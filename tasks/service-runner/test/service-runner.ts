@@ -1,13 +1,44 @@
 import { expect } from 'chai';
+import * as k8s from '@kubernetes/client-node';
 import { describe, it } from 'mocha';
 import env from '../app/util/env';
 import WorkItem from '../../../app/models/work-item';
 import { objectStoreForProtocol } from '../../../app/util/object-store';
 import * as serviceRunner from '../app/service/service-runner';
 import { resolve } from '../../../app/util/url';
+import { createLoggerForTest } from '../../../test/helpers/log';
+import { getItemLogsLocation, WorkItemRecord } from '../../../app/models/work-item-interface';
+import { uploadLogs } from '../app/service/service-runner';
 
 const { _getErrorMessage, _getStacCatalogs } = serviceRunner.exportedForTesting;
 
+const exampleStatus : k8s.V1Status = {
+  message: 'example status',
+};
+
+const oomStatusCause : k8s.V1StatusCause = {
+  reason: 'ExitCode',
+  message: '137',
+};
+
+const oomStatusDetails : k8s.V1StatusDetails = {
+  causes: [oomStatusCause],
+};
+
+const oomStatus : k8s.V1Status = {
+  details: oomStatusDetails,
+};
+
+const errorLogRecord = `
+{
+  "application": "query-cmr",
+  "requestId": "c76c7a30-84a1-40a1-88a0-34a35e47fe8f",
+  "message": "bad stuff",
+  "level": "error",
+  "timestamp": "2021-09-14T15:08:57.346Z",
+  "env_name": "harmony-unknown"
+}
+`;
 const errorLog = `
 {
   "application": "query-cmr",
@@ -17,14 +48,7 @@ const errorLog = `
   "timestamp": "2021-09-13T15:08:57.346Z",
   "env_name": "harmony-unknown"
 }
-{
-  "application": "query-cmr",
-  "requestId": "c76c7a30-84a1-40a1-88a0-34a35e47fe8f",
-  "message": "bad stuff",
-  "level": "error",
-  "timestamp": "2021-09-14T15:08:57.346Z",
-  "env_name": "harmony-unknown"
-}
+${errorLogRecord}
 {
   "application": "query-cmr",
   "requestId": "c76c7a30-84a1-40a1-88a0-34a35e47fe8f",
@@ -49,6 +73,7 @@ const nonErrorLog = `
 const workItemWithErrorJson = 's3://stac-catalogs/abc/123/outputs/';
 const workItemWithoutErrorJson = 's3://stac-catalogs/abc/456/outputs/';
 const emptyLog = '';
+const badLog = '{\'x\': {\'y\': \'z\'}}';
 
 describe('Service Runner', function () {
   describe('_getErrorMessage()', function () {
@@ -60,32 +85,127 @@ describe('Service Runner', function () {
     });
     describe('when there is an error.json file associated with the WorkItem', async function () {
       it('returns the error message from error.json', async function () {
-        const errorMessage = await _getErrorMessage(errorLog, workItemWithErrorJson);
+        const errorMessage = await _getErrorMessage(exampleStatus, errorLog, workItemWithErrorJson);
         expect(errorMessage).equal('Service error message');
       });
     });
     describe('when the error log has ERROR level entries', async function () {
       it('returns the first error log entry', async function () {
-        const errorMessage = await _getErrorMessage(errorLog, workItemWithoutErrorJson);
+        const errorMessage = await _getErrorMessage(exampleStatus, errorLog, workItemWithoutErrorJson);
         expect(errorMessage).equal('bad stuff');
       });
     });
     describe('when the error log has no ERROR level entries', async function () {
       it('returns "unknown error"', async function () {
-        const errorMessage = await _getErrorMessage(nonErrorLog, workItemWithoutErrorJson);
+        const errorMessage = await _getErrorMessage(exampleStatus, nonErrorLog, workItemWithoutErrorJson);
         expect(errorMessage).equal('Unknown error');
       });
     });
     describe('when the error log is empty', async function () {
       it('returns "unknown error"', async function () {
-        const errorMessage = await _getErrorMessage(emptyLog, workItemWithoutErrorJson);
+        const errorMessage = await _getErrorMessage(exampleStatus, emptyLog, workItemWithoutErrorJson);
         expect(errorMessage).equal('Unknown error');
       });
     });
     describe('when the error log is null', async function () {
       it('returns "unknown error"', async function () {
-        const errorMessage = await _getErrorMessage(null, workItemWithoutErrorJson);
+        const errorMessage = await _getErrorMessage(exampleStatus, null, workItemWithoutErrorJson);
         expect(errorMessage).equal('Unknown error');
+      });
+    });
+    describe('when the error status code is 137', async function () {
+      it('returns "OOM error"', async function () {
+        const errorMessage = await _getErrorMessage(oomStatus, null, workItemWithoutErrorJson);
+        expect(errorMessage).equal('Service failed due to running out of memory');
+      });
+    });
+    describe('when the log is not valid JSON and error status code is 137', async function () {
+      it('returns "OOM error"', async function () {
+        const errorMessage = await _getErrorMessage(oomStatus, badLog, workItemWithoutErrorJson);
+        expect(errorMessage).equal('Service failed due to running out of memory');
+      });
+    });
+    describe('when the log is not valid JSON and error status code is not 137', async function () {
+      it('returns "OOM error"', async function () {
+        const errorMessage = await _getErrorMessage(exampleStatus, badLog, workItemWithoutErrorJson);
+        expect(errorMessage).equal('Service terminated without error message');
+      });
+    });
+  });
+
+  describe('uploadLogs', function () {
+    describe('with text logs', function () {
+      const itemRecord0: WorkItemRecord = { id: 0, jobID: '123', serviceID: '', sortIndex: 0,
+        workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date() };
+      const itemRecord1: WorkItemRecord = { id: 1, jobID: '123', serviceID: '', sortIndex: 0,
+        workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date() };
+      const s3 = objectStoreForProtocol('s3');
+      before(async function () {
+        // One of the items will have its log file written to twice
+        await uploadLogs(itemRecord0, ['the old logs']);
+        itemRecord0.retryCount = 1; // simulate a retry
+        await uploadLogs(itemRecord0, ['the new logs']);
+
+        await uploadLogs(itemRecord1, ['the only logs']);
+      });
+      describe('when there is a logs file already associated with the WorkItem', async function () {
+        it('appends the new logs to the old ones', async function () {
+          const logsLocation0 = getItemLogsLocation(itemRecord0);
+          const logs = await s3.getObjectJson(logsLocation0);
+          expect(logs).to.deep.equal([
+            'Start of service execution (retryCount=0, id=0)',
+            'the old logs',
+            'Start of service execution (retryCount=1, id=0)',
+            'the new logs',
+          ]);
+        });
+      });
+      describe('when there is no logs file associated with the WorkItem', async function () {
+        it('writes the logs to a new file', async function () {
+          const logsLocation1 = getItemLogsLocation(itemRecord1);
+          const logs = await s3.getObjectJson(logsLocation1);
+          expect(logs).to.deep.equal([
+            'Start of service execution (retryCount=0, id=1)',
+            'the only logs',
+          ]);
+        });
+      });
+    });
+    describe('with JSON logs', function () {
+      const itemRecord0: WorkItemRecord = { id: 2, jobID: '123', serviceID: '', sortIndex: 0,
+        workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date() };
+      const itemRecord1: WorkItemRecord = { id: 3, jobID: '123', serviceID: '', sortIndex: 0,
+        workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date() };
+      const s3 = objectStoreForProtocol('s3');
+      before(async function () {
+        // One of the items will have its log file written to twice
+        await uploadLogs(itemRecord0, [{ message: 'the old logs' }]);
+        itemRecord0.retryCount = 1; // simulate a retry
+        await uploadLogs(itemRecord0, [{ message: 'the new logs' }]);
+
+        await uploadLogs(itemRecord1, [{ message: 'the only logs' }]);
+      });
+      describe('when there is a logs file already associated with the WorkItem', async function () {
+        it('appends the new logs to the old ones', async function () {
+          const logsLocation0 = getItemLogsLocation(itemRecord0);
+          const logs = await s3.getObjectJson(logsLocation0);
+          expect(logs).to.deep.equal([
+            { message: 'Start of service execution (retryCount=0, id=2)' },
+            { message: 'the old logs' },
+            { message: 'Start of service execution (retryCount=1, id=2)' },
+            { message: 'the new logs' },
+          ]);
+        });
+      });
+      describe('when there is no logs file associated with the WorkItem', async function () {
+        it('writes the logs to a new file', async function () {
+          const logsLocation1 = getItemLogsLocation(itemRecord1);
+          const logs = await s3.getObjectJson(logsLocation1);
+          expect(logs).to.deep.equal([
+            { message: 'Start of service execution (retryCount=0, id=3)' },
+            { message: 'the only logs' },
+          ]);
+        });
       });
     });
   });
@@ -120,7 +240,7 @@ describe('Service Runner', function () {
         jobID: '123',
         serviceID: 'abc',
         workflowStepIndex: 0,
-        scrollID: 1234,
+        scrollID: '1234',
         operation: { requestID: 'foo' },
         id: 1,
       });
@@ -152,6 +272,132 @@ describe('Service Runner', function () {
       it('returns an error message', async function () {
         const result = await serviceRunner.runServiceFromPull(workItem);
         expect(result.error).to.be.not.empty;
+      });
+    });
+  });
+
+  describe('LogStream', function () {
+
+    const message = 'mv \'/tmp/tmpkwxpifmr/tmp-result.tif\' \'/tmp/tmpkwxpifmr/result.tif\'';
+    const user = 'bo';
+    const timestamp =  '2022-10-06T17:04:21.090726Z';
+    const requestId = 'cdea7cb8-4c77-4342-8f00-6285e32c9123';
+    const level = 'INFO';
+
+    const textLog = `${timestamp} [${level}] [harmony-service.cmd:199] ${message}`;
+    const jsonLog = `{ "level":"${level}", "message":"${message}", "user":"${user}", "requestId":"${requestId}", "timestamp":"${timestamp}"}`;
+
+    describe('_handleLogString with a JSON logger', function () {
+
+      before(function () {
+        const { getTestLogs, testLogger } = createLoggerForTest(true);
+        this.testLogger = testLogger;
+        this.logStream = new serviceRunner.LogStream(testLogger);
+        this.logStream._handleLogString(textLog);
+        this.logStream._handleLogString(jsonLog);
+
+        const testLogs = getTestLogs();
+        this.testLogsArr = testLogs.split('\n');
+        this.textLogOutput = JSON.parse(this.testLogsArr[0]);
+        this.jsonLogOutput = JSON.parse(this.testLogsArr[1]);
+      });
+
+      after(function () {
+        for (const transport of this.testLogger.transports) {
+          transport.close;
+        }
+        this.testLogger.close();
+      });
+
+      it('saves each log to an array in the original format, as a string or JSON', function () {
+        expect(this.logStream.logStrArr.length == 2);
+        expect(this.logStream.logStrArr[0] === JSON.parse(jsonLog));
+        expect(this.logStream.logStrArr[1] === textLog);
+      });
+
+      it('outputs the proper quantity of logs to the log stream', function () {
+        expect(this.testLogsArr.length == 2);
+      });
+
+      it('sets the appropriate message for each log', function () {
+        expect(this.textLogOutput.message).to.equal(textLog);
+        expect(this.jsonLogOutput.message).to.equal(message);
+      });
+
+      it('sets custom attributes appropriately for each log', function () {
+        expect(this.jsonLogOutput.user).to.equal(user);
+        expect(this.jsonLogOutput.requestId).to.equal(requestId);
+
+        expect(this.textLogOutput.worker).to.equal(true);
+        expect(this.jsonLogOutput.worker).to.equal(true);
+      });
+
+      it('does not override manager container log attributes with those from the worker container', function () {
+        expect(this.textLogOutput.timestamp).to.not.equal(timestamp);
+        expect(this.jsonLogOutput.timestamp).to.not.equal(timestamp);
+        expect(this.jsonLogOutput.workerTimestamp).to.equal(timestamp);
+
+        expect(this.textLogOutput.level.toLowerCase()).to.equal('debug');
+        expect(this.jsonLogOutput.level.toLowerCase()).to.equal('debug');
+        expect(this.jsonLogOutput.workerLevel.toLowerCase()).to.equal(level.toLowerCase());
+      });
+    });
+
+    describe('_handleLogString with a text logger', function () {
+
+      before(function () {
+        const { getTestLogs, testLogger } = createLoggerForTest(false);
+        this.testLogger = testLogger;
+        this.logStream = new serviceRunner.LogStream(testLogger);
+        this.logStream._handleLogString(textLog);
+        this.logStream._handleLogString(jsonLog);
+        this.testLogs = getTestLogs();
+      });
+
+      after(function () {
+        for (const transport of this.testLogger.transports) {
+          transport.close;
+        }
+        this.testLogger.close();
+      });
+
+      it('saves each log to an array in the original format, as a string or JSON', function () {
+        expect(this.logStream.logStrArr.length == 2);
+        expect(this.logStream.logStrArr[0] === JSON.parse(jsonLog));
+        expect(this.logStream.logStrArr[1] === textLog);
+      });
+
+      it('outputs the proper quantity of logs to the log stream', function () {
+        expect(this.testLogs.split('\n').length == 2);
+      });
+
+      it('outputs the appropriate text to the log stream', function () {
+        const jsonLogOutput = `[${requestId}]: ${message}`;
+        expect(this.testLogs.includes(textLog));
+        expect(this.testLogs.includes(jsonLogOutput));
+      });
+    });
+
+    describe('aggregateLogStr with a JSON logger', function () {
+
+      before(function () {
+        const { testLogger } = createLoggerForTest(true);
+        this.testLogger = testLogger;
+        this.logStream = new serviceRunner.LogStream(testLogger);
+        this.logStream._handleLogString(nonErrorLog);
+        this.logStream._handleLogString(errorLogRecord);
+      });
+
+      after(function () {
+        for (const transport of this.testLogger.transports) {
+          transport.close;
+        }
+        this.testLogger.close();
+      });
+
+      it('can provide an aggregate log string to _getErrorMessage', async function () {
+        const errorMessage = await _getErrorMessage(exampleStatus, this.logStream.aggregateLogStr, workItemWithoutErrorJson);
+        expect(errorMessage).equal('bad stuff');
       });
     });
   });

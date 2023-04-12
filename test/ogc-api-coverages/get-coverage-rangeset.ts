@@ -11,6 +11,7 @@ import { ServiceConfig } from '../../app/models/services/base-service';
 import { hookRedirect } from '../helpers/hooks';
 import { stub } from 'sinon';
 import env from '../../app/util/env';
+import { hookTransactionFailure } from '../helpers/db';
 
 describe('OGC API Coverages - getCoverageRangeset', function () {
   const collection = 'C1233800302-EEDTEST';
@@ -43,7 +44,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
       it('provides a staging location to the backend', function () {
         const location = this.service.operation.stagingLocation;
-        expect(location).to.match(new RegExp('^s3://[^/]+/public/harmony/stub/[^/]+/$'));
+        expect(location).to.match(new RegExp('^s3://[^/]+/public/.*$'));
       });
 
       it('passes the source collection to the backend', function () {
@@ -774,7 +775,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
         StubService.hook({ params: { redirect: 'http://example.com' } });
         hookRangesetRequest(version, collection, variableName, { headers, query });
         it('uses the backend service that supports variable subsetting', function () {
-          expect(this.service.name).to.equal('harmony/service-example');
+          expect(this.service.config.name).to.equal('harmony/service-example');
         });
         it('chooses the tiff format since zarr is not supported by the variable subsetting service', function () {
           expect(this.service.operation.outputFormat).to.equal(tiff);
@@ -788,7 +789,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
           expect(this.service.operation.outputFormat).to.equal(zarr);
         });
         it('uses the backend service that supports that output format', function () {
-          expect(this.service.name).to.equal('harmony/netcdf-to-zarr');
+          expect(this.service.config.name).to.equal('harmony/netcdf-to-zarr');
         });
       });
     });
@@ -801,7 +802,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
         expect(this.service.operation.outputFormat).to.equal(png);
       });
       it('uses the correct backend service', function () {
-        expect(this.service.name).to.equal('harmony/service-example');
+        expect(this.service.config.name).to.equal('harmony/service-example');
       });
     });
 
@@ -828,23 +829,10 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     });
   });
 
-  /*
-  FIXME: HARMONY-293 - Commenting out now because this is a low priority edge case holding up high
-  priority work
-
   describe('when the database catches fire during an asynchronous request', function () {
-    before(function () {
-      const testdb = path.resolve(__dirname, '../../db/test.sqlite3');
-      fs.unlinkSync(testdb);
-    });
-
+    hookTransactionFailure();
     StubService.hook({ params: { redirect: 'http://example.com' } });
     hookRangesetRequest(version, collection, variableName, {});
-
-    after(async function () {
-      // Get a new connection
-      await knex(db.client.config).migrate.latest();
-    });
 
     it('returns an HTTP 500 error with the JSON error format', function () {
       expect(this.res.status).to.eql(500);
@@ -855,7 +843,6 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       });
     });
   });
-  */
 
   describe('Validation', function () {
     /**

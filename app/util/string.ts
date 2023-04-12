@@ -30,6 +30,25 @@ export function listToText(items: string[], joinWord = Conjunction.AND): string 
 }
 
 /**
+ * Join sentences or paragraphs (in the specified order) ensuring periods
+ * are inserted if no punctuation is present, and a space between texts.
+ *
+ * @param items - The items to join
+ * @returns The resulting textual string
+ */
+export function joinTexts(...items: string[]): string {
+  const result = [];
+  for (const item of items) {
+    let resultItem = item.trim();
+    if (!/[.!?]$/m.test(resultItem)) {
+      resultItem += '.';
+    }
+    result.push(resultItem);
+  }
+  return result.join(' ');
+}
+
+/**
  * Truncates a string to the specified number of characters. The last
  * three characters are replaced with '...'.
  *
@@ -69,6 +88,7 @@ export function isInteger(value: string): boolean {
 export function sanitizeImage(image: string): string {
   return image
     .replace(/.*amazonaws.com\//, '')
+    .replace(/.*ghcr.io\//, '')
     .replace(/.*earthdata.nasa.gov\//, '');
 }
 

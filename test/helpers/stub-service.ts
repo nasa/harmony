@@ -8,37 +8,34 @@ import BaseService, { ServiceConfig } from '../../app/models/services/base-servi
 import * as services from '../../app/models/services/index';
 import DataOperation from '../../app/models/data-operation';
 import InvocationResult from '../../app/models/services/invocation-result';
+import WorkflowStep from '../../app/models/workflow-steps';
 
 /**
  * Service implementation used for stubbing invocations for tests
  *
  */
-export default class StubService extends BaseService<void> {
+export default class StubService extends BaseService<unknown> {
   callbackOptions: object | Function;
 
   isComplete: boolean;
 
   isRun: boolean;
 
-  name: string;
-
   /**
    * Creates an instance of StubService.
    *
+   * @param config - The service configuration
    * @param callbackOptions - The request options to be used for the callback, with
    *   keys for params (query parameter object), headers (headers to set), and body (body to POST).
    *   If a function is passed instead of an object, it will be called with no arguments to a
    *   callback options object.
    * @param operation - The data operation being requested of the service
-   * @param serviceName - The service name
    */
-  constructor(callbackOptions: object | Function, operation: DataOperation, serviceName: string) {
-    super({ name: 'harmony/stub' }, operation);
+  constructor(config: ServiceConfig<unknown>, callbackOptions: object | Function, operation: DataOperation) {
+    super(config, operation);
     this.callbackOptions = callbackOptions;
     this.isComplete = false;
     this.isRun = false;
-    this.name = serviceName;
-
   }
 
   /**
@@ -106,6 +103,13 @@ export default class StubService extends BaseService<void> {
   }
 
   /**
+   * Calls the protected createWorkflowSteps on the baseService for test purposes
+   */
+  createWorkflowSteps(): WorkflowStep[] {
+    return this._createWorkflowSteps();
+  }
+
+  /**
    * Returns a function that can be passed to a before / beforeEach call to route
    * service requests to StubService
    *
@@ -118,7 +122,7 @@ export default class StubService extends BaseService<void> {
       const ctx = this;
       stub(services, 'buildService')
         .callsFake((config, operation) => {
-          ctx.service = new StubService(callbackOptions, operation, config.name);
+          ctx.service = new StubService(config, callbackOptions, operation);
           return ctx.service;
         });
     };

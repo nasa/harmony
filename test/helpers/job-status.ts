@@ -8,10 +8,9 @@ import { S3ObjectStore } from '../../app/util/object-store';
 
 /**
  * Provides a parameterized `describe` blocks that tests expected format of data links.
- * @param version - the harmony API version
- * @param collection - the id of the collection for the request
- * @param variableName - the name of the variable in the collection to process
  *
+ * @param s3Uri - the S3 URI
+ * @param serviceName - the name of the service used - defaults to harmony/example
  */
 export function itReturnsUnchangedDataLinksForZarr(
   s3Uri: string,
@@ -26,8 +25,8 @@ export function itReturnsUnchangedDataLinksForZarr(
     const job = new Job(JSON.parse(this.res.text));
     const bucketLinks = job.getRelatedLinks('s3-access');
     expect(bucketLinks.length).to.equal(1);
-    const urlRegex = new RegExp(`^s3://${env.stagingBucket}/public/harmony/stub/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/$`);
-    expect(bucketLinks[0].href).to.match(urlRegex);
+    const stagingLocation = `s3://${env.stagingBucket}/public/${job.jobID}/`;
+    expect(bucketLinks[0].href).to.equal(stagingLocation);
     expect(bucketLinks[0].title).to.equal('Results in AWS S3. Access from AWS us-west-2 with keys from /cloud-access.sh');
   });
 

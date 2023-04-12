@@ -1,0 +1,44 @@
+<table class="table table-sm">
+  {{#capabilities}}
+  <thead>
+      <tr class="align-middle">
+          <th scope="col"></th>
+          <th scope="col"></th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr clas='job-table-row'>
+          <th scope="row">Variable Subset</th>
+          <td>{{variableSubset}}</td>
+      </tr>
+      <tr clas='job-table-row'>
+        <th scope="row">Bounding Box Subset</th>
+        <td>{{bboxSubset}}</td>
+      </tr>
+      <tr clas='job-table-row'>
+        <th scope="row">Shape Subset</th>
+        <td>{{shapeSubset}}</td>
+      </tr>
+      <tr clas='job-table-row'>
+        <th scope="row">Concatenate</th>
+        <td>{{concatenate}}</td>
+      </tr>
+      <tr clas='job-table-row'>
+        <th scope="row">Reproject</th>
+        <td>{{reproject}}</td>
+      </tr>
+      <tr clas='job-table-row'>
+        <th scope="row">Output Formats</th>
+        <td>{{outputFormats}}</td>
+      </tr>
+      <tr clas='job-table-row'>
+        <th scope="row">Services ({{services.length}})</th>
+        <td>{{services}}</td>
+      </tr>
+      <tr clas='job-table-row'>
+        <th scope="row">Variables ({{variables.length}})</th>
+        <td>{{variables}}</td>
+      </tr>
+  </tbody>
+  {{/capabilities}}
+</table>

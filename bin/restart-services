@@ -7,6 +7,13 @@ source ".env"
 set +a
 eval "$env_save"
 
+current_context=$(kubectl config current-context)
+if [ "$current_context" != "docker-desktop" ] && [ "$current_context" != "minikube" ]; then
+  echo 'ERROR: Attempting to use a non-local k8s context while deploying to a development environment.'
+  echo "$current_context"
+  exit 1
+fi
+
 for service in ${LOCALLY_DEPLOYED_SERVICES//,/ } query-cmr
 do
     echo "stopping $service"

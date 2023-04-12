@@ -23,10 +23,15 @@ export default interface WorkItemUpdate {
   // The location of the resulting STAC catalog(s)
   results?: string[];
 
-  // The sum of the sizes of the granules associated with this work item
-  totalGranulesSize?: number;
+  // The sum of the sizes (in mb) of the items associated with this work item
+  totalItemsSize?: number;
+
+  // The size (in bytes) of each data item produced by this work item (used for batching)
+  outputItemSizes?: number[];
 
   // error message if status === FAILED
   errorMessage?: string;
 
+  // how long the work item took to process
+  duration?: number;
 }

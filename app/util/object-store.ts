@@ -15,14 +15,14 @@ const pipeline = util.promisify(stream.pipeline);
 const createTmpFileName = util.promisify(tmp.tmpName);
 const readFile = util.promisify(fs.readFile);
 
-interface BucketParams {
+export interface BucketParams {
   Bucket: string;
   Key: string;
 }
 
 /**
  * Read a stream into a string
- * 
+ *
  * @param readableStream - The stream to read
  * @returns A string containing the contents of the stream
  */
@@ -90,7 +90,7 @@ export class S3ObjectStore {
     }
     const object = {
       Bucket: url.hostname,
-      Key: url.pathname.substr(1), // Nuke leading "/"
+      Key: url.pathname.substr(1).replaceAll('%20', ' '), // Nuke leading "/" and convert %20 to spaces
     };
 
     // Verifies that the object exists, or throws NotFound
@@ -145,7 +145,7 @@ export class S3ObjectStore {
 
   /**
    * List all of the object keys for the given prefix.
-   * 
+   *
    * @param paramsOrUrl - a map of parameters (Bucket, Key) indicating the objects to
    *   be retrieved or the object URL
    * @returns a promise resolving to a list of s3 object keys (strings)
@@ -325,6 +325,19 @@ export class S3ObjectStore {
     }
     return upload.promise();
   }
+
+  /**
+   * Returns the AWS region the given bucket is in
+   *
+   * @param bucketName - name of the s3 bucket
+   * @returns the AWS region
+   */
+  async getBucketRegion(bucketName: string): Promise<string> {
+    const req : aws.S3.GetBucketLocationRequest = { Bucket: bucketName };
+    const result = await this.s3.getBucketLocation(req).promise();
+    // aws returns null when the bucket region is us-east-1. We want always return a region name.
+    return result.LocationConstraint ? result.LocationConstraint : 'us-east-1';
+  }  
 
   /**
    * Returns a URL string for an object with the given bucket and key (prefix)

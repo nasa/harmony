@@ -28,15 +28,16 @@ describe('Versions endpoint', function () {
           'podaac/concise',
           'podaac/l2-subsetter-concise',
           'sds/swot-reproject',
+          'sds/harmony-regridder',
           'sds/variable-subsetter',
-          'sds/HOSS',
           'sds/maskfill',
           'sds/trajectory-subsetter',
-          'harmony/netcdf-to-zarr',
           'nasa/harmony-gdal-adapter',
+          'sds/HOSS-geographic',
+          'sds/HOSS-projection-gridded',
+          'harmony/netcdf-to-zarr',
           'harmony/podaac-l2-subsetter-netcdf-to-zarr',
           'harmony/swot-repr-netcdf-to-zarr',
-          'sds/HOSS-maskfill',
         ]);
       });
 

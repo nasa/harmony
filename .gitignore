@@ -1,9 +1,6 @@
 # package directories
 node_modules
 
-# Serverless directories
-.serverless
-
 # Temp and log files
 *.log
 tmp
@@ -23,6 +20,7 @@ built
 # Dev and test databases
 db/*.sqlite3
 db/*-journal
+db/*sqbpro
 
 # Quokka repl/playground
 playground.ts
@@ -35,3 +33,6 @@ workload/.python-version
 
 # notebook outputs
 docs/harmony_dimension_subset_results/
+docs/outputs
+
+.netrc

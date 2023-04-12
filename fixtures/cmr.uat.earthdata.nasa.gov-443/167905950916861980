@@ -1,0 +1,28 @@
+POST /search/variables.umm_json_v1_8_1
+accept: application/json
+content-type: multipart/form-data; boundary=----------------------------012345678901234567890123
+accept-encoding: gzip,deflate
+body: ------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"concept_id\"\r\n\r\nV1229850953-POCUMULUS\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"page_size\"\r\n\r\n2000\r\n------------------------------012345678901234567890123--\r\n
+
+HTTP/1.1 200 OK
+content-type: application/vnd.nasa.cmr.umm_results+json;version=1.8.1; charset=utf-8
+content-length: 30
+connection: close
+date: Fri, 17 Mar 2023 13:25:09 GMT
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: eac4f2e1-114a-4dbc-8d3c-60940144d19b
+strict-transport-security: max-age=31536000
+cmr-hits: 0
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Search-After, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 8
+x-request-id: RXYIhdb-htRGpkuugZxSFpQxKoF51JfQ0DwjSc1E1D9wKve5Pp4shA==
+server: ServerTokens ProductOnly
+x-cache: Miss from cloudfront
+via: 1.1 e89d8ce7f3f95990dceb161aeac4f898.cloudfront.net (CloudFront)
+x-amz-cf-pop: DFW55-C3
+x-amz-cf-id: RXYIhdb-htRGpkuugZxSFpQxKoF51JfQ0DwjSc1E1D9wKve5Pp4shA==
+
+{"hits":0,"took":7,"items":[]}

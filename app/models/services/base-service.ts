@@ -10,14 +10,19 @@ import { defaultObjectStore } from '../../util/object-store';
 import { RequestValidationError, ServerError } from '../../util/errors';
 import db from '../../util/db';
 import env from '../../util/env';
-import { WorkItemStatus } from '../work-item-interface';
+import { WorkItemMeta, WorkItemStatus } from '../work-item-interface';
 import { getRequestMetric } from '../../util/metrics';
+import { getRequestUrl } from '../../util/url';
+import HarmonyRequest from '../harmony-request';
+import UserWork from '../user-work';
+import { joinTexts, sanitizeImage } from '../../util/string';
 
 export interface ServiceCapabilities {
   concatenation?: boolean;
   concatenate_by_default?: boolean;
   subsetting?: {
     bbox?: boolean;
+    shape?: boolean;
     variable?: boolean;
     multiple_variable?: true;
   };
@@ -28,6 +33,9 @@ export interface ServiceCapabilities {
 export interface ServiceStep {
   image?: string;
   operations?: string[];
+  max_batch_inputs?: number;
+  max_batch_size_in_bytes?: number;
+  is_batched?: boolean;
   conditional?: {
     exists?: string[];
     format?: string[];
@@ -41,8 +49,8 @@ export interface ServiceCollection {
 }
 
 export interface ServiceConfig<ServiceParamType> {
-  batch_size?: number;
   name?: string;
+  description?: string;
   data_operation_version?: string;
   granule_limit?: number;
   has_granule_limit?: boolean;
@@ -96,6 +104,7 @@ const conditionToOperationField = {
   reproject: 'crs',
   reformat: 'outputFormat',
   variableSubset: 'shouldVariableSubset',
+  shapefileSubset: 'shouldShapefileSubset',
   spatialSubset: 'shouldSpatialSubset',
   temporalSubset: 'shouldTemporalSubset',
   concatenate: 'shouldConcatenate',
@@ -182,7 +191,7 @@ export default abstract class BaseService<ServiceParamType> {
 
     if (!this.operation.stagingLocation) {
       const prefix = `public/${config.name || this.constructor.name}/${uuid()}/`;
-      this.operation.stagingLocation = defaultObjectStore().getUrlString(env.stagingBucket, prefix);
+      this.operation.stagingLocation = defaultObjectStore().getUrlString(env.artifactBucket, prefix);
     }
   }
 
@@ -197,6 +206,21 @@ export default abstract class BaseService<ServiceParamType> {
   }
 
   /**
+   * Returns the final staging location of the service.
+   *
+   * @returns the final staging location of the service
+   */
+  finalStagingLocation() : string {
+    const { requestId, destinationUrl } = this.operation;
+    if (destinationUrl) {
+      let destPath = destinationUrl.substring(5);
+      destPath = destPath.endsWith('/') ? destPath.slice(0, -1) : destPath;
+      return defaultObjectStore().getUrlString(destPath, requestId + '/');
+    }
+    return defaultObjectStore().getUrlString(env.stagingBucket, `public/${requestId}/`);
+  }
+
+  /**
    * Invokes the service, returning a promise for the invocation result
    *
    * @param logger - The logger associated with this request
@@ -205,17 +229,15 @@ export default abstract class BaseService<ServiceParamType> {
    *
    * @returns A promise resolving to the result of the callback.
    */
-  async invoke(
-    logger?: Logger, harmonyRoot?: string, requestUrl?: string,
-  ): Promise<InvocationResult> {
+  async invoke(req: HarmonyRequest, logger?: Logger): Promise<InvocationResult> {
     this.logger = logger;
     logger.info('Invoking service for operation', { operation: this.operation });
     // TODO handle the skipPreview parameter here when implementing HARMONY-1129
-    const job = this._createJob(requestUrl);
+    const job = this._createJob(getRequestUrl(req));
     await this._createAndSaveWorkflow(job);
 
     const { isAsync, requestId } = job;
-    const requestMetric = getRequestMetric(this.operation, this.config.name);
+    const requestMetric = getRequestMetric(req, this.operation, this.config.name);
     logger.info(`Request metric for request ${requestId}`, { requestMetric: true, ...requestMetric } );
     this.operation.callback = `${env.callbackUrlRoot}/service/${requestId}`;
     return new Promise((resolve, reject) => {
@@ -287,7 +309,6 @@ export default abstract class BaseService<ServiceParamType> {
    * Creates a new job object for this service's operation
    *
    * @param requestUrl - The URL the end user invoked
-   * @param stagingLocation - The staging location for this job
    * @returns The created job
    * @throws ServerError - if the job cannot be created
    */
@@ -316,8 +337,24 @@ export default abstract class BaseService<ServiceParamType> {
       message: message,
       collectionIds: this.operation.collectionIds,
       ignoreErrors: this.operation.ignoreErrors,
+      destination_url: this.operation.destinationUrl,
+      service_name: this.config.name,
     });
-    job.addStagingBucketLink(this.operation.stagingLocation);
+    if (this.operation.message) {
+      job.setMessage(this.operation.message, JobStatus.SUCCESSFUL);
+    }
+    if (this.operation.message && !skipPreview) {
+      job.setMessage(this.operation.message, JobStatus.RUNNING);
+    }
+    if (this.operation.destinationUrl) {
+      const destinationWarningSuccessful = 'The results have been placed in the requested custom destination. Any further changes to the result files or their location are outside of Harmony\'s control.';
+      const destinationWarningRunning = 'Once results are sent to the requested destination, any changes to the result files or their location are outside of Harmony\'s control.';
+      job.setMessage(joinTexts(job.getMessage(JobStatus.SUCCESSFUL), destinationWarningSuccessful), JobStatus.SUCCESSFUL);
+      job.setMessage(joinTexts(job.getMessage(JobStatus.RUNNING), destinationWarningRunning), JobStatus.RUNNING);
+    }
+    if (!this.operation.destinationUrl) {
+      job.addStagingBucketLink(this.finalStagingLocation());
+    }
     return job;
   }
 
@@ -368,6 +405,23 @@ export default abstract class BaseService<ServiceParamType> {
   }
 
   /**
+   * Return the number of actual workflow steps for this request
+   *
+   * @returns  the number of actual workflow steps
+   */
+  protected _numActualSteps(): number {
+    let totalSteps = 0;
+    if (this.config.steps) {
+      this.config.steps.forEach(((step) => {
+        if (stepRequired(step, this.operation)) {
+          totalSteps += 1;
+        }
+      }));
+    }
+    return totalSteps;
+  }
+
+  /**
    * Creates the workflow steps objects for this request
    *
    * @returns The created WorkItem for the query CMR job
@@ -376,10 +430,14 @@ export default abstract class BaseService<ServiceParamType> {
   protected _createWorkflowSteps(): WorkflowStep[] {
     const workflowSteps = [];
     if (this.config.steps) {
+      const numSteps = this._numActualSteps();
       let i = 0;
       this.config.steps.forEach(((step) => {
         if (stepRequired(step, this.operation)) {
           i += 1;
+          if (i === numSteps) {
+            this.operation.stagingLocation = this.finalStagingLocation();
+          }
           workflowSteps.push(new WorkflowStep({
             jobID: this.operation.requestId,
             serviceID: serviceImageToId(step.image),
@@ -390,6 +448,9 @@ export default abstract class BaseService<ServiceParamType> {
               step.operations || [],
             ),
             hasAggregatedOutput: stepHasAggregatedOutput(step, this.operation),
+            isBatched: !!step.is_batched && this.operation.shouldConcatenate,
+            maxBatchInputs: step.max_batch_inputs,
+            maxBatchSizeInBytes: step.max_batch_size_in_bytes,
           }));
         }
       }));
@@ -397,6 +458,34 @@ export default abstract class BaseService<ServiceParamType> {
       throw new RequestValidationError(`Service: ${this.config.name} does not yet support Turbo.`);
     }
     return workflowSteps;
+  }
+
+  /**
+   * Creates the user work objects for this request
+   *
+   * @returns The created user work entries
+   * @throws ServerError - if the user work entries cannot be created
+   */
+  protected _createUserWorkEntries(): UserWork[] {
+    const userWorkEntries = [];
+    if (this.config.steps) {
+      this.config.steps.forEach(((step) => {
+        if (stepRequired(step, this.operation)) {
+          userWorkEntries.push(new UserWork({
+            job_id: this.operation.requestId,
+            service_id: serviceImageToId(step.image),
+            username: this.operation.user,
+            ready_count: 0,
+            running_count: 0,
+            is_async: !this.isSynchronous,
+            last_worked: new Date(),
+          }));
+        }
+      }));
+    } else {
+      throw new RequestValidationError(`Service: ${this.config.name} does not yet support Turbo.`);
+    }
+    return userWorkEntries;
   }
 
   /**
@@ -420,12 +509,15 @@ export default abstract class BaseService<ServiceParamType> {
   ): Promise<void> {
     const startTime = new Date().getTime();
     let workflowSteps = [];
+    let userWorkEntries = [];
     let firstStepWorkItems = [];
 
     if (this.isTurbo()) {
-      this.logger.debug('Creating workflow steps');
+      this.logger.debug('Creating workflow steps, user work rows, and initial work items');
       workflowSteps = this._createWorkflowSteps();
+      userWorkEntries = this._createUserWorkEntries();
       firstStepWorkItems = this._createFirstStepWorkItems(workflowSteps[0]);
+      userWorkEntries[0].ready_count += firstStepWorkItems.length;
     }
 
     try {
@@ -436,11 +528,17 @@ export default abstract class BaseService<ServiceParamType> {
           for await (const step of workflowSteps) {
             await step.save(tx);
           }
+          for await (const userWork of userWorkEntries) {
+            await userWork.save(tx);
+          }
           for await (const workItem of firstStepWorkItems) {
             // use first step as the workflow step associated with each work item
             workItem.workflowStepIndex = workflowSteps[0].stepIndex;
             await workItem.save(tx);
           }
+          const itemMeta: WorkItemMeta = { workItemService: sanitizeImage(workflowSteps[0].serviceID), workItemEvent: 'statusUpdate',
+            workItemAmount: firstStepWorkItems.length, workItemStatus: WorkItemStatus.READY };
+          this.logger.info('Queued first step work items.', itemMeta);
         }
       });
 
@@ -463,6 +561,9 @@ export default abstract class BaseService<ServiceParamType> {
 
     if (operation.requireSynchronous) {
       return true;
+    }
+    if (operation.destinationUrl) {
+      return false;
     }
     if (operation.isSynchronous !== undefined) {
       return operation.isSynchronous;

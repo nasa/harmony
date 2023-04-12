@@ -1,3 +1,4 @@
+import { truncateString } from '../util/string';
 import db, { Transaction } from '../util/db';
 import Record from './record';
 
@@ -33,7 +34,7 @@ export default class JobError extends Record {
     super(fields);
     this.jobID = fields.jobID;
     this.url = fields.url;
-    this.message = fields.message;
+    this.message = truncateString(fields.message, 4096);
   }
 
   /**

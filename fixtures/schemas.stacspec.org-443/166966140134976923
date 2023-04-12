@@ -1,0 +1,45 @@
+GET /v1.0.0/item-spec/json-schema/basics.json
+accept: application/json, text/plain, */*
+
+HTTP/1.1 200 OK
+connection: close
+content-length: 533
+server: GitHub.com
+content-type: application/json; charset=utf-8
+x-origin-cache: HIT
+last-modified: Tue, 25 May 2021 20:12:04 GMT
+access-control-allow-origin: *
+etag: "60ad5a14-215"
+expires: Mon, 28 Nov 2022 15:19:20 GMT
+cache-control: max-age=600
+x-proxy-cache: MISS
+x-github-request-id: D4F0:1594:10D80C9:176ECFF:6384CF20
+accept-ranges: bytes
+date: Mon, 28 Nov 2022 18:50:01 GMT
+via: 1.1 varnish
+age: 0
+x-served-by: cache-pdk17849-PDK
+x-cache: HIT
+x-cache-hits: 1
+x-timer: S1669661401.457827,VS0,VE20
+vary: Accept-Encoding
+x-fastly-request-id: 08e01d5c01b9042c4345334453b57b75b71c48b7
+
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://schemas.stacspec.org/v1.0.0/item-spec/json-schema/basics.json#",
+  "title": "Basic Descriptive Fields",
+  "type": "object",
+  "properties": {
+    "title": {
+      "title": "Item Title",
+      "description": "A human-readable title describing the Item.",
+      "type": "string"
+    },
+    "description": {
+      "title": "Item Description",
+      "description": "Detailed multi-line description to fully explain the Item.",
+      "type": "string"
+    }
+  }
+}

@@ -15,7 +15,9 @@ CREATE TABLE `jobs` (
   `isAsync` boolean,
   `numInputGranules` integer not null default 0,
   `collectionIds` text not null,
-  `ignoreErrors` boolean not null
+  `ignoreErrors` boolean not null,
+  `destination_url` varchar(8192),
+  `service_name` varchar(255)
 );
 
 CREATE TABLE `job_links` (
@@ -51,8 +53,12 @@ CREATE TABLE `work_items` (
   `serviceID` varchar(255) not null,
   `status` text check (`status` in ('ready', 'running', 'successful', 'failed', 'canceled')) not null,
   `stacCatalogLocation` varchar(255),
-  `totalGranulesSize` double precision not null default 0,
+  `totalItemsSize` double precision not null default 0,
+  `outputItemSizesJson` text,
   `retryCount` integer not null default 0,
+  `duration` float not null default -1.0,
+  `sortIndex` integer not null default 0,
+  `startedAt` datetime,
   `createdAt` datetime not null,
   `updatedAt` datetime not null,
   FOREIGN KEY(jobID) REFERENCES jobs(jobID)
@@ -66,11 +72,52 @@ CREATE TABLE `workflow_steps` (
   `stepIndex` integer not null,
   `workItemCount` integer not null,
   `hasAggregatedOutput` boolean not null default false,
+  `isBatched` boolean not null default false,
+  `maxBatchInputs` integer,
+  `maxBatchSizeInBytes` integer,
   `operation` text not null,
   `createdAt` datetime not null,
   `updatedAt` datetime not null,
   FOREIGN KEY(jobID) REFERENCES jobs(jobID),
   UNIQUE(jobID, stepIndex)
+);
+
+CREATE TABLE `batches` (
+  `id` integer not null primary key autoincrement,
+  `jobID` char(36) not null,
+  `serviceID` varchar(255) not null,
+  `batchID` integer not null,
+  `createdAt` datetime not null,
+  `updatedAt` datetime not null,
+  FOREIGN KEY(jobID, serviceID) REFERENCES workflow_steps(jobID, serviceID)
+);
+
+CREATE TABLE `batch_items` (
+  `id` integer not null primary key autoincrement,
+  `jobID` char(36) not null,
+  `serviceID` varchar(255) not null,
+  `batchID` integer,
+  `stacItemUrl` char(4096),
+  `itemSize` double precision not null default 0,
+  `sortIndex` integer not null,
+  `createdAt` datetime not null,
+  `updatedAt` datetime not null,
+  FOREIGN KEY(jobID, serviceID) REFERENCES workflow_steps(jobID, serviceID)
+);
+
+CREATE TABLE `user_work` (
+  `id` integer not null primary key autoincrement,
+  `username` varchar(255) not null,
+  `service_id` varchar(255) not null,
+  `ready_count` integer not null default 0,
+  `running_count` integer not null default 0,
+  `job_id` char(36) not null,
+  `is_async` boolean,
+  `last_worked` datetime not null,
+  `createdAt` datetime not null,
+  `updatedAt` datetime not null,
+  FOREIGN KEY(job_id) REFERENCES jobs(jobID),
+  UNIQUE(job_id, service_id)
 );
 
 CREATE INDEX jobs_jobID_idx ON jobs(jobID);
@@ -84,4 +131,5 @@ CREATE INDEX work_items_status_idx ON work_items(status);
 CREATE INDEX workflow_steps_jobID_idx ON workflow_steps(jobID);
 CREATE INDEX workflow_steps_jobID_StepIndex_idx ON workflow_steps(jobID, stepIndex);
 CREATE INDEX workflow_steps_serviceID_idx ON workflow_steps(serviceID);
-
+CREATE INDEX batch_jobID_service_ID_batchID ON batches(jobID, serviceID, batchID);
+CREATE INDEX batch_items_jobID_service_ID_batchID ON batch_items(jobID, serviceID, batchID);

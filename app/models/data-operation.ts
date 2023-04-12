@@ -223,15 +223,9 @@ function validator(): Ajv {
   }
   return _validator;
 }
-
-export interface TemporalRange {
-  start?: Date;
-  end?: Date;
-}
-
 export interface TemporalStringRange {
-  start?: string | Date;
-  end?: string | Date;
+  start?: string;
+  end?: string;
 }
 export interface HarmonyGranule {
   id: string;
@@ -275,6 +269,8 @@ export default class DataOperation {
 
   granuleIds: string[];
 
+  granuleNames: string[];
+
   requireSynchronous: boolean;
 
   maxResults?: number;
@@ -294,6 +290,9 @@ export default class DataOperation {
   requestStartTime: Date; // The time that the initial request to harmony was received
 
   ignoreErrors?: boolean;
+
+  destinationUrl: string;
+
 
   /**
    * Creates an instance of DataOperation.
@@ -670,17 +669,10 @@ export default class DataOperation {
    * Sets the temporal range to be acted upon by services, `{ start, end }`, storing each time
    * as a string expressed in RFC-3339 format
    *
-   * @param The - [ start, end ] temporal range
+   * @param temporalRange - [ start, end ] temporal range
    */
   set temporal(temporalRange: TemporalStringRange) {
-    const { start, end } = temporalRange;
-    this.model.temporal = {};
-    if (start) {
-      this.model.temporal.start = (typeof start === 'string') ? start : (start as Date).toISOString();
-    }
-    if (end) {
-      this.model.temporal.end = (typeof end === 'string') ? end : (end as Date).toISOString();
-    }
+    this.model.temporal = temporalRange;
   }
 
   /**
@@ -936,10 +928,6 @@ export default class DataOperation {
       }
       if (!fieldsToInclude.includes('dimensionSubset')) {
         delete toWrite.subset.dimensions;
-      }
-
-      if (Object.keys(toWrite.subset).length === 0) {
-        delete toWrite.subset;
       }
     }
 

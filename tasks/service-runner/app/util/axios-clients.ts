@@ -6,7 +6,7 @@ import Agent from 'agentkeepalive';
 /**
  * Default Axios client timeout (also used by keepAliveAgent).
  */
-const axiosTimeoutMs = 30_000;
+const axiosTimeoutMs = 240_000;
 
 /**
  * The default HTTP agent used by createAxiosClientWithRetry.
@@ -56,7 +56,7 @@ function calculateExponentialDelay(
  * @returns - boolean
  */
 function isRetryable(error: AxiosError): boolean {
-  if (isNetworkOrIdempotentRequestError(error) || 
+  if (isNetworkOrIdempotentRequestError(error) ||
     [AxiosErrorCode.ECONNABORTED.valueOf(), AxiosErrorCode.ECONNRESET.valueOf()].includes(error.code) ) {
     logger.warn('Axios retry condition has been met.',
       { 'axios-retry': error?.config['axios-retry'], 'message': error.message, 'code': error.code });
@@ -90,7 +90,7 @@ export default function createAxiosClientWithRetry(
   }
   const axiosClient = axios.create({ httpAgent, timeout: timeoutMs });
   axiosRetry(axiosClient, {
-    retryDelay: (retryNumber) => 
+    retryDelay: (retryNumber) =>
       calculateExponentialDelay(retryNumber, exponentialOffset, maxDelayMs),
     retryCondition,
     shouldResetTimeout: true,

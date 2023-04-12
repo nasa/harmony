@@ -19,7 +19,7 @@ export function createLoggerForTest(logJson = true): {
     outputString += chunk.toString();
     next();
   };
-  const streamTransport = new winston.transports.Stream({ stream });
+  const streamTransport = new winston.transports.Stream({ stream, level: 'debug' });
   const testLogger = logJson ? createJsonLogger([streamTransport]) : createTextLogger([streamTransport]);
   
   return { getTestLogs, testLogger };

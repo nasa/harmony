@@ -13,7 +13,7 @@ import router, { RouterConfig } from './routers/router';
 import RequestContext from './models/request-context';
 import HarmonyRequest from './models/harmony-request';
 import * as ogcCoveragesApi from './frontends/ogc-coverages';
-import serviceResponseRouter from './routers/service-response-router';
+import serviceResponseRouter from './routers/backend-router';
 import logger from './util/log';
 import * as exampleBackend from '../example/http-backend';
 import WorkReaper from './workers/work-reaper';
@@ -77,7 +77,6 @@ function buildBackendServer(port: number, hostBinding: string): Server {
   };
 
   const app = express();
-
   app.use('/service/:requestId/*', setRequestId);
   app.use(addRequestId(appLogger));
 
@@ -118,7 +117,9 @@ function buildFrontendServer(port: number, hostBinding: string, config: RouterCo
   app.use(favicon(path.join(__dirname, '..', 'public/assets/images', 'favicon.ico')));
 
   // Setup mustache as a templating engine for HTML views
-  app.engine('mustache.html', mustacheExpress());
+  const engine = mustacheExpress();
+  engine.cache = null;
+  app.engine('mustache.html', engine);
   app.set('view engine', 'mustache.html');
   app.set('views', path.join(__dirname, 'views'));
 

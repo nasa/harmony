@@ -1,0 +1,80 @@
+GET /v1.0.0/item-spec/json-schema/datetime.json
+accept: application/json, text/plain, */*
+
+HTTP/1.1 200 OK
+connection: close
+content-length: 1472
+server: GitHub.com
+content-type: application/json; charset=utf-8
+x-origin-cache: HIT
+last-modified: Tue, 25 May 2021 20:12:04 GMT
+access-control-allow-origin: *
+etag: "60ad5a14-5c0"
+expires: Mon, 28 Nov 2022 15:19:20 GMT
+cache-control: max-age=600
+x-proxy-cache: MISS
+x-github-request-id: 83A6:7D98:1C8C11F:26BE3F8:6384CF20
+accept-ranges: bytes
+date: Mon, 28 Nov 2022 18:50:01 GMT
+via: 1.1 varnish
+age: 0
+x-served-by: cache-fty21370-FTY
+x-cache: HIT
+x-cache-hits: 1
+x-timer: S1669661402.724079,VS0,VE19
+vary: Accept-Encoding
+x-fastly-request-id: e9e60ad48a035f5e46478669d3df034b7fcac90f
+
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://schemas.stacspec.org/v1.0.0/item-spec/json-schema/datetime.json#",
+  "title": "Date and Time Fields",
+  "type": "object",
+  "dependencies": {
+    "start_datetime": {
+      "required": [
+        "end_datetime"
+      ]
+    },
+    "end_datetime": {
+      "required": [
+        "start_datetime"
+      ]
+    }
+  },
+  "properties": {
+    "datetime": {
+      "title": "Date and Time",
+      "description": "The searchable date/time of the assets, in UTC (Formatted in RFC 3339) ",
+      "type": ["string", "null"],
+      "format": "date-time",
+      "pattern": "(\\+00:00|Z)$"
+    },
+    "start_datetime": {
+      "title": "Start Date and Time",
+      "description": "The searchable start date/time of the assets, in UTC (Formatted in RFC 3339) ",
+      "type": "string",
+      "format": "date-time",
+      "pattern": "(\\+00:00|Z)$"
+    }, 
+    "end_datetime": {
+      "title": "End Date and Time", 
+      "description": "The searchable end date/time of the assets, in UTC (Formatted in RFC 3339) ",                  
+      "type": "string",
+      "format": "date-time",
+      "pattern": "(\\+00:00|Z)$"
+    },
+    "created": {
+      "title": "Creation Time",
+      "type": "string",
+      "format": "date-time",
+      "pattern": "(\\+00:00|Z)$"
+    },
+    "updated": {
+      "title": "Last Update Time",
+      "type": "string",
+      "format": "date-time",
+      "pattern": "(\\+00:00|Z)$"
+    }
+  }
+}

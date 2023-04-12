@@ -3,6 +3,7 @@
 // See https://wiki.earthdata.nasa.gov/display/METS/Data+Schema+Collaboration+Space
 
 import DataOperation from '../models/data-operation';
+import HarmonyRequest from '../models/harmony-request';
 import { Job } from '../models/job';
 import { isFailureStatus } from './job';
 
@@ -24,8 +25,6 @@ export interface RequestMetric {
   referrer_request_id?: string; // We do not have this information
   request_id: string;
   user_id: string;
-  // We do not have the user_ip information, but the metrics team needs it set to a blank string
-  // rather than omitting it
   user_ip: string;
   rangeBeginDateTime?: string;
   rangeEndDateTime?: string;
@@ -38,7 +37,6 @@ export interface ProductDataMetric {
   shortName: string;
   versionId: string;
   organization?: string; // We do not have this information
-  product_size?: number; // This represents the total size of outputs which we do not track yet
   variables?: string[]; // An array of variable names
 }
 
@@ -69,8 +67,8 @@ export interface ResponseMetric {
   http_response_code: number;
   time_completed: string;
   total_time: number; // Agreed to use seconds with decimals
-  original_size: number; // Bytes that would have needed to be downloaded
-  output_size?: number; // Bytes returned after transformation - not tracking yet
+  original_size: number; // (Agreed to use MB) MB that would have needed to be downloaded
+  output_size?: number; // (Agreed to use MB) MB returned after transformation
 }
 
 /**
@@ -97,13 +95,18 @@ function constructBboxFromOperation(operation: DataOperation): BboxMetric {
  *
  * @returns the request metric
  */
-export function getRequestMetric(operation: DataOperation, serviceName: string): RequestMetric {
+export function getRequestMetric(
+  req: HarmonyRequest, operation: DataOperation, serviceName: string,
+): RequestMetric {
   const rangeBeginDateTime = operation.temporal?.start;
   const rangeEndDateTime = operation.temporal?.end;
+  const headers = req?.headers;
+  const forwardedHeader = headers ? headers['x-forwarded-for'] as string : '';
+  const user_ip = forwardedHeader?.split(',')[0];
 
   const metric: RequestMetric = {
     request_id: operation.requestId,
-    user_ip: '',
+    user_ip: user_ip || '',
     user_id: operation.user,
     parameters: { service_name: serviceName },
   };
@@ -115,11 +118,11 @@ export function getRequestMetric(operation: DataOperation, serviceName: string):
   }
 
   if (rangeBeginDateTime) {
-    metric.rangeBeginDateTime = rangeBeginDateTime as string;
+    metric.rangeBeginDateTime = rangeBeginDateTime;
   }
 
   if (rangeEndDateTime) {
-    metric.rangeEndDateTime = rangeEndDateTime as string;
+    metric.rangeEndDateTime = rangeEndDateTime;
   }
 
   return metric;
@@ -193,11 +196,12 @@ export function getProductMetric(operation: DataOperation, job: Job)
  *  @param operation - The data operation
  *  @param job - The job associated with the request
  *  @param originalSize - The sum of the sizes of all input granules for the request
+ *  @param outputSize - The sum of the sizes of all outputs for the request
  *
  * @returns Promise that resolves to the response metric for a request
  */
 export async function getResponseMetric(
-  operation: DataOperation, job: Job, originalSize: number,
+  operation: DataOperation, job: Job, originalSize: number, outputSize: number,
 ): Promise<ResponseMetric> {
   let httpResponseCode = 200;
 
@@ -212,6 +216,7 @@ export async function getResponseMetric(
     time_completed: job.updatedAt.toISOString(),
     total_time: ((job.updatedAt.getTime() - job.createdAt.getTime()) / 1000),
     original_size: originalSize,
+    output_size: outputSize,
   };
 
   return metric;

@@ -1,22 +1,25 @@
+import db, { Transaction, batchSize } from './../util/db';
 import _, { ceil, range, sum } from 'lodash';
 import { NextFunction, Response } from 'express';
 import { v4 as uuid } from 'uuid';
 import { Logger } from 'winston';
-import db, { batchSize, Transaction } from '../util/db';
 import { completeJob } from '../util/job';
 import env from '../util/env';
 import { readCatalogItems, StacItemLink } from '../util/stac';
 import HarmonyRequest from '../models/harmony-request';
 import { Job, JobStatus } from '../models/job';
 import JobLink, { getJobDataLinkCount } from '../models/job-link';
-import WorkItem, { getNextWorkItem, updateWorkItemStatus, getWorkItemById, workItemCountForStep, getWorkItemsByJobIdAndStepIndex, getJobIdForWorkItem } from '../models/work-item';
+import WorkItem, { updateWorkItemStatus, getWorkItemById, workItemCountForStep, getWorkItemsByJobIdAndStepIndex, getJobIdForWorkItem, getNextWorkItem, maxSortIndexForJobService } from '../models/work-item';
 import WorkflowStep, { decrementFutureWorkItemCount, getWorkflowStepByJobIdStepIndex, getWorkflowStepsByJobId } from '../models/workflow-steps';
 import { objectStoreForProtocol } from '../util/object-store';
 import { resolve } from '../util/url';
 import { ServiceError } from '../util/errors';
-import { COMPLETED_WORK_ITEM_STATUSES, WorkItemStatus } from '../models/work-item-interface';
+import { COMPLETED_WORK_ITEM_STATUSES, WorkItemMeta, WorkItemStatus } from '../models/work-item-interface';
 import JobError, { getErrorCountForJob } from '../models/job-error';
 import WorkItemUpdate from '../models/work-item-update';
+import { handleBatching, outputStacItemUrls, resultItemSizes } from '../util/aggregation-batch';
+import { decrementRunningCount, deleteUserWorkForJob, getNextJobIdForUsernameAndService, getNextUsernameForWork, incrementReadyAndDecrementRunningCounts, incrementReadyCount, incrementRunningAndDecrementReadyCounts } from '../models/user-work';
+import { sanitizeImage } from '../util/string';
 
 const MAX_TRY_COUNT = 1;
 const RETRY_DELAY = 1000 * 120;
@@ -24,36 +27,20 @@ const QUERY_CMR_SERVICE_REGEX = /harmonyservices\/query-cmr:.*/;
 
 /**
  * Calculate the granule page limit for the current query-cmr work item.
- * @param workItem - current query-cmr work item
  * @param tx - database transaction to query with
+ * @param workItem - current query-cmr work item
  * @param logger - a Logger instance
  * @returns a number used to limit the query-cmr task or undefined
  */
-async function calculateQueryCmrLimit(
-  workItem: WorkItem,
-  tx,
-  logger: Logger): Promise<number> {
+async function calculateQueryCmrLimit(tx: Transaction, workItem: WorkItem, logger: Logger): Promise<number> {
+  let queryCmrLimit = -1;
   if (workItem && QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)) { // only proceed if this is a query-cmr step
-    const { numInputGranules } = await Job.byJobID(tx, workItem.jobID, false, false);
-    let queryCmrItems = (await getWorkItemsByJobIdAndStepIndex(
-      tx, workItem.jobID, workItem.workflowStepIndex, 1, Number.MAX_SAFE_INTEGER))
-      .workItems;
-    queryCmrItems = queryCmrItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL);
-    const s3 = objectStoreForProtocol('s3');
-    const stacCatalogLengths = await Promise.all(queryCmrItems.map(async (item) => {
-      const jsonPath = item.getStacLocation('batch-catalogs.json');
-      try {
-        return (await s3.getObjectJson(jsonPath)).length;
-      } catch (e) {
-        logger.error(`Could not not calculate query cmr limit from ${jsonPath}`);
-        logger.error(e);
-        return 0;
-      }
-    }));
-    const queryCmrLimit = Math.min(env.cmrMaxPageSize, numInputGranules - sum(stacCatalogLengths));
+    const numInputGranules = await Job.getNumInputGranules(tx, workItem.jobID);
+    const numSuccessfulQueryCmrItems = await workItemCountForStep(tx, workItem.jobID, 1, WorkItemStatus.SUCCESSFUL);
+    queryCmrLimit = Math.max(0, Math.min(env.cmrMaxPageSize, numInputGranules - (numSuccessfulQueryCmrItems * env.cmrMaxPageSize)));
     logger.debug(`Limit next query-cmr task to no more than ${queryCmrLimit} granules.`);
-    return queryCmrLimit;
   }
+  return queryCmrLimit;
 }
 
 /**
@@ -66,21 +53,42 @@ async function calculateQueryCmrLimit(
 export async function getWork(
   req: HarmonyRequest, res: Response, next: NextFunction, tryCount = 1,
 ): Promise<void> {
-  const { logger } = req.context;
+  const reqLogger = req.context.logger;
   const { serviceID, podName } = req.query;
-  let workItem: WorkItem, maxCmrGranules: number;
+
+  let responded = false;
   await db.transaction(async (tx) => {
-    workItem = await getNextWorkItem(tx, serviceID as string);
-    maxCmrGranules = await calculateQueryCmrLimit(workItem, tx, logger);
+    const username = await getNextUsernameForWork(tx, serviceID as string);
+    if (username) {
+      const jobID = await getNextJobIdForUsernameAndService(tx, serviceID as string, username);
+      if (jobID) {
+        const workItem = await getNextWorkItem(tx, serviceID as string, jobID);
+        if (workItem) {
+          await incrementRunningAndDecrementReadyCounts(tx, jobID, serviceID as string);
+          const logger = reqLogger.child({ workItemId: workItem.id });
+          const waitSeconds = (Date.now() - workItem.createdAt.valueOf()) / 1000;
+          const itemMeta: WorkItemMeta = { workItemEvent: 'statusUpdate', workItemDuration: waitSeconds,
+            workItemService: sanitizeImage(workItem.serviceID), workItemAmount: 1, workItemStatus: WorkItemStatus.RUNNING  };
+          logger.info(`Sending work item ${workItem.id} to pod ${podName}`, itemMeta);
+          if (workItem && QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)){
+            const maxCmrGranules = await calculateQueryCmrLimit(tx, workItem, logger);
+            res.send({ workItem, maxCmrGranules });
+            responded = true;
+          } else {
+            res.send({ workItem });
+            responded = true;
+          }
+        } else {
+          reqLogger.warn(`user_work is out of sync for user ${username} and job ${jobID}, could not find ready work item`);
+        }
+      }
+    } else if (tryCount < MAX_TRY_COUNT) {
+      setTimeout(async () => {
+        await getWork(req, res, next, tryCount + 1);
+      }, RETRY_DELAY);
+    }
   });
-  if (workItem) {
-    logger.debug(`Sending work item ${workItem.id} to pod ${podName}`);
-    res.send({ workItem, maxCmrGranules });
-  } else if (tryCount < MAX_TRY_COUNT) {
-    setTimeout(async () => {
-      await getWork(req, res, next, tryCount + 1);
-    }, RETRY_DELAY);
-  } else {
+  if (!responded) {
     res.status(404).send();
   }
 }
@@ -161,9 +169,10 @@ async function getItemLinksFromCatalog(catalogPath: string): Promise<StacItemLin
  * @param currentWorkItem - The current work item
  * @param nextStep - the next step in the workflow
  * @param results - an array of paths to STAC catalogs from the last worked item
+ * @param logger - the logger to use
  */
 async function createAggregatingWorkItem(
-  tx: Transaction, currentWorkItem: WorkItem, nextStep: WorkflowStep,
+  tx: Transaction, currentWorkItem: WorkItem, nextStep: WorkflowStep, logger: Logger,
 ): Promise<void> {
   const itemLinks: StacItemLink[] = [];
   const s3 = objectStoreForProtocol('s3');
@@ -264,49 +273,99 @@ async function createAggregatingWorkItem(
     workflowStepIndex: nextStep.stepIndex,
   });
 
+  await incrementReadyCount(tx, currentWorkItem.jobID, nextStep.serviceID);
   await newWorkItem.save(tx);
+  const itemMeta: WorkItemMeta = { workItemService: sanitizeImage(newWorkItem.serviceID),
+    workItemEvent: 'statusUpdate', workItemAmount: 1, workItemStatus: WorkItemStatus.READY };
+  logger.info('Queued new aggregating work item.', itemMeta);
 }
 
 /**
- * Creates the next work items for the workflow based on the results of the current step
+ * Creates the next work items for the workflow based on the results of the current step and handle
+ * any needed batching
  * @param tx - The database transaction
- * @param currentWorkItem - The current work item
- * @param nextStep - the next step in the workflow
+ * @param nextWorkflowStep - the next workflow step in the chain after the current workItem
+ * @param logger - a Logger instance
+ * @param workItem - The current work item
+ * @param allWorkItemsForStepComplete - true if all the work items for the current step are complete
  * @param results - an array of paths to STAC catalogs
+ * @param outputItemSizes - an array of sizes (in bytes) of the output items for the current step
+ *
+ * @returns true if it created a work item
  */
 async function createNextWorkItems(
-  tx: Transaction, workItem: WorkItem, allWorkItemsForStepComplete: boolean, results: string[],
-): Promise<WorkflowStep> {
-  const nextStep = await getWorkflowStepByJobIdStepIndex(
-    tx, workItem.jobID, workItem.workflowStepIndex + 1,
-  );
+  tx: Transaction,
+  nextWorkflowStep: WorkflowStep,
+  logger: Logger,
+  workItem: WorkItem,
+  allWorkItemsForStepComplete: boolean,
+  results: string[],
+  outputItemSizes: number[],
+): Promise<boolean> {
+  let didCreateWorkItem = false;
+  if (results && results.length > 0 || nextWorkflowStep.isBatched) {
+    didCreateWorkItem = true;
+    // if we have completed all the work items for this step or if the next step does not
+    // aggregate then create a work item for the next step
+    if (nextWorkflowStep.hasAggregatedOutput) {
+      if (nextWorkflowStep.isBatched) {
+        let sortIndex;
+        if (!QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)) {
+          // eslint-disable-next-line prefer-destructuring
+          sortIndex = workItem.sortIndex;
+        }
+        let outputItemUrls = [];
+        if (workItem.status !== WorkItemStatus.FAILED) {
+          outputItemUrls = await outputStacItemUrls(results);
+        }
+        // TODO add other services that can produce more than one output and so should have their
+        // batching sortIndex propagated to child work items to provide consistent batching
+        didCreateWorkItem = await handleBatching(
+          tx,
+          logger,
+          nextWorkflowStep,
+          outputItemUrls,
+          outputItemSizes,
+          sortIndex,
+          workItem.status,
+          allWorkItemsForStepComplete);
+      } else if (allWorkItemsForStepComplete) {
+        await createAggregatingWorkItem(tx, workItem, nextWorkflowStep, logger);
+      }
+    } else {
+      // Create a new work item for each result using the next step
 
-  if (nextStep) {
-    if (results && results.length > 0) {
-      // if we have completed all the work items for this step or if the next step does not
-      // aggregate then create a work item for the next step
-      if (nextStep.hasAggregatedOutput) {
-        if (allWorkItemsForStepComplete) {
-          await createAggregatingWorkItem(tx, workItem, nextStep);
-        }
-      } else {
-        // Create a new work item for each result using the next step
-        const newItems = results.map(result =>
-          new WorkItem({
-            jobID: workItem.jobID,
-            serviceID: nextStep.serviceID,
-            status: WorkItemStatus.READY,
-            stacCatalogLocation: result,
-            workflowStepIndex: nextStep.stepIndex,
-          }),
-        );
-        for (const batch of _.chunk(newItems, batchSize)) {
-          await WorkItem.insertBatch(tx, batch);
-        }
+      // use the sort index from the previous step's work item unless we have more than one
+      // result, in which case we start from the previous highest sort index for this step
+      // NOTE: This is only valid if the work-items for this multi-output step are worked
+      // sequentially, as with query-cmr. If they are worked in parallel then we need a
+      // different approach.
+      let { sortIndex } = workItem;
+      if (results.length > 1) {
+        sortIndex = await maxSortIndexForJobService(tx, nextWorkflowStep.jobID, nextWorkflowStep.serviceID);
+      }
+      const newItems = results.map(result => {
+        sortIndex += 1;
+        return new WorkItem({
+          jobID: workItem.jobID,
+          serviceID: nextWorkflowStep.serviceID,
+          status: WorkItemStatus.READY,
+          stacCatalogLocation: result,
+          workflowStepIndex: nextWorkflowStep.stepIndex,
+          sortIndex,
+        });
+      });
+
+      await incrementReadyCount(tx, workItem.jobID, nextWorkflowStep.serviceID, newItems.length);
+      for (const batch of _.chunk(newItems, batchSize)) {
+        await WorkItem.insertBatch(tx, batch);
+        const itemMeta: WorkItemMeta = { workItemService: sanitizeImage(nextWorkflowStep.serviceID),
+          workItemEvent: 'statusUpdate', workItemAmount: batch.length, workItemStatus: WorkItemStatus.READY };
+        logger.info('Queued new batch of work items.', itemMeta);
       }
     }
   }
-  return nextStep;
+  return didCreateWorkItem;
 }
 
 /**
@@ -316,14 +375,10 @@ async function createNextWorkItems(
  * @param nextStep - the next step in the workflow
  */
 async function maybeQueueQueryCmrWorkItem(
-  tx: Transaction, currentWorkItem: WorkItem, nextStep: WorkflowStep,
+  tx: Transaction, currentWorkItem: WorkItem, logger: Logger,
 ): Promise<void> {
   if (QUERY_CMR_SERVICE_REGEX.test(currentWorkItem.serviceID)) {
-    // If the current step is the query-cmr service and the number of work items for the next
-    // step is less than 'workItemCount' for the next step then create a new work item for
-    // the current step
-    const workItemCount = await workItemCountForStep(tx, currentWorkItem.jobID, nextStep.stepIndex);
-    if (workItemCount < nextStep.workItemCount) {
+    if (await calculateQueryCmrLimit(tx, currentWorkItem, logger) > 0) {
       const nextQueryCmrItem = new WorkItem({
         jobID: currentWorkItem.jobID,
         scrollID: currentWorkItem.scrollID,
@@ -331,9 +386,14 @@ async function maybeQueueQueryCmrWorkItem(
         status: WorkItemStatus.READY,
         stacCatalogLocation: currentWorkItem.stacCatalogLocation,
         workflowStepIndex: currentWorkItem.workflowStepIndex,
+        sortIndex: currentWorkItem.sortIndex + 1,
       });
 
+      await incrementReadyCount(tx, currentWorkItem.jobID, currentWorkItem.serviceID);
       await nextQueryCmrItem.save(tx);
+      const itemMeta: WorkItemMeta = { workItemService: sanitizeImage(nextQueryCmrItem.serviceID),
+        workItemEvent: 'statusUpdate', workItemAmount: 1, workItemStatus: WorkItemStatus.READY };
+      logger.info('Queued new query-cmr work item.', itemMeta);
     }
   }
 }
@@ -449,6 +509,7 @@ async function handleFailedWorkItems(
         const errorCount =  await getErrorCountForJob(tx, job.jobID);
         if (errorCount > env.maxErrorsForJob) {
           jobMessage = `Maximum allowed errors ${env.maxErrorsForJob} exceeded`;
+          logger.warn(jobMessage);
           continueProcessing = false;
         }
       }
@@ -493,109 +554,210 @@ async function updateWorkItemCounts(
 
 /**
  * Update job status/progress in response to a service provided work item update
- * 
+ * IMPORTANT: This asynchronous function is called without awaiting, so any errors must be
+ * handled in this function and no exceptions should be thrown since nothing will catch
+ * them.
+ *
+ * @param jobId - job id
  * @param update - information about the work item update
+ * @param operation - the DataOperation for the user's request
+ * @param logger - the Logger for the request
  */
-export async function handleWorkItemUpdate(update: WorkItemUpdate, logger: Logger): Promise<void> {
-  const { workItemID, status, hits, results, scrollID, errorMessage, totalGranulesSize } = update;
+export async function handleWorkItemUpdateWithJobId(
+  jobID: string,
+  update: WorkItemUpdate,
+  operation: object,
+  logger: Logger): Promise<void> {
+  const { workItemID, hits, results, scrollID } = update;
+  let { errorMessage, status } = update;
+  let didCreateWorkItem = false;
   if (status === WorkItemStatus.SUCCESSFUL) {
     logger.info(`Updating work item ${workItemID} to ${status}`);
   }
-  // get the jobID for the work item
-  const jobID = await getJobIdForWorkItem(workItemID);
 
-  await db.transaction(async (tx) => {
-    const job = await Job.byJobID(tx, jobID, false, true);
-    // lock the work item to we can update it - need to do this after locking jobs table above
-    // to avoid deadlocks
-    const workItem = await getWorkItemById(tx, workItemID, true);
-    const thisStep = await getWorkflowStepByJobIdStepIndex(tx, workItem.jobID, workItem.workflowStepIndex);
+  // Get the sizes of all the data items/granules returned for the WorkItem and STAC item links
+  // when batching.
+  // This needs to be done outside the transaction as it can be slow if there are many granules.
+  let outputItemSizes;
+  try {
+    outputItemSizes = await resultItemSizes(update, operation, logger);
+  } catch (e) {
+    logger.error('Could not get result item file size, failing the work item update');
+    logger.error(e);
+    status = WorkItemStatus.FAILED;
+    errorMessage = 'Could not get result item file size, failing the work item update';
+  }
 
-    // If the job was already in a terminal state then send 409 response
-    // unless we are just canceling the work item
-    if (job.isComplete() && status !== WorkItemStatus.CANCELED) {
-      logger.warn(`Job was already ${job.status}.`);
-      // Note work item will stay in the running state, but the reaper will clean it up
-      return;
-    }
+  try {
+    await db.transaction(async (tx) => {
+      const job = await Job.byJobID(tx, jobID, false, true);
+      // lock the work item to we can update it - need to do this after locking jobs table above
+      // to avoid deadlocks
+      const workItem = await getWorkItemById(tx, workItemID, true);
+      const thisStep = await getWorkflowStepByJobIdStepIndex(tx, workItem.jobID, workItem.workflowStepIndex);
 
-    // Don't allow updates to work items that are already in a terminal state
-    if (COMPLETED_WORK_ITEM_STATUSES.includes(workItem.status)) {
-      logger.warn(`WorkItem ${workItemID} was already ${workItem.status}`);
-      return;
-    }
-
-    // retry failed work-items up to a limit
-    if (status === WorkItemStatus.FAILED) {
-      if (workItem.retryCount < env.workItemRetryLimit) {
-        logger.warn(`Retrying failed work-item ${workItemID}`);
-        workItem.retryCount += 1;
-        workItem.status = WorkItemStatus.READY;
-        await workItem.save(tx);
+      if (job.isComplete() && status !== WorkItemStatus.CANCELED) {
+        logger.warn(`Job was already ${job.status}.`);
+        const numRowsDeleted = await deleteUserWorkForJob(tx, jobID);
+        logger.warn(`Removed ${numRowsDeleted} from user_work table for job ${jobID}.`);
+        // Note work item will stay in the running state, but the reaper will clean it up
         return;
-      } else {
-        logger.warn(`Retry limit of ${env.workItemRetryLimit} exceeded`);
-        logger.warn(`Updating work item for ${workItemID} to ${status} with message ${errorMessage}`);
-      }
-    }
-
-    await updateWorkItemStatus(tx, workItemID, status as WorkItemStatus, totalGranulesSize);
-
-    const completedWorkItemCount = await workItemCountForStep(
-      tx, workItem.jobID, workItem.workflowStepIndex, COMPLETED_WORK_ITEM_STATUSES,
-    );
-    const allWorkItemsForStepComplete = (completedWorkItemCount == thisStep.workItemCount);
-
-    if (hits && job.numInputGranules > hits) {
-      job.numInputGranules = hits;
-      await job.save(tx);
-      await updateWorkItemCounts(tx, job);
-    }
-
-    const continueProcessing = await handleFailedWorkItems(tx, job, workItem, thisStep, status, logger, errorMessage);
-    if (continueProcessing) {
-      let nextStep = null;
-      if (status != WorkItemStatus.FAILED) {
-        nextStep = await createNextWorkItems(tx, workItem, allWorkItemsForStepComplete, results);
       }
 
-      if (nextStep) {
-        if (results && results.length > 0) {
-          // set the scrollID for the next work item to the one we received from the update
-          workItem.scrollID = scrollID;
-          await maybeQueueQueryCmrWorkItem(tx, workItem, nextStep);
+      // Don't allow updates to work items that are already in a terminal state
+      if (COMPLETED_WORK_ITEM_STATUSES.includes(workItem.status)) {
+        // Unclear what to do with user_work entries, so do nothing for now.
+        logger.warn(`WorkItem ${workItemID} was already ${workItem.status}`);
+        return;
+      }
+
+      // retry failed work-items up to a limit
+      if (status === WorkItemStatus.FAILED) {
+        if (workItem.retryCount < env.workItemRetryLimit) {
+          const itemMeta: WorkItemMeta = { workItemService: sanitizeImage(workItem.serviceID),
+            workItemEvent: 'retry', workItemAmount: 1 };
+          logger.info(`Retrying failed work-item ${workItemID}`, itemMeta);
+          workItem.retryCount += 1;
+          workItem.status = WorkItemStatus.READY;
+          await workItem.save(tx);
+          await incrementReadyAndDecrementRunningCounts(tx, jobID, workItem.serviceID);
+          return;
         } else {
-          // Failed to create the next work items - fail the job rather than leaving it orphaned
-          // in the running state
-          logger.error('The work item update should have contained results to queue a next work item, but it did not.');
-          const message = 'Harmony internal failure: could not create the next work items for the request.';
-          await completeJob(tx, job, JobStatus.FAILED, logger, message);
+          logger.warn(`Retry limit of ${env.workItemRetryLimit} exceeded`);
+          logger.warn(`Updating work item for ${workItemID} to ${status} with message ${errorMessage}`);
         }
-      } else {
-        // Finished with the chain for this granule
-        if (status != WorkItemStatus.FAILED) {
-          await addJobLinksForFinishedWorkItem(tx, job, results, logger);
+      }
+
+      // We calculate the duration of the work both in harmony and in the manager of the service pod.
+      // We tend to favor the harmony value as it is normally longer since it accounts for the extra
+      // overhead of communication with the pod. There is a problem with retries however in that
+      // the startTime gets reset, so if an earlier worker finishes and replies it will look like
+      // the whole thing was quicker (since our startTime has changed). So in that case we want to
+      // use the time reported by the service pod. Any updates from retries that happen later  will
+      // be ignored since the work item is already in a 'successful' state.
+      const harmonyDuration = Date.now() - workItem.startedAt.valueOf();
+      let duration = harmonyDuration;
+      if (update.duration) {
+        duration = Math.max(duration, update.duration);
+      }
+
+      let { totalItemsSize } = update;
+
+      if (!totalItemsSize && outputItemSizes?.length > 0) {
+        totalItemsSize = sum(outputItemSizes) / 1024 / 1024;
+      }
+
+      await updateWorkItemStatus(
+        tx,
+        workItemID,
+        status,
+        duration,
+        totalItemsSize,
+        outputItemSizes);
+      await decrementRunningCount(tx, jobID, workItem.serviceID);
+
+      const itemMeta: WorkItemMeta = { workItemService: sanitizeImage(workItem.serviceID),
+        workItemDuration: (duration / 1000), workItemStatus: status, workItemEvent: 'statusUpdate', workItemAmount: 1 };
+      logger.info(`Updated work item. Duration (ms) was: ${duration}`, itemMeta);
+
+      workItem.status = status;
+
+      const completedWorkItemCount = await workItemCountForStep(
+        tx, workItem.jobID, workItem.workflowStepIndex, COMPLETED_WORK_ITEM_STATUSES,
+      );
+      const allWorkItemsForStepComplete = (completedWorkItemCount == thisStep.workItemCount);
+
+      // The number of 'hits' returned by a query-cmr could be less than when CMR was first queried
+      // queried by harmony due to metadata deletions from CMR, so we update the job to reflect
+      // that there are fewer items and to know when no more query-cmr jobs should be created.
+      if (hits && job.numInputGranules > hits) {
+        job.numInputGranules = hits;
+        await job.save(tx);
+        await updateWorkItemCounts(tx, job);
+      }
+
+      const continueProcessing = await handleFailedWorkItems(tx, job, workItem, thisStep, status, logger, errorMessage);
+      if (continueProcessing) {
+        const nextWorkflowStep = await getWorkflowStepByJobIdStepIndex(
+          tx, workItem.jobID, workItem.workflowStepIndex + 1,
+        );
+        if (nextWorkflowStep && (status !== WorkItemStatus.FAILED || nextWorkflowStep?.isBatched)) {
+          didCreateWorkItem = await createNextWorkItems(
+            tx,
+            nextWorkflowStep,
+            logger,
+            workItem,
+            allWorkItemsForStepComplete,
+            results,
+            outputItemSizes,
+          );
         }
-        // If all granules are finished mark the job as finished
-        job.completeBatch(thisStep.workItemCount);
-        if (allWorkItemsForStepComplete) {
-          const finalStatus = await getFinalStatusForJob(tx, job);
-          await completeJob(tx, job, finalStatus, logger);
-        } else {
-          // Special case to pause the job as soon as any single granule completes when in the previewing state
-          if (job.status === JobStatus.PREVIEWING) {
-            job.pause();
+
+        if (nextWorkflowStep && status === WorkItemStatus.SUCCESSFUL) {
+          if (results && results.length > 0) {
+            // set the scrollID for the next work item to the one we received from the update
+            workItem.scrollID = scrollID;
+            await maybeQueueQueryCmrWorkItem(tx, workItem, logger);
+          } else {
+            // Failed to create the next work items when there should be work items.
+            // Fail the job rather than leaving it orphaned in the running state
+            logger.error('The work item update should have contained results to queue a next work item, but it did not.');
+            const message = 'Harmony internal failure: could not create the next work items for the request.';
+            await completeJob(tx, job, JobStatus.FAILED, logger, message);
           }
+        } else if (!nextWorkflowStep || allWorkItemsForStepComplete) {
+          // Finished with the chain for this granule
+          if (status != WorkItemStatus.FAILED) {
+            await addJobLinksForFinishedWorkItem(tx, job, results, logger);
+          }
+          job.completeBatch(thisStep.workItemCount);
+          if (allWorkItemsForStepComplete && !didCreateWorkItem && (!nextWorkflowStep || nextWorkflowStep.workItemCount === 0)) {
+            // If all granules are finished mark the job as finished
+            const finalStatus = await getFinalStatusForJob(tx, job);
+            await completeJob(tx, job, finalStatus, logger);
+          } else {
+            // Either previewing or next step is a batched step and this item failed
+            if (job.status === JobStatus.PREVIEWING) {
+              // Special case to pause the job as soon as any single granule completes when in the previewing state
+              await job.pauseAndSave(tx);
+            } else {
+              await job.save(tx);
+            }
+          }
+        } else { // Currently only reach this condition for batched aggregation requests
           await job.save(tx);
         }
       }
-    }
-  });
+    });
+  } catch (e) {
+    logger.error(`Work item update failed for work item ${workItemID} and status ${status}`);
+    logger.error(e);
+  }
+}
+
+/**
+ * Update job status/progress in response to a service provided work item update
+ * IMPORTANT: This asynchronous function is called without awaiting, so any errors must be
+ * handled in this function and no exceptions should be thrown since nothing will catch
+ * them.
+ *
+ * @param update - information about the work item update
+ * @param operation - the DataOperation for the user's request
+ * @param logger - the Logger for the request
+ */
+export async function handleWorkItemUpdate(
+  update: WorkItemUpdate,
+  operation: object,
+  logger: Logger): Promise<void> {
+  const { workItemID } = update;
+  // get the jobID for the work item
+  const jobID = await getJobIdForWorkItem(workItemID);
+  await handleWorkItemUpdateWithJobId(jobID, update, operation, logger);
 }
 
 /**
  * Update a work item from a service response. This function stores the update without further
- * processing and then responds quickly. Processing the update is handled asynchronously 
+ * processing and then responds quickly. Processing the update is handled asynchronously
  * (see `handleWorkItemUpdate`)
  *
  * @param req - The request sent by the client
@@ -604,32 +766,34 @@ export async function handleWorkItemUpdate(update: WorkItemUpdate, logger: Logge
  */
 export async function updateWorkItem(req: HarmonyRequest, res: Response): Promise<void> {
   const { id } = req.params;
-  const { status, hits, results, scrollID, errorMessage } = req.body;
-  const totalGranulesSize = req.body.totalGranulesSize ? parseFloat(req.body.totalGranulesSize) : 0;
+  const { status, hits, results, scrollID, errorMessage, duration, operation, outputItemSizes } = req.body;
+  const totalItemsSize = req.body.totalItemsSize ? parseFloat(req.body.totalItemsSize) : 0;
 
-  const update =
-  {
+  const update = {
     workItemID: parseInt(id),
     status,
     hits,
     results,
     scrollID,
     errorMessage,
-    totalGranulesSize,
+    totalItemsSize,
+    outputItemSizes,
+    duration,
   };
-
-  // asynchronously handle the update so that the service is not waiting for a response
-  // during a potentially long update. If the asynchronous update fails the work-item will
-  // eventually be retried by the timeout handler. In any case there is not much the service
-  // can do if the update fails, so it is OK for us to ignore the promise here. The service
-  // can still retry for network or similar failures, but we don't want it to retry for things
-  // like 409 errors.
-  if (db.client.config.client === 'pg') {
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    handleWorkItemUpdate(update, req.context.logger);
-  } else {
+  const workItemLogger = req.context.logger.child({ workItemId: update.workItemID });
+  if (typeof global.it === 'function') {
     // tests break if we don't await this
-    await handleWorkItemUpdate(update, req.context.logger);
+    await handleWorkItemUpdate(update, operation, workItemLogger);
+  } else {
+    // asynchronously handle the update so that the service is not waiting for a response
+    // during a potentially long update. If the asynchronous update fails the work-item will
+    // eventually be retried by the timeout handler. In any case there is not much the service
+    // can do if the update fails, so it is OK for us to ignore the promise here. The service
+    // can still retry for network or similar failures, but we don't want it to retry for things
+    // like 409 errors.
+
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    handleWorkItemUpdate(update, operation, workItemLogger);
   }
 
   // Return a success with no body

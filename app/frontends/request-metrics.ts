@@ -7,7 +7,7 @@ import db from '../util/db';
 import env = require('../util/env');
 import { getPagingParams } from '../util/pagination';
 import { Parser } from 'json2csv';
-import { getTotalWorkItemSizeForJobID } from '../models/work-item';
+import { getTotalWorkItemSizesForJobID } from '../models/work-item';
 import _ from 'lodash';
 import { validateParameterNames } from '../middleware/parameter-validation';
 
@@ -176,7 +176,8 @@ export default async function getRequestMetrics(
         const row = getServiceMetricsFromSteps(steps, req.context.logger);
         row.numInputGranules = job.numInputGranules;
         row.timeTakenSeconds = (job.updatedAt.getTime() - job.createdAt.getTime()) / 1000;
-        row.totalGranuleSizeMb = await getTotalWorkItemSizeForJobID(tx, job.jobID);
+        const workItemSizes = await getTotalWorkItemSizesForJobID(tx, job.jobID);
+        row.totalGranuleSizeMb = workItemSizes.originalSize;
         row.synchronous = 1;
         if (job.isAsync) {
           row.synchronous = 0;

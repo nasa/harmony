@@ -2,14 +2,15 @@ import { Logger } from 'winston';
 import db, { Transaction } from './db';
 import { Job, JobStatus, terminalStates } from '../models/job';
 import env from './env';
-import { getTotalWorkItemSizeForJobID, updateWorkItemStatusesByJobId } from '../models/work-item';
-import { ConflictError, NotFoundError, RequestValidationError } from './errors';
+import { getTotalWorkItemSizesForJobID, updateWorkItemStatusesByJobId } from '../models/work-item';
+import { ConflictError, ForbiddenError, NotFoundError, RequestValidationError } from './errors';
 import isUUID from './uuid';
-import { WorkItemStatus } from '../models/work-item-interface';
+import { WorkItemMeta, WorkItemStatus } from '../models/work-item-interface';
 import { getWorkflowStepByJobIdStepIndex, getWorkflowStepsByJobId } from '../models/workflow-steps';
 import DataOperation, { CURRENT_SCHEMA_VERSION } from '../models/data-operation';
 import { createDecrypter, createEncrypter } from './crypto';
 import { getProductMetric, getResponseMetric } from './metrics';
+import { deleteUserWorkForJob, recalculateReadyCount, setReadyCountToZero } from '../models/user-work';
 
 /**
  * Helper function to pull back the provided job ID (optionally by username).
@@ -23,9 +24,9 @@ import { getProductMetric, getResponseMetric } from './metrics';
 async function lookupJob(tx: Transaction, jobID: string, username: string): Promise<Job>  {
   let job;
   if (username) {
-    ({ job } = await Job.byUsernameAndRequestId(tx, username, jobID));
+    ({ job } = await Job.byUsernameAndJobId(tx, username, jobID));
   } else {
-    ({ job } = await Job.byRequestId(tx, jobID));
+    job = await Job.byJobID(tx, jobID);
   }
 
   if (!job) {
@@ -73,10 +74,13 @@ export async function completeJob(
     job.updateStatus(finalStatus, message);
     await job.save(tx);
     if (failed) {
-      await updateWorkItemStatusesByJobId(
+      const numUpdated = await updateWorkItemStatusesByJobId(
         tx, job.jobID, [WorkItemStatus.READY, WorkItemStatus.RUNNING], WorkItemStatus.CANCELED,
       );
+      const itemMeta: WorkItemMeta = { workItemStatus: WorkItemStatus.CANCELED, workItemAmount: numUpdated, workItemEvent: 'statusUpdate' };
+      logger.info(`Updated work items to ${WorkItemStatus.CANCELED} for completed job.`, itemMeta);
     }
+    await deleteUserWorkForJob(tx, job.jobID);
 
     // Grab the operation from the first step which will be the full operation
     const initialStep = await getWorkflowStepByJobIdStepIndex(tx, job.jobID, 1);
@@ -87,8 +91,8 @@ export async function completeJob(
       // Log information about the job
       const productMetric = getProductMetric(operation, job);
 
-      const originalSize = await getTotalWorkItemSizeForJobID(tx, job.jobID);
-      const responseMetric = await getResponseMetric(operation, job, originalSize);
+      const { originalSize, outputSize } = await getTotalWorkItemSizesForJobID(tx, job.jobID);
+      const responseMetric = await getResponseMetric(operation, job, originalSize, outputSize);
 
       logger.info(`Job ${job.jobID} complete - product metric`, { productMetric: true, ...productMetric });
       logger.info(`Job ${job.jobID} complete - response metric`, { responseMetric: true, ...responseMetric });
@@ -149,7 +153,7 @@ export function validateJobId(jobID: string): void {
  */
 export async function pauseAndSaveJob(
   jobID: string,
-  _logger: Logger,
+  _logger?: Logger,
   username?: string,
   _token?: string,
 ): Promise<void> {
@@ -157,6 +161,45 @@ export async function pauseAndSaveJob(
     const job = await lookupJob(tx, jobID, username);
     job.pause();
     await job.save(tx);
+    await setReadyCountToZero(tx, jobID);
+  });
+}
+
+/**
+ * Updates the user access token in the database and applies the appropriate job status function
+ * to change the state of the job.
+ *
+ * @param jobID - the id of job (requestId in the db)
+ * @param username - the name of the user requesting the resume - null if the admin
+ * @param token - the access token for the user
+ * @param jobStatusFn - a function that takes a job and calls the appropriate method on the job
+ * in order to change the status field.
+ * @throws {@link ConflictError} if the job is already in a terminal state.
+ * @throws {@link NotFoundError} if the job does not exist or the job does not
+ * belong to the user.
+*/
+async function updateTokenAndChangeState(
+  jobID: string, username: string, token: string, jobStatusFn: CallableFunction,
+): Promise <void> {
+  const encrypter = createEncrypter(env.sharedSecretKey);
+  const decrypter = createDecrypter(env.sharedSecretKey);
+  await db.transaction(async (tx) => {
+    const job = await lookupJob(tx, jobID, username);
+    if (username && token) {
+      // update access token
+      const workflowSteps = await getWorkflowStepsByJobId(tx, jobID);
+      for (const workflowStep of workflowSteps) {
+        const { operation } = workflowStep;
+        const op = new DataOperation(JSON.parse(operation), encrypter, decrypter);
+        op.accessToken = token;
+        const serialOp = op.serialize(CURRENT_SCHEMA_VERSION);
+        workflowStep.operation = serialOp;
+        await workflowStep.save(tx);
+      }
+    }
+    jobStatusFn(job);
+    await job.save(tx);
+    await recalculateReadyCount(tx, jobID);
   });
 }
 
@@ -178,25 +221,7 @@ export async function resumeAndSaveJob(
   token?: string,
 
 ): Promise<void> {
-  const encrypter = createEncrypter(env.sharedSecretKey);
-  const decrypter = createDecrypter(env.sharedSecretKey);
-  await db.transaction(async (tx) => {
-    const job = await lookupJob(tx, jobID, username);
-    if (username && token) {
-      // update access token
-      const workflowSteps = await getWorkflowStepsByJobId(tx, jobID);
-      for (const workflowStep of workflowSteps) {
-        const { operation } = workflowStep;
-        const op = new DataOperation(JSON.parse(operation), encrypter, decrypter);
-        op.accessToken = token;
-        const serialOp = op.serialize(CURRENT_SCHEMA_VERSION);
-        workflowStep.operation = serialOp;
-        await workflowStep.save(tx);
-      }
-    }
-    job.resume();
-    await job.save(tx);
-  });
+  await updateTokenAndChangeState(jobID, username, token, ((job) => job.resume()));
 }
 
 /**
@@ -215,24 +240,36 @@ export async function skipPreviewAndSaveJob(
   token?: string,
 
 ): Promise<void> {
-  const encrypter = createEncrypter(env.sharedSecretKey);
-  const decrypter = createDecrypter(env.sharedSecretKey);
-  await db.transaction(async (tx) => {
-    const job = await lookupJob(tx, jobID, username);
-    if (username && token) {
-      // update access token
-      const workflowSteps = await getWorkflowStepsByJobId(tx, jobID);
-      for (const workflowStep of workflowSteps) {
-        const { operation } = workflowStep;
-        const op = new DataOperation(JSON.parse(operation), encrypter, decrypter);
-        op.accessToken = token;
-        const serialOp = op.serialize(CURRENT_SCHEMA_VERSION);
-        workflowStep.operation = serialOp;
-        await workflowStep.save(tx);
-      }
-    }
-    job.skipPreview();
-    await job.save(tx);
-  });
+  await updateTokenAndChangeState(jobID, username, token, ((job) => job.skipPreview()));
+}
+
+/**
+ * Get a particular job only if it can be seen by the requesting user, (based on
+ * whether they own the job or are an admin, and optionally if the job is shareable).
+ * @param jobID - id of the job to query for
+ * @param username - the username of the user requesting the job
+ * @param isAdmin - whether to treat the user as an admin
+ * @param accessToken - the user's access token
+ * @param enableShareability - whether to check if the job can be shared with non-owners
+ * @throws ForbiddenError, NotFoundError
+ * @returns the requested job, if allowed
+ */
+export async function getJobIfAllowed(
+  jobID: string,
+  username: string,
+  isAdmin: boolean,
+  accessToken: string,
+  enableShareability: boolean,
+): Promise<Job> {
+  validateJobId(jobID);
+  const { job } = await Job.byRequestId(db, jobID, 0, 0);
+  if (!job) {
+    throw new NotFoundError();
+  }
+  if (await job.canViewJob(username, isAdmin, accessToken, enableShareability)) {
+    return job;
+  } else {
+    throw new ForbiddenError();
+  }
 }
 

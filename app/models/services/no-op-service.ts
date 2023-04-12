@@ -1,4 +1,6 @@
 import { Logger } from 'winston';
+import { getRequestRoot, getRequestUrl } from '../../util/url';
+import HarmonyRequest from '../harmony-request';
 import { Job, JobStatus } from '../job';
 import BaseService from './base-service';
 import InvocationResult from './invocation-result';
@@ -38,17 +40,17 @@ export default class NoOpService extends BaseService<void> {
   /**
    * Generates a response with a list of download links as provided by the CMR.
    *
-   * @param logger - The logger associated with this request
-   * @param harmonyRoot - The harmony root URL
+   * @param req - The harmony request
+   * @param _logger - The logger associated with this request (unused)
    * @param requestUrl - The URL the end user invoked
    * @returns a promise with the Job status response
    */
-  async invoke(_logger, harmonyRoot, requestUrl): Promise<InvocationResult> {
+  async invoke(req: HarmonyRequest, _logger): Promise<InvocationResult> {
     const now = new Date();
     const granuleLists = this.operation.sources.map((source) => source.granules);
     const granules = granuleLists.reduce((acc, val) => acc.concat(val), []);
     const links = granules.map((granule) => ({ title: granule.id, href: granule.url, rel: 'data' }));
-    let job = new Job({
+    const job = new Job({
       username: this.operation.user,
       requestId: this.operation.requestId,
       jobID: this.operation.requestId,
@@ -59,13 +61,13 @@ export default class NoOpService extends BaseService<void> {
       message: this.message,
       collectionIds: this.operation.collectionIds,
       links,
-      request: requestUrl,
+      request: getRequestUrl(req),
       numInputGranules: this.operation.cmrHits,
     });
-    job = job.serialize(harmonyRoot);
+    const serializedJob = job.serialize(getRequestRoot(req));
     // No-op service response should look like a job, but doesn't actually create one
     // so do not include a jobID in the response.
-    delete job.jobID;
+    delete serializedJob.jobID;
     const response = {
       error: null,
       redirect: null,
@@ -73,7 +75,7 @@ export default class NoOpService extends BaseService<void> {
       onComplete: null,
       headers: { contentType: 'application/json' },
       statusCode: 200,
-      content: JSON.stringify(job),
+      content: JSON.stringify(serializedJob),
     };
 
     return response;

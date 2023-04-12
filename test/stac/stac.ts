@@ -142,8 +142,9 @@ describe('STAC catalog route', function () {
               type: 'application/json',
             },
           ]);
-          expect(catalog.stac_version).to.equal('0.9.0');
+          expect(catalog.stac_version).to.equal('1.0.0');
           expect(catalog.title).to.include('Harmony output for ');
+          expect(catalog.type).to.equal('Catalog');
         });
       });
       describe('when the linkType is invalid', function () {

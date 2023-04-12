@@ -68,7 +68,7 @@ describe('Individual job status route', function () {
     });
 
     it('returns a single job record in JSON format', function () {
-      const actualJob = new Job(JSON.parse(this.res.text));
+      const actualJob = JSON.parse(this.res.text);
       expect(jobsEqual(aJob, actualJob)).to.be.true;
     });
 
@@ -130,7 +130,7 @@ describe('Individual job status route', function () {
 
     it('returns a human-readable message field corresponding to its state', function () {
       const job = JSON.parse(this.res.text);
-      expect(job.message).to.include('The job is paused');
+      expect(job.message).to.include('The job is paused and may be resumed using the provided link');
     });
 
     it('includes links for canceling and resuming the job', function () {
@@ -784,7 +784,7 @@ describe('Individual job status route', function () {
 
         it('includes all of the granules', function () {
           const job = JSON.parse(this.res.text);
-          expect(job.numInputGranules).to.equal(176);
+          expect(job.numInputGranules).to.equal(177);
         });
       });
 
@@ -802,7 +802,7 @@ describe('Individual job status route', function () {
 
         it('returns a warning message that includes both warnings', function () {
           const job = JSON.parse(this.res.text);
-          expect(job.message).to.equal('There were 3 collections that matched the provided short name harmony_example. See https://cmr.uat.earthdata.nasa.gov/concepts/C1234088182-EEDTEST for details on the selected collection. The version ID for the selected collection is 2. To use a different collection submit a new request specifying the desired CMR concept ID instead of the collection short name. CMR query identified 176 granules, but the request has been limited to process only the first 2 granules because of system constraints.');
+          expect(job.message).to.equal('There were 3 collections that matched the provided short name harmony_example. See https://cmr.uat.earthdata.nasa.gov/concepts/C1234088182-EEDTEST for details on the selected collection. The version ID for the selected collection is 2. To use a different collection submit a new request specifying the desired CMR concept ID instead of the collection short name. CMR query identified 177 granules, but the request has been limited to process only the first 2 granules because of system constraints.');
         });
 
         it('limits the input granules to the system limit', function () {

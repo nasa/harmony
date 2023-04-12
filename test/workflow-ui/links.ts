@@ -62,11 +62,7 @@ describe('Workflow UI job links route', function () {
       describe('requests links for a shareable job that they do not own', function () {
         hookWorkflowUILinks({ jobID: shareableJob.jobID, username: 'woody', query: { all: 'true' } });
         it('returns an HTTP success response', function () {
-          expect(this.res.statusCode).to.equal(200);
-        });
-        it('returns an empty links array', function () {
-          const links = JSON.parse(this.res.text);
-          expect(links.length).to.eql(0);
+          expect(this.res.statusCode).to.equal(403);
         });
       });
       describe('requests links for a job that does not exist', function () {
@@ -74,16 +70,15 @@ describe('Workflow UI job links route', function () {
         hookWorkflowUILinks({ jobID: unknownRequest, username: 'woody', query: { all: 'true' } });
         it('returns a 404 HTTP Not Found response', function () {
           expect(this.res.statusCode).to.equal(404);
-          expect(this.res.text).to.include(`Unable to find job ${unknownRequest}`);
+          expect(this.res.text).to.include('The requested resource could not be found');
         });
       });
     });
     describe('when an admin user', function () {
       describe('requests links for a non-shareable job they do not own', function () {
         hookWorkflowUILinks({ jobID: nonShareableJob.jobID, username: 'adam', query: { all: 'true' } });
-        it('returns a 404 HTTP Not Found response', function () {
-          expect(this.res.statusCode).to.equal(404);
-          expect(this.res.text).to.include('The requested resource could not be found');
+        it('returns a 200 HTTP response', function () {
+          expect(this.res.statusCode).to.equal(200);
         });
       });
     });

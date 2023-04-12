@@ -60,6 +60,12 @@ CALLBACK_URL_ROOT=http://harmony:3001
 # The CMR Endpoint to use (e.g. URL for local, SIT, UAT, or production)
 CMR_ENDPOINT=https://cmr.uat.earthdata.nasa.gov
 
+# The Metrics Endpoint (Kibana) to use (linked to from the Workflow UI)
+METRICS_ENDPOINT=
+
+# The Metrics index to query (via the METRICS_ENDPOINT)
+METRICS_INDEX=
+
 # For testing: Whether to use Localstack instead of AWS S3.  Options are "true" or "false".
 USE_LOCALSTACK=true
 
@@ -143,12 +149,6 @@ SAME_REGION_ACCESS_ROLE=same-region-access-role
 # The CMR concept ID for the group whose users can access the admin interface
 ADMIN_GROUP_ID=AG1222736883-EEDTEST
 
-# The time (in seconds) between invocations of the job reaper service
-JOB_REAPER_PERIOD_SEC=360
-
-# Jobs older than this many minutes that are running are checked by the job reaper
-REAPABLE_JOB_AGE_MINUTES=60
-
 # The time (in seconds) between invocations of the work reaper service
 WORK_REAPER_PERIOD_SEC=360
 
@@ -156,11 +156,11 @@ WORK_REAPER_PERIOD_SEC=360
 REAPABLE_WORK_AGE_MINUTES=1440
 
 # The time (in seconds) between invocations of the work failer service
-WORK_FAILER_PERIOD_SEC=360
+WORK_FAILER_PERIOD_SEC=120
 
 # WorkItems that have not been updated for more than this many minutes are
 # updated by the work failer (resulting either in job and work item failure or a retry)
-FAILABLE_WORK_AGE_MINUTES=240
+FAILABLE_WORK_AGE_MINUTES=1
 
 # The number of seconds to allow a pod to continue processing an active request before terminating a pod
 DEFAULT_POD_GRACE_PERIOD_SECS=14400
@@ -190,7 +190,28 @@ WORKER_TIMEOUT=14400000
 MAX_DOWNLOAD_RETRIES=10
 
 # Number of times to retry a failed work item
-WORK_ITEM_RETRY_LIMIT=3
+WORK_ITEM_RETRY_LIMIT=5
+
+# The maximum number of input granules in each invocation of a service
+MAX_BATCH_INPUTS=1000000000000
+
+# The upper limit on the combined sizes of all the files in a batch
+MAX_BATCH_SIZE_IN_BYTES=5000000000
+
+# The batch size used by work-failer. Set it to 0 will effectively disable work-failer.
+WORK_FAILER_BATCH_SIZE=1000
+
+# The fraction of back-end get work requests we want to trace with open telemetry
+GET_WORK_SAMPLE_RATIO=0.01
+# The fraction of back-end put work result requests we want to trace with open telemetry
+PUT_WORK_SAMPLE_RATIO=0.1
+# The fraction of metrics requests we want to trace with open telemetry
+GET_METRICS_SAMPLE_RATIO=0.01
+# The url for the open telemetry exporter daemon
+OPEN_TELEMETRY_URL=http://localhost:4318/v1/traces
+
+# Bamboo release
+RELEASE_VERSION=0.0.0
 
 ###########################################################################
 #                             Service Config                              #
@@ -230,12 +251,19 @@ HARMONY_SERVICE_EXAMPLE_LIMITS_CPU=128m
 HARMONY_SERVICE_EXAMPLE_LIMITS_MEMORY=512Mi
 HARMONY_SERVICE_EXAMPLE_INVOCATION_ARGS='python -m harmony_service_example'
 
-HARMONY_NETCDF_TO_ZARR_IMAGE=harmonyservices/netcdf-to-zarr:latest
+HARMONY_NETCDF_TO_ZARR_IMAGE=ghcr.io/nasa/harmony-netcdf-to-zarr:latest
 HARMONY_NETCDF_TO_ZARR_REQUESTS_CPU=128m
 HARMONY_NETCDF_TO_ZARR_REQUESTS_MEMORY=128Mi
 HARMONY_NETCDF_TO_ZARR_LIMITS_CPU=128m
 HARMONY_NETCDF_TO_ZARR_LIMITS_MEMORY=512Mi
 HARMONY_NETCDF_TO_ZARR_INVOCATION_ARGS='python -m harmony_netcdf_to_zarr'
+
+HARMONY_REGRIDDER_IMAGE=sds/harmony-regridder:latest
+HARMONY_REGRIDDER_REQUESTS_CPU=128m
+HARMONY_REGRIDDER_REQUESTS_MEMORY=128Mi
+HARMONY_REGRIDDER_LIMITS_CPU=128m
+HARMONY_REGRIDDER_LIMITS_MEMORY=512Mi
+HARMONY_REGRIDDER_INVOCATION_ARGS='python -m harmony_regridding_service'
 
 SWOT_REPROJECT_IMAGE=sds/swot-reproject:latest
 SWOT_REPROJECT_REQUESTS_CPU=128m
@@ -306,17 +334,15 @@ GIOVANNI_ADAPTER_INVOCATION_ARGS='node tasks/giovanni-adapter/app/cli'
 
 # The services to deploy locally. A comma-separated list of services that the bin/deploy-services
 # script should attempt to deploy. By default only a couple of harmony example services are deployed.
-# When specifying another service to be deployed make sure the name matches the prefix for the
-# sidecar file in tasks/service-runner-config and the name of the service in that file. For example
-# to deploy the SWOT reprojection service which has a sidecar file swot-reproject-sidecar.yaml
-# and service-name of swot-reproject, specify swot-reproject. query-cmr is required for all services,
-# so it will always be deployed, and does not need to be specified. Make sure if the image for the
-# service is not publicly available that you have built the docker image locally, otherwise the
-# service will fail to start.
+# When specifying another service to be deployed make sure the name matches the lower and dash case
+# prefix for the image variable name. For example to deploy the Giovanni adapter image which has
+# a variable name of GIOVANNI_ADAPTER_IMAGE you would specify giovanni-adapter (converting to lowercase
+# and dash case and dropping _IMAGE. Make sure if the image for the service is not publicly available
+# that you have built the docker image locally, otherwise the service will fail to start.
 LOCALLY_DEPLOYED_SERVICES=harmony-service-example,harmony-netcdf-to-zarr
 
 # page size to use with CMR calls
-CMR_MAX_PAGE_SIZE=100
+CMR_MAX_PAGE_SIZE=2000
 
 # Prefix before "harmonyservices/task-name" for built-in tasks like query-cmr, e.g. an ECR location
 # If not blank, it should end in a slash if there is a slash before "harmony"
@@ -421,7 +447,8 @@ HPA_MIN_REPLICAS=1
 HPA_MAX_REPLICAS=10
 
 # See https://kubernetes.io/docs/reference/kubernetes-api/common-definitions/quantity/#Quantity
-# for an explanation of the "m" suffix (e.g. 1.5 will be serialized as "1500m")
+# for an explanation of the "m" suffix (e.g. 10 will be serialized as "10000m").
+# With this value, the HPAs (when deployed) will try to ensure a pod exists for every 10 queued work items.
 HPA_TARGET_VALUE=10000m
 
 #############################################################################

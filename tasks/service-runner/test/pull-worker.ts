@@ -9,7 +9,7 @@ import { hookGetWorkRequest } from './helpers/pull-worker';
 import * as pullWorker from '../app/workers/pull-worker';
 import PullWorker from '../app/workers/pull-worker';
 import * as serviceRunner from '../app/service/service-runner';
-import { existsSync, writeFileSync, mkdirSync } from 'fs';
+import { existsSync, writeFileSync, mkdirSync, rmSync } from 'fs';
 
 const {
   _pullWork,
@@ -121,7 +121,7 @@ describe('Pull Worker', async function () {
       it('returns a timeout message (after retrying with exponential backoff)', async function () {
         const work = await _pullWork();
         expect(work.status).to.be.greaterThanOrEqual(400, 'Expected an error status');
-        expect(work.error).to.eql('timeout of 30000ms exceeded');
+        expect(work.error).to.match(/^timeout of \d+ms exceeded$/);
         expect(this.axiosMock.history.get.length).to.equal(3);
       });
     });
@@ -150,7 +150,7 @@ describe('Pull Worker', async function () {
           jobID: '123',
           serviceID: 'abc',
           workflowStepIndex: 0,
-          scrollID: 1234,
+          scrollID: '1234',
           operation: { requestID: 'foo' },
           id: 1,
         });
@@ -187,6 +187,7 @@ describe('Pull Worker', async function () {
         writeFileSync('/tmp/TERMINATING', '1');
       });
       afterEach(function () {
+        rmSync('/tmp/TERMINATING');
         pullWorkSpy.restore();
         doWorkSpy.restore();
       });
@@ -226,6 +227,7 @@ describe('Pull Worker', async function () {
         writeFileSync('/tmp/TERMINATING', '1');
         await _pullAndDoWork(false);
         expect(existsSync('/tmp/TERMINATING')).to.be.true;
+        rmSync('/tmp/TERMINATING');
       });
     });
 

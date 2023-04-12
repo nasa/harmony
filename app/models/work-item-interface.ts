@@ -16,6 +16,36 @@ export const COMPLETED_WORK_ITEM_STATUSES = [
   WorkItemStatus.CANCELED,
 ];
 
+/**
+ * Standardized metadata that can be passed to logging calls alongside a message.
+ * Helpful for making sense of JSON log data / metrics in downstream apps.
+ */
+export interface WorkItemMeta {
+  // workItemId may already be included by default in some child loggers
+  // e.g. logger.child({ workItemId: update.workItemID })
+  workItemId?: number;
+  // Count of work items.
+  workItemAmount?: number;
+  // The duration of some process. 
+  // (e.g. how long it took for the worker to finish or
+  // how long the item waited before being picked up)
+  workItemDuration?: number;
+  // See WorkItemRecord serviceID
+  workItemService?: string;
+  // See WorkItemRecord status
+  workItemStatus?: WorkItemStatus;
+  // WorkItemMeta objects can optionally have an associated event if
+  // the context in which the logging call was made has some special significance
+  workItemEvent?: 
+  // Signfies that item status(es) have been updated by an update handler or callback function.
+  // Item status should be specified for this event type.
+  'statusUpdate' |
+  // Signfies that the retry count has been incremented.
+  'retry' |
+  // A metric was calculated
+  'readyMetric';
+}
+
 export interface WorkItemRecord {
   // The database ID for the record
   id: number;
@@ -51,16 +81,50 @@ export interface WorkItemRecord {
   results?: string[];
 
   // The sum of the sizes of the granules associated with this work item
-  totalGranulesSize?: number;
+  totalItemsSize?: number;
+
+  // The size (in bytes) of each data item produced by this work item (used for batching)
+  outputItemSizes?: number[];
 
   // The number of times this work-item has been retried
   retryCount: number;
+
+  // When the work item started processing
+  startedAt?: Date;
+
+  // How long in milliseconds the work item took to process
+  duration: number;
 
   // The last time the record was updated
   updatedAt: Date;
 
   // When the item was created
   createdAt: Date;
+
+  // The position of the work item output in any following aggregation
+  sortIndex: number;
+}
+
+export interface WorkItemQuery {
+  where?: {
+    id?: number;
+    jobID?: string;
+    status?: string;
+    createdAt?: number;
+    updatedAt?: number;
+  };
+  whereIn?: {
+    status?: { in: boolean, values: string[] };
+  };
+  dates?: {
+    from?: Date;
+    to?: Date;
+    field: 'createdAt' | 'updatedAt';
+  };
+  orderBy?: {
+    field: string;
+    value: string;
+  };
 }
 
 /**
@@ -70,7 +134,7 @@ export interface WorkItemRecord {
  * e.g. s3://artifacts/abc/123/outputs/ with a targetUrl of ./catalog0.json or catalog0.json would resolve to
  * s3://artifacts/abc/123/outputs/catalog0.json
  * @param item - the returned URL will provide the path to the outputs for this work item
- * @param targetUrl - URL to resolve against the base outptuts directory 
+ * @param targetUrl - URL to resolve against the base outputs directory 
  * @param isAggregate - include the word aggregate in the URL
  * @returns - the path to the STAC outputs directory (e.g. s3://artifacts/abc/123/outputs/) or the full path to the target URL
  */

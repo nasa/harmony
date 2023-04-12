@@ -1,14 +1,17 @@
 /**
  * Format all of the dates in the user's browser timezone.
+ * @param {string} selector - the selector to use in querySelectorAll to
+ * find elements that need their dates formatted
  */
-function formatDates() {
-  const dateTds = document.getElementsByClassName('date-td');
+function formatDates(selector) {
+  const dateTds = document.querySelectorAll(selector);
   [...dateTds].forEach(
     (element) => {
-      const time = parseInt(element.getAttribute('data-time'));
+      const time = parseInt(element.getAttribute('data-time'), 10);
       const formattedDate = (new Date(time)).toLocaleString();
+      // eslint-disable-next-line no-param-reassign
       element.textContent = formattedDate;
-    }
+    },
   );
 }
 
@@ -17,9 +20,7 @@ function formatDates() {
  */
 function initTooltips(querySelector) {
   const tooltipTriggerList = [].slice.call(document.querySelectorAll(querySelector));
-  tooltipTriggerList.map(function (tooltipTriggerEl) {
-    return new bootstrap.Tooltip(tooltipTriggerEl);
-  });
+  tooltipTriggerList.map((tooltipTriggerEl) => new bootstrap.Tooltip(tooltipTriggerEl));
 }
 
 /**
@@ -28,4 +29,4 @@ function initTooltips(querySelector) {
 export {
   formatDates,
   initTooltips,
-}
+};

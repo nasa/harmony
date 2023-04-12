@@ -13,7 +13,7 @@ import earthdataLoginOauthAuthorizer from '../middleware/earthdata-login-oauth-a
 import admin from '../middleware/admin';
 import wmsFrontend from '../frontends/wms';
 import { getJobsListing, getJobStatus, cancelJob, resumeJob, pauseJob, skipJobPreview } from '../frontends/jobs';
-import { getJobs, getJob, getWorkItemsTable, getJobLinks, getWorkItemLogs } from '../frontends/workflow-ui';
+import { getJobs, getJob, getWorkItemsTable, getJobLinks, getWorkItemLogs, retry, getWorkItemTableRow, redirectWithoutTrailingSlash } from '../frontends/workflow-ui';
 import { getStacCatalog, getStacItem } from '../frontends/stac';
 import { getServiceResult } from '../frontends/service-results';
 import cmrGranuleLocator from '../middleware/cmr-granule-locator';
@@ -33,7 +33,10 @@ import cmrCollectionReader = require('../middleware/cmr-collection-reader');
 import envVars = require('../util/env');
 import { postServiceConcatenationHandler, preServiceConcatenationHandler } from '../middleware/concatenation';
 import getRequestMetrics from '../frontends/request-metrics';
-
+import { getStagingBucketPolicy } from '../frontends/staging-bucket-policy';
+import { parseGridMiddleware } from '../util/grids';
+import docsPage from '../frontends/docs/docs';
+import { getCollectionCapabilitiesJson } from '../frontends/capabilities';
 export interface RouterConfig {
   PORT?: string | number; // The port to run the frontend server on
   BACKEND_PORT?: string | number; // The port to run the backend server on
@@ -123,12 +126,13 @@ function collectionPrefix(path: string): RegExp {
 const authorizedRoutes = [
   cmrCollectionReader.collectionRegex,
   '/admin*',
+  '/capabilities*',
+  '/cloud-access*',
+  '/configuration*',
   '/jobs*',
   '/service-results/*',
-  '/cloud-access*',
   '/stac*',
   '/workflow-ui*',
-  '/configuration*',
 ];
 
 /**
@@ -186,18 +190,21 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   });
   result.use(logged(shapefileConverter));
   result.use(logged(parameterValidation));
+  result.use(logged(parseGridMiddleware));
   result.use(logged(preServiceConcatenationHandler));
   result.use(logged(chooseService));
   result.use(logged(postServiceConcatenationHandler));
   result.use(logged(cmrGranuleLocator));
   result.use(logged(addRequestContextToOperation));
+  result.use(logged(redirectWithoutTrailingSlash));
 
   result.get('/', asyncHandler(landingPage));
   result.get('/versions', asyncHandler(getVersions));
+  result.get('/docs', asyncHandler(docsPage));
   result.use('/docs/api', swaggerUi.serve, swaggerUi.setup(yaml.load(ogcCoverageApi.openApiContent), { customJs: '/js/docs/analytics-tag.js' }));
   result.get(collectionPrefix('wms'), asyncHandler(service(serviceInvoker)));
-  result.get(/^.*?\/ogc-api-coverages\/.*?\/collections\/.*?\/coverage\/rangeset/, asyncHandler(service(serviceInvoker)));
-  result.post(/^.*?\/ogc-api-coverages\/.*?\/collections\/.*?\/coverage\/rangeset/, asyncHandler(service(serviceInvoker)));
+  result.get(/^.*?\/ogc-api-coverages\/.*?\/collections\/.*?\/coverage\/rangeset\/?$/, asyncHandler(service(serviceInvoker)));
+  result.post(/^.*?\/ogc-api-coverages\/.*?\/collections\/.*?\/coverage\/rangeset\/?$/, asyncHandler(service(serviceInvoker)));
   result.get('/jobs', asyncHandler(getJobsListing));
   result.get('/jobs/:jobID', asyncHandler(getJobStatus));
 
@@ -231,15 +238,23 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   result.get('/workflow-ui', asyncHandler(getJobs));
   result.get('/workflow-ui/:jobID', asyncHandler(getJob));
   result.get('/workflow-ui/:jobID/work-items', asyncHandler(getWorkItemsTable));
+  result.get('/workflow-ui/:jobID/work-items/:id', asyncHandler(getWorkItemTableRow));
   result.get('/workflow-ui/:jobID/links', asyncHandler(getJobLinks));
+  result.post('/workflow-ui/:jobID/:id/retry', asyncHandler(retry));
   result.get('/admin/workflow-ui', asyncHandler(getJobs));
   result.get('/admin/workflow-ui/:jobID', asyncHandler(getJob));
   result.get('/admin/workflow-ui/:jobID/work-items', asyncHandler(getWorkItemsTable));
+  result.get('/admin/workflow-ui/:jobID/work-items/:id', asyncHandler(getWorkItemTableRow));
   result.get('/admin/workflow-ui/:jobID/links', asyncHandler(getJobLinks));
   result.get('/admin/workflow-ui/:jobID/:id/logs', asyncHandler(getWorkItemLogs));
 
+  result.get('/staging-bucket-policy', asyncHandler(getStagingBucketPolicy));
+
   result.get('/admin/configuration/log-level', asyncHandler(setLogLevel));
 
+  result.get('/capabilities', asyncHandler(getCollectionCapabilitiesJson));
+  // Enable HTML view with HARMONY-1393
+  // result.get('/capabilities.html', asyncHandler(getCollectionCapabilitiesHtml));
   result.get('/cloud-access', asyncHandler(cloudAccessJson));
   result.get('/cloud-access.sh', asyncHandler(cloudAccessSh));
   result.get('/stac/:jobId', asyncHandler(getStacCatalog));

@@ -69,7 +69,7 @@ describe('Workflow UI job route', function () {
         });
         it('returns HTML with the job ID included', function () {
           const listing = this.res.text;
-          expect(listing).to.contain(mustache.render('{{req}}', { req: nonShareableJob.jobID }));
+          expect(listing).to.contain(mustache.render('{{req}} (<a href="/jobs/{{req}}">Job Status</a>)', { req: nonShareableJob.jobID }));
         });
         it('returns a breadcrumb that includes the non-admin path', async function () {
           const listing = this.res.text;
@@ -91,7 +91,7 @@ describe('Workflow UI job route', function () {
         hookWorkflowUIJob({ jobID: unknownRequest, username: 'woody' });
         it('returns a 404 HTTP Not Found response', function () {
           expect(this.res.statusCode).to.equal(404);
-          expect(this.res.text).to.include(`Unable to find job ${unknownRequest}`);
+          expect(this.res.text).to.include('The requested resource could not be found');
         });
       });
       describe('requests a job with an invalid ID format', function () {
@@ -101,13 +101,28 @@ describe('Workflow UI job route', function () {
           expect(this.res.text).to.include('Invalid format for Job ID');
         });
       });
+      describe('filters by status IN [failed, successful]', function () {
+        const tableFilter = '[{"value":"status: failed","dbValue":"failed","field":"status"},{"value":"status: successful","dbValue":"successful","field":"status"}]';
+        hookWorkflowUIJob({ jobID: nonShareableJob.jobID, username: 'woody', query: { disallowStatus: '', tableFilter } });
+        it('does not have disallowStatus HTML checked', function () {
+          const listing = this.res.text;
+          expect((listing.match(/<input (?=.*name="disallowStatus")(?!.*checked).*>/g) || []).length).to.equal(1);
+        });
+        it('has the appropriate status options selected', function () {
+          const listing = this.res.text;
+          expect(listing).to.contain('status: failed');
+          expect(listing).to.contain('status: successful');
+          expect(listing).to.not.contain('status: running');
+          expect(listing).to.not.contain('status: ready');
+          expect(listing).to.not.contain('status: canceled');
+        });
+      });
     });
     describe('when an admin user', function () {
       describe('requests a non-shareable job they do not own', function () {
         hookWorkflowUIJob({ jobID: nonShareableJob.jobID, username: 'adam' });
-        it('returns a 404 HTTP Not Found response', function () {
-          expect(this.res.statusCode).to.equal(404);
-          expect(this.res.text).to.include('The requested resource could not be found');
+        it('returns a 200 response', function () {
+          expect(this.res.statusCode).to.equal(200);
         });
       });
     });
@@ -118,11 +133,27 @@ describe('Workflow UI job route', function () {
         hookAdminWorkflowUIJob({ jobID: nonShareableJob.jobID, username: 'adam' });
         it('returns a job for any user', async function () {
           const listing = this.res.text;
-          expect(listing).to.contain(mustache.render('{{req}}', { req: nonShareableJob.jobID }));
+          expect(listing).to.contain(mustache.render('{{req}} (<a href="/admin/jobs/{{req}}">Job Status</a>)', { req: nonShareableJob.jobID }));
         });
         it('returns a breadcrumb that includes the admin path', async function () {
           const listing = this.res.text;
           expect(listing).to.contain(mustache.render('<a href="/admin/workflow-ui">Jobs</a>', {}));
+        });
+      });
+      describe('filters by status NOT IN [running]', function () {
+        const tableFilter = '[{"value":"status: running","dbValue":"running","field":"status"}]';
+        hookWorkflowUIJob({ jobID: nonShareableJob.jobID, username: 'adam', query: { disallowStatus: 'on', tableFilter } });
+        it('does have disallowStatus HTML checked', function () {
+          const listing = this.res.text;
+          expect((listing.match(/<input (?=.*name="disallowStatus")(?=.*checked).*>/g) || []).length).to.equal(1);
+        });
+        it('has the appropriate status options selected', function () {
+          const listing = this.res.text;
+          expect(listing).to.contain('status: running');
+          expect(listing).to.not.contain('status: failed');
+          expect(listing).to.not.contain('status: successful');
+          expect(listing).to.not.contain('status: ready');
+          expect(listing).to.not.contain('status: canceled');
         });
       });
     });

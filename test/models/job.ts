@@ -188,11 +188,6 @@ describe('Job', function () {
       expect(new Job({ status: JobStatus.FAILED } as JobRecord).message).to.eql('The job failed with an unknown error');
     });
 
-    it('updates the message if a default was used and the status changed', function () {
-      expect(new Job({ status: JobStatus.SUCCESSFUL, message: 'The job is being processed' } as JobRecord).message)
-        .to.equal('The job has completed successfully');
-    });
-
     it('defaults links to an empty array', function () {
       expect(new Job({} as JobRecord).links).to.eql([]);
     });
@@ -270,6 +265,15 @@ describe('Job', function () {
       const { trx } = this;
       const job = buildJob({ requestId: uuid().toString(), username: 'jdoe', request: 'foo:not//a-url' } as JobRecord);
       await expect(job.save(trx)).to.eventually.be.rejected;
+    });
+
+    it('truncates long error messages', async function () {
+      let job = buildJob(exampleProps);
+      const longFailureMessage = 'x'.repeat(6000);
+      job.setMessage(longFailureMessage, JobStatus.FAILED);
+      await job.save(this.trx);
+      ({ job } = await Job.byRequestId(this.trx, job.requestId));
+      expect(job.getMessage(JobStatus.FAILED).length).lessThanOrEqual(4096 - 1000);
     });
   });
 });

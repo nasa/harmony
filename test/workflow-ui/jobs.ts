@@ -1,5 +1,6 @@
 import * as mustache from 'mustache';
 import { expect } from 'chai';
+import request from 'supertest';
 import { describe, it, before } from 'mocha';
 import { JobStatus } from '../../app/models/job';
 import hookServersStartStop from '../helpers/servers';
@@ -7,6 +8,10 @@ import { hookTransaction, truncateAll } from '../helpers/db';
 import { buildJob } from '../helpers/jobs';
 import { workflowUIJobs, hookWorkflowUIJobs, hookAdminWorkflowUIJobs } from '../helpers/workflow-ui';
 import env from '../../app/util/env';
+import { auth } from '../helpers/auth';
+import { renderNavLink } from './helpers';
+import MockDate from 'mockdate';
+
 
 // Example jobs to use in tests
 const woodyJob1 = buildJob({
@@ -18,6 +23,7 @@ const woodyJob1 = buildJob({
   request: 'http://example.com/harmony?request=woody1&turbo=false',
   isAsync: true,
   numInputGranules: 89723,
+  service_name: 'harmony/service-example',
 });
 
 const woodyJob2 = buildJob({
@@ -29,6 +35,7 @@ const woodyJob2 = buildJob({
   request: 'http://example.com/harmony?request=woody2&turbo=true',
   isAsync: true,
   numInputGranules: 35051,
+  service_name: 'harmony/service-example',
 });
 
 const woodySyncJob = buildJob({
@@ -40,6 +47,7 @@ const woodySyncJob = buildJob({
   request: 'http://example.com/harmony?request=woody2',
   isAsync: false,
   numInputGranules: 12615,
+  service_name: 'harmony/netcdf-to-zarr',
 });
 
 const buzzJob1 = buildJob({
@@ -103,15 +111,33 @@ describe('Workflow UI jobs route', function () {
     hookTransaction();
     before(async function () {
       // Add all jobs to the database
+      MockDate.set('2023-01-04T14:12:00.000Z');
       await woodyJob1.save(this.trx);
+      MockDate.set('2023-01-05T14:12:00.000Z');
       await woodyJob2.save(this.trx);
+      MockDate.set('2023-01-06T14:12:00.000Z');
       await woodySyncJob.save(this.trx);
+      
       await buzzJob1.save(this.trx);
+      
       await sidJob1.save(this.trx);
       await sidJob2.save(this.trx);
       await sidJob3.save(this.trx);
       await sidJob4.save(this.trx);
+      
       this.trx.commit();
+      MockDate.reset();
+    });
+
+    describe('When including a trailing slash on the user route /workflow-ui/', function () {
+      before(async function () {
+        this.res = await request(this.frontend).get('/workflow-ui/').use(auth({ username: 'andy' })).redirects(0);
+      });
+
+      it('redirects to the /workflow-ui page without a trailing slash', function () {
+        expect(this.res.statusCode).to.equal(301);
+        expect(this.res.headers.location).to.match(/.*\/workflow-ui$/);
+      });
     });
 
     describe('who has no jobs', function () {
@@ -144,11 +170,75 @@ describe('Workflow UI jobs route', function () {
       });
     });
 
+    describe('who filters jobs by update date >=', function () {
+      hookWorkflowUIJobs({ username: 'woody', tzoffsetminutes: '0', fromdatetime: '2023-01-06T14:12', datekind: 'updatedAt' });
+      it('returns the job with an acceptable updatedAt date', function () {
+        const listing = this.res.text;
+        expect(listing).to.contain((new Date('2023-01-06T14:12:00.000Z')).getTime());
+        expect((listing.match(/job-table-row/g) || []).length).to.equal(1);
+      });
+    });
+
+    describe('who filters jobs by update date >= with a timezone offset of -1 hour', function () {
+      hookWorkflowUIJobs({ username: 'woody', tzoffsetminutes: '60', fromdatetime: '2023-01-06T13:12', datekind: 'updatedAt' });
+      it('returns the job with an acceptable updatedAt date', function () {
+        const listing = this.res.text;
+        expect(listing).to.contain((new Date('2023-01-06T14:12:00.000Z')).getTime());
+        expect((listing.match(/job-table-row/g) || []).length).to.equal(1);
+      });
+    });
+
+    describe('who filters jobs by update date >= with a timezone offset of +1 hour', function () {
+      hookWorkflowUIJobs({ username: 'woody', tzoffsetminutes: '-60', fromdatetime: '2023-01-06T15:12', datekind: 'updatedAt' });
+      it('returns the job with an acceptable updatedAt date', function () {
+        const listing = this.res.text;
+        expect(listing).to.contain((new Date('2023-01-06T14:12:00.000Z')).getTime());
+        expect((listing.match(/job-table-row/g) || []).length).to.equal(1);
+      });
+      it('carries over the date filters to the job link url', function () {
+        const listing = this.res.text;
+        const dateQuery = `?fromDateTime=${encodeURIComponent('2023-01-06T15:12')}&toDateTime=` +
+          '&dateKind=updatedAt&tzOffsetMinutes=-60';
+        expect(listing).to.contain(mustache.render('{{dateQuery}}', { dateQuery }));
+      });
+    });
+
+    describe('who filters jobs by created date >= and <=', function () {
+      hookWorkflowUIJobs({ username: 'woody', tzoffsetminutes: '0',
+        fromdatetime: '2023-01-05T14:12', todatetime: '2023-01-05T14:12', datekind: 'createdAt' });
+      it('returns the job with an acceptable createdAt date', function () {
+        const listing = this.res.text;
+        expect(listing).to.contain((new Date('2023-01-05T14:12:00.000Z')).getTime());
+        expect((listing.match(/job-table-row/g) || []).length).to.equal(1);
+      });
+    });
+
+    describe('who filters jobs by created date <=', function () {
+      hookWorkflowUIJobs({ username: 'woody', tzoffsetminutes: '0', todatetime: '2023-01-05T14:12', datekind: 'createdAt' });
+      it('returns the jobs with acceptable createdAt date', function () {
+        const listing = this.res.text;
+        expect(listing).to.contain((new Date('2023-01-05T14:12:00.000Z')).getTime());
+        expect(listing).to.contain((new Date('2023-01-04T14:12:00.000Z')).getTime());
+        expect((listing.match(/job-table-row/g) || []).length).to.equal(2);
+      });
+    });
+
     describe('who has 3 jobs and asks for page 1, with a limit of 1', function () {
       hookWorkflowUIJobs({ username: 'woody', limit: 1 });
       it('returns a link to the next page', function () {
         const listing = this.res.text;
-        expect(listing).to.contain(mustache.render('{{nextLink}}', { nextLink: '/workflow-ui?limit=1&page=2' }));
+        expect(listing).to.contain(renderNavLink('/workflow-ui?limit=1&page=2', 'next'));
+      });
+      it('returns a disabled link to the previous page', function () {
+        const listing = this.res.text;
+        expect(listing).to.contain(renderNavLink('', 'previous', false));
+      });
+      it('returns a disabled link to the first page', function () {
+        const listing = this.res.text;
+        expect(listing).to.contain(renderNavLink('', 'first', false));
+      });it('returns a link to the last page', function () {
+        const listing = this.res.text;
+        expect(listing).to.contain(renderNavLink('/workflow-ui?limit=1&page=3', 'last'));
       });
       it('returns only one job', function () {
         const listing = this.res.text;
@@ -186,8 +276,39 @@ describe('Workflow UI jobs route', function () {
       hookWorkflowUIJobs({ username: 'woody', limit: 1, page: 2 });
       it('returns a link to the next and previous page', function () {
         const listing = this.res.text;
-        expect(listing).to.contain(mustache.render('{{nextLink}}', { nextLink: '/workflow-ui?limit=1&page=1' }));
-        expect(listing).to.contain(mustache.render('{{prevLink}}', { prevLink: '/workflow-ui?limit=1&page=3' }));
+        expect(listing).to.contain(renderNavLink('/workflow-ui?limit=1&page=1', 'previous'));
+        expect(listing).to.contain(renderNavLink('/workflow-ui?limit=1&page=3', 'next'));
+      });
+      it('returns a disabled link to the first page', function () {
+        const listing = this.res.text;
+        expect(listing).to.contain(renderNavLink('', 'first', false));
+      });it('returns a disabled link to the last page', function () {
+        const listing = this.res.text;
+        expect(listing).to.contain(renderNavLink('', 'last', false));
+      });
+      it('returns only one job', function () {
+        const listing = this.res.text;
+        expect((listing.match(/job-table-row/g) || []).length).to.equal(1);
+      });
+    });
+
+    describe('who has 3 jobs and asks for page 3, with a limit of 1', function () {
+      hookWorkflowUIJobs({ username: 'woody', limit: 1, page: 3 });
+      it('returns a disabled link to the next page', function () {
+        const listing = this.res.text;
+        expect(listing).to.contain(renderNavLink('', 'next', false));
+      });
+      it('returns a link to the previous page', function () {
+        const listing = this.res.text;
+        expect(listing).to.contain(renderNavLink('/workflow-ui?limit=1&page=2', 'previous'));
+      });
+      it('returns a link to the first page', function () {
+        const listing = this.res.text;
+        expect(listing).to.contain(renderNavLink('/workflow-ui?limit=1&page=1', 'first'));
+      });
+      it('returns a disabled link to the last page', function () {
+        const listing = this.res.text;
+        expect(listing).to.contain(renderNavLink('', 'last', false));
       });
       it('returns only one job', function () {
         const listing = this.res.text;
@@ -196,7 +317,7 @@ describe('Workflow UI jobs route', function () {
     });
 
     describe('who filters by status IN [failed]', function () {
-      hookWorkflowUIJobs({ username: 'woody', jobsFilter: '[{"value":"status: failed","dbValue":"failed","field":"status"}]' });
+      hookWorkflowUIJobs({ username: 'woody', tableFilter: '[{"value":"status: failed","dbValue":"failed","field":"status"}]' });
       it('returns only failed jobs', function () {
         const listing = this.res.text;
         expect((listing.match(/job-table-row/g) || []).length).to.equal(1);
@@ -217,8 +338,8 @@ describe('Workflow UI jobs route', function () {
     });
 
     describe('who filters by status IN [failed, successful]', function () {
-      const jobsFilter = '[{"value":"status: failed","dbValue":"failed","field":"status"},{"value":"status: successful","dbValue":"successful","field":"status"}]';
-      hookWorkflowUIJobs({ username: 'woody', disallowStatus: '', jobsFilter });
+      const tableFilter = '[{"value":"status: failed","dbValue":"failed","field":"status"},{"value":"status: successful","dbValue":"successful","field":"status"}]';
+      hookWorkflowUIJobs({ username: 'woody', disallowStatus: '', tableFilter });
       it('returns failed and successful jobs', function () {
         const listing = this.res.text;
         expect((listing.match(/job-table-row/g) || []).length).to.equal(2);
@@ -239,7 +360,7 @@ describe('Workflow UI jobs route', function () {
     });
 
     describe('who filters by an invalid status (working)', function () {
-      hookWorkflowUIJobs({ username: 'woody', jobsFilter: '[{"value":"status: working","dbValue":"working","field":"status"}, {"value":"status: running","dbValue":"running","field":"status"}]' });
+      hookWorkflowUIJobs({ username: 'woody', tableFilter: '[{"value":"status: working","dbValue":"working","field":"status"}, {"value":"status: running","dbValue":"running","field":"status"}]' });
       it('ignores the invalid status', function () {
         const listing = this.res.text;
         expect(listing).to.not.contain('status: working');
@@ -248,7 +369,7 @@ describe('Workflow UI jobs route', function () {
     });
 
     describe('who filters by an invalid username (jo)', function () {
-      hookAdminWorkflowUIJobs({ username: 'adam', jobsFilter: '[{"value":"user: jo"}, {"value":"user: woody"}]' });
+      hookAdminWorkflowUIJobs({ username: 'adam', tableFilter: '[{"value":"user: jo"}, {"value":"user: woody"}]' });
       it('ignores the invalid username', function () {
         const listing = this.res.text;
         expect(listing).to.not.contain('user: jo');
@@ -257,8 +378,8 @@ describe('Workflow UI jobs route', function () {
     });
 
     describe('who filters by status NOT IN [failed, successful]', function () {
-      const jobsFilter = '[{"value":"status: failed","dbValue":"failed","field":"status"},{"value":"status: successful","dbValue":"successful","field":"status"}]';
-      hookWorkflowUIJobs({ username: 'woody', disallowStatus: 'on', jobsFilter });
+      const tableFilter = '[{"value":"status: failed","dbValue":"failed","field":"status"},{"value":"status: successful","dbValue":"successful","field":"status"}]';
+      hookWorkflowUIJobs({ username: 'woody', disallowStatus: 'on', tableFilter });
       it('returns all jobs that are not failed or successful', function () {
         const listing = this.res.text;
         expect((listing.match(/job-table-row/g) || []).length).to.equal(1);
@@ -278,8 +399,94 @@ describe('Workflow UI jobs route', function () {
       });
     });
 
+    describe('who filters by service IN [harmony/service-example]', function () {
+      const tableFilter = '[{"value":"service: harmony/service-example","dbValue":"harmony/service-example","field":"service"}]';
+      hookWorkflowUIJobs({ username: 'woody', disallowService: '', tableFilter });
+      it('returns jobs for harmony/service-example', function () {
+        const listing = this.res.text;
+        expect((listing.match(/job-table-row/g) || []).length).to.equal(2);
+        const serviceExampleTd = mustache.render('<td>{{service}}</td>', { service: 'harmony/service-example' });
+        const serviceExampleRegExp = new RegExp(serviceExampleTd, 'g');
+        expect((listing.match(serviceExampleRegExp) || []).length).to.equal(2);
+        const netcdfToZarrTd = mustache.render('<td>{{service}}</td>', { service: 'harmony/netcdf-to-zarr' });
+        const netcdfToZarrRegExp = new RegExp(netcdfToZarrTd, 'g');
+        expect((listing.match(netcdfToZarrRegExp) || []).length).to.equal(0);
+      });
+      it('does not have disallowService HTML checked', function () {
+        const listing = this.res.text;
+        expect((listing.match(/<input (?=.*name="disallowService")(?!.*checked).*>/g) || []).length).to.equal(1);
+      });
+      it('has the appropriate services selected', function () {
+        const listing = this.res.text;
+        expect(listing).to.contain(mustache.render('{{service}}', { service: 'service: harmony/service-example' }));
+      });
+    });
+
+    describe('who filters by service NOT IN [harmony/service-example]', function () {
+      const tableFilter = '[{"value":"service: harmony/service-example","dbValue":"harmony/service-example","field":"service"}]';
+      hookWorkflowUIJobs({ username: 'woody', disallowService: 'on', tableFilter });
+      it('returns jobs for harmony/netcdf-to-zarr', function () {
+        const listing = this.res.text;
+        expect((listing.match(/job-table-row/g) || []).length).to.equal(1);
+        const serviceExampleTd = mustache.render('<td>{{service}}</td>', { service: 'harmony/service-example' });
+        const serviceExampleRegExp = new RegExp(serviceExampleTd, 'g');
+        expect((listing.match(serviceExampleRegExp) || []).length).to.equal(0);
+        const netcdfToZarrTd = mustache.render('<td>{{service}}</td>', { service: 'harmony/netcdf-to-zarr' });
+        const netcdfToZarrRegExp = new RegExp(netcdfToZarrTd, 'g');
+        expect((listing.match(netcdfToZarrRegExp) || []).length).to.equal(1);
+      });
+      it('does have disallowService HTML checked', function () {
+        const listing = this.res.text;
+        expect((listing.match(/<input (?=.*name="disallowService")(?=.*checked).*>/g) || []).length).to.equal(1);
+      });
+      it('has the appropriate services selected', function () {
+        const listing = this.res.text;
+        expect(listing).to.contain(mustache.render('{{service}}', { service: 'service: harmony/service-example' }));
+      });
+    });
+
+    describe('who filters by a particular combination of filter types', function () {
+      const tableFilter = '[{"value":"service: harmony/service-example","dbValue":"harmony/service-example","field":"service"},{"value":"status: failed","dbValue":"failed","field":"status"}]';
+      hookWorkflowUIJobs({ username: 'woody', disallowService: 'on', disallowStatus: '', tableFilter });
+      it('returns the harmony/netcdf-to-zarr job', function () {
+        const listing = this.res.text;
+        expect((listing.match(/job-table-row/g) || []).length).to.equal(1);
+        const serviceExampleTd = mustache.render('<td>{{service}}</td>', { service: 'harmony/service-example' });
+        const serviceExampleRegExp = new RegExp(serviceExampleTd, 'g');
+        expect((listing.match(serviceExampleRegExp) || []).length).to.equal(0);
+        const netcdfToZarrTd = mustache.render('<td>{{service}}</td>', { service: 'harmony/netcdf-to-zarr' });
+        const netcdfToZarrRegExp = new RegExp(netcdfToZarrTd, 'g');
+        expect((listing.match(netcdfToZarrRegExp) || []).length).to.equal(1);
+
+        expect(listing).to.contain(`<span class="badge bg-danger">${JobStatus.FAILED.valueOf()}</span>`);
+        expect(listing).to.not.contain(`<span class="badge bg-success">${JobStatus.SUCCESSFUL.valueOf()}</span>`);
+        expect(listing).to.not.contain(`<span class="badge bg-info">${JobStatus.RUNNING.valueOf()}</span>`);
+      });
+      it('has the appropriate HTML (un)checked', function () {
+        const listing = this.res.text;
+        expect((listing.match(/<input (?=.*name="disallowStatus")(?!.*checked).*>/g) || []).length).to.equal(1);
+        expect((listing.match(/<input (?=.*name="disallowService")(?=.*checked).*>/g) || []).length).to.equal(1);
+      });
+      it('has the appropriate filters selected', function () {
+        const listing = this.res.text;
+        expect(listing).to.contain(mustache.render('{{service}}', { service: 'service: harmony/service-example' }));
+        expect(listing).to.contain(mustache.render('{{status}}', { status: 'status: failed' }));
+      });
+    });
+
     describe('when accessing the admin endpoint', function () {
       describe('when the user is part of the admin group', function () {
+        describe('When including a trailing slash on the admin route admin/workflow-ui/', function () {
+          before(async function () {
+            this.res = await request(this.frontend).get('/admin/workflow-ui/').use(auth({ username: 'adam' })).redirects(0);
+          });
+
+          it('redirects to the /admin/workflow-ui page without a trailing slash', function () {
+            expect(this.res.statusCode).to.equal(301);
+            expect(this.res.headers.location).to.match(/.*\/admin\/workflow-ui$/);
+          });
+        });
+
         hookAdminWorkflowUIJobs({ username: 'adam', limit: 100 });
         it('returns jobs for all users', async function () {
           const listing = this.res.text;
@@ -296,7 +503,7 @@ describe('Workflow UI jobs route', function () {
       });
 
       describe('when the admin filters the jobs by user IN [woody]', function () {
-        hookAdminWorkflowUIJobs({ username: 'adam', jobsFilter: '[{"value":"user: woody"}]' });
+        hookAdminWorkflowUIJobs({ username: 'adam', tableFilter: '[{"value":"user: woody"}]' });
         it('only contains jobs submitted by woody', async function () {
           const listing = this.res.text;
           expect(listing).to.contain('<td>woody</td>');
@@ -305,7 +512,7 @@ describe('Workflow UI jobs route', function () {
       });
 
       describe('when the admin filters the jobs by user NOT IN [woody]', function () {
-        hookAdminWorkflowUIJobs({ username: 'adam', jobsFilter: '[{"value":"user: woody"}]', disallowUser: 'on' });
+        hookAdminWorkflowUIJobs({ username: 'adam', tableFilter: '[{"value":"user: woody"}]', disallowUser: 'on' });
         it('does not contain jobs submitted by woody', async function () {
           const listing = this.res.text;
           expect(listing).to.not.contain('<td>woody</td>');
@@ -314,11 +521,11 @@ describe('Workflow UI jobs route', function () {
       });
 
       describe('when the admin filters by status IN [running_with_errors, complete_with_errors, paused, previewing]', function () {
-        const jobsFilter = '[{"value":"status: running with errors","dbValue":"running_with_errors","field":"status"},' +
+        const tableFilter = '[{"value":"status: running with errors","dbValue":"running_with_errors","field":"status"},' +
         '{"value":"status: complete with errors","dbValue":"complete_with_errors","field":"status"},' +
         '{"value":"status: paused","dbValue":"paused","field":"status"},' +
         '{"value":"status: previewing","dbValue":"previewing","field":"status"}]';
-        hookAdminWorkflowUIJobs({ username: 'adam', disallowStatus: '', jobsFilter });
+        hookAdminWorkflowUIJobs({ username: 'adam', disallowStatus: '', tableFilter });
         it('returns jobs with the aforementioned statuses', function () {
           const listing = this.res.text;
           expect((listing.match(/job-table-row/g) || []).length).to.equal(4);
@@ -346,11 +553,11 @@ describe('Workflow UI jobs route', function () {
       });
 
       describe('when the admin filters by status NOT IN [running_with_errors, complete_with_errors, paused, previewing]', function () {
-        const jobsFilter = '[{"value":"status: running with errors","dbValue":"running_with_errors","field":"status"},' +
+        const tableFilter = '[{"value":"status: running with errors","dbValue":"running_with_errors","field":"status"},' +
         '{"value":"status: complete with errors","dbValue":"complete_with_errors","field":"status"},' +
         '{"value":"status: paused","dbValue":"paused","field":"status"},' +
         '{"value":"status: previewing","dbValue":"previewing","field":"status"}]';
-        hookAdminWorkflowUIJobs({ username: 'adam', disallowStatus: 'on', jobsFilter });
+        hookAdminWorkflowUIJobs({ username: 'adam', disallowStatus: 'on', tableFilter });
         it('returns jobs without the aforementioned statuses', function () {
           const listing = this.res.text;
           expect((listing.match(/job-table-row/g) || []).length).to.equal(4);

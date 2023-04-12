@@ -1,0 +1,9 @@
+node_modules
+services
+.env
+db/*.sqlite3
+logs
+tasks
+test
+workload
+fixtures

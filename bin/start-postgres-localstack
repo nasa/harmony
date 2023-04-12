@@ -81,9 +81,9 @@ UPLOAD_BUCKET=${UPLOAD_BUCKET:-local-upload-bucket}
 
 # Creates buckets in localstack
 localstack_startup_script="
-awslocal s3 mb s3://${STAGING_BUCKET}
-awslocal s3 mb s3://${ARTIFACT_BUCKET}
-awslocal s3 mb s3://${UPLOAD_BUCKET}
+awslocal s3 mb s3://${STAGING_BUCKET} --region us-west-2
+awslocal s3 mb s3://${ARTIFACT_BUCKET} --region us-west-2
+awslocal s3 mb s3://${UPLOAD_BUCKET} --region us-west-2
 awslocal s3api put-bucket-acl --bucket ${ARTIFACT_BUCKET} --acl public-read" # allows us to view STAC files: localhost:4572/{ARTIFACT_BUCKET}/{jobId}/{workItemId}/outputs/
 
 

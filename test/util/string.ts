@@ -99,6 +99,9 @@ describe('util/string', function () {
     it('strips aws account information from image url', function () {
       expect(sanitizeImage('00000000.xyz.abc.REGION-5.amazonaws.com/the-image-name')).to.equal('the-image-name');
     });
+    it('strips ghcr account information from image url', function () {
+      expect(sanitizeImage('ghcr.io/x/y:1.0.0')).to.equal('x/y:1.0.0');
+    });
     it('strips private earthdata location from image url', function () {
       expect(sanitizeImage('private.earthdata.nasa.gov/the-image-name')).to.equal('the-image-name');
     });

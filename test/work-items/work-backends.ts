@@ -1,19 +1,27 @@
 import { WorkItemStatus, getStacLocation, WorkItemRecord } from './../../app/models/work-item-interface';
 import { Job, JobRecord, JobStatus, terminalStates } from './../../app/models/job';
 import { describe, it } from 'mocha';
+import * as sinon from 'sinon';
+import { SinonStub } from 'sinon';
+import MockDate from 'mockdate';
 import { expect } from 'chai';
 import { v4 as uuid } from 'uuid';
 import WorkItem, { getWorkItemById } from '../../app/models/work-item';
 import { WorkflowStepRecord } from '../../app/models/workflow-steps';
 import hookServersStartStop from '../helpers/servers';
 import db from '../../app/util/db';
+import * as aggregationBatch from '../../app/util/aggregation-batch';
 import { hookJobCreation } from '../helpers/jobs';
 import { hookGetWorkForService, hookWorkItemCreation, hookWorkItemUpdate, hookWorkflowStepAndItemCreation, getWorkForService, fakeServiceStacOutput, updateWorkItem } from '../helpers/work-items';
 import { hookWorkflowStepCreation, validOperation } from '../helpers/workflow-steps';
+import { hookPopulateUserWorkFromWorkItems } from '../helpers/user-work';
+import { resumeAndSaveJob } from '../../app/util/job';
+
+const oldDate = '1/1/2000'; // "old" work items will get created on this date
 
 describe('Work Backends', function () {
-  const requestId = uuid().toString();
-  const jobRecord = { jobID: requestId, requestId } as Partial<JobRecord>;
+  const exampleRequestId = uuid().toString();
+  const jobRecord = { jobID: exampleRequestId, requestId: exampleRequestId } as Partial<JobRecord>;
   const service = 'harmonyservices/query-cmr';
   const expectedLink = 'https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/001_00_8f00ff_global.nc';
 
@@ -36,7 +44,7 @@ describe('Work Backends', function () {
   describe('when getting a work item', function () {
     const runningJob = new Job({
       jobID: 'ABCD',
-      requestId,
+      requestId: uuid().toString(),
       status: JobStatus.RUNNING,
       username: 'anonymous',
       request: 'http://example.com/harmony?foo=bar',
@@ -46,7 +54,7 @@ describe('Work Backends', function () {
 
     const pausedJob = new Job({
       jobID: 'PAUSED',
-      requestId,
+      requestId: uuid().toString(),
       status: JobStatus.PAUSED,
       username: 'anonymous',
       request: 'http://example.com/harmony?foo=bar',
@@ -95,6 +103,7 @@ describe('Work Backends', function () {
     hookWorkflowStepAndItemCreation(runningWorkItem);
     hookWorkflowStepAndItemCreation(pausedJobWorkItem);
     hookWorkflowStepAndItemCreation(pausedJobQueryCmrWorkItem);
+    hookPopulateUserWorkFromWorkItems();
 
     describe('when no work item is available for the service', function () {
       hookGetWorkForService('noWorkService');
@@ -112,19 +121,17 @@ describe('Work Backends', function () {
       });
     });
 
-    // CMR work items are returned even when a job is paused to avoid a scroll session timeout
     describe('when work items are available for query-cmr, but their job is paused', function () {
       hookGetWorkForService('query-cmr');
 
-      it('returns a 200', function () {
-        expect(this.res.status).to.equal(200);
+      it('returns a 404', function () {
+        expect(this.res.status).to.equal(404);
       });
     });
 
     describe('when work items are available for a paused job that is resumed', async function () {
       it('returns a 200', async function () {
-        pausedJob.updateStatus(JobStatus.RUNNING);
-        await pausedJob.save(db);
+        await resumeAndSaveJob(pausedJob.jobID, null);
         const result = await getWorkForService(this.backend, 'thePausedJobService');
         expect(result.status).to.equal(200);
       });
@@ -141,7 +148,8 @@ describe('Work Backends', function () {
       it('returns the correct fields for a work item', function () {
         expect(Object.keys(this.res.body.workItem)).to.eql([
           'id', 'jobID', 'createdAt', 'retryCount', 'updatedAt', 'scrollID', 'serviceID', 'status',
-          'stacCatalogLocation', 'totalGranulesSize', 'workflowStepIndex', 'operation',
+          'stacCatalogLocation', 'totalItemsSize', 'workflowStepIndex', 'duration',
+          'startedAt', 'sortIndex', 'operation',
         ]);
       });
 
@@ -150,7 +158,10 @@ describe('Work Backends', function () {
       });
 
       it('returns the expected operation', function () {
-        expect(this.res.body.workItem.operation).to.eql(JSON.parse(validOperation));
+        const expectedOperation = JSON.parse(validOperation);
+        // The staging location will include a prefix with the work item id
+        expectedOperation.stagingLocation += '1/';
+        expect(this.res.body.workItem.operation).to.eql(expectedOperation);
       });
 
       it('returns the expected jobID', function () {
@@ -196,20 +207,24 @@ describe('Work Backends', function () {
       hookJobCreation(jobRecord);
       hookWorkflowStepCreation(workflowStepRecord);
       hookWorkItemCreation(workItemRecord);
+      hookPopulateUserWorkFromWorkItems();
       before(async function () {
         let shouldLoop = true;
         // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
         while (shouldLoop) {
           const res = await getWorkForService(this.backend, workItemRecord.serviceID);
-          const tmpWorkItem = JSON.parse(res.text).workItem as WorkItem;
-          tmpWorkItem.status = WorkItemStatus.FAILED;
-          tmpWorkItem.results = [];
+          if (res.text) {
+            const tmpWorkItem = JSON.parse(res.text).workItem as WorkItem;
+            tmpWorkItem.status = WorkItemStatus.FAILED;
+            tmpWorkItem.results = [];
+            tmpWorkItem.outputItemSizes = [];
 
-          await updateWorkItem(this.backend, tmpWorkItem);
+            await updateWorkItem(this.backend, tmpWorkItem);
 
-          // check to see if the work-item has failed completely
-          const workItem = await getWorkItemById(db, this.workItem.id);
-          shouldLoop = !(workItem.status === WorkItemStatus.FAILED);
+            // check to see if the work-item has failed completely
+            const workItem = await getWorkItemById(db, this.workItem.id);
+            shouldLoop = !(workItem.status === WorkItemStatus.FAILED);
+          }
         }
       });
 
@@ -224,16 +239,170 @@ describe('Work Backends', function () {
       });
     });
 
-    describe('and the work item succeeded', async function () {
+    describe('output granules sizes', async function () {
+      let readCatalogLinksStub: SinonStub;
+      let sizeOfObjectStub: SinonStub;
+      describe('when a work item provides all the granule sizes', async function () {
+        hookJobCreation(jobRecord);
+        hookWorkflowStepCreation(workflowStepRecord);
+        const runningWorkItemRecord = {
+          ...workItemRecord,
+          ...{
+            status: WorkItemStatus.RUNNING,
+            startedAt: new Date(),
+          },
+        };
+        hookWorkItemCreation(runningWorkItemRecord);
+        const successfulWorkItemRecord = {
+          ...workItemRecord,
+          ...{
+            status: WorkItemStatus.SUCCESSFUL,
+            results: [getStacLocation({ id: workItemRecord.id, jobID: workItemRecord.jobID }, 'catalog.json')],
+            scrollID: '-1234',
+            duration: 0,
+            outputItemSizes: [1],
+          },
+        };
+        before(async () => {
+          await fakeServiceStacOutput(successfulWorkItemRecord.jobID, successfulWorkItemRecord.id);
+          readCatalogLinksStub = sinon.stub(aggregationBatch, 'readCatalogLinks');
+          sizeOfObjectStub = sinon.stub(aggregationBatch, 'sizeOfObject');
+        });
+        after(async () => {
+          readCatalogLinksStub.restore();
+          sizeOfObjectStub.restore();
+        });
+        hookWorkItemUpdate((r) => r.send(successfulWorkItemRecord));
+
+        it('does not read the STAC catalog', async function () {
+          expect(readCatalogLinksStub.callCount).to.equal(0);
+        });
+
+        it('does not look up the granule sizes', async function () {
+          expect(sizeOfObjectStub.callCount).to.equal(0);
+        });
+
+        it('uses the granule sizes provided by the service', async function () {
+          const updatedWorkItem = await getWorkItemById(db, this.workItem.id);
+          expect(updatedWorkItem.outputItemSizes).to.eql(successfulWorkItemRecord.outputItemSizes);
+        });
+      });
+
+      describe('when a work item provides some of the granule sizes', async function () {
+        hookJobCreation(jobRecord);
+        hookWorkflowStepCreation(workflowStepRecord);
+        const runningWorkItemRecord = {
+          ...workItemRecord,
+          ...{
+            status: WorkItemStatus.RUNNING,
+            startedAt: new Date(),
+          },
+        };
+        hookWorkItemCreation(runningWorkItemRecord);
+        const successfulWorkItemRecord = {
+          ...workItemRecord,
+          ...{
+            status: WorkItemStatus.SUCCESSFUL,
+            results: [getStacLocation({ id: workItemRecord.id, jobID: workItemRecord.jobID }, 'catalog.json')],
+            scrollID: '-1234',
+            duration: 0,
+            outputItemSizes: [12340000000000, 0],
+          },
+        };
+        before(async () => {
+          await fakeServiceStacOutput(successfulWorkItemRecord.jobID, successfulWorkItemRecord.id);
+          readCatalogLinksStub = sinon.stub(aggregationBatch, 'readCatalogLinks')
+            .callsFake(async (_) => ['s3://abc/foo.nc', 'http://abc/bar.nc']);
+          sizeOfObjectStub = sinon.stub(aggregationBatch, 'sizeOfObject')
+            .callsFake(async (_) => 7000000000);
+        });
+        after(async () => {
+          readCatalogLinksStub.restore();
+          sizeOfObjectStub.restore();
+        });
+        hookWorkItemUpdate((r) => r.send(successfulWorkItemRecord));
+
+        it('reads the STAC catalog', async function () {
+          expect(readCatalogLinksStub.callCount).to.equal(1);
+        });
+
+        it('looks up the missing the granule sizes', async function () {
+          expect(sizeOfObjectStub.callCount).to.equal(1);
+        });
+
+        it('uses the granule sizes provided by the service', async function () {
+          const updatedWorkItem = await getWorkItemById(db, this.workItem.id);
+          expect(updatedWorkItem.outputItemSizes).to.eql([12340000000000, 7000000000]);
+        });
+      });
+
+      describe('when a work item does not provide granule sizes', async function () {
+        hookJobCreation(jobRecord);
+        hookWorkflowStepCreation(workflowStepRecord);
+        const runningWorkItemRecord = {
+          ...workItemRecord,
+          ...{
+            status: WorkItemStatus.RUNNING,
+            startedAt: new Date(),
+          },
+        };
+        hookWorkItemCreation(runningWorkItemRecord);
+        const successfulWorkItemRecord = {
+          ...workItemRecord,
+          ...{
+            status: WorkItemStatus.SUCCESSFUL,
+            results: [getStacLocation({ id: workItemRecord.id, jobID: workItemRecord.jobID }, 'catalog.json')],
+            scrollID: '-1234',
+            duration: 0,
+          },
+        };
+        before(async () => {
+          await fakeServiceStacOutput(successfulWorkItemRecord.jobID, successfulWorkItemRecord.id);
+          readCatalogLinksStub = sinon.stub(aggregationBatch, 'readCatalogLinks')
+            .callsFake(async (_) => ['s3://abc/foo.nc', 'http://abc/bar.nc']);
+          sizeOfObjectStub = sinon.stub(aggregationBatch, 'sizeOfObject')
+            .callsFake(async (_) => 7000000000);
+        });
+        after(async () => {
+          readCatalogLinksStub.restore();
+          sizeOfObjectStub.restore();
+        });
+        hookWorkItemUpdate((r) => r.send(successfulWorkItemRecord));
+
+        it('reads the STAC catalog', async function () {
+          expect(readCatalogLinksStub.callCount).to.equal(1);
+        });
+
+        it('looks up the granule sizes', async function () {
+          expect(sizeOfObjectStub.callCount).to.equal(2);
+        });
+
+        it('uses the granule sizes provided by the service', async function () {
+          const updatedWorkItem = await getWorkItemById(db, this.workItem.id);
+          expect(updatedWorkItem.outputItemSizes).to.eql([7000000000, 7000000000]);
+        });
+      });
+    });
+
+    describe('when the work item succeeded', async function () {
       hookJobCreation(jobRecord);
       hookWorkflowStepCreation(workflowStepRecord);
-      hookWorkItemCreation(workItemRecord);
+      const runningWorkItemRecord = {
+        ...workItemRecord,
+        ...{
+          status: WorkItemStatus.RUNNING,
+          startedAt: new Date(),
+        },
+      };
+      hookWorkItemCreation(runningWorkItemRecord);
       const successfulWorkItemRecord = {
         ...workItemRecord,
         ...{
           status: WorkItemStatus.SUCCESSFUL,
           results: [getStacLocation({ id: workItemRecord.id, jobID: workItemRecord.jobID }, 'catalog.json')],
+          outputItemSizes: [1],
           scrollID: '-1234',
+          duration: 0,
         },
       };
       before(async () => {
@@ -244,6 +413,13 @@ describe('Work Backends', function () {
       it('sets the work item status to successful', async function () {
         const updatedWorkItem = await getWorkItemById(db, this.workItem.id);
         expect(updatedWorkItem.status).to.equal(WorkItemStatus.SUCCESSFUL);
+      });
+
+      describe('and the worker computed duration is less than the harmony computed duration', async function () {
+        it('sets the work item duration to the harmony computed duration', async function () {
+          const updatedWorkItem = await getWorkItemById(db, this.workItem.id);
+          expect(updatedWorkItem.duration).to.be.greaterThan(successfulWorkItemRecord.duration);
+        });
       });
 
       describe('and the work item is the last in the chain', async function () {
@@ -267,6 +443,46 @@ describe('Work Backends', function () {
         it('sets the job progress to 100', async function () {
           const updatedJob = await Job.byJobID(db, this.job.jobID);
           expect(updatedJob.progress).to.equal(100);
+        });
+      });
+    });
+
+    describe('when a retried work item succeeds on the original worker before the retry finishes', async function () {
+      hookJobCreation(jobRecord);
+      hookWorkflowStepCreation(workflowStepRecord);
+      const runningWorkItemRecord = {
+        ...workItemRecord,
+        ...{
+          status: WorkItemStatus.RUNNING,
+          startedAt: new Date(),
+        },
+      };
+      hookWorkItemCreation(runningWorkItemRecord);
+      const successfulWorkItemRecord = {
+        ...workItemRecord,
+        ...{
+          status: WorkItemStatus.SUCCESSFUL,
+          results: [getStacLocation({ id: workItemRecord.id, jobID: workItemRecord.jobID }, 'catalog.json')],
+          outputItemSizes: [1],
+          scrollID: '-1234',
+          duration: 100000000,
+        },
+      };
+      before(async () => {
+        await fakeServiceStacOutput(successfulWorkItemRecord.jobID, successfulWorkItemRecord.id);
+      });
+      hookWorkItemUpdate((r) => r.send(successfulWorkItemRecord));
+
+      describe('so the worker computed duration is longer than the harmony computed duration', async function () {
+        before(async () => {
+          MockDate.set(oldDate);
+        });
+        after(() => {
+          MockDate.reset();
+        });
+        it('sets the work item duration to the worker computed duration', async function () {
+          const updatedWorkItem = await getWorkItemById(db, this.workItem.id);
+          expect(updatedWorkItem.duration).to.equal(successfulWorkItemRecord.duration);
         });
       });
     });

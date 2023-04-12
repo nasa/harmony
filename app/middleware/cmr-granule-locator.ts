@@ -90,6 +90,17 @@ function getMaxGranules(req: HarmonyRequest, collection: string):
 }
 
 /**
+ * Constructs the base of the results limited message.
+ * @param hits - number of CMR hits
+ * @param maxGranules - limit for granule processing
+ * @returns the base of the results limited message
+ */
+export function baseResultsLimitedMessage(hits: number, maxGranules: number): string {
+  return `CMR query identified ${hits} granules, but the request has been limited `
+    + `to process only the first ${maxGranules} granules`;
+}
+
+/**
  * Create a message indicating that the results have been limited and why - if necessary
  *
  * @param req - The client request, containing an operation
@@ -106,8 +117,7 @@ function getResultsLimitedMessage(req: HarmonyRequest, collection: string): stri
   const { maxGranules, reason } = getMaxGranules(req, collection);
 
   if (operation.cmrHits > maxGranules) {
-    message = `CMR query identified ${operation.cmrHits} granules, but the request has been limited `
-      + `to process only the first ${maxGranules} granules`;
+    message = baseResultsLimitedMessage(operation.cmrHits, maxGranules);
 
     switch (reason) {
       case GranuleLimitReason.MaxResults:
@@ -163,7 +173,7 @@ async function cmrGranuleLocatorTurbo(
   }
 
   cmrQuery.concept_id = operation.granuleIds;
-
+  cmrQuery.readable_granule_name = operation.granuleNames;
   operation.cmrHits = 0;
   operation.scrollIDs = [];
 
@@ -253,6 +263,7 @@ async function cmrGranuleLocatorNonTurbo(
   }
 
   cmrQuery.concept_id = operation.granuleIds;
+  cmrQuery.readable_granule_name = operation.granuleNames;
 
   operation.cmrHits = 0;
   try {

@@ -73,6 +73,8 @@ interface HarmonyEnv {
   builtInTaskVersion: string;
   callbackUrlRoot: string;
   cmrEndpoint: string;
+  metricsEndpoint: string;
+  metricsIndex: string;
   cmrMaxPageSize: number;
   defaultPodGracePeriodSecs: number;
   defaultJobListPageSize: number;
@@ -80,11 +82,12 @@ interface HarmonyEnv {
   defaultResultPageSize: number;
   failableWorkAgeMinutes: number;
   harmonyClientId: string;
-  jobReaperPeriodSec: number;
   localstackHost: string;
   logLevel: string;
   maxGranuleLimit: number;
   maxPageSize: number;
+  maxBatchInputs: number;
+  maxBatchSizeInBytes: number;
   maxPostFields: number;
   maxPostFileParts: number;
   maxPostFileSize: number;
@@ -94,7 +97,6 @@ interface HarmonyEnv {
   oauthUid: string;
   objectStoreType: string;
   previewThreshold: number;
-  reapableJobAgeMinutes: number;
   reapableWorkAgeMinutes: number;
   sameRegionAccessRole: string;
   servicesYml: string;
@@ -107,6 +109,12 @@ interface HarmonyEnv {
   workReaperPeriodSec: number;
   maxErrorsForJob: number;
   workItemRetryLimit: number;
+  getWorkSampleRatio: number;
+  putWorkSampleRatio: number;
+  getMetricsSampleRatio: number;
+  openTelemetryUrl: string;
+  workFailerBatchSize: number;
+  releaseVersion: string;
 }
 
 // special cases

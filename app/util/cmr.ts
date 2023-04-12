@@ -1,7 +1,7 @@
 import FormData from 'form-data';
 import * as fs from 'fs';
 import { v4 as uuid } from 'uuid';
-import { get } from 'lodash';
+import { get, isArray } from 'lodash';
 import fetch, { Response } from 'node-fetch';
 import * as querystring from 'querystring';
 import { CmrError } from './errors';
@@ -111,6 +111,37 @@ export interface CmrUmmVariable {
   };
 }
 
+export interface CmrUmmGrid {
+  meta: {
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    'concept-id': string;
+  };
+  umm: {
+    Name: string;
+    GridDefinition: {
+      CoordinateReferenceSystemID: {
+        Code: string;
+      };
+      DimensionSize: {
+        Height: number;
+        Width: number;
+      };
+      DimensionScale: {
+        X: {
+          Minimum: number;
+          Maximum: number;
+          Resolution: number;
+        };
+        Y: {
+          Minimum: number;
+          Maximum: number;
+          Resolution: number;
+        };
+      };
+    };
+  };
+}
+
 export interface CmrRelatedUrl {
   URL: string;
   URLContentType: string;
@@ -124,6 +155,7 @@ export interface CmrRelatedUrl {
 export interface CmrQuery
   extends NodeJS.Dict<string | string[] | number | number[] | boolean | boolean[] | null> {
   concept_id?: string | string[];
+  readable_granule_name?: string | string[];
   page_size?: number;
   downloadable?: boolean;
   scroll?: string;
@@ -158,6 +190,13 @@ export interface CmrGranulesResponse extends CmrResponse {
     feed: {
       entry: CmrGranule[];
     };
+  };
+}
+
+export interface CmrGridsResponse extends CmrResponse {
+  data: {
+    items: CmrUmmGrid[];
+    hits: number;
   };
 }
 
@@ -261,6 +300,7 @@ export async function fetchPost(
     headers,
   });
   response.data = await response.json();
+
   return response;
 }
 
@@ -278,6 +318,39 @@ async function processGeoJson(geoJsonUrl: string, formData: FormData): Promise<s
     contentType: 'application/geo+json',
   });
   return tempFile;
+}
+
+/**
+ *  Check a field on a CmrQuery to see if it has wildcard values. If so, add an
+ * `options[fieldName][patter] = true` to the given `FormData` object.
+ *
+ * @param formData - the form data to be altered if the given field has wildcards
+ * @param form - the form data to be checked
+ * @param field -the field to check for wildcards
+ */
+function handleWildcards(formData: FormData, form: CmrQuery, field: string): void {
+  const re = /(\*|\?)/;
+  const values = form[field];
+  if (!values) {
+    return;
+  }
+  let isPattern = false;
+  if (isArray(values)) {
+    for (const value of values as Array<unknown>) {
+      if (re.test(value.toString())) {
+        isPattern = true;
+        break;
+      }
+    }
+  } else {
+    if (re.test(values.toString())) {
+      isPattern = true;
+    }
+  }
+
+  if (isPattern) {
+    formData.append(`options[${field}][pattern]`, 'true');
+  }
 }
 
 /**
@@ -311,6 +384,9 @@ export async function cmrPostBase(
       }
     }
   }));
+
+  handleWildcards(formData, form as CmrQuery, 'readable_granule_name');
+
   const headers = {
     ...clientIdHeader,
     ..._makeTokenHeader(token),
@@ -435,6 +511,20 @@ async function queryCollections(
 }
 
 /**
+ * Performs a CMR grids.umm_json search with the given query string
+ *
+ * @param query - The key/value pairs to search
+ * @param token - Access token for user request
+ * @returns The grid search results
+ */
+async function queryGrids(
+  query: CmrQuery, token: string,
+): Promise<Array<CmrUmmGrid>> {
+  const gridsResponse = await _cmrGet('/search/grids.umm_json', query, token) as CmrGridsResponse;
+  return gridsResponse.data.items;
+}
+
+/**
  * Performs a CMR granules.json search with the given form data
  *
  * @param form - The key/value pairs to search including a `shapefile` parameter
@@ -539,8 +629,21 @@ export async function getVariablesForCollection(
 }
 
 /**
+ * Queries the CMR grids for grid(s) with the given name. Ideally only one grid should match.
+ *
+ * @param gridName - The name of the grid for which to search
+ * @param token - Access token for user request
+ * @returns an array of UMM Grids matching the passed in name (ideally only one item)
+ */
+export async function getGridsByName(
+  gridName: string, token: string,
+): Promise<Array<CmrUmmGrid>> {
+  return queryGrids({ name: gridName, page_size: ACTUAL_CMR_MAX_PAGE_SIZE }, token);
+}
+
+/**
  * Generate an s3 url to use to store/lookup stored query parameters
- * 
+ *
  * @param sessionKey - The session key
  * @returns An s3 url containing the session key
  */
@@ -557,7 +660,7 @@ function s3UrlForStoredQueryParams(sessionKey: string): string {
  * @param limit - The maximum number of granules to return in this page of results
  * @param sessionKey - Key used to look up query parameters
  * @param searchAfterHeader - Value string to use for the cmr-search-after header
- * @returns A CmrGranuleHits object containing the granules associated with the input collection 
+ * @returns A CmrGranuleHits object containing the granules associated with the input collection
  * and a session key and cmr-search-after header
  */
 export async function queryGranulesWithSearchAfter(
@@ -629,6 +732,7 @@ export function queryGranulesForCollection(
     ...query,
   }, token);
 }
+
 
 /**
  * Queries and returns the CMR permissions for each concept specified

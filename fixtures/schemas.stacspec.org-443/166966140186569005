@@ -1,0 +1,59 @@
+GET /v1.0.0/item-spec/json-schema/instrument.json
+accept: application/json, text/plain, */*
+
+HTTP/1.1 200 OK
+connection: close
+content-length: 696
+server: GitHub.com
+content-type: application/json; charset=utf-8
+x-origin-cache: HIT
+last-modified: Tue, 25 May 2021 20:12:04 GMT
+access-control-allow-origin: *
+etag: "60ad5a14-2b8"
+expires: Mon, 28 Nov 2022 15:19:27 GMT
+cache-control: max-age=600
+x-proxy-cache: MISS
+x-github-request-id: 752E:48C4:1DC5C9A:27F8CDE:6384CF27
+accept-ranges: bytes
+date: Mon, 28 Nov 2022 18:50:01 GMT
+via: 1.1 varnish
+age: 0
+x-served-by: cache-fty21356-FTY
+x-cache: HIT
+x-cache-hits: 1
+x-timer: S1669661402.970254,VS0,VE18
+vary: Accept-Encoding
+x-fastly-request-id: c0b670948a3ce8ae4063d5fc10f60b245d276e09
+
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://schemas.stacspec.org/v1.0.0/item-spec/json-schema/instrument.json#",
+  "title": "Instrument Fields",
+  "type": "object",
+  "properties": {
+    "platform": {
+      "title": "Platform",
+      "type": "string"
+    },
+    "instruments": {
+      "title": "Instruments",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "constellation": {
+      "title": "Constellation",
+      "type": "string"
+    },
+    "mission": {
+      "title": "Mission",
+      "type": "string"
+    },
+    "gsd": {
+      "title": "Ground Sample Distance",
+      "type": "number",
+      "exclusiveMinimum": 0
+    }
+  }
+}

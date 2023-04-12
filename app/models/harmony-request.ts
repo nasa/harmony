@@ -1,5 +1,4 @@
-import { NextFunction, Request } from 'express';
-import { ServerResponse } from 'http';
+import { Response, NextFunction, Request } from 'express';
 import { CmrCollection } from '../util/cmr';
 import RequestContext from './request-context';
 import DataOperation from './data-operation';
@@ -26,7 +25,7 @@ export default interface HarmonyRequest extends Request {
  *
  */
 export function addRequestContextToOperation(
-  req: HarmonyRequest, res: ServerResponse, next: NextFunction,
+  req: HarmonyRequest, res: Response, next: NextFunction,
 ): void {
   const { operation, context } = req;
 

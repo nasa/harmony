@@ -49,8 +49,38 @@ const completedJob = buildJob({
     rel: 'data',
     bbox: [-10, -10, 10, 10],
     temporal: {
-      start: new Date('2021-01-01T00:00:00.000Z'),
-      end: new Date('2021-01-01T01:00:00.000Z'),
+      start: new Date('2020-01-01T00:00:00.000Z'),
+      end: new Date('2020-01-01T01:00:00.000Z'),
+    },
+  }],
+  request: 'http://example.com/harmony?job=completedJob',
+});
+
+const completedJobWithDestinationUrl = buildJob({
+  username: 'joe',
+  status: JobStatus.SUCCESSFUL,
+  destination_url: 's3://my-staging-bucket',
+  message: 'it is done',
+  progress: 100,
+  numInputGranules: 1,
+  links: [{
+    href: 's3://example-bucket/public/example/path1.tif',
+    type: 'image/tiff',
+    rel: 'data',
+    bbox: [-10, -10, 10, 10],
+    temporal: {
+      start: new Date('2020-01-01T00:00:00.000Z'),
+      end: new Date('2020-01-01T01:00:00.000Z'),
+    },
+  },
+  {
+    href: 's3://example-bucket/public/example/path2.tif',
+    type: 'image/tiff',
+    rel: 'data',
+    bbox: [-10, -10, 10, 10],
+    temporal: {
+      start: new Date('2020-01-01T00:00:00.000Z'),
+      end: new Date('2020-01-01T01:00:00.000Z'),
     },
   }],
   request: 'http://example.com/harmony?job=completedJob',
@@ -76,6 +106,7 @@ describe('STAC item route', function () {
   before(async function () {
     await runningJob.save(this.trx);
     await completedJob.save(this.trx);
+    await completedJobWithDestinationUrl.save(this.trx);
     await completedNonStacJob.save(this.trx);
     this.trx.commit();
   });
@@ -140,6 +171,19 @@ describe('STAC item route', function () {
       });
     });
 
+    describe('When the job is complete and has a destination url set', async function () {
+      const completedJobId = completedJobWithDestinationUrl.requestId;
+
+      describe('when an item is requested', function () {
+        hookStacItem(completedJobId, 0, 'joe');
+
+        it('returns a STAC item without an "expires" field', async function () {
+          const item = JSON.parse(this.res.text);
+          expect(item.properties.expires).to.be.undefined;
+        });
+      });
+    });
+
     describe('when the job is complete', function () {
       describe('when the service does not supply the necessary fields', async function () {
         const completedJobId = completedNonStacJob.requestId;
@@ -163,7 +207,7 @@ describe('STAC item route', function () {
 
         const expectedItemWithoutAssetsOrLinks = {
           id: `${completedJob.requestId}_0`,
-          stac_version: '0.9.0',
+          stac_version: '1.0.0',
           title: `Harmony output #0 in job ${completedJob.requestId}`,
           description: 'Harmony out for http://example.com/harmony?job=completedJob',
           type: 'Feature',
@@ -227,7 +271,7 @@ describe('STAC item route', function () {
         const completedJobId = completedJob.requestId;
         const expectedItemWithoutAssetsOrLinks = {
           id: `${completedJob.requestId}_1`,
-          stac_version: '0.9.0',
+          stac_version: '1.0.0',
           title: `Harmony output #1 in job ${completedJob.requestId}`,
           description: 'Harmony out for http://example.com/harmony?job=completedJob',
           type: 'Feature',
@@ -240,9 +284,9 @@ describe('STAC item route', function () {
           properties: {
             // `created` and `expires` properties added later
             license: 'various',
-            start_datetime: '2021-01-01T00:00:00.000Z',
-            end_datetime: '2021-01-01T01:00:00.000Z',
-            datetime: '2021-01-01T00:00:00.000Z',
+            start_datetime: '2020-01-01T00:00:00.000Z',
+            end_datetime: '2020-01-01T01:00:00.000Z',
+            datetime: '2020-01-01T00:00:00.000Z',
           },
         };
 

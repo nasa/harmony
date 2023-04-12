@@ -1,6 +1,6 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import { CmrRelatedUrl, CmrUmmVariable, getVariablesByIds, getAllVariables } from '../../app/util/cmr';
+import { CmrRelatedUrl, CmrUmmVariable, getVariablesByIds, getAllVariables, CmrQuery, queryGranuleUsingMultipartForm } from '../../app/util/cmr';
 
 describe('util/cmr', function () {
   describe('getVariablesByIds', function () {
@@ -39,5 +39,81 @@ describe('util/cmr', function () {
     });
   });
 
+  describe('when issuing a granuleName query with wildcards', function () {
+    it('it handles * at the beginning', async function () {
+      const query: CmrQuery = {
+        concept_id: 'C1233800302-EEDTEST',
+        readable_granule_name: '*oceania_east',
+      };
+      const results = await queryGranuleUsingMultipartForm(query, '');
+      expect(results.hits).to.equal(16);
+
+      const querySingleMatch: CmrQuery = {
+        concept_id: 'C1233800302-EEDTEST',
+        readable_granule_name: '*01_08_7f00ff_oceania_east',
+      };
+      const singleMatchResults = await queryGranuleUsingMultipartForm(querySingleMatch, '');
+      expect(singleMatchResults.hits).to.equal(1);
+    });
+
+    it('it handles * in the middle', async function () {
+      const query: CmrQuery = {
+        concept_id: 'C1233800302-EEDTEST',
+        readable_granule_name: '001_*_east',
+      };
+      const results = await queryGranuleUsingMultipartForm(query, '');
+      expect(results.hits).to.equal(2);
+
+      const querySingleMatch: CmrQuery = {
+        concept_id: 'C1233800302-EEDTEST',
+        readable_granule_name: '001_*_7f00ff_oceania_east',
+      };
+      const singleMatchResults = await queryGranuleUsingMultipartForm(querySingleMatch, '');
+      expect(singleMatchResults.hits).to.equal(1);
+    });
+
+    it('it handles * at the end', async function () {
+      const query: CmrQuery = {
+        concept_id: 'C1233800302-EEDTEST',
+        readable_granule_name: '001_*',
+      };
+      const results = await queryGranuleUsingMultipartForm(query, '');
+      expect(results.hits).to.equal(12);
+
+      const querySingleMatch: CmrQuery = {
+        concept_id: 'C1233800302-EEDTEST',
+        readable_granule_name: '001_08_7f00ff_oceania_eas*',
+      };
+      const singleMatchResults = await queryGranuleUsingMultipartForm(querySingleMatch, '');
+      expect(singleMatchResults.hits).to.equal(1);
+    });
+
+    it('it handles ? at the beginning', async function () {
+      const query: CmrQuery = {
+        concept_id: 'C1233800302-EEDTEST',
+        readable_granule_name: '?01_08_7f00ff_oceania_east',
+      };
+      const results = await queryGranuleUsingMultipartForm(query, '');
+      expect(results.hits).to.equal(1);
+    });
+
+    it('it handles ? in the middle', async function () {
+      const query: CmrQuery = {
+        concept_id: 'C1233800302-EEDTEST',
+        readable_granule_name: '001_08_7f00ff_?ceania_east',
+      };
+      const results = await queryGranuleUsingMultipartForm(query, '');
+      expect(results.hits).to.equal(1);
+    });
+
+    it('it handles ? at the end', async function () {
+      const query: CmrQuery = {
+        concept_id: 'C1233800302-EEDTEST',
+        readable_granule_name: '001_08_7f00ff_oceania_eas?',
+      };
+      const results = await queryGranuleUsingMultipartForm(query, '');
+      expect(results.hits).to.equal(1);
+    });
+  });
 
 });

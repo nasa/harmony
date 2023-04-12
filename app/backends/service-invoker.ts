@@ -1,5 +1,4 @@
 import { RequestHandler, Response } from 'express';
-import { getRequestRoot, getRequestUrl } from '../util/url';
 import * as services from '../models/services/index';
 import { objectStoreForProtocol } from '../util/object-store';
 import { ServiceError } from '../util/errors';
@@ -79,7 +78,7 @@ export default async function serviceInvoker(
     component: `${service.constructor.name}`,
   });
   try {
-    serviceResult = await service.invoke(serviceLogger, getRequestRoot(req), getRequestUrl(req));
+    serviceResult = await service.invoke(req, serviceLogger);
     await translateServiceResult(serviceResult, req.operation.user, res);
   } finally {
     if (serviceResult && serviceResult.onComplete) {
