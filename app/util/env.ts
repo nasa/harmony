@@ -107,13 +107,14 @@ interface HarmonyEnv {
   useLocalstack: boolean;
   workFailerPeriodSec: number;
   workReaperPeriodSec: number;
+  workItemUpdateQueueProcessorPeriodSec: number;
   maxErrorsForJob: number;
   workItemRetryLimit: number;
+  workItemUpdateQueueUrl: string;
   getWorkSampleRatio: number;
   putWorkSampleRatio: number;
   getMetricsSampleRatio: number;
   openTelemetryUrl: string;
-  workFailerBatchSize: number;
   releaseVersion: string;
 }
 

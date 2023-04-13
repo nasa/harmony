@@ -75,12 +75,14 @@ if [ -z "$harmony_namespace" ]; then
   kubectl create namespace harmony
 fi
 
+WORK_ITEM_UPDATE_QUEUE=${WORK_ITEM_UPDATE_QUEUE:-work-item-update-queue}
 STAGING_BUCKET=${STAGING_BUCKET:-local-staging-bucket}
 ARTIFACT_BUCKET=${ARTIFACT_BUCKET:-local-artifact-bucket}
 UPLOAD_BUCKET=${UPLOAD_BUCKET:-local-upload-bucket}
 
-# Creates buckets in localstack
+# Creates qeueue and buckets in localstack
 localstack_startup_script="
+awslocal sqs create-queue --queue-name ${WORK_ITEM_UPDATE_QUEUE} --region us-west-2
 awslocal s3 mb s3://${STAGING_BUCKET} --region us-west-2
 awslocal s3 mb s3://${ARTIFACT_BUCKET} --region us-west-2
 awslocal s3 mb s3://${UPLOAD_BUCKET} --region us-west-2

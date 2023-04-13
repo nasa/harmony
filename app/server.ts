@@ -18,6 +18,7 @@ import logger from './util/log';
 import * as exampleBackend from '../example/http-backend';
 import WorkReaper from './workers/work-reaper';
 import WorkFailer from './workers/work-failer';
+import WorkItemUpdateQueueProcessor from './workers/work-item-update-queue-processor';
 import cmrCollectionReader from './middleware/cmr-collection-reader';
 
 /**
@@ -154,6 +155,7 @@ export function start(config: Record<string, string>): {
   backend: Server;
   workReaper: WorkReaper;
   workFailer: WorkFailer;
+  workItemUpdateQueueProcessor: WorkItemUpdateQueueProcessor;
 } {
 
   // Log unhandled promise rejections and do not crash the node process
@@ -191,7 +193,16 @@ export function start(config: Record<string, string>): {
     workFailer.start();
   }
 
-  return { frontend, backend, workReaper, workFailer };
+  let workItemUpdateQueueProcessor;
+  if (config.startWorkItemUpdateQueueProcessor !== 'false') {
+    const workItemUpdateQueueProcessorConfig = {
+      logger: logger.child({ application: 'work-item-update-queue-processor' }),
+    };
+    workItemUpdateQueueProcessor = new WorkItemUpdateQueueProcessor(workItemUpdateQueueProcessorConfig);
+    workItemUpdateQueueProcessor.start();
+  }
+
+  return { frontend, backend, workReaper, workFailer, workItemUpdateQueueProcessor };
 }
 
 /**
