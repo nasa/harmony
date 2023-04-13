@@ -845,7 +845,6 @@ https://cmr.uat.earthdata.nasa.gov:
           STAGING_PATH: public/sds/trajectory-subsetter
     umm_s:
       - S1242315633-EEDTEST
-      - S1243702422-ORNL_CLOUD
     collections: []
     capabilities:  # The Trajectory Subsetter also supports temporal subsetting
       subsetting:
@@ -902,7 +901,6 @@ https://cmr.uat.earthdata.nasa.gov:
           STAGING_PATH: public/nasa/harmony-gdal-adapter
     umm_s:
       - S1245787332-EEDTEST
-      - S1255775104-ORNL_CLOUD
     collections:
       - id: C1225776654-ASF
       - id: C1207038647-ASF
@@ -947,7 +945,6 @@ https://cmr.uat.earthdata.nasa.gov:
           STAGING_PATH: public/sds/HOSS-geographic
     umm_s:
       - S1240682712-EEDTEST
-      - S1246887053-ORNL_CLOUD
     collections: []
     capabilities:
       subsetting:
