@@ -1,8 +1,11 @@
 import db, { Transaction, batchSize } from './../util/db';
 import _, { ceil, range, sum } from 'lodash';
 import { NextFunction, Response } from 'express';
+// import * as fastq from 'fastq';
+// import type { queueAsPromised } from 'fastq';
 import { v4 as uuid } from 'uuid';
 import { Logger } from 'winston';
+import defaultLogger from '../util/log';
 import { completeJob } from '../util/job';
 import env from '../util/env';
 import { readCatalogItems, StacItemLink } from '../util/stac';
@@ -20,10 +23,13 @@ import WorkItemUpdate from '../models/work-item-update';
 import { handleBatching, outputStacItemUrls, resultItemSizes } from '../util/aggregation-batch';
 import { decrementRunningCount, deleteUserWorkForJob, getNextJobIdForUsernameAndService, getNextUsernameForWork, incrementReadyAndDecrementRunningCounts, incrementReadyCount, incrementRunningAndDecrementReadyCounts } from '../models/user-work';
 import { sanitizeImage } from '../util/string';
+import { SqsQueue } from '../util/sqs-queue';
 
 const MAX_TRY_COUNT = 1;
 const RETRY_DELAY = 1000 * 120;
 const QUERY_CMR_SERVICE_REGEX = /harmonyservices\/query-cmr:.*/;
+
+const queue = new SqsQueue(env.workItemUpdateQueueUrl);
 
 /**
  * Calculate the granule page limit for the current query-cmr work item.
@@ -755,6 +761,40 @@ export async function handleWorkItemUpdate(
   await handleWorkItemUpdateWithJobId(jobID, update, operation, logger);
 }
 
+type WorkItemUpdateQueueItem = {
+  update: WorkItemUpdate,
+  operation: object,
+};
+
+/**
+ * Update a work item with the given status and error message.
+ * @param updateItem - the work item update and the operation
+ */
+// async function updateWorker(updateItem: WorkItemUpdateQueueItem): Promise<void> {
+//   const { update, operation } = updateItem;
+//   defaultLogger.log('info', `Processing work item update from queue for work item ${update.workItemID} and status ${update.status}`);
+//   await handleWorkItemUpdate(update, operation, defaultLogger);
+// }
+
+/**
+ * Update a work item with the given status and error message.
+ */
+export async function processQueue(): Promise<void> {
+  const msg = await queue.getMessage();
+  // defaultLogger.log('info', `QUEUE MSG: ${msg.body}`);
+  if (msg) {
+    const updateItem: WorkItemUpdateQueueItem = JSON.parse(msg.body);
+    const { update, operation } = updateItem;
+    defaultLogger.log('info', `Processing work item update from queue for work item ${update.workItemID} and status ${update.status}`);
+    await handleWorkItemUpdate(update, operation, defaultLogger);
+    await queue.deleteMessage(msg.receipt);
+  }
+}
+
+// const queue: queueAsPromised<WorkItemUpdateQueueItem> = fastq.promise(updateWorker, 1);
+
+
+
 /**
  * Update a work item from a service response. This function stores the update without further
  * processing and then responds quickly. Processing the update is handled asynchronously
@@ -793,7 +833,17 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
     // like 409 errors.
 
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    handleWorkItemUpdate(update, operation, workItemLogger);
+    // handleWorkItemUpdate(update, operation, workItemLogger);
+    // queue.push({ update, operation }).catch((e) => {
+    //   workItemLogger.error(e);
+    // });
+    // await handleWorkItemUpdate(update, operation, workItemLogger);
+    workItemLogger.info(`Sending work item update ${JSON.stringify(update)} to queue`);
+    await queue.sendMessage(JSON.stringify({ update, operation })).catch((e) => {
+      workItemLogger.error(e);
+    });
+
+    // await processQueue();
   }
 
   // Return a success with no body
