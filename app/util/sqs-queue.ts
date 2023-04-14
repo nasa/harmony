@@ -40,6 +40,21 @@ export class SqsQueue extends Queue {
     return null;
   }
 
+  async getMessages(num: number): Promise<ReceivedMessage[]> {
+    const response = await this.sqs.receiveMessage({
+      QueueUrl: this.queueUrl,
+      MaxNumberOfMessages: num,
+      WaitTimeSeconds: 20,
+    }).promise();
+    if (response.Messages) {
+      return response.Messages.map((message) => ({
+        receipt: message.ReceiptHandle,
+        body: JSON.parse(message.Body),
+      }));
+    }
+    return [];
+  }
+
   async sendMessage(msg: string): Promise<void> {
     await this.sqs.sendMessage({
       QueueUrl: this.queueUrl,
@@ -51,6 +66,16 @@ export class SqsQueue extends Queue {
     await this.sqs.deleteMessage({
       QueueUrl: this.queueUrl,
       ReceiptHandle: receipt,
+    }).promise();
+  }
+
+  async deleteMessages(receipts: string[]): Promise<void> {
+    await this.sqs.deleteMessageBatch({
+      QueueUrl: this.queueUrl,
+      Entries: receipts.map((receipt, index) => ({
+        Id: index.toString(),
+        ReceiptHandle: receipt,
+      })),
     }).promise();
   }
 }

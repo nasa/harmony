@@ -597,7 +597,7 @@ export async function handleWorkItemUpdateWithJobId(
   try {
     await db.transaction(async (tx) => {
       const job = await Job.byJobID(tx, jobID, false, true);
-      // lock the work item to we can update it - need to do this after locking jobs table above
+      // lock the work item so we can update it - need to do this after locking jobs table above
       // to avoid deadlocks
       const workItem = await getWorkItemById(tx, workItemID, true);
       const thisStep = await getWorkflowStepByJobIdStepIndex(tx, workItem.jobID, workItem.workflowStepIndex);
@@ -766,6 +766,71 @@ type WorkItemUpdateQueueItem = {
   operation: object,
 };
 
+/**
+ * Updates the batch of work items. It is assumed that all the work items belong
+ * to the same job.
+ * @param jobID - ID of the job that the work items belong to
+ * @param updates - List of work item updates
+ * @param logger - Logger to use
+ */
+async function handleBatchWorkItemUpdatesWithJobId(jobID: string, updates: WorkItemUpdateQueueItem[], logger: Logger): Promise<void> {
+  // process each job's updates
+  logger.info(`Processing ${updates.length} work item updates for job ${jobID}`);
+  await Promise.all(updates.map(async (item) => {
+    const { update, operation } = item;
+    await handleWorkItemUpdateWithJobId(jobID, update, operation, logger);
+  }));
+
+}
+
+/**
+ * This function processes a batch of work item updates.
+ * It first creates a map of jobIDs to updates, then it processes each job's updates.
+ * It calls the function handleBatchWorkItemUpdatesWithJobId to handle the updates.
+ * @param updates - List of work item updates read from the queue
+ * @param logger - Logger to use
+ */
+export async function handleBatchWorkItemUpdates(
+  updates: WorkItemUpdateQueueItem[],
+  logger: Logger): Promise<void> {
+  logger.info(`Processing ${updates.length} work item updates`);
+  // create a map of jobIDs to updates
+  const jobUpdates: Record<string, WorkItemUpdateQueueItem[]> =
+      await updates.reduce(async (acc, item) => {
+        const { workItemID } = item.update;
+        const jobID = await getJobIdForWorkItem(workItemID);
+        logger.info(`Processing work item update for job ${jobID}`);
+        const accValue = await acc;
+        if (accValue[jobID]) {
+          accValue[jobID].push(item);
+        } else {
+          accValue[jobID] = [item];
+        }
+        return accValue;
+      }, {});
+  // process each job's updates
+  for (const jobID in jobUpdates) {
+    logger.info(`Processing ${jobUpdates[jobID].length} work item updates for job ${jobID}`);
+    await handleBatchWorkItemUpdatesWithJobId(jobID, jobUpdates[jobID], logger);
+  }
+  // await Promise.all(Object.keys(jobUpdates).map(async (jobID) => {
+  //   const updatesForJob = jobUpdates[jobID];
+  //   return handleBatchWorkItemUpdatesWithJobId(jobID, updatesForJob, logger);
+  // }));
+}
+
+/**
+ * This function processes a batch of work item updates from the queue.
+ */
+export async function batchProcessQueue(): Promise<void> {
+  const messages = await queue.getMessages(10);
+  if (messages.length > 0) {
+    defaultLogger.log('info', `Processing ${messages.length} work item updates from queue`);
+    const updates: WorkItemUpdateQueueItem[] = messages.map((msg) => JSON.parse(msg.body));
+    await handleBatchWorkItemUpdates(updates, defaultLogger);
+    await queue.deleteMessages(messages.map((msg) => msg.receipt));
+  }
+}
 
 /**
  * Update a work item with the given status and error message.
