@@ -766,22 +766,12 @@ type WorkItemUpdateQueueItem = {
   operation: object,
 };
 
-/**
- * Update a work item with the given status and error message.
- * @param updateItem - the work item update and the operation
- */
-// async function updateWorker(updateItem: WorkItemUpdateQueueItem): Promise<void> {
-//   const { update, operation } = updateItem;
-//   defaultLogger.log('info', `Processing work item update from queue for work item ${update.workItemID} and status ${update.status}`);
-//   await handleWorkItemUpdate(update, operation, defaultLogger);
-// }
 
 /**
  * Update a work item with the given status and error message.
  */
 export async function processQueue(): Promise<void> {
   const msg = await queue.getMessage();
-  // defaultLogger.log('info', `QUEUE MSG: ${msg.body}`);
   if (msg) {
     const updateItem: WorkItemUpdateQueueItem = JSON.parse(msg.body);
     const { update, operation } = updateItem;
@@ -790,10 +780,6 @@ export async function processQueue(): Promise<void> {
     await queue.deleteMessage(msg.receipt);
   }
 }
-
-// const queue: queueAsPromised<WorkItemUpdateQueueItem> = fastq.promise(updateWorker, 1);
-
-
 
 /**
  * Update a work item from a service response. This function stores the update without further
