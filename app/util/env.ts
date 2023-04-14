@@ -115,6 +115,7 @@ interface HarmonyEnv {
   putWorkSampleRatio: number;
   getMetricsSampleRatio: number;
   openTelemetryUrl: string;
+  workFailerBatchSize: number;
   releaseVersion: string;
 }
 
