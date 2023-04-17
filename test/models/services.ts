@@ -71,6 +71,17 @@ describe('services.chooseServiceConfig and services.buildService', function () {
             },
           },
         },
+        {
+          name: 'temporal-netcdf-service',
+          type: { name: 'turbo' },
+          collections: [{ id: collectionId }],
+          capabilities: {
+            output_formats: ['application/x-netcdf4'],
+            subsetting: {
+              temporal: true,
+            },
+          },
+        },
       ];
     });
 
@@ -148,7 +159,36 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
       it('indicates that it could not clip based on the spatial extent', function () {
         const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
-        expect(serviceConfig.message).to.equal('Data in output files may extend outside the spatial bounds you requested.');
+        expect(serviceConfig.message).to.equal('Data in output files may extend outside the spatial and temporal bounds you requested.');
+      });
+    });
+
+    describe('and the request needs temporal subsetting and netcdf-4 format', function () {
+      beforeEach(function () {
+        this.operation.temporal = ['2022-01-05T01:00:00Z', '2023-01-05T01:00:00Z'];
+        this.operation.outputFormat = 'application/x-netcdf4';
+      });
+
+      it('chooses the service that supports temporal subsetting and netcdf-4 format', function () {
+        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        expect(serviceConfig.name).to.equal('temporal-netcdf-service');
+      });
+    });
+
+    describe('and the request needs temporal subsetting and tiff format', function () {
+      beforeEach(function () {
+        this.operation.temporal = ['2022-01-05T01:00:00Z', '2023-01-05T01:00:00Z'];
+        this.operation.outputFormat = 'image/tiff';
+      });
+
+      it('chooses the first service that supports tiff format, but not temporal subsetting since no service can perform both', function () {
+        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        expect(serviceConfig.name).to.equal('tiff-png-bbox-service');
+      });
+
+      it('indicates that it could not clip based on the spatial extent', function () {
+        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        expect(serviceConfig.message).to.equal('Data in output files may extend outside the spatial and temporal bounds you requested.');
       });
     });
 
@@ -174,20 +214,21 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       });
     });
 
-    describe('and the request needs both shapefile subsetting and reprojection, but no service supports that combination', function () {
+    describe('and the request needs temporal, shapefile subsetting and reprojection, but no service supports that combination', function () {
       beforeEach(function () {
         this.operation.geojson = { pretend: 'geojson' };
+        this.operation.temporal = ['2022-01-05T01:00:00Z', '2023-01-05T01:00:00Z'];
         this.operation.crs = 'EPSG:4326';
       });
 
-      it('returns the service that supports reprojection, but not shapefile subsetting', function () {
+      it('returns the service that supports reprojection, but not temporal or shapefile subsetting', function () {
         const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
         expect(serviceConfig.name).to.equal('tiff-png-reprojection-service');
       });
 
-      it('indicates that it could not clip based on the spatial extent', function () {
+      it('indicates that it could not clip based on the spatial or temporal extents', function () {
         const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
-        expect(serviceConfig.message).to.equal('Data in output files may extend outside the spatial bounds you requested.');
+        expect(serviceConfig.message).to.equal('Data in output files may extend outside the spatial and temporal bounds you requested.');
       });
     });
 
