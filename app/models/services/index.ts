@@ -701,7 +701,7 @@ const requiredFilterFns = [
   filterOutputFormatMatches,
 ];
 
-const bestEffortMessage = 'Data in output files may extend outside the spatial bounds you requested.';
+const bestEffortMessage = 'Data in output files may extend outside the spatial and temporal bounds you requested.';
 
 /**
  * Returns true if the collectionId has available backends
