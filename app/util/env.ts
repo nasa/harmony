@@ -112,6 +112,7 @@ interface HarmonyEnv {
   workItemRetryLimit: number;
   workItemUpdateQueueUrl: string;
   largeWorkItemUpdateQueueUrl: string;
+  largeWorkItemUpdateQueueMaxBatchSize: number;
   getWorkSampleRatio: number;
   putWorkSampleRatio: number;
   getMetricsSampleRatio: number;
