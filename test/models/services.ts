@@ -71,6 +71,17 @@ describe('services.chooseServiceConfig and services.buildService', function () {
             },
           },
         },
+        {
+          name: 'temporal-netcdf-service',
+          type: { name: 'turbo' },
+          collections: [{ id: collectionId }],
+          capabilities: {
+            output_formats: ['application/x-netcdf4'],
+            subsetting: {
+              temporal: true,
+            },
+          },
+        },
       ];
     });
 
@@ -148,7 +159,36 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
       it('indicates that it could not clip based on the spatial extent', function () {
         const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
-        expect(serviceConfig.message).to.equal('Data in output files may extend outside the spatial bounds you requested.');
+        expect(serviceConfig.message).to.equal('Data in output files may extend outside the spatial and temporal bounds you requested.');
+      });
+    });
+
+    describe('and the request needs temporal subsetting and netcdf-4 format', function () {
+      beforeEach(function () {
+        this.operation.temporal = ['2022-01-05T01:00:00Z', '2023-01-05T01:00:00Z'];
+        this.operation.outputFormat = 'application/x-netcdf4';
+      });
+
+      it('chooses the service that supports temporal subsetting and netcdf-4 format', function () {
+        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        expect(serviceConfig.name).to.equal('temporal-netcdf-service');
+      });
+    });
+
+    describe('and the request needs temporal subsetting and tiff format', function () {
+      beforeEach(function () {
+        this.operation.temporal = ['2022-01-05T01:00:00Z', '2023-01-05T01:00:00Z'];
+        this.operation.outputFormat = 'image/tiff';
+      });
+
+      it('chooses the first service that supports tiff format, but not temporal subsetting since no service can perform both', function () {
+        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        expect(serviceConfig.name).to.equal('tiff-png-bbox-service');
+      });
+
+      it('indicates that it could not clip based on the spatial extent', function () {
+        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        expect(serviceConfig.message).to.equal('Data in output files may extend outside the spatial and temporal bounds you requested.');
       });
     });
 
@@ -174,20 +214,21 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       });
     });
 
-    describe('and the request needs both shapefile subsetting and reprojection, but no service supports that combination', function () {
+    describe('and the request needs temporal, shapefile subsetting and reprojection, but no service supports that combination', function () {
       beforeEach(function () {
         this.operation.geojson = { pretend: 'geojson' };
+        this.operation.temporal = ['2022-01-05T01:00:00Z', '2023-01-05T01:00:00Z'];
         this.operation.crs = 'EPSG:4326';
       });
 
-      it('returns the service that supports reprojection, but not shapefile subsetting', function () {
+      it('returns the service that supports reprojection, but not temporal or shapefile subsetting', function () {
         const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
         expect(serviceConfig.name).to.equal('tiff-png-reprojection-service');
       });
 
-      it('indicates that it could not clip based on the spatial extent', function () {
+      it('indicates that it could not clip based on the spatial or temporal extents', function () {
         const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
-        expect(serviceConfig.message).to.equal('Data in output files may extend outside the spatial bounds you requested.');
+        expect(serviceConfig.message).to.equal('Data in output files may extend outside the spatial and temporal bounds you requested.');
       });
     });
 
@@ -740,7 +781,6 @@ describe('Services by association', function () {
 });
 
 describe('createWorkflowSteps', function () {
-
   const collectionId = 'C123-TEST';
   const shortName = 'harmony_example';
   const versionId = '1';
@@ -760,6 +800,10 @@ describe('createWorkflowSteps', function () {
     },
     steps: [{
       image: 'query cmr',
+    }, {
+      image: 'temporal subsetter',
+      operations: ['temporalSubset'],
+      conditional: { exists: ['temporalSubset'] },
     }, {
       image: 'var and bbox subsetter',
       operations: ['variableSubset', 'spatialSubset', 'dimensionSubset'],
@@ -829,6 +873,40 @@ describe('createWorkflowSteps', function () {
     });
   });
 
+  describe('when an operation has temporal and bbox subsetting', function () {
+    const temporal_and_bbox_operation = _.cloneDeep(operation);
+    temporal_and_bbox_operation.boundingRectangle = [1, 2, 3, 4];
+    temporal_and_bbox_operation.temporal = { start: '2022-01-03T02:04:00Z', end: '2022-01-03T02:04:00Z' };
+    const service = new StubService(config, {}, temporal_and_bbox_operation);
+    const steps = service.createWorkflowSteps();
+
+    it('creates three workflow steps', function () {
+      expect(steps.length).to.equal(3);
+    });
+
+    it('creates a first workflow step for query cmr', function () {
+      expect(steps[0].serviceID).to.equal('query cmr');
+    });
+
+    it('creates a second workflow step for the temporal subsetter', function () {
+      expect(steps[1].serviceID).to.equal('temporal subsetter');
+    });
+
+    it('creates a third and final workflow step for the var and bbox subsetter', function () {
+      expect(steps[2].serviceID).to.equal('var and bbox subsetter');
+    });
+
+    it('uses the artifact bucket as the staging location for the first step', function () {
+      const { stagingLocation } = JSON.parse(steps[0].operation);
+      expect(stagingLocation).to.include('s3://local-artifact-bucket/public/shapefile-tiff-netcdf-service/');
+    });
+
+    it('uses the staging bucket as the staging location for the last step', function () {
+      const { stagingLocation } = JSON.parse(steps[2].operation);
+      expect(stagingLocation).to.include('s3://local-staging-bucket/public/');
+    });
+  });
+
   describe('when an operation has both bbox and shapefile subsetting', function () {
     const both_operation = _.cloneDeep(operation);
     both_operation.boundingRectangle = [1, 2, 3, 4];
@@ -868,7 +946,7 @@ describe('createWorkflowSteps', function () {
     });
   });
 
-  describe('when operation with destinationUrl and optional step', function () {
+  describe('when an operation has a destinationUrl and optional step', function () {
     const destUrlOperation = _.cloneDeep(operation);
     destUrlOperation.boundingRectangle = [1, 2, 3, 4];
     destUrlOperation.destinationUrl = 's3://dummy/p1';
@@ -898,7 +976,7 @@ describe('createWorkflowSteps', function () {
     });
   });
 
-  describe('when operation with destinationUrl', function () {
+  describe('when an operation has a destinationUrl', function () {
     const destUrlOperation = _.cloneDeep(operation);
     destUrlOperation.boundingRectangle = [1, 2, 3, 4];
     destUrlOperation.geojson = 'interesting shape';

@@ -11,7 +11,7 @@ const expectedOutput = parseSchemaFile(`valid-operation-v${versions[0]}.json`);
 // The fields that all operations should contain
 const baseFields = new Set([
   'client', 'callback', 'stagingLocation', 'sources', 'format', 'user', 'accessToken',
-  'subset', 'isSynchronous', 'requestId', 'temporal', 'version', 'concatenate',
+  'subset', 'isSynchronous', 'requestId', 'version', 'concatenate',
 ]);
 
 describe('DataOperation', () => {
@@ -96,6 +96,10 @@ describe('DataOperation', () => {
           expect(JSON.parse(serializedOperation).sources[0].variables).to.be.undefined;
         });
 
+        it('does not include temporal for the operation', () => {
+          expect(JSON.parse(serializedOperation).temporal).to.be.undefined;
+        });
+
         it('includes all of the base fields for the operation', () => {
           expect(new Set(Object.keys(JSON.parse(serializedOperation)))).to.eql(baseFields);
         });
@@ -118,6 +122,10 @@ describe('DataOperation', () => {
           expect(JSON.parse(serializedOperation).sources[0].variables).to.be.undefined;
         });
 
+        it('does not include temporal for the operation', () => {
+          expect(JSON.parse(serializedOperation).temporal).to.be.undefined;
+        });
+
         it('includes all of the base fields for the operation', () => {
           expect(new Set(Object.keys(JSON.parse(serializedOperation)))).to.eql(baseFields);
         });
@@ -138,6 +146,10 @@ describe('DataOperation', () => {
 
         it('includes variables for the operation', () => {
           expect(JSON.parse(serializedOperation).sources[0].variables).to.eql(expectedOutput.sources[0].variables);
+        });
+
+        it('does not include temporal for the operation', () => {
+          expect(JSON.parse(serializedOperation).temporal).to.be.undefined;
         });
 
         it('includes all of the base fields for the operation', () => {
@@ -166,8 +178,12 @@ describe('DataOperation', () => {
           expect(JSON.parse(serializedOperation).sources[0].variables).to.be.undefined;
         });
 
-        it('includes all of the base fields for the operation and the subset field', () => {
-          expect(new Set(Object.keys(JSON.parse(serializedOperation)))).to.eql(new Set(baseFields.add('subset')) );
+        it('does not include temporal for the operation', () => {
+          expect(JSON.parse(serializedOperation).temporal).to.be.undefined;
+        });
+
+        it('includes all of the base fields for the operation', () => {
+          expect(new Set(Object.keys(JSON.parse(serializedOperation)))).to.eql(baseFields);
         });
       });
 
@@ -192,8 +208,38 @@ describe('DataOperation', () => {
           expect(JSON.parse(serializedOperation).sources[0].variables).to.be.undefined;
         });
 
-        it('includes all of the base fields for the operation and the subset field', () => {
-          expect(new Set(Object.keys(JSON.parse(serializedOperation)))).to.eql(new Set(baseFields.add('subset')) );
+        it('does not include temporal for the operation', () => {
+          expect(JSON.parse(serializedOperation).temporal).to.be.undefined;
+        });
+
+        it('includes all of the base fields for the operation', () => {
+          expect(new Set(Object.keys(JSON.parse(serializedOperation)))).to.eql(baseFields);
+        });
+      });
+
+      describe('temporalSubset', () => {
+        const serializedOperation = validOperation.serialize(CURRENT_SCHEMA_VERSION, ['temporalSubset']);
+
+        it('includes the temporal for the operation', () => {
+          expect(JSON.parse(serializedOperation).temporal).to.eql(expectedOutput.temporal);
+        });
+
+        it('does not include reprojection fields for the operation', () => {
+          const parsedOperation = JSON.parse(serializedOperation);
+          expect(parsedOperation.format.crs).to.be.undefined;
+          expect(parsedOperation.format.srs).to.be.undefined;
+        });
+
+        it('does not include reformatting fields for the operation', () => {
+          expect(JSON.parse(serializedOperation).format.mime).to.be.undefined;
+        });
+
+        it('does not include variables for the operation', () => {
+          expect(JSON.parse(serializedOperation).sources[0].variables).to.be.undefined;
+        });
+
+        it('includes all of the base fields for the operation and the temporal field', () => {
+          expect(new Set(Object.keys(JSON.parse(serializedOperation)))).to.eql(new Set(baseFields).add('temporal'));
         });
       });
 
@@ -218,14 +264,19 @@ describe('DataOperation', () => {
           expect(JSON.parse(serializedOperation).sources[0].variables).to.eql(expectedOutput.sources[0].variables);
         });
 
-        it('includes all of the base fields for the operation and the subset field', () => {
-          expect(new Set(Object.keys(JSON.parse(serializedOperation)))).to.eql(new Set(baseFields.add('subset')) );
+        it('does not include temporal for the operation', () => {
+          expect(JSON.parse(serializedOperation).temporal).to.be.undefined;
+        });
+
+        it('includes all of the base fields for the operation', () => {
+          expect(new Set(Object.keys(JSON.parse(serializedOperation)))).to.eql(baseFields);
         });
       });
 
       describe('all fields requested', () => {
         const serializedOperation = validOperation.serialize(
-          CURRENT_SCHEMA_VERSION, ['spatialSubset', 'variableSubset', 'reformat', 'reproject', 'shapefileSubset', 'dimensionSubset'],
+          CURRENT_SCHEMA_VERSION,
+          ['spatialSubset', 'variableSubset', 'reformat', 'reproject', 'shapefileSubset', 'dimensionSubset', 'temporalSubset'],
         );
 
         it('includes all of the fields for the operation', () => {
