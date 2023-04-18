@@ -24,12 +24,21 @@ import { handleBatching, outputStacItemUrls, resultItemSizes } from '../util/agg
 import { decrementRunningCount, deleteUserWorkForJob, getNextJobIdForUsernameAndService, getNextUsernameForWork, incrementReadyAndDecrementRunningCounts, incrementReadyCount, incrementRunningAndDecrementReadyCounts } from '../models/user-work';
 import { sanitizeImage } from '../util/string';
 import { SqsQueue } from '../util/sqs-queue';
+import { WorkItemUpdateQueueType } from '../util/queue';
+import { MemoryQueue } from '../../test/helpers/memory-queue';
 
 const MAX_TRY_COUNT = 1;
 const RETRY_DELAY = 1000 * 120;
 const QUERY_CMR_SERVICE_REGEX = /harmonyservices\/query-cmr:.*/;
 
-const queue = new SqsQueue(env.workItemUpdateQueueUrl);
+const queues = {};
+if (typeof global.it === 'function') {
+  // use an in-memory queue for testing
+  queues[WorkItemUpdateQueueType.MEMORY] = new MemoryQueue();
+} else {
+  queues[WorkItemUpdateQueueType.SMALL_ITEM_UPDATE] = new SqsQueue(env.workItemUpdateQueueUrl);
+  queues[WorkItemUpdateQueueType.LARGE_ITEM_UPDATE] = new SqsQueue(env.largeWorkItemUpdateQueueUrl);
+}
 
 /**
  * Calculate the granule page limit for the current query-cmr work item.
@@ -822,7 +831,8 @@ export async function handleBatchWorkItemUpdates(
 /**
  * This function processes a batch of work item updates from the queue.
  */
-export async function batchProcessQueue(): Promise<void> {
+export async function batchProcessQueue(queueType: WorkItemUpdateQueueType): Promise<void> {
+  const queue = queues[queueType];
   const messages = await queue.getMessages(10);
   if (messages.length > 0) {
     defaultLogger.log('info', `Processing ${messages.length} work item updates from queue`);
@@ -835,16 +845,17 @@ export async function batchProcessQueue(): Promise<void> {
 /**
  * Update a work item with the given status and error message.
  */
-export async function processQueue(): Promise<void> {
-  const msg = await queue.getMessage();
-  if (msg) {
-    const updateItem: WorkItemUpdateQueueItem = JSON.parse(msg.body);
-    const { update, operation } = updateItem;
-    defaultLogger.log('info', `Processing work item update from queue for work item ${update.workItemID} and status ${update.status}`);
-    await handleWorkItemUpdate(update, operation, defaultLogger);
-    await queue.deleteMessage(msg.receipt);
-  }
-}
+// export async function processQueue(queueUrl: string): Promise<void> {
+//   const queue = queues[queueUrl];
+//   const msg = await queue.getMessage();
+//   if (msg) {
+//     const updateItem: WorkItemUpdateQueueItem = JSON.parse(msg.body);
+//     const { update, operation } = updateItem;
+//     defaultLogger.log('info', `Processing work item update from queue for work item ${update.workItemID} and status ${update.status}`);
+//     await handleWorkItemUpdate(update, operation, defaultLogger);
+//     await queue.deleteMessage(msg.receipt);
+//   }
+// }
 
 /**
  * Update a work item from a service response. This function stores the update without further
@@ -873,8 +884,13 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
   };
   const workItemLogger = req.context.logger.child({ workItemId: update.workItemID });
   if (typeof global.it === 'function') {
-    // tests break if we don't await this
-    await handleWorkItemUpdate(update, operation, workItemLogger);
+    // if we are running in a test, handle the update synchronously
+    const queue = queues[WorkItemUpdateQueueType.MEMORY];
+    await queue.sendMessage(JSON.stringify({ update, operation })).catch((e) => {
+      workItemLogger.error(e);
+    });
+    await batchProcessQueue(WorkItemUpdateQueueType.MEMORY);
+    // await handleWorkItemUpdate(update, operation, workItemLogger);
   } else {
     // asynchronously handle the update so that the service is not waiting for a response
     // during a potentially long update. If the asynchronous update fails the work-item will
@@ -889,12 +905,15 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
     //   workItemLogger.error(e);
     // });
     // await handleWorkItemUpdate(update, operation, workItemLogger);
-    workItemLogger.info(`Sending work item update ${JSON.stringify(update)} to queue`);
+    workItemLogger.debug(`Sending work item update ${JSON.stringify(update)} to queue`);
+    let queueType = WorkItemUpdateQueueType.SMALL_ITEM_UPDATE;
+    if (results.length > 1) {
+      queueType = WorkItemUpdateQueueType.LARGE_ITEM_UPDATE;
+    }
+    const queue = queues[queueType];
     await queue.sendMessage(JSON.stringify({ update, operation })).catch((e) => {
       workItemLogger.error(e);
     });
-
-    // await processQueue();
   }
 
   // Return a success with no body

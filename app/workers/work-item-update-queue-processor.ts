@@ -3,9 +3,11 @@ import { batchProcessQueue } from '../backends/workflow-orchestration';
 import env from '../util/env';
 import { Worker } from './worker';
 import sleep from '../util/sleep';
+import { WorkItemUpdateQueueType } from '../util/queue';
 
 export interface WorkItemUpdateQueueProcessorConfig {
   logger: Logger;
+  queueType: WorkItemUpdateQueueType;
 }
 
 export default class WorkItemUpdateQueueProcessor implements Worker {
@@ -13,8 +15,11 @@ export default class WorkItemUpdateQueueProcessor implements Worker {
 
   logger: Logger;
 
+  queueType: WorkItemUpdateQueueType;
+
   constructor(config: WorkItemUpdateQueueProcessorConfig) {
     this.logger = config.logger;
+    this.queueType = config.queueType;
   }
 
   async start(): Promise<void> {
@@ -26,7 +31,7 @@ export default class WorkItemUpdateQueueProcessor implements Worker {
       }
       this.logger.info('Starting work item update queue processor');
       try {
-        await batchProcessQueue();
+        await batchProcessQueue(this.queueType);
       } catch (e) {
         this.logger.error('Work item update queue processor failed to process work item update queue');
         this.logger.error(e);

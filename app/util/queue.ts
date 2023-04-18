@@ -1,9 +1,13 @@
-
 export interface ReceivedMessage {
   receipt: string;
   body: string;
 }
 
+export enum WorkItemUpdateQueueType {
+  SMALL_ITEM_UPDATE = 'small-work-item-update',
+  LARGE_ITEM_UPDATE = 'large-work-item-update',
+  MEMORY = 'memory',
+}
 
 export abstract class Queue {
   abstract getMessage(): Promise<ReceivedMessage>;

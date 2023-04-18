@@ -145,6 +145,9 @@ UPLOAD_BUCKET=local-upload-bucket
 # SQS queue used to process work item updates
 WORK_ITEM_UPDATE_QUEUE_URL=http://localhost:4566/queue/work-item-update-queue
 
+# SQS queue used to process work item updates
+LARGE_WORK_ITEM_UPDATE_QUEUE_URL=http://localhost:4566/queue/large-work-item-update-queue
+
 # An IAM role that allows access to a bucket and prefix where outputs for asynchronous
 # requests are stored by backend services.
 SAME_REGION_ACCESS_ROLE=same-region-access-role
