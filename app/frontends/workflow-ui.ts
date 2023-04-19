@@ -18,6 +18,7 @@ import { objectStoreForProtocol } from '../util/object-store';
 import { handleWorkItemUpdate } from '../backends/workflow-orchestration';
 import { Logger } from 'winston';
 import { serviceNames } from '../models/services';
+import { getEdlGroupInformation } from '../util/edl-api';
 
 /**
  * Maps job status to display class.
@@ -36,7 +37,7 @@ const statusClass = {
 
 /**
  * Defines values that have been parsed and transformed
- * from the query string of a GET request for jobs or work item(s). 
+ * from the query string of a GET request for jobs or work item(s).
  */
 interface TableQuery {
   sortGranules: string,
@@ -356,7 +357,8 @@ export async function getJobLinks(
  * @param requestUser - the user making the request
  * @returns an object with rendering functions
  */
-function workItemRenderingFunctions(job: Job, isAdmin: boolean, requestUser: string): object {
+function workItemRenderingFunctions(job: Job, isAdmin: boolean, isLogViewer: boolean, requestUser: string, logger: Logger): object {
+  logger.warn(`isLogViewer is set to ${isLogViewer}`);
   const badgeClasses = {};
   badgeClasses[WorkItemStatus.READY] = 'primary';
   badgeClasses[WorkItemStatus.CANCELED] = 'secondary';
@@ -369,7 +371,7 @@ function workItemRenderingFunctions(job: Job, isAdmin: boolean, requestUser: str
     workflowItemCreatedAt(): string { return this.createdAt.getTime(); },
     workflowItemUpdatedAt(): string { return this.updatedAt.getTime(); },
     workflowItemLogsButton(): string {
-      if (!isAdmin) return '';
+      if (!isAdmin && !isLogViewer) return '';
       let logsLinks = '';
       const isComplete = [WorkItemStatus.FAILED, WorkItemStatus.SUCCESSFUL].indexOf(this.status) > -1;
       const isLogAvailable = (isComplete || this.retryCount > 0) && !this.serviceID.includes('query-cmr');
@@ -440,7 +442,10 @@ export async function getWorkItemsTable(
   const { jobID } = req.params;
   const { checkJobStatus } = req.query;
   try {
-    const isAdmin = req.context.isAdminAccess || await belongsToGroup(req.user, env.adminGroupId, req.accessToken);
+    const { isAdmin, isLogViewer } = await getEdlGroupInformation(req.user, req.accessToken, req.context.logger);
+    const isAdminOrLogViewer = isAdmin || isLogViewer;
+    // const isAdmin = req.context.isAdminAccess || await belongsToGroup(req.user, env.adminGroupId, req.accessToken);
+    // const isLogViewer = isAdmin || await belongsToGroup(req.user, env.logViewerGroupId, req.accessToken);
     const job = await getJobIfAllowed(jobID, req.user, isAdmin, req.accessToken, true);
     if (([JobStatus.SUCCESSFUL, JobStatus.CANCELED, JobStatus.FAILED, JobStatus.COMPLETE_WITH_ERRORS]
       .indexOf(job.status) > -1) && checkJobStatus === 'true') {
@@ -460,12 +465,12 @@ export async function getWorkItemsTable(
     const previousPage = pageLinks.find((l) => l.rel === 'prev');
     setPagingHeaders(res, pagination);
     res.render('workflow-ui/job/work-items-table', {
-      isAdmin,
+      isAdminOrLogViewer,
       canShowRetryColumn: job.belongsToOrIsAdmin(req.user, isAdmin),
       job,
       statusClass: statusClass[job.status],
       workItems,
-      ...workItemRenderingFunctions(job, isAdmin, req.user),
+      ...workItemRenderingFunctions(job, isAdmin, isLogViewer, req.user, req.context.logger),
       links: [
         { ...firstPage, linkTitle: 'first' },
         { ...previousPage, linkTitle: 'previous' },
@@ -498,7 +503,9 @@ export async function getWorkItemTableRow(
 ): Promise<void> {
   const { jobID, id } = req.params;
   try {
-    const isAdmin = req.context.isAdminAccess || await belongsToGroup(req.user, env.adminGroupId, req.accessToken);
+    const { isAdmin, isLogViewer } = await getEdlGroupInformation(req.user, req.accessToken, req.context.logger);
+    // const isAdmin = req.context.isAdminAccess || await belongsToGroup(req.user, env.adminGroupId, req.accessToken);
+    // const isLogViewer = isAdmin || await belongsToGroup(req.user, env.logViewerGroupId, req.accessToken);
     const job = await getJobIfAllowed(jobID, req.user, isAdmin, req.accessToken, true);
     // even though we only want one row/item we should still respect the current user's table filters
     const requestQuery = keysToLowerCase(req.query);
@@ -513,7 +520,7 @@ export async function getWorkItemTableRow(
       isAdmin,
       canShowRetryColumn: job.belongsToOrIsAdmin(req.user, isAdmin),
       ...workItems[0],
-      ...workItemRenderingFunctions(job, isAdmin, req.user),
+      ...workItemRenderingFunctions(job, isAdmin, isLogViewer, req.user, req.context.logger),
     });
   } catch (e) {
     req.context.logger.error(e);

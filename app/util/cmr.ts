@@ -775,6 +775,7 @@ export async function belongsToGroup(
 ): Promise<boolean> {
   const path = `/access-control/groups/${groupId}/members`;
   const response = await cmrGetBase(path, null, token, { 'X-Harmony-User': username });
+  console.log(`RESPONSE data is ${JSON.stringify(response.data)}`);
   return response.status === 200 && (response.data as string[]).indexOf(username) !== -1;
 }
 

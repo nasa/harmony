@@ -3,9 +3,9 @@
   <td>{{workflowItemStep}}</td>
   <td>{{id}}</td>
   <td><span class="badge bg-{{workflowItemBadge}}">{{status}}</span></td>
-  {{#isAdmin}}
+  {{#isAdminOrLogViewer}}
   <td>{{{workflowItemLogsButton}}}</td>
-  {{/isAdmin}}
+  {{/isAdminOrLogViewer}}
   {{#canShowRetryColumn}}
   <td>{{{workflowItemRetryButton}}}</td>
   {{/canShowRetryColumn}}

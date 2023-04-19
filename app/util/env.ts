@@ -84,6 +84,7 @@ interface HarmonyEnv {
   harmonyClientId: string;
   localstackHost: string;
   logLevel: string;
+  logViewerGroupId: string;
   maxGranuleLimit: number;
   maxPageSize: number;
   maxBatchInputs: number;
@@ -93,7 +94,9 @@ interface HarmonyEnv {
   maxPostFileSize: number;
   maxSynchronousGranules: number;
   nodeEnv: string;
+  oauthClientId: string;
   oauthHost: string;
+  oauthPassword: string;
   oauthUid: string;
   objectStoreType: string;
   previewThreshold: number;
