@@ -1,5 +1,6 @@
-import { Queue, ReceivedMessage } from './queue';
 import { v4 as uuid } from 'uuid';
+import { Queue, ReceivedMessage, WorkItemUpdateQueueType } from '../../app/util/queue/queue';
+import { batchProcessQueue } from '../../app/backends/workflow-orchestration';
 
 interface StoredMessage extends ReceivedMessage {
   body: string;
@@ -37,6 +38,7 @@ export class MemoryQueue extends Queue {
 
   async sendMessage(msg: string): Promise<void> {
     this.messages.push({ receipt: '', body: msg, isVisible: true });
+    await batchProcessQueue(WorkItemUpdateQueueType.SMALL_ITEM_UPDATE);
   }
 
   async deleteMessage(receipt: string): Promise<void> {

@@ -6,7 +6,6 @@ export interface ReceivedMessage {
 export enum WorkItemUpdateQueueType {
   SMALL_ITEM_UPDATE = 'small-work-item-update',
   LARGE_ITEM_UPDATE = 'large-work-item-update',
-  MEMORY = 'memory',
 }
 
 export abstract class Queue {

@@ -20,10 +20,9 @@ import JobError, { getErrorCountForJob } from '../models/job-error';
 import WorkItemUpdate from '../models/work-item-update';
 import { handleBatching, outputStacItemUrls, resultItemSizes } from '../util/aggregation-batch';
 import { decrementRunningCount, deleteUserWorkForJob, getNextJobIdForUsernameAndService, getNextUsernameForWork, incrementReadyAndDecrementRunningCounts, incrementReadyCount, incrementRunningAndDecrementReadyCounts } from '../models/user-work';
-import { WorkItemUpdateQueueType } from '../util/queue/queue';
-import { SqsQueue } from '../util/queue/sqs-queue';
-import { MemoryQueue } from '../util/queue/memory-queue';
 import { sanitizeImage } from '../util/string';
+import { WorkItemUpdateQueueType } from '../util/queue/queue';
+import { getQueue } from '../util/queue/queue-factory';
 
 const MAX_TRY_COUNT = 1;
 const RETRY_DELAY = 1000 * 120;
@@ -33,15 +32,6 @@ type WorkItemUpdateQueueItem = {
   update: WorkItemUpdate,
   operation: object,
 };
-
-const queues = {};
-if (typeof global.it === 'function') {
-  // use an in-memory queue for testing
-  queues[WorkItemUpdateQueueType.MEMORY] = new MemoryQueue();
-} else {
-  queues[WorkItemUpdateQueueType.SMALL_ITEM_UPDATE] = new SqsQueue(env.workItemUpdateQueueUrl);
-  queues[WorkItemUpdateQueueType.LARGE_ITEM_UPDATE] = new SqsQueue(env.largeWorkItemUpdateQueueUrl);
-}
 
 /**
  * Calculate the granule page limit for the current query-cmr work item.
@@ -825,7 +815,7 @@ export async function handleBatchWorkItemUpdates(
  * @param queueType - Type of the queue to read from
  */
 export async function batchProcessQueue(queueType: WorkItemUpdateQueueType): Promise<void> {
-  const queue = queues[queueType];
+  const queue = getQueue(queueType);
   // use a smaller batch size for the large item update queue otherwise use the SQS max batch size
   // of 10
   const largeItemQueueBatchSize = Math.min(env.largeWorkItemUpdateQueueMaxBatchSize, 10);
@@ -881,7 +871,7 @@ export async function batchProcessQueue(queueType: WorkItemUpdateQueueType): Pro
 /**
  * Update a work item from a service response. This function stores the update without further
  * processing and then responds quickly. Processing the update is handled asynchronously
- * (see `handleWorkItemUpdate`)
+ * (see `batchProcessQueue`)
  *
  * @param req - The request sent by the client
  * @param res - The response to send to the client
@@ -904,29 +894,20 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
     duration,
   };
   const workItemLogger = req.context.logger.child({ workItemId: update.workItemID });
-  if (typeof global.it === 'function') {
-    // if we are running in a test we need to await the results of the update
-    const queue = queues[WorkItemUpdateQueueType.MEMORY];
-    await queue.sendMessage(JSON.stringify({ update, operation })).catch((e) => {
-      workItemLogger.error(e);
-    });
-    await batchProcessQueue(WorkItemUpdateQueueType.MEMORY);
+
+  // we use separate queues for small and large work item updates
+  let queueType = WorkItemUpdateQueueType.SMALL_ITEM_UPDATE;
+  if (results.length > 1) {
+    workItemLogger.debug('Sending work item update to large item queue');
+    queueType = WorkItemUpdateQueueType.LARGE_ITEM_UPDATE;
   } else {
-    // if we are running in production, send the update to the queue and return immediately.
-    // the service can still retry for network or similar failures, but we don't want it to retry
-    // for things like 409 errors.
-
-    workItemLogger.debug(`Sending work item update ${JSON.stringify(update)} to queue`);
-    let queueType = WorkItemUpdateQueueType.SMALL_ITEM_UPDATE;
-    if (results.length > 1) {
-      queueType = WorkItemUpdateQueueType.LARGE_ITEM_UPDATE;
-    }
-    const queue = queues[queueType];
-    await queue.sendMessage(JSON.stringify({ update, operation })).catch((e) => {
-      workItemLogger.error(e);
-    });
+    workItemLogger.debug('Sending work item update to regular queue');
   }
+  const queue = getQueue(queueType);
+  await queue.sendMessage(JSON.stringify({ update, operation })).catch((e) => {
+    workItemLogger.error(e);
+  });
 
-  // Return a success with no body
+  // Return a success status with no body
   res.status(204).send();
 }
