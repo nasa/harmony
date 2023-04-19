@@ -1,8 +1,6 @@
 import db, { Transaction, batchSize } from './../util/db';
 import _, { ceil, range, sum } from 'lodash';
 import { NextFunction, Response } from 'express';
-// import * as fastq from 'fastq';
-// import type { queueAsPromised } from 'fastq';
 import { v4 as uuid } from 'uuid';
 import { Logger } from 'winston';
 import defaultLogger from '../util/log';
@@ -22,10 +20,10 @@ import JobError, { getErrorCountForJob } from '../models/job-error';
 import WorkItemUpdate from '../models/work-item-update';
 import { handleBatching, outputStacItemUrls, resultItemSizes } from '../util/aggregation-batch';
 import { decrementRunningCount, deleteUserWorkForJob, getNextJobIdForUsernameAndService, getNextUsernameForWork, incrementReadyAndDecrementRunningCounts, incrementReadyCount, incrementRunningAndDecrementReadyCounts } from '../models/user-work';
+import { WorkItemUpdateQueueType } from '../util/queue/queue';
+import { SqsQueue } from '../util/queue/sqs-queue';
+import { MemoryQueue } from '../util/queue/memory-queue';
 import { sanitizeImage } from '../util/string';
-import { SqsQueue } from '../util/sqs-queue';
-import { WorkItemUpdateQueueType } from '../util/queue';
-import { MemoryQueue } from '../../test/helpers/memory-queue';
 
 const MAX_TRY_COUNT = 1;
 const RETRY_DELAY = 1000 * 120;
@@ -914,7 +912,7 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
     });
     await batchProcessQueue(WorkItemUpdateQueueType.MEMORY);
   } else {
-    // if we are running in production, send the update to the queue and return immediately
+    // if we are running in production, send the update to the queue and return immediately.
     // the service can still retry for network or similar failures, but we don't want it to retry
     // for things like 409 errors.
 

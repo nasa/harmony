@@ -1,5 +1,5 @@
 import AWS from 'aws-sdk';
-import env from './env';
+import env from '../env';
 import { Queue, ReceivedMessage } from './queue';
 
 export class SqsQueue extends Queue {

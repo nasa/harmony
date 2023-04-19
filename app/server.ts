@@ -19,7 +19,7 @@ import * as exampleBackend from '../example/http-backend';
 import WorkReaper from './workers/work-reaper';
 import WorkFailer from './workers/work-failer';
 import WorkItemUpdateQueueProcessor from './workers/work-item-update-queue-processor';
-import { WorkItemUpdateQueueType } from './util/queue';
+import { WorkItemUpdateQueueType } from './util/queue/queue';
 import cmrCollectionReader from './middleware/cmr-collection-reader';
 
 /**

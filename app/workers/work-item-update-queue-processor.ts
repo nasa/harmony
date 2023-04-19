@@ -3,7 +3,7 @@ import { batchProcessQueue } from '../backends/workflow-orchestration';
 import env from '../util/env';
 import { Worker } from './worker';
 import sleep from '../util/sleep';
-import { WorkItemUpdateQueueType } from '../util/queue';
+import { WorkItemUpdateQueueType } from '../util/queue/queue';
 
 export interface WorkItemUpdateQueueProcessorConfig {
   logger: Logger;
