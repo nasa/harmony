@@ -9,9 +9,9 @@
             <th scope="col">stepName</th>
             <th scope="col">id</th>
             <th scope="col">status</th>
-            {{#isAdmin}}
+            {{#isAdminOrLogViewer}}
             <th class="helpful-th" scope="col" title="Links to logs (including all retries) for each work item.">logs</th>
-            {{/isAdmin}}
+            {{/isAdminOrLogViewer}}
             {{#canShowRetryColumn}}
             <th scope="col">retry</th>
             {{/canShowRetryColumn}}
