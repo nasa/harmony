@@ -12,7 +12,6 @@ import env = require('../util/env');
 import { keysToLowerCase } from '../util/object';
 import { getItemLogsLocation, WorkItemQuery, WorkItemStatus } from '../models/work-item-interface';
 import { getRequestRoot } from '../util/url';
-import { belongsToGroup } from '../util/cmr';
 import { getAllStateChangeLinks, getJobStateChangeLinks } from '../util/links';
 import { objectStoreForProtocol } from '../util/object-store';
 import { handleWorkItemUpdate } from '../backends/workflow-orchestration';
@@ -122,6 +121,15 @@ function parseQuery( /* eslint-disable @typescript-eslint/no-explicit-any */
   return { tableQuery, originalValues };
 }
 
+/**
+ * Helper function which returns true if the request is from an admin user
+ * @param req - the harmony request
+ */
+async function isAdminUser(req: HarmonyRequest): Promise<boolean> {
+  const isAdmin = req.context.isAdminAccess ||
+    (await getEdlGroupInformation(req.user, req.accessToken, req.context.logger)).isAdmin;
+  return isAdmin;
+}
 /**
  * Returns an object with all of the functions necessary for rendering
  * a row of the jobs table.
@@ -294,7 +302,7 @@ export async function getJob(
 ): Promise<void> {
   const { jobID } = req.params;
   try {
-    const isAdmin = req.context.isAdminAccess || await belongsToGroup(req.user, env.adminGroupId, req.accessToken);
+    const isAdmin = await isAdminUser(req);
     const job = await getJobIfAllowed(jobID, req.user, isAdmin, req.accessToken, true);
     const { page, limit } = getPagingParams(req, 1000);
     const requestQuery = keysToLowerCase(req.query);
@@ -336,7 +344,7 @@ export async function getJobLinks(
   const { jobID } = req.params;
   const { all } = req.query;
   try {
-    const isAdmin = req.context.isAdminAccess || await belongsToGroup(req.user, env.adminGroupId, req.accessToken);
+    const isAdmin = req.context.isAdminAccess || (await getEdlGroupInformation(req.user, req.accessToken, req.context.logger)).isAdmin;
     const job = await getJobIfAllowed(jobID, req.user, isAdmin, req.accessToken, false);
     const urlRoot = getRequestRoot(req);
     const links = all === 'true' ?
@@ -357,8 +365,7 @@ export async function getJobLinks(
  * @param requestUser - the user making the request
  * @returns an object with rendering functions
  */
-function workItemRenderingFunctions(job: Job, isAdmin: boolean, isLogViewer: boolean, requestUser: string, logger: Logger): object {
-  logger.warn(`isLogViewer is set to ${isLogViewer}`);
+function workItemRenderingFunctions(job: Job, isAdmin: boolean, isLogViewer: boolean, requestUser: string): object {
   const badgeClasses = {};
   badgeClasses[WorkItemStatus.READY] = 'primary';
   badgeClasses[WorkItemStatus.CANCELED] = 'secondary';
@@ -442,10 +449,10 @@ export async function getWorkItemsTable(
   const { jobID } = req.params;
   const { checkJobStatus } = req.query;
   try {
-    const { isAdmin, isLogViewer } = await getEdlGroupInformation(req.user, req.accessToken, req.context.logger);
+    const { isAdmin, isLogViewer } = await getEdlGroupInformation(
+      req.user, req.accessToken, req.context.logger,
+    );
     const isAdminOrLogViewer = isAdmin || isLogViewer;
-    // const isAdmin = req.context.isAdminAccess || await belongsToGroup(req.user, env.adminGroupId, req.accessToken);
-    // const isLogViewer = isAdmin || await belongsToGroup(req.user, env.logViewerGroupId, req.accessToken);
     const job = await getJobIfAllowed(jobID, req.user, isAdmin, req.accessToken, true);
     if (([JobStatus.SUCCESSFUL, JobStatus.CANCELED, JobStatus.FAILED, JobStatus.COMPLETE_WITH_ERRORS]
       .indexOf(job.status) > -1) && checkJobStatus === 'true') {
@@ -470,7 +477,7 @@ export async function getWorkItemsTable(
       job,
       statusClass: statusClass[job.status],
       workItems,
-      ...workItemRenderingFunctions(job, isAdmin, isLogViewer, req.user, req.context.logger),
+      ...workItemRenderingFunctions(job, isAdmin, isLogViewer, req.user),
       links: [
         { ...firstPage, linkTitle: 'first' },
         { ...previousPage, linkTitle: 'previous' },
@@ -503,9 +510,10 @@ export async function getWorkItemTableRow(
 ): Promise<void> {
   const { jobID, id } = req.params;
   try {
-    const { isAdmin, isLogViewer } = await getEdlGroupInformation(req.user, req.accessToken, req.context.logger);
-    // const isAdmin = req.context.isAdminAccess || await belongsToGroup(req.user, env.adminGroupId, req.accessToken);
-    // const isLogViewer = isAdmin || await belongsToGroup(req.user, env.logViewerGroupId, req.accessToken);
+    const { isAdmin, isLogViewer } = await getEdlGroupInformation(
+      req.user, req.accessToken, req.context.logger,
+    );
+    const isAdminOrLogViewer = isAdmin || isLogViewer;
     const job = await getJobIfAllowed(jobID, req.user, isAdmin, req.accessToken, true);
     // even though we only want one row/item we should still respect the current user's table filters
     const requestQuery = keysToLowerCase(req.query);
@@ -517,10 +525,10 @@ export async function getWorkItemTableRow(
       return;
     }
     res.render('workflow-ui/job/work-item-table-row', {
-      isAdmin,
+      isAdminOrLogViewer,
       canShowRetryColumn: job.belongsToOrIsAdmin(req.user, isAdmin),
       ...workItems[0],
-      ...workItemRenderingFunctions(job, isAdmin, isLogViewer, req.user, req.context.logger),
+      ...workItemRenderingFunctions(job, isAdmin, isLogViewer, req.user),
     });
   } catch (e) {
     req.context.logger.error(e);
@@ -541,7 +549,7 @@ export async function getWorkItemLogs(
 ): Promise<void> {
   const { id, jobID } = req.params;
   try {
-    const isAdmin = req.context.isAdminAccess || await belongsToGroup(req.user, env.adminGroupId, req.accessToken);
+    const isAdmin = await isAdminUser(req);
     if (!isAdmin) {
       throw new ForbiddenError();
     }
@@ -567,7 +575,7 @@ export async function retry(
 ): Promise<void> {
   const { jobID, id } = req.params;
   try {
-    const isAdmin = req.context.isAdminAccess || await belongsToGroup(req.user, env.adminGroupId, req.accessToken);
+    const isAdmin = await isAdminUser(req);
     await getJobIfAllowed(jobID, req.user, isAdmin, req.accessToken, false); // validate access to the work item's job
     const item = await getWorkItemById(db, parseInt(id));
     if (!item) {

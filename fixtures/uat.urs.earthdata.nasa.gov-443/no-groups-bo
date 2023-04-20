@@ -1,0 +1,26 @@
+GET /api/user_groups/groups_for_user/bo
+accept: application/json, text/plain, */*
+authorization: Bearer fake_access
+
+HTTP/1.1 200 OK
+Server: nginx/1.20.1
+Date: Wed, 19 Apr 2023 20:07:41 GMT
+Content-Type: application/json; charset=utf-8
+Connection: keep-alive
+X-Frame-Options: SAMEORIGIN
+X-XSS-Protection: 1; mode=block
+X-Content-Type-Options: nosniff
+X-Download-Options: noopen
+X-Permitted-Cross-Domain-Policies: none
+Referrer-Policy: strict-origin-when-cross-origin
+Cache-Control: no-store
+Pragma: no-cache
+Expires: Fri, 01 Jan 1990 00:00:00 GMT
+Vary: Accept
+ETag: W/"95d47ed009d4ca4a238f2b3bbcd1d4a3"
+X-Request-Id: 96d4861c-072b-4d69-9d39-2b83d2852899
+X-Runtime: 0.011620
+Strict-Transport-Security: max-age=31536000
+Transfer-Encoding: chunked
+
+{"user_groups":[]}

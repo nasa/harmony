@@ -146,11 +146,11 @@ UPLOAD_BUCKET=local-upload-bucket
 # requests are stored by backend services.
 SAME_REGION_ACCESS_ROLE=same-region-access-role
 
-# The CMR concept ID for the group whose users can access the admin interface
-ADMIN_GROUP_ID=AG1222736883-EEDTEST
+# The EDL Group ID for the group whose users can access the admin interface
+ADMIN_GROUP_ID=9b359064-287f-411f-b2cc-ed4429676900
 
-# The CMR concept ID for the group whose users can access logs in the workflow-ui for their own requests
-LOG_VIEWER_GROUP_ID=AG1257214364-EEDTEST
+# The EDL Group ID for the group whose users can access logs in the workflow-ui for their own jobs or shareable jobs
+LOG_VIEWER_GROUP_ID=0cf2a427-96cc-453e-ae44-e28dd0958738
 
 # The time (in seconds) between invocations of the work reaper service
 WORK_REAPER_PERIOD_SEC=360

@@ -945,7 +945,7 @@ export class Job extends DBRecord implements JobRecord {
    * (Called whenever a request is made to frontend jobs or STAC endpoints)
    * @param requestingUserName - the person we're checking permissions for
    * @param isAdminAccess - whether the requesting user should be treated as an admin
-   * (e.g. req.context.isAdminAccess or belongsToGroup())
+   * (e.g. req.context.isAdminAccess or user is in the admin group)
    * @param accessToken - the token to make permission check requests with
    * @param enableShareability - whether to check if the job can be shared with non-owners
    * @returns true or false
