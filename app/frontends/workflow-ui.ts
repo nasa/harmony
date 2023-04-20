@@ -383,7 +383,7 @@ function workItemRenderingFunctions(job: Job, isAdmin: boolean, isLogViewer: boo
       const isComplete = [WorkItemStatus.FAILED, WorkItemStatus.SUCCESSFUL].indexOf(this.status) > -1;
       const isLogAvailable = (isComplete || this.retryCount > 0) && !this.serviceID.includes('query-cmr');
       if (isLogAvailable) {
-        const logsUrl = `/admin/workflow-ui/${job.jobID}/${this.id}/logs`;
+        const logsUrl = `/logs/${job.jobID}/${this.id}`;
         logsLinks += `<a type="button" target="__blank" class="btn btn-sm btn-outline-primary logs-s3" href="${logsUrl}"` +
           ` title="View all service log output for work item ${this.id} in aggregate."><i class="bi bi-body-text"></i></a>&nbsp;`;
       }
@@ -549,8 +549,11 @@ export async function getWorkItemLogs(
 ): Promise<void> {
   const { id, jobID } = req.params;
   try {
-    const isAdmin = await isAdminUser(req);
-    if (!isAdmin) {
+    const { isAdmin, isLogViewer } = await getEdlGroupInformation(
+      req.user, req.accessToken, req.context.logger,
+    );
+    const isAdminOrLogViewer = isAdmin || isLogViewer;
+    if (!isAdminOrLogViewer) {
       throw new ForbiddenError();
     }
     const logPromise =  await objectStoreForProtocol('s3')
