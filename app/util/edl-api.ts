@@ -66,6 +66,9 @@ export async function getClientCredentialsToken(logger: Logger): Promise<string>
  * Returns the groups to which a user belongs
  *
  * @param username - The EDL username
+ * @param userToken - The user's token
+ * @param logger - The logger associated with the request
+ * @returns the groups to which the user belongs
  */
 async function getUserGroups(username: string, userToken: string, logger: Logger)
   : Promise<string[]> {
@@ -73,10 +76,7 @@ async function getUserGroups(username: string, userToken: string, logger: Logger
     const response = await axios.default.get(
       `${edlUserGroupsBaseUrl}/${username}`, { headers: { Authorization: `Bearer ${userToken}` } },
     );
-    const { data } = response;
-    console.log(`Groups before are ${JSON.stringify(data)}`);
     const groups = response.data?.user_groups.map((group) => group.group_id) || [];
-    console.log(`Groups after are ${JSON.stringify(groups)}`);
     return groups;
   } catch (e) {
     logger.error('Failed to retrieve groups for user.');
@@ -91,20 +91,23 @@ export interface EdlGroupMembership {
 }
 
 /**
- * Returns the harmony relevant group information for a user with two keys isAdmin and isLogViewer
+ * Returns the harmony relevant group information for a user with two keys isAdmin and isLogViewer.
  *
+ * @param username - The EDL username
+ * @param userToken - The user's token
+ * @param logger - The logger associated with the request
+ * @returns A promise which resolves to info about whether the user is an admin or log viewer
  */
 export async function getEdlGroupInformation(username: string, userToken: string, logger: Logger)
   : Promise<EdlGroupMembership> {
   const groups = await getUserGroups(username, userToken, logger);
-  console.log(`Groups are ${JSON.stringify(groups)}`);
   let isAdmin = false;
-  if (groups.includes('9b359064-287f-411f-b2cc-ed4429676900')) {
+  if (groups.includes(env.adminGroupId)) {
     isAdmin = true;
   }
 
   let isLogViewer = false;
-  if (groups.includes('0cf2a427-96cc-453e-ae44-e28dd0958738')) {
+  if (groups.includes(env.logViewerGroupId)) {
     isLogViewer = true;
   }
 

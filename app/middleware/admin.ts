@@ -1,8 +1,7 @@
 import { Response, NextFunction } from 'express';
 import HarmonyRequest from '../models/harmony-request';
 import { ForbiddenError } from '../util/errors';
-import { belongsToGroup } from '../util/cmr';
-import env from '../util/env';
+import { getEdlGroupInformation } from '../util/edl-api';
 
 /**
  * Middleware to enforce ACLs on admin interfaces.  If the user is part
@@ -18,7 +17,7 @@ export default async function admin(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
   try {
-    const isAdmin = await belongsToGroup(req.user, env.adminGroupId, req.accessToken);
+    const { isAdmin } = await getEdlGroupInformation(req.user, req.accessToken, req.context.logger);
     if (isAdmin) {
       req.context.isAdminAccess = true;
       next();

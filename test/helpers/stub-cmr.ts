@@ -3,7 +3,7 @@ import { before, after } from 'mocha';
 import { stub } from 'sinon';
 import * as cmr from '../../app/util/cmr';
 
-type CmrMethodName = 'cmrGetBase' | 'fetchPost' | 'cmrPostBase' | 'getCollectionsByIds' | 'getVariablesByIds' | 'getVariablesForCollection' | 'queryGranulesForCollection' | 'belongsToGroup' | 'cmrApiConfig';
+type CmrMethodName = 'cmrGetBase' | 'fetchPost' | 'cmrPostBase' | 'getCollectionsByIds' | 'getVariablesByIds' | 'getVariablesForCollection' | 'queryGranulesForCollection' | 'cmrApiConfig';
 
 /**
  * Replace a function in the `cmr` module with a given function. This is needed because
