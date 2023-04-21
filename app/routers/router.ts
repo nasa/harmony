@@ -130,6 +130,7 @@ const authorizedRoutes = [
   '/cloud-access*',
   '/configuration*',
   '/jobs*',
+  '/logs*',
   '/service-results/*',
   '/stac*',
   '/workflow-ui*',

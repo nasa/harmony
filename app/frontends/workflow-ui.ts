@@ -344,7 +344,7 @@ export async function getJobLinks(
   const { jobID } = req.params;
   const { all } = req.query;
   try {
-    const isAdmin = req.context.isAdminAccess || (await getEdlGroupInformation(req.user, req.accessToken, req.context.logger)).isAdmin;
+    const isAdmin = await isAdminUser(req);
     const job = await getJobIfAllowed(jobID, req.user, isAdmin, req.accessToken, false);
     const urlRoot = getRequestRoot(req);
     const links = all === 'true' ?
