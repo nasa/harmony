@@ -119,7 +119,7 @@ export function hookGetBucketRegion(
         }
       });
   });
-  
+
   after(function () {
     stubGetBucketRegion.restore();
   });
@@ -141,11 +141,11 @@ export function hookUpload(): void {
           const e = new Error('Access Denied');
           e.name = 'AccessDenied';
           throw e;
-        } 
+        }
         return null;
       });
   });
-  
+
   after(function () {
     stubUpload.restore();
   });
