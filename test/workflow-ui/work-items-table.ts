@@ -218,8 +218,16 @@ describe('Workflow UI work items table route', function () {
         hookWorkflowUIWorkItems({ username: 'adam', jobID: targetJob.jobID });
         it('returns links for the other user\'s work item logs (stored in s3) for retrying and completed work items', async function () {
           const listing = this.res.text;
+          const matches = listing.match(/logs-s3" href="([^"]+")/g);
+          const urls = [];
+          for (const logLine of matches) {
+            const lineMatches = logLine.match(/logs-s3" href="([^"]+)"/);
+            urls.push(lineMatches[1]);
+          }
           expect((listing.match(/logs-s3/g) || []).length).to.equal(4);
+          expect(urls[0]).to.equal(`/logs/${targetJob.jobID}/${item1.id}`);
         });
+
         it('returns metrics links for the other user\'s work item logs for every work item', async function () {
           const listing = this.res.text;
           expect((listing.match(/logs-metrics/g) || []).length).to.equal(5);
