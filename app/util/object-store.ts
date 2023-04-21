@@ -337,7 +337,7 @@ export class S3ObjectStore {
     const result = await this.s3.getBucketLocation(req).promise();
     // aws returns null when the bucket region is us-east-1. We want always return a region name.
     return result.LocationConstraint ? result.LocationConstraint : 'us-east-1';
-  }  
+  }
 
   /**
    * Returns a URL string for an object with the given bucket and key (prefix)
