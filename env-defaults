@@ -168,8 +168,12 @@ REAPABLE_WORK_AGE_MINUTES=1440
 # The time (in seconds) between invocations of the work failer service
 WORK_FAILER_PERIOD_SEC=120
 
-# The time (in seconds) between invocations of the work-item update queue processor
-WORK_ITEM_UPDATE_QUEUE_PROCESSOR_PERIOD_SEC=1
+# The time (in seconds) the work-item update queue processor will wait before resuming after an error
+# Used to avoid a tight loop
+WORK_ITEM_UPDATE_QUEUE_PROCESSOR_DELAY_AFTER_ERROR_SEC=1
+
+# Long polling wait time (in seconds) for queues
+QUEUE_LONG_POLLING_WAIT_TIME_SEC=20
 
 # WorkItems that have not been updated for more than this many minutes are
 # updated by the work failer (resulting either in job and work item failure or a retry)

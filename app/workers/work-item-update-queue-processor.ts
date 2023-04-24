@@ -24,19 +24,15 @@ export default class WorkItemUpdateQueueProcessor implements Worker {
 
   async start(): Promise<void> {
     this.isRunning = true;
-    let firstRun = true;
     while (this.isRunning) {
-      if (!firstRun) {
-        await sleep(env.workItemUpdateQueueProcessorPeriodSec * 1000);
-      }
       this.logger.info('Starting work item update queue processor');
       try {
         await batchProcessQueue(this.queueType);
       } catch (e) {
         this.logger.error('Work item update queue processor failed to process work item update queue');
         this.logger.error(e);
-      } finally {
-        firstRun = false;
+        // Wait for a bit before trying again to avoid a tight loop
+        await sleep(env.workItemUpdateQueueProcessorDelayAfterErrorSec * 1000);
       }
     }
   }

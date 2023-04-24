@@ -1,5 +1,5 @@
 import AWS from 'aws-sdk';
-import env from '../env';
+import env, { queueLongPollingWaitTimeSec } from '../env';
 import { Queue, ReceivedMessage } from './queue';
 
 export class SqsQueue extends Queue {
@@ -28,7 +28,7 @@ export class SqsQueue extends Queue {
     const response = await this.sqs.receiveMessage({
       QueueUrl: this.queueUrl,
       MaxNumberOfMessages: 1,
-      WaitTimeSeconds: 20,
+      WaitTimeSeconds: env.queueLongPollingWaitTimeSec,
     }).promise();
     if (response.Messages) {
       const message = response.Messages[0];
@@ -44,7 +44,7 @@ export class SqsQueue extends Queue {
     const response = await this.sqs.receiveMessage({
       QueueUrl: this.queueUrl,
       MaxNumberOfMessages: num,
-      WaitTimeSeconds: 20,
+      WaitTimeSeconds: queueLongPollingWaitTimeSec,
     }).promise();
     if (response.Messages) {
       return response.Messages.map((message) => ({
