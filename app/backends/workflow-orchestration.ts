@@ -869,9 +869,9 @@ export async function batchProcessQueue(queueType: WorkItemUpdateQueueType): Pro
 }
 
 /**
- * Update a work item from a service response. This function stores the update without further
- * processing and then responds quickly. Processing the update is handled asynchronously
- * (see `batchProcessQueue`)
+ * Update a work item from a service response. This function stores the update in a queue
+ * without further processing and then responds quickly. Processing the update is handled
+ * asynchronously (see `batchProcessQueue`)
  *
  * @param req - The request sent by the client
  * @param res - The response to send to the client
