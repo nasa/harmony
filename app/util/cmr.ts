@@ -760,25 +760,6 @@ export async function getPermissions(
 }
 
 /**
- * Returns true if the user belongs to the given group.  Returns false if the user does not
- * belong to the group or the token cannot be used to query the group.
- *
- * @param username - The EDL username to test for membership
- * @param groupId - The group concept ID to check for membership
- * @param token - Access token for the request
- * @returns true if the group can be queried and the user is a member of the group
- */
-export async function belongsToGroup(
-  username: string,
-  groupId: string,
-  token: string,
-): Promise<boolean> {
-  const path = `/access-control/groups/${groupId}/members`;
-  const response = await cmrGetBase(path, null, token, { 'X-Harmony-User': username });
-  return response.status === 200 && (response.data as string[]).indexOf(username) !== -1;
-}
-
-/**
  * Return all non-inherited links with rel ending in /data# or /service#.
  *
  * @param granule - The granule to obtain links from

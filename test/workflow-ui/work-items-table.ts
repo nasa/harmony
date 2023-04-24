@@ -132,7 +132,7 @@ describe('Workflow UI work items table route', function () {
       await shareableJob.save(this.trx);
       const shareableItem1 = buildWorkItem({ jobID: shareableJob.jobID, status: WorkItemStatus.RUNNING });
       await shareableItem1.save(this.trx);
-      const shareableItem2 = buildWorkItem({ jobID: shareableJob.jobID });
+      const shareableItem2 = buildWorkItem({ jobID: shareableJob.jobID, workflowStepIndex: 2, serviceID: step2ServiceId, status: WorkItemStatus.SUCCESSFUL });
       await shareableItem2.save(this.trx);
       const shareableStep1 = buildWorkflowStep({ jobID: shareableJob.jobID, stepIndex: 1 });
       await shareableStep1.save(this.trx);
@@ -171,7 +171,7 @@ describe('Workflow UI work items table route', function () {
         });
       });
 
-      describe('who requests the work items table for their job', function () {
+      describe('who requests the work items table for their job (but is not a log viewer)', function () {
         hookWorkflowUIWorkItems({ username: 'bo', jobID: targetJob.jobID });
         it('returns an HTTP success response', function () {
           expect(this.res.statusCode).to.equal(200);
@@ -218,8 +218,16 @@ describe('Workflow UI work items table route', function () {
         hookWorkflowUIWorkItems({ username: 'adam', jobID: targetJob.jobID });
         it('returns links for the other user\'s work item logs (stored in s3) for retrying and completed work items', async function () {
           const listing = this.res.text;
+          const matches = listing.match(/logs-s3" href="([^"]+")/g);
+          const urls = [];
+          for (const logLine of matches) {
+            const lineMatches = logLine.match(/logs-s3" href="([^"]+)"/);
+            urls.push(lineMatches[1]);
+          }
           expect((listing.match(/logs-s3/g) || []).length).to.equal(4);
+          expect(urls[0]).to.equal(`/logs/${targetJob.jobID}/${item1.id}`);
         });
+
         it('returns metrics links for the other user\'s work item logs for every work item', async function () {
           const listing = this.res.text;
           expect((listing.match(/logs-metrics/g) || []).length).to.equal(5);
@@ -245,7 +253,7 @@ describe('Workflow UI work items table route', function () {
         });
       });
 
-      describe('who requests the work items table for someone else\'s shareable job (a non-admin)', function () {
+      describe('who requests the work items table for someone else\'s shareable job (not an admin or log-viewer)', function () {
         hookWorkflowUIWorkItems({ username: 'not-bo', jobID: shareableJob.jobID });
         it('returns a 200 HTTP response', async function () {
           expect(this.res.statusCode).to.equal(200);
@@ -253,6 +261,33 @@ describe('Workflow UI work items table route', function () {
         it('does not return a column for the work item logs', async function () {
           const listing = this.res.text;
           expect(listing).to.not.contain(mustache.render(logsTableHeader, {}));
+        });
+        it('does not return retry buttons for the other user\'s RUNNING work items', async function () {
+          const listing = this.res.text;
+          expect((listing.match(/retry-button/g) || []).length).to.equal(0);
+        });
+        it('does not return a column for the retry buttons', async function () {
+          const listing = this.res.text;
+          expect(listing).to.not.contain(mustache.render('<th scope="col">retry</th>', {}));
+        });
+      });
+
+      describe('who requests the work items table for someone else\'s shareable job (not an admin, but is a log-viewer)', function () {
+        hookWorkflowUIWorkItems({ username: 'log-viewer-not-bo', jobID: shareableJob.jobID });
+        it('returns a 200 HTTP response', async function () {
+          expect(this.res.statusCode).to.equal(200);
+        });
+        it('returns links for the (completed) and currently running work item logs (stored in s3)', async function () {
+          const listing = this.res.text;
+          expect((listing.match(/logs-s3/g) || []).length).to.equal(1);
+        });
+        it('returns metrics logs links for all work items', async function () {
+          const listing = this.res.text;
+          expect((listing.match(/logs-metrics/g) || []).length).to.equal(2);
+        });
+        it('does return a column for the work item logs', async function () {
+          const listing = this.res.text;
+          expect(listing).to.contain(mustache.render(logsTableHeader, {}));
         });
         it('does not return retry buttons for the other user\'s RUNNING work items', async function () {
           const listing = this.res.text;

@@ -130,6 +130,7 @@ const authorizedRoutes = [
   '/cloud-access*',
   '/configuration*',
   '/jobs*',
+  '/logs*',
   '/service-results/*',
   '/stac*',
   '/workflow-ui*',
@@ -246,7 +247,8 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   result.get('/admin/workflow-ui/:jobID/work-items', asyncHandler(getWorkItemsTable));
   result.get('/admin/workflow-ui/:jobID/work-items/:id', asyncHandler(getWorkItemTableRow));
   result.get('/admin/workflow-ui/:jobID/links', asyncHandler(getJobLinks));
-  result.get('/admin/workflow-ui/:jobID/:id/logs', asyncHandler(getWorkItemLogs));
+
+  result.get('/logs/:jobID/:id', asyncHandler(getWorkItemLogs));
 
   result.get('/staging-bucket-policy', asyncHandler(getStagingBucketPolicy));
 
