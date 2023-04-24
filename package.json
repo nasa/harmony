@@ -99,6 +99,7 @@
     "express-openapi": "^4.6.5",
     "express-validator": "^6.13.0",
     "express-winston": "^4.1.0",
+    "fastq": "^1.11.0",
     "form-data": "^4.0.0",
     "gdal-async": "^3.5.0",
     "highlight.js": "^11.7.0",

@@ -100,6 +100,7 @@ interface HarmonyEnv {
   oauthUid: string;
   objectStoreType: string;
   previewThreshold: number;
+  queueLongPollingWaitTimeSec: number
   reapableWorkAgeMinutes: number;
   sameRegionAccessRole: string;
   servicesYml: string;
@@ -110,8 +111,12 @@ interface HarmonyEnv {
   useLocalstack: boolean;
   workFailerPeriodSec: number;
   workReaperPeriodSec: number;
+  workItemUpdateQueueProcessorDelayAfterErrorSec: number;
   maxErrorsForJob: number;
   workItemRetryLimit: number;
+  workItemUpdateQueueUrl: string;
+  largeWorkItemUpdateQueueUrl: string;
+  largeWorkItemUpdateQueueMaxBatchSize: number;
   getWorkSampleRatio: number;
   putWorkSampleRatio: number;
   getMetricsSampleRatio: number;

@@ -3,6 +3,7 @@ import _, { ceil, range, sum } from 'lodash';
 import { NextFunction, Response } from 'express';
 import { v4 as uuid } from 'uuid';
 import { Logger } from 'winston';
+import defaultLogger from '../util/log';
 import { completeJob } from '../util/job';
 import env from '../util/env';
 import { readCatalogItems, StacItemLink } from '../util/stac';
@@ -20,10 +21,17 @@ import WorkItemUpdate from '../models/work-item-update';
 import { handleBatching, outputStacItemUrls, resultItemSizes } from '../util/aggregation-batch';
 import { decrementRunningCount, deleteUserWorkForJob, getNextJobIdForUsernameAndService, getNextUsernameForWork, incrementReadyAndDecrementRunningCounts, incrementReadyCount, incrementRunningAndDecrementReadyCounts } from '../models/user-work';
 import { sanitizeImage } from '../util/string';
+import { WorkItemUpdateQueueType } from '../util/queue/queue';
+import { getQueue } from '../util/queue/queue-factory';
 
 const MAX_TRY_COUNT = 1;
 const RETRY_DELAY = 1000 * 120;
 const QUERY_CMR_SERVICE_REGEX = /harmonyservices\/query-cmr:.*/;
+
+type WorkItemUpdateQueueItem = {
+  update: WorkItemUpdate,
+  operation: object,
+};
 
 /**
  * Calculate the granule page limit for the current query-cmr work item.
@@ -591,7 +599,7 @@ export async function handleWorkItemUpdateWithJobId(
   try {
     await db.transaction(async (tx) => {
       const job = await Job.byJobID(tx, jobID, false, true);
-      // lock the work item to we can update it - need to do this after locking jobs table above
+      // lock the work item so we can update it - need to do this after locking jobs table above
       // to avoid deadlocks
       const workItem = await getWorkItemById(tx, workItemID, true);
       const thisStep = await getWorkflowStepByJobIdStepIndex(tx, workItem.jobID, workItem.workflowStepIndex);
@@ -737,9 +745,6 @@ export async function handleWorkItemUpdateWithJobId(
 
 /**
  * Update job status/progress in response to a service provided work item update
- * IMPORTANT: This asynchronous function is called without awaiting, so any errors must be
- * handled in this function and no exceptions should be thrown since nothing will catch
- * them.
  *
  * @param update - information about the work item update
  * @param operation - the DataOperation for the user's request
@@ -756,9 +761,117 @@ export async function handleWorkItemUpdate(
 }
 
 /**
- * Update a work item from a service response. This function stores the update without further
- * processing and then responds quickly. Processing the update is handled asynchronously
- * (see `handleWorkItemUpdate`)
+ * Updates the batch of work items. It is assumed that all the work items belong
+ * to the same job. Currently, this function processes the updates sequentially, but it
+ * may be changed to process them all at once in the future.
+ * @param jobID - ID of the job that the work items belong to
+ * @param updates - List of work item updates
+ * @param logger - Logger to use
+ */
+async function handleBatchWorkItemUpdatesWithJobId(jobID: string, updates: WorkItemUpdateQueueItem[], logger: Logger): Promise<void> {
+  // process each job's updates
+  logger.debug(`Processing ${updates.length} work item updates for job ${jobID}`);
+  await Promise.all(updates.map(async (item) => {
+    const { update, operation } = item;
+    await handleWorkItemUpdateWithJobId(jobID, update, operation, logger);
+  }));
+
+}
+
+/**
+ * This function processes a batch of work item updates.
+ * It first creates a map of jobIDs to updates, then it processes each job's updates.
+ * It calls the function handleBatchWorkItemUpdatesWithJobId to handle the updates.
+ * @param updates - List of work item updates read from the queue
+ * @param logger - Logger to use
+ */
+export async function handleBatchWorkItemUpdates(
+  updates: WorkItemUpdateQueueItem[],
+  logger: Logger): Promise<void> {
+  logger.debug(`Processing ${updates.length} work item updates`);
+  // create a map of jobIDs to updates
+  const jobUpdates: Record<string, WorkItemUpdateQueueItem[]> =
+      await updates.reduce(async (acc, item) => {
+        const { workItemID } = item.update;
+        const jobID = await getJobIdForWorkItem(workItemID);
+        logger.debug(`Processing work item update for job ${jobID}`);
+        const accValue = await acc;
+        if (accValue[jobID]) {
+          accValue[jobID].push(item);
+        } else {
+          accValue[jobID] = [item];
+        }
+        return accValue;
+      }, {});
+  // process each job's updates
+  for (const jobID in jobUpdates) {
+    logger.debug(`Processing ${jobUpdates[jobID].length} work item updates for job ${jobID}`);
+    await handleBatchWorkItemUpdatesWithJobId(jobID, jobUpdates[jobID], logger);
+  }
+}
+
+/**
+ * This function processes a batch of work item updates from the queue.
+ * @param queueType - Type of the queue to read from
+ */
+export async function batchProcessQueue(queueType: WorkItemUpdateQueueType): Promise<void> {
+  const queue = getQueue(queueType);
+  // use a smaller batch size for the large item update queue otherwise use the SQS max batch size
+  // of 10
+  const largeItemQueueBatchSize = Math.min(env.largeWorkItemUpdateQueueMaxBatchSize, 10);
+  const otherQueueBatchSize = 10; // the SQS max batch size
+  const queueBatchSize = queueType === WorkItemUpdateQueueType.LARGE_ITEM_UPDATE
+    ? largeItemQueueBatchSize : otherQueueBatchSize;
+  const messages = await queue.getMessages(queueBatchSize);
+  if (messages.length < 1) {
+    return;
+  }
+  defaultLogger.debug(`Processing ${messages.length} work item updates from queue`);
+
+  if (queueType === WorkItemUpdateQueueType.LARGE_ITEM_UPDATE) {
+    // process each message individually
+    for (const msg of messages) {
+      try {
+        const updateItem: WorkItemUpdateQueueItem = JSON.parse(msg.body);
+        const { update, operation } = updateItem;
+        defaultLogger.debug(`Processing work item update from queue for work item ${update.workItemID} and status ${update.status}`);
+        await handleWorkItemUpdate(update, operation, defaultLogger);
+      } catch (e) {
+        defaultLogger.error(`Error processing work item update from queue: ${e}`);
+      }
+      try {
+        // delete the message from the queue even if there was an error updating the work-item
+        // so that we don't keep processing the same message over and over
+        await queue.deleteMessage(msg.receipt);
+      } catch (e) {
+        defaultLogger.error(`Error deleting work item update from queue: ${e}`);
+      }
+    }
+  } else {
+    // potentially process all the messages at once. this actually calls `handleBatchWorkItemUpdates`,
+    // which processes each job's updates individually right now. this just leaves the possibility
+    // open for that function to be updated to process all the updates at once in a more efficient
+    // manner. It also allows us to delete all the messages from the queue at once, which is more
+    // efficient than deleting them one at a time.
+    const updates: WorkItemUpdateQueueItem[] = messages.map((msg) => JSON.parse(msg.body));
+    try {
+      await handleBatchWorkItemUpdates(updates, defaultLogger);
+    } catch (e) {
+      defaultLogger.error(`Error processing work item updates from queue: ${e}`);
+    }
+    // delete all the messages from the queue at once (slightly more efficient)
+    try {
+      await queue.deleteMessages(messages.map((msg) => msg.receipt));
+    } catch (e) {
+      defaultLogger.error(`Error deleting work item updates from queue: ${e}`);
+    }
+  }
+}
+
+/**
+ * Update a work item from a service response. This function stores the update in a queue
+ * without further processing and then responds quickly. Processing the update is handled
+ * asynchronously (see `batchProcessQueue`)
  *
  * @param req - The request sent by the client
  * @param res - The response to send to the client
@@ -781,21 +894,20 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
     duration,
   };
   const workItemLogger = req.context.logger.child({ workItemId: update.workItemID });
-  if (typeof global.it === 'function') {
-    // tests break if we don't await this
-    await handleWorkItemUpdate(update, operation, workItemLogger);
+
+  // we use separate queues for small and large work item updates
+  let queueType = WorkItemUpdateQueueType.SMALL_ITEM_UPDATE;
+  if (results?.length > 1) {
+    workItemLogger.debug('Sending work item update to large item queue');
+    queueType = WorkItemUpdateQueueType.LARGE_ITEM_UPDATE;
   } else {
-    // asynchronously handle the update so that the service is not waiting for a response
-    // during a potentially long update. If the asynchronous update fails the work-item will
-    // eventually be retried by the timeout handler. In any case there is not much the service
-    // can do if the update fails, so it is OK for us to ignore the promise here. The service
-    // can still retry for network or similar failures, but we don't want it to retry for things
-    // like 409 errors.
-
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    handleWorkItemUpdate(update, operation, workItemLogger);
+    workItemLogger.debug('Sending work item update to regular queue');
   }
+  const queue = getQueue(queueType);
+  await queue.sendMessage(JSON.stringify({ update, operation })).catch((e) => {
+    workItemLogger.error(e);
+  });
 
-  // Return a success with no body
+  // Return a success status with no body
   res.status(204).send();
 }
