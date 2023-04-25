@@ -112,6 +112,7 @@ interface HarmonyEnv {
   workFailerPeriodSec: number;
   workReaperPeriodSec: number;
   workItemUpdateQueueProcessorDelayAfterErrorSec: number;
+  workItemUpdateQueueProcessorCount: number;
   maxErrorsForJob: number;
   workItemRetryLimit: number;
   workItemUpdateQueueUrl: string;
