@@ -127,14 +127,14 @@ describe('Sharing job results with someone other than its owner', function () {
       });
       describe('Accessing the STAC Catalog page', function () {
         hookStacCatalog(jobIDWithEULATrueAndGuestReadTrue, notJobOwner);
-        it('returns a 404 response', function () {
-          expect(this.res.statusCode).to.equal(404);
+        it('returns a 200 response', function () {
+          expect(this.res.statusCode).to.equal(200);
         });
       });
       describe('Accessing the STAC Item page', function () {
         hookStacItem(jobIDWithEULATrueAndGuestReadTrue, 0, notJobOwner);
-        it('returns a 404 response', function () {
-          expect(this.res.statusCode).to.equal(404);
+        it('returns a 200 response', function () {
+          expect(this.res.statusCode).to.equal(200);
         });
       });
     });
@@ -148,14 +148,14 @@ describe('Sharing job results with someone other than its owner', function () {
       });
       describe('Accessing the STAC Catalog page', function () {
         hookStacCatalog(jobIDWithEULAFalseAndGuestReadFalse, notJobOwner);
-        it('returns a 404 response', function () {
-          expect(this.res.statusCode).to.equal(404);
+        it('returns a 200 response', function () {
+          expect(this.res.statusCode).to.equal(200);
         });
       });
       describe('Accessing the STAC Item page', function () {
         hookStacItem(jobIDWithEULAFalseAndGuestReadFalse, 0, notJobOwner);
-        it('returns a 404 response', function () {
-          expect(this.res.statusCode).to.equal(404);
+        it('returns a 200 response', function () {
+          expect(this.res.statusCode).to.equal(200);
         });
       });
     });
@@ -169,14 +169,14 @@ describe('Sharing job results with someone other than its owner', function () {
       });
       describe('Accessing the STAC Catalog page', function () {
         hookStacCatalog(jobIDWithEULANonexistent, notJobOwner);
-        it('returns a 404 response', function () {
-          expect(this.res.statusCode).to.equal(404);
+        it('returns a 200 response', function () {
+          expect(this.res.statusCode).to.equal(200);
         });
       });
       describe('Accessing the STAC Item page', function () {
         hookStacItem(jobIDWithEULANonexistent, 0, notJobOwner);
-        it('returns a 404 response', function () {
-          expect(this.res.statusCode).to.equal(404);
+        it('returns a 200 response', function () {
+          expect(this.res.statusCode).to.equal(200);
         });
       });
     });
@@ -190,14 +190,14 @@ describe('Sharing job results with someone other than its owner', function () {
       });
       describe('Accessing the STAC Catalog page', function () {
         hookStacCatalog(jobIDWithNoCollections, notJobOwner);
-        it('returns a 404 response', function () {
-          expect(this.res.statusCode).to.equal(404);
+        it('returns a 200 response', function () {
+          expect(this.res.statusCode).to.equal(200);
         });
       });
       describe('Accessing the STAC Item page', function () {
         hookStacItem(jobIDWithNoCollections, 0, notJobOwner);
-        it('returns a 404 response', function () {
-          expect(this.res.statusCode).to.equal(404);
+        it('returns a 200 response', function () {
+          expect(this.res.statusCode).to.equal(200);
         });
       });
     });
@@ -213,14 +213,14 @@ describe('Sharing job results with someone other than its owner', function () {
       });
       describe('Accessing the STAC Catalog page', function () {
         hookStacCatalog(jobIDWithMultipleCollections, notJobOwner);
-        it('returns a 404 response', function () {
-          expect(this.res.statusCode).to.equal(404);
+        it('returns a 200 response', function () {
+          expect(this.res.statusCode).to.equal(200);
         });
       });
       describe('Accessing the STAC Item page', function () {
         hookStacItem(jobIDWithMultipleCollections, 0, notJobOwner);
-        it('returns a 404 response', function () {
-          expect(this.res.statusCode).to.equal(404);
+        it('returns a 200 response', function () {
+          expect(this.res.statusCode).to.equal(200);
         });
       });
     });

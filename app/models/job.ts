@@ -942,7 +942,7 @@ export class Job extends DBRecord implements JobRecord {
 
   /**
    * Return whether a user can access this job and its results.
-   * (Called whenever a request is made to frontend jobs or STAC endpoints)
+   * (Called whenever a request is made to frontend jobs endpoints)
    * @param requestingUserName - the person we're checking permissions for
    * @param isAdminAccess - whether the requesting user should be treated as an admin
    * (e.g. req.context.isAdminAccess or user is in the admin group)

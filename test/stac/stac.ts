@@ -6,7 +6,7 @@ import { JobStatus } from '../../app/models/job';
 import { buildJob } from '../helpers/jobs';
 import hookServersStartStop from '../helpers/servers';
 import { hookTransaction } from '../helpers/db';
-import { stacCatalog, hookStacCatalog } from '../helpers/stac';
+import { hookStacCatalog } from '../helpers/stac';
 import env from '../../app/util/env';
 
 const runningJobProps = {
@@ -58,17 +58,19 @@ describe('STAC catalog route', function () {
     this.trx.commit();
   });
   const jobId = runningJob.requestId;
-  describe('For a user who is not logged in', function () {
-    before(async function () {
-      this.res = await stacCatalog(this.frontend, jobId).redirects(0);
-    });
-    it('redirects to Earthdata Login', function () {
-      expect(this.res.statusCode).to.equal(303);
-      expect(this.res.headers.location).to.include(process.env.OAUTH_HOST);
+
+  describe('For a non-existent job ID without user info', function () {
+    const unknownRequest = uuid();
+    hookStacCatalog(unknownRequest);
+    it('returns a 404 HTTP Not found response', function () {
+      expect(this.res.statusCode).to.equal(404);
     });
 
-    it('sets the "redirect" cookie to the originally-requested resource', function () {
-      expect(this.res.headers['set-cookie'][0]).to.include(encodeURIComponent(`/stac/${jobId}`));
+    it('returns a JSON error response', function () {
+      const response = JSON.parse(this.res.text);
+      expect(response).to.eql({
+        code: 'harmony.NotFoundError',
+        description: `Error: Unable to find job ${unknownRequest}` });
     });
   });
 
@@ -150,6 +152,65 @@ describe('STAC catalog route', function () {
       describe('when the linkType is invalid', function () {
         const completedJobId = completedJob.requestId;
         hookStacCatalog(completedJobId, 'joe', { linkType: 'foo' });
+        // HARMONY-770 AC 8
+        it('returns a 400 status', function () {
+          expect(this.res.statusCode).to.equal(400);
+        });
+        it('returns an informative error', function () {
+          expect(this.res.error.text).to.match(/^{"code":"harmony.RequestValidationError","description":"Error: Invalid linkType 'foo' must be http, https, or s3"}/);
+        });
+      });
+    });
+  });
+
+  describe('For a guest user who does not own the job', function () {
+    describe('when the job is incomplete', function () {
+      hookStacCatalog(jobId);
+      it('returns an HTTP not implemented response', function () {
+        expect(this.res.statusCode).to.equal(409);
+      });
+
+      it('returns a JSON error response', function () {
+        const response = JSON.parse(this.res.text);
+        expect(response).to.eql({
+          code: 'harmony.ConflictError',
+          description: `Error: Job ${jobId} is not complete`,
+        });
+      });
+    });
+
+    describe('when the job is complete', function () {
+      describe('when the service supplies the necessary fields', async function () {
+        const completedJobId = completedJob.requestId;
+        hookStacCatalog(completedJobId);
+
+        it('returns an HTTP OK response', function () {
+          expect(this.res.statusCode).to.equal(200);
+        });
+
+        it('returns a STAC catalog in JSON format', function () {
+          const reqUrl = new url.URL(this.res.request.url);
+          const catalog = JSON.parse(this.res.text);
+          expect(catalog.description).to.equal('Harmony output for http://example.com/harmony?job=completedJob');
+          expect(catalog.id).to.equal(completedJob.requestId);
+          expect(catalog.links).to.eql([
+            { href: '.', rel: 'root', title: 'root' },
+            { href: './0', rel: 'item' },
+            {
+              href: `${reqUrl.origin}/stac/${completedJob.requestId}?page=1&limit=${env.defaultResultPageSize}`,
+              rel: 'self',
+              title: 'The current page',
+              type: 'application/json',
+            },
+          ]);
+          expect(catalog.stac_version).to.equal('1.0.0');
+          expect(catalog.title).to.include('Harmony output for ');
+          expect(catalog.type).to.equal('Catalog');
+        });
+      });
+      describe('when the linkType is invalid', function () {
+        const completedJobId = completedJob.requestId;
+        hookStacCatalog(completedJobId, null, { linkType: 'foo' });
         // HARMONY-770 AC 8
         it('returns a 400 status', function () {
           expect(this.res.statusCode).to.equal(400);

@@ -44,9 +44,7 @@ async function handleStacRequest(
       if (!job) {
         throw new NotFoundError(`Unable to find job ${jobId}`);
       }
-      if (!(await job.canViewJob(req.user, req.context.isAdminAccess, req.accessToken))) {
-        throw new NotFoundError();
-      }
+
       if (job.status === 'successful') {
         if (stacDataLinks.length) {
           job.links = stacDataLinks;
