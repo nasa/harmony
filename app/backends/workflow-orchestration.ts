@@ -576,6 +576,7 @@ export async function handleWorkItemUpdateWithJobId(
   update: WorkItemUpdate,
   operation: object,
   logger: Logger): Promise<void> {
+  const startTime = Date.now();
   const { workItemID, hits, results, scrollID } = update;
   let { errorMessage, status } = update;
   let didCreateWorkItem = false;
@@ -741,6 +742,10 @@ export async function handleWorkItemUpdateWithJobId(
     logger.error(`Work item update failed for work item ${workItemID} and status ${status}`);
     logger.error(e);
   }
+
+  const endTime = Date.now();
+  const duration = endTime - startTime;
+  logger.debug(`Finished handling work item update for ${workItemID} and status ${status} in ${duration} ms`);
 }
 
 /**
@@ -791,22 +796,25 @@ export async function handleBatchWorkItemUpdates(
   logger.debug(`Processing ${updates.length} work item updates`);
   // create a map of jobIDs to updates
   const jobUpdates: Record<string, WorkItemUpdateQueueItem[]> =
-      await updates.reduce(async (acc, item) => {
-        const { workItemID } = item.update;
-        const jobID = await getJobIdForWorkItem(workItemID);
-        logger.debug(`Processing work item update for job ${jobID}`);
-        const accValue = await acc;
-        if (accValue[jobID]) {
-          accValue[jobID].push(item);
-        } else {
-          accValue[jobID] = [item];
-        }
-        return accValue;
-      }, {});
+    await updates.reduce(async (acc, item) => {
+      const { workItemID } = item.update;
+      const jobID = await getJobIdForWorkItem(workItemID);
+      logger.debug(`Processing work item update for job ${jobID}`);
+      const accValue = await acc;
+      if (accValue[jobID]) {
+        accValue[jobID].push(item);
+      } else {
+        accValue[jobID] = [item];
+      }
+      return accValue;
+    }, {});
   // process each job's updates
   for (const jobID in jobUpdates) {
+    const startTime = Date.now();
     logger.debug(`Processing ${jobUpdates[jobID].length} work item updates for job ${jobID}`);
     await handleBatchWorkItemUpdatesWithJobId(jobID, jobUpdates[jobID], logger);
+    const endTime = Date.now();
+    logger.debug(`Processing ${jobUpdates[jobID].length} work item updates for job ${jobID} took ${endTime - startTime} ms`);
   }
 }
 
@@ -816,13 +824,17 @@ export async function handleBatchWorkItemUpdates(
  */
 export async function batchProcessQueue(queueType: WorkItemUpdateQueueType): Promise<void> {
   const queue = getQueue(queueType);
+  const startTime = Date.now();
   // use a smaller batch size for the large item update queue otherwise use the SQS max batch size
   // of 10
   const largeItemQueueBatchSize = Math.min(env.largeWorkItemUpdateQueueMaxBatchSize, 10);
   const otherQueueBatchSize = 10; // the SQS max batch size
   const queueBatchSize = queueType === WorkItemUpdateQueueType.LARGE_ITEM_UPDATE
     ? largeItemQueueBatchSize : otherQueueBatchSize;
+  const readQueueStartTime = Date.now();
   const messages = await queue.getMessages(queueBatchSize);
+  const readQueueEndTime = Date.now();
+  defaultLogger.debug(`Reading ${messages.length} work item updates from queue took ${readQueueEndTime - readQueueStartTime} ms`);
   if (messages.length < 1) {
     return;
   }
@@ -866,6 +878,8 @@ export async function batchProcessQueue(queueType: WorkItemUpdateQueueType): Pro
       defaultLogger.error(`Error deleting work item updates from queue: ${e}`);
     }
   }
+  const endTime = Date.now();
+  defaultLogger.debug(`Processed ${messages.length} work item updates from queue in ${endTime - startTime} ms`);
 }
 
 /**
