@@ -10,7 +10,7 @@ import { auth } from './auth';
  * @param query - Query parameters object for the GET request
  * @returns An awaitable object that resolves to the request response
  */
-export function stacCatalog(
+function stacCatalog(
   app: Express.Application,
   jobId: string,
   query: object = {},
@@ -27,7 +27,7 @@ export function stacCatalog(
  * @param query - Query parameters object for the GET request
  * @returns An awaitable object that resolves to the request response
  */
-export function stacItem(
+function stacItem(
   app: Express.Application,
   jobId: string,
   index: number,
