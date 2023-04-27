@@ -112,6 +112,8 @@ Specifically, you will need to add the following to your .env file:
 Mac OS X
 ```
 LOCALSTACK_HOST=localhost
+WORK_ITEM_UPDATE_QUEUE_URL=http://localstack:4566/queue/work-item-update-queue
+LARGE_WORK_ITEM_UPDATE_QUEUE_URL=http://localstack:4566/queue/large-work-item-update-queue
 BACKEND_HOST=host.docker.internal
 CALLBACK_URL_ROOT=http://host.docker.internal:3001
 ```
@@ -119,6 +121,8 @@ CALLBACK_URL_ROOT=http://host.docker.internal:3001
 Linux
 ```
 LOCALSTACK_HOST=localhost
+WORK_ITEM_UPDATE_QUEUE_URL=http://localstack:4566/queue/work-item-update-queue
+LARGE_WORK_ITEM_UPDATE_QUEUE_URL=http://localstack:4566/queue/large-work-item-update-queue
 BACKEND_HOST=localhost
 CALLBACK_URL_ROOT=http://localhost:3001
 ```
