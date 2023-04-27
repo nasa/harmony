@@ -58,7 +58,7 @@ describe('when setting ignoreErrors=true', function () {
       expect(maxCmrGranules).to.equal(1);
       workItem.status = WorkItemStatus.SUCCESSFUL;
       workItem.results = [
-        getStacLocation(workItem, 'catalog0.json'),
+        getStacLocation(workItem, 'catalog.json'),
       ];
       workItem.outputItemSizes = [1];
       await fakeServiceStacOutput(workItem.jobID, workItem.id, 1);
@@ -122,7 +122,7 @@ describe('when setting ignoreErrors=true', function () {
       expect(maxCmrGranules).to.equal(1);
       workItem.status = WorkItemStatus.SUCCESSFUL;
       workItem.results = [
-        getStacLocation(workItem, 'catalog0.json'),
+        getStacLocation(workItem, 'catalog.json'),
       ];
       workItem.outputItemSizes = [1];
       await fakeServiceStacOutput(workItem.jobID, workItem.id, 1);

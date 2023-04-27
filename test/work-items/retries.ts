@@ -5,7 +5,7 @@ import { Job, JobStatus } from '../../app/models/job';
 import { hookRedirect } from '../helpers/hooks';
 import { hookRangesetRequest } from '../helpers/ogc-api-coverages';
 import hookServersStartStop from '../helpers/servers';
-import { getWorkForService, updateWorkItem } from '../helpers/work-items';
+import { fakeServiceStacOutput, getWorkForService, updateWorkItem } from '../helpers/work-items';
 import { getStacLocation, WorkItemStatus } from '../../app/models/work-item-interface';
 import { truncateAll } from '../helpers/db';
 import env from '../../app/util/env';
@@ -71,9 +71,10 @@ describe('Work item failure retries', function () {
           const { workItem } = JSON.parse(res.text);
 
           workItem.status = WorkItemStatus.SUCCESSFUL;
-          workItem.results = [getStacLocation(workItem, 'catalog0.json')];
+          workItem.results = [getStacLocation(workItem, 'catalog.json')];
           workItem.outputItemSizes = [1];
 
+          await fakeServiceStacOutput(workItem.jobID, workItem.id, 1);
           await updateWorkItem(this.backend, workItem);
 
           this.workItem = await getWorkItemById(db, workItem.id);
@@ -131,9 +132,10 @@ describe('Work item failure retries', function () {
           const { workItem } = JSON.parse(res.text);
 
           workItem.status = WorkItemStatus.SUCCESSFUL;
-          workItem.results = [getStacLocation(workItem, 'catalog0.json')];
+          workItem.results = [getStacLocation(workItem, 'catalog.json')];
           workItem.outputItemSizes = [1];
 
+          await fakeServiceStacOutput(workItem.jobID, workItem.id, 1);
           await updateWorkItem(this.backend, workItem);
 
           this.workItem = await getWorkItemById(db, workItem.id);

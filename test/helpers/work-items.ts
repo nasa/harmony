@@ -273,7 +273,6 @@ export async function fakeServiceStacOutput(
       // create a fake STAC item
       const granuleUrl = getStacLocation(workItem, `granule${i}.json`);
       await s3.upload(JSON.stringify(exampleItem, null, 4), granuleUrl, null, 'application/json');
-
     }
 
     // create fake catalog of catalogs
