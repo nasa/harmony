@@ -132,7 +132,6 @@ const authorizedRoutes = [
   '/jobs*',
   '/logs*',
   '/service-results/*',
-  '/stac*',
   '/workflow-ui*',
 ];
 
