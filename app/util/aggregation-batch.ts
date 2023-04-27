@@ -10,7 +10,7 @@ import env from './env';
 import DataOperation from '../models/data-operation';
 import { objectStoreForProtocol } from './object-store';
 import axios from 'axios';
-import { getCatalogItemUrls, readCatalogItems } from './stac';
+import { getCatalogItemUrls, readCatalogItems, StacItem } from './stac';
 import WorkItemUpdate from '../models/work-item-update';
 import WorkflowStep, { decrementWorkItemCount, incrementWorkItemCount } from '../models/workflow-steps';
 import { WorkItemStatus } from '../models/work-item-interface';
@@ -51,19 +51,17 @@ export async function sizeOfObject(url: string, token: string, logger: Logger): 
     result = 0;
   }
 
-  logger.debug(`ContentLength: ${result}`);
+  logger.debug(`ContentLength: ${result} for ${url}`);
   return result;
 }
 
 /**
- * Read and parse a STAC catalog and return the links to the data items
+ * Return the links to the data items from a STAC catalog
  *
  * @param s3Url - the s3 url of the catalog
  */
-export async function readCatalogLinks(s3Url: string, logger: Logger): Promise<string[]> {
-  logger.debug(`Reading STAC catalog ${s3Url}`);
-  const items = await readCatalogItems(s3Url);
-  return items.map((item) => item.assets.data.href);
+export function getCatalogLinks(catalogItems: StacItem[]):string[] {
+  return catalogItems.map((item) => item.assets.data.href);
 }
 
 /**
@@ -106,7 +104,8 @@ Promise<number[]> {
     const token = op.unencryptedAccessToken;
     let index = 0;
     for (const catalogUrl of update.results) {
-      const links = await exports.readCatalogLinks(catalogUrl, logger);
+      const catalogItems = await readCatalogItems(catalogUrl);
+      const links = exports.getCatalogLinks(catalogItems);
       // eslint-disable-next-line @typescript-eslint/no-loop-func
       const sizes = await Promise.all(links.map(async (link) => {
         const serviceProvidedSize = update.outputItemSizes?.[index];

@@ -114,6 +114,16 @@ describe('when a work item callback request does not return the results to const
   });
 
   describe('when executing a query-cmr work item and no catalog is returned', function () {
+    let retryLimit;
+    before(async function () {
+      retryLimit = env.workItemRetryLimit;
+      env.workItemRetryLimit = 0;
+    });
+
+    after(async function () {
+      env.workItemRetryLimit = retryLimit;
+    });
+
     it('finds the queued work item, but query-cmr fails to return a catalog for the next work items', async function () {
       const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
       expect(res.status).to.equal(200);
@@ -130,7 +140,7 @@ describe('when a work item callback request does not return the results to const
         const jobs = await Job.forUser(db, 'anonymous');
         const job = jobs.data[0];
         expect(job.status).to.equal('failed');
-        expect(job.message).to.equal('Harmony internal failure: could not create the next work items for the request.');
+        expect(job.message).to.equal('WorkItem [1] failed with error: Could not get result item file size, failing the work item update');
       });
     });
   });

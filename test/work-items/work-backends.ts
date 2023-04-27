@@ -265,7 +265,7 @@ describe('Work Backends', function () {
         };
         before(async () => {
           await fakeServiceStacOutput(successfulWorkItemRecord.jobID, successfulWorkItemRecord.id);
-          readCatalogLinksStub = sinon.stub(aggregationBatch, 'readCatalogLinks');
+          readCatalogLinksStub = sinon.stub(aggregationBatch, 'getCatalogLinks');
           sizeOfObjectStub = sinon.stub(aggregationBatch, 'sizeOfObject');
         });
         after(async () => {
@@ -311,8 +311,8 @@ describe('Work Backends', function () {
         };
         before(async () => {
           await fakeServiceStacOutput(successfulWorkItemRecord.jobID, successfulWorkItemRecord.id);
-          readCatalogLinksStub = sinon.stub(aggregationBatch, 'readCatalogLinks')
-            .callsFake(async (_) => ['s3://abc/foo.nc', 'http://abc/bar.nc']);
+          readCatalogLinksStub = sinon.stub(aggregationBatch, 'getCatalogLinks')
+            .callsFake((_) => ['s3://abc/foo.nc', 'http://abc/bar.nc']);
           sizeOfObjectStub = sinon.stub(aggregationBatch, 'sizeOfObject')
             .callsFake(async (_) => 7000000000);
         });
@@ -358,8 +358,8 @@ describe('Work Backends', function () {
         };
         before(async () => {
           await fakeServiceStacOutput(successfulWorkItemRecord.jobID, successfulWorkItemRecord.id);
-          readCatalogLinksStub = sinon.stub(aggregationBatch, 'readCatalogLinks')
-            .callsFake(async (_) => ['s3://abc/foo.nc', 'http://abc/bar.nc']);
+          readCatalogLinksStub = sinon.stub(aggregationBatch, 'getCatalogLinks')
+            .callsFake((_) => ['s3://abc/foo.nc', 'http://abc/bar.nc']);
           sizeOfObjectStub = sinon.stub(aggregationBatch, 'sizeOfObject')
             .callsFake(async (_) => 7000000000);
         });

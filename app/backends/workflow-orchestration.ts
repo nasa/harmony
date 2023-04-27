@@ -6,7 +6,7 @@ import { Logger } from 'winston';
 import defaultLogger from '../util/log';
 import { completeJob } from '../util/job';
 import env from '../util/env';
-import { readCatalogItems, StacItemLink } from '../util/stac';
+import { readCatalogItems, StacItem, StacItemLink } from '../util/stac';
 import HarmonyRequest from '../models/harmony-request';
 import { Job, JobStatus } from '../models/job';
 import JobLink, { getJobDataLinkCount } from '../models/job-link';
@@ -107,37 +107,31 @@ export async function getWork(
  * @param tx - The database transaction
  * @param job - The job for the work item
  * @param results  - an array of paths to STAC catalogs
- * @param logger - The logger for the request
  */
 async function addJobLinksForFinishedWorkItem(
   tx: Transaction,
-  job: Job,
-  results: string[],
-  logger: Logger,
+  jobID: string,
+  catalogItems: StacItem[],
 ): Promise<void> {
-  for (const catalogLocation of results) {
-    logger.debug(`Adding link for STAC catalog ${catalogLocation}`);
+  // const items = await readCatalogItems(catalogLocation);
 
-    const items = await readCatalogItems(catalogLocation);
-
-    for await (const item of items) {
-      for (const keyValue of Object.entries(item.assets)) {
-        const asset = keyValue[1];
-        const { href, type, title } = asset;
-        const link = new JobLink({
-          jobID: job.jobID,
-          href,
-          type,
-          title,
-          rel: 'data',
-          temporal: {
-            start: new Date(item.properties.start_datetime),
-            end: new Date(item.properties.end_datetime),
-          },
-          bbox: item.bbox,
-        });
-        await link.save(tx);
-      }
+  for await (const item of catalogItems) {
+    for (const keyValue of Object.entries(item.assets)) {
+      const asset = keyValue[1];
+      const { href, type, title } = asset;
+      const link = new JobLink({
+        jobID,
+        href,
+        type,
+        title,
+        rel: 'data',
+        temporal: {
+          start: new Date(item.properties.start_datetime),
+          end: new Date(item.properties.end_datetime),
+        },
+        bbox: item.bbox,
+      });
+      await link.save(tx);
     }
   }
 }
@@ -588,7 +582,11 @@ export async function handleWorkItemUpdateWithJobId(
   // when batching.
   // This needs to be done outside the transaction as it can be slow if there are many granules.
   let outputItemSizes;
+  let catalogItems;
   try {
+    if (results?.length < 2 && status === WorkItemStatus.SUCCESSFUL) {
+      catalogItems = await readCatalogItems(results[0]);
+    }
     outputItemSizes = await resultItemSizes(update, operation, logger);
   } catch (e) {
     logger.error('Could not get result item file size, failing the work item update');
@@ -604,7 +602,6 @@ export async function handleWorkItemUpdateWithJobId(
       // to avoid deadlocks
       const workItem = await getWorkItemById(tx, workItemID, true);
       const thisStep = await getWorkflowStepByJobIdStepIndex(tx, workItem.jobID, workItem.workflowStepIndex);
-
       if (job.isComplete() && status !== WorkItemStatus.CANCELED) {
         logger.warn(`Job was already ${job.status}.`);
         const numRowsDeleted = await deleteUserWorkForJob(tx, jobID);
@@ -701,7 +698,6 @@ export async function handleWorkItemUpdateWithJobId(
             outputItemSizes,
           );
         }
-
         if (nextWorkflowStep && status === WorkItemStatus.SUCCESSFUL) {
           if (results && results.length > 0) {
             // set the scrollID for the next work item to the one we received from the update
@@ -717,7 +713,7 @@ export async function handleWorkItemUpdateWithJobId(
         } else if (!nextWorkflowStep || allWorkItemsForStepComplete) {
           // Finished with the chain for this granule
           if (status != WorkItemStatus.FAILED) {
-            await addJobLinksForFinishedWorkItem(tx, job, results, logger);
+            await addJobLinksForFinishedWorkItem(tx, job.jobID, catalogItems);
           }
           job.completeBatch(thisStep.workItemCount);
           if (allWorkItemsForStepComplete && !didCreateWorkItem && (!nextWorkflowStep || nextWorkflowStep.workItemCount === 0)) {
