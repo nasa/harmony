@@ -1164,7 +1164,7 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
   });
 
   describe('when using short name for a collection with granules but no services configured', function () {
-    const shortName = 'GLOBAL_MICROBIAL_BIOMASS_C_N_P_1264';
+    const shortName = 'harmony-SEA_SURFACE_HEIGHT_ALT_GRIDS_L4_2SATS_5DAY_6THDEG_V_JPL1812';
     hookRangesetRequest(version, shortName, 'all', {});
 
     it('returns a 200 successful response', function () {

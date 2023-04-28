@@ -7,6 +7,7 @@ import logger from '../../util/log';
 import { NotFoundError } from '../../util/errors';
 import { isMimeTypeAccepted, allowsAny } from '../../util/content-negotiation';
 import { CmrCollection } from '../../util/cmr';
+import { addCollectionsToServicesByAssociation } from '../../middleware/service-selection';
 import { listToText, Conjunction, isInteger } from '../../util/string';
 import TurboService from './turbo-service';
 import HttpService from './http-service';
@@ -76,7 +77,7 @@ function validateServiceConfig(config: ServiceConfig<unknown>): void {
       }
       if (maxBatchInputs > env.maxGranuleLimit) {
         logger.warn(`Service ${config.name} attempting to allow more than the max allowed granules in a batch. `
-        + `Configured to use ${maxBatchInputs}, but will be limited to ${env.maxGranuleLimit}`);
+          + `Configured to use ${maxBatchInputs}, but will be limited to ${env.maxGranuleLimit}`);
       }
     }
   }
@@ -95,7 +96,6 @@ export function getServiceConfigs(): ServiceConfig<unknown>[] {
 // Load config at require-time to ensure presence / validity early
 loadServiceConfigs();
 serviceConfigs.forEach(validateServiceConfig);
-export const harmonyCollections = _.flatten(serviceConfigs.map((c) => c.collections.map((sc) => sc.id)));
 export const serviceNames = serviceConfigs.map((c) => c.name);
 
 const serviceTypesToServiceClasses = {
@@ -103,6 +103,20 @@ const serviceTypesToServiceClasses = {
   turbo: TurboService,
   noOp: NoOpService,
 };
+
+/**
+ * For a given list of collections, return a list of collection concept ids that have Harmony serices defined via
+ * the umm-s associations in services.yml. This is used to filter out any collections that do not have services associated,
+ * so we only deal with collections that are applicable to Harmony services.
+ * @param collections - an initial list of collections
+ * @returns a list of collection concept ids that have Harmony serices
+ */
+export function harmonyCollections(
+  collections: CmrCollection[],
+): string[] {
+  const allServiceConfigs = addCollectionsToServicesByAssociation(collections);
+  return _.flatten(allServiceConfigs.map((c) => c.collections.map((sc) => sc.id)));
+}
 
 /**
  * Given a service configuration from services.yml and an operation, returns a
@@ -710,7 +724,8 @@ const bestEffortMessage = 'Data in output files may extend outside the spatial a
  * @returns true if the collection has available backends, false otherwise
  */
 export function isCollectionSupported(collection: CmrCollection): boolean {
-  return serviceConfigs.some((sc) => sc.collections.map((c) => c.id).includes(collection.id));
+  const allServiceConfigs = addCollectionsToServicesByAssociation([collection]);
+  return allServiceConfigs.some((sc) => sc.collections.map((c) => c.id).includes(collection.id));
 }
 
 /**
@@ -789,10 +804,10 @@ function requiresStrictCapabilitiesMatching(
     // Request is only asking for one of temporal or spatial subsetting and
     // is not asking for any other operation, so force making matching strict
     !requiresVariableSubsetting(operation)
-      && !requiresReprojection(operation)
-      && !requiresReformatting(operation, context)
-      && !requiresConcatenation(operation)
-      && !requiresDimensionSubsetting(operation)
+    && !requiresReprojection(operation)
+    && !requiresReformatting(operation, context)
+    && !requiresConcatenation(operation)
+    && !requiresDimensionSubsetting(operation)
   ) {
     return true;
   }

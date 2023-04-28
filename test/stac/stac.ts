@@ -70,7 +70,8 @@ describe('STAC catalog route', function () {
       const response = JSON.parse(this.res.text);
       expect(response).to.eql({
         code: 'harmony.NotFoundError',
-        description: `Error: Unable to find job ${unknownRequest}` });
+        description: `Error: Unable to find job ${unknownRequest}`,
+      });
     });
   });
 
@@ -85,7 +86,8 @@ describe('STAC catalog route', function () {
       const response = JSON.parse(this.res.text);
       expect(response).to.eql({
         code: 'harmony.NotFoundError',
-        description: `Error: Unable to find job ${unknownRequest}` });
+        description: `Error: Unable to find job ${unknownRequest}`,
+      });
     });
   });
 
@@ -104,11 +106,17 @@ describe('STAC catalog route', function () {
     });
   });
 
-  // test with user who owns the job and a guest user who doesn't own the job
-  for (const userName of ['joe', null]) {
-    describe('For user who owns the job or guest who does not own the job', function () {
+  const tests = [{
+    description: 'with a logged-in user who owns the job',
+    userName: 'joe',
+  }, {
+    description: 'with a guest user who does not own the job',
+    userName: null,
+  }];
+  for (const test of tests) {
+    describe(test.description, function () {
       describe('when the job is incomplete', function () {
-        hookStacCatalog(jobId, userName);
+        hookStacCatalog(jobId, test.userName);
         it('returns an HTTP not implemented response', function () {
           expect(this.res.statusCode).to.equal(409);
         });
@@ -125,7 +133,7 @@ describe('STAC catalog route', function () {
       describe('when the job is complete', function () {
         describe('when the service supplies the necessary fields', async function () {
           const completedJobId = completedJob.requestId;
-          hookStacCatalog(completedJobId, userName);
+          hookStacCatalog(completedJobId, test.userName);
 
           it('returns an HTTP OK response', function () {
             expect(this.res.statusCode).to.equal(200);
@@ -153,7 +161,7 @@ describe('STAC catalog route', function () {
         });
         describe('when the linkType is invalid', function () {
           const completedJobId = completedJob.requestId;
-          hookStacCatalog(completedJobId, userName, { linkType: 'foo' });
+          hookStacCatalog(completedJobId, test.userName, { linkType: 'foo' });
           // HARMONY-770 AC 8
           it('returns a 400 status', function () {
             expect(this.res.statusCode).to.equal(400);

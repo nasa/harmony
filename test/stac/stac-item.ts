@@ -123,7 +123,8 @@ describe('STAC item route', function () {
       const response = JSON.parse(this.res.text);
       expect(response).to.eql({
         code: 'harmony.NotFoundError',
-        description: `Error: Unable to find job ${unknownRequest}` });
+        description: `Error: Unable to find job ${unknownRequest}`,
+      });
     });
   });
 
@@ -142,11 +143,17 @@ describe('STAC item route', function () {
     });
   });
 
-  // test with user who owns the job and a guest user who doesn't own the job
-  for (const userName of ['joe', null]) {
-    describe('For a logged-in user who owns the job', function () {
+  const tests = [{
+    description: 'with a logged-in user who owns the job',
+    userName: 'joe',
+  }, {
+    description: 'with a guest user who does not own the job',
+    userName: null,
+  }];
+  for (const test of tests) {
+    describe(test.description, function () {
       describe('when the job is incomplete', function () {
-        hookStacItem(jobId, 0, userName);
+        hookStacItem(jobId, 0, test.userName);
         it('returns an HTTP conflict response', function () {
           expect(this.res.statusCode).to.equal(409);
         });
@@ -164,7 +171,7 @@ describe('STAC item route', function () {
         const completedJobId = completedJobWithDestinationUrl.requestId;
 
         describe('when an item is requested', function () {
-          hookStacItem(completedJobId, 0, userName);
+          hookStacItem(completedJobId, 0, test.userName);
 
           it('returns a STAC item without an "expires" field', async function () {
             const item = JSON.parse(this.res.text);
@@ -176,7 +183,7 @@ describe('STAC item route', function () {
       describe('when the job is complete', function () {
         describe('when the service does not supply the necessary fields', async function () {
           const completedJobId = completedNonStacJob.requestId;
-          hookStacItem(completedJobId, 0, userName);
+          hookStacItem(completedJobId, 0, test.userName);
 
           it('returns an HTTP not found response', function () {
             expect(this.res.statusCode).to.equal(404);
@@ -208,7 +215,7 @@ describe('STAC item route', function () {
             geometry: { type: 'Polygon', coordinates: [[[-10, -10], [-10, 10], [10, 10], [10, -10], [-10, -10]]] },
             // `links` added later
             properties: {
-            // `created` and `expires` properties added later
+              // `created` and `expires` properties added later
               license: 'various',
               start_datetime: '2020-01-01T00:00:00.000Z',
               end_datetime: '2020-01-01T01:00:00.000Z',
@@ -218,7 +225,7 @@ describe('STAC item route', function () {
 
           // HARMONY-770 AC 2
           describe('when linkType is not set', function () {
-            hookStacItem(completedJobId, 0, userName);
+            hookStacItem(completedJobId, 0, test.userName);
             itReturnsTheExpectedStacResponse(
               completedJob,
               expectedItemWithoutAssetsOrLinks,
@@ -227,7 +234,7 @@ describe('STAC item route', function () {
 
           // HARMONY-770 AC 7
           describe('when linkType is s3', function () {
-            hookStacItem(completedJobId, 0, userName, { linkType: 's3' });
+            hookStacItem(completedJobId, 0, test.userName, { linkType: 's3' });
             itReturnsTheExpectedStacResponse(
               completedJob,
               expectedItemWithoutAssetsOrLinks,
@@ -237,7 +244,7 @@ describe('STAC item route', function () {
 
           // HARMONY-770 AC 6
           describe('when linkType is http', function () {
-            hookStacItem(completedJobId, 0, userName, { linkType: 'http' });
+            hookStacItem(completedJobId, 0, test.userName, { linkType: 'http' });
             itReturnsTheExpectedStacResponse(
               completedJob,
               expectedItemWithoutAssetsOrLinks,
@@ -247,7 +254,7 @@ describe('STAC item route', function () {
 
           // HARMONY-770 AC 6
           describe('when linkType is https', function () {
-            hookStacItem(completedJobId, 0, userName, { linkType: 'https' });
+            hookStacItem(completedJobId, 0, test.userName, { linkType: 'https' });
             itReturnsTheExpectedStacResponse(
               completedJob,
               expectedItemWithoutAssetsOrLinks,
@@ -271,7 +278,7 @@ describe('STAC item route', function () {
             geometry: { type: 'Polygon', coordinates: [[[-10, -10], [-10, 10], [10, 10], [10, -10], [-10, -10]]] },
             // `links` added later
             properties: {
-            // `created` and `expires` properties added later
+              // `created` and `expires` properties added later
               license: 'various',
               start_datetime: '2020-01-01T00:00:00.000Z',
               end_datetime: '2020-01-01T01:00:00.000Z',
@@ -280,7 +287,7 @@ describe('STAC item route', function () {
           };
 
           describe('when the nth item is requested', function () {
-            hookStacItem(completedJobId, 1, userName);
+            hookStacItem(completedJobId, 1, test.userName);
             itReturnsTheExpectedStacResponse(
               completedJob,
               expectedItemWithoutAssetsOrLinks,
@@ -290,7 +297,7 @@ describe('STAC item route', function () {
 
         describe('when the linkType is invalid', function () {
           const completedJobId = completedJob.requestId;
-          hookStacItem(completedJobId, 0, userName, { linkType: 'foo' });
+          hookStacItem(completedJobId, 0, test.userName, { linkType: 'foo' });
           // HARMONY-770 AC 8
           it('returns a 400 status', function () {
             expect(this.res.error.status).to.equal(400);
@@ -302,7 +309,7 @@ describe('STAC item route', function () {
 
         describe('when the item index is out of bounds', function () {
           const completedJobId = completedJob.requestId;
-          hookStacItem(completedJobId, 100, userName);
+          hookStacItem(completedJobId, 100, test.userName);
           it('returns an HTTP bad request response', function () {
             expect(this.res.statusCode).to.equal(400);
           });

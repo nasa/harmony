@@ -77,8 +77,8 @@ https://cmr.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/harmony/service-example
-    collections:
-      - id: C1756916832-XYZ_PROV
+    umm_s:
+      - S2606110201-XYZ_PROV
     capabilities:
       subsetting:
         bbox: true
@@ -569,12 +569,11 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/harmony/service-example
+    umm_s:
+      - S1237980031-EEDTEST
     collections:
-      - id: C1233800302-EEDTEST
-      - id: C1234088182-EEDTEST
       - id: C1243747507-EEDTEST
         granule_limit: 100 # added to test collection granule limits for HARMONY-795
-      - id: C1244968414-EEDTEST
     capabilities:
       subsetting:
         bbox: true
@@ -628,8 +627,6 @@ https://cmr.uat.earthdata.nasa.gov:
       - id: C1238538241-POCLOUD
       - id: C1238658049-POCLOUD
       - id: C1238570311-POCLOUD
-      - id: C1243729749-EEDTEST
-      - id: C1243747507-EEDTEST
       - id: C1254989831-LARC_ASDC
       - id: C1254989897-LARC_ASDC
       - id: C1245508858-LARC_ASDC
@@ -664,7 +661,6 @@ https://cmr.uat.earthdata.nasa.gov:
       - id: C1234208436-POCLOUD
       - id: C1234208437-POCLOUD
       - id: C1234208438-POCLOUD
-      - id: C1243729749-EEDTEST
     capabilities:
       concatenation: true
       subsetting:
@@ -712,8 +708,6 @@ https://cmr.uat.earthdata.nasa.gov:
       - id: C1238621102-POCLOUD
       - id: C1234071416-POCLOUD
       - id: C1238658052-POCLOUD
-      - id: C1243729749-EEDTEST
-      - id: C1243747507-EEDTEST
     capabilities:
       concatenation: true
       subsetting:
@@ -1032,10 +1026,6 @@ https://cmr.uat.earthdata.nasa.gov:
       - S1240999847-EEDTEST # NetCDF-to-Zarr + swotrepr
       - S1241248230-POCLOUD # PODDAC just netcdf to zarr
     collections:
-      - id: C1234088182-EEDTEST
-      # DO NOT UNCOMMENT THE FOLLOWING LINE - this collection is added via UMM-S and is left here
-      # to prevent re-adding. This is needed for tests related to HARMONY-875
-      # - id: C1233800302-EEDTEST
       - id: C1234410736-POCLOUD
       - id: C1234082763-POCLOUD
       - id: C1234071416-POCLOUD
@@ -1045,7 +1035,6 @@ https://cmr.uat.earthdata.nasa.gov:
       - id: C1234724471-POCLOUD
       - id: C1239379704-POCLOUD
       - id: C1238621141-POCLOUD
-      - id: C1243729749-EEDTEST
     maximum_sync_granules: 0
     capabilities:
       concatenation: true
@@ -1083,6 +1072,8 @@ https://cmr.uat.earthdata.nasa.gov:
           <<: *default-turbo-env
           STAGING_PATH: public/harmony/podaac-l2-subsetter-netcdf-to-zarr
     maximum_sync_granules: 0
+    umm_s:
+      - S1239265626-EEDTEST
     collections:
       - id: C1234208436-POCLOUD
       - id: C1234208437-POCLOUD
@@ -1090,8 +1081,6 @@ https://cmr.uat.earthdata.nasa.gov:
       - id: C1234724470-POCLOUD
       - id: C1234724471-POCLOUD
       - id: C1234071416-POCLOUD
-      - id: C1243729749-EEDTEST
-      - id: C1243747507-EEDTEST
     capabilities:
       concatenation: true
       concatenate_by_default: false
@@ -1136,7 +1125,6 @@ https://cmr.uat.earthdata.nasa.gov:
     umm_s:
       - S1240999847-EEDTEST
     collections:
-      - id: C1233800302-EEDTEST
       - id: C1234724470-POCLOUD
     maximum_sync_granules: 0
     capabilities:
