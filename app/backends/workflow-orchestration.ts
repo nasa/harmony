@@ -105,16 +105,14 @@ export async function getWork(
  * Add links to the Job for the WorkItem and save them to the database.
  *
  * @param tx - The database transaction
- * @param job - The job for the work item
- * @param results  - an array of paths to STAC catalogs
+ * @param jobID - The job ID for the work item
+ * @param catalogItems - an array of STAC catalog items
  */
 async function addJobLinksForFinishedWorkItem(
   tx: Transaction,
   jobID: string,
   catalogItems: StacItem[],
 ): Promise<void> {
-  // const items = await readCatalogItems(catalogLocation);
-
   for await (const item of catalogItems) {
     for (const keyValue of Object.entries(item.assets)) {
       const asset = keyValue[1];
