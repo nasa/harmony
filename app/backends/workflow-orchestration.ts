@@ -907,7 +907,10 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
 
   // we use separate queues for small and large work item updates
   let queueType = WorkItemUpdateQueueType.SMALL_ITEM_UPDATE;
-  if (results?.length > 1) {
+  if (operation.isSynchronous) {
+    workItemLogger.debug('Sending work item update to synchronous queue');
+    queueType = WorkItemUpdateQueueType.SYNCHRONOUS_ITEM_UPDATE;
+  } else if (results?.length > 1) {
     workItemLogger.debug('Sending work item update to large item queue');
     queueType = WorkItemUpdateQueueType.LARGE_ITEM_UPDATE;
   } else {

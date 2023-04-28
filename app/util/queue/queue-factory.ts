@@ -17,6 +17,7 @@ export function getQueue(type: WorkItemUpdateQueueType): Queue {
   if (Object.keys(queues).length === 0) {
     queues[WorkItemUpdateQueueType.SMALL_ITEM_UPDATE] = new SqsQueue(env.workItemUpdateQueueUrl);
     queues[WorkItemUpdateQueueType.LARGE_ITEM_UPDATE] = new SqsQueue(env.largeWorkItemUpdateQueueUrl);
+    queues[WorkItemUpdateQueueType.SYNCHRONOUS_ITEM_UPDATE] = new SqsQueue(env.synchronousWorkItemUpdateQueueUrl);
   }
   return queues[type];
 }
