@@ -198,36 +198,26 @@ export function start(config: Record<string, string>): {
   const queueProcessorCount = config.WORK_ITEM_UPDATE_QUEUE_PROCESSOR_COUNT ?
     parseInt(config.WORK_ITEM_UPDATE_QUEUE_PROCESSOR_COUNT) : 0;
   const workItemUpdateQueueProcessors = [];
-  const synchronousWorkItemUpdateQueueProcessors = [];
   const largeWorkItemUpdateQueueProcessors = [];
   if (config.startWorkItemUpdateQueueProcessor !== 'false' && queueProcessorCount > 0) {
     const workItemUpdateQueueProcessorConfig = {
       logger: logger.child({ application: 'work-item-update-queue-processor' }),
       queueType: WorkItemUpdateQueueType.SMALL_ITEM_UPDATE,
     };
-    const largeWorkItemUpdateQueueProcessorConfig = {
-      logger: logger.child({ application: 'large-work-item-update-queue-processor' }),
-      queueType: WorkItemUpdateQueueType.LARGE_ITEM_UPDATE,
-    };
-    const synchronousWorkItemUpdateQueueProcessorConfig = {
-      logger: logger.child({ application: 'synchronous-work-item-update-queue-processor' }),
-      queueType: WorkItemUpdateQueueType.SYNCHRONOUS_ITEM_UPDATE,
-    };
     let workItemUpdateQueueProcessor;
-    let synchronousWorkItemUpdateQueueProcessor;
     let largeWorkItemUpdateQueueProcessor;
     for (let i = 0; i < queueProcessorCount; i++) {
       workItemUpdateQueueProcessor = new WorkItemUpdateQueueProcessor(workItemUpdateQueueProcessorConfig);
       workItemUpdateQueueProcessors.push(workItemUpdateQueueProcessor);
       workItemUpdateQueueProcessor.start();
 
+      const largeWorkItemUpdateQueueProcessorConfig = {
+        logger: logger.child({ application: 'large-work-item-update-queue-processor' }),
+        queueType: WorkItemUpdateQueueType.LARGE_ITEM_UPDATE,
+      };
       largeWorkItemUpdateQueueProcessor = new WorkItemUpdateQueueProcessor(largeWorkItemUpdateQueueProcessorConfig);
       largeWorkItemUpdateQueueProcessors.push(largeWorkItemUpdateQueueProcessor);
       largeWorkItemUpdateQueueProcessor.start();
-
-      synchronousWorkItemUpdateQueueProcessor = new WorkItemUpdateQueueProcessor(synchronousWorkItemUpdateQueueProcessorConfig);
-      synchronousWorkItemUpdateQueueProcessors.push(synchronousWorkItemUpdateQueueProcessor);
-      synchronousWorkItemUpdateQueueProcessor.start();
     }
   }
 
