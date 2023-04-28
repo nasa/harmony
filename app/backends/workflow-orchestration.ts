@@ -6,7 +6,7 @@ import { Logger } from 'winston';
 import defaultLogger from '../util/log';
 import { completeJob } from '../util/job';
 import env from '../util/env';
-import { readCatalogItems, StacItemLink } from '../util/stac';
+import { readCatalogItems, StacItem, StacItemLink } from '../util/stac';
 import HarmonyRequest from '../models/harmony-request';
 import { Job, JobStatus } from '../models/job';
 import JobLink, { getJobDataLinkCount } from '../models/job-link';
@@ -105,39 +105,31 @@ export async function getWork(
  * Add links to the Job for the WorkItem and save them to the database.
  *
  * @param tx - The database transaction
- * @param job - The job for the work item
- * @param results  - an array of paths to STAC catalogs
- * @param logger - The logger for the request
+ * @param jobID - The job ID for the work item
+ * @param catalogItems - an array of STAC catalog items
  */
 async function addJobLinksForFinishedWorkItem(
   tx: Transaction,
-  job: Job,
-  results: string[],
-  logger: Logger,
+  jobID: string,
+  catalogItems: StacItem[],
 ): Promise<void> {
-  for (const catalogLocation of results) {
-    logger.debug(`Adding link for STAC catalog ${catalogLocation}`);
-
-    const items = await readCatalogItems(catalogLocation);
-
-    for await (const item of items) {
-      for (const keyValue of Object.entries(item.assets)) {
-        const asset = keyValue[1];
-        const { href, type, title } = asset;
-        const link = new JobLink({
-          jobID: job.jobID,
-          href,
-          type,
-          title,
-          rel: 'data',
-          temporal: {
-            start: new Date(item.properties.start_datetime),
-            end: new Date(item.properties.end_datetime),
-          },
-          bbox: item.bbox,
-        });
-        await link.save(tx);
-      }
+  for await (const item of catalogItems) {
+    for (const keyValue of Object.entries(item.assets)) {
+      const asset = keyValue[1];
+      const { href, type, title } = asset;
+      const link = new JobLink({
+        jobID,
+        href,
+        type,
+        title,
+        rel: 'data',
+        temporal: {
+          start: new Date(item.properties.start_datetime),
+          end: new Date(item.properties.end_datetime),
+        },
+        bbox: item.bbox,
+      });
+      await link.save(tx);
     }
   }
 }
@@ -576,6 +568,7 @@ export async function handleWorkItemUpdateWithJobId(
   update: WorkItemUpdate,
   operation: object,
   logger: Logger): Promise<void> {
+  const startTime = Date.now();
   const { workItemID, hits, results, scrollID } = update;
   let { errorMessage, status } = update;
   let didCreateWorkItem = false;
@@ -587,7 +580,11 @@ export async function handleWorkItemUpdateWithJobId(
   // when batching.
   // This needs to be done outside the transaction as it can be slow if there are many granules.
   let outputItemSizes;
+  let catalogItems;
   try {
+    if (results?.length < 2 && status === WorkItemStatus.SUCCESSFUL) {
+      catalogItems = await readCatalogItems(results[0]);
+    }
     outputItemSizes = await resultItemSizes(update, operation, logger);
   } catch (e) {
     logger.error('Could not get result item file size, failing the work item update');
@@ -603,7 +600,6 @@ export async function handleWorkItemUpdateWithJobId(
       // to avoid deadlocks
       const workItem = await getWorkItemById(tx, workItemID, true);
       const thisStep = await getWorkflowStepByJobIdStepIndex(tx, workItem.jobID, workItem.workflowStepIndex);
-
       if (job.isComplete() && status !== WorkItemStatus.CANCELED) {
         logger.warn(`Job was already ${job.status}.`);
         const numRowsDeleted = await deleteUserWorkForJob(tx, jobID);
@@ -700,7 +696,6 @@ export async function handleWorkItemUpdateWithJobId(
             outputItemSizes,
           );
         }
-
         if (nextWorkflowStep && status === WorkItemStatus.SUCCESSFUL) {
           if (results && results.length > 0) {
             // set the scrollID for the next work item to the one we received from the update
@@ -716,7 +711,7 @@ export async function handleWorkItemUpdateWithJobId(
         } else if (!nextWorkflowStep || allWorkItemsForStepComplete) {
           // Finished with the chain for this granule
           if (status != WorkItemStatus.FAILED) {
-            await addJobLinksForFinishedWorkItem(tx, job, results, logger);
+            await addJobLinksForFinishedWorkItem(tx, job.jobID, catalogItems);
           }
           job.completeBatch(thisStep.workItemCount);
           if (allWorkItemsForStepComplete && !didCreateWorkItem && (!nextWorkflowStep || nextWorkflowStep.workItemCount === 0)) {
@@ -741,6 +736,10 @@ export async function handleWorkItemUpdateWithJobId(
     logger.error(`Work item update failed for work item ${workItemID} and status ${status}`);
     logger.error(e);
   }
+
+  const endTime = Date.now();
+  const duration = endTime - startTime;
+  logger.debug(`Finished handling work item update for ${workItemID} and status ${status} in ${duration} ms`);
 }
 
 /**
@@ -791,22 +790,25 @@ export async function handleBatchWorkItemUpdates(
   logger.debug(`Processing ${updates.length} work item updates`);
   // create a map of jobIDs to updates
   const jobUpdates: Record<string, WorkItemUpdateQueueItem[]> =
-      await updates.reduce(async (acc, item) => {
-        const { workItemID } = item.update;
-        const jobID = await getJobIdForWorkItem(workItemID);
-        logger.debug(`Processing work item update for job ${jobID}`);
-        const accValue = await acc;
-        if (accValue[jobID]) {
-          accValue[jobID].push(item);
-        } else {
-          accValue[jobID] = [item];
-        }
-        return accValue;
-      }, {});
+    await updates.reduce(async (acc, item) => {
+      const { workItemID } = item.update;
+      const jobID = await getJobIdForWorkItem(workItemID);
+      logger.debug(`Processing work item update for job ${jobID}`);
+      const accValue = await acc;
+      if (accValue[jobID]) {
+        accValue[jobID].push(item);
+      } else {
+        accValue[jobID] = [item];
+      }
+      return accValue;
+    }, {});
   // process each job's updates
   for (const jobID in jobUpdates) {
+    const startTime = Date.now();
     logger.debug(`Processing ${jobUpdates[jobID].length} work item updates for job ${jobID}`);
     await handleBatchWorkItemUpdatesWithJobId(jobID, jobUpdates[jobID], logger);
+    const endTime = Date.now();
+    logger.debug(`Processing ${jobUpdates[jobID].length} work item updates for job ${jobID} took ${endTime - startTime} ms`);
   }
 }
 
@@ -816,13 +818,17 @@ export async function handleBatchWorkItemUpdates(
  */
 export async function batchProcessQueue(queueType: WorkItemUpdateQueueType): Promise<void> {
   const queue = getQueue(queueType);
+  const startTime = Date.now();
   // use a smaller batch size for the large item update queue otherwise use the SQS max batch size
   // of 10
   const largeItemQueueBatchSize = Math.min(env.largeWorkItemUpdateQueueMaxBatchSize, 10);
   const otherQueueBatchSize = 10; // the SQS max batch size
   const queueBatchSize = queueType === WorkItemUpdateQueueType.LARGE_ITEM_UPDATE
     ? largeItemQueueBatchSize : otherQueueBatchSize;
+  const readQueueStartTime = Date.now();
   const messages = await queue.getMessages(queueBatchSize);
+  const readQueueEndTime = Date.now();
+  defaultLogger.debug(`Reading ${messages.length} work item updates from queue took ${readQueueEndTime - readQueueStartTime} ms`);
   if (messages.length < 1) {
     return;
   }
@@ -866,6 +872,8 @@ export async function batchProcessQueue(queueType: WorkItemUpdateQueueType): Pro
       defaultLogger.error(`Error deleting work item updates from queue: ${e}`);
     }
   }
+  const endTime = Date.now();
+  defaultLogger.debug(`Processed ${messages.length} work item updates from queue in ${endTime - startTime} ms`);
 }
 
 /**
