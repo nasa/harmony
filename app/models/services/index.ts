@@ -96,7 +96,6 @@ export function getServiceConfigs(): ServiceConfig<unknown>[] {
 // Load config at require-time to ensure presence / validity early
 loadServiceConfigs();
 serviceConfigs.forEach(validateServiceConfig);
-export const harmonyCollections = _.flatten(serviceConfigs.map((c) => c.collections.map((sc) => sc.id)));
 export const serviceNames = serviceConfigs.map((c) => c.name);
 
 const serviceTypesToServiceClasses = {
@@ -104,6 +103,20 @@ const serviceTypesToServiceClasses = {
   turbo: TurboService,
   noOp: NoOpService,
 };
+
+/**
+ * For a given list of collections, return a list of collection concept ids that have Harmony serices defined via
+ * the umm-s associations in services.yml. This is used to filter out any collections that do not have services associated,
+ * so we only deal with collections that are applicable to Harmony services.
+ * @param collections - an initial list of collections
+ * @returns a list of collection concept ids that have Harmony serices
+ */
+export function harmonyCollections(
+  collections: CmrCollection[],
+): string[] {
+  const allServiceConfigs = addCollectionsToServicesByAssociation(collections);
+  return _.flatten(allServiceConfigs.map((c) => c.collections.map((sc) => sc.id)));
+}
 
 /**
  * Given a service configuration from services.yml and an operation, returns a

@@ -1026,10 +1026,6 @@ https://cmr.uat.earthdata.nasa.gov:
       - S1240999847-EEDTEST # NetCDF-to-Zarr + swotrepr
       - S1241248230-POCLOUD # PODDAC just netcdf to zarr
     collections:
-      - id: C1234088182-EEDTEST
-      # DO NOT UNCOMMENT THE FOLLOWING LINE - this collection is added via UMM-S and is left here
-      # to prevent re-adding. This is needed for tests related to HARMONY-875
-      # - id: C1233800302-EEDTEST
       - id: C1234410736-POCLOUD
       - id: C1234082763-POCLOUD
       - id: C1234071416-POCLOUD

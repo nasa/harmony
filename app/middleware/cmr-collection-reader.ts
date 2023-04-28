@@ -94,7 +94,7 @@ async function cmrCollectionReader(req: HarmonyRequest, res, next: NextFunction)
         if (collections.length > 1) {
           // If there are multiple collections matching prefer a collection that is configured
           // for use in harmony
-          const harmonyCollection = collections.find((c) => harmonyCollections.includes(c.id));
+          const harmonyCollection = collections.find((c) => harmonyCollections(collections).includes(c.id));
           pickedCollection = harmonyCollection || pickedCollection;
         }
         if (pickedCollection) {
