@@ -143,10 +143,10 @@ DATABASE_URL=
 UPLOAD_BUCKET=local-upload-bucket
 
 # SQS queue used to process work item updates
-WORK_ITEM_UPDATE_QUEUE_URL=http://localstack:4566/queue/work-item-update-queue
+WORK_ITEM_UPDATE_QUEUE_URL=http://localhost:4566/queue/work-item-update-queue
 
 # SQS queue used to process work item updates
-LARGE_WORK_ITEM_UPDATE_QUEUE_URL=http://localstack:4566/queue/large-work-item-update-queue
+LARGE_WORK_ITEM_UPDATE_QUEUE_URL=http://localhost:4566/queue/large-work-item-update-queue
 
 # maximum number of items to pull from the queue at once for the large item queue (to avoid visibility timeouts)
 # if this is set to greater than 10 (the SQS max) then 10 will be used instead

@@ -7,6 +7,7 @@ import logger from '../../util/log';
 import { NotFoundError } from '../../util/errors';
 import { isMimeTypeAccepted, allowsAny } from '../../util/content-negotiation';
 import { CmrCollection } from '../../util/cmr';
+import { addCollectionsToServicesByAssociation } from '../../middleware/service-selection';
 import { listToText, Conjunction, isInteger } from '../../util/string';
 import TurboService from './turbo-service';
 import HttpService from './http-service';
@@ -76,7 +77,7 @@ function validateServiceConfig(config: ServiceConfig<unknown>): void {
       }
       if (maxBatchInputs > env.maxGranuleLimit) {
         logger.warn(`Service ${config.name} attempting to allow more than the max allowed granules in a batch. `
-        + `Configured to use ${maxBatchInputs}, but will be limited to ${env.maxGranuleLimit}`);
+          + `Configured to use ${maxBatchInputs}, but will be limited to ${env.maxGranuleLimit}`);
       }
     }
   }
@@ -710,7 +711,8 @@ const bestEffortMessage = 'Data in output files may extend outside the spatial a
  * @returns true if the collection has available backends, false otherwise
  */
 export function isCollectionSupported(collection: CmrCollection): boolean {
-  return serviceConfigs.some((sc) => sc.collections.map((c) => c.id).includes(collection.id));
+  const allServiceConfigs = addCollectionsToServicesByAssociation([collection]);
+  return allServiceConfigs.some((sc) => sc.collections.map((c) => c.id).includes(collection.id));
 }
 
 /**
@@ -789,10 +791,10 @@ function requiresStrictCapabilitiesMatching(
     // Request is only asking for one of temporal or spatial subsetting and
     // is not asking for any other operation, so force making matching strict
     !requiresVariableSubsetting(operation)
-      && !requiresReprojection(operation)
-      && !requiresReformatting(operation, context)
-      && !requiresConcatenation(operation)
-      && !requiresDimensionSubsetting(operation)
+    && !requiresReprojection(operation)
+    && !requiresReformatting(operation, context)
+    && !requiresConcatenation(operation)
+    && !requiresDimensionSubsetting(operation)
   ) {
     return true;
   }
