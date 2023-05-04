@@ -1,6 +1,6 @@
 import { v4 as uuid } from 'uuid';
 import { Queue, ReceivedMessage, WorkItemUpdateQueueType } from '../../app/util/queue/queue';
-import { batchProcessQueue } from '../../app/backends/workflow-orchestration';
+import { batchProcessQueue } from '../../app/backends/workflow-orchestration/workflow-orchestration';
 
 interface StoredMessage extends ReceivedMessage {
   body: string;

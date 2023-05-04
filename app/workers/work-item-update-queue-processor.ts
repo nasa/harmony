@@ -1,5 +1,5 @@
 import { Logger } from 'winston';
-import { batchProcessQueue } from '../backends/workflow-orchestration';
+import { batchProcessQueue } from '../backends/workflow-orchestration/workflow-orchestration';
 import env from '../util/env';
 import { Worker } from './worker';
 import sleep from '../util/sleep';
