@@ -2,11 +2,11 @@ import FormData from 'form-data';
 import { before, after } from 'mocha';
 import { stub, SinonStub } from 'sinon';
 import { hookMockS3 } from './object-store';
-import { hookGetQueue } from './queue';
+import { hookGetQueueForType } from './queue';
 import * as cmr from '../../app/util/cmr';
 
 hookMockS3();
-hookGetQueue();
+hookGetQueueForType();
 
 process.env.REPLAY = process.env.REPLAY || 'record';
 require('replay');

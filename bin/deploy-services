@@ -56,4 +56,7 @@ do
   export SERVICE_INVOCATION_ARGS=${!varname}
 
   envsubst < $file | kubectl apply -f - -n harmony
+
+  # create the service queue
+  awslocal sqs create-queue --queue-name "${SERVICE_NAME}.fifo" --attributes FifoQueue=true --region us-west-2
 done

@@ -115,6 +115,7 @@ interface HarmonyEnv {
   workItemUpdateQueueProcessorCount: number;
   maxErrorsForJob: number;
   workItemRetryLimit: number;
+  workItemSchedulerQueueUrl: string;
   workItemUpdateQueueUrl: string;
   largeWorkItemUpdateQueueUrl: string;
   largeWorkItemUpdateQueueMaxBatchSize: number;
@@ -124,6 +125,8 @@ interface HarmonyEnv {
   openTelemetryUrl: string;
   workFailerBatchSize: number;
   releaseVersion: string;
+  serviceQueueUrls: { [key: string]: string };
+  useServiceQueues: boolean;
 }
 
 // special cases
@@ -131,5 +134,29 @@ interface HarmonyEnv {
 envVars.harmonyClientId = process.env.CLIENT_ID || 'harmony-unknown';
 envVars.uploadBucket = process.env.UPLOAD_BUCKET || process.env.STAGING_BUCKET || 'local-staging-bucket';
 envVars.useLocalstack = process.env.USE_LOCALSTACK === 'true';
+envVars.useServiceQueues = process.env.USE_SERVICE_QUEUES === 'true';
+
+envVars.serviceQueueUrls = {};
+// process all environment variables ending in _QUEUE_URLS to add image/url pairs to
+// the `serviceQueueUrls` map
+for (const k of Object.keys(process.env)) {
+  if (/^.*_QUEUE_URLS$/.test(k)) {
+    const value = process.env[k];
+    try {
+      const imageQueueUrls = JSON.parse(value);
+      for (const imageQueueUrl of imageQueueUrls) {
+        const [image, url] = imageQueueUrl.split(',');
+        if (image && url) {
+          // replace 'localstack' with `env.localstackHost` to allow for harmony to be run in a
+          // container
+          envVars.serviceQueueUrls[image] = url.replace('localstack', envVars.localstackHost);
+        }
+      }
+    } catch (e) {
+      winston.warn(`Could not parse value ${value} for ${k} as JSON`);
+    }
+  }
+}
+
 
 export = envVars;

@@ -1,5 +1,5 @@
 import AWS from 'aws-sdk';
-import env, { queueLongPollingWaitTimeSec } from '../env';
+import env from '../env';
 import { Queue, ReceivedMessage } from './queue';
 
 export class SqsQueue extends Queue {
@@ -24,11 +24,11 @@ export class SqsQueue extends Queue {
     }
   }
 
-  async getMessage(): Promise<ReceivedMessage> {
+  async getMessage(waitTimeSeconds = env.queueLongPollingWaitTimeSec): Promise<ReceivedMessage> {
     const response = await this.sqs.receiveMessage({
       QueueUrl: this.queueUrl,
       MaxNumberOfMessages: 1,
-      WaitTimeSeconds: env.queueLongPollingWaitTimeSec,
+      WaitTimeSeconds: waitTimeSeconds,
     }).promise();
     if (response.Messages) {
       const message = response.Messages[0];
@@ -40,11 +40,11 @@ export class SqsQueue extends Queue {
     return null;
   }
 
-  async getMessages(num: number): Promise<ReceivedMessage[]> {
+  async getMessages(num: number, waitTimeSeconds = env.queueLongPollingWaitTimeSec): Promise<ReceivedMessage[]> {
     const response = await this.sqs.receiveMessage({
       QueueUrl: this.queueUrl,
       MaxNumberOfMessages: num,
-      WaitTimeSeconds: queueLongPollingWaitTimeSec,
+      WaitTimeSeconds: waitTimeSeconds,
     }).promise();
     if (response.Messages) {
       return response.Messages.map((message) => ({

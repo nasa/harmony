@@ -77,6 +77,7 @@ fi
 
 WORK_ITEM_UPDATE_QUEUE=${WORK_ITEM_UPDATE_QUEUE:-work-item-update-queue}
 LARGE_WORK_ITEM_UPDATE_QUEUE=${LARGE_WORK_ITEM_UPDATE_QUEUE:-large-work-item-update-queue}
+WORK_ITEM_SCHEDULER_QUEUE=${WORK_ITEM_SCHEDULER_QUEUE:-work-item-scheduler-queue}
 STAGING_BUCKET=${STAGING_BUCKET:-local-staging-bucket}
 ARTIFACT_BUCKET=${ARTIFACT_BUCKET:-local-artifact-bucket}
 UPLOAD_BUCKET=${UPLOAD_BUCKET:-local-upload-bucket}
@@ -85,6 +86,7 @@ UPLOAD_BUCKET=${UPLOAD_BUCKET:-local-upload-bucket}
 localstack_startup_script="
 awslocal sqs create-queue --queue-name ${WORK_ITEM_UPDATE_QUEUE} --region us-west-2
 awslocal sqs create-queue --queue-name ${LARGE_WORK_ITEM_UPDATE_QUEUE} --attributes VisibilityTimeout=3600 --region us-west-2
+awslocal sqs create-queue --queue-name ${WORK_ITEM_SCHEDULER_QUEUE} --attributes FifoQueue=true --region us-west-2
 awslocal s3 mb s3://${STAGING_BUCKET} --region us-west-2
 awslocal s3 mb s3://${ARTIFACT_BUCKET} --region us-west-2
 awslocal s3 mb s3://${UPLOAD_BUCKET} --region us-west-2

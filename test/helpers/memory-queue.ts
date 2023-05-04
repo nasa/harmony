@@ -8,6 +8,9 @@ interface StoredMessage extends ReceivedMessage {
   isVisible: boolean;
 }
 
+/**
+ * This class is used to mock the SQS queue for testing purposes. It stores messages in memory.
+ */
 export class MemoryQueue extends Queue {
   messages: StoredMessage[];
 
@@ -16,7 +19,7 @@ export class MemoryQueue extends Queue {
     this.messages = [];
   }
 
-  async getMessage(): Promise<ReceivedMessage> {
+  async getMessage(_waitTimeSeconds: number): Promise<ReceivedMessage> {
     const message = this.messages.find((m) => m.isVisible);
     if (message) {
       message.isVisible = false;
@@ -25,7 +28,7 @@ export class MemoryQueue extends Queue {
     return message;
   }
 
-  async getMessages(num: number): Promise<ReceivedMessage[]> {
+  async getMessages(num: number, _waitTimeSeconds: number): Promise<ReceivedMessage[]> {
     const messages = this.messages.filter((m) => m.isVisible).slice(0, num);
     if (messages.length > 0) {
       messages.forEach((m) => {

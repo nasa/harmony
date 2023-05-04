@@ -142,6 +142,12 @@ DATABASE_URL=
 # requests are in flight
 UPLOAD_BUCKET=local-upload-bucket
 
+# Whether or not to use queues for retrieving work-items when handling polling for work
+USE_SERVICE_QUEUES=false
+
+# SQS queue used to request scheduling of work items for a service
+WORK_ITEM_SCHEDULER_QUEUE_URL=http://localstack:4566/queue/work-item-scheduler-queue
+
 # SQS queue used to process work item updates
 WORK_ITEM_UPDATE_QUEUE_URL=http://localstack:4566/queue/work-item-update-queue
 
@@ -265,6 +271,7 @@ HARMONY_GDAL_ADAPTER_REQUESTS_MEMORY=128Mi
 HARMONY_GDAL_ADAPTER_LIMITS_CPU=128m
 HARMONY_GDAL_ADAPTER_LIMITS_MEMORY=8Gi
 HARMONY_GDAL_ADAPTER_INVOCATION_ARGS='python -m gdal_subsetter'
+HARMONY_GDAL_ADAPTER_QUEUE_URLS='["ghcr.io/nasa/harmony-gdal-adapter:latest,http://localstack:4566/queue/harmony-gdal-adapter-queue.fifo"]'
 
 HARMONY_SERVICE_EXAMPLE_IMAGE=harmonyservices/service-example:latest
 HARMONY_SERVICE_EXAMPLE_REQUESTS_CPU=128m
@@ -272,6 +279,7 @@ HARMONY_SERVICE_EXAMPLE_REQUESTS_MEMORY=128Mi
 HARMONY_SERVICE_EXAMPLE_LIMITS_CPU=128m
 HARMONY_SERVICE_EXAMPLE_LIMITS_MEMORY=512Mi
 HARMONY_SERVICE_EXAMPLE_INVOCATION_ARGS='python -m harmony_service_example'
+HARMONY_SERVICE_EXAMPLE_QUEUE_URLS='["harmonyservices/service-example:latest,http://localstack:4566/queue/harmony-service-example-queue"]'
 
 HARMONY_NETCDF_TO_ZARR_IMAGE=ghcr.io/nasa/harmony-netcdf-to-zarr:latest
 HARMONY_NETCDF_TO_ZARR_REQUESTS_CPU=128m
@@ -279,6 +287,7 @@ HARMONY_NETCDF_TO_ZARR_REQUESTS_MEMORY=128Mi
 HARMONY_NETCDF_TO_ZARR_LIMITS_CPU=128m
 HARMONY_NETCDF_TO_ZARR_LIMITS_MEMORY=512Mi
 HARMONY_NETCDF_TO_ZARR_INVOCATION_ARGS='python -m harmony_netcdf_to_zarr'
+HARMONY_NETCDF_TO_ZARR_QUEUE_URLS='["ghcr.io/nasa/harmony-netcdf-to-zarr:latest,http://localstack:4566/queue/harmony-netcdf-to-zarr-queue.fifo"]'
 
 HARMONY_REGRIDDER_IMAGE=sds/harmony-regridder:latest
 HARMONY_REGRIDDER_REQUESTS_CPU=128m
@@ -286,6 +295,7 @@ HARMONY_REGRIDDER_REQUESTS_MEMORY=128Mi
 HARMONY_REGRIDDER_LIMITS_CPU=128m
 HARMONY_REGRIDDER_LIMITS_MEMORY=512Mi
 HARMONY_REGRIDDER_INVOCATION_ARGS='python -m harmony_regridding_service'
+HARMONY_REGRIDDER_QUEUE_URLS='["sds/harmony-regridder:latest,http://localstack:4566/queue/harmony-regridder-queue.fifo"]'
 
 SWOT_REPROJECT_IMAGE=sds/swot-reproject:latest
 SWOT_REPROJECT_REQUESTS_CPU=128m
@@ -293,6 +303,7 @@ SWOT_REPROJECT_REQUESTS_MEMORY=128Mi
 SWOT_REPROJECT_LIMITS_CPU=128m
 SWOT_REPROJECT_LIMITS_MEMORY=512Mi
 SWOT_REPROJECT_INVOCATION_ARGS='python swotrepr.py'
+SWOT_REPROJECT_QUEUE_URLS='["sds/swot-reproject:latest,http://localstack:4566/queue/swot-reproject-queue.fifo"]'
 
 VAR_SUBSETTER_IMAGE=sds/variable-subsetter:latest
 VAR_SUBSETTER_REQUESTS_CPU=128m
@@ -300,6 +311,7 @@ VAR_SUBSETTER_REQUESTS_MEMORY=128Mi
 VAR_SUBSETTER_LIMITS_CPU=128m
 VAR_SUBSETTER_LIMITS_MEMORY=512Mi
 VAR_SUBSETTER_INVOCATION_ARGS='python subsetter.py'
+VAR_SUBSETTER_QUEUE_URLS='["sds/variable-subsetter:latest,http://localstack:4566/queue/variable-subsetter-queue.fifo"]'
 
 SDS_MASKFILL_IMAGE=sds/maskfill-harmony:latest
 SDS_MASKFILL_REQUESTS_CPU=128m
@@ -307,6 +319,7 @@ SDS_MASKFILL_REQUESTS_MEMORY=128Mi
 SDS_MASKFILL_LIMITS_CPU=128m
 SDS_MASKFILL_LIMITS_MEMORY=512Mi
 SDS_MASKFILL_INVOCATION_ARGS='python harmony_adapter.py'
+SDS_MASKFILL_QUEUE_URLS='["sds/maskfill-harmony:latest,http://localstack:4566/queue/maskfill-harmony-queue.fifo"]'
 
 TRAJECTORY_SUBSETTER_IMAGE=sds/trajectory-subsetter:latest
 TRAJECTORY_SUBSETTER_REQUESTS_CPU=128m
@@ -314,6 +327,7 @@ TRAJECTORY_SUBSETTER_REQUESTS_MEMORY=128Mi
 TRAJECTORY_SUBSETTER_LIMITS_CPU=128m
 TRAJECTORY_SUBSETTER_LIMITS_MEMORY=512Mi
 TRAJECTORY_SUBSETTER_INVOCATION_ARGS='python harmony_service/adapter.py'
+TRAJECTORY_SUBSETTER_QUEUE_URLS='["sds/trajectory-subsetter:latest,http://localstack:4566/queue/trajectory-subsetter-queue.fifo"]'
 
 PODAAC_CONCISE_IMAGE=ghcr.io/podaac/concise:sit
 PODAAC_CONCISE_REQUESTS_CPU=128m
@@ -321,6 +335,7 @@ PODAAC_CONCISE_REQUESTS_MEMORY=128Mi
 PODAAC_CONCISE_LIMITS_CPU=128m
 PODAAC_CONCISE_LIMITS_MEMORY=512Mi
 PODAAC_CONCISE_INVOCATION_ARGS='concise_harmony'
+PODAAC_CONCISE_QUEUE_URLS='["ghcr.io/podaac/concise:sit,http://localstack:4566/queue/concise-queue.fifo"]'
 
 PODAAC_L2_SUBSETTER_IMAGE=ghcr.io/podaac/l2ss-py:sit
 PODAAC_L2_SUBSETTER_REQUESTS_CPU=128m
@@ -328,24 +343,28 @@ PODAAC_L2_SUBSETTER_REQUESTS_MEMORY=128Mi
 PODAAC_L2_SUBSETTER_LIMITS_CPU=128m
 PODAAC_L2_SUBSETTER_LIMITS_MEMORY=512Mi
 PODAAC_L2_SUBSETTER_INVOCATION_ARGS='./docker-entrypoint.sh'
+PODAAC_L2_SUBSETTER_QUEUE_URLS='["ghcr.io/podaac/l2ss-py:sit,http://localstack:4566/queue/l2ss-queue.fifo"]'
 
 PODAAC_PS3_IMAGE=podaac/podaac-cloud/podaac-shapefile-subsetter:latest
 PODAAC_PS3_REQUESTS_CPU=128m
 PODAAC_PS3_REQUESTS_MEMORY=128Mi
 PODAAC_PS3_LIMITS_CPU=128m
 PODAAC_PS3_LIMITS_MEMORY=512Mi
+PODAAC_L2_SUBSETTER_QUEUE_URLS='["podaac/podaac-cloud/podaac-shapefile-subsetter:latest,http://localstack:4566/queue/podaac-shapefile-subsetter-queue.fifo"]'
 
 PODAAC_NETCDF_CONVERTER_IMAGE=podaac/podaac-cloud/podaac-netcdf-converter:latest
 PODAAC_NETCDF_CONVERTER_REQUESTS_CPU=128m
 PODAAC_NETCDF_CONVERTER_REQUESTS_MEMORY=128Mi
 PODAAC_NETCDF_CONVERTER_LIMITS_CPU=128m
 PODAAC_NETCDF_CONVERTER_LIMITS_MEMORY=512Mi
+PODAAC_NETCDF_CONVERTER_QUEUE_URLS='["podaac/podaac-cloud/podaac-netcdf-converter:latest,http://localstack:4566/queue/podaac-netcdf-converter-queue.fifo"]'
 
 QUERY_CMR_IMAGE=harmonyservices/query-cmr:latest
 QUERY_CMR_REQUESTS_CPU=128m
 QUERY_CMR_REQUESTS_MEMORY=128Mi
 QUERY_CMR_LIMITS_CPU=128m
 QUERY_CMR_LIMITS_MEMORY=512Mi
+QUERY_CMR_QUEUE_URLS='["harmonyservices/query-cmr:latest,http://localstack:4566/queue/query-cmr-queue.fifo"]'
 
 GIOVANNI_ADAPTER_IMAGE=harmonyservices/giovanni-adapter:latest
 GIOVANNI_ADAPTER_REQUESTS_CPU=128m
@@ -353,6 +372,7 @@ GIOVANNI_ADAPTER_REQUESTS_MEMORY=128Mi
 GIOVANNI_ADAPTER_LIMITS_CPU=128m
 GIOVANNI_ADAPTER_LIMITS_MEMORY=512Mi
 GIOVANNI_ADAPTER_INVOCATION_ARGS='node tasks/giovanni-adapter/app/cli'
+GIOVANNI_ADAPTER_QUEUE_URLS='["harmonyservices/giovanni-adapter:latest,http://localstack:4566/queue/giovanni-adapter-queue.fifo"]'
 
 # The services to deploy locally. A comma-separated list of services that the bin/deploy-services
 # script should attempt to deploy. By default only a couple of harmony example services are deployed.
