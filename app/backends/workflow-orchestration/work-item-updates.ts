@@ -21,8 +21,8 @@ import { objectStoreForProtocol } from '../../util/object-store';
 import { StacItem, readCatalogItems, StacItemLink } from '../../util/stac';
 import { sanitizeImage } from '../../util/string';
 import { resolve } from '../../util/url';
+import { QUERY_CMR_SERVICE_REGEX, calculateQueryCmrLimit } from './util';
 
-const QUERY_CMR_SERVICE_REGEX = /harmonyservices\/query-cmr:.*/;
 
 type WorkItemUpdateQueueItem = {
   update: WorkItemUpdate,
@@ -363,24 +363,6 @@ async function createAggregatingWorkItem(
   const itemMeta: WorkItemMeta = { workItemService: sanitizeImage(newWorkItem.serviceID),
     workItemEvent: 'statusUpdate', workItemAmount: 1, workItemStatus: WorkItemStatus.READY };
   logger.info('Queued new aggregating work item.', itemMeta);
-}
-
-/**
- * Calculate the granule page limit for the current query-cmr work item.
- * @param tx - database transaction to query with
- * @param workItem - current query-cmr work item
- * @param logger - a Logger instance
- * @returns a number used to limit the query-cmr task or undefined
- */
-export async function calculateQueryCmrLimit(tx: Transaction, workItem: WorkItem, logger: Logger): Promise<number> {
-  let queryCmrLimit = -1;
-  if (workItem && QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)) { // only proceed if this is a query-cmr step
-    const numInputGranules = await Job.getNumInputGranules(tx, workItem.jobID);
-    const numSuccessfulQueryCmrItems = await workItemCountForStep(tx, workItem.jobID, 1, WorkItemStatus.SUCCESSFUL);
-    queryCmrLimit = Math.max(0, Math.min(env.cmrMaxPageSize, numInputGranules - (numSuccessfulQueryCmrItems * env.cmrMaxPageSize)));
-    logger.debug(`Limit next query-cmr task to no more than ${queryCmrLimit} granules.`);
-  }
-  return queryCmrLimit;
 }
 
 /**
