@@ -4,7 +4,9 @@ import env from '../../util/env';
 import HarmonyRequest from '../../models/harmony-request';
 import { WorkItemUpdateQueueType } from '../../util/queue/queue';
 import { getQueueForType  } from '../../util/queue/queue-factory';
-import { getWorkFromQueue, getWorkFromDatabase } from './work-item-polling';
+import { getWorkFromQueue, getWorkFromDatabase, WorkItemData } from './work-item-polling';
+import { WorkItemMeta, WorkItemStatus } from '../../models/work-item-interface';
+import { sanitizeImage } from '../../util/string';
 
 
 const MAX_TRY_COUNT = 1;
@@ -26,21 +28,32 @@ export async function getWork(
   reqLogger.info(`Getting work for service ${serviceID} and pod ${podName}`);
 
   let responded = false;
+  let workItemData: WorkItemData;
 
   if (env.useServiceQueues) {
-    const workItemData = await getWorkFromQueue(serviceID as string);
-    if (workItemData){
-      const { workItem, maxCmrGranules } = workItemData;
-      if (QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)) {
-        res.send({ workItem, maxCmrGranules });
-      } else {
-        res.send({ workItem });
-      }
-
-      responded = true;
-    }
+    workItemData = await getWorkFromQueue(serviceID as string);
   } else {
-    responded = await getWorkFromDatabase(serviceID as string, reqLogger, podName as string, res);
+    workItemData = await getWorkFromDatabase(serviceID as string, reqLogger);
+  }
+
+  if (workItemData) {
+    const { workItem, maxCmrGranules } = workItemData;
+
+    const logger = reqLogger.child({ workItemId: workItem.id });
+    const waitSeconds = (Date.now() - workItem.createdAt.valueOf()) / 1000;
+    const itemMeta: WorkItemMeta = {
+      workItemEvent: 'statusUpdate', workItemDuration: waitSeconds,
+      workItemService: sanitizeImage(workItem.serviceID), workItemAmount: 1, workItemStatus: WorkItemStatus.RUNNING,
+    };
+    logger.info(`Sending work item ${workItem.id} to pod ${podName}`, itemMeta);
+
+    if (QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)) {
+      res.send({ workItem, maxCmrGranules });
+    } else {
+      res.send({ workItem });
+    }
+
+    responded = true;
   }
 
   if (!responded) {

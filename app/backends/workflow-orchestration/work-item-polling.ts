@@ -1,17 +1,14 @@
 import db from '../../util/db';
 import { Logger } from 'winston';
-import { Response } from 'express';
 import env from '../../util/env';
 import WorkItem, { getNextWorkItem } from '../../models/work-item';
-import { WorkItemMeta, WorkItemStatus } from '../../models/work-item-interface';
 import { getNextJobIdForUsernameAndService, getNextUsernameForWork, incrementRunningAndDecrementReadyCounts } from '../../models/user-work';
-import { sanitizeImage } from '../../util/string';
 import { getQueueForUrl, getWorkSchedulerQueue  } from '../../util/queue/queue-factory';
 import { QUERY_CMR_SERVICE_REGEX, calculateQueryCmrLimit } from './util';
 
-type WorkItemData = {
+export type WorkItemData = {
   workItem: WorkItem,
-  maxCmrGranules: number
+  maxCmrGranules?: number
 };
 
 /**
@@ -64,8 +61,8 @@ export async function getWorkFromQueue(serviceID: string): Promise<WorkItemData>
  * @param responded - TODO
  * @returns
  */
-export async function getWorkFromDatabase(serviceID: string, reqLogger: Logger, podName: string, res: Response): Promise<boolean> {
-  let responded = false;
+export async function getWorkFromDatabase(serviceID: string, reqLogger: Logger): Promise<WorkItemData> {
+  let result: WorkItemData;
   await db.transaction(async (tx) => {
     const username = await getNextUsernameForWork(tx, serviceID as string);
     if (username) {
@@ -74,20 +71,13 @@ export async function getWorkFromDatabase(serviceID: string, reqLogger: Logger, 
         const workItem = await getNextWorkItem(tx, serviceID as string, jobID);
         if (workItem) {
           await incrementRunningAndDecrementReadyCounts(tx, jobID, serviceID as string);
-          const logger = reqLogger.child({ workItemId: workItem.id });
-          const waitSeconds = (Date.now() - workItem.createdAt.valueOf()) / 1000;
-          const itemMeta: WorkItemMeta = {
-            workItemEvent: 'statusUpdate', workItemDuration: waitSeconds,
-            workItemService: sanitizeImage(workItem.serviceID), workItemAmount: 1, workItemStatus: WorkItemStatus.RUNNING,
-          };
-          logger.info(`Sending work item ${workItem.id} to pod ${podName}`, itemMeta);
+
           if (workItem && QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)) {
+            const logger = reqLogger.child({ workItemId: workItem.id });
             const maxCmrGranules = await calculateQueryCmrLimit(tx, workItem, logger);
-            res.send({ workItem, maxCmrGranules });
-            responded = true;
+            result = { workItem, maxCmrGranules };
           } else {
-            res.send({ workItem });
-            responded = true;
+            result = { workItem };
           }
         } else {
           reqLogger.warn(`user_work is out of sync for user ${username} and job ${jobID}, could not find ready work item`);
@@ -95,5 +85,5 @@ export async function getWorkFromDatabase(serviceID: string, reqLogger: Logger, 
       }
     }
   });
-  return responded;
+  return result;
 }
