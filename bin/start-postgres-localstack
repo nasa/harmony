@@ -77,21 +77,24 @@ fi
 
 WORK_ITEM_UPDATE_QUEUE=${WORK_ITEM_UPDATE_QUEUE:-work-item-update-queue}
 LARGE_WORK_ITEM_UPDATE_QUEUE=${LARGE_WORK_ITEM_UPDATE_QUEUE:-large-work-item-update-queue}
-WORK_ITEM_SCHEDULER_QUEUE=${WORK_ITEM_SCHEDULER_QUEUE:-work-item-scheduler-queue}
+WORK_ITEM_SCHEDULER_QUEUE=${WORK_ITEM_SCHEDULER_QUEUE:-work-item-scheduler-queue.fifo}
 STAGING_BUCKET=${STAGING_BUCKET:-local-staging-bucket}
 ARTIFACT_BUCKET=${ARTIFACT_BUCKET:-local-artifact-bucket}
 UPLOAD_BUCKET=${UPLOAD_BUCKET:-local-upload-bucket}
 
 # Creates qeueue and buckets in localstack
 localstack_startup_script="
-awslocal sqs create-queue --queue-name ${WORK_ITEM_UPDATE_QUEUE} --region us-west-2
-awslocal sqs create-queue --queue-name ${LARGE_WORK_ITEM_UPDATE_QUEUE} --attributes VisibilityTimeout=3600 --region us-west-2
-awslocal sqs create-queue --queue-name ${WORK_ITEM_SCHEDULER_QUEUE} --attributes FifoQueue=true --region us-west-2
-awslocal s3 mb s3://${STAGING_BUCKET} --region us-west-2
-awslocal s3 mb s3://${ARTIFACT_BUCKET} --region us-west-2
-awslocal s3 mb s3://${UPLOAD_BUCKET} --region us-west-2
-awslocal s3api put-bucket-acl --bucket ${ARTIFACT_BUCKET} --acl public-read" # allows us to view STAC files: localhost:4572/{ARTIFACT_BUCKET}/{jobId}/{workItemId}/outputs/
-
+import boto3
+s3 = boto3.client('s3', endpoint_url='http://localhost:4566', region_name='us-west-2')
+s3.create_bucket(Bucket='${STAGING_BUCKET}', CreateBucketConfiguration={'LocationConstraint': 'us-west-2'})
+s3.create_bucket(Bucket='${ARTIFACT_BUCKET}', CreateBucketConfiguration={'LocationConstraint': 'us-west-2'})
+s3.create_bucket(Bucket='${UPLOAD_BUCKET}', CreateBucketConfiguration={'LocationConstraint': 'us-west-2'})
+s3.put_bucket_acl(Bucket='${ARTIFACT_BUCKET}', ACL='public-read') # allows us to view STAC files: localhost:4566/{ARTIFACT_BUCKET}/{jobId}/{workItemId}/outputs/
+sqs = boto3.client('sqs', endpoint_url='http://localhost:4566', region_name='us-west-2')
+sqs.create_queue(QueueName='${WORK_ITEM_UPDATE_QUEUE}')
+sqs.create_queue(QueueName='${LARGE_WORK_ITEM_UPDATE_QUEUE}', Attributes={'VisibilityTimeout': '3600'})
+sqs.create_queue(QueueName='${WORK_ITEM_SCHEDULER_QUEUE}', Attributes={'FifoQueue': 'true'})
+"
 
 # For some develpers using Linux, artifact repositories were not working correctly without
 # setting the default harmony account as a cluster admin
@@ -99,7 +102,7 @@ kubectl -n harmony delete rolebinding default-admin 2>/dev/null || true
 kubectl -n harmony create rolebinding default-admin --clusterrole=admin --serviceaccount=harmony:default
 
 kubectl -n harmony delete configmap localstack-config 2>/dev/null || true
-kubectl -n harmony create configmap localstack-config --from-literal=startup.sh="${localstack_startup_script}"
+kubectl -n harmony create configmap localstack-config --from-literal=startup.py="${localstack_startup_script}"
 
 . ./bin/create-k8s-config-maps-and-secrets
 

@@ -25,7 +25,7 @@ export async function getWork(
 ): Promise<void> {
   const reqLogger = req.context.logger;
   const { serviceID, podName } = req.query;
-  reqLogger.info(`Getting work for service ${serviceID} and pod ${podName}`);
+  // reqLogger.info(`Getting work for service ${serviceID} and pod ${podName}`);
 
   let responded = false;
   let workItemData: WorkItemData;
