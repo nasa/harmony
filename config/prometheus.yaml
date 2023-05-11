@@ -137,6 +137,8 @@ spec:
     metadata:
       labels:
         app: prometheus
+      annotations:
+        "cluster-autoscaler.kubernetes.io/safe-to-evict": "true"
     spec:
       serviceAccountName: prometheus
       containers:

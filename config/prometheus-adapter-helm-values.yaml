@@ -16,3 +16,6 @@ rules:
       matches: "num_ready_work_items"
       as: "num_ready_work_items"
     metricsQuery: '<<.Series>>{<<.LabelMatchers>>}'
+
+# Annotations added to the pod
+podAnnotations: {"cluster-autoscaler.kubernetes.io/safe-to-evict": "true"}
