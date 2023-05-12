@@ -1,0 +1,30 @@
+POST /search/granules.json
+accept: application/json
+content-type: multipart/form-data; boundary=----------------------------012345678901234567890123
+accept-encoding: gzip,deflate
+body: ------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"page_size\"\r\n\r\n100\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"readable_granule_name\"\r\n\r\n001_08_7f00ff_oceania_east\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"readable_granule_name\"\r\n\r\n001_03_7f00ff_asia_east\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"collection_concept_id\"\r\n\r\nC1233800302-EEDTEST\r\n------------------------------012345678901234567890123--\r\n
+
+HTTP/1.1 200 OK
+content-type: application/json;charset=utf-8
+transfer-encoding: chunked
+connection: close
+vary: Accept-Encoding
+date: Fri, 12 May 2023 17:16:43 GMT
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: 90040345-becc-44d6-af8e-d365f5e9b495
+strict-transport-security: max-age=31536000
+cmr-search-after: ["eedtest",1577894400000,1233800349]
+cmr-hits: 2
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Search-After, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 62
+x-request-id: XPmx3qkUTjoz6BYIy_-6hwtblux_irklYVP88Trt_3KpIfWfDWJrfg==
+server: ServerTokens ProductOnly
+x-cache: Miss from cloudfront
+via: 1.1 af9d66efe7802df1efbc8106c86a13e6.cloudfront.net (CloudFront)
+x-amz-cf-pop: SFO5-C3
+x-amz-cf-id: XPmx3qkUTjoz6BYIy_-6hwtblux_irklYVP88Trt_3KpIfWfDWJrfg==
+
+{"feed":{"updated":"2023-05-12T17:16:43.001Z","id":"https://cmr.uat.earthdata.nasa.gov:443/search/granules.json","title":"ECHO granule metadata","entry":[{"producer_granule_id":"001_03_7f00ff_asia_east","boxes":["-11 25.7 81.3 180"],"time_start":"2020-01-01T06:00:00.000Z","updated":"2020-02-25T21:43:11.000Z","dataset_id":"Harmony Example Data","data_center":"EEDTEST","title":"001_03_7f00ff_asia_east","coordinate_system":"CARTESIAN","day_night_flag":"BOTH","time_end":"2020-01-01T07:59:59.000Z","id":"G1233800495-EEDTEST","original_format":"UMM_JSON","granule_size":"0.44835853576660156","browse_flag":false,"collection_concept_id":"C1233800302-EEDTEST","online_access_flag":true,"links":[{"rel":"http://esipfed.org/ns/fedsearch/1.1/data#","type":"application/x-netcdf","hreflang":"en-US","href":"https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-eedtest-data/C1233800302-EEDTEST/nc/001_03_7f00ff_asia_east.nc"},{"rel":"http://esipfed.org/ns/fedsearch/1.1/data#","type":"image/tiff","hreflang":"en-US","href":"https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-eedtest-data/C1233800302-EEDTEST/tiff/001_03_7f00ff_asia_east.tif"}]},{"producer_granule_id":"001_08_7f00ff_oceania_east","boxes":["-52.6 96.8 19.4 180"],"time_start":"2020-01-01T16:00:00.000Z","updated":"2020-02-25T21:43:11.000Z","dataset_id":"Harmony Example Data","data_center":"EEDTEST","title":"001_08_7f00ff_oceania_east","coordinate_system":"CARTESIAN","day_night_flag":"BOTH","time_end":"2020-01-01T17:59:59.000Z","id":"G1233800349-EEDTEST","original_format":"UMM_JSON","granule_size":"0.22467517852783203","browse_flag":false,"collection_concept_id":"C1233800302-EEDTEST","online_access_flag":true,"links":[{"rel":"http://esipfed.org/ns/fedsearch/1.1/data#","type":"application/x-netcdf","hreflang":"en-US","href":"https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-eedtest-data/C1233800302-EEDTEST/nc/001_08_7f00ff_oceania_east.nc"},{"rel":"http://esipfed.org/ns/fedsearch/1.1/data#","type":"image/tiff","hreflang":"en-US","href":"https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-eedtest-data/C1233800302-EEDTEST/tiff/001_08_7f00ff_oceania_east.tif"}]}]}}

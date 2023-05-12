@@ -499,7 +499,7 @@ https://cmr.earthdata.nasa.gov:
           <<: *default-turbo-env
           STAGING_PATH: public/harmony/service-example
     umm_s:
-      - S2606110201-XYZ_PROV
+      - S2685815868-XYZ_PROV
     capabilities:
       subsetting:
         bbox: true
@@ -1131,7 +1131,7 @@ https://cmr.uat.earthdata.nasa.gov:
           <<: *default-turbo-env
           STAGING_PATH: public/harmony/service-example
     umm_s:
-      - S1237980031-EEDTEST
+      - S1257851197-EEDTEST
     collections:
       - id: C1243747507-EEDTEST
         granule_limit: 100 # added to test collection granule limits for HARMONY-795
