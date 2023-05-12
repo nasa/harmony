@@ -23,7 +23,6 @@ describe('Versions endpoint', function () {
         const services = JSON.parse(this.res.text);
         expect(services.map((s) => s.name)).to.eql([
           'gesdisc/giovanni',
-          'harmony/service-example',
           'podaac/l2-subsetter',
           'podaac/concise',
           'podaac/l2-subsetter-concise',
@@ -38,6 +37,7 @@ describe('Versions endpoint', function () {
           'harmony/netcdf-to-zarr',
           'harmony/podaac-l2-subsetter-netcdf-to-zarr',
           'harmony/swot-repr-netcdf-to-zarr',
+          'harmony/service-example',
         ]);
       });
 
