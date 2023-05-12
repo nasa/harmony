@@ -65,34 +65,6 @@ https://cmr.earthdata.nasa.gov:
       - image: !Env ${GIOVANNI_ADAPTER_IMAGE}
         operations: ['concatenate', 'variableSubset', 'temporalSubset']
 
-  - name: harmony/service-example
-    description: |
-      Reference service that can be used to perform most operations supported by Harmony.
-      Useful for testing new API features end-to-end on example data but not meant for production use.
-    data_operation_version: '0.17.0'
-    type:
-      <<: *default-turbo-config
-      params:
-        <<: *default-turbo-params
-        env:
-          <<: *default-turbo-env
-          STAGING_PATH: public/harmony/service-example
-    umm_s:
-      - S2606110201-XYZ_PROV
-    capabilities:
-      subsetting:
-        bbox: true
-        variable: true
-        multiple_variable: true
-      output_formats:
-        - image/tiff
-        - image/png
-        - image/gif
-      reprojection: true
-    steps:
-      - image: !Env ${QUERY_CMR_IMAGE}
-      - image: !Env ${HARMONY_SERVICE_EXAMPLE_IMAGE}
-
   - name: podaac/l2-subsetter
     description: |
       Implementation of the L2 swath subsetter based on python, xarray and netcdf4.
@@ -514,6 +486,34 @@ https://cmr.earthdata.nasa.gov:
         is_batched: false
         operations: ['reformat', 'concatenate']
 
+  - name: harmony/service-example
+    description: |
+      Reference service that can be used to perform most operations supported by Harmony.
+      Useful for testing new API features end-to-end on example data but not meant for production use.
+    data_operation_version: '0.17.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/harmony/service-example
+    umm_s:
+      - S2606110201-XYZ_PROV
+    capabilities:
+      subsetting:
+        bbox: true
+        variable: true
+        multiple_variable: true
+      output_formats:
+        - image/tiff
+        - image/png
+        - image/gif
+      reprojection: true
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+      - image: !Env ${HARMONY_SERVICE_EXAMPLE_IMAGE}
+
 https://cmr.uat.earthdata.nasa.gov:
 
   - name: gesdisc/giovanni
@@ -556,37 +556,6 @@ https://cmr.uat.earthdata.nasa.gov:
     steps:
       - image: !Env ${GIOVANNI_ADAPTER_IMAGE}
         operations: ['concatenate', 'variableSubset', 'temporalSubset']
-
-  - name: harmony/service-example
-    description: |
-      Reference service that can be used to perform most operations supported by Harmony.
-      Useful for testing new API features end-to-end on example data but not meant for production use.
-    data_operation_version: '0.17.0'
-    type:
-      <<: *default-turbo-config
-      params:
-        <<: *default-turbo-params
-        env:
-          <<: *default-turbo-env
-          STAGING_PATH: public/harmony/service-example
-    umm_s:
-      - S1237980031-EEDTEST
-    collections:
-      - id: C1243747507-EEDTEST
-        granule_limit: 100 # added to test collection granule limits for HARMONY-795
-    capabilities:
-      subsetting:
-        bbox: true
-        variable: true
-        multiple_variable: true
-      output_formats:
-        - image/tiff
-        - image/png
-        - image/gif
-      reprojection: true
-    steps:
-      - image: !Env ${QUERY_CMR_IMAGE}
-      - image: !Env ${HARMONY_SERVICE_EXAMPLE_IMAGE}
 
   - name: podaac/l2-subsetter
     description: |
@@ -1148,3 +1117,34 @@ https://cmr.uat.earthdata.nasa.gov:
         operations: ['reformat', 'concatenate']
         conditional:
           format: ['application/x-zarr']
+
+  - name: harmony/service-example
+    description: |
+      Reference service that can be used to perform most operations supported by Harmony.
+      Useful for testing new API features end-to-end on example data but not meant for production use.
+    data_operation_version: '0.17.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/harmony/service-example
+    umm_s:
+      - S1237980031-EEDTEST
+    collections:
+      - id: C1243747507-EEDTEST
+        granule_limit: 100 # added to test collection granule limits for HARMONY-795
+    capabilities:
+      subsetting:
+        bbox: true
+        variable: true
+        multiple_variable: true
+      output_formats:
+        - image/tiff
+        - image/png
+        - image/gif
+      reprojection: true
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+      - image: !Env ${HARMONY_SERVICE_EXAMPLE_IMAGE}
