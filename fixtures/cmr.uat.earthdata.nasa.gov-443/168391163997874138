@@ -1,0 +1,27 @@
+GET /search/grids.umm_json?name=LambertDurbin&page_size=2000
+accept: application/json
+accept-encoding: gzip,deflate
+
+HTTP/1.1 200 OK
+content-type: application/vnd.nasa.cmr.umm_results+json; charset=utf-8
+connection: close
+date: Fri, 12 May 2023 17:14:00 GMT
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: 84abcd2b-33f6-4537-99a2-fcf4bf7e704a
+strict-transport-security: max-age=31536000
+cmr-search-after: ["lambertdurbin","EEDTEST","LambertDurbin","EEDTEST"]
+cmr-hits: 1
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Search-After, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 35
+x-request-id: 5W0IPGugo0j8mGEIg02UITvNxa_xheH3-73KMVmAjmJkl6uqcSXkgA==
+vary: Accept-Encoding, User-Agent
+server: ServerTokens ProductOnly
+x-cache: Miss from cloudfront
+via: 1.1 8aaf07807b640d113c47df1d50eca064.cloudfront.net (CloudFront)
+x-amz-cf-pop: IAD89-P2
+x-amz-cf-id: 5W0IPGugo0j8mGEIg02UITvNxa_xheH3-73KMVmAjmJkl6uqcSXkgA==
+
+{"hits":1,"took":35,"items":[{"meta":{"revision-id":2,"deleted":false,"provider-id":"EEDTEST","user-id":"cdurbin","native-id":"cdd_lambert_durbin_grid","concept-id":"GRD1256535471-EEDTEST","revision-date":"2023-03-30T11:59:31.745Z","concept-type":"grid"},"umm":{"MetadataSpecification":{"URL":"https://cdn.earthdata.nasa.gov/generic/grid/v0.0.1","Name":"Grid","Version":"0.0.1"},"Name":"LambertDurbin","LongName":"A made up Lambert Conformal Conic Grid for testing","Version":"v1.0","Description":"A made up Lambert Conformal Conic Grid for testing","GridDefinition":{"CoordinateReferenceSystemID":{"Type":"PROJ","Code":"+proj=lcc +lat_1=43 +lat_2=62 +lat_0=30 +lon_0=10 +x_0=0 +y_0=0 +ellps=intl +units=m no_defs","Title":"Lambert Durbin Grid","URL":"https://epsg.io/102001"},"DimensionSize":{"Height":4000,"Width":6000},"SpatialConstraint":{"0_360_DegreeProjection":false,"NorthBoundingCoordinate":62.025,"WestBoundingCoordinate":-131.277,"EastBoundingCoordinate":-126.714,"SouthBoundingCoordinate":59.872},"DimensionScale":{"0_360_DegreeProjection":false,"X":{"Minimum":1,"Maximum":8000000,"Unit":"Meter","Resolution":20},"Y":{"Minimum":1000000,"Maximum":8000000,"Unit":"Meter","Resolution":30},"Time":{"Minimum":"2020-01-01T00:00:00.001Z","Maximum":"2020-01-30T23:59:59Z","Unit":"DateTime","Resolution":0.125},"Other":{"Minimum":0,"Maximum":44,"Unit":"Meter","Resolution":0.5}}},"Organization":{"ShortName":"NASA/GSFC/EOSDIS/DAS","LongName":"Goddard Earth Observational Data Information System - Daca Access Services, Earth Sciences Division, Science and Exploration Directorate, Goddard Space Flight Center, NASA","RelatedURLs":[{"URL":"https://example.gov","URLContentType":"C-Type","Type":"Type"}],"ContactMechanisms":[{"Type":"Email","Value":"who@example.gov"},{"Type":"Email","Value":"you@example.gov"}]},"MetadataDate":{"Create":"2023-01-20T08:00:00Z"}}}]}
