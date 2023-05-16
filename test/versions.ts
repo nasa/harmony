@@ -32,6 +32,7 @@ describe('Versions endpoint', function () {
           'sds/maskfill',
           'sds/trajectory-subsetter',
           'nasa/harmony-gdal-adapter',
+          'sds/HyBIG',
           'sds/HOSS-geographic',
           'sds/HOSS-projection-gridded',
           'harmony/netcdf-to-zarr',
