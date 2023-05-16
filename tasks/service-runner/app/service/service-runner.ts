@@ -289,18 +289,22 @@ export async function runServiceFromPull(workItem: WorkItemRecord, workItemLogge
               resolve({ error: errMsg });
             }
           } catch (e) {
-            workItemLogger.error(`Unable to upload logs. Caught exception: ${e}`);
+            workItemLogger.error('Unable to upload logs. Caught exception:');
+            workItemLogger.error(e);
             resolve({ error: e.message });
           }
         },
       ).catch((e) => {
         clearTimeout(timeout);
-        workItemLogger.error(`Kubernetes client exec caught exception: ${e}`);
+        workItemLogger.error('Kubernetes client exec caught exception:');
+        workItemLogger.error(e);
         resolve({ error: e.message });
       });
     });
   } catch (e) {
-    workItemLogger.error(`runServiceFromPull caught exception: ${e}`);
+    workItemLogger.error('runServiceFromPull caught exception:');
+    workItemLogger.error(e);
+
     return { error: e.message };
   }
 }
