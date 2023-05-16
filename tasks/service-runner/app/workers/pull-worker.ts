@@ -30,9 +30,6 @@ let pullCounter = 0;
 // how many pulls to execute before logging - used to keep log message count reasonable
 const pullLogPeriod = 10;
 
-const WORK_DIR = '/tmp';
-const LOCKFILE_DIR = WORK_DIR;
-
 // retry twice for tests and 1200 (2 minutes) for real
 const maxPrimeRetries = process.env.NODE_ENV === 'test' ? 2 : 1_200;
 
@@ -132,23 +129,23 @@ async function _doWork(
  * @param repeat - if true the function will loop forever (added for testing purposes)
  */
 async function _pullAndDoWork(repeat = true): Promise<void> {
-  const workingFilePath = path.join(LOCKFILE_DIR, 'WORKING');
+  const workingFilePath = path.join(env.workingDir, 'WORKING');
   try {
     // remove any previous work items to prevent the pod from running out of disk space
     const regex = /^(?!WORKING|TERMINATING)(.+)$/;
-    await emptyDirectory(WORK_DIR, regex);
+    await emptyDirectory(env.workingDir, regex);
     // write out the WORKING file to prevent pod termination while working
     await fs.writeFile(workingFilePath, '1');
   } catch (e) {
     // We'll continue on even if we have issues cleaning up - it just means the pod may end
     // up being evicted at some point due to running out of ephemeral storage space
-    logger.error(`Error cleaning up working directory ${WORK_DIR} and creating WORKING file`);
+    logger.error(`Error cleaning up working directory ${env.workingDir} and creating WORKING file`);
     logger.error(e);
   }
 
   try {
     // check to see if we are terminating
-    const terminationFilePath = path.join(LOCKFILE_DIR, 'TERMINATING');
+    const terminationFilePath = path.join(env.workingDir, 'TERMINATING');
     try {
       await fs.access(terminationFilePath);
       // TERMINATING file exists so PreStop handler is requesting termination
