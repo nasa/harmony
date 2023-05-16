@@ -75,8 +75,6 @@ spec:
             value: "$WORKER_PORT"
           - name: HARMONY_SERVICE
             value: $SERVICE_IMAGE
-          - name: WORKING_DIR
-            value: $SERVICE_WORKING_DIR
           - name: INVOCATION_ARGS
             value: $SERVICE_INVOCATION_ARGS
           - name: MY_POD_NAME
