@@ -19,7 +19,8 @@ import { COMPLETED_WORK_ITEM_STATUSES, WorkItemMeta, WorkItemStatus } from '../m
 import JobError, { getErrorCountForJob } from '../models/job-error';
 import WorkItemUpdate from '../models/work-item-update';
 import { handleBatching, outputStacItemUrls, resultItemSizes } from '../util/aggregation-batch';
-import { decrementRunningCount, deleteUserWorkForJob, getNextJobIdForUsernameAndService, getNextUsernameForWork, incrementReadyAndDecrementRunningCounts, incrementReadyCount, incrementRunningAndDecrementReadyCounts } from '../models/user-work';
+import { decrementRunningCount, deleteUserWorkForJob, getNextJobIdForUsernameAndService, getNextUsernameForWork, incrementReadyAndDecrementRunningCounts, incrementReadyCount,
+  incrementRunningAndDecrementReadyCounts, recalculateCounts } from '../models/user-work';
 import { sanitizeImage } from '../util/string';
 import { WorkItemUpdateQueueType } from '../util/queue/queue';
 import { getQueue } from '../util/queue/queue-factory';
@@ -88,6 +89,8 @@ export async function getWork(
           }
         } else {
           reqLogger.warn(`user_work is out of sync for user ${username} and job ${jobID}, could not find ready work item`);
+          reqLogger.warn(`recalculating ready and running counts for job ${jobID}`);
+          await recalculateCounts(tx, jobID);
         }
       }
     } else if (tryCount < MAX_TRY_COUNT) {
