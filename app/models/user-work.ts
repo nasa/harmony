@@ -185,10 +185,30 @@ export async function populateUserWorkForJobId(tx: Transaction, jobID: string): 
 }
 
 /**
+ * Get the ready_count or running_count for the provided jobID, serviceID and work item state.
+ * @param tx - The database transaction
+ * @param jobID - The job ID
+ * @param serviceID - The service ID
+ * @param readyOrRunning - The work item state (ready or running)
+ */
+export async function getCount(tx: Transaction, jobID: string, serviceID: string, readyOrRunning: 'ready' | 'running'): Promise<number> {
+  const readyOrRunningCountRow = await tx(WorkItem.table)
+    .count()
+    .where({ jobID, serviceID, status: readyOrRunning })
+    .first();
+  let key = 'count(*)';
+  if (db.client.config.client === 'pg') {
+    key = 'count';
+  }
+  return readyOrRunningCountRow[key] as number;
+}
+
+/**
  * Sets the ready_count or running_count to the appropriate value for each row in the user_work table for the
  * provided jobID.
  * @param tx - The database transaction
  * @param jobID - The job ID
+ * @param readyOrRunning - The work item state (ready or running)
  */
 export async function recalculateCount(tx: Transaction, jobID: string, readyOrRunning: 'ready' | 'running'): Promise<void> {
   const rows = await tx(UserWork.table)
@@ -200,18 +220,10 @@ export async function recalculateCount(tx: Transaction, jobID: string, readyOrRu
     await populateUserWorkForJobId(tx, jobID);
   } else {
     for (const row of rows) {
-      const readyOrRunningCountRow = await tx(WorkItem.table)
-        .count()
-        .where({ jobID, serviceID: row.service_id, status: readyOrRunning })
-        .first();
-
-      let key = 'count(*)';
-      if (db.client.config.client === 'pg') {
-        key = 'count';
-      }
+      const readyOrRunningCount = getCount(tx, jobID, row.service_id, readyOrRunning);
       await tx(UserWork.table)
         .where({ id: row.id })
-        .update(`${readyOrRunning}_count`, readyOrRunningCountRow[key]);
+        .update(`${readyOrRunning}_count`, readyOrRunningCount);
     }
   }
 }
