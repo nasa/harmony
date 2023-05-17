@@ -48,7 +48,7 @@ export default class WorkReaper implements Worker {
           const numItemsDeleted = await deleteWorkItemsById(db, workItemIds);
           totalDeleted += numItemsDeleted;
           this.logger.info(`Work reaper removed ${numItemsDeleted} work items, starting id: ${startingId}.`);
-          startingId = Math.max(...workItemIds);
+          startingId = workItemIds[workItemIds.length - 1];
         } else {
           this.logger.info('Work reaper did not find any work items to delete');
         }
@@ -57,9 +57,9 @@ export default class WorkReaper implements Worker {
           done = true;
         }
       } catch (e) {
+        done = true;
         this.logger.error('Error attempting to delete terminal work items');
         this.logger.error(e);
-        done = true;
       }
     }
     this.logger.info(`Work reaper delete terminal work items completed. Total work items deleted: ${totalDeleted}`);
@@ -87,7 +87,7 @@ export default class WorkReaper implements Worker {
           const numItemsDeleted = await deleteWorkflowStepsById(db, workflowSteps);
           totalDeleted += numItemsDeleted;
           this.logger.info(`Work reaper removed ${numItemsDeleted} workflow steps, starting id: ${startingId}.`);
-          startingId = Math.max(...workflowSteps);
+          startingId = workflowSteps[workflowSteps.length - 1];
         } else {
           this.logger.info('Work reaper did not find any workflow steps to delete');
         }
@@ -96,9 +96,9 @@ export default class WorkReaper implements Worker {
           done = true;
         }
       } catch (e) {
+        done = true;
         this.logger.error('Error attempting to delete terminal workflow steps');
         this.logger.error(e);
-        done = true;
       }
     }
     this.logger.info(`Work reaper delete terminal workflow steps completed. Total workflow steps deleted: ${totalDeleted}`);
