@@ -256,16 +256,6 @@ export async function recalculateReadyCount(tx: Transaction, jobID: string): Pro
 }
 
 /**
- * Sets the running_count to the appropriate value for each row in the user_work table for the
- * provided jobID.
- * @param tx - The database transaction
- * @param jobID - The job ID
- */
-export async function recalculateRunningCount(tx: Transaction, jobID: string): Promise<void> {
-  await recalculateCount(tx, jobID, 'running');
-}
-
-/**
  * Adds one to the running_count and subtracts one from the ready_count for the given
  * jobID and serviceID.
  * @param tx - The database transaction
