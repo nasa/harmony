@@ -8,7 +8,7 @@ BACKEND_PORT=3001
 SCRIPT_FILE=__main__.py
 SCRIPT_DIR=/home
 NODE_ENV=development
-WORKING_DIR="/home"
+WORKING_DIR=/tmp
 LOG_LEVEL=debug
 # How long (in ms) to let a worker run on a work item before timing out and reporting an error
 # default is 4 hours

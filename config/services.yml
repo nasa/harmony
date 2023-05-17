@@ -500,6 +500,7 @@ https://cmr.earthdata.nasa.gov:
           STAGING_PATH: public/harmony/service-example
     umm_s:
       - S2685815868-XYZ_PROV
+    collections: []
     capabilities:
       subsetting:
         bbox: true

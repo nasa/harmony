@@ -19,6 +19,11 @@ const {
   axiosUpdateWork } = pullWorker.exportedForTesting;
 
 describe('Pull Worker', async function () {
+  before(function () {
+    if (!existsSync(env.workingDir)) {
+      mkdirSync(env.workingDir);
+    }
+  });
   describe('on start', async function () {
     let serviceSpy: sinon.SinonSpy;
     const invocArgs = env.invocationArgs;
@@ -182,12 +187,12 @@ describe('Pull Worker', async function () {
       let pullWorkSpy: sinon.SinonSpy;
       let doWorkSpy: sinon.SinonSpy;
       beforeEach(function () {
+        writeFileSync(`${env.workingDir}/TERMINATING`, '1');
         pullWorkSpy = sinon.spy(pullWorker.exportedForTesting, '_pullWork');
         doWorkSpy = sinon.spy(pullWorker.exportedForTesting, '_doWork');
-        writeFileSync('/tmp/TERMINATING', '1');
       });
       afterEach(function () {
-        rmSync('/tmp/TERMINATING');
+        rmSync(`${env.workingDir}/TERMINATING`);
         pullWorkSpy.restore();
         doWorkSpy.restore();
       });
@@ -203,9 +208,15 @@ describe('Pull Worker', async function () {
       let pullStub: SinonStub;
       let doWorkStub: SinonStub;
       const mock = new MockAdapter(axiosUpdateWork);
+      const dir = `${env.workingDir}/abc123`;
       beforeEach(function () {
-        mkdirSync('/tmp/abc123');
-        writeFileSync('/tmp/abc123/work', '1');
+        if (!existsSync(dir)) {
+          mkdirSync(dir);
+        }
+        const file = `${dir}/work`;
+        if (!existsSync(file)) {
+          writeFileSync(file, '1');
+        }
         pullStub = sinon.stub(pullWorker.exportedForTesting, '_pullWork').callsFake(async function () { return {}; });
         doWorkStub = sinon.stub(pullWorker.exportedForTesting, '_doWork').callsFake(async function (): Promise<WorkItem> {
           return new WorkItem({});
@@ -218,16 +229,16 @@ describe('Pull Worker', async function () {
         mock.restore();
       });
 
-      it('cleans the /tmp directory', async function () {
+      it('cleans the working directory', async function () {
         await _pullAndDoWork(false);
-        expect(existsSync('/tmp/abc123')).to.be.false;
+        expect(existsSync(dir)).to.be.false;
       });
 
       it('does not delete /tmp/TERMINATING', async function () {
-        writeFileSync('/tmp/TERMINATING', '1');
+        writeFileSync(`${env.workingDir}/TERMINATING`, '1');
         await _pullAndDoWork(false);
-        expect(existsSync('/tmp/TERMINATING')).to.be.true;
-        rmSync('/tmp/TERMINATING');
+        expect(existsSync(`${env.workingDir}/TERMINATING`)).to.be.true;
+        rmSync(`${env.workingDir}/TERMINATING`);
       });
     });
 
@@ -252,7 +263,7 @@ describe('Pull Worker', async function () {
 
       it('deletes the WORKING lock file', async function () {
         await _pullAndDoWork(false);
-        expect(existsSync('/tmp/WORKING')).to.be.false;
+        expect(existsSync(`${env.workingDir}/WORKING`)).to.be.false;
       });
 
       it('does not throw', async function () {
@@ -283,7 +294,7 @@ describe('Pull Worker', async function () {
 
       it('deletes the WORKING lock file', async function () {
         await _pullAndDoWork(false);
-        expect(existsSync('/tmp/WORKING')).to.be.false;
+        expect(existsSync(`${env.workingDir}/WORKING`)).to.be.false;
       });
 
       it('does not throw', async function () {

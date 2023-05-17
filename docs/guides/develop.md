@@ -232,7 +232,7 @@ You should see messages about the two applications listening on two ports, "fron
 
 You should now be able to view the outputs of performing a simple transformation request.  Harmony has its own test collection
 set up for sanity checking harmony with the harmony-service-example backend.  This will fetch a granule from that collection converted to GeoTIFF:
-[http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?granuleId=G1233800343-EEDTEST](http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?granuleId=G1233800343-EEDTEST&format=image/tiff)
+[http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?granuleId=G1233800343-EEDTEST&format=image/tiff](http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?granuleId=G1233800343-EEDTEST&format=image/tiff)
 
 You can also set up a WMS connection in [QGIS](https://qgis.org/en/site/about/index.html), for example, by placing the
 `http://localhost:3000/C1233800302-EEDTEST/wms` as the "URL" field input in the "Connection Details"
