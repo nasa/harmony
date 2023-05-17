@@ -2,10 +2,10 @@ import { Logger } from 'winston';
 import _ from 'lodash';
 import { JobStatus, terminalStates } from '../models/job';
 import { getWorkItemIdsByJobUpdateAgeAndStatus, deleteWorkItemsById } from '../models/work-item';
-import { deleteWorkflowStepsById, getWorkflowStepIdsByJobUpdateAgeAndStatus } from '../models/workflow-steps';
+import { getWorkflowStepIdsByJobUpdateAgeAndStatus, deleteWorkflowStepsById } from '../models/workflow-steps';
 import env from '../util/env';
 import { Worker } from './worker';
-import db, { batchSize } from '../util/db';
+import db from '../util/db';
 import sleep from '../util/sleep';
 
 export interface WorkReaperConfig {
@@ -13,7 +13,7 @@ export interface WorkReaperConfig {
 }
 
 /**
- * Delete the work items and workflow steps associated with terminal jobs 
+ * Delete the work items and workflow steps associated with terminal jobs
  * that haven't been updated for a configurable amount of minutes.
  */
 export default class WorkReaper implements Worker {
@@ -25,48 +25,99 @@ export default class WorkReaper implements Worker {
     this.logger = config.logger;
   }
 
-  async deleteTerminalWork(notUpdatedForMinutes: number, jobStatus: JobStatus[]): Promise<void> {
-    try {
-      const workItemIds = await getWorkItemIdsByJobUpdateAgeAndStatus(
-        db, notUpdatedForMinutes, jobStatus,
-      );
-      if (workItemIds.length) {
-        const chunkedWorkItemIds = _.chunk(workItemIds, batchSize);
-        for (const workItemIdsChunk of chunkedWorkItemIds) {
-          const numItemsDeleted = await deleteWorkItemsById(db, workItemIdsChunk);
-          this.logger.info(`Work reaper removed ${numItemsDeleted} work items`);
+
+  /**
+   * Find work items that are older than notUpdatedForMinutes and delete them.
+   * @param notUpdatedForMinutes - upper limit on the duration since the last update
+   * @param jobStatus - a list of terminal job statuses
+   * @returns Resolves when the request is complete
+   */
+  async deleteTerminalWorkItems(notUpdatedForMinutes: number, jobStatus: JobStatus[]): Promise<void> {
+    let done = false;
+    let startingId = 0;
+    let totalDeleted = 0;
+    const batchSize = env.workReaperBatchSize;
+    this.logger.info('Work reaper delete terminal work items started.');
+
+    while (!done) {
+      try {
+        const workItemIds = await getWorkItemIdsByJobUpdateAgeAndStatus(
+          db, notUpdatedForMinutes, jobStatus, startingId, batchSize,
+        );
+        if (workItemIds.length > 0) {
+          const numItemsDeleted = await deleteWorkItemsById(db, workItemIds);
+          totalDeleted += numItemsDeleted;
+          this.logger.info(`Work reaper removed ${numItemsDeleted} work items, starting id: ${startingId}.`);
+          startingId = Math.max(...workItemIds);
+        } else {
+          this.logger.info('Work reaper did not find any work items to delete');
         }
-      } else {
-        this.logger.info('Work reaper did not find any work items to delete');
-      }
-      const workStepIds = await getWorkflowStepIdsByJobUpdateAgeAndStatus(
-        db, notUpdatedForMinutes, jobStatus,
-      );
-      if (workStepIds.length) {
-        const chunkedWorkStepIds = _.chunk(workStepIds, batchSize);
-        for (const workStepIdsChunk of chunkedWorkStepIds) {
-          const numItemsDeleted = await deleteWorkflowStepsById(db, workStepIdsChunk);
-          this.logger.info(`Work reaper removed ${numItemsDeleted} workflow steps`);
+
+        if (workItemIds.length < batchSize) {
+          done = true;
         }
-      } else {
-        this.logger.info('Work reaper did not find any workflow steps to delete');
+      } catch (e) {
+        this.logger.error('Error attempting to delete terminal work items');
+        this.logger.error(e);
+        done = true;
       }
-    } catch (e) {
-      this.logger.error('Error attempting to delete terminal work items');
-      this.logger.error(e);
     }
+    this.logger.info(`Work reaper delete terminal work items completed. Total work items deleted: ${totalDeleted}`);
+  }
+
+  /**
+   * Find workflow steps that are older than notUpdatedForMinutes and delete them.
+   * @param notUpdatedForMinutes - upper limit on the duration since the last update
+   * @param jobStatus - a list of terminal job statuses
+   * @returns Resolves when the request is complete
+   */
+  async deleteTerminalWorkflowSteps(notUpdatedForMinutes: number, jobStatus: JobStatus[]): Promise<void> {
+    let done = false;
+    let startingId = 0;
+    let totalDeleted = 0;
+    const batchSize = env.workReaperBatchSize;
+    this.logger.info('Work reaper delete terminal workflow steps started.');
+
+    while (!done) {
+      try {
+        const workflowSteps = await getWorkflowStepIdsByJobUpdateAgeAndStatus(
+          db, notUpdatedForMinutes, jobStatus, startingId, batchSize,
+        );
+        if (workflowSteps.length > 0) {
+          const numItemsDeleted = await deleteWorkflowStepsById(db, workflowSteps);
+          totalDeleted += numItemsDeleted;
+          this.logger.info(`Work reaper removed ${numItemsDeleted} workflow steps, starting id: ${startingId}.`);
+          startingId = Math.max(...workflowSteps);
+        } else {
+          this.logger.info('Work reaper did not find any workflow steps to delete');
+        }
+
+        if (workflowSteps.length < batchSize) {
+          done = true;
+        }
+      } catch (e) {
+        this.logger.error('Error attempting to delete terminal workflow steps');
+        this.logger.error(e);
+        done = true;
+      }
+    }
+    this.logger.info(`Work reaper delete terminal workflow steps completed. Total workflow steps deleted: ${totalDeleted}`);
   }
 
   async start(): Promise<void> {
     this.isRunning = true;
     let firstRun = true;
+    this.logger.info('Starting work reaper');
     while (this.isRunning) {
       if (!firstRun) {
         await sleep(env.workReaperPeriodSec * 1000);
       }
-      this.logger.info('Starting work reaper');
       try {
-        await this.deleteTerminalWork(
+        await this.deleteTerminalWorkItems(
+          env.reapableWorkAgeMinutes,
+          terminalStates,
+        );
+        await this.deleteTerminalWorkflowSteps(
           env.reapableWorkAgeMinutes,
           terminalStates,
         );

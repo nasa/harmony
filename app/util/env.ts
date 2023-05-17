@@ -123,6 +123,7 @@ interface HarmonyEnv {
   getMetricsSampleRatio: number;
   openTelemetryUrl: string;
   workFailerBatchSize: number;
+  workReaperBatchSize: number;
   releaseVersion: string;
 }
 

@@ -168,6 +168,9 @@ WORK_REAPER_PERIOD_SEC=360
 # WorkItems and WorkflowSteps (in a terminal state) older than this many minutes are checked by the work reaper
 REAPABLE_WORK_AGE_MINUTES=1440
 
+# The batch size of the work reaper service
+WORK_REAPER_BATCH_SIZE=2000
+
 # The time (in seconds) between invocations of the work failer service
 WORK_FAILER_PERIOD_SEC=120
 
