@@ -148,6 +148,23 @@ export async function incrementReadyCount(
 }
 
 /**
+ * Get the running_count or ready_count for the given jobID and serviceID.
+ * @param tx - The database transaction
+ * @param jobID - The job ID
+ * @param serviceID - The ID of the service
+ * @param readyOrRunning - The work item state (ready or running)
+ */
+export async function getCount(
+  tx: Transaction, jobID: string, serviceID: string, readyOrRunning: 'ready' | 'running',
+): Promise<number> {
+  const record = await tx(UserWork.table)
+    .select(`${readyOrRunning}_count`)
+    .where({ job_id: jobID, service_id: serviceID })
+    .first();
+  return record[`${readyOrRunning}_count`];
+}
+
+/**
  * Sets the ready_count to 0 for the given jobID.
  * @param tx - The database transaction
  * @param jobID - The job ID
