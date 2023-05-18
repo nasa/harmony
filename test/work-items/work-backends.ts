@@ -16,6 +16,7 @@ import { hookGetWorkForService, hookWorkItemCreation, hookWorkItemUpdate, hookWo
 import { hookWorkflowStepCreation, validOperation } from '../helpers/workflow-steps';
 import { hookPopulateUserWorkFromWorkItems } from '../helpers/user-work';
 import { resumeAndSaveJob } from '../../app/util/job';
+import { getCount, incrementReadyCount } from '../../app/models/user-work';
 
 const oldDate = '1/1/2000'; // "old" work items will get created on this date
 
@@ -75,6 +76,15 @@ describe('Work Backends', function () {
       stepIndex: 3,
     };
 
+    const doneWorkItem = {
+      serviceID: 'theDoneService',
+      status: WorkItemStatus.SUCCESSFUL,
+      jobID: 'ABCD',
+      scrollID: '-1234',
+      stacCatalogLocation: '/tmp/catalog.json',
+      stepIndex: 4,
+    };
+
     const runningWorkItem = {
       serviceID: 'theRunningService',
       status: WorkItemStatus.RUNNING,
@@ -100,6 +110,7 @@ describe('Work Backends', function () {
     };
 
     hookWorkflowStepAndItemCreation(readyWorkItem);
+    hookWorkflowStepAndItemCreation(doneWorkItem);
     hookWorkflowStepAndItemCreation(runningWorkItem);
     hookWorkflowStepAndItemCreation(pausedJobWorkItem);
     hookWorkflowStepAndItemCreation(pausedJobQueryCmrWorkItem);
@@ -126,6 +137,22 @@ describe('Work Backends', function () {
 
       it('returns a 404', function () {
         expect(this.res.status).to.equal(404);
+      });
+    });
+
+    describe('when ready_count > 0 for a service, but there are no ready work items (user_work record is out of sync)', function () {
+      before(async  function () {
+        await incrementReadyCount(db, 'ABCD', 'theDoneService');
+        const count = await getCount(db, 'ABCD', 'theDoneService', 'ready');
+        expect(count).eq(1);
+      });
+      hookGetWorkForService('theDoneService');
+      it('returns a 404 even though the user_work table said that ready_count > 0', function () {
+        expect(this.res.status).to.equal(404);
+      });
+      it('recalculates the count to be in sync with the actual number of ready work items', async function () {
+        const count = await getCount(db, 'ABCD', 'theDoneService', 'ready');
+        expect(count).to.eq(0);
       });
     });
 
