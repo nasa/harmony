@@ -3,7 +3,7 @@ import { Logger } from 'winston';
 import logger from '../../util/log';
 import env from '../../util/env';
 import WorkItem, { getNextWorkItem, updateWorkItemStatuses, WorkItemEvent } from '../../models/work-item';
-import { getNextJobIdForUsernameAndService, getNextUsernameForWork, incrementRunningAndDecrementReadyCounts } from '../../models/user-work';
+import { getNextJobIdForUsernameAndService, getNextUsernameForWork, incrementRunningAndDecrementReadyCounts, recalculateCounts } from '../../models/user-work';
 import { getQueueForUrl, getQueueUrlForService, getWorkSchedulerQueue  } from '../../util/queue/queue-factory';
 import { QUERY_CMR_SERVICE_REGEX, calculateQueryCmrLimit } from './util';
 import { eventEmitter } from '../../events';
@@ -43,6 +43,8 @@ export async function getWorkFromDatabase(serviceID: string, reqLogger: Logger):
             }
           } else {
             reqLogger.warn(`user_work is out of sync for user ${username} and job ${jobID}, could not find ready work item`);
+            reqLogger.warn(`recalculating ready and running counts for job ${jobID}`);
+            await recalculateCounts(tx, jobID);
           }
         }
       }
