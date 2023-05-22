@@ -10,7 +10,6 @@ import { getStacLocation, WorkItemStatus } from '../../app/models/work-item-inte
 import { truncateAll } from '../helpers/db';
 import env from '../../app/util/env';
 import { resetQueues } from '../helpers/queue';
-import { reset } from 'mockdate';
 
 const reprojectAndZarrQuery = {
   maxResults: 1,
