@@ -26,7 +26,6 @@ export class MemoryQueue extends Queue {
     if (message) {
       message.isVisible = false;
       message.receipt = uuid();
-      logger.info(`>>>>>>>>>>>>> Found message ${JSON.stringify(message, null, 2)}`);
     }
     return message;
   }

@@ -790,7 +790,7 @@ describe('When a request spans multiple CMR pages', function () {
           expect(nextStepWorkResponse.statusCode).to.equal(404);
         });
 
-        it('Adoes not define maxCmrGranules for non-query-cmr items', async function () {
+        it('does not define maxCmrGranules for non-query-cmr items', async function () {
           const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
           const { workItem, maxCmrGranules } = JSON.parse(res.text);
           expect(maxCmrGranules).equals(undefined);

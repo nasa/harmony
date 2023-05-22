@@ -121,14 +121,6 @@ export default class WorkItem extends Record implements WorkItemRecord {
         eventEmitter.emit(WorkItemEvent.CREATED, workItem);
       }
     }
-
-    // for (const workItem of workItems) {
-    //   if (workItem.id) {
-    //     eventEmitter.emit(WorkItemEvent.CREATED, workItem);
-    //   } else {
-    //     eventEmitter.emit(WorkItemEvent.UPDATED, workItem);
-    //   }
-    // }
   }
 
   /**

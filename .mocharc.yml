@@ -14,5 +14,3 @@ require:
   - tsconfig-paths/register
 recursive: true
 exit: true
-# uncomment the next line to force the tests to stop on the first failure
-# bail: true
