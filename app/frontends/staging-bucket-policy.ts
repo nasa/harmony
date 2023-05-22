@@ -1,5 +1,5 @@
-import aws from 'aws-sdk';
 import { RequestValidationError } from '../util/errors';
+import SecureTokenService from '../util/sts';
 
 const policyTemplate = {
   'Version': '2012-10-17',
@@ -81,8 +81,8 @@ export async function getStagingBucketPolicy(req, res): Promise<void> {
   // is what the workers will use when interacting with the external bucket. This will fail
   // for local (non-AWS) Harmony
   try {
-    const sts = new aws.STS();
-    const identity = await sts.getCallerIdentity().promise();
+    const sts = new SecureTokenService();
+    const identity = await sts.getCallerIdentity();
     const account = identity.Account;
     // for putObject
     policyTemplate.Statement[0].Principal.AWS = `arn:aws:iam::${account}:root`;

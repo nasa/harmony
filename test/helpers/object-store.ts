@@ -1,9 +1,9 @@
-import aws from 'aws-sdk';
 import { stub, SinonStub } from 'sinon';
 import fs from 'fs';
 import mockAws, { S3 } from 'mock-aws-s3';
 import * as tmp from 'tmp';
 import { S3ObjectStore, objectStoreForProtocol, BucketParams } from '../../app/util/object-store';
+import { GetObjectCommandOutput } from '@aws-sdk/client-s3';
 
 // Patches mock-aws-s3's mock so that the result of "upload" has an "on" method
 const S3MockPrototype = Object.getPrototypeOf(new mockAws.S3());
@@ -53,13 +53,13 @@ Promise<any> { // eslint-disable-line @typescript-eslint/no-explicit-any
  * @param url - the Object store URL to read
  */
 export async function getObjectText(url: string): Promise<string> {
-  const contents: S3.GetObjectOutput = await new Promise((resolve, reject) => {
-    objectStoreForProtocol(url).getObject(url, (err, body) => {
+  const contents: GetObjectCommandOutput = await new Promise((resolve, reject) => {
+    void objectStoreForProtocol(url).getObject(url, (err, body) => {
       if (err) reject(err);
       else resolve(body);
     });
   });
-  return contents.Body.toString('utf-8');
+  return contents.Body.toString();
 }
 
 /**
