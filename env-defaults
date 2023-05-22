@@ -276,6 +276,13 @@ HARMONY_GDAL_ADAPTER_LIMITS_MEMORY=8Gi
 HARMONY_GDAL_ADAPTER_INVOCATION_ARGS='python -m gdal_subsetter'
 HARMONY_GDAL_ADAPTER_SERVICE_QUEUE_URLS='["ghcr.io/nasa/harmony-gdal-adapter:latest,http://localstack:4566/queue/harmony-gdal-adapter.fifo"]'
 
+HYBIG_IMAGE=sds/harmony-browse-image-generator:latest
+HYBIG_REQUESTS_CPU=128m
+HYBIG_REQUESTS_MEMORY=128Mi
+HYBIG_LIMITS_CPU=128m
+HYBIG_LIMITS_MEMORY=8Gi
+HYBIG_INVOCATION_ARGS='python -m harmony_browse_image_generator'
+
 HARMONY_SERVICE_EXAMPLE_IMAGE=harmonyservices/service-example:latest
 HARMONY_SERVICE_EXAMPLE_REQUESTS_CPU=128m
 HARMONY_SERVICE_EXAMPLE_REQUESTS_MEMORY=128Mi
