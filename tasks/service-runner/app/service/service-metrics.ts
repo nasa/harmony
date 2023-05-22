@@ -26,7 +26,7 @@ async function _getHarmonyMetric(serviceID: string): Promise<string> {
 
   const metric_message = `# HELP num_ready_work_items Ready work items count for a harmony task-runner service.
 # TYPE num_ready_work_items gauge
-num_ready_work_items{service_id="${serviceID}"} ${response.data.availableWorkItems}`;
+num_ready_work_items{service_id="${serviceID}"} ${parseInt(response.data.availableWorkItems) + 1}`;
 
   return metric_message;
 }

@@ -148,6 +148,23 @@ export async function incrementReadyCount(
 }
 
 /**
+ * Get the running_count or ready_count for the given jobID and serviceID.
+ * @param tx - The database transaction
+ * @param jobID - The job ID
+ * @param serviceID - The ID of the service
+ * @param readyOrRunning - The work item state (ready or running)
+ */
+export async function getCount(
+  tx: Transaction, jobID: string, serviceID: string, readyOrRunning: 'ready' | 'running',
+): Promise<number> {
+  const record = await tx(UserWork.table)
+    .select(`${readyOrRunning}_count`)
+    .where({ job_id: jobID, service_id: serviceID })
+    .first();
+  return record[`${readyOrRunning}_count`];
+}
+
+/**
  * Sets the ready_count to 0 for the given jobID.
  * @param tx - The database transaction
  * @param jobID - The job ID
@@ -185,12 +202,13 @@ export async function populateUserWorkForJobId(tx: Transaction, jobID: string): 
 }
 
 /**
- * Sets the ready_count to the appropriate value for each row in the user_work table for the
+ * Sets the ready_count or running_count to the appropriate value for each row in the user_work table for the
  * provided jobID.
  * @param tx - The database transaction
  * @param jobID - The job ID
+ * @param readyOrRunning - The work item state (ready or running)
  */
-export async function recalculateReadyCount(tx: Transaction, jobID: string): Promise<void> {
+export async function recalculateCount(tx: Transaction, jobID: string, readyOrRunning: 'ready' | 'running'): Promise<void> {
   const rows = await tx(UserWork.table)
     .select(['id', 'service_id'])
     .where({ job_id: jobID });
@@ -200,9 +218,9 @@ export async function recalculateReadyCount(tx: Transaction, jobID: string): Pro
     await populateUserWorkForJobId(tx, jobID);
   } else {
     for (const row of rows) {
-      const readyCountRow = await tx(WorkItem.table)
+      const readyOrRunningCountRow = await tx(WorkItem.table)
         .count()
-        .where({ jobID, serviceID: row.service_id, status: 'ready' })
+        .where({ jobID, serviceID: row.service_id, status: readyOrRunning })
         .first();
 
       let key = 'count(*)';
@@ -211,9 +229,30 @@ export async function recalculateReadyCount(tx: Transaction, jobID: string): Pro
       }
       await tx(UserWork.table)
         .where({ id: row.id })
-        .update('ready_count', readyCountRow[key]);
+        .update(`${readyOrRunning}_count`, readyOrRunningCountRow[key]);
     }
   }
+}
+
+/**
+ * Sets the ready_count and running_count to the appropriate value for each row in the user_work table for the
+ * provided jobID.
+ * @param tx - The database transaction
+ * @param jobID - The job ID
+ */
+export async function recalculateCounts(tx: Transaction, jobID: string): Promise<void> {
+  await recalculateCount(tx, jobID, 'ready');
+  await recalculateCount(tx, jobID, 'running');
+}
+
+/**
+ * Sets the ready_count to the appropriate value for each row in the user_work table for the
+ * provided jobID.
+ * @param tx - The database transaction
+ * @param jobID - The job ID
+ */
+export async function recalculateReadyCount(tx: Transaction, jobID: string): Promise<void> {
+  await recalculateCount(tx, jobID, 'ready');
 }
 
 /**

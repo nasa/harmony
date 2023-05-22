@@ -774,7 +774,7 @@ describe('Services by association', function () {
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookRangesetRequest(version, reprojectCollection, 'all', { headers, query: reprojectQuery });
       it('it uses the first matching service', function () {
-        expect(this.service.config.name).to.equal('harmony/service-example');
+        expect(this.service.config.name).to.equal('nasa/harmony-gdal-adapter');
       });
     });
   });

@@ -124,6 +124,7 @@ interface HarmonyEnv {
   getMetricsSampleRatio: number;
   openTelemetryUrl: string;
   workFailerBatchSize: number;
+  workReaperBatchSize: number;
   releaseVersion: string;
   serviceQueueUrls: { [key: string]: string };
   useServiceQueues: boolean;

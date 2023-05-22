@@ -48,6 +48,8 @@ spec:
       name: alertmanager
       labels:
         app: alertmanager
+      annotations:
+        "cluster-autoscaler.kubernetes.io/safe-to-evict": "true"
     spec:
       containers:
       - name: alertmanager

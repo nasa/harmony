@@ -446,6 +446,8 @@ export async function getWorkItemsByJobIdAndStepIndex(
  * @param notUpdatedForMinutes - jobs with updateAt older than notUpdatedForMinutes ago
  * will be joined with the returned work items
  * @param jobStatus - only jobs with this status will be joined
+ * @param startingId - the work item id to begin the query with, i.e. query work items with id greater than startingId
+ * @param batchSize - the batch size
  * @returns - all work item ids associated with the jobs that
  * met the updatedAt and status constraints
  */
@@ -453,13 +455,18 @@ export async function getWorkItemIdsByJobUpdateAgeAndStatus(
   tx: Transaction,
   notUpdatedForMinutes: number,
   jobStatus: JobStatus[],
+  startingId = 0,
+  batchSize = 2000,
 ): Promise<number[]> {
   const pastDate = subMinutes(new Date(), notUpdatedForMinutes);
   const workItemIds = (await tx(`${WorkItem.table} as w`)
     .innerJoin(Job.table, 'w.jobID', '=', `${Job.table}.jobID`)
-    .select(...tableFields)
+    .select(['w.id'])
     .where(`${Job.table}.updatedAt`, '<', pastDate)
-    .whereIn(`${Job.table}.status`, jobStatus))
+    .whereIn(`${Job.table}.status`, jobStatus)
+    .where('w.id', '>', startingId)
+    .orderBy('w.id', 'asc')
+    .limit(batchSize))
     .map((item) => item.id);
 
   return workItemIds;
@@ -474,6 +481,8 @@ export async function getWorkItemIdsByJobUpdateAgeAndStatus(
  * @param workItemStatuses - only WorkItems with these statuses will be retrieved
  * @param jobStatuses - only WorkItems associated with jobs with these statuses will be retrieved
  * @param fields - optional parameter to indicate which fields to retrieve - defaults to all
+ * @param startingId - the work item id to begin the query with, i.e. query work items with id greater than startingId
+ * @param batchSize - the batch size
  * @returns all WorkItems that meet the lastUpdateOlderThanMinutes and status constraints
 */
 export async function getWorkItemsByUpdateAgeAndStatus(

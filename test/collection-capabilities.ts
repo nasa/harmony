@@ -66,7 +66,7 @@ describe('Testing collection capabilities', function () {
         it('sets the outputFormats field correctly', function () {
           const capabilities = JSON.parse(this.res.text);
           const expectedFormats = [
-            'image/tiff', 'image/png', 'image/gif', 'application/x-netcdf4', 'application/x-zarr',
+            'application/x-netcdf4', 'image/tiff', 'image/png', 'image/gif', 'application/x-zarr',
           ];
           expect(capabilities.outputFormats).to.eql(expectedFormats);
         });
@@ -74,7 +74,7 @@ describe('Testing collection capabilities', function () {
         it('includes the correct services', function () {
           const capabilities = JSON.parse(this.res.text);
           const serviceNames = capabilities.services.map((s) => s.name);
-          const expectedServices = ['harmony/service-example', 'nasa/harmony-gdal-adapter', 'harmony/netcdf-to-zarr'];
+          const expectedServices = ['nasa/harmony-gdal-adapter', 'harmony/netcdf-to-zarr', 'harmony/service-example'];
           expect(serviceNames).to.eql(expectedServices);
         });
 

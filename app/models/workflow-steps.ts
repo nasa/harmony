@@ -178,6 +178,8 @@ export async function getWorkflowStepByJobIdServiceId(
  * @param notUpdatedForMinutes - jobs with updateAt older than notUpdatedForMinutes ago
  * will be joined with the returned workflow steps
  * @param jobStatus - only jobs with this status will be joined
+ * @param startingId - the workflow step id to begin the query with, i.e. query workflow steps with id greater than startingId
+ * @param batchSize - the batch size
  * @returns - all workflow step ids associated with the jobs that
  * met the updatedAt and status constraints
  */
@@ -185,13 +187,18 @@ export async function getWorkflowStepIdsByJobUpdateAgeAndStatus(
   tx: Transaction,
   notUpdatedForMinutes: number,
   jobStatus: JobStatus[],
+  startingId = 0,
+  batchSize = 2000,
 ): Promise<number[]> {
   const pastDate = subMinutes(new Date(), notUpdatedForMinutes);
   const workflowStepIds = (await tx(WorkflowStep.table)
     .innerJoin(Job.table, `${WorkflowStep.table}.jobID`, '=', `${Job.table}.jobID`)
-    .select(...tableFields)
+    .select([`${WorkflowStep.table}.id`])
     .where(`${Job.table}.updatedAt`, '<', pastDate)
-    .whereIn(`${Job.table}.status`, jobStatus))
+    .whereIn(`${Job.table}.status`, jobStatus)
+    .where(`${WorkflowStep.table}.id`, '>', startingId)
+    .orderBy(`${WorkflowStep.table}.id`, 'asc')
+    .limit(batchSize))
     .map((step) => step.id);
 
   return workflowStepIds;
