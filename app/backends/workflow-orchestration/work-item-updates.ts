@@ -1,108 +1,33 @@
-import db, { Transaction, batchSize } from './../util/db';
-import _, { ceil, range, sum } from 'lodash';
-import { NextFunction, Response } from 'express';
+import defaultLogger from '../../util/log';
+import env from '../../util/env';
 import { v4 as uuid } from 'uuid';
+import { WorkItemUpdateQueueType } from '../../util/queue/queue';
+import { getQueueForType } from '../../util/queue/queue-factory';
+import WorkItemUpdate from '../../models/work-item-update';
+import WorkflowStep, { decrementFutureWorkItemCount, getWorkflowStepByJobIdStepIndex, getWorkflowStepsByJobId } from '../../models/workflow-steps';
 import { Logger } from 'winston';
-import defaultLogger from '../util/log';
-import { completeJob } from '../util/job';
-import env from '../util/env';
-import { readCatalogItems, StacItem, StacItemLink } from '../util/stac';
-import HarmonyRequest from '../models/harmony-request';
-import { Job, JobStatus } from '../models/job';
-import JobLink, { getJobDataLinkCount } from '../models/job-link';
-import WorkItem, { updateWorkItemStatus, getWorkItemById, workItemCountForStep, getWorkItemsByJobIdAndStepIndex, getJobIdForWorkItem, getNextWorkItem, maxSortIndexForJobService } from '../models/work-item';
-import WorkflowStep, { decrementFutureWorkItemCount, getWorkflowStepByJobIdStepIndex, getWorkflowStepsByJobId } from '../models/workflow-steps';
-import { objectStoreForProtocol } from '../util/object-store';
-import { resolve } from '../util/url';
-import { ServiceError } from '../util/errors';
-import { COMPLETED_WORK_ITEM_STATUSES, WorkItemMeta, WorkItemStatus } from '../models/work-item-interface';
-import JobError, { getErrorCountForJob } from '../models/job-error';
-import WorkItemUpdate from '../models/work-item-update';
-import { handleBatching, outputStacItemUrls, resultItemSizes } from '../util/aggregation-batch';
-import { decrementRunningCount, deleteUserWorkForJob, getNextJobIdForUsernameAndService, getNextUsernameForWork, incrementReadyAndDecrementRunningCounts, incrementReadyCount,
-  incrementRunningAndDecrementReadyCounts, recalculateCounts } from '../models/user-work';
-import { sanitizeImage } from '../util/string';
-import { WorkItemUpdateQueueType } from '../util/queue/queue';
-import { getQueue } from '../util/queue/queue-factory';
+import _, { ceil, range, sum } from 'lodash';
+import { JobStatus, Job } from '../../models/job';
+import JobError, { getErrorCountForJob } from '../../models/job-error';
+import JobLink, { getJobDataLinkCount } from '../../models/job-link';
+import { incrementReadyCount, deleteUserWorkForJob, incrementReadyAndDecrementRunningCounts, decrementRunningCount } from '../../models/user-work';
+import WorkItem, { maxSortIndexForJobService, workItemCountForStep, getWorkItemsByJobIdAndStepIndex, getWorkItemById, updateWorkItemStatus, getJobIdForWorkItem } from '../../models/work-item';
+import { WorkItemStatus, WorkItemMeta, COMPLETED_WORK_ITEM_STATUSES } from '../../models/work-item-interface';
+import { outputStacItemUrls, handleBatching, resultItemSizes } from '../../util/aggregation-batch';
+import db, { Transaction, batchSize } from '../../util/db';
+import { ServiceError } from '../../util/errors';
+import { completeJob } from '../../util/job';
+import { objectStoreForProtocol } from '../../util/object-store';
+import { StacItem, readCatalogItems, StacItemLink } from '../../util/stac';
+import { sanitizeImage } from '../../util/string';
+import { resolve } from '../../util/url';
+import { QUERY_CMR_SERVICE_REGEX, calculateQueryCmrLimit } from './util';
 
-const MAX_TRY_COUNT = 1;
-const RETRY_DELAY = 1000 * 120;
-const QUERY_CMR_SERVICE_REGEX = /harmonyservices\/query-cmr:.*/;
 
 type WorkItemUpdateQueueItem = {
   update: WorkItemUpdate,
   operation: object,
 };
-
-/**
- * Calculate the granule page limit for the current query-cmr work item.
- * @param tx - database transaction to query with
- * @param workItem - current query-cmr work item
- * @param logger - a Logger instance
- * @returns a number used to limit the query-cmr task or undefined
- */
-async function calculateQueryCmrLimit(tx: Transaction, workItem: WorkItem, logger: Logger): Promise<number> {
-  let queryCmrLimit = -1;
-  if (workItem && QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)) { // only proceed if this is a query-cmr step
-    const numInputGranules = await Job.getNumInputGranules(tx, workItem.jobID);
-    const numSuccessfulQueryCmrItems = await workItemCountForStep(tx, workItem.jobID, 1, WorkItemStatus.SUCCESSFUL);
-    queryCmrLimit = Math.max(0, Math.min(env.cmrMaxPageSize, numInputGranules - (numSuccessfulQueryCmrItems * env.cmrMaxPageSize)));
-    logger.debug(`Limit next query-cmr task to no more than ${queryCmrLimit} granules.`);
-  }
-  return queryCmrLimit;
-}
-
-/**
- * Return a work item for the given service
- * @param req - The request sent by the client
- * @param res - The response to send to the client
- * @param next - The next function in the call chain
- * @returns Resolves when the request is complete
- */
-export async function getWork(
-  req: HarmonyRequest, res: Response, next: NextFunction, tryCount = 1,
-): Promise<void> {
-  const reqLogger = req.context.logger;
-  const { serviceID, podName } = req.query;
-
-  let responded = false;
-  await db.transaction(async (tx) => {
-    const username = await getNextUsernameForWork(tx, serviceID as string);
-    if (username) {
-      const jobID = await getNextJobIdForUsernameAndService(tx, serviceID as string, username);
-      if (jobID) {
-        const workItem = await getNextWorkItem(tx, serviceID as string, jobID);
-        if (workItem) {
-          await incrementRunningAndDecrementReadyCounts(tx, jobID, serviceID as string);
-          const logger = reqLogger.child({ workItemId: workItem.id });
-          const waitSeconds = (Date.now() - workItem.createdAt.valueOf()) / 1000;
-          const itemMeta: WorkItemMeta = { workItemEvent: 'statusUpdate', workItemDuration: waitSeconds,
-            workItemService: sanitizeImage(workItem.serviceID), workItemAmount: 1, workItemStatus: WorkItemStatus.RUNNING  };
-          logger.info(`Sending work item ${workItem.id} to pod ${podName}`, itemMeta);
-          if (workItem && QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)){
-            const maxCmrGranules = await calculateQueryCmrLimit(tx, workItem, logger);
-            res.send({ workItem, maxCmrGranules });
-            responded = true;
-          } else {
-            res.send({ workItem });
-            responded = true;
-          }
-        } else {
-          reqLogger.warn(`user_work is out of sync for user ${username} and job ${jobID}, could not find ready work item`);
-          reqLogger.warn(`recalculating ready and running counts for job ${jobID}`);
-          await recalculateCounts(tx, jobID);
-        }
-      }
-    } else if (tryCount < MAX_TRY_COUNT) {
-      setTimeout(async () => {
-        await getWork(req, res, next, tryCount + 1);
-      }, RETRY_DELAY);
-    }
-  });
-  if (!responded) {
-    res.status(404).send();
-  }
-}
 
 /**
  * Add links to the Job for the WorkItem and save them to the database.
@@ -134,6 +59,163 @@ async function addJobLinksForFinishedWorkItem(
       });
       await link.save(tx);
     }
+  }
+}
+
+
+
+/**
+ * Returns the final job status for the request based on whether all items were
+ * successful, some were successful and some failed, or all items failed.
+ *
+ * @param tx - The database transaction
+ * @param job - The job record
+ * @returns the final job status for the request
+ */
+async function getFinalStatusForJob(tx: Transaction, job: Job): Promise<JobStatus> {
+  let finalStatus = JobStatus.SUCCESSFUL;
+  if (await getErrorCountForJob(tx, job.jobID) > 0) {
+    if (await getJobDataLinkCount(tx, job.jobID) > 0) {
+      finalStatus = JobStatus.COMPLETE_WITH_ERRORS;
+    } else {
+      finalStatus = JobStatus.FAILED;
+    }
+  }
+  return finalStatus;
+}
+
+/**
+ * If a work item has an error adds the error to the job_errors database table.
+ *
+ * @param tx - The database transaction
+ * @param job - The job record
+ * @param url - The URL to include in the error
+ * @param message - An error message to include in the error
+ */
+async function addErrorForWorkItem(
+  tx: Transaction, job: Job, url: string, message: string,
+): Promise<void> {
+  const error = new JobError({
+    jobID: job.jobID,
+    url,
+    message,
+  });
+  await error.save(tx);
+}
+
+
+/**
+ * Returns a URL for the work item which will be stored with a job error.
+ *
+ * @param workItem - The work item
+ * @param logger - The logger for the request
+ *
+ * @returns a relevant URL for the work item that failed if a data URL exists
+ */
+async function getWorkItemUrl(workItem, logger): Promise<string> {
+  let url = 'unknown';
+  if (workItem.stacCatalogLocation) {
+    try {
+      const items = await readCatalogItems(workItem.stacCatalogLocation);
+      // Only consider the first item in the list
+      url = items[0].assets.data.href;
+    } catch (e) {
+      logger.error(`Could not read catalog for ${workItem.stacCatalogLocation}`);
+      logger.error(e);
+    }
+  }
+
+  return url;
+}
+
+/**
+ * Checks if the work item failed and if so handles the logic of determining whether to
+ * fail the job or continue to processing. If there's an error it adds it to the job_errors
+ * table.
+ *
+ * @param tx - The database transaction
+ * @param job - The job associated with the work item
+ * @param workItem - The work item that just finished
+ * @param workflowStep - The current workflow step
+ * @param status - The status sent with the work item update
+ * @param errorMessage - The error message associated with the work item update (if any)
+ * @param logger - The logger for the request
+ *
+ * @returns whether to continue processing work item updates or end
+ */
+async function handleFailedWorkItems(
+  tx: Transaction, job: Job, workItem: WorkItem, workflowStep: WorkflowStep, status: WorkItemStatus,
+  logger: Logger, errorMessage: string,
+): Promise<boolean> {
+  let continueProcessing = true;
+  // If the response is an error then set the job status to 'failed'
+  if (status === WorkItemStatus.FAILED) {
+    continueProcessing = job.ignoreErrors;
+    if (!job.isComplete()) {
+      let jobMessage;
+
+      if (errorMessage) {
+        jobMessage = `WorkItem [${workItem.id}] failed with error: ${errorMessage}`;
+      }
+
+      if (QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)) {
+        // Fail the request if query-cmr fails to populate granules
+        continueProcessing = false;
+        if (!jobMessage) {
+          jobMessage = `WorkItem [${workItem.id}] failed to query CMR for granule information`;
+        }
+      } else {
+        const url = await getWorkItemUrl(workItem, logger);
+        if (!jobMessage) {
+          jobMessage = `WorkItem [${workItem.id}] failed with an unknown error`;
+        }
+        await addErrorForWorkItem(tx, job, url, jobMessage);
+      }
+
+      if (continueProcessing) {
+        const errorCount =  await getErrorCountForJob(tx, job.jobID);
+        if (errorCount > env.maxErrorsForJob) {
+          jobMessage = `Maximum allowed errors ${env.maxErrorsForJob} exceeded`;
+          logger.warn(jobMessage);
+          continueProcessing = false;
+        }
+      }
+
+      if (!continueProcessing) {
+        await completeJob(tx, job, JobStatus.FAILED, logger, jobMessage);
+      } else {
+        // Need to make sure we expect one fewer granule to complete
+        await decrementFutureWorkItemCount(tx, job.jobID, workflowStep.stepIndex);
+        if (job.status == JobStatus.RUNNING) {
+          job.status = JobStatus.RUNNING_WITH_ERRORS;
+          await job.save(tx);
+        }
+      }
+    }
+  }
+  return continueProcessing;
+}
+
+/**
+ * Updated the workflow steps `workItemCount` field for the given job to match the new
+ *
+ * @param transaction - the transaction to use for the update
+ * @param job - A Job that has a new input granule count
+ */
+async function updateWorkItemCounts(
+  transaction: Transaction,
+  job: Job):
+  Promise<void> {
+  const workflowSteps = await getWorkflowStepsByJobId(transaction, job.jobID);
+  for (const step of workflowSteps) {
+    if (QUERY_CMR_SERVICE_REGEX.test(step.serviceID)) {
+      step.workItemCount = Math.ceil(job.numInputGranules / env.cmrMaxPageSize);
+    } else if (!step.hasAggregatedOutput) {
+      step.workItemCount = job.numInputGranules;
+    } else {
+      step.workItemCount = 1;
+    }
+    await step.save(transaction);
   }
 }
 
@@ -284,6 +366,36 @@ async function createAggregatingWorkItem(
 }
 
 /**
+ * Creates another next query-cmr work item if needed
+ * @param tx - The database transaction
+ * @param currentWorkItem - The current work item
+ * @param nextStep - the next step in the workflow
+ */
+async function maybeQueueQueryCmrWorkItem(
+  tx: Transaction, currentWorkItem: WorkItem, logger: Logger,
+): Promise<void> {
+  if (QUERY_CMR_SERVICE_REGEX.test(currentWorkItem.serviceID)) {
+    if (await calculateQueryCmrLimit(tx, currentWorkItem, logger) > 0) {
+      const nextQueryCmrItem = new WorkItem({
+        jobID: currentWorkItem.jobID,
+        scrollID: currentWorkItem.scrollID,
+        serviceID: currentWorkItem.serviceID,
+        status: WorkItemStatus.READY,
+        stacCatalogLocation: currentWorkItem.stacCatalogLocation,
+        workflowStepIndex: currentWorkItem.workflowStepIndex,
+        sortIndex: currentWorkItem.sortIndex + 1,
+      });
+
+      await incrementReadyCount(tx, currentWorkItem.jobID, currentWorkItem.serviceID);
+      await nextQueryCmrItem.save(tx);
+      const itemMeta: WorkItemMeta = { workItemService: sanitizeImage(nextQueryCmrItem.serviceID),
+        workItemEvent: 'statusUpdate', workItemAmount: 1, workItemStatus: WorkItemStatus.READY };
+      logger.info('Queued new query-cmr work item.', itemMeta);
+    }
+  }
+}
+
+/**
  * Creates the next work items for the workflow based on the results of the current step and handle
  * any needed batching
  * @param tx - The database transaction
@@ -369,190 +481,6 @@ async function createNextWorkItems(
     }
   }
   return didCreateWorkItem;
-}
-
-/**
- * Creates another next query-cmr work item if needed
- * @param tx - The database transaction
- * @param currentWorkItem - The current work item
- * @param nextStep - the next step in the workflow
- */
-async function maybeQueueQueryCmrWorkItem(
-  tx: Transaction, currentWorkItem: WorkItem, logger: Logger,
-): Promise<void> {
-  if (QUERY_CMR_SERVICE_REGEX.test(currentWorkItem.serviceID)) {
-    if (await calculateQueryCmrLimit(tx, currentWorkItem, logger) > 0) {
-      const nextQueryCmrItem = new WorkItem({
-        jobID: currentWorkItem.jobID,
-        scrollID: currentWorkItem.scrollID,
-        serviceID: currentWorkItem.serviceID,
-        status: WorkItemStatus.READY,
-        stacCatalogLocation: currentWorkItem.stacCatalogLocation,
-        workflowStepIndex: currentWorkItem.workflowStepIndex,
-        sortIndex: currentWorkItem.sortIndex + 1,
-      });
-
-      await incrementReadyCount(tx, currentWorkItem.jobID, currentWorkItem.serviceID);
-      await nextQueryCmrItem.save(tx);
-      const itemMeta: WorkItemMeta = { workItemService: sanitizeImage(nextQueryCmrItem.serviceID),
-        workItemEvent: 'statusUpdate', workItemAmount: 1, workItemStatus: WorkItemStatus.READY };
-      logger.info('Queued new query-cmr work item.', itemMeta);
-    }
-  }
-}
-
-/**
- * If a work item has an error adds the error to the job_errors database table.
- *
- * @param tx - The database transaction
- * @param job - The job record
- * @param url - The URL to include in the error
- * @param message - An error message to include in the error
- */
-async function addErrorForWorkItem(
-  tx: Transaction, job: Job, url: string, message: string,
-): Promise<void> {
-  const error = new JobError({
-    jobID: job.jobID,
-    url,
-    message,
-  });
-  await error.save(tx);
-}
-
-/**
- * Returns the final job status for the request based on whether all items were
- * successful, some were successful and some failed, or all items failed.
- *
- * @param tx - The database transaction
- * @param job - The job record
- * @returns the final job status for the request
- */
-async function getFinalStatusForJob(tx: Transaction, job: Job): Promise<JobStatus> {
-  let finalStatus = JobStatus.SUCCESSFUL;
-  if (await getErrorCountForJob(tx, job.jobID) > 0) {
-    if (await getJobDataLinkCount(tx, job.jobID) > 0) {
-      finalStatus = JobStatus.COMPLETE_WITH_ERRORS;
-    } else {
-      finalStatus = JobStatus.FAILED;
-    }
-  }
-  return finalStatus;
-}
-
-/**
- * Returns a URL for the work item which will be stored with a job error.
- *
- * @param workItem - The work item
- * @param logger - The logger for the request
- *
- * @returns a relevant URL for the work item that failed if a data URL exists
- */
-async function getWorkItemUrl(workItem, logger): Promise<string> {
-  let url = 'unknown';
-  if (workItem.stacCatalogLocation) {
-    try {
-      const items = await readCatalogItems(workItem.stacCatalogLocation);
-      // Only consider the first item in the list
-      url = items[0].assets.data.href;
-    } catch (e) {
-      logger.error(`Could not read catalog for ${workItem.stacCatalogLocation}`);
-      logger.error(e);
-    }
-  }
-
-  return url;
-}
-
-/**
- * Checks if the work item failed and if so handles the logic of determining whether to
- * fail the job or continue to processing. If there's an error it adds it to the job_errors
- * table.
- *
- * @param tx - The database transaction
- * @param job - The job associated with the work item
- * @param workItem - The work item that just finished
- * @param workflowStep - The current workflow step
- * @param status - The status sent with the work item update
- * @param errorMessage - The error message associated with the work item update (if any)
- * @param logger - The logger for the request
- *
- * @returns whether to continue processing work item updates or end
- */
-async function handleFailedWorkItems(
-  tx: Transaction, job: Job, workItem: WorkItem, workflowStep: WorkflowStep, status: WorkItemStatus,
-  logger: Logger, errorMessage: string,
-): Promise<boolean> {
-  let continueProcessing = true;
-  // If the response is an error then set the job status to 'failed'
-  if (status === WorkItemStatus.FAILED) {
-    continueProcessing = job.ignoreErrors;
-    if (!job.isComplete()) {
-      let jobMessage;
-
-      if (errorMessage) {
-        jobMessage = `WorkItem [${workItem.id}] failed with error: ${errorMessage}`;
-      }
-
-      if (QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)) {
-        // Fail the request if query-cmr fails to populate granules
-        continueProcessing = false;
-        if (!jobMessage) {
-          jobMessage = `WorkItem [${workItem.id}] failed to query CMR for granule information`;
-        }
-      } else {
-        const url = await getWorkItemUrl(workItem, logger);
-        if (!jobMessage) {
-          jobMessage = `WorkItem [${workItem.id}] failed with an unknown error`;
-        }
-        await addErrorForWorkItem(tx, job, url, jobMessage);
-      }
-
-      if (continueProcessing) {
-        const errorCount =  await getErrorCountForJob(tx, job.jobID);
-        if (errorCount > env.maxErrorsForJob) {
-          jobMessage = `Maximum allowed errors ${env.maxErrorsForJob} exceeded`;
-          logger.warn(jobMessage);
-          continueProcessing = false;
-        }
-      }
-
-      if (!continueProcessing) {
-        await completeJob(tx, job, JobStatus.FAILED, logger, jobMessage);
-      } else {
-        // Need to make sure we expect one fewer granule to complete
-        await decrementFutureWorkItemCount(tx, job.jobID, workflowStep.stepIndex);
-        if (job.status == JobStatus.RUNNING) {
-          job.status = JobStatus.RUNNING_WITH_ERRORS;
-          await job.save(tx);
-        }
-      }
-    }
-  }
-  return continueProcessing;
-}
-
-/**
- * Updated the workflow steps `workItemCount` field for the given job to match the new
- *
- * @param transaction - the transaction to use for the update
- * @param job - A Job that has a new input granule count
- */
-async function updateWorkItemCounts(
-  transaction: Transaction,
-  job: Job):
-  Promise<void> {
-  const workflowSteps = await getWorkflowStepsByJobId(transaction, job.jobID);
-  for (const step of workflowSteps) {
-    if (QUERY_CMR_SERVICE_REGEX.test(step.serviceID)) {
-      step.workItemCount = Math.ceil(job.numInputGranules / env.cmrMaxPageSize);
-    } else if (!step.hasAggregatedOutput) {
-      step.workItemCount = job.numInputGranules;
-    } else {
-      step.workItemCount = 1;
-    }
-    await step.save(transaction);
-  }
 }
 
 /**
@@ -820,7 +748,7 @@ export async function handleBatchWorkItemUpdates(
  * @param queueType - Type of the queue to read from
  */
 export async function batchProcessQueue(queueType: WorkItemUpdateQueueType): Promise<void> {
-  const queue = getQueue(queueType);
+  const queue = getQueueForType(queueType);
   const startTime = Date.now();
   // use a smaller batch size for the large item update queue otherwise use the SQS max batch size
   // of 10
@@ -828,14 +756,11 @@ export async function batchProcessQueue(queueType: WorkItemUpdateQueueType): Pro
   const otherQueueBatchSize = 10; // the SQS max batch size
   const queueBatchSize = queueType === WorkItemUpdateQueueType.LARGE_ITEM_UPDATE
     ? largeItemQueueBatchSize : otherQueueBatchSize;
-  const readQueueStartTime = Date.now();
   const messages = await queue.getMessages(queueBatchSize);
-  const readQueueEndTime = Date.now();
-  defaultLogger.debug(`Reading ${messages.length} work item updates from queue took ${readQueueEndTime - readQueueStartTime} ms`);
   if (messages.length < 1) {
     return;
   }
-  defaultLogger.debug(`Processing ${messages.length} work item updates from queue`);
+  // defaultLogger.debug(`Processing ${messages.length} work item updates from queue`);
 
   if (queueType === WorkItemUpdateQueueType.LARGE_ITEM_UPDATE) {
     // process each message individually
@@ -877,48 +802,4 @@ export async function batchProcessQueue(queueType: WorkItemUpdateQueueType): Pro
   }
   const endTime = Date.now();
   defaultLogger.debug(`Processed ${messages.length} work item updates from queue in ${endTime - startTime} ms`);
-}
-
-/**
- * Update a work item from a service response. This function stores the update in a queue
- * without further processing and then responds quickly. Processing the update is handled
- * asynchronously (see `batchProcessQueue`)
- *
- * @param req - The request sent by the client
- * @param res - The response to send to the client
- * @returns Resolves when the request is complete
- */
-export async function updateWorkItem(req: HarmonyRequest, res: Response): Promise<void> {
-  const { id } = req.params;
-  const { status, hits, results, scrollID, errorMessage, duration, operation, outputItemSizes } = req.body;
-  const totalItemsSize = req.body.totalItemsSize ? parseFloat(req.body.totalItemsSize) : 0;
-
-  const update = {
-    workItemID: parseInt(id),
-    status,
-    hits,
-    results,
-    scrollID,
-    errorMessage,
-    totalItemsSize,
-    outputItemSizes,
-    duration,
-  };
-  const workItemLogger = req.context.logger.child({ workItemId: update.workItemID });
-
-  // we use separate queues for small and large work item updates
-  let queueType = WorkItemUpdateQueueType.SMALL_ITEM_UPDATE;
-  if (results?.length > 1) {
-    workItemLogger.debug('Sending work item update to large item queue');
-    queueType = WorkItemUpdateQueueType.LARGE_ITEM_UPDATE;
-  } else {
-    workItemLogger.debug('Sending work item update to regular queue');
-  }
-  const queue = getQueue(queueType);
-  await queue.sendMessage(JSON.stringify({ update, operation })).catch((e) => {
-    workItemLogger.error(e);
-  });
-
-  // Return a success status with no body
-  res.status(204).send();
 }

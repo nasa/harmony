@@ -1,5 +1,5 @@
 import AWS from 'aws-sdk';
-import env, { queueLongPollingWaitTimeSec } from '../env';
+import env from '../env';
 import { Queue, ReceivedMessage } from './queue';
 
 export class SqsQueue extends Queue {
@@ -24,11 +24,11 @@ export class SqsQueue extends Queue {
     }
   }
 
-  async getMessage(): Promise<ReceivedMessage> {
+  async getMessage(waitTimeSeconds = env.queueLongPollingWaitTimeSec): Promise<ReceivedMessage> {
     const response = await this.sqs.receiveMessage({
       QueueUrl: this.queueUrl,
       MaxNumberOfMessages: 1,
-      WaitTimeSeconds: env.queueLongPollingWaitTimeSec,
+      WaitTimeSeconds: waitTimeSeconds,
     }).promise();
     if (response.Messages) {
       const message = response.Messages[0];
@@ -40,11 +40,11 @@ export class SqsQueue extends Queue {
     return null;
   }
 
-  async getMessages(num: number): Promise<ReceivedMessage[]> {
+  async getMessages(num: number, waitTimeSeconds = env.queueLongPollingWaitTimeSec): Promise<ReceivedMessage[]> {
     const response = await this.sqs.receiveMessage({
       QueueUrl: this.queueUrl,
       MaxNumberOfMessages: num,
-      WaitTimeSeconds: queueLongPollingWaitTimeSec,
+      WaitTimeSeconds: waitTimeSeconds,
     }).promise();
     if (response.Messages) {
       return response.Messages.map((message) => ({
@@ -55,11 +55,15 @@ export class SqsQueue extends Queue {
     return [];
   }
 
-  async sendMessage(msg: string): Promise<void> {
-    await this.sqs.sendMessage({
+  async sendMessage(msg: string, groupId?:string): Promise<void> {
+    const message: { QueueUrl: string, MessageBody: string, MessageGroupId?: string } = {
       QueueUrl: this.queueUrl,
       MessageBody: JSON.stringify(msg),
-    }).promise();
+    };
+    if (groupId) {
+      message.MessageGroupId = groupId;
+    }
+    await this.sqs.sendMessage(message).promise();
   }
 
   async deleteMessage(receipt: string): Promise<void> {
@@ -76,6 +80,12 @@ export class SqsQueue extends Queue {
         Id: index.toString(),
         ReceiptHandle: receipt,
       })),
+    }).promise();
+  }
+
+  async purge(): Promise<void> {
+    await this.sqs.purgeQueue({
+      QueueUrl: this.queueUrl,
     }).promise();
   }
 }

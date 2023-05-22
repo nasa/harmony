@@ -12,6 +12,7 @@ import { truncateAll } from './helpers/db';
 import env from '../app/util/env';
 import { jobStatus } from './helpers/jobs';
 import * as aggregationBatch from '../app/util/aggregation-batch';
+import { resetQueues } from './helpers/queue';
 
 const reprojectAndZarrQuery = {
   maxResults: 1,
@@ -34,6 +35,7 @@ const l2ssAndConciseQuery = {
 describe('when setting ignoreErrors=true', function () {
   const collection = 'C1233800302-EEDTEST';
   const l2ssCollection = 'C1243729749-EEDTEST';
+
   hookServersStartStop();
 
   let sizeOfObjectStub;
@@ -41,10 +43,12 @@ describe('when setting ignoreErrors=true', function () {
     sizeOfObjectStub = stub(aggregationBatch, 'sizeOfObject')
       .callsFake(async (_) => 1);
     await truncateAll();
+    resetQueues();
   });
 
   after(async function () {
     sizeOfObjectStub.restore();
+    resetQueues();
     await truncateAll();
   });
 
@@ -65,7 +69,7 @@ describe('when setting ignoreErrors=true', function () {
       await updateWorkItem(this.backend, workItem);
       const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
       expect(currentWorkItems.length).to.equal(2);
-      expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
+      expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
     });
 
     describe('when all of the work items succeed', function () {
@@ -129,7 +133,7 @@ describe('when setting ignoreErrors=true', function () {
       await updateWorkItem(this.backend, workItem);
       const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
       expect(currentWorkItems.length).to.equal(2);
-      expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
+      expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
     });
 
     describe('when the first swot-reprojection service work item fails', function () {
@@ -197,8 +201,7 @@ describe('when setting ignoreErrors=true', function () {
       await updateWorkItem(this.backend, workItem);
       const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
 
-      expect(currentWorkItems.length).to.equal(3);
-      expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(2);
+      expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(2);
     });
 
     describe('when the first swot-reprojection service work item fails', function () {
@@ -228,7 +231,7 @@ describe('when setting ignoreErrors=true', function () {
         expect(currentWorkItems.length).to.equal(3);
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
-        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
+        expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
       });
     });
 
@@ -292,7 +295,7 @@ describe('when setting ignoreErrors=true', function () {
       await updateWorkItem(this.backend, workItem);
       const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
       expect(currentWorkItems.length).to.equal(4);
-      expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(3);
+      expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(3);
     });
 
     describe('when the first swot-reprojection service work item fails', function () {
@@ -324,7 +327,7 @@ describe('when setting ignoreErrors=true', function () {
         const currentWorkItems = (await getWorkItemsByJobId(db, firstSwotItem.jobID)).workItems;
         expect(currentWorkItems.length).to.equal(4);
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(2);
+        expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(2);
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
       });
 
@@ -400,7 +403,7 @@ describe('when setting ignoreErrors=true', function () {
       const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
       expect(currentWorkItems.length).to.equal(5);
       expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-      expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(4);
+      expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(4);
     });
     after(function () {
       maxErrorsStub.restore();
@@ -461,7 +464,7 @@ describe('when setting ignoreErrors=true', function () {
         const currentWorkItems = (await getWorkItemsByJobId(db, secondSwotItem.jobID)).workItems;
         expect(currentWorkItems.length).to.equal(6);
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(2);
+        expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(2);
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest').length).to.equal(1);
@@ -590,8 +593,8 @@ describe('when setting ignoreErrors=true', function () {
         const currentWorkItems = (await getWorkItemsByJobId(db, workItemJobID)).workItems;
         expect(currentWorkItems.length).to.equal(5);
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(3);
+        expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
+        expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(3);
       });
 
       it('leaves the job in the running state', async function () {
@@ -708,7 +711,7 @@ describe('when setting ignoreErrors=true', function () {
         await updateWorkItem(this.backend, workItem);
         const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
         expect(currentWorkItems.length).to.equal(4);
-        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(3);
+        expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(3);
       });
 
       describe('when the first L2-Subsetter service work item fails', function () {
@@ -740,7 +743,7 @@ describe('when setting ignoreErrors=true', function () {
           const currentWorkItems = (await getWorkItemsByJobId(db, firstL2SSItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(4);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(2);
+          expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(2);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
         });
 
@@ -754,7 +757,7 @@ describe('when setting ignoreErrors=true', function () {
           const currentWorkItems = (await getWorkItemsByJobId(db, firstL2SSItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(4);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
         });
@@ -770,7 +773,7 @@ describe('when setting ignoreErrors=true', function () {
           const currentWorkItems = (await getWorkItemsByJobId(db, firstL2SSItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(5);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/podaac/concise:sit').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/podaac/concise:sit').length).to.equal(1);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(2);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
         });
@@ -821,7 +824,7 @@ describe('when setting ignoreErrors=true', function () {
         await updateWorkItem(this.backend, workItem);
         const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
         expect(currentWorkItems.length).to.equal(4);
-        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(3);
+        expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(3);
       });
       after(function () {
         batchSizeStub.restore();
@@ -838,8 +841,8 @@ describe('when setting ignoreErrors=true', function () {
           const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(5);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/podaac/concise:sit').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(2);
+          expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/podaac/concise:sit').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(2);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
         });
       });
@@ -872,8 +875,8 @@ describe('when setting ignoreErrors=true', function () {
           const currentWorkItems = (await getWorkItemsByJobId(db, secondL2SSItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(5);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/podaac/concise:sit').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/podaac/concise:sit').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
         });
@@ -889,7 +892,7 @@ describe('when setting ignoreErrors=true', function () {
           const currentWorkItems = (await getWorkItemsByJobId(db, secondL2SSItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(6);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/podaac/concise:sit').length).to.equal(2);
+          expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/podaac/concise:sit').length).to.equal(2);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(2);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
         });
@@ -951,7 +954,7 @@ describe('when setting ignoreErrors=true', function () {
         await updateWorkItem(this.backend, workItem);
         const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
         expect(currentWorkItems.length).to.equal(4);
-        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(3);
+        expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(3);
       });
       after(function () {
         batchSizeStub.restore();
@@ -968,8 +971,8 @@ describe('when setting ignoreErrors=true', function () {
           const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(5);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/podaac/concise:sit').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(2);
+          expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/podaac/concise:sit').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(2);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
         });
       });
@@ -985,8 +988,8 @@ describe('when setting ignoreErrors=true', function () {
           const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(6);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/podaac/concise:sit').length).to.equal(2);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/podaac/concise:sit').length).to.equal(2);
+          expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(2);
         });
       });
@@ -1019,7 +1022,7 @@ describe('when setting ignoreErrors=true', function () {
           const currentWorkItems = (await getWorkItemsByJobId(db, lastL2SSItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(6);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/podaac/concise:sit').length).to.equal(2);
+          expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/podaac/concise:sit').length).to.equal(2);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(2);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
         });
@@ -1081,7 +1084,7 @@ describe('when setting ignoreErrors=true', function () {
         await updateWorkItem(this.backend, workItem);
         const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
         expect(currentWorkItems.length).to.equal(4);
-        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(3);
+        expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(3);
       });
       after(function () {
         batchSizeStub.restore();
@@ -1098,8 +1101,8 @@ describe('when setting ignoreErrors=true', function () {
           const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(5);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/podaac/concise:sit').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(2);
+          expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/podaac/concise:sit').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(2);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
         });
       });
@@ -1115,8 +1118,8 @@ describe('when setting ignoreErrors=true', function () {
           const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(6);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/podaac/concise:sit').length).to.equal(2);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/podaac/concise:sit').length).to.equal(2);
+          expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(2);
         });
       });
@@ -1149,7 +1152,7 @@ describe('when setting ignoreErrors=true', function () {
           const currentWorkItems = (await getWorkItemsByJobId(db, lastL2SSItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(6);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/podaac/concise:sit').length).to.equal(2);
+          expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/podaac/concise:sit').length).to.equal(2);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(2);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
         });
@@ -1227,7 +1230,7 @@ describe('when setting ignoreErrors=true', function () {
         const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
         expect(currentWorkItems.length).to.equal(5);
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(4);
+        expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(4);
       });
       after(function () {
         maxErrorsStub.restore();
@@ -1281,7 +1284,7 @@ describe('when setting ignoreErrors=true', function () {
           const currentWorkItems = (await getWorkItemsByJobId(db, secondL2SSItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(5);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(2);
+          expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(2);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
         });

@@ -115,6 +115,7 @@ interface HarmonyEnv {
   workItemUpdateQueueProcessorCount: number;
   maxErrorsForJob: number;
   workItemRetryLimit: number;
+  workItemSchedulerQueueUrl: string;
   workItemUpdateQueueUrl: string;
   largeWorkItemUpdateQueueUrl: string;
   largeWorkItemUpdateQueueMaxBatchSize: number;
@@ -125,6 +126,8 @@ interface HarmonyEnv {
   workFailerBatchSize: number;
   workReaperBatchSize: number;
   releaseVersion: string;
+  serviceQueueUrls: { [key: string]: string };
+  useServiceQueues: boolean;
 }
 
 // special cases
@@ -132,5 +135,39 @@ interface HarmonyEnv {
 envVars.harmonyClientId = process.env.CLIENT_ID || 'harmony-unknown';
 envVars.uploadBucket = process.env.UPLOAD_BUCKET || process.env.STAGING_BUCKET || 'local-staging-bucket';
 envVars.useLocalstack = process.env.USE_LOCALSTACK === 'true';
+envVars.useServiceQueues = process.env.USE_SERVICE_QUEUES === 'true';
+envVars.workItemUpdateQueueUrl = process.env.WORK_ITEM_UPDATE_QUEUE_URL?.replace('localstack', envVars.localstackHost);
+envVars.largeWorkItemUpdateQueueUrl = process.env.LARGE_WORK_ITEM_UPDATE_QUEUE_URL?.replace('localstack', envVars.localstackHost);
+envVars.workItemSchedulerQueueUrl = process.env.WORK_ITEM_SCHEDULER_QUEUE_URL?.replace('localstack', envVars.localstackHost);
+
+envVars.serviceQueueUrls = {};
+// process all environment variables ending in _QUEUE_URLS to add image/url pairs to
+// the `serviceQueueUrls` map
+for (const k of Object.keys(process.env)) {
+  if (/^.*_QUEUE_URLS$/.test(k)) {
+    const value = process.env[k];
+    // TODO - Remove all these commented out console.log statements in HARMONY-1419
+    // console.log(`Parsing ${k}=${value} as JSON`);
+    try {
+      const imageQueueUrls = JSON.parse(value);
+      for (const imageQueueUrl of imageQueueUrls) {
+        const [image, url] = imageQueueUrl.split(',');
+        // console.log(`Parsed ${imageQueueUrl} as ${image}=${url}`);
+        if (image && url) {
+          // console.log(`Adding ${image}=${url} to serviceQueueUrls`);
+          // replace 'localstack' with `env.localstackHost` to allow for harmony to be run in a
+          // container
+          envVars.serviceQueueUrls[image] = url.replace('localstack', envVars.localstackHost);
+        } else {
+          // console.log(`Could not parse ${imageQueueUrl} as image,url pair`);
+        }
+      }
+    } catch (e) {
+      // console.log(`Could not parse value ${value} for ${k} as JSON`);
+    }
+  }
+}
+
+// console.log(`SERVICE_QUEUE_URLS: ${JSON.stringify(envVars.serviceQueueUrls, null, 2)}`);
 
 export = envVars;

@@ -6,7 +6,7 @@ import db from '../util/db';
 import sleep from '../util/sleep';
 import { JobStatus } from '../models/job';
 import { WorkItemStatus } from '../models/work-item-interface';
-import { handleWorkItemUpdateWithJobId } from '../backends/workflow-orchestration';
+import { handleWorkItemUpdateWithJobId } from '../backends/workflow-orchestration/work-item-updates';
 
 export interface WorkFailerConfig {
   logger: Logger;

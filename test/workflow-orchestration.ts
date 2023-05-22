@@ -17,6 +17,7 @@ import { truncateAll } from './helpers/db';
 import { getObjectText } from './helpers/object-store';
 import { stub } from 'sinon';
 import { populateUserWorkFromWorkItems } from '../app/models/user-work';
+import { resetQueues } from './helpers/queue';
 
 /**
  * Create a job and some work times to be used by tests
@@ -524,7 +525,7 @@ describe('Workflow chaining for a collection configured for swot reprojection an
       // multiple work items should be generated for the next step
       const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
       expect(currentWorkItems.length).to.equal(4);
-      expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(3);
+      expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(3);
     });
 
     describe('when the first swot-reprojection service work item fails with an error message', function () {
@@ -612,7 +613,7 @@ describe('Workflow chaining for a collection configured for swot reprojection an
       // multiple work items should be generated for the next step
       const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
       expect(currentWorkItems.length).to.equal(4);
-      expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(3);
+      expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(3);
     });
 
     describe('when the first swot-reprojection service work item fails and does not provide an error message', function () {
@@ -724,10 +725,12 @@ describe('When a request spans multiple CMR pages', function () {
       sizeOfObjectStub = stub(aggregationBatch, 'sizeOfObject')
         .callsFake(async (_) => 7000000000);
       await truncateAll();
+      resetQueues();
     });
     after(async function () {
       pageStub.restore();
       sizeOfObjectStub.restore();
+      resetQueues();
       await truncateAll();
     });
 
