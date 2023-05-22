@@ -9,6 +9,8 @@ import { fakeServiceStacOutput, getWorkForService, updateWorkItem } from '../hel
 import { getStacLocation, WorkItemStatus } from '../../app/models/work-item-interface';
 import { truncateAll } from '../helpers/db';
 import env from '../../app/util/env';
+import { resetQueues } from '../helpers/queue';
+import { reset } from 'mockdate';
 
 const reprojectAndZarrQuery = {
   maxResults: 1,
@@ -38,9 +40,11 @@ describe('Work item failure retries', function () {
   describe('When making a request', async function () {
     before(async function () {
       await truncateAll();
+      resetQueues();
     });
 
     after(async function () {
+      resetQueues();
       await truncateAll();
     });
 

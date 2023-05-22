@@ -55,11 +55,15 @@ export class SqsQueue extends Queue {
     return [];
   }
 
-  async sendMessage(msg: string): Promise<void> {
-    await this.sqs.sendMessage({
+  async sendMessage(msg: string, groupId?:string): Promise<void> {
+    const message: { QueueUrl: string, MessageBody: string, MessageGroupId?: string } = {
       QueueUrl: this.queueUrl,
       MessageBody: JSON.stringify(msg),
-    }).promise();
+    };
+    if (groupId) {
+      message.MessageGroupId = groupId;
+    }
+    await this.sqs.sendMessage(message).promise();
   }
 
   async deleteMessage(receipt: string): Promise<void> {
@@ -76,6 +80,12 @@ export class SqsQueue extends Queue {
         Id: index.toString(),
         ReceiptHandle: receipt,
       })),
+    }).promise();
+  }
+
+  async purge(): Promise<void> {
+    await this.sqs.purgeQueue({
+      QueueUrl: this.queueUrl,
     }).promise();
   }
 }

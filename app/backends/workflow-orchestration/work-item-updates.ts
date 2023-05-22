@@ -756,14 +756,11 @@ export async function batchProcessQueue(queueType: WorkItemUpdateQueueType): Pro
   const otherQueueBatchSize = 10; // the SQS max batch size
   const queueBatchSize = queueType === WorkItemUpdateQueueType.LARGE_ITEM_UPDATE
     ? largeItemQueueBatchSize : otherQueueBatchSize;
-  const readQueueStartTime = Date.now();
   const messages = await queue.getMessages(queueBatchSize);
-  const readQueueEndTime = Date.now();
-  defaultLogger.debug(`Reading ${messages.length} work item updates from queue took ${readQueueEndTime - readQueueStartTime} ms`);
   if (messages.length < 1) {
     return;
   }
-  defaultLogger.debug(`Processing ${messages.length} work item updates from queue`);
+  // defaultLogger.debug(`Processing ${messages.length} work item updates from queue`);
 
   if (queueType === WorkItemUpdateQueueType.LARGE_ITEM_UPDATE) {
     // process each message individually

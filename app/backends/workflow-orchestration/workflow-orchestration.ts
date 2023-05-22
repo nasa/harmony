@@ -31,7 +31,7 @@ export async function getWork(
   let workItemData: WorkItemData;
 
   if (env.useServiceQueues) {
-    workItemData = await getWorkFromQueue(serviceID as string);
+    workItemData = await getWorkFromQueue(serviceID as string, reqLogger);
   } else {
     workItemData = await getWorkFromDatabase(serviceID as string, reqLogger);
   }

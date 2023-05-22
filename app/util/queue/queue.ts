@@ -11,7 +11,8 @@ export enum WorkItemUpdateQueueType {
 export abstract class Queue {
   abstract getMessage(waitTimeSeconds?: number): Promise<ReceivedMessage>;
   abstract getMessages(num: number, waitTimeSeconds?: number): Promise<ReceivedMessage[]>;
-  abstract sendMessage(msg: string): Promise<void>;
+  abstract sendMessage(msg: string, groupId?: string): Promise<void>;
   abstract deleteMessage(receipt: string): Promise<void>;
   abstract deleteMessages(receipts: string[]): Promise<void>;
+  abstract purge(): Promise<void>;
 }

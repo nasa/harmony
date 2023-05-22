@@ -93,7 +93,7 @@ s3.put_bucket_acl(Bucket='${ARTIFACT_BUCKET}', ACL='public-read') # allows us to
 sqs = boto3.client('sqs', endpoint_url='http://localhost:4566', region_name='us-west-2')
 sqs.create_queue(QueueName='${WORK_ITEM_UPDATE_QUEUE}')
 sqs.create_queue(QueueName='${LARGE_WORK_ITEM_UPDATE_QUEUE}', Attributes={'VisibilityTimeout': '3600'})
-sqs.create_queue(QueueName='${WORK_ITEM_SCHEDULER_QUEUE}', Attributes={'FifoQueue': 'true'})
+sqs.create_queue(QueueName='${WORK_ITEM_SCHEDULER_QUEUE}', Attributes={'FifoQueue': 'true', 'ContentBasedDeduplication': 'true'})
 "
 
 # For some develpers using Linux, artifact repositories were not working correctly without

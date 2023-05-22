@@ -44,3 +44,17 @@ export function getQueueForUrl(url: string): Queue {
 export function getWorkSchedulerQueue(): Queue {
   return workSchedulerQueue;
 }
+
+/**
+ * Get the URL of the queue used for a service
+ * @param serviceID - The service ID for which to get the queue URL
+ * @returns the URL of the queue used for the service
+ * @throws an error if no queue URL is found for the service
+ */
+export function getQueueUrlForService(serviceID: string): string {
+  const queueUrl = env.serviceQueueUrls[serviceID];
+  if (!queueUrl) {
+    throw new Error(`No queue URL found for service ${serviceID}`);
+  }
+  return queueUrl;
+}
