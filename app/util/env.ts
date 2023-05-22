@@ -146,6 +146,7 @@ envVars.serviceQueueUrls = {};
 for (const k of Object.keys(process.env)) {
   if (/^.*_QUEUE_URLS$/.test(k)) {
     const value = process.env[k];
+    // TODO - Remove all these commented out console.log statements in HARMONY-1419
     // console.log(`Parsing ${k}=${value} as JSON`);
     try {
       const imageQueueUrls = JSON.parse(value);
