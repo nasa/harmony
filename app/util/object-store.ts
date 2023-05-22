@@ -1,14 +1,16 @@
-import aws from 'aws-sdk';
 import * as fs from 'fs';
 import * as querystring from 'querystring';
 import * as stream from 'stream';
 import tmp from 'tmp';
 import { URL } from 'url';
 import * as util from 'util';
-import { PromiseResult } from 'aws-sdk/lib/request';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { CopyObjectCommand, GetBucketLocationCommand, GetObjectCommand, GetObjectCommandOutput,
+  HeadObjectCommand, HeadObjectCommandOutput, ListObjectsV2Command, PutObjectCommand,
+  PutObjectCommandInput, PutObjectCommandOutput, S3Client, S3ClientConfig,
+} from '@aws-sdk/client-s3';
 
 import env = require('./env');
-
 const { awsDefaultRegion } = env;
 
 const pipeline = util.promisify(stream.pipeline);
@@ -41,7 +43,7 @@ async function streamToString(readableStream: stream.Readable): Promise<string> 
  *
  */
 export class S3ObjectStore {
-  s3: aws.S3;
+  s3: S3Client;
 
   /**
    * Builds and returns an S3 object store configured according to environment variables
@@ -54,22 +56,32 @@ export class S3ObjectStore {
     this.s3 = this._getS3(overrides);
   }
 
-  _getS3(overrides?): aws.S3 {
-    const endpointSettings: aws.S3.ClientConfiguration = {};
+
+  _getS3(overrides?: S3ClientConfig): S3Client {
     if (process.env.USE_LOCALSTACK === 'true') {
-      aws.config.update({
-        region: env.awsDefaultRegion,
-        credentials: { accessKeyId: 'localstack', secretAccessKey: 'localstack' },
+      const { localstackHost } = env;
+
+      const endpointSettings = {
+        endpoint: `http://${localstackHost}:4572`,
+        forcePathStyle: true,
+      };
+
+      const credentials = {
+        accessKeyId: 'localstack',
+        secretAccessKey: 'localstack',
+      };
+
+      return new S3Client({
+        apiVersion: '2006-03-01',
+        region: awsDefaultRegion,
+        ...endpointSettings,
+        ...overrides,
+        credentials,
       });
-      endpointSettings.endpoint = `http://${env.localstackHost}:4572`;
-      endpointSettings.s3ForcePathStyle = true;
     }
 
-    return new aws.S3({
+    return new S3Client({
       apiVersion: '2006-03-01',
-      region: awsDefaultRegion,
-      signatureVersion: 'v4',
-      ...endpointSettings,
       ...overrides,
     });
   }
@@ -93,22 +105,29 @@ export class S3ObjectStore {
       Key: url.pathname.substr(1).replaceAll('%20', ' '), // Nuke leading "/" and convert %20 to spaces
     };
 
-    // Verifies that the object exists, or throws NotFound
-    await this.s3.headObject(object).promise();
-    const req = this.s3.getObject(object);
+    try {
+      // Verifies that the object exists, or throws NotFound
+      await this.s3.send(new HeadObjectCommand(object));
 
-    if (params && req.on) {
-      req.on('build', () => { req.httpRequest.path += `?${querystring.stringify(params)}`; });
+      const req = new GetObjectCommand(object);
+
+      if (params) {
+        req.input.Key += `?${querystring.stringify(params)}`;
+      }
+
+      let signedUrl = await getSignedUrl(this.s3, req, { expiresIn: 3600 }); // Adjust expiresIn value as needed
+
+      // Needed as a work-around to allow access from outside the Kubernetes cluster
+      // for local development
+      if (env.useLocalstack) {
+        signedUrl = signedUrl.replace('localstack', 'localhost');
+      }
+
+      return signedUrl;
+    } catch (error) {
+      // Handle any errors that occur during the headObject or getObject requests
+      throw error;
     }
-    // TypeScript doesn't recognize that req has a presign method.  It does.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let result = await (req as any).presign();
-    // Needed as a work-around to allow access from outside the kubernetes cluster
-    // for local development
-    if (env.useLocalstack) {
-      result = result.replace('localstack', 'localhost');
-    }
-    return result;
   }
 
   /**
@@ -123,10 +142,20 @@ export class S3ObjectStore {
    */
   getObject(
     paramsOrUrl: string | BucketParams,
-    callback?: (err: aws.AWSError, data: aws.S3.GetObjectOutput) => void,
-  ): aws.Request<aws.S3.GetObjectOutput, aws.AWSError> {
-    return this.s3.getObject(this._paramsOrUrlToParams(paramsOrUrl), callback);
+    callback?: (err, data: GetObjectCommandOutput) => void,
+  ): Promise<GetObjectCommandOutput> {
+    const params = this._paramsOrUrlToParams(paramsOrUrl);
+    const command = new GetObjectCommand(params);
+
+    if (callback) {
+      this.s3.send(command)
+        .then((response) => callback(null, response))
+        .catch((error) => callback(error, null));
+    } else {
+      return this.s3.send(command);
+    }
   }
+
 
   /**
    * Get the parsed JSON object for the JSON file at the given s3 location.
@@ -138,8 +167,8 @@ export class S3ObjectStore {
     paramsOrUrl: string | BucketParams,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ): Promise<any> {
-    const catalogResponse = await this.getObject(paramsOrUrl).promise();
-    const catalogString = catalogResponse.Body.toString('utf-8');
+    const catalogResponse = await this.getObject(paramsOrUrl);
+    const catalogString = catalogResponse.Body.toString();
     return JSON.parse(catalogString);
   }
 
@@ -150,29 +179,33 @@ export class S3ObjectStore {
    *   be retrieved or the object URL
    * @returns a promise resolving to a list of s3 object keys (strings)
    */
-  async listObjectKeys(paramsOrUrl: string | BucketParams): Promise<string[]>  {
-    let s3Objects = [];
+  async listObjectKeys(paramsOrUrl: string | BucketParams): Promise<string[]> {
+    const s3Objects: string[] = [];
     let hasMoreObjects = true;
-    let continuationToken = null;
+    let continuationToken: string | undefined = undefined;
     const requestParams = this._paramsOrUrlToParams(paramsOrUrl);
+
     while (hasMoreObjects) {
-      const res = await this.s3
-        .listObjectsV2({
-          Bucket: requestParams.Bucket,
-          Prefix: requestParams.Key,
-          ContinuationToken: continuationToken || undefined,
-        })
-        .promise();
-      s3Objects = [...s3Objects, ...res.Contents.map(object => object.Key)];
-      if (!res.IsTruncated) {
+      const command = new ListObjectsV2Command({
+        Bucket: requestParams.Bucket,
+        Prefix: requestParams.Key,
+        ContinuationToken: continuationToken,
+      });
+      const response = await this.s3.send(command);
+
+      s3Objects.push(...(response.Contents?.map(object => object.Key) ?? []));
+
+      if (!response.IsTruncated) {
         hasMoreObjects = false;
-        continuationToken = null;
+        continuationToken = undefined;
       } else {
-        continuationToken = res.NextContinuationToken;
+        continuationToken = response.NextContinuationToken;
       }
     }
+
     return s3Objects;
   }
+
 
   /**
    * Call HTTP HEAD on an object to get its headers without retrieving it (see AWS S3 SDK
@@ -183,10 +216,9 @@ export class S3ObjectStore {
    * @returns A promise for the object's header to value pairs
    * @throws TypeError - if an invalid URL is supplied
    */
-  headObject(
-    paramsOrUrl: string | BucketParams,
-  ): Promise<PromiseResult<aws.S3.HeadObjectOutput, aws.AWSError>> {
-    return this.s3.headObject(this._paramsOrUrlToParams(paramsOrUrl)).promise();
+  async headObject(paramsOrUrl: string | BucketParams): Promise<HeadObjectCommandOutput> {
+    const command = new HeadObjectCommand(this._paramsOrUrlToParams(paramsOrUrl));
+    return this.s3.send(command);
   }
 
   /**
@@ -197,10 +229,10 @@ export class S3ObjectStore {
    */
   async objectExists(paramsOrUrl: string | BucketParams): Promise<boolean> {
     try {
-      await this.s3.headObject(this._paramsOrUrlToParams(paramsOrUrl)).promise();
+      await this.headObject(paramsOrUrl);
       return true;
     } catch (err) {
-      if (err.statusCode === 404) {
+      if (err.$metadata?.httpStatusCode === 404) {
         return false;
       }
       throw err;
@@ -238,8 +270,16 @@ export class S3ObjectStore {
    * @throws TypeError - if an invalid URL is supplied
    */
   async download(paramsOrUrl: string | BucketParams): Promise<string> {
-    const getObjectResponse = this.getObject(paramsOrUrl);
-    return streamToString(getObjectResponse.createReadStream());
+    const getObjectCommand = new GetObjectCommand(this._paramsOrUrlToParams(paramsOrUrl));
+    const getObjectResponse = await this.s3.send(getObjectCommand);
+    const body = getObjectResponse.Body;
+
+    if (body && typeof body === 'object') {
+      const buffer = await streamToString(body as stream.Readable);
+      return buffer.toString();
+    }
+
+    throw new Error('Failed to download object');
   }
 
   /**
@@ -253,8 +293,8 @@ export class S3ObjectStore {
    */
   async downloadFile(paramsOrUrl: string | BucketParams): Promise<string> {
     const tempFile = await createTmpFileName();
-    const getObjectResponse = this.getObject(paramsOrUrl);
-    await pipeline(getObjectResponse.createReadStream(), fs.createWriteStream(tempFile));
+    const getObjectResponse = await this.getObject(paramsOrUrl);
+    await pipeline(getObjectResponse.Body as stream.Readable, fs.createWriteStream(tempFile));
     return tempFile;
   }
 
@@ -269,11 +309,15 @@ export class S3ObjectStore {
    */
   async uploadFile(fileName: string, paramsOrUrl: string | BucketParams): Promise<string> {
     const fileContent = await readFile(fileName);
-    const params = this._paramsOrUrlToParams(paramsOrUrl) as aws.S3.PutObjectRequest;
+    const params = this._paramsOrUrlToParams(paramsOrUrl) as PutObjectCommandInput;
     params.Body = fileContent;
-    await this.s3.upload(params).promise();
+
+    const uploadCommand = new PutObjectCommand(params);
+    await this.s3.send(uploadCommand);
+
     return this.getUrlString(params.Bucket, params.Key);
   }
+
 
   /**
    * Stream upload an object to S3 (see AWS S3 SDK `upload`)
@@ -291,8 +335,8 @@ export class S3ObjectStore {
     paramsOrUrl: string | BucketParams,
     contentLength: number = null,
     contentType: string = null,
-  ): Promise<aws.S3.ManagedUpload.SendData> {
-    const params = this._paramsOrUrlToParams(paramsOrUrl) as aws.S3.PutObjectRequest;
+  ): Promise<PutObjectCommandOutput> {
+    const params = this._paramsOrUrlToParams(paramsOrUrl) as PutObjectCommandInput;
 
     const body = stringOrStream;
     const isStream = typeof body !== 'string';
@@ -305,9 +349,14 @@ export class S3ObjectStore {
       params.ContentLength = contentLength;
       // Getting non-zero-byte files streaming a req to S3 is wonky
       // https://stackoverflow.com/a/54153557
-      srcStream = new stream.PassThrough();
-      (body as NodeJS.ReadableStream).pipe(srcStream);
-      params.Body = new stream.PassThrough();
+      srcStream = new stream.Readable();
+      (body as NodeJS.ReadableStream).on('data', (chunk) => {
+        srcStream.push(chunk);
+      });
+      (body as NodeJS.ReadableStream).on('end', () => {
+        srcStream.push(null);
+      });
+      params.Body = srcStream;
     } else {
       params.Body = body;
     }
@@ -317,14 +366,14 @@ export class S3ObjectStore {
       params.Metadata['Content-Type'] = contentType; // Helps tests
       params.ContentType = contentType;
     }
-    const upload = this.s3.upload(params);
-    if (isStream) {
-      const passthrough = params.Body as stream.PassThrough;
-      srcStream.on('data', (chunk) => { passthrough.write(chunk); });
-      srcStream.on('end', () => { passthrough.end(); });
-    }
-    return upload.promise();
+
+    const putObjectCommand = new PutObjectCommand(params);
+    const response = await this.s3.send(putObjectCommand);
+
+    return response;
   }
+
+
 
   /**
    * Returns the AWS region the given bucket is in
@@ -332,11 +381,12 @@ export class S3ObjectStore {
    * @param bucketName - name of the s3 bucket
    * @returns the AWS region
    */
-  async getBucketRegion(bucketName: string): Promise<string> {
-    const req : aws.S3.GetBucketLocationRequest = { Bucket: bucketName };
-    const result = await this.s3.getBucketLocation(req).promise();
-    // aws returns null when the bucket region is us-east-1. We want always return a region name.
-    return result.LocationConstraint ? result.LocationConstraint : 'us-east-1';
+  async getBucketRegion(s3: S3Client, bucketName: string): Promise<string> {
+    const command = new GetBucketLocationCommand({ Bucket: bucketName });
+    const response = await s3.send(command);
+
+    // AWS returns null when the bucket region is us-east-1. We always want to return a region name.
+    return response.LocationConstraint ?? 'us-east-1';
   }
 
   /**
@@ -355,21 +405,25 @@ export class S3ObjectStore {
    * @param paramsOrUrl - a map of parameters (Bucket, Key) indicating the object to be retrieved or
    *   the object URL
    */
-  async _changeOwnership(paramsOrUrl: string | BucketParams): Promise<void> {
+  async changeOwnership(s3: S3Client, paramsOrUrl: string | BucketParams): Promise<void> {
     const params = this._paramsOrUrlToParams(paramsOrUrl);
     const existingObject = await this.headObject(params);
-    // When replacing the metadata both the Metadata and ContentType fields are overwritten
+
+    // When replacing the metadata, both the Metadata and ContentType fields are overwritten
     // with the new object creation. So we preserve those two fields here.
     const copyObjectParams = {
       ...params,
-      Metadata: await existingObject.Metadata,
-      ContentType: await existingObject.ContentType,
+      Metadata: existingObject.Metadata,
+      ContentType: existingObject.ContentType,
       MetadataDirective: 'REPLACE',
       CopySource: `${params.Bucket}/${params.Key}`,
     };
-    await this.s3.copyObject(copyObjectParams).promise();
+
+    const command = new CopyObjectCommand(copyObjectParams);
+    await s3.send(command);
   }
 }
+
 
 /**
  * Returns a class to interact with the object store appropriate for

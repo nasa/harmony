@@ -1,5 +1,4 @@
-import aws from 'aws-sdk';
-
+import { ECRClient, DescribeImagesCommand, ECRClientConfig } from '@aws-sdk/client-ecr';
 import env = require('./env');
 
 export interface ImageDetails {
@@ -8,10 +7,10 @@ export interface ImageDetails {
 }
 
 export class ECR {
-  private ecr: aws.ECR;
+  private ecr: ECRClient;
 
   /**
-   * Builds and returns an Elastic container registry object for interacting with the
+   * Builds and returns an Elastic Container Registry object for interacting with the
    * AWS SDK.
    *
    * @param overrides - values to set when constructing the underlying ECR.
@@ -21,22 +20,17 @@ export class ECR {
   }
 
   /**
-   * Returns a new aws.ECR object
+   * Returns a new ECR client object.
    *
    * @param overrides - values to set when constructing the underlying ECR.
    */
-  private _getECR(overrides?): aws.ECR {
-    const endpointSettings: aws.ECR.ClientConfiguration = {};
-    if (process.env.USE_LOCALSTACK === 'true') {
-      aws.config.update({
-        region: env.awsDefaultRegion,
-        credentials: { accessKeyId: 'localstack', secretAccessKey: 'localstack' },
-      });
+  private _getECR(overrides?: object): ECRClient {
+    const endpointSettings: ECRClientConfig = {};
+    if (env.useLocalstack === true) {
       endpointSettings.endpoint = `http://${env.localstackHost}:4566`;
     }
 
-    return new aws.ECR({
-      apiVersion: '2015-09-21',
+    return new ECRClient({
       region: env.awsDefaultRegion,
       ...endpointSettings,
       ...overrides,
@@ -44,14 +38,16 @@ export class ECR {
   }
 
   /**
-   * Returns image information from ECR for the given image repository and tag
-   * @param repository - the image repository (e.g. harmonyservices/service-example)
+   * Returns image information from ECR for the given image repository and tag.
+   * @param repository - the image repository (e.g., harmonyservices/service-example)
    * @param tag - the image tag
    */
   async describeImage(repository: string, tag: string): Promise<ImageDetails> {
-    const response = await this.ecr
-      .describeImages({ repositoryName: repository, imageIds: [{ imageTag: tag }] })
-      .promise();
+    const command = new DescribeImagesCommand({
+      repositoryName: repository,
+      imageIds: [{ imageTag: tag }],
+    });
+    const response = await this.ecr.send(command);
 
     const image = response.imageDetails[0];
 
@@ -63,10 +59,10 @@ export class ECR {
 }
 
 /**
- * Returns the default object store for this instance of Harmony.  Allows requesting an
- * object store without first knowing a protocol.
+ * Returns the default container registry for this instance of Harmony. Allows requesting a
+ * container registry without first knowing the protocol.
  *
- * @returns the default object store for Harmony.
+ * @returns the default container registry for Harmony.
  */
 export function defaultContainerRegistry(): ECR {
   return new ECR({});

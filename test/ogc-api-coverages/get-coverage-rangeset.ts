@@ -939,7 +939,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       expect(res.status).to.equal(400);
       expect(res.body).to.eql({
         code: 'harmony.RequestValidationError',
-        description: 'Error: Coverages were not found for the provided CMR collection: NotAVariable',
+        description: 'Error: Coverages were not found for the provided variables: NotAVariable',
       });
     });
 
@@ -1158,7 +1158,7 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
       const response = JSON.parse(this.res.text);
       expect(response).to.eql({
         code: 'harmony.RequestValidationError',
-        description: 'Error: Coverages were not found for the provided CMR collection: badVar',
+        description: 'Error: Coverages were not found for the provided variables: badVar',
       });
     });
   });
