@@ -14,7 +14,7 @@ import { getItemLogsLocation, WorkItemQuery, WorkItemStatus } from '../models/wo
 import { getRequestRoot } from '../util/url';
 import { getAllStateChangeLinks, getJobStateChangeLinks } from '../util/links';
 import { objectStoreForProtocol } from '../util/object-store';
-import { handleWorkItemUpdate } from '../backends/workflow-orchestration';
+import { handleWorkItemUpdate } from '../backends/workflow-orchestration/work-item-updates';
 import { Logger } from 'winston';
 import { serviceNames } from '../models/services';
 import { getEdlGroupInformation } from '../util/edl-api';

@@ -6,6 +6,7 @@
   "scripts": {
     "test": "strict-npm-engines && eslint --ext .ts --ignore-pattern tasks . && nyc mocha && better-npm-audit audit && lerna run test",
     "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha",
+    "test-bail": "TS_NODE_TRANSPILE_ONLY=true mocha --bail",
     "coverage": "nyc mocha",
     "start": "NODE_OPTIONS=--max-old-space-size=3096 ts-node -r tsconfig-paths/register --require './app/tracing.ts' app/server.ts",
     "start-dev": "strict-npm-engines && ts-node-dev --no-notify -r tsconfig-paths/register --watch app/views,public/js --respawn app/server",

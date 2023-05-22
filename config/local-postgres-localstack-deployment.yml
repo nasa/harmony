@@ -7,18 +7,15 @@ metadata:
 spec:
   containers:
     - name: localstack
-      image: localstack/localstack:0.11.1
+      image: localstack/localstack:2.0.2
       ports:
         - containerPort: 4566
-        - containerPort: 4572
-        - containerPort: 4592
-        - containerPort: 8080
       volumeMounts:
-        - mountPath: /docker-entrypoint-initaws.d
+        - mountPath: /etc/localstack/init/ready.d
           name: localstack-start
       env:
         - name: LOCALSTACK_SERVICES
-          value: "s3,sqs,sts"
+          value: "lambda,s3,sqs,sts"
         - name: LOCALSTACK_DEBUG
           value: "1"
   volumes:
@@ -26,6 +23,8 @@ spec:
       configMap:
         # Mount startup.sh script created by start-postgres-localstack into the volume
         name: localstack-config
+        defaultMode: 0744
+
 ---
 apiVersion: v1
 kind: Service
@@ -35,18 +34,15 @@ metadata:
     name: localstack
 spec:
   ports:
-    - name: "ui"
-      port: 8080
-      targetPort: 8080
     - name: "edge"
       port: 4566
       targetPort: 4566
     - name: "s3"
       port: 4572
-      targetPort: 4572
+      targetPort: 4566
     - name: "sts"
       port: 4592
-      targetPort: 4592
+      targetPort: 4566
   selector:
     name: localstack-pod
   type: LoadBalancer

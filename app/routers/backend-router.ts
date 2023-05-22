@@ -1,6 +1,6 @@
 import { Router, json } from 'express';
 import asyncHandler from 'express-async-handler';
-import { getWork, updateWorkItem } from '../backends/workflow-orchestration';
+import { getWork, updateWorkItem } from '../backends/workflow-orchestration/workflow-orchestration';
 import { responseHandler } from '../backends/service-response';
 import { getEligibleWorkItemCountForServiceID } from '../backends/service-metrics';
 import log from '../util/log';

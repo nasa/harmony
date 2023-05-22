@@ -4,14 +4,23 @@ import _ from 'lodash';
 import logger from '../util/log';
 import db, { Transaction } from '../util/db';
 import DataOperation from './data-operation';
+import env from '../util/env';
 import { Job, JobStatus } from './job';
 import Record from './record';
 import WorkflowStep from './workflow-steps';
 import { WorkItemRecord, WorkItemStatus, getStacLocation, WorkItemQuery } from './work-item-interface';
+import { eventEmitter } from '../events';
 
 // The step index for the query-cmr task. Right now query-cmr only runs as the first step -
 // if this changes we will have to revisit this
 const QUERY_CMR_STEP_INDEX = 1;
+
+// Events emitted by this class
+export enum WorkItemEvent {
+  CREATED = 'work-item-created',
+  UPDATED = 'work-item-updated',
+  DELETED = 'work-item-deleted',
+}
 
 // The fields to save to the database
 const serializedFields = [
@@ -79,8 +88,14 @@ export default class WorkItem extends Record implements WorkItemRecord {
    * @param transaction - The transaction to use for saving the job link
    */
   async save(transaction: Transaction): Promise<void> {
+    const isUpdate = !!this.id;
     const record = _.pick(this, serializedFields);
     await super.save(transaction, record);
+    if (isUpdate) {
+      eventEmitter.emit(WorkItemEvent.UPDATED, this);
+    } else {
+      eventEmitter.emit(WorkItemEvent.CREATED, this);
+    }
   }
 
   /**
@@ -91,7 +106,21 @@ export default class WorkItem extends Record implements WorkItemRecord {
    */
   static async insertBatch(transaction: Transaction, workItems: WorkItem[]): Promise<void> {
     const fieldsList = workItems.map(item => _.pick(item, serializedFields));
+    // only send one event for all the work items as they will all have the same serviceID
+    let isUpdate;
+    let workItem;
+    if (workItems.length > 0) {
+      workItem = workItems[0];
+      isUpdate = !!workItem.id;
+    }
     await super.insertBatch(transaction, workItems, fieldsList);
+    if (workItem) {
+      if (isUpdate) {
+        eventEmitter.emit(WorkItemEvent.UPDATED, workItem);
+      } else {
+        eventEmitter.emit(WorkItemEvent.CREATED, workItem);
+      }
+    }
   }
 
   /**
@@ -155,9 +184,13 @@ export async function getNextWorkItem(
         // in case a service for the same job produces an output with the same file name
         workItemData.operation.stagingLocation += `${workItemData.id}/`;
         const startedAt = new Date();
+        let status = WorkItemStatus.RUNNING;
+        if (env.useServiceQueues) {
+          status = WorkItemStatus.QUEUED;
+        }
         await tx(WorkItem.table)
           .update({
-            status: WorkItemStatus.RUNNING,
+            status,
             updatedAt: startedAt,
             startedAt,
           })
@@ -215,8 +248,14 @@ export async function updateWorkItemStatuses(
   ids: number[],
   status: WorkItemStatus,
 ): Promise<void> {
+  const now = new Date();
+  let update = { status, updatedAt: now };
+  // if we are setting the status to running, also set the startedAt time
+  if (status === WorkItemStatus.RUNNING) {
+    update = { ...update, ...{ startedAt: now } };
+  }
   await tx(WorkItem.table)
-    .update({ status, updatedAt: new Date() })
+    .update(update)
     .whereIn(`${WorkItem.table}.id`, ids);
 }
 

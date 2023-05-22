@@ -4,6 +4,7 @@ import env from '../util/env';
 
 export enum WorkItemStatus {
   READY = 'ready',
+  QUEUED = 'queued',
   RUNNING = 'running',
   SUCCESSFUL = 'successful',
   FAILED = 'failed',
@@ -26,7 +27,7 @@ export interface WorkItemMeta {
   workItemId?: number;
   // Count of work items.
   workItemAmount?: number;
-  // The duration of some process. 
+  // The duration of some process.
   // (e.g. how long it took for the worker to finish or
   // how long the item waited before being picked up)
   workItemDuration?: number;
@@ -36,7 +37,7 @@ export interface WorkItemMeta {
   workItemStatus?: WorkItemStatus;
   // WorkItemMeta objects can optionally have an associated event if
   // the context in which the logging call was made has some special significance
-  workItemEvent?: 
+  workItemEvent?:
   // Signfies that item status(es) have been updated by an update handler or callback function.
   // Item status should be specified for this event type.
   'statusUpdate' |
@@ -134,7 +135,7 @@ export interface WorkItemQuery {
  * e.g. s3://artifacts/abc/123/outputs/ with a targetUrl of ./catalog0.json or catalog0.json would resolve to
  * s3://artifacts/abc/123/outputs/catalog0.json
  * @param item - the returned URL will provide the path to the outputs for this work item
- * @param targetUrl - URL to resolve against the base outputs directory 
+ * @param targetUrl - URL to resolve against the base outputs directory
  * @param isAggregate - include the word aggregate in the URL
  * @returns - the path to the STAC outputs directory (e.g. s3://artifacts/abc/123/outputs/) or the full path to the target URL
  */

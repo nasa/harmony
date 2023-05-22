@@ -51,7 +51,7 @@ CREATE TABLE `work_items` (
   `workflowStepIndex` integer not null,
   `scrollID` varchar(4096),
   `serviceID` varchar(255) not null,
-  `status` text check (`status` in ('ready', 'running', 'successful', 'failed', 'canceled')) not null,
+  `status` text check (`status` in ('ready', 'queued', 'running', 'successful', 'failed', 'canceled')) not null,
   `stacCatalogLocation` varchar(255),
   `totalItemsSize` double precision not null default 0,
   `outputItemSizesJson` text,
