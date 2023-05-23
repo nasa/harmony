@@ -58,7 +58,9 @@ export class S3ObjectStore {
 
 
   _getS3(overrides?: S3ClientConfig): S3Client {
+    console.log('CDD IN _getS3');
     if (process.env.USE_LOCALSTACK === 'true') {
+      console.log('CDD use localstack is true');
       const { localstackHost } = env;
 
       const endpointSettings = {
@@ -79,6 +81,8 @@ export class S3ObjectStore {
         credentials,
       });
     }
+
+    console.log('CDD Should not have gotten here - not using localstack');
 
     return new S3Client({
       apiVersion: '2006-03-01',
@@ -106,16 +110,19 @@ export class S3ObjectStore {
     };
 
     try {
+      console.log(`CDD: Object is ${JSON.stringify(object)}`);
       // Verifies that the object exists, or throws NotFound
       await this.s3.send(new HeadObjectCommand(object));
 
+      console.log('CDD - head command worked');
+
       const req = new GetObjectCommand(object);
 
-      if (params) {
-        req.input.Key += `?${querystring.stringify(params)}`;
-      }
+      console.log('CDD - Get command worked');
 
       let signedUrl = await getSignedUrl(this.s3, req, { expiresIn: 3600 }); // Adjust expiresIn value as needed
+
+      console.log(`CDD - signed url worked - URL is ${signedUrl}`);
 
       // Needed as a work-around to allow access from outside the Kubernetes cluster
       // for local development
@@ -123,9 +130,17 @@ export class S3ObjectStore {
         signedUrl = signedUrl.replace('localstack', 'localhost');
       }
 
+      // Add query parameters to string
+      if (params) {
+        signedUrl = signedUrl.replace('?', `?${querystring.stringify(params)}&`);
+      }
+
+      console.log(`CDD - signed url after replacement - URL is ${signedUrl}`);
+
       return signedUrl;
     } catch (error) {
       // Handle any errors that occur during the headObject or getObject requests
+      console.log(`CDD - something was thrown ${error.message}`);
       throw error;
     }
   }
@@ -168,7 +183,8 @@ export class S3ObjectStore {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ): Promise<any> {
     const catalogResponse = await this.getObject(paramsOrUrl);
-    const catalogString = catalogResponse.Body.toString();
+    // console.log(`CDD: Response was ${JSON.stringify(catalogResponse)}`);
+    const catalogString = await catalogResponse.Body.transformToString();
     return JSON.parse(catalogString);
   }
 
@@ -368,6 +384,8 @@ export class S3ObjectStore {
     }
 
     const putObjectCommand = new PutObjectCommand(params);
+    console.log(`This.s3 is ${JSON.stringify(this.s3)}`);
+
     const response = await this.s3.send(putObjectCommand);
 
     return response;
@@ -381,9 +399,9 @@ export class S3ObjectStore {
    * @param bucketName - name of the s3 bucket
    * @returns the AWS region
    */
-  async getBucketRegion(s3: S3Client, bucketName: string): Promise<string> {
+  async getBucketRegion(bucketName: string): Promise<string> {
     const command = new GetBucketLocationCommand({ Bucket: bucketName });
-    const response = await s3.send(command);
+    const response = await this.s3.send(command);
 
     // AWS returns null when the bucket region is us-east-1. We always want to return a region name.
     return response.LocationConstraint ?? 'us-east-1';

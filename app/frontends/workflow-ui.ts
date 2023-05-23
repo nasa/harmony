@@ -557,8 +557,8 @@ export async function getWorkItemLogs(
       throw new ForbiddenError();
     }
     const logPromise =  await objectStoreForProtocol('s3')
-      .getObject(getItemLogsLocation({ id: parseInt(id), jobID })).promise();
-    const logs = logPromise.Body.toString('utf-8');
+      .getObject(getItemLogsLocation({ id: parseInt(id), jobID }));
+    const logs = logPromise.Body.toString();
     res.json(JSON.parse(logs));
   } catch (e) {
     req.context.logger.error(e);
