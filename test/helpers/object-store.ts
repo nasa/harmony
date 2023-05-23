@@ -1,9 +1,9 @@
 import { stub, SinonStub } from 'sinon';
 import fs from 'fs';
-import mockAws, { S3 } from 'mock-aws-s3';
+import mockAws from 'mock-aws-s3';
 import * as tmp from 'tmp';
 import { S3ObjectStore, objectStoreForProtocol, BucketParams } from '../../app/util/object-store';
-import { GetObjectCommandOutput } from '@aws-sdk/client-s3';
+import { GetObjectCommandOutput, PutObjectCommandOutput, S3Client } from '@aws-sdk/client-s3';
 
 // Patches mock-aws-s3's mock so that the result of "upload" has an "on" method
 const S3MockPrototype = Object.getPrototypeOf(new mockAws.S3());
@@ -77,7 +77,7 @@ export function hookMockS3(_buckets?: string[]): void {
     dir = tmp.dirSync({ unsafeCleanup: true });
     mockAws.config.basePath = dir.name;
     stubObject = stub(S3ObjectStore.prototype, '_getS3')
-      .callsFake(() => new mockAws.S3());
+      .callsFake(() => new mockAws.S3() as unknown as S3Client);
     // replace getObjectJson since mock-aws-s3 doesn't work well with current function
     stubGetJson = stub(S3ObjectStore.prototype, 'getObjectJson')
       .callsFake(async (url) => JSON.parse(await getObjectText(url as string)));
@@ -135,7 +135,7 @@ export function hookUpload(): void {
       .callsFake((stringOrStream: string | NodeJS.ReadableStream,
         destinationUrl: string | BucketParams,
         _contentLength: number,
-        _contentType: string) : Promise<aws.S3.ManagedUpload.SendData> => {
+        _contentType: string) : Promise<PutObjectCommandOutput> => {
         const destUrl = typeof destinationUrl === 'string' ? destinationUrl : '';
         if (destUrl.startsWith('s3://no-write-permission')) {
           const e = new Error('Access Denied');
