@@ -1,14 +1,20 @@
 import * as fs from 'fs';
-import * as querystring from 'querystring';
 import * as stream from 'stream';
 import tmp from 'tmp';
-import { URL } from 'url';
 import * as util from 'util';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { getSignedUrl, S3RequestPresigner, S3RequestPresignerOptions } from '@aws-sdk/s3-request-presigner';
+
+import { HttpRequest } from '@aws-sdk/protocol-http';
+import { parseUrl } from '@aws-sdk/url-parser';
+import { Hash } from '@aws-sdk/hash-node';
+import { formatUrl } from '@aws-sdk/util-format-url';
+
 import { CopyObjectCommand, GetBucketLocationCommand, GetObjectCommand, GetObjectCommandOutput,
   HeadObjectCommand, HeadObjectCommandOutput, ListObjectsV2Command, PutObjectCommand,
   PutObjectCommandInput, PutObjectCommandOutput, S3Client, S3ClientConfig,
 } from '@aws-sdk/client-s3';
+
+import { fromInstanceMetadata } from '@aws-sdk/credential-provider-imds';
 
 import env = require('./env');
 const { awsDefaultRegion } = env;
@@ -56,11 +62,9 @@ export class S3ObjectStore {
     this.s3 = this._getS3(overrides);
   }
 
-
-  _getS3(overrides?: S3ClientConfig): S3Client {
-    console.log('CDD IN _getS3');
+  _getS3Config(overrides?: object): object {
+    let config = {};
     if (process.env.USE_LOCALSTACK === 'true') {
-      console.log('CDD use localstack is true');
       const { localstackHost } = env;
 
       const endpointSettings = {
@@ -68,26 +72,34 @@ export class S3ObjectStore {
         forcePathStyle: true,
       };
 
-      const credentials = {
-        accessKeyId: 'localstack',
-        secretAccessKey: 'localstack',
-      };
+      process.env.AWS_ACCESS_KEY_ID = 'localstack';
+      process.env.AWS_SECRET_ACCESS_KEY = 'localstack';
 
-      return new S3Client({
+      config = {
         apiVersion: '2006-03-01',
+        credentials: {
+          accessKeyId: 'localstack',
+          secretAccessKey: 'localstack',
+        },
         region: awsDefaultRegion,
         ...endpointSettings,
         ...overrides,
-        credentials,
-      });
+      };
+    } else {
+
+      config = {
+        apiVersion: '2006-03-01',
+        region: awsDefaultRegion,
+        credentials: fromInstanceMetadata(),
+        ...overrides,
+      };
     }
 
-    console.log('CDD Should not have gotten here - not using localstack');
+    return config;
+  }
 
-    return new S3Client({
-      apiVersion: '2006-03-01',
-      ...overrides,
-    });
+  _getS3(overrides?: S3ClientConfig): S3Client {
+    return new S3Client(this._getS3Config(overrides));
   }
 
   /**
@@ -100,6 +112,12 @@ export class S3ObjectStore {
    * @throws TypeError - if the URL is not a recognized protocol or cannot be parsed
    */
   async signGetObject(objectUrl: string, params: { [key: string]: string }): Promise<string> {
+    const config = this._getS3Config() as S3RequestPresignerOptions;
+    const presigner = new S3RequestPresigner({
+      sha256: Hash.bind(null, 'sha256'), // In Node.js
+      ...config,
+    });
+
     const url = new URL(objectUrl);
     if (url.protocol.toLowerCase() !== 's3:') {
       throw new TypeError(`Invalid S3 URL: ${objectUrl}`);
@@ -107,42 +125,29 @@ export class S3ObjectStore {
     const object = {
       Bucket: url.hostname,
       Key: url.pathname.substr(1).replaceAll('%20', ' '), // Nuke leading "/" and convert %20 to spaces
+      QueryParameters: params,
     };
 
-    try {
-      console.log(`CDD: Object is ${JSON.stringify(object)}`);
-      // Verifies that the object exists, or throws NotFound
-      await this.s3.send(new HeadObjectCommand(object));
+    console.log(`CDD: Object is ${JSON.stringify(object)}`);
+    // Verifies that the object exists, or throws NotFound
+    await this.s3.send(new HeadObjectCommand(object));
 
-      console.log('CDD - head command worked');
+    console.log('CDD - head command worked');
 
-      const req = new GetObjectCommand(object);
+    const req = new GetObjectCommand(object);
+    console.log('REQ OLD: ', req.input);
 
-      console.log('CDD - Get command worked');
+    const signedUrl = await getSignedUrl(this.s3, req, { expiresIn: 3600 });
+    console.log('OLD SIGNED URL', signedUrl);
 
-      let signedUrl = await getSignedUrl(this.s3, req, { expiresIn: 3600 }); // Adjust expiresIn value as needed
+    const baseUrl = signedUrl.substring(0, signedUrl.indexOf('?'));
+    const urlToSign = parseUrl(baseUrl);
+    urlToSign.query = params;
+    const urlNew = await presigner.presign(new HttpRequest(urlToSign), { expiresIn: 3600 });
+    console.log('PRESIGNED URL: ', formatUrl(urlNew));
 
-      console.log(`CDD - signed url worked - URL is ${signedUrl}`);
 
-      // Needed as a work-around to allow access from outside the Kubernetes cluster
-      // for local development
-      if (env.useLocalstack) {
-        signedUrl = signedUrl.replace('localstack', 'localhost');
-      }
-
-      // Add query parameters to string
-      if (params) {
-        signedUrl = signedUrl.replace('?', `?${querystring.stringify(params)}&`);
-      }
-
-      console.log(`CDD - signed url after replacement - URL is ${signedUrl}`);
-
-      return signedUrl;
-    } catch (error) {
-      // Handle any errors that occur during the headObject or getObject requests
-      console.log(`CDD - something was thrown ${error.message}`);
-      throw error;
-    }
+    return formatUrl(urlNew);
   }
 
   /**
@@ -221,7 +226,6 @@ export class S3ObjectStore {
 
     return s3Objects;
   }
-
 
   /**
    * Call HTTP HEAD on an object to get its headers without retrieving it (see AWS S3 SDK
