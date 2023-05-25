@@ -42,17 +42,17 @@ https://cmr.earthdata.nasa.gov:
       - S2623993680-GES_DISC
     collections:
       - id: C1598621093-GES_DISC
-        variables:
-        - V2296949098-GES_DISC
-        - V2296949172-GES_DISC
-        - V2296949242-GES_DISC
-        - V2296949978-GES_DISC
-        - V2296949195-GES_DISC
-        - V2296949905-GES_DISC
-        - V2296949990-GES_DISC
-        - V2296949860-GES_DISC
-        - V2296949142-GES_DISC
-        - V2296949998-GES_DISC
+        # variables:
+        # - V2296949098-GES_DISC
+        # - V2296949172-GES_DISC
+        # - V2296949242-GES_DISC
+        # - V2296949978-GES_DISC
+        # - V2296949195-GES_DISC
+        # - V2296949905-GES_DISC
+        # - V2296949990-GES_DISC
+        # - V2296949860-GES_DISC
+        # - V2296949142-GES_DISC
+        # - V2296949998-GES_DISC
     capabilities:
       concatenation: true
       concatenate_by_default: true
@@ -385,17 +385,17 @@ https://cmr.uat.earthdata.nasa.gov:
       - S1240989350-GES_DISC
     collections:
       - id: C1225808238-GES_DISC
-        variables:
-        - V1245551685-GES_DISC
-        - V1245551715-GES_DISC
-        - V1245551687-GES_DISC
-        - V1245551691-GES_DISC
-        - V1245551713-GES_DISC
-        - V1245551711-GES_DISC
-        - V1245551709-GES_DISC
-        - V1245551689-GES_DISC
-        - V1245551693-GES_DISC
-        - V1245551717-GES_DISC
+        # variables:
+        # - V1245551685-GES_DISC
+        # - V1245551715-GES_DISC
+        # - V1245551687-GES_DISC
+        # - V1245551691-GES_DISC
+        # - V1245551713-GES_DISC
+        # - V1245551711-GES_DISC
+        # - V1245551709-GES_DISC
+        # - V1245551689-GES_DISC
+        # - V1245551693-GES_DISC
+        # - V1245551717-GES_DISC
     capabilities:
       concatenation: true
       concatenate_by_default: true

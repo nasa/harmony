@@ -4,7 +4,7 @@ import * as yaml from 'js-yaml';
 import _, { get as getIn, partial } from 'lodash';
 
 import logger from '../../util/log';
-import { NotFoundError } from '../../util/errors';
+import { NotFoundError, RequestValidationError } from '../../util/errors';
 import { isMimeTypeAccepted, allowsAny } from '../../util/content-negotiation';
 import { CmrCollection } from '../../util/cmr';
 import { addCollectionsToServicesByAssociation } from '../../middleware/service-selection';
@@ -39,9 +39,20 @@ function parseEnvironmentDirective(envDirective: string): string | number {
 }
 
 /**
- * Loads the services configuration file.
+ * Update the given service configuration collections to empty array if it is undefined.
  */
-function loadServiceConfigs(): void {
+function updateCollectionsConfig(config: ServiceConfig<unknown>): void {
+  if (config.collections === undefined) {
+    config.collections = [];
+  }
+}
+
+/**
+ * Loads the services configuration from the given file.
+ * @param fileName - The path to the services configuation file
+ * @returns the parsed services configuration
+ */
+export function loadServiceConfigsFromFile(fileName: string): ServiceConfig<unknown>[] {
   // Setup a type, !Env, that when placed in front of a string resolves substrings like
   // "${some_env_var}" to the corresponding environment variable
   const EnvType = new yaml.Type('!Env', {
@@ -53,18 +64,27 @@ function loadServiceConfigs(): void {
   // Load the config - either from an env var or failing that from the services.yml file.
   // This allows us to use a configmap in k8s instead of reading the file system.
   const buffer = env.servicesYml ? Buffer.from(env.servicesYml, 'base64')
-    : fs.readFileSync(path.join(__dirname, '../../../config/services.yml'));
+    : fs.readFileSync(path.join(__dirname, fileName));
   const schema = yaml.DEFAULT_SCHEMA.extend([EnvType]);
   const envConfigs = yaml.load(buffer.toString(), { schema });
-  serviceConfigs = envConfigs[env.cmrEndpoint]
+  const configs = envConfigs[env.cmrEndpoint]
     .filter((config) => config.enabled !== false && config.enabled !== 'false');
+  configs.forEach(sc => updateCollectionsConfig(sc));
+  return configs;
 }
 
 /**
- * Throws an error if the configuration is invalid. Logs a warning if configuration will be ignored.
+ * Loads the services configuration file.
+ */
+function loadServiceConfigs(): void {
+  serviceConfigs = loadServiceConfigsFromFile('../../../config/services.yml');
+}
+
+/**
+ * Throws an error if the steps configuration is invalid. Logs a warning if configuration will be ignored.
  * @param config - The service configuration to validate
  */
-function validateServiceConfig(config: ServiceConfig<unknown>): void {
+function validateServiceConfigSteps(config: ServiceConfig<unknown>): void {
   const steps = config.steps || [];
   for (const step of steps) {
     const maxBatchInputs = step.max_batch_inputs;
@@ -81,6 +101,24 @@ function validateServiceConfig(config: ServiceConfig<unknown>): void {
       }
     }
   }
+}
+
+/**
+ * Throws an error if the configuration is invalid. Logs a warning if configuration will be ignored.
+ * @param config - The service configuration to validate
+ */
+export function validateServiceConfig(config: ServiceConfig<unknown>): void {
+  if (config.umm_s === undefined || config.umm_s.length !== 1) {
+    throw new RequestValidationError(`There must be one and only one umm_s record configured for harmony service: ${config.name}`);
+  }
+
+  for (const coll of config.collections) {
+    if (coll && (!coll.variables && !coll.granule_limit)) {
+      throw new RequestValidationError(`Collections cannot be configured for harmony service: ${config.name}, use umm_s instead.`);
+    }
+  }
+
+  validateServiceConfigSteps(config);
 }
 
 /**

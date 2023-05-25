@@ -86,6 +86,7 @@ https://cmr.earthdata.nasa.gov:
           STAGING_PATH: public/podaac/l2-subsetter
     umm_s:
       - S1962070864-POCLOUD
+      - S1962070865-POCLOUD
     capabilities:
       subsetting:
         temporal: true
@@ -429,6 +430,7 @@ https://cmr.uat.earthdata.nasa.gov:
           STAGING_PATH: public/podaac/l2-subsetter
     umm_s:
       - S1234899453-POCLOUD
+      - S1234899454-POCLOUD
     capabilities:
       subsetting:
         temporal: true
