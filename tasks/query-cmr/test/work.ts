@@ -21,7 +21,7 @@ describe('doWork', function () {
       );
 
       it('outputs the result data to catalog.json in the directory', async function () {
-        const catalog = await getObjectText(resolve(workRequest.outputDir, 'catalog0.json'));
+        const catalog = await defaultObjectStore().getObject(resolve(workRequest.outputDir, 'catalog0.json'));
         expect(JSON.parse(catalog).description).to.equal('done');
       });
     });

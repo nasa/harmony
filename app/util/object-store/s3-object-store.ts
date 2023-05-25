@@ -1,7 +1,3 @@
-import * as fs from 'fs';
-import * as stream from 'stream';
-import tmp from 'tmp';
-import * as util from 'util';
 import { getSignedUrl, S3RequestPresigner, S3RequestPresignerOptions } from '@aws-sdk/s3-request-presigner';
 
 import { HttpRequest } from '@aws-sdk/protocol-http';
@@ -9,15 +5,21 @@ import { parseUrl } from '@aws-sdk/url-parser';
 import { Hash } from '@aws-sdk/hash-node';
 import { formatUrl } from '@aws-sdk/util-format-url';
 
-import { CopyObjectCommand, GetBucketLocationCommand, GetObjectCommand, GetObjectCommandOutput,
-  HeadObjectCommand, HeadObjectCommandOutput, ListObjectsV2Command, PutObjectCommand,
+import { CopyObjectCommand, GetBucketLocationCommand, GetObjectCommand,
+  HeadObjectCommand, ListObjectsV2Command, PutObjectCommand,
   PutObjectCommandInput, PutObjectCommandOutput, S3Client, S3ClientConfig,
 } from '@aws-sdk/client-s3';
 
 import { fromInstanceMetadata } from '@aws-sdk/credential-provider-imds';
 
-import env = require('./env');
+import env = require('../env');
 const { awsDefaultRegion } = env;
+
+import * as fs from 'fs';
+import tmp from 'tmp';
+import * as util from 'util';
+import * as stream from 'stream';
+import { HeadObjectResponse, ObjectStore } from './object-store';
 
 const pipeline = util.promisify(stream.pipeline);
 const createTmpFileName = util.promisify(tmp.tmpName);
@@ -29,26 +31,10 @@ export interface BucketParams {
 }
 
 /**
- * Read a stream into a string
- *
- * @param readableStream - The stream to read
- * @returns A string containing the contents of the stream
- */
-async function streamToString(readableStream: stream.Readable): Promise<string> {
-  const chunks = [];
-
-  for await (const chunk of readableStream) {
-    chunks.push(Buffer.from(chunk));
-  }
-
-  return Buffer.concat(chunks).toString('utf-8');
-}
-
-/**
  * Class to use when interacting with S3
  *
  */
-export class S3ObjectStore {
+export class S3ObjectStore implements ObjectStore {
   s3: S3Client;
 
   /**
@@ -151,7 +137,7 @@ export class S3ObjectStore {
   }
 
   /**
-   * Get an object from the object store (see AWS S3 SDK `getObject`)
+   * Get an object from S3 returning a string containing the contents
    *
    * @param paramsOrUrl - a map of parameters (Bucket, Key) indicating the object to
    *   be retrieved or the object URL
@@ -160,20 +146,35 @@ export class S3ObjectStore {
    *   promise containing the retrieved object
    * @throws TypeError - if an invalid URL is supplied
    */
-  getObject(
+  async getObject(
     paramsOrUrl: string | BucketParams,
-    callback?: (err, data: GetObjectCommandOutput) => void,
-  ): Promise<GetObjectCommandOutput> {
+  ): Promise<string> {
     const params = this._paramsOrUrlToParams(paramsOrUrl);
     const command = new GetObjectCommand(params);
 
-    if (callback) {
-      this.s3.send(command)
-        .then((response) => callback(null, response))
-        .catch((error) => callback(error, null));
-    } else {
-      return this.s3.send(command);
-    }
+    const response = await this.s3.send(command);
+    const objectAsString = await response.Body.transformToString();
+    return objectAsString;
+  }
+
+  /**
+   * Get an object from S3 returning a string containing the contents
+   *
+   * @param paramsOrUrl - a map of parameters (Bucket, Key) indicating the object to
+   *   be retrieved or the object URL
+   * @param callback - an optional callback function
+   * @returns An object with a `promise` function that can be called to obtain a
+   *   promise containing the retrieved object
+   * @throws TypeError - if an invalid URL is supplied
+   */
+  async _getObjectStream(
+    paramsOrUrl: string | BucketParams,
+  ): Promise<object> {
+    const params = this._paramsOrUrlToParams(paramsOrUrl);
+    const command = new GetObjectCommand(params);
+
+    const response = await this.s3.send(command);
+    return response.Body;
   }
 
 
@@ -185,12 +186,9 @@ export class S3ObjectStore {
    */
   async getObjectJson(
     paramsOrUrl: string | BucketParams,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ): Promise<any> {
-    const catalogResponse = await this.getObject(paramsOrUrl);
-    // console.log(`CDD: Response was ${JSON.stringify(catalogResponse)}`);
-    const catalogString = await catalogResponse.Body.transformToString();
-    return JSON.parse(catalogString);
+  ): Promise<object> {
+    const contents = await this.getObject(paramsOrUrl);
+    return JSON.parse(contents);
   }
 
   /**
@@ -236,9 +234,13 @@ export class S3ObjectStore {
    * @returns A promise for the object's header to value pairs
    * @throws TypeError - if an invalid URL is supplied
    */
-  async headObject(paramsOrUrl: string | BucketParams): Promise<HeadObjectCommandOutput> {
+  async headObject(paramsOrUrl: string | BucketParams): Promise<HeadObjectResponse> {
     const command = new HeadObjectCommand(this._paramsOrUrlToParams(paramsOrUrl));
-    return this.s3.send(command);
+    const response = await this.s3.send(command);
+    return {
+      contentType: response.ContentType,
+      contentLength: response.ContentLength,
+    };
   }
 
   /**
@@ -281,28 +283,6 @@ export class S3ObjectStore {
   }
 
   /**
-   * Downloads the given object from the store, returning a string containing the contents of the
-   * object
-   *
-   * @param paramsOrUrl - a map of parameters (Bucket, Key) indicating the object to
-   *   be retrieved or the object URL
-   * @returns a string containing the contents of the object
-   * @throws TypeError - if an invalid URL is supplied
-   */
-  async download(paramsOrUrl: string | BucketParams): Promise<string> {
-    const getObjectCommand = new GetObjectCommand(this._paramsOrUrlToParams(paramsOrUrl));
-    const getObjectResponse = await this.s3.send(getObjectCommand);
-    const body = getObjectResponse.Body;
-
-    if (body && typeof body === 'object') {
-      const buffer = await streamToString(body as stream.Readable);
-      return buffer.toString();
-    }
-
-    throw new Error('Failed to download object');
-  }
-
-  /**
    * Downloads the given object from the store, returning a temporary file location containing the
    * object.  Note, the caller MUST remove the file when complete
    *
@@ -313,8 +293,8 @@ export class S3ObjectStore {
    */
   async downloadFile(paramsOrUrl: string | BucketParams): Promise<string> {
     const tempFile = await createTmpFileName();
-    const getObjectResponse = await this.getObject(paramsOrUrl);
-    await pipeline(getObjectResponse.Body as stream.Readable, fs.createWriteStream(tempFile));
+    const objectStream = await this._getObjectStream(paramsOrUrl);
+    await pipeline(objectStream as stream.Readable, fs.createWriteStream(tempFile));
     return tempFile;
   }
 
@@ -340,7 +320,7 @@ export class S3ObjectStore {
 
 
   /**
-   * Stream upload an object to S3 (see AWS S3 SDK `upload`)
+   * Stream upload an object to S3
    *
    * @param stringOrStream - the text string or stream to upload
    * @param paramsOrUrl - a map of parameters (Bucket, Key) indicating the object to
@@ -395,8 +375,6 @@ export class S3ObjectStore {
     return response;
   }
 
-
-
   /**
    * Returns the AWS region the given bucket is in
    *
@@ -427,9 +405,10 @@ export class S3ObjectStore {
    * @param paramsOrUrl - a map of parameters (Bucket, Key) indicating the object to be retrieved or
    *   the object URL
    */
-  async changeOwnership(s3: S3Client, paramsOrUrl: string | BucketParams): Promise<void> {
+  async changeOwnership(paramsOrUrl: string | BucketParams): Promise<void> {
     const params = this._paramsOrUrlToParams(paramsOrUrl);
-    const existingObject = await this.headObject(params);
+    const headCommand = new HeadObjectCommand(this._paramsOrUrlToParams(paramsOrUrl));
+    const existingObject = await this.s3.send(headCommand);
 
     // When replacing the metadata, both the Metadata and ContentType fields are overwritten
     // with the new object creation. So we preserve those two fields here.
@@ -441,38 +420,7 @@ export class S3ObjectStore {
       CopySource: `${params.Bucket}/${params.Key}`,
     };
 
-    const command = new CopyObjectCommand(copyObjectParams);
-    await s3.send(command);
+    const copyCommand = new CopyObjectCommand(copyObjectParams);
+    await this.s3.send(copyCommand);
   }
-}
-
-
-/**
- * Returns a class to interact with the object store appropriate for
- * the provided protocol, or null if no such store exists.
- *
- * @param protocol - the protocol used in object store URLs.  This may be a full URL, in
- *   which case the protocol will be read from the front of the URL.
- * @returns an object store for interacting with the given protocol
- */
-export function objectStoreForProtocol(protocol?: string): S3ObjectStore {
-  if (!protocol) {
-    return null;
-  }
-  // Make sure the protocol is lowercase and does not end in a colon (as URL parsing produces)
-  const normalizedProtocol = protocol.toLowerCase().split(':')[0];
-  if (normalizedProtocol === 's3') {
-    return new S3ObjectStore({});
-  }
-  return null;
-}
-
-/**
- * Returns the default object store for this instance of Harmony.  Allows requesting an
- * object store without first knowing a protocol.
- *
- * @returns the default object store for Harmony.
- */
-export function defaultObjectStore(): S3ObjectStore {
-  return new S3ObjectStore({});
 }

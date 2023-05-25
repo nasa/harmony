@@ -3,7 +3,6 @@ import { describe, it } from 'mocha';
 import _ from 'lodash';
 import isUUID from '../../app/util/uuid';
 import { expectedNoOpJobKeys, itIncludesRequestUrl } from '../helpers/jobs';
-import { hookSignS3Object } from '../helpers/object-store';
 import { hookPostRangesetRequest, hookRangesetRequest, rangesetRequest } from '../helpers/ogc-api-coverages';
 import hookServersStartStop from '../helpers/servers';
 import StubService, { hookServices } from '../helpers/stub-service';
@@ -147,7 +146,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     });
 
     describe('and the backend service calls back with a redirect to an S3 location', function () {
-      const signedPrefix = hookSignS3Object();
+      const signedPrefix = 'foo';
       StubService.hook({ params: { redirect: 's3://my-bucket/public/my-object.tif' } });
       hookRangesetRequest(version, collection, variableName, { query });
 
@@ -159,7 +158,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     });
 
     describe('and the backend service provides POST data', function () {
-      const signedPrefix = hookSignS3Object();
+      const signedPrefix = 'foo';
       StubService.hook({
         body: 'realistic mock data',
         headers: {

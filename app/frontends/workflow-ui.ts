@@ -556,10 +556,9 @@ export async function getWorkItemLogs(
     if (!isAdminOrLogViewer) {
       throw new ForbiddenError();
     }
-    const logPromise =  await objectStoreForProtocol('s3')
-      .getObject(getItemLogsLocation({ id: parseInt(id), jobID }));
-    const logs = logPromise.Body.toString();
-    res.json(JSON.parse(logs));
+    const logs =  await objectStoreForProtocol('s3')
+      .getObjectJson(getItemLogsLocation({ id: parseInt(id), jobID }));
+    res.json(logs);
   } catch (e) {
     req.context.logger.error(e);
     next(e);
