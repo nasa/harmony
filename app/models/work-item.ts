@@ -207,6 +207,34 @@ export async function getNextWorkItem(
 }
 
 /**
+ * Returns the status of a work item as read from the database
+ *
+ * @param tx - the transaction to use for querying
+ * @param id - the id of the work item to get the status for
+ * @returns A promise with the status of the work item
+ */
+export async function getWorkItemStatus(
+  tx: Transaction,
+  id: number,
+): Promise<WorkItemStatus> {
+  try {
+    const workItemData = await tx(WorkItem.table)
+      .select(['status'])
+      .where({ id })
+      .first();
+    if (workItemData) {
+      return workItemData.status;
+    } else {
+      throw new Error(`Work item [${id}] not found`);
+    }
+  } catch (e) {
+    logger.error(`Error getting status for work item [${id}]`);
+    logger.error(e);
+    throw e;
+  }
+}
+
+/**
  * Update the status and duration in the database for a WorkItem
  * @param tx - the transaction to use for querying
  * @param id - the id of the WorkItem

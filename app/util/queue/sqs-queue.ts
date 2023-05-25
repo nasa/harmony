@@ -55,6 +55,14 @@ export class SqsQueue extends Queue {
     return [];
   }
 
+  async getApproximateNumberOfMessages(): Promise<number> {
+    const response = await this.sqs.getQueueAttributes({
+      QueueUrl: this.queueUrl,
+      AttributeNames: ['ApproximateNumberOfMessages'],
+    }).promise();
+    return parseInt(response.Attributes.ApproximateNumberOfMessages, 10);
+  }
+
   async sendMessage(msg: string, groupId?:string): Promise<void> {
     const message: { QueueUrl: string, MessageBody: string, MessageGroupId?: string } = {
       QueueUrl: this.queueUrl,

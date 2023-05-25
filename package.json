@@ -4,7 +4,7 @@
   "description": "Data services frontend",
   "main": "index.js",
   "scripts": {
-    "test": "strict-npm-engines && eslint --ext .ts --ignore-pattern tasks . && nyc mocha && better-npm-audit audit && lerna run test",
+    "test": "strict-npm-engines && eslint --ext .ts --ignore-pattern tasks --ignore-pattern kubernetes-services . && nyc mocha && better-npm-audit audit && lerna run test",
     "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha",
     "test-bail": "TS_NODE_TRANSPILE_ONLY=true mocha --bail",
     "coverage": "nyc mocha",

@@ -1,5 +1,5 @@
 import env from '../env';
-import { WorkItemUpdateQueueType, Queue } from './queue';
+import { WorkItemQueueType, Queue } from './queue';
 import { SqsQueue } from './sqs-queue';
 
 const queuesByType = {};
@@ -15,10 +15,10 @@ const workSchedulerQueue = new SqsQueue(env.workItemSchedulerQueueUrl);
  * @returns a queue object based on the type of work item update queue specified as the input
  * parameter.
  */
-export function getQueueForType(type: WorkItemUpdateQueueType): Queue {
+export function getQueueForType(type: WorkItemQueueType): Queue {
   if (Object.keys(queuesByType).length === 0) {
-    queuesByType[WorkItemUpdateQueueType.SMALL_ITEM_UPDATE] = new SqsQueue(env.workItemUpdateQueueUrl);
-    queuesByType[WorkItemUpdateQueueType.LARGE_ITEM_UPDATE] = new SqsQueue(env.largeWorkItemUpdateQueueUrl);
+    queuesByType[WorkItemQueueType.SMALL_ITEM_UPDATE] = new SqsQueue(env.workItemUpdateQueueUrl);
+    queuesByType[WorkItemQueueType.LARGE_ITEM_UPDATE] = new SqsQueue(env.largeWorkItemUpdateQueueUrl);
   }
   return queuesByType[type];
 }

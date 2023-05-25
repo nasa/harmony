@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: harmony-work-scheduler
+  labels:
+    name: harmony
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: harmony
+  template:
+    metadata:
+      labels:
+        name: harmony
+    spec:
+      containers:
+        - name: harmony-work-scheduler
+          imagePullPolicy: IfNotPresent
+          image: harmonyservices/harmony-work-scheduler:latest
+          envFrom:
+          - configMapRef:
+              name: harmony-env
+          - secretRef:
+              name: harmony-secrets
+          ports:
+            - containerPort: 5000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: harmony-work-scheduler
+spec:
+  ports:
+    - name: frontend
+      port: 5000
+      targetPort: 5000
+      protocol: TCP
+  selector:
+    name: harmony
+  type: ClusterIP

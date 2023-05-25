@@ -1,5 +1,5 @@
 import { v4 as uuid } from 'uuid';
-import { Queue, ReceivedMessage, WorkItemUpdateQueueType } from '../../app/util/queue/queue';
+import { Queue, ReceivedMessage, WorkItemQueueType } from '../../app/util/queue/queue';
 import { batchProcessQueue } from '../../app/backends/workflow-orchestration/work-item-updates';
 
 interface StoredMessage extends ReceivedMessage {
@@ -15,9 +15,12 @@ interface StoredMessage extends ReceivedMessage {
 export class MemoryQueue extends Queue {
   messages: StoredMessage[];
 
-  constructor() {
+  queueType: WorkItemQueueType;
+
+  constructor(type: WorkItemQueueType = null) {
     super();
     this.messages = [];
+    this.queueType = type;
   }
 
   async getMessage(_waitTimeSeconds: number): Promise<ReceivedMessage> {
@@ -40,10 +43,17 @@ export class MemoryQueue extends Queue {
     return messages;
   }
 
+  async getApproximateNumberOfMessages(): Promise<number> {
+    return this.messages.filter((m) => m.isVisible).length;
+  }
+
   // we don't care about groupId for testing purposes
   async sendMessage(msg: string, _groupId?: string): Promise<void> {
     this.messages.push({ receipt: '', body: msg, isVisible: true });
-    await batchProcessQueue(WorkItemUpdateQueueType.SMALL_ITEM_UPDATE);
+    if ([WorkItemQueueType.SMALL_ITEM_UPDATE, WorkItemQueueType.LARGE_ITEM_UPDATE]
+      .includes(this.queueType)) {
+      await batchProcessQueue(this.queueType);
+    }
   }
 
   async deleteMessage(receipt: string): Promise<void> {

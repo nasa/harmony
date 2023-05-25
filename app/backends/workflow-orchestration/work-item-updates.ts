@@ -1,7 +1,7 @@
 import defaultLogger from '../../util/log';
 import env from '../../util/env';
 import { v4 as uuid } from 'uuid';
-import { WorkItemUpdateQueueType } from '../../util/queue/queue';
+import { WorkItemQueueType } from '../../util/queue/queue';
 import { getQueueForType } from '../../util/queue/queue-factory';
 import WorkItemUpdate from '../../models/work-item-update';
 import WorkflowStep, { decrementFutureWorkItemCount, getWorkflowStepByJobIdStepIndex, getWorkflowStepsByJobId } from '../../models/workflow-steps';
@@ -747,14 +747,14 @@ export async function handleBatchWorkItemUpdates(
  * This function processes a batch of work item updates from the queue.
  * @param queueType - Type of the queue to read from
  */
-export async function batchProcessQueue(queueType: WorkItemUpdateQueueType): Promise<void> {
+export async function batchProcessQueue(queueType: WorkItemQueueType): Promise<void> {
   const queue = getQueueForType(queueType);
   const startTime = Date.now();
   // use a smaller batch size for the large item update queue otherwise use the SQS max batch size
   // of 10
   const largeItemQueueBatchSize = Math.min(env.largeWorkItemUpdateQueueMaxBatchSize, 10);
   const otherQueueBatchSize = 10; // the SQS max batch size
-  const queueBatchSize = queueType === WorkItemUpdateQueueType.LARGE_ITEM_UPDATE
+  const queueBatchSize = queueType === WorkItemQueueType.LARGE_ITEM_UPDATE
     ? largeItemQueueBatchSize : otherQueueBatchSize;
   const messages = await queue.getMessages(queueBatchSize);
   if (messages.length < 1) {
@@ -762,7 +762,7 @@ export async function batchProcessQueue(queueType: WorkItemUpdateQueueType): Pro
   }
   // defaultLogger.debug(`Processing ${messages.length} work item updates from queue`);
 
-  if (queueType === WorkItemUpdateQueueType.LARGE_ITEM_UPDATE) {
+  if (queueType === WorkItemQueueType.LARGE_ITEM_UPDATE) {
     // process each message individually
     for (const msg of messages) {
       try {

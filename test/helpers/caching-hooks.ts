@@ -2,7 +2,7 @@ import FormData from 'form-data';
 import { before, after } from 'mocha';
 import { stub, SinonStub } from 'sinon';
 import { hookMockS3 } from './object-store';
-import { hookGetQueueForType, hookGetQueueForUrl, hookGetQueueUrlForService, hookGetWorkSchedulerQueue } from './queue';
+import { hookGetQueueForType, hookGetQueueForUrl, hookGetQueueUrlForService, hookGetWorkSchedulerQueue, hookProcessSchedulerQueue } from './queue';
 import * as cmr from '../../app/util/cmr';
 
 hookMockS3();
@@ -10,6 +10,7 @@ hookGetQueueForType();
 hookGetQueueForUrl();
 hookGetWorkSchedulerQueue();
 hookGetQueueUrlForService();
+hookProcessSchedulerQueue();
 
 process.env.REPLAY = process.env.REPLAY || 'record';
 require('replay');

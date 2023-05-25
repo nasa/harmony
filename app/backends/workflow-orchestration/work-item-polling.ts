@@ -2,10 +2,10 @@ import db from '../../util/db';
 import { Logger } from 'winston';
 import logger from '../../util/log';
 import env from '../../util/env';
-import WorkItem, { getNextWorkItem, updateWorkItemStatuses, WorkItemEvent } from '../../models/work-item';
+import WorkItem, { getNextWorkItem, getWorkItemStatus, updateWorkItemStatuses, WorkItemEvent } from '../../models/work-item';
 import { getNextJobIdForUsernameAndService, getNextUsernameForWork, incrementRunningAndDecrementReadyCounts, recalculateCounts } from '../../models/user-work';
 import { getQueueForUrl, getQueueUrlForService, getWorkSchedulerQueue  } from '../../util/queue/queue-factory';
-import { QUERY_CMR_SERVICE_REGEX, calculateQueryCmrLimit } from './util';
+import { QUERY_CMR_SERVICE_REGEX, calculateQueryCmrLimit, processSchedulerQueue } from './util';
 import { eventEmitter } from '../../events';
 import { WorkItemStatus } from '../../models/work-item-interface';
 
@@ -55,38 +55,6 @@ export async function getWorkFromDatabase(serviceID: string, reqLogger: Logger):
   return result;
 }
 
-/**
- * Temporary code to process the work scheduler queue until we move this to a worker. This is
- * just a temporary solution to get the work scheduler working for testing. It should not be
- * used in production as it does not limit the number of items it will put on a service queue,
- * which will break fair queueing. It also only processes one item at a time, which is not
- * efficient. The actual scheduler will be implemented in HARMONY-1419.
- */
-export async function processSchedulerQueue(reqLogger: Logger): Promise<void> {
-  const schedulerQueue = getWorkSchedulerQueue();
-  // ten is the max batch size for SQS FIFO queues
-  const queueItems = await schedulerQueue.getMessages(10);
-  reqLogger.debug(`Found ${queueItems.length} items in the scheduler queue`);
-  for (const queueItem of queueItems) {
-    const serviceID = queueItem.body;
-    reqLogger.debug(`Processing scheduler queue item for service ${serviceID}`);
-    const queueUrl = getQueueUrlForService(serviceID);
-    const queue = getQueueForUrl(queueUrl);
-    if (queue) {
-      const workItemData = await getWorkFromDatabase(serviceID, reqLogger);
-      if (workItemData) {
-        reqLogger.debug(`Sending work item data to queue ${queueUrl}`);
-        // must include groupId for FIFO queues, but we don't care about it so just use 'w'
-        await queue.sendMessage(JSON.stringify(workItemData), 'w');
-      }
-    } else {
-      logger.error(`No queue found for URL ${queueUrl}`);
-    }
-    reqLogger.debug('Sending delete message to scheduler queue');
-    await schedulerQueue.deleteMessage(queueItem.receipt);
-  }
-
-}
 
 /**
  *  Put a message on the work scheduler queue asking it to schedule some WorkItems for the given
@@ -95,6 +63,7 @@ export async function processSchedulerQueue(reqLogger: Logger): Promise<void> {
  */
 export async function requestWorkScheduler(serviceID: string): Promise<void> {
   const schedulerQueue = getWorkSchedulerQueue();
+  // must include groupId for FIFO queues, but we don't care about it so just use 'w'
   await schedulerQueue.sendMessage(serviceID, 'w');
 }
 
@@ -116,12 +85,9 @@ export async function getWorkFromQueue(serviceID: string, reqLogger: Logger): Pr
   if (!queueItem) {
     reqLogger.debug(`No work found on queue ${queueUrl} for service ${serviceID} - requesting work from scheduler`);
     // put a message on the scheduler queue asking it to schedule some WorkItems for this service
-    const schedulerQueue = getWorkSchedulerQueue();
-    // must include groupId for FIFO queues, but we don't care about it so just use 'w'
-    await schedulerQueue.sendMessage(serviceID, 'w');
+    await requestWorkScheduler(serviceID);
 
-    // process the scheduler queue to schedule some work for this service - this is temporary
-    // until the actual scheduler is implemented
+    // this actually does nothing outside of tests since the scheduler pod will be running
     await processSchedulerQueue(reqLogger);
 
     // long poll for work before giving up
@@ -137,10 +103,16 @@ export async function getWorkFromQueue(serviceID: string, reqLogger: Logger): Pr
     await queue.deleteMessage(queueItem.receipt);
     reqLogger.debug(`Deleted work item with receipt ${queueItem.receipt} from queue ${queueUrl}`);
     const item = JSON.parse(queueItem.body) as WorkItemData;
-    // set the status to running
+    // make sure the item wasn't canceled and set the status to running
     try {
       await db.transaction(async (tx) => {
-        await updateWorkItemStatuses(tx, [item.workItem.id], WorkItemStatus.RUNNING);
+        const currentStatus = await getWorkItemStatus(tx, item.workItem.id);
+        if (currentStatus === WorkItemStatus.CANCELED) {
+          reqLogger.debug(`Work item ${item.workItem.id} was canceled, skipping`);
+          return null;
+        } else {
+          await updateWorkItemStatuses(tx, [item.workItem.id], WorkItemStatus.RUNNING);
+        }
       });
       return item;
     } catch (err) {
@@ -163,7 +135,7 @@ eventEmitter.on(WorkItemEvent.CREATED, async (workItem: WorkItem) => {
     const queue = getWorkSchedulerQueue();
     // must include groupId for FIFO queues, but we don't care about it so just use 'w'
     await queue.sendMessage(serviceID, 'w');
-    // temporary code to process the scheduler queue until we move this to a worker
+    // this actually does nothing outside of tests since the scheduler pod will be running
     await processSchedulerQueue(defaultLogger);
   }
 });

@@ -24,3 +24,11 @@ export async function calculateQueryCmrLimit(tx: Transaction, workItem: WorkItem
   }
   return queryCmrLimit;
 }
+
+/**
+ * Empty function that will be overridden in tests. Not needed for runtime environments since
+ * the scheduler pod will be running
+ */
+export async function processSchedulerQueue(_reqLogger: Logger): Promise<void> {
+  // NOOP - this will be overridden in tests
+}
