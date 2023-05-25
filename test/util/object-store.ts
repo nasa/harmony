@@ -1,7 +1,8 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
 import { mock } from 'sinon';
-import { objectStoreForProtocol, defaultObjectStore, S3ObjectStore } from '../../app/util/object-store';
+import { objectStoreForProtocol, defaultObjectStore } from '../../app/util/object-store';
+import { S3ObjectStore } from '../../app/util/object-store/s3-object-store';
 
 describe('util/object-store', function () {
   describe('objectStoreForProtocol', function () {

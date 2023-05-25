@@ -72,7 +72,7 @@ describe('when setting destinationUrl on ogc request', function () {
       expect(this.res.status).to.equal(200);
       const jobId = JSON.parse(this.res.text).jobID;
       const s3Url = 's3://dummy/p1/' + jobId + '/harmony-job-status-link';
-      const statusLink = await getObjectText(s3Url);
+      const statusLink = await defaultObjectStore().getObject(s3Url);
       // this.res.request.url is the job status link
       expect(statusLink).to.equal(this.res.request.url);
     });

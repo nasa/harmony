@@ -1,10 +1,10 @@
 import { it } from 'mocha';
 import { expect } from 'chai';
-import { stub, SinonStub } from 'sinon';
+// import { stub, SinonStub } from 'sinon';
 import { Job } from '../../app/models/job';
 import { hookUrl } from './hooks';
 import env from '../../app/util/env';
-import { S3ObjectStore } from '../../app/util/object-store';
+// import { S3ObjectStore } from '../../app/util/object-store';
 
 /**
  * Provides a parameterized `describe` blocks that tests expected format of data links.
@@ -68,13 +68,13 @@ export function itProvidesAWorkingHttpUrl(user: string): void {
   });
 
   describe('loading the provided Harmony HTTP URL', function () {
-    before(function () {
-      stub(S3ObjectStore.prototype, 'signGetObject')
-        .callsFake(async (url, params) => `https://example.com/signed/${params['A-userid']}`);
-    });
-    after(function () {
-      (S3ObjectStore.prototype.signGetObject as SinonStub).restore();
-    });
+    // before(function () {
+    //   stub(S3ObjectStore.prototype, 'signGetObject')
+    //     .callsFake(async (url, params) => `https://example.com/signed/${params['A-userid']}`);
+    // });
+    // after(function () {
+    //   (S3ObjectStore.prototype.signGetObject as SinonStub).restore();
+    // });
 
     hookUrl(function () {
       const job = new Job(JSON.parse(this.res.text));

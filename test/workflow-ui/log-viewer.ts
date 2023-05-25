@@ -11,7 +11,7 @@ import { hookWorkflowUILogs, workflowUILogs } from '../helpers/workflow-ui';
 import { WorkItemStatus } from '../../app/models/work-item-interface';
 import sinon from 'sinon';
 import * as objectStore from '../../app/util/object-store';
-import { S3ObjectStore } from '../../app/util/object-store';
+import { ObjectStore } from '../../app/util/object-store/object-store';
 
 // main objects used in the tests
 const targetJob = buildJob({ status: JobStatus.FAILED, username: 'bo' });
@@ -72,12 +72,12 @@ describe('Workflow UI directly accessing log files', function () {
 
       // Mock out the calls to S3 to just return arbitrary JSON for the logs
       const getObjectStub = sinon.stub().returns({
-        promise: async () => ({ Body: Buffer.from(JSON.stringify({ foo: 'bar' })) }),
+        promise: async () => ({ foo: 'bar' }),
       });
 
       s3Stub = sinon.stub(objectStore, 'objectStoreForProtocol').callsFake(() => ({
-        getObject: getObjectStub,
-      } as unknown as S3ObjectStore));
+        getObjectJson: getObjectStub,
+      } as unknown as ObjectStore));
     });
 
     after(async function () {
