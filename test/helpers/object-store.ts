@@ -7,15 +7,17 @@ import * as tmp from 'tmp';
 
 import { FileStore } from '../../app/util/object-store/file-store';
 import * as objectStore from '../../app/util/object-store';
+import * as shapefileUpload from '../../app/middleware/shapefile-upload';
 import { stub } from 'sinon';
+import { RequestHandler } from 'express';
 
-// // Patches mock-aws-s3's mock so that the result of "upload" has an "on" method
-// // const S3MockPrototype = Object.getPrototypeOf(new mockAws.S3());
-// // const originalUpload = S3MockPrototype.upload;
-// // S3MockPrototype.upload = function (...args): mockAws.S3.ManagedUpload {
-// //   const result = originalUpload.call(this, ...args);
-// //   return { on: (): void => {}, ...result };
-// // };
+// Patches mock-aws-s3's mock so that the result of "upload" has an "on" method
+// const S3MockPrototype = Object.getPrototypeOf(new mockAws.S3());
+// const originalUpload = S3MockPrototype.upload;
+// S3MockPrototype.upload = function (...args): mockAws.S3.ManagedUpload {
+//   const result = originalUpload.call(this, ...args);
+//   return { on: (): void => {}, ...result };
+// };
 
 // /**
 //  * Adds stubs to S3 object signing that retain the username from the 'A-userid' parameter.
@@ -73,11 +75,29 @@ import { stub } from 'sinon';
 //   // return contents.Body.toString();
 // }
 
+
+
+// const shapefileUploadStub = stub(shapefileUpload, 'default');
+// shapefileUploadStub.callsFake(shapefileUploadMock);
+
 // Override using S3 in tests
 const dir = tmp.dirSync({ unsafeCleanup: true });
 const fileStore = new FileStore(dir.name);
 stub(objectStore, 'defaultObjectStore').callsFake(() => fileStore);
 stub(objectStore, 'objectStoreForProtocol').callsFake(() => fileStore);
+
+// Override multer middleware
+/**
+ * Override shapefile upload middleware code which uses S3 and multer
+ * @param req - request
+ * @param res - response
+ * @param next - next middleware function
+ * @returns
+ */
+function shapefileUploadMock(): RequestHandler {
+  return (_req, _res, next) => { next();};
+}
+stub(shapefileUpload, 'default').callsFake(() => shapefileUploadMock());
 
 
 /**

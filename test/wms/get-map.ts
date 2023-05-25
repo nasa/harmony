@@ -4,6 +4,7 @@ import isUUID from '../../app/util/uuid';
 import hookServersStartStop from '../helpers/servers';
 import { hookGetMap, wmsRequest, validGetMapQuery } from '../helpers/wms';
 import StubService from '../helpers/stub-service';
+import env from '../../app/util/env';
 
 describe('WMS GetMap', function () {
   const collection = 'C1234088182-EEDTEST';
@@ -93,12 +94,11 @@ describe('WMS GetMap', function () {
 
       it('redirects the client to the provided URL', function () {
         expect(this.res.status).to.equal(303);
-        expect(this.res.headers.location).to.equal('http://example.com');
+        expect(this.res.headers.location).to.equal('http://example.com?A-userid=anonymous');
       });
     });
 
     describe('and the backend service provides POST data', function () {
-      const signedPrefix = 'foo';
       StubService.hook({
         body: 'realistic mock data',
         headers: {
@@ -110,7 +110,7 @@ describe('WMS GetMap', function () {
 
       it('returns an HTTP 303 redirect status code to the provided data', function () {
         expect(this.res.status).to.equal(303);
-        expect(this.res.headers.location).to.include(signedPrefix);
+        expect(this.res.headers.location).to.include(env.stagingBucket);
       });
 
       it('propagates the Content-Type header to the client', function () {

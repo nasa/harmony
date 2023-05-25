@@ -37,10 +37,13 @@ async function translateServiceResult(serviceResult, user, res): Promise<void> {
   if (error) {
     throw new ServiceError(statusCode || 400, error);
   } else if (redirect) {
-    const store = objectStoreForProtocol(redirect.split(':')[0]);
     let dest = redirect;
-    if (store) {
-      dest = await store.signGetObject(redirect, { 'A-userid': user });
+    const urlType = redirect.split(':')[0];
+    if (urlType === 's3') {
+      const store = objectStoreForProtocol(urlType);
+      if (store) {
+        dest = await store.signGetObject(redirect, { 'A-userid': user });
+      }
     }
     res.redirect(303, dest);
   } else if (content) {

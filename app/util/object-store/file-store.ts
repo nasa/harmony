@@ -36,11 +36,37 @@ export class FileStore implements ObjectStore {
     //   fileName = fileName.replace('s3://', this.fileStoreRoot + '/');
     // }
     // return fileName;
-    return paramsOrUrl.replace('s3://', this.fileStoreRoot + '/');
+    // console.log(`Passed in filename was ${paramsOrUrl}`);
+    return paramsOrUrl.replace('s3://', `${this.fileStoreRoot}/`);
   }
 
-  signGetObject(objectUrl: string, _params: { [key: string]: string }): Promise<string> {
-    return Promise.resolve(objectUrl);
+  /**
+   * Returns the filename represented by the passed in parameters
+   * @param paramsOrUrl - a map of parameters (Bucket, Key) or a string URL
+   * @returns
+   */
+  // _getFilename2(paramsOrUrl, contentType?): string {
+  //   // s3://local-artifact-bucket/harmony-inputs/query/8506b5cb-0a61-4796-8cdf-9944a4c72bc3/query00000.json
+  //   // let fileName = paramsOrUrl;
+  //   // if (paramsOrUrl.startsWith('s3://')) {
+  //   //   fileName = fileName.replace('s3://', this.fileStoreRoot + '/');
+  //   // }
+  //   // return fileName;
+  //   let filename: string = paramsOrUrl.replace('s3://', `${this.fileStoreRoot}/`);
+  //   if (contentType) {
+  //     filename = filename.concat(encodeURIComponent(`ct-${contentType}`));
+  //   }
+  //   return filename;
+  // }
+
+  signGetObject(objectUrl: string, params: { [key: string]: string }): Promise<string> {
+    let signedUrl = objectUrl;
+    if (params) {
+      const queryString = new URLSearchParams(params).toString();
+      signedUrl = `${objectUrl}?${queryString}`;
+    }
+    signedUrl = signedUrl.replace('s3://', 'https://');
+    return Promise.resolve(signedUrl);
   }
 
   getObject(paramsOrUrl: string | object): Promise<string> {
@@ -57,9 +83,14 @@ export class FileStore implements ObjectStore {
     return Promise.resolve(files);
   }
 
-  headObject(paramsOrUrl: string | object): Promise<HeadObjectResponse> {
-    const stats = fs.statSync(this._getFilename(paramsOrUrl));
-    return Promise.resolve({ contentLength: stats.size });
+  async headObject(paramsOrUrl: string | object): Promise<HeadObjectResponse> {
+    const filename = this._getFilename(paramsOrUrl);
+    let contentType;
+    if (await this.objectExists(filename + 'content-type')) {
+      contentType = await this.getObject(filename + 'content-type');
+    }
+    const stats = fs.statSync(filename);
+    return Promise.resolve({ contentLength: stats.size, contentType });
   }
 
   objectExists(paramsOrUrl: string | object): Promise<boolean> {
@@ -89,8 +120,8 @@ export class FileStore implements ObjectStore {
   async upload(
     stringOrStream: string | NodeJS.ReadableStream,
     paramsOrUrl: string | object,
-    _contentLength: number,
-    _contentType: string,
+    contentLength?: number,
+    contentType?: string,
   ): Promise<object> {
     const filename = this._getFilename(paramsOrUrl);
     const dirname = path.dirname(filename);
@@ -103,6 +134,9 @@ export class FileStore implements ObjectStore {
       await pipeline(stringOrStream as stream.Readable, fs.createWriteStream(filename));
     } else {
       fs.writeFileSync(filename, stringOrStream);
+    }
+    if (contentType) {
+      fs.writeFileSync(filename + 'content-type', contentType);
     }
     return Promise.resolve({});
   }

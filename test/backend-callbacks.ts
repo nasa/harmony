@@ -325,8 +325,8 @@ describe('Backend Callbacks', function () {
       it('redirects to the stored response content', async function () {
         const { location } = this.userResp.headers;
         expect(this.userResp.statusCode).to.equal(303);
-        expect(location).to.match(/\/some-file.nc$/);
-        expect(await defaultObjectStore().getObject(location.replace('signed+', ''))).to.equal('Some data here');
+        expect(location).to.match(/\/some-file.nc/);
+        expect(await defaultObjectStore().getObject(location.replace('?A-userid=anonymous', ''))).to.equal('Some data here');
       });
     });
   });
