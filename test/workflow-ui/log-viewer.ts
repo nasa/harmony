@@ -10,8 +10,7 @@ import { buildJob } from '../helpers/jobs';
 import { hookWorkflowUILogs, workflowUILogs } from '../helpers/workflow-ui';
 import { WorkItemStatus } from '../../app/models/work-item-interface';
 import sinon from 'sinon';
-import * as objectStore from '../../app/util/object-store';
-import { ObjectStore } from '../../app/util/object-store/object-store';
+import { FileStore } from '../../app/util/object-store/file-store';
 
 // main objects used in the tests
 const targetJob = buildJob({ status: JobStatus.FAILED, username: 'bo' });
@@ -63,7 +62,7 @@ describe('Workflow UI directly accessing log files', function () {
   describe('for logged-in users', async function () {
     // First save the jobs so that they have IDs
     hookTransaction();
-    let s3Stub;
+    let getObjectJsonStub;
     before(async function () {
       await targetJob.save(this.trx);
       await item1.save(this.trx);
@@ -71,17 +70,11 @@ describe('Workflow UI directly accessing log files', function () {
       await this.trx.commit();
 
       // Mock out the calls to S3 to just return arbitrary JSON for the logs
-      const getObjectStub = sinon.stub().returns({
-        promise: async () => ({ foo: 'bar' }),
-      });
-
-      s3Stub = sinon.stub(objectStore, 'objectStoreForProtocol').callsFake(() => ({
-        getObjectJson: getObjectStub,
-      } as unknown as ObjectStore));
+      getObjectJsonStub = sinon.stub(FileStore.prototype, 'getObjectJson').resolves({ foo: 'bar' });
     });
 
     after(async function () {
-      if (s3Stub.restore) s3Stub.restore();
+      if (getObjectJsonStub.restore) getObjectJsonStub.restore();
     });
 
     describe('when requesting the logs as the user that owns the job, (but is not a log viewer)', function () {

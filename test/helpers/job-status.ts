@@ -25,8 +25,8 @@ export function itReturnsUnchangedDataLinksForZarr(
     const job = new Job(JSON.parse(this.res.text));
     const bucketLinks = job.getRelatedLinks('s3-access');
     expect(bucketLinks.length).to.equal(1);
-    const stagingLocation = `s3://${env.stagingBucket}/public/${job.jobID}/`;
-    expect(bucketLinks[0].href).to.equal(stagingLocation);
+    const matchingLocation = new RegExp(`^.*${env.stagingBucket}public/${job.jobID}/`);
+    expect(bucketLinks[0].href).to.match(matchingLocation);
     expect(bucketLinks[0].title).to.equal('Results in AWS S3. Access from AWS us-west-2 with keys from /cloud-access.sh');
   });
 
@@ -83,7 +83,7 @@ export function itProvidesAWorkingHttpUrl(user: string): void {
 
     it('temporarily redirects to a presigned URL for the data', function () {
       expect(this.res.statusCode).to.equal(307);
-      expect(this.res.headers.location).to.equal('https://example.com/signed/jdoe1');
+      expect(this.res.headers.location).to.equal('https://example-bucket/public/example/path.tif?A-userid=jdoe1');
     });
   });
 }

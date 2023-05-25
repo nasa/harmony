@@ -43,7 +43,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
       it('provides a staging location to the backend', function () {
         const location = this.service.operation.stagingLocation;
-        expect(location).to.match(new RegExp('^s3://[^/]+/public/.*$'));
+        expect(location).to.include(env.artifactBucket);
       });
 
       it('passes the source collection to the backend', function () {
@@ -141,24 +141,22 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
       it('redirects the client to the provided URL', function () {
         expect(this.res.status).to.equal(303);
-        expect(this.res.headers.location).to.equal('http://example.com');
+        expect(this.res.headers.location).to.equal('http://example.com?A-userid=anonymous');
       });
     });
 
     describe('and the backend service calls back with a redirect to an S3 location', function () {
-      const signedPrefix = 'foo';
       StubService.hook({ params: { redirect: 's3://my-bucket/public/my-object.tif' } });
       hookRangesetRequest(version, collection, variableName, { query });
 
       it('redirects the client to a presigned url', function () {
         expect(this.res.status).to.equal(303);
-        expect(this.res.headers.location).to.include(signedPrefix);
+        expect(this.res.headers.location).to.include('s3://my-bucket/public/my-object.tif');
         expect(this.res.headers.location).to.include('anonymous');
       });
     });
 
     describe('and the backend service provides POST data', function () {
-      const signedPrefix = 'foo';
       StubService.hook({
         body: 'realistic mock data',
         headers: {
@@ -170,7 +168,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
       it('returns an HTTP 303 redirect status code to the provided data', function () {
         expect(this.res.status).to.equal(303);
-        expect(this.res.headers.location).to.include(signedPrefix);
+        expect(this.res.headers.location).to.include(env.stagingBucket);
       });
 
       it('propagates the Content-Type header to the client', function () {
