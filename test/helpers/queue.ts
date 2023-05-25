@@ -69,6 +69,7 @@ export function hookGetQueueForType(): void {
   });
   after(function () {
     (qf.getQueueForType as SinonStub).restore();
+    typeQueues = {};
   });
 }
 
@@ -123,4 +124,5 @@ export function hookGetQueueUrlForService(): void {
  */
 export function resetQueues(): void {
   serviceQueues = {};
+  typeQueues = {};
 }

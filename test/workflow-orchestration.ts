@@ -177,6 +177,7 @@ describe('When a workflow contains an aggregating step', async function () {
   });
 
   beforeEach(async function () {
+    resetQueues();
     const job = buildJob();
     await job.save(db);
     this.jobID = job.jobID;
@@ -221,6 +222,7 @@ describe('When a workflow contains an aggregating step', async function () {
 
   this.afterEach(async function () {
     await truncateAll();
+    resetQueues();
   });
 
   describe('and it has fewer granules than the paging threshold', async function () {

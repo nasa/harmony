@@ -61,7 +61,7 @@ export async function getWorkFromDatabase(serviceID: string, reqLogger: Logger):
  *  service
  * @param serviceID - The service ID for which to request work
  */
-export async function requestWorkScheduler(serviceID: string): Promise<void> {
+export async function makeWorkScheduleRequest(serviceID: string): Promise<void> {
   const schedulerQueue = getWorkSchedulerQueue();
   // must include groupId for FIFO queues, but we don't care about it so just use 'w'
   await schedulerQueue.sendMessage(serviceID, 'w');
@@ -85,7 +85,7 @@ export async function getWorkFromQueue(serviceID: string, reqLogger: Logger): Pr
   if (!queueItem) {
     reqLogger.debug(`No work found on queue ${queueUrl} for service ${serviceID} - requesting work from scheduler`);
     // put a message on the scheduler queue asking it to schedule some WorkItems for this service
-    await requestWorkScheduler(serviceID);
+    await makeWorkScheduleRequest(serviceID);
 
     // this actually does nothing outside of tests since the scheduler pod will be running
     await processSchedulerQueue(reqLogger);
