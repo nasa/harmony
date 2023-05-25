@@ -6,3 +6,4 @@ rules:
   no-unused-expressions: "off" # Required for chai `to.be.empty`
   node/no-unpublished-import: ["off"]
   "@typescript-eslint/no-unused-expressions": ["off"]
+  "import/no-extraneous-dependencies": ["error", {"devDependencies": true}]

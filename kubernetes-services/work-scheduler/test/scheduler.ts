@@ -9,26 +9,12 @@ import * as workItemPolling from '../../../app/backends/workflow-orchestration/w
 import * as queueFactory from '../../../app/util/queue/queue-factory';
 import logger from '../../../app/util/log';
 import { MemoryQueue } from '../../../test/helpers/memory-queue';
+import WorkItem from '../../../app/models/work-item';
+import { WorkItemData } from '../../../app/backends/workflow-orchestration/work-item-polling';
 
-
-// tests
-// before
-//   - mock k8sApi.listNamespacedPod
-//   - mock getPodsCountForService
-//   - mock getQueueForUrl
-//   - mock getWorkFromDatabase
-//   - mock getWorkSchedulerQueue
-//   - load memory queue with service IDs
-// test
-//   - call processSchedulerQueue
-//   - assert that getPodsCountForService was called
-//   - assert that getWorkFromDatabase was called
-//   - assert that getWorkSchedulerQueue was called
-//   - assert that getQueueForUrl was called
-//   - assert that queue.sendMessageBatch was called with the correct number of messages
-// after
-//   - restore all mocks
 describe('Scheduler Worker', async function () {
+  const service = 'foo:latest';
+
   describe('processSchedulerQueue', async function () {
     let getPodsCountForServiceStub: SinonStub;
     let getWorkFromDatabaseStub: SinonStub;
@@ -43,7 +29,7 @@ describe('Scheduler Worker', async function () {
         return 1;
       });
       getWorkFromDatabaseStub = sinon.stub(workItemPolling, 'getWorkFromDatabase').callsFake(async function (_serviceID: string, _logger: Logger) {
-        return null;
+        return { workItem: new WorkItem({ id: 1 }) } as WorkItemData;
       });
       getSchedulerQueueStub = sinon.stub(queueFactory, 'getWorkSchedulerQueue').callsFake(function () {
         return schedulerQueue;
@@ -67,12 +53,13 @@ describe('Scheduler Worker', async function () {
       getQueueUrlForServiceStub.restore();
     });
 
-    describe('when there is no work in the scheduler queue', async function () {
-      // let sendMessageBatchStub: SinonStub;
+    describe('when there is no work on the scheduler queue', async function () {
 
       beforeEach(async function () {
         await schedulerQueue.purge();
         serviceQueues = {};
+        serviceQueues[service] = new MemoryQueue();
+        await scheduler.processSchedulerQueue(logger);
       });
       afterEach(async function () {
         await schedulerQueue.purge();
@@ -80,37 +67,35 @@ describe('Scheduler Worker', async function () {
       });
 
       it('does call getSchedulerQueue', async function () {
-        await scheduler.processSchedulerQueue(logger);
         expect(getSchedulerQueueStub.called).to.be.true;
       });
 
       it('does not call getPodsCountForService', async function () {
-        await scheduler.processSchedulerQueue(logger);
         expect(getPodsCountForServiceStub.called).to.be.false;
       });
 
       it('does not call getWorkFromDatabase', async function () {
-        await scheduler.processSchedulerQueue(logger);
         expect(getWorkFromDatabaseStub.called).to.be.false;
       });
 
       it('does not call getQueueForUrl', async function () {
-        await scheduler.processSchedulerQueue(logger);
         expect(getQueueForUrlStub.called).to.be.false;
       });
 
-      // it('does not call sendMessageBatch', async function () {
-      //   await scheduler.processSchedulerQueue(logger);
-      //   expect(sendMessageBatchStub.called).to.be.false;
-      // });
+      it('doest not put any messages on the queue', async function () {
+        const numMessages = await serviceQueues[service].getApproximateNumberOfMessages();
+        expect(numMessages).to.equal(0);
+      });
     });
 
-    describe('when there is work in the scheduler queue', async function () {
+    describe('when there is work on the scheduler queue', async function () {
 
       beforeEach(async function () {
         await schedulerQueue.purge();
-        await schedulerQueue.sendMessage('foo:latest');
+        await schedulerQueue.sendMessage(service);
         serviceQueues = {};
+        serviceQueues[service] = new MemoryQueue();
+        await scheduler.processSchedulerQueue(logger);
       });
       afterEach(async function () {
         await schedulerQueue.purge();
@@ -118,29 +103,25 @@ describe('Scheduler Worker', async function () {
       });
 
       it('calls getPodsCountForService', async function () {
-        await scheduler.processSchedulerQueue(logger);
         expect(getPodsCountForServiceStub.called).to.be.true;
       });
 
       it('calls getWorkFromDatabase', async function () {
-        await scheduler.processSchedulerQueue(logger);
         expect(getWorkFromDatabaseStub.called).to.be.true;
       });
 
       it('calls getSchedulerQueue', async function () {
-        await scheduler.processSchedulerQueue(logger);
         expect(getSchedulerQueueStub.called).to.be.true;
       });
 
       it('calls getQueueForUrl', async function () {
-        await scheduler.processSchedulerQueue(logger);
         expect(getQueueForUrlStub.called).to.be.true;
       });
 
-      // it('calls sendMessageBatch', async function () {
-      //   await scheduler.processSchedulerQueue(logger);
-      //   expect(sendMessageBatchStub.called).to.be.true;
-      // });
+      it('puts messages on the queue', async function () {
+        const numMessages = await serviceQueues[service].getApproximateNumberOfMessages();
+        expect(numMessages).to.equal(1);
+      });
     });
   });
 });
