@@ -141,7 +141,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
       it('redirects the client to the provided URL', function () {
         expect(this.res.status).to.equal(303);
-        expect(this.res.headers.location).to.equal('http://example.com?A-userid=anonymous');
+        expect(this.res.headers.location).to.equal('http://example.com');
       });
     });
 
@@ -151,8 +151,8 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
       it('redirects the client to a presigned url', function () {
         expect(this.res.status).to.equal(303);
-        expect(this.res.headers.location).to.include('s3://my-bucket/public/my-object.tif');
-        expect(this.res.headers.location).to.include('anonymous');
+        expect(this.res.headers.location).to.include('https://my-bucket/public/my-object.tif');
+        expect(this.res.headers.location).to.include('A-userid=anonymous');
       });
     });
 
