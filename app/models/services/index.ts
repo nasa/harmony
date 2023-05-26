@@ -831,10 +831,7 @@ export function chooseServiceConfig(
   configs: ServiceConfig<unknown>[] = serviceConfigs,
 ): ServiceConfig<unknown> {
   let serviceConfig = filterServiceConfigs(operation, context, configs, allFilterFns);
-  // if we are asked to concatenate, but no matching concat service is available then throw an error
-  if (serviceConfig.name === 'noOpService' && operation.shouldConcatenate) {
-    throw new NotFoundError('no matching service');
-  }
+
   if (serviceConfig.name === 'noOpService' && !requiresStrictCapabilitiesMatching(operation, context)) {
     // if we couldn't find a matching service, make a best effort to find a service that
     // can do part of what the operation requested
@@ -844,5 +841,11 @@ export function chooseServiceConfig(
       serviceConfig.message = bestEffortMessage;
     }
   }
+
+  // if we are asked to concatenate, but no matching concat service is available then throw an error
+  if (serviceConfig.name === 'noOpService' && operation.shouldConcatenate) {
+    throw new NotFoundError('no matching service');
+  }
+
   return serviceConfig;
 }
