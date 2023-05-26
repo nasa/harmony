@@ -82,6 +82,18 @@ describe('services.chooseServiceConfig and services.buildService', function () {
             },
           },
         },
+        {
+          name: 'netcdf-service',
+          type: { name: 'turbo' },
+          collections: [{ id: collectionId }],
+          capabilities: {
+            output_formats: ['application/x-netcdf4'],
+            concatenation: true,
+            subsetting: {
+              temporal: true,
+            },
+          },
+        },
       ];
     });
 
@@ -275,6 +287,20 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       it('indicates the reason for choosing the no op service is the combination of reprojection and reformatting', function () {
         const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
         expect(serviceConfig.message).to.equal('the requested combination of operations: reprojection and reformatting to application/x-netcdf4 on C123-TEST is unsupported');
+      });
+    });
+
+    describe('and the request needs concatenation', function () {
+      beforeEach(function () {
+        this.operation.temporal = ['2022-01-05T01:00:00Z', '2023-01-05T01:00:00Z'];
+        this.operation.boundingRectangle = [0, 0, 10, 10];
+        this.operation.outputFormat = 'application/x-netcdf4';
+        this.operation.model.concatenate = true;
+      });
+
+      it('chooses the service that supports concatenation and netcdf-4 format', function () {
+        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        expect(serviceConfig.name).to.equal('netcdf-service');
       });
     });
   });
