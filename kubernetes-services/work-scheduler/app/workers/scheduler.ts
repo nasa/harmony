@@ -21,6 +21,7 @@ export const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
  * @throws An error if there is no queue for a queue URL
  **/
 export async function processSchedulerQueue(reqLogger: Logger): Promise<void> {
+  reqLogger.debug('Processing scheduler queue');
   const schedulerQueue = getWorkSchedulerQueue();
   const queueItems = await schedulerQueue.getMessages(env.schedulerQueueBatchSize);
 
@@ -62,6 +63,8 @@ export async function processSchedulerQueue(reqLogger: Logger): Promise<void> {
 
 export default class Scheduler implements Worker {
   async start(repeat = true): Promise<void> {
+    logger.debug(`AWS_ACCESS_KEY_ID: ${process.env.AWS_ACCESS_KEY_ID}`);
+    logger.debug('Starting scheduler');
     while (repeat) {
       await processSchedulerQueue(logger);
     }

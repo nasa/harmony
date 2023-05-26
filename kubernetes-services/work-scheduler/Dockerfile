@@ -1,6 +1,7 @@
 FROM node:16-alpine
 
-RUN apk add bash vim curl git
+RUN apk update
+RUN apk add bash vim curl git python3 postgresql-client make gcc g++ libc-dev libpq-dev
 RUN git config --global url."https://".insteadOf ssh://
 
 RUN mkdir -p /harmony-work-scheduler

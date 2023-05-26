@@ -5,16 +5,12 @@ import * as fs from 'fs';
 import { isInteger } from '../../../../app/util/string';
 
 let envDefaults = {};
-let localDefaults = {};
 try {
-  envDefaults = dotenv.parse(fs.readFileSync('../../env-defaults'));
-  localDefaults = dotenv.parse(fs.readFileSync('env-defaults'));
+  envDefaults = dotenv.parse(fs.readFileSync('env-defaults'));
 } catch (e) {
   winston.warn('Could not parse environment defaults from env-defaults file');
   winston.warn(e.message);
 }
-
-envDefaults = { ...envDefaults, ...localDefaults };
 
 let envOverrides = {};
 try {
@@ -54,19 +50,11 @@ for (const k of Object.keys(allEnv)) {
 }
 
 interface HarmonyEnv {
-  backendHost: string;
-  backendPort: number;
   harmonyClientId: string;
-  harmonyService: string;
-  invocationArgs: string;
   logLevel: string;
   myPodName: string;
   port: number;
-  workerPort: number;
-  workerTimeout: number;
   workingDir: string;
-  maxPutWorkRetries: number;
-  artifactBucket: string;
   awsDefaultRegion: string;
   useLocalstack: boolean;
   localstackHost: string;
@@ -74,6 +62,7 @@ interface HarmonyEnv {
   useServiceQueues: boolean;
   workItemSchedulerQueueUrl: string;
   maxGranuleLimit: number;
+  cmrMaxPageSize: number;
   nodeEnv: string;
   schedulerQueueBatchSize: number;
 }

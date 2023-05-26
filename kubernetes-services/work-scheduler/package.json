@@ -23,6 +23,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@kubernetes/client-node": "^0.17.1",
+    "@types/node-fetch": "^2.5.12",
     "agentkeepalive": "^4.1.4",
     "aws-sdk": "^2.1029.0",
     "axios": "^0.24.0",
@@ -32,11 +33,14 @@
     "express": "^4.17.3",
     "knex": "^2.4.0",
     "knex-paginate": "^2.3.0",
+    "pg": "^8.7.3",
+    "pg-native": "^3.0.1",
     "lodash": "^4.17.21",
     "lodash.camelcase": "^4.3.0",
-    "node-fetch": "^3.2.10",
+    "node-fetch": "^2.6.6",
     "tmp": "^0.2.1",
-    "winston": "^3.7.2"
+    "winston": "^3.7.2",
+    "xstate": "^4.31.0"
   },
   "devDependencies": {
     "@types/chai": "^4.2.22",

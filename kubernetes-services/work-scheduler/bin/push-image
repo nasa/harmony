@@ -2,7 +2,7 @@
 
 set -ex
 
-image="harmonyservices/service-runner"
+image="harmonyservices/harmony-work-scheduler"
 tag=${1:-latest}
 
 region=${AWS_DEFAULT_REGION-"us-west-2"}
