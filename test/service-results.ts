@@ -66,12 +66,12 @@ describe('service-results', function () {
     describe('when given a valid bucket and key', function () {
       hookUrl('/service-results/some-bucket/public/some/path.tif', 'jdoe');
       it("passes the user's Earthdata Login username to the signing function for tracking", function () {
-        expect(this.res.headers.location).to.match(/.*\?A-userid=jdoe/);
+        expect(this.res.headers.location).to.include('?A-userid=jdoe');
       });
 
       it('redirects temporarily to a presigned URL', function () {
         expect(this.res.statusCode).to.equal(307);
-        expect(this.res.headers.location).to.match(/^s3:\/\/some-bucket\/public\/some\/path.tif.*/);
+        expect(this.res.headers.location).to.include('https://some-bucket/public/some/path.tif');
       });
 
       it('sets a cache-control header to indicate the redirect should be reused', function () {

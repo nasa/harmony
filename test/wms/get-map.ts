@@ -94,7 +94,7 @@ describe('WMS GetMap', function () {
 
       it('redirects the client to the provided URL', function () {
         expect(this.res.status).to.equal(303);
-        expect(this.res.headers.location).to.equal('http://example.com?A-userid=anonymous');
+        expect(this.res.headers.location).to.equal('http://example.com');
       });
     });
 
