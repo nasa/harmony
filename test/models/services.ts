@@ -90,7 +90,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
             output_formats: ['application/x-netcdf4'],
             concatenation: true,
             subsetting: {
-              temporal: true,
+              temporal: false,
             },
           },
         },
