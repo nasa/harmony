@@ -3,6 +3,12 @@ export interface HeadObjectResponse {
   contentType?: string;
 }
 
+export interface MulterFile {
+  key?: string;
+  bucket?: string;
+  path?: string;
+}
+
 export abstract class ObjectStore {
   abstract signGetObject(objectUrl: string, params: { [key: string]: string }): Promise<string>;
   abstract getObject(paramsOrUrl: string | object): Promise<string>;
@@ -19,6 +25,6 @@ export abstract class ObjectStore {
     contentType?: string,
   ): Promise<object>;
   abstract getBucketRegion(bucketName: string): Promise<string>;
-  abstract getUrlString(bucket: string, key: string);
+  abstract getUrlString(mFile: MulterFile);
   abstract changeOwnership(paramsOrUrl: string | object): Promise<void>;
 }
