@@ -17,7 +17,14 @@ spec:
       containers:
         - name: harmony-work-scheduler
           imagePullPolicy: IfNotPresent
-          image: harmonyservices/harmony-work-scheduler:latest
+          image: $WORK_SCHEDULER_IMAGE
+          resources:
+            limits:
+              memory: $WORK_SCHEDULER_LIMITS_MEMORY
+              cpu: $WORK_SCHEDULER_LIMITS_CPU
+            requests:
+              memory: $WORK_SCHEDULER_REQUESTS_MEMORY
+              cpu: $WORK_SCHEDULER_REQUESTS_CPU
           envFrom:
           - configMapRef:
               name: harmony-env

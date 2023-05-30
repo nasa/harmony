@@ -11,9 +11,9 @@
     "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha --timeout 5000",
     "lint": "eslint --ext .ts .",
     "coverage": "nyc mocha --timeout 5000",
-    "build": "tsc && docker build --tag harmonyservices/harmony-work-scheduler:${VERSION:-latest} .",
-    "build-m1": "tsc && docker build --platform linux/amd64 --tag harmonyservices/harmony-work-scheduler:${VERSION:-latest} .",
-    "publish": "docker push harmonyservices/harmony-work-scheduler:${VERSION:-latest}"
+    "build": "tsc && docker build --tag harmonyservices/work-scheduler:${VERSION:-latest} .",
+    "build-m1": "tsc && docker build --platform linux/amd64 --tag harmonyservices/work-scheduler:${VERSION:-latest} .",
+    "publish": "docker push harmonyservices/work-scheduler:${VERSION:-latest}"
   },
   "engines": {
     "node": "^16.13.1",
