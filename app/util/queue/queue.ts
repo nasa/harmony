@@ -7,7 +7,7 @@ export enum WorkItemQueueType {
   SMALL_ITEM_UPDATE = 'small-work-item-update',
   LARGE_ITEM_UPDATE = 'large-work-item-update',
   SERVICE_QUEUE = 'service-queue',
-  WORK_SCHEDULER = 'work-scheduler',
+  WORK_ITEM_SCHEDULER = 'work-item-scheduler',
 }
 
 export abstract class Queue {
