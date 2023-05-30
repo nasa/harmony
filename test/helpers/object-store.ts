@@ -10,6 +10,8 @@ import * as objectStore from '../../app/util/object-store';
 import * as shapefileUpload from '../../app/middleware/shapefile-upload';
 import { stub } from 'sinon';
 import { RequestHandler } from 'express';
+import multer from 'multer';
+import env from '../../app/util/env';
 
 // Patches mock-aws-s3's mock so that the result of "upload" has an "on" method
 // const S3MockPrototype = Object.getPrototypeOf(new mockAws.S3());
@@ -95,9 +97,44 @@ stub(objectStore, 'objectStoreForProtocol').callsFake(() => fileStore);
  * @returns
  */
 function shapefileUploadMock(): RequestHandler {
-  return (_req, _res, next) => { next();};
+  const storage = multer.diskStorage({
+    destination: (_req, _file, callback) => {
+      console.log('CDD in the destination code');
+      // Create a unique temporary directory
+      const tempDir = tmp.dirSync().name;
+
+      // Save the file to the temporary directory
+      callback(null, tempDir);
+    },
+    filename: (_req, file, callback) => {
+      // Use the original filename of the uploaded file
+      console.log('CDD in the filename code');
+      callback(null, file.originalname);
+    },
+  });
+
+  const upload = multer({
+    storage,
+    limits: {
+      fields: env.maxPostFields, // Maximum number of non-file fields to accept
+      fileSize: env.maxPostFileSize, // Maximum size for shapefiles
+      files: 1, // Maximum number of files to accept
+      parts: env.maxPostFileParts, // Maximum number of multipart parts to accept
+    },
+  });
+
+  console.log('CDD - Using mocked out code');
+
+  // Return the actual multer middleware function
+  return upload.single('shapefile');
+  // return upload.fields([{ name: 'shapefile', maxCount: 1 }]);
 }
+
 stub(shapefileUpload, 'default').callsFake(() => shapefileUploadMock());
+// stub(shapefileUpload, 'default').returns((_req, _res, next) => {
+//   // Resolve the middleware by calling the `next` function immediately
+//   next();
+// });
 
 
 /**
@@ -107,25 +144,25 @@ stub(shapefileUpload, 'default').callsFake(() => shapefileUploadMock());
  * @param _buckets - An optional list of buckets to create in the mock S3 (not implemented
  * yet)
  */
-export function hookMockS3(_buckets?: string[]): void {
-  // let dir;
-  // let stubDefaultObjectStore;
-  // let stubObjectStoreForProtocol;
-  // let fileStore;
-  // before(function () {
-  //   dir = tmp.dirSync({ unsafeCleanup: true });
-  //   fileStore = new FileStore(dir);
+// export function hookMockS3(_buckets?: string[]): void {
+// let dir;
+// let stubDefaultObjectStore;
+// let stubObjectStoreForProtocol;
+// let fileStore;
+// before(function () {
+//   dir = tmp.dirSync({ unsafeCleanup: true });
+//   fileStore = new FileStore(dir);
 
-  //   stubDefaultObjectStore = stub(objectStore, 'defaultObjectStore').callsFake(() => fileStore);
-  //   stubObjectStoreForProtocol = stub(objectStore, 'objectStoreForProtocol').callsFake(() => fileStore);
-  // });
+//   stubDefaultObjectStore = stub(objectStore, 'defaultObjectStore').callsFake(() => fileStore);
+//   stubObjectStoreForProtocol = stub(objectStore, 'objectStoreForProtocol').callsFake(() => fileStore);
+// });
 
-  // after(function () {
-  //   stubDefaultObjectStore.restore();
-  //   stubObjectStoreForProtocol.restore();
-  //   dir.removeCallback();
-  // });
-}
+// after(function () {
+//   stubDefaultObjectStore.restore();
+//   stubObjectStoreForProtocol.restore();
+//   dir.removeCallback();
+// });
+// }
 
 /**
  * Adds before / after hooks to GetBucketRegion
