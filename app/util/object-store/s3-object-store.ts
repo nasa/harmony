@@ -19,7 +19,7 @@ import * as fs from 'fs';
 import tmp from 'tmp';
 import * as util from 'util';
 import * as stream from 'stream';
-import { HeadObjectResponse, ObjectStore } from './object-store';
+import { HeadObjectResponse, MulterFile, ObjectStore } from './object-store';
 
 const pipeline = util.promisify(stream.pipeline);
 const createTmpFileName = util.promisify(tmp.tmpName);
@@ -315,7 +315,7 @@ export class S3ObjectStore implements ObjectStore {
     const uploadCommand = new PutObjectCommand(params);
     await this.s3.send(uploadCommand);
 
-    return this.getUrlString(params.Bucket, params.Key);
+    return this.getUrlString({ bucket: params.Bucket, key: params.Key });
   }
 
 
@@ -396,7 +396,8 @@ export class S3ObjectStore implements ObjectStore {
    * @param key - the key or key prefix for the location
    * @returns the URL for the object
    */
-  getUrlString(bucket: string, key: string): string {
+  getUrlString(mFile: MulterFile): string {
+    const { bucket, key } = mFile;
     return `s3://${bucket}/${key}`;
   }
 

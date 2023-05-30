@@ -1,4 +1,4 @@
-import { HeadObjectResponse, ObjectStore } from './object-store';
+import { HeadObjectResponse, MulterFile, ObjectStore } from './object-store';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as stream from 'stream';
@@ -145,8 +145,13 @@ export class FileStore implements ObjectStore {
     return Promise.resolve('us-west-2');
   }
 
-  getUrlString(bucket: string, key: string): string {
-    return this.fileStoreRoot + bucket + key;
+  getUrlString(mFile: MulterFile): string {
+    const { bucket, key } = mFile;
+    if (bucket && key) {
+      return this.fileStoreRoot + bucket + key;
+    } else {
+      return mFile.path;
+    }
   }
 
   changeOwnership(_paramsOrUrl: string | object): Promise<void> {

@@ -99,16 +99,17 @@ stub(objectStore, 'objectStoreForProtocol').callsFake(() => fileStore);
 function shapefileUploadMock(): RequestHandler {
   const storage = multer.diskStorage({
     destination: (_req, _file, callback) => {
-      console.log('CDD in the destination code');
       // Create a unique temporary directory
       const tempDir = tmp.dirSync().name;
+
+      console.log(`CDD saving to temp dir ${tempDir}`);
 
       // Save the file to the temporary directory
       callback(null, tempDir);
     },
     filename: (_req, file, callback) => {
       // Use the original filename of the uploaded file
-      console.log('CDD in the filename code');
+      console.log(`CDD in the filename code - using filename ${file.originalname}`);
       callback(null, file.originalname);
     },
   });

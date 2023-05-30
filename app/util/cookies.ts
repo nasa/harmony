@@ -2,10 +2,7 @@ import { Response } from 'express';
 import { mergeParameters } from './parameter-parsing-helpers';
 import * as urlUtil from './url';
 import HarmonyRequest from '../models/harmony-request';
-
-interface FileParams {
-  shapefile?: Express.MulterS3.File;
-}
+import { get } from 'lodash';
 
 /**
  * This module provides functions to support setting cookies associated with the
@@ -27,10 +24,12 @@ export const cookieOptions = { signed: true, sameSite: 'Lax' };
 function _shapefile(req: HarmonyRequest): string[] {
   // if a shapefile was uploaded set a cookie with a url for the shapefile and
   // the other POST form parameters
-  if (!req.files) return [];
+  // console.log(`CDD - files are ${req.files}`);
+  const shapefile = get(req, 'files.shapefile[0]') || get(req, 'file');
+  if (!shapefile) return [];
 
-  const { mimetype, key, bucket } = (req.files as FileParams).shapefile[0];
-  const shapefileParams = { mimetype, key, bucket };
+  const { mimetype, key, bucket, path } = shapefile;
+  const shapefileParams = { mimetype, key, bucket, path };
   return ['shapefile', `j:${JSON.stringify(shapefileParams)}`];
 }
 
