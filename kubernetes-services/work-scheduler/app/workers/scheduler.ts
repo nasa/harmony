@@ -46,6 +46,7 @@ export async function processSchedulerQueue(reqLogger: Logger): Promise<void> {
     reqLogger.debug(`Attempting to retrieve ${batchSize} work items for queue ${queueUrl}`);
 
     // TODO - do this as a batch instead of one at a time - HARMONY-1417
+    let queuedCount = 0;
     for (let i = 0; i < batchSize; i++) {
       const workItem = await getWorkFromDatabase(serviceID, reqLogger);
       if (workItem) {
@@ -53,10 +54,12 @@ export async function processSchedulerQueue(reqLogger: Logger): Promise<void> {
         reqLogger.info(`Sending work item ${workItem.workItem.id} to queue ${queueUrl}`);
         // must include groupId for FIFO queues, but we don't care about it so just use 'w'
         await queue.sendMessage(json, 'w');
+        queuedCount++;
       } else {
         break;
       }
     }
+    reqLogger.info(`Sent ${queuedCount} work items to queue ${queueUrl}`);
     reqLogger.info('Sending delete message to scheduler queue');
     await schedulerQueue.deleteMessage(queueItem.receipt);
   }
