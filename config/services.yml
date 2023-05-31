@@ -86,6 +86,7 @@ https://cmr.earthdata.nasa.gov:
           STAGING_PATH: public/podaac/l2-subsetter
     umm_s:
       - S1962070864-POCLOUD
+    collections: []
     capabilities:
       subsetting:
         temporal: true
@@ -113,6 +114,7 @@ https://cmr.earthdata.nasa.gov:
           STAGING_PATH: public/podaac/concise
     umm_s:
       - S2153799015-POCLOUD
+    collections: []
     capabilities:
       concatenation: true
       subsetting:
@@ -151,6 +153,7 @@ https://cmr.earthdata.nasa.gov:
           STAGING_PATH: public/podaac/l2-subsetter-concise
     umm_s:
       - S2227193226-POCLOUD
+    collections: []
     capabilities:
       concatenation: true
       subsetting:
@@ -187,6 +190,7 @@ https://cmr.earthdata.nasa.gov:
           STAGING_PATH: public/sds/trajectory-subsetter
     umm_s:
       - S2232210365-ORNL_CLOUD
+    collections: []
     capabilities:
       subsetting:
         temporal: true
@@ -218,6 +222,7 @@ https://cmr.earthdata.nasa.gov:
           STAGING_PATH: public/sds/HOSS-geographic
     umm_s:
       - S2164732315-XYZ_PROV
+    collections: []
     capabilities:
       subsetting:
         temporal: true
@@ -255,6 +260,7 @@ https://cmr.earthdata.nasa.gov:
           STAGING_PATH: public/sds/HOSS-projection-gridded
     umm_s:
       - S2300730272-XYZ_PROV
+    collections: []
     capabilities:
       subsetting:
         temporal: true
@@ -292,6 +298,7 @@ https://cmr.earthdata.nasa.gov:
           STAGING_PATH: public/nasa/harmony-gdal-adapter
     umm_s:
       - S2606110201-XYZ_PROV
+    collections: []
     capabilities:
       subsetting:
         temporal: true
@@ -323,6 +330,7 @@ https://cmr.earthdata.nasa.gov:
           STAGING_PATH: public/harmony/netcdf-to-zarr
     umm_s:
       - S2009180097-POCLOUD
+    collections: []
     maximum_sync_granules: 0
     capabilities:
       concatenation: true
@@ -351,6 +359,7 @@ https://cmr.earthdata.nasa.gov:
           STAGING_PATH: public/harmony/service-example
     umm_s:
       - S2685815868-XYZ_PROV
+    collections: []
     capabilities:
       subsetting:
         bbox: true
@@ -429,6 +438,7 @@ https://cmr.uat.earthdata.nasa.gov:
           STAGING_PATH: public/podaac/l2-subsetter
     umm_s:
       - S1234899453-POCLOUD
+    collections: []
     capabilities:
       subsetting:
         temporal: true
@@ -456,6 +466,7 @@ https://cmr.uat.earthdata.nasa.gov:
           STAGING_PATH: public/podaac/concise
     umm_s:
       - S1242328818-POCLOUD
+    collections: []
     capabilities:
       concatenation: true
       subsetting:
@@ -494,6 +505,7 @@ https://cmr.uat.earthdata.nasa.gov:
           STAGING_PATH: public/podaac/l2-subsetter-concise
     umm_s:
       - S1243671015-POCLOUD
+    collections: []
     capabilities:
       concatenation: true
       subsetting:
@@ -529,6 +541,7 @@ https://cmr.uat.earthdata.nasa.gov:
           STAGING_PATH: public/sds/swot-reproject
     umm_s:
       - S1237974711-EEDTEST
+    collections: []
     capabilities:
       subsetting:
         bbox: false
@@ -554,6 +567,7 @@ https://cmr.uat.earthdata.nasa.gov:
           STAGING_PATH: public/sds/harmony-regridder
     umm_s:
       - S1256563664-EEDTEST
+    collections: []
     capabilities:
       subsetting:
         bbox: false
@@ -582,6 +596,7 @@ https://cmr.uat.earthdata.nasa.gov:
           STAGING_PATH: public/sds/variable-subsetter
     umm_s:
       - S1237976118-EEDTEST
+    collections: []
     capabilities:
       subsetting:
         bbox: false
@@ -609,6 +624,7 @@ https://cmr.uat.earthdata.nasa.gov:
           STAGING_PATH: public/sds/maskfill
     umm_s:
       - S1240151795-EEDTEST
+    collections: []
     capabilities:
       subsetting:
         shape: true
@@ -631,6 +647,7 @@ https://cmr.uat.earthdata.nasa.gov:
           STAGING_PATH: public/sds/trajectory-subsetter
     umm_s:
       - S1242315633-EEDTEST
+    collections: []
     capabilities:
       subsetting:
         temporal: true
@@ -658,6 +675,7 @@ https://cmr.uat.earthdata.nasa.gov:
         url: http://localhost:4000/example/harmony
     umm_s:
       - S1233603903-EEDTEST
+    collections: []
     capabilities:
       subsetting:
         variable: true
@@ -684,6 +702,7 @@ https://cmr.uat.earthdata.nasa.gov:
           STAGING_PATH: public/nasa/harmony-gdal-adapter
     umm_s:
       - S1245787332-EEDTEST
+    collections: []
     capabilities:
       subsetting:
         temporal: true
@@ -716,6 +735,7 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/sds/hybig
+    collections: []
     umm_s:
       - S1257776354-EEDTEST
     capabilities:
@@ -750,6 +770,7 @@ https://cmr.uat.earthdata.nasa.gov:
           STAGING_PATH: public/sds/HOSS-geographic
     umm_s:
       - S1240682712-EEDTEST
+    collections: []
     capabilities:
       subsetting:
         temporal: true
@@ -787,6 +808,7 @@ https://cmr.uat.earthdata.nasa.gov:
           STAGING_PATH: public/sds/HOSS-projection-gridded
     umm_s:
       - S1245117629-EEDTEST
+    collections: []
     capabilities:
       subsetting:
         temporal: true
@@ -820,6 +842,7 @@ https://cmr.uat.earthdata.nasa.gov:
           STAGING_PATH: public/harmony/netcdf-to-zarr
     umm_s:
       - S1237980031-EEDTEST
+    collections: []
     maximum_sync_granules: 0
     capabilities:
       concatenation: true
@@ -859,6 +882,7 @@ https://cmr.uat.earthdata.nasa.gov:
     maximum_sync_granules: 0
     umm_s:
       - S1239265626-EEDTEST
+    collections: []
     capabilities:
       concatenation: true
       concatenate_by_default: false
@@ -902,6 +926,7 @@ https://cmr.uat.earthdata.nasa.gov:
           STAGING_PATH: public/harmony/swot-repr-netcdf-to-zarr
     umm_s:
       - S1240999847-EEDTEST
+    collections: []
     maximum_sync_granules: 0
     capabilities:
       concatenation: true
