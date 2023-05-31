@@ -59,7 +59,6 @@ export function hookProcessSchedulerQueue(): void {
 export function hookGetQueueForType(): void {
   before(function () {
     typeQueues = {};
-    // this.queue = new MemoryQueue();
     stub(qf, 'getQueueForType').callsFake((type: WorkItemQueueType) => {
       if (!typeQueues[type]) {
         typeQueues[type] = new MemoryQueue(type);

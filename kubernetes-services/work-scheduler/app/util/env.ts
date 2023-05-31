@@ -65,6 +65,7 @@ interface HarmonyEnv {
   cmrMaxPageSize: number;
   nodeEnv: string;
   schedulerQueueBatchSize: number;
+  serviceQueueBatchSizeCoefficient: number;
 }
 
 // special cases

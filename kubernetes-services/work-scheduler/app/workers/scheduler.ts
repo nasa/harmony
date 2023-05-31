@@ -35,15 +35,17 @@ export async function processSchedulerQueue(reqLogger: Logger): Promise<void> {
       throw new Error(`No queue found for URL ${queueUrl}`);
     }
 
+    // Get the number of messages in the queue and the number of pods for the service
+    // so we can determine how many work items to send
     const messageCount = await queue.getApproximateNumberOfMessages();
-    console.log(`Found ${messageCount} messages in queue ${queueUrl}`);
     const podCount = await getPodsCountForService(serviceID);
-    console.log(`Found ${podCount} pods for service ${serviceID}`);
 
-    // If there are more pods than messages, we need to send more work. Allow up to 10% more work
-    // than pods to avoid queue starvation
-    const batchSize = Math.floor(1.1 * podCount - messageCount);
+    // If there are more pods than messages, we need to send more work. Allow more work
+    // than pods to avoid queue starvation (env.serviceQueueBatchSizeCoefficient)
+    const batchSize = Math.floor(env.serviceQueueBatchSizeCoefficient * podCount - messageCount);
+    reqLogger.debug(`Attempting to retrieve ${batchSize} work items for queue ${queueUrl}`);
 
+    // TODO - do this as a batch instead of one at a time - HARMONY-1417
     for (let i = 0; i < batchSize; i++) {
       const workItem = await getWorkFromDatabase(serviceID, reqLogger);
       if (workItem) {
