@@ -12,7 +12,8 @@ let typeQueues;
 
 /**
  * Process the scheduler queue. This function is only used for tests since they won't have a
- * scheduler pod running
+ * scheduler pod running. It will read the scheduler queue and send the work items to the
+ * appropriate service queues.
  */
 async function processSchedulerQueue(reqLogger: Logger): Promise<void> {
   const schedulerQueue = qf.getWorkSchedulerQueue();
