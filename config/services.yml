@@ -39,7 +39,7 @@ https://cmr.earthdata.nasa.gov:
           <<: *default-turbo-env
           STAGING_PATH: public/gesdisc/giovanni
     umm_s:
-      - S2623993680-GES_DISC
+      - S2701049693-XYZ_PROV
     collections:
       - id: C1598621093-GES_DISC
         variables:
@@ -382,7 +382,7 @@ https://cmr.uat.earthdata.nasa.gov:
           <<: *default-turbo-env
           STAGING_PATH: public/gesdisc/giovanni
     umm_s:
-      - S1240989350-GES_DISC
+      - S1258119278-EEDTEST
     collections:
       - id: C1225808238-GES_DISC
         variables:
