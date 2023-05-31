@@ -8,9 +8,9 @@ import * as sinon from 'sinon';
 import * as fetch from 'node-fetch';
 import { Stream } from 'form-data';
 import { queryGranules } from '../app/query';
-
 import * as cmr from '../../../app/util/cmr';
 import DataOperation from '../../../app/models/data-operation';
+import { FileStore } from '../../../app/util/object-store/file-store';
 import * as objStore from '../../../app/util/object-store';
 import { CmrError } from '../../../app/util/errors';
 
@@ -79,10 +79,11 @@ function hookQueryGranules(maxCmrGranules = 100): void {
     fetchPost.returns(Promise.resolve(output));
 
     // Stub object-store calls to store/get query params
-    this.store = new objStore.S3ObjectStore();
-    this.uploadStub = sinon.stub(this.store, 'upload');
-    this.downloadStub = sinon.stub(this.store, 'download').returns(Promise.resolve('{"collection_concept_id": "C001-TEST"}'));
+    this.store = new FileStore();
+    // this.uploadStub = sinon.stub(this.store, 'upload');
+    this.downloadStub = sinon.stub(this.store, 'getObject').returns(Promise.resolve('{"collection_concept_id": "C001-TEST"}'));
     this.defaultStoreStub = sinon.stub(objStore, 'defaultObjectStore').returns(this.store);
+    this.protocolStub = sinon.stub(objStore, 'objectStoreForProtocol').returns(this.store);
 
     // Actually call it
     this.result = await queryGranules(operation, 'scrollId', maxCmrGranules);
@@ -93,8 +94,10 @@ function hookQueryGranules(maxCmrGranules = 100): void {
   });
   after(function () {
     this.defaultStoreStub.restore();
-    this.uploadStub.restore();
+    // this.uploadStub.restore();
     this.downloadStub.restore();
+    this.protocolStub.restore();
+
     fetchPost.restore();
     delete this.result;
     delete this.queryFields;
@@ -123,11 +126,22 @@ function hookQueryGranulesWithError(): void {
     // Stub cmr fetchPost to return the contents of queries
     fetchPost = sinon.stub(cmr, 'fetchPost');
     fetchPost.returns(Promise.resolve(output));
+    this.store = new FileStore();
+    // this.uploadStub = sinon.stub(this.store, 'upload');
+    this.downloadStub = sinon.stub(this.store, 'getObject').returns(Promise.resolve('{"collection_concept_id": "C001-TEST"}'));
+    this.defaultStoreStub = sinon.stub(objStore, 'defaultObjectStore').returns(this.store);
+    this.protocolStub = sinon.stub(objStore, 'objectStoreForProtocol').returns(this.store);
   });
   after(function () {
+    this.defaultStoreStub.restore();
+    // this.uploadStub.restore();
+    this.downloadStub.restore();
+    this.protocolStub.restore();
+
     fetchPost.restore();
     delete this.result;
     delete this.queryFields;
+    delete this.store;
   });
 }
 

@@ -1,3 +1,4 @@
+import { FileStore } from './file-store';
 import { ObjectStore } from './object-store';
 import { S3ObjectStore } from './s3-object-store';
 
@@ -27,6 +28,8 @@ export function objectStoreForProtocol(protocol?: string): ObjectStore {
   const normalizedProtocol = protocol.toLowerCase().split(':')[0];
   if (normalizedProtocol === 's3') {
     return new S3ObjectStore({});
+  } else if (normalizedProtocol === 'file') {
+    return new FileStore();
   }
   return null;
 }
