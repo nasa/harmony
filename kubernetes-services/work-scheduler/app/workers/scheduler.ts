@@ -63,7 +63,6 @@ export async function processSchedulerQueue(reqLogger: Logger): Promise<void> {
 
 export default class Scheduler implements Worker {
   async start(repeat = true): Promise<void> {
-    logger.debug(`AWS_ACCESS_KEY_ID: ${process.env.AWS_ACCESS_KEY_ID}`);
     logger.debug('Starting scheduler');
     while (repeat) {
       await processSchedulerQueue(logger);
