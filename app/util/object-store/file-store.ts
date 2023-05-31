@@ -70,6 +70,7 @@ export class FileStore implements ObjectStore {
   }
 
   getObject(paramsOrUrl: string | object): Promise<string> {
+    // console.log(`trying to find object ${paramsOrUrl}`);
     return Promise.resolve(fs.readFileSync(this._getFilename(paramsOrUrl), 'utf8'));
   }
 
@@ -120,12 +121,19 @@ export class FileStore implements ObjectStore {
   async upload(
     stringOrStream: string | NodeJS.ReadableStream,
     paramsOrUrl: string | object,
-    contentLength?: number,
+    _contentLength?: number,
     contentType?: string,
   ): Promise<object> {
+    // console.log(`Attempting to upload ${paramsOrUrl}`);
     const filename = this._getFilename(paramsOrUrl);
+    // console.log(`File name is ${filename}`);
+
     const dirname = path.dirname(filename);
+    // console.log(`Dir name is ${dirname}`);
+
     const dirExists = await this.objectExists(dirname);
+    // console.log(`Dir exists is ${dirExists}`);
+
     if (!dirExists) {
       fs.mkdirSync(dirname, { recursive: true });
     }
@@ -138,6 +146,7 @@ export class FileStore implements ObjectStore {
     if (contentType) {
       fs.writeFileSync(filename + 'content-type', contentType);
     }
+    // console.log(`Wrote file ${filename}`);
     return Promise.resolve({});
   }
 

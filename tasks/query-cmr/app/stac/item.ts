@@ -1,4 +1,3 @@
-import aws from 'aws-sdk';
 import { strict as assert } from 'assert';
 import { v4 as uuid } from 'uuid';
 import { StacLink, StacAsset, StacItem } from './types';
@@ -49,7 +48,7 @@ export default class Item implements StacItem {
    * @param fileUrl - the full path to the file where this item should be written
    * @param pretty - whether to pretty-format the JSON
    */
-  async write(fileUrl: string, pretty = false): Promise<aws.S3.ManagedUpload.SendData> {
+  async write(fileUrl: string, pretty = false): Promise<object> {
     const s3 = objectStoreForProtocol('s3');
     const json = pretty ? JSON.stringify(this, null, 2) : JSON.stringify(this);
     return s3.upload(json, fileUrl, null, 'application/json');
