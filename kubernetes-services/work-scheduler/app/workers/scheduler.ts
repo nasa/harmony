@@ -70,7 +70,11 @@ export default class Scheduler implements Worker {
   async start(repeat = true): Promise<void> {
     logger.debug('Starting scheduler');
     while (repeat) {
-      await processSchedulerQueue(logger);
+      try {
+        await processSchedulerQueue(logger);
+      } catch (e) {
+        logger.error(e);
+      }
     }
   }
 }
