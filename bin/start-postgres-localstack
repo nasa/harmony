@@ -108,6 +108,9 @@ kubectl -n harmony create configmap localstack-config --from-literal=startup.py=
 
 kubectl apply -n harmony -f ./config/local-postgres-localstack-deployment.yml
 
+# run the database migrations for postgres
+NODE_ENV=production DATABASE_URL=postgresql://postgres:password@localhost:5432  npx knex --cwd db migrate:latest
+
 [[ $USE_LOCALSTACK = 'true' ]] && s3_endpoint="localstack:4572" || s3_endpoint="s3.amazonaws.com"
 
 
