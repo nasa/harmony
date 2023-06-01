@@ -1,9 +1,3 @@
-import { Response } from 'express';
-import { mergeParameters } from './parameter-parsing-helpers';
-import * as urlUtil from './url';
-import HarmonyRequest from '../models/harmony-request';
-import { get } from 'lodash';
-
 /**
  * This module provides functions to support setting cookies associated with the
  * redirect to Earth Data Login.
@@ -12,6 +6,12 @@ import { get } from 'lodash';
  * same signature, taking a request argument and returning a tuple
  * containing the cookie name, value, and options.
  */
+
+import { Response } from 'express';
+import { mergeParameters } from './parameter-parsing-helpers';
+import * as urlUtil from './url';
+import HarmonyRequest from '../models/harmony-request';
+import { get } from 'lodash';
 
 export const cookieOptions = { signed: true, sameSite: 'Lax' };
 
@@ -24,7 +24,6 @@ export const cookieOptions = { signed: true, sameSite: 'Lax' };
 function _shapefile(req: HarmonyRequest): string[] {
   // if a shapefile was uploaded set a cookie with a url for the shapefile and
   // the other POST form parameters
-  // console.log(`CDD - files are ${req.files}`);
   const shapefile = get(req, 'files.shapefile[0]') || get(req, 'file');
   if (!shapefile) return [];
 
