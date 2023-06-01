@@ -4,7 +4,7 @@ import * as yaml from 'js-yaml';
 import _, { get as getIn, partial } from 'lodash';
 
 import logger from '../../util/log';
-import { NotFoundError, RequestValidationError } from '../../util/errors';
+import { NotFoundError, ServerError } from '../../util/errors';
 import { isMimeTypeAccepted, allowsAny } from '../../util/content-negotiation';
 import { CmrCollection } from '../../util/cmr';
 import { addCollectionsToServicesByAssociation } from '../../middleware/service-selection';
@@ -40,10 +40,11 @@ function parseEnvironmentDirective(envDirective: string): string | number {
 
 /**
  * Loads the services configuration from the given file.
+ * @param cmrEndpoint - The CMR endpoint url
  * @param fileName - The path to the services configuation file
  * @returns the parsed services configuration
  */
-export function loadServiceConfigsFromFile(fileName: string): ServiceConfig<unknown>[] {
+export function loadServiceConfigsFromFile(cmrEndpoint: string, fileName: string): ServiceConfig<unknown>[] {
   // Setup a type, !Env, that when placed in front of a string resolves substrings like
   // "${some_env_var}" to the corresponding environment variable
   const EnvType = new yaml.Type('!Env', {
@@ -58,16 +59,18 @@ export function loadServiceConfigsFromFile(fileName: string): ServiceConfig<unkn
     : fs.readFileSync(path.join(__dirname, fileName));
   const schema = yaml.DEFAULT_SCHEMA.extend([EnvType]);
   const envConfigs = yaml.load(buffer.toString(), { schema });
-  const configs = envConfigs[env.cmrEndpoint]
+  const configs = envConfigs[cmrEndpoint]
     .filter((config) => config.enabled !== false && config.enabled !== 'false');
   return configs;
 }
 
 /**
  * Loads the services configuration file.
+ * @param cmrEndpoint - The CMR endpoint url
+ * @returns the parsed services configuration
  */
-function loadServiceConfigs(): void {
-  serviceConfigs = loadServiceConfigsFromFile('../../../config/services.yml');
+export function loadServiceConfigs(cmrEndpoint: string): ServiceConfig<unknown>[] {
+  return loadServiceConfigsFromFile(cmrEndpoint, '../../../config/services.yml');
 }
 
 /**
@@ -99,7 +102,7 @@ function validateServiceConfigSteps(config: ServiceConfig<unknown>): void {
  */
 export function validateServiceConfig(config: ServiceConfig<unknown>): void {
   if (config.umm_s === undefined || typeof config.umm_s !== 'string') {
-    throw new RequestValidationError(`There must be one and only one umm_s record configured as a string for harmony service: ${config.name}`);
+    throw new ServerError(`There must be one and only one umm_s record configured as a string for harmony service: ${config.name}`);
   }
 
   validateServiceConfigSteps(config);
@@ -116,7 +119,7 @@ export function getServiceConfigs(): ServiceConfig<unknown>[] {
 }
 
 // Load config at require-time to ensure presence / validity early
-loadServiceConfigs();
+serviceConfigs = loadServiceConfigs(env.cmrEndpoint);
 serviceConfigs.forEach(validateServiceConfig);
 export const serviceNames = serviceConfigs.map((c) => c.name);
 
