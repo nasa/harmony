@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
-/* eslint-disable  node/no-unpublished-require */
+/* eslint-disable node/no-unpublished-require */
 import fs from 'fs';
 import path from 'path';
 import chai, { expect } from 'chai';
@@ -11,7 +11,6 @@ import { queryGranules } from '../app/query';
 import * as cmr from '../../../app/util/cmr';
 import DataOperation from '../../../app/models/data-operation';
 import { FileStore } from '../../../app/util/object-store/file-store';
-import * as objStore from '../../../app/util/object-store';
 import { CmrError } from '../../../app/util/errors';
 
 chai.use(require('chai-as-promised'));
@@ -77,13 +76,7 @@ function hookQueryGranules(maxCmrGranules = 100): void {
     // Stub cmr fetch post to return the contents of queries
     fetchPost = sinon.stub(cmr, 'fetchPost');
     fetchPost.returns(Promise.resolve(output));
-
-    // Stub object-store calls to store/get query params
-    this.store = new FileStore();
-    // this.uploadStub = sinon.stub(this.store, 'upload');
-    this.downloadStub = sinon.stub(this.store, 'getObject').returns(Promise.resolve('{"collection_concept_id": "C001-TEST"}'));
-    this.defaultStoreStub = sinon.stub(objStore, 'defaultObjectStore').returns(this.store);
-    this.protocolStub = sinon.stub(objStore, 'objectStoreForProtocol').returns(this.store);
+    this.downloadStub = sinon.stub(FileStore.prototype, 'getObject').returns(Promise.resolve('{"collection_concept_id": "C001-TEST"}'));
 
     // Actually call it
     this.result = await queryGranules(operation, 'scrollId', maxCmrGranules);
@@ -93,15 +86,11 @@ function hookQueryGranules(maxCmrGranules = 100): void {
     this.queryFields = this.queryFields.sort((a, b) => a._index - b._index);
   });
   after(function () {
-    this.defaultStoreStub.restore();
-    // this.uploadStub.restore();
     this.downloadStub.restore();
-    this.protocolStub.restore();
 
     fetchPost.restore();
     delete this.result;
     delete this.queryFields;
-    delete this.store;
   });
 }
 
@@ -126,22 +115,9 @@ function hookQueryGranulesWithError(): void {
     // Stub cmr fetchPost to return the contents of queries
     fetchPost = sinon.stub(cmr, 'fetchPost');
     fetchPost.returns(Promise.resolve(output));
-    this.store = new FileStore();
-    // this.uploadStub = sinon.stub(this.store, 'upload');
-    this.downloadStub = sinon.stub(this.store, 'getObject').returns(Promise.resolve('{"collection_concept_id": "C001-TEST"}'));
-    this.defaultStoreStub = sinon.stub(objStore, 'defaultObjectStore').returns(this.store);
-    this.protocolStub = sinon.stub(objStore, 'objectStoreForProtocol').returns(this.store);
   });
   after(function () {
-    this.defaultStoreStub.restore();
-    // this.uploadStub.restore();
-    this.downloadStub.restore();
-    this.protocolStub.restore();
-
     fetchPost.restore();
-    delete this.result;
-    delete this.queryFields;
-    delete this.store;
   });
 }
 

@@ -4,11 +4,9 @@ import { describe, it } from 'mocha';
 import { hookDoWork } from './helpers/work';
 import CmrStacCatalog from '../app/stac/cmr-catalog';
 import { resolve } from '../../../app/util/url';
-import { hookMockS3 } from '../../../test/helpers/object-store';
-import { defaultObjectStore } from '@harmony/util/object-store';
+import { defaultObjectStore } from '../../../app/util/object-store';
 
 describe('doWork', function () {
-  hookMockS3();
   describe('main', function () {
     describe('when the output directory exists', function () {
       const totalItemsSize = 1.0;
