@@ -83,10 +83,10 @@ import env from '../../app/util/env';
 // shapefileUploadStub.callsFake(shapefileUploadMock);
 
 // Override using S3 in tests
-const dir = tmp.dirSync({ unsafeCleanup: true });
-const fileStore = new FileStore(dir.name);
-stub(objectStore, 'defaultObjectStore').callsFake(() => fileStore);
-stub(objectStore, 'objectStoreForProtocol').callsFake(() => fileStore);
+// const dir = tmp.dirSync({ unsafeCleanup: true });
+// const fileStore = new FileStore(dir.name);
+// stub(objectStore, 'defaultObjectStore').callsFake(() => fileStore);
+// stub(objectStore, 'objectStoreForProtocol').callsFake(() => fileStore);
 
 // Override multer middleware
 /**
@@ -138,32 +138,30 @@ stub(shapefileUpload, 'default').callsFake(() => shapefileUploadMock());
 // });
 
 
+
 /**
  * Causes calls to aws.S3 to return a mock S3 object that stores to a temp dir on the
  * local filesystem.
- *
- * @param _buckets - An optional list of buckets to create in the mock S3 (not implemented
- * yet)
  */
-// export function hookMockS3(_buckets?: string[]): void {
-// let dir;
-// let stubDefaultObjectStore;
-// let stubObjectStoreForProtocol;
-// let fileStore;
-// before(function () {
-//   dir = tmp.dirSync({ unsafeCleanup: true });
-//   fileStore = new FileStore(dir);
+export function hookMockS3(): void {
+  let stubDefaultObjectStore;
+  let stubObjectStoreForProtocol;
+  let dir;
+  let fileStore;
 
-//   stubDefaultObjectStore = stub(objectStore, 'defaultObjectStore').callsFake(() => fileStore);
-//   stubObjectStoreForProtocol = stub(objectStore, 'objectStoreForProtocol').callsFake(() => fileStore);
-// });
+  before(function () {
+    dir = tmp.dirSync({ unsafeCleanup: true });
+    fileStore = new FileStore(dir.name);
+    stubDefaultObjectStore = stub(objectStore, 'defaultObjectStore').callsFake(() => fileStore);
+    stubObjectStoreForProtocol = stub(objectStore, 'objectStoreForProtocol').callsFake(() => fileStore);
+  });
 
-// after(function () {
-//   stubDefaultObjectStore.restore();
-//   stubObjectStoreForProtocol.restore();
-//   dir.removeCallback();
-// });
-// }
+  after(function () {
+    stubDefaultObjectStore.restore();
+    stubObjectStoreForProtocol.restore();
+    dir.removeCallback();
+  });
+}
 
 /**
  * Adds before / after hooks to GetBucketRegion

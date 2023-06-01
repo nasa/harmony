@@ -72,7 +72,6 @@ export class S3ObjectStore implements ObjectStore {
         ...overrides,
       };
     } else {
-
       config = {
         apiVersion: '2006-03-01',
         region: awsDefaultRegion,
