@@ -1,5 +1,4 @@
 import { getSignedUrl, S3RequestPresigner, S3RequestPresignerOptions } from '@aws-sdk/s3-request-presigner';
-
 import { HttpRequest } from '@aws-sdk/protocol-http';
 import { parseUrl } from '@aws-sdk/url-parser';
 import { Hash } from '@aws-sdk/hash-node';
@@ -113,24 +112,14 @@ export class S3ObjectStore implements ObjectStore {
       QueryParameters: params,
     };
 
-    console.log(`CDD: Object is ${JSON.stringify(object)}`);
     // Verifies that the object exists, or throws NotFound
     await this.s3.send(new HeadObjectCommand(object));
-
-    console.log('CDD - head command worked');
-
     const req = new GetObjectCommand(object);
-    console.log('REQ OLD: ', req.input);
-
     const signedUrl = await getSignedUrl(this.s3, req, { expiresIn: 3600 });
-    console.log('OLD SIGNED URL', signedUrl);
-
     const baseUrl = signedUrl.substring(0, signedUrl.indexOf('?'));
     const urlToSign = parseUrl(baseUrl);
     urlToSign.query = params;
     const urlNew = await presigner.presign(new HttpRequest(urlToSign), { expiresIn: 3600 });
-    console.log('PRESIGNED URL: ', formatUrl(urlNew));
-
 
     return formatUrl(urlNew);
   }
@@ -367,8 +356,6 @@ export class S3ObjectStore implements ObjectStore {
     }
 
     const putObjectCommand = new PutObjectCommand(params);
-    console.log(`This.s3 is ${JSON.stringify(this.s3)}`);
-
     const response = await this.s3.send(putObjectCommand);
 
     return response;

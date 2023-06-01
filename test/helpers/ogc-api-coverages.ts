@@ -25,7 +25,6 @@ interface QueryOptions {
  * @returns the unsigned cookie value
  */
 export function stripSignature(value: string): string {
-  console.log(`strip signature for ${value}`);
   let m = value.match(/^s:j:(.*)\..*$/);
   if (m) {
     return JSON.parse(m[1]);
@@ -46,7 +45,6 @@ export function stripSignature(value: string): string {
  * @returns The unencoded cookie string
  */
 function cookieValue(encodedValue: string, key: string): string {
-  console.log(`CDD - cookie value for ${key}, ${encodedValue}`);
   const decoded = decodeURIComponent(encodedValue);
   const parsed = parse(decoded);
   return stripSignature(parsed[key]);

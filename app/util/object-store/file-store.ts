@@ -1,3 +1,7 @@
+/**
+ * This file adds an implementation of the ObjectStore protocol for saving files to a local
+ * file system as opposed to S3. It is currently used to replace S3 interactions in tests.
+ */
 import { HeadObjectResponse, MulterFile, ObjectStore } from './object-store';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -8,15 +12,16 @@ import * as util from 'util';
 const pipeline = util.promisify(stream.pipeline);
 
 /**
- * Class to use when interacting with files instead of S3. Used for testing.
- *
+ * Class to use when interacting with files instead of S3. Used for testing, but could also
+ * be used in place of an S3 store for the harmony application if it was running only one
+ * frontend instance.
  */
 export class FileStore implements ObjectStore {
 
   fileStoreRoot;
 
   /**
-   * Builds and returns an file store
+   * Builds and returns a file store object
    *
    * @param root - root directory to store files
    */
@@ -30,34 +35,8 @@ export class FileStore implements ObjectStore {
    * @returns
    */
   _getFilename(paramsOrUrl): string {
-    // s3://local-artifact-bucket/harmony-inputs/query/8506b5cb-0a61-4796-8cdf-9944a4c72bc3/query00000.json
-    // let fileName = paramsOrUrl;
-    // if (paramsOrUrl.startsWith('s3://')) {
-    //   fileName = fileName.replace('s3://', this.fileStoreRoot + '/');
-    // }
-    // return fileName;
-    // console.log(`Passed in filename was ${paramsOrUrl}`);
     return paramsOrUrl.replace('s3://', `${this.fileStoreRoot}/`);
   }
-
-  /**
-   * Returns the filename represented by the passed in parameters
-   * @param paramsOrUrl - a map of parameters (Bucket, Key) or a string URL
-   * @returns
-   */
-  // _getFilename2(paramsOrUrl, contentType?): string {
-  //   // s3://local-artifact-bucket/harmony-inputs/query/8506b5cb-0a61-4796-8cdf-9944a4c72bc3/query00000.json
-  //   // let fileName = paramsOrUrl;
-  //   // if (paramsOrUrl.startsWith('s3://')) {
-  //   //   fileName = fileName.replace('s3://', this.fileStoreRoot + '/');
-  //   // }
-  //   // return fileName;
-  //   let filename: string = paramsOrUrl.replace('s3://', `${this.fileStoreRoot}/`);
-  //   if (contentType) {
-  //     filename = filename.concat(encodeURIComponent(`ct-${contentType}`));
-  //   }
-  //   return filename;
-  // }
 
   signGetObject(objectUrl: string, params: { [key: string]: string }): Promise<string> {
     let signedUrl = objectUrl;
@@ -70,7 +49,6 @@ export class FileStore implements ObjectStore {
   }
 
   getObject(paramsOrUrl: string | object): Promise<string> {
-    // console.log(`trying to find object ${paramsOrUrl}`);
     return Promise.resolve(fs.readFileSync(this._getFilename(paramsOrUrl), 'utf8'));
   }
 
@@ -81,7 +59,6 @@ export class FileStore implements ObjectStore {
 
   listObjectKeys(paramsOrUrl: string | object): Promise<string[]> {
     try {
-      console.log(`Getting files in directory ${paramsOrUrl}`);
       const files = fs.readdirSync(this._getFilename(paramsOrUrl));
       return Promise.resolve(files);
     } catch (e) {
@@ -129,15 +106,9 @@ export class FileStore implements ObjectStore {
     _contentLength?: number,
     contentType?: string,
   ): Promise<object> {
-    // console.log(`Attempting to upload ${paramsOrUrl}`);
     const filename = this._getFilename(paramsOrUrl);
-    // console.log(`File name is ${filename}`);
-
     const dirname = path.dirname(filename);
-    // console.log(`Dir name is ${dirname}`);
-
     const dirExists = await this.objectExists(dirname);
-    // console.log(`Dir exists is ${dirExists}`);
 
     if (!dirExists) {
       fs.mkdirSync(dirname, { recursive: true });
@@ -151,7 +122,6 @@ export class FileStore implements ObjectStore {
     if (contentType) {
       fs.writeFileSync(filename + 'content-type', contentType);
     }
-    // console.log(`Wrote file ${filename}`);
     return Promise.resolve({});
   }
 
@@ -169,6 +139,7 @@ export class FileStore implements ObjectStore {
   }
 
   changeOwnership(_paramsOrUrl: string | object): Promise<void> {
+    // Not implemented
     return Promise.resolve();
   }
 }

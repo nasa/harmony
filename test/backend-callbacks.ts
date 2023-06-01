@@ -1,7 +1,6 @@
 import { describe, it, beforeEach, after } from 'mocha';
 import { expect } from 'chai';
 import request from 'supertest';
-// import { stub, SinonStub } from 'sinon';
 import { HTTPError } from 'superagent';
 import { Job, JobStatus } from '../app/models/job';
 import JobLink from '../app/models/job-link';
@@ -20,16 +19,6 @@ describe('Backend Callbacks', function () {
   const href = 'https://example.com/foo';
 
   hookServersStartStop();
-
-  // beforeEach(function () {
-  //   // Avoid signing objects, which mock-aws-s3 cannot do the way we need it to
-  //   stub(S3ObjectStore.prototype, 'signGetObject')
-  //     .callsFake(async (s3Uri) => `signed+${s3Uri}`);
-  // });
-
-  // afterEach(function () {
-  //   (S3ObjectStore.prototype.signGetObject as SinonStub).restore();
-  // });
 
   beforeEach(truncateAll);
   after(truncateAll);
