@@ -1,3 +1,11 @@
+/**
+ * The object store protocol is an implementation that wraps many common AWS S3
+ * functions into our own API. By doing this code does not need to be changed
+ * in order to interact with something other than S3 for object (file) storage.
+ * We have two implementations of this protocol right now - S3ObjectStore and
+ * FileStore.
+ */
+
 export interface HeadObjectResponse {
   contentLength: number;
   contentType?: string;

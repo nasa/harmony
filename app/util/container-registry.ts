@@ -39,7 +39,7 @@ export class ECR {
 
   /**
    * Returns image information from ECR for the given image repository and tag.
-   * @param repository - the image repository (e.g., harmonyservices/service-example)
+   * @param repository - the image repository (e.g. harmonyservices/service-example)
    * @param tag - the image tag
    */
   async describeImage(repository: string, tag: string): Promise<ImageDetails> {
@@ -59,8 +59,7 @@ export class ECR {
 }
 
 /**
- * Returns the default container registry for this instance of Harmony. Allows requesting a
- * container registry without first knowing the protocol.
+ * Returns the default container registry for this instance of Harmony.
  *
  * @returns the default container registry for Harmony.
  */
