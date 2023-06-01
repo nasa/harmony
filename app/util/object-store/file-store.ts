@@ -80,8 +80,13 @@ export class FileStore implements ObjectStore {
   }
 
   listObjectKeys(paramsOrUrl: string | object): Promise<string[]> {
-    const files = fs.readdirSync(this._getFilename(paramsOrUrl));
-    return Promise.resolve(files);
+    try {
+      console.log(`Getting files in directory ${paramsOrUrl}`);
+      const files = fs.readdirSync(this._getFilename(paramsOrUrl));
+      return Promise.resolve(files);
+    } catch (e) {
+      return Promise.resolve([]);
+    }
   }
 
   async headObject(paramsOrUrl: string | object): Promise<HeadObjectResponse> {

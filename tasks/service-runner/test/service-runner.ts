@@ -139,18 +139,17 @@ describe('Service Runner', function () {
         workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date() };
       const itemRecord1: WorkItemRecord = { id: 1, jobID: '123', serviceID: '', sortIndex: 0,
         workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date() };
-      const s3 = objectStoreForProtocol('s3');
       before(async function () {
         // One of the items will have its log file written to twice
         await uploadLogs(itemRecord0, ['the old logs']);
         itemRecord0.retryCount = 1; // simulate a retry
         await uploadLogs(itemRecord0, ['the new logs']);
-
         await uploadLogs(itemRecord1, ['the only logs']);
       });
       describe('when there is a logs file already associated with the WorkItem', async function () {
         it('appends the new logs to the old ones', async function () {
           const logsLocation0 = getItemLogsLocation(itemRecord0);
+          const s3 = objectStoreForProtocol('s3');
           const logs = await s3.getObjectJson(logsLocation0);
           expect(logs).to.deep.equal([
             'Start of service execution (retryCount=0, id=0)',
@@ -163,6 +162,7 @@ describe('Service Runner', function () {
       describe('when there is no logs file associated with the WorkItem', async function () {
         it('writes the logs to a new file', async function () {
           const logsLocation1 = getItemLogsLocation(itemRecord1);
+          const s3 = objectStoreForProtocol('s3');
           const logs = await s3.getObjectJson(logsLocation1);
           expect(logs).to.deep.equal([
             'Start of service execution (retryCount=0, id=1)',
@@ -176,7 +176,6 @@ describe('Service Runner', function () {
         workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date() };
       const itemRecord1: WorkItemRecord = { id: 3, jobID: '123', serviceID: '', sortIndex: 0,
         workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date() };
-      const s3 = objectStoreForProtocol('s3');
       before(async function () {
         // One of the items will have its log file written to twice
         await uploadLogs(itemRecord0, [{ message: 'the old logs' }]);
@@ -188,6 +187,7 @@ describe('Service Runner', function () {
       describe('when there is a logs file already associated with the WorkItem', async function () {
         it('appends the new logs to the old ones', async function () {
           const logsLocation0 = getItemLogsLocation(itemRecord0);
+          const s3 = objectStoreForProtocol('s3');
           const logs = await s3.getObjectJson(logsLocation0);
           expect(logs).to.deep.equal([
             { message: 'Start of service execution (retryCount=0, id=2)' },
@@ -200,6 +200,7 @@ describe('Service Runner', function () {
       describe('when there is no logs file associated with the WorkItem', async function () {
         it('writes the logs to a new file', async function () {
           const logsLocation1 = getItemLogsLocation(itemRecord1);
+          const s3 = objectStoreForProtocol('s3');
           const logs = await s3.getObjectJson(logsLocation1);
           expect(logs).to.deep.equal([
             { message: 'Start of service execution (retryCount=0, id=3)' },
@@ -220,9 +221,12 @@ describe('Service Runner', function () {
       await s3.upload(errorJson, catalogUrl, null, 'application/json');
     });
     describe('when the directory has catalogs', async function () {
-      it('returns the list of catalogs', async function () {
+      it('returns the list of catalogs and captures the content type', async function () {
         const files = await _getStacCatalogs(nonEmptyCatalogUrl);
-        expect(files).to.eql(['s3://stac-catalogs/some/catalog0.json']);
+        expect(files).to.eql([
+          's3://stac-catalogs/catalog0.json',
+          's3://stac-catalogs/catalog0.jsoncontent-type',
+        ]);
       });
     });
 
