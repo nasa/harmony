@@ -455,7 +455,7 @@ async function createNextWorkItems(
       // NOTE: This is only valid if the work-items for this multi-output step are worked
       // sequentially, as with query-cmr. If they are worked in parallel then we need a
       // different approach.
-      let { sortIndex } = workItem;
+      let sortIndex = workItem.sortIndex - 1;
       if (results.length > 1) {
         sortIndex = await maxSortIndexForJobService(tx, nextWorkflowStep.jobID, nextWorkflowStep.serviceID);
       }
