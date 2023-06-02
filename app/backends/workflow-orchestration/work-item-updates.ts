@@ -453,8 +453,8 @@ async function createNextWorkItems(
       // use the sort index from the previous step's work item unless the service was
       // query-cmr, in which case we start from the previous highest sort index for this step
       // NOTE: This is only valid if the work-items for this multi-output step are worked
-      // sequentially, as with query-cmr. If they are worked in parallel then we need a
-      // different approach.
+      // sequentially and have consistently ordered outputs, as with query-cmr.
+      // If they are worked in parallel then we need a different approach.
       let { sortIndex } = workItem;
       let shouldIncrementSortIndex = false;
       if (QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)) {
