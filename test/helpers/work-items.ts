@@ -194,9 +194,9 @@ export const hookGetWorkForService = hookBackendRequest.bind(this, getWorkForSer
  *
  * @param jobID - the job ID to which the STAC items belong
  * @param workItemID - the ID of the work item that generated the STAC items
- * @param granuleCount - the number of granular outputs
+ * @param granuleCount - the number of granule outputs
  * @param dataLinkCount - the number of data links to put in the STAC item
- * @param useParent - Whether the STAC Output should use a parent catalog like the CMR task
+ * @param useParent - whether the STAC Output should use a parent catalog like the CMR task
  */
 export async function fakeServiceStacOutput(
   jobID: string,
