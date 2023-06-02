@@ -16,6 +16,10 @@ export class SqsQueue extends Queue {
       this.sqs = new AWS.SQS({
         endpoint: `http://${env.localstackHost}:4566`,
         region: env.awsDefaultRegion,
+        credentials: {
+          accessKeyId: 'LOCALSTACK',
+          secretAccessKey: 'LOCALSTACK',
+        },
       });
     } else {
       this.sqs = new AWS.SQS({
