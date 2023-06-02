@@ -450,17 +450,21 @@ async function createNextWorkItems(
     } else {
       // Create a new work item for each result using the next step
 
-      // use the sort index from the previous step's work item unless we have more than one
-      // result, in which case we start from the previous highest sort index for this step
+      // use the sort index from the previous step's work item unless the service was
+      // query-cmr, in which case we start from the previous highest sort index for this step
       // NOTE: This is only valid if the work-items for this multi-output step are worked
       // sequentially, as with query-cmr. If they are worked in parallel then we need a
       // different approach.
-      let sortIndex = workItem.sortIndex - 1;
+      let { sortIndex } = workItem;
+      let shouldIncrementSortIndex = false;
       if (QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)) {
+        shouldIncrementSortIndex = true;
         sortIndex = await maxSortIndexForJobService(tx, nextWorkflowStep.jobID, nextWorkflowStep.serviceID);
       }
       const newItems = results.map(result => {
-        sortIndex += 1;
+        if (shouldIncrementSortIndex) {
+          sortIndex += 1;
+        }
         return new WorkItem({
           jobID: workItem.jobID,
           serviceID: nextWorkflowStep.serviceID,
