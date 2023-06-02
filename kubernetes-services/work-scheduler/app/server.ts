@@ -6,11 +6,10 @@ import { Server } from 'http';
 import Scheduler from './workers/scheduler';
 
 /**
- *
- * @param config - The configuration Record from the environment variables
+ * Start the application
  * @returns An object containing the running components
  */
-export default function start(_config: Record<string, string>): Server {
+export default function start(): Server {
 
   // start the scheduler
   const scheduler = new Scheduler();
@@ -30,5 +29,5 @@ export default function start(_config: Record<string, string>): Server {
 }
 
 if (require.main === module) {
-  start(process.env);
+  start();
 }
