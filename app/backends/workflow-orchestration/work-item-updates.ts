@@ -456,7 +456,7 @@ async function createNextWorkItems(
       // sequentially, as with query-cmr. If they are worked in parallel then we need a
       // different approach.
       let sortIndex = workItem.sortIndex - 1;
-      if (results.length > 1) {
+      if (QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)) {
         sortIndex = await maxSortIndexForJobService(tx, nextWorkflowStep.jobID, nextWorkflowStep.serviceID);
       }
       const newItems = results.map(result => {
