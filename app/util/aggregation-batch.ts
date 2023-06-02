@@ -264,7 +264,7 @@ export async function handleBatching(
   }
 
   // Create new batch items for the STAC items in the results. This looping only works for
-  // query-cmr (currently) because query-cmr items do not have sort indices and so we can
+  // query-cmr (currently) because query-cmr items do not impart their sort indices and so we can
   // just increment the sort index by 1 for each item returned. If an intermediate step has
   // a sort index and can produce multiple outputs from a single work item we'll need to
   // change this logic.
