@@ -1286,4 +1286,118 @@ describe('when testing a batched aggregation service', function () {
       });
     }
   });
+ 
+  describe('with maxResults=1 in a service chain', function () {
+    let sizeOfObjectStub;
+    let batchSizeStub;
+    let pageStub;
+
+    before(function () {
+      pageStub = stub(env, 'cmrMaxPageSize').get(() => 2);
+      batchSizeStub = stub(env, 'maxBatchInputs').get(() => 2);
+      sizeOfObjectStub = stub(aggregationBatch, 'sizeOfObject')
+        .callsFake(async (_) => 1);
+    });
+    after(function () {
+      if (pageStub.restore) {
+        pageStub.restore();
+      }
+      if (batchSizeStub.restore) {
+        batchSizeStub.restore();
+      }
+      if (sizeOfObjectStub.restore) {
+        sizeOfObjectStub.restore();
+      }
+    });
+    
+    describe('when submitting a request for l2ss-concise', function () {
+      const l2ssCollection = 'C1234208438-POCLOUD';
+      const l2ssConciseQuery = {
+        subset: 'lat(0:90)',
+        concatenate: true,
+        maxResults: 1,
+        forceAsync: true,
+      };
+
+      before(async function () {
+        await truncateAll();
+      });
+
+      hookRangesetRequest('1.0.0', l2ssCollection, 'all', { query: l2ssConciseQuery, username: 'joe' });
+      hookRedirect('joe');
+
+      it('generates a workflow with 3 steps', async function () {
+        const job = JSON.parse(this.res.text);
+        const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
+
+        expect(workflowSteps.length).to.equal(3);
+      });
+
+      it('starts with the query-cmr task', async function () {
+        const job = JSON.parse(this.res.text);
+        const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
+
+        expect(workflowSteps[0].serviceID).to.equal('harmonyservices/query-cmr:latest');
+      });
+
+      it('then requests subsetting using l2ss', async function () {
+        const job = JSON.parse(this.res.text);
+        const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
+
+        expect(workflowSteps[1].serviceID).to.equal('ghcr.io/podaac/l2ss-py:sit');
+      });
+
+      it('then requests aggregation using concise', async function () {
+        const job = JSON.parse(this.res.text);
+        const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
+
+        expect(workflowSteps[2].serviceID).to.equal('ghcr.io/podaac/concise:sit');
+      });
+  
+    });
+    describe('when checking for a query-cmr work item', function () {
+      it('finds the item and can complete it', async function () {
+        const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+        expect(res.status).to.equal(200);
+        const { workItem, maxCmrGranules } = JSON.parse(res.text);
+        expect(maxCmrGranules).to.equal(1);
+        expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:latest');
+        workItem.status = WorkItemStatus.SUCCESSFUL;
+        workItem.results = [
+          getStacLocation(workItem, 'catalog0.json'),
+        ];
+        workItem.outputItemSizes = [1];
+        await fakeServiceStacOutput(workItem.jobID, workItem.id, 1, 1, true);
+        await updateWorkItem(this.backend, workItem);
+      });
+    });
+
+    describe('when checking to see if an l2ss-py work item is queued', function () {
+      it('finds an l2ss-py work item and can complete it', async function () {
+        const res = await getWorkForService(this.backend, 'ghcr.io/podaac/l2ss-py:sit');
+        expect(res.status).to.equal(200);
+        const { workItem } = JSON.parse(res.text);
+        workItem.status = WorkItemStatus.SUCCESSFUL;
+        workItem.results = [getStacLocation(workItem, 'catalog.json')];
+        workItem.outputItemSizes = [1];
+        await fakeServiceStacOutput(workItem.jobID, workItem.id, 1, 1);
+        await updateWorkItem(this.backend, workItem);
+        expect(workItem.serviceID).to.equal('ghcr.io/podaac/l2ss-py:sit');
+      });
+    });
+
+    describe('when checking to see if a concise work item is queued', function () {
+      it('finds a concise work item and can complete it', async function () {
+        const res = await getWorkForService(this.backend, 'ghcr.io/podaac/concise:sit');
+        expect(res.status).to.equal(200);
+        const { workItem } = JSON.parse(res.text);
+        workItem.status = WorkItemStatus.SUCCESSFUL;
+        workItem.results = [getStacLocation(workItem, 'catalog.json')];
+        workItem.outputItemSizes = [1];
+        await fakeServiceStacOutput(workItem.jobID, workItem.id, 1, 1);
+        await updateWorkItem(this.backend, workItem);
+        expect(workItem.serviceID).to.equal('ghcr.io/podaac/concise:sit');
+      });
+    });
+  });
 });
