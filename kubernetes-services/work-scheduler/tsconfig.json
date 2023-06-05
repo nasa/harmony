@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-      "types": ["node"],
       "module": "commonjs",
       "baseUrl": ".",
       "moduleResolution": "node",
@@ -11,6 +10,5 @@
       "sourceMap": true,
       "outDir": "built"
   },
-  "typeRoots": ["./node_modules/@types"],
   "include": ["./app", "./test"]
 }
