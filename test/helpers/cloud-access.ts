@@ -1,9 +1,9 @@
 import request from 'supertest';
 import { readFileSync } from 'fs';
 import { stub } from 'sinon';
-import { AssumeRoleResponse } from 'aws-sdk/clients/sts';
 import { hookRequest } from './hooks';
 import sts from '../../app/util/sts';
+import { AssumeRoleCommandOutput } from '@aws-sdk/client-sts';
 
 /**
  * Makes a cloud-access JSON request
@@ -41,12 +41,12 @@ export const sampleCloudAccessJsonResponse = {
  * @param response - The response to return when assumeRole is called
  */
 export function hookStubAssumeRole(
-  response: AssumeRoleResponse = sampleCloudAccessJsonResponse,
+  response = sampleCloudAccessJsonResponse,
 ): void {
   let assumeRoleStub;
   before(async function () {
     assumeRoleStub = stub(sts.prototype, 'assumeRole')
-      .callsFake(async () => response);
+      .callsFake(async () => response as AssumeRoleCommandOutput);
   });
 
   after(async function () {

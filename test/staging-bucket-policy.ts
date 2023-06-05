@@ -1,10 +1,10 @@
-import aws from 'aws-sdk';
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
 import request from 'supertest';
 import { stub, SinonStub } from 'sinon';
 import { hookRequest } from './helpers/hooks';
 import hookServersStartStop from './helpers/servers';
+import sts from '../app/util/sts';
 
 /**
  * Calls the staging-bucket-policy endpoint to get a bucket policy for the given bucket/path
@@ -76,19 +76,14 @@ describe('staging-bucket-policy route', function () {
   describe('when a user accesses the staging-bucket-policy route on a server in AWS', function () {
     let getCallerIdentityStub: SinonStub;
     before(function () {
-      getCallerIdentityStub = stub(aws, 'STS')
-        .returns({
-          getCallerIdentity: () => {
-            return {
-              promise: (): unknown => {
-                return {
-                  Account: '123456789012',
-                  Arn: 'arn:aws:iam::123456789012:role/harmony-sandbox-role',
-                };
-              },
-            };
-          },
-        });
+
+      const expectedResult = {
+        $metadata: {},
+        Account: '123456789012',
+        Arn: 'arn:aws:iam::123456789012:role/harmony-sandbox-role',
+      };
+
+      getCallerIdentityStub = stub(sts.prototype, 'getCallerIdentity').resolves(expectedResult);
     });
     after(function (){
       getCallerIdentityStub.restore();
@@ -181,7 +176,7 @@ describe('staging-bucket-policy route', function () {
   describe('when a user accesses the staging-bucket-policy route on a server not in AWS', function () {
     let getCallerIdentityStub: SinonStub;
     before(function () {
-      getCallerIdentityStub = stub(aws, 'STS')
+      getCallerIdentityStub = stub(sts.prototype, 'getCallerIdentity')
         .throws('This is not AWS');
     });
     after(function (){

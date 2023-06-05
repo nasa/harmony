@@ -1,4 +1,4 @@
-import { Credentials } from 'aws-sdk/clients/sts';
+import { Credentials } from '@aws-sdk/client-sts';
 import { Response, NextFunction } from 'express';
 import SecureTokenService from '../util/sts';
 import { ServerError } from '../util/errors';

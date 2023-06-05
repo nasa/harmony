@@ -14,10 +14,10 @@ import * as aggregationBatch from '../app/util/aggregation-batch';
 import { buildJob } from './helpers/jobs';
 import { getStacLocation, WorkItemRecord, WorkItemStatus } from '../app/models/work-item-interface';
 import { truncateAll } from './helpers/db';
-import { getObjectText } from './helpers/object-store';
 import { stub } from 'sinon';
 import { populateUserWorkFromWorkItems } from '../app/models/user-work';
 import { resetQueues } from './helpers/queue';
+import { defaultObjectStore } from '../app/util/object-store';
 
 /**
  * Create a job and some work times to be used by tests
@@ -255,7 +255,7 @@ describe('When a workflow contains an aggregating step', async function () {
           const nextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
           const workItem = JSON.parse(nextStepWorkResponse.text).workItem as WorkItemRecord;
           const filePath = workItem.stacCatalogLocation;
-          const catalog = JSON.parse(await getObjectText(filePath));
+          const catalog = JSON.parse(await defaultObjectStore().getObject(filePath));
           const items = catalog.links.filter(link => link.rel === 'item');
           expect(items.length).to.equal(2);
         });
@@ -266,7 +266,7 @@ describe('When a workflow contains an aggregating step', async function () {
           const nextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
           const workItem = JSON.parse(nextStepWorkResponse.text).workItem as WorkItemRecord;
           const filePath = workItem.stacCatalogLocation;
-          const catalog = JSON.parse(await getObjectText(filePath));
+          const catalog = JSON.parse(await defaultObjectStore().getObject(filePath));
           expect(catalog.links.filter(link => link.rel == 'prev').length).to.equal(0);
           expect(catalog.links.filter(link => link.rel == 'next').length).to.equal(0);
         });
@@ -295,14 +295,14 @@ describe('When a workflow contains an aggregating step', async function () {
           const nextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
           const workItem = JSON.parse(nextStepWorkResponse.text).workItem as WorkItemRecord;
           const filePath = workItem.stacCatalogLocation;
-          const catalog = JSON.parse(await getObjectText(filePath));
+          const catalog = JSON.parse(await defaultObjectStore().getObject(filePath));
           // first catalog just has 'next' link
           expect(catalog.links.filter(link => link.rel == 'prev').length).to.equal(0);
           const nextLinks = catalog.links.filter(link => link.rel == 'next');
           expect(nextLinks.length).to.equal(1);
           // second catalog just has 'prev' link
           const nextCatalogPath = nextLinks[0].href;
-          const nextCatalog = JSON.parse(await getObjectText(nextCatalogPath));
+          const nextCatalog = JSON.parse(await defaultObjectStore().getObject(nextCatalogPath));
           expect(nextCatalog.links.filter(link => link.rel == 'prev').length).to.equal(1);
           expect(nextCatalog.links.filter(link => link.rel == 'next').length).to.equal(0);
         });

@@ -1,39 +1,39 @@
-import AWS from 'aws-sdk';
+import {
+  SQSClient, ReceiveMessageCommand, SendMessageCommand, DeleteMessageCommand,
+  DeleteMessageBatchCommand, SQSClientConfig, SendMessageCommandInput, PurgeQueueCommand,
+  GetQueueAttributesCommand,
+} from '@aws-sdk/client-sqs';
 import env from '../env';
 import { Queue, ReceivedMessage } from './queue';
 
 export class SqsQueue extends Queue {
   queueUrl: string;
 
-  sqs: AWS.SQS;
+  sqs: SQSClient;
 
-  constructor(
-    queueUrl: string,
-  ) {
+  constructor(queueUrl: string) {
     super();
     this.queueUrl = queueUrl;
+    const sqsConfig: SQSClientConfig = {
+      region: env.awsDefaultRegion,
+    };
     if (env.useLocalstack) {
-      this.sqs = new AWS.SQS({
-        endpoint: `http://${env.localstackHost}:4566`,
-        region: env.awsDefaultRegion,
-        credentials: {
-          accessKeyId: 'LOCALSTACK',
-          secretAccessKey: 'LOCALSTACK',
-        },
-      });
-    } else {
-      this.sqs = new AWS.SQS({
-        region: env.awsDefaultRegion,
-      });
+      sqsConfig.endpoint = `http://${env.localstackHost}:4566`;
+      sqsConfig.credentials = {
+        accessKeyId: 'LOCALSTACK',
+        secretAccessKey: 'LOCALSTACK',
+      };
     }
+    this.sqs = new SQSClient(sqsConfig);
   }
 
   async getMessage(waitTimeSeconds = env.queueLongPollingWaitTimeSec): Promise<ReceivedMessage> {
-    const response = await this.sqs.receiveMessage({
+    const command = new ReceiveMessageCommand({
       QueueUrl: this.queueUrl,
       MaxNumberOfMessages: 1,
       WaitTimeSeconds: waitTimeSeconds,
-    }).promise();
+    });
+    const response = await this.sqs.send(command);
     if (response.Messages) {
       const message = response.Messages[0];
       return {
@@ -45,11 +45,12 @@ export class SqsQueue extends Queue {
   }
 
   async getMessages(num: number, waitTimeSeconds = env.queueLongPollingWaitTimeSec): Promise<ReceivedMessage[]> {
-    const response = await this.sqs.receiveMessage({
+    const command = new ReceiveMessageCommand({
       QueueUrl: this.queueUrl,
       MaxNumberOfMessages: num,
       WaitTimeSeconds: waitTimeSeconds,
-    }).promise();
+    });
+    const response = await this.sqs.send(command);
     if (response.Messages) {
       return response.Messages.map((message) => ({
         receipt: message.ReceiptHandle,
@@ -60,44 +61,47 @@ export class SqsQueue extends Queue {
   }
 
   async getApproximateNumberOfMessages(): Promise<number> {
-    const response = await this.sqs.getQueueAttributes({
+    const command = new GetQueueAttributesCommand({
       QueueUrl: this.queueUrl,
       AttributeNames: ['ApproximateNumberOfMessages'],
-    }).promise();
+    });
+
+    const response = await this.sqs.send(command);
     return parseInt(response.Attributes.ApproximateNumberOfMessages, 10);
   }
 
-  async sendMessage(msg: string, groupId?:string): Promise<void> {
-    const message: { QueueUrl: string, MessageBody: string, MessageGroupId?: string } = {
+  async sendMessage(msg: string, groupId?: string): Promise<void> {
+    const message: SendMessageCommandInput = {
       QueueUrl: this.queueUrl,
       MessageBody: JSON.stringify(msg),
     };
     if (groupId) {
       message.MessageGroupId = groupId;
     }
-    await this.sqs.sendMessage(message).promise();
+    await this.sqs.send(new SendMessageCommand(message));
   }
 
   async deleteMessage(receipt: string): Promise<void> {
-    await this.sqs.deleteMessage({
+    const command = new DeleteMessageCommand({
       QueueUrl: this.queueUrl,
       ReceiptHandle: receipt,
-    }).promise();
+    });
+    await this.sqs.send(command);
   }
 
   async deleteMessages(receipts: string[]): Promise<void> {
-    await this.sqs.deleteMessageBatch({
+    const entries = receipts.map((receipt, index) => ({
+      Id: index.toString(),
+      ReceiptHandle: receipt,
+    }));
+    const command = new DeleteMessageBatchCommand({
       QueueUrl: this.queueUrl,
-      Entries: receipts.map((receipt, index) => ({
-        Id: index.toString(),
-        ReceiptHandle: receipt,
-      })),
-    }).promise();
+      Entries: entries,
+    });
+    await this.sqs.send(command);
   }
 
   async purge(): Promise<void> {
-    await this.sqs.purgeQueue({
-      QueueUrl: this.queueUrl,
-    }).promise();
+    await this.sqs.send(new PurgeQueueCommand({ QueueUrl: this.queueUrl }));
   }
 }
