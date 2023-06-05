@@ -36,7 +36,7 @@ export async function sizeOfObject(url: string, token: string, logger: Logger): 
       case 's3':
         const s3 = objectStoreForProtocol('s3');
         res = await s3.headObject(url);
-        result = res.ContentLength;
+        result = res.contentLength;
         break;
 
       default:

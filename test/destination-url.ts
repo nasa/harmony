@@ -1,9 +1,10 @@
 import { expect } from 'chai';
 import { Context } from 'mocha';
 import { Job } from '../app/models/job';
+import { defaultObjectStore } from '../app/util/object-store';
 import { hookTransaction } from './helpers/db';
 import { hookRedirect } from './helpers/hooks';
-import { getObjectText, hookGetBucketRegion, hookUpload } from './helpers/object-store';
+import { hookGetBucketRegion, hookUpload } from './helpers/object-store';
 import { hookRangesetRequest } from './helpers/ogc-api-coverages';
 import hookServersStartStop from './helpers/servers';
 import StubService from './helpers/stub-service';
@@ -72,7 +73,7 @@ describe('when setting destinationUrl on ogc request', function () {
       expect(this.res.status).to.equal(200);
       const jobId = JSON.parse(this.res.text).jobID;
       const s3Url = 's3://dummy/p1/' + jobId + '/harmony-job-status-link';
-      const statusLink = await getObjectText(s3Url);
+      const statusLink = await defaultObjectStore().getObject(s3Url);
       // this.res.request.url is the job status link
       expect(statusLink).to.equal(this.res.request.url);
     });

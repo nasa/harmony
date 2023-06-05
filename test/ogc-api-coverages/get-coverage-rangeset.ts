@@ -3,7 +3,6 @@ import { describe, it } from 'mocha';
 import _ from 'lodash';
 import isUUID from '../../app/util/uuid';
 import { expectedNoOpJobKeys, itIncludesRequestUrl } from '../helpers/jobs';
-import { hookSignS3Object } from '../helpers/object-store';
 import { hookPostRangesetRequest, hookRangesetRequest, rangesetRequest } from '../helpers/ogc-api-coverages';
 import hookServersStartStop from '../helpers/servers';
 import StubService, { hookServices } from '../helpers/stub-service';
@@ -44,7 +43,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
       it('provides a staging location to the backend', function () {
         const location = this.service.operation.stagingLocation;
-        expect(location).to.match(new RegExp('^s3://[^/]+/public/.*$'));
+        expect(location).to.include(env.artifactBucket);
       });
 
       it('passes the source collection to the backend', function () {
@@ -147,19 +146,17 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     });
 
     describe('and the backend service calls back with a redirect to an S3 location', function () {
-      const signedPrefix = hookSignS3Object();
       StubService.hook({ params: { redirect: 's3://my-bucket/public/my-object.tif' } });
       hookRangesetRequest(version, collection, variableName, { query });
 
       it('redirects the client to a presigned url', function () {
         expect(this.res.status).to.equal(303);
-        expect(this.res.headers.location).to.include(signedPrefix);
-        expect(this.res.headers.location).to.include('anonymous');
+        expect(this.res.headers.location).to.include('https://my-bucket/public/my-object.tif');
+        expect(this.res.headers.location).to.include('A-userid=anonymous');
       });
     });
 
     describe('and the backend service provides POST data', function () {
-      const signedPrefix = hookSignS3Object();
       StubService.hook({
         body: 'realistic mock data',
         headers: {
@@ -171,7 +168,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
       it('returns an HTTP 303 redirect status code to the provided data', function () {
         expect(this.res.status).to.equal(303);
-        expect(this.res.headers.location).to.include(signedPrefix);
+        expect(this.res.headers.location).to.include(env.stagingBucket);
       });
 
       it('propagates the Content-Type header to the client', function () {
@@ -939,7 +936,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       expect(res.status).to.equal(400);
       expect(res.body).to.eql({
         code: 'harmony.RequestValidationError',
-        description: 'Error: Coverages were not found for the provided CMR collection: NotAVariable',
+        description: 'Error: Coverages were not found for the provided variables: NotAVariable',
       });
     });
 
@@ -1158,7 +1155,7 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
       const response = JSON.parse(this.res.text);
       expect(response).to.eql({
         code: 'harmony.RequestValidationError',
-        description: 'Error: Coverages were not found for the provided CMR collection: badVar',
+        description: 'Error: Coverages were not found for the provided variables: badVar',
       });
     });
   });

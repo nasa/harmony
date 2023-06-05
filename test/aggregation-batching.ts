@@ -16,6 +16,7 @@ import WorkItem from '../app/models/work-item';
 import { objectStoreForProtocol } from '../app/util/object-store';
 import { truncateAll } from './helpers/db';
 import { hookServices } from './helpers/stub-service';
+import { StacCatalog } from '../app/util/stac';
 
 /**
  * Create a work item update for a query-cmr get work response
@@ -43,10 +44,10 @@ function createCmrResult(resText: string, resultCount: number): WorkItem {
  * @param workItem - the work item containing the STAC catalog to process
  * @returns - an array of urls for the STAC items in the STAC catalog
  */
-async function getBatchItemsForWorkItem(workItem: WorkItem): Promise<String>  {
+async function getBatchItemsForWorkItem(workItem: WorkItem): Promise<String[]>  {
   const { stacCatalogLocation } = workItem;
   const s3 = objectStoreForProtocol('s3');
-  const catalog = await s3.getObjectJson(stacCatalogLocation);
+  const catalog = await s3.getObjectJson(stacCatalogLocation) as StacCatalog;
   const itemsHrefs = catalog.links.filter(link => link.rel === 'item').map(item => item.href);
   return itemsHrefs;
 }

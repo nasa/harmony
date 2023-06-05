@@ -1,4 +1,3 @@
-import aws from 'aws-sdk';
 import { strict as assert } from 'assert';
 import { v4 as uuid } from 'uuid';
 import _ from 'lodash';
@@ -59,7 +58,7 @@ export default class Catalog implements StacCatalog {
   async write(fileUrl: string, pretty = false): Promise<void> {
     const s3 = objectStoreForProtocol('s3');
     const childLinks = this.links.filter((l) => l.rel === 'child' || l.rel === 'item');
-    const promises: Promise<void | aws.S3.ManagedUpload.SendData>[] = this.children.map(async (item, i) => {
+    const promises: Promise<void | object>[] = this.children.map(async (item, i) => {
       const itemFilename = resolve(fileUrl, childLinks[i].href);
       return item.write(itemFilename, pretty);
     });

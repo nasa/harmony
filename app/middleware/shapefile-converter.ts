@@ -93,7 +93,8 @@ export default async function shapefileConverter(req, res, next: NextFunction): 
   const { operation } = req;
 
   try {
-    const shapefile = get(req, 'files.shapefile[0]') || req.signedCookies.shapefile;
+    // const shapefile = get(req, 'files.shapefile[0]') || req.signedCookies.shapefile;
+    const shapefile = get(req, 'files.shapefile[0]') || get(req, 'file') || req.signedCookies.shapefile;
     res.clearCookie('shapefile', cookieOptions);
 
     if (!shapefile) {
@@ -103,14 +104,14 @@ export default async function shapefileConverter(req, res, next: NextFunction): 
     req.context.shapefile = shapefile;
     const store = defaultObjectStore();
 
-    const { mimetype, bucket, key } = shapefile;
+    const { mimetype } = shapefile;
     const converter = contentTypesToConverters[mimetype];
     if (!converter) {
       const humanContentTypes = Object.entries(contentTypesToConverters).map(([k, v]) => `"${k}" (${v.name})`);
       throw new RequestValidationError(`Unrecognized shapefile type "${mimetype}".  Valid types are ${listToText(humanContentTypes)}`);
     }
     shapefile.typeName = converter.name;
-    const url = store.getUrlString(bucket, key);
+    const url = store.getUrlString(shapefile);
     if (converter.geoJsonConverter) {
       const originalFile = await store.downloadFile(url);
       let convertedFile;

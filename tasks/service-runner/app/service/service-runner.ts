@@ -8,7 +8,6 @@ import { objectStoreForProtocol } from '../../../../app/util/object-store';
 import { WorkItemRecord, getStacLocation, getItemLogsLocation } from '../../../../app/models/work-item-interface';
 import axios from 'axios';
 import { Logger } from 'winston';
-import { ManagedUpload } from 'aws-sdk/clients/s3';
 
 const kc = new k8s.KubeConfig();
 kc.loadFromDefault();
@@ -137,7 +136,8 @@ async function _getErrorMessage(status: k8s.V1Status, logStr: string, catalogDir
     const s3 = objectStoreForProtocol('s3');
     const errorFile = resolveUrl(catalogDir, 'error.json');
     if (await s3.objectExists(errorFile)) {
-      const logEntry = await s3.getObjectJson(errorFile);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const logEntry: any = await s3.getObjectJson(errorFile);
       return logEntry.error;
     }
 
@@ -212,7 +212,7 @@ export async function runQueryCmrFromPull(
  * @param workItem - the work item that the logs are for
  * @param logs - logs array from the k8s exec call
  */
-export async function uploadLogs(workItem: WorkItemRecord, logs: (string | object)[]): Promise<ManagedUpload.SendData> {
+export async function uploadLogs(workItem: WorkItemRecord, logs: (string | object)[]): Promise<object> {
   let newFileContent;
   const retryMessage = `Start of service execution (retryCount=${workItem.retryCount}, id=${workItem.id})`;
   if (logs.length > 0 && (typeof logs[0] === 'string' || logs[0] instanceof String)) {
@@ -223,7 +223,8 @@ export async function uploadLogs(workItem: WorkItemRecord, logs: (string | objec
   const s3 = objectStoreForProtocol('s3');
   const logsLocation = getItemLogsLocation(workItem);
   if (await s3.objectExists(logsLocation)) { // append to existing logs
-    const oldFileContent = await s3.getObjectJson(logsLocation);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const oldFileContent: any = await s3.getObjectJson(logsLocation);
     newFileContent = [...oldFileContent, ...newFileContent];
   }
   return s3.upload(JSON.stringify(newFileContent), logsLocation);

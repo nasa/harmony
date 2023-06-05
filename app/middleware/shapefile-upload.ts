@@ -2,9 +2,8 @@ import multer from 'multer';
 import multerS3 from 'multer-s3';
 import * as crypto from 'crypto';
 import { RequestHandler } from 'express';
-import { objectStoreForProtocol } from '../util/object-store';
-
 import env = require('../util/env');
+import { S3ObjectStore } from '../util/object-store/s3-object-store';
 
 /**
  * Build a middleware for uploading shapefiles passed in with the request to S3
@@ -13,12 +12,12 @@ import env = require('../util/env');
  */
 export default function buildShapefileUploadMiddleware(): RequestHandler {
   const { uploadBucket } = env;
-  const objectStore = objectStoreForProtocol(env.objectStoreType);
+  const s3Store = new S3ObjectStore();
   const shapefilePrefix = 'temp-user-uploads';
 
   const upload = multer({
     storage: multerS3({
-      s3: objectStore.s3,
+      s3: s3Store.s3,
       key: (_request, _file, callback) => {
         crypto.randomBytes(16, (err, raw) => {
           callback(err, err ? undefined : `${shapefilePrefix}/${raw.toString('hex')}`);

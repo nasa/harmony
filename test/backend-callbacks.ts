@@ -1,7 +1,6 @@
-import { describe, it, beforeEach, afterEach, after } from 'mocha';
+import { describe, it, beforeEach, after } from 'mocha';
 import { expect } from 'chai';
 import request from 'supertest';
-import { stub, SinonStub } from 'sinon';
 import { HTTPError } from 'superagent';
 import { Job, JobStatus } from '../app/models/job';
 import JobLink from '../app/models/job-link';
@@ -11,8 +10,7 @@ import { rangesetRequest } from './helpers/ogc-api-coverages';
 import { validGetMapQuery, wmsRequest } from './helpers/wms';
 import db from '../app/util/db';
 import { hookJobCreationEach } from './helpers/jobs';
-import { getObjectText } from './helpers/object-store';
-import { objectStoreForProtocol, S3ObjectStore } from '../app/util/object-store';
+import { defaultObjectStore, objectStoreForProtocol } from '../app/util/object-store';
 import { hookCallbackEach, hookHttpBackendEach, loadJobForCallback } from './helpers/callbacks';
 
 describe('Backend Callbacks', function () {
@@ -21,16 +19,6 @@ describe('Backend Callbacks', function () {
   const href = 'https://example.com/foo';
 
   hookServersStartStop();
-
-  beforeEach(function () {
-    // Avoid signing objects, which mock-aws-s3 cannot do the way we need it to
-    stub(S3ObjectStore.prototype, 'signGetObject')
-      .callsFake(async (s3Uri) => `signed+${s3Uri}`);
-  });
-
-  afterEach(function () {
-    (S3ObjectStore.prototype.signGetObject as SinonStub).restore();
-  });
 
   beforeEach(truncateAll);
   after(truncateAll);
@@ -244,7 +232,7 @@ describe('Backend Callbacks', function () {
       it('tags the stored object with the provided content type', async function () {
         const job = await loadJobForCallback(this.callback);
         const link = job.getRelatedLinks('data')[0];
-        const type = (await objectStoreForProtocol(link.href).headObject(link.href)).Metadata['Content-Type'];
+        const type = (await objectStoreForProtocol(link.href).headObject(link.href)).contentType;
         expect(type).to.equal('text/plain');
       });
 
@@ -263,7 +251,7 @@ describe('Backend Callbacks', function () {
       it('tags the stored item with the provided content type', async function () {
         const job = await loadJobForCallback(this.callback);
         const link = job.getRelatedLinks('data')[0];
-        const type = (await objectStoreForProtocol(link.href).headObject(link.href)).Metadata['Content-Type'];
+        const type = (await objectStoreForProtocol(link.href).headObject(link.href)).contentType;
         expect(type).to.equal('text/plain');
       });
 
@@ -283,7 +271,7 @@ describe('Backend Callbacks', function () {
       it('tags the stored object with the content type provided in the header', async function () {
         const job = await loadJobForCallback(this.callback);
         const link = job.getRelatedLinks('data')[0];
-        const type = (await objectStoreForProtocol(link.href).headObject(link.href)).Metadata['Content-Type'];
+        const type = (await objectStoreForProtocol(link.href).headObject(link.href)).contentType;
         expect(type).to.equal('text/fancy');
       });
 
@@ -302,8 +290,8 @@ describe('Backend Callbacks', function () {
       it('does not tag the stored item with a content type', async function () {
         const job = await loadJobForCallback(this.callback);
         const link = job.getRelatedLinks('data')[0];
-        const meta = (await objectStoreForProtocol(link.href).headObject(link.href)).Metadata;
-        expect(meta).to.be.undefined;
+        const { contentType } = await objectStoreForProtocol(link.href).headObject(link.href);
+        expect(contentType).to.be.undefined;
       });
 
       it('does not set the "type" field in the job item', async function () {
@@ -326,8 +314,8 @@ describe('Backend Callbacks', function () {
       it('redirects to the stored response content', async function () {
         const { location } = this.userResp.headers;
         expect(this.userResp.statusCode).to.equal(303);
-        expect(location).to.match(/\/some-file.nc$/);
-        expect(await getObjectText(location.replace('signed+', ''))).to.equal('Some data here');
+        expect(location).to.match(/\/some-file.nc/);
+        expect(await defaultObjectStore().getObject(location.replace('?A-userid=anonymous', ''))).to.equal('Some data here');
       });
     });
   });
@@ -349,7 +337,7 @@ describe('Backend Callbacks', function () {
         const job = await loadJobForCallback(this.callback);
         const link = job.getRelatedLinks('data')[0];
         expect(link.href).to.match(/\/some-file.nc$/);
-        expect(await getObjectText(link.href.replace('signed+', ''))).to.equal('Some data here');
+        expect(await defaultObjectStore().getObject(link.href.replace('signed+', ''))).to.equal('Some data here');
       });
     });
 
