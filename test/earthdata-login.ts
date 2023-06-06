@@ -236,8 +236,8 @@ describe('Earthdata Login', function () {
             .query({ code: 'abc123', state: 'xyz' });
         });
         
-        // in this case, the state query parameter will be compared against an undefined
-        // state cookie (handleNeedsAuthorized, which sets the cookie has not been called)
+        // In this case, the state query parameter will be compared against an undefined
+        // state cookie. (handleNeedsAuthorized, which sets the cookie has not been called.)
         it('returns an invalid request status code', function () {
           expect(this.res.statusCode).to.equal(400);
         });
