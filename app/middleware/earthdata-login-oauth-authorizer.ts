@@ -3,7 +3,7 @@ import simpleOAuth2, { OAuthClient, Token } from 'simple-oauth2';
 import { RequestHandler, NextFunction } from 'express';
 import { cookieOptions, setCookiesForEdl } from '../util/cookies';
 import { listToText } from '../util/string';
-import { ForbiddenError } from '../util/errors';
+import { ForbiddenError, RequestValidationError } from '../util/errors';
 import HarmonyRequest from '../models/harmony-request';
 import env from '../util/env';
 
@@ -44,9 +44,12 @@ const oauthOptions = {
  */
 async function handleCodeValidation(oauth2: OAuthClient, req, res, _next): Promise<void> {
   const { state } = req.signedCookies;
+
+  console.log('check if state matches');
+  console.log(req.query.state, state);
+
   if (state !== req.query.state) {
-    res.status(422).send('Invalid Request');
-    return;
+    throw new RequestValidationError();
   }
   
   const tokenConfig = {
@@ -108,6 +111,7 @@ function handleNeedsAuthorized(oauth2: OAuthClient, req, res, _next): void {
     state,
   });
   
+  console.log('add state to url');
   console.log(state);
   console.log(url);
   
