@@ -3,6 +3,7 @@ reporterOptions: 'spec=-,mocha-junit-reporter=-'
 file: # Files that get loaded before suite execution.  Helpful when running a single file.
   - test/helpers/env.ts
   - test/helpers/hooks.ts
+  - ../../test/helpers/aws.ts
 extension:
   - js
   - ts

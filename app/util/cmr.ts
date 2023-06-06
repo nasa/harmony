@@ -681,8 +681,7 @@ export async function queryGranulesWithSearchAfter(
   if (sessionKey) {
     // use the session key to get the stored query parameters from the s3 bucket
     const url = s3UrlForStoredQueryParams(sessionKey);
-    const storedQueryJson = await defaultObjectStore().download(url);
-    const storedQuery = JSON.parse(storedQueryJson);
+    const storedQuery = await defaultObjectStore().getObjectJson(url);
     const fullQuery = { ...baseQuery, ...storedQuery };
     response = await queryGranuleUsingMultipartForm(
       fullQuery,

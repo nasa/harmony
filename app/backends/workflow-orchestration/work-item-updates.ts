@@ -18,7 +18,7 @@ import db, { Transaction, batchSize } from '../../util/db';
 import { ServiceError } from '../../util/errors';
 import { completeJob } from '../../util/job';
 import { objectStoreForProtocol } from '../../util/object-store';
-import { StacItem, readCatalogItems, StacItemLink } from '../../util/stac';
+import { StacItem, readCatalogItems, StacItemLink, StacCatalog } from '../../util/stac';
 import { sanitizeImage } from '../../util/string';
 import { resolve } from '../../util/url';
 import { QUERY_CMR_SERVICE_REGEX, calculateQueryCmrLimit } from './util';
@@ -227,7 +227,7 @@ async function updateWorkItemCounts(
  */
 async function getItemLinksFromCatalog(catalogPath: string): Promise<StacItemLink[]> {
   const s3 = objectStoreForProtocol('s3');
-  const catalog = await s3.getObjectJson(catalogPath);
+  const catalog = await s3.getObjectJson(catalogPath) as StacCatalog;
   const links: StacItemLink[] = [];
   for (const link of catalog.links) {
     if (link.rel === 'item') {
@@ -280,7 +280,7 @@ async function createAggregatingWorkItem(
         // couldn't read the single catalog so read the JSON file that lists all the result
         // catalogs for this work item
         const jsonPath = workItem.getStacLocation('batch-catalogs.json');
-        const catalog = await s3.getObjectJson(jsonPath);
+        const catalog = await s3.getObjectJson(jsonPath) as string[];
         const linksPromises: Promise<StacItemLink[]>[] = catalog.map((filename: string) => {
           const fullPath = workItem.getStacLocation(filename);
           return getItemLinksFromCatalog(fullPath);
@@ -450,17 +450,21 @@ async function createNextWorkItems(
     } else {
       // Create a new work item for each result using the next step
 
-      // use the sort index from the previous step's work item unless we have more than one
-      // result, in which case we start from the previous highest sort index for this step
+      // use the sort index from the previous step's work item unless the service was
+      // query-cmr, in which case we start from the previous highest sort index for this step
       // NOTE: This is only valid if the work-items for this multi-output step are worked
-      // sequentially, as with query-cmr. If they are worked in parallel then we need a
-      // different approach.
+      // sequentially and have consistently ordered outputs, as with query-cmr.
+      // If they are worked in parallel then we need a different approach.
       let { sortIndex } = workItem;
-      if (results.length > 1) {
+      let shouldIncrementSortIndex = false;
+      if (QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)) {
+        shouldIncrementSortIndex = true;
         sortIndex = await maxSortIndexForJobService(tx, nextWorkflowStep.jobID, nextWorkflowStep.serviceID);
       }
       const newItems = results.map(result => {
-        sortIndex += 1;
+        if (shouldIncrementSortIndex) {
+          sortIndex += 1;
+        }
         return new WorkItem({
           jobID: workItem.jobID,
           serviceID: nextWorkflowStep.serviceID,

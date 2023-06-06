@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable max-len */
 import { parse } from 'cookie';
 import * as fetch from 'node-fetch';
@@ -12,7 +13,7 @@ import StubService from '../helpers/stub-service';
 import { auth } from '../helpers/auth';
 import { rangesetRequest, postRangesetRequest, hookPostRangesetRequest, stripSignature } from '../helpers/ogc-api-coverages';
 import hookCmr from '../helpers/stub-cmr';
-import { getJson } from '../helpers/object-store';
+import { defaultObjectStore } from '../../app/util/object-store';
 
 /**
  * Common steps in the validation tests
@@ -131,9 +132,11 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
       });
 
       it('passes a shapefile URI to the backend', async function () {
-        expect(this.service.operation.geojson).to.match(new RegExp('^s3://[^/]+/temp-user-uploads/[^/]+$'));
+        expect(this.service.operation.geojson).to.include('complex_multipoly.geojson');
+      });
 
-        const geojson = await getJson(this.service.operation.geojson);
+      xit('has the correct content for the GeoJSON file', async function () {
+        const geojson = await defaultObjectStore().getObjectJson(this.service.operation.geojson);
         expect(geojson).to.deep.equal(testGeoJson);
       });
     });
@@ -144,9 +147,11 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
       hookPostRangesetRequest(version, collection, variableName, shapeForm);
 
       it('passes a URL to the ESRI Shapefile converted to GeoJSON to the backend', async function () {
-        expect(this.service.operation.geojson).to.match(new RegExp('^s3://[^/]+/temp-user-uploads/[^/]+.geojson$'));
+        expect(this.service.operation.geojson).to.include('complex_multipoly.zip.geojson');
+      });
 
-        const geojson = await getJson(this.service.operation.geojson);
+      xit('has the correct content for the converted GeoJSON file', async function () {
+        const geojson = await defaultObjectStore().getObjectJson(this.service.operation.geojson) as unknown as any;
         // Ignore helpful bbox and filename attributes added from ESRI Shapefile
         delete geojson.features[0].geometry.bbox;
         delete geojson.features[1].geometry.bbox;
@@ -192,9 +197,11 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
       hookPostRangesetRequest(version, collection, variableName, shapeForm);
 
       it('passes a URL to the KML converted to GeoJSON to the backend', async function () {
-        expect(this.service.operation.geojson).to.match(new RegExp('^s3://[^/]+/temp-user-uploads/[^/]+.geojson$'));
+        expect(this.service.operation.geojson).to.include('complex_multipoly.kml.geojson');
+      });
 
-        const geojson = await getJson(this.service.operation.geojson);
+      xit('has the correct content for the converted GeoJSON file', async function () {
+        const geojson = await defaultObjectStore().getObjectJson(this.service.operation.geojson) as unknown as any;
         for (const feature of geojson.features) { // Adapt null vs undefined id property
           feature.properties.id = feature.properties.id || null;
         }

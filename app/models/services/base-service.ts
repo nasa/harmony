@@ -191,7 +191,7 @@ export default abstract class BaseService<ServiceParamType> {
 
     if (!this.operation.stagingLocation) {
       const prefix = `public/${config.name || this.constructor.name}/${uuid()}/`;
-      this.operation.stagingLocation = defaultObjectStore().getUrlString(env.artifactBucket, prefix);
+      this.operation.stagingLocation = defaultObjectStore().getUrlString({ bucket: env.artifactBucket, key: prefix });
     }
   }
 
@@ -215,9 +215,9 @@ export default abstract class BaseService<ServiceParamType> {
     if (destinationUrl) {
       let destPath = destinationUrl.substring(5);
       destPath = destPath.endsWith('/') ? destPath.slice(0, -1) : destPath;
-      return defaultObjectStore().getUrlString(destPath, requestId + '/');
+      return defaultObjectStore().getUrlString({ bucket: destPath, key: requestId + '/' });
     }
-    return defaultObjectStore().getUrlString(env.stagingBucket, `public/${requestId}/`);
+    return defaultObjectStore().getUrlString({ bucket: env.stagingBucket, key: `public/${requestId}/` });
   }
 
   /**
