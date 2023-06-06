@@ -38,8 +38,7 @@ https://cmr.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/gesdisc/giovanni
-    umm_s:
-      - S2701049693-XYZ_PROV
+    umm_s: S2701049693-XYZ_PROV
     collections:
       - id: C1598621093-GES_DISC
         variables:
@@ -84,8 +83,7 @@ https://cmr.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/podaac/l2-subsetter
-    umm_s:
-      - S1962070864-POCLOUD
+    umm_s: S1962070864-POCLOUD
     collections: []
     capabilities:
       subsetting:
@@ -112,8 +110,7 @@ https://cmr.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/podaac/concise
-    umm_s:
-      - S2153799015-POCLOUD
+    umm_s: S2153799015-POCLOUD
     collections: []
     capabilities:
       concatenation: true
@@ -151,8 +148,7 @@ https://cmr.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/podaac/l2-subsetter-concise
-    umm_s:
-      - S2227193226-POCLOUD
+    umm_s: S2227193226-POCLOUD
     collections: []
     capabilities:
       concatenation: true
@@ -188,8 +184,7 @@ https://cmr.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/sds/trajectory-subsetter
-    umm_s:
-      - S2232210365-ORNL_CLOUD
+    umm_s: S2232210365-ORNL_CLOUD
     collections: []
     capabilities:
       subsetting:
@@ -220,8 +215,7 @@ https://cmr.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/sds/HOSS-geographic
-    umm_s:
-      - S2164732315-XYZ_PROV
+    umm_s: S2164732315-XYZ_PROV
     collections: []
     capabilities:
       subsetting:
@@ -258,8 +252,7 @@ https://cmr.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/sds/HOSS-projection-gridded
-    umm_s:
-      - S2300730272-XYZ_PROV
+    umm_s: S2300730272-XYZ_PROV
     collections: []
     capabilities:
       subsetting:
@@ -296,8 +289,7 @@ https://cmr.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/nasa/harmony-gdal-adapter
-    umm_s:
-      - S2606110201-XYZ_PROV
+    umm_s: S2606110201-XYZ_PROV
     collections: []
     capabilities:
       subsetting:
@@ -328,8 +320,7 @@ https://cmr.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/harmony/netcdf-to-zarr
-    umm_s:
-      - S2009180097-POCLOUD
+    umm_s: S2009180097-POCLOUD
     collections: []
     maximum_sync_granules: 0
     capabilities:
@@ -357,8 +348,7 @@ https://cmr.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/harmony/service-example
-    umm_s:
-      - S2685815868-XYZ_PROV
+    umm_s: S2685815868-XYZ_PROV
     collections: []
     capabilities:
       subsetting:
@@ -390,8 +380,7 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/gesdisc/giovanni
-    umm_s:
-      - S1258119278-EEDTEST
+    umm_s: S1258119278-EEDTEST
     collections:
       - id: C1225808238-GES_DISC
         variables:
@@ -436,8 +425,7 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/podaac/l2-subsetter
-    umm_s:
-      - S1234899453-POCLOUD
+    umm_s: S1234899453-POCLOUD
     collections: []
     capabilities:
       subsetting:
@@ -464,8 +452,7 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/podaac/concise
-    umm_s:
-      - S1242328818-POCLOUD
+    umm_s: S1242328818-POCLOUD
     collections: []
     capabilities:
       concatenation: true
@@ -503,8 +490,7 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/podaac/l2-subsetter-concise
-    umm_s:
-      - S1243671015-POCLOUD
+    umm_s: S1243671015-POCLOUD
     collections: []
     capabilities:
       concatenation: true
@@ -539,8 +525,7 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/sds/swot-reproject
-    umm_s:
-      - S1237974711-EEDTEST
+    umm_s: S1237974711-EEDTEST
     collections: []
     capabilities:
       subsetting:
@@ -565,8 +550,7 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/sds/harmony-regridder
-    umm_s:
-      - S1256563664-EEDTEST
+    umm_s: S1256563664-EEDTEST
     collections: []
     capabilities:
       subsetting:
@@ -594,8 +578,7 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/sds/variable-subsetter
-    umm_s:
-      - S1237976118-EEDTEST
+    umm_s: S1237976118-EEDTEST
     collections: []
     capabilities:
       subsetting:
@@ -622,8 +605,7 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/sds/maskfill
-    umm_s:
-      - S1240151795-EEDTEST
+    umm_s: S1240151795-EEDTEST
     collections: []
     capabilities:
       subsetting:
@@ -645,8 +627,7 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/sds/trajectory-subsetter
-    umm_s:
-      - S1242315633-EEDTEST
+    umm_s: S1242315633-EEDTEST
     collections: []
     capabilities:
       subsetting:
@@ -673,8 +654,7 @@ https://cmr.uat.earthdata.nasa.gov:
       name: http
       params:
         url: http://localhost:4000/example/harmony
-    umm_s:
-      - S1233603903-EEDTEST
+    umm_s: S1233603903-EEDTEST
     collections: []
     capabilities:
       subsetting:
@@ -700,8 +680,7 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/nasa/harmony-gdal-adapter
-    umm_s:
-      - S1245787332-EEDTEST
+    umm_s: S1245787332-EEDTEST
     collections: []
     capabilities:
       subsetting:
@@ -736,8 +715,7 @@ https://cmr.uat.earthdata.nasa.gov:
           <<: *default-turbo-env
           STAGING_PATH: public/sds/hybig
     collections: []
-    umm_s:
-      - S1257776354-EEDTEST
+    umm_s: S1257776354-EEDTEST
     capabilities:
       subsetting:
         bbox: false
@@ -768,8 +746,7 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/sds/HOSS-geographic
-    umm_s:
-      - S1240682712-EEDTEST
+    umm_s: S1240682712-EEDTEST
     collections: []
     capabilities:
       subsetting:
@@ -806,8 +783,7 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/sds/HOSS-projection-gridded
-    umm_s:
-      - S1245117629-EEDTEST
+    umm_s: S1245117629-EEDTEST
     collections: []
     capabilities:
       subsetting:
@@ -840,8 +816,7 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/harmony/netcdf-to-zarr
-    umm_s:
-      - S1237980031-EEDTEST
+    umm_s: S1237980031-EEDTEST
     collections: []
     maximum_sync_granules: 0
     capabilities:
@@ -880,8 +855,7 @@ https://cmr.uat.earthdata.nasa.gov:
           <<: *default-turbo-env
           STAGING_PATH: public/harmony/podaac-l2-subsetter-netcdf-to-zarr
     maximum_sync_granules: 0
-    umm_s:
-      - S1239265626-EEDTEST
+    umm_s: S1239265626-EEDTEST
     collections: []
     capabilities:
       concatenation: true
@@ -924,8 +898,7 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/harmony/swot-repr-netcdf-to-zarr
-    umm_s:
-      - S1240999847-EEDTEST
+    umm_s: S1240999847-EEDTEST
     collections: []
     maximum_sync_granules: 0
     capabilities:
@@ -963,8 +936,7 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/harmony/service-example
-    umm_s:
-      - S1257851197-EEDTEST
+    umm_s: S1257851197-EEDTEST
     collections:
       - id: C1243747507-EEDTEST
         granule_limit: 100 # added to test collection granule limits for HARMONY-795

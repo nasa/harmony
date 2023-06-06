@@ -194,13 +194,16 @@ export const hookGetWorkForService = hookBackendRequest.bind(this, getWorkForSer
  *
  * @param jobID - the job ID to which the STAC items belong
  * @param workItemID - the ID of the work item that generated the STAC items
+ * @param granuleCount - the number of granule outputs
  * @param dataLinkCount - the number of data links to put in the STAC item
+ * @param useParent - whether the STAC output should use a parent catalog like the CMR task does
  */
 export async function fakeServiceStacOutput(
   jobID: string,
   workItemID: number,
   granuleCount = 1,
-  dataLinkCount = 2): Promise<void> {
+  dataLinkCount = 2,
+  useParent = false): Promise<void> {
   const s3 = objectStoreForProtocol('s3');
   const workItem = {
     id: workItemID, jobID,
@@ -260,7 +263,7 @@ export async function fakeServiceStacOutput(
     } };
   }
 
-  if (granuleCount > 1) {
+  if (granuleCount > 1 || useParent) {
     const catalogOfCatalogs = [];
     for (let i = 0; i < granuleCount; i++) {
       catalogOfCatalogs.push(`catalog${i}.json`);

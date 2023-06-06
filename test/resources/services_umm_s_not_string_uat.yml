@@ -1,0 +1,83 @@
+# Order for each CMR endpoint in this file will reflect precedence of the service when
+# multiple services handle a collection
+
+# Default turbo configuration
+x-turbo-config: &default-turbo-config
+  name: turbo
+  params: &default-turbo-params
+    env: &default-turbo-env
+      USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
+      LOCALSTACK_HOST: !Env ${BACKEND_HOST}
+      AWS_DEFAULT_REGION: us-west-2
+      STAGING_BUCKET: !Env ${STAGING_BUCKET}
+      TEXT_LOGGER: !Env ${TEXT_LOGGER}
+      BACKEND_HOST: !Env ${BACKEND_HOST}
+      EDL_USERNAME: !Env ${EDL_USERNAME}
+      EDL_PASSWORD: !Env ${EDL_PASSWORD}
+      OAUTH_UID: !Env ${OAUTH_UID}
+      OAUTH_PASSWORD: !Env ${OAUTH_PASSWORD}
+      OAUTH_HOST: !Env ${OAUTH_HOST}
+      OAUTH_CLIENT_ID: !Env ${OAUTH_CLIENT_ID}
+      OAUTH_REDIRECT_URI: !Env ${OAUTH_REDIRECT_URI}
+      FALLBACK_AUTHN_ENABLED: !Env ${FALLBACK_AUTHN_ENABLED}
+
+https://cmr.uat.earthdata.nasa.gov:
+
+  - name: umm_s_not_string
+    description: |
+      testing service configuration umm_s field with a list value
+    data_operation_version: '0.17.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/somewhere
+    umm_s:
+      - S1962070864-EXAMPLE
+    collections: []
+    capabilities:
+      subsetting:
+        temporal: true
+        bbox: true
+        variable: true
+        shape: true
+      output_formats:
+        - application/x-netcdf4
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+      - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
+
+  - name: podaac/l2-subsetter
+    description: |
+      Implementation of the L2 swath subsetter based on python, xarray and netcdf4.
+
+      * Works with Trajectory (1D) and Along track/across track data.
+      * Works with NetCDF and HDF5 inputfiles
+      * Variable subsetting supported
+      * works with hierarchical groups
+      Outputs netcdf4.
+    data_operation_version: '0.17.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/podaac/l2-subsetter
+    umm_s: S1234899453-POCLOUD
+    collections: []
+    capabilities:
+      subsetting:
+        temporal: true
+        bbox: true
+        variable: true
+        shape: true
+      output_formats:
+        - application/netcdf # Incorrect mime-type, remove when no longer needed
+        - application/x-netcdf4
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+      - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
+
