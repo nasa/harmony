@@ -43,6 +43,12 @@ const oauthOptions = {
  * @param _next - The next function in the middleware chain
  */
 async function handleCodeValidation(oauth2: OAuthClient, req, res, _next): Promise<void> {
+  const { state } = req.signedCookies;
+  if (state !== req.query.state) {
+    res.status(422).send('Invalid Request');
+    return;
+  }
+  
   const tokenConfig = {
     code: req.query.code,
     redirect_uri: process.env.OAUTH_REDIRECT_URI,
@@ -95,12 +101,16 @@ function handleLogout(oauth2: OAuthClient, req, res, _next): void {
  * @param _next - The next function in the middleware chain
  */
 function handleNeedsAuthorized(oauth2: OAuthClient, req, res, _next): void {
+  const state = setCookiesForEdl(req, res, cookieOptions);
+  
   const url = oauth2.authorizationCode.authorizeURL({
     redirect_uri: process.env.OAUTH_REDIRECT_URI,
+    state,
   });
-
-  setCookiesForEdl(req, res, cookieOptions);
-
+  
+  console.log(state);
+  console.log(url);
+  
   res.redirect(303, url);
 }
 
