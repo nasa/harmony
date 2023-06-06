@@ -45,9 +45,6 @@ const oauthOptions = {
 async function handleCodeValidation(oauth2: OAuthClient, req, res, _next): Promise<void> {
   const { state } = req.signedCookies;
 
-  console.log('check if state matches');
-  console.log(req.query.state, state);
-
   if (state !== req.query.state) {
     throw new RequestValidationError();
   }
@@ -110,10 +107,6 @@ function handleNeedsAuthorized(oauth2: OAuthClient, req, res, _next): void {
     redirect_uri: process.env.OAUTH_REDIRECT_URI,
     state,
   });
-  
-  console.log('add state to url');
-  console.log(state);
-  console.log(url);
   
   res.redirect(303, url);
 }

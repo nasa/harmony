@@ -228,6 +228,20 @@ describe('Earthdata Login', function () {
           expect(this.res.headers['set-cookie'][0]).to.include('validated');
         });
       });
+
+      describe('and the provided state does not match the state cookie', function () {
+        beforeEach(async function () {
+          this.res = await request(this.frontend)
+            .get('/oauth2/redirect')
+            .query({ code: 'abc123', state: 'xyz' });
+        });
+        
+        // in this case, the state query parameter will be compared against an undefined
+        // state cookie (handleNeedsAuthorized, which sets the cookie has not been called)
+        it('returns an invalid request status code', function () {
+          expect(this.res.statusCode).to.equal(400);
+        });
+      });
     });
 
     describe('When Earthdata login does not validate the provided code', function () {
