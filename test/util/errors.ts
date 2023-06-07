@@ -1,6 +1,9 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import { HttpError, buildJsonErrorResponse, getHttpStatusCode, getEndUserErrorMessage, getCodeForError, NotFoundError, ForbiddenError, ServerError, RequestValidationError, ConflictError } from '../../app/util/errors';
+import {
+  HttpError, buildJsonErrorResponse, getHttpStatusCode, getEndUserErrorMessage, getCodeForError,
+  NotFoundError, ForbiddenError, ServerError, RequestValidationError, ConflictError,
+} from '../../app/util/errors';
 
 describe('util/errors', function () {
   describe('when an error is thrown that is not a harmony HttpError', function () {
@@ -59,7 +62,7 @@ describe('util/errors', function () {
 
     describe('without a custom message', function () {
       const error = new ForbiddenError();
-      it('uses the default not found message', function () {
+      it('uses the default forbidden message', function () {
         expect(getEndUserErrorMessage(error)).to.equal('You are not authorized to access the requested resource');
       });
       it('returns a 403 HTTP status code', function () {
@@ -87,7 +90,7 @@ describe('util/errors', function () {
 
     describe('without a custom message', function () {
       const error = new ServerError();
-      it('uses the default not found message', function () {
+      it('uses the default server error message', function () {
         expect(getEndUserErrorMessage(error)).to.equal('An unexpected error occurred');
       });
       it('returns a 500 HTTP status code', function () {
@@ -115,7 +118,7 @@ describe('util/errors', function () {
 
     describe('without a custom message', function () {
       const error = new RequestValidationError();
-      it('uses the default not found message', function () {
+      it('uses the default request validation error message', function () {
         expect(getEndUserErrorMessage(error)).to.equal('Invalid request');
       });
       it('returns a 400 HTTP status code', function () {
@@ -127,7 +130,7 @@ describe('util/errors', function () {
     });
   });
 
-  describe('when a Request Validation Error is thrown', function () {
+  describe('when a Conflict Error is thrown', function () {
     describe('with a custom message', function () {
       const message = 'Sorry, the server and client were engaged in a heated argument over who ate the last' +
         "cookie. Looks like it's a crumbly conflict, but don't worry, peace negotiations are underway!";
@@ -145,7 +148,7 @@ describe('util/errors', function () {
 
     describe('without a custom message', function () {
       const error = new ConflictError();
-      it('uses the default not found message', function () {
+      it('uses the default conflict error message', function () {
         expect(getEndUserErrorMessage(error)).to.equal('Conflict error');
       });
       it('returns a 409 HTTP status code', function () {

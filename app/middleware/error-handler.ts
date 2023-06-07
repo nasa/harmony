@@ -55,7 +55,7 @@ export default function errorHandler(
   if (shouldReturnJson(error, req)) {
     res.status(statusCode).json(buildJsonErrorResponse(code, message));
   } else {
-    const response = mustache.render(errorTemplate, { code, message });
+    const response = mustache.render(errorTemplate, { message });
     res.status(statusCode).type('html').send(response);
   }
 }
