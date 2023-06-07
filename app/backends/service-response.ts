@@ -192,7 +192,7 @@ export async function responseHandler(req: Request, res: Response): Promise<void
     res.send('Ok');
   } catch (e) {
     await trx.rollback();
-    const status = e.code || (e instanceof TypeError ? 400 : 500);
+    const status = e.statusCode || (e instanceof TypeError ? 400 : 500);
     res.status(status);
     const errorCode = (status >= 400 && status <= 499) ? 'harmony.RequestValidationError' : 'harmony.UnknownError';
     res.json({ code: errorCode, message: e.message });

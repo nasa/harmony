@@ -142,7 +142,7 @@ describe('Jobs listing route', function () {
         const response = JSON.parse(this.res.text);
         expect(response).to.eql({
           code: 'harmony.ServerError',
-          description: 'Error: Internal server error.',
+          description: 'Error: Internal server error',
         });
       });
     });
