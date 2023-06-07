@@ -14,7 +14,8 @@ export class SqsQueue extends Queue {
       region: env.awsDefaultRegion,
     };
     if (env.useLocalstack) {
-      sqsConfig.endpoint = 'http://localhost:4566';
+      const { localstackHost } = env;
+      sqsConfig.endpoint = `http://${localstackHost}:4566`;
     }
     this.sqs = new SQSClient(sqsConfig);
   }
