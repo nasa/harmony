@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { Application, Response, Router } from 'express';
 import * as yaml from 'js-yaml';
-import { buildErrorResponse } from '../../util/errors';
+import { buildJsonErrorResponse, getCodeForError, getEndUserErrorMessage, getHttpStatusCode } from '../../util/errors';
 import getLandingPage from './get-landing-page';
 import getRequirementsClasses from './get-requirements-classes';
 
@@ -105,22 +105,24 @@ export function handleOpenApiErrors(app: Application): void {
       next(err);
       return;
     }
-    let status = +err.status || +err.code || 500;
-    if (status < 400 || status >= 600) {
-      // Handle statuses out of range due to non-http error codes
-      status = 500;
-    }
-    let message = err.message || err.toString();
+
+    let statusCode;
+    let message;
     let code;
     if (err.status && err.errors) {
       // OpenAPI Validation errors;
+      statusCode = +err.status;
       code = 'openapi.ValidationError';
       const messages = err.errors.map((error) => `${error.location} parameter "${error.path}" ${error.message}`);
       message = messages.join('\n\t');
+    } else {
+      statusCode = getHttpStatusCode(err);
+      code = getCodeForError(err);
+      message = getEndUserErrorMessage(err);
     }
-    res.status(status).json(buildErrorResponse(err, code, message));
+    res.status(statusCode).json(buildJsonErrorResponse(code, message));
 
-    if (status < 500) {
+    if (statusCode < 500) {
       req.context.logger.error(`[${code}] ${message}`);
     } else {
       // Make sure we get stack traces when we throw an unexpected exception

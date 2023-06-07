@@ -1,7 +1,7 @@
 import express, { Request, Response, NextFunction } from 'express';
 import { Server } from 'http';
 import env from './util/env';
-import { buildErrorResponse, HttpError } from '../../../app/util/errors';
+import { buildJsonErrorResponse, getCodeForError, getEndUserErrorMessage, getHttpStatusCode, HttpError } from '../../../app/util/errors';
 import log from '../../../app/util/log';
 import router from './routers/router';
 
@@ -24,8 +24,10 @@ function errorHandler(
     next(err);
     return;
   }
-  const statusCode = err.code || 500;
-  const resp = buildErrorResponse(err);
+  const statusCode = getHttpStatusCode(err);
+  const code = getCodeForError(err);
+  const message = getEndUserErrorMessage(err);
+  const resp = buildJsonErrorResponse(code, message);
 
   res.status(statusCode).json(resp);
 }
