@@ -1,74 +1,170 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import { buildErrorResponse, HttpError } from '../../app/util/errors';
+import {
+  HttpError, buildJsonErrorResponse, getHttpStatusCode, getEndUserErrorMessage, getCodeForError,
+  NotFoundError, ForbiddenError, ServerError, RequestValidationError, ConflictError,
+} from '../../app/util/errors';
 
 describe('util/errors', function () {
-  describe('buildErrorResponse', function () {
-    describe('an error that does not have any http code associated with it', function () {
-      const error = new Error('Some error');
+  describe('when an error is thrown that is not a harmony HttpError', function () {
+    const error = new Error('Super secret sensitive info here.');
+    it('returns a generic error message', function () {
+      expect(getEndUserErrorMessage(error as HttpError)).to.equal('Internal server error');
+    });
+    it('returns a 500 HTTP status code', function () {
+      expect(getHttpStatusCode(error as HttpError)).to.equal(500);
+    });
+    it('returns a server error for the JSON code field in the error response', function () {
+      expect(getCodeForError(error as HttpError)).to.equal('harmony.ServerError');
+    });
+  });
 
-      describe('when passing just the error in', function () {
-        it('returns an internal server error', function () {
-          expect(buildErrorResponse(error as HttpError)).to.eql({
-            code: 'harmony.ServerError',
-            description: 'Error: Internal server error.',
-          });
-        });
+  describe('when a NotFound Error is thrown', function () {
+    describe('with a custom message', function () {
+      const error = new NotFoundError('that thing is gone');
+      it('uses the custom message', function () {
+        expect(getEndUserErrorMessage(error)).to.equal('that thing is gone');
       });
+      it('returns a 404 HTTP status code', function () {
+        expect(getHttpStatusCode(error)).to.equal(404);
+      });
+      it('returns an appropriate type for the code', function () {
+        expect(getCodeForError(error)).to.equal('harmony.NotFoundError');
+      });
+    });
+    describe('without a custom message', function () {
+      const error = new NotFoundError();
+      it('uses the default not found message', function () {
+        expect(getEndUserErrorMessage(error)).to.equal('The requested resource could not be found');
+      });
+      it('returns a 404 HTTP status code', function () {
+        expect(getHttpStatusCode(error)).to.equal(404);
+      });
+      it('returns an appropriate type for the code', function () {
+        expect(getCodeForError(error)).to.equal('harmony.NotFoundError');
+      });
+    });
+  });
 
-      describe('when passing an error code in', function () {
-        const code = 'harmony.testError';
-        it('constructs an error with that error code and the message from the original error', function () {
-          expect(buildErrorResponse(error as HttpError, code)).to.eql({
-            code: 'harmony.testError',
-            description: 'Error: Some error',
-          });
-        });
+  describe('when a Forbidden Error is thrown', function () {
+    describe('with a custom message', function () {
+      const error = new ForbiddenError('Who let you in here?');
+      it('uses the custom message', function () {
+        expect(getEndUserErrorMessage(error)).to.equal('Who let you in here?');
+      });
+      it('returns a 403 HTTP status code', function () {
+        expect(getHttpStatusCode(error)).to.equal(403);
+      });
+      it('returns an appropriate type for the code', function () {
+        expect(getCodeForError(error)).to.equal('harmony.ForbiddenError');
       });
     });
 
-    describe('an HttpError with an HTTP code associated with it', function () {
-      const httpError = new HttpError(400, 'Request was invalid');
-
-      describe('when passing just the error in', function () {
-        it('constructs an error response based on the HttpError type and the message passed to that error', function () {
-          expect(buildErrorResponse(httpError)).to.eql({
-            code: 'harmony.HttpError',
-            description: 'Error: Request was invalid',
-          });
-        });
+    describe('without a custom message', function () {
+      const error = new ForbiddenError();
+      it('uses the default forbidden message', function () {
+        expect(getEndUserErrorMessage(error)).to.equal('You are not authorized to access the requested resource');
       });
-
-      describe('when passed an error code', function () {
-        const code = 'secret.OverwrittenCode';
-        it('uses that as the error code in the response that is constructed', function () {
-          expect(buildErrorResponse(httpError, code)).to.eql({
-            code: 'secret.OverwrittenCode',
-            description: 'Error: Request was invalid',
-          });
-        });
+      it('returns a 403 HTTP status code', function () {
+        expect(getHttpStatusCode(error)).to.equal(403);
       });
-
-      describe('when passed an error code and a message', function () {
-        const code = 'secret.testCode';
-        const message = 'Overwrote the message';
-        it('uses that as the error code in the response that is constructed', function () {
-          expect(buildErrorResponse(httpError, code, message)).to.eql({
-            code: 'secret.testCode',
-            description: 'Error: Overwrote the message',
-          });
-        });
+      it('returns an appropriate type for the code', function () {
+        expect(getCodeForError(error)).to.equal('harmony.ForbiddenError');
       });
+    });
+  });
 
-      describe('when the message is empty', function () {
-        const message = '';
-        const error = new HttpError(403, message);
-        it('returns an error with a code and description field with the default Error', function () {
-          expect(buildErrorResponse(error)).to.eql({
-            code: 'harmony.HttpError',
-            description: 'Error: Error',
-          });
-        });
+  describe('when a Server Error is thrown', function () {
+    describe('with a custom message', function () {
+      const error = new ServerError('Oops that was my fault');
+      it('uses the custom message', function () {
+        expect(getEndUserErrorMessage(error)).to.equal('Oops that was my fault');
+      });
+      it('returns a 500 HTTP status code', function () {
+        expect(getHttpStatusCode(error)).to.equal(500);
+      });
+      it('returns an appropriate type for the code', function () {
+        expect(getCodeForError(error)).to.equal('harmony.ServerError');
+      });
+    });
+
+    describe('without a custom message', function () {
+      const error = new ServerError();
+      it('uses the default server error message', function () {
+        expect(getEndUserErrorMessage(error)).to.equal('An unexpected error occurred');
+      });
+      it('returns a 500 HTTP status code', function () {
+        expect(getHttpStatusCode(error)).to.equal(500);
+      });
+      it('returns an appropriate type for the code', function () {
+        expect(getCodeForError(error)).to.equal('harmony.ServerError');
+      });
+    });
+  });
+
+  describe('when a Request Validation Error is thrown', function () {
+    describe('with a custom message', function () {
+      const error = new RequestValidationError("I'm sorry Dave. I'm afraid I can't do that.");
+      it('uses the custom message', function () {
+        expect(getEndUserErrorMessage(error)).to.equal("I'm sorry Dave. I'm afraid I can't do that.");
+      });
+      it('returns a 400 HTTP status code', function () {
+        expect(getHttpStatusCode(error)).to.equal(400);
+      });
+      it('returns an appropriate type for the code', function () {
+        expect(getCodeForError(error)).to.equal('harmony.RequestValidationError');
+      });
+    });
+
+    describe('without a custom message', function () {
+      const error = new RequestValidationError();
+      it('uses the default request validation error message', function () {
+        expect(getEndUserErrorMessage(error)).to.equal('Invalid request');
+      });
+      it('returns a 400 HTTP status code', function () {
+        expect(getHttpStatusCode(error)).to.equal(400);
+      });
+      it('returns an appropriate type for the code', function () {
+        expect(getCodeForError(error)).to.equal('harmony.RequestValidationError');
+      });
+    });
+  });
+
+  describe('when a Conflict Error is thrown', function () {
+    describe('with a custom message', function () {
+      const message = 'Sorry, the server and client were engaged in a heated argument over who ate the last' +
+        "cookie. Looks like it's a crumbly conflict, but don't worry, peace negotiations are underway!";
+      const error = new ConflictError(message);
+      it('uses the custom message', function () {
+        expect(getEndUserErrorMessage(error)).to.equal(message);
+      });
+      it('returns a 409 HTTP status code', function () {
+        expect(getHttpStatusCode(error)).to.equal(409);
+      });
+      it('returns an appropriate type for the code', function () {
+        expect(getCodeForError(error)).to.equal('harmony.ConflictError');
+      });
+    });
+
+    describe('without a custom message', function () {
+      const error = new ConflictError();
+      it('uses the default conflict error message', function () {
+        expect(getEndUserErrorMessage(error)).to.equal('Conflict error');
+      });
+      it('returns a 409 HTTP status code', function () {
+        expect(getHttpStatusCode(error)).to.equal(409);
+      });
+      it('returns an appropriate type for the code', function () {
+        expect(getCodeForError(error)).to.equal('harmony.ConflictError');
+      });
+    });
+  });
+
+  describe('#buildJsonErrorResponse', function () {
+    it('generates an appropriate JSON error field with code and message keys', function () {
+      expect(buildJsonErrorResponse('harmony.testError', 'some kind of problem')).to.eql({
+        code: 'harmony.testError',
+        description: 'Error: some kind of problem',
       });
     });
   });
