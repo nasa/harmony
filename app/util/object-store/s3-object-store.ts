@@ -121,7 +121,14 @@ export class S3ObjectStore implements ObjectStore {
     urlToSign.query = params;
     const urlNew = await presigner.presign(new HttpRequest(urlToSign), { expiresIn: 3600 });
 
-    return formatUrl(urlNew);
+
+    let finalUrl = formatUrl(urlNew);
+    // Needed as a work-around to allow access from outside the kubernetes cluster
+    // for local development
+    if (env.useLocalstack) {
+      finalUrl = finalUrl.replace('localstack', 'localhost');
+    }
+    return finalUrl;
   }
 
   /**
