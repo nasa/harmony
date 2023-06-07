@@ -67,7 +67,6 @@ https://cmr.uat.earthdata.nasa.gov:
           <<: *default-turbo-env
           STAGING_PATH: public/podaac/l2-subsetter
     umm_s: S1234899453-POCLOUD
-    collections: []
     capabilities:
       subsetting:
         temporal: true
