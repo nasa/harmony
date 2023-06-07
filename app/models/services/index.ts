@@ -39,6 +39,15 @@ function parseEnvironmentDirective(envDirective: string): string | number {
 }
 
 /**
+ * Update the given service configuration collections to empty array if it is undefined.
+ */
+function updateCollectionsConfig(config: ServiceConfig<unknown>): void {
+  if (config.collections === undefined) {
+    config.collections = [];
+  }
+}
+
+/**
  * Loads the services configuration from the given file.
  * @param cmrEndpoint - The CMR endpoint url
  * @param fileName - The path to the services configuation file
@@ -61,6 +70,7 @@ export function loadServiceConfigsFromFile(cmrEndpoint: string, fileName: string
   const envConfigs = yaml.load(buffer.toString(), { schema });
   const configs = envConfigs[cmrEndpoint]
     .filter((config) => config.enabled !== false && config.enabled !== 'false');
+  configs.forEach(sc => updateCollectionsConfig(sc));
   return configs;
 }
 
@@ -103,6 +113,12 @@ function validateServiceConfigSteps(config: ServiceConfig<unknown>): void {
 export function validateServiceConfig(config: ServiceConfig<unknown>): void {
   if (config.umm_s === undefined || typeof config.umm_s !== 'string') {
     throw new ServerError(`There must be one and only one umm_s record configured as a string for harmony service: ${config.name}`);
+  }
+
+  for (const coll of config.collections) {
+    if (coll && (!coll.variables && !coll.granule_limit)) {
+      throw new ServerError(`Collections cannot be configured for harmony service: ${config.name}, use umm_s instead.`);
+    }
   }
 
   validateServiceConfigSteps(config);
