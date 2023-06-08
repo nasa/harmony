@@ -816,7 +816,6 @@ describe('createWorkflowSteps', function () {
     name: 'shapefile-tiff-netcdf-service',
     data_operation_version: CURRENT_SCHEMA_VERSION,
     type: { name: 'turbo' },
-    collections: [],
     capabilities: {
       output_formats: ['image/tiff', 'application/x-netcdf4'],
       subsetting: {

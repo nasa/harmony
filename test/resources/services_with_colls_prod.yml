@@ -23,6 +23,32 @@ x-turbo-config: &default-turbo-config
 
 https://cmr.earthdata.nasa.gov:
 
+  - name: with-collections
+    description: |
+      testing service configuration with collections field not for variables or granule_limit
+    data_operation_version: '0.17.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/somewhere
+    umm_s: S23456789-EXAMPLE
+    collections:
+      - C12345678-EXAMPLE
+    capabilities:
+      subsetting:
+        temporal: true
+        bbox: true
+        variable: true
+        shape: true
+      output_formats:
+        - application/x-netcdf4
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+      - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
+
   - name: podaac/l2-subsetter
     description: |
       Implementation of the L2 swath subsetter based on python, xarray and netcdf4.
@@ -54,27 +80,3 @@ https://cmr.earthdata.nasa.gov:
       - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
 
-  - name: umm_s_not_string
-    description: |
-      testing service configuration umm_s field with a list value
-    data_operation_version: '0.17.0'
-    type:
-      <<: *default-turbo-config
-      params:
-        <<: *default-turbo-params
-        env:
-          <<: *default-turbo-env
-          STAGING_PATH: public/somewhere
-    umm_s:
-      - S1962070864-EXAMPLE
-    capabilities:
-      subsetting:
-        temporal: true
-        bbox: true
-        variable: true
-        shape: true
-      output_formats:
-        - application/x-netcdf4
-    steps:
-      - image: !Env ${QUERY_CMR_IMAGE}
-      - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
