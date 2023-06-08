@@ -7,10 +7,10 @@
     "start": "ts-node app/server.ts",
     "start-dev": "strict-npm-engines && ts-node-dev --no-notify -r tsconfig-paths/register --watch app/views --respawn app/server",
     "start-dev-fast": "TS_NODE_TRANSPILE_ONLY=true ts-node-dev --no-notify -r tsconfig-paths/register --respawn --inspect=127.0.0.1:9231 app/server",
-    "test": "eslint --ext .ts . && nyc mocha --timeout 5000 && better-npm-audit audit",
-    "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha --timeout 5000",
+    "test": "eslint --ext .ts . && nyc mocha && better-npm-audit audit",
+    "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha",
     "lint": "eslint --ext .ts .",
-    "coverage": "nyc mocha --timeout 5000",
+    "coverage": "nyc mocha",
     "build": "tsc && docker build --tag harmonyservices/work-scheduler:${VERSION:-latest} .",
     "build-m1": "tsc && docker build --platform linux/amd64 --tag harmonyservices/work-scheduler:${VERSION:-latest} .",
     "publish": "docker push harmonyservices/work-scheduler:${VERSION:-latest}"
