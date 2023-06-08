@@ -51,4 +51,18 @@ describe('Services.yml validation', function () {
       expect(() => configs.forEach(validateServiceConfig)).to.throw(/There must be one and only one umm_s record configured as a string for harmony service: umm_s_not_string/);
     });
   });
+
+  describe('services.yml with collections configuraiton in UAT is invalid', function () {
+    it('throws an exception', function () {
+      const configs = loadServiceConfigsFromFile(cmrEndpoints.uat, '../../../test/resources/services_with_colls_uat.yml');
+      expect(() => configs.forEach(validateServiceConfig)).to.throw(/Collections cannot be configured for harmony service: with-collections, use umm_s instead./);
+    });
+  });
+
+  describe('services.yml with collections configuraiton in PROD is invalid', function () {
+    it('throws an exception', function () {
+      const configs = loadServiceConfigsFromFile(cmrEndpoints.prod, '../../../test/resources/services_with_colls_prod.yml');
+      expect(() => configs.forEach(validateServiceConfig)).to.throw(/Collections cannot be configured for harmony service: with-collections, use umm_s instead./);
+    });
+  });
 });

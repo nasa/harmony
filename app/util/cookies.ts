@@ -12,6 +12,7 @@ import { mergeParameters } from './parameter-parsing-helpers';
 import * as urlUtil from './url';
 import HarmonyRequest from '../models/harmony-request';
 import { get } from 'lodash';
+import { randomBytes } from 'crypto';
 
 export const cookieOptions = { signed: true, sameSite: 'Lax' };
 
@@ -48,9 +49,21 @@ function _redirect(req: HarmonyRequest): string[] {
   return ['redirect', urlUtil.getRequestUrl(req)];
 }
 
+/**
+ * Recipe for the 'state' cookie
+ *
+ * @returns a tuple containing the name and value for the cookie
+ */
+function _state(): string[] {
+  const state = randomBytes(16).toString('hex');
+
+  return ['state', state];
+}
+
 const edlRecipes = [
   _shapefile,
   _redirect,
+  _state,
 ];
 
 const authorizedRecipes = [
@@ -63,14 +76,20 @@ const authorizedRecipes = [
  * @param req - The request
  * @param res - The response
  * @param options - The options to use when setting the cookie
+ * @returns the value for the state cookie
  */
-export function setCookiesForEdl(req: HarmonyRequest, res: Response, options: object): void {
+export function setCookiesForEdl(req: HarmonyRequest, res: Response, options: object): string {
+  let stateValue: string;
   edlRecipes.forEach((recipe) => {
     const [name, value] = recipe(req);
     if (name) {
       res.cookie(name, value, options);
     }
+    if (name == 'state') {
+      stateValue = value;
+    }
   });
+  return stateValue;
 }
 
 /**

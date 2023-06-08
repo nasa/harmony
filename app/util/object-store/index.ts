@@ -2,6 +2,8 @@ import { FileStore } from './file-store';
 import { ObjectStore } from './object-store';
 import { S3ObjectStore } from './s3-object-store';
 
+let s3Store; // Singleton to ensure we are only instantiating one S3 client
+
 /**
  * Returns the default object store for this instance of Harmony.  Allows requesting an
  * object store without first knowing a protocol.
@@ -9,7 +11,10 @@ import { S3ObjectStore } from './s3-object-store';
  * @returns the default object store for Harmony.
  */
 export function defaultObjectStore(): ObjectStore {
-  return new S3ObjectStore({});
+  if (!s3Store) {
+    s3Store = new S3ObjectStore({});
+  }
+  return s3Store;
 }
 
 /**
@@ -27,7 +32,10 @@ export function objectStoreForProtocol(protocol?: string): ObjectStore {
   // Make sure the protocol is lowercase and does not end in a colon (as URL parsing produces)
   const normalizedProtocol = protocol.toLowerCase().split(':')[0];
   if (normalizedProtocol === 's3') {
-    return new S3ObjectStore({});
+    if (!s3Store) {
+      s3Store = new S3ObjectStore({});
+    }
+    return s3Store;
   } else if (normalizedProtocol === 'file') {
     return new FileStore();
   }

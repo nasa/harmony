@@ -35,8 +35,11 @@ if [ ! -f "$file" ]; then
   exit 1
 fi
 envsubst < $file | kubectl apply -f - -n harmony
+
 # create the service queue
+if [ "$USE_SERVICE_QUEUES" == "true" ]; then
   awslocal sqs create-queue --queue-name "query-cmr.fifo" --attributes FifoQueue=true,ContentBasedDeduplication=true --region us-west-2
+fi
 
 # create the other services
 file="tasks/service-runner/config/service-template.yaml"
@@ -70,5 +73,7 @@ do
   envsubst < $file | kubectl apply -f - -n harmony
 
   # create the service queue
-  awslocal sqs create-queue --queue-name "${SERVICE_NAME}.fifo" --attributes FifoQueue=true,ContentBasedDeduplication=true --region us-west-2
+  if [ "$USE_SERVICE_QUEUES" == "true" ]; then
+    awslocal sqs create-queue --queue-name "${SERVICE_NAME}.fifo" --attributes FifoQueue=true,ContentBasedDeduplication=true --region us-west-2
+  fi
 done
