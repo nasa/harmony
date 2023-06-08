@@ -78,6 +78,7 @@ export class SqsQueue extends Queue {
     if (groupId) {
       message.MessageGroupId = groupId;
     }
+    message.DelaySeconds = 0;
     await this.sqs.send(new SendMessageCommand(message));
   }
 

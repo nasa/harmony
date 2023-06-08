@@ -21,8 +21,8 @@ export type WorkItemData = {
  * @param reqLogger - a logger instance
  * @returns A work item from the database for the given service ID
  */
-export async function getWorkFromDatabase(serviceID: string, reqLogger: Logger): Promise<WorkItemData> {
-  let result: WorkItemData;
+export async function getWorkFromDatabase(serviceID: string, reqLogger: Logger): Promise<WorkItemData | null> {
+  let result: WorkItemData | null = null;
   try {
     await db.transaction(async (tx) => {
       const username = await getNextUsernameForWork(tx, serviceID as string);
@@ -62,16 +62,18 @@ export async function getWorkFromDatabase(serviceID: string, reqLogger: Logger):
  * @param serviceID - The service ID for which to request work
  */
 export async function makeWorkScheduleRequest(serviceID: string): Promise<void> {
-  const schedulerQueue = getWorkSchedulerQueue();
-  // must include groupId for FIFO queues, but we don't care about it so just use 'w'
-  await schedulerQueue.sendMessage(serviceID, 'w');
+  // only do this if we are using service queues
+  if (env.useServiceQueues) {
+    const schedulerQueue = getWorkSchedulerQueue();
+    await schedulerQueue.sendMessage(serviceID);
+  }
 }
 
 /**
  * Get the next work item for the given service from the queue
  * @param serviceID - The service ID for which to get work
  */
-export async function getWorkFromQueue(serviceID: string, reqLogger: Logger): Promise<WorkItemData> {
+export async function getWorkFromQueue(serviceID: string, reqLogger: Logger): Promise<WorkItemData | null> {
   const queueUrl = getQueueUrlForService(serviceID);
   reqLogger.debug(`Short polling for work from queue ${queueUrl} for service ${serviceID}`);
 

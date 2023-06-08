@@ -28,7 +28,7 @@ export async function getWork(
   // reqLogger.info(`Getting work for service ${serviceID} and pod ${podName}`);
 
   let responded = false;
-  let workItemData: WorkItemData;
+  let workItemData: WorkItemData | null;
 
   if (env.useServiceQueues) {
     workItemData = await getWorkFromQueue(serviceID as string, reqLogger);
