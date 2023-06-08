@@ -77,7 +77,7 @@ fi
 
 WORK_ITEM_UPDATE_QUEUE=${WORK_ITEM_UPDATE_QUEUE:-work-item-update-queue}
 LARGE_WORK_ITEM_UPDATE_QUEUE=${LARGE_WORK_ITEM_UPDATE_QUEUE:-large-work-item-update-queue}
-WORK_ITEM_SCHEDULER_QUEUE=${WORK_ITEM_SCHEDULER_QUEUE:-work-item-scheduler-queue.fifo}
+WORK_ITEM_SCHEDULER_QUEUE=${WORK_ITEM_SCHEDULER_QUEUE:-work-item-scheduler-queue}
 STAGING_BUCKET=${STAGING_BUCKET:-local-staging-bucket}
 ARTIFACT_BUCKET=${ARTIFACT_BUCKET:-local-artifact-bucket}
 UPLOAD_BUCKET=${UPLOAD_BUCKET:-local-upload-bucket}
@@ -93,7 +93,7 @@ s3.put_bucket_acl(Bucket='${ARTIFACT_BUCKET}', ACL='public-read') # allows us to
 sqs = boto3.client('sqs', endpoint_url='http://localhost:4566', region_name='us-west-2')
 sqs.create_queue(QueueName='${WORK_ITEM_UPDATE_QUEUE}')
 sqs.create_queue(QueueName='${LARGE_WORK_ITEM_UPDATE_QUEUE}', Attributes={'VisibilityTimeout': '3600'})
-sqs.create_queue(QueueName='${WORK_ITEM_SCHEDULER_QUEUE}', Attributes={'FifoQueue': 'true', 'ContentBasedDeduplication': 'true'})
+sqs.create_queue(QueueName='${WORK_ITEM_SCHEDULER_QUEUE}')
 "
 
 # For some develpers using Linux, artifact repositories were not working correctly without
