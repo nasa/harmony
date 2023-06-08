@@ -28,6 +28,8 @@ kubernetes then starting up a node.js process to run the scheduler.
 If you want to do sandbox deployments with your custom scheduler image then you need to
 push it to ECR. This can be done as follows:
 
-1. `bin/push-image <image-tag?`
+1. (only needed if building on Mac to build for AMD64 architecture)
+   `VERSION=<image-tag> npm run build-m1`
+2. `bin/push-image <image-tag?`
 
 This requires you to have your AWS credentials set for your sandbox.
