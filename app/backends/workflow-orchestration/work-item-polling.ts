@@ -55,47 +55,21 @@ export async function getWorkFromDatabase(serviceID: string, reqLogger: Logger):
   return result;
 }
 
-
-/**
- *  Put a message on the work scheduler queue asking it to schedule some WorkItems for the given
- *  service
- * @param serviceID - The service ID for which to request work
- */
-export async function makeWorkScheduleRequest(serviceID: string): Promise<void> {
-  // only do this if we are using service queues
-  if (env.useServiceQueues) {
-    const schedulerQueue = getWorkSchedulerQueue();
-    await schedulerQueue.sendMessage(serviceID);
-  }
-}
-
 /**
  * Get the next work item for the given service from the queue
  * @param serviceID - The service ID for which to get work
  */
 export async function getWorkFromQueue(serviceID: string, reqLogger: Logger): Promise<WorkItemData | null> {
   const queueUrl = getQueueUrlForService(serviceID);
-  reqLogger.debug(`Short polling for work from queue ${queueUrl} for service ${serviceID}`);
+  reqLogger.debug(`Polling for work from queue ${queueUrl} for service ${serviceID}`);
 
   const queue = getQueueForUrl(queueUrl);
   if (!queue) {
     throw new Error(`No queue found for URL ${queueUrl}`);
   }
 
-  // get a message from the service queue without using long-polling
-  let queueItem = await queue.getMessage(0);
-  if (!queueItem) {
-    reqLogger.debug(`No work found on queue ${queueUrl} for service ${serviceID} - requesting work from scheduler`);
-    // put a message on the scheduler queue asking it to schedule some WorkItems for this service
-    await makeWorkScheduleRequest(serviceID);
-
-    // this actually does nothing outside of tests since the scheduler pod will be running
-    await processSchedulerQueue(reqLogger);
-
-    // long poll for work before giving up
-    reqLogger.debug(`Long polling for work on queue ${queueUrl} for service ${serviceID}`);
-    queueItem = await queue.getMessage();
-  }
+  // get a message from the service queue using long polling
+  const queueItem = await queue.getMessage();
 
   if (queueItem){
     // reqLogger.debug(`Found work item ${JSON.stringify(queueItem, null, 2)} on queue ${queueUrl}`);

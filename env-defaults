@@ -145,9 +145,6 @@ UPLOAD_BUCKET=local-upload-bucket
 # Whether or not to use queues for retrieving work-items when handling polling for work
 USE_SERVICE_QUEUES=false
 
-# SQS queue used to request scheduling of work items for a service
-WORK_ITEM_SCHEDULER_QUEUE_URL=http://localstack:4566/queue/work-item-scheduler-queue
-
 # SQS queue used to process work item updates
 WORK_ITEM_UPDATE_QUEUE_URL=http://localstack:4566/queue/work-item-update-queue
 

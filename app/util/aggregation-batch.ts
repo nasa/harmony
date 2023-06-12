@@ -16,7 +16,6 @@ import WorkflowStep, { decrementWorkItemCount, incrementWorkItemCount } from '..
 import { WorkItemStatus } from '../models/work-item-interface';
 import WorkItem from '../models/work-item';
 import { incrementReadyCount } from '../models/user-work';
-import { makeWorkScheduleRequest } from '../backends/workflow-orchestration/work-item-polling';
 
 /**
  * Get the size in bytes of the object at the given url
@@ -211,9 +210,6 @@ async function createCatalogAndWorkItemForBatch(
 
     await incrementReadyCount(tx, jobID, serviceID);
     await newWorkItem.save(tx);
-
-    // ask the scheduler to schedule the new work item
-    await makeWorkScheduleRequest(serviceID);
 
     return true;
   } else {

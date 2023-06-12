@@ -22,7 +22,6 @@ import { StacItem, readCatalogItems, StacItemLink, StacCatalog } from '../../uti
 import { sanitizeImage } from '../../util/string';
 import { resolve } from '../../util/url';
 import { QUERY_CMR_SERVICE_REGEX, calculateQueryCmrLimit } from './util';
-import { makeWorkScheduleRequest } from './work-item-polling';
 
 
 type WorkItemUpdateQueueItem = {
@@ -362,9 +361,6 @@ async function createAggregatingWorkItem(
   await incrementReadyCount(tx, currentWorkItem.jobID, nextStep.serviceID);
   await newWorkItem.save(tx);
 
-  // ask the scheduler to schedule the new work item
-  await makeWorkScheduleRequest(newWorkItem.serviceID);
-
   const itemMeta: WorkItemMeta = { workItemService: sanitizeImage(newWorkItem.serviceID),
     workItemEvent: 'statusUpdate', workItemAmount: 1, workItemStatus: WorkItemStatus.READY };
   logger.info('Queued new aggregating work item.', itemMeta);
@@ -393,9 +389,6 @@ async function maybeQueueQueryCmrWorkItem(
 
       await incrementReadyCount(tx, currentWorkItem.jobID, currentWorkItem.serviceID);
       await nextQueryCmrItem.save(tx);
-
-      // ask the scheduler to schedule the new work item
-      await makeWorkScheduleRequest(currentWorkItem.serviceID);
 
       const itemMeta: WorkItemMeta = { workItemService: sanitizeImage(nextQueryCmrItem.serviceID),
         workItemEvent: 'statusUpdate', workItemAmount: 1, workItemStatus: WorkItemStatus.READY };
@@ -639,10 +632,6 @@ export async function handleWorkItemUpdateWithJobId(
             results,
             outputItemSizes,
           );
-          if (didCreateWorkItem) {
-            // ask the scheduler to schedule the new work item
-            await makeWorkScheduleRequest(nextWorkflowStep.serviceID);
-          }
         }
         if (nextWorkflowStep && status === WorkItemStatus.SUCCESSFUL) {
           if (results && results.length > 0) {
