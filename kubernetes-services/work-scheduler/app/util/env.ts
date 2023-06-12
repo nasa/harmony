@@ -61,8 +61,9 @@ interface HarmonyEnv {
   serviceQueueUrls: { [key: string]: string };
   useServiceQueues: boolean;
   workItemSchedulerQueueUrl: string;
+  workItemSchedulerQueueMaxBatchSize: number;
+  workItemSchedulerQueueMaxGetMessageRequests: number;
   nodeEnv: string;
-  schedulerQueueBatchSize: number;
   serviceQueueBatchSizeCoefficient: number;
 }
 

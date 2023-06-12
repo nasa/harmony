@@ -6,11 +6,31 @@ import { Logger } from 'winston';
 import { getQueueUrlForService, getQueueForUrl, getWorkSchedulerQueue } from '../../../../app/util/queue/queue-factory';
 import { getWorkFromDatabase } from '../../../../app/backends/workflow-orchestration/work-item-polling';
 import { getPodsCountForService } from '../util/k8s';
+import { Queue, ReceivedMessage } from '../../../../app/util/queue/queue';
 
 const kc = new k8s.KubeConfig();
 kc.loadFromDefault();
 
 export const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
+
+/**
+ * Read all the messages from a queue (up to the default timeout period) and return them.
+ * @param queue - the queue to drain
+ */
+async function drainQueue(queue: Queue): Promise<ReceivedMessage[]> {
+  const allMessages: ReceivedMessage[] = [];
+  // long poll for messages the first time through
+  let messages = await queue.getMessages(env.workItemSchedulerQueueMaxBatchSize);
+  let receiveCount = 1;
+  while (messages.length > 0 && receiveCount < env.workItemSchedulerQueueMaxGetMessageRequests) {
+    allMessages.push(...messages);
+    // get the next batch of messages with a short poll
+    messages = await queue.getMessages(env.workItemSchedulerQueueMaxBatchSize, 0);
+    receiveCount++;
+  }
+
+  return allMessages;
+}
 
 /**
  * Read the scheduler queue and process any items in it
@@ -23,7 +43,8 @@ export const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
 export async function processSchedulerQueue(reqLogger: Logger): Promise<void> {
   reqLogger.debug('Processing scheduler queue');
   const schedulerQueue = getWorkSchedulerQueue();
-  const queueItems = await schedulerQueue.getMessages(env.schedulerQueueBatchSize);
+  // const queueItems = await schedulerQueue.getMessages(env.workItemSchedulerQueueMaxBatchSize);
+  const queueItems = await drainQueue(schedulerQueue);
   const processedServiceIDs: string[] = [];
 
   reqLogger.debug(`Found ${queueItems.length} items in the scheduler queue`);
