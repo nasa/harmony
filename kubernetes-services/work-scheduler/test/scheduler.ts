@@ -7,29 +7,33 @@ import * as scheduler from '../app/workers/scheduler';
 import * as k8s from '../app/util/k8s';
 import * as workItemPolling from '../../../app/backends/workflow-orchestration/work-item-polling';
 import * as queueFactory from '../../../app/util/queue/queue-factory';
+import logger from '../../../app/util/log';
 import { MemoryQueue } from '../../../test/helpers/memory-queue';
 import WorkItem from '../../../app/models/work-item';
 import { WorkItemData } from '../../../app/backends/workflow-orchestration/work-item-polling';
-import env from '../app/util/env';
 
 describe('Scheduler Worker', async function () {
   const service = 'foo:latest';
 
-  describe('schedule work', async function () {
+  describe('processSchedulerQueue', async function () {
     let getPodsCountForServiceStub: SinonStub;
     let getWorkFromDatabaseStub: SinonStub;
+    let getSchedulerQueueStub: SinonStub;
     let getQueueUrlForServiceStub: SinonStub;
     let getQueueForUrlStub: SinonStub;
+    const schedulerQueue = new MemoryQueue();
     let serviceQueues;
 
     before(function () {
-      env.serviceQueueUrls = {
-        'foo:latest': 'foo',
-      };
       getPodsCountForServiceStub = sinon.stub(k8s, 'getPodsCountForService').callsFake(async function () {
         return 1;
       });
-
+      getWorkFromDatabaseStub = sinon.stub(workItemPolling, 'getWorkFromDatabase').callsFake(async function (_serviceID: string, _logger: Logger) {
+        return { workItem: new WorkItem({ id: 1 }) } as WorkItemData;
+      });
+      getSchedulerQueueStub = sinon.stub(queueFactory, 'getWorkSchedulerQueue').callsFake(function () {
+        return schedulerQueue;
+      });
       getQueueUrlForServiceStub = sinon.stub(queueFactory, 'getQueueUrlForService').callsFake(function (serviceID: string) { return serviceID; });
       getQueueForUrlStub = sinon.stub(queueFactory, 'getQueueForUrl').callsFake(function (url: string) {
         let queue = serviceQueues[url];
@@ -43,57 +47,59 @@ describe('Scheduler Worker', async function () {
 
     after(function () {
       getPodsCountForServiceStub.restore();
+      getWorkFromDatabaseStub.restore();
+      getSchedulerQueueStub.restore();
       getQueueForUrlStub.restore();
       getQueueUrlForServiceStub.restore();
     });
 
-    beforeEach(async function () {
-      serviceQueues = {};
-      serviceQueues[service] = new MemoryQueue();
-      await scheduler.updateServiceQueues();
-    });
-    afterEach(async function () {
-      serviceQueues = {};
-    });
+    describe('when there is no work on the scheduler queue', async function () {
 
-    describe('when there is no work for a service', async function () {
-      before(function () {
-        getWorkFromDatabaseStub = sinon.stub(workItemPolling, 'getWorkFromDatabase').callsFake(async function (_serviceID: string, _logger: Logger) {
-          return null;
-        });
+      beforeEach(async function () {
+        await schedulerQueue.purge();
+        serviceQueues = {};
+        serviceQueues[service] = new MemoryQueue();
+        await scheduler.processSchedulerQueue(logger);
+      });
+      afterEach(async function () {
+        await schedulerQueue.purge();
+        serviceQueues = {};
       });
 
-      after(function () {
-        getWorkFromDatabaseStub.restore();
+      it('does call getSchedulerQueue', async function () {
+        expect(getSchedulerQueueStub.called).to.be.true;
       });
 
-      it('calls getPodsCountForService', async function () {
-        expect(getPodsCountForServiceStub.called).to.be.true;
+      it('does not call getPodsCountForService', async function () {
+        expect(getPodsCountForServiceStub.called).to.be.false;
       });
 
-      it('calls getWorkFromDatabase', async function () {
-        expect(getWorkFromDatabaseStub.called).to.be.true;
+      it('does not call getWorkFromDatabase', async function () {
+        expect(getWorkFromDatabaseStub.called).to.be.false;
       });
 
-      it('calls getQueueForUrl', async function () {
-        expect(getQueueForUrlStub.called).to.be.true;
+      it('does not call getQueueForUrl', async function () {
+        expect(getQueueForUrlStub.called).to.be.false;
       });
 
-      it('does not put a message on the queue', async function () {
+      it('doest not put any messages on the queue', async function () {
         const numMessages = await serviceQueues[service].getApproximateNumberOfMessages();
         expect(numMessages).to.equal(0);
       });
     });
 
-    describe('when there is work for a service', async function () {
-      before(function () {
-        getWorkFromDatabaseStub = sinon.stub(workItemPolling, 'getWorkFromDatabase').callsFake(async function (_serviceID: string, _logger: Logger) {
-          return { workItem: new WorkItem({ id: 1 }) } as WorkItemData;
-        });
-      });
+    describe('when there is work on the scheduler queue', async function () {
 
-      after(function () {
-        getWorkFromDatabaseStub.restore();
+      beforeEach(async function () {
+        await schedulerQueue.purge();
+        await schedulerQueue.sendMessage(service);
+        serviceQueues = {};
+        serviceQueues[service] = new MemoryQueue();
+        await scheduler.processSchedulerQueue(logger);
+      });
+      afterEach(async function () {
+        await schedulerQueue.purge();
+        serviceQueues = {};
       });
 
       it('calls getPodsCountForService', async function () {
@@ -102,6 +108,10 @@ describe('Scheduler Worker', async function () {
 
       it('calls getWorkFromDatabase', async function () {
         expect(getWorkFromDatabaseStub.called).to.be.true;
+      });
+
+      it('calls getSchedulerQueue', async function () {
+        expect(getSchedulerQueueStub.called).to.be.true;
       });
 
       it('calls getQueueForUrl', async function () {

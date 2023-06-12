@@ -33,6 +33,9 @@ QUEUE_LONG_POLLING_WAIT_TIME_SEC=20
 # page size to use with CMR calls - only used for logging in this service
 CMR_MAX_PAGE_SIZE=2000
 
+# SQS queue used to request scheduling of work items for a service
+WORK_ITEM_SCHEDULER_QUEUE_URL=http://localstack:4566/queue/work-item-scheduler-queue
+SCHEDULER_QUEUE_BATCH_SIZE=10
 # Used to allow slightly more work items to be queued than the number of available workers
 # to avoid queue starvation. 1.1 for example means to queue 10% more work items than there
 # are running pods for the service.
