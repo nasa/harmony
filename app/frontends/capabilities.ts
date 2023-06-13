@@ -5,12 +5,18 @@ import { NotFoundError, RequestValidationError } from '../util/errors';
 import { CmrCollection, getCollectionsByIds, getCollectionsByShortName, getVariablesForCollection, CmrUmmVariable } from '../util/cmr';
 import { addCollectionsToServicesByAssociation } from '../middleware/service-selection';
 import _ from 'lodash';
-import { ServiceConfig } from '../models/services/base-service';
+import { ServiceCapabilities, ServiceConfig } from '../models/services/base-service';
 import { harmonyCollections } from '../models/services';
 import { listToText } from '../util/string';
 
 export const currentApiVersion = '2';
 const supportedApiVersions = ['1', '2'];
+
+interface ServiceV2 {
+  name: string;
+  href: string;
+  capabilities: ServiceCapabilities;
+}
 
 interface VariableV2 {
   name: string;
@@ -40,7 +46,7 @@ interface CollectionCapabilitiesV2 {
   concatenate: boolean;
   reproject: boolean;
   outputFormats: string[];
-  services: ServiceConfig<unknown>[];
+  services: ServiceV2[];
   variables: VariableV2[];
   capabilitiesVersion: string;
 }
@@ -93,10 +99,22 @@ async function loadCollectionInfo(req: HarmonyRequest): Promise<CmrCollection> {
 }
 
 /**
- * Returns the variables representation in capabilities version 2 format.
+ * Returns the service representation in capabilities version 2 format.
+ *
+ * @param variable - the services config object
+ * @returns the service representation in capabilities version 2 format
+ */
+function getServiceV2(service: ServiceConfig<unknown>): ServiceV2 {
+  const { name, umm_s, capabilities } = service;
+  const href = `${process.env.CMR_ENDPOINT}/search/concepts/${umm_s}`;
+  return { name, href, capabilities };
+}
+
+/**
+ * Returns the variable representation in capabilities version 2 format.
  *
  * @param variable - the CMR umm-var object
- * @returns the variables representation in capabilities version 2 format
+ * @returns the variable representation in capabilities version 2 format
  */
 function getVariableV2(variable: CmrUmmVariable): VariableV2 {
   const name = variable.umm.Name;
@@ -158,7 +176,7 @@ async function getCollectionCapabilitiesV2(collection: CmrCollection)
   const outputFormats = new Set(matchingServices.flatMap((s) => s.capabilities.output_formats));
   const conceptId = collection.id;
   const shortName = collection.short_name;
-  const services = matchingServices.map((s) => _.pick(s, ['name', 'capabilities']));
+  const services = matchingServices.map((s) => getServiceV2(s));
   const capabilities = {
     conceptId, shortName, variableSubset, bboxSubset, shapeSubset,
     concatenate, reproject, outputFormats: Array.from(outputFormats), services, variables, capabilitiesVersion,
