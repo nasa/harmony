@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import { expect } from 'chai';
 import { currentApiVersion } from '../app/frontends/capabilities';
 import { hookGetCollectionCapabilities } from './helpers/capabilities';
@@ -80,9 +81,20 @@ describe('Testing collection capabilities', function () {
 
         it('includes the correct services', function () {
           const capabilities = JSON.parse(this.res.text);
-          const serviceNames = capabilities.services.map((s) => s.name);
-          const expectedServices = ['nasa/harmony-gdal-adapter', 'harmony/netcdf-to-zarr', 'harmony/service-example'];
-          expect(serviceNames).to.eql(expectedServices);
+          const services_name_href = capabilities.services.map((s) => _.pick(s, ['name', 'href']));
+          const expectedServices = [{
+            'name': 'nasa/harmony-gdal-adapter',
+            'href': 'https://cmr.uat.earthdata.nasa.gov/search/concepts/S1245787332-EEDTEST',
+          },
+          {
+            'name': 'harmony/netcdf-to-zarr',
+            'href': 'https://cmr.uat.earthdata.nasa.gov/search/concepts/S1237980031-EEDTEST',
+          },
+          {
+            'name': 'harmony/service-example',
+            'href': 'https://cmr.uat.earthdata.nasa.gov/search/concepts/S1257851197-EEDTEST',
+          }];
+          expect(services_name_href).to.eql(expectedServices);
         });
 
         it('sets the variables field correctly', function () {
