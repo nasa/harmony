@@ -1,6 +1,6 @@
 import _ from 'lodash';
-import { currentApiVersion } from '../app/frontends/capabilities';
 import { expect } from 'chai';
+import { currentApiVersion } from '../app/frontends/capabilities';
 import { hookGetCollectionCapabilities } from './helpers/capabilities';
 import hookServersStartStop from './helpers/servers';
 
