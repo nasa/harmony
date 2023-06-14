@@ -1,4 +1,8 @@
-import { SQSClient, ReceiveMessageCommand, SendMessageCommand, DeleteMessageCommand, DeleteMessageBatchCommand, SQSClientConfig, SendMessageCommandInput, PurgeQueueCommand } from '@aws-sdk/client-sqs';
+import {
+  SQSClient, ReceiveMessageCommand, SendMessageCommand, DeleteMessageCommand,
+  DeleteMessageBatchCommand, SQSClientConfig, SendMessageCommandInput, PurgeQueueCommand,
+  GetQueueAttributesCommand,
+} from '@aws-sdk/client-sqs';
 import env from '../env';
 import { Queue, ReceivedMessage } from './queue';
 
@@ -14,8 +18,11 @@ export class SqsQueue extends Queue {
       region: env.awsDefaultRegion,
     };
     if (env.useLocalstack) {
-      const { localstackHost } = env;
-      sqsConfig.endpoint = `http://${localstackHost}:4566`;
+      sqsConfig.endpoint = `http://${env.localstackHost}:4566`;
+      sqsConfig.credentials = {
+        accessKeyId: 'LOCALSTACK',
+        secretAccessKey: 'LOCALSTACK',
+      };
     }
     this.sqs = new SQSClient(sqsConfig);
   }
@@ -53,6 +60,16 @@ export class SqsQueue extends Queue {
     return [];
   }
 
+  async getApproximateNumberOfMessages(): Promise<number> {
+    const command = new GetQueueAttributesCommand({
+      QueueUrl: this.queueUrl,
+      AttributeNames: ['ApproximateNumberOfMessages'],
+    });
+
+    const response = await this.sqs.send(command);
+    return parseInt(response.Attributes.ApproximateNumberOfMessages, 10);
+  }
+
   async sendMessage(msg: string, groupId?: string): Promise<void> {
     const message: SendMessageCommandInput = {
       QueueUrl: this.queueUrl,
@@ -61,6 +78,7 @@ export class SqsQueue extends Queue {
     if (groupId) {
       message.MessageGroupId = groupId;
     }
+    message.DelaySeconds = 0;
     await this.sqs.send(new SendMessageCommand(message));
   }
 

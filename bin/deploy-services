@@ -18,6 +18,16 @@ fi
 
 . ./bin/create-k8s-config-maps-and-secrets
 
+# create the work scheduler
+if [ "$USE_SERVICE_QUEUES" = true ]; then
+  file="kubernetes-services/work-scheduler/config/service-template.yaml"
+  if [ ! -f "$file" ]; then
+    echo "work scheduler template was not found."
+    exit 1
+  fi
+  envsubst < $file | kubectl apply -f - -n harmony
+fi
+
 # create the query-cmr service
 file="tasks/service-runner/config/query-cmr-sidecar.yaml"
 if [ ! -f "$file" ]; then

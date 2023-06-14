@@ -16,6 +16,7 @@ import { getRequestUrl } from '../../util/url';
 import HarmonyRequest from '../harmony-request';
 import UserWork from '../user-work';
 import { joinTexts, sanitizeImage } from '../../util/string';
+import { makeWorkScheduleRequest } from '../../backends/workflow-orchestration/work-item-polling';
 
 export interface ServiceCapabilities {
   concatenation?: boolean;
@@ -538,9 +539,14 @@ export default abstract class BaseService<ServiceParamType> {
           }
           const itemMeta: WorkItemMeta = { workItemService: sanitizeImage(workflowSteps[0].serviceID), workItemEvent: 'statusUpdate',
             workItemAmount: firstStepWorkItems.length, workItemStatus: WorkItemStatus.READY };
-          this.logger.info('Queued first step work items.', itemMeta);
+          this.logger.info('Created first step work items.', itemMeta);
         }
       });
+
+      if (workflowSteps && workflowSteps.length > 0) {
+        // ask the scheduler to schedule the new work items
+        await makeWorkScheduleRequest(workflowSteps[0].serviceID);
+      }
 
       const durationMs = new Date().getTime() - startTime;
       this.logger.info('timing.save-job-to-database.end', { durationMs });

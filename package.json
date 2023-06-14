@@ -4,7 +4,7 @@
   "description": "Data services frontend",
   "main": "index.js",
   "scripts": {
-    "test": "strict-npm-engines && eslint --ext .ts --ignore-pattern tasks . && nyc mocha && better-npm-audit audit && lerna run test",
+    "test": "strict-npm-engines && eslint --ext .ts --ignore-pattern tasks --ignore-pattern kubernetes-services . && nyc mocha && better-npm-audit audit && lerna run test",
     "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha",
     "test-bail": "TS_NODE_TRANSPILE_ONLY=true mocha --bail",
     "coverage": "nyc mocha",
@@ -164,7 +164,7 @@
     "@pollyjs/persister-fs": "5.1.1",
     "@types/chai": "^4.2.18",
     "@types/chai-as-promised": "^7.1.4",
-    "@types/geojson": "^7946.0.7",
+    "@types/geojson": "^7946.0.10",
     "@types/json2csv": "^5.0.3",
     "@types/leaflet": "^1.5.15",
     "@types/lodash": "^4.14.176",

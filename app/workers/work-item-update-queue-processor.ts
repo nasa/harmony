@@ -3,11 +3,11 @@ import { batchProcessQueue } from '../backends/workflow-orchestration/work-item-
 import env from '../util/env';
 import { Worker } from './worker';
 import sleep from '../util/sleep';
-import { WorkItemUpdateQueueType } from '../util/queue/queue';
+import { WorkItemQueueType } from '../util/queue/queue';
 
 export interface WorkItemUpdateQueueProcessorConfig {
   logger: Logger;
-  queueType: WorkItemUpdateQueueType;
+  queueType: WorkItemQueueType;
 }
 
 export default class WorkItemUpdateQueueProcessor implements Worker {
@@ -15,7 +15,7 @@ export default class WorkItemUpdateQueueProcessor implements Worker {
 
   logger: Logger;
 
-  queueType: WorkItemUpdateQueueType;
+  queueType: WorkItemQueueType;
 
   constructor(config: WorkItemUpdateQueueProcessorConfig) {
     this.logger = config.logger;
