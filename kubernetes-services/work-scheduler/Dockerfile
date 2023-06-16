@@ -1,8 +1,6 @@
-FROM node:16-bookworm
+FROM node:16-buster
 
-# RUN apk update
-# RUN apk add bash vim curl git python3 postgresql-client make gcc g++ libc-dev libpq-dev
-RUN apt-get install bash curl git python3 make gcc g++ libc-dev libpq-dev
+RUN apt-get update && apt-get -y install postgresql
 RUN git config --global url."https://".insteadOf ssh://
 
 RUN mkdir -p /harmony-work-scheduler
