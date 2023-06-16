@@ -78,13 +78,13 @@ export function fullPath(v: CmrUmmVariable): string {
 }
 
 /**
- * Returns true if the path matches the variable name or full path (GroupPath/Name)
+ * Returns true if the string value matches the given variable's name or concept id
  * @param v - The variable to check
- * @param p - The path to check. Can be a full path or variable name
- * @returns true if path matches variable name or full path
+ * @param s - The string to match against the variable's name or concept id
+ * @returns true if given value matches variable name or concept id
  */
-function doesPathMatch(v: CmrUmmVariable, p: string): boolean {
-  return p === v.umm.Name;
+function doesPathMatch(v: CmrUmmVariable, s: string): boolean {
+  return s === v.umm.Name || s === v.meta['concept-id'];
 }
 
 const coordinateType = 'COORDINATE';
@@ -146,7 +146,11 @@ export function parseVariables(
         const variable = collection.variables.find((v) => doesPathMatch(v, variableId));
         if (variable) {
           missingVariables.delete(variableId);
-          variables.push(variable);
+          // only add the variable to the list if it does not exist.
+          // This is to guard against when variable name mixed with concept id that references the same variable
+          if (variables.find(v => v.meta['concept-id'] === variable.meta['concept-id']) === undefined) {
+            variables.push(variable);
+          }
         }
       }
       variableInfo.push({ collectionId: collection.id, shortName: collection.short_name,
