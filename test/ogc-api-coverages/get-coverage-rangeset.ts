@@ -21,224 +21,237 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
   hookServersStartStop();
 
-  describe('when provided a valid set of parameters', function () {
-    const query = {
-      granuleId,
-      outputCrs: 'EPSG:4326',
-      subset: ['lat(0:10)', 'lon(-20.1:20)', 'time("2020-01-02T00:00:00.000Z":"2020-01-02T01:00:00.000Z")', 'foo(1.1:10)'],
-      interpolation: 'near',
-      // TODO: it might only make sense to include width and height with a scaleExtent
-      // and scaleSize by itself
-      scaleExtent: '0,2500000.3,1500000,3300000',
-      scaleSize: '1.1,2',
-      height: 500,
-      width: 1000,
-      format: 'image/png',
-      skipPreview: 'true',
-    };
+  const tests = [{
+    description: 'with variable name',
+    variableParam: variableName,
+  }, {
+    description: 'with variable concept-id',
+    variableParam: variableId,
+  }];
 
-    describe('calling the backend service', function () {
-      StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookRangesetRequest(version, collection, variableName, { query });
+  for (const test of tests) {
+    describe(test.description, function () {
 
-      it('provides a staging location to the backend', function () {
-        const location = this.service.operation.stagingLocation;
-        expect(location).to.include(env.artifactBucket);
-      });
+      describe('when provided a valid set of parameters', function () {
+        const query = {
+          granuleId,
+          outputCrs: 'EPSG:4326',
+          subset: ['lat(0:10)', 'lon(-20.1:20)', 'time("2020-01-02T00:00:00.000Z":"2020-01-02T01:00:00.000Z")', 'foo(1.1:10)'],
+          interpolation: 'near',
+          // TODO: it might only make sense to include width and height with a scaleExtent
+          // and scaleSize by itself
+          scaleExtent: '0,2500000.3,1500000,3300000',
+          scaleSize: '1.1,2',
+          height: 500,
+          width: 1000,
+          format: 'image/png',
+          skipPreview: 'true',
+        };
 
-      it('passes the source collection to the backend', function () {
-        const source = this.service.operation.sources[0];
-        expect(source.collection).to.equal(collection);
-      });
+        describe('calling the backend service', function () {
+          StubService.hook({ params: { redirect: 'http://example.com' } });
+          hookRangesetRequest(version, collection, test.variableParam, { query });
 
-      it('passes the source variable to the backend', function () {
-        const source = this.service.operation.sources[0];
-        expect(source.variables.length === 1);
-        expect(source.variables[0].id).to.equal(variableId);
-      });
+          it('provides a staging location to the backend', function () {
+            const location = this.service.operation.stagingLocation;
+            expect(location).to.include(env.artifactBucket);
+          });
 
-      it('has an empty set of coordinate variables for a collection with no coordinate variables', function () {
-        const source = this.service.operation.sources[0];
-        expect(source.coordinateVariables).to.eql([]);
-      });
+          it('passes the source collection to the backend', function () {
+            const source = this.service.operation.sources[0];
+            expect(source.collection).to.equal(collection);
+          });
 
-      it('passes the outputCrs parameter to the backend in Proj4 format', function () {
-        expect(this.service.operation.crs).to.equal('+proj=longlat +datum=WGS84 +no_defs');
-      });
+          it('passes the source variable to the backend', function () {
+            const source = this.service.operation.sources[0];
+            expect(source.variables.length).to.equal(1);
+            expect(source.variables[0].id).to.equal(variableId);
+          });
 
-      it('passes the client parameter to the backend', function () {
-        expect(this.service.operation.client).to.equal('harmony-test');
-      });
+          it('has an empty set of coordinate variables for a collection with no coordinate variables', function () {
+            const source = this.service.operation.sources[0];
+            expect(source.coordinateVariables).to.eql([]);
+          });
 
-      it('passes the user parameter to the backend', function () {
-        expect(this.service.operation.user).to.equal('anonymous');
-      });
+          it('passes the outputCrs parameter to the backend in Proj4 format', function () {
+            expect(this.service.operation.crs).to.equal('+proj=longlat +datum=WGS84 +no_defs');
+          });
 
-      it('passes the synchronous mode parameter to the backend and is set to true', function () {
-        expect(this.service.operation.isSynchronous).to.equal(true);
-      });
+          it('passes the client parameter to the backend', function () {
+            expect(this.service.operation.client).to.equal('harmony-test');
+          });
 
-      it('passes the request id parameter to the backend', function () {
-        expect(isUUID(this.service.operation.requestId)).to.equal(true);
-      });
+          it('passes the user parameter to the backend', function () {
+            expect(this.service.operation.user).to.equal('anonymous');
+          });
 
-      it('transforms subset lat and lon parameters into a backend bounding box subset request', function () {
-        expect(this.service.operation.boundingRectangle).to.eql([-20.1, 0, 20, 10]);
-      });
+          it('passes the synchronous mode parameter to the backend and is set to true', function () {
+            expect(this.service.operation.isSynchronous).to.equal(true);
+          });
 
-      it('passes the arbitrary dimensions to subset to the backend', function () {
-        expect(this.service.operation.dimensions).to.eql([{
-          name: 'foo',
-          min: 1.1,
-          max: 10,
-        }]);
-      });
+          it('passes the request id parameter to the backend', function () {
+            expect(isUUID(this.service.operation.requestId)).to.equal(true);
+          });
 
-      it('passes the interpolation parameter to the backend', function () {
-        expect(this.service.operation.interpolationMethod).to.equal('near');
-      });
+          it('transforms subset lat and lon parameters into a backend bounding box subset request', function () {
+            expect(this.service.operation.boundingRectangle).to.eql([-20.1, 0, 20, 10]);
+          });
 
-      it('passes the scaleExtent parameter to the backend', function () {
-        expect(this.service.operation.scaleExtent).to.eql({
-          x: { min: 0, max: 1500000 },
-          y: { min: 2500000.3, max: 3300000 },
+          it('passes the arbitrary dimensions to subset to the backend', function () {
+            expect(this.service.operation.dimensions).to.eql([{
+              name: 'foo',
+              min: 1.1,
+              max: 10,
+            }]);
+          });
+
+          it('passes the interpolation parameter to the backend', function () {
+            expect(this.service.operation.interpolationMethod).to.equal('near');
+          });
+
+          it('passes the scaleExtent parameter to the backend', function () {
+            expect(this.service.operation.scaleExtent).to.eql({
+              x: { min: 0, max: 1500000 },
+              y: { min: 2500000.3, max: 3300000 },
+            });
+          });
+
+          it('passes the scaleSize parameter to the backend', function () {
+            expect(this.service.operation.scaleSize).to.eql({ x: 1.1, y: 2 });
+          });
+
+          it('passes the height parameter to the backend', function () {
+            expect(this.service.operation.outputHeight).to.equal(500);
+          });
+
+          it('passes the width parameter to the backend', function () {
+            expect(this.service.operation.outputWidth).to.equal(1000);
+          });
+
+          it('passes the format parameter to the backend', function () {
+            expect(this.service.operation.outputFormat).to.equal('image/png');
+          });
+        });
+
+        describe('and the backend service calls back with an error parameter', function () {
+          StubService.hook({ params: { error: 'Something bad happened' } });
+          hookRangesetRequest(version, collection, test.variableParam, { query });
+
+          it('propagates the error message into the response', function () {
+            expect(this.res.text).to.include('Something bad happened');
+          });
+
+          it('responds with an HTTP 400 "Bad Request" status code', function () {
+            expect(this.res.status).to.equal(400);
+          });
+        });
+
+        describe('and the backend service calls back with a redirect', function () {
+          StubService.hook({ params: { redirect: 'http://example.com' } });
+          hookRangesetRequest(version, collection, test.variableParam, { query });
+
+          it('redirects the client to the provided URL', function () {
+            expect(this.res.status).to.equal(303);
+            expect(this.res.headers.location).to.equal('http://example.com');
+          });
+        });
+
+        describe('and the backend service calls back with a redirect to an S3 location', function () {
+          StubService.hook({ params: { redirect: 's3://my-bucket/public/my-object.tif' } });
+          hookRangesetRequest(version, collection, test.variableParam, { query });
+
+          it('redirects the client to a presigned url', function () {
+            expect(this.res.status).to.equal(303);
+            expect(this.res.headers.location).to.include('https://my-bucket/public/my-object.tif');
+            expect(this.res.headers.location).to.include('A-userid=anonymous');
+          });
+        });
+
+        describe('and the backend service provides POST data', function () {
+          StubService.hook({
+            body: 'realistic mock data',
+            headers: {
+              'Content-Type': 'text/plain; charset=utf-8',
+              'Content-Disposition': 'filename="out.txt"',
+            },
+          });
+          hookRangesetRequest(version, collection, test.variableParam, { query });
+
+          it('returns an HTTP 303 redirect status code to the provided data', function () {
+            expect(this.res.status).to.equal(303);
+            expect(this.res.headers.location).to.include(env.stagingBucket);
+          });
+
+          it('propagates the Content-Type header to the client', function () {
+            expect(this.res.headers['content-type']).to.equal('text/plain; charset=utf-8');
+          });
+        });
+
+        describe('which is very large', function () {
+          const largeGranuleList = [];
+          for (let i = 0; i < 2000; i++) {
+            largeGranuleList.push(query.granuleId);
+          }
+
+          StubService.hook({ params: { redirect: 'http://example.com' } });
+          hookPostRangesetRequest(
+            version,
+            collection,
+            test.variableParam,
+            { ...query, granuleId: largeGranuleList.join(',') },
+          );
+
+          it('successfully queries CMR and accepts the request', function () {
+            expect(this.res.status).to.be.lessThan(400);
+          });
+        });
+
+        describe('which contains both form and query parameter', function () {
+          const queryLocal = { ...query };
+          delete queryLocal.subset;
+          const queryParameterString = 'subset=time%28%222020-01-02T00%3A00%3A00Z%22%3A%222020-01-02T01%3A00%3A00Z%22%29';
+          StubService.hook({ params: { redirect: 'http://example.com' } });
+          hookPostRangesetRequest(
+            version,
+            collection,
+            test.variableParam,
+            queryLocal,
+            queryParameterString,
+          );
+
+          it('passes the temporal range to the backend service', function () {
+            const { start, end } = this.service.operation.temporal;
+            expect(start).to.equal('2020-01-02T00:00:00.000Z');
+            expect(end).to.equal('2020-01-02T01:00:00.000Z');
+          });
+
+          it('successfully queries CMR and accepts the request', function () {
+            expect(this.res.status).to.be.lessThan(400);
+          });
+        });
+
+        describe('which has a duplicate key from form and query parameter', function () {
+          const queryParameterString = 'subset=time%28%222020-01-02T00%3A00%3A00Z%22%3A%222020-01-02T01%3A00%3A00Z%22%29';
+          StubService.hook({ params: { redirect: 'http://example.com' } });
+          hookPostRangesetRequest(
+            version,
+            collection,
+            test.variableParam,
+            query,
+            queryParameterString,
+          );
+
+          it('propagates the error message into the response', function () {
+            expect(this.res.text).to.include('Duplicate keys');
+          });
+
+          it('responds with an HTTP 400 "Bad Request" status code', function () {
+            expect(this.res.status).to.equal(400);
+          });
         });
       });
-
-      it('passes the scaleSize parameter to the backend', function () {
-        expect(this.service.operation.scaleSize).to.eql({ x: 1.1, y: 2 });
-      });
-
-      it('passes the height parameter to the backend', function () {
-        expect(this.service.operation.outputHeight).to.equal(500);
-      });
-
-      it('passes the width parameter to the backend', function () {
-        expect(this.service.operation.outputWidth).to.equal(1000);
-      });
-
-      it('passes the format parameter to the backend', function () {
-        expect(this.service.operation.outputFormat).to.equal('image/png');
-      });
     });
-
-    describe('and the backend service calls back with an error parameter', function () {
-      StubService.hook({ params: { error: 'Something bad happened' } });
-      hookRangesetRequest(version, collection, variableName, { query });
-
-      it('propagates the error message into the response', function () {
-        expect(this.res.text).to.include('Something bad happened');
-      });
-
-      it('responds with an HTTP 400 "Bad Request" status code', function () {
-        expect(this.res.status).to.equal(400);
-      });
-    });
-
-    describe('and the backend service calls back with a redirect', function () {
-      StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookRangesetRequest(version, collection, variableName, { query });
-
-      it('redirects the client to the provided URL', function () {
-        expect(this.res.status).to.equal(303);
-        expect(this.res.headers.location).to.equal('http://example.com');
-      });
-    });
-
-    describe('and the backend service calls back with a redirect to an S3 location', function () {
-      StubService.hook({ params: { redirect: 's3://my-bucket/public/my-object.tif' } });
-      hookRangesetRequest(version, collection, variableName, { query });
-
-      it('redirects the client to a presigned url', function () {
-        expect(this.res.status).to.equal(303);
-        expect(this.res.headers.location).to.include('https://my-bucket/public/my-object.tif');
-        expect(this.res.headers.location).to.include('A-userid=anonymous');
-      });
-    });
-
-    describe('and the backend service provides POST data', function () {
-      StubService.hook({
-        body: 'realistic mock data',
-        headers: {
-          'Content-Type': 'text/plain; charset=utf-8',
-          'Content-Disposition': 'filename="out.txt"',
-        },
-      });
-      hookRangesetRequest(version, collection, variableName, { query });
-
-      it('returns an HTTP 303 redirect status code to the provided data', function () {
-        expect(this.res.status).to.equal(303);
-        expect(this.res.headers.location).to.include(env.stagingBucket);
-      });
-
-      it('propagates the Content-Type header to the client', function () {
-        expect(this.res.headers['content-type']).to.equal('text/plain; charset=utf-8');
-      });
-    });
-
-    describe('which is very large', function () {
-      const largeGranuleList = [];
-      for (let i = 0; i < 2000; i++) {
-        largeGranuleList.push(query.granuleId);
-      }
-
-      StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookPostRangesetRequest(
-        version,
-        collection,
-        variableName,
-        { ...query, granuleId: largeGranuleList.join(',') },
-      );
-
-      it('successfully queries CMR and accepts the request', function () {
-        expect(this.res.status).to.be.lessThan(400);
-      });
-    });
-
-    describe('which contains both form and query parameter', function () {
-      const queryLocal = { ...query };
-      delete queryLocal.subset;
-      const queryParameterString = 'subset=time%28%222020-01-02T00%3A00%3A00Z%22%3A%222020-01-02T01%3A00%3A00Z%22%29';
-      StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookPostRangesetRequest(
-        version,
-        collection,
-        variableName,
-        queryLocal,
-        queryParameterString,
-      );
-
-      it('passes the temporal range to the backend service', function () {
-        const { start, end } = this.service.operation.temporal;
-        expect(start).to.equal('2020-01-02T00:00:00.000Z');
-        expect(end).to.equal('2020-01-02T01:00:00.000Z');
-      });
-
-      it('successfully queries CMR and accepts the request', function () {
-        expect(this.res.status).to.be.lessThan(400);
-      });
-    });
-
-    describe('which has a duplicate key from form and query parameter', function () {
-      const queryParameterString = 'subset=time%28%222020-01-02T00%3A00%3A00Z%22%3A%222020-01-02T01%3A00%3A00Z%22%29';
-      StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookPostRangesetRequest(
-        version,
-        collection,
-        variableName,
-        query,
-        queryParameterString,
-      );
-
-      it('propagates the error message into the response', function () {
-        expect(this.res.text).to.include('Duplicate keys');
-      });
-
-      it('responds with an HTTP 400 "Bad Request" status code', function () {
-        expect(this.res.status).to.equal(400);
-      });
-    });
-  });
+  }
 
   describe('when provided an incorrectly named set of parameters', function () {
     StubService.hook({ params: { redirect: 'http://example.com' } });
@@ -259,22 +272,50 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     });
   });
 
-  describe('Subsetting multiple variables', function () {
-    const variableNames = 'red_var,green_var';
+  const multiVariablesTests = [{
+    description: 'Subsetting multiple variables with variable names',
+    variableParam: 'red_var,green_var',
+  }, {
+    description: 'Subsetting multiple variables with variable concept ids',
+    variableParam: 'V1233801695-EEDTEST,V1233801696-EEDTEST',
+  }, {
+    description: 'Subsetting multiple variables with mixed variable name and concept ids',
+    variableParam: 'red_var,V1233801696-EEDTEST',
+  }];
+
+  for (const test of multiVariablesTests) {
+    describe(test.description, function () {
+      const query = {
+        granuleId,
+      };
+      const variableId1 = 'V1233801695-EEDTEST';
+      const variableId2 = 'V1233801696-EEDTEST';
+
+      StubService.hook({ params: { redirect: 'http://example.com' } });
+      hookRangesetRequest(version, collection, test.variableParam, { query });
+
+      it('passes multiple variables to the backend service', function () {
+        const source = this.service.operation.sources[0];
+        expect(source.variables.length).to.equal(2);
+        expect(source.variables[0].id).to.equal(variableId1);
+        expect(source.variables[1].id).to.equal(variableId2);
+      });
+    });
+  }
+
+  describe('Subsetting variables with duplicate in mixed name and concept-id', function () {
     const query = {
       granuleId,
     };
     const variableId1 = 'V1233801695-EEDTEST';
-    const variableId2 = 'V1233801696-EEDTEST';
 
     StubService.hook({ params: { redirect: 'http://example.com' } });
-    hookRangesetRequest(version, collection, variableNames, { query });
+    hookRangesetRequest(version, collection, `red_var,${variableId1}`, { query });
 
-    it('passes multiple variables to the backend service', function () {
+    it('passes a single variable to the backend service', function () {
       const source = this.service.operation.sources[0];
-      expect(source.variables.length === 2);
+      expect(source.variables.length).to.equal(1);
       expect(source.variables[0].id).to.equal(variableId1);
-      expect(source.variables[1].id).to.equal(variableId2);
     });
   });
 
