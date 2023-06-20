@@ -1,13 +1,14 @@
 import FormData from 'form-data';
 import { before, after } from 'mocha';
 import { stub, SinonStub } from 'sinon';
-import { hookGetQueueForType, hookGetQueueForUrl, hookGetQueueUrlForService, hookGetWorkSchedulerQueue } from './queue';
+import { hookGetQueueForType, hookGetQueueForUrl, hookGetQueueUrlForService, hookGetWorkSchedulerQueue, hookProcessSchedulerQueue } from './queue';
 import * as cmr from '../../app/util/cmr';
 
 hookGetQueueForType();
 hookGetQueueForUrl();
 hookGetWorkSchedulerQueue();
 hookGetQueueUrlForService();
+hookProcessSchedulerQueue();
 
 process.env.REPLAY = process.env.REPLAY || 'record';
 require('replay');

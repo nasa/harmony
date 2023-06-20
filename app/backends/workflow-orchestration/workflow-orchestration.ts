@@ -2,7 +2,7 @@ import _ from 'lodash';
 import { NextFunction, Response } from 'express';
 import env from '../../util/env';
 import HarmonyRequest from '../../models/harmony-request';
-import { WorkItemUpdateQueueType } from '../../util/queue/queue';
+import { WorkItemQueueType } from '../../util/queue/queue';
 import { getQueueForType  } from '../../util/queue/queue-factory';
 import { getWorkFromQueue, getWorkFromDatabase, WorkItemData } from './work-item-polling';
 import { WorkItemMeta, WorkItemStatus } from '../../models/work-item-interface';
@@ -28,7 +28,7 @@ export async function getWork(
   // reqLogger.info(`Getting work for service ${serviceID} and pod ${podName}`);
 
   let responded = false;
-  let workItemData: WorkItemData;
+  let workItemData: WorkItemData | null;
 
   if (env.useServiceQueues) {
     workItemData = await getWorkFromQueue(serviceID as string, reqLogger);
@@ -95,10 +95,10 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
   const workItemLogger = req.context.logger.child({ workItemId: update.workItemID });
 
   // we use separate queues for small and large work item updates
-  let queueType = WorkItemUpdateQueueType.SMALL_ITEM_UPDATE;
+  let queueType = WorkItemQueueType.SMALL_ITEM_UPDATE;
   if (results?.length > 1) {
     workItemLogger.debug('Sending work item update to large item queue');
-    queueType = WorkItemUpdateQueueType.LARGE_ITEM_UPDATE;
+    queueType = WorkItemQueueType.LARGE_ITEM_UPDATE;
   } else {
     workItemLogger.debug('Sending work item update to regular queue');
   }

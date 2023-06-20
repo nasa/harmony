@@ -146,28 +146,22 @@ envVars.serviceQueueUrls = {};
 for (const k of Object.keys(process.env)) {
   if (/^.*_QUEUE_URLS$/.test(k)) {
     const value = process.env[k];
-    // TODO - Remove all these commented out console.log statements in HARMONY-1419
-    // console.log(`Parsing ${k}=${value} as JSON`);
     try {
       const imageQueueUrls = JSON.parse(value);
       for (const imageQueueUrl of imageQueueUrls) {
         const [image, url] = imageQueueUrl.split(',');
-        // console.log(`Parsed ${imageQueueUrl} as ${image}=${url}`);
         if (image && url) {
-          // console.log(`Adding ${image}=${url} to serviceQueueUrls`);
           // replace 'localstack' with `env.localstackHost` to allow for harmony to be run in a
           // container
           envVars.serviceQueueUrls[image] = url.replace('localstack', envVars.localstackHost);
-        } else {
-          // console.log(`Could not parse ${imageQueueUrl} as image,url pair`);
         }
       }
     } catch (e) {
-      // console.log(`Could not parse value ${value} for ${k} as JSON`);
+      winston.error(`Could not parse value ${value} for ${k} as JSON`);
     }
   }
 }
 
-// console.log(`SERVICE_QUEUE_URLS: ${JSON.stringify(envVars.serviceQueueUrls, null, 2)}`);
+winston.debug(`SERVICE_QUEUE_URLS: ${JSON.stringify(envVars.serviceQueueUrls, null, 2)}`);
 
 export = envVars;

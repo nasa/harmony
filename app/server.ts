@@ -19,7 +19,7 @@ import * as exampleBackend from '../example/http-backend';
 import WorkReaper from './workers/work-reaper';
 import WorkFailer from './workers/work-failer';
 import WorkItemUpdateQueueProcessor from './workers/work-item-update-queue-processor';
-import { WorkItemUpdateQueueType } from './util/queue/queue';
+import { WorkItemQueueType } from './util/queue/queue';
 import cmrCollectionReader from './middleware/cmr-collection-reader';
 
 /**
@@ -202,7 +202,7 @@ export function start(config: Record<string, string>): {
   if (config.startWorkItemUpdateQueueProcessor !== 'false' && queueProcessorCount > 0) {
     const workItemUpdateQueueProcessorConfig = {
       logger: logger.child({ application: 'work-item-update-queue-processor' }),
-      queueType: WorkItemUpdateQueueType.SMALL_ITEM_UPDATE,
+      queueType: WorkItemQueueType.SMALL_ITEM_UPDATE,
     };
     let workItemUpdateQueueProcessor;
     let largeWorkItemUpdateQueueProcessor;
@@ -213,7 +213,7 @@ export function start(config: Record<string, string>): {
 
       const largeWorkItemUpdateQueueProcessorConfig = {
         logger: logger.child({ application: 'large-work-item-update-queue-processor' }),
-        queueType: WorkItemUpdateQueueType.LARGE_ITEM_UPDATE,
+        queueType: WorkItemQueueType.LARGE_ITEM_UPDATE,
       };
       largeWorkItemUpdateQueueProcessor = new WorkItemUpdateQueueProcessor(largeWorkItemUpdateQueueProcessorConfig);
       largeWorkItemUpdateQueueProcessors.push(largeWorkItemUpdateQueueProcessor);

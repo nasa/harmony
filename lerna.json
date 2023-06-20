@@ -1,6 +1,7 @@
 {
   "packages": [
-    "tasks/*"
+    "tasks/*",
+    "kubernetes-services/*"
   ],
   "version": "0.0.0"
 }

@@ -1,7 +1,7 @@
 import defaultLogger from '../../util/log';
 import env from '../../util/env';
 import { v4 as uuid } from 'uuid';
-import { WorkItemUpdateQueueType } from '../../util/queue/queue';
+import { WorkItemQueueType } from '../../util/queue/queue';
 import { getQueueForType } from '../../util/queue/queue-factory';
 import WorkItemUpdate from '../../models/work-item-update';
 import WorkflowStep, { decrementFutureWorkItemCount, getWorkflowStepByJobIdStepIndex, getWorkflowStepsByJobId } from '../../models/workflow-steps';
@@ -22,6 +22,7 @@ import { StacItem, readCatalogItems, StacItemLink, StacCatalog } from '../../uti
 import { sanitizeImage } from '../../util/string';
 import { resolve } from '../../util/url';
 import { QUERY_CMR_SERVICE_REGEX, calculateQueryCmrLimit } from './util';
+import { makeWorkScheduleRequest } from './work-item-polling';
 
 
 type WorkItemUpdateQueueItem = {
@@ -360,6 +361,10 @@ async function createAggregatingWorkItem(
 
   await incrementReadyCount(tx, currentWorkItem.jobID, nextStep.serviceID);
   await newWorkItem.save(tx);
+
+  // ask the scheduler to schedule the new work item
+  await makeWorkScheduleRequest(newWorkItem.serviceID);
+
   const itemMeta: WorkItemMeta = { workItemService: sanitizeImage(newWorkItem.serviceID),
     workItemEvent: 'statusUpdate', workItemAmount: 1, workItemStatus: WorkItemStatus.READY };
   logger.info('Queued new aggregating work item.', itemMeta);
@@ -388,6 +393,10 @@ async function maybeQueueQueryCmrWorkItem(
 
       await incrementReadyCount(tx, currentWorkItem.jobID, currentWorkItem.serviceID);
       await nextQueryCmrItem.save(tx);
+
+      // ask the scheduler to schedule the new work item
+      await makeWorkScheduleRequest(currentWorkItem.serviceID);
+
       const itemMeta: WorkItemMeta = { workItemService: sanitizeImage(nextQueryCmrItem.serviceID),
         workItemEvent: 'statusUpdate', workItemAmount: 1, workItemStatus: WorkItemStatus.READY };
       logger.info('Queued new query-cmr work item.', itemMeta);
@@ -630,6 +639,10 @@ export async function handleWorkItemUpdateWithJobId(
             results,
             outputItemSizes,
           );
+          if (didCreateWorkItem) {
+            // ask the scheduler to schedule the new work item
+            await makeWorkScheduleRequest(nextWorkflowStep.serviceID);
+          }
         }
         if (nextWorkflowStep && status === WorkItemStatus.SUCCESSFUL) {
           if (results && results.length > 0) {
@@ -751,14 +764,14 @@ export async function handleBatchWorkItemUpdates(
  * This function processes a batch of work item updates from the queue.
  * @param queueType - Type of the queue to read from
  */
-export async function batchProcessQueue(queueType: WorkItemUpdateQueueType): Promise<void> {
+export async function batchProcessQueue(queueType: WorkItemQueueType): Promise<void> {
   const queue = getQueueForType(queueType);
   const startTime = Date.now();
   // use a smaller batch size for the large item update queue otherwise use the SQS max batch size
   // of 10
   const largeItemQueueBatchSize = Math.min(env.largeWorkItemUpdateQueueMaxBatchSize, 10);
   const otherQueueBatchSize = 10; // the SQS max batch size
-  const queueBatchSize = queueType === WorkItemUpdateQueueType.LARGE_ITEM_UPDATE
+  const queueBatchSize = queueType === WorkItemQueueType.LARGE_ITEM_UPDATE
     ? largeItemQueueBatchSize : otherQueueBatchSize;
   const messages = await queue.getMessages(queueBatchSize);
   if (messages.length < 1) {
@@ -766,7 +779,7 @@ export async function batchProcessQueue(queueType: WorkItemUpdateQueueType): Pro
   }
   // defaultLogger.debug(`Processing ${messages.length} work item updates from queue`);
 
-  if (queueType === WorkItemUpdateQueueType.LARGE_ITEM_UPDATE) {
+  if (queueType === WorkItemQueueType.LARGE_ITEM_UPDATE) {
     // process each message individually
     for (const msg of messages) {
       try {

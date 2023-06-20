@@ -146,7 +146,7 @@ UPLOAD_BUCKET=local-upload-bucket
 USE_SERVICE_QUEUES=false
 
 # SQS queue used to request scheduling of work items for a service
-WORK_ITEM_SCHEDULER_QUEUE_URL=http://localstack:4566/queue/work-item-scheduler-queue.fifo
+WORK_ITEM_SCHEDULER_QUEUE_URL=http://localstack:4566/queue/work-item-scheduler-queue
 
 # SQS queue used to process work item updates
 WORK_ITEM_UPDATE_QUEUE_URL=http://localstack:4566/queue/work-item-update-queue
@@ -266,6 +266,13 @@ SERVICE_RUNNER_REQUESTS_MEMORY=128Mi
 SERVICE_RUNNER_LIMITS_CPU=1024m
 SERVICE_RUNNER_LIMITS_MEMORY=512Mi
 SERVICE_RUNNER_IMAGE=harmonyservices/service-runner:latest
+
+# work scheduler
+WORK_ITEM_SCHEDULER_REQUESTS_CPU=128m
+WORK_ITEM_SCHEDULER_REQUESTS_MEMORY=128Mi
+WORK_ITEM_SCHEDULER_LIMITS_CPU=1024m
+WORK_ITEM_SCHEDULER_LIMITS_MEMORY=512Mi
+WORK_ITEM_SCHEDULER_IMAGE=harmonyservices/work-scheduler:latest
 
 # backend services
 HARMONY_GDAL_ADAPTER_IMAGE=ghcr.io/nasa/harmony-gdal-adapter:latest
