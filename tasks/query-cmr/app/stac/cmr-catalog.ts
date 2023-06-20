@@ -102,6 +102,7 @@ export default class CmrStacCatalog extends StacCatalog {
           properties: {
             start_datetime: granule.time_start,
             end_datetime: granule.time_end,
+            datetime: null,
           },
         });
         this.children.push(item);
