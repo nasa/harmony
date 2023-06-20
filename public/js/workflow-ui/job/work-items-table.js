@@ -95,6 +95,7 @@ function initFilter(tableFilter) {
     { value: 'status: canceled', dbValue: 'canceled', field: 'status' },
     { value: 'status: running', dbValue: 'running', field: 'status' },
     { value: 'status: failed', dbValue: 'failed', field: 'status' },
+    { value: 'status: queued', dbValue: 'queued', field: 'status' },
   ];
   const allowedValues = allowedList.map((t) => t.value);
   // eslint-disable-next-line no-new

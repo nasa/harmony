@@ -372,6 +372,7 @@ function workItemRenderingFunctions(job: Job, isAdmin: boolean, isLogViewer: boo
   badgeClasses[WorkItemStatus.FAILED] = 'danger';
   badgeClasses[WorkItemStatus.SUCCESSFUL] = 'success';
   badgeClasses[WorkItemStatus.RUNNING] = 'info';
+  badgeClasses[WorkItemStatus.QUEUED] = 'warning';
   return {
     workflowItemBadge(): string { return badgeClasses[this.status]; },
     workflowItemStep(): string { return sanitizeImage(this.serviceID); },
