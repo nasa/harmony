@@ -48,6 +48,9 @@ const item3 = buildWorkItem(
 const item4 = buildWorkItem(
   { jobID: targetJob.jobID, workflowStepIndex: 2, serviceID: step2ServiceId, status: WorkItemStatus.RUNNING },
 );
+const item5 = buildWorkItem(
+  { jobID: targetJob.jobID, workflowStepIndex: 3, serviceID: step2ServiceId, status: WorkItemStatus.QUEUED },
+);
 const retryingWorkItem = buildWorkItem(
   { jobID: targetJob.jobID, workflowStepIndex: 2, serviceID: step2ServiceId, status: WorkItemStatus.RUNNING, retryCount: 1 },
 );
@@ -112,6 +115,7 @@ describe('Workflow UI work items table route', function () {
       MockDate.set('2023-01-06T14:12:00.000Z');
       await item3.save(this.trx);
       await item4.save(this.trx);
+      await item5.save(this.trx);
       await retryingWorkItem.save(this.trx);
       await step1.save(this.trx);
       await step2.save(this.trx);
@@ -178,11 +182,12 @@ describe('Workflow UI work items table route', function () {
         });
         it('returns an HTML table of all the work items associated with the job', function () {
           const listing = this.res.text;
-          [item1.workflowStepIndex, item2.workflowStepIndex, item3.workflowStepIndex]
+          [item1.workflowStepIndex, item2.workflowStepIndex, item3.workflowStepIndex, item4.workflowStepIndex,
+            item5.workflowStepIndex, retryingWorkItem.workflowStepIndex]
             .forEach((stepIndex) => expect(listing).to.contain(mustache.render('<th scope="row">{{stepIndex}}</th>', { stepIndex })));
-          [1, 2, 3]
+          [1, 2, 3, 4, 5, 6]
             .forEach((id) => expect(listing).to.contain(mustache.render('<td>{{id}}</td>', { id })));
-          expect((listing.match(/work-item-table-row/g) || []).length).to.equal(5);
+          expect((listing.match(/work-item-table-row/g) || []).length).to.equal(6);
         });
         it('return useful but nonsensitive information about docker images', function () {
           const listing = this.res.text;
@@ -230,7 +235,7 @@ describe('Workflow UI work items table route', function () {
 
         it('returns metrics links for the other user\'s work item logs for every work item', async function () {
           const listing = this.res.text;
-          expect((listing.match(/logs-metrics/g) || []).length).to.equal(5);
+          expect((listing.match(/logs-metrics/g) || []).length).to.equal(6);
         });
         it('does return a column for the work item logs', async function () {
           const listing = this.res.text;
@@ -339,6 +344,21 @@ describe('Workflow UI work items table route', function () {
         });
       });
 
+      const queuedFilter = '[{"value":"status: queued","dbValue":"queued","field":"status"}]';
+
+      describe('who requests page 1 of the work items table, with a limit of 1 and status IN [QUEUED]', function () {
+        hookWorkflowUIWorkItems({ username: 'bo', jobID: targetJob.jobID, query: { limit: 1, tableFilter: queuedFilter } });
+        it('returns only one work item', function () {
+          const listing = this.res.text;
+          expect(listing).to.contain(mustache.render('<td>{{id}}</td>', { id: 5 }));
+          expect((listing.match(/work-item-table-row/g) || []).length).to.equal(1);
+        });
+        it('returns a QUEUED work item', function () {
+          const listing = this.res.text;
+          expect(listing).to.contain(`<span class="badge bg-warning">${WorkItemStatus.QUEUED.valueOf()}</span>`);
+        });
+      });
+
       describe('who requests page 2 of the work items table, with a limit of 1 and status IN [SUCCESSFUL]', function () {
         hookWorkflowUIWorkItems({ username: 'bo', jobID: targetJob.jobID, query: { limit: 1, page: 2, tableFilter: successfulFilter } });
         it('returns a link to the previous page', function () {
@@ -399,7 +419,7 @@ describe('Workflow UI work items table route', function () {
       it('returns the items with an acceptable updatedAt date', function () {
         const listing = this.res.text;
         expect(listing).to.contain((new Date('2023-01-06T14:12:00.000Z')).getTime());
-        expect((listing.match(/work-item-table-row/g) || []).length).to.equal(3);
+        expect((listing.match(/work-item-table-row/g) || []).length).to.equal(4);
       });
     });
 
@@ -408,7 +428,7 @@ describe('Workflow UI work items table route', function () {
       it('returns the items with an acceptable updatedAt date', function () {
         const listing = this.res.text;
         expect(listing).to.contain((new Date('2023-01-06T14:12:00.000Z')).getTime());
-        expect((listing.match(/work-item-table-row/g) || []).length).to.equal(3);
+        expect((listing.match(/work-item-table-row/g) || []).length).to.equal(4);
       });
     });
 
@@ -417,7 +437,7 @@ describe('Workflow UI work items table route', function () {
       it('returns the items with an acceptable updatedAt date', function () {
         const listing = this.res.text;
         expect(listing).to.contain((new Date('2023-01-06T14:12:00.000Z')).getTime());
-        expect((listing.match(/work-item-table-row/g) || []).length).to.equal(3);
+        expect((listing.match(/work-item-table-row/g) || []).length).to.equal(4);
       });
     });
 
@@ -446,15 +466,16 @@ describe('Workflow UI work items table route', function () {
         hookAdminWorkflowUIWorkItems({ username: 'adam', jobID: targetJob.jobID });
         it('returns the work items for any job, owned by any user', async function () {
           const listing = this.res.text;
-          [item1.workflowStepIndex, item2.workflowStepIndex, item3.workflowStepIndex]
+          [item1.workflowStepIndex, item2.workflowStepIndex, item3.workflowStepIndex, item4.workflowStepIndex,
+            item5.workflowStepIndex, retryingWorkItem.workflowStepIndex]
             .forEach((stepIndex) => expect(listing).to.contain(mustache.render('<th scope="row">{{stepIndex}}</th>', { stepIndex })));
           [step1ServiceIdScrubbed, step2ServiceIdScrubbed]
             .forEach((workflowItemStep) => expect(listing).to.contain(
               mustache.render('<td>{{workflowItemStep}}</td>', { workflowItemStep }),
             ));
-          [1, 2, 3]
+          [1, 2, 3, 4, 5, 6]
             .forEach((id) => expect(listing).to.contain(mustache.render('<td>{{id}}</td>', { id })));
-          expect((listing.match(/work-item-table-row/g) || []).length).to.equal(5);
+          expect((listing.match(/work-item-table-row/g) || []).length).to.equal(6);
         });
         it('returns links for the (completed) and currently running work item logs (stored in s3)', async function () {
           const listing = this.res.text;
@@ -462,7 +483,7 @@ describe('Workflow UI work items table route', function () {
         });
         it('returns metrics logs links for all work items', async function () {
           const listing = this.res.text;
-          expect((listing.match(/logs-metrics/g) || []).length).to.equal(5);
+          expect((listing.match(/logs-metrics/g) || []).length).to.equal(6);
         });
         it('does return a column for the work item logs', async function () {
           const listing = this.res.text;
@@ -483,9 +504,10 @@ describe('Workflow UI work items table route', function () {
           query: { disallowStatus: 'on', tableFilter: '[{"value":"status: running","dbValue":"running","field":"status"}]' } });
         it('returns only non-running work items', function () {
           const listing = this.res.text;
-          expect((listing.match(/work-item-table-row/g) || []).length).to.equal(3);
+          expect((listing.match(/work-item-table-row/g) || []).length).to.equal(4);
           expect(listing).to.not.contain(`<span class="badge bg-danger">${WorkItemStatus.FAILED.valueOf()}</span>`);
           expect(listing).to.contain(`<span class="badge bg-success">${WorkItemStatus.SUCCESSFUL.valueOf()}</span>`);
+          expect(listing).to.contain(`<span class="badge bg-warning">${WorkItemStatus.QUEUED.valueOf()}</span>`);
           expect(listing).to.not.contain(`<span class="badge bg-secondary">${WorkItemStatus.CANCELED.valueOf()}</span>`);
           expect(listing).to.not.contain(`<span class="badge bg-primary">${WorkItemStatus.READY.valueOf()}</span>`);
           expect(listing).to.not.contain(`<span class="badge bg-info">${WorkItemStatus.RUNNING.valueOf()}</span>`);

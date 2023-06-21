@@ -43,7 +43,10 @@ const item2 = buildWorkItem(
   { jobID: targetJob.jobID, workflowStepIndex: 1, serviceID: step1ServiceId, status: WorkItemStatus.SUCCESSFUL, id: 2 },
 );
 const item3 = buildWorkItem(
-  { jobID: targetJob.jobID, workflowStepIndex: 2, serviceID: step2ServiceId, status: WorkItemStatus.CANCELED },
+  { jobID: targetJob.jobID, workflowStepIndex: 2, serviceID: step2ServiceId, status: WorkItemStatus.CANCELED, id: 3 },
+);
+const queuedItem = buildWorkItem(
+  { jobID: targetJob.jobID, workflowStepIndex: 2, serviceID: step2ServiceId, status: WorkItemStatus.QUEUED, id: 4 },
 );
 
 // use to test functionality related to job sharing
@@ -102,6 +105,7 @@ describe('Workflow UI work items table row route', function () {
       MockDate.set('2020-01-05T14:12:00.000Z');
       await item2.save(this.trx);
       await item3.save(this.trx);
+      await queuedItem.save(this.trx);
       await step1.save(this.trx);
       await step2.save(this.trx);
 
@@ -185,6 +189,16 @@ describe('Workflow UI work items table row route', function () {
         it('returns a retry button for their RUNNING work item', async function () {
           const listing = this.res.text;
           expect((listing.match(/retry-button/g) || []).length).to.equal(1);
+        });
+      });
+
+      describe('who requests a queued work item for their job', function () {
+        hookWorkflowUIWorkItemsRow({ username: 'bo', jobID: targetJob.jobID, id: queuedItem.id });
+        it('returns an HTML row of the work item', function () {
+          const listing = this.res.text;
+          expect(listing).to.contain(mustache.render('<th scope="row">{{stepIndex}}</th>', { stepIndex: queuedItem.workflowStepIndex }));
+          expect(listing).to.contain(mustache.render('<td>{{id}}</td>', { id: queuedItem.id }));
+          expect((listing.match(/work-item-table-row/g) || []).length).to.equal(1);
         });
       });
 
