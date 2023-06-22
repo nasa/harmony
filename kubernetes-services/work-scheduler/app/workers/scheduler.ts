@@ -76,8 +76,7 @@ export async function processSchedulerQueue(reqLogger: Logger): Promise<void> {
         if (workItem) {
           const json = JSON.stringify(workItem);
           reqLogger.info(`Sending work item ${workItem.workItem.id} to queue ${queueUrl}`);
-          // must include groupId for FIFO queues, but we don't care about it so just use 'w'
-          await queue.sendMessage(json, 'w');
+          await queue.sendMessage(json, `${workItem.workItem.id}`);
           queuedCount++;
         } else {
           break;

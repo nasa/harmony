@@ -576,7 +576,7 @@ export class Job extends DBRecord implements JobRecord {
     currentPage = 0,
     perPage = env.defaultResultPageSize,
   ): Promise<{ job: Job; pagination: ILengthAwarePagination }> {
-    const result = await transaction('jobs').select().where({ username, requestId }).forUpdate();
+    const result = await transaction('jobs').select().where({ username, requestId });
     const job = result.length === 0 ? null : new Job(result[0]);
     let paginationInfo;
     if (job && includeLinks) {
@@ -608,7 +608,7 @@ export class Job extends DBRecord implements JobRecord {
     currentPage = 0,
     perPage = env.defaultResultPageSize,
   ): Promise<{ job: Job; pagination: ILengthAwarePagination }> {
-    const result = await transaction('jobs').select().where({ username, jobID }).forUpdate();
+    const result = await transaction('jobs').select().where({ username, jobID });
     const job = result.length === 0 ? null : new Job(result[0]);
     let paginationInfo;
     if (job && includeLinks) {

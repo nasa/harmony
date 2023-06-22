@@ -30,6 +30,7 @@ describe('Work Backends', function () {
     jobID: jobRecord.jobID,
     serviceID: service,
     id: 1,
+    operation: JSON.parse(validOperation),
   } as Partial<WorkItemRecord>;
 
   const workflowStepRecord = {

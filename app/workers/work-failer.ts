@@ -51,7 +51,7 @@ export default class WorkFailer implements Worker {
     const jobServiceThresholds = {};
 
     const workItems = await getWorkItemsByUpdateAgeAndStatus(
-      db, lastUpdateOlderThanMinutes, [WorkItemStatus.RUNNING],
+      db, lastUpdateOlderThanMinutes, [WorkItemStatus.RUNNING, WorkItemStatus.QUEUED],
       [JobStatus.RUNNING, JobStatus.RUNNING_WITH_ERRORS],
       ['w.id', 'w.jobID', 'serviceID', 'startedAt', 'workflowStepIndex'],
       startingId,
