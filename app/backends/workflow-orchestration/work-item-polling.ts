@@ -96,7 +96,7 @@ export async function getWorkFromQueue(serviceID: string, reqLogger: Logger): Pr
     queueItem = await queue.getMessage();
   }
 
-  if (queueItem){
+  if (queueItem) {
     // reqLogger.debug(`Found work item ${JSON.stringify(queueItem, null, 2)} on queue ${queueUrl}`);
     reqLogger.debug(`Found work item on queue ${queueUrl}`);
     // normally we would process this before deleting the message, but we instead are relying on

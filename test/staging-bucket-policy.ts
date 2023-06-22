@@ -85,7 +85,7 @@ describe('staging-bucket-policy route', function () {
 
       getCallerIdentityStub = stub(sts.prototype, 'getCallerIdentity').resolves(expectedResult);
     });
-    after(function (){
+    after(function () {
       getCallerIdentityStub.restore();
     });
     describe('and the user provides a valid s3 bucket with no prefix', async function () {
@@ -179,7 +179,7 @@ describe('staging-bucket-policy route', function () {
       getCallerIdentityStub = stub(sts.prototype, 'getCallerIdentity')
         .throws('This is not AWS');
     });
-    after(function (){
+    after(function () {
       getCallerIdentityStub.restore();
     });
     describe('and the user provides a valid s3 bucket path', async function () {
