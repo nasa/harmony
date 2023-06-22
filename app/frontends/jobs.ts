@@ -177,13 +177,17 @@ export async function getJobStatus(
     if (!job) {
       throw new NotFoundError(`Unable to find job ${jobID}`);
     }
-    if (!(await job.canViewJob(req.user, req.context.isAdminAccess, req.accessToken))) {
+    const isAdminOrOwner = job.belongsToOrIsAdmin(req.user, req.context.isAdminAccess);
+    const isJobShareable = await job.isShareable(req.accessToken);
+    if (!isAdminOrOwner && !isJobShareable) {
       throw new NotFoundError();
     }
     const urlRoot = getRequestRoot(req);
     const pagingLinks = getPagingLinks(req, pagination).map((link) => new JobLink(link));
     job.links = job.links.concat(pagingLinks);
-    res.send(getJobForDisplay(job, urlRoot, linkType, errors));
+    const jobForDisplay = await getJobForDisplay(job, urlRoot, linkType, errors);
+    jobForDisplay.shareable = isJobShareable;
+    res.send(jobForDisplay);
   } catch (e) {
     req.context.logger.error(e);
     next(e);
