@@ -146,13 +146,13 @@ UPLOAD_BUCKET=local-upload-bucket
 USE_SERVICE_QUEUES=false
 
 # SQS queue used to request scheduling of work items for a service
-WORK_ITEM_SCHEDULER_QUEUE_URL=http://localstack:4566/queue/work-item-scheduler-queue
+WORK_ITEM_SCHEDULER_QUEUE_URL=http://localstack:4566/queue/work-item-scheduler-queue.fifo
 
 # SQS queue used to process work item updates
-WORK_ITEM_UPDATE_QUEUE_URL=http://localstack:4566/queue/work-item-update-queue
+WORK_ITEM_UPDATE_QUEUE_URL=http://localstack:4566/queue/work-item-update-queue.fifo
 
 # SQS queue used to process work item updates
-LARGE_WORK_ITEM_UPDATE_QUEUE_URL=http://localstack:4566/queue/large-work-item-update-queue
+LARGE_WORK_ITEM_UPDATE_QUEUE_URL=http://localstack:4566/queue/large-work-item-update-queue.fifo
 
 # maximum number of items to pull from the queue at once for the large item queue (to avoid visibility timeouts)
 # if this is set to greater than 10 (the SQS max) then 10 will be used instead
@@ -184,7 +184,7 @@ WORK_FAILER_PERIOD_SEC=120
 # Used to avoid a tight loop
 WORK_ITEM_UPDATE_QUEUE_PROCESSOR_DELAY_AFTER_ERROR_SEC=1
 
-WORK_ITEM_UPDATE_QUEUE_PROCESSOR_COUNT=6
+WORK_ITEM_UPDATE_QUEUE_PROCESSOR_COUNT=3
 
 # Long polling wait time (in seconds) for queues
 QUEUE_LONG_POLLING_WAIT_TIME_SEC=20
