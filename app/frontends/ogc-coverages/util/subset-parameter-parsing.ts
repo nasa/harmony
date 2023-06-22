@@ -163,7 +163,7 @@ export function parsePointParam(
 ): number[] {
   let results;
   let coordinate, coordinates;
-  if (values !== undefined){
+  if (values !== undefined) {
     coordinates = values;
     if ( coordinates.length !== 2 )
       throw new ParameterParseError(`should point 2 values in "point" but got "${values}" instead.`);

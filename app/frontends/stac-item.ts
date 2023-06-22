@@ -1,4 +1,3 @@
-import { v4 as uuid } from 'uuid';
 import { pick } from 'lodash';
 
 import JobLink from '../models/job-link';
@@ -52,7 +51,7 @@ export class HarmonyItem {
    * @param description - Description of the STAC Item
    * @param index - The index of this item in the STAC catalog
    */
-  constructor(id: string = uuid(), title = '', description = '', index: number) {
+  constructor(id: string, title: string, description: string, index: number) {
     this.id = `${id}_${index}`;
     this.stac_version = '1.0.0';
     this.title = title;

@@ -204,7 +204,7 @@ function shouldSample(
   }
 
   // store the trace ID for any rejected parent segments so we can reject their subsegments later
-  if (decision === SamplingDecision.NOT_RECORD){
+  if (decision === SamplingDecision.NOT_RECORD) {
     if (spanKind === 1) {
       rejectedTraces.reject(traceId);
     }

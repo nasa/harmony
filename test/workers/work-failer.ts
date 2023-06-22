@@ -158,7 +158,7 @@ describe('WorkFailer', function () {
         let items = (await getWorkItemsByJobId(db, job.jobID)).workItems;
 
         for (const item of items) {
-          if (!oldItems.map(i => {return i.id;}).includes(item.id)){
+          if (!oldItems.map(i => {return i.id;}).includes(item.id)) {
             // only simulating for the "old" items as specified in the before hook
             continue;
           }
