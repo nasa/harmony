@@ -16,7 +16,7 @@ export const adminUsername = 'adam';
 
 export const expectedJobKeys = [
   'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'dataExpiration',
-  'links', 'request', 'numInputGranules', 'jobID',
+  'links', 'request', 'numInputGranules', 'jobID', 'shareable',
 ];
 
 export const expectedNoOpJobKeys = expectedJobKeys.filter((k) => k !== 'jobID');
