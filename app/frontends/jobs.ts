@@ -185,7 +185,7 @@ export async function getJobStatus(
     const urlRoot = getRequestRoot(req);
     const pagingLinks = getPagingLinks(req, pagination).map((link) => new JobLink(link));
     job.links = job.links.concat(pagingLinks);
-    const jobForDisplay = await getJobForDisplay(job, urlRoot, linkType, errors);
+    const jobForDisplay = getJobForDisplay(job, urlRoot, linkType, errors);
     jobForDisplay.shareable = isJobShareable;
     res.send(jobForDisplay);
   } catch (e) {
