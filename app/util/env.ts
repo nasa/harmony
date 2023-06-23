@@ -21,11 +21,13 @@ try {
 }
 
 let envOverrides = {};
-try {
-  envOverrides = dotenv.parse(fs.readFileSync('.env'));
-} catch (e) {
-  winston.warn('Could not parse environment overrides from .env file');
-  winston.warn(e.message);
+if (process.env.NODE_ENV !== 'test') {
+  try {
+    envOverrides = dotenv.parse(fs.readFileSync('.env'));
+  } catch (e) {
+    winston.warn('Could not parse environment overrides from .env file');
+    winston.warn(e.message);
+  }
 }
 
 const envVars: HarmonyEnv = {} as HarmonyEnv;
