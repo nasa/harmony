@@ -28,7 +28,7 @@ As such it accepts parameters in the URL path as well as query parameters.
 | parameter | description |
 |-----------|-------------|
 | collection | (required) This is the NASA EOSDIS collection or data product. There are two options for inputting a collection of interest:<br/>1. Provide a concept ID, which is an ID provided in the Common Metadata Repository (CMR) metadata<br/>2. Use the data product short name, e.g. SENTINEL-1_INTERFEROGRAMS. Must be URL encoded. |
-| variable | (required) Names of the UMM-Var variables to be retrieved, or "all" to retrieve all variables.<br/> Multiple variables may be retrieved by separating them with a comma. |
+| variable | (required) Names or concept ids of the UMM-Var variables to be retrieved, or "all" to retrieve all variables.<br/> Multiple variables may be retrieved by separating them with a comma. |
 ---
 **Table {{tableCounter}}** - Harmony OGC Coverages API URL path (required) parameters
 

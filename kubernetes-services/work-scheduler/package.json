@@ -12,7 +12,7 @@
     "lint": "eslint --ext .ts .",
     "coverage": "nyc mocha",
     "build": "tsc && docker build -f Dockerfile.mac --tag harmonyservices/work-scheduler:${VERSION:-latest} .",
-    "build-m1": "tsc && docker build --platform linux/amd64 --tag harmonyservices/work-scheduler:${VERSION:-latest} .",
+    "build-m1": "tsc && docker build -f Dockerfile.mac --platform linux/amd64 --tag harmonyservices/work-scheduler:${VERSION:-latest} .",
     "publish": "docker push harmonyservices/work-scheduler:${VERSION:-latest}"
   },
   "engines": {
@@ -57,7 +57,7 @@
     "better-npm-audit": "^3.7.3",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
-    "eslint": "^8.2.0",
+    "eslint": "^8.43.0",
     "mocha": "^9.1.3",
     "sinon": "^12.0.1",
     "superagent": "^8.0.6",

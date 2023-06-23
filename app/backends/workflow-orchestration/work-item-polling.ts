@@ -55,7 +55,6 @@ export async function getWorkFromDatabase(serviceID: string, reqLogger: Logger):
   return result;
 }
 
-
 /**
  *  Put a message on the work scheduler queue asking it to schedule some WorkItems for the given
  *  service
@@ -97,7 +96,7 @@ export async function getWorkFromQueue(serviceID: string, reqLogger: Logger): Pr
     queueItem = await queue.getMessage();
   }
 
-  if (queueItem){
+  if (queueItem) {
     // reqLogger.debug(`Found work item ${JSON.stringify(queueItem, null, 2)} on queue ${queueUrl}`);
     reqLogger.debug(`Found work item on queue ${queueUrl}`);
     // normally we would process this before deleting the message, but we instead are relying on
@@ -135,8 +134,7 @@ eventEmitter.on(WorkItemEvent.CREATED, async (workItem: WorkItem) => {
     const { serviceID } = workItem;
     defaultLogger.debug(`Work item created for service ${serviceID}, putting message on scheduler queue`);
     const queue = getWorkSchedulerQueue();
-    // must include groupId for FIFO queues, but we don't care about it so just use 'w'
-    await queue.sendMessage(serviceID, 'w');
+    await queue.sendMessage(serviceID);
     // this actually does nothing outside of tests since the scheduler pod will be running
     await processSchedulerQueue(defaultLogger);
   }
