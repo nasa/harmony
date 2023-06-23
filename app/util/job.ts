@@ -266,7 +266,7 @@ export async function getJobIfAllowed(
   if (!job) {
     throw new NotFoundError();
   }
-  let canViewJob:boolean;
+  let canViewJob: boolean;
   const isAdminOrOwner = job.belongsToOrIsAdmin(username, isAdmin);
   if (isAdminOrOwner) {
     canViewJob = true;
