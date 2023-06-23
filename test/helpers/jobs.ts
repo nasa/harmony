@@ -19,7 +19,7 @@ export const expectedJobKeys = [
   'links', 'request', 'numInputGranules', 'jobID', 'shareable',
 ];
 
-export const expectedNoOpJobKeys = expectedJobKeys.filter((k) => k !== 'jobID');
+export const expectedNoOpJobKeys = expectedJobKeys.filter((k) => k !== 'jobID' && k !== 'shareable');
 
 const exampleProps = {
   username: 'anonymous',
