@@ -2,6 +2,7 @@ import * as axios from 'axios';
 import { ForbiddenError } from './errors';
 import { Logger } from 'winston';
 import env from './env';
+import HarmonyRequest from '../models/harmony-request';
 
 const edlUserRequestUrl = `${env.oauthHost}/oauth/tokens/user`;
 const edlClientCredentialsUrl = `${env.oauthHost}/oauth/token`;
@@ -112,4 +113,14 @@ export async function getEdlGroupInformation(username: string, userToken: string
   }
 
   return { isAdmin, isLogViewer };
+}
+
+/**
+ * Helper function which returns true if the request is from an admin user
+ * @param req - the harmony request
+ */
+export async function isAdminUser(req: HarmonyRequest): Promise<boolean> {
+  const isAdmin = req.context.isAdminAccess ||
+    (await getEdlGroupInformation(req.user, req.accessToken, req.context.logger)).isAdmin;
+  return isAdmin;
 }

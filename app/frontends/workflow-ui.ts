@@ -17,7 +17,7 @@ import { objectStoreForProtocol } from '../util/object-store';
 import { handleWorkItemUpdate } from '../backends/workflow-orchestration/work-item-updates';
 import { Logger } from 'winston';
 import { serviceNames } from '../models/services';
-import { getEdlGroupInformation } from '../util/edl-api';
+import { getEdlGroupInformation, isAdminUser } from '../util/edl-api';
 
 /**
  * Maps job status to display class.
@@ -121,15 +121,6 @@ function parseQuery( /* eslint-disable @typescript-eslint/no-explicit-any */
   return { tableQuery, originalValues };
 }
 
-/**
- * Helper function which returns true if the request is from an admin user
- * @param req - the harmony request
- */
-async function isAdminUser(req: HarmonyRequest): Promise<boolean> {
-  const isAdmin = req.context.isAdminAccess ||
-    (await getEdlGroupInformation(req.user, req.accessToken, req.context.logger)).isAdmin;
-  return isAdmin;
-}
 /**
  * Returns an object with all of the functions necessary for rendering
  * a row of the jobs table.

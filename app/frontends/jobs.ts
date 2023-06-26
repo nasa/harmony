@@ -14,6 +14,7 @@ import db from '../util/db';
 import env = require('../util/env');
 import JobError, { getErrorsForJob } from '../models/job-error';
 import _ from 'lodash';
+import { isAdminUser } from '../util/edl-api';
 
 /**
  * Returns true if the job contains S3 direct access links
@@ -177,7 +178,8 @@ export async function getJobStatus(
     if (!job) {
       throw new NotFoundError(`Unable to find job ${jobID}`);
     }
-    const isAdminOrOwner = job.belongsToOrIsAdmin(req.user, req.context.isAdminAccess);
+    const isAdmin = await isAdminUser(req);
+    const isAdminOrOwner = job.belongsToOrIsAdmin(req.user, isAdmin);
     const isJobShareable = await job.isShareable(req.accessToken);
     if (!isAdminOrOwner && !isJobShareable) {
       throw new NotFoundError();
