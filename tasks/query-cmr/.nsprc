@@ -1,2 +1,7 @@
 {
+  "1092310": {
+    "active": true,
+    "notes": "Ignored since only affects semver used for development and there is no fix",
+    "expiry": "2023-09-01"
+  }
 }
