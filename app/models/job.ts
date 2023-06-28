@@ -101,6 +101,8 @@ export class JobForDisplay {
 
   errors?: JobError[];
 
+  shareable?: boolean;
+
 }
 
 export interface JobQuery {
@@ -941,27 +943,11 @@ export class Job extends DBRecord implements JobRecord {
   }
 
   /**
-   * Return whether a user can access this job and its results.
-   * (Called whenever a request is made to frontend jobs endpoints)
-   * @param requestingUserName - the person we're checking permissions for
-   * @param isAdminAccess - whether the requesting user should be treated as an admin
-   * (e.g. req.context.isAdminAccess or user is in the admin group)
-   * @param accessToken - the token to make permission check requests with
-   * @param enableShareability - whether to check if the job can be shared with non-owners
-   * @returns true or false
+   * Returns true if the job and its results can be shared.
+   * @param accessToken - The token used for the CMR API
+   * @returns boolean
    */
-  async canViewJob(
-    requestingUserName: string,
-    isAdminAccess: boolean,
-    accessToken: string,
-    enableShareability = true,
-  ): Promise<boolean> {
-    const isAdminOrOwner = this.belongsToOrIsAdmin(requestingUserName, isAdminAccess);
-    if (isAdminOrOwner || !enableShareability) {
-      return isAdminOrOwner;
-    }
-    // if we get to here, the user is not an admin, nor the owner of the job,
-    // but we should still check if the job can be viewed since enableShareability=true
+  async isShareable(accessToken: string): Promise<boolean> {
     if (!this.collectionIds.length) {
       return false;
     }

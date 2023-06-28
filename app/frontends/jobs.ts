@@ -14,6 +14,7 @@ import db from '../util/db';
 import env = require('../util/env');
 import JobError, { getErrorsForJob } from '../models/job-error';
 import _ from 'lodash';
+import { isAdminUser } from '../util/edl-api';
 
 /**
  * Returns true if the job contains S3 direct access links
@@ -177,13 +178,18 @@ export async function getJobStatus(
     if (!job) {
       throw new NotFoundError(`Unable to find job ${jobID}`);
     }
-    if (!(await job.canViewJob(req.user, req.context.isAdminAccess, req.accessToken))) {
+    const isAdmin = await isAdminUser(req);
+    const isAdminOrOwner = job.belongsToOrIsAdmin(req.user, isAdmin);
+    const isJobShareable = await job.isShareable(req.accessToken);
+    if (!isAdminOrOwner && !isJobShareable) {
       throw new NotFoundError();
     }
     const urlRoot = getRequestRoot(req);
     const pagingLinks = getPagingLinks(req, pagination).map((link) => new JobLink(link));
     job.links = job.links.concat(pagingLinks);
-    res.send(getJobForDisplay(job, urlRoot, linkType, errors));
+    const jobForDisplay = getJobForDisplay(job, urlRoot, linkType, errors);
+    jobForDisplay.shareable = isJobShareable;
+    res.send(jobForDisplay);
   } catch (e) {
     req.context.logger.error(e);
     next(e);

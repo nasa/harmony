@@ -266,7 +266,16 @@ export async function getJobIfAllowed(
   if (!job) {
     throw new NotFoundError();
   }
-  if (await job.canViewJob(username, isAdmin, accessToken, enableShareability)) {
+  let canViewJob: boolean;
+  const isAdminOrOwner = job.belongsToOrIsAdmin(username, isAdmin);
+  if (isAdminOrOwner) {
+    canViewJob = true;
+  } else if (!enableShareability) {
+    canViewJob = false;
+  } else {
+    canViewJob = await job.isShareable(accessToken);
+  }
+  if (canViewJob) {
     return job;
   } else {
     throw new ForbiddenError();
