@@ -24,7 +24,7 @@
     <title>Harmony</title>
 </head>
 
-<body class="d-flex flex-column h-100">
+<body class="d-flex flex-column" style="height: fit-content;">
     {{> workflow-ui/toasts}}
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container-lg">
@@ -35,8 +35,8 @@
             </button>
         </div>
     </nav>
-    <nav class="ml-0 pl-0"
-        style="--bs-breadcrumb-divider: url(&#34;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M2.5 0L1 1.5 3.5 4 1 6.5 2.5 8l4-4-4-4z' fill='currentColor'/%3E%3C/svg%3E&#34;);"
+    <nav class="ml-0 pl-0 sticky-top"
+        style="top: 0; --bs-breadcrumb-divider: url(&#34;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M2.5 0L1 1.5 3.5 4 1 6.5 2.5 8l4-4-4-4z' fill='currentColor'/%3E%3C/svg%3E&#34;);"
         aria-label="breadcrumb">
         <div class="breadcrumb  d-flex flex-row justify-content-between">
             <ol class="breadcrumb p-0 m-0">
@@ -54,10 +54,10 @@
             </div>
         </div>
     </nav>
-    <div class="container-fluid">
+    <div class="container-fluid" style="min-height: calc(100vh - 194px);">
         <div class="row pb-4">
             <div class="col-2">
-                <form id="work-items-query-form" action="./{{job.jobID}}" method="get" class="sticky-top pt-2">
+                <form id="work-items-query-form" action="./{{job.jobID}}" method="get" class="sticky-top pt-2"  style="top: 40px;">
                     <input type="hidden" name="jobID" value="{{job.jobID}}" />
                     <input type="hidden" name="page" value="{{page}}" />
                     <input type="hidden" name="limit" value="{{limit}}" />
