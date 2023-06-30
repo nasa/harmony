@@ -268,8 +268,10 @@ export async function incrementRunningAndDecrementReadyCounts(
   await tx(UserWork.table)
     .where({ job_id: jobID, service_id: serviceID })
     .increment('running_count')
-    .decrement('ready_count')
-    .update({ 'last_worked': new Date() });
+    .update({
+      ready_count: tx.raw('CASE WHEN ready_count > 0 THEN ready_count - 1 ELSE 0 END'),
+      last_worked: new Date(),
+    });
 }
 
 /**
@@ -285,7 +287,9 @@ export async function incrementReadyAndDecrementRunningCounts(
   await tx(UserWork.table)
     .where({ job_id: jobID, service_id: serviceID })
     .increment('ready_count')
-    .decrement('running_count');
+    .update({
+      running_count: tx.raw('CASE WHEN running_count > 0 THEN running_count - 1 ELSE 0 END'),
+    });
 }
 
 /**
@@ -299,7 +303,9 @@ export async function decrementRunningCount(
 ): Promise<void> {
   await tx(UserWork.table)
     .where({ job_id: jobID, service_id: serviceID })
-    .decrement('running_count');
+    .update({
+      running_count: tx.raw('CASE WHEN running_count > 0 THEN running_count - 1 ELSE 0 END'),
+    });
 }
 
 /**
