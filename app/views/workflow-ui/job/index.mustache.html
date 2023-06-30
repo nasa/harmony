@@ -24,7 +24,7 @@
     <title>Harmony</title>
 </head>
 
-<body class="d-flex flex-column" style="height: fit-content;">
+<body class="d-flex flex-column">
     {{> workflow-ui/toasts}}
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container-lg">
@@ -54,10 +54,10 @@
             </div>
         </div>
     </nav>
-    <div class="container-fluid" style="min-height: calc(100vh - 194px);">
+    <div class="container-fluid content">
         <div class="row pb-4">
             <div class="col-2">
-                <form id="work-items-query-form" action="./{{job.jobID}}" method="get" class="sticky-top pt-2"  style="top: 40px;">
+                <form id="work-items-query-form" action="./{{job.jobID}}" method="get" class="sticky-top pt-2 t-40">
                     <input type="hidden" name="jobID" value="{{job.jobID}}" />
                     <input type="hidden" name="page" value="{{page}}" />
                     <input type="hidden" name="limit" value="{{limit}}" />

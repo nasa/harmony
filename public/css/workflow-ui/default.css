@@ -5,3 +5,15 @@
 .helpful-th, .helpful-span {
     cursor: help;
 }
+
+body {
+    height: fit-content;
+}
+
+.content {
+    min-height: calc(100vh - 194px);
+}
+
+.t-40 {
+    top: 40px;
+}
