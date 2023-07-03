@@ -29,7 +29,7 @@ body {
 }
 
 #page-nav {
-    /* Center the paging links toward the bottom middle */
+    /* Center the paging links toward the bottom */
     bottom: 40px;
     position: fixed;
     left: 50%;
