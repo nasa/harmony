@@ -27,3 +27,17 @@ body {
     /* Ensures that toast elements appear above most elements */
     z-index: 1050;
 }
+
+#page-nav {
+    /* Center the paging links toward the bottom middle */
+    bottom: 40px;
+    position: fixed;
+    left: 50%;
+    transform: translate(-50%, 0);   
+}
+
+#page-nav > ul > li > a {
+    box-shadow: 2px 3px 3px #c2bbbb;
+    -moz-box-shadow: 2px 3px 3px #c2bbbb;
+    -webkit-box-shadow: 2px 3px 3px #c2bbbb;
+}
