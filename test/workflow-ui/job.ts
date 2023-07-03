@@ -63,7 +63,7 @@ describe('Workflow UI job route', function () {
     });
     describe('when a non-admin user', function () {
       describe('requests their own job', function () {
-        hookWorkflowUIJob({ jobID: nonShareableJob.jobID, username: 'woody' });
+        hookWorkflowUIJob({ jobID: nonShareableJob.jobID, username: 'woody', query: { limit: 1 } });
         it('returns an HTTP success response', function () {
           expect(this.res.statusCode).to.equal(200);
         });
@@ -74,6 +74,10 @@ describe('Workflow UI job route', function () {
         it('returns a breadcrumb that includes the non-admin path', async function () {
           const listing = this.res.text;
           expect(listing).to.contain(mustache.render('<a href="/workflow-ui">Jobs</a>', {}));
+        });
+        it('sets the page limit input to the expected value', function () {
+          const listing = this.res.text;
+          expect(listing).to.contain('<input name="limit" type="number" class="form-control" value="1">');
         });
       });
       describe('requests a shareable job that they do not own', function () {
