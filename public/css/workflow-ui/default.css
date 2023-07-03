@@ -7,17 +7,23 @@
 }
 
 body {
+    /* Sticky elements disappear if the parent element is scrolled past.
+    Therefore the parent of sticky elements ("body" in this case)
+    should be at least as tall as their content. */
     height: fit-content;
 }
 
 .content {
+    /* Pushes the footer to the bottom of the viewport */
     min-height: calc(100vh - 180px);
 }
 
 .t-40 {
+    /* Prevents the secondary header from overlapping primary header */
     top: 40px;
 }
 
 .z-1050 {
+    /* Ensures that toast elements appear above most elements */
     z-index: 1050;
 }
