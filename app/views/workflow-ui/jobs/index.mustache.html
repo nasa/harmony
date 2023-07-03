@@ -46,7 +46,6 @@
             <div class="col-2">
                 <form id="jobs-query-form" action="./workflow-ui" method="get" class="sticky-top pt-2">
                     <input type="hidden" name="page" value="{{page}}" />
-                    <input type="hidden" name="limit" value="{{limit}}" />
                     {{> workflow-ui/date-time-picker}}
                     <input id="sort-granules" type="hidden" name="sortGranules" value="{{sortGranules}}" />
                     <input name="tableFilter" class="table-filter form-control mb-2" placeholder="add a filter"
@@ -72,6 +71,10 @@
                         </label>
                     </div>
                     {{/isAdminRoute}}
+                    <div class="input-group mt-2">
+                      <span class="input-group-text">limit</span>
+                      <input name="limit" type="number" class="form-control" value="{{limit}}">
+                    </div>
                     <button type="submit" class="btn btn-primary btn-sm mt-3"><i class="bi bi-filter-circle"></i> apply</button>
                 </form>
             </div>
