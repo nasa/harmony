@@ -13,7 +13,7 @@ body {
     height: fit-content;
 }
 
-.content {
+#content {
     /* Pushes the footer to the bottom of the viewport */
     min-height: calc(100vh - 180px);
 }
