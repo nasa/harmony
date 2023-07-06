@@ -8,7 +8,7 @@
 
 #workflow-items-table-container, #jobs-table-container {
     overflow-y: scroll;
-    max-height: 70vh;
+    max-height: 80vh;
 }
 
 .sticky-paging {
