@@ -3,14 +3,15 @@
 </div>
 
 <table class="table table-sm">
-    <thead>
+    <thead class="sticky-top bg-white">
         <tr>
             <th scope="col">stepIndex</th>
             <th scope="col">stepName</th>
             <th scope="col">id</th>
             <th scope="col">status</th>
             {{#isAdminOrLogViewer}}
-            <th class="helpful-th" scope="col" title="Links to logs (including all retries) for each work item.">logs</th>
+            <th class="helpful-th" scope="col" title="Links to logs (including all retries) for each work item.">
+                logs</th>
             {{/isAdminOrLogViewer}}
             {{#canShowRetryColumn}}
             <th scope="col">retry</th>
@@ -22,11 +23,12 @@
     </thead>
     <tbody>
         {{#workItems}}
-            {{> workflow-ui/job/work-item-table-row }}
+        {{> workflow-ui/job/work-item-table-row }}
         {{/workItems}}
     </tbody>
 </table>
-<nav aria-label="Page navigation" class="d-flex flex-column align-items-center">
+
+<nav aria-label="Page navigation" class="bg-white d-flex flex-column align-items-center py-2 sticky-paging">
     <ul class="pagination px-0 mx-auto">
         {{#links}}
         <li class="page-item {{linkDisabled}}">
