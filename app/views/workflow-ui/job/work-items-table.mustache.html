@@ -27,12 +27,4 @@
     </tbody>
 </table>
 
-<nav aria-label="Page navigation" class="bg-white d-flex flex-column align-items-center py-2 sticky-paging">
-    <ul class="pagination px-0 mx-auto">
-        {{#links}}
-        <li class="page-item {{linkDisabled}}">
-            <a class="page-link" href="{{linkHref}}" title="{{linkTitle}}">{{linkTitle}}</a>
-        </li>
-        {{/links}}
-    </ul>
-</nav>
+{{> workflow-ui/paging }}
