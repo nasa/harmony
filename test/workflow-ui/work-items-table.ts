@@ -400,6 +400,14 @@ describe('Workflow UI work items table route', function () {
         });
       });
 
+      describe('who requests page 2 of the work items table, with a limit of 2', function () {
+        hookWorkflowUIWorkItems({ username: 'bo', jobID: targetJob.jobID, query: { limit: 2, page: 2 } });
+        it('contains paging info', function () {
+          const listing = this.res.text;
+          expect(listing).to.contain('3-4 of 6 (p. 2 of 3)');
+        });
+      });
+
       describe('who filters by status IN [RUNNING]', function () {
         hookWorkflowUIWorkItems({ username: 'bo', jobID: targetJob.jobID, query: { tableFilter: '[{"value":"status: running","dbValue":"running","field":"status"}]' } });
         it('returns only running work items', function () {
