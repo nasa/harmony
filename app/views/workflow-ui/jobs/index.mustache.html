@@ -44,7 +44,7 @@
     <div class="container-fluid">
         <div class="row pb-4">
             <div class="col-2">
-                <form id="jobs-query-form" action="./workflow-ui" method="get" class="sticky-top pt-2">
+                <form id="jobs-query-form" action="./workflow-ui" method="get" class="pt-2">
                     <input type="hidden" name="page" value="{{page}}" />
                     {{> workflow-ui/date-time-picker}}
                     <input id="sort-granules" type="hidden" name="sortGranules" value="{{sortGranules}}" />
@@ -78,9 +78,9 @@
                     <button type="submit" class="btn btn-primary btn-sm mt-3"><i class="bi bi-filter-circle"></i> apply</button>
                 </form>
             </div>
-            <div class="col-10">
+            <div class="col-10" id="jobs-table-container">
                 {{> workflow-ui/jobs/jobs-table}}
-                <nav aria-label="Page navigation" class="d-flex flex-column align-items-center">
+                <nav aria-label="Page navigation" class="bg-white d-flex flex-column align-items-center py-2 sticky-paging">
                     <ul class="pagination px-0 mx-auto">
                         {{#links}}
                         <li class="page-item {{linkDisabled}}">
