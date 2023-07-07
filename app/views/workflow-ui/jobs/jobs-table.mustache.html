@@ -1,5 +1,5 @@
 <table class="table table-sm">
-    <thead>
+    <thead class="sticky-top bg-white">
         <tr class="align-middle">
             <th scope="col">jobID</th>
             <th scope="col">service</th>
@@ -13,7 +13,7 @@
                 <div class="d-flex flex-row align-items-center">
                     <div>granules</div>&nbsp;
                     <div class="d-flex flex-column">
-                    {{{sortGranulesLinks}}}
+                        {{{sortGranulesLinks}}}
                     </div>
                 </div>
             </th>
@@ -31,8 +31,7 @@
             <td>{{username}}</td>
             {{/isAdminRoute}}
             <td class="mw-40ch">
-                <span title="{{request}}" data-bs-toggle="tooltip"
-                    data-bs-placement="right">{{jobUrl}}</span>
+                <span title="{{request}}" data-bs-toggle="tooltip" data-bs-placement="right">{{jobUrl}}</span>
             </td>
             <td><span class="badge bg-{{jobBadge}}">{{status}}</span></td>
             <td class="mw-40ch"><span title="{{message}}" data-bs-toggle="tooltip"

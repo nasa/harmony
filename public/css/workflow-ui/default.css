@@ -5,3 +5,13 @@
 .helpful-th, .helpful-span {
     cursor: help;
 }
+
+#workflow-items-table-container, #jobs-table-container {
+    overflow-y: scroll;
+    max-height: 80vh;
+}
+
+.sticky-paging {
+    position: sticky;
+    bottom: -1px;
+}
