@@ -7,6 +7,7 @@ import hookServersStartStop from '../helpers/servers';
 import { hookTransaction, tables, truncateAll } from '../helpers/db';
 import { buildJob } from '../helpers/jobs';
 import { workflowUIJob, hookWorkflowUIJob, hookAdminWorkflowUIJob } from '../helpers/workflow-ui';
+import env from '../../app/util/env';
 
 const collectionWithEULAFalseAndGuestReadTrue = 'C1233800302-EEDTEST';
 
@@ -78,6 +79,13 @@ describe('Workflow UI job route', function () {
         it('sets the page limit input to the expected value', function () {
           const listing = this.res.text;
           expect(listing).to.contain('<input name="limit" type="number" class="form-control" value="1">');
+        });
+      });
+      describe('requests more than the max limit of work items', function () {
+        hookWorkflowUIJob({ jobID: nonShareableJob.jobID, username: 'woody', query: { limit: 9999999999 } });
+        it('sets the page limit input to the expected value', function () {
+          const listing = this.res.text;
+          expect(listing).to.contain(`<input name="limit" type="number" class="form-control" value="${env.maxPageSize}">`);
         });
       });
       describe('requests a shareable job that they do not own', function () {
