@@ -4,9 +4,9 @@
     "notes": "Ignored since we don't expose the vulnerability and there is no fix",
     "expiry": "2023-09-01"
   },
-  "1092310": {
+  "1092429": {
     "active": true,
-    "notes": "Ignored since only affects semver used for development and there is no fix",
-    "expiry": "2023-09-01"
+    "notes": "Ignored since there is no fix",
+    "expiry": "2023-10-01"
   }
 }
