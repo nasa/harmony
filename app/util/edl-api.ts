@@ -7,6 +7,8 @@ import HarmonyRequest from '../models/harmony-request';
 const edlUserRequestUrl = `${env.oauthHost}/oauth/tokens/user`;
 const edlClientCredentialsUrl = `${env.oauthHost}/oauth/token`;
 const edlUserGroupsBaseUrl = `${env.oauthHost}/api/user_groups/groups_for_user`;
+const edlVerifyUserEulaUrl = (username: string, eulaId: string): string =>
+  `${env.oauthHost}/api/users/${username}/verify_user_eula?eula_id=${eulaId}`;
 
 const clientCredentialsData = {
   params: { grant_type: 'client_credentials' },
@@ -123,4 +125,35 @@ export async function isAdminUser(req: HarmonyRequest): Promise<boolean> {
   const isAdmin = req.context.isAdminAccess ||
     (await getEdlGroupInformation(req.user, req.accessToken, req.context.logger)).isAdmin;
   return isAdmin;
+}
+
+export interface EdlUserEulaInfo {
+  statusCode: number;
+  message?: string;
+  error?: string;
+  acceptEulaUrl?: string;
+}
+
+/**
+ * Check the whether the user has accepted a EULA.
+ *
+ * @param username - The EDL username
+ * @param eulaId - The id of the EULA (from the collection metadata)
+ * @param userToken - The user's token
+ * @returns A promise which resolves to info about whether the user has accepted a EULA,
+ * and if not, where they can go to accept it
+ */
+export async function verifyUserEula(username: string, eulaId: string, userToken: string)
+  : Promise<EdlUserEulaInfo> {
+  const response = await axios.default.get(
+    edlVerifyUserEulaUrl(username, eulaId), { headers: { Authorization: `Bearer ${userToken}` } },
+  );
+  const eulaData = response.data;
+  const edlUserEulaInfo = {
+    statusCode: response.status,
+    message: eulaData.msg,
+    error: eulaData.error,
+    acceptEulaUrl: eulaData.accept_eula_url,
+  };
+  return edlUserEulaInfo;
 }
