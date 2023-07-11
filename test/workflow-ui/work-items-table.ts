@@ -404,7 +404,7 @@ describe('Workflow UI work items table route', function () {
         hookWorkflowUIWorkItems({ username: 'bo', jobID: targetJob.jobID, query: { limit: 2, page: 2 } });
         it('contains paging info', function () {
           const listing = this.res.text;
-          expect(listing).to.contain('3-4 of 6 (p. 2 of 3)');
+          expect(listing).to.contain('3-4 of 6 (page 2 of 3)');
         });
       });
 

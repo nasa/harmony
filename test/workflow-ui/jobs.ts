@@ -293,7 +293,7 @@ describe('Workflow UI jobs route', function () {
       });
       it('contains paging info', function () {
         const listing = this.res.text;
-        expect(listing).to.contain('2-2 of 3 (p. 2 of 3)');
+        expect(listing).to.contain('2-2 of 3 (page 2 of 3)');
       });
     });
 
