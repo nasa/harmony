@@ -64,6 +64,7 @@ export interface CmrCollection {
   };
   variables?: CmrUmmVariable[];
   tags?: CmrTags;
+  eula_identifiers: string[];
 }
 
 export interface CmrGranule {
