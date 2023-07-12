@@ -144,15 +144,21 @@ export interface EdlUserEulaInfo {
  */
 export async function verifyUserEula(username: string, eulaId: string, userToken: string)
   : Promise<EdlUserEulaInfo> {
-  const response = await axios.default.get(
-    edlVerifyUserEulaUrl(username, eulaId), { headers: { Authorization: `Bearer ${userToken}` } },
-  );
-  const eulaData = response.data;
-  const edlUserEulaInfo = {
-    statusCode: response.status,
-    message: eulaData.msg,
-    error: eulaData.error,
-    acceptEulaUrl: eulaData.accept_eula_url,
+  let statusCode: number;
+  let eulaResponse: { msg: string, error: string, accept_eula_url: string };
+  try {
+    const response = await axios.default.get(
+      edlVerifyUserEulaUrl(username, eulaId), { headers: { Authorization: `Bearer ${userToken}` } },
+    );
+    eulaResponse = response.data;
+    statusCode = response.status;
+  } catch (e) {
+    eulaResponse = e.response.data;
+    statusCode = e.response.status;
+  }
+  return {
+    statusCode,
+    error: eulaResponse.error,
+    acceptEulaUrl: eulaResponse.accept_eula_url,
   };
-  return edlUserEulaInfo;
 }
