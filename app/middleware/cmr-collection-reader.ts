@@ -32,8 +32,6 @@ async function loadVariablesForCollection(collection: CmrCollection, token: stri
  * @param collections - array of CMR collections
  * @param req - the client request
  * @throws ServerError, ForbiddenError, NotFoundError
- * @returns An array of urls where the user can accept a EULA. If empty,
- * either there are no EULAs, or the user has accepted all of them.
  */
 async function verifyEulaAcceptance(collections: CmrCollection[], req: HarmonyRequest): Promise<void> {
   const acceptEulaUrls = [];
@@ -135,7 +133,7 @@ async function cmrCollectionReader(req: HarmonyRequest, res, next: NextFunction)
         }
         if (pickedCollection) {
           await verifyEulaAcceptance([pickedCollection], req);
-          
+
           req.collections = [pickedCollection];
           req.collectionIds = [pickedCollection.id];
           await loadVariablesForCollection(pickedCollection, req.accessToken);
