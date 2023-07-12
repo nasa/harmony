@@ -76,7 +76,7 @@
     "@opentelemetry/instrumentation-http": "^0.34.0",
     "@opentelemetry/propagator-aws-xray": "^1.1.1",
     "@opentelemetry/resources": "^1.8.0",
-    "@opentelemetry/sdk-node": "^0.34.0",
+    "@opentelemetry/sdk-node": "^0.35.0",
     "@opentelemetry/sdk-trace-base": "^1.8.0",
     "@opentelemetry/sdk-trace-node": "^1.8.0",
     "@opentelemetry/semantic-conventions": "^1.8.0",
