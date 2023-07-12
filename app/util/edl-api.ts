@@ -129,7 +129,6 @@ export async function isAdminUser(req: HarmonyRequest): Promise<boolean> {
 
 export interface EdlUserEulaInfo {
   statusCode: number;
-  message?: string;
   error?: string;
   acceptEulaUrl?: string;
 }
