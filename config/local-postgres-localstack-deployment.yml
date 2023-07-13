@@ -4,6 +4,7 @@ metadata:
   name: localstack-pod
   labels:
     name: localstack-pod
+    app: localstack
 spec:
   containers:
     - name: localstack
@@ -45,7 +46,7 @@ spec:
       targetPort: 4566
   selector:
     name: localstack-pod
-  type: LoadBalancer
+  type: ClusterIP
 ---
 apiVersion: v1
 kind: Secret
@@ -71,7 +72,7 @@ spec:
     targetPort: 5432
   selector:
     app: postgres
-  type: LoadBalancer
+  type: ClusterIP
 ---
 apiVersion: apps/v1
 kind: Deployment
