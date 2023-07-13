@@ -34,7 +34,7 @@ QUEUE_LONG_POLLING_WAIT_TIME_SEC=20
 CMR_MAX_PAGE_SIZE=2000
 
 # SQS queue used to request scheduling of work items for a service
-WORK_ITEM_SCHEDULER_QUEUE_URL=http://localstack:4566/queue/work-item-scheduler-queue.fifo
+WORK_ITEM_SCHEDULER_QUEUE_URL=http://localstack:4566/queue/work-item-scheduler-queue
 # Maximum number of messages to pull from the scheduler queue at once
 WORK_ITEM_SCHEDULER_QUEUE_MAX_BATCH_SIZE=10
 # Maximum number of getMessage requests to make to the scheduler queue on each pass
