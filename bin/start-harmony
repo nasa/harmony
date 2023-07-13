@@ -11,4 +11,5 @@ set +a
 eval "$env_save"
 
 envsubst < ./config/harmony-k8s.yaml | kubectl apply -f - -n harmony > /dev/null
+bin/port-forward start harmony 3000:3000
 echo 'Harmony has started at http://localhost:3000/'
