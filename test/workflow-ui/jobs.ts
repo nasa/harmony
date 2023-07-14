@@ -244,6 +244,10 @@ describe('Workflow UI jobs route', function () {
         const listing = this.res.text;
         expect((listing.match(/job-table-row/g) || []).length).to.equal(1);
       });
+      it('sets the page limit input to the expected value', function () {
+        const listing = this.res.text;
+        expect(listing).to.contain('<input name="limit" type="number" class="form-control" value="1">');
+      });
     });
 
     describe('who asks for page 1, with a limit of 1, descending', function () {
