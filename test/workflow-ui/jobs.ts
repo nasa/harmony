@@ -286,13 +286,18 @@ describe('Workflow UI jobs route', function () {
       it('returns a disabled link to the first page', function () {
         const listing = this.res.text;
         expect(listing).to.contain(renderNavLink('', 'first', false));
-      });it('returns a disabled link to the last page', function () {
+      });
+      it('returns a disabled link to the last page', function () {
         const listing = this.res.text;
         expect(listing).to.contain(renderNavLink('', 'last', false));
       });
       it('returns only one job', function () {
         const listing = this.res.text;
         expect((listing.match(/job-table-row/g) || []).length).to.equal(1);
+      });
+      it('contains paging info', function () {
+        const listing = this.res.text;
+        expect(listing).to.contain('2-2 of 3 (page 2 of 3)');
       });
     });
 

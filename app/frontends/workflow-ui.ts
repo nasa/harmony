@@ -250,10 +250,14 @@ export async function getJobs(
     const lastPage = pageLinks.find((l) => l.rel === 'last');
     const nextPage = pageLinks.find((l) => l.rel === 'next');
     const previousPage = pageLinks.find((l) => l.rel === 'prev');
+    const paginationInfo = { from: (pagination.from + 1).toLocaleString(),
+      to: pagination.to.toLocaleString(), total: pagination.total.toLocaleString(),
+      currentPage: pagination.currentPage.toLocaleString(), lastPage: pagination.lastPage.toLocaleString() };
     res.render('workflow-ui/jobs/index', {
       version,
       page,
       limit,
+      paginationInfo, // formatted for display
       currentUser: req.user,
       isAdminRoute,
       jobs,
@@ -465,10 +469,14 @@ export async function getWorkItemsTable(
     const lastPage = pageLinks.find((l) => l.rel === 'last');
     const nextPage = pageLinks.find((l) => l.rel === 'next');
     const previousPage = pageLinks.find((l) => l.rel === 'prev');
+    const paginationInfo = { from: (pagination.from + 1).toLocaleString(),
+      to: pagination.to.toLocaleString(), total: pagination.total.toLocaleString(),
+      currentPage: pagination.currentPage.toLocaleString(), lastPage: pagination.lastPage.toLocaleString() };
     setPagingHeaders(res, pagination);
     res.render('workflow-ui/job/work-items-table', {
       isAdminOrLogViewer,
       canShowRetryColumn: job.belongsToOrIsAdmin(req.user, isAdmin),
+      paginationInfo,
       job,
       statusClass: statusClass[job.status],
       workItems,
