@@ -19,6 +19,9 @@ import { Logger } from 'winston';
 import { serviceNames } from '../models/services';
 import { getEdlGroupInformation, isAdminUser } from '../util/edl-api';
 
+// Default to retrieving this number of work items per page
+const defaultWorkItemPageSize = 100;
+
 /**
  * Maps job status to display class.
  */
@@ -295,7 +298,7 @@ export async function getJob(
   try {
     const isAdmin = await isAdminUser(req);
     const job = await getJobIfAllowed(jobID, req.user, isAdmin, req.accessToken, true);
-    const { page, limit } = getPagingParams(req, 1000);
+    const { page, limit } = getPagingParams(req, defaultWorkItemPageSize, true);
     const requestQuery = keysToLowerCase(req.query);
     const fromDateTime = requestQuery.fromdatetime;
     const toDateTime = requestQuery.todatetime;
@@ -452,7 +455,7 @@ export async function getWorkItemsTable(
       res.status(204).json({ status: job.status });
       return;
     }
-    const { page, limit } = getPagingParams(req, env.defaultJobListPageSize);
+    const { page, limit } = getPagingParams(req, defaultWorkItemPageSize, true);
     const requestQuery = keysToLowerCase(req.query);
     const { tableQuery } = parseQuery(requestQuery, WorkItemStatus);
     const itemQuery = tableQueryToWorkItemQuery(tableQuery, jobID);
