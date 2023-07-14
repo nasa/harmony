@@ -28,6 +28,20 @@ if [ "$USE_SERVICE_QUEUES" = true ]; then
   envsubst < $file | kubectl apply -f - -n harmony
 fi
 
+# create the work updaters
+file="kubernetes-services/work-updater/config/service-template-large.yaml"
+if [ ! -f "$file" ]; then
+  echo "large work updater template was not found."
+  exit 1
+fi
+envsubst < $file | kubectl apply -f - -n harmony
+file="kubernetes-services/work-updater/config/service-template-small.yaml"
+if [ ! -f "$file" ]; then
+  echo "small work updater template was not found."
+  exit 1
+fi
+envsubst < $file | kubectl apply -f - -n harmony
+
 # create the query-cmr service
 file="tasks/service-runner/config/query-cmr-sidecar.yaml"
 if [ ! -f "$file" ]; then

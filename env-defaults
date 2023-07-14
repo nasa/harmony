@@ -180,11 +180,8 @@ WORK_REAPER_BATCH_SIZE=2000
 # The time (in seconds) between invocations of the work failer service
 WORK_FAILER_PERIOD_SEC=120
 
-# The time (in seconds) the work-item update queue processor will wait before resuming after an error
-# Used to avoid a tight loop
-WORK_ITEM_UPDATE_QUEUE_PROCESSOR_DELAY_AFTER_ERROR_SEC=1
-
-WORK_ITEM_UPDATE_QUEUE_PROCESSOR_COUNT=3
+# The number of update queue processors to run for both large and small work-item queues
+WORK_ITEM_UPDATE_QUEUE_PROCESSOR_COUNT=1
 
 # Long polling wait time (in seconds) for queues
 QUEUE_LONG_POLLING_WAIT_TIME_SEC=20
@@ -273,6 +270,13 @@ WORK_ITEM_SCHEDULER_REQUESTS_MEMORY=128Mi
 WORK_ITEM_SCHEDULER_LIMITS_CPU=1024m
 WORK_ITEM_SCHEDULER_LIMITS_MEMORY=512Mi
 WORK_ITEM_SCHEDULER_IMAGE=harmonyservices/work-scheduler:latest
+
+# work updater
+WORK_ITEM_UPDATER_REQUESTS_CPU=128m
+WORK_ITEM_UPDATER_REQUESTS_MEMORY=128Mi
+WORK_ITEM_UPDATER_LIMITS_CPU=1024m
+WORK_ITEM_UPDATER_LIMITS_MEMORY=512Mi
+WORK_ITEM_UPDATER_IMAGE=harmonyservices/work-updater:latest
 
 # backend services
 HARMONY_GDAL_ADAPTER_IMAGE=ghcr.io/nasa/harmony-gdal-adapter:latest

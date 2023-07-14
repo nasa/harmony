@@ -1,0 +1,48 @@
+# Port the health check server listens on
+PORT=5000
+
+AWS_DEFAULT_REGION=us-west-2
+
+NODE_ENV=production
+
+# For testing: Whether to use Localstack instead of AWS S3.  Options are "true" or "false".
+USE_LOCALSTACK=true
+
+# Hostname for harmony to use to connect to Localstack
+LOCALSTACK_HOST=localstack
+
+# When set to true log messages are logged as a text string instead of the default
+# JSON format. Useful when running harmony locally and viewing logs via a terminal.
+TEXT_LOGGER=true
+
+# When set to true log all database queries performed by knex
+DEBUG_KNEX=false
+
+# Log level (error, warn, info, debug)
+LOG_LEVEL=debug
+
+# Long polling wait time (in seconds) for queues
+QUEUE_LONG_POLLING_WAIT_TIME_SEC=20
+
+# SQS queue used to process work item updates
+WORK_ITEM_UPDATE_QUEUE_URL=http://localstack:4566/queue/work-item-update-queue.fifo
+
+# SQS queue used to process work item updates
+LARGE_WORK_ITEM_UPDATE_QUEUE_URL=http://localstack:4566/queue/large-work-item-update-queue.fifo
+
+# SQS queue used to request scheduling of work items for a service
+WORK_ITEM_SCHEDULER_QUEUE_URL=http://localstack:4566/queue/work-item-scheduler-queue
+
+# maximum number of items to pull from the queue at once for the large item queue (to avoid visibility timeouts)
+# if this is set to greater than 10 (the SQS max) then 10 will be used instead
+LARGE_WORK_ITEM_UPDATE_QUEUE_MAX_BATCH_SIZE=2
+
+# which update queue to process
+WORK_ITEM_UPDATE_QUEUE_TYPE=large
+
+# The time (in seconds) the work-item update queue processor will wait before resuming after an error
+# Used to avoid a tight loop
+WORK_ITEM_UPDATE_QUEUE_PROCESSOR_DELAY_AFTER_ERROR_SEC=1
+
+# Whether or not to use queues for retrieving work-items when handling polling for work
+USE_SERVICE_QUEUES=true

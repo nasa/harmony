@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: harmony-small-work-updater
+  labels:
+    name: harmony
+spec:
+  replicas: $WORK_ITEM_UPDATE_QUEUE_PROCESSOR_COUNT
+  selector:
+    matchLabels:
+      name: harmony
+  template:
+    metadata:
+      labels:
+        name: harmony
+    spec:
+      containers:
+        - name: harmony-small-work-updater
+          imagePullPolicy: IfNotPresent
+          image: $WORK_ITEM_UPDATER_IMAGE
+          resources:
+            limits:
+              memory: $WORK_ITEM_UPDATER_LIMITS_MEMORY
+              cpu: $WORK_ITEM_UPDATER_LIMITS_CPU
+            requests:
+              memory: $WORK_ITEM_UPDATER_REQUESTS_MEMORY
+              cpu: $WORK_ITEM_UPDATER_REQUESTS_CPU
+          envFrom:
+          - configMapRef:
+              name: harmony-env
+          - secretRef:
+              name: harmony-secrets
+          env:
+          - name: WORK_ITEM_UPDATE_QUEUE_TYPE
+            value: small
+          ports:
+            - containerPort: 5000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: harmony-small-work-updater
+spec:
+  ports:
+    - name: frontend
+      port: 5000
+      targetPort: 5000
+      protocol: TCP
+  selector:
+    name: harmony
+  type: ClusterIP
