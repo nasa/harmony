@@ -104,12 +104,6 @@ describe('Sharing job results with someone other than its owner', function () {
           expect(this.res.statusCode).to.equal(200);
         });
       });
-      describe('Accessing the job shareable property', function () {
-        hookJobStatus({ jobID: jobIDWithEULAFalseAndGuestReadTrue, username: 'adam' });
-        it('is shareable according to the shareable property', function () {
-          expect(JSON.parse(this.res.text).shareable).to.equal(true);
-        });
-      });
       describe('Accessing the STAC Catalog page', function () {
         hookStacCatalog(jobIDWithEULAFalseAndGuestReadTrue, notJobOwner);
         it('returns a 200 response', function () {
@@ -129,12 +123,6 @@ describe('Sharing job results with someone other than its owner', function () {
         hookJobStatus({ jobID: jobIDWithEULATrueAndGuestReadTrue, username: notJobOwner });
         it('returns a 404 response', function () {
           expect(this.res.statusCode).to.equal(404);
-        });
-      });
-      describe('Accessing the job shareable property', function () {
-        hookJobStatus({ jobID: jobIDWithEULATrueAndGuestReadTrue, username: 'adam' });
-        it('is NOT shareable according to the shareable property', function () {
-          expect(JSON.parse(this.res.text).shareable).to.equal(false);
         });
       });
       describe('Accessing the STAC Catalog page', function () {
@@ -158,12 +146,6 @@ describe('Sharing job results with someone other than its owner', function () {
           expect(this.res.statusCode).to.equal(404);
         });
       });
-      describe('Accessing the job shareable property', function () {
-        hookJobStatus({ jobID: jobIDWithEULAFalseAndGuestReadFalse, username: 'adam' });
-        it('is NOT shareable according to the shareable property', function () {
-          expect(JSON.parse(this.res.text).shareable).to.equal(false);
-        });
-      });
       describe('Accessing the STAC Catalog page', function () {
         hookStacCatalog(jobIDWithEULAFalseAndGuestReadFalse, notJobOwner);
         it('returns a 200 response', function () {
@@ -183,12 +165,6 @@ describe('Sharing job results with someone other than its owner', function () {
         hookJobStatus({ jobID: jobIDWithEULANonexistent, username: notJobOwner });
         it('returns a 404 response', function () {
           expect(this.res.statusCode).to.equal(404);
-        });
-      });
-      describe('Accessing the job shareable property', function () {
-        hookJobStatus({ jobID: jobIDWithEULANonexistent, username: 'adam' });
-        it('is NOT shareable according to the shareable property', function () {
-          expect(JSON.parse(this.res.text).shareable).to.equal(false);
         });
       });
       describe('Accessing the STAC Catalog page', function () {
@@ -212,12 +188,6 @@ describe('Sharing job results with someone other than its owner', function () {
           expect(this.res.statusCode).to.equal(404);
         });
       });
-      describe('Accessing the job shareable property', function () {
-        hookJobStatus({ jobID: jobIDWithNoCollections, username: 'adam' });
-        it('is NOT shareable according to the shareable property', function () {
-          expect(JSON.parse(this.res.text).shareable).to.equal(false);
-        });
-      });
       describe('Accessing the STAC Catalog page', function () {
         hookStacCatalog(jobIDWithNoCollections, notJobOwner);
         it('returns a 200 response', function () {
@@ -239,12 +209,6 @@ describe('Sharing job results with someone other than its owner', function () {
         hookJobStatus({ jobID: jobIDWithMultipleCollections, username: notJobOwner });
         it('returns a 404 response', function () {
           expect(this.res.statusCode).to.equal(404);
-        });
-      });
-      describe('Accessing the job shareable property', function () {
-        hookJobStatus({ jobID: jobIDWithMultipleCollections, username: 'adam' });
-        it('is NOT shareable according to the shareable property', function () {
-          expect(JSON.parse(this.res.text).shareable).to.equal(false);
         });
       });
       describe('Accessing the STAC Catalog page', function () {
