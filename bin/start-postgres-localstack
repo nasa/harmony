@@ -77,12 +77,12 @@ fi
 
 WORK_ITEM_UPDATE_QUEUE=${WORK_ITEM_UPDATE_QUEUE:-work-item-update-queue.fifo}
 LARGE_WORK_ITEM_UPDATE_QUEUE=${LARGE_WORK_ITEM_UPDATE_QUEUE:-large-work-item-update-queue.fifo}
-WORK_ITEM_SCHEDULER_QUEUE=${WORK_ITEM_SCHEDULER_QUEUE:-work-item-scheduler-queue.fifo}
+WORK_ITEM_SCHEDULER_QUEUE=${WORK_ITEM_SCHEDULER_QUEUE:-work-item-scheduler-queue}
 STAGING_BUCKET=${STAGING_BUCKET:-local-staging-bucket}
 ARTIFACT_BUCKET=${ARTIFACT_BUCKET:-local-artifact-bucket}
 UPLOAD_BUCKET=${UPLOAD_BUCKET:-local-upload-bucket}
 
-# Creates qeueue and buckets in localstack
+# Creates queue and buckets in localstack
 localstack_startup_script="
 import boto3
 s3 = boto3.client('s3', endpoint_url='http://localhost:4566', region_name='us-west-2')
@@ -93,7 +93,7 @@ s3.put_bucket_acl(Bucket='${ARTIFACT_BUCKET}', ACL='public-read') # allows us to
 sqs = boto3.client('sqs', endpoint_url='http://localhost:4566', region_name='us-west-2')
 sqs.create_queue(QueueName='${WORK_ITEM_UPDATE_QUEUE}', Attributes={'FifoQueue': 'true', 'ContentBasedDeduplication': 'true'})
 sqs.create_queue(QueueName='${LARGE_WORK_ITEM_UPDATE_QUEUE}', Attributes={'VisibilityTimeout': '3600', 'FifoQueue': 'true', 'ContentBasedDeduplication': 'true'})
-sqs.create_queue(QueueName='${WORK_ITEM_SCHEDULER_QUEUE}', Attributes={'FifoQueue': 'true', 'ContentBasedDeduplication': 'true'})
+sqs.create_queue(QueueName='${WORK_ITEM_SCHEDULER_QUEUE}')
 "
 
 # For some develpers using Linux, artifact repositories were not working correctly without
@@ -110,10 +110,8 @@ kubectl apply -n harmony -f ./config/local-postgres-localstack-deployment.yml
 
 [[ $USE_LOCALSTACK = 'true' ]] && s3_endpoint="localstack:4572" || s3_endpoint="s3.amazonaws.com"
 
-if [[ "$KUBE_CONTEXT" == "minikube" ]]; then
-  # Allow LoadBalancer services to be reached in minikube
-  minikube tunnel > /dev/null &
-fi
+bin/port-forward start localstack 4566:4566 4572:4566 4592:4566
+bin/port-forward start postgres 5432:5432
 
 echo ''
 echo 'Localstack has started at http://localhost:4566/'
