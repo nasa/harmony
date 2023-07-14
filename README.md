@@ -40,15 +40,6 @@ git clone https://github.com/nasa/harmony.git
 cd harmony && ./bin/bootstrap-harmony
 ```
 
-Linux Only (Handled automatically by Docker Desktop)
-
-5. Expose the kubernetes services to the local host. These commands will block so they must be run in separate terminals.
-```bash
-kubectl port-forward service/harmony 3000:3000 -n harmony
-```
-
-End of Linux Only
-
 Harmony should now be running in your Kubernetes cluster as the `harmony` service in the `harmony` namespace.
 
 **NOTE** It may take a while for all the pods to start if this is the first time you have started
