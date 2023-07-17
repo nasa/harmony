@@ -109,9 +109,10 @@ kubectl -n harmony create configmap localstack-config --from-literal=startup.py=
 kubectl apply -n harmony -f ./config/local-postgres-localstack-deployment.yml
 
 [[ $USE_LOCALSTACK = 'true' ]] && s3_endpoint="localstack:4572" || s3_endpoint="s3.amazonaws.com"
+POSTGRES_PORT="${POSTGRES_PORT:-5432}"
 
 bin/port-forward start localstack 4566:4566 4572:4566 4592:4566
-bin/port-forward start postgres 5432:5432
+bin/port-forward start postgres ${POSTGRES_PORT}:5432
 
 echo ''
 echo 'Localstack has started at http://localhost:4566/'
