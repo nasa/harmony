@@ -131,19 +131,19 @@ MAX_ERRORS_FOR_JOB=2000
 # This is a conventional identifier to switch application behavior but is
 # currently only used to determine which database connection to use in
 # db/knexfile.js and whether to deploy the alert manager
-NODE_ENV=development
+NODE_ENV=production
 
 # Connection string to use to connect to the database.  Used for
 # NODE_ENV="production" databases.  For development and test, this is
 # ignored, using a sqlite3 file instead
-DATABASE_URL=
+DATABASE_URL=postgresql://postgres:password@localhost:5432/postgres
 
 # A bucket with brief lifecycle where temporary uploads (shapefiles) are stored while
 # requests are in flight
 UPLOAD_BUCKET=local-upload-bucket
 
 # Whether or not to use queues for retrieving work-items when handling polling for work
-USE_SERVICE_QUEUES=false
+USE_SERVICE_QUEUES=true
 
 # SQS queue used to request scheduling of work items for a service
 WORK_ITEM_SCHEDULER_QUEUE_URL=http://localhost:4566/000000000000/work-item-scheduler-queue
