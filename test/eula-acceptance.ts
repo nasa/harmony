@@ -9,7 +9,6 @@ describe('EULA acceptance validation', function () {
 
   // Whether or not a collection has a EULA as implied by these variable names
   // depends on whether EULA identifiers are present in the collection's metadata
-  const noEulasCollection = 'C1233800302-EEDTEST';
   const twoEulasCollection = 'C1258836670-EEDTEST';
   const oneEulaCollection = 'C1258839703-EEDTEST';
   const badEulaIdCollection = 'C1258840703-EEDTEST';
