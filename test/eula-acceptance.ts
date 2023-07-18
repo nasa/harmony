@@ -1,16 +1,9 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
 import _ from 'lodash';
-import isUUID from '../app/util/uuid';
-import { expectedNoOpJobKeys, itIncludesRequestUrl } from './helpers/jobs';
-import { hookPostRangesetRequest, hookRangesetRequest, rangesetRequest } from './helpers/ogc-api-coverages';
+import { hookRangesetRequest } from './helpers/ogc-api-coverages';
 import hookServersStartStop from './helpers/servers';
-import StubService, { hookServices } from './helpers/stub-service';
-import { ServiceConfig } from '../app/models/services/base-service';
-import { hookRedirect } from './helpers/hooks';
-import { stub } from 'sinon';
-import env from '../app/util/env';
-import { hookTransactionFailure } from './helpers/db';
+
 
 describe('EULA acceptance validation', function () {
 
@@ -26,23 +19,62 @@ describe('EULA acceptance validation', function () {
     skipPreview: 'true',
   };
 
-  hookServersStartStop();
+  hookServersStartStop({ skipEarthdataLogin: false });
 
-  describe('which has 2 unaccepted EULAS', function () {
-    StubService.hook({ params: { redirect: 'http://example.com' } });
+  describe('When the collection has 2 unaccepted EULAS', function () {
     hookRangesetRequest(
       '1.0.0',
-      collection,
+      twoEulasCollection,
       'red_var',
-      { query },
+      { query, username: 'joe' },
     );
 
-    it('', function () {
-      expect(this.res.text).to.include('');
+    it('Provides accept EULA URLs', function () {
+      const description = 'Error: You may access the requested data by resubmitting your request after accepting the following EULA(s): ' + 
+        'https://uat.urs.earthdata.nasa.gov/accept_eula?eula_id=be7c8c07-65f7-4e63-a81d-78dfa187870e, ' +
+        'https://uat.urs.earthdata.nasa.gov/accept_eula?eula_id=a5242e69-dc27-455c-b2bc-1991af58f719.';
+      expect(JSON.parse(this.res.text).description).to.eq(description);
     });
 
-    it('', function () {
-      expect(this.res.status).to.equal(400);
+    it('Responds with 403 Forbidden', function () {
+      expect(this.res.status).to.equal(403);
+    });
+  });
+
+  describe('When the collection has 1 unaccepted EULAS', function () {
+    hookRangesetRequest(
+      '1.0.0',
+      oneEulaCollection,
+      'red_var',
+      { query, username: 'joe' },
+    );
+
+    it('Provides accept EULA URLs', function () {
+      const description = 'Error: You may access the requested data by resubmitting your request after accepting the following EULA(s): ' + 
+        'https://uat.urs.earthdata.nasa.gov/accept_eula?eula_id=be7c8c07-65f7-4e63-a81d-78dfa187870e.';
+      expect(JSON.parse(this.res.text).description).to.eq(description);
+    });
+
+    it('Responds with 403 Forbidden', function () {
+      expect(this.res.status).to.equal(403);
+    });
+  });
+
+  describe('When the collection has a bad EULA id in the metadata', function () {
+    hookRangesetRequest(
+      '1.0.0',
+      badEulaIdCollection,
+      'red_var',
+      { query, username: 'joe' },
+    );
+
+    it('Tells the user which EULA could not be found', function () {
+      const description = 'Error: EULA be7c8c07-65f7-4e63-a81d-78dfa187879x could not be found.';
+      expect(JSON.parse(this.res.text).description).to.eq(description);
+    });
+
+    it('Responds with 404 Not Found', function () {
+      expect(this.res.status).to.equal(404);
     });
   });
 });

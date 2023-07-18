@@ -1,0 +1,24 @@
+GET /api/users/joe/verify_user_eula?eula_id=be7c8c07-65f7-4e63-a81d-78dfa187879x
+accept: application/json, text/plain, */*
+authorization: Bearer fake_access
+
+HTTP/1.1 404 Not Found
+server: nginx/1.20.1
+date: Tue, 18 Jul 2023 17:42:15 GMT
+content-type: application/json; charset=utf-8
+transfer-encoding: chunked
+connection: close
+x-frame-options: SAMEORIGIN
+x-xss-protection: 1; mode=block
+x-content-type-options: nosniff
+x-download-options: noopen
+x-permitted-cross-domain-policies: none
+referrer-policy: strict-origin-when-cross-origin
+cache-control: no-store
+pragma: no-cache
+expires: Fri, 01 Jan 1990 00:00:00 GMT
+x-request-id: 940eafc0-505b-49a4-b44a-317d66c2c5cc
+x-runtime: 0.004239
+strict-transport-security: max-age=31536000
+
+{ "error":"Invalid EULA ID" }
