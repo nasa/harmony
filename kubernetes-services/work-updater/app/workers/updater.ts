@@ -1,14 +1,13 @@
 import { Logger } from 'winston';
 import { handleWorkItemUpdate, handleWorkItemUpdateWithJobId } from '../../../../app/backends/workflow-orchestration/work-item-updates';
-import WorkItem, { WorkItemEvent, getJobIdForWorkItem } from '../../../../app/models/work-item';
+import { getJobIdForWorkItem } from '../../../../app/models/work-item';
 import WorkItemUpdate from '../../../../app/models/work-item-update';
 import { default as defaultLogger } from '../../../../app/util/log';
 import { WorkItemQueueType } from '../../../../app/util/queue/queue';
-import { getQueueForType, getWorkSchedulerQueue } from '../../../../app/util/queue/queue-factory';
+import { getQueueForType } from '../../../../app/util/queue/queue-factory';
 import sleep from '../../../../app/util/sleep';
 import { Worker } from '../../../../app/workers/worker';
 import env from '../util/env';
-import { eventEmitter } from '../../../../app/events';
 
 type WorkItemUpdateQueueItem = {
   update: WorkItemUpdate,
@@ -117,10 +116,6 @@ export async function batchProcessQueue(queueType: WorkItemQueueType): Promise<v
     const updates: WorkItemUpdateQueueItem[] = messages.map((msg) => JSON.parse(msg.body));
     try {
       await handleBatchWorkItemUpdates(updates, defaultLogger);
-      // TODO TEST CODE
-      // const schedulerQueue = getWorkSchedulerQueue();
-      // await schedulerQueue.sendMessage('harmonyservices/service-example:latest');
-      // END TEST CODE
     } catch (e) {
       defaultLogger.error(`Error processing work item updates from queue: ${e}`);
     }

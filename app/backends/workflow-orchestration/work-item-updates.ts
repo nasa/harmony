@@ -696,5 +696,5 @@ export async function handleWorkItemUpdate(
   const { workItemID } = update;
   // get the jobID for the work item
   const jobID = await getJobIdForWorkItem(workItemID);
-  await handleWorkItemUpdateWithJobId(jobID, update, operation, logger);
+  await exports.handleWorkItemUpdateWithJobId(jobID, update, operation, logger);
 }

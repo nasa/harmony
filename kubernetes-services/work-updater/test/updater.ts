@@ -1,15 +1,87 @@
+/* eslint-disable node/no-unpublished-import */
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
-import * as sinon from 'sinon';
+import Sinon, * as sinon from 'sinon';
 import { SinonStub } from 'sinon';
 import { Logger } from 'winston';
-import * as scheduler from '../app/workers/updater';
-import * as workItemPolling from '../../../app/backends/workflow-orchestration/work-item-polling';
+import * as updater from '../app/workers/updater';
 import * as queueFactory from '../../../app/util/queue/queue-factory';
-import logger from '../../../app/util/log';
 import { MemoryQueue } from '../../../test/helpers/memory-queue';
-import WorkItem from '../../../app/models/work-item';
-import { WorkItemData } from '../../../app/backends/workflow-orchestration/work-item-polling';
+import * as wi from '../../../app/models/work-item';
+import * as wiu from '../../../app/backends/workflow-orchestration/work-item-updates';
+import { WorkItemQueueType } from '../../../app/util/queue/queue';
+import WorkItemUpdate from '../../../app/models/work-item-update';
+import DataOperation from '../../../app/models/data-operation';
+
+describe('Updater Worker', async function () {
+  const smallUpdateQueue = new MemoryQueue();
+  const largeUpdateQueue = new MemoryQueue();
+  let getQueueForTypeStub: SinonStub;
+  let getJobIdForWorkItemStub: SinonStub;
+  let handleWorkItemUpdateWithJobIdStub: SinonStub;
+
+  before(function () {
+    getQueueForTypeStub = sinon.stub(queueFactory, 'getQueueForType').callsFake(function (type: WorkItemQueueType) {
+      if (type === WorkItemQueueType.SMALL_ITEM_UPDATE) {
+        return smallUpdateQueue;
+      }
+      return largeUpdateQueue;
+    });
+    getJobIdForWorkItemStub = sinon.stub(wi, 'getJobIdForWorkItem').callsFake(async function (_id: number): Promise<string> {
+      return 'jobID';
+    });
+    handleWorkItemUpdateWithJobIdStub = sinon.stub(wiu, 'handleWorkItemUpdateWithJobId').callsFake(async function (_jobID: string, _update: WorkItemUpdate, _operation: DataOperation, _logger: Logger): Promise<void> {
+      return;
+    });
+  });
+
+  after(function () {
+    getQueueForTypeStub.restore();
+    getJobIdForWorkItemStub.restore();
+    handleWorkItemUpdateWithJobIdStub.restore();
+  });
+
+  describe('large job update', async function () {
+
+    beforeEach(async function () {
+      await largeUpdateQueue.purge();
+    });
+
+    describe('when the queue is empty', async function () {
+      it('should call getQueueForType', async function () {
+        await updater.batchProcessQueue(WorkItemQueueType.LARGE_ITEM_UPDATE);
+        expect(getQueueForTypeStub.called).to.be.true;
+      });
+      it('should not call handleWorkItemUpdateWithJobId', async function () {
+        await updater.batchProcessQueue(WorkItemQueueType.LARGE_ITEM_UPDATE);
+        expect(handleWorkItemUpdateWithJobIdStub.called).to.be.false;
+      });
+    });
+
+    describe('when the queue has one item', async function () {
+      this.beforeEach(async function () {
+        const update = { workItemId: 1 };
+        const operation = {};
+        await largeUpdateQueue.purge();
+        await largeUpdateQueue.sendMessage(JSON.stringify({ update, operation }), '', false);
+        handleWorkItemUpdateWithJobIdStub.resetHistory();
+      });
+
+      it('should call getQueueForType', async function () {
+        await updater.batchProcessQueue(WorkItemQueueType.LARGE_ITEM_UPDATE);
+        expect(getQueueForTypeStub.called).to.be.true;
+      });
+      it('should call handleWorkItemUpdateWithJobId once', async function () {
+        await updater.batchProcessQueue(WorkItemQueueType.LARGE_ITEM_UPDATE);
+        expect(handleWorkItemUpdateWithJobIdStub.callCount).to.equal(1);
+      });
+    });
+  });
+
+  // describe('small job update', async function () {
+  // });
+
+});
 
 // describe('Scheduler Worker', async function () {
 //   const service = 'foo:latest';
