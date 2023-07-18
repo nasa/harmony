@@ -19,7 +19,7 @@ function start_port_forwarding() {
   local iteration=0
 
   while [ "$iteration" -lt "$max_iterations" ]; do
-    # Check if there is exactly 1 pod in the "Running" state
+    # Wait until there is exactly 1 pod running for the service
     local running_count
     running_count=$(kubectl get pods -n harmony -l app="$service_name" --no-headers | wc -l)
 
