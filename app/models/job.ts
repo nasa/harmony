@@ -101,8 +101,6 @@ export class JobForDisplay {
 
   errors?: JobError[];
 
-  shareable?: boolean;
-
 }
 
 export interface JobQuery {

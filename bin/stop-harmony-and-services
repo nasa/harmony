@@ -1,0 +1,15 @@
+#!/bin/bash
+# This script will delete all of the kubernetes harmony resources. If you use this script
+# you will also delete all of your local harmony jobs since the database will be destroyed.
+
+current_context=$(kubectl config current-context)
+if [ "$current_context" != "docker-desktop" ] && [ "$current_context" != "minikube" ]; then
+  echo 'ERROR: Attempting to use a non-local k8s context while deleting harmony resources.'
+  echo "$current_context"
+  exit 1
+fi
+
+bin/port-forward stop harmony
+bin/port-forward stop localstack
+bin/port-forward stop postgres
+kubectl delete ns harmony
