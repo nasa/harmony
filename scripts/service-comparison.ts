@@ -144,7 +144,6 @@ const allEnvironments = ['https://cmr.earthdata.nasa.gov', 'https://cmr.uat.eart
  * @param environments - the CMR environments to check against
  */
 async function runComparisons(environments = allEnvironments): Promise<void> {
-  // Note should be able to use an existing config
   let exitCode = 0;
   for (const environment of environments) {
     console.log(`*** Running service comparison for ${environment}`);
@@ -170,7 +169,7 @@ async function runComparisons(environments = allEnvironments): Promise<void> {
 }
 
 /**
- * Main function called from npm run service-compare
+ * Main function called from npm run compare-services
  */
 async function main(): Promise<void> {
   await runComparisons();
