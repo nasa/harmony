@@ -11,7 +11,7 @@ export default class SecureTokenService {
   constructor(overrides?: STSClientConfig) {
     const endpointSettings: STSClientConfig = {};
     if (process.env.USE_LOCALSTACK === 'true') {
-      endpointSettings.endpoint = 'http://localhost:4592';
+      endpointSettings.endpoint = `http://${env.localstackHost}:4592`;
     }
 
     this.sts = new STSClient({

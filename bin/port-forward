@@ -1,0 +1,98 @@
+#!/bin/bash
+# Script for setting up port forwarding needed for harmony to run locally. Check logs/ directory
+# for error messages in setting up port forwards. This script is called from others, not expected
+# to be used directly in normal circumstances.
+
+function start_port_forwarding() {
+  local service_name="$1"
+  shift 1
+  local port_pairs=("$@")
+
+  local args=()
+  for port_pair in "${port_pairs[@]}"; do
+    args+=("${port_pair}")
+  done
+
+  stop_port_forwarding "$service_name"
+
+  local max_iterations=60
+  local iteration=0
+
+  while [ "$iteration" -lt "$max_iterations" ]; do
+    # Wait until there is exactly 1 pod running for the service
+    local running_count
+    running_count=$(kubectl get pods -n harmony -l app="$service_name" --no-headers | wc -l)
+
+    if [ "$running_count" -eq 1 ]; then
+      echo "Exactly 1 ${service_name} pod found. Setting up port forward when pod is ready."
+      break
+    fi
+
+    ((iteration++))
+
+    sleep 1
+  done
+
+  if [ "$iteration" -eq "$max_iterations" ]; then
+    echo "WARNING: Timeout reached. There are ${running_count} pods running. Port forwarding may not work."
+    exit 1
+  fi
+
+  kubectl wait -n harmony --for=condition=ready pod -l app="$service_name" --timeout=60s
+  nohup kubectl -n harmony port-forward "service/${service_name}" "${args[@]}" > "logs/port-forward-${service_name}.log" 2>&1 &
+  echo "Port forwarding started for service: ${service_name}, port pairs: ${port_pairs[*]}"
+}
+
+function stop_port_forwarding() {
+  local service_name="$1"
+  local process_name="kubectl -n harmony port-forward service/${service_name}"
+  local running=$(pgrep -f "${process_name}")
+  if [ -n "${running}" ]; then
+    echo "Stopping port forwarding for service: ${service_name}"
+    pkill -f "${process_name}"
+    echo "Port forwarding stopped for service: ${service_name}"
+  else
+    echo "No port forwarding running for service: ${service_name}"
+  fi
+}
+
+function is_port_forwarding_running() {
+  local service_name="$1"
+  local process_name="kubectl -n harmony port-forward service/${service_name}"
+  pgrep -f "${process_name}" >/dev/null
+}
+
+function print_usage() {
+  echo "Usage: $0 [start|stop|status] <service-name>"
+  echo "Commands:"
+  echo "  start      Start port forwarding for the specified service"
+  echo "  stop       Stop port forwarding for the specified service"
+  echo "  status     Check if port forwarding is running for the specified service"
+}
+
+if [ "$#" -lt 2 ]; then
+  print_usage && exit 1
+fi
+
+command="$1"
+service="$2"
+
+case "$command" in
+  start)
+    start_port_forwarding "$service" "${@:3}"
+    ;;
+  stop)
+    stop_port_forwarding "$service"
+    ;;
+  status)
+    if is_port_forwarding_running "$service"; then
+      echo "Port forwarding is running for service: $service"
+    else
+      echo "Port forwarding is not running for service: $service"
+    fi
+    ;;
+  *)
+    print_usage
+    exit 1
+    ;;
+esac

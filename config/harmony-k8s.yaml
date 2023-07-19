@@ -3,16 +3,16 @@ kind: Deployment
 metadata:
   name: harmony
   labels:
-    name: harmony
+    app: harmony
 spec:
   replicas: 1
   selector:
     matchLabels:
-      name: harmony
+      app: harmony
   template:
     metadata:
       labels:
-        name: harmony
+        app: harmony
     spec:
       containers:
         - name: harmony
@@ -21,10 +21,10 @@ spec:
           command:
             - "/harmony/bin/start-harmony-in-container"
           envFrom:
-          - configMapRef:
-              name: harmony-env
-          - secretRef:
-              name: harmony-secrets
+            - configMapRef:
+                name: harmony-env
+            - secretRef:
+                name: harmony-secrets
           ports:
             - containerPort: 3000
             - containerPort: 3001
@@ -44,5 +44,5 @@ spec:
       targetPort: 3001
       protocol: TCP
   selector:
-    name: harmony
-  type: LoadBalancer
+    app: harmony
+  type: ClusterIP

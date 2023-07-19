@@ -60,7 +60,6 @@
                 <form id="work-items-query-form" action="./{{job.jobID}}" method="get" class="pt-2">
                     <input type="hidden" name="jobID" value="{{job.jobID}}" />
                     <input type="hidden" name="page" value="{{page}}" />
-                    <input type="hidden" name="limit" value="{{limit}}" />
                     {{> workflow-ui/date-time-picker}}
                     <input name="tableFilter" class="form-control table-filter mb-2" placeholder="add a filter"
                         data-value="{{selectedFilters}}" data-is-admin-route="{{isAdminRoute}}">
@@ -69,6 +68,10 @@
                         <label class="form-check-label" for="disallowStatus">
                             negate statuses
                         </label>
+                    </div>
+                    <div class="input-group mt-2">
+                      <span class="input-group-text">page size</span>
+                      <input name="limit" type="number" class="form-control" value="{{limit}}">
                     </div>
                     <button type="submit" class="btn btn-primary btn-sm mt-3"><i class="bi bi-filter-circle"></i>
                         apply</button>
