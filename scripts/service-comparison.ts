@@ -9,16 +9,6 @@ import { loadServiceConfigs } from '../app/models/services';
 import { CmrUmmService, cmrApiConfig, getServicesByIds } from '../app/util/cmr';
 import { ServiceConfig } from '../app/models/services/base-service';
 
-// Functions I expect to need
-// Get all service configurations from services.yml for a given environment
-// Get a list of warnings/config differences between a single service definition and the UMM-S record
-// Data structure with each field in services.yml that should be checked as a key and a link to the UMM-S field that should be checked as the value
-// Field specific functions for each comparison
-// A generic validation function that can handle each field specific function providing back mismatches
-// A list of validation functions
-
-// Add all the validation function definitions here
-
 /**
  * Validates spatial subsetting configuration matches
  *
@@ -26,7 +16,9 @@ import { ServiceConfig } from '../app/models/services/base-service';
  * @param harmonyConfig - The service configuration defined in harmony services.yml
  * @returns validation failure message or '' if validation succeeds
  */
-function validateSpatialSubsetting(ummRecord: CmrUmmService, harmonyConfig: ServiceConfig<unknown>): string {
+function validateSpatialSubsetting(
+  ummRecord: CmrUmmService, harmonyConfig: ServiceConfig<unknown>,
+): string {
   const harmonyBbox = harmonyConfig.capabilities.subsetting.bbox || false;
   const ummBbox = ummRecord.umm.ServiceOptions?.Subset?.SpatialSubset?.BoundingBox ? true : false;
   if (harmonyBbox !== ummBbox) {
@@ -42,7 +34,9 @@ function validateSpatialSubsetting(ummRecord: CmrUmmService, harmonyConfig: Serv
  * @param harmonyConfig - The service configuration defined in harmony services.yml
  * @returns validation failure message or '' if validation succeeds
  */
-function validateShapefileSubsetting(ummRecord: CmrUmmService, harmonyConfig: ServiceConfig<unknown>): string {
+function validateShapefileSubsetting(
+  ummRecord: CmrUmmService, harmonyConfig: ServiceConfig<unknown>,
+): string {
   const harmonyShapefile = harmonyConfig.capabilities.subsetting.shape || false;
   const ummShapefile = ummRecord.umm.ServiceOptions?.Subset?.SpatialSubset?.Shapefile ? true : false;
   if (harmonyShapefile !== ummShapefile) {
@@ -58,7 +52,14 @@ function validateShapefileSubsetting(ummRecord: CmrUmmService, harmonyConfig: Se
  * @param harmonyConfig - The service configuration defined in harmony services.yml
  * @returns validation failure message or '' if validation succeeds
  */
-function validateVariableSubsetting(ummRecord: CmrUmmService, harmonyConfig: ServiceConfig<unknown>): string {
+function validateVariableSubsetting(
+  ummRecord: CmrUmmService, harmonyConfig: ServiceConfig<unknown>,
+): string {
+  const harmonyVariable = harmonyConfig.capabilities.subsetting.variable || false;
+  const ummVariable = ummRecord.umm.ServiceOptions?.Subset?.VariableSubset ? true : false;
+  if (harmonyVariable !== ummVariable) {
+    return `Variable subset mismatch: harmony is ${harmonyVariable} and UMM-S is ${ummVariable}.`;
+  }
   return '';
 }
 
@@ -69,7 +70,11 @@ function validateVariableSubsetting(ummRecord: CmrUmmService, harmonyConfig: Ser
  * @param harmonyConfig - The service configuration defined in harmony services.yml
  * @returns validation failure message or '' if validation succeeds
  */
-function validateConcatenation(_ummRecord: CmrUmmService, _harmonyConfig: ServiceConfig<unknown>): string {
+function validateConcatenation(
+  _ummRecord: CmrUmmService, harmonyConfig: ServiceConfig<unknown>,
+): string {
+  const _harmonyConcatenation = harmonyConfig.capabilities.concatenation || false;
+  const _harmonyConcatenateByDefault = harmonyConfig.capabilities.concatenate_by_default || false;
   return '';
 }
 
@@ -80,7 +85,14 @@ function validateConcatenation(_ummRecord: CmrUmmService, _harmonyConfig: Servic
  * @param harmonyConfig - The service configuration defined in harmony services.yml
  * @returns validation failure message or '' if validation succeeds
  */
-function validateReprojection(ummRecord: CmrUmmService, harmonyConfig: ServiceConfig<unknown>): string {
+function validateReprojection(
+  ummRecord: CmrUmmService, harmonyConfig: ServiceConfig<unknown>,
+): string {
+  const harmonyReprojection = harmonyConfig.capabilities.reprojection || false;
+  const ummReprojection = ummRecord.umm.ServiceOptions?.SupportedOutputProjections ? true : false;
+  if (harmonyReprojection !== ummReprojection) {
+    return `Reprojection mismatch: harmony is ${harmonyReprojection} and UMM-S is ${ummReprojection}.`;
+  }
   return '';
 }
 
