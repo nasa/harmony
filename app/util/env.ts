@@ -164,6 +164,4 @@ for (const k of Object.keys(process.env)) {
   }
 }
 
-winston.debug(`SERVICE_QUEUE_URLS: ${JSON.stringify(envVars.serviceQueueUrls, null, 2)}`);
-
 export = envVars;
