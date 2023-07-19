@@ -36,4 +36,4 @@ jobs:
         run: npm ci
 
       - name: Run service compare script
-        run: npm run compare-services
+        run: SHARED_SECRET_KEY=foo npm run compare-services
