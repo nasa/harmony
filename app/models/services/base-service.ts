@@ -40,6 +40,9 @@ export interface ServiceStep {
   conditional?: {
     exists?: string[];
     format?: string[];
+    umm_c?: {
+      native_format?: string[];
+    }
   };
 }
 
@@ -157,6 +160,16 @@ function stepRequired(step: ServiceStep, operation: DataOperation): boolean {
     required = false;
     if (step.conditional.format.includes(operation.outputFormat)) {
       required = true;
+    }
+  }
+  if (required && step.conditional?.umm_c) {
+    required = false;
+    if (step.conditional.umm_c.native_format) {
+      const fileArchiveInfo = operation.ummcollections[0].umm.ArchiveAndDistributionInformation?.FileArchiveInformation;
+      const nativeFormat = fileArchiveInfo?.filter((a) => a.FormatType = 'Native')[0]?.Format;
+      if (nativeFormat && step.conditional.umm_c.native_format.includes(nativeFormat.toLowerCase())) {
+        required = true;
+      }
     }
   }
   return required;

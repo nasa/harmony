@@ -812,6 +812,19 @@ describe('createWorkflowSteps', function () {
   const versionId = '1';
   const operation = buildOperation('foo');
   operation.addSource(collectionId, shortName, versionId);
+  // the existence of conditional umm_c in config guarantees that ummCollections is set
+  operation.ummcollections = [{
+    'meta': {
+      'concept-id': 'C1234-TEST',
+    },
+    'umm': {
+      'MetadataSpecification': {
+        'Name': 'UMM-C',
+        'URL': 'https://cdn.earthdata.nasa.gov/umm/collection/v1.17.3',
+        'Version': '1.17.3',
+      },
+    },
+  }];
   const config = {
     name: 'shapefile-tiff-netcdf-service',
     data_operation_version: CURRENT_SCHEMA_VERSION,
@@ -825,6 +838,14 @@ describe('createWorkflowSteps', function () {
     },
     steps: [{
       image: 'query cmr',
+    }, {
+      image: 'format transformer',
+      operations: ['formatTransform'],
+      conditional: {
+        umm_c: {
+          native_format: ['netcdf-4'],
+        },
+      },
     }, {
       image: 'temporal subsetter',
       operations: ['temporalSubset'],
@@ -1031,6 +1052,56 @@ describe('createWorkflowSteps', function () {
     it('uses the destinationUrl as the staging location for the last step', function () {
       const { stagingLocation } = JSON.parse(steps[2].operation);
       expect(stagingLocation).to.include('dummy/p1');
+    });
+  });
+
+  describe('when a collection has matching umm-c conditional native_format', function () {
+    const ummOperation = _.cloneDeep(operation);
+    ummOperation.geojson = 'interesting shape';
+    ummOperation.ummcollections = [{
+      'meta': {
+        'concept-id': 'C1234-TEST',
+      },
+      'umm': {
+        'MetadataSpecification': {
+          'Name': 'UMM-C',
+          'URL': 'https://cdn.earthdata.nasa.gov/umm/collection/v1.17.3',
+          'Version': '1.17.3',
+        },
+        'ArchiveAndDistributionInformation': {
+          'FileArchiveInformation': [ {
+            'Format': 'netCDF-4',
+            'FormatType': 'Native',
+          } ],
+          'FileDistributionInformation': [ {
+            'Format': 'netCDF-4',
+            'FormatType': 'Native',
+          } ],
+        },
+      },
+    }];
+    const service = new StubService(config, {}, ummOperation);
+    const steps = service.createWorkflowSteps();
+
+    it('is not synchronous', function () {
+      expect(service.isSynchronous).to.equal(false);
+      expect(service.operation.isSynchronous).to.equal(false);
+    });
+
+    it('creates three workflow steps', function () {
+      expect(steps.length).to.equal(3);
+    });
+
+    it('creates a first workflow step for query cmr', function () {
+      expect(steps[0].serviceID).to.equal('query cmr');
+    });
+
+    it('creates a second step for conditional umm_c native_format', function () {
+      expect(steps[1].serviceID).to.equal('format transformer');
+    });
+
+    it('creates a third and final workflow step for the shapefile subsetter', function () {
+      expect(steps[2].serviceID).to.equal('shapefile subsetter');
     });
   });
 });

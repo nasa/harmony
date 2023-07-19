@@ -4,7 +4,7 @@ import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 import _ from 'lodash';
 import logger from '../util/log';
-import { CmrUmmVariable } from '../util/cmr';
+import { CmrUmmCollection, CmrUmmVariable } from '../util/cmr';
 import { Encrypter, Decrypter } from '../util/crypto';
 import { cmrVarToHarmonyVar, HarmonyVariable } from '../util/variables';
 
@@ -853,6 +853,24 @@ export default class DataOperation {
   }
 
   /**
+   * Gets the umm collections for data produced by this request
+   *
+   * @returns the umm collections
+   */
+  get ummcollections(): CmrUmmCollection[] {
+    return this.model.ummcollections;
+  }
+
+  /**
+   * Sets the umm collections for data produced by this request
+   *
+   * @param value - the umm collections
+   */
+  set ummcollections(value: CmrUmmCollection[]) {
+    this.model.ummcollections = value;
+  }
+
+  /**
    *  Returns a deep copy of this operation
    *
    * @returns a deep copy of this operation
@@ -878,6 +896,7 @@ export default class DataOperation {
     }
 
     let toWrite = _.cloneDeep(this.model);
+    delete toWrite.ummcollections;
 
     // To be fixed by HARMONY-203 to not default to TIFF
     toWrite.format.mime = toWrite.format.mime || 'image/tiff';

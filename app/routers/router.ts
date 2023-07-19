@@ -30,6 +30,7 @@ import serviceInvoker from '../backends/service-invoker';
 import HarmonyRequest, { addRequestContextToOperation } from '../models/harmony-request';
 
 import cmrCollectionReader = require('../middleware/cmr-collection-reader');
+import cmrUmmCollectionReader = require('../middleware/cmr-umm-collection-reader');
 import envVars = require('../util/env');
 import { postServiceConcatenationHandler, preServiceConcatenationHandler } from '../middleware/concatenation';
 import getRequestMetrics from '../frontends/request-metrics';
@@ -194,6 +195,7 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   result.use(logged(preServiceConcatenationHandler));
   result.use(logged(chooseService));
   result.use(logged(postServiceConcatenationHandler));
+  result.use(logged(cmrUmmCollectionReader));
   result.use(logged(cmrGranuleLocator));
   result.use(logged(addRequestContextToOperation));
   result.use(logged(redirectWithoutTrailingSlash));

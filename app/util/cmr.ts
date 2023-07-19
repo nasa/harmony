@@ -204,6 +204,22 @@ export interface CmrPermissionsResponse extends CmrResponse {
   data: CmrPermissionsMap;
 }
 
+export interface CmrUmmCollection {
+  meta: {
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    'concept-id': string;
+  };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  umm: any;
+}
+
+export interface CmrUmmCollectionsResponse extends CmrResponse {
+  data: {
+    items: CmrUmmCollection[];
+    hits: number;
+  };
+}
+
 /**
  * Create a token header for the given access token string
  *
@@ -511,6 +527,20 @@ async function queryCollections(
 }
 
 /**
+ * Performs a CMR collections.umm_json search with the given query string
+ *
+ * @param query - The key/value pairs to search
+ * @param token - Access token for user request
+ * @returns The umm collection search results
+ */
+async function queryUmmCollections(
+  query: CmrQuery, token: string,
+): Promise<Array<CmrUmmCollection>> {
+  const ummResponse = await _cmrGet('/search/collections.umm_json', query, token) as CmrUmmCollectionsResponse;
+  return ummResponse.data.items;
+}
+
+/**
  * Performs a CMR grids.umm_json search with the given query string
  *
  * @param query - The key/value pairs to search
@@ -569,6 +599,25 @@ export function getCollectionsByIds(
     },
   };
   return queryCollections(query, token);
+}
+
+/**
+ * Queries and returns the CMR UMM JSON collections corresponding to the given CMR Collection IDs
+ *
+ * @param ids - The collection IDs to find
+ * @param token - Access token for user request
+ * @param includeTags - Include tags with tag_key matching this value
+ * @returns The umm collections with the given ids
+ */
+export function getUmmCollectionsByIds(
+  ids: Array<string>,
+  token: string,
+): Promise<Array<CmrUmmCollection>> {
+  const query = {
+    concept_id: ids,
+    page_size: cmrMaxPageSize,
+  };
+  return queryUmmCollections(query, token);
 }
 
 /**
