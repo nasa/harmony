@@ -1,12 +1,10 @@
 import db from '../../util/db';
 import { Logger } from 'winston';
-import logger from '../../util/log';
 import env from '../../util/env';
-import WorkItem, { getNextWorkItem, getWorkItemStatus, updateWorkItemStatuses, WorkItemEvent } from '../../models/work-item';
+import WorkItem, { getNextWorkItem, getWorkItemStatus, updateWorkItemStatuses } from '../../models/work-item';
 import { getNextJobIdForUsernameAndService, getNextUsernameForWork, incrementRunningAndDecrementReadyCounts, recalculateCounts } from '../../models/user-work';
 import { getQueueForUrl, getQueueUrlForService, getWorkSchedulerQueue  } from '../../util/queue/queue-factory';
 import { QUERY_CMR_SERVICE_REGEX, calculateQueryCmrLimit, processSchedulerQueue } from './util';
-import { eventEmitter } from '../../events';
 import { WorkItemStatus } from '../../models/work-item-interface';
 
 export type WorkItemData = {

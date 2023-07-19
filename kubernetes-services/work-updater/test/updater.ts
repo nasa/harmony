@@ -1,7 +1,7 @@
 /* eslint-disable node/no-unpublished-import */
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
-import Sinon, * as sinon from 'sinon';
+import * as sinon from 'sinon';
 import { SinonStub } from 'sinon';
 import { Logger } from 'winston';
 import * as updater from '../app/workers/updater';
