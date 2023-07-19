@@ -40,6 +40,26 @@ describe('EULA acceptance validation', function () {
     });
   });
 
+  describe('When the collection has 2 unaccepted EULAS, requested by shortname', function () {
+    hookRangesetRequest(
+      '1.0.0',
+      'eula-test-harmony_example',
+      'red_var',
+      { query, username: 'joe' },
+    );
+
+    it('Provides accept EULA URLs', function () {
+      const description = 'Error: You may access the requested data by resubmitting your request after accepting the following EULA(s): ' + 
+        'https://uat.urs.earthdata.nasa.gov/accept_eula?eula_id=be7c8c07-65f7-4e63-a81d-78dfa187870e, ' +
+        'https://uat.urs.earthdata.nasa.gov/accept_eula?eula_id=a5242e69-dc27-455c-b2bc-1991af58f719.';
+      expect(JSON.parse(this.res.text).description).to.eq(description);
+    });
+
+    it('Responds with 403 Forbidden', function () {
+      expect(this.res.status).to.equal(403);
+    });
+  });
+
   describe('When the collection has 1 unaccepted EULAS', function () {
     hookRangesetRequest(
       '1.0.0',
