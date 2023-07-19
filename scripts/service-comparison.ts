@@ -163,6 +163,9 @@ async function runComparisons(environments = allEnvironments): Promise<void> {
       }
     }
   }
+  if (exitCode === 0) {
+    console.log('No validation failures found.');
+  }
   exit(exitCode);
 }
 
