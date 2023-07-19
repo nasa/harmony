@@ -39,8 +39,6 @@ eventEmitter.on(WorkItemEvent.CREATED, async (workItem: WorkItem) => {
     defaultLogger.debug(`Work item created for service ${serviceID}, putting message on scheduler queue`);
     const queue = getWorkSchedulerQueue();
     await queue.sendMessage(serviceID);
-    // this actually does nothing outside of tests since the scheduler pod will be running
-    // await processSchedulerQueue(defaultLogger);
   }
 });
 
