@@ -11,6 +11,9 @@
       "sourceMap": true,
       "outDir": "built"
   },
-  "include": ["./app/**/*", "./test/**/*", "./tasks/**/app/**/*", "./tasks/**/test/**/*", "./kubernetes-services/**/app/**/*", "./kubernetes-services/**/test/**/*"],
+  "include": [
+    "./app/**/*", "./test/**/*", "./tasks/**/app/**/*", "./tasks/**/test/**/*",
+    "./kubernetes-services/**/app/**/*", "./kubernetes-services/**/test/**/*",
+    "scripts/*"],
   "exclude": ["./tasks/**/built/**/*", "./kubernetes-services/**/built/**/*"]
 }
