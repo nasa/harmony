@@ -5,9 +5,9 @@
  */
 
 import { exit } from 'process';
-import { loadServiceConfigs } from './models/services';
-import { CmrUmmService, cmrApiConfig, getServicesByIds } from './util/cmr';
-import { ServiceConfig } from './models/services/base-service';
+import { loadServiceConfigs } from '../app/models/services';
+import { CmrUmmService, cmrApiConfig, getServicesByIds } from '../app/util/cmr';
+import { ServiceConfig } from '../app/models/services/base-service';
 
 // Functions I expect to need
 // Get all service configurations from services.yml for a given environment
