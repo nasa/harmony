@@ -115,7 +115,7 @@ export async function batchProcessQueue(queueType: WorkItemQueueType): Promise<v
     // efficient than deleting them one at a time.
     const updates: WorkItemUpdateQueueItem[] = messages.map((msg) => JSON.parse(msg.body));
     try {
-      await handleBatchWorkItemUpdates(updates, defaultLogger);
+      await exports.handleBatchWorkItemUpdates(updates, defaultLogger);
     } catch (e) {
       defaultLogger.error(`Error processing work item updates from queue: ${e}`);
     }
