@@ -134,7 +134,7 @@ export interface EdlUserEulaInfo {
 }
 
 /**
- * Check the whether the user has accepted a EULA.
+ * Check whether the user has accepted a EULA.
  *
  * @param username - The EDL username
  * @param eulaId - The id of the EULA (from the collection metadata)
