@@ -112,6 +112,49 @@ export interface CmrUmmVariable {
   };
 }
 
+export interface UmmSubsetOptions {
+  SpatialSubset?: {
+    BoundingBox?: {
+      AllowMultipleValues?: boolean;
+    }
+    Circle?: {
+      AllowMultipleValues?: boolean;
+    }
+    Shapefile?: {
+      Format?: string;
+    }[];
+  }
+  VariableSubset?: {
+    AllowMultipleValues?: boolean;
+  }
+  TemporalSubset?: {
+    AllowMultipleValues?: boolean;
+  }
+}
+export interface UmmServiceOptions {
+  Subset?: UmmSubsetOptions;
+  SupportedReformattings?: {
+    SupportedInputFormat?: string;
+    SupportedOutputFormats?: string[];
+  }[];
+
+  SupportedOutputProjections?: {
+    ProjectionName?: string;
+    ProjectionOutputAuthority?: string;
+  }[];
+}
+
+export interface CmrUmmService {
+  meta: {
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    'concept-id': string;
+  };
+  umm: {
+    Name: string;
+    ServiceOptions?: UmmServiceOptions;
+  };
+}
+
 export interface CmrUmmGrid {
   meta: {
     // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -174,6 +217,13 @@ export interface CmrResponse extends Response {
 export interface CmrVariablesResponse extends CmrResponse {
   data: {
     items: CmrUmmVariable[];
+    hits: number;
+  };
+}
+
+export interface CmrServicesResponse extends CmrResponse {
+  data: {
+    items: CmrUmmService[];
     hits: number;
   };
 }
@@ -498,6 +548,40 @@ export async function getAllVariables(
 }
 
 /**
+ * Performs a CMR variables.json search with the given query string. If there are more
+ * than 2000 variables, page through the variable results until all are retrieved.
+ *
+ * @param query - The key/value pairs to search
+ * @param token - Access token for user request
+ * @returns The variable search results
+ */
+export async function getAllServices(
+  query: CmrQuery, token: string,
+): Promise<Array<CmrUmmService>> {
+  const servicesResponse = await _cmrPost('/search/services.umm_json_v1_5_1', query, token) as CmrServicesResponse;
+  const { hits } = servicesResponse.data;
+  let services = servicesResponse.data.items;
+  let numServicesRetrieved = services.length;
+  let page_num = 1;
+
+  while (numServicesRetrieved < hits) {
+    page_num += 1;
+    logger.debug(`Paging through services = ${page_num}, numServicesRetrieved = ${numServicesRetrieved}, total hits ${hits}`);
+    query.page_num = page_num;
+    const response = await _cmrPost('/search/services.umm_json_v1_5_1', query, token) as CmrServicesResponse;
+    const pageOfServices = response.data.items;
+    services = services.concat(pageOfServices);
+    numServicesRetrieved += pageOfServices.length;
+    if (pageOfServices.length == 0) {
+      logger.warn(`Expected ${hits} services, but only retrieved ${numServicesRetrieved} from CMR.`);
+      break;
+    }
+  }
+
+  return services;
+}
+
+/**
  * Performs a CMR collections.json search with the given query string
  *
  * @param query - The key/value pairs to search
@@ -627,6 +711,23 @@ export async function getVariablesForCollection(
     return getVariablesByIds(varIds, token);
   }
   return [];
+}
+
+/**
+ * Queries and returns the CMR JSON services corresponding to the given CMR UMM Service IDs
+ *
+ * @param ids - The CMR concept IDs for the services to find
+ * @param token - Access token for user request
+ * @returns The services with the given ids
+ */
+export function getServicesByIds(
+  ids: Array<string>,
+  token: string,
+): Promise<Array<CmrUmmService>> {
+  return getAllServices({
+    concept_id: ids,
+    page_size: ACTUAL_CMR_MAX_PAGE_SIZE,
+  }, token);
 }
 
 /**
