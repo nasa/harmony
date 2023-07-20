@@ -1,9 +1,10 @@
 import { NextFunction } from 'express';
 import { harmonyCollections } from '../models/services';
 import { getVariablesForCollection, CmrCollection, getCollectionsByIds, getCollectionsByShortName, cmrApiConfig } from '../util/cmr';
-import { NotFoundError } from '../util/errors';
+import { ForbiddenError, NotFoundError, ServerError } from '../util/errors';
 import HarmonyRequest from '../models/harmony-request';
 import { listToText } from '../util/string';
+import { EdlUserEulaInfo, verifyUserEula } from '../util/edl-api';
 
 // CMR Collection IDs separated by delimiters of single "+" or single whitespace
 // (some clients may translate + to space)
@@ -23,6 +24,37 @@ const COLLECTION_ROUTE_REGEX = /^(\/(?!docs).*\/)(wms|ogc-api-coverages)/;
 async function loadVariablesForCollection(collection: CmrCollection, token: string): Promise<void> {
   const c = collection; // We are mutating collection
   c.variables = await getVariablesForCollection(collection, token);
+}
+
+/**
+ * Check that the user has accepted any EULAs that are attached to the collections
+ * in the request.
+ * @param collections - array of CMR collections
+ * @param req - the client request
+ * @throws ServerError, ForbiddenError, NotFoundError
+ */
+async function verifyEulaAcceptance(collections: CmrCollection[], req: HarmonyRequest): Promise<void> {
+  const acceptEulaUrls = [];
+  for (const collection of collections) {
+    if (collection.eula_identifiers) {
+      for (const eulaId of collection.eula_identifiers) {
+        const eulaInfo: EdlUserEulaInfo = await verifyUserEula(req.user, eulaId, req.accessToken);
+        if (eulaInfo.statusCode == 404 && eulaInfo.acceptEulaUrl) { // EULA wasn't accepted
+          acceptEulaUrls.push(eulaInfo.acceptEulaUrl);  
+        } else if (eulaInfo.statusCode == 404) {
+          req.context.logger.error(`EULA (${eulaId}) verfification failed with statusCode 404. Error: ${eulaInfo.error}`);
+          throw new NotFoundError(`EULA ${eulaId} could not be found.`);
+        } else if (eulaInfo.statusCode !== 200) {
+          req.context.logger.error(`EULA (${eulaId}) verfification failed. Error: ${eulaInfo.error}`);
+          throw new ServerError(`EULA (${eulaId}) verfification failed unexpectedly.`);
+        }
+      }
+    }
+  }
+  if (acceptEulaUrls.length > 0) {
+    throw new ForbiddenError('You may access the requested data by resubmitting your request ' +
+      `after accepting the following EULA(s): ${acceptEulaUrls.join(', ')}.`);
+  }
 }
 
 /**
@@ -64,6 +96,8 @@ async function cmrCollectionReader(req: HarmonyRequest, res, next: NextFunction)
       req.collections = await getCollectionsByIds(collectionIds, req.accessToken);
       const { collections } = req;
 
+      await verifyEulaAcceptance(collections, req);
+
       // Could not find a requested collection
       if (collections.length === 0) {
         const message = `${collectionIdStr} must be a collection short name or CMR collection`
@@ -98,6 +132,8 @@ async function cmrCollectionReader(req: HarmonyRequest, res, next: NextFunction)
           pickedCollection = harmonyCollection || pickedCollection;
         }
         if (pickedCollection) {
+          await verifyEulaAcceptance([pickedCollection], req);
+
           req.collections = [pickedCollection];
           req.collectionIds = [pickedCollection.id];
           await loadVariablesForCollection(pickedCollection, req.accessToken);
