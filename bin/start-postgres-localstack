@@ -115,7 +115,7 @@ bin/port-forward start localstack 4566:4566 4572:4566 4592:4566
 bin/port-forward start postgres ${POSTGRES_PORT}:5432
 
 # run migrations
-DATABASE_URL="postgresql://postgres:password@localhost:${POSTGRES_PORT}/postgres" npx knex --cwd db migrate:latest
+DATABASE_TYPE=postgres DATABASE_URL="postgresql://postgres:password@localhost:${POSTGRES_PORT}/postgres" npx knex --cwd db migrate:latest
 
 echo ''
 echo 'Localstack has started at http://localhost:4566/'

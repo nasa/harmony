@@ -13,9 +13,7 @@ export const batchSize = env.nodeEnv === 'development' ? 100 : 2000;
 
 export type Transaction = Knex.Transaction | Knex;
 
-const { databaseType } = env;
-const config = knexfile[databaseType];
-const database = knex(config);
+const database = knex(knexfile);
 
 // attachPaginate will fail when code is reloaded by mocha -w
 try {
