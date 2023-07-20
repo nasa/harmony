@@ -132,18 +132,32 @@ The following `steps` entry is for a chain of services including the PODAAC L2 S
 
 ```yaml
 steps:
-   - image: !Env ${QUERY_CMR_IMAGE}
-   - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
-     operations: ['spatialSubset', 'variableSubset']
-     conditional:
-       exists: ['spatialSubset', 'variableSubset']
-   - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
-     operations: ['reformat']
-     conditional:
-       format: ['application/x-zarr']
+  - image: !Env ${QUERY_CMR_IMAGE}
+  - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
+    operations: ['spatialSubset', 'variableSubset']
+    conditional:
+      exists: ['spatialSubset', 'variableSubset']
+  - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
+    operations: ['reformat']
+    conditional:
+      format: ['application/x-zarr']
 ```
 
 First we have the query-cmr service (this service is the first in every current workflow). This is followed by the PODAAC L2 Subsetter service, which provides the 'spatialSubset' and 'variableSubset' operations and is only invoked if the user is requesting one or both of those. Finally, we have the Harmony netcdf-to-zarr service which provides the 'reformat' operation and is only invoked if the request asks for 'zarr' output.
+
+There is also a `conditional` option on `umm-c` `native_format` that compares with the value of the collection UMM-C field: `ArchiveAndDistributionInformationType.FileArchiveInformation.Format` when the sibling FormatType = 'Native'. Here is an example of its usage:
+
+```yaml
+steps:
+  - image: !Env ${QUERY_CMR_IMAGE}
+  - image: !Env ${NET_2_COG_IMAGE}
+    conditional:
+      umm_c:
+        native_format: ['netcdf-4']
+  - image: !Env ${HYBIG_IMAGE}
+```
+
+Here we have the query-cmr service (this service is the first in every current workflow). This is followed by the optional NetCDF to COG service, which will only be invoked when the collection's UMM-C native format is one of the values that are defined (case insensitive) in the steps configuration (i.e. `[netcdf-4]`). Finally, we have the HyBIG service that converts the GeoTIFF inputs from the previous step to Global Imagery Browse Services (GIBS) compatible PNG or JPEG outputs.
 
 ### Aggregation Steps
 Services that provide aggregation, e.g., concatenation for CONCISE, require that all inputs are
@@ -162,12 +176,12 @@ The following `steps` entry is an example one might use for an aggregating servi
 
 ```yaml
 steps:
-      - image: !Env ${QUERY_CMR_IMAGE}
-      - image: !Env ${EXAMPLE_AGGREGATING_SERVICE_IMAGE}
-        is_batched: true
-        max_batch_inputs: 100
-        max_batch_size_in_bytes: 2000000000
-        operations: ['concatenate']
+  - image: !Env ${QUERY_CMR_IMAGE}
+  - image: !Env ${EXAMPLE_AGGREGATING_SERVICE_IMAGE}
+    is_batched: true
+    max_batch_inputs: 100
+    max_batch_size_in_bytes: 2000000000
+    operations: ['concatenate']
 ```
 
 There are default limits set by the environment variables `MAX_BATCH_INPUTS` and
