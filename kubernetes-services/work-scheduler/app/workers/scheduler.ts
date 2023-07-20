@@ -68,8 +68,8 @@ export async function processSchedulerQueue(reqLogger: Logger): Promise<void> {
       const podCountEnd = new Date();
       const messageCountTime = messageCountEnd.getTime() - messageCountStart.getTime();
       const podCountTime = podCountEnd.getTime() - messageCountEnd.getTime();
-      reqLogger.info(`Message count took ${messageCountTime}ms`);
-      reqLogger.info(`Pod count took ${podCountTime}ms`);
+      reqLogger.debug(`Message count took ${messageCountTime}ms`, { durationMs: messageCountTime });
+      reqLogger.debug(`Pod count took ${podCountTime}ms`, { durationMs: podCountTime });
 
       // If there are more pods than messages, we need to send more work. Allow more work
       // than pods to avoid queue starvation (env.serviceQueueBatchSizeCoefficient)

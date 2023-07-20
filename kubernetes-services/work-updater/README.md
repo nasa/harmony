@@ -3,16 +3,15 @@
 This folder contains the code and build scripts for the Harmony work updater,
 which is responsible for reading work-item updates from a queue and handling processing them.
 
-## Building the Work Updater
+## Building the Work Updater for Local Use
 
 1. Run `npm build` in this directory to build with the tag `latest`. To use a different tag,
    run `VERSION=tag npm run build`.
 
 ## Using the Updater Locally
 
-1. Set `USE_SERVICE_QUEUES=true` in your .env file for the harmony repository
-2. If you are using an image tag other than `latest` set `WORK_ITEM_UPDATER_IMAGE=harmonyservices/work-updater:<tag>` in your harmony .env file
-3. Run `bin/deploy-services` from the harmony repository
+1. If you are using an image tag other than `latest` set `WORK_ITEM_UPDATER_IMAGE=harmonyservices/work-updater:<tag>` in your harmony .env file
+2. Run `bin/deploy-services` from the harmony repository
 
 ## Running the Updater Outside of Docker for Development
 
