@@ -14,8 +14,31 @@ function start_port_forwarding() {
   done
 
   stop_port_forwarding "$service_name"
-  kubectl wait -n harmony --for=condition=ready pod --selector=app="$service_name" --timeout=60s
 
+  local max_iterations=60
+  local iteration=0
+
+  while [ "$iteration" -lt "$max_iterations" ]; do
+    # Wait until there is exactly 1 pod running for the service
+    local running_count
+    running_count=$(kubectl get pods -n harmony -l app="$service_name" --no-headers | wc -l)
+
+    if [ "$running_count" -eq 1 ]; then
+      echo "Exactly 1 ${service_name} pod found. Setting up port forward when pod is ready."
+      break
+    fi
+
+    ((iteration++))
+
+    sleep 1
+  done
+
+  if [ "$iteration" -eq "$max_iterations" ]; then
+    echo "WARNING: Timeout reached. There are ${running_count} pods running. Port forwarding may not work."
+    exit 1
+  fi
+
+  kubectl wait -n harmony --for=condition=ready pod -l app="$service_name" --timeout=60s
   nohup kubectl -n harmony port-forward "service/${service_name}" "${args[@]}" > "logs/port-forward-${service_name}.log" 2>&1 &
   echo "Port forwarding started for service: ${service_name}, port pairs: ${port_pairs[*]}"
 }

@@ -18,7 +18,8 @@
     "build": "docker build -t harmonyservices/harmony:${VERSION:-latest} .",
     "build-notebooks-image": "docker build --platform linux/amd64 -t harmonyservices/notebooks:${VERSION:-latest} -f Dockerfile-notebooks .",
     "run-notebooks-image": "source .env && docker run -i -t --platform linux/amd64 --init -p 8888:8888 --env NB_EDL_USERNAME=\"${NB_EDL_USERNAME}\" --env NB_EDL_PASSWORD=\"${NB_EDL_PASSWORD}\" harmonyservices/notebooks:${VERSION:-latest}",
-    "publish": "docker push harmonyservices/harmony:${VERSION:-latest}"
+    "publish": "docker push harmonyservices/harmony:${VERSION:-latest}",
+    "compare-services": "ts-node scripts/service-comparison.ts"
   },
   "keywords": [
     "NASA",
