@@ -128,13 +128,17 @@ MAX_ERRORS_FOR_JOB=2000
 #  - "development" for local development.
 #  - "production" for deployments with a separate postgres server (SIT, UAT, Production).
 #  - "test" for unit / integration tests
-# This is a conventional identifier to switch application behavior but is
-# currently only used to determine which database connection to use in
-# db/knexfile.js and whether to deploy the alert manager
-NODE_ENV=production
+# This is a conventional identifier to switch application behavior
+NODE_ENV=development
+
+# String to identify which database engine to use. Options:
+#  - "postgres"
+#  - "sqlite"
+# Note that sqlite is only used for running tests
+DATABASE_TYPE=postgres
 
 # Connection string to use to connect to the database.  Used for
-# NODE_ENV="production" databases.  For development and test, this is
+# DATABASE_TYPE="postgres" databases.  For tests this is
 # ignored, using a sqlite3 file instead
 DATABASE_URL=postgresql://postgres:password@localhost:5432/postgres
 

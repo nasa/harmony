@@ -5,6 +5,9 @@ AWS_DEFAULT_REGION=us-west-2
 
 NODE_ENV=production
 
+# String to identify which database engine to use. For this service the only option is 'postgres'
+DATABASE_TYPE=postgres
+
 # For testing: Whether to use Localstack instead of AWS S3.  Options are "true" or "false".
 USE_LOCALSTACK=true
 

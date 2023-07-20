@@ -3,17 +3,7 @@ const path = require('path');
 const migrations = { directory: path.resolve(__dirname, 'migrations') };
 
 module.exports = {
-  development: {
-    client: 'sqlite3',
-    connection: {
-      filename: path.resolve(__dirname, 'development.sqlite3'),
-    },
-    useNullAsDefault: true,
-    debug: (process.env.DEBUG_KNEX === 'true'),
-    migrations,
-  },
-
-  test: {
+  sqlite: {
     client: 'sqlite3',
     connection: {
       filename: path.resolve(__dirname, 'test.sqlite3'),
@@ -22,7 +12,7 @@ module.exports = {
     migrations,
   },
 
-  production: {
+  postgres: {
     client: 'pg',
     connection: process.env.DATABASE_URL,
     pool: {

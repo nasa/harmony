@@ -78,6 +78,7 @@ interface HarmonyEnv {
   metricsEndpoint: string;
   metricsIndex: string;
   cmrMaxPageSize: number;
+  databaseType: string;
   defaultPodGracePeriodSecs: number;
   defaultJobListPageSize: number;
   defaultParallelism: number;
@@ -131,6 +132,7 @@ interface HarmonyEnv {
 
 // special cases
 
+envVars.databaseType = process.env.DATABASE_TYPE || 'postgres';
 envVars.harmonyClientId = process.env.CLIENT_ID || 'harmony-unknown';
 envVars.uploadBucket = process.env.UPLOAD_BUCKET || process.env.STAGING_BUCKET || 'local-staging-bucket';
 envVars.useLocalstack = process.env.USE_LOCALSTACK === 'true';
