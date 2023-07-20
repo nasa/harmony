@@ -260,7 +260,6 @@ export interface CmrUmmCollection {
     // eslint-disable-next-line @typescript-eslint/naming-convention
     'concept-id': string;
   };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   umm: {
     ArchiveAndDistributionInformation?: {
       FileArchiveInformation: [{
