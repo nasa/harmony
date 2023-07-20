@@ -813,17 +813,11 @@ describe('createWorkflowSteps', function () {
   const operation = buildOperation('foo');
   operation.addSource(collectionId, shortName, versionId);
   // the existence of conditional umm_c in config guarantees that ummCollections is set
-  operation.ummcollections = [{
+  operation.ummCollections = [{
     'meta': {
       'concept-id': 'C1234-TEST',
     },
-    'umm': {
-      'MetadataSpecification': {
-        'Name': 'UMM-C',
-        'URL': 'https://cdn.earthdata.nasa.gov/umm/collection/v1.17.3',
-        'Version': '1.17.3',
-      },
-    },
+    'umm': {},
   }];
   const config = {
     name: 'shapefile-tiff-netcdf-service',
@@ -1058,22 +1052,13 @@ describe('createWorkflowSteps', function () {
   describe('when a collection has matching umm-c conditional native_format', function () {
     const ummOperation = _.cloneDeep(operation);
     ummOperation.geojson = 'interesting shape';
-    ummOperation.ummcollections = [{
+    ummOperation.ummCollections = [{
       'meta': {
         'concept-id': 'C1234-TEST',
       },
       'umm': {
-        'MetadataSpecification': {
-          'Name': 'UMM-C',
-          'URL': 'https://cdn.earthdata.nasa.gov/umm/collection/v1.17.3',
-          'Version': '1.17.3',
-        },
         'ArchiveAndDistributionInformation': {
           'FileArchiveInformation': [ {
-            'Format': 'netCDF-4',
-            'FormatType': 'Native',
-          } ],
-          'FileDistributionInformation': [ {
             'Format': 'netCDF-4',
             'FormatType': 'Native',
           } ],

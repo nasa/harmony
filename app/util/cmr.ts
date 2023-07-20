@@ -261,7 +261,14 @@ export interface CmrUmmCollection {
     'concept-id': string;
   };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  umm: any;
+  umm: {
+    ArchiveAndDistributionInformation?: {
+      FileArchiveInformation: [{
+        FormatType: string;
+        Format: string;
+      }]
+    }
+  };
 }
 
 export interface CmrUmmCollectionsResponse extends CmrResponse {
@@ -621,7 +628,7 @@ async function queryCollections(
 async function queryUmmCollections(
   query: CmrQuery, token: string,
 ): Promise<Array<CmrUmmCollection>> {
-  const ummResponse = await _cmrGet('/search/collections.umm_json', query, token) as CmrUmmCollectionsResponse;
+  const ummResponse = await _cmrGet('/search/collections.umm_json_v1_17_3', query, token) as CmrUmmCollectionsResponse;
   return ummResponse.data.items;
 }
 
