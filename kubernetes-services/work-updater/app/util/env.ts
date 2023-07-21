@@ -68,6 +68,9 @@ interface HarmonyEnv {
   nodeEnv: string;
   serviceQueueBatchSizeCoefficient: number;
   useServiceQueues: boolean;
+  maxErrorsForJob: number;
+  cmrMaxPageSize: number;
+  aggregateStacCatalogMaxPageSize: number;
 }
 
 // special cases

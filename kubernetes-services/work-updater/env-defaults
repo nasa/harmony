@@ -52,3 +52,15 @@ WORK_ITEM_RETRY_LIMIT=5
 
 # Whether or not to use queues for retrieving work-items when handling polling for work
 USE_SERVICE_QUEUES=true
+
+# The maximum number of errors to allow for a job before considering it failed
+MAX_ERRORS_FOR_JOB=2000
+
+# page size to use with CMR calls
+CMR_MAX_PAGE_SIZE=2000
+
+# TODO change this to a smaller number when aggregating services are updated to handle paged catalogs
+# See HARNONY-1178
+AGGREGATE_STAC_CATALOG_MAX_PAGE_SIZE=1000000
+
+
