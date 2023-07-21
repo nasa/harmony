@@ -1,6 +1,7 @@
 import { v4 as uuid } from 'uuid';
 import { Queue, ReceivedMessage, WorkItemQueueType } from '../../app/util/queue/queue';
-import { batchProcessQueue } from '../../app/backends/workflow-orchestration/work-item-updates';
+// TODO - this is a hack. we should move the batchProcessQueue function to a common package.
+import { batchProcessQueue } from '../../kubernetes-services/work-updater/app/workers/updater';
 
 interface StoredMessage extends ReceivedMessage {
   body: string;
@@ -48,9 +49,9 @@ export class MemoryQueue extends Queue {
   }
 
   // we don't care about groupId for testing purposes
-  async sendMessage(msg: string, _groupId?: string): Promise<void> {
+  async sendMessage(msg: string, _groupId?: string, shouldProcessQueue = true): Promise<void> {
     this.messages.push({ receipt: '', body: msg, isVisible: true });
-    if ([WorkItemQueueType.SMALL_ITEM_UPDATE, WorkItemQueueType.LARGE_ITEM_UPDATE]
+    if (shouldProcessQueue && [WorkItemQueueType.SMALL_ITEM_UPDATE, WorkItemQueueType.LARGE_ITEM_UPDATE]
       .includes(this.queueType)) {
       await batchProcessQueue(this.queueType);
     }

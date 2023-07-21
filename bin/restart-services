@@ -14,7 +14,7 @@ if [ "$current_context" != "docker-desktop" ] && [ "$current_context" != "miniku
   exit 1
 fi
 
-for service in ${LOCALLY_DEPLOYED_SERVICES//,/ } query-cmr harmony-work-scheduler
+for service in ${LOCALLY_DEPLOYED_SERVICES//,/ } query-cmr harmony-work-scheduler harmony-small-work-updater harmony-large-work-updater
 do
     echo "stopping $service"
     kubectl delete deployment "$service" -n harmony

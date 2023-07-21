@@ -128,25 +128,29 @@ MAX_ERRORS_FOR_JOB=2000
 #  - "development" for local development.
 #  - "production" for deployments with a separate postgres server (SIT, UAT, Production).
 #  - "test" for unit / integration tests
-# This is a conventional identifier to switch application behavior but is
-# currently only used to determine which database connection to use in
-# db/knexfile.js and whether to deploy the alert manager
+# This is a conventional identifier to switch application behavior
 NODE_ENV=development
 
+# String to identify which database engine to use. Options:
+#  - "postgres"
+#  - "sqlite"
+# Note that sqlite is only used for running tests
+DATABASE_TYPE=postgres
+
 # Connection string to use to connect to the database.  Used for
-# NODE_ENV="production" databases.  For development and test, this is
+# DATABASE_TYPE="postgres" databases.  For tests this is
 # ignored, using a sqlite3 file instead
-DATABASE_URL=
+DATABASE_URL=postgresql://postgres:password@localhost:5432/postgres
 
 # A bucket with brief lifecycle where temporary uploads (shapefiles) are stored while
 # requests are in flight
 UPLOAD_BUCKET=local-upload-bucket
 
 # Whether or not to use queues for retrieving work-items when handling polling for work
-USE_SERVICE_QUEUES=false
+USE_SERVICE_QUEUES=true
 
 # SQS queue used to request scheduling of work items for a service
-WORK_ITEM_SCHEDULER_QUEUE_URL=http://localhost:4566/000000000000/4566/queue/work-item-scheduler-queue
+WORK_ITEM_SCHEDULER_QUEUE_URL=http://localhost:4566/000000000000/work-item-scheduler-queue
 
 # SQS queue used to process work item updates
 WORK_ITEM_UPDATE_QUEUE_URL=http://localhost:4566/000000000000/work-item-update-queue.fifo
@@ -180,11 +184,14 @@ WORK_REAPER_BATCH_SIZE=2000
 # The time (in seconds) between invocations of the work failer service
 WORK_FAILER_PERIOD_SEC=120
 
-# The time (in seconds) the work-item update queue processor will wait before resuming after an error
-# Used to avoid a tight loop
-WORK_ITEM_UPDATE_QUEUE_PROCESSOR_DELAY_AFTER_ERROR_SEC=1
+# The number of work scheduler pods to run
+SCHEDULER_POD_REPLICAS=1
 
-WORK_ITEM_UPDATE_QUEUE_PROCESSOR_COUNT=3
+# The number of update queue processors to run for the large work-item queue
+LARGE_WORK_UPDATER_POD_REPLICAS=1
+
+# The number of update queue processors to run for the small work-item queue
+SMALL_WORK_UPDATER_POD_REPLICAS=1
 
 # Long polling wait time (in seconds) for queues
 QUEUE_LONG_POLLING_WAIT_TIME_SEC=20
@@ -273,6 +280,13 @@ WORK_ITEM_SCHEDULER_REQUESTS_MEMORY=128Mi
 WORK_ITEM_SCHEDULER_LIMITS_CPU=1024m
 WORK_ITEM_SCHEDULER_LIMITS_MEMORY=512Mi
 WORK_ITEM_SCHEDULER_IMAGE=harmonyservices/work-scheduler:latest
+
+# work updater
+WORK_ITEM_UPDATER_REQUESTS_CPU=128m
+WORK_ITEM_UPDATER_REQUESTS_MEMORY=128Mi
+WORK_ITEM_UPDATER_LIMITS_CPU=1024m
+WORK_ITEM_UPDATER_LIMITS_MEMORY=512Mi
+WORK_ITEM_UPDATER_IMAGE=harmonyservices/work-updater:latest
 
 # backend services
 HARMONY_GDAL_ADAPTER_IMAGE=ghcr.io/nasa/harmony-gdal-adapter:latest

@@ -9,9 +9,4 @@ WORKDIR /harmony
 RUN npm ci
 RUN npm install sqlite3 --save
 COPY . /harmony/
-# build the sqlite dabase
-USER root
-RUN ./bin/create-database development
-RUN chown -R node db
-USER node
 ENTRYPOINT [ "npm", "run", "start" ]

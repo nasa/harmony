@@ -1,12 +1,10 @@
 import db from '../../util/db';
 import { Logger } from 'winston';
-import logger from '../../util/log';
 import env from '../../util/env';
-import WorkItem, { getNextWorkItem, getWorkItemStatus, updateWorkItemStatuses, WorkItemEvent } from '../../models/work-item';
+import WorkItem, { getNextWorkItem, getWorkItemStatus, updateWorkItemStatuses } from '../../models/work-item';
 import { getNextJobIdForUsernameAndService, getNextUsernameForWork, incrementRunningAndDecrementReadyCounts, recalculateCounts } from '../../models/user-work';
 import { getQueueForUrl, getQueueUrlForService, getWorkSchedulerQueue  } from '../../util/queue/queue-factory';
 import { QUERY_CMR_SERVICE_REGEX, calculateQueryCmrLimit, processSchedulerQueue } from './util';
-import { eventEmitter } from '../../events';
 import { WorkItemStatus } from '../../models/work-item-interface';
 
 export type WorkItemData = {
@@ -126,16 +124,3 @@ export async function getWorkFromQueue(serviceID: string, reqLogger: Logger): Pr
   return null;
 }
 
-// Listen for work items being created and put a message on the scheduler queue asking it to
-// schedule some WorkItems for the service
-eventEmitter.on(WorkItemEvent.CREATED, async (workItem: WorkItem) => {
-  if (env.useServiceQueues) {
-    const defaultLogger = logger.child({ application: 'work-scheduler' });
-    const { serviceID } = workItem;
-    defaultLogger.debug(`Work item created for service ${serviceID}, putting message on scheduler queue`);
-    const queue = getWorkSchedulerQueue();
-    await queue.sendMessage(serviceID);
-    // this actually does nothing outside of tests since the scheduler pod will be running
-    await processSchedulerQueue(defaultLogger);
-  }
-});

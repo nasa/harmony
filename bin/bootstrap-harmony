@@ -23,7 +23,7 @@ else
     source .env
 fi
 
-# run localstack and harmony in kubernetes
+# run localstack, postgresql, and harmony in kubernetes
 ./bin/start-all
 
 # deploy the services
