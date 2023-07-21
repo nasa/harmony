@@ -137,26 +137,6 @@ minikube ssh grep host.minikube.internal /etc/hosts | cut -f1
 
 This should print out an IP address. Use this in your .env file to specify the `CALLBACK_URL_ROOT` value, e.g., `CALLBACK_URL_ROOT=http://192.168.65.2:4001`.
 
-## Set Up A Database
-
-To setup a sqlite3 database with the correct schema for local execution, run
-
-```
-$ bin/create-database development
-```
-
-This should be run any time the versioned contents of the `db/db.sql` file change.
-
-This will create a file, `db/development.sqlite3`, which will contain your local data.  You can delete the above file to remove
-all existing development data.
-
-In production environments, we use PostgreSQL and use database migrations to modify the schema.  If you have a PostgreSQL
-database, you can create and/or migrate your database by setting `NODE_ENV=production` and
-`DATABASE_URL=postgresql://your-postgres-connection-url` and running:
-```
-$ npx knex --cwd db migrate:latest
-```
-
 ### Set Up and Run Postgres and Localstack
 
 In development Harmony uses [Localstack](https://github.com/localstack/localstack) to avoid allocating AWS resources. Postgres is also installed (but not used by default).
@@ -171,8 +151,6 @@ This will install Postgres and Localstack and forward their ports to localhost. 
 Localstack has started at http://localhost:4566/
 Postgres has started at localhost:5432
 ```
-
-To use Postgres instead of sqlite set `NODE_ENV=production` in your .env and run `NODE_ENV=production DATABASE_URL=postgresql://postgres:password@localhost:5432  npx knex --cwd db migrate:latest` to create the latest schema.
 
 ## Add A Service
 

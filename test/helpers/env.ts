@@ -4,6 +4,7 @@ import { use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 
 process.env.NODE_ENV = 'test';
+process.env.DATABASE_TYPE = 'sqlite';
 
 // We do not use an EDL application or call backend services in our tests.
 process.env.COOKIE_SECRET = 'foo';
@@ -26,6 +27,7 @@ process.env.MAX_BATCH_SIZE_IN_BYTES = '10000';
 import env from '../../app/util/env'; // Must set required env before loading the env file
 
 env.nodeEnv = 'test';
+env.databaseType = 'sqlite';
 process.setMaxListeners(Infinity);
 
 use(chaiAsPromised);

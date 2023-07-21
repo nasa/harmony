@@ -18,8 +18,6 @@ import logger from './util/log';
 import * as exampleBackend from '../example/http-backend';
 import WorkReaper from './workers/work-reaper';
 import WorkFailer from './workers/work-failer';
-import WorkItemUpdateQueueProcessor from './workers/work-item-update-queue-processor';
-import { WorkItemQueueType } from './util/queue/queue';
 import cmrCollectionReader from './middleware/cmr-collection-reader';
 
 /**
@@ -156,8 +154,6 @@ export function start(config: Record<string, string>): {
   backend: Server;
   workReaper: WorkReaper;
   workFailer: WorkFailer;
-  workItemUpdateQueueProcessors: WorkItemUpdateQueueProcessor[];
-  largeWorkItemUpdateQueueProcessors: WorkItemUpdateQueueProcessor[];
 } {
 
   // Log unhandled promise rejections and do not crash the node process
@@ -195,33 +191,7 @@ export function start(config: Record<string, string>): {
     workFailer.start();
   }
 
-  const queueProcessorCount = config.WORK_ITEM_UPDATE_QUEUE_PROCESSOR_COUNT ?
-    parseInt(config.WORK_ITEM_UPDATE_QUEUE_PROCESSOR_COUNT) : 0;
-  const workItemUpdateQueueProcessors = [];
-  const largeWorkItemUpdateQueueProcessors = [];
-  if (config.startWorkItemUpdateQueueProcessor !== 'false' && queueProcessorCount > 0) {
-    const workItemUpdateQueueProcessorConfig = {
-      logger: logger.child({ application: 'work-item-update-queue-processor' }),
-      queueType: WorkItemQueueType.SMALL_ITEM_UPDATE,
-    };
-    let workItemUpdateQueueProcessor;
-    let largeWorkItemUpdateQueueProcessor;
-    for (let i = 0; i < queueProcessorCount; i++) {
-      workItemUpdateQueueProcessor = new WorkItemUpdateQueueProcessor(workItemUpdateQueueProcessorConfig);
-      workItemUpdateQueueProcessors.push(workItemUpdateQueueProcessor);
-      workItemUpdateQueueProcessor.start();
-
-      const largeWorkItemUpdateQueueProcessorConfig = {
-        logger: logger.child({ application: 'large-work-item-update-queue-processor' }),
-        queueType: WorkItemQueueType.LARGE_ITEM_UPDATE,
-      };
-      largeWorkItemUpdateQueueProcessor = new WorkItemUpdateQueueProcessor(largeWorkItemUpdateQueueProcessorConfig);
-      largeWorkItemUpdateQueueProcessors.push(largeWorkItemUpdateQueueProcessor);
-      largeWorkItemUpdateQueueProcessor.start();
-    }
-  }
-
-  return { frontend, backend, workReaper, workFailer, workItemUpdateQueueProcessors, largeWorkItemUpdateQueueProcessors };
+  return { frontend, backend, workReaper, workFailer };
 }
 
 /**

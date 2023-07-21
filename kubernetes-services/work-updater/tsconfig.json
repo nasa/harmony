@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+      "module": "commonjs",
+      "baseUrl": ".",
+      "moduleResolution": "node",
+      "target": "ES2021",
+      "esModuleInterop": true,
+      "allowJs": true,
+      "noImplicitAny": false,
+      "sourceMap": true,
+      "outDir": "built"
+  },
+  "include": ["./app", "./test"]
+}
