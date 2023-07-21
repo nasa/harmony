@@ -184,8 +184,14 @@ WORK_REAPER_BATCH_SIZE=2000
 # The time (in seconds) between invocations of the work failer service
 WORK_FAILER_PERIOD_SEC=120
 
-# The number of update queue processors to run for both large and small work-item queues
-WORK_ITEM_UPDATE_QUEUE_PROCESSOR_COUNT=1
+# The number of work scheduler pods to run
+SCHEDULER_POD_REPLICAS=1
+
+# The number of update queue processors to run for the large work-item queue
+LARGE_WORK_UPDATER_POD_REPLICAS=1
+
+# The number of update queue processors to run for the small work-item queue
+SMALL_WORK_UPDATER_POD_REPLICAS=1
 
 # Long polling wait time (in seconds) for queues
 QUEUE_LONG_POLLING_WAIT_TIME_SEC=20

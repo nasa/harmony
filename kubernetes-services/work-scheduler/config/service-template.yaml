@@ -5,7 +5,7 @@ metadata:
   labels:
     name: harmony
 spec:
-  replicas: 1
+  replicas: $SCHEDULER_POD_REPLICAS
   selector:
     matchLabels:
       name: harmony

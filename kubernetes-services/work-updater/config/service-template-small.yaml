@@ -5,7 +5,7 @@ metadata:
   labels:
     name: harmony
 spec:
-  replicas: $WORK_ITEM_UPDATE_QUEUE_PROCESSOR_COUNT
+  replicas: $SMALL_WORK_UPDATER_POD_REPLICAS
   selector:
     matchLabels:
       name: harmony
@@ -33,6 +33,8 @@ spec:
           env:
           - name: WORK_ITEM_UPDATE_QUEUE_TYPE
             value: small
+          - name: WORK_ITEM_RETRY_LIMIT
+            value: '$WORK_ITEM_RETRY_LIMIT'
           ports:
             - containerPort: 5000
 ---

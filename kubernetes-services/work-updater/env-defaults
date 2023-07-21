@@ -47,5 +47,8 @@ WORK_ITEM_UPDATE_QUEUE_TYPE=large
 # Used to avoid a tight loop
 WORK_ITEM_UPDATE_QUEUE_PROCESSOR_DELAY_AFTER_ERROR_SEC=1
 
+# Number of times to retry a failed work item
+WORK_ITEM_RETRY_LIMIT=5
+
 # Whether or not to use queues for retrieving work-items when handling polling for work
 USE_SERVICE_QUEUES=true
