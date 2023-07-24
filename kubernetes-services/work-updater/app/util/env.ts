@@ -71,6 +71,8 @@ interface HarmonyEnv {
   maxErrorsForJob: number;
   cmrMaxPageSize: number;
   aggregateStacCatalogMaxPageSize: number;
+  maxBatchInputs: number;
+  maxBatchSizeInBytes: number;
 }
 
 // special cases
