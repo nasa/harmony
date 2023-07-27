@@ -7,7 +7,7 @@ import { HarmonyGranule } from '../models/data-operation';
 import HarmonyRequest from '../models/harmony-request';
 import { computeMbr } from '../util/spatial/mbr';
 import { BoundingBox } from '../util/bounding-box';
-import { env } from 'harmony-util';
+import { env } from '@harmony/util';
 import { defaultObjectStore } from '../util/object-store';
 import { CmrCollection, CmrGranule, CmrQuery, filterGranuleLinks, queryGranulesForCollection, queryGranulesWithSearchAfter } from '../util/cmr';
 

@@ -1,6 +1,6 @@
 import { Logger } from 'winston';
 import WorkItem, { computeWorkItemDurationOutlierThresholdForJobService, getWorkItemsByUpdateAgeAndStatus } from '../models/work-item';
-import { env } from 'harmony-util';
+import { env } from '@harmony/util';
 import { Worker } from './worker';
 import db from '../util/db';
 import sleep from '../util/sleep';

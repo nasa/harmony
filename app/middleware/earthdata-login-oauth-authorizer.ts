@@ -2,10 +2,10 @@ import axios from 'axios';
 import simpleOAuth2, { OAuthClient, Token } from 'simple-oauth2';
 import { RequestHandler, NextFunction } from 'express';
 import { cookieOptions, setCookiesForEdl } from '../util/cookies';
-import { listToText } from 'harmony-util/string';
+import { listToText } from '@harmony/util/string';
 import { ForbiddenError, RequestValidationError } from '../util/errors';
 import HarmonyRequest from '../models/harmony-request';
-import { env } from 'harmony-util';
+import { env } from '@harmony/util';
 
 const vars = ['OAUTH_CLIENT_ID', 'OAUTH_UID', 'OAUTH_PASSWORD', 'OAUTH_REDIRECT_URI', 'OAUTH_HOST', 'COOKIE_SECRET'];
 

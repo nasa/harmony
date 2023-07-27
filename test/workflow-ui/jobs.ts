@@ -7,7 +7,7 @@ import hookServersStartStop from '../helpers/servers';
 import { hookTransaction, truncateAll } from '../helpers/db';
 import { buildJob } from '../helpers/jobs';
 import { workflowUIJobs, hookWorkflowUIJobs, hookAdminWorkflowUIJobs } from '../helpers/workflow-ui';
-import { env } from 'harmony-util';
+import { env } from '@harmony/util';
 import { auth } from '../helpers/auth';
 import { renderNavLink } from './helpers';
 import MockDate from 'mockdate';

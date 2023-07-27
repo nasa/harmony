@@ -7,7 +7,7 @@ import { addCollectionsToServicesByAssociation } from '../middleware/service-sel
 import _ from 'lodash';
 import { ServiceCapabilities, ServiceConfig } from '../models/services/base-service';
 import { harmonyCollections } from '../models/services';
-import { listToText } from 'harmony-util/string';
+import { listToText } from '@harmony/util/string';
 
 export const currentApiVersion = '2';
 const supportedApiVersions = ['1', '2'];

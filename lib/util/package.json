@@ -1,5 +1,5 @@
 {
-  "name": "harmony-util",
+  "name": "@harmony/util",
   "version": "0.0.0",
   "description": "Utility modules related to Harmony",
   "main": "index.ts",

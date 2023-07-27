@@ -24,7 +24,7 @@ process.env.MAX_BATCH_INPUTS = '3';
 process.env.MAX_BATCH_SIZE_IN_BYTES = '10000';
 
 // eslint-disable-next-line import/first
-import { env } from 'harmony-util'; // Must set required env before loading the env file
+import { env } from '@harmony/util'; // Must set required env before loading the env file
 
 env.nodeEnv = 'test';
 env.databaseType = 'sqlite';

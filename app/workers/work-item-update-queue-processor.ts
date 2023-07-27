@@ -1,6 +1,6 @@
 import { Logger } from 'winston';
 import { batchProcessQueue } from '../backends/workflow-orchestration/work-item-updates';
-import { env } from 'harmony-util';
+import { env } from '@harmony/util';
 import { Worker } from './worker';
 import sleep from '../util/sleep';
 import { WorkItemQueueType } from '../util/queue/queue';

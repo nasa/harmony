@@ -20,7 +20,7 @@ import { hookRedirect } from '../helpers/hooks';
 import { getWorkflowStepsByJobId } from '../../app/models/workflow-steps';
 import db from '../../app/util/db';
 import { createDecrypter, createEncrypter } from '../../app/util/crypto';
-import { env } from 'harmony-util';
+import { env } from '@harmony/util';
 import DataOperation from '../../app/models/data-operation';
 import { buildWorkflowStep } from '../helpers/workflow-steps';
 import { hookRangesetRequest } from '../helpers/ogc-api-coverages';

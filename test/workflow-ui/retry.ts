@@ -7,7 +7,7 @@ import { buildWorkItem } from '../helpers/work-items';
 import db from '../../app/util/db';
 import { expect } from 'chai';
 import { WorkItemStatus } from '../../app/models/work-item-interface';
-import { env } from 'harmony-util';
+import { env } from '@harmony/util';
 import { buildWorkflowStep } from '../helpers/workflow-steps';
 import { hookWorkflowUIWorkItemRetry } from '../helpers/workflow-ui';
 import hookServersStartStop from '../helpers/servers';

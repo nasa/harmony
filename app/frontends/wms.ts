@@ -14,7 +14,7 @@ import { parseMultiValueParameter } from '../util/parameter-parsing-helpers';
 import * as urlUtil from '../util/url';
 
 import { handleGranuleNames } from '../util/parameter-parsers';
-import { env } from 'harmony-util';
+import { env } from '@harmony/util';
 import { getVariablesForCollection } from '../util/variables';
 
 const readFile = promisify(fs.readFile);

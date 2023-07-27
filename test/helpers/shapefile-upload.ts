@@ -6,7 +6,7 @@
 import { RequestHandler } from 'express';
 import multer from 'multer';
 import * as tmp from 'tmp';
-import { env } from 'harmony-util';
+import { env } from '@harmony/util';
 import { stub } from 'sinon';
 import * as shapefileUpload from '../../app/middleware/shapefile-upload';
 

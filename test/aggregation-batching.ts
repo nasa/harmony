@@ -3,7 +3,7 @@ import permutations from 'just-permutations';
 import { stub } from 'sinon';
 import { getStacLocation, WorkItemStatus } from '../app/models/work-item-interface';
 import db from '../app/util/db';
-import { env } from 'harmony-util';
+import { env } from '@harmony/util';
 import hookServersStartStop from './helpers/servers';
 import { fakeServiceStacOutput, getWorkForService, hookGetWorkForService, updateWorkItem } from './helpers/work-items';
 import * as aggregationBatch from '../app/util/aggregation-batch';

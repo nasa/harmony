@@ -4,7 +4,7 @@ import HarmonyRequest from '../../models/harmony-request';
 import wrap from '../../util/array';
 import { handleCrs, handleFormat, handleGranuleIds, handleGranuleNames, handleScaleExtent, handleScaleSize } from '../../util/parameter-parsers';
 import { createDecrypter, createEncrypter } from '../../util/crypto';
-import { env } from 'harmony-util';
+import { env } from '@harmony/util';
 import { RequestValidationError } from '../../util/errors';
 import { keysToLowerCase } from '../../util/object';
 import { ParameterParseError } from '../../util/parameter-parsing-helpers';

@@ -1,6 +1,6 @@
 import nacl from 'tweetnacl';
 import utils from 'tweetnacl-util';
-import { env } from 'harmony-util';
+import { env } from '@harmony/util';
 
 export type Encrypter = (plaintext: string) => string;
 export type EncrypterConstructor = (key: string) => Encrypter;

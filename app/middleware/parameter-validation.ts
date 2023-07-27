@@ -1,11 +1,11 @@
 import { NextFunction, Response } from 'express';
 import HarmonyRequest from '../models/harmony-request';
 import { RequestValidationError } from '../util/errors';
-import { Conjunction, listToText } from 'harmony-util/string';
+import { Conjunction, listToText } from '@harmony/util/string';
 import { keysToLowerCase } from '../util/object';
 import { defaultObjectStore } from '../util/object-store';
 import { coverageRangesetGetParams, coverageRangesetPostParams } from '../frontends/ogc-coverages/index';
-import { env} from 'harmony-util';
+import { env} from '@harmony/util';
 import { getRequestRoot } from '../util/url';
 import { validateNoConflictingGridParameters } from '../util/grids';
 

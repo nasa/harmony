@@ -10,7 +10,7 @@ import db from '../../app/util/db';
 import { expect } from 'chai';
 import WorkFailer, { WorkFailerConfig } from '../../app/workers/work-failer';
 import { WorkItemStatus } from '../../app/models/work-item-interface';
-import { env } from 'harmony-util';
+import { env } from '@harmony/util';
 import { buildWorkflowStep } from '../helpers/workflow-steps';
 
 

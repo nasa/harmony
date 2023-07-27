@@ -1,7 +1,7 @@
 import { Logger } from 'winston';
 import { Job } from '../../models/job';
 import WorkItem, { workItemCountForStep } from '../../models/work-item';
-import { env } from 'harmony-util';
+import { env } from '@harmony/util';
 import { Transaction } from '../../util/db';
 import { WorkItemStatus } from '../../models/work-item-interface';
 

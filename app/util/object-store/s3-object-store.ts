@@ -11,7 +11,7 @@ import { CopyObjectCommand, GetBucketLocationCommand, GetObjectCommand,
 
 import { fromInstanceMetadata } from '@aws-sdk/credential-provider-imds';
 
-import { env } from 'harmony-util';
+import { env } from '@harmony/util';
 const { awsDefaultRegion } = env;
 
 import * as fs from 'fs';

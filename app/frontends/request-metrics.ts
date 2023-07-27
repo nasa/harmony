@@ -4,7 +4,7 @@ import HarmonyRequest from '../models/harmony-request';
 import { Job, JobStatus } from '../models/job';
 import WorkflowStep, { getWorkflowStepsByJobId } from '../models/workflow-steps';
 import db from '../util/db';
-import { env} from 'harmony-util';
+import { env} from '@harmony/util';
 import { getPagingParams } from '../util/pagination';
 import { Parser } from 'json2csv';
 import { getTotalWorkItemSizesForJobID } from '../models/work-item';

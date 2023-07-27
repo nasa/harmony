@@ -1,4 +1,4 @@
-import { env } from 'harmony-util';
+import { env } from '@harmony/util';
 import { v4 as uuid } from 'uuid';
 import WorkItemUpdate from '../../models/work-item-update';
 import WorkflowStep, { decrementFutureWorkItemCount, getWorkflowStepByJobIdStepIndex, getWorkflowStepsByJobId } from '../../models/workflow-steps';
@@ -16,7 +16,7 @@ import { ServiceError } from '../../util/errors';
 import { completeJob } from '../../util/job';
 import { objectStoreForProtocol } from '../../util/object-store';
 import { StacItem, readCatalogItems, StacItemLink, StacCatalog } from '../../util/stac';
-import { sanitizeImage } from 'harmony-util/string';
+import { sanitizeImage } from '@harmony/util/string';
 import { resolve } from '../../util/url';
 import { QUERY_CMR_SERVICE_REGEX, calculateQueryCmrLimit } from './util';
 import { makeWorkScheduleRequest } from './work-item-polling';

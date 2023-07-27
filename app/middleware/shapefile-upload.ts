@@ -2,7 +2,7 @@ import multer from 'multer';
 import multerS3 from 'multer-s3';
 import * as crypto from 'crypto';
 import { RequestHandler } from 'express';
-import { env} from 'harmony-util';
+import { env} from '@harmony/util';
 import { S3ObjectStore } from '../util/object-store/s3-object-store';
 
 /**

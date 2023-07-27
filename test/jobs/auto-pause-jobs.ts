@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import _ from 'lodash';
 import { stub } from 'sinon';
 import { WorkItemStatus, getStacLocation } from '../../app/models/work-item-interface';
-import { env } from 'harmony-util';
+import { env } from '@harmony/util';
 import { truncateAll } from '../helpers/db';
 import { hookRedirect } from '../helpers/hooks';
 import { hookRangesetRequest } from '../helpers/ogc-api-coverages';

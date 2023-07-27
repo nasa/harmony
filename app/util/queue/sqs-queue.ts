@@ -3,7 +3,7 @@ import {
   DeleteMessageBatchCommand, SQSClientConfig, SendMessageCommandInput, PurgeQueueCommand,
   GetQueueAttributesCommand,
 } from '@aws-sdk/client-sqs';
-import { env } from 'harmony-util';
+import { env } from '@harmony/util';
 import { Queue, ReceivedMessage } from './queue';
 
 export class SqsQueue extends Queue {

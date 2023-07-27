@@ -9,7 +9,7 @@ import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 import { AWSXRayIdGenerator } from '@opentelemetry/id-generator-aws-xray';
 import { Attributes, Context, Link, SpanKind, trace } from '@opentelemetry/api';
 import { AWSXRayPropagator } from '@opentelemetry/propagator-aws-xray';
-import { env } from 'harmony-util';
+import { env } from '@harmony/util';
 import version from './util/version';
 import { random } from 'lodash';
 import { AwsInstrumentation } from '@opentelemetry/instrumentation-aws-sdk';

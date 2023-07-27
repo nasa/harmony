@@ -1,5 +1,5 @@
 import { Response, NextFunction } from 'express';
-import { sanitizeImage, truncateString } from 'harmony-util/string';
+import { sanitizeImage, truncateString } from '@harmony/util/string';
 import { getJobIfAllowed } from '../util/job';
 import { Job, JobStatus, JobQuery } from '../models/job';
 import { getWorkItemById, queryAll } from '../models/work-item';
@@ -8,7 +8,7 @@ import { getPagingParams, getPagingLinks, setPagingHeaders } from '../util/pagin
 import HarmonyRequest from '../models/harmony-request';
 import db from '../util/db';
 import version from '../util/version';
-import { env} from 'harmony-util';
+import { env} from '@harmony/util';
 import { keysToLowerCase } from '../util/object';
 import { getItemLogsLocation, WorkItemQuery, WorkItemStatus } from '../models/work-item-interface';
 import { getRequestRoot } from '../util/url';

@@ -1,7 +1,7 @@
 import { Logger } from 'winston';
 import db, { Transaction } from './db';
 import { Job, JobStatus, terminalStates } from '../models/job';
-import { env } from 'harmony-util';
+import { env } from '@harmony/util';
 import { getTotalWorkItemSizesForJobID, updateWorkItemStatusesByJobId } from '../models/work-item';
 import { ConflictError, ForbiddenError, NotFoundError, RequestValidationError } from './errors';
 import isUUID from './uuid';

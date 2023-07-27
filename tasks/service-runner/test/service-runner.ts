@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import * as k8s from '@kubernetes/client-node';
 import { describe, it } from 'mocha';
-import { env } from 'harmony-util';
+import { env } from '@harmony/util';
 import WorkItem from '../../../app/models/work-item';
 import { objectStoreForProtocol } from '../../../app/util/object-store';
 import * as serviceRunner from '../app/service/service-runner';

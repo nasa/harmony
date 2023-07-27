@@ -3,7 +3,7 @@ import { v4 as uuid } from 'uuid';
 import { getWorkItemById, getWorkItemsByJobId, getWorkItemsByJobIdAndStepIndex } from '../app/models/work-item';
 import { getWorkflowStepByJobIdStepIndex, getWorkflowStepsByJobId } from '../app/models/workflow-steps';
 import db from '../app/util/db';
-import { env } from 'harmony-util';
+import { env } from '@harmony/util';
 import { Job, JobStatus } from '../app/models/job';
 import { hookRedirect } from './helpers/hooks';
 import { hookRangesetRequest } from './helpers/ogc-api-coverages';

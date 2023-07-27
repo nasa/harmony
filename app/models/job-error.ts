@@ -1,4 +1,4 @@
-import { truncateString } from 'harmony-util/string';
+import { truncateString } from '@harmony/util/string';
 import db, { Transaction } from '../util/db';
 import Record from './record';
 

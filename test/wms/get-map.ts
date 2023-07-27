@@ -4,7 +4,7 @@ import isUUID from '../../app/util/uuid';
 import hookServersStartStop from '../helpers/servers';
 import { hookGetMap, wmsRequest, validGetMapQuery } from '../helpers/wms';
 import StubService from '../helpers/stub-service';
-import { env } from 'harmony-util';
+import { env } from '@harmony/util';
 
 describe('WMS GetMap', function () {
   const collection = 'C1234088182-EEDTEST';

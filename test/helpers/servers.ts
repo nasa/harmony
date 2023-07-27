@@ -1,7 +1,7 @@
 import { before, after } from 'mocha';
 import { stub } from 'sinon';
 import * as harmony from '../../app/server';
-import { env } from 'harmony-util';
+import { env } from '@harmony/util';
 
 process.env.EXAMPLE_SERVICES = 'true';
 

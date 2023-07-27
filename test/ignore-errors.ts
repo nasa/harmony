@@ -9,7 +9,7 @@ import hookServersStartStop from './helpers/servers';
 import { fakeServiceStacOutput, getWorkForService, updateWorkItem } from './helpers/work-items';
 import { getStacLocation, WorkItemStatus } from '../app/models/work-item-interface';
 import { truncateAll } from './helpers/db';
-import { env } from 'harmony-util';
+import { env } from '@harmony/util';
 import { jobStatus } from './helpers/jobs';
 import * as aggregationBatch from '../app/util/aggregation-batch';
 import { resetQueues } from './helpers/queue';

@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import { describe, it } from 'mocha';
 import * as sinon from 'sinon';
 import { SinonStub } from 'sinon';
-import { env } from 'harmony-util';
+import { env } from '@harmony/util';
 import WorkItem from '../../../app/models/work-item';
 import { hookGetWorkRequest } from './helpers/pull-worker';
 import * as pullWorker from '../app/workers/pull-worker';

@@ -2,7 +2,7 @@ import camelCase from 'lodash.camelcase';
 import * as dotenv from 'dotenv';
 import * as winston from 'winston';
 import * as fs from 'fs';
-import { isInteger } from 'harmony-util/string';
+import { isInteger } from '@harmony/util/string';
 
 let envDefaults = {};
 try {

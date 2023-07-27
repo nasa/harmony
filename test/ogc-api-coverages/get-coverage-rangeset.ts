@@ -9,7 +9,7 @@ import StubService, { hookServices } from '../helpers/stub-service';
 import { ServiceConfig } from '../../app/models/services/base-service';
 import { hookRedirect } from '../helpers/hooks';
 import { stub } from 'sinon';
-import { env } from 'harmony-util';
+import { env } from '@harmony/util';
 import { hookTransactionFailure } from '../helpers/db';
 
 describe('OGC API Coverages - getCoverageRangeset', function () {

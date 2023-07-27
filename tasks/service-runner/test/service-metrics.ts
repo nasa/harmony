@@ -4,7 +4,7 @@ import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
 import chai, { expect } from 'chai';
 import { describe, it } from 'mocha';
-import { env } from 'harmony-util';
+import { env } from '@harmony/util';
 import { exportedForTesting } from '../app/service/service-metrics';
 
 chai.use(require('chai-as-promised'));

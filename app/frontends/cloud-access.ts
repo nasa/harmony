@@ -5,7 +5,7 @@ import { ServerError } from '../util/errors';
 import HarmonyRequest from '../models/harmony-request';
 import RequestContext from '../models/request-context';
 
-import { env } from 'harmony-util';
+import { env } from '@harmony/util';
 
 const { sameRegionAccessRole, awsDefaultRegion } = env;
 

@@ -10,7 +10,7 @@ import { hookTransaction, truncateAll } from '../helpers/db';
 import { buildJob } from '../helpers/jobs';
 import { hookWorkflowUIWorkItemsRow, workflowUIWorkItemsRow } from '../helpers/workflow-ui';
 import { WorkItemStatus } from '../../app/models/work-item-interface';
-import { env } from 'harmony-util';
+import { env } from '@harmony/util';
 import MockDate from 'mockdate';
 
 

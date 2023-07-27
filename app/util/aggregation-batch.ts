@@ -6,7 +6,7 @@ import { Transaction } from '../util/db';
 import BatchItem, { getByJobServiceBatch, getCurrentBatchSizeAndCount, getItemUrlsForJobServiceBatch, getMaxSortIndexForJobServiceBatch } from '../models/batch-item';
 import { Batch, withHighestBatchIDForJobService } from '../models/batch';
 import { createDecrypter, createEncrypter } from './crypto';
-import { env } from 'harmony-util';
+import { env } from '@harmony/util';
 import DataOperation from '../models/data-operation';
 import { objectStoreForProtocol } from './object-store';
 import axios from 'axios';

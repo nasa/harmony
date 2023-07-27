@@ -3,7 +3,7 @@ import _ from 'lodash';
 import { JobStatus, terminalStates } from '../models/job';
 import { getWorkItemIdsByJobUpdateAgeAndStatus, deleteWorkItemsById } from '../models/work-item';
 import { getWorkflowStepIdsByJobUpdateAgeAndStatus, deleteWorkflowStepsById } from '../models/workflow-steps';
-import { env } from 'harmony-util';
+import { env } from '@harmony/util';
 import { Worker } from './worker';
 import db from '../util/db';
 import sleep from '../util/sleep';
