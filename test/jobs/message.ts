@@ -4,7 +4,7 @@ import { hookTransaction } from '../helpers/db';
 import { assert, expect } from 'chai';
 import { baseResultsLimitedMessage } from '../../app/middleware/cmr-granule-locator';
 import { TestTurboService } from '../helpers/turbo-service';
-import env from '../../app/util/env';
+import { env } from 'harmony-util';
 import { stub } from 'sinon';
 import { buildOperation } from '../helpers/data-operation';
 import { v4 as uuid } from 'uuid';

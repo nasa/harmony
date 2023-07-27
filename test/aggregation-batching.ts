@@ -3,7 +3,7 @@ import permutations from 'just-permutations';
 import { stub } from 'sinon';
 import { getStacLocation, WorkItemStatus } from '../app/models/work-item-interface';
 import db from '../app/util/db';
-import env from '../app/util/env';
+import { env } from 'harmony-util';
 import hookServersStartStop from './helpers/servers';
 import { fakeServiceStacOutput, getWorkForService, hookGetWorkForService, updateWorkItem } from './helpers/work-items';
 import * as aggregationBatch from '../app/util/aggregation-batch';
@@ -1287,7 +1287,7 @@ describe('when testing a batched aggregation service', function () {
       });
     }
   });
- 
+
   describe('with maxResults=1 in a service chain', function () {
     let sizeOfObjectStub;
     let batchSizeStub;
@@ -1310,7 +1310,7 @@ describe('when testing a batched aggregation service', function () {
         sizeOfObjectStub.restore();
       }
     });
-    
+
     describe('when submitting a request for l2ss-concise', function () {
       const l2ssCollection = 'C1234208438-POCLOUD';
       const l2ssConciseQuery = {
@@ -1354,7 +1354,7 @@ describe('when testing a batched aggregation service', function () {
 
         expect(workflowSteps[2].serviceID).to.equal('ghcr.io/podaac/concise:sit');
       });
-  
+
     });
     describe('when checking for a query-cmr work item', function () {
       it('finds the item and can complete it', async function () {

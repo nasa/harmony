@@ -1,0 +1,25 @@
+{
+  "name": "harmony-util",
+  "version": "0.0.0",
+  "description": "Utility modules related to Harmony",
+  "main": "index.ts",
+  "scripts": {
+    "test": "strict-npm-engines && eslint --ext .ts --ignore-pattern tasks --ignore-pattern kubernetes-services . && nyc mocha && better-npm-audit audit",
+    "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha",
+    "test-bail": "TS_NODE_TRANSPILE_ONLY=true mocha --bail",
+    "coverage": "nyc mocha"
+  },
+  "keywords": [
+    "NASA",
+    "EOSDIS",
+    "Harmony",
+    "Services"
+  ],
+  "author": "NASA EOSDIS Harmony team",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "lodash": "^4.17.21",
+    "winston": "^3.10.0"
+  }
+}

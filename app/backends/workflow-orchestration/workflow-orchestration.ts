@@ -1,12 +1,12 @@
 import _ from 'lodash';
 import { NextFunction, Response } from 'express';
-import env from '../../util/env';
+import { env } from 'harmony-util';
 import HarmonyRequest from '../../models/harmony-request';
 import { WorkItemQueueType } from '../../util/queue/queue';
 import { getQueueForType  } from '../../util/queue/queue-factory';
 import { getWorkFromQueue, getWorkFromDatabase, WorkItemData } from './work-item-polling';
 import { WorkItemMeta, WorkItemStatus } from '../../models/work-item-interface';
-import { sanitizeImage } from '../../util/string';
+import { sanitizeImage } from 'harmony-util/string';
 
 
 const MAX_TRY_COUNT = 1;

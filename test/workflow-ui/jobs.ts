@@ -7,7 +7,7 @@ import hookServersStartStop from '../helpers/servers';
 import { hookTransaction, truncateAll } from '../helpers/db';
 import { buildJob } from '../helpers/jobs';
 import { workflowUIJobs, hookWorkflowUIJobs, hookAdminWorkflowUIJobs } from '../helpers/workflow-ui';
-import env from '../../app/util/env';
+import { env } from 'harmony-util';
 import { auth } from '../helpers/auth';
 import { renderNavLink } from './helpers';
 import MockDate from 'mockdate';
@@ -117,14 +117,14 @@ describe('Workflow UI jobs route', function () {
       await woodyJob2.save(this.trx);
       MockDate.set('2023-01-06T14:12:00.000Z');
       await woodySyncJob.save(this.trx);
-      
+
       await buzzJob1.save(this.trx);
-      
+
       await sidJob1.save(this.trx);
       await sidJob2.save(this.trx);
       await sidJob3.save(this.trx);
       await sidJob4.save(this.trx);
-      
+
       this.trx.commit();
       MockDate.reset();
     });

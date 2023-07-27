@@ -3,7 +3,7 @@ import { describe, it } from 'mocha';
 import request from 'supertest';
 import hookServersStartStop from './helpers/servers';
 import { hookRequest } from './helpers/hooks';
-import env from '../app/util/env';
+import { env } from 'harmony-util';
 import version from '../app/util/version';
 import { hookDocumentationPage } from './helpers/documentation-page';
 

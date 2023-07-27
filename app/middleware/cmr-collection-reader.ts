@@ -3,7 +3,7 @@ import { harmonyCollections } from '../models/services';
 import { getVariablesForCollection, CmrCollection, getCollectionsByIds, getCollectionsByShortName, cmrApiConfig } from '../util/cmr';
 import { ForbiddenError, NotFoundError, ServerError } from '../util/errors';
 import HarmonyRequest from '../models/harmony-request';
-import { listToText } from '../util/string';
+import { listToText } from 'harmony-util/string';
 import { EdlUserEulaInfo, verifyUserEula } from '../util/edl-api';
 
 // CMR Collection IDs separated by delimiters of single "+" or single whitespace
@@ -40,7 +40,7 @@ async function verifyEulaAcceptance(collections: CmrCollection[], req: HarmonyRe
       for (const eulaId of collection.eula_identifiers) {
         const eulaInfo: EdlUserEulaInfo = await verifyUserEula(req.user, eulaId, req.accessToken);
         if (eulaInfo.statusCode == 404 && eulaInfo.acceptEulaUrl) { // EULA wasn't accepted
-          acceptEulaUrls.push(eulaInfo.acceptEulaUrl);  
+          acceptEulaUrls.push(eulaInfo.acceptEulaUrl);
         } else if (eulaInfo.statusCode == 404) {
           req.context.logger.error(`EULA (${eulaId}) verfification failed with statusCode 404. Error: ${eulaInfo.error}`);
           throw new NotFoundError(`EULA ${eulaId} could not be found.`);

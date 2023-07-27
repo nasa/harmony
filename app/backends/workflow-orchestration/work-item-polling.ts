@@ -1,6 +1,6 @@
 import db from '../../util/db';
 import { Logger } from 'winston';
-import env from '../../util/env';
+import { env } from 'harmony-util';
 import WorkItem, { getNextWorkItem, getWorkItemStatus, updateWorkItemStatuses } from '../../models/work-item';
 import { getNextJobIdForUsernameAndService, getNextUsernameForWork, incrementRunningAndDecrementReadyCounts, recalculateCounts } from '../../models/user-work';
 import { getQueueForUrl, getQueueUrlForService, getWorkSchedulerQueue  } from '../../util/queue/queue-factory';

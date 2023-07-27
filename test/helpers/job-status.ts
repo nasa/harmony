@@ -2,7 +2,7 @@ import { it } from 'mocha';
 import { expect } from 'chai';
 import { Job } from '../../app/models/job';
 import { hookUrl } from './hooks';
-import env from '../../app/util/env';
+import { env } from 'harmony-util';
 
 /**
  * Provides a parameterized `describe` blocks that tests expected format of data links.

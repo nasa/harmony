@@ -6,8 +6,10 @@ import fetch, { Response } from 'node-fetch';
 import * as querystring from 'querystring';
 import { CmrError } from './errors';
 import { defaultObjectStore, objectStoreForProtocol } from './object-store';
-import { cmrEndpoint, cmrMaxPageSize, harmonyClientId, stagingBucket } from './env';
+import { env } from 'harmony-util';
 import logger from './log';
+
+const { cmrEndpoint, cmrMaxPageSize, harmonyClientId, stagingBucket } = env;
 
 const clientIdHeader = {
   'Client-id': `${harmonyClientId}`,

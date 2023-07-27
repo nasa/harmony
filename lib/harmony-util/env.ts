@@ -1,7 +1,8 @@
 import _ from 'lodash';
 import * as dotenv from 'dotenv';
-import * as winston from 'winston';
 import * as fs from 'fs';
+import * as path from 'path';
+import * as winston from 'winston';
 import { isInteger, listToText } from './string';
 
 if (Object.prototype.hasOwnProperty.call(process.env, 'GDAL_DATA')) {
@@ -12,9 +13,19 @@ if (Object.prototype.hasOwnProperty.call(process.env, 'GDAL_DATA')) {
   delete process.env.GDAL_DATA;
 }
 
+// Read the env-defaults for this module (relative to this typescript file)
 let envDefaults = {};
 try {
-  envDefaults = dotenv.parse(fs.readFileSync('env-defaults'));
+  envDefaults = dotenv.parse(fs.readFileSync(path.resolve(__dirname, '../../env-defaults')));
+} catch (e) {
+  winston.warn('Could not parse environment defaults from env-defaults file');
+  winston.warn(e.message);
+}
+
+// read the local env-defaults from the top-level where the app is executed
+let envLocalDefaults = {};
+try {
+  envLocalDefaults = dotenv.parse(fs.readFileSync('env-defaults'));
 } catch (e) {
   winston.warn('Could not parse environment defaults from env-defaults file');
   winston.warn(e.message);
@@ -53,7 +64,7 @@ function makeConfigVar(envName: string, defaultValue?: string): void {
   process.env[envName] = stringValue;
 }
 
-const allEnv = { ...envDefaults, ...envOverrides, ...process.env };
+const allEnv = { ...envDefaults, ...envLocalDefaults, ...envOverrides, ...process.env };
 
 for (const k of Object.keys(allEnv)) {
   makeConfigVar(k, allEnv[k]);
@@ -128,6 +139,11 @@ interface HarmonyEnv {
   releaseVersion: string;
   serviceQueueUrls: { [key: string]: string };
   useServiceQueues: boolean;
+
+  // Allow extension of this interface with new properties. This should only be used for special
+  // properties that cannot be captured explicitly like the above properties.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [propName: string]: any;
 }
 
 // special cases
@@ -163,4 +179,72 @@ for (const k of Object.keys(process.env)) {
   }
 }
 
-export = envVars;
+// validate - this is ugly, but is the best way to do this until we update to TypeScript 5.x and
+// can use decorators
+const requiredFields = [
+  'adminGroupId',
+  'aggregateStacCatalogMaxPageSize',
+  'artifactBucket',
+  'awsDefaultRegion',
+  'callbackUrlRoot',
+  'cmrEndpoint',
+  'cmrMaxPageSize',
+  'databaseType',
+  'defaultJobListPageSize',
+  'defaultPodGracePeriodSecs',
+  'defaultResultPageSize',
+  'failableWorkAgeMinutes',
+  'getMetricsSampleRatio',
+  'getWorkSampleRatio',
+  'harmonyClientId',
+  'largeWorkItemUpdateQueueUrl',
+  'localstackHost',
+  'logLevel',
+  'logViewerGroupId',
+  'maxBatchInputs',
+  'maxBatchSizeInBytes',
+  'maxErrorsForJob',
+  'maxGranuleLimit',
+  'maxPageSize',
+  'maxPostFields',
+  'maxPostFileParts',
+  'maxPostFileSize',
+  'maxSynchronousGranules',
+  'nodeEnv',
+  'oauthClientId',
+  'oauthHost',
+  'oauthPassword',
+  'oauthUid',
+  'objectStoreType',
+  'openTelemetryUrl',
+  'previewThreshold',
+  'putWorkSampleRatio',
+  'queueLongPollingWaitTimeSec',
+  'reapableWorkAgeMinutes',
+  'releaseVersion',
+  'sameRegionAccessRole',
+  'sharedSecretKey',
+  'stagingBucket',
+  'syncRequestPollIntervalMs',
+  'uploadBucket',
+  'useLocalstack',
+  'workFailerBatchSize',
+  'workFailerPeriodSec',
+  'workItemRetryLimit',
+  'workItemSchedulerQueueUrl',
+  'workItemUpdateQueueUrl',
+  'workReaperBatchSize',
+  'workReaperPeriodSec',
+];
+
+const missingFields = requiredFields.filter((f) => !envVars[f]);
+if (missingFields.length > 0) {
+  throw new Error(`Configuration error: You must set ${listToText(missingFields)} in the environment`);
+}
+
+
+// TODO move this into a sub-project and add specializations for harmony and
+// each service
+
+
+export default envVars;

@@ -7,7 +7,7 @@ import { buildWorkItem } from '../helpers/work-items';
 import db from '../../app/util/db';
 import { expect } from 'chai';
 import { WorkItemStatus } from '../../app/models/work-item-interface';
-import env from '../../app/util/env';
+import { env } from 'harmony-util';
 import { buildWorkflowStep } from '../helpers/workflow-steps';
 import { hookWorkflowUIWorkItemRetry } from '../helpers/workflow-ui';
 import hookServersStartStop from '../helpers/servers';
@@ -29,11 +29,11 @@ describe('Workflow UI retry', function () {
     env.workItemRetryLimit = 1;
 
     await job.save(this.trx);
-    
+
     await item1.save(this.trx);
     await item2.save(this.trx);
     await buildWorkflowStep({ jobID: item2.jobID, stepIndex: 0 }).save(this.trx);
-    
+
     await this.trx.commit();
   });
 
@@ -43,7 +43,7 @@ describe('Workflow UI retry', function () {
 
   describe('when a retry is triggered for a user\'s work item', async function () {
     hookWorkflowUIWorkItemRetry({ username: 'bo', jobID: job.jobID, id: item1.id });
-    
+
     it('returns a 200 HTTP response', async function () {
       expect(this.res.statusCode).to.equal(200);
     });
@@ -76,7 +76,7 @@ describe('Workflow UI retry', function () {
 
   describe('when an admin triggers a retry for another user\'s work item', async function () {
     hookWorkflowUIWorkItemRetry({ username: 'adam', jobID: job.jobID, id: item1.id });
-    
+
     it('allows the request', async function () {
       expect(this.res.statusCode).to.equal(200);
     });
@@ -84,7 +84,7 @@ describe('Workflow UI retry', function () {
 
   describe('when a non-admin triggers a retry for another user\'s work item', async function () {
     hookWorkflowUIWorkItemRetry({ username: 'not-bo', jobID: job.jobID, id: item1.id });
-    
+
     it('does not allow the request', async function () {
       expect(this.res.statusCode).to.equal(403);
     });

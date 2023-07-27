@@ -4,7 +4,7 @@ import { getQueuedOrRunningCountForService } from '../models/user-work';
 import db from '../util/db';
 import logger from '../util/log';
 import { RequestValidationError } from '../util/errors';
-import { sanitizeImage } from '../util/string';
+import { sanitizeImage } from 'harmony-util/string';
 
 /**
  * Express.js handler that returns the number of work items in the 'READY' or 'RUNNING' state for the given serviceID

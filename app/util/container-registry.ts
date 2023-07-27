@@ -1,5 +1,5 @@
 import { ECRClient, DescribeImagesCommand, ECRClientConfig } from '@aws-sdk/client-ecr';
-import env = require('./env');
+import { env } from 'harmony-util';
 
 export interface ImageDetails {
   imageDigest: string;

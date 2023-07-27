@@ -10,7 +10,7 @@ import { hookTransaction, truncateAll } from '../helpers/db';
 import { buildJob } from '../helpers/jobs';
 import { hookWorkflowUIWorkItemsRow, workflowUIWorkItemsRow } from '../helpers/workflow-ui';
 import { WorkItemStatus } from '../../app/models/work-item-interface';
-import env from '../../app/util/env';
+import { env } from 'harmony-util';
 import MockDate from 'mockdate';
 
 
@@ -66,7 +66,7 @@ const shareableItem1 = buildWorkItem({ jobID: shareableJob.jobID, status: WorkIt
 
 describe('Workflow UI work items table row route', function () {
   hookServersStartStop({ skipEarthdataLogin: false });
-  
+
   let retryLimit;
   before(async function () {
     retryLimit = env.workItemRetryLimit;

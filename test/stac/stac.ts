@@ -7,7 +7,7 @@ import { buildJob } from '../helpers/jobs';
 import hookServersStartStop from '../helpers/servers';
 import { hookTransaction } from '../helpers/db';
 import { hookStacCatalog } from '../helpers/stac';
-import env from '../../app/util/env';
+import { env } from 'harmony-util';
 
 const runningJobProps = {
   username: 'joe',

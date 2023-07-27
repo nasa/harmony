@@ -9,7 +9,7 @@ import JobLink, { getLinksForJob } from '../models/job-link';
 import stacItemCreate from './stac-item';
 import stacCatalogCreate from './stac-catalog';
 import db from '../util/db';
-import env from '../util/env';
+import { env } from 'harmony-util';
 
 /**
  * Generic handler for STAC requests

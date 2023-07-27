@@ -1,6 +1,6 @@
 import { canTransition, JobEvent, JobStatus, JobForDisplay } from '../models/job';
 import JobLink from '../models/job-link';
-import env = require('./env');
+import { env } from 'harmony-util';
 
 const { awsDefaultRegion } = env;
 
@@ -83,9 +83,9 @@ export function getStatusLink(urlRoot: string, jobID: string, rel: string): Link
  * @returns - the job link for the job event
  */
 function getLinkForJobEvent(
-  event: JobEvent, 
-  jobID: string, 
-  urlRoot: string, 
+  event: JobEvent,
+  jobID: string,
+  urlRoot: string,
   isAdmin = false,
 ): JobLink {
   const adminPath = isAdmin ? '/admin' : '';
@@ -133,8 +133,8 @@ export function getLinkRelevantJobEvents(job: JobForDisplay): Set<JobEvent> {
   const transitions: [JobEvent, JobStatus][] = [
     // [event, resultant status]
     [JobEvent.CANCEL, JobStatus.CANCELED],
-    [JobEvent.PAUSE, JobStatus.PAUSED], 
-    [JobEvent.RESUME, JobStatus.RUNNING], 
+    [JobEvent.PAUSE, JobStatus.PAUSED],
+    [JobEvent.RESUME, JobStatus.RUNNING],
   ];
   if (job.status === JobStatus.PREVIEWING) {
     // This may be a valid transition for other states, but we
@@ -155,8 +155,8 @@ export function getLinkRelevantJobEvents(job: JobForDisplay): Set<JobEvent> {
  * Generate links that represent the actions that are available to a user with
  * respect to job status state transitions (cancel, pause, etc.).
  * @param job - the serialized job to generate links for
- * @param urlRoot - the root url for the links being generated 
- * @param isAdmin - boolean representing whether we are generating links for 
+ * @param urlRoot - the root url for the links being generated
+ * @param isAdmin - boolean representing whether we are generating links for
  * an admin request
  * @returns JobLink[]
  */
@@ -173,8 +173,8 @@ export function getJobStateChangeLinks(
  * Generate links that represent all of the actions that are available to a user with
  * respect to job status state transitions (cancel, pause, etc.).
  * @param job - the job to generate links for
- * @param urlRoot - the root url for the links being generated 
- * @param isAdmin - boolean representing whether we are generating links for 
+ * @param urlRoot - the root url for the links being generated
+ * @param isAdmin - boolean representing whether we are generating links for
  * an admin request
  * @returns JobLink[]
  */

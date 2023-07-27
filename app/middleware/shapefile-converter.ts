@@ -11,7 +11,7 @@ import { NextFunction } from 'express';
 import { promises as fs } from 'fs';
 import { RequestValidationError, HttpError, ServerError } from '../util/errors';
 import { defaultObjectStore } from '../util/object-store';
-import { listToText } from '../util/string';
+import { listToText } from 'harmony-util/string';
 import { cookieOptions } from '../util/cookies';
 
 /**

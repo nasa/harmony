@@ -11,7 +11,7 @@ import { jobStatus, hookJobStatus, jobsEqual, itIncludesRequestUrl, buildJob } f
 import StubService from '../helpers/stub-service';
 import { hookRedirect, hookUrl } from '../helpers/hooks';
 import { hookRangesetRequest } from '../helpers/ogc-api-coverages';
-import env from '../../app/util/env';
+import { env } from 'harmony-util';
 
 const aJob = buildJob({ username: 'joe' });
 const pausedJob = buildJob({ username: 'joe' });

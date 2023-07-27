@@ -7,7 +7,7 @@ import hookServersStartStop from '../helpers/servers';
 import { getMaxSynchronousGranules } from '../../app/models/services/base-service';
 import DataOperation, { CURRENT_SCHEMA_VERSION } from '../../app/models/data-operation';
 import { chooseServiceConfig, buildService } from '../../app/models/services';
-import env from '../../app/util/env';
+import { env } from 'harmony-util';
 import TurboService from '../../app/models/services/turbo-service';
 import { buildOperation } from '../helpers/data-operation';
 import _ from 'lodash';

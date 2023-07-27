@@ -3,7 +3,7 @@ import { ILengthAwarePagination } from 'knex-paginate';
 import { Link } from './links';
 import { RequestValidationError } from './errors';
 import { getRequestUrl } from './url';
-import env from './env';
+import { env } from 'harmony-util';
 
 export interface PagingParams {
   page: number;

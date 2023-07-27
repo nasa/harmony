@@ -1,7 +1,7 @@
 import { STSClient, AssumeRoleCommand, AssumeRoleCommandOutput, STSClientConfig,
   AssumeRoleCommandInput,  GetCallerIdentityCommandOutput, GetCallerIdentityCommand,
 } from '@aws-sdk/client-sts';
-import env from './env';
+import { env } from 'harmony-util';
 
 const { awsDefaultRegion } = env;
 

@@ -2,10 +2,10 @@ import axios from 'axios';
 import simpleOAuth2, { OAuthClient, Token } from 'simple-oauth2';
 import { RequestHandler, NextFunction } from 'express';
 import { cookieOptions, setCookiesForEdl } from '../util/cookies';
-import { listToText } from '../util/string';
+import { listToText } from 'harmony-util/string';
 import { ForbiddenError, RequestValidationError } from '../util/errors';
 import HarmonyRequest from '../models/harmony-request';
-import env from '../util/env';
+import { env } from 'harmony-util';
 
 const vars = ['OAUTH_CLIENT_ID', 'OAUTH_UID', 'OAUTH_PASSWORD', 'OAUTH_REDIRECT_URI', 'OAUTH_HOST', 'COOKIE_SECRET'];
 
@@ -48,7 +48,7 @@ async function handleCodeValidation(oauth2: OAuthClient, req, res, _next): Promi
   if (state !== req.query.state) {
     throw new RequestValidationError();
   }
-  
+
   const tokenConfig = {
     code: req.query.code,
     redirect_uri: process.env.OAUTH_REDIRECT_URI,
@@ -102,12 +102,12 @@ function handleLogout(oauth2: OAuthClient, req, res, _next): void {
  */
 function handleNeedsAuthorized(oauth2: OAuthClient, req, res, _next): void {
   const state = setCookiesForEdl(req, res, cookieOptions);
-  
+
   const url = oauth2.authorizationCode.authorizeURL({
     redirect_uri: process.env.OAUTH_REDIRECT_URI,
     state,
   });
-  
+
   res.redirect(303, url);
 }
 

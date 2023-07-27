@@ -1,4 +1,4 @@
-import env from './env';
+import { env } from 'harmony-util';
 
 const version = env.releaseVersion;
 

@@ -1,11 +1,11 @@
 import { NextFunction, Response } from 'express';
 import HarmonyRequest from '../models/harmony-request';
 import { RequestValidationError } from '../util/errors';
-import { Conjunction, listToText } from '../util/string';
+import { Conjunction, listToText } from 'harmony-util/string';
 import { keysToLowerCase } from '../util/object';
 import { defaultObjectStore } from '../util/object-store';
 import { coverageRangesetGetParams, coverageRangesetPostParams } from '../frontends/ogc-coverages/index';
-import env = require('../util/env');
+import { env} from 'harmony-util';
 import { getRequestRoot } from '../util/url';
 import { validateNoConflictingGridParameters } from '../util/grids';
 
@@ -23,7 +23,7 @@ const RANGESET_ROUTE_REGEX = /^\/.*\/ogc-api-coverages\/.*\/collections\/.*\/cov
 const validLinkTypeValues = ['http', 'https', 's3'];
 
 /**
- * Returns the bucket setup instruction 
+ * Returns the bucket setup instruction
  *
  * @param req - The client request
  * @param destinationUrl - The destinationUrl
@@ -119,7 +119,7 @@ async function validateDestinationUrlParameter(req: HarmonyRequest): Promise<voi
     if (destUrl.includes(',s3://')) {
       throw new RequestValidationError(`Invalid destinationUrl '${destUrl}', only one S3 location is allowed.`);
     }
-    
+
     await validateBucketIsInRegion(req, destUrl);
     await validateDestinationUrlWritable(req, destUrl);
   }
