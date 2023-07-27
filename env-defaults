@@ -303,6 +303,7 @@ HYBIG_REQUESTS_MEMORY=128Mi
 HYBIG_LIMITS_CPU=128m
 HYBIG_LIMITS_MEMORY=8Gi
 HYBIG_INVOCATION_ARGS='python -m harmony_browse_image_generator'
+HYBIG_SERVICE_QUEUE_URLS='["sds/harmony-browse-image-generator:latest,http://localstack:4566/queue/hybig.fifo"]'
 
 HARMONY_SERVICE_EXAMPLE_IMAGE=harmonyservices/service-example:latest
 HARMONY_SERVICE_EXAMPLE_REQUESTS_CPU=128m
