@@ -1,6 +1,6 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import { listToText, truncateString, Conjunction, isInteger, inEcr, sanitizeImage } from 'harmony-util/string';
+import { listToText, truncateString, Conjunction, isInteger, inEcr, sanitizeImage } from '../string';
 
 describe('util/string', function () {
   describe('#listToText', function () {

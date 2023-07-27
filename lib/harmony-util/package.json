@@ -4,7 +4,7 @@
   "description": "Utility modules related to Harmony",
   "main": "index.ts",
   "scripts": {
-    "test": "strict-npm-engines && eslint --ext .ts --ignore-pattern tasks --ignore-pattern kubernetes-services . && nyc mocha && better-npm-audit audit",
+    "test": "strict-npm-engines && eslint --ext .ts . && nyc mocha && better-npm-audit audit",
     "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha",
     "test-bail": "TS_NODE_TRANSPILE_ONLY=true mocha --bail",
     "coverage": "nyc mocha"
@@ -21,5 +21,18 @@
     "dotenv": "^16.3.1",
     "lodash": "^4.17.21",
     "winston": "^3.10.0"
+  },
+  "devDependencies": {
+    "chai": "^4.3.7",
+    "eslint": "^8.43.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-config-airbnb-typescript": "^17.0.0",
+    "eslint-plugin-import": "^2.27.5",
+    "eslint-plugin-jsdoc": "^46.2.6",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-tsdoc": "^0.2.17",
+    "mocha": "^10.2.0",
+    "strict-npm-engines": "^0.0.1",
+    "ts-node-dev": "^2.0.0"
   }
 }
