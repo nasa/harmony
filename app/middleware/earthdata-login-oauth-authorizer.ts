@@ -5,7 +5,7 @@ import { cookieOptions, setCookiesForEdl } from '../util/cookies';
 import { listToText } from '@harmony/util/string';
 import { ForbiddenError, RequestValidationError } from '../util/errors';
 import HarmonyRequest from '../models/harmony-request';
-import { env } from '@harmony/util';
+import env from '../util/env';
 
 const vars = ['OAUTH_CLIENT_ID', 'OAUTH_UID', 'OAUTH_PASSWORD', 'OAUTH_REDIRECT_URI', 'OAUTH_HOST', 'COOKIE_SECRET'];
 

@@ -31,7 +31,7 @@ import HarmonyRequest, { addRequestContextToOperation } from '../models/harmony-
 
 import cmrCollectionReader = require('../middleware/cmr-collection-reader');
 import cmrUmmCollectionReader = require('../middleware/cmr-umm-collection-reader');
-import { env } from '@harmony/util';
+import env from '../util/env';
 import { postServiceConcatenationHandler, preServiceConcatenationHandler } from '../middleware/concatenation';
 import getRequestMetrics from '../frontends/request-metrics';
 import { getStagingBucketPolicy } from '../frontends/staging-bucket-policy';

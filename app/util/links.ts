@@ -1,6 +1,6 @@
 import { canTransition, JobEvent, JobStatus, JobForDisplay } from '../models/job';
 import JobLink from '../models/job-link';
-import { env } from '@harmony/util';
+import env from './env';
 
 const { awsDefaultRegion } = env;
 

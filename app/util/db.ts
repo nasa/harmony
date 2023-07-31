@@ -3,7 +3,7 @@
 import knexfile from '../../db/knexfile';
 import { knex, Knex } from 'knex';
 import { attachPaginate } from 'knex-paginate';
-import { env } from '@harmony/util';
+import env from './env';
 import logger from './log';
 
 /**

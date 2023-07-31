@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import { NextFunction, Response } from 'express';
-import { env } from '@harmony/util';
+import env from '../../util/env';
 import HarmonyRequest from '../../models/harmony-request';
 import { WorkItemQueueType } from '../../util/queue/queue';
 import { getQueueForType  } from '../../util/queue/queue-factory';

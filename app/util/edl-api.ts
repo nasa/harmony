@@ -1,7 +1,7 @@
 import * as axios from 'axios';
 import { ForbiddenError } from './errors';
 import { Logger } from 'winston';
-import { env } from '@harmony/util';
+import env from './env';
 import HarmonyRequest from '../models/harmony-request';
 
 const edlUserRequestUrl = `${env.oauthHost}/oauth/tokens/user`;

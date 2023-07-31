@@ -79,6 +79,15 @@ export function isInteger(value: string): boolean {
 }
 
 /**
+ * Returns true if the a string is a float (has a decimal point followed by one or more digits).
+ * @param value - the value to check
+ * @returns true if it is a float and false otherwise
+ */
+export function isFloat(value: string): boolean {
+  return /^[-+]?\d*\.\d+$/.test(value);
+}
+
+/**
  * Removes AWS account ECR information or *.earthdata.nasa.gov from image name
  * since we may not want to expose that information.
  *

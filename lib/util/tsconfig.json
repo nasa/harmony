@@ -5,6 +5,8 @@
       "moduleResolution": "node",
       "target": "ES2021",
       "esModuleInterop": true,
+      "experimentalDecorators": true,
+      "emitDecoratorMetadata": true,
       "allowJs": true,
       "noImplicitAny": false,
       "sourceMap": true,

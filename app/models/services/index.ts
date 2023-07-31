@@ -15,7 +15,7 @@ import NoOpService from './no-op-service';
 import DataOperation, { DataSource } from '../data-operation';
 import BaseService, { ServiceCollection, ServiceConfig } from './base-service';
 import RequestContext from '../request-context';
-import { env } from '@harmony/util';
+import env from '../../util/env';
 
 let serviceConfigs: ServiceConfig<unknown>[] = null;
 

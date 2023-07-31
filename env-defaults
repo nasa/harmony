@@ -21,11 +21,6 @@ COOKIE_SECRET=
 # to generate a 32 character random string
 SHARED_SECRET_KEY=
 
-# See the "OAuth 2 (Earthdata Login)" section below for a description
-OAUTH_CLIENT_ID=
-OAUTH_UID=
-OAUTH_PASSWORD=
-
 ###########################################################################
 #                             General Config                              #
 #                                                                         #
@@ -39,58 +34,20 @@ HOST_BINDING='0.0.0.0'
 # The port on which to run the Harmony frontend
 PORT=3000
 
-# The port on which to run the Harmony backend that receives service
-# callbacks
-BACKEND_PORT=3001
-
-# The port on which a worker container listens for work from the manager container
-WORKER_PORT=5001
-
-# The base URL for the service callbacks. This needs to be accessible from
-# wherever the service is run. The Harmony CI/CD scripts sets this to the
-# backend load balancer when running on AWS. The default is set for
-# running Harmony in Kubernetes.
-CALLBACK_URL_ROOT=http://harmony:3001
-# When running locally on a Mac or Linux (not in Kubernetes), use the appropriate value below.
-# Mac OS X:
-# CALLBACK_URL_ROOT=http://host.docker.internal:3001
-# Linux:
-# CALLBACK_URL_ROOT=http://localhost:3001
-
-# The CMR Endpoint to use (e.g. URL for local, SIT, UAT, or production)
-CMR_ENDPOINT=https://cmr.uat.earthdata.nasa.gov
-
 # The Metrics Endpoint (Kibana) to use (linked to from the Workflow UI)
 METRICS_ENDPOINT=
 
 # The Metrics index to query (via the METRICS_ENDPOINT)
 METRICS_INDEX=
 
-# For testing: Whether to use Localstack instead of AWS S3.  Options are "true" or "false".
-USE_LOCALSTACK=true
-
-# Hostname for harmony to use to connect to Localstack
-LOCALSTACK_HOST=localstack
-
-# Hostname for K8S pods to connect to Localstack
-LOCALSTACK_K8S_HOST=localstack
-
+# TODO - Can't find where this is used in the code - maybe just and env var used indirectly
+# by a library?
 # If set to true, only include EDL cookies if the request is made via https.
 USE_HTTPS=false
 
 # Whether to run example service endpoints under /example.  Useful for
 # testing HTTP backends without actual service calls.  See example/http-service.js
 EXAMPLE_SERVICES=true
-
-# Identifier so backends know which Harmony client submitted the request
-CLIENT_ID=harmony-local
-
-# When set to true log messages are logged as a text string instead of the default
-# JSON format. Useful when running harmony locally and viewing logs via a terminal.
-TEXT_LOGGER=true
-
-# When set to true log all database queries performed by knex
-DEBUG_KNEX=false
 
 # Log level (error, warn, info, debug)
 LOG_LEVEL=debug
@@ -113,58 +70,15 @@ MAX_PAGE_SIZE=2000
 # value in services.yml for maximum_sync_granules it will override this value.
 MAX_SYNCHRONOUS_GRANULES=1
 
-# The maximum allowed granules in any request synchronous or asynchronous. If a service
-# attempts to configure a value greater than this limit for either maximum_async_granules
-# or maximum_async_granules we will override the configuration to limit to this value.
-MAX_GRANULE_LIMIT=10000000
-
 # The threshold of the number of granules in a request that will trigger auto-pausing with preview
 PREVIEW_THRESHOLD=100
 
 # The maximum number of errors to allow for a job before considering it failed
 MAX_ERRORS_FOR_JOB=2000
 
-# String to identify the type of environment.  Options:
-#  - "development" for local development.
-#  - "production" for deployments with a separate postgres server (SIT, UAT, Production).
-#  - "test" for unit / integration tests
-# This is a conventional identifier to switch application behavior
-NODE_ENV=development
-
-# String to identify which database engine to use. Options:
-#  - "postgres"
-#  - "sqlite"
-# Note that sqlite is only used for running tests
-DATABASE_TYPE=postgres
-
-# Connection string to use to connect to the database.  Used for
-# DATABASE_TYPE="postgres" databases.  For tests this is
-# ignored, using a sqlite3 file instead
-DATABASE_URL=postgresql://postgres:password@localhost:5432/postgres
-
 # A bucket with brief lifecycle where temporary uploads (shapefiles) are stored while
 # requests are in flight
 UPLOAD_BUCKET=local-upload-bucket
-
-# Whether or not to use queues for retrieving work-items when handling polling for work
-USE_SERVICE_QUEUES=true
-
-# SQS queue used to request scheduling of work items for a service
-WORK_ITEM_SCHEDULER_QUEUE_URL=http://localhost:4566/000000000000/work-item-scheduler-queue
-
-# SQS queue used to process work item updates
-WORK_ITEM_UPDATE_QUEUE_URL=http://localhost:4566/000000000000/work-item-update-queue.fifo
-
-# SQS queue used to process work item updates
-LARGE_WORK_ITEM_UPDATE_QUEUE_URL=http://localhost:4566/000000000000/large-work-item-update-queue.fifo
-
-# maximum number of items to pull from the queue at once for the large item queue (to avoid visibility timeouts)
-# if this is set to greater than 10 (the SQS max) then 10 will be used instead
-LARGE_WORK_ITEM_UPDATE_QUEUE_MAX_BATCH_SIZE=2
-
-# An IAM role that allows access to a bucket and prefix where outputs for asynchronous
-# requests are stored by backend services.
-SAME_REGION_ACCESS_ROLE=same-region-access-role
 
 # The EDL Group ID for the group whose users can access the admin interface
 ADMIN_GROUP_ID=9b359064-287f-411f-b2cc-ed4429676900
@@ -184,48 +98,12 @@ WORK_REAPER_BATCH_SIZE=2000
 # The time (in seconds) between invocations of the work failer service
 WORK_FAILER_PERIOD_SEC=120
 
-# The number of work scheduler pods to run
-SCHEDULER_POD_REPLICAS=1
-
-# The number of update queue processors to run for the large work-item queue
-LARGE_WORK_UPDATER_POD_REPLICAS=1
-
-# The number of update queue processors to run for the small work-item queue
-SMALL_WORK_UPDATER_POD_REPLICAS=1
-
-# Long polling wait time (in seconds) for queues
-QUEUE_LONG_POLLING_WAIT_TIME_SEC=20
-
 # WorkItems that have not been updated for more than this many minutes are
 # updated by the work failer (resulting either in job and work item failure or a retry)
 FAILABLE_WORK_AGE_MINUTES=1
 
-# The number of seconds to allow a pod to continue processing an active request before terminating a pod
-DEFAULT_POD_GRACE_PERIOD_SECS=14400
-
 # The number of ms to wait between polling to check whether a synchronous request completed
 SYNC_REQUEST_POLL_INTERVAL_MS=100
-
-# Local development: Use the following to set the Kubernetes context used by start scripts
-# minikube users should set it to "minikube"
-KUBE_CONTEXT=docker-desktop
-
-# How long (in ms) to let a worker run on a work item before timing out and reporting an error
-# default is 4 hours
-WORKER_TIMEOUT=14400000
-
-# Number of times to retry failed HTTP (408, 502, 503, 504) data download calls
-# via the http module of the service library.
-
-# backoff seconds = {backoff factor} * (2 ** ({retry number} - 1))
-# where {retry number} = 1, 2, 3, ..., total_retries
-
-# With a backoff_factor of 2 (the current default) and 10 retries,
-# the total sleep seconds between executions will be:
-# [0, 4, 8, 16, 32, 64, 120, 120, 120, 120] (~10 minutes)
-# 120 seconds is the maximum backoff and there is always 0 seconds before the
-# first retry regardless of the parameters.
-MAX_DOWNLOAD_RETRIES=10
 
 # Number of times to retry a failed work item
 WORK_ITEM_RETRY_LIMIT=5
@@ -251,201 +129,8 @@ OPEN_TELEMETRY_URL=http://localhost:4318/v1/traces
 # Bamboo release
 RELEASE_VERSION=0.0.0
 
-###########################################################################
-#                             Service Config                              #
-#                                                                         #
-# Variables defined in config/services.yml that get passed to backend     #
-# services on invocation                                                  #
-#                                                                         #
-# IMAGE_PULL_POLICY configuration:                                        #
-# In deployed environments the pull policy used for images is 'Always'    #
-# to ensure an up to date image is pulled as part of deploying. When      #
-# developing locally the pull policy used is 'IfNotPresent' to            #
-# prevent Kubernetes from pulling the image and overwriting any locally   #
-# built images. Note if you want to pull an image update rather than      #
-# building it you need to run `docker pull <IMAGE>` to update your local  #
-# copy.                                                                   #
-###########################################################################
-
-# The service runner image used as a sidecar for polling for work for
-SERVICE_RUNNER_REQUESTS_CPU=128m
-SERVICE_RUNNER_REQUESTS_MEMORY=128Mi
-SERVICE_RUNNER_LIMITS_CPU=1024m
-SERVICE_RUNNER_LIMITS_MEMORY=512Mi
-SERVICE_RUNNER_IMAGE=harmonyservices/service-runner:latest
-
-# work scheduler
-WORK_ITEM_SCHEDULER_REQUESTS_CPU=128m
-WORK_ITEM_SCHEDULER_REQUESTS_MEMORY=128Mi
-WORK_ITEM_SCHEDULER_LIMITS_CPU=1024m
-WORK_ITEM_SCHEDULER_LIMITS_MEMORY=512Mi
-WORK_ITEM_SCHEDULER_IMAGE=harmonyservices/work-scheduler:latest
-
-# work updater
-WORK_ITEM_UPDATER_REQUESTS_CPU=128m
-WORK_ITEM_UPDATER_REQUESTS_MEMORY=128Mi
-WORK_ITEM_UPDATER_LIMITS_CPU=1024m
-WORK_ITEM_UPDATER_LIMITS_MEMORY=512Mi
-WORK_ITEM_UPDATER_IMAGE=harmonyservices/work-updater:latest
-
-# backend services
-HARMONY_GDAL_ADAPTER_IMAGE=ghcr.io/nasa/harmony-gdal-adapter:latest
-HARMONY_GDAL_ADAPTER_REQUESTS_CPU=128m
-HARMONY_GDAL_ADAPTER_REQUESTS_MEMORY=128Mi
-HARMONY_GDAL_ADAPTER_LIMITS_CPU=128m
-HARMONY_GDAL_ADAPTER_LIMITS_MEMORY=8Gi
-HARMONY_GDAL_ADAPTER_INVOCATION_ARGS='python -m gdal_subsetter'
-HARMONY_GDAL_ADAPTER_SERVICE_QUEUE_URLS='["ghcr.io/nasa/harmony-gdal-adapter:latest,http://localstack:4566/queue/harmony-gdal-adapter.fifo"]'
-
-HYBIG_IMAGE=sds/harmony-browse-image-generator:latest
-HYBIG_REQUESTS_CPU=128m
-HYBIG_REQUESTS_MEMORY=128Mi
-HYBIG_LIMITS_CPU=128m
-HYBIG_LIMITS_MEMORY=8Gi
-HYBIG_INVOCATION_ARGS='python -m harmony_browse_image_generator'
-HYBIG_SERVICE_QUEUE_URLS='["sds/harmony-browse-image-generator:latest,http://localstack:4566/queue/hybig.fifo"]'
-
-HARMONY_SERVICE_EXAMPLE_IMAGE=harmonyservices/service-example:latest
-HARMONY_SERVICE_EXAMPLE_REQUESTS_CPU=128m
-HARMONY_SERVICE_EXAMPLE_REQUESTS_MEMORY=128Mi
-HARMONY_SERVICE_EXAMPLE_LIMITS_CPU=128m
-HARMONY_SERVICE_EXAMPLE_LIMITS_MEMORY=512Mi
-HARMONY_SERVICE_EXAMPLE_INVOCATION_ARGS='python -m harmony_service_example'
-HARMONY_SERVICE_EXAMPLE_SERVICE_QUEUE_URLS='["harmonyservices/service-example:latest,http://localstack:4566/queue/harmony-service-example.fifo"]'
-
-HARMONY_NETCDF_TO_ZARR_IMAGE=ghcr.io/nasa/harmony-netcdf-to-zarr:latest
-HARMONY_NETCDF_TO_ZARR_REQUESTS_CPU=128m
-HARMONY_NETCDF_TO_ZARR_REQUESTS_MEMORY=128Mi
-HARMONY_NETCDF_TO_ZARR_LIMITS_CPU=128m
-HARMONY_NETCDF_TO_ZARR_LIMITS_MEMORY=512Mi
-HARMONY_NETCDF_TO_ZARR_INVOCATION_ARGS='python -m harmony_netcdf_to_zarr'
-HARMONY_NETCDF_TO_ZARR_SERVICE_QUEUE_URLS='["ghcr.io/nasa/harmony-netcdf-to-zarr:latest,http://localstack:4566/queue/harmony-netcdf-to-zarr.fifo"]'
-
-HARMONY_REGRIDDER_IMAGE=sds/harmony-regridder:latest
-HARMONY_REGRIDDER_REQUESTS_CPU=128m
-HARMONY_REGRIDDER_REQUESTS_MEMORY=128Mi
-HARMONY_REGRIDDER_LIMITS_CPU=128m
-HARMONY_REGRIDDER_LIMITS_MEMORY=512Mi
-HARMONY_REGRIDDER_INVOCATION_ARGS='python -m harmony_regridding_service'
-HARMONY_REGRIDDER_SERVICE_QUEUE_URLS='["sds/harmony-regridder:latest,http://localstack:4566/queue/harmony-regridder.fifo"]'
-
-SWOT_REPROJECT_IMAGE=sds/swot-reproject:latest
-SWOT_REPROJECT_REQUESTS_CPU=128m
-SWOT_REPROJECT_REQUESTS_MEMORY=128Mi
-SWOT_REPROJECT_LIMITS_CPU=128m
-SWOT_REPROJECT_LIMITS_MEMORY=512Mi
-SWOT_REPROJECT_INVOCATION_ARGS='python swotrepr.py'
-SWOT_REPROJECT_SERVICE_QUEUE_URLS='["sds/swot-reproject:latest,http://localstack:4566/queue/swot-reproject.fifo"]'
-
-VAR_SUBSETTER_IMAGE=sds/variable-subsetter:latest
-VAR_SUBSETTER_REQUESTS_CPU=128m
-VAR_SUBSETTER_REQUESTS_MEMORY=128Mi
-VAR_SUBSETTER_LIMITS_CPU=128m
-VAR_SUBSETTER_LIMITS_MEMORY=512Mi
-VAR_SUBSETTER_INVOCATION_ARGS='python subsetter.py'
-VAR_SUBSETTER_SERVICE_QUEUE_URLS='["sds/variable-subsetter:latest,http://localstack:4566/queue/var-subsetter.fifo"]'
-
-SDS_MASKFILL_IMAGE=sds/maskfill-harmony:latest
-SDS_MASKFILL_REQUESTS_CPU=128m
-SDS_MASKFILL_REQUESTS_MEMORY=128Mi
-SDS_MASKFILL_LIMITS_CPU=128m
-SDS_MASKFILL_LIMITS_MEMORY=512Mi
-SDS_MASKFILL_INVOCATION_ARGS='python harmony_adapter.py'
-SDS_MASKFILL_SERVICE_QUEUE_URLS='["sds/maskfill-harmony:latest,http://localstack:4566/queue/sds-maskfill.fifo"]'
-
-TRAJECTORY_SUBSETTER_IMAGE=sds/trajectory-subsetter:latest
-TRAJECTORY_SUBSETTER_REQUESTS_CPU=128m
-TRAJECTORY_SUBSETTER_REQUESTS_MEMORY=128Mi
-TRAJECTORY_SUBSETTER_LIMITS_CPU=128m
-TRAJECTORY_SUBSETTER_LIMITS_MEMORY=512Mi
-TRAJECTORY_SUBSETTER_INVOCATION_ARGS='python harmony_service/adapter.py'
-TRAJECTORY_SUBSETTER_SERVICE_QUEUE_URLS='["sds/trajectory-subsetter:latest,http://localstack:4566/queue/trajectory-subsetter.fifo"]'
-
-PODAAC_CONCISE_IMAGE=ghcr.io/podaac/concise:sit
-PODAAC_CONCISE_REQUESTS_CPU=128m
-PODAAC_CONCISE_REQUESTS_MEMORY=128Mi
-PODAAC_CONCISE_LIMITS_CPU=128m
-PODAAC_CONCISE_LIMITS_MEMORY=512Mi
-PODAAC_CONCISE_INVOCATION_ARGS='concise_harmony'
-PODAAC_CONCISE_SERVICE_QUEUE_URLS='["ghcr.io/podaac/concise:sit,http://localstack:4566/queue/podaac-concise.fifo"]'
-
-PODAAC_L2_SUBSETTER_IMAGE=ghcr.io/podaac/l2ss-py:sit
-PODAAC_L2_SUBSETTER_REQUESTS_CPU=128m
-PODAAC_L2_SUBSETTER_REQUESTS_MEMORY=128Mi
-PODAAC_L2_SUBSETTER_LIMITS_CPU=128m
-PODAAC_L2_SUBSETTER_LIMITS_MEMORY=512Mi
-PODAAC_L2_SUBSETTER_INVOCATION_ARGS='./docker-entrypoint.sh'
-PODAAC_L2_SUBSETTER_SERVICE_QUEUE_URLS='["ghcr.io/podaac/l2ss-py:sit,http://localstack:4566/queue/podaac-l2-subsetter.fifo"]'
-
-PODAAC_PS3_IMAGE=podaac/podaac-cloud/podaac-shapefile-subsetter:latest
-PODAAC_PS3_REQUESTS_CPU=128m
-PODAAC_PS3_REQUESTS_MEMORY=128Mi
-PODAAC_PS3_LIMITS_CPU=128m
-PODAAC_PS3_LIMITS_MEMORY=512Mi
-PODAAC_PS3_SERVICE_QUEUE_URLS='["podaac/podaac-cloud/podaac-shapefile-subsetter:latest,http://localstack:4566/queue/podaac-shapefile-subsetter.fifo"]'
-
-PODAAC_NETCDF_CONVERTER_IMAGE=podaac/podaac-cloud/podaac-netcdf-converter:latest
-PODAAC_NETCDF_CONVERTER_REQUESTS_CPU=128m
-PODAAC_NETCDF_CONVERTER_REQUESTS_MEMORY=128Mi
-PODAAC_NETCDF_CONVERTER_LIMITS_CPU=128m
-PODAAC_NETCDF_CONVERTER_LIMITS_MEMORY=512Mi
-PODAAC_NETCDF_CONVERTER_SERVICE_QUEUE_URLS='["podaac/podaac-cloud/podaac-netcdf-converter:latest,http://localstack:4566/queue/podaac-netcdf-converter.fifo"]'
-
-QUERY_CMR_IMAGE=harmonyservices/query-cmr:latest
-QUERY_CMR_REQUESTS_CPU=128m
-QUERY_CMR_REQUESTS_MEMORY=128Mi
-QUERY_CMR_LIMITS_CPU=128m
-QUERY_CMR_LIMITS_MEMORY=512Mi
-QUERY_CMR_SERVICE_QUEUE_URLS='["harmonyservices/query-cmr:latest,http://localstack:4566/queue/query-cmr.fifo"]'
-
-GIOVANNI_ADAPTER_IMAGE=harmonyservices/giovanni-adapter:latest
-GIOVANNI_ADAPTER_REQUESTS_CPU=128m
-GIOVANNI_ADAPTER_REQUESTS_MEMORY=128Mi
-GIOVANNI_ADAPTER_LIMITS_CPU=128m
-GIOVANNI_ADAPTER_LIMITS_MEMORY=512Mi
-GIOVANNI_ADAPTER_INVOCATION_ARGS='node tasks/giovanni-adapter/app/cli'
-GIOVANNI_ADAPTER_SERVICE_QUEUE_URLS='["harmonyservices/giovanni-adapter:latest,http://localstack:4566/queue/giovanni-adapter.fifo"]'
-
-# The services to deploy locally. A comma-separated list of services that the bin/deploy-services
-# script should attempt to deploy. By default only a couple of harmony example services are deployed.
-# When specifying another service to be deployed make sure the name matches the lower and dash case
-# prefix for the image variable name. For example to deploy the Giovanni adapter image which has
-# a variable name of GIOVANNI_ADAPTER_IMAGE you would specify giovanni-adapter (converting to lowercase
-# and dash case and dropping _IMAGE. Make sure if the image for the service is not publicly available
-# that you have built the docker image locally, otherwise the service will fail to start.
-LOCALLY_DEPLOYED_SERVICES=harmony-service-example,harmony-netcdf-to-zarr
-
-# page size to use with CMR calls
-CMR_MAX_PAGE_SIZE=2000
-
-# Prefix before "harmonyservices/task-name" for built-in tasks like query-cmr, e.g. an ECR location
-# If not blank, it should end in a slash if there is a slash before "harmony"
-BUILT_IN_TASK_PREFIX=
-# Version to use for all built-in tasks.  "latest" (local / sandbox), "sit", "uat", or "prod"
-BUILT_IN_TASK_VERSION=latest
-
-# AWS region where harmony is deployed, irrelevant for local development
-AWS_DEFAULT_REGION=us-west-2
-
 # The object store used for storing shapefiles. Only S3 is supported currently.
 OBJECT_STORE_TYPE=s3
-
-# The bucket where final service output data will be staged
-# Default: A bucket created for use in localstack
-STAGING_BUCKET=local-staging-bucket
-
-# The bucket where intermediate service artifacts and STAC catalogs will be staged
-# Default: A bucket created for use in localstack
-ARTIFACT_BUCKET=local-artifact-bucket
-
-# The DNS entry to use for the host exposing the Harmony back end API for callbacks. This
-# default is appropriate for when Harmony is running in Kubernetes.
-BACKEND_HOST=harmony
-#  For local development outside of Kubernetes:
-# Mac OS X:
-# BACKEND_HOST=host.docker.internal
-# Linux:
-# BACKEND_HOST=localhost
 
 # Maximum number of non-file fields to accept when providing a shapefile to harmony
 MAX_POST_FIELDS=100
@@ -455,75 +140,6 @@ MAX_POST_FILE_SIZE=2000000000
 
 # Maximum number of multipart parts to accept when providing a shapefile
 MAX_POST_FILE_PARTS=100
-
-# If a retryable error is encountered while attempting to update a work item,
-# the HTTP client will retry a maximum of this many times.
-# MAX_PUT_WORK_RETRIES should be high enough to allow a work item update to succeed
-# even when a deployment is happening (~25 min max currently)
-MAX_PUT_WORK_RETRIES=30
-
-###########################################################################
-#                             Prometheus Config                           #
-#                                                                         #
-# This section is irrelevant for local development unless you are a       #
-# harmony core developer who plans to deploy Prometheus locally           #
-###########################################################################
-
-# For Prometheus time variables, "m" postfix means "minutes".
-# https://prometheus.io/docs/prometheus/latest/querying/basics/#time-durations
-# For k8s CPU or memory variables, see this link for unit explanations:
-# https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-cpu
-
-# Prometheus deployment variables
-PROMETHEUS_REQUESTS_CPU=128m
-PROMETHEUS_REQUESTS_MEMORY=150Mi
-PROMETHEUS_REQUESTS_EPHEMERAL_STORAGE=600Mi
-PROMETHEUS_LIMITS_CPU=128m
-
-PROMETHEUS_LIMITS_MEMORY=600Mi
-PROMETHEUS_LIMITS_EPHEMERAL_STORAGE=2000Mi
-PROMETHEUS_PROMETHEUS_SCRAPE_INTERVAL=15s
-PROMETHEUS_POD_MANAGER_SCRAPE_INTERVAL=15s
-
-# See https://prometheus.io/docs/prometheus/latest/storage/ for details on retention metrics.
-# How long to keep prometheus metrics before cleaning up
-PROMETHEUS_RETENTION_TIME=180d
-# Maximum amount of space to use for Prometheus metrics before deleting oldest metrics
-# Be sure to set this value to less than PROMETHEUS_LIMITS_EPHEMERAL_STORAGE otherwise the
-# pod may be evicted due to running out of ephemeral space.
-PROMETHEUS_RETENTION_SIZE=1750MB
-
-# how many consecutive minutes to sample in the PromQL query for KubernetesPodNotHealthy
-PROMETHEUS_POD_NOT_HEALTHY_DURATION=10m
-
-# how long the specified alert must be firing before being sent to the Alert Manager
-PROMETHEUS_POD_NOT_HEALTHY_WAIT_FOR=5m
-PROMETHEUS_NODE_NOT_READY_WAIT_FOR=10m
-
-# Alert manager variables (irrelevant to local development).
-# To see/test whether alerts are firing locally, kubectl port-forward {prometheus-pod} 9090:9090 -n monitoring
-# and navigate to the prometheus UI http://localhost:9090/alerts
-ALERT_MANAGER_REQUESTS_CPU=500m
-ALERT_MANAGER_REQUESTS_MEMORY=500M
-ALERT_MANAGER_LIMITS_CPU=1
-ALERT_MANAGER_LIMITS_MEMORY=1Gi
-
-ALERT_MANAGER_TOPIC_ARN=
-
-###########################################################################
-#             Horizontal Pod Autoscaling Config                           #
-#                                                                         #
-# Variables that are used to configure scaling for service pods           #
-#                                                                         #
-###########################################################################
-
-HPA_MIN_REPLICAS=1
-HPA_MAX_REPLICAS=10
-
-# See https://kubernetes.io/docs/reference/kubernetes-api/common-definitions/quantity/#Quantity
-# for an explanation of the "m" suffix (e.g. 10 will be serialized as "10000m").
-# With this value, the HPAs (when deployed) will try to ensure a pod exists for every 10 queued work items.
-HPA_TARGET_VALUE=10000m
 
 #############################################################################
 #                        OAuth 2 (Earthdata Login)                          #
@@ -554,6 +170,10 @@ HPA_TARGET_VALUE=10000m
 # This should be the same EDL environment as used by backend data sources.
 # For example, if OAUTH_HOST points to UAT EDL, downloading data from a
 # TEA endpoint that's integrated with PROD EDL will fail.
+
+OAUTH_CLIENT_ID=
+OAUTH_UID=
+OAUTH_PASSWORD=
 
 OAUTH_REDIRECT_URI=http://localhost:3000/oauth2/redirect
 OAUTH_HOST=https://uat.urs.earthdata.nasa.gov
@@ -603,3 +223,40 @@ REPLAY=record
 # True if server logs should be allowed to go to STDOUT.  When false
 # (default), they are routed to logs/test.log and suppressed in STDOUT
 LOG_STDOUT=false
+
+
+###########################################################################
+#                              Services                                   #
+#                                                                         #
+###########################################################################
+HARMONY_GDAL_ADAPTER_IMAGE=ghcr.io/nasa/harmony-gdal-adapter:latest
+HARMONY_GDAL_ADAPTER_SERVICE_QUEUE_URLS='["ghcr.io/nasa/harmony-gdal-adapter:latest,http://localstack:4566/queue/harmony-gdal-adapter.fifo"]'
+HYBIG_IMAGE=sds/harmony-browse-image-generator:latest
+HYBIG_SERVICE_QUEUE_URLS='["sds/harmony-browse-image-generator:latest,http://localstack:4566/queue/hybig.fifo"]'
+HARMONY_SERVICE_EXAMPLE_IMAGE=harmonyservices/service-example:latest
+HARMONY_SERVICE_EXAMPLE_SERVICE_QUEUE_URLS='["harmonyservices/service-example:latest,http://localstack:4566/queue/harmony-service-example.fifo"]'
+HARMONY_NETCDF_TO_ZARR_IMAGE=ghcr.io/nasa/harmony-netcdf-to-zarr:latest
+HARMONY_NETCDF_TO_ZARR_SERVICE_QUEUE_URLS='["ghcr.io/nasa/harmony-netcdf-to-zarr:latest,http://localstack:4566/queue/harmony-netcdf-to-zarr.fifo"]'
+HARMONY_REGRIDDER_IMAGE=sds/harmony-regridder:latest
+HARMONY_REGRIDDER_SERVICE_QUEUE_URLS='["sds/harmony-regridder:latest,http://localstack:4566/queue/harmony-regridder.fifo"]'
+SWOT_REPROJECT_IMAGE=sds/swot-reproject:latest
+SWOT_REPROJECT_SERVICE_QUEUE_URLS='["sds/swot-reproject:latest,http://localstack:4566/queue/swot-reproject.fifo"]'
+VAR_SUBSETTER_IMAGE=sds/variable-subsetter:latest
+VAR_SUBSETTER_SERVICE_QUEUE_URLS='["sds/variable-subsetter:latest,http://localstack:4566/queue/var-subsetter.fifo"]'
+SDS_MASKFILL_IMAGE=sds/maskfill-harmony:latest
+SDS_MASKFILL_SERVICE_QUEUE_URLS='["sds/maskfill-harmony:latest,http://localstack:4566/queue/sds-maskfill.fifo"]'
+TRAJECTORY_SUBSETTER_IMAGE=sds/trajectory-subsetter:latest
+TRAJECTORY_SUBSETTER_SERVICE_QUEUE_URLS='["sds/trajectory-subsetter:latest,http://localstack:4566/queue/trajectory-subsetter.fifo"]'
+PODAAC_CONCISE_IMAGE=ghcr.io/podaac/concise:sit
+PODAAC_CONCISE_SERVICE_QUEUE_URLS='["ghcr.io/podaac/concise:sit,http://localstack:4566/queue/podaac-concise.fifo"]'
+PODAAC_L2_SUBSETTER_IMAGE=ghcr.io/podaac/l2ss-py:sit
+PODAAC_L2_SUBSETTER_SERVICE_QUEUE_URLS='["ghcr.io/podaac/l2ss-py:sit,http://localstack:4566/queue/podaac-l2-subsetter.fifo"]'
+PODAAC_PS3_IMAGE=podaac/podaac-cloud/podaac-shapefile-subsetter:latest
+PODAAC_PS3_SERVICE_QUEUE_URLS='["podaac/podaac-cloud/podaac-shapefile-subsetter:latest,http://localstack:4566/queue/podaac-shapefile-subsetter.fifo"]'
+PODAAC_NETCDF_CONVERTER_IMAGE=podaac/podaac-cloud/podaac-netcdf-converter:latest
+PODAAC_NETCDF_CONVERTER_SERVICE_QUEUE_URLS='["podaac/podaac-cloud/podaac-netcdf-converter:latest,http://localstack:4566/queue/podaac-netcdf-converter.fifo"]'
+QUERY_CMR_IMAGE=harmonyservices/query-cmr:latest
+QUERY_CMR_SERVICE_QUEUE_URLS='["harmonyservices/query-cmr:latest,http://localstack:4566/queue/query-cmr.fifo"]'
+GIOVANNI_ADAPTER_IMAGE=harmonyservices/giovanni-adapter:latest
+GIOVANNI_ADAPTER_SERVICE_QUEUE_URLS='["harmonyservices/giovanni-adapter:latest,http://localstack:4566/queue/giovanni-adapter.fifo"]'
+

@@ -1,6 +1,6 @@
 import * as k8s from '@kubernetes/client-node';
 import { Worker } from '../../../../app/workers/worker';
-import { env } from '@harmony/util';
+import env from './util/env'
 import logger from '../../../../app/util/log';
 import { Logger } from 'winston';
 import { getQueueUrlForService, getQueueForUrl, getWorkSchedulerQueue } from '../../../../app/util/queue/queue-factory';

@@ -7,7 +7,7 @@ import { WorkItemQueueType } from '../../../../app/util/queue/queue';
 import { getQueueForType } from '../../../../app/util/queue/queue-factory';
 import sleep from '../../../../app/util/sleep';
 import { Worker } from '../../../../app/workers/worker';
-import { env } from '@harmony/util';
+import env from '../util/env';
 
 type WorkItemUpdateQueueItem = {
   update: WorkItemUpdate,

@@ -9,7 +9,7 @@ import DataOperation from '../data-operation';
 import { defaultObjectStore } from '../../util/object-store';
 import { RequestValidationError, ServerError } from '../../util/errors';
 import db from '../../util/db';
-import { env } from '@harmony/util';
+import env from '../../util/env';
 import { WorkItemMeta, WorkItemStatus } from '../work-item-interface';
 import { getRequestMetric } from '../../util/metrics';
 import { getRequestUrl } from '../../util/url';

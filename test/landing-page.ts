@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { describe, it } from 'mocha';
 import hookServersStartStop from './helpers/servers';
 import { hookLandingPage } from './helpers/landing-page';
-import { env } from '@harmony/util';
+import env from '../app/util/env';
 import version from '../app/util/version';
 
 // This is the bulk of our HTML content.  If we do anything significant with HTML, we should

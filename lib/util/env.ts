@@ -1,9 +1,17 @@
+/* eslint-disable @typescript-eslint/dot-notation */
 import _ from 'lodash';
 import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as winston from 'winston';
-import { isInteger, listToText } from './string';
+import { IsInt, IsNotEmpty, IsUrl, Matches, Max, Min, validateSync } from 'class-validator';
+import { isFloat, isInteger } from './string';
+
+//
+// env module
+// Sets up the environment variables used by more than one executable (the harmony server,
+// the k8s services, etc.). Each executable can customize to add or override its own env vars
+//
 
 if (Object.prototype.hasOwnProperty.call(process.env, 'GDAL_DATA')) {
   winston.warn('Found a GDAL_DATA environment variable.  This is usually from an external GDAL '
@@ -16,7 +24,7 @@ if (Object.prototype.hasOwnProperty.call(process.env, 'GDAL_DATA')) {
 // Read the env-defaults for this module (relative to this typescript file)
 let envDefaults = {};
 try {
-  envDefaults = dotenv.parse(fs.readFileSync(path.resolve(__dirname, '../../env-defaults')));
+  envDefaults = dotenv.parse(fs.readFileSync(path.resolve(__dirname, 'env-defaults')));
 } catch (e) {
   winston.warn('Could not parse environment defaults from env-defaults file');
   winston.warn(e.message);
@@ -41,7 +49,137 @@ if (process.env.NODE_ENV !== 'test') {
   }
 }
 
-const envVars: HarmonyEnv = {} as HarmonyEnv;
+export interface IHarmonyEnv {
+  artifactBucket: string;
+  awsDefaultRegion: string;
+  builtInTaskPrefix: string;
+  builtInTaskVersion: string;
+  callbackUrlRoot: string;
+  cmrEndpoint: string;
+  cmrMaxPageSize: number;
+  databaseType: string;
+  defaultPodGracePeriodSecs: number;
+  defaultParallelism: number;
+  defaultResultPageSize: number;
+  harmonyClientId: string;
+  localstackHost: string;
+  logLevel: string;
+  maxGranuleLimit: number;
+  nodeEnv: string;
+  port: number;
+  queueLongPollingWaitTimeSec: number
+  reapableWorkAgeMinutes: number;
+  sameRegionAccessRole: string;
+  servicesYml: string;
+  sharedSecretKey: string;
+  stagingBucket: string;
+  useLocalstack: boolean;
+  workItemSchedulerQueueUrl: string;
+  workItemUpdateQueueUrl: string;
+  largeWorkItemUpdateQueueUrl: string;
+  releaseVersion: string;
+  serviceQueueUrls: { [key: string]: string };
+  useServiceQueues: boolean;
+
+  // Allow extension of this interface with new properties. This should only be used for special
+  // properties that cannot be captured explicitly like the above properties.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [propName: string]: any;
+}
+
+const ipRegex = /^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$/;
+const domainHostRegex = /^([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})$/;
+export const hostRegexWhitelist = { host_whitelist: [/localhost/, /localstack/, /harmony/, ipRegex, domainHostRegex] };
+export const awsRegionRegex = /(us(-gov)?|ap|ca|cn|eu|sa)-(central|(north|south)?(east|west)?)-\d/;
+
+export class HarmonyEnv implements IHarmonyEnv {
+
+  artifactBucket: string;
+
+  @Matches(awsRegionRegex)
+    awsDefaultRegion: string;
+
+  builtInTaskPrefix: string;
+
+  builtInTaskVersion: string;
+
+  @IsUrl(hostRegexWhitelist)
+    callbackUrlRoot: string;
+
+  @IsUrl(hostRegexWhitelist)
+    cmrEndpoint: string;
+
+  cmrMaxPageSize: number;
+
+  databaseType: string;
+
+  defaultPodGracePeriodSecs: number;
+
+  defaultParallelism: number;
+
+  defaultResultPageSize: number;
+
+  harmonyClientId: string;
+
+  localstackHost: string;
+
+  logLevel: string;
+
+  maxGranuleLimit: number;
+
+  maxPostFields: number;
+
+  maxPostFileParts: number;
+
+  maxPostFileSize: number;
+
+  nodeEnv: string;
+
+  @IsInt()
+  @Min(0)
+  @Max(65535)
+    port: number;
+
+  queueLongPollingWaitTimeSec: number;
+
+  reapableWorkAgeMinutes: number;
+
+  sameRegionAccessRole: string;
+
+  servicesYml: string;
+
+  @IsNotEmpty()
+    sharedSecretKey: string;
+
+  stagingBucket: string;
+
+  useLocalstack: boolean;
+
+  @IsUrl(hostRegexWhitelist)
+    workItemSchedulerQueueUrl: string;
+
+  @IsUrl(hostRegexWhitelist)
+    workItemUpdateQueueUrl: string;
+
+  @IsUrl(hostRegexWhitelist)
+    largeWorkItemUpdateQueueUrl: string;
+
+  releaseVersion: string;
+
+  serviceQueueUrls: { [key: string]: string; };
+
+  useServiceQueues: boolean;
+
+  constructor(env: IHarmonyEnv) {
+    for (const key of Object.keys(env)) {
+      this[key] = env[key];
+    }
+  }
+
+}
+
+
+const envVars: IHarmonyEnv = {} as IHarmonyEnv;
 
 /**
  * Add a symbol to module.exports with an appropriate value. The exported symbol will be in
@@ -56,11 +194,13 @@ const envVars: HarmonyEnv = {} as HarmonyEnv;
  */
 function makeConfigVar(envName: string, defaultValue?: string): void {
   const stringValue = process.env[envName] || defaultValue;
+  let val: number | string = stringValue;
   if (isInteger(stringValue)) {
-    envVars[_.camelCase(envName)] = parseInt(stringValue, 10);
-  } else {
-    envVars[_.camelCase(envName)] = stringValue;
+    val = parseInt(stringValue, 10);
+  } else if (isFloat(stringValue)) {
+    val = parseFloat(stringValue);
   }
+  envVars[_.camelCase(envName)] = val;
   process.env[envName] = stringValue;
 }
 
@@ -68,82 +208,6 @@ const allEnv = { ...envDefaults, ...envLocalDefaults, ...envOverrides, ...proces
 
 for (const k of Object.keys(allEnv)) {
   makeConfigVar(k, allEnv[k]);
-}
-
-const requiredVars = ['SHARED_SECRET_KEY'];
-
-const missingVars = requiredVars.filter((v) => !process.env[v]);
-if (missingVars.length > 0) {
-  throw new Error(`Configuration error: You must set ${listToText(missingVars)} in the environment`);
-}
-
-interface HarmonyEnv {
-  adminGroupId: string;
-  aggregateStacCatalogMaxPageSize: number;
-  artifactBucket: string;
-  awsDefaultRegion: string;
-  builtInTaskPrefix: string;
-  builtInTaskVersion: string;
-  callbackUrlRoot: string;
-  cmrEndpoint: string;
-  metricsEndpoint: string;
-  metricsIndex: string;
-  cmrMaxPageSize: number;
-  databaseType: string;
-  defaultPodGracePeriodSecs: number;
-  defaultJobListPageSize: number;
-  defaultParallelism: number;
-  defaultResultPageSize: number;
-  failableWorkAgeMinutes: number;
-  harmonyClientId: string;
-  localstackHost: string;
-  logLevel: string;
-  logViewerGroupId: string;
-  maxGranuleLimit: number;
-  maxPageSize: number;
-  maxBatchInputs: number;
-  maxBatchSizeInBytes: number;
-  maxPostFields: number;
-  maxPostFileParts: number;
-  maxPostFileSize: number;
-  maxSynchronousGranules: number;
-  nodeEnv: string;
-  oauthClientId: string;
-  oauthHost: string;
-  oauthPassword: string;
-  oauthUid: string;
-  objectStoreType: string;
-  previewThreshold: number;
-  queueLongPollingWaitTimeSec: number
-  reapableWorkAgeMinutes: number;
-  sameRegionAccessRole: string;
-  servicesYml: string;
-  sharedSecretKey: string;
-  stagingBucket: string;
-  syncRequestPollIntervalMs: number;
-  uploadBucket: string;
-  useLocalstack: boolean;
-  workFailerPeriodSec: number;
-  workReaperPeriodSec: number;
-  maxErrorsForJob: number;
-  workItemRetryLimit: number;
-  workItemSchedulerQueueUrl: string;
-  workItemUpdateQueueUrl: string;
-  largeWorkItemUpdateQueueUrl: string;
-  getWorkSampleRatio: number;
-  putWorkSampleRatio: number;
-  getMetricsSampleRatio: number;
-  openTelemetryUrl: string;
-  workFailerBatchSize: number;
-  workReaperBatchSize: number;
-  releaseVersion: string;
-  serviceQueueUrls: { [key: string]: string };
-  useServiceQueues: boolean;
-
-  // Allow extension of this interface with new properties. This should only be used for special
-  // properties that cannot be captured explicitly like the above properties.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [propName: string]: any;
 }
 
 // special cases
@@ -179,72 +243,14 @@ for (const k of Object.keys(process.env)) {
   }
 }
 
-// validate - this is ugly, but is the best way to do this until we update to TypeScript 5.x and
-// can use decorators
-const requiredFields = [
-  'adminGroupId',
-  'aggregateStacCatalogMaxPageSize',
-  'artifactBucket',
-  'awsDefaultRegion',
-  'callbackUrlRoot',
-  'cmrEndpoint',
-  'cmrMaxPageSize',
-  'databaseType',
-  'defaultJobListPageSize',
-  'defaultPodGracePeriodSecs',
-  'defaultResultPageSize',
-  'failableWorkAgeMinutes',
-  'getMetricsSampleRatio',
-  'getWorkSampleRatio',
-  'harmonyClientId',
-  'largeWorkItemUpdateQueueUrl',
-  'localstackHost',
-  'logLevel',
-  'logViewerGroupId',
-  'maxBatchInputs',
-  'maxBatchSizeInBytes',
-  'maxErrorsForJob',
-  'maxGranuleLimit',
-  'maxPageSize',
-  'maxPostFields',
-  'maxPostFileParts',
-  'maxPostFileSize',
-  'maxSynchronousGranules',
-  'nodeEnv',
-  'oauthClientId',
-  'oauthHost',
-  'oauthPassword',
-  'oauthUid',
-  'objectStoreType',
-  'openTelemetryUrl',
-  'previewThreshold',
-  'putWorkSampleRatio',
-  'queueLongPollingWaitTimeSec',
-  'reapableWorkAgeMinutes',
-  'releaseVersion',
-  'sameRegionAccessRole',
-  'sharedSecretKey',
-  'stagingBucket',
-  'syncRequestPollIntervalMs',
-  'uploadBucket',
-  'useLocalstack',
-  'workFailerBatchSize',
-  'workFailerPeriodSec',
-  'workItemRetryLimit',
-  'workItemSchedulerQueueUrl',
-  'workItemUpdateQueueUrl',
-  'workReaperBatchSize',
-  'workReaperPeriodSec',
-];
-
-const missingFields = requiredFields.filter((f) => !envVars[f]);
-if (missingFields.length > 0) {
-  throw new Error(`Configuration error: You must set ${listToText(missingFields)} in the environment`);
+// validate the env vars
+const envVarsObj = new HarmonyEnv(envVars);
+const errors = validateSync(envVarsObj,  { validationError: { target: false } });
+if (errors.length > 0) {
+  for (const err of errors) {
+    winston.error(err);
+  }
+  throw (new Error('BAD BASE ENVIRONMENT'));
 }
-
-
-// TODO move this into a sub-project and add specializations for harmony and
-// each service
-
 
 export default envVars;

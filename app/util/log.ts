@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import * as winston from 'winston';
-import { env } from '@harmony/util';
+import env from './env';
 import { RequestValidationError } from './errors';
 import redact from './log-redactor';
 import { Conjunction, listToText } from '@harmony/util/string';

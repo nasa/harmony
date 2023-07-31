@@ -4,7 +4,7 @@ import _ from 'lodash';
 import logger from '../util/log';
 import db, { Transaction } from '../util/db';
 import DataOperation from './data-operation';
-import { env } from '@harmony/util';
+import env from '../util/env';
 import { Job, JobStatus } from './job';
 import Record from './record';
 import WorkflowStep from './workflow-steps';

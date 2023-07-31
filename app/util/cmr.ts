@@ -6,7 +6,7 @@ import fetch, { Response } from 'node-fetch';
 import * as querystring from 'querystring';
 import { CmrError } from './errors';
 import { defaultObjectStore, objectStoreForProtocol } from './object-store';
-import { env } from '@harmony/util';
+import env from './env';
 import logger from './log';
 
 const { cmrEndpoint, cmrMaxPageSize, harmonyClientId, stagingBucket } = env;

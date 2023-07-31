@@ -1,4 +1,4 @@
-import { env } from '@harmony/util';
+import env from '../env';
 import { WorkItemQueueType, Queue } from './queue';
 import { SqsQueue } from './sqs-queue';
 

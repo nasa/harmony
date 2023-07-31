@@ -12,7 +12,7 @@ import replaceLink from 'markdown-it-replace-link';
 import toc from 'markdown-it-toc-done-right';
 import HarmonyRequest from '../../models/harmony-request';
 import { getRequestRoot } from '../../util/url';
-import { env } from '@harmony/util';
+import env from '../../util/env';
 import version from '../../util/version';
 import { promisify } from 'util';
 import { generateServicesDocs } from './service-docs-markdown-it-plugin';

@@ -1,6 +1,6 @@
 import { Worker } from '../../../../app/workers/worker';
 import { sanitizeImage } from '@harmony/util/string';
-import { env } from '@harmony/util';
+import env from './util/env'
 import { WorkItemRecord, WorkItemStatus } from '../../../../app/models/work-item-interface';
 import logger from '../../../../app/util/log';
 import { runServiceFromPull, runQueryCmrFromPull } from '../service/service-runner';
