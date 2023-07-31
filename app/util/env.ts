@@ -1,6 +1,6 @@
 import { HarmonyEnv, IHarmonyEnv, hostRegexWhitelist } from '@harmony/util/env';
 import { env } from '@harmony/util';
-import { IsInt, IsNotEmpty, IsNumber, IsUrl, Min, validateSync } from 'class-validator';
+import { IsInt, IsNotEmpty, IsNumber, IsUrl, Length, Min, validateSync } from 'class-validator';
 import winston from 'winston';
 
 //
@@ -17,6 +17,8 @@ export interface IHarmonyServerEnv extends IHarmonyEnv {
   oauthHost: string;
   oauthPassword: string;
   oauthUid: string;
+  sharedSecretKey: string;
+  cookieSecret: string;
   metricsEndpoint: string;
   metricsIndex: string;
   maxPageSize: number;
@@ -57,6 +59,12 @@ class HarmonyServerEnv extends HarmonyEnv implements IHarmonyServerEnv {
 
   @IsNotEmpty()
     oauthUid: string;
+
+  @IsNotEmpty()
+    sharedSecretKey: string;
+
+  @Length(128)
+    cookieSecret: string;
 
   metricsEndpoint: string;
 
@@ -161,8 +169,6 @@ const serverEnvVars = env as IHarmonyServerEnv;
 
 // validate the env vars
 const harmonyServerEnvObj = new HarmonyServerEnv(serverEnvVars);
-const ratio = harmonyServerEnvObj.getWorkSampleRatio;
-console.log(`RATIO = ${ratio}`);
 const errors = validateSync(harmonyServerEnvObj,  { validationError: { target: false } });
 if (errors.length > 0) {
   for (const err of errors) {

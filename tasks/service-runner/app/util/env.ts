@@ -1,4 +1,4 @@
-import { IsInt, IsNotEmpty, Max, Min, validateSync } from 'class-validator';
+import { IsInt, IsNotEmpty, Length, Max, Min, validateSync } from 'class-validator';
 import * as winston from 'winston';
 import { HarmonyEnv, IHarmonyEnv } from '@harmony/util/env';
 import { env } from '@harmony/util';
@@ -10,22 +10,26 @@ import { env } from '@harmony/util';
 //
 
 interface IHarmonyServiceEnv extends IHarmonyEnv {
+  artifactBucket: string;
   backendHost: string;
   backendPort: number;
   harmonyClientId: string;
   harmonyService: string;
   invocationArgs: string;
-  logLevel: string;
+  maxPutWorkRetries: number;
   myPodName: string;
   port: number;
+  sharedSecretKey: string;
   workerPort: number;
   workerTimeout: number;
   workingDir: string;
-  maxPutWorkRetries: number;
-  artifactBucket: string;
 }
 
 class HarmonyServiceEnv extends HarmonyEnv implements IHarmonyServiceEnv {
+
+  @IsNotEmpty()
+    artifactBucket: string;
+
   @IsNotEmpty()
     backendHost: string;
 
@@ -33,6 +37,9 @@ class HarmonyServiceEnv extends HarmonyEnv implements IHarmonyServiceEnv {
   @Min(0)
   @Max(65535)
     backendPort: number;
+
+  @Length(128)
+    cookieSecret: string;
 
   @IsNotEmpty()
     harmonyClientId: string;
@@ -43,7 +50,9 @@ class HarmonyServiceEnv extends HarmonyEnv implements IHarmonyServiceEnv {
   @IsNotEmpty()
     invocationArgs: string;
 
-  logLevel: string;
+  @IsInt()
+  @Min(0)
+    maxPutWorkRetries: number;
 
   @IsNotEmpty()
     myPodName: string;
@@ -64,12 +73,9 @@ class HarmonyServiceEnv extends HarmonyEnv implements IHarmonyServiceEnv {
   @IsNotEmpty()
     workingDir: string;
 
-  @IsInt()
-  @Min(0)
-    maxPutWorkRetries: number;
-
   @IsNotEmpty()
-    artifactBucket: string;
+    sharedSecretKey: string;
+
 }
 
 const envVars: IHarmonyServiceEnv = env as IHarmonyServiceEnv;

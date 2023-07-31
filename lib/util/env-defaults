@@ -130,6 +130,8 @@ PODAAC_PS3_SERVICE_QUEUE_URLS='["podaac/podaac-cloud/podaac-shapefile-subsetter:
 PODAAC_NETCDF_CONVERTER_SERVICE_QUEUE_URLS='["podaac/podaac-cloud/podaac-netcdf-converter:latest,http://localstack:4566/queue/podaac-netcdf-converter.fifo"]'
 QUERY_CMR_SERVICE_QUEUE_URLS='["harmonyservices/query-cmr:latest,http://localstack:4566/queue/query-cmr.fifo"]'
 
+# The number of seconds to allow a pod to continue processing an active request before terminating a pod
+DEFAULT_POD_GRACE_PERIOD_SECS=14400
 
 # page size to use with CMR calls
 CMR_MAX_PAGE_SIZE=2000

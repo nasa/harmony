@@ -4,7 +4,7 @@ import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as winston from 'winston';
-import { IsInt, IsNotEmpty, IsUrl, Matches, Max, Min, validateSync } from 'class-validator';
+import { IsInt, IsNotEmpty, IsNumber, IsUrl, Matches, Max, Min, ValidateIf, validateSync } from 'class-validator';
 import { isFloat, isInteger } from './string';
 
 //
@@ -59,7 +59,6 @@ export interface IHarmonyEnv {
   cmrMaxPageSize: number;
   databaseType: string;
   defaultPodGracePeriodSecs: number;
-  defaultParallelism: number;
   defaultResultPageSize: number;
   harmonyClientId: string;
   localstackHost: string;
@@ -71,7 +70,6 @@ export interface IHarmonyEnv {
   reapableWorkAgeMinutes: number;
   sameRegionAccessRole: string;
   servicesYml: string;
-  sharedSecretKey: string;
   stagingBucket: string;
   useLocalstack: boolean;
   workItemSchedulerQueueUrl: string;
@@ -94,7 +92,8 @@ export const awsRegionRegex = /(us(-gov)?|ap|ca|cn|eu|sa)-(central|(north|south)
 
 export class HarmonyEnv implements IHarmonyEnv {
 
-  artifactBucket: string;
+  @IsNotEmpty()
+    artifactBucket: string;
 
   @Matches(awsRegionRegex)
     awsDefaultRegion: string;
@@ -109,51 +108,71 @@ export class HarmonyEnv implements IHarmonyEnv {
   @IsUrl(hostRegexWhitelist)
     cmrEndpoint: string;
 
-  cmrMaxPageSize: number;
+  @IsInt()
+  @Min(1)
+    cmrMaxPageSize: number;
 
-  databaseType: string;
+  @IsNotEmpty()
+    databaseType: string;
 
-  defaultPodGracePeriodSecs: number;
+  @IsNumber()
+  @Min(0)
+    defaultPodGracePeriodSecs: number;
 
-  defaultParallelism: number;
+  @IsNumber()
+  @Min(1)
+    defaultResultPageSize: number;
 
-  defaultResultPageSize: number;
+  @IsNotEmpty()
+    harmonyClientId: string;
 
-  harmonyClientId: string;
+  useLocalstack: boolean;
 
-  localstackHost: string;
+  @ValidateIf(obj => obj.useLocalStack === true)
+  @IsNotEmpty()
+    localstackHost: string;
 
-  logLevel: string;
+  @IsNotEmpty()
+    logLevel: string;
 
-  maxGranuleLimit: number;
+  @IsInt()
+  @Min(0)
+    maxGranuleLimit: number;
 
-  maxPostFields: number;
+  @IsInt()
+  @Min(0)
+    maxPostFields: number;
 
-  maxPostFileParts: number;
+  @IsInt()
+  @Min(0)
+    maxPostFileParts: number;
 
-  maxPostFileSize: number;
+  @IsInt()
+  @Min(0)
+    maxPostFileSize: number;
 
-  nodeEnv: string;
+  @IsNotEmpty()
+    nodeEnv: string;
 
   @IsInt()
   @Min(0)
   @Max(65535)
     port: number;
 
-  queueLongPollingWaitTimeSec: number;
+  @IsInt()
+  @Min(1)
+    queueLongPollingWaitTimeSec: number;
 
-  reapableWorkAgeMinutes: number;
+  @IsInt()
+  @Min(0)
+    reapableWorkAgeMinutes: number;
 
-  sameRegionAccessRole: string;
+  @IsNotEmpty()
+    sameRegionAccessRole: string;
 
   servicesYml: string;
 
-  @IsNotEmpty()
-    sharedSecretKey: string;
-
   stagingBucket: string;
-
-  useLocalstack: boolean;
 
   @IsUrl(hostRegexWhitelist)
     workItemSchedulerQueueUrl: string;
