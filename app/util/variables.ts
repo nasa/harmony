@@ -83,7 +83,7 @@ export function fullPath(v: CmrUmmVariable): string {
  * @param s - The string to match against the variable's name or concept id
  * @returns true if given value matches variable name or concept id
  */
-export function doesPathMatch(v: CmrUmmVariable, s: string): boolean {
+function doesPathMatch(v: CmrUmmVariable, s: string): boolean {
   return s === v.umm.Name || s === v.meta['concept-id'];
 }
 
@@ -204,4 +204,34 @@ export function getVariablesForCollection(
       versionId: collection.version_id, variables, coordinateVariables });
   }
   return variableInfo;
+}
+
+/**
+ * Validate that the extend query parameter is both a valid variable name
+ * and falls within the requested variables (OGC collectionId).
+ * @param extendParam - The name of the variable to be extended (extend query parameter)
+ * @param collectionIdParam - The OGC collectionId
+ * @param eosdisCollections - An array of CMR collections
+ * @param varInfos - The variables requested by the user
+ * @throws RequestValidationError if extend is not a valid variable name or was not requested
+ * in the OGC collectionIdParam
+ */
+export function validateExtend(extendParam: string, collectionIdParam: string, eosdisCollections: CmrCollection[], varInfos: VariableInfo[]): void {
+  let extendVarValid = false;
+  if (collectionIdParam === 'all') {
+    for (const collection of eosdisCollections) { // Looks through all of the variables
+      extendVarValid = collection.variables.some((v) => doesPathMatch(v, extendParam));
+      if (extendVarValid)
+        break;
+    }
+  } else {
+    for (const varInfo of varInfos) { // Only look through the requested variables
+      extendVarValid = varInfo.variables.some((v) => doesPathMatch(v, extendParam));
+      if (extendVarValid)
+        break;
+    }
+  }
+  if (!extendVarValid) {
+    throw new RequestValidationError(`${extendParam} was not found in the requested variables`);
+  }
 }
