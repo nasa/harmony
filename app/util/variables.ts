@@ -83,7 +83,7 @@ export function fullPath(v: CmrUmmVariable): string {
  * @param s - The string to match against the variable's name or concept id
  * @returns true if given value matches variable name or concept id
  */
-function doesPathMatch(v: CmrUmmVariable, s: string): boolean {
+export function doesPathMatch(v: CmrUmmVariable, s: string): boolean {
   return s === v.umm.Name || s === v.meta['concept-id'];
 }
 
