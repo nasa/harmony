@@ -6,7 +6,7 @@ source "env-defaults"
 if [ -f ".env" ]; then
 source ".env"
 fi
-set +a
+set +ax
 eval "$env_save"
 
 # Deploy prometheus
