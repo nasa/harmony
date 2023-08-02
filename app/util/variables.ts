@@ -207,10 +207,10 @@ export function getVariablesForCollection(
 }
 
 /**
- * Validate that the extend query parameter is both a valid variable name
+ * Validate that the extend query parameter is both a valid variable name or concept ID
  * and falls within the requested variable(s) (OGC collectionId) and collection(s).
  * Assumes that the extend variable only needs to be found within one of the requested collections.
- * @param extendParam - The name of the variable to be extended (extend query parameter)
+ * @param extendParam - The name or concept ID of the variable to be extended (extend query parameter)
  * @param collectionIdParam - The OGC collectionId
  * @param eosdisCollections - An array of CMR collections
  * @param varInfos - The variables requested by the user
