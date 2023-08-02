@@ -232,5 +232,5 @@ export function validateExtend(extendParam: string, collectionIdParam: string, e
       }
     }
   }
-  throw new RequestValidationError(`${extendParam} was not found in the requested variables`);
+  throw new RequestValidationError(`${extendParam} cannot be extended because it was not found in the requested variables`);
 }
