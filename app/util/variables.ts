@@ -219,7 +219,7 @@ export function getVariablesForCollection(
 export function validateExtend(extendParam: string, collectionIdParam: string, eosdisCollections: CmrCollection[], varInfos: VariableInfo[]): void {
   let extendVarValid = false;
   if (collectionIdParam === 'all') {
-    for (const collection of eosdisCollections) { // Looks through all of the variables
+    for (const collection of eosdisCollections) { // Look through all of the variables
       extendVarValid = collection.variables.some((v) => doesPathMatch(v, extendParam));
       if (extendVarValid)
         break;
