@@ -208,30 +208,29 @@ export function getVariablesForCollection(
 
 /**
  * Validate that the extend query parameter is both a valid variable name
- * and falls within the requested variables (OGC collectionId).
+ * and falls within the requested variable(s) (OGC collectionId) and collection(s).
+ * Assumes that the extend variable only needs to be found within one of the requested collections.
  * @param extendParam - The name of the variable to be extended (extend query parameter)
  * @param collectionIdParam - The OGC collectionId
  * @param eosdisCollections - An array of CMR collections
  * @param varInfos - The variables requested by the user
- * @throws RequestValidationError if extend is not a valid variable name or was not requested
- * in the OGC collectionIdParam
+ * @throws RequestValidationError if the variable cannot be extended for the user's request
  */
 export function validateExtend(extendParam: string, collectionIdParam: string, eosdisCollections: CmrCollection[], varInfos: VariableInfo[]): void {
-  let extendVarValid = false;
   if (collectionIdParam === 'all') {
     for (const collection of eosdisCollections) { // Look through all of the variables
-      extendVarValid = collection.variables.some((v) => doesPathMatch(v, extendParam));
-      if (extendVarValid)
-        break;
+      const foundVar = collection.variables.some((v) => doesPathMatch(v, extendParam));
+      if (foundVar) {
+        return;
+      }
     }
   } else {
     for (const varInfo of varInfos) { // Only look through the requested variables
-      extendVarValid = varInfo.variables.some((v) => doesPathMatch(v, extendParam));
-      if (extendVarValid)
-        break;
+      const foundVar = varInfo.variables.some((v) => doesPathMatch(v, extendParam));
+      if (foundVar) {
+        return;
+      }
     }
   }
-  if (!extendVarValid) {
-    throw new RequestValidationError(`${extendParam} was not found in the requested variables`);
-  }
+  throw new RequestValidationError(`${extendParam} was not found in the requested variables`);
 }
