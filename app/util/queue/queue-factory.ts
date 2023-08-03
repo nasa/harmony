@@ -42,7 +42,6 @@ export function getQueueForUrl(url: string): Queue {
  * @returns the queue to use for scheduling work items
  */
 export function getWorkSchedulerQueue(): Queue {
-  console.log(`SCHEDULER_QUEUE_URL: ${env.workItemSchedulerQueueUrl}`);
   return workSchedulerQueue;
 }
 

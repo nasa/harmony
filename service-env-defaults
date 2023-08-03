@@ -155,6 +155,10 @@ MAX_DOWNLOAD_RETRIES=10
 # The number of seconds to allow a pod to continue processing an active request before terminating a pod
 DEFAULT_POD_GRACE_PERIOD_SECS=14400
 
+# Hostname for k8s services to use to connect to Localstack - this is only used by the
+# script that creates the env var config map for local development
+LOCALSTACK_K8S_HOST=localstack
+
 ###########################################################################
 #                             Prometheus Config                           #
 #                                                                         #
