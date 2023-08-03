@@ -31,7 +31,7 @@ env:
   es6: true
 rules:
   indent: ["off"]
-  "@typescript-eslint/indent": ["error", 2]
+  "@typescript-eslint/indent": ["error", 2, { "ignoredNodes": ["PropertyDefinition"] }]
   no-restricted-syntax: ["error", "LabeledStatement", "WithStatement"]
   class-methods-use-this: "off"
   no-underscore-dangle: "off"

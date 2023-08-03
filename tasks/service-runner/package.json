@@ -11,7 +11,7 @@
     "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha --timeout 5000",
     "lint": "eslint --ext .ts .",
     "coverage": "nyc mocha --timeout 5000",
-    "build": "tsc && docker build --tag harmonyservices/service-runner:${VERSION:-latest} .",
+    "build": "tsc && cd ../../ && docker build -f tasks/service-runner/Dockerfile --tag harmonyservices/service-runner:${VERSION:-latest} .",
     "build-m1": "tsc && docker build --platform linux/amd64 --tag harmonyservices/service-runner:${VERSION:-latest} .",
     "publish": "docker push harmonyservices/service-runner:${VERSION:-latest}"
   },
@@ -44,7 +44,7 @@
     "node-fetch": "^3.2.10",
     "python-shell": "^3.0.1",
     "tmp": "^0.2.1",
-    "winston": "^3.7.2"
+    "winston": "^3.10.0"
   },
   "devDependencies": {
     "@types/chai": "^4.2.22",

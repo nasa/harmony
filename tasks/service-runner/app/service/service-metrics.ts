@@ -1,6 +1,6 @@
 import { Response, Request, NextFunction } from 'express';
 import axios from 'axios';
-import env from './util/env';
+import env from '../util/env';
 import { keepAliveAgent } from '../util/axios-clients';
 import logger from '../../../../app/util/log';
 

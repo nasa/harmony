@@ -1,11 +1,11 @@
 {
   "compilerOptions": {
+    "types": ["node"],
       "module": "commonjs",
       "baseUrl": ".",
-      "paths": {
-        "@harmony/*": ["../../app/*"]
-      },
       "moduleResolution": "node",
+      "experimentalDecorators": true,
+      "emitDecoratorMetadata": true,
       "target": "ES2021",
       "esModuleInterop": true,
       "allowJs": true,

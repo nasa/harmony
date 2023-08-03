@@ -4,6 +4,9 @@
 #  Variables that control pod setup for services                          #
 ###########################################################################
 
+# The port on which a worker container listens for work from the manager container
+WORKER_PORT=5001
+
 # The number of work scheduler pods to run
 SCHEDULER_POD_REPLICAS=1
 
@@ -18,18 +21,21 @@ SERVICE_RUNNER_REQUESTS_CPU=128m
 SERVICE_RUNNER_REQUESTS_MEMORY=128Mi
 SERVICE_RUNNER_LIMITS_CPU=1024m
 SERVICE_RUNNER_LIMITS_MEMORY=512Mi
+SERVICE_RUNNER_IMAGE=harmonyservices/service-runner:latest
 
 # work scheduler
 WORK_ITEM_SCHEDULER_REQUESTS_CPU=128m
 WORK_ITEM_SCHEDULER_REQUESTS_MEMORY=128Mi
 WORK_ITEM_SCHEDULER_LIMITS_CPU=1024m
 WORK_ITEM_SCHEDULER_LIMITS_MEMORY=512Mi
+WORK_ITEM_SCHEDULER_IMAGE=harmonyservices/work-scheduler:latest
 
 # work updater
 WORK_ITEM_UPDATER_REQUESTS_CPU=128m
 WORK_ITEM_UPDATER_REQUESTS_MEMORY=128Mi
 WORK_ITEM_UPDATER_LIMITS_CPU=1024m
 WORK_ITEM_UPDATER_LIMITS_MEMORY=512Mi
+WORK_ITEM_UPDATER_IMAGE=harmonyservices/work-updater:latest
 
 # backend services
 HARMONY_GDAL_ADAPTER_REQUESTS_CPU=128m

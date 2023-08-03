@@ -156,7 +156,7 @@
     "typescript": "^5.1.6",
     "unzipper": "^0.10.11",
     "uuid": "^8.3.2",
-    "winston": "^3.7.2",
+    "winston": "^3.10.0",
     "xmldom": "github:xmldom/xmldom#0.7.0",
     "xregexp": "^5.0.2",
     "xstate": "^4.31.0"

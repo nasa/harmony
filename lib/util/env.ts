@@ -22,7 +22,7 @@ if (Object.prototype.hasOwnProperty.call(process.env, 'GDAL_DATA')) {
 }
 
 // Read the env-defaults for this module (relative to this typescript file)
-let envDefaults = {};
+export let envDefaults = {};
 try {
   envDefaults = dotenv.parse(fs.readFileSync(path.resolve(__dirname, 'env-defaults')));
 } catch (e) {
@@ -30,16 +30,7 @@ try {
   winston.warn(e.message);
 }
 
-// read the local env-defaults from the top-level where the app is executed
-let envLocalDefaults = {};
-try {
-  envLocalDefaults = dotenv.parse(fs.readFileSync('env-defaults'));
-} catch (e) {
-  winston.warn('Could not parse environment defaults from env-defaults file');
-  winston.warn(e.message);
-}
-
-let envOverrides = {};
+export let envOverrides = {};
 if (process.env.NODE_ENV !== 'test') {
   try {
     envOverrides = dotenv.parse(fs.readFileSync('.env'));
@@ -67,7 +58,6 @@ export interface IHarmonyEnv {
   nodeEnv: string;
   port: number;
   queueLongPollingWaitTimeSec: number
-  reapableWorkAgeMinutes: number;
   sameRegionAccessRole: string;
   servicesYml: string;
   stagingBucket: string;
@@ -93,95 +83,79 @@ export const awsRegionRegex = /(us(-gov)?|ap|ca|cn|eu|sa)-(central|(north|south)
 export class HarmonyEnv implements IHarmonyEnv {
 
   @IsNotEmpty()
-    artifactBucket: string;
+  artifactBucket: string;
 
   @Matches(awsRegionRegex)
-    awsDefaultRegion: string;
+  awsDefaultRegion: string;
 
   builtInTaskPrefix: string;
 
   builtInTaskVersion: string;
 
   @IsUrl(hostRegexWhitelist)
-    callbackUrlRoot: string;
+  callbackUrlRoot: string;
 
   @IsUrl(hostRegexWhitelist)
-    cmrEndpoint: string;
+  cmrEndpoint: string;
 
   @IsInt()
   @Min(1)
-    cmrMaxPageSize: number;
+  cmrMaxPageSize: number;
 
   @IsNotEmpty()
-    databaseType: string;
+  databaseType: string;
 
   @IsNumber()
   @Min(0)
-    defaultPodGracePeriodSecs: number;
+  defaultPodGracePeriodSecs: number;
 
   @IsNumber()
   @Min(1)
-    defaultResultPageSize: number;
+  defaultResultPageSize: number;
 
   @IsNotEmpty()
-    harmonyClientId: string;
+  harmonyClientId: string;
 
   useLocalstack: boolean;
 
   @ValidateIf(obj => obj.useLocalStack === true)
   @IsNotEmpty()
-    localstackHost: string;
+  localstackHost: string;
 
   @IsNotEmpty()
-    logLevel: string;
+  logLevel: string;
 
   @IsInt()
   @Min(0)
-    maxGranuleLimit: number;
-
-  @IsInt()
-  @Min(0)
-    maxPostFields: number;
-
-  @IsInt()
-  @Min(0)
-    maxPostFileParts: number;
-
-  @IsInt()
-  @Min(0)
-    maxPostFileSize: number;
+  maxGranuleLimit: number;
 
   @IsNotEmpty()
-    nodeEnv: string;
+  nodeEnv: string;
 
   @IsInt()
   @Min(0)
   @Max(65535)
-    port: number;
+  port: number;
 
   @IsInt()
   @Min(1)
-    queueLongPollingWaitTimeSec: number;
-
-  @IsInt()
-  @Min(0)
-    reapableWorkAgeMinutes: number;
+  queueLongPollingWaitTimeSec: number;
 
   @IsNotEmpty()
-    sameRegionAccessRole: string;
+  sameRegionAccessRole: string;
 
   servicesYml: string;
 
   stagingBucket: string;
 
   @IsUrl(hostRegexWhitelist)
-    workItemSchedulerQueueUrl: string;
+  workItemSchedulerQueueUrl: string;
 
   @IsUrl(hostRegexWhitelist)
-    workItemUpdateQueueUrl: string;
+  workItemUpdateQueueUrl: string;
 
   @IsUrl(hostRegexWhitelist)
-    largeWorkItemUpdateQueueUrl: string;
+  largeWorkItemUpdateQueueUrl: string;
 
   releaseVersion: string;
 
@@ -197,21 +171,21 @@ export class HarmonyEnv implements IHarmonyEnv {
 
 }
 
-
 const envVars: IHarmonyEnv = {} as IHarmonyEnv;
 
 /**
- * Add a symbol to module.exports with an appropriate value. The exported symbol will be in
+ * Add a symbol to an env variable map with an appropriate value. The exported symbol will be in
  * camel case, e.g., `maxPostFileSize`. This approach has the drawback that these
  * config variables don't show up in VS Code autocomplete, but the reduction in repeated
  * boilerplate code is probably worth it.
  *
+ * @param envMap - The object to which the variable should be added
  * @param envName - The environment variable corresponding to the config variable in
  *   CONSTANT_CASE form
  * @param defaultValue - The value to use if the environment variable is not set. Only strings
  *   and integers are supported
  */
-function makeConfigVar(envName: string, defaultValue?: string): void {
+export function makeConfigVar(env: object, envName: string, defaultValue?: string): void {
   const stringValue = process.env[envName] || defaultValue;
   let val: number | string = stringValue;
   if (isInteger(stringValue)) {
@@ -219,14 +193,16 @@ function makeConfigVar(envName: string, defaultValue?: string): void {
   } else if (isFloat(stringValue)) {
     val = parseFloat(stringValue);
   }
-  envVars[_.camelCase(envName)] = val;
+  env[_.camelCase(envName)] = val;
+  // for existing env vars this is redundant (but doesn't hurt), but this allows us
+  // to add new env vars to the process as needed
   process.env[envName] = stringValue;
 }
 
-const allEnv = { ...envDefaults, ...envLocalDefaults, ...envOverrides, ...process.env };
+const allEnv = { ...envDefaults, ...envOverrides, ...process.env };
 
 for (const k of Object.keys(allEnv)) {
-  makeConfigVar(k, allEnv[k]);
+  makeConfigVar(envVars, k, allEnv[k]);
 }
 
 // special cases
@@ -262,14 +238,14 @@ for (const k of Object.keys(process.env)) {
   }
 }
 
-// validate the env vars
-const envVarsObj = new HarmonyEnv(envVars);
-const errors = validateSync(envVarsObj,  { validationError: { target: false } });
-if (errors.length > 0) {
-  for (const err of errors) {
-    winston.error(err);
-  }
-  throw (new Error('BAD BASE ENVIRONMENT'));
-}
+// // validate the env vars
+// const envVarsObj = new HarmonyEnv(envVars);
+// const errors = validateSync(envVarsObj,  { validationError: { target: false } });
+// if (errors.length > 0) {
+//   for (const err of errors) {
+//     winston.error(err);
+//   }
+//   throw (new Error('BAD BASE ENVIRONMENT'));
+// }
 
 export default envVars;
