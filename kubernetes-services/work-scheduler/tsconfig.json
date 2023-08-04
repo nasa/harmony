@@ -9,6 +9,7 @@
       "emitDecoratorMetadata": true,
       "allowJs": true,
       "noImplicitAny": false,
+      "resolveJsonModule": true,
       "sourceMap": true,
       "outDir": "built"
   },

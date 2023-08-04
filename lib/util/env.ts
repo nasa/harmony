@@ -52,22 +52,22 @@ export interface IHarmonyEnv {
   defaultPodGracePeriodSecs: number;
   defaultResultPageSize: number;
   harmonyClientId: string;
+  largeWorkItemUpdateQueueUrl: string;
   localstackHost: string;
   logLevel: string;
   maxGranuleLimit: number;
   nodeEnv: string;
   port: number;
   queueLongPollingWaitTimeSec: number
+  releaseVersion: string;
   sameRegionAccessRole: string;
+  serviceQueueUrls: { [key: string]: string };
   servicesYml: string;
   stagingBucket: string;
   useLocalstack: boolean;
+  useServiceQueues: boolean;
   workItemSchedulerQueueUrl: string;
   workItemUpdateQueueUrl: string;
-  largeWorkItemUpdateQueueUrl: string;
-  releaseVersion: string;
-  serviceQueueUrls: { [key: string]: string };
-  useServiceQueues: boolean;
 
   // Allow extension of this interface with new properties. This should only be used for special
   // properties that cannot be captured explicitly like the above properties.
@@ -116,7 +116,8 @@ export class HarmonyEnv implements IHarmonyEnv {
   @IsNotEmpty()
   harmonyClientId: string;
 
-  useLocalstack: boolean;
+  @IsUrl(hostRegexWhitelist)
+  largeWorkItemUpdateQueueUrl: string;
 
   @ValidateIf(obj => obj.useLocalStack === true)
   @IsNotEmpty()
@@ -141,6 +142,8 @@ export class HarmonyEnv implements IHarmonyEnv {
   @Min(1)
   queueLongPollingWaitTimeSec: number;
 
+  releaseVersion: string;
+
   @IsNotEmpty()
   sameRegionAccessRole: string;
 
@@ -148,20 +151,17 @@ export class HarmonyEnv implements IHarmonyEnv {
 
   stagingBucket: string;
 
+  serviceQueueUrls: { [key: string]: string; };
+
+  useLocalstack: boolean;
+
+  useServiceQueues: boolean;
+
   @IsUrl(hostRegexWhitelist)
   workItemSchedulerQueueUrl: string;
 
   @IsUrl(hostRegexWhitelist)
   workItemUpdateQueueUrl: string;
-
-  @IsUrl(hostRegexWhitelist)
-  largeWorkItemUpdateQueueUrl: string;
-
-  releaseVersion: string;
-
-  serviceQueueUrls: { [key: string]: string; };
-
-  useServiceQueues: boolean;
 
   constructor(env: IHarmonyEnv) {
     for (const key of Object.keys(env)) {

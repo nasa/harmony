@@ -3,7 +3,7 @@ import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as winston from 'winston';
-import { envDefaults, envOverrides, HarmonyEnv, IHarmonyEnv, hostRegexWhitelist, makeConfigVar } from '@harmony/util/env';
+import { envDefaults, envOverrides, HarmonyEnv, IHarmonyEnv, makeConfigVar } from '@harmony/util/env';
 import { env } from '@harmony/util';
 
 //
