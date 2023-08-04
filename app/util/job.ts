@@ -5,7 +5,7 @@ import env from './env';
 import { getTotalWorkItemSizesForJobID, updateWorkItemStatusesByJobId } from '../models/work-item';
 import { ConflictError, ForbiddenError, NotFoundError, RequestValidationError } from './errors';
 import isUUID from './uuid';
-import { WorkItemMeta, WorkItemStatus } from '../models/work-item-interface';
+import { WorkItemStatus } from '../models/work-item-interface';
 import { getWorkflowStepByJobIdStepIndex, getWorkflowStepsByJobId } from '../models/workflow-steps';
 import DataOperation, { CURRENT_SCHEMA_VERSION } from '../models/data-operation';
 import { createDecrypter, createEncrypter } from './crypto';
@@ -74,11 +74,10 @@ export async function completeJob(
     job.updateStatus(finalStatus, message);
     await job.save(tx);
     if (failed) {
-      const numUpdated = await updateWorkItemStatusesByJobId(
+      await updateWorkItemStatusesByJobId(
         tx, job.jobID, [WorkItemStatus.READY, WorkItemStatus.RUNNING], WorkItemStatus.CANCELED,
       );
-      const itemMeta: WorkItemMeta = { workItemStatus: WorkItemStatus.CANCELED, workItemAmount: numUpdated, workItemEvent: 'statusUpdate' };
-      logger.info(`Updated work items to ${WorkItemStatus.CANCELED} for completed job.`, itemMeta);
+      logger.info(`Updated work items to ${WorkItemStatus.CANCELED} for completed job.`);
     }
     await deleteUserWorkForJob(tx, job.jobID);
 
