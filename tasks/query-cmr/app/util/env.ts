@@ -2,6 +2,7 @@ import { IsNotEmpty, validateSync } from 'class-validator';
 import * as winston from 'winston';
 import { HarmonyEnv, IHarmonyEnv } from '@harmony/util/env';
 import { env } from '@harmony/util';
+import _ from 'lodash';
 
 //
 // env module
@@ -18,7 +19,7 @@ class QueryCmrServiceEnv extends HarmonyEnv implements IQueryCmrServiceEnv {
     workingDir: string;
 }
 
-const envVars: IQueryCmrServiceEnv = env as IQueryCmrServiceEnv;
+const envVars: IQueryCmrServiceEnv = _.cloneDeep(env) as IQueryCmrServiceEnv;
 
 // validate the env vars
 const harmonyQueryServiceEnvObj = new QueryCmrServiceEnv(envVars);

@@ -82,13 +82,13 @@ DATABASE_URL=postgresql://postgres:password@localhost:5432/postgres
 USE_SERVICE_QUEUES=true
 
 # SQS queue used to request scheduling of work items for a service
-WORK_ITEM_SCHEDULER_QUEUE_URL=http://localhost:4566/000000000000/work-item-scheduler-queue
+WORK_ITEM_SCHEDULER_QUEUE_URL=http://localstack:4566/000000000000/work-item-scheduler-queue
 
 # SQS queue used to process work item updates
-WORK_ITEM_UPDATE_QUEUE_URL=http://localhost:4566/000000000000/work-item-update-queue.fifo
+WORK_ITEM_UPDATE_QUEUE_URL=http://localstack:4566/000000000000/work-item-update-queue.fifo
 
 # SQS queue used to process work item updates
-LARGE_WORK_ITEM_UPDATE_QUEUE_URL=http://localhost:4566/000000000000/large-work-item-update-queue.fifo
+LARGE_WORK_ITEM_UPDATE_QUEUE_URL=http://localstack:4566/000000000000/large-work-item-update-queue.fifo
 
 # maximum number of items to pull from the queue at once for the large item queue (to avoid visibility timeouts)
 # if this is set to greater than 10 (the SQS max) then 10 will be used instead

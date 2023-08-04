@@ -5,6 +5,7 @@ import * as path from 'path';
 import winston from 'winston';
 import { envDefaults, envOverrides, HarmonyEnv, IHarmonyEnv, hostRegexWhitelist, makeConfigVar } from '@harmony/util/env';
 import { env } from '@harmony/util';
+import _ from 'lodash';
 
 //
 // harmony env module
@@ -184,8 +185,8 @@ class HarmonyServerEnv extends HarmonyEnv implements IHarmonyServerEnv {
 
 }
 
-const allEnv = { ...envDefaults, ...envOverrides, ...envLocalDefaults, ...process.env };
-const serverEnvVars = env as IHarmonyServerEnv;
+const allEnv = { ...envDefaults, ...envLocalDefaults, ...envOverrides, ...process.env };
+const serverEnvVars = _.cloneDeep(env) as IHarmonyServerEnv;
 
 for (const k of Object.keys(allEnv)) {
   makeConfigVar(serverEnvVars, k, allEnv[k]);

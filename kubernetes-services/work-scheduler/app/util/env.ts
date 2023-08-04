@@ -5,6 +5,7 @@ import * as path from 'path';
 import * as winston from 'winston';
 import { HarmonyEnv, IHarmonyEnv, envDefaults, envOverrides, makeConfigVar } from '@harmony/util/env';
 import { env } from '@harmony/util';
+import _ from 'lodash';
 //
 // env module
 // Sets up the environment variables for the work scheduler using the base environment variables
@@ -47,8 +48,8 @@ class HarmonyWorkSchedulerEnv extends HarmonyEnv implements IHarmonyWorkSchedule
   workItemSchedulerQueueMaxGetMessageRequests: number;
 }
 
-const allEnv = { ...envDefaults, ...envOverrides, ...envLocalDefaults, ...process.env };
-const envVars: IHarmonyWorkSchedulerEnv = env as IHarmonyWorkSchedulerEnv;
+const allEnv = { ...envDefaults, ...envLocalDefaults, ...envOverrides, ...process.env };
+const envVars: IHarmonyWorkSchedulerEnv = _.cloneDeep(env) as IHarmonyWorkSchedulerEnv;
 
 for (const k of Object.keys(allEnv)) {
   makeConfigVar(envVars, k, allEnv[k]);

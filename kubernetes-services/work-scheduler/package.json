@@ -12,7 +12,7 @@
     "lint": "eslint --ext .ts .",
     "coverage": "nyc mocha",
     "build": "tsc && cd ../.. && docker build -f kubernetes-services/work-scheduler/Dockerfile.mac --tag harmonyservices/work-scheduler:${VERSION:-latest} .",
-    "build-m1": "tsc && docker build -f Dockerfile.mac --platform linux/amd64 --tag harmonyservices/work-scheduler:${VERSION:-latest} .",
+    "build-m1": "tsc && cd ../.. && docker build -f kubernetes-services/work-scheduler/Dockerfile.mac --platform linux/amd64 --tag harmonyservices/work-scheduler:${VERSION:-latest} .",
     "publish": "docker push harmonyservices/work-scheduler:${VERSION:-latest}"
   },
   "engines": {

@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-      "module": "nodenext",
+      "module": "commonjs",
       "baseUrl": ".",
       "moduleResolution": "node",
       "target": "ES2021",

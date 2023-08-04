@@ -6,6 +6,7 @@ import * as winston from 'winston';
 import { HarmonyEnv, IHarmonyEnv, envDefaults, envOverrides, makeConfigVar } from '@harmony/util/env';
 import { env } from '@harmony/util';
 import { WorkItemQueueType } from '../../../../app/util/queue/queue';
+import _ from 'lodash';
 
 //
 // env module
@@ -25,7 +26,6 @@ try {
 }
 
 export interface IUpdaterHarmonyEnv extends IHarmonyEnv {
-  port: number;
   largeWorkItemUpdateQueueMaxBatchSize: number;
   workItemUpdateQueueType: WorkItemQueueType;
   workItemUpdateQueueProcessorDelayAfterErrorSec: number;
@@ -45,8 +45,8 @@ class UpdaterHarmonyEnv extends HarmonyEnv implements IUpdaterHarmonyEnv {
   workItemUpdateQueueProcessorDelayAfterErrorSec: number;
 }
 
-const allEnv = { ...envDefaults, ...envOverrides, ...envLocalDefaults, ...process.env };
-const updaterEnvVars = env as IUpdaterHarmonyEnv;
+const allEnv = { ...envDefaults, ...envLocalDefaults, ...envOverrides, ...process.env };
+const updaterEnvVars = _.cloneDeep(env) as IUpdaterHarmonyEnv;
 
 for (const k of Object.keys(allEnv)) {
   makeConfigVar(updaterEnvVars, k, allEnv[k]);
