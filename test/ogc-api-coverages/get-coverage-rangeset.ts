@@ -1026,36 +1026,42 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
   });
 });
 
-describe('OGC API Coverages - getCoverageRangeset with the extend query parameter', function () {
-  hookServersStartStop({ skipEarthdataLogin: false });
-
+describe('OGC API Coverages - getCoverageRangeset with the extend query parameter', async function () {
+  hookServersStartStop();
+  
   describe('when requesting all vars and extending red_var', function () {
+    StubService.hook({ params: { redirect: 'http://example.com' } });
     hookRangesetRequest('1.0.0', 'C1233800302-EEDTEST', 'all', { query: { extend: 'red_var', skipPreview: 'true', maxResults: 2 }, username: 'joe' });
     itRedirectsToJobStatusUrl();
   });
 
   describe('when requesting red_var and extending red_var', function () {
+    StubService.hook({ params: { redirect: 'http://example.com' } });
     hookRangesetRequest('1.0.0', 'C1233800302-EEDTEST', 'red_var', { query: { extend: 'red_var' }, username: 'joe' });
     itRedirectsToJobStatusUrl();
   });
 
   describe('when requesting red_var and blue_var and extending red_var', function () {
+    StubService.hook({ params: { redirect: 'http://example.com' } });
     hookRangesetRequest('1.0.0', 'C1233800302-EEDTEST', 'red_var,blue_var', { query: { extend: 'red_var' }, username: 'joe' });
     itRedirectsToJobStatusUrl();
   });
 
   describe('when requesting V1233801695-EEDTEST and extending V1233801695-EEDTEST', function () {
+    StubService.hook({ params: { redirect: 'http://example.com' } });
     hookRangesetRequest('1.0.0', 'C1233800302-EEDTEST', 'V1233801695-EEDTEST', { query: { extend: 'V1233801695-EEDTEST' }, username: 'joe' });
     itRedirectsToJobStatusUrl();
   });
   
   // red_var and V1233801695-EEDTEST are equivalent so this should work
   describe('when requesting red_var and extending V1233801695-EEDTEST', function () {
+    StubService.hook({ params: { redirect: 'http://example.com' } });
     hookRangesetRequest('1.0.0', 'C1233800302-EEDTEST', 'red_var', { query: { extend: 'V1233801695-EEDTEST' }, username: 'joe' });
     itRedirectsToJobStatusUrl();
   });
 
   describe('when requesting V1233801695-EEDTEST and extending red_var', function () {
+    StubService.hook({ params: { redirect: 'http://example.com' } });
     hookRangesetRequest('1.0.0', 'C1233800302-EEDTEST', 'V1233801695-EEDTEST', { query: { extend: 'red_var' }, username: 'joe' });
     itRedirectsToJobStatusUrl();
   });
