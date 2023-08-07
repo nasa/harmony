@@ -38,7 +38,7 @@ https://cmr.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/gesdisc/giovanni
-    umm_s: S2701049693-XYZ_PROV
+    umm_s: S2739607260-GES_DISC
     collections:
       - id: C1598621093-GES_DISC
         variables:
@@ -57,7 +57,7 @@ https://cmr.earthdata.nasa.gov:
       concatenate_by_default: true
       subsetting:
         temporal: true
-        bbox: true
+        point: true
         variable: true
         multiple_variable: false
       output_formats:
@@ -371,7 +371,7 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/gesdisc/giovanni
-    umm_s: S1258119278-EEDTEST
+    umm_s: S1258984104-GES_DISC
     collections:
       - id: C1225808238-GES_DISC
         variables:
@@ -390,7 +390,7 @@ https://cmr.uat.earthdata.nasa.gov:
       concatenate_by_default: true
       subsetting:
         temporal: true
-        bbox: true
+        point: true
         variable: true
         multiple_variable: false
       output_formats:
