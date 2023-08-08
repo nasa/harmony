@@ -29,6 +29,10 @@ const readyTurboWorkItem = buildWorkItem({
   jobID: acceptedTurboJob.jobID,
   status: WorkItemStatus.READY,
 });
+const queuedTurboWorkItem = buildWorkItem({
+  jobID: acceptedTurboJob.jobID,
+  status: WorkItemStatus.QUEUED,
+});
 
 const finishedTurboJob = buildJob({ username: 'doe', status: JobStatus.SUCCESSFUL });
 const finishedTurboWorkItem = buildWorkItem({
@@ -55,6 +59,7 @@ describe('Canceling a job', async function () {
     await thirdTurboWorkItem.save(this.trx);
     await anotherTurboWorkItem.save(this.trx);
     await readyTurboWorkItem.save(this.trx);
+    await queuedTurboWorkItem.save(this.trx);
     await finishedTurboWorkItem.save(this.trx);
     await failedTurboWorkItem.save(this.trx);
     this.trx.commit();
@@ -67,6 +72,7 @@ describe('Canceling a job', async function () {
         await cancelAndSaveJob(acceptedTurboJob.requestId, log, 'doe');
         const { workItems } = await getWorkItemsByJobId(db, readyTurboWorkItem.jobID);
         expect(workItems[0].status).to.equal(WorkItemStatus.CANCELED);
+        expect(workItems[1].status).to.equal(WorkItemStatus.CANCELED);
       });
 
       it('is able to cancel the job in running state', async function () {
