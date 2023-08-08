@@ -57,7 +57,6 @@ https://cmr.earthdata.nasa.gov:
       concatenate_by_default: true
       subsetting:
         temporal: true
-        point: true
         variable: true
         multiple_variable: false
       output_formats:
@@ -390,7 +389,6 @@ https://cmr.uat.earthdata.nasa.gov:
       concatenate_by_default: true
       subsetting:
         temporal: true
-        point: true
         variable: true
         multiple_variable: false
       output_formats:
