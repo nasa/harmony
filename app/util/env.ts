@@ -1,4 +1,4 @@
-import { IsInt, IsNotEmpty, IsNumber, IsUrl, Length, Min, validateSync } from 'class-validator';
+import { IsInt, IsNotEmpty, IsNumber, IsUrl, Min, validateSync } from 'class-validator';
 import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -82,7 +82,7 @@ class HarmonyServerEnv extends HarmonyEnv implements IHarmonyServerEnv {
   @IsNotEmpty()
   sharedSecretKey: string;
 
-  @Length(128)
+  @IsNotEmpty()
   cookieSecret: string;
 
   metricsEndpoint: string;
@@ -194,7 +194,7 @@ for (const k of Object.keys(allEnv)) {
 
 // validate the env vars
 const harmonyServerEnvObj = new HarmonyServerEnv(serverEnvVars);
-const errors = validateSync(harmonyServerEnvObj,  { validationError: { target: false } });
+const errors = validateSync(harmonyServerEnvObj, { validationError: { target: false } });
 if (errors.length > 0) {
   for (const err of errors) {
     winston.error(err);

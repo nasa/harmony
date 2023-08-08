@@ -7,7 +7,7 @@ import hookServersStartStop from '../helpers/servers';
 import { hookTransaction, tables, truncateAll } from '../helpers/db';
 import { buildJob } from '../helpers/jobs';
 import { workflowUIJob, hookWorkflowUIJob, hookAdminWorkflowUIJob } from '../helpers/workflow-ui';
-import { env } from '@harmony/util';
+import env from '../../app/util/env';
 
 const collectionWithEULAFalseAndGuestReadTrue = 'C1233800302-EEDTEST';
 

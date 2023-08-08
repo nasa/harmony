@@ -8,7 +8,7 @@ import { getPagingParams, getPagingLinks, setPagingHeaders } from '../util/pagin
 import HarmonyRequest from '../models/harmony-request';
 import db from '../util/db';
 import version from '../util/version';
-import { env} from '@harmony/util';
+import env from '../util/env';
 import { keysToLowerCase } from '../util/object';
 import { getItemLogsLocation, WorkItemQuery, WorkItemStatus } from '../models/work-item-interface';
 import { getRequestRoot } from '../util/url';

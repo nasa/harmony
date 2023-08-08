@@ -23,8 +23,12 @@ process.env.CMR_MAX_PAGE_SIZE = '100';
 process.env.MAX_BATCH_INPUTS = '3';
 process.env.MAX_BATCH_SIZE_IN_BYTES = '10000';
 
+// use 'localhost' instead of 'harmony' since we don't run tests in k8s
+// process.env.CALLBACK_URL_ROOT = 'http://localhost:4001';
+
+
 // eslint-disable-next-line import/first
-import { env } from '@harmony/util'; // Must set required env before loading the env file
+import env from '../../app/util/env'; // Must set required env before loading the env file
 
 env.nodeEnv = 'test';
 env.databaseType = 'sqlite';

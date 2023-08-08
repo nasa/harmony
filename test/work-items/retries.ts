@@ -8,7 +8,7 @@ import hookServersStartStop from '../helpers/servers';
 import { fakeServiceStacOutput, getWorkForService, updateWorkItem } from '../helpers/work-items';
 import { getStacLocation, WorkItemStatus } from '../../app/models/work-item-interface';
 import { truncateAll } from '../helpers/db';
-import { env } from '@harmony/util';
+import env from '../../app/util/env';
 import { resetQueues } from '../helpers/queue';
 
 const reprojectAndZarrQuery = {

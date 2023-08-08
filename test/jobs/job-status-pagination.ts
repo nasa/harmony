@@ -5,7 +5,7 @@ import JobLink from '../../app/models/job-link';
 import hookServersStartStop from '../helpers/servers';
 import { hookJobStatus, buildJob, areJobLinksEqual, itIncludesPagingRelations } from '../helpers/jobs';
 import db from '../../app/util/db';
-import { env } from '@harmony/util';
+import env from '../../app/util/env';
 
 describe('Individual job status route - pagination', function () {
   hookServersStartStop({ skipEarthdataLogin: false });

@@ -26,7 +26,7 @@ import { JobRecord, JobStatus, Job } from '../../app/models/job';
 import { getWorkflowStepsByJobId } from '../../app/models/workflow-steps';
 import db from '../../app/util/db';
 import { createDecrypter, createEncrypter } from '../../app/util/crypto';
-import { env } from '@harmony/util';
+import env from '../../app/util/env';
 import DataOperation from '../../app/models/data-operation';
 import { buildWorkflowStep } from '../helpers/workflow-steps';
 

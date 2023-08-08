@@ -7,7 +7,7 @@ import hookServersStartStop from '../helpers/servers';
 import { buildJob, itIncludesPagingRelations, areStacJobLinksEqual } from '../helpers/jobs';
 import { hookStacCatalog } from '../helpers/stac';
 import db from '../../app/util/db';
-import { env } from '@harmony/util';
+import env from '../../app/util/env';
 
 describe('STAC - pagination', function () {
   hookServersStartStop({ skipEarthdataLogin: false });
