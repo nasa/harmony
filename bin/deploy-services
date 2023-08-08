@@ -7,7 +7,7 @@ source "lib/util/env-defaults"
 source "env-defaults"
 source "service-env-defaults"
 source ".env"
-set +a
+set +ax
 eval "$env_save"
 
 

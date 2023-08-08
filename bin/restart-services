@@ -4,7 +4,7 @@ env_save=$(export -p)
 set -a
 source "env-defaults"
 source ".env"
-set +a
+set +ax
 eval "$env_save"
 
 current_context=$(kubectl config current-context)
