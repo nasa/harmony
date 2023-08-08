@@ -1,4 +1,4 @@
-import { IsInt, IsNotEmpty, Length, Max, Min, ValidateIf, validateSync } from 'class-validator';
+import { IsInt, IsNotEmpty, Max, Min, ValidateIf, validateSync } from 'class-validator';
 import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -53,9 +53,6 @@ class HarmonyServiceEnv extends HarmonyEnv implements IHarmonyServiceEnv {
   @Max(65535)
   backendPort: number;
 
-  @Length(128)
-  cookieSecret: string;
-
   @IsNotEmpty()
   harmonyClientId: string;
 
@@ -101,7 +98,7 @@ envVars.harmonyClientId = process.env.CLIENT_ID || 'harmony-unknown';
 
 // validate the env vars
 const harmonyServiceEnvObj = new HarmonyServiceEnv(envVars);
-const errors = validateSync(harmonyServiceEnvObj,  { validationError: { target: false } });
+const errors = validateSync(harmonyServiceEnvObj, { validationError: { target: false } });
 if (errors.length > 0) {
   for (const err of errors) {
     winston.error(err);
