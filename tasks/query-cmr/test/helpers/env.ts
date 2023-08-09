@@ -5,3 +5,8 @@ process.env.CMR_MAX_PAGE_SIZE = '2000';
 process.env.STAGING_BUCKET = 'local_staging_bucket';
 process.env.NODE_ENV = 'test';
 process.env.DATABASE_TYPE = 'postgres';
+process.env.COOKIE_SECRET = 'foo';
+process.env.OAUTH_CLIENT_ID = 'foo';
+process.env.OAUTH_UID = 'foo';
+process.env.OAUTH_PASSWORD = 'foo';
+
