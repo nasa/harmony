@@ -23,8 +23,6 @@ export default function buildEdlAuthorizer(paths: Array<string | RegExp> = []): 
       if (match) {
         const { logger } = req.context;
         const userToken = match[1];
-        // Generates a new client credentials token for each user request passing in a token
-        // We should reuse client credentials if possible (seems like simple-oauth2 lib might)
         try {
           // Get the username for the provided token from EDL
           const username = await getUserIdRequest(userToken, logger);
