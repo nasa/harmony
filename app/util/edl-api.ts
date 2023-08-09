@@ -12,7 +12,7 @@ const edlVerifyUserEulaUrl = (username: string, eulaId: string): string =>
   `${env.oauthHost}/api/users/${username}/verify_user_eula?eula_id=${eulaId}`;
 
 const oauth2 = simpleOAuth2.create(oauthOptions);
-let clientToken: AccessToken; // valid for 30 days
+let harmonyClientToken: AccessToken; // valid for 30 days
 
 /**
  * Returns the bearer token to use in all EDL requests from Harmony
@@ -20,11 +20,11 @@ let clientToken: AccessToken; // valid for 30 days
  */
 export async function getClientCredentialsToken(logger: Logger): Promise<string> {
   try {
-    if (!clientToken || clientToken.expired()) {
+    if (!harmonyClientToken || harmonyClientToken.expired()) {
       const oauthToken = await oauth2.clientCredentials.getToken({});
-      clientToken = oauth2.accessToken.create(oauthToken);
+      harmonyClientToken = oauth2.accessToken.create(oauthToken);
     }
-    return clientToken.token.access_token;
+    return harmonyClientToken.token.access_token;
   } catch (e) {
     logger.error('Failed to get client credentials for harmony user.');
     logger.error(e);
@@ -44,7 +44,7 @@ export async function getClientCredentialsToken(logger: Logger): Promise<string>
 export async function getUserIdRequest(userToken: string, logger: Logger)
   : Promise<string> {
   try {
-    const token = await getClientCredentialsToken(logger);
+    const clientToken = await getClientCredentialsToken(logger);
     const response = await axios.default.post(
       edlUserRequestUrl,
       null,
@@ -53,7 +53,7 @@ export async function getUserIdRequest(userToken: string, logger: Logger)
           client_id: env.oauthClientId,
           token: userToken,
         },
-        headers: { authorization: `Bearer ${token}` },
+        headers: { authorization: `Bearer ${clientToken}` },
       },
     );
     return response.data.uid;
@@ -74,9 +74,9 @@ export async function getUserIdRequest(userToken: string, logger: Logger)
 async function getUserGroups(username: string, logger: Logger)
   : Promise<string[]> {
   try {
-    const token = await getClientCredentialsToken(logger);
+    const clientToken = await getClientCredentialsToken(logger);
     const response = await axios.default.get(
-      `${edlUserGroupsBaseUrl}/${username}`, { headers: { Authorization: `Bearer ${token}` } },
+      `${edlUserGroupsBaseUrl}/${username}`, { headers: { Authorization: `Bearer ${clientToken}` } },
     );
     const groups = response.data?.user_groups.map((group) => group.group_id) || [];
     return groups;
@@ -145,9 +145,9 @@ export async function verifyUserEula(username: string, eulaId: string, logger: L
   let statusCode: number;
   let eulaResponse: { msg: string, error: string, accept_eula_url: string };
   try {
-    const token = await getClientCredentialsToken(logger);
+    const clientToken = await getClientCredentialsToken(logger);
     const response = await axios.default.get(
-      edlVerifyUserEulaUrl(username, eulaId), { headers: { Authorization: `Bearer ${token}` } },
+      edlVerifyUserEulaUrl(username, eulaId), { headers: { Authorization: `Bearer ${clientToken}` } },
     );
     eulaResponse = response.data;
     statusCode = response.status;
