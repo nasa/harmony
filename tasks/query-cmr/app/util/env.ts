@@ -7,16 +7,14 @@ import _ from 'lodash';
 //
 // env module
 // Sets up the environment variables for query-cmr using the base environment variables
-// and some specific to services
+// and some specific to services.
+// Currently this is just a placeholder for future vars we might need for query-cmr.
 //
 
 interface IQueryCmrServiceEnv extends IHarmonyEnv {
-  workingDir: string;
 }
 
 class QueryCmrServiceEnv extends HarmonyEnv implements IQueryCmrServiceEnv {
-  @IsNotEmpty()
-    workingDir: string;
 }
 
 const envVars: IQueryCmrServiceEnv = _.cloneDeep(env) as IQueryCmrServiceEnv;

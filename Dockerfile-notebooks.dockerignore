@@ -3,7 +3,7 @@ services
 .env
 db/*.sqlite3
 logs
-tasks
+#tasks
 test
 workload
 fixtures
