@@ -13,6 +13,9 @@
 # callbacks
 BACKEND_PORT=3001
 
+# The port on which to run a given service
+PORT=5000
+
 # The base URL for the service callbacks. This needs to be accessible from
 # wherever the service is run. The Harmony CI/CD scripts sets this to the
 # backend load balancer when running on AWS. The default is set for
