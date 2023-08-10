@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-empty-interface */
-import * as winston from 'winston';
 import { HarmonyEnv, IHarmonyEnv, validateEnvironment } from '@harmony/util/env';
 import { env } from '@harmony/util';
 import _ from 'lodash';
