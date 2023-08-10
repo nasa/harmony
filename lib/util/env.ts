@@ -4,8 +4,14 @@ import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as winston from 'winston';
-import { IsInt, IsNotEmpty, IsNumber, IsUrl, Matches, Max, Min, ValidateIf, validateSync } from 'class-validator';
+import { IsInt, IsNotEmpty, IsNumber, IsUrl, Matches, Max, Min, ValidateIf, ValidationError, validateSync } from 'class-validator';
 import { isFloat, isInteger } from './string';
+
+const logger = winston.createLogger({
+  transports: [
+    new winston.transports.Console(),
+  ],
+});
 
 //
 // env module
@@ -14,7 +20,7 @@ import { isFloat, isInteger } from './string';
 //
 
 if (Object.prototype.hasOwnProperty.call(process.env, 'GDAL_DATA')) {
-  winston.warn('Found a GDAL_DATA environment variable.  This is usually from an external GDAL '
+  logger.warn('Found a GDAL_DATA environment variable.  This is usually from an external GDAL '
     + 'installation and can interfere with CRS parsing in Harmony, so we will ignore it. '
     + 'If you need to override the GDAL_DATA location for Harmony, provide a GDAL_DATA key in '
     + 'your .env file.');
@@ -26,8 +32,8 @@ export let envDefaults = {};
 try {
   envDefaults = dotenv.parse(fs.readFileSync(path.resolve(__dirname, 'env-defaults')));
 } catch (e) {
-  winston.warn('Could not parse environment defaults from env-defaults file');
-  winston.warn(e.message);
+  logger.warn('Could not parse environment defaults from env-defaults file');
+  logger.warn(e.message);
 }
 
 export let envOverrides = {};
@@ -35,8 +41,8 @@ if (process.env.NODE_ENV !== 'test') {
   try {
     envOverrides = dotenv.parse(fs.readFileSync('.env'));
   } catch (e) {
-    winston.warn('Could not parse environment overrides from .env file');
-    winston.warn(e.message);
+    logger.warn('Could not parse environment overrides from .env file');
+    logger.warn(e.message);
   }
 }
 
@@ -171,6 +177,34 @@ export class HarmonyEnv implements IHarmonyEnv {
 
 }
 
+/**
+  Get any errors from validating the environment - leave out the env object itself
+  from the output to avoid showing secrets.
+  @param env - the object representing the env vars, including constraints
+  @returns An array of `ValidationError`s
+*/
+export function getValidationErrors(env: HarmonyEnv): ValidationError[] {
+  return validateSync(env, { validationError: { target: false } });
+}
+
+/**
+  Validate a set of env vars
+  @param env - the object representing the env vars, including constraints
+  @throws Error on constraing violation
+*/
+export function validateEnvironment(env: HarmonyEnv): void {
+  if (process.env.SKIP_ENV_VALIDATION !== 'true') {
+    const errors = getValidationErrors(env);
+  
+    if (errors.length > 0) {
+      for (const err of errors) {
+        logger.error(err);
+      }
+      throw (new Error('BAD ENVIRONMENT'));
+    }
+  }
+}
+
 const envVars: IHarmonyEnv = {} as IHarmonyEnv;
 
 /**
@@ -233,21 +267,12 @@ for (const k of Object.keys(process.env)) {
         }
       }
     } catch (e) {
-      winston.error(`Could not parse value ${value} for ${k} as JSON`);
+      logger.error(`Could not parse value ${value} for ${k} as JSON`);
     }
   }
 }
 
-if (process.env.SKIP_ENV_VALIDATION !== 'true') {
-  // validate the env vars
-  const envVarsObj = new HarmonyEnv(envVars);
-  const errors = validateSync(envVarsObj, { validationError: { target: false } });
-  if (errors.length > 0) {
-    for (const err of errors) {
-      winston.error(err);
-    }
-    throw (new Error('BAD BASE ENVIRONMENT'));
-  }
-}
+const envVarsObj = new HarmonyEnv(envVars);
+validateEnvironment(envVarsObj);
 
 export default envVars;

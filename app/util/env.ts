@@ -1,9 +1,9 @@
-import { IsInt, IsNotEmpty, IsNumber, IsUrl, Min, validateSync } from 'class-validator';
+import { IsInt, IsNotEmpty, IsNumber, IsUrl, Min } from 'class-validator';
 import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
 import winston from 'winston';
-import { envDefaults, envOverrides, HarmonyEnv, IHarmonyEnv, hostRegexWhitelist, makeConfigVar } from '@harmony/util/env';
+import { envDefaults, envOverrides, HarmonyEnv, IHarmonyEnv, hostRegexWhitelist, makeConfigVar, validateEnvironment } from '@harmony/util/env';
 import { env } from '@harmony/util';
 import _ from 'lodash';
 
@@ -194,12 +194,6 @@ for (const k of Object.keys(allEnv)) {
 
 // validate the env vars
 const harmonyServerEnvObj = new HarmonyServerEnv(serverEnvVars);
-const errors = validateSync(harmonyServerEnvObj, { validationError: { target: false } });
-if (errors.length > 0) {
-  for (const err of errors) {
-    winston.error(err);
-  }
-  throw (new Error('BAD ENVIRONMENT'));
-}
+validateEnvironment(harmonyServerEnvObj);
 
 export default serverEnvVars;

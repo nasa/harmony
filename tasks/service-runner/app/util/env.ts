@@ -1,9 +1,9 @@
-import { IsInt, IsNotEmpty, Max, Min, ValidateIf, validateSync } from 'class-validator';
+import { IsInt, IsNotEmpty, Max, Min, ValidateIf } from 'class-validator';
 import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as winston from 'winston';
-import { envDefaults, envOverrides, HarmonyEnv, IHarmonyEnv, makeConfigVar } from '@harmony/util/env';
+import { envDefaults, envOverrides, HarmonyEnv, IHarmonyEnv, validateEnvironment } from '@harmony/util/env';
 import { env } from '@harmony/util';
 import _ from 'lodash';
 
@@ -98,12 +98,6 @@ envVars.harmonyClientId = process.env.CLIENT_ID || 'harmony-unknown';
 
 // validate the env vars
 const harmonyServiceEnvObj = new HarmonyServiceEnv(envVars);
-const errors = validateSync(harmonyServiceEnvObj, { validationError: { target: false } });
-if (errors.length > 0) {
-  for (const err of errors) {
-    winston.error(err);
-  }
-  throw (new Error('BAD ENVIRONMENT'));
-}
+validateEnvironment(harmonyServiceEnvObj);
 
 export default envVars;

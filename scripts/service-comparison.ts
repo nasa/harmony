@@ -4,8 +4,6 @@
  * any mismatches between the configurations.
  */
 
-process.env.SKIP_ENV_VALIDATION = 'true';
-
 import { exit } from 'process';
 import { loadServiceConfigs } from '../app/models/services';
 import { CmrUmmService, cmrApiConfig, getServicesByIds } from '../app/util/cmr';

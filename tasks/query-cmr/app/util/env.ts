@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-empty-interface */
-import { validateSync } from 'class-validator';
 import * as winston from 'winston';
-import { HarmonyEnv, IHarmonyEnv } from '@harmony/util/env';
+import { HarmonyEnv, IHarmonyEnv, validateEnvironment } from '@harmony/util/env';
 import { env } from '@harmony/util';
 import _ from 'lodash';
 
@@ -22,12 +21,6 @@ const envVars: IQueryCmrServiceEnv = _.cloneDeep(env) as IQueryCmrServiceEnv;
 
 // validate the env vars
 const harmonyQueryServiceEnvObj = new QueryCmrServiceEnv(envVars);
-const errors = validateSync(harmonyQueryServiceEnvObj,  { validationError: { target: false } });
-if (errors.length > 0) {
-  for (const err of errors) {
-    winston.error(err);
-  }
-  throw (new Error('BAD ENVIRONMENT'));
-}
+validateEnvironment(harmonyQueryServiceEnvObj);
 
 export default envVars;

@@ -1,9 +1,9 @@
-import { IsIn, IsInt, Min, validateSync } from 'class-validator';
+import { IsIn, IsInt, Min } from 'class-validator';
 import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as winston from 'winston';
-import { HarmonyEnv, IHarmonyEnv, envDefaults, envOverrides, makeConfigVar } from '@harmony/util/env';
+import { HarmonyEnv, IHarmonyEnv, envDefaults, envOverrides, makeConfigVar, validateEnvironment } from '@harmony/util/env';
 import { env } from '@harmony/util';
 import { WorkItemQueueType } from '../../../../app/util/queue/queue';
 import _ from 'lodash';
@@ -57,12 +57,6 @@ updaterEnvVars.workItemUpdateQueueType = process.env.WORK_ITEM_UPDATE_QUEUE_TYPE
 
 // validate the env vars
 const updaterHarmonyEnvObj = new UpdaterHarmonyEnv(updaterEnvVars);
-const errors = validateSync(updaterHarmonyEnvObj,  { validationError: { target: false } });
-if (errors.length > 0) {
-  for (const err of errors) {
-    winston.error(err);
-  }
-  throw (new Error('BAD ENVIRONMENT'));
-}
+validateEnvironment(updaterHarmonyEnvObj);
 
 export default updaterEnvVars;

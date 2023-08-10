@@ -1,7 +1,6 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import { validateSync } from 'class-validator';
-import { HarmonyEnv, IHarmonyEnv } from '../env';
+import { HarmonyEnv, IHarmonyEnv, getValidationErrors, validateEnvironment } from '../env';
 
 describe('Environment validation', function () {
 
@@ -29,26 +28,40 @@ describe('Environment validation', function () {
 
   describe('When the environment is valid', function () {
     const validEnv: HarmonyEnv = new HarmonyEnv(validEnvData);
-    const errors = validateSync(validEnv, { validationError: { target: false } });
-    console.log(JSON.stringify(errors));
-    it('does not return errors when validated', function () {
-      expect(errors.length).to.eql(0);
+    it('does not throw an error when validated', function () {
+      expect(() => validateEnvironment(validEnv)).not.to.Throw;
+    });
+
+    it('does not log any errors', function () {
+      expect(getValidationErrors(validEnv).length).to.eql(0);
     });
   });
 
-  describe('WHen the environment is invalid', function () {
-    const invalidEnvData: IHarmonyEnv = { ...validEnvData, ...{ port: -1 } } as IHarmonyEnv;
+  describe('When the environment is invalid', function () {
+    const invalidEnvData: IHarmonyEnv = { ...validEnvData, ...{ port: -1, callbackUrlRoot: 'foo' } } as IHarmonyEnv;
     const invalidEnv: HarmonyEnv = new HarmonyEnv(invalidEnvData);
-    const errors = validateSync(invalidEnv, { validationError: { target: false } });
-    it('returns errors when validated', function () {
-      expect(errors).to.eql([{
-        'children': [],
-        'constraints': {
-          'min': 'port must not be less than 0',
+    it('throws an error when validated', function () {
+      expect(() => validateEnvironment(invalidEnv)).to.throw;
+    });
+
+    it('logs two errors', function () {
+      expect(getValidationErrors(invalidEnv)).to.eql([
+        {
+          'children': [],
+          'constraints': {
+            'isUrl': 'callbackUrlRoot must be a URL address',
+          },
+          'property': 'callbackUrlRoot',
+          'value': 'foo',
         },
-        'property': 'port',
-        'value': -1,
-      },
+        {
+          'children': [],
+          'constraints': {
+            'min': 'port must not be less than 0',
+          },
+          'property': 'port',
+          'value': -1,
+        },
       ]);
     });
   });
