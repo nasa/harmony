@@ -18,7 +18,7 @@ const fakeUsername = 'testy_mctestface';
 
 describe('Earthdata Login', function () {
   StubService.hookEach();
-  hookServersStartStop({ skipEarthdataLogin: false });
+  hookServersStartStop({ skipEarthdataLogin: false }, false);
 
   describe('Calls to authenticated resources', function () {
     describe('When a request provides no token', function () {

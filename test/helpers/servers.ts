@@ -2,6 +2,7 @@ import { before, after } from 'mocha';
 import { stub } from 'sinon';
 import * as harmony from '../../app/server';
 import env from '../../app/util/env';
+import { stubEdlRequest, token, unstubEdlRequest } from './auth';
 
 process.env.EXAMPLE_SERVICES = 'true';
 
@@ -21,8 +22,10 @@ process.env.EXAMPLE_SERVICES = 'true';
  * `hookRedirect('joe');`
  *
  * @param opts - Options to pass to the server start method
+ * @param stubOAuthClientCredentialsReq - Whether to replace OAuth client_credentials API calls to EDL
+ * with a stub that returns a fake_access token
  */
-export default function hookServersStartStop(opts = { skipEarthdataLogin: true }): void {
+export default function hookServersStartStop(opts = { skipEarthdataLogin: true }, stubOAuthClientCredentialsReq = true): void {
   let servers = null;
   before(async function () {
     // Skip Earthdata Login unless the test says to do otherwise
@@ -43,10 +46,21 @@ export default function hookServersStartStop(opts = { skipEarthdataLogin: true }
     this.backend = servers.backend;
     stub(env, 'callbackUrlRoot').get(() => `http://localhost:${servers.backend.address().port}`);
     process.env.OAUTH_REDIRECT_URI = `http://localhost:${servers.frontend.address().port}/oauth2/redirect`;
+
+    if (stubOAuthClientCredentialsReq) {
+      stubEdlRequest(
+        '/oauth/token',
+        { grant_type: 'client_credentials' },
+        token({ accessToken: 'fake_access' }),
+      );
+    }
   });
   after(async function () {
     await harmony.stop(servers);
     delete this.frontend;
     delete this.backend;
+    if (stubOAuthClientCredentialsReq) {
+      unstubEdlRequest();
+    }
   });
 }
