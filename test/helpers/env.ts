@@ -23,9 +23,7 @@ process.env.CMR_MAX_PAGE_SIZE = '100';
 process.env.MAX_BATCH_INPUTS = '3';
 process.env.MAX_BATCH_SIZE_IN_BYTES = '10000';
 
-// use 'localhost' instead of 'harmony' since we don't run tests in k8s
-// process.env.CALLBACK_URL_ROOT = 'http://localhost:4001';
-
+process.env.PORT = '4000';
 
 // eslint-disable-next-line import/first
 import env from '../../app/util/env'; // Must set required env before loading the env file
