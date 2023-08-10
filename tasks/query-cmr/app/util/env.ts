@@ -1,4 +1,5 @@
-import { IsNotEmpty, validateSync } from 'class-validator';
+/* eslint-disable @typescript-eslint/no-empty-interface */
+import { validateSync } from 'class-validator';
 import * as winston from 'winston';
 import { HarmonyEnv, IHarmonyEnv } from '@harmony/util/env';
 import { env } from '@harmony/util';

@@ -19,12 +19,12 @@ export function listToText(items: string[], joinWord = Conjunction.AND): string 
   let result;
   if (!items) return '';
   switch (items.length) {
-    case 0: return '';
-    case 1: return items[0];
-    case 2: return items.join(` ${joinWord} `);
-    default:
-      result = items.concat(); // Copies the array
-      result[result.length - 1] = `${joinWord} ${result[result.length - 1]}`;
+  case 0: return '';
+  case 1: return items[0];
+  case 2: return items.join(` ${joinWord} `);
+  default:
+    result = items.concat(); // Copies the array
+    result[result.length - 1] = `${joinWord} ${result[result.length - 1]}`;
   }
   return result.join(', ');
 }

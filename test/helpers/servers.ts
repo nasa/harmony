@@ -24,7 +24,7 @@ process.env.EXAMPLE_SERVICES = 'true';
  */
 export default function hookServersStartStop(opts = { skipEarthdataLogin: true }): void {
   let servers = null;
-  before(async function() {
+  before(async function () {
     // Skip Earthdata Login unless the test says to do otherwise
     const skipEdl = opts.skipEarthdataLogin ? 'true' : 'false';
     // Start Harmony on a random open port
@@ -44,7 +44,7 @@ export default function hookServersStartStop(opts = { skipEarthdataLogin: true }
     stub(env, 'callbackUrlRoot').get(() => `http://localhost:${servers.backend.address().port}`);
     process.env.OAUTH_REDIRECT_URI = `http://localhost:${servers.frontend.address().port}/oauth2/redirect`;
   });
-  after(async function() {
+  after(async function () {
     await harmony.stop(servers);
     delete this.frontend;
     delete this.backend;

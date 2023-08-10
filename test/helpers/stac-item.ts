@@ -12,12 +12,12 @@ import { it } from 'mocha';
 function expectAssets(assetsEntry: any, linkType?: string): void {
   let expectedType: string;
   switch (linkType) {
-    case 'https':
-    case 'http':
-      expectedType = 'http';
-      break;
-    default:
-      expectedType = 's3';
+  case 'https':
+  case 'http':
+    expectedType = 'http';
+    break;
+  default:
+    expectedType = 's3';
   }
   const link = Object.keys(assetsEntry)[0];
   expect(link.toLowerCase().startsWith(expectedType)).to.be.true;

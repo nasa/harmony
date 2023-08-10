@@ -238,14 +238,14 @@ for (const k of Object.keys(process.env)) {
   }
 }
 
-// // validate the env vars
-// const envVarsObj = new HarmonyEnv(envVars);
-// const errors = validateSync(envVarsObj,  { validationError: { target: false } });
-// if (errors.length > 0) {
-//   for (const err of errors) {
-//     winston.error(err);
-//   }
-//   throw (new Error('BAD BASE ENVIRONMENT'));
-// }
+// validate the env vars
+const envVarsObj = new HarmonyEnv(envVars);
+const errors = validateSync(envVarsObj,  { validationError: { target: false } });
+if (errors.length > 0) {
+  for (const err of errors) {
+    winston.error(err);
+  }
+  throw (new Error('BAD BASE ENVIRONMENT'));
+}
 
 export default envVars;

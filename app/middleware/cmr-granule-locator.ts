@@ -120,21 +120,21 @@ function getResultsLimitedMessage(req: HarmonyRequest, collection: string): stri
     message = baseResultsLimitedMessage(operation.cmrHits, maxGranules);
 
     switch (reason) {
-      case GranuleLimitReason.MaxResults:
-        message += ` because you requested ${operation.maxResults} maxResults.`;
-        break;
+    case GranuleLimitReason.MaxResults:
+      message += ` because you requested ${operation.maxResults} maxResults.`;
+      break;
 
-      case GranuleLimitReason.Service:
-        message += ` because the service ${req.context.serviceConfig.name} is limited to ${maxGranules}.`;
-        break;
+    case GranuleLimitReason.Service:
+      message += ` because the service ${req.context.serviceConfig.name} is limited to ${maxGranules}.`;
+      break;
 
-      case GranuleLimitReason.Collection:
-        message += ` because collection ${collection} is limited to ${maxGranules} for the ${req.context.serviceConfig.name} service.`;
-        break;
+    case GranuleLimitReason.Collection:
+      message += ` because collection ${collection} is limited to ${maxGranules} for the ${req.context.serviceConfig.name} service.`;
+      break;
 
-      default:
-        message += ' because of system constraints.';
-        break;
+    default:
+      message += ' because of system constraints.';
+      break;
     }
   }
   return message;
