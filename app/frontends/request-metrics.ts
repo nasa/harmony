@@ -1,4 +1,3 @@
-/*eslint indent: ["error", 2, { "SwitchCase": 1 }]*/
 import { Response, NextFunction } from 'express';
 import { Logger } from 'winston';
 import HarmonyRequest from '../models/harmony-request';
