@@ -1,3 +1,4 @@
+/*eslint indent: ["error", 2, { "SwitchCase": 1 }]*/
 import { Response, NextFunction } from 'express';
 import { Logger } from 'winston';
 import HarmonyRequest from '../models/harmony-request';
@@ -50,40 +51,40 @@ function getServiceNameFromID(serviceID: string, logger: Logger): string {
   // I realize this is terrible
   let serviceName = null;
   switch (true) {
-  case /harmony-gdal-adapter/.test(serviceID):
-    serviceName = 'harmonyGdalAdapter';
-    break;
-  case /service-example/.test(serviceID):
-    serviceName = 'harmonyServiceExample';
-    break;
-  case /netcdf-to-zarr/.test(serviceID):
-    serviceName = 'harmonyNetcdfToZarr';
-    break;
-  case /swot-reproject/.test(serviceID):
-    serviceName = 'swotReproject';
-    break;
-  case /variable-subsetter/.test(serviceID):
-    serviceName = 'varSubsetter';
-    break;
-  case /maskfill-harmony/.test(serviceID):
-    serviceName = 'sdsMaskfill';
-    break;
-  case /trajectory-subsetter/.test(serviceID):
-    serviceName = 'trajectorySubsetter';
-    break;
-  case /podaac\/concise/.test(serviceID):
-    serviceName = 'podaacConcise';
-    break;
-  case /podaac\/l2ss-py/.test(serviceID):
-    serviceName = 'podaacL2Subsetter';
-    break;
-  case /giovanni-adapter/.test(serviceID):
-    serviceName = 'giovanniAdapter';
-    break;
-  case /query\-cmr/.test(serviceID):
-    break;
-  default:
-    logger.warn(`Service ${serviceID} is not mapped correctly`);
+    case /harmony-gdal-adapter/.test(serviceID):
+      serviceName = 'harmonyGdalAdapter';
+      break;
+    case /service-example/.test(serviceID):
+      serviceName = 'harmonyServiceExample';
+      break;
+    case /netcdf-to-zarr/.test(serviceID):
+      serviceName = 'harmonyNetcdfToZarr';
+      break;
+    case /swot-reproject/.test(serviceID):
+      serviceName = 'swotReproject';
+      break;
+    case /variable-subsetter/.test(serviceID):
+      serviceName = 'varSubsetter';
+      break;
+    case /maskfill-harmony/.test(serviceID):
+      serviceName = 'sdsMaskfill';
+      break;
+    case /trajectory-subsetter/.test(serviceID):
+      serviceName = 'trajectorySubsetter';
+      break;
+    case /podaac\/concise/.test(serviceID):
+      serviceName = 'podaacConcise';
+      break;
+    case /podaac\/l2ss-py/.test(serviceID):
+      serviceName = 'podaacL2Subsetter';
+      break;
+    case /giovanni-adapter/.test(serviceID):
+      serviceName = 'giovanniAdapter';
+      break;
+    case /query\-cmr/.test(serviceID):
+      break;
+    default:
+      logger.warn(`Service ${serviceID} is not mapped correctly`);
   }
   return serviceName;
 }

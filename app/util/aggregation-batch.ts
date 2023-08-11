@@ -34,18 +34,18 @@ export async function sizeOfObject(url: string, token: string, logger: Logger): 
   try {
     let res;
     switch (protocol) {
-    case 's3':
-      const s3 = objectStoreForProtocol('s3');
-      res = await s3.headObject(url);
-      result = res.contentLength;
-      break;
+      case 's3':
+        const s3 = objectStoreForProtocol('s3');
+        res = await s3.headObject(url);
+        result = res.contentLength;
+        break;
 
-    default:
+      default:
 
-      const headers = token ? { authorization: `Bearer ${token}` } : {};
-      res = await axios.head(url, { headers: headers });
-      result = parseInt(res.headers['content-length']);
-      break;
+        const headers = token ? { authorization: `Bearer ${token}` } : {};
+        res = await axios.head(url, { headers: headers });
+        result = parseInt(res.headers['content-length']);
+        break;
     }
   } catch (e) {
     logger.error(e);

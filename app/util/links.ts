@@ -90,34 +90,34 @@ function getLinkForJobEvent(
 ): JobLink {
   const adminPath = isAdmin ? '/admin' : '';
   switch (event) {
-  case JobEvent.RESUME:
-    return new JobLink({
-      title: 'Resumes the job.',
-      href: `${urlRoot + adminPath}/jobs/${jobID}/resume`,
-      type: 'application/json',
-      rel: 'resumer',
-    });
-  case JobEvent.SKIP_PREVIEW:
-    return new JobLink({
-      title: 'Skips preview and runs the job.',
-      href: `${urlRoot + adminPath}/jobs/${jobID}/skip-preview`,
-      type: 'application/json',
-      rel: 'preview-skipper',
-    });
-  case JobEvent.CANCEL:
-    return new JobLink({
-      title: 'Cancels the job.',
-      href: `${urlRoot + adminPath}/jobs/${jobID}/cancel`,
-      type: 'application/json',
-      rel: 'canceler',
-    });
-  case JobEvent.PAUSE:
-    return new JobLink({
-      title: 'Pauses the job.',
-      href: `${urlRoot + adminPath}/jobs/${jobID}/pause`,
-      type: 'application/json',
-      rel: 'pauser',
-    });
+    case JobEvent.RESUME:
+      return new JobLink({
+        title: 'Resumes the job.',
+        href: `${urlRoot + adminPath}/jobs/${jobID}/resume`,
+        type: 'application/json',
+        rel: 'resumer',
+      });
+    case JobEvent.SKIP_PREVIEW:
+      return new JobLink({
+        title: 'Skips preview and runs the job.',
+        href: `${urlRoot + adminPath}/jobs/${jobID}/skip-preview`,
+        type: 'application/json',
+        rel: 'preview-skipper',
+      });
+    case JobEvent.CANCEL:
+      return new JobLink({
+        title: 'Cancels the job.',
+        href: `${urlRoot + adminPath}/jobs/${jobID}/cancel`,
+        type: 'application/json',
+        rel: 'canceler',
+      });
+    case JobEvent.PAUSE:
+      return new JobLink({
+        title: 'Pauses the job.',
+        href: `${urlRoot + adminPath}/jobs/${jobID}/pause`,
+        type: 'application/json',
+        rel: 'pauser',
+      });
   }
 }
 

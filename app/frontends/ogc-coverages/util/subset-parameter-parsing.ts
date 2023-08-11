@@ -225,18 +225,18 @@ export function parseSubsetParams(
 
 
     switch (dim.type) {
-    case Number:
-      parsed.min = parseNumeric(dim, minStr, dim.min);
-      parsed.max = parseNumeric(dim, maxStr, dim.max);
-      break;
-    case Date:
-      parsed.min = parseDate(dim, minStr);
-      parsed.max = parseDate(dim, maxStr);
-      break;
-    default:
+      case Number:
+        parsed.min = parseNumeric(dim, minStr, dim.min);
+        parsed.max = parseNumeric(dim, maxStr, dim.max);
+        break;
+      case Date:
+        parsed.min = parseDate(dim, minStr);
+        parsed.max = parseDate(dim, maxStr);
+        break;
+      default:
       // Cannot be reached with current config.
-      if (minStr !== unbounded) parsed.min = minStr;
-      if (maxStr !== unbounded) parsed.max = maxStr;
+        if (minStr !== unbounded) parsed.min = minStr;
+        if (maxStr !== unbounded) parsed.max = maxStr;
     }
     const { min, max } = parsed;
     if (dim.lowToHigh && min !== undefined && max !== undefined && min > max) {
