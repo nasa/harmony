@@ -17,6 +17,7 @@ let harmonyClientToken: AccessToken; // valid for 30 days
 /**
  * Returns the bearer token to use in all EDL requests from Harmony
  * @param logger - The logger associated with the request
+ * @returns The client bearer token
  */
 export async function getClientCredentialsToken(logger: Logger): Promise<string> {
   try {
