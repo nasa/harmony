@@ -3,8 +3,7 @@ import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as winston from 'winston';
-import { HarmonyEnv, IHarmonyEnv, envDefaults, envOverrides, makeConfigVar, validateEnvironment } from '@harmony/util/env';
-import { env } from '@harmony/util';
+import { HarmonyEnv, IHarmonyEnv, envDefaults, envOverrides, makeConfigVar, validateEnvironment, envVars } from '@harmony/util/env';
 import _ from 'lodash';
 //
 // env module
@@ -49,17 +48,17 @@ class HarmonyWorkSchedulerEnv extends HarmonyEnv implements IHarmonyWorkSchedule
 }
 
 const allEnv = { ...envDefaults, ...envLocalDefaults, ...envOverrides, ...process.env };
-const envVars: IHarmonyWorkSchedulerEnv = _.cloneDeep(env) as IHarmonyWorkSchedulerEnv;
+const schedulerEnvVars: IHarmonyWorkSchedulerEnv = _.cloneDeep(envVars) as IHarmonyWorkSchedulerEnv;
 
 for (const k of Object.keys(allEnv)) {
-  makeConfigVar(envVars, k, allEnv[k]);
+  makeConfigVar(schedulerEnvVars, k, allEnv[k]);
 }
 
 // special case
-envVars.harmonyClientId = process.env.CLIENT_ID || 'harmony-unknown';
+schedulerEnvVars.harmonyClientId = process.env.CLIENT_ID || 'harmony-unknown';
 
 // validate the env vars
-const envObj = new HarmonyWorkSchedulerEnv(envVars);
+const envObj = new HarmonyWorkSchedulerEnv(schedulerEnvVars);
 validateEnvironment(envObj);
 
-export default envVars;
+export default schedulerEnvVars;

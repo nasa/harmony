@@ -3,8 +3,7 @@ import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as winston from 'winston';
-import { HarmonyEnv, IHarmonyEnv, envDefaults, envOverrides, makeConfigVar, validateEnvironment } from '@harmony/util/env';
-import { env } from '@harmony/util';
+import { HarmonyEnv, IHarmonyEnv, envDefaults, envOverrides, makeConfigVar, validateEnvironment, envVars } from '@harmony/util/env';
 import { WorkItemQueueType } from '../../../../app/util/queue/queue';
 import _ from 'lodash';
 
@@ -46,7 +45,7 @@ class UpdaterHarmonyEnv extends HarmonyEnv implements IUpdaterHarmonyEnv {
 }
 
 const allEnv = { ...envDefaults, ...envLocalDefaults, ...envOverrides, ...process.env };
-const updaterEnvVars = _.cloneDeep(env) as IUpdaterHarmonyEnv;
+const updaterEnvVars = _.cloneDeep(envVars) as IUpdaterHarmonyEnv;
 
 for (const k of Object.keys(allEnv)) {
   makeConfigVar(updaterEnvVars, k, allEnv[k]);

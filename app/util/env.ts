@@ -3,8 +3,7 @@ import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
 import winston from 'winston';
-import { envDefaults, envOverrides, HarmonyEnv, IHarmonyEnv, hostRegexWhitelist, makeConfigVar, validateEnvironment } from '@harmony/util/env';
-import { env } from '@harmony/util';
+import { envDefaults, envOverrides, HarmonyEnv, IHarmonyEnv, hostRegexWhitelist, makeConfigVar, validateEnvironment, envVars } from '@harmony/util/env';
 import _ from 'lodash';
 
 //
@@ -186,7 +185,7 @@ class HarmonyServerEnv extends HarmonyEnv implements IHarmonyServerEnv {
 }
 
 const allEnv = { ...envDefaults, ...envLocalDefaults, ...envOverrides, ...process.env };
-const serverEnvVars = _.cloneDeep(env) as IHarmonyServerEnv;
+const serverEnvVars = _.cloneDeep(envVars) as IHarmonyServerEnv;
 
 for (const k of Object.keys(allEnv)) {
   makeConfigVar(serverEnvVars, k, allEnv[k]);

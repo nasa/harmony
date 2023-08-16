@@ -5,7 +5,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as winston from 'winston';
 import { IsInt, IsNotEmpty, IsNumber, IsUrl, Matches, Max, Min, ValidateIf, ValidationError, validateSync } from 'class-validator';
-import { isFloat, isInteger } from './string';
+import { isBoolean, isFloat, isInteger, parseBoolean } from './string';
 
 const logger = winston.createLogger({
   transports: [
@@ -205,7 +205,7 @@ export function validateEnvironment(env: HarmonyEnv): void {
   }
 }
 
-const envVars: IHarmonyEnv = {} as IHarmonyEnv;
+export const envVars: IHarmonyEnv = {} as IHarmonyEnv;
 
 /**
  * Add a symbol to an env variable map with an appropriate value. The exported symbol will be in
@@ -221,11 +221,13 @@ const envVars: IHarmonyEnv = {} as IHarmonyEnv;
  */
 export function makeConfigVar(env: object, envName: string, defaultValue?: string): void {
   const stringValue = process.env[envName] || defaultValue;
-  let val: number | string = stringValue;
+  let val: number | string | boolean = stringValue;
   if (isInteger(stringValue)) {
     val = parseInt(stringValue, 10);
   } else if (isFloat(stringValue)) {
     val = parseFloat(stringValue);
+  } else if (isBoolean(stringValue)) {
+    val = parseBoolean(stringValue);
   }
   env[_.camelCase(envName)] = val;
   // for existing env vars this is redundant (but doesn't hurt), but this allows us
@@ -274,5 +276,3 @@ for (const k of Object.keys(process.env)) {
 
 const envVarsObj = new HarmonyEnv(envVars);
 validateEnvironment(envVarsObj);
-
-export default envVars;

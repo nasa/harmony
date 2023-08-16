@@ -6,6 +6,7 @@ RUN git config --global url."https://".insteadOf ssh://
 RUN mkdir -p /service-runner/lib/util
 RUN mkdir -p /service-runner/tasks/service-runner
 RUN mkdir -p /tmp/metadata
+# The util library code
 COPY lib/util/built /service-runner/lib/util/
 # The util library env-defaults
 COPY lib/util/env-defaults /service-runner/lib/util/

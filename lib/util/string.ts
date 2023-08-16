@@ -79,12 +79,32 @@ export function isInteger(value: string): boolean {
 }
 
 /**
- * Returns true if the a string is a float (has a decimal point followed by one or more digits).
+ * Returns true if the string is a float (has a decimal point followed by one or more digits).
  * @param value - the value to check
  * @returns true if it is a float and false otherwise
  */
 export function isFloat(value: string): boolean {
   return /^[-+]?\d*\.\d+$/.test(value);
+}
+
+/**
+ * Return true if the string represents a boolean value, e.g., true, True, false, etc.
+ * @param value - the value to check
+ * @returns true if it is a boolean and false otherwise
+ */
+export function isBoolean(value: string): boolean {
+  return /^true|false$/i.test(value);
+}
+
+/**
+ * Return the boolean equivalent of the given string. Anything that does not match
+ * 'true' (case insensitive) is false.
+ * @param value - the value to convert
+ * @returns true if the value matches the string 'true' (case insensitive), false
+ * otheriwise.
+ */
+export function parseBoolean(value: string): boolean {
+  return /^true$/i.test(value);
 }
 
 /**
