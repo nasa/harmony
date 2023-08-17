@@ -9,7 +9,7 @@
     "lint": "eslint --ext .ts .",
     "coverage": "nyc mocha",
     "docker-example": "docker run --rm -it --env SHARED_SECRET_KEY=foo -v $(pwd)/example:/app/example -v $(pwd)/temp:/app/temp harmonyservices/giovanni-adapter:${VERSION:-latest}",
-    "build": "tsc && docker build --no-cache -t harmonyservices/giovanni-adapter:${VERSION:-latest} .",
+    "build": "tsc && cd ../.. && docker build -f tasks/giovanni-adapter/Dockerfile --no-cache -t harmonyservices/giovanni-adapter:${VERSION:-latest} .",
     "publish": "docker push harmonyservices/giovanni-adapter:${VERSION:-latest}"
   },
   "keywords": [
