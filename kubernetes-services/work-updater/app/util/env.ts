@@ -2,7 +2,6 @@ import { IsIn, IsInt, Min } from 'class-validator';
 import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as winston from 'winston';
 import { HarmonyEnv, IHarmonyEnv, envOverrides, originalEnv, makeConfigVar, validateEnvironment, envVars } from '@harmony/util/env';
 import { WorkItemQueueType } from '../../../../app/util/queue/queue';
 import _ from 'lodash';
