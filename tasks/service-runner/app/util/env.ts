@@ -3,7 +3,7 @@ import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as winston from 'winston';
-import { envDefaults, envOverrides, HarmonyEnv, IHarmonyEnv, makeConfigVar,  validateEnvironment, envVars } from '@harmony/util/env';
+import { envOverrides, originalEnv, HarmonyEnv, IHarmonyEnv, makeConfigVar,  validateEnvironment, envVars } from '@harmony/util/env';
 import _ from 'lodash';
 
 //
@@ -85,7 +85,7 @@ class HarmonyServiceEnv extends HarmonyEnv implements IHarmonyServiceEnv {
 
 }
 
-const allEnv = { ...envDefaults, ...envLocalDefaults, ...envOverrides, ...process.env };
+const allEnv = { ...envLocalDefaults, ...envOverrides };
 const serviceEnvVars: IHarmonyServiceEnv = _.cloneDeep(envVars) as IHarmonyServiceEnv;
 
 for (const k of Object.keys(allEnv)) {
@@ -93,7 +93,7 @@ for (const k of Object.keys(allEnv)) {
 }
 
 // special case
-serviceEnvVars.harmonyClientId = process.env.CLIENT_ID || 'harmony-unknown';
+serviceEnvVars.harmonyClientId = originalEnv.CLIENT_ID || 'harmony-unknown';
 
 // validate the env vars
 const harmonyServiceEnvObj = new HarmonyServiceEnv(serviceEnvVars);

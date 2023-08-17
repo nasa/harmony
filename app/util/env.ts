@@ -3,7 +3,7 @@ import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
 import winston from 'winston';
-import { envDefaults, envOverrides, HarmonyEnv, IHarmonyEnv, hostRegexWhitelist, makeConfigVar, validateEnvironment, envVars } from '@harmony/util/env';
+import { envOverrides, HarmonyEnv, IHarmonyEnv, hostRegexWhitelist, makeConfigVar, validateEnvironment, envVars } from '@harmony/util/env';
 import _ from 'lodash';
 
 //
@@ -13,15 +13,8 @@ import _ from 'lodash';
 //
 
 // read the local env-defaults from the top-level where the app is executed
-let envLocalDefaults = {};
-try {
-  const localPath = path.resolve(__dirname, '../../env-defaults');
-  winston.debug(`localPath = ${localPath}`);
-  envLocalDefaults = dotenv.parse(fs.readFileSync(localPath));
-} catch (e) {
-  winston.warn('Could not parse environment defaults from env-defaults file');
-  winston.warn(e.message);
-}
+const localPath = path.resolve(__dirname, '../../env-defaults');
+const envLocalDefaults = dotenv.parse(fs.readFileSync(localPath));
 
 export interface IHarmonyServerEnv extends IHarmonyEnv {
   aggregateStacCatalogMaxPageSize: number;
@@ -184,7 +177,7 @@ class HarmonyServerEnv extends HarmonyEnv implements IHarmonyServerEnv {
 
 }
 
-const allEnv = { ...envDefaults, ...envLocalDefaults, ...envOverrides, ...process.env };
+const allEnv = { ...envLocalDefaults, ...envOverrides };
 const serverEnvVars = _.cloneDeep(envVars) as IHarmonyServerEnv;
 
 for (const k of Object.keys(allEnv)) {

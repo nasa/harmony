@@ -3,7 +3,7 @@ import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as winston from 'winston';
-import { HarmonyEnv, IHarmonyEnv, envDefaults, envOverrides, makeConfigVar, validateEnvironment, envVars } from '@harmony/util/env';
+import { HarmonyEnv, IHarmonyEnv, envOverrides, originalEnv, makeConfigVar, validateEnvironment, envVars } from '@harmony/util/env';
 import { WorkItemQueueType } from '../../../../app/util/queue/queue';
 import _ from 'lodash';
 
@@ -14,15 +14,8 @@ import _ from 'lodash';
 //
 
 // read the local env-defaults from the top-level where the app is executed
-let envLocalDefaults = {};
-try {
-  const localPath = path.resolve(__dirname, '../../env-defaults');
-  winston.debug(`localPath = ${localPath}`);
-  envLocalDefaults = dotenv.parse(fs.readFileSync(localPath));
-} catch (e) {
-  winston.warn('Could not parse environment defaults from env-defaults file');
-  winston.warn(e.message);
-}
+const localPath = path.resolve(__dirname, '../../env-defaults');
+const envLocalDefaults = dotenv.parse(fs.readFileSync(localPath));
 
 export interface IUpdaterHarmonyEnv extends IHarmonyEnv {
   largeWorkItemUpdateQueueMaxBatchSize: number;
@@ -44,7 +37,7 @@ class UpdaterHarmonyEnv extends HarmonyEnv implements IUpdaterHarmonyEnv {
   workItemUpdateQueueProcessorDelayAfterErrorSec: number;
 }
 
-const allEnv = { ...envDefaults, ...envLocalDefaults, ...envOverrides, ...process.env };
+const allEnv = { ...envLocalDefaults, ...envOverrides };
 const updaterEnvVars = _.cloneDeep(envVars) as IUpdaterHarmonyEnv;
 
 for (const k of Object.keys(allEnv)) {

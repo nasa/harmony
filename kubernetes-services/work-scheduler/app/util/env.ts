@@ -3,7 +3,7 @@ import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as winston from 'winston';
-import { HarmonyEnv, IHarmonyEnv, envDefaults, envOverrides, makeConfigVar, validateEnvironment, envVars } from '@harmony/util/env';
+import { HarmonyEnv, IHarmonyEnv, envOverrides, originalEnv, makeConfigVar, validateEnvironment, envVars } from '@harmony/util/env';
 import _ from 'lodash';
 //
 // env module
@@ -47,7 +47,7 @@ class HarmonyWorkSchedulerEnv extends HarmonyEnv implements IHarmonyWorkSchedule
   workItemSchedulerQueueMaxGetMessageRequests: number;
 }
 
-const allEnv = { ...envDefaults, ...envLocalDefaults, ...envOverrides, ...process.env };
+const allEnv = { ...envLocalDefaults, ...envOverrides };
 const schedulerEnvVars: IHarmonyWorkSchedulerEnv = _.cloneDeep(envVars) as IHarmonyWorkSchedulerEnv;
 
 for (const k of Object.keys(allEnv)) {
@@ -55,7 +55,7 @@ for (const k of Object.keys(allEnv)) {
 }
 
 // special case
-schedulerEnvVars.harmonyClientId = process.env.CLIENT_ID || 'harmony-unknown';
+schedulerEnvVars.harmonyClientId = originalEnv.CLIENT_ID || 'harmony-unknown';
 
 // validate the env vars
 const envObj = new HarmonyWorkSchedulerEnv(schedulerEnvVars);

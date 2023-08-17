@@ -27,14 +27,11 @@ if (Object.prototype.hasOwnProperty.call(process.env, 'GDAL_DATA')) {
   delete process.env.GDAL_DATA;
 }
 
+// Save the original process.env so we can re-use it to override
+export const originalEnv = _.cloneDeep(process.env);
+
 // Read the env-defaults for this module (relative to this typescript file)
-export let envDefaults = {};
-try {
-  envDefaults = dotenv.parse(fs.readFileSync(path.resolve(__dirname, 'env-defaults')));
-} catch (e) {
-  logger.warn('Could not parse environment defaults from env-defaults file');
-  logger.warn(e.message);
-}
+const envDefaults = dotenv.parse(fs.readFileSync(path.resolve(__dirname, 'env-defaults')));
 
 export let envOverrides = {};
 if (process.env.NODE_ENV !== 'test') {
@@ -193,7 +190,7 @@ export function getValidationErrors(env: HarmonyEnv): ValidationError[] {
   @throws Error on constraing violation
 */
 export function validateEnvironment(env: HarmonyEnv): void {
-  if (process.env.SKIP_ENV_VALIDATION !== 'true') {
+  if (originalEnv.SKIP_ENV_VALIDATION !== 'true') {
     const errors = getValidationErrors(env);
   
     if (errors.length > 0) {
@@ -220,7 +217,7 @@ export const envVars: IHarmonyEnv = {} as IHarmonyEnv;
  *   and integers are supported
  */
 export function makeConfigVar(env: object, envName: string, defaultValue?: string): void {
-  const stringValue = process.env[envName] || defaultValue;
+  const stringValue = originalEnv[envName] || defaultValue;
   let val: number | string | boolean = stringValue;
   if (isInteger(stringValue)) {
     val = parseInt(stringValue, 10);
@@ -235,7 +232,7 @@ export function makeConfigVar(env: object, envName: string, defaultValue?: strin
   process.env[envName] = stringValue;
 }
 
-const allEnv = { ...envDefaults, ...envOverrides, ...process.env };
+const allEnv = { ...envDefaults, ...originalEnv };
 
 for (const k of Object.keys(allEnv)) {
   makeConfigVar(envVars, k, allEnv[k]);
@@ -245,9 +242,9 @@ for (const k of Object.keys(allEnv)) {
 
 envVars.databaseType = process.env.DATABASE_TYPE || 'postgres';
 envVars.harmonyClientId = process.env.CLIENT_ID || 'harmony-unknown';
-envVars.uploadBucket = process.env.UPLOAD_BUCKET || process.env.STAGING_BUCKET || 'local-staging-bucket';
-envVars.useLocalstack = process.env.USE_LOCALSTACK === 'true';
-envVars.useServiceQueues = process.env.USE_SERVICE_QUEUES === 'true';
+envVars.uploadBucket = process.env.UPLOAD_BUCKET || originalEnv.STAGING_BUCKET || 'local-staging-bucket';
+envVars.useLocalstack = !! envVars.useLocalStack;
+envVars.useServiceQueues = !! envVars.useSerivceQueues;
 envVars.workItemUpdateQueueUrl = process.env.WORK_ITEM_UPDATE_QUEUE_URL?.replace('localstack', envVars.localstackHost);
 envVars.largeWorkItemUpdateQueueUrl = process.env.LARGE_WORK_ITEM_UPDATE_QUEUE_URL?.replace('localstack', envVars.localstackHost);
 envVars.workItemSchedulerQueueUrl = process.env.WORK_ITEM_SCHEDULER_QUEUE_URL?.replace('localstack', envVars.localstackHost);
