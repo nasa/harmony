@@ -40,8 +40,6 @@ METRICS_ENDPOINT=
 # The Metrics index to query (via the METRICS_ENDPOINT)
 METRICS_INDEX=
 
-# TODO - Can't find where this is used in the code - maybe just and env var used indirectly
-# by a library?
 # If set to true, only include EDL cookies if the request is made via https.
 USE_HTTPS=false
 
