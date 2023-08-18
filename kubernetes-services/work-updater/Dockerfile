@@ -4,7 +4,7 @@ RUN apt-get update && apt-get -y install postgresql
 RUN git config --global url."https://".insteadOf ssh://
 
 RUN mkdir -p /work-updater/lib/util
-RUN mdkir -p /work-updater/kubernetes-services/work-updater
+RUN mkdir -p /work-updater/kubernetes-services/work-updater
 RUN mkdir -p /tmp/metadata
 COPY lib/util/built /work-updater/lib/util/
 # The util library env-defaults

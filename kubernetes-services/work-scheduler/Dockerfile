@@ -4,7 +4,7 @@ RUN apt-get update && apt-get -y install postgresql
 RUN git config --global url."https://".insteadOf ssh://
 
 RUN mkdir -p /work-scheduler/lib/util
-RUN mdkir -p /work-scheduler/kubernetes-services/work-scheduler
+RUN mkdir -p /work-scheduler/kubernetes-services/work-scheduler
 RUN mkdir -p /tmp/metadata
 COPY lib/util/built /work-scheduler/lib/util/
 # The util library env-defaults
