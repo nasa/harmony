@@ -4,7 +4,6 @@ env_save=$(export -p)
 set -a
 source "lib/util/env-defaults"
 source "env-defaults"
-source "service-env-defaults"
 if [ -f ".env" ]; then
 source ".env"
 fi

@@ -5,7 +5,6 @@ env_save=$(export -p)
 set -a
 source "lib/util/env-defaults"
 source "env-defaults"
-source "service-env-defaults"
 source ".env"
 set +ax
 eval "$env_save"
