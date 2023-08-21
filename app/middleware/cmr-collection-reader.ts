@@ -38,7 +38,7 @@ async function verifyEulaAcceptance(collections: CmrCollection[], req: HarmonyRe
   for (const collection of collections) {
     if (collection.eula_identifiers) {
       for (const eulaId of collection.eula_identifiers) {
-        const eulaInfo: EdlUserEulaInfo = await verifyUserEula(req.user, eulaId, req.accessToken);
+        const eulaInfo: EdlUserEulaInfo = await verifyUserEula(req.user, eulaId, req.context.logger);
         if (eulaInfo.statusCode == 404 && eulaInfo.acceptEulaUrl) { // EULA wasn't accepted
           acceptEulaUrls.push(eulaInfo.acceptEulaUrl);  
         } else if (eulaInfo.statusCode == 404) {

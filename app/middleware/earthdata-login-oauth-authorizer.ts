@@ -14,7 +14,7 @@ if (missingVars.length > 0) {
   throw new Error(`Earthdata Login configuration error: You must set ${listToText(missingVars)} in the environment`);
 }
 
-const oauthOptions = {
+export const oauthOptions = {
   client: {
     id: process.env.OAUTH_CLIENT_ID,
     secret: process.env.OAUTH_PASSWORD,

@@ -12,7 +12,7 @@ describe('testing concatenation', function () {
     const serviceTag = 'ghcr.io/podaac/concise:sit';
 
     describe('When passing the concatenate parameter', function () {
-      hookServersStartStop( { skipEarthdataLogin: false });
+      hookServersStartStop({ skipEarthdataLogin: false });
 
       describe('calling the backend service', function () {
         const query = {

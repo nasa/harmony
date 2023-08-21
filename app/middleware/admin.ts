@@ -17,7 +17,7 @@ export default async function admin(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
   try {
-    const { isAdmin } = await getEdlGroupInformation(req.user, req.accessToken, req.context.logger);
+    const { isAdmin } = await getEdlGroupInformation(req.user, req.context.logger);
     if (isAdmin) {
       req.context.isAdminAccess = true;
       next();
