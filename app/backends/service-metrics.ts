@@ -30,7 +30,7 @@ export async function getEligibleWorkItemCountForServiceID(
       workItemCount = await getQueuedOrRunningCountForService(tx, serviceID);
     });
     if (!workItemCount) workItemCount = 0;
-    logger.info('Got num_ready_work_items metric.');
+    logger.debug('Got num_ready_work_items metric.');
     const response = {
       availableWorkItems: workItemCount,
     };

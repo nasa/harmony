@@ -8,7 +8,7 @@ import env from '../../util/env';
 import { RequestValidationError } from '../../util/errors';
 import { keysToLowerCase } from '../../util/object';
 import { ParameterParseError } from '../../util/parameter-parsing-helpers';
-import { parseVariables, validateExtend } from '../../util/variables';
+import { parseVariables } from '../../util/variables';
 import { parsePointParam, parseSubsetParams, subsetParamsToBbox, subsetParamsToTemporal } from './util/subset-parameter-parsing';
 /**
  * Express middleware that responds to OGC API - Coverages coverage
@@ -88,10 +88,6 @@ export default function getCoverageRangeset(
   for (const varInfo of varInfos) {
     operation.addSource(varInfo.collectionId, varInfo.shortName, varInfo.versionId,
       varInfo.variables, varInfo.coordinateVariables);
-  }
-
-  if (query.extend) {
-    validateExtend(query.extend, req.params.collectionId, req.collections, varInfos);
   }
   req.operation = operation;
   next();

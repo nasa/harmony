@@ -74,10 +74,10 @@ export async function completeJob(
     job.updateStatus(finalStatus, message);
     await job.save(tx);
     if (failed) {
-      await updateWorkItemStatusesByJobId(
+      const numUpdated = await updateWorkItemStatusesByJobId(
         tx, job.jobID, [WorkItemStatus.READY, WorkItemStatus.RUNNING, WorkItemStatus.QUEUED], WorkItemStatus.CANCELED,
       );
-      logger.info(`Updated work items to ${WorkItemStatus.CANCELED} for completed job.`);
+      logger.info(`Updated ${numUpdated} work items to ${WorkItemStatus.CANCELED} for completed job.`);
     }
     await deleteUserWorkForJob(tx, job.jobID);
 
