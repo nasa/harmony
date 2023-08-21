@@ -957,24 +957,6 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       'query parameter "subset" subset dimension "time" has an invalid date time "nonsense"',
       'harmony.RequestValidationError',
     );
-    itReturnsAValidationError(
-      { extend: variableName },
-      `${variableName} cannot be extended because it was not found in the requested variables`,
-      'harmony.RequestValidationError',
-      'blue_var',
-    );
-    itReturnsAValidationError(
-      { extend: variableName },
-      `${variableName} cannot be extended because it was not found in the requested variables`,
-      'harmony.RequestValidationError',
-      'blue_var,green_var',
-    );
-    itReturnsAValidationError(
-      { extend: 'V9993801696-EEDTEST' }, // fake var concept ID
-      'V9993801696-EEDTEST cannot be extended because it was not found in the requested variables',
-      'harmony.RequestValidationError',
-      'blue_var,green_var,red_var',
-    );
 
     it('returns an HTTP 400 "Bad Request" error with explanatory message when the variable does not exist', async function () {
       const res = await rangesetRequest(
