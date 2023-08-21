@@ -89,6 +89,7 @@ export default function getCoverageRangeset(
     operation.addSource(varInfo.collectionId, varInfo.shortName, varInfo.versionId,
       varInfo.variables, varInfo.coordinateVariables);
   }
+
   req.operation = operation;
   next();
 }
