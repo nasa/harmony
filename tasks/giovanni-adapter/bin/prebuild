@@ -1,0 +1,6 @@
+#!/bin/bash
+#
+# sets up the project to be ready for compiling and buidling docker image
+#
+
+rimraf built/*
