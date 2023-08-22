@@ -13,6 +13,7 @@ WORKDIR /query-cmr/tasks/query-cmr
 RUN npm update
 RUN npm ci
 WORKDIR /query-cmr
+# This symlink is needed to make module loading work correctly
 RUN ln -s tasks/query-cmr/node_modules .
 WORKDIR /query-cmr/tasks/query-cmr
 

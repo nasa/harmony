@@ -243,7 +243,7 @@ for (const k of Object.keys(allEnv)) {
 envVars.databaseType = process.env.DATABASE_TYPE || 'postgres';
 envVars.harmonyClientId = process.env.CLIENT_ID || 'harmony-unknown';
 envVars.uploadBucket = process.env.UPLOAD_BUCKET || originalEnv.STAGING_BUCKET || 'local-staging-bucket';
-envVars.useLocalstack = !! envVars.useLocalStack;
+envVars.useLocalstack = !! envVars.useLocalstack;
 envVars.useServiceQueues = !! envVars.useSerivceQueues;
 envVars.workItemUpdateQueueUrl = process.env.WORK_ITEM_UPDATE_QUEUE_URL?.replace('localstack', envVars.localstackHost);
 envVars.largeWorkItemUpdateQueueUrl = process.env.LARGE_WORK_ITEM_UPDATE_QUEUE_URL?.replace('localstack', envVars.localstackHost);

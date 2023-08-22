@@ -11,8 +11,10 @@
     "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha",
     "lint": "eslint --ext .ts .",
     "coverage": "nyc mocha",
-    "build": "tsc && cd ../.. && docker build -f kubernetes-services/work-updater/Dockerfile.mac --tag harmonyservices/work-updater:${VERSION:-latest} .",
-    "build-m1": "tsc && cd ../.. && docker build -f kubernetes-services/work-updater/Dockerfile.mac --platform linux/amd64 --tag harmonyservices/work-updater:${VERSION:-latest} .",
+    "prebuild": "./bin/prebuild",
+    "prebuild-m1": "./bin/prebuild",
+    "build": "tsc && docker build --no-cache -f Dockerfile.mac --tag harmonyservices/work-updater:${VERSION:-latest} .",
+    "build-m1": "tsc && docker build -f Dockerfile.mac --platform linux/amd64 --tag harmonyservices/work-updater:${VERSION:-latest} .",
     "publish": "docker push harmonyservices/work-updater:${VERSION:-latest}"
   },
   "engines": {
