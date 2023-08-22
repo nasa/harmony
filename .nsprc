@@ -1,14 +1,4 @@
 {
-  "1092826": {
-    "active": true,
-    "notes": "Ignored since there is no fix",
-    "expiry": "2023-10-01"
-  },
-  "1092429": {
-    "active": true,
-    "notes": "Ignored since there is no fix",
-    "expiry": "2023-10-01"
-  },
   "1092460": {
     "active": true,
     "notes": "Ignored since there is no fix",
@@ -23,5 +13,20 @@
     "active": true,
     "notes": "Ignored since there is no fix",
     "expiry": "2023-10-01"
+  },
+  "1092972": {
+    "active": true,
+    "notes": "Ignored since there is no fix",
+    "expiry": "2023-11-01"
+  },
+  "1092988": {
+    "active": true,
+    "notes": "Ignored since there is no fix",
+    "expiry": "2023-11-01"
+  },
+  "1092989": {
+    "active": true,
+    "notes": "Ignored since there is no fix",
+    "expiry": "2023-11-01"
   }
 }

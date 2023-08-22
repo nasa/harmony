@@ -5,8 +5,6 @@ import HarmonyRequest from '../../models/harmony-request';
 import { WorkItemQueueType } from '../../util/queue/queue';
 import { getQueueForType  } from '../../util/queue/queue-factory';
 import { getWorkFromQueue, getWorkFromDatabase, WorkItemData } from './work-item-polling';
-import { WorkItemMeta, WorkItemStatus } from '../../models/work-item-interface';
-import { sanitizeImage } from '../../util/string';
 
 
 const MAX_TRY_COUNT = 1;
@@ -40,12 +38,7 @@ export async function getWork(
     const { workItem, maxCmrGranules } = workItemData;
 
     const logger = reqLogger.child({ workItemId: workItem.id });
-    const waitSeconds = (Date.now() - workItem.createdAt.valueOf()) / 1000;
-    const itemMeta: WorkItemMeta = {
-      workItemEvent: 'statusUpdate', workItemDuration: waitSeconds,
-      workItemService: sanitizeImage(workItem.serviceID), workItemAmount: 1, workItemStatus: WorkItemStatus.RUNNING,
-    };
-    logger.info(`Sending work item ${workItem.id} to pod ${podName}`, itemMeta);
+    logger.info(`Sending work item ${workItem.id} to pod ${podName}`);
 
     if (QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)) {
       res.send({ workItem, maxCmrGranules });
