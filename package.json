@@ -5,7 +5,6 @@
   "main": "index.js",
   "scripts": {
     "test": "strict-npm-engines && eslint --ext .ts --ignore-pattern tasks --ignore-pattern kubernetes-services . && nyc mocha && better-npm-audit audit && lerna run test",
-    "test-top": "strict-npm-engines && eslint --ext .ts --ignore-pattern tasks --ignore-pattern kubernetes-services . && nyc mocha && better-npm-audit audit",
     "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha",
     "test-bail": "TS_NODE_TRANSPILE_ONLY=true mocha --bail",
     "coverage": "nyc mocha",
@@ -174,7 +173,7 @@
     "@types/lodash": "^4.14.176",
     "@types/mocha": "^9.0.0",
     "@types/mock-aws-s3": "^2.6.1",
-    "@types/node": "^16.11.43",
+    "@types/node": "^16.18.41",
     "@types/sinon": "^10.0.6",
     "@types/superagent": "^4.1.11",
     "@types/supertest": "^2.0.10",
