@@ -9,14 +9,13 @@ import JobError, { getErrorCountForJob } from '../../models/job-error';
 import JobLink, { getJobDataLinkCount } from '../../models/job-link';
 import { incrementReadyCount, deleteUserWorkForJob, incrementReadyAndDecrementRunningCounts, decrementRunningCount } from '../../models/user-work';
 import WorkItem, { maxSortIndexForJobService, workItemCountForStep, getWorkItemsByJobIdAndStepIndex, getWorkItemById, updateWorkItemStatus, getJobIdForWorkItem } from '../../models/work-item';
-import { WorkItemStatus, WorkItemMeta, COMPLETED_WORK_ITEM_STATUSES } from '../../models/work-item-interface';
+import { WorkItemStatus, COMPLETED_WORK_ITEM_STATUSES } from '../../models/work-item-interface';
 import { outputStacItemUrls, handleBatching, resultItemSizes } from '../../util/aggregation-batch';
 import db, { Transaction, batchSize } from '../../util/db';
 import { ServiceError } from '../../util/errors';
 import { completeJob } from '../../util/job';
 import { objectStoreForProtocol } from '../../util/object-store';
 import { StacItem, readCatalogItems, StacItemLink, StacCatalog } from '../../util/stac';
-import { sanitizeImage } from '@harmony/util/string';
 import { resolve } from '../../util/url';
 import { QUERY_CMR_SERVICE_REGEX, calculateQueryCmrLimit } from './util';
 import { makeWorkScheduleRequest } from './work-item-polling';
@@ -357,9 +356,7 @@ async function createAggregatingWorkItem(
   // ask the scheduler to schedule the new work item
   await makeWorkScheduleRequest(newWorkItem.serviceID);
 
-  const itemMeta: WorkItemMeta = { workItemService: sanitizeImage(newWorkItem.serviceID),
-    workItemEvent: 'statusUpdate', workItemAmount: 1, workItemStatus: WorkItemStatus.READY };
-  logger.info('Queued new aggregating work item.', itemMeta);
+  logger.info('Queued new aggregating work item.');
 }
 
 /**
@@ -389,9 +386,7 @@ async function maybeQueueQueryCmrWorkItem(
       // ask the scheduler to schedule the new work item
       await makeWorkScheduleRequest(currentWorkItem.serviceID);
 
-      const itemMeta: WorkItemMeta = { workItemService: sanitizeImage(nextQueryCmrItem.serviceID),
-        workItemEvent: 'statusUpdate', workItemAmount: 1, workItemStatus: WorkItemStatus.READY };
-      logger.info('Queued new query-cmr work item.', itemMeta);
+      logger.info('Queued new query-cmr work item.');
     }
   }
 }
@@ -479,9 +474,7 @@ async function createNextWorkItems(
       await incrementReadyCount(tx, workItem.jobID, nextWorkflowStep.serviceID, newItems.length);
       for (const batch of _.chunk(newItems, batchSize)) {
         await WorkItem.insertBatch(tx, batch);
-        const itemMeta: WorkItemMeta = { workItemService: sanitizeImage(nextWorkflowStep.serviceID),
-          workItemEvent: 'statusUpdate', workItemAmount: batch.length, workItemStatus: WorkItemStatus.READY };
-        logger.info('Queued new batch of work items.', itemMeta);
+        logger.info('Queued new batch of work items.');
       }
     }
   }
@@ -554,9 +547,7 @@ export async function handleWorkItemUpdateWithJobId(
       // retry failed work-items up to a limit
       if (status === WorkItemStatus.FAILED) {
         if (workItem.retryCount < env.workItemRetryLimit) {
-          const itemMeta: WorkItemMeta = { workItemService: sanitizeImage(workItem.serviceID),
-            workItemEvent: 'retry', workItemAmount: 1 };
-          logger.info(`Retrying failed work-item ${workItemID}`, itemMeta);
+          logger.info(`Retrying failed work-item ${workItemID}`);
           workItem.retryCount += 1;
           workItem.status = WorkItemStatus.READY;
           await workItem.save(tx);
@@ -596,9 +587,7 @@ export async function handleWorkItemUpdateWithJobId(
         outputItemSizes);
       await decrementRunningCount(tx, jobID, workItem.serviceID);
 
-      const itemMeta: WorkItemMeta = { workItemService: sanitizeImage(workItem.serviceID),
-        workItemDuration: (duration / 1000), workItemStatus: status, workItemEvent: 'statusUpdate', workItemAmount: 1 };
-      logger.info(`Updated work item. Duration (ms) was: ${duration}`, itemMeta);
+      logger.info(`Updated work item. Duration (ms) was: ${duration}`);
 
       workItem.status = status;
 

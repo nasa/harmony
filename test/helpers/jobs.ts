@@ -424,6 +424,19 @@ export function itIncludesRequestUrl(expectedPath: string): void {
 }
 
 /**
+ * Expects a redirect to the job status URL.
+ * @param res - this.res from the request
+ */
+export function itRedirectsToJobStatusUrl(): void {
+  it('returns a redirect to the job status URL', function () {
+    const { status, headers } = this.res;
+    const { location } = headers;
+    expect(status).to.equal(303);
+    expect(location).to.match(/^\/jobs\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+  });
+}
+
+/**
  * Creates a batch of jobs owned by the given username, using the given transaction, where the
  * `progress` int of each job is set to the index in which it should appear in the default jobs
  * array, i.e. the last job has progress 0, the second to last has progress 1, etc.

@@ -10,12 +10,12 @@ import { defaultObjectStore } from '../../util/object-store';
 import { RequestValidationError, ServerError } from '../../util/errors';
 import db from '../../util/db';
 import env from '../../util/env';
-import { WorkItemMeta, WorkItemStatus } from '../work-item-interface';
+import { WorkItemStatus } from '../work-item-interface';
 import { getRequestMetric } from '../../util/metrics';
 import { getRequestUrl } from '../../util/url';
 import HarmonyRequest from '../harmony-request';
 import UserWork from '../user-work';
-import { joinTexts, sanitizeImage } from '@harmony/util/string';
+import { joinTexts } from '@harmony/util/string';
 import { makeWorkScheduleRequest } from '../../backends/workflow-orchestration/work-item-polling';
 
 export interface ServiceCapabilities {
@@ -550,9 +550,7 @@ export default abstract class BaseService<ServiceParamType> {
             workItem.workflowStepIndex = workflowSteps[0].stepIndex;
             await workItem.save(tx);
           }
-          const itemMeta: WorkItemMeta = { workItemService: sanitizeImage(workflowSteps[0].serviceID), workItemEvent: 'statusUpdate',
-            workItemAmount: firstStepWorkItems.length, workItemStatus: WorkItemStatus.READY };
-          this.logger.info('Created first step work items.', itemMeta);
+          this.logger.info('Created first step work items.');
         }
       });
 

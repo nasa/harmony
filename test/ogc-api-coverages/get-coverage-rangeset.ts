@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { describe, it } from 'mocha';
 import _ from 'lodash';
 import isUUID from '../../app/util/uuid';
-import { expectedNoOpJobKeys, itIncludesRequestUrl } from '../helpers/jobs';
+import { expectedNoOpJobKeys, itIncludesRequestUrl, itRedirectsToJobStatusUrl } from '../helpers/jobs';
 import { hookPostRangesetRequest, hookRangesetRequest, rangesetRequest } from '../helpers/ogc-api-coverages';
 import hookServersStartStop from '../helpers/servers';
 import StubService, { hookServices } from '../helpers/stub-service';
@@ -344,12 +344,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       expect(this.service.operation.isSynchronous).to.equal(false);
     });
 
-    it('returns a redirect to the job status URL', function () {
-      const { status, headers } = this.res;
-      const { location } = headers;
-      expect(status).to.equal(303);
-      expect(location).to.match(/^\/jobs\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
-    });
+    itRedirectsToJobStatusUrl();
   });
 
   describe('When specifying a collection short name instead of a CMR concept ID', function () {
@@ -362,12 +357,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       expect(this.service.operation.isSynchronous).to.equal(false);
     });
 
-    it('returns a redirect to the job status URL', function () {
-      const { status, headers } = this.res;
-      const { location } = headers;
-      expect(status).to.equal(303);
-      expect(location).to.match(/^\/jobs\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
-    });
+    itRedirectsToJobStatusUrl();
   });
 
   describe('when provided a valid temporal range', function () {
@@ -890,16 +880,18 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
      * @param queryParams - The query parameters to send to the request
      * @param message - The error message that should be returned
      * @param code - The error code of the message
+     * @param variable - The variable to use for the request
+     * ("all", or variable name(s) or concept ID(s) comma separated, defaults to the value of variableName)
      */
     function itReturnsAValidationError(
-      queryParams: object, message: string, code = 'openapi.ValidationError',
+      queryParams: object, message: string, code = 'openapi.ValidationError', variable = variableName,
     ): void {
       it(`returns an HTTP 400 "Bad Request" error with explanatory message ${message}`, async function () {
         const res = await rangesetRequest(
           this.frontend,
           version,
           collection,
-          variableName,
+          variable,
           { query: queryParams },
         );
         expect(res.status).to.equal(400);
@@ -1013,6 +1005,22 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
         type: 'COORDINATE',
       });
     });
+  });
+});
+
+describe('OGC API Coverages - getCoverageRangeset with the extend query parameter', async function () {
+  hookServersStartStop();
+  
+  describe('when requesting all vars and extending dimension_var', function () {
+    StubService.hook({ params: { redirect: 'http://example.com' } });
+    hookRangesetRequest('1.0.0', 'C1233800302-EEDTEST', 'all', { query: { extend: 'dimension_var', skipPreview: 'true', maxResults: 2 }, username: 'joe' });
+    itRedirectsToJobStatusUrl();
+  });
+
+  describe('when requesting red_var and extending lat,lon', function () {
+    StubService.hook({ params: { redirect: 'http://example.com' } });
+    hookRangesetRequest('1.0.0', 'C1233800302-EEDTEST', 'red_var', { query: { extend: 'lat,lon' }, username: 'joe' });
+    itRedirectsToJobStatusUrl();
   });
 });
 
