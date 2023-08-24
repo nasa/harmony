@@ -8,7 +8,7 @@ import { CmrUmmCollection, CmrUmmVariable } from '../util/cmr';
 import { Encrypter, Decrypter } from '../util/crypto';
 import { cmrVarToHarmonyVar, HarmonyVariable } from '../util/variables';
 
-export const CURRENT_SCHEMA_VERSION = '0.17.0';
+export const CURRENT_SCHEMA_VERSION = '0.18.0';
 
 /**
  * Synchronously reads and parses the JSON Schema at the given path
@@ -40,6 +40,15 @@ let _schemaVersions: SchemaVersion[];
 function schemaVersions(): SchemaVersion[] {
   if (_schemaVersions) return _schemaVersions;
   _schemaVersions = [
+    {
+      version: '0.18.0',
+      schema: readSchema('0.18.0'),
+      down: (model): unknown => {
+        const revertedModel = _.cloneDeep(model);
+        delete revertedModel.extendDimensions;
+        return revertedModel;
+      },
+    },
     {
       version: '0.17.0',
       schema: readSchema('0.17.0'),
@@ -636,9 +645,27 @@ export default class DataOperation {
   }
 
   /**
+   * Gets the dimensions used for dimension extension
+   *
+   * @returns The dimensions that will be extended
+   */
+  get extendDimensions(): string[] {
+    return this.model.extendDimensions;
+  }
+
+  /**
+   * Sets dimensions used for dimension extension
+   *
+   * @param dimensions - The dimensions that will be extended
+   */
+  set extendDimensions(dimensions: string[]) {
+    this.model.extendDimensions = dimensions;
+  }
+
+  /**
    * Gets the dimensions used for dimension subsetting
    *
-   * @returns A URI to the geojson shape
+   * @returns The dimensions against which to subset
    */
   get dimensions(): Dimension[] {
     return this.model.subset.dimensions;
