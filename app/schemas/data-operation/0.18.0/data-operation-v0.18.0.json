@@ -27,8 +27,13 @@
           },
           "extendDimensions": {
             "type": "array",
+            "title": "Extend Dimensions",
+            "description": "The names or concept IDs of the dimensions that should be extended.",
+            "examples": [
+              ["lat", "lon"]
+            ],
             "items": {
-              "$ref": "#/definitions/ExtendDimensions"
+              "type": "string"
             }
           },
           "temporal": {
@@ -383,17 +388,6 @@
           }
         },
         "required": []
-      },
-      "ExtendDimensions": {
-        "type": "array",
-        "title": "Extend Dimensions",
-        "description": "The names or concept IDs of the dimensions that should be extended.",
-        "examples": [
-          ["lat", "lon"]
-        ],
-        "items": {
-          "type": "string"
-        }
       },
       "SpatialPoint": {
         "type": "array",
