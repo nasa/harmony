@@ -94,7 +94,9 @@ export default async function shapefileConverter(req, res, next: NextFunction): 
 
   try {
     // const shapefile = get(req, 'files.shapefile[0]') || req.signedCookies.shapefile;
+    console.log(`REQ: ${JSON.stringify(req.signedCookies.shapefile)}`);
     const shapefile = get(req, 'files.shapefile[0]') || get(req, 'file') || req.signedCookies.shapefile;
+    console.log(`SHAPEFILE: ${JSON.stringify(shapefile)}`);
     res.clearCookie('shapefile', cookieOptions);
 
     if (!shapefile) {
@@ -105,6 +107,7 @@ export default async function shapefileConverter(req, res, next: NextFunction): 
     const store = defaultObjectStore();
 
     const { mimetype } = shapefile;
+    console.log(`MIMETYPE = ${mimetype}`);
     const converter = contentTypesToConverters[mimetype];
     if (!converter) {
       const humanContentTypes = Object.entries(contentTypesToConverters).map(([k, v]) => `"${k}" (${v.name})`);
@@ -113,6 +116,7 @@ export default async function shapefileConverter(req, res, next: NextFunction): 
     shapefile.typeName = converter.name;
     const url = store.getUrlString(shapefile);
     if (converter.geoJsonConverter) {
+      console.log('CONVERTING TO GEOJSON');
       const originalFile = await store.downloadFile(url);
       let convertedFile;
       try {
@@ -125,6 +129,8 @@ export default async function shapefileConverter(req, res, next: NextFunction): 
         }
       }
     } else {
+      console.log('NOT CONVERTING TO GEOJSON');
+      console.log(`URL: ${url}`);
       operation.geojson = url;
     }
   } catch (e) {

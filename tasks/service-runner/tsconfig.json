@@ -1,18 +1,5 @@
 {
-  "compilerOptions": {
-      "types": ["node"],
-      "module": "commonjs",
-      "baseUrl": ".",
-      "moduleResolution": "node",
-      "target": "ES2021",
-      "esModuleInterop": true,
-      "experimentalDecorators": true,
-      "emitDecoratorMetadata": true,
-      "allowJs": true,
-      "noImplicitAny": false,
-      "sourceMap": true,
-      "outDir": "built"
-  },
-  "typeRoots": ["./node_modules/@types"],
-  "include": ["./app", "./test"]
+  "extends": "./tsconfig.base.json",
+  "typeRoots": [ "./node_modules/@types", "./app/stac" ],
+  "include": [ "./app/**/*", "./test/**/*" ]
 }

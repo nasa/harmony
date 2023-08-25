@@ -14,7 +14,7 @@ import HarmonyRequest from '../models/harmony-request';
 import { get } from 'lodash';
 import { randomBytes } from 'crypto';
 
-export const cookieOptions = { signed: true, sameSite: 'Lax' };
+export const cookieOptions = { signed: true, sameSite: 'lax' as const };
 
 /**
  * Recipe for a cookie to support handling shapefiles
@@ -27,8 +27,8 @@ function _shapefile(req: HarmonyRequest): string[] {
   // the other POST form parameters
   const shapefile = get(req, 'files.shapefile[0]') || get(req, 'file');
   if (!shapefile) return [];
-
-  const { mimetype, key, bucket, path } = shapefile;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { mimetype, key, bucket, path } = shapefile as any;
   const shapefileParams = { mimetype, key, bucket, path };
   return ['shapefile', `j:${JSON.stringify(shapefileParams)}`];
 }

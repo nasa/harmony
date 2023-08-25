@@ -26,7 +26,12 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.342.0",
     "@aws-sdk/client-sqs": "^3.342.0",
+    "@aws-sdk/credential-provider-imds": "^3.342.0",
+    "@aws-sdk/hash-node": "^3.342.0",
+    "@aws-sdk/protocol-http": "^3.342.0",
     "@aws-sdk/s3-request-presigner": "^3.342.0",
+    "@aws-sdk/url-parser": "^3.342.0",
+    "@aws-sdk/util-format-url": "^3.342.0",
     "@harmony/util": "file:../../lib/util",
     "@kubernetes/client-node": "^0.17.1",
     "@types/node-fetch": "^2.5.12",

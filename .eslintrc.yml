@@ -30,6 +30,7 @@ env:
   node: true
   es6: true
 rules:
+  "@typescript-eslint/ban-types": "off"
   "@typescript-eslint/indent": ["error", 2, { "ignoredNodes": ["PropertyDefinition"], "SwitchCase": 1 }]
   no-restricted-syntax: ["error", "LabeledStatement", "WithStatement"]
   class-methods-use-this: "off"

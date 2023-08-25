@@ -1,5 +1,5 @@
 {
   "extends": "./tsconfig.base.json",
   "typeRoots": [ "./node_modules/@types", "./app/stac" ],
-  "include": [ "./app/**/*", "./test/**/*" ]
+  "include": [ "./app/**/*" ]
 }
