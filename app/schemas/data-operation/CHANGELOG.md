@@ -1,4 +1,4 @@
-## [0.18.0] - 2022-08-24
+## [0.18.0] - 2023-08-28
 ### Added
 - sources.extendDimensions - The dimensions to extend (added inititally for TEMPO users)
 
