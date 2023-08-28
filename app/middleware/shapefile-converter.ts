@@ -28,9 +28,13 @@ async function _esriToGeoJson(filename: string): Promise<string> {
   try {
     geoJsonFile = await tmp.file();
     const buffer = await fs.readFile(filename);
+    console.log('PRE CONVERSION');
     const geojson = rewind(await shpjs.parseZip(buffer));
+    console.log('POST CONVERSION');
     await fs.writeFile(geoJsonFile.path, JSON.stringify(geojson), 'utf8');
+    await fs.writeFile('/tmp/test.geo.json', JSON.stringify(geojson, null, 2), 'utf8');
   } catch (e) {
+    console.log(e);
     if (geoJsonFile) await geoJsonFile.cleanup();
     if (e instanceof RequestValidationError) throw e;
     throw new RequestValidationError('The provided ESRI Shapefile file could not be parsed. Please check its validity before retrying.');
@@ -123,7 +127,7 @@ export default async function shapefileConverter(req, res, next: NextFunction): 
         convertedFile = await converter.geoJsonConverter(originalFile, req.context.logger);
         operation.geojson = await store.uploadFile(convertedFile, `${url}.geojson`);
       } finally {
-        await fs.unlink(originalFile);
+        // await fs.unlink(originalFile);
         if (convertedFile) {
           await fs.unlink(convertedFile);
         }

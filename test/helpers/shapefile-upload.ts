@@ -20,7 +20,9 @@ function shapefileUploadMock(): RequestHandler {
       const tempDir = tmp.dirSync().name;
       callback(null, tempDir);
     },
-    filename: (_req, file, callback) => {
+    filename: (req, file, callback) => {
+      console.log(req);
+      console.log(`FILE: ${JSON.stringify(file)}`);
       callback(null, file.originalname);
     },
   });

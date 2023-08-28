@@ -477,6 +477,7 @@ export async function cmrPostBase(
     if (shapefile) {
       try {
         await fs.promises.unlink(shapefile);
+        console.log('DELETING SHAPEFILE');
       } catch (e) {
         logger.error(`Failed to delete file ${shapefile}`);
         logger.error(e);
