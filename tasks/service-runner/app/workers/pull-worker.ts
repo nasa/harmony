@@ -149,7 +149,14 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
     try {
       await fs.access(terminationFilePath);
       // TERMINATING file exists so PreStop handler is requesting termination
-      logger.debug('RECEIVED TERMINATION REQUEST');
+      logger.warn('Received TERMINATION request, no longer processing work');
+      try {
+        // Clean up the TERMINATING file to ensure we do not stay in an infinite loop terminating
+        await fs.unlink(terminationFilePath);
+      } catch (e) {
+        logger.error('Error removing TERMINATING file, will still attempt to quit');
+        logger.error(e);
+      }
       // removing the WORKING file is done in the `finally` block at the end of this function
       return;
     } catch {
