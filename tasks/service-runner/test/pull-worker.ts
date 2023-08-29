@@ -9,7 +9,7 @@ import { hookGetWorkRequest } from './helpers/pull-worker';
 import * as pullWorker from '../app/workers/pull-worker';
 import PullWorker from '../app/workers/pull-worker';
 import * as serviceRunner from '../app/service/service-runner';
-import { existsSync, writeFileSync, mkdirSync, rmSync } from 'fs';
+import { existsSync, writeFileSync, mkdirSync } from 'fs';
 
 const {
   _pullWork,
@@ -191,8 +191,8 @@ describe('Pull Worker', async function () {
         pullWorkSpy = sinon.spy(pullWorker.exportedForTesting, '_pullWork');
         doWorkSpy = sinon.spy(pullWorker.exportedForTesting, '_doWork');
       });
-      afterEach(function () {
-        rmSync(`${env.workingDir}/TERMINATING`);
+      afterEach(async function () {
+        // pullWork will remove the TERMINATING file so no need to remove it
         pullWorkSpy.restore();
         doWorkSpy.restore();
       });
@@ -234,11 +234,10 @@ describe('Pull Worker', async function () {
         expect(existsSync(dir)).to.be.false;
       });
 
-      it('does not delete /tmp/TERMINATING', async function () {
+      it('deletes the TERMINATING file if it encounters it', async function () {
         writeFileSync(`${env.workingDir}/TERMINATING`, '1');
         await _pullAndDoWork(false);
-        expect(existsSync(`${env.workingDir}/TERMINATING`)).to.be.true;
-        rmSync(`${env.workingDir}/TERMINATING`);
+        expect(existsSync(`${env.workingDir}/TERMINATING`)).to.be.false;
       });
     });
 

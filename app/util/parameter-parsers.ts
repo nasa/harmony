@@ -39,6 +39,21 @@ export function handleGranuleIds(
 }
 
 /**
+ * Handle the extend parameter in a Harmony query, adding it to extendDimensions in
+ * the DataOperation if necessary.
+ *
+ * @param operation - the DataOperation for the request
+ * @param query - the query for the request
+ */
+export function handleExtend(
+  operation: DataOperation,
+  query: Record<string, string>): void {
+  if (query.extend) {
+    operation.extendDimensions = parseMultiValueParameter(query.extend);
+  }
+}
+
+/**
  * Handle the ouptputCrs parameter in a Harmony query, adding it to the DataOperation
  * if necessary.
  *

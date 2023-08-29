@@ -1,3 +1,7 @@
+## [0.18.0] - 2023-08-28
+### Added
+- sources.extendDimensions - The dimensions to extend (added inititally for TEMPO users)
+
 ## [0.17.0] - 2022-07-12
 ### Added
 - sources.shortName - The CMR short name for a source

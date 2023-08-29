@@ -94,6 +94,19 @@ describe('services.chooseServiceConfig and services.buildService', function () {
             },
           },
         },
+        {
+          name: 'extend-service',
+          type: { name: 'turbo' },
+          collections: [{ id: collectionId }],
+          capabilities: {
+            extend: true,
+            output_formats: ['application/x-netcdf4'],
+            concatenation: true,
+            subsetting: {
+              temporal: false,
+            },
+          },
+        },
       ];
     });
 
@@ -155,6 +168,17 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       it('chooses the service that supports spatial subsetting', function () {
         const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
         expect(serviceConfig.name).to.equal('tiff-png-bbox-service');
+      });
+    });
+
+    describe('and the request needs dimension extension', function () {
+      beforeEach(function () {
+        this.operation.extendDimensions = ['lat', 'lon'];
+      });
+
+      it('chooses the service that supports dimension extension', function () {
+        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        expect(serviceConfig.name).to.equal('extend-service');
       });
     });
 

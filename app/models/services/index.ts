@@ -391,6 +391,24 @@ function supportsTemporalSubsetting(configs: ServiceConfig<unknown>[]): ServiceC
 }
 
 /**
+ * Returns true if the operation requires dimension extension
+ * @param operation - The operation to perform.
+ * @returns true if the provided operation requires dimension extension and false otherwise
+ */
+function requiresExtend(operation: DataOperation): boolean {
+  return operation.extendDimensions && operation.extendDimensions.length > 0;
+}
+
+/**
+ * Returns any services that support dimension extension from the list of configs
+ * @param configs - The potential matching service configurations
+ * @returns Any configurations that support dimension extension
+ */
+function supportsExtend(configs: ServiceConfig<unknown>[]): ServiceConfig<unknown>[] {
+  return configs.filter((config) => getIn(config, 'capabilities.extend', false));
+}
+
+/**
  * Returns true if the operation requires dimension subsetting
  * @param operation - The operation to perform.
  * @returns true if the provided operation requires dimension subsetting and false otherwise
@@ -664,6 +682,35 @@ function filterTemporalSubsettingMatches(
 }
 
 /**
+ * Returns any services that support dimension extension from the list of configs if the
+ * operation requires dimension extension.
+ * @param operation - The operation to perform.
+ * @param context - Additional context that's not part of the operation, but influences the
+ *     choice regarding the service to use
+ * @param configs - All service configurations that have matched up to this call
+ * @param requestedOperations - Operations that have been considered in filtering out services up to
+ *     this call
+ * @returns Any service configurations that could still support the request
+ */
+function filterExtendMatches(
+  operation: DataOperation,
+  context: RequestContext,
+  configs: ServiceConfig<unknown>[],
+  requestedOperations: string[],
+): ServiceConfig<unknown>[] {
+  let services = configs;
+  if (requiresExtend(operation)) {
+    requestedOperations.push('extend');
+    services = supportsExtend(configs);
+  }
+
+  if (services.length === 0) {
+    throw new UnsupportedOperation(operation, requestedOperations);
+  }
+  return services;
+}
+
+/**
  * Returns any services that support arbitrary dimension subsetting from the list of configs
  * if the operation requires dimension subsetting.
  * @param operation - The operation to perform.
@@ -736,6 +783,7 @@ const allFilterFns = [
   filterTemporalSubsettingMatches,
   filterDimensionSubsettingMatches,
   filterReprojectionMatches,
+  filterExtendMatches,
   // This filter must be last because it chooses a format based on the accepted MimeTypes and
   // the remaining services that could support the operation. If it ran earlier we could
   // potentially eliminate services that a different accepted MimeType would have allowed. We
@@ -752,6 +800,7 @@ const requiredFilterFns = [
   filterVariableSubsettingMatches,
   filterDimensionSubsettingMatches,
   filterReprojectionMatches,
+  filterExtendMatches,
   // See caveat above in allFilterFns about why this filter must be applied last
   filterOutputFormatMatches,
 ];

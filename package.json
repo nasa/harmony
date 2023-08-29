@@ -190,7 +190,7 @@
     "cookie-signature": "^1.1.0",
     "copyfiles": "^2.3.0",
     "csv-parse": "^5.0.4",
-    "eslint": "^8.43.0",
+    "eslint": "^8.48.0",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-config-airbnb-typescript": "^17.0.0",
     "eslint-plugin-import": "^2.27.5",

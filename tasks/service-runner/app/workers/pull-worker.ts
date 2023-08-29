@@ -5,10 +5,30 @@ import { WorkItemRecord, WorkItemStatus } from '../../../../app/models/work-item
 import logger from '../../../../app/util/log';
 import { runServiceFromPull, runQueryCmrFromPull } from '../service/service-runner';
 import sleep from '../../../../app/util/sleep';
-import createAxiosClientWithRetry from '../util/axios-clients';
+import createAxiosClientWithRetry, { isRetryable } from '../util/axios-clients';
 import path from 'path';
-import { existsSync, rmSync, promises as fs } from 'fs';
+import { existsSync, rmSync, accessSync, constants, promises as fs } from 'fs';
 import { exit } from 'process';
+import { AxiosError } from 'axios';
+
+/**
+ * Retries axios connection errors using default retry logic unless the pod is being terminated
+ * in which case it exits out early
+ *
+ * @param error - the axios error returned by the failed request
+ * Returns true if the error can be retried and the pod is not being terminated, false otherwise
+ */
+function retryUnlessTerminating(error: AxiosError): boolean {
+  const terminationFilePath = path.join(env.workingDir, 'TERMINATING');
+  try {
+    accessSync(terminationFilePath, constants.F_OK);
+    // No exception thrown, so the terminating file exists
+    logger.warn('Pod termination requested, will not retry');
+    return false;
+  } catch (e) {
+    return isRetryable(error);
+  }
+}
 
 // Poll every 500 ms for now. Potentially make this a configuration item.
 const pollingInterval = 500;
@@ -23,7 +43,9 @@ const { maxPutWorkRetries } = env;
 const maxGetWorkRetries = Number.MAX_SAFE_INTEGER;
 const maxDelayMs = 60_000; // delay subsequent retries for up to 1 minute
 const exponentialOffset = 3; // offsets the exponent so that initial retries don't happen too soon
-const axiosGetWork = createAxiosClientWithRetry(maxGetWorkRetries, maxDelayMs, exponentialOffset);
+const axiosGetWork = createAxiosClientWithRetry(
+  maxGetWorkRetries, maxDelayMs, exponentialOffset, retryUnlessTerminating,
+);
 const axiosUpdateWork = createAxiosClientWithRetry(maxPutWorkRetries, maxDelayMs, exponentialOffset);
 
 let pullCounter = 0;
@@ -149,7 +171,14 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
     try {
       await fs.access(terminationFilePath);
       // TERMINATING file exists so PreStop handler is requesting termination
-      logger.debug('RECEIVED TERMINATION REQUEST');
+      logger.warn('Received TERMINATION request, no longer processing work');
+      try {
+        // Clean up the TERMINATING file to ensure we do not stay in an infinite loop terminating
+        await fs.unlink(terminationFilePath);
+      } catch (e) {
+        logger.error('Error removing TERMINATING file, will still attempt to quit');
+        logger.error(e);
+      }
       // removing the WORKING file is done in the `finally` block at the end of this function
       return;
     } catch {

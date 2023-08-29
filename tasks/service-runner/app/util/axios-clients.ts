@@ -53,9 +53,9 @@ function calculateExponentialDelay(
 /**
  * Determine whether the request should be retried.
  * @param error - the axios error returned by the failed request
- * @returns - boolean
+ * @returns true if the request should be retried, false otherwise
  */
-function isRetryable(error: AxiosError): boolean {
+export function isRetryable(error: AxiosError): boolean {
   if (isNetworkOrIdempotentRequestError(error) ||
     [AxiosErrorCode.ECONNABORTED.valueOf(), AxiosErrorCode.ECONNRESET.valueOf()].includes(error.code) ) {
     logger.warn('Axios retry condition has been met.',
@@ -81,9 +81,9 @@ export default function createAxiosClientWithRetry(
   retries = Infinity,
   maxDelayMs = Infinity,
   exponentialOffset = 0,
+  retryCondition = isRetryable,
   timeoutMs = axiosTimeoutMs,
   httpAgent = keepAliveAgent,
-  retryCondition = isRetryable,
 ): AxiosInstance {
   if (process.env.NODE_ENV === 'test') {
     retries = 2;
