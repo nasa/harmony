@@ -97,6 +97,7 @@
       "max": 12.0
     }]
   },
+  "extendDimensions": ["lat", "lon"],
   "isSynchronous": true,
   "requestId": "c045c793-19f1-43b5-9547-c87a5c7dfadb",
   "temporal": {
@@ -104,5 +105,5 @@
     "end": "2020-02-20T15:00:00.000Z"
   },
   "concatenate": false,
-  "version": "0.17.0"
+  "version": "0.18.0"
 }

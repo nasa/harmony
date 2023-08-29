@@ -2,7 +2,7 @@ import { NextFunction, Response } from 'express';
 import DataOperation from '../../models/data-operation';
 import HarmonyRequest from '../../models/harmony-request';
 import wrap from '../../util/array';
-import { handleCrs, handleFormat, handleGranuleIds, handleGranuleNames, handleScaleExtent, handleScaleSize } from '../../util/parameter-parsers';
+import { handleCrs, handleExtend, handleFormat, handleGranuleIds, handleGranuleNames, handleScaleExtent, handleScaleSize } from '../../util/parameter-parsers';
 import { createDecrypter, createEncrypter } from '../../util/crypto';
 import env from '../../util/env';
 import { RequestValidationError } from '../../util/errors';
@@ -33,6 +33,7 @@ export default function getCoverageRangeset(
   const operation = new DataOperation(null, encrypter, decrypter);
 
   handleFormat(operation, query, req);
+  handleExtend(operation, query);
   handleGranuleIds(operation, query);
   handleGranuleNames(operation, query);
   handleCrs(operation, query);

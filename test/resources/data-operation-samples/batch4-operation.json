@@ -122,6 +122,7 @@
       10
     ]
   },
+  "extendDimensions": ["lat", "lon"],
   "requestId": "5fab13b7-cff1-4fb3-83ac-e4fe95775701",
   "user": "jnorton1",
   "client": "harmony-local",
