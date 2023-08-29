@@ -53,7 +53,7 @@ function calculateExponentialDelay(
 /**
  * Determine whether the request should be retried.
  * @param error - the axios error returned by the failed request
- * @returns whether true if the request should be retried, false otherwise
+ * @returns true if the request should be retried, false otherwise
  */
 export function isRetryable(error: AxiosError): boolean {
   if (isNetworkOrIdempotentRequestError(error) ||
