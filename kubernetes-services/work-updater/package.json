@@ -13,7 +13,7 @@
     "coverage": "nyc mocha",
     "prebuild": "./bin/prebuild",
     "prebuild-m1": "./bin/prebuild",
-    "build": "tsc && docker build --no-cache -f Dockerfile.mac --tag harmonyservices/work-updater:${VERSION:-latest} .",
+    "build": "tsc && docker build -f Dockerfile.mac --tag harmonyservices/work-updater:${VERSION:-latest} .",
     "build-m1": "tsc && docker build -f Dockerfile.mac --platform linux/amd64 --tag harmonyservices/work-updater:${VERSION:-latest} .",
     "publish": "docker push harmonyservices/work-updater:${VERSION:-latest}"
   },

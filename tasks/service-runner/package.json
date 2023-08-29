@@ -13,8 +13,8 @@
     "coverage": "nyc mocha --timeout 5000",
     "prebuild": "./bin/prebuild",
     "prebuild-m1": "./bin/prebuild",
-    "build": "tsc && docker build --no-cache --tag harmonyservices/service-runner:${VERSION:-latest} .",
-    "build-m1": "tsc && docker build --no-cache  --platform linux/amd64 --tag harmonyservices/service-runner:${VERSION:-latest} .",
+    "build": "tsc && docker build --tag harmonyservices/service-runner:${VERSION:-latest} .",
+    "build-m1": "tsc && docker build --platform linux/amd64 --tag harmonyservices/service-runner:${VERSION:-latest} .",
     "publish": "docker push harmonyservices/service-runner:${VERSION:-latest}"
   },
   "engines": {

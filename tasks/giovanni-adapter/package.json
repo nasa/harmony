@@ -11,8 +11,8 @@
     "docker-example": "docker run --rm -it --env SHARED_SECRET_KEY=foo -v $(pwd)/example:/app/example -v $(pwd)/temp:/app/temp harmonyservices/giovanni-adapter:${VERSION:-latest}",
     "prebuid": "./bin/prebuild",
     "prebuid-m1": "./bin/prebuild",
-    "build": "tsc && docker build --no-cache -t harmonyservices/giovanni-adapter:${VERSION:-latest} .",
-    "build-m1": "tsc && docker build --platform linux/amd64 -t harmonyservices/query-cmr:${VERSION:-latest} .",
+    "build": "tsc && docker build -t harmonyservices/giovanni-adapter:${VERSION:-latest} .",
+    "build-m1": "tsc && docker build --platform linux/amd64 -t harmonyservices/giovanni-adapter:${VERSION:-latest} .",
     "publish": "docker push harmonyservices/giovanni-adapter:${VERSION:-latest}"
   },
   "keywords": [
