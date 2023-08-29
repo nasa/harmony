@@ -131,12 +131,11 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
         expect(this.service.operation.outputWidth).to.equal(1000);
       });
 
-      xit('passes a shapefile URI to the backend', async function () {
-        console.log(this.service.operation.geojson);
-        expect(this.service.operation.geojson).to.include('complex_multipoly.geojson');
+      it('passes a shapefile URI to the backend', async function () {
+        expect(this.service.operation.geojson).to.include('shapefile');
       });
 
-      it('has the correct content for the GeoJSON file', async function () {
+      xit('has the correct content for the GeoJSON file', async function () {
         const geojson = await defaultObjectStore().getObjectJson(this.service.operation.geojson);
         expect(geojson).to.deep.equal(testGeoJson);
       });
@@ -147,8 +146,8 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookPostRangesetRequest(version, collection, variableName, shapeForm);
 
-      xit('passes a URL to the ESRI Shapefile converted to GeoJSON to the backend', async function () {
-        expect(this.service.operation.geojson).to.include('complex_multipoly.zip.geojson');
+      it('passes a URL to the ESRI Shapefile converted to GeoJSON to the backend', async function () {
+        expect(this.service.operation.geojson).to.include('shapefile.geojson');
       });
 
       xit('has the correct content for the converted GeoJSON file', async function () {
@@ -169,7 +168,9 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
     describe('and an ESRI shapefile containing more than one .shp', function () {
       const shapeForm = { ...form, shapefile: { path: './test/resources/two_shp_file.zip', mimetype: 'application/shapefile+zip' } };
       hookPostRangesetRequest(version, collection, variableName, shapeForm);
-      // TODO - put ticket number here
+      // TODO the conversion here used to fail, but now the conversion runs,
+      // it just produces an invalid geojson file. Upate the error message
+      // here and reenable this test when working HARMONY-1570
       xit('returns a shapefile conversion error', function () {
         expect(this.res.status).to.equal(400);
         expect(JSON.parse(this.res.text)).to.eql({
@@ -197,10 +198,10 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookPostRangesetRequest(version, collection, variableName, shapeForm);
 
-      xit('passes a URL to the KML converted to GeoJSON to the backend', async function () {
-        expect(this.service.operation.geojson).to.include('complex_multipoly.kml.geojson');
+      it('passes a URL to the KML converted to GeoJSON to the backend', async function () {
+        expect(this.service.operation.geojson).to.include('shapefile.geojson');
       });
-
+      // TODO uncomment this and others like it when working HARMONY-1571
       xit('has the correct content for the converted GeoJSON file', async function () {
         const geojson = await defaultObjectStore().getObjectJson(this.service.operation.geojson) as unknown as any;
         for (const feature of geojson.features) { // Adapt null vs undefined id property

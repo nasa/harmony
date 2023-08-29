@@ -28,13 +28,10 @@ async function _esriToGeoJson(filename: string): Promise<string> {
   try {
     geoJsonFile = await tmp.file();
     const buffer = await fs.readFile(filename);
-    console.log('PRE CONVERSION');
     const geojson = rewind(await shpjs.parseZip(buffer));
-    console.log('POST CONVERSION');
     await fs.writeFile(geoJsonFile.path, JSON.stringify(geojson), 'utf8');
     await fs.writeFile('/tmp/test.geo.json', JSON.stringify(geojson, null, 2), 'utf8');
   } catch (e) {
-    console.log(e);
     if (geoJsonFile) await geoJsonFile.cleanup();
     if (e instanceof RequestValidationError) throw e;
     throw new RequestValidationError('The provided ESRI Shapefile file could not be parsed. Please check its validity before retrying.');
@@ -97,10 +94,7 @@ export default async function shapefileConverter(req, res, next: NextFunction): 
   const { operation } = req;
 
   try {
-    // const shapefile = get(req, 'files.shapefile[0]') || req.signedCookies.shapefile;
-    console.log(`REQ: ${JSON.stringify(req.signedCookies.shapefile)}`);
     const shapefile = get(req, 'files.shapefile[0]') || get(req, 'file') || req.signedCookies.shapefile;
-    console.log(`SHAPEFILE: ${JSON.stringify(shapefile)}`);
     res.clearCookie('shapefile', cookieOptions);
 
     if (!shapefile) {
@@ -111,7 +105,6 @@ export default async function shapefileConverter(req, res, next: NextFunction): 
     const store = defaultObjectStore();
 
     const { mimetype } = shapefile;
-    console.log(`MIMETYPE = ${mimetype}`);
     const converter = contentTypesToConverters[mimetype];
     if (!converter) {
       const humanContentTypes = Object.entries(contentTypesToConverters).map(([k, v]) => `"${k}" (${v.name})`);
@@ -120,7 +113,6 @@ export default async function shapefileConverter(req, res, next: NextFunction): 
     shapefile.typeName = converter.name;
     const url = store.getUrlString(shapefile);
     if (converter.geoJsonConverter) {
-      console.log('CONVERTING TO GEOJSON');
       const originalFile = await store.downloadFile(url);
       let convertedFile;
       try {
@@ -133,8 +125,6 @@ export default async function shapefileConverter(req, res, next: NextFunction): 
         }
       }
     } else {
-      console.log('NOT CONVERTING TO GEOJSON');
-      console.log(`URL: ${url}`);
       operation.geojson = url;
     }
   } catch (e) {

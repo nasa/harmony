@@ -21,8 +21,6 @@ function shapefileUploadMock(): RequestHandler {
       callback(null, tempDir);
     },
     filename: (req, file, callback) => {
-      console.log(req);
-      console.log(`FILE: ${JSON.stringify(file)}`);
       callback(null, file.originalname);
     },
   });
