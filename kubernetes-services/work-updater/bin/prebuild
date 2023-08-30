@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# sets up the project to be ready for compiling and buidling docker image
+# sets up the project to be ready for compiling and building docker image
 #
 
 pushd ../../lib/util
