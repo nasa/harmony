@@ -1,6 +1,6 @@
 import * as k8s from '@kubernetes/client-node';
 import stream from 'stream';
-import { sanitizeImage } from '../../../../app/util/string';
+import { sanitizeImage } from '@harmony/util/string';
 import env from '../util/env';
 import logger from '../../../../app/util/log';
 import { resolve as resolveUrl } from '../../../../app/util/url';

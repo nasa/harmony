@@ -66,7 +66,7 @@ const shareableItem1 = buildWorkItem({ jobID: shareableJob.jobID, status: WorkIt
 
 describe('Workflow UI work items table row route', function () {
   hookServersStartStop({ skipEarthdataLogin: false });
-  
+
   let retryLimit;
   before(async function () {
     retryLimit = env.workItemRetryLimit;

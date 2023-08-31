@@ -1,0 +1,25 @@
+POST /search/granules.json
+accept: application/json
+content-type: multipart/form-data; boundary=----------------------------012345678901234567890123
+accept-encoding: gzip,deflate
+body: ------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"page_size\"\r\n\r\n100\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"temporal\"\r\n\r\n2020-01-02T00:00:00.000Z,2020-01-02T01:00:00.000Z\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"bounding_box\"\r\n\r\n17,-90,98,90\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"collection_concept_id\"\r\n\r\nC1233800302-EEDTEST\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"shapefile\"; filename=\"shapefile\"\r\nContent-Type: application/geo+json\r\n\r\n[{\"type\":\"FeatureCollection\",\"features\":[{\"type\":\"Feature\",\"geometry\":{\"bbox\":[-2.7833330125979785,-36.18537641422631,53.920003137637536,15.342655246106743],\"type\":\"Polygon\",\"coordinates\":[[[3.7420509094529284,2.2918874020049174],[-2.7833330125979785,8.1422316079816],[39.96918233877008,15.342655246106743],[53.920003137637536,11.292416949661359],[33.21878517802776,-36.18537641422631],[15.217726082714877,-35.28532345946067],[3.7420509094529284,2.2918874020049174]]]},\"properties\":{\"id\":null}}],\"fileName\":\"southern_africa\"},{\"type\":\"FeatureCollection\",\"features\":[{\"type\":\"Feature\",\"geometry\":{\"bbox\":[-2.7833330125979785,-36.18537641422631,53.920003137637536,15.342655246106744],\"type\":\"Polygon\",\"coordinates\":[[[3.742050909452928,2.2918874020049174],[-2.7833330125979785,8.1422316079816],[39.96918233877008,15.342655246106744],[53.920003137637536,11.292416949661359],[33.21878517802776,-36.18537641422631],[15.217726082714876,-35.28532345946067],[3.742050909452928,2.2918874020049174]]]},\"properties\":{}}],\"fileName\":\"second_shp\"}]\r\n------------------------------012345678901234567890123--\r\n
+
+HTTP/1.1 400 Bad Request
+content-type: application/json
+transfer-encoding: chunked
+connection: close
+date: Thu, 24 Aug 2023 14:35:50 GMT
+access-control-allow-origin: *
+cmr-request-id: 39a374bf-f12f-49d8-b0f3-7aecf05e1670
+x-request-id: vWN_Fs3tdx9yEq2ByDwhbXP6IFM5Kl1xH1nQjBRKV1DWxAueFRLxBQ==
+strict-transport-security: max-age=31536000
+x-content-type-options: nosniff
+x-frame-options: SAMEORIGIN
+x-xss-protection: 1; mode=block
+server: ServerTokens ProductOnly
+x-cache: Error from cloudfront
+via: 1.1 e4c06b6e6eb895470e2fd65bbc93b3b6.cloudfront.net (CloudFront)
+x-amz-cf-pop: IAD79-C3
+x-amz-cf-id: vWN_Fs3tdx9yEq2ByDwhbXP6IFM5Kl1xH1nQjBRKV1DWxAueFRLxBQ==
+
+{"errors":["Shapefile has no features"]}

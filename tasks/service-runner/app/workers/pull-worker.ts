@@ -1,5 +1,5 @@
 import { Worker } from '../../../../app/workers/worker';
-import { sanitizeImage } from '../../../../app/util/string';
+import { sanitizeImage } from '@harmony/util/string';
 import env from '../util/env';
 import { WorkItemRecord, WorkItemStatus } from '../../../../app/models/work-item-interface';
 import logger from '../../../../app/util/log';

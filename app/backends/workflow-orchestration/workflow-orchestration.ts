@@ -6,7 +6,6 @@ import { WorkItemQueueType } from '../../util/queue/queue';
 import { getQueueForType  } from '../../util/queue/queue-factory';
 import { getWorkFromQueue, getWorkFromDatabase, WorkItemData } from './work-item-polling';
 
-
 const MAX_TRY_COUNT = 1;
 const RETRY_DELAY = 1000 * 120;
 const QUERY_CMR_SERVICE_REGEX = /harmonyservices\/query-cmr:.*/;

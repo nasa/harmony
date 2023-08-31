@@ -2,6 +2,10 @@
 Any changes to the environment variables will be documented in this file in chronological
 order with the most recent changes first.
 
+## 2023-08-11
+### Changes
+Split env-defaults into separate files based on use
+
 ## 2022-12-15
 ### Changes
 - HARMONY_NETCDF_TO_ZARR_IMAGE - Update to point to ghcr.io hosted images.

@@ -1,89 +1,53 @@
-import camelCase from 'lodash.camelcase';
+import { IsIn, IsInt, Min } from 'class-validator';
 import * as dotenv from 'dotenv';
-import * as winston from 'winston';
 import * as fs from 'fs';
-import { isInteger } from '../../../../app/util/string';
+import * as path from 'path';
+import { HarmonyEnv, IHarmonyEnv, envOverrides, makeConfigVar, validateEnvironment, envVars } from '@harmony/util/env';
 import { WorkItemQueueType } from '../../../../app/util/queue/queue';
+import _ from 'lodash';
 
-let envDefaults = {};
-try {
-  envDefaults = dotenv.parse(fs.readFileSync('env-defaults'));
-} catch (e) {
-  winston.warn('Could not parse environment defaults from env-defaults file');
-  winston.warn(e.message);
-}
+//
+// env module
+// Sets up the environment variables for the work updater using the base environment variables
+// and some specific to the updater
+//
 
-let envOverrides = {};
-try {
-  envOverrides = dotenv.parse(fs.readFileSync('.env'));
-} catch (e) {
-  winston.warn('Could not parse environment overrides from .env file');
-  winston.warn(e.message);
-}
+// read the local env-defaults from the top-level where the app is executed
+const localPath = path.resolve(__dirname, '../../env-defaults');
+const envLocalDefaults = dotenv.parse(fs.readFileSync(localPath));
 
-const envVars: HarmonyEnv = {} as HarmonyEnv;
-
-/**
- * Add a symbol to module.exports with an appropriate value. The exported symbol will be in
- * camel case, e.g., `maxPostFileSize`. This approach has the drawback that these
- * config variables don't show up in VS Code autocomplete, but the reduction in repeated
- * boilerplate code is probably worth it.
- *
- * @param envName - The environment variable corresponding to the config variable in
- *   CONSTANT_CASE form
- * @param defaultValue - The value to use if the environment variable is not set. Only strings
- *   and integers are supported
- */
-function makeConfigVar(envName: string, defaultValue?: string): void {
-  const stringValue = process.env[envName] || defaultValue;
-  if (isInteger(stringValue)) {
-    envVars[camelCase(envName)] = parseInt(stringValue, 10);
-  } else {
-    envVars[camelCase(envName)] = stringValue;
-  }
-  process.env[envName] = stringValue;
-}
-
-const allEnv = { ...envDefaults, ...envOverrides, ...process.env };
-
-for (const k of Object.keys(allEnv)) {
-  makeConfigVar(k, allEnv[k]);
-}
-
-interface HarmonyEnv {
-  harmonyClientId: string;
-  logLevel: string;
-  myPodName: string;
-  port: number;
-  workingDir: string;
-  awsDefaultRegion: string;
-  useLocalstack: boolean;
-  localstackHost: string;
-  workItemUpdateQueueUrl: string;
-  largeWorkItemUpdateQueueUrl: string;
+export interface IUpdaterHarmonyEnv extends IHarmonyEnv {
   largeWorkItemUpdateQueueMaxBatchSize: number;
   workItemUpdateQueueType: WorkItemQueueType;
   workItemUpdateQueueProcessorDelayAfterErrorSec: number;
-  workItemSchedulerQueueUrl: string;
-  nodeEnv: string;
-  serviceQueueBatchSizeCoefficient: number;
-  useServiceQueues: boolean;
-  maxErrorsForJob: number;
-  cmrMaxPageSize: number;
-  aggregateStacCatalogMaxPageSize: number;
-  maxBatchInputs: number;
-  maxBatchSizeInBytes: number;
 }
 
-// special cases
+class UpdaterHarmonyEnv extends HarmonyEnv implements IUpdaterHarmonyEnv {
 
-envVars.harmonyClientId = process.env.CLIENT_ID || 'harmony-unknown';
-envVars.useLocalstack = process.env.USE_LOCALSTACK === 'true';
-envVars.useServiceQueues = process.env.USE_SERVICE_QUEUES === 'true';
+  @IsInt()
+  @Min(1)
+  largeWorkItemUpdateQueueMaxBatchSize: number;
 
-envVars.workItemUpdateQueueUrl = process.env.WORK_ITEM_UPDATE_QUEUE_URL?.replace('localstack', envVars.localstackHost);
-envVars.largeWorkItemUpdateQueueUrl = process.env.LARGE_WORK_ITEM_UPDATE_QUEUE_URL?.replace('localstack', envVars.localstackHost);
-envVars.workItemUpdateQueueType = process.env.WORK_ITEM_UPDATE_QUEUE_TYPE === 'large' ? WorkItemQueueType.LARGE_ITEM_UPDATE : WorkItemQueueType.SMALL_ITEM_UPDATE;
-envVars.workItemSchedulerQueueUrl = process.env.WORK_ITEM_SCHEDULER_QUEUE_URL?.replace('localstack', envVars.localstackHost);
+  @IsIn([WorkItemQueueType.LARGE_ITEM_UPDATE, WorkItemQueueType.SMALL_ITEM_UPDATE])
+  workItemUpdateQueueType: WorkItemQueueType;
 
-export = envVars;
+  @IsInt()
+  @Min(0)
+  workItemUpdateQueueProcessorDelayAfterErrorSec: number;
+}
+
+const allEnv = { ...envLocalDefaults, ...envOverrides };
+const updaterEnvVars = _.cloneDeep(envVars) as IUpdaterHarmonyEnv;
+
+for (const k of Object.keys(allEnv)) {
+  makeConfigVar(updaterEnvVars, k, allEnv[k]);
+}
+
+// special case
+updaterEnvVars.workItemUpdateQueueType = process.env.WORK_ITEM_UPDATE_QUEUE_TYPE === 'large' ? WorkItemQueueType.LARGE_ITEM_UPDATE : WorkItemQueueType.SMALL_ITEM_UPDATE;
+
+// validate the env vars
+const updaterHarmonyEnvObj = new UpdaterHarmonyEnv(updaterEnvVars);
+validateEnvironment(updaterHarmonyEnvObj);
+
+export default updaterEnvVars;

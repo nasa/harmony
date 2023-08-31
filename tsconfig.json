@@ -5,6 +5,8 @@
       "moduleResolution": "node",
       "target": "ES2021",
       "esModuleInterop": true,
+      "experimentalDecorators": true,
+      "emitDecoratorMetadata": true,
       "allowJs": true,
       "noImplicitAny": false,
       "resolveJsonModule": true,
@@ -14,6 +16,6 @@
   "include": [
     "./app/**/*", "./test/**/*", "./tasks/**/app/**/*", "./tasks/**/test/**/*",
     "./kubernetes-services/**/app/**/*", "./kubernetes-services/**/test/**/*",
-    "scripts/*"],
+    "scripts/*", "./lib/**/*"],
   "exclude": ["./tasks/**/built/**/*", "./kubernetes-services/**/built/**/*"]
 }

@@ -31,7 +31,7 @@ import HarmonyRequest, { addRequestContextToOperation } from '../models/harmony-
 
 import cmrCollectionReader = require('../middleware/cmr-collection-reader');
 import cmrUmmCollectionReader = require('../middleware/cmr-umm-collection-reader');
-import envVars = require('../util/env');
+import env from '../util/env';
 import { postServiceConcatenationHandler, preServiceConcatenationHandler } from '../middleware/concatenation';
 import getRequestMetrics from '../frontends/request-metrics';
 import { getStagingBucketPolicy } from '../frontends/staging-bucket-policy';
@@ -169,7 +169,7 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
     result.use(logged(earthdataLoginOauthAuthorizer(authorizedRoutes)));
   }
 
-  if (envVars.adminGroupId) {
+  if (env.adminGroupId) {
     result.use('/admin/*', admin);
   } else {
     // Prevent misconfiguration granting unintended access

@@ -1,75 +1,94 @@
-import camelCase from 'lodash.camelcase';
+import { IsInt, IsNotEmpty, Max, Min, ValidateIf } from 'class-validator';
 import * as dotenv from 'dotenv';
-import * as winston from 'winston';
 import * as fs from 'fs';
-import { isInteger } from '../../../../app/util/string';
+import * as path from 'path';
+import { envOverrides, originalEnv, HarmonyEnv, IHarmonyEnv, makeConfigVar,  validateEnvironment, envVars } from '@harmony/util/env';
+import _ from 'lodash';
 
-let envDefaults = {};
-try {
-  envDefaults = dotenv.parse(fs.readFileSync('env-defaults'));
-} catch (e) {
-  winston.warn('Could not parse environment defaults from env-defaults file');
-  winston.warn(e.message);
-}
+//
+// env module
+// Sets up the environment variables for the service runner using the base environment variables
+// and some specific to the service runner
+//
 
-let envOverrides = {};
-try {
-  envOverrides = dotenv.parse(fs.readFileSync('.env'));
-} catch (e) {
-  winston.warn('Could not parse environment overrides from .env file');
-  winston.warn(e.message);
-}
+// read the local env-defaults from the top-level where the app is executed
+const localPath = path.resolve(__dirname, '../../env-defaults');
+const envLocalDefaults = dotenv.parse(fs.readFileSync(localPath));
 
-const envVars: HarmonyEnv = {} as HarmonyEnv;
-
-/**
- * Add a symbol to module.exports with an appropriate value. The exported symbol will be in
- * camel case, e.g., `maxPostFileSize`. This approach has the drawback that these
- * config variables don't show up in VS Code autocomplete, but the reduction in repeated
- * boilerplate code is probably worth it.
- *
- * @param envName - The environment variable corresponding to the config variable in
- *   CONSTANT_CASE form
- * @param defaultValue - The value to use if the environment variable is not set. Only strings
- *   and integers are supported
- */
-function makeConfigVar(envName: string, defaultValue?: string): void {
-  const stringValue = process.env[envName] || defaultValue;
-  if (isInteger(stringValue)) {
-    envVars[camelCase(envName)] = parseInt(stringValue, 10);
-  } else {
-    envVars[camelCase(envName)] = stringValue;
-  }
-  process.env[envName] = stringValue;
-}
-
-const allEnv = { ...envDefaults, ...envOverrides, ...process.env };
-
-for (const k of Object.keys(allEnv)) {
-  makeConfigVar(k, allEnv[k]);
-}
-
-interface HarmonyEnv {
+interface IHarmonyServiceEnv extends IHarmonyEnv {
+  artifactBucket: string;
   backendHost: string;
   backendPort: number;
   harmonyClientId: string;
   harmonyService: string;
   invocationArgs: string;
-  logLevel: string;
+  maxPutWorkRetries: number;
   myPodName: string;
   port: number;
+  sharedSecretKey: string;
   workerPort: number;
   workerTimeout: number;
   workingDir: string;
-  maxPutWorkRetries: number;
-  artifactBucket: string;
-  awsDefaultRegion: string;
-  useLocalstack: boolean;
-  localstackHost: string;
 }
 
-// special cases
+class HarmonyServiceEnv extends HarmonyEnv implements IHarmonyServiceEnv {
 
-envVars.harmonyClientId = process.env.CLIENT_ID || 'harmony-unknown';
+  @IsNotEmpty()
+  artifactBucket: string;
 
-export = envVars;
+  @IsNotEmpty()
+  backendHost: string;
+
+  @IsInt()
+  @Min(0)
+  @Max(65535)
+  backendPort: number;
+
+  @IsNotEmpty()
+  harmonyClientId: string;
+
+  @IsNotEmpty()
+  harmonyService: string;
+
+  @ValidateIf(o => ! /query-cmr/.test(o.harmonyService))
+  @IsNotEmpty()
+  invocationArgs: string;
+
+  @IsInt()
+  @Min(0)
+  maxPutWorkRetries: number;
+
+  @IsNotEmpty()
+  myPodName: string;
+
+  @IsInt()
+  @Min(0)
+  @Max(65535)
+  workerPort: number;
+
+  @IsInt()
+  workerTimeout: number;
+
+  @IsNotEmpty()
+  workingDir: string;
+
+  @IsNotEmpty()
+  sharedSecretKey: string;
+
+}
+
+const allEnv = { ...envLocalDefaults, ...envOverrides };
+const serviceEnvVars: IHarmonyServiceEnv = _.cloneDeep(envVars) as IHarmonyServiceEnv;
+
+for (const k of Object.keys(allEnv)) {
+  makeConfigVar(serviceEnvVars, k, allEnv[k]);
+}
+
+// special case
+serviceEnvVars.harmonyClientId = originalEnv.CLIENT_ID || 'harmony-unknown';
+
+// validate the env vars
+const harmonyServiceEnvObj = new HarmonyServiceEnv(serviceEnvVars);
+validateEnvironment(harmonyServiceEnvObj);
+
+export default serviceEnvVars;

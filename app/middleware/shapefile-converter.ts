@@ -11,7 +11,7 @@ import { NextFunction } from 'express';
 import { promises as fs } from 'fs';
 import { RequestValidationError, HttpError, ServerError } from '../util/errors';
 import { defaultObjectStore } from '../util/object-store';
-import { listToText } from '../util/string';
+import { listToText } from '@harmony/util/string';
 import { cookieOptions } from '../util/cookies';
 
 /**
@@ -93,7 +93,6 @@ export default async function shapefileConverter(req, res, next: NextFunction): 
   const { operation } = req;
 
   try {
-    // const shapefile = get(req, 'files.shapefile[0]') || req.signedCookies.shapefile;
     const shapefile = get(req, 'files.shapefile[0]') || get(req, 'file') || req.signedCookies.shapefile;
     res.clearCookie('shapefile', cookieOptions);
 
@@ -119,7 +118,6 @@ export default async function shapefileConverter(req, res, next: NextFunction): 
         convertedFile = await converter.geoJsonConverter(originalFile, req.context.logger);
         operation.geojson = await store.uploadFile(convertedFile, `${url}.geojson`);
       } finally {
-        await fs.unlink(originalFile);
         if (convertedFile) {
           await fs.unlink(convertedFile);
         }

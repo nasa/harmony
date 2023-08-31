@@ -21,11 +21,6 @@ COOKIE_SECRET=
 # to generate a 32 character random string
 SHARED_SECRET_KEY=
 
-# See the "OAuth 2 (Earthdata Login)" section below for a description
-OAUTH_CLIENT_ID=
-OAUTH_UID=
-OAUTH_PASSWORD=
-
 ###########################################################################
 #                             General Config                              #
 #                                                                         #
@@ -39,41 +34,11 @@ HOST_BINDING='0.0.0.0'
 # The port on which to run the Harmony frontend
 PORT=3000
 
-# The port on which to run the Harmony backend that receives service
-# callbacks
-BACKEND_PORT=3001
-
-# The port on which a worker container listens for work from the manager container
-WORKER_PORT=5001
-
-# The base URL for the service callbacks. This needs to be accessible from
-# wherever the service is run. The Harmony CI/CD scripts sets this to the
-# backend load balancer when running on AWS. The default is set for
-# running Harmony in Kubernetes.
-CALLBACK_URL_ROOT=http://harmony:3001
-# When running locally on a Mac or Linux (not in Kubernetes), use the appropriate value below.
-# Mac OS X:
-# CALLBACK_URL_ROOT=http://host.docker.internal:3001
-# Linux:
-# CALLBACK_URL_ROOT=http://localhost:3001
-
-# The CMR Endpoint to use (e.g. URL for local, SIT, UAT, or production)
-CMR_ENDPOINT=https://cmr.uat.earthdata.nasa.gov
-
 # The Metrics Endpoint (Kibana) to use (linked to from the Workflow UI)
 METRICS_ENDPOINT=
 
 # The Metrics index to query (via the METRICS_ENDPOINT)
 METRICS_INDEX=
-
-# For testing: Whether to use Localstack instead of AWS S3.  Options are "true" or "false".
-USE_LOCALSTACK=true
-
-# Hostname for harmony to use to connect to Localstack
-LOCALSTACK_HOST=localstack
-
-# Hostname for K8S pods to connect to Localstack
-LOCALSTACK_K8S_HOST=localstack
 
 # If set to true, only include EDL cookies if the request is made via https.
 USE_HTTPS=false
@@ -81,16 +46,6 @@ USE_HTTPS=false
 # Whether to run example service endpoints under /example.  Useful for
 # testing HTTP backends without actual service calls.  See example/http-service.js
 EXAMPLE_SERVICES=true
-
-# Identifier so backends know which Harmony client submitted the request
-CLIENT_ID=harmony-local
-
-# When set to true log messages are logged as a text string instead of the default
-# JSON format. Useful when running harmony locally and viewing logs via a terminal.
-TEXT_LOGGER=true
-
-# When set to true log all database queries performed by knex
-DEBUG_KNEX=false
 
 # Log level (error, warn, info, debug)
 LOG_LEVEL=debug
@@ -113,58 +68,15 @@ MAX_PAGE_SIZE=2000
 # value in services.yml for maximum_sync_granules it will override this value.
 MAX_SYNCHRONOUS_GRANULES=1
 
-# The maximum allowed granules in any request synchronous or asynchronous. If a service
-# attempts to configure a value greater than this limit for either maximum_async_granules
-# or maximum_async_granules we will override the configuration to limit to this value.
-MAX_GRANULE_LIMIT=10000000
-
 # The threshold of the number of granules in a request that will trigger auto-pausing with preview
 PREVIEW_THRESHOLD=100
 
 # The maximum number of errors to allow for a job before considering it failed
 MAX_ERRORS_FOR_JOB=2000
 
-# String to identify the type of environment.  Options:
-#  - "development" for local development.
-#  - "production" for deployments with a separate postgres server (SIT, UAT, Production).
-#  - "test" for unit / integration tests
-# This is a conventional identifier to switch application behavior
-NODE_ENV=development
-
-# String to identify which database engine to use. Options:
-#  - "postgres"
-#  - "sqlite"
-# Note that sqlite is only used for running tests
-DATABASE_TYPE=postgres
-
-# Connection string to use to connect to the database.  Used for
-# DATABASE_TYPE="postgres" databases.  For tests this is
-# ignored, using a sqlite3 file instead
-DATABASE_URL=postgresql://postgres:password@localhost:5432/postgres
-
 # A bucket with brief lifecycle where temporary uploads (shapefiles) are stored while
 # requests are in flight
 UPLOAD_BUCKET=local-upload-bucket
-
-# Whether or not to use queues for retrieving work-items when handling polling for work
-USE_SERVICE_QUEUES=true
-
-# SQS queue used to request scheduling of work items for a service
-WORK_ITEM_SCHEDULER_QUEUE_URL=http://localhost:4566/000000000000/work-item-scheduler-queue
-
-# SQS queue used to process work item updates
-WORK_ITEM_UPDATE_QUEUE_URL=http://localhost:4566/000000000000/work-item-update-queue.fifo
-
-# SQS queue used to process work item updates
-LARGE_WORK_ITEM_UPDATE_QUEUE_URL=http://localhost:4566/000000000000/large-work-item-update-queue.fifo
-
-# maximum number of items to pull from the queue at once for the large item queue (to avoid visibility timeouts)
-# if this is set to greater than 10 (the SQS max) then 10 will be used instead
-LARGE_WORK_ITEM_UPDATE_QUEUE_MAX_BATCH_SIZE=2
-
-# An IAM role that allows access to a bucket and prefix where outputs for asynchronous
-# requests are stored by backend services.
-SAME_REGION_ACCESS_ROLE=same-region-access-role
 
 # The EDL Group ID for the group whose users can access the admin interface
 ADMIN_GROUP_ID=9b359064-287f-411f-b2cc-ed4429676900
@@ -184,48 +96,12 @@ WORK_REAPER_BATCH_SIZE=2000
 # The time (in seconds) between invocations of the work failer service
 WORK_FAILER_PERIOD_SEC=120
 
-# The number of work scheduler pods to run
-SCHEDULER_POD_REPLICAS=1
-
-# The number of update queue processors to run for the large work-item queue
-LARGE_WORK_UPDATER_POD_REPLICAS=1
-
-# The number of update queue processors to run for the small work-item queue
-SMALL_WORK_UPDATER_POD_REPLICAS=1
-
-# Long polling wait time (in seconds) for queues
-QUEUE_LONG_POLLING_WAIT_TIME_SEC=20
-
 # WorkItems that have not been updated for more than this many minutes are
 # updated by the work failer (resulting either in job and work item failure or a retry)
 FAILABLE_WORK_AGE_MINUTES=1
 
-# The number of seconds to allow a pod to continue processing an active request before terminating a pod
-DEFAULT_POD_GRACE_PERIOD_SECS=14400
-
 # The number of ms to wait between polling to check whether a synchronous request completed
 SYNC_REQUEST_POLL_INTERVAL_MS=100
-
-# Local development: Use the following to set the Kubernetes context used by start scripts
-# minikube users should set it to "minikube"
-KUBE_CONTEXT=docker-desktop
-
-# How long (in ms) to let a worker run on a work item before timing out and reporting an error
-# default is 4 hours
-WORKER_TIMEOUT=14400000
-
-# Number of times to retry failed HTTP (408, 502, 503, 504) data download calls
-# via the http module of the service library.
-
-# backoff seconds = {backoff factor} * (2 ** ({retry number} - 1))
-# where {retry number} = 1, 2, 3, ..., total_retries
-
-# With a backoff_factor of 2 (the current default) and 10 retries,
-# the total sleep seconds between executions will be:
-# [0, 4, 8, 16, 32, 64, 120, 120, 120, 120] (~10 minutes)
-# 120 seconds is the maximum backoff and there is always 0 seconds before the
-# first retry regardless of the parameters.
-MAX_DOWNLOAD_RETRIES=10
 
 # Number of times to retry a failed work item
 WORK_ITEM_RETRY_LIMIT=5
@@ -251,21 +127,118 @@ OPEN_TELEMETRY_URL=http://localhost:4318/v1/traces
 # Bamboo release
 RELEASE_VERSION=0.0.0
 
+# The object store used for storing shapefiles. Only S3 is supported currently.
+OBJECT_STORE_TYPE=s3
+
+# Maximum number of non-file fields to accept when providing a shapefile to harmony
+MAX_POST_FIELDS=100
+
+# Maximum size (in bytes) for shapefiles
+MAX_POST_FILE_SIZE=2000000000
+
+# Maximum number of multipart parts to accept when providing a shapefile
+MAX_POST_FILE_PARTS=100
+
+#############################################################################
+#                        OAuth 2 (Earthdata Login)                          #
+#                                                                           #
+# Variables used to configure OAuth 2 authentication for Harmony data users #
+#                                                                           #
+# To use Earthdata Login, you must first set up a new application using the #
+# Earthdata Login UI.                                                       #
+# https://wiki.earthdata.nasa.gov/display/EL/How+To+Register+An+Application #
+#############################################################################
+
+# Variable            Description                 Example
+#--------------------------------------------------------------------------------------
+# OAUTH_CLIENT_ID     EDL App Client ID           rCjHBluumLhppiIX5iZxoQ
+# OAUTH_UID           EDL App UID                 harmony_kbeam
+# OAUTH_PASSWORD      EDL App Password            top_secret
+# OAUTH_REDIRECT_URI  Valid EDL App Redirect URL  http://localhost:3000/oauth2/redirect
+# OAUTH_HOST          Earthdata Login URL         https://uat.urs.earthdata.nasa.gov
+
+# Notes:
+# The OAUTH_REDIRECT_URI needs to be provided verbatim when setting up the
+# Earthdata Login app. Each EDL app has a list of valid Redirect URLs, and
+# Harmony requires a URI endpoint of "/oauth2/redirect" for all environments.
+# When running Harmony locally, for example, add a Redirect URL of
+# `http://localhost:3000/oauth2/redirect`. Use HTTPS for non-local instances.
+#
+# The OAUTH_HOST is used by the Harmony API as well as Harmony services.
+# This should be the same EDL environment as used by backend data sources.
+# For example, if OAUTH_HOST points to UAT EDL, downloading data from a
+# TEA endpoint that's integrated with PROD EDL will fail.
+
+OAUTH_CLIENT_ID=
+OAUTH_UID=
+OAUTH_PASSWORD=
+
+OAUTH_REDIRECT_URI=http://localhost:3000/oauth2/redirect
+OAUTH_HOST=https://uat.urs.earthdata.nasa.gov
+
+###########################################################################
+#                        Fallback Authentication                          #
+###########################################################################
+
+# When using data that cannot accept Earthdata Login tokens from
+# Harmony, either because of application group setup or because they
+# use a different Earthdata Login endpoint (e.g. Data needs production
+# while Harmony and CMR need UAT), these provide a
+# minimally-privileged EDL user login for fetching remote data behind
+# Earthdata Login. This user should exist in all environments being
+# used to fetch data.
+
+# CAUTION: This fallback authentication switch should normally be
+# disabled.
+
+# CAUTION: This EDL user should *not* have accepted any EDL
+# application EULAs. Doing so can result in users getting data for
+# which they have not personally accepted the EULA.
+
+# CAUTION: Enabling this could result in skewed metrics since
+# downloads will appear to be done by Harmony--not the actual
+# end-user--if the fallback authentication is used (e.g., a backend
+# data source doesn't yet support EDL federated tokens).
+
+FALLBACK_AUTHN_ENABLED=false
+EDL_USERNAME=
+EDL_PASSWORD=
+
+###########################################################################
+#                               Test Suite                                #
+#                                                                         #
+# Settings for altering the behavior of the test suite that are not used  #
+# elsewhere in the application.                                           #
+###########################################################################
+
+# How to handle fixtures for remote calls in the test suite:
+#   record (default): Perform and record new calls.  Replay existing calls.
+#   bloody: Perform and record all calls.  Never play back.
+#   replay: Always play back.  Throw an error if a call is not recorded.
+#   cheat: Play back cached calls.  Perform and do not cache any new calls
+REPLAY=record
+
+# True if server logs should be allowed to go to STDOUT.  When false
+# (default), they are routed to logs/test.log and suppressed in STDOUT
+LOG_STDOUT=false
+
 ###########################################################################
 #                             Service Config                              #
 #                                                                         #
-# Variables defined in config/services.yml that get passed to backend     #
-# services on invocation                                                  #
-#                                                                         #
-# IMAGE_PULL_POLICY configuration:                                        #
-# In deployed environments the pull policy used for images is 'Always'    #
-# to ensure an up to date image is pulled as part of deploying. When      #
-# developing locally the pull policy used is 'IfNotPresent' to            #
-# prevent Kubernetes from pulling the image and overwriting any locally   #
-# built images. Note if you want to pull an image update rather than      #
-# building it you need to run `docker pull <IMAGE>` to update your local  #
-# copy.                                                                   #
+#  Variables that control pod setup for services                          #
 ###########################################################################
+
+# The port on which a worker container listens for work from the manager container
+WORKER_PORT=5001
+
+# The number of work scheduler pods to run
+SCHEDULER_POD_REPLICAS=1
+
+# The number of update queue processors to run for the large work-item queue
+LARGE_WORK_UPDATER_POD_REPLICAS=1
+
+# The number of update queue processors to run for the small work-item queue
+SMALL_WORK_UPDATER_POD_REPLICAS=1
 
 # The service runner image used as a sidecar for polling for work for
 SERVICE_RUNNER_REQUESTS_CPU=128m
@@ -321,8 +294,7 @@ HARMONY_NETCDF_TO_ZARR_LIMITS_MEMORY=512Mi
 HARMONY_NETCDF_TO_ZARR_INVOCATION_ARGS='python -m harmony_netcdf_to_zarr'
 HARMONY_NETCDF_TO_ZARR_SERVICE_QUEUE_URLS='["ghcr.io/nasa/harmony-netcdf-to-zarr:latest,http://localstack:4566/queue/harmony-netcdf-to-zarr.fifo"]'
 
-HARMONY_REGRIDDER_IMAGE=sds/harmony-regridder:latest
-HARMONY_REGRIDDER_REQUESTS_CPU=128m
+HARMONY_REGRIDDER_IMAGE=sds/harmony-regridder:latestHARMONY_REGRIDDER_REQUESTS_CPU=128m
 HARMONY_REGRIDDER_REQUESTS_MEMORY=128Mi
 HARMONY_REGRIDDER_LIMITS_CPU=128m
 HARMONY_REGRIDDER_LIMITS_MEMORY=512Mi
@@ -392,12 +364,14 @@ PODAAC_NETCDF_CONVERTER_LIMITS_MEMORY=512Mi
 PODAAC_NETCDF_CONVERTER_SERVICE_QUEUE_URLS='["podaac/podaac-cloud/podaac-netcdf-converter:latest,http://localstack:4566/queue/podaac-netcdf-converter.fifo"]'
 
 QUERY_CMR_IMAGE=harmonyservices/query-cmr:latest
+QUERY_CMR_IMAGE=harmonyservices/query-cmr:latest
 QUERY_CMR_REQUESTS_CPU=128m
 QUERY_CMR_REQUESTS_MEMORY=128Mi
 QUERY_CMR_LIMITS_CPU=128m
 QUERY_CMR_LIMITS_MEMORY=512Mi
 QUERY_CMR_SERVICE_QUEUE_URLS='["harmonyservices/query-cmr:latest,http://localstack:4566/queue/query-cmr.fifo"]'
 
+GIOVANNI_ADAPTER_IMAGE=harmonyservices/giovanni-adapter:latest
 GIOVANNI_ADAPTER_IMAGE=harmonyservices/giovanni-adapter:latest
 GIOVANNI_ADAPTER_REQUESTS_CPU=128m
 GIOVANNI_ADAPTER_REQUESTS_MEMORY=128Mi
@@ -415,52 +389,29 @@ GIOVANNI_ADAPTER_SERVICE_QUEUE_URLS='["harmonyservices/giovanni-adapter:latest,h
 # that you have built the docker image locally, otherwise the service will fail to start.
 LOCALLY_DEPLOYED_SERVICES=harmony-service-example,harmony-netcdf-to-zarr
 
-# page size to use with CMR calls
-CMR_MAX_PAGE_SIZE=2000
+# Local development: Use the following to set the Kubernetes context used by start scripts
+# minikube users should set it to "minikube"
+KUBE_CONTEXT=docker-desktop
 
-# Prefix before "harmonyservices/task-name" for built-in tasks like query-cmr, e.g. an ECR location
-# If not blank, it should end in a slash if there is a slash before "harmony"
-BUILT_IN_TASK_PREFIX=
-# Version to use for all built-in tasks.  "latest" (local / sandbox), "sit", "uat", or "prod"
-BUILT_IN_TASK_VERSION=latest
+# Number of times to retry failed HTTP (408, 502, 503, 504) data download calls
+# via the http module of the service library.
 
-# AWS region where harmony is deployed, irrelevant for local development
-AWS_DEFAULT_REGION=us-west-2
+# backoff seconds = {backoff factor} * (2 ** ({retry number} - 1))
+# where {retry number} = 1, 2, 3, ..., total_retries
 
-# The object store used for storing shapefiles. Only S3 is supported currently.
-OBJECT_STORE_TYPE=s3
+# With a backoff_factor of 2 (the current default) and 10 retries,
+# the total sleep seconds between executions will be:
+# [0, 4, 8, 16, 32, 64, 120, 120, 120, 120] (~10 minutes)
+# 120 seconds is the maximum backoff and there is always 0 seconds before the
+# first retry regardless of the parameters.
+MAX_DOWNLOAD_RETRIES=10
 
-# The bucket where final service output data will be staged
-# Default: A bucket created for use in localstack
-STAGING_BUCKET=local-staging-bucket
+# The number of seconds to allow a pod to continue processing an active request before terminating a pod
+DEFAULT_POD_GRACE_PERIOD_SECS=14400
 
-# The bucket where intermediate service artifacts and STAC catalogs will be staged
-# Default: A bucket created for use in localstack
-ARTIFACT_BUCKET=local-artifact-bucket
-
-# The DNS entry to use for the host exposing the Harmony back end API for callbacks. This
-# default is appropriate for when Harmony is running in Kubernetes.
-BACKEND_HOST=harmony
-#  For local development outside of Kubernetes:
-# Mac OS X:
-# BACKEND_HOST=host.docker.internal
-# Linux:
-# BACKEND_HOST=localhost
-
-# Maximum number of non-file fields to accept when providing a shapefile to harmony
-MAX_POST_FIELDS=100
-
-# Maximum size (in bytes) for shapefiles
-MAX_POST_FILE_SIZE=2000000000
-
-# Maximum number of multipart parts to accept when providing a shapefile
-MAX_POST_FILE_PARTS=100
-
-# If a retryable error is encountered while attempting to update a work item,
-# the HTTP client will retry a maximum of this many times.
-# MAX_PUT_WORK_RETRIES should be high enough to allow a work item update to succeed
-# even when a deployment is happening (~25 min max currently)
-MAX_PUT_WORK_RETRIES=30
+# Hostname for k8s services to use to connect to Localstack - this is only used by the
+# script that creates the env var config map for local development
+LOCALSTACK_K8S_HOST=localstack
 
 ###########################################################################
 #                             Prometheus Config                           #
@@ -525,81 +476,3 @@ HPA_MAX_REPLICAS=10
 # With this value, the HPAs (when deployed) will try to ensure a pod exists for every 10 queued work items.
 HPA_TARGET_VALUE=10000m
 
-#############################################################################
-#                        OAuth 2 (Earthdata Login)                          #
-#                                                                           #
-# Variables used to configure OAuth 2 authentication for Harmony data users #
-#                                                                           #
-# To use Earthdata Login, you must first set up a new application using the #
-# Earthdata Login UI.                                                       #
-# https://wiki.earthdata.nasa.gov/display/EL/How+To+Register+An+Application #
-#############################################################################
-
-# Variable            Description                 Example
-#--------------------------------------------------------------------------------------
-# OAUTH_CLIENT_ID     EDL App Client ID           rCjHBluumLhppiIX5iZxoQ
-# OAUTH_UID           EDL App UID                 harmony_kbeam
-# OAUTH_PASSWORD      EDL App Password            top_secret
-# OAUTH_REDIRECT_URI  Valid EDL App Redirect URL  http://localhost:3000/oauth2/redirect
-# OAUTH_HOST          Earthdata Login URL         https://uat.urs.earthdata.nasa.gov
-
-# Notes:
-# The OAUTH_REDIRECT_URI needs to be provided verbatim when setting up the
-# Earthdata Login app. Each EDL app has a list of valid Redirect URLs, and
-# Harmony requires a URI endpoint of "/oauth2/redirect" for all environments.
-# When running Harmony locally, for example, add a Redirect URL of
-# `http://localhost:3000/oauth2/redirect`. Use HTTPS for non-local instances.
-#
-# The OAUTH_HOST is used by the Harmony API as well as Harmony services.
-# This should be the same EDL environment as used by backend data sources.
-# For example, if OAUTH_HOST points to UAT EDL, downloading data from a
-# TEA endpoint that's integrated with PROD EDL will fail.
-
-OAUTH_REDIRECT_URI=http://localhost:3000/oauth2/redirect
-OAUTH_HOST=https://uat.urs.earthdata.nasa.gov
-
-###########################################################################
-#                        Fallback Authentication                          #
-###########################################################################
-
-# When using data that cannot accept Earthdata Login tokens from
-# Harmony, either because of application group setup or because they
-# use a different Earthdata Login endpoint (e.g. Data needs production
-# while Harmony and CMR need UAT), these provide a
-# minimally-privileged EDL user login for fetching remote data behind
-# Earthdata Login. This user should exist in all environments being
-# used to fetch data.
-
-# CAUTION: This fallback authentication switch should normally be
-# disabled.
-
-# CAUTION: This EDL user should *not* have accepted any EDL
-# application EULAs. Doing so can result in users getting data for
-# which they have not personally accepted the EULA.
-
-# CAUTION: Enabling this could result in skewed metrics since
-# downloads will appear to be done by Harmony--not the actual
-# end-user--if the fallback authentication is used (e.g., a backend
-# data source doesn't yet support EDL federated tokens).
-
-FALLBACK_AUTHN_ENABLED=false
-EDL_USERNAME=
-EDL_PASSWORD=
-
-###########################################################################
-#                               Test Suite                                #
-#                                                                         #
-# Settings for altering the behavior of the test suite that are not used  #
-# elsewhere in the application.                                           #
-###########################################################################
-
-# How to handle fixtures for remote calls in the test suite:
-#   record (default): Perform and record new calls.  Replay existing calls.
-#   bloody: Perform and record all calls.  Never play back.
-#   replay: Always play back.  Throw an error if a call is not recorded.
-#   cheat: Play back cached calls.  Perform and do not cache any new calls
-REPLAY=record
-
-# True if server logs should be allowed to go to STDOUT.  When false
-# (default), they are routed to logs/test.log and suppressed in STDOUT
-LOG_STDOUT=false

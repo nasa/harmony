@@ -1,0 +1,77 @@
+{
+  "name": "@harmony/util",
+  "version": "0.0.0",
+  "description": "Utility modules related to Harmony",
+  "main": "index.ts",
+  "scripts": {
+    "test": "strict-npm-engines && eslint --ext .ts . && nyc mocha && better-npm-audit audit",
+    "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha",
+    "test-bail": "TS_NODE_TRANSPILE_ONLY=true mocha --bail",
+    "build": "rimraf built/* && tsc",
+    "build-m1": "rimraf built/* && tsc",
+    "lint": "eslint --ext .ts .",
+    "coverage": "nyc mocha"
+  },
+  "engines": {
+    "node": "^16.13.1",
+    "npm": ">=8"
+  },
+  "nyc": {
+    "all": true,
+    "check-coverage": true,
+    "extension": [
+      ".ts",
+      ".tsx"
+    ],
+    "exclude": [
+      "**/*.d.ts"
+    ],
+    "lines": 70,
+    "reporter": [
+      "lcov",
+      "text"
+    ],
+    "include": [
+      "**/*.ts"
+    ],
+    "exclude": [
+      "node_modules/**",
+      "build/**",
+      "test/**"
+    ]
+  },
+  "keywords": [
+    "NASA",
+    "EOSDIS",
+    "Harmony",
+    "Services"
+  ],
+  "author": "NASA EOSDIS Harmony team",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "class-validator": "^0.14.0",
+    "dotenv": "^16.3.1",
+    "lodash": "^4.17.21",
+    "reflect-metadata": "^0.1.13",
+    "typescript": "^5.1.6",
+    "winston": "^3.10.0"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.2.22",
+    "chai": "^4.3.7",
+    "eslint": "^8.43.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-config-airbnb-typescript": "^17.0.0",
+    "eslint-plugin-import": "^2.27.5",
+    "eslint-plugin-jsdoc": "^46.2.6",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-tsdoc": "^0.2.17",
+    "mocha": "^10.2.0",
+    "nyc": "^15.1.0",
+    "rimraf": "^5.0.1",
+    "strict-npm-engines": "^0.0.1",
+    "ts-node-dev": "^2.0.0",
+    "ts-node": "^10.4.0",
+    "typescript": "^4.4.4"
+  }
+}

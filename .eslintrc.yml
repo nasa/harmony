@@ -30,8 +30,8 @@ env:
   node: true
   es6: true
 rules:
-  indent: ["off"]
-  "@typescript-eslint/indent": ["error", 2]
+  "@typescript-eslint/ban-types": "off"
+  "@typescript-eslint/indent": ["error", 2, { "ignoredNodes": ["PropertyDefinition"], "SwitchCase": 1 }]
   no-restricted-syntax: ["error", "LabeledStatement", "WithStatement"]
   class-methods-use-this: "off"
   no-underscore-dangle: "off"
@@ -57,11 +57,14 @@ rules:
       format: ["camelCase", "PascalCase", "snake_case", "UPPER_CASE"], selector: "default" },
     { selector: "objectLiteralProperty", format: [] }]
 overrides:
-  - files: [ "test/**/*" ]
+  - files: [ "test/**/*", "lib/**/test/**/*" ]
     rules:
-      import/no-extraneous-dependencies: ["error"]
+      import/no-extraneous-dependencies: ["error", {
+        devDependencies: ["test/**", "**/test/**"]
+      }]
       node/no-unpublished-require: ["off"]
       node/no-unpublished-import: ["off"]
+      "@typescript-eslint/no-unused-expressions": ["off"]
       # These overrides let us use anonymous functions for Mocha instead of lambdas, which is
       # the preferred method described in the Mocha docs
       prefer-arrow-callback: "off"

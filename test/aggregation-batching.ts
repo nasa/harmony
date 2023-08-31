@@ -44,7 +44,7 @@ function createCmrResult(resText: string, resultCount: number): WorkItem {
  * @param workItem - the work item containing the STAC catalog to process
  * @returns - an array of urls for the STAC items in the STAC catalog
  */
-async function getBatchItemsForWorkItem(workItem: WorkItem): Promise<String[]>  {
+async function getBatchItemsForWorkItem(workItem: WorkItem): Promise<String[]> {
   const { stacCatalogLocation } = workItem;
   const s3 = objectStoreForProtocol('s3');
   const catalog = await s3.getObjectJson(stacCatalogLocation) as StacCatalog;
@@ -1251,7 +1251,7 @@ describe('when testing a batched aggregation service', function () {
           const l2ssWorkItems: WorkItem[] = [];
           const expectedBatches = [[], []];
           before(async function () {
-            for (let i = 0;i < 4;i++) {
+            for (let i = 0; i < 4; i++) {
               const res = await getWorkForService(this.backend, 'ghcr.io/podaac/l2ss-py:sit');
               const { workItem } = JSON.parse(res.text);
               l2ssWorkItems.push(workItem);
@@ -1287,7 +1287,7 @@ describe('when testing a batched aggregation service', function () {
       });
     }
   });
- 
+
   describe('with maxResults=1 in a service chain', function () {
     let sizeOfObjectStub;
     let batchSizeStub;
@@ -1310,7 +1310,7 @@ describe('when testing a batched aggregation service', function () {
         sizeOfObjectStub.restore();
       }
     });
-    
+
     describe('when submitting a request for l2ss-concise', function () {
       const l2ssCollection = 'C1234208438-POCLOUD';
       const l2ssConciseQuery = {
@@ -1354,7 +1354,7 @@ describe('when testing a batched aggregation service', function () {
 
         expect(workflowSteps[2].serviceID).to.equal('ghcr.io/podaac/concise:sit');
       });
-  
+
     });
     describe('when checking for a query-cmr work item', function () {
       it('finds the item and can complete it', async function () {

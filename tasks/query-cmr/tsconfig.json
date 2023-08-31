@@ -1,18 +1,7 @@
 {
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-      "module": "commonjs",
-      "baseUrl": ".",
-      "paths": {
-        "@harmony/*": ["../../app/*"]
-      },
-      "moduleResolution": "node",
-      "target": "ES2021",
-      "esModuleInterop": true,
-      "allowJs": true,
-      "noImplicitAny": false,
-      "sourceMap": true,
-      "outDir": "built"
+    "typeRoots": [ "./node_modules/@types", "./app/stac" ],
   },
-  "typeRoots": [ "./node_modules/@types", "./app/stac" ],
   "include": [ "./app/**/*", "./test/**/*" ]
 }

@@ -11,7 +11,7 @@ import { RequestValidationError, NotFoundError } from '../util/errors';
 import { getPagingParams, getPagingLinks, setPagingHeaders } from '../util/pagination';
 import HarmonyRequest from '../models/harmony-request';
 import db from '../util/db';
-import env = require('../util/env');
+import env from '../util/env';
 import JobError, { getErrorsForJob } from '../models/job-error';
 import _ from 'lodash';
 import { isAdminUser } from '../util/edl-api';

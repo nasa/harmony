@@ -5,7 +5,7 @@ import { ServiceError } from '../util/errors';
 import InvocationResult from '../models/services/invocation-result';
 import HarmonyRequest from '../models/harmony-request';
 
-import env = require('../util/env');
+import env from '../util/env';
 
 /**
  * Copies the header with the given name from the given request to the given response

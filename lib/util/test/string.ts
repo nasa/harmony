@@ -1,6 +1,6 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import { listToText, truncateString, Conjunction, isInteger, inEcr, sanitizeImage } from '../../app/util/string';
+import { listToText, truncateString, Conjunction, isBoolean, isInteger, inEcr, parseBoolean, sanitizeImage } from '../string';
 
 describe('util/string', function () {
   describe('#listToText', function () {
@@ -83,6 +83,51 @@ describe('util/string', function () {
     });
     it('returns false for 31115.foo.bar', function () {
       expect(isInteger('31115.foo.bar')).to.be.false;
+    });
+  });
+
+  describe('#isBoolean', function () {
+    it('returns true for true', function () {
+      expect(isBoolean('true')).to.be.true;
+    });
+    it('returns true for True', function () {
+      expect(isBoolean('True')).to.be.true;
+    });
+    it('returns true for TRUE', function () {
+      expect(isBoolean('TRUE')).to.be.true;
+    });
+    it('returns true for false', function () {
+      expect(isBoolean('false')).to.be.true;
+    });
+    it('returns true for False', function () {
+      expect(isBoolean('False')).to.be.true;
+    });
+    it('returns true for FALSE', function () {
+      expect(isBoolean('FALSE')).to.be.true;
+    });
+    it('returns false for 1', function () {
+      expect(isBoolean('1')).to.be.false;
+    });
+    it('returns false for 0', function () {
+      expect(isBoolean('0')).to.be.false;
+    });
+    it('returns false for foo', function () {
+      expect(isBoolean('foo')).to.be.false;
+    });
+  });
+
+  describe('#parseBoolean', function () {
+    it('returns true for true', function () {
+      expect(parseBoolean('true')).to.be.true;
+    });
+    it('returns true for True', function () {
+      expect(parseBoolean('True')).to.be.true;
+    });
+    it('returns true for TRUE', function () {
+      expect(parseBoolean('TRUE')).to.be.true;
+    });
+    it('returns false for anything else', function () {
+      expect(parseBoolean('foo')).to.be.false;
     });
   });
 

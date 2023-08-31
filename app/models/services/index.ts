@@ -8,7 +8,7 @@ import { NotFoundError, ServerError } from '../../util/errors';
 import { isMimeTypeAccepted, allowsAny } from '../../util/content-negotiation';
 import { CmrCollection } from '../../util/cmr';
 import { addCollectionsToServicesByAssociation } from '../../middleware/service-selection';
-import { listToText, Conjunction, isInteger } from '../../util/string';
+import { listToText, Conjunction, isInteger } from '@harmony/util/string';
 import TurboService from './turbo-service';
 import HttpService from './http-service';
 import NoOpService from './no-op-service';

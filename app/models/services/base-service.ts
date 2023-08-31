@@ -15,7 +15,7 @@ import { getRequestMetric } from '../../util/metrics';
 import { getRequestUrl } from '../../util/url';
 import HarmonyRequest from '../harmony-request';
 import UserWork from '../user-work';
-import { joinTexts } from '../../util/string';
+import { joinTexts } from '@harmony/util/string';
 import { makeWorkScheduleRequest } from '../../backends/workflow-orchestration/work-item-polling';
 
 export interface ServiceCapabilities {

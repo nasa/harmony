@@ -1,166 +1,190 @@
-import _ from 'lodash';
+import { IsInt, IsNotEmpty, IsNumber, IsUrl, Min } from 'class-validator';
 import * as dotenv from 'dotenv';
-import * as winston from 'winston';
 import * as fs from 'fs';
-import { isInteger, listToText } from './string';
+import * as path from 'path';
+import { envOverrides, HarmonyEnv, IHarmonyEnv, hostRegexWhitelist, makeConfigVar, validateEnvironment, envVars } from '@harmony/util/env';
+import _ from 'lodash';
 
-if (Object.prototype.hasOwnProperty.call(process.env, 'GDAL_DATA')) {
-  winston.warn('Found a GDAL_DATA environment variable.  This is usually from an external GDAL '
-    + 'installation and can interfere with CRS parsing in Harmony, so we will ignore it. '
-    + 'If you need to override the GDAL_DATA location for Harmony, provide a GDAL_DATA key in '
-    + 'your .env file.');
-  delete process.env.GDAL_DATA;
-}
+//
+// harmony env module
+// Sets up the environment variables for the Harmony server using the base environment variables
+// and some specific to the server
+//
 
-let envDefaults = {};
-try {
-  envDefaults = dotenv.parse(fs.readFileSync('env-defaults'));
-} catch (e) {
-  winston.warn('Could not parse environment defaults from env-defaults file');
-  winston.warn(e.message);
-}
+// read the local env-defaults from the top-level where the app is executed
+const localPath = path.resolve(__dirname, '../../env-defaults');
+const envLocalDefaults = dotenv.parse(fs.readFileSync(localPath));
 
-let envOverrides = {};
-if (process.env.NODE_ENV !== 'test') {
-  try {
-    envOverrides = dotenv.parse(fs.readFileSync('.env'));
-  } catch (e) {
-    winston.warn('Could not parse environment overrides from .env file');
-    winston.warn(e.message);
-  }
-}
-
-const envVars: HarmonyEnv = {} as HarmonyEnv;
-
-/**
- * Add a symbol to module.exports with an appropriate value. The exported symbol will be in
- * camel case, e.g., `maxPostFileSize`. This approach has the drawback that these
- * config variables don't show up in VS Code autocomplete, but the reduction in repeated
- * boilerplate code is probably worth it.
- *
- * @param envName - The environment variable corresponding to the config variable in
- *   CONSTANT_CASE form
- * @param defaultValue - The value to use if the environment variable is not set. Only strings
- *   and integers are supported
- */
-function makeConfigVar(envName: string, defaultValue?: string): void {
-  const stringValue = process.env[envName] || defaultValue;
-  if (isInteger(stringValue)) {
-    envVars[_.camelCase(envName)] = parseInt(stringValue, 10);
-  } else {
-    envVars[_.camelCase(envName)] = stringValue;
-  }
-  process.env[envName] = stringValue;
-}
-
-const allEnv = { ...envDefaults, ...envOverrides, ...process.env };
-
-for (const k of Object.keys(allEnv)) {
-  makeConfigVar(k, allEnv[k]);
-}
-
-const requiredVars = ['SHARED_SECRET_KEY'];
-
-const missingVars = requiredVars.filter((v) => !process.env[v]);
-if (missingVars.length > 0) {
-  throw new Error(`Configuration error: You must set ${listToText(missingVars)} in the environment`);
-}
-
-interface HarmonyEnv {
-  adminGroupId: string;
+export interface IHarmonyServerEnv extends IHarmonyEnv {
   aggregateStacCatalogMaxPageSize: number;
-  artifactBucket: string;
-  awsDefaultRegion: string;
-  builtInTaskPrefix: string;
-  builtInTaskVersion: string;
-  callbackUrlRoot: string;
-  cmrEndpoint: string;
-  metricsEndpoint: string;
-  metricsIndex: string;
-  cmrMaxPageSize: number;
-  databaseType: string;
-  defaultPodGracePeriodSecs: number;
-  defaultJobListPageSize: number;
-  defaultParallelism: number;
-  defaultResultPageSize: number;
-  failableWorkAgeMinutes: number;
-  harmonyClientId: string;
-  localstackHost: string;
-  logLevel: string;
-  logViewerGroupId: string;
-  maxGranuleLimit: number;
-  maxPageSize: number;
-  maxBatchInputs: number;
-  maxBatchSizeInBytes: number;
-  maxPostFields: number;
-  maxPostFileParts: number;
-  maxPostFileSize: number;
-  maxSynchronousGranules: number;
-  nodeEnv: string;
+  adminGroupId: string;
+  defaultJobListPageSize: number
   oauthClientId: string;
   oauthHost: string;
   oauthPassword: string;
   oauthUid: string;
-  objectStoreType: string;
-  previewThreshold: number;
-  queueLongPollingWaitTimeSec: number
-  reapableWorkAgeMinutes: number;
-  sameRegionAccessRole: string;
-  servicesYml: string;
   sharedSecretKey: string;
-  stagingBucket: string;
-  syncRequestPollIntervalMs: number;
+  cookieSecret: string;
+  metricsEndpoint: string;
+  metricsIndex: string;
+  maxPageSize: number;
+  maxPostFields: number;
+  maxPostFileParts: number;
+  maxPostFileSize: number;
+  maxSynchronousGranules: number;
+  maxErrorsForJob: number;
+  previewThreshold: number;
   uploadBucket: string;
-  useLocalstack: boolean;
+  logViewerGroupId: string;
   workFailerPeriodSec: number;
   workReaperPeriodSec: number;
-  maxErrorsForJob: number;
-  workItemRetryLimit: number;
-  workItemSchedulerQueueUrl: string;
-  workItemUpdateQueueUrl: string;
-  largeWorkItemUpdateQueueUrl: string;
+  workFailerBatchSize: number;
+  workReaperBatchSize: number;
+  failableWorkAgeMinutes: number;
+  reapableWorkAgeMinutes: number;
+  syncRequestPollIntervalMs: number;
+  maxBatchInputs: number;
+  maxBatchSizeInBytes: number;
   getWorkSampleRatio: number;
   putWorkSampleRatio: number;
   getMetricsSampleRatio: number;
   openTelemetryUrl: string;
+}
+
+class HarmonyServerEnv extends HarmonyEnv implements IHarmonyServerEnv {
+  @IsInt()
+  aggregateStacCatalogMaxPageSize: number;
+
+  @IsNotEmpty()
+  adminGroupId: string;
+
+  @IsNotEmpty()
+  oauthClientId: string;
+
+  @IsNotEmpty()
+  oauthHost: string;
+
+  @IsNotEmpty()
+  oauthPassword: string;
+
+  @IsNotEmpty()
+  oauthUid: string;
+
+  @IsNotEmpty()
+  sharedSecretKey: string;
+
+  @IsNotEmpty()
+  cookieSecret: string;
+
+  metricsEndpoint: string;
+
+  metricsIndex: string;
+
+  @IsInt()
+  @Min(1)
+  defaultJobListPageSize: number;
+
+  @IsInt()
+  @Min(1)
+  maxPageSize: number;
+
+  @IsInt()
+  @Min(1)
+  maxSynchronousGranules: number;
+
+  @IsInt()
+  @Min(1)
+  maxErrorsForJob: number;
+
+  @IsInt()
+  @Min(0)
+  previewThreshold: number;
+
+  @IsNotEmpty()
+  uploadBucket: string;
+
+  @IsNotEmpty()
+  logViewerGroupId: string;
+
+  @IsInt()
+  @Min(1)
+  workFailerPeriodSec: number;
+
+  @IsInt()
+  @Min(1)
+  workReaperPeriodSec: number;
+
+  @IsInt()
+  @Min(1)
   workFailerBatchSize: number;
+
+  @IsInt()
+  @Min(1)
   workReaperBatchSize: number;
-  releaseVersion: string;
-  serviceQueueUrls: { [key: string]: string };
-  useServiceQueues: boolean;
+
+  @IsInt()
+  @Min(1)
+  failableWorkAgeMinutes: number;
+
+  @IsInt()
+  @Min(0)
+  reapableWorkAgeMinutes: number;
+
+  @IsInt()
+  @Min(1)
+  syncRequestPollIntervalMs: number;
+
+  @IsInt()
+  @Min(1)
+  maxBatchInputs: number;
+
+  @IsInt()
+  @Min(1)
+  maxBatchSizeInBytes: number;
+
+  @IsInt()
+  @Min(0)
+  workItemRetryLimit: number;
+
+  @IsNumber()
+  @Min(0)
+  getWorkSampleRatio: number;
+
+  @IsNumber()
+  @Min(0)
+  putWorkSampleRatio: number;
+
+  getMetricsSampleRatio: number;
+
+  @IsUrl(hostRegexWhitelist)
+  openTelemetryUrl: string;
+
+  @IsNotEmpty()
+  objectStoreType: string;
+
+  @IsInt()
+  @Min(1)
+  maxPostFields: number;
+
+  @IsInt()
+  @Min(1)
+  maxPostFileParts: number;
+
+  @IsInt()
+  @Min(1)
+  maxPostFileSize: number;
+
 }
 
-// special cases
+const allEnv = { ...envLocalDefaults, ...envOverrides };
+const serverEnvVars = _.cloneDeep(envVars) as IHarmonyServerEnv;
 
-envVars.databaseType = process.env.DATABASE_TYPE || 'postgres';
-envVars.harmonyClientId = process.env.CLIENT_ID || 'harmony-unknown';
-envVars.uploadBucket = process.env.UPLOAD_BUCKET || process.env.STAGING_BUCKET || 'local-staging-bucket';
-envVars.useLocalstack = process.env.USE_LOCALSTACK === 'true';
-envVars.useServiceQueues = process.env.USE_SERVICE_QUEUES === 'true';
-envVars.workItemUpdateQueueUrl = process.env.WORK_ITEM_UPDATE_QUEUE_URL?.replace('localstack', envVars.localstackHost);
-envVars.largeWorkItemUpdateQueueUrl = process.env.LARGE_WORK_ITEM_UPDATE_QUEUE_URL?.replace('localstack', envVars.localstackHost);
-envVars.workItemSchedulerQueueUrl = process.env.WORK_ITEM_SCHEDULER_QUEUE_URL?.replace('localstack', envVars.localstackHost);
-
-envVars.serviceQueueUrls = {};
-// process all environment variables ending in _QUEUE_URLS to add image/url pairs to
-// the `serviceQueueUrls` map
-for (const k of Object.keys(process.env)) {
-  if (/^.*_QUEUE_URLS$/.test(k)) {
-    const value = process.env[k];
-    try {
-      const imageQueueUrls = JSON.parse(value);
-      for (const imageQueueUrl of imageQueueUrls) {
-        const [image, url] = imageQueueUrl.split(',');
-        if (image && url) {
-          // replace 'localstack' with `env.localstackHost` to allow for harmony to be run in a
-          // container
-          envVars.serviceQueueUrls[image] = url.replace('localstack', envVars.localstackHost);
-        }
-      }
-    } catch (e) {
-      winston.error(`Could not parse value ${value} for ${k} as JSON`);
-    }
-  }
+for (const k of Object.keys(allEnv)) {
+  makeConfigVar(serverEnvVars, k, allEnv[k]);
 }
 
-export = envVars;
+// validate the env vars
+const harmonyServerEnvObj = new HarmonyServerEnv(serverEnvVars);
+validateEnvironment(harmonyServerEnvObj);
+
+export default serverEnvVars;
