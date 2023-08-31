@@ -114,8 +114,9 @@ POSTGRES_PORT="${POSTGRES_PORT:-5432}"
 bin/port-forward start localstack 4566:4566 4572:4566 4592:4566
 bin/port-forward start postgres ${POSTGRES_PORT}:5432
 
-# run migrations
-DATABASE_TYPE=postgres DATABASE_URL="postgresql://postgres:password@localhost:${POSTGRES_PORT}/postgres" npx knex --cwd db migrate:latest
+# Try to run migrations when not using harmony in a box. If using harmony in a box and this fails,
+# the migrations will run during the bin/start-harmony script.
+DATABASE_TYPE=postgres DATABASE_URL="postgresql://postgres:password@localhost:${POSTGRES_PORT}/postgres" npx knex --cwd db migrate:latest || true
 
 echo ''
 echo 'Localstack has started at http://localhost:4566/'
