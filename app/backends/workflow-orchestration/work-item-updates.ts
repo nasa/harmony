@@ -505,6 +505,7 @@ export async function handleWorkItemUpdateWithJobId(
     logger.info(`Updating work item ${workItemID} to ${status}`);
   }
 
+  logger.warn(`CDD Results are: ${JSON.stringify(results)}`);
   // Get the sizes of all the data items/granules returned for the WorkItem and STAC item links
   // when batching.
   // This needs to be done outside the transaction as it can be slow if there are many granules.
@@ -516,10 +517,10 @@ export async function handleWorkItemUpdateWithJobId(
     }
     outputItemSizes = await resultItemSizes(update, operation, logger);
   } catch (e) {
-    logger.error('Could not get result item file size, failing the work item update');
+    errorMessage = 'Could not get result item file size, failing the work item update';
+    logger.error(errorMessage);
     logger.error(e);
     status = WorkItemStatus.FAILED;
-    errorMessage = 'Could not get result item file size, failing the work item update';
   }
 
   try {

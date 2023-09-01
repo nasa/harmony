@@ -61,8 +61,25 @@ export async function sizeOfObject(url: string, token: string, logger: Logger): 
  *
  * @param s3Url - the s3 url of the catalog
  */
-export function getCatalogLinks(catalogItems: StacItem[]):string[] {
-  return catalogItems.map((item) => item.assets.data.href);
+export function getCatalogLinks(catalogItems: StacItem[]): string[] {
+  console.log(`************CDD: Get catalog links ${JSON.stringify(catalogItems)}`);
+  const assets = catalogItems.map((item) => item.assets);
+  const dataLinks = assets.map((asset) => asset.data?.href);
+  const giovanniAssets = assets.filter((asset) => asset['Giovanni URL']?.href);
+  console.log(`************CDD: Giovanni assets ${JSON.stringify(giovanniAssets)}`);
+  const giovanniLinks = giovanniAssets.map((asset) => asset['Giovanni URL']?.href);
+  console.log(`************CDD: Giovanni links ${JSON.stringify(giovanniLinks)}`);
+
+  // if (giovanniItem) {
+  //   dataLinks.push(giovanniItem.map((item) => item.href));
+  // }
+  // const giovanniLinks = giovanniItems.map((item) => item.href);
+  const catalogLinks = [...giovanniLinks, ...dataLinks].filter((link) => link);
+
+  return catalogLinks;
+
+
+  // return catalogItems.map((item) => item.assets?.data?.href);
 }
 
 /**
@@ -104,11 +121,14 @@ Promise<number[]> {
     const op = new DataOperation(operation, encrypter, decrypter);
     const token = op.unencryptedAccessToken;
     let index = 0;
+    logger.warn(`CDD: Results: ${JSON.stringify(update.results)}`);
+    logger.warn(`CDD: update itself is ${JSON.stringify(update)}`);
     for (const catalogUrl of update.results) {
       const catalogItems = await readCatalogItems(catalogUrl);
       const links = exports.getCatalogLinks(catalogItems);
       // eslint-disable-next-line @typescript-eslint/no-loop-func
       const sizes = await Promise.all(links.map(async (link) => {
+        logger.warn(`CDD: Update ${index} with link ${link}`);
         const serviceProvidedSize = update.outputItemSizes?.[index];
         index += 1;
         // use the value provided by the service if available
