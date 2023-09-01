@@ -152,7 +152,6 @@ function buildFrontendServer(port: number, hostBinding: string, config: RouterCo
 export function start(config: Record<string, string>): {
   frontend: Server;
   backend: Server;
-  workReaper: WorkReaper;
   workFailer: WorkFailer;
 } {
 
@@ -173,15 +172,6 @@ export function start(config: Record<string, string>): {
   // Setup the backend server to accept callbacks from backend services
   const backend = buildBackendServer(backendPort, config.HOST_BINDING);
 
-  let workReaper;
-  if (config.startWorkReaper !== 'false') {
-    const reaperConfig = {
-      logger: logger.child({ application: 'work-reaper' }),
-    };
-    workReaper = new WorkReaper(reaperConfig);
-    workReaper.start();
-  }
-
   let workFailer;
   if (config.startWorkFailer !== 'false') {
     const failerConfig = {
@@ -191,7 +181,7 @@ export function start(config: Record<string, string>): {
     workFailer.start();
   }
 
-  return { frontend, backend, workReaper, workFailer };
+  return { frontend, backend, workFailer };
 }
 
 /**

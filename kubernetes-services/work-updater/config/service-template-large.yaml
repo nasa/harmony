@@ -3,16 +3,16 @@ kind: Deployment
 metadata:
   name: harmony-large-work-updater
   labels:
-    name: harmony
+    name: harmony-large-work-updater
 spec:
   replicas: $LARGE_WORK_UPDATER_POD_REPLICAS
   selector:
     matchLabels:
-      name: harmony
+      name: harmony-large-work-updater
   template:
     metadata:
       labels:
-        name: harmony
+        name: harmony-large-work-updater
     spec:
       containers:
         - name: harmony-large-work-updater
@@ -49,5 +49,5 @@ spec:
       targetPort: 5000
       protocol: TCP
   selector:
-    name: harmony
+    name: harmony-large-work-updater
   type: ClusterIP

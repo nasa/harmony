@@ -11,7 +11,7 @@ import _ from 'lodash';
 // and some specific to the server
 //
 
-// read the local env-defaults from the top-level where the app is executed
+// read the local env-defaults
 const localPath = path.resolve(__dirname, '../../env-defaults');
 const envLocalDefaults = dotenv.parse(fs.readFileSync(localPath));
 
@@ -37,11 +37,8 @@ export interface IHarmonyServerEnv extends IHarmonyEnv {
   uploadBucket: string;
   logViewerGroupId: string;
   workFailerPeriodSec: number;
-  workReaperPeriodSec: number;
   workFailerBatchSize: number;
-  workReaperBatchSize: number;
   failableWorkAgeMinutes: number;
-  reapableWorkAgeMinutes: number;
   syncRequestPollIntervalMs: number;
   maxBatchInputs: number;
   maxBatchSizeInBytes: number;
@@ -112,23 +109,11 @@ class HarmonyServerEnv extends HarmonyEnv implements IHarmonyServerEnv {
 
   @IsInt()
   @Min(1)
-  workReaperPeriodSec: number;
-
-  @IsInt()
-  @Min(1)
   workFailerBatchSize: number;
 
   @IsInt()
   @Min(1)
-  workReaperBatchSize: number;
-
-  @IsInt()
-  @Min(1)
   failableWorkAgeMinutes: number;
-
-  @IsInt()
-  @Min(0)
-  reapableWorkAgeMinutes: number;
 
   @IsInt()
   @Min(1)
