@@ -1,9 +1,19 @@
 FROM node:16-alpine
 
-WORKDIR /app
-COPY built package.json package-lock.json ./
-RUN npm install --production
+RUN apk update
+RUN apk add bash vim curl git
+RUN git config --global url."https://".insteadOf ssh://
 
-COPY config/giovanni-datafield.json /app/tasks/giovanni-adapter/config
+RUN mkdir -p /giovanni-adapter/tasks/giovanni-adapter
+RUN mkdir -p /tmp/metadata
 
-ENTRYPOINT [ "node", "tasks/giovanni-adapter/app/cli" ]
+COPY package.json package-lock.json /giovanni-adapter/tasks/giovanni-adapter/
+COPY built /giovanni-adapter/
+COPY config/giovanni-datafield.json /giovanni-adapter/tasks/giovanni-adapter/config
+WORKDIR /giovanni-adapter/tasks/giovanni-adapter
+RUN npm ci
+WORKDIR /giovanni-adapter
+# This symlink is needed to make module loading work correctly
+RUN ln -s tasks/giovanni-adapter/node_modules .
+
+ENTRYPOINT [ "node", "app/cli.js" ]

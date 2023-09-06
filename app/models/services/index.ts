@@ -217,7 +217,7 @@ function isCollectionMatch(
   serviceConfig: ServiceConfig<unknown>,
 ): boolean {
   return operation.sources.every((source) => {
-    const rval = serviceConfig.collections.some(partial(isServiceCollectionMatch, source));
+    const rval = serviceConfig.collections?.some(partial(isServiceCollectionMatch, source));
     return rval;
   });
 }

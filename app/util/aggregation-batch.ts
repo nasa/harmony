@@ -10,7 +10,7 @@ import env from './env';
 import DataOperation from '../models/data-operation';
 import { objectStoreForProtocol } from './object-store';
 import axios from 'axios';
-import { getCatalogItemUrls, readCatalogItems, StacItem } from './stac';
+import { getCatalogItemUrls, getCatalogLinks, readCatalogItems } from './stac';
 import WorkItemUpdate from '../models/work-item-update';
 import WorkflowStep, { decrementWorkItemCount, incrementWorkItemCount } from '../models/workflow-steps';
 import { WorkItemStatus } from '../models/work-item-interface';
@@ -57,15 +57,6 @@ export async function sizeOfObject(url: string, token: string, logger: Logger): 
 }
 
 /**
- * Return the links to the data items from a STAC catalog
- *
- * @param s3Url - the s3 url of the catalog
- */
-export function getCatalogLinks(catalogItems: StacItem[]):string[] {
-  return catalogItems.map((item) => item.assets.data.href);
-}
-
-/**
  * Get the urls of the STAC items contained in the STAC catalogs returned in a work item update
  * @param results - the url(s) of the STAC catalog(s) returned in the work item update
  * @returns
@@ -106,7 +97,7 @@ Promise<number[]> {
     let index = 0;
     for (const catalogUrl of update.results) {
       const catalogItems = await readCatalogItems(catalogUrl);
-      const links = exports.getCatalogLinks(catalogItems);
+      const links = getCatalogLinks(catalogItems);
       // eslint-disable-next-line @typescript-eslint/no-loop-func
       const sizes = await Promise.all(links.map(async (link) => {
         const serviceProvidedSize = update.outputItemSizes?.[index];
