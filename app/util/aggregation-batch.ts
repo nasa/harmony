@@ -57,29 +57,30 @@ export async function sizeOfObject(url: string, token: string, logger: Logger): 
 }
 
 /**
- * Return the links to the data items from a STAC catalog
+ * Return the links to the data items from a STAC catalog. Note that for most of our
+ * services the data items are under item.assets.data, but for Giovanni the links are
+ * under item.assets['Giovanni URL']. However to make it more general we return any link
+ * for an asset that includes the 'data' role in its list of roles.
  *
- * @param s3Url - the s3 url of the catalog
+ * @param catalogItems - a list of STAC catalog items
+ * @returns a list of URLs pointing to data (may include s3/http/https URLs)
  */
 export function getCatalogLinks(catalogItems: StacItem[]): string[] {
-  console.log(`************CDD: Get catalog links ${JSON.stringify(catalogItems)}`);
-  const assets = catalogItems.map((item) => item.assets);
-  const dataLinks = assets.map((asset) => asset.data?.href);
-  const giovanniAssets = assets.filter((asset) => asset['Giovanni URL']?.href);
-  console.log(`************CDD: Giovanni assets ${JSON.stringify(giovanniAssets)}`);
-  const giovanniLinks = giovanniAssets.map((asset) => asset['Giovanni URL']?.href);
-  console.log(`************CDD: Giovanni links ${JSON.stringify(giovanniLinks)}`);
+  const links = [];
+  for (const item of catalogItems) {
+    if (item.assets) {
+      for (const assetName in item.assets) {
+        const asset = item.assets[assetName];
+        if (assetName === 'data' || item.assets[assetName].roles?.includes('data')) {
+          if (asset.href) {
+            links.push(asset.href);
+          }
+        }
+      }
+    }
+  }
 
-  // if (giovanniItem) {
-  //   dataLinks.push(giovanniItem.map((item) => item.href));
-  // }
-  // const giovanniLinks = giovanniItems.map((item) => item.href);
-  const catalogLinks = [...giovanniLinks, ...dataLinks].filter((link) => link);
-
-  return catalogLinks;
-
-
-  // return catalogItems.map((item) => item.assets?.data?.href);
+  return links;
 }
 
 /**
@@ -121,14 +122,11 @@ Promise<number[]> {
     const op = new DataOperation(operation, encrypter, decrypter);
     const token = op.unencryptedAccessToken;
     let index = 0;
-    logger.warn(`CDD: Results: ${JSON.stringify(update.results)}`);
-    logger.warn(`CDD: update itself is ${JSON.stringify(update)}`);
     for (const catalogUrl of update.results) {
       const catalogItems = await readCatalogItems(catalogUrl);
       const links = exports.getCatalogLinks(catalogItems);
       // eslint-disable-next-line @typescript-eslint/no-loop-func
       const sizes = await Promise.all(links.map(async (link) => {
-        logger.warn(`CDD: Update ${index} with link ${link}`);
         const serviceProvidedSize = update.outputItemSizes?.[index];
         index += 1;
         // use the value provided by the service if available
