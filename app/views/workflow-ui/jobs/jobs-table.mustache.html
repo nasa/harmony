@@ -30,11 +30,11 @@
             {{#isAdminRoute}}
             <td>{{username}}</td>
             {{/isAdminRoute}}
-            <td class="mw-40ch">
+            <td id="request-td">
                 <span title="{{request}}" data-bs-toggle="tooltip" data-bs-placement="right">{{jobUrl}}</span>
             </td>
             <td><span class="badge bg-{{jobBadge}}">{{status}}</span></td>
-            <td class="mw-40ch"><span title="{{message}}" data-bs-toggle="tooltip"
+            <td id="message-td"><span title="{{message}}" data-bs-toggle="tooltip"
                     data-bs-placement="right">{{jobMessage}}</span></td>
             <td>{{numInputGranules}}</td>
             <td>{{progress}}%</td>

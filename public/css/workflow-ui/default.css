@@ -15,3 +15,13 @@
     position: sticky;
     bottom: -1px;
 }
+
+#request-td {
+    max-width: 40ch;
+    word-break: break-all;
+}
+
+#message-td {
+    max-width: 40ch;
+    word-break: break-word;
+}
