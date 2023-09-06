@@ -10,7 +10,7 @@ import env from './env';
 import DataOperation from '../models/data-operation';
 import { objectStoreForProtocol } from './object-store';
 import axios from 'axios';
-import { getCatalogItemUrls, readCatalogItems, StacItem } from './stac';
+import { getCatalogItemUrls, getCatalogLinks, readCatalogItems } from './stac';
 import WorkItemUpdate from '../models/work-item-update';
 import WorkflowStep, { decrementWorkItemCount, incrementWorkItemCount } from '../models/workflow-steps';
 import { WorkItemStatus } from '../models/work-item-interface';
@@ -57,33 +57,6 @@ export async function sizeOfObject(url: string, token: string, logger: Logger): 
 }
 
 /**
- * Return the links to the data items from a STAC catalog. Note that for most of our
- * services the data items are under item.assets.data, but for Giovanni the links are
- * under item.assets['Giovanni URL']. However to make it more general we return any link
- * for an asset that includes the 'data' role in its list of roles.
- *
- * @param catalogItems - a list of STAC catalog items
- * @returns a list of URLs pointing to data (may include s3/http/https URLs)
- */
-export function getCatalogLinks(catalogItems: StacItem[]): string[] {
-  const links = [];
-  for (const item of catalogItems) {
-    if (item.assets) {
-      for (const assetName in item.assets) {
-        const asset = item.assets[assetName];
-        if (assetName === 'data' || item.assets[assetName].roles?.includes('data')) {
-          if (asset.href) {
-            links.push(asset.href);
-          }
-        }
-      }
-    }
-  }
-
-  return links;
-}
-
-/**
  * Get the urls of the STAC items contained in the STAC catalogs returned in a work item update
  * @param results - the url(s) of the STAC catalog(s) returned in the work item update
  * @returns
@@ -124,7 +97,7 @@ Promise<number[]> {
     let index = 0;
     for (const catalogUrl of update.results) {
       const catalogItems = await readCatalogItems(catalogUrl);
-      const links = exports.getCatalogLinks(catalogItems);
+      const links = getCatalogLinks(catalogItems);
       // eslint-disable-next-line @typescript-eslint/no-loop-func
       const sizes = await Promise.all(links.map(async (link) => {
         const serviceProvidedSize = update.outputItemSizes?.[index];
