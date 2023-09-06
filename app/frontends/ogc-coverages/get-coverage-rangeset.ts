@@ -69,8 +69,8 @@ export default function getCoverageRangeset(
     }
     const point = parsePointParam(query.point);
     if (point) {
-      if (bbox) { // || req.rawHeaders.filter((x) => new RegExp('shapefile=*').test(x)).length)
-        throw new RequestValidationError('bounding_box or shapefile and point query parameters should not co-exist');
+      if (bbox) {
+        throw new RequestValidationError('bounding_box and point query parameters should not co-exist');
       }
       operation.spatialPoint = point;
     }

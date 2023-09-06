@@ -505,7 +505,6 @@ export async function handleWorkItemUpdateWithJobId(
     logger.info(`Updating work item ${workItemID} to ${status}`);
   }
 
-  logger.warn(`CDD Results are: ${JSON.stringify(results)}`);
   // Get the sizes of all the data items/granules returned for the WorkItem and STAC item links
   // when batching.
   // This needs to be done outside the transaction as it can be slow if there are many granules.

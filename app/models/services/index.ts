@@ -839,10 +839,8 @@ function filterServiceConfigs(
   let matches = configs;
   const requestedOperations = [];
   try {
-    logger.warn(`All service configs are: ${matches.map((m) => m.name)}`);
     for (const filterFn of filterFns) {
       matches = filterFn(operation, context, matches, requestedOperations);
-      logger.error(`Filtering on ${filterFn} returned ${matches.map((m) => m.name)}`);
     }
     const outputFormat = selectFormat(operation, context, matches);
     if (outputFormat) {

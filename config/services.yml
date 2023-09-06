@@ -30,7 +30,9 @@ https://cmr.earthdata.nasa.gov:
     data_operation_version: '0.18.0'
     enabled: !Env ${EXAMPLE_SERVICES}
     has_granule_limit: false
-    default_sync: true
+    # Replace the next two lines to default to synchronous once bearer tokens are supported by Giovanni
+    # default_sync: true
+    maximum_sync_granules: -1
     type:
       <<: *default-turbo-config
       params:
@@ -54,7 +56,6 @@ https://cmr.earthdata.nasa.gov:
         - text/csv
     steps:
       - image: !Env ${GIOVANNI_ADAPTER_IMAGE}
-        is_batched: false
         operations: ['concatenate', 'variableSubset', 'temporalSubset']
 
   - name: podaac/l2-subsetter
@@ -354,7 +355,9 @@ https://cmr.uat.earthdata.nasa.gov:
       and access vast amounts of Earth science remote sensing data without having to download the data.
     data_operation_version: '0.18.0'
     has_granule_limit: false
-    default_sync: true
+    # Replace the next two lines to default to synchronous once bearer tokens are supported by Giovanni
+    # default_sync: true
+    maximum_sync_granules: -1
     type:
       <<: *default-turbo-config
       params:
@@ -378,7 +381,6 @@ https://cmr.uat.earthdata.nasa.gov:
         - text/csv
     steps:
       - image: !Env ${GIOVANNI_ADAPTER_IMAGE}
-        is_batched: false
         operations: ['concatenate', 'variableSubset', 'temporalSubset']
 
   - name: podaac/l2-subsetter
