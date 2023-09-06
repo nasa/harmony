@@ -25,3 +25,12 @@
     max-width: 40ch;
     word-break: break-word;
 }
+
+.copy-btn {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+td:hover .copy-btn {
+    opacity: 1;
+}
