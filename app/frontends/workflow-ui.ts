@@ -142,7 +142,7 @@ function jobRenderingFunctions(logger: Logger, requestQuery: Record<string, any>
       try {
         const url = new URL(this.request);
         const path = url.pathname + url.search;
-        return truncateString(path, 100);
+        return truncateString(path, 150);
       } catch (e) {
         logger.error(`Could not form a valid URL from job.request: ${this.request}`);
         logger.error(e);

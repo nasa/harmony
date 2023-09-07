@@ -6,7 +6,6 @@
             {{#isAdminRoute}}
             <th scope="col">user</th>
             {{/isAdminRoute}}
-            <th scope="col">request</th>
             <th scope="col">status</th>
             <th scope="col">message</th>
             <th scope="col">
@@ -24,20 +23,12 @@
     </thead>
     <tbody>
         {{#jobs}}
-        <tr clas='job-table-row'>
+        <tr class='job-table-row' style="border-bottom-color: white;">
             <th scope="row"><a href="workflow-ui/{{jobID}}{{dateQuery}}">{{jobID}}</a></th>
             <td>{{service_name}}</td>
             {{#isAdminRoute}}
             <td>{{username}}</td>
             {{/isAdminRoute}}
-            <td id="request-td">
-                <div style="position: relative;">
-                    <span title="{{request}}" data-bs-toggle="tooltip" data-bs-placement="right">{{jobUrl}}</span>
-                    <button type="button" class="btn btn-sm btn-secondary copy-btn" style="position: absolute; right: 5px; bottom: 5px;">
-                        <i class="bi-clipboard"></i>
-                    </button>
-                </div>
-            </td>
             <td><span class="badge bg-{{jobBadge}}">{{status}}</span></td>
             <td id="message-td"><span title="{{message}}" data-bs-toggle="tooltip"
                     data-bs-placement="right">{{jobMessage}}</span></td>
@@ -46,6 +37,12 @@
             <td class="date-td" data-time="{{jobCreatedAt}}"></td>
             <td class="date-td" data-time="{{jobUpdatedAt}}"></td>
         </tr>
+        <th colspan="9" style="background-color: rgb(251, 251, 251); border-top-color:white;">
+            <button type="button" class="btn btn-sm btn-secondary copy-btn">
+                <i class="bi-clipboard"></i>
+            </button>
+            <small class="text-muted" style="font-weight: normal; font-size: small;">{{jobUrl}}</small>
+        </th>
         {{/jobs}}
     </tbody>
 </table>
