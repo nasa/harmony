@@ -3,7 +3,10 @@
 # start postgress, localstack, and harmony in the harmony namespace in the local kubernetes cluster
 
 ./bin/start-postgres-localstack
-./bin/start-harmony
-echo ''
-echo 'Run `bin/reload-services-config` to restart harmony.'
-echo 'Run `kubectl delete namespace harmony` to remove all local resources'
+if [ ! "$LOCAL_DEV" = true ]; then
+  echo 'Running harmony in kubernetes'
+  ./bin/start-harmony
+  echo 'Run `bin/reload-services-config` to restart harmony.'
+fi
+
+echo 'Run ``./bin/stop-harmony-and-services` to remove all local resources'

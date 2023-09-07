@@ -116,6 +116,8 @@ WORK_ITEM_UPDATE_QUEUE_URL=http://localhost:4566/queue/work-item-update-queue
 LARGE_WORK_ITEM_UPDATE_QUEUE_URL=http://localhost:4566/queue/large-work-item-update-queue
 BACKEND_HOST=host.docker.internal
 CALLBACK_URL_ROOT=http://host.docker.internal:3001
+LOCAL_DEV=true
+
 ```
 
 Linux
@@ -125,6 +127,7 @@ WORK_ITEM_UPDATE_QUEUE_URL=http://localhost:4566/queue/work-item-update-queue
 LARGE_WORK_ITEM_UPDATE_QUEUE_URL=http://localhost:4566/queue/large-work-item-update-queue
 BACKEND_HOST=localhost
 CALLBACK_URL_ROOT=http://localhost:3001
+LOCAL_DEV=true
 ```
 
 ### (minikube only) Configuring the callback URL for backend services
@@ -137,20 +140,43 @@ minikube ssh grep host.minikube.internal /etc/hosts | cut -f1
 
 This should print out an IP address. Use this in your .env file to specify the `CALLBACK_URL_ROOT` value, e.g., `CALLBACK_URL_ROOT=http://192.168.65.2:4001`.
 
-### Set Up and Run Postgres and Localstack
+## Run Harmony and Services
 
-In development Harmony uses [Localstack](https://github.com/localstack/localstack) to avoid allocating AWS resources. Postgres is also installed (but not used by default).
-
-```
-$ ./bin/start-postgres-localstack
-```
-
-This will install Postgres and Localstack and forward their ports to localhost. It will take a few minutes the first time you run it. You will know when it has completed when it prints
+Harmony and the services can be run using the following:
 
 ```
-Localstack has started at http://localhost:4566/
-Postgres has started at localhost:5432
+./bin/bootstrap-harmony
+./bin/start-dev-services
 ```
+
+NOTE: You must set `LOCAL_DEV=true` before running these to prevent `bootstrap-harmony` from
+starting harmony and it's support  services in kubernetes.
+
+The provider services along with postgresql and localstack will now be running in kubernetes,
+while Harmony and its support services will be running as local Node.js processes. Each process
+has a specific port and debug port as shown in the following table:
+
+| Process              | Port | Debug Port |
+|----------------------|------|------------|
+| harmony              | 3000 | 9200       |
+| work-scheduler       | 5001 | 9201       |
+| work-updater (large) | 5002 | 9202       |
+| work-updater (small) | 5003 | 9203       |
+
+## Stopping Harmony and Services
+
+The services running in kubernetes can be stopped using the following (this will also delete 
+the `harmony` namespace):
+
+```
+./bin/stop-harmony-and-services
+```  
+
+The Node.js processes for Harmony and its support services can be stopped using the following:
+```
+./bin/stop-dev-services
+```
+
 
 ## Add A Service
 
