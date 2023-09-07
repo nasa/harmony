@@ -9,4 +9,4 @@ if [ ! "$LOCAL_DEV" = true ]; then
   echo 'Run `bin/reload-services-config` to restart harmony.'
 fi
 
-echo 'Run ``./bin/stop-harmony-and-services` to remove all local resources'
+echo 'Run `./bin/stop-harmony-and-services` to remove all local resources'
