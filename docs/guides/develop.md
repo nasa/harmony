@@ -150,7 +150,7 @@ Harmony and the services can be run using the following:
 ```
 
 NOTE: You must set `LOCAL_DEV=true` before running these to prevent `bootstrap-harmony` from
-starting harmony and it's support  services in kubernetes.
+starting harmony and its support services in kubernetes.
 
 The provider services along with postgresql and localstack will now be running in kubernetes,
 while Harmony and its support services will be running as local Node.js processes. Each process
