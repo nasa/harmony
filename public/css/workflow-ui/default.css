@@ -36,3 +36,8 @@ th:hover .copy-btn {
 .bi-clipboard:hover {
     color: #212529!important;
 }
+
+.job-url-th {
+    font-size: .75em;
+    font-family: SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+}
