@@ -139,6 +139,15 @@ function jobRenderingFunctions(logger: Logger, requestQuery: Record<string, any>
     },
     jobCreatedAt(): number { return this.createdAt.getTime(); },
     jobUpdatedAt(): number { return this.updatedAt.getTime(); },
+    jobRequest(): string {
+      try {
+        return decodeURIComponent(this.request);
+      } catch (e) {
+        logger.error(`Could not decode URL from job.request: ${this.request}`);
+        logger.error(e);
+        return this.request;
+      }
+    },
     jobUrl(): string {
       try {
         const url = new URL(this.request);
