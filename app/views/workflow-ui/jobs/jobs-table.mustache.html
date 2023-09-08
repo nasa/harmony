@@ -37,11 +37,13 @@
             <td class="date-td" data-time="{{jobCreatedAt}}"></td>
             <td class="date-td" data-time="{{jobUpdatedAt}}"></td>
         </tr>
-        <th colspan="9" style="background-color: rgb(251, 251, 251); border-top-color:white;">
-            <button type="button" class="btn btn-sm btn-secondary copy-btn">
+        <th colspan="9" style="background-color: rgb(252, 251, 251); border-top-color:white; padding-bottom: .3rem;">
+            <div style="position: relative;">
+            <button type="button" class="btn btn-sm btn-secondary copy-btn" style="position: absolute; left: 1px;" title="{{request}}" data-bs-toggle="tooltip" data-bs-placement="right">
                 <i class="bi-clipboard"></i>
             </button>
-            <small class="text-muted" style="font-weight: normal; font-size: small;">{{jobUrl}}</small>
+            <small class="text-muted" style="font-weight: normal; max-width: 100%;">{{jobUrl}}</small>
+        </div>
         </th>
         {{/jobs}}
     </tbody>
