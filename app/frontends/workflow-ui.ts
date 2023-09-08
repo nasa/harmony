@@ -147,7 +147,7 @@ function jobRenderingFunctions(logger: Logger, requestQuery: Record<string, any>
           pathname = pathname.replace(`${ogcVersion}/collections`, '...');
           pathname = pathname.replace('coverage/rangeset', '...');
         }
-        const path = pathname + url.search;
+        const path = pathname + decodeURIComponent(url.search);
         return truncateString(path, 1590);
       } catch (e) {
         logger.error(`Could not form a valid URL from job.request: ${this.request}`);
