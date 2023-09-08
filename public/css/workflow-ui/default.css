@@ -34,3 +34,7 @@
 th:hover .copy-btn {
     opacity: 1;
 }
+
+.bi-clipboard {
+    cursor: pointer;
+}

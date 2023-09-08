@@ -31,14 +31,14 @@
             {{/isAdminRoute}}
             <td><span class="badge bg-{{jobBadge}}">{{status}}</span></td>
             <td id="message-td"><span><i title="{{message}}" data-bs-toggle="tooltip"
-                        class="bi-eye"></i>&nbsp;{{jobMessage}}</span></td>
+                        class="bi-eye text-secondary"></i>&nbsp;{{jobMessage}}</span></td>
             <td>{{numInputGranules}}</td>
             <td>{{progress}}%</td>
             <td class="date-td" data-time="{{jobCreatedAt}}"></td>
             <td class="date-td" data-time="{{jobUpdatedAt}}"></td>
         </tr>
         <th colspan="9" style="background-color: rgb(252, 251, 251); border-top-color:white; padding-bottom: .3rem;">
-            <i class="bi-clipboard"></i> <i class="bi-eye" title="{{request}}" data-bs-toggle="tooltip"></i> &nbsp;
+            <i class="bi-clipboard text-primary"></i> <i class="bi-eye text-secondary" title="{{jobRequest}}" data-bs-toggle="tooltip"></i> &nbsp;
             <small class="text-muted" style="font-weight: normal; max-width: 100%;">{{jobUrl}}</small>
         </th>
         {{/jobs}}
