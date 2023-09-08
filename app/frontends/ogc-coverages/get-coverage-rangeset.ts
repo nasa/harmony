@@ -46,9 +46,8 @@ export default function getCoverageRangeset(
   if (query.forceasync) {
     operation.isSynchronous = false;
   }
-  if (query.ignoreerrors) {
-    operation.ignoreErrors = true;
-  }
+
+  operation.ignoreErrors = query.ignoreerrors === false ? false : true;
   operation.destinationUrl = query.destinationurl;
   try {
     const subset = parseSubsetParams(wrap(query.subset));
@@ -69,8 +68,9 @@ export default function getCoverageRangeset(
     }
     const point = parsePointParam(query.point);
     if (point) {
-      if (bbox || req.rawHeaders.filter((x) => new RegExp('shapefile=*').test(x)).length)
+      if (bbox) {
         throw new RequestValidationError('bounding_box and point query parameters should not co-exist');
+      }
       operation.spatialPoint = point;
     }
     const { start, end } = subsetParamsToTemporal(subset);

@@ -519,10 +519,10 @@ export async function handleWorkItemUpdateWithJobId(
     }
     outputItemSizes = await resultItemSizes(update, operation, logger);
   } catch (e) {
-    logger.error('Could not get result item file size, failing the work item update');
+    errorMessage = 'Could not get result item file size, failing the work item update';
+    logger.error(errorMessage);
     logger.error(e);
     status = WorkItemStatus.FAILED;
-    errorMessage = 'Could not get result item file size, failing the work item update';
   }
 
   durationMs = new Date().getTime() - startTime;

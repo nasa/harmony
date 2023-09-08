@@ -11,6 +11,7 @@ import { WorkflowStepRecord } from '../../app/models/workflow-steps';
 import hookServersStartStop from '../helpers/servers';
 import db from '../../app/util/db';
 import * as aggregationBatch from '../../app/util/aggregation-batch';
+import * as stac from '../../app/util/stac';
 import { hookJobCreation } from '../helpers/jobs';
 import { hookGetWorkForService, hookWorkItemCreation, hookWorkItemUpdate, hookWorkflowStepAndItemCreation, getWorkForService, fakeServiceStacOutput, updateWorkItem } from '../helpers/work-items';
 import { hookWorkflowStepCreation, validOperation } from '../helpers/workflow-steps';
@@ -293,7 +294,7 @@ describe('Work Backends', function () {
         };
         before(async () => {
           await fakeServiceStacOutput(successfulWorkItemRecord.jobID, successfulWorkItemRecord.id);
-          readCatalogLinksStub = sinon.stub(aggregationBatch, 'getCatalogLinks');
+          readCatalogLinksStub = sinon.stub(stac, 'getCatalogLinks');
           sizeOfObjectStub = sinon.stub(aggregationBatch, 'sizeOfObject');
         });
         after(async () => {
@@ -339,7 +340,7 @@ describe('Work Backends', function () {
         };
         before(async () => {
           await fakeServiceStacOutput(successfulWorkItemRecord.jobID, successfulWorkItemRecord.id);
-          readCatalogLinksStub = sinon.stub(aggregationBatch, 'getCatalogLinks')
+          readCatalogLinksStub = sinon.stub(stac, 'getCatalogLinks')
             .callsFake((_) => ['s3://abc/foo.nc', 'http://abc/bar.nc']);
           sizeOfObjectStub = sinon.stub(aggregationBatch, 'sizeOfObject')
             .callsFake(async (_) => 7000000000);
@@ -386,7 +387,7 @@ describe('Work Backends', function () {
         };
         before(async () => {
           await fakeServiceStacOutput(successfulWorkItemRecord.jobID, successfulWorkItemRecord.id);
-          readCatalogLinksStub = sinon.stub(aggregationBatch, 'getCatalogLinks')
+          readCatalogLinksStub = sinon.stub(stac, 'getCatalogLinks')
             .callsFake((_) => ['s3://abc/foo.nc', 'http://abc/bar.nc']);
           sizeOfObjectStub = sinon.stub(aggregationBatch, 'sizeOfObject')
             .callsFake(async (_) => 7000000000);
