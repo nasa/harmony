@@ -906,7 +906,9 @@ components:
     ignoreErrors:
       name: ignoreErrors
       in: query
-      description: if "true", continue processing a request to completion even if some items fail
+      description: |
+        if "true", continue processing a request to completion even if some items fail. If "false",
+        immediately fail the request on the first failure. Defaults to true.
       required: false
       schema:
         type: boolean

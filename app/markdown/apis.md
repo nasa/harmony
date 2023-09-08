@@ -54,7 +54,7 @@ As such it accepts parameters in the URL path as well as query parameters.
 | format | the mime-type of the output format to return |
 | maxResults | limits the number of input files processed in the request |
 | skipPreview | if "true", override the default API behavior and never auto-pause jobs |
-| ignoreErrors | if "true", continue processing a request to completion even if some items fail |
+| ignoreErrors | if "true", continue processing a request to completion even if some items fail. If "false" immediately fail the request. Defaults to true |
 | destinationUrl | destination url specified by the client; currently only s3 link urls are  supported (e.g. s3://my-bucket-name/mypath) and will result in the job being run asynchronously |
 ---
 **Table {{tableCounter}}** - Harmony OGC Coverages API query parameters
