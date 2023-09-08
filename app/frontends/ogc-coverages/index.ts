@@ -29,7 +29,7 @@ interface OgcSchemaCoverages {
   }
 }
 
-const version = '1.0.0';
+export const version = '1.0.0';
 const openApiRoot = path.join(__dirname, '..', '..', 'schemas', 'ogc-api-coverages', version);
 const openApiPath = path.join(openApiRoot, `ogc-api-coverages-v${version}.yml`);
 export const openApiContent = fs.readFileSync(openApiPath, 'utf-8');

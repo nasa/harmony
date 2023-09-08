@@ -31,6 +31,6 @@
     transition: opacity 0.3s ease;
 }
 
-td:hover .copy-btn {
+th:hover .copy-btn {
     opacity: 1;
 }

@@ -8,6 +8,7 @@ import { getPagingParams, getPagingLinks, setPagingHeaders } from '../util/pagin
 import HarmonyRequest from '../models/harmony-request';
 import db from '../util/db';
 import version from '../util/version';
+import { version as ogcVersion } from '../frontends/ogc-coverages';
 import env from '../util/env';
 import { keysToLowerCase } from '../util/object';
 import { getItemLogsLocation, WorkItemQuery, WorkItemStatus } from '../models/work-item-interface';
@@ -141,8 +142,13 @@ function jobRenderingFunctions(logger: Logger, requestQuery: Record<string, any>
     jobUrl(): string {
       try {
         const url = new URL(this.request);
-        const path = url.pathname + url.search;
-        return truncateString(path, 150);
+        let { pathname } = url;
+        if (pathname.indexOf('ogc-api-coverages') > -1) {
+          pathname = pathname.replace(`${ogcVersion}/collections`, '...');
+          pathname = pathname.replace('coverage/rangeset', '...');
+        }
+        const path = pathname + url.search;
+        return truncateString(path, 1590);
       } catch (e) {
         logger.error(`Could not form a valid URL from job.request: ${this.request}`);
         logger.error(e);
