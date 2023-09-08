@@ -44,6 +44,14 @@ if [ ! "$LOCAL_DEV" = true ]; then
     exit 1
   fi
   envsubst < $file | kubectl apply -f - -n harmony
+
+  # create the work reaper
+  file="kubernetes-services/work-reaper/config/service-template.yaml"
+  if [ ! -f "$file" ]; then
+    echo "work reaper template was not found."
+    exit 1
+  fi
+  envsubst < $file | kubectl apply -f - -n harmony
 fi
 
 export LOCALSTACK_HOST=localhost

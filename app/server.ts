@@ -152,7 +152,6 @@ function buildFrontendServer(port: number, hostBinding: string, config: RouterCo
 export function start(config: Record<string, string>): {
   frontend: Server;
   backend: Server;
-  workFailer: WorkFailer;
 } {
 
   // Log unhandled promise rejections and do not crash the node process
@@ -172,16 +171,7 @@ export function start(config: Record<string, string>): {
   // Setup the backend server to accept callbacks from backend services
   const backend = buildBackendServer(backendPort, config.HOST_BINDING);
 
-  let workFailer;
-  if (config.startWorkFailer !== 'false') {
-    const failerConfig = {
-      logger: logger.child({ application: 'work-failer' }),
-    };
-    workFailer = new WorkFailer(failerConfig);
-    workFailer.start();
-  }
-
-  return { frontend, backend, workFailer };
+  return { frontend, backend };
 }
 
 /**
