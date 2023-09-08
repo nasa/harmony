@@ -30,20 +30,16 @@
             <td>{{username}}</td>
             {{/isAdminRoute}}
             <td><span class="badge bg-{{jobBadge}}">{{status}}</span></td>
-            <td id="message-td"><span title="{{message}}" data-bs-toggle="tooltip"
-                    data-bs-placement="right">{{jobMessage}}</span></td>
+            <td id="message-td"><span><i title="{{message}}" data-bs-toggle="tooltip"
+                        class="bi-eye"></i>&nbsp;{{jobMessage}}</span></td>
             <td>{{numInputGranules}}</td>
             <td>{{progress}}%</td>
             <td class="date-td" data-time="{{jobCreatedAt}}"></td>
             <td class="date-td" data-time="{{jobUpdatedAt}}"></td>
         </tr>
         <th colspan="9" style="background-color: rgb(252, 251, 251); border-top-color:white; padding-bottom: .3rem;">
-            <div style="position: relative;">
-            <button type="button" class="btn btn-sm btn-secondary copy-btn" style="position: absolute; left: 1px;" title="{{request}}" data-bs-toggle="tooltip" data-bs-placement="right">
-                <i class="bi-clipboard"></i>
-            </button>
+            <i class="bi-clipboard"></i> <i class="bi-eye" title="{{request}}" data-bs-toggle="tooltip"></i> &nbsp;
             <small class="text-muted" style="font-weight: normal; max-width: 100%;">{{jobUrl}}</small>
-        </div>
         </th>
         {{/jobs}}
     </tbody>
