@@ -38,6 +38,10 @@ th:hover .copy-btn {
 }
 
 .job-url-th {
+    font-size: .95em;
+}
+
+.job-url-text {
     font-size: .75em;
     font-family: SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
 }
