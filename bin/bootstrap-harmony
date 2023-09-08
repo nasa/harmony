@@ -23,6 +23,9 @@ else
     source .env
 fi
 
+# Used to decide whether or not to run harmony in k8s
+export LOCAL_DEV
+
 # run localstack, postgresql, and harmony in kubernetes
 ./bin/start-all
 
