@@ -63,7 +63,7 @@ async function handleBatchWorkItemUpdatesWithJobId(jobID: string, updates: WorkI
           item.preprocessResult = result;
           return item;
         }));
-      await processWorkItems(jobID, preprocessedWorkItems, logger);
+      await processWorkItems(jobID, parseInt(workflowStepIndex), preprocessedWorkItems, logger);
     }
   }
   const durationMs = new Date().getTime() - startTime;
