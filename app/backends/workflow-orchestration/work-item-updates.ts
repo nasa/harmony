@@ -21,6 +21,22 @@ import { resolve } from '../../util/url';
 import { QUERY_CMR_SERVICE_REGEX, calculateQueryCmrLimit } from './util';
 import { makeWorkScheduleRequest } from './work-item-polling';
 
+/**
+ * A structure holding the preprocess info of a work item
+ */
+export type WorkItemPreprocessInfo = {
+  status?: WorkItemStatus;
+  // error message if status === FAILED
+  errorMessage?: string;
+  catalogItems: StacItem[];
+  outputItemSizes: number[];
+};
+
+export type WorkItemUpdateQueueItem = {
+  update: WorkItemUpdate,
+  operation: object,
+  preprocessResult?: WorkItemPreprocessInfo,
+};
 
 /**
  * Add links to the Job for the WorkItem and save them to the database.
@@ -493,43 +509,73 @@ async function createNextWorkItems(
  * @param operation - the DataOperation for the user's request
  * @param logger - the Logger for the request
  */
-export async function handleWorkItemUpdateWithJobId(
-  jobID: string,
+export async function preprocessWorkItem(
   update: WorkItemUpdate,
   operation: object,
-  logger: Logger): Promise<void> {
+  logger: Logger): Promise<WorkItemPreprocessInfo> {
   const startTime = new Date().getTime();
-  const { workItemID, hits, results, scrollID } = update;
+  const { results } = update;
   let { errorMessage, status } = update;
-  let didCreateWorkItem = false;
-  if (status === WorkItemStatus.SUCCESSFUL) {
-    logger.info(`Updating work item ${workItemID} to ${status}`);
-  }
 
   // Get the sizes of all the data items/granules returned for the WorkItem and STAC item links
   // when batching.
   // This needs to be done outside the transaction as it can be slow if there are many granules.
   let durationMs;
-  let jobSaveStartTime;
   let outputItemSizes;
   let catalogItems;
   try {
     if (results?.length < 2 && status === WorkItemStatus.SUCCESSFUL) {
       catalogItems = await readCatalogItems(results[0]);
+      durationMs = new Date().getTime() - startTime;
+      logger.debug('timing.HWIUWJI.readCatalogItems.end', { durationMs });
     }
+    const resultStartTime = new Date().getTime();
     outputItemSizes = await resultItemSizes(update, operation, logger);
+    durationMs = new Date().getTime() - resultStartTime;
+    logger.debug('timing.HWIUWJI.getResultItemSize.end', { durationMs });
   } catch (e) {
     errorMessage = 'Could not get result item file size, failing the work item update';
     logger.error(errorMessage);
     logger.error(e);
     status = WorkItemStatus.FAILED;
   }
+  const result: WorkItemPreprocessInfo = {
+    status,
+    errorMessage,
+    catalogItems,
+    outputItemSizes,
+  };
+  return result;
+}
 
-  durationMs = new Date().getTime() - startTime;
-  logger.debug('timing.HWIUWJI.getResultItemSize.end', { durationMs });
+/**
+ * Update job status/progress in response to a service provided work item update
+ * IMPORTANT: This asynchronous function is called without awaiting, so any errors must be
+ * handled in this function and no exceptions should be thrown since nothing will catch
+ * them.
+ *
+ * @param jobId - job id
+ * @param update - information about the work item update
+ * @param operation - the DataOperation for the user's request
+ * @param logger - the Logger for the request
+ */
+export async function processWorkItem(
+  preprocessResult: WorkItemPreprocessInfo,
+  jobID: string,
+  update: WorkItemUpdate,
+  logger: Logger,
+  checkCompletion = true ): Promise<void> {
+  const { status, errorMessage, catalogItems, outputItemSizes } = preprocessResult;
+  const { workItemID, hits, results, scrollID } = update;
+  const startTime = new Date().getTime();
+  let durationMs;
+  let jobSaveStartTime;
+  let didCreateWorkItem = false;
+  if (status === WorkItemStatus.SUCCESSFUL) {
+    logger.info(`Updating work item ${workItemID} to ${status}`);
+  }
 
   try {
-
     const transactionStart = new Date().getTime();
     await db.transaction(async (tx) => {
       const job = await (await logAsyncExecutionTime(
@@ -623,15 +669,21 @@ export async function handleWorkItemUpdateWithJobId(
 
       workItem.status = status;
 
-      const completedWorkItemCount = await (await logAsyncExecutionTime(
-        workItemCountForStep,
-        'HWIUWJI.workItemCountForStep',
-        logger))(
-        tx, workItem.jobID, workItem.workflowStepIndex, COMPLETED_WORK_ITEM_STATUSES,
-      );
-      const allWorkItemsForStepComplete = (completedWorkItemCount == thisStep.workItemCount);
+      let allWorkItemsForStepComplete = false;
 
-      // The number of 'hits' returned by a query-cmr could be less than when CMR was first queried
+      if (checkCompletion) {
+        const completedWorkItemCount = await (await logAsyncExecutionTime(
+          workItemCountForStep,
+          'HWIUWJI.workItemCountForStep',
+          logger))(
+          tx, workItem.jobID, workItem.workflowStepIndex, COMPLETED_WORK_ITEM_STATUSES,
+        );
+        allWorkItemsForStepComplete = (completedWorkItemCount == thisStep.workItemCount);
+      }
+
+
+
+      // The number of 'hits' returned by a query-cmr could be less than when CMR was first
       // queried by harmony due to metadata deletions from CMR, so we update the job to reflect
       // that there are fewer items and to know when no more query-cmr jobs should be created.
       if (hits && job.numInputGranules > hits) {
@@ -747,6 +799,53 @@ export async function handleWorkItemUpdateWithJobId(
   durationMs = new Date().getTime() - startTime;
   logger.debug('timing.HWIUWJI.end', { durationMs });
   logger.debug(`Finished handling work item update for ${workItemID} and status ${status} in ${durationMs} ms`);
+}
+
+/**
+ * Update job status/progress in response to a service provided work item update
+ * IMPORTANT: This asynchronous function is called without awaiting, so any errors must be
+ * handled in this function and no exceptions should be thrown since nothing will catch
+ * them.
+ *
+ * @param jobId - job id
+ * @param update - information about the work item update
+ * @param operation - the DataOperation for the user's request
+ * @param logger - the Logger for the request
+ */
+export async function processWorkItems(
+  jobID: string,
+  items: WorkItemUpdateQueueItem[],
+  logger: Logger): Promise<void> {
+  const lastIndex = items.length - 1;
+  for (let index = 0; index < items.length; index++) {
+    const { preprocessResult, update }  = items[index];
+    if (index < lastIndex) {
+      await processWorkItem(preprocessResult, jobID, update, logger, false);
+    } else {
+      await processWorkItem(preprocessResult, jobID, update, logger, true);
+    }
+  }
+}
+
+/**
+ * Update job status/progress in response to a service provided work item update
+ * IMPORTANT: This asynchronous function is called without awaiting, so any errors must be
+ * handled in this function and no exceptions should be thrown since nothing will catch
+ * them.
+ *
+ * @param jobId - job id
+ * @param update - information about the work item update
+ * @param operation - the DataOperation for the user's request
+ * @param logger - the Logger for the request
+ */
+export async function handleWorkItemUpdateWithJobId(
+  jobID: string,
+  update: WorkItemUpdate,
+  operation: object,
+  logger: Logger): Promise<void> {
+  const preprocessResult = await preprocessWorkItem(update, operation, logger);
+
+  await processWorkItem(preprocessResult, jobID, update, logger);
 }
 
 /**
