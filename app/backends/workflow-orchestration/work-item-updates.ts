@@ -560,11 +560,13 @@ export async function preprocessWorkItem(
  * @param logger - the Logger for the request
  */
 export async function processWorkItem(
+  tx: Transaction,
   preprocessResult: WorkItemPreprocessInfo,
-  jobID: string,
+  job: Job,
   update: WorkItemUpdate,
   logger: Logger,
   checkCompletion = true ): Promise<void> {
+  const { jobID } = job;
   const { status, errorMessage, catalogItems, outputItemSizes } = preprocessResult;
   const { workItemID, hits, results, scrollID } = update;
   const startTime = new Date().getTime();
@@ -576,221 +578,212 @@ export async function processWorkItem(
   }
 
   try {
-    const transactionStart = new Date().getTime();
-    await db.transaction(async (tx) => {
-      const job = await (await logAsyncExecutionTime(
-        Job.byJobID,
-        'HWIUWJI.Job.byJobID',
-        logger))(tx, jobID, false, true);
-      // lock the work item so we can update it - need to do this after locking jobs table above
-      // to avoid deadlocks
-      const workItem = await (await logAsyncExecutionTime(
-        getWorkItemById,
-        'HWIUWJI.getWorkItemById',
-        logger))(tx, workItemID, true);
-      const thisStep = await (await logAsyncExecutionTime(
+    // lock the work item so we can update it - need to do this after locking jobs table above
+    // to avoid deadlocks
+    const workItem = await (await logAsyncExecutionTime(
+      getWorkItemById,
+      'HWIUWJI.getWorkItemById',
+      logger))(tx, workItemID, true);
+    const thisStep = await (await logAsyncExecutionTime(
+      getWorkflowStepByJobIdStepIndex,
+      'HWIUWJI.getWorkflowStepByJobIdStepIndex',
+      logger))(tx, workItem.jobID, workItem.workflowStepIndex);
+    if (job.isComplete() && status !== WorkItemStatus.CANCELED) {
+      logger.warn(`Job was already ${job.status}.`);
+      const numRowsDeleted = await (await logAsyncExecutionTime(
+        deleteUserWorkForJob,
+        'HWIUWJI.deleteUserWorkForJob',
+        logger))(tx, jobID);
+      logger.warn(`Removed ${numRowsDeleted} from user_work table for job ${jobID}.`);
+      // Note work item will stay in the running state, but the reaper will clean it up
+      return;
+    }
+
+    // Don't allow updates to work items that are already in a terminal state
+    if (COMPLETED_WORK_ITEM_STATUSES.includes(workItem.status)) {
+      // Unclear what to do with user_work entries, so do nothing for now.
+      logger.warn(`WorkItem ${workItemID} was already ${workItem.status}`);
+      return;
+    }
+
+    // retry failed work-items up to a limit
+    if (status === WorkItemStatus.FAILED) {
+      if (workItem.retryCount < env.workItemRetryLimit) {
+        logger.info(`Retrying failed work-item ${workItemID}`);
+        workItem.retryCount += 1;
+        workItem.status = WorkItemStatus.READY;
+        const workitemSaveStartTime = new Date().getTime();
+        await workItem.save(tx);
+        durationMs = new Date().getTime() - workitemSaveStartTime;
+        logger.debug('timing.HWIUWJI.workItem.save.end', { durationMs });
+        await (await logAsyncExecutionTime(
+          incrementReadyAndDecrementRunningCounts,
+          'HWIUWJI.incrementReadyAndDecrementRunningCounts',
+          logger))(tx, jobID, workItem.serviceID);
+        return;
+      } else {
+        logger.warn(`Retry limit of ${env.workItemRetryLimit} exceeded`);
+        logger.warn(`Updating work item for ${workItemID} to ${status} with message ${errorMessage}`);
+      }
+    }
+
+    // We calculate the duration of the work both in harmony and in the manager of the service pod.
+    // We tend to favor the harmony value as it is normally longer since it accounts for the extra
+    // overhead of communication with the pod. There is a problem with retries however in that
+    // the startTime gets reset, so if an earlier worker finishes and replies it will look like
+    // the whole thing was quicker (since our startTime has changed). So in that case we want to
+    // use the time reported by the service pod. Any updates from retries that happen later  will
+    // be ignored since the work item is already in a 'successful' state.
+    const harmonyDuration = Date.now() - workItem.startedAt.valueOf();
+    let duration = harmonyDuration;
+    if (update.duration) {
+      duration = Math.max(duration, update.duration);
+    }
+
+    let { totalItemsSize } = update;
+
+    if (!totalItemsSize && outputItemSizes?.length > 0) {
+      totalItemsSize = sum(outputItemSizes) / 1024 / 1024;
+    }
+
+    await (await logAsyncExecutionTime(
+      updateWorkItemStatus,
+      'HWIUWJI.updateWorkItemStatus',
+      logger))(
+      tx,
+      workItemID,
+      status,
+      duration,
+      totalItemsSize,
+      outputItemSizes);
+    await (await logAsyncExecutionTime(
+      decrementRunningCount,
+      'HWIUWJI.decrementRunningCount',
+      logger))(tx, jobID, workItem.serviceID);
+
+    logger.info(`Updated work item. Duration (ms) was: ${duration}`);
+
+    workItem.status = status;
+
+    let allWorkItemsForStepComplete = false;
+
+    if (checkCompletion) {
+      const completedWorkItemCount = await (await logAsyncExecutionTime(
+        workItemCountForStep,
+        'HWIUWJI.workItemCountForStep',
+        logger))(
+        tx, workItem.jobID, workItem.workflowStepIndex, COMPLETED_WORK_ITEM_STATUSES,
+      );
+      allWorkItemsForStepComplete = (completedWorkItemCount == thisStep.workItemCount);
+    }
+
+
+
+    // The number of 'hits' returned by a query-cmr could be less than when CMR was first
+    // queried by harmony due to metadata deletions from CMR, so we update the job to reflect
+    // that there are fewer items and to know when no more query-cmr jobs should be created.
+    if (hits && job.numInputGranules > hits) {
+      job.numInputGranules = hits;
+
+      jobSaveStartTime = new Date().getTime();
+      await job.save(tx);
+      durationMs = new Date().getTime() - jobSaveStartTime;
+      logger.debug('timing.HWIUWJI.job.save.end', { durationMs });
+
+      await (await logAsyncExecutionTime(
+        updateWorkItemCounts,
+        'HWIUWJI.updateWorkItemCounts',
+        logger))(tx, job);
+    }
+
+    const continueProcessing = await (await logAsyncExecutionTime(
+      handleFailedWorkItems,
+      'HWIUWJI.handleFailedWorkItems',
+      logger))(tx, job, workItem, thisStep, status, logger, errorMessage);
+    if (continueProcessing) {
+      const nextWorkflowStep = await (await logAsyncExecutionTime(
         getWorkflowStepByJobIdStepIndex,
         'HWIUWJI.getWorkflowStepByJobIdStepIndex',
-        logger))(tx, workItem.jobID, workItem.workflowStepIndex);
-      if (job.isComplete() && status !== WorkItemStatus.CANCELED) {
-        logger.warn(`Job was already ${job.status}.`);
-        const numRowsDeleted = await (await logAsyncExecutionTime(
-          deleteUserWorkForJob,
-          'HWIUWJI.deleteUserWorkForJob',
-          logger))(tx, jobID);
-        logger.warn(`Removed ${numRowsDeleted} from user_work table for job ${jobID}.`);
-        // Note work item will stay in the running state, but the reaper will clean it up
-        return;
-      }
-
-      // Don't allow updates to work items that are already in a terminal state
-      if (COMPLETED_WORK_ITEM_STATUSES.includes(workItem.status)) {
-        // Unclear what to do with user_work entries, so do nothing for now.
-        logger.warn(`WorkItem ${workItemID} was already ${workItem.status}`);
-        return;
-      }
-
-      // retry failed work-items up to a limit
-      if (status === WorkItemStatus.FAILED) {
-        if (workItem.retryCount < env.workItemRetryLimit) {
-          logger.info(`Retrying failed work-item ${workItemID}`);
-          workItem.retryCount += 1;
-          workItem.status = WorkItemStatus.READY;
-          const workitemSaveStartTime = new Date().getTime();
-          await workItem.save(tx);
-          durationMs = new Date().getTime() - workitemSaveStartTime;
-          logger.debug('timing.HWIUWJI.workItem.save.end', { durationMs });
+        logger))(
+        tx, workItem.jobID, workItem.workflowStepIndex + 1,
+      );
+      if (nextWorkflowStep && (status !== WorkItemStatus.FAILED || nextWorkflowStep?.isBatched)) {
+        didCreateWorkItem = await (await logAsyncExecutionTime(
+          createNextWorkItems,
+          'HWIUWJI.createNextWorkItems',
+          logger))(
+          tx,
+          nextWorkflowStep,
+          logger,
+          workItem,
+          allWorkItemsForStepComplete,
+          results,
+          outputItemSizes,
+        );
+        if (didCreateWorkItem) {
+          // ask the scheduler to schedule the new work item
           await (await logAsyncExecutionTime(
-            incrementReadyAndDecrementRunningCounts,
-            'HWIUWJI.incrementReadyAndDecrementRunningCounts',
-            logger))(tx, jobID, workItem.serviceID);
-          return;
-        } else {
-          logger.warn(`Retry limit of ${env.workItemRetryLimit} exceeded`);
-          logger.warn(`Updating work item for ${workItemID} to ${status} with message ${errorMessage}`);
+            makeWorkScheduleRequest,
+            'HWIUWJI.makeWorkScheduleRequest',
+            logger))(nextWorkflowStep.serviceID);
         }
       }
-
-      // We calculate the duration of the work both in harmony and in the manager of the service pod.
-      // We tend to favor the harmony value as it is normally longer since it accounts for the extra
-      // overhead of communication with the pod. There is a problem with retries however in that
-      // the startTime gets reset, so if an earlier worker finishes and replies it will look like
-      // the whole thing was quicker (since our startTime has changed). So in that case we want to
-      // use the time reported by the service pod. Any updates from retries that happen later  will
-      // be ignored since the work item is already in a 'successful' state.
-      const harmonyDuration = Date.now() - workItem.startedAt.valueOf();
-      let duration = harmonyDuration;
-      if (update.duration) {
-        duration = Math.max(duration, update.duration);
-      }
-
-      let { totalItemsSize } = update;
-
-      if (!totalItemsSize && outputItemSizes?.length > 0) {
-        totalItemsSize = sum(outputItemSizes) / 1024 / 1024;
-      }
-
-      await (await logAsyncExecutionTime(
-        updateWorkItemStatus,
-        'HWIUWJI.updateWorkItemStatus',
-        logger))(
-        tx,
-        workItemID,
-        status,
-        duration,
-        totalItemsSize,
-        outputItemSizes);
-      await (await logAsyncExecutionTime(
-        decrementRunningCount,
-        'HWIUWJI.decrementRunningCount',
-        logger))(tx, jobID, workItem.serviceID);
-
-      logger.info(`Updated work item. Duration (ms) was: ${duration}`);
-
-      workItem.status = status;
-
-      let allWorkItemsForStepComplete = false;
-
-      if (checkCompletion) {
-        const completedWorkItemCount = await (await logAsyncExecutionTime(
-          workItemCountForStep,
-          'HWIUWJI.workItemCountForStep',
-          logger))(
-          tx, workItem.jobID, workItem.workflowStepIndex, COMPLETED_WORK_ITEM_STATUSES,
-        );
-        allWorkItemsForStepComplete = (completedWorkItemCount == thisStep.workItemCount);
-      }
-
-
-
-      // The number of 'hits' returned by a query-cmr could be less than when CMR was first
-      // queried by harmony due to metadata deletions from CMR, so we update the job to reflect
-      // that there are fewer items and to know when no more query-cmr jobs should be created.
-      if (hits && job.numInputGranules > hits) {
-        job.numInputGranules = hits;
-
+      if (nextWorkflowStep && status === WorkItemStatus.SUCCESSFUL) {
+        if (results && results.length > 0) {
+          // set the scrollID for the next work item to the one we received from the update
+          workItem.scrollID = scrollID;
+          await (await logAsyncExecutionTime(
+            maybeQueueQueryCmrWorkItem,
+            'HWIUWJI.maybeQueueQueryCmrWorkItem',
+            logger))(tx, workItem, logger);
+        } else {
+          // Failed to create the next work items when there should be work items.
+          // Fail the job rather than leaving it orphaned in the running state
+          logger.error('The work item update should have contained results to queue a next work item, but it did not.');
+          const message = 'Harmony internal failure: could not create the next work items for the request.';
+          await (await logAsyncExecutionTime(
+            completeJob,
+            'HWIUWJI.completeJob',
+            logger))(tx, job, JobStatus.FAILED, logger, message);
+        }
+      } else if (!nextWorkflowStep || allWorkItemsForStepComplete) {
+        // Finished with the chain for this granule
+        if (status != WorkItemStatus.FAILED) {
+          await (await logAsyncExecutionTime(
+            addJobLinksForFinishedWorkItem,
+            'HWIUWJI.addJobLinksForFinishedWorkItem',
+            logger))(tx, job.jobID, catalogItems);
+        }
+        job.completeBatch(thisStep.workItemCount);
+        if (allWorkItemsForStepComplete && !didCreateWorkItem && (!nextWorkflowStep || nextWorkflowStep.workItemCount === 0)) {
+          // If all granules are finished mark the job as finished
+          const finalStatus = await getFinalStatusForJob(tx, job);
+          await (await logAsyncExecutionTime(
+            completeJob,
+            'HWIUWJI.completeJob',
+            logger))(tx, job, finalStatus, logger);
+        } else {
+          // Either previewing or next step is a batched step and this item failed
+          if (job.status === JobStatus.PREVIEWING) {
+            // Special case to pause the job as soon as any single granule completes when in the previewing state
+            jobSaveStartTime = new Date().getTime();
+            await job.pauseAndSave(tx);
+            durationMs = new Date().getTime() - jobSaveStartTime;
+            logger.debug('timing.HWIUWJI.job.pauseAndSave.end', { durationMs });
+          } else {
+            jobSaveStartTime = new Date().getTime();
+            await job.save(tx);
+            durationMs = new Date().getTime() - jobSaveStartTime;
+            logger.debug('timing.HWIUWJI.job.save.end', { durationMs });
+          }
+        }
+      } else { // Currently only reach this condition for batched aggregation requests
         jobSaveStartTime = new Date().getTime();
         await job.save(tx);
         durationMs = new Date().getTime() - jobSaveStartTime;
         logger.debug('timing.HWIUWJI.job.save.end', { durationMs });
-
-        await (await logAsyncExecutionTime(
-          updateWorkItemCounts,
-          'HWIUWJI.updateWorkItemCounts',
-          logger))(tx, job);
       }
-
-      const continueProcessing = await (await logAsyncExecutionTime(
-        handleFailedWorkItems,
-        'HWIUWJI.handleFailedWorkItems',
-        logger))(tx, job, workItem, thisStep, status, logger, errorMessage);
-      if (continueProcessing) {
-        const nextWorkflowStep = await (await logAsyncExecutionTime(
-          getWorkflowStepByJobIdStepIndex,
-          'HWIUWJI.getWorkflowStepByJobIdStepIndex',
-          logger))(
-          tx, workItem.jobID, workItem.workflowStepIndex + 1,
-        );
-        if (nextWorkflowStep && (status !== WorkItemStatus.FAILED || nextWorkflowStep?.isBatched)) {
-          didCreateWorkItem = await (await logAsyncExecutionTime(
-            createNextWorkItems,
-            'HWIUWJI.createNextWorkItems',
-            logger))(
-            tx,
-            nextWorkflowStep,
-            logger,
-            workItem,
-            allWorkItemsForStepComplete,
-            results,
-            outputItemSizes,
-          );
-          if (didCreateWorkItem) {
-            // ask the scheduler to schedule the new work item
-            await (await logAsyncExecutionTime(
-              makeWorkScheduleRequest,
-              'HWIUWJI.makeWorkScheduleRequest',
-              logger))(nextWorkflowStep.serviceID);
-          }
-        }
-        if (nextWorkflowStep && status === WorkItemStatus.SUCCESSFUL) {
-          if (results && results.length > 0) {
-            // set the scrollID for the next work item to the one we received from the update
-            workItem.scrollID = scrollID;
-            await (await logAsyncExecutionTime(
-              maybeQueueQueryCmrWorkItem,
-              'HWIUWJI.maybeQueueQueryCmrWorkItem',
-              logger))(tx, workItem, logger);
-          } else {
-            // Failed to create the next work items when there should be work items.
-            // Fail the job rather than leaving it orphaned in the running state
-            logger.error('The work item update should have contained results to queue a next work item, but it did not.');
-            const message = 'Harmony internal failure: could not create the next work items for the request.';
-            await (await logAsyncExecutionTime(
-              completeJob,
-              'HWIUWJI.completeJob',
-              logger))(tx, job, JobStatus.FAILED, logger, message);
-          }
-        } else if (!nextWorkflowStep || allWorkItemsForStepComplete) {
-          // Finished with the chain for this granule
-          if (status != WorkItemStatus.FAILED) {
-            await (await logAsyncExecutionTime(
-              addJobLinksForFinishedWorkItem,
-              'HWIUWJI.addJobLinksForFinishedWorkItem',
-              logger))(tx, job.jobID, catalogItems);
-          }
-          job.completeBatch(thisStep.workItemCount);
-          if (allWorkItemsForStepComplete && !didCreateWorkItem && (!nextWorkflowStep || nextWorkflowStep.workItemCount === 0)) {
-            // If all granules are finished mark the job as finished
-            const finalStatus = await getFinalStatusForJob(tx, job);
-            await (await logAsyncExecutionTime(
-              completeJob,
-              'HWIUWJI.completeJob',
-              logger))(tx, job, finalStatus, logger);
-          } else {
-            // Either previewing or next step is a batched step and this item failed
-            if (job.status === JobStatus.PREVIEWING) {
-              // Special case to pause the job as soon as any single granule completes when in the previewing state
-              jobSaveStartTime = new Date().getTime();
-              await job.pauseAndSave(tx);
-              durationMs = new Date().getTime() - jobSaveStartTime;
-              logger.debug('timing.HWIUWJI.job.pauseAndSave.end', { durationMs });
-            } else {
-              jobSaveStartTime = new Date().getTime();
-              await job.save(tx);
-              durationMs = new Date().getTime() - jobSaveStartTime;
-              logger.debug('timing.HWIUWJI.job.save.end', { durationMs });
-            }
-          }
-        } else { // Currently only reach this condition for batched aggregation requests
-          jobSaveStartTime = new Date().getTime();
-          await job.save(tx);
-          durationMs = new Date().getTime() - jobSaveStartTime;
-          logger.debug('timing.HWIUWJI.job.save.end', { durationMs });
-        }
-      }
-    });
-    durationMs = new Date().getTime() - transactionStart;
-    logger.debug('timing.HWIUWJI.transaction.end', { durationMs });
+    }
   } catch (e) {
     logger.error(`Work item update failed for work item ${workItemID} and status ${status}`);
     logger.error(e);
@@ -816,14 +809,29 @@ export async function processWorkItems(
   jobID: string,
   items: WorkItemUpdateQueueItem[],
   logger: Logger): Promise<void> {
-  const lastIndex = items.length - 1;
-  for (let index = 0; index < items.length; index++) {
-    const { preprocessResult, update }  = items[index];
-    if (index < lastIndex) {
-      await processWorkItem(preprocessResult, jobID, update, logger, false);
-    } else {
-      await processWorkItem(preprocessResult, jobID, update, logger, true);
-    }
+  try {
+    const transactionStart = new Date().getTime();
+    await db.transaction(async (tx) => {
+      const job = await (await logAsyncExecutionTime(
+        Job.byJobID,
+        'HWIUWJI.Job.byJobID',
+        logger))(tx, jobID, false, true);
+
+      const lastIndex = items.length - 1;
+      for (let index = 0; index < items.length; index++) {
+        const { preprocessResult, update }  = items[index];
+        if (index < lastIndex) {
+          await processWorkItem(tx, preprocessResult, job, update, logger, false);
+        } else {
+          await processWorkItem(tx, preprocessResult, job, update, logger, true);
+        }
+      }
+    });
+    const durationMs = new Date().getTime() - transactionStart;
+    logger.debug('timing.HWIUWJI.transaction.end', { durationMs });
+  } catch (e) {
+    logger.error('Unable to acquire lock on Jobs table');
+    logger.error(e);
   }
 }
 
@@ -845,7 +853,23 @@ export async function handleWorkItemUpdateWithJobId(
   logger: Logger): Promise<void> {
   const preprocessResult = await preprocessWorkItem(update, operation, logger);
 
-  await processWorkItem(preprocessResult, jobID, update, logger);
+  try {
+    const transactionStart = new Date().getTime();
+    await db.transaction(async (tx) => {
+      const job = await (await logAsyncExecutionTime(
+        Job.byJobID,
+        'HWIUWJI.Job.byJobID',
+        logger))(tx, jobID, false, true);
+
+      await processWorkItem(tx, preprocessResult, job, update, logger);
+
+    });
+    const durationMs = new Date().getTime() - transactionStart;
+    logger.debug('timing.HWIUWJI.transaction.end', { durationMs });
+  } catch (e) {
+    logger.error('Unable to acquire lock on Jobs table');
+    logger.error(e);
+  }
 }
 
 /**
