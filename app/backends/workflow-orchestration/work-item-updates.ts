@@ -38,6 +38,8 @@ export type WorkItemUpdateQueueItem = {
   preprocessResult?: WorkItemPreprocessInfo,
 };
 
+const NO_NEXT_STEP = 'NoNextStep';
+
 /**
  * Add links to the Job for the WorkItem and save them to the database.
  *
@@ -565,7 +567,9 @@ export async function processWorkItem(
   job: Job,
   update: WorkItemUpdate,
   logger: Logger,
-  checkCompletion = true ): Promise<void> {
+  checkCompletion = true,
+  thisStep: WorkflowStep = undefined,
+  nextStep: WorkflowStep | string = undefined): Promise<void> {
   const { jobID } = job;
   const { status, errorMessage, catalogItems, outputItemSizes } = preprocessResult;
   const { workItemID, hits, results, scrollID } = update;
@@ -584,10 +588,12 @@ export async function processWorkItem(
       getWorkItemById,
       'HWIUWJI.getWorkItemById',
       logger))(tx, workItemID, true);
-    const thisStep = await (await logAsyncExecutionTime(
-      getWorkflowStepByJobIdStepIndex,
-      'HWIUWJI.getWorkflowStepByJobIdStepIndex',
-      logger))(tx, workItem.jobID, workItem.workflowStepIndex);
+    if (thisStep == undefined) {
+      thisStep = await (await logAsyncExecutionTime(
+        getWorkflowStepByJobIdStepIndex,
+        'HWIUWJI.getWorkflowStepByJobIdStepIndex',
+        logger))(tx, workItem.jobID, workItem.workflowStepIndex);
+    }
     if (job.isComplete() && status !== WorkItemStatus.CANCELED) {
       logger.warn(`Job was already ${job.status}.`);
       const numRowsDeleted = await (await logAsyncExecutionTime(
@@ -700,13 +706,19 @@ export async function processWorkItem(
       handleFailedWorkItems,
       'HWIUWJI.handleFailedWorkItems',
       logger))(tx, job, workItem, thisStep, status, logger, errorMessage);
+    let nextWorkflowStep;
     if (continueProcessing) {
-      const nextWorkflowStep = await (await logAsyncExecutionTime(
-        getWorkflowStepByJobIdStepIndex,
-        'HWIUWJI.getWorkflowStepByJobIdStepIndex',
-        logger))(
-        tx, workItem.jobID, workItem.workflowStepIndex + 1,
-      );
+      if (nextStep == undefined) {
+        nextWorkflowStep = await (await logAsyncExecutionTime(
+          getWorkflowStepByJobIdStepIndex,
+          'HWIUWJI.getWorkflowStepByJobIdStepIndex',
+          logger))(tx, workItem.jobID, workItem.workflowStepIndex + 1);
+      } else if (nextStep == NO_NEXT_STEP) {
+        nextWorkflowStep = undefined;
+      } else {
+        nextWorkflowStep = nextStep;
+      }
+
       if (nextWorkflowStep && (status !== WorkItemStatus.FAILED || nextWorkflowStep?.isBatched)) {
         didCreateWorkItem = await (await logAsyncExecutionTime(
           createNextWorkItems,
@@ -807,23 +819,37 @@ export async function processWorkItem(
  */
 export async function processWorkItems(
   jobID: string,
+  workflowStepIndex: number,
   items: WorkItemUpdateQueueItem[],
   logger: Logger): Promise<void> {
   try {
     const transactionStart = new Date().getTime();
+
     await db.transaction(async (tx) => {
       const job = await (await logAsyncExecutionTime(
         Job.byJobID,
         'HWIUWJI.Job.byJobID',
         logger))(tx, jobID, false, true);
 
+      const thisStep: WorkflowStep = await (await logAsyncExecutionTime(
+        getWorkflowStepByJobIdStepIndex,
+        'HWIUWJI.getWorkflowStepByJobIdStepIndex',
+        logger))(tx, jobID, workflowStepIndex);
+      let nextStep: WorkflowStep | string = await (await logAsyncExecutionTime(
+        getWorkflowStepByJobIdStepIndex,
+        'HWIUWJI.getWorkflowStepByJobIdStepIndex',
+        logger))(tx, jobID, workflowStepIndex + 1);
+      if (nextStep == undefined) {
+        nextStep = NO_NEXT_STEP;
+      }
+
       const lastIndex = items.length - 1;
       for (let index = 0; index < items.length; index++) {
         const { preprocessResult, update }  = items[index];
         if (index < lastIndex) {
-          await processWorkItem(tx, preprocessResult, job, update, logger, false);
+          await processWorkItem(tx, preprocessResult, job, update, logger, false, thisStep, nextStep);
         } else {
-          await processWorkItem(tx, preprocessResult, job, update, logger, true);
+          await processWorkItem(tx, preprocessResult, job, update, logger, true, thisStep, nextStep);
         }
       }
     });
