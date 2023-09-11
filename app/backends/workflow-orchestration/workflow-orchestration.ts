@@ -70,7 +70,16 @@ export async function getWork(
  */
 export async function updateWorkItem(req: HarmonyRequest, res: Response): Promise<void> {
   const { id } = req.params;
-  const { status, hits, results, scrollID, workflowStepIndex, errorMessage, duration, operation, outputItemSizes } = req.body;
+  const {
+    status,
+    hits,
+    results,
+    scrollID,
+    workflowStepIndex,
+    errorMessage,
+    duration,
+    operation,
+    outputItemSizes } = req.body;
   const totalItemsSize = req.body.totalItemsSize ? parseFloat(req.body.totalItemsSize) : 0;
 
   const update = {

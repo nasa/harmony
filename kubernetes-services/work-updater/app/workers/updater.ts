@@ -14,39 +14,41 @@ import { Worker } from '../../../../app/workers/worker';
 import env from '../util/env';
 
 /**
- * Updates the batch of work items. It is assumed that all the work items belong
- * to the same job. Currently, this function processes the updates sequentially, but it
- * may be changed to process them all at once in the future.
- * @param jobID - ID of the job that the work items belong to
+ * Group work item updates by its workflow step and returned the grouped work item updates
+ * as a map of workflow step to a list of work item updates on that workflow step.
  * @param updates - List of work item updates
- * @param logger - Logger to use
+ *
+ * @returns a map of workflow step to a list of work item updates on that workflow step.
  */
-function groupByWorkflowStepIndex(objects: WorkItemUpdateQueueItem[]): Record<number, WorkItemUpdateQueueItem[]> {
-  return objects.reduce((result, currentObject) => {
-    // Get the category value
-    const { workflowStepIndex } = currentObject.update;
+function groupByWorkflowStepIndex(
+  updates: WorkItemUpdateQueueItem[]): Record<number, WorkItemUpdateQueueItem[]> {
 
-    // Initialize an array for the category if it doesn't exist
+  return updates.reduce((result, currentUpdate) => {
+    const { workflowStepIndex } = currentUpdate.update;
+
+    // Initialize an array for the step if it doesn't exist
     if (!result[workflowStepIndex]) {
       result[workflowStepIndex] = [];
     }
 
-    // Add the current object to the category array
-    result[workflowStepIndex].push(currentObject);
+    result[workflowStepIndex].push(currentUpdate);
 
     return result;
   }, {} as Record<number, WorkItemUpdateQueueItem[]>);
 }
 
 /**
- * Updates the batch of work items. It is assumed that all the work items belong
- * to the same job. Currently, this function processes the updates sequentially, but it
- * may be changed to process them all at once in the future.
- * @param jobID - ID of the job that the work items belong to
+ * Updates the batch of work items.
+ * It is assumed that all the work items belong to the same job.
+ * It processes the work tiem updates in groups by the workflow step.
+ * @param jobID - ID of the job that the work item updates belong to
  * @param updates - List of work item updates
  * @param logger - Logger to use
  */
-async function handleBatchWorkItemUpdatesWithJobId(jobID: string, updates: WorkItemUpdateQueueItem[], logger: Logger): Promise<void> {
+async function handleBatchWorkItemUpdatesWithJobId(
+  jobID: string,
+  updates: WorkItemUpdateQueueItem[],
+  logger: Logger): Promise<void> {
   const startTime = new Date().getTime();
   logger.debug(`Processing ${updates.length} work item updates for job ${jobID}`);
   // group updates by workflow step index to make sure at least one completion check is performed for each step
