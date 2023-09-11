@@ -1,0 +1,12 @@
+{
+  "client": "harmony-test",
+  "callback": "http://example.com/callback",
+  "stagingLocation": "s3://some-bucket/public/some/prefix/",
+  "sources": [],
+  "format": { "mime": "image/png" },
+  "user": "test-user",
+  "subset": { "bbox": [-130, -45, 130, 45, 100] },
+  "isSynchronous": true,
+  "requestId": "c045c793-19f1-43b5-9547-c87a5c7dfadb",
+  "temporal": { "start": "1999-01-01T10:00:00Z", "end": "2020-02-20T15:00:00Z" }
+}

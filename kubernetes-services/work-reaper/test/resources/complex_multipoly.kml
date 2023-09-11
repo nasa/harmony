@@ -1,0 +1,55 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<kml>
+  <Document>
+    <Schema id="temp">
+      <SimpleField name="id" type="string" />
+    </Schema>
+    <Placemark>
+      <ExtendedData>
+        <SchemaData schemaUrl="#temp" />
+      </ExtendedData>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              -14.0948,31.3277
+              -21.8726,8.9666
+              20.3218,-40.6167
+              30.6274,-40.6167
+              58.4329,13.4388
+              35.0996,35.7999
+              5.5441,39.4943
+              -14.0948,31.3277
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+        <innerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              -10.5948,13.8277
+              2.433,32.2999
+              29.8496,30.7443
+              51.4329,13.4388
+              29.8496,-34.9778
+              21.0996,-37.5056
+              -16.2337,7.411
+              -10.5948,13.8277
+            </coordinates>
+          </LinearRing>
+        </innerBoundaryIs>
+      </Polygon>
+    </Placemark>
+    <Placemark>
+      <ExtendedData>
+        <SchemaData schemaUrl="#temp" />
+      </ExtendedData>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>-57.8447,37.7443 -33.5392,12.661 11.7663,48.2443 -18.1781,71.9665 -57.8447,37.7443</coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+  </Document>
+</kml>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document id="root_doc">
+<Schema name="southern_africa" id="southern_africa">
+	<SimpleField name="id" type="float"></SimpleField>
+</Schema>
+<Folder><name>southern_africa</name>
+  <Placemark>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+      <MultiGeometry><Polygon><outerBoundaryIs><LinearRing><coordinates>3.742050909452928,2.2918874020049174 15.217726082714876,-35.28532

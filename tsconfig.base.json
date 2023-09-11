@@ -1,13 +1,15 @@
 {
   "compilerOptions": {
-      "module": "commonjs",
-      "baseUrl": ".",
-      "moduleResolution": "node",
-      "target": "ES2021",
-      "esModuleInterop": true,
-      "allowJs": true,
-      "noImplicitAny": false,
-      "sourceMap": true,
-      "outDir": "built"
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "module": "commonjs",
+    "baseUrl": ".",
+    "moduleResolution": "node",
+    "target": "ES2021",
+    "esModuleInterop": true,
+    "allowJs": true,
+    "noImplicitAny": false,
+    "sourceMap": true,
+    "outDir": "built"
   }
 }
