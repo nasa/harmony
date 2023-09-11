@@ -16,8 +16,6 @@ import * as ogcCoveragesApi from './frontends/ogc-coverages';
 import serviceResponseRouter from './routers/backend-router';
 import logger from './util/log';
 import * as exampleBackend from '../example/http-backend';
-import WorkReaper from './workers/work-reaper';
-import WorkFailer from './workers/work-failer';
 import cmrCollectionReader from './middleware/cmr-collection-reader';
 
 /**

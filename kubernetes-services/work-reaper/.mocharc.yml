@@ -1,0 +1,11 @@
+reporter: mocha-multi
+reporterOptions: 'spec=-,mocha-junit-reporter=-'
+extension:
+  - js
+  - ts
+require:
+  - ts-node/register
+  - tsconfig-paths/register
+recursive: true
+exit: true
+timeout: 2000

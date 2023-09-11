@@ -18,7 +18,7 @@ export default class Reaper implements Worker {
    * @param jobStatus - a list of terminal job statuses
    * @returns Resolves when the request is complete
    */
-  async deleteTerminalWorkItems(notUpdatedForMinutes: number, jobStatus: JobStatus[]): Promise<void> {    
+  async deleteTerminalWorkItems(notUpdatedForMinutes: number, jobStatus: JobStatus[]): Promise<void> {
     let done = false;
     let startingId = 0;
     let totalDeleted = 0;
@@ -52,8 +52,8 @@ export default class Reaper implements Worker {
     log.info(`Work reaper delete terminal work items completed. Total work items deleted: ${totalDeleted}`);
   }
 
-  
- /**
+
+  /**
    * Find workflow steps that are older than notUpdatedForMinutes and delete them.
    * @param notUpdatedForMinutes - upper limit on the duration since the last update
    * @param jobStatus - a list of terminal job statuses
@@ -92,8 +92,8 @@ export default class Reaper implements Worker {
     log.info(`Work reaper delete terminal workflow steps completed. Total workflow steps deleted: ${totalDeleted}`);
   }
 
-  
-async start(): Promise<void> {
+
+  async start(): Promise<void> {
     let firstRun = true;
     log.info('Starting work reaper');
     while (true) {
