@@ -26,7 +26,6 @@ import { makeWorkScheduleRequest } from './work-item-polling';
  */
 export type WorkItemPreprocessInfo = {
   status?: WorkItemStatus;
-  // error message if status === FAILED
   errorMessage?: string;
   catalogItems: StacItem[];
   outputItemSizes: number[];
@@ -501,15 +500,15 @@ async function createNextWorkItems(
 }
 
 /**
- * Update job status/progress in response to a service provided work item update
- * IMPORTANT: This asynchronous function is called without awaiting, so any errors must be
- * handled in this function and no exceptions should be thrown since nothing will catch
- * them.
+ * Preprocess a work item and return the catalog items and result item size
+ * inside the return type WorkItemPreprocessInfo. This function can be called
+ * in parallel.
  *
- * @param jobId - job id
  * @param update - information about the work item update
  * @param operation - the DataOperation for the user's request
  * @param logger - the Logger for the request
+ *
+ * @returns work item preprocess result
  */
 export async function preprocessWorkItem(
   update: WorkItemUpdate,
@@ -551,15 +550,20 @@ export async function preprocessWorkItem(
 }
 
 /**
- * Update job status/progress in response to a service provided work item update
- * IMPORTANT: This asynchronous function is called without awaiting, so any errors must be
- * handled in this function and no exceptions should be thrown since nothing will catch
- * them.
+ * Process the work item update using the preprocessed result info and the work item info.
+ * Various other parameters are passed in to optimize the processing of a batch of work items.
+ * A database lock on the work item related job needs to be acquired before calling this function.
+ * This function should be called single threaded because it is inside a database transaction.
  *
- * @param jobId - job id
+ * @param tx - database transaction with lock on the related job in the jobs table
+ * @param job - job of the work item
  * @param update - information about the work item update
- * @param operation - the DataOperation for the user's request
  * @param logger - the Logger for the request
+ * @param checkCompletion - true if needs to check if the whole job has completed
+ * @param thisStep - the current workflow step the work item is being processed in
+ * @param nextStep - the next workflow step of the work item. If it has a string
+ *                   value of NO_NEXT_STEP, it means the current step is the last step
+ *                   and there is no next workflow step.
  */
 export async function processWorkItem(
   tx: Transaction,
@@ -683,8 +687,6 @@ export async function processWorkItem(
       allWorkItemsForStepComplete = (completedWorkItemCount == thisStep.workItemCount);
     }
 
-
-
     // The number of 'hits' returned by a query-cmr could be less than when CMR was first
     // queried by harmony due to metadata deletions from CMR, so we update the job to reflect
     // that there are fewer items and to know when no more query-cmr jobs should be created.
@@ -807,14 +809,11 @@ export async function processWorkItem(
 }
 
 /**
- * Update job status/progress in response to a service provided work item update
- * IMPORTANT: This asynchronous function is called without awaiting, so any errors must be
- * handled in this function and no exceptions should be thrown since nothing will catch
- * them.
+ * Process a list of work item updates
  *
  * @param jobId - job id
- * @param update - information about the work item update
- * @param operation - the DataOperation for the user's request
+ * @param workflowStepIndex - the current workflow step of the work item
+ * @param items - a list of work item update items
  * @param logger - the Logger for the request
  */
 export async function processWorkItems(
@@ -863,9 +862,6 @@ export async function processWorkItems(
 
 /**
  * Update job status/progress in response to a service provided work item update
- * IMPORTANT: This asynchronous function is called without awaiting, so any errors must be
- * handled in this function and no exceptions should be thrown since nothing will catch
- * them.
  *
  * @param jobId - job id
  * @param update - information about the work item update
