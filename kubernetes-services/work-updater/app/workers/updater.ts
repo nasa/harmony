@@ -14,7 +14,7 @@ import { Worker } from '../../../../app/workers/worker';
 import env from '../util/env';
 
 /**
- * Group work item updates by its workflow step and returned the grouped work item updates
+ * Group work item updates by its workflow step and return the grouped work item updates
  * as a map of workflow step to a list of work item updates on that workflow step.
  * @param updates - List of work item updates
  *
@@ -40,7 +40,7 @@ function groupByWorkflowStepIndex(
 /**
  * Updates the batch of work items.
  * It is assumed that all the work items belong to the same job.
- * It processes the work tiem updates in groups by the workflow step.
+ * It processes the work item updates in groups by the workflow step.
  * @param jobID - ID of the job that the work item updates belong to
  * @param updates - List of work item updates
  * @param logger - Logger to use
