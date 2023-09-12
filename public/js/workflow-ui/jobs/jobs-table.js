@@ -64,7 +64,6 @@ export default {
    */
   async init(currentUser, services, isAdminRoute, tableFilter) {
     formatDates('.date-td');
-    initTooltips('[data-bs-toggle="tooltip"]');
     initFilter(currentUser, services, isAdminRoute, tableFilter);
   },
 };
