@@ -17,6 +17,9 @@ export default interface WorkItemUpdate {
   // The ID of the scroll session (only used for the query cmr service)
   scrollID?: string;
 
+  // The workflowStepIndex of the work item
+  workflowStepIndex?: number;
+
   // The number of cmr hits (only used for the query cmr service)
   hits?: number;
 

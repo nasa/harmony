@@ -1,7 +1,11 @@
 import { Logger } from 'winston';
-import { handleWorkItemUpdate, handleWorkItemUpdateWithJobId } from '../../../../app/backends/workflow-orchestration/work-item-updates';
+import {
+  WorkItemUpdateQueueItem,
+  handleWorkItemUpdate,
+  handleWorkItemUpdateWithJobId,
+  preprocessWorkItem,
+  processWorkItems } from '../../../../app/backends/workflow-orchestration/work-item-updates';
 import { getJobIdForWorkItem } from '../../../../app/models/work-item';
-import WorkItemUpdate from '../../../../app/models/work-item-update';
 import { default as defaultLogger } from '../../../../app/util/log';
 import { WorkItemQueueType } from '../../../../app/util/queue/queue';
 import { getQueueForType } from '../../../../app/util/queue/queue-factory';
@@ -9,27 +13,63 @@ import sleep from '../../../../app/util/sleep';
 import { Worker } from '../../../../app/workers/worker';
 import env from '../util/env';
 
-type WorkItemUpdateQueueItem = {
-  update: WorkItemUpdate,
-  operation: object,
-};
+/**
+ * Group work item updates by its workflow step and return the grouped work item updates
+ * as a map of workflow step to a list of work item updates on that workflow step.
+ * @param updates - List of work item updates
+ *
+ * @returns a map of workflow step to a list of work item updates on that workflow step.
+ */
+function groupByWorkflowStepIndex(
+  updates: WorkItemUpdateQueueItem[]): Record<number, WorkItemUpdateQueueItem[]> {
+
+  return updates.reduce((result, currentUpdate) => {
+    const { workflowStepIndex } = currentUpdate.update;
+
+    // Initialize an array for the step if it doesn't exist
+    if (!result[workflowStepIndex]) {
+      result[workflowStepIndex] = [];
+    }
+
+    result[workflowStepIndex].push(currentUpdate);
+
+    return result;
+  }, {} as Record<number, WorkItemUpdateQueueItem[]>);
+}
 
 /**
- * Updates the batch of work items. It is assumed that all the work items belong
- * to the same job. Currently, this function processes the updates sequentially, but it
- * may be changed to process them all at once in the future.
- * @param jobID - ID of the job that the work items belong to
+ * Updates the batch of work items.
+ * It is assumed that all the work items belong to the same job.
+ * It processes the work item updates in groups by the workflow step.
+ * @param jobID - ID of the job that the work item updates belong to
  * @param updates - List of work item updates
  * @param logger - Logger to use
  */
-async function handleBatchWorkItemUpdatesWithJobId(jobID: string, updates: WorkItemUpdateQueueItem[], logger: Logger): Promise<void> {
-  // process each job's updates
+async function handleBatchWorkItemUpdatesWithJobId(
+  jobID: string,
+  updates: WorkItemUpdateQueueItem[],
+  logger: Logger): Promise<void> {
+  const startTime = new Date().getTime();
   logger.debug(`Processing ${updates.length} work item updates for job ${jobID}`);
-  await Promise.all(updates.map(async (item) => {
-    const { update, operation } = item;
-    await handleWorkItemUpdateWithJobId(jobID, update, operation, logger);
-  }));
-
+  // group updates by workflow step index to make sure at least one completion check is performed for each step
+  const groups = groupByWorkflowStepIndex(updates);
+  for (const workflowStepIndex of Object.keys(groups)) {
+    if (groups[workflowStepIndex].length == 1) {
+      const { update, operation } = groups[workflowStepIndex][0];
+      await handleWorkItemUpdateWithJobId(jobID, update, operation, logger);
+    } else {
+      const preprocessedWorkItems: WorkItemUpdateQueueItem[] = await Promise.all(
+        groups[workflowStepIndex].map(async (item: WorkItemUpdateQueueItem) => {
+          const { update, operation } = item;
+          const result = await preprocessWorkItem(update, operation, logger);
+          item.preprocessResult = result;
+          return item;
+        }));
+      await processWorkItems(jobID, parseInt(workflowStepIndex), preprocessedWorkItems, logger);
+    }
+  }
+  const durationMs = new Date().getTime() - startTime;
+  logger.debug('timing.HWIUWJI.batch.end', { durationMs });
 }
 
 /**
