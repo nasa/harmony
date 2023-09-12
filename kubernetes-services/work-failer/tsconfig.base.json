@@ -12,9 +12,6 @@
     "noImplicitAny": false,
     "sourceMap": true,
     "outDir": "built",
-    "types": [
-      "node"
-    ],
   },
   "include": [
     "./app",

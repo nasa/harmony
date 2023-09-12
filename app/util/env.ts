@@ -36,9 +36,6 @@ export interface IHarmonyServerEnv extends IHarmonyEnv {
   previewThreshold: number;
   uploadBucket: string;
   logViewerGroupId: string;
-  workFailerPeriodSec: number;
-  workFailerBatchSize: number;
-  failableWorkAgeMinutes: number;
   syncRequestPollIntervalMs: number;
   maxBatchInputs: number;
   maxBatchSizeInBytes: number;
@@ -102,18 +99,6 @@ class HarmonyServerEnv extends HarmonyEnv implements IHarmonyServerEnv {
 
   @IsNotEmpty()
   logViewerGroupId: string;
-
-  @IsInt()
-  @Min(1)
-  workFailerPeriodSec: number;
-
-  @IsInt()
-  @Min(1)
-  workFailerBatchSize: number;
-
-  @IsInt()
-  @Min(1)
-  failableWorkAgeMinutes: number;
 
   @IsInt()
   @Min(1)
