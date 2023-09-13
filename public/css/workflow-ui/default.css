@@ -43,6 +43,6 @@
     word-break: break-all;
 }
 
-.job-table-row {
+#workflow-ui-jobs-table .job-table-row {
     border-bottom-color: white;
 }
