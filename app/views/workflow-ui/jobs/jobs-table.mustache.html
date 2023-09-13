@@ -23,7 +23,7 @@
     </thead>
     <tbody>
         {{#jobs}}
-        <tr class='job-table-row' style="border-bottom-color: white;">
+        <tr class='job-table-row'>
             <th scope="row"><a href="workflow-ui/{{jobID}}{{dateQuery}}">{{jobID}}</a></th>
             <td>{{service_name}}</td>
             {{#isAdminRoute}}
@@ -36,9 +36,9 @@
             <td class="date-td" data-time="{{jobCreatedAt}}"></td>
             <td class="date-td" data-time="{{jobUpdatedAt}}"></td>
         </tr>
-        <th class="job-url-th" colspan="9" style="background: linear-gradient(to top, rgb(252, 251, 251), white); border-top-color:white; padding-bottom: .3rem;">
+        <th class="job-url-th" colspan="9">
             <i class="bi-clipboard text-primary copy-request" data-text="{{jobRequest}}"></i>
-            <span title="{{jobRequest}}" class="text-muted job-url-text" style="font-weight: normal; max-width: 100%; word-break: break-all;">{{jobUrl}}</span>
+            <span title="{{jobRequest}}" class="text-muted job-url-text">{{jobUrl}}</span>
         </th>
         {{/jobs}}
     </tbody>
