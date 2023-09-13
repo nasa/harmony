@@ -53,7 +53,7 @@ function initFilter(currentUser, services, isAdminRoute, tableFilter) {
 
 /**
  * Fallback method for copying text to clipboard.
- * @param {*} text - the text to copy
+ * @param text - the text to copy
  */
 function fallbackCopyTextToClipboard(text) {
   const textArea = document.createElement('textarea');
@@ -74,7 +74,7 @@ function fallbackCopyTextToClipboard(text) {
 
 /**
  * Method for copying the text to the clipboard.
- * @param {*} text - the text to copy
+ * @param text - the text to copy
  */
 async function copyTextToClipboard(text) {
   if (!navigator.clipboard) {
