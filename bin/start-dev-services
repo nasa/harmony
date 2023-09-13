@@ -1,0 +1,42 @@
+#!/bin/bash
+# create internal services for Harmony development
+
+env_save=$(export -p)
+set -a
+source "lib/util/env-defaults"
+source "env-defaults"
+source ".env"
+set +a
+eval "$env_save"
+
+# run harmony
+echo "Starting Harmony server..."
+npm run start-dev-fast > logs/server.log 2>&1 &
+
+# create the work scheduler
+echo "Starting the work scheduler..."
+pushd kubernetes-services/work-scheduler > /dev/null
+export PORT=5001  
+npm run start-dev-fast > logs/work-scheduler.log 2>&1 &
+popd > /dev/null
+
+sleep 5
+
+# create the work updaters
+export LOCALSTACK_HOST=localhost
+echo "Starting the large job work updater..."
+pushd kubernetes-services/work-updater > /dev/null
+export PORT=5002
+export DEBUG_PORT=9202
+export WORK_ITEM_UPDATE_QUEUE_TYPE=large
+npm run start-dev-fast > logs/work-update-large.log 2>&1 &
+
+sleep 5
+
+echo "Starting the small job work updater..."
+export PORT=5003
+export DEBUG_PORT=9203
+export WORK_ITEM_UPDATE_QUEUE_TYPE=small
+npm run start-dev-fast > logs/work-update-small.log 2>&1 &
+
+popd > /dev/null

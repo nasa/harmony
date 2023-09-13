@@ -19,8 +19,6 @@ export function logExecutionTime<T extends (...args: any[]) => any>(func: T,
     const durationMs = endTime - startTime;
     logger.debug(`timing.${functionName}.end`, { durationMs });
 
-    console.log(`Function ${functionName} took ${durationMs} milliseconds to execute.`);
-
     return result;
   };
 }
@@ -44,8 +42,6 @@ export async function logAsyncExecutionTime<T extends (...args: any[]) => Promis
     const endTime = new Date().getTime(); // Record end time
     const durationMs = endTime - startTime;
     logger.debug(`timing.${functionName}.end`, { durationMs });
-
-    console.log(`Function ${functionName} took ${durationMs} milliseconds to execute.`);
 
     return result;
   };

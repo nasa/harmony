@@ -505,6 +505,7 @@ describe('Workflow chaining for a collection configured for swot reprojection an
       scaleExtent: '0,2500000.3,1500000,3300000',
       scaleSize: '1.1,2',
       format: 'application/x-zarr',
+      ignoreErrors: false,
     };
 
     hookRangesetRequest('1.0.0', collection, 'all', { query: reprojectAndZarrQuery });
@@ -593,6 +594,7 @@ describe('Workflow chaining for a collection configured for swot reprojection an
       scaleExtent: '0,2500000.3,1500000,3300000',
       scaleSize: '1.1,2',
       format: 'application/x-zarr',
+      ignoreErrors: false,
     };
 
     hookRangesetRequest('1.0.0', collection, 'all', { query: reprojectAndZarrQuery });

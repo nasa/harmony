@@ -263,6 +263,11 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   result.get('/stac/:jobId', asyncHandler(getStacCatalog));
   result.get('/stac/:jobId/:itemIndex', asyncHandler(getStacItem));
 
+  // Kubernetes readiness probe for Harmony in a Box
+  result.get('/readiness', async (_req, res, _next: Function): Promise<void> => {
+    res.send('OK');
+  });
+
   result.get('/*', () => { throw new NotFoundError('The requested page was not found.'); });
   result.post('/*', () => { throw new NotFoundError('The requested POST page was not found.'); });
   return result;
