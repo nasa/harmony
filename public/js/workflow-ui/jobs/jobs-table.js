@@ -1,4 +1,4 @@
-import { formatDates, initTooltips } from '../table.js';
+import { formatDates } from '../table.js';
 
 /**
  * Build the jobs filter with filter facets like 'status' and 'user'.
@@ -51,6 +51,51 @@ function initFilter(currentUser, services, isAdminRoute, tableFilter) {
 }
 
 /**
+ * Fallback method for copying text to clipboard.
+ * @param {*} text - the text to copy
+ */
+function fallbackCopyTextToClipboard(text) {
+  const textArea = document.createElement('textarea');
+  textArea.value = text;
+  // Avoid scrolling to bottom
+  textArea.style.top = '0';
+  textArea.style.left = '0';
+  textArea.style.position = 'fixed';
+  document.body.appendChild(textArea);
+  textArea.focus();
+  textArea.select();
+  try {
+    document.execCommand('copy');
+  } finally {
+    document.body.removeChild(textArea);
+  }
+}
+
+/**
+ * Method for copying the text to the clipboard.
+ * @param {*} text - the text to copy
+ */
+async function copyTextToClipboard(text) {
+  if (!navigator.clipboard) {
+    fallbackCopyTextToClipboard(text);
+    return;
+  }
+  await navigator.clipboard.writeText(text);
+}
+
+/**
+ * Intitialize the copy click handler for all copy buttons.
+ */
+async function initCopyHandler() {
+  // https://stackoverflow.com/questions/400212/how-do-i-copy-to-the-clipboard-in-javascript
+  document.querySelectorAll('.copy-request').forEach((el) => {
+    el.addEventListener('click', (event) => {
+      copyTextToClipboard(event.target.getAttribute('data-text'));
+    });
+  });
+}
+
+/**
  * Handles jobs table logic (formatting, building filters, etc.).
  */
 export default {
@@ -65,5 +110,6 @@ export default {
   async init(currentUser, services, isAdminRoute, tableFilter) {
     formatDates('.date-td');
     initFilter(currentUser, services, isAdminRoute, tableFilter);
+    initCopyHandler();
   },
 };
