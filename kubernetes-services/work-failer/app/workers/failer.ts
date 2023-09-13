@@ -138,7 +138,7 @@ export default class Failer implements Worker {
     log.info('Starting work failer');
     while (true) {
       if (!firstRun) {
-        await sleep(env.workReaperPeriodSec * 1000);
+        await sleep(env.workFailerPeriodSec * 1000);
       }
       try {
         await this.handleWorkItemUpdates(
