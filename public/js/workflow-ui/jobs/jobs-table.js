@@ -92,7 +92,7 @@ async function initCopyHandler() {
   document.querySelectorAll('.copy-request').forEach((el) => {
     el.addEventListener('click', (event) => {
       copyTextToClipboard(event.target.getAttribute('data-text'));
-      toasts.showUpper('Copied to clipboard!');
+      toasts.showUpper('✅ Copied to clipboard');
     });
   });
 }
