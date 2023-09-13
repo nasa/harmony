@@ -27,7 +27,6 @@ export default class Reaper implements Worker {
 
     while (!done) {
       try {
-        console.log(`DB: ${JSON.stringify(db, null, 2)}`);
         const workItemIds = await getWorkItemIdsByJobUpdateAgeAndStatus(
           db, notUpdatedForMinutes, jobStatus, startingId, batchSize,
         );

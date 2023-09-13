@@ -9,7 +9,7 @@ import Reaper from './workers/reaper';
  * Start the application
  * @returns An object containing the running components
  */
-export default function start(): Server {
+function start(): Server {
   // start the reaper
   const reaper = new Reaper();
   reaper.start().catch((e) => {
