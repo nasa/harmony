@@ -1,4 +1,5 @@
 import { formatDates } from '../table.js';
+import toasts from '../toasts.js';
 
 /**
  * Build the jobs filter with filter facets like 'status' and 'user'.
@@ -91,6 +92,7 @@ async function initCopyHandler() {
   document.querySelectorAll('.copy-request').forEach((el) => {
     el.addEventListener('click', (event) => {
       copyTextToClipboard(event.target.getAttribute('data-text'));
+      toasts.showUpper('Copied to clipboard!');
     });
   });
 }
