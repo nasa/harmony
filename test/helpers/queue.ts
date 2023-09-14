@@ -17,8 +17,9 @@ let typeQueues;
  */
 async function processSchedulerQueue(reqLogger: Logger): Promise<void> {
   const schedulerQueue = qf.getWorkSchedulerQueue();
-  // ten is the max batch size for SQS FIFO queues
-  const queueItems = await schedulerQueue.getMessages(10);
+  // ten is the max batch size for SQS FIFO queues, but for tests which use a memory queue
+  // we'll use -1 to indicate to process all the messages
+  const queueItems = await schedulerQueue.getMessages(-1);
   reqLogger.debug(`Found ${queueItems.length} items in the scheduler queue`);
   for (const queueItem of queueItems) {
     const serviceID = queueItem.body;

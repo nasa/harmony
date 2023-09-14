@@ -1,30 +1,16 @@
-import { Logger } from 'winston';
 import _ from 'lodash';
-import { JobStatus, terminalStates } from '../models/job';
-import { getWorkItemIdsByJobUpdateAgeAndStatus, deleteWorkItemsById } from '../models/work-item';
-import { getWorkflowStepIdsByJobUpdateAgeAndStatus, deleteWorkflowStepsById } from '../models/workflow-steps';
+import { JobStatus, terminalStates } from '../../../../app/models/job';
+import { getWorkItemIdsByJobUpdateAgeAndStatus, deleteWorkItemsById } from '../../../../app/models/work-item';
+import { getWorkflowStepIdsByJobUpdateAgeAndStatus, deleteWorkflowStepsById } from '../../../../app/models/workflow-steps';
+import db from '../../../../app/util/db';
+import log from '../../../../app/util/log';
+import sleep from '../../../../app/util/sleep';
+import { Worker } from '../../../../app/workers/worker';
 import env from '../util/env';
-import { Worker } from './worker';
-import db from '../util/db';
-import sleep from '../util/sleep';
 
-export interface WorkReaperConfig {
-  logger: Logger;
-}
 
-/**
- * Delete the work items and workflow steps associated with terminal jobs
- * that haven't been updated for a configurable amount of minutes.
- */
-export default class WorkReaper implements Worker {
-  isRunning: boolean;
 
-  logger: Logger;
-
-  constructor(config: WorkReaperConfig) {
-    this.logger = config.logger;
-  }
-
+export default class Reaper implements Worker {
 
   /**
    * Find work items that are older than notUpdatedForMinutes and delete them.
@@ -37,7 +23,7 @@ export default class WorkReaper implements Worker {
     let startingId = 0;
     let totalDeleted = 0;
     const batchSize = env.workReaperBatchSize;
-    this.logger.info('Work reaper delete terminal work items started.');
+    log.info('Work reaper delete terminal work items started.');
 
     while (!done) {
       try {
@@ -47,10 +33,10 @@ export default class WorkReaper implements Worker {
         if (workItemIds.length > 0) {
           const numItemsDeleted = await deleteWorkItemsById(db, workItemIds);
           totalDeleted += numItemsDeleted;
-          this.logger.info(`Work reaper removed ${numItemsDeleted} work items, starting id: ${startingId}.`);
+          log.info(`Work reaper removed ${numItemsDeleted} work items, starting id: ${startingId}.`);
           startingId = workItemIds[workItemIds.length - 1];
         } else {
-          this.logger.info('Work reaper did not find any work items to delete');
+          log.info('Work reaper did not find any work items to delete');
         }
 
         if (workItemIds.length < batchSize) {
@@ -58,12 +44,13 @@ export default class WorkReaper implements Worker {
         }
       } catch (e) {
         done = true;
-        this.logger.error('Error attempting to delete terminal work items');
-        this.logger.error(e);
+        log.error('Error attempting to delete terminal work items');
+        log.error(e);
       }
     }
-    this.logger.info(`Work reaper delete terminal work items completed. Total work items deleted: ${totalDeleted}`);
+    log.info(`Work reaper delete terminal work items completed. Total work items deleted: ${totalDeleted}`);
   }
+
 
   /**
    * Find workflow steps that are older than notUpdatedForMinutes and delete them.
@@ -76,7 +63,7 @@ export default class WorkReaper implements Worker {
     let startingId = 0;
     let totalDeleted = 0;
     const batchSize = env.workReaperBatchSize;
-    this.logger.info('Work reaper delete terminal workflow steps started.');
+    log.info('Work reaper delete terminal workflow steps started.');
 
     while (!done) {
       try {
@@ -86,10 +73,10 @@ export default class WorkReaper implements Worker {
         if (workflowSteps.length > 0) {
           const numItemsDeleted = await deleteWorkflowStepsById(db, workflowSteps);
           totalDeleted += numItemsDeleted;
-          this.logger.info(`Work reaper removed ${numItemsDeleted} workflow steps, starting id: ${startingId}.`);
+          log.info(`Work reaper removed ${numItemsDeleted} workflow steps, starting id: ${startingId}.`);
           startingId = workflowSteps[workflowSteps.length - 1];
         } else {
-          this.logger.info('Work reaper did not find any workflow steps to delete');
+          log.info('Work reaper did not find any workflow steps to delete');
         }
 
         if (workflowSteps.length < batchSize) {
@@ -97,18 +84,18 @@ export default class WorkReaper implements Worker {
         }
       } catch (e) {
         done = true;
-        this.logger.error('Error attempting to delete terminal workflow steps');
-        this.logger.error(e);
+        log.error('Error attempting to delete terminal workflow steps');
+        log.error(e);
       }
     }
-    this.logger.info(`Work reaper delete terminal workflow steps completed. Total workflow steps deleted: ${totalDeleted}`);
+    log.info(`Work reaper delete terminal workflow steps completed. Total workflow steps deleted: ${totalDeleted}`);
   }
 
+
   async start(): Promise<void> {
-    this.isRunning = true;
     let firstRun = true;
-    this.logger.info('Starting work reaper');
-    while (this.isRunning) {
+    log.info('Starting work reaper');
+    while (true) {
       if (!firstRun) {
         await sleep(env.workReaperPeriodSec * 1000);
       }
@@ -122,15 +109,11 @@ export default class WorkReaper implements Worker {
           terminalStates,
         );
       } catch (e) {
-        this.logger.error('Work reaper failed to delete terminal work');
-        this.logger.error(e);
+        log.error('Work reaper failed to delete terminal work');
+        log.error(e);
       } finally {
         firstRun = false;
       }
     }
-  }
-
-  async stop(): Promise<void> {
-    this.isRunning = false;
   }
 }

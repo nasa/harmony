@@ -34,12 +34,17 @@ export class MemoryQueue extends Queue {
   }
 
   async getMessages(num: number, _waitTimeSeconds: number): Promise<ReceivedMessage[]> {
-    const messages = this.messages.filter((m) => m.isVisible).slice(0, num);
-    if (messages.length > 0) {
-      messages.forEach((m) => {
-        m.isVisible = false;
-        m.receipt = uuid();
-      });
+    let messages;
+    if (num === -1) { // Return all the messages
+      messages = this.messages.filter((m) => m.isVisible);
+    } else {
+      messages = this.messages.filter((m) => m.isVisible).slice(0, num);
+      if (messages.length > 0) {
+        messages.forEach((m) => {
+          m.isVisible = false;
+          m.receipt = uuid();
+        });
+      }
     }
     return messages;
   }

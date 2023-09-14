@@ -1,12 +1,9 @@
 import express from 'express';
 import env from './util/env';
-import log, { default as defaultLogger } from '../../../app/util/log';
+import log from '../../../app/util/log';
 import router from './routers/router';
 import { Server } from 'http';
 import Updater from './workers/updater';
-import { eventEmitter } from '../../../app/events';
-import WorkItem, { WorkItemEvent } from '../../../app/models/work-item';
-import { getWorkSchedulerQueue } from '../../../app/util/queue/queue-factory';
 
 /**
  * Start the application
@@ -31,18 +28,6 @@ export default function start(): Server {
   });
 }
 
-// Listen for work items being created and put a message on the scheduler queue asking it to
-// schedule some WorkItems for the service
-eventEmitter.on(WorkItemEvent.CREATED, async (workItem: WorkItem) => {
-  if (env.useServiceQueues) {
-    const { serviceID } = workItem;
-    defaultLogger.debug(`Work item created for service ${serviceID}, putting message on scheduler queue`);
-    const queue = getWorkSchedulerQueue();
-    await queue.sendMessage(serviceID);
-  }
-});
-
 if (require.main === module) {
   start();
 }
-

@@ -38,5 +38,22 @@ export PORT=5003
 export DEBUG_PORT=9203
 export WORK_ITEM_UPDATE_QUEUE_TYPE=small
 npm run start-dev-fast > logs/work-update-small.log 2>&1 &
+popd > /dev/null
 
+sleep 5
+
+echo "Starting the work reaper..."
+pushd kubernetes-services/work-reaper > /dev/null
+export PORT=5004
+export DEBUG_PORT=9204
+npm run start-dev-fast > logs/work-reaper.log 2>&1 &
+popd > /dev/null
+
+sleep 5
+
+echo "Starting the work failer..."
+pushd kubernetes-services/work-failer > /dev/null
+export PORT=5005
+export DEBUG_PORT=9205
+npm run start-dev-fast > logs/work-failer.log 2>&1 &
 popd > /dev/null

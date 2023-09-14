@@ -16,8 +16,6 @@ import * as ogcCoveragesApi from './frontends/ogc-coverages';
 import serviceResponseRouter from './routers/backend-router';
 import logger from './util/log';
 import * as exampleBackend from '../example/http-backend';
-import WorkReaper from './workers/work-reaper';
-import WorkFailer from './workers/work-failer';
 import cmrCollectionReader from './middleware/cmr-collection-reader';
 
 /**
@@ -152,8 +150,6 @@ function buildFrontendServer(port: number, hostBinding: string, config: RouterCo
 export function start(config: Record<string, string>): {
   frontend: Server;
   backend: Server;
-  workReaper: WorkReaper;
-  workFailer: WorkFailer;
 } {
 
   // Log unhandled promise rejections and do not crash the node process
@@ -173,25 +169,7 @@ export function start(config: Record<string, string>): {
   // Setup the backend server to accept callbacks from backend services
   const backend = buildBackendServer(backendPort, config.HOST_BINDING);
 
-  let workReaper;
-  if (config.startWorkReaper !== 'false') {
-    const reaperConfig = {
-      logger: logger.child({ application: 'work-reaper' }),
-    };
-    workReaper = new WorkReaper(reaperConfig);
-    workReaper.start();
-  }
-
-  let workFailer;
-  if (config.startWorkFailer !== 'false') {
-    const failerConfig = {
-      logger: logger.child({ application: 'work-failer' }),
-    };
-    workFailer = new WorkFailer(failerConfig);
-    workFailer.start();
-  }
-
-  return { frontend, backend, workReaper, workFailer };
+  return { frontend, backend };
 }
 
 /**
