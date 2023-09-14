@@ -1,21 +1,19 @@
 import { describe } from 'mocha';
-import MockDate from 'mockdate';
-import { buildJob } from '../helpers/jobs';
-import { Job, JobStatus } from '../../app/models/job';
-import WorkItem, { getWorkItemsByJobId } from '../../app/models/work-item';
-import { hookTransaction, truncateAll } from '../helpers/db';
-import { buildWorkItem } from '../helpers/work-items';
-import logger from '../../app/util/log';
-import db from '../../app/util/db';
 import { expect } from 'chai';
-import WorkFailer, { WorkFailerConfig } from '../../app/workers/work-failer';
-import { WorkItemStatus } from '../../app/models/work-item-interface';
-import env from '../../app/util/env';
-import { buildWorkflowStep } from '../helpers/workflow-steps';
+import MockDate from 'mockdate';
+import { buildJob } from './helpers/jobs';
+import { Job, JobStatus } from '../../../app/models/job';
+import WorkItem, { getWorkItemsByJobId } from '../../../app/models/work-item';
+import { hookTransaction, truncateAll } from './helpers/db';
+import { buildWorkItem } from './helpers/work-items';
+import db from '../../../app/util/db';
+import WorkFailer from '../app/workers/failer';
+import { WorkItemStatus } from '../../../app/models/work-item-interface';
+import env from '../../../app/util/env';
+import { buildWorkflowStep } from './helpers/workflow-steps';
 
 
-const config: WorkFailerConfig = { logger };
-const workFailer = new WorkFailer(config);
+const workFailer = new WorkFailer();
 
 // 11 hours -- any RUNNING items that haven't been updatedAt for this long should get picked up
 // by the WorkFailer

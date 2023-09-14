@@ -142,6 +142,7 @@ const stateMachine = createMachine(
     id: 'job',
     initial: 'accepted',
     strict: true,
+    predictableActionArguments: true,
     states: {
       accepted: {
         id: JobStatus.ACCEPTED,

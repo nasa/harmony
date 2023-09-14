@@ -3,16 +3,16 @@ kind: Deployment
 metadata:
   name: harmony-work-scheduler
   labels:
-    name: harmony
+    name: harmony-work-scheduler
 spec:
   replicas: $SCHEDULER_POD_REPLICAS
   selector:
     matchLabels:
-      name: harmony
+      name: harmony-work-scheduler
   template:
     metadata:
       labels:
-        name: harmony
+        name: harmony-work-scheduler
     spec:
       containers:
         - name: harmony-work-scheduler
@@ -44,5 +44,5 @@ spec:
       targetPort: 5000
       protocol: TCP
   selector:
-    name: harmony
+    name: harmony-work-scheduler
   type: ClusterIP

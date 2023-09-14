@@ -84,22 +84,6 @@ ADMIN_GROUP_ID=9b359064-287f-411f-b2cc-ed4429676900
 # The EDL Group ID for the group whose users can access logs in the workflow-ui for their own jobs or shareable jobs
 LOG_VIEWER_GROUP_ID=0cf2a427-96cc-453e-ae44-e28dd0958738
 
-# The time (in seconds) between invocations of the work reaper service
-WORK_REAPER_PERIOD_SEC=360
-
-# WorkItems and WorkflowSteps (in a terminal state) older than this many minutes are checked by the work reaper
-REAPABLE_WORK_AGE_MINUTES=1440
-
-# The batch size of the work reaper service
-WORK_REAPER_BATCH_SIZE=2000
-
-# The time (in seconds) between invocations of the work failer service
-WORK_FAILER_PERIOD_SEC=120
-
-# WorkItems that have not been updated for more than this many minutes are
-# updated by the work failer (resulting either in job and work item failure or a retry)
-FAILABLE_WORK_AGE_MINUTES=1
-
 # The number of ms to wait between polling to check whether a synchronous request completed
 SYNC_REQUEST_POLL_INTERVAL_MS=100
 
@@ -111,9 +95,6 @@ MAX_BATCH_INPUTS=1000000000000
 
 # The upper limit on the combined sizes of all the files in a batch
 MAX_BATCH_SIZE_IN_BYTES=5000000000
-
-# The batch size used by work-failer. Set it to 0 will effectively disable work-failer.
-WORK_FAILER_BATCH_SIZE=1000
 
 # The fraction of back-end get work requests we want to trace with open telemetry
 GET_WORK_SAMPLE_RATIO=0.01
@@ -240,6 +221,12 @@ LARGE_WORK_UPDATER_POD_REPLICAS=1
 # The number of update queue processors to run for the small work-item queue
 SMALL_WORK_UPDATER_POD_REPLICAS=1
 
+# The number of work reaper pods to run
+WORK_REAPER_POD_REPLICAS=1
+
+# The number of work failer pods to run
+WORK_FAILER_POD_REPLICAS=1
+
 # The service runner image used as a sidecar for polling for work for
 SERVICE_RUNNER_REQUESTS_CPU=128m
 SERVICE_RUNNER_REQUESTS_MEMORY=128Mi
@@ -260,6 +247,20 @@ WORK_ITEM_UPDATER_REQUESTS_MEMORY=128Mi
 WORK_ITEM_UPDATER_LIMITS_CPU=1024m
 WORK_ITEM_UPDATER_LIMITS_MEMORY=512Mi
 WORK_ITEM_UPDATER_IMAGE=harmonyservices/work-updater:latest
+
+# work reaper
+WORK_REAPER_REQUESTS_CPU=128m
+WORK_REAPER_REQUESTS_MEMORY=128Mi
+WORK_REAPER_LIMITS_CPU=512m
+WORK_REAPER_LIMITS_MEMORY=512Mi
+WORK_REAPER_IMAGE=harmonyservices/work-reaper:latest
+
+# work failer
+WORK_FAILER_REQUESTS_CPU=128m
+WORK_FAILER_REQUESTS_MEMORY=128Mi
+WORK_FAILER_LIMITS_CPU=512m
+WORK_FAILER_LIMITS_MEMORY=512Mi
+WORK_FAILER_IMAGE=harmonyservices/work-failer:latest
 
 # backend services
 HARMONY_GDAL_ADAPTER_IMAGE=ghcr.io/nasa/harmony-gdal-adapter:latest

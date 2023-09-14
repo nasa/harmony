@@ -1,13 +1,13 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
 import MockDate from 'mockdate';
-import { buildJob } from '../helpers/jobs';
-import { buildWorkflowStep } from '../helpers/workflow-steps';
-import { deleteWorkflowStepsById, getWorkflowStepIdsByJobUpdateAgeAndStatus } from '../../app/models/workflow-steps';
-import { JobStatus } from '../../app/models/job';
-import { deleteWorkItemsById, getWorkItemIdsByJobUpdateAgeAndStatus } from '../../app/models/work-item';
-import { hookTransaction, truncateAll } from '../helpers/db';
-import { buildWorkItem } from '../helpers/work-items';
+import { buildJob } from './helpers/jobs';
+import { buildWorkflowStep } from './helpers/workflow-steps';
+import { deleteWorkflowStepsById, getWorkflowStepIdsByJobUpdateAgeAndStatus } from '../../../app/models/workflow-steps';
+import { JobStatus } from '../../../app/models/job';
+import { deleteWorkItemsById, getWorkItemIdsByJobUpdateAgeAndStatus } from '../../../app/models/work-item';
+import { hookTransaction, truncateAll } from './helpers/db';
+import { buildWorkItem } from './helpers/work-items';
 
 describe('WorkReaper-related functions', function () {
   const newDate = '1/1/2000';
