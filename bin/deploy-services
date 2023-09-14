@@ -5,6 +5,10 @@ env_save=$(export -p)
 set -a
 source "lib/util/env-defaults"
 source "env-defaults"
+source "./kubernetes-services/work-scheduler/env-defaults"
+source "./kubernetes-services/work-updater/env-defaults"
+source "./kubernetes-services/work-reaper/env-defaults"
+source "./kubernetes-services/work-failer/env-defaults"
 source ".env"
 set +ax
 eval "$env_save"
@@ -49,6 +53,14 @@ if [ ! "$LOCAL_DEV" = true ]; then
   file="kubernetes-services/work-reaper/config/service-template.yaml"
   if [ ! -f "$file" ]; then
     echo "work reaper template was not found."
+    exit 1
+  fi
+  envsubst < $file | kubectl apply -f - -n harmony
+
+  # create the work failer
+  file="kubernetes-services/work-failer/config/service-template.yaml"
+  if [ ! -f "$file" ]; then
+    echo "work failer template was not found."
     exit 1
   fi
   envsubst < $file | kubectl apply -f - -n harmony
