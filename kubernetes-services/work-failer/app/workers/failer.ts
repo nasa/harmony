@@ -145,7 +145,7 @@ export default class Failer implements Worker {
           env.failableWorkAgeMinutes,
         );
       } catch (e) {
-        log.error('Work reaper failed to delete terminal work');
+        log.error('Work failer failed to delete terminal work');
         log.error(e);
       } finally {
         firstRun = false;
