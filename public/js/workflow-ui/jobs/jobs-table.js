@@ -92,7 +92,10 @@ async function initCopyHandler() {
   document.querySelectorAll('.copy-request').forEach((el) => {
     el.addEventListener('click', (event) => {
       copyTextToClipboard(event.target.getAttribute('data-text'));
-      toasts.showUpper('✅ Copied to clipboard');
+      const isTruncated = event.target.getAttribute('data-truncated') === 'true';
+      toasts.showUpper(
+          `✅ Copied to clipboard${isTruncated ? '. WARNING: this request was truncated due to length constraints.' : ''}`,
+      );
     });
   });
 }
