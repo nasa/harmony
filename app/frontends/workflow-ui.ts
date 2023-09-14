@@ -1,7 +1,7 @@
 import { Response, NextFunction } from 'express';
 import { sanitizeImage, truncateString } from '@harmony/util/string';
 import { getJobIfAllowed } from '../util/job';
-import { Job, JobStatus, JobQuery } from '../models/job';
+import { Job, JobStatus, JobQuery, TEXT_LIMIT } from '../models/job';
 import { getWorkItemById, queryAll } from '../models/work-item';
 import { ForbiddenError, NotFoundError, RequestValidationError } from '../util/errors';
 import { getPagingParams, getPagingLinks, setPagingHeaders } from '../util/pagination';
@@ -147,6 +147,10 @@ function jobRenderingFunctions(logger: Logger, requestQuery: Record<string, any>
         logger.error(e);
         return this.request;
       }
+    },
+    jobRequestIsTruncated(): boolean {
+      const req = this.request;
+      return req && (req.length >= TEXT_LIMIT) && req.endsWith('..');
     },
     jobUrl(): string {
       try {
