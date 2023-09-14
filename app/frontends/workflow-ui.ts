@@ -152,7 +152,7 @@ function jobRenderingFunctions(logger: Logger, requestQuery: Record<string, any>
       const req = this.request;
       return req && (req.length >= TEXT_LIMIT) && req.endsWith('..');
     },
-    jobUrl(): string {
+    jobRequestDisplay(): string {
       try {
         const url = new URL(this.request);
         let { pathname } = url;
