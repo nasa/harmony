@@ -1,16 +1,14 @@
-import { Logger } from 'winston';
-import WorkItem, { computeWorkItemDurationOutlierThresholdForJobService, getWorkItemsByUpdateAgeAndStatus } from '../models/work-item';
+import _ from 'lodash';
+import { JobStatus } from '../../../../app/models/job';
+import WorkItem, { computeWorkItemDurationOutlierThresholdForJobService, getWorkItemsByUpdateAgeAndStatus } from '../../../../app/models/work-item';
+import db from '../../../../app/util/db';
+import log from '../../../../app/util/log';
+import sleep from '../../../../app/util/sleep';
+import { Worker } from '../../../../app/workers/worker';
+import { WorkItemStatus } from '../../../../app/models/work-item-interface';
+import { handleWorkItemUpdateWithJobId } from '../../../../app/backends/workflow-orchestration/work-item-updates';
 import env from '../util/env';
-import { Worker } from './worker';
-import db from '../util/db';
-import sleep from '../util/sleep';
-import { JobStatus } from '../models/job';
-import { WorkItemStatus } from '../models/work-item-interface';
-import { handleWorkItemUpdateWithJobId } from '../backends/workflow-orchestration/work-item-updates';
 
-export interface WorkFailerConfig {
-  logger: Logger;
-}
 
 /**
  * Construct a message indicating that the given work item has exceeded the given duration
@@ -23,19 +21,7 @@ function failedMessage(itemId: number, duration: number): string {
   return `Work item ${itemId} has exceeded the ${duration} ms duration threshold.`;
 }
 
-/**
- * Updates work items to status=FAILED for work items that haven't been updated
- * for a specified duration (env.workFailerPeriodSec). If retries haven't been exhausted,
- * work item statuses may be reset to READY instead.
- */
-export default class WorkFailer implements Worker {
-  isRunning: boolean;
-
-  logger: Logger;
-
-  constructor(config: WorkFailerConfig) {
-    this.logger = config.logger;
-  }
+export default class Failer implements Worker {
 
   /**
    * Get expired work items that are older than lastUpdateOlderThanMinutes.
@@ -95,16 +81,16 @@ export default class WorkFailer implements Worker {
     let startingId = 0;
     let numExpired = 0;
     const batchSize = env.workFailerBatchSize;
-    this.logger.info('Work failer processing started.');
+    log.info('Work failer processing started.');
 
     while (!done) {
-      const { workItems, jobServiceThresholds, maxId: newId } = await this.getExpiredWorkItems(lastUpdateOlderThanMinutes,  startingId, batchSize);
+      const { workItems, jobServiceThresholds, maxId: newId } = await this.getExpiredWorkItems(lastUpdateOlderThanMinutes, startingId, batchSize);
 
       if (newId > startingId) {
         if (workItems.length > 0) {
           numExpired += workItems.length;
           for (const workItem of workItems) {
-            this.logger.warn(`expiring work item ${workItem.id}`, { jobId: workItem.jobID, workItemId: workItem.id });
+            log.warn(`expiring work item ${workItem.id}`, { jobId: workItem.jobID, workItemId: workItem.id });
           }
           const jobIds = new Set(workItems.map((item) => item.jobID));
           for (const jobId of jobIds) {
@@ -112,10 +98,10 @@ export default class WorkFailer implements Worker {
             try {
               const itemsForJob = workItems.filter((item) => item.jobID === jobId);
               await Promise.all(itemsForJob.map((item) => {
-                const workItemLogger = this.logger.child({ workItemId: item.id });
+                const workItemlog = log.child({ workItemId: item.id });
                 const key = `${jobId}${item.serviceID}`;
                 const message = failedMessage(item.id, jobServiceThresholds[key]);
-                workItemLogger.debug(message);
+                workItemlog.debug(message);
                 return handleWorkItemUpdateWithJobId(
                   jobId,
                   {
@@ -124,11 +110,11 @@ export default class WorkFailer implements Worker {
                     errorMessage: message,
                   },
                   null,
-                  workItemLogger);
+                  workItemlog);
               }));
             } catch (e) {
-              this.logger.error(`Error attempting to process work item updates for job ${jobId}.`);
-              this.logger.error(e);
+              log.error(`Error attempting to process work item updates for job ${jobId}.`);
+              log.error(e);
             }
           }
 
@@ -136,7 +122,7 @@ export default class WorkFailer implements Worker {
             done = true;
           }
 
-          this.logger.info('Work failer processed work item updates for ' +
+          log.info('Work failer processed work item updates for ' +
             `${jobIds.size} jobs and ${workItems.length} work items, starting id: ${startingId}.`);
         }
         startingId = newId;
@@ -144,14 +130,13 @@ export default class WorkFailer implements Worker {
         done = true;
       }
     }
-    this.logger.info(`Work failer processing completed. Total work items updated: ${numExpired}`);
+    log.info(`Work failer processing completed. Total work items updated: ${numExpired}`);
   }
 
   async start(): Promise<void> {
-    this.isRunning = true;
     let firstRun = true;
-    this.logger.info('Starting work failer');
-    while (this.isRunning) {
+    log.info('Starting work failer');
+    while (true) {
       if (!firstRun) {
         await sleep(env.workFailerPeriodSec * 1000);
       }
@@ -160,15 +145,11 @@ export default class WorkFailer implements Worker {
           env.failableWorkAgeMinutes,
         );
       } catch (e) {
-        this.logger.error('Work failer encountered an unexpected error');
-        this.logger.error(e);
+        log.error('Work failer failed to delete terminal work');
+        log.error(e);
       } finally {
         firstRun = false;
       }
     }
-  }
-
-  async stop(): Promise<void> {
-    this.isRunning = false;
   }
 }

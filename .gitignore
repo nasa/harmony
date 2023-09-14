@@ -18,9 +18,9 @@ __pycache__
 built
 
 # Dev and test databases
-db/*.sqlite3
-db/*-journal
-db/*sqbpro
+*.sqlite3
+*-journal
+*sqbpro
 
 # Quokka repl/playground
 playground.ts

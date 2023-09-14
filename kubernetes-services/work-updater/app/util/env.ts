@@ -12,7 +12,7 @@ import _ from 'lodash';
 // and some specific to the updater
 //
 
-// read the local env-defaults from the top-level where the app is executed
+// read the local env-defaults
 const localPath = path.resolve(__dirname, '../../env-defaults');
 const envLocalDefaults = dotenv.parse(fs.readFileSync(localPath));
 

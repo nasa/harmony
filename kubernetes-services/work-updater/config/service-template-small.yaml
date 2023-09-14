@@ -3,16 +3,16 @@ kind: Deployment
 metadata:
   name: harmony-small-work-updater
   labels:
-    name: harmony
+    name: harmony-small-work-updater
 spec:
   replicas: $SMALL_WORK_UPDATER_POD_REPLICAS
   selector:
     matchLabels:
-      name: harmony
+      name: harmony-small-work-updater
   template:
     metadata:
       labels:
-        name: harmony
+        name: harmony-small-work-updater
     spec:
       containers:
         - name: harmony-small-work-updater
@@ -49,5 +49,5 @@ spec:
       targetPort: 5000
       protocol: TCP
   selector:
-    name: harmony
+    name: harmony-small-work-updater
   type: ClusterIP
