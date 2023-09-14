@@ -94,7 +94,7 @@ async function initCopyHandler() {
       copyTextToClipboard(event.target.getAttribute('data-text'));
       const isTruncated = event.target.getAttribute('data-truncated') === 'true';
       toasts.showUpper(
-          `✅ Copied to clipboard${isTruncated ? '. WARNING: this request was truncated due to length constraints.' : ''}`,
+          `✅ Copied to clipboard${isTruncated ? '. WARNING: this request was truncated for display due to length constraints.' : ''}`,
       );
     });
   });
