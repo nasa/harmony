@@ -6,7 +6,7 @@ import WorkflowStep, { decrementFutureWorkItemCount, getWorkflowStepByJobIdStepI
 import { Logger } from 'winston';
 import _, { ceil, range, sum } from 'lodash';
 import { JobStatus, Job } from '../../models/job';
-import JobError, { getErrorCountForJob } from '../../models/job-error';
+import JobError, { getErrorCountForJob, getNErrorsForJob } from '../../models/job-error';
 import JobLink, { getJobDataLinkCount } from '../../models/job-link';
 import { incrementReadyCount, deleteUserWorkForJob, incrementReadyAndDecrementRunningCounts, decrementRunningCount } from '../../models/user-work';
 import WorkItem, { maxSortIndexForJobService, workItemCountForStep, getWorkItemsByJobIdAndStepIndex, getWorkItemById, updateWorkItemStatus, getJobIdForWorkItem } from '../../models/work-item';
@@ -75,23 +75,34 @@ async function addJobLinksForFinishedWorkItem(
 
 
 /**
- * Returns the final job status for the request based on whether all items were
- * successful, some were successful and some failed, or all items failed.
+ * Returns the final job status and message for the request based on whether all
+ * items were successful, some were successful and some failed, or all items failed.
+ * Currently, this function is unreachable in cases where an incomplete job has failed due 
+ * to various error conditions (e.g. error limit exceeded, ignore errors is false, query cmr fails)
  *
  * @param tx - The database transaction
  * @param job - The job record
  * @returns the final job status for the request
  */
-async function getFinalStatusForJob(tx: Transaction, job: Job): Promise<JobStatus> {
+async function getFinalStatusAndMessageForJob(tx: Transaction, job: Job):
+Promise<{ finalStatus: JobStatus, finalMessage: string }> {
   let finalStatus = JobStatus.SUCCESSFUL;
-  if (await getErrorCountForJob(tx, job.jobID) > 0) {
+  const errorCount = await getErrorCountForJob(tx, job.jobID);
+  if (errorCount > 0) {
     if (await getJobDataLinkCount(tx, job.jobID) > 0) {
       finalStatus = JobStatus.COMPLETE_WITH_ERRORS;
     } else {
       finalStatus = JobStatus.FAILED;
     }
   }
-  return finalStatus;
+  let finalMessage = '';
+  if ((errorCount > 1) && (finalStatus == JobStatus.FAILED)) {
+    finalMessage  = `The job has failed with ${errorCount} errors. See the errors field for more details`;
+  } else if ((errorCount == 1) && (finalStatus = JobStatus.FAILED)) {
+    const jobError = (await getNErrorsForJob(tx, job.jobID, 1))[0];
+    finalMessage = jobError.message;
+  }
+  return { finalStatus, finalMessage };
 }
 
 /**
@@ -185,7 +196,7 @@ async function handleFailedWorkItems(
       if (continueProcessing) {
         const errorCount = await getErrorCountForJob(tx, job.jobID);
         if (errorCount > env.maxErrorsForJob) {
-          jobMessage = `Maximum allowed errors ${env.maxErrorsForJob} exceeded`;
+          jobMessage = `Maximum allowed errors ${env.maxErrorsForJob} exceeded. See the errors field for more details`;
           logger.warn(jobMessage);
           continueProcessing = false;
         }
@@ -771,11 +782,11 @@ export async function processWorkItem(
         job.completeBatch(thisStep.workItemCount);
         if (allWorkItemsForStepComplete && !didCreateWorkItem && (!nextWorkflowStep || nextWorkflowStep.workItemCount === 0)) {
           // If all granules are finished mark the job as finished
-          const finalStatus = await getFinalStatusForJob(tx, job);
+          const { finalStatus, finalMessage } = await getFinalStatusAndMessageForJob(tx, job);
           await (await logAsyncExecutionTime(
             completeJob,
             'HWIUWJI.completeJob',
-            logger))(tx, job, finalStatus, logger);
+            logger))(tx, job, finalStatus, logger, finalMessage);
         } else {
           // Either previewing or next step is a batched step and this item failed
           if (job.status === JobStatus.PREVIEWING) {

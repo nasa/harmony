@@ -76,6 +76,29 @@ export async function getErrorsForJob(
 }
 
 /**
+ * Returns the first n errors for a given job
+ *
+ * @param tx - the transaction to use for querying
+ * @param jobID - the UUID associated with the job
+ * @param n - the limit for errors to retrieve
+ *
+ * @returns A promise that resolves to an array of job errors
+ */
+export async function getNErrorsForJob(
+  tx: Transaction,
+  jobID: string,
+  n: number,
+): Promise<JobError[]> {
+  const results = await tx(JobError.table).select()
+    .where({ jobID })
+    .limit(n)
+    .orderBy(['id']);
+
+  const errors = results.map((e) => new JobError(e));
+  return errors;
+}
+
+/**
  * Returns the number of errors for the given job
  *
  * @param tx - the transaction to use for querying
