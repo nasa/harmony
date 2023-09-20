@@ -140,15 +140,6 @@ async function _getErrorMessage(status: k8s.V1Status, logStr: string, catalogDir
       const logEntry: any = await s3.getObjectJson(errorFile);
       return logEntry.error;
     }
-
-    const regex = /\{.*?\}/gs;
-    const matches = logStr?.match(regex) || [];
-    for (const match of matches) {
-      const logEntry = JSON.parse(match);
-      if (logEntry.level?.toUpperCase() === 'ERROR') {
-        return logEntry.message;
-      }
-    }
     return _getErrorMessageOfStatus(status);
   } catch (e) {
     workItemLogger.error(`Caught exception: ${e}`);
