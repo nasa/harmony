@@ -88,8 +88,9 @@ async function getFinalStatusAndMessageForJob(tx: Transaction, job: Job):
 Promise<{ finalStatus: JobStatus, finalMessage: string }> {
   let finalStatus = JobStatus.SUCCESSFUL;
   const errorCount = await getErrorCountForJob(tx, job.jobID);
+  const dataLinkCount = await getJobDataLinkCount(tx, job.jobID);
   if (errorCount > 0) {
-    if (await getJobDataLinkCount(tx, job.jobID) > 0) {
+    if (dataLinkCount > 0) {
       finalStatus = JobStatus.COMPLETE_WITH_ERRORS;
     } else {
       finalStatus = JobStatus.FAILED;
@@ -98,7 +99,7 @@ Promise<{ finalStatus: JobStatus, finalMessage: string }> {
   let finalMessage = '';
   if ((errorCount > 1) && (finalStatus == JobStatus.FAILED)) {
     finalMessage  = `The job has failed with ${errorCount} errors. See the errors field for more details`;
-  } else if ((errorCount == 1) && (finalStatus = JobStatus.FAILED)) {
+  } else if ((errorCount == 1) && (finalStatus == JobStatus.FAILED)) {
     const jobError = (await getNErrorsForJob(tx, job.jobID, 1))[0];
     finalMessage = jobError.message;
   }
