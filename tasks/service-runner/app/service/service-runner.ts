@@ -159,9 +159,8 @@ export async function runQueryCmrFromPull(
   const { operation, scrollID } = workItem;
   const catalogDir = getStacLocation(workItem);
   workItemLogger.debug(`CALLING WORKER with maxCmrGranules = ${maxCmrGranules}`);
-  let response: AxiosResponse;
   try {
-    response = await axios.post(`http://localhost:${env.workerPort}/work`,
+    const response: AxiosResponse = await axios.post(`http://localhost:${env.workerPort}/work`,
       {
         outputDir: catalogDir,
         harmonyInput: operation,
@@ -174,10 +173,10 @@ export async function runQueryCmrFromPull(
       },
     );
     if (response.status < 300) {
-      const catalogs = await _getStacCatalogs(catalogDir);
+      const batchCatalogs = await _getStacCatalogs(catalogDir);
       const { totalItemsSize, outputItemSizes } = response.data;
       const newScrollID = response.data.scrollID;
-      return { batchCatalogs: catalogs, totalItemsSize, outputItemSizes, scrollID: newScrollID };
+      return { batchCatalogs, totalItemsSize, outputItemSizes, scrollID: newScrollID };
     } else {
       return { error: response.statusText };
     }
