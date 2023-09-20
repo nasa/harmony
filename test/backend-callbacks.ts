@@ -330,7 +330,7 @@ describe('Backend Callbacks', function () {
 
       it('does not alter the corresponding job status', async function () {
         const job = await loadJobForCallback(this.callback);
-        expect(job.isComplete()).to.equal(false);
+        expect(job.hasTerminalStatus()).to.equal(false);
       });
 
       it('provides a link in the job to the stored response content', async function () {

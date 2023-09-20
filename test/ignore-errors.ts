@@ -146,6 +146,7 @@ describe('ignoreErrors', function () {
             const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
             firstSwotItem = JSON.parse(res.text).workItem;
             firstSwotItem.status = WorkItemStatus.FAILED;
+            firstSwotItem.errorMessage = 'Specific failure reason';
             firstSwotItem.results = [];
 
             await updateWorkItem(this.backend, firstSwotItem);
@@ -160,7 +161,7 @@ describe('ignoreErrors', function () {
           // work item failure with only one granue should trigger job failure
           const job = await Job.byJobID(db, firstSwotItem.jobID);
           expect(job.status).to.equal(JobStatus.FAILED);
-          expect(job.message).to.equal(`WorkItem [${firstSwotItem.id}] failed with an unknown error`);
+          expect(job.message).to.equal(`WorkItem [${firstSwotItem.id}] failed with error: Specific failure reason`);
         });
 
         it('correctly sets the work items status', async function () {

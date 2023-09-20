@@ -173,7 +173,7 @@ async function handleFailedWorkItems(
   // If the response is an error then set the job status to 'failed'
   if (status === WorkItemStatus.FAILED) {
     continueProcessing = job.ignoreErrors;
-    if (!job.isComplete()) {
+    if (!job.hasTerminalStatus()) {
       let jobMessage;
 
       if (errorMessage) {
@@ -610,7 +610,7 @@ export async function processWorkItem(
         'HWIUWJI.getWorkflowStepByJobIdStepIndex',
         logger))(tx, workItem.jobID, workItem.workflowStepIndex);
     }
-    if (job.isComplete() && status !== WorkItemStatus.CANCELED) {
+    if (job.hasTerminalStatus() && status !== WorkItemStatus.CANCELED) {
       logger.warn(`Job was already ${job.status}.`);
       const numRowsDeleted = await (await logAsyncExecutionTime(
         deleteUserWorkForJob,

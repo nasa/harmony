@@ -890,12 +890,12 @@ export class Job extends DBRecord implements JobRecord {
   }
 
   /**
-   * Returns true if the job is complete, i.e. it expects no further interaction with
-   * backend services.
+   * Returns true if the job status on this instance is currently set to a terminal
+   * state, i.e. it expects no further interaction with backend services.
    *
-   * @returns true if the job is complete
+   * @returns true if the job status is a terminal status
    */
-  isComplete(): boolean {
+  hasTerminalStatus(): boolean {
     return terminalStates.includes(this.status);
   }
 
