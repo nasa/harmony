@@ -29,51 +29,8 @@ const oomStatus : k8s.V1Status = {
   details: oomStatusDetails,
 };
 
-const errorLogRecord = `
-{
-  "application": "query-cmr",
-  "requestId": "c76c7a30-84a1-40a1-88a0-34a35e47fe8f",
-  "message": "bad stuff",
-  "level": "error",
-  "timestamp": "2021-09-14T15:08:57.346Z",
-  "env_name": "harmony-unknown"
-}
-`;
-const errorLog = `
-{
-  "application": "query-cmr",
-  "requestId": "c76c7a30-84a1-40a1-88a0-34a35e47fe8f",
-  "message": "found granules",
-  "level": "info",
-  "timestamp": "2021-09-13T15:08:57.346Z",
-  "env_name": "harmony-unknown"
-}
-${errorLogRecord}
-{
-  "application": "query-cmr",
-  "requestId": "c76c7a30-84a1-40a1-88a0-34a35e47fe8f",
-  "message": "second error",
-  "level": "error",
-  "timestamp": "2021-09-14T15:08:57.346Z",
-  "env_name": "harmony-unknown"
-}
-`;
-
-const nonErrorLog = `
-{
-  "application": "query-cmr",
-  "requestId": "c76c7a30-84a1-40a1-88a0-34a35e47fe8f",
-  "message": "found granules",
-  "level": "info",
-  "timestamp": "2021-09-13T15:08:57.346Z",
-  "env_name": "harmony-unknown"
-}
-`;
-
 const workItemWithErrorJson = 's3://stac-catalogs/abc/123/outputs/';
 const workItemWithoutErrorJson = 's3://stac-catalogs/abc/456/outputs/';
-const emptyLog = '';
-const badLog = '{\'x\': {\'y\': \'z\'}}';
 
 describe('Service Runner', function () {
   describe('_getErrorMessage()', function () {
@@ -85,50 +42,14 @@ describe('Service Runner', function () {
     });
     describe('when there is an error.json file associated with the WorkItem', async function () {
       it('returns the error message from error.json', async function () {
-        const errorMessage = await _getErrorMessage(exampleStatus, errorLog, workItemWithErrorJson);
+        const errorMessage = await _getErrorMessage(exampleStatus, workItemWithErrorJson);
         expect(errorMessage).equal('Service error message');
-      });
-    });
-    describe('when the error log has ERROR level entries', async function () {
-      it('returns the first error log entry', async function () {
-        const errorMessage = await _getErrorMessage(exampleStatus, errorLog, workItemWithoutErrorJson);
-        expect(errorMessage).equal('bad stuff');
-      });
-    });
-    describe('when the error log has no ERROR level entries', async function () {
-      it('returns "unknown error"', async function () {
-        const errorMessage = await _getErrorMessage(exampleStatus, nonErrorLog, workItemWithoutErrorJson);
-        expect(errorMessage).equal('Unknown error');
-      });
-    });
-    describe('when the error log is empty', async function () {
-      it('returns "unknown error"', async function () {
-        const errorMessage = await _getErrorMessage(exampleStatus, emptyLog, workItemWithoutErrorJson);
-        expect(errorMessage).equal('Unknown error');
-      });
-    });
-    describe('when the error log is null', async function () {
-      it('returns "unknown error"', async function () {
-        const errorMessage = await _getErrorMessage(exampleStatus, null, workItemWithoutErrorJson);
-        expect(errorMessage).equal('Unknown error');
       });
     });
     describe('when the error status code is 137', async function () {
       it('returns "OOM error"', async function () {
-        const errorMessage = await _getErrorMessage(oomStatus, null, workItemWithoutErrorJson);
+        const errorMessage = await _getErrorMessage(oomStatus, workItemWithoutErrorJson);
         expect(errorMessage).equal('Service failed due to running out of memory');
-      });
-    });
-    describe('when the log is not valid JSON and error status code is 137', async function () {
-      it('returns "OOM error"', async function () {
-        const errorMessage = await _getErrorMessage(oomStatus, badLog, workItemWithoutErrorJson);
-        expect(errorMessage).equal('Service failed due to running out of memory');
-      });
-    });
-    describe('when the log is not valid JSON and error status code is not 137', async function () {
-      it('returns "OOM error"', async function () {
-        const errorMessage = await _getErrorMessage(exampleStatus, badLog, workItemWithoutErrorJson);
-        expect(errorMessage).equal('Service terminated without error message');
       });
     });
   });
@@ -250,6 +171,7 @@ describe('Service Runner', function () {
       });
       it('returns an error message', async function () {
         const result = await serviceRunner.runQueryCmrFromPull(workItem);
+        console.log(result);
         expect(result.error).to.be.not.empty;
       });
     });
@@ -379,29 +301,6 @@ describe('Service Runner', function () {
         const jsonLogOutput = `[${requestId}]: ${message}`;
         expect(this.testLogs.includes(textLog));
         expect(this.testLogs.includes(jsonLogOutput));
-      });
-    });
-
-    describe('aggregateLogStr with a JSON logger', function () {
-
-      before(function () {
-        const { testLogger } = createLoggerForTest(true);
-        this.testLogger = testLogger;
-        this.logStream = new serviceRunner.LogStream(testLogger);
-        this.logStream._handleLogString(nonErrorLog);
-        this.logStream._handleLogString(errorLogRecord);
-      });
-
-      after(function () {
-        for (const transport of this.testLogger.transports) {
-          transport.close;
-        }
-        this.testLogger.close();
-      });
-
-      it('can provide an aggregate log string to _getErrorMessage', async function () {
-        const errorMessage = await _getErrorMessage(exampleStatus, this.logStream.aggregateLogStr, workItemWithoutErrorJson);
-        expect(errorMessage).equal('bad stuff');
       });
     });
   });

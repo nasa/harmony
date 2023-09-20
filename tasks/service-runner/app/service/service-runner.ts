@@ -6,7 +6,7 @@ import logger from '../../../../app/util/log';
 import { resolve as resolveUrl } from '../../../../app/util/url';
 import { objectStoreForProtocol } from '../../../../app/util/object-store';
 import { WorkItemRecord, getStacLocation, getItemLogsLocation } from '../../../../app/models/work-item-interface';
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
 import { Logger } from 'winston';
 
 const kc = new k8s.KubeConfig();
@@ -42,8 +42,6 @@ export class LogStream extends stream.Writable {
   // to this stream (gets uploaded to s3)
   logStrArr: (string | object)[] = [];
 
-  aggregateLogStr = '';
-
   /**
    * Build a LogStream instance.
    * @param streamLogger - the logger to log messages with
@@ -68,7 +66,6 @@ export class LogStream extends stream.Writable {
    * @param logStr - the string to log (could emanate from a text or JSON logger)
    */
   _handleLogString(logStr: string): void {
-    this.aggregateLogStr += logStr;
     try {
       const logObj: object = JSON.parse(logStr);
       this.logStrArr.push(logObj);
@@ -124,13 +121,12 @@ function _getErrorMessageOfStatus(status: k8s.V1Status, msg = 'Unknown error'): 
  * braces.
  *
  * @param status - A kubernetes V1Status
- * @param logStr - A string that contains error logging
  * @param catalogDir - A string path for the outputs directory of the WorkItem
  * (e.g. s3://artifacts/requestId/workItemId/outputs/).
  * @param workItemLogger - Logger for logging messages
  * @returns An error message parsed from the log
  */
-async function _getErrorMessage(status: k8s.V1Status, logStr: string, catalogDir: string, workItemLogger: Logger = logger): Promise<string> {
+async function _getErrorMessage(status: k8s.V1Status, catalogDir: string, workItemLogger: Logger = logger): Promise<string> {
   // expect JSON logs entries
   try {
     const s3 = objectStoreForProtocol('s3');
@@ -143,7 +139,7 @@ async function _getErrorMessage(status: k8s.V1Status, logStr: string, catalogDir
     return _getErrorMessageOfStatus(status);
   } catch (e) {
     workItemLogger.error(`Caught exception: ${e}`);
-    workItemLogger.error(`Unable to parse out error from catalog location: ${catalogDir} and log message: ${logStr}`);
+    workItemLogger.error(`Unable to parse out error from catalog location: ${catalogDir}`);
     return _getErrorMessageOfStatus(status, 'Service terminated without error message');
   }
 }
@@ -162,40 +158,34 @@ export async function runQueryCmrFromPull(
 ): Promise<ServiceResponse> {
   const { operation, scrollID } = workItem;
   const catalogDir = getStacLocation(workItem);
-  return new Promise<ServiceResponse>(async (resolve) => {
-    workItemLogger.debug('CALLING WORKER');
-    workItemLogger.debug(`maxCmrGranules = ${maxCmrGranules}`);
-
-    try {
-      const resp = await axios.post(`http://localhost:${env.workerPort}/work`,
-        {
-          outputDir: catalogDir,
-          harmonyInput: operation,
-          scrollId: scrollID,
-          maxCmrGranules,
-          workItemId: workItem.id,
-        },
-        {
-          timeout: workerTimeout,
-        },
-      );
-
-      if (resp.status < 300) {
-        const catalogs = await _getStacCatalogs(catalogDir);
-        const { totalItemsSize, outputItemSizes } = resp.data;
-        const newScrollID = resp.data.scrollID;
-
-        resolve({ batchCatalogs: catalogs, totalItemsSize, outputItemSizes, scrollID: newScrollID });
-      } else {
-        resolve({ error: resp.statusText });
-      }
-    } catch (e) {
-      workItemLogger.error(e);
-      const message = e.response?.data ? e.response.data.description : e.message;
-      resolve({ error: message });
+  workItemLogger.debug(`CALLING WORKER with maxCmrGranules = ${maxCmrGranules}`);
+  let response: AxiosResponse;
+  try {
+    response = await axios.post(`http://localhost:${env.workerPort}/work`,
+      {
+        outputDir: catalogDir,
+        harmonyInput: operation,
+        scrollId: scrollID,
+        maxCmrGranules,
+        workItemId: workItem.id,
+      },
+      {
+        timeout: workerTimeout,
+      },
+    );
+    if (response.status < 300) {
+      const catalogs = await _getStacCatalogs(catalogDir);
+      const { totalItemsSize, outputItemSizes } = response.data;
+      const newScrollID = response.data.scrollID;
+      return { batchCatalogs: catalogs, totalItemsSize, outputItemSizes, scrollID: newScrollID };
+    } else {
+      return { error: response.statusText };
     }
-  });
-
+  } catch (e) {
+    workItemLogger.error(e);
+    const message = e.response?.data ? e.response.data.description : e.message;
+    return { error: message };
+  }
 }
 
 /**
@@ -276,7 +266,7 @@ export async function runServiceFromPull(workItem: WorkItemRecord, workItemLogge
               resolve({ batchCatalogs: catalogs });
             } else {
               clearTimeout(timeout);
-              const logErr = await _getErrorMessage(status, stdOut.aggregateLogStr, catalogDir, workItemLogger);
+              const logErr = await _getErrorMessage(status, catalogDir, workItemLogger);
               const errMsg = `${sanitizeImage(env.harmonyService)}: ${logErr}`;
               resolve({ error: errMsg });
             }
