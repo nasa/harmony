@@ -6,7 +6,7 @@ import logger from '../../../../app/util/log';
 import { resolve as resolveUrl } from '../../../../app/util/url';
 import { objectStoreForProtocol } from '../../../../app/util/object-store';
 import { WorkItemRecord, getStacLocation, getItemLogsLocation } from '../../../../app/models/work-item-interface';
-import axios, { AxiosResponse } from 'axios';
+import axios from 'axios';
 import { Logger } from 'winston';
 
 const kc = new k8s.KubeConfig();
