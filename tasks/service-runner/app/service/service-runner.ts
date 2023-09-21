@@ -221,6 +221,7 @@ export async function uploadLogs(workItem: WorkItemRecord, logs: (string | objec
  * @param workItemLogger - The logger to use
  */
 export async function runServiceFromPull(workItem: WorkItemRecord, workItemLogger = logger): Promise<ServiceResponse> {
+  const serviceName = sanitizeImage(env.harmonyService);
   try {
     const { operation, stacCatalogLocation } = workItem;
     // support invocation args specified with newline separator or space separator
@@ -271,27 +272,27 @@ export async function runServiceFromPull(workItem: WorkItemRecord, workItemLogge
             } else {
               clearTimeout(timeout);
               const logErr = await _getErrorMessage(status, catalogDir, workItemLogger);
-              const errMsg = `${sanitizeImage(env.harmonyService)}: ${logErr}`;
+              const errMsg = `${serviceName}: ${logErr}`;
               resolve({ error: errMsg });
             }
           } catch (e) {
             workItemLogger.error('Unable to upload logs. Caught exception:');
             workItemLogger.error(e);
-            resolve({ error: e.message });
+            resolve({ error: `An error ocurred while processing the ${serviceName} service response.` });
           }
         },
       ).catch((e) => {
         clearTimeout(timeout);
         workItemLogger.error('Kubernetes client exec caught exception:');
         workItemLogger.error(e);
-        resolve({ error: e.message });
+        resolve({ error: `Execution of the ${serviceName} service failed.` });
       });
     });
   } catch (e) {
     workItemLogger.error('runServiceFromPull caught exception:');
     workItemLogger.error(e);
 
-    return { error: e.message };
+    return { error: `An error occured while running the ${serviceName} service.` };
   }
 }
 
