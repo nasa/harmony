@@ -158,9 +158,10 @@ export async function runQueryCmrFromPull(
 ): Promise<ServiceResponse> {
   const { operation, scrollID } = workItem;
   const catalogDir = getStacLocation(workItem);
+  let response;
   workItemLogger.debug(`CALLING WORKER with maxCmrGranules = ${maxCmrGranules}`);
   try {
-    const response: AxiosResponse = await axios.post(`http://localhost:${env.workerPort}/work`,
+    response = await axios.post(`http://localhost:${env.workerPort}/work`,
       {
         outputDir: catalogDir,
         harmonyInput: operation,
@@ -177,14 +178,18 @@ export async function runQueryCmrFromPull(
       const { totalItemsSize, outputItemSizes } = response.data;
       const newScrollID = response.data.scrollID;
       return { batchCatalogs, totalItemsSize, outputItemSizes, scrollID: newScrollID };
-    } else {
-      return { error: response.statusText };
     }
   } catch (e) {
     workItemLogger.error(e);
-    const message = e.response?.data ? e.response.data.description : e.message;
-    return { error: message };
+    if (e.response) {
+      ({ response } = e);
+    }
   }
+  let error = response?.data?.description || '';
+  if (!error && (response?.status || response?.statusText)) {
+    error = `The Query CMR service responded with an error - ${response.statusText || response.status}.`;
+  }
+  return { error };
 }
 
 /**

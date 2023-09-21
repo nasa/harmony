@@ -87,7 +87,7 @@ async function doWorkHandler(req: Request, res: Response, next: NextFunction): P
     } else {
       logger.error(e);
     }
-    next(new ServerError('Query CMR doWorkHandler encountered an unexpected error.'));
+    next(new ServerError('An unexpected error was encountered while querying for granules.'));
   }
 }
 
