@@ -172,7 +172,8 @@ describe('Service Runner', function () {
       id: 1,
     });
     describe('when an error occurs', async function () {
-      let axiosStub; // https://axios-http.com/docs/res_schema
+      // https://axios-http.com/docs/res_schema
+      let axiosStub;
       afterEach(function () {
         axiosStub.restore();
       });
@@ -232,7 +233,7 @@ describe('Service Runner', function () {
 
       it('returns an error message', async function () {
         const result = await serviceRunner.runServiceFromPull(workItem);
-        expect(result.error).to.be.not.empty;
+        expect(result.error).to.equal('Execution of the harmonyservices/query-cmr:latest service failed.');
       });
     });
   });
