@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-throw-literal */
 import { expect } from 'chai';
 import * as k8s from '@kubernetes/client-node';
 import { describe, it } from 'mocha';
@@ -9,6 +10,8 @@ import { resolve } from '../../../app/util/url';
 import { createLoggerForTest } from '../../../test/helpers/log';
 import { getItemLogsLocation, WorkItemRecord } from '../../../app/models/work-item-interface';
 import { uploadLogs } from '../app/service/service-runner';
+import sinon from 'sinon';
+import axios from 'axios';
 
 const { _getErrorMessage, _getStacCatalogs } = serviceRunner.exportedForTesting;
 
@@ -160,19 +163,51 @@ describe('Service Runner', function () {
   });
 
   describe('runQueryCmrFromPull', async function () {
+    const workItem = new WorkItem({
+      jobID: '123',
+      serviceID: 'abc',
+      workflowStepIndex: 0,
+      scrollID: '1234',
+      operation: { requestID: 'foo' },
+      id: 1,
+    });
     describe('when an error occurs', async function () {
-      const workItem = new WorkItem({
-        jobID: '123',
-        serviceID: 'abc',
-        workflowStepIndex: 0,
-        scrollID: '1234',
-        operation: { requestID: 'foo' },
-        id: 1,
+      let axiosStub; // https://axios-http.com/docs/res_schema
+      afterEach(function () {
+        axiosStub.restore();
       });
-      it('returns an error message', async function () {
-        const result = await serviceRunner.runQueryCmrFromPull(workItem);
-        console.log(result);
-        expect(result.error).to.be.not.empty;
+      describe('and the server provides data', async function () {  
+        const description = 'Query CMR server failed unexpectedly';
+        before(async function () {
+          axiosStub = sinon.stub(axios, 'post').callsFake(
+            async function () { throw { 'response': { 'data' : { description } } }; });
+        });
+        it('returns an error message matching the description', async function () {
+          const result = await serviceRunner.runQueryCmrFromPull(workItem);
+          expect(result.error).to.equal(description);
+        });
+      });
+      describe('and there is a status code', async function () {  
+        const status = 500;
+        before(async function () {
+          axiosStub = sinon.stub(axios, 'post').callsFake(
+            async function () { throw { 'response': { status } }; });
+        });
+        it('returns an error message that includes the status code', async function () {
+          const result = await serviceRunner.runQueryCmrFromPull(workItem);
+          expect(result.error).to.equal(`The Query CMR service responded with an error - ${status}.`);
+        });
+      });
+      describe('and there is status text', async function () {  
+        const statusText = 'Not Found';
+        before(async function () {
+          axiosStub = sinon.stub(axios, 'post').callsFake(
+            async function () { throw { 'response': { statusText } };});
+        });
+        it('returns an error message that includes the status text', async function () {
+          const result = await serviceRunner.runQueryCmrFromPull(workItem);
+          expect(result.error).to.equal(`The Query CMR service responded with an error - ${statusText}.`);
+        });
       });
     });
   });
