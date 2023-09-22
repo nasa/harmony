@@ -161,7 +161,7 @@ describe('ignoreErrors', function () {
           // work item failure with only one granue should trigger job failure
           const job = await Job.byJobID(db, firstSwotItem.jobID);
           expect(job.status).to.equal(JobStatus.FAILED);
-          expect(job.message).to.equal(`WorkItem [${firstSwotItem.id}] Specific failure reason`);
+          expect(job.message).to.equal('WorkItem failed: Specific failure reason');
         });
 
         it('correctly sets the work items status', async function () {
