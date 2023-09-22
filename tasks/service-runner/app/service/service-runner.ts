@@ -114,10 +114,9 @@ function _getErrorMessageOfStatus(status: k8s.V1Status, msg = 'Unknown error'): 
 }
 
 /**
- * Parse an error message out of an error log from error.json
- * (if it exists), or use the k8s status to generate one. This
- * error message is often used to populate the job's message and errors fields,
- * which are user facing.
+ * Get the error message from error.json (if the backend service provided it)
+ * or use the k8s status to generate one. This error message
+ * is often used to populate the user-facing job's message and errors fields.
  *
  * @param status - A kubernetes V1Status
  * @param catalogDir - A string path for the outputs directory of the WorkItem
