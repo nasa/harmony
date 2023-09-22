@@ -102,7 +102,7 @@ def show_shape(filename, basemap=True):
   if basemap:
     ctx.add_basemap(plot)
 
-def show(response, varList=[], color_index=None, immediate=True, flip=True):
+def show(response, varList=None, color_index=None, immediate=True, flip=True):
   """Shows a variety of responses possible from Harmony for its example data
 
   Handles NetCDF files with red_var, green_var, blue_var, and alpha_var bands, compositing output
@@ -119,6 +119,8 @@ def show(response, varList=[], color_index=None, immediate=True, flip=True):
       flip {bool} -- Whether to flip the numpy arrays for stacked plots
 
   """
+  if varList is None:
+    varList = []
 
 
   # show_netcdf (look at dimensions, decide how to display); show_image
@@ -222,7 +224,7 @@ def get_data_urls(response):
   """
   return [link['href'] for link in response.json()['links'] if link.get('rel', 'data') == 'data']
 
-def show_async(response, varList = []):
+def show_async(response, varList = None):
   """Shows an asynchronous Harmony response.
 
   Polls the output, displaying it as it changes, displaying any http data
@@ -236,6 +238,8 @@ def show_async(response, varList = []):
   Returns:
       response.Response -- the response from the final successful or failed poll
   """
+  if varList is None:
+    varList = []
   def show_response(response, link_count):
     print('Async response at', datetime.now().strftime("%H:%M:%S"))
     print(json.dumps(response.json(), indent=2))
@@ -278,7 +282,7 @@ def print_async_status(body):
   """
   print('JobID:',body['jobID'],'Status:',body['status'],'(',body['progress'],'%) Messages:', body['message'])
 
-def show_async_condensed(response, varList = [], show_results=True):
+def show_async_condensed(response, varList = None, show_results=True):
   """Shows a condensed version of the asynchronous Harmony response.  Useful for getting status if you don't care about the results.
 
   Polls the output, displaying status as it changes, and ultimately ending once the request
@@ -289,6 +293,8 @@ def show_async_condensed(response, varList = [], show_results=True):
       varList {array} -- If set, only plot the variables listed in varList.  Otherwise, plot all.
       show_results {bool} -- True will display the results as they arrive.  (default: {True})
   """
+  if varList is None:
+    varList = []
   def show_response_condensed(response, varList, link_count):
     links = get_data_urls(response)
     new_links = links[slice(link_count, None)]
