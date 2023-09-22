@@ -177,7 +177,7 @@ async function handleFailedWorkItems(
       let jobMessage;
 
       if (errorMessage) {
-        jobMessage = `WorkItem [${workItem.id}] failed: ${errorMessage}`;
+        jobMessage = `WorkItem [${workItem.id}] ${errorMessage}`;
       }
 
       if (QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)) {
