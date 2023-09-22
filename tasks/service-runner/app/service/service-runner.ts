@@ -155,11 +155,11 @@ export async function runQueryCmrFromPull(
   maxCmrGranules?: number,
   workItemLogger = logger,
 ): Promise<ServiceResponse> {
-  const { operation, scrollID } = workItem;
-  const catalogDir = getStacLocation(workItem);
-  let response;
   workItemLogger.debug(`CALLING WORKER with maxCmrGranules = ${maxCmrGranules}`);
+  let response;
   try {
+    const { operation, scrollID } = workItem;
+    const catalogDir = getStacLocation(workItem);
     response = await axios.post(`http://localhost:${env.workerPort}/work`,
       {
         outputDir: catalogDir,
@@ -220,9 +220,9 @@ export async function uploadLogs(workItem: WorkItemRecord, logs: (string | objec
  * @param workItemLogger - The logger to use
  */
 export async function runServiceFromPull(workItem: WorkItemRecord, workItemLogger = logger): Promise<ServiceResponse> {
-  const serviceName = sanitizeImage(env.harmonyService);
-  const error = `Execution of the ${serviceName} service failed.`;
   try {
+    const serviceName = sanitizeImage(env.harmonyService);
+    const error = `The ${serviceName} service failed.`;
     const { operation, stacCatalogLocation } = workItem;
     // support invocation args specified with newline separator or space separator
     let commandLine = env.invocationArgs.split('\n');
@@ -272,7 +272,7 @@ export async function runServiceFromPull(workItem: WorkItemRecord, workItemLogge
             } else {
               clearTimeout(timeout);
               const logErr = await _getErrorMessage(status, catalogDir, workItemLogger);
-              const errMsg = `${serviceName}: ${logErr}`;
+              const errMsg = `${serviceName} - ${logErr}`;
               resolve({ error: errMsg });
             }
           } catch (e) {
@@ -291,7 +291,7 @@ export async function runServiceFromPull(workItem: WorkItemRecord, workItemLogge
   } catch (e) {
     workItemLogger.error('runServiceFromPull caught exception:');
     workItemLogger.error(e);
-    return { error };
+    return { error: 'The service failed.' };
   }
 }
 
