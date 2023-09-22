@@ -177,19 +177,19 @@ async function handleFailedWorkItems(
       let jobMessage;
 
       if (errorMessage) {
-        jobMessage = `WorkItem [${workItem.id}] ${errorMessage}`;
+        jobMessage = `WorkItem failed: ${errorMessage}`;
       }
 
       if (QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)) {
         // Fail the request if query-cmr fails to populate granules
         continueProcessing = false;
         if (!jobMessage) {
-          jobMessage = `WorkItem [${workItem.id}] failed to query CMR for granule information`;
+          jobMessage = 'Failed to query CMR for granule information';
         }
       } else {
         const url = await getWorkItemUrl(workItem, logger);
         if (!jobMessage) {
-          jobMessage = `WorkItem [${workItem.id}] failed with an unknown error`;
+          jobMessage = 'WorkItem failed with an unknown error';
         }
         await addErrorForWorkItem(tx, job, url, jobMessage);
       }
