@@ -77,8 +77,8 @@ async function addJobLinksForFinishedWorkItem(
 /**
  * Returns the final job status and message for the request based on whether all
  * items were successful, some were successful and some failed, or all items failed.
- * Currently, this function is unreachable in cases where an incomplete job has failed due 
- * to various error conditions (e.g. error limit exceeded, ignore errors is false, query cmr fails)
+ * This function is not reached in all job completion failure cases
+ * (e.g. error limit exceeded, ignore errors is false, query cmr fails)
  *
  * @param tx - The database transaction
  * @param job - The job record
