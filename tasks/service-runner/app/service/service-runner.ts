@@ -271,7 +271,7 @@ export async function runServiceFromPull(workItem: WorkItemRecord, workItemLogge
             } else {
               clearTimeout(timeout);
               const logErr = await _getErrorMessage(status, catalogDir, workItemLogger);
-              const errMsg = `${serviceName} - ${logErr}`;
+              const errMsg = `${serviceName}: ${logErr}`;
               resolve({ error: errMsg });
             }
           } catch (e) {
