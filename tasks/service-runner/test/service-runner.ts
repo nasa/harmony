@@ -196,7 +196,7 @@ describe('Service Runner', function () {
         });
         it('returns an error message that includes the status code', async function () {
           const result = await serviceRunner.runQueryCmrFromPull(workItem);
-          expect(result.error).to.equal(`The Query CMR service responded with an error - ${status}.`);
+          expect(result.error).to.equal(`The Query CMR service responded with status ${status}.`);
         });
       });
       describe('and there is status text', async function () {  
@@ -207,7 +207,7 @@ describe('Service Runner', function () {
         });
         it('returns an error message that includes the status text', async function () {
           const result = await serviceRunner.runQueryCmrFromPull(workItem);
-          expect(result.error).to.equal(`The Query CMR service responded with an error - ${statusText}.`);
+          expect(result.error).to.equal(`The Query CMR service responded with status ${statusText}.`);
         });
       });
     });

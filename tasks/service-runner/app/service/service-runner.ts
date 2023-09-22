@@ -187,7 +187,7 @@ export async function runQueryCmrFromPull(
   }
   let error = response?.data?.description || '';
   if (!error && (response?.status || response?.statusText)) {
-    error = `The Query CMR service responded with an error - ${response.statusText || response.status}.`;
+    error = `The Query CMR service responded with status ${response.statusText || response.status}.`;
   }
   return { error };
 }

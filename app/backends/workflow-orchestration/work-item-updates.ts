@@ -98,7 +98,7 @@ Promise<{ finalStatus: JobStatus, finalMessage: string }> {
   }
   let finalMessage = '';
   if ((errorCount > 1) && (finalStatus == JobStatus.FAILED)) {
-    finalMessage  = `The job has failed with ${errorCount} errors. See the errors field for more details`;
+    finalMessage  = `The job failed with ${errorCount} errors. See the errors field for more details`;
   } else if ((errorCount == 1) && (finalStatus == JobStatus.FAILED)) {
     const jobError = (await getNErrorsForJob(tx, job.jobID, 1))[0];
     finalMessage = jobError.message;
@@ -177,7 +177,7 @@ async function handleFailedWorkItems(
       let jobMessage;
 
       if (errorMessage) {
-        jobMessage = `WorkItem [${workItem.id}] failed with error: ${errorMessage}`;
+        jobMessage = `WorkItem [${workItem.id}] failed: ${errorMessage}`;
       }
 
       if (QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)) {
@@ -547,7 +547,7 @@ export async function preprocessWorkItem(
     durationMs = new Date().getTime() - resultStartTime;
     logger.debug('timing.HWIUWJI.getResultItemSize.end', { durationMs });
   } catch (e) {
-    errorMessage = 'Could not get result item file size, failing the work item update';
+    errorMessage = 'Could not get result item file size';
     logger.error(errorMessage);
     logger.error(e);
     status = WorkItemStatus.FAILED;
