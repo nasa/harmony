@@ -114,17 +114,16 @@ function _getErrorMessageOfStatus(status: k8s.V1Status, msg = 'Unknown error'): 
 }
 
 /**
- * Parse an error message out of an error log. First check for error.json, and
- * extract the message from the entry there. Otherwise, parse the full STDOUT
- * error logs for any ERROR level message. Note, the current regular expression
- * for the latter option has issues handling error messages containing curly
- * braces.
+ * Parse an error message out of an error log from error.json
+ * (if it exists), or use the k8s status to generate one. This
+ * error message is often used to populate the job's message and errors fields,
+ * which are user facing.
  *
  * @param status - A kubernetes V1Status
  * @param catalogDir - A string path for the outputs directory of the WorkItem
  * (e.g. s3://artifacts/requestId/workItemId/outputs/).
  * @param workItemLogger - Logger for logging messages
- * @returns An error message parsed from the log
+ * @returns An error message
  */
 async function _getErrorMessage(status: k8s.V1Status, catalogDir: string, workItemLogger: Logger = logger): Promise<string> {
   // expect JSON logs entries
@@ -222,6 +221,7 @@ export async function uploadLogs(workItem: WorkItemRecord, logs: (string | objec
  */
 export async function runServiceFromPull(workItem: WorkItemRecord, workItemLogger = logger): Promise<ServiceResponse> {
   const serviceName = sanitizeImage(env.harmonyService);
+  const error = `Execution of the ${serviceName} service failed.`;
   try {
     const { operation, stacCatalogLocation } = workItem;
     // support invocation args specified with newline separator or space separator
@@ -278,21 +278,20 @@ export async function runServiceFromPull(workItem: WorkItemRecord, workItemLogge
           } catch (e) {
             workItemLogger.error('Unable to upload logs. Caught exception:');
             workItemLogger.error(e);
-            resolve({ error: `An error ocurred while processing the ${serviceName} service response.` });
+            resolve({ error });
           }
         },
       ).catch((e) => {
         clearTimeout(timeout);
         workItemLogger.error('Kubernetes client exec caught exception:');
         workItemLogger.error(e);
-        resolve({ error: `Execution of the ${serviceName} service failed.` });
+        resolve({ error });
       });
     });
   } catch (e) {
     workItemLogger.error('runServiceFromPull caught exception:');
     workItemLogger.error(e);
-
-    return { error: `An error occured while running the ${serviceName} service.` };
+    return { error };
   }
 }
 
