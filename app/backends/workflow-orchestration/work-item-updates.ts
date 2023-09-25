@@ -6,7 +6,7 @@ import WorkflowStep, { decrementFutureWorkItemCount, getWorkflowStepByJobIdStepI
 import { Logger } from 'winston';
 import _, { ceil, range, sum } from 'lodash';
 import { JobStatus, Job } from '../../models/job';
-import JobError, { getErrorCountForJob, getNErrorsForJob } from '../../models/job-error';
+import JobError, { getErrorCountForJob, getErrorsForJob } from '../../models/job-error';
 import JobLink, { getJobDataLinkCount } from '../../models/job-link';
 import { incrementReadyCount, deleteUserWorkForJob, incrementReadyAndDecrementRunningCounts, decrementRunningCount } from '../../models/user-work';
 import WorkItem, { maxSortIndexForJobService, workItemCountForStep, getWorkItemsByJobIdAndStepIndex, getWorkItemById, updateWorkItemStatus, getJobIdForWorkItem } from '../../models/work-item';
@@ -100,7 +100,7 @@ Promise<{ finalStatus: JobStatus, finalMessage: string }> {
   if ((errorCount > 1) && (finalStatus == JobStatus.FAILED)) {
     finalMessage  = `The job failed with ${errorCount} errors. See the errors field for more details`;
   } else if ((errorCount == 1) && (finalStatus == JobStatus.FAILED)) {
-    const jobError = (await getNErrorsForJob(tx, job.jobID, 1))[0];
+    const jobError = (await getErrorsForJob(tx, job.jobID, 1))[0];
     finalMessage = jobError.message;
   }
   return { finalStatus, finalMessage };
