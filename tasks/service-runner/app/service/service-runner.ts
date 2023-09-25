@@ -42,8 +42,6 @@ export class LogStream extends stream.Writable {
   // to this stream (gets uploaded to s3)
   logStrArr: (string | object)[] = [];
 
-  aggregateLogStr = '';
-
   /**
    * Build a LogStream instance.
    * @param streamLogger - the logger to log messages with
@@ -68,7 +66,6 @@ export class LogStream extends stream.Writable {
    * @param logStr - the string to log (could emanate from a text or JSON logger)
    */
   _handleLogString(logStr: string): void {
-    this.aggregateLogStr += logStr;
     try {
       const logObj: object = JSON.parse(logStr);
       this.logStrArr.push(logObj);
@@ -117,20 +114,17 @@ function _getErrorMessageOfStatus(status: k8s.V1Status, msg = 'Unknown error'): 
 }
 
 /**
- * Parse an error message out of an error log. First check for error.json, and
- * extract the message from the entry there. Otherwise, parse the full STDOUT
- * error logs for any ERROR level message. Note, the current regular expression
- * for the latter option has issues handling error messages containing curly
- * braces.
+ * Get the error message from error.json (if the backend service provided it)
+ * or use the k8s status to generate one. This error message
+ * is often used to populate the user-facing job's message and errors fields.
  *
  * @param status - A kubernetes V1Status
- * @param logStr - A string that contains error logging
  * @param catalogDir - A string path for the outputs directory of the WorkItem
  * (e.g. s3://artifacts/requestId/workItemId/outputs/).
  * @param workItemLogger - Logger for logging messages
- * @returns An error message parsed from the log
+ * @returns An error message
  */
-async function _getErrorMessage(status: k8s.V1Status, logStr: string, catalogDir: string, workItemLogger: Logger = logger): Promise<string> {
+async function _getErrorMessage(status: k8s.V1Status, catalogDir: string, workItemLogger: Logger = logger): Promise<string> {
   // expect JSON logs entries
   try {
     const s3 = objectStoreForProtocol('s3');
@@ -140,19 +134,10 @@ async function _getErrorMessage(status: k8s.V1Status, logStr: string, catalogDir
       const logEntry: any = await s3.getObjectJson(errorFile);
       return logEntry.error;
     }
-
-    const regex = /\{.*?\}/gs;
-    const matches = logStr?.match(regex) || [];
-    for (const match of matches) {
-      const logEntry = JSON.parse(match);
-      if (logEntry.level?.toUpperCase() === 'ERROR') {
-        return logEntry.message;
-      }
-    }
     return _getErrorMessageOfStatus(status);
   } catch (e) {
     workItemLogger.error(`Caught exception: ${e}`);
-    workItemLogger.error(`Unable to parse out error from catalog location: ${catalogDir} and log message: ${logStr}`);
+    workItemLogger.error(`Unable to parse out error from catalog location: ${catalogDir}`);
     return _getErrorMessageOfStatus(status, 'Service terminated without error message');
   }
 }
@@ -169,42 +154,40 @@ export async function runQueryCmrFromPull(
   maxCmrGranules?: number,
   workItemLogger = logger,
 ): Promise<ServiceResponse> {
-  const { operation, scrollID } = workItem;
-  const catalogDir = getStacLocation(workItem);
-  return new Promise<ServiceResponse>(async (resolve) => {
-    workItemLogger.debug('CALLING WORKER');
-    workItemLogger.debug(`maxCmrGranules = ${maxCmrGranules}`);
-
-    try {
-      const resp = await axios.post(`http://localhost:${env.workerPort}/work`,
-        {
-          outputDir: catalogDir,
-          harmonyInput: operation,
-          scrollId: scrollID,
-          maxCmrGranules,
-          workItemId: workItem.id,
-        },
-        {
-          timeout: workerTimeout,
-        },
-      );
-
-      if (resp.status < 300) {
-        const catalogs = await _getStacCatalogs(catalogDir);
-        const { totalItemsSize, outputItemSizes } = resp.data;
-        const newScrollID = resp.data.scrollID;
-
-        resolve({ batchCatalogs: catalogs, totalItemsSize, outputItemSizes, scrollID: newScrollID });
-      } else {
-        resolve({ error: resp.statusText });
-      }
-    } catch (e) {
-      workItemLogger.error(e);
-      const message = e.response?.data ? e.response.data.description : e.message;
-      resolve({ error: message });
+  workItemLogger.debug(`CALLING WORKER with maxCmrGranules = ${maxCmrGranules}`);
+  let response;
+  try {
+    const { operation, scrollID } = workItem;
+    const catalogDir = getStacLocation(workItem);
+    response = await axios.post(`http://localhost:${env.workerPort}/work`,
+      {
+        outputDir: catalogDir,
+        harmonyInput: operation,
+        scrollId: scrollID,
+        maxCmrGranules,
+        workItemId: workItem.id,
+      },
+      {
+        timeout: workerTimeout,
+      },
+    );
+    if (response.status < 300) {
+      const batchCatalogs = await _getStacCatalogs(catalogDir);
+      const { totalItemsSize, outputItemSizes } = response.data;
+      const newScrollID = response.data.scrollID;
+      return { batchCatalogs, totalItemsSize, outputItemSizes, scrollID: newScrollID };
     }
-  });
-
+  } catch (e) {
+    workItemLogger.error(e);
+    if (e.response) {
+      ({ response } = e);
+    }
+  }
+  let error = response?.data?.description || '';
+  if (!error && (response?.status || response?.statusText)) {
+    error = `The Query CMR service responded with status ${response.statusText || response.status}.`;
+  }
+  return { error };
 }
 
 /**
@@ -237,6 +220,8 @@ export async function uploadLogs(workItem: WorkItemRecord, logs: (string | objec
  */
 export async function runServiceFromPull(workItem: WorkItemRecord, workItemLogger = logger): Promise<ServiceResponse> {
   try {
+    const serviceName = sanitizeImage(env.harmonyService);
+    const error = `The ${serviceName} service failed.`;
     const { operation, stacCatalogLocation } = workItem;
     // support invocation args specified with newline separator or space separator
     let commandLine = env.invocationArgs.split('\n');
@@ -285,28 +270,27 @@ export async function runServiceFromPull(workItem: WorkItemRecord, workItemLogge
               resolve({ batchCatalogs: catalogs });
             } else {
               clearTimeout(timeout);
-              const logErr = await _getErrorMessage(status, stdOut.aggregateLogStr, catalogDir, workItemLogger);
-              const errMsg = `${sanitizeImage(env.harmonyService)}: ${logErr}`;
+              const logErr = await _getErrorMessage(status, catalogDir, workItemLogger);
+              const errMsg = `${serviceName}: ${logErr}`;
               resolve({ error: errMsg });
             }
           } catch (e) {
             workItemLogger.error('Unable to upload logs. Caught exception:');
             workItemLogger.error(e);
-            resolve({ error: e.message });
+            resolve({ error });
           }
         },
       ).catch((e) => {
         clearTimeout(timeout);
         workItemLogger.error('Kubernetes client exec caught exception:');
         workItemLogger.error(e);
-        resolve({ error: e.message });
+        resolve({ error });
       });
     });
   } catch (e) {
     workItemLogger.error('runServiceFromPull caught exception:');
     workItemLogger.error(e);
-
-    return { error: e.message };
+    return { error: 'The service failed.' };
   }
 }
 

@@ -146,6 +146,7 @@ describe('ignoreErrors', function () {
             const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
             firstSwotItem = JSON.parse(res.text).workItem;
             firstSwotItem.status = WorkItemStatus.FAILED;
+            firstSwotItem.errorMessage = 'Specific failure reason';
             firstSwotItem.results = [];
 
             await updateWorkItem(this.backend, firstSwotItem);
@@ -160,6 +161,7 @@ describe('ignoreErrors', function () {
           // work item failure with only one granue should trigger job failure
           const job = await Job.byJobID(db, firstSwotItem.jobID);
           expect(job.status).to.equal(JobStatus.FAILED);
+          expect(job.message).to.equal('WorkItem failed: Specific failure reason');
         });
 
         it('correctly sets the work items status', async function () {
@@ -266,6 +268,7 @@ describe('ignoreErrors', function () {
           // all work items failing should trigger job failure
           const job = await Job.byJobID(db, secondSwotItem.jobID);
           expect(job.status).to.equal(JobStatus.FAILED);
+          expect(job.message).to.equal('The job failed with 2 errors. See the errors field for more details');
           const currentWorkItems = (await getWorkItemsByJobId(db, job.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(4);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);

@@ -289,7 +289,7 @@ export default abstract class BaseService<ServiceParamType> {
         // Sleep and poll for completion.  We could also use SNS or similar for a faster response
         await new Promise((resolve) => setTimeout(resolve, env.syncRequestPollIntervalMs));
         ({ job } = await Job.byRequestId(db, requestId));
-      } while (!job.isComplete());
+      } while (!job.hasTerminalStatus());
 
       if (job.status === JobStatus.FAILED) {
         result = { error: job.message };

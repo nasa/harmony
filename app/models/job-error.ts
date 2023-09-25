@@ -60,16 +60,23 @@ export default class JobError extends Record {
  *
  * @param tx - the transaction to use for querying
  * @param jobID - the UUID associated with the job
- *
+ * @param n - the limit for errors to retrieve
+ * 
  * @returns A promise that resolves to an array of job errors
  */
 export async function getErrorsForJob(
   tx: Transaction,
   jobID: string,
+  n?: number,
 ): Promise<JobError[]> {
   const results = await tx(JobError.table).select()
     .where({ jobID })
-    .orderBy(['id']);
+    .orderBy(['id'])
+    .modify(async (queryBuilder) => {
+      if (Number.isInteger(n) && n > 0) {
+        await queryBuilder.limit(n);
+      }
+    });
 
   const errors = results.map((e) => new JobError(e));
   return errors;

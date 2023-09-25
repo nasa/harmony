@@ -198,7 +198,7 @@ export async function responseHandler(req: Request, res: Response): Promise<void
     res.json({ code: errorCode, message: e.message });
     logger.error(e);
   } finally {
-    if (job.isComplete()) {
+    if (job.hasTerminalStatus()) {
       const durationMs = +job.updatedAt - +job.createdAt;
       const numOutputs = job.getRelatedLinks('data').length;
       logger.info('timing.job-execution.end', { durationMs, numOutputs, job: job.serialize() });
