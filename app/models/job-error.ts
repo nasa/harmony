@@ -73,7 +73,7 @@ export async function getErrorsForJob(
     .where({ jobID })
     .orderBy(['id'])
     .modify(async (queryBuilder) => {
-      if (n) {
+      if (Number.isInteger(n)) {
         await queryBuilder.limit(n);
       }
     });
