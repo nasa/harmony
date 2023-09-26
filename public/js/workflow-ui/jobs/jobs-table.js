@@ -1,5 +1,8 @@
+/* eslint-disable no-param-reassign */
 import { formatDates } from '../table.js';
 import toasts from '../toasts.js';
+
+let jobIDs = [];
 
 /**
  * Build the jobs filter with filter facets like 'status' and 'user'.
@@ -101,6 +104,47 @@ async function initCopyHandler() {
 }
 
 /**
+ * Intitialize the select box click handler for all job rows.
+ */
+async function initSelectHandler() {
+  document.querySelectorAll('.select-job').forEach((el) => {
+    el.addEventListener('click', (event) => {
+      const { target } = event;
+      const jobID = target.getAttribute('data-id');
+      const { checked } = target;
+      if (checked) {
+        jobIDs.push(jobID);
+      } else {
+        jobIDs.splice(jobIDs.indexOf(jobID), 1);
+      }
+      toasts.showUpper(jobIDs);
+    });
+  });
+}
+
+/**
+ * Intitialize the select all box click handler.
+ */
+async function initSelectAllHandler() {
+  const el = document.getElementById('select-jobs');
+  el.addEventListener('click', (event) => {
+    const { target } = event;
+    const { checked } = target;
+    jobIDs = [];
+    document.querySelectorAll('.select-job').forEach((jobEl) => {
+      if (checked) {
+        const jobID = jobEl.getAttribute('data-id');
+        jobIDs.push(jobID);
+        jobEl.checked = true;
+      } else {
+        jobEl.checked = false;
+      }
+    });
+    toasts.showUpper(jobIDs);
+  });
+}
+
+/**
  * Handles jobs table logic (formatting, building filters, etc.).
  */
 export default {
@@ -116,5 +160,7 @@ export default {
     formatDates('.date-td');
     initFilter(currentUser, services, isAdminRoute, tableFilter);
     initCopyHandler();
+    initSelectHandler();
+    initSelectAllHandler();
   },
 };
