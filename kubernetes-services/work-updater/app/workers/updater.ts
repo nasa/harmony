@@ -88,14 +88,18 @@ export async function handleBatchWorkItemUpdates(
     await updates.reduce(async (acc, item) => {
       const { workItemID } = item.update;
       const jobID = await getJobIdForWorkItem(workItemID);
-      logger.debug(`Processing work item update for job ${jobID}`);
-      const accValue = await acc;
-      if (accValue[jobID]) {
-        accValue[jobID].push(item);
+      if (!jobID) {
+        logger.error(`Received a message to process a work item that could not be found in the jobs table ${workItemID}.`, item);
       } else {
-        accValue[jobID] = [item];
+        logger.debug(`Processing work item update for job ${jobID}`);
+        const accValue = await acc;
+        if (accValue[jobID]) {
+          accValue[jobID].push(item);
+        } else {
+          accValue[jobID] = [item];
+        }
+        return accValue;
       }
-      return accValue;
     }, {});
   // process each job's updates
   for (const jobID in jobUpdates) {
