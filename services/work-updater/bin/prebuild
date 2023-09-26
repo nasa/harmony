@@ -1,0 +1,12 @@
+#!/bin/bash
+#
+# sets up the project to be ready for compiling and building docker image
+#
+
+pushd ../../packages/util
+npm run build
+popd
+rimraf built/*
+copyfiles -u 5 "../../packages/util/built/**/*" built/lib/util
+copyfiles ../../packages/util/env-defaults built/lib/util
+copyfiles -u 2 ../../env-defaults built

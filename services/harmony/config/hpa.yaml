@@ -1,0 +1,25 @@
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: $SERVICE_NAME
+  namespace: harmony
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: $SERVICE_NAME 
+  minReplicas: $HPA_MIN_REPLICAS
+  maxReplicas: $HPA_MAX_REPLICAS
+  metrics:
+  - type: Object
+    object:
+      describedObject:
+        apiVersion: apps/v1
+        kind: Deployment
+        name: $SERVICE_NAME
+      target:
+        type: AverageValue
+        averageValue: $HPA_TARGET_VALUE
+      metric:
+        name: num_ready_work_items
+        selector: {matchLabels: {name: $SERVICE_NAME}}

@@ -1,0 +1,195 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: prometheus
+rules:
+- apiGroups: [""]
+  resources:
+  - nodes
+  - nodes/proxy
+  - services
+  - endpoints
+  - pods
+  verbs: ["get", "list", "watch"]
+- apiGroups:
+  - extensions
+  resources:
+  - ingresses
+  verbs: ["get", "list", "watch"]
+- nonResourceURLs: ["/metrics"]
+  verbs: ["get"]
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: prometheus
+  namespace: monitoring
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: prometheus
+subjects:
+- kind: ServiceAccount
+  name: prometheus
+  namespace: monitoring
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: monitoring
+data:
+  prometheus.rules: |-
+    groups:
+    - name: default
+      rules:
+      - alert: KubernetesPodNotHealthy
+        expr: min_over_time(sum by (namespace, pod) (kube_pod_status_phase{phase=~"Pending|Unknown|Failed"})[$PROMETHEUS_POD_NOT_HEALTHY_DURATION:1m]) > 0
+        for: $PROMETHEUS_POD_NOT_HEALTHY_WAIT_FOR
+        labels:
+          environment: $CLIENT_ID
+          duration: $PROMETHEUS_POD_NOT_HEALTHY_DURATION
+        annotations:
+          summary: "AlertManager has detected pod(s) in a non-ready phase (Pending|Unknown|Failed)."
+      - alert: KubernetesNodeNotReady
+        expr: kube_node_status_condition{condition="Ready",status="true"} == 0
+        for: $PROMETHEUS_NODE_NOT_READY_WAIT_FOR
+        labels:
+          environment: $CLIENT_ID
+          duration: $PROMETHEUS_NODE_NOT_READY_WAIT_FOR
+        annotations:
+          summary: "AlertManager has detected Node(s) in an unready state."
+  prometheus.yml: |
+    global:
+      scrape_interval:     15s
+    rule_files:
+      - /etc/prometheus/prometheus.rules
+    alerting:
+      alertmanagers:
+        - static_configs:
+            - targets:
+                - "alertmanager:9093"
+    scrape_configs:
+      - job_name: 'prometheus'
+        scrape_interval: $PROMETHEUS_PROMETHEUS_SCRAPE_INTERVAL
+        static_configs:
+          - targets: ['localhost:9090']
+      - job_name: 'pod-manager'
+        scrape_interval: $PROMETHEUS_POD_MANAGER_SCRAPE_INTERVAL
+        kubernetes_sd_configs:
+        - role: service
+          selectors:
+          - role: service
+            label: "should_scrape=true"
+        relabel_configs:
+        - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
+          action: keep
+          regex: true
+        - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
+          action: replace
+          target_label: __metrics_path__
+          regex: (.+)
+        - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
+          action: replace
+          regex: ([^:]+)(?::\d+)?;(\d+)
+          replacement: $1:$2
+          target_label: __address__
+        - action: labelmap
+          regex: __meta_kubernetes_service_label_(.+)
+        - source_labels: [__meta_kubernetes_namespace]
+          action: replace
+          target_label: kubernetes_namespace
+        - source_labels: [__meta_kubernetes_service_name]
+          action: replace
+          target_label: kubernetes_service_name
+      - job_name: 'kube-state-metrics'
+        static_configs:
+        - targets: ['kube-state-metrics:8080']
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: monitoring
+  labels:
+    app: prometheus
+spec:
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+      annotations:
+        "cluster-autoscaler.kubernetes.io/safe-to-evict": "true"
+    spec:
+      serviceAccountName: prometheus
+      containers:
+      - name: prometheus
+        image: quay.io/prometheus/prometheus:v2.33.1
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            ephemeral-storage: $PROMETHEUS_REQUESTS_EPHEMERAL_STORAGE
+            memory: $PROMETHEUS_REQUESTS_MEMORY
+            cpu: $PROMETHEUS_REQUESTS_CPU
+          limits:
+            ephemeral-storage: $PROMETHEUS_LIMITS_EPHEMERAL_STORAGE
+            memory: $PROMETHEUS_LIMITS_MEMORY
+            cpu: $PROMETHEUS_LIMITS_CPU
+        args:
+          - "--storage.tsdb.retention.time=$PROMETHEUS_RETENTION_TIME"
+          - "--storage.tsdb.retention.size=$PROMETHEUS_RETENTION_SIZE"
+          - "--storage.tsdb.path=/prometheus"
+          - "--config.file=/etc/prometheus/prometheus.yml"
+        command:
+        - /bin/prometheus
+        ports:
+        - name: web
+          containerPort: 9090
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/prometheus
+        - name: data
+          mountPath: /prometheus
+      restartPolicy: Always
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: config-volume
+        configMap:
+          name: prometheus-config
+      - name: data
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: prometheus
+  name: prometheus
+  namespace: monitoring
+spec:
+  selector:
+    app: prometheus
+  ports:
+    - protocol: TCP
+      port: 9090
+      targetPort: 9090
