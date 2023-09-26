@@ -65,11 +65,11 @@ export async function getWork(
 /**
  * Queue a work item update for the given update and operation
  *
- * @param jobID -
- * @param update -
- * @param operation -
- * @param queueType -
- * @param logger -
+ * @param jobID - the jobID
+ * @param update - the work item update message
+ * @param operation - the data operation
+ * @param queueType - the queue to put the message on either the small or large work item queue
+ * @param logger - the logger for the request
  * @returns resolves when message is queued
  */
 export async function queueWorkItemUpdate(
