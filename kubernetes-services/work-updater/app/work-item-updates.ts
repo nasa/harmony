@@ -1,25 +1,25 @@
-import env from '../../util/env';
-import { logAsyncExecutionTime } from '../../util/log-execution';
+import env from '../../../app/util/env';
+import { logAsyncExecutionTime } from '../../../app/util/log-execution';
 import { v4 as uuid } from 'uuid';
-import WorkItemUpdate from '../../models/work-item-update';
-import WorkflowStep, { decrementFutureWorkItemCount, getWorkflowStepByJobIdStepIndex, getWorkflowStepsByJobId } from '../../models/workflow-steps';
+import WorkItemUpdate from '../../../app/models/work-item-update';
+import WorkflowStep, { decrementFutureWorkItemCount, getWorkflowStepByJobIdStepIndex, getWorkflowStepsByJobId } from '../../../app/models/workflow-steps';
 import { Logger } from 'winston';
 import _, { ceil, range, sum } from 'lodash';
-import { JobStatus, Job } from '../../models/job';
-import JobError, { getErrorCountForJob, getErrorsForJob } from '../../models/job-error';
-import JobLink, { getJobDataLinkCount } from '../../models/job-link';
-import { incrementReadyCount, deleteUserWorkForJob, incrementReadyAndDecrementRunningCounts, decrementRunningCount } from '../../models/user-work';
-import WorkItem, { maxSortIndexForJobService, workItemCountForStep, getWorkItemsByJobIdAndStepIndex, getWorkItemById, updateWorkItemStatus, getJobIdForWorkItem } from '../../models/work-item';
-import { WorkItemStatus, COMPLETED_WORK_ITEM_STATUSES } from '../../models/work-item-interface';
-import { outputStacItemUrls, handleBatching, resultItemSizes } from '../../util/aggregation-batch';
-import db, { Transaction, batchSize } from '../../util/db';
-import { ServiceError } from '../../util/errors';
-import { completeJob } from '../../util/job';
-import { objectStoreForProtocol } from '../../util/object-store';
-import { StacItem, readCatalogItems, StacItemLink, StacCatalog } from '../../util/stac';
-import { resolve } from '../../util/url';
-import { QUERY_CMR_SERVICE_REGEX, calculateQueryCmrLimit } from './util';
-import { makeWorkScheduleRequest } from './work-item-polling';
+import { JobStatus, Job } from '../../../app/models/job';
+import JobError, { getErrorCountForJob, getErrorsForJob } from '../../../app/models/job-error';
+import JobLink, { getJobDataLinkCount } from '../../../app/models/job-link';
+import { incrementReadyCount, deleteUserWorkForJob, incrementReadyAndDecrementRunningCounts, decrementRunningCount } from '../../../app/models/user-work';
+import WorkItem, { maxSortIndexForJobService, workItemCountForStep, getWorkItemsByJobIdAndStepIndex, getWorkItemById, updateWorkItemStatus, getJobIdForWorkItem } from '../../../app/models/work-item';
+import { WorkItemStatus, COMPLETED_WORK_ITEM_STATUSES } from '../../../app/models/work-item-interface';
+import { outputStacItemUrls, handleBatching, resultItemSizes } from '../../../app/util/aggregation-batch';
+import db, { Transaction, batchSize } from '../../../app/util/db';
+import { ServiceError } from '../../../app/util/errors';
+import { completeJob } from '../../../app/util/job';
+import { objectStoreForProtocol } from '../../../app/util/object-store';
+import { StacItem, readCatalogItems, StacItemLink, StacCatalog } from '../../../app/util/stac';
+import { resolve } from '../../../app/util/url';
+import { QUERY_CMR_SERVICE_REGEX, calculateQueryCmrLimit } from '../../../app/backends/workflow-orchestration/util';
+import { makeWorkScheduleRequest } from '../../../app/backends/workflow-orchestration/work-item-polling';
 
 /**
  * A structure holding the preprocess info of a work item

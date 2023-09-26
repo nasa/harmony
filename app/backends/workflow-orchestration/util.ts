@@ -1,9 +1,9 @@
 import { Logger } from 'winston';
-import { Job } from '../../models/job';
-import WorkItem, { workItemCountForStep } from '../../models/work-item';
-import env from '../../util/env';
 import { Transaction } from '../../util/db';
+import WorkItem, { workItemCountForStep } from '../../models/work-item';
 import { WorkItemStatus } from '../../models/work-item-interface';
+import { Job } from '../../models/job';
+import env from '../../util/env';
 
 export const QUERY_CMR_SERVICE_REGEX = /harmonyservices\/query-cmr:.*/;
 
@@ -25,6 +25,7 @@ export async function calculateQueryCmrLimit(tx: Transaction, workItem: WorkItem
   return queryCmrLimit;
 }
 
+// TODO - can we get rid of this and just handle it in the test framework
 /**
  * Empty function that will be overridden in tests. Not needed for runtime environments since
  * the scheduler pod will be running

@@ -12,7 +12,6 @@ import { WorkItemStatus } from '../../../app/models/work-item-interface';
 import env from '../../../app/util/env';
 import { buildWorkflowStep } from './helpers/workflow-steps';
 
-
 const workFailer = new WorkFailer();
 
 // 11 hours -- any RUNNING items that haven't been updatedAt for this long should get picked up

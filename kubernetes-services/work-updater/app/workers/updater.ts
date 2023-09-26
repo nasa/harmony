@@ -4,7 +4,7 @@ import {
   handleWorkItemUpdate,
   handleWorkItemUpdateWithJobId,
   preprocessWorkItem,
-  processWorkItems } from '../../../../app/backends/workflow-orchestration/work-item-updates';
+  processWorkItems } from '../work-item-updates';
 import { getJobIdForWorkItem } from '../../../../app/models/work-item';
 import { default as defaultLogger } from '../../../../app/util/log';
 import { WorkItemQueueType } from '../../../../app/util/queue/queue';

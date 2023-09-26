@@ -1,10 +1,13 @@
 import _ from 'lodash';
 import { NextFunction, Response } from 'express';
 import env from '../../util/env';
+import { Logger } from 'winston';
 import HarmonyRequest from '../../models/harmony-request';
 import { WorkItemQueueType } from '../../util/queue/queue';
 import { getQueueForType  } from '../../util/queue/queue-factory';
 import { getWorkFromQueue, getWorkFromDatabase, WorkItemData } from './work-item-polling';
+import WorkItemUpdate from '../../models/work-item-update';
+import DataOperation from '../../models/data-operation';
 
 const MAX_TRY_COUNT = 1;
 const RETRY_DELAY = 1000 * 120;
@@ -60,6 +63,27 @@ export async function getWork(
 }
 
 /**
+ * Queue a work item update for the given update and operation
+ *
+ * @param jobID -
+ * @param update -
+ * @param operation -
+ * @param queueType -
+ * @param logger -
+ * @returns resolves when message is queued
+ */
+export async function queueWorkItemUpdate(
+  jobID: string, update: WorkItemUpdate, operation: DataOperation, queueType: WorkItemQueueType, logger: Logger,
+): Promise<void> {
+  // we use separate queues for small and large work item updates
+  logger.debug(`Sending work item update to ${queueType} for ${update.workItemID}`);
+  const queue = getQueueForType(queueType);
+  await queue.sendMessage(JSON.stringify({ update, operation }), jobID).catch((e) => {
+    logger.error(e);
+  });
+}
+
+/**
  * Update a work item from a service response. This function stores the update in a queue
  * without further processing and then responds quickly. Processing the update is handled
  * asynchronously (see `batchProcessQueue`)
@@ -95,19 +119,8 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
     duration,
   };
   const workItemLogger = req.context.logger.child({ workItemId: update.workItemID });
-
-  // we use separate queues for small and large work item updates
-  let queueType = WorkItemQueueType.SMALL_ITEM_UPDATE;
-  if (results?.length > 1) {
-    workItemLogger.debug(`Sending work item update to large item queue for ${operation.requestId}`);
-    queueType = WorkItemQueueType.LARGE_ITEM_UPDATE;
-  } else {
-    workItemLogger.debug(`Sending work item update to regular queue for ${operation.requestId}`);
-  }
-  const queue = getQueueForType(queueType);
-  await queue.sendMessage(JSON.stringify({ update, operation }), operation.requestId).catch((e) => {
-    workItemLogger.error(e);
-  });
+  const queueType = results?.length > 1 ? WorkItemQueueType.LARGE_ITEM_UPDATE : WorkItemQueueType.SMALL_ITEM_UPDATE;
+  await queueWorkItemUpdate(operation.requestId, update, operation, queueType, workItemLogger);
 
   // Return a success status with no body
   res.status(204).send();
