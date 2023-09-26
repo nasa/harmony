@@ -3,6 +3,7 @@ import { formatDates } from '../table.js';
 import toasts from '../toasts.js';
 
 let jobIDs = [];
+let statuses = [];
 
 /**
  * Build the jobs filter with filter facets like 'status' and 'user'.
@@ -111,13 +112,16 @@ async function initSelectHandler() {
     el.addEventListener('click', (event) => {
       const { target } = event;
       const jobID = target.getAttribute('data-id');
+      const status = target.getAttribute('data-status');
       const { checked } = target;
       if (checked) {
         jobIDs.push(jobID);
+        statuses.push(status);
       } else {
         jobIDs.splice(jobIDs.indexOf(jobID), 1);
+        statuses.splice(statuses.indexOf(status), 1);
       }
-      toasts.showUpper(jobIDs);
+      toasts.showUpper(statuses);
     });
   });
 }
@@ -131,16 +135,19 @@ async function initSelectAllHandler() {
     const { target } = event;
     const { checked } = target;
     jobIDs = [];
+    statuses = [];
     document.querySelectorAll('.select-job').forEach((jobEl) => {
       if (checked) {
         const jobID = jobEl.getAttribute('data-id');
+        const status = jobEl.getAttribute('data-status');
         jobIDs.push(jobID);
+        statuses.push(status);
         jobEl.checked = true;
       } else {
         jobEl.checked = false;
       }
     });
-    toasts.showUpper(jobIDs);
+    toasts.showUpper(statuses);
   });
 }
 

@@ -25,7 +25,7 @@
     <tbody>
         {{#jobs}}
         <tr class='job-table-row'>
-            <td><input class="select-job" type="checkbox" data-id="{{jobID}}"></input></td>
+            <td><input class="select-job" type="checkbox" data-id="{{jobID}}" data-status="{{status}}"></input></td>
             <th scope="row"><a href="workflow-ui/{{jobID}}{{dateQuery}}">{{jobID}}</a></th>
             <td>{{service_name}}</td>
             {{#isAdminRoute}}
