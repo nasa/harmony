@@ -1,7 +1,24 @@
-import toasts from './toasts.js';
 import PubSub from '../pub-sub.js';
 
 class NavLinks {
+  /**
+   * Initialize job state change nav links.
+   * @param {string} linksContainerId - id of the container to place the links within
+   * @param {string} linkEvent - the event name that should trigger visibility change for the links
+   */
+  constructor(linksContainerId, linkEvent) {
+    this.fetchLinks(true).then((links) => {
+      if (links.length) {
+        this.insertLinksHtml(links, linksContainerId);
+      }
+    });
+    // keep the hidden/visible state updated on this event
+    PubSub.subscribe(
+      linkEvent,
+      () => this.enableLinks(),
+    );
+  }
+
   /**
    * Transform link objects to an HTML string representing the links nav.
    * @param {Object[]} links - link array (of links with title, href, type, rel)
@@ -22,24 +39,11 @@ class NavLinks {
 
   /**
    * Responds to a nav link click event
-   * (hits relevant Harmony url, shows user the response).
+   * (e.g. hits relevant Harmony url, shows user the response).
    * @param {Event} event - the click event
    */
-  async handleClick(event) {
-    event.preventDefault();
-    toasts.showUpper('Changing job state...');
-    const link = event.target;
-    const stateChangeUrl = link.getAttribute('href');
-    const res = await fetch(stateChangeUrl);
-    const data = await res.json();
-    if (res.status === 200) {
-      toasts.showUpper(`The job is now ${data.status}`);
-      PubSub.publish('table-state-change');
-    } else if (data.description) {
-      toasts.showUpper(data.description);
-    } else {
-      toasts.showUpper('The update failed.');
-    }
+  async handleClick() {
+    throw new Error('handleClick must be implemented.');
   }
 
   /**
@@ -59,54 +63,27 @@ class NavLinks {
   }
 
   /**
-   * Get job state change links (pause, resume, etc.) from Harmony and insert them in the UI.
-   * @param {string} linksContainerId - id of the container to place the HTML within
-   * @param {string} jobId - the job id to fetch links for
+   * Get job state change links (pause, resume, etc.) from Harmony.
+   * @param {boolean} fetchAll - fetch all links or only those relevent to the
+   * job's current status
    */
-  async fetchAndInsertLinks(linksContainerId, jobId) {
-    const linksUrl = `./${jobId}/links?all=true`;
-    const res = await fetch(linksUrl);
-    if (res.status === 200) {
-      const links = await res.json();
-      if (links.length) {
-        this.insertLinksHtml(links, linksContainerId);
-      }
-    }
+  async fetchLinks() {
+    throw new Error('fetchLinks must be implemented');
   }
 
   /**
    * Hide/show links depending on the job state.
-   * @param {string} jobId the id of the current job
    */
-   async enableLinks(jobId) {
-    const linksUrl = `./${jobId}/links?all=false`;
-    const res = await fetch(linksUrl);
-    if (res.status === 200) {
-      const validLinks = await res.json();
-      document.querySelectorAll('.state-change-link').forEach((el) => {
-        const rel = el.getAttribute('rel');
-        if (validLinks.find((l) => l.rel === rel)) {
-          el.classList.remove('d-none');
-        } else {
-          el.classList.add('d-none');
-        }
-      });
-    }
-  }
-
-  /**
-   * Initialize job state change nav links.
-   * @param {string} linksContainerId - id of the container to place the links within
-   * @param {string} jobId - the job id to fetch links for
-   */
-  async init(linksContainerId, jobId) {
-    await this.fetchAndInsertLinks(linksContainerId, jobId);
-    // keep the hidden/visible state of the links in sync with
-    // the work items table
-    PubSub.subscribe(
-      'work-items-table-loaded',
-      () => this.enableLinks(jobId),
-    );
+   async enableLinks() {
+    const validLinks = await this.fetchLinks(false);
+    document.querySelectorAll('.state-change-link').forEach((el) => {
+      const rel = el.getAttribute('rel');
+      if (validLinks.find((l) => l.rel === rel)) {
+        el.classList.remove('d-none');
+      } else {
+        el.classList.add('d-none');
+      }
+    });
   }
 }
 
