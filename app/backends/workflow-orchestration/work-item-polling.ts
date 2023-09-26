@@ -1,8 +1,9 @@
 import db from '../../util/db';
 import { Logger } from 'winston';
 import env from '../../util/env';
-import WorkItem, { getNextWorkItem, getWorkItemStatus, updateWorkItemStatuses } from '../../models/work-item';
-import { getNextJobIdForUsernameAndService, getNextUsernameForWork, incrementRunningAndDecrementReadyCounts, recalculateCounts } from '../../models/user-work';
+import WorkItem, { getNextWorkItem, getNextWorkItems, getWorkItemStatus, updateWorkItemStatuses } from '../../models/work-item';
+import WorkflowStep from '../../models/workflow-steps';
+import { getNextJobIdForUsernameAndService, getNextJobIds, getNextUsernameForWork, incrementRunningAndDecrementReadyCounts, recalculateCounts } from '../../models/user-work';
 import { getQueueForUrl, getQueueUrlForService, getWorkSchedulerQueue  } from '../../util/queue/queue-factory';
 import { QUERY_CMR_SERVICE_REGEX, calculateQueryCmrLimit, processSchedulerQueue } from './util';
 import { WorkItemStatus } from '../../models/work-item-interface';
@@ -51,6 +52,56 @@ export async function getWorkFromDatabase(serviceID: string, reqLogger: Logger):
     reqLogger.error(`Error getting work from database: ${err.message}`);
   }
   return result;
+}
+
+/**
+ * Get work items from the database for the given service ID.
+ *
+ * @param serviceID - the id of the service to get work for
+ * @param reqLogger - a logger instance
+ * @param batchSize - batch size
+ * @returns work items from the database for the given service ID
+ */
+export async function getWorksFromDatabase(
+  serviceID: string,
+  reqLogger: Logger,
+  batchSize: number): Promise<WorkItemData[]> {
+  const workItems: WorkItemData[] = [];
+  try {
+    await db.transaction(async (tx) => {
+      const jobIds = await getNextJobIds(tx, serviceID as string, batchSize);
+      const workSize = (jobIds.length > 0) ? Math.ceil(batchSize / jobIds.length) : 1;
+      for (const jobId of jobIds) {
+        const workflowStepData = await tx(WorkflowStep.table)
+          .select(['operation'])
+          .where('jobID', '=', jobId)
+          .andWhere({ serviceID })
+          .first();
+        const nextWorkItems = await getNextWorkItems(tx, serviceID as string, jobId, workSize, workflowStepData);
+        if (nextWorkItems?.length > 0) {
+          for (const workItem of nextWorkItems) {
+            if (workItem && QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)) {
+              const childLogger = reqLogger.child({ workItemId: workItem.id });
+              const maxCmrGranules = await calculateQueryCmrLimit(tx, workItem, childLogger);
+              reqLogger.debug(`Found work item ${workItem.id} for service ${serviceID} with max CMR granules ${maxCmrGranules}`);
+              workItems.push({ workItem, maxCmrGranules });
+            } else {
+              workItems.push({ workItem });
+            }
+          }
+          await incrementRunningAndDecrementReadyCounts(tx, jobId, serviceID as string, nextWorkItems.length);
+        } else {
+          reqLogger.warn(`==============found: ${nextWorkItems?.length}, foundowrkitem worksize: ${workSize}`);
+          reqLogger.warn(`user_work is out of sync for job ${jobId}, could not find ready work item`);
+          reqLogger.warn(`recalculating ready and running counts for job ${jobId}`);
+          await recalculateCounts(tx, jobId);
+        }
+      }
+    });
+  } catch (err) {
+    reqLogger.error(`Error getting works from database: ${err.message}`);
+  }
+  return workItems;
 }
 
 /**
