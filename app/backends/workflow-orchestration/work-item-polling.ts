@@ -2,7 +2,6 @@ import db from '../../util/db';
 import { Logger } from 'winston';
 import env from '../../util/env';
 import WorkItem, { getNextWorkItem, getNextWorkItems, getWorkItemStatus, updateWorkItemStatuses } from '../../models/work-item';
-import WorkflowStep from '../../models/workflow-steps';
 import { getNextJobIdForUsernameAndService, getNextJobIds, getNextUsernameForWork, incrementRunningAndDecrementReadyCounts, recalculateCounts } from '../../models/user-work';
 import { getQueueForUrl, getQueueUrlForService, getWorkSchedulerQueue  } from '../../util/queue/queue-factory';
 import { QUERY_CMR_SERVICE_REGEX, calculateQueryCmrLimit, processSchedulerQueue } from './util';
@@ -72,12 +71,7 @@ export async function getWorksFromDatabase(
       const jobIds = await getNextJobIds(tx, serviceID as string, batchSize);
       const workSize = (jobIds.length > 0) ? Math.ceil(batchSize / jobIds.length) : 1;
       for (const jobId of jobIds) {
-        const workflowStepData = await tx(WorkflowStep.table)
-          .select(['operation'])
-          .where('jobID', '=', jobId)
-          .andWhere({ serviceID })
-          .first();
-        const nextWorkItems = await getNextWorkItems(tx, serviceID as string, jobId, workSize, workflowStepData);
+        const nextWorkItems = await getNextWorkItems(tx, serviceID as string, jobId, workSize);
         if (nextWorkItems?.length > 0) {
           for (const workItem of nextWorkItems) {
             if (workItem && QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)) {

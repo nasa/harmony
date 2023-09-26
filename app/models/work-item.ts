@@ -154,17 +154,14 @@ export async function getNextWorkItem(
   tx: Transaction,
   serviceID: string,
   jobID: string,
-  workflowStepData = undefined,
 ): Promise<WorkItem> {
   let workItemData;
   try {
-    if (workflowStepData == undefined) {
-      workflowStepData = await tx(WorkflowStep.table)
-        .select(['operation'])
-        .where('jobID', '=', jobID)
-        .andWhere({ serviceID })
-        .first();
-    }
+    const workflowStepData = await tx(WorkflowStep.table)
+      .select(['operation'])
+      .where('jobID', '=', jobID)
+      .andWhere({ serviceID })
+      .first();
 
     if (workflowStepData?.operation) {
       const { operation } = workflowStepData;
@@ -212,6 +209,33 @@ export async function getNextWorkItem(
 }
 
 /**
+ * Get operation from the database for the given job id and service id.
+ *
+ * @param jobId - the id of the job
+ * @param serviceID - the id of the service to get operation for
+ * @param reqLogger - a logger instance
+ * @returns parsed operation from the database for the given job and service ids
+ */
+async function getJobServiceOperation(
+  tx: Transaction,
+  jobID: string,
+  serviceID: string): Promise<DataOperation> {
+  let parsedOperation;
+  try {
+    const workflowStepData = await tx(WorkflowStep.table)
+      .select(['operation'])
+      .where('jobID', '=', jobID)
+      .andWhere({ serviceID })
+      .first();
+    const { operation } = workflowStepData;
+    parsedOperation = JSON.parse(operation);
+  } catch (err) {
+    logger.error(`Error getting operation of jobID: ${jobID} and serviceID: ${serviceID} from database: ${err.message}`);
+  }
+  return parsedOperation && new DataOperation(parsedOperation);
+}
+
+/**
  * Returns the next work item to process for a service and job ID
  * @param tx - the transaction to use for querying
  * @param serviceID - the service ID looking for the next item to work
@@ -224,20 +248,12 @@ export async function getNextWorkItems(
   serviceID: string,
   jobID: string,
   workSize: number,
-  workflowStepData = undefined,
 ): Promise<WorkItem[]> {
   let workItemData;
   try {
-    if (workflowStepData == undefined) {
-      workflowStepData = await tx(WorkflowStep.table)
-        .select(['operation'])
-        .where('jobID', '=', jobID)
-        .andWhere({ serviceID })
-        .first();
-    }
+    const operation = await getJobServiceOperation(tx, jobID, serviceID);
 
-    if (workflowStepData?.operation) {
-      const { operation } = workflowStepData;
+    if (operation) {
       let workItemDataQuery = tx(`${WorkItem.table} as w`)
         .forUpdate()
         .select(tableFields)
@@ -252,25 +268,26 @@ export async function getNextWorkItems(
       }
 
       workItemData = await workItemDataQuery;
-      if (workItemData) {
+
+      if (workItemData?.length > 0) {
         for (let i = 0; i < workItemData.length; i++) {
-          workItemData[i].operation = JSON.parse(operation);
+          workItemData[i].operation = operation.clone();
           // Make sure that the staging location is unique for every work item in a job
           // in case a service for the same job produces an output with the same file name
           workItemData[i].operation.stagingLocation += `${workItemData[i].id}/`;
-          const startedAt = new Date();
-          let status = WorkItemStatus.RUNNING;
-          if (env.useServiceQueues) {
-            status = WorkItemStatus.QUEUED;
-          }
-          await tx(WorkItem.table)
-            .update({
-              status,
-              updatedAt: startedAt,
-              startedAt,
-            })
-            .where({ id: workItemData[i].id });
         }
+        const startedAt = new Date();
+        let status = WorkItemStatus.RUNNING;
+        if (env.useServiceQueues) {
+          status = WorkItemStatus.QUEUED;
+        }
+        await tx(WorkItem.table)
+          .update({
+            status,
+            updatedAt: startedAt,
+            startedAt,
+          })
+          .whereIn('id', workItemData.map((w) => w.id));
       }
     }
   } catch (e) {
