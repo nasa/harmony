@@ -6,9 +6,9 @@ import log from '../../../../app/util/log';
 import sleep from '../../../../app/util/sleep';
 import { Worker } from '../../../../app/workers/worker';
 import { WorkItemStatus } from '../../../../app/models/work-item-interface';
-import { handleWorkItemUpdateWithJobId } from '../../../../app/backends/workflow-orchestration/work-item-updates';
 import env from '../util/env';
-
+import { WorkItemQueueType } from '../../../../app/util/queue/queue';
+import { queueWorkItemUpdate } from '../../../../app/backends/workflow-orchestration/workflow-orchestration';
 
 /**
  * Construct a message indicating that the given work item has exceeded the given duration
@@ -92,28 +92,24 @@ export default class Failer implements Worker {
           for (const workItem of workItems) {
             log.warn(`expiring work item ${workItem.id}`, { jobId: workItem.jobID, workItemId: workItem.id });
           }
-          const jobIds = new Set(workItems.map((item) => item.jobID));
-          for (const jobId of jobIds) {
-            jobIds.add(jobId);
+          const jobIDs = new Set(workItems.map((item) => item.jobID));
+          for (const jobID of jobIDs) {
+            jobIDs.add(jobID);
             try {
-              const itemsForJob = workItems.filter((item) => item.jobID === jobId);
-              await Promise.all(itemsForJob.map((item) => {
+              const itemsForJob = workItems.filter((item) => item.jobID === jobID);
+              await Promise.all(itemsForJob.map(async (item) => {
                 const workItemlog = log.child({ workItemId: item.id });
-                const key = `${jobId}${item.serviceID}`;
+                const key = `${jobID}${item.serviceID}`;
                 const message = failedMessage(item.id, jobServiceThresholds[key]);
                 workItemlog.debug(message);
-                return handleWorkItemUpdateWithJobId(
-                  jobId,
-                  {
-                    workItemID: item.id, status: WorkItemStatus.FAILED,
-                    scrollID: item.scrollID, hits: null, results: [], totalItemsSize: item.totalItemsSize,
-                    errorMessage: message,
-                  },
-                  null,
-                  workItemlog);
+                const workItemUpdate = {
+                  workItemID: item.id, status: WorkItemStatus.FAILED, scrollID: item.scrollID,
+                  hits: null, results: [], totalItemsSize: item.totalItemsSize, errorMessage: message,
+                };
+                await queueWorkItemUpdate(jobID, workItemUpdate, null, WorkItemQueueType.SMALL_ITEM_UPDATE, workItemlog);
               }));
             } catch (e) {
-              log.error(`Error attempting to process work item updates for job ${jobId}.`);
+              log.error(`Error attempting to process work item updates for job ${jobID}.`);
               log.error(e);
             }
           }
@@ -123,7 +119,7 @@ export default class Failer implements Worker {
           }
 
           log.info('Work failer processed work item updates for ' +
-            `${jobIds.size} jobs and ${workItems.length} work items, starting id: ${startingId}.`);
+            `${jobIDs.size} jobs and ${workItems.length} work items, starting id: ${startingId}.`);
         }
         startingId = newId;
       } else {

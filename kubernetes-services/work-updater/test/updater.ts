@@ -7,7 +7,7 @@ import * as updater from '../app/workers/updater';
 import * as queueFactory from '../../../app/util/queue/queue-factory';
 import { MemoryQueue } from '../../../test/helpers/memory-queue';
 import * as wi from '../../../app/models/work-item';
-import * as wiu from '../../../app/backends/workflow-orchestration/work-item-updates';
+import * as wiu from '../app/work-item-updates';
 import { WorkItemQueueType } from '../../../app/util/queue/queue';
 import WorkItemUpdate from '../../../app/models/work-item-update';
 import DataOperation from '../../../app/models/data-operation';
