@@ -23,7 +23,7 @@ chown -R root:root .
 set -ex
 npm ci
 
-build "lib/util"
+build "packages/util"
 
 for subdir in services/*; do
     if [[ -d "${subdir}" && "${subdir} != "harmony" ]]; then
