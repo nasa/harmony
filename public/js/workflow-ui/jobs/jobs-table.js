@@ -2,7 +2,9 @@
 import { formatDates } from '../table.js';
 import toasts from '../toasts.js';
 
+// all of the currently selected job IDs
 let jobIDs = [];
+// each status for each currently selected job
 let statuses = [];
 
 /**
