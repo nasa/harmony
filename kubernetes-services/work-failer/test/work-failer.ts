@@ -11,6 +11,7 @@ import WorkFailer from '../app/workers/failer';
 import { WorkItemStatus } from '../../../app/models/work-item-interface';
 import env from '../../../app/util/env';
 import { buildWorkflowStep } from './helpers/workflow-steps';
+import { hookGetQueueForType } from '../../../test/helpers/queue';
 
 const workFailer = new WorkFailer();
 
@@ -36,6 +37,7 @@ describe('WorkFailer', function () {
   let readyItemJobItem2: WorkItem;
 
   hookTransaction();
+  hookGetQueueForType();
 
   before(async function () {
     // Set the limit to something small for these tests
