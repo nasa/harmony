@@ -102,6 +102,29 @@ export async function getNextJobIdForUsernameAndService(tx: Transaction, service
 }
 
 /**
+ * Returns the jobIds with the oldest last_worked value and ready count greater than 0 and interleaved by username.
+ * This query enforces the fair queueing by returning the job ids in the order of fair queueing priority.
+ * @param tx - The database transaction
+ * @param serviceID - The service ID
+ * @param batchSize - The batch size
+ * @returns The list of job ids in fair queuring priority
+ */
+export async function getNextJobIds(
+  tx: Transaction,
+  serviceID: string,
+  batchSize: number)
+  : Promise<string[]> {
+  const sql = 'WITH RankedJobs AS ( '
+  + 'SELECT job_id, last_worked, username, is_async, ROW_NUMBER() OVER (PARTITION BY username ORDER BY last_worked ASC) AS user_row_num '
+  + `FROM user_work WHERE service_id = '${serviceID}' and ready_count > 0`
+  + ') SELECT job_id FROM ( '
+  + 'SELECT R.job_id, R.last_worked, R.username, R.is_async, ROW_NUMBER() OVER (ORDER BY R.user_row_num, R.last_worked ASC) AS overall_row_num '
+  + `FROM RankedJobs R) Interleaved WHERE overall_row_num <= ${batchSize} ORDER BY is_async, overall_row_num`;
+  const results = await tx.raw(sql);
+  return results.rows.map((r) => r.job_id) || [];
+}
+
+/**
  * Deletes all of the rows for the given job from the user_work table.
  * delete from user_work where job_id = $job_id
  * @param tx - The database transaction
@@ -263,13 +286,13 @@ export async function recalculateReadyCount(tx: Transaction, jobID: string): Pro
  * @param serviceID - The ID of the service
  */
 export async function incrementRunningAndDecrementReadyCounts(
-  tx: Transaction, jobID: string, serviceID: string,
+  tx: Transaction, jobID: string, serviceID: string, count = 1,
 ): Promise<void> {
   await tx(UserWork.table)
     .where({ job_id: jobID, service_id: serviceID })
-    .increment('running_count')
+    .increment('running_count', count)
     .update({
-      ready_count: tx.raw('CASE WHEN ready_count > 0 THEN ready_count - 1 ELSE 0 END'),
+      ready_count: tx.raw(`CASE WHEN ready_count >= ${count} THEN ready_count - ${count} ELSE 0 END`),
       last_worked: new Date(),
     });
 }
