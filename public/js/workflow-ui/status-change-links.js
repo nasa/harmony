@@ -1,12 +1,15 @@
 import PubSub from '../pub-sub.js';
 
-class NavLinks {
+/**
+ * Links for changing job status.
+ */
+class StatusChangeLinks {
   /**
-   * Initialize job state change nav links.
+   * Initialize job status change links.
    * @param {string} linksContainerId - id of the container to place the links within
    * @param {string} linkEvent - the event name that should trigger visibility change for the links
    */
-  constructor(linksContainerId, linkEvent) {
+  init(linksContainerId, linkEvent) {
     this.fetchLinks(true).then((links) => {
       if (links.length) {
         this.insertLinksHtml(links, linksContainerId);
@@ -87,4 +90,4 @@ class NavLinks {
   }
 }
 
-export default NavLinks;
+export default StatusChangeLinks;

@@ -1,15 +1,17 @@
-import NavLinks from '../nav-links.js';
+import StatusChangeLinks from '../status-change-links.js';
 import toasts from '../toasts.js';
 import PubSub from '../../pub-sub.js';
 
-class JobLinks extends NavLinks {
+/**
+ * Links for changing job status (for the job page of the Workflow UI).
+ */
+class JobStatusChangeLinks extends StatusChangeLinks {
   /**
-   * Init the jobs links which allow the user to change the job state.
+   * Construct an instance of JobStatusChangeLinks (HTML links used to change job status).
    * @param {string} jobId - ID of the job that the links are for
-   * @param {string} linksContainerId - ID of the container to put the links in
    */
-  constructor(jobId, linksContainerId) {
-    super(linksContainerId, 'work-items-table-loaded');
+  constructor(jobId) {
+    super();
     this.jobId = jobId;
   }
 
@@ -51,4 +53,4 @@ class JobLinks extends NavLinks {
   }
 }
 
-export default JobLinks;
+export default JobStatusChangeLinks;
