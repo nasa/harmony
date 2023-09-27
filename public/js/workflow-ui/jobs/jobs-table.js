@@ -172,4 +172,12 @@ export default {
     initSelectHandler();
     initSelectAllHandler();
   },
+
+  getJobStatuses() {
+    return statuses;
+  },
+
+  getJobIds() {
+    return jobIDs;
+  },
 };

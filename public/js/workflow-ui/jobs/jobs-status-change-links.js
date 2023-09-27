@@ -1,6 +1,26 @@
 import StatusChangeLinks from '../status-change-links.js';
-import toasts from '../toasts.js';
-import PubSub from '../../pub-sub.js';
+import jobsTable from './jobs-table.js';
+
+const resumeLink = {
+  title: 'Resumes the job.',
+  href: '/jobs/resume',
+  type: 'application/json',
+  rel: 'resumer',
+};
+
+const cancelLink = {
+  title: 'Cancels the job.',
+  href: '/jobs/cancel',
+  type: 'application/json',
+  rel: 'canceler',
+};
+
+const pauseLink = {
+  title: 'Pauses the job.',
+  href: '/jobs/pause',
+  type: 'application/json',
+  rel: 'pauser',
+};
 
 /**
  * Links for changing job status(es) (for the jobs page of the Workflow UI).
@@ -13,19 +33,7 @@ class JobsStatusChangeLinks extends StatusChangeLinks {
    */
   async handleClick(event) {
     event.preventDefault();
-    toasts.showUpper('Changing job state...');
-    const link = event.target;
-    const stateChangeUrl = link.getAttribute('href');
-    const res = await fetch(stateChangeUrl);
-    const data = await res.json();
-    if (res.status === 200) {
-      toasts.showUpper(`The job is now ${data.status}`);
-      PubSub.publish('table-state-change');
-    } else if (data.description) {
-      toasts.showUpper(data.description);
-    } else {
-      toasts.showUpper('The update failed.');
-    }
+    console.log(jobsTable.getJobIds());
   }
 
   /**
@@ -34,13 +42,7 @@ class JobsStatusChangeLinks extends StatusChangeLinks {
    * job's current status
    */
   async fetchLinks(fetchAll) {
-    const linksUrl = `./${this.jobId}/links?all=${fetchAll}`;
-    const res = await fetch(linksUrl);
-    if (res.status === 200) {
-      const links = await res.json();
-      return links;
-    }
-    return [];
+    return [resumeLink, cancelLink, pauseLink];
   }
 }
 
