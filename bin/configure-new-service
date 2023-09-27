@@ -1,3 +1,65 @@
 #!/bin/bash
 
-echo "Non nobis, Domine, non nobis, sed Nomini tuo da gloriam"
+# Function to prompt the user and convert 'y' or 'n' to 'true' or 'false'
+function prompt_user {
+    local prompt_message="$1"
+    local variable_name="${prompt_message// /_}"
+    variable_name=$(echo "$variable_name" | tr '[:lower:]' '[:upper:]')
+
+    read -p "$prompt_message (y/n): " user_input
+    user_input=$(echo "$user_input" | tr '[:upper:]' '[:lower:]')
+
+    if [ "$user_input" == "y" ]; then
+        eval "$variable_name=true"
+    else
+        eval "$variable_name=false"
+    fi
+}
+
+read -p "Service name: " SERVICE_NAME
+
+# Check if the service already exists in the config file
+if grep -q "^\s*- name: $SERVICE_NAME" config/services.yml; then
+    echo "Service with name '$SERVICE_NAME' already exists in config/services.yml. Exiting."
+    exit 1
+fi
+
+# Prompt the user for various options
+prompt_user "Bbox subsetting"
+prompt_user "Shapefile subsetting"
+prompt_user "Temporal subsetting"
+prompt_user "Variable subsetting"
+prompt_user "Reprojection"
+prompt_user "Concatenation"
+
+# Convert SERVICE_NAME to uppercase using 'tr'
+SERVICE_NAME_UPPER=$(echo "$SERVICE_NAME" | tr '[:lower:]' '[:upper:]')
+
+# Append to config/services.yml
+cat <<-EOF >> config/services.yml
+    - name: $SERVICE_NAME
+      description: |
+        TODO - fill in description
+      data_operation_version: '0.18.0'
+      type:
+        <<: *default-turbo-config
+        params:
+          <<: *default-turbo-params
+          env:
+            <<: *default-turbo-env
+            STAGING_PATH: public/template/$SERVICE_NAME
+      umm_s: []
+      capabilities:
+        subsetting:
+          bbox: $BBOX_SUBSETTING
+          concatenation: $CONCATENATION
+          variable: $VARIABLE_SUBSETTING
+          temporal: $TEMPORAL_SUBSETTING
+        output_formats:
+          - application/netcdf4
+        reprojection: $REPROJECTION
+      steps:
+        - image: !Env \${QUERY_CMR_IMAGE}
+        - image: !Env \${${SERVICE_NAME_UPPER}_IMAGE}
+
+EOF
