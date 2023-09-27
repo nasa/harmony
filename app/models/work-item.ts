@@ -232,7 +232,7 @@ async function getJobServiceOperation(
   } catch (err) {
     logger.error(`Error getting operation of jobID: ${jobID} and serviceID: ${serviceID} from database: ${err.message}`);
   }
-  return parsedOperation && new DataOperation(parsedOperation);
+  return parsedOperation;
 }
 
 /**
@@ -271,7 +271,7 @@ export async function getNextWorkItems(
 
       if (workItemData?.length > 0) {
         for (let i = 0; i < workItemData.length; i++) {
-          workItemData[i].operation = operation.clone();
+          workItemData[i].operation = _.cloneDeep(operation);
           // Make sure that the staging location is unique for every work item in a job
           // in case a service for the same job produces an output with the same file name
           workItemData[i].operation.stagingLocation += `${workItemData[i].id}/`;
