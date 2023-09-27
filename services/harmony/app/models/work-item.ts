@@ -402,7 +402,7 @@ export async function getJobIdForWorkItem(id: number): Promise<string> {
       .select('jobID')
       .where({ id })
       .first()
-  ).jobID;
+  )?.jobID;
 }
 
 /**
