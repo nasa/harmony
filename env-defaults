@@ -203,6 +203,102 @@ REPLAY=record
 # (default), they are routed to logs/test.log and suppressed in STDOUT
 LOG_STDOUT=false
 
+# The services to deploy locally. A comma-separated list of services that the bin/deploy-services
+# script should attempt to deploy. By default only a couple of harmony example services are deployed.
+# When specifying another service to be deployed make sure the name matches the lower and dash case
+# prefix for the image variable name. For example to deploy the Giovanni adapter image which has
+# a variable name of GIOVANNI_ADAPTER_IMAGE you would specify giovanni-adapter (converting to lowercase
+# and dash case and dropping _IMAGE. Make sure if the image for the service is not publicly available
+# that you have built the docker image locally, otherwise the service will fail to start.
+LOCALLY_DEPLOYED_SERVICES=harmony-service-example,harmony-netcdf-to-zarr
+
+# Local development: Use the following to set the Kubernetes context used by start scripts
+# minikube users should set it to "minikube"
+KUBE_CONTEXT=docker-desktop
+
+# Number of times to retry failed HTTP (408, 502, 503, 504) data download calls
+# via the http module of the service library.
+
+# backoff seconds = {backoff factor} * (2 ** ({retry number} - 1))
+# where {retry number} = 1, 2, 3, ..., total_retries
+
+# With a backoff_factor of 2 (the current default) and 10 retries,
+# the total sleep seconds between executions will be:
+# [0, 4, 8, 16, 32, 64, 120, 120, 120, 120] (~10 minutes)
+# 120 seconds is the maximum backoff and there is always 0 seconds before the
+# first retry regardless of the parameters.
+MAX_DOWNLOAD_RETRIES=10
+
+# The number of seconds to allow a pod to continue processing an active request before terminating a pod
+DEFAULT_POD_GRACE_PERIOD_SECS=14400
+
+# Hostname for k8s services to use to connect to Localstack - this is only used by the
+# script that creates the env var config map for local development
+LOCALSTACK_K8S_HOST=localstack
+
+###########################################################################
+#                             Prometheus Config                           #
+#                                                                         #
+# This section is irrelevant for local development unless you are a       #
+# harmony core developer who plans to deploy Prometheus locally           #
+###########################################################################
+
+# For Prometheus time variables, "m" postfix means "minutes".
+# https://prometheus.io/docs/prometheus/latest/querying/basics/#time-durations
+# For k8s CPU or memory variables, see this link for unit explanations:
+# https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-cpu
+
+# Prometheus deployment variables
+PROMETHEUS_REQUESTS_CPU=128m
+PROMETHEUS_REQUESTS_MEMORY=150Mi
+PROMETHEUS_REQUESTS_EPHEMERAL_STORAGE=600Mi
+PROMETHEUS_LIMITS_CPU=128m
+
+PROMETHEUS_LIMITS_MEMORY=600Mi
+PROMETHEUS_LIMITS_EPHEMERAL_STORAGE=2000Mi
+PROMETHEUS_PROMETHEUS_SCRAPE_INTERVAL=15s
+PROMETHEUS_POD_MANAGER_SCRAPE_INTERVAL=15s
+
+# See https://prometheus.io/docs/prometheus/latest/storage/ for details on retention metrics.
+# How long to keep prometheus metrics before cleaning up
+PROMETHEUS_RETENTION_TIME=180d
+# Maximum amount of space to use for Prometheus metrics before deleting oldest metrics
+# Be sure to set this value to less than PROMETHEUS_LIMITS_EPHEMERAL_STORAGE otherwise the
+# pod may be evicted due to running out of ephemeral space.
+PROMETHEUS_RETENTION_SIZE=1750MB
+
+# how many consecutive minutes to sample in the PromQL query for KubernetesPodNotHealthy
+PROMETHEUS_POD_NOT_HEALTHY_DURATION=10m
+
+# how long the specified alert must be firing before being sent to the Alert Manager
+PROMETHEUS_POD_NOT_HEALTHY_WAIT_FOR=5m
+PROMETHEUS_NODE_NOT_READY_WAIT_FOR=10m
+
+# Alert manager variables (irrelevant to local development).
+# To see/test whether alerts are firing locally, kubectl port-forward {prometheus-pod} 9090:9090 -n monitoring
+# and navigate to the prometheus UI http://localhost:9090/alerts
+ALERT_MANAGER_REQUESTS_CPU=500m
+ALERT_MANAGER_REQUESTS_MEMORY=500M
+ALERT_MANAGER_LIMITS_CPU=1
+ALERT_MANAGER_LIMITS_MEMORY=1Gi
+
+ALERT_MANAGER_TOPIC_ARN=
+
+###########################################################################
+#             Horizontal Pod Autoscaling Config                           #
+#                                                                         #
+# Variables that are used to configure scaling for service pods           #
+#                                                                         #
+###########################################################################
+
+HPA_MIN_REPLICAS=1
+HPA_MAX_REPLICAS=10
+
+# See https://kubernetes.io/docs/reference/kubernetes-api/common-definitions/quantity/#Quantity
+# for an explanation of the "m" suffix (e.g. 10 will be serialized as "10000m").
+# With this value, the HPAs (when deployed) will try to ensure a pod exists for every 10 queued work items.
+HPA_TARGET_VALUE=10000m
+
 ###########################################################################
 #                             Service Config                              #
 #                                                                         #
@@ -365,7 +461,6 @@ PODAAC_NETCDF_CONVERTER_LIMITS_MEMORY=512Mi
 PODAAC_NETCDF_CONVERTER_SERVICE_QUEUE_URLS='["podaac/podaac-cloud/podaac-netcdf-converter:latest,http://localstack:4566/queue/podaac-netcdf-converter.fifo"]'
 
 QUERY_CMR_IMAGE=harmonyservices/query-cmr:latest
-QUERY_CMR_IMAGE=harmonyservices/query-cmr:latest
 QUERY_CMR_REQUESTS_CPU=128m
 QUERY_CMR_REQUESTS_MEMORY=128Mi
 QUERY_CMR_LIMITS_CPU=128m
@@ -373,107 +468,9 @@ QUERY_CMR_LIMITS_MEMORY=512Mi
 QUERY_CMR_SERVICE_QUEUE_URLS='["harmonyservices/query-cmr:latest,http://localstack:4566/queue/query-cmr.fifo"]'
 
 GIOVANNI_ADAPTER_IMAGE=harmonyservices/giovanni-adapter:latest
-GIOVANNI_ADAPTER_IMAGE=harmonyservices/giovanni-adapter:latest
 GIOVANNI_ADAPTER_REQUESTS_CPU=128m
 GIOVANNI_ADAPTER_REQUESTS_MEMORY=128Mi
 GIOVANNI_ADAPTER_LIMITS_CPU=128m
 GIOVANNI_ADAPTER_LIMITS_MEMORY=512Mi
 GIOVANNI_ADAPTER_INVOCATION_ARGS='node tasks/giovanni-adapter/app/cli'
 GIOVANNI_ADAPTER_SERVICE_QUEUE_URLS='["harmonyservices/giovanni-adapter:latest,http://localstack:4566/queue/giovanni-adapter.fifo"]'
-
-# The services to deploy locally. A comma-separated list of services that the bin/deploy-services
-# script should attempt to deploy. By default only a couple of harmony example services are deployed.
-# When specifying another service to be deployed make sure the name matches the lower and dash case
-# prefix for the image variable name. For example to deploy the Giovanni adapter image which has
-# a variable name of GIOVANNI_ADAPTER_IMAGE you would specify giovanni-adapter (converting to lowercase
-# and dash case and dropping _IMAGE. Make sure if the image for the service is not publicly available
-# that you have built the docker image locally, otherwise the service will fail to start.
-LOCALLY_DEPLOYED_SERVICES=harmony-service-example,harmony-netcdf-to-zarr
-
-# Local development: Use the following to set the Kubernetes context used by start scripts
-# minikube users should set it to "minikube"
-KUBE_CONTEXT=docker-desktop
-
-# Number of times to retry failed HTTP (408, 502, 503, 504) data download calls
-# via the http module of the service library.
-
-# backoff seconds = {backoff factor} * (2 ** ({retry number} - 1))
-# where {retry number} = 1, 2, 3, ..., total_retries
-
-# With a backoff_factor of 2 (the current default) and 10 retries,
-# the total sleep seconds between executions will be:
-# [0, 4, 8, 16, 32, 64, 120, 120, 120, 120] (~10 minutes)
-# 120 seconds is the maximum backoff and there is always 0 seconds before the
-# first retry regardless of the parameters.
-MAX_DOWNLOAD_RETRIES=10
-
-# The number of seconds to allow a pod to continue processing an active request before terminating a pod
-DEFAULT_POD_GRACE_PERIOD_SECS=14400
-
-# Hostname for k8s services to use to connect to Localstack - this is only used by the
-# script that creates the env var config map for local development
-LOCALSTACK_K8S_HOST=localstack
-
-###########################################################################
-#                             Prometheus Config                           #
-#                                                                         #
-# This section is irrelevant for local development unless you are a       #
-# harmony core developer who plans to deploy Prometheus locally           #
-###########################################################################
-
-# For Prometheus time variables, "m" postfix means "minutes".
-# https://prometheus.io/docs/prometheus/latest/querying/basics/#time-durations
-# For k8s CPU or memory variables, see this link for unit explanations:
-# https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-cpu
-
-# Prometheus deployment variables
-PROMETHEUS_REQUESTS_CPU=128m
-PROMETHEUS_REQUESTS_MEMORY=150Mi
-PROMETHEUS_REQUESTS_EPHEMERAL_STORAGE=600Mi
-PROMETHEUS_LIMITS_CPU=128m
-
-PROMETHEUS_LIMITS_MEMORY=600Mi
-PROMETHEUS_LIMITS_EPHEMERAL_STORAGE=2000Mi
-PROMETHEUS_PROMETHEUS_SCRAPE_INTERVAL=15s
-PROMETHEUS_POD_MANAGER_SCRAPE_INTERVAL=15s
-
-# See https://prometheus.io/docs/prometheus/latest/storage/ for details on retention metrics.
-# How long to keep prometheus metrics before cleaning up
-PROMETHEUS_RETENTION_TIME=180d
-# Maximum amount of space to use for Prometheus metrics before deleting oldest metrics
-# Be sure to set this value to less than PROMETHEUS_LIMITS_EPHEMERAL_STORAGE otherwise the
-# pod may be evicted due to running out of ephemeral space.
-PROMETHEUS_RETENTION_SIZE=1750MB
-
-# how many consecutive minutes to sample in the PromQL query for KubernetesPodNotHealthy
-PROMETHEUS_POD_NOT_HEALTHY_DURATION=10m
-
-# how long the specified alert must be firing before being sent to the Alert Manager
-PROMETHEUS_POD_NOT_HEALTHY_WAIT_FOR=5m
-PROMETHEUS_NODE_NOT_READY_WAIT_FOR=10m
-
-# Alert manager variables (irrelevant to local development).
-# To see/test whether alerts are firing locally, kubectl port-forward {prometheus-pod} 9090:9090 -n monitoring
-# and navigate to the prometheus UI http://localhost:9090/alerts
-ALERT_MANAGER_REQUESTS_CPU=500m
-ALERT_MANAGER_REQUESTS_MEMORY=500M
-ALERT_MANAGER_LIMITS_CPU=1
-ALERT_MANAGER_LIMITS_MEMORY=1Gi
-
-ALERT_MANAGER_TOPIC_ARN=
-
-###########################################################################
-#             Horizontal Pod Autoscaling Config                           #
-#                                                                         #
-# Variables that are used to configure scaling for service pods           #
-#                                                                         #
-###########################################################################
-
-HPA_MIN_REPLICAS=1
-HPA_MAX_REPLICAS=10
-
-# See https://kubernetes.io/docs/reference/kubernetes-api/common-definitions/quantity/#Quantity
-# for an explanation of the "m" suffix (e.g. 10 will be serialized as "10000m").
-# With this value, the HPAs (when deployed) will try to ensure a pod exists for every 10 queued work items.
-HPA_TARGET_VALUE=10000m
-

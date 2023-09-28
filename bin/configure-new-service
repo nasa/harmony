@@ -2,64 +2,81 @@
 
 # Function to prompt the user and convert 'y' or 'n' to 'true' or 'false'
 function prompt_user {
-    local prompt_message="$1"
-    local variable_name="${prompt_message// /_}"
-    variable_name=$(echo "$variable_name" | tr '[:lower:]' '[:upper:]')
+  local prompt_message="$1"
+  local variable_name="${prompt_message// /_}"
+  variable_name=$(echo "$variable_name" | tr '[:lower:]' '[:upper:]')
 
-    read -p "$prompt_message (y/n): " user_input
-    user_input=$(echo "$user_input" | tr '[:upper:]' '[:lower:]')
+  read -p "$prompt_message (y/n): " user_input
+  user_input=$(echo "$user_input" | tr '[:upper:]' '[:lower:]')
 
-    if [ "$user_input" == "y" ]; then
-        eval "$variable_name=true"
-    else
-        eval "$variable_name=false"
-    fi
+  if [ "$user_input" == "y" ]; then
+      eval "$variable_name=true"
+  else
+      eval "$variable_name=false"
+  fi
 }
 
 read -p "Service name: " SERVICE_NAME
 
+# Convert SERVICE_NAME to uppercase and change dashes to underscores
+SERVICE_NAME_UPPER=$(echo "$SERVICE_NAME" | tr '[:lower:]-' '[:upper:]_')
+
 # Check if the service already exists in the config file
 if grep -q "^\s*- name: $SERVICE_NAME" config/services.yml; then
-    echo "Service with name '$SERVICE_NAME' already exists in config/services.yml. Exiting."
-    exit 1
+  echo "Service with name '$SERVICE_NAME' already exists in config/services.yml. Not modifying."
+else
+  read -p "Organization name (used in docker image name): " ORGANIZATION
+  prompt_user "Bbox subsetting"
+  prompt_user "Shapefile subsetting"
+  prompt_user "Temporal subsetting"
+  prompt_user "Variable subsetting"
+  prompt_user "Reprojection"
+  prompt_user "Concatenation"
+
+  # Append to config/services.yml
+  cat <<-EOF >> config/services.yml
+
+  - name: $SERVICE_NAME
+    description: |
+      TODO - fill in description
+    data_operation_version: '0.18.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/$ORGANIZATION/$SERVICE_NAME
+    umm_s: []
+    capabilities:
+      subsetting:
+        bbox: $BBOX_SUBSETTING
+        concatenation: $CONCATENATION
+        variable: $VARIABLE_SUBSETTING
+        temporal: $TEMPORAL_SUBSETTING
+      output_formats:
+        - application/netcdf4
+      reprojection: $REPROJECTION
+    steps:
+      - image: !Env \${QUERY_CMR_IMAGE}
+      - image: !Env \${${SERVICE_NAME_UPPER}_IMAGE}
+EOF
 fi
 
-# Prompt the user for various options
-prompt_user "Bbox subsetting"
-prompt_user "Shapefile subsetting"
-prompt_user "Temporal subsetting"
-prompt_user "Variable subsetting"
-prompt_user "Reprojection"
-prompt_user "Concatenation"
-
-# Convert SERVICE_NAME to uppercase using 'tr'
-SERVICE_NAME_UPPER=$(echo "$SERVICE_NAME" | tr '[:lower:]' '[:upper:]')
-
-# Append to config/services.yml
-cat <<-EOF >> config/services.yml
-    - name: $SERVICE_NAME
-      description: |
-        TODO - fill in description
-      data_operation_version: '0.18.0'
-      type:
-        <<: *default-turbo-config
-        params:
-          <<: *default-turbo-params
-          env:
-            <<: *default-turbo-env
-            STAGING_PATH: public/template/$SERVICE_NAME
-      umm_s: []
-      capabilities:
-        subsetting:
-          bbox: $BBOX_SUBSETTING
-          concatenation: $CONCATENATION
-          variable: $VARIABLE_SUBSETTING
-          temporal: $TEMPORAL_SUBSETTING
-        output_formats:
-          - application/netcdf4
-        reprojection: $REPROJECTION
-      steps:
-        - image: !Env \${QUERY_CMR_IMAGE}
-        - image: !Env \${${SERVICE_NAME_UPPER}_IMAGE}
+if grep -q "^$SERVICE_NAME_UPPER" env-defaults; then
+  echo "Service with name '$SERVICE_NAME' already set up in env-defaults. Not modifying."
+else
+  if [[ -z $ORGANIZATION ]]; then
+    read -p "Organization name (used in docker image name): " ORGANIZATION
+  fi
+  # Create the environment variables
+  echo "Adding environment variables to env-defaults"
+  cat <<-EOF >> env-defaults
+${SERVICE_NAME_UPPER}_IMAGE=$ORGANIZATION/$SERVICE_NAME:latest
+${SERVICE_NAME_UPPER}_REQUESTS_MEMORY=128Mi
+${SERVICE_NAME_UPPER}_LIMITS_MEMORY=512Mi
+${SERVICE_NAME_UPPER}_INVOCATION_ARGS='./docker-entrypoint.sh'
+${SERVICE_NAME_UPPER}_SERVICE_QUEUE_URLS='["$ORGANIZATION/$SERVICE_NAME:latest,http://localstack:4566/queue/$SERVICE_NAME.fifo"]'
 
 EOF
+fi
