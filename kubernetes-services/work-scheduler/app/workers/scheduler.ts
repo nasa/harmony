@@ -46,6 +46,33 @@ async function drainQueue(queue: Queue, reqLogger: Logger): Promise<ReceivedMess
 }
 
 /**
+ * Returns the next work item to process for a service and job ID
+ * @param tx - the transaction to use for querying
+ * @param serviceID - the service ID looking for the next item to work
+ * @param jobID - - the jobID for the next item to work
+ *
+ * @returns A promise with the work item to process or null if none
+ */
+function sizeToBatches(
+  workSize: number,
+  batchSize: number,
+): number[] {
+  const batches: number[] = [];
+
+  while (workSize > 0) {
+    if (workSize >= batchSize) {
+      batches.push(batchSize);
+      workSize -= batchSize;
+    } else {
+      batches.push(workSize);
+      workSize = 0;
+    }
+  }
+
+  return batches;
+}
+
+/**
  * Read the scheduler queue and process any items in it
  *
  * @param reqLogger - a logger instance
@@ -98,24 +125,26 @@ export async function processSchedulerQueue(reqLogger: Logger): Promise<void> {
 
       // If there are more pods than messages, we need to send more work. Allow more work
       // than pods to avoid queue starvation (env.serviceQueueBatchSizeCoefficient)
-      const batchSize = Math.floor(env.serviceQueueBatchSizeCoefficient * podCount - messageCount);
-      reqLogger.debug(`Attempting to retrieve ${batchSize} work items for queue ${queueUrl}`);
+      const workSize = Math.floor(env.serviceQueueBatchSizeCoefficient * podCount - messageCount);
+      reqLogger.debug(`Attempting to retrieve ${workSize} work items for queue ${queueUrl}`);
 
       let queuedCount = 0;
       const batchStartTime = new Date().getTime();
-      const workItems = await (await logAsyncExecutionTime(
-        getWorksFromDatabase,
-        'PSQ.getWorksFromDatabase',
-        reqLogger))(serviceID, reqLogger, batchSize);
+      for (const chunk of sizeToBatches(workSize, env.workItemSchedulerBatchSize)) {
+        const workItems = await (await logAsyncExecutionTime(
+          getWorksFromDatabase,
+          'PSQ.getWorksFromDatabase',
+          reqLogger))(serviceID, reqLogger, chunk);
 
-      for (const workItem of workItems) {
-        const json = JSON.stringify(workItem);
-        reqLogger.info(`Sending work item ${workItem.workItem.id} to queue ${queueUrl}`);
-        const smStartTime = new Date().getTime();
-        await queue.sendMessage(json, `${workItem.workItem.id}`);
-        durationMs = new Date().getTime() - smStartTime;
-        logger.debug('timing.PSQ.queue.sendMessage.end', { durationMs });
-        queuedCount++;
+        for (const workItem of workItems) {
+          const json = JSON.stringify(workItem);
+          reqLogger.info(`Sending work item ${workItem.workItem.id} to queue ${queueUrl}`);
+          const smStartTime = new Date().getTime();
+          await queue.sendMessage(json, `${workItem.workItem.id}`);
+          durationMs = new Date().getTime() - smStartTime;
+          logger.debug('timing.PSQ.queue.sendMessage.end', { durationMs });
+          queuedCount++;
+        }
       }
 
       durationMs = new Date().getTime() - batchStartTime;
@@ -134,7 +163,6 @@ export async function processSchedulerQueue(reqLogger: Logger): Promise<void> {
 
   durationMs = new Date().getTime() - startTime;
   logger.debug('timing.PSQ.processSchedulerQueue.end', { durationMs });
-
 }
 
 export default class Scheduler implements Worker {

@@ -19,6 +19,7 @@ interface IHarmonyWorkSchedulerEnv extends IHarmonyEnv {
   workingDir: string;
   workItemSchedulerQueueMaxBatchSize: number;
   workItemSchedulerQueueMaxGetMessageRequests: number;
+  workItemSchedulerBatchSize: number;
 }
 
 class HarmonyWorkSchedulerEnv extends HarmonyEnv implements IHarmonyWorkSchedulerEnv {
@@ -37,6 +38,10 @@ class HarmonyWorkSchedulerEnv extends HarmonyEnv implements IHarmonyWorkSchedule
   @IsInt()
   @Min(1)
   workItemSchedulerQueueMaxGetMessageRequests: number;
+
+  @IsInt()
+  @Min(1)
+  workItemSchedulerBatchSize: number;
 }
 
 const allEnv = { ...envLocalDefaults, ...envOverrides };
