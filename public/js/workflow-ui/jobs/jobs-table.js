@@ -1,6 +1,7 @@
 /* eslint-disable no-param-reassign */
 import { formatDates } from '../table.js';
 import toasts from '../toasts.js';
+import PubSub from '../../pub-sub.js';
 
 // all of the currently selected job IDs
 let jobIDs = [];
@@ -112,6 +113,7 @@ async function initCopyHandler() {
 async function initSelectHandler() {
   document.querySelectorAll('.select-job').forEach((el) => {
     el.addEventListener('click', (event) => {
+      PubSub.publish('job-selected');
       const { target } = event;
       const jobID = target.getAttribute('data-id');
       const status = target.getAttribute('data-status');
@@ -134,6 +136,7 @@ async function initSelectHandler() {
 async function initSelectAllHandler() {
   const el = document.getElementById('select-jobs');
   el.addEventListener('click', (event) => {
+    PubSub.publish('job-selected');
     const { target } = event;
     const { checked } = target;
     jobIDs = [];

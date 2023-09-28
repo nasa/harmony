@@ -1,6 +1,5 @@
 import jobsTable from './jobs-table.js';
 import JobsStatusChangeLinks from './jobs-status-change-links.js';
-import PubSub from '../../pub-sub.js';
 
 const tableFilter = document.querySelector('input[name="tableFilter"]');
 const tableFilterValue = tableFilter.getAttribute('data-value');
@@ -10,5 +9,4 @@ const isAdminRoute = tableFilter.getAttribute('data-is-admin-route') === 'true';
 jobsTable.init(currentUser, services, isAdminRoute, tableFilterValue);
 
 const jobStatusLinks = new JobsStatusChangeLinks();
-jobStatusLinks.init('job-state-links-container', 'tbd');
-PubSub.publish('tbd');
+jobStatusLinks.init('job-state-links-container', 'job-selected');
