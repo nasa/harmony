@@ -53,13 +53,19 @@ class JobsStatusChangeLinks extends StatusChangeLinks {
       return [cancelLink, pauseLink, resumeLink, skipPreviewLink];
     }
     const links = [];
-
     const statuses = jobsTable.getJobStatuses();
     const hasRunning = statuses.indexOf('running') > -1;
     const hasRunningWithErrors = statuses.indexOf('running_with_errors') > -1;
     const hasPreviewing = statuses.indexOf('previewing') > -1;
     const hasPaused = statuses.indexOf('paused') > -1;
-
+    const hasCompleteWithErrors = statuses.indexOf('complete_with_errors') > -1;
+    const hasCanceled = statuses.indexOf('canceled') > -1;
+    const hasFailed = statuses.indexOf('failed') > -1;
+    const hasSuccessful = statuses.indexOf('successful') > -1;
+    const hasTerminalStatus = hasCompleteWithErrors || hasCanceled || hasFailed || hasSuccessful;
+    if (hasTerminalStatus) {
+      return [];
+    }
     const hasActionableStatus = hasRunning || hasRunningWithErrors || hasPreviewing || hasPaused;
     if (hasActionableStatus) {
       links.push(cancelLink);
