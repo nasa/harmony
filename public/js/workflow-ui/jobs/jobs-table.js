@@ -113,7 +113,6 @@ async function initCopyHandler() {
 async function initSelectHandler() {
   document.querySelectorAll('.select-job').forEach((el) => {
     el.addEventListener('click', (event) => {
-      PubSub.publish('job-selected');
       const { target } = event;
       const jobID = target.getAttribute('data-id');
       const status = target.getAttribute('data-status');
@@ -126,6 +125,7 @@ async function initSelectHandler() {
         statuses.splice(statuses.indexOf(status), 1);
       }
       toasts.showUpper(statuses);
+      PubSub.publish('job-selected');
     });
   });
 }
@@ -136,7 +136,6 @@ async function initSelectHandler() {
 async function initSelectAllHandler() {
   const el = document.getElementById('select-jobs');
   el.addEventListener('click', (event) => {
-    PubSub.publish('job-selected');
     const { target } = event;
     const { checked } = target;
     jobIDs = [];
@@ -153,6 +152,7 @@ async function initSelectAllHandler() {
       }
     });
     toasts.showUpper(statuses);
+    PubSub.publish('job-selected');
   });
 }
 

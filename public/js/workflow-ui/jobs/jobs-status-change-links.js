@@ -52,24 +52,28 @@ class JobsStatusChangeLinks extends StatusChangeLinks {
     if (fetchAll) {
       return [cancelLink, pauseLink, resumeLink, skipPreviewLink];
     }
-    // TODO - ordering of links
-    const links = new Set();
+    const links = [];
+
     const statuses = jobsTable.getJobStatuses();
-    if ((statuses.indexOf('running') > -1)
-      || (statuses.indexOf('running_with_errors') > -1)) {
-        links.add(cancelLink);
-        links.add(pauseLink);
+    const hasRunning = statuses.indexOf('running') > -1;
+    const hasRunningWithErrors = statuses.indexOf('running_with_errors') > -1;
+    const hasPreviewing = statuses.indexOf('previewing') > -1;
+    const hasPaused = statuses.indexOf('paused') > -1;
+
+    const hasActionableStatus = hasRunning || hasRunningWithErrors || hasPreviewing || hasPaused;
+    if (hasActionableStatus) {
+      links.push(cancelLink);
     }
-    if ('paused' in statuses) {
-      links.add(cancelLink);
-      links.add(resumeLink);
+    if (!hasPaused && hasActionableStatus) {
+      links.push(pauseLink);
     }
-    if (statuses.indexOf('previewing') > -1) {
-      links.add(cancelLink);
-      links.add(pauseLink);
-      links.add(skipPreviewLink);
+    if (hasPaused && !hasRunning && !hasRunningWithErrors && !hasPreviewing) {
+      links.push(resumeLink);
     }
-    return Array.from(links);
+    if (hasPreviewing && !hasRunning && !hasRunningWithErrors && !hasPaused) {
+      links.push(skipPreviewLink);
+    }
+    return links;
   }
 }
 
