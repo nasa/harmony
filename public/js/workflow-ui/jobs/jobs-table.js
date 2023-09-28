@@ -124,7 +124,6 @@ async function initSelectHandler() {
         jobIDs.splice(jobIDs.indexOf(jobID), 1);
         statuses.splice(statuses.indexOf(status), 1);
       }
-      toasts.showUpper(statuses);
       PubSub.publish('job-selected');
     });
   });
@@ -151,7 +150,6 @@ async function initSelectAllHandler() {
         jobEl.checked = false;
       }
     });
-    toasts.showUpper(statuses);
     PubSub.publish('job-selected');
   });
 }

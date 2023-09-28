@@ -1,5 +1,6 @@
 import StatusChangeLinks from '../status-change-links.js';
 import jobsTable from './jobs-table.js';
+import toasts from '../toasts.js';
 
 const cancelLink = {
   title: 'Cancels the job.',
@@ -40,7 +41,26 @@ class JobsStatusChangeLinks extends StatusChangeLinks {
    */
   async handleClick(event) {
     event.preventDefault();
-    console.log(jobsTable.getJobIds());
+    toasts.showUpper('Changing job state...');
+    const link = event.target;
+    const stateChangeUrl = link.getAttribute('href');
+    const res = await fetch(stateChangeUrl, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ jobIds: jobsTable.getJobIds() }),
+    });
+    const data = await res.json();
+    if (res.status === 200) {
+      toasts.showUpper(`The jobs are now ${data.status}`);
+      // TODO - handle table refresh
+    } else if (data.description) {
+      toasts.showUpper(data.description);
+    } else {
+      toasts.showUpper('The update failed.');
+    }
   }
 
   /**
