@@ -3,19 +3,21 @@
 
 env_save=$(export -p)
 set -a
-source "lib/util/env-defaults"
-source "env-defaults"
+source "packages/util/env-defaults"
+source "services/harmony/env-defaults"
 source ".env"
 set +a
 eval "$env_save"
 
 # run harmony
 echo "Starting Harmony server..."
+pushd services/harmony > /dev/null
 npm run start-dev-fast > logs/server.log 2>&1 &
+popd > /dev/null
 
 # create the work scheduler
 echo "Starting the work scheduler..."
-pushd kubernetes-services/work-scheduler > /dev/null
+pushd services/work-scheduler > /dev/null
 export PORT=5001  
 npm run start-dev-fast > logs/work-scheduler.log 2>&1 &
 popd > /dev/null
@@ -25,7 +27,7 @@ sleep 5
 # create the work updaters
 export LOCALSTACK_HOST=localhost
 echo "Starting the large job work updater..."
-pushd kubernetes-services/work-updater > /dev/null
+pushd services/work-updater > /dev/null
 export PORT=5002
 export DEBUG_PORT=9202
 export WORK_ITEM_UPDATE_QUEUE_TYPE=large
@@ -43,7 +45,7 @@ popd > /dev/null
 sleep 5
 
 echo "Starting the work reaper..."
-pushd kubernetes-services/work-reaper > /dev/null
+pushd services/work-reaper > /dev/null
 export PORT=5004
 export DEBUG_PORT=9204
 npm run start-dev-fast > logs/work-reaper.log 2>&1 &
@@ -52,7 +54,7 @@ popd > /dev/null
 sleep 5
 
 echo "Starting the work failer..."
-pushd kubernetes-services/work-failer > /dev/null
+pushd services/work-failer > /dev/null
 export PORT=5005
 export DEBUG_PORT=9205
 npm run start-dev-fast > logs/work-failer.log 2>&1 &
