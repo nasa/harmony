@@ -15,7 +15,8 @@
     "prebuild-m1": "./bin/prebuild",
     "build": "tsc && docker build -f Dockerfile.mac --tag harmonyservices/work-scheduler:${VERSION:-latest} .",
     "build-m1": "tsc && docker build -f Dockerfile.mac --platform linux/amd64 --tag harmonyservices/work-scheduler:${VERSION:-latest} .",
-    "publish": "docker push harmonyservices/work-scheduler:${VERSION:-latest}"
+    "publish": "docker push harmonyservices/work-scheduler:${VERSION:-latest}",
+    "better-audit": "better-npm-audit audit"
   },
   "engines": {
     "node": "^16.13.1",

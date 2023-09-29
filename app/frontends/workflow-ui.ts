@@ -15,10 +15,11 @@ import { getItemLogsLocation, WorkItemQuery, WorkItemStatus } from '../models/wo
 import { getRequestRoot } from '../util/url';
 import { getAllStateChangeLinks, getJobStateChangeLinks } from '../util/links';
 import { objectStoreForProtocol } from '../util/object-store';
-import { handleWorkItemUpdate } from '../backends/workflow-orchestration/work-item-updates';
 import { Logger } from 'winston';
 import { serviceNames } from '../models/services';
 import { getEdlGroupInformation, isAdminUser } from '../util/edl-api';
+import { queueWorkItemUpdate } from '../backends/workflow-orchestration/workflow-orchestration';
+import { WorkItemQueueType } from '../util/queue/queue';
 
 // Default to retrieving this number of work items per page
 const defaultWorkItemPageSize = 100;
@@ -615,12 +616,13 @@ export async function retry(
       res.status(200).send({ message: 'The item does not have any retries left.' });
     }
     const workItemLogger = req.context.logger.child({ workItemId: item.id });
-    await handleWorkItemUpdate(
-      { workItemID: item.id, status: WorkItemStatus.FAILED,
-        scrollID: item.scrollID, hits: null, results: [], totalItemsSize: item.totalItemsSize,
-        errorMessage: 'A user attempted to trigger a retry via the Workflow UI.' },
-      null,
-      workItemLogger);
+    const workItemUpdate = {
+      workItemID: item.id, status: WorkItemStatus.FAILED, scrollID: item.scrollID, hits: null, results: [],
+      totalItemsSize: item.totalItemsSize, errorMessage: 'A user attempted to trigger a retry via the Workflow UI.',
+    };
+
+    await queueWorkItemUpdate(jobID, workItemUpdate, null, WorkItemQueueType.SMALL_ITEM_UPDATE, workItemLogger);
+
     res.status(200).send({ message: 'The item was successfully requeued.' });
   } catch (e) {
     req.context.logger.error(e);
