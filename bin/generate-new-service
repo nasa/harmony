@@ -35,6 +35,7 @@ else
 
   # Create the new service directory at the same level as the harmony repository
   SERVICE_DIR="../harmony-$SERVICE_NAME"
+  echo "Creating project directory $SERVICE_DIR"
   mkdir "$SERVICE_DIR"
   # Copy the Dockerfile, replacing the service name
   env SERVICE_NAME=$SERVICE_NAME envsubst < service-templates/Dockerfile > "$SERVICE_DIR/Dockerfile"
