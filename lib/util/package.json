@@ -10,7 +10,8 @@
     "build": "rimraf built/* && tsc",
     "build-m1": "rimraf built/* && tsc",
     "lint": "eslint --ext .ts .",
-    "coverage": "nyc mocha"
+    "coverage": "nyc mocha",
+    "better-audit": "better-npm-audit audit"
   },
   "engines": {
     "node": "^16.13.1",
