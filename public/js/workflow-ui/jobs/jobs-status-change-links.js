@@ -50,7 +50,7 @@ class JobsStatusChangeLinks extends StatusChangeLinks {
         Accept: 'application/json',
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ jobIds: jobsTable.getJobIds() }),
+      body: JSON.stringify({ jobIDs: jobsTable.getJobIds() }),
     });
     const data = await res.json();
     if (res.status === 200) {
