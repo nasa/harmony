@@ -56,7 +56,7 @@ class ExampleAdapter(harmony.BaseHarmonyAdapter):
 
             # Do the work here!
             var_names = [v.name for v in variables]
-            print('Processing item %s, DPI=%d, vars=[%s]' % (item.id, dpi, ', '.join(var_names)))
+            print('Processing item %s, vars=[%s]' % (item.id, ', '.join(var_names)))
             working_filename = os.path.join(workdir, 'tmp.txt')
             shutil.copyfile(input_filename, working_filename)
 
