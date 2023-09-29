@@ -7,7 +7,7 @@ import JobLink from '../models/job-link';
 import { needsStacLink } from '../util/stac';
 import { getRequestRoot } from '../util/url';
 import { getCloudAccessJsonLink, getCloudAccessShLink, getJobStateChangeLinks, getStacCatalogLink, getStatusLink, Link } from '../util/links';
-import { RequestValidationError, NotFoundError } from '../util/errors';
+import { RequestValidationError, NotFoundError, ServerError } from '../util/errors';
 import { getPagingParams, getPagingLinks, setPagingHeaders } from '../util/pagination';
 import HarmonyRequest from '../models/harmony-request';
 import db from '../util/db';
@@ -232,6 +232,39 @@ export async function changeJobState(
     } else {
       next(e);
     }
+  }
+}
+
+/**
+ * Helper function for canceling, pausing, or resuming jobs in a batch
+ *
+ * @param req - The request sent by the client
+ * @param next - The next function in the call chain
+ * @param jobFn - The function to call to change the job state
+ */
+export async function changeJobStateBatch(
+  req: HarmonyRequest,
+  next: NextFunction,
+  jobFn: (jobID: string, logger: Logger, username: string, token: string) => Promise<void>,
+): Promise<void> {
+  let currentJobID: string;
+  let processedCount = 0;
+  try {
+    const { jobIds } = req.body;
+    let username: string;
+    const isAdmin = await isAdminUser(req);
+    if (!isAdmin) {
+      username = req.user;
+    }
+    for (const jobID of jobIds) {
+      currentJobID = jobID;
+      validateJobId(jobID);
+      await jobFn(jobID, req.context.logger, username, req.accessToken);
+      processedCount += 1;
+    }
+  } catch (e) {
+    const message = `Could not change all job statuses. Failed on job ${currentJobID}. Proccessed ${processedCount}.`;
+    next(new ServerError(message));
   }
 }
 
