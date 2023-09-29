@@ -32,6 +32,7 @@ else
   prompt_user "Variable subsetting"
   prompt_user "Reprojection"
   prompt_user "Concatenation"
+  read -p "List of CMR collection IDs (comma separated) to use the service (eg C1-PROV1,C2-PROV1,C3-PROV2): " COLLECTIONS
 
   # Create the new service directory at the same level as the harmony repository
   SERVICE_DIR="../harmony-$SERVICE_NAME"
@@ -61,9 +62,9 @@ else
           STAGING_PATH: public/$ORGANIZATION/$SERVICE_NAME
     umm_s: []
     capabilities:
+      concatenation: $CONCATENATION
       subsetting:
         bbox: $BBOX_SUBSETTING
-        concatenation: $CONCATENATION
         variable: $VARIABLE_SUBSETTING
         temporal: $TEMPORAL_SUBSETTING
       output_formats:
@@ -91,4 +92,9 @@ ${SERVICE_NAME_UPPER}_INVOCATION_ARGS='python -m $SERVICE_NAME'
 ${SERVICE_NAME_UPPER}_SERVICE_QUEUE_URLS='["$ORGANIZATION/$SERVICE_NAME:latest,http://localstack:4566/queue/$SERVICE_NAME.fifo"]'
 
 EOF
+  echo "Configuring local .env file to deploy your service and configure with use for your collections"
+  cat <<-EOF >> .env
+${SERVICE_NAME_UPPER}_COLLECTIONS=$COLLECTIONS
+EOF
+  sed -i '' "s/^LOCALLY_DEPLOYED_SERVICES=.*/&,${SERVICE_NAME}/" .env
 fi
