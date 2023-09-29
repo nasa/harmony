@@ -12,7 +12,7 @@ import earthdataLoginTokenAuthorizer from '../middleware/earthdata-login-token-a
 import earthdataLoginOauthAuthorizer from '../middleware/earthdata-login-oauth-authorizer';
 import admin from '../middleware/admin';
 import wmsFrontend from '../frontends/wms';
-import { getJobsListing, getJobStatus, cancelJob, resumeJob, pauseJob, skipJobPreview } from '../frontends/jobs';
+import { getJobsListing, getJobStatus, cancelJob, resumeJob, pauseJob, skipJobPreview, skipJobsPreview, cancelJobs, resumeJobs, pauseJobs } from '../frontends/jobs';
 import { getJobs, getJob, getWorkItemsTable, getJobLinks, getWorkItemLogs, retry, getWorkItemTableRow, redirectWithoutTrailingSlash } from '../frontends/workflow-ui';
 import { getStacCatalog, getStacItem } from '../frontends/stac';
 import { getServiceResult } from '../frontends/service-results';
@@ -234,6 +234,11 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
 
   result.get('/admin/jobs', asyncHandler(getJobsListing));
   result.get('/admin/jobs/:jobID', asyncHandler(getJobStatus));
+
+  result.post('/jobs/cancel', asyncHandler(cancelJobs));
+  result.post('/jobs/resume', asyncHandler(resumeJobs));
+  result.post('/jobs/skip-preview', asyncHandler(skipJobsPreview));
+  result.post('/jobs/pause', asyncHandler(pauseJobs));
 
   result.get('/admin/request-metrics', asyncHandler(getRequestMetrics));
 
