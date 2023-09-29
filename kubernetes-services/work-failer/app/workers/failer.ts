@@ -105,6 +105,7 @@ export default class Failer implements Worker {
                 const workItemUpdate = {
                   workItemID: item.id, status: WorkItemStatus.FAILED, scrollID: item.scrollID,
                   hits: null, results: [], totalItemsSize: item.totalItemsSize, errorMessage: message,
+                  workflowStepIndex: item.workflowStepIndex,
                 };
                 await queueWorkItemUpdate(jobID, workItemUpdate, null, WorkItemQueueType.SMALL_ITEM_UPDATE, workItemlog);
               }));
