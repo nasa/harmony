@@ -44,17 +44,20 @@ class JobsStatusChangeLinks extends StatusChangeLinks {
     toasts.showUpper('Changing job state...');
     const link = event.target;
     const stateChangeUrl = link.getAttribute('href');
+    const jobIDs = jobsTable.getJobIds();
     const res = await fetch(stateChangeUrl, {
       method: 'POST',
       headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ jobIDs: jobsTable.getJobIds() }),
+      body: JSON.stringify({ jobIDs }),
     });
     const data = await res.json();
+    const postfix = jobIDs.length > 1 ? 's' : '';
+    const isAre = jobIDs.length > 1 ? 'are' : 'is';
     if (res.status === 200) {
-      toasts.showUpper(`The jobs are now ${data.status}`);
+      toasts.showUpper(`The job${postfix} ${isAre} now ${data.status}`);
       // TODO - handle table refresh
     } else if (data.description) {
       toasts.showUpper(data.description);

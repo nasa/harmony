@@ -348,7 +348,7 @@ export async function cancelJobs(
 ): Promise<void> {
   req.context.logger.info(`Cancel requested for jobs ${req.body.jobIDs} by user ${req.user}`);
   await changeJobsState(req, next, cancelAndSaveJob);
-  res.status(200).json();
+  res.status(200).json({ status: 'canceled' });
 }
 
 /**
@@ -364,7 +364,7 @@ export async function resumeJobs(
 ): Promise<void> {
   req.context.logger.info(`Resume requested for jobs ${req.body.jobIDs} by user ${req.user}`);
   await changeJobsState(req, next, resumeAndSaveJob);
-  res.status(200).json();
+  res.status(200).json({ status: 'running' });
 }
 
 /**
@@ -380,7 +380,7 @@ export async function skipJobsPreview(
 ): Promise<void> {
   req.context.logger.info(`Skip preview requested for jobs ${req.body.jobIDs} by user ${req.user}`);
   await changeJobsState(req, next, skipPreviewAndSaveJob);
-  res.status(200).json();
+  res.status(200).json({ status: 'running' });
 }
 
 /**
@@ -396,5 +396,5 @@ export async function pauseJobs(
 ): Promise<void> {
   req.context.logger.info(`Pause requested for jobs ${req.body.jobIDs} by user ${req.user}`);
   await changeJobsState(req, next, pauseAndSaveJob);
-  res.status(200).json();
+  res.status(200).json({ status: 'paused' });
 }
