@@ -42,9 +42,11 @@ else
   env SERVICE_NAME=$SERVICE_NAME envsubst < service-templates/Dockerfile > "$SERVICE_DIR/Dockerfile"
   # Copy the example service python file
   cp service-templates/sample_service.py "$SERVICE_DIR/$SERVICE_NAME.py"
+  cp service-templates/README "$SERVICE_DIR"
   # Copy the build script
   env SERVICE_NAME=$SERVICE_NAME ORGANIZATION=$ORGANIZATION envsubst < service-templates/build-service > "$SERVICE_DIR/build-service"
   chmod +x "$SERVICE_DIR/build-service"
+
 
   # Append to config/services.yml
   cat <<-EOF >> config/services.yml
@@ -98,3 +100,13 @@ ${SERVICE_NAME_UPPER}_COLLECTIONS=$COLLECTIONS
 EOF
   sed -i '' "s/^LOCALLY_DEPLOYED_SERVICES=.*/&,${SERVICE_NAME}/" .env
 fi
+
+echo "Successfully setup project. You can take a look at env-defaults, .env, and config/services.yml to see how your service was set up for use in harmony.
+Next steps:
+cd ../harmony-${SERVICE_NAME}
+Modify the .py file to replace the sample code in the process_item method with your service logic.
+Build the image with ./build-service
+
+Return to this directory and start up all of harmony including your service with:
+cd ../harmony && ./bin/bootstrap-harmony
+Once the command completes you can issue harmony requests for your collection and test your service."
