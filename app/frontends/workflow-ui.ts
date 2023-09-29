@@ -173,6 +173,12 @@ function jobRenderingFunctions(logger: Logger, requestQuery: Record<string, any>
         return truncateString(this.message, 100);
       }
     },
+    jobSelectBox(): string {
+      if (this.hasTerminalStatus()) {
+        return '';
+      }
+      return `<input class="select-job" type="checkbox" data-id="${this.jobID}" data-status="${this.status}"></input>`;
+    },
     sortGranulesLinks(): string {
       // return links that lets the user apply or unapply an asc or desc sort
       const [ asc, desc ] = [ 'asc', 'desc' ].map((sortValue) => {
