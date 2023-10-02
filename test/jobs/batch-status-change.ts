@@ -11,13 +11,12 @@ import {
   hookSkipPreviewJobs,
 } from '../helpers/jobs';
 import { JobStatus, Job } from '../../app/models/job';
-import { hookRedirect } from 'test/helpers/hooks';
 
 
-describe('Cancel batch of jobs', function () {
+describe('jobs/cancel, jobs/resume, jobs/skip-preview, jobs/resume)', function () {
   hookServersStartStop({ skipEarthdataLogin: false });
 
-  describe('For a logged-in user who owns the job', function () {
+  describe('Canceling multiple jobs', function () {
     hookTransaction();
     const joeJob1 = buildJob({ username: 'joe' });
     const joeJob2 = buildJob({ username: 'joe' });
@@ -29,13 +28,12 @@ describe('Cancel batch of jobs', function () {
     });
     hookCancelJobs({ username: 'joe', 'jobIDs': [joeJob1.jobID, joeJob2.jobID] });
 
-    it('returns a redirect to the canceled job', function () {
-      console.log(this.res);
+    it('Cancels the jobs', function () {
       expect(this.res.statusCode).to.equal(200);
     });
   });
 
-  describe('For a logged-in user who owns the job', function () {
+  describe('Pausing multiple jobs', function () {
     hookTransaction();
     const joeJob1 = buildJob({ username: 'joe' });
     const joeJob2 = buildJob({ username: 'joe' });
@@ -47,13 +45,12 @@ describe('Cancel batch of jobs', function () {
     });
     hookPauseJobs({ username: 'joe', 'jobIDs': [joeJob1.jobID, joeJob2.jobID] });
 
-    it('returns a redirect to the canceled job', function () {
-      console.log(this.res);
+    it('Pauses the jobs', function () {
       expect(this.res.statusCode).to.equal(200);
     });
   });
 
-  describe('For a logged-in user who owns the job', function () {
+  describe('Resuming multiple jobs', function () {
     hookTransaction();
     const joeJob1 = buildJob({ username: 'joe', status: JobStatus.PAUSED });
     const joeJob2 = buildJob({ username: 'joe', status: JobStatus.PAUSED });
@@ -65,13 +62,12 @@ describe('Cancel batch of jobs', function () {
     });
     hookResumeJobs({ username: 'joe', 'jobIDs': [joeJob1.jobID, joeJob2.jobID] });
 
-    it('returns a redirect to the canceled job', function () {
-      console.log(this.res);
-      expect(this.res.statusCode).to.equal(302);
+    it('Resumes the jobs', function () {
+      expect(this.res.statusCode).to.equal(200);
     });
   });
 
-  describe('For a logged-in user who owns the job', function () {
+  describe('Skipping preview for multiple jobs', function () {
     hookTransaction();
     const joeJob1 = buildJob({ username: 'joe', status: JobStatus.PREVIEWING });
     const joeJob2 = buildJob({ username: 'joe', status: JobStatus.PREVIEWING });
@@ -83,9 +79,8 @@ describe('Cancel batch of jobs', function () {
     });
     hookSkipPreviewJobs({ username: 'joe', 'jobIDs': [joeJob1.jobID, joeJob2.jobID] });
 
-    it('returns a redirect to the canceled job', function () {
-      console.log(this.res);
-      expect(this.res.statusCode).to.equal(302);
+    it('Skips the job previews', function () {
+      expect(this.res.statusCode).to.equal(200);
     });
   });
 });
