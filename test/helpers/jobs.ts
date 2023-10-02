@@ -375,6 +375,45 @@ export function adminPauseJobWithGET(app: Express.Application, { jobID }: Job): 
   return request(app).get(`/admin/jobs/${jobID}/pause`);
 }
 
+/**
+ * Submits a skip preview jobs request
+ *
+ * @param app - The express application (typically this.frontend)
+ * @param jobIDs - The job ids
+ */
+export function skipPreviewJobs(app: Express.Application, jobIDs : string[]): Test {
+  return request(app).post('/jobs/skip-preview').send({ jobIDs });
+}
+
+/**
+ * Submits a pause jobs request
+ *
+ * @param app - The express application (typically this.frontend)
+ * @param jobIDs - The job ids
+ */
+export function pauseJobs(app: Express.Application, jobIDs : string[]): Test {
+  return request(app).post('/jobs/pause').send({ jobIDs });
+}
+
+/**
+ * Submits resume jobs request
+ *
+ * @param app - The express application (typically this.frontend)
+ * @param jobIDs - The job ids
+ */
+export function resumeJobs(app: Express.Application, jobIDs : string[]): Test {
+  return request(app).post('/jobs/resume').send({ jobIDs });
+}
+
+/**
+ * Submits a cancel jobs request
+ *
+ * @param app - The express application (typically this.frontend)
+ * @param jobIDs - The job ids
+ */
+export function cancelJobs(app: Express.Application, jobIDs : string[]): Test {
+  return request(app).post('/jobs/cancel').send({ jobIDs });
+}
 
 export const hookJobListing = hookRequest.bind(this, jobListing);
 export const hookAdminJobListing = hookRequest.bind(this, adminJobListing);

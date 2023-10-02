@@ -57,7 +57,7 @@ class JobsStatusChangeLinks extends StatusChangeLinks {
     const postfix = jobIDs.length > 1 ? 's' : '';
     const isAre = jobIDs.length > 1 ? 'are' : 'is';
     if (res.status === 200) {
-      toasts.showUpper(`The job${postfix} ${isAre} now ${data.status}. Please reload the page to view updates.`);
+      toasts.showUpper(`The selected job${postfix} ${isAre} now ${data.status}. Please reload the page to view updates.`);
       // TODO - handle rows refresh and make table refresh on interval
       // Should rows disappear if updated rows don't match table filters?
     } else if (data.description) {
