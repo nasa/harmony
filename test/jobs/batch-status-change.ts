@@ -32,7 +32,7 @@ describe('jobs/cancel, jobs/resume, jobs/skip-preview, jobs/resume', function ()
     it('Cancels the jobs', async function () {
       const dbJob1 = await Job.byJobID(db, joeJob1.jobID);
       expect(dbJob1.status).to.eq(JobStatus.CANCELED);
-      const dbJob2 = await Job.byJobID(db, joeJob1.jobID);
+      const dbJob2 = await Job.byJobID(db, joeJob2.jobID);
       expect(dbJob2.status).to.eq(JobStatus.CANCELED);
       expect(this.res.statusCode).to.equal(200);
     });
@@ -52,7 +52,13 @@ describe('jobs/cancel, jobs/resume, jobs/skip-preview, jobs/resume', function ()
     });
     hookPauseJobs({ username: 'joe', 'jobIDs': [joeJob1.jobID, joeJob2.jobID, joeJob3.jobID] });
 
-    it('Pauses the jobs', function () {
+    it('Pauses the jobs', async function () {
+      const dbJob1 = await Job.byJobID(db, joeJob1.jobID);
+      expect(dbJob1.status).to.eq(JobStatus.PAUSED);
+      const dbJob2 = await Job.byJobID(db, joeJob2.jobID);
+      expect(dbJob2.status).to.eq(JobStatus.PAUSED);
+      const dbJob3 = await Job.byJobID(db, joeJob3.jobID);
+      expect(dbJob3.status).to.eq(JobStatus.PAUSED);
       expect(this.res.statusCode).to.equal(200);
     });
   });
@@ -69,7 +75,11 @@ describe('jobs/cancel, jobs/resume, jobs/skip-preview, jobs/resume', function ()
     });
     hookResumeJobs({ username: 'joe', 'jobIDs': [joeJob1.jobID, joeJob2.jobID] });
 
-    it('Resumes the jobs', function () {
+    it('Resumes the jobs', async function () {
+      const dbJob1 = await Job.byJobID(db, joeJob1.jobID);
+      expect(dbJob1.status).to.eq(JobStatus.RUNNING);
+      const dbJob2 = await Job.byJobID(db, joeJob2.jobID);
+      expect(dbJob2.status).to.eq(JobStatus.RUNNING);
       expect(this.res.statusCode).to.equal(200);
     });
   });
@@ -86,7 +96,11 @@ describe('jobs/cancel, jobs/resume, jobs/skip-preview, jobs/resume', function ()
     });
     hookSkipPreviewJobs({ username: 'joe', 'jobIDs': [joeJob1.jobID, joeJob2.jobID] });
 
-    it('Skips the job previews', function () {
+    it('Skips the job previews', async function () {
+      const dbJob1 = await Job.byJobID(db, joeJob1.jobID);
+      expect(dbJob1.status).to.eq(JobStatus.RUNNING);
+      const dbJob2 = await Job.byJobID(db, joeJob2.jobID);
+      expect(dbJob2.status).to.eq(JobStatus.RUNNING);
       expect(this.res.statusCode).to.equal(200);
     });
   });
