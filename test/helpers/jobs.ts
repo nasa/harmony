@@ -419,6 +419,7 @@ export const hookJobListing = hookRequest.bind(this, jobListing);
 export const hookAdminJobListing = hookRequest.bind(this, adminJobListing);
 export const hookJobStatus = hookRequest.bind(this, jobStatus);
 export const hookAdminJobStatus = hookRequest.bind(this, adminJobStatus);
+
 export const hookCancelJob = hookRequest.bind(this, cancelJob);
 export const hookAdminCancelJob = hookRequest.bind(this, adminCancelJob);
 export const hookCancelJobWithGET = hookRequest.bind(this, cancelJobWithGET);
@@ -435,6 +436,11 @@ export const hookPauseJob = hookRequest.bind(this, pauseJob);
 export const hookAdminPauseJob = hookRequest.bind(this, adminPauseJob);
 export const hookPauseJobWithGET = hookRequest.bind(this, pauseJobWithGET);
 export const hookAdminPauseJobWithGET = hookRequest.bind(this, adminPauseJobWithGET);
+
+export const hookSkipPreviewJobs = hookRequest.bind(this, skipPreviewJobs);
+export const hookPauseJobs = hookRequest.bind(this, pauseJobs);
+export const hookResumeJobs = hookRequest.bind(this, resumeJobs);
+export const hookCancelJobs = hookRequest.bind(this, cancelJobs);
 
 /**
  * Given a string returns a new string with all characters escaped such that the string
