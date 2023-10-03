@@ -4,10 +4,11 @@ import JobsStatusChangeLinks from '../../public/js/workflow-ui/jobs/jobs-status-
 
 
 describe('JobsStatusChangeLinks', function () {
+  const jobsStatusChangeLinks = new JobsStatusChangeLinks();
   describe('fetchLinks()', function () {
     let links;
     before(async function () {
-      links = JobsStatusChangeLinks.fetchLinks(true);
+      links = jobsStatusChangeLinks.fetchLinks(true);
     });
     it('Returns all job status change links', function () {
       expect(links.length).to.eq(4);
@@ -19,7 +20,7 @@ describe('JobsStatusChangeLinks', function () {
     describe('with incompatible statuses', function () {
       let links;
       before(async function () {
-        links = JobsStatusChangeLinks.fetchLinksForStatuses(['paused', 'successful']);
+        links = jobsStatusChangeLinks.fetchLinksForStatuses(['paused', 'successful']);
       });
       it('Returns 0 job status change links', function () {
         expect(links.length).to.eq(0);
@@ -28,7 +29,7 @@ describe('JobsStatusChangeLinks', function () {
     describe('with paused status', function () {
       let links;
       before(async function () {
-        links = JobsStatusChangeLinks.fetchLinksForStatuses(['paused']);
+        links = jobsStatusChangeLinks.fetchLinksForStatuses(['paused']);
       });
       it('Returns resume and cancel status change link', function () {
         expect(links.length).to.eq(2);
@@ -40,7 +41,7 @@ describe('JobsStatusChangeLinks', function () {
     describe('with running status', function () {
       let links;
       before(async function () {
-        links = JobsStatusChangeLinks.fetchLinksForStatuses(['running']);
+        links = jobsStatusChangeLinks.fetchLinksForStatuses(['running']);
       });
       it('Returns pause and cancel status change link', function () {
         expect(links.length).to.eq(2);
@@ -52,7 +53,7 @@ describe('JobsStatusChangeLinks', function () {
     describe('with previewing status', function () {
       let links;
       before(async function () {
-        links = JobsStatusChangeLinks.fetchLinksForStatuses(['previewing', 'previewing']);
+        links = jobsStatusChangeLinks.fetchLinksForStatuses(['previewing', 'previewing']);
       });
       it('Returns skip preview, pause and cancel status change link', function () {
         expect(links.length).to.eq(3);
@@ -65,7 +66,7 @@ describe('JobsStatusChangeLinks', function () {
     describe('with running and running_with_errors statuses', function () {
       let links;
       before(async function () {
-        links = JobsStatusChangeLinks.fetchLinksForStatuses(['running', 'running_with_errors']);
+        links = jobsStatusChangeLinks.fetchLinksForStatuses(['running', 'running_with_errors']);
       });
       it('Returns pause and cancel status change link', function () {
         expect(links.length).to.eq(2);
@@ -77,7 +78,7 @@ describe('JobsStatusChangeLinks', function () {
     describe('with running and previewing statuses', function () {
       let links;
       before(async function () {
-        links = JobsStatusChangeLinks.fetchLinksForStatuses(['running', 'previewing']);
+        links = jobsStatusChangeLinks.fetchLinksForStatuses(['running', 'previewing']);
       });
       it('Returns pause and cancel status change link', function () {
         expect(links.length).to.eq(2);
@@ -89,7 +90,7 @@ describe('JobsStatusChangeLinks', function () {
     describe('with running and paused statuses', function () {
       let links;
       before(async function () {
-        links = JobsStatusChangeLinks.fetchLinksForStatuses(['running', 'paused']);
+        links = jobsStatusChangeLinks.fetchLinksForStatuses(['running', 'paused']);
       });
       it('Returns cancel status change link', function () {
         expect(links.length).to.eq(1);

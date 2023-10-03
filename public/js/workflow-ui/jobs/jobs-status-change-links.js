@@ -39,7 +39,7 @@ class JobsStatusChangeLinks extends StatusChangeLinks {
    * (hits relevant Harmony url, shows user the response).
    * @param {Event} event - the click event
    */
-  static async handleClick(event) {
+  async handleClick(event) {
     event.preventDefault();
     toasts.showUpper('Changing job state...');
     const link = event.target;
@@ -71,7 +71,7 @@ class JobsStatusChangeLinks extends StatusChangeLinks {
    * Get job state change links (pause, resume, etc.) depending on jobs' statuses.
    * @param {string[]} statuses - fetch links relevent to these job statuses
    */
-  static fetchLinksForStatuses(statuses) {
+  fetchLinksForStatuses(statuses) {
     const links = [];
     const hasRunning = statuses.indexOf('running') > -1;
     const hasRunningWithErrors = statuses.indexOf('running_with_errors') > -1;
@@ -106,11 +106,11 @@ class JobsStatusChangeLinks extends StatusChangeLinks {
    * @param {boolean} fetchAll - fetch all links or only those relevent to the
    * specified statuses
    */
-  static fetchLinks(fetchAll) {
+  fetchLinks(fetchAll) {
     if (fetchAll) {
       return [cancelLink, pauseLink, resumeLink, skipPreviewLink];
     }
-    return JobsStatusChangeLinks.fetchLinksForStatuses(jobsTable.getJobStatuses());
+    return this.fetchLinksForStatuses(jobsTable.getJobStatuses());
   }
 }
 
