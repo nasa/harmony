@@ -7,6 +7,6 @@ pushd ../../packages/util
 npm run build
 popd
 rimraf built/*
-copyfiles -u 5 "../../packages/util/built/**/*" built/lib/util
-copyfiles ../../packages/util/env-defaults built/lib/util
-copyfiles -u 2 ../../env-defaults built
+copyfiles -u 5 "../../packages/util/built/**/*" built/packages/util
+copyfiles ../../packages/util/env-defaults built/packages/util
+copyfiles -u 2 ../harmony/env-defaults built
