@@ -1,6 +1,5 @@
 import { expect } from 'chai';
 import { describe, it, before } from 'mocha';
-import * as sinon from 'sinon';
 import JobsStatusChangeLinks from '../../public/js/workflow-ui/jobs/jobs-status-change-links';
 
 
