@@ -279,6 +279,8 @@ export async function getJobs(
     const paginationInfo = { from: (pagination.from + 1).toLocaleString(),
       to: pagination.to.toLocaleString(), total: pagination.total.toLocaleString(),
       currentPage: pagination.currentPage.toLocaleString(), lastPage: pagination.lastPage.toLocaleString() };
+    const selectAllBox = jobs.some((j) => !j.hasTerminalStatus()) ?
+      '<input id="select-jobs" type="checkbox" title="select/deselect all jobs">' : '';
     res.render('workflow-ui/jobs/index', {
       version,
       page,
@@ -287,6 +289,7 @@ export async function getJobs(
       currentUser: req.user,
       isAdminRoute,
       jobs,
+      selectAllBox,
       serviceNames: JSON.stringify(serviceNames),
       sortGranules: requestQuery.sortgranules,
       disallowStatusChecked: !tableQuery.allowStatuses ? 'checked' : '',
