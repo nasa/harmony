@@ -17,6 +17,7 @@ function formatDates(selector) {
 
 /**
  * Initialize all bootstrap tooltips with a given querySelector.
+ * @param {string} querySelector - the selector for elements that have tooltips
  */
 function initTooltips(querySelector) {
   const tooltipTriggerList = [].slice.call(document.querySelectorAll(querySelector));

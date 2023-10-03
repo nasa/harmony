@@ -10,10 +10,10 @@ let statuses = [];
 
 /**
  * Build the jobs filter with filter facets like 'status' and 'user'.
- * @param currentUser - the current Harmony user
- * @param services - service names from services.yml
- * @param isAdminRoute - whether the current page is /admin/...
- * @param tableFilter - initial tags that will populate the input
+  * @param {string} currentUser - the current Harmony user
+  * @param {string[]} services - service names from services.yml
+  * @param {boolean} isAdminRoute - whether the current page is /admin/...
+  * @param {object[]} tableFilter - initial tags that will populate the input
  */
 function initFilter(currentUser, services, isAdminRoute, tableFilter) {
   const filterInput = document.querySelector('input[name="tableFilter"]');
@@ -60,7 +60,7 @@ function initFilter(currentUser, services, isAdminRoute, tableFilter) {
 
 /**
  * Fallback method for copying text to clipboard.
- * @param text - the text to copy
+ * @param {string} text - the text to copy
  */
 function fallbackCopyTextToClipboard(text) {
   const textArea = document.createElement('textarea');
@@ -81,7 +81,7 @@ function fallbackCopyTextToClipboard(text) {
 
 /**
  * Method for copying the text to the clipboard.
- * @param text - the text to copy
+ * @param {string} text - the text to copy
  */
 async function copyTextToClipboard(text) {
   if (!navigator.clipboard) {
@@ -161,10 +161,10 @@ export default {
 
   /**
    * Initialize the jobs table.
-   * @param currentUser - the current Harmony user
-   * @param services - service names from services.yml
-   * @param isAdminRoute - whether the current page is /admin/...
-   * @param tableFilter - initial tags that will populate the input
+   * @param {string} currentUser - the current Harmony user
+   * @param {string[]} services - service names from services.yml
+   * @param {boolean} isAdminRoute - whether the current page is /admin/...
+   * @param {object[]} tableFilter - initial tags that will populate the input
    */
   async init(currentUser, services, isAdminRoute, tableFilter) {
     formatDates('.date-td');
@@ -174,10 +174,18 @@ export default {
     initSelectAllHandler();
   },
 
+  /**
+   * Get the statuses for each currently selected job.
+   * @returns an array of statuses
+   */
   getJobStatuses() {
     return statuses;
   },
 
+ /**
+   * Get the ID for each currently selected job.
+   * @returns an array of job IDs.
+   */
   getJobIds() {
     return jobIDs;
   },

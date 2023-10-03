@@ -1,5 +1,6 @@
 import workItemsTable from './work-items-table.js';
 import JobStatusChangeLinks from './job-status-change-links.js';
+import toasts from '../toasts.js';
 
 /**
  * Initialize the job page (which displays work items, job status, etc).
@@ -24,6 +25,8 @@ async function init() {
   }
 
   workItemsTable.init(params);
+
+  toasts.init();
 }
 
 init();
