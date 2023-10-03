@@ -46,12 +46,11 @@ async function drainQueue(queue: Queue, reqLogger: Logger): Promise<ReceivedMess
 }
 
 /**
- * Returns the next work item to process for a service and job ID
- * @param tx - the transaction to use for querying
- * @param serviceID - the service ID looking for the next item to work
- * @param jobID - - the jobID for the next item to work
+ * Returns the list of batch sizes for a given size
+ * @param workSize - the size to break into batches
+ * @param batchSize - - the batch size
  *
- * @returns A promise with the work item to process or null if none
+ * @returns A list of batch sizes for the given size
  */
 function sizeToBatches(
   workSize: number,
