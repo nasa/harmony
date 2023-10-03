@@ -61,7 +61,7 @@ class JobsStatusChangeLinks extends StatusChangeLinks {
       // TODO - handle rows refresh and make table refresh on interval
       // Should rows disappear if updated rows don't match table filters?
     } else if (data.description) {
-      toasts.showUpper(data.description);
+      toasts.showUpper(`${data.description} Please reload the page to view updates.`);
     } else {
       toasts.showUpper('The update failed.');
     }
