@@ -17,7 +17,7 @@ describe('Scheduler Worker', async function () {
 
   describe('processSchedulerQueue', async function () {
     let getPodsCountForServiceStub: SinonStub;
-    let getWorkFromDatabaseStub: SinonStub;
+    let getWorksFromDatabaseStub: SinonStub;
     let getSchedulerQueueStub: SinonStub;
     let getQueueUrlForServiceStub: SinonStub;
     let getQueueForUrlStub: SinonStub;
@@ -28,8 +28,8 @@ describe('Scheduler Worker', async function () {
       getPodsCountForServiceStub = sinon.stub(k8s, 'getPodsCountForService').callsFake(async function () {
         return 1;
       });
-      getWorkFromDatabaseStub = sinon.stub(workItemPolling, 'getWorkFromDatabase').callsFake(async function (_serviceID: string, _logger: Logger) {
-        return { workItem: new WorkItem({ id: 1 }) } as WorkItemData;
+      getWorksFromDatabaseStub = sinon.stub(workItemPolling, 'getWorksFromDatabase').callsFake(async function (_serviceID: string, _logger: Logger, _batchSize: number) {
+        return [{ workItem: new WorkItem({ id: 1 }) }] as WorkItemData[];
       });
       getSchedulerQueueStub = sinon.stub(queueFactory, 'getWorkSchedulerQueue').callsFake(function () {
         return schedulerQueue;
@@ -47,7 +47,7 @@ describe('Scheduler Worker', async function () {
 
     after(function () {
       getPodsCountForServiceStub.restore();
-      getWorkFromDatabaseStub.restore();
+      getWorksFromDatabaseStub.restore();
       getSchedulerQueueStub.restore();
       getQueueForUrlStub.restore();
       getQueueUrlForServiceStub.restore();
@@ -74,8 +74,8 @@ describe('Scheduler Worker', async function () {
         expect(getPodsCountForServiceStub.called).to.be.false;
       });
 
-      it('does not call getWorkFromDatabase', async function () {
-        expect(getWorkFromDatabaseStub.called).to.be.false;
+      it('does not call getWorksFromDatabase', async function () {
+        expect(getWorksFromDatabaseStub.called).to.be.false;
       });
 
       it('does not call getQueueForUrl', async function () {
@@ -106,8 +106,8 @@ describe('Scheduler Worker', async function () {
         expect(getPodsCountForServiceStub.called).to.be.true;
       });
 
-      it('calls getWorkFromDatabase', async function () {
-        expect(getWorkFromDatabaseStub.called).to.be.true;
+      it('calls getWorksFromDatabase', async function () {
+        expect(getWorksFromDatabaseStub.called).to.be.true;
       });
 
       it('calls getSchedulerQueue', async function () {
