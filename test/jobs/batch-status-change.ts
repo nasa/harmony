@@ -104,4 +104,67 @@ describe('jobs/cancel, jobs/resume, jobs/skip-preview, jobs/resume', function ()
       expect(this.res.statusCode).to.equal(200);
     });
   });
+
+  describe('Skipping preview for multiple jobs and only one is previewing', function () {
+    hookTransaction();
+    const joeJob1 = buildJob({ username: 'joe', status: JobStatus.PREVIEWING });
+    const joeJob2 = buildJob({ username: 'joe', status: JobStatus.CANCELED });
+    before(async function () {
+      await joeJob1.save(this.trx);
+      await joeJob2.save(this.trx);
+      this.trx.commit();
+      this.trx = null;
+    });
+    hookSkipPreviewJobs({ username: 'joe', 'jobIDs': [joeJob1.jobID, joeJob2.jobID] });
+
+    it('Skips the job preview for only one job', async function () {
+      const dbJob1 = await Job.byJobID(db, joeJob1.jobID);
+      expect(dbJob1.status).to.eq(JobStatus.RUNNING);
+      const dbJob2 = await Job.byJobID(db, joeJob2.jobID);
+      expect(dbJob2.status).to.eq(JobStatus.CANCELED);
+      expect(JSON.parse(this.res.error.text).description).to.equal('Error: Could not change all job statuses. Proccessed 1.');
+    });
+  });
+
+  describe('An admin changing the status for jobs owned by other users', function () {
+    hookTransaction();
+    const joeJob1 = buildJob({ username: 'joe', status: JobStatus.PREVIEWING });
+    const joeJob2 = buildJob({ username: 'buzz', status: JobStatus.PREVIEWING });
+    before(async function () {
+      await joeJob1.save(this.trx);
+      await joeJob2.save(this.trx);
+      this.trx.commit();
+      this.trx = null;
+    });
+    hookSkipPreviewJobs({ username: 'adam', 'jobIDs': [joeJob1.jobID, joeJob2.jobID] });
+
+    it('Skips the job previews', async function () {
+      const dbJob1 = await Job.byJobID(db, joeJob1.jobID);
+      expect(dbJob1.status).to.eq(JobStatus.RUNNING);
+      const dbJob2 = await Job.byJobID(db, joeJob2.jobID);
+      expect(dbJob2.status).to.eq(JobStatus.RUNNING);
+      expect(this.res.statusCode).to.equal(200);
+    });
+  });
+
+  describe('An non-admin changing the status for jobs owned by another user', function () {
+    hookTransaction();
+    const joeJob1 = buildJob({ username: 'joe', status: JobStatus.PREVIEWING });
+    const joeJob2 = buildJob({ username: 'joe', status: JobStatus.PREVIEWING });
+    before(async function () {
+      await joeJob1.save(this.trx);
+      await joeJob2.save(this.trx);
+      this.trx.commit();
+      this.trx = null;
+    });
+    hookSkipPreviewJobs({ username: 'woody', 'jobIDs': [joeJob1.jobID, joeJob2.jobID] });
+
+    it('Does not skip the job previews (returns an error)', async function () {
+      const dbJob1 = await Job.byJobID(db, joeJob1.jobID);
+      expect(dbJob1.status).to.eq(JobStatus.PREVIEWING);
+      const dbJob2 = await Job.byJobID(db, joeJob2.jobID);
+      expect(dbJob2.status).to.eq(JobStatus.PREVIEWING);
+      expect(JSON.parse(this.res.error.text).description).to.equal('Error: Could not change all job statuses. Proccessed 0.');
+    });
+  });
 });

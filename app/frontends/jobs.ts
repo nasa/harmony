@@ -247,7 +247,6 @@ export async function changeJobsState(
   next: NextFunction,
   jobFn: (jobID: string, logger: Logger, username: string, token: string) => Promise<void>,
 ): Promise<void> {
-  let currentJobID: string;
   let processedCount = 0;
   try {
     const { jobIDs } = req.body;
@@ -258,13 +257,12 @@ export async function changeJobsState(
       username = req.user;
     }
     for (const jobID of jobIDs) {
-      currentJobID = jobID;
       validateJobId(jobID);
       await jobFn(jobID, req.context.logger, username, req.accessToken);
       processedCount += 1;
     }
   } catch (e) {
-    const message = `Could not change all job statuses. Failed on job ${currentJobID}. Proccessed ${processedCount}.`;
+    const message = `Could not change all job statuses. Proccessed ${processedCount}.`;
     next(new ServerError(message));
   }
 }
