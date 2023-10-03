@@ -1,6 +1,5 @@
 import { expect } from 'chai';
 import { describe, it, before } from 'mocha';
-import 'jsdom-global/register';
 import * as sinon from 'sinon';
 import JobsStatusChangeLinks from '../../public/js/workflow-ui/jobs/jobs-status-change-links';
 
@@ -25,6 +24,78 @@ describe('JobsStatusChangeLinks', function () {
       });
       it('Returns 0 job status change links', function () {
         expect(links.length).to.eq(0);
+      });
+    });
+    describe('with paused status', function () {
+      let links;
+      before(async function () {
+        links = JobsStatusChangeLinks.fetchLinksForStatuses(['paused']);
+      });
+      it('Returns resume and cancel status change link', function () {
+        expect(links.length).to.eq(2);
+        const linkRels = links.map((l) => l.rel);
+        expect(linkRels).contains('resumer');
+        expect(linkRels).contains('canceler');
+      });
+    });
+    describe('with running status', function () {
+      let links;
+      before(async function () {
+        links = JobsStatusChangeLinks.fetchLinksForStatuses(['running']);
+      });
+      it('Returns pause and cancel status change link', function () {
+        expect(links.length).to.eq(2);
+        const linkRels = links.map((l) => l.rel);
+        expect(linkRels).contains('pauser');
+        expect(linkRels).contains('canceler');
+      });
+    });
+    describe('with previewing status', function () {
+      let links;
+      before(async function () {
+        links = JobsStatusChangeLinks.fetchLinksForStatuses(['previewing', 'previewing']);
+      });
+      it('Returns skip preview, pause and cancel status change link', function () {
+        expect(links.length).to.eq(3);
+        const linkRels = links.map((l) => l.rel);
+        expect(linkRels).contains('preview-skipper');
+        expect(linkRels).contains('pauser');
+        expect(linkRels).contains('canceler');
+      });
+    });
+    describe('with running and running_with_errors statuses', function () {
+      let links;
+      before(async function () {
+        links = JobsStatusChangeLinks.fetchLinksForStatuses(['running', 'running_with_errors']);
+      });
+      it('Returns pause and cancel status change link', function () {
+        expect(links.length).to.eq(2);
+        const linkRels = links.map((l) => l.rel);
+        expect(linkRels).contains('pauser');
+        expect(linkRels).contains('canceler');
+      });
+    });
+    describe('with running and previewing statuses', function () {
+      let links;
+      before(async function () {
+        links = JobsStatusChangeLinks.fetchLinksForStatuses(['running', 'previewing']);
+      });
+      it('Returns pause and cancel status change link', function () {
+        expect(links.length).to.eq(2);
+        const linkRels = links.map((l) => l.rel);
+        expect(linkRels).contains('pauser');
+        expect(linkRels).contains('canceler');
+      });
+    });
+    describe('with running and paused statuses', function () {
+      let links;
+      before(async function () {
+        links = JobsStatusChangeLinks.fetchLinksForStatuses(['running', 'paused']);
+      });
+      it('Returns cancel status change link', function () {
+        expect(links.length).to.eq(1);
+        const linkRels = links.map((l) => l.rel);
+        expect(linkRels).contains('canceler');
       });
     });
   });
