@@ -129,19 +129,19 @@ describe('jobs/cancel, jobs/resume, jobs/skip-preview, jobs/resume', function ()
   describe('An admin changing the status for jobs owned by other users', function () {
     hookTransaction();
     const joeJob1 = buildJob({ username: 'joe', status: JobStatus.PREVIEWING });
-    const joeJob2 = buildJob({ username: 'buzz', status: JobStatus.PREVIEWING });
+    const buzzJob1 = buildJob({ username: 'buzz', status: JobStatus.PREVIEWING });
     before(async function () {
       await joeJob1.save(this.trx);
-      await joeJob2.save(this.trx);
+      await buzzJob1.save(this.trx);
       this.trx.commit();
       this.trx = null;
     });
-    hookSkipPreviewJobs({ username: 'adam', 'jobIDs': [joeJob1.jobID, joeJob2.jobID] });
+    hookSkipPreviewJobs({ username: 'adam', 'jobIDs': [joeJob1.jobID, buzzJob1.jobID] });
 
     it('Skips the job previews', async function () {
       const dbJob1 = await Job.byJobID(db, joeJob1.jobID);
       expect(dbJob1.status).to.eq(JobStatus.RUNNING);
-      const dbJob2 = await Job.byJobID(db, joeJob2.jobID);
+      const dbJob2 = await Job.byJobID(db, buzzJob1.jobID);
       expect(dbJob2.status).to.eq(JobStatus.RUNNING);
       expect(this.res.statusCode).to.equal(200);
     });
