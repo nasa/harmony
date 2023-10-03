@@ -211,10 +211,11 @@ export async function getNextWorkItem(
 /**
  * Get operation from the database for the given job id and service id.
  *
+ * @param tx - the transaction to use for querying
  * @param jobId - the id of the job
  * @param serviceID - the id of the service to get operation for
- * @param reqLogger - a logger instance
- * @returns parsed operation from the database for the given job and service ids
+ *
+ * @returns parsed operation from the database for the given job id and service id
  */
 async function getJobServiceOperation(
   tx: Transaction,
@@ -240,8 +241,9 @@ async function getJobServiceOperation(
  * @param tx - the transaction to use for querying
  * @param serviceID - the service ID looking for the next item to work
  * @param jobID - - the jobID for the next item to work
+ * @param workSize - - the size of work items to return
  *
- * @returns A promise with the work item to process or null if none
+ * @returns A promise with a list of work items to process or null if none
  */
 export async function getNextWorkItems(
   tx: Transaction,

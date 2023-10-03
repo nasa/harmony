@@ -85,7 +85,6 @@ export async function getWorksFromDatabase(
           }
           await incrementRunningAndDecrementReadyCounts(tx, jobId, serviceID as string, nextWorkItems.length);
         } else {
-          reqLogger.warn(`==============found: ${nextWorkItems?.length}, foundowrkitem worksize: ${workSize}`);
           reqLogger.warn(`user_work is out of sync for job ${jobId}, could not find ready work item`);
           reqLogger.warn(`recalculating ready and running counts for job ${jobId}`);
           await recalculateCounts(tx, jobId);
