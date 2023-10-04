@@ -150,9 +150,11 @@ MAX_POST_FILE_PARTS=100
 # For example, if OAUTH_HOST points to UAT EDL, downloading data from a
 # TEA endpoint that's integrated with PROD EDL will fail.
 
-OAUTH_CLIENT_ID=
-OAUTH_UID=
-OAUTH_PASSWORD=
+
+OAUTH_CLIENT_ID=GddAPdDN4R3GYDn7p8l12Q
+OAUTH_UID=harmonylocalcbrownstevenson
+OAUTH_PASSWORD=Earthdata2023!
+
 
 OAUTH_REDIRECT_URI=http://localhost:3000/oauth2/redirect
 OAUTH_HOST=https://uat.urs.earthdata.nasa.gov
@@ -381,6 +383,14 @@ GIOVANNI_ADAPTER_LIMITS_MEMORY=512Mi
 GIOVANNI_ADAPTER_INVOCATION_ARGS='node tasks/giovanni-adapter/app/cli'
 GIOVANNI_ADAPTER_SERVICE_QUEUE_URLS='["harmonyservices/giovanni-adapter:latest,http://localstack:4566/queue/giovanni-adapter.fifo"]'
 
+GEOLOCO_IMAGE=ldds/geoloco:latest
+GEOLOCO_REQUESTS_CPU=128m
+GEOLOCO_REQUESTS_MEMORY=128Mi
+GEOLOCO_LIMITS_CPU=2048m
+GEOLOCO_LIMITS_MEMORY=2048Mi
+GEOLOCO_INVOCATION_ARGS='python harmony_python_interface/adapter.py'
+GEOLOCO_SERVICE_QUEUE_URLS='["ldds/geoloco:latest,http://localstack:4566/queue/geoloco.fifo"]'
+
 # The services to deploy locally. A comma-separated list of services that the bin/deploy-services
 # script should attempt to deploy. By default only a couple of harmony example services are deployed.
 # When specifying another service to be deployed make sure the name matches the lower and dash case
@@ -388,7 +398,7 @@ GIOVANNI_ADAPTER_SERVICE_QUEUE_URLS='["harmonyservices/giovanni-adapter:latest,h
 # a variable name of GIOVANNI_ADAPTER_IMAGE you would specify giovanni-adapter (converting to lowercase
 # and dash case and dropping _IMAGE. Make sure if the image for the service is not publicly available
 # that you have built the docker image locally, otherwise the service will fail to start.
-LOCALLY_DEPLOYED_SERVICES=harmony-service-example,harmony-netcdf-to-zarr
+LOCALLY_DEPLOYED_SERVICES=harmony-service-example,harmony-netcdf-to-zarr,geoloco
 
 # Local development: Use the following to set the Kubernetes context used by start scripts
 # minikube users should set it to "minikube"
