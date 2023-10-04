@@ -8,7 +8,7 @@ describe('JobsStatusChangeLinks', function () {
   describe('fetchLinks()', function () {
     let links;
     before(async function () {
-      links = jobsStatusChangeLinks.fetchLinks(true);
+      links = await jobsStatusChangeLinks.fetchLinks(true);
     });
     it('Returns all job status change links', function () {
       expect(links.length).to.eq(4);

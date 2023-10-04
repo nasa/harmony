@@ -106,7 +106,7 @@ class JobsStatusChangeLinks extends StatusChangeLinks {
    * @param {boolean} fetchAll - fetch all links or only those relevent to the
    * specified statuses
    */
-  fetchLinks(fetchAll) {
+  async fetchLinks(fetchAll) {
     if (fetchAll) {
       return [cancelLink, pauseLink, resumeLink, skipPreviewLink];
     }
