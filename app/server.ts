@@ -1,4 +1,4 @@
-import express, { Response, NextFunction, RequestHandler, json } from 'express';
+import express, { Response, NextFunction, RequestHandler } from 'express';
 import mustacheExpress from 'mustache-express';
 import { v4 as uuid } from 'uuid';
 import expressWinston from 'express-winston';
@@ -108,7 +108,6 @@ function buildFrontendServer(port: number, hostBinding: string, config: RouterCo
   const app = express();
   app.use(addRequestId(appLogger));
   app.use(addRequestLogger(appLogger));
-  app.use(json());
 
   // currently, only service requests are timed (for the frontend)
   app.use(logForRoutes('timing.frontend-request.start', 'allow', [cmrCollectionReader.collectionRegex]));

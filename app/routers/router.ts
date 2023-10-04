@@ -1,5 +1,5 @@
 import process from 'process';
-import express, { RequestHandler } from 'express';
+import express, { json, RequestHandler } from 'express';
 import asyncHandler from 'express-async-handler';
 import cookieParser from 'cookie-parser';
 import swaggerUi from 'swagger-ui-express';
@@ -235,10 +235,11 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   result.get('/admin/jobs', asyncHandler(getJobsListing));
   result.get('/admin/jobs/:jobID', asyncHandler(getJobStatus));
 
-  result.post('/jobs/cancel', asyncHandler(cancelJobs));
-  result.post('/jobs/resume', asyncHandler(resumeJobs));
-  result.post('/jobs/skip-preview', asyncHandler(skipJobsPreview));
-  result.post('/jobs/pause', asyncHandler(pauseJobs));
+  const jsonParser = json();
+  result.post('/jobs/cancel', jsonParser, asyncHandler(cancelJobs));
+  result.post('/jobs/resume', jsonParser, asyncHandler(resumeJobs));
+  result.post('/jobs/skip-preview', jsonParser, asyncHandler(skipJobsPreview));
+  result.post('/jobs/pause', jsonParser, asyncHandler(pauseJobs));
 
   result.get('/admin/request-metrics', asyncHandler(getRequestMetrics));
 
