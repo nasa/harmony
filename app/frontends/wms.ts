@@ -188,7 +188,7 @@ function getMap(req, res, next: NextFunction): void {
   // Section 7.3
 
   const query = req.wmsQuery;
-  console.log(query);
+
   // Required WMS params
   validateParamExists(query,
     'layers',
@@ -260,7 +260,7 @@ export default async function wmsFrontend(req, res, next: NextFunction): Promise
   req.context.frontend = 'wms';
   const query = keysToLowerCase(req.query);
   req.wmsQuery = query;
-  console.log(query);
+
   try {
     validateParamIn(query, 'service', ['WMS']);
     validateParamIn(query, 'request', ['GetCapabilities', 'GetMap']);
@@ -278,7 +278,6 @@ export default async function wmsFrontend(req, res, next: NextFunction): Promise
     }
     throw new Error(`Unrecognized operation: ${wmsRequest}`);
   } catch (e) {
-    console.log(e);
     // TODO: Handle 'exceptions' param (HARMONY-40)
     if (e instanceof RequestValidationError) {
       req.context.logger.error(e.message);

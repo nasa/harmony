@@ -78,7 +78,6 @@ export default class HttpService extends BaseService<HttpServiceParams> {
             resolve(null); // Success.  Further communication is via callback
           } else if (res.statusCode < 300) {
             // Synchronous success
-            console.log('sync success!');
             result.stream = res;
             resolve(result);
           } else if (res.statusCode < 400) {
