@@ -178,7 +178,7 @@ function jobRenderingFunctions(logger: Logger, requestQuery: Record<string, any>
       if (this.hasTerminalStatus()) {
         return '';
       }
-      return `<input class="select-job" type="checkbox" data-id="${this.jobID}" data-status="${this.status}"></input>`;
+      return `<input class="select-job" type="checkbox" data-id="${this.jobID}" data-status="${this.status}" autocomplete="off"></input>`;
     },
     sortGranulesLinks(): string {
       // return links that lets the user apply or unapply an asc or desc sort
@@ -280,7 +280,7 @@ export async function getJobs(
       to: pagination.to.toLocaleString(), total: pagination.total.toLocaleString(),
       currentPage: pagination.currentPage.toLocaleString(), lastPage: pagination.lastPage.toLocaleString() };
     const selectAllBox = jobs.some((j) => !j.hasTerminalStatus()) ?
-      '<input id="select-jobs" type="checkbox" title="select/deselect all jobs">' : '';
+      '<input id="select-jobs" type="checkbox" title="select/deselect all jobs" autocomplete="off">' : '';
     res.render('workflow-ui/jobs/index', {
       version,
       page,
