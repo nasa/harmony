@@ -168,7 +168,7 @@ describe('jobs/cancel, jobs/resume, jobs/skip-preview, jobs/resume', function ()
     });
   });
 
-  describe('An non-admin canceling jobs owned by another user', function () {
+  describe('A non-admin canceling jobs owned by another user', function () {
     hookTransaction();
     const joeJob1 = buildJob({ username: 'joe', status: JobStatus.PREVIEWING });
     const joeJob2 = buildJob({ username: 'joe', status: JobStatus.PREVIEWING });
