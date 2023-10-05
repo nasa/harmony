@@ -237,7 +237,7 @@ async function getJobServiceOperation(
 }
 
 /**
- * Returns the next work item to process for a service and job ID
+ * Returns the next work items to process for a service and job ID
  * @param tx - the transaction to use for querying
  * @param serviceID - the service ID looking for the next item to work
  * @param jobID - - the jobID for the next item to work

@@ -5,7 +5,7 @@ import { logAsyncExecutionTime } from '../../../../app/util/log-execution';
 import logger from '../../../../app/util/log';
 import { Logger } from 'winston';
 import { getQueueUrlForService, getQueueForUrl, getWorkSchedulerQueue } from '../../../../app/util/queue/queue-factory';
-import { getWorksFromDatabase } from '../../../../app/backends/workflow-orchestration/work-item-polling';
+import { getWorkItemsFromDatabase } from '../../../../app/backends/workflow-orchestration/work-item-polling';
 import { getPodsCountForService } from '../util/k8s';
 import { Queue, ReceivedMessage } from '../../../../app/util/queue/queue';
 
@@ -131,8 +131,8 @@ export async function processSchedulerQueue(reqLogger: Logger): Promise<void> {
       const batchStartTime = new Date().getTime();
       for (const chunk of sizeToBatches(workSize, env.workItemSchedulerBatchSize)) {
         const workItems = await (await logAsyncExecutionTime(
-          getWorksFromDatabase,
-          'PSQ.getWorksFromDatabase',
+          getWorkItemsFromDatabase,
+          'PSQ.getWorkItemsFromDatabase',
           reqLogger))(serviceID, reqLogger, chunk);
 
         for (const workItem of workItems) {
