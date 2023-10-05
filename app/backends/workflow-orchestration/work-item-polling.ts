@@ -54,14 +54,29 @@ export async function getWorkFromDatabase(serviceID: string, reqLogger: Logger):
 }
 
 /**
+ * Return a randomly shuffled list of the given list.
+ * This is an implementation of the Fisher-Yates shuffle algorithm.
+ *
+ * @param array - the given list to shuffle
+ * @returns The randomly shuffled list of the original list
+ */
+function shuffleArray<T>(array: T[]): T[] {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
+/**
  * Get work items from the database for the given service ID.
  *
  * @param serviceID - the id of the service to get work for
  * @param reqLogger - a logger instance
- * @param batchSize - batch size
+ * @param batchSize - the maximum number of work items to return
  * @returns work items from the database for the given service ID
  */
-export async function getWorksFromDatabase(
+export async function getWorkItemsFromDatabase(
   serviceID: string,
   reqLogger: Logger,
   batchSize: number): Promise<WorkItemData[]> {
@@ -69,8 +84,13 @@ export async function getWorksFromDatabase(
   try {
     await db.transaction(async (tx) => {
       const jobIds = await getNextJobIds(tx, serviceID as string, batchSize);
-      const workSize = (jobIds.length > 0) ? Math.ceil(batchSize / jobIds.length) : 1;
-      for (const jobId of jobIds) {
+      const shuffledJobIds = shuffleArray(jobIds);
+      let remainingNumOfJobs = jobIds.length;
+      let remainingBatchSize = batchSize;
+      let workSize;
+      for (const jobId of shuffledJobIds) {
+        // the work size is readjusted based on work items retrieved from the previous job
+        workSize = (remainingNumOfJobs > 0) ? Math.ceil(remainingBatchSize / remainingNumOfJobs) : 1;
         const nextWorkItems = await getNextWorkItems(tx, serviceID as string, jobId, workSize);
         if (nextWorkItems?.length > 0) {
           for (const workItem of nextWorkItems) {
@@ -89,6 +109,10 @@ export async function getWorksFromDatabase(
           reqLogger.warn(`recalculating ready and running counts for job ${jobId}`);
           await recalculateCounts(tx, jobId);
         }
+
+        // readjust the counts for calculating the next work size
+        remainingNumOfJobs -= 1;
+        remainingBatchSize = nextWorkItems ? remainingBatchSize - nextWorkItems.length : remainingBatchSize;
       }
     });
   } catch (err) {
