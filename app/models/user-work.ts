@@ -290,11 +290,11 @@ export async function incrementRunningAndDecrementReadyCounts(
 ): Promise<void> {
   await tx(UserWork.table)
     .where({ job_id: jobID, service_id: serviceID })
-    .increment('running_count', count)
     .update({
       ready_count: tx.raw(`CASE WHEN ready_count >= ${count} THEN ready_count - ${count} ELSE 0 END`),
       last_worked: new Date(),
-    });
+    })
+    .increment('running_count', count);
 }
 
 /**
