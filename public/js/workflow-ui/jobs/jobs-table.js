@@ -9,35 +9,6 @@ let jobIDs = [];
 let statuses = [];
 
 /**
- * Query Harmony for up to date version of a HTML rows of the jobs table.
- * @param {object} params - parameters that define what will appear in the table row
- */
-async function loadRows(params) {
-  let tableUrl = './jobs';
-  tableUrl += `?tableFilter=${encodeURIComponent(params.tableFilter)}&disallowStatus=${params.disallowStatus}`;
-  const res = await fetch(tableUrl, {
-    method: 'POST',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ jobIDs }),
-  });
-  if (res.status === 200) {
-    // loop through json map of html rows (job id => row)
-
-    // const template = await res.text();
-    // const tmp = document.createElement('tbody');
-    // tmp.innerHTML = template;
-    // document.getElementById(`item-${workItemId}`).replaceWith(...tmp.childNodes); // add only the <tr>...</tr>
-    // // bind click handlers
-    // // update job ids / job statuses arrays
-    // // trigger status links update
-    // formatDates(`tr[id="item-${workItemId}"] .date-td`);
-  }
-}
-
-/**
  * Build the jobs filter with filter facets like 'status' and 'user'.
   * @param {string} currentUser - the current Harmony user
   * @param {string[]} services - service names from services.yml
@@ -122,10 +93,11 @@ async function copyTextToClipboard(text) {
 
 /**
  * Intitialize the copy click handler for all copy buttons.
+ * @param {string} selector - defines which button(s) to bind the handler to
  */
-async function initCopyHandler() {
+async function initCopyHandler(selector) {
   // https://stackoverflow.com/questions/400212/how-do-i-copy-to-the-clipboard-in-javascript
-  document.querySelectorAll('.copy-request').forEach((el) => {
+  document.querySelectorAll(selector).forEach((el) => {
     el.addEventListener('click', (event) => {
       copyTextToClipboard(event.target.getAttribute('data-text'));
       const isTruncated = event.target.getAttribute('data-truncated') === 'true';
@@ -137,10 +109,30 @@ async function initCopyHandler() {
 }
 
 /**
- * Intitialize the select box click handler for all job rows.
+ * Repopulate the job IDs and statuses arrays which
+ * track which jobs are selected.
  */
-async function initSelectHandler() {
+async function refreshSelected() {
+  jobIDs = [];
+  statuses = [];
   document.querySelectorAll('.select-job').forEach((el) => {
+    const jobID = el.getAttribute('data-id');
+    const status = el.getAttribute('data-status');
+    const { checked } = el;
+    if (checked) {
+      jobIDs.push(jobID);
+      statuses.push(status);
+    }
+    PubSub.publish('job-selected');
+  });
+}
+
+/**
+ * Intitialize the select box click handler for all job rows.
+ * @param {string} selector - defines which box(es) to bind the handler to
+ */
+async function initSelectHandler(selector) {
+  document.querySelectorAll(selector).forEach((el) => {
     el.addEventListener('click', (event) => {
       const { target } = event;
       const jobID = target.getAttribute('data-id');
@@ -184,6 +176,36 @@ async function initSelectAllHandler() {
 }
 
 /**
+ * Query Harmony for up to date version of a HTML rows of the jobs table.
+ * @param {object} params - parameters that define what will appear in the table row
+ */
+async function loadRows(params) {
+  let tableUrl = './jobs';
+  tableUrl += `?tableFilter=${encodeURIComponent(params.tableFilter)}&disallowStatus=${params.disallowStatus}`;
+  const res = await fetch(tableUrl, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ jobIDs }),
+  });
+  if (res.status === 200) {
+    // loop through json map of html rows (job id => row)
+    const rowsJson = await res.json();
+    for (const [jobID, rowHtml] of Object.entries(rowsJson)) {
+      const tmp = document.createElement('tbody');
+      tmp.innerHTML = rowHtml;
+      document.getElementById(`job-${jobID}`).replaceWith(...tmp.childNodes); // add only the <tr>...</tr>
+      initSelectHandler(`tr[id="job-${jobID}"] .select-job`);
+      initCopyHandler(`tr[id="job-${jobID}"] .copy-request`);
+      formatDates(`tr[id="job-${jobID}"] .date-td`);
+    }
+    refreshSelected();
+  }
+}
+
+/**
  * Handles jobs table logic (formatting, building filters, etc.).
  */
 const jobsTable = {
@@ -205,8 +227,8 @@ const jobsTable = {
     );
     formatDates('.date-td');
     initFilter(params.currentUser, params.services, params.isAdminRoute, params.tableFilter);
-    initCopyHandler();
-    initSelectHandler();
+    initCopyHandler('.copy-request');
+    initSelectHandler('.select-job');
     initSelectAllHandler();
   },
 
