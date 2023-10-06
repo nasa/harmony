@@ -1,0 +1,14 @@
+<tr id="job-{{jobID}}" class='job-table-row'>
+    <td>{{{jobSelectBox}}}</td>
+    <th scope="row"><a href="workflow-ui/{{jobID}}{{dateQuery}}">{{jobID}}</a></th>
+    <td>{{service_name}}</td>
+    {{#isAdminRoute}}
+    <td>{{username}}</td>
+    {{/isAdminRoute}}
+    <td><span class="badge bg-{{jobBadge}}">{{status}}</span></td>
+    <td id="message-td" title="{{message}}">{{jobMessage}}</td>
+    <td>{{numInputGranules}}</td>
+    <td>{{progress}}%</td>
+    <td class="date-td" data-time="{{jobCreatedAt}}"></td>
+    <td class="date-td" data-time="{{jobUpdatedAt}}"></td>
+</tr>

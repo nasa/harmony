@@ -10,10 +10,9 @@ let statuses = [];
 
 /**
  * Query Harmony for up to date version of a HTML rows of the jobs table.
- * @param {string} jobIDsToRefresh - ids of the item for the row that needs updating
  * @param {object} params - parameters that define what will appear in the table row
  */
-async function loadRows(jobIDsToRefresh, params) {
+async function loadRows(params) {
   let tableUrl = './jobs';
   tableUrl += `?tableFilter=${encodeURIComponent(params.tableFilter)}&disallowStatus=${params.disallowStatus}`;
   const res = await fetch(tableUrl, {
@@ -22,7 +21,7 @@ async function loadRows(jobIDsToRefresh, params) {
       Accept: 'application/json',
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ jobIDs: jobIDsToRefresh }),
+    body: JSON.stringify({ jobIDs }),
   });
   if (res.status === 200) {
     // loop through json map of html rows (job id => row)
@@ -187,18 +186,25 @@ async function initSelectAllHandler() {
 /**
  * Handles jobs table logic (formatting, building filters, etc.).
  */
-export default {
+const jobsTable = {
 
   /**
    * Initialize the jobs table.
-   * @param {string} currentUser - the current Harmony user
-   * @param {string[]} services - service names from services.yml
-   * @param {boolean} isAdminRoute - whether the current page is /admin/...
-   * @param {object[]} tableFilter - initial tags that will populate the input
+   * @param {object} params - Parameters that define what will appear in the table.
+   * Params contains the follwing attributes:
+   * disallowStatus - whether to load the table with disallow status "on" or "off".
+   * currentUser - the current Harmony user
+   * services - service names from services.yml
+   * isAdminRoute - whether the current page is /admin/...
+   * tableFilter - initial tags that will populate the input
    */
-  async init(currentUser, services, isAdminRoute, tableFilter) {
+  async init(params) {
+    PubSub.subscribe(
+      'row-state-change',
+      async () => loadRows(params),
+    );
     formatDates('.date-td');
-    initFilter(currentUser, services, isAdminRoute, tableFilter);
+    initFilter(params.currentUser, params.services, params.isAdminRoute, params.tableFilter);
     initCopyHandler();
     initSelectHandler();
     initSelectAllHandler();
@@ -220,3 +226,5 @@ export default {
     return jobIDs;
   },
 };
+
+export default jobsTable;

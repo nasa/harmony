@@ -569,6 +569,52 @@ export async function getWorkItemTableRow(
 }
 
 /**
+ * Render rows of the jobs table for the workflow UI.
+ *
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
+ * @param next - The next function in the call chain
+ * @returns The job rows HTML
+ */
+export async function getJobTableRows(
+  req: HarmonyRequest, res: Response, next: NextFunction,
+): Promise<void> {
+  const { jobIDs } = req.body;
+  try {
+    const { isAdmin } = await getEdlGroupInformation(
+      req.user, req.context.logger,
+    );
+    const requestQuery = keysToLowerCase(req.query);
+    const isAdminOrLogViewer = isAdmin || isLogViewer;
+    const { tableQuery } = parseQuery(requestQuery, JobStatus, isAdmin);
+    const jobs = await Job.queryAll(db);
+    const { isAdmin, isLogViewer } = await getEdlGroupInformation(
+      req.user, req.context.logger,
+    );
+    
+    const job = await getJobIfAllowed(jobID, req.user, isAdmin, req.accessToken, true);
+    // even though we only want one row/item we should still respect the current user's table filters
+    
+    const { tableQuery } = parseQuery(requestQuery, WorkItemStatus);
+    const itemQuery = tableQueryToWorkItemQuery(tableQuery, jobID, parseInt(id));
+    const { workItems } = await queryAll(db, itemQuery, 1, 1);
+    if (workItems.length === 0) {
+      res.send('<span></span>');
+      return;
+    }
+    res.render('workflow-ui/job/work-item-table-row', {
+      isAdminOrLogViewer,
+      canShowRetryColumn: job.belongsToOrIsAdmin(req.user, isAdmin),
+      ...workItems[0],
+      ...workItemRenderingFunctions(job, isAdmin, isLogViewer, req.user),
+    });
+  } catch (e) {
+    req.context.logger.error(e);
+    next(e);
+  }
+}
+
+/**
  * Get the logs for a work item.
  *
  * @param req - The request sent by the client

@@ -1,6 +1,7 @@
 import StatusChangeLinks from '../status-change-links.js';
 import jobsTable from './jobs-table.js';
 import toasts from '../toasts.js';
+import PubSub from '../../pub-sub.js';
 
 const cancelLink = {
   title: 'Cancels the job.',
@@ -58,8 +59,9 @@ class JobsStatusChangeLinks extends StatusChangeLinks {
     const isAre = jobIDs.length > 1 ? 'are' : 'is';
     if (res.status === 200) {
       toasts.showUpper(`The selected job${postfix} ${isAre} now ${data.status}. Please reload the page to view updates.`);
-      // HARMONY-1610 - handle rows refresh and make table refresh on interval
-      // Should rows disappear if updated rows don't match table filters?
+      PubSub.publish(
+        'row-state-change',
+      );
     } else if (data.description) {
       toasts.showUpper(`${data.description} Please reload the page to view updates.`);
     } else {
