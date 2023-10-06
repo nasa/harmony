@@ -205,7 +205,7 @@ function jobRenderingFunctions(logger: Logger, requestQuery: Record<string, any>
 }
 
 /**
- * Transform a TableQuery to a WorkItem db query.
+ * Transform a TableQuery to a Job db query.
  * @param tableQuery - the constraints parsed from the query string of the request
  * @param isAdmin - is the requesting user an admin
  * @param user - the requesting user's username
@@ -585,19 +585,16 @@ export async function getJobTableRows(
       req.user, req.context.logger,
     );
     const requestQuery = keysToLowerCase(req.query);
-    const isAdminOrLogViewer = isAdmin || isLogViewer;
     const { tableQuery } = parseQuery(requestQuery, JobStatus, isAdmin);
+    const itemQuery = tableQueryToJobQuery(tableQuery, isAdmin, req.user, jobIDs);
     const jobs = await Job.queryAll(db);
-    const { isAdmin, isLogViewer } = await getEdlGroupInformation(
-      req.user, req.context.logger,
-    );
     
     const job = await getJobIfAllowed(jobID, req.user, isAdmin, req.accessToken, true);
     // even though we only want one row/item we should still respect the current user's table filters
     
     const { tableQuery } = parseQuery(requestQuery, WorkItemStatus);
-    const itemQuery = tableQueryToWorkItemQuery(tableQuery, jobID, parseInt(id));
-    const { workItems } = await queryAll(db, itemQuery, 1, 1);
+    
+    
     if (workItems.length === 0) {
       res.send('<span></span>');
       return;
