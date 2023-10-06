@@ -1,4 +1,4 @@
-import db from '../../util/db';
+import db, { Transaction } from '../../util/db';
 import { Logger } from 'winston';
 import env from '../../util/env';
 import WorkItem, { getNextWorkItem, getNextWorkItems, getWorkItemStatus, updateWorkItemStatuses } from '../../models/work-item';
@@ -82,39 +82,52 @@ export async function getWorkItemsFromDatabase(
   batchSize: number): Promise<WorkItemData[]> {
   const workItems: WorkItemData[] = [];
   try {
-    await db.transaction(async (tx) => {
-      const jobIds = await getNextJobIds(tx, serviceID as string, batchSize);
-      const shuffledJobIds = shuffleArray(jobIds);
-      let remainingNumOfJobs = jobIds.length;
-      let remainingBatchSize = batchSize;
-      let workSize;
-      for (const jobId of shuffledJobIds) {
-        // the work size is readjusted based on work items retrieved from the previous job
-        workSize = (remainingNumOfJobs > 0) ? Math.ceil(remainingBatchSize / remainingNumOfJobs) : 1;
-        const nextWorkItems = await getNextWorkItems(tx, serviceID as string, jobId, workSize);
-        if (nextWorkItems?.length > 0) {
-          for (const workItem of nextWorkItems) {
-            if (workItem && QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)) {
-              const childLogger = reqLogger.child({ workItemId: workItem.id });
-              const maxCmrGranules = await calculateQueryCmrLimit(tx, workItem, childLogger);
-              reqLogger.debug(`Found work item ${workItem.id} for service ${serviceID} with max CMR granules ${maxCmrGranules}`);
-              workItems.push({ workItem, maxCmrGranules });
-            } else {
-              workItems.push({ workItem });
-            }
-          }
-          await incrementRunningAndDecrementReadyCounts(tx, jobId, serviceID as string, nextWorkItems.length);
-        } else {
-          reqLogger.warn(`user_work is out of sync for job ${jobId}, could not find ready work item`);
-          reqLogger.warn(`recalculating ready and running counts for job ${jobId}`);
-          await recalculateCounts(tx, jobId);
-        }
+    const jobIds = await getNextJobIds(db, serviceID as string, batchSize);
+    // Because the way we readjust the size of work items to retrieve for processing,
+    // only the jobs at the back of the list can take advantage of the free slots left by
+    // jobs in front. To avoid the situation where a fixed job list with small jobs
+    // at the end preventing us from utilizing the full batch size, we randomly shuffle
+    // the jobs in the list before looping through them.
+    // This shuffle combined with multiple schedulers running in Harmony makes
+    // available work items be retrieved for processing more promptly.
+    const shuffledJobIds = shuffleArray(jobIds);
+    let remainingNumOfJobs = jobIds.length;
+    let remainingBatchSize = batchSize;
+    let workSize;
 
-        // readjust the counts for calculating the next work size
-        remainingNumOfJobs -= 1;
-        remainingBatchSize = nextWorkItems ? remainingBatchSize - nextWorkItems.length : remainingBatchSize;
+    // Define the inner function outside of the loop
+    const processJob = async (tx: Transaction, jobId: string) : Promise<void> => {
+      // the work size is readjusted based on work items retrieved from the previous job
+      workSize = (remainingNumOfJobs > 0) ? Math.ceil(remainingBatchSize / remainingNumOfJobs) : 1;
+      const nextWorkItems = await getNextWorkItems(tx, serviceID as string, jobId, workSize);
+      if (nextWorkItems?.length > 0) {
+        for (const workItem of nextWorkItems) {
+          if (workItem && QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)) {
+            const childLogger = reqLogger.child({ workItemId: workItem.id });
+            const maxCmrGranules = await calculateQueryCmrLimit(tx, workItem, childLogger);
+            reqLogger.debug(`Found work item ${workItem.id} for service ${serviceID} with max CMR granules ${maxCmrGranules}`);
+            workItems.push({ workItem, maxCmrGranules });
+          } else {
+            workItems.push({ workItem });
+          }
+        }
+        await incrementRunningAndDecrementReadyCounts(tx, jobId, serviceID as string, nextWorkItems.length);
+      } else {
+        reqLogger.warn(`user_work is out of sync for job ${jobId}, could not find ready work item`);
+        reqLogger.warn(`recalculating ready and running counts for job ${jobId}`);
+        await recalculateCounts(tx, jobId);
       }
-    });
+
+      // Readjust the counts for calculating the next work size
+      remainingNumOfJobs -= 1;
+      remainingBatchSize -= nextWorkItems ? nextWorkItems.length : 0;
+    };
+
+    for (const jobId of shuffledJobIds) {
+      await db.transaction(async (tx) => {
+        await processJob(tx, jobId);
+      });
+    }
   } catch (err) {
     reqLogger.error(`Error getting works from database: ${err.message}`);
   }
