@@ -665,6 +665,7 @@ export async function retry(
     const workItemUpdate = {
       workItemID: item.id, status: WorkItemStatus.FAILED, scrollID: item.scrollID, hits: null, results: [],
       totalItemsSize: item.totalItemsSize, errorMessage: 'A user attempted to trigger a retry via the Workflow UI.',
+      workflowStepIndex: item.workflowStepIndex,
     };
 
     await queueWorkItemUpdate(jobID, workItemUpdate, null, WorkItemQueueType.SMALL_ITEM_UPDATE, workItemLogger);
