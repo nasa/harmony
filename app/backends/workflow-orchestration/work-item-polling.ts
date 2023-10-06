@@ -57,6 +57,14 @@ export async function getWorkFromDatabase(serviceID: string, reqLogger: Logger):
  * Return a randomly shuffled list of the given list.
  * This is an implementation of the Fisher-Yates shuffle algorithm.
  *
+ * Because the way we readjust the size of work items to retrieve for processing,
+ * only the jobs at the back of the list can take advantage of the free slots left by
+ * jobs in front. To avoid the situation where a fixed job list with small jobs
+ * at the end preventing us from utilizing the full batch size, we randomly shuffle
+ * the jobs in the list before looping through them.
+ * This shuffle combined with multiple schedulers running in Harmony makes
+ * available work items be retrieved for processing more promptly.
+ *
  * @param array - the given list to shuffle
  * @returns The randomly shuffled list of the original list
  */
@@ -83,13 +91,6 @@ export async function getWorkItemsFromDatabase(
   const workItems: WorkItemData[] = [];
   try {
     const jobIds = await getNextJobIds(db, serviceID as string, batchSize);
-    // Because the way we readjust the size of work items to retrieve for processing,
-    // only the jobs at the back of the list can take advantage of the free slots left by
-    // jobs in front. To avoid the situation where a fixed job list with small jobs
-    // at the end preventing us from utilizing the full batch size, we randomly shuffle
-    // the jobs in the list before looping through them.
-    // This shuffle combined with multiple schedulers running in Harmony makes
-    // available work items be retrieved for processing more promptly.
     const shuffledJobIds = shuffleArray(jobIds);
     let remainingNumOfJobs = jobIds.length;
     let remainingBatchSize = batchSize;
