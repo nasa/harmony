@@ -9,6 +9,36 @@ let jobIDs = [];
 let statuses = [];
 
 /**
+ * Query Harmony for up to date version of a HTML rows of the jobs table.
+ * @param {string} jobIDsToRefresh - ids of the item for the row that needs updating
+ * @param {object} params - parameters that define what will appear in the table row
+ */
+async function loadRows(jobIDsToRefresh, params) {
+  let tableUrl = './jobs';
+  tableUrl += `?tableFilter=${encodeURIComponent(params.tableFilter)}&disallowStatus=${params.disallowStatus}`;
+  const res = await fetch(tableUrl, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ jobIDs: jobIDsToRefresh }),
+  });
+  if (res.status === 200) {
+    // loop through json map of html rows (job id => row)
+
+    // const template = await res.text();
+    // const tmp = document.createElement('tbody');
+    // tmp.innerHTML = template;
+    // document.getElementById(`item-${workItemId}`).replaceWith(...tmp.childNodes); // add only the <tr>...</tr>
+    // // bind click handlers
+    // // update job ids / job statuses arrays
+    // // trigger status links update
+    // formatDates(`tr[id="item-${workItemId}"] .date-td`);
+  }
+}
+
+/**
  * Build the jobs filter with filter facets like 'status' and 'user'.
   * @param {string} currentUser - the current Harmony user
   * @param {string[]} services - service names from services.yml

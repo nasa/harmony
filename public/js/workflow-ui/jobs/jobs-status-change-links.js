@@ -69,7 +69,7 @@ class JobsStatusChangeLinks extends StatusChangeLinks {
 
   /**
    * Get job state change links (pause, resume, etc.) depending on jobs' statuses.
-   * @param {string[]} statuses - fetch links relevent to these job statuses
+   * @param {string[]} statuses - fetch links relevant to these job statuses
    */
   fetchLinksForStatuses(statuses) {
     const links = [];
