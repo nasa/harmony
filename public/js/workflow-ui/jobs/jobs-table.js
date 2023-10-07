@@ -180,7 +180,7 @@ async function initSelectAllHandler() {
  * @param {object} params - parameters that define what will appear in the table row
  */
 async function loadRows(params) {
-  let tableUrl = './jobs';
+  let tableUrl = './workflow-ui/jobs';
   tableUrl += `?tableFilter=${encodeURIComponent(params.tableFilter)}&disallowStatus=${params.disallowStatus}`;
   const res = await fetch(tableUrl, {
     method: 'POST',

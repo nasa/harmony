@@ -248,7 +248,7 @@ function tableQueryToJobQuery(tableQuery: TableQuery, isAdmin: boolean, user: st
     jobQuery.dates.to = tableQuery.to;
   }
   if (jobIDs && jobIDs.length > 0) {
-    jobQuery.whereIn.ids = {
+    jobQuery.whereIn.jobID = {
       values: jobIDs,
       in: true,
     };
@@ -604,7 +604,7 @@ export async function getJobTableRows(
     for (const job of jobs) {
       const html = req.app.render('workflow-ui/jobs/job-table-row', {
         ...job[0],
-        ...jobRenderingFunctions(req.context.logger, requestQuery),
+        ...jobRenderingFunctions(req.context.logger, requestQuery, true),
         isAdminRoute: req.context.isAdminAccess,
       });
       resJson[job.jobID] = html;
