@@ -601,13 +601,14 @@ export async function getJobTableRows(
     }
     const resJson = {};
     for (const job of jobs) {
-      req.app.render('workflow-ui/jobs/job-table-row', {
-        isAdminOrLogViewer,
-        canShowRetryColumn: job.belongsToOrIsAdmin(req.user, isAdmin),
-        ...workItems[0],
-        ...workItemRenderingFunctions(job, isAdmin, isLogViewer, req.user),
+      const html = req.app.render('workflow-ui/jobs/job-table-row', {
+        ...job[0],
+        ...jobRenderingFunctions(req.context.logger, requestQuery),
+        isAdminRoute: req.context.isAdminAccess,
       });
+      resJson[job.jobID] = html;
     }
+    res.send(resJson);
   } catch (e) {
     req.context.logger.error(e);
     next(e);
