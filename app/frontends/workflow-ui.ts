@@ -602,12 +602,19 @@ export async function getJobTableRows(
     }
     const resJson = {};
     for (const job of jobs) {
-      const html = req.app.render('workflow-ui/jobs/job-table-row', {
-        ...job[0],
-        ...jobRenderingFunctions(req.context.logger, requestQuery, true),
-        isAdminRoute: req.context.isAdminAccess,
-      });
-      resJson[job.jobID] = html;
+      const renderedHtml = await new Promise<string>((resolve, reject) => req.app.render(
+        'workflow-ui/jobs/job-table-row', {
+          ...job,
+          ...jobRenderingFunctions(req.context.logger, requestQuery, true),
+          isAdminRoute: req.context.isAdminAccess,
+          hasTerminalStatus: () => job.hasTerminalStatus(),
+        }, (err, html) => {
+          if (err) {
+            reject('Could not get job rows');
+          }
+          resolve(html);
+        }));
+      resJson[job.jobID] = renderedHtml;
     }
     res.send(resJson);
   } catch (e) {
