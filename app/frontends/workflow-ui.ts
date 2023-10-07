@@ -131,9 +131,10 @@ function parseQuery( /* eslint-disable @typescript-eslint/no-explicit-any */
  * a row of the jobs table.
  * @param logger - the logger to use
  * @param requestQuery - the query parameters from the request
+ * @param checked - whether the job should be selected
  * @returns an object with rendering functions
  */
-function jobRenderingFunctions(logger: Logger, requestQuery: Record<string, any>): object {
+function jobRenderingFunctions(logger: Logger, requestQuery: Record<string, any>, checked?: boolean): object {
   return {
     jobBadge(): string {
       return statusClass[this.status];
@@ -178,7 +179,7 @@ function jobRenderingFunctions(logger: Logger, requestQuery: Record<string, any>
       if (this.hasTerminalStatus()) {
         return '';
       }
-      return `<input class="select-job" type="checkbox" data-id="${this.jobID}" data-status="${this.status}" autocomplete="off"></input>`;
+      return `<input class="select-job" type="checkbox" data-id="${this.jobID}" data-status="${this.status}" autocomplete="off" ${checked ? 'checked' : ''}></input>`;
     },
     sortGranulesLinks(): string {
       // return links that lets the user apply or unapply an asc or desc sort
