@@ -596,25 +596,28 @@ export async function getJobTableRows(
     const { tableQuery } = parseQuery(requestQuery, JobStatus, isAdmin);
     const jobQuery = tableQueryToJobQuery(tableQuery, isAdmin, req.user, jobIDs);
     const jobs = (await Job.queryAll(db, jobQuery, false, 0, jobIDs.length)).data;
-    if (jobs.length === 0) {
-      res.status(404).send({});
-      return;
-    }
     const resJson = {};
     for (const job of jobs) {
+      const context = {
+        ...job,
+        ...jobRenderingFunctions(req.context.logger, requestQuery, true),
+        isAdminRoute: req.context.isAdminAccess,
+        hasTerminalStatus: job.hasTerminalStatus,
+        message: job.message,
+      };
       const renderedHtml = await new Promise<string>((resolve, reject) => req.app.render(
-        'workflow-ui/jobs/job-table-row', {
-          ...job,
-          ...jobRenderingFunctions(req.context.logger, requestQuery, true),
-          isAdminRoute: req.context.isAdminAccess,
-          hasTerminalStatus: () => job.hasTerminalStatus(),
-        }, (err, html) => {
+        'workflow-ui/jobs/job-table-row', context, (err, html) => {
           if (err) {
             reject('Could not get job rows');
           }
           resolve(html);
         }));
       resJson[job.jobID] = renderedHtml;
+    }
+    for (const jobID of jobIDs) {
+      if (!resJson[jobID]) {
+        resJson[jobID] = '<span></span>';
+      }
     }
     res.send(resJson);
   } catch (e) {

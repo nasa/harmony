@@ -155,6 +155,9 @@ async function initSelectHandler(selector) {
  */
 async function initSelectAllHandler() {
   const el = document.getElementById('select-jobs');
+  if (!el) {
+    return;
+  }
   el.addEventListener('click', (event) => {
     const { target } = event;
     const { checked } = target;
@@ -196,9 +199,10 @@ async function loadRows(params) {
     for (const [jobID, rowHtml] of Object.entries(rowsJson)) {
       const tmp = document.createElement('tbody');
       tmp.innerHTML = rowHtml;
+      document.getElementById(`copy-${jobID}`).remove();
       document.getElementById(`job-${jobID}`).replaceWith(...tmp.childNodes); // add only the <tr>...</tr>
       initSelectHandler(`tr[id="job-${jobID}"] .select-job`);
-      initCopyHandler(`tr[id="job-${jobID}"] .copy-request`);
+      initCopyHandler(`th[id="copy-${jobID}"] .copy-request`);
       formatDates(`tr[id="job-${jobID}"] .date-td`);
     }
     refreshSelected();

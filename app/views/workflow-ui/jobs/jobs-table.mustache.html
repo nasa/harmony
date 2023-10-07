@@ -25,10 +25,6 @@
     <tbody>
         {{#jobs}}
         {{> workflow-ui/jobs/job-table-row }}
-        <th class="job-url-th" colspan="9">
-            <i class="bi bi-copy text-primary copy-request" data-text="{{request}}" data-truncated="{{jobRequestIsTruncated}}"></i>
-            <span title="{{jobRequest}}" class="text-muted job-url-text">{{jobRequestDisplay}}</span>
-        </th>
         {{/jobs}}
     </tbody>
 </table>

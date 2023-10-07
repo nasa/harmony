@@ -42,10 +42,15 @@ class JobsStatusChangeLinks extends StatusChangeLinks {
    */
   async handleClick(event) {
     event.preventDefault();
-    toasts.showUpper('Changing job state...');
     const link = event.target;
-    const stateChangeUrl = link.getAttribute('href');
     const jobIDs = jobsTable.getJobIds();
+    const postfix = jobIDs.length > 1 ? 's' : '';
+    // eslint-disable-next-line no-alert, no-restricted-globals
+    if (!confirm(`Are you sure you want to ${(link.textContent || link.innerText).trim()} ${jobIDs.length} job${postfix}?`)) {
+      return;
+    }
+    toasts.showUpper('Changing job state...');
+    const stateChangeUrl = link.getAttribute('href');
     const res = await fetch(stateChangeUrl, {
       method: 'POST',
       headers: {
@@ -55,7 +60,6 @@ class JobsStatusChangeLinks extends StatusChangeLinks {
       body: JSON.stringify({ jobIDs }),
     });
     const data = await res.json();
-    const postfix = jobIDs.length > 1 ? 's' : '';
     const isAre = jobIDs.length > 1 ? 'are' : 'is';
     if (res.status === 200) {
       toasts.showUpper(`The selected job${postfix} ${isAre} now ${data.status}. Please reload the page to view updates.`);
