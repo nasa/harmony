@@ -209,9 +209,10 @@ function jobRenderingFunctions(logger: Logger, requestQuery: Record<string, any>
  * @param tableQuery - the constraints parsed from the query string of the request
  * @param isAdmin - is the requesting user an admin
  * @param user - the requesting user's username
+ * @param jobIDs - optional list of job IDs to match on
  * @returns JobQuery
  */
-function tableQueryToJobQuery(tableQuery: TableQuery, isAdmin: boolean, user: string): JobQuery {
+function tableQueryToJobQuery(tableQuery: TableQuery, isAdmin: boolean, user: string, jobIDs?: string[]): JobQuery {
   const jobQuery: JobQuery = { where: {}, whereIn: {} };
   if (tableQuery.sortGranules) {
     jobQuery.orderBy = {
@@ -244,6 +245,12 @@ function tableQueryToJobQuery(tableQuery: TableQuery, isAdmin: boolean, user: st
     jobQuery.dates = { field: tableQuery.dateKind };
     jobQuery.dates.from = tableQuery.from;
     jobQuery.dates.to = tableQuery.to;
+  }
+  if (jobIDs && jobIDs.length > 0) {
+    jobQuery.whereIn.ids = {
+      values: jobIDs,
+      in: true,
+    };
   }
   return jobQuery;
 }
@@ -586,25 +593,21 @@ export async function getJobTableRows(
     );
     const requestQuery = keysToLowerCase(req.query);
     const { tableQuery } = parseQuery(requestQuery, JobStatus, isAdmin);
-    const itemQuery = tableQueryToJobQuery(tableQuery, isAdmin, req.user, jobIDs);
-    const jobs = await Job.queryAll(db);
-    
-    const job = await getJobIfAllowed(jobID, req.user, isAdmin, req.accessToken, true);
-    // even though we only want one row/item we should still respect the current user's table filters
-    
-    const { tableQuery } = parseQuery(requestQuery, WorkItemStatus);
-    
-    
-    if (workItems.length === 0) {
-      res.send('<span></span>');
+    const jobQuery = tableQueryToJobQuery(tableQuery, isAdmin, req.user, jobIDs);
+    const jobs = (await Job.queryAll(db, jobQuery, false, 0, jobIDs.length)).data;
+    if (jobs.length === 0) {
+      res.status(404).send({});
       return;
     }
-    res.render('workflow-ui/job/work-item-table-row', {
-      isAdminOrLogViewer,
-      canShowRetryColumn: job.belongsToOrIsAdmin(req.user, isAdmin),
-      ...workItems[0],
-      ...workItemRenderingFunctions(job, isAdmin, isLogViewer, req.user),
-    });
+    const resJson = {};
+    for (const job of jobs) {
+      req.app.render('workflow-ui/jobs/job-table-row', {
+        isAdminOrLogViewer,
+        canShowRetryColumn: job.belongsToOrIsAdmin(req.user, isAdmin),
+        ...workItems[0],
+        ...workItemRenderingFunctions(job, isAdmin, isLogViewer, req.user),
+      });
+    }
   } catch (e) {
     req.context.logger.error(e);
     next(e);
