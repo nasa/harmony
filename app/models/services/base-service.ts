@@ -29,6 +29,8 @@ export interface ServiceCapabilities {
   };
   output_formats?: string[];
   reprojection?: boolean;
+  extend?: boolean;
+  default_extend_dimensions?: string[];
 }
 
 export interface ServiceStep {
