@@ -5,9 +5,6 @@ set -ex
 image="harmonyservices/service-runner"
 tag=${1:-latest}
 
-echo "$tag"
-exit 0
-
 region=${AWS_DEFAULT_REGION-"us-west-2"}
 
 account=$(aws sts get-caller-identity --output text --query 'Account')
