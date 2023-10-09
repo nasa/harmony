@@ -885,9 +885,8 @@ export async function handleWorkItemUpdateWithJobId(
   update: WorkItemUpdate,
   operation: object,
   logger: Logger): Promise<void> {
-  const preprocessResult = await preprocessWorkItem(update, operation, logger);
-
   try {
+    const preprocessResult = await preprocessWorkItem(update, operation, logger);
     const transactionStart = new Date().getTime();
     await db.transaction(async (tx) => {
       const job = await (await logAsyncExecutionTime(
@@ -901,7 +900,7 @@ export async function handleWorkItemUpdateWithJobId(
     const durationMs = new Date().getTime() - transactionStart;
     logger.debug('timing.HWIUWJI.transaction.end', { durationMs });
   } catch (e) {
-    logger.error('Unable to acquire lock on Jobs table');
+    logger.error(`Failed to process work item update for work item: ${update.workItemID}`);
     logger.error(e);
   }
 }

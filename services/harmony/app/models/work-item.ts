@@ -162,6 +162,7 @@ export async function getNextWorkItem(
       .where('jobID', '=', jobID)
       .andWhere({ serviceID })
       .first();
+
     if (workflowStepData?.operation) {
       const { operation } = workflowStepData;
       let workItemDataQuery = tx(`${WorkItem.table} as w`)
@@ -205,6 +206,99 @@ export async function getNextWorkItem(
   }
 
   return workItemData && new WorkItem(workItemData);
+}
+
+/**
+ * Get operation from the database for the given job id and service id.
+ *
+ * @param tx - the transaction to use for querying
+ * @param jobId - the id of the job
+ * @param serviceID - the id of the service to get operation for
+ *
+ * @returns parsed operation from the database for the given job id and service id
+ */
+async function getJobServiceOperation(
+  tx: Transaction,
+  jobID: string,
+  serviceID: string): Promise<DataOperation> {
+  let parsedOperation;
+  try {
+    const workflowStepData = await tx(WorkflowStep.table)
+      .select(['operation'])
+      .where('jobID', '=', jobID)
+      .andWhere({ serviceID })
+      .first();
+    const { operation } = workflowStepData;
+    parsedOperation = JSON.parse(operation);
+  } catch (err) {
+    logger.error(`Error getting operation of jobID: ${jobID} and serviceID: ${serviceID} from database: ${err.message}`);
+  }
+  return parsedOperation;
+}
+
+/**
+ * Returns the next work items to process for a service and job ID
+ * @param tx - the transaction to use for querying
+ * @param serviceID - the service ID looking for the next item to work
+ * @param jobID - - the jobID for the next item to work
+ * @param workSize - - the size of work items to return
+ *
+ * @returns A promise with a list of work items to process or null if none
+ */
+export async function getNextWorkItems(
+  tx: Transaction,
+  serviceID: string,
+  jobID: string,
+  workSize: number,
+): Promise<WorkItem[]> {
+  let workItemData;
+  try {
+    const operation = await getJobServiceOperation(tx, jobID, serviceID);
+
+    if (operation) {
+      let workItemDataQuery = tx(`${WorkItem.table} as w`)
+        .forUpdate()
+        .select(tableFields)
+        .where('w.jobID', '=', jobID)
+        .where('w.status', '=', 'ready')
+        .where('w.serviceID', '=', serviceID)
+        .orderBy('w.id', 'asc')
+        .limit(workSize);
+
+      if (db.client.config.client === 'pg') {
+        workItemDataQuery = workItemDataQuery.skipLocked();
+      }
+
+      workItemData = await workItemDataQuery;
+
+      if (workItemData?.length > 0) {
+        for (let i = 0; i < workItemData.length; i++) {
+          workItemData[i].operation = _.cloneDeep(operation);
+          // Make sure that the staging location is unique for every work item in a job
+          // in case a service for the same job produces an output with the same file name
+          workItemData[i].operation.stagingLocation += `${workItemData[i].id}/`;
+        }
+        const startedAt = new Date();
+        let status = WorkItemStatus.RUNNING;
+        if (env.useServiceQueues) {
+          status = WorkItemStatus.QUEUED;
+        }
+        await tx(WorkItem.table)
+          .update({
+            status,
+            updatedAt: startedAt,
+            startedAt,
+          })
+          .whereIn('id', workItemData.map((w) => w.id));
+      }
+    }
+  } catch (e) {
+    logger.error(`Error getting next work item for service [${serviceID}] and job [${jobID}]`);
+    logger.error(e);
+    throw e;
+  }
+
+  return workItemData && workItemData.map((w) => new WorkItem(w));
 }
 
 /**
