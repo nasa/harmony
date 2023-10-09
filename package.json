@@ -18,7 +18,7 @@
     "build": "lerna run build --scope=harmony -- VERSION=${VERSION:-latest}",
     "build-all": "lerna exec -- VERSION=${VERSION:-latest} npm run build-m1",
     "build-all-m1": "lerna exec --ignore harmony -- VERSION=${VERSION:-latest} npm run build-m1",
-    "push-image-all": "lerna exec --ignore harmony --ignore giovanni-adapter --ignore util --concurrency 1 -- ./bin/push-image ${VERSION:-latest}",
+    "push-image-all": "lerna exec --ignore harmony --ignore @harmony/util --concurrency 1 -- ./bin/push-image ${VERSION:-latest}",
     "build-notebooks-image": "docker build --platform linux/amd64 -t harmonyservices/notebooks:${VERSION:-latest} -f Dockerfile-notebooks .",
     "run-notebooks-image": "source .env && docker run -i -t --platform linux/amd64 --init -p 8888:8888 --env NB_EDL_USERNAME=\"${NB_EDL_USERNAME}\" --env NB_EDL_PASSWORD=\"${NB_EDL_PASSWORD}\" harmonyservices/notebooks:${VERSION:-latest}",
     "publish": "lerna run publish --scope=harmony -- VERSION=${VERSION:-latest}",
