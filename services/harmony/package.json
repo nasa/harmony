@@ -13,10 +13,8 @@
     "start-dev-fast": "TS_NODE_TRANSPILE_ONLY=true ts-node-dev --no-notify -r tsconfig-paths/register --respawn --inspect=127.0.0.1:${DEBUG_PORT:-9200} app/server",
     "copy-files": "copyfiles 'app/schemas/**/*' 'app/templates/**/*' 'app/frontends/templates/**/*' 'config/**/*' 'db/**/*' 'public/**/*' built",
     "watch-debug": "TS_NODE_TRANSPILE_ONLY=true nodemon --inspect=5858 -e ts,tsx,html --exec node -r tsconfig-paths/register -r ts-node/register app/server.ts",
+    "prebuild": "./bin/prebuild",
     "build": "docker build -t harmonyservices/harmony:${VERSION:-latest} .",
-    "build-all": "docker build -t harmonyservices/harmony:${VERSION:-latest} . && lerna exec -- npm run build",
-    "build-all-m1": "lerna exec -- npm run build-m1",
-    "build-notebooks-image": "docker build --platform linux/amd64 -t harmonyservices/notebooks:${VERSION:-latest} -f Dockerfile-notebooks .",
     "run-notebooks-image": "source .env && docker run -i -t --platform linux/amd64 --init -p 8888:8888 --env NB_EDL_USERNAME=\"${NB_EDL_USERNAME}\" --env NB_EDL_PASSWORD=\"${NB_EDL_PASSWORD}\" harmonyservices/notebooks:${VERSION:-latest}",
     "publish": "docker push harmonyservices/harmony:${VERSION:-latest}",
     "compare-services": "SKIP_ENV_VALIDATION=true ts-node scripts/service-comparison.ts"

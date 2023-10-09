@@ -36,7 +36,7 @@ const envDefaults = dotenv.parse(fs.readFileSync(path.resolve(__dirname, 'env-de
 export let envOverrides = {};
 if (process.env.NODE_ENV !== 'test') {
   try {
-    envOverrides = dotenv.parse(fs.readFileSync('.env'));
+    envOverrides = dotenv.parse(fs.readFileSync('../../.env'));
   } catch (e) {
     logger.warn('Could not parse environment overrides from .env file');
     logger.warn(e.message);

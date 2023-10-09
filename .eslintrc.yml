@@ -69,7 +69,3 @@ overrides:
       # the preferred method described in the Mocha docs
       prefer-arrow-callback: "off"
       func-names: "off"
-  - files: [ "tasks/**/*" ]
-    rules:
-      import/no-extraneous-dependencies: ["error"]
-      node/no-unpublished-import: ["off"]

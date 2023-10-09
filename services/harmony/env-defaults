@@ -378,7 +378,7 @@ GIOVANNI_ADAPTER_REQUESTS_CPU=128m
 GIOVANNI_ADAPTER_REQUESTS_MEMORY=128Mi
 GIOVANNI_ADAPTER_LIMITS_CPU=128m
 GIOVANNI_ADAPTER_LIMITS_MEMORY=512Mi
-GIOVANNI_ADAPTER_INVOCATION_ARGS='node tasks/giovanni-adapter/app/cli'
+GIOVANNI_ADAPTER_INVOCATION_ARGS='node services/giovanni-adapter/app/cli'
 GIOVANNI_ADAPTER_SERVICE_QUEUE_URLS='["harmonyservices/giovanni-adapter:latest,http://localstack:4566/queue/giovanni-adapter.fifo"]'
 
 # The services to deploy locally. A comma-separated list of services that the bin/deploy-services

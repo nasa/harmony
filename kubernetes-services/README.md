@@ -11,7 +11,7 @@ the services.
 ## Creating a Task Service
 
 The easiest way to create a new task service is to copy the `work-scheduler` directory to a new
-directory under this (kubernetes-services) folder, then modify the code to do what you want.
+directory under this (services) folder, then modify the code to do what you want.
 `work-scheduler` is a small `Nodes.js` `Express` app that uses the `Worker` class/pattern as
 defined in `app/workers.ts`. The `Express` server provides a health check endpoint for kubernetes
 while the `Worker` performs the real work of the application.
@@ -21,7 +21,7 @@ can scrape it to drive an HPA, but that is beyond the scope of this discussion.
 
 The specific steps to create a new service are
 
-1. `cd kubernetes-services`
+1. `cd services`
 2. `cp work-scheduler <new service>`
 3. Modify the code in the `app` and `test` directories to implement/test your service.
 4. Modify the `Dockerfile`, `env-defaults`, and `config/service-template.yml` files as well as

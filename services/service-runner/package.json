@@ -16,6 +16,7 @@
     "build": "tsc && docker build --tag harmonyservices/service-runner:${VERSION:-latest} .",
     "build-m1": "tsc && docker build --platform linux/amd64 --tag harmonyservices/service-runner:${VERSION:-latest} .",
     "publish": "docker push harmonyservices/service-runner:${VERSION:-latest}",
+    "push-image": "./bin/push-image",
     "better-audit": "better-npm-audit audit"
   },
   "engines": {
