@@ -1,6 +1,6 @@
 import { Response, NextFunction } from 'express';
 import { sanitizeImage, truncateString } from '@harmony/util/string';
-import { getJobIfAllowed } from '../util/job';
+import { getJobIfAllowed, validateJobId } from '../util/job';
 import { Job, JobStatus, JobQuery, TEXT_LIMIT } from '../models/job';
 import { getWorkItemById, queryAll } from '../models/work-item';
 import { ForbiddenError, NotFoundError, RequestValidationError } from '../util/errors';
@@ -589,6 +589,7 @@ export async function getJobTableRows(
 ): Promise<void> {
   const { jobIDs } = req.body;
   try {
+    jobIDs.forEach((id: string) => validateJobId(id));
     const { isAdmin } = await getEdlGroupInformation(
       req.user, req.context.logger,
     );
@@ -613,11 +614,6 @@ export async function getJobTableRows(
           resolve(html);
         }));
       resJson[job.jobID] = renderedHtml;
-    }
-    for (const jobID of jobIDs) {
-      if (!resJson[jobID]) {
-        resJson[jobID] = '<span></span>';
-      }
     }
     res.send(resJson);
   } catch (e) {

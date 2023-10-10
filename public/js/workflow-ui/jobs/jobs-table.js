@@ -196,7 +196,8 @@ async function loadRows(params) {
   if (res.status === 200) {
     // loop through json map of html rows (job id => row)
     const rowsJson = await res.json();
-    for (const [jobID, rowHtml] of Object.entries(rowsJson)) {
+    for (const jobID of jobIDs) {
+      const rowHtml = rowsJson[jobID] || '<span></span>';
       const tmp = document.createElement('tbody');
       tmp.innerHTML = rowHtml;
       document.getElementById(`copy-${jobID}`).remove();
