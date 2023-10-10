@@ -49,7 +49,7 @@ describe('Workflow UI job table rows route', function () {
 
   describe('whose request includes someone else\'s job (but is an admin)', function () {
     hookWorkflowUIJobRows({ username: 'adam', jobIDs: [boJob1.jobID, adamJob1.jobID] });
-    it('returns the other user\'s job rows', async function () {
+    it('returns the other user\'s job rows in addition to their own', async function () {
       const response = JSON.parse(this.res.text);
       expect(response[adamJob1.jobID]).contains(`<tr id="job-${adamJob1.jobID}" class='job-table-row'>`);
       expect(response[boJob1.jobID]).contains(`<tr id="job-${boJob1.jobID}" class='job-table-row'>`);
