@@ -179,12 +179,15 @@ function initSelectAllHandler() {
 }
 
 /**
- * Query Harmony for up to date version of a HTML rows of the jobs table.
+ * Query Harmony for up to date version of particular HTML rows of the jobs table.
  * @param {object} params - parameters that define what will appear in the table row
  */
 async function loadRows(params) {
   let tableUrl = './workflow-ui/jobs';
-  tableUrl += `?tableFilter=${encodeURIComponent(params.tableFilter)}&disallowStatus=${params.disallowStatus}`;
+  tableUrl += `?tableFilter=${encodeURIComponent(params.tableFilter)}`
+  + `&disallowStatus=${params.disallowStatus}`
+  + `&disallowService=${params.disallowService}`
+  + `&disallowUser=${params.disallowUser}`;
   const res = await fetch(tableUrl, {
     method: 'POST',
     headers: {
@@ -223,6 +226,8 @@ const jobsTable = {
    * @param {object} params - Parameters that define what will appear in the table.
    * Params contains the follwing attributes:
    * disallowStatus - whether to load the table with disallow status "on" or "off".
+   * disallowService - whether to load the table with disallow service "on" or "off".
+   * disallowUser - whether to load the table with disallow user "on" or "off".
    * currentUser - the current Harmony user
    * services - service names from services.yml
    * isAdminRoute - whether the current page is /admin/...
