@@ -112,7 +112,7 @@ async function initCopyHandler(selector) {
  * Repopulate the job IDs and statuses arrays which
  * track which jobs are selected.
  */
-async function refreshSelected() {
+function refreshSelected() {
   jobIDs = [];
   statuses = [];
   document.querySelectorAll('.select-job').forEach((el) => {
@@ -123,15 +123,15 @@ async function refreshSelected() {
       jobIDs.push(jobID);
       statuses.push(status);
     }
-    PubSub.publish('job-selected');
   });
+  PubSub.publish('job-selected');
 }
 
 /**
  * Intitialize the select box click handler for all job rows.
  * @param {string} selector - defines which box(es) to bind the handler to
  */
-async function initSelectHandler(selector) {
+function initSelectHandler(selector) {
   document.querySelectorAll(selector).forEach((el) => {
     el.addEventListener('click', (event) => {
       const { target } = event;
@@ -153,7 +153,7 @@ async function initSelectHandler(selector) {
 /**
  * Intitialize the select all box click handler.
  */
-async function initSelectAllHandler() {
+function initSelectAllHandler() {
   const el = document.getElementById('select-jobs');
   if (!el) {
     return;
@@ -207,6 +207,9 @@ async function loadRows(params) {
       formatDates(`tr[id="job-${jobID}"] .date-td`);
     }
     refreshSelected();
+    if (!document.querySelectorAll('.select-job').length) {
+      document.getElementById('select-jobs').remove();
+    }
   }
 }
 

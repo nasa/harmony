@@ -41,7 +41,6 @@ describe('Workflow UI job table rows route', function () {
       const response = JSON.parse(this.res.text);
       expect(response[boJob1.jobID]).to.eq(undefined);
       expect(response[boJob2.jobID]).contains(`<tr id="job-${boJob2.jobID}" class='job-table-row'>`);
-      console.log(typeof response);
       expect(Object.keys(response).length).to.eq(1);
     });
   });
