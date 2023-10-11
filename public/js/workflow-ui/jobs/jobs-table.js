@@ -145,6 +145,10 @@ function initSelectHandler(selector) {
         jobIDs.splice(jobIDs.indexOf(jobID), 1);
         statuses.splice(statuses.indexOf(status), 1);
       }
+      const numSelectable = document.querySelectorAll('.select-job').length;
+      const numSelected = jobIDs.length;
+      const areAllJobsSelected = numSelectable === numSelected;
+      document.getElementById('select-jobs').checked = areAllJobsSelected;
       PubSub.publish('job-selected');
     });
   });
