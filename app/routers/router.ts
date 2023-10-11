@@ -38,7 +38,7 @@ import { getStagingBucketPolicy } from '../frontends/staging-bucket-policy';
 import { parseGridMiddleware } from '../util/grids';
 import docsPage from '../frontends/docs/docs';
 import { getCollectionCapabilitiesJson } from '../frontends/capabilities';
-import extendDefault = require('app/middleware/extend');
+import extendDefault from '../middleware/extend';
 export interface RouterConfig {
   PORT?: string | number; // The port to run the frontend server on
   BACKEND_PORT?: string | number; // The port to run the backend server on
