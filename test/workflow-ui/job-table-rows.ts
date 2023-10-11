@@ -62,6 +62,17 @@ describe('Workflow UI job table rows route', function () {
     });
   });
 
+  describe('who uses a user filter', function () {
+    hookWorkflowUIJobRows({ username: 'adam', jobIDs: [boJob1.jobID, boJob2.jobID],
+      query: { disallowUser: true, tableFilter: '[{"value":"user: bo","dbValue":"bo","field":"user"}]' } });
+    it('returns only the job row matching the user filter', function () {
+      const response = JSON.parse(this.res.text);
+      expect(response[boJob1.jobID]).to.eq(undefined);
+      expect(response[boJob2.jobID]).contains(undefined);
+      expect(Object.keys(response).length).to.eq(0);
+    });
+  });
+
   describe('whose request includes someone else\'s job (but is an admin)', function () {
     hookWorkflowUIJobRows({ username: 'adam', jobIDs: [boJob1.jobID, adamJob1.jobID] });
     it('returns the other user\'s job rows in addition to their own', async function () {
@@ -71,7 +82,6 @@ describe('Workflow UI job table rows route', function () {
       expect(Object.keys(response).length).to.eq(2);
     });
   });
-
 
   describe('who requests someone else\'s job (but is NOT an admin)', function () {
     hookWorkflowUIJobRows({ username: 'bo', jobIDs: [adamJob1.jobID] });
