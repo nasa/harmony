@@ -1,4 +1,3 @@
-import * as mustache from 'mustache';
 import { expect } from 'chai';
 import { describe, it, before } from 'mocha';
 import { JobStatus } from '../../app/models/job';
