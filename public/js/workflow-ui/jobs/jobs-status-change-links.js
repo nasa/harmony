@@ -62,12 +62,12 @@ class JobsStatusChangeLinks extends StatusChangeLinks {
     const data = await res.json();
     const isAre = jobIDs.length > 1 ? 'are' : 'is';
     if (res.status === 200) {
-      toasts.showUpper(`The selected job${postfix} ${isAre} now ${data.status}. Please reload the page to view updates.`);
+      toasts.showUpper(`The selected job${postfix} ${isAre} now ${data.status}.`);
       PubSub.publish(
         'row-state-change',
       );
     } else if (data.description) {
-      toasts.showUpper(`${data.description} Please reload the page to view updates.`);
+      toasts.showUpper(data.description);
     } else {
       toasts.showUpper('The update failed.');
     }
