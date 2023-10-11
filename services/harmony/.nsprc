@@ -24,14 +24,9 @@
     "notes": "Ignored since there is no fix",
     "expiry": "2023-11-01"
   },
-  "1092989": {
+  "1094228": {
     "active": true,
-    "notes": "Ignored since there is no fix",
-    "expiry": "2023-11-01"
-  },
-  "1093054": {
-    "active": true,
-    "notes": "Ignored since there is no fix",
-    "expiry": "2023-11-01"
+    "notes": "Ignored since this is a dev dependency only used for tests",
+    "expiry": "2023-12-01"
   }
 }
