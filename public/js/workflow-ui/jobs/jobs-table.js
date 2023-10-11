@@ -190,8 +190,10 @@ async function loadRows(params) {
   let tableUrl = './workflow-ui/jobs';
   tableUrl += `?tableFilter=${encodeURIComponent(params.tableFilter)}`
   + `&disallowStatus=${params.disallowStatus}`
-  + `&disallowService=${params.disallowService}`
-  + `&disallowUser=${params.disallowUser}`;
+  + `&disallowService=${params.disallowService}`;
+  if (params.disallowUser) {
+    tableUrl += `&disallowUser=${params.disallowUser}`;
+  }
   const res = await fetch(tableUrl, {
     method: 'POST',
     headers: {
