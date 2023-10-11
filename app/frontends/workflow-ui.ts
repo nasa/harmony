@@ -594,7 +594,7 @@ export async function getJobTableRows(
       req.user, req.context.logger,
     );
     const requestQuery = keysToLowerCase(req.query);
-    const { tableQuery } = parseQuery(requestQuery, JobStatus, isAdmin);
+    const { tableQuery } = parseQuery(requestQuery, JobStatus, req.context.isAdminAccess);
     const jobQuery = tableQueryToJobQuery(tableQuery, isAdmin, req.user, jobIDs);
     const jobs = (await Job.queryAll(db, jobQuery, false, 0, jobIDs.length)).data;
     const resJson = {};

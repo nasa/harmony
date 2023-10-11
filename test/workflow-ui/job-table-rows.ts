@@ -4,7 +4,7 @@ import { JobStatus } from '../../app/models/job';
 import hookServersStartStop from '../helpers/servers';
 import { hookTransaction } from '../helpers/db';
 import { buildJob } from '../helpers/jobs';
-import { hookWorkflowUIJobRows } from '../helpers/workflow-ui';
+import { hookAdminWorkflowUIJobRows, hookWorkflowUIJobRows } from '../helpers/workflow-ui';
 import * as sinon from 'sinon';
 import * as services from '../../app/models/services';
 
@@ -13,6 +13,7 @@ import * as services from '../../app/models/services';
 const boJob1 = buildJob({ status: JobStatus.FAILED, username: 'bo' });
 const boJob2 = buildJob({ status: JobStatus.SUCCESSFUL, username: 'bo', service_name: 'cog-maker' });
 const adamJob1 = buildJob({ status: JobStatus.RUNNING, username: 'adam' });
+const woodyJob1 = buildJob({ status: JobStatus.RUNNING, username: 'woody' });
 
 describe('Workflow UI job table rows route', function () {
   hookServersStartStop({ skipEarthdataLogin: false });
@@ -24,6 +25,7 @@ describe('Workflow UI job table rows route', function () {
     await boJob1.save(this.trx);
     await boJob2.save(this.trx);
     await adamJob1.save(this.trx);
+    await woodyJob1.save(this.trx);
     this.trx.commit();
   });
   after(function () {
@@ -62,13 +64,22 @@ describe('Workflow UI job table rows route', function () {
     });
   });
 
-  describe('who uses a user filter', function () {
-    hookWorkflowUIJobRows({ username: 'adam', jobIDs: [boJob1.jobID, boJob2.jobID],
-      query: { disallowUser: true, tableFilter: '[{"value":"user: bo","dbValue":"bo","field":"user"}]' } });
+  describe('who uses a user filter with the non-admin route', function () {
+    hookWorkflowUIJobRows({ username: 'adam', jobIDs: [woodyJob1.jobID],
+      query: { disallowUser: true, tableFilter: '[{"value":"user: woody","dbValue":"woody","field":"user"}]' } });
+    it('ignores the user filter', function () {
+      const response = JSON.parse(this.res.text);
+      expect(response[woodyJob1.jobID]).contains(`<tr id="job-${woodyJob1.jobID}" class='job-table-row'>`);
+      expect(Object.keys(response).length).to.eq(1);
+    });
+  });
+
+  describe('who uses a user filter with the admin route', function () {
+    hookAdminWorkflowUIJobRows({ username: 'adam', jobIDs: [woodyJob1.jobID],
+      query: { disallowUser: 'on', tableFilter: '[{"value":"user: woody","dbValue":"woody","field":"user"}]' } });
     it('returns only the job row matching the user filter', function () {
       const response = JSON.parse(this.res.text);
-      expect(response[boJob1.jobID]).to.eq(undefined);
-      expect(response[boJob2.jobID]).contains(undefined);
+      expect(response[woodyJob1.jobID]).eq(undefined);
       expect(Object.keys(response).length).to.eq(0);
     });
   });
