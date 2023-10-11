@@ -32,7 +32,7 @@ describe('Workflow UI job table rows route', function () {
     servicesStub.restore();
   });
 
-  describe('for an invalid job ID format', function () {
+  describe('with an invalid job ID format', function () {
     hookWorkflowUIJobRows({ jobIDs: ['not-a-uuid'], username: 'bo' });
     it('returns an error', function () {
       const response = JSON.parse(this.res.text);
@@ -43,7 +43,7 @@ describe('Workflow UI job table rows route', function () {
     });
   });
 
-  describe('who requests their SUCCESSFUL jobs', function () {
+  describe('a user requesting SUCCESSFUL jobs', function () {
     hookWorkflowUIJobRows({ username: 'bo', jobIDs: [boJob1.jobID, boJob2.jobID], query: { tableFilter: '[{"value":"status: successful","dbValue":"successful","field":"status"}]' } });
     it('returns only the successful job row', function () {
       const response = JSON.parse(this.res.text);
@@ -53,7 +53,7 @@ describe('Workflow UI job table rows route', function () {
     });
   });
 
-  describe('who uses a service name filter', function () {
+  describe('an admin using a service name filter', function () {
     hookWorkflowUIJobRows({ username: 'bo', jobIDs: [boJob1.jobID, boJob2.jobID],
       query: { disallowService: false, tableFilter: '[{"value":"service: cog-maker","dbValue":"cog-maker","field":"service"}]' } });
     it('returns only the job row for the cog-maker service job', function () {
@@ -64,7 +64,7 @@ describe('Workflow UI job table rows route', function () {
     });
   });
 
-  describe('who uses a user filter with the non-admin route', function () {
+  describe('an admin using a user filter with the non-admin route', function () {
     hookWorkflowUIJobRows({ username: 'adam', jobIDs: [woodyJob1.jobID],
       query: { disallowUser: true, tableFilter: '[{"value":"user: woody","dbValue":"woody","field":"user"}]' } });
     it('ignores the user filter', function () {
@@ -74,7 +74,7 @@ describe('Workflow UI job table rows route', function () {
     });
   });
 
-  describe('who uses a user filter with the admin route', function () {
+  describe('an admin who uses a user filter with the admin route', function () {
     hookAdminWorkflowUIJobRows({ username: 'adam', jobIDs: [woodyJob1.jobID],
       query: { disallowUser: 'on', tableFilter: '[{"value":"user: woody","dbValue":"woody","field":"user"}]' } });
     it('returns only the job row matching the user filter', function () {
@@ -84,7 +84,7 @@ describe('Workflow UI job table rows route', function () {
     });
   });
 
-  describe('whose request includes someone else\'s job (but is an admin)', function () {
+  describe('a user whose request includes someone else\'s job (but is an admin)', function () {
     hookWorkflowUIJobRows({ username: 'adam', jobIDs: [boJob1.jobID, adamJob1.jobID] });
     it('returns the other user\'s job rows in addition to their own', async function () {
       const response = JSON.parse(this.res.text);
@@ -94,7 +94,7 @@ describe('Workflow UI job table rows route', function () {
     });
   });
 
-  describe('who requests someone else\'s job (but is NOT an admin)', function () {
+  describe('a user who requests someone else\'s job (but is NOT an admin)', function () {
     hookWorkflowUIJobRows({ username: 'bo', jobIDs: [adamJob1.jobID] });
     it('returns undefined', async function () {
       const response = JSON.parse(this.res.text);
