@@ -1,6 +1,8 @@
-# Kubernetes Task Services
+# Services
 
-This directory contains sub-projects for tasks that are run as kubernetes services. Not to be
+This directory contains sub-projects for tasks that are run as kubernetes services as well as the
+main Harmony server itself. Any module that runs as a server is here, whereas library type
+modules should be plced under `packages`. Not to be
 confused with `Harmony services` that operate on actual data, these tasks are associated with
 the inner plumbing of scheduling work-items, processing work-item updates, etc.
 
