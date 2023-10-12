@@ -38,6 +38,7 @@ import { getStagingBucketPolicy } from '../frontends/staging-bucket-policy';
 import { parseGridMiddleware } from '../util/grids';
 import docsPage from '../frontends/docs/docs';
 import { getCollectionCapabilitiesJson } from '../frontends/capabilities';
+import extendDefault from '../middleware/extend';
 export interface RouterConfig {
   PORT?: string | number; // The port to run the frontend server on
   BACKEND_PORT?: string | number; // The port to run the backend server on
@@ -198,6 +199,7 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   result.use(logged(cmrUmmCollectionReader));
   result.use(logged(cmrGranuleLocator));
   result.use(logged(addRequestContextToOperation));
+  result.use(logged(extendDefault));
   result.use(logged(redirectWithoutTrailingSlash));
 
   result.get('/', asyncHandler(landingPage));
