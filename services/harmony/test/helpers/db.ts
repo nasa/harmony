@@ -20,14 +20,14 @@ export async function truncateAll(): Promise<void> {
   await Promise.all(tables.map((t) => db(t).truncate()));
 }
 
-const createDatabaseCommand = './bin/create-database -o test';
+const createDatabaseCommand = '../../bin/create-database -o test';
 
 /**
  * Recreates the test database
  * Note this is done because database migrations do not work for sqlite
  */
 async function recreateDatabase(): Promise<void> {
-  return exec(createDatabaseCommand, { 'cwd': '../..' });
+  return exec(createDatabaseCommand);
 }
 
 before(async function () {

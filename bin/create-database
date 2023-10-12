@@ -35,4 +35,5 @@ if [ -f $database ]; then
 fi
 
 echo "Creating database $database"
-cat db/db.sql | sqlite3 $database
+dir=$(dirname "$0")
+cat "$dir/../db/db.sql" | sqlite3 $database
