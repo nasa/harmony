@@ -261,8 +261,12 @@ describe('Pull Worker', async function () {
       });
 
       it('deletes the WORKING lock file', async function () {
+        console.log(`STARTING _pullAndDoWork`);
         await _pullAndDoWork(false);
+        console.log(`COMPLETED _pullAndDoWork`);
+        console.log(`existsSync CHECK STARTED`);
         expect(existsSync(`${env.workingDir}/WORKING`)).to.be.false;
+        console.log(`existsSync CHECK COMPLTED`);
       });
 
       it('does not throw', async function () {
