@@ -238,6 +238,7 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
     console.log('UNLINKING WORKING FILE');
     try {
       await fs.unlink(workingFilePath);
+      console.log('WORKING FILE UNLINKED');
     } catch {
       // log this, but don't let it stop things
       logger.error('Failed to delete /tmp/WORKING');
