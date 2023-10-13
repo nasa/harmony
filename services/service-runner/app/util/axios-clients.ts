@@ -85,6 +85,7 @@ export default function createAxiosClientWithRetry(
   timeoutMs = axiosTimeoutMs,
   httpAgent = keepAliveAgent,
 ): AxiosInstance {
+  console.log(`NODE_ENV: ${process.env.NODE_ENV}`);
   if (process.env.NODE_ENV === 'test') {
     retries = 2;
   }
