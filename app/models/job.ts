@@ -128,6 +128,7 @@ export interface JobQuery {
     status?: { in: boolean, values: string[] };
     service_name?: { in: boolean, values: string[] };
     username?: { in: boolean, values: string[] };
+    jobID?: { in: boolean, values: string[] };
   }
   orderBy?: {
     field: string;
