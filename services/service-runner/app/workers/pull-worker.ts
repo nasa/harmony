@@ -155,9 +155,13 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
   try {
     // remove any previous work items to prevent the pod from running out of disk space
     const regex = /^(?!WORKING|TERMINATING)(.+)$/;
+    logger.info('Starting to empty directory');
     await emptyDirectory(env.workingDir, regex);
+    logger.info('Directory emptied');
     // write out the WORKING file to prevent pod termination while working
+    logger.info('WRITING WORKING FILE');
     await fs.writeFile(workingFilePath, '1');
+    logger.info('WORKING FILE WRITTEN');
   } catch (e) {
     // We'll continue on even if we have issues cleaning up - it just means the pod may end
     // up being evicted at some point due to running out of ephemeral storage space
@@ -169,12 +173,16 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
     // check to see if we are terminating
     const terminationFilePath = path.join(env.workingDir, 'TERMINATING');
     try {
+      logger.info('CHECKING FOR TERMINATING FILE');
       await fs.access(terminationFilePath);
+      logger.info('DONE CHECKING FOR TERMINATING FILE');
       // TERMINATING file exists so PreStop handler is requesting termination
       logger.warn('Received TERMINATION request, no longer processing work');
       try {
         // Clean up the TERMINATING file to ensure we do not stay in an infinite loop terminating
+        logger.info('UNLINKNG TERMINATING FILE');
         await fs.unlink(terminationFilePath);
+        logger.info('TERMINATING FILE UNLINKED');
       } catch (e) {
         logger.error('Error removing TERMINATING file, will still attempt to quit');
         logger.error(e);
@@ -184,6 +192,8 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
     } catch {
       // expected if file does not exist
     }
+
+    logger.info('ABOUT TO POLL FOR WORK');
 
     pullCounter += 1;
     logger.debug('Polling for work');
@@ -225,6 +235,7 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
     logger.error(e);
   } finally {
     // remove the WORKING file
+    logger.info('UNLINKING WORKING FILE');
     try {
       await fs.unlink(workingFilePath);
     } catch {
@@ -232,6 +243,7 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
       logger.error('Failed to delete /tmp/WORKING');
     }
     if (repeat) {
+      logger.info('REPEATING POLLING FOR WORK');
       setTimeout(_pullAndDoWork, pollingInterval);
     }
   }
