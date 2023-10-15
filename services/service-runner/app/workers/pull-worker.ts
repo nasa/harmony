@@ -164,18 +164,6 @@ async function _doWork(
   return newWorkItem;
 }
 
-/**
- * Used to make functions available for testing and mocking
- *
- */
-const exportedForTesting = {
-  _pullWork,
-  _doWork,
-  _pullAndDoWork,
-  _primeService,
-  axiosGetWork,
-  axiosUpdateWork,
-};
 
 /**
  * Pull work and execute it
@@ -222,6 +210,7 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
       pullCounter = 0;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-use-before-define
     const work = await exportedForTesting._pullWork();
     if (!work.error && work.item) {
       const startTime = Date.now();
@@ -267,6 +256,19 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
     }
   }
 }
+
+/**
+ * Used to make functions available for testing and mocking
+ *
+ */
+export const exportedForTesting = {
+  _pullWork,
+  _doWork,
+  _pullAndDoWork,
+  _primeService,
+  axiosGetWork,
+  axiosUpdateWork,
+};
 
 export default class PullWorker implements Worker {
   async start(repeat = true): Promise<void> {
