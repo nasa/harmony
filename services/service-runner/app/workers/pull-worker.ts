@@ -11,8 +11,6 @@ import { existsSync, rmSync, accessSync, constants, promises as fs } from 'fs';
 import { exit } from 'process';
 import { AxiosError } from 'axios';
 
-export let exportedForTesting = {};
-
 /**
  * Retries axios connection errors using default retry logic unless the pod is being terminated
  * in which case it exits out early
@@ -61,6 +59,24 @@ const workUrl = `http://${env.backendHost}:${env.backendPort}/service/work`;
 logger.debug(`WORK URL: ${workUrl}`);
 logger.debug(`HARMONY_SERVICE: ${sanitizeImage(env.harmonyService)}`);
 logger.debug(`INVOCATION_ARGS: ${env.invocationArgs}`);
+
+/**
+ * Call the sidecar service once to get around a k8s client bug
+ */
+async function _primeService(): Promise<void> {
+  const exampleWorkItemProps = {
+    jobID: '1',
+    serviceID: 'harmony-services/query-cmr:latest',
+    status: WorkItemStatus.READY,
+    workflowStepIndex: 0,
+    operation: { requestId: 'abc' },
+  } as WorkItemRecord;
+
+  runServiceFromPull(exampleWorkItemProps).catch((e) => {
+    logger.error('Failed to prime service');
+    throw e;
+  });
+}
 
 /**
  * Requests work items from Harmony
@@ -149,6 +165,19 @@ async function _doWork(
 }
 
 /**
+ * Used to make functions available for testing and mocking
+ *
+ */
+const exportedForTesting = {
+  _pullWork,
+  _doWork,
+  _pullAndDoWork,
+  _primeService,
+  axiosGetWork,
+  axiosUpdateWork,
+};
+
+/**
  * Pull work and execute it
  * @param repeat - if true the function will loop forever (added for testing purposes)
  */
@@ -157,13 +186,9 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
   try {
     // remove any previous work items to prevent the pod from running out of disk space
     const regex = /^(?!WORKING|TERMINATING)(.+)$/;
-    console.log('STARTING TO EMPTY DIRECTORY');
     await emptyDirectory(env.workingDir, regex);
-    console.log('DIRECTORY EMPTIED');
     // write out the WORKING file to prevent pod termination while working
-    console.log('WRITING WORKING FILE');
     await fs.writeFile(workingFilePath, '1');
-    console.log('WORKING FILE WRITTEN');
   } catch (e) {
     // We'll continue on even if we have issues cleaning up - it just means the pod may end
     // up being evicted at some point due to running out of ephemeral storage space
@@ -175,16 +200,12 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
     // check to see if we are terminating
     const terminationFilePath = path.join(env.workingDir, 'TERMINATING');
     try {
-      console.log('CHECKING FOR TERMINATING FILE');
       await fs.access(terminationFilePath);
-      console.log('DONE CHECKING FOR TERMINATING FILE');
       // TERMINATING file exists so PreStop handler is requesting termination
       logger.warn('Received TERMINATION request, no longer processing work');
       try {
         // Clean up the TERMINATING file to ensure we do not stay in an infinite loop terminating
-        console.log('UNLINKNG TERMINATING FILE');
         await fs.unlink(terminationFilePath);
-        console.log('TERMINATING FILE UNLINKED');
       } catch (e) {
         logger.error('Error removing TERMINATING file, will still attempt to quit');
         logger.error(e);
@@ -195,8 +216,6 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
       // expected if file does not exist
     }
 
-    console.log('ABOUT TO POLL FOR WORK');
-
     pullCounter += 1;
     logger.debug('Polling for work');
     if (pullCounter === pullLogPeriod) {
@@ -204,7 +223,6 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
     }
 
     const work = await exportedForTesting._pullWork();
-    console.log('FINISHED PULLING WORK');
     if (!work.error && work.item) {
       const startTime = Date.now();
       const workItemLogger = logger.child({ workItemId: work.item.id });
@@ -238,47 +256,17 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
     logger.error(e);
   } finally {
     // remove the WORKING file
-    console.log('UNLINKING WORKING FILE');
     try {
       await fs.unlink(workingFilePath);
-      console.log('WORKING FILE UNLINKED');
     } catch {
       // log this, but don't let it stop things
       logger.error('Failed to delete /tmp/WORKING');
     }
     if (repeat) {
-      console.log('REPEATING POLLING FOR WORK');
       setTimeout(_pullAndDoWork, pollingInterval);
     }
   }
 }
-
-/**
- * Call the sidecar service once to get around a k8s client bug
- */
-async function _primeService(): Promise<void> {
-  const exampleWorkItemProps = {
-    jobID: '1',
-    serviceID: 'harmony-services/query-cmr:latest',
-    status: WorkItemStatus.READY,
-    workflowStepIndex: 0,
-    operation: { requestId: 'abc' },
-  } as WorkItemRecord;
-
-  runServiceFromPull(exampleWorkItemProps).catch((e) => {
-    logger.error('Failed to prime service');
-    throw e;
-  });
-}
-
-exportedForTesting = {
-  _pullWork,
-  _doWork,
-  _pullAndDoWork,
-  _primeService,
-  axiosGetWork,
-  axiosUpdateWork,
-};
 
 export default class PullWorker implements Worker {
   async start(repeat = true): Promise<void> {
