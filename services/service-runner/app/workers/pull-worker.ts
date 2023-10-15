@@ -202,6 +202,7 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
     }
 
     const work = await _pullWork();
+    console.log('FINISHED PULLING WORK');
     if (!work.error && work.item) {
       const startTime = Date.now();
       const workItemLogger = logger.child({ workItemId: work.item.id });
