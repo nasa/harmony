@@ -155,9 +155,9 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
   try {
     // remove any previous work items to prevent the pod from running out of disk space
     const regex = /^(?!WORKING|TERMINATING)(.+)$/;
-    console.log('Starting to empty directory');
+    console.log('STARTING TO EMPTY DIRECTORY');
     await emptyDirectory(env.workingDir, regex);
-    console.log('Directory emptied');
+    console.log('DIRECTORY EMPTIED');
     // write out the WORKING file to prevent pod termination while working
     console.log('WRITING WORKING FILE');
     await fs.writeFile(workingFilePath, '1');
@@ -201,7 +201,7 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
       pullCounter = 0;
     }
 
-    const work = await _pullWork();
+    const work = await exportedForTesting._pullWork();
     console.log('FINISHED PULLING WORK');
     if (!work.error && work.item) {
       const startTime = Date.now();
