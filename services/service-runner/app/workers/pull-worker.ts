@@ -11,6 +11,8 @@ import { existsSync, rmSync, accessSync, constants, promises as fs } from 'fs';
 import { exit } from 'process';
 import { AxiosError } from 'axios';
 
+export let exportedForTesting = {};
+
 /**
  * Retries axios connection errors using default retry logic unless the pod is being terminated
  * in which case it exits out early
@@ -269,7 +271,7 @@ async function _primeService(): Promise<void> {
   });
 }
 
-export const exportedForTesting = {
+exportedForTesting = {
   _pullWork,
   _doWork,
   _pullAndDoWork,
