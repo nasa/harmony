@@ -30,7 +30,7 @@ import PubSub from '../../pub-sub.js';
 /**
  * Query Harmony for an up to date version of
  * a single HTML page of the work items table.
- * @param {object} params - parameters that define what will appear in the table row
+ * @param {object} params - parameters that define what will appear in the table rows
  * @param {boolean} checkJobStatus - set to true if should check whether the job is finished
  * @returns Boolean indicating whether the job is still running
  */
@@ -129,7 +129,7 @@ export default {
   /**
    * Update the work items table while the job is processing.
    * @param {object} params - Parameters that define what will appear in the table.
-   * Params may contain the follwing attributes:
+   * Params contains the follwing attributes:
    * jobId - id of the job that the work items are linked to.
    * page - page number for the work items.
    * limit - limit on the number of work items in a page.

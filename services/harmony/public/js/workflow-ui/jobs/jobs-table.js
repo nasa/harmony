@@ -1,12 +1,19 @@
+/* eslint-disable no-param-reassign */
 import { formatDates } from '../table.js';
 import toasts from '../toasts.js';
+import PubSub from '../../pub-sub.js';
+
+// all of the currently selected job IDs
+let jobIDs = [];
+// each status for each currently selected job
+let statuses = [];
 
 /**
  * Build the jobs filter with filter facets like 'status' and 'user'.
- * @param currentUser - the current Harmony user
- * @param services - service names from services.yml
- * @param isAdminRoute - whether the current page is /admin/...
- * @param tableFilter - initial tags that will populate the input
+  * @param {string} currentUser - the current Harmony user
+  * @param {string[]} services - service names from services.yml
+  * @param {boolean} isAdminRoute - whether the current page is /admin/...
+  * @param {object[]} tableFilter - initial tags that will populate the input
  */
 function initFilter(currentUser, services, isAdminRoute, tableFilter) {
   const filterInput = document.querySelector('input[name="tableFilter"]');
@@ -53,7 +60,7 @@ function initFilter(currentUser, services, isAdminRoute, tableFilter) {
 
 /**
  * Fallback method for copying text to clipboard.
- * @param text - the text to copy
+ * @param {string} text - the text to copy
  */
 function fallbackCopyTextToClipboard(text) {
   const textArea = document.createElement('textarea');
@@ -74,7 +81,7 @@ function fallbackCopyTextToClipboard(text) {
 
 /**
  * Method for copying the text to the clipboard.
- * @param text - the text to copy
+ * @param {string} text - the text to copy
  */
 async function copyTextToClipboard(text) {
   if (!navigator.clipboard) {
@@ -86,10 +93,11 @@ async function copyTextToClipboard(text) {
 
 /**
  * Intitialize the copy click handler for all copy buttons.
+ * @param {string} selector - defines which button(s) to bind the handler to
  */
-async function initCopyHandler() {
+async function initCopyHandler(selector) {
   // https://stackoverflow.com/questions/400212/how-do-i-copy-to-the-clipboard-in-javascript
-  document.querySelectorAll('.copy-request').forEach((el) => {
+  document.querySelectorAll(selector).forEach((el) => {
     el.addEventListener('click', (event) => {
       copyTextToClipboard(event.target.getAttribute('data-text'));
       const isTruncated = event.target.getAttribute('data-truncated') === 'true';
@@ -101,20 +109,163 @@ async function initCopyHandler() {
 }
 
 /**
+ * Repopulate the job IDs and statuses arrays which
+ * track which jobs are selected.
+ */
+function refreshSelected() {
+  jobIDs = [];
+  statuses = [];
+  document.querySelectorAll('.select-job').forEach((el) => {
+    const jobID = el.getAttribute('data-id');
+    const status = el.getAttribute('data-status');
+    const { checked } = el;
+    if (checked) {
+      jobIDs.push(jobID);
+      statuses.push(status);
+    }
+  });
+  PubSub.publish('job-selected');
+}
+
+/**
+ * Intitialize the select box click handler for all job rows.
+ * @param {string} selector - defines which box(es) to bind the handler to
+ */
+function initSelectHandler(selector) {
+  document.querySelectorAll(selector).forEach((el) => {
+    el.addEventListener('click', (event) => {
+      const { target } = event;
+      const jobID = target.getAttribute('data-id');
+      const status = target.getAttribute('data-status');
+      const { checked } = target;
+      if (checked) {
+        jobIDs.push(jobID);
+        statuses.push(status);
+      } else {
+        jobIDs.splice(jobIDs.indexOf(jobID), 1);
+        statuses.splice(statuses.indexOf(status), 1);
+      }
+      const numSelectable = document.querySelectorAll('.select-job').length;
+      const numSelected = jobIDs.length;
+      const areAllJobsSelected = numSelectable === numSelected;
+      document.getElementById('select-jobs').checked = areAllJobsSelected;
+      PubSub.publish('job-selected');
+    });
+  });
+}
+
+/**
+ * Intitialize the select all box click handler.
+ */
+function initSelectAllHandler() {
+  const el = document.getElementById('select-jobs');
+  if (!el) {
+    return;
+  }
+  el.addEventListener('click', (event) => {
+    const { target } = event;
+    const { checked } = target;
+    jobIDs = [];
+    statuses = [];
+    document.querySelectorAll('.select-job').forEach((jobEl) => {
+      if (checked) {
+        const jobID = jobEl.getAttribute('data-id');
+        const status = jobEl.getAttribute('data-status');
+        jobIDs.push(jobID);
+        statuses.push(status);
+        jobEl.checked = true;
+      } else {
+        jobEl.checked = false;
+      }
+    });
+    PubSub.publish('job-selected');
+  });
+}
+
+/**
+ * Query Harmony for up to date version of particular HTML rows of the jobs table.
+ * @param {object} params - parameters that define what will appear in the table row
+ */
+async function loadRows(params) {
+  let tableUrl = './workflow-ui/jobs';
+  tableUrl += `?tableFilter=${encodeURIComponent(params.tableFilter)}`
+  + `&disallowStatus=${params.disallowStatus}`
+  + `&disallowService=${params.disallowService}`;
+  if (params.disallowUser) {
+    tableUrl += `&disallowUser=${params.disallowUser}`;
+  }
+  const res = await fetch(tableUrl, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ jobIDs }),
+  });
+  if (res.status === 200) {
+    // loop through json map of html rows (job id => row)
+    const rowsJson = await res.json();
+    for (const jobID of jobIDs) {
+      const rowHtml = rowsJson[jobID] || '<span></span>';
+      const tmp = document.createElement('tbody');
+      tmp.innerHTML = rowHtml;
+      document.getElementById(`copy-${jobID}`).remove();
+      document.getElementById(`job-${jobID}`).replaceWith(...tmp.childNodes); // add only the <tr>...</tr>
+      initSelectHandler(`tr[id="job-${jobID}"] .select-job`);
+      initCopyHandler(`th[id="copy-${jobID}"] .copy-request`);
+      formatDates(`tr[id="job-${jobID}"] .date-td`);
+    }
+    refreshSelected();
+    if (!document.querySelectorAll('.select-job').length) {
+      document.getElementById('select-jobs').remove();
+    }
+  }
+}
+
+/**
  * Handles jobs table logic (formatting, building filters, etc.).
  */
-export default {
+const jobsTable = {
 
   /**
    * Initialize the jobs table.
-   * @param currentUser - the current Harmony user
-   * @param services - service names from services.yml
-   * @param isAdminRoute - whether the current page is /admin/...
-   * @param tableFilter - initial tags that will populate the input
+   * @param {object} params - Parameters that define what will appear in the table.
+   * Params contains the follwing attributes:
+   * disallowStatus - whether to load the table with disallow status "on" or "off".
+   * disallowService - whether to load the table with disallow service "on" or "off".
+   * disallowUser - whether to load the table with disallow user "on" or "off".
+   * currentUser - the current Harmony user
+   * services - service names from services.yml
+   * isAdminRoute - whether the current page is /admin/...
+   * tableFilter - initial tags that will populate the input
    */
-  async init(currentUser, services, isAdminRoute, tableFilter) {
+  async init(params) {
+    PubSub.subscribe(
+      'row-state-change',
+      async () => loadRows(params),
+    );
     formatDates('.date-td');
-    initFilter(currentUser, services, isAdminRoute, tableFilter);
-    initCopyHandler();
+    initFilter(params.currentUser, params.services, params.isAdminRoute, params.tableFilter);
+    initCopyHandler('.copy-request');
+    initSelectHandler('.select-job');
+    initSelectAllHandler();
+  },
+
+  /**
+   * Get the statuses for each currently selected job.
+   * @returns an array of statuses
+   */
+  getJobStatuses() {
+    return statuses;
+  },
+
+ /**
+   * Get the ID for each currently selected job.
+   * @returns an array of job IDs.
+   */
+  getJobIds() {
+    return jobIDs;
   },
 };
+
+export default jobsTable;

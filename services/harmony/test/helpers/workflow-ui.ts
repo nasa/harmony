@@ -109,6 +109,40 @@ export function workflowUIWorkItemsRow(
 }
 
 /**
+ * Makes a request to the workflow UI job rows endpoint
+ *
+ * @param app - The express application (typically this.frontend)
+ * @param options - Mapping object. Includes query param object (which maps query
+ * param names to values), jobIDs (array of jobID), and username.
+ * e.g. \{ jobIDs, username: 'billy', query: \{...\}\}
+ */
+export function workflowUIJobRows(
+  app: Express.Application,
+  options: { username: string; query: object, jobIDs: string[] },
+): Test {
+  const { jobIDs, query } = options;
+  const actualQuery = query || {};
+  return request(app).post('/workflow-ui/jobs').query(actualQuery).send({ jobIDs });
+}
+
+/**
+ * Makes a request to the admin workflow UI job rows endpoint
+ *
+ * @param app - The express application (typically this.frontend)
+ * @param options - Mapping object. Includes query param object (which maps query
+ * param names to values), jobIDs (array of jobID), and username.
+ * e.g. \{ jobIDs, username: 'billy', query: \{...\}\}
+ */
+export function adminWorkflowUIJobRows(
+  app: Express.Application,
+  options: { username: string; query: object, jobIDs: string[] },
+): Test {
+  const { jobIDs, query } = options;
+  const actualQuery = query || {};
+  return request(app).post('/admin/workflow-ui/jobs').query(actualQuery).send({ jobIDs });
+}
+
+/**
  * Makes a request to view the workflow UI work items row endpoint
  *
  * @param app - The express application (typically this.frontend)
@@ -181,6 +215,8 @@ export const hookAdminWorkflowUIJob = hookRequest.bind(this, adminWorkflowUIJob)
 export const hookWorkflowUIWorkItems = hookRequest.bind(this, workflowUIWorkItems);
 export const hookAdminWorkflowUIWorkItems = hookRequest.bind(this, adminWorkflowUIWorkItems);
 export const hookWorkflowUIWorkItemsRow = hookRequest.bind(this, workflowUIWorkItemsRow);
+export const hookWorkflowUIJobRows = hookRequest.bind(this, workflowUIJobRows);
+export const hookAdminWorkflowUIJobRows = hookRequest.bind(this, adminWorkflowUIJobRows);
 export const hookWorkflowUIWorkItemRetry = hookRequest.bind(this, workflowUIWorkItemRetry);
 export const hookWorkflowUILinks = hookRequest.bind(this, workflowUILinks);
 export const hookAdminWorkflowUILinks = hookRequest.bind(this, adminWorkflowUILinks);

@@ -7,7 +7,7 @@ import JobLink from '../models/job-link';
 import { needsStacLink } from '../util/stac';
 import { getRequestRoot } from '../util/url';
 import { getCloudAccessJsonLink, getCloudAccessShLink, getJobStateChangeLinks, getStacCatalogLink, getStatusLink, Link } from '../util/links';
-import { RequestValidationError, NotFoundError } from '../util/errors';
+import { RequestValidationError, NotFoundError, ServerError } from '../util/errors';
 import { getPagingParams, getPagingLinks, setPagingHeaders } from '../util/pagination';
 import HarmonyRequest from '../models/harmony-request';
 import db from '../util/db';
@@ -236,6 +236,38 @@ export async function changeJobState(
 }
 
 /**
+ * Helper function for canceling, pausing, or resuming jobs in a batch
+ *
+ * @param req - The request sent by the client
+ * @param next - The next function in the call chain
+ * @param jobFn - The function to call to change the job state
+ */
+export async function changeJobsState(
+  req: HarmonyRequest,
+  next: NextFunction,
+  jobFn: (jobID: string, logger: Logger, username: string, token: string) => Promise<void>,
+): Promise<void> {
+  let processedCount = 0;
+  try {
+    const { jobIDs } = req.body;
+    let username: string;
+    const isAdmin = await isAdminUser(req);
+    if (!isAdmin) {
+      // undefined username => admin=true
+      username = req.user;
+    }
+    for (const jobID of jobIDs) {
+      validateJobId(jobID);
+      await jobFn(jobID, req.context.logger, username, req.accessToken);
+      processedCount += 1;
+    }
+  } catch (e) {
+    const message = `Could not change all job statuses. Proccessed ${processedCount}.`;
+    next(new ServerError(message));
+  }
+}
+
+/**
  * Express.js handler that cancels a single job `(POST /jobs/{jobID}/cancel)`. A user can cancel their own
  * request. An admin can cancel any user's request.
  *
@@ -299,4 +331,68 @@ export async function pauseJob(
 ): Promise<void> {
   req.context.logger.info(`Pause requested for job ${req.params.jobID} by user ${req.user}`);
   await changeJobState(req, res, next, pauseAndSaveJob);
+}
+
+/**
+ * Express.js handler that cancels jobs.
+ *
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
+ * @param next - The next function in the call chain
+ * @returns Resolves when the request is complete
+ */
+export async function cancelJobs(
+  req: HarmonyRequest, res: Response, next: NextFunction,
+): Promise<void> {
+  req.context.logger.info(`Cancel requested for jobs ${req.body.jobIDs} by user ${req.user}`);
+  await changeJobsState(req, next, cancelAndSaveJob);
+  res.status(200).json({ status: 'canceled' });
+}
+
+/**
+ * Express.js handler that resumes jobs.
+ *
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
+ * @param next - The next function in the call chain
+ * @returns Resolves when the request is complete
+ */
+export async function resumeJobs(
+  req: HarmonyRequest, res: Response, next: NextFunction,
+): Promise<void> {
+  req.context.logger.info(`Resume requested for jobs ${req.body.jobIDs} by user ${req.user}`);
+  await changeJobsState(req, next, resumeAndSaveJob);
+  res.status(200).json({ status: 'running' });
+}
+
+/**
+ * Express.js handler that skips the preview of jobs.
+ *
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
+ * @param next - The next function in the call chain
+ * @returns Resolves when the request is complete
+ */
+export async function skipJobsPreview(
+  req: HarmonyRequest, res: Response, next: NextFunction,
+): Promise<void> {
+  req.context.logger.info(`Skip preview requested for jobs ${req.body.jobIDs} by user ${req.user}`);
+  await changeJobsState(req, next, skipPreviewAndSaveJob);
+  res.status(200).json({ status: 'running' });
+}
+
+/**
+ * Express.js handler that pauses jobs.
+ *
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
+ * @param next - The next function in the call chain
+ * @returns Resolves when the request is complete
+ */
+export async function pauseJobs(
+  req: HarmonyRequest, res: Response, next: NextFunction,
+): Promise<void> {
+  req.context.logger.info(`Pause requested for jobs ${req.body.jobIDs} by user ${req.user}`);
+  await changeJobsState(req, next, pauseAndSaveJob);
+  res.status(200).json({ status: 'paused' });
 }
