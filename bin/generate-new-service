@@ -93,9 +93,6 @@ ${SERVICE_NAME_UPPER}_LIMITS_MEMORY=512Mi
 ${SERVICE_NAME_UPPER}_INVOCATION_ARGS='python -m $SERVICE_NAME'
 ${SERVICE_NAME_UPPER}_SERVICE_QUEUE_URLS='["$ORGANIZATION/$SERVICE_NAME:latest,http://localstack:4566/queue/$SERVICE_NAME.fifo"]'
 
-# Only for local testing - do not commit this change
-${SERVICE_NAME_UPPER}_COLLECTIONS=$COLLECTIONS
-
 EOF
 
   echo "Adding queue URL variable to lib/util env-defaults"
@@ -103,7 +100,11 @@ EOF
 ${SERVICE_NAME_UPPER}_SERVICE_QUEUE_URLS='["$ORGANIZATION/$SERVICE_NAME:latest,http://localstack:4566/queue/$SERVICE_NAME.fifo"]'
 
 EOF
-  echo "Configuring local .env file to deploy your service"
+  echo "Configuring local .env file to deploy your service and add the collections to test"
+  cat <<-EOF >> .env
+${SERVICE_NAME_UPPER}_COLLECTIONS=$COLLECTIONS
+
+EOF
   sed -i '' "s/^LOCALLY_DEPLOYED_SERVICES=.*/&,${SERVICE_NAME}/" .env
 fi
 
