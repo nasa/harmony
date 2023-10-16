@@ -190,6 +190,8 @@ async function loadRows(params) {
   let tableUrl = './workflow-ui/jobs';
   tableUrl += `?tableFilter=${encodeURIComponent(params.tableFilter)}`
   + `page=${params.page}&limit=${params.limit}`
+  + `&fromDateTime=${encodeURIComponent(params.fromDateTime)}&toDateTime=${encodeURIComponent(params.toDateTime)}`
+  + `&tzOffsetMinutes=${params.tzOffsetMinutes}&dateKind=${params.dateKind}`
   + `&disallowStatus=${params.disallowStatus}`
   + `&disallowService=${params.disallowService}`;
   if (params.disallowUser) {

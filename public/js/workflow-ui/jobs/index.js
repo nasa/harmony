@@ -14,11 +14,11 @@ params.services = JSON.parse(tableFilter.getAttribute('data-services'));
 params.disallowStatus = document.getElementsByName('disallowStatus')[0].checked ? 'on' : '';
 params.disallowService = document.getElementsByName('disallowService')[0].checked ? 'on' : '';
 if (isAdminRoute) {
-    params.disallowUser = document.getElementsByName('disallowUser')[0].checked ? 'on' : '';
+  params.disallowUser = document.getElementsByName('disallowUser')[0].checked ? 'on' : '';
 }
-
-params.page = document.getElementsByName('page')[0].value;
-params.limit = document.getElementsByName('limit')[0].value;
+['page', 'limit', 'fromDateTime', 'toDateTime', 'tzOffsetMinutes'].forEach((name) => {
+  params[name] = document.getElementsByName(name)[0].value;
+});
 
 jobsTable.init(params);
 

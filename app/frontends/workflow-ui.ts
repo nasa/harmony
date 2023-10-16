@@ -609,13 +609,40 @@ export async function getJobTableRows(
       const renderedHtml = await new Promise<string>((resolve, reject) => req.app.render(
         'workflow-ui/jobs/job-table-row', context, (err, html) => {
           if (err) {
-            reject('Could not get job rows');
+            reject('Could not get job rows HTML');
           }
           resolve(html);
         }));
       rows[job.jobID] = renderedHtml;
     }
-    res.send({ rows });
+    delete jobQuery.whereIn.jobID;
+    const { page, limit } = getPagingParams(req, env.defaultJobListPageSize, true);
+    const { pagination } = (await Job.queryAll(db, jobQuery, false, page, limit));
+    const pageLinks = getPagingLinks(req, pagination);
+    const firstPage = pageLinks.find((l) => l.rel === 'first');
+    const lastPage = pageLinks.find((l) => l.rel === 'last');
+    const nextPage = pageLinks.find((l) => l.rel === 'next');
+    const previousPage = pageLinks.find((l) => l.rel === 'prev');
+    const paginationInfo = { from: (pagination.from + 1).toLocaleString(),
+      to: pagination.to.toLocaleString(), total: pagination.total.toLocaleString(),
+      currentPage: pagination.currentPage.toLocaleString(), lastPage: pagination.lastPage.toLocaleString() };
+    const context = {
+      links: [
+        { ...firstPage, linkTitle: 'first' },
+        { ...previousPage, linkTitle: 'previous' },
+        { ...nextPage, linkTitle: 'next' },
+        { ...lastPage, linkTitle: 'last' },
+      ],
+      paginationInfo,
+    };
+    const nav = await new Promise<string>((resolve, reject) => req.app.render(
+      'workflow-ui/paging', context, (err, html) => {
+        if (err) {
+          reject('Could not get pagination HTML');
+        }
+        resolve(html);
+      }));
+    res.send({ rows, nav });
   } catch (e) {
     req.context.logger.error(e);
     next(e);
