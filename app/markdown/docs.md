@@ -2,12 +2,14 @@
 
 !!!include(getting-started.md)!!!
 
-!!!include(endpoints.md)!!!
-
 !!!include(apis.md)!!!
 
 !!!include(services.md)!!!
 
+!!!include(user-bucket.md)!!!
+
+!!!include(endpoints.md)!!!
+
 !!!include(jobs.md)!!!
 
-!!!include(user-bucket.md)!!!
+!!!include(stac.md)!!!
