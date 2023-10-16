@@ -13,7 +13,7 @@ curl -Ln -bj {{root}}/stac/<job-id>
 
 ##### Getting the STAC catalog item within a job's STAC catalog
 
-The <item-index> is the index of the STAC catalog item within the job's output STAC catalog. It starts at 0.
+The `<item-index>` is the index of the STAC catalog item within the job's output STAC catalog. It starts at 0.
 
 ```
 
