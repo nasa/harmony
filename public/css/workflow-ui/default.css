@@ -20,11 +20,12 @@
     word-break: break-word;
 }
 
-.bi-clipboard {
+.bi-copy {
+    color:rgb(232, 181, 0)!important;
     cursor: pointer;
 }
 
-.bi-clipboard:hover {
+.bi-copy:hover {
     color: #212529!important;
 }
 

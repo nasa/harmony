@@ -1,8 +1,8 @@
-import { IsInt, IsNotEmpty, IsNumber, IsUrl, Min } from 'class-validator';
+import { IsInt, IsNotEmpty, Min } from 'class-validator';
 import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
-import { envOverrides, HarmonyEnv, IHarmonyEnv, hostRegexWhitelist, makeConfigVar, validateEnvironment, envVars } from '@harmony/util/env';
+import { envOverrides, HarmonyEnv, IHarmonyEnv, makeConfigVar, validateEnvironment, envVars } from '@harmony/util/env';
 import _ from 'lodash';
 
 //
@@ -39,10 +39,6 @@ export interface IHarmonyServerEnv extends IHarmonyEnv {
   syncRequestPollIntervalMs: number;
   maxBatchInputs: number;
   maxBatchSizeInBytes: number;
-  getWorkSampleRatio: number;
-  putWorkSampleRatio: number;
-  getMetricsSampleRatio: number;
-  openTelemetryUrl: string;
 }
 
 class HarmonyServerEnv extends HarmonyEnv implements IHarmonyServerEnv {
@@ -115,19 +111,6 @@ class HarmonyServerEnv extends HarmonyEnv implements IHarmonyServerEnv {
   @IsInt()
   @Min(0)
   workItemRetryLimit: number;
-
-  @IsNumber()
-  @Min(0)
-  getWorkSampleRatio: number;
-
-  @IsNumber()
-  @Min(0)
-  putWorkSampleRatio: number;
-
-  getMetricsSampleRatio: number;
-
-  @IsUrl(hostRegexWhitelist)
-  openTelemetryUrl: string;
 
   @IsNotEmpty()
   objectStoreType: string;
