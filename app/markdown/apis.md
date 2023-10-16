@@ -1,5 +1,5 @@
 ## Using the Service APIs
-This section provides an introduction to the Harmony service APIs. For more details on the OGC Coverages API see the [API Documentation](/docs/api).
+This section provides an introduction to the Harmony service APIs for launching services for collections using either OGC Coverages or WMS. For more details on the OGC Coverages API see the [API Documentation](/docs/api).
 
 Each API requires a CMR collection concept ID or short name, and transformations can be performed using
 one of the following endpoints ({collectionId} and {variable} are placeholders):
