@@ -74,6 +74,10 @@ describe('Documentation page', function () {
       expect(this.res.text).to.include('<h3 id="monitoring-jobs-with-the-jobs-api-and-the-workflow-ui"');
     });
 
+    it('provides a section on the stac endpoints', function () {
+      expect(this.res.text).to.include('<h3 id="retrieving-stac-catalog-and-catalog-items-for-processed-data"');
+    });
+
     it('provides a section on user-owned S3 buckets', function () {
       expect(this.res.text).to.include('<h2 id="user-owned-buckets-for-harmony-output"');
     });
