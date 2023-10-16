@@ -7,7 +7,7 @@
     "test": "lerna run test",
     "test-fast": "lerna run test-fast",
     "test-bail": "lerna run test-bail",
-    "coverage": "lerna run --concurrency 1 coverage",
+    "coverage": "lerna run coverage",
     "lint": "lerna run lint",
     "start": "cd services/harmony && NODE_OPTIONS=--max-old-space-size=3096 ts-node -r tsconfig-paths/register app/server.ts",
     "start-dev": "cd servcies/harmony && strict-npm-engines && ts-node-dev --no-notify -r tsconfig-paths/register --watch app/views,public/js --respawn app/server",
