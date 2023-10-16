@@ -117,11 +117,11 @@ export function getPagingLinks(req: Request, pagination: ILengthAwarePagination)
   const result = [];
   const { currentPage, lastPage, perPage } = pagination;
   // const { currentPage, lastPage, perPage } = pagination as unknown as { lastPage: number; perPage; number; currentPage: number; total: number; };
-  if (perPage > 0 && currentPage > 2) result.push(getPagingLink(req, pagination, 1, 'first'));
+  if (perPage > 0 && currentPage > 1) result.push(getPagingLink(req, pagination, 1, 'first'));
   if (perPage > 0 && currentPage > 1) result.push(getPagingLink(req, pagination, currentPage - 1, 'prev', 'previous'));
   result.push(getPagingLink(req, pagination, currentPage, 'self', 'current'));
   if (perPage > 0 && currentPage < lastPage) result.push(getPagingLink(req, pagination, currentPage + 1, 'next'));
-  if (perPage > 0 && currentPage < lastPage - 1) result.push(getPagingLink(req, pagination, lastPage, 'last'));
+  if (perPage > 0 && currentPage < lastPage) result.push(getPagingLink(req, pagination, lastPage, 'last'));
   return result;
 }
 

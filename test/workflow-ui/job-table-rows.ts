@@ -47,9 +47,9 @@ describe('Workflow UI job table rows route', function () {
     hookWorkflowUIJobRows({ username: 'bo', jobIDs: [boJob1.jobID, boJob2.jobID], query: { tableFilter: '[{"value":"status: successful","dbValue":"successful","field":"status"}]' } });
     it('returns only the successful job row', function () {
       const response = JSON.parse(this.res.text);
-      expect(response[boJob1.jobID]).to.eq(undefined);
-      expect(response[boJob2.jobID]).contains(`<tr id="job-${boJob2.jobID}" class='job-table-row'>`);
-      expect(Object.keys(response).length).to.eq(1);
+      expect(response.rows[boJob1.jobID]).to.eq(undefined);
+      expect(response.rows[boJob2.jobID]).contains(`<tr id="job-${boJob2.jobID}" class='job-table-row'>`);
+      expect(Object.keys(response.rows).length).to.eq(1);
     });
   });
 
@@ -58,9 +58,9 @@ describe('Workflow UI job table rows route', function () {
       query: { disallowService: false, tableFilter: '[{"value":"service: cog-maker","dbValue":"cog-maker","field":"service"}]' } });
     it('returns only the job row for the cog-maker service job', function () {
       const response = JSON.parse(this.res.text);
-      expect(response[boJob1.jobID]).to.eq(undefined);
-      expect(response[boJob2.jobID]).contains(`<tr id="job-${boJob2.jobID}" class='job-table-row'>`);
-      expect(Object.keys(response).length).to.eq(1);
+      expect(response.rows[boJob1.jobID]).to.eq(undefined);
+      expect(response.rows[boJob2.jobID]).contains(`<tr id="job-${boJob2.jobID}" class='job-table-row'>`);
+      expect(Object.keys(response.rows).length).to.eq(1);
     });
   });
 
@@ -69,8 +69,8 @@ describe('Workflow UI job table rows route', function () {
       query: { disallowUser: true, tableFilter: '[{"value":"user: woody","dbValue":"woody","field":"user"}]' } });
     it('ignores the user filter', function () {
       const response = JSON.parse(this.res.text);
-      expect(response[woodyJob1.jobID]).contains(`<tr id="job-${woodyJob1.jobID}" class='job-table-row'>`);
-      expect(Object.keys(response).length).to.eq(1);
+      expect(response.rows[woodyJob1.jobID]).contains(`<tr id="job-${woodyJob1.jobID}" class='job-table-row'>`);
+      expect(Object.keys(response.rows).length).to.eq(1);
     });
   });
 
@@ -79,8 +79,8 @@ describe('Workflow UI job table rows route', function () {
       query: { disallowUser: 'on', tableFilter: '[{"value":"user: woody","dbValue":"woody","field":"user"}]' } });
     it('returns only the job row matching the user filter', function () {
       const response = JSON.parse(this.res.text);
-      expect(response[woodyJob1.jobID]).eq(undefined);
-      expect(Object.keys(response).length).to.eq(0);
+      expect(response.rows[woodyJob1.jobID]).eq(undefined);
+      expect(Object.keys(response.rows).length).to.eq(0);
     });
   });
 
@@ -88,9 +88,9 @@ describe('Workflow UI job table rows route', function () {
     hookWorkflowUIJobRows({ username: 'adam', jobIDs: [boJob1.jobID, adamJob1.jobID] });
     it('returns the other user\'s job rows in addition to their own', async function () {
       const response = JSON.parse(this.res.text);
-      expect(response[adamJob1.jobID]).contains(`<tr id="job-${adamJob1.jobID}" class='job-table-row'>`);
-      expect(response[boJob1.jobID]).contains(`<tr id="job-${boJob1.jobID}" class='job-table-row'>`);
-      expect(Object.keys(response).length).to.eq(2);
+      expect(response.rows[adamJob1.jobID]).contains(`<tr id="job-${adamJob1.jobID}" class='job-table-row'>`);
+      expect(response.rows[boJob1.jobID]).contains(`<tr id="job-${boJob1.jobID}" class='job-table-row'>`);
+      expect(Object.keys(response.rows).length).to.eq(2);
     });
   });
 
@@ -98,8 +98,8 @@ describe('Workflow UI job table rows route', function () {
     hookWorkflowUIJobRows({ username: 'bo', jobIDs: [adamJob1.jobID] });
     it('returns undefined', async function () {
       const response = JSON.parse(this.res.text);
-      expect(response[adamJob1.jobID]).to.eq(undefined);
-      expect(Object.keys(response).length).to.eq(0);
+      expect(response.rows[adamJob1.jobID]).to.eq(undefined);
+      expect(Object.keys(response.rows).length).to.eq(0);
     });
   });
 });

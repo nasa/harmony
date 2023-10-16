@@ -597,7 +597,7 @@ export async function getJobTableRows(
     const { tableQuery } = parseQuery(requestQuery, JobStatus, req.context.isAdminAccess);
     const jobQuery = tableQueryToJobQuery(tableQuery, isAdmin, req.user, jobIDs);
     const jobs = (await Job.queryAll(db, jobQuery, false, 0, jobIDs.length)).data;
-    const resJson = {};
+    const rows = {};
     for (const job of jobs) {
       const context = {
         ...job,
@@ -613,9 +613,9 @@ export async function getJobTableRows(
           }
           resolve(html);
         }));
-      resJson[job.jobID] = renderedHtml;
+      rows[job.jobID] = renderedHtml;
     }
-    res.send(resJson);
+    res.send({ rows });
   } catch (e) {
     req.context.logger.error(e);
     next(e);

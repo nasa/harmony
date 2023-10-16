@@ -16,6 +16,10 @@ params.disallowService = document.getElementsByName('disallowService')[0].checke
 if (isAdminRoute) {
     params.disallowUser = document.getElementsByName('disallowUser')[0].checked ? 'on' : '';
 }
+
+params.page = document.getElementsByName('page')[0].value;
+params.limit = document.getElementsByName('limit')[0].value;
+
 jobsTable.init(params);
 
 const jobStatusLinks = new JobsStatusChangeLinks();

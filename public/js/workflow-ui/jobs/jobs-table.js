@@ -189,6 +189,7 @@ function initSelectAllHandler() {
 async function loadRows(params) {
   let tableUrl = './workflow-ui/jobs';
   tableUrl += `?tableFilter=${encodeURIComponent(params.tableFilter)}`
+  + `page=${params.page}&limit=${params.limit}`
   + `&disallowStatus=${params.disallowStatus}`
   + `&disallowService=${params.disallowService}`;
   if (params.disallowUser) {
@@ -204,7 +205,8 @@ async function loadRows(params) {
   });
   if (res.status === 200) {
     // loop through json map of html rows (job id => row)
-    const rowsJson = await res.json();
+    const jsonRes = await res.json();
+    const rowsJson = jsonRes.rows;
     for (const jobID of jobIDs) {
       const rowHtml = rowsJson[jobID] || '<span></span>';
       const tmp = document.createElement('tbody');
@@ -215,6 +217,7 @@ async function loadRows(params) {
       initCopyHandler(`th[id="copy-${jobID}"] .copy-request`);
       formatDates(`tr[id="job-${jobID}"] .date-td`);
     }
+    document.getElementById('page-nav').replaceWith(jsonRes.nav);
     refreshSelected();
     if (!document.querySelectorAll('.select-job').length) {
       document.getElementById('select-jobs').remove();
@@ -231,6 +234,8 @@ const jobsTable = {
    * Initialize the jobs table.
    * @param {object} params - Parameters that define what will appear in the table.
    * Params contains the follwing attributes:
+   * page - page number for the jobs
+   * limit - limit on the number of jobs in a page
    * disallowStatus - whether to load the table with disallow status "on" or "off".
    * disallowService - whether to load the table with disallow service "on" or "off".
    * disallowUser - whether to load the table with disallow user "on" or "off".
