@@ -99,6 +99,15 @@ MAX_BATCH_SIZE_IN_BYTES=5000000000
 # Bamboo release
 RELEASE_VERSION=0.0.0
 
+# Client ID passed in as a header when making calls to other APIs
+CLIENT_ID=harmony-local
+
+# Identifies the harmony user agent when harmony makes calls to other APIs
+USER_AGENT="harmony/0.0.0 harmony-local"
+
+# The node environment (production, test, development)
+NODE_ENV=production
+
 # The object store used for storing shapefiles. Only S3 is supported currently.
 OBJECT_STORE_TYPE=s3
 
@@ -465,3 +474,4 @@ GIOVANNI_ADAPTER_LIMITS_CPU=128m
 GIOVANNI_ADAPTER_LIMITS_MEMORY=512Mi
 GIOVANNI_ADAPTER_INVOCATION_ARGS='node tasks/giovanni-adapter/app/cli'
 GIOVANNI_ADAPTER_SERVICE_QUEUE_URLS='["harmonyservices/giovanni-adapter:latest,http://localstack:4566/queue/giovanni-adapter.fifo"]'
+

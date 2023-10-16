@@ -53,7 +53,7 @@ spec:
           livenessProbe:
             httpGet:
               path: /liveness
-              port: 5000
+              port: $PORT
             initialDelaySeconds: 3
             periodSeconds: 3
           resources:
@@ -90,7 +90,7 @@ spec:
               fieldRef:
                 fieldPath: status.podIP
           ports:
-            - containerPort: 5000
+            - containerPort: $PORT
           volumeMounts:
             - mountPath: /tmp
               name: ephemeral-volume
@@ -106,13 +106,13 @@ metadata:
     should_scrape: "true"
     name: $SERVICE_NAME
   annotations:
-    prometheus.io/port: "5000"
+    prometheus.io/port: "$PORT"
     prometheus.io/scrape: "true"
 spec:
   ports:
     - name: frontend
-      port: 5000
-      targetPort: 5000
+      port: $PORT
+      targetPort: $PORT
       protocol: TCP
   selector:
     name: $SERVICE_NAME

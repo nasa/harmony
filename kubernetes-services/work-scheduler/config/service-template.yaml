@@ -31,7 +31,7 @@ spec:
           - secretRef:
               name: harmony-secrets
           ports:
-            - containerPort: 5000
+            - containerPort: $PORT
 ---
 apiVersion: v1
 kind: Service
@@ -40,8 +40,8 @@ metadata:
 spec:
   ports:
     - name: frontend
-      port: 5000
-      targetPort: 5000
+      port: $PORT
+      targetPort: $PORT
       protocol: TCP
   selector:
     name: harmony-work-scheduler
