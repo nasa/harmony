@@ -1,6 +1,6 @@
 import { Response, NextFunction } from 'express';
 import { sanitizeImage, truncateString } from '@harmony/util/string';
-import { getJobIfAllowed } from '../util/job';
+import { getJobIfAllowed, validateJobId } from '../util/job';
 import { Job, JobStatus, JobQuery, TEXT_LIMIT } from '../models/job';
 import { getWorkItemById, queryAll } from '../models/work-item';
 import { ForbiddenError, NotFoundError, RequestValidationError } from '../util/errors';
@@ -131,9 +131,10 @@ function parseQuery( /* eslint-disable @typescript-eslint/no-explicit-any */
  * a row of the jobs table.
  * @param logger - the logger to use
  * @param requestQuery - the query parameters from the request
+ * @param checked - whether the job should be selected
  * @returns an object with rendering functions
  */
-function jobRenderingFunctions(logger: Logger, requestQuery: Record<string, any>): object {
+function jobRenderingFunctions(logger: Logger, requestQuery: Record<string, any>, checked?: boolean): object {
   return {
     jobBadge(): string {
       return statusClass[this.status];
@@ -174,6 +175,12 @@ function jobRenderingFunctions(logger: Logger, requestQuery: Record<string, any>
         return truncateString(this.message, 100);
       }
     },
+    jobSelectBox(): string {
+      if (this.hasTerminalStatus()) {
+        return '';
+      }
+      return `<input class="select-job" type="checkbox" data-id="${this.jobID}" data-status="${this.status}" autocomplete="off" ${checked ? 'checked' : ''}></input>`;
+    },
     sortGranulesLinks(): string {
       // return links that lets the user apply or unapply an asc or desc sort
       const [ asc, desc ] = [ 'asc', 'desc' ].map((sortValue) => {
@@ -199,13 +206,14 @@ function jobRenderingFunctions(logger: Logger, requestQuery: Record<string, any>
 }
 
 /**
- * Transform a TableQuery to a WorkItem db query.
+ * Transform a TableQuery to a Job db query.
  * @param tableQuery - the constraints parsed from the query string of the request
  * @param isAdmin - is the requesting user an admin
  * @param user - the requesting user's username
+ * @param jobIDs - optional list of job IDs to match on
  * @returns JobQuery
  */
-function tableQueryToJobQuery(tableQuery: TableQuery, isAdmin: boolean, user: string): JobQuery {
+function tableQueryToJobQuery(tableQuery: TableQuery, isAdmin: boolean, user: string, jobIDs?: string[]): JobQuery {
   const jobQuery: JobQuery = { where: {}, whereIn: {} };
   if (tableQuery.sortGranules) {
     jobQuery.orderBy = {
@@ -238,6 +246,12 @@ function tableQueryToJobQuery(tableQuery: TableQuery, isAdmin: boolean, user: st
     jobQuery.dates = { field: tableQuery.dateKind };
     jobQuery.dates.from = tableQuery.from;
     jobQuery.dates.to = tableQuery.to;
+  }
+  if (jobIDs && jobIDs.length > 0) {
+    jobQuery.whereIn.jobID = {
+      values: jobIDs,
+      in: true,
+    };
   }
   return jobQuery;
 }
@@ -273,6 +287,8 @@ export async function getJobs(
     const paginationInfo = { from: (pagination.from + 1).toLocaleString(),
       to: pagination.to.toLocaleString(), total: pagination.total.toLocaleString(),
       currentPage: pagination.currentPage.toLocaleString(), lastPage: pagination.lastPage.toLocaleString() };
+    const selectAllBox = jobs.some((j) => !j.hasTerminalStatus()) ?
+      '<input id="select-jobs" type="checkbox" title="select/deselect all jobs" autocomplete="off">' : '';
     res.render('workflow-ui/jobs/index', {
       version,
       page,
@@ -281,6 +297,7 @@ export async function getJobs(
       currentUser: req.user,
       isAdminRoute,
       jobs,
+      selectAllBox,
       serviceNames: JSON.stringify(serviceNames),
       sortGranules: requestQuery.sortgranules,
       disallowStatusChecked: !tableQuery.allowStatuses ? 'checked' : '',
@@ -553,6 +570,52 @@ export async function getWorkItemTableRow(
       ...workItems[0],
       ...workItemRenderingFunctions(job, isAdmin, isLogViewer, req.user),
     });
+  } catch (e) {
+    req.context.logger.error(e);
+    next(e);
+  }
+}
+
+/**
+ * Render rows of the jobs table for the workflow UI.
+ *
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
+ * @param next - The next function in the call chain
+ * @returns The job rows HTML
+ */
+export async function getJobTableRows(
+  req: HarmonyRequest, res: Response, next: NextFunction,
+): Promise<void> {
+  const { jobIDs } = req.body;
+  try {
+    jobIDs.forEach((id: string) => validateJobId(id));
+    const { isAdmin } = await getEdlGroupInformation(
+      req.user, req.context.logger,
+    );
+    const requestQuery = keysToLowerCase(req.query);
+    const { tableQuery } = parseQuery(requestQuery, JobStatus, req.context.isAdminAccess);
+    const jobQuery = tableQueryToJobQuery(tableQuery, isAdmin, req.user, jobIDs);
+    const jobs = (await Job.queryAll(db, jobQuery, false, 0, jobIDs.length)).data;
+    const resJson = {};
+    for (const job of jobs) {
+      const context = {
+        ...job,
+        ...jobRenderingFunctions(req.context.logger, requestQuery, true),
+        isAdminRoute: req.context.isAdminAccess,
+        hasTerminalStatus: job.hasTerminalStatus,
+        message: job.message,
+      };
+      const renderedHtml = await new Promise<string>((resolve, reject) => req.app.render(
+        'workflow-ui/jobs/job-table-row', context, (err, html) => {
+          if (err) {
+            reject('Could not get job rows');
+          }
+          resolve(html);
+        }));
+      resJson[job.jobID] = renderedHtml;
+    }
+    res.send(resJson);
   } catch (e) {
     req.context.logger.error(e);
     next(e);

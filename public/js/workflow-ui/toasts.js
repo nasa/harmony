@@ -10,14 +10,6 @@ const toastObj = {};
 const upperToastId = 'upper-toast';
 const lowerToastId = 'lower-toast';
 
-// bootstrap toasts need to be initialized
-window.addEventListener('load', () => {
-  for (const toastId of [upperToastId, lowerToastId]) {
-    const toastEl = document.getElementById(toastId);
-    toastObj[toastId] = new bootstrap.Toast(toastEl, { delay: 5000 });
-  }
-});
-
 /**
  * For the given toast, set its text.
  * @param {string} toastId - the id of the toast
@@ -35,6 +27,18 @@ function setToastText(toastId, text) {
  * in order to use this functionality.
  */
 export default {
+
+  /**
+   * Initialize the toasts.
+   */
+  init() {
+    window.addEventListener('load', () => {
+      for (const toastId of [upperToastId, lowerToastId]) {
+        const toastEl = document.getElementById(toastId);
+        toastObj[toastId] = new bootstrap.Toast(toastEl, { delay: 5000 });
+      }
+    });
+  },
 
   /**
    * Set the text of the upper toast and show it.
