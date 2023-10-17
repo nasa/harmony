@@ -236,7 +236,8 @@ describe('Workflow UI jobs route', function () {
       it('returns a disabled link to the first page', function () {
         const listing = this.res.text;
         expect(listing).to.contain(renderNavLink('', 'first', false));
-      });it('returns a link to the last page', function () {
+      });
+      it('returns a link to the last page', function () {
         const listing = this.res.text;
         expect(listing).to.contain(renderNavLink('/workflow-ui?limit=1&page=3', 'last'));
       });
@@ -283,13 +284,13 @@ describe('Workflow UI jobs route', function () {
         expect(listing).to.contain(renderNavLink('/workflow-ui?limit=1&page=1', 'previous'));
         expect(listing).to.contain(renderNavLink('/workflow-ui?limit=1&page=3', 'next'));
       });
-      it('returns a disabled link to the first page', function () {
+      it('returns a link to the first page', function () {
         const listing = this.res.text;
-        expect(listing).to.contain(renderNavLink('', 'first', false));
+        expect(listing).to.contain(renderNavLink('/workflow-ui?limit=1&page=1', 'first', true));
       });
-      it('returns a disabled link to the last page', function () {
+      it('returns a link to the last page', function () {
         const listing = this.res.text;
-        expect(listing).to.contain(renderNavLink('', 'last', false));
+        expect(listing).to.contain(renderNavLink('/workflow-ui?limit=1&page=3', 'last', true));
       });
       it('returns only one job', function () {
         const listing = this.res.text;
