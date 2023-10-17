@@ -1,4 +1,4 @@
-## Monitoring Jobs with the Jobs API and the Workflow-UI
+### <a name="jobs-details"></a>  Monitoring Jobs with the Jobs API and the Workflow-UI
 
 Jobs can be monitored using the `jobs` API as well as with the [Workflow-UI](/workflow-ui) web application.
 
