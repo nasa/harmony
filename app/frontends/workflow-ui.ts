@@ -279,7 +279,7 @@ export async function getJobs(
     const { page, limit } = getPagingParams(req, env.defaultJobListPageSize, true);
     const { data: jobs, pagination } = await Job.queryAll(db, jobQuery, false, page, limit);
     setPagingHeaders(res, pagination);
-    const pageLinks = getPagingLinks(req, pagination);
+    const pageLinks = getPagingLinks(req, pagination, true);
     const firstPage = pageLinks.find((l) => l.rel === 'first');
     const lastPage = pageLinks.find((l) => l.rel === 'last');
     const nextPage = pageLinks.find((l) => l.rel === 'next');
@@ -501,7 +501,7 @@ export async function getWorkItemsTable(
     const { tableQuery } = parseQuery(requestQuery, WorkItemStatus);
     const itemQuery = tableQueryToWorkItemQuery(tableQuery, jobID);
     const { workItems, pagination } = await queryAll(db, itemQuery, page, limit);
-    const pageLinks = getPagingLinks(req, pagination);
+    const pageLinks = getPagingLinks(req, pagination, true);
     const firstPage = pageLinks.find((l) => l.rel === 'first');
     const lastPage = pageLinks.find((l) => l.rel === 'last');
     const nextPage = pageLinks.find((l) => l.rel === 'next');
@@ -618,7 +618,7 @@ export async function getJobTableRows(
     delete jobQuery.whereIn.jobID;
     const { page, limit } = getPagingParams(req, env.defaultJobListPageSize, true);
     const { pagination } = (await Job.queryAll(db, jobQuery, false, page, limit));
-    const pageLinks = getPagingLinks(req, pagination);
+    const pageLinks = getPagingLinks(req, pagination, true);
     const firstPage = pageLinks.find((l) => l.rel === 'first');
     const lastPage = pageLinks.find((l) => l.rel === 'last');
     const nextPage = pageLinks.find((l) => l.rel === 'next');

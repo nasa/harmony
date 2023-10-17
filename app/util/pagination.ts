@@ -111,17 +111,19 @@ function getPagingLink(
  * Returns a list of links for paginating a response
  * @param req - the Express request to generate links relative to
  * @param pagination - the pagination information as returned by, e.g. knex-paginate
+ * @param includeExtraneous - include first and last links even when first and last are the
+ * previous and next pages respectively
  * @returns the links to paginate
  */
-export function getPagingLinks(req: Request, pagination: ILengthAwarePagination): Link[] {
+export function getPagingLinks(req: Request, pagination: ILengthAwarePagination, includeExtraneous = false): Link[] {
   const result = [];
   const { currentPage, lastPage, perPage } = pagination;
   // const { currentPage, lastPage, perPage } = pagination as unknown as { lastPage: number; perPage; number; currentPage: number; total: number; };
-  if (perPage > 0 && currentPage > 1) result.push(getPagingLink(req, pagination, 1, 'first'));
+  if (perPage > 0 && currentPage > (includeExtraneous ? 1 : 2)) result.push(getPagingLink(req, pagination, 1, 'first'));
   if (perPage > 0 && currentPage > 1) result.push(getPagingLink(req, pagination, currentPage - 1, 'prev', 'previous'));
   result.push(getPagingLink(req, pagination, currentPage, 'self', 'current'));
   if (perPage > 0 && currentPage < lastPage) result.push(getPagingLink(req, pagination, currentPage + 1, 'next'));
-  if (perPage > 0 && currentPage < lastPage) result.push(getPagingLink(req, pagination, lastPage, 'last'));
+  if (perPage > 0 && currentPage < (includeExtraneous ? lastPage : lastPage - 1)) result.push(getPagingLink(req, pagination, lastPage, 'last'));
   return result;
 }
 
