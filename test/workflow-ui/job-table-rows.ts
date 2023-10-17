@@ -15,6 +15,8 @@ const boJob2 = buildJob({ status: JobStatus.SUCCESSFUL, username: 'bo', service_
 const adamJob1 = buildJob({ status: JobStatus.RUNNING, username: 'adam' });
 const woodyJob1 = buildJob({ status: JobStatus.RUNNING, username: 'woody' });
 
+const totalJobsCount = [boJob1, boJob2, adamJob1, woodyJob1].length;
+
 describe('Workflow UI job table rows route', function () {
   hookServersStartStop({ skipEarthdataLogin: false });
 
@@ -62,6 +64,30 @@ describe('Workflow UI job table rows route', function () {
       expect(response.rows[boJob2.jobID]).contains(`<tr id="job-${boJob2.jobID}" class='job-table-row'>`);
       expect(Object.keys(response.rows).length).to.eq(1);
     });
+    it('returns updated (disabled) paging links', function () {
+      const response = JSON.parse(this.res.text);
+      expect(response.nav.replace(/\s/g, '')).to.eq(
+        `<nav id="page-nav" aria-label="Page navigation" class="bg-white d-flex flex-column align-items-center py-2 sticky-paging">
+          <ul class="pagination px-0 mx-auto mb-1">
+              <li class="page-item disabled">
+                  <a class="page-link" href="" title="first">first</a>
+              </li>
+              <li class="page-item disabled">
+                  <a class="page-link" href="" title="previous">previous</a>
+              </li>
+              <li class="page-item disabled">
+                  <a class="page-link" href="" title="next">next</a>
+              </li>
+              <li class="page-item disabled">
+                  <a class="page-link" href="" title="last">last</a>
+              </li>
+          </ul>
+          <small class="text-muted">
+              1-1 of 1 (page 1 of 1)
+          </small>
+        </nav>`.replace(/\s/g, ''),
+      );
+    });
   });
 
   describe('an admin using a user filter with the non-admin route', function () {
@@ -82,15 +108,55 @@ describe('Workflow UI job table rows route', function () {
       expect(response.rows[woodyJob1.jobID]).eq(undefined);
       expect(Object.keys(response.rows).length).to.eq(0);
     });
+    it('returns updated paging links that reflect the impact of the user filter', function () {
+      // the filter should filter out woody's job
+      const response = JSON.parse(this.res.text);
+      expect(response.nav).to.contain(`1-${totalJobsCount - 1} of ${totalJobsCount - 1} (page 1 of 1)`);
+    });
   });
 
   describe('a user whose request includes someone else\'s job (but is an admin)', function () {
-    hookWorkflowUIJobRows({ username: 'adam', jobIDs: [boJob1.jobID, adamJob1.jobID] });
-    it('returns the other user\'s job rows in addition to their own', async function () {
-      const response = JSON.parse(this.res.text);
-      expect(response.rows[adamJob1.jobID]).contains(`<tr id="job-${adamJob1.jobID}" class='job-table-row'>`);
-      expect(response.rows[boJob1.jobID]).contains(`<tr id="job-${boJob1.jobID}" class='job-table-row'>`);
-      expect(Object.keys(response.rows).length).to.eq(2);
+    describe('with one page', function () {
+      hookWorkflowUIJobRows({ username: 'adam', jobIDs: [boJob1.jobID, adamJob1.jobID], query: { page: 1, limit: 10 } });
+      it('returns the other user\'s job rows in addition to their own', async function () {
+        const response = JSON.parse(this.res.text);
+        expect(response.rows[adamJob1.jobID]).contains(`<tr id="job-${adamJob1.jobID}" class='job-table-row'>`);
+        expect(response.rows[boJob1.jobID]).contains(`<tr id="job-${boJob1.jobID}" class='job-table-row'>`);
+        expect(Object.keys(response.rows).length).to.eq(2);
+      });
+    });
+    describe('with two pages', function () {
+      it('returns the other user\'s job rows in addition to their own', async function () {
+        const response = JSON.parse(this.res.text);
+        expect(response.rows[adamJob1.jobID]).contains(`<tr id="job-${adamJob1.jobID}" class='job-table-row'>`);
+        expect(response.rows[boJob1.jobID]).contains(`<tr id="job-${boJob1.jobID}" class='job-table-row'>`);
+        expect(Object.keys(response.rows).length).to.eq(2);
+      });
+      hookWorkflowUIJobRows({ username: 'adam', jobIDs: [boJob1.jobID, adamJob1.jobID], query: { page: 1, limit: 1 } });
+      it('returns updated paging links, with a link to the last and next page', function () {
+        const response = JSON.parse(this.res.text);
+        expect(response.nav.replace(/\s/g, '')).to.eq(
+          `<nav id="page-nav" aria-label="Page navigation" class="bg-white d-flex flex-column align-items-center py-2 sticky-paging">
+            <ul class="pagination px-0 mx-auto mb-1">
+                <li class="page-item disabled">
+                    <a class="page-link" href="" title="first">first</a>
+                </li>
+                <li class="page-item disabled">
+                    <a class="page-link" href="" title="previous">previous</a>
+                </li>
+                <li class="page-item ">
+                    <a class="page-link" href="http:&#x2F;&#x2F;127.0.0.1:4000&#x2F;workflow-ui&#x2F;jobs?page&#x3D;2&amp;limit&#x3D;1" title="next">next</a>
+                </li>
+                <li class="page-item ">
+                    <a class="page-link" href="http:&#x2F;&#x2F;127.0.0.1:4000&#x2F;workflow-ui&#x2F;jobs?page&#x3D;4&amp;limit&#x3D;1" title="last">last</a>
+                </li>
+            </ul>
+            <small class="text-muted">
+                1-1 of ${totalJobsCount} (page 1 of ${totalJobsCount})
+            </small>
+          </nav>`.replace(/\s/g, ''),
+        );
+      });
     });
   });
 

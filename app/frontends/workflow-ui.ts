@@ -633,6 +633,8 @@ export async function getJobTableRows(
         { ...nextPage, linkTitle: 'next' },
         { ...lastPage, linkTitle: 'last' },
       ],
+      linkDisabled(): string { return (this.href ? '' : 'disabled'); },
+      linkHref(): string { return (this.href || ''); },
       paginationInfo,
     };
     const nav = await new Promise<string>((resolve, reject) => req.app.render(
