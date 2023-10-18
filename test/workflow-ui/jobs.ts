@@ -149,6 +149,10 @@ describe('Workflow UI jobs route', function () {
       it('returns an empty jobs table', function () {
         expect(this.res.text).to.not.contain('job-table-row');
       });
+
+      it('contains the right paging info', function () {
+        expect(this.res.text).to.contain('0-0 of 0 (page 1 of 1)');
+      });
     });
 
     describe('who has jobs', function () {

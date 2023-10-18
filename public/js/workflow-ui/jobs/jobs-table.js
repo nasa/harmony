@@ -189,7 +189,7 @@ function initSelectAllHandler() {
 async function loadRows(params) {
   let tableUrl = './workflow-ui/jobs';
   tableUrl += `?tableFilter=${encodeURIComponent(params.tableFilter)}`
-  + `page=${params.page}&limit=${params.limit}`
+  + `&page=${params.page}&limit=${params.limit}`
   + `&fromDateTime=${encodeURIComponent(params.fromDateTime)}&toDateTime=${encodeURIComponent(params.toDateTime)}`
   + `&tzOffsetMinutes=${params.tzOffsetMinutes}&dateKind=${params.dateKind}`
   + `&disallowStatus=${params.disallowStatus}`
@@ -200,26 +200,19 @@ async function loadRows(params) {
   const res = await fetch(tableUrl, {
     method: 'POST',
     headers: {
-      Accept: 'application/json',
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ jobIDs }),
   });
   if (res.status === 200) {
-    // loop through json map of html rows (job id => row)
-    const jsonRes = await res.json();
-    const rowsJson = jsonRes.rows;
-    for (const jobID of jobIDs) {
-      const rowHtml = rowsJson[jobID] || '<span></span>';
-      const tmp = document.createElement('tbody');
-      tmp.innerHTML = rowHtml;
-      document.getElementById(`copy-${jobID}`).remove();
-      document.getElementById(`job-${jobID}`).replaceWith(...tmp.childNodes); // add only the <tr>...</tr>
-      initSelectHandler(`tr[id="job-${jobID}"] .select-job`);
-      initCopyHandler(`th[id="copy-${jobID}"] .copy-request`);
-      formatDates(`tr[id="job-${jobID}"] .date-td`);
-    }
-    document.getElementById('page-nav').replaceWith(jsonRes.nav);
+    document.getElementById('page-nav').remove();
+    const htmlRes = await res.text();
+    const tmp = document.createElement('div');
+    tmp.innerHTML = htmlRes;
+    document.getElementById('workflow-ui-jobs-table').replaceWith(...tmp.childNodes);
+    initSelectHandler('.select-job');
+    initCopyHandler('.copy-request');
+    formatDates('.date-td');
     refreshSelected();
     if (!document.querySelectorAll('.select-job').length) {
       document.getElementById('select-jobs').remove();

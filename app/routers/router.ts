@@ -13,7 +13,7 @@ import earthdataLoginOauthAuthorizer from '../middleware/earthdata-login-oauth-a
 import admin from '../middleware/admin';
 import wmsFrontend from '../frontends/wms';
 import { getJobsListing, getJobStatus, cancelJob, resumeJob, pauseJob, skipJobPreview, skipJobsPreview, cancelJobs, resumeJobs, pauseJobs } from '../frontends/jobs';
-import { getJobs, getJob, getWorkItemsTable, getJobLinks, getWorkItemLogs, retry, getWorkItemTableRow, redirectWithoutTrailingSlash, getJobTableRows } from '../frontends/workflow-ui';
+import { getJobs, getJob, getWorkItemsTable, getJobLinks, getWorkItemLogs, retry, getWorkItemTableRow, redirectWithoutTrailingSlash, getJobsTable } from '../frontends/workflow-ui';
 import { getStacCatalog, getStacItem } from '../frontends/stac';
 import { getServiceResult } from '../frontends/service-results';
 import cmrGranuleLocator from '../middleware/cmr-granule-locator';
@@ -251,14 +251,14 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   result.get('/workflow-ui/:jobID/work-items/:id', asyncHandler(getWorkItemTableRow));
   result.get('/workflow-ui/:jobID/links', asyncHandler(getJobLinks));
   result.post('/workflow-ui/:jobID/:id/retry', asyncHandler(retry));
-  result.post('/workflow-ui/jobs', jsonParser, asyncHandler(getJobTableRows));
+  result.post('/workflow-ui/jobs', jsonParser, asyncHandler(getJobsTable));
 
   result.get('/admin/workflow-ui', asyncHandler(getJobs));
   result.get('/admin/workflow-ui/:jobID', asyncHandler(getJob));
   result.get('/admin/workflow-ui/:jobID/work-items', asyncHandler(getWorkItemsTable));
   result.get('/admin/workflow-ui/:jobID/work-items/:id', asyncHandler(getWorkItemTableRow));
   result.get('/admin/workflow-ui/:jobID/links', asyncHandler(getJobLinks));
-  result.post('/admin/workflow-ui/jobs', jsonParser, asyncHandler(getJobTableRows));
+  result.post('/admin/workflow-ui/jobs', jsonParser, asyncHandler(getJobsTable));
 
   result.get('/logs/:jobID/:id', asyncHandler(getWorkItemLogs));
 

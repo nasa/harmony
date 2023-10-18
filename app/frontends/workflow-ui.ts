@@ -1,6 +1,6 @@
 import { Response, NextFunction } from 'express';
 import { sanitizeImage, truncateString } from '@harmony/util/string';
-import { getJobIfAllowed, validateJobId } from '../util/job';
+import { getJobIfAllowed } from '../util/job';
 import { Job, JobStatus, JobQuery, TEXT_LIMIT } from '../models/job';
 import { getWorkItemById, queryAll } from '../models/work-item';
 import { ForbiddenError, NotFoundError, RequestValidationError } from '../util/errors';
@@ -20,6 +20,7 @@ import { serviceNames } from '../models/services';
 import { getEdlGroupInformation, isAdminUser } from '../util/edl-api';
 import { queueWorkItemUpdate } from '../backends/workflow-orchestration/workflow-orchestration';
 import { WorkItemQueueType } from '../util/queue/queue';
+import { ILengthAwarePagination, IPagination } from 'knex-paginate';
 
 // Default to retrieving this number of work items per page
 const defaultWorkItemPageSize = 100;
@@ -127,6 +128,22 @@ function parseQuery( /* eslint-disable @typescript-eslint/no-explicit-any */
 }
 
 /**
+ * Convert pagination object returned from the DB into an object
+ * that has similar properties, but formatted for display.
+ * @param pagination - pagination object returned from the DB
+ * @returns pagination info for display
+ */
+function getPaginationDisplay(pagination: ILengthAwarePagination): { from: string, to: string, currentPage: string, lastPage: string } {
+  const zeroItems = pagination.total == 0;
+  const paginationDisplay = {
+    from: zeroItems ? '0' : (pagination.from + 1).toLocaleString(),
+    to: pagination.to.toLocaleString(), total: pagination.total.toLocaleString(),
+    currentPage: pagination.currentPage.toLocaleString(), lastPage: zeroItems ? '1' : pagination.lastPage.toLocaleString(),
+  };
+  return paginationDisplay;
+}
+
+/**
  * Returns an object with all of the functions necessary for rendering
  * a row of the jobs table.
  * @param logger - the logger to use
@@ -134,7 +151,7 @@ function parseQuery( /* eslint-disable @typescript-eslint/no-explicit-any */
  * @param checked - whether the job should be selected
  * @returns an object with rendering functions
  */
-function jobRenderingFunctions(logger: Logger, requestQuery: Record<string, any>, checked?: boolean): object {
+function jobRenderingFunctions(logger: Logger, requestQuery: Record<string, any>, jobIDs: string[] = []): object {
   return {
     jobBadge(): string {
       return statusClass[this.status];
@@ -176,10 +193,11 @@ function jobRenderingFunctions(logger: Logger, requestQuery: Record<string, any>
       }
     },
     jobSelectBox(): string {
+      const checked = jobIDs.indexOf(this.jobID) > -1 ? 'checked' : '';
       if (this.hasTerminalStatus()) {
         return '';
       }
-      return `<input class="select-job" type="checkbox" data-id="${this.jobID}" data-status="${this.status}" autocomplete="off" ${checked ? 'checked' : ''}></input>`;
+      return `<input id="select-${this.jobID}" class="select-job" type="checkbox" data-id="${this.jobID}" data-status="${this.status}" autocomplete="off" ${checked}></input>`;
     },
     sortGranulesLinks(): string {
       // return links that lets the user apply or unapply an asc or desc sort
@@ -284,16 +302,14 @@ export async function getJobs(
     const lastPage = pageLinks.find((l) => l.rel === 'last');
     const nextPage = pageLinks.find((l) => l.rel === 'next');
     const previousPage = pageLinks.find((l) => l.rel === 'prev');
-    const paginationInfo = { from: (pagination.from + 1).toLocaleString(),
-      to: pagination.to.toLocaleString(), total: pagination.total.toLocaleString(),
-      currentPage: pagination.currentPage.toLocaleString(), lastPage: pagination.lastPage.toLocaleString() };
+    const paginationDisplay = getPaginationDisplay(pagination);
     const selectAllBox = jobs.some((j) => !j.hasTerminalStatus()) ?
       '<input id="select-jobs" type="checkbox" title="select/deselect all jobs" autocomplete="off">' : '';
     res.render('workflow-ui/jobs/index', {
       version,
       page,
       limit,
-      paginationInfo, // formatted for display
+      paginationDisplay,
       currentUser: req.user,
       isAdminRoute,
       jobs,
@@ -506,14 +522,12 @@ export async function getWorkItemsTable(
     const lastPage = pageLinks.find((l) => l.rel === 'last');
     const nextPage = pageLinks.find((l) => l.rel === 'next');
     const previousPage = pageLinks.find((l) => l.rel === 'prev');
-    const paginationInfo = { from: (pagination.from + 1).toLocaleString(),
-      to: pagination.to.toLocaleString(), total: pagination.total.toLocaleString(),
-      currentPage: pagination.currentPage.toLocaleString(), lastPage: pagination.lastPage.toLocaleString() };
+    const paginationDisplay = getPaginationDisplay(pagination);
     setPagingHeaders(res, pagination);
     res.render('workflow-ui/job/work-items-table', {
       isAdminOrLogViewer,
       canShowRetryColumn: job.belongsToOrIsAdmin(req.user, isAdmin),
-      paginationInfo,
+      paginationDisplay,
       job,
       statusClass: statusClass[job.status],
       workItems,
@@ -577,56 +591,51 @@ export async function getWorkItemTableRow(
 }
 
 /**
- * Render rows of the jobs table for the workflow UI.
+ * Render the jobs table for the workflow UI.
  *
  * @param req - The request sent by the client
  * @param res - The response to send to the client
  * @param next - The next function in the call chain
  * @returns The job rows HTML
  */
-export async function getJobTableRows(
+export async function getJobsTable(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
-  const { jobIDs } = req.body;
   try {
-    jobIDs.forEach((id: string) => validateJobId(id));
+    const { jobIDs } = req.body;
     const { isAdmin } = await getEdlGroupInformation(
       req.user, req.context.logger,
     );
     const requestQuery = keysToLowerCase(req.query);
     const { tableQuery } = parseQuery(requestQuery, JobStatus, req.context.isAdminAccess);
-    const jobQuery = tableQueryToJobQuery(tableQuery, isAdmin, req.user, jobIDs);
-    const jobs = (await Job.queryAll(db, jobQuery, false, 0, jobIDs.length)).data;
-    const rows = {};
-    for (const job of jobs) {
-      const context = {
-        ...job,
-        ...jobRenderingFunctions(req.context.logger, requestQuery, true),
-        isAdminRoute: req.context.isAdminAccess,
-        hasTerminalStatus: job.hasTerminalStatus,
-        message: job.message,
-      };
-      const renderedHtml = await new Promise<string>((resolve, reject) => req.app.render(
-        'workflow-ui/jobs/job-table-row', context, (err, html) => {
-          if (err) {
-            reject('Could not get job rows HTML');
-          }
-          resolve(html);
-        }));
-      rows[job.jobID] = renderedHtml;
-    }
-    delete jobQuery.whereIn.jobID;
+    const jobQuery = tableQueryToJobQuery(tableQuery, isAdmin, req.user);
     const { page, limit } = getPagingParams(req, env.defaultJobListPageSize, true);
-    const { pagination } = (await Job.queryAll(db, jobQuery, false, page, limit));
+    const jobsRes = await Job.queryAll(db, jobQuery, false, page, limit);
+    const jobs = jobsRes.data;
+    const { pagination } = jobsRes;
+    const selectAllChecked = jobs.every((j) => jobIDs.indexOf(j.jobID) > -1) ? 'checked' : '';
+    const selectAllBox = jobs.some((j) => !j.hasTerminalStatus()) ?
+      `<input id="select-jobs" type="checkbox" title="select/deselect all jobs" autocomplete="off" ${selectAllChecked}>` : '';
+    const tableContext = {
+      jobs,
+      selectAllBox,
+      ...jobRenderingFunctions(req.context.logger, requestQuery, jobIDs),
+      isAdminRoute: req.context.isAdminAccess,
+    };
+    const tableHtml = await new Promise<string>((resolve, reject) => req.app.render(
+      'workflow-ui/jobs/jobs-table', tableContext, (err, html) => {
+        if (err) {
+          reject('Could not get job rows HTML');
+        }
+        resolve(html);
+      }));
     const pageLinks = getPagingLinks(req, pagination, true);
     const firstPage = pageLinks.find((l) => l.rel === 'first');
     const lastPage = pageLinks.find((l) => l.rel === 'last');
     const nextPage = pageLinks.find((l) => l.rel === 'next');
     const previousPage = pageLinks.find((l) => l.rel === 'prev');
-    const paginationInfo = { from: (pagination.from + 1).toLocaleString(),
-      to: pagination.to.toLocaleString(), total: pagination.total.toLocaleString(),
-      currentPage: pagination.currentPage.toLocaleString(), lastPage: pagination.lastPage.toLocaleString() };
-    const context = {
+    const paginationDisplay = getPaginationDisplay(pagination);
+    const pagingContext = {
       links: [
         { ...firstPage, linkTitle: 'first' },
         { ...previousPage, linkTitle: 'previous' },
@@ -635,16 +644,16 @@ export async function getJobTableRows(
       ],
       linkDisabled(): string { return (this.href ? '' : 'disabled'); },
       linkHref(): string { return (this.href || ''); },
-      paginationInfo,
+      paginationDisplay,
     };
-    const nav = await new Promise<string>((resolve, reject) => req.app.render(
-      'workflow-ui/paging', context, (err, html) => {
+    const pagingHtml = await new Promise<string>((resolve, reject) => req.app.render(
+      'workflow-ui/paging', pagingContext, (err, html) => {
         if (err) {
           reject('Could not get pagination HTML');
         }
         resolve(html);
       }));
-    res.send({ rows, nav });
+    res.send(tableHtml + pagingHtml);
   } catch (e) {
     req.context.logger.error(e);
     next(e);
