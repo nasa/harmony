@@ -14,9 +14,10 @@ build() {
 link_env() {
     pushd "$1"
     mkdir -p built/packages/util
+    mkdir -p built/services/harmony
     cp -r  ../../packages/util/built/* built/packages/util
     cp ../../packages/util/env-defaults built/packages/util
-    cp ../harmony/env-defaults built
+    cp ../harmony/env-defaults built/services/harmony
     popd
 }
 
@@ -28,9 +29,7 @@ build "packages/util"
 
 for subdir in services/*; do
     if [[ -d "${subdir}" ]]; then
-            if [[ "${subdir}" != "services/harmony" ]]; then
-                link_env "${subdir}"
-            fi
+        link_env "${subdir}"
         build "${subdir}"
     fi
 done
