@@ -27,8 +27,10 @@ npm ci
 build "packages/util"
 
 for subdir in services/*; do
-    if [[ -d "${subdir}" && "${subdir}" != "services/harmony" ]]; then
-        link_env "${subdir}"
+    if [[ -d "${subdir}" ]]; then
+            if [[ "${subdir}" != "services/harmony" ]]; then
+                link_env "${subdir}"
+            fi
         build "${subdir}"
     fi
 done
