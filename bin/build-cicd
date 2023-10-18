@@ -3,6 +3,7 @@
 # build services - only to be used in CICD
 
 build() {
+     echo "BUILDING $1"
      pushd "$1"
      npm ci
      npx tsc --project ./tsconfig.build.json 
@@ -26,7 +27,7 @@ npm ci
 build "packages/util"
 
 for subdir in services/*; do
-    if [[ -d "${subdir}" && "${subdir} != "harmony" ]]; then
+    if [[ -d "${subdir}" && "${subdir}" != "services/harmony" ]]; then
         link_env "${subdir}"
         build "${subdir}"
     fi
