@@ -52,6 +52,8 @@ let pullCounter = 0;
 // how many pulls to execute before logging - used to keep log message count reasonable
 const pullLogPeriod = 10;
 
+// this debug statement works around a test failure in Bamboo
+console.log(`NODE_ENV = ${process.env.NODE_ENV}`);
 // retry twice for tests and 1200 (2 minutes) for real
 const maxPrimeRetries = process.env.NODE_ENV === 'test' ? 2 : 1_200;
 
