@@ -1,8 +1,7 @@
 {
   "packages": [
-    "lib/*",
-    "tasks/*",
-    "kubernetes-services/*"
+    "packages/*",
+    "services/*"
   ],
   "scripts": {
     "better-audit": "better-npm-audit audit"

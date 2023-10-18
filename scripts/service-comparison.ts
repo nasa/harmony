@@ -5,9 +5,9 @@
  */
 
 import { exit } from 'process';
-import { loadServiceConfigs } from '../app/models/services';
-import { CmrUmmService, cmrApiConfig, getServicesByIds } from '../app/util/cmr';
-import { ServiceConfig } from '../app/models/services/base-service';
+import { loadServiceConfigs } from '../services/harmony/app/models/services';
+import { CmrUmmService, cmrApiConfig, getServicesByIds } from '../services/harmony/app/util/cmr';
+import { ServiceConfig } from '../services/harmony/app/models/services/base-service';
 
 /**
  * Validates spatial subsetting configuration matches
