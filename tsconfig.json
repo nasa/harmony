@@ -4,17 +4,15 @@
     "resolveJsonModule": true,
   },
   "include": [
-    "./app/**/*",
-    "./test/**/*",
-    "./tasks/**/app/**/*",
-    "./tasks/**/test/**/*",
-    "./kubernetes-services/**/app/**/*",
-    "./kubernetes-services/**/test/**/*",
+    "./services/**/app/**/*",
+    "./services/**/test/**/*",
     "scripts/*",
-    "./lib/**/*"
+    "./packages/**/*",
+    "./packages/**/test/**/*",
+    "./example/**/*"
   ],
   "exclude": [
-    "./tasks/**/built/**/*",
-    "./kubernetes-services/**/built/**/*"
+    "./services/**/built/**/*",
+    "./packages/**/built/**/*"
   ]
 }

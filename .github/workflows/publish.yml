@@ -40,7 +40,7 @@ jobs:
           # build and publish harmony
           VERSION="${VERSION}" npm run build
           VERSION="${VERSION}" npm run publish
-          # build and publish images for all tasks
+          # build and publish images for all services
           VERSION="${VERSION}" lerna run build
           VERSION="${VERSION}" lerna run publish
 
