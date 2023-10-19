@@ -238,6 +238,10 @@ const jobsTable = {
    * services - service names from services.yml
    * isAdminRoute - whether the current page is /admin/...
    * tableFilter - initial tags that will populate the input
+   * fromDateTime - date time string that constrains by date
+   * toDateTime - date time string that constrains by date
+   * tzOffsetMinutes - offset from UTC
+   * dateKind - updatedAt or createdAt
    */
   async init(params) {
     PubSub.subscribe(
