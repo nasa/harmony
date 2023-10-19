@@ -2,7 +2,8 @@
 
 env_save=$(export -p)
 set -a
-source "env-defaults"
+source "packages/util/env-defaults"
+source "services/harmony/env-defaults"
 source ".env"
 set +ax
 eval "$env_save"
