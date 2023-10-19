@@ -3,7 +3,8 @@
 
 env_save=$(export -p)
 set -a
-source "env-defaults"
+source "packages/util/env-defaults"
+source "services/harmony/env-defaults"
 if [ -f ".env" ]; then
 source ".env"
 fi
