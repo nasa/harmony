@@ -215,9 +215,6 @@ async function loadRows(params) {
     initCopyHandler('.copy-request');
     formatDates('.date-td');
     refreshSelected();
-    if (!document.querySelectorAll('.select-job').length) {
-      document.getElementById('select-jobs').remove();
-    }
   }
 }
 
