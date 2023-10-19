@@ -6,7 +6,7 @@ Jobs can be monitored using the `jobs` API as well as with the [Workflow-UI](/wo
 
 ```
 
-curl -Ln -bj {{root}}/jobs
+{{root}}/jobs
 
 ```
 **Example {{exampleCounter}}** - Getting the user's list of jobs using the `jobs` API
@@ -15,7 +15,7 @@ curl -Ln -bj {{root}}/jobs
 
 ```
 
-curl -Ln -bj {{root}}/jobs/<job-id>
+{{root}}/jobs/<job-id>
 
 ```
 **Example {{exampleCounter}}** - Getting job status
@@ -24,7 +24,7 @@ curl -Ln -bj {{root}}/jobs/<job-id>
 
 ```
 
-curl -Ln -bj {{root}}/jobs/<job-id>/pause
+{{root}}/jobs/<job-id>/pause
 
 ```
 **Example {{exampleCounter}}** - Pausing a running job
@@ -33,7 +33,7 @@ curl -Ln -bj {{root}}/jobs/<job-id>/pause
 
 ```
 
-curl -Ln -bj {{root}}/jobs/<job-id>/resume
+{{root}}/jobs/<job-id>/resume
 
 ```
 **Example {{exampleCounter}}** - Resuming a paused job
@@ -42,7 +42,7 @@ curl -Ln -bj {{root}}/jobs/<job-id>/resume
 
 ```
 
-curl -Ln -bj {{root}}/jobs/<job-id>/cancel
+{{root}}/jobs/<job-id>/cancel
 
 ```
 **Example {{exampleCounter}}** - Canceling a running job
@@ -60,7 +60,7 @@ to skip the preview using the following:
 
 ```
 
-curl -Ln -bj {{root}}/jobs/<job-id>/skip-preview
+{{root}}/jobs/<job-id>/skip-preview
 
 ```
 **Example {{exampleCounter}}** - Skipping the preview on a many-granule job
