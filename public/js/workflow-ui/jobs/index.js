@@ -19,6 +19,7 @@ if (isAdminRoute) {
 ['page', 'limit', 'fromDateTime', 'toDateTime', 'tzOffsetMinutes'].forEach((name) => {
   params[name] = document.getElementsByName(name)[0].value;
 });
+params.dateKind = document.getElementById('dateKindUpdated').checked ? 'updatedAt' : 'createdAt';
 
 jobsTable.init(params);
 

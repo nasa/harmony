@@ -20,7 +20,7 @@ import { serviceNames } from '../models/services';
 import { getEdlGroupInformation, isAdminUser } from '../util/edl-api';
 import { queueWorkItemUpdate } from '../backends/workflow-orchestration/workflow-orchestration';
 import { WorkItemQueueType } from '../util/queue/queue';
-import { ILengthAwarePagination, IPagination } from 'knex-paginate';
+import { ILengthAwarePagination } from 'knex-paginate';
 
 // Default to retrieving this number of work items per page
 const defaultWorkItemPageSize = 100;
@@ -88,10 +88,10 @@ function parseQuery( /* eslint-disable @typescript-eslint/no-explicit-any */
   };
   let originalValues = '[]';
   tableQuery.sortGranules = requestQuery.sortgranules;
-  tableQuery.allowStatuses = !(requestQuery.disallowstatus === 'on');
-  tableQuery.allowServices = !(requestQuery.disallowservice === 'on');
-  tableQuery.allowUsers = !(requestQuery.disallowuser === 'on');
-  if (requestQuery.tablefilter) {
+  if (requestQuery.tablefilter && requestQuery.tablefilter.length > 0) {
+    tableQuery.allowStatuses = !(requestQuery.disallowstatus === 'on');
+    tableQuery.allowServices = !(requestQuery.disallowservice === 'on');
+    tableQuery.allowUsers = !(requestQuery.disallowuser === 'on');
     const selectedOptions: { field: string, dbValue: string, value: string }[] = JSON.parse(requestQuery.tablefilter);
     const validStatusSelections = selectedOptions
       .filter(option => option.field === 'status' && Object.values<string>(statusEnum).includes(option.dbValue));
@@ -112,7 +112,6 @@ function parseQuery( /* eslint-disable @typescript-eslint/no-explicit-any */
     tableQuery.serviceValues = serviceValues;
     tableQuery.userValues = userValues;
   }
-  tableQuery.dateKind = requestQuery.datekind || 'createdAt';
   // everything in the Workflow UI uses the browser timezone, so we need a timezone offset
   const offSetMs = parseInt(requestQuery.tzoffsetminutes || 0) * 60 * 1000;
   const utcDateTime = (yearMonthDayHoursMinutes: string): string => `${yearMonthDayHoursMinutes}:00.000Z`;
@@ -123,6 +122,9 @@ function parseQuery( /* eslint-disable @typescript-eslint/no-explicit-any */
   if (requestQuery.todatetime) {
     const dateTimeMs = Date.parse(utcDateTime(requestQuery.todatetime));
     tableQuery.to = new Date(dateTimeMs + offSetMs);
+  }
+  if (requestQuery.fromdatetime || requestQuery.todatetime) {
+    tableQuery.dateKind = requestQuery.datekind || 'createdAt';
   }
   return { tableQuery, originalValues };
 }
@@ -643,7 +645,10 @@ export async function getJobsTable(
         { ...lastPage, linkTitle: 'last' },
       ],
       linkDisabled(): string { return (this.href ? '' : 'disabled'); },
-      linkHref(): string { return (this.href || ''); },
+      linkHref(): string {
+        return (this.href ? this.href
+          .replace('/jobs', '') : '');
+      },
       paginationDisplay,
     };
     const pagingHtml = await new Promise<string>((resolve, reject) => req.app.render(
