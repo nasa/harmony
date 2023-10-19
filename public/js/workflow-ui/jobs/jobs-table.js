@@ -192,6 +192,7 @@ async function loadRows(params) {
   + `&page=${params.page}&limit=${params.limit}`
   + `&fromDateTime=${encodeURIComponent(params.fromDateTime)}&toDateTime=${encodeURIComponent(params.toDateTime)}`
   + `&tzOffsetMinutes=${params.tzOffsetMinutes}&dateKind=${params.dateKind}`
+  + `&sortGranules=${params.sortGranules}`
   + `&disallowStatus=${params.disallowStatus}`
   + `&disallowService=${params.disallowService}`;
   if (params.disallowUser) {
@@ -242,6 +243,7 @@ const jobsTable = {
    * toDateTime - date time string that constrains by date
    * tzOffsetMinutes - offset from UTC
    * dateKind - updatedAt or createdAt
+   * sortGranules - sort the rows ascending ('asc') or descending ('desc')
    */
   async init(params) {
     PubSub.subscribe(

@@ -20,6 +20,7 @@ if (isAdminRoute) {
   params[name] = document.getElementsByName(name)[0].value;
 });
 params.dateKind = document.getElementById('dateKindUpdated').checked ? 'updatedAt' : 'createdAt';
+params.sortGranules = document.getElementById('sort-granules').value;
 
 jobsTable.init(params);
 
