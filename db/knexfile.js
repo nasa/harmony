@@ -5,7 +5,8 @@ const migrations = { directory: path.resolve(__dirname, 'migrations') };
 const sqliteConfig = {
   client: 'sqlite3',
   connection: {
-    filename: path.resolve(__dirname, 'test.sqlite3'),
+    filename: path.resolve('db', 'test.sqlite3'),
+    // filename: path.resolve(__dirname, 'test.sqlite3'),
   },
   useNullAsDefault: true,
   migrations,

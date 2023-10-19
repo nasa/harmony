@@ -280,6 +280,13 @@ The image can be deployed to DockerHub using the following commands:
 npm run publish
 ```
 
+## Building Images and Pushing them to the Sandbox ECR
+
+1. Set your AWS profile to the sandbox, e.g., `export AWS_PROFILE=harmony-sandbox`
+2. `VERSION=<some-tag> npm run build-all` (or `VERSION=<some-tag> npm run build-all-m1` if you are building
+    on a Mac M1/M2 machine).
+3. `VERSION=<some-tag> npm run push-image-all`
+
 ## Contributing to Harmony
 
 We welcome Pull Requests from developers not on the Harmony
