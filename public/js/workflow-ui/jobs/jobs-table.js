@@ -205,11 +205,10 @@ async function loadRows(params) {
     body: JSON.stringify({ jobIDs }),
   });
   if (res.status === 200) {
-    document.getElementById('page-nav').remove();
     const htmlRes = await res.text();
     const tmp = document.createElement('div');
-    tmp.innerHTML = htmlRes;
-    document.getElementById('workflow-ui-jobs-table').replaceWith(...tmp.childNodes);
+    tmp.innerHTML = `<div class="col-10" id="jobs-table-container">${htmlRes}</div>`;
+    document.getElementById('jobs-table-container').replaceWith(...tmp.childNodes);
     initSelectHandler('.select-job');
     initSelectAllHandler();
     initCopyHandler('.copy-request');
