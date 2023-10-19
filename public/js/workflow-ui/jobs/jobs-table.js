@@ -211,6 +211,7 @@ async function loadRows(params) {
     tmp.innerHTML = htmlRes;
     document.getElementById('workflow-ui-jobs-table').replaceWith(...tmp.childNodes);
     initSelectHandler('.select-job');
+    initSelectAllHandler();
     initCopyHandler('.copy-request');
     formatDates('.date-td');
     refreshSelected();
