@@ -10,6 +10,8 @@
 
 !!!include(endpoints.md)!!!
 
+!!!include(capabilities.md)!!!
+
 !!!include(jobs.md)!!!
 
 !!!include(stac.md)!!!

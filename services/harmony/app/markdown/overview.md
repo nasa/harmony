@@ -6,6 +6,8 @@ Data processed by Harmony is staged in [AWS](https://aws.com) S3 buckets owned b
 
 Data transformation requests are executed as _jobs_ in Harmony. Harmony provides the ability for users to monitor and interact with long-running jobs, both programmatically through an API and via a web-based user interface.
 
+**This document describes the APIs and endpoints Harmony provided. You can use these APIs and endpoints to directly interact with Harmony, but the recommended official way to interact with Harmony is through [Harmony-Py](https://github.com/nasa/harmony-py).**
+
 This documentation covers the following:
 
 ${toc}
