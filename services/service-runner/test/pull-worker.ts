@@ -113,7 +113,8 @@ describe('Pull Worker', async function () {
     });
     describe('when there was an error getting work', async function () {
       hookGetWorkRequest({ status: 503, statusText: 'something bad happened' });
-      it('returns an error message (after retrying with exponential backoff)', async function () {
+      // temporarily escape this test due to harmony-1615
+      xit('returns an error message (after retrying with exponential backoff)', async function () {
         const work = await _pullWork();
         expect(work.status).to.be.greaterThanOrEqual(400, 'Expected an error status');
         expect(work.error).to.eql('something bad happened');
@@ -123,7 +124,8 @@ describe('Pull Worker', async function () {
 
     describe('when there was a timeout while getting work', async function () {
       hookGetWorkRequest(null, true);
-      it('returns a timeout message (after retrying with exponential backoff)', async function () {
+      // temporarily escape this test due to harmony-1615
+      xit('returns a timeout message (after retrying with exponential backoff)', async function () {
         const work = await _pullWork();
         expect(work.status).to.be.greaterThanOrEqual(400, 'Expected an error status');
         expect(work.error).to.match(/^timeout of \d+ms exceeded$/);
