@@ -126,16 +126,16 @@ describe('Workflow UI jobs table route', function () {
                     <a class="page-link" href="" title="previous">previous</a>
                 </li>
                 <li class="page-item ">
-                    <a class="page-link" href="http:&#x2F;&#x2F;127.0.0.1:4000&#x2F;workflow-ui&#x2F;jobs?page&#x3D;2&amp;limit&#x3D;1" title="next">next</a>
+                    <a class="page-link" href="http:&#x2F;&#x2F;127.0.0.1:4000&#x2F;workflow-ui?page&#x3D;2&amp;limit&#x3D;1" title="next">next</a>
                 </li>
                 <li class="page-item ">
-                    <a class="page-link" href="http:&#x2F;&#x2F;127.0.0.1:4000&#x2F;workflow-ui&#x2F;jobs?page&#x3D;4&amp;limit&#x3D;1" title="last">last</a>
+                    <a class="page-link" href="http:&#x2F;&#x2F;127.0.0.1:4000&#x2F;workflow-ui?page&#x3D;4&amp;limit&#x3D;1" title="last">last</a>
                 </li>
             </ul>
             <small class="text-muted">
                 1-1 of ${totalJobsCount} (page 1 of ${totalJobsCount})
             </small>
-          </nav>`.replace(/\s/g, ''),
+        </nav>`.replace(/\s/g, ''),
         );
       });
     });
