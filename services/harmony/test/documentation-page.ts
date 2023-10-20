@@ -70,6 +70,10 @@ describe('Documentation page', function () {
       expect(this.res.text).to.include('<h2 id="available-services"');
     });
 
+    it('provides a section on the capabilities endpoints', function () {
+      expect(this.res.text).to.include('<h3 id="get-harmony-capabilities-for-the-provided-collection"');
+    });
+
     it('provides a section on the jobs API and the workflow-UI', function () {
       expect(this.res.text).to.include('<h3 id="monitoring-jobs-with-the-jobs-api-and-the-workflow-ui"');
     });
