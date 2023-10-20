@@ -7,8 +7,11 @@ import { buildJob } from '../helpers/jobs';
 import { hookAdminWorkflowUIJobRows, hookWorkflowUIJobRows } from '../helpers/workflow-ui';
 import * as sinon from 'sinon';
 import * as services from '../../app/models/services';
+import MockDate from 'mockdate';
+import * as mustache from 'mustache';
 
 
+MockDate.set('1/30/2000');
 // main objects used in the tests
 const boJob1 = buildJob({ status: JobStatus.FAILED, username: 'bo' });
 const boJob2 = buildJob({ status: JobStatus.SUCCESSFUL, username: 'bo', service_name: 'cog-maker' });
@@ -32,6 +35,7 @@ describe('Workflow UI jobs table route', function () {
   });
   after(function () {
     servicesStub.restore();
+    MockDate.reset();
   });
 
   describe('a user requesting SUCCESSFUL jobs', function () {
@@ -41,6 +45,25 @@ describe('Workflow UI jobs table route', function () {
       expect(response).to.not.contain(`<tr id="job-${boJob1.jobID}" class='job-table-row'>`);
       expect(response).contains(`<tr id="job-${boJob2.jobID}" class='job-table-row'>`);
       expect((response.match(/job-table-row/g) || []).length).to.eq(1);
+    });
+  });
+
+  describe('a user requesting jobs of a particular date range', function () {
+    const dateKind = 'createdAt';
+    const tzOffsetMinutes = 240;
+    const fromDateTime = '1999-10-10T10:44';
+    const toDateTime = '2023-10-20T10:45';
+    hookWorkflowUIJobRows({ username: 'bo', jobIDs: [], query: { page: 1, limit: 1,
+      dateKind, tzOffsetMinutes, fromDateTime, toDateTime } });
+    it('includes the date filters on the paging links', function () {
+      const renderedDateQuery = mustache.render('{{query}}', {
+        query : `dateKind=${dateKind}` + 
+          `&tzOffsetMinutes=${tzOffsetMinutes}` +
+          `&fromDateTime=${encodeURIComponent(fromDateTime)}` +
+          `&toDateTime=${encodeURIComponent(toDateTime)}`,
+      });
+      const response = this.res.text;
+      expect(response).contains(renderedDateQuery);
     });
   });
 
