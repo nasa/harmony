@@ -135,6 +135,10 @@ export default {
    * limit - limit on the number of work items in a page.
    * disallowStatus - whether to load the table with disallow status "on" or "off".
    * tableFilter - a list of filter objects (as a string).
+   * fromDateTime - date time string that constrains by date
+   * toDateTime - date time string that constrains by date
+   * tzOffsetMinutes - offset from UTC
+   * dateKind - updatedAt or createdAt
    */
   async init(params) {
     initFilter(params.tableFilter);
