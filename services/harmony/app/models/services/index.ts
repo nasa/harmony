@@ -87,7 +87,7 @@ export function loadServiceConfigsFromFile(cmrEndpoint: string, fileName: string
  * @returns the parsed services configuration
  */
 export function loadServiceConfigs(cmrEndpoint: string): ServiceConfig<unknown>[] {
-  return loadServiceConfigsFromFile(cmrEndpoint, '../../../config/services.yml');
+  return loadServiceConfigsFromFile(cmrEndpoint, '../../../../../config/services.yml');
 }
 
 /**
