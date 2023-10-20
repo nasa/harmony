@@ -11,7 +11,7 @@ import MockDate from 'mockdate';
 import * as mustache from 'mustache';
 
 
-MockDate.set('1/30/2000');
+
 // main objects used in the tests
 const boJob1 = buildJob({ status: JobStatus.FAILED, username: 'bo' });
 const boJob2 = buildJob({ status: JobStatus.SUCCESSFUL, username: 'bo', service_name: 'cog-maker' });
@@ -26,6 +26,7 @@ describe('Workflow UI jobs table route', function () {
   hookTransaction();
   let servicesStub: sinon.SinonStub;
   before(async function () {
+    MockDate.set('1/30/2000');
     servicesStub = sinon.stub(services, 'serviceNames').value(['cog-maker', 'netcdf-to-zarr']);
     await boJob1.save(this.trx);
     await boJob2.save(this.trx);
