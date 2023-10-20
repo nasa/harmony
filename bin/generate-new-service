@@ -78,15 +78,15 @@ else
 EOF
 fi
 
-if grep -q "^$SERVICE_NAME_UPPER" env-defaults; then
+if grep -q "^$SERVICE_NAME_UPPER" services/harmony/env-defaults; then
   echo "Service with name '$SERVICE_NAME' already set up in env-defaults. Not modifying."
 else
   if [[ -z $ORGANIZATION ]]; then
     read -p "Organization name (used in docker image name): " ORGANIZATION
   fi
   # Create the environment variables
-  echo "Adding environment variables to main env-defaults"
-  cat <<-EOF >> env-defaults
+  echo "Adding environment variables to main harmony services/harmony/env-defaults"
+  cat <<-EOF >> services/harmony/env-defaults
 ${SERVICE_NAME_UPPER}_IMAGE=$ORGANIZATION/$SERVICE_NAME:latest
 ${SERVICE_NAME_UPPER}_REQUESTS_MEMORY=128Mi
 ${SERVICE_NAME_UPPER}_LIMITS_MEMORY=512Mi
@@ -95,8 +95,8 @@ ${SERVICE_NAME_UPPER}_SERVICE_QUEUE_URLS='["$ORGANIZATION/$SERVICE_NAME:latest,h
 
 EOF
 
-  echo "Adding queue URL variable to lib/util env-defaults"
-  cat <<-EOF >> lib/util/env-defaults
+  echo "Adding queue URL variable to packages/util env-defaults"
+  cat <<-EOF >> packages/util/env-defaults
 ${SERVICE_NAME_UPPER}_SERVICE_QUEUE_URLS='["$ORGANIZATION/$SERVICE_NAME:latest,http://localstack:4566/queue/$SERVICE_NAME.fifo"]'
 
 EOF
