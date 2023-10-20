@@ -6,7 +6,7 @@ Harmony uses [STAC catalog](https://stacspec.org/en) to provide input and output
 
 ```
 
-curl -Ln -bj {{root}}/stac/<job-id>
+{{root}}/stac/<job-id>
 
 ```
 **Example {{exampleCounter}}** - Getting the STAC catalog of a single job
@@ -17,7 +17,7 @@ The `<item-index>` is the index of the STAC catalog item within the job's output
 
 ```
 
-curl -Ln -bj {{root}}/stac/<job-id>/<item-index>
+{{root}}/stac/<job-id>/<item-index>
 
 ```
 **Example {{exampleCounter}}** - Getting the STAC catalog item within a job's STAC catalog
