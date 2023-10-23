@@ -3,7 +3,7 @@ name: Publish to DockerHub
 on:
   push:
     branches:
-      - main
+      - harmony-1538-publish-fix
   release:
     types:
        - published
@@ -29,13 +29,8 @@ jobs:
           npm install
       - name: Build and publish images
         run: |
-          # For tagged versions, translate e.g. "refs/tags/v1.2.3" -> "1.2.3"
-          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
-          [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
-
-          # For the main branch, use "latest" as the version
-          [ "${VERSION}" == "main" ] && VERSION=latest
-          [ "${VERSION}" == "harmony-412" ] && VERSION=latest
+          VERSION=test-publish-update
+          
 
           # build and publish images for all services
           VERSION="${VERSION}" lerna run build
