@@ -2,6 +2,33 @@
 
 Please reach out in #harmony-service-providers (EOSDIS Slack) for additional guidance on any adaptation needs, and especially with any feedback that can help us improve.
 
+## Quick Start
+Fully setting up a service can be overwhelming for first time service providers. We now provide a script `bin/generate-new-service` to generate
+much of the scaffolding to get services ready for local integration testing with harmony quickly. The scaffolding provides the following:
+
+1. Updates to env-defaults files to add needed environment variables for running the service
+1. Updates to services.yml to fill in a new service definition to call the service
+1. Updates to local environment variables in .env to ensure the service is deployed
+1. Updates to local environment variables in .env to bypass needing to have a UMM-S record ready to go in UAT and collections associated
+1. A new directory at the same level as the harmony repo that contains:
+    1. Dockerfile defining an image that includes some common libraries used by service providers
+    1. A script to build the service image
+    1. Python wrapper code to make use of the harmony-service-library with hooks identified for places to add the custom service code
+
+### Setting up a new service
+***Prior to setting up a new service be sure to get harmony fully functional and tested with harmony-service-example by following the Quickstart
+in the main [README](../../README.md). Then come back to this section to set up the new service.***
+
+1. Run `bin/generate-new-service` and fill in values when prompted.
+2. Read the output after the script completes and follow the instructions provided in the terminal to finish setting up the service.
+
+Using the script will help to see the files that need to be changed in order to test with harmony and many of the defaults will just work.
+Once you have finished testing things out be sure to follow the steps outlined in the rest of this document to ensure the service is
+ready to be integrated into other harmony test environments.
+
+Note that the service chain that is generated in services.yml will define a service chain that queries for granules from the CMR and
+then invokes a single service image. If setting up a more complex service chain be sure to modify the entry.
+
 ## Table of Contents<!-- omit in toc -->
 - [Requirements for Harmony Services](#requirements-for-harmony-services)
   - [1. Allowing Harmony to invoke services](#1-allowing-harmony-to-invoke-services)
@@ -12,7 +39,7 @@ Please reach out in #harmony-service-providers (EOSDIS Slack) for additional gui
   - [6. Registering services in services.yml](#6-registering-services-in-servicesyml)
     - [Aggregation Steps](#aggregation-steps)
   - [7. Docker Container Images](#7-docker-container-images)
-  - [9. Recommendations for service implementations](#9-recommendations-for-service-implementations)
+  - [8. Recommendations for service implementations](#9-recommendations-for-service-implementations)
 - [Appendix A - Harmony Internals](#appendix-a---harmony-internals)
   - [Sending results to Harmony](#sending-results-to-harmony)
     - [Synchronous responses](#synchronous-responses)
