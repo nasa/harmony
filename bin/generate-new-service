@@ -47,35 +47,47 @@ else
   env SERVICE_NAME=$SERVICE_NAME ORGANIZATION=$ORGANIZATION envsubst < service-templates/build-service > "$SERVICE_DIR/build-service"
   chmod +x "$SERVICE_DIR/build-service"
 
+  # Update services.yml - put the service at the top of the UAT configuration section so that it is matched first for testing
+  awk -v SERVICE_NAME="$SERVICE_NAME" \
+    -v ORGANIZATION="$ORGANIZATION" \
+    -v CONCATENATION="$CONCATENATION" \
+    -v BBOX_SUBSETTING="$BBOX_SUBSETTING" \
+    -v VARIABLE_SUBSETTING="$VARIABLE_SUBSETTING" \
+    -v TEMPORAL_SUBSETTING="$TEMPORAL_SUBSETTING" \
+    -v REPROJECTION="$REPROJECTION" \
+    -v SERVICE_NAME_UPPER="$SERVICE_NAME_UPPER" \
+    -v QUERY_CMR_IMAGE="$QUERY_CMR_IMAGE" \
+'{
+    print;
+    if ($0 == "https://cmr.uat.earthdata.nasa.gov:") {
+        print "";
+        print "  - name: " SERVICE_NAME;
+        print "    description: |";
+        print "      TODO - fill in description";
+        print "    data_operation_version: '\''0.18.0'\''";
+        print "    type:";
+        print "      <<: *default-turbo-config";
+        print "      params:";
+        print "        <<: *default-turbo-params";
+        print "        env:";
+        print "          <<: *default-turbo-env";
+        print "          STAGING_PATH: public/" ORGANIZATION "/" SERVICE_NAME;
+        print "    umm_s: []";
+        print "    capabilities:";
+        print "      concatenation: " CONCATENATION;
+        print "      subsetting:";
+        print "        bbox: " BBOX_SUBSETTING;
+        print "        variable: " VARIABLE_SUBSETTING;
+        print "        temporal: " TEMPORAL_SUBSETTING;
+        print "      output_formats:";
+        print "        - application/netcdf4";
+        print "      reprojection: " REPROJECTION;
+        print "    steps:";
+        print "      - image: !Env ${QUERY_CMR_IMAGE}";
+        print "      - image: !Env ${" SERVICE_NAME_UPPER "_IMAGE}";
+    }
+}' config/services.yml > config/services.tmp.yml && mv config/services.tmp.yml config/services.yml
 
-  # Append to config/services.yml
-  cat <<-EOF >> config/services.yml
-
-  - name: $SERVICE_NAME
-    description: |
-      TODO - fill in description
-    data_operation_version: '0.18.0'
-    type:
-      <<: *default-turbo-config
-      params:
-        <<: *default-turbo-params
-        env:
-          <<: *default-turbo-env
-          STAGING_PATH: public/$ORGANIZATION/$SERVICE_NAME
-    umm_s: []
-    capabilities:
-      concatenation: $CONCATENATION
-      subsetting:
-        bbox: $BBOX_SUBSETTING
-        variable: $VARIABLE_SUBSETTING
-        temporal: $TEMPORAL_SUBSETTING
-      output_formats:
-        - application/netcdf4
-      reprojection: $REPROJECTION
-    steps:
-      - image: !Env \${QUERY_CMR_IMAGE}
-      - image: !Env \${${SERVICE_NAME_UPPER}_IMAGE}
-EOF
 fi
 
 if grep -q "^$SERVICE_NAME_UPPER" services/harmony/env-defaults; then
