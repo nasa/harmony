@@ -189,6 +189,10 @@ function initSelectAllHandler() {
 async function loadRows(params) {
   let tableUrl = './workflow-ui/jobs';
   tableUrl += `?tableFilter=${encodeURIComponent(params.tableFilter)}`
+  + `&page=${params.page}&limit=${params.limit}`
+  + `&fromDateTime=${encodeURIComponent(params.fromDateTime)}&toDateTime=${encodeURIComponent(params.toDateTime)}`
+  + `&tzOffsetMinutes=${params.tzOffsetMinutes}&dateKind=${params.dateKind}`
+  + `&sortGranules=${params.sortGranules}`
   + `&disallowStatus=${params.disallowStatus}`
   + `&disallowService=${params.disallowService}`;
   if (params.disallowUser) {
@@ -197,28 +201,20 @@ async function loadRows(params) {
   const res = await fetch(tableUrl, {
     method: 'POST',
     headers: {
-      Accept: 'application/json',
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ jobIDs }),
   });
   if (res.status === 200) {
-    // loop through json map of html rows (job id => row)
-    const rowsJson = await res.json();
-    for (const jobID of jobIDs) {
-      const rowHtml = rowsJson[jobID] || '<span></span>';
-      const tmp = document.createElement('tbody');
-      tmp.innerHTML = rowHtml;
-      document.getElementById(`copy-${jobID}`).remove();
-      document.getElementById(`job-${jobID}`).replaceWith(...tmp.childNodes); // add only the <tr>...</tr>
-      initSelectHandler(`tr[id="job-${jobID}"] .select-job`);
-      initCopyHandler(`th[id="copy-${jobID}"] .copy-request`);
-      formatDates(`tr[id="job-${jobID}"] .date-td`);
-    }
+    const htmlRes = await res.text();
+    const tmp = document.createElement('div');
+    tmp.innerHTML = `<div class="col-10" id="jobs-table-container">${htmlRes}</div>`;
+    document.getElementById('jobs-table-container').replaceWith(...tmp.childNodes);
+    initSelectHandler('.select-job');
+    initSelectAllHandler();
+    initCopyHandler('.copy-request');
+    formatDates('.date-td');
     refreshSelected();
-    if (!document.querySelectorAll('.select-job').length) {
-      document.getElementById('select-jobs').remove();
-    }
   }
 }
 
@@ -231,6 +227,8 @@ const jobsTable = {
    * Initialize the jobs table.
    * @param {object} params - Parameters that define what will appear in the table.
    * Params contains the follwing attributes:
+   * page - page number for the jobs
+   * limit - limit on the number of jobs in a page
    * disallowStatus - whether to load the table with disallow status "on" or "off".
    * disallowService - whether to load the table with disallow service "on" or "off".
    * disallowUser - whether to load the table with disallow user "on" or "off".
@@ -238,6 +236,11 @@ const jobsTable = {
    * services - service names from services.yml
    * isAdminRoute - whether the current page is /admin/...
    * tableFilter - initial tags that will populate the input
+   * fromDateTime - date time string that constrains by date
+   * toDateTime - date time string that constrains by date
+   * tzOffsetMinutes - offset from UTC
+   * dateKind - updatedAt or createdAt
+   * sortGranules - sort the rows ascending ('asc') or descending ('desc')
    */
   async init(params) {
     PubSub.subscribe(

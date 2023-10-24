@@ -14,8 +14,14 @@ params.services = JSON.parse(tableFilter.getAttribute('data-services'));
 params.disallowStatus = document.getElementsByName('disallowStatus')[0].checked ? 'on' : '';
 params.disallowService = document.getElementsByName('disallowService')[0].checked ? 'on' : '';
 if (isAdminRoute) {
-    params.disallowUser = document.getElementsByName('disallowUser')[0].checked ? 'on' : '';
+  params.disallowUser = document.getElementsByName('disallowUser')[0].checked ? 'on' : '';
 }
+['page', 'limit', 'fromDateTime', 'toDateTime', 'tzOffsetMinutes'].forEach((name) => {
+  params[name] = document.getElementsByName(name)[0].value;
+});
+params.dateKind = document.getElementById('dateKindUpdated').checked ? 'updatedAt' : 'createdAt';
+params.sortGranules = document.getElementById('sort-granules').value;
+
 jobsTable.init(params);
 
 const jobStatusLinks = new JobsStatusChangeLinks();
