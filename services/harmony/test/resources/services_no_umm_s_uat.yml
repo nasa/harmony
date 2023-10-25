@@ -23,7 +23,7 @@ x-turbo-config: &default-turbo-config
 
 https://cmr.uat.earthdata.nasa.gov:
 
-  - name: missing_umm_s
+  - name: missing-umm-s-uat
     description: |
       testing service configuration missing umm_s field
     data_operation_version: '0.17.0'

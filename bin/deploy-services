@@ -3,12 +3,12 @@
 
 env_save=$(export -p)
 set -a
-source "packages/util/env-defaults"
-source "./services/harmony/env-defaults"
 source "./services/work-scheduler/env-defaults"
 source "./services/work-updater/env-defaults"
 source "./services/work-reaper/env-defaults"
 source "./services/work-failer/env-defaults"
+source "packages/util/env-defaults"
+source "./services/harmony/env-defaults"
 source ".env"
 set +ax
 eval "$env_save"
@@ -24,7 +24,7 @@ fi
 . ./bin/create-k8s-config-maps-and-secrets
 
 if [ ! "$LOCAL_DEV" = true ]; then
-  
+
   # create the work scheduler
   if [ "$USE_SERVICE_QUEUES" = true ]; then
     file="services/work-scheduler/config/service-template.yaml"
@@ -34,7 +34,7 @@ if [ ! "$LOCAL_DEV" = true ]; then
     fi
     envsubst < $file | kubectl apply -f - -n harmony
   fi
-  
+
   # create the work updaters
   file="services/work-updater/config/service-template-large.yaml"
   if [ ! -f "$file" ]; then

@@ -2,8 +2,12 @@
 
 env_save=$(export -p)
 set -a
+source "./services/work-scheduler/env-defaults"
+source "./services/work-updater/env-defaults"
+source "./services/work-reaper/env-defaults"
+source "./services/work-failer/env-defaults"
 source "packages/util/env-defaults"
-source "services/harmony/env-defaults"
+source "./services/harmony/env-defaults"
 source ".env"
 set +ax
 eval "$env_save"

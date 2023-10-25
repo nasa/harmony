@@ -12,7 +12,7 @@
     "start": "NODE_OPTIONS=--max-old-space-size=3096 ts-node -r tsconfig-paths/register app/server.ts",
     "start-dev": "strict-npm-engines && ts-node-dev --no-notify -r tsconfig-paths/register --watch app/views,public/js --respawn app/server",
     "start-dev-fast": "TS_NODE_TRANSPILE_ONLY=true ts-node-dev --no-notify -r tsconfig-paths/register --respawn --inspect=127.0.0.1:${DEBUG_PORT:-9200} app/server",
-    "copy-files": "copyfiles 'app/schemas/**/*' 'app/templates/**/*' 'app/frontends/templates/**/*' 'config/**/*' 'db/**/*' 'public/**/*' built",
+    "copy-files": "copyfiles 'app/schemas/**/*' 'app/templates/**/*' 'app/frontends/templates/**/*' 'config/**/*' 'db/**/*' 'public/**/*' '../../config/services.yml' built",
     "watch-debug": "TS_NODE_TRANSPILE_ONLY=true nodemon --inspect=5858 -e ts,tsx,html --exec node -r tsconfig-paths/register -r ts-node/register app/server.ts",
     "prebuild": "./bin/prebuild",
     "build": "docker build -t harmonyservices/harmony:${VERSION:-latest} .",
