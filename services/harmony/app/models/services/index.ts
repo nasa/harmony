@@ -45,7 +45,7 @@ function updateCollectionsConfig(config: ServiceConfig<unknown>): void {
   if (config.collections === undefined) {
     config.collections = [];
   }
-  const variableName = `${config.name.toUpperCase()}_COLLECTIONS`;
+  const variableName = `${config.name.toUpperCase().replace(/-/g, '_')}_COLLECTIONS`;
   const collectionString = process.env[variableName];
   if (collectionString) {
     const collections = collectionString.split(',');
@@ -118,7 +118,7 @@ function validateServiceConfigSteps(config: ServiceConfig<unknown>): void {
  * @param config - The service configuration to validate
  */
 export function validateServiceConfig(config: ServiceConfig<unknown>): void {
-  const variableName = `${config.name.toUpperCase()}_COLLECTIONS`;
+  const variableName = `${config.name.toUpperCase().replace(/-/g, '_')}_COLLECTIONS`;
   const collectionString = process.env[variableName];
   if (!collectionString) {
     if (config.umm_s === undefined || typeof config.umm_s !== 'string') {
