@@ -123,7 +123,7 @@ fi
 echo "Successfully setup project. You can take a look at env-defaults, .env, and config/services.yml to see how your service was set up for use in harmony.
 Next steps:
 cd ../harmony-${SERVICE_NAME}
-Modify the .py file to replace the sample code in the process_item method with your service logic.
+Modify the ${SERVICE_NAME}.py file to replace the sample code in the process_item method with your service logic.
 Build the image with ./build-service
 
 Return to this directory and start up all of harmony including your service with:
