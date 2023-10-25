@@ -32,7 +32,7 @@ else
   prompt_user "Variable subsetting"
   prompt_user "Reprojection"
   prompt_user "Concatenation"
-  read -p "List of CMR collection IDs (comma separated) to use the service (eg C1-PROV1,C2-PROV1,C3-PROV2): " COLLECTIONS
+  read -p "List of CMR UAT collection IDs (comma separated) to use the service (eg C1-PROV1,C2-PROV1,C3-PROV2): " COLLECTIONS
 
   # Create the new service directory at the same level as the harmony repository
   SERVICE_DIR="../harmony-$SERVICE_NAME"
@@ -72,7 +72,7 @@ else
         print "        env:";
         print "          <<: *default-turbo-env";
         print "          STAGING_PATH: public/" ORGANIZATION "/" SERVICE_NAME;
-        print "    umm_s: []";
+        print "    umm_s: '\'\''";
         print "    capabilities:";
         print "      concatenation: " CONCATENATION;
         print "      subsetting:";
