@@ -36,7 +36,7 @@ spec:
           - name: WORK_ITEM_RETRY_LIMIT
             value: '$WORK_ITEM_RETRY_LIMIT'
           ports:
-            - containerPort: 5000
+            - containerPort: $PORT
 ---
 apiVersion: v1
 kind: Service
@@ -45,8 +45,8 @@ metadata:
 spec:
   ports:
     - name: frontend
-      port: 5000
-      targetPort: 5000
+      port: $PORT
+      targetPort: $PORT
       protocol: TCP
   selector:
     name: harmony-small-work-updater

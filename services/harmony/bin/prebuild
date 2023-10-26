@@ -4,9 +4,10 @@
 #
 
 rimraf built/*
-copyfiles -u 2 -e "../../db/test.sqlite3" "../../db/**/*" built
+copyfiles -u 2 -e "../../db/*.sqlite3" "../../db/**/*" built
 # need to copy the db directory into the servcies/harmony directory as well to make knex migrations work because knex is stupid
-copyfiles -u 2 -e "../../db/test.sqlite3" "../../db/**/*" built/services/harmony
+copyfiles -u 2 -e "../../db/*.sqlite3" "../../db/**/*" built/services/harmony
 copyfiles -u 2 "../../bin/start-harmony-in-container" built
+copyfiles -u 2 "../../config/services.yml" built
 copyfiles -u 4 -e "../../packages/util/node_modules/**/*" -e "../../packages/util/built/**/*" -e "../../packages/util/test/**/*" -e "../../packages/util/coverage/**/*" "../../packages/util/**/*"  built/packages/util
 copyfiles -e "./test/**/*" -e "./node_modules/**/*" -e "./coverage/**/*" -e "./built/**/*" -e "./bin/**/*" -e "./fixtures/**/*" "./**/*" built/services/harmony

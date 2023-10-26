@@ -1,0 +1,3 @@
+#!/bin/bash
+
+docker build -t "$ORGANIZATION/$SERVICE_NAME:${VERSION-latest}" .

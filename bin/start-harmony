@@ -5,6 +5,7 @@
 
 env_save=$(export -p)
 set -a
+source "packages/util/env-defaults"
 source "services/harmony/env-defaults"
 source ".env"
 set +a
@@ -13,9 +14,9 @@ eval "$env_save"
 envsubst < ./config/harmony-k8s.yaml | kubectl apply -f - -n harmony > /dev/null
 # harmony takes a while to start up, so we will do other things before we try to set up
 # port forwarding
-bin/port-forward start harmony 3000:3000
+bin/port-forward start harmony $PORT:$PORT
 
 harmony_pod=$(kubectl get pods -n harmony -l app=harmony | grep -v NAME | awk '{print $1;}')
 echo 'Running database migrations using harmony container'
 kubectl -n harmony exec -it $harmony_pod -- npx knex --cwd db migrate:latest
-echo 'Harmony has started at http://localhost:3000/'
+echo "Harmony has started at http://localhost:$PORT/"

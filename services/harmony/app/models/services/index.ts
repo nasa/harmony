@@ -45,6 +45,13 @@ function updateCollectionsConfig(config: ServiceConfig<unknown>): void {
   if (config.collections === undefined) {
     config.collections = [];
   }
+  const variableName = `${config.name.toUpperCase().replace(/-/g, '_')}_COLLECTIONS`;
+  const collectionString = process.env[variableName];
+  if (collectionString) {
+    const collections = collectionString.split(',');
+    const serviceCollections = collections.map((c) => ({ id: c }));
+    config.collections.push(...serviceCollections);
+  }
 }
 
 /**
@@ -80,7 +87,7 @@ export function loadServiceConfigsFromFile(cmrEndpoint: string, fileName: string
  * @returns the parsed services configuration
  */
 export function loadServiceConfigs(cmrEndpoint: string): ServiceConfig<unknown>[] {
-  return loadServiceConfigsFromFile(cmrEndpoint, '../../../config/services.yml');
+  return loadServiceConfigsFromFile(cmrEndpoint, '../../../../../config/services.yml');
 }
 
 /**
@@ -111,14 +118,20 @@ function validateServiceConfigSteps(config: ServiceConfig<unknown>): void {
  * @param config - The service configuration to validate
  */
 export function validateServiceConfig(config: ServiceConfig<unknown>): void {
-  if (config.umm_s === undefined || typeof config.umm_s !== 'string') {
-    throw new ServerError(`There must be one and only one umm_s record configured as a string for harmony service: ${config.name}`);
-  }
-
-  for (const coll of config.collections) {
-    if (coll && (!coll.variables && !coll.granule_limit)) {
-      throw new ServerError(`Collections cannot be configured for harmony service: ${config.name}, use umm_s instead.`);
+  const variableName = `${config.name.toUpperCase().replace(/-/g, '_')}_COLLECTIONS`;
+  const collectionString = process.env[variableName];
+  if (!collectionString) {
+    if (config.umm_s === undefined || typeof config.umm_s !== 'string') {
+      throw new ServerError(`There must be one and only one umm_s record configured as a string for harmony service: ${config.name}`);
     }
+
+    for (const coll of config.collections) {
+      if (coll && (!coll.variables && !coll.granule_limit)) {
+        throw new ServerError(`Collections cannot be configured for harmony service: ${config.name}, use umm_s instead.`);
+      }
+    }
+  } else {
+    logger.warn(`Collections are manually set using environment variable for service ${config.name} with collections ${JSON.stringify(config.collections)}`);
   }
 
   validateServiceConfigSteps(config);
@@ -146,7 +159,7 @@ const serviceTypesToServiceClasses = {
 };
 
 /**
- * For a given list of collections, return a list of collection concept ids that have Harmony serices defined via
+ * For a given list of collections, return a list of collection concept ids that have Harmony services defined via
  * the umm-s associations in services.yml. This is used to filter out any collections that do not have services associated,
  * so we only deal with collections that are applicable to Harmony services.
  * @param collections - an initial list of collections
@@ -180,7 +193,8 @@ export function buildService(
 }
 
 /**
- *  Returns any services that support concatenation from the list of configs
+ * Returns any services that support concatenation from the list of configs
+ *
  * @param configs - The potential matching service configurations
  * @returns any configurations that support concatenation
  */
