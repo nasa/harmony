@@ -2,7 +2,7 @@ import { get } from 'lodash';
 import rewind from '@mapbox/geojson-rewind';
 import * as togeojson from '@tmcw/togeojson';
 
-import { DOMParser } from 'xmldom';
+import { DOMParser } from '@xmldom/xmldom';
 import * as shpjs from 'shpjs';
 import * as tmp from 'tmp-promise';
 
