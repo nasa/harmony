@@ -104,7 +104,7 @@
     "express-winston": "^4.1.0",
     "fastq": "^1.11.0",
     "form-data": "^4.0.0",
-    "gdal-async": "~3.5.0",
+    "gdal-async": "~3.7.2-1",
     "highlight.js": "^11.7.0",
     "js-yaml": "^4.1.0",
     "json2csv": "^5.0.7",
