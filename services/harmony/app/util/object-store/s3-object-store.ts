@@ -7,6 +7,7 @@ import { formatUrl } from '@aws-sdk/util-format-url';
 import { CopyObjectCommand, GetBucketLocationCommand, GetObjectCommand,
   HeadObjectCommand, ListObjectsV2Command, PutObjectCommand,
   PutObjectCommandInput, PutObjectCommandOutput, S3Client, S3ClientConfig,
+  MetadataDirective,
 } from '@aws-sdk/client-s3';
 
 import { fromInstanceMetadata } from '@aws-sdk/credential-provider-imds';
@@ -410,7 +411,7 @@ export class S3ObjectStore implements ObjectStore {
       ...params,
       Metadata: existingObject.Metadata,
       ContentType: existingObject.ContentType,
-      MetadataDirective: 'REPLACE',
+      MetadataDirective: MetadataDirective.REPLACE,
       CopySource: `${params.Bucket}/${params.Key}`,
     };
 
