@@ -29,8 +29,13 @@ jobs:
           npm install
       - name: Build and publish images
         run: |
-          VERSION=test-publish-update
-          
+          # For tagged versions, translate e.g. "refs/tags/v1.2.3" -> "1.2.3"
+          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+          [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
+
+          # For the main branch, use "latest" as the version
+          [ "${VERSION}" == "main" ] && VERSION=latest
+          [ "${VERSION}" == "harmony-412" ] && VERSION=latest
 
           # build and publish images for all services
           VERSION="${VERSION}" lerna run build
