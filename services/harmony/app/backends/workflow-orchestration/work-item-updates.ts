@@ -1,25 +1,25 @@
-import env from '../../harmony/app/util/env';
-import { logAsyncExecutionTime } from '../../harmony/app/util/log-execution';
+import env from '../../util/env';
+import { logAsyncExecutionTime } from '../../util/log-execution';
 import { v4 as uuid } from 'uuid';
-import WorkItemUpdate from '../../harmony/app/models/work-item-update';
-import WorkflowStep, { decrementFutureWorkItemCount, getWorkflowStepByJobIdStepIndex, getWorkflowStepsByJobId } from '../../harmony/app/models/workflow-steps';
+import WorkItemUpdate from '../../models/work-item-update';
+import WorkflowStep, { decrementFutureWorkItemCount, getWorkflowStepByJobIdStepIndex, getWorkflowStepsByJobId } from '../../models/workflow-steps';
 import { Logger } from 'winston';
 import _, { ceil, range, sum } from 'lodash';
-import { JobStatus, Job } from '../../harmony/app/models/job';
-import JobError, { getErrorCountForJob, getErrorsForJob } from '../../harmony/app/models/job-error';
-import JobLink, { getJobDataLinkCount } from '../../harmony/app/models/job-link';
-import { incrementReadyCount, deleteUserWorkForJob, incrementReadyAndDecrementRunningCounts, decrementRunningCount } from '../../harmony/app/models/user-work';
-import WorkItem, { maxSortIndexForJobService, workItemCountForStep, getWorkItemsByJobIdAndStepIndex, getWorkItemById, updateWorkItemStatus, getJobIdForWorkItem } from '../../harmony/app/models/work-item';
-import { WorkItemStatus, COMPLETED_WORK_ITEM_STATUSES } from '../../harmony/app/models/work-item-interface';
-import { outputStacItemUrls, handleBatching, resultItemSizes } from '../../harmony/app/util/aggregation-batch';
-import db, { Transaction, batchSize } from '../../harmony/app/util/db';
-import { ServiceError } from '../../harmony/app/util/errors';
-import { completeJob } from '../../harmony/app/util/job';
-import { objectStoreForProtocol } from '../../harmony/app/util/object-store';
-import { StacItem, readCatalogItems, StacItemLink, StacCatalog } from '../../harmony/app/util/stac';
-import { resolve } from '../../harmony/app/util/url';
-import { QUERY_CMR_SERVICE_REGEX, calculateQueryCmrLimit } from '../../harmony/app/backends/workflow-orchestration/util';
-import { makeWorkScheduleRequest } from '../../harmony/app/backends/workflow-orchestration/work-item-polling';
+import { JobStatus, Job } from '../../models/job';
+import JobError, { getErrorCountForJob, getErrorsForJob } from '../../models/job-error';
+import JobLink, { getJobDataLinkCount } from '../../models/job-link';
+import { incrementReadyCount, deleteUserWorkForJob, incrementReadyAndDecrementRunningCounts, decrementRunningCount } from '../../models/user-work';
+import WorkItem, { maxSortIndexForJobService, workItemCountForStep, getWorkItemsByJobIdAndStepIndex, getWorkItemById, updateWorkItemStatus, getJobIdForWorkItem } from '../../models/work-item';
+import { WorkItemStatus, COMPLETED_WORK_ITEM_STATUSES } from '../../models/work-item-interface';
+import { outputStacItemUrls, handleBatching, resultItemSizes } from '../../util/aggregation-batch';
+import db, { Transaction, batchSize } from '../../util/db';
+import { ServiceError } from '../../util/errors';
+import { completeJob } from '../../util/job';
+import { objectStoreForProtocol } from '../../util/object-store';
+import { StacItem, readCatalogItems, StacItemLink, StacCatalog } from '../../util/stac';
+import { resolve } from '../../util/url';
+import { QUERY_CMR_SERVICE_REGEX, calculateQueryCmrLimit } from '../../backends/workflow-orchestration/util';
+import { makeWorkScheduleRequest } from '../../backends/workflow-orchestration/work-item-polling';
 
 /**
  * A structure holding the preprocess info of a work item
