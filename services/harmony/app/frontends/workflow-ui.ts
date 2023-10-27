@@ -18,9 +18,8 @@ import { objectStoreForProtocol } from '../util/object-store';
 import { Logger } from 'winston';
 import { serviceNames } from '../models/services';
 import { getEdlGroupInformation, isAdminUser } from '../util/edl-api';
-import { queueWorkItemUpdate } from '../backends/workflow-orchestration/workflow-orchestration';
-import { WorkItemQueueType } from '../util/queue/queue';
 import { ILengthAwarePagination } from 'knex-paginate';
+import { handleWorkItemUpdateWithJobId } from '../backends/workflow-orchestration/work-item-updates';
 
 // Default to retrieving this number of work items per page
 const defaultWorkItemPageSize = 100;
@@ -722,7 +721,7 @@ export async function retry(
       workflowStepIndex: item.workflowStepIndex,
     };
 
-    await queueWorkItemUpdate(jobID, workItemUpdate, null, WorkItemQueueType.SMALL_ITEM_UPDATE, workItemLogger);
+    await handleWorkItemUpdateWithJobId(jobID, workItemUpdate, null, workItemLogger);
 
     res.status(200).send({ message: 'The item was successfully requeued.' });
   } catch (e) {

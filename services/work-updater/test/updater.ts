@@ -7,7 +7,7 @@ import * as updater from '../app/workers/updater';
 import * as queueFactory from '../../harmony/app/util/queue/queue-factory';
 import { MemoryQueue } from '../../harmony/test/helpers/memory-queue';
 import * as wi from '../../harmony/app/models/work-item';
-import * as wiu from '../app/work-item-updates';
+import * as wiu from '../../harmony/app/backends/workflow-orchestration/work-item-updates';
 import { WorkItemQueueType } from '../../harmony/app/util/queue/queue';
 import WorkItemUpdate from '../../harmony/app/models/work-item-update';
 import DataOperation from '../../harmony/app/models/data-operation';

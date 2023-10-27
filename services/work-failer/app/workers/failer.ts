@@ -7,8 +7,7 @@ import sleep from '../../../harmony/app/util/sleep';
 import { Worker } from '../../../harmony/app/workers/worker';
 import { WorkItemStatus } from '../../../harmony/app/models/work-item-interface';
 import env from '../util/env';
-import { WorkItemQueueType } from '../../../harmony/app/util/queue/queue';
-import { queueWorkItemUpdate } from '../../../harmony/app/backends/workflow-orchestration/workflow-orchestration';
+import { handleWorkItemUpdateWithJobId } from '../../../harmony/app/backends/workflow-orchestration/work-item-updates';
 
 /**
  * Construct a message indicating that the given work item has exceeded the given duration
@@ -107,7 +106,7 @@ export default class Failer implements Worker {
                   hits: null, results: [], totalItemsSize: item.totalItemsSize, errorMessage: message,
                   workflowStepIndex: item.workflowStepIndex,
                 };
-                await queueWorkItemUpdate(jobID, workItemUpdate, null, WorkItemQueueType.SMALL_ITEM_UPDATE, workItemlog);
+                await handleWorkItemUpdateWithJobId(jobID, workItemUpdate, null, workItemlog);
               }));
             } catch (e) {
               log.error(`Error attempting to process work item updates for job ${jobID}.`);
