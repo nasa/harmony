@@ -15,7 +15,7 @@ export const metricsFields = [
   'timeTakenSeconds', 'numInputGranules', 'totalGranuleSizeMb', 'numVariables', 'concatenate',
   'reproject', 'synchronous', 'spatialSubset', 'shapefileSubset', 'chainLength',
   'harmonyGdalAdapter', 'harmonyServiceExample', 'harmonyNetcdfToZarr', 'swotReproject',
-  'varSubsetter', 'sdsMaskfill', 'trajectorySubsetter', 'podaacConcise',
+  'hoss', 'sdsMaskfill', 'trajectorySubsetter', 'podaacConcise',
   'podaacL2Subsetter', 'giovanniAdapter',
 ];
 
@@ -24,7 +24,7 @@ interface RequestMetrics {
   harmonyServiceExample: number;
   harmonyNetcdfToZarr: number;
   swotReproject: number;
-  varSubsetter: number;
+  hoss: number;
   sdsMaskfill: number;
   trajectorySubsetter: number;
   podaacConcise: number;
@@ -62,8 +62,8 @@ function getServiceNameFromID(serviceID: string, logger: Logger): string {
     case /swot-reproject/.test(serviceID):
       serviceName = 'swotReproject';
       break;
-    case /variable-subsetter/.test(serviceID):
-      serviceName = 'varSubsetter';
+    case /hoss/.test(serviceID):
+      serviceName = 'hoss';
       break;
     case /maskfill-harmony/.test(serviceID):
       serviceName = 'sdsMaskfill';
@@ -100,7 +100,7 @@ function getServiceMetricsFromSteps(steps: WorkflowStep[], logger: Logger): Part
     harmonyServiceExample: 0,
     harmonyNetcdfToZarr: 0,
     swotReproject: 0,
-    varSubsetter: 0,
+    hoss: 0,
     sdsMaskfill: 0,
     trajectorySubsetter: 0,
     podaacConcise: 0,

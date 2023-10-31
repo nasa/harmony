@@ -2,8 +2,21 @@
 Any changes to the environment variables will be documented in this file in chronological
 order with the most recent changes first.
 
+## 2023-10-09
+### Changed
+- VAR_SUBSETTER_IMAGE to HOSS_IMAGE
+- VAR_SUBSETTER_REQUESTS_CPU to HOSS_REQUESTS_CPU
+- VAR_SUBSETTER_REQUESTS_MEMORY to HOSS_REQUESTS_MEMORY
+- VAR_SUBSETTER_LIMITS_CPU to HOSS_LIMITS_CPU
+- VAR_SUBSETTER_LIMITS_MEMORY to HOSS_LIMITS_MEMORY
+- VAR_SUBSETTER_INVOCATION_ARGS to HOSS_INVOCATION_ARGS
+- VAR_SUBSETTER_SERVICE_QUEUE_URLS to HOSS_SERVICE_QUEUE_URLS
+- HOSS_IMAGE to point to ghcr.io hosted image.
+- HOSS_INVOCATION_ARGS to use new image entry point.
+- HOSS_SERVICE_QUEUE_URLS to change references from "var-subsetter" to "hoss".
+
 ## 2023-08-11
-### Changes
+### Changed
 Split env-defaults into separate files based on use
 
 ## 2022-12-15

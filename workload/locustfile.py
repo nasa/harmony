@@ -125,12 +125,13 @@ class HarmonyUatUser(BaseHarmonyUser):
         }
         self._sync_request(name, collection, variable, params, 7)
 
-    def _var_subsetter(self):
-        name = 'Variable subsetter'
-        collection = 'C1234714698-EEDTEST'
-        variable = urllib.parse.quote('/gt1l/land_segments/canopy/h_canopy', safe='')
+    def _hoss(self):
+        name = 'HOSS variable subset'
+        collection = 'C1238392622-EEDTEST'
+        variable = urllib.parse.quote('atmosphere_cloud_liquid_water_content',
+                                      safe='')
         params = {
-            'granuleid': 'G1238479514-EEDTEST'
+            'granuleid': 'G1245840469-EEDTEST'
         }
         self._sync_request(name, collection, variable, params, 8)
 
@@ -241,10 +242,10 @@ class HarmonyUatUser(BaseHarmonyUser):
     def harmony_gdal_adapter(self):
         self._harmony_gdal_adapter()
 
-    @tag('var-subsetter', 'sync', 'variable', 'hierarchical-variable', 'netcdf4', 'demo')
+    @tag('hoss', 'sync', 'variable', 'hierarchical-variable', 'netcdf4', 'demo')
     @task(50)
-    def var_subsetter(self):
-        self._var_subsetter()
+    def hoss(self):
+        self._hoss()
 
     @tag('podaac-l2ss', 'bbox', 'sync', 'netcdf4', 'agu', 'variable', 'demo')
     @task(50)
@@ -311,4 +312,3 @@ class HarmonyUatUser(BaseHarmonyUser):
     #         files={'shapefile': ('test_in-polygon.shp.zip',
     #                              open(shapefile_location, 'rb'), 'application/shapefile+zip')},
     #         name='PODAAC Shapefile Subsetter')
-
