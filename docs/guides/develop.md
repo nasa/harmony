@@ -259,7 +259,7 @@ Harmony uses [eslint](https://eslint.org) as a linter, which can be invoked as `
 Rather than repeatedly perform the same queries against the CMR, our test suite
 uses [node-replay](https://github.com/assaf/node-replay) to record and play back
 HTTP interactions.  All non-localhost interactions are recorded and placed in files
-in the [fixtures directory](../../fixtures/).
+in the [fixtures directory](../../services/harmony/fixtures/).
 
 By default, the test suite will playback interactions it has already seen and
 record any new interactions to new files.  This behavior can be changed by setting
@@ -307,7 +307,7 @@ Request to this repo:
 ## Additional Resources
 
 * [Adapting new services to Harmony](adapting-new-services.md)
-* [Harmony message schemas](../../app/schemas/data-operation)
-* [EOSS protocol OpenAPI Specification](../../app/schemas/eoss)
+* [Harmony message schemas](../../services/harmony/app/schemas/data-operation)
+* [EOSS protocol OpenAPI Specification](../../services/harmony/app/schemas/eoss)
 * [Harmony NetCDF to Zarr service repository](https://github.com/nasa/harmony-netcdf-to-zarr)
 * [Harmony GDAL-based example service repository](https://github.com/nasa/harmony-service-example)
