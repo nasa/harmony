@@ -54,7 +54,7 @@ Harmony provides a Python library, [harmony-service-lib-py](https://github.com/n
 
 ## 2. Accepting Harmony requests
 
-When invoking a service, Harmony provides an input detailing the specific operations the service should perform and the URLs of the data it should perform the operations on. Each new service will need to adapt this message into an actual service invocation, typically transforming the JSON input into method calls, command-line invocations, or HTTP requests. See the latest [Harmony data-operation schema](../../app/schemas/) for details on Harmony's JSON input format.
+When invoking a service, Harmony provides an input detailing the specific operations the service should perform and the URLs of the data it should perform the operations on. Each new service will need to adapt this message into an actual service invocation, typically transforming the JSON input into method calls, command-line invocations, or HTTP requests. See the latest [Harmony data-operation schema](../../services/harmony/app/schemas/) for details on Harmony's JSON input format.
 
 Ideally, this adaptation would consist only of necessary complexity peculiar to the service in question. Please let the team know if there are components that can make this process easier and consider sending a pull request or publishing your code if you believe it can help future services.
 
@@ -127,7 +127,7 @@ Services can fail for other unforeseen reasons, like running out of memory, in w
 
 ## 6. Defining environment variables in env-defaults
 
-Add environment variables specific to the service to [env-defaults](../../env-defaults). See the harmony-service-example for an example of the environment variables needed:
+Add environment variables specific to the service to [env-defaults](../../services/harmony/env-defaults). See the harmony-service-example for an example of the environment variables needed:
 
 ```
 HARMONY_SERVICE_EXAMPLE_IMAGE=harmonyservices/service-example:latest
@@ -254,7 +254,7 @@ steps:
 ```
 
 There are default limits set by the environment variables `MAX_BATCH_INPUTS` and
-`MAX_BATCH_SIZE_IN_BYTES`. Providers should consult the [env-defaults.ts](../env-defaults) file to obtain the
+`MAX_BATCH_SIZE_IN_BYTES`. Providers should consult the [env-defaults.ts](../../services/harmony/env-defaults) file to obtain the
 current values of these variables.
 
 The settings in `services.yml` take precedence over these environment variables. If a provider
@@ -272,7 +272,7 @@ Harmony will run the Docker image, passing the following command-line parameters
 
 `<action>` is the action Harmony wants the service to perform. Currently, Harmony only uses `invoke`, which requests that the service be run and exit. The service library Harmony provides also supports a `start` action with parameter `--harmony-queue-url <url>`, which requests that the service be started as a long running service that reads requests from an SQS queue. This is likely to be deprecated.
 
-`<input>` is a JSON string containing the details of the service operation to be run. See the latest [Harmony data-operation schema](../../app/schemas/) for format details.
+`<input>` is a JSON string containing the details of the service operation to be run. See the latest [Harmony data-operation schema](../../services/harmony/app/schemas/) for format details.
 
 `<sources-file>` file path that contains a STAC catalog with items and metadata to be processed by the service. The intent of this file is to allow Harmony to externalize the potentially very long list of input sources to avoid command line limits while retaining the remainder of the message on the command line for easier manipulation in workflow definitions.
 

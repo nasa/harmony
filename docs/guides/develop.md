@@ -307,7 +307,7 @@ Request to this repo:
 ## Additional Resources
 
 * [Adapting new services to Harmony](adapting-new-services.md)
-* [Harmony message schemas](../../app/schemas/data-operation)
-* [EOSS protocol OpenAPI Specification](../../app/schemas/eoss)
+* [Harmony message schemas](../../services/harmony/app/schemas/data-operation)
+* [EOSS protocol OpenAPI Specification](../../services/harmony/app/schemas/eoss)
 * [Harmony NetCDF to Zarr service repository](https://github.com/nasa/harmony-netcdf-to-zarr)
 * [Harmony GDAL-based example service repository](https://github.com/nasa/harmony-service-example)
