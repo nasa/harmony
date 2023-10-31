@@ -4,7 +4,7 @@ import {
   handleWorkItemUpdate,
   handleWorkItemUpdateWithJobId,
   preprocessWorkItem,
-  processWorkItems } from '../work-item-updates';
+  processWorkItems } from '../../../harmony/app/backends/workflow-orchestration/work-item-updates';
 import { getJobIdForWorkItem } from '../../../harmony/app/models/work-item';
 import { default as defaultLogger } from '../../../harmony/app/util/log';
 import { WorkItemQueueType } from '../../../harmony/app/util/queue/queue';
