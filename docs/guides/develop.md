@@ -63,7 +63,7 @@ or
 arch -x86_64 bash
 ```
 
-Ensure node is available and is the correct version, 16.x.y.
+Ensure node is available and is the correct version, 18.x.y.
 
 ```
 $ node --version
@@ -165,12 +165,12 @@ has a specific port and debug port as shown in the following table:
 
 ## Stopping Harmony and Services
 
-The services running in kubernetes can be stopped using the following (this will also delete 
+The services running in kubernetes can be stopped using the following (this will also delete
 the `harmony` namespace):
 
 ```
 ./bin/stop-harmony-and-services
-```  
+```
 
 The Node.js processes for Harmony and its support services can be stopped using the following:
 ```
