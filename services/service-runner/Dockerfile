@@ -1,4 +1,4 @@
-FROM node:20-alpine
+FROM node:18-alpine
 
 RUN apk add bash vim curl git
 RUN git config --global url."https://".insteadOf ssh://
