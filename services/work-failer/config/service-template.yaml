@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: harmony-work-failer
+  labels:
+    name: harmony-work-failer
+spec:
+  replicas: $WORK_FAILER_POD_REPLICAS
+  selector:
+    matchLabels:
+      name: harmony-work-failer
+  template:
+    metadata:
+      labels:
+        name: harmony-work-failer
+    spec:
+      containers:
+        - name: harmony-work-failer
+          imagePullPolicy: IfNotPresent
+          image: $WORK_FAILER_IMAGE
+          resources:
+            limits:
+              memory: $WORK_FAILER_LIMITS_MEMORY
+              cpu: $WORK_FAILER_LIMITS_CPU
+            requests:
+              memory: $WORK_FAILER_REQUESTS_MEMORY
+              cpu: $WORK_FAILER_REQUESTS_CPU
+          envFrom:
+          - configMapRef:
+              name: harmony-env
+          - secretRef:
+              name: harmony-secrets
+          env:
+          - name: FAILABLE_WORK_AGE_MINUTES
+            value: '$FAILABLE_WORK_AGE_MINUTES'
+          - name: WORK_FAILER_BATCH_SIZE
+            value: '$WORK_FAILER_BATCH_SIZE'
+          - name: WORK_FAILER_PERIOD_SEC
+            value: '$WORK_FAILER_PERIOD_SEC'
+          ports:
+            - containerPort: $PORT
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: harmony-work-failer
+spec:
+  ports:
+    - name: frontend
+      port: $PORT
+      targetPort: $PORT
+      protocol: TCP
+  selector:
+    name: harmony-work-failer
+  type: ClusterIP

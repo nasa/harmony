@@ -216,7 +216,7 @@ https://cmr.earthdata.nasa.gov:
         - application/x-netcdf4
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
-      - image: !Env ${VAR_SUBSETTER_IMAGE}
+      - image: !Env ${HOSS_IMAGE}
         operations: ['variableSubset', 'spatialSubset', 'dimensionSubset', 'shapefileSubset', 'temporalSubset']
       - image: !Env ${SDS_MASKFILL_IMAGE}
         operations: ['shapefileSubset']
@@ -252,7 +252,7 @@ https://cmr.earthdata.nasa.gov:
         - application/x-netcdf4
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
-      - image: !Env ${VAR_SUBSETTER_IMAGE}
+      - image: !Env ${HOSS_IMAGE}
         operations: ['variableSubset', 'spatialSubset', 'dimensionSubset', 'shapefileSubset', 'temporalSubset']
       - image: !Env ${SDS_MASKFILL_IMAGE}
         operations: ['shapefileSubset', 'spatialSubset']
@@ -588,7 +588,7 @@ https://cmr.uat.earthdata.nasa.gov:
         - application/x-netcdf4
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
-      - image: !Env ${VAR_SUBSETTER_IMAGE}
+      - image: !Env ${HOSS_IMAGE}
         operations: ['variableSubset']
 
   - name: sds/maskfill
@@ -752,7 +752,7 @@ https://cmr.uat.earthdata.nasa.gov:
         - application/x-netcdf4
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
-      - image: !Env ${VAR_SUBSETTER_IMAGE}
+      - image: !Env ${HOSS_IMAGE}
         operations: ['variableSubset', 'spatialSubset', 'dimensionSubset', 'shapefileSubset', 'temporalSubset']
       - image: !Env ${SDS_MASKFILL_IMAGE}
         operations: ['shapefileSubset']
@@ -788,7 +788,7 @@ https://cmr.uat.earthdata.nasa.gov:
         - application/x-netcdf4
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
-      - image: !Env ${VAR_SUBSETTER_IMAGE}
+      - image: !Env ${HOSS_IMAGE}
         operations: ['variableSubset', 'spatialSubset', 'dimensionSubset', 'shapefileSubset', 'temporalSubset']
       - image: !Env ${SDS_MASKFILL_IMAGE}
         operations: ['shapefileSubset', 'spatialSubset']

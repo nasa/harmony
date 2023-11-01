@@ -1,0 +1,30 @@
+<table id="workflow-ui-jobs-table" class="table table-sm">
+    <thead class="sticky-top bg-white">
+        <tr class="align-middle">
+            <th scope="col">{{{selectAllBox}}}</input></th>
+            <th scope="col">jobID</th>
+            <th scope="col">service</th>
+            {{#isAdminRoute}}
+            <th scope="col">user</th>
+            {{/isAdminRoute}}
+            <th scope="col">status</th>
+            <th scope="col">message</th>
+            <th scope="col">
+                <div class="d-flex flex-row align-items-center">
+                    <div>granules</div>&nbsp;
+                    <div class="d-flex flex-column">
+                        {{{sortGranulesLinks}}}
+                    </div>
+                </div>
+            </th>
+            <th scope="col">progress</th>
+            <th scope="col">createdAt</th>
+            <th scope="col">updatedAt</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{#jobs}}
+        {{> workflow-ui/jobs/job-table-row }}
+        {{/jobs}}
+    </tbody>
+</table>

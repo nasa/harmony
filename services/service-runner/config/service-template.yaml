@@ -1,0 +1,119 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: $SERVICE_NAME
+  labels:
+    name: $SERVICE_NAME
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: $SERVICE_NAME
+  template:
+    metadata:
+      labels:
+        name: $SERVICE_NAME
+    spec:
+      terminationGracePeriodSeconds: $DEFAULT_POD_GRACE_PERIOD_SECS
+      containers:
+        - name: worker
+          imagePullPolicy: IfNotPresent
+          image: $SERVICE_IMAGE
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh","-c","touch /tmp/TERMINATING; while [ -f /tmp/WORKING ]; do sleep 1; done; kill -TERM 1"]
+          resources:
+            limits:
+              memory: $SERVICE_LIMITS_MEMORY
+            requests:
+              memory: $SERVICE_REQUESTS_MEMORY
+          envFrom:
+          - configMapRef:
+              name: harmony-env
+          - secretRef:
+              name: harmony-secrets
+          volumeMounts:
+            - mountPath: /tmp
+              name: ephemeral-volume
+          command: ["/bin/sh", "-c"]
+          args:
+            - trap "exit 0" TERM;
+              while true; do
+                date;
+                sleep 10;
+              done
+        - name: manager
+          imagePullPolicy: IfNotPresent
+          image: $SERVICE_RUNNER_IMAGE
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh","-c","touch /tmp/TERMINATING; while [ -f /tmp/WORKING ]; do sleep 1; done; kill -TERM 1"]
+          livenessProbe:
+            httpGet:
+              path: /liveness
+              port: $PORT
+            initialDelaySeconds: 3
+            periodSeconds: 3
+          resources:
+            limits:
+              memory: $SERVICE_RUNNER_LIMITS_MEMORY
+            requests:
+              memory: $SERVICE_RUNNER_REQUESTS_MEMORY
+          envFrom:
+          - configMapRef:
+              name: harmony-env
+          - secretRef:
+              name: harmony-secrets
+          env:
+          - name: BACKEND_HOST
+            value: $BACKEND_HOST
+          - name: BACKEND_PORT
+            value: "$BACKEND_PORT"
+          - name: WORKER_PORT
+            value: "$WORKER_PORT"
+          - name: HARMONY_SERVICE
+            value: $SERVICE_IMAGE
+          - name: INVOCATION_ARGS
+            value: $SERVICE_INVOCATION_ARGS
+          - name: MY_POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: MY_POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: MY_POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          ports:
+            - containerPort: $PORT
+          volumeMounts:
+            - mountPath: /tmp
+              name: ephemeral-volume
+      volumes:
+      - name: ephemeral-volume
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: $SERVICE_NAME
+  labels:
+    should_scrape: "true"
+    name: $SERVICE_NAME
+  annotations:
+    prometheus.io/port: "$PORT"
+    prometheus.io/scrape: "true"
+spec:
+  ports:
+    - name: frontend
+      port: $PORT
+      targetPort: $PORT
+      protocol: TCP
+  selector:
+    name: $SERVICE_NAME
+  type: ClusterIP

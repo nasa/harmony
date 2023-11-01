@@ -3,12 +3,12 @@
 
 env_save=$(export -p)
 set -a
-source "lib/util/env-defaults"
-source "env-defaults"
-source "./kubernetes-services/work-scheduler/env-defaults"
-source "./kubernetes-services/work-updater/env-defaults"
-source "./kubernetes-services/work-reaper/env-defaults"
-source "./kubernetes-services/work-failer/env-defaults"
+source "./services/work-scheduler/env-defaults"
+source "./services/work-updater/env-defaults"
+source "./services/work-reaper/env-defaults"
+source "./services/work-failer/env-defaults"
+source "packages/util/env-defaults"
+source "./services/harmony/env-defaults"
 source ".env"
 set +ax
 eval "$env_save"
@@ -24,25 +24,25 @@ fi
 . ./bin/create-k8s-config-maps-and-secrets
 
 if [ ! "$LOCAL_DEV" = true ]; then
-  
+
   # create the work scheduler
   if [ "$USE_SERVICE_QUEUES" = true ]; then
-    file="kubernetes-services/work-scheduler/config/service-template.yaml"
+    file="services/work-scheduler/config/service-template.yaml"
     if [ ! -f "$file" ]; then
       echo "work scheduler template was not found."
       exit 1
     fi
     envsubst < $file | kubectl apply -f - -n harmony
   fi
-  
+
   # create the work updaters
-  file="kubernetes-services/work-updater/config/service-template-large.yaml"
+  file="services/work-updater/config/service-template-large.yaml"
   if [ ! -f "$file" ]; then
     echo "large work updater template was not found."
     exit 1
   fi
   envsubst < $file | kubectl apply -f - -n harmony
-  file="kubernetes-services/work-updater/config/service-template-small.yaml"
+  file="services/work-updater/config/service-template-small.yaml"
   if [ ! -f "$file" ]; then
     echo "small work updater template was not found."
     exit 1
@@ -50,7 +50,7 @@ if [ ! "$LOCAL_DEV" = true ]; then
   envsubst < $file | kubectl apply -f - -n harmony
 
   # create the work reaper
-  file="kubernetes-services/work-reaper/config/service-template.yaml"
+  file="services/work-reaper/config/service-template.yaml"
   if [ ! -f "$file" ]; then
     echo "work reaper template was not found."
     exit 1
@@ -58,7 +58,7 @@ if [ ! "$LOCAL_DEV" = true ]; then
   envsubst < $file | kubectl apply -f - -n harmony
 
   # create the work failer
-  file="kubernetes-services/work-failer/config/service-template.yaml"
+  file="services/work-failer/config/service-template.yaml"
   if [ ! -f "$file" ]; then
     echo "work failer template was not found."
     exit 1
@@ -69,9 +69,9 @@ fi
 export LOCALSTACK_HOST=localhost
 
 # create the query-cmr service
-file="tasks/service-runner/config/query-cmr-sidecar.yaml"
+file="services/service-runner/config/query-cmr-sidecar.yaml"
 if [ ! -f "$file" ]; then
-  echo "query-cmr-sidecar.yml was not found."
+  echo "query-cmr-sidecar.yaml was not found."
   exit 1
 fi
 envsubst < $file | kubectl apply -f - -n harmony
@@ -90,7 +90,7 @@ if [ "$USE_SERVICE_QUEUES" == "true" ]; then
 fi
 
 # create the other services
-file="tasks/service-runner/config/service-template.yaml"
+file="services/service-runner/config/service-template.yaml"
 for service in ${LOCALLY_DEPLOYED_SERVICES//,/ }
 do
   # set up enviornment variables for service

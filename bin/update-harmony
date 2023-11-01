@@ -3,7 +3,8 @@
 # Update the harmonyservices/harmony and harmonyservices/query-cmr images and optionally
 # update service images
 
-source "env-defaults"
+source "packages/util/env-defaults"
+source "services/harmony/env-defaults"
 source ".env"
 
 # set -e
@@ -78,7 +79,7 @@ while read -r line; do
 done < <(sort <(echo "${referenced_images[*]}") <(echo "${pulled_images[*]}") | uniq -d)
 
 # always reload the harmony image, query-cmr, work-updater, work-scheudler, and service-runner images
-all_images+=( "harmonyservices/harmony:latest" "harmonyservices/query-cmr:latest" "harmonyservices/service-runner:latest" "harmonyservices/work-updater:latest" "harmony-services/work-scheduler:latest" )
+all_images+=( "harmonyservices/harmony:latest" "harmonyservices/query-cmr:latest" "harmonyservices/service-runner:latest" "harmonyservices/work-updater:latest" "harmonyservices/work-scheduler:latest" )
 
 for image in ${all_images[@]}; do
   echo "${image}"

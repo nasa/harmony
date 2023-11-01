@@ -2,34 +2,46 @@
 
 Please reach out in #harmony-service-providers (EOSDIS Slack) for additional guidance on any adaptation needs, and especially with any feedback that can help us improve.
 
+## Quick Start
+Fully setting up a service can be overwhelming for first time service providers. We now provide a script `bin/generate-new-service` to generate
+much of the scaffolding to get services ready for local integration testing with harmony quickly. The scaffolding provides the following:
+
+1. Updates to env-defaults files to add needed environment variables for running the service
+1. Updates to services.yml to fill in a new service definition to call the service
+1. Updates to local environment variables in .env to ensure the service is deployed
+1. Updates to local environment variables in .env to bypass needing to have a UMM-S record ready to go in UAT and collections associated
+1. A new directory at the same level as the harmony repo that contains:
+    1. Dockerfile defining an image that includes some common libraries used by service providers
+    1. A script to build the service image
+    1. Python wrapper code to make use of the harmony-service-library with hooks identified for places to add the custom service code
+
+### Setting up a new service
+***Prior to setting up a new service be sure to get harmony fully functional and tested with harmony-service-example by following the Quickstart
+in the main [README](../../README.md). Then come back to this section to set up the new service.***
+
+1. Run `bin/generate-new-service` and fill in values when prompted.
+2. Read the output after the script completes and follow the instructions provided in the terminal to finish setting up the service.
+
+Using the script will help to see the files that need to be changed in order to test with harmony and many of the defaults will just work.
+Once you have finished testing things out be sure to follow the steps outlined in the rest of this document to ensure the service is
+ready to be integrated into other harmony test environments.
+
+Note that the service chain that is generated in services.yml will define a service chain that queries for granules from the CMR and
+then invokes a single service image. If setting up a more complex service chain be sure to modify the entry.
+
 ## Table of Contents<!-- omit in toc -->
 - [Requirements for Harmony Services](#requirements-for-harmony-services)
   - [1. Allowing Harmony to invoke services](#1-allowing-harmony-to-invoke-services)
   - [2. Accepting Harmony requests](#2-accepting-harmony-requests)
   - [3. Sending results to Harmony](#3-sending-results-to-harmony)
   - [4. Canceled requests](#4-canceled-requests)
-  - [5. Defining environment variables in env-defaults](#5-defining-environment-variables-in-env-defaults)
-  - [6. Registering services in services.yml](#6-registering-services-in-servicesyml)
+  - [5. Error handling](#5-error-handling)
+  - [6. Defining environment variables in env-defaults](#6-defining-environment-variables-in-env-defaults)
+  - [7. Registering services in services.yml](#7-registering-services-in-servicesyml)
     - [Aggregation Steps](#aggregation-steps)
-  - [7. Docker Container Images](#7-docker-container-images)
+  - [8. Docker Container Images](#8-docker-container-images)
   - [9. Recommendations for service implementations](#9-recommendations-for-service-implementations)
-- [Appendix A - Harmony Internals](#appendix-a---harmony-internals)
-  - [Sending results to Harmony](#sending-results-to-harmony)
-    - [Synchronous responses](#synchronous-responses)
-      - [For Docker services](#for-docker-services)
-        - [Staged response data](#staged-response-data)
-        - [Streaming response data](#streaming-response-data)
-      - [Canceled requests](#canceled-requests)
-        - [Response errors](#response-errors)
-    - [Asynchronous responses](#asynchronous-responses)
-        - [Callback with partial result](#callback-with-partial-result)
-        - [Callback with progress update](#callback-with-progress-update)
-        - [Callback with single result](#callback-with-single-result)
-        - [Response errors](#response-errors-1)
-      - [Status 2xx, success](#status-2xx-success)
-      - [Status 3xx, redirect](#status-3xx-redirect)
-      - [Status 4xx and 5xx, client and server errors](#status-4xx-and-5xx-client-and-server-errors)
-  - [Service chaining](#service-chaining)
+  - [10. Service chaining](#10-service-chaining)
 
 
 
@@ -40,25 +52,82 @@ In order for a service to run in Harmony several things need to be provided as c
 
 Harmony provides a Python library, [harmony-service-lib-py](https://github.com/nasa/harmony-service-lib-py), to ease the process of adapting Harmony messages to service code. It provides helpers for message parsing, command line interactions, data staging, reading and writing STAC catalogs, and Harmony callbacks. Full details as well as an example can be found in the project's README and code. *This is the preferred way for services to interact with Harmony as it handles much of the work for the service and makes it easy for services to stay up-to-date with Harmony.*
 
-For service providers that do not want to use the service library (perhaps because the service is not implemented in Python), details about Harmony internals can be found in [Appendix A](#appendix-a---harmony-internals).
-
 ## 2. Accepting Harmony requests
 
-When invoking a service, Harmony provides an input detailing the specific operations the service should perform and the URLs of the data it should perform the operations on. Each new service will need to adapt this message into an actual service invocation, typically transforming the JSON input into method calls, command-line invocations, or HTTP requests. See the latest [Harmony data-operation schema](../../app/schemas/) for details on Harmony's JSON input format.
+When invoking a service, Harmony provides an input detailing the specific operations the service should perform and the URLs of the data it should perform the operations on. Each new service will need to adapt this message into an actual service invocation, typically transforming the JSON input into method calls, command-line invocations, or HTTP requests. See the latest [Harmony data-operation schema](../../services/harmony/app/schemas/) for details on Harmony's JSON input format.
 
 Ideally, this adaptation would consist only of necessary complexity peculiar to the service in question. Please let the team know if there are components that can make this process easier and consider sending a pull request or publishing your code if you believe it can help future services.
 
 ## 3. Sending results to Harmony
 
-This is handled automatically by the service library using the output of the service invocation. Alternatively a service can provide results directly as discussed in [Appendix A](#appendix-a---harmony-internals).
+This is handled automatically by the service library using the output of the service invocation.
 
 ## 4. Canceled requests
 
-Canceled requests are handled internally by Harmony. Harmony will prevent further work from being sent to a service on behalf of a canceled request, but will not otherwise interact with a service that is already processing data on behalf of a request. For services employing the service library nothing needs to be done to support request cancellation. For services not employing the service library, see the section in [Appendix A](#appendix-a---harmony-internals) regarding cancellation.
+Canceled requests are handled internally by Harmony. Harmony will prevent further work from being sent to a service on behalf of a canceled request, but will not otherwise interact with a service that is already processing data on behalf of a request. For services employing the service library nothing needs to be done to support request cancellation.
 
-## 5. Defining environment variables in env-defaults
+## 5. Error handling
 
-Add environment variables specific to the service to [env-defaults](../../env-defaults). See the harmony-service-example for an example of the environment variables needed:
+The best way to trigger a service failure when an unrecoverable condition is encountered is to extend HarmonyException (a class provided by the service library) and throw an exception of that type. The service library may also throw a HarmonyException when common errors are encountered. 
+
+Exceptions of this type (HarmonyException or a subclass) which are meant to be bubbled up to users should _not_ be suppressed by the service. The exception will automatically be caught/handled by the service library. The exception message will be passed on to Harmony and bubbled up to the end user (accessible via the errors field in the job status Harmony endpoint (`/jobs/<job-id>`) and in many cases via the final job message). When possible services should strive to give informative error messages that give the end user some sense of why the service failed, without revealing any internal details about the service that could be exploited. 
+
+Here is a good example:
+```
+"""This module contains custom exceptions specific to the Harmony GDAL Adapter
+    service. These exceptions are intended to allow for clearer messages to the
+    end-user and easier debugging of expected errors that arise during an
+    invocation of the service.
+"""
+
+from harmony.exceptions import HarmonyException
+
+class HGAException(HarmonyException):
+    """Base class for exceptions in the Harmony GDAL Adapter."""
+
+    def __init__(self, message):
+        super().__init__(message, 'nasa/harmony-gdal-adapter')
+
+
+class DownloadError(HGAException):
+    """ This exception is raised when the Harmony GDAL Adapter cannot retrieve
+        input data.
+    """
+    def __init__(self, url, message):
+        super().__init__(f'Could not download resource: {url}, {message}')
+
+
+class UnknownFileFormatError(HGAException):
+    """ This is raised when the input file format is one that cannot by
+        processed by the Harmony GDAL Adapter.
+    """
+    def __init__(self, file_format):
+        super().__init__('Cannot process unrecognised file format: '
+                         f'"{file_format}"')
+
+
+class IncompatibleVariablesError(HGAException):
+    """ This exception is raised when the dataset variables requested are not
+    compatible, i.e. they have different projections, geotransforms, sizes or
+    data types.
+    """
+    def __init__(self, message):
+        super().__init__(f'Incompatible variables: {message}')
+
+
+class MultipleZippedNetCDF4FilesError(HGAException):
+    """ This exception is raised when the input file supplied to HGA is a zip
+        file containing multiple NetCDF-4 files, as these cannot be aggregated.
+    """
+    def __init__(self, zip_file):
+        super().__init__(f'Multiple NetCDF-4 files within input: {zip_file}.')
+```
+
+Services can fail for other unforeseen reasons, like running out of memory, in which case Harmony will make an effort to provide a standardized error message. Just because a service invocation results in failure does not mean that the entire job itself will fail. Other factors that come into play are retries and cases where a job completes with errors (partial success). Retries happen automatically (up to a Harmony-wide configured limit) on failed data downloads and service failures.
+
+## 6. Defining environment variables in env-defaults
+
+Add environment variables specific to the service to [env-defaults](../../services/harmony/env-defaults). See the harmony-service-example for an example of the environment variables needed:
 
 ```
 HARMONY_SERVICE_EXAMPLE_IMAGE=harmonyservices/service-example:latest
@@ -78,7 +147,7 @@ Be sure to prefix the entries with the name of your service. Set the value for t
   MY_SERVICE_INVOCATION_ARGS='python -m my-service'
   ```
 
-## 6. Registering services in services.yml
+## 7. Registering services in services.yml
 
 Add an entry to [services.yml](../../config/services.yml) under each CMR environment that has umm-s appropriate to the service and send a pull request to the Harmony team, or ask a Harmony team member for assistance. It is important to note that the order that service entries are placed in this file can have an impact on service selection. In cases where multiple services are capable of performing the requested transformations, the service that appears first in the file will handle the request.
 
@@ -126,7 +195,7 @@ Each harmony service must have one and only one `umm-s` concept-id configured vi
 
 If you intend for Harmony job results that include this collection to be shareable, make sure that guests have `read` permission on the collection (via [CMR ACLs endpoints](https://cmr.earthdata.nasa.gov/access-control/site/docs/access-control/api.html)), and if no EULAs are present that the `harmony.has-eula` tag is associated with the collection and set to `false` via the CMR `/search/tags/harmony.has-eula/associations` endpoint. Example request body: `[{"concept_id": "C1233860183-EEDTEST", "data": false}]`. All collections used in the Harmony job must meet these two requirements in order for the job to be shareable.
 
-The last part of this entry defines the Turbo workflow for this service consisting of the query-cmr service (CMR_GRANULE_LOCATOR_IMAGE) followed by the docker_example service (DOCKER_EXAMPLE_IMAGE). For single service (excluding query-cmr) workflows, one need only list the steps. For more complicated workflows involving chained services (once again not counting the query-cmr service) one can list the operations each service in the chain provides along with a list of conditions under which the service will be invoked.
+The last part of this entry defines the workflow for this service consisting of the query-cmr service (CMR_GRANULE_LOCATOR_IMAGE) followed by the docker_example service (DOCKER_EXAMPLE_IMAGE). For single service (excluding query-cmr) workflows, one need only list the steps. For more complicated workflows involving chained services (once again not counting the query-cmr service) one can list the operations each service in the chain provides along with a list of conditions under which the service will be invoked.
 
 The following `steps` entry is for a chain of services including the PODAAC L2 Subsetter followed by the Harmony netcf-to-zarr service:
 
@@ -157,7 +226,7 @@ steps:
   - image: !Env ${HYBIG_IMAGE}
 ```
 
-Here we have the query-cmr service (this service is the first in every current workflow). This is followed by the optional NetCDF to COG service, which will only be invoked when the collection's UMM-C native format is one of the values that are defined (case insensitive) in the steps configuration (i.e. `[netcdf-4]`). Finally, we have the HyBIG service that converts the GeoTIFF inputs from the previous step to Global Imagery Browse Services (GIBS) compatible PNG or JPEG outputs.
+Here we have the query-cmr service (this service is the first in every current workflow). This is followed by the optional NetCDF to COG service, which will only be invoked when the collection's UMM-C native format is one of the values that are defined (case insensitive) in the steps configuration (i.e. `[netcdf-4]`). Finally, we have the HyBIG service that converts the GeoTIFF inputs from the previous step to Global Imagery Browse Services (GIBS) compatible PNG or JPEG outputs. See [10. Service chaining](#10-service-chaining) for more info.
 
 ### Aggregation Steps
 Services that provide aggregation, e.g., concatenation for CONCISE, require that all inputs are
@@ -185,7 +254,7 @@ steps:
 ```
 
 There are default limits set by the environment variables `MAX_BATCH_INPUTS` and
-`MAX_BATCH_SIZE_IN_BYTES`. Providers should consult the [env-defaults.ts](../env-defaults) file to obtain the
+`MAX_BATCH_SIZE_IN_BYTES`. Providers should consult the [env-defaults.ts](../../services/harmony/env-defaults) file to obtain the
 current values of these variables.
 
 The settings in `services.yml` take precedence over these environment variables. If a provider
@@ -194,7 +263,7 @@ contact the Harmony team first to make sure that the underlying Kubernetes pods 
 resources allocated (disk space, memory).
 
 
-## 7. Docker Container Images
+## 8. Docker Container Images
 The service and all necessary code and dependencies to allow it to run should be packaged in a Docker container image. Docker images can be staged anywhere Harmony can reach them, e.g. ghcr.io, Dockerhub or AWS ECR. If the image cannot be made publicly available, contact the harmony team to determine how to provide access to the image.
 
 Harmony will run the Docker image, passing the following command-line parameters:
@@ -203,7 +272,7 @@ Harmony will run the Docker image, passing the following command-line parameters
 
 `<action>` is the action Harmony wants the service to perform. Currently, Harmony only uses `invoke`, which requests that the service be run and exit. The service library Harmony provides also supports a `start` action with parameter `--harmony-queue-url <url>`, which requests that the service be started as a long running service that reads requests from an SQS queue. This is likely to be deprecated.
 
-`<input>` is a JSON string containing the details of the service operation to be run. See the latest [Harmony data-operation schema](../../app/schemas/) for format details.
+`<input>` is a JSON string containing the details of the service operation to be run. See the latest [Harmony data-operation schema](../../services/harmony/app/schemas/) for format details.
 
 `<sources-file>` file path that contains a STAC catalog with items and metadata to be processed by the service. The intent of this file is to allow Harmony to externalize the potentially very long list of input sources to avoid command line limits while retaining the remainder of the message on the command line for easier manipulation in workflow definitions.
 
@@ -243,94 +312,7 @@ account or has access to the Harmony staging bucket, we recommend you place resu
 and ensure correct retention policies and access logging as features are added to Harmony. It is not mandatory that you make use of this location, but highly recommended
 if your service produces files that need to be staged.
 
-# Appendix A - Harmony Internals
-If a service makes use of the Harmony Service Library mentioned above then the service developer need not be concerned with how Harmony operates internally (status callbacks, passing data between steps in a workflow, etc.). If the service cannot use the service library then the service must implement much of this functionality directly. The following is a description of the internal operation of Harmony.
-
-## Sending results to Harmony
-
-In addition to the examples below, we provide an [Open API schema](../../app/schemas/service-callbacks/0.1.0/service-callbacks-v0.1.0.yml) detailing all of the parameters available and their constraints.
-
-### Synchronous responses
-
-Synchronous requests are ones where a user has made a call to Harmony and the corresponding HTTP request remains open awaiting a response.
-
-#### For Docker services
-
-Docker based services are no longer required to call back to harmony in order to provide service responses. This is handled internally by harmony. However, services can optionally call back to Harmony as described below using an HTTP POST to the URL provided in the `callback` field of the Harmony input.
-
-The following are the options for how to call back to the Harmony URL:
-
-##### Staged response data
-
-`${operation.callback}/response?redirect=<url>`
-
-If data has been staged at an accessible location, for instance by pre-signing an S3 URL, the URL can be provided in the "redirect" query parameter and Harmony will issue an HTTP redirect to the staged data. This is the preferred callback method if there is not substantial performance to be gained by streaming data to the user. For best compatibility, ensure the `Content-Type` header will be sent by the staging URL.
-
-##### Streaming response data
-
-`${operation.callback}/response`
-
-If no query parameters are provided and a POST body is present, Harmony will stream the POST body directly to the user as it receives data, conveying the appropriate `Content-Type` and `Content-Size` headers set in the callback. Use this method if the service builds its response incrementally and the user would benefit from a partial response while waiting on the remainder.
-
-#### Canceled requests
-
-A harmony admin or a user may cancel a request in flight. When a request has been canceled, Harmony will return a 409 HTTP status code to any callback indicating that the request is canceled, and will not allow adding any new job outputs. No more work should be performed on the request by the backend service at that point.
-
-##### Response errors
-
-`${operation.callback}/response?error=<message>`
-
-If an error occurs, it can be provided in the "message" query parameter and Harmony will convey it to the user in a format suitable for the protocol.
-
-All log messages should be directed to stdout, and all messages should be in JSON format. Harmony will capture all output on both stdout and stderr, and those logs will be available in the metrics system. By using JSON, metrics from the backend services can easily be extracted.
-
-### Asynchronous responses
-
-Asynchronous requests are ones where a user has made a call to Harmony and Harmony has replied with a URL to poll for results as they arrive.
-
-Similar to synchronous requests to Docker services, Harmony provides a callback URL for all asynchronous requests, in the input's `callback` field.
-
-##### Callback with partial result
-
-`${operation.callback}/response?item[href]=<url>&item[type]=<media-type>&item[temporal]=<date>&item[bbox]=<spatial-extent>&item[title]=<title>`
-
-When the service completes a file, it can indicate the file is complete by calling back to this endpoint. `item[href]` and `item[type]` query parameters are required. `item[href]` must contain the location (typically an S3 object URI) of the resulting item and `item[type]` must contain the media type of the file, e.g. `application/geo+tiff`. `item[title]` is an optional human-readable name for the result.
-
-In order for Harmony to create STAC metadata for asynchronous requests based on the transformed output file extents, the service needs to send updated bounding box and temporal range values as `item[bbox]` and `item[temporal]`, respectively. If no spatial or temporal modifications were performed by the service, then the original spatial and temporal values from the CMR metadata should be returned in the response.
-
-##### Callback with progress update
-
-`${operation.callback}/response?progress=<percentage>`
-
-To provide better feedback to users, a service can estimate its percent complete by performing this callback, providing an integer percentage from 0-100.  Harmony automatically starts the percentage at 0 and automatically sets it to 100 when the service completes, so this is only necessary for providing intermediate status.
-
-This query parameter can be provided with partial results, if a service is tracking percent complete by the number of files it has completed, e.g. `${operation.callback}/response?item[href]=s3://example/file&item[type]=image/png&progress=25`
-
-##### Callback with single result
-
-`${operation.callback}/response?redirect=<url>`
-
-For the convenience of services that only ever produce a single result and cannot provide status, Harmony will accept the same callback
-as in the synchronous case.
-
-##### Response errors
-`${operation.callback}/response?error=<message>`
-
-If an error occurs, it can be provided in the "message" query parameter and Harmony will convey it to the user in a format suitable for the protocol.  Harmony captures STDOUT from Docker containers for further diagnostics. On error, the job's progress will remain set at the most recently set progress value and it will retain any partial results. Services can use this to provide partial results to users in the case of recoverable errors.
-
-#### Status 2xx, success
-
-The service call was successful and the response body contains bytes constituting the resulting file. Harmony will use the `Content-Size` and `Content-Type` headers to provide appropriate information to users or downstream services.
-
-#### Status 3xx, redirect
-
-The service call was successful and the resulting file can be found at the _fully qualified_ URL contained in the `Location` header.
-
-#### Status 4xx and 5xx, client and server errors
-
-The service call was unsuccessful due to an error. The error message is the text of the response body. Harmony will convey the message verbatim to the user when permitted by the user's request protocol. Error status codes should follow [RFC-7231](https://tools.ietf.org/html/rfc7231#section-6), with 4xx errors indicating client errors such as validation or access problems and 5xx errors indicating server errors like unexpected exceptions.
-
-## Service chaining
+## 10. Service chaining
 
 In order to support service-chaining--a pipeline of two or more
 services that process data--Harmony uses a STAC Catalog that describes
