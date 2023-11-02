@@ -366,13 +366,10 @@ https://cmr.uat.earthdata.nasa.gov:
     umm_s: S1259233619-LAADSCDUAT
     maximum_sync_granules: 0
     capabilities:
-       #concatenation:true
-       #concatenate_by_default: true
        subsetting:
          bbox: true
          variable: true
          multiple_variable: true
-         shape: true
        output_formats:
          - application/x-hdf
        reprojection: true
