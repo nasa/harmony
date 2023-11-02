@@ -364,6 +364,7 @@ https://cmr.uat.earthdata.nasa.gov:
           <<: *default-turbo-env
           STAGING_PATH: public/ldds/geoloco
     umm_s: S1259233619-LAADSCDUAT
+    maximum_sync_granules: 0
     capabilities:
        #concatenation:true
        #concatenate_by_default: true
