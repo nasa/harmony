@@ -8,7 +8,7 @@ For developing Harmony on _**Windows**_ follow this document as well as the info
 
 Required:
 * A local copy of this repository.  Using `git clone` is strongly recommended
-* Node.js version 16.  We strongly recommend installing [NVM](https://github.com/nvm-sh/nvm) to add and manage node versions.
+* Node.js version 18.  We strongly recommend installing [NVM](https://github.com/nvm-sh/nvm) to add and manage node versions.
 * Mac OSX, Linux, or similar command line tooling.  Harmony is tested to run on OSX >= 10.14 and Amazon Linux 2.  Command-line instructions and bash helper files under [bin/](bin/) are tested on OSX >= 10.14.
 * [git](https://git-scm.com) - Used to clone this repository
 * Mac:
