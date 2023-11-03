@@ -475,3 +475,10 @@ GIOVANNI_ADAPTER_LIMITS_MEMORY=512Mi
 GIOVANNI_ADAPTER_INVOCATION_ARGS='node services/giovanni-adapter/app/cli'
 GIOVANNI_ADAPTER_SERVICE_QUEUE_URLS='["harmonyservices/giovanni-adapter:latest,http://localstack:4566/queue/giovanni-adapter.fifo"]'
 
+GEOLOCO_IMAGE=ldds/geoloco:latest
+GEOLOCO_REQUESTS_CPU=128m
+GEOLOCO_REQUESTS_MEMORY=128Mi
+GEOLOCO_LIMITS_CPU=2048m
+GEOLOCO_LIMITS_MEMORY=2048Mi
+GEOLOCO_INVOCATION_ARGS='python harmony_python_interface/adapter.py'
+GEOLOCO_SERVICE_QUEUE_URLS='["ldds/geoloco:latest,http://localstack:4566/queue/geoloco.fifo"]'
