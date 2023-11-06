@@ -8,7 +8,7 @@ For developing Harmony on _**Windows**_ follow this document as well as the info
 
 Required:
 * A local copy of this repository.  Using `git clone` is strongly recommended
-* Node.js version 16.  We strongly recommend installing [NVM](https://github.com/nvm-sh/nvm) to add and manage node versions.
+* Node.js version 18.  We strongly recommend installing [NVM](https://github.com/nvm-sh/nvm) to add and manage node versions.
 * Mac OSX, Linux, or similar command line tooling.  Harmony is tested to run on OSX >= 10.14 and Amazon Linux 2.  Command-line instructions and bash helper files under [bin/](bin/) are tested on OSX >= 10.14.
 * [git](https://git-scm.com) - Used to clone this repository
 * Mac:
@@ -63,7 +63,7 @@ or
 arch -x86_64 bash
 ```
 
-Ensure node is available and is the correct version, 16.x.y.
+Ensure node is available and is the correct version, 18.x.y.
 
 ```
 $ node --version
@@ -165,12 +165,12 @@ has a specific port and debug port as shown in the following table:
 
 ## Stopping Harmony and Services
 
-The services running in kubernetes can be stopped using the following (this will also delete 
+The services running in kubernetes can be stopped using the following (this will also delete
 the `harmony` namespace):
 
 ```
 ./bin/stop-harmony-and-services
-```  
+```
 
 The Node.js processes for Harmony and its support services can be stopped using the following:
 ```
@@ -259,7 +259,7 @@ Harmony uses [eslint](https://eslint.org) as a linter, which can be invoked as `
 Rather than repeatedly perform the same queries against the CMR, our test suite
 uses [node-replay](https://github.com/assaf/node-replay) to record and play back
 HTTP interactions.  All non-localhost interactions are recorded and placed in files
-in the [fixtures directory](../../fixtures/).
+in the [fixtures directory](../../services/harmony/fixtures/).
 
 By default, the test suite will playback interactions it has already seen and
 record any new interactions to new files.  This behavior can be changed by setting
@@ -307,7 +307,7 @@ Request to this repo:
 ## Additional Resources
 
 * [Adapting new services to Harmony](adapting-new-services.md)
-* [Harmony message schemas](../../app/schemas/data-operation)
-* [EOSS protocol OpenAPI Specification](../../app/schemas/eoss)
+* [Harmony message schemas](../../services/harmony/app/schemas/data-operation)
+* [EOSS protocol OpenAPI Specification](../../services/harmony/app/schemas/eoss)
 * [Harmony NetCDF to Zarr service repository](https://github.com/nasa/harmony-netcdf-to-zarr)
 * [Harmony GDAL-based example service repository](https://github.com/nasa/harmony-service-example)

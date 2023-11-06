@@ -159,7 +159,7 @@ export async function runQueryCmrFromPull(
   try {
     const { operation, scrollID } = workItem;
     const catalogDir = getStacLocation(workItem);
-    response = await axios.post(`http://localhost:${env.workerPort}/work`,
+    response = await axios.post(`http://127.0.0.1:${env.workerPort}/work`,
       {
         outputDir: catalogDir,
         harmonyInput: operation,

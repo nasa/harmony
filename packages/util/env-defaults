@@ -104,6 +104,7 @@ SAME_REGION_ACCESS_ROLE=same-region-access-role
 # Long polling wait time (in seconds) for queues
 QUEUE_LONG_POLLING_WAIT_TIME_SEC=20
 
+GEOLOCO_SERVICE_QUEUE_URLS='["ldds/geoloco:latest,http://localstack:4566/queue/geoloco.fifo"]'
 GIOVANNI_ADAPTER_SERVICE_QUEUE_URLS='["harmonyservices/giovanni-adapter:latest,http://localstack:4566/queue/giovanni-adapter.fifo"]'
 HARMONY_GDAL_ADAPTER_SERVICE_QUEUE_URLS='["ghcr.io/nasa/harmony-gdal-adapter:latest,http://localstack:4566/queue/harmony-gdal-adapter.fifo"]'
 HYBIG_SERVICE_QUEUE_URLS='["sds/harmony-browse-image-generator:latest,http://localstack:4566/queue/hybig.fifo"]'
@@ -111,7 +112,7 @@ HARMONY_SERVICE_EXAMPLE_SERVICE_QUEUE_URLS='["harmonyservices/service-example:la
 HARMONY_NETCDF_TO_ZARR_SERVICE_QUEUE_URLS='["ghcr.io/nasa/harmony-netcdf-to-zarr:latest,http://localstack:4566/queue/harmony-netcdf-to-zarr.fifo"]'
 HARMONY_REGRIDDER_SERVICE_QUEUE_URLS='["sds/harmony-regridder:latest,http://localstack:4566/queue/harmony-regridder.fifo"]'
 SWOT_REPROJECT_SERVICE_QUEUE_URLS='["sds/swot-reproject:latest,http://localstack:4566/queue/swot-reproject.fifo"]'
-VAR_SUBSETTER_SERVICE_QUEUE_URLS='["sds/variable-subsetter:latest,http://localstack:4566/queue/var-subsetter.fifo"]'
+HOSS_SERVICE_QUEUE_URLS='["ghcr.io/nasa/harmony-opendap-subsetter:latest,http://localstack:4566/queue/hoss.fifo"]'
 SDS_MASKFILL_SERVICE_QUEUE_URLS='["sds/maskfill-harmony:latest,http://localstack:4566/queue/sds-maskfill.fifo"]'
 TRAJECTORY_SUBSETTER_SERVICE_QUEUE_URLS='["sds/trajectory-subsetter:latest,http://localstack:4566/queue/trajectory-subsetter.fifo"]'
 PODAAC_CONCISE_SERVICE_QUEUE_URLS='["ghcr.io/podaac/concise:sit,http://localstack:4566/queue/podaac-concise.fifo"]'
