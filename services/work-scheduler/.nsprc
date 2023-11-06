@@ -1,10 +1,5 @@
 {
-  "1092826": {
-    "active": true,
-    "notes": "Ignored since there is no fix",
-    "expiry": "2023-12-01"
-  },
-  "1092470": {
+  "1094596": {
     "active": true,
     "notes": "Ignored since there is no fix",
     "expiry": "2023-12-01"
@@ -12,16 +7,6 @@
   "1092972": {
     "active": true,
     "notes": "Ignored since there is no fix",
-    "expiry": "2023-12-01"
-  },
-  "1094183": {
-    "active": true,
-    "notes": "Ignored since there is no fix",
-    "expiry": "2023-12-01"
-  },
-  "1094228": {
-    "active": true,
-    "notes": "Ignored since it is a dev dependency",
     "expiry": "2023-12-01"
   }
 }
