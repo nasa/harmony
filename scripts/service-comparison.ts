@@ -82,7 +82,7 @@ function validateConcatenation(
   const harmonyConcatenateByDefault = harmonyConfig.capabilities.concatenate_by_default || false;
   const ummConcatenateDefault = ummRecord.umm?.ServiceOptions?.Aggregation?.Concatenate?.ConcatenateDefault || false;
   if (ummConcatenateDefault !== harmonyConcatenateByDefault) {
-    errors.push(`Concatenation default mismatch: harmony is ${harmonyConcatenateByDefault} and UMM-S is ${ummConcatenateDefault}.`);
+    errors.push(`Concatenate by default mismatch: harmony is ${harmonyConcatenateByDefault} and UMM-S is ${ummConcatenateDefault}.`);
   }
   return errors.join(' ');
 }
