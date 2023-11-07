@@ -71,18 +71,18 @@ function validateVariableSubsetting(
  * @returns validation failure message or '' if validation succeeds
  */
 function validateConcatenation(
-  _ummRecord: CmrUmmService, harmonyConfig: ServiceConfig<unknown>,
+  ummRecord: CmrUmmService, harmonyConfig: ServiceConfig<unknown>,
 ): string {
   const errors = [];
-  const _harmonyConcatenation = harmonyConfig.capabilities.concatenation || false;
-  const _harmonyConcatenateByDefault = harmonyConfig.capabilities.concatenate_by_default || false;
-  const ummConcatenation = _ummRecord.umm?.ServiceOptions?.Aggregation?.Concatenate !== undefined;
-  if (_harmonyConcatenation !== ummConcatenation) {
-    errors.push(`Concatenation mismatch: harmony is ${_harmonyConcatenation} and UMM-S is ${ummConcatenation}.`);
+  const harmonyConcatenation = harmonyConfig.capabilities.concatenation || false;
+  const ummConcatenation = ummRecord.umm?.ServiceOptions?.Aggregation?.Concatenate !== undefined;
+  if (harmonyConcatenation !== ummConcatenation) {
+    errors.push(`Concatenation mismatch: harmony is ${harmonyConcatenation} and UMM-S is ${ummConcatenation}.`);
   }
-  const ummConcatenateDefault = _ummRecord.umm?.ServiceOptions?.Aggregation?.Concatenate?.ConcatenateDefault || false;
-  if (ummConcatenateDefault !== _harmonyConcatenateByDefault) {
-    errors.push(`Concatenation default mismatch: harmony is ${_harmonyConcatenateByDefault} and UMM-S is ${ummConcatenateDefault}.`);
+  const harmonyConcatenateByDefault = harmonyConfig.capabilities.concatenate_by_default || false;
+  const ummConcatenateDefault = ummRecord.umm?.ServiceOptions?.Aggregation?.Concatenate?.ConcatenateDefault || false;
+  if (ummConcatenateDefault !== harmonyConcatenateByDefault) {
+    errors.push(`Concatenation default mismatch: harmony is ${harmonyConcatenateByDefault} and UMM-S is ${ummConcatenateDefault}.`);
   }
   return errors.join(' ');
 }
