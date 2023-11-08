@@ -71,11 +71,20 @@ function validateVariableSubsetting(
  * @returns validation failure message or '' if validation succeeds
  */
 function validateConcatenation(
-  _ummRecord: CmrUmmService, harmonyConfig: ServiceConfig<unknown>,
+  ummRecord: CmrUmmService, harmonyConfig: ServiceConfig<unknown>,
 ): string {
-  const _harmonyConcatenation = harmonyConfig.capabilities.concatenation || false;
-  const _harmonyConcatenateByDefault = harmonyConfig.capabilities.concatenate_by_default || false;
-  return '';
+  const errors = [];
+  const harmonyConcatenation = harmonyConfig.capabilities.concatenation || false;
+  const ummConcatenation = ummRecord.umm?.ServiceOptions?.Aggregation?.Concatenate !== undefined;
+  if (harmonyConcatenation !== ummConcatenation) {
+    errors.push(`Concatenation mismatch: harmony is ${harmonyConcatenation} and UMM-S is ${ummConcatenation}.`);
+  }
+  const harmonyConcatenateByDefault = harmonyConfig.capabilities.concatenate_by_default || false;
+  const ummConcatenateDefault = ummRecord.umm?.ServiceOptions?.Aggregation?.Concatenate?.ConcatenateDefault || false;
+  if (ummConcatenateDefault !== harmonyConcatenateByDefault) {
+    errors.push(`Concatenate by default mismatch: harmony is ${harmonyConcatenateByDefault} and UMM-S is ${ummConcatenateDefault}.`);
+  }
+  return errors.join(' ');
 }
 
 /**
@@ -96,7 +105,7 @@ function validateReprojection(
   return '';
 }
 
-const allValidations = [
+export const allValidations = [
   validateSpatialSubsetting,
   validateShapefileSubsetting,
   validateVariableSubsetting,

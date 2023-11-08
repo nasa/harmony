@@ -144,6 +144,12 @@ export interface UmmServiceOptions {
     ProjectionName?: string;
     ProjectionOutputAuthority?: string;
   }[];
+
+  Aggregation?: {
+    Concatenate?: {
+      ConcatenateDefault?: boolean;
+    }
+  }
 }
 
 export interface CmrUmmService {
