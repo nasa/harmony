@@ -67,13 +67,13 @@ Ensure node is available and is the correct version, 18.x.y.
 
 ```
 $ node --version
-v16.14.2
+v18.18.2
 ```
 
-Ensure npm is available and is version 8 or later.
+Ensure npm is available and is version 9 or later.
 ```
 $ npm --version
-8.5.0
+9.8.1
 ```
 
 If either are not the correct versions and you are using NVM, install them and ensure your `PATH` is up-to-date by running:
@@ -82,9 +82,9 @@ If either are not the correct versions and you are using NVM, install them and e
 $ nvm install && nvm use
 ```
 
-The output should include node 16 and npm 8.
+The output should include node 18 and npm 9.
 ```
-Now using node v16.14.2 (npm v8.5.0)
+Now using node v18.18.2 (npm v9.8.1)
 ```
 
 Be sure to **verify the version on the final line** to make sure the NVM binary appears first in your `PATH`.
