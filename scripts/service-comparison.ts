@@ -105,7 +105,7 @@ function validateReprojection(
   return '';
 }
 
-const allValidations = [
+export const allValidations = [
   validateSpatialSubsetting,
   validateShapefileSubsetting,
   validateVariableSubsetting,
