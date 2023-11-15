@@ -2,7 +2,7 @@ import { IsInt, IsNotEmpty, Min } from 'class-validator';
 import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
-import { envOverrides, HarmonyEnv, IHarmonyEnv, makeConfigVar, validateEnvironment, envVars } from '@harmony/util/env';
+import { HarmonyEnv, IHarmonyEnv, makeConfigVar, validateEnvironment, envVars } from '@harmony/util/env';
 import _ from 'lodash';
 
 //
@@ -129,11 +129,10 @@ class HarmonyServerEnv extends HarmonyEnv implements IHarmonyServerEnv {
 
 }
 
-const allEnv = { ...envLocalDefaults, ...envOverrides };
 const serverEnvVars = _.cloneDeep(envVars) as IHarmonyServerEnv;
 
-for (const k of Object.keys(allEnv)) {
-  makeConfigVar(serverEnvVars, k, allEnv[k]);
+for (const k of Object.keys(envLocalDefaults)) {
+  serverEnvVars[_.camelCase(k)] = makeConfigVar(envLocalDefaults[k]);
 }
 
 // validate the env vars

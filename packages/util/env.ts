@@ -202,41 +202,35 @@ export function validateEnvironment(env: HarmonyEnv): void {
   }
 }
 
-export const envVars: IHarmonyEnv = {} as IHarmonyEnv;
-
 /**
- * Add a symbol to an env variable map with an appropriate value. The exported symbol will be in
- * camel case, e.g., `maxPostFileSize`. This approach has the drawback that these
+ * Parse a string env variable to a boolean or number if necessary. This approach has the drawback that these
  * config variables don't show up in VS Code autocomplete, but the reduction in repeated
  * boilerplate code is probably worth it.
  *
- * @param envMap - The object to which the variable should be added
- * @param envName - The environment variable corresponding to the config variable in
- *   CONSTANT_CASE form
- * @param defaultValue - The value to use if the environment variable is not set. Only strings
- *   and integers are supported
+ * @param stringValue - The environment variable value as a string
+ * @returns the parsed value
  */
-export function makeConfigVar(env: object, envName: string, defaultValue?: string): void {
-  const stringValue = originalEnv[envName] || defaultValue;
-  let val: number | string | boolean = stringValue;
+export function makeConfigVar(stringValue: string): number | string | boolean {
   if (isInteger(stringValue)) {
-    val = parseInt(stringValue, 10);
+    return parseInt(stringValue, 10);
   } else if (isFloat(stringValue)) {
-    val = parseFloat(stringValue);
+    return parseFloat(stringValue);
   } else if (isBoolean(stringValue)) {
-    val = parseBoolean(stringValue);
-  }
-  env[_.camelCase(envName)] = val;
+    return parseBoolean(stringValue);
+  } else {
+    return stringValue;
+  } 
+}
+
+export const envVars: IHarmonyEnv = {} as IHarmonyEnv;
+const allEnv = { ...envDefaults, ...envOverrides, ...originalEnv };
+for (const k of Object.keys(allEnv)) {
+  envVars[_.camelCase(k)] = makeConfigVar(allEnv[k]);
   // for existing env vars this is redundant (but doesn't hurt), but this allows us
   // to add new env vars to the process as needed
-  process.env[envName] = stringValue;
+  process.env[k] = allEnv[k];
 }
-
-const allEnv = { ...envDefaults, ...originalEnv };
-
-for (const k of Object.keys(allEnv)) {
-  makeConfigVar(envVars, k, allEnv[k]);
-}
+console.log(envVars);
 
 // special cases
 
@@ -270,6 +264,7 @@ for (const k of Object.keys(process.env)) {
     }
   }
 }
-
+console.log(envVars);
 const envVarsObj = new HarmonyEnv(envVars);
+console.log(envVarsObj);
 validateEnvironment(envVarsObj);
