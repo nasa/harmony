@@ -48,6 +48,8 @@ source ".env"
 if [ -n "$KUBE_CONTEXT" ]; then :
 elif kubectl config get-contexts docker-desktop &> /dev/null ; then
   KUBE_CONTEXT='docker-desktop'
+elif kubectl config get-contexts colima &> /dev/null ; then
+  KUBE_CONTEXT='colima'
 elif command -v minikube &> /dev/null ; then
   KUBE_CONTEXT='minikube'
 else

@@ -8,7 +8,7 @@ metadata:
 spec:
   containers:
     - name: localstack
-      image: localstack/localstack:2.0.2
+      image: localstack/localstack:latest
       ports:
         - containerPort: 4566
       volumeMounts:

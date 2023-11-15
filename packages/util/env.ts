@@ -192,7 +192,7 @@ export function getValidationErrors(env: HarmonyEnv): ValidationError[] {
 export function validateEnvironment(env: HarmonyEnv): void {
   if (originalEnv.SKIP_ENV_VALIDATION !== 'true') {
     const errors = getValidationErrors(env);
-  
+
     if (errors.length > 0) {
       for (const err of errors) {
         logger.error(err);
@@ -262,7 +262,8 @@ for (const k of Object.keys(process.env)) {
         if (image && url) {
           // replace 'localstack' with `env.localstackHost` to allow for harmony to be run in a
           // container
-          envVars.serviceQueueUrls[image] = url.replace('localstack', envVars.localstackHost);
+          // envVars.serviceQueueUrls[image] = url.replace('localstack', envVars.localstackSqsHost);
+          envVars.serviceQueueUrls[image] = url;
         }
       }
     } catch (e) {
