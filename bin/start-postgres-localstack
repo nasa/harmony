@@ -40,10 +40,15 @@ done
 DRIVER_DEFAULT=docker
 
 DRIVER=${DRIVER:-$DRIVER_DEFAULT}
+COMMAND_LINE_KUBE_CONTEXT=$KUBE_CONTEXT
 
 source "./services/harmony/env-defaults"
 source ".env"
 [[ -n $KUBERNETES_URL ]] && alias kubectl="kubectl -s $KUBERNETES_URL"
+
+if [ -n "$COMMAND_LINE_KUBE_CONTEXT" ]; then :
+  KUBE_CONTEXT=$COMMAND_LINE_KUBE_CONTEXT
+fi
 
 if [ -n "$KUBE_CONTEXT" ]; then :
 elif kubectl config get-contexts docker-desktop &> /dev/null ; then

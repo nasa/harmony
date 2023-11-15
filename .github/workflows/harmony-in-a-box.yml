@@ -29,7 +29,7 @@ jobs:
       run: npm ci
 
     - name: Start harmony in a box
-      run: ./bin/bootstrap-harmony
+      run: KUBE_CONTEXT=colima bin/bootstrap-harmony
     - name: Wait for the server to start
       run: sleep 30s
 
