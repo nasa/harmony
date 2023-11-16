@@ -7,8 +7,8 @@ import {
   processWorkItems } from '../../../harmony/app/backends/workflow-orchestration/work-item-updates';
 import { getJobIdForWorkItem } from '../../../harmony/app/models/work-item';
 import { default as defaultLogger } from '../../../harmony/app/util/log';
-import { WorkItemQueueType } from '../../../harmony/app/util/queue/queue';
-import { getQueueForType } from '../../../harmony/app/util/queue/queue-factory';
+import { WorkItemQueueType } from '@harmony/util/queue';
+import { queuefactory as qf } from '@harmony/util';
 import sleep from '../../../harmony/app/util/sleep';
 import { Worker } from '../../../harmony/app/workers/worker';
 import env from '../util/env';
@@ -116,7 +116,7 @@ export async function handleBatchWorkItemUpdates(
  * @param queueType - Type of the queue to read from
  */
 export async function batchProcessQueue(queueType: WorkItemQueueType): Promise<void> {
-  const queue = getQueueForType(queueType);
+  const queue = qf.getQueueForType(queueType);
   const startTime = Date.now();
   // use a smaller batch size for the large item update queue otherwise use the SQS max batch size
   // of 10

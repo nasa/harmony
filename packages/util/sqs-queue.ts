@@ -3,7 +3,7 @@ import {
   DeleteMessageBatchCommand, SQSClientConfig, SendMessageCommandInput, PurgeQueueCommand,
   GetQueueAttributesCommand,
 } from '@aws-sdk/client-sqs';
-import env from '../env';
+import { envVars as env } from './env';
 import { Queue, ReceivedMessage } from './queue';
 
 export class SqsQueue extends Queue {

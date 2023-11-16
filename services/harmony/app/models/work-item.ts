@@ -10,7 +10,8 @@ import Record from './record';
 import WorkflowStep from './workflow-steps';
 import { WorkItemRecord, WorkItemStatus, getStacLocation, WorkItemQuery } from './work-item-interface';
 import { eventEmitter } from '../events';
-import { getWorkSchedulerQueue } from '../../app/util/queue/queue-factory';
+import { queuefactory as qf } from '@harmony/util';
+
 
 // The step index for the query-cmr task. Right now query-cmr only runs as the first step -
 // if this changes we will have to revisit this
@@ -885,7 +886,7 @@ eventEmitter.on(WorkItemEvent.CREATED, async (workItem: WorkItem) => {
   if (env.useServiceQueues) {
     const { serviceID } = workItem;
     logger.debug(`Work item created for service ${serviceID}, putting message on scheduler queue`);
-    const queue = getWorkSchedulerQueue();
+    const queue = qf.getWorkSchedulerQueue();
     await queue.sendMessage(serviceID);
   }
 });

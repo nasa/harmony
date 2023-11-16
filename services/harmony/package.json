@@ -4,21 +4,7 @@
   "description": "Data services frontend",
   "main": "index.js",
   "scripts": {
-    "test": "strict-npm-engines && eslint --ext .ts --ignore-pattern built . && nyc mocha && better-npm-audit audit",
-    "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha",
-    "test-bail": "TS_NODE_TRANSPILE_ONLY=true mocha --bail",
-    "coverage": "nyc mocha",
-    "lint": "eslint --ext .ts --ignore-pattern built .",
-    "start": "NODE_OPTIONS=--max-old-space-size=3096 ts-node -r tsconfig-paths/register app/server.ts",
-    "start-dev": "strict-npm-engines && ts-node-dev --no-notify -r tsconfig-paths/register --watch app/views,public/js --respawn app/server",
-    "start-dev-fast": "TS_NODE_TRANSPILE_ONLY=true ts-node-dev --no-notify -r tsconfig-paths/register --respawn --inspect=127.0.0.1:${DEBUG_PORT:-9200} app/server",
-    "copy-files": "copyfiles 'app/schemas/**/*' 'app/templates/**/*' 'app/frontends/templates/**/*' 'config/**/*' 'db/**/*' 'public/**/*' '../../config/services.yml' built",
-    "watch-debug": "TS_NODE_TRANSPILE_ONLY=true nodemon --inspect=5858 -e ts,tsx,html --exec node -r tsconfig-paths/register -r ts-node/register app/server.ts",
-    "prebuild": "./bin/prebuild",
-    "build": "docker build -t harmonyservices/harmony:${VERSION:-latest} .",
-    "run-notebooks-image": "source .env && docker run -i -t --platform linux/amd64 --init -p 8888:8888 --env NB_EDL_USERNAME=\"${NB_EDL_USERNAME}\" --env NB_EDL_PASSWORD=\"${NB_EDL_PASSWORD}\" harmonyservices/notebooks:${VERSION:-latest}",
-    "publish": "docker push harmonyservices/harmony:${VERSION:-latest}",
-    "compare-services": "SKIP_ENV_VALIDATION=true ts-node scripts/service-comparison.ts"
+    "test": "mocha --bail"
   },
   "keywords": [
     "NASA",
@@ -28,8 +14,7 @@
     "Cumulus"
   ],
   "engines": {
-    "node": "^18.18.2",
-    "npm": ">=8"
+    "node": "^18.18.2"
   },
   "nyc": {
     "all": true,
@@ -64,7 +49,7 @@
     "@aws-sdk/s3-request-presigner": "^3.437.0",
     "@aws-sdk/url-parser": "^3.374.0",
     "@aws-sdk/util-format-url": "^3.433.0",
-    "@harmony/util": "file:../../packages/util",
+    "@harmony/util": "workspace:*",
     "@kubernetes/client-node": "^0.18.1",
     "@mapbox/geojson-rewind": "^0.5.0",
     "@tmcw/togeojson": "^4.2.0",

@@ -1,5 +1,5 @@
 import { v4 as uuid } from 'uuid';
-import { Queue, ReceivedMessage, WorkItemQueueType } from '../../app/util/queue/queue';
+import { Queue, ReceivedMessage, WorkItemQueueType } from '@harmony/util/queue';
 // TODO - this is a hack. we should move the batchProcessQueue function to a common package.
 import { batchProcessQueue } from '../../../work-updater/app/workers/updater';
 

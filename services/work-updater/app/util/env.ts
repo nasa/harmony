@@ -3,7 +3,7 @@ import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
 import { HarmonyEnv, IHarmonyEnv, envOverrides, makeConfigVar, validateEnvironment, envVars } from '@harmony/util/env';
-import { WorkItemQueueType } from '../../../harmony/app/util/queue/queue';
+import { WorkItemQueueType } from '@harmony/util/queue';
 import _ from 'lodash';
 
 //
