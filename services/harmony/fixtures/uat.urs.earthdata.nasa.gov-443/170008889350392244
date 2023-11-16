@@ -1,0 +1,26 @@
+GET /api/user_groups/groups_for_user/jdoe3
+accept: application/json, text/plain, */*
+authorization: Bearer fake_access
+accept-encoding: gzip, compress, deflate, br
+
+HTTP/1.1 401 Unauthorized
+server: nginx/1.22.1
+date: Wed, 15 Nov 2023 22:54:53 GMT
+content-type: application/json; charset=utf-8
+transfer-encoding: chunked
+connection: close
+x-frame-options: SAMEORIGIN
+x-xss-protection: 1; mode=block
+x-content-type-options: nosniff
+x-download-options: noopen
+x-permitted-cross-domain-policies: none
+referrer-policy: strict-origin-when-cross-origin
+cache-control: no-store
+pragma: no-cache
+expires: Fri, 01 Jan 1990 00:00:00 GMT
+www-authenticate: Bearer realm="Earthdata Login",error="invalid_token"
+x-request-id: c7c8abdc-d219-4089-8b63-4c598f073dda
+x-runtime: 0.002429
+strict-transport-security: max-age=31536000
+
+{"error":"invalid_token"}
