@@ -588,7 +588,7 @@ export async function getAllVariables(
 export async function getAllServices(
   query: CmrQuery, token: string,
 ): Promise<Array<CmrUmmService>> {
-  const servicesResponse = await _cmrPost('/search/services.umm_json_v1_5_1', query, token) as CmrServicesResponse;
+  const servicesResponse = await _cmrPost('/search/services.umm_json_v1_5_2', query, token) as CmrServicesResponse;
   const { hits } = servicesResponse.data;
   let services = servicesResponse.data.items;
   let numServicesRetrieved = services.length;
@@ -598,7 +598,7 @@ export async function getAllServices(
     page_num += 1;
     logger.debug(`Paging through services = ${page_num}, numServicesRetrieved = ${numServicesRetrieved}, total hits ${hits}`);
     query.page_num = page_num;
-    const response = await _cmrPost('/search/services.umm_json_v1_5_1', query, token) as CmrServicesResponse;
+    const response = await _cmrPost('/search/services.umm_json_v1_5_2', query, token) as CmrServicesResponse;
     const pageOfServices = response.data.items;
     services = services.concat(pageOfServices);
     numServicesRetrieved += pageOfServices.length;
