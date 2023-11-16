@@ -22,6 +22,11 @@ if [ "$NODE_ENV" != "development" ]; then
     envsubst < "config/grafana.yaml" | kubectl apply -f -
 fi
 
+# Deploy NODE EXPORTER
+if [ "$NODE_ENV" != "development" ]; then
+    envsubst < "config/daemonset.yaml" | kubectl apply -f -
+fi
+
 # Check for helm
 if ! command -v "helm" &> /dev/null; then
     echo "'helm' command not found. Prometheus adapter needs to be deployed via helm."

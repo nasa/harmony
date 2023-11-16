@@ -249,7 +249,7 @@ data:
               "type": "prometheus",
               "uid": "P1809F7CD0C75ACF3"
             },
-            "expr": "sum(kube_pod_info{node=~\"$node\"}) / sum(kube_node_status_allocatable_pods{node=~\".*\"})",
+            "expr": "sum(kube_pod_info{node=~\"$${hold}node\"}) /(sum(kube_node_info) * 110))",
             "format": "time_series",
             "intervalFactor": 1,
             "refId": "A"
@@ -332,7 +332,7 @@ data:
               "type": "prometheus",
               "uid": "P1809F7CD0C75ACF3"
             },
-            "expr": "sum(kube_pod_container_resource_requests_cpu_cores{node=~\"$node\"}) / sum(kube_node_status_allocatable_cpu_cores{node=~\"$node\"})",
+            "expr": "sum(kube_pod_container_resource_requests{node=~\"$${hold}node\"}) / sum(kube_node_status_allocatable{node=~\"$${hold}node\"})",
             "format": "time_series",
             "intervalFactor": 1,
             "refId": "A"
@@ -415,7 +415,7 @@ data:
               "type": "prometheus",
               "uid": "P1809F7CD0C75ACF3"
             },
-            "expr": "sum(kube_pod_container_resource_requests_memory_bytes{node=~\"$node\"}) / sum(kube_node_status_allocatable_memory_bytes{node=~\"$node\"})",
+            "expr": "sum(kube_pod_container_resource_requests{node=~\"$${hold}node\"}) / sum(kube_node_status_allocatable{node=~\"$${hold}node\"})",
             "format": "time_series",
             "intervalFactor": 1,
             "refId": "A"
@@ -498,7 +498,7 @@ data:
               "type": "prometheus",
               "uid": "P1809F7CD0C75ACF3"
             },
-            "expr": "(sum (node_filesystem_size{nodename=~\"$node\"}) - sum (node_filesystem_free{nodename=~\"$node\"})) / sum (node_filesystem_size{nodename=~\"$node\"})",
+            "expr": "(sum (node_filesystem_size_bytes{nodename=~\"$${hold}node\"}) - sum (node_filesystem_free_bytes{nodename=~\"$${hold}node\"})) / sum (node_filesystem_size_bytes{nodename=~\"$${hold}node\"})",
             "format": "time_series",
             "intervalFactor": 1,
             "refId": "A"
@@ -557,7 +557,7 @@ data:
               "type": "prometheus",
               "uid": "P1809F7CD0C75ACF3"
             },
-            "expr": "sum(kube_node_status_allocatable_pods{node=~\"$node\"})",
+            "expr": "sum(kube_node_status_allocatable_pods{node=~\"$${hold}node\"})",
             "format": "time_series",
             "intervalFactor": 1,
             "legendFormat": "allocatable",
@@ -579,7 +579,7 @@ data:
               "type": "prometheus",
               "uid": "P1809F7CD0C75ACF3"
             },
-            "expr": "sum(kube_pod_info{node=~\"$node\"})",
+            "expr": "sum(kube_pod_info{node=~\"$${hold}node\"})",
             "format": "time_series",
             "intervalFactor": 1,
             "legendFormat": "requested",
@@ -667,7 +667,7 @@ data:
               "type": "prometheus",
               "uid": "P1809F7CD0C75ACF3"
             },
-            "expr": "sum(kube_node_status_capacity_cpu_cores{node=~\"$node\"})",
+            "expr": "sum(kube_node_status_capacity{node=~\"$${hold}node\"})",
             "format": "time_series",
             "intervalFactor": 1,
             "legendFormat": "allocatable",
@@ -678,7 +678,7 @@ data:
               "type": "prometheus",
               "uid": "P1809F7CD0C75ACF3"
             },
-            "expr": "sum(kube_node_status_allocatable_cpu_cores{node=~\"$node\"})",
+            "expr": "sum(kube_node_status_allocatable{node=~\"$node\"})",
             "format": "time_series",
             "intervalFactor": 1,
             "legendFormat": "capacity",
@@ -689,7 +689,7 @@ data:
               "type": "prometheus",
               "uid": "P1809F7CD0C75ACF3"
             },
-            "expr": "sum(kube_pod_container_resource_requests_cpu_cores{node=~\"$node\"})",
+            "expr": "sum(kube_pod_container_resource_requests{node=~\"$${hold}node\"})",
             "format": "time_series",
             "intervalFactor": 1,
             "legendFormat": "requested",
@@ -777,7 +777,7 @@ data:
               "type": "prometheus",
               "uid": "P1809F7CD0C75ACF3"
             },
-            "expr": "sum(kube_node_status_allocatable_memory_bytes{node=~\"$node\"})",
+            "expr": "sum(kube_node_status_allocatable_memory_bytes{node=~\"$${hold}node\"})",
             "format": "time_series",
             "intervalFactor": 1,
             "legendFormat": "allocatable",
@@ -788,7 +788,7 @@ data:
               "type": "prometheus",
               "uid": "P1809F7CD0C75ACF3"
             },
-            "expr": "sum(kube_node_status_capacity_memory_bytes{node=~\"$node\"})",
+            "expr": "sum(kube_node_status_capacity{node=~\"$${hold}node\"})",
             "format": "time_series",
             "intervalFactor": 1,
             "legendFormat": "capacity",
@@ -799,7 +799,7 @@ data:
               "type": "prometheus",
               "uid": "P1809F7CD0C75ACF3"
             },
-            "expr": "sum(kube_pod_container_resource_requests_memory_bytes{node=~\"$node\"})",
+            "expr": "sum(kube_pod_container_resource_requests{node=~\"$${hold}node\"})",
             "format": "time_series",
             "intervalFactor": 1,
             "legendFormat": "requested",
@@ -886,7 +886,7 @@ data:
               "type": "prometheus",
               "uid": "P1809F7CD0C75ACF3"
             },
-            "expr": "sum(node_filesystem_size{nodename=~\"$node\"}) - sum(node_filesystem_free{nodename=~\"$node\"})",
+            "expr": "sum(node_filesystem_size_bytes{nodename=~\"$${hold}node\"}) - sum(node_filesystem_free_bytes{nodename=~\"$${hold}node\"})",
             "format": "time_series",
             "intervalFactor": 1,
             "legendFormat": "usage",
@@ -1040,7 +1040,7 @@ data:
               "type": "prometheus",
               "uid": "P1809F7CD0C75ACF3"
             },
-            "expr": "kube_deployment_status_replicas{namespace=~\"$namespace\"}",
+            "expr": "kube_deployment_status_replicas{namespace=~\"$${hold}namespace\"}",
             "format": "time_series",
             "instant": true,
             "interval": "",
@@ -1121,7 +1121,7 @@ data:
               "type": "prometheus",
               "uid": "P1809F7CD0C75ACF3"
             },
-            "expr": "sum(kube_deployment_status_replicas{namespace=~\"$namespace\"})",
+            "expr": "sum(kube_deployment_status_replicas{namespace=~\"$${hold}namespace\"})",
             "format": "time_series",
             "intervalFactor": 1,
             "refId": "A"
@@ -1198,7 +1198,7 @@ data:
               "type": "prometheus",
               "uid": "P1809F7CD0C75ACF3"
             },
-            "expr": "sum(kube_deployment_status_replicas_updated{namespace=~\"$namespace\"})",
+            "expr": "sum(kube_deployment_status_replicas_updated{namespace=~\"$${hold}namespace\"})",
             "format": "time_series",
             "intervalFactor": 1,
             "refId": "A"
@@ -1275,7 +1275,7 @@ data:
               "type": "prometheus",
               "uid": "P1809F7CD0C75ACF3"
             },
-            "expr": "sum(kube_deployment_status_replicas_unavailable{namespace=~\"$namespace\"})",
+            "expr": "sum(kube_deployment_status_replicas_unavailable{namespace=~\"$${hold}namespace\"})",
             "format": "time_series",
             "intervalFactor": 1,
             "refId": "A"
@@ -1378,7 +1378,7 @@ data:
               "type": "prometheus",
               "uid": "P1809F7CD0C75ACF3"
             },
-            "expr": "sum(kube_node_info{node=~\"$node\"})",
+            "expr": "sum(kube_node_info{node=~'$${dollar}node'})",
             "format": "time_series",
             "intervalFactor": 1,
             "refId": "A"
@@ -1458,7 +1458,7 @@ data:
               "type": "prometheus",
               "uid": "P1809F7CD0C75ACF3"
             },
-            "expr": "sum(kube_node_status_condition{condition=\"OutOfDisk\", node=~\"$node\", status=\"true\"})",
+            "expr": "sum(kube_node_status_condition{condition=\"OutOfDisk\", node=~\"$${hold}node\", status=\"true\"})",
             "format": "time_series",
             "intervalFactor": 1,
             "refId": "A"
@@ -1538,7 +1538,7 @@ data:
               "type": "prometheus",
               "uid": "P1809F7CD0C75ACF3"
             },
-            "expr": "sum(kube_node_spec_unschedulable{node=~\"$node\"})",
+            "expr": "sum(kube_node_spec_unschedulable{node=~\"$${hold}node\"})",
             "format": "time_series",
             "intervalFactor": 1,
             "refId": "A"
@@ -1642,7 +1642,7 @@ data:
               "type": "prometheus",
               "uid": "P1809F7CD0C75ACF3"
             },
-            "expr": "sum(kube_pod_status_phase{namespace=~\"$namespace\", phase=\"Running\"})",
+            "expr": "sum(kube_pod_status_phase{namespace=~\"$${hold}namespace\", phase=\"Running\"})",
             "format": "time_series",
             "interval": "",
             "intervalFactor": 1,
@@ -1721,7 +1721,7 @@ data:
               "type": "prometheus",
               "uid": "P1809F7CD0C75ACF3"
             },
-            "expr": "sum(kube_pod_status_phase{namespace=~\"$namespace\", phase=\"Pending\"})",
+            "expr": "sum(kube_pod_status_phase{namespace=~\"$${hold}namespace\", phase=\"Pending\"})",
             "format": "time_series",
             "interval": "",
             "intervalFactor": 1,
@@ -1800,7 +1800,7 @@ data:
               "type": "prometheus",
               "uid": "P1809F7CD0C75ACF3"
             },
-            "expr": "sum(kube_pod_status_phase{namespace=~\"$namespace\", phase=\"Failed\"})",
+            "expr": "sum(kube_pod_status_phase{namespace=~\"$${hold}namespace\", phase=\"Failed\"})",
             "format": "time_series",
             "interval": "",
             "intervalFactor": 1,
@@ -1879,7 +1879,7 @@ data:
               "type": "prometheus",
               "uid": "P1809F7CD0C75ACF3"
             },
-            "expr": "sum(kube_pod_status_phase{namespace=~\"$namespace\", phase=\"Succeeded\"})",
+            "expr": "sum(kube_pod_status_phase{namespace=~\"$${hold}namespace\", phase=\"Succeeded\"})",
             "format": "time_series",
             "interval": "",
             "intervalFactor": 1,
@@ -1958,7 +1958,7 @@ data:
               "type": "prometheus",
               "uid": "P1809F7CD0C75ACF3"
             },
-            "expr": "sum(kube_pod_status_phase{namespace=~\"$namespace\", phase=\"Unknown\"})",
+            "expr": "sum(kube_pod_status_phase{namespace=~\"$${hold}namespace\", phase=\"Unknown\"})",
             "format": "time_series",
             "interval": "",
             "intervalFactor": 1,
@@ -2063,7 +2063,7 @@ data:
               "type": "prometheus",
               "uid": "P1809F7CD0C75ACF3"
             },
-            "expr": "sum(kube_pod_container_status_running{namespace=~\"$namespace\"})",
+            "expr": "sum(kube_pod_container_status_running{namespace=~\"$${hold}namespace\"})",
             "format": "time_series",
             "intervalFactor": 1,
             "refId": "A"
@@ -2141,7 +2141,7 @@ data:
               "type": "prometheus",
               "uid": "P1809F7CD0C75ACF3"
             },
-            "expr": "sum(kube_pod_container_status_waiting{namespace=~\"$namespace\"})",
+            "expr": "sum(kube_pod_container_status_waiting{namespace=~\"$${hold}namespace\"})",
             "format": "time_series",
             "intervalFactor": 1,
             "refId": "A"
@@ -2219,7 +2219,7 @@ data:
               "type": "prometheus",
               "uid": "P1809F7CD0C75ACF3"
             },
-            "expr": "sum(kube_pod_container_status_terminated{namespace=~\"$namespace\"})",
+            "expr": "sum(kube_pod_container_status_terminated{namespace=~\"$${hold}namespace\"})",
             "format": "time_series",
             "intervalFactor": 1,
             "refId": "A"
@@ -2375,7 +2375,7 @@ data:
               "type": "prometheus",
               "uid": "P1809F7CD0C75ACF3"
             },
-            "expr": "sum(kube_pod_container_resource_requests_cpu_cores{namespace=~\"$namespace\", node=~\"$node\"})",
+            "expr": "sum(kube_pod_container_resource_requests_cpu_cores{namespace=~\"$${hold}namespace\", node=~\"$${hold}node\"})",
             "format": "time_series",
             "intervalFactor": 1,
             "refId": "A"
@@ -2453,7 +2453,7 @@ data:
               "type": "prometheus",
               "uid": "P1809F7CD0C75ACF3"
             },
-            "expr": "sum(kube_pod_container_resource_requests_memory_bytes{namespace=~\"$namespace\", node=~\"$node\"})",
+            "expr": "sum(kube_pod_container_resource_requests_memory_bytes{namespace=~\"$${hold}namespace\", node=~\"$${hold}node\"})",
             "format": "time_series",
             "intervalFactor": 1,
             "refId": "A"
@@ -2557,7 +2557,7 @@ data:
               "type": "prometheus",
               "uid": "P1809F7CD0C75ACF3"
             },
-            "expr": "sum(kube_job_status_succeeded{namespace=~\"$namespace\"})",
+            "expr": "sum(kube_job_status_succeeded{namespace=~\"$${hold}namespace\"})",
             "format": "time_series",
             "intervalFactor": 1,
             "refId": "A"
@@ -2635,7 +2635,7 @@ data:
               "type": "prometheus",
               "uid": "P1809F7CD0C75ACF3"
             },
-            "expr": "sum(kube_job_status_active{namespace=~\"$namespace\"})",
+            "expr": "sum(kube_job_status_active{namespace=~\"$${hold}namespace\"})",
             "format": "time_series",
             "intervalFactor": 1,
             "refId": "A"
@@ -2713,7 +2713,7 @@ data:
               "type": "prometheus",
               "uid": "P1809F7CD0C75ACF3"
             },
-            "expr": "sum(kube_job_status_failed{namespace=~\"$namespace\"})",
+            "expr": "sum(kube_job_status_failed{namespace=~\"$${hold}namespace\"})",
             "format": "time_series",
             "intervalFactor": 1,
             "refId": "A"
@@ -2819,8 +2819,8 @@ data:
       ]
     },
     "timezone": "browser",
-    "title": "Kubernetes Cluster (Prometheus)",
-    "uid": "4XuMd2Iiz",
+    "title": "Kubernetes Cluster New(Prometheus)-Latest-1",
+    "uid": "4XuMd2Iiz2",
     "version": 1,
     "weekStart": ""
     }
