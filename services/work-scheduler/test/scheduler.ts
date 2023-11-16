@@ -6,7 +6,7 @@ import { Logger } from 'winston';
 import * as scheduler from '../app/workers/scheduler';
 import * as k8s from '../app/util/k8s';
 import * as workItemPolling from '../../harmony/app/backends/workflow-orchestration/work-item-polling';
-import * as queueFactory from '../../harmony/app/util/queue/queue-factory';
+import { queuefactory as qf } from '@harmony/util';
 import logger from '../../harmony/app/util/log';
 import { MemoryQueue } from '../../harmony/test/helpers/memory-queue';
 import WorkItem from '../../harmony/app/models/work-item';
@@ -31,11 +31,11 @@ describe('Scheduler Worker', async function () {
       getWorkItemsFromDatabaseStub = sinon.stub(workItemPolling, 'getWorkItemsFromDatabase').callsFake(async function (_serviceID: string, _logger: Logger, _batchSize: number) {
         return [{ workItem: new WorkItem({ id: 1 }) }] as WorkItemData[];
       });
-      getSchedulerQueueStub = sinon.stub(queueFactory, 'getWorkSchedulerQueue').callsFake(function () {
+      getSchedulerQueueStub = sinon.stub(qf, 'getWorkSchedulerQueue').callsFake(function () {
         return schedulerQueue;
       });
-      getQueueUrlForServiceStub = sinon.stub(queueFactory, 'getQueueUrlForService').callsFake(function (serviceID: string) { return serviceID; });
-      getQueueForUrlStub = sinon.stub(queueFactory, 'getQueueForUrl').callsFake(function (url: string) {
+      getQueueUrlForServiceStub = sinon.stub(qf, 'getQueueUrlForService').callsFake(function (serviceID: string) { return serviceID; });
+      getQueueForUrlStub = sinon.stub(qf, 'getQueueForUrl').callsFake(function (url: string) {
         let queue = serviceQueues[url];
         if (!queue) {
           queue = new MemoryQueue();

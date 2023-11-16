@@ -4,7 +4,8 @@
   "description": "Data services frontend",
   "main": "index.js",
   "scripts": {
-    "test": "mocha --bail"
+    "test": "mocha --bail",
+    "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha"
   },
   "keywords": [
     "NASA",

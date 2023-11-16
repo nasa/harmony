@@ -4,7 +4,8 @@
   "description": "Utility modules related to Harmony",
   "main": "./index.ts",
   "scripts": {
-    "test": "mocha"
+    "test": "mocha",
+    "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha"
   },
   "files": [
     "*.ts",

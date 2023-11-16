@@ -108,8 +108,8 @@ importers:
         specifier: ^3.433.0
         version: 3.433.0
       '@harmony/util':
-        specifier: file:../../packages/util
-        version: file:packages/util
+        specifier: workspace:*
+        version: link:../../packages/util
       ajv:
         specifier: ^8.8.0
         version: 8.12.0
@@ -689,8 +689,8 @@ importers:
         specifier: ^3.433.0
         version: 3.433.0
       '@harmony/util':
-        specifier: file:../../packages/util
-        version: file:packages/util
+        specifier: workspace:*
+        version: link:../../packages/util
       ajv:
         specifier: ^8.12.0
         version: 8.12.0
@@ -852,8 +852,8 @@ importers:
         specifier: ^3.433.0
         version: 3.433.0
       '@harmony/util':
-        specifier: file:../../packages/util
-        version: file:packages/util
+        specifier: workspace:*
+        version: link:../../packages/util
       '@kubernetes/client-node':
         specifier: ^0.17.1
         version: 0.17.1
@@ -991,8 +991,8 @@ importers:
         specifier: ^3.433.0
         version: 3.433.0
       '@harmony/util':
-        specifier: file:../../packages/util
-        version: file:packages/util
+        specifier: workspace:*
+        version: link:../../packages/util
       '@types/node-fetch':
         specifier: ^2.5.12
         version: 2.6.8
@@ -1157,8 +1157,8 @@ importers:
         specifier: ^3.433.0
         version: 3.433.0
       '@harmony/util':
-        specifier: file:../../packages/util
-        version: file:packages/util
+        specifier: workspace:*
+        version: link:../../packages/util
       '@types/node-fetch':
         specifier: ^2.5.12
         version: 2.6.8
@@ -1314,8 +1314,8 @@ importers:
         specifier: ^3.433.0
         version: 3.433.0
       '@harmony/util':
-        specifier: file:../../packages/util
-        version: file:packages/util
+        specifier: workspace:*
+        version: link:../../packages/util
       '@kubernetes/client-node':
         specifier: ^0.17.1
         version: 0.17.1
@@ -13279,21 +13279,6 @@ packages:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
     dev: true
-
-  file:packages/util:
-    resolution: {directory: packages/util, type: directory}
-    name: '@harmony/util'
-    engines: {node: ^18.18.2, npm: '>=8'}
-    dependencies:
-      '@aws-sdk/client-sqs': 3.441.0
-      class-validator: 0.14.0
-      dotenv: 16.3.1
-      lodash: 4.17.21
-      reflect-metadata: 0.1.13
-      winston: 3.11.0
-    transitivePeerDependencies:
-      - aws-crt
-    dev: false
 
   github.com/bilts/simple-oauth2/9ff4514d5692b5786a089f87fd12791d01ef40bb:
     resolution: {tarball: https://codeload.github.com/bilts/simple-oauth2/tar.gz/9ff4514d5692b5786a089f87fd12791d01ef40bb}

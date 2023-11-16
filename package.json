@@ -4,7 +4,8 @@
   "description": "Data services frontend",
   "preinstall": "npx only-allow pnpm",
   "scripts": {
-    "test": "pnpm run -r test"
+    "test": "pnpm run -r test",
+    "test-fast": "pnpm run -r test-fast"
   },
   "keywords": [
     "NASA",

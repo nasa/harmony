@@ -34,7 +34,7 @@
     "@aws-sdk/s3-request-presigner": "^3.437.0",
     "@aws-sdk/url-parser": "^3.374.0",
     "@aws-sdk/util-format-url": "^3.433.0",
-    "@harmony/util": "file:../../packages/util",
+    "@harmony/util": "workspace:*",
     "@types/node-fetch": "^2.5.12",
     "agentkeepalive": "^4.1.4",
     "axios": "^1.6.0",

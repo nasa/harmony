@@ -4,11 +4,11 @@ import * as sinon from 'sinon';
 import { SinonSpy, SinonStub } from 'sinon';
 import { Logger } from 'winston';
 import * as updater from '../app/workers/updater';
-import * as queueFactory from '../../harmony/app/util/queue/queue-factory';
+import { queuefactory as qf } from '@harmony/util';
 import { MemoryQueue } from '../../harmony/test/helpers/memory-queue';
 import * as wi from '../../harmony/app/models/work-item';
 import * as wiu from '../../harmony/app/backends/workflow-orchestration/work-item-updates';
-import { WorkItemQueueType } from '../../harmony/app/util/queue/queue';
+import { WorkItemQueueType } from '@harmony/util/queue';
 import WorkItemUpdate from '../../harmony/app/models/work-item-update';
 import DataOperation from '../../harmony/app/models/data-operation';
 
@@ -21,7 +21,7 @@ describe('Updater Worker', async function () {
   let handleBatchWorkItemUpdatesSpy: SinonSpy;
 
   before(function () {
-    getQueueForTypeStub = sinon.stub(queueFactory, 'getQueueForType').callsFake(function (type: WorkItemQueueType) {
+    getQueueForTypeStub = sinon.stub(qf, 'getQueueForType').callsFake(function (type: WorkItemQueueType) {
       if (type === WorkItemQueueType.SMALL_ITEM_UPDATE) {
         return smallUpdateQueue;
       }

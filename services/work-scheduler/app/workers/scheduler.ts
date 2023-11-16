@@ -4,10 +4,10 @@ import env from '../util/env';
 import logger from '../../../harmony/app/util/log';
 import { logAsyncExecutionTime } from '../../../harmony/app/util/log-execution';
 import { Logger } from 'winston';
-import { getQueueUrlForService, getQueueForUrl, getWorkSchedulerQueue } from '../../../harmony/app/util/queue/queue-factory';
+import { queuefactory as qf } from '@harmony/util';
 import { getWorkItemsFromDatabase } from '../../../harmony/app/backends/workflow-orchestration/work-item-polling';
 import { getPodsCountForService } from '../util/k8s';
-import { Queue, ReceivedMessage } from '../../../harmony/app/util/queue/queue';
+import { Queue, ReceivedMessage } from '@harmony/util/queue';
 
 const kc = new k8s.KubeConfig();
 kc.loadFromDefault();
@@ -83,7 +83,7 @@ export async function processSchedulerQueue(reqLogger: Logger): Promise<void> {
   reqLogger.debug('Processing scheduler queue');
   const startTime = new Date().getTime();
   let durationMs;
-  const schedulerQueue = getWorkSchedulerQueue();
+  const schedulerQueue = qf.getWorkSchedulerQueue();
   // const queueItems = await schedulerQueue.getMessages(env.workItemSchedulerQueueMaxBatchSize);
   const queueItems = await (await logAsyncExecutionTime(
     drainQueue,
@@ -98,8 +98,8 @@ export async function processSchedulerQueue(reqLogger: Logger): Promise<void> {
     if (!processedServiceIDs.includes(serviceID)) {
       processedServiceIDs.push(serviceID);
       reqLogger.info(`Processing scheduler queue item for service ${serviceID}`);
-      const queueUrl = getQueueUrlForService(serviceID);
-      const queue = getQueueForUrl(queueUrl);
+      const queueUrl = qf.getQueueUrlForService(serviceID);
+      const queue = qf.getQueueForUrl(queueUrl);
       if (!queue) {
         throw new Error(`No queue found for URL ${queueUrl}`);
       }
