@@ -28,6 +28,9 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
+    - name: Build all images
+      run: npm run build-all
+
     - name: Start harmony in a box
       run: KUBE_CONTEXT=colima bin/bootstrap-harmony
     - name: Wait for the server to start
