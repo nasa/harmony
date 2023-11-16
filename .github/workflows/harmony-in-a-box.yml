@@ -23,7 +23,7 @@ jobs:
         brew update
         brew install docker
         brew install kubectl
-        colima start --cpu 2 --memory 12 --with-kubernetes
+        colima start --cpu 3 --memory 12 --with-kubernetes
 
     - name: Install dependencies
       run: npm ci
