@@ -29,12 +29,17 @@ jobs:
       run: npm ci
 
     - name: Build all images
-      run: npm run build-all
+      run: |
+        npm run build-all
+        docker images
+
+    - name: list images
+      run: docker images
 
     - name: Start harmony in a box
       run: KUBE_CONTEXT=colima bin/bootstrap-harmony
     - name: Wait for the server to start
-      run: sleep 30s
+      run: kubectl -n harmony get pods
 
     - name: Run curl against harmony
       id: curl

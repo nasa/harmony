@@ -40,8 +40,8 @@ function start_port_forwarding() {
 
   # debug info
   if [ "$service_name" == "harmony" ]; then
-    echo '========wait for 300 seconds'
-    sleep 300
+    echo '========wait for 30 seconds'
+    sleep 30
     echo '========get pods'
     kubectl get pods -n harmony
     harmony_pod=$(kubectl get pods -n harmony -l app=harmony | grep -v NAME | awk '{print $1;}')
