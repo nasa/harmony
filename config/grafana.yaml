@@ -249,7 +249,7 @@ data:
               "type": "prometheus",
               "uid": "P1809F7CD0C75ACF3"
             },
-            "expr": "sum(kube_pod_info{node=~\"$${hold}node\"}) /(sum(kube_node_info) * 110))",
+            "expr": "sum(kube_pod_info{node=~\"$${hold}node\"}) /(sum(kube_node_info) * 110)",
             "format": "time_series",
             "intervalFactor": 1,
             "refId": "A"
