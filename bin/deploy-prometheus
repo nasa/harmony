@@ -24,7 +24,7 @@ fi
 
 # Deploy NODE EXPORTER
 if [ "$NODE_ENV" != "development" ]; then
-    envsubst < "config/daemonset.yaml" | kubectl apply -f -
+    envsubst < "config/damonset.yaml" | kubectl apply -f -
 fi
 
 # Check for helm
