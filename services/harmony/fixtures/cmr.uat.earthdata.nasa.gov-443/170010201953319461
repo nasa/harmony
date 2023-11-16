@@ -1,0 +1,28 @@
+GET /search/collections.json?include_tags=harmony.has-eula&concept_id=C1233147317-EEDTEST&page_size=100
+accept: application/json
+accept-encoding: gzip,deflate
+
+HTTP/1.1 200 OK
+content-type: application/json;charset=utf-8
+transfer-encoding: chunked
+connection: close
+date: Thu, 16 Nov 2023 02:33:39 GMT
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: d9af9e84-cf52-4bd0-aedb-8a6a1c9d4e5b
+strict-transport-security: max-age=31536000
+cmr-search-after: ["podaac-ghvrs-2pn30","EEDTEST","VIIRS_NPP-NAVO-L2P-v3.0","1",1233147317,1]
+cmr-hits: 0
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Search-After, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 27
+x-request-id: zSy68EbuIxdC_d3BagNdszlmh7uGMFsuTYDVctEYtXASbQQRpYhdMA==
+vary: Accept-Encoding, User-Agent
+server: ServerTokens ProductOnly
+x-cache: Miss from cloudfront
+via: 1.1 098d11622fcaacdb87ba92e6eaca351c.cloudfront.net (CloudFront)
+x-amz-cf-pop: SFO53-C1
+x-amz-cf-id: zSy68EbuIxdC_d3BagNdszlmh7uGMFsuTYDVctEYtXASbQQRpYhdMA==
+
+{"feed":{"updated":"2023-11-16T02:33:39.505Z","id":"https://cmr.uat.earthdata.nasa.gov:443/search/collections.json?include_tags=harmony.has-eula&concept_id=C1233147317-EEDTEST&page_size=100","title":"ECHO dataset metadata","entry":[]}}

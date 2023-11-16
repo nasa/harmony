@@ -138,7 +138,7 @@ https://cmr.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/podaac/l2-subsetter-concise
-    umm_s: S2227193226-POCLOUD
+    umm_s: S2800188133-POCLOUD
     capabilities:
       concatenation: true
       subsetting:
@@ -490,7 +490,7 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/podaac/l2-subsetter-concise
-    umm_s: S1243671015-POCLOUD
+    umm_s: S1261068840-POCLOUD
     capabilities:
       concatenation: true
       subsetting:
