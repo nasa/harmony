@@ -37,11 +37,13 @@ jobs:
     - name: Build all other images
       run: npm run build-all
 
+    - name: list images
+      run: docker images
+
     - name: Start harmony in a box
       run: KUBE_CONTEXT=colima bin/bootstrap-harmony
 
     - name: Check if harmony server is up
-      id: curl
       run: |
         HTTP_STATUS=$(curl -I -s -o /dev/null -w "%{http_code}" "http://localhost:3000")
         echo "harmony server status code: $HTTP_STATUS"
