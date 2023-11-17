@@ -2,15 +2,15 @@
   "name": "@harmony/util",
   "version": "0.0.0",
   "description": "Utility modules related to Harmony",
+  "private": true,
   "main": "./index.ts",
   "scripts": {
-    "test": "mocha",
-    "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha"
+    "test": "eslint --ext .ts --ignore-pattern built . && nyc mocha && pnpm audit --audit-level high --prod",
+    "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha",
+    "test-bail": "TS_NODE_TRANSPILE_ONLY=true mocha --bail",
+    "coverage": "nyc mocha",
+    "lint": "eslint --ext .ts --ignore-pattern built ."
   },
-  "files": [
-    "*.ts",
-    "!test/**"
-  ],
   "nyc": {
     "all": true,
     "check-coverage": true,

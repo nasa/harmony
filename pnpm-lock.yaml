@@ -4,9 +4,46 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  trim-newlines: 4.0.1
+
 importers:
 
-  .: {}
+  .:
+    devDependencies:
+      eslint:
+        specifier: ^8.48.0
+        version: 8.52.0
+      eslint-config-airbnb-base:
+        specifier: ^15.0.0
+        version: 15.0.0(eslint-plugin-import@2.29.0)(eslint@8.52.0)
+      eslint-config-airbnb-typescript:
+        specifier: ^17.0.0
+        version: 17.1.0(@typescript-eslint/eslint-plugin@6.9.1)(@typescript-eslint/parser@6.9.1)(eslint-plugin-import@2.29.0)(eslint@8.52.0)
+      eslint-plugin-import:
+        specifier: ^2.27.5
+        version: 2.29.0(@typescript-eslint/parser@6.9.1)(eslint@8.52.0)
+      eslint-plugin-jsdoc:
+        specifier: ^46.2.6
+        version: 46.8.2(eslint@8.52.0)
+      eslint-plugin-node:
+        specifier: ^11.1.0
+        version: 11.1.0(eslint@8.52.0)
+      eslint-plugin-tsdoc:
+        specifier: ^0.2.17
+        version: 0.2.17
+      mocha:
+        specifier: ^9.1.3
+        version: 9.2.2
+      mocha-junit-reporter:
+        specifier: ^2.0.0
+        version: 2.2.1(mocha@9.2.2)
+      mocha-multi:
+        specifier: ^1.1.3
+        version: 1.1.7(mocha@9.2.2)
+      nyc:
+        specifier: ^15.1.0
+        version: 15.1.0
 
   packages/util:
     dependencies:
@@ -7630,7 +7667,7 @@ packages:
       fs.realpath: 1.0.0
       inflight: 1.0.6
       inherits: 2.0.4
-      minimatch: 3.0.5
+      minimatch: 3.1.2
       once: 1.4.0
       path-is-absolute: 1.0.1
     dev: true
@@ -8491,7 +8528,7 @@ packages:
     hasBin: true
     dependencies:
       async: 3.2.4
-      chalk: 4.1.0
+      chalk: 4.1.2
       filelist: 1.0.4
       minimatch: 3.1.2
     dev: true
@@ -9265,9 +9302,9 @@ packages:
       normalize-package-data: 3.0.3
       read-pkg-up: 7.0.1
       redent: 3.0.0
-      trim-newlines: 3.0.1
+      trim-newlines: 4.0.1
       type-fest: 0.18.1
-      yargs-parser: 20.2.4
+      yargs-parser: 20.2.9
     dev: true
 
   /merge-descriptors@1.0.1:
@@ -9665,7 +9702,7 @@ packages:
       array-differ: 3.0.0
       array-union: 2.1.0
       arrify: 2.0.1
-      minimatch: 3.0.5
+      minimatch: 3.1.2
     dev: true
 
   /mustache-express@1.3.2:
@@ -12219,9 +12256,9 @@ packages:
     hasBin: true
     dev: true
 
-  /trim-newlines@3.0.1:
-    resolution: {integrity: sha512-c1PTsA3tYrIsLGkJkzHF+w9F2EyxfXGo4UyJc4pFL++FMjnq0HJS69T3M7d//gKrFKwy429bouPescbjecU+Zw==}
-    engines: {node: '>=8'}
+  /trim-newlines@4.0.1:
+    resolution: {integrity: sha512-5n5GIW0uEbjCB2PO6OoaG11rscJmLOLw12ZG9e0vBKNMToDJ2n1+AkUhJpGO2bLj3jXKa/gYTGVmilX5CCxqmA==}
+    engines: {node: '>=12'}
     dev: true
 
   /triple-beam@1.4.1:

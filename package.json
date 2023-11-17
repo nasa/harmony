@@ -4,8 +4,24 @@
   "description": "Data services frontend",
   "preinstall": "npx only-allow pnpm",
   "scripts": {
-    "test": "pnpm run -r test",
-    "test-fast": "pnpm run -r test-fast"
+    "test": "pnpm run -r --parallel test",
+    "test-fast": "pnpm run -r --parallel test-fast",
+    "test-bail": "pnpm run -r --parallel test-bail",
+    "coverage": "pnpm run -r --parallel coverage",
+    "lint": "pnpm run -r --parallel lint",
+    "start": "cd services/harmony && NODE_OPTIONS=--max-old-space-size=3096 ts-node -r tsconfig-paths/register app/server.ts",
+    "start-dev": "cd services/harmony && strict-npm-engines && ts-node-dev --no-notify -r tsconfig-paths/register --watch app/views,public/js --respawn app/server",
+    "start-dev-fast": "cd services/harmony && TS_NODE_TRANSPILE_ONLY=true ts-node-dev --no-notify -r tsconfig-paths/register --respawn --inspect=127.0.0.1:${DEBUG_PORT:-9200} app/server",
+    "update-dev": "pnpm i && pnpm  run -r build && bin/restart-services",
+    "watch-debug": "cd services/harmony && TS_NODE_TRANSPILE_ONLY=true nodemon --inspect=5858 -e ts,tsx,html --exec node -r tsconfig-paths/register -r ts-node/register app/server.ts",
+    "build": "lerna exec --scope=harmony -- VERSION=${VERSION:-latest} npm run build",
+    "build-all": "lerna exec --ignore harmony -- VERSION=${VERSION:-latest} npm run build",
+    "build-all-m1": "lerna exec --ignore harmony --concurrency 1 -- VERSION=${VERSION:-latest} npm run build-m1",
+    "push-image-all": "lerna exec --ignore harmony --ignore @harmony/util --concurrency 1 -- ./bin/push-image ${VERSION:-latest}",
+    "build-notebooks-image": "docker build --platform linux/amd64 -t harmonyservices/notebooks:${VERSION:-latest} -f Dockerfile-notebooks .",
+    "run-notebooks-image": "source .env && docker run -i -t --platform linux/amd64 --init -p 8888:8888 --env NB_EDL_USERNAME=\"${NB_EDL_USERNAME}\" --env NB_EDL_PASSWORD=\"${NB_EDL_PASSWORD}\" harmonyservices/notebooks:${VERSION:-latest}",
+    "publish": "lerna exec --scope=harmony -- VERSION=${VERSION:-latest} npm run publish ",
+    "compare-services": "SKIP_ENV_VALIDATION=true ts-node scripts/service-comparison.ts"
   },
   "keywords": [
     "NASA",
@@ -19,5 +35,22 @@
     "pnpm": ">=8"
   },
   "author": "NASA EOSDIS Harmony team",
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "eslint": "^8.48.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-config-airbnb-typescript": "^17.0.0",
+    "eslint-plugin-import": "^2.27.5",
+    "eslint-plugin-jsdoc": "^46.2.6",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-tsdoc": "^0.2.17"
+  },
+  "pnpm": {
+    "overrides": {
+      "trim-newlines": "4.0.1"
+    },
+    "auditConfig": {
+      "ignoreCves": []
+    }
+  }
 }
