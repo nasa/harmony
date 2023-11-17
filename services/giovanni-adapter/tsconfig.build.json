@@ -1,7 +1,12 @@
 {
-  "extends": "./tsconfig.base.json",
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "typeRoots": [ "./node_modules/@types", "./app/stac" ],
+    "typeRoots": [
+      "./node_modules/@types",
+      "./app/stac"
+    ]
   },
-  "include": [ "./app/**/*" ]
+  "include": [
+    "./app/**/*"
+  ]
 }

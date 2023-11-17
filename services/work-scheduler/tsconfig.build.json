@@ -1,17 +1,6 @@
 {
-  "compilerOptions": {
-      "module": "commonjs",
-      "baseUrl": ".",
-      "moduleResolution": "node",
-      "target": "ES2021",
-      "esModuleInterop": true,
-      "experimentalDecorators": true,
-      "emitDecoratorMetadata": true,
-      "allowJs": true,
-      "noImplicitAny": false,
-      "resolveJsonModule": true,
-      "sourceMap": true,
-      "outDir": "built"
-  },
-  "include": ["./app", "./test"]
+  "extends": "../../tsconfig.base.json",
+  "include": [
+    "./app"
+  ]
 }
