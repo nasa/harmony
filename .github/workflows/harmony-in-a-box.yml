@@ -25,9 +25,6 @@ jobs:
         brew install kubectl
         colima start --cpu 3 --memory 12 --with-kubernetes
 
-    - name: Pull down basic harmony docker images
-      run: bin/pull-harmony-images
-
     - name: Install dependencies
       run: npm ci
 
@@ -42,6 +39,9 @@ jobs:
 
     - name: Start harmony in a box
       run: KUBE_CONTEXT=colima bin/bootstrap-harmony
+
+    - name: debug pods 00
+      run: kubectl -n harmony get pods
 
     - name: Wait 30s  for the server to start
       run: sleep 30
