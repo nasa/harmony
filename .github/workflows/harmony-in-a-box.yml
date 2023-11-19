@@ -5,7 +5,7 @@ on: [push, pull_request]
 jobs:
   harmony-in-a-box:
 
-    runs-on: macos-latest
+    runs-on: macos-13
 
     strategy:
       matrix:
@@ -23,7 +23,11 @@ jobs:
         brew update
         brew install docker
         brew install kubectl
+        brew install colima
         colima start --cpu 3 --memory 12 --with-kubernetes
+
+    - name: Pull down basic harmony docker images
+      run: bin/pull-harmony-images
 
     - name: Install dependencies
       run: npm ci
@@ -32,19 +36,13 @@ jobs:
       run: npm run build
 
     - name: Build all other images
-      run: npm run build-all-sequential
+      run: npm run build-sequential
 
     - name: list images
       run: docker images
 
     - name: Start harmony in a box
       run: KUBE_CONTEXT=colima bin/bootstrap-harmony
-
-    - name: debug pods 00
-      run: kubectl -n harmony get pods
-
-    - name: Wait 30s  for the server to start
-      run: sleep 30
 
     - name: debug pods 1
       run: kubectl -n harmony get pods
@@ -53,7 +51,14 @@ jobs:
       run: sleep 300
 
     - name: debug pods
-      run: kubectl -n harmony get pods
+      run: |
+        kubectl -n harmony get pods
+        echo "=========describe harmony pod"
+        harmony_pod=$(kubectl get pods -n harmony -l app=harmony | grep -v NAME | awk '{print $1;}')
+        kubectl -n harmony describe pod $harmony_pod
+        echo "========describe service-example pod"
+        example_pod=$(kubectl get pods -n harmony -l name=harmony-service-example | grep -v NAME | awk '{print $1;}')
+        kubectl -n harmony describe pod $example_pod
 
     - name: Check if harmony server is up
       run: |

@@ -49,7 +49,7 @@ function start_port_forwarding() {
     kubectl -n harmony describe pod $harmony_pod
   fi
 
-  kubectl wait -n harmony --for=condition=ready pod -l app="$service_name" --timeout=360s
+  kubectl wait -n harmony --for=condition=ready pod -l app="$service_name" --timeout=600s
   nohup kubectl -n harmony port-forward "service/${service_name}" "${args[@]}" > "logs/port-forward-${service_name}.log" 2>&1 &
   echo "Port forwarding started for service: ${service_name}, port pairs: ${port_pairs[*]}"
 }

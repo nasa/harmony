@@ -17,7 +17,7 @@
     "postinstall": "if test \"$NODE_ENV\" != \"production\" && test \"$LERNA\" != \"false\" ; then lerna exec -- npm install; fi",
     "build": "lerna exec --scope=harmony -- VERSION=${VERSION:-latest} npm run build",
     "build-all": "lerna exec --ignore harmony -- VERSION=${VERSION:-latest} npm run build",
-    "build-all-sequential": "lerna exec --ignore harmony --concurrency 1 -- VERSION=${VERSION:-latest} npm run build",
+    "build-sequential": "lerna exec --ignore harmony --ignore harmony-work-failer --ignore harmony-work-reaper --concurrency 1 -- VERSION=${VERSION:-latest} npm run build",
     "build-all-m1": "lerna exec --ignore harmony --concurrency 1 -- VERSION=${VERSION:-latest} npm run build-m1",
     "push-image-all": "lerna exec --ignore harmony --ignore @harmony/util --concurrency 1 -- ./bin/push-image ${VERSION:-latest}",
     "build-notebooks-image": "docker build --platform linux/amd64 -t harmonyservices/notebooks:${VERSION:-latest} -f Dockerfile-notebooks .",
