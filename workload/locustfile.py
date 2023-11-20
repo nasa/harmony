@@ -53,8 +53,8 @@ class HarmonyUatUser(BaseHarmonyUser):
         }
         self._async_request(name, collection, variable, params, 14)
 
-    def _swot_repr_europe(self):
-        name = 'SWOT Reprojection: Europe scale extent'
+    def _swath_projector_europe(self):
+        name = 'Swath Projector: Europe scale extent'
         collection = 'C1233860183-EEDTEST'
         variable = 'all'
         params = {
@@ -75,8 +75,8 @@ class HarmonyUatUser(BaseHarmonyUser):
         }
         self._async_request(name, collection, variable, params, 3)
 
-    def _chain_swot_repr_europe_to_zarr(self):
-        name = 'Chain SWOT Reprojection to NetCDF-to-Zarr'
+    def _chain_swath_projector_europe_to_zarr(self):
+        name = 'Chain Swath Projector to NetCDF-to-Zarr'
         collection = 'harmony_example_l2'
         variable = 'all'
         params = {
@@ -220,10 +220,10 @@ class HarmonyUatUser(BaseHarmonyUser):
     def harmony_service_example_bbox_variable_reformat_50_granules(self):
         self._harmony_service_example_bbox_variable_reformat_50_granules()
 
-    @tag('swot-repr', 'sync', 'reproject', 'netcdf4', 'demo')
+    @tag('swath-projector', 'sync', 'reproject', 'netcdf4', 'demo')
     @task(50)
-    def swot_repr_europe(self):
-        self._swot_repr_europe()
+    def swath_projector_europe(self):
+        self._swath_projector_europe()
 
     @tag('netcdf-to-zarr', 'async', 'zarr', 'demo')
     @task(2)
@@ -233,8 +233,8 @@ class HarmonyUatUser(BaseHarmonyUser):
     # Broken with current netcdf-to-zarr
     @tag('chain', 'async', 'zarr', 'reproject', 'chain')
     @task(50)
-    def chain_swot_repr_europe_to_zarr(self):
-        self._chain_swot_repr_europe_to_zarr()
+    def chain_swath_projector_europe_to_zarr(self):
+        self._chain_swath_projector_europe_to_zarr()
 
     # Unable to download from ASF site in sandbox and SIT now
     @tag('harmony-gdal', 'sync', 'bbox', 'variable', 'temporal', 'hierarchical-variable', 'netcdf4', 'uat-only')

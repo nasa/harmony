@@ -148,7 +148,7 @@ describe('when a work item callback request does not return the results to const
 });
 
 
-describe('Workflow chaining for a collection configured for swot reprojection and netcdf-to-zarr', function () {
+describe('Workflow chaining for a collection configured for Swath Projector and netcdf-to-zarr', function () {
   let pageStub;
   let sizeOfObjectStub;
   before(function () {
@@ -194,11 +194,11 @@ describe('Workflow chaining for a collection configured for swot reprojection an
       expect(workflowSteps[0].serviceID).to.equal('harmonyservices/query-cmr:latest');
     });
 
-    it('then requests reprojection using swot reprojection', async function () {
+    it('then requests reprojection using Swath Projector', async function () {
       const job = JSON.parse(this.res.text);
       const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
 
-      expect(workflowSteps[1].serviceID).to.equal('sds/swot-reproject:latest');
+      expect(workflowSteps[1].serviceID).to.equal('ghcr.io/nasa/harmony-swath-projector:latest');
     });
 
     it('then requests reformatting using netcdf-to-zarr', async function () {
@@ -214,8 +214,8 @@ describe('Workflow chaining for a collection configured for swot reprojection an
     });
 
     // Verify it only queues a work item for the query-cmr task
-    describe('when checking for a swot reproject work item', function () {
-      hookGetWorkForService('sds/swot-reproject:latest');
+    describe('when checking for a Swath Projector work item', function () {
+      hookGetWorkForService('ghcr.io/nasa/harmony-swath-projector:latest');
 
       it('does not find a work item', async function () {
         expect(this.res.status).to.equal(404);
@@ -247,9 +247,9 @@ describe('Workflow chaining for a collection configured for swot reprojection an
         await updateWorkItem(this.backend, workItem);
       });
 
-      describe('when checking to see if swot-reprojection work is queued', function () {
+      describe('when checking to see if Swath Projector work is queued', function () {
         it('finds a swot-reprojection service work item and can complete it', async function () {
-          const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
+          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
           expect(res.status).to.equal(200);
           const { workItem } = JSON.parse(res.text);
           workItem.status = WorkItemStatus.SUCCESSFUL;
@@ -257,7 +257,7 @@ describe('Workflow chaining for a collection configured for swot reprojection an
           workItem.outputItemSizes = [1];
           await fakeServiceStacOutput(workItem.jobID, workItem.id);
           await updateWorkItem(this.backend, workItem);
-          expect(workItem.serviceID).to.equal('sds/swot-reproject:latest');
+          expect(workItem.serviceID).to.equal('ghcr.io/nasa/harmony-swath-projector:latest');
         });
 
         describe('when checking to see if netcdf-to-zarr work is queued', function () {
@@ -306,7 +306,7 @@ describe('Workflow chaining for a collection configured for swot reprojection an
 
           describe('when completing all steps for the second granule', function () {
             it('wish I could do this in the describe', async function () {
-              for await (const service of ['sds/swot-reproject:latest', 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest']) {
+              for await (const service of ['ghcr.io/nasa/harmony-swath-projector:latest', 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest']) {
                 res = await getWorkForService(this.backend, service);
                 // eslint-disable-next-line prefer-destructuring
                 workItem = JSON.parse(res.text).workItem;
@@ -363,7 +363,7 @@ describe('Workflow chaining for a collection configured for swot reprojection an
       // multiple work items should be generated for the next step
       const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
       expect(currentWorkItems.length).to.equal(4);
-      expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(3);
+      expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(3);
     });
 
     describe('when the first swot-reprojection service work item fails with an error message', function () {
@@ -373,7 +373,7 @@ describe('Workflow chaining for a collection configured for swot reprojection an
         let shouldLoop = true;
         // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
         while (shouldLoop) {
-          const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
+          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
           firstSwotItem = JSON.parse(res.text).workItem;
           firstSwotItem.status = WorkItemStatus.FAILED;
           firstSwotItem.errorMessage = 'That was just a practice try, right?';
@@ -394,8 +394,8 @@ describe('Workflow chaining for a collection configured for swot reprojection an
         const currentWorkItems = (await getWorkItemsByJobId(db, job.jobID)).workItems;
         expect(currentWorkItems.length).to.equal(4);
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.CANCELED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(2);
-        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
+        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.CANCELED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(2);
+        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
       });
 
       it('sets the job failure message to the error message returned by the service', async function () {
@@ -404,7 +404,7 @@ describe('Workflow chaining for a collection configured for swot reprojection an
       });
 
       it('does not find any further swot-reproject work', async function () {
-        const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
+        const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
         expect(res.status).to.equal(404);
       });
 
@@ -415,8 +415,8 @@ describe('Workflow chaining for a collection configured for swot reprojection an
         const currentWorkItems = (await getWorkItemsByJobId(db, firstSwotItem.jobID)).workItems;
         expect(currentWorkItems.length).to.equal(4);
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.CANCELED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(2);
-        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
+        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.CANCELED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(2);
+        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
       });
     });
   });
@@ -452,7 +452,7 @@ describe('Workflow chaining for a collection configured for swot reprojection an
       // multiple work items should be generated for the next step
       const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
       expect(currentWorkItems.length).to.equal(4);
-      expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(3);
+      expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(3);
     });
 
     describe('when the first swot-reprojection service work item fails and does not provide an error message', function () {
@@ -462,7 +462,7 @@ describe('Workflow chaining for a collection configured for swot reprojection an
         let shouldLoop = true;
         // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
         while (shouldLoop) {
-          const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
+          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
           firstSwotItem = JSON.parse(res.text).workItem;
           firstSwotItem.status = WorkItemStatus.FAILED;
           firstSwotItem.results = [];
@@ -548,7 +548,7 @@ describe('Workflow chaining for a collection configured for swot reprojection an
       const job = JSON.parse(this.res.text);
       const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
 
-      expect(workflowSteps[1].serviceID).to.equal('sds/swot-reproject:latest');
+      expect(workflowSteps[1].serviceID).to.equal('ghcr.io/nasa/harmony-swath-projector:latest');
     });
   });
 });
@@ -630,7 +630,7 @@ describe('When a request spans multiple CMR pages', function () {
         });
 
         it('does not define maxCmrGranules for non-query-cmr items', async function () {
-          const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
+          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
           const { workItem, maxCmrGranules } = JSON.parse(res.text);
           expect(maxCmrGranules).equals(undefined);
           expect(workItem).to.not.equal(undefined);

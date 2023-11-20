@@ -69,23 +69,23 @@ describe('ignoreErrors', function () {
         await updateWorkItem(this.backend, workItem);
         const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
         expect(currentWorkItems.length).to.equal(2);
-        expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
+        expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
       });
 
       describe('when all of the work items succeed', function () {
-        let firstSwotItem;
+        let firstSwathItem;
         let zarrItem;
 
         before(async function () {
-          const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
-          firstSwotItem = JSON.parse(res.text).workItem;
-          firstSwotItem.status = WorkItemStatus.SUCCESSFUL;
-          firstSwotItem.results = [
-            getStacLocation(firstSwotItem, 'catalog.json'),
+          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
+          firstSwathItem = JSON.parse(res.text).workItem;
+          firstSwathItem.status = WorkItemStatus.SUCCESSFUL;
+          firstSwathItem.results = [
+            getStacLocation(firstSwathItem, 'catalog.json'),
           ];
-          firstSwotItem.outputItemSizes = [1];
-          await fakeServiceStacOutput(firstSwotItem.jobID, firstSwotItem.id);
-          await updateWorkItem(this.backend, firstSwotItem);
+          firstSwathItem.outputItemSizes = [1];
+          await fakeServiceStacOutput(firstSwathItem.jobID, firstSwathItem.id);
+          await updateWorkItem(this.backend, firstSwathItem);
 
           const res2 = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest');
           zarrItem = JSON.parse(res2.text).workItem;
@@ -98,18 +98,18 @@ describe('ignoreErrors', function () {
         });
 
         it('marks the job as successful', async function () {
-          const { job } = await Job.byJobID(db, firstSwotItem.jobID);
+          const { job } = await Job.byJobID(db, firstSwathItem.jobID);
           expect(job.status).to.equal(JobStatus.SUCCESSFUL);
           expect(job.progress).to.equal(100);
           const currentWorkItems = (await getWorkItemsByJobId(db, job.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(3);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest').length).to.equal(1);
         });
 
-        it('does not find any further swot-reproject work', async function () {
-          const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
+        it('does not find any further Swath Projector work', async function () {
+          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
           expect(res.status).to.equal(404);
         });
 
@@ -133,54 +133,54 @@ describe('ignoreErrors', function () {
         await updateWorkItem(this.backend, workItem);
         const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
         expect(currentWorkItems.length).to.equal(2);
-        expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
+        expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
       });
 
-      describe('when the first swot-reprojection service work item fails', function () {
-        let firstSwotItem;
+      describe('when the first Swath Projector work item fails', function () {
+        let firstSwathItem;
 
         before(async function () {
           let shouldLoop = true;
           // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
           while (shouldLoop) {
-            const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
-            firstSwotItem = JSON.parse(res.text).workItem;
-            firstSwotItem.status = WorkItemStatus.FAILED;
-            firstSwotItem.errorMessage = 'Specific failure reason';
-            firstSwotItem.results = [];
+            const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
+            firstSwathItem = JSON.parse(res.text).workItem;
+            firstSwathItem.status = WorkItemStatus.FAILED;
+            firstSwathItem.errorMessage = 'Specific failure reason';
+            firstSwathItem.results = [];
 
-            await updateWorkItem(this.backend, firstSwotItem);
+            await updateWorkItem(this.backend, firstSwathItem);
 
             // check to see if the work-item has failed completely
-            const workItem = await getWorkItemById(db, firstSwotItem.id);
+            const workItem = await getWorkItemById(db, firstSwathItem.id);
             shouldLoop = !(workItem.status === WorkItemStatus.FAILED);
           }
         });
 
         it('fails the job', async function () {
           // work item failure with only one granue should trigger job failure
-          const { job } = await Job.byJobID(db, firstSwotItem.jobID);
+          const { job } = await Job.byJobID(db, firstSwathItem.jobID);
           expect(job.status).to.equal(JobStatus.FAILED);
           expect(job.message).to.equal('WorkItem failed: Specific failure reason');
         });
 
         it('correctly sets the work items status', async function () {
-          const currentWorkItems = (await getWorkItemsByJobId(db, firstSwotItem.jobID)).workItems;
+          const currentWorkItems = (await getWorkItemsByJobId(db, firstSwathItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(2);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
         });
 
-        it('does not find any further swot-reproject work', async function () {
-          const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
+        it('does not find any further Swath Projector work', async function () {
+          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
           expect(res.status).to.equal(404);
         });
 
         it('does not allow any further work item updates', async function () {
-          firstSwotItem.status = WorkItemStatus.SUCCESSFUL;
-          await updateWorkItem(this.backend, firstSwotItem);
-          const swotItem = await getWorkItemById(db, firstSwotItem.id);
-          expect(swotItem.status).to.equal(WorkItemStatus.FAILED);
+          firstSwathItem.status = WorkItemStatus.SUCCESSFUL;
+          await updateWorkItem(this.backend, firstSwathItem);
+          const swathItem = await getWorkItemById(db, firstSwathItem.id);
+          expect(swathItem.status).to.equal(WorkItemStatus.FAILED);
         });
       });
     });
@@ -203,51 +203,51 @@ describe('ignoreErrors', function () {
         await updateWorkItem(this.backend, workItem);
         const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
 
-        expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(2);
+        expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(2);
       });
 
-      describe('when the first swot-reprojection service work item fails', function () {
-        let firstSwotItem;
+      describe('when the first Swath Projector work item fails', function () {
+        let firstSwathItem;
 
         before(async function () {
           let shouldLoop = true;
           // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
           while (shouldLoop) {
-            const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
-            firstSwotItem = JSON.parse(res.text).workItem;
-            firstSwotItem.status = WorkItemStatus.FAILED;
-            firstSwotItem.results = [];
+            const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
+            firstSwathItem = JSON.parse(res.text).workItem;
+            firstSwathItem.status = WorkItemStatus.FAILED;
+            firstSwathItem.results = [];
 
-            await updateWorkItem(this.backend, firstSwotItem);
+            await updateWorkItem(this.backend, firstSwathItem);
 
             // check to see if the work-item has failed completely
-            const workItem = await getWorkItemById(db, firstSwotItem.id);
+            const workItem = await getWorkItemById(db, firstSwathItem.id);
             shouldLoop = !(workItem.status === WorkItemStatus.FAILED);
           }
         });
 
         it('changes the job status to running_with_errors', async function () {
-          const { job } = await Job.byJobID(db, firstSwotItem.jobID);
+          const { job } = await Job.byJobID(db, firstSwathItem.jobID);
           expect(job.status).to.equal(JobStatus.RUNNING_WITH_ERRORS);
           const currentWorkItems = (await getWorkItemsByJobId(db, job.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(3);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
         });
       });
 
-      describe('when the second swot-reprojection service item succeeds and then its zarr work item fails', function () {
-        let secondSwotItem;
+      describe('when the second Swath Projector item succeeds and then its zarr work item fails', function () {
+        let secondSwathItem;
         let zarrItem;
 
         before(async function () {
-          const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
-          secondSwotItem = JSON.parse(res.text).workItem;
-          secondSwotItem.status = WorkItemStatus.SUCCESSFUL;
-          secondSwotItem.results = [getStacLocation(secondSwotItem, 'catalog.json')];
-          await fakeServiceStacOutput(secondSwotItem.jobID, secondSwotItem.id);
-          await updateWorkItem(this.backend, secondSwotItem);
+          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
+          secondSwathItem = JSON.parse(res.text).workItem;
+          secondSwathItem.status = WorkItemStatus.SUCCESSFUL;
+          secondSwathItem.results = [getStacLocation(secondSwathItem, 'catalog.json')];
+          await fakeServiceStacOutput(secondSwathItem.jobID, secondSwathItem.id);
+          await updateWorkItem(this.backend, secondSwathItem);
 
           let shouldLoop = true;
           // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
@@ -266,14 +266,14 @@ describe('ignoreErrors', function () {
 
         it('marks the job as failed', async function () {
           // all work items failing should trigger job failure
-          const { job } = await Job.byJobID(db, secondSwotItem.jobID);
+          const { job } = await Job.byJobID(db, secondSwathItem.jobID);
           expect(job.status).to.equal(JobStatus.FAILED);
           expect(job.message).to.equal('The job failed with 2 errors. See the errors field for more details');
           const currentWorkItems = (await getWorkItemsByJobId(db, job.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(4);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest').length).to.equal(1);
         });
       });
@@ -298,45 +298,45 @@ describe('ignoreErrors', function () {
         await updateWorkItem(this.backend, workItem);
         const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
         expect(currentWorkItems.length).to.equal(4);
-        expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(3);
+        expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(3);
       });
 
-      describe('when the first swot-reprojection service work item fails', function () {
-        let firstSwotItem;
+      describe('when the first Swath Projector work item fails', function () {
+        let firstSwathItem;
 
         before(async function () {
           let shouldLoop = true;
           // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
           while (shouldLoop) {
-            const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
-            firstSwotItem = JSON.parse(res.text).workItem;
-            firstSwotItem.status = WorkItemStatus.FAILED;
-            firstSwotItem.results = [];
+            const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
+            firstSwathItem = JSON.parse(res.text).workItem;
+            firstSwathItem.status = WorkItemStatus.FAILED;
+            firstSwathItem.results = [];
 
-            await updateWorkItem(this.backend, firstSwotItem);
+            await updateWorkItem(this.backend, firstSwathItem);
 
             // check to see if the work-item has failed completely
-            const workItem = await getWorkItemById(db, firstSwotItem.id);
+            const workItem = await getWorkItemById(db, firstSwathItem.id);
             shouldLoop = !(workItem.status === WorkItemStatus.FAILED);
           }
         });
 
         it('changes the job status to running_with_errors', async function () {
-          const { job } = await Job.byJobID(db, firstSwotItem.jobID);
+          const { job } = await Job.byJobID(db, firstSwathItem.jobID);
           expect(job.status).to.equal(JobStatus.RUNNING_WITH_ERRORS);
         });
 
         it('does not queue a zarr step for the work item that failed', async function () {
-          const currentWorkItems = (await getWorkItemsByJobId(db, firstSwotItem.jobID)).workItems;
+          const currentWorkItems = (await getWorkItemsByJobId(db, firstSwathItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(4);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(2);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(2);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
         });
 
         it('sets the status to COMPLETE_WITH_ERRORS when the other granules complete', async function () {
-          const res1 = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
-          const res2 = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
+          const res1 = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
+          const res2 = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
           const workItem1 = JSON.parse(res1.text).workItem;
           const workItem2 = JSON.parse(res2.text).workItem;
 
@@ -366,13 +366,13 @@ describe('ignoreErrors', function () {
           await fakeServiceStacOutput(workItem4.jobID, workItem4.id);
           await updateWorkItem(this.backend, workItem4);
 
-          const { job } = await Job.byJobID(db, firstSwotItem.jobID);
+          const { job } = await Job.byJobID(db, firstSwathItem.jobID);
           expect(job.status).to.equal(JobStatus.COMPLETE_WITH_ERRORS);
           expect(job.progress).to.equal(100);
         });
 
         it('includes the error details in the job status', async function () {
-          const response = await jobStatus(this.frontend, { jobID: firstSwotItem.jobID, username: 'joe' });
+          const response = await jobStatus(this.frontend, { jobID: firstSwathItem.jobID, username: 'joe' });
           const job = JSON.parse(response.text);
           const { errors } = job;
           expect(errors.length).to.equal(1);
@@ -406,23 +406,23 @@ describe('ignoreErrors', function () {
         const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
         expect(currentWorkItems.length).to.equal(5);
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-        expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(4);
+        expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(4);
       });
       after(function () {
         maxErrorsStub.restore();
       });
 
       describe('when the first granule completes successfully', function () {
-        let firstSwotItem;
+        let firstSwathItem;
 
         before(async function () {
-          const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
+          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
 
-          firstSwotItem = JSON.parse(res.text).workItem;
-          firstSwotItem.status = WorkItemStatus.SUCCESSFUL;
-          firstSwotItem.results = [getStacLocation(firstSwotItem, 'catalog.json')];
-          await fakeServiceStacOutput(firstSwotItem.jobID, firstSwotItem.id);
-          await updateWorkItem(this.backend, firstSwotItem);
+          firstSwathItem = JSON.parse(res.text).workItem;
+          firstSwathItem.status = WorkItemStatus.SUCCESSFUL;
+          firstSwathItem.results = [getStacLocation(firstSwathItem, 'catalog.json')];
+          await fakeServiceStacOutput(firstSwathItem.jobID, firstSwathItem.id);
+          await updateWorkItem(this.backend, firstSwathItem);
 
           const res2 = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest');
           const zarrItem = JSON.parse(res2.text).workItem;
@@ -433,76 +433,76 @@ describe('ignoreErrors', function () {
         });
 
         it('leaves the job in the running state', async function () {
-          const { job } = await Job.byJobID(db, firstSwotItem.jobID);
+          const { job } = await Job.byJobID(db, firstSwathItem.jobID);
           expect(job.status).to.equal(JobStatus.RUNNING);
         });
       });
 
-      describe('when the second swot-reprojection service work item fails (first failure)', function () {
-        let secondSwotItem;
+      describe('when the second Swath Projector work item fails (first failure)', function () {
+        let secondSwathItem;
 
         before(async function () {
           let shouldLoop = true;
           // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
           while (shouldLoop) {
-            const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
-            secondSwotItem = JSON.parse(res.text).workItem;
-            secondSwotItem.status = WorkItemStatus.FAILED;
-            secondSwotItem.results = [];
+            const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
+            secondSwathItem = JSON.parse(res.text).workItem;
+            secondSwathItem.status = WorkItemStatus.FAILED;
+            secondSwathItem.results = [];
 
-            await updateWorkItem(this.backend, secondSwotItem);
+            await updateWorkItem(this.backend, secondSwathItem);
 
             // check to see if the work-item has failed completely
-            const workItem = await getWorkItemById(db, secondSwotItem.id);
+            const workItem = await getWorkItemById(db, secondSwathItem.id);
             shouldLoop = !(workItem.status === WorkItemStatus.FAILED);
           }
         });
 
         it('changes the job status to running_with_errors', async function () {
-          const { job } = await Job.byJobID(db, secondSwotItem.jobID);
+          const { job } = await Job.byJobID(db, secondSwathItem.jobID);
           expect(job.status).to.equal(JobStatus.RUNNING_WITH_ERRORS);
         });
 
         it('does not queue a zarr step for the work item that failed', async function () {
-          const currentWorkItems = (await getWorkItemsByJobId(db, secondSwotItem.jobID)).workItems;
+          const currentWorkItems = (await getWorkItemsByJobId(db, secondSwathItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(6);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(2);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(2);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest').length).to.equal(1);
 
         });
       });
 
-      describe('when the third swot-reprojection service work item fails resulting in a (second failure) for the job', function () {
-        let thirdSwotItem;
+      describe('when the third Swath Projector work item fails resulting in a (second failure) for the job', function () {
+        let thirdSwathItem;
 
         before(async function () {
           let shouldLoop = true;
           // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
           while (shouldLoop) {
-            const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
-            thirdSwotItem = JSON.parse(res.text).workItem;
-            thirdSwotItem.status = WorkItemStatus.FAILED;
-            thirdSwotItem.results = [];
-            thirdSwotItem.errorMessage = 'Did not reach 88 MPH.';
+            const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
+            thirdSwathItem = JSON.parse(res.text).workItem;
+            thirdSwathItem.status = WorkItemStatus.FAILED;
+            thirdSwathItem.results = [];
+            thirdSwathItem.errorMessage = 'Did not reach 88 MPH.';
 
-            await updateWorkItem(this.backend, thirdSwotItem);
+            await updateWorkItem(this.backend, thirdSwathItem);
 
             // check to see if the work-item has failed completely
-            const workItem = await getWorkItemById(db, thirdSwotItem.id);
+            const workItem = await getWorkItemById(db, thirdSwathItem.id);
             shouldLoop = !(workItem.status === WorkItemStatus.FAILED);
           }
         });
 
         it('puts the job in a FAILED state', async function () {
-          const { job } = await Job.byJobID(db, thirdSwotItem.jobID);
+          const { job } = await Job.byJobID(db, thirdSwathItem.jobID);
           expect(job.status).to.equal(JobStatus.FAILED);
         });
 
         it('includes the error details in the job status', async function () {
-          const response = await jobStatus(this.frontend, { jobID: thirdSwotItem.jobID, username: 'joe' });
+          const response = await jobStatus(this.frontend, { jobID: thirdSwathItem.jobID, username: 'joe' });
           const job = JSON.parse(response.text);
           const { errors } = job;
           expect(errors.length).to.equal(2);
@@ -514,12 +514,12 @@ describe('ignoreErrors', function () {
 
         it('marks any remaining work items as canceled', async function () {
           // job failure should trigger cancellation of any pending work items
-          const currentWorkItems = (await getWorkItemsByJobId(db, thirdSwotItem.jobID)).workItems;
+          const currentWorkItems = (await getWorkItemsByJobId(db, thirdSwathItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(6);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.CANCELED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(2);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.CANCELED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(2);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest').length).to.equal(1);
         });
       });
@@ -592,12 +592,12 @@ describe('ignoreErrors', function () {
           await updateWorkItem(this.backend, workItem);
         });
 
-        it('queues 3 swot-reproject work items and 1 more query-cmr work item', async function () {
+        it('queues 3 Swath Projector work items and 1 more query-cmr work item', async function () {
           const currentWorkItems = (await getWorkItemsByJobId(db, workItemJobID)).workItems;
           expect(currentWorkItems.length).to.equal(5);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
           expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(3);
+          expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(3);
         });
 
         it('leaves the job in the running state', async function () {
@@ -605,17 +605,17 @@ describe('ignoreErrors', function () {
           expect(job.status).to.equal(JobStatus.RUNNING);
         });
 
-        describe('when the first granule swot-reproject and netcdf-to-zarr work items succeed', async function () {
-          let firstSwotItem;
+        describe('when the first granule Swath Projector and netcdf-to-zarr work items succeed', async function () {
+          let firstSwathItem;
 
           before(async function () {
-            const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
+            const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
 
-            firstSwotItem = JSON.parse(res.text).workItem;
-            firstSwotItem.status = WorkItemStatus.SUCCESSFUL;
-            firstSwotItem.results = [getStacLocation(firstSwotItem, 'catalog.json')];
-            await fakeServiceStacOutput(firstSwotItem.jobID, firstSwotItem.id);
-            await updateWorkItem(this.backend, firstSwotItem);
+            firstSwathItem = JSON.parse(res.text).workItem;
+            firstSwathItem.status = WorkItemStatus.SUCCESSFUL;
+            firstSwathItem.results = [getStacLocation(firstSwathItem, 'catalog.json')];
+            await fakeServiceStacOutput(firstSwathItem.jobID, firstSwathItem.id);
+            await updateWorkItem(this.backend, firstSwathItem);
 
             const res2 = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest');
             const zarrItem = JSON.parse(res2.text).workItem;
@@ -626,33 +626,33 @@ describe('ignoreErrors', function () {
           });
 
           it('leaves the job in the running state', async function () {
-            const { job } = await Job.byJobID(db, firstSwotItem.jobID);
+            const { job } = await Job.byJobID(db, firstSwathItem.jobID);
             expect(job.status).to.equal(JobStatus.RUNNING);
           });
         });
       });
 
-      describe('when the next swot-reproject item fails', function () {
-        let secondSwotItem;
+      describe('when the next Swath Projector item fails', function () {
+        let secondSwathItem;
         before(async function () {
           let shouldLoop = true;
           // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
           while (shouldLoop) {
-            const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
-            secondSwotItem = JSON.parse(res.text).workItem;
-            secondSwotItem.status = WorkItemStatus.FAILED;
-            secondSwotItem.results = [];
+            const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
+            secondSwathItem = JSON.parse(res.text).workItem;
+            secondSwathItem.status = WorkItemStatus.FAILED;
+            secondSwathItem.results = [];
 
-            await updateWorkItem(this.backend, secondSwotItem);
+            await updateWorkItem(this.backend, secondSwathItem);
 
             // check to see if the work-item has failed completely
-            const workItem = await getWorkItemById(db, secondSwotItem.id);
+            const workItem = await getWorkItemById(db, secondSwathItem.id);
             shouldLoop = !(workItem.status === WorkItemStatus.FAILED);
           }
         });
 
         it('updates the job to the running_with_errors state', async function () {
-          const { job } = await Job.byJobID(db, secondSwotItem.jobID);
+          const { job } = await Job.byJobID(db, secondSwathItem.jobID);
           expect(job.status).to.equal(JobStatus.RUNNING_WITH_ERRORS);
         });
       });
@@ -686,9 +686,9 @@ describe('ignoreErrors', function () {
           expect(currentWorkItems.length).to.equal(6);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.CANCELED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.CANCELED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest').length).to.equal(1);
         });
       });
@@ -1240,20 +1240,20 @@ describe('ignoreErrors', function () {
         });
 
         describe('when the first granule completes successfully', function () {
-          let firstSwotItem;
+          let firstSwathItem;
 
           before(async function () {
             const res = await getWorkForService(this.backend, 'ghcr.io/podaac/l2ss-py:sit');
 
-            firstSwotItem = JSON.parse(res.text).workItem;
-            firstSwotItem.status = WorkItemStatus.SUCCESSFUL;
-            firstSwotItem.results = [getStacLocation(firstSwotItem, 'catalog.json')];
-            await fakeServiceStacOutput(firstSwotItem.jobID, firstSwotItem.id);
-            await updateWorkItem(this.backend, firstSwotItem);
+            firstSwathItem = JSON.parse(res.text).workItem;
+            firstSwathItem.status = WorkItemStatus.SUCCESSFUL;
+            firstSwathItem.results = [getStacLocation(firstSwathItem, 'catalog.json')];
+            await fakeServiceStacOutput(firstSwathItem.jobID, firstSwathItem.id);
+            await updateWorkItem(this.backend, firstSwathItem);
           });
 
           it('leaves the job in the running state', async function () {
-            const { job } = await Job.byJobID(db, firstSwotItem.jobID);
+            const { job } = await Job.byJobID(db, firstSwathItem.jobID);
             expect(job.status).to.equal(JobStatus.RUNNING);
           });
         });
@@ -1399,45 +1399,45 @@ describe('ignoreErrors', function () {
         await updateWorkItem(this.backend, workItem);
         const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
         expect(currentWorkItems.length).to.equal(4);
-        expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(3);
+        expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(3);
       });
 
-      describe('when the first swot-reprojection service work item fails', function () {
-        let firstSwotItem;
+      describe('when the first Swath Projector work item fails', function () {
+        let firstSwathItem;
 
         before(async function () {
           let shouldLoop = true;
           // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
           while (shouldLoop) {
-            const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
-            firstSwotItem = JSON.parse(res.text).workItem;
-            firstSwotItem.status = WorkItemStatus.FAILED;
-            firstSwotItem.results = [];
+            const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
+            firstSwathItem = JSON.parse(res.text).workItem;
+            firstSwathItem.status = WorkItemStatus.FAILED;
+            firstSwathItem.results = [];
 
-            await updateWorkItem(this.backend, firstSwotItem);
+            await updateWorkItem(this.backend, firstSwathItem);
 
             // check to see if the work-item has failed completely
-            const workItem = await getWorkItemById(db, firstSwotItem.id);
+            const workItem = await getWorkItemById(db, firstSwathItem.id);
             shouldLoop = !(workItem.status === WorkItemStatus.FAILED);
           }
         });
 
         it('changes the job status to running_with_errors', async function () {
-          const { job } = await Job.byJobID(db, firstSwotItem.jobID);
+          const { job } = await Job.byJobID(db, firstSwathItem.jobID);
           expect(job.status).to.equal(JobStatus.RUNNING_WITH_ERRORS);
         });
 
         it('does not queue a zarr step for the work item that failed', async function () {
-          const currentWorkItems = (await getWorkItemsByJobId(db, firstSwotItem.jobID)).workItems;
+          const currentWorkItems = (await getWorkItemsByJobId(db, firstSwathItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(4);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(2);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(2);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
         });
 
         it('sets the status to COMPLETE_WITH_ERRORS when the other granules complete', async function () {
-          const res1 = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
-          const res2 = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
+          const res1 = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
+          const res2 = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
           const workItem1 = JSON.parse(res1.text).workItem;
           const workItem2 = JSON.parse(res2.text).workItem;
 
@@ -1467,13 +1467,13 @@ describe('ignoreErrors', function () {
           await fakeServiceStacOutput(workItem4.jobID, workItem4.id);
           await updateWorkItem(this.backend, workItem4);
 
-          const { job } = await Job.byJobID(db, firstSwotItem.jobID);
+          const { job } = await Job.byJobID(db, firstSwathItem.jobID);
           expect(job.status).to.equal(JobStatus.COMPLETE_WITH_ERRORS);
           expect(job.progress).to.equal(100);
         });
 
         it('includes the error details in the job status', async function () {
-          const response = await jobStatus(this.frontend, { jobID: firstSwotItem.jobID, username: 'joe' });
+          const response = await jobStatus(this.frontend, { jobID: firstSwathItem.jobID, username: 'joe' });
           const job = JSON.parse(response.text);
           const { errors } = job;
           expect(errors.length).to.equal(1);
@@ -1504,45 +1504,45 @@ describe('ignoreErrors', function () {
         await updateWorkItem(this.backend, workItem);
         const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
         expect(currentWorkItems.length).to.equal(4);
-        expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(3);
+        expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(3);
       });
 
-      describe('when the first swot-reprojection service work item fails', function () {
-        let firstSwotItem;
+      describe('when the first Swath Projector work item fails', function () {
+        let firstSwathItem;
 
         before(async function () {
           let shouldLoop = true;
           // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
           while (shouldLoop) {
-            const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
-            firstSwotItem = JSON.parse(res.text).workItem;
-            firstSwotItem.status = WorkItemStatus.FAILED;
-            firstSwotItem.results = [];
+            const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
+            firstSwathItem = JSON.parse(res.text).workItem;
+            firstSwathItem.status = WorkItemStatus.FAILED;
+            firstSwathItem.results = [];
 
-            await updateWorkItem(this.backend, firstSwotItem);
+            await updateWorkItem(this.backend, firstSwathItem);
 
             // check to see if the work-item has failed completely
-            const workItem = await getWorkItemById(db, firstSwotItem.id);
+            const workItem = await getWorkItemById(db, firstSwathItem.id);
             shouldLoop = !(workItem.status === WorkItemStatus.FAILED);
           }
         });
 
         it('changes the job status to failed', async function () {
-          const { job } = await Job.byJobID(db, firstSwotItem.jobID);
+          const { job } = await Job.byJobID(db, firstSwathItem.jobID);
           expect(job.status).to.equal(JobStatus.FAILED);
         });
 
         it('does not queue a zarr step for the work item that failed', async function () {
-          const currentWorkItems = (await getWorkItemsByJobId(db, firstSwotItem.jobID)).workItems;
+          const currentWorkItems = (await getWorkItemsByJobId(db, firstSwathItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(4);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.CANCELED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(2);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.CANCELED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(2);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
         });
 
 
         it('includes the error details in the job status', async function () {
-          const response = await jobStatus(this.frontend, { jobID: firstSwotItem.jobID, username: 'joe' });
+          const response = await jobStatus(this.frontend, { jobID: firstSwathItem.jobID, username: 'joe' });
           const job = JSON.parse(response.text);
           const { errors } = job;
           expect(errors.length).to.equal(1);

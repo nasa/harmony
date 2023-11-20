@@ -2,6 +2,19 @@
 Any changes to the environment variables will be documented in this file in chronological
 order with the most recent changes first.
 
+## 2024-01-04
+### Changed
+- SWOT_REPROJECT_IMAGE to SWATH_PROJECTOR_IMAGE
+- SWOT_REPROJECT_REQUESTS_CPU to SWATH_PROJECTOR_REQUESTS_CPU
+- SWOT_REPROJECT_REQUESTS_MEMORY to SWATH_PROJECTOR_REQUESTS_MEMORY
+- SWOT_REPROJECT_LIMITS_CPU to SWATH_PROJECTOR_LIMITS_CPU
+- SWOT_REPROJECT_LIMITS_MEMORY to SWATH_PROJECTOR_LIMITS_MEMORY
+- SWOT_REPROJECT_INVOCATION_ARGS to SWATH_PROJECTOR_INVOCATION_ARGS
+- SWOT_REPROJECT_SERVICE_QUEUE_URLS to SWATH_PROJECTOR_SERVICE_QUEUE_URLS
+- SWATH_PROJECTOR_IMAGE to point to ghcr.io hosted image.
+- SWATH_PROJECTOR_INVOCATION_ARGS to use new image entry point.
+- SWATH_PROJECTOR_SERVICE_QUEUE_URLS to change references from "swot-reproject" to "swath-projector".
+
 ## 2024-01-03
 ### Changed
 - HOSS_LIMITS_MEMORY - Increased to 8Gi to accommodate filling for bounding boxes crossing grid edge for large granules.
