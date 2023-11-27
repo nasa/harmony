@@ -13,10 +13,10 @@ Using the `versions` endpoint, a user can get a list of all of the docker images
 
 The returned JSON response is an array of service version information with the following fields:
 
-| field | description                                                      |
-|-------|------------------------------------------------------------------|
-| name | The name of the backend service chain as defined in services.yml. |
-| images | An array of the images used in the service chain.               |
+| field | description                                                                                                                       |
+|-------|-----------------------------------------------------------------------------------------------------------------------------------|
+| name | The name of the backend service chain as defined in [services.yml](https://github.com/nasa/harmony/blob/main/config/services.yml). |
+| images | An array of the images used in the service chain.                                                                                |
 
 Each image has the following fields:
 | field | description                                                        |
