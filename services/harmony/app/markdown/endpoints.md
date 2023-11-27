@@ -6,8 +6,7 @@ All of the public endpoints for Harmony users other than the OGC Coverages and W
 |------------------------|-------------------------------------------------------------------------------------------|
 | /                      | The Harmony landing page                                                                  |
 | /capabilities          | [Get harmony capabilities for the provided collection](#capabilities-details)             |
-| /cloud-access          | Generates JSON with temporary credentials for accessing processed data in S3              |
-| /cloud-access.sh       | Generates shell scripts that can be run to access processed data in S3                    |
+| /cloud-access          | [Generates AWS credentials for accessing processed data in S3](#cloud-access-details)     |
 | /docs                  | These documentation pages                                                                 |
 | /docs/api              | The Swagger documentation for the OGC Coverages API                                       |
 | /jobs                  | [The jobs API for getting job status, pausing/continuing/canceling jobs](#jobs-details)   |
