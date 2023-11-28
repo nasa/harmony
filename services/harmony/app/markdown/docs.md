@@ -17,3 +17,5 @@
 !!!include(stac.md)!!!
 
 !!!include(cloud-access.md)!!!
+
+!!!include(versions.md)!!!
