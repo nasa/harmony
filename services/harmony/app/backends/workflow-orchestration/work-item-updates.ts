@@ -513,8 +513,7 @@ async function createNextWorkItems(
 
 /**
  * Preprocess a work item and return the catalog items and result item size
- * inside the return type WorkItemPreprocessInfo. This function can be called
- * in parallel.
+ * inside the return type WorkItemPreprocessInfo.
  *
  * @param update - information about the work item update
  * @param operation - the DataOperation for the user's request
@@ -565,9 +564,10 @@ export async function preprocessWorkItem(
  * Process the work item update using the preprocessed result info and the work item info.
  * Various other parameters are passed in to optimize the processing of a batch of work items.
  * A database lock on the work item related job needs to be acquired before calling this function.
- * This function should be called single threaded because it is inside a database transaction.
+ * WARN To avoid dB deadlocks, this function should be not be called from a Promise.all.
  *
  * @param tx - database transaction with lock on the related job in the jobs table
+ * @param preprocessedResult - information obtained in earlier processing for efficiency reasons
  * @param job - job of the work item
  * @param update - information about the work item update
  * @param logger - the Logger for the request
@@ -690,6 +690,7 @@ export async function processWorkItem(
     let allWorkItemsForStepComplete = false;
 
     if (checkCompletion) {
+      // TODO don't do this every time
       const completedWorkItemCount = await (await logAsyncExecutionTime(
         workItemCountForStep,
         'HWIUWJI.workItemCountForStep',
@@ -821,10 +822,10 @@ export async function processWorkItem(
 }
 
 /**
- * Process a list of work item updates
+ * Process a list of work item updates for a given job
  *
  * @param jobId - job id
- * @param workflowStepIndex - the current workflow step of the work item
+ * @param workflowStepIndex - the current workflow step of the work items
  * @param items - a list of work item update items
  * @param logger - the Logger for the request
  */
