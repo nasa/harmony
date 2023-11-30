@@ -2,26 +2,26 @@
   "1094556": {
     "active": true,
     "notes": "Ignored since there is no fix",
-    "expiry": "2023-12-01"
-  },
-  "1094596": {
-    "active": true,
-    "notes": "Ignored since there is no fix",
-    "expiry": "2023-12-01"
+    "expiry": "2024-02-01"
   },
   "1094555": {
     "active": true,
     "notes": "Ignored since there is no fix",
-    "expiry": "2023-12-01"
-  },
-  "1092263": {
-    "active": true,
-    "notes": "Ignored since there is no fix",
-    "expiry": "2023-12-01"
+    "expiry": "2024-02-01"
   },
   "1092972": {
     "active": true,
     "notes": "Ignored since there is no fix",
-    "expiry": "2023-12-01"
+    "expiry": "2024-02-01"
+  },
+  "1095019": {
+    "active": true,
+    "notes": "Will fix in HARMONY-1648",
+    "expiry": "2024-02-01"
+  },
+  "1095102": {
+    "active": true,
+    "notes": "Will fix in HARMONY-1650",
+    "expiry": "2024-02-01"
   }
 }
