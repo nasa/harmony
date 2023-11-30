@@ -427,9 +427,14 @@ async function maybeQueueQueryCmrWorkItem(
  *
  * @param logger - the logger to use for logging timing statements
  * @param tx - the database transaction to use for making queries
- * @param workItem - the work-item o
+ * @param workItem - the work-item associated with the step
+ * @param thisStep - the step to check
+ *
+ * @returns true if the step is complete
  */
 async function isStepComplete(logger: Logger, tx: Transaction, workItem: WorkItem, thisStep: WorkflowStep): Promise<boolean> {
+  // this first check is much faster than the second, but only conclusive if notComplete is true.
+  // if it is false we must do the second (slower check)
   let notComplete = await (await logAsyncExecutionTime(
     isDefinitelyNotComplete,
     'HWIJUWJI.isDefinitelyNotComplete',
