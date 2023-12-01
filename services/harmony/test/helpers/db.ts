@@ -77,16 +77,26 @@ export function hookTransactionEach(): void {
 }
 
 /**
- * Before/after hooks to have calls to create a database transaction throw an exception for
+ * Before/after hooks to have calls to interact with the database throw an exception for
  * just that test.
  *
  */
-export function hookTransactionFailure(): void {
-  let txStub;
+export function hookDatabaseFailure(): void {
+  const originalMethods = {};
   before(function () {
-    txStub = stub(db, 'transaction').throws();
+    Object.keys(db).forEach(method => {
+      if (typeof db[method as keyof typeof db] === 'function') {
+        originalMethods[method] = db[method as keyof typeof db];
+        stub(db, method as keyof typeof db).throws(new Error('DB call failed'));
+      }
+    });
   });
+
   after(function () {
-    txStub.restore();
+    Object.keys(originalMethods).forEach(method => {
+      if (db[method as keyof typeof db] && typeof db[method as keyof typeof db].restore === 'function') {
+        db[method as keyof typeof db].restore();
+      }
+    });
   });
 }
