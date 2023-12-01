@@ -6,7 +6,7 @@ import { v4 as uuid } from 'uuid';
 import request from 'supertest';
 import { itReturnsUnchangedDataLinksForZarr, itProvidesAWorkingHttpUrl } from '../helpers/job-status';
 import hookServersStartStop from '../helpers/servers';
-import { hookTransaction, hookTransactionFailure } from '../helpers/db';
+import { hookTransaction, hookDatabaseFailure } from '../helpers/db';
 import { jobStatus, hookJobStatus, jobsEqual, itIncludesRequestUrl, buildJob } from '../helpers/jobs';
 import StubService from '../helpers/stub-service';
 import { hookRedirect, hookUrl } from '../helpers/hooks';
@@ -184,7 +184,7 @@ describe('Individual job status route', function () {
   });
 
   describe('When the database catches fire', function () {
-    hookTransactionFailure();
+    hookDatabaseFailure();
     describe('for a user that should have jobs', function () {
       hookJobStatus({ jobID, username: 'joe' });
       it('returns an internal server error status code', function () {

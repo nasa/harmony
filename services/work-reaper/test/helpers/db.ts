@@ -81,7 +81,7 @@ export function hookTransactionEach(): void {
  * just that test.
  *
  */
-export function hookTransactionFailure(): void {
+export function hookDatabaseFailure(): void {
   let txStub;
   before(function () {
     txStub = stub(db, 'transaction').throws();

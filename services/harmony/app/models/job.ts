@@ -650,6 +650,17 @@ export class Job extends DBRecord implements JobRecord {
   }
 
   /**
+   * Returns the time of the most recently updated job
+   *
+   * @param transaction - the transaction to use for querying
+   * @returns a promise resolving to the timestamp of the most recently updated job
+   */
+  static async getTimeOfMostRecentlyUpdatedJob(transaction: Transaction): Promise<Date> {
+    const response = await transaction('jobs').max('updatedAt as latest_update');
+    return new Date(response[0].latest_update);
+  }
+
+  /**
    * Creates a Job instance.
    *
    * @param fields - Object containing fields to set on the record
