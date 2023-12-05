@@ -132,7 +132,14 @@ class HarmonyServerEnv extends HarmonyEnv implements IHarmonyServerEnv {
 const serverEnvVars = _.cloneDeep(envVars) as IHarmonyServerEnv;
 
 for (const k of Object.keys(envLocalDefaults)) {
-  serverEnvVars[_.camelCase(k)] = makeConfigVar(envLocalDefaults[k]);
+  // some values defined above may already be set via .env
+  const variableValue = serverEnvVars[_.camelCase(k)];
+  if (variableValue === undefined || variableValue === '') {
+    serverEnvVars[_.camelCase(k)] = makeConfigVar(envLocalDefaults[k]);
+  }
+  if (process.env[k] === undefined || process.env[k] === '') {
+    process.env[k] = envLocalDefaults[k];
+  }
 }
 
 // validate the env vars

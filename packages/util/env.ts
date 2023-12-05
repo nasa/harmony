@@ -230,7 +230,6 @@ for (const k of Object.keys(allEnv)) {
   // to add new env vars to the process as needed
   process.env[k] = allEnv[k];
 }
-console.log(envVars);
 
 // special cases
 
@@ -264,7 +263,5 @@ for (const k of Object.keys(process.env)) {
     }
   }
 }
-console.log(envVars);
 const envVarsObj = new HarmonyEnv(envVars);
-console.log(envVarsObj);
 validateEnvironment(envVarsObj);
