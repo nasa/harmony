@@ -1,9 +1,7 @@
 import { IsInt, IsNotEmpty, Min } from 'class-validator';
-import * as dotenv from 'dotenv';
-import * as fs from 'fs';
-import * as path from 'path';
-import { HarmonyEnv, IHarmonyEnv, makeConfigVar, validateEnvironment, envVars } from '@harmony/util/env';
+import { HarmonyEnv } from '@harmony/util/env';
 import _ from 'lodash';
+import * as path from 'path';
 
 //
 // harmony env module
@@ -11,37 +9,7 @@ import _ from 'lodash';
 // and some specific to the server
 //
 
-// read the local env-defaults
-const localPath = path.resolve(__dirname, '../../env-defaults');
-const envLocalDefaults = dotenv.parse(fs.readFileSync(localPath));
-
-export interface IHarmonyServerEnv extends IHarmonyEnv {
-  aggregateStacCatalogMaxPageSize: number;
-  adminGroupId: string;
-  defaultJobListPageSize: number
-  oauthClientId: string;
-  oauthHost: string;
-  oauthPassword: string;
-  oauthUid: string;
-  sharedSecretKey: string;
-  cookieSecret: string;
-  metricsEndpoint: string;
-  metricsIndex: string;
-  maxPageSize: number;
-  maxPostFields: number;
-  maxPostFileParts: number;
-  maxPostFileSize: number;
-  maxSynchronousGranules: number;
-  maxErrorsForJob: number;
-  previewThreshold: number;
-  uploadBucket: string;
-  logViewerGroupId: string;
-  syncRequestPollIntervalMs: number;
-  maxBatchInputs: number;
-  maxBatchSizeInBytes: number;
-}
-
-class HarmonyServerEnv extends HarmonyEnv implements IHarmonyServerEnv {
+class HarmonyServerEnv extends HarmonyEnv {
   @IsInt()
   aggregateStacCatalogMaxPageSize: number;
 
@@ -129,21 +97,8 @@ class HarmonyServerEnv extends HarmonyEnv implements IHarmonyServerEnv {
 
 }
 
-const serverEnvVars = _.cloneDeep(envVars) as IHarmonyServerEnv;
+const localPath = path.resolve(__dirname, '../../env-defaults');
+const harmonyServerEnvObj = new HarmonyServerEnv(localPath);
+harmonyServerEnvObj.validate();
 
-for (const k of Object.keys(envLocalDefaults)) {
-  // some values defined above may already be set via .env
-  const variableValue = serverEnvVars[_.camelCase(k)];
-  if (variableValue === undefined || variableValue === '') {
-    serverEnvVars[_.camelCase(k)] = makeConfigVar(envLocalDefaults[k]);
-  }
-  if (process.env[k] === undefined || process.env[k] === '') {
-    process.env[k] = envLocalDefaults[k];
-  }
-}
-
-// validate the env vars
-const harmonyServerEnvObj = new HarmonyServerEnv(serverEnvVars);
-validateEnvironment(harmonyServerEnvObj);
-
-export default serverEnvVars;
+export default harmonyServerEnvObj;
