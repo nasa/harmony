@@ -1,9 +1,9 @@
 node_modules
+.git
 .env
 db/*.sqlite3
 logs
-tasks
-test
 docs
 workload
 fixtures
+built

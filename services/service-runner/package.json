@@ -1,5 +1,5 @@
 {
-  "name": "service-runner",
+  "name": "@harmony/service-runner",
   "version": "1.0.0",
   "description": "",
   "main": "index.ts",
@@ -14,15 +14,15 @@
     "lint": "eslint --ext .ts .",
     "prebuild": "./bin/prebuild",
     "prebuild-m1": "./bin/prebuild",
-    "build": "tsc && docker build --tag harmonyservices/service-runner:${VERSION:-latest} .",
-    "build-m1": "tsc && docker build --platform linux/amd64 --tag harmonyservices/service-runner:${VERSION:-latest} .",
+    "bld": "tsc -p ./tsconfig.build.json",
+    "build": "tsc -p ./tsconfig.build.json  && docker build --tag harmonyservices/service-runner:${VERSION:-latest} .",
+    "build-m1": "tsc -p ./tsconfig.build.json && docker build --platform linux/amd64 --tag harmonyservices/service-runner:${VERSION:-latest} .",
     "push-image": "./bin/push-image ${VERSION:-latest}",
-    "publish": "docker push harmonyservices/service-runner:${VERSION:-latest}",
-    "better-audit": "better-npm-audit audit"
+    "publish": "docker push harmonyservices/service-runner:${VERSION:-latest}"
   },
   "engines": {
     "node": "^18.18.2",
-    "npm": ">=8"
+    "pnpm": ">=8"
   },
   "author": "NASA EOSDIS Harmony team",
   "license": "Apache-2.0",

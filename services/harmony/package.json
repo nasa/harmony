@@ -1,5 +1,5 @@
 {
-  "name": "harmony",
+  "name": "@harmony/harmony",
   "version": "0.0.0",
   "description": "Data services frontend",
   "main": "index.js",

@@ -9,7 +9,10 @@
     "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha",
     "test-bail": "TS_NODE_TRANSPILE_ONLY=true mocha --bail",
     "coverage": "nyc mocha",
-    "lint": "eslint --ext .ts --ignore-pattern built ."
+    "lint": "eslint --ext .ts --ignore-pattern built .",
+    "bld": "tsc -p ./tsconfig.build.json",
+    "build": "rimraf built/* && tsc -p ./tsconfig.build.json",
+    "build-m1": "rimraf built/* && tsc -p ./tsconfig.build.json"
   },
   "nyc": {
     "all": true,

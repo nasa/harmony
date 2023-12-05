@@ -1,5 +1,5 @@
 {
-  "name": "harmony-work-scheduler",
+  "name": "@harmony/work-scheduler",
   "version": "1.0.0",
   "description": "",
   "main": "server.ts",
@@ -17,8 +17,7 @@
     "build": "tsc && docker build -f Dockerfile.mac --tag harmonyservices/work-scheduler:${VERSION:-latest} .",
     "build-m1": "tsc && docker build -f Dockerfile.mac --platform linux/amd64 --tag harmonyservices/work-scheduler:${VERSION:-latest} .",
     "push-image": "./bin/push-image ${VERSION:-latest}",
-    "publish": "docker push harmonyservices/work-scheduler:${VERSION:-latest}",
-    "better-audit": "better-npm-audit audit"
+    "publish": "docker push harmonyservices/work-scheduler:${VERSION:-latest}"
   },
   "engines": {
     "node": "^18.18.2",

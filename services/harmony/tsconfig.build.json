@@ -1,4 +1,7 @@
 {
+  "compilerOptions": {
+    "outDir": "built"
+  },
   "extends": "../../tsconfig.base.json",
   "include": [
     "./app/**/*"

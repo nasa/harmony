@@ -1,5 +1,5 @@
 {
-  "name": "harmony-work-failer",
+  "name": "@harmony/work-failer",
   "version": "1.0.0",
   "description": "",
   "main": "server.ts",
