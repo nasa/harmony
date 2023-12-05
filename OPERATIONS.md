@@ -28,6 +28,11 @@ kubectl port-forward <Prometheus Pod ID> 9090:9090 -n monitoring [--kubeconfig <
 
 After which you can access the Prometheus UI in web browser at `http://localhost:9090`.
 
+### Grafana
+
+The Grafana UI can be accessed by forwarding the service's port (3000) to a another port since harmony runs on same port as grafana(3000)
+kubectl port-forward -n monitoring service/grafana 4000:3000
+
 #### Metrics
 
 Harmony services workers provide a [metric](https://prometheus.io/docs/concepts/data_model/) 

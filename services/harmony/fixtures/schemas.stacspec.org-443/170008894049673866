@@ -1,0 +1,74 @@
+GET /v1.0.0/item-spec/json-schema/provider.json
+accept: application/json, text/plain, */*
+accept-encoding: gzip, compress, deflate, br
+
+HTTP/1.1 200 OK
+connection: close
+server: GitHub.com
+content-type: application/json; charset=utf-8
+x-origin-cache: HIT
+last-modified: Tue, 07 Nov 2023 16:31:02 GMT
+access-control-allow-origin: *
+etag: W/"654a6646-46f"
+expires: Wed, 15 Nov 2023 23:05:40 GMT
+cache-control: max-age=600
+x-proxy-cache: MISS
+x-github-request-id: 52FC:354C:5D5A3E:7ED464:65554C6C
+accept-ranges: bytes
+date: Wed, 15 Nov 2023 22:55:40 GMT
+via: 1.1 varnish
+age: 0
+x-served-by: cache-ewr18181-EWR
+x-cache: MISS
+x-cache-hits: 0
+x-timer: S1700088941.515094,VS0,VE12
+vary: Accept-Encoding
+x-fastly-request-id: 759f209627f5681195b07825b6dc71a4eb9b7237
+
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://schemas.stacspec.org/v1.0.0/item-spec/json-schema/provider.json#",
+  "title": "Provider Fields",
+  "type": "object",
+  "properties": {
+    "providers": {
+      "title": "Providers",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "title": "Organization name",
+            "type": "string",
+            "minLength": 1
+          },
+          "description": {
+            "title": "Organization description",
+            "type": "string"
+          },
+          "roles": {
+            "title": "Organization roles",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "producer",
+                "licensor",
+                "processor",
+                "host"
+              ]
+            }
+          },
+          "url": {
+            "title": "Organization homepage",
+            "type": "string",
+            "format": "iri"
+          }
+        }
+      }
+    }
+  }
+}

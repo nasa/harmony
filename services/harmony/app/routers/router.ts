@@ -39,6 +39,7 @@ import { parseGridMiddleware } from '../util/grids';
 import docsPage from '../frontends/docs/docs';
 import { getCollectionCapabilitiesJson } from '../frontends/capabilities';
 import extendDefault from '../middleware/extend';
+import { getAdminHealth, getHealth } from '../frontends/health';
 export interface RouterConfig {
   PORT?: string | number; // The port to run the frontend server on
   BACKEND_PORT?: string | number; // The port to run the backend server on
@@ -273,6 +274,9 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   result.get('/cloud-access.sh', asyncHandler(cloudAccessSh));
   result.get('/stac/:jobId', asyncHandler(getStacCatalog));
   result.get('/stac/:jobId/:itemIndex', asyncHandler(getStacItem));
+
+  result.get('/health', asyncHandler(getHealth));
+  result.get('/admin/health', asyncHandler(getAdminHealth));
 
   // Kubernetes readiness probe for Harmony in a Box
   result.get('/readiness', async (_req, res, _next: Function): Promise<void> => {

@@ -9,7 +9,7 @@ import { JobStatus, Job } from '../../models/job';
 import JobError, { getErrorCountForJob, getErrorsForJob } from '../../models/job-error';
 import JobLink, { getJobDataLinkCount } from '../../models/job-link';
 import { incrementReadyCount, deleteUserWorkForJob, incrementReadyAndDecrementRunningCounts, decrementRunningCount } from '../../models/user-work';
-import WorkItem, { maxSortIndexForJobService, workItemCountForStep, getWorkItemsByJobIdAndStepIndex, getWorkItemById, updateWorkItemStatus, getJobIdForWorkItem } from '../../models/work-item';
+import WorkItem, { maxSortIndexForJobService, workItemCountForStep, getWorkItemsByJobIdAndStepIndex, getWorkItemById, updateWorkItemStatus, getJobIdForWorkItem, isDefinitelyNotComplete } from '../../models/work-item';
 import { WorkItemStatus, COMPLETED_WORK_ITEM_STATUSES } from '../../models/work-item-interface';
 import { outputStacItemUrls, handleBatching, resultItemSizes } from '../../util/aggregation-batch';
 import db, { Transaction, batchSize } from '../../util/db';
@@ -421,6 +421,40 @@ async function maybeQueueQueryCmrWorkItem(
   }
 }
 
+
+/**
+ * Check to see if a workflow step for the given job is completed
+ *
+ * @param logger - the logger to use for logging timing statements
+ * @param tx - the database transaction to use for making queries
+ * @param workItem - the work-item associated with the step
+ * @param thisStep - the step to check
+ *
+ * @returns true if the step is complete
+ */
+async function isStepComplete(logger: Logger, tx: Transaction, workItem: WorkItem, thisStep: WorkflowStep): Promise<boolean> {
+  // this first check is much faster than the second, but only conclusive if notComplete is true.
+  // if it is false we must do the second (slower check)
+  let notComplete = await (await logAsyncExecutionTime(
+    isDefinitelyNotComplete,
+    'HWIJUWJI.isDefinitelyNotComplete',
+    logger))(
+    tx, workItem.jobID, workItem.workflowStepIndex,
+  );
+
+  if (!notComplete) {
+    const completedWorkItemCount = await (await logAsyncExecutionTime(
+      workItemCountForStep,
+      'HWIUWJI.workItemCountForStep',
+      logger))(
+      tx, workItem.jobID, workItem.workflowStepIndex, COMPLETED_WORK_ITEM_STATUSES,
+    );
+    notComplete = (completedWorkItemCount != thisStep.workItemCount);
+
+  }
+  return !notComplete;
+}
+
 /**
  * Creates the next work items for the workflow based on the results of the current step and handle
  * any needed batching
@@ -513,8 +547,7 @@ async function createNextWorkItems(
 
 /**
  * Preprocess a work item and return the catalog items and result item size
- * inside the return type WorkItemPreprocessInfo. This function can be called
- * in parallel.
+ * inside the return type WorkItemPreprocessInfo.
  *
  * @param update - information about the work item update
  * @param operation - the DataOperation for the user's request
@@ -565,9 +598,10 @@ export async function preprocessWorkItem(
  * Process the work item update using the preprocessed result info and the work item info.
  * Various other parameters are passed in to optimize the processing of a batch of work items.
  * A database lock on the work item related job needs to be acquired before calling this function.
- * This function should be called single threaded because it is inside a database transaction.
+ * WARN To avoid dB deadlocks, this function should be not be called from a Promise.all.
  *
  * @param tx - database transaction with lock on the related job in the jobs table
+ * @param preprocessedResult - information obtained in earlier processing for efficiency reasons
  * @param job - job of the work item
  * @param update - information about the work item update
  * @param logger - the Logger for the request
@@ -690,13 +724,7 @@ export async function processWorkItem(
     let allWorkItemsForStepComplete = false;
 
     if (checkCompletion) {
-      const completedWorkItemCount = await (await logAsyncExecutionTime(
-        workItemCountForStep,
-        'HWIUWJI.workItemCountForStep',
-        logger))(
-        tx, workItem.jobID, workItem.workflowStepIndex, COMPLETED_WORK_ITEM_STATUSES,
-      );
-      allWorkItemsForStepComplete = (completedWorkItemCount == thisStep.workItemCount);
+      allWorkItemsForStepComplete = await isStepComplete(logger, tx, workItem, thisStep);
     }
 
     // The number of 'hits' returned by a query-cmr could be less than when CMR was first
@@ -820,11 +848,12 @@ export async function processWorkItem(
   logger.debug(`Finished handling work item update for ${workItemID} and status ${status} in ${durationMs} ms`);
 }
 
+
 /**
- * Process a list of work item updates
+ * Process a list of work item updates for a given job
  *
  * @param jobId - job id
- * @param workflowStepIndex - the current workflow step of the work item
+ * @param workflowStepIndex - the current workflow step of the work items
  * @param items - a list of work item update items
  * @param logger - the Logger for the request
  */
