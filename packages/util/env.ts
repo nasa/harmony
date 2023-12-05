@@ -134,11 +134,6 @@ function buildEnv(localEnvDefaultsPath: string): HarmonyEnv {
     env[_.camelCase(k)] = makeConfigVar(allEnv[k]);
   }
   setSpecialCases(env);
-  for (const k of Object.keys(allEnv)) {
-    // for existing env vars this is redundant (but doesn't hurt), but this allows us
-    // to add new env vars to the process as needed
-    process.env[k] = allEnv[k];
-  }
   return env as HarmonyEnv;
 }
 
@@ -246,10 +241,26 @@ export class HarmonyEnv {
     }
   }
 
+  /**
+   * Override this if the subclass has any special cases where
+   * setting the env variable requires more than just reading the
+   * value straight from the file.
+   * e.g. envVars.databaseType = process.env.DATABASE_TYPE || 'postgres';
+   */
+  protected setSpecialCases(env: HarmonyEnv): void {
+
+  }
+
   constructor(localPath: string) {
     const env = buildEnv(localPath);
+    if (this.setSpecialCases) { // subclass has special cases
+      setSpecialCases(this);
+    }
     for (const key of Object.keys(env)) {
       this[key] = env[key];
+      // for existing env vars this is redundant (but doesn't hurt), but this allows us
+      // to add new env vars to the process as needed
+      process.env[key] = env[key];
     }
   }
 }
