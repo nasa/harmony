@@ -52,14 +52,6 @@ class HarmonyServiceEnv extends HarmonyEnv {
 
   @IsNotEmpty()
   sharedSecretKey: string;
-
-  /**
-   * Handles cases where setting the env variable requires more
-   * than just reading the value straight from the file.
-   */
-  setSpecialCases(env: HarmonyServiceEnv): void {
-    env.harmonyClientId = process.env.CLIENT_ID || 'harmony-unknown';
-  }
 }
 
 // validate the env vars

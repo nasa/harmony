@@ -1,28 +1,15 @@
 import { IsInt, IsNotEmpty, IsNumber, Min } from 'class-validator';
-import * as dotenv from 'dotenv';
-import * as fs from 'fs';
-import * as path from 'path';
-import { HarmonyEnv, IHarmonyEnv, envOverrides, originalEnv, makeConfigVar, validateEnvironment, envVars } from '@harmony/util/env';
+import { HarmonyEnv } from '@harmony/util/env';
 import _ from 'lodash';
+import path from 'path';
+
 //
 // env module
 // Sets up the environment variables for the work scheduler using the base environment variables
 // and some specific to the work scheduler
 //
 
-// read the local env-defaults
-const localPath = path.resolve(__dirname, '../../env-defaults');
-const envLocalDefaults = dotenv.parse(fs.readFileSync(localPath));
-
-interface IHarmonyWorkSchedulerEnv extends IHarmonyEnv {
-  serviceQueueBatchSizeCoefficient: number;
-  workingDir: string;
-  workItemSchedulerQueueMaxBatchSize: number;
-  workItemSchedulerQueueMaxGetMessageRequests: number;
-  workItemSchedulerBatchSize: number;
-}
-
-class HarmonyWorkSchedulerEnv extends HarmonyEnv implements IHarmonyWorkSchedulerEnv {
+class HarmonyWorkSchedulerEnv extends HarmonyEnv {
 
   @IsNumber()
   @Min(1)
@@ -44,18 +31,8 @@ class HarmonyWorkSchedulerEnv extends HarmonyEnv implements IHarmonyWorkSchedule
   workItemSchedulerBatchSize: number;
 }
 
-const allEnv = { ...envLocalDefaults, ...envOverrides };
-const schedulerEnvVars: IHarmonyWorkSchedulerEnv = _.cloneDeep(envVars) as IHarmonyWorkSchedulerEnv;
+const localPath = path.resolve(__dirname, '../../env-defaults');
+const envObj = new HarmonyWorkSchedulerEnv(localPath);
+envObj.validate();
 
-for (const k of Object.keys(allEnv)) {
-  makeConfigVar(schedulerEnvVars, k, allEnv[k]);
-}
-
-// special case
-schedulerEnvVars.harmonyClientId = originalEnv.CLIENT_ID || 'harmony-unknown';
-
-// validate the env vars
-const envObj = new HarmonyWorkSchedulerEnv(schedulerEnvVars);
-validateEnvironment(envObj);
-
-export default schedulerEnvVars;
+export default envObj;

@@ -17,7 +17,7 @@ class UpdaterHarmonyEnv extends HarmonyEnv {
   largeWorkItemUpdateQueueMaxBatchSize: number;
 
   @IsIn([WorkItemQueueType.LARGE_ITEM_UPDATE, WorkItemQueueType.SMALL_ITEM_UPDATE])
-  workItemUpdateQueueType: WorkItemQueueType;
+  workItemUpdateQueueType: WorkItemQueueType | string;
 
   @IsInt()
   @Min(0)
@@ -28,7 +28,7 @@ class UpdaterHarmonyEnv extends HarmonyEnv {
    * than just reading the value straight from the file.
    */
   setSpecialCases(env: UpdaterHarmonyEnv): void {
-    env.workItemUpdateQueueType = process.env.WORK_ITEM_UPDATE_QUEUE_TYPE === 'large' ?
+    env.workItemUpdateQueueType = env.workItemUpdateQueueType === 'large' ?
       WorkItemQueueType.LARGE_ITEM_UPDATE : WorkItemQueueType.SMALL_ITEM_UPDATE;
   }
 }
