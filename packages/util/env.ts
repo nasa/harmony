@@ -87,17 +87,18 @@ function setQueueUrls(envVars: Partial<HarmonyEnv>): void {
 
 /**
  * Adds special case environment variables to the HarmonyEnv.
+ * Reassigns or dynamically adds new variables to the env object.
  * @param envVars - the HarmonyEnv to add to
  */
 function setSpecialCases(envVars: Partial<HarmonyEnv>): void {
-  envVars.databaseType = process.env.DATABASE_TYPE || 'postgres';
+  envVars.databaseType ||= 'postgres';
   envVars.harmonyClientId = process.env.CLIENT_ID || 'harmony-unknown';
-  envVars.uploadBucket = process.env.UPLOAD_BUCKET || process.env.STAGING_BUCKET || 'local-staging-bucket';
+  envVars.uploadBucket ||= envVars.stagingBucket || 'local-staging-bucket';
   envVars.useLocalstack = !! envVars.useLocalstack;
   envVars.useServiceQueues = !! envVars.useServiceQueues;
-  envVars.workItemUpdateQueueUrl = process.env.WORK_ITEM_UPDATE_QUEUE_URL?.replace('localstack', envVars.localstackHost);
-  envVars.largeWorkItemUpdateQueueUrl = process.env.LARGE_WORK_ITEM_UPDATE_QUEUE_URL?.replace('localstack', envVars.localstackHost);
-  envVars.workItemSchedulerQueueUrl = process.env.WORK_ITEM_SCHEDULER_QUEUE_URL?.replace('localstack', envVars.localstackHost);
+  envVars.workItemUpdateQueueUrl = envVars.workItemUpdateQueueUrl?.replace('localstack', envVars.localstackHost);
+  envVars.largeWorkItemUpdateQueueUrl = envVars.largeWorkItemUpdateQueueUrl?.replace('localstack', envVars.localstackHost);
+  envVars.workItemSchedulerQueueUrl = envVars.workItemSchedulerQueueUrl?.replace('localstack', envVars.localstackHost);
   setQueueUrls(envVars);
 }
 
@@ -242,13 +243,17 @@ export class HarmonyEnv {
   }
 
   /**
-   * Override this if the subclass has any special cases where
-   * setting the env variable requires more than just reading the
-   * value straight from the file.
-   * e.g. envVars.databaseType = process.env.DATABASE_TYPE || 'postgres';
+   * Implement this if the child class has any special cases where setting the
+   * env variable requires more than just reading the value straight
+   * from the file, e.g. envVars.databaseType ||= 'postgres'; (see setSpecialCases in this module).
+   * You can manipulate/reassign existing properties or add new ones via this method.
    */
   protected setSpecialCases?(env: HarmonyEnv): void;
 
+  /**
+   * Constructs the env object, for use in any Harmony component.
+   * @param localPath - path to the env-defaults file of the component
+   */
   constructor(localPath: string) {
     const env = buildEnv(localPath);
     if (this.setSpecialCases) { // subclass has special cases
