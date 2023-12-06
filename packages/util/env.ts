@@ -109,7 +109,7 @@ function setSpecialCases(envVars: Partial<HarmonyEnv>): void {
  * is specific to the HarmonyEnv subclass 
  * @returns a HarmonyEnv containing all necessary environment variables
  */
-function buildEnv(localEnvDefaultsPath: string): HarmonyEnv {
+function buildEnv(localEnvDefaultsPath?: string): HarmonyEnv {
   const env: Partial<HarmonyEnv> = {};
   if (Object.prototype.hasOwnProperty.call(process.env, 'GDAL_DATA')) {
     logger.warn(gdalWarning);
@@ -129,7 +129,10 @@ function buildEnv(localEnvDefaultsPath: string): HarmonyEnv {
     }
   }
   // read the local env-defaults
-  const envLocalDefaults = dotenv.parse(fs.readFileSync(localEnvDefaultsPath));
+  let envLocalDefaults = {};
+  if (localEnvDefaultsPath) {
+    envLocalDefaults = dotenv.parse(fs.readFileSync(localEnvDefaultsPath));
+  }
   const allEnv = { ...envLocalDefaults, ...envDefaults, ...envOverrides, ...originalEnv };
   for (const k of Object.keys(allEnv)) {
     env[_.camelCase(k)] = makeConfigVar(allEnv[k]);
@@ -253,11 +256,9 @@ export class HarmonyEnv {
   /**
    * Constructs the env object, for use in any Harmony component.
    * @param localPath - path to the env-defaults file of the component
-   * @param overrides - if provided, bypasses the env files and instead
-   * populates the env with this object
    */
-  constructor(localPath: string, overrides?: Record<string, string | boolean | number>) {
-    const env = overrides || buildEnv(localPath);
+  constructor(localPath?: string) {
+    const env = buildEnv(localPath);
     if (this.setSpecialCases) { // subclass has special cases
       setSpecialCases(env);
     }

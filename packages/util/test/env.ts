@@ -4,32 +4,8 @@ import { HarmonyEnv, getValidationErrors } from '../env';
 
 describe('Environment validation', function () {
 
-  const validEnvData = {
-    uploadBucket: 'a-bucket',
-    clientId: 'a-client',
-    artifactBucket: 'foo',
-    awsDefaultRegion: 'us-west-2',
-    callbackUrlRoot: 'http://localhost:3000',
-    cmrEndpoint: 'http://localhost:3001',
-    cmrMaxPageSize: 1,
-    databaseType: 'postgres',
-    defaultPodGracePeriodSecs: 1,
-    defaultResultPageSize: 1,
-    harmonyClientId: 'foo',
-    largeWorkItemUpdateQueueUrl: 'http://localstack:4566/w.fifo',
-    localstackHost: 'localstack',
-    logLevel: 'debug',
-    maxGranuleLimit: 1,
-    nodeEnv: 'production',
-    port: 3000,
-    queueLongPollingWaitTimeSec: 1,
-    sameRegionAccessRole: 'foo',
-    workItemSchedulerQueueUrl: 'http://localstack:4566/ws.fifo',
-    workItemUpdateQueueUrl: 'http://localstack:4566/wu.fifo',
-  };
-
   describe('When the environment is valid', function () {
-    const validEnv: HarmonyEnv = new HarmonyEnv(undefined, validEnvData);
+    const validEnv: HarmonyEnv = new HarmonyEnv();
     it('does not throw an error when validated', function () {
       expect(() => validEnv.validate()).not.to.Throw;
     });
@@ -40,8 +16,9 @@ describe('Environment validation', function () {
   });
 
   describe('When the environment is invalid', function () {
-    const invalidEnvData = { ...validEnvData, ...{ port: -1, callbackUrlRoot: 'foo' } };
-    const invalidEnv: HarmonyEnv = new HarmonyEnv(undefined, invalidEnvData);
+    const invalidEnv: HarmonyEnv = new HarmonyEnv();
+    invalidEnv.port = -1;
+    invalidEnv.callbackUrlRoot = 'foo';
     it('throws an error when validated', function () {
       expect(() => invalidEnv.validate()).to.throw;
     });
