@@ -5,6 +5,8 @@ import { HarmonyEnv, getValidationErrors } from '../env';
 describe('Environment validation', function () {
 
   const validEnvData = {
+    uploadBucket: 'a-bucket',
+    clientId: 'a-client',
     artifactBucket: 'foo',
     awsDefaultRegion: 'us-west-2',
     callbackUrlRoot: 'http://localhost:3000',
