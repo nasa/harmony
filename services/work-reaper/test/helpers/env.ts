@@ -36,5 +36,5 @@ use(chaiAsPromised);
 
 before(() => {
   stub(env, 'maxGranuleLimit').get(() => 2100);
-  stub(env, 'harmonyClientId').get(() => 'harmony-test');
+  stub(env, 'clientId').get(() => 'harmony-test');
 });

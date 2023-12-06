@@ -23,7 +23,7 @@ class HarmonyServiceEnv extends HarmonyEnv {
   backendPort: number;
 
   @IsNotEmpty()
-  harmonyClientId: string;
+  clientId: string;
 
   @IsNotEmpty()
   harmonyService: string;

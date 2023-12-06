@@ -1,6 +1,6 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import { HarmonyEnv, IHarmonyEnv, getValidationErrors, validateEnvironment } from '../env';
+import { HarmonyEnv, getValidationErrors } from '../env';
 
 describe('Environment validation', function () {
 

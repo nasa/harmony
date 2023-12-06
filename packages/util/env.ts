@@ -92,7 +92,7 @@ function setQueueUrls(envVars: Partial<HarmonyEnv>): void {
  */
 function setSpecialCases(envVars: Partial<HarmonyEnv>): void {
   envVars.databaseType ||= 'postgres';
-  envVars.harmonyClientId = process.env.CLIENT_ID || 'harmony-unknown';
+  envVars.clientId ||= 'harmony-unknown';
   envVars.uploadBucket ||= envVars.stagingBucket || 'local-staging-bucket';
   envVars.useLocalstack = !! envVars.useLocalstack;
   envVars.useServiceQueues = !! envVars.useServiceQueues;
@@ -175,7 +175,7 @@ export class HarmonyEnv {
   defaultResultPageSize: number;
 
   @IsNotEmpty()
-  harmonyClientId: string;
+  clientId: string;
 
   @IsUrl(hostRegexWhitelist)
   largeWorkItemUpdateQueueUrl: string;
