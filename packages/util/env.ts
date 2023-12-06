@@ -253,11 +253,13 @@ export class HarmonyEnv {
   /**
    * Constructs the env object, for use in any Harmony component.
    * @param localPath - path to the env-defaults file of the component
+   * @param overrides - if provided, bypasses the env files and instead
+   * populates the env with this object
    */
-  constructor(localPath: string) {
-    const env = buildEnv(localPath);
+  constructor(localPath: string, overrides?: Record<string, string | boolean | number>) {
+    const env = overrides || buildEnv(localPath);
     if (this.setSpecialCases) { // subclass has special cases
-      setSpecialCases(this);
+      setSpecialCases(env);
     }
     for (const key of Object.keys(env)) {
       this[key] = env[key];
@@ -267,3 +269,4 @@ export class HarmonyEnv {
     }
   }
 }
+

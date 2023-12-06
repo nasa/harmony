@@ -4,7 +4,7 @@ import { HarmonyEnv, getValidationErrors } from '../env';
 
 describe('Environment validation', function () {
 
-  const validEnvData: IHarmonyEnv = {
+  const validEnvData = {
     artifactBucket: 'foo',
     awsDefaultRegion: 'us-west-2',
     callbackUrlRoot: 'http://localhost:3000',
@@ -24,12 +24,12 @@ describe('Environment validation', function () {
     sameRegionAccessRole: 'foo',
     workItemSchedulerQueueUrl: 'http://localstack:4566/ws.fifo',
     workItemUpdateQueueUrl: 'http://localstack:4566/wu.fifo',
-  } as IHarmonyEnv;
+  };
 
   describe('When the environment is valid', function () {
-    const validEnv: HarmonyEnv = new HarmonyEnv(validEnvData);
+    const validEnv: HarmonyEnv = new HarmonyEnv(undefined, validEnvData);
     it('does not throw an error when validated', function () {
-      expect(() => validateEnvironment(validEnv)).not.to.Throw;
+      expect(() => validEnv.validate()).not.to.Throw;
     });
 
     it('does not log any errors', function () {
@@ -38,10 +38,10 @@ describe('Environment validation', function () {
   });
 
   describe('When the environment is invalid', function () {
-    const invalidEnvData: IHarmonyEnv = { ...validEnvData, ...{ port: -1, callbackUrlRoot: 'foo' } } as IHarmonyEnv;
-    const invalidEnv: HarmonyEnv = new HarmonyEnv(invalidEnvData);
+    const invalidEnvData = { ...validEnvData, ...{ port: -1, callbackUrlRoot: 'foo' } };
+    const invalidEnv: HarmonyEnv = new HarmonyEnv(undefined, invalidEnvData);
     it('throws an error when validated', function () {
-      expect(() => validateEnvironment(invalidEnv)).to.throw;
+      expect(() => invalidEnv.validate()).to.throw;
     });
 
     it('logs two errors', function () {
