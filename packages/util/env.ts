@@ -247,9 +247,7 @@ export class HarmonyEnv {
    * value straight from the file.
    * e.g. envVars.databaseType = process.env.DATABASE_TYPE || 'postgres';
    */
-  protected setSpecialCases(env: HarmonyEnv): void {
-
-  }
+  protected setSpecialCases?(env: HarmonyEnv): void;
 
   constructor(localPath: string) {
     const env = buildEnv(localPath);
