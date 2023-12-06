@@ -6,13 +6,14 @@ import { logAsyncExecutionTime } from '../../../harmony/app/util/log-execution';
 import { Logger } from 'winston';
 import { getQueueUrlForService, getQueueForUrl, getWorkSchedulerQueue } from '../../../harmony/app/util/queue/queue-factory';
 import { getWorkItemsFromDatabase } from '../../../harmony/app/backends/workflow-orchestration/work-item-polling';
-import { getPodsCountForService } from '../util/k8s';
+import { getPodsCountForPodName, getPodsCountForService } from '../util/k8s';
 import { Queue, ReceivedMessage } from '../../../harmony/app/util/queue/queue';
 
 const kc = new k8s.KubeConfig();
 kc.loadFromDefault();
 
 export const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
+const SCHEDULER_POD_NAME = 'harmony-work-scheduler';
 
 /**
  * Read all the messages from a queue (up to the default timeout period) and return them.
@@ -112,10 +113,17 @@ export async function processSchedulerQueue(reqLogger: Logger): Promise<void> {
       durationMs = new Date().getTime() - mcStartTime;
       logger.debug('timing.PSQ.queue.getApproximateNumberOfMessages.end', { durationMs });
       const messageCountEnd = new Date();
-      const podCount = await (await logAsyncExecutionTime(
+      const servicePodCount = await (await logAsyncExecutionTime(
         getPodsCountForService,
         'PSQ.getPodsCountForService',
         reqLogger))(serviceID);
+
+      let schedulerPodCount = await (await logAsyncExecutionTime(
+        getPodsCountForPodName,
+        'PSQ.getSchedulerPodsCount',
+        reqLogger))(SCHEDULER_POD_NAME);
+
+      schedulerPodCount = Math.max(1, schedulerPodCount);
       const podCountEnd = new Date();
       const messageCountTime = messageCountEnd.getTime() - messageCountStart.getTime();
       const podCountTime = podCountEnd.getTime() - messageCountEnd.getTime();
@@ -124,8 +132,9 @@ export async function processSchedulerQueue(reqLogger: Logger): Promise<void> {
 
       // If there are more pods than messages, we need to send more work. Allow more work
       // than pods to avoid queue starvation (env.serviceQueueBatchSizeCoefficient)
-      const workSize = Math.floor(env.serviceQueueBatchSizeCoefficient * podCount - messageCount);
+      const workSize = Math.ceil(env.serviceQueueBatchSizeCoefficient * (servicePodCount / schedulerPodCount) - messageCount);
       reqLogger.debug(`Attempting to retrieve ${workSize} work items for queue ${queueUrl}`);
+      reqLogger.debug(`Work size count is ${workSize} based on service pod count of ${servicePodCount}, message count ${messageCount}, and scheduler pod count ${schedulerPodCount} for queue ${queueUrl}`);
 
       let queuedCount = 0;
       const batchStartTime = new Date().getTime();

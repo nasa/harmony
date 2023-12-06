@@ -25,7 +25,7 @@ interface IHarmonyWorkSchedulerEnv extends IHarmonyEnv {
 class HarmonyWorkSchedulerEnv extends HarmonyEnv implements IHarmonyWorkSchedulerEnv {
 
   @IsNumber()
-  @Min(1)
+  @Min(0)
   serviceQueueBatchSizeCoefficient: number;
 
   @IsNotEmpty()

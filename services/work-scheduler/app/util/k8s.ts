@@ -21,5 +21,28 @@ export async function getPodsCountForService(serviceId: string, namespace = 'har
     });
   });
 
-  return pods.length;
+  const runningPods = pods.filter((pod) => pod.status.phase === 'Running');
+  return runningPods.length;
+}
+
+/**
+ * Get the number of pods running for a given pod name
+ * @param podName - The pod name for which to get the number of pods
+ * @param namespace - The namespace in which to look for pods
+ * @returns The number of pods running for the service
+ **/
+export async function getPodsCountForPodName(podName: string, namespace = 'harmony'): Promise<number> {
+  try {
+    const labelSelector = `name=${podName}`;
+
+    const res = await k8sApi.listNamespacedPod(namespace, undefined, undefined, undefined, undefined, labelSelector);
+    const pods = res.body.items;
+    const runningPods = pods.filter(pod => pod.status.phase === 'Running');
+
+    return runningPods.length;
+  } catch (e) {
+    logger.error(`Error getting the number of running ${podName} pods`);
+    logger.error(e);
+    return 1;
+  }
 }
