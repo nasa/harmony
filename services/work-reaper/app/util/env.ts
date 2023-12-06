@@ -1,8 +1,6 @@
 import { IsInt, Min } from 'class-validator';
-import * as dotenv from 'dotenv';
-import * as fs from 'fs';
 import * as path from 'path';
-import { HarmonyEnv, IHarmonyEnv, envOverrides, makeConfigVar, validateEnvironment, envVars } from '@harmony/util/env';
+import { HarmonyEnv } from '@harmony/util/env';
 import _ from 'lodash';
 
 //
@@ -11,40 +9,23 @@ import _ from 'lodash';
 // and some specific to the reaper
 //
 
-// read the local env-defaults
+class ReaperHarmonyEnv extends HarmonyEnv {
+
+  @IsInt()
+  @Min(1)
+  workReaperPeriodSec: number;
+
+  @IsInt()
+  @Min(1)
+  workReaperBatchSize: number;
+
+  @IsInt()
+  @Min(1)
+  reapableWorkAgeMinutes: number;
+}
+
 const localPath = path.resolve(__dirname, '../../env-defaults');
-const envLocalDefaults = dotenv.parse(fs.readFileSync(localPath));
+const reaperHarmonyEnvObj = new ReaperHarmonyEnv(localPath);
+reaperHarmonyEnvObj.validate();
 
-export interface IReaperHarmonyEnv extends IHarmonyEnv {
-  workReaperPeriodSec: number;
-  workReaperBatchSize: number;
-  reapableWorkAgeMinutes: number;
-}
-
-class ReaperHarmonyEnv extends HarmonyEnv implements IReaperHarmonyEnv {
-
-  @IsInt()
-  @Min(1)
-  workReaperPeriodSec: number;
-
-  @IsInt()
-  @Min(1)
-  workReaperBatchSize: number;
-
-  @IsInt()
-  @Min(1)
-  reapableWorkAgeMinutes: number;
-}
-
-const allEnv = { ...envLocalDefaults, ...envOverrides };
-const reaperEnvVars = _.cloneDeep(envVars) as IReaperHarmonyEnv;
-
-for (const k of Object.keys(allEnv)) {
-  makeConfigVar(reaperEnvVars, k, allEnv[k]);
-}
-
-// validate the env vars
-const reaperHarmonyEnvObj = new ReaperHarmonyEnv(reaperEnvVars);
-validateEnvironment(reaperHarmonyEnvObj);
-
-export default reaperEnvVars;
+export default reaperHarmonyEnvObj;
