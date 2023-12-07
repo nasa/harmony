@@ -190,17 +190,24 @@ describe('Scheduler Worker', async function () {
       });
     });
 
-    describe('when there are no workers running and no messages queued', function () {
+    describe('when there are no service workers running and no messages queued', function () {
       it('will queue exactly one message', function () {
-        const actual = calculateNumItemsToQueue(0, 0, 0, 1.1);
+        const actual = calculateNumItemsToQueue(0, 1, 0, 1.1);
         expect(actual).to.equal(1);
       });
     });
 
-    describe('when there are no workers running and 1 message queued', function () {
+    describe('when there are no service workers running and 1 message queued', function () {
       it('queues zero items', function () {
         const actual = calculateNumItemsToQueue(0, 0, 1, 1.1);
         expect(actual).to.equal(0);
+      });
+    });
+
+    describe('when there are no schedulers running and no messages queued', function () {
+      it('treats it as if there is 1 scheduler running', function () {
+        const actual = calculateNumItemsToQueue(100, 0, 0, 1);
+        expect(actual).to.equal(100);
       });
     });
   });
