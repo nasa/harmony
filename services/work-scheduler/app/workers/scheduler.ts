@@ -73,6 +73,30 @@ function sizeToBatches(
 }
 
 /**
+ * Calculates the number of work items to request to queue
+ *
+ * @param servicePodCount - number of service pods running
+ * @param schedulerPodCount - number of work scheduler pods running
+ * @param queuedCount - current number of messages on the service queue
+ * @param scaleFactor - percent of the number of messages we want
+ * @returns the number of work items to request to queue
+ */
+export function calculateNumItemsToQueue(
+  servicePodCount: number, schedulerPodCount: number, queuedCount: number, scaleFactor: number,
+): number {
+  const minOneSchedulerPodCount = Math.max(1, schedulerPodCount);
+  const numItemsToQueue = scaleFactor * (servicePodCount / minOneSchedulerPodCount) - queuedCount;
+  let numItemsToQueueInt = Math.max(0, Math.floor(numItemsToQueue));
+
+  // With some configurations it's possible to request zero items in all cases. Make sure we avoid
+  // the situation where we never queue anything
+  if (numItemsToQueueInt <= 0 && queuedCount <= 0) {
+    numItemsToQueueInt = 1;
+  }
+  return numItemsToQueueInt;
+}
+
+/**
  * Read the scheduler queue and process any items in it
  *
  * @param reqLogger - a logger instance
@@ -85,7 +109,6 @@ export async function processSchedulerQueue(reqLogger: Logger): Promise<void> {
   const startTime = new Date().getTime();
   let durationMs;
   const schedulerQueue = getWorkSchedulerQueue();
-  // const queueItems = await schedulerQueue.getMessages(env.workItemSchedulerQueueMaxBatchSize);
   const queueItems = await (await logAsyncExecutionTime(
     drainQueue,
     'PSQ.drainQueue',
@@ -118,21 +141,18 @@ export async function processSchedulerQueue(reqLogger: Logger): Promise<void> {
         'PSQ.getPodsCountForService',
         reqLogger))(serviceID);
 
-      let schedulerPodCount = await (await logAsyncExecutionTime(
+      const schedulerPodCount = await (await logAsyncExecutionTime(
         getPodsCountForPodName,
         'PSQ.getSchedulerPodsCount',
         reqLogger))(SCHEDULER_POD_NAME);
 
-      schedulerPodCount = Math.max(1, schedulerPodCount);
       const podCountEnd = new Date();
       const messageCountTime = messageCountEnd.getTime() - messageCountStart.getTime();
       const podCountTime = podCountEnd.getTime() - messageCountEnd.getTime();
       reqLogger.debug(`Message count took ${messageCountTime}ms`, { durationMs: messageCountTime });
       reqLogger.debug(`Pod count took ${podCountTime}ms`, { durationMs: podCountTime });
 
-      // If there are more pods than messages, we need to send more work. Allow more work
-      // than pods to avoid queue starvation (env.serviceQueueBatchSizeCoefficient)
-      const workSize = Math.ceil(env.serviceQueueBatchSizeCoefficient * (servicePodCount / schedulerPodCount) - messageCount);
+      const workSize = calculateNumItemsToQueue(servicePodCount, schedulerPodCount, messageCount, env.serviceQueueBatchSizeCoefficient);
       reqLogger.debug(`Attempting to retrieve ${workSize} work items for queue ${queueUrl}`);
       reqLogger.debug(`Work size count is ${workSize} based on service pod count of ${servicePodCount}, message count ${messageCount}, and scheduler pod count ${schedulerPodCount} for queue ${queueUrl}`);
 
