@@ -3,7 +3,7 @@ import { describe, it, before } from 'mocha';
 import { Job, JobStatus } from '../../app/models/job';
 import env from '../../app/util/env';
 import hookServersStartStop from '../helpers/servers';
-import { hookTransaction, hookTransactionFailure, truncateAll } from '../helpers/db';
+import { hookTransaction, hookDatabaseFailure, truncateAll } from '../helpers/db';
 import { containsJob, jobListing, hookJobListing, createIndexedJobs, itIncludesPagingRelations, hookAdminJobListing, buildJob } from '../helpers/jobs';
 
 // Example jobs to use in tests
@@ -131,7 +131,7 @@ describe('Jobs listing route', function () {
   });
 
   describe('When the database catches fire', function () {
-    hookTransactionFailure();
+    hookDatabaseFailure();
     hookJobListing({ username: 'woody' });
     describe('for a user that should have jobs', function () {
       it('returns an internal server error status code', function () {
