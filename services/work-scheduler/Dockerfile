@@ -4,6 +4,7 @@ RUN apt-get update && apt-get -y install postgresql
 RUN git config --global url."https://".insteadOf ssh://
 
 RUN mkdir -p /work-scheduler/services/work-scheduler
+
 COPY package.json package-lock.json /work-scheduler/services/work-scheduler/
 WORKDIR /work-scheduler/services/work-scheduler
 RUN npm ci
