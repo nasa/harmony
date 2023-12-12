@@ -9,7 +9,7 @@ import hookServersStartStop from './helpers/servers';
 import { rangesetRequest } from './helpers/ogc-api-coverages';
 import { validGetMapQuery, wmsRequest } from './helpers/wms';
 import db from '../app/util/db';
-import { hookJobCreationEach } from './helpers/jobs';
+import { getFirstJob, hookJobCreationEach } from './helpers/jobs';
 import { defaultObjectStore, objectStoreForProtocol } from '../app/util/object-store';
 import { hookCallbackEach, hookHttpBackendEach, loadJobForCallback } from './helpers/callbacks';
 
@@ -80,7 +80,7 @@ describe('Backend Callbacks', function () {
     });
 
     it('updates the corresponding job record', async function () {
-      const { job } = await Job.byRequestId(db, this.job.requestId);
+      const { job } = await Job.byJobID(db, this.job.jobID);
       expect(job.status).to.equal(JobStatus.SUCCESSFUL);
     });
   });
@@ -350,7 +350,7 @@ describe('Backend Callbacks', function () {
           code: 'harmony.RequestValidationError',
           message: 'JobLink is invalid: ["Job link must include an href"]',
         });
-        const job = (await Job.forUser(db, 'anonymous')).data[0];
+        const job = await getFirstJob(db);
         expect(job.getRelatedLinks('data')).to.eql([]);
       });
     });
@@ -364,7 +364,7 @@ describe('Backend Callbacks', function () {
           code: 'harmony.RequestValidationError',
           message: 'Unrecognized temporal format.  Must be 2 RFC-3339 dates with optional fractional seconds as Start,End',
         });
-        const job = (await Job.forUser(db, 'anonymous')).data[0];
+        const job = await getFirstJob(db);
         expect(job.getRelatedLinks('data')).to.eql([]);
       });
 
@@ -376,7 +376,7 @@ describe('Backend Callbacks', function () {
           code: 'harmony.RequestValidationError',
           message: 'Unrecognized temporal format.  Must be 2 RFC-3339 dates with optional fractional seconds as Start,End',
         });
-        const job = (await Job.forUser(db, 'anonymous')).data[0];
+        const job = await getFirstJob(db);
         expect(job.getRelatedLinks('data')).to.eql([]);
       });
 
@@ -391,7 +391,7 @@ describe('Backend Callbacks', function () {
         await request(this.backend).post(this.callback).query({
           item: { href, temporal: '2020-01-01T00:00:00Z,2020-01-02T00:00:00Z' },
         });
-        const job = (await Job.forUser(db, 'anonymous')).data[0];
+        const job = await getFirstJob(db);
         expect(job.getRelatedLinks('data').length).to.equal(1);
         expect(job.getRelatedLinks('data')[0].temporal).to.eql({ start: new Date('2020-01-01T00:00:00.000Z'), end: new Date('2020-01-02T00:00:00.000Z') });
       });
@@ -410,7 +410,7 @@ describe('Backend Callbacks', function () {
           code: 'harmony.RequestValidationError',
           message: 'Unrecognized bounding box format.  Must be 4 comma-separated floats as West,South,East,North',
         });
-        const job = (await Job.forUser(db, 'anonymous')).data[0];
+        const job = await getFirstJob(db);
         expect(job.getRelatedLinks('data')).to.eql([]);
       });
 
@@ -424,7 +424,7 @@ describe('Backend Callbacks', function () {
           code: 'harmony.RequestValidationError',
           message: 'Unrecognized bounding box format.  Must be 4 comma-separated floats as West,South,East,North',
         });
-        const job = (await Job.forUser(db, 'anonymous')).data[0];
+        const job = await getFirstJob(db);
         expect(job.getRelatedLinks('data')).to.eql([]);
       });
 
@@ -439,7 +439,7 @@ describe('Backend Callbacks', function () {
         await request(this.backend).post(this.callback).query({
           item: { href, bbox: '0.0,1.1,2.2,3.3' },
         });
-        const job = (await Job.forUser(db, 'anonymous')).data[0];
+        const job = await getFirstJob(db);
         expect(job.getRelatedLinks('data').length).to.equal(1);
         expect(job.getRelatedLinks('data')[0].bbox).to.eql([0.0, 1.1, 2.2, 3.3]);
       });

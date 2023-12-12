@@ -126,7 +126,8 @@ export async function responseHandler(req: Request, res: Response): Promise<void
 
   const trx = await db.transaction();
 
-  const { job } = await Job.byRequestId(trx, requestId);
+  // TODO - This might be a performance problem for large requests - who is calling this and can we change it to not load all the links?
+  const { job } = await Job.byJobID(trx, requestId, true);
   if (!job) {
     await trx.rollback();
     res.status(404);

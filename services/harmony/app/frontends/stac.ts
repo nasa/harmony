@@ -32,7 +32,7 @@ async function handleStacRequest(
       // (using paging parameters)
       const {
         job,
-      } = await Job.byRequestId(
+      } = await Job.byJobID(
         tx, jobId,
       );
       const {
