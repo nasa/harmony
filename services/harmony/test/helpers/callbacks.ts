@@ -52,6 +52,6 @@ export function hookCallbackEach(fn: (req: request.Test) => request.Test, finish
  * @param callback - the callback URL for the job that needs to be loaded
  */
 export async function loadJobForCallback(callback: string): Promise<Job> {
-  const requestId = callback.replace('/response', '').split('/').pop();
-  return (await Job.byRequestId(db, requestId)).job;
+  const jobID = callback.replace('/response', '').split('/').pop();
+  return (await Job.byJobID(db, jobID, true)).job;
 }

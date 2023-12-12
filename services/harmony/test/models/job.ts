@@ -1,7 +1,6 @@
 import { describe, it, beforeEach } from 'mocha';
 import { expect } from 'chai';
 import { v4 as uuid } from 'uuid';
-import MockDate from 'mockdate';
 import { buildJob } from '../helpers/jobs';
 import { Job, JobRecord, JobStatus } from '../../app/models/job';
 import JobLink from '../../app/models/job-link';
@@ -64,107 +63,63 @@ describe('Job', function () {
       });
     });
 
-    describe('.byUsernameAndRequestId', function () {
+    describe('.byUsernameAndJobID', function () {
       let job;
       beforeEach(async function () {
         job = buildJob({ username: 'jdoe' });
         await job.save(this.trx);
       });
 
-      describe('when a job matches the username and request id', function () {
+      describe('when a job matches the username and job ID', function () {
         it('returns the matching job', async function () {
-          const result = await Job.byUsernameAndRequestId(this.trx, 'jdoe', job.requestId);
+          const result = await Job.byUsernameAndJobID(this.trx, 'jdoe', job.jobID);
           expect(result.job.id).to.eql(job.id);
         });
       });
 
-      describe('when the username has a job but the request id does not', function () {
+      describe('when the username has a job but the job ID does not match', function () {
         it('returns null', async function () {
-          const result = await Job.byUsernameAndRequestId(this.trx, 'jdoe', uuid());
+          const result = await Job.byUsernameAndJobID(this.trx, 'jdoe', uuid());
           expect(result.job).to.eql(null);
         });
       });
 
-      describe('when the request id has a job but the username does not', function () {
+      describe('when the job ID exists but the username does not match', function () {
         it('returns null', async function () {
-          const result = await Job.byUsernameAndRequestId(this.trx, 'notjdoe', job.requestId);
+          const result = await Job.byUsernameAndJobID(this.trx, 'notjdoe', job.jobID);
           expect(result.job).to.eql(null);
         });
       });
 
-      describe('when neither the request id nor the username has a job', function () {
+      describe('when neither the username nor job ID are matches', function () {
         it('returns null', async function () {
-          const result = await Job.byUsernameAndRequestId(this.trx, 'notjdoe', uuid());
-          expect(result.job).to.eql(null);
-        });
-      });
-    });
-
-    describe('.byRequestId', function () {
-      let job;
-      beforeEach(async function () {
-        job = buildJob({ username: 'jdoe' });
-        await job.save(this.trx);
-      });
-
-      describe('when a job matches the request id', function () {
-        it('returns the matching job', async function () {
-          const result = await Job.byRequestId(this.trx, job.requestId);
-          expect(result.job.id).to.eql(job.id);
-        });
-      });
-
-      describe('when no job matches the request id', function () {
-        it('returns null', async function () {
-          const result = await Job.byRequestId(this.trx, uuid());
+          const result = await Job.byUsernameAndJobID(this.trx, 'notjdoe', uuid());
           expect(result.job).to.eql(null);
         });
       });
     });
 
-    describe('.notUpdatedForMinutes', function () {
-      let oldFinishedJob: Job;
-      let oldRunningJob: Job;
-      let newRunningJob: Job;
-      let result;
+    // describe('.byRequestId', function () {
+    //   let job;
+    //   beforeEach(async function () {
+    //     job = buildJob({ username: 'jdoe' });
+    //     await job.save(this.trx);
+    //   });
 
-      beforeEach(async function () {
-        MockDate.set('1/30/2000');
-        oldFinishedJob = buildJob({ username: 'bob' });
-        oldFinishedJob.updateStatus(JobStatus.SUCCESSFUL);
-        await oldFinishedJob.save(this.trx);
-        oldRunningJob = buildJob({ username: 'jdoe' });
-        oldRunningJob.updateStatus(JobStatus.RUNNING);
-        await oldRunningJob.save(this.trx);
-        MockDate.reset();
-        newRunningJob = buildJob({ username: 'mary' });
-        newRunningJob.updateStatus(JobStatus.RUNNING);
-        await newRunningJob.save(this.trx);
-        result = await Job.notUpdatedForMinutes(this.trx, 60);
-      });
+    //   describe('when a job matches the request id', function () {
+    //     it('returns the matching job', async function () {
+    //       const result = await Job.byRequestId(this.trx, job.requestId);
+    //       expect(result.job.id).to.eql(job.id);
+    //     });
+    //   });
 
-      afterEach(function () {
-        MockDate.reset();
-      });
-
-      describe('when some jobs have been running longer than the given duration', function () {
-        it('returns the matching jobs', async function () {
-          expect(result.data[0].id).to.eql(oldRunningJob.id);
-        });
-
-        it('does not return other jobs', async function () {
-          expect(result.data.length).to.equal(1);
-        });
-      });
-
-      describe('when no job has been running longer than the given duration', function () {
-        it('returns an empty array', async function () {
-          MockDate.set('1/31/2000');
-          result = await Job.notUpdatedForMinutes(this.trx, 2880); // 48 hours
-          expect(result.data).to.eql([]);
-        });
-      });
-    });
+    //   describe('when no job matches the request id', function () {
+    //     it('returns null', async function () {
+    //       const result = await Job.byRequestId(this.trx, uuid());
+    //       expect(result.job).to.eql(null);
+    //     });
+    //   });
+    // });
   });
 
   describe('#constructor', function () {
@@ -199,7 +154,7 @@ describe('Job', function () {
     it('inserts new records', async function () {
       const job = buildJob(exampleProps);
       await job.save(this.trx);
-      const result = await Job.byRequestId(this.trx, job.requestId);
+      const result = await Job.byJobID(this.trx, job.jobID, true);
       for (const key of Object.keys(exampleProps)) {
         if (key === 'links') {
           expect(job[key].map((l) => l.serialize())).to.eql(job.links.map((l) => l.serialize()));
@@ -222,7 +177,7 @@ describe('Job', function () {
       await job.save(this.trx);
       job.username = 'notjdoe';
       await job.save(this.trx);
-      const result = await Job.byRequestId(this.trx, job.requestId);
+      const result = await Job.byJobID(this.trx, job.jobID, true);
       expect(result.job.username).to.eql('notjdoe');
     });
 
@@ -235,10 +190,10 @@ describe('Job', function () {
     it('saves changes to the links array', async function () {
       let job = buildJob(exampleProps);
       await job.save(this.trx);
-      ({ job } = await Job.byRequestId(this.trx, job.requestId));
+      ({ job } = await Job.byJobID(this.trx, job.jobID, true));
       job.links.push(new JobLink({ href: 'http://example.com/2', jobID: job.jobID }));
       await job.save(this.trx);
-      const result = await Job.byRequestId(this.trx, job.requestId);
+      const result = await Job.byJobID(this.trx, job.jobID, true);
       expect(result.job.links.map((l) => l.serialize()))
         .to.eql(job.links.map((l) => l.serialize()));
     });
@@ -272,7 +227,7 @@ describe('Job', function () {
       const longFailureMessage = 'x'.repeat(6000);
       job.setMessage(longFailureMessage, JobStatus.FAILED);
       await job.save(this.trx);
-      ({ job } = await Job.byRequestId(this.trx, job.requestId));
+      ({ job } = await Job.byJobID(this.trx, job.jobID, true));
       expect(job.getMessage(JobStatus.FAILED).length).lessThanOrEqual(4096 - 1000);
     });
   });

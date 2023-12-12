@@ -5,7 +5,7 @@ import { v4 as uuid } from 'uuid';
 import { Application } from 'express';
 import _ from 'lodash';
 import JobLink from '../../app/models/job-link';
-import { Job, JobStatus, JobRecord, jobRecordFields, JobForDisplay, getRelatedLinks } from '../../app/models/job';
+import { Job, JobStatus, JobRecord, jobRecordFields, JobForDisplay, getRelatedLinks, JobQuery } from '../../app/models/job';
 import { JobListing } from '../../app/frontends/jobs';
 import db, { Transaction } from '../../app/util/db';
 import { hookRequest } from './hooks';
@@ -583,4 +583,18 @@ export function hookJobCreation(
  */
 export function hookJobCreationEach(props: Partial<JobRecord> = {}): void {
   hookJobCreation(props, beforeEach, afterEach);
+}
+
+/**
+ * Pulls back the first job from the database and includes the job links. Helps to simplify tests.
+ * @param tx - the database transaction
+ * @returns the first job from the database
+ */
+export async function getFirstJob(
+  tx: Transaction, constraints: JobQuery = { where: {} },
+): Promise<Job> {
+  const { data } = await Job.queryAll(tx, constraints);
+  const firstJobID = data[0].jobID;
+  const { job } = await Job.byJobID(tx, firstJobID, true);
+  return job;
 }
