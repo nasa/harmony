@@ -73,6 +73,7 @@ CREATE TABLE `workflow_steps` (
   `workItemCount` integer not null,
   `hasAggregatedOutput` boolean not null default false,
   `isBatched` boolean not null default false,
+  `is_complete` boolean not null default false,
   `maxBatchInputs` integer,
   `maxBatchSizeInBytes` integer,
   `operation` text not null,

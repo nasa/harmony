@@ -2,7 +2,7 @@ import env from '../../util/env';
 import { logAsyncExecutionTime } from '../../util/log-execution';
 import { v4 as uuid } from 'uuid';
 import WorkItemUpdate from '../../models/work-item-update';
-import WorkflowStep, { decrementFutureWorkItemCount, getWorkflowStepByJobIdStepIndex, getWorkflowStepsByJobId } from '../../models/workflow-steps';
+import WorkflowStep, { decrementFutureWorkItemCount, getWorkflowStepByJobIdStepIndex, getWorkflowStepsByJobId, updateIsComplete } from '../../models/workflow-steps';
 import { Logger } from 'winston';
 import _, { ceil, range, sum } from 'lodash';
 import { JobStatus, Job } from '../../models/job';
@@ -723,10 +723,7 @@ export async function processWorkItem(
 
     let allWorkItemsForStepComplete = false;
 
-    if (checkCompletion) {
-      allWorkItemsForStepComplete = await isStepComplete(logger, tx, workItem, thisStep);
-    }
-
+    
     // The number of 'hits' returned by a query-cmr could be less than when CMR was first
     // queried by harmony due to metadata deletions from CMR, so we update the job to reflect
     // that there are fewer items and to know when no more query-cmr jobs should be created.
@@ -744,6 +741,20 @@ export async function processWorkItem(
         logger))(tx, job);
     }
 
+    if (checkCompletion) {
+      const allWorkItemsForStepComplete2 = await isStepComplete(logger, tx, workItem, thisStep);
+      logger.error(`jobID = ${jobID}`);
+
+
+      allWorkItemsForStepComplete = await updateIsComplete(tx, jobID, job.numInputGranules, thisStep.stepIndex, logger);
+      if (allWorkItemsForStepComplete2 != allWorkItemsForStepComplete) {
+        logger.error(`EXPECTED ${allWorkItemsForStepComplete2} GOT ${allWorkItemsForStepComplete}`);
+        process.abort();
+      }
+
+      // allWorkItemsForStepComplete = allWorkItemsForStepComplete2;
+    }
+    
     const continueProcessing = await (await logAsyncExecutionTime(
       handleFailedWorkItems,
       'HWIUWJI.handleFailedWorkItems',

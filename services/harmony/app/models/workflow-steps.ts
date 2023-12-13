@@ -1,14 +1,18 @@
+import { Logger } from 'winston';
+import env from '../util/env';
 import { subMinutes } from 'date-fns';
 import _ from 'lodash';
 import { Transaction } from '../util/db';
 import { Job, JobStatus } from './job';
 import Record from './record';
+import WorkItem, { workItemCountForStep } from './work-item';
+import { COMPLETED_WORK_ITEM_STATUSES } from './work-item-interface';
 
 // The fields to save to the database
 const serializedFields = [
   'id', 'jobID', 'serviceID', 'stepIndex',
   'workItemCount', 'operation', 'createdAt', 'updatedAt',
-  'hasAggregatedOutput', 'isBatched', 'maxBatchInputs', 'maxBatchSizeInBytes',
+  'hasAggregatedOutput', 'isBatched', 'is_complete', 'maxBatchInputs', 'maxBatchSizeInBytes',
 ];
 
 export interface WorkflowStepRecord {
@@ -31,8 +35,11 @@ export interface WorkflowStepRecord {
   // Whether or not this step aggregates the outputs of a previous step
   hasAggregatedOutput: boolean;
 
-  // Whether or no the service should receive a batch of inputs
+  // Whether or not the service should receive a batch of inputs
   isBatched: boolean;
+
+  // Whether or not the step has been completed
+  is_complete: boolean; 
 
   // The maximum number of input granules in each invocation of the service
   maxBatchInputs: number;
@@ -69,6 +76,9 @@ export default class WorkflowStep extends Record implements WorkflowStepRecord {
 
   // Whether or no the service should receive a batch of inputs
   isBatched: boolean;
+
+  // Whether or not the step has been completed
+  is_complete: boolean; 
 
   // The maximum number of input granules in each invocation of the service
   maxBatchInputs: number;
@@ -243,6 +253,7 @@ export async function decrementFutureWorkItemCount(tx: Transaction, jobID, stepI
  * @param tx - the database transaction
  * @param jobID - the job ID
  * @param stepIndex - the current step index
+ * @deprecated
  */
 export async function incrementWorkItemCount(tx: Transaction, jobID, stepIndex): Promise<void> {
   await tx(WorkflowStep.table)
@@ -257,9 +268,59 @@ export async function incrementWorkItemCount(tx: Transaction, jobID, stepIndex):
  * @param tx - the database transaction
  * @param jobID - the job ID
  * @param stepIndex - the current step index
+ * @deprecated
  */
 export async function decrementWorkItemCount(tx: Transaction, jobID, stepIndex): Promise<void> {
   await tx(WorkflowStep.table)
     .where({ jobID, stepIndex })
     .decrement('workItemCount');
+}
+
+/**
+ * Determine whether or not the workflow step is complete and set its `is_complete` column
+ * to `true` if so.
+ *
+ * @param tx - the database transaction
+ * @param jobID - the job ID
+ * @param stepIndex - the current step index
+ * @returns a Promise containing a boolean that indicates whether or not the step is complete
+ */
+export async function updateIsComplete(tx: Transaction, jobID: string, numInputGranules: number, stepIndex: number, logger: Logger): Promise<boolean> {
+
+  let isComplete = false;
+
+  logger.error(`HANDLING WORKFLOW STEP ${stepIndex}`);
+  if (stepIndex > 1) {
+    const prevStepComplete = await tx(WorkflowStep.table)
+      .select(['is_complete'])
+      .where({ jobID, stepIndex: stepIndex - 1})
+      .first();
+
+    
+    if (prevStepComplete) {
+      const isNotCompleteResult = await tx
+        .select(tx.raw('EXISTS ? AS not_complete',
+          tx(WorkItem.table)
+          .select(tx.raw('1'))
+          .where({ jobID, workflowStepIndex: stepIndex })
+          .andWhere('status', 'not in', COMPLETED_WORK_ITEM_STATUSES)),
+        );
+
+      isComplete = !isNotCompleteResult[0]['not_complete'];
+    }
+
+  } else {
+    const completedCount = await workItemCountForStep(tx, jobID, stepIndex, COMPLETED_WORK_ITEM_STATUSES);
+    const expectedCount =  Math.ceil(numInputGranules / env.cmrMaxPageSize);
+    isComplete = completedCount == expectedCount;
+  }
+
+  if (isComplete) {
+    await tx(WorkflowStep.table)
+      .where({ jobID, stepIndex })
+      .update('is_complete', true);       
+  }
+
+  return isComplete;
+  
 }

@@ -11,7 +11,7 @@ export const validOperation = new DataOperation(parseSchemaFile('valid-operation
 const exampleProps = {
   jobID: '1',
   serviceID: 'harmony-services/query-cmr:latest',
-  stepIndex: 0,
+  stepIndex: 1,
   workItemCount: 10,
   operation: validOperation,
 } as WorkflowStepRecord;
