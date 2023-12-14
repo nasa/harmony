@@ -845,7 +845,7 @@ describe('When a request spans multiple CMR pages', function () {
 
     after(async function () {
       pageStub.restore();
-      // await truncateAll();
+      await truncateAll();
     });
 
     describe('when checking for a query-cmr work item', function () {
