@@ -98,28 +98,6 @@ describe('Job', function () {
         });
       });
     });
-
-    // describe('.byRequestId', function () {
-    //   let job;
-    //   beforeEach(async function () {
-    //     job = buildJob({ username: 'jdoe' });
-    //     await job.save(this.trx);
-    //   });
-
-    //   describe('when a job matches the request id', function () {
-    //     it('returns the matching job', async function () {
-    //       const result = await Job.byRequestId(this.trx, job.requestId);
-    //       expect(result.job.id).to.eql(job.id);
-    //     });
-    //   });
-
-    //   describe('when no job matches the request id', function () {
-    //     it('returns null', async function () {
-    //       const result = await Job.byRequestId(this.trx, uuid());
-    //       expect(result.job).to.eql(null);
-    //     });
-    //   });
-    // });
   });
 
   describe('#constructor', function () {
