@@ -12,7 +12,8 @@ import { COMPLETED_WORK_ITEM_STATUSES } from './work-item-interface';
 const serializedFields = [
   'id', 'jobID', 'serviceID', 'stepIndex',
   'workItemCount', 'operation', 'createdAt', 'updatedAt',
-  'hasAggregatedOutput', 'isBatched', 'is_complete', 'maxBatchInputs', 'maxBatchSizeInBytes',
+  'hasAggregatedOutput', 'isBatched', 'is_sequential', 'is_complete', 'maxBatchInputs',
+  'maxBatchSizeInBytes',
 ];
 
 export interface WorkflowStepRecord {
@@ -37,6 +38,10 @@ export interface WorkflowStepRecord {
 
   // Whether or not the service should receive a batch of inputs
   isBatched: boolean;
+
+  // Whether or not the service is executed in parallel (the default) or sequentiall, like
+  // query-cmr
+  is_sequential: boolean;
 
   // Whether or not the step has been completed
   is_complete: boolean; 
@@ -77,7 +82,11 @@ export default class WorkflowStep extends Record implements WorkflowStepRecord {
   // Whether or no the service should receive a batch of inputs
   isBatched: boolean;
 
-  // Whether or not the step has been completed
+  // Whether or not the service is executed in parallel (the default) or sequentiall, like
+  // query-cmr
+  is_sequential: boolean;
+
+    // Whether or not the step has been completed
   is_complete: boolean; 
 
   // The maximum number of input granules in each invocation of the service
@@ -285,17 +294,31 @@ export async function decrementWorkItemCount(tx: Transaction, jobID, stepIndex):
  * @param stepIndex - the current step index
  * @returns a Promise containing a boolean that indicates whether or not the step is complete
  */
-export async function updateIsComplete(tx: Transaction, jobID: string, numInputGranules: number, stepIndex: number, logger: Logger): Promise<boolean> {
+export async function updateIsComplete(tx: Transaction, jobID: string, numInputGranules: number, step: WorkflowStep, logger: Logger): Promise<boolean> {
 
   let isComplete = false;
 
-  logger.error(`HANDLING WORKFLOW STEP ${stepIndex}`);
-  if (stepIndex > 1) {
-    const prevStepComplete = await tx(WorkflowStep.table)
-      .select(['is_complete'])
-      .where({ jobID, stepIndex: stepIndex - 1})
-      .first();
+  const { stepIndex } = step;
 
+  logger.error(`HANDLING WORKFLOW STEP ${stepIndex}`);
+  if (step.is_sequential) {
+    const completedCount = await workItemCountForStep(tx, jobID, stepIndex, COMPLETED_WORK_ITEM_STATUSES);
+    // logger.error(`NUM INPUT GRANULES = ${numInputGranules}`);
+    logger.error(`COMPLETED WORK_ITEM COUNT = ${completedCount}`);
+    const expectedCount =  Math.ceil(numInputGranules / env.cmrMaxPageSize);
+    isComplete = completedCount == expectedCount;
+    // isComplete = completedCount == step.workItemCount;
+
+  } else {
+    let prevStepComplete = true;
+    if (stepIndex > 1) {
+      const prevStepCompleteResult = await tx(WorkflowStep.table)
+        .first('is_complete')
+        .where({ jobID, stepIndex: stepIndex - 1});
+      prevStepComplete = prevStepCompleteResult['is_complete'];
+    }
+
+    logger.error(`prevStepComplete = ${JSON.stringify(prevStepComplete, null, 2)}`);
     
     if (prevStepComplete) {
       const isNotCompleteResult = await tx
@@ -308,11 +331,6 @@ export async function updateIsComplete(tx: Transaction, jobID: string, numInputG
 
       isComplete = !isNotCompleteResult[0]['not_complete'];
     }
-
-  } else {
-    const completedCount = await workItemCountForStep(tx, jobID, stepIndex, COMPLETED_WORK_ITEM_STATUSES);
-    const expectedCount =  Math.ceil(numInputGranules / env.cmrMaxPageSize);
-    isComplete = completedCount == expectedCount;
   }
 
   if (isComplete) {

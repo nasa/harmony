@@ -42,6 +42,7 @@ async function createJobAndWorkItems(
     jobID: job.jobID,
     serviceID: 'harmonyservices/query-cmr:latest',
     stepIndex: 1,
+    is_sequential: true,
     workItemCount: initialQueryCmrWorkItemCount,
   }).save(db);
 

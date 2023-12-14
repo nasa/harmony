@@ -39,6 +39,7 @@ export interface ServiceStep {
   max_batch_inputs?: number;
   max_batch_size_in_bytes?: number;
   is_batched?: boolean;
+  is_sequential?: boolean;
   conditional?: {
     exists?: string[];
     format?: string[];
@@ -444,6 +445,7 @@ export default abstract class BaseService<ServiceParamType> {
    * @throws ServerError - if the work item cannot be created
    */
   protected _createWorkflowSteps(): WorkflowStep[] {
+    console.log(JSON.stringify(this.config.steps, null, 2));
     const workflowSteps = [];
     if (this.config.steps) {
       const numSteps = this._numActualSteps();
@@ -465,6 +467,7 @@ export default abstract class BaseService<ServiceParamType> {
             ),
             hasAggregatedOutput: stepHasAggregatedOutput(step, this.operation),
             isBatched: !!step.is_batched && this.operation.shouldConcatenate,
+            is_sequential: !!step.is_sequential,
             maxBatchInputs: step.max_batch_inputs,
             maxBatchSizeInBytes: step.max_batch_size_in_bytes,
           }));

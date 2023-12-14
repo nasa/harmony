@@ -746,11 +746,11 @@ export async function processWorkItem(
       logger.error(`jobID = ${jobID}`);
 
 
-      allWorkItemsForStepComplete = await updateIsComplete(tx, jobID, job.numInputGranules, thisStep.stepIndex, logger);
+      allWorkItemsForStepComplete = await updateIsComplete(tx, jobID, job.numInputGranules, thisStep, logger);
       if (allWorkItemsForStepComplete2 != allWorkItemsForStepComplete) {
         logger.error(`EXPECTED ${allWorkItemsForStepComplete2} GOT ${allWorkItemsForStepComplete}`);
         // the next liine is temporary debugging to preserve the state of the dB during a test run
-        process.abort();
+        // process.abort();
       }
 
       // allWorkItemsForStepComplete = allWorkItemsForStepComplete2;
