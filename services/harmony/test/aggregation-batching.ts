@@ -141,10 +141,7 @@ describe('when testing a batched aggregation service', function () {
 
           describe('when checking the jobs listing', function () {
             it('marks the job as successful and progress of 100 with 1 link to the aggregated output', async function () {
-              // const jobs = await Job.forUser(db, 'joe');
               const job = await getFirstJob(db, { where: { username: 'joe' } });
-              // expect(job.status).to.equal('successful');
-              // expect(job.progress).to.equal(100);
               const dataLinks = job.links.filter(link => link.rel === 'data');
               expect(dataLinks.length).to.equal(1);
             });
@@ -1137,9 +1134,6 @@ describe('when testing a batched aggregation service', function () {
 
           describe('when checking the jobs listing', function () {
             it('marks the job as successful and progress of 100 with 4 links to the three aggregated outputs', async function () {
-              // const jobs = await Job.forUser(db, 'joe');
-              // const job = jobs.data[0];
-              // const job = await getFirstJob(db, { where: { username: 'joe' } });
               const job = await getFirstJob(db);
               expect(job.status).to.equal('successful');
               expect(job.progress).to.equal(100);
