@@ -120,6 +120,8 @@ CREATE TABLE `user_work` (
   UNIQUE(job_id, service_id)
 );
 
+-- Note this is not a full list of the indices, we rely on the database migrations to create
+-- all the indexes in Postgres
 CREATE INDEX jobs_jobID_idx ON jobs(jobID);
 CREATE INDEX jobs_updatedAt_id ON jobs(updatedAt);
 CREATE INDEX jobs_status_idx ON jobs(status);
