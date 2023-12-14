@@ -433,6 +433,7 @@ describe('when testing a batched aggregation service', function () {
           },
           steps: [{
             image: 'harmonyservices/query-cmr:latest',
+            is_sequential: true,
           }, {
             image: 'ghcr.io/podaac/concise:sit',
             is_batched: true,
@@ -948,6 +949,7 @@ describe('when testing a batched aggregation service', function () {
           },
           steps: [{
             image: 'harmonyservices/query-cmr:latest',
+            is_sequential: true,
           }, {
             image: 'ghcr.io/podaac/concise:sit',
             is_batched: true,

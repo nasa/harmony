@@ -755,7 +755,7 @@ export async function processWorkItem(
 
       // allWorkItemsForStepComplete = allWorkItemsForStepComplete2;
     }
-    
+
     const continueProcessing = await (await logAsyncExecutionTime(
       handleFailedWorkItems,
       'HWIUWJI.handleFailedWorkItems',

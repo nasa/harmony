@@ -405,10 +405,9 @@ describe('Workflow chaining for a collection configured for swot reprojection an
         workItem.results = [
           getStacLocation(workItem, 'catalog0.json'),
           getStacLocation(workItem, 'catalog1.json'),
-          getStacLocation(workItem, 'catalog2.json'),
         ];
-        workItem.outputItemSizes = [1, 2, 3];
-        await fakeServiceStacOutput(workItem.jobID, workItem.id);
+        workItem.outputItemSizes = [1, 2];
+        await fakeServiceStacOutput(workItem.jobID, workItem.id, 2);
         await updateWorkItem(this.backend, workItem);
       });
 
@@ -822,6 +821,7 @@ describe('When a request spans multiple CMR pages', function () {
         jobID: job.jobID,
         serviceID: 'harmonyservices/query-cmr:latest',
         stepIndex: 1,
+        is_sequential: true,
         workItemCount: 2,
       }).save(db);
 
@@ -845,7 +845,7 @@ describe('When a request spans multiple CMR pages', function () {
 
     after(async function () {
       pageStub.restore();
-      await truncateAll();
+      // await truncateAll();
     });
 
     describe('when checking for a query-cmr work item', function () {

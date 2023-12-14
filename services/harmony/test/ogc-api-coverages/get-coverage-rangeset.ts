@@ -449,6 +449,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
         },
         steps: [{
           image: 'harmonyservices/query-cmr:fake-test',
+          is_sequential: true,
         }],
         granule_limit: 4,
         capabilities: {
@@ -551,6 +552,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
         },
         steps: [{
           image: 'harmonyservices/query-cmr:fake-test',
+          is_sequential: true,
         }],
         capabilities: {
           subsetting: {

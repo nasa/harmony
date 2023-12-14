@@ -445,7 +445,6 @@ export default abstract class BaseService<ServiceParamType> {
    * @throws ServerError - if the work item cannot be created
    */
   protected _createWorkflowSteps(): WorkflowStep[] {
-    console.log(JSON.stringify(this.config.steps, null, 2));
     const workflowSteps = [];
     if (this.config.steps) {
       const numSteps = this._numActualSteps();

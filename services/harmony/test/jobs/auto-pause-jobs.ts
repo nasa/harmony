@@ -72,9 +72,12 @@ function previewingToPauseTest(username: string): void {
       const workItemQueryCmr = JSON.parse(resQueryCmr.text).workItem;
       workItemQueryCmr.status = WorkItemStatus.SUCCESSFUL;
       workItemQueryCmr.results = [
-        getStacLocation(workItemQueryCmr, 'catalog.json'),
+        getStacLocation(workItemQueryCmr, 'catalog0.json'),
+        getStacLocation(workItemQueryCmr, 'catalog1.json'),
+        getStacLocation(workItemQueryCmr, 'catalog2.json'),
+        getStacLocation(workItemQueryCmr, 'catalog3.json'),
       ];
-      await fakeServiceStacOutput(workItemQueryCmr.jobID, workItemQueryCmr.id);
+      await fakeServiceStacOutput(workItemQueryCmr.jobID, workItemQueryCmr.id, 4);
       await updateWorkItem(this.backend, workItemQueryCmr);
 
       const resServExample = await getWorkForService(this.backend, 'harmonyservices/service-example:latest');
