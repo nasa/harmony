@@ -11,7 +11,7 @@ import hookServersStartStop from './helpers/servers';
 import { buildWorkItem, getWorkForService, hookGetWorkForService, updateWorkItem, fakeServiceStacOutput } from './helpers/work-items';
 import { buildWorkflowStep } from './helpers/workflow-steps';
 import * as aggregationBatch from '../app/util/aggregation-batch';
-import { buildJob } from './helpers/jobs';
+import { buildJob, getFirstJob } from './helpers/jobs';
 import { getStacLocation, WorkItemRecord, WorkItemStatus } from '../app/models/work-item-interface';
 import { truncateAll } from './helpers/db';
 import { stub } from 'sinon';
@@ -81,7 +81,7 @@ async function createJobAndWorkItems(
  */
 async function testInitialConditions(initialCmrHits: number, initialQueryCmrWorkItemCount: number): Promise<void> {
   it('sets the initial numInputGranules on the job', async function () {
-    const job = await Job.byJobID(db, this.jobID);
+    const { job } = await Job.byJobID(db, this.jobID);
     expect(job.numInputGranules).equals(initialCmrHits);
   });
   it('sets the initial number of work items for each step', async function () {
@@ -484,8 +484,7 @@ describe('Workflow chaining for a collection configured for swot reprojection an
 
             describe('when checking the jobs listing', function () {
               it('marks the job as successful and progress of 100 with 5 links', async function () {
-                const jobs = await Job.forUser(db, 'anonymous');
-                const job = jobs.data[0];
+                const job = await getFirstJob(db);
                 expect(job.status).to.equal('successful');
                 expect(job.progress).to.equal(100);
                 expect(job.links.length).to.equal(5);
@@ -553,7 +552,7 @@ describe('Workflow chaining for a collection configured for swot reprojection an
 
       it('fails the job, and all further work items are canceled', async function () {
       // work item failure should trigger job failure
-        const job = await Job.byJobID(db, firstSwotItem.jobID);
+        const { job } = await Job.byJobID(db, firstSwotItem.jobID);
         expect(job.status).to.equal(JobStatus.FAILED);
         // job failure should trigger cancellation of any pending work items
         const currentWorkItems = (await getWorkItemsByJobId(db, job.jobID)).workItems;
@@ -564,7 +563,7 @@ describe('Workflow chaining for a collection configured for swot reprojection an
       });
 
       it('sets the job failure message to the error message returned by the service', async function () {
-        const job = await Job.byJobID(db, firstSwotItem.jobID);
+        const { job } = await Job.byJobID(db, firstSwotItem.jobID);
         expect(job.message).to.contain('That was just a practice try, right?');
       });
 
@@ -640,12 +639,12 @@ describe('Workflow chaining for a collection configured for swot reprojection an
       });
 
       it('fails the job', async function () {
-        const job = await Job.byJobID(db, firstSwotItem.jobID);
+        const { job } = await Job.byJobID(db, firstSwotItem.jobID);
         expect(job.status).to.equal(JobStatus.FAILED);
       });
 
       it('sets the job failure message to a generic failure', async function () {
-        const job = await Job.byJobID(db, firstSwotItem.jobID);
+        const { job } = await Job.byJobID(db, firstSwotItem.jobID);
         expect(job.message).to.contain('failed with an unknown error');
       });
     });
@@ -945,7 +944,7 @@ describe('When a request spans multiple CMR pages', function () {
           }
         });
         it('updates the job numInputGranules', async function () {
-          const job = await Job.byJobID(db, this.jobID);
+          const { job } = await Job.byJobID(db, this.jobID);
           expect(job.numInputGranules).equals(finalCmrHits);
         });
 
@@ -988,7 +987,7 @@ describe('When a request spans multiple CMR pages', function () {
 
           });
           it('completes the job', async function () {
-            const job = await Job.byJobID(db, this.jobID);
+            const { job } = await Job.byJobID(db, this.jobID);
             expect(job.status).equals(JobStatus.SUCCESSFUL);
           });
         });
@@ -1021,7 +1020,7 @@ describe('When a request spans multiple CMR pages', function () {
         });
 
         it('does not update the job numInputGranules', async function () {
-          const job = await Job.byJobID(db, this.jobID);
+          const { job } = await Job.byJobID(db, this.jobID);
           expect(job.numInputGranules).equals(initialCmrHits);
         });
 
@@ -1064,7 +1063,7 @@ describe('When a request spans multiple CMR pages', function () {
 
           });
           it('completes the job', async function () {
-            const job = await Job.byJobID(db, this.jobID);
+            const { job } = await Job.byJobID(db, this.jobID);
             expect(job.status).equals(JobStatus.SUCCESSFUL);
           });
         });

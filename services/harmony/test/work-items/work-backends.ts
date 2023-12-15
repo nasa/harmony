@@ -263,7 +263,7 @@ describe('Work Backends', function () {
       });
 
       it('sets the job status to failed', async function () {
-        const job = await Job.byJobID(db, this.job.jobID);
+        const { job } = await Job.byJobID(db, this.job.jobID);
         expect(job.status).to.equal(JobStatus.FAILED);
       });
     });
@@ -453,24 +453,24 @@ describe('Work Backends', function () {
 
       describe('and the work item is the last in the chain', async function () {
         it('sets the job updatedAt field to the current time', async function () {
-          const updatedJob = await Job.byJobID(db, this.job.jobID);
+          const { job: updatedJob } = await Job.byJobID(db, this.job.jobID);
           expect(updatedJob.updatedAt.valueOf()).to.greaterThan(this.job.updatedAt.valueOf());
         });
 
         it('adds a link for the work results to the job', async function () {
-          const updatedJob = await Job.byJobID(db, this.job.jobID);
+          const { job: updatedJob } = await Job.byJobID(db, this.job.jobID, true);
           expect(updatedJob.links.filter(
             (jobLink) => jobLink.href === expectedLink,
           ).length).to.equal(1);
         });
 
         it('sets the job status to complete', async function () {
-          const updatedJob = await Job.byJobID(db, this.job.jobID);
+          const { job: updatedJob } = await Job.byJobID(db, this.job.jobID);
           expect(updatedJob.status === JobStatus.SUCCESSFUL);
         });
 
         it('sets the job progress to 100', async function () {
-          const updatedJob = await Job.byJobID(db, this.job.jobID);
+          const { job: updatedJob } = await Job.byJobID(db, this.job.jobID);
           expect(updatedJob.progress).to.equal(100);
         });
       });

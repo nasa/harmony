@@ -98,7 +98,7 @@ describe('ignoreErrors', function () {
         });
 
         it('marks the job as successful', async function () {
-          const job = await Job.byJobID(db, firstSwotItem.jobID);
+          const { job } = await Job.byJobID(db, firstSwotItem.jobID);
           expect(job.status).to.equal(JobStatus.SUCCESSFUL);
           expect(job.progress).to.equal(100);
           const currentWorkItems = (await getWorkItemsByJobId(db, job.jobID)).workItems;
@@ -159,7 +159,7 @@ describe('ignoreErrors', function () {
 
         it('fails the job', async function () {
           // work item failure with only one granue should trigger job failure
-          const job = await Job.byJobID(db, firstSwotItem.jobID);
+          const { job } = await Job.byJobID(db, firstSwotItem.jobID);
           expect(job.status).to.equal(JobStatus.FAILED);
           expect(job.message).to.equal('WorkItem failed: Specific failure reason');
         });
@@ -227,7 +227,7 @@ describe('ignoreErrors', function () {
         });
 
         it('changes the job status to running_with_errors', async function () {
-          const job = await Job.byJobID(db, firstSwotItem.jobID);
+          const { job } = await Job.byJobID(db, firstSwotItem.jobID);
           expect(job.status).to.equal(JobStatus.RUNNING_WITH_ERRORS);
           const currentWorkItems = (await getWorkItemsByJobId(db, job.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(3);
@@ -266,7 +266,7 @@ describe('ignoreErrors', function () {
 
         it('marks the job as failed', async function () {
           // all work items failing should trigger job failure
-          const job = await Job.byJobID(db, secondSwotItem.jobID);
+          const { job } = await Job.byJobID(db, secondSwotItem.jobID);
           expect(job.status).to.equal(JobStatus.FAILED);
           expect(job.message).to.equal('The job failed with 2 errors. See the errors field for more details');
           const currentWorkItems = (await getWorkItemsByJobId(db, job.jobID)).workItems;
@@ -322,7 +322,7 @@ describe('ignoreErrors', function () {
         });
 
         it('changes the job status to running_with_errors', async function () {
-          const job = await Job.byJobID(db, firstSwotItem.jobID);
+          const { job } = await Job.byJobID(db, firstSwotItem.jobID);
           expect(job.status).to.equal(JobStatus.RUNNING_WITH_ERRORS);
         });
 
@@ -366,7 +366,7 @@ describe('ignoreErrors', function () {
           await fakeServiceStacOutput(workItem4.jobID, workItem4.id);
           await updateWorkItem(this.backend, workItem4);
 
-          const job = await Job.byJobID(db, firstSwotItem.jobID);
+          const { job } = await Job.byJobID(db, firstSwotItem.jobID);
           expect(job.status).to.equal(JobStatus.COMPLETE_WITH_ERRORS);
           expect(job.progress).to.equal(100);
         });
@@ -433,7 +433,7 @@ describe('ignoreErrors', function () {
         });
 
         it('leaves the job in the running state', async function () {
-          const job = await Job.byJobID(db, firstSwotItem.jobID);
+          const { job } = await Job.byJobID(db, firstSwotItem.jobID);
           expect(job.status).to.equal(JobStatus.RUNNING);
         });
       });
@@ -459,7 +459,7 @@ describe('ignoreErrors', function () {
         });
 
         it('changes the job status to running_with_errors', async function () {
-          const job = await Job.byJobID(db, secondSwotItem.jobID);
+          const { job } = await Job.byJobID(db, secondSwotItem.jobID);
           expect(job.status).to.equal(JobStatus.RUNNING_WITH_ERRORS);
         });
 
@@ -497,7 +497,7 @@ describe('ignoreErrors', function () {
         });
 
         it('puts the job in a FAILED state', async function () {
-          const job = await Job.byJobID(db, thirdSwotItem.jobID);
+          const { job } = await Job.byJobID(db, thirdSwotItem.jobID);
           expect(job.status).to.equal(JobStatus.FAILED);
         });
 
@@ -555,7 +555,7 @@ describe('ignoreErrors', function () {
       });
 
       it('marks the job as failed', async function () {
-        const job = await Job.byJobID(db, this.workItem.jobID);
+        const { job } = await Job.byJobID(db, this.workItem.jobID);
         expect(job.status).to.equal(JobStatus.FAILED);
       });
     });
@@ -601,7 +601,7 @@ describe('ignoreErrors', function () {
         });
 
         it('leaves the job in the running state', async function () {
-          const job = await Job.byJobID(db, workItemJobID);
+          const { job } = await Job.byJobID(db, workItemJobID);
           expect(job.status).to.equal(JobStatus.RUNNING);
         });
 
@@ -626,7 +626,7 @@ describe('ignoreErrors', function () {
           });
 
           it('leaves the job in the running state', async function () {
-            const job = await Job.byJobID(db, firstSwotItem.jobID);
+            const { job } = await Job.byJobID(db, firstSwotItem.jobID);
             expect(job.status).to.equal(JobStatus.RUNNING);
           });
         });
@@ -652,7 +652,7 @@ describe('ignoreErrors', function () {
         });
 
         it('updates the job to the running_with_errors state', async function () {
-          const job = await Job.byJobID(db, secondSwotItem.jobID);
+          const { job } = await Job.byJobID(db, secondSwotItem.jobID);
           expect(job.status).to.equal(JobStatus.RUNNING_WITH_ERRORS);
         });
       });
@@ -677,7 +677,7 @@ describe('ignoreErrors', function () {
         });
 
         it('updates the job to the failed state', async function () {
-          const job = await Job.byJobID(db, secondQueryCmrItem.jobID);
+          const { job } = await Job.byJobID(db, secondQueryCmrItem.jobID);
           expect(job.status).to.equal(JobStatus.FAILED);
         });
 
@@ -738,7 +738,7 @@ describe('ignoreErrors', function () {
           });
 
           it('changes the job status to running_with_errors', async function () {
-            const job = await Job.byJobID(db, firstL2SSItem.jobID);
+            const { job } = await Job.byJobID(db, firstL2SSItem.jobID);
             expect(job.status).to.equal(JobStatus.RUNNING_WITH_ERRORS);
           });
 
@@ -790,7 +790,7 @@ describe('ignoreErrors', function () {
             await updateWorkItem(this.backend, workItem);
 
 
-            const job = await Job.byJobID(db, firstL2SSItem.jobID);
+            const { job } = await Job.byJobID(db, firstL2SSItem.jobID);
             expect(job.status).to.equal(JobStatus.COMPLETE_WITH_ERRORS);
             expect(job.progress).to.equal(100);
           });
@@ -870,7 +870,7 @@ describe('ignoreErrors', function () {
           });
 
           it('changes the job status to running_with_errors', async function () {
-            const job = await Job.byJobID(db, secondL2SSItem.jobID);
+            const { job } = await Job.byJobID(db, secondL2SSItem.jobID);
             expect(job.status).to.equal(JobStatus.RUNNING_WITH_ERRORS);
           });
 
@@ -908,7 +908,7 @@ describe('ignoreErrors', function () {
             await fakeServiceStacOutput(workItem.jobID, workItem.id);
             await updateWorkItem(this.backend, workItem);
 
-            const job = await Job.byJobID(db, secondL2SSItem.jobID);
+            const { job } = await Job.byJobID(db, secondL2SSItem.jobID);
             expect(job.status).to.equal(JobStatus.RUNNING_WITH_ERRORS);
           });
 
@@ -920,7 +920,7 @@ describe('ignoreErrors', function () {
             await fakeServiceStacOutput(workItem.jobID, workItem.id);
             await updateWorkItem(this.backend, workItem);
 
-            const job = await Job.byJobID(db, secondL2SSItem.jobID);
+            const { job } = await Job.byJobID(db, secondL2SSItem.jobID);
             expect(job.status).to.equal(JobStatus.COMPLETE_WITH_ERRORS);
             expect(job.progress).to.equal(100);
           });
@@ -1017,7 +1017,7 @@ describe('ignoreErrors', function () {
           });
 
           it('changes the job status to running_with_errors', async function () {
-            const job = await Job.byJobID(db, lastL2SSItem.jobID);
+            const { job } = await Job.byJobID(db, lastL2SSItem.jobID);
             expect(job.status).to.equal(JobStatus.RUNNING_WITH_ERRORS);
           });
 
@@ -1038,7 +1038,7 @@ describe('ignoreErrors', function () {
             await fakeServiceStacOutput(workItem.jobID, workItem.id);
             await updateWorkItem(this.backend, workItem);
 
-            const job = await Job.byJobID(db, lastL2SSItem.jobID);
+            const { job } = await Job.byJobID(db, lastL2SSItem.jobID);
             expect(job.status).to.equal(JobStatus.RUNNING_WITH_ERRORS);
           });
 
@@ -1050,7 +1050,7 @@ describe('ignoreErrors', function () {
             await fakeServiceStacOutput(workItem.jobID, workItem.id);
             await updateWorkItem(this.backend, workItem);
 
-            const job = await Job.byJobID(db, lastL2SSItem.jobID);
+            const { job } = await Job.byJobID(db, lastL2SSItem.jobID);
             expect(job.status).to.equal(JobStatus.COMPLETE_WITH_ERRORS);
             expect(job.progress).to.equal(100);
           });
@@ -1147,7 +1147,7 @@ describe('ignoreErrors', function () {
           });
 
           it('changes the job status to running_with_errors', async function () {
-            const job = await Job.byJobID(db, lastL2SSItem.jobID);
+            const { job } = await Job.byJobID(db, lastL2SSItem.jobID);
             expect(job.status).to.equal(JobStatus.RUNNING_WITH_ERRORS);
           });
 
@@ -1168,7 +1168,7 @@ describe('ignoreErrors', function () {
             await fakeServiceStacOutput(workItem.jobID, workItem.id);
             await updateWorkItem(this.backend, workItem);
 
-            const job = await Job.byJobID(db, lastL2SSItem.jobID);
+            const { job } = await Job.byJobID(db, lastL2SSItem.jobID);
             expect(job.status).to.equal(JobStatus.RUNNING_WITH_ERRORS);
           });
 
@@ -1191,7 +1191,7 @@ describe('ignoreErrors', function () {
               }
             });
             it('sets the status to COMPLETE_WITH_ERRORS', async function () {
-              const job = await Job.byJobID(db, lastL2SSItem.jobID);
+              const { job } = await Job.byJobID(db, lastL2SSItem.jobID);
               expect(job.status).to.equal(JobStatus.COMPLETE_WITH_ERRORS);
               expect(job.progress).to.equal(100);
             });
@@ -1253,7 +1253,7 @@ describe('ignoreErrors', function () {
           });
 
           it('leaves the job in the running state', async function () {
-            const job = await Job.byJobID(db, firstSwotItem.jobID);
+            const { job } = await Job.byJobID(db, firstSwotItem.jobID);
             expect(job.status).to.equal(JobStatus.RUNNING);
           });
         });
@@ -1279,7 +1279,7 @@ describe('ignoreErrors', function () {
           });
 
           it('changes the job status to running_with_errors', async function () {
-            const job = await Job.byJobID(db, secondL2SSItem.jobID);
+            const { job } = await Job.byJobID(db, secondL2SSItem.jobID);
             expect(job.status).to.equal(JobStatus.RUNNING_WITH_ERRORS);
           });
 
@@ -1315,7 +1315,7 @@ describe('ignoreErrors', function () {
           });
 
           it('puts the job in a FAILED state', async function () {
-            const job = await Job.byJobID(db, thirdL2SSItem.jobID);
+            const { job } = await Job.byJobID(db, thirdL2SSItem.jobID);
             expect(job.status).to.equal(JobStatus.FAILED);
           });
 
@@ -1372,7 +1372,7 @@ describe('ignoreErrors', function () {
         });
 
         it('marks the job as failed', async function () {
-          const job = await Job.byJobID(db, this.workItem.jobID);
+          const { job } = await Job.byJobID(db, this.workItem.jobID);
           expect(job.status).to.equal(JobStatus.FAILED);
         });
       });
@@ -1423,7 +1423,7 @@ describe('ignoreErrors', function () {
         });
 
         it('changes the job status to running_with_errors', async function () {
-          const job = await Job.byJobID(db, firstSwotItem.jobID);
+          const { job } = await Job.byJobID(db, firstSwotItem.jobID);
           expect(job.status).to.equal(JobStatus.RUNNING_WITH_ERRORS);
         });
 
@@ -1467,7 +1467,7 @@ describe('ignoreErrors', function () {
           await fakeServiceStacOutput(workItem4.jobID, workItem4.id);
           await updateWorkItem(this.backend, workItem4);
 
-          const job = await Job.byJobID(db, firstSwotItem.jobID);
+          const { job } = await Job.byJobID(db, firstSwotItem.jobID);
           expect(job.status).to.equal(JobStatus.COMPLETE_WITH_ERRORS);
           expect(job.progress).to.equal(100);
         });
@@ -1528,7 +1528,7 @@ describe('ignoreErrors', function () {
         });
 
         it('changes the job status to failed', async function () {
-          const job = await Job.byJobID(db, firstSwotItem.jobID);
+          const { job } = await Job.byJobID(db, firstSwotItem.jobID);
           expect(job.status).to.equal(JobStatus.FAILED);
         });
 
