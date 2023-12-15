@@ -254,7 +254,7 @@ export class HarmonyEnv {
   }
 
   /**
-   * Constructs the env object, for use in any Harmony component.
+   * Constructs the HarmonyEnv instance, for use in any Harmony component.
    * @param localPath - path to the env-defaults file of the component
    */
   constructor(localPath?: string) {
