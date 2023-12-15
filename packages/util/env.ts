@@ -108,8 +108,9 @@ function specialCases(env: Record<string, string>): Partial<HarmonyEnv> {
 }
 
 /**
- * Builds the HarmonyEnv from this module's env-defaults, the env-defaults
- * for a subclass (e.g. UpdaterHarmonyEnv), process.env, and optionally .env.
+ * Returns an object (Record\<string, string\>) containing environment config properties,
+ * with snake-cased keys. Loads the  properties from this module's env-defaults file, the env-defaults file
+ * for the subclass (e.g. UpdaterHarmonyEnv), process.env, and optionally a .env file.
  * @param localEnvDefaultsPath - the path to the env-defaults file that
  * is specific to the HarmonyEnv subclass 
  * @returns all environment variables in snake case (Record\<string, string\>)
