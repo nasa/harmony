@@ -256,9 +256,9 @@ export class HarmonyEnv {
    * @param localPath - path to the env-defaults file of the component
    */
   constructor(localPath?: string) {
-    const env = loadEnvFromFiles(localPath); // e.g. { CONFIG_NAME: 'value', ... }
+    const env = loadEnvFromFiles(localPath); // { CONFIG_NAME: '0', ... }
     for (const k of Object.keys(env)) {
-      this[_.camelCase(k)] = makeConfigVar(env[k]);
+      this[_.camelCase(k)] = makeConfigVar(env[k]); // { configName: 0, ... }
     }
     Object.assign(this, specialConfig(env), this.specialConfig(env));
     // for existing env vars this is redundant (but doesn't hurt), but this allows us
