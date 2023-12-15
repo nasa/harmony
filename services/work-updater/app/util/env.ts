@@ -25,11 +25,11 @@ class UpdaterHarmonyEnv extends HarmonyEnv {
 
   /**
    * Returns the special env variable cases for the UpdaterHarmonyEnv
-   * (with keys in snake case).
+   * (with keys in camel case).
    * @param env - the map of all env variables loaded from files
    * @returns Partial\<UpdaterHarmonyEnv\>
    */
-  localSpecialCases(env: Record<string, string>): Partial<UpdaterHarmonyEnv> {
+  specialConfig(env: Record<string, string>): Partial<UpdaterHarmonyEnv> {
     return {
       workItemUpdateQueueType : env.WORK_ITEM_UPDATE_QUEUE_TYPE === 'large' ?
         WorkItemQueueType.LARGE_ITEM_UPDATE : WorkItemQueueType.SMALL_ITEM_UPDATE,

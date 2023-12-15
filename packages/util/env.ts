@@ -94,7 +94,7 @@ function queueUrlsMap(env: Record<string, string>): Record<string, string> {
  * @param env - the env object loaded from the env files
  * @returns Partial\<HarmonyEnv\>
  */
-function specialCases(env: Record<string, string>): Partial<HarmonyEnv> {
+function specialConfig(env: Record<string, string>): Partial<HarmonyEnv> {
   const localstackHost = env.LOCALSTACK_HOST;
   return {
     databaseType : env.DATABASE_TYPE || 'postgres',
@@ -105,6 +105,7 @@ function specialCases(env: Record<string, string>): Partial<HarmonyEnv> {
     workItemUpdateQueueUrl: env.WORK_ITEM_UPDATE_QUEUE_URL?.replace('localstack', localstackHost),
     largeWorkItemUpdateQueueUrl: env.LARGE_WORK_ITEM_UPDATE_QUEUE_URL?.replace('localstack', localstackHost),
     workItemSchedulerQueueUrl: env.WORK_ITEM_SCHEDULER_QUEUE_URL?.replace('localstack', localstackHost),
+    serviceQueueUrls: queueUrlsMap(env),
   };
 }
 
@@ -116,7 +117,7 @@ function specialCases(env: Record<string, string>): Partial<HarmonyEnv> {
  * is specific to the HarmonyEnv subclass 
  * @returns all environment variables in snake case (Record\<string, string\>)
  */
-function loadEnv(localEnvDefaultsPath?: string): Record<string, string> {
+function loadEnvFromFiles(localEnvDefaultsPath?: string): Record<string, string> {
   // Save the original process.env so we can re-use it to override
   const originalEnv = _.cloneDeep(process.env);
   // Read the env-defaults for this module (relative to this typescript file)
@@ -242,14 +243,11 @@ export class HarmonyEnv {
   }
 
   /**
-   * Implement this if the child class has any special cases
-   * where setting the env variable requires
-   * more than just reading the value straight from the file and converting
-   * to a string, number or boolean.
+   * Get special case environment variables for the HarmonyEnv subclass.
    * @param _env - the map of all env variables loaded from files
-   * @returns Partial\<HarmonyEnv\>
+   * @returns Partial\<HarmonyEnv\>, e.g. \{ databaseType : env.DATABASE_TYPE || 'postgres' \}
    */
-  protected localSpecialCases(_env: Record<string, string>): Partial<HarmonyEnv> { 
+  protected specialConfig(_env: Record<string, string>): Partial<HarmonyEnv> { 
     return {}; 
   }
 
@@ -258,13 +256,11 @@ export class HarmonyEnv {
    * @param localPath - path to the env-defaults file of the component
    */
   constructor(localPath?: string) {
-    const env = loadEnv(localPath); // e.g. { CONFIG_NAME: 'value', ... }
+    const env = loadEnvFromFiles(localPath); // e.g. { CONFIG_NAME: 'value', ... }
     for (const k of Object.keys(env)) {
       this[_.camelCase(k)] = makeConfigVar(env[k]);
     }
-    this.serviceQueueUrls = queueUrlsMap(env);
-    Object.assign(this, specialCases(env));
-    Object.assign(this, this.localSpecialCases(env));
+    Object.assign(this, specialConfig(env), this.specialConfig(env));
     // for existing env vars this is redundant (but doesn't hurt), but this allows us
     // to add new env vars to the process as needed
     Object.assign(process.env, env);
