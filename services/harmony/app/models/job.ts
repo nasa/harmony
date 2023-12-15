@@ -43,7 +43,7 @@ export enum JobStatus {
 export enum JobEvent {
   CANCEL = 'CANCEL',
   COMPLETE = 'COMPLETE',
-  COMPLETE_WITH_ERRORS = 'COMPLETE_WITH_ERRORS', // TODO - where does this get used
+  COMPLETE_WITH_ERRORS = 'COMPLETE_WITH_ERRORS',
   FAIL = 'FAIL',
   PAUSE = 'PAUSE',
   RESUME = 'RESUME',
@@ -420,7 +420,7 @@ export class Job extends DBRecord implements JobRecord {
     currentPage = 0,
     perPage = 10,
   ): Promise<{ data: Job[]; pagination: ILengthAwarePagination }> {
-    const items = await tx('jobs')
+    const items = await tx(Job.table)
       .select()
       .where(constraints.where)
       .orderBy(
@@ -475,12 +475,12 @@ export class Job extends DBRecord implements JobRecord {
     currentPage = 0,
     perPage = env.defaultResultPageSize,
   ): Promise<{ job: Job; pagination: ILengthAwarePagination }> {
-    let query = tx('jobs').select().where(constraints.where);
+    let query = tx(Job.table).first().where(constraints.where);
     if (lock) {
       query = query.forUpdate();
     }
     const result = await query;
-    const job = result.length === 0 ? null : new Job(result[0]);
+    const job = result ? new Job(result) : null;
     let paginationInfo;
     if (job && includeLinks) {
       const linkData = await getLinksForJob(tx, job.jobID, currentPage, perPage);
@@ -532,7 +532,7 @@ export class Job extends DBRecord implements JobRecord {
   * @returns the number of input granules for the job
   */
   static async getNumInputGranules(tx: Transaction, jobID: string): Promise<number> {
-    const results = await tx('jobs')
+    const results = await tx(Job.table)
       .select('numInputGranules')
       .where({ jobID });
 
@@ -573,7 +573,7 @@ export class Job extends DBRecord implements JobRecord {
    * @returns a promise resolving to the timestamp of the most recently updated job
    */
   static async getTimeOfMostRecentlyUpdatedJob(tx: Transaction): Promise<Date> {
-    const response = await tx('jobs').max('updatedAt as latest_update');
+    const response = await tx(Job.table).max('updatedAt as latest_update');
     return new Date(response[0].latest_update);
   }
 
