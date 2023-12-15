@@ -243,7 +243,8 @@ export class HarmonyEnv {
   /**
    * Implement this if the child class has any special cases
    * where setting the env variable requires
-   * more than just reading the value straight from the file.
+   * more than just reading the value straight from the file and converting
+   * to a string, number or boolean.
    */
   protected localSpecialCases(_env: Record<string, string>): Partial<HarmonyEnv> { 
     return {}; 
