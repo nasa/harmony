@@ -245,7 +245,7 @@ export class HarmonyEnv {
   /**
    * Get special case environment variables for the HarmonyEnv subclass.
    * @param _env - the map of all env variables loaded from files
-   * @returns Partial\<HarmonyEnv\>, e.g. \{ databaseType : env.DATABASE_TYPE || 'postgres' \}
+   * @returns Partial\<HarmonyEnv\>, e.g. \{ cacheType : env.CACHE_TYPE || 'disk' \}
    */
   protected specialConfig(_env: Record<string, string>): Partial<HarmonyEnv> { 
     return {}; 
