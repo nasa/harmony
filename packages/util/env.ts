@@ -18,6 +18,8 @@ const logger = winston.createLogger({
 // Sets up the environment variables used by more than one executable (the harmony server,
 // the k8s services, etc.). Each executable can customize to add or override its own env vars
 //
+// Save the original process.env so we can re-use it to override
+export const originalEnv = _.cloneDeep(process.env);
 const ipRegex = /^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$/;
 const domainHostRegex = /^([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})$/;
 export const hostRegexWhitelist = { host_whitelist: [/localhost/, /localstack/, /harmony/, ipRegex, domainHostRegex] };
@@ -133,11 +135,9 @@ function loadEnvFromFiles(localEnvDefaultsPath?: string, dotEnvPath?: string): R
   if (localEnvDefaultsPath) {
     envLocalDefaults = dotenv.parse(fs.readFileSync(localEnvDefaultsPath));
   }
-  // Save the original process.env so we can re-use it to override
-  const envOriginal = _.cloneDeep(process.env);
   // Read the env-defaults for this module (relative to this typescript file)
   const envDefaults = dotenv.parse(fs.readFileSync(path.resolve(__dirname, 'env-defaults')));
-  return { ...envLocalDefaults, ...envDefaults, ...envOverrides, ...envOriginal };
+  return { ...envLocalDefaults, ...envDefaults, ...envOverrides, ...originalEnv };
 }
 
 export class HarmonyEnv {
