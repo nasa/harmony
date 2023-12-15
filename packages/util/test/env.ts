@@ -1,24 +1,21 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import { HarmonyEnv, getValidationErrors } from '../env';
 import * as tmp from 'tmp-promise';
 import { promises as fs } from 'fs';
 
+// do this before the import since the env module clones process.env on import 
+const prevProcessEnv = process.env;
+process.env.CLIENT_ID = 'client-007';
+import { HarmonyEnv, getValidationErrors } from '../env';
+
 describe('Environment validation', function () {
 
-  beforeEach(function () {
-    this.prevProcessEnv = process.env;
-  });
-
   afterEach(function () {
-    process.env = this.prevProcessEnv;
+    process.env = prevProcessEnv;
   });
 
   describe('When the environment is valid', function () {
     before(async function () {
-      this.prevClientId = process.env.CLIENT_ID;
-      process.env.CLIENT_ID = 'client-007';
-      
       this.envFile = await tmp.file();
       const envContent = 'DATABASE_TYPE=cassandra';
       await fs.writeFile(this.envFile.path, envContent, 'utf8');
@@ -26,7 +23,6 @@ describe('Environment validation', function () {
       this.validEnv = new HarmonyEnv(undefined, this.envFile.path);
     });
     after(async function () {
-      process.env.CLIENT_ID = this.prevClientId;
       await this.envFile.cleanup();
     });
 
