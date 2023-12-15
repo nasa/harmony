@@ -1,30 +1,85 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
 import { HarmonyEnv, getValidationErrors } from '../env';
+import * as tmp from 'tmp-promise';
+import { promises as fs } from 'fs';
 
 describe('Environment validation', function () {
 
+  beforeEach(function () {
+    this.prevProcessEnv = process.env;
+  });
+
+  afterEach(function () {
+    process.env = this.prevProcessEnv;
+  });
+
   describe('When the environment is valid', function () {
-    const validEnv: HarmonyEnv = new HarmonyEnv();
+    before(async function () {
+      this.prevClientId = process.env.CLIENT_ID;
+      process.env.CLIENT_ID = 'client-007';
+      
+      this.envFile = await tmp.file();
+      const envContent = 'DATABASE_TYPE=cassandra';
+      await fs.writeFile(this.envFile.path, envContent, 'utf8');
+      console.log(this.envFile.path);
+      this.validEnv = new HarmonyEnv(undefined, this.envFile.path);
+    });
+    after(async function () {
+      process.env.CLIENT_ID = this.prevClientId;
+      await this.envFile.cleanup();
+    });
+
     it('does not throw an error when validated', function () {
-      expect(() => validEnv.validate()).not.to.Throw;
+      expect(() => this.validEnv.validate()).not.to.Throw;
     });
 
     it('does not log any errors', function () {
-      expect(getValidationErrors(validEnv).length).to.eql(0);
+      expect(getValidationErrors(this.validEnv).length).to.eql(0);
     });
+
+    it('sets special values (values that are set manually) using env-defaults', function () {
+      expect(this.validEnv.useServiceQueues).to.eql(true);
+    });
+
+    it('sets non-special values using env-defaults', function () {
+      expect(this.validEnv.localstackHost).to.eql('localstack');
+    });
+
+    it('converts non-string types', function () {
+      expect(this.validEnv.defaultResultPageSize).to.eql(2000);
+    });
+
+    it('overrides env file config with values read from process.env', function () {
+      expect(this.validEnv.clientId).to.eql('client-007');
+    });
+
+    it('overrides the env util env-defaults with .env file values', function () {
+      expect(this.validEnv.databaseType).to.eql('cassandra');
+    });
+
+    it('sets service queue urls', function () {
+      expect(this.validEnv.serviceQueueUrls['harmonyservices/service-example:latest'])
+        .to.eql('http://localstack:4566/queue/harmony-service-example.fifo');
+    });
+    
+    // todo .env override, process, subclass, etc
   });
 
   describe('When the environment is invalid', function () {
-    const invalidEnv: HarmonyEnv = new HarmonyEnv();
-    invalidEnv.port = -1;
-    invalidEnv.callbackUrlRoot = 'foo';
+    
+    before(function () {
+      this.invalidEnv = new HarmonyEnv();
+      this.invalidEnv.port = -1;
+      this.invalidEnv.callbackUrlRoot = 'foo';
+    });
+    
     it('throws an error when validated', function () {
-      expect(() => invalidEnv.validate()).to.throw;
+      expect(() => this.invalidEnv.validate()).to.throw;
     });
 
     it('logs two errors', function () {
-      expect(getValidationErrors(invalidEnv)).to.eql([
+      expect(getValidationErrors(this.invalidEnv)).to.eql([
         {
           'children': [],
           'constraints': {

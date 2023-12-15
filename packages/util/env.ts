@@ -114,18 +114,15 @@ function specialConfig(env: Record<string, string>): Partial<HarmonyEnv> {
  * with snake-cased keys. Loads the  properties from this module's env-defaults file, the env-defaults file
  * for the subclass (e.g. UpdaterHarmonyEnv), process.env, and optionally a .env file.
  * @param localEnvDefaultsPath - the path to the env-defaults file that
- * is specific to the HarmonyEnv subclass 
+ * is specific to the HarmonyEnv subclass
+ * @param dotEnvPath - path to the .env file
  * @returns all environment variables in snake case (Record\<string, string\>)
  */
-function loadEnvFromFiles(localEnvDefaultsPath?: string): Record<string, string> {
-  // Save the original process.env so we can re-use it to override
-  const originalEnv = _.cloneDeep(process.env);
-  // Read the env-defaults for this module (relative to this typescript file)
-  const envDefaults = dotenv.parse(fs.readFileSync(path.resolve(__dirname, 'env-defaults')));
+function loadEnvFromFiles(localEnvDefaultsPath?: string, dotEnvPath?: string): Record<string, string> {
   let envOverrides = {};
-  if (process.env.NODE_ENV !== 'test') {
+  if (process.env.NODE_ENV !== 'test' || dotEnvPath != '../../.env') {
     try {
-      envOverrides = dotenv.parse(fs.readFileSync('../../.env'));
+      envOverrides = dotenv.parse(fs.readFileSync(dotEnvPath));
     } catch (e) {
       logger.warn('Could not parse environment overrides from .env file');
       logger.warn(e.message);
@@ -136,7 +133,11 @@ function loadEnvFromFiles(localEnvDefaultsPath?: string): Record<string, string>
   if (localEnvDefaultsPath) {
     envLocalDefaults = dotenv.parse(fs.readFileSync(localEnvDefaultsPath));
   }
-  return  { ...envLocalDefaults, ...envDefaults, ...envOverrides, ...originalEnv };
+  // Save the original process.env so we can re-use it to override
+  const envOriginal = _.cloneDeep(process.env);
+  // Read the env-defaults for this module (relative to this typescript file)
+  const envDefaults = dotenv.parse(fs.readFileSync(path.resolve(__dirname, 'env-defaults')));
+  return { ...envLocalDefaults, ...envDefaults, ...envOverrides, ...envOriginal };
 }
 
 export class HarmonyEnv {
@@ -253,17 +254,18 @@ export class HarmonyEnv {
 
   /**
    * Constructs the HarmonyEnv instance, for use in any Harmony component.
-   * @param localPath - path to the env-defaults file of the component
+   * @param localEnvDefaultsPath - path to the env-defaults file of the component
+   * @param dotEnvPath - path to the .env file
    */
-  constructor(localPath?: string) {
-    const env = loadEnvFromFiles(localPath); // { CONFIG_NAME: '0', ... }
+  constructor(localEnvDefaultsPath?: string, dotEnvPath = '../../.env') {
+    const env = loadEnvFromFiles(localEnvDefaultsPath, dotEnvPath); // { CONFIG_NAME: '0', ... }
     for (const k of Object.keys(env)) {
       this[_.camelCase(k)] = makeConfigVar(env[k]); // { configName: 0, ... }
+      // for existing env vars this is redundant (but doesn't hurt), but this allows us
+      // to add new env vars to the process as needed
+      process.env[k] = env[k];
     }
     Object.assign(this, specialConfig(env), this.specialConfig(env));
-    // for existing env vars this is redundant (but doesn't hurt), but this allows us
-    // to add new env vars to the process as needed
-    Object.assign(process.env, env);
   }
 }
 
