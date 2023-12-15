@@ -18,21 +18,21 @@ const logger = winston.createLogger({
 // Sets up the environment variables used by more than one executable (the harmony server,
 // the k8s services, etc.). Each executable can customize to add or override its own env vars
 //
-// Save the original process.env so we can re-use it to override
-export const originalEnv = _.cloneDeep(process.env);
 const ipRegex = /^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$/;
 const domainHostRegex = /^([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})$/;
 export const hostRegexWhitelist = { host_whitelist: [/localhost/, /localstack/, /harmony/, ipRegex, domainHostRegex] };
 export const awsRegionRegex = /(us(-gov)?|ap|ca|cn|eu|sa)-(central|(north|south)?(east|west)?)-\d/;
-const gdalWarning = 'Found a GDAL_DATA environment variable.  This is usually from an external GDAL '
-+ 'installation and can interfere with CRS parsing in Harmony, so we will ignore it. '
-+ 'If you need to override the GDAL_DATA location for Harmony, provide a GDAL_DATA key in '
-+ 'your .env file.';
 
 if (Object.prototype.hasOwnProperty.call(process.env, 'GDAL_DATA')) {
-  logger.warn(gdalWarning);
+  logger.warn('Found a GDAL_DATA environment variable.  This is usually from an external GDAL '
+    + 'installation and can interfere with CRS parsing in Harmony, so we will ignore it. '
+    + 'If you need to override the GDAL_DATA location for Harmony, provide a GDAL_DATA key in '
+    + 'your .env file.');
   delete process.env.GDAL_DATA;
 }
+
+// Save the original process.env so we can re-use it to override
+export const originalEnv = _.cloneDeep(process.env);
 
 /**
  * Parse a string env variable to a boolean or number if necessary.
