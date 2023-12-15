@@ -225,7 +225,6 @@ export class HarmonyEnv {
 
   /**
   * Validate a set of env vars.
-  * @param env - the object representing the env vars, including constraints
   * @throws Error on constraing violation
   */
   validate(): void {
@@ -246,6 +245,8 @@ export class HarmonyEnv {
    * where setting the env variable requires
    * more than just reading the value straight from the file and converting
    * to a string, number or boolean.
+   * @param _env - the map of all env variables loaded from files
+   * @returns Partial\<HarmonyEnv\>
    */
   protected localSpecialCases(_env: Record<string, string>): Partial<HarmonyEnv> { 
     return {}; 

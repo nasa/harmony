@@ -17,15 +17,17 @@ class UpdaterHarmonyEnv extends HarmonyEnv {
   largeWorkItemUpdateQueueMaxBatchSize: number;
 
   @IsIn([WorkItemQueueType.LARGE_ITEM_UPDATE, WorkItemQueueType.SMALL_ITEM_UPDATE])
-  workItemUpdateQueueType: WorkItemQueueType | string;
+  workItemUpdateQueueType: WorkItemQueueType;
 
   @IsInt()
   @Min(0)
   workItemUpdateQueueProcessorDelayAfterErrorSec: number;
 
   /**
-   * Handles cases where setting the env variable requires more
-   * than just reading the value straight from the file.
+   * Returns the special env variable cases for the UpdaterHarmonyEnv
+   * (with keys in snake case).
+   * @param env - the map of all env variables loaded from files
+   * @returns Partial\<UpdaterHarmonyEnv\>
    */
   localSpecialCases(env: Record<string, string>): Partial<UpdaterHarmonyEnv> {
     return {
