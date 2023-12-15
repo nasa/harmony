@@ -7,21 +7,17 @@ import * as winston from 'winston';
 import { IsInt, IsNotEmpty, IsNumber, IsUrl, Matches, Max, Min, ValidateIf, ValidationError, validateSync } from 'class-validator';
 import { isBoolean, isFloat, isInteger, parseBoolean } from './string';
 
-const logger = winston.createLogger({
-  transports: [
-    new winston.transports.Console(),
-  ],
-});
-
 //
 // env module
 // Sets up the environment variables used by more than one executable (the harmony server,
 // the k8s services, etc.). Each executable can customize to add or override its own env vars
 //
-const ipRegex = /^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$/;
-const domainHostRegex = /^([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})$/;
-export const hostRegexWhitelist = { host_whitelist: [/localhost/, /localstack/, /harmony/, ipRegex, domainHostRegex] };
-export const awsRegionRegex = /(us(-gov)?|ap|ca|cn|eu|sa)-(central|(north|south)?(east|west)?)-\d/;
+
+const logger = winston.createLogger({
+  transports: [
+    new winston.transports.Console(),
+  ],
+});
 
 if (Object.prototype.hasOwnProperty.call(process.env, 'GDAL_DATA')) {
   logger.warn('Found a GDAL_DATA environment variable.  This is usually from an external GDAL '
@@ -139,6 +135,12 @@ function loadEnvFromFiles(localEnvDefaultsPath?: string, dotEnvPath?: string): R
   const envDefaults = dotenv.parse(fs.readFileSync(path.resolve(__dirname, 'env-defaults')));
   return { ...envLocalDefaults, ...envDefaults, ...envOverrides, ...originalEnv };
 }
+
+// regexps for validations
+const ipRegex = /^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$/;
+const domainHostRegex = /^([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})$/;
+export const hostRegexWhitelist = { host_whitelist: [/localhost/, /localstack/, /harmony/, ipRegex, domainHostRegex] };
+export const awsRegionRegex = /(us(-gov)?|ap|ca|cn|eu|sa)-(central|(north|south)?(east|west)?)-\d/;
 
 export class HarmonyEnv {
 
