@@ -7,17 +7,17 @@ import * as winston from 'winston';
 import { IsInt, IsNotEmpty, IsNumber, IsUrl, Matches, Max, Min, ValidateIf, ValidationError, validateSync } from 'class-validator';
 import { isBoolean, isFloat, isInteger, parseBoolean } from './string';
 
-//
-// env module
-// Sets up the environment variables used by more than one executable (the harmony server,
-// the k8s services, etc.). Each executable can customize to add or override its own env vars
-//
-
 const logger = winston.createLogger({
   transports: [
     new winston.transports.Console(),
   ],
 });
+
+//
+// env module
+// Sets up the environment variables used by more than one executable (the harmony server,
+// the k8s services, etc.). Each executable can customize to add or override its own env vars
+//
 
 if (Object.prototype.hasOwnProperty.call(process.env, 'GDAL_DATA')) {
   logger.warn('Found a GDAL_DATA environment variable.  This is usually from an external GDAL '
