@@ -91,7 +91,8 @@ function queueUrlsMap(env: Record<string, string>): Record<string, string> {
 
 /**
  * Get special case environment variables for the HarmonyEnv.
- * @param env - the dotenv object loaded from the env files
+ * @param env - the env object loaded from the env files
+ * @returns Partial\<HarmonyEnv\>
  */
 function specialCases(env: Record<string, string>): Partial<HarmonyEnv> {
   const localstackHost = env.LOCALSTACK_HOST;
