@@ -27,10 +27,13 @@ const gdalWarning = 'Found a GDAL_DATA environment variable.  This is usually fr
 + 'If you need to override the GDAL_DATA location for Harmony, provide a GDAL_DATA key in '
 + 'your .env file.';
 
+if (Object.prototype.hasOwnProperty.call(process.env, 'GDAL_DATA')) {
+  logger.warn(gdalWarning);
+  delete process.env.GDAL_DATA;
+}
+
 /**
- * Parse a string env variable to a boolean or number if necessary. This approach has the drawback that these
- * config variables don't show up in VS Code autocomplete, but the reduction in repeated
- * boilerplate code is probably worth it.
+ * Parse a string env variable to a boolean or number if necessary.
  *
  * @param stringValue - The environment variable value as a string
  * @returns the parsed value
@@ -58,16 +61,16 @@ export function getValidationErrors(env: HarmonyEnv): ValidationError[] {
 }
 
 /**
- * Adds a map of image to queue URL to the env object.
- * @param envVars - the HarmonyEnv to add to
+ * Get a map of image to queue URL.
+ * @param env - the dotenv object loaded from the env files
  */
-function setQueueUrls(envVars: Partial<HarmonyEnv>): void {
+function queueUrlsMap(env: Record<string, string>): Record<string, string> {
   // process all environment variables ending in _QUEUE_URLS to add image/url pairs to
   // the `serviceQueueUrls` map
-  envVars.serviceQueueUrls = {};
-  for (const k of Object.keys(process.env)) {
+  const serviceQueueUrls = {};
+  for (const k of Object.keys(env)) {
     if (/^.*_QUEUE_URLS$/.test(k)) {
-      const value = process.env[k];
+      const value = env[k];
       try {
         const imageQueueUrls = JSON.parse(value);
         for (const imageQueueUrl of imageQueueUrls) {
@@ -75,7 +78,7 @@ function setQueueUrls(envVars: Partial<HarmonyEnv>): void {
           if (image && url) {
             // replace 'localstack' with `env.localstackHost` to allow for harmony to be run in a
             // container
-            envVars.serviceQueueUrls[image] = url.replace('localstack', envVars.localstackHost);
+            serviceQueueUrls[image] = url.replace('localstack', env.LOCALSTACK_HOST);
           }
         }
       } catch (e) {
@@ -83,23 +86,25 @@ function setQueueUrls(envVars: Partial<HarmonyEnv>): void {
       }
     }
   }
+  return serviceQueueUrls;
 }
 
 /**
- * Adds special case environment variables to the HarmonyEnv.
- * Reassigns or dynamically adds new variables to the env object.
- * @param envVars - the HarmonyEnv to add to
+ * Get special case environment variables for the HarmonyEnv.
+ * @param env - the dotenv object loaded from the env files
  */
-function setSpecialCases(envVars: Partial<HarmonyEnv>): void {
-  envVars.databaseType ||= 'postgres';
-  envVars.clientId ||= 'harmony-unknown';
-  envVars.uploadBucket ||= envVars.stagingBucket || 'local-staging-bucket';
-  envVars.useLocalstack = !! envVars.useLocalstack;
-  envVars.useServiceQueues = !! envVars.useServiceQueues;
-  envVars.workItemUpdateQueueUrl = envVars.workItemUpdateQueueUrl?.replace('localstack', envVars.localstackHost);
-  envVars.largeWorkItemUpdateQueueUrl = envVars.largeWorkItemUpdateQueueUrl?.replace('localstack', envVars.localstackHost);
-  envVars.workItemSchedulerQueueUrl = envVars.workItemSchedulerQueueUrl?.replace('localstack', envVars.localstackHost);
-  setQueueUrls(envVars);
+function specialCases(env: Record<string, string>): Partial<HarmonyEnv> {
+  const localstackHost = env.LOCALSTACK_HOST;
+  return {
+    databaseType : env.DATABASE_TYPE || 'postgres',
+    clientId : env.CLIENT_ID || 'harmony-unknown',
+    uploadBucket: env.UPLOAD_BUCKET || env.STAGING_BUCKET || 'local-staging-bucket',
+    useLocalstack: !! env.USE_LOCALSTACK,
+    useServiceQueues: !! env.USE_SERVICE_QUEUES,
+    workItemUpdateQueueUrl: env.WORK_ITEM_UPDATE_QUEUE_URL?.replace('localstack', localstackHost),
+    largeWorkItemUpdateQueueUrl: env.LARGE_WORK_ITEM_UPDATE_QUEUE_URL?.replace('localstack', localstackHost),
+    workItemSchedulerQueueUrl: env.WORK_ITEM_SCHEDULER_QUEUE_URL?.replace('localstack', localstackHost),
+  };
 }
 
 /**
@@ -107,14 +112,9 @@ function setSpecialCases(envVars: Partial<HarmonyEnv>): void {
  * for a subclass (e.g. UpdaterHarmonyEnv), process.env, and optionally .env.
  * @param localEnvDefaultsPath - the path to the env-defaults file that
  * is specific to the HarmonyEnv subclass 
- * @returns a HarmonyEnv containing all necessary environment variables
+ * @returns all environment variables in snake case (Record\<string, string\>)
  */
-function buildEnv(localEnvDefaultsPath?: string): HarmonyEnv {
-  const env: Partial<HarmonyEnv> = {};
-  if (Object.prototype.hasOwnProperty.call(process.env, 'GDAL_DATA')) {
-    logger.warn(gdalWarning);
-    delete process.env.GDAL_DATA;
-  }
+function loadEnv(localEnvDefaultsPath?: string): Record<string, string> {
   // Save the original process.env so we can re-use it to override
   const originalEnv = _.cloneDeep(process.env);
   // Read the env-defaults for this module (relative to this typescript file)
@@ -133,12 +133,7 @@ function buildEnv(localEnvDefaultsPath?: string): HarmonyEnv {
   if (localEnvDefaultsPath) {
     envLocalDefaults = dotenv.parse(fs.readFileSync(localEnvDefaultsPath));
   }
-  const allEnv = { ...envLocalDefaults, ...envDefaults, ...envOverrides, ...originalEnv };
-  for (const k of Object.keys(allEnv)) {
-    env[_.camelCase(k)] = makeConfigVar(allEnv[k]);
-  }
-  setSpecialCases(env);
-  return env as HarmonyEnv;
+  return  { ...envLocalDefaults, ...envDefaults, ...envOverrides, ...originalEnv };
 }
 
 export class HarmonyEnv {
@@ -178,7 +173,7 @@ export class HarmonyEnv {
   defaultResultPageSize: number;
 
   @IsNotEmpty()
-  clientId: string;
+  clientId = '';
 
   @IsUrl(hostRegexWhitelist)
   largeWorkItemUpdateQueueUrl: string;
@@ -246,28 +241,29 @@ export class HarmonyEnv {
   }
 
   /**
-   * Implement this if the child class has any special cases where setting the
-   * env variable requires more than just reading the value straight
-   * from the file, e.g. envVars.databaseType ||= 'postgres'; (see setSpecialCases in this module).
-   * You can manipulate/reassign existing properties or add new ones via this method.
+   * Implement this if the child class has any special cases
+   * where setting the env variable requires
+   * more than just reading the value straight from the file.
    */
-  protected setSpecialCases?(env: HarmonyEnv): void;
+  protected localSpecialCases(_env: Record<string, string>): Partial<HarmonyEnv> { 
+    return {}; 
+  }
 
   /**
    * Constructs the env object, for use in any Harmony component.
    * @param localPath - path to the env-defaults file of the component
    */
   constructor(localPath?: string) {
-    const env = buildEnv(localPath);
-    if (this.setSpecialCases) { // subclass has special cases
-      setSpecialCases(env);
+    const env = loadEnv(localPath); // e.g. { CONFIG_NAME: 'value', ... }
+    for (const k of Object.keys(env)) {
+      this[_.camelCase(k)] = makeConfigVar(env[k]);
     }
-    for (const key of Object.keys(env)) {
-      this[key] = env[key];
-      // for existing env vars this is redundant (but doesn't hurt), but this allows us
-      // to add new env vars to the process as needed
-      process.env[key] = env[key];
-    }
+    this.serviceQueueUrls = queueUrlsMap(env);
+    Object.assign(this, specialCases(env));
+    Object.assign(this, this.localSpecialCases(env));
+    // for existing env vars this is redundant (but doesn't hurt), but this allows us
+    // to add new env vars to the process as needed
+    Object.assign(process.env, env);
   }
 }
 

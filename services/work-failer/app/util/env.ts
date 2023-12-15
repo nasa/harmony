@@ -22,6 +22,7 @@ class FailerHarmonyEnv extends HarmonyEnv {
   @IsInt()
   @Min(1)
   failableWorkAgeMinutes: number;
+
 }
 
 const localPath = path.resolve(__dirname, '../../env-defaults');

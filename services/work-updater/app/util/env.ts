@@ -27,9 +27,11 @@ class UpdaterHarmonyEnv extends HarmonyEnv {
    * Handles cases where setting the env variable requires more
    * than just reading the value straight from the file.
    */
-  setSpecialCases(env: UpdaterHarmonyEnv): void {
-    env.workItemUpdateQueueType = env.workItemUpdateQueueType === 'large' ?
-      WorkItemQueueType.LARGE_ITEM_UPDATE : WorkItemQueueType.SMALL_ITEM_UPDATE;
+  localSpecialCases(env: Record<string, string>): Partial<UpdaterHarmonyEnv> {
+    return {
+      workItemUpdateQueueType : env.WORK_ITEM_UPDATE_QUEUE_TYPE === 'large' ?
+        WorkItemQueueType.LARGE_ITEM_UPDATE : WorkItemQueueType.SMALL_ITEM_UPDATE,
+    };
   }
 }
 
