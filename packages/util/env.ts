@@ -118,7 +118,8 @@ function specialConfig(env: Record<string, string>): Partial<HarmonyEnv> {
  */
 function loadEnvFromFiles(localEnvDefaultsPath?: string, dotEnvPath?: string): Record<string, string> {
   let envOverrides = {};
-  if (process.env.NODE_ENV !== 'test' || dotEnvPath != '../../.env') {
+  if (process.env.NODE_ENV !== 'test' ||
+    dotEnvPath !== '../../.env') { // some tests provide a .env file
     try {
       envOverrides = dotenv.parse(fs.readFileSync(dotEnvPath));
     } catch (e) {
