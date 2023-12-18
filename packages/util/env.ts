@@ -51,7 +51,7 @@ function makeConfigVar(stringValue: string): number | string | boolean {
 /**
   Get any errors from validating the environment - leave out the env object itself
   from the output to avoid showing secrets.
-  @param env - the object representing the env vars, including constraints
+  @param env - the HarmonyEnv instance, including constraints
   @returns An array of `ValidationError`s
 */
 export function getValidationErrors(env: HarmonyEnv): ValidationError[] {
@@ -60,7 +60,8 @@ export function getValidationErrors(env: HarmonyEnv): ValidationError[] {
 
 /**
  * Get a map of image to queue URL.
- * @param env - the dotenv object loaded from the env files
+ * @param env - (Record\<string, string\>) containing all environment config properties,
+ * with snake-cased keys
  */
 function queueUrlsMap(env: Record<string, string>): Record<string, string> {
   // process all environment variables ending in _QUEUE_URLS to add image/url pairs to
@@ -89,7 +90,8 @@ function queueUrlsMap(env: Record<string, string>): Record<string, string> {
 
 /**
  * Get special case environment variables for the HarmonyEnv.
- * @param env - the env object loaded from the env files
+ * @param env - (Record\<string, string\>) containing all environment config properties,
+ * with snake-cased keys
  * @returns Partial\<HarmonyEnv\>
  */
 function specialConfig(env: Record<string, string>): Partial<HarmonyEnv> {
