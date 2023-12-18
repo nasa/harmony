@@ -46,6 +46,10 @@ describe('HarmonyEnv', function () {
       expect(this.validEnv.defaultResultPageSize).to.eql(2000);
     });
 
+    it('parses booleans from text', function () {
+      expect(this.validEnv.textLogger).to.eql(true);
+    });
+
     it('overrides util env-defaults with values read from process.env', function () {
       expect(this.validEnv.clientId).to.eql('client-007');
     });
@@ -107,6 +111,8 @@ describe('HarmonyEnv', function () {
         throttleType: string;
 
         maxPerSecond: number;
+
+        floatConfig: number;
       
         specialConfig(env: Record<string, string>): Partial<HarmonyEnvSubclass> {
           return {
@@ -120,7 +126,7 @@ describe('HarmonyEnv', function () {
       await fs.writeFile(this.dotEnvFile.path, envContent, 'utf8');
 
       this.envDefaultsFile = await tmp.file();
-      const defaultsContent = 'THROTTLE=false\nTHROTTLE_TYPE=fixed-window\nMAX_PER_SECOND=200';
+      const defaultsContent = 'THROTTLE=false\nTHROTTLE_TYPE=fixed-window\nMAX_PER_SECOND=200\nFLOAT_CONFIG=3.5001';
       await fs.writeFile(this.envDefaultsFile.path, defaultsContent, 'utf8');
       
       this.validEnv = new HarmonyEnvSubclass(this.envDefaultsFile.path, this.dotEnvFile.path);
@@ -156,6 +162,10 @@ describe('HarmonyEnv', function () {
 
     it('overrides HarmonyEnvSubclass env-defaults with .env file values', function () {
       expect(this.validEnv.maxPerSecond).to.eql(900);
+    });
+
+    it('parses floats from text', function () {
+      expect(this.validEnv.floatConfig).to.eql(3.5001);
     });
   });
 });

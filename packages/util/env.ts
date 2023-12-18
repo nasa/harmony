@@ -133,7 +133,7 @@ function loadEnvFromFiles(localEnvDefaultsPath?: string, dotEnvPath?: string): R
   }
   // Read the env-defaults for this module (relative to this typescript file)
   const envDefaults = dotenv.parse(fs.readFileSync(path.resolve(__dirname, 'env-defaults')));
-  return { ...envLocalDefaults, ...envDefaults, ...envOverrides, ...originalEnv };
+  return { ...envDefaults, ...envLocalDefaults, ...envOverrides, ...originalEnv };
 }
 
 // regexps for validations
