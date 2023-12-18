@@ -105,6 +105,7 @@ SAME_REGION_ACCESS_ROLE=same-region-access-role
 QUEUE_LONG_POLLING_WAIT_TIME_SEC=20
 
 GEOLOCO_SERVICE_QUEUE_URLS='["ldds/geoloco:latest,http://localstack:4566/queue/geoloco.fifo"]'
+SUBSETNAMEBAND_SERVICE_QUEUE_URLS='["ldds/subset_band_name:latest,http://localstack:4566/queue/subsetnameband.fifo"]'
 GIOVANNI_ADAPTER_SERVICE_QUEUE_URLS='["harmonyservices/giovanni-adapter:latest,http://localstack:4566/queue/giovanni-adapter.fifo"]'
 HARMONY_GDAL_ADAPTER_SERVICE_QUEUE_URLS='["ghcr.io/nasa/harmony-gdal-adapter:latest,http://localstack:4566/queue/harmony-gdal-adapter.fifo"]'
 HYBIG_SERVICE_QUEUE_URLS='["sds/harmony-browse-image-generator:latest,http://localstack:4566/queue/hybig.fifo"]'
