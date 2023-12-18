@@ -116,7 +116,7 @@ describe('HarmonyEnv', function () {
         floatConfig: number;
 
         @IsInt()
-        defaultProp = 'default';
+        intProp = 'int';
       
         specialConfig(env: Record<string, string>): Partial<HarmonyEnvSubclass> {
           return {
@@ -160,14 +160,6 @@ describe('HarmonyEnv', function () {
       expect(this.env.clientId).to.eql('client-007');
     });
 
-    it('uses default property values from the base class', function () {
-      expect(this.env.databaseType).to.eql('postgres');
-    });
-
-    it('uses default property values from the subclass', function () {
-      expect(this.env.defaultProp).to.eql('default');
-    });
-
     it('overrides util env-defaults with .env file values', function () {
       expect(this.env.sameRegionAccessRole).to.eql('none');
     });
@@ -189,10 +181,10 @@ describe('HarmonyEnv', function () {
         {
           'children': [],
           'constraints': {
-            'isInt': 'defaultProp must be an integer number',
+            'isInt': 'intProp must be an integer number',
           },
-          'property': 'defaultProp',
-          'value': 'default',
+          'property': 'intProp',
+          'value': 'int',
         },
       ]);
     });

@@ -168,7 +168,7 @@ export class HarmonyEnv {
   cmrMaxPageSize: number;
 
   @IsNotEmpty()
-  databaseType = 'postgres';
+  databaseType: string;
 
   @IsNumber()
   @Min(0)
@@ -179,7 +179,7 @@ export class HarmonyEnv {
   defaultResultPageSize: number;
 
   @IsNotEmpty()
-  clientId = 'harmony-unknown';
+  clientId: string;
 
   @IsUrl(hostRegexWhitelist)
   largeWorkItemUpdateQueueUrl: string;
