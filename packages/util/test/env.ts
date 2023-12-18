@@ -8,6 +8,7 @@ const prevProcessEnv = process.env;
 process.env.CLIENT_ID = 'client-007';
 process.env.AWS_DEFAULT_REGION = 'us-east-3';
 import { HarmonyEnv, getValidationErrors } from '../env';
+import { IsInt } from 'class-validator';
 
 describe('HarmonyEnv', function () {
 
@@ -113,6 +114,9 @@ describe('HarmonyEnv', function () {
         maxPerSecond: number;
 
         floatConfig: number;
+
+        @IsInt()
+        defaultProp = 'default';
       
         specialConfig(env: Record<string, string>): Partial<HarmonyEnvSubclass> {
           return {
@@ -122,14 +126,14 @@ describe('HarmonyEnv', function () {
       }
 
       this.dotEnvFile = await tmp.file();
-      const envContent = 'DATABASE_TYPE=cassandra\nAWS_DEFAULT_REGION=us-west-0\nMAX_PER_SECOND=900';
+      const envContent = 'SAME_REGION_ACCESS_ROLE=none\nAWS_DEFAULT_REGION=us-west-0\nMAX_PER_SECOND=900';
       await fs.writeFile(this.dotEnvFile.path, envContent, 'utf8');
 
       this.envDefaultsFile = await tmp.file();
       const defaultsContent = 'THROTTLE=false\nTHROTTLE_TYPE=fixed-window\nMAX_PER_SECOND=200\nFLOAT_CONFIG=3.5001';
       await fs.writeFile(this.envDefaultsFile.path, defaultsContent, 'utf8');
       
-      this.validEnv = new HarmonyEnvSubclass(this.envDefaultsFile.path, this.dotEnvFile.path);
+      this.env = new HarmonyEnvSubclass(this.envDefaultsFile.path, this.dotEnvFile.path);
     });
     after(async function () {
       await this.dotEnvFile.cleanup();
@@ -137,35 +141,60 @@ describe('HarmonyEnv', function () {
     });
 
     it('can supply env values via its own env-defaults file', function () {
-      expect(this.validEnv.throttleType).to.eql('fixed-window');
+      expect(this.env.throttleType).to.eql('fixed-window');
     });
 
     it('can supply env values via its own env-defaults file', function () {
-      expect(() => this.invalidEnv.validate()).to.throw;
+      expect(() => this.env.validate()).to.throw;
     });
 
     it('can set special case variables', function () {
-      expect(this.validEnv.throttleDelay).to.eql(0);
+      expect(this.env.throttleDelay).to.eql(0);
     });
  
     it('prefers process.env over .env', function () {
-      expect(this.validEnv.awsDefaultRegion).to.eql('us-east-3');
+      expect(this.env.awsDefaultRegion).to.eql('us-east-3');
     });
 
     it('overrides util env-defaults with values read from process.env', function () {
-      expect(this.validEnv.clientId).to.eql('client-007');
+      expect(this.env.clientId).to.eql('client-007');
+    });
+
+    it('uses default property values from the base class', function () {
+      expect(this.env.databaseType).to.eql('postgres');
+    });
+
+    it('uses default property values from the subclass', function () {
+      expect(this.env.defaultProp).to.eql('default');
     });
 
     it('overrides util env-defaults with .env file values', function () {
-      expect(this.validEnv.databaseType).to.eql('cassandra');
+      expect(this.env.sameRegionAccessRole).to.eql('none');
     });
 
     it('overrides HarmonyEnvSubclass env-defaults with .env file values', function () {
-      expect(this.validEnv.maxPerSecond).to.eql(900);
+      expect(this.env.maxPerSecond).to.eql(900);
     });
 
     it('parses floats from text', function () {
-      expect(this.validEnv.floatConfig).to.eql(3.5001);
+      expect(this.env.floatConfig).to.eql(3.5001);
+    });
+
+    it('throws an error when validated', function () {
+      expect(() => this.env.validate()).to.throw;
+    });
+
+    it('logs one errors', function () {
+      expect(getValidationErrors(this.env)).to.eql([
+        {
+          'children': [],
+          'constraints': {
+            'isInt': 'defaultProp must be an integer number',
+          },
+          'property': 'defaultProp',
+          'value': 'default',
+        },
+      ]);
     });
   });
 });

@@ -97,8 +97,6 @@ function queueUrlsMap(env: Record<string, string>): Record<string, string> {
 function specialConfig(env: Record<string, string>): Partial<HarmonyEnv> {
   const localstackHost = env.LOCALSTACK_HOST;
   return {
-    databaseType : env.DATABASE_TYPE || 'postgres',
-    clientId : env.CLIENT_ID || 'harmony-unknown',
     uploadBucket: env.UPLOAD_BUCKET || env.STAGING_BUCKET || 'local-staging-bucket',
     useLocalstack: !! env.USE_LOCALSTACK,
     useServiceQueues: !! env.USE_SERVICE_QUEUES,
@@ -170,7 +168,7 @@ export class HarmonyEnv {
   cmrMaxPageSize: number;
 
   @IsNotEmpty()
-  databaseType: string;
+  databaseType = 'postgres';
 
   @IsNumber()
   @Min(0)
@@ -181,7 +179,7 @@ export class HarmonyEnv {
   defaultResultPageSize: number;
 
   @IsNotEmpty()
-  clientId = '';
+  clientId = 'harmony-unknown';
 
   @IsUrl(hostRegexWhitelist)
   largeWorkItemUpdateQueueUrl: string;
