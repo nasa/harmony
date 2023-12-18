@@ -6,24 +6,24 @@ import { promises as fs } from 'fs';
 // do this before the import since the env module clones process.env on import 
 const prevProcessEnv = process.env;
 process.env.CLIENT_ID = 'client-007';
+process.env.AWS_DEFAULT_REGION = 'us-east-3';
 import { HarmonyEnv, getValidationErrors } from '../env';
 
-describe('Environment validation', function () {
+describe('HarmonyEnv', function () {
 
-  afterEach(function () {
+  after(function () {
     process.env = prevProcessEnv;
   });
 
   describe('When the environment is valid', function () {
     before(async function () {
-      this.envFile = await tmp.file();
-      const envContent = 'DATABASE_TYPE=cassandra';
-      await fs.writeFile(this.envFile.path, envContent, 'utf8');
-      console.log(this.envFile.path);
-      this.validEnv = new HarmonyEnv(undefined, this.envFile.path);
+      this.dotEnvFile = await tmp.file();
+      const envContent = 'DATABASE_TYPE=cassandra\nAWS_DEFAULT_REGION=us-west-0';
+      await fs.writeFile(this.dotEnvFile.path, envContent, 'utf8');
+      this.validEnv = new HarmonyEnv(undefined, this.dotEnvFile.path);
     });
     after(async function () {
-      await this.envFile.cleanup();
+      await this.dotEnvFile.cleanup();
     });
 
     it('does not throw an error when validated', function () {
@@ -46,20 +46,22 @@ describe('Environment validation', function () {
       expect(this.validEnv.defaultResultPageSize).to.eql(2000);
     });
 
-    it('overrides env file config with values read from process.env', function () {
+    it('overrides util env-defaults with values read from process.env', function () {
       expect(this.validEnv.clientId).to.eql('client-007');
     });
 
-    it('overrides the env util env-defaults with .env file values', function () {
+    it('overrides util env-defaults with .env file values', function () {
       expect(this.validEnv.databaseType).to.eql('cassandra');
+    });
+
+    it('prefers process.env over .env', function () {
+      expect(this.validEnv.awsDefaultRegion).to.eql('us-east-3');
     });
 
     it('sets service queue urls', function () {
       expect(this.validEnv.serviceQueueUrls['harmonyservices/service-example:latest'])
         .to.eql('http://localstack:4566/queue/harmony-service-example.fifo');
-    });
-    
-    // todo .env override, process, subclass, etc
+    });    
   });
 
   describe('When the environment is invalid', function () {
@@ -93,6 +95,67 @@ describe('Environment validation', function () {
           'value': -1,
         },
       ]);
+    });
+  });
+
+  describe('When the environment is set via a HarmonyEnv subclass', function () {
+    before(async function () {
+      class HarmonyEnvSubclass extends HarmonyEnv {
+
+        throttleDelay: number;
+
+        throttleType: string;
+
+        maxPerSecond: number;
+      
+        specialConfig(env: Record<string, string>): Partial<HarmonyEnvSubclass> {
+          return {
+            throttleDelay: env.THROTTLE === 'true' ? 1000 : 0,
+          };
+        }
+      }
+
+      this.dotEnvFile = await tmp.file();
+      const envContent = 'DATABASE_TYPE=cassandra\nAWS_DEFAULT_REGION=us-west-0\nMAX_PER_SECOND=900';
+      await fs.writeFile(this.dotEnvFile.path, envContent, 'utf8');
+
+      this.envDefaultsFile = await tmp.file();
+      const defaultsContent = 'THROTTLE=false\nTHROTTLE_TYPE=fixed-window\nMAX_PER_SECOND=200';
+      await fs.writeFile(this.envDefaultsFile.path, defaultsContent, 'utf8');
+      
+      this.validEnv = new HarmonyEnvSubclass(this.envDefaultsFile.path, this.dotEnvFile.path);
+    });
+    after(async function () {
+      await this.dotEnvFile.cleanup();
+      await this.envDefaultsFile.cleanup();
+    });
+
+    it('can supply env values via its own env-defaults file', function () {
+      expect(this.validEnv.throttleType).to.eql('fixed-window');
+    });
+
+    it('can supply env values via its own env-defaults file', function () {
+      expect(() => this.invalidEnv.validate()).to.throw;
+    });
+
+    it('can set special case variables', function () {
+      expect(this.validEnv.throttleDelay).to.eql(0);
+    });
+ 
+    it('prefers process.env over .env', function () {
+      expect(this.validEnv.awsDefaultRegion).to.eql('us-east-3');
+    });
+
+    it('overrides util env-defaults with values read from process.env', function () {
+      expect(this.validEnv.clientId).to.eql('client-007');
+    });
+
+    it('overrides util env-defaults with .env file values', function () {
+      expect(this.validEnv.databaseType).to.eql('cassandra');
+    });
+
+    it('overrides HarmonyEnvSubclass env-defaults with .env file values', function () {
+      expect(this.validEnv.maxPerSecond).to.eql(900);
     });
   });
 });
