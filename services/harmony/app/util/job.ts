@@ -16,18 +16,15 @@ import { deleteUserWorkForJob, recalculateReadyCount, setReadyCountToZero } from
  * Helper function to pull back the provided job ID (optionally by username).
  *
  * @param tx - the transaction use to perform the queries
- * @param jobID - the id of job (requestId in the db)
+ * @param jobID - the id of job
  * @param username - the name of the user requesting the pause - null if the admin
  * @throws {@link NotFoundError} if the job does not exist or the job does not
  * belong to the user.
  */
 async function lookupJob(tx: Transaction, jobID: string, username: string): Promise<Job>  {
-  let job;
-  if (username) {
-    ({ job } = await Job.byUsernameAndJobId(tx, username, jobID));
-  } else {
-    job = await Job.byJobID(tx, jobID);
-  }
+  const { job } = username ?
+    await Job.byUsernameAndJobID(tx, username, jobID) :
+    await Job.byJobID(tx, jobID);
 
   if (!job) {
     throw new NotFoundError(`Unable to find job ${jobID}`);
@@ -261,7 +258,7 @@ export async function getJobIfAllowed(
   enableShareability: boolean,
 ): Promise<Job> {
   validateJobId(jobID);
-  const { job } = await Job.byRequestId(db, jobID, 0, 0);
+  const { job } = await Job.byJobID(db, jobID, false, false);
   if (!job) {
     throw new NotFoundError();
   }

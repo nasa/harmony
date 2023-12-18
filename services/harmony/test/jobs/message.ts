@@ -43,13 +43,13 @@ describe('skipPreview, pause, resume, and updateStatus job message handling', as
       it('sets the appropriate message when paused', async function () {
         job.pause();
         await job.save(this.trx);
-        const updatedJob = await Job.byJobID(this.trx, job.jobID);
+        const { job: updatedJob } = await Job.byJobID(this.trx, job.jobID);
         expect(updatedJob.message).to.eq('The job is paused and may be resumed using the provided link');
       });
       it('sets the appropriate message when resumed', async function () {
         job.resume();
         await job.save(this.trx);
-        const updatedJob = await Job.byJobID(this.trx, job.jobID);
+        const { job: updatedJob } = await Job.byJobID(this.trx, job.jobID);
         expect(updatedJob.message).to.eq('The job is being processed');
       });
     });
@@ -96,13 +96,13 @@ describe('skipPreview, pause, resume, and updateStatus job message handling', as
       it('sets the appropriate message when paused', async function () {
         job.pause();
         await job.save(this.trx);
-        const updatedJob = await Job.byJobID(this.trx, job.jobID);
+        const { job: updatedJob } = await Job.byJobID(this.trx, job.jobID);
         expect(updatedJob.message).to.eq('The job is paused and may be resumed using the provided link');
       });
       it('sets the appropriate message when resumed', async function () {
         job.resume();
         await job.save(this.trx);
-        const updatedJob = await Job.byJobID(this.trx, job.jobID);
+        const { job: updatedJob } = await Job.byJobID(this.trx, job.jobID);
         expect(updatedJob.message).to.eq(limitedMessage);
       });
     });
@@ -156,13 +156,13 @@ describe('skipPreview, pause, resume, and updateStatus job message handling', as
         it('sets the appropriate message when paused', async function () {
           job.pause();
           await job.save(this.trx);
-          const updatedJob = await Job.byJobID(this.trx, job.jobID);
+          const { job: updatedJob } = await Job.byJobID(this.trx, job.jobID);
           expect(updatedJob.message).to.eq('The job is paused and may be resumed using the provided link');
         });
         it('sets the appropriate message when resumed', async function () {
           job.resume();
           await job.save(this.trx);
-          const updatedJob = await Job.byJobID(this.trx, job.jobID);
+          const { job: updatedJob } = await Job.byJobID(this.trx, job.jobID);
           expect(updatedJob.message).to.eq('The job is being processed');
         });
       });
@@ -170,19 +170,19 @@ describe('skipPreview, pause, resume, and updateStatus job message handling', as
         it('sets the appropriate message when skipping preview', async function () {
           skipJob.skipPreview();
           await skipJob.save(this.trx);
-          const updatedJob = await Job.byJobID(this.trx, skipJob.jobID);
+          const { job: updatedJob } = await Job.byJobID(this.trx, skipJob.jobID);
           expect(updatedJob.message).to.eq('The job is being processed');
         });
         it('sets the appropriate message when paused', async function () {
           skipJob.pause();
           await skipJob.save(this.trx);
-          const updatedJob = await Job.byJobID(this.trx, skipJob.jobID);
+          const { job: updatedJob } = await Job.byJobID(this.trx, skipJob.jobID);
           expect(updatedJob.message).to.eq('The job is paused and may be resumed using the provided link');
         });
         it('sets the appropriate message when resumed', async function () {
           skipJob.resume();
           await skipJob.save(this.trx);
-          const updatedJob = await Job.byJobID(this.trx, skipJob.jobID);
+          const { job: updatedJob } = await Job.byJobID(this.trx, skipJob.jobID);
           expect(updatedJob.message).to.eq('The job is being processed');
         });
       });
@@ -214,13 +214,13 @@ describe('skipPreview, pause, resume, and updateStatus job message handling', as
         it('sets the appropriate message when paused', async function () {
           job.pause();
           await job.save(this.trx);
-          const updatedJob = await Job.byJobID(this.trx, job.jobID);
+          const { job: updatedJob } = await Job.byJobID(this.trx, job.jobID);
           expect(updatedJob.message).to.eq('The job is paused and may be resumed using the provided link');
         });
         it('sets the appropriate message when resumed', async function () {
           job.resume();
           await job.save(this.trx);
-          const updatedJob = await Job.byJobID(this.trx, job.jobID);
+          const { job: updatedJob } = await Job.byJobID(this.trx, job.jobID);
           expect(updatedJob.message).to.eq(limitedMessage);
         });
       });
@@ -228,19 +228,19 @@ describe('skipPreview, pause, resume, and updateStatus job message handling', as
         it('sets the appropriate message when skipping preview', async function () {
           skipJob.skipPreview();
           await skipJob.save(this.trx);
-          const updatedJob = await Job.byJobID(this.trx, skipJob.jobID);
+          const { job: updatedJob } = await Job.byJobID(this.trx, skipJob.jobID);
           expect(updatedJob.message).to.eq(limitedMessage);
         });
         it('sets the appropriate message when paused', async function () {
           skipJob.pause();
           await skipJob.save(this.trx);
-          const updatedJob = await Job.byJobID(this.trx, skipJob.jobID);
+          const { job: updatedJob } = await Job.byJobID(this.trx, skipJob.jobID);
           expect(updatedJob.message).to.eq('The job is paused and may be resumed using the provided link');
         });
         it('sets the appropriate message when resumed', async function () {
           skipJob.resume();
           await skipJob.save(this.trx);
-          const updatedJob = await Job.byJobID(this.trx, skipJob.jobID);
+          const { job: updatedJob } = await Job.byJobID(this.trx, skipJob.jobID);
           expect(updatedJob.message).to.eq(limitedMessage);
         });
       });
@@ -248,13 +248,13 @@ describe('skipPreview, pause, resume, and updateStatus job message handling', as
         it('sets the appropriate message when paused', async function () {
           completeJob.pause();
           await completeJob.save(this.trx);
-          const updatedJob = await Job.byJobID(this.trx, completeJob.jobID);
+          const { job: updatedJob } = await Job.byJobID(this.trx, completeJob.jobID);
           expect(updatedJob.message).to.eq('The job is paused and may be resumed using the provided link');
         });
         it('sets the appropriate message when completed', async function () {
           completeJob.updateStatus(JobStatus.SUCCESSFUL);
           await completeJob.save(this.trx);
-          const updatedJob = await Job.byJobID(this.trx, completeJob.jobID);
+          const { job: updatedJob } = await Job.byJobID(this.trx, completeJob.jobID);
           expect(updatedJob.message).to.eq(limitedMessage);
         });
       });

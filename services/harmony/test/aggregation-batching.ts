@@ -11,12 +11,12 @@ import { hookRangesetRequest } from './helpers/ogc-api-coverages';
 import { hookRedirect } from './helpers/hooks';
 import { expect } from 'chai';
 import { getWorkflowStepsByJobId } from '../app/models/workflow-steps';
-import { Job } from '../app/models/job';
 import WorkItem from '../app/models/work-item';
 import { objectStoreForProtocol } from '../app/util/object-store';
 import { truncateAll } from './helpers/db';
 import { hookServices } from './helpers/stub-service';
 import { StacCatalog } from '../app/util/stac';
+import { getFirstJob } from './helpers/jobs';
 
 /**
  * Create a work item update for a query-cmr get work response
@@ -141,10 +141,7 @@ describe('when testing a batched aggregation service', function () {
 
           describe('when checking the jobs listing', function () {
             it('marks the job as successful and progress of 100 with 1 link to the aggregated output', async function () {
-              const jobs = await Job.forUser(db, 'joe');
-              const job = jobs.data[0];
-              expect(job.status).to.equal('successful');
-              expect(job.progress).to.equal(100);
+              const job = await getFirstJob(db, { where: { username: 'joe' } });
               const dataLinks = job.links.filter(link => link.rel === 'data');
               expect(dataLinks.length).to.equal(1);
             });
@@ -274,8 +271,7 @@ describe('when testing a batched aggregation service', function () {
 
         describe('when checking the jobs listing', function () {
           it('lists the job as running and progress of 43 with 1 link to the first aggregated output', async function () {
-            const jobs = await Job.forUser(db, 'joe');
-            const job = jobs.data[0];
+            const job = await getFirstJob(db);
             expect(job.status).to.equal('running');
             expect(job.progress).to.equal(50);
             const dataLinks = job.links.filter(link => link.rel === 'data');
@@ -323,8 +319,7 @@ describe('when testing a batched aggregation service', function () {
 
           describe('when checking the jobs listing', function () {
             it('marks the job as running and progress of 86 with 2 links to the first two aggregated outputs', async function () {
-              const jobs = await Job.forUser(db, 'joe');
-              const job = jobs.data[0];
+              const job = await getFirstJob(db);
               expect(job.status).to.equal('running');
               expect(job.progress).to.equal(66);
               const dataLinks = job.links.filter(link => link.rel === 'data');
@@ -379,8 +374,7 @@ describe('when testing a batched aggregation service', function () {
 
           describe('when checking the jobs listing', function () {
             it('marks the job as successful and progress of 100 with 3 links to the three aggregated outputs', async function () {
-              const jobs = await Job.forUser(db, 'joe');
-              const job = jobs.data[0];
+              const job = await getFirstJob(db);
               expect(job.status).to.equal('successful');
               expect(job.progress).to.equal(100);
               const dataLinks = job.links.filter(link => link.rel === 'data');
@@ -536,8 +530,7 @@ describe('when testing a batched aggregation service', function () {
 
         describe('when checking the jobs listing', function () {
           it('lists the job as running and progress of 43 with 1 link to the first aggregated output', async function () {
-            const jobs = await Job.forUser(db, 'joe');
-            const job = jobs.data[0];
+            const job = await getFirstJob(db);
             expect(job.status).to.equal('running');
             expect(job.progress).to.equal(50);
             const dataLinks = job.links.filter(link => link.rel === 'data');
@@ -585,8 +578,7 @@ describe('when testing a batched aggregation service', function () {
 
           describe('when checking the jobs listing', function () {
             it('marks the job as running and progress of 86 with 2 links to the first two aggregated outputs', async function () {
-              const jobs = await Job.forUser(db, 'joe');
-              const job = jobs.data[0];
+              const job = await getFirstJob(db);
               expect(job.status).to.equal('running');
               expect(job.progress).to.equal(66);
               const dataLinks = job.links.filter(link => link.rel === 'data');
@@ -641,8 +633,7 @@ describe('when testing a batched aggregation service', function () {
 
           describe('when checking the jobs listing', function () {
             it('marks the job as successful and progress of 100 with 3 links to the three aggregated outputs', async function () {
-              const jobs = await Job.forUser(db, 'joe');
-              const job = jobs.data[0];
+              const job = await getFirstJob(db);
               expect(job.status).to.equal('successful');
               expect(job.progress).to.equal(100);
               const dataLinks = job.links.filter(link => link.rel === 'data');
@@ -775,8 +766,7 @@ describe('when testing a batched aggregation service', function () {
 
         describe('when checking the jobs listing', function () {
           it('lists the job as running and progress of 43 with 1 link to the first aggregated output', async function () {
-            const jobs = await Job.forUser(db, 'joe');
-            const job = jobs.data[0];
+            const job = await getFirstJob(db);
             expect(job.status).to.equal('running');
             expect(job.progress).to.equal(50);
             const dataLinks = job.links.filter(link => link.rel === 'data');
@@ -824,8 +814,7 @@ describe('when testing a batched aggregation service', function () {
 
           describe('when checking the jobs listing', function () {
             it('marks the job as running and progress of 86 with 2 links to the first two aggregated outputs', async function () {
-              const jobs = await Job.forUser(db, 'joe');
-              const job = jobs.data[0];
+              const job = await getFirstJob(db);
               expect(job.status).to.equal('running');
               expect(job.progress).to.equal(66);
               const dataLinks = job.links.filter(link => link.rel === 'data');
@@ -894,8 +883,7 @@ describe('when testing a batched aggregation service', function () {
 
           describe('when checking the jobs listing', function () {
             it('marks the job as successful and progress of 100 with 4 links to the three aggregated outputs', async function () {
-              const jobs = await Job.forUser(db, 'joe');
-              const job = jobs.data[0];
+              const job = await getFirstJob(db);
               expect(job.status).to.equal('successful');
               expect(job.progress).to.equal(100);
               const dataLinks = job.links.filter(link => link.rel === 'data');
@@ -1029,8 +1017,7 @@ describe('when testing a batched aggregation service', function () {
 
         describe('when checking the jobs listing', function () {
           it('lists the job as running and progress of 43 with 1 link to the first aggregated output', async function () {
-            const jobs = await Job.forUser(db, 'joe');
-            const job = jobs.data[0];
+            const job = await getFirstJob(db);
             expect(job.status).to.equal('running');
             expect(job.progress).to.equal(50);
             const dataLinks = job.links.filter(link => link.rel === 'data');
@@ -1078,8 +1065,7 @@ describe('when testing a batched aggregation service', function () {
 
           describe('when checking the jobs listing', function () {
             it('marks the job as running and progress of 86 with 2 links to the first two aggregated outputs', async function () {
-              const jobs = await Job.forUser(db, 'joe');
-              const job = jobs.data[0];
+              const job = await getFirstJob(db);
               expect(job.status).to.equal('running');
               expect(job.progress).to.equal(66);
               const dataLinks = job.links.filter(link => link.rel === 'data');
@@ -1148,8 +1134,7 @@ describe('when testing a batched aggregation service', function () {
 
           describe('when checking the jobs listing', function () {
             it('marks the job as successful and progress of 100 with 4 links to the three aggregated outputs', async function () {
-              const jobs = await Job.forUser(db, 'joe');
-              const job = jobs.data[0];
+              const job = await getFirstJob(db);
               expect(job.status).to.equal('successful');
               expect(job.progress).to.equal(100);
               const dataLinks = job.links.filter(link => link.rel === 'data');

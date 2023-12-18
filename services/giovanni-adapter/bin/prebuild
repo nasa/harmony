@@ -9,4 +9,4 @@ popd
 rimraf built/*
 copyfiles -u 5 "../../packages/util/built/**/*" built/packages/util
 copyfiles ../../packages/util/env-defaults built/packages/util
-copyfiles -u 2 ../harmony/env-defaults built/prebuild/harmony
+copyfiles -u 2 ../harmony/env-defaults built/services/harmony

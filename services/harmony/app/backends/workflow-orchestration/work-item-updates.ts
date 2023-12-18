@@ -866,7 +866,7 @@ export async function processWorkItems(
     const transactionStart = new Date().getTime();
 
     await db.transaction(async (tx) => {
-      const job = await (await logAsyncExecutionTime(
+      const { job } = await (await logAsyncExecutionTime(
         Job.byJobID,
         'HWIUWJI.Job.byJobID',
         logger))(tx, jobID, false, true);
@@ -918,7 +918,7 @@ export async function handleWorkItemUpdateWithJobId(
     const preprocessResult = await preprocessWorkItem(update, operation, logger);
     const transactionStart = new Date().getTime();
     await db.transaction(async (tx) => {
-      const job = await (await logAsyncExecutionTime(
+      const { job } = await (await logAsyncExecutionTime(
         Job.byJobID,
         'HWIUWJI.Job.byJobID',
         logger))(tx, jobID, false, true);

@@ -30,9 +30,9 @@ describe('jobs/cancel, jobs/resume, jobs/skip-preview, jobs/resume', function ()
     hookCancelJobs({ username: 'joe', 'jobIDs': [joeJob1.jobID, joeJob2.jobID] });
 
     it('Cancels the jobs', async function () {
-      const dbJob1 = await Job.byJobID(db, joeJob1.jobID);
+      const { job: dbJob1 } = await Job.byJobID(db, joeJob1.jobID);
       expect(dbJob1.status).to.eq(JobStatus.CANCELED);
-      const dbJob2 = await Job.byJobID(db, joeJob2.jobID);
+      const { job: dbJob2 } = await Job.byJobID(db, joeJob2.jobID);
       expect(dbJob2.status).to.eq(JobStatus.CANCELED);
       expect(this.res.statusCode).to.equal(200);
     });
@@ -53,11 +53,11 @@ describe('jobs/cancel, jobs/resume, jobs/skip-preview, jobs/resume', function ()
     hookPauseJobs({ username: 'joe', 'jobIDs': [joeJob1.jobID, joeJob2.jobID, joeJob3.jobID] });
 
     it('Pauses the jobs', async function () {
-      const dbJob1 = await Job.byJobID(db, joeJob1.jobID);
+      const { job: dbJob1 } = await Job.byJobID(db, joeJob1.jobID);
       expect(dbJob1.status).to.eq(JobStatus.PAUSED);
-      const dbJob2 = await Job.byJobID(db, joeJob2.jobID);
+      const { job: dbJob2 } = await Job.byJobID(db, joeJob2.jobID);
       expect(dbJob2.status).to.eq(JobStatus.PAUSED);
-      const dbJob3 = await Job.byJobID(db, joeJob3.jobID);
+      const { job: dbJob3 } = await Job.byJobID(db, joeJob3.jobID);
       expect(dbJob3.status).to.eq(JobStatus.PAUSED);
       expect(this.res.statusCode).to.equal(200);
     });
@@ -76,9 +76,9 @@ describe('jobs/cancel, jobs/resume, jobs/skip-preview, jobs/resume', function ()
     hookResumeJobs({ username: 'joe', 'jobIDs': [joeJob1.jobID, joeJob2.jobID] });
 
     it('Resumes the jobs', async function () {
-      const dbJob1 = await Job.byJobID(db, joeJob1.jobID);
+      const { job: dbJob1 } = await Job.byJobID(db, joeJob1.jobID);
       expect(dbJob1.status).to.eq(JobStatus.RUNNING);
-      const dbJob2 = await Job.byJobID(db, joeJob2.jobID);
+      const { job: dbJob2 } = await Job.byJobID(db, joeJob2.jobID);
       expect(dbJob2.status).to.eq(JobStatus.RUNNING);
       expect(this.res.statusCode).to.equal(200);
     });
@@ -97,9 +97,9 @@ describe('jobs/cancel, jobs/resume, jobs/skip-preview, jobs/resume', function ()
     hookSkipPreviewJobs({ username: 'joe', 'jobIDs': [joeJob1.jobID, joeJob2.jobID] });
 
     it('Skips the job previews', async function () {
-      const dbJob1 = await Job.byJobID(db, joeJob1.jobID);
+      const { job: dbJob1 } = await Job.byJobID(db, joeJob1.jobID);
       expect(dbJob1.status).to.eq(JobStatus.RUNNING);
-      const dbJob2 = await Job.byJobID(db, joeJob2.jobID);
+      const { job: dbJob2 } = await Job.byJobID(db, joeJob2.jobID);
       expect(dbJob2.status).to.eq(JobStatus.RUNNING);
       expect(this.res.statusCode).to.equal(200);
     });
@@ -118,9 +118,9 @@ describe('jobs/cancel, jobs/resume, jobs/skip-preview, jobs/resume', function ()
     hookSkipPreviewJobs({ username: 'joe', 'jobIDs': [joeJob1.jobID, joeJob2.jobID] });
 
     it('Skips the job preview for only one job', async function () {
-      const dbJob1 = await Job.byJobID(db, joeJob1.jobID);
+      const { job: dbJob1 } = await Job.byJobID(db, joeJob1.jobID);
       expect(dbJob1.status).to.eq(JobStatus.RUNNING);
-      const dbJob2 = await Job.byJobID(db, joeJob2.jobID);
+      const { job: dbJob2 } = await Job.byJobID(db, joeJob2.jobID);
       expect(dbJob2.status).to.eq(JobStatus.CANCELED);
       expect(JSON.parse(this.res.error.text).description).to.equal('Error: Could not change all job statuses. Proccessed 1.');
     });
@@ -139,9 +139,9 @@ describe('jobs/cancel, jobs/resume, jobs/skip-preview, jobs/resume', function ()
     hookSkipPreviewJobs({ username: 'adam', 'jobIDs': [joeJob1.jobID, buzzJob1.jobID] });
 
     it('Skips the job previews', async function () {
-      const dbJob1 = await Job.byJobID(db, joeJob1.jobID);
+      const { job: dbJob1 } = await Job.byJobID(db, joeJob1.jobID);
       expect(dbJob1.status).to.eq(JobStatus.RUNNING);
-      const dbJob2 = await Job.byJobID(db, buzzJob1.jobID);
+      const { job: dbJob2 } = await Job.byJobID(db, buzzJob1.jobID);
       expect(dbJob2.status).to.eq(JobStatus.RUNNING);
       expect(this.res.statusCode).to.equal(200);
     });
@@ -160,9 +160,9 @@ describe('jobs/cancel, jobs/resume, jobs/skip-preview, jobs/resume', function ()
     hookSkipPreviewJobs({ username: 'woody', 'jobIDs': [joeJob1.jobID, joeJob2.jobID] });
 
     it('Does not skip the job previews (returns an error)', async function () {
-      const dbJob1 = await Job.byJobID(db, joeJob1.jobID);
+      const { job: dbJob1 } = await Job.byJobID(db, joeJob1.jobID);
       expect(dbJob1.status).to.eq(JobStatus.PREVIEWING);
-      const dbJob2 = await Job.byJobID(db, joeJob2.jobID);
+      const { job: dbJob2 } = await Job.byJobID(db, joeJob2.jobID);
       expect(dbJob2.status).to.eq(JobStatus.PREVIEWING);
       expect(JSON.parse(this.res.error.text).description).to.equal('Error: Could not change all job statuses. Proccessed 0.');
     });
@@ -181,9 +181,9 @@ describe('jobs/cancel, jobs/resume, jobs/skip-preview, jobs/resume', function ()
     hookCancelJobs({ username: 'woody', 'jobIDs': [joeJob1.jobID, joeJob2.jobID] });
 
     it('Does not cancel the jobs (returns an error)', async function () {
-      const dbJob1 = await Job.byJobID(db, joeJob1.jobID);
+      const { job: dbJob1 } = await Job.byJobID(db, joeJob1.jobID);
       expect(dbJob1.status).to.eq(JobStatus.PREVIEWING);
-      const dbJob2 = await Job.byJobID(db, joeJob2.jobID);
+      const { job: dbJob2 } = await Job.byJobID(db, joeJob2.jobID);
       expect(dbJob2.status).to.eq(JobStatus.PREVIEWING);
       expect(JSON.parse(this.res.error.text).description).to.equal('Error: Could not change all job statuses. Proccessed 0.');
     });
