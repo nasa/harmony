@@ -12,7 +12,7 @@ import path from 'path';
 class HarmonyWorkSchedulerEnv extends HarmonyEnv {
 
   @IsNumber()
-  @Min(1)
+  @Min(0)
   serviceQueueBatchSizeCoefficient: number;
 
   @IsNotEmpty()

@@ -175,13 +175,14 @@ export async function getWorkflowStepByJobIdServiceId(
  * Get all workflow step ids associated with jobs that haven't been updated for a
  * certain amount of minutes and that have a particular JobStatus
  * @param tx - the transaction to use for querying
- * @param notUpdatedForMinutes - jobs with updateAt older than notUpdatedForMinutes ago
- * will be joined with the returned workflow steps
+ * @param notUpdatedForMinutes - jobs with updateAt older than notUpdatedForMinutes ago will be
+ * joined with the returned workflow steps
  * @param jobStatus - only jobs with this status will be joined
- * @param startingId - the workflow step id to begin the query with, i.e. query workflow steps with id greater than startingId
+ * @param startingId - the workflow step id to begin the query with, i.e. query workflow steps
+ * with id greater than startingId
  * @param batchSize - the batch size
- * @returns - all workflow step ids associated with the jobs that
- * met the updatedAt and status constraints
+ * @returns - all workflow step ids associated with the jobs that met the updatedAt and status
+ *            constraints
  */
 export async function getWorkflowStepIdsByJobUpdateAgeAndStatus(
   tx: Transaction,

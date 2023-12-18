@@ -296,7 +296,7 @@ export async function getJobs(
     const { tableQuery, originalValues } = parseQuery(requestQuery, JobStatus, isAdminRoute);
     const jobQuery = tableQueryToJobQuery(tableQuery, isAdminRoute, req.user);
     const { page, limit } = getPagingParams(req, env.defaultJobListPageSize, true);
-    const { data: jobs, pagination } = await Job.queryAll(db, jobQuery, false, page, limit);
+    const { data: jobs, pagination } = await Job.queryAll(db, jobQuery, page, limit);
     setPagingHeaders(res, pagination);
     const pageLinks = getPagingLinks(req, pagination, true);
     const firstPage = pageLinks.find((l) => l.rel === 'first');
@@ -611,7 +611,7 @@ export async function getJobsTable(
     const { tableQuery } = parseQuery(requestQuery, JobStatus, req.context.isAdminAccess);
     const jobQuery = tableQueryToJobQuery(tableQuery, isAdmin, req.user);
     const { page, limit } = getPagingParams(req, env.defaultJobListPageSize, true);
-    const jobsRes = await Job.queryAll(db, jobQuery, false, page, limit);
+    const jobsRes = await Job.queryAll(db, jobQuery, page, limit);
     const jobs = jobsRes.data;
     const { pagination } = jobsRes;
     const selectAllChecked = jobs.every((j) => jobIDs.indexOf(j.jobID) > -1) ? 'checked' : '';

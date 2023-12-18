@@ -5,10 +5,12 @@ RUN git config --global url."https://".insteadOf ssh://
 
 RUN mkdir -p /work-scheduler/services/work-scheduler
 
-COPY env-defaults package.json package-lock.json /work-scheduler/services/work-scheduler/
-COPY built /work-scheduler/
+COPY package.json package-lock.json /work-scheduler/services/work-scheduler/
 WORKDIR /work-scheduler/services/work-scheduler
 RUN npm ci
+
+COPY env-defaults /work-scheduler/services/work-scheduler/
+COPY built /work-scheduler/
 WORKDIR /work-scheduler
 # This symlink is needed to make module loading work correctly
 RUN ln -s services/work-scheduler/node_modules .

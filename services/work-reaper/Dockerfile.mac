@@ -5,10 +5,13 @@ RUN apk add bash vim curl git python3 postgresql-client make gcc g++ libc-dev li
 RUN git config --global url."https://".insteadOf ssh://
 
 RUN mkdir -p /work-reaper/services/work-reaper
-COPY env-defaults package.json package-lock.json /work-reaper/services/work-reaper/
-COPY built /work-reaper/
+
+COPY package.json package-lock.json /work-reaper/services/work-reaper/
 WORKDIR /work-reaper/services/work-reaper
 RUN npm ci
+
+COPY env-defaults /work-reaper/services/work-reaper/
+COPY built /work-reaper/
 WORKDIR /work-reaper
 # This symlink is needed to make module loading work correctly
 RUN ln -s services/work-reaper/node_modules .

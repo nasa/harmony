@@ -62,7 +62,7 @@ describe('Work item failure retries', function () {
         this.workItem = await getWorkItemById(db, workItem.id);
       });
       it('Leaves the job in the running state', async function () {
-        const job = await Job.byJobID(db, this.workItem.jobID);
+        const { job } = await Job.byJobID(db, this.workItem.jobID);
         expect(job.status).to.equal(JobStatus.RUNNING);
       });
       it('Changes the work-item status to ready', async function () {
@@ -103,7 +103,7 @@ describe('Work item failure retries', function () {
         this.workItem = await getWorkItemById(db, workItem.id);
       });
       it('Leaves the job in the running state', async function () {
-        const job = await Job.byJobID(db, this.workItem.jobID);
+        const { job } = await Job.byJobID(db, this.workItem.jobID);
         expect(job.status).to.equal(JobStatus.RUNNING);
       });
       it('Changes the work-item status to ready', async function () {
@@ -122,7 +122,7 @@ describe('Work item failure retries', function () {
           this.workItem = await getWorkItemById(db, workItem.id);
         });
         it('Leaves the job in the running state', async function () {
-          const job = await Job.byJobID(db, this.workItem.jobID);
+          const { job } = await Job.byJobID(db, this.workItem.jobID);
           expect(job.status).to.equal(JobStatus.RUNNING);
         });
         it('Changes the work-item status to ready', async function () {
@@ -163,7 +163,7 @@ describe('Work item failure retries', function () {
         this.workItem = await getWorkItemById(db, workItem.id);
       });
       it('Leaves the job in the running state', async function () {
-        const job = await Job.byJobID(db, this.workItem.jobID);
+        const { job } = await Job.byJobID(db, this.workItem.jobID);
         expect(job.status).to.equal(JobStatus.RUNNING);
       });
       it('Changes the work-item status to ready', async function () {
@@ -182,7 +182,7 @@ describe('Work item failure retries', function () {
           this.workItem = await getWorkItemById(db, workItem.id);
         });
         it('Leaves the job in the running state', async function () {
-          const job = await Job.byJobID(db, this.workItem.jobID);
+          const { job } = await Job.byJobID(db, this.workItem.jobID);
           expect(job.status).to.equal(JobStatus.RUNNING);
         });
         it('Changes the work-item status to ready', async function () {
@@ -202,7 +202,7 @@ describe('Work item failure retries', function () {
           this.workItem = await getWorkItemById(db, workItem.id);
         });
         it('Changes the job status to failed', async function () {
-          const job = await Job.byJobID(db, this.workItem.jobID);
+          const { job } = await Job.byJobID(db, this.workItem.jobID);
           expect(job.status).to.equal(JobStatus.FAILED);
         });
         it('changes the work-item status to failed', async function () {

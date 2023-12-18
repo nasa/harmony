@@ -184,8 +184,8 @@ describe('WorkFailer', function () {
         });
 
         // check that the job status was appropriately updated as a result of the item updates
-        job = await Job.byJobID(db, job.jobID);
-        expect(job.status === jobStatus);
+        const response = await Job.byJobID(db, job.jobID);
+        expect(response.job.status === jobStatus);
       });
     });
   });
