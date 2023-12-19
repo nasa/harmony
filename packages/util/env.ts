@@ -183,7 +183,7 @@ export class HarmonyEnv {
   @IsUrl(hostRegexWhitelist)
   largeWorkItemUpdateQueueUrl: string;
 
-  @ValidateIf(obj => obj.useLocalStack === true)
+  @ValidateIf(obj => obj.useLocalstack === true)
   @IsNotEmpty()
   localstackHost: string;
 
