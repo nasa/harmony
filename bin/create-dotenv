@@ -4,8 +4,8 @@ if [ -f .env ]; then
     echo "Skipping generating .env file because it already exists."
 else
     cat <<-EOF > .env
-    	# Used to identify the client (sent in request headers)
-    	CLIENT_ID=harmony-in-a-box
+		# Used to identify the client (sent in request headers)
+		CLIENT_ID=harmony-in-a-box
 
 		# Random string used to sign cookies.
 		COOKIE_SECRET=$(openssl rand -hex 128)
