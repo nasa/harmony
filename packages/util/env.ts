@@ -98,8 +98,6 @@ function specialConfig(env: Record<string, string>): Partial<HarmonyEnv> {
   const localstackHost = env.LOCALSTACK_HOST;
   return {
     uploadBucket: env.UPLOAD_BUCKET || env.STAGING_BUCKET || 'local-staging-bucket',
-    useLocalstack: !! env.USE_LOCALSTACK,
-    useServiceQueues: !! env.USE_SERVICE_QUEUES,
     workItemUpdateQueueUrl: env.WORK_ITEM_UPDATE_QUEUE_URL?.replace('localstack', localstackHost),
     largeWorkItemUpdateQueueUrl: env.LARGE_WORK_ITEM_UPDATE_QUEUE_URL?.replace('localstack', localstackHost),
     workItemSchedulerQueueUrl: env.WORK_ITEM_SCHEDULER_QUEUE_URL?.replace('localstack', localstackHost),
