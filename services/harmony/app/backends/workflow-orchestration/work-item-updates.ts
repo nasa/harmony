@@ -398,6 +398,7 @@ async function createAggregatingWorkItem(
 async function maybeQueueQueryCmrWorkItem(
   tx: Transaction, currentWorkItem: WorkItem, logger: Logger,
 ): Promise<void> {
+  // TODO HARMONY-1659 change this to handle any sequential services
   if (QUERY_CMR_SERVICE_REGEX.test(currentWorkItem.serviceID)) {
     if (await calculateQueryCmrLimit(tx, currentWorkItem, logger) > 0) {
       const nextQueryCmrItem = new WorkItem({

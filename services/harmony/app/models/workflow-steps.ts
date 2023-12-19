@@ -79,15 +79,15 @@ export default class WorkflowStep extends Record implements WorkflowStepRecord {
   // Whether or not this step aggregates the outputs of a previous step
   hasAggregatedOutput: boolean;
 
-  // Whether or no the service should receive a batch of inputs
+  // Whether or not the service should receive a batch of inputs
   isBatched: boolean;
 
-  // Whether or not the service is executed in parallel (the default) or sequentiall, like
+  // Whether or not the service is executed in parallel (the default) or sequentially, like
   // query-cmr
   is_sequential: boolean;
 
   // Whether or not the step has been completed
-  is_complete: boolean; 
+  is_complete: boolean;
 
   // The maximum number of input granules in each invocation of the service
   maxBatchInputs: number;
