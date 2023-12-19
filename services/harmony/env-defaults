@@ -488,5 +488,5 @@ SUBSETNAMEBAND_REQUESTS_CPU=128m
 SUBSETNAMEBAND_REQUESTS_MEMORY=128Mi
 SUBSETNAMEBAND_LIMITS_CPU=2048m
 SUBSETNAMEBAND_LIMITS_MEMORY=2048Mi
-SUBSETNAMEBAND_INVOCATION_ARGS='python3 harmony_python_interface/adapter.py'
+SUBSETNAMEBAND_INVOCATION_ARGS='python3 /app/harmony_python_interface/adapter.py'
 SUBSETNAMEBAND_SERVICE_QUEUE_URLS='["ldds/subset_band_name:latest,http://localstack:4566/queue/subsetnameband.fifo"]'
