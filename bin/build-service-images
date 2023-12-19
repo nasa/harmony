@@ -47,7 +47,7 @@ function build_all {
   parallel=$1
   pids=()
   for dir in services/*; do
-    [[ $dir == "services/README.md" ]] && continue
+    [[ ! -d "$dir" ]] && continue
     pushd "$dir"
     if [[ $parallel -eq 1 ]]; then
       npm run build &
