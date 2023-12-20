@@ -12,6 +12,7 @@ eval "$env_save"
 # run harmony
 echo "Starting Harmony server..."
 pushd services/harmony > /dev/null
+export PORT=3000
 export DEBUG_PORT=9200
 npm run start-dev-fast > logs/server.log 2>&1 &
 popd > /dev/null
