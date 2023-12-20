@@ -1,8 +1,6 @@
 import { IsIn, IsInt, Min } from 'class-validator';
-import * as dotenv from 'dotenv';
-import * as fs from 'fs';
 import * as path from 'path';
-import { HarmonyEnv, IHarmonyEnv, envOverrides, makeConfigVar, validateEnvironment, envVars } from '@harmony/util/env';
+import { HarmonyEnv } from '@harmony/util/env';
 import { WorkItemQueueType } from '../../../harmony/app/util/queue/queue';
 import _ from 'lodash';
 
@@ -12,17 +10,7 @@ import _ from 'lodash';
 // and some specific to the updater
 //
 
-// read the local env-defaults
-const localPath = path.resolve(__dirname, '../../env-defaults');
-const envLocalDefaults = dotenv.parse(fs.readFileSync(localPath));
-
-export interface IUpdaterHarmonyEnv extends IHarmonyEnv {
-  largeWorkItemUpdateQueueMaxBatchSize: number;
-  workItemUpdateQueueType: WorkItemQueueType;
-  workItemUpdateQueueProcessorDelayAfterErrorSec: number;
-}
-
-class UpdaterHarmonyEnv extends HarmonyEnv implements IUpdaterHarmonyEnv {
+class UpdaterHarmonyEnv extends HarmonyEnv {
 
   @IsInt()
   @Min(1)
@@ -34,20 +22,25 @@ class UpdaterHarmonyEnv extends HarmonyEnv implements IUpdaterHarmonyEnv {
   @IsInt()
   @Min(0)
   workItemUpdateQueueProcessorDelayAfterErrorSec: number;
+
+  /**
+   * Returns the special env variable cases for the UpdaterHarmonyEnv
+   * (with keys in camel case).
+   * @param env - the map of all env variables loaded from files
+   * @returns Partial\<UpdaterHarmonyEnv\>
+   */
+  specialConfig(env: Record<string, string>): Partial<UpdaterHarmonyEnv> {
+    return {
+      workItemUpdateQueueType : env.WORK_ITEM_UPDATE_QUEUE_TYPE === 'large' ?
+        WorkItemQueueType.LARGE_ITEM_UPDATE : WorkItemQueueType.SMALL_ITEM_UPDATE,
+    };
+  }
 }
 
-const allEnv = { ...envLocalDefaults, ...envOverrides };
-const updaterEnvVars = _.cloneDeep(envVars) as IUpdaterHarmonyEnv;
-
-for (const k of Object.keys(allEnv)) {
-  makeConfigVar(updaterEnvVars, k, allEnv[k]);
-}
-
-// special case
-updaterEnvVars.workItemUpdateQueueType = process.env.WORK_ITEM_UPDATE_QUEUE_TYPE === 'large' ? WorkItemQueueType.LARGE_ITEM_UPDATE : WorkItemQueueType.SMALL_ITEM_UPDATE;
+const localPath = path.resolve(__dirname, '../../env-defaults');
 
 // validate the env vars
-const updaterHarmonyEnvObj = new UpdaterHarmonyEnv(updaterEnvVars);
-validateEnvironment(updaterHarmonyEnvObj);
+const updaterHarmonyEnvObj = new UpdaterHarmonyEnv(localPath);
+updaterHarmonyEnvObj.validate();
 
-export default updaterEnvVars;
+export default updaterHarmonyEnvObj;
