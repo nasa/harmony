@@ -12,13 +12,15 @@ eval "$env_save"
 # run harmony
 echo "Starting Harmony server..."
 pushd services/harmony > /dev/null
+export DEBUG_PORT=9200
 npm run start-dev-fast > logs/server.log 2>&1 &
 popd > /dev/null
 
 # create the work scheduler
 echo "Starting the work scheduler..."
 pushd services/work-scheduler > /dev/null
-export PORT=5001  
+export PORT=5006  
+export DEBUG_PORT=9206
 npm run start-dev-fast > logs/work-scheduler.log 2>&1 &
 popd > /dev/null
 
