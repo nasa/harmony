@@ -42,6 +42,10 @@ jobs:
 
     - name: Start harmony in a box
       run: KUBE_CONTEXT=colima bin/bootstrap-harmony
+      env:
+        OAUTH_CLIENT_ID: ${{ secrets.OAUTH_CLIENT_ID }}
+        OAUTH_UID: ${{ secrets.OAUTH_UID }}
+        OAUTH_PASSWORD: ${{ secrets.OAUTH_PASSWORD }}
 
     - name: debug pods 1
       run: kubectl -n harmony get pods
