@@ -25,6 +25,7 @@ fi
 
 # Used to decide whether or not to run harmony in k8s
 export LOCAL_DEV
+export KUBE_CONTEXT
 
 # run localstack, postgresql, and harmony in kubernetes
 ./bin/start-all

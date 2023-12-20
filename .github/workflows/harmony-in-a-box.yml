@@ -1,0 +1,101 @@
+name: Harmony in a box
+
+on: [push, pull_request]
+
+jobs:
+  harmony-in-a-box:
+
+    runs-on: macos-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x]
+
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v3
+
+    - name: Install setuptools
+      run: sudo -H pip install setuptools
+
+    - name: Install docker
+      run: |
+        brew update
+        brew install docker
+        brew install kubectl
+        colima start --cpu 2 --memory 12 --with-kubernetes
+
+    - name: Pull down basic harmony docker images
+      run: bin/pull-harmony-images
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build harmony image
+      run: npm run build
+
+    - name: Build all other images
+      run: npm run build-sequential
+
+    - name: list images
+      run: docker images
+
+    - name: Start harmony in a box
+      run: KUBE_CONTEXT=colima bin/bootstrap-harmony
+      env:
+        OAUTH_CLIENT_ID: ${{ secrets.OAUTH_CLIENT_ID }}
+        OAUTH_UID: ${{ secrets.OAUTH_UID }}
+        OAUTH_PASSWORD: ${{ secrets.OAUTH_PASSWORD }}
+
+    - name: debug pods 1
+      run: kubectl -n harmony get pods
+
+    - name: Wait for the server to start
+      run: sleep 300
+
+    - name: debug pods
+      run: |
+        kubectl -n harmony get pods
+        echo "=========describe harmony pod"
+        harmony_pod=$(kubectl get pods -n harmony -l app=harmony | grep -v NAME | awk '{print $1;}')
+        kubectl -n harmony describe pod $harmony_pod
+        echo "========harmony pod log"
+        kubectl -n harmony logs $harmony_pod
+        echo "========describe service-example pod"
+        example_pod=$(kubectl get pods -n harmony -l name=harmony-service-example | grep -v NAME | awk '{print $1;}')
+        kubectl -n harmony describe pod $example_pod
+
+    - name: Check if harmony server is up
+      run: |
+        HTTP_STATUS=$(curl -I -s -o /dev/null -w "%{http_code}" "http://localhost:3000")
+        echo "harmony server status code: $HTTP_STATUS"
+
+    - name: Run harmony request
+      id: curl
+      run: |
+        HTTP_STATUS=$(curl -Ln -bj -w "%{http_code}" "http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?granuleId=G1233800343-EEDTEST&format=image/tiff" -o ./output.tif)
+        echo "::set-output name=http_status::$HTTP_STATUS"
+
+    - name: Check HTTP status code
+      run: |
+        if [[ "${{ steps.curl.outputs.http_status }}" -eq 200 ]]; then
+          echo "HTTP request was successful!"
+        else
+          echo "HTTP request failed with status code ${{ steps.curl.outputs.http_status }}"
+          exit 1
+        fi
+
+    - name: Run a bad harmony request
+      id: curlx
+      run: |
+        HTTP_STATUS=$(curl -Ln -bj -w "%{http_code}" "http://localhost:3000/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?granuleId=G1233800343-EEDTEST&format=image/tiff" -o ./output.tif)
+        echo "::set-output name=http_status::$HTTP_STATUS"
+
+    - name: Check bad HTTP status code
+      run: |
+        if [[ "${{ steps.curlx.outputs.http_status }}" -eq 200 ]]; then
+          echo "HTTP request was successful!"
+        else
+          echo "HTTP request failed with status code ${{ steps.curlx.outputs.http_status }}"
+          exit 1
+        fi

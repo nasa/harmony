@@ -18,14 +18,17 @@ popd > /dev/null
 # create the work scheduler
 echo "Starting the work scheduler..."
 pushd services/work-scheduler > /dev/null
-export PORT=5001  
+export PORT=5001
 npm run start-dev-fast > logs/work-scheduler.log 2>&1 &
 popd > /dev/null
 
 sleep 5
 
 # create the work updaters
-export LOCALSTACK_HOST=localhost
+if [ "$KUBE_CONTEXT" != "colima" ]; then
+  export LOCALSTACK_HOST=localhost
+fi
+
 echo "Starting the large job work updater..."
 pushd services/work-updater > /dev/null
 export PORT=5002

@@ -15,7 +15,7 @@ eval "$env_save"
 
 
 current_context=$(kubectl config current-context)
-if [ "$current_context" != "docker-desktop" ] && [ "$current_context" != "minikube" ]; then
+if [ "$current_context" != "colima" ] && [ "$current_context" != "docker-desktop" ] && [ "$current_context" != "minikube" ]; then
   echo 'ERROR: Attempting to use a non-local k8s context while deploying to a development environment.'
   echo "$current_context"
   exit 1
@@ -36,12 +36,12 @@ if [ ! "$LOCAL_DEV" = true ]; then
   fi
 
   # create the work updaters
-  file="services/work-updater/config/service-template-large.yaml"
-  if [ ! -f "$file" ]; then
-    echo "large work updater template was not found."
-    exit 1
-  fi
-  envsubst < $file | kubectl apply -f - -n harmony
+  # file="services/work-updater/config/service-template-large.yaml"
+  # if [ ! -f "$file" ]; then
+  #   echo "large work updater template was not found."
+  #   exit 1
+  # fi
+  # envsubst < $file | kubectl apply -f - -n harmony
   file="services/work-updater/config/service-template-small.yaml"
   if [ ! -f "$file" ]; then
     echo "small work updater template was not found."
@@ -49,24 +49,26 @@ if [ ! "$LOCAL_DEV" = true ]; then
   fi
   envsubst < $file | kubectl apply -f - -n harmony
 
-  # create the work reaper
-  file="services/work-reaper/config/service-template.yaml"
-  if [ ! -f "$file" ]; then
-    echo "work reaper template was not found."
-    exit 1
-  fi
-  envsubst < $file | kubectl apply -f - -n harmony
+#   # create the work reaper
+#   file="services/work-reaper/config/service-template.yaml"
+#   if [ ! -f "$file" ]; then
+#     echo "work reaper template was not found."
+#     exit 1
+#   fi
+#   envsubst < $file | kubectl apply -f - -n harmony
 
-  # create the work failer
-  file="services/work-failer/config/service-template.yaml"
-  if [ ! -f "$file" ]; then
-    echo "work failer template was not found."
-    exit 1
-  fi
-  envsubst < $file | kubectl apply -f - -n harmony
+#   # create the work failer
+#   file="services/work-failer/config/service-template.yaml"
+#   if [ ! -f "$file" ]; then
+#     echo "work failer template was not found."
+#     exit 1
+#   fi
+#   envsubst < $file | kubectl apply -f - -n harmony
 fi
 
-export LOCALSTACK_HOST=localhost
+if [ "$current_context" != "colima" ]; then
+  export LOCALSTACK_HOST=localhost
+fi
 
 # create the query-cmr service
 file="services/service-runner/config/query-cmr-sidecar.yaml"

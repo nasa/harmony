@@ -45,7 +45,7 @@ function makeConfigVar(stringValue: string): number | string | boolean {
     return parseBoolean(stringValue);
   } else {
     return stringValue;
-  } 
+  }
 }
 
 /**
@@ -77,7 +77,8 @@ function queueUrlsMap(env: Record<string, string>): Record<string, string> {
           if (image && url) {
             // replace 'localstack' with `env.localstackHost` to allow for harmony to be run in a
             // container
-            serviceQueueUrls[image] = url.replace('localstack', env.LOCALSTACK_HOST);
+            // serviceQueueUrls[image] = url.replace('localstack', env.LOCALSTACK_HOST);
+            serviceQueueUrls[image] = url;
           }
         }
       } catch (e) {
@@ -234,7 +235,7 @@ export class HarmonyEnv {
   validate(): void {
     if (process.env.SKIP_ENV_VALIDATION !== 'true') {
       const errors = getValidationErrors(this);
-    
+
       if (errors.length > 0) {
         for (const err of errors) {
           logger.error(err);
@@ -249,8 +250,8 @@ export class HarmonyEnv {
    * @param _env - the map of all env variables loaded from files
    * @returns Partial\<HarmonyEnv\>, e.g. \{ cacheType : env.CACHE_TYPE || 'disk' \}
    */
-  protected specialConfig(_env: Record<string, string>): Partial<HarmonyEnv> { 
-    return {}; 
+  protected specialConfig(_env: Record<string, string>): Partial<HarmonyEnv> {
+    return {};
   }
 
   /**

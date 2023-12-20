@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# pull down docker images that are needed to run a basic harmony service-example reqeust
+# all_images=( "harmonyservices/harmony:latest" "harmonyservices/query-cmr:latest" "harmonyservices/service-runner:latest" "harmonyservices/work-updater:latest" "harmonyservices/work-scheduler:latest" "harmonyservices/work-failer:latest" "harmonyservices/service-example:latest")
+all_images=( "harmonyservices/service-example:latest" )
+
+for image in ${all_images[@]}; do
+  echo "${image}"
+  docker pull "${image}" > /dev/null 2>&1
+  if [ $? -eq 0 ]; then
+    echo "${image} successfully pulled"
+  else
+    echo "WARNING: ${image} could not be pulled"
+  fi
+done
