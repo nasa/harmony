@@ -5,7 +5,7 @@ import { RequestValidationError } from './errors';
 import redact from './log-redactor';
 import { Conjunction, listToText } from '@harmony/util/string';
 
-const envNameFormat = winston.format((info) => ({ ...info, env_name: env.harmonyClientId }));
+const envNameFormat = winston.format((info) => ({ ...info, env_name: env.clientId }));
 
 
 /**

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-empty-interface */
-import { HarmonyEnv, IHarmonyEnv, validateEnvironment, envVars } from '@harmony/util/env';
+import { HarmonyEnv } from '@harmony/util/env';
 import _ from 'lodash';
 
 //
@@ -9,16 +9,11 @@ import _ from 'lodash';
 // Currently this is just a placeholder for future vars we might need for query-cmr.
 //
 
-interface IQueryCmrServiceEnv extends IHarmonyEnv {
+class QueryCmrServiceEnv extends HarmonyEnv {
 }
-
-class QueryCmrServiceEnv extends HarmonyEnv implements IQueryCmrServiceEnv {
-}
-
-const serviceEnvVars: IQueryCmrServiceEnv = _.cloneDeep(envVars) as IQueryCmrServiceEnv;
 
 // validate the env vars
-const harmonyQueryServiceEnvObj = new QueryCmrServiceEnv(serviceEnvVars);
-validateEnvironment(harmonyQueryServiceEnvObj);
+const harmonyQueryServiceEnvObj = new QueryCmrServiceEnv();
+harmonyQueryServiceEnvObj.validate();
 
-export default serviceEnvVars;
+export default harmonyQueryServiceEnvObj;

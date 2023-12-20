@@ -43,7 +43,7 @@ USE_LOCALSTACK=true
 LOCALSTACK_HOST=localstack
 
 # Identifier so backends know which Harmony client submitted the request
-CLIENT_ID=harmony-local
+CLIENT_ID=harmony-unknown
 
 # When set to true log messages are logged as a text string instead of the default
 # JSON format. Useful when running harmony locally and viewing logs via a terminal.
