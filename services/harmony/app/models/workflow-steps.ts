@@ -39,7 +39,7 @@ export interface WorkflowStepRecord {
   // Whether or not the service should receive a batch of inputs
   isBatched: boolean;
 
-  // Whether or not the service is executed in parallel (the default) or sequentiall, like
+  // Whether or not the service is executed in parallel (the default) or sequentially, like
   // query-cmr
   is_sequential: boolean;
 
