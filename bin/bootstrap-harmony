@@ -15,7 +15,7 @@ if ! command -v "kubectl" &> /dev/null; then
 fi
 
 # read EDL credentials and other vars from .env file if it exists, otherwise prompt for them
-
+export OAUTH_SOURCE
 if [[ -f ".env" ]]; then
     source .env
 else

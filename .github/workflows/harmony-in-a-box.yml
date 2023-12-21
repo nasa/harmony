@@ -41,7 +41,7 @@ jobs:
       run: docker images
 
     - name: Start harmony in a box
-      run: KUBE_CONTEXT=colima bin/bootstrap-harmony
+      run: KUBE_CONTEXT=colima OAUTH_SOURCE=env bin/bootstrap-harmony
       env:
         OAUTH_CLIENT_ID: ${{ secrets.OAUTH_CLIENT_ID }}
         OAUTH_UID: ${{ secrets.OAUTH_UID }}
@@ -56,6 +56,8 @@ jobs:
     - name: debug pods
       run: |
         kubectl -n harmony get pods
+        echo "=========describe localstack pod"
+        kubectl -n harmony describe localstack-pod
         echo "=========describe harmony pod"
         harmony_pod=$(kubectl get pods -n harmony -l app=harmony | grep -v NAME | awk '{print $1;}')
         kubectl -n harmony describe pod $harmony_pod
