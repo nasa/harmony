@@ -23,7 +23,7 @@ EOF
 		Running Harmony requires creating an Earthdata Login (EDL) application. If you need instructions for this or do not understand what this means, please contact the Harmony team for help. Once you have your EDL application created, please enter the credentials as prompted.
 
 PROMPT_EDL
-    if [ "$OAUTH_SOURCE" != "env" ]; then
+    if [ "$EXEC_CONTEXT" != "workflow" ]; then
         echo "# See the \"OAuth 2 (Earthdata Login)\" section in the env-defaults file" >> .env
         echo "# Contact a harmony developer if unsure what values to use" >> .env
         # prompt for the users EDL app credentials

@@ -41,7 +41,7 @@ jobs:
       run: docker images
 
     - name: Start harmony in a box
-      run: KUBE_CONTEXT=colima OAUTH_SOURCE=env bin/bootstrap-harmony
+      run: KUBE_CONTEXT=colima EXEC_CONTEXT=workflow bin/bootstrap-harmony
       env:
         OAUTH_CLIENT_ID: ${{ secrets.OAUTH_CLIENT_ID }}
         OAUTH_UID: ${{ secrets.OAUTH_UID }}
