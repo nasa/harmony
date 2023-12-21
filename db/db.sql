@@ -73,6 +73,8 @@ CREATE TABLE `workflow_steps` (
   `workItemCount` integer not null,
   `hasAggregatedOutput` boolean not null default false,
   `isBatched` boolean not null default false,
+  `is_complete` boolean not null default false,
+  `is_sequential` boolean not null default false,
   `maxBatchInputs` integer,
   `maxBatchSizeInBytes` integer,
   `operation` text not null,
@@ -120,9 +122,12 @@ CREATE TABLE `user_work` (
   UNIQUE(job_id, service_id)
 );
 
+-- Note this is not a full list of the indices, we rely on the database migrations to create
+-- all the indexes in Postgres
 CREATE INDEX jobs_jobID_idx ON jobs(jobID);
 CREATE INDEX jobs_updatedAt_id ON jobs(updatedAt);
-CREATE INDEX jobs_username_idx ON jobs(username);
+CREATE INDEX jobs_status_idx ON jobs(status);
+CREATE INDEX jobs_username_idx ON jobs(jobID, username);
 CREATE INDEX job_links_jobID_idx ON job_links(jobID);
 CREATE INDEX job_errors_jobID_idx ON job_errors(jobID);
 CREATE INDEX work_items_jobID_idx ON work_items(jobID);

@@ -6,7 +6,7 @@
   "scripts": {
     "start": "ts-node app/server.ts",
     "start-dev": "strict-npm-engines && ts-node-dev --no-notify -r tsconfig-paths/register --watch app/views --respawn app/server",
-    "start-dev-fast": "TS_NODE_TRANSPILE_ONLY=true ts-node-dev --no-notify -r tsconfig-paths/register --respawn --inspect=127.0.0.1:9204 app/server",
+    "start-dev-fast": "TS_NODE_TRANSPILE_ONLY=true ts-node-dev --no-notify -r tsconfig-paths/register --respawn --inspect=127.0.0.1:{{DEBUG_PORT:-9204} app/server",
     "test": "eslint --ext .ts --ignore-pattern built . && nyc mocha && pnpm audit --audit-level high --prod",
     "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha",
     "test-bail": "TS_NODE_TRANSPILE_ONLY=true mocha --bail",

@@ -8,10 +8,10 @@ RUN mkdir -p /query-cmr/services/query-cmr
 RUN mkdir -p /tmp/metadata
 
 COPY package.json package-lock.json /query-cmr/services/query-cmr/
-COPY built /query-cmr/
 WORKDIR /query-cmr/services/query-cmr
-RUN npm update
 RUN npm ci
+
+COPY built /query-cmr/
 WORKDIR /query-cmr
 # This symlink is needed to make module loading work correctly
 RUN ln -s services/query-cmr/node_modules .

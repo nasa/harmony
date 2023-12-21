@@ -11,13 +11,12 @@ import hookServersStartStop from './helpers/servers';
 import { buildWorkItem, getWorkForService, hookGetWorkForService, updateWorkItem, fakeServiceStacOutput } from './helpers/work-items';
 import { buildWorkflowStep } from './helpers/workflow-steps';
 import * as aggregationBatch from '../app/util/aggregation-batch';
-import { buildJob } from './helpers/jobs';
-import { getStacLocation, WorkItemRecord, WorkItemStatus } from '../app/models/work-item-interface';
+import { buildJob, getFirstJob } from './helpers/jobs';
+import { getStacLocation, WorkItemStatus } from '../app/models/work-item-interface';
 import { truncateAll } from './helpers/db';
 import { stub } from 'sinon';
 import { populateUserWorkFromWorkItems } from '../app/models/user-work';
 import { resetQueues } from './helpers/queue';
-import { defaultObjectStore } from '../app/util/object-store';
 
 /**
  * Create a job and some work times to be used by tests
@@ -42,6 +41,7 @@ async function createJobAndWorkItems(
     jobID: job.jobID,
     serviceID: 'harmonyservices/query-cmr:latest',
     stepIndex: 1,
+    is_sequential: true,
     workItemCount: initialQueryCmrWorkItemCount,
   }).save(db);
 
@@ -80,7 +80,7 @@ async function createJobAndWorkItems(
  */
 async function testInitialConditions(initialCmrHits: number, initialQueryCmrWorkItemCount: number): Promise<void> {
   it('sets the initial numInputGranules on the job', async function () {
-    const job = await Job.byJobID(db, this.jobID);
+    const { job } = await Job.byJobID(db, this.jobID);
     expect(job.numInputGranules).equals(initialCmrHits);
   });
   it('sets the initial number of work items for each step', async function () {
@@ -147,169 +147,6 @@ describe('when a work item callback request does not return the results to const
   });
 });
 
-describe('When a workflow contains an aggregating step', async function () {
-/**
- * Do some fake work and update the work item
- * @param context - 'this' from test
- */
-  async function doWorkAndUpdateStatus(context: Mocha.Context): Promise<void> {
-    const savedWorkItemResp = await getWorkForService(context.backend, 'foo');
-    const savedWorkItem = JSON.parse(savedWorkItemResp.text).workItem;
-    savedWorkItem.status = WorkItemStatus.SUCCESSFUL;
-    savedWorkItem.results = [
-      getStacLocation(savedWorkItem, 'catalog.json'),
-    ];
-    savedWorkItem.outputItemSizes = [1];
-    await fakeServiceStacOutput(savedWorkItem.jobID, savedWorkItem.id);
-    await updateWorkItem(context.backend, savedWorkItem);
-  }
-  const aggregateService = 'bar';
-  hookServersStartStop();
-
-  let sizeOfObjectStub;
-  before(function () {
-    sizeOfObjectStub = stub(aggregationBatch, 'sizeOfObject')
-      .callsFake(async (_) => 7000000000);
-  });
-
-  after(function () {
-    sizeOfObjectStub.restore();
-  });
-
-  beforeEach(async function () {
-    resetQueues();
-    const job = buildJob();
-    await job.save(db);
-    this.jobID = job.jobID;
-
-    await buildWorkflowStep({
-      jobID: job.jobID,
-      serviceID: 'foo',
-      stepIndex: 1,
-      workItemCount: 2,
-    }).save(db);
-
-    await buildWorkflowStep({
-      jobID: job.jobID,
-      serviceID: aggregateService,
-      stepIndex: 2,
-      hasAggregatedOutput: true,
-    }).save(db);
-
-    await buildWorkItem({
-      jobID: job.jobID,
-      serviceID: 'foo',
-      workflowStepIndex: 1,
-    }).save(db);
-
-    await buildWorkItem({
-      jobID: job.jobID,
-      serviceID: 'foo',
-      workflowStepIndex: 1,
-    }).save(db);
-
-    await populateUserWorkFromWorkItems(db);
-    const savedWorkItemResp = await getWorkForService(this.backend, 'foo');
-    const savedWorkItem = JSON.parse(savedWorkItemResp.text).workItem;
-    savedWorkItem.status = WorkItemStatus.SUCCESSFUL;
-    savedWorkItem.results = [
-      getStacLocation(savedWorkItem, 'catalog.json'),
-    ];
-    savedWorkItem.outputItemSizes = [1];
-    await fakeServiceStacOutput(job.jobID, savedWorkItem.id);
-    await updateWorkItem(this.backend, savedWorkItem);
-  });
-
-  this.afterEach(async function () {
-    await truncateAll();
-    resetQueues();
-  });
-
-  describe('and it has fewer granules than the paging threshold', async function () {
-
-    describe('and a work item for the first step is completed', async function () {
-      describe('and it is not the last work item for the step', async function () {
-        it('does not supply work for the next step', async function () {
-
-          const nextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
-          expect(nextStepWorkResponse.statusCode).to.equal(404);
-        });
-      });
-
-      describe('and it is the last work item for the step', async function () {
-        it('supplies exactly one work item for the next step', async function () {
-          await doWorkAndUpdateStatus(this);
-
-          // one work item available
-          const nextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
-          expect(nextStepWorkResponse.statusCode).to.equal(200);
-
-          const secondNextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
-          expect(secondNextStepWorkResponse.statusCode).to.equal(404);
-
-
-        });
-
-        it('provides all the outputs of the preceding step to the aggregating step', async function () {
-          await doWorkAndUpdateStatus(this);
-          const nextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
-          const workItem = JSON.parse(nextStepWorkResponse.text).workItem as WorkItemRecord;
-          const filePath = workItem.stacCatalogLocation;
-          const catalog = JSON.parse(await defaultObjectStore().getObject(filePath));
-          const items = catalog.links.filter(link => link.rel === 'item');
-          expect(items.length).to.equal(2);
-        });
-
-        it('does not add paging links to the catalog', async function () {
-          await doWorkAndUpdateStatus(this);
-
-          const nextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
-          const workItem = JSON.parse(nextStepWorkResponse.text).workItem as WorkItemRecord;
-          const filePath = workItem.stacCatalogLocation;
-          const catalog = JSON.parse(await defaultObjectStore().getObject(filePath));
-          expect(catalog.links.filter(link => link.rel == 'prev').length).to.equal(0);
-          expect(catalog.links.filter(link => link.rel == 'next').length).to.equal(0);
-        });
-      });
-    });
-  });
-
-  describe('and it has more granules than the paging threshold', async function () {
-    let envStub;
-
-    before(function () {
-      envStub = stub(env, 'aggregateStacCatalogMaxPageSize').get(() => 1);
-    });
-
-    after(function () {
-      envStub.restore();
-    });
-
-    describe('and a work item for the first step is completed', async function () {
-
-      describe('and it is the last work item for the step', async function () {
-
-        it('adds paging links to the catalogs', async function () {
-          await doWorkAndUpdateStatus(this);
-
-          const nextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
-          const workItem = JSON.parse(nextStepWorkResponse.text).workItem as WorkItemRecord;
-          const filePath = workItem.stacCatalogLocation;
-          const catalog = JSON.parse(await defaultObjectStore().getObject(filePath));
-          // first catalog just has 'next' link
-          expect(catalog.links.filter(link => link.rel == 'prev').length).to.equal(0);
-          const nextLinks = catalog.links.filter(link => link.rel == 'next');
-          expect(nextLinks.length).to.equal(1);
-          // second catalog just has 'prev' link
-          const nextCatalogPath = nextLinks[0].href;
-          const nextCatalog = JSON.parse(await defaultObjectStore().getObject(nextCatalogPath));
-          expect(nextCatalog.links.filter(link => link.rel == 'prev').length).to.equal(1);
-          expect(nextCatalog.links.filter(link => link.rel == 'next').length).to.equal(0);
-        });
-      });
-    });
-  });
-});
 
 describe('Workflow chaining for a collection configured for swot reprojection and netcdf-to-zarr', function () {
   let pageStub;
@@ -404,10 +241,9 @@ describe('Workflow chaining for a collection configured for swot reprojection an
         workItem.results = [
           getStacLocation(workItem, 'catalog0.json'),
           getStacLocation(workItem, 'catalog1.json'),
-          getStacLocation(workItem, 'catalog2.json'),
         ];
-        workItem.outputItemSizes = [1, 2, 3];
-        await fakeServiceStacOutput(workItem.jobID, workItem.id);
+        workItem.outputItemSizes = [1, 2];
+        await fakeServiceStacOutput(workItem.jobID, workItem.id, 2);
         await updateWorkItem(this.backend, workItem);
       });
 
@@ -484,8 +320,7 @@ describe('Workflow chaining for a collection configured for swot reprojection an
 
             describe('when checking the jobs listing', function () {
               it('marks the job as successful and progress of 100 with 5 links', async function () {
-                const jobs = await Job.forUser(db, 'anonymous');
-                const job = jobs.data[0];
+                const job = await getFirstJob(db);
                 expect(job.status).to.equal('successful');
                 expect(job.progress).to.equal(100);
                 expect(job.links.length).to.equal(5);
@@ -553,7 +388,7 @@ describe('Workflow chaining for a collection configured for swot reprojection an
 
       it('fails the job, and all further work items are canceled', async function () {
       // work item failure should trigger job failure
-        const job = await Job.byJobID(db, firstSwotItem.jobID);
+        const { job } = await Job.byJobID(db, firstSwotItem.jobID);
         expect(job.status).to.equal(JobStatus.FAILED);
         // job failure should trigger cancellation of any pending work items
         const currentWorkItems = (await getWorkItemsByJobId(db, job.jobID)).workItems;
@@ -564,7 +399,7 @@ describe('Workflow chaining for a collection configured for swot reprojection an
       });
 
       it('sets the job failure message to the error message returned by the service', async function () {
-        const job = await Job.byJobID(db, firstSwotItem.jobID);
+        const { job } = await Job.byJobID(db, firstSwotItem.jobID);
         expect(job.message).to.contain('That was just a practice try, right?');
       });
 
@@ -640,12 +475,12 @@ describe('Workflow chaining for a collection configured for swot reprojection an
       });
 
       it('fails the job', async function () {
-        const job = await Job.byJobID(db, firstSwotItem.jobID);
+        const { job } = await Job.byJobID(db, firstSwotItem.jobID);
         expect(job.status).to.equal(JobStatus.FAILED);
       });
 
       it('sets the job failure message to a generic failure', async function () {
-        const job = await Job.byJobID(db, firstSwotItem.jobID);
+        const { job } = await Job.byJobID(db, firstSwotItem.jobID);
         expect(job.message).to.contain('failed with an unknown error');
       });
     });
@@ -821,6 +656,7 @@ describe('When a request spans multiple CMR pages', function () {
         jobID: job.jobID,
         serviceID: 'harmonyservices/query-cmr:latest',
         stepIndex: 1,
+        is_sequential: true,
         workItemCount: 2,
       }).save(db);
 
@@ -944,7 +780,7 @@ describe('When a request spans multiple CMR pages', function () {
           }
         });
         it('updates the job numInputGranules', async function () {
-          const job = await Job.byJobID(db, this.jobID);
+          const { job } = await Job.byJobID(db, this.jobID);
           expect(job.numInputGranules).equals(finalCmrHits);
         });
 
@@ -987,7 +823,7 @@ describe('When a request spans multiple CMR pages', function () {
 
           });
           it('completes the job', async function () {
-            const job = await Job.byJobID(db, this.jobID);
+            const { job } = await Job.byJobID(db, this.jobID);
             expect(job.status).equals(JobStatus.SUCCESSFUL);
           });
         });
@@ -1020,7 +856,7 @@ describe('When a request spans multiple CMR pages', function () {
         });
 
         it('does not update the job numInputGranules', async function () {
-          const job = await Job.byJobID(db, this.jobID);
+          const { job } = await Job.byJobID(db, this.jobID);
           expect(job.numInputGranules).equals(initialCmrHits);
         });
 
@@ -1063,7 +899,7 @@ describe('When a request spans multiple CMR pages', function () {
 
           });
           it('completes the job', async function () {
-            const job = await Job.byJobID(db, this.jobID);
+            const { job } = await Job.byJobID(db, this.jobID);
             expect(job.status).equals(JobStatus.SUCCESSFUL);
           });
         });

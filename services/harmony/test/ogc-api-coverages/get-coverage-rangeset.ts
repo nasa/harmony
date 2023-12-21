@@ -10,7 +10,7 @@ import { ServiceConfig } from '../../app/models/services/base-service';
 import { hookRedirect } from '../helpers/hooks';
 import { stub } from 'sinon';
 import env from '../../app/util/env';
-import { hookTransactionFailure } from '../helpers/db';
+import { hookDatabaseFailure } from '../helpers/db';
 
 describe('OGC API Coverages - getCoverageRangeset', function () {
   const collection = 'C1233800302-EEDTEST';
@@ -449,6 +449,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
         },
         steps: [{
           image: 'harmonyservices/query-cmr:fake-test',
+          is_sequential: true,
         }],
         granule_limit: 4,
         capabilities: {
@@ -551,6 +552,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
         },
         steps: [{
           image: 'harmonyservices/query-cmr:fake-test',
+          is_sequential: true,
         }],
         capabilities: {
           subsetting: {
@@ -863,7 +865,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
   });
 
   describe('when the database catches fire during an asynchronous request', function () {
-    hookTransactionFailure();
+    hookDatabaseFailure();
     StubService.hook({ params: { redirect: 'http://example.com' } });
     hookRangesetRequest(version, collection, variableName, {});
 
@@ -1015,7 +1017,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
 describe('OGC API Coverages - getCoverageRangeset with the extend query parameter', async function () {
   hookServersStartStop();
-  
+
   describe('when requesting all vars and extending dimension_var', function () {
     StubService.hook({ params: { redirect: 'http://example.com' } });
     hookRangesetRequest('1.0.0', 'C1233800302-EEDTEST', 'all', { query: { extend: 'dimension_var', skipPreview: 'true', maxResults: 2 }, username: 'joe' });

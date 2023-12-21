@@ -47,12 +47,13 @@ function build_all {
   parallel=$1
   pids=()
   for dir in services/*; do
+    [[ ! -d "$dir" ]] && continue
     pushd "$dir"
     if [[ $parallel -eq 1 ]]; then
-      ./bin/build-image &
+      npm run build &
       pids+=($!)
     else
-      ./bin/build-image
+      npm run build
     fi
     popd
   done
@@ -70,11 +71,11 @@ else
     pushd "services/${f}"
     if [[ $PARALLEL -eq 1 ]]; then
       echo "BUILDING ${f} IN PARALLEL"
-      ./bin/build-image &
+      npm run build &
       pids+=($!)
     else
       echo "BUILDING ${f} IN SERIES"
-      ./bin/build-image
+      npm run build
     fi
     popd
   done

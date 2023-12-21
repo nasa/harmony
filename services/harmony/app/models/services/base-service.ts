@@ -39,6 +39,7 @@ export interface ServiceStep {
   max_batch_inputs?: number;
   max_batch_size_in_bytes?: number;
   is_batched?: boolean;
+  is_sequential?: boolean;
   conditional?: {
     exists?: string[];
     format?: string[];
@@ -252,10 +253,10 @@ export default abstract class BaseService<ServiceParamType> {
     const job = this._createJob(getRequestUrl(req));
     await this._createAndSaveWorkflow(job);
 
-    const { isAsync, requestId } = job;
+    const { isAsync, jobID } = job;
     const requestMetric = getRequestMetric(req, this.operation, this.config.name);
-    logger.info(`Request metric for request ${requestId}`, { requestMetric: true, ...requestMetric } );
-    this.operation.callback = `${env.callbackUrlRoot}/service/${requestId}`;
+    logger.info(`Request metric for request ${jobID}`, { requestMetric: true, ...requestMetric } );
+    this.operation.callback = `${env.callbackUrlRoot}/service/${jobID}`;
     return new Promise((resolve, reject) => {
       this._run(logger)
         .then((result) => {
@@ -263,9 +264,9 @@ export default abstract class BaseService<ServiceParamType> {
             // If running produces a result, use that rather than waiting for a callback
             resolve(result);
           } else if (isAsync) {
-            resolve({ redirect: `/jobs/${requestId}`, headers: {} });
+            resolve({ redirect: `/jobs/${jobID}`, headers: {} });
           } else {
-            this._waitForSyncResponse(logger, requestId).then(resolve).catch(reject);
+            this._waitForSyncResponse(logger, jobID).then(resolve).catch(reject);
           }
         })
         .catch(reject);
@@ -277,12 +278,12 @@ export default abstract class BaseService<ServiceParamType> {
    * then returns its result
    *
    * @param logger - The logger used for the request
-   * @param requestId - The request ID
+   * @param jobID - The job ID
    * @returns - An invocation result corresponding to a synchronous service response
    */
   protected async _waitForSyncResponse(
     logger: Logger,
-    requestId: string,
+    jobID: string,
   ): Promise<InvocationResult> {
     let result: InvocationResult;
     try {
@@ -290,7 +291,7 @@ export default abstract class BaseService<ServiceParamType> {
       do {
         // Sleep and poll for completion.  We could also use SNS or similar for a faster response
         await new Promise((resolve) => setTimeout(resolve, env.syncRequestPollIntervalMs));
-        ({ job } = await Job.byRequestId(db, requestId));
+        ({ job } = await Job.byJobID(db, jobID, true));
       } while (!job.hasTerminalStatus());
 
       if (job.status === JobStatus.FAILED) {
@@ -465,6 +466,7 @@ export default abstract class BaseService<ServiceParamType> {
             ),
             hasAggregatedOutput: stepHasAggregatedOutput(step, this.operation),
             isBatched: !!step.is_batched && this.operation.shouldConcatenate,
+            is_sequential: !!step.is_sequential,
             maxBatchInputs: step.max_batch_inputs,
             maxBatchSizeInBytes: step.max_batch_size_in_bytes,
           }));

@@ -1,14 +1,19 @@
+/* eslint-disable @typescript-eslint/dot-notation */
+import env from '../util/env';
 import { subMinutes } from 'date-fns';
 import _ from 'lodash';
 import { Transaction } from '../util/db';
 import { Job, JobStatus } from './job';
 import Record from './record';
+import WorkItem, { workItemCountForStep } from './work-item';
+import { COMPLETED_WORK_ITEM_STATUSES } from './work-item-interface';
 
 // The fields to save to the database
 const serializedFields = [
   'id', 'jobID', 'serviceID', 'stepIndex',
   'workItemCount', 'operation', 'createdAt', 'updatedAt',
-  'hasAggregatedOutput', 'isBatched', 'maxBatchInputs', 'maxBatchSizeInBytes',
+  'hasAggregatedOutput', 'isBatched', 'is_sequential', 'is_complete', 'maxBatchInputs',
+  'maxBatchSizeInBytes',
 ];
 
 export interface WorkflowStepRecord {
@@ -31,8 +36,15 @@ export interface WorkflowStepRecord {
   // Whether or not this step aggregates the outputs of a previous step
   hasAggregatedOutput: boolean;
 
-  // Whether or no the service should receive a batch of inputs
+  // Whether or not the service should receive a batch of inputs
   isBatched: boolean;
+
+  // Whether or not the service is executed in parallel (the default) or sequentially, like
+  // query-cmr
+  is_sequential: boolean;
+
+  // Whether or not the step has been completed
+  is_complete: boolean; 
 
   // The maximum number of input granules in each invocation of the service
   maxBatchInputs: number;
@@ -67,8 +79,15 @@ export default class WorkflowStep extends Record implements WorkflowStepRecord {
   // Whether or not this step aggregates the outputs of a previous step
   hasAggregatedOutput: boolean;
 
-  // Whether or no the service should receive a batch of inputs
+  // Whether or not the service should receive a batch of inputs
   isBatched: boolean;
+
+  // Whether or not the service is executed in parallel (the default) or sequentially, like
+  // query-cmr
+  is_sequential: boolean;
+
+  // Whether or not the step has been completed
+  is_complete: boolean;
 
   // The maximum number of input granules in each invocation of the service
   maxBatchInputs: number;
@@ -175,13 +194,14 @@ export async function getWorkflowStepByJobIdServiceId(
  * Get all workflow step ids associated with jobs that haven't been updated for a
  * certain amount of minutes and that have a particular JobStatus
  * @param tx - the transaction to use for querying
- * @param notUpdatedForMinutes - jobs with updateAt older than notUpdatedForMinutes ago
- * will be joined with the returned workflow steps
+ * @param notUpdatedForMinutes - jobs with updateAt older than notUpdatedForMinutes ago will be
+ * joined with the returned workflow steps
  * @param jobStatus - only jobs with this status will be joined
- * @param startingId - the workflow step id to begin the query with, i.e. query workflow steps with id greater than startingId
+ * @param startingId - the workflow step id to begin the query with, i.e. query workflow steps
+ * with id greater than startingId
  * @param batchSize - the batch size
- * @returns - all workflow step ids associated with the jobs that
- * met the updatedAt and status constraints
+ * @returns - all workflow step ids associated with the jobs that met the updatedAt and status
+ *            constraints
  */
 export async function getWorkflowStepIdsByJobUpdateAgeAndStatus(
   tx: Transaction,
@@ -262,4 +282,55 @@ export async function decrementWorkItemCount(tx: Transaction, jobID, stepIndex):
   await tx(WorkflowStep.table)
     .where({ jobID, stepIndex })
     .decrement('workItemCount');
+}
+
+/**
+ * Determine whether or not the workflow step is complete and set its `is_complete` column
+ * to `true` if so.
+ *
+ * @param tx - the database transaction
+ * @param jobID - the job ID
+ * @param step - the current workflow step
+ * @returns a Promise containing a boolean that indicates whether or not the step is complete
+ */
+export async function updateIsComplete(tx: Transaction, jobID: string, numInputGranules: number, step: WorkflowStep): Promise<boolean> {
+
+  let isComplete = false;
+
+  const { stepIndex } = step;
+
+  if (step.is_sequential) {
+    const completedCount = await workItemCountForStep(tx, jobID, stepIndex, COMPLETED_WORK_ITEM_STATUSES);
+    const expectedCount =  Math.ceil(numInputGranules / env.cmrMaxPageSize);
+    isComplete = completedCount == expectedCount;
+
+  } else {
+    let prevStepComplete = true;
+    if (stepIndex > 1) {
+      const prevStepCompleteResult = await tx(WorkflowStep.table)
+        .first('is_complete')
+        .where({ jobID, stepIndex: stepIndex - 1 });
+      prevStepComplete = prevStepCompleteResult['is_complete'];
+    }
+  
+    if (prevStepComplete) {
+      const isNotCompleteResult = await tx
+        .select(tx.raw('EXISTS ? AS not_complete',
+          tx(WorkItem.table)
+            .select(tx.raw('1'))
+            .where({ jobID, workflowStepIndex: stepIndex })
+            .andWhere('status', 'not in', COMPLETED_WORK_ITEM_STATUSES)),
+        );
+
+      isComplete = !isNotCompleteResult[0]['not_complete'];
+    }
+  }
+
+  if (isComplete) {
+    await tx(WorkflowStep.table)
+      .where({ jobID, stepIndex })
+      .update('is_complete', true);       
+  }
+
+  return isComplete;
 }

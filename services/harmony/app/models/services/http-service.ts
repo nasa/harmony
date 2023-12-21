@@ -62,7 +62,7 @@ export default class HttpService extends BaseService<HttpServiceParams> {
             const trx = await db.transaction();
             try {
               const { user, requestId } = this.operation;
-              const { job } = await Job.byUsernameAndRequestId(trx, user, requestId);
+              const { job } = await Job.byUsernameAndJobID(trx, user, requestId);
               if (job) {
                 job.fail();
                 await job.save(trx);

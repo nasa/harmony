@@ -9,10 +9,10 @@ import { defaultObjectStore, objectStoreForProtocol } from './object-store';
 import env from './env';
 import logger from './log';
 
-const { cmrEndpoint, cmrMaxPageSize, harmonyClientId, stagingBucket } = env;
+const { cmrEndpoint, cmrMaxPageSize, clientId, stagingBucket } = env;
 
 const clientIdHeader = {
-  'Client-id': `${harmonyClientId}`,
+  'Client-id': `${clientId}`,
 };
 
 // Exported to allow tests to override cmrApiConfig

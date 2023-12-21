@@ -31,7 +31,7 @@ The returned JSON response will have the configured capabilities in Harmony for 
 ---
 **Table {{tableCounter}}** - Harmony capabilities endpoint response fields
 
-##### Getting Harmony capabilities for a given collection by collection concept id
+#### Getting Harmony capabilities for a given collection by collection concept id
 
 ```
 
@@ -40,7 +40,7 @@ The returned JSON response will have the configured capabilities in Harmony for 
 ```
 **Example {{exampleCounter}}** - Getting Harmony capabilities for a given collection by collection concept id
 
-##### Getting Harmony capabilities for a given collection by collection short name
+#### Getting Harmony capabilities for a given collection by collection short name
 
 ```
 

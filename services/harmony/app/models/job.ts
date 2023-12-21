@@ -1,6 +1,5 @@
 import { pick } from 'lodash';
 import { ILengthAwarePagination } from 'knex-paginate'; // For types only
-import subMinutes from 'date-fns/subMinutes';
 import { createMachine } from 'xstate';
 import { CmrPermission, CmrPermissionsMap, getCollectionsByIds, getPermissions, CmrTagKeys } from '../util/cmr';
 import { removeEmptyProperties } from '../util/object';
@@ -44,7 +43,7 @@ export enum JobStatus {
 export enum JobEvent {
   CANCEL = 'CANCEL',
   COMPLETE = 'COMPLETE',
-  COMPLETE_WITH_ERRORS = 'COMPLETE_WITH_ERRORS', // TODO - where does this get used
+  COMPLETE_WITH_ERRORS = 'COMPLETE_WITH_ERRORS',
   FAIL = 'FAIL',
   PAUSE = 'PAUSE',
   RESUME = 'RESUME',
@@ -409,21 +408,19 @@ export class Job extends DBRecord implements JobRecord {
   /**
    * Returns an array of all jobs that match the given constraints
    *
-   * @param transaction - the transaction to use for querying
+   * @param tx - the transaction to use for querying
    * @param constraints - field / value pairs that must be matched for a record to be returned
-   * @param getLinks - whether or not to get job links
    * @param currentPage - the index of the page to show
    * @param perPage - the number of results per page
    * @returns a list of all of the user's jobs
    */
   static async queryAll(
-    transaction: Transaction,
-    constraints: JobQuery = {},
-    getLinks = true,
+    tx: Transaction,
+    constraints: JobQuery = { where: {} },
     currentPage = 0,
     perPage = 10,
   ): Promise<{ data: Job[]; pagination: ILengthAwarePagination }> {
-    const items = await transaction('jobs')
+    const items = await tx(Job.table)
       .select()
       .where(constraints.where)
       .orderBy(
@@ -452,11 +449,6 @@ export class Job extends DBRecord implements JobRecord {
       .paginate({ currentPage, perPage, isLengthAware: true });
 
     const jobs = items.data.map((j) => new Job(j));
-    if (getLinks) {
-      for (const job of jobs) {
-        job.links = (await getLinksForJob(transaction, job.jobID)).data;
-      }
-    }
 
     return {
       data: jobs,
@@ -465,40 +457,37 @@ export class Job extends DBRecord implements JobRecord {
   }
 
   /**
-   * Returns and array of all the the jobs that are still in the RUNNING state, but have not
-   * been updated in the given number of minutes
+   * Returns the job matching the given query constraints, or null if no such job exists.
    *
-   * @param transaction - the transaction to use for querying
-   * @param minutes - any jobs still running and not updated in this many minutes will be returned
-   * @param currentPage - the index of the page to show
-   * @param perPage - the number of results per page
-   * @returns a list of Job's still running but not updated in the given number of minutes
+   * @param tx - the transaction to use for querying
+   * @param constraints - field / value pairs that must be matched for a record to be returned
+   * @param includeLinks - if true, load all JobLinks into job.links
+   * @param currentPage - the index of the page of links to show
+   * @param perPage - the number of link results per page
+   * @returns the matching job, or null if none exists, along with pagination information
+   * for the job links
    */
-  static async notUpdatedForMinutes(
-    transaction: Transaction,
-    minutes: number,
+  static async queryForSingleJob(
+    tx: Transaction,
+    constraints: JobQuery = {},
+    includeLinks = false,
+    lock = false,
     currentPage = 0,
-    perPage = 10,
-  ):
-    Promise<{ data: Job[]; pagination: ILengthAwarePagination }> {
-    const pastDate = subMinutes(new Date(), minutes);
-    const items = await transaction('jobs')
-      .select()
-      .where({
-        status: JobStatus.RUNNING,
-      })
-      .where('updatedAt', '<', pastDate)
-      .orderBy('createdAt', 'desc')
-      .paginate({ currentPage, perPage, isLengthAware: true });
-
-    const jobs = items.data.map((j) => new Job(j));
-    for (const job of jobs) {
-      job.links = (await getLinksForJob(transaction, job.jobID)).data;
+    perPage = env.defaultResultPageSize,
+  ): Promise<{ job: Job; pagination: ILengthAwarePagination }> {
+    let query = tx(Job.table).first().where(constraints.where);
+    if (lock) {
+      query = query.forUpdate();
     }
-    return {
-      data: jobs,
-      pagination: items.pagination,
-    };
+    const result = await query;
+    const job = result ? new Job(result) : null;
+    let paginationInfo;
+    if (job && includeLinks) {
+      const linkData = await getLinksForJob(tx, job.jobID, currentPage, perPage);
+      job.links = linkData.data;
+      paginationInfo = linkData.pagination;
+    }
+    return { job, pagination: paginationInfo };
   }
 
   /**
@@ -510,9 +499,9 @@ export class Job extends DBRecord implements JobRecord {
    * @param perPage - the number of results per page
    * @returns a list of all of the user's jobs
    */
-  static forUser(transaction: Transaction, username: string, currentPage = 0, perPage = 10):
+  static forUser(tx: Transaction, username: string, currentPage = 0, perPage = 10):
   Promise<{ data: Job[]; pagination: ILengthAwarePagination }> {
-    return this.queryAll(transaction, { where: { username } }, true, currentPage, perPage);
+    return Job.queryAll(tx, { where: { username } }, currentPage, perPage);
   }
 
   /**
@@ -521,27 +510,18 @@ export class Job extends DBRecord implements JobRecord {
   *
   * @param transaction - the transaction to use for querying
   * @param jobID - the jobID for the job that should be retrieved
-  * @param getLinks - if true include the job links when returning the job
+  * @param includeLinks - if true include the job links when returning the job
   * @param lock - if true lock the row in the jobs table
+  * @param currentPage - the index of the page of job links to show
+  * @param perPage - the number of job links to include per page
   * @returns the Job with the given JobID or null if not found
   */
   static async byJobID(
-    transaction: Transaction, jobID: string, getLinks = true, lock = false,
-  ): Promise<Job | null> {
-
-    let query = transaction('jobs').select().where({ jobID });
-    if (lock) {
-      query = query.forUpdate();
-    }
-
-    const result = await query;
-    if (result.length) {
-      const job = new Job(result[0]);
-      if (getLinks) {
-        job.links = (await getLinksForJob(transaction, job.jobID)).data;
-      }
-      return job;
-    }
+    tx: Transaction, jobID: string, includeLinks = false, lock = false, currentPage = 0,
+    perPage = env.defaultResultPageSize,
+  ): Promise<{ job: Job; pagination: ILengthAwarePagination }> {
+    const constraints = { where: { jobID } };
+    return Job.queryForSingleJob(tx, constraints, includeLinks, lock, currentPage, perPage);
   }
 
   /**
@@ -552,7 +532,7 @@ export class Job extends DBRecord implements JobRecord {
   * @returns the number of input granules for the job
   */
   static async getNumInputGranules(tx: Transaction, jobID: string): Promise<number> {
-    const results = await tx('jobs')
+    const results = await tx(Job.table)
       .select('numInputGranules')
       .where({ jobID });
 
@@ -560,93 +540,41 @@ export class Job extends DBRecord implements JobRecord {
   }
 
   /**
-   * Returns the job matching the given username and request ID, or null if
-   * no such job exists.
-   *
-   * @param transaction - the transaction to use for querying
-   * @param username - the username associated with the job
-   * @param requestId - the UUID of the request associated with the job
-   * @param includeLinks - if true, load all JobLinks into job.links
-   * @param currentPage - the index of the page of links to show
-   * @param perPage - the number of link results per page
-   * @returns the matching job, or null if none exists, along with pagination information
-   * for the job links
-   */
-  static async byUsernameAndRequestId(
-    transaction,
-    username,
-    requestId,
-    includeLinks = true,
-    currentPage = 0,
-    perPage = env.defaultResultPageSize,
-  ): Promise<{ job: Job; pagination: ILengthAwarePagination }> {
-    const result = await transaction('jobs').select().where({ username, requestId });
-    const job = result.length === 0 ? null : new Job(result[0]);
-    let paginationInfo;
-    if (job && includeLinks) {
-      const linkData = await getLinksForJob(transaction, job.jobID, currentPage, perPage);
-      job.links = linkData.data;
-      paginationInfo = linkData.pagination;
-    }
-    return { job, pagination: paginationInfo };
-  }
-
-  /**
    * Returns the job matching the given username and job ID, or null if
    * no such job exists.
    *
-   * @param transaction - the transaction to use for querying
+   * @param tx - the transaction to use for querying
    * @param username - the username associated with the job
-   * @param jobID - the jobID
+   * @param jobID - the job ID for the request
    * @param includeLinks - if true, load all JobLinks into job.links
+   * @param lock - if true lock the row in the jobs table
    * @param currentPage - the index of the page of links to show
    * @param perPage - the number of link results per page
    * @returns the matching job, or null if none exists, along with pagination information
    * for the job links
    */
-  static async byUsernameAndJobId(
-    transaction,
+  static async byUsernameAndJobID(
+    tx,
     username,
     jobID,
-    includeLinks = true,
+    includeLinks = false,
+    lock = false,
     currentPage = 0,
     perPage = env.defaultResultPageSize,
   ): Promise<{ job: Job; pagination: ILengthAwarePagination }> {
-    const result = await transaction('jobs').select().where({ username, jobID });
-    const job = result.length === 0 ? null : new Job(result[0]);
-    let paginationInfo;
-    if (job && includeLinks) {
-      const linkData = await getLinksForJob(transaction, job.jobID, currentPage, perPage);
-      job.links = linkData.data;
-      paginationInfo = linkData.pagination;
-    }
-    return { job, pagination: paginationInfo };
+    const constraints = { where: { username, jobID } };
+    return Job.queryForSingleJob(tx, constraints, includeLinks, lock, currentPage, perPage);
   }
 
   /**
-   * Returns the job matching the given request ID, or null if no such job exists
+   * Returns the time of the most recently updated job
    *
-   * @param transaction - the transaction to use for querying
-   * @param requestId - the UUID of the request associated with the job
-   * @param currentPage - the index of the page of links to show
-   * @param perPage - the number of link results per page
-   * @returns the matching job, or null if none exists
+   * @param tx - the transaction to use for querying
+   * @returns a promise resolving to the timestamp of the most recently updated job
    */
-  static async byRequestId(
-    transaction,
-    requestId,
-    currentPage = 0,
-    perPage = env.defaultResultPageSize,
-  ): Promise<{ job: Job; pagination: ILengthAwarePagination }> {
-    const result = await transaction('jobs').select().where({ requestId });
-    const job = result.length === 0 ? null : new Job(result[0]);
-    let paginationInfo;
-    if (job) {
-      const linkData = await getLinksForJob(transaction, job.jobID, currentPage, perPage);
-      job.links = linkData.data;
-      paginationInfo = linkData.pagination;
-    }
-    return { job, pagination: paginationInfo };
+  static async getTimeOfMostRecentlyUpdatedJob(tx: Transaction): Promise<Date> {
+    const response = await tx(Job.table).max('updatedAt as latest_update');
+    return new Date(response[0].latest_update);
   }
 
   /**
@@ -965,19 +893,19 @@ export class Job extends DBRecord implements JobRecord {
   /**
    * Check if the job has any links
    *
-   * @param transaction - transaction to use for the query
+   * @param tx - transaction to use for the query
    * @param rel - if set, only check for job links with this rel type
    * @param requireSpatioTemporal - if true, only check for job links
    *  with spatial and temporal constraints
    * @returns true or false
    */
   async hasLinks(
-    transaction,
+    tx,
     rel?: string,
     requireSpatioTemporal = false,
   ): Promise<boolean> {
     const { data } = await getLinksForJob(
-      transaction, this.jobID, 1, 1, rel, requireSpatioTemporal,
+      tx, this.jobID, 1, 1, rel, requireSpatioTemporal,
     );
     return data.length !== 0;
   }
@@ -988,10 +916,10 @@ export class Job extends DBRecord implements JobRecord {
    * updatedAt fields set.  Existing jobs will be updated and have their updatedAt
    * field set.
    *
-   * @param transaction - The transaction to use for saving the job
+   * @param tx - The transaction to use for saving the job
    * @throws {@link Error} if the job is invalid
    */
-  async save(transaction: Transaction): Promise<void> {
+  async save(tx: Transaction): Promise<void> {
     const reservedMessageChars = 1000; // reserve 1k chars for non-failure messages (which tend to be smaller)
     // Need to validate the original status before removing it as part of saving to the database
     // May want to change in the future to have a way to have non-database fields on a record.
@@ -1002,12 +930,12 @@ export class Job extends DBRecord implements JobRecord {
     const dbRecord: Record<string, unknown> = pick(this, jobRecordFields);
     dbRecord.collectionIds = JSON.stringify(this.collectionIds || []);
     dbRecord.message = JSON.stringify(this.statesToMessages || {});
-    await super.save(transaction, dbRecord);
+    await super.save(tx, dbRecord);
     const promises = [];
     for (const link of this.links) {
       // Note we will not update existing links in the database - only add new ones
       if (!link.id) {
-        promises.push(link.save(transaction));
+        promises.push(link.save(tx));
       }
     }
     await Promise.all(promises);

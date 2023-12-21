@@ -2,7 +2,7 @@ import env from '../../util/env';
 import { logAsyncExecutionTime } from '../../util/log-execution';
 import { v4 as uuid } from 'uuid';
 import WorkItemUpdate from '../../models/work-item-update';
-import WorkflowStep, { decrementFutureWorkItemCount, getWorkflowStepByJobIdStepIndex, getWorkflowStepsByJobId } from '../../models/workflow-steps';
+import WorkflowStep, { decrementFutureWorkItemCount, getWorkflowStepByJobIdStepIndex, getWorkflowStepsByJobId, updateIsComplete } from '../../models/workflow-steps';
 import { Logger } from 'winston';
 import _, { ceil, range, sum } from 'lodash';
 import { JobStatus, Job } from '../../models/job';
@@ -398,6 +398,7 @@ async function createAggregatingWorkItem(
 async function maybeQueueQueryCmrWorkItem(
   tx: Transaction, currentWorkItem: WorkItem, logger: Logger,
 ): Promise<void> {
+  // TODO HARMONY-1659 change this to handle any sequential services
   if (QUERY_CMR_SERVICE_REGEX.test(currentWorkItem.serviceID)) {
     if (await calculateQueryCmrLimit(tx, currentWorkItem, logger) > 0) {
       const nextQueryCmrItem = new WorkItem({
@@ -513,8 +514,7 @@ async function createNextWorkItems(
 
 /**
  * Preprocess a work item and return the catalog items and result item size
- * inside the return type WorkItemPreprocessInfo. This function can be called
- * in parallel.
+ * inside the return type WorkItemPreprocessInfo.
  *
  * @param update - information about the work item update
  * @param operation - the DataOperation for the user's request
@@ -565,9 +565,10 @@ export async function preprocessWorkItem(
  * Process the work item update using the preprocessed result info and the work item info.
  * Various other parameters are passed in to optimize the processing of a batch of work items.
  * A database lock on the work item related job needs to be acquired before calling this function.
- * This function should be called single threaded because it is inside a database transaction.
+ * WARN To avoid dB deadlocks, this function should be not be called from a Promise.all.
  *
  * @param tx - database transaction with lock on the related job in the jobs table
+ * @param preprocessedResult - information obtained in earlier processing for efficiency reasons
  * @param job - job of the work item
  * @param update - information about the work item update
  * @param logger - the Logger for the request
@@ -689,16 +690,7 @@ export async function processWorkItem(
 
     let allWorkItemsForStepComplete = false;
 
-    if (checkCompletion) {
-      const completedWorkItemCount = await (await logAsyncExecutionTime(
-        workItemCountForStep,
-        'HWIUWJI.workItemCountForStep',
-        logger))(
-        tx, workItem.jobID, workItem.workflowStepIndex, COMPLETED_WORK_ITEM_STATUSES,
-      );
-      allWorkItemsForStepComplete = (completedWorkItemCount == thisStep.workItemCount);
-    }
-
+    
     // The number of 'hits' returned by a query-cmr could be less than when CMR was first
     // queried by harmony due to metadata deletions from CMR, so we update the job to reflect
     // that there are fewer items and to know when no more query-cmr jobs should be created.
@@ -714,6 +706,10 @@ export async function processWorkItem(
         updateWorkItemCounts,
         'HWIUWJI.updateWorkItemCounts',
         logger))(tx, job);
+    }
+
+    if (checkCompletion) {
+      allWorkItemsForStepComplete = await updateIsComplete(tx, jobID, job.numInputGranules, thisStep);
     }
 
     const continueProcessing = await (await logAsyncExecutionTime(
@@ -820,11 +816,12 @@ export async function processWorkItem(
   logger.debug(`Finished handling work item update for ${workItemID} and status ${status} in ${durationMs} ms`);
 }
 
+
 /**
- * Process a list of work item updates
+ * Process a list of work item updates for a given job
  *
  * @param jobId - job id
- * @param workflowStepIndex - the current workflow step of the work item
+ * @param workflowStepIndex - the current workflow step of the work items
  * @param items - a list of work item update items
  * @param logger - the Logger for the request
  */
@@ -837,7 +834,7 @@ export async function processWorkItems(
     const transactionStart = new Date().getTime();
 
     await db.transaction(async (tx) => {
-      const job = await (await logAsyncExecutionTime(
+      const { job } = await (await logAsyncExecutionTime(
         Job.byJobID,
         'HWIUWJI.Job.byJobID',
         logger))(tx, jobID, false, true);
@@ -889,7 +886,7 @@ export async function handleWorkItemUpdateWithJobId(
     const preprocessResult = await preprocessWorkItem(update, operation, logger);
     const transactionStart = new Date().getTime();
     await db.transaction(async (tx) => {
-      const job = await (await logAsyncExecutionTime(
+      const { job } = await (await logAsyncExecutionTime(
         Job.byJobID,
         'HWIUWJI.Job.byJobID',
         logger))(tx, jobID, false, true);
