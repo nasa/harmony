@@ -2,14 +2,13 @@ import { expect } from 'chai';
 import db from '../app/util/db';
 import env from '../app/util/env';
 import { JobStatus } from '../app/models/job';
-import { getFirstJob } from './helpers/jobs';
+import { getFirstJob, buildJob } from './helpers/jobs';
 import hookServersStartStop from './helpers/servers';
 import { buildWorkItem, getWorkForService, updateWorkItem, fakeServiceStacOutput } from './helpers/work-items';
 import { buildWorkflowStep } from './helpers/workflow-steps';
 import * as aggregationBatch from '../app/util/aggregation-batch';
-import { buildJob } from './helpers/jobs';
 import { getStacLocation, WorkItemRecord, WorkItemStatus } from '../app/models/work-item-interface';
-import { hookTransaction, truncateAll } from './helpers/db';
+import { truncateAll } from './helpers/db';
 import { stub } from 'sinon';
 import { populateUserWorkFromWorkItems } from '../app/models/user-work';
 import { resetQueues } from './helpers/queue';
@@ -184,7 +183,7 @@ describe('When a workflow has an aggregating step in the middle and end and star
   let savedWorkItem;
   let nonAggregateWorkItem1;
   let nonAggregateWorkItem2;
-    
+
   hookServersStartStop();
   const queryCmr = 'harmonyservices/query-cmr:latest';
   const firstAggregateService = 'batchee';
@@ -193,8 +192,9 @@ describe('When a workflow has an aggregating step in the middle and end and star
   let cmrMaxPageSize;
 
   before(async function () {
+    // eslint-disable-next-line prefer-destructuring
     cmrMaxPageSize = env.cmrMaxPageSize;
-    env.cmrMaxPageSize = 2
+    env.cmrMaxPageSize = 2;
 
     resetQueues();
     const job = buildJob({ numInputGranules: 4 });
@@ -328,30 +328,30 @@ describe('When a workflow has an aggregating step in the middle and end and star
                   await updateWorkItem(this.backend, nonAggregateWorkItem2);
 
                   const savedWorkItemResp = await getWorkForService(this.backend, secondAggregateService);
-                  
+
                   savedWorkItem = JSON.parse(savedWorkItemResp.text).workItem;
 
                   expect(savedWorkItemResp.statusCode).to.equal(200);
                 });
 
                 describe('when the second aggregating service completes its work', async function () {
-                  
+
                   it('completes the job', async function () {
                     savedWorkItem.status = WorkItemStatus.SUCCESSFUL;
                     savedWorkItem.results = [
                       getStacLocation(savedWorkItem, 'catalog.json'),
-                    ]
+                    ];
                     savedWorkItem.outputItemSizes = [1];
                     await fakeServiceStacOutput(this.job.jobID, savedWorkItem.id);
                     await updateWorkItem(this.backend, savedWorkItem);
 
                     const job = await getFirstJob(db);
                     expect(job.status).to.equal(JobStatus.SUCCESSFUL);
-                  })
-                })
-              })
-            })
-          })
+                  });
+                });
+              });
+            });
+          });
         });
       });
     });

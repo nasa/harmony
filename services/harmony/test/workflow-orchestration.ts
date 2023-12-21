@@ -12,12 +12,11 @@ import { buildWorkItem, getWorkForService, hookGetWorkForService, updateWorkItem
 import { buildWorkflowStep } from './helpers/workflow-steps';
 import * as aggregationBatch from '../app/util/aggregation-batch';
 import { buildJob, getFirstJob } from './helpers/jobs';
-import { getStacLocation, WorkItemRecord, WorkItemStatus } from '../app/models/work-item-interface';
+import { getStacLocation, WorkItemStatus } from '../app/models/work-item-interface';
 import { truncateAll } from './helpers/db';
 import { stub } from 'sinon';
 import { populateUserWorkFromWorkItems } from '../app/models/user-work';
 import { resetQueues } from './helpers/queue';
-import { defaultObjectStore } from '../app/util/object-store';
 
 /**
  * Create a job and some work times to be used by tests
