@@ -1,7 +1,8 @@
-import { envVars as env } from './env';
+import { HarmonyEnv } from './env';
 import { WorkItemQueueType, Queue } from './queue';
 import { SqsQueue } from './sqs-queue';
 
+const env = new HarmonyEnv(undefined);
 const queuesByType = {};
 const queuesByUrl = {};
 const workSchedulerQueue = new SqsQueue(env.workItemSchedulerQueueUrl);
