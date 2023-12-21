@@ -18,7 +18,8 @@
     "Cumulus"
   ],
   "engines": {
-    "node": "^18.18.2"
+    "node": "^18.18.2",
+    "pnpm": ">=8"
   },
   "nyc": {
     "all": true,

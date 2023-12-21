@@ -22,7 +22,7 @@
   },
   "engines": {
     "node": "^18.18.2",
-    "npm": ">=8"
+    "pnpm": ">=8"
   },
   "author": "NASA EOSDIS Harmony team",
   "license": "Apache-2.0",
