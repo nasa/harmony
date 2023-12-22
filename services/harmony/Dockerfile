@@ -15,7 +15,8 @@ RUN env NODE_ENV=production npm ci
 
 COPY --chown=node:node built/services/harmony/package.json built/services/harmony/package-lock.json /harmony/services/harmony/
 WORKDIR /harmony/services/harmony
-RUN env NODE_ENV=production npm ci
+# RUN env NODE_ENV=production npm ci
+RUN npm config set fetch-retries 5 && npm config set fetch-timeout 600000 && env NODE_ENV=production npm ci
 RUN npm install sqlite3
 
 COPY --chown=node:node built /harmony
