@@ -75,9 +75,6 @@ function queueUrlsMap(env: Record<string, string>): Record<string, string> {
         for (const imageQueueUrl of imageQueueUrls) {
           const [image, url] = imageQueueUrl.split(',');
           if (image && url) {
-            // replace 'localstack' with `env.localstackHost` to allow for harmony to be run in a
-            // container
-            // serviceQueueUrls[image] = url.replace('localstack', env.LOCALSTACK_HOST);
             serviceQueueUrls[image] = url;
           }
         }
