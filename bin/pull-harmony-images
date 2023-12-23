@@ -1,8 +1,7 @@
 #!/bin/bash
 
 # pull down docker images that are needed to run a basic harmony service-example reqeust
-# all_images=( "harmonyservices/harmony:latest" "harmonyservices/query-cmr:latest" "harmonyservices/service-runner:latest" "harmonyservices/work-updater:latest" "harmonyservices/work-scheduler:latest" "harmonyservices/work-failer:latest" "harmonyservices/service-example:latest")
-all_images=( "harmonyservices/service-example:latest" )
+all_images=( "harmonyservices/service-example:latest" "ghcr.io/nasa/harmony-netcdf-to-zarr:latest" )
 
 for image in ${all_images[@]}; do
   echo "${image}"
