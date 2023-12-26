@@ -3,7 +3,6 @@ FROM $BASE_IMAGE
 
 RUN apt update && apt-get -y install sqlite3 python3 python3-pip python3-setuptools
 RUN pip3 install --upgrade pip awscli awscli-local
-# Need to downgrade boto3 because there is a bug breaking creating SQS queues
 RUN pip3 install boto3==1.25.5
 
 RUN mkdir -p /harmony/services/harmony /harmony/packages/util
@@ -15,7 +14,6 @@ RUN env NODE_ENV=production npm ci
 
 COPY --chown=node:node built/services/harmony/package.json built/services/harmony/package-lock.json /harmony/services/harmony/
 WORKDIR /harmony/services/harmony
-# RUN env NODE_ENV=production npm ci
 RUN npm config set fetch-retries 5 && npm config set fetch-timeout 600000 && env NODE_ENV=production npm ci
 RUN npm install sqlite3
 
