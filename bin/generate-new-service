@@ -84,6 +84,7 @@ else
         print "      reprojection: " REPROJECTION;
         print "    steps:";
         print "      - image: !Env ${QUERY_CMR_IMAGE}";
+        print "        is_sequential: true";
         print "      - image: !Env ${" SERVICE_NAME_UPPER "_IMAGE}";
     }
 }' config/services.yml > config/services.tmp.yml && mv config/services.tmp.yml config/services.yml

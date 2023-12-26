@@ -1,7 +1,7 @@
 #!/bin/bash
 # stop any services running in development mode
 
-for DEBUG_PORT in 9200 9201 9202 9203 9204 9205
+for DEBUG_PORT in 9200 9202 9203 9204 9205 9206
 do
   for PID in $( ps -ef | grep node | grep "inspect=127.0.0.1:$DEBUG_PORT" | awk '{print $2}')
   do

@@ -2,14 +2,14 @@ import env from '../../util/env';
 import { logAsyncExecutionTime } from '../../util/log-execution';
 import { v4 as uuid } from 'uuid';
 import WorkItemUpdate from '../../models/work-item-update';
-import WorkflowStep, { decrementFutureWorkItemCount, getWorkflowStepByJobIdStepIndex, getWorkflowStepsByJobId } from '../../models/workflow-steps';
+import WorkflowStep, { decrementFutureWorkItemCount, getWorkflowStepByJobIdStepIndex, getWorkflowStepsByJobId, updateIsComplete } from '../../models/workflow-steps';
 import { Logger } from 'winston';
 import _, { ceil, range, sum } from 'lodash';
 import { JobStatus, Job } from '../../models/job';
 import JobError, { getErrorCountForJob, getErrorsForJob } from '../../models/job-error';
 import JobLink, { getJobDataLinkCount } from '../../models/job-link';
 import { incrementReadyCount, deleteUserWorkForJob, incrementReadyAndDecrementRunningCounts, decrementRunningCount } from '../../models/user-work';
-import WorkItem, { maxSortIndexForJobService, workItemCountForStep, getWorkItemsByJobIdAndStepIndex, getWorkItemById, updateWorkItemStatus, getJobIdForWorkItem, isDefinitelyNotComplete } from '../../models/work-item';
+import WorkItem, { maxSortIndexForJobService, workItemCountForStep, getWorkItemsByJobIdAndStepIndex, getWorkItemById, updateWorkItemStatus, getJobIdForWorkItem } from '../../models/work-item';
 import { WorkItemStatus, COMPLETED_WORK_ITEM_STATUSES } from '../../models/work-item-interface';
 import { outputStacItemUrls, handleBatching, resultItemSizes } from '../../util/aggregation-batch';
 import db, { Transaction, batchSize } from '../../util/db';
@@ -398,6 +398,7 @@ async function createAggregatingWorkItem(
 async function maybeQueueQueryCmrWorkItem(
   tx: Transaction, currentWorkItem: WorkItem, logger: Logger,
 ): Promise<void> {
+  // TODO HARMONY-1659 change this to handle any sequential services
   if (QUERY_CMR_SERVICE_REGEX.test(currentWorkItem.serviceID)) {
     if (await calculateQueryCmrLimit(tx, currentWorkItem, logger) > 0) {
       const nextQueryCmrItem = new WorkItem({
@@ -419,40 +420,6 @@ async function maybeQueueQueryCmrWorkItem(
       logger.info('Queued new query-cmr work item.');
     }
   }
-}
-
-
-/**
- * Check to see if a workflow step for the given job is completed
- *
- * @param logger - the logger to use for logging timing statements
- * @param tx - the database transaction to use for making queries
- * @param workItem - the work-item associated with the step
- * @param thisStep - the step to check
- *
- * @returns true if the step is complete
- */
-async function isStepComplete(logger: Logger, tx: Transaction, workItem: WorkItem, thisStep: WorkflowStep): Promise<boolean> {
-  // this first check is much faster than the second, but only conclusive if notComplete is true.
-  // if it is false we must do the second (slower check)
-  let notComplete = await (await logAsyncExecutionTime(
-    isDefinitelyNotComplete,
-    'HWIJUWJI.isDefinitelyNotComplete',
-    logger))(
-    tx, workItem.jobID, workItem.workflowStepIndex,
-  );
-
-  if (!notComplete) {
-    const completedWorkItemCount = await (await logAsyncExecutionTime(
-      workItemCountForStep,
-      'HWIUWJI.workItemCountForStep',
-      logger))(
-      tx, workItem.jobID, workItem.workflowStepIndex, COMPLETED_WORK_ITEM_STATUSES,
-    );
-    notComplete = (completedWorkItemCount != thisStep.workItemCount);
-
-  }
-  return !notComplete;
 }
 
 /**
@@ -723,10 +690,7 @@ export async function processWorkItem(
 
     let allWorkItemsForStepComplete = false;
 
-    if (checkCompletion) {
-      allWorkItemsForStepComplete = await isStepComplete(logger, tx, workItem, thisStep);
-    }
-
+    
     // The number of 'hits' returned by a query-cmr could be less than when CMR was first
     // queried by harmony due to metadata deletions from CMR, so we update the job to reflect
     // that there are fewer items and to know when no more query-cmr jobs should be created.
@@ -742,6 +706,10 @@ export async function processWorkItem(
         updateWorkItemCounts,
         'HWIUWJI.updateWorkItemCounts',
         logger))(tx, job);
+    }
+
+    if (checkCompletion) {
+      allWorkItemsForStepComplete = await updateIsComplete(tx, jobID, job.numInputGranules, thisStep);
     }
 
     const continueProcessing = await (await logAsyncExecutionTime(

@@ -856,6 +856,7 @@ describe('createWorkflowSteps', function () {
     },
     steps: [{
       image: 'query cmr',
+      is_sequential: true,
     }, {
       image: 'format transformer',
       operations: ['formatTransform'],
