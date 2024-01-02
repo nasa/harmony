@@ -4,6 +4,10 @@ order with the most recent changes first.
 
 ## 2024-01-03
 ### Changed
+- HOSS_LIMITS_MEMORY - Increased to 8Gi to accommodate filling for bounding boxes crossing grid edge for large granules.
+
+## 2024-01-03
+### Changed
 - MAX_DOWNLOAD_RETRIES - Decreased to 3.
 
 ## 2023-10-09
