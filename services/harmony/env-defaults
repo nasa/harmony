@@ -210,7 +210,7 @@ LOG_STDOUT=false
 # a variable name of GIOVANNI_ADAPTER_IMAGE you would specify giovanni-adapter (converting to lowercase
 # and dash case and dropping _IMAGE. Make sure if the image for the service is not publicly available
 # that you have built the docker image locally, otherwise the service will fail to start.
-LOCALLY_DEPLOYED_SERVICES=harmony-service-example,harmony-netcdf-to-zarr
+LOCALLY_DEPLOYED_SERVICES=harmony-service-example
 
 # Local development: Use the following to set the Kubernetes context used by start scripts
 # minikube users should set it to "minikube"
