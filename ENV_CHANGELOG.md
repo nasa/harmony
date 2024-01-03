@@ -2,6 +2,10 @@
 Any changes to the environment variables will be documented in this file in chronological
 order with the most recent changes first.
 
+## 2024-01-03
+### Changed
+- MAX_DOWNLOAD_RETRIES - Decreased to 3.
+
 ## 2023-10-09
 ### Changed
 - VAR_SUBSETTER_IMAGE to HOSS_IMAGE
