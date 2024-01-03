@@ -227,7 +227,7 @@ KUBE_CONTEXT=docker-desktop
 # [0, 4, 8, 16, 32, 64, 120, 120, 120, 120] (~10 minutes)
 # 120 seconds is the maximum backoff and there is always 0 seconds before the
 # first retry regardless of the parameters.
-MAX_DOWNLOAD_RETRIES=10
+MAX_DOWNLOAD_RETRIES=3
 
 # The number of seconds to allow a pod to continue processing an active request before terminating a pod
 DEFAULT_POD_GRACE_PERIOD_SECS=14400
