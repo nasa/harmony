@@ -248,7 +248,7 @@ describe('Workflow chaining for a collection configured for Swath Projector and 
       });
 
       describe('when checking to see if Swath Projector work is queued', function () {
-        it('finds a swot-reprojection service work item and can complete it', async function () {
+        it('finds a swath-projector service work item and can complete it', async function () {
           const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
           expect(res.status).to.equal(200);
           const { workItem } = JSON.parse(res.text);
@@ -366,29 +366,29 @@ describe('Workflow chaining for a collection configured for Swath Projector and 
       expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(3);
     });
 
-    describe('when the first swot-reprojection service work item fails with an error message', function () {
-      let firstSwotItem;
+    describe('when the first swath-projector service work item fails with an error message', function () {
+      let firstSwathItem;
 
       before(async function () {
         let shouldLoop = true;
         // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
         while (shouldLoop) {
           const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
-          firstSwotItem = JSON.parse(res.text).workItem;
-          firstSwotItem.status = WorkItemStatus.FAILED;
-          firstSwotItem.errorMessage = 'That was just a practice try, right?';
-          firstSwotItem.results = [];
-          await updateWorkItem(this.backend, firstSwotItem);
+          firstSwathItem = JSON.parse(res.text).workItem;
+          firstSwathItem.status = WorkItemStatus.FAILED;
+          firstSwathItem.errorMessage = 'That was just a practice try, right?';
+          firstSwathItem.results = [];
+          await updateWorkItem(this.backend, firstSwathItem);
 
           // check to see if the work-item has failed completely
-          const workItem = await getWorkItemById(db, firstSwotItem.id);
+          const workItem = await getWorkItemById(db, firstSwathItem.id);
           shouldLoop = !(workItem.status === WorkItemStatus.FAILED);
         }
       });
 
       it('fails the job, and all further work items are canceled', async function () {
       // work item failure should trigger job failure
-        const { job } = await Job.byJobID(db, firstSwotItem.jobID);
+        const { job } = await Job.byJobID(db, firstSwathItem.jobID);
         expect(job.status).to.equal(JobStatus.FAILED);
         // job failure should trigger cancellation of any pending work items
         const currentWorkItems = (await getWorkItemsByJobId(db, job.jobID)).workItems;
@@ -399,20 +399,20 @@ describe('Workflow chaining for a collection configured for Swath Projector and 
       });
 
       it('sets the job failure message to the error message returned by the service', async function () {
-        const { job } = await Job.byJobID(db, firstSwotItem.jobID);
+        const { job } = await Job.byJobID(db, firstSwathItem.jobID);
         expect(job.message).to.contain('That was just a practice try, right?');
       });
 
-      it('does not find any further swot-reproject work', async function () {
+      it('does not find any further swath-projector work', async function () {
         const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
         expect(res.status).to.equal(404);
       });
 
       it('does not allow any further work item updates', async function () {
-        firstSwotItem.status = WorkItemStatus.SUCCESSFUL;
-        await updateWorkItem(this.backend, firstSwotItem);
+        firstSwathItem.status = WorkItemStatus.SUCCESSFUL;
+        await updateWorkItem(this.backend, firstSwathItem);
 
-        const currentWorkItems = (await getWorkItemsByJobId(db, firstSwotItem.jobID)).workItems;
+        const currentWorkItems = (await getWorkItemsByJobId(db, firstSwathItem.jobID)).workItems;
         expect(currentWorkItems.length).to.equal(4);
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.CANCELED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(2);
@@ -455,32 +455,32 @@ describe('Workflow chaining for a collection configured for Swath Projector and 
       expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(3);
     });
 
-    describe('when the first swot-reprojection service work item fails and does not provide an error message', function () {
-      let firstSwotItem;
+    describe('when the first swath-projector service work item fails and does not provide an error message', function () {
+      let firstSwathItem;
 
       before(async function () {
         let shouldLoop = true;
         // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
         while (shouldLoop) {
           const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
-          firstSwotItem = JSON.parse(res.text).workItem;
-          firstSwotItem.status = WorkItemStatus.FAILED;
-          firstSwotItem.results = [];
-          await updateWorkItem(this.backend, firstSwotItem);
+          firstSwathItem = JSON.parse(res.text).workItem;
+          firstSwathItem.status = WorkItemStatus.FAILED;
+          firstSwathItem.results = [];
+          await updateWorkItem(this.backend, firstSwathItem);
 
           // check to see if the work-item has failed completely
-          const workItem = await getWorkItemById(db, firstSwotItem.id);
+          const workItem = await getWorkItemById(db, firstSwathItem.id);
           shouldLoop = !(workItem.status === WorkItemStatus.FAILED);
         }
       });
 
       it('fails the job', async function () {
-        const { job } = await Job.byJobID(db, firstSwotItem.jobID);
+        const { job } = await Job.byJobID(db, firstSwathItem.jobID);
         expect(job.status).to.equal(JobStatus.FAILED);
       });
 
       it('sets the job failure message to a generic failure', async function () {
-        const { job } = await Job.byJobID(db, firstSwotItem.jobID);
+        const { job } = await Job.byJobID(db, firstSwathItem.jobID);
         expect(job.message).to.contain('failed with an unknown error');
       });
     });
@@ -544,7 +544,7 @@ describe('Workflow chaining for a collection configured for Swath Projector and 
       expect(workflowSteps[0].serviceID).to.equal('harmonyservices/query-cmr:latest');
     });
 
-    it('then requests reprojection using swot reprojection', async function () {
+    it('then requests reprojection using the Swath Projector', async function () {
       const job = JSON.parse(this.res.text);
       const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
 
@@ -602,7 +602,7 @@ describe('When a request spans multiple CMR pages', function () {
           workItem.outputItemSizes = [1, 1, 1];
           await fakeServiceStacOutput(workItem.jobID, workItem.id, 3);
           await updateWorkItem(this.backend, workItem);
-          // sanity check that 3 swot-reproject items were generated by the first query-cmr task
+          // sanity check that 3 swath-projector items were generated by the first query-cmr task
           const queuedCount = (await getWorkItemsByJobIdAndStepIndex(db, workItem.jobID, 2)).workItems.length;
           expect(queuedCount).equals(3);
         });
@@ -619,7 +619,7 @@ describe('When a request spans multiple CMR pages', function () {
           workItem.outputItemSizes = [1, 1];
           await fakeServiceStacOutput(workItem.jobID, workItem.id, 2);
           await updateWorkItem(this.backend, workItem);
-          // sanity check that 2 more swot-reproject items were generated by the second query-cmr task
+          // sanity check that 2 more swath-projector items were generated by the second query-cmr task
           const queuedCount = (await getWorkItemsByJobIdAndStepIndex(db, workItem.jobID, 2)).workItems.length;
           expect(queuedCount).equals(5);
         });
