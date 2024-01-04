@@ -410,7 +410,7 @@ HOSS_IMAGE=ghcr.io/nasa/harmony-opendap-subsetter:latest
 HOSS_REQUESTS_CPU=128m
 HOSS_REQUESTS_MEMORY=128Mi
 HOSS_LIMITS_CPU=128m
-HOSS_LIMITS_MEMORY=512Mi
+HOSS_LIMITS_MEMORY=8Gi
 HOSS_INVOCATION_ARGS='python -m hoss'
 HOSS_SERVICE_QUEUE_URLS='["ghcr.io/nasa/harmony-opendap-subsetter:latest,http://localstack:4566/queue/hoss.fifo"]'
 
