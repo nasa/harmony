@@ -25,6 +25,14 @@ jobs:
         brew install kubectl
         colima start --cpu 2 --memory 12 --with-kubernetes
 
+    - name: Install awslocal
+      run: |
+        pip install awscli-local
+
+    - name: Print awslocal Version
+      run: |
+        awslocal --version
+
     - name: Pull down basic harmony docker images
       run: bin/pull-harmony-images
 
