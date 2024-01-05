@@ -30,28 +30,28 @@ const jobData = [
 const workflowStepData = [
   // jobID, serviceID, operation
   ['job1', 'harmony-service-example', '[]'],
-  ['job2', 'swot-reproject', '[]'],
+  ['job2', 'swath-projector', '[]'],
   ['job3', 'harmony-service-example', '[]'],
   ['job4', 'harmony-service-example', '[]'],
-  ['job5', 'swot-reproject', '[]'],
+  ['job5', 'swath-projecor', '[]'],
   ['job6', 'harmony-service-example', '[]'],
   ['job7', 'harmony-service-example', '[]'],
   ['job8', 'trajectory-subsetter', '[]'],
-  ['job9', 'swot-reproject', '[]'],
+  ['job9', 'swath-projector', '[]'],
   ['job10', 'harmony-service-example', '[]'],
 ];
 
 const workItemData = [
   // jobID, serviceID, status, updatedAt
   ['job1', 'harmony-service-example', 'successful', 12345],
-  ['job2', 'swot-reproject', 'successful', 12352],
+  ['job2', 'swath-projector', 'successful', 12352],
   ['job3', 'harmony-service-example', 'ready', 12347],
   ['job4', 'harmony-service-example', 'ready', 12345],
-  ['job5', 'swot-reproject', 'ready', 12350],
+  ['job5', 'swath-projector', 'ready', 12350],
   ['job6', 'harmony-service-example', 'ready', 12348],
   ['job7', 'harmony-service-example', 'ready', 12349],
   ['job8', 'trajectory-subsetter', 'successful', 12355],
-  ['job9', 'swot-reproject', 'ready', 12340],
+  ['job9', 'swath-projector', 'ready', 12340],
   ['job10', 'harmony-service-example', 'ready', 12200],
 ];
 
@@ -123,7 +123,7 @@ describe('/admin/request-metrics', function () {
         it('returns the second item', function () {
           const records = parse(this.res.text, { columns: true, skipEmptyLines: true });
           expect(records.length).to.equal(1);
-          expect(records[0].swotReproject).to.equal('1');
+          expect(records[0].swathProjector).to.equal('1');
         });
 
       });
@@ -153,7 +153,7 @@ describe('/admin/request-metrics', function () {
           const records = parse(this.res.text, { columns: true, skipEmptyLines: true });
           expect(records.length).to.equal(2);
           expect(records[0].trajectorySubsetter).to.equal('1');
-          expect(records[1].swotReproject).to.equal('1');
+          expect(records[1].swathProjector).to.equal('1');
 
           // Sanity checking that services not used are set to 0
           expect(records[0].harmonyServiceExample).to.equal('0');

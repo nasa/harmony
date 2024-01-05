@@ -525,7 +525,7 @@ https://cmr.uat.earthdata.nasa.gov:
         conditional:
           exists: ['concatenate']
 
-  - name: sds/swot-reproject
+  - name: sds/swath-projector
     description: |
       Takes NetCDF-4 input files and projects input swath variables to an output grid.
       Target CRS, output grid dimensions, extents and/or resolutions can be specified in the Harmony request.
@@ -536,7 +536,7 @@ https://cmr.uat.earthdata.nasa.gov:
         <<: *default-turbo-params
         env:
           <<: *default-turbo-env
-          STAGING_PATH: public/sds/swot-reproject
+          STAGING_PATH: public/sds/swath-projector
     umm_s: S1237974711-EEDTEST
     capabilities:
       subsetting:
@@ -549,7 +549,7 @@ https://cmr.uat.earthdata.nasa.gov:
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
-      - image: !Env ${SWOT_REPROJECT_IMAGE}
+      - image: !Env ${SWATH_PROJECTOR_IMAGE}
 
   - name: sds/harmony-regridder
     description: |
@@ -889,11 +889,11 @@ https://cmr.uat.earthdata.nasa.gov:
         conditional:
           format: ['application/x-zarr']
 
-  - name: harmony/swot-repr-netcdf-to-zarr
+  - name: harmony/swath-projector-netcdf-to-zarr
     description: |
-      ### Chained Service of the SDS SWOT reprojection and Harmony netcdf-to-zarr services.
+      ### Chained Service of the SDS Swath Projection and Harmony netcdf-to-zarr services.
 
-      #### SDS SWOT reprojection service
+      #### SDS Swath Projector service
       Takes NetCDF-4 input files and projects input swath variables to an output grid.
       Target CRS, output grid dimensions, extents and/or resolutions can be specified in the Harmony request.
 
@@ -908,7 +908,7 @@ https://cmr.uat.earthdata.nasa.gov:
         <<: *default-turbo-params
         env:
           <<: *default-turbo-env
-          STAGING_PATH: public/harmony/swot-repr-netcdf-to-zarr
+          STAGING_PATH: public/harmony/swath-projector-netcdf-to-zarr
     umm_s: S1240999847-EEDTEST
     maximum_sync_granules: 0
     capabilities:
@@ -925,7 +925,7 @@ https://cmr.uat.earthdata.nasa.gov:
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
-      - image: !Env ${SWOT_REPROJECT_IMAGE}
+      - image: !Env ${SWATH_PROJECTOR_IMAGE}
         operations: ['reproject']
         conditional:
           exists: ['reproject']

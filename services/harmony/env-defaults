@@ -398,13 +398,13 @@ HARMONY_REGRIDDER_LIMITS_MEMORY=512Mi
 HARMONY_REGRIDDER_INVOCATION_ARGS='python -m harmony_regridding_service'
 HARMONY_REGRIDDER_SERVICE_QUEUE_URLS='["sds/harmony-regridder:latest,http://localstack:4566/queue/harmony-regridder.fifo"]'
 
-SWOT_REPROJECT_IMAGE=sds/swot-reproject:latest
-SWOT_REPROJECT_REQUESTS_CPU=128m
-SWOT_REPROJECT_REQUESTS_MEMORY=128Mi
-SWOT_REPROJECT_LIMITS_CPU=128m
-SWOT_REPROJECT_LIMITS_MEMORY=512Mi
-SWOT_REPROJECT_INVOCATION_ARGS='python swotrepr.py'
-SWOT_REPROJECT_SERVICE_QUEUE_URLS='["sds/swot-reproject:latest,http://localstack:4566/queue/swot-reproject.fifo"]'
+SWATH_PROJECTOR_IMAGE=ghcr.io/nasa/harmony-swath-projector:latest
+SWATH_PROJECTOR_REQUESTS_CPU=128m
+SWATH_PROJECTOR_REQUESTS_MEMORY=128Mi
+SWATH_PROJECTOR_LIMITS_CPU=128m
+SWATH_PROJECTOR_LIMITS_MEMORY=512Mi
+SWATH_PROJECTOR_INVOCATION_ARGS='python -m swath_projector'
+SWATH_PROJECTOR_SERVICE_QUEUE_URLS='["ghcr.io/nasa/harmony-swath-projector:latest,http://localstack:4566/queue/swath-projector.fifo"]'
 
 HOSS_IMAGE=ghcr.io/nasa/harmony-opendap-subsetter:latest
 HOSS_REQUESTS_CPU=128m
