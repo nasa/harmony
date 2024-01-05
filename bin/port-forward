@@ -21,11 +21,12 @@ function start_port_forwarding() {
   while [ "$iteration" -lt "$max_iterations" ]; do
     # Wait until there is exactly 1 pod running for the service
     local running_count
-    running_count=$(kubectl get pods -n harmony -l app="$service_name" --no-headers | wc -l)
 
     # postgres and harmony take some time to be ready, wait for them
-    if [ "$service_name" == "postgres" ] || [ "$service_name" == "harmony" ]; then
+    if [ "$service_name" == "postgres" ] || [ "$service_name" == "localstack" ] || [ "$service_name" == "harmony" ]; then
       running_count=$(kubectl get pods -n harmony -l app="$service_name" --no-headers | grep "1/1" | wc -l)
+    else
+      running_count=$(kubectl get pods -n harmony -l app="$service_name" --no-headers | wc -l)
     fi
 
     if [ "$running_count" -eq 1 ]; then
