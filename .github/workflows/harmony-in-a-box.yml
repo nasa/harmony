@@ -37,10 +37,26 @@ jobs:
       run: bin/pull-harmony-images
 
     - name: Install dependencies
-      run: npm ci
+      run: |
+        retries=3
+        until [ $retries -eq 0 ]; do
+          npm ci
+          if [ $? -eq 0 ]; then
+            break
+          fi
+          retries=$(($retries - 1))
+        done
 
     - name: Build harmony image
-      run: npm run build
+      run: |
+        retries=3
+        until [ $retries -eq 0 ]; do
+          npm run build
+          if [ $? -eq 0 ]; then
+            break
+          fi
+          retries=$(($retries - 1))
+        done
 
     - name: Build all other images
       run: npm run build-sequential
