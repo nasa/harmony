@@ -227,7 +227,7 @@ KUBE_CONTEXT=docker-desktop
 # [0, 4, 8, 16, 32, 64, 120, 120, 120, 120] (~10 minutes)
 # 120 seconds is the maximum backoff and there is always 0 seconds before the
 # first retry regardless of the parameters.
-MAX_DOWNLOAD_RETRIES=10
+MAX_DOWNLOAD_RETRIES=3
 
 # The number of seconds to allow a pod to continue processing an active request before terminating a pod
 DEFAULT_POD_GRACE_PERIOD_SECS=14400
@@ -393,18 +393,19 @@ HARMONY_REGRIDDER_LIMITS_CPU=128m
 HARMONY_REGRIDDER_LIMITS_MEMORY=512Mi
 HARMONY_REGRIDDER_INVOCATION_ARGS='python -m harmony_regridding_service'
 
-SWOT_REPROJECT_IMAGE=sds/swot-reproject:latest
-SWOT_REPROJECT_REQUESTS_CPU=128m
-SWOT_REPROJECT_REQUESTS_MEMORY=128Mi
-SWOT_REPROJECT_LIMITS_CPU=128m
-SWOT_REPROJECT_LIMITS_MEMORY=512Mi
-SWOT_REPROJECT_INVOCATION_ARGS='python swotrepr.py'
+SWATH_PROJECTOR_IMAGE=ghcr.io/nasa/harmony-swath-projector:latest
+SWATH_PROJECTOR_REQUESTS_CPU=128m
+SWATH_PROJECTOR_REQUESTS_MEMORY=128Mi
+SWATH_PROJECTOR_LIMITS_CPU=128m
+SWATH_PROJECTOR_LIMITS_MEMORY=512Mi
+SWATH_PROJECTOR_INVOCATION_ARGS='python -m swath_projector'
+SWATH_PROJECTOR_SERVICE_QUEUE_URLS='["ghcr.io/nasa/harmony-swath-projector:latest,http://localstack:4566/queue/swath-projector.fifo"]'
 
 HOSS_IMAGE=ghcr.io/nasa/harmony-opendap-subsetter:latest
 HOSS_REQUESTS_CPU=128m
 HOSS_REQUESTS_MEMORY=128Mi
 HOSS_LIMITS_CPU=128m
-HOSS_LIMITS_MEMORY=512Mi
+HOSS_LIMITS_MEMORY=8Gi
 HOSS_INVOCATION_ARGS='python -m hoss'
 
 SDS_MASKFILL_IMAGE=sds/maskfill-harmony:latest

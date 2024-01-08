@@ -27,7 +27,7 @@ describe('Versions endpoint', function () {
           'podaac/l2-subsetter',
           'podaac/concise',
           'podaac/l2-subsetter-concise',
-          'sds/swot-reproject',
+          'sds/swath-projector',
           'sds/harmony-regridder',
           'sds/variable-subsetter',
           'sds/maskfill',
@@ -38,7 +38,7 @@ describe('Versions endpoint', function () {
           'sds/HOSS-projection-gridded',
           'harmony/netcdf-to-zarr',
           'harmony/podaac-l2-subsetter-netcdf-to-zarr',
-          'harmony/swot-repr-netcdf-to-zarr',
+          'harmony/swath-projector-netcdf-to-zarr',
           'harmony/service-example',
         ]);
       });
