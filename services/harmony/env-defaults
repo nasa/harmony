@@ -399,7 +399,6 @@ SWATH_PROJECTOR_REQUESTS_MEMORY=128Mi
 SWATH_PROJECTOR_LIMITS_CPU=128m
 SWATH_PROJECTOR_LIMITS_MEMORY=512Mi
 SWATH_PROJECTOR_INVOCATION_ARGS='python -m swath_projector'
-SWATH_PROJECTOR_SERVICE_QUEUE_URLS='["ghcr.io/nasa/harmony-swath-projector:latest,http://localstack:4566/queue/swath-projector.fifo"]'
 
 HOSS_IMAGE=ghcr.io/nasa/harmony-opendap-subsetter:latest
 HOSS_REQUESTS_CPU=128m
