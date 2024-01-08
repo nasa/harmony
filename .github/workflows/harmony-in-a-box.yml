@@ -68,13 +68,15 @@ jobs:
       id: curl
       run: |
         HTTP_STATUS=$(curl -Ln -bj -w "%{http_code}" "http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?granuleId=G1233800343-EEDTEST&format=image/tiff" -o ./output.tif)
-        echo "::set-output name=http_status::$HTTP_STATUS"
+        echo "http_status=$HTTP_STATUS" >> "$GITHUB_OUTPUT"
 
     - name: Check HTTP status code
+      env:
+          HTTP_STATUS: ${{ steps.curl.outputs.http_status }}
       run: |
-        if [[ "${{ steps.curl.outputs.http_status }}" -eq 200 ]]; then
+        if [[ "$HTTP_STATUS" -eq 200 ]]; then
           echo "HTTP request was successful!"
         else
-          echo "HTTP request failed with status code ${{ steps.curl.outputs.http_status }}"
+          echo "HTTP request failed with status code $HTTP_STATUS"
           exit 1
         fi
