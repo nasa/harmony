@@ -39,12 +39,12 @@ jobs:
     - name: Install dependencies
       run: |
         source bin/helper
-        retry_command 3 npm ci
+        retry_command 10 npm ci
 
     - name: Build harmony image
       run: |
         source bin/helper
-        retry_command 3 npm run build
+        retry_command 10 npm run build
 
     - name: Build all other images
       run: npm run build-sequential
