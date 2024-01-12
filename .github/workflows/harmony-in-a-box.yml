@@ -47,7 +47,9 @@ jobs:
         retry_command 10 npm run build
 
     - name: Build all other images
-      run: npm run build-sequential
+      run: |
+        source bin/helper
+        retry_command 10 npm run build-sequential
 
     - name: list images
       run: docker images
