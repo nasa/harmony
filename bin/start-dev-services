@@ -30,7 +30,10 @@ popd > /dev/null
 sleep 3
 
 # create the work updaters
-export LOCALSTACK_HOST=localhost
+if [ "$KUBE_CONTEXT" != "colima" ]; then
+  export LOCALSTACK_HOST=localhost
+fi
+
 echo "Starting the large job work updater..."
 pushd services/work-updater > /dev/null
 export PORT=5002
