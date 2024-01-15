@@ -61,7 +61,7 @@ async function handleBatchWorkItemUpdatesWithJobId(
       const preprocessedWorkItems: WorkItemUpdateQueueItem[] = await Promise.all(
         groups[workflowStepIndex].map(async (item: WorkItemUpdateQueueItem) => {
           const { update, operation } = item;
-          const result = await preprocessWorkItem(update, operation, logger);
+          const result = await preprocessWorkItem(update, operation, logger, true);
           item.preprocessResult = result;
           return item;
         }));

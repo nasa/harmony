@@ -16,7 +16,7 @@ import db, { Transaction, batchSize } from '../../util/db';
 import { ServiceError } from '../../util/errors';
 import { completeJob } from '../../util/job';
 import { objectStoreForProtocol } from '../../util/object-store';
-import { StacItem, readCatalogItems, StacItemLink, StacCatalog } from '../../util/stac';
+import { StacItem, readCatalogItems, StacItemLink, StacCatalog, readCatalogsItems } from '../../util/stac';
 import { resolve } from '../../util/url';
 import { QUERY_CMR_SERVICE_REGEX, calculateQueryCmrLimit } from '../../backends/workflow-orchestration/util';
 import { makeWorkScheduleRequest } from '../../backends/workflow-orchestration/work-item-polling';
@@ -525,7 +525,9 @@ async function createNextWorkItems(
 export async function preprocessWorkItem(
   update: WorkItemUpdate,
   operation: object,
-  logger: Logger): Promise<WorkItemPreprocessInfo> {
+  logger: Logger,
+  shouldReadCatalog: boolean,
+): Promise<WorkItemPreprocessInfo> {
   const startTime = new Date().getTime();
   const { results } = update;
   let { errorMessage, status } = update;
@@ -537,8 +539,9 @@ export async function preprocessWorkItem(
   let outputItemSizes;
   let catalogItems;
   try {
-    if (results?.length < 2 && status === WorkItemStatus.SUCCESSFUL) {
-      catalogItems = await readCatalogItems(results[0]);
+    if (shouldReadCatalog) {
+    // if (results?.length < 2 && status === WorkItemStatus.SUCCESSFUL) {
+      catalogItems = await readCatalogsItems(results);
       durationMs = new Date().getTime() - startTime;
       logger.debug('timing.HWIUWJI.readCatalogItems.end', { durationMs });
     }
@@ -690,7 +693,6 @@ export async function processWorkItem(
 
     let allWorkItemsForStepComplete = false;
 
-    
     // The number of 'hits' returned by a query-cmr could be less than when CMR was first
     // queried by harmony due to metadata deletions from CMR, so we update the job to reflect
     // that there are fewer items and to know when no more query-cmr jobs should be created.
@@ -883,7 +885,7 @@ export async function handleWorkItemUpdateWithJobId(
   operation: object,
   logger: Logger): Promise<void> {
   try {
-    const preprocessResult = await preprocessWorkItem(update, operation, logger);
+    const preprocessResult = await preprocessWorkItem(update, operation, logger, true);
     const transactionStart = new Date().getTime();
     await db.transaction(async (tx) => {
       const { job } = await (await logAsyncExecutionTime(
@@ -915,6 +917,11 @@ export async function handleWorkItemUpdate(
   logger: Logger): Promise<void> {
   const { workItemID } = update;
   // get the jobID for the work item
+  // const jobID = await (await logAsyncExecutionTime(
+  //   getJobIdForWorkItem,
+  //   'getJobIdForWorkItem',
+  //   logger))(workItemID);
+  // await exports.handleWorkItemUpdateWithJobId(jobID, update, operation, logger);
   const jobID = await (await logAsyncExecutionTime(
     getJobIdForWorkItem,
     'getJobIdForWorkItem',

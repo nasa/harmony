@@ -121,13 +121,15 @@ export function validateServiceConfig(config: ServiceConfig<unknown>): void {
   const variableName = `${config.name.toUpperCase().replace(/-/g, '_')}_COLLECTIONS`;
   const collectionString = process.env[variableName];
   if (!collectionString) {
-    if (config.umm_s === undefined || typeof config.umm_s !== 'string') {
-      throw new ServerError(`There must be one and only one umm_s record configured as a string for harmony service: ${config.name}`);
-    }
+    if (!config.capabilities.all_collections) {
+      if (config.umm_s === undefined || config.umm_s === '' || typeof config.umm_s !== 'string') {
+        throw new ServerError(`There must be one and only one umm_s record configured as a string for harmony service: ${config.name}`);
+      }
 
-    for (const coll of config.collections) {
-      if (coll && (!coll.variables && !coll.granule_limit)) {
-        throw new ServerError(`Collections cannot be configured for harmony service: ${config.name}, use umm_s instead.`);
+      for (const coll of config.collections) {
+        if (coll && (!coll.variables && !coll.granule_limit)) {
+          throw new ServerError(`Collections cannot be configured for harmony service: ${config.name}, use umm_s instead.`);
+        }
       }
     }
   } else {
@@ -230,7 +232,7 @@ function isCollectionMatch(
   operation: DataOperation,
   serviceConfig: ServiceConfig<unknown>,
 ): boolean {
-  return operation.sources.every((source) => {
+  return serviceConfig.capabilities.all_collections || operation.sources.every((source) => {
     const rval = serviceConfig.collections?.some(partial(isServiceCollectionMatch, source));
     return rval;
   });
