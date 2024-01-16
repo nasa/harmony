@@ -1,13 +1,13 @@
 {
-  "1094556": {
+  "1095366": {
     "active": true,
-    "notes": "Ignored since there is no fix",
-    "expiry": "2024-02-01"
+    "notes": "Will fix in HARMONY-1688",
+    "expiry": "2024-02-12"
   },
-  "1094555": {
+  "1095367": {
     "active": true,
-    "notes": "Ignored since there is no fix",
-    "expiry": "2024-02-01"
+    "notes": "Will fix in HARMONY-1688",
+    "expiry": "2024-02-12"
   },
   "1092972": {
     "active": true,
