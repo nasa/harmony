@@ -86,3 +86,28 @@ jobs:
           echo "HTTP request failed with status code $HTTP_STATUS"
           exit 1
         fi
+
+    - name: Test Giovanni request
+      id: giovanni
+      run: |
+        GIOVANNI_RESP=$(curl -Ln -bj "http://localhost:3000/C1225808238-GES_DISC/ogc-api-coverages/1.0.0/collections/Grid%2FprecipitationCal/coverage/rangeset?format=text%2Fcsv&point=0.76,-3.8&subset=time(%222020-01-06T12%3A00%3A00Z%22%3A%222020-01-06T16%3A00%3A00Z%22)")
+        GIOVANNI_URL=$(echo "$GIOVANNI_RESP" | jq -r '.links[] | select(.rel == "self") | .href')
+        echo "status_url: $GIOVANNI_URL"
+        echo "status_url=$GIOVANNI_URL" >> "$GITHUB_OUTPUT"
+
+    - name: Wait Until Final Status is Not 'running'
+      run: |
+        until [[ "$(curl -Ln -bj "${{ steps.giovanni.outputs.status_url }}" | jq -r '.status')" != "running" ]]; do
+          sleep 10
+        done
+
+    - name: Check Giovanni request final status
+      run: |
+        GIOVANNI_STATUS=$(curl -Ln -bj "${{ steps.giovanni.outputs.status_url }}" | jq -r '.status')
+        echo "giovanni_status: $GIOVANNI_STATUS"
+        if [ "$GIOVANNI_STATUS" != "successful" ]; then
+          echo "Error: The final status is not successful."
+          exit 1
+        else
+          echo "The final status is successful."
+        fi
