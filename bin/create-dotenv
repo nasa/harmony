@@ -58,7 +58,7 @@ EOF
             echo "KUBE_CONTEXT=minikube" >> .env
         fi
     else
-        echo -e "\nLOCALLY_DEPLOYED_SERVICES=harmony-service-example\n" >> .env
+        echo -e "\nLOCALLY_DEPLOYED_SERVICES=harmony-service-example,giovanni-adapter\n" >> .env
     fi
 
 fi
