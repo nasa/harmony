@@ -25,6 +25,12 @@ jobs:
         brew install kubectl
         colima start --cpu 2 --memory 12 --with-kubernetes
 
+    - name: Create netrc
+      run: bin/create-netrc
+      env:
+        EDL_USER: ${{ secrets.EDL_USER }}
+        EDL_PASSWORD: ${{ secrets.EDL_PASSWORD }}
+
     - name: Install awslocal
       run: |
         pip install awscli-local
