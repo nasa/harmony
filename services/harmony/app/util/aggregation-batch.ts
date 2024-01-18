@@ -310,13 +310,11 @@ export async function handleBatching(
   }
   // assign the new batch items to the most recent batch until it gets full. create a new
   // batch if necessary - this becomes the most recent batch
-  logger.error(`batchItems.lenght = ${batchItems.length}`);
   while (index < batchItems.length) {
     if (currentBatch) {
       // figure out what the next sort index in the batch should be
       nextSortIndex = 0;
       const batchItem = batchItems[index];
-      logger.error(JSON.stringify(batchItem));
       // if there are already items in this batch use (highest sort index in the batch) + 1
       const maxSortIndex = await getMaxSortIndexForJobServiceBatch(
         tx,

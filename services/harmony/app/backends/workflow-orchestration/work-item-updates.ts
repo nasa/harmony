@@ -496,14 +496,11 @@ async function createNextWorkItems(
       shouldIncrementSortIndex = true;
 
       if (currentWorkflowStep.is_sequential) {
-        sortIndex = await maxSortIndexForJobService(tx, nextWorkflowStep.jobID, nextWorkflowStep.serviceID);
+        sortIndex = await maxSortIndexForJobService(tx, nextWorkflowStep.jobID, nextWorkflowStep.serviceID) + 1;
       }
     }
     const newItems = results.map(result => {
-      if (shouldIncrementSortIndex) {
-        sortIndex += 1;
-      }
-      return new WorkItem({
+      const newItem = new WorkItem({
         jobID: workItem.jobID,
         serviceID: nextWorkflowStep.serviceID,
         status: WorkItemStatus.READY,
@@ -511,6 +508,12 @@ async function createNextWorkItems(
         workflowStepIndex: nextWorkflowStep.stepIndex,
         sortIndex,
       });
+
+      if (shouldIncrementSortIndex) {
+        sortIndex += 1;
+      }
+
+      return newItem;
     });
 
     await incrementReadyCount(tx, workItem.jobID, nextWorkflowStep.serviceID, newItems.length);
