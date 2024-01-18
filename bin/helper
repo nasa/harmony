@@ -1,0 +1,21 @@
+#!/bin/bash -xe
+
+retry_command() {
+  set +e
+  local retries=$1
+  shift
+  local count=0
+
+  until "$@"; do
+    exit_code=$?
+    count=$((count + 1))
+
+    if [ $count -lt $retries ]; then
+      echo "Retrying command ($count/$retries)..."
+      sleep 5
+    else
+      echo "Retry limit exceeded. Exiting..."
+      exit $exit_code
+    fi
+  done
+}

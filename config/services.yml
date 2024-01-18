@@ -176,7 +176,7 @@ https://cmr.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/sds/trajectory-subsetter
-    umm_s: S2232210365-ORNL_CLOUD
+    umm_s: S2836723123-XYZ_PROV
     capabilities:
       subsetting:
         temporal: true
