@@ -4,9 +4,9 @@
   "description": "Data services frontend",
   "main": "index.js",
   "scripts": {
-    "test": "lerna run test",
-    "test-fast": "lerna run test-fast",
-    "test-bail": "lerna run test-bail",
+    "test": "lerna run test --load-env-files=false",
+    "test-fast": "lerna run test-fast --load-env-files=false",
+    "test-bail": "lerna run test-bail --load-env-files=false",
     "coverage": "lerna run coverage",
     "lint": "lerna run lint",
     "start": "cd services/harmony && NODE_OPTIONS=--max-old-space-size=3096 ts-node -r tsconfig-paths/register app/server.ts",
