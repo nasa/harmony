@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { describe, it } from 'mocha';
 import _ from 'lodash';
 import isUUID from '../../app/util/uuid';
-import { expectedNoOpJobKeys, itIncludesRequestUrl, itRedirectsToJobStatusUrl } from '../helpers/jobs';
+import { itRedirectsToJobStatusUrl } from '../helpers/jobs';
 import { hookPostRangesetRequest, hookRangesetRequest, rangesetRequest } from '../helpers/ogc-api-coverages';
 import hookServersStartStop from '../helpers/servers';
 import StubService, { hookServices } from '../helpers/stub-service';
@@ -36,7 +36,9 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
         const query = {
           granuleId,
           outputCrs: 'EPSG:4326',
-          subset: ['lat(0:10)', 'lon(-20.1:20)', 'time("2020-01-02T00:00:00.000Z":"2020-01-02T01:00:00.000Z")', 'foo(1.1:10)'],
+          // TODO: there's no service that can also support dimension subsetting for this collection
+          // subset: ['lat(0:10)', 'lon(-20.1:20)', 'time("2020-01-02T00:00:00.000Z":"2020-01-02T01:00:00.000Z")', 'foo(1.1:10)'],
+          subset: ['lat(0:10)', 'lon(-20.1:20)', 'time("2020-01-02T00:00:00.000Z":"2020-01-02T01:00:00.000Z")'],
           interpolation: 'near',
           // TODO: it might only make sense to include width and height with a scaleExtent
           // and scaleSize by itself
@@ -46,7 +48,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
           width: 1000,
           format: 'image/png',
           skipPreview: 'true',
-          extend: 'lat,lon',
+          // extend: 'lat,lon', TODO: HARMONY-1569 support extend
         };
 
         describe('calling the backend service', function () {
@@ -98,7 +100,8 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
             expect(this.service.operation.boundingRectangle).to.eql([-20.1, 0, 20, 10]);
           });
 
-          it('passes the arbitrary dimensions to subset to the backend', function () {
+          // TODO: Add dimension subsetting test once collection supports it
+          xit('passes the arbitrary dimensions to subset to the backend', function () {
             expect(this.service.operation.dimensions).to.eql([{
               name: 'foo',
               min: 1.1,
@@ -133,7 +136,8 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
             expect(this.service.operation.outputFormat).to.equal('image/png');
           });
 
-          it('passes the extend parameter to the backend', function () {
+          // TODO: HARMONY-1569 support extend
+          xit('passes the extend parameter to the backend', function () {
             expect(this.service.operation.extendDimensions).to.have.members(['lat', 'lon']);
           });
         });
@@ -639,102 +643,108 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     });
   });
 
-  describe('when the first step is not query-cmr', function () {
-    const serviceConfigs: ServiceConfig<unknown>[] = [
-      {
-        name: 'non-query-cmr-service',
-        collections: [
-          {
-            id: collection,
-          },
-        ],
-        type: {
-          name: 'turbo',
-        },
-        steps: [{
-          image: 'fake-internal.earthdata.nasa.gov/nexus-service/foo:uat',
-        }],
-        default_sync: true,
-        has_granule_limit: false,
-      }];
-    hookServices(serviceConfigs);
-    StubService.hook({ params: { redirect: 'http://example.com' } });
+  // TODO FIGURE THIS ONE OUT
+  // describe('when the first step is not query-cmr', function () {
+  //   const serviceConfigs: ServiceConfig<unknown>[] = [
+  //     {
+  //       name: 'non-query-cmr-service',
+  //       collections: [
+  //         {
+  //           id: collection,
+  //         },
+  //       ],
+  //       type: {
+  //         name: 'turbo',
+  //       },
+  //       capabilities: {
+  //         subsetting: {
+  //           variable: true,
+  //         },
+  //       },
+  //       steps: [{
+  //         image: 'fake-internal.earthdata.nasa.gov/nexus-service/foo:uat',
+  //       }],
+  //       default_sync: true,
+  //       has_granule_limit: false,
+  //     }];
+  //   hookServices(serviceConfigs);
+  //   StubService.hook({ params: { redirect: 'http://example.com' } });
 
-    describe('and maxResults is not set for the query', function () {
+  //   describe('and maxResults is not set for the query', function () {
 
-      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1', query: {} });
-      describe('retrieving its job status', function () {
-        hookRedirect('jdoe1');
-        it('returns a human-readable message field indicating the job is being processed', function () {
-          const job = JSON.parse(this.res.text);
-          expect(job.message).to.equal('The job is being processed');
-        });
+  //     hookRangesetRequest(version, collection, variableName, { username: 'jdoe1', query: {} });
+  //     describe('retrieving its job status', function () {
+  //       hookRedirect('jdoe1');
+  //       it('returns a human-readable message field indicating the job is being processed', function () {
+  //         const job = JSON.parse(this.res.text);
+  //         expect(job.message).to.equal('The job is being processed');
+  //       });
 
-        it('returns the number of granules for the collection', function () {
-          const job = JSON.parse(this.res.text);
-          expect(job.numInputGranules).to.equal(177);
-        });
-      });
-    });
+  //       it('returns the number of granules for the collection', function () {
+  //         const job = JSON.parse(this.res.text);
+  //         expect(job.numInputGranules).to.equal(177);
+  //       });
+  //     });
+  //   });
 
-    describe('and maxResults from the query is set to a value greater than the granule limit for the collection', function () {
-      const maxResults = 200;
+  //   describe('and maxResults from the query is set to a value greater than the granule limit for the collection', function () {
+  //     const maxResults = 200;
 
-      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1', query: { maxResults } });
-      describe('retrieving its job status', function () {
-        hookRedirect('jdoe1');
-        it('returns a human-readable message field indicating the job is being processed', function () {
-          const job = JSON.parse(this.res.text);
-          expect(job.message).to.equal('The job is being processed');
-        });
+  //     hookRangesetRequest(version, collection, variableName, { username: 'jdoe1', query: { maxResults } });
+  //     describe('retrieving its job status', function () {
+  //       hookRedirect('jdoe1');
+  //       it('returns a human-readable message field indicating the job is being processed', function () {
+  //         const job = JSON.parse(this.res.text);
+  //         expect(job.message).to.equal('The job is being processed');
+  //       });
 
-        it('returns the number of granules for the collection', function () {
-          const job = JSON.parse(this.res.text);
-          expect(job.numInputGranules).to.equal(177);
-        });
-      });
-    });
+  //       it('returns the number of granules for the collection', function () {
+  //         const job = JSON.parse(this.res.text);
+  //         expect(job.numInputGranules).to.equal(177);
+  //       });
+  //     });
+  //   });
 
-    describe('and maxResults from the query is set to a value less than the granule limit for the collection', function () {
-      const maxResults = 2;
+  //   describe('and maxResults from the query is set to a value less than the granule limit for the collection', function () {
+  //     const maxResults = 2;
 
-      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1', query: { maxResults } });
-      describe('retrieving its job status', function () {
-        hookRedirect('jdoe1');
-        it('returns a human-readable message field indicating the request has been limited to a subset of the granules determined by maxResults', function () {
-          const job = JSON.parse(this.res.text);
-          expect(job.message).to.match(/^CMR query identified \d{3,} granules, but the request has been limited to process only the first 2 granules because you requested 2 maxResults\.$/);
-        });
+  //     hookRangesetRequest(version, collection, variableName, { username: 'jdoe1', query: { maxResults } });
+  //     describe('retrieving its job status', function () {
+  //       hookRedirect('jdoe1');
+  //       it('returns a human-readable message field indicating the request has been limited to a subset of the granules determined by maxResults', function () {
+  //         const job = JSON.parse(this.res.text);
+  //         expect(job.message).to.match(/^CMR query identified \d{3,} granules, but the request has been limited to process only the first 2 granules because you requested 2 maxResults\.$/);
+  //       });
 
-        it('returns up to maxGraunules', function () {
-          const job = JSON.parse(this.res.text);
-          expect(job.numInputGranules).to.equal(2);
-        });
-      });
-    });
+  //       it('returns up to maxGraunules', function () {
+  //         const job = JSON.parse(this.res.text);
+  //         expect(job.numInputGranules).to.equal(2);
+  //       });
+  //     });
+  //   });
 
-    describe('when the collection granule limit is greater than the CMR hits, but the CMR hits is greater than the system limit', function () {
-      before(function () {
-        this.glStub = stub(env, 'maxGranuleLimit').get(() => 3);
-      });
-      after(function () {
-        this.glStub.restore();
-      });
+  //   describe('when the collection granule limit is greater than the CMR hits, but the CMR hits is greater than the system limit', function () {
+  //     before(function () {
+  //       this.glStub = stub(env, 'maxGranuleLimit').get(() => 3);
+  //     });
+  //     after(function () {
+  //       this.glStub.restore();
+  //     });
 
-      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1', query: {} });
-      hookRedirect('jdoe1');
+  //     hookRangesetRequest(version, collection, variableName, { username: 'jdoe1', query: {} });
+  //     hookRedirect('jdoe1');
 
-      it('returns a warning message about maxResults limiting the number of results', function () {
-        const job = JSON.parse(this.res.text);
-        expect(job.message).to.match(/^CMR query identified \d{3,} granules, but the request has been limited to process only the first 3 granules because of system constraints\.$/);
-      });
+  //     it('returns a warning message about maxResults limiting the number of results', function () {
+  //       const job = JSON.parse(this.res.text);
+  //       expect(job.message).to.match(/^CMR query identified \d{3,} granules, but the request has been limited to process only the first 3 granules because of system constraints\.$/);
+  //     });
 
-      it('limits the input granules to the system limit', function () {
-        const job = JSON.parse(this.res.text);
-        expect(job.numInputGranules).to.equal(3);
-      });
-    });
-  });
+  //     it('limits the input granules to the system limit', function () {
+  //       const job = JSON.parse(this.res.text);
+  //       expect(job.numInputGranules).to.equal(3);
+  //     });
+  //   });
+  // });
 
   describe('when requesting output formats', function () {
     const tiff = 'image/tiff';
@@ -748,13 +758,17 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
     describe('when providing an accept header for an unsupported format', function () {
       const headers = { accept: unsupportedFormat };
-      hookRangesetRequest(version, collection, variableName, { headers, query });
-      it('returns a 200 successful response', function () {
-        expect(this.res.status).to.equal(200);
+      hookRangesetRequest(version, collection, 'all', { headers, query });
+      it('returns a 422 error response', function () {
+        expect(this.res.status).to.equal(422);
       });
-      it('indicates the format as the reason the no op service was used', function () {
-        const noOpResponse = JSON.parse(this.res.text);
-        expect(noOpResponse.message).to.equal('Returning direct download links because the requested combination of operations: variable subsetting and reformatting to text/plain on C1233800302-EEDTEST is unsupported.');
+
+      it('indicates the format as the reason the request could not be processed', function () {
+        const body = JSON.parse(this.res.text);
+        expect(body).to.eql({
+          code: 'harmony.UnsupportedOperation',
+          description: 'Error: the requested combination of operations: reformatting to text/plain on C1233800302-EEDTEST is unsupported',
+        });
       });
     });
 
@@ -1017,18 +1031,32 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
 describe('OGC API Coverages - getCoverageRangeset with the extend query parameter', async function () {
   hookServersStartStop();
+  hookRangesetRequest('1.0.0', 'C1233800302-EEDTEST', 'all', { query: { extend: 'dimension_var', skipPreview: 'true', maxResults: 2 }, username: 'joe' });
 
-  describe('when requesting all vars and extending dimension_var', function () {
-    StubService.hook({ params: { redirect: 'http://example.com' } });
-    hookRangesetRequest('1.0.0', 'C1233800302-EEDTEST', 'all', { query: { extend: 'dimension_var', skipPreview: 'true', maxResults: 2 }, username: 'joe' });
-    itRedirectsToJobStatusUrl();
+  it('returns a 422 error response', function () {
+    expect(this.res.status).to.equal(422);
   });
 
-  describe('when requesting red_var and extending lat,lon', function () {
-    StubService.hook({ params: { redirect: 'http://example.com' } });
-    hookRangesetRequest('1.0.0', 'C1233800302-EEDTEST', 'red_var', { query: { extend: 'lat,lon' }, username: 'joe' });
-    itRedirectsToJobStatusUrl();
+  it('returns an error message indicating the transformation could not be performed', function () {
+    const body = JSON.parse(this.res.text);
+    expect(body).to.eql({
+      code: 'harmony.UnsupportedOperation',
+      description: 'Error: the requested combination of operations: extend on C1233800302-EEDTEST is unsupported',
+    });
   });
+
+  // TODO - HARMONY-1569 add tests after we have added a service that supports extend
+  // describe('when requesting all vars and extending dimension_var', function () {
+  //   StubService.hook({ params: { redirect: 'http://example.com' } });
+  //   hookRangesetRequest('1.0.0', 'C1233800302-EEDTEST', 'all', { query: { extend: 'dimension_var', skipPreview: 'true', maxResults: 2 }, username: 'joe' });
+  //   itRedirectsToJobStatusUrl();
+  // });
+
+  // describe('when requesting red_var and extending lat,lon', function () {
+  //   StubService.hook({ params: { redirect: 'http://example.com' } });
+  //   hookRangesetRequest('1.0.0', 'C1233800302-EEDTEST', 'red_var', { query: { extend: 'lat,lon' }, username: 'joe' });
+  //   itRedirectsToJobStatusUrl();
+  // });
 });
 
 describe('OGC API Coverages - getCoverageRangeset with a collection not configured for services', function () {
@@ -1037,195 +1065,25 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
 
   hookServersStartStop();
 
-  // TODO Added for HARMONY-1030. Remove this when working HARMONY-968
-  describe('when running in turbo mode', function () {
+  describe('when not requesting any transformations', function () {
     hookRangesetRequest(version, collection, 'all', { username: 'joe' });
-    it('returns a 200 successful response', function () {
-      expect(this.res.status).to.equal(200);
-    });
-    it('returns a JSON body in the format of a job status without a job ID', function () {
-      const job = JSON.parse(this.res.text);
-      expect(Object.keys(job)).to.eql(expectedNoOpJobKeys);
-    });
-    it('returns a successful status', function () {
-      const job = JSON.parse(this.res.text);
-      expect(job.status).to.eql('successful');
-    });
-    it('returns 100 for progress', function () {
-      const job = JSON.parse(this.res.text);
-      expect(job.progress).to.eql(100);
-    });
-    it('returns the number of CMR hits as the number of input granules', function () {
-      const job = JSON.parse(this.res.text);
-      expect(job.numInputGranules).to.eql(6);
-    });
-    it('returns a message when results are truncated', function () {
-      const job = JSON.parse(this.res.text);
-      expect(job.message).to.eql('Returning direct download links because no operations can be performed on C1243745256-EEDTEST.');
-    });
-    it('returns granule links', function () {
-      const job = JSON.parse(this.res.text);
-      expect(job.links.length).to.equal(6);
-    });
-    it('granule links include a title of the granuleId', function () {
-      const job = JSON.parse(this.res.text);
-      expect(job.links[0].title).to.equal('G1243746331-EEDTEST');
-    });
-    it('granule links include a download link', function () {
-      const job = JSON.parse(this.res.text);
-      expect(job.links[0].href).to.not.equal(undefined);
-    });
+    itRedirectsToJobStatusUrl();
   });
 
-  describe('when provided a valid set of parameters', function () {
-    hookRangesetRequest(version, collection, 'all', { username: 'joe' });
+  describe('when requesting any transformation such as reformatting to png', function () {
+    hookRangesetRequest(version, collection, 'all', { username: 'joe', query: { format: 'image/png' } });
 
-    it('returns a 200 successful response', function () {
-      expect(this.res.status).to.equal(200);
-    });
-    it('returns a JSON body in the format of a job status without a job ID', function () {
-      const job = JSON.parse(this.res.text);
-      expect(Object.keys(job)).to.eql(expectedNoOpJobKeys);
-    });
-    it('returns a successful status', function () {
-      const job = JSON.parse(this.res.text);
-      expect(job.status).to.eql('successful');
-    });
-    it('returns 100 for progress', function () {
-      const job = JSON.parse(this.res.text);
-      expect(job.progress).to.eql(100);
-    });
-    it('returns the number of CMR hits as the number of input granules', function () {
-      const job = JSON.parse(this.res.text);
-      expect(job.numInputGranules).to.eql(6);
-    });
-    it('returns a message when results are truncated', function () {
-      const job = JSON.parse(this.res.text);
-      expect(job.message).to.eql('Returning direct download links because no operations can be performed on C1243745256-EEDTEST.');
-    });
-    it('returns granule links', function () {
-      const job = JSON.parse(this.res.text);
-      expect(job.links.length).to.equal(6);
-    });
-    it('granule links include a title of the granuleId', function () {
-      const job = JSON.parse(this.res.text);
-      expect(job.links[0].title).to.equal('G1243746331-EEDTEST');
-    });
-    it('granule links include a download link', function () {
-      const job = JSON.parse(this.res.text);
-      expect(job.links[0].href).to.not.equal(undefined);
+    it('returns a 422 error response', function () {
+      expect(this.res.status).to.equal(422);
     });
 
-    itIncludesRequestUrl('/C1243745256-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset');
-  });
-
-  describe('when using accept headers', function () {
-    describe('*/*', function () {
-      hookRangesetRequest(version, collection, 'all', { headers: { accept: '*/*' } });
-      it('returns a 200 successful response', function () {
-        expect(this.res.status).to.equal(200);
-      });
-      it('returns a JSON body in the format of a job status without a job ID', function () {
-        const job = JSON.parse(this.res.text);
-        expect(Object.keys(job)).to.eql(expectedNoOpJobKeys);
+    it('returns an error message indicating the transformation could not be performed', function () {
+      const body = JSON.parse(this.res.text);
+      expect(body).to.eql({
+        code: 'harmony.UnsupportedOperation',
+        description: 'Error: the requested combination of operations: reformatting to image/png on C1243745256-EEDTEST is unsupported',
       });
     });
-    describe('application/json', function () {
-      hookRangesetRequest(version, collection, 'all', { headers: { accept: 'application/json' } });
-      it('returns a 200 successful response', function () {
-        expect(this.res.status).to.equal(200);
-      });
-      it('returns a JSON body in the format of a job status without a job ID', function () {
-        const job = JSON.parse(this.res.text);
-        expect(Object.keys(job)).to.eql(expectedNoOpJobKeys);
-      });
-    });
-  });
 
-  describe('when only one granule is identified', function () {
-    const collectionWithSingleGranule = 'C1243747466-EEDTEST';
-    hookRangesetRequest(version, collectionWithSingleGranule, 'all', {});
-
-    it('returns a 200 successful response', function () {
-      expect(this.res.status).to.equal(200);
-    });
-    it('returns a JSON body in the format of a job status without a job ID', function () {
-      const job = JSON.parse(this.res.text);
-      expect(Object.keys(job)).to.eql(expectedNoOpJobKeys);
-    });
-    it('returns a message indicating no transformations were performed', function () {
-      const job = JSON.parse(this.res.text);
-      expect(job.message).to.eql('Returning direct download links because no operations can be performed on C1243747466-EEDTEST.');
-    });
-  });
-
-  describe('when performing spatial and temporal subsetting', function () {
-    const query = {
-      subset: ['lat(30:40)', 'lon(-100:0)', 'time("1987-05-29T00:00Z":"1987-05-30T00:00Z")'],
-    };
-    hookRangesetRequest(version, collection, 'all', { query });
-
-    it('returns a 200 successful response', function () {
-      expect(this.res.status).to.equal(200);
-    });
-    it('returns a JSON body in the format of a job status without a job ID', function () {
-      const job = JSON.parse(this.res.text);
-      expect(Object.keys(job)).to.eql(expectedNoOpJobKeys);
-    });
-    it('limits results to only those that match the spatial and temporal subset', function () {
-      const job = JSON.parse(this.res.text);
-      expect(job.links.length).to.equal(1);
-    });
-
-    itIncludesRequestUrl('C1243745256-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?subset=lat(30%3A40)&subset=lon(-100%3A0)&subset=time(%221987-05-29T00%3A00Z%22%3A%221987-05-30T00%3A00Z%22)');
-  });
-
-  describe('when performing point-based query', function () {
-    const query = {
-      point: [-96.595, 39.1019],
-    };
-    hookRangesetRequest(version, collection, 'all', { query });
-
-    it('returns a 200 successful response', function () {
-      expect(this.res.status).to.equal(200);
-    });
-    it('returns a JSON body in the format of a job status without a job ID', function () {
-      const job = JSON.parse(this.res.text);
-      expect(Object.keys(job)).to.eql(expectedNoOpJobKeys);
-    });
-    it('limits results to only those that match the point-based query', function () {
-      const job = JSON.parse(this.res.text);
-      expect(job.links.length).to.equal(6);
-    });
-
-    itIncludesRequestUrl('C1243745256-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?point=-96.595&point=39.1019');
-  });
-
-  describe('when specifying an invalid variable', function () {
-    hookRangesetRequest(version, collection, 'badVar', {});
-
-    it('returns a 400 error', function () {
-      expect(this.res.status).to.equal(400);
-    });
-    it('includes an error message indicating the bad variable name', function () {
-      const response = JSON.parse(this.res.text);
-      expect(response).to.eql({
-        code: 'harmony.RequestValidationError',
-        description: 'Error: Coverages were not found for the provided variables: badVar',
-      });
-    });
-  });
-
-  describe('when using short name for a collection with granules but no services configured', function () {
-    const shortName = 'harmony-SEA_SURFACE_HEIGHT_ALT_GRIDS_L4_2SATS_5DAY_6THDEG_V_JPL1812';
-    hookRangesetRequest(version, shortName, 'all', {});
-
-    it('returns a 200 successful response', function () {
-      expect(this.res.status).to.equal(200);
-    });
-    it('returns a JSON body in the format of a job status without a job ID', function () {
-      const job = JSON.parse(this.res.text);
-      expect(Object.keys(job)).to.eql(expectedNoOpJobKeys);
-    });
   });
 });

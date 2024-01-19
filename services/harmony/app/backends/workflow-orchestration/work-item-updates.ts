@@ -526,7 +526,7 @@ export async function preprocessWorkItem(
   update: WorkItemUpdate,
   operation: object,
   logger: Logger,
-  shouldReadCatalog: boolean,
+  _shouldReadCatalog: boolean,
 ): Promise<WorkItemPreprocessInfo> {
   const startTime = new Date().getTime();
   const { results } = update;
@@ -539,8 +539,8 @@ export async function preprocessWorkItem(
   let outputItemSizes;
   let catalogItems;
   try {
-    if (shouldReadCatalog) {
-    // if (results?.length < 2 && status === WorkItemStatus.SUCCESSFUL) {
+    // if (_shouldReadCatalog) {
+    if (results?.length < 2 && status === WorkItemStatus.SUCCESSFUL) {
       catalogItems = await readCatalogsItems(results);
       durationMs = new Date().getTime() - startTime;
       logger.debug('timing.HWIUWJI.readCatalogItems.end', { durationMs });
