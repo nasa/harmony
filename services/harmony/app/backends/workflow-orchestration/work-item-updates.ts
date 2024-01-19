@@ -456,7 +456,6 @@ async function createNextWorkItems(
   //  for the next step if we have completed all the work-items for the current step
   // 3. next step does not aggregate, so we create a new work-item for the next step for each
   //  result from this work-item update
-  // if (results && results.length > 0 || nextWorkflowStep.isBatched) {
   if (nextWorkflowStep.hasAggregatedOutput) {
     if (nextWorkflowStep.isBatched) {
       let sortIndex;
