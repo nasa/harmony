@@ -297,7 +297,10 @@ export async function handleBatching(
   const batchItems = await getByJobServiceBatch(tx, jobID, serviceID, null, true);
   let index = 0;
   let nextSortIndex: number;
+  // get the most recent batch so we can try to assign new items to it
   let currentBatch = await withHighestBatchIDForJobService(tx, jobID, serviceID);
+  // keep track of how big the batch is in terms of number of items and total size of the 
+  // items in bytes
   let currentBatchSize = 0;
   let currentBatchCount = 0;
   if (currentBatch) {
@@ -305,7 +308,8 @@ export async function handleBatching(
     currentBatchSize = sum;
     currentBatchCount = count;
   }
-
+  // assign the new batch items to the most recent batch until it gets full. create a new
+  // batch if necessary - this becomes the most recent batch
   while (index < batchItems.length) {
     if (currentBatch) {
       // figure out what the next sort index in the batch should be
