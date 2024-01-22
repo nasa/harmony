@@ -18,7 +18,7 @@ jobs:
     - name: Install setuptools
       run: sudo -H pip install setuptools
 
-    - name: Install docker
+    - name: Install docker and start colima
       run: |
         brew update
         brew install docker
@@ -29,15 +29,27 @@ jobs:
       run: |
         pip install awscli-local
 
-    - name: Print awslocal Version
-      run: |
-        awslocal --version
+    - name: Set up npm dependency caching
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18
+        cache: 'npm'
+        cache-dependency-path: '**/package-lock.json'
+
+    # Set up docker layer caching
+    - uses: docker/setup-buildx-action@v3
+    - uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: services/harmony/Dockerfile
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
 
     - name: Create netrc
       run: bin/create-netrc
       env:
-        EDL_USER: ${{ secrets.EDL_USER }}
-        EDL_PASSWORD: ${{ secrets.EDL_PASSWORD }}
+        EDL_USER: ${{ secrets.LEO_EDL_USER }}
+        EDL_PASSWORD: ${{ secrets.LEO_EDL_PASSWORD }}
 
     - name: Pull down basic harmony docker images
       run: bin/pull-harmony-images
