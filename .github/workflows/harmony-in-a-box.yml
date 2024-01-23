@@ -24,11 +24,6 @@ jobs:
         brew install docker
         brew install kubectl
 
-    - name: Start colima
-      run: |
-        colima start --cpu 2 --memory 12 --with-kubernetes
-        colima status
-
     - name: Install awslocal
       run: |
         pip install awscli-local
@@ -46,13 +41,19 @@ jobs:
         EDL_USER: ${{ secrets.LEO_EDL_USER }}
         EDL_PASSWORD: ${{ secrets.LEO_EDL_PASSWORD }}
 
-    - name: Pull down basic harmony docker images
-      run: bin/pull-harmony-images
-
     - name: Install dependencies
       run: |
         source bin/helper
         retry_command 10 npm ci
+
+    - name: Start colima
+      run: colima start --cpu 2 --memory 12 --with-kubernetes
+
+    - name: Check colima status
+      run: colima status
+
+    - name: Pull down basic harmony docker images
+      run: bin/pull-harmony-images
 
     - name: Build harmony image
       run: |
@@ -66,6 +67,9 @@ jobs:
 
     - name: list images
       run: docker images
+
+    - name: debug
+      run: kubectl cluster-info
 
     - name: Start harmony in a box
       run: |
