@@ -18,12 +18,16 @@ jobs:
     - name: Install setuptools
       run: sudo -H pip install setuptools
 
-    - name: Install docker and start colima
+    - name: Install docker
       run: |
         brew update
         brew install docker
         brew install kubectl
+
+    - name: Start colima
+      run: |
         colima start --cpu 2 --memory 12 --with-kubernetes
+        colima status
 
     - name: Install awslocal
       run: |
@@ -35,15 +39,6 @@ jobs:
         node-version: 18
         cache: 'npm'
         cache-dependency-path: '**/package-lock.json'
-
-    # Set up docker layer caching
-    - uses: docker/setup-buildx-action@v3
-    - uses: docker/build-push-action@v5
-      with:
-        context: .
-        file: services/harmony/Dockerfile
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
 
     - name: Create netrc
       run: bin/create-netrc
