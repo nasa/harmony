@@ -453,8 +453,10 @@ export default abstract class BaseService<ServiceParamType> {
       this.config.steps.forEach(((step) => {
         if (stepRequired(step, this.operation)) {
           i += 1;
+          let isLastStep = false;
           if (i === numSteps) {
             this.operation.stagingLocation = this.finalStagingLocation();
+            isLastStep = true;
           }
           workflowSteps.push(new WorkflowStep({
             jobID: this.operation.requestId,
@@ -468,6 +470,7 @@ export default abstract class BaseService<ServiceParamType> {
             hasAggregatedOutput: stepHasAggregatedOutput(step, this.operation),
             isBatched: !!step.is_batched && this.operation.shouldConcatenate,
             is_sequential: !!step.is_sequential,
+            is_last_step: isLastStep,
             maxBatchInputs: step.max_batch_inputs,
             maxBatchSizeInBytes: step.max_batch_size_in_bytes,
           }));

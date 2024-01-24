@@ -44,7 +44,10 @@ export interface WorkflowStepRecord {
   is_sequential: boolean;
 
   // Whether or not the step has been completed
-  is_complete: boolean; 
+  is_complete: boolean;
+
+  // Whether or not the step is the last step in the chain
+  is_last_step: boolean;
 
   // The maximum number of input granules in each invocation of the service
   maxBatchInputs: number;
@@ -88,6 +91,9 @@ export default class WorkflowStep extends Record implements WorkflowStepRecord {
 
   // Whether or not the step has been completed
   is_complete: boolean;
+
+  // Whether or not the step is the last step in the chain
+  is_last_step: boolean;
 
   // The maximum number of input granules in each invocation of the service
   maxBatchInputs: number;
@@ -312,7 +318,7 @@ export async function updateIsComplete(tx: Transaction, jobID: string, numInputG
         .where({ jobID, stepIndex: stepIndex - 1 });
       prevStepComplete = prevStepCompleteResult['is_complete'];
     }
-  
+
     if (prevStepComplete) {
       const isNotCompleteResult = await tx
         .select(tx.raw('EXISTS ? AS not_complete',
@@ -329,7 +335,7 @@ export async function updateIsComplete(tx: Transaction, jobID: string, numInputG
   if (isComplete) {
     await tx(WorkflowStep.table)
       .where({ jobID, stepIndex })
-      .update('is_complete', true);       
+      .update('is_complete', true);
   }
 
   return isComplete;

@@ -37,8 +37,6 @@ export type WorkItemUpdateQueueItem = {
   preprocessResult?: WorkItemPreprocessInfo,
 };
 
-const NO_NEXT_STEP = 'NoNextStep';
-
 /**
  * Add links to the Job for the WorkItem and save them to the database.
  *
@@ -526,21 +524,22 @@ export async function preprocessWorkItem(
   update: WorkItemUpdate,
   operation: object,
   logger: Logger,
-  _shouldReadCatalog: boolean,
+  nextWorkflowStep: WorkflowStep,
 ): Promise<WorkItemPreprocessInfo> {
   const startTime = new Date().getTime();
   const { results } = update;
   let { errorMessage, status } = update;
 
   // Get the sizes of all the data items/granules returned for the WorkItem and STAC item links
-  // when batching.
-  // This needs to be done outside the transaction as it can be slow if there are many granules.
+  // when batching. This needs to be done outside the main db transaction since it involves reading
+  // the catalogs from S3.
   let durationMs;
   let outputItemSizes;
   let catalogItems;
   try {
-    // if (_shouldReadCatalog) {
-    if (results?.length < 2 && status === WorkItemStatus.SUCCESSFUL) {
+    if (status === WorkItemStatus.SUCCESSFUL && !nextWorkflowStep) {
+      // if we are the last step in the chain we should read the catalog items since they are
+      // needed for generating the output links we will save
       catalogItems = await readCatalogsItems(results);
       durationMs = new Date().getTime() - startTime;
       logger.debug('timing.HWIUWJI.readCatalogItems.end', { durationMs });
@@ -577,9 +576,6 @@ export async function preprocessWorkItem(
  * @param logger - the Logger for the request
  * @param checkCompletion - true if needs to check if the whole job has completed
  * @param thisStep - the current workflow step the work item is being processed in
- * @param nextStep - the next workflow step of the work item. If it has a string
- *                   value of NO_NEXT_STEP, it means the current step is the last step
- *                   and there is no next workflow step.
  */
 export async function processWorkItem(
   tx: Transaction,
@@ -587,9 +583,9 @@ export async function processWorkItem(
   job: Job,
   update: WorkItemUpdate,
   logger: Logger,
-  checkCompletion = true,
-  thisStep: WorkflowStep = undefined,
-  nextStep: WorkflowStep | string = undefined): Promise<void> {
+  checkCompletion,
+  thisStep: WorkflowStep,
+): Promise<void> {
   const { jobID } = job;
   const { status, errorMessage, catalogItems, outputItemSizes } = preprocessResult;
   const { workItemID, hits, results, scrollID } = update;
@@ -608,7 +604,7 @@ export async function processWorkItem(
       getWorkItemById,
       'HWIUWJI.getWorkItemById',
       logger))(tx, workItemID, true);
-    if (thisStep == undefined) {
+    if (!thisStep) {
       thisStep = await (await logAsyncExecutionTime(
         getWorkflowStepByJobIdStepIndex,
         'HWIUWJI.getWorkflowStepByJobIdStepIndex',
@@ -718,18 +714,11 @@ export async function processWorkItem(
       handleFailedWorkItems,
       'HWIUWJI.handleFailedWorkItems',
       logger))(tx, job, workItem, thisStep, status, logger, errorMessage);
-    let nextWorkflowStep;
     if (continueProcessing) {
-      if (nextStep == undefined) {
-        nextWorkflowStep = await (await logAsyncExecutionTime(
-          getWorkflowStepByJobIdStepIndex,
-          'HWIUWJI.getWorkflowStepByJobIdStepIndex',
-          logger))(tx, workItem.jobID, workItem.workflowStepIndex + 1);
-      } else if (nextStep == NO_NEXT_STEP) {
-        nextWorkflowStep = undefined;
-      } else {
-        nextWorkflowStep = nextStep;
-      }
+      const nextWorkflowStep = await (await logAsyncExecutionTime(
+        getWorkflowStepByJobIdStepIndex,
+        'HWIUWJI.getWorkflowStepByJobIdStepIndex',
+        logger))(tx, workItem.jobID, workItem.workflowStepIndex + 1);
 
       if (nextWorkflowStep && (status !== WorkItemStatus.FAILED || nextWorkflowStep?.isBatched)) {
         didCreateWorkItem = await (await logAsyncExecutionTime(
@@ -764,7 +753,7 @@ export async function processWorkItem(
           // Failed to create the next work items when there should be work items.
           // Fail the job rather than leaving it orphaned in the running state
           logger.error('The work item update should have contained results to queue a next work item, but it did not.');
-          const message = 'Harmony internal failure: could not create the next work items for the request.';
+          const message = 'Harmony internal failure: service did not return any outputs.';
           await (await logAsyncExecutionTime(
             completeJob,
             'HWIUWJI.completeJob',
@@ -845,21 +834,14 @@ export async function processWorkItems(
         getWorkflowStepByJobIdStepIndex,
         'HWIUWJI.getWorkflowStepByJobIdStepIndex',
         logger))(tx, jobID, workflowStepIndex);
-      let nextStep: WorkflowStep | string = await (await logAsyncExecutionTime(
-        getWorkflowStepByJobIdStepIndex,
-        'HWIUWJI.getWorkflowStepByJobIdStepIndex',
-        logger))(tx, jobID, workflowStepIndex + 1);
-      if (nextStep == undefined) {
-        nextStep = NO_NEXT_STEP;
-      }
 
       const lastIndex = items.length - 1;
       for (let index = 0; index < items.length; index++) {
         const { preprocessResult, update }  = items[index];
         if (index < lastIndex) {
-          await processWorkItem(tx, preprocessResult, job, update, logger, false, thisStep, nextStep);
+          await processWorkItem(tx, preprocessResult, job, update, logger, false, thisStep);
         } else {
-          await processWorkItem(tx, preprocessResult, job, update, logger, true, thisStep, nextStep);
+          await processWorkItem(tx, preprocessResult, job, update, logger, true, thisStep);
         }
       }
     });
@@ -883,9 +865,17 @@ export async function handleWorkItemUpdateWithJobId(
   jobID: string,
   update: WorkItemUpdate,
   operation: object,
-  logger: Logger): Promise<void> {
+  logger: Logger,
+  loadNextWorkflowStep = false): Promise<void> {
   try {
-    const preprocessResult = await preprocessWorkItem(update, operation, logger, true);
+    let nextWorkflowStep = undefined;
+    if (loadNextWorkflowStep) {
+      nextWorkflowStep = await (await logAsyncExecutionTime(
+        getWorkflowStepByJobIdStepIndex,
+        'HWIUWJI.getWorkflowStepByJobIdStepIndex',
+        logger))(db, jobID, update.workflowStepIndex + 1);
+    }
+    const preprocessResult = await preprocessWorkItem(update, operation, logger, nextWorkflowStep);
     const transactionStart = new Date().getTime();
     await db.transaction(async (tx) => {
       const { job } = await (await logAsyncExecutionTime(
@@ -893,7 +883,7 @@ export async function handleWorkItemUpdateWithJobId(
         'HWIUWJI.Job.byJobID',
         logger))(tx, jobID, false, true);
 
-      await processWorkItem(tx, preprocessResult, job, update, logger);
+      await processWorkItem(tx, preprocessResult, job, update, logger, true, undefined);
 
     });
     const durationMs = new Date().getTime() - transactionStart;
@@ -916,15 +906,9 @@ export async function handleWorkItemUpdate(
   operation: object,
   logger: Logger): Promise<void> {
   const { workItemID } = update;
-  // get the jobID for the work item
-  // const jobID = await (await logAsyncExecutionTime(
-  //   getJobIdForWorkItem,
-  //   'getJobIdForWorkItem',
-  //   logger))(workItemID);
-  // await exports.handleWorkItemUpdateWithJobId(jobID, update, operation, logger);
   const jobID = await (await logAsyncExecutionTime(
     getJobIdForWorkItem,
     'getJobIdForWorkItem',
     logger))(workItemID);
-  await exports.handleWorkItemUpdateWithJobId(jobID, update, operation, logger);
+  await exports.handleWorkItemUpdateWithJobId(jobID, update, operation, logger, true, undefined);
 }
