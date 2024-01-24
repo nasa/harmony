@@ -741,7 +741,7 @@ export async function processWorkItem(
             logger))(nextWorkflowStep.serviceID);
         }
       }
-      if (nextWorkflowStep && status === WorkItemStatus.SUCCESSFUL) {
+      if (status === WorkItemStatus.SUCCESSFUL) {
         if (results && results.length > 0) {
           // set the scrollID for the next work item to the one we received from the update
           workItem.scrollID = scrollID;
@@ -759,7 +759,8 @@ export async function processWorkItem(
             'HWIUWJI.completeJob',
             logger))(tx, job, JobStatus.FAILED, logger, message);
         }
-      } else if (!nextWorkflowStep || allWorkItemsForStepComplete) {
+      }
+      if (!nextWorkflowStep || allWorkItemsForStepComplete) {
         // Finished with the chain for this granule
         if (status != WorkItemStatus.FAILED) {
           await (await logAsyncExecutionTime(
