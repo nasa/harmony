@@ -78,7 +78,6 @@ CREATE TABLE `workflow_steps` (
   `maxBatchInputs` integer,
   `maxBatchSizeInBytes` integer,
   `operation` text not null,
-  `is_last_step` boolean not null default false,
   `createdAt` datetime not null,
   `updatedAt` datetime not null,
   FOREIGN KEY(jobID) REFERENCES jobs(jobID),

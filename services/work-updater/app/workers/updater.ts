@@ -61,14 +61,14 @@ async function handleBatchWorkItemUpdatesWithJobId(
       'HWIUWJI.getWorkflowStepByJobIdStepIndex',
       logger))(db, jobID, parseInt(workflowStepIndex) + 1);
 
-      const preprocessedWorkItems: WorkItemUpdateQueueItem[] = await Promise.all(
-        groups[workflowStepIndex].map(async (item: WorkItemUpdateQueueItem) => {
-          const { update, operation } = item;
-          const result = await preprocessWorkItem(update, operation, logger, nextWorkflowStep);
-          item.preprocessResult = result;
-          return item;
-        }));
-      await processWorkItems(jobID, parseInt(workflowStepIndex), preprocessedWorkItems, logger);
+    const preprocessedWorkItems: WorkItemUpdateQueueItem[] = await Promise.all(
+      groups[workflowStepIndex].map(async (item: WorkItemUpdateQueueItem) => {
+        const { update, operation } = item;
+        const result = await preprocessWorkItem(update, operation, logger, nextWorkflowStep);
+        item.preprocessResult = result;
+        return item;
+      }));
+    await processWorkItems(jobID, parseInt(workflowStepIndex), preprocessedWorkItems, logger);
   }
   const durationMs = new Date().getTime() - startTime;
   logger.debug('timing.HWIUWJI.batch.end', { durationMs });

@@ -46,9 +46,6 @@ export interface WorkflowStepRecord {
   // Whether or not the step has been completed
   is_complete: boolean;
 
-  // Whether or not the step is the last step in the chain
-  is_last_step: boolean;
-
   // The maximum number of input granules in each invocation of the service
   maxBatchInputs: number;
 
@@ -91,9 +88,6 @@ export default class WorkflowStep extends Record implements WorkflowStepRecord {
 
   // Whether or not the step has been completed
   is_complete: boolean;
-
-  // Whether or not the step is the last step in the chain
-  is_last_step: boolean;
 
   // The maximum number of input granules in each invocation of the service
   maxBatchInputs: number;
