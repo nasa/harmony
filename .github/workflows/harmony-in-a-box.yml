@@ -146,12 +146,14 @@ jobs:
     - name: Check Giovanni request final status
       run: |
         for i in {1..30}; do
-          GIOVANNI_STATUS==$(curl -Ln -bj "${{ steps.giovanni.outputs.status_url }}" | jq -r '.status')
-          if [[ "$GIOVANNI_STATUS" == *"running"* ]]; then
+          request_status==$(curl -Ln -bj "${{ steps.giovanni.outputs.status_url }}" | jq -r '.status')
+          # remove the leading = that shows up only in github actions
+          GIOVANNI_STATUS="${request_status#=}"
+          if [[ "$GIOVANNI_STATUS" != "running" ]]; then
+            break
+          else
             echo "Giovanni reqeust running, wait..."
             sleep 10
-          else
-            break
           fi
         done
 
