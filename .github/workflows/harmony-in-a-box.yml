@@ -68,8 +68,10 @@ jobs:
     - name: list images
       run: docker images
 
-    - name: debug
-      run: kubectl cluster-info
+    - name: Check kubernetes status
+      run: |
+        source bin/helper
+        retry_command 5 kubectl cluster-info
 
     - name: Start harmony in a box
       run: |

@@ -19,6 +19,10 @@ retry_command() {
         kubectl -n harmony get pods
         top -l 1 -s 0 | grep PhysMem
         df -h
+      elif [[ "$@" == *"kubectl"* ]]; then
+        echo "kubectl command failed, restart colima."
+        colima stop
+        colima start --cpu 2 --memory 12 --with-kubernetes
       fi
       sleep 5
     else
