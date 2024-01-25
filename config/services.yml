@@ -23,6 +23,32 @@ x-turbo-config: &default-turbo-config
 
 https://cmr.earthdata.nasa.gov:
 
+  - name: harmony/download
+    description: Service that performs no processing, it only returns download links for all of the matched granules from the CMR.
+    data_operation_version: '0.18.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/harmony/download
+    maximum_sync_granules: 0
+    capabilities:
+      subsetting:
+        bbox: false
+        variable: false
+        multiple_variable: false
+      reprojection: false
+      concatenation: false
+      all_collections: true
+      output_formats:
+        - application/netcdf # Incorrect mime-type, remove when no longer needed
+        - application/x-netcdf4
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
+
   - name: gesdisc/giovanni
     description: |
       A service to compose the Giovanni URL and invoke Giovanni service to produce output file to visualize, analyze,
@@ -357,6 +383,32 @@ https://cmr.earthdata.nasa.gov:
       - image: !Env ${HARMONY_SERVICE_EXAMPLE_IMAGE}
 
 https://cmr.uat.earthdata.nasa.gov:
+
+  - name: harmony/download
+    description: Service that performs no processing, it only returns download links for all of the matched granules from the CMR.
+    data_operation_version: '0.18.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/harmony/download
+    maximum_sync_granules: 0
+    capabilities:
+      subsetting:
+        bbox: false
+        variable: false
+        multiple_variable: false
+      reprojection: false
+      concatenation: false
+      all_collections: true
+      output_formats:
+        - application/netcdf # Incorrect mime-type, remove when no longer needed
+        - application/x-netcdf4
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
 
   - name: ldds/geoloco
     description: |
