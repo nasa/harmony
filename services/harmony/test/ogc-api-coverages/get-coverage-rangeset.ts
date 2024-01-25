@@ -775,6 +775,14 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     });
   });
 
+  describe('when requesting no data transformations', function () {
+    StubService.hook({ params: { redirect: 'http://example.com' } });
+    hookRangesetRequest(version, collection, 'all');
+    it('selects the download link service to process the request', function () {
+      expect(this.service.config.name).to.equal('harmony/download');
+    });
+  });
+
   describe('when the database catches fire during an asynchronous request', function () {
     hookDatabaseFailure();
     StubService.hook({ params: { redirect: 'http://example.com' } });
