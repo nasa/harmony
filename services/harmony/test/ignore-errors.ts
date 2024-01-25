@@ -560,7 +560,7 @@ describe('ignoreErrors', function () {
       });
     });
 
-    describe('CDD When a request spans multiple CMR pages', function () {
+    describe('When a request spans multiple CMR pages', function () {
       let pageStub;
       before(function () {
         pageStub = stub(env, 'cmrMaxPageSize').get(() => 3);
