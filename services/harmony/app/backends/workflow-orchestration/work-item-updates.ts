@@ -680,6 +680,11 @@ export async function processWorkItem(
       totalItemsSize = sum(outputItemSizes) / 1024 / 1024;
     }
 
+    if (COMPLETED_WORK_ITEM_STATUSES.includes(status)) {
+      thisStep.completed_work_item_count += 1;
+      thisStep.save(tx);
+    }
+
     await (await logAsyncExecutionTime(
       updateWorkItemStatus,
       'HWIUWJI.updateWorkItemStatus',
@@ -717,6 +722,9 @@ export async function processWorkItem(
         'HWIUWJI.updateWorkItemCounts',
         logger))(tx, job);
     }
+
+    job.updateProgress(tx);
+    await job.save(tx);
 
     if (checkCompletion) {
       allWorkItemsForStepComplete = await updateIsComplete(tx, jobID, job.numInputGranules, thisStep);
@@ -781,7 +789,7 @@ export async function processWorkItem(
             'HWIUWJI.addJobLinksForFinishedWorkItem',
             logger))(tx, job.jobID, catalogItems);
         }
-        job.completeBatch(thisStep.workItemCount);
+        job.completeBatch();
         if (allWorkItemsForStepComplete && !didCreateWorkItem && (!nextWorkflowStep || nextWorkflowStep.workItemCount === 0)) {
           // If all granules are finished mark the job as finished
           const { finalStatus, finalMessage } = await getFinalStatusAndMessageForJob(tx, job);
@@ -898,6 +906,8 @@ export async function handleWorkItemUpdateWithJobId(
         logger))(tx, jobID, false, true);
 
       await processWorkItem(tx, preprocessResult, job, update, logger, true, undefined);
+      await job.save(tx);
+      console.log(`Job progress is now ${job.progress}`);
 
     });
     const durationMs = new Date().getTime() - transactionStart;
