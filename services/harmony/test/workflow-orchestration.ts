@@ -141,7 +141,7 @@ describe('when a work item callback request does not return the results to const
         const jobs = await Job.forUser(db, 'anonymous');
         const job = jobs.data[0];
         expect(job.status).to.equal('failed');
-        expect(job.message).to.equal('WorkItem failed: Could not get result item file size');
+        expect(job.message).to.equal('Harmony internal failure: service did not return any outputs.');
       });
     });
   });

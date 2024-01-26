@@ -305,9 +305,10 @@ describe('Individual job status route', function () {
     const collection = 'C1104-PVC_TS2';
     const variableName = 'all';
     const version = '1.0.0';
+    const query = { format: 'image/tiff' }; // Ensure the http example backend service is called
 
     describe('when the job has started but not completed', function () {
-      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1' });
+      hookRangesetRequest(version, collection, variableName, { query, username: 'jdoe1' });
 
       describe('retrieving its job status', function () {
         hookRedirect('jdoe1');
@@ -332,7 +333,7 @@ describe('Individual job status route', function () {
     });
 
     describe('when the job has failed to complete', function () {
-      hookRangesetRequest(version, collection, variableName, { username: 'jdoe2' });
+      hookRangesetRequest(version, collection, variableName, { query, username: 'jdoe2' });
       before(async function () {
         const id = this.res.headers.location.split('/').pop();
         await request(this.frontend)
@@ -378,7 +379,7 @@ describe('Individual job status route', function () {
       ];
 
       StubService.hook({ params: { status: 'successful' } });
-      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1' });
+      hookRangesetRequest(version, collection, variableName, { query, username: 'jdoe1' });
       before(async function () {
         await this.service.sendResponse({ item: shortLinks[0] });
         await this.service.sendResponse({ item: shortLinks[1] });
@@ -401,7 +402,7 @@ describe('Individual job status route', function () {
 
     describe('when an incomplete job has provided a percentage progress update', function () {
       StubService.hook({ params: { status: 'successful' } });
-      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1' });
+      hookRangesetRequest(version, collection, variableName, { query, username: 'jdoe1' });
       before(async function () {
         await this.service.sendResponse({ progress: 20 });
       });
@@ -422,7 +423,7 @@ describe('Individual job status route', function () {
 
     describe('when an incomplete job provides an out-of-range percentage', function () {
       StubService.hook({ params: { status: 'successful' } });
-      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1' });
+      hookRangesetRequest(version, collection, variableName, { query, username: 'jdoe1' });
       before(async function () {
         this.res = await this.service.sendResponse({ progress: -1 }).ok(() => true);
       });
@@ -436,7 +437,7 @@ describe('Individual job status route', function () {
 
     describe('when an incomplete job provides a non-numeric percentage', function () {
       StubService.hook({ params: { status: 'successful' } });
-      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1' });
+      hookRangesetRequest(version, collection, variableName, { query, username: 'jdoe1' });
       before(async function () {
         this.res = await this.service.sendResponse({ progress: 'garbage' }).ok(() => true);
       });
@@ -451,7 +452,7 @@ describe('Individual job status route', function () {
     describe('when a job has provided an S3 URL as a result', function () {
       const s3Uri = 's3://example-bucket/public/example/path.tif';
       StubService.hook({ params: { status: 'successful' } });
-      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1' });
+      hookRangesetRequest(version, collection, variableName, { query, username: 'jdoe1' });
       before(async function () {
         await this.service.sendResponse({ item: { href: s3Uri } });
       });
@@ -599,8 +600,8 @@ describe('Individual job status route', function () {
     });
 
     describe('when the job has completed successfully', function () {
-      const query = { subset: ['lat(-80:80)', 'lon(-100:100)'] };
-      hookRangesetRequest(version, collection, variableName, { query, username: 'jdoe3' });
+      const subsetQuery = { subset: ['lat(-80:80)', 'lon(-100:100)'] };
+      hookRangesetRequest(version, collection, variableName, { query: subsetQuery, username: 'jdoe3' });
       before(async function () {
         const id = this.res.headers.location.split('/').pop();
         await request(this.frontend)
@@ -766,10 +767,10 @@ describe('Individual job status route', function () {
       });
 
       describe('when multiple collections share the same short name', function () {
-        const query = { subset: ['time("1998-01-01T00:00:00Z":"2021-01-01T00:00:00Z")'] };
+        const temporalQuery = { subset: ['time("1998-01-01T00:00:00Z":"2021-01-01T00:00:00Z")'] };
 
         StubService.hook({ params: { status: 'successful' } });
-        hookRangesetRequest(version, 'harmony_example', variableName, { username: 'jdoe3', query });
+        hookRangesetRequest(version, 'harmony_example', variableName, { username: 'jdoe3', query: temporalQuery });
         hookRedirect('jdoe3');
 
         it('returns a warning message about the multiple matching collections', function () {

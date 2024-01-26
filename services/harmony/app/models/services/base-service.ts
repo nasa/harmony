@@ -31,6 +31,7 @@ export interface ServiceCapabilities {
   reprojection?: boolean;
   extend?: boolean;
   default_extend_dimensions?: string[];
+  all_collections?: boolean;
 }
 
 export interface ServiceStep {

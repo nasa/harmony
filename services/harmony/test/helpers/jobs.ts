@@ -19,8 +19,6 @@ export const expectedJobKeys = [
   'links', 'request', 'numInputGranules', 'jobID',
 ];
 
-export const expectedNoOpJobKeys = expectedJobKeys.filter((k) => k !== 'jobID');
-
 const exampleProps = {
   username: 'anonymous',
   status: JobStatus.RUNNING,
