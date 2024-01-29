@@ -1458,7 +1458,7 @@ data:
               "type": "prometheus",
               "uid": "P1809F7CD0C75ACF3"
             },
-            "expr": "sum(kube_node_status_condition{condition=\"OutOfDisk\", node=~\"$${hold}node\", status=\"true\"})",
+            "expr": "sum(kube_node_status_condition{condition=\"DiskPressure\", node=~\"$${hold}node\", status=\"true\"})",
             "format": "time_series",
             "intervalFactor": 1,
             "refId": "A"
@@ -2297,7 +2297,7 @@ data:
               "type": "prometheus",
               "uid": "P1809F7CD0C75ACF3"
             },
-            "expr": "sum(delta(kube_pod_container_status_restarts{namespace=\"kube-system\"}[30m]))",
+            "expr": "sum(increase(kube_pod_container_status_restarts_total[30m]) by (container)) > 0",
             "format": "time_series",
             "intervalFactor": 1,
             "refId": "A"
@@ -2375,7 +2375,7 @@ data:
               "type": "prometheus",
               "uid": "P1809F7CD0C75ACF3"
             },
-            "expr": "sum(kube_pod_container_resource_requests_cpu_cores{namespace=~\"$${hold}namespace\", node=~\"$${hold}node\"})",
+            "expr": "sum(kube_pod_container_resource_requests{namespace=~\"$${hold}namespace\", node=~\"$${hold}node\"})",
             "format": "time_series",
             "intervalFactor": 1,
             "refId": "A"
@@ -2453,7 +2453,7 @@ data:
               "type": "prometheus",
               "uid": "P1809F7CD0C75ACF3"
             },
-            "expr": "sum(kube_pod_container_resource_requests_memory_bytes{namespace=~\"$${hold}namespace\", node=~\"$${hold}node\"})",
+            "expr": "sum(kube_pod_container_resource_requests{namespace=~\"$${hold}namespace\", node=~\"$${hold}node\"})",
             "format": "time_series",
             "intervalFactor": 1,
             "refId": "A"
