@@ -153,8 +153,8 @@ export function start(config: Record<string, string>): {
 } {
 
   // Log unhandled promise rejections and do not crash the node process
-  process.on('unhandledRejection', (reason, promise) => {
-    logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  process.on('unhandledRejection', (reason, _promise) => {
+    logger.error('Unhandled Rejection:', reason);
   });
 
   const appPort = +config.PORT;

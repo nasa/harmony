@@ -578,12 +578,12 @@ export async function getAllVariables(
 }
 
 /**
- * Performs a CMR variables.json search with the given query string. If there are more
- * than 2000 variables, page through the variable results until all are retrieved.
+ * Performs a CMR services.umm_json search with the given query string. If there are more
+ * than 2000 services, page through the service results until all are retrieved.
  *
  * @param query - The key/value pairs to search
  * @param token - Access token for user request
- * @returns The variable search results
+ * @returns The services search results
  */
 export async function getAllServices(
   query: CmrQuery, token: string,

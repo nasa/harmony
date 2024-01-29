@@ -133,8 +133,11 @@ describe('Updater Worker', async function () {
       it('should call getQueueForType', async function () {
         expect(getQueueForTypeStub.called).to.be.true;
       });
-      it('should call handleWorkItemUpdateWithJobId once', async function () {
-        expect(handleWorkItemUpdateWithJobIdStub.callCount).to.equal(1);
+      it('should not call handleWorkItemUpdateWithJobId', async function () {
+        expect(handleWorkItemUpdateWithJobIdStub.callCount).to.equal(0);
+      });
+      it('should call handleBatchWorkItemUpdates once', async function () {
+        expect(handleBatchWorkItemUpdatesSpy.callCount).to.equal(1);
       });
     });
 

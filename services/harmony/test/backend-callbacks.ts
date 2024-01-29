@@ -14,7 +14,7 @@ import { defaultObjectStore, objectStoreForProtocol } from '../app/util/object-s
 import { hookCallbackEach, hookHttpBackendEach, loadJobForCallback } from './helpers/callbacks';
 
 describe('Backend Callbacks', function () {
-  this.timeout(30000);
+  this.timeout(10000);
   const collection = 'C1104-PVC_TS2';
   const href = 'https://example.com/foo';
 
@@ -321,7 +321,8 @@ describe('Backend Callbacks', function () {
   });
 
   describe('for asynchronous requests', function () {
-    hookHttpBackendEach(function () { return rangesetRequest(this.frontend, '1.0.0', collection, 'all'); });
+    const query = { format: 'image/tiff' };
+    hookHttpBackendEach(function () { return rangesetRequest(this.frontend, '1.0.0', collection, 'all', { query }); });
 
     describe('when a POST body item is received', function () {
       hookCallbackEach((r) => r
@@ -398,7 +399,7 @@ describe('Backend Callbacks', function () {
     });
 
     describe('bbox validation', function () {
-      hookHttpBackendEach(function () { return rangesetRequest(this.frontend, '1.0.0', collection, 'all'); });
+      hookHttpBackendEach(function () { return rangesetRequest(this.frontend, '1.0.0', collection, 'all', { query }); });
 
       it('rejects bbox params containing invalid numbers', async function () {
         const response = await request(this.backend).post(this.callback).query({

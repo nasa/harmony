@@ -233,7 +233,7 @@ async function cmrGranuleLocatorTurbo(
  * and performs a granule query on them, determining which files are applicable
  * to the given operation.
  *
- * Still used for the NoOpService and for HTTP based services
+ * Still used for HTTP based services
  *
  * @param req - The client request, containing an operation
  * @param res - The client response

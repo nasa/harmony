@@ -72,7 +72,7 @@ function describeHttpBackendBehavior(performRequestFn: Function): void {
 describe('HTTP Backends', function () {
   const collection = 'C1104-PVC_TS2';
   const granule = 'G1216319051-PVC_TS2';
-  const query = { granuleId: granule };
+  const query = { granuleId: granule, format: 'image/tiff' };
   const version = '1.0.0';
 
   hookServersStartStop();
@@ -97,7 +97,7 @@ describe('HTTP Backends', function () {
         variables: [
           'V1229850953-POCUMULUS',
         ],
-        services: ['S1233603906-EEDTEST'],
+        services: ['S1233603903-EEDTEST'],
       },
       has_variables: true,
       data_center: 'POCUMULUS',

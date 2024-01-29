@@ -586,7 +586,7 @@ describe('ignoreErrors', function () {
           workItem.results = [
             getStacLocation(workItem, 'catalog0.json'),
             getStacLocation(workItem, 'catalog1.json'),
-            getStacLocation(workItem, 'catalog1.json'),
+            getStacLocation(workItem, 'catalog2.json'),
           ];
           workItem.outputItemSizes = [1, 2, 3];
           await updateWorkItem(this.backend, workItem);

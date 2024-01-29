@@ -23,23 +23,37 @@ jobs:
         brew update
         brew install docker
         brew install kubectl
-        colima start --cpu 2 --memory 12 --with-kubernetes
 
     - name: Install awslocal
       run: |
         pip install awscli-local
 
-    - name: Print awslocal Version
-      run: |
-        awslocal --version
+    - name: Set up npm dependency caching
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18
+        cache: 'npm'
+        cache-dependency-path: '**/package-lock.json'
 
-    - name: Pull down basic harmony docker images
-      run: bin/pull-harmony-images
+    - name: Create netrc
+      run: bin/create-netrc
+      env:
+        EDL_USER: ${{ secrets.LEO_EDL_USER }}
+        EDL_PASSWORD: ${{ secrets.LEO_EDL_PASSWORD }}
 
     - name: Install dependencies
       run: |
         source bin/helper
         retry_command 10 npm ci
+
+    - name: Start colima
+      run: colima start --cpu 2 --memory 12 --with-kubernetes
+
+    - name: Check colima status
+      run: colima status
+
+    - name: Pull down basic harmony docker images
+      run: bin/pull-harmony-images
 
     - name: Build harmony image
       run: |
@@ -54,8 +68,17 @@ jobs:
     - name: list images
       run: docker images
 
+    - name: Check kubernetes status
+      run: |
+        source bin/helper
+        retry_command 5 kubectl cluster-info
+
     - name: Start harmony in a box
-      run: KUBE_CONTEXT=colima EXEC_CONTEXT=workflow bin/bootstrap-harmony
+      run: |
+        source bin/helper
+        export KUBE_CONTEXT=colima
+        export EXEC_CONTEXT=workflow
+        retry_command 5 bin/bootstrap-harmony
       env:
         OAUTH_CLIENT_ID: ${{ secrets.OAUTH_CLIENT_ID }}
         OAUTH_UID: ${{ secrets.OAUTH_UID }}
@@ -73,7 +96,7 @@ jobs:
     - name: Run harmony request
       id: curl
       run: |
-        HTTP_STATUS=$(curl -Ln -bj -w "%{http_code}" "http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?granuleId=G1233800343-EEDTEST&format=image/tiff" -o ./output.tif)
+        HTTP_STATUS=$(curl -Ln -bj -w "%{http_code}" "http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?granuleId=G1233800343-EEDTEST&format=image/tiff" -o /dev/null)
         echo "http_status=$HTTP_STATUS" >> "$GITHUB_OUTPUT"
 
     - name: Check HTTP status code
@@ -84,5 +107,60 @@ jobs:
           echo "HTTP request was successful!"
         else
           echo "HTTP request failed with status code $HTTP_STATUS"
+          kubectl -n harmony get pods
+          harmony_pod=$(kubectl get pods -n harmony -l app=harmony | grep -v NAME | awk '{print $1;}')
+          kubectl -n harmony describe pod $harmony_pod
+          echo "Harmony pod log:"
+          kubectl -n harmony logs $harmony_pod
           exit 1
+        fi
+
+    - name: Wait for Giovanni pod to be ready
+      run: |
+        for i in {1..10}; do
+          kubectl -n harmony get pods
+          running_count=$(kubectl -n harmony get pods -l name="giovanni-adapter" --no-headers | grep "2/2" | wc -l)
+          if [ "$running_count" -eq 1 ]; then
+            echo "Giovanni pod is ready! Continue with the workflow."
+            break
+          else
+            echo "Giovanni pod is not ready, wait..."
+            sleep 60
+          fi
+        done
+
+        # If Giovanni pod is still not ready, fail the workflow
+        if [ "$running_count" -ne 1 ]; then
+          echo "Failed: Giovanni pod is not ready after 10 minutes."
+          exit 1
+        fi
+
+    - name: Test Giovanni request
+      id: giovanni
+      run: |
+        GIOVANNI_RESP=$(curl -Ln -bj "http://localhost:3000/C1225808238-GES_DISC/ogc-api-coverages/1.0.0/collections/Grid%2FprecipitationCal/coverage/rangeset?format=text%2Fcsv&point=0.76,-3.8&subset=time(%222020-01-06T12%3A00%3A00Z%22%3A%222020-01-06T16%3A00%3A00Z%22)")
+        GIOVANNI_URL=$(echo "$GIOVANNI_RESP" | jq -r '.links[] | select(.rel == "self") | .href')
+        echo "status_url: $GIOVANNI_URL"
+        echo "status_url=$GIOVANNI_URL" >> "$GITHUB_OUTPUT"
+
+    - name: Check Giovanni request final status
+      run: |
+        for i in {1..30}; do
+          request_status==$(curl -Ln -bj "${{ steps.giovanni.outputs.status_url }}" | jq -r '.status')
+          # remove the leading = that shows up only in github actions
+          GIOVANNI_STATUS="${request_status#=}"
+          if [[ "$GIOVANNI_STATUS" != "running" ]]; then
+            break
+          else
+            echo "Giovanni request running, wait..."
+            sleep 10
+          fi
+        done
+
+        echo "Giovanni request final status is $GIOVANNI_STATUS"
+        if [ "$GIOVANNI_STATUS" != "successful" ]; then
+          echo "Error: The final status is not successful."
+          exit 1
+        else
+          echo "The final status is successful."
         fi
