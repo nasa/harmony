@@ -416,10 +416,9 @@ export default abstract class BaseService<ServiceParamType> {
     // query-cmr number of work items is a function of the page size and total granules
     if (step.image.match(regex)) {
       return Math.ceil(this.numInputGranules / env.cmrMaxPageSize);
-    } else if (stepHasAggregatedOutput(step, operation)) {
-      return 1;
     }
-    return this.numInputGranules;
+    // the rest will get filled in as we go
+    return 0;
   }
 
   /**

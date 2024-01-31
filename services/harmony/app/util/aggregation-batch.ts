@@ -12,7 +12,7 @@ import { objectStoreForProtocol } from './object-store';
 import axios from 'axios';
 import { getCatalogItemUrls, getCatalogLinks, readCatalogItems } from './stac';
 import WorkItemUpdate from '../models/work-item-update';
-import WorkflowStep, { decrementWorkItemCount, incrementWorkItemCount } from '../models/workflow-steps';
+import WorkflowStep, { decrementWorkItemCount } from '../models/workflow-steps';
 import { WorkItemStatus } from '../models/work-item-interface';
 import WorkItem from '../models/work-item';
 import { incrementReadyCount } from '../models/user-work';
@@ -374,7 +374,8 @@ export async function handleBatching(
             currentBatch = newBatch;
             currentBatchCount = 0;
             currentBatchSize = 0;
-            await incrementWorkItemCount(tx, jobID, stepIndex);
+            workflowStep.workItemCount += 1;
+
           }
         } else {
           if (currentBatchSize + batchItem.itemSize > maxBatchSizeInBytes) {
@@ -401,7 +402,7 @@ export async function handleBatching(
           currentBatch = newBatch;
           currentBatchCount = 1;
           currentBatchSize = batchItem.itemSize;
-          await incrementWorkItemCount(tx, jobID, stepIndex);
+          workflowStep.workItemCount += 1;
           index += 1;
         }
       } else {

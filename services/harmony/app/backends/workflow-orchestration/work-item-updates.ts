@@ -168,7 +168,7 @@ async function handleFailedWorkItems(
   logger: Logger, errorMessage: string,
 ): Promise<boolean> {
   let continueProcessing = true;
-  // If the response is an error then set the job status to 'failed'
+  // If the response is an error then maybe set the job status to 'failed'
   if (status === WorkItemStatus.FAILED) {
     continueProcessing = job.ignoreErrors;
     if (!job.hasTerminalStatus()) {
@@ -217,26 +217,19 @@ async function handleFailedWorkItems(
 }
 
 /**
- * Updated the workflow steps `workItemCount` field for the given job to match the new
+ * Updated the query-cmr workflow step's `workItemCount` field for the given job to match the new
+ * granule count
  *
  * @param transaction - the transaction to use for the update
  * @param job - A Job that has a new input granule count
  */
-async function updateWorkItemCounts(
+async function updateCmrWorkItemCount(
   transaction: Transaction,
   job: Job):
   Promise<void> {
-  const workflowSteps = await getWorkflowStepsByJobId(transaction, job.jobID);
-  for (const step of workflowSteps) {
-    if (QUERY_CMR_SERVICE_REGEX.test(step.serviceID)) {
-      step.workItemCount = Math.ceil(job.numInputGranules / env.cmrMaxPageSize);
-    } else if (!step.hasAggregatedOutput) {
-      step.workItemCount = job.numInputGranules;
-    } else {
-      step.workItemCount = 1;
-    }
-    await step.save(transaction);
-  }
+  const step = await getWorkflowStepByJobIdStepIndex(transaction, job.jobID, 1);
+   step.workItemCount = Math.ceil(job.numInputGranules / env.cmrMaxPageSize);
+   await step.save(transaction);
 }
 
 /**
@@ -477,7 +470,9 @@ async function createNextWorkItems(
     } else if (allWorkItemsForStepComplete) {
       await createAggregatingWorkItem(tx, workItem, nextWorkflowStep, logger);
       didCreateWorkItem = true;
+      nextWorkflowStep.workItemCount += 1;
     }
+
   } else {
     // Create a new work item for each result using the next step
     didCreateWorkItem = true;
@@ -513,11 +508,16 @@ async function createNextWorkItems(
       return newItem;
     });
 
+    nextWorkflowStep.workItemCount += newItems.length;
+
     await incrementReadyCount(tx, workItem.jobID, nextWorkflowStep.serviceID, newItems.length);
     for (const batch of _.chunk(newItems, batchSize)) {
       await WorkItem.insertBatch(tx, batch);
       logger.info('Queued new batch of work items.');
     }
+  }
+  if (didCreateWorkItem) {
+    nextWorkflowStep.save(tx);
   }
   return didCreateWorkItem;
 }
@@ -718,8 +718,8 @@ export async function processWorkItem(
       logger.debug('timing.HWIUWJI.job.save.end', { durationMs });
 
       await (await logAsyncExecutionTime(
-        updateWorkItemCounts,
-        'HWIUWJI.updateWorkItemCounts',
+        updateCmrWorkItemCount,
+        'HWIUWJI.updateCmrWorkItemCount',
         logger))(tx, job);
     }
 
@@ -790,7 +790,7 @@ export async function processWorkItem(
             logger))(tx, job.jobID, catalogItems);
         }
         job.completeBatch();
-        if (allWorkItemsForStepComplete && !didCreateWorkItem && (!nextWorkflowStep || nextWorkflowStep.workItemCount === 0)) {
+        if (allWorkItemsForStepComplete && !didCreateWorkItem && (!nextWorkflowStep || nextWorkflowStep.workItemCount < 1)) {
           // If all granules are finished mark the job as finished
           const { finalStatus, finalMessage } = await getFinalStatusAndMessageForJob(tx, job);
           await (await logAsyncExecutionTime(
@@ -907,8 +907,6 @@ export async function handleWorkItemUpdateWithJobId(
 
       await processWorkItem(tx, preprocessResult, job, update, logger, true, undefined);
       await job.save(tx);
-      console.log(`Job progress is now ${job.progress}`);
-
     });
     const durationMs = new Date().getTime() - transactionStart;
     logger.debug('timing.HWIUWJI.transaction.end', { durationMs });

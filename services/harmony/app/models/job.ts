@@ -827,8 +827,6 @@ export class Job extends DBRecord implements JobRecord {
     if (this.progress < progress) {
       this.progress = progress;
     }
-
-    console.log(`Job progress set to ${this.progress}`);
   }
 
   /**

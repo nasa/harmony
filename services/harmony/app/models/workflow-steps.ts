@@ -298,19 +298,6 @@ export async function decrementFutureWorkItemCount(tx: Transaction, jobID, stepI
 }
 
 /**
- * Increment the number of expected work items for the step. Used during batching.
- *
- * @param tx - the database transaction
- * @param jobID - the job ID
- * @param stepIndex - the current step index
- */
-export async function incrementWorkItemCount(tx: Transaction, jobID, stepIndex): Promise<void> {
-  await tx(WorkflowStep.table)
-    .where({ jobID, stepIndex })
-    .increment('workItemCount');
-}
-
-/**
  * Decrement the number of expected work items for the step. Used during batching when prior step
  * items fail and we end up with the final batch being empty.
  *
@@ -341,6 +328,8 @@ export async function updateIsComplete(tx: Transaction, jobID: string, numInputG
 
   if (step.is_sequential) {
     const completedCount = await workItemCountForStep(tx, jobID, stepIndex, COMPLETED_WORK_ITEM_STATUSES);
+    // TODO this is only true for query-cmr. If we add another sequential service we need to 
+    // fix this.
     const expectedCount =  Math.ceil(numInputGranules / env.cmrMaxPageSize);
     isComplete = completedCount == expectedCount;
 
