@@ -17,59 +17,7 @@ import { truncateAll } from './helpers/db';
 import { stub } from 'sinon';
 import { populateUserWorkFromWorkItems } from '../app/models/user-work';
 import { resetQueues } from './helpers/queue';
-
-/**
- * Create a job and some work steps/items to be used by tests
- *
- * @param initialCmrHits - The number of hits returned by the CMR the first time it is queries
- * @param initialQueryCmrWorkItemCount - The number of query-cmr work items anticipated by the
- * initial number of cmr hits
- * @param nonAggregateService - identifier for a service that does not aggregate
- * @param aggregateService - identifier for a service that does aggregate
- * @returns a promise containing the id of the created job
- */
-async function createJobAndWorkItems(
-  initialCmrHits: number,
-  initialQueryCmrWorkItemCount: number,
-  nonAggregateService: string,
-  aggregateService: string): Promise<string> {
-  await truncateAll();
-  const job = buildJob({ numInputGranules: initialCmrHits });
-  await job.save(db);
-
-  await buildWorkflowStep({
-    jobID: job.jobID,
-    serviceID: 'harmonyservices/query-cmr:latest',
-    stepIndex: 1,
-    is_sequential: true,
-    workItemCount: initialQueryCmrWorkItemCount,
-  }).save(db);
-
-  await buildWorkflowStep({
-    jobID: job.jobID,
-    serviceID: nonAggregateService,
-    stepIndex: 2,
-    workItemCount: 0,
-    hasAggregatedOutput: false,
-  }).save(db);
-
-  await buildWorkflowStep({
-    jobID: job.jobID,
-    serviceID: aggregateService,
-    stepIndex: 3,
-    workItemCount: 0,
-    hasAggregatedOutput: true,
-  }).save(db);
-
-  await buildWorkItem({
-    jobID: job.jobID,
-    serviceID: 'harmonyservices/query-cmr:latest',
-    workflowStepIndex: 1,
-  }).save(db);
-
-  await populateUserWorkFromWorkItems(db);
-  return job.jobID;
-}
+import { createJobWithAggregationAndWorkItems } from './helpers/workflow';
 
 /**
  * Defines tests that ensure that the initial conditions for a job are correct
@@ -664,7 +612,7 @@ describe('When a request spans multiple CMR pages', function () {
         jobID: job.jobID,
         serviceID: aggregateService,
         stepIndex: 2,
-        workItemCount: 1,
+        workItemCount: 0,
         hasAggregatedOutput: true,
       }).save(db);
 
@@ -698,6 +646,12 @@ describe('When a request spans multiple CMR pages', function () {
         await updateWorkItem(this.backend, workItem);
       });
 
+      it(`sets job progress to 42 after completing the first query-cmr work-item`, async function () {
+        const jobs = await Job.forUser(db, 'anonymous');
+        const job = jobs.data[0];
+        expect(job.progress).to.equal(42);
+      });
+
       it('does not generate the aggregation step until all query-cmr items are finished', async function () {
         const queuedCount = (await getWorkItemsByJobIdAndStepIndex(db, this.jobID, 2)).workItems.length;
         expect(queuedCount).equals(0);
@@ -714,6 +668,12 @@ describe('When a request spans multiple CMR pages', function () {
         workItem.outputItemSizes = [1, 1];
         await fakeServiceStacOutput(workItem.jobID, workItem.id, 2);
         await updateWorkItem(this.backend, workItem);
+      });
+
+      it(`sets job progress to 50 after completing all the query-cmr work-items`, async function () {
+        const jobs = await Job.forUser(db, 'anonymous');
+        const job = jobs.data[0];
+        expect(job.progress).to.equal(50);
       });
 
       it('queues the aggregating work item once all query-cmr items are finished', async function () {
@@ -763,7 +723,7 @@ describe('When a request spans multiple CMR pages', function () {
         before(async function () {
           await truncateAll();
           finalQueryCmrWorkItemCount = Math.ceil(finalCmrHits / env.cmrMaxPageSize);
-          this.jobID = await createJobAndWorkItems(initialCmrHits, initialQueryCmrWorkItemCount, nonAggregateService, aggregateService);
+          this.jobID = await createJobWithAggregationAndWorkItems(initialCmrHits, initialQueryCmrWorkItemCount, nonAggregateService, aggregateService);
           await testInitialConditions(initialCmrHits, initialQueryCmrWorkItemCount);
 
           for (let i = 0; i < finalQueryCmrWorkItemCount; i++) {
@@ -833,7 +793,7 @@ describe('When a request spans multiple CMR pages', function () {
         const finalCmrHits = 5;
         before(async function () {
           await truncateAll();
-          this.jobID = await createJobAndWorkItems(initialCmrHits, initialQueryCmrWorkItemCount, nonAggregateService, aggregateService);
+          this.jobID = await createJobWithAggregationAndWorkItems(initialCmrHits, initialQueryCmrWorkItemCount, nonAggregateService, aggregateService);
           await testInitialConditions(initialCmrHits, initialQueryCmrWorkItemCount);
 
           for (let i = 0; i < initialQueryCmrWorkItemCount; i++) {
