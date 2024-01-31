@@ -86,8 +86,8 @@ async function testInitialConditions(initialCmrHits: number, initialQueryCmrWork
   it('sets the initial number of work items for each step', async function () {
     const workflowSteps = await getWorkflowStepsByJobId(db, this.jobID);
     expect(workflowSteps[0].workItemCount).equals(initialQueryCmrWorkItemCount);
-    expect(workflowSteps[1].workItemCount).equals(initialCmrHits);
-    expect(workflowSteps[2].workItemCount).equals(1);
+    expect(workflowSteps[1].workItemCount).equals(0);
+    expect(workflowSteps[2].workItemCount).equals(0);
   });
 }
 
