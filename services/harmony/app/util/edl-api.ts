@@ -98,7 +98,7 @@ export interface EdlGroupMembership {
  *
  * @param username - The EDL username
  * @param logger - The logger associated with the request
- * @returns A promise which resolves to info about whether the user is an admin or log viewer
+ * @returns A promise which resolves to info about whether the user is an admin, log viewer or service deployer
  */
 export async function getEdlGroupInformation(username: string, logger: Logger)
   : Promise<EdlGroupMembership> {
@@ -111,6 +111,11 @@ export async function getEdlGroupInformation(username: string, logger: Logger)
   let isLogViewer = false;
   if (groups.includes(env.logViewerGroupId)) {
     isLogViewer = true;
+  }
+
+  let isServiceDeployer = false;
+  if (groups.includes(env.serviceDeployerGroupId)) {
+    isServiceDeployer = true;
   }
 
   return { isAdmin, isLogViewer };

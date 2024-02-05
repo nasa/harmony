@@ -64,6 +64,9 @@ class HarmonyServerEnv extends HarmonyEnv {
   @IsNotEmpty()
   logViewerGroupId: string;
 
+  @IsNotEmpty()
+  serviceDeployerGroupId: string;
+
   @IsInt()
   @Min(1)
   syncRequestPollIntervalMs: number;
