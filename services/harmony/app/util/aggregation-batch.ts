@@ -171,7 +171,7 @@ async function createStacCatalogForBatch(
  * Create a STAC catalog for a batch then create an aggregating work item to process it
  *
  * @param tx - the database transaction
- * @param workflowStep- the step in the workflow that needs batching
+ * @param workflowStep - the step in the workflow that needs batching
  * @param batch - the Batch to process
  * @param logger - the Logger for the request
  *
@@ -199,6 +199,8 @@ async function createCatalogAndWorkItemForBatch(
       stacCatalogLocation: catalogUrl,
       workflowStepIndex: workflowStep.stepIndex,
     });
+    workflowStep.workItemCount += 1;
+    workflowStep.save(tx);
 
     await incrementReadyCount(tx, jobID, serviceID);
     await newWorkItem.save(tx);
@@ -208,8 +210,8 @@ async function createCatalogAndWorkItemForBatch(
 
     return true;
   } else {
-    logger.warn('Attempted to construct a work item for a batch, but there were no valid items in the batch. Decrementing the expected number of work items.');
-    await decrementWorkItemCount(tx, jobID, stepIndex);
+    logger.warn('Attempted to construct a work item for a batch, but there were no valid items in the batch.');
+    // await decrementWorkItemCount(tx, jobID, stepIndex);
   }
   return false;
 }
@@ -374,8 +376,6 @@ export async function handleBatching(
             currentBatch = newBatch;
             currentBatchCount = 0;
             currentBatchSize = 0;
-            workflowStep.workItemCount += 1;
-
           }
         } else {
           if (currentBatchSize + batchItem.itemSize > maxBatchSizeInBytes) {
@@ -402,7 +402,6 @@ export async function handleBatching(
           currentBatch = newBatch;
           currentBatchCount = 1;
           currentBatchSize = batchItem.itemSize;
-          workflowStep.workItemCount += 1;
           index += 1;
         }
       } else {

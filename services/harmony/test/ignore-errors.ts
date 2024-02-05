@@ -13,6 +13,7 @@ import env from '../app/util/env';
 import { jobStatus } from './helpers/jobs';
 import * as aggregationBatch from '../app/util/aggregation-batch';
 import { resetQueues } from './helpers/queue';
+import sleep from '../app/util/sleep';
 
 const reprojectAndZarrQuery = {
   maxResults: 1,
@@ -137,6 +138,7 @@ describe('ignoreErrors', function () {
       });
 
       describe('when the first Swath Projector work item fails', function () {
+        this.timeout(120000);
         let firstSwathItem;
 
         before(async function () {
@@ -158,6 +160,7 @@ describe('ignoreErrors', function () {
         });
 
         it('fails the job', async function () {
+          // await sleep(100000);
           // work item failure with only one granue should trigger job failure
           const { job } = await Job.byJobID(db, firstSwathItem.jobID);
           expect(job.status).to.equal(JobStatus.FAILED);

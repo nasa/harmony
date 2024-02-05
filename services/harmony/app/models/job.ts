@@ -814,7 +814,6 @@ export class Job extends DBRecord implements JobRecord {
     let prevStep: WorkflowStep = null;
     for (const step of steps) {
       step.updateProgress(prevStep);
-      // await step.save(tx);
       prevStep = step;
     }
     let sumOfWeights = steps.reduce((sum: number, step: WorkflowStep) => sum + step.progress_weight, 0);

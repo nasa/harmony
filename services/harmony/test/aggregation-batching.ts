@@ -17,7 +17,6 @@ import { truncateAll } from './helpers/db';
 import { hookServices } from './helpers/stub-service';
 import { StacCatalog } from '../app/util/stac';
 import { getFirstJob } from './helpers/jobs';
-import { isISO31661Alpha2 } from 'class-validator';
 
 /**
  * Create a work item update for a query-cmr get work response
