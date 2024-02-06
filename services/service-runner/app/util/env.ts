@@ -59,4 +59,8 @@ const localPath = path.resolve(__dirname, '../../env-defaults');
 const harmonyServiceEnvObj = new HarmonyServiceEnv(localPath);
 harmonyServiceEnvObj.validate();
 
+// export function getHarmonyBackendProtocol() {
+
+// }
+
 export default harmonyServiceEnvObj;
