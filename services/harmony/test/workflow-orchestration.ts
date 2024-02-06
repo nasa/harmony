@@ -698,7 +698,7 @@ describe('When a request spans multiple CMR pages', function () {
         await updateWorkItem(this.backend, workItem);
       });
 
-      it(`sets job progress to 42 after completing the first query-cmr work-item`, async function () {
+      it('sets job progress to 42 after completing the first query-cmr work-item', async function () {
         const jobs = await Job.forUser(db, 'anonymous');
         const job = jobs.data[0];
         expect(job.progress).to.equal(42);
@@ -722,7 +722,7 @@ describe('When a request spans multiple CMR pages', function () {
         await updateWorkItem(this.backend, workItem);
       });
 
-      it(`sets job progress to 50 after completing all the query-cmr work-items`, async function () {
+      it('sets job progress to 50 after completing all the query-cmr work-items', async function () {
         const jobs = await Job.forUser(db, 'anonymous');
         const job = jobs.data[0];
         expect(job.progress).to.equal(50);

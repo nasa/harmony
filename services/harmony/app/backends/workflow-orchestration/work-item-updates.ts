@@ -2,7 +2,7 @@ import env from '../../util/env';
 import { logAsyncExecutionTime } from '../../util/log-execution';
 import { v4 as uuid } from 'uuid';
 import WorkItemUpdate from '../../models/work-item-update';
-import WorkflowStep, { decrementFutureWorkItemCount, getWorkflowStepByJobIdStepIndex, getWorkflowStepsByJobId, updateIsComplete } from '../../models/workflow-steps';
+import WorkflowStep, { getWorkflowStepByJobIdStepIndex, updateIsComplete } from '../../models/workflow-steps';
 import { Logger } from 'winston';
 import _, { ceil, range, sum } from 'lodash';
 import { JobStatus, Job } from '../../models/job';
@@ -83,7 +83,7 @@ async function addJobLinksForFinishedWorkItem(
  * @returns the final job status for the request
  */
 async function getFinalStatusAndMessageForJob(tx: Transaction, job: Job):
-  Promise<{ finalStatus: JobStatus, finalMessage: string }> {
+Promise<{ finalStatus: JobStatus, finalMessage: string; }> {
   let finalStatus = JobStatus.SUCCESSFUL;
   const errorCount = await getErrorCountForJob(tx, job.jobID);
   const dataLinkCount = await getJobDataLinkCount(tx, job.jobID);
@@ -514,7 +514,7 @@ async function createNextWorkItems(
     }
   }
   if (didCreateWorkItem) {
-    nextWorkflowStep.save(tx);
+    await nextWorkflowStep.save(tx);
   }
   return didCreateWorkItem;
 }
@@ -679,19 +679,19 @@ export async function processWorkItem(
 
     if (COMPLETED_WORK_ITEM_STATUSES.includes(status)) {
       thisStep.completed_work_item_count += 1;
-      thisStep.save(tx);
+      await thisStep.save(tx);
     }
 
     await (await logAsyncExecutionTime(
       updateWorkItemStatus,
       'HWIUWJI.updateWorkItemStatus',
       logger))(
-        tx,
-        workItemID,
-        status,
-        duration,
-        totalItemsSize,
-        outputItemSizes);
+      tx,
+      workItemID,
+      status,
+      duration,
+      totalItemsSize,
+      outputItemSizes);
     await (await logAsyncExecutionTime(
       decrementRunningCount,
       'HWIUWJI.decrementRunningCount',
@@ -720,7 +720,7 @@ export async function processWorkItem(
         logger))(tx, job);
     }
 
-    job.updateProgress(tx);
+    await job.updateProgress(tx);
     await job.save(tx);
 
     if (checkCompletion) {
@@ -742,15 +742,15 @@ export async function processWorkItem(
           createNextWorkItems,
           'HWIUWJI.createNextWorkItems',
           logger))(
-            tx,
-            thisStep,
-            nextWorkflowStep,
-            logger,
-            workItem,
-            allWorkItemsForStepComplete,
-            results,
-            outputItemSizes,
-          );
+          tx,
+          thisStep,
+          nextWorkflowStep,
+          logger,
+          workItem,
+          allWorkItemsForStepComplete,
+          results,
+          outputItemSizes,
+        );
         if (didCreateWorkItem) {
           // ask the scheduler to schedule the new work item
           await (await logAsyncExecutionTime(

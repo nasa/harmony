@@ -106,7 +106,7 @@ export default class WorkflowStep extends Record implements WorkflowStepRecord {
 
   // The number of work-items that have been completed (successfully or otherwise)
   completed_work_item_count: number;
-  
+
   // What percentage of the work for this step has been completed
   progress: number;
 
@@ -123,22 +123,22 @@ export default class WorkflowStep extends Record implements WorkflowStepRecord {
     return op.sources.map(source => source.collection);
   }
 
- /**
-  * Update the progress value based on the number of completed work-items for this step.
-  * NOTE: this should be called on the workflow steps in order since the progress
-  * computation depends on the progress of the previous step.
-  *
-  * @param prevStep - the previous step in the workflow (nil if this is the first step)
-  * @returns an integer number representing the percent progress
-  */
- updateProgress(prevStep: WorkflowStep): number {
+  /**
+   * Update the progress value based on the number of completed work-items for this step.
+   * NOTE: this should be called on the workflow steps in order since the progress
+   * computation depends on the progress of the previous step.
+   *
+   * @param prevStep - the previous step in the workflow (nil if this is the first step)
+   * @returns an integer number representing the percent progress
+   */
+  updateProgress(prevStep: WorkflowStep): number {
     let workItemCount = Math.max(1, this.workItemCount);
     const completedItemCount = Math.max(0, this.completed_work_item_count);
     workItemCount = Math.max(workItemCount, completedItemCount);
     let prevProgress = 1.0;
-    if (prevStep){
-      prevProgress = Math.max(0, prevStep.progress) / 100.0     
-    };
+    if (prevStep) {
+      prevProgress = Math.max(0, prevStep.progress) / 100.0;
+    }
     this.progress = Math.floor(100.0 * prevProgress * completedItemCount / workItemCount);
     return this.progress;
   }
@@ -328,9 +328,9 @@ export async function updateIsComplete(tx: Transaction, jobID: string, numInputG
 
   if (step.is_sequential) {
     const completedCount = await workItemCountForStep(tx, jobID, stepIndex, COMPLETED_WORK_ITEM_STATUSES);
-    // TODO this is only true for query-cmr. If we add another sequential service we need to 
+    // TODO this is only true for query-cmr. If we add another sequential service we need to
     // fix this.
-    const expectedCount =  Math.ceil(numInputGranules / env.cmrMaxPageSize);
+    const expectedCount = Math.ceil(numInputGranules / env.cmrMaxPageSize);
     isComplete = completedCount == expectedCount;
 
   } else {

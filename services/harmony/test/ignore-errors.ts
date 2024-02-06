@@ -13,7 +13,6 @@ import env from '../app/util/env';
 import { jobStatus } from './helpers/jobs';
 import * as aggregationBatch from '../app/util/aggregation-batch';
 import { resetQueues } from './helpers/queue';
-import sleep from '../app/util/sleep';
 
 const reprojectAndZarrQuery = {
   maxResults: 1,

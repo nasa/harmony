@@ -12,7 +12,7 @@ import { objectStoreForProtocol } from './object-store';
 import axios from 'axios';
 import { getCatalogItemUrls, getCatalogLinks, readCatalogItems } from './stac';
 import WorkItemUpdate from '../models/work-item-update';
-import WorkflowStep, { decrementWorkItemCount } from '../models/workflow-steps';
+import WorkflowStep from '../models/workflow-steps';
 import { WorkItemStatus } from '../models/work-item-interface';
 import WorkItem from '../models/work-item';
 import { incrementReadyCount } from '../models/user-work';
@@ -200,7 +200,7 @@ async function createCatalogAndWorkItemForBatch(
       workflowStepIndex: workflowStep.stepIndex,
     });
     workflowStep.workItemCount += 1;
-    workflowStep.save(tx);
+    await workflowStep.save(tx);
 
     await incrementReadyCount(tx, jobID, serviceID);
     await newWorkItem.save(tx);
@@ -240,7 +240,7 @@ export async function handleBatching(
   workItemStatus: WorkItemStatus,
   allWorkItemsForStepComplete: boolean)
   : Promise<boolean> {
-  const { jobID, serviceID, stepIndex } = workflowStep;
+  const { jobID, serviceID } = workflowStep;
   let { maxBatchInputs, maxBatchSizeInBytes } = workflowStep;
   let didCreateWorkItem = false;
   maxBatchInputs = maxBatchInputs || env.maxBatchInputs;
@@ -301,7 +301,7 @@ export async function handleBatching(
   let nextSortIndex: number;
   // get the most recent batch so we can try to assign new items to it
   let currentBatch = await withHighestBatchIDForJobService(tx, jobID, serviceID);
-  // keep track of how big the batch is in terms of number of items and total size of the 
+  // keep track of how big the batch is in terms of number of items and total size of the
   // items in bytes
   let currentBatchSize = 0;
   let currentBatchCount = 0;

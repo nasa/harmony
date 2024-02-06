@@ -1,11 +1,10 @@
 import { expect } from 'chai';
 import db from '../app/util/db';
-import { Job  } from '../app/models/job';
+import { Job } from '../app/models/job';
 import { hookRangesetRequest } from './helpers/ogc-api-coverages';
 import hookServersStartStop from './helpers/servers';
 import { getWorkForService, updateWorkItem, fakeServiceStacOutput } from './helpers/work-items';
 import { getStacLocation, WorkItemStatus } from '../app/models/work-item-interface';
-import { truncateAll } from './helpers/db';
 
 describe('Testing job progress', function () {
   const collection = 'C1234208438-POCLOUD';
@@ -25,9 +24,9 @@ describe('Testing job progress', function () {
         const { workItem } = JSON.parse(res.text);
         workItem.status = WorkItemStatus.SUCCESSFUL;
         workItem.results = [
-            getStacLocation(workItem, 'catalog0.json'),
-            getStacLocation(workItem, 'catalog1.json'),
-          ];
+          getStacLocation(workItem, 'catalog0.json'),
+          getStacLocation(workItem, 'catalog1.json'),
+        ];
         workItem.outputItemSizes = [1, 2];
         await fakeServiceStacOutput(workItem.jobID, workItem.id, 2, 1);
 
@@ -43,7 +42,7 @@ describe('Testing job progress', function () {
           const { workItem } = JSON.parse(res.text);
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = [
-             getStacLocation(workItem, 'catalog.json'),
+            getStacLocation(workItem, 'catalog.json'),
           ];
           workItem.outputItemSizes = [1];
           await fakeServiceStacOutput(workItem.jobID, workItem.id, 1, 1);
@@ -61,7 +60,7 @@ describe('Testing job progress', function () {
           const { workItem } = JSON.parse(res.text);
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = [
-             getStacLocation(workItem, 'catalog.json'),
+            getStacLocation(workItem, 'catalog.json'),
           ];
           workItem.outputItemSizes = [1];
           await fakeServiceStacOutput(workItem.jobID, workItem.id, 1, 1);
@@ -92,9 +91,9 @@ describe('Testing job progress', function () {
         const { workItem } = JSON.parse(res.text);
         workItem.status = WorkItemStatus.SUCCESSFUL;
         workItem.results = [
-            getStacLocation(workItem, 'catalog0.json'),
-            getStacLocation(workItem, 'catalog1.json'),
-          ];
+          getStacLocation(workItem, 'catalog0.json'),
+          getStacLocation(workItem, 'catalog1.json'),
+        ];
         workItem.outputItemSizes = [1, 2];
         await fakeServiceStacOutput(workItem.jobID, workItem.id, 2, 1);
 
@@ -113,7 +112,7 @@ describe('Testing job progress', function () {
           const { workItem } = JSON.parse(res.text);
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = [
-             getStacLocation(workItem, 'catalog.json'),
+            getStacLocation(workItem, 'catalog.json'),
           ];
           workItem.outputItemSizes = [1];
           await fakeServiceStacOutput(workItem.jobID, workItem.id, 1, 1);
@@ -130,7 +129,7 @@ describe('Testing job progress', function () {
           const { workItem } = JSON.parse(res.text);
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = [
-             getStacLocation(workItem, 'catalog.json'),
+            getStacLocation(workItem, 'catalog.json'),
           ];
           workItem.outputItemSizes = [1];
           await fakeServiceStacOutput(workItem.jobID, workItem.id, 1, 1);
