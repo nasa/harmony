@@ -9,7 +9,7 @@ import * as url from 'url';
 function _getProtocol(req): string {
   const host = req.get('host');
   return (host.startsWith('localhost')
-    || host.startsWith('internal-harmony') // using an internal harmony load balancer
+    // || host.startsWith('internal-harmony') // using an internal harmony load balancer
     || host.startsWith('127.0.0.1')) ? 'http' : 'https';
 }
 
