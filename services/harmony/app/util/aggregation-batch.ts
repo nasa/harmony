@@ -211,7 +211,6 @@ async function createCatalogAndWorkItemForBatch(
     return true;
   } else {
     logger.warn('Attempted to construct a work item for a batch, but there were no valid items in the batch.');
-    // await decrementWorkItemCount(tx, jobID, stepIndex);
   }
   return false;
 }
