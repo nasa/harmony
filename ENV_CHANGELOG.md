@@ -2,6 +2,11 @@
 Any changes to the environment variables will be documented in this file in chronological
 order with the most recent changes first.
 
+## 2024-01-23
+### Changed
+- HYBIG_IMAGE to point to ghcr.io hosted image.
+- HYBIG_SERVICE_QUEUE_URLS to point to ghcr.io hosted image.
+
 ## 2024-01-04
 ### Changed
 - SWOT_REPROJECT_IMAGE to SWATH_PROJECTOR_IMAGE

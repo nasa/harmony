@@ -2,11 +2,23 @@
   "1092972": {
     "active": true,
     "notes": "Ignored since there is no fix",
+<<<<<<< HEAD
     "expiry": "2024-08-01"
+||||||| 56ce490b
+    "expiry": "2024-02-01"
+=======
+    "expiry": "2024-05-01"
+>>>>>>> main
   },
   "1095102": {
     "active": true,
     "notes": "Will fix in HARMONY-1650",
+<<<<<<< HEAD
     "expiry": "2024-08-01"
+||||||| 56ce490b
+    "expiry": "2024-02-01"
+=======
+    "expiry": "2024-05-01"
+>>>>>>> main
   }
 }
