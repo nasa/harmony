@@ -16,7 +16,7 @@ before(function () {
 
 after(function () {
   unstubEdlRequest();
-})
+});
 
 describe('util/edl-api', function () {
   describe('getEdlGroupInformation', function () {
