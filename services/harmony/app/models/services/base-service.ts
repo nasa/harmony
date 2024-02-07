@@ -17,6 +17,7 @@ import HarmonyRequest from '../harmony-request';
 import UserWork from '../user-work';
 import { joinTexts } from '@harmony/util/string';
 import { makeWorkScheduleRequest } from '../../backends/workflow-orchestration/work-item-polling';
+import { QUERY_CMR_SERVICE_REGEX } from '../../backends/workflow-orchestration/util';
 
 export interface ServiceCapabilities {
   concatenation?: boolean;
@@ -454,6 +455,10 @@ export default abstract class BaseService<ServiceParamType> {
           if (i === numSteps) {
             this.operation.stagingLocation = this.finalStagingLocation();
           }
+          let progressWeight = 1.0;
+          if (QUERY_CMR_SERVICE_REGEX.test(step.image)) {
+            progressWeight = 0.1;
+          }
           workflowSteps.push(new WorkflowStep({
             jobID: this.operation.requestId,
             serviceID: serviceImageToId(step.image),
@@ -468,6 +473,7 @@ export default abstract class BaseService<ServiceParamType> {
             is_sequential: !!step.is_sequential,
             maxBatchInputs: step.max_batch_inputs,
             maxBatchSizeInBytes: step.max_batch_size_in_bytes,
+            progress_weight: progressWeight,
           }));
         }
       }));

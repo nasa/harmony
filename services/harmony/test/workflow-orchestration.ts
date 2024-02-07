@@ -296,11 +296,11 @@ describe('Workflow chaining for a collection configured for Swath Projector and 
           });
 
           describe('when checking the jobs listing', function () {
-            it('marks the job as in progress and 66 percent complete because query-cmr is completely done and 1 of 2 granules is complete in the other services', async function () {
+            it('marks the job as in progress and 52 percent complete because query-cmr is completely done and 1 of 2 granules is complete in the other services', async function () {
               const jobs = await Job.forUser(db, 'anonymous');
               const job = jobs.data[0];
               expect(job.status).to.equal('running');
-              expect(job.progress).to.equal(66);
+              expect(job.progress).to.equal(52);
             });
           });
 

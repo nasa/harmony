@@ -19,7 +19,7 @@ describe('Testing job progress', function () {
     hookRangesetRequest('1.0.0', collection, 'all', { query: reprojectQuery });
 
     describe('when the query-cmr work-item is retrieved and processed', async function () {
-      it('sets the job progress to 50', async function () {
+      it('sets the job progress to 9', async function () {
         const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
         const { workItem } = JSON.parse(res.text);
         workItem.status = WorkItemStatus.SUCCESSFUL;
@@ -33,11 +33,11 @@ describe('Testing job progress', function () {
         await updateWorkItem(this.backend, workItem);
         const jobs = await Job.forUser(db, 'anonymous');
         const job = jobs.data[0];
-        expect(job.progress).to.equal(50);
+        expect(job.progress).to.equal(9);
       });
 
       describe('when the first sub-setter work-item is retrieved and processed', async function () {
-        it('sets the job progress to 75', async function () {
+        it('sets the job progress to 54', async function () {
           const res = await getWorkForService(this.backend, 'ghcr.io/podaac/l2ss-py:sit');
           const { workItem } = JSON.parse(res.text);
           workItem.status = WorkItemStatus.SUCCESSFUL;
@@ -49,7 +49,7 @@ describe('Testing job progress', function () {
           await updateWorkItem(this.backend, workItem);
           const jobs = await Job.forUser(db, 'anonymous');
           const job = jobs.data[0];
-          expect(job.progress).to.equal(75);
+          expect(job.progress).to.equal(54);
 
         });
       });
@@ -86,7 +86,7 @@ describe('Testing job progress', function () {
     hookRangesetRequest('1.0.0', collection, 'all', { query: reprojectQuery });
 
     describe('when the query-cmr work-item is retrieved and processed', async function () {
-      it('sets the job progress to 33', async function () {
+      it('sets the job progress to 4', async function () {
         const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
         const { workItem } = JSON.parse(res.text);
         workItem.status = WorkItemStatus.SUCCESSFUL;
@@ -100,14 +100,11 @@ describe('Testing job progress', function () {
         await updateWorkItem(this.backend, workItem);
         const jobs = await Job.forUser(db, 'anonymous');
         const job = jobs.data[0];
-        expect(job.progress).to.equal(33);
+        expect(job.progress).to.equal(4);
       });
 
-      // FIXME for some reason I'm seeing logs that the work item updates are failing, even though
-      // they are set to 'success' in the dB
-
       describe('when the first sub-setter work-item is retrieved and processed', async function () {
-        it('sets the job progress to 50', async function () {
+        it('sets the job progress to 28', async function () {
           const res = await getWorkForService(this.backend, 'ghcr.io/podaac/l2ss-py:sit');
           const { workItem } = JSON.parse(res.text);
           workItem.status = WorkItemStatus.SUCCESSFUL;
@@ -119,12 +116,12 @@ describe('Testing job progress', function () {
           await updateWorkItem(this.backend, workItem);
           const jobs = await Job.forUser(db, 'anonymous');
           const job = jobs.data[0];
-          expect(job.progress).to.equal(50);
+          expect(job.progress).to.equal(28);
         });
       });
 
       describe('when the second sub-setter work-item is retrieved and processed', async function () {
-        it('sets the job progress to 66', async function () {
+        it('sets the job progress to 52', async function () {
           const res = await getWorkForService(this.backend, 'ghcr.io/podaac/l2ss-py:sit');
           const { workItem } = JSON.parse(res.text);
           workItem.status = WorkItemStatus.SUCCESSFUL;
@@ -136,7 +133,7 @@ describe('Testing job progress', function () {
           await updateWorkItem(this.backend, workItem);
           const jobs = await Job.forUser(db, 'anonymous');
           const job = jobs.data[0];
-          expect(job.progress).to.equal(66);
+          expect(job.progress).to.equal(52);
         });
       });
     });
