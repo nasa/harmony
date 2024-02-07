@@ -4,15 +4,15 @@ import {
   getEdlGroupInformation,
 } from '../../app/util/edl-api';
 import logger from '../../app/util/log';
-import { stubEdlRequest, token } from 'test/helpers/auth';
+import { stubEdlRequest, token } from '../helpers/auth';
 
-before(function() {
+before(function () {
   stubEdlRequest(
     '/oauth/token',
     { grant_type: 'client_credentials' },
     token({ accessToken: 'fake_access' }),
   );
-})
+});
 
 describe('util/edl-api', function () {
   describe('getEdlGroupInformation', function () {
