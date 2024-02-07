@@ -23,4 +23,4 @@ X-Runtime: 0.011620
 Strict-Transport-Security: max-age=31536000
 Transfer-Encoding: chunked
 
-{"user_groups":[{"group_id":"0cf2a427-96cc-453e-ae44-e28dd0958738","name":"Harmony Log Viewers","tag":null,"shared_user_group":false,"created_by":"harmony_uat","app_uid":"harmony_uat","client_id":"abcd"}]}
+{"user_groups":[{"group_id":"e0f5c59f-ee8b-49e0-b23d-587f15e56441","name":"Harmony Service Deployers","tag":null,"shared_user_group":false,"created_by":"harmony_uat","app_uid":"harmony_uat","client_id":"abcd"},{"group_id":"0cf2a427-96cc-453e-ae44-e28dd0958738","name":"Harmony Log Viewers","tag":null,"shared_user_group":false,"created_by":"harmony_uat","app_uid":"harmony_uat","client_id":"abcd"}]}
