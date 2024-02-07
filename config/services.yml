@@ -131,6 +131,7 @@ https://cmr.earthdata.nasa.gov:
     umm_s: S2153799015-POCLOUD
     capabilities:
       concatenation: true
+      concatenate_by_default: true
       subsetting:
         bbox: false
         variable: false
@@ -169,6 +170,7 @@ https://cmr.earthdata.nasa.gov:
     umm_s: S2800188133-POCLOUD
     capabilities:
       concatenation: true
+      concatenate_by_default: true
       subsetting:
         temporal: true
         bbox: true
@@ -519,6 +521,7 @@ https://cmr.uat.earthdata.nasa.gov:
     umm_s: S1242328818-POCLOUD
     capabilities:
       concatenation: true
+      concatenate_by_default: true
       subsetting:
         bbox: false
         variable: false
@@ -557,6 +560,7 @@ https://cmr.uat.earthdata.nasa.gov:
     umm_s: S1261068840-POCLOUD
     capabilities:
       concatenation: true
+      concatenate_by_default: true
       subsetting:
         temporal: true
         bbox: true
