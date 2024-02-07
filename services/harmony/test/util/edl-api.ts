@@ -4,7 +4,7 @@ import {
   getEdlGroupInformation,
 } from '../../app/util/edl-api';
 import logger from '../../app/util/log';
-import { stubEdlRequest, token } from '../helpers/auth';
+import { stubEdlRequest, token, unstubEdlRequest } from '../helpers/auth';
 
 before(function () {
   stubEdlRequest(
@@ -13,6 +13,10 @@ before(function () {
     token({ accessToken: 'fake_access' }),
   );
 });
+
+after(function () {
+  unstubEdlRequest();
+})
 
 describe('util/edl-api', function () {
   describe('getEdlGroupInformation', function () {
