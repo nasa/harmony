@@ -91,6 +91,7 @@ async function getUserGroups(username: string, logger: Logger)
 export interface EdlGroupMembership {
   isAdmin: boolean;
   isLogViewer: boolean;
+  isServiceDeployer: boolean;
 }
 
 /**
@@ -118,7 +119,7 @@ export async function getEdlGroupInformation(username: string, logger: Logger)
     isServiceDeployer = true;
   }
 
-  return { isAdmin, isLogViewer };
+  return { isAdmin, isLogViewer, isServiceDeployer };
 }
 
 /**
