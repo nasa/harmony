@@ -225,6 +225,7 @@ async function updateCmrWorkItemCount(
   transaction: Transaction,
   job: Job):
   Promise<void> {
+  // NOTE We assume here that any chain using query-cmr will have it as the first step
   const step = await getWorkflowStepByJobIdStepIndex(transaction, job.jobID, 1);
   step.workItemCount = Math.ceil(job.numInputGranules / env.cmrMaxPageSize);
   await step.save(transaction);
@@ -510,7 +511,7 @@ async function createNextWorkItems(
     await incrementReadyCount(tx, workItem.jobID, nextWorkflowStep.serviceID, newItems.length);
     for (const batch of _.chunk(newItems, batchSize)) {
       await WorkItem.insertBatch(tx, batch);
-      logger.info('Created new set of work items.');
+      logger.info(`Created new set of ${newItems.length} work items.`);
     }
   }
   if (didCreateWorkItem) {
