@@ -84,6 +84,9 @@ ADMIN_GROUP_ID=9b359064-287f-411f-b2cc-ed4429676900
 # The EDL Group ID for the group whose users can access logs in the workflow-ui for their own jobs or shareable jobs
 LOG_VIEWER_GROUP_ID=0cf2a427-96cc-453e-ae44-e28dd0958738
 
+# The EDL Group ID for the group whose users can deploy backend services
+SERVICE_DEPLOYER_GROUP_ID=e0f5c59f-ee8b-49e0-b23d-587f15e56441
+
 # The number of ms to wait between polling to check whether a synchronous request completed
 SYNC_REQUEST_POLL_INTERVAL_MS=100
 
