@@ -24,9 +24,15 @@ describe('util/edl-api', function () {
         expect(groups.isServiceDeployer).is.false;
       });
     });
-    describe('when the user is part of the service deployers group', function () {
+    describe('when the user is part of the service deployers and log viewers group', function () {
       it('returns isServiceDeployer:true', async function () {
         const groups = await getEdlGroupInformation('eve', logger);
+        expect(groups.isServiceDeployer).is.true;
+      });
+    });
+    describe('when the user is part of the service deployers group', function () {
+      it('returns isServiceDeployer:true', async function () {
+        const groups = await getEdlGroupInformation('buzz', logger);
         expect(groups.isServiceDeployer).is.true;
       });
     });
