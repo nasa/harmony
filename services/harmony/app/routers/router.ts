@@ -28,7 +28,7 @@ import { setLogLevel } from '../frontends/configuration';
 import getVersions from '../frontends/versions';
 import serviceInvoker from '../backends/service-invoker';
 import HarmonyRequest, { addRequestContextToOperation } from '../models/harmony-request';
-
+import { getServiceImage, getServiceImages, updateServiceImage } from '../frontends/service-image';
 import cmrCollectionReader = require('../middleware/cmr-collection-reader');
 import cmrUmmCollectionReader = require('../middleware/cmr-umm-collection-reader');
 import env from '../util/env';
@@ -282,6 +282,11 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   result.get('/readiness', async (_req, res, _next: Function): Promise<void> => {
     res.send('OK');
   });
+
+  // service images
+  result.get('/service-image', asyncHandler(getServiceImages));
+  result.get('/service-image/:service', asyncHandler(getServiceImage));
+  result.put('/service-image/:service', asyncHandler(updateServiceImage));
 
   result.get('/*', () => { throw new NotFoundError('The requested page was not found.'); });
   result.post('/*', () => { throw new NotFoundError('The requested POST page was not found.'); });
