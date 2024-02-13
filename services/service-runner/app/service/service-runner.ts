@@ -112,7 +112,7 @@ async function _getStacCatalogs(dir: string): Promise<string[]> {
     const bMatches = b.match(fileNumRegex);
     const bNum = bMatches.length > 1 ? Number(bMatches[1]) : 0;
     return aNum - bNum;
-  })
+  });
 }
 
 /**

@@ -36,22 +36,22 @@ const workItemWithErrorJson = 's3://stac-catalogs/abc/123/outputs/';
 const workItemWithoutErrorJson = 's3://stac-catalogs/abc/456/outputs/';
 
 const dummyCatalog = {
-  "stac_version": "1.0.0-beta.2",
-  "stac_extensions": [],
-  "id": "e8c152dd-112f-499d-9307-65a21ecb0ae6",
-  "links": [
+  'stac_version': '1.0.0-beta.2',
+  'stac_extensions': [],
+  'id': 'e8c152dd-112f-499d-9307-65a21ecb0ae6',
+  'links': [
     {
-      "rel": "harmony_source",
-      "href": "https://cmr.uat.earthdata.nasa.gov/search/concepts/C1234208438-POCLOUD"
+      'rel': 'harmony_source',
+      'href': 'https://cmr.uat.earthdata.nasa.gov/search/concepts/C1234208438-POCLOUD',
     },
     {
-      "rel": "item",
-      "href": "./granule_G1234495188-POCLOUD_0000000.json",
-      "type": "application/json",
-      "title": "JA1_GPS_2PeP220_111_20071231_005214_20071231_014826"
-    }
+      'rel': 'item',
+      'href': './granule_G1234495188-POCLOUD_0000000.json',
+      'type': 'application/json',
+      'title': 'JA1_GPS_2PeP220_111_20071231_005214_20071231_014826',
+    },
   ],
-  "description": "CMR collection C1234208438-POCLOUD, granule G1234495188-POCLOUD"
+  'description': 'CMR collection C1234208438-POCLOUD, granule G1234495188-POCLOUD',
 
 };
 
@@ -179,11 +179,11 @@ describe('Service Runner', function () {
     describe('with text logs', function () {
       const itemRecord0: WorkItemRecord = {
         id: 0, jobID: '123', serviceID: '', sortIndex: 0,
-        workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date()
+        workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date(),
       };
       const itemRecord1: WorkItemRecord = {
         id: 1, jobID: '123', serviceID: '', sortIndex: 0,
-        workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date()
+        workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date(),
       };
       before(async function () {
         // One of the items will have its log file written to twice
@@ -220,11 +220,11 @@ describe('Service Runner', function () {
     describe('with JSON logs', function () {
       const itemRecord0: WorkItemRecord = {
         id: 2, jobID: '123', serviceID: '', sortIndex: 0,
-        workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date()
+        workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date(),
       };
       const itemRecord1: WorkItemRecord = {
         id: 3, jobID: '123', serviceID: '', sortIndex: 0,
-        workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date()
+        workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date(),
       };
       before(async function () {
         // One of the items will have its log file written to twice
