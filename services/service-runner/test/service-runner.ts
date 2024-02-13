@@ -15,25 +15,45 @@ import axios from 'axios';
 
 const { _getErrorMessage, _getStacCatalogs } = serviceRunner.exportedForTesting;
 
-const exampleStatus : k8s.V1Status = {
+const exampleStatus: k8s.V1Status = {
   message: 'example status',
 };
 
-const oomStatusCause : k8s.V1StatusCause = {
+const oomStatusCause: k8s.V1StatusCause = {
   reason: 'ExitCode',
   message: '137',
 };
 
-const oomStatusDetails : k8s.V1StatusDetails = {
+const oomStatusDetails: k8s.V1StatusDetails = {
   causes: [oomStatusCause],
 };
 
-const oomStatus : k8s.V1Status = {
+const oomStatus: k8s.V1Status = {
   details: oomStatusDetails,
 };
 
 const workItemWithErrorJson = 's3://stac-catalogs/abc/123/outputs/';
 const workItemWithoutErrorJson = 's3://stac-catalogs/abc/456/outputs/';
+
+const dummyCatalog = {
+  "stac_version": "1.0.0-beta.2",
+  "stac_extensions": [],
+  "id": "e8c152dd-112f-499d-9307-65a21ecb0ae6",
+  "links": [
+    {
+      "rel": "harmony_source",
+      "href": "https://cmr.uat.earthdata.nasa.gov/search/concepts/C1234208438-POCLOUD"
+    },
+    {
+      "rel": "item",
+      "href": "./granule_G1234495188-POCLOUD_0000000.json",
+      "type": "application/json",
+      "title": "JA1_GPS_2PeP220_111_20071231_005214_20071231_014826"
+    }
+  ],
+  "description": "CMR collection C1234208438-POCLOUD, granule G1234495188-POCLOUD"
+
+};
 
 describe('Service Runner', function () {
   describe('_getErrorMessage()', function () {
@@ -57,12 +77,114 @@ describe('Service Runner', function () {
     });
   });
 
+  describe('_getStacCatalogs()', function () {
+
+    const workItemWithOneCatalog = 's3://stac-catalogs/abc/789/outputs/';
+    const workItemWithMultipleCatalogs = 's3://stac-catalogs/abc/321/outputs/';
+    const workItemWithMultipleCatalogsNoBatchFile = 's3://stac-catalogs/abc/987/outputs/';
+    const emptyCatalogUrl = 's3://stac-catalogs/empty/';
+
+    describe('when the directory has no catalogs', async function () {
+      it('returns any empty list', async function () {
+        const files = await _getStacCatalogs(emptyCatalogUrl);
+        expect(files).to.eql([]);
+      });
+    });
+
+    describe('when there is a batch-catalogs.json file associated with the WorkItem', async function () {
+      before(async function () {
+        const s3 = objectStoreForProtocol('s3');
+        const batchFileContent = JSON.stringify([
+          'catalog0.json',
+          'catalog1.json',
+          'catalog2.json',
+          'catalog3.json',
+          'catalog4.json',
+          'catalog5.json',
+          'catalog6.json',
+          'catalog7.json',
+          'catalog8.json',
+          'catalog9.json',
+          'catalog10.json',
+        ]);
+        const stacCatalogsUrl = resolve(workItemWithMultipleCatalogs, 'batch-catalogs.json');
+        await s3.upload(batchFileContent, stacCatalogsUrl, null, 'application/json');
+      });
+
+      it('returns the stac catalogs from batch-catalogs.json in the order they are in the file', async function () {
+        const stacCatalogs = await _getStacCatalogs(workItemWithMultipleCatalogs);
+        expect(stacCatalogs).to.deep.equal([
+          's3://stac-catalogs/abc/321/outputs/catalog0.json',
+          's3://stac-catalogs/abc/321/outputs/catalog1.json',
+          's3://stac-catalogs/abc/321/outputs/catalog2.json',
+          's3://stac-catalogs/abc/321/outputs/catalog3.json',
+          's3://stac-catalogs/abc/321/outputs/catalog4.json',
+          's3://stac-catalogs/abc/321/outputs/catalog5.json',
+          's3://stac-catalogs/abc/321/outputs/catalog6.json',
+          's3://stac-catalogs/abc/321/outputs/catalog7.json',
+          's3://stac-catalogs/abc/321/outputs/catalog8.json',
+          's3://stac-catalogs/abc/321/outputs/catalog9.json',
+          's3://stac-catalogs/abc/321/outputs/catalog10.json',
+        ]);
+      });
+    });
+
+    describe('when there is no batch-catalogs.json file associated with the WorkItem', async function () {
+      describe('when there is just one catalog', async function () {
+        before(async function () {
+          const s3 = objectStoreForProtocol('s3');
+          const catalogContent = JSON.stringify(dummyCatalog);
+          const stacCatalogUrl = resolve(workItemWithOneCatalog, 'catalog.json');
+          await s3.upload(catalogContent, stacCatalogUrl, null, 'application/json');
+        });
+
+        it('returns the url of the catalog.json file', async function () {
+          const stacCatalogs = await _getStacCatalogs(workItemWithOneCatalog);
+          expect(stacCatalogs).to.deep.equal(['s3://stac-catalogs/abc/789/outputs/catalog.json']);
+        });
+      });
+
+      // This should never happen, but it's good to test the behavior
+      describe('when there is more than one catalog', async function () {
+        before(async function () {
+          const s3 = objectStoreForProtocol('s3');
+          const catalogContent = JSON.stringify(dummyCatalog);
+          for (let i = 0; i < 11; i++) {
+            const stacCatalogUrl = resolve(workItemWithMultipleCatalogsNoBatchFile, `catalog${i}.json`);
+            await s3.upload(catalogContent, stacCatalogUrl, null, 'application/json');
+          }
+        });
+
+        it('returns an array sorted by catalog index', async function () {
+          const stacCatalogs = await _getStacCatalogs(workItemWithMultipleCatalogsNoBatchFile);
+          expect(stacCatalogs).to.deep.equal([
+            's3://stac-catalogs/abc/987/outputs/catalog0.json',
+            's3://stac-catalogs/abc/987/outputs/catalog1.json',
+            's3://stac-catalogs/abc/987/outputs/catalog2.json',
+            's3://stac-catalogs/abc/987/outputs/catalog3.json',
+            's3://stac-catalogs/abc/987/outputs/catalog4.json',
+            's3://stac-catalogs/abc/987/outputs/catalog5.json',
+            's3://stac-catalogs/abc/987/outputs/catalog6.json',
+            's3://stac-catalogs/abc/987/outputs/catalog7.json',
+            's3://stac-catalogs/abc/987/outputs/catalog8.json',
+            's3://stac-catalogs/abc/987/outputs/catalog9.json',
+            's3://stac-catalogs/abc/987/outputs/catalog10.json',
+          ]);
+        });
+      });
+    });
+  });
+
   describe('uploadLogs', function () {
     describe('with text logs', function () {
-      const itemRecord0: WorkItemRecord = { id: 0, jobID: '123', serviceID: '', sortIndex: 0,
-        workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date() };
-      const itemRecord1: WorkItemRecord = { id: 1, jobID: '123', serviceID: '', sortIndex: 0,
-        workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date() };
+      const itemRecord0: WorkItemRecord = {
+        id: 0, jobID: '123', serviceID: '', sortIndex: 0,
+        workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date()
+      };
+      const itemRecord1: WorkItemRecord = {
+        id: 1, jobID: '123', serviceID: '', sortIndex: 0,
+        workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date()
+      };
       before(async function () {
         // One of the items will have its log file written to twice
         await uploadLogs(itemRecord0, ['the old logs']);
@@ -96,10 +218,14 @@ describe('Service Runner', function () {
       });
     });
     describe('with JSON logs', function () {
-      const itemRecord0: WorkItemRecord = { id: 2, jobID: '123', serviceID: '', sortIndex: 0,
-        workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date() };
-      const itemRecord1: WorkItemRecord = { id: 3, jobID: '123', serviceID: '', sortIndex: 0,
-        workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date() };
+      const itemRecord0: WorkItemRecord = {
+        id: 2, jobID: '123', serviceID: '', sortIndex: 0,
+        workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date()
+      };
+      const itemRecord1: WorkItemRecord = {
+        id: 3, jobID: '123', serviceID: '', sortIndex: 0,
+        workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date()
+      };
       before(async function () {
         // One of the items will have its log file written to twice
         await uploadLogs(itemRecord0, [{ message: 'the old logs' }]);
@@ -135,33 +261,6 @@ describe('Service Runner', function () {
     });
   });
 
-  describe('_getStacCatalogs', function () {
-    const nonEmptyCatalogUrl = 's3://stac-catalogs/some/';
-    const emptyCatalogUrl = 's3://stac-catalogs/empty/';
-    before(async function () {
-      const s3 = objectStoreForProtocol('s3');
-      const errorJson = JSON.stringify({});
-      const catalogUrl = resolve(nonEmptyCatalogUrl, 'catalog0.json');
-      await s3.upload(errorJson, catalogUrl, null, 'application/json');
-    });
-    describe('when the directory has catalogs', async function () {
-      it('returns the list of catalogs and captures the content type', async function () {
-        const files = await _getStacCatalogs(nonEmptyCatalogUrl);
-        expect(files).to.eql([
-          's3://stac-catalogs/catalog0.json',
-          's3://stac-catalogs/catalog0.jsoncontent-type',
-        ]);
-      });
-    });
-
-    describe('when the directory has no catalogs', async function () {
-      it('returns any empty list', async function () {
-        const files = await _getStacCatalogs(emptyCatalogUrl);
-        expect(files).to.eql([]);
-      });
-    });
-  });
-
   describe('runQueryCmrFromPull', async function () {
     const workItem = new WorkItem({
       jobID: '123',
@@ -181,7 +280,7 @@ describe('Service Runner', function () {
         const description = 'Query CMR server failed unexpectedly';
         before(async function () {
           axiosStub = sinon.stub(axios, 'post').callsFake(
-            async function () { throw { 'response': { 'data' : { description } } }; });
+            async function () { throw { 'response': { 'data': { description } } }; });
         });
         it('returns an error message matching the description', async function () {
           const result = await serviceRunner.runQueryCmrFromPull(workItem);
@@ -203,7 +302,7 @@ describe('Service Runner', function () {
         const statusText = 'Not Found';
         before(async function () {
           axiosStub = sinon.stub(axios, 'post').callsFake(
-            async function () { throw { 'response': { statusText } };});
+            async function () { throw { 'response': { statusText } }; });
         });
         it('returns an error message that includes the status text', async function () {
           const result = await serviceRunner.runQueryCmrFromPull(workItem);
@@ -242,7 +341,7 @@ describe('Service Runner', function () {
 
     const message = 'mv \'/tmp/tmpkwxpifmr/tmp-result.tif\' \'/tmp/tmpkwxpifmr/result.tif\'';
     const user = 'bo';
-    const timestamp =  '2022-10-06T17:04:21.090726Z';
+    const timestamp = '2022-10-06T17:04:21.090726Z';
     const requestId = 'cdea7cb8-4c77-4342-8f00-6285e32c9123';
     const level = 'INFO';
 

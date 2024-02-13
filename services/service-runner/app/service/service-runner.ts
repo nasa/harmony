@@ -92,9 +92,27 @@ export class LogStream extends stream.Writable {
  */
 async function _getStacCatalogs(dir: string): Promise<string[]> {
   const s3 = objectStoreForProtocol('s3');
-  return (await s3.listObjectKeys(dir))
-    .filter((fileKey) => fileKey.match(/catalog\d*.json/))
-    .map((fileKey) => `s3://${env.artifactBucket}/${fileKey}`);
+  // check to see if there is a batch-catalogs.json file and read it if so
+  const batchCatalogsJsonUrl = `${dir}batch-catalogs.json`;
+  if (await s3.objectExists(batchCatalogsJsonUrl)) {
+    const batchCatalogs = await s3.getObjectJson(batchCatalogsJsonUrl) as string[];
+    const result =  batchCatalogs.map(filename => `${dir}${filename}`);
+    return result;
+  }
+
+  // otherwise retrieve the keys from the bucket that are of the form catalog*.json,
+  // and sort them by index number
+  const urls = (await s3.listObjectKeys(dir))
+    .filter((fileKey) => fileKey.match(/catalog\d*.json$/))
+    .map((fileKey) => `${dir}${fileKey}`);
+  const fileNumRegex = /.*catalog(\d+)\.json$/;
+  return urls.sort((a, b) =>{
+    const aMatches = a.match(fileNumRegex);
+    const aNum = aMatches.length > 1 ? Number(aMatches[1]) : 0;
+    const bMatches = b.match(fileNumRegex);
+    const bNum = bMatches.length > 1 ? Number(bMatches[1]) : 0;
+    return aNum - bNum;
+  })
 }
 
 /**
