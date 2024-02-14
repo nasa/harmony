@@ -26,7 +26,17 @@
   },
   "1096460": {
     "active": true,
-    "notes": "Will fix in HARMONY-",
+    "notes": "Will fix in HARMONY-1698",
+    "expiry": "2024-08-01"
+  },
+  "1096482": {
+    "active": true,
+    "notes": "Will fix in HARMONY-1700",
+    "expiry": "2024-08-01"
+  },
+  "1096484": {
+    "active": true,
+    "notes": "Will fix in HARMONY-1700",
     "expiry": "2024-08-01"
   }
 }

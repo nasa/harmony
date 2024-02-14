@@ -55,44 +55,44 @@ const dummyCatalog = {
 
 };
 
-describe('Service Runner', function () {
-  describe('_getErrorMessage()', function () {
-    before(async function () {
+describe('Service Runner', function() {
+  describe('_getErrorMessage()', function() {
+    before(async function() {
       const s3 = objectStoreForProtocol('s3');
       const errorJson = JSON.stringify({ 'error': 'Service error message', 'category': 'Service' });
       const errorJsonUrl = resolve(workItemWithErrorJson, 'error.json');
       await s3.upload(errorJson, errorJsonUrl, null, 'application/json');
     });
-    describe('when there is an error.json file associated with the WorkItem', async function () {
-      it('returns the error message from error.json', async function () {
+    describe('when there is an error.json file associated with the WorkItem', async function() {
+      it('returns the error message from error.json', async function() {
         const errorMessage = await _getErrorMessage(exampleStatus, workItemWithErrorJson);
         expect(errorMessage).equal('Service error message');
       });
     });
-    describe('when the error status code is 137', async function () {
-      it('returns "OOM error"', async function () {
+    describe('when the error status code is 137', async function() {
+      it('returns "OOM error"', async function() {
         const errorMessage = await _getErrorMessage(oomStatus, workItemWithoutErrorJson);
         expect(errorMessage).equal('Service failed due to running out of memory');
       });
     });
   });
 
-  describe('_getStacCatalogs()', function () {
+  describe('_getStacCatalogs()', function() {
 
     const workItemWithOneCatalog = 's3://stac-catalogs/abc/789/outputs/';
     const workItemWithMultipleCatalogs = 's3://stac-catalogs/abc/321/outputs/';
     const workItemWithMultipleCatalogsNoBatchFile = 's3://stac-catalogs/abc/987/outputs/';
     const emptyCatalogUrl = 's3://stac-catalogs/empty/';
 
-    describe('when the directory has no catalogs', async function () {
-      it('returns any empty list', async function () {
+    describe('when the directory has no catalogs', async function() {
+      it('returns any empty list', async function() {
         const files = await _getStacCatalogs(emptyCatalogUrl);
         expect(files).to.eql([]);
       });
     });
 
-    describe('when there is a batch-catalogs.json file associated with the WorkItem', async function () {
-      before(async function () {
+    describe('when there is a batch-catalogs.json file associated with the WorkItem', async function() {
+      before(async function() {
         const s3 = objectStoreForProtocol('s3');
         const batchFileContent = JSON.stringify([
           'catalog0.json',
@@ -111,7 +111,7 @@ describe('Service Runner', function () {
         await s3.upload(batchFileContent, stacCatalogsUrl, null, 'application/json');
       });
 
-      it('returns the stac catalogs from batch-catalogs.json in the order they are in the file', async function () {
+      it('returns the stac catalogs from batch-catalogs.json in the order they are in the file', async function() {
         const stacCatalogs = await _getStacCatalogs(workItemWithMultipleCatalogs);
         expect(stacCatalogs).to.deep.equal([
           's3://stac-catalogs/abc/321/outputs/catalog0.json',
@@ -129,24 +129,24 @@ describe('Service Runner', function () {
       });
     });
 
-    describe('when there is no batch-catalogs.json file associated with the WorkItem', async function () {
-      describe('when there is just one catalog', async function () {
-        before(async function () {
+    describe('when there is no batch-catalogs.json file associated with the WorkItem', async function() {
+      describe('when there is just one catalog', async function() {
+        before(async function() {
           const s3 = objectStoreForProtocol('s3');
           const catalogContent = JSON.stringify(dummyCatalog);
           const stacCatalogUrl = resolve(workItemWithOneCatalog, 'catalog.json');
           await s3.upload(catalogContent, stacCatalogUrl, null, 'application/json');
         });
 
-        it('returns the url of the catalog.json file', async function () {
+        it('returns the url of the catalog.json file', async function() {
           const stacCatalogs = await _getStacCatalogs(workItemWithOneCatalog);
           expect(stacCatalogs).to.deep.equal(['s3://stac-catalogs/abc/789/outputs/catalog.json']);
         });
       });
 
       // This should never happen, but it's good to test the behavior
-      describe('when there is more than one catalog', async function () {
-        before(async function () {
+      describe('when there is more than one catalog', async function() {
+        before(async function() {
           const s3 = objectStoreForProtocol('s3');
           const catalogContent = JSON.stringify(dummyCatalog);
           for (let i = 0; i < 11; i++) {
@@ -155,7 +155,7 @@ describe('Service Runner', function () {
           }
         });
 
-        it('returns an array sorted by catalog index', async function () {
+        it('returns an array sorted by catalog index', async function() {
           const stacCatalogs = await _getStacCatalogs(workItemWithMultipleCatalogsNoBatchFile);
           expect(stacCatalogs).to.deep.equal([
             's3://stac-catalogs/abc/987/outputs/catalog0.json',
@@ -175,8 +175,8 @@ describe('Service Runner', function () {
     });
   });
 
-  describe('uploadLogs', function () {
-    describe('with text logs', function () {
+  describe('uploadLogs', function() {
+    describe('with text logs', function() {
       const itemRecord0: WorkItemRecord = {
         id: 0, jobID: '123', serviceID: '', sortIndex: 0,
         workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date(),
@@ -185,15 +185,15 @@ describe('Service Runner', function () {
         id: 1, jobID: '123', serviceID: '', sortIndex: 0,
         workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date(),
       };
-      before(async function () {
+      before(async function() {
         // One of the items will have its log file written to twice
         await uploadLogs(itemRecord0, ['the old logs']);
         itemRecord0.retryCount = 1; // simulate a retry
         await uploadLogs(itemRecord0, ['the new logs']);
         await uploadLogs(itemRecord1, ['the only logs']);
       });
-      describe('when there is a logs file already associated with the WorkItem', async function () {
-        it('appends the new logs to the old ones', async function () {
+      describe('when there is a logs file already associated with the WorkItem', async function() {
+        it('appends the new logs to the old ones', async function() {
           const logsLocation0 = getItemLogsLocation(itemRecord0);
           const s3 = objectStoreForProtocol('s3');
           const logs = await s3.getObjectJson(logsLocation0);
@@ -205,8 +205,8 @@ describe('Service Runner', function () {
           ]);
         });
       });
-      describe('when there is no logs file associated with the WorkItem', async function () {
-        it('writes the logs to a new file', async function () {
+      describe('when there is no logs file associated with the WorkItem', async function() {
+        it('writes the logs to a new file', async function() {
           const logsLocation1 = getItemLogsLocation(itemRecord1);
           const s3 = objectStoreForProtocol('s3');
           const logs = await s3.getObjectJson(logsLocation1);
@@ -217,7 +217,7 @@ describe('Service Runner', function () {
         });
       });
     });
-    describe('with JSON logs', function () {
+    describe('with JSON logs', function() {
       const itemRecord0: WorkItemRecord = {
         id: 2, jobID: '123', serviceID: '', sortIndex: 0,
         workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date(),
@@ -226,7 +226,7 @@ describe('Service Runner', function () {
         id: 3, jobID: '123', serviceID: '', sortIndex: 0,
         workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date(),
       };
-      before(async function () {
+      before(async function() {
         // One of the items will have its log file written to twice
         await uploadLogs(itemRecord0, [{ message: 'the old logs' }]);
         itemRecord0.retryCount = 1; // simulate a retry
@@ -234,8 +234,8 @@ describe('Service Runner', function () {
 
         await uploadLogs(itemRecord1, [{ message: 'the only logs' }]);
       });
-      describe('when there is a logs file already associated with the WorkItem', async function () {
-        it('appends the new logs to the old ones', async function () {
+      describe('when there is a logs file already associated with the WorkItem', async function() {
+        it('appends the new logs to the old ones', async function() {
           const logsLocation0 = getItemLogsLocation(itemRecord0);
           const s3 = objectStoreForProtocol('s3');
           const logs = await s3.getObjectJson(logsLocation0);
@@ -247,8 +247,8 @@ describe('Service Runner', function () {
           ]);
         });
       });
-      describe('when there is no logs file associated with the WorkItem', async function () {
-        it('writes the logs to a new file', async function () {
+      describe('when there is no logs file associated with the WorkItem', async function() {
+        it('writes the logs to a new file', async function() {
           const logsLocation1 = getItemLogsLocation(itemRecord1);
           const s3 = objectStoreForProtocol('s3');
           const logs = await s3.getObjectJson(logsLocation1);
@@ -261,7 +261,7 @@ describe('Service Runner', function () {
     });
   });
 
-  describe('runQueryCmrFromPull', async function () {
+  describe('runQueryCmrFromPull', async function() {
     const workItem = new WorkItem({
       jobID: '123',
       serviceID: 'abc',
@@ -270,41 +270,41 @@ describe('Service Runner', function () {
       operation: { requestID: 'foo' },
       id: 1,
     });
-    describe('when an error occurs', async function () {
+    describe('when an error occurs', async function() {
       // https://axios-http.com/docs/res_schema
       let axiosStub;
-      afterEach(function () {
+      afterEach(function() {
         axiosStub.restore();
       });
-      describe('and the server provides data', async function () {
+      describe('and the server provides data', async function() {
         const description = 'Query CMR server failed unexpectedly';
-        before(async function () {
+        before(async function() {
           axiosStub = sinon.stub(axios, 'post').callsFake(
-            async function () { throw { 'response': { 'data': { description } } }; });
+            async function() { throw { 'response': { 'data': { description } } }; });
         });
-        it('returns an error message matching the description', async function () {
+        it('returns an error message matching the description', async function() {
           const result = await serviceRunner.runQueryCmrFromPull(workItem);
           expect(result.error).to.equal(description);
         });
       });
-      describe('and there is a status code', async function () {
+      describe('and there is a status code', async function() {
         const status = 500;
-        before(async function () {
+        before(async function() {
           axiosStub = sinon.stub(axios, 'post').callsFake(
-            async function () { throw { 'response': { status } }; });
+            async function() { throw { 'response': { status } }; });
         });
-        it('returns an error message that includes the status code', async function () {
+        it('returns an error message that includes the status code', async function() {
           const result = await serviceRunner.runQueryCmrFromPull(workItem);
           expect(result.error).to.equal(`The Query CMR service responded with status ${status}.`);
         });
       });
-      describe('and there is status text', async function () {
+      describe('and there is status text', async function() {
         const statusText = 'Not Found';
-        before(async function () {
+        before(async function() {
           axiosStub = sinon.stub(axios, 'post').callsFake(
-            async function () { throw { 'response': { statusText } }; });
+            async function() { throw { 'response': { statusText } }; });
         });
-        it('returns an error message that includes the status text', async function () {
+        it('returns an error message that includes the status text', async function() {
           const result = await serviceRunner.runQueryCmrFromPull(workItem);
           expect(result.error).to.equal(`The Query CMR service responded with status ${statusText}.`);
         });
@@ -312,8 +312,8 @@ describe('Service Runner', function () {
     });
   });
 
-  describe('runServiceFromPull', async function () {
-    describe('when an error occurs', async function () {
+  describe('runServiceFromPull', async function() {
+    describe('when an error occurs', async function() {
       const invocArgs = env.invocationArgs;
       const workItem = new WorkItem({
         jobID: '123',
@@ -322,22 +322,22 @@ describe('Service Runner', function () {
         operation: { requestID: 'foo' },
         id: 1,
       });
-      beforeEach(function () {
+      beforeEach(function() {
         env.invocationArgs = 'abc\n123';
       });
 
-      afterEach(function () {
+      afterEach(function() {
         env.invocationArgs = invocArgs;
       });
 
-      it('returns an error message', async function () {
+      it('returns an error message', async function() {
         const result = await serviceRunner.runServiceFromPull(workItem);
         expect(result.error).to.equal('The harmonyservices/query-cmr:latest service failed.');
       });
     });
   });
 
-  describe('LogStream', function () {
+  describe('LogStream', function() {
 
     const message = 'mv \'/tmp/tmpkwxpifmr/tmp-result.tif\' \'/tmp/tmpkwxpifmr/result.tif\'';
     const user = 'bo';
@@ -348,9 +348,9 @@ describe('Service Runner', function () {
     const textLog = `${timestamp} [${level}] [harmony-service.cmd:199] ${message}`;
     const jsonLog = `{ "level":"${level}", "message":"${message}", "user":"${user}", "requestId":"${requestId}", "timestamp":"${timestamp}"}`;
 
-    describe('_handleLogString with a JSON logger', function () {
+    describe('_handleLogString with a JSON logger', function() {
 
-      before(function () {
+      before(function() {
         const { getTestLogs, testLogger } = createLoggerForTest(true);
         this.testLogger = testLogger;
         this.logStream = new serviceRunner.LogStream(testLogger);
@@ -363,29 +363,29 @@ describe('Service Runner', function () {
         this.jsonLogOutput = JSON.parse(this.testLogsArr[1]);
       });
 
-      after(function () {
+      after(function() {
         for (const transport of this.testLogger.transports) {
           transport.close;
         }
         this.testLogger.close();
       });
 
-      it('saves each log to an array in the original format, as a string or JSON', function () {
+      it('saves each log to an array in the original format, as a string or JSON', function() {
         expect(this.logStream.logStrArr.length == 2);
         expect(this.logStream.logStrArr[0] === JSON.parse(jsonLog));
         expect(this.logStream.logStrArr[1] === textLog);
       });
 
-      it('outputs the proper quantity of logs to the log stream', function () {
+      it('outputs the proper quantity of logs to the log stream', function() {
         expect(this.testLogsArr.length == 2);
       });
 
-      it('sets the appropriate message for each log', function () {
+      it('sets the appropriate message for each log', function() {
         expect(this.textLogOutput.message).to.equal(textLog);
         expect(this.jsonLogOutput.message).to.equal(message);
       });
 
-      it('sets custom attributes appropriately for each log', function () {
+      it('sets custom attributes appropriately for each log', function() {
         expect(this.jsonLogOutput.user).to.equal(user);
         expect(this.jsonLogOutput.requestId).to.equal(requestId);
 
@@ -393,7 +393,7 @@ describe('Service Runner', function () {
         expect(this.jsonLogOutput.worker).to.equal(true);
       });
 
-      it('does not override manager container log attributes with those from the worker container', function () {
+      it('does not override manager container log attributes with those from the worker container', function() {
         expect(this.textLogOutput.timestamp).to.not.equal(timestamp);
         expect(this.jsonLogOutput.timestamp).to.not.equal(timestamp);
         expect(this.jsonLogOutput.workerTimestamp).to.equal(timestamp);
@@ -404,9 +404,9 @@ describe('Service Runner', function () {
       });
     });
 
-    describe('_handleLogString with a text logger', function () {
+    describe('_handleLogString with a text logger', function() {
 
-      before(function () {
+      before(function() {
         const { getTestLogs, testLogger } = createLoggerForTest(false);
         this.testLogger = testLogger;
         this.logStream = new serviceRunner.LogStream(testLogger);
@@ -415,24 +415,24 @@ describe('Service Runner', function () {
         this.testLogs = getTestLogs();
       });
 
-      after(function () {
+      after(function() {
         for (const transport of this.testLogger.transports) {
           transport.close;
         }
         this.testLogger.close();
       });
 
-      it('saves each log to an array in the original format, as a string or JSON', function () {
+      it('saves each log to an array in the original format, as a string or JSON', function() {
         expect(this.logStream.logStrArr.length == 2);
         expect(this.logStream.logStrArr[0] === JSON.parse(jsonLog));
         expect(this.logStream.logStrArr[1] === textLog);
       });
 
-      it('outputs the proper quantity of logs to the log stream', function () {
+      it('outputs the proper quantity of logs to the log stream', function() {
         expect(this.testLogs.split('\n').length == 2);
       });
 
-      it('outputs the appropriate text to the log stream', function () {
+      it('outputs the appropriate text to the log stream', function() {
         const jsonLogOutput = `[${requestId}]: ${message}`;
         expect(this.testLogs.includes(textLog));
         expect(this.testLogs.includes(jsonLogOutput));

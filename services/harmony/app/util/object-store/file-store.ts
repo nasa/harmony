@@ -59,8 +59,12 @@ export class FileStore implements ObjectStore {
 
   listObjectKeys(paramsOrUrl: string | object): Promise<string[]> {
     try {
+      let prefix = '';
+      if (typeof paramsOrUrl === 'string') {
+        prefix = paramsOrUrl.match(/s3:\/\/.*?\/(.*)\//)[1];
+      }
       const files = fs.readdirSync(this._getFilename(paramsOrUrl));
-      return Promise.resolve(files);
+      return Promise.resolve(files.map((file) => `${prefix}/${file}`));
     } catch (e) {
       return Promise.resolve([]);
     }
@@ -143,5 +147,3 @@ export class FileStore implements ObjectStore {
     return Promise.resolve();
   }
 }
-
-
