@@ -96,17 +96,16 @@ async function _getStacCatalogs(dir: string): Promise<string[]> {
   const batchCatalogsJsonUrl = `${dir}batch-catalogs.json`;
   if (await s3.objectExists(batchCatalogsJsonUrl)) {
     const batchCatalogs = await s3.getObjectJson(batchCatalogsJsonUrl) as string[];
-    const result =  batchCatalogs.map(filename => `${dir}${filename}`);
-    return result;
+    return batchCatalogs.map(filename => `${dir}${filename}`);
   }
 
   // otherwise retrieve the keys from the bucket that are of the form catalog*.json,
   // and sort them by index number
   const urls = (await s3.listObjectKeys(dir))
     .filter((fileKey) => fileKey.match(/catalog\d*.json$/))
-    .map((fileKey) => `${dir}${fileKey}`);
+    .map((fileKey) => `s3://${env.artifactBucket}/${fileKey}`);
   const fileNumRegex = /.*catalog(\d+)\.json$/;
-  return urls.sort((a, b) =>{
+  return urls.sort((a, b) => {
     const aMatches = a.match(fileNumRegex);
     const aNum = aMatches.length > 1 ? Number(aMatches[1]) : 0;
     const bMatches = b.match(fileNumRegex);
