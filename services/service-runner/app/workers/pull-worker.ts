@@ -56,7 +56,7 @@ const pullLogPeriod = 10;
 console.log(`NODE_ENV = ${process.env.NODE_ENV}`);
 // retry twice for tests and 1200 (2 minutes) for real
 const maxPrimeRetries = process.env.NODE_ENV === 'test' ? 2 : 1_200;
-const protocol = env.backendHost === 'harmony' || env.backendHost === 'host.docker.internal' ? 'http' : 'https'
+const protocol = env.backendHost === 'harmony' || env.backendHost === 'host.docker.internal' ? 'http' : 'https';
 const workUrl = `${protocol}://${env.backendHost}:${env.backendPort}/service/work`;
 logger.debug(`WORK URL: ${workUrl}`);
 logger.debug(`HARMONY_SERVICE: ${sanitizeImage(env.harmonyService)}`);
