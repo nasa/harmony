@@ -138,6 +138,11 @@ const authorizedRoutes = [
   '/workflow-ui*',
 ];
 
+const tokenAuthorizedRoutes = [
+  ...authorizedRoutes,
+  '/service-image*',
+];
+
 /**
  * Creates and returns an express.Router instance that has the middleware
  * and handlers necessary to respond to frontend service requests
@@ -165,7 +170,7 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   // a bucket.
   result.post(collectionPrefix('(ogc-api-coverages)'), asyncHandler(shapefileUpload()));
 
-  result.use(logged(earthdataLoginTokenAuthorizer(authorizedRoutes)));
+  result.use(logged(earthdataLoginTokenAuthorizer(tokenAuthorizedRoutes)));
 
   if (`${skipEarthdataLogin}` !== 'true') {
     result.use(logged(earthdataLoginOauthAuthorizer(authorizedRoutes)));
@@ -286,7 +291,7 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   // service images
   result.get('/service-image', asyncHandler(getServiceImages));
   result.get('/service-image/:service', asyncHandler(getServiceImage));
-  result.put('/service-image/:service', asyncHandler(updateServiceImage));
+  result.put('/service-image/:service', jsonParser, asyncHandler(updateServiceImage));
 
   result.get('/*', () => { throw new NotFoundError('The requested page was not found.'); });
   result.post('/*', () => { throw new NotFoundError('The requested POST page was not found.'); });

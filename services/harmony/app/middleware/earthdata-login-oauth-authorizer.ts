@@ -196,8 +196,10 @@ export default function buildEdlAuthorizer(paths: Array<string | RegExp> = []): 
       } else if (token) {
         handler = handleAuthorized;
       } else if (requiresAuth) {
+        console.log('USING OAUTH');
         handler = handleNeedsAuthorized;
       } else {
+        console.log('NOT USING OAUTH');
         // No auth interaction and doesn't need auth
         next();
         return;

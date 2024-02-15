@@ -1,6 +1,7 @@
 
 import { Response, NextFunction } from 'express';
 import HarmonyRequest from '../models/harmony-request';
+import { getEdlGroupInformation, isAdminUser } from '../util/edl-api';
 
 const harmonyTaskServices = [
   'work-item-scheduler',
@@ -48,9 +49,39 @@ async function validateServiceExists(
   return true;
 }
 
+async function validateUserIsInDeployerGroup(
+  req: HarmonyRequest, res: Response
+): Promise<boolean> {
+  const { isServiceDeployer } = await getEdlGroupInformation(
+    req.user, req.context.logger,
+  );
+
+  if (!isServiceDeployer) {
+    res.statusCode = 403;
+    res.send(`User ${req.user} is not in the service deployers EDL group`);
+    return false;
+  }
+  return true;
+}
+
+async function validateTag(
+  req: HarmonyRequest, res: Response
+): Promise<boolean> {
+  const { tag } = req.body;
+  const tagRegex = /[a-zA-Z\d_][a-zA-Z\d-_.]{0,127}/;
+  if (!tagRegex.test(tag)) {
+    res.statusCode = 400;
+    res.send('A tag name may contain lowercase and uppercase characters, digits, underscores, periods and dashes. A tag name may not start with a period or a dash and may contain a maximum of 128 characters.');
+    return false;
+  }
+  return true;
+}
+
 export async function getServiceImages(
-  _req: HarmonyRequest, res: Response, _next: NextFunction,
+  req: HarmonyRequest, res: Response, _next: NextFunction,
 ): Promise<void> {
+  if(! await validateUserIsInDeployerGroup(req, res)) return;
+
   const imageMap = getImageMap();
   res.statusCode = 200;
   res.send(imageMap);
@@ -59,28 +90,38 @@ export async function getServiceImages(
 export async function getServiceImage(
   req: HarmonyRequest, res: Response, _next: NextFunction,
 ): Promise<void> {
+  if(! await validateUserIsInDeployerGroup(req, res)) return;
   const { service } = req.params;
   if (! await validateServiceExists(res, service)) return;
 
   const imageMap = getImageMap()
   const serviceImage = imageMap[service]
+  const tag = serviceImage.match(/.*:(.*)/)[1] || '';
   res.statusCode = 200;
-  res.send({'image': serviceImage});
+  res.send({'tag': tag});
 }
 
 export async function updateServiceImage(
   req: HarmonyRequest, res: Response, _next: NextFunction,
-) {
+): Promise<void> {
+  if(! await validateUserIsInDeployerGroup(req, res)) return;
+
   const { service } = req.params;
   if(! await validateServiceExists(res, service)) return;
-
-  if (!req.body) {
+  if (!req.body || !req.body.tag) {
     res.statusCode = 400;
-    res.send('\'image\' and \'tag\' are required body parameters');
+    res.send('\'tag\' is a required body parameter');
     return;
   }
+
+  if (! await validateTag(req, res)) return;
+
+  const { tag } = req.body;
   const imageMap = getImageMap()
-  const { image, tag } = req.body;
-  imageMap[service] = `${image}:${tag}`;
+  let imageUrl = imageMap[service]
+  const imageBase = imageUrl.match(/(.*):.*/)[1];
+
+  imageMap[service] = `${imageBase}:${tag}`;
   res.statusCode = 201;
+  res.send({'tag': tag});
 }
