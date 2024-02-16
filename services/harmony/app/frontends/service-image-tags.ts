@@ -1,7 +1,7 @@
 
 import { Response, NextFunction } from 'express';
 import HarmonyRequest from '../models/harmony-request';
-import { getEdlGroupInformation, isAdminUser } from '../util/edl-api';
+import { getEdlGroupInformation } from '../util/edl-api';
 
 const harmonyTaskServices = [
   'work-item-scheduler',
@@ -14,23 +14,29 @@ const harmonyTaskServices = [
  * Compute the map of services to tags. Harmony core services are excluded.
  * @returns The map of canonical service names to image tags.
  */
-function getImageTagMap() {
-    const imageMap = {};
-    for (const v of Object.keys(process.env)) {
-      if(v.endsWith('_IMAGE')) {
-        const serviceName = v.slice(0, -6).toLowerCase().replaceAll('_', '-');
-        // add in any services that are not Harmony core task services
-        if (!harmonyTaskServices.includes(serviceName)) {
-          const image = process.env[v];
-          const tag = image.match(/.*:(.*)/)[1] || '';
-          imageMap[serviceName] = tag;
-        }
+function getImageTagMap(): {} {
+  const imageMap = {};
+  for (const v of Object.keys(process.env)) {
+    if (v.endsWith('_IMAGE')) {
+      const serviceName = v.slice(0, -6).toLowerCase().replaceAll('_', '-');
+      // add in any services that are not Harmony core task services
+      if (!harmonyTaskServices.includes(serviceName)) {
+        const image = process.env[v];
+        const tag = image.match(/.*:(.*)/)[1] || '';
+        imageMap[serviceName] = tag;
       }
     }
+  }
 
   return imageMap;
 }
 
+/**
+ * Validate that the service exists
+ * @param req - The request object
+ * @param res  - The response object - will be used to send an error if the validation fails
+ * @returns A Promise containing `true` if the service exists, `false` otherwise
+ */
 async function validateServiceExists(
   res: Response, service: string,
 ): Promise<boolean> {
@@ -44,8 +50,14 @@ async function validateServiceExists(
   return true;
 }
 
+/**
+ * Validate that the user is in the deployers or the admin group
+ * @param req - The request object
+ * @param res  - The response object - will be used to send an error if the validation fails
+ * @returns A Promise containing `true` if the user in in either group, `false` otherwise
+ */
 async function validateUserIsInDeployerOrAdminGroup(
-  req: HarmonyRequest, res: Response
+  req: HarmonyRequest, res: Response,
 ): Promise<boolean> {
   const { isAdmin, isServiceDeployer } = await getEdlGroupInformation(
     req.user, req.context.logger,
@@ -59,8 +71,14 @@ async function validateUserIsInDeployerOrAdminGroup(
   return true;
 }
 
+/**
+ * Verify that the given tag is valid. Send an error if it is not.
+ * @param req - The request object
+ * @param res  - The response object - will be used to send an error if the validation fails
+ * @returns a Promise containing `true` if the tag is valid, false if not
+ */
 async function validateTag(
-  req: HarmonyRequest, res: Response
+  req: HarmonyRequest, res: Response,
 ): Promise<boolean> {
   const { tag } = req.body;
   const tagRegex = /^[a-zA-Z\d_][a-zA-Z\d\-_.]{0,127}$/;
@@ -72,36 +90,55 @@ async function validateTag(
   return true;
 }
 
+/**
+ * Get a map of the canonical service names to their current tags
+ * @param req - The request object
+ * @param res  - The response object
+ * @param _next  - The next middleware in the chain
+ */
 export async function getServiceImageTags(
   req: HarmonyRequest, res: Response, _next: NextFunction,
 ): Promise<void> {
-  if(! await validateUserIsInDeployerOrAdminGroup(req, res)) return;
+  if (! await validateUserIsInDeployerOrAdminGroup(req, res)) return;
 
   const imageMap = getImageTagMap();
   res.statusCode = 200;
   res.send(imageMap);
 }
 
+/**
+ * Get the current image tag for the given service
+ * @param req - The request object
+ * @param res  - The response object
+ * @param _next  - The next middleware in the chain
+ */
 export async function getServiceImageTag(
   req: HarmonyRequest, res: Response, _next: NextFunction,
 ): Promise<void> {
-  if(! await validateUserIsInDeployerOrAdminGroup(req, res)) return;
+  if (! await validateUserIsInDeployerOrAdminGroup(req, res)) return;
   const { service } = req.params;
   if (! await validateServiceExists(res, service)) return;
 
-  const imageTagMap = getImageTagMap()
-  const tag = imageTagMap[service]
+  const imageTagMap = getImageTagMap();
+  const tag = imageTagMap[service];
   res.statusCode = 200;
-  res.send({'tag': tag});
+  res.send({ 'tag': tag });
 }
 
+/**
+ *  Update the tag for the given service
+ *
+ * @param req - The request object
+ * @param res  - The response object
+ * @param _next  - The next middleware in the chain
+ */
 export async function updateServiceImageTag(
   req: HarmonyRequest, res: Response, _next: NextFunction,
 ): Promise<void> {
-  if(! await validateUserIsInDeployerOrAdminGroup(req, res)) return;
+  if (! await validateUserIsInDeployerOrAdminGroup(req, res)) return;
 
   const { service } = req.params;
-  if(! await validateServiceExists(res, service)) return;
+  if (! await validateServiceExists(res, service)) return;
   if (!req.body || !req.body.tag) {
     res.statusCode = 400;
     res.send('\'tag\' is a required body parameter');
@@ -115,5 +152,5 @@ export async function updateServiceImageTag(
   // TODO HARMONY-1701 run deployment script here
 
   res.statusCode = 201;
-  res.send({'tag': tag});
+  res.send({ 'tag': tag });
 }

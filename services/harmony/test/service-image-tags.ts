@@ -4,9 +4,6 @@ import request from 'supertest';
 import hookServersStartStop from './helpers/servers';
 import { hookRedirect } from './helpers/hooks';
 import { auth } from './helpers/auth';
-import { stubEdlRequest, token, unstubEdlRequest } from './helpers/auth';
-import StubService from './helpers/stub-service';
-import { hookEdlTokenAuthentication, hookEdlTokenAuthenticationError } from './helpers/stub-edl-token';
 
 //
 // Tests for the service-image endpoint
@@ -331,7 +328,7 @@ describe('Service image endpoint', async function () {
       });
 
       it('returns the tag we sent', async function () {
-        expect(this.res.body).to.eql({'tag': 'foo'});
+        expect(this.res.body).to.eql({ 'tag': 'foo' });
       });
 
       // TODO HARMONY-1701 enable this test or remove it as you see fit
@@ -369,7 +366,7 @@ describe('Service image endpoint', async function () {
       });
 
       it('returns the tag we sent', async function () {
-        expect(this.res.body).to.eql({'tag': 'foo'});
+        expect(this.res.body).to.eql({ 'tag': 'foo' });
       });
 
       // TODO HARMONY-1701 enable this test or remove it as you see fit
