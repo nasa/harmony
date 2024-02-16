@@ -68,7 +68,7 @@ async function validateTag(
   req: HarmonyRequest, res: Response
 ): Promise<boolean> {
   const { tag } = req.body;
-  const tagRegex = /[a-zA-Z\d_][a-zA-Z\d-_.]{0,127}/;
+  const tagRegex = /^[a-zA-Z\d_][a-zA-Z\d\-_.]{0,127}$/;
   if (!tagRegex.test(tag)) {
     res.statusCode = 400;
     res.send('A tag name may contain lowercase and uppercase characters, digits, underscores, periods and dashes. A tag name may not start with a period or a dash and may contain a maximum of 128 characters.');
@@ -77,7 +77,7 @@ async function validateTag(
   return true;
 }
 
-export async function getServiceImages(
+export async function getServiceImageTags(
   req: HarmonyRequest, res: Response, _next: NextFunction,
 ): Promise<void> {
   if(! await validateUserIsInDeployerGroup(req, res)) return;
@@ -87,7 +87,7 @@ export async function getServiceImages(
   res.send(imageMap);
 }
 
-export async function getServiceImage(
+export async function getServiceImageTag(
   req: HarmonyRequest, res: Response, _next: NextFunction,
 ): Promise<void> {
   if(! await validateUserIsInDeployerGroup(req, res)) return;
@@ -101,7 +101,7 @@ export async function getServiceImage(
   res.send({'tag': tag});
 }
 
-export async function updateServiceImage(
+export async function updateServiceImageTag(
   req: HarmonyRequest, res: Response, _next: NextFunction,
 ): Promise<void> {
   if(! await validateUserIsInDeployerGroup(req, res)) return;
