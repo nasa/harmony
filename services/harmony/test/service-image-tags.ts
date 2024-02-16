@@ -12,33 +12,33 @@ import { hookEdlTokenAuthentication, hookEdlTokenAuthenticationError } from './h
 // Tests for the service-image endpoint
 //
 // Note: this test relies on the EDL fixture that includes users `eve` and `buzz` in the
-// deployers group, but not `joe`
+// deployers group and `adam` in the admin group, and `joe` in neither
 //
 
 const serviceImages = {
-  'service-runner': 'harmonyservices/service-runner:latest',
-  'harmony-gdal-adapter': 'ghcr.io/nasa/harmony-gdal-adapter:latest',
-  'hybig': 'ghcr.io/nasa/harmony-browse-image-generator:latest',
-  'harmony-service-example': 'harmonyservices/service-example:latest',
-  'harmony-netcdf-to-zarr': 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest',
-  'harmony-regridder': 'sds/harmony-regridder:latest',
-  'swath-projector': 'ghcr.io/nasa/harmony-swath-projector:latest',
-  'hoss': 'ghcr.io/nasa/harmony-opendap-subsetter:latest',
-  'sds-maskfill': 'sds/maskfill-harmony:latest',
-  'trajectory-subsetter': 'sds/trajectory-subsetter:latest',
-  'podaac-concise': 'ghcr.io/podaac/concise:sit',
-  'podaac-l2-subsetter': 'ghcr.io/podaac/l2ss-py:sit',
-  'podaac-ps3': 'podaac/podaac-cloud/podaac-shapefile-subsetter:latest',
-  'podaac-netcdf-converter': 'podaac/podaac-cloud/podaac-netcdf-converter:latest',
-  'query-cmr': 'harmonyservices/query-cmr:latest',
-  'giovanni-adapter': 'harmonyservices/giovanni-adapter:latest',
-  'geoloco': 'ldds/geoloco:latest',
+  'service-runner': 'latest',
+  'harmony-gdal-adapter': 'latest',
+  'hybig': 'latest',
+  'harmony-service-example': 'latest',
+  'harmony-netcdf-to-zarr': 'latest',
+  'harmony-regridder': 'latest',
+  'swath-projector': 'latest',
+  'hoss': 'latest',
+  'sds-maskfill': 'latest',
+  'trajectory-subsetter': 'latest',
+  'podaac-concise': 'sit',
+  'podaac-l2-subsetter': 'sit',
+  'podaac-ps3': 'latest',
+  'podaac-netcdf-converter': 'latest',
+  'query-cmr': 'latest',
+  'giovanni-adapter': 'latest',
+  'geoloco': 'latest',
 };
 
 const errorMsg404 = 'Service foo does not exist.\nThe existing services and their images are\n' +
   JSON.stringify(serviceImages, null, 2);
 
-const userErrorMsg = 'User joe is not in the service deployers EDL group';
+const userErrorMsg = 'User joe is not in the service deployers or admin EDL groups';
 
 const tagContentErrorMsg = 'A tag name may contain lowercase and uppercase characters, digits, underscores, periods and dashes. A tag name may not start with a period or a dash and may contain a maximum of 128 characters.';
 
@@ -46,7 +46,7 @@ describe('Service image endpoint', async function () {
   hookServersStartStop({ skipEarthdataLogin: false });
 
   describe('List service images', async function () {
-    describe('when a user is not in the EDL service deployers group', async function () {
+    describe('when a user is not in the EDL service deployers or admin groups', async function () {
       before(async function () {
         hookRedirect('joe');
         this.res = await request(this.frontend).get('/service-image-tag').use(auth({ username: 'joe' }));
@@ -80,10 +80,26 @@ describe('Service image endpoint', async function () {
         expect(this.res.body).to.eql(serviceImages);
       });
     });
+
+    describe('when a user is in the EDL admin group', async function () {
+      before(async function () {
+        hookRedirect('adam');
+        this.res = await request(this.frontend).get('/service-image-tag').use(auth({ username: 'adam' }));
+      });
+
+      after(function () {
+        delete this.res;
+      });
+
+      it('returns a map of images', async function () {
+        expect(this.res.status).to.equal(200);
+        expect(this.res.body).to.eql(serviceImages);
+      });
+    });
   });
 
   describe('Get service image', async function () {
-    describe('when a user is not in the EDL service deployers group', async function () {
+    describe('when a user is not in the EDL service deployers or admin groups', async function () {
 
       describe('when the service does not exist', async function () {
         before(async function () {
@@ -171,10 +187,55 @@ describe('Service image endpoint', async function () {
       });
     });
 
+    describe('when a user is in the EDL admin group', async function () {
+
+      describe('when the service does not exist', async function () {
+        before(async function () {
+          hookRedirect('adam');
+          this.res = await request(this.frontend).get('/service-image-tag/foo').use(auth({ username: 'adam' }));
+        });
+
+        after(function () {
+          delete this.res;
+        });
+
+        it('returns a status 404', async function () {
+          expect(this.res.status).to.equal(404);
+        });
+
+        it('returns a meaningful error message', async function () {
+          expect(this.res.text).to.equal(errorMsg404);
+        });
+
+      });
+
+      describe('when the service does exist', async function () {
+        before(async function () {
+          hookRedirect('adam');
+          this.res = await request(this.frontend).get('/service-image-tag/hoss').use(auth({ username: 'adam' }));
+        });
+
+        after(function () {
+          delete this.res;
+        });
+
+        it('returns a status 200', async function () {
+          expect(this.res.status).to.equal(200);
+        });
+
+        it('returns the service image information', async function () {
+          expect(this.res.body).to.eql({
+            'tag': 'latest',
+          });
+        });
+
+      });
+    });
+
   });
 
   describe('Update service image', function () {
-    describe('when a user is not in the EDL service deployers group', async function () {
+    describe('when a user is not in the EDL service deployers or admin groups', async function () {
 
       before(async function () {
         hookRedirect('joe');
@@ -190,7 +251,7 @@ describe('Service image endpoint', async function () {
       });
 
       it('returns a meaningful error message', async function () {
-        expect(this.res.text).to.equal("User joe is not in the service deployers EDL group");
+        expect(this.res.text).to.equal(userErrorMsg);
       });
     });
 
@@ -273,22 +334,61 @@ describe('Service image endpoint', async function () {
         expect(this.res.body).to.eql({'tag': 'foo'});
       });
 
-      describe('when the user checks the tag', async function () {
-        before(async function () {
-          hookRedirect('buzz');
-          this.res = await request(this.frontend).get('/service-image-tag/harmony-service-example').use(auth({ username: 'buzz' }));
-        });
+      // TODO HARMONY-1701 enable this test or remove it as you see fit
+      // describe('when the user checks the tag', async function () {
+      //   before(async function () {
+      //     hookRedirect('buzz');
+      //     this.res = await request(this.frontend).get('/service-image-tag/harmony-service-example').use(auth({ username: 'buzz' }));
+      //   });
 
-        after(function () {
-          delete this.res;
-        });
+      //   after(function () {
+      //     delete this.res;
+      //   });
 
-        it('returns the updated tag', async function () {
-          expect(this.res.body).to.eql({
-            'tag': 'foo',
-          });
-        });
+      //   it('returns the updated tag', async function () {
+      //     expect(this.res.body).to.eql({
+      //       'tag': 'foo',
+      //     });
+      //   });
+      // });
+    });
+
+    describe('when the user is in the admin group and a valid tag is sent in the request', async function () {
+
+      before(async function () {
+        hookRedirect('adam');
+        this.res = await request(this.frontend).put('/service-image-tag/harmony-service-example').use(auth({ username: 'adam' })).send({ tag: 'foo' });
       });
+
+      after(function () {
+        delete this.res;
+      });
+
+      it('returns a status 201', async function () {
+        expect(this.res.status).to.equal(201);
+      });
+
+      it('returns the tag we sent', async function () {
+        expect(this.res.body).to.eql({'tag': 'foo'});
+      });
+
+      // TODO HARMONY-1701 enable this test or remove it as you see fit
+      // describe('when the user checks the tag', async function () {
+      //   before(async function () {
+      //     hookRedirect('adam');
+      //     this.res = await request(this.frontend).get('/service-image-tag/harmony-service-example').use(auth({ username: 'adam' }));
+      //   });
+
+      //   after(function () {
+      //     delete this.res;
+      //   });
+
+      //   it('returns the updated tag', async function () {
+      //     expect(this.res.body).to.eql({
+      //       'tag': 'foo',
+      //     });
+      //   });
+      // });
     });
   });
 });

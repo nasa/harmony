@@ -10,36 +10,31 @@ const harmonyTaskServices = [
   'work-failer',
 ];
 
-// NOTE this should only be accessed through `getImageMap`
-let _imageMap = null;
-
 /**
- * Compute and cache the map of services to images/tags. Harmony
- * core services are excluded.
- * @returns The map of canonical service names to images/tags.
+ * Compute the map of services to tags. Harmony core services are excluded.
+ * @returns The map of canonical service names to image tags.
  */
-function getImageMap() {
-  if (!_imageMap) {
-    _imageMap = {};
+function getImageTagMap() {
+    const imageMap = {};
     for (const v of Object.keys(process.env)) {
       if(v.endsWith('_IMAGE')) {
         const serviceName = v.slice(0, -6).toLowerCase().replaceAll('_', '-');
         // add in any services that are not Harmony core task services
         if (!harmonyTaskServices.includes(serviceName)) {
           const image = process.env[v];
-          _imageMap[serviceName] = image;
+          const tag = image.match(/.*:(.*)/)[1] || '';
+          imageMap[serviceName] = tag;
         }
       }
     }
-  }
 
-  return _imageMap;
+  return imageMap;
 }
 
 async function validateServiceExists(
   res: Response, service: string,
 ): Promise<boolean> {
-  const imageMap = getImageMap();
+  const imageMap = getImageTagMap();
   if (!imageMap[service]) {
     res.statusCode = 404;
     const message = `Service ${service} does not exist.\nThe existing services and their images are\n${JSON.stringify(imageMap, null, 2)}`;
@@ -49,16 +44,16 @@ async function validateServiceExists(
   return true;
 }
 
-async function validateUserIsInDeployerGroup(
+async function validateUserIsInDeployerOrAdminGroup(
   req: HarmonyRequest, res: Response
 ): Promise<boolean> {
-  const { isServiceDeployer } = await getEdlGroupInformation(
+  const { isAdmin, isServiceDeployer } = await getEdlGroupInformation(
     req.user, req.context.logger,
   );
 
-  if (!isServiceDeployer) {
+  if (!isServiceDeployer && !isAdmin) {
     res.statusCode = 403;
-    res.send(`User ${req.user} is not in the service deployers EDL group`);
+    res.send(`User ${req.user} is not in the service deployers or admin EDL groups`);
     return false;
   }
   return true;
@@ -80,9 +75,9 @@ async function validateTag(
 export async function getServiceImageTags(
   req: HarmonyRequest, res: Response, _next: NextFunction,
 ): Promise<void> {
-  if(! await validateUserIsInDeployerGroup(req, res)) return;
+  if(! await validateUserIsInDeployerOrAdminGroup(req, res)) return;
 
-  const imageMap = getImageMap();
+  const imageMap = getImageTagMap();
   res.statusCode = 200;
   res.send(imageMap);
 }
@@ -90,13 +85,12 @@ export async function getServiceImageTags(
 export async function getServiceImageTag(
   req: HarmonyRequest, res: Response, _next: NextFunction,
 ): Promise<void> {
-  if(! await validateUserIsInDeployerGroup(req, res)) return;
+  if(! await validateUserIsInDeployerOrAdminGroup(req, res)) return;
   const { service } = req.params;
   if (! await validateServiceExists(res, service)) return;
 
-  const imageMap = getImageMap()
-  const serviceImage = imageMap[service]
-  const tag = serviceImage.match(/.*:(.*)/)[1] || '';
+  const imageTagMap = getImageTagMap()
+  const tag = imageTagMap[service]
   res.statusCode = 200;
   res.send({'tag': tag});
 }
@@ -104,7 +98,7 @@ export async function getServiceImageTag(
 export async function updateServiceImageTag(
   req: HarmonyRequest, res: Response, _next: NextFunction,
 ): Promise<void> {
-  if(! await validateUserIsInDeployerGroup(req, res)) return;
+  if(! await validateUserIsInDeployerOrAdminGroup(req, res)) return;
 
   const { service } = req.params;
   if(! await validateServiceExists(res, service)) return;
@@ -117,11 +111,9 @@ export async function updateServiceImageTag(
   if (! await validateTag(req, res)) return;
 
   const { tag } = req.body;
-  const imageMap = getImageMap()
-  let imageUrl = imageMap[service]
-  const imageBase = imageUrl.match(/(.*):.*/)[1];
 
-  imageMap[service] = `${imageBase}:${tag}`;
+  // TODO HARMONY-1701 run deployment script here
+
   res.statusCode = 201;
   res.send({'tag': tag});
 }
