@@ -120,6 +120,8 @@ PODAAC_L2_SUBSETTER_SERVICE_QUEUE_URLS='["ghcr.io/podaac/l2ss-py:sit,http://sqs.
 PODAAC_PS3_SERVICE_QUEUE_URLS='["podaac/podaac-cloud/podaac-shapefile-subsetter:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/podaac-shapefile-subsetter.fifo"]'
 PODAAC_NETCDF_CONVERTER_SERVICE_QUEUE_URLS='["podaac/podaac-cloud/podaac-netcdf-converter:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/podaac-netcdf-converter.fifo"]'
 QUERY_CMR_SERVICE_QUEUE_URLS='["harmonyservices/query-cmr:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/query-cmr.fifo"]'
+BATCHEE_SERVICE_QUEUE_URLS='["asdc-trade/batchee:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/batchee.fifo"]'
+STITCHEE_SERVICE_QUEUE_URLS='["asdc-trade/stitchee:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/stitchee.fifo"]'
 
 # The number of seconds to allow a pod to continue processing an active request before terminating a pod
 DEFAULT_POD_GRACE_PERIOD_SECS=14400
