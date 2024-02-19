@@ -4,7 +4,7 @@
   "description": "Data services frontend",
   "main": "index.js",
   "scripts": {
-    "test": "lerna run test --load-env-files=false",
+    "test": "better-npm-audit audit && lerna run test --load-env-files=false",
     "test-fast": "lerna run test-fast --load-env-files=false",
     "test-bail": "lerna run test-bail --load-env-files=false",
     "coverage": "lerna run coverage",
