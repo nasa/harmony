@@ -1021,3 +1021,82 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
       - image: !Env ${HARMONY_SERVICE_EXAMPLE_IMAGE}
+
+  - name: batchee-stitchee-concise
+    description: |
+      TODO - fill in description
+    data_operation_version: '0.18.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/asdc-trade/batchee-stitchee-concise
+    umm_s: ''
+    capabilities:
+      concatenation: true
+      concatenate_by_default: true
+      extend: true
+      default_extend_dimensions: ['mirror_step']
+      subsetting:
+        bbox: false
+        variable: false
+        temporal: false
+      output_formats:
+        - application/netcdf4
+      reprojection: false
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
+      - image: !Env ${BATCHEE_IMAGE}
+        operations: ['concatenate']
+      - image: !Env ${STITCHEE_IMAGE}
+        operations: ['extend']
+      - image: !Env ${PODAAC_CONCISE_IMAGE}
+        is_batched: true
+        operations: ['concatenate']
+        conditional:
+          exists: ['concatenate']
+
+  - name: l2-subsetter-batchee-stitchee-concise
+    description: |
+      TODO - fill in description
+    data_operation_version: '0.18.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/asdc-trade/l2-subsetter-batchee-stitchee-concise
+    umm_s: ''
+    capabilities:
+      concatenation: true
+      concatenate_by_default: true
+      extend: true
+      default_extend_dimensions: ['mirror_step']
+      subsetting:
+        bbox: true
+        variable: true
+        temporal: true
+      output_formats:
+        - application/netcdf4
+      reprojection: false
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
+      - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
+        operations: ['spatialSubset', 'variableSubset', 'temporalSubset']
+        conditional:
+          exists: ['spatialSubset', 'variableSubset', 'temporalSubset']
+      - image: !Env ${BATCHEE_IMAGE}
+        operations: ['concatenate']
+      - image: !Env ${STITCHEE_IMAGE}
+        operations: ['extend']
+      - image: !Env ${PODAAC_CONCISE_IMAGE}
+        is_batched: true
+        operations: ['concatenate']
+        conditional:
+          exists: ['concatenate']
+
