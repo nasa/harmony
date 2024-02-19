@@ -1024,7 +1024,7 @@ https://cmr.uat.earthdata.nasa.gov:
 
   - name: batchee-stitchee-concise
     description: |
-      TODO - fill in description
+      Chained Service of the Batchee, STITCHEE, and PODAAC CONCISE services.
     data_operation_version: '0.18.0'
     type:
       <<: *default-turbo-config
@@ -1033,7 +1033,7 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/asdc-trade/batchee-stitchee-concise
-    umm_s: ''
+    umm_s: S1262025641-LARC_CLOUD
     capabilities:
       concatenation: true
       concatenate_by_default: true
