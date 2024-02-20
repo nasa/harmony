@@ -1022,46 +1022,9 @@ https://cmr.uat.earthdata.nasa.gov:
         is_sequential: true
       - image: !Env ${HARMONY_SERVICE_EXAMPLE_IMAGE}
 
-  - name: batchee-stitchee-concise
-    description: |
-      Chained Service of the Batchee, STITCHEE, and PODAAC CONCISE services.
-    data_operation_version: '0.18.0'
-    type:
-      <<: *default-turbo-config
-      params:
-        <<: *default-turbo-params
-        env:
-          <<: *default-turbo-env
-          STAGING_PATH: public/asdc-trade/batchee-stitchee-concise
-    umm_s: S1262025641-LARC_CLOUD
-    capabilities:
-      concatenation: true
-      concatenate_by_default: true
-      extend: true
-      default_extend_dimensions: ['mirror_step']
-      subsetting:
-        bbox: false
-        variable: false
-        temporal: false
-      output_formats:
-        - application/netcdf4
-      reprojection: false
-    steps:
-      - image: !Env ${QUERY_CMR_IMAGE}
-        is_sequential: true
-      - image: !Env ${BATCHEE_IMAGE}
-        operations: ['concatenate']
-      - image: !Env ${STITCHEE_IMAGE}
-        operations: ['extend']
-      - image: !Env ${PODAAC_CONCISE_IMAGE}
-        is_batched: true
-        operations: ['concatenate']
-        conditional:
-          exists: ['concatenate']
-
   - name: l2-subsetter-batchee-stitchee-concise
     description: |
-      TODO - fill in description
+      Chained Service of the PODAAC L2-subsetter, Batchee, STITCHEE, and PODAAC CONCISE services.
     data_operation_version: '0.18.0'
     type:
       <<: *default-turbo-config
@@ -1070,7 +1033,7 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/asdc-trade/l2-subsetter-batchee-stitchee-concise
-    umm_s: ''
+    umm_s: S1262025641-LARC_CLOUD
     capabilities:
       concatenation: true
       concatenate_by_default: true
