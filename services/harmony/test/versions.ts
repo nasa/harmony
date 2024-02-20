@@ -41,6 +41,7 @@ describe('Versions endpoint', function () {
           'harmony/podaac-l2-subsetter-netcdf-to-zarr',
           'harmony/swath-projector-netcdf-to-zarr',
           'harmony/service-example',
+          'l2-subsetter-batchee-stitchee-concise',
         ]);
       });
 
