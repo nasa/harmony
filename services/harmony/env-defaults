@@ -470,3 +470,17 @@ GEOLOCO_REQUESTS_MEMORY=128Mi
 GEOLOCO_LIMITS_CPU=2048m
 GEOLOCO_LIMITS_MEMORY=2048Mi
 GEOLOCO_INVOCATION_ARGS='python harmony_python_interface/adapter.py'
+
+BATCHEE_IMAGE=asdc-trade/batchee:latest
+BATCHEE_REQUESTS_MEMORY=128Mi
+BATCHEE_LIMITS_MEMORY=512Mi
+BATCHEE_INVOCATION_ARGS='./docker-entrypoint.sh'
+BATCHEE_SERVICE_QUEUE_URLS='["asdc-trade/batchee:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/batchee.fifo"]'
+
+STITCHEE_IMAGE=asdc-trade/stitchee:latest
+STITCHEE_REQUESTS_CPU=128m
+STITCHEE_LIMITS_CPU=128m
+STITCHEE_REQUESTS_MEMORY=128Mi
+STITCHEE_LIMITS_MEMORY=10Gi
+STITCHEE_INVOCATION_ARGS='./docker-entrypoint.sh'
+STITCHEE_SERVICE_QUEUE_URLS='["asdc-trade/stitchee:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/stitchee.fifo"]'
