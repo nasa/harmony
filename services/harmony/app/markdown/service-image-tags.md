@@ -2,7 +2,7 @@
 
 Using the `service-image-tag` endpoint, service providers can manage the versions of their services deployed to an environment. Note that a user must be a member of either the EDL `Harmony Service Deployers`
 group or the EDL `Harmony Admin` group to access this endpoint, and requests to this endpoint _must_ include
-and EDL bearer token header, .e.g., `Authorization: Bearer <token>`.
+an EDL bearer token header, .e.g., `Authorization: Bearer <token>`.
 
 #### Get backend service tag (version) information for all services
 

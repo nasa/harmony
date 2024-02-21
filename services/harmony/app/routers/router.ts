@@ -136,10 +136,6 @@ const authorizedRoutes = [
   '/logs*',
   '/service-results/*',
   '/workflow-ui*',
-];
-
-const tokenAuthorizedRoutes = [
-  ...authorizedRoutes,
   '/service-image*',
 ];
 
@@ -170,7 +166,7 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   // a bucket.
   result.post(collectionPrefix('(ogc-api-coverages)'), asyncHandler(shapefileUpload()));
 
-  result.use(logged(earthdataLoginTokenAuthorizer(tokenAuthorizedRoutes)));
+  result.use(logged(earthdataLoginTokenAuthorizer(authorizedRoutes)));
 
   if (`${skipEarthdataLogin}` !== 'true') {
     result.use(logged(earthdataLoginOauthAuthorizer(authorizedRoutes)));
