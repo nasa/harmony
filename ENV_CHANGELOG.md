@@ -2,6 +2,11 @@
 Any changes to the environment variables will be documented in this file in chronological
 order with the most recent changes first.
 
+## 2024-02-19
+### Changed
+- TRAJECTORY_SUBSETTER_LIMITS_MEMORY - Increased to 8Gi to accommodate large GEDI L1B files.
+
+
 ## 2024-01-23
 ### Changed
 - HYBIG_IMAGE to point to ghcr.io hosted image.
