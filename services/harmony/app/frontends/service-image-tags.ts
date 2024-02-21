@@ -81,6 +81,7 @@ async function validateTag(
   req: HarmonyRequest, res: Response,
 ): Promise<boolean> {
   const { tag } = req.body;
+  // See https://docs.docker.com/engine/reference/commandline/image_tag/
   const tagRegex = /^[a-zA-Z\d_][a-zA-Z\d\-_.]{0,127}$/;
   if (!tagRegex.test(tag)) {
     res.statusCode = 400;
