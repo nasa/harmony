@@ -7,7 +7,7 @@
     "test": "better-npm-audit audit && lerna run test --load-env-files=false",
     "test-fast": "lerna run test-fast --load-env-files=false",
     "test-bail": "lerna run test-bail --load-env-files=false",
-    "coverage": "lerna run coverage",
+    "coverage": "lerna run coverage --load-env-files=false",
     "lint": "lerna run lint",
     "start": "cd services/harmony && NODE_OPTIONS=--max-old-space-size=3096 ts-node -r tsconfig-paths/register app/server.ts",
     "start-dev": "cd services/harmony && strict-npm-engines && ts-node-dev --no-notify -r tsconfig-paths/register --watch app/views,public/js --respawn app/server",
