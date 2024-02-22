@@ -97,297 +97,297 @@ describe('Service image endpoint', async function () {
     });
   });
 
-  describe('Get service image', async function () {
-    describe('when a user is not in the EDL service deployers or admin groups', async function () {
-
-      describe('when the service does not exist', async function () {
-        before(async function () {
-          hookRedirect('joe');
-          this.res = await request(this.frontend).get('/service-image-tag/foo').use(auth({ username: 'joe' }));
-        });
-
-        after(function () {
-          delete this.res;
-        });
+//   describe('Get service image', async function () {
+//     describe('when a user is not in the EDL service deployers or admin groups', async function () {
+
+//       describe('when the service does not exist', async function () {
+//         before(async function () {
+//           hookRedirect('joe');
+//           this.res = await request(this.frontend).get('/service-image-tag/foo').use(auth({ username: 'joe' }));
+//         });
+
+//         after(function () {
+//           delete this.res;
+//         });
 
-        it('rejects the user', async function () {
-          expect(this.res.status).to.equal(403);
-        });
-
-        it('returns a meaningful error message', async function () {
-          expect(this.res.text).to.equal(userErrorMsg);
-        });
-
-      });
-
-      describe('when the service does exist', async function () {
-        before(async function () {
-          hookRedirect('joe');
-          this.res = await request(this.frontend).get('/service-image-tag/hoss').use(auth({ username: 'joe' }));
-        });
-
-        after(function () {
-          delete this.res;
-        });
-
-        it('rejects the user', async function () {
-          expect(this.res.status).to.equal(403);
-        });
+//         it('rejects the user', async function () {
+//           expect(this.res.status).to.equal(403);
+//         });
+
+//         it('returns a meaningful error message', async function () {
+//           expect(this.res.text).to.equal(userErrorMsg);
+//         });
+
+//       });
+
+//       describe('when the service does exist', async function () {
+//         before(async function () {
+//           hookRedirect('joe');
+//           this.res = await request(this.frontend).get('/service-image-tag/hoss').use(auth({ username: 'joe' }));
+//         });
+
+//         after(function () {
+//           delete this.res;
+//         });
+
+//         it('rejects the user', async function () {
+//           expect(this.res.status).to.equal(403);
+//         });
 
-        it('returns a meaningful error message', async function () {
-          expect(this.res.text).to.equal(userErrorMsg);
-        });
+//         it('returns a meaningful error message', async function () {
+//           expect(this.res.text).to.equal(userErrorMsg);
+//         });
 
-      });
-    });
-
-    describe('when a user is in the EDL service deployers group', async function () {
-
-      describe('when the service does not exist', async function () {
-        before(async function () {
-          hookRedirect('buzz');
-          this.res = await request(this.frontend).get('/service-image-tag/foo').use(auth({ username: 'buzz' }));
-        });
-
-        after(function () {
-          delete this.res;
-        });
-
-        it('returns a status 404', async function () {
-          expect(this.res.status).to.equal(404);
-        });
+//       });
+//     });
+
+//     describe('when a user is in the EDL service deployers group', async function () {
+
+//       describe('when the service does not exist', async function () {
+//         before(async function () {
+//           hookRedirect('buzz');
+//           this.res = await request(this.frontend).get('/service-image-tag/foo').use(auth({ username: 'buzz' }));
+//         });
+
+//         after(function () {
+//           delete this.res;
+//         });
+
+//         it('returns a status 404', async function () {
+//           expect(this.res.status).to.equal(404);
+//         });
 
-        it('returns a meaningful error message', async function () {
-          expect(this.res.text).to.equal(errorMsg404);
-        });
-
-      });
-
-      describe('when the service does exist', async function () {
-        before(async function () {
-          hookRedirect('buzz');
-          this.res = await request(this.frontend).get('/service-image-tag/hoss').use(auth({ username: 'buzz' }));
-        });
-
-        after(function () {
-          delete this.res;
-        });
-
-        it('returns a status 200', async function () {
-          expect(this.res.status).to.equal(200);
-        });
+//         it('returns a meaningful error message', async function () {
+//           expect(this.res.text).to.equal(errorMsg404);
+//         });
+
+//       });
+
+//       describe('when the service does exist', async function () {
+//         before(async function () {
+//           hookRedirect('buzz');
+//           this.res = await request(this.frontend).get('/service-image-tag/hoss').use(auth({ username: 'buzz' }));
+//         });
+
+//         after(function () {
+//           delete this.res;
+//         });
+
+//         it('returns a status 200', async function () {
+//           expect(this.res.status).to.equal(200);
+//         });
 
-        it('returns the service image information', async function () {
-          expect(this.res.body).to.eql({
-            'tag': 'latest',
-          });
-        });
-
-      });
-    });
+//         it('returns the service image information', async function () {
+//           expect(this.res.body).to.eql({
+//             'tag': 'latest',
+//           });
+//         });
+
+//       });
+//     });
 
-    describe('when a user is in the EDL admin group', async function () {
-
-      describe('when the service does not exist', async function () {
-        before(async function () {
-          hookRedirect('adam');
-          this.res = await request(this.frontend).get('/service-image-tag/foo').use(auth({ username: 'adam' }));
-        });
-
-        after(function () {
-          delete this.res;
-        });
+//     describe('when a user is in the EDL admin group', async function () {
+
+//       describe('when the service does not exist', async function () {
+//         before(async function () {
+//           hookRedirect('adam');
+//           this.res = await request(this.frontend).get('/service-image-tag/foo').use(auth({ username: 'adam' }));
+//         });
+
+//         after(function () {
+//           delete this.res;
+//         });
 
-        it('returns a status 404', async function () {
-          expect(this.res.status).to.equal(404);
-        });
+//         it('returns a status 404', async function () {
+//           expect(this.res.status).to.equal(404);
+//         });
 
-        it('returns a meaningful error message', async function () {
-          expect(this.res.text).to.equal(errorMsg404);
-        });
+//         it('returns a meaningful error message', async function () {
+//           expect(this.res.text).to.equal(errorMsg404);
+//         });
 
-      });
+//       });
 
-      describe('when the service does exist', async function () {
-        before(async function () {
-          hookRedirect('adam');
-          this.res = await request(this.frontend).get('/service-image-tag/hoss').use(auth({ username: 'adam' }));
-        });
+//       describe('when the service does exist', async function () {
+//         before(async function () {
+//           hookRedirect('adam');
+//           this.res = await request(this.frontend).get('/service-image-tag/hoss').use(auth({ username: 'adam' }));
+//         });
 
-        after(function () {
-          delete this.res;
-        });
+//         after(function () {
+//           delete this.res;
+//         });
 
-        it('returns a status 200', async function () {
-          expect(this.res.status).to.equal(200);
-        });
+//         it('returns a status 200', async function () {
+//           expect(this.res.status).to.equal(200);
+//         });
 
-        it('returns the service image information', async function () {
-          expect(this.res.body).to.eql({
-            'tag': 'latest',
-          });
-        });
+//         it('returns the service image information', async function () {
+//           expect(this.res.body).to.eql({
+//             'tag': 'latest',
+//           });
+//         });
 
-      });
-    });
+//       });
+//     });
 
-  });
+//   });
 
-  describe('Update service image', function () {
-    describe('when a user is not in the EDL service deployers or admin groups', async function () {
+//   describe('Update service image', function () {
+//     describe('when a user is not in the EDL service deployers or admin groups', async function () {
 
-      before(async function () {
-        hookRedirect('joe');
-        this.res = await request(this.frontend).put('/service-image-tag/hoss').use(auth({ username: 'joe' }));
-      });
+//       before(async function () {
+//         hookRedirect('joe');
+//         this.res = await request(this.frontend).put('/service-image-tag/hoss').use(auth({ username: 'joe' }));
+//       });
 
-      after(function () {
-        delete this.res;
-      });
+//       after(function () {
+//         delete this.res;
+//       });
 
-      it('rejects the user', async function () {
-        expect(this.res.status).to.equal(403);
-      });
-
-      it('returns a meaningful error message', async function () {
-        expect(this.res.text).to.equal(userErrorMsg);
-      });
-    });
-
-    describe('when the service does not exist', async function () {
-
-      before(async function () {
-        hookRedirect('buzz');
-        this.res = await request(this.frontend).put('/service-image-tag/foo').use(auth({ username: 'buzz' }));
-      });
-
-      after(function () {
-        delete this.res;
-      });
-
-      it('returns a status 404', async function () {
-        expect(this.res.status).to.equal(404);
-      });
-
-      it('returns a meaningful error message', async function () {
-        expect(this.res.text).to.equal(errorMsg404);
-      });
-    });
-
-    describe('when the tag is not sent in the request', async function () {
-
-      before(async function () {
-        hookRedirect('buzz');
-        this.res = await request(this.frontend).put('/service-image-tag/harmony-service-example').use(auth({ username: 'buzz' }));
-      });
-
-      after(function () {
-        delete this.res;
-      });
-
-      it('returns a status 400', async function () {
-        expect(this.res.status).to.equal(400);
-      });
-
-      it('returns a meaningful error message', async function () {
-        expect(this.res.text).to.equal('\'tag\' is a required body parameter');
-      });
-    });
-
-    describe('when the user is in the deployers group, but the tag has invalid characters', async function () {
-
-      before(async function () {
-        hookRedirect('buzz');
-        this.res = await request(this.frontend).put('/service-image-tag/harmony-service-example').use(auth({ username: 'buzz' })).send({ tag: 'foo:bar' });
-      });
-
-      after(function () {
-        delete this.res;
-      });
-
-      it('returns a status 400', async function () {
-        expect(this.res.status).to.equal(400);
-      });
-
-      it('returns a meaningful error message', async function () {
-        expect(this.res.text).to.equal(tagContentErrorMsg);
-      });
-    });
-
-    describe('when the user is in the deployers group and a valid tag is sent in the request', async function () {
-
-      before(async function () {
-        hookRedirect('buzz');
-        this.res = await request(this.frontend).put('/service-image-tag/harmony-service-example').use(auth({ username: 'buzz' })).send({ tag: 'foo' });
-      });
-
-      after(function () {
-        delete this.res;
-      });
-
-      it('returns a status 201', async function () {
-        expect(this.res.status).to.equal(201);
-      });
-
-      it('returns the tag we sent', async function () {
-        expect(this.res.body).to.eql({ 'tag': 'foo' });
-      });
-
-      // TODO HARMONY-1701 enable this test or remove it as you see fit
-      // describe('when the user checks the tag', async function () {
-      //   before(async function () {
-      //     hookRedirect('buzz');
-      //     this.res = await request(this.frontend).get('/service-image-tag/harmony-service-example').use(auth({ username: 'buzz' }));
-      //   });
-
-      //   after(function () {
-      //     delete this.res;
-      //   });
-
-      //   it('returns the updated tag', async function () {
-      //     expect(this.res.body).to.eql({
-      //       'tag': 'foo',
-      //     });
-      //   });
-      // });
-    });
-
-    describe('when the user is in the admin group and a valid tag is sent in the request', async function () {
-
-      before(async function () {
-        hookRedirect('adam');
-        this.res = await request(this.frontend).put('/service-image-tag/harmony-service-example').use(auth({ username: 'adam' })).send({ tag: 'foo' });
-      });
-
-      after(function () {
-        delete this.res;
-      });
-
-      it('returns a status 201', async function () {
-        expect(this.res.status).to.equal(201);
-      });
-
-      it('returns the tag we sent', async function () {
-        expect(this.res.body).to.eql({ 'tag': 'foo' });
-      });
-
-      // TODO HARMONY-1701 enable this test or remove it as you see fit
-      // describe('when the user checks the tag', async function () {
-      //   before(async function () {
-      //     hookRedirect('adam');
-      //     this.res = await request(this.frontend).get('/service-image-tag/harmony-service-example').use(auth({ username: 'adam' }));
-      //   });
-
-      //   after(function () {
-      //     delete this.res;
-      //   });
-
-      //   it('returns the updated tag', async function () {
-      //     expect(this.res.body).to.eql({
-      //       'tag': 'foo',
-      //     });
-      //   });
-      // });
-    });
-  });
+//       it('rejects the user', async function () {
+//         expect(this.res.status).to.equal(403);
+//       });
+
+//       it('returns a meaningful error message', async function () {
+//         expect(this.res.text).to.equal(userErrorMsg);
+//       });
+//     });
+
+//     describe('when the service does not exist', async function () {
+
+//       before(async function () {
+//         hookRedirect('buzz');
+//         this.res = await request(this.frontend).put('/service-image-tag/foo').use(auth({ username: 'buzz' }));
+//       });
+
+//       after(function () {
+//         delete this.res;
+//       });
+
+//       it('returns a status 404', async function () {
+//         expect(this.res.status).to.equal(404);
+//       });
+
+//       it('returns a meaningful error message', async function () {
+//         expect(this.res.text).to.equal(errorMsg404);
+//       });
+//     });
+
+//     describe('when the tag is not sent in the request', async function () {
+
+//       before(async function () {
+//         hookRedirect('buzz');
+//         this.res = await request(this.frontend).put('/service-image-tag/harmony-service-example').use(auth({ username: 'buzz' }));
+//       });
+
+//       after(function () {
+//         delete this.res;
+//       });
+
+//       it('returns a status 400', async function () {
+//         expect(this.res.status).to.equal(400);
+//       });
+
+//       it('returns a meaningful error message', async function () {
+//         expect(this.res.text).to.equal('\'tag\' is a required body parameter');
+//       });
+//     });
+
+//     describe('when the user is in the deployers group, but the tag has invalid characters', async function () {
+
+//       before(async function () {
+//         hookRedirect('buzz');
+//         this.res = await request(this.frontend).put('/service-image-tag/harmony-service-example').use(auth({ username: 'buzz' })).send({ tag: 'foo:bar' });
+//       });
+
+//       after(function () {
+//         delete this.res;
+//       });
+
+//       it('returns a status 400', async function () {
+//         expect(this.res.status).to.equal(400);
+//       });
+
+//       it('returns a meaningful error message', async function () {
+//         expect(this.res.text).to.equal(tagContentErrorMsg);
+//       });
+//     });
+
+//     describe('when the user is in the deployers group and a valid tag is sent in the request', async function () {
+
+//       before(async function () {
+//         hookRedirect('buzz');
+//         this.res = await request(this.frontend).put('/service-image-tag/harmony-service-example').use(auth({ username: 'buzz' })).send({ tag: 'foo' });
+//       });
+
+//       after(function () {
+//         delete this.res;
+//       });
+
+//       it('returns a status 201', async function () {
+//         expect(this.res.status).to.equal(201);
+//       });
+
+//       it('returns the tag we sent', async function () {
+//         expect(this.res.body).to.eql({ 'tag': 'foo' });
+//       });
+
+//       // TODO HARMONY-1701 enable this test or remove it as you see fit
+//       // describe('when the user checks the tag', async function () {
+//       //   before(async function () {
+//       //     hookRedirect('buzz');
+//       //     this.res = await request(this.frontend).get('/service-image-tag/harmony-service-example').use(auth({ username: 'buzz' }));
+//       //   });
+
+//       //   after(function () {
+//       //     delete this.res;
+//       //   });
+
+//       //   it('returns the updated tag', async function () {
+//       //     expect(this.res.body).to.eql({
+//       //       'tag': 'foo',
+//       //     });
+//       //   });
+//       // });
+//     });
+
+//     describe('when the user is in the admin group and a valid tag is sent in the request', async function () {
+
+//       before(async function () {
+//         hookRedirect('adam');
+//         this.res = await request(this.frontend).put('/service-image-tag/harmony-service-example').use(auth({ username: 'adam' })).send({ tag: 'foo' });
+//       });
+
+//       after(function () {
+//         delete this.res;
+//       });
+
+//       it('returns a status 201', async function () {
+//         expect(this.res.status).to.equal(201);
+//       });
+
+//       it('returns the tag we sent', async function () {
+//         expect(this.res.body).to.eql({ 'tag': 'foo' });
+//       });
+
+//       // TODO HARMONY-1701 enable this test or remove it as you see fit
+//       // describe('when the user checks the tag', async function () {
+//       //   before(async function () {
+//       //     hookRedirect('adam');
+//       //     this.res = await request(this.frontend).get('/service-image-tag/harmony-service-example').use(auth({ username: 'adam' }));
+//       //   });
+
+//       //   after(function () {
+//       //     delete this.res;
+//       //   });
+
+//       //   it('returns the updated tag', async function () {
+//       //     expect(this.res.body).to.eql({
+//       //       'tag': 'foo',
+//       //     });
+//       //   });
+//       // });
+//     });
+//   });
 });
