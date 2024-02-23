@@ -19,3 +19,5 @@
 !!!include(cloud-access.md)!!!
 
 !!!include(versions.md)!!!
+
+!!!include(service-image-tags.md)!!!
