@@ -2,6 +2,8 @@
 import { Response, NextFunction } from 'express';
 import HarmonyRequest from '../models/harmony-request';
 import { getEdlGroupInformation } from '../util/edl-api';
+import { exec } from 'child_process';
+import * as path from 'path';
 
 const harmonyTaskServices = [
   'work-item-scheduler',
@@ -153,7 +155,25 @@ export async function updateServiceImageTag(
 
   const { tag } = req.body;
 
-  // TODO HARMONY-1701 run deployment script here
+  const currentPath = __dirname;
+  const cicdDir = path.join(currentPath, '../../../../../harmony-ci-cd');
+  // Set the current working directory to the cicd directory
+  process.chdir(cicdDir);
+  req.context.logger.info(`Execute script: ./bin/exec-deploy-service ${service} ${tag}`);
+  const command = `./bin/exec-deploy-service ${service} ${tag}`;
+
+  exec(command, (error, stdout, stderr) => {
+    if (error) {
+      req.context.logger.error(`Error executing script: ${error.message}`);
+      return;
+    }
+    const commandOutput: string = stdout.trim();
+    const commandErr: string = stderr.trim();
+    req.context.logger.info(`Script output: ${commandOutput}`);
+    if (commandErr) {
+      req.context.logger.error(`Script error: ${commandErr}`);
+    }
+  });
 
   res.statusCode = 201;
   res.send({ 'tag': tag });
