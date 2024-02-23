@@ -22,8 +22,11 @@ function getImageTagMap(): {} {
       // add in any services that are not Harmony core task services
       if (!harmonyTaskServices.includes(serviceName)) {
         const image = process.env[v];
-        const tag = image.match(/.*:(.*)/)[1] || '';
-        imageMap[serviceName] = tag;
+        const match = image.match(/.*:(.*)/);
+        if (match) {
+          const tag = match[1] || '';
+          imageMap[serviceName] = tag;
+        }
       }
     }
   }
