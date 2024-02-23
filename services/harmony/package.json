@@ -7,7 +7,7 @@
     "test": "strict-npm-engines && eslint --ext .ts --ignore-pattern built . && nyc mocha && better-npm-audit audit",
     "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha",
     "test-bail": "TS_NODE_TRANSPILE_ONLY=true mocha --bail",
-    "coverage": "nyc mocha --load-env-files=false --bail",
+    "coverage": "nyc mocha --load-env-files=false --bail 2>&1 | tee coverage-test.log",
     "lint": "eslint --ext .ts --ignore-pattern built .",
     "start": "NODE_OPTIONS=--max-old-space-size=3096 ts-node -r tsconfig-paths/register app/server.ts",
     "start-dev": "strict-npm-engines && ts-node-dev --no-notify -r tsconfig-paths/register --watch app/views,public/js --respawn app/server",
