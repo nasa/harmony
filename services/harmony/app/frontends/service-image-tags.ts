@@ -1,6 +1,8 @@
 import { Response, NextFunction } from 'express';
 import HarmonyRequest from '../models/harmony-request';
 import { getEdlGroupInformation } from '../util/edl-api';
+import { exec } from 'child_process';
+import * as path from 'path';
 
 const harmonyTaskServices = [
   'work-item-scheduler',
@@ -8,6 +10,8 @@ const harmonyTaskServices = [
   'work-reaper',
   'work-failer',
 ];
+
+const successfulStatus = 'successful';
 
 /**
  * Compute the map of services to tags. Harmony core services are excluded.
@@ -129,6 +133,43 @@ export async function getServiceImageTag(
 }
 
 /**
+ *  Execute the deploy service script asynchronously
+ *
+ * @param req - The request object
+ * @param res  - The response object
+ * @param service  - The name of the service to deploy
+ * @param tag  - The service image tag to deploy
+ * @returns a Promise containing the deployment status
+ */
+export async function execDeployScript(
+  req: HarmonyRequest, res: Response, service: string, tag: string,
+): Promise<string> {
+  const currentPath = __dirname;
+  const cicdDir = path.join(currentPath, '../../../../../harmony-ci-cd');
+
+  req.context.logger.info(`Execute script: ./bin/exec-deploy-service ${service} ${tag}`);
+  const command = `./bin/exec-deploy-service ${service} ${tag}`;
+  const options = {
+    cwd: cicdDir,
+  };
+
+  exec(command, options, (error, stdout, stderr) => {
+    if (error) {
+      req.context.logger.error(`Error executing script: ${error.message}`);
+      return 'failed';
+    }
+    const commandOutput: string = stdout.trim();
+    const commandErr: string = stderr.trim();
+    req.context.logger.info(`Script output: ${commandOutput}`);
+    if (commandErr) {
+      req.context.logger.error(`Script error: ${commandErr}`);
+    }
+  });
+
+  return successfulStatus;
+}
+
+/**
  *  Update the tag for the given service
  *
  * @param req - The request object
@@ -152,8 +193,9 @@ export async function updateServiceImageTag(
 
   const { tag } = req.body;
 
-  // TODO HARMONY-1701 run deployment script here
-
-  res.statusCode = 201;
-  res.send({ 'tag': tag });
+  const status = await module.exports.execDeployScript(req, res, service, tag);
+  if (status == successfulStatus) {
+    res.statusCode = 201;
+    res.send({ 'tag': tag });
+  }
 }
