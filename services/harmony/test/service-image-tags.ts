@@ -1,9 +1,11 @@
 import { expect } from 'chai';
+import * as sinon from 'sinon';
 import request from 'supertest';
 
 import hookServersStartStop from './helpers/servers';
 import { hookRedirect } from './helpers/hooks';
 import { auth } from './helpers/auth';
+import * as serviceImageTags from '../app/frontends/service-image-tags';
 
 //
 // Tests for the service-image endpoint
@@ -315,14 +317,16 @@ describe('Service image endpoint', async function () {
     });
 
     describe('when the user is in the deployers group and a valid tag is sent in the request', async function () {
-
+      let execDeployScriptStub: sinon.SinonStub;
       before(async function () {
         hookRedirect('buzz');
+        execDeployScriptStub = sinon.stub(serviceImageTags, 'execDeployScript').callsFake(() => Promise.resolve('successful'));
         this.res = await request(this.frontend).put('/service-image-tag/harmony-service-example').use(auth({ username: 'buzz' })).send({ tag: 'foo' });
       });
 
       after(function () {
         delete this.res;
+        execDeployScriptStub.restore();
       });
 
       it('returns a status 201', async function () {
@@ -332,28 +336,9 @@ describe('Service image endpoint', async function () {
       it('returns the tag we sent', async function () {
         expect(this.res.body).to.eql({ 'tag': 'foo' });
       });
-
-      // TODO HARMONY-1701 enable this test or remove it as you see fit
-      // describe('when the user checks the tag', async function () {
-      //   before(async function () {
-      //     hookRedirect('buzz');
-      //     this.res = await request(this.frontend).get('/service-image-tag/harmony-service-example').use(auth({ username: 'buzz' }));
-      //   });
-
-      //   after(function () {
-      //     delete this.res;
-      //   });
-
-      //   it('returns the updated tag', async function () {
-      //     expect(this.res.body).to.eql({
-      //       'tag': 'foo',
-      //     });
-      //   });
-      // });
     });
 
     describe('when the user is in the admin group and a valid tag is sent in the request', async function () {
-
       before(async function () {
         hookRedirect('adam');
         this.res = await request(this.frontend).put('/service-image-tag/harmony-service-example').use(auth({ username: 'adam' })).send({ tag: 'foo' });
@@ -370,24 +355,6 @@ describe('Service image endpoint', async function () {
       it('returns the tag we sent', async function () {
         expect(this.res.body).to.eql({ 'tag': 'foo' });
       });
-
-      // TODO HARMONY-1701 enable this test or remove it as you see fit
-      // describe('when the user checks the tag', async function () {
-      //   before(async function () {
-      //     hookRedirect('adam');
-      //     this.res = await request(this.frontend).get('/service-image-tag/harmony-service-example').use(auth({ username: 'adam' }));
-      //   });
-
-      //   after(function () {
-      //     delete this.res;
-      //   });
-
-      //   it('returns the updated tag', async function () {
-      //     expect(this.res.body).to.eql({
-      //       'tag': 'foo',
-      //     });
-      //   });
-      // });
     });
   });
 });
