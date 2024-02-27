@@ -30,6 +30,8 @@ const serviceImages = {
   'query-cmr': 'latest',
   'giovanni-adapter': 'latest',
   'geoloco': 'latest',
+  'batchee': 'latest',
+  'stitchee': 'latest',
 };
 
 const errorMsg404 = 'Service foo does not exist.\nThe existing services and their images are\n' +
