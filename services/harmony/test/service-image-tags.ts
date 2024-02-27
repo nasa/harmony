@@ -236,6 +236,15 @@ describe('Service image endpoint', async function () {
   });
 
   describe('Update service image', function () {
+    let execDeployScriptStub: sinon.SinonStub;
+    before(async function () {
+      execDeployScriptStub = sinon.stub(serviceImageTags, 'execDeployScript').callsFake(() => Promise.resolve('successful'));
+    });
+
+    after(function () {
+      execDeployScriptStub.restore();
+    });
+
     describe('when a user is not in the EDL service deployers or admin groups', async function () {
 
       before(async function () {
@@ -317,16 +326,13 @@ describe('Service image endpoint', async function () {
     });
 
     describe('when the user is in the deployers group and a valid tag is sent in the request', async function () {
-      let execDeployScriptStub: sinon.SinonStub;
       before(async function () {
         hookRedirect('buzz');
-        execDeployScriptStub = sinon.stub(serviceImageTags, 'execDeployScript').callsFake(() => Promise.resolve('successful'));
         this.res = await request(this.frontend).put('/service-image-tag/harmony-service-example').use(auth({ username: 'buzz' })).send({ tag: 'foo' });
       });
 
       after(function () {
         delete this.res;
-        execDeployScriptStub.restore();
       });
 
       it('returns a status 201', async function () {
