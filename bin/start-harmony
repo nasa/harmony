@@ -13,6 +13,12 @@ eval "$env_save"
 
 envsubst < ./config/harmony-k8s.yaml | kubectl apply -f - -n harmony > /dev/null
 # harmony takes a while to start up, so we will do other things before we try to set up
+
+while [ "$(kubectl -n harmony get pods -l app='harmony' -o jsonpath='{.items[*].status.containerStatuses[0].ready}')" != "true" ]; do
+   sleep 5
+   echo "Waiting for harmony pod to be ready."
+done
+
 # port forwarding
 bin/port-forward start harmony $PORT:$PORT
 

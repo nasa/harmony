@@ -72,7 +72,7 @@ if [[ "$KUBE_CONTEXT" == "minikube" ]]; then
 
   minikube start --driver="$DRIVER"
 
-  sleep 5
+  sleep 30
 fi
 kubectl config use-context $KUBE_CONTEXT
 
@@ -81,6 +81,8 @@ harmony_namespace=$(kubectl get namespace | grep harmony | cut -d ' ' -f1)
 if [ -z "$harmony_namespace" ]; then
   kubectl create namespace harmony
 fi
+
+sleep 10
 
 WORK_ITEM_UPDATE_QUEUE=${WORK_ITEM_UPDATE_QUEUE:-work-item-update-queue.fifo}
 LARGE_WORK_ITEM_UPDATE_QUEUE=${LARGE_WORK_ITEM_UPDATE_QUEUE:-large-work-item-update-queue.fifo}
@@ -117,6 +119,9 @@ kubectl apply -n harmony -f ./config/local-postgres-localstack-deployment.yml
 
 [[ $USE_LOCALSTACK = 'true' ]] && s3_endpoint="localstack:4572" || s3_endpoint="s3.amazonaws.com"
 POSTGRES_PORT="${POSTGRES_PORT:-5432}"
+
+
+sleep 10
 
 bin/port-forward start localstack 4566:4566 4572:4566 4592:4566
 bin/port-forward start postgres ${POSTGRES_PORT}:5432
