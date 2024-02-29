@@ -378,7 +378,7 @@ describe('Service image endpoint', async function () {
   describe('Update service image', function () {
     let execDeployScriptStub: sinon.SinonStub;
     before(async function () {
-      execDeployScriptStub = sinon.stub(serviceImageTags, 'execDeployScript').callsFake(() => Promise.resolve('successful'));
+      execDeployScriptStub = sinon.stub(serviceImageTags, 'execDeployScript').callsFake(() => null);
     });
 
     after(function () {
