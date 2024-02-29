@@ -18,8 +18,6 @@ export const harmonyTaskServices = [
   'work-failer',
 ];
 
-const successfulStatus = 'successful';
-
 /**
  * Compute the map of services to tags. Harmony core services are excluded.
  * @returns The map of canonical service names to image tags.
@@ -279,11 +277,10 @@ export async function getServiceImageTag(
  * @param res  - The response object
  * @param service  - The name of the service to deploy
  * @param tag  - The service image tag to deploy
- * @returns a Promise containing the deployment status
  */
 export async function execDeployScript(
   req: HarmonyRequest, res: Response, service: string, tag: string,
-): Promise<string> {
+): Promise<void> {
   const currentPath = __dirname;
   const cicdDir = path.join(currentPath, '../../../../../harmony-ci-cd');
 
@@ -293,20 +290,20 @@ export async function execDeployScript(
     cwd: cicdDir,
   };
 
-  exec(command, options, (error, stdout, stderr) => {
+  exec(command, options, (error, stdout, _stderr) => {
+    // Split the stdout by line breaks
+    const lines = stdout.split('\n');
     if (error) {
       req.context.logger.error(`Error executing script: ${error.message}`);
-      return 'failed';
-    }
-    const commandOutput: string = stdout.trim();
-    const commandErr: string = stderr.trim();
-    req.context.logger.info(`Script output: ${commandOutput}`);
-    if (commandErr) {
-      req.context.logger.error(`Script error: ${commandErr}`);
+      lines.forEach(line => {
+        req.context.logger.info(`Failed script output: ${line}`);
+      });
+    } else {
+      lines.forEach(line => {
+        req.context.logger.info(`Script output: ${line}`);
+      });
     }
   });
-
-  return successfulStatus;
 }
 
 /**
@@ -335,9 +332,7 @@ export async function updateServiceImageTag(
   const { service } = req.params;
   const { tag } = req.body;
 
-  const status = await module.exports.execDeployScript(req, res, service, tag);
-  if (status == successfulStatus) {
-    res.statusCode = 201;
-    res.send({ 'tag': tag });
-  }
+  await module.exports.execDeployScript(req, res, service, tag);
+  res.statusCode = 201;
+  res.send({ 'tag': tag });
 }
