@@ -41,6 +41,7 @@ export class ECR {
    * Returns image information from ECR for the given image repository and tag.
    * @param repository - the image repository (e.g. harmonyservices/service-example)
    * @param tag - the image tag
+   * @returns A Promise containing ImageDetails or null if the image/tag does not exist
    */
   async describeImage(repository: string, tag: string): Promise<ImageDetails> {
     const command = new DescribeImagesCommand({
@@ -49,12 +50,15 @@ export class ECR {
     });
     const response = await this.ecr.send(command);
 
-    const image = response.imageDetails[0];
+    if (response.imageDetails) {
+      const image = response.imageDetails[0];
 
-    return {
-      imageDigest: image.imageDigest,
-      lastUpdated: new Date(image.imagePushedAt),
-    };
+      return {
+        imageDigest: image.imageDigest,
+        lastUpdated: new Date(image.imagePushedAt),
+      };
+    }
+    return null;
   }
 }
 
