@@ -40,7 +40,7 @@ METRICS_ENDPOINT=
 # The Metrics index to query (via the METRICS_ENDPOINT)
 METRICS_INDEX=
 
-# If set to true, only include EDL cookies if the request is made via https.
+# If set to true the listener for the harmony application will use HTTPS
 USE_HTTPS=false
 
 # Whether to run example service endpoints under /example.  Useful for

@@ -7,6 +7,9 @@ import * as url from 'url';
  * @returns The protocol (http or https) to use for public Harmony URLs
  */
 function _getProtocol(req): string {
+  if (process.env.USE_HTTPS === 'true') {
+    return 'https';
+  }
   const host = req.get('host');
   return (host.startsWith('localhost') || host.startsWith('127.0.0.1')) ? 'http' : 'https';
 }

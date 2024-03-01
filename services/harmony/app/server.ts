@@ -5,7 +5,8 @@ import expressWinston from 'express-winston';
 import * as path from 'path';
 import favicon from 'serve-favicon';
 import { promisify } from 'util';
-import { Server } from 'http';
+import * as http from 'http';
+import * as https from 'https';
 import { Logger } from 'winston';
 import errorHandler from './middleware/error-handler';
 import logForRoutes from './middleware/log-for-routes';
@@ -17,6 +18,7 @@ import serviceResponseRouter from './routers/backend-router';
 import logger from './util/log';
 import * as exampleBackend from '../example/http-backend';
 import cmrCollectionReader from './middleware/cmr-collection-reader';
+import * as fs from 'fs';
 
 /**
  * Returns middleware to add a request specific logger
@@ -64,7 +66,7 @@ function addRequestId(appLogger: Logger): RequestHandler {
  * @param hostBinding - The host network interface to bind against
  * @returns The running express application
  */
-function buildBackendServer(port: number, hostBinding: string): Server {
+function buildBackendServer(port: number, hostBinding: string): http.Server | https.Server {
   const appLogger = logger.child({ application: 'backend' });
   const setRequestId = (req: HarmonyRequest, res: Response, next: NextFunction): void => {
     const { requestId } = req.params;
@@ -103,7 +105,7 @@ function buildBackendServer(port: number, hostBinding: string): Server {
  * @param config - Config that controls whether certain middleware will be used
  * @returns The running express application
  */
-function buildFrontendServer(port: number, hostBinding: string, config: RouterConfig): Server {
+function buildFrontendServer(port: number, hostBinding: string, config: RouterConfig): http.Server | https.Server {
   const appLogger = logger.child({ application: 'frontend' });
   const app = express();
   app.use(addRequestId(appLogger));
@@ -130,7 +132,19 @@ function buildFrontendServer(port: number, hostBinding: string, config: RouterCo
   ogcCoveragesApi.handleOpenApiErrors(app);
   app.use(errorHandler);
 
-  return app.listen(port, hostBinding, () => appLogger.info(`Application frontend listening on ${hostBinding} on port ${port}`));
+  let listener;
+  if (config.USE_HTTPS === 'true') {
+    const privateKey = fs.readFileSync(path.join(__dirname, 'certs/harmony-cert.key'), 'utf8');
+    const certificate = fs.readFileSync(path.join(__dirname, 'certs/harmony-cert.crt'), 'utf8');
+
+    const credentials = { key: privateKey, cert: certificate };
+
+    const httpsServer = https.createServer(credentials, app);
+    listener = httpsServer.listen(port, hostBinding, () => appLogger.info(`Application frontend listening using HTTPS on ${hostBinding} on port ${port}`));
+  } else {
+    listener = app.listen(port, hostBinding, () => appLogger.info(`Application frontend listening using HTTP on ${hostBinding} on port ${port}`));
+  }
+  return listener;
 }
 
 /**
@@ -148,8 +162,8 @@ function buildFrontendServer(port: number, hostBinding: string, config: RouterCo
  * @returns An object with "frontend" and "backend" keys with running http.Server objects
  */
 export function start(config: Record<string, string>): {
-  frontend: Server;
-  backend: Server;
+  frontend: http.Server | https.Server;
+  backend: http.Server | https.Server;
 } {
 
   // Log unhandled promise rejections and do not crash the node process
