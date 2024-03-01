@@ -10,7 +10,7 @@ import util from 'util';
 import env from '../util/env';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const asyncExec = util.promisify(require('child_process').exec);
+export const asyncExec = util.promisify(require('child_process').exec);
 
 
 export const harmonyTaskServices = [
@@ -83,9 +83,10 @@ async function validateTaggedImageIsReachable(
   req: HarmonyRequest,
   res: Response,
 ): Promise<boolean> {
-  const { service, tag } = req.params;
-  const serviceImages = getImageTagMap();
-  const existingName = serviceImages[service];
+  const { service } = req.params;
+  const { tag } = req.body;
+  const envVarName = service.toUpperCase().replaceAll('-', '_') + '_IMAGE';
+  const existingName = process.env[envVarName];
   const updatedName = existingName.replace(/:.*?$/, `:${tag}`);
 
   const nameComponents = ecrImageNameToComponents(existingName);
@@ -102,14 +103,13 @@ async function validateTaggedImageIsReachable(
       region,
       endpoint,
     });
-
     if (! await ecr.describeImage(repository, tag)) {
       isReachable = false;
     }
   } else {
     // use the docker ClI to check
-    const { err } = await asyncExec(`docker manifest inspect ${updatedName}`);
-    if (err) {
+    const exitCode = await exports.asyncExec(`docker manifest inspect ${updatedName}`);
+    if (exitCode != 0) {
       isReachable = false;
     }
   }
@@ -212,7 +212,7 @@ async function validateTag(
 }
 
 /**
- * Verify that a `tag` is present in the request body
+ * Verify that a tag is present in the request body
  * @param req - The request object
  * @param res  - The response object - will be used to send an error if the validation fails
  * @returns a Promise containing `true` if the tag is present in the request body, `false` otherwise
@@ -323,7 +323,7 @@ export async function updateServiceImageTag(
     validateTagPresent,
     validateServiceExists,
     validateTag,
-    // validateTaggedImageIsReachable,
+    validateTaggedImageIsReachable,
   ];
 
   for (const validation of validations) {

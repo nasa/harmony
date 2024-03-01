@@ -7,6 +7,7 @@ import { hookRedirect } from './helpers/hooks';
 import { auth } from './helpers/auth';
 import * as serviceImageTags from '../app/frontends/service-image-tags';
 import { checkServiceExists, checkTag, getImageTagMap, ecrImageNameToComponents } from '../app/frontends/service-image-tags';
+import hookDescribeImage from './helpers/container-registry';
 
 //
 // Tests for the service-image endpoint
@@ -467,13 +468,84 @@ describe('Service image endpoint', async function () {
       });
     });
 
-    describe('when the user is in the deployers group and a valid tag is sent in the request', async function () {
+    describe('when the user is in the deployers group, but the image is not reachable', async function () {
+      let originalEnv;
       before(async function () {
         hookRedirect('buzz');
-        this.res = await request(this.frontend).put('/service-image-tag/harmony-service-example').use(auth({ username: 'buzz' })).send({ tag: 'foo' });
+        // Save the original process.env
+        originalEnv = process.env;
+
+        // Setup
+        process.env.MY_ECR_SERVICE_IMAGE = '123456789012.dkr.ecr.us-west-2.amazonaws.com/harmony/my-repository:my-tag';
+        process.env.MY_GHCR_SERVICE_IMAGE = 'ghcr.io/nasa/my-repository:my-tag';
       });
 
       after(function () {
+        // Restore the original process.env after each test
+        process.env = originalEnv;
+      });
+
+      describe('when the image is an ECR image', async function () {
+        hookDescribeImage(null);
+
+        before(async function () {
+          this.res = await request(this.frontend).put('/service-image-tag/my-ecr-service').use(auth({ username: 'buzz' })).send({ tag: 'foo' });
+        });
+
+        after(function () {
+          delete this.res;
+        });
+
+        it('returns a status 404', async function () {
+          expect(this.res.status).to.equal(404);
+        });
+
+        it('returns a meaningful error message', async function () {
+          expect(this.res.text).to.equal('123456789012.dkr.ecr.us-west-2.amazonaws.com/harmony/my-repository:foo is unreachable');
+        });
+      });
+
+      describe('when the image is not an ECR image', async function () {
+        let execStub;
+        hookDescribeImage(null);
+
+        before(async function () {
+          // resolve to non-zero exit code meaning script failed
+          execStub = sinon.stub(serviceImageTags, 'asyncExec').callsFake(() => Promise.resolve(1));
+          this.res = await request(this.frontend).put('/service-image-tag/my-ghcr-service').use(auth({ username: 'buzz' })).send({ tag: 'foo' });
+        });
+
+        after(function () {
+          execStub.restore();
+          delete this.res;
+        });
+
+        it('returns a status 404', async function () {
+          expect(this.res.status).to.equal(404);
+        });
+
+        it('returns a meaningful error message', async function () {
+          expect(this.res.text).to.equal('ghcr.io/nasa/my-repository:foo is unreachable');
+        });
+      });
+    });
+
+    describe('when the user is in the deployers group and a valid tag is sent in the request', async function () {
+      let execStub;
+      hookDescribeImage({
+        imageDigest: '',
+        lastUpdated: undefined,
+      });
+      before(async function () {
+        // hookRedirect('buzz');
+        // resolve to zero exit code meaning script executed OK
+        execStub = sinon.stub(serviceImageTags, 'asyncExec').callsFake(() => Promise.resolve(0));
+        this.res = await request(this.frontend).put('/service-image-tag/harmony-service-example').use(auth({ username: 'buzz' })).send({ tag: 'foo' });
+
+      });
+
+      after(function () {
+        execStub.restore();
         delete this.res;
       });
 
@@ -487,12 +559,20 @@ describe('Service image endpoint', async function () {
     });
 
     describe('when the user is in the admin group and a valid tag is sent in the request', async function () {
+      let execStub;
+      hookDescribeImage({
+        imageDigest: '',
+        lastUpdated: undefined,
+      });
       before(async function () {
-        hookRedirect('adam');
+        // hookRedirect('adam');
+        // resolve to zero exit code meaning script executed OK
+        execStub = sinon.stub(serviceImageTags, 'asyncExec').callsFake(() => Promise.resolve(0));
         this.res = await request(this.frontend).put('/service-image-tag/harmony-service-example').use(auth({ username: 'adam' })).send({ tag: 'foo' });
       });
 
       after(function () {
+        execStub.restore();
         delete this.res;
       });
 
