@@ -48,6 +48,7 @@ export interface RouterConfig {
   // in production.  Defaults to true until we have real HTTP services.
   EXAMPLE_SERVICES?: string;
   skipEarthdataLogin?: string; // True if we should skip using EDL
+  USE_HTTPS?: string; // True if the server should use https
 }
 
 /**
