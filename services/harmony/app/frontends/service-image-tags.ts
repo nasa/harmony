@@ -1,6 +1,4 @@
 import { Response, NextFunction } from 'express';
-// import { ECR } from '@aws-sdk/client-ecr';
-
 import HarmonyRequest from '../models/harmony-request';
 import { ECR } from '../util/container-registry';
 import { getEdlGroupInformation } from '../util/edl-api';

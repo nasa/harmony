@@ -534,7 +534,6 @@ describe('Service image endpoint', async function () {
         lastUpdated: undefined,
       });
       before(async function () {
-        // hookRedirect('buzz');
         // resolve without error meaning script executed OK
         execStub = sinon.stub(serviceImageTags, 'asyncExec').callsFake(() => Promise.resolve({}));
         this.res = await request(this.frontend).put('/service-image-tag/harmony-service-example').use(auth({ username: 'buzz' })).send({ tag: 'foo' });
@@ -562,7 +561,6 @@ describe('Service image endpoint', async function () {
         lastUpdated: undefined,
       });
       before(async function () {
-        // hookRedirect('adam');
         // resolve to zero exit code meaning script executed OK
         execStub = sinon.stub(serviceImageTags, 'asyncExec').callsFake(() => Promise.resolve(0));
         this.res = await request(this.frontend).put('/service-image-tag/harmony-service-example').use(auth({ username: 'adam' })).send({ tag: 'foo' });
