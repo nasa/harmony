@@ -386,6 +386,32 @@ https://cmr.earthdata.nasa.gov:
 
 https://cmr.uat.earthdata.nasa.gov:
 
+  - name: opera-rtc-reproject
+    description: |
+      TODO - fill in description
+    data_operation_version: '0.18.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/asf/opera-rtc-reproject
+    umm_s: ''
+    capabilities:
+      concatenation: false
+      subsetting:
+        bbox: true
+        variable: true
+        temporal: true
+      output_formats:
+        - application/netcdf4
+      reprojection: true
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
+      - image: !Env ${OPERA_RTC_REPROJECT_IMAGE}
+
   - name: harmony/download
     description: Service that performs no processing, it only returns download links for all of the matched granules from the CMR.
     data_operation_version: '0.18.0'

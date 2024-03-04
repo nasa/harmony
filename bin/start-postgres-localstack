@@ -73,7 +73,13 @@ if [[ "$KUBE_CONTEXT" == "minikube" ]]; then
   minikube start --driver="$DRIVER"
 
   sleep 30
+
+  eval $(minikube docker-env) 
+
 fi
+
+
+
 kubectl config use-context $KUBE_CONTEXT
 
 harmony_namespace=$(kubectl get namespace | grep harmony | cut -d ' ' -f1)

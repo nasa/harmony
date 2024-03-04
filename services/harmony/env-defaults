@@ -213,7 +213,7 @@ LOG_STDOUT=false
 # a variable name of GIOVANNI_ADAPTER_IMAGE you would specify giovanni-adapter (converting to lowercase
 # and dash case and dropping _IMAGE. Make sure if the image for the service is not publicly available
 # that you have built the docker image locally, otherwise the service will fail to start.
-LOCALLY_DEPLOYED_SERVICES=harmony-service-example
+LOCALLY_DEPLOYED_SERVICES=harmony-service-example,opera-rtc-reproject
 
 # Local development: Use the following to set the Kubernetes context used by start scripts
 # minikube users should set it to "minikube"
@@ -469,3 +469,9 @@ GEOLOCO_REQUESTS_MEMORY=128Mi
 GEOLOCO_LIMITS_CPU=2048m
 GEOLOCO_LIMITS_MEMORY=2048Mi
 GEOLOCO_INVOCATION_ARGS='python harmony_python_interface/adapter.py'
+OPERA_RTC_REPROJECT_IMAGE=asf/opera-rtc-reproject:latest
+OPERA_RTC_REPROJECT_REQUESTS_MEMORY=128Mi
+OPERA_RTC_REPROJECT_LIMITS_MEMORY=512Mi
+OPERA_RTC_REPROJECT_INVOCATION_ARGS='python -m opera-rtc-reproject'
+OPERA_RTC_REPROJECT_SERVICE_QUEUE_URLS='["asf/opera-rtc-reproject:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/opera-rtc-reproject.fifo"]'
+
