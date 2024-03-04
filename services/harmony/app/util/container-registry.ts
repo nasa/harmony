@@ -48,7 +48,17 @@ export class ECR {
       repositoryName: repository,
       imageIds: [{ imageTag: tag }],
     });
-    const response = await this.ecr.send(command);
+    let response;
+    try {
+      response = await this.ecr.send(command);
+    } catch (e) {
+      // The `send` command will throw an exception if the image does not exist.
+      // We handle this by returning `null`. Any other exceptions are re-thrown.
+      if (e instanceof Error && e.message.includes('does not exist')) {
+        return null;
+      }
+      throw e;
+    }
 
     if (response.imageDetails) {
       const image = response.imageDetails[0];

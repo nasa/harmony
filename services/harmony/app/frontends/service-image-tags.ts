@@ -95,7 +95,7 @@ async function validateTaggedImageIsReachable(
   if (nameComponents) {
     // use the AWS CLI to check
     const { region, repository } = nameComponents;
-    let endpoint = `ecr.${region}.amazonaws.com`;
+    let endpoint = `https://ecr.${region}.amazonaws.com`;
     if (env.useLocalstack === true) {
       endpoint = `http://${env.localstackHost}:4566`;
     }
@@ -108,8 +108,12 @@ async function validateTaggedImageIsReachable(
     }
   } else {
     // use the docker ClI to check
-    const exitCode = await exports.asyncExec(`docker manifest inspect ${updatedName}`);
-    if (exitCode != 0) {
+    try {
+      const { err } = await exports.asyncExec(`docker manifest inspect ${updatedName}`);
+      if (err && err.code != 0) {
+        isReachable = false;
+      }
+    } catch (e) {
       isReachable = false;
     }
   }

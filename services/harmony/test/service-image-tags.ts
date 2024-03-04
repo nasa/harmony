@@ -74,8 +74,6 @@ describe('getImageTagMap', function () {
 
     const result = getImageTagMap();
 
-    console.log(`${JSON.stringify(result, null, 2)}`);
-
     expect(result).to.be.an('object');
     expect(result).to.have.property('my-service', 'latest');
     expect(result).to.have.property('another-service', 'v1.2.3');
@@ -106,7 +104,6 @@ describe('checkServiceExists', function () {
   });
 
   it('should return null if the service exists', function () {
-    console.log(JSON.stringify(getImageTagMap(), null, 2));
     const result = checkServiceExists('my-service');
     expect(result).to.be.null;
   });
@@ -511,7 +508,7 @@ describe('Service image endpoint', async function () {
 
         before(async function () {
           // resolve to non-zero exit code meaning script failed
-          execStub = sinon.stub(serviceImageTags, 'asyncExec').callsFake(() => Promise.resolve(1));
+          execStub = sinon.stub(serviceImageTags, 'asyncExec').callsFake(() => Promise.resolve({ err: { code: 1 } }));
           this.res = await request(this.frontend).put('/service-image-tag/my-ghcr-service').use(auth({ username: 'buzz' })).send({ tag: 'foo' });
         });
 
@@ -538,8 +535,8 @@ describe('Service image endpoint', async function () {
       });
       before(async function () {
         // hookRedirect('buzz');
-        // resolve to zero exit code meaning script executed OK
-        execStub = sinon.stub(serviceImageTags, 'asyncExec').callsFake(() => Promise.resolve(0));
+        // resolve without error meaning script executed OK
+        execStub = sinon.stub(serviceImageTags, 'asyncExec').callsFake(() => Promise.resolve({}));
         this.res = await request(this.frontend).put('/service-image-tag/harmony-service-example').use(auth({ username: 'buzz' })).send({ tag: 'foo' });
 
       });
