@@ -66,7 +66,7 @@ function addRequestId(appLogger: Logger): RequestHandler {
  * @param hostBinding - The host network interface to bind against
  * @returns The running express application
  */
-function buildBackendServer(port: number, hostBinding: string): http.Server | https.Server {
+function buildBackendServer(port: number, hostBinding: string, useHttps: string): http.Server | https.Server {
   const appLogger = logger.child({ application: 'backend' });
   const setRequestId = (req: HarmonyRequest, res: Response, next: NextFunction): void => {
     const { requestId } = req.params;
@@ -93,7 +93,19 @@ function buildBackendServer(port: number, hostBinding: string): http.Server | ht
   app.get('/', ((req, res) => res.send('OK')));
   app.use(errorHandler);
 
-  return app.listen(port, hostBinding, () => appLogger.info(`Application backend listening on ${hostBinding} on port ${port}`));
+  let listener;
+  if (useHttps === 'true') {
+    const privateKey = fs.readFileSync(path.join(__dirname, 'certs/harmony-cert.key'), 'utf8');
+    const certificate = fs.readFileSync(path.join(__dirname, 'certs/harmony-cert.crt'), 'utf8');
+
+    const credentials = { key: privateKey, cert: certificate };
+
+    const httpsServer = https.createServer(credentials, app);
+    listener = httpsServer.listen(port, hostBinding, () => appLogger.info(`Application backend listening using HTTPS on ${hostBinding} on port ${port}`));
+  } else {
+    listener = app.listen(port, hostBinding, () => appLogger.info(`Application backend listening using HTTP on ${hostBinding} on port ${port}`));
+  }
+  return listener;
 }
 
 /**
@@ -181,7 +193,7 @@ export function start(config: Record<string, string>): {
   frontend.setTimeout(1200000);
 
   // Setup the backend server to accept callbacks from backend services
-  const backend = buildBackendServer(backendPort, config.HOST_BINDING);
+  const backend = buildBackendServer(backendPort, config.HOST_BINDING, config.USE_HTTPS);
 
   return { frontend, backend };
 }
