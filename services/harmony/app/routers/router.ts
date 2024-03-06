@@ -26,6 +26,7 @@ import { cloudAccessJson, cloudAccessSh } from '../frontends/cloud-access';
 import landingPage from '../frontends/landing-page';
 import { setLogLevel } from '../frontends/configuration';
 import getVersions from '../frontends/versions';
+import getSnsMessage from '../frontends/deployment-callback';
 import serviceInvoker from '../backends/service-invoker';
 import HarmonyRequest, { addRequestContextToOperation } from '../models/harmony-request';
 import { getServiceImageTag, getServiceImageTags, updateServiceImageTag } from '../frontends/service-image-tags';
@@ -289,6 +290,7 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   result.get('/service-image-tag', asyncHandler(getServiceImageTags));
   result.get('/service-image-tag/:service', asyncHandler(getServiceImageTag));
   result.put('/service-image-tag/:service', jsonParser, asyncHandler(updateServiceImageTag));
+  result.post('/deployment-callback', jsonParser, asyncHandler(getSnsMessage));
 
   result.get('/*', () => { throw new NotFoundError('The requested page was not found.'); });
   result.post('/*', () => { throw new NotFoundError('The requested POST page was not found.'); });
