@@ -30,6 +30,18 @@ describe('When a workflow contains an aggregating step', async function () {
     await fakeServiceStacOutput(savedWorkItem.jobID, savedWorkItem.id);
     await updateWorkItem(context.backend, savedWorkItem);
   }
+
+  /**
+ * Fail some fake work and update the work item
+ * @param context - 'this' from test
+ */
+  async function failWorkAndUpdateStatus(context: Mocha.Context): Promise<void> {
+    const savedWorkItemResp = await getWorkForService(context.backend, 'foo');
+    const savedWorkItem = JSON.parse(savedWorkItemResp.text).workItem;
+    savedWorkItem.status = WorkItemStatus.FAILED;
+    await updateWorkItem(context.backend, savedWorkItem);
+  }
+
   const aggregateService = 'bar';
   hookServersStartStop();
 
@@ -45,7 +57,7 @@ describe('When a workflow contains an aggregating step', async function () {
 
   beforeEach(async function () {
     resetQueues();
-    const job = buildJob();
+    const job = buildJob({ ignoreErrors: true });
     await job.save(db);
     this.jobID = job.jobID;
 
@@ -94,7 +106,7 @@ describe('When a workflow contains an aggregating step', async function () {
 
   describe('and it has fewer granules than the paging threshold', async function () {
 
-    describe('and a work item for the first step is completed', async function () {
+    describe('and a work item for the first step is completed successfully', async function () {
       describe('and it is not the last work item for the step', async function () {
         it('does not supply work for the next step', async function () {
 
@@ -139,6 +151,32 @@ describe('When a workflow contains an aggregating step', async function () {
         });
       });
     });
+
+    describe('and a work item for the first step fails', async function () {
+      let retryLimit;
+      before(async function () {
+        retryLimit = env.workItemRetryLimit;
+        env.workItemRetryLimit = 0;
+      });
+
+      after(async function () {
+        env.workItemRetryLimit = retryLimit;
+      });
+
+      describe('and it is the last work item for the step', async function () {
+        it('supplies exactly one work item for the next step', async function () {
+          await failWorkAndUpdateStatus(this);
+
+          // one work item available
+          const nextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
+          expect(nextStepWorkResponse.statusCode).to.equal(200);
+
+          const secondNextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
+          expect(secondNextStepWorkResponse.statusCode).to.equal(404);
+
+        });
+      });
+    });
   });
 
   describe('and it has more granules than the paging threshold', async function () {
@@ -173,6 +211,32 @@ describe('When a workflow contains an aggregating step', async function () {
           expect(nextCatalog.links.filter(link => link.rel == 'prev').length).to.equal(1);
           expect(nextCatalog.links.filter(link => link.rel == 'next').length).to.equal(0);
         });
+      });
+    });
+  });
+
+  describe('and a work item for the first step fails', async function () {
+    let retryLimit;
+    before(async function () {
+      retryLimit = env.workItemRetryLimit;
+      env.workItemRetryLimit = 0;
+    });
+
+    after(async function () {
+      env.workItemRetryLimit = retryLimit;
+    });
+
+    describe('and it is the last work item for the step', async function () {
+      it('supplies exactly one work item for the next step', async function () {
+        await failWorkAndUpdateStatus(this);
+
+        // one work item available
+        const nextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
+        expect(nextStepWorkResponse.statusCode).to.equal(200);
+
+        const secondNextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
+        expect(secondNextStepWorkResponse.statusCode).to.equal(404);
+
       });
     });
   });

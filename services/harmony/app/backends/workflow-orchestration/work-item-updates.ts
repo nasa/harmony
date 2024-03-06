@@ -273,7 +273,7 @@ async function createAggregatingWorkItem(
   const itemLinks: StacItemLink[] = [];
   const s3 = objectStoreForProtocol('s3');
   // get all the previous results
-  const workItemCount = await workItemCountForStep(tx, currentWorkItem.jobID, nextStep.stepIndex - 1);
+  const workItemCount = await workItemCountForStep(tx, currentWorkItem.jobID, nextStep.stepIndex - 1, WorkItemStatus.SUCCESSFUL);
   let page = 1;
   let processedItemCount = 0;
   while (processedItemCount < workItemCount) {
@@ -281,7 +281,8 @@ async function createAggregatingWorkItem(
     // guard against failure case where we cannot retrieve all items - THIS SHOULD NEVER HAPPEN
     if (prevStepWorkItems.workItems.length < 1) break;
 
-    for (const workItem of prevStepWorkItems.workItems) {
+    // only process the successful ones
+    for (const workItem of prevStepWorkItems.workItems.filter(item => item.status == WorkItemStatus.SUCCESSFUL)) {
       try {
         // try to use the default catalog output for single granule work items
         const singleCatalogPath = workItem.getStacLocation('catalog.json');
@@ -737,7 +738,7 @@ export async function processWorkItem(
         'HWIUWJI.getWorkflowStepByJobIdStepIndex',
         logger))(tx, workItem.jobID, workItem.workflowStepIndex + 1);
 
-      if (nextWorkflowStep && (status !== WorkItemStatus.FAILED || nextWorkflowStep?.isBatched)) {
+      if (nextWorkflowStep && (status !== WorkItemStatus.FAILED || nextWorkflowStep?.hasAggregatedOutput)) {
         didCreateWorkItem = await (await logAsyncExecutionTime(
           createNextWorkItems,
           'HWIUWJI.createNextWorkItems',
