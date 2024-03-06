@@ -61,7 +61,7 @@ describe('Deployment callback endpoint', async function () {
       });
 
       it('rejects the request', async function () {
-        expect(this.res.status).to.equal(400);
+        expect(this.res.status).to.equal(401);
       });
 
       it('returns a meaningful error message', async function () {
@@ -83,7 +83,7 @@ describe('Deployment callback endpoint', async function () {
       });
 
       it('rejects the request', async function () {
-        expect(this.res.status).to.equal(400);
+        expect(this.res.status).to.equal(401);
       });
 
       it('returns a meaningful error message', async function () {

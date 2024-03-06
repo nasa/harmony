@@ -274,13 +274,12 @@ export async function getServiceImageTag(
  *  Execute the deploy service script asynchronously
  *
  * @param req - The request object
- * @param res  - The response object
  * @param service  - The name of the service to deploy
  * @param tag  - The service image tag to deploy
  */
-export async function execDeployScript(
-  req: HarmonyRequest, res: Response, service: string, tag: string,
-): Promise<void> {
+export function execDeployScript(
+  req: HarmonyRequest, service: string, tag: string,
+): void {
   const currentPath = __dirname;
   const cicdDir = path.join(currentPath, '../../../../../harmony-ci-cd');
 
@@ -332,7 +331,7 @@ export async function updateServiceImageTag(
   const { service } = req.params;
   const { tag } = req.body;
 
-  await module.exports.execDeployScript(req, res, service, tag);
+  module.exports.execDeployScript(req, service, tag);
   res.statusCode = 201;
   res.send({ 'tag': tag });
 }
