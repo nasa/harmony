@@ -153,6 +153,14 @@ serviceConfigs = loadServiceConfigs(env.cmrEndpoint);
 serviceConfigs.forEach(validateServiceConfig);
 export const serviceNames = serviceConfigs.map((c) => c.name);
 
+/**
+ * Reset the service configuration so that new environment variable values
+ * can be applied to services.yml.
+ */
+export function resetServiceConfigs(): void {
+  serviceConfigs = loadServiceConfigs(env.cmrEndpoint);
+}
+
 const serviceTypesToServiceClasses = {
   http: HttpService,
   turbo: TurboService,
