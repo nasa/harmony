@@ -28,10 +28,20 @@ export default async function handleCallbackMessage(req: HarmonyRequest, res: Re
   if (headerSecret === secret) {
     const { deployService, image, serviceQueueUrls } = req.body;
     const serviceImageEnv = _.camelCase(`${deployService.replace(/-/g, '_')}_image`);
-    const serviceQueueUrlsEnv = _.camelCase(`${deployService.replace(/-/g, '_')}_service_queue_urls`);
 
+    try {
+      const imageQueueUrls = JSON.parse(serviceQueueUrls);
+      for (const imageQueueUrl of imageQueueUrls) {
+        const [img, url] = imageQueueUrl.split(',');
+        if (img && url) {
+          env.serviceQueueUrls[img] = url;
+        }
+      }
+    } catch (e) {
+      logger.error(`Could not parse serviceQueueUrls: ${serviceQueueUrls} as JSON`);
+      return;
+    }
     env[serviceImageEnv] = image;
-    env[serviceQueueUrlsEnv] = serviceQueueUrls;
     env.servicesYml = undefined;
     services.resetServiceConfigs();
 
