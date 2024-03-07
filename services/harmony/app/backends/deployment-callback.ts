@@ -35,7 +35,7 @@ export default async function handleCallbackMessage(req: HarmonyRequest, res: Re
     env.servicesYml = undefined;
     services.resetServiceConfigs();
   } else {
-    logger.error('You do not have permission to call deployment-callback endpoint');
+    logger.error('You do not have permission to call deployment-callback endpoint. COOKIE_SECRET in header does not match.');
     res.statusCode = 403;
     res.send('You do not have permission to call deployment-callback endpoint');
     return;
