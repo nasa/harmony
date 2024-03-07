@@ -34,6 +34,10 @@ export default async function handleCallbackMessage(req: HarmonyRequest, res: Re
     env[serviceQueueUrlsEnv] = serviceQueueUrls;
     env.servicesYml = undefined;
     services.resetServiceConfigs();
+
+    // update process.env for the getImageTagMap function
+    const processServiceImageEnv = `${deployService.toUpperCase().replace(/-/g, '_')}_IMAGE`;
+    process.env[processServiceImageEnv] = image;
   } else {
     logger.error('You do not have permission to call deployment-callback endpoint. COOKIE_SECRET in header does not match.');
     res.statusCode = 403;
