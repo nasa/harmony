@@ -10,7 +10,7 @@ const serviceNewTag = 'harmonyservices/giovanni-adapter:newtag';
 const callbackMessage = {
   deployService: 'giovanni-adapter',
   image: serviceNewTag,
-  serviceQueueUrls: ['harmonyservices/giovanni-adapter:latest,https://sqs.us-west-2.amazonaws.com/123456/giovanni-adapter-latest-0-sandbox'],
+  serviceQueueUrls: '["harmonyservices/giovanni-adapter:test,https://sqs.us-west-2.amazonaws.com/123456/giovanni-adapter-test-0-sandbox"]',
 };
 
 /**
