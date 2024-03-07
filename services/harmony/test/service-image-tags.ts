@@ -545,8 +545,8 @@ describe('Service image endpoint', async function () {
         delete this.res;
       });
 
-      it('returns a status 201', async function () {
-        expect(this.res.status).to.equal(201);
+      it('returns a status 202', async function () {
+        expect(this.res.status).to.equal(202);
       });
 
       it('returns the tag we sent', async function () {
@@ -571,8 +571,8 @@ describe('Service image endpoint', async function () {
         delete this.res;
       });
 
-      it('returns a status 201', async function () {
-        expect(this.res.status).to.equal(201);
+      it('returns a status 202', async function () {
+        expect(this.res.status).to.equal(202);
       });
 
       it('returns the tag we sent', async function () {

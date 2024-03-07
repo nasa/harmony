@@ -41,5 +41,6 @@ export default async function handleCallbackMessage(req: HarmonyRequest, res: Re
     return;
   }
 
+  res.statusCode = 201;
   res.send('OK');
 }

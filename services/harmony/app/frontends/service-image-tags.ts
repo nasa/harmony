@@ -332,6 +332,6 @@ export async function updateServiceImageTag(
   const { tag } = req.body;
 
   module.exports.execDeployScript(req, service, tag);
-  res.statusCode = 201;
+  res.statusCode = 202;
   res.send({ 'tag': tag });
 }
