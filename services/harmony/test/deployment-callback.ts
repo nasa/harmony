@@ -35,7 +35,7 @@ function findImageByName(configs: ServiceConfig<unknown>[], targetName: string):
 describe('Deployment callback endpoint', async function () {
   hookServersStartStop();
   let originalEnv;
-  before(async function () {
+  before(function () {
     // Save the original process.env
     originalEnv = process.env;
     process.env.COOKIE_SECRET = 'secret-value';
@@ -69,7 +69,7 @@ describe('Deployment callback endpoint', async function () {
       });
     });
 
-    describe('when no cookie-secret header is provided', async function () {
+    describe('when wrong cookie-secret header is provided', async function () {
       before(async function () {
         this.res = await request(this.backend)
           .post('/service/deployment-callback')
@@ -107,7 +107,7 @@ describe('Deployment callback endpoint', async function () {
       });
 
       it('runs the request successfully', async function () {
-        expect(this.res.status).to.equal(200);
+        expect(this.res.status).to.equal(201);
       });
 
       it('returns OK', async function () {
