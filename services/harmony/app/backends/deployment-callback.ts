@@ -36,7 +36,7 @@ export default async function handleCallbackMessage(req: HarmonyRequest, res: Re
     services.resetServiceConfigs();
   } else {
     logger.error('You do not have permission to call deployment-callback endpoint');
-    res.statusCode = 401;
+    res.statusCode = 403;
     res.send('You do not have permission to call deployment-callback endpoint');
     return;
   }

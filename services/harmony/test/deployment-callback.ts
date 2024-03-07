@@ -50,8 +50,8 @@ describe('Deployment callback endpoint', async function () {
 
     describe('when no cookie-secret header is provided', async function () {
       before(async function () {
-        this.res = await request(this.frontend)
-          .post('/deployment-callback')
+        this.res = await request(this.backend)
+          .post('/service/deployment-callback')
           .send(callbackMessage)
           .set('Content-Type', 'application/json');
       });
@@ -61,7 +61,7 @@ describe('Deployment callback endpoint', async function () {
       });
 
       it('rejects the request', async function () {
-        expect(this.res.status).to.equal(401);
+        expect(this.res.status).to.equal(403);
       });
 
       it('returns a meaningful error message', async function () {
@@ -71,8 +71,8 @@ describe('Deployment callback endpoint', async function () {
 
     describe('when no cookie-secret header is provided', async function () {
       before(async function () {
-        this.res = await request(this.frontend)
-          .post('/deployment-callback')
+        this.res = await request(this.backend)
+          .post('/service/deployment-callback')
           .send(callbackMessage)
           .set('cookie-secret', 'wrong-secret-value')
           .set('Content-Type', 'application/json');
@@ -83,7 +83,7 @@ describe('Deployment callback endpoint', async function () {
       });
 
       it('rejects the request', async function () {
-        expect(this.res.status).to.equal(401);
+        expect(this.res.status).to.equal(403);
       });
 
       it('returns a meaningful error message', async function () {
@@ -95,8 +95,8 @@ describe('Deployment callback endpoint', async function () {
       let configs: ServiceConfig<unknown>[] = null;
       before(async function () {
         configs = getServiceConfigs();
-        this.res = await request(this.frontend)
-          .post('/deployment-callback')
+        this.res = await request(this.backend)
+          .post('/service/deployment-callback')
           .send(callbackMessage)
           .set('cookie-secret', 'secret-value')
           .set('Content-Type', 'application/json');
