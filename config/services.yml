@@ -397,7 +397,10 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/asf/opera-rtc-reproject
-    umm_s: ''
+    umm_s: 'C123456789-ASF'
+    collections:
+      - id: C1259974840-ASF
+        granule_limit: 1000
     capabilities:
       concatenation: false
       subsetting:
