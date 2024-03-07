@@ -34,16 +34,15 @@ function findImageByName(configs: ServiceConfig<unknown>[], targetName: string):
 
 describe('Deployment callback endpoint', async function () {
   hookServersStartStop();
-  let originalEnv;
+  let originalImage;
   before(function () {
     // Save the original process.env
-    originalEnv = process.env;
-    process.env.COOKIE_SECRET = 'secret-value';
+    originalImage = process.env.GIOVANNI_ADAPTER_IMAGE;
   });
 
   after(function () {
     // Restore the original process.env after test
-    process.env = originalEnv;
+    process.env.GIOVANNI_ADAPTER_IMAGE = originalImage;
   });
 
   describe('handle callback message', function () {
@@ -98,7 +97,7 @@ describe('Deployment callback endpoint', async function () {
         this.res = await request(this.backend)
           .post('/service/deployment-callback')
           .send(callbackMessage)
-          .set('cookie-secret', 'secret-value')
+          .set('cookie-secret', process.env.COOKIE_SECRET)
           .set('Content-Type', 'application/json');
       });
 
