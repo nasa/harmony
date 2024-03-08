@@ -266,14 +266,16 @@ async function getItemLinksFromCatalog(catalogPath: string): Promise<StacItemLin
  * @param nextStep - the next step in the workflow
  * @param results - an array of paths to STAC catalogs from the last worked item
  * @param logger - the logger to use
+ * @returns true if a new work item was created, false otherwise
  */
 async function createAggregatingWorkItem(
   tx: Transaction, currentWorkItem: WorkItem, nextStep: WorkflowStep, logger: Logger,
-): Promise<void> {
+): Promise<boolean> {
   const itemLinks: StacItemLink[] = [];
   const s3 = objectStoreForProtocol('s3');
   // get all the previous results
   const workItemCount = await workItemCountForStep(tx, currentWorkItem.jobID, nextStep.stepIndex - 1, WorkItemStatus.SUCCESSFUL);
+  if (workItemCount < 1) return false; // nothing to aggregate
   let page = 1;
   let processedItemCount = 0;
   while (processedItemCount < workItemCount) {
@@ -377,6 +379,8 @@ async function createAggregatingWorkItem(
   await makeWorkScheduleRequest(newWorkItem.serviceID);
 
   logger.info('Queued new aggregating work item.');
+
+  return true;
 }
 
 /**
@@ -467,9 +471,10 @@ async function createNextWorkItems(
         workItem.status,
         allWorkItemsForStepComplete);
     } else if (allWorkItemsForStepComplete) {
-      await createAggregatingWorkItem(tx, workItem, nextWorkflowStep, logger);
-      didCreateWorkItem = true;
-      nextWorkflowStep.workItemCount += 1;
+      didCreateWorkItem = await createAggregatingWorkItem(tx, workItem, nextWorkflowStep, logger);
+      if (didCreateWorkItem) {
+        nextWorkflowStep.workItemCount += 1;
+      }
     }
 
   } else {

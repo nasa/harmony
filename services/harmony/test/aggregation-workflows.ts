@@ -42,6 +42,8 @@ describe('When a workflow contains an aggregating step', async function () {
     await updateWorkItem(context.backend, savedWorkItem);
   }
 
+  let nextStepWorkResponse;
+
   const aggregateService = 'bar';
   hookServersStartStop();
 
@@ -88,71 +90,105 @@ describe('When a workflow contains an aggregating step', async function () {
     }).save(db);
 
     await populateUserWorkFromWorkItems(db);
-    const savedWorkItemResp = await getWorkForService(this.backend, 'foo');
-    const savedWorkItem = JSON.parse(savedWorkItemResp.text).workItem;
-    savedWorkItem.status = WorkItemStatus.SUCCESSFUL;
-    savedWorkItem.results = [
-      getStacLocation(savedWorkItem, 'catalog.json'),
-    ];
-    savedWorkItem.outputItemSizes = [1];
-    await fakeServiceStacOutput(job.jobID, savedWorkItem.id);
-    await updateWorkItem(this.backend, savedWorkItem);
   });
 
   this.afterEach(async function () {
     await truncateAll();
     resetQueues();
+    nextStepWorkResponse = null;
   });
 
   describe('and it has fewer granules than the paging threshold', async function () {
 
-    describe('and a work item for the first step is completed successfully', async function () {
-      describe('and it is not the last work item for the step', async function () {
-        it('does not supply work for the next step', async function () {
-
-          const nextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
-          expect(nextStepWorkResponse.statusCode).to.equal(404);
-        });
+    describe('and the first work item for the first step is completed successfully', async function () {
+      beforeEach(async function () {
+        await doWorkAndUpdateStatus(this);
       });
 
-      describe('and it is the last work item for the step', async function () {
-        it('supplies exactly one work item for the next step', async function () {
+      it('does not supply work for the next step', async function () {
+        nextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
+        expect(nextStepWorkResponse.statusCode).to.equal(404);
+      });
+
+      describe('and the last work item for the first step is completed successfully', async function () {
+
+        this.beforeEach(async function () {
           await doWorkAndUpdateStatus(this);
+          nextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
+        });
 
-          // one work item available
-          const nextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
+        it('supplies exactly one work item for the next step', async function () {
           expect(nextStepWorkResponse.statusCode).to.equal(200);
-
           const secondNextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
           expect(secondNextStepWorkResponse.statusCode).to.equal(404);
-
 
         });
 
         it('provides all the outputs of the preceding step to the aggregating step', async function () {
-          await doWorkAndUpdateStatus(this);
-          const nextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
           const workItem = JSON.parse(nextStepWorkResponse.text).workItem as WorkItemRecord;
           const filePath = workItem.stacCatalogLocation;
           const catalog = JSON.parse(await defaultObjectStore().getObject(filePath));
           const items = catalog.links.filter(link => link.rel === 'item');
-          expect(items.length).to.equal(2);
+          expect(items.length).to.equal(2); // <<=== both items
         });
 
         it('does not add paging links to the catalog', async function () {
-          await doWorkAndUpdateStatus(this);
-
-          const nextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
           const workItem = JSON.parse(nextStepWorkResponse.text).workItem as WorkItemRecord;
           const filePath = workItem.stacCatalogLocation;
           const catalog = JSON.parse(await defaultObjectStore().getObject(filePath));
           expect(catalog.links.filter(link => link.rel == 'prev').length).to.equal(0);
           expect(catalog.links.filter(link => link.rel == 'next').length).to.equal(0);
         });
+
+      });
+
+      describe('and the last work item for the first step fails', async function () {
+        let retryLimit;
+
+        before(async function () {
+          retryLimit = env.workItemRetryLimit;
+          env.workItemRetryLimit = 0;
+        });
+
+        after(async function () {
+          env.workItemRetryLimit = retryLimit;
+        });
+
+        this.beforeEach(async function () {
+          await failWorkAndUpdateStatus(this);
+          nextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
+        });
+
+        it('supplies exactly one work item for the next step', async function () {
+
+          // one work item available
+          expect(nextStepWorkResponse.statusCode).to.equal(200);
+
+          const secondNextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
+          expect(secondNextStepWorkResponse.statusCode).to.equal(404);
+
+        });
+
+        it('provides only the successful output of the preceding step to the aggregating step', async function () {
+          const workItem = JSON.parse(nextStepWorkResponse.text).workItem as WorkItemRecord;
+          const filePath = workItem.stacCatalogLocation;
+          const catalog = JSON.parse(await defaultObjectStore().getObject(filePath));
+          const items = catalog.links.filter(link => link.rel === 'item');
+          expect(items.length).to.equal(1); // <<=== just the successful item
+        });
+
+        it('does not add paging links to the catalog', async function () {
+          const workItem = JSON.parse(nextStepWorkResponse.text).workItem as WorkItemRecord;
+          const filePath = workItem.stacCatalogLocation;
+          const catalog = JSON.parse(await defaultObjectStore().getObject(filePath));
+          expect(catalog.links.filter(link => link.rel == 'prev').length).to.equal(0);
+          expect(catalog.links.filter(link => link.rel == 'next').length).to.equal(0);
+        });
+
       });
     });
 
-    describe('and a work item for the first step fails', async function () {
+    describe('and the first work item for the first step fails', async function () {
       let retryLimit;
       before(async function () {
         retryLimit = env.workItemRetryLimit;
@@ -163,17 +199,53 @@ describe('When a workflow contains an aggregating step', async function () {
         env.workItemRetryLimit = retryLimit;
       });
 
-      describe('and it is the last work item for the step', async function () {
-        it('supplies exactly one work item for the next step', async function () {
-          await failWorkAndUpdateStatus(this);
+      beforeEach(async function () {
+        await failWorkAndUpdateStatus(this);
+      });
 
+      it('does not supply work for the next step', async function () {
+        nextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
+        expect(nextStepWorkResponse.statusCode).to.equal(404);
+      });
+
+      describe('and the last work item for the first step is completed successfully', async function () {
+        beforeEach(async function () {
+          await doWorkAndUpdateStatus(this);
+          nextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
+        });
+
+        it('supplies exactly one work item for the next step', async function () {
           // one work item available
-          const nextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
           expect(nextStepWorkResponse.statusCode).to.equal(200);
 
           const secondNextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
           expect(secondNextStepWorkResponse.statusCode).to.equal(404);
 
+        });
+
+        it('provides only the successful output of the preceding step to the aggregating step', async function () {
+          const workItem = JSON.parse(nextStepWorkResponse.text).workItem as WorkItemRecord;
+          const filePath = workItem.stacCatalogLocation;
+          const catalog = JSON.parse(await defaultObjectStore().getObject(filePath));
+          const items = catalog.links.filter(link => link.rel === 'item');
+          expect(items.length).to.equal(1); // <<=== just the successful item
+        });
+
+        it('does not add paging links to the catalog', async function () {
+          const workItem = JSON.parse(nextStepWorkResponse.text).workItem as WorkItemRecord;
+          const filePath = workItem.stacCatalogLocation;
+          const catalog = JSON.parse(await defaultObjectStore().getObject(filePath));
+          expect(catalog.links.filter(link => link.rel == 'prev').length).to.equal(0);
+          expect(catalog.links.filter(link => link.rel == 'next').length).to.equal(0);
+        });
+
+      });
+
+      describe('and the last work item for the first step fails', async function () {
+        it('does not supply work for the next step', async function () {
+          await failWorkAndUpdateStatus(this);
+          nextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
+          expect(nextStepWorkResponse.statusCode).to.equal(404);
         });
       });
     });
@@ -191,13 +263,16 @@ describe('When a workflow contains an aggregating step', async function () {
     });
 
     describe('and a work item for the first step is completed', async function () {
+      beforeEach(async function () {
+        await doWorkAndUpdateStatus(this);
+      });
 
       describe('and it is the last work item for the step', async function () {
 
         it('adds paging links to the catalogs', async function () {
           await doWorkAndUpdateStatus(this);
 
-          const nextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
+          nextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
           const workItem = JSON.parse(nextStepWorkResponse.text).workItem as WorkItemRecord;
           const filePath = workItem.stacCatalogLocation;
           const catalog = JSON.parse(await defaultObjectStore().getObject(filePath));
@@ -211,32 +286,6 @@ describe('When a workflow contains an aggregating step', async function () {
           expect(nextCatalog.links.filter(link => link.rel == 'prev').length).to.equal(1);
           expect(nextCatalog.links.filter(link => link.rel == 'next').length).to.equal(0);
         });
-      });
-    });
-  });
-
-  describe('and a work item for the first step fails', async function () {
-    let retryLimit;
-    before(async function () {
-      retryLimit = env.workItemRetryLimit;
-      env.workItemRetryLimit = 0;
-    });
-
-    after(async function () {
-      env.workItemRetryLimit = retryLimit;
-    });
-
-    describe('and it is the last work item for the step', async function () {
-      it('supplies exactly one work item for the next step', async function () {
-        await failWorkAndUpdateStatus(this);
-
-        // one work item available
-        const nextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
-        expect(nextStepWorkResponse.statusCode).to.equal(200);
-
-        const secondNextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
-        expect(secondNextStepWorkResponse.statusCode).to.equal(404);
-
       });
     });
   });
