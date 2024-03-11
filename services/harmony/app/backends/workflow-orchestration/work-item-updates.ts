@@ -266,14 +266,16 @@ async function getItemLinksFromCatalog(catalogPath: string): Promise<StacItemLin
  * @param nextStep - the next step in the workflow
  * @param results - an array of paths to STAC catalogs from the last worked item
  * @param logger - the logger to use
+ * @returns true if a new work item was created, false otherwise
  */
 async function createAggregatingWorkItem(
   tx: Transaction, currentWorkItem: WorkItem, nextStep: WorkflowStep, logger: Logger,
-): Promise<void> {
+): Promise<boolean> {
   const itemLinks: StacItemLink[] = [];
   const s3 = objectStoreForProtocol('s3');
   // get all the previous results
-  const workItemCount = await workItemCountForStep(tx, currentWorkItem.jobID, nextStep.stepIndex - 1);
+  const workItemCount = await workItemCountForStep(tx, currentWorkItem.jobID, nextStep.stepIndex - 1, WorkItemStatus.SUCCESSFUL);
+  if (workItemCount < 1) return false; // nothing to aggregate
   let page = 1;
   let processedItemCount = 0;
   while (processedItemCount < workItemCount) {
@@ -281,7 +283,8 @@ async function createAggregatingWorkItem(
     // guard against failure case where we cannot retrieve all items - THIS SHOULD NEVER HAPPEN
     if (prevStepWorkItems.workItems.length < 1) break;
 
-    for (const workItem of prevStepWorkItems.workItems) {
+    // only process the successful ones
+    for (const workItem of prevStepWorkItems.workItems.filter(item => item.status == WorkItemStatus.SUCCESSFUL)) {
       try {
         // try to use the default catalog output for single granule work items
         const singleCatalogPath = workItem.getStacLocation('catalog.json');
@@ -376,6 +379,8 @@ async function createAggregatingWorkItem(
   await makeWorkScheduleRequest(newWorkItem.serviceID);
 
   logger.info('Queued new aggregating work item.');
+
+  return true;
 }
 
 /**
@@ -466,9 +471,10 @@ async function createNextWorkItems(
         workItem.status,
         allWorkItemsForStepComplete);
     } else if (allWorkItemsForStepComplete) {
-      await createAggregatingWorkItem(tx, workItem, nextWorkflowStep, logger);
-      didCreateWorkItem = true;
-      nextWorkflowStep.workItemCount += 1;
+      didCreateWorkItem = await createAggregatingWorkItem(tx, workItem, nextWorkflowStep, logger);
+      if (didCreateWorkItem) {
+        nextWorkflowStep.workItemCount += 1;
+      }
     }
 
   } else {
@@ -737,7 +743,7 @@ export async function processWorkItem(
         'HWIUWJI.getWorkflowStepByJobIdStepIndex',
         logger))(tx, workItem.jobID, workItem.workflowStepIndex + 1);
 
-      if (nextWorkflowStep && (status !== WorkItemStatus.FAILED || nextWorkflowStep?.isBatched)) {
+      if (nextWorkflowStep && (status !== WorkItemStatus.FAILED || nextWorkflowStep?.hasAggregatedOutput)) {
         didCreateWorkItem = await (await logAsyncExecutionTime(
           createNextWorkItems,
           'HWIUWJI.createNextWorkItems',
