@@ -2,7 +2,7 @@ import env from '../../util/env';
 import { logAsyncExecutionTime } from '../../util/log-execution';
 import { v4 as uuid } from 'uuid';
 import WorkItemUpdate from '../../models/work-item-update';
-import WorkflowStep, { decrementFutureWorkItemCount, getWorkflowStepByJobIdStepIndex, getWorkflowStepsByJobId, updateIsComplete } from '../../models/workflow-steps';
+import WorkflowStep, { getWorkflowStepByJobIdStepIndex, updateIsComplete } from '../../models/workflow-steps';
 import { Logger } from 'winston';
 import _, { ceil, range, sum } from 'lodash';
 import { JobStatus, Job } from '../../models/job';
@@ -16,7 +16,7 @@ import db, { Transaction, batchSize } from '../../util/db';
 import { ServiceError } from '../../util/errors';
 import { completeJob } from '../../util/job';
 import { objectStoreForProtocol } from '../../util/object-store';
-import { StacItem, readCatalogItems, StacItemLink, StacCatalog } from '../../util/stac';
+import { StacItem, readCatalogItems, StacItemLink, StacCatalog, readCatalogsItems } from '../../util/stac';
 import { resolve } from '../../util/url';
 import { QUERY_CMR_SERVICE_REGEX, calculateQueryCmrLimit } from '../../backends/workflow-orchestration/util';
 import { makeWorkScheduleRequest } from '../../backends/workflow-orchestration/work-item-polling';
@@ -36,8 +36,6 @@ export type WorkItemUpdateQueueItem = {
   operation: object,
   preprocessResult?: WorkItemPreprocessInfo,
 };
-
-const NO_NEXT_STEP = 'NoNextStep';
 
 /**
  * Add links to the Job for the WorkItem and save them to the database.
@@ -85,7 +83,7 @@ async function addJobLinksForFinishedWorkItem(
  * @returns the final job status for the request
  */
 async function getFinalStatusAndMessageForJob(tx: Transaction, job: Job):
-Promise<{ finalStatus: JobStatus, finalMessage: string }> {
+Promise<{ finalStatus: JobStatus, finalMessage: string; }> {
   let finalStatus = JobStatus.SUCCESSFUL;
   const errorCount = await getErrorCountForJob(tx, job.jobID);
   const dataLinkCount = await getJobDataLinkCount(tx, job.jobID);
@@ -98,7 +96,7 @@ Promise<{ finalStatus: JobStatus, finalMessage: string }> {
   }
   let finalMessage = '';
   if ((errorCount > 1) && (finalStatus == JobStatus.FAILED)) {
-    finalMessage  = `The job failed with ${errorCount} errors. See the errors field for more details`;
+    finalMessage = `The job failed with ${errorCount} errors. See the errors field for more details`;
   } else if ((errorCount == 1) && (finalStatus == JobStatus.FAILED)) {
     const jobError = (await getErrorsForJob(tx, job.jobID, 1))[0];
     finalMessage = jobError.message;
@@ -170,7 +168,7 @@ async function handleFailedWorkItems(
   logger: Logger, errorMessage: string,
 ): Promise<boolean> {
   let continueProcessing = true;
-  // If the response is an error then set the job status to 'failed'
+  // If the response is an error then maybe set the job status to 'failed'
   if (status === WorkItemStatus.FAILED) {
     continueProcessing = job.ignoreErrors;
     if (!job.hasTerminalStatus()) {
@@ -206,8 +204,6 @@ async function handleFailedWorkItems(
       if (!continueProcessing) {
         await completeJob(tx, job, JobStatus.FAILED, logger, jobMessage);
       } else {
-        // Need to make sure we expect one fewer granule to complete
-        await decrementFutureWorkItemCount(tx, job.jobID, workflowStep.stepIndex);
         if (job.status == JobStatus.RUNNING) {
           job.status = JobStatus.RUNNING_WITH_ERRORS;
           await job.save(tx);
@@ -219,26 +215,19 @@ async function handleFailedWorkItems(
 }
 
 /**
- * Updated the workflow steps `workItemCount` field for the given job to match the new
+ * Updated the query-cmr workflow step's `workItemCount` field for the given job to match the new
+ * granule count
  *
  * @param transaction - the transaction to use for the update
  * @param job - A Job that has a new input granule count
  */
-async function updateWorkItemCounts(
+async function updateCmrWorkItemCount(
   transaction: Transaction,
   job: Job):
   Promise<void> {
-  const workflowSteps = await getWorkflowStepsByJobId(transaction, job.jobID);
-  for (const step of workflowSteps) {
-    if (QUERY_CMR_SERVICE_REGEX.test(step.serviceID)) {
-      step.workItemCount = Math.ceil(job.numInputGranules / env.cmrMaxPageSize);
-    } else if (!step.hasAggregatedOutput) {
-      step.workItemCount = job.numInputGranules;
-    } else {
-      step.workItemCount = 1;
-    }
-    await step.save(transaction);
-  }
+  const step = await getWorkflowStepByJobIdStepIndex(transaction, job.jobID, 1);
+  step.workItemCount = Math.ceil(job.numInputGranules / env.cmrMaxPageSize);
+  await step.save(transaction);
 }
 
 /**
@@ -277,14 +266,16 @@ async function getItemLinksFromCatalog(catalogPath: string): Promise<StacItemLin
  * @param nextStep - the next step in the workflow
  * @param results - an array of paths to STAC catalogs from the last worked item
  * @param logger - the logger to use
+ * @returns true if a new work item was created, false otherwise
  */
 async function createAggregatingWorkItem(
   tx: Transaction, currentWorkItem: WorkItem, nextStep: WorkflowStep, logger: Logger,
-): Promise<void> {
+): Promise<boolean> {
   const itemLinks: StacItemLink[] = [];
   const s3 = objectStoreForProtocol('s3');
   // get all the previous results
-  const workItemCount = await workItemCountForStep(tx, currentWorkItem.jobID, nextStep.stepIndex - 1);
+  const workItemCount = await workItemCountForStep(tx, currentWorkItem.jobID, nextStep.stepIndex - 1, WorkItemStatus.SUCCESSFUL);
+  if (workItemCount < 1) return false; // nothing to aggregate
   let page = 1;
   let processedItemCount = 0;
   while (processedItemCount < workItemCount) {
@@ -292,7 +283,8 @@ async function createAggregatingWorkItem(
     // guard against failure case where we cannot retrieve all items - THIS SHOULD NEVER HAPPEN
     if (prevStepWorkItems.workItems.length < 1) break;
 
-    for (const workItem of prevStepWorkItems.workItems) {
+    // only process the successful ones
+    for (const workItem of prevStepWorkItems.workItems.filter(item => item.status == WorkItemStatus.SUCCESSFUL)) {
       try {
         // try to use the default catalog output for single granule work items
         const singleCatalogPath = workItem.getStacLocation('catalog.json');
@@ -387,6 +379,8 @@ async function createAggregatingWorkItem(
   await makeWorkScheduleRequest(newWorkItem.serviceID);
 
   logger.info('Queued new aggregating work item.');
+
+  return true;
 }
 
 /**
@@ -437,6 +431,7 @@ async function maybeQueueQueryCmrWorkItem(
  */
 async function createNextWorkItems(
   tx: Transaction,
+  currentWorkflowStep: WorkflowStep,
   nextWorkflowStep: WorkflowStep,
   logger: Logger,
   workItem: WorkItem,
@@ -445,69 +440,87 @@ async function createNextWorkItems(
   outputItemSizes: number[],
 ): Promise<boolean> {
   let didCreateWorkItem = false;
-  if (results && results.length > 0 || nextWorkflowStep.isBatched) {
-    didCreateWorkItem = true;
-    // if we have completed all the work items for this step or if the next step does not
-    // aggregate then create a work item for the next step
-    if (nextWorkflowStep.hasAggregatedOutput) {
-      if (nextWorkflowStep.isBatched) {
-        let sortIndex;
-        if (!QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)) {
-          // eslint-disable-next-line prefer-destructuring
-          sortIndex = workItem.sortIndex;
-        }
-        let outputItemUrls = [];
-        if (workItem.status !== WorkItemStatus.FAILED) {
-          outputItemUrls = await outputStacItemUrls(results);
-        }
-        // TODO add other services that can produce more than one output and so should have their
-        // batching sortIndex propagated to child work items to provide consistent batching
-        didCreateWorkItem = await handleBatching(
-          tx,
-          logger,
-          nextWorkflowStep,
-          outputItemUrls,
-          outputItemSizes,
-          sortIndex,
-          workItem.status,
-          allWorkItemsForStepComplete);
-      } else if (allWorkItemsForStepComplete) {
-        await createAggregatingWorkItem(tx, workItem, nextWorkflowStep, logger);
+  // When a work-item update comes in we have three possible cases to handle:
+  // 1. next step aggregates AND uses batching - in this case we process each result and put it
+  //  into a batch. As batches fill up we generate a new work-item for the next step and create
+  //  a new batch if needed. We have a check to see if we have completed all the work-items for
+  //  the current step, in which case we close the last batch even if it is not full and
+  //  generate a final work-item for the next step
+  // 2. next step aggregates, but does not use batching, so we only create a new work-item
+  //  for the next step if we have completed all the work-items for the current step
+  // 3. next step does not aggregate, so we create a new work-item for the next step for each
+  //  result from this work-item update
+  if (nextWorkflowStep.hasAggregatedOutput) {
+    if (nextWorkflowStep.isBatched) {
+      let sortIndex;
+      if (!QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)) {
+        // eslint-disable-next-line prefer-destructuring
+        sortIndex = workItem.sortIndex;
       }
-    } else {
-      // Create a new work item for each result using the next step
-
-      // use the sort index from the previous step's work item unless the service was
-      // query-cmr, in which case we start from the previous highest sort index for this step
-      // NOTE: This is only valid if the work-items for this multi-output step are worked
-      // sequentially and have consistently ordered outputs, as with query-cmr.
-      // If they are worked in parallel then we need a different approach.
-      let { sortIndex } = workItem;
-      let shouldIncrementSortIndex = false;
-      if (QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)) {
-        shouldIncrementSortIndex = true;
-        sortIndex = await maxSortIndexForJobService(tx, nextWorkflowStep.jobID, nextWorkflowStep.serviceID);
+      let outputItemUrls = [];
+      if (workItem.status !== WorkItemStatus.FAILED) {
+        outputItemUrls = await outputStacItemUrls(results);
       }
-      const newItems = results.map(result => {
-        if (shouldIncrementSortIndex) {
-          sortIndex += 1;
-        }
-        return new WorkItem({
-          jobID: workItem.jobID,
-          serviceID: nextWorkflowStep.serviceID,
-          status: WorkItemStatus.READY,
-          stacCatalogLocation: result,
-          workflowStepIndex: nextWorkflowStep.stepIndex,
-          sortIndex,
-        });
-      });
-
-      await incrementReadyCount(tx, workItem.jobID, nextWorkflowStep.serviceID, newItems.length);
-      for (const batch of _.chunk(newItems, batchSize)) {
-        await WorkItem.insertBatch(tx, batch);
-        logger.info('Queued new batch of work items.');
+      didCreateWorkItem = await handleBatching(
+        tx,
+        logger,
+        nextWorkflowStep,
+        outputItemUrls,
+        outputItemSizes,
+        sortIndex,
+        workItem.status,
+        allWorkItemsForStepComplete);
+    } else if (allWorkItemsForStepComplete) {
+      didCreateWorkItem = await createAggregatingWorkItem(tx, workItem, nextWorkflowStep, logger);
+      if (didCreateWorkItem) {
+        nextWorkflowStep.workItemCount += 1;
       }
     }
+
+  } else {
+    // Create a new work item for each result using the next step
+    didCreateWorkItem = true;
+
+    // use the sort index from the previous step's work item unless the service was
+    // query-cmr, in which case we start from the previous highest sort index for this step
+    // NOTE: This is only valid if the work-items for this multi-output step are worked
+    // sequentially and have consistently ordered outputs, as with query-cmr.
+    // If they are worked in parallel then we need a different approach.
+    let { sortIndex } = workItem;
+    let shouldIncrementSortIndex = false;
+    if (currentWorkflowStep.hasAggregatedOutput || currentWorkflowStep.is_sequential) {
+      shouldIncrementSortIndex = true;
+
+      if (currentWorkflowStep.is_sequential) {
+        sortIndex = await maxSortIndexForJobService(tx, nextWorkflowStep.jobID, nextWorkflowStep.serviceID) + 1;
+      }
+    }
+    const newItems = results.map(result => {
+      const newItem = new WorkItem({
+        jobID: workItem.jobID,
+        serviceID: nextWorkflowStep.serviceID,
+        status: WorkItemStatus.READY,
+        stacCatalogLocation: result,
+        workflowStepIndex: nextWorkflowStep.stepIndex,
+        sortIndex,
+      });
+
+      if (shouldIncrementSortIndex) {
+        sortIndex += 1;
+      }
+
+      return newItem;
+    });
+
+    nextWorkflowStep.workItemCount += newItems.length;
+    await incrementReadyCount(tx, workItem.jobID, nextWorkflowStep.serviceID, newItems.length);
+    for (const batch of _.chunk(newItems, batchSize)) {
+      await WorkItem.insertBatch(tx, batch);
+      logger.info('Created new set of work items.');
+    }
+  }
+  if (didCreateWorkItem) {
+    await nextWorkflowStep.save(tx);
   }
   return didCreateWorkItem;
 }
@@ -525,20 +538,24 @@ async function createNextWorkItems(
 export async function preprocessWorkItem(
   update: WorkItemUpdate,
   operation: object,
-  logger: Logger): Promise<WorkItemPreprocessInfo> {
+  logger: Logger,
+  nextWorkflowStep: WorkflowStep,
+): Promise<WorkItemPreprocessInfo> {
   const startTime = new Date().getTime();
   const { results } = update;
   let { errorMessage, status } = update;
 
   // Get the sizes of all the data items/granules returned for the WorkItem and STAC item links
-  // when batching.
-  // This needs to be done outside the transaction as it can be slow if there are many granules.
+  // when batching. This needs to be done outside the main db transaction since it involves reading
+  // the catalogs from S3.
   let durationMs;
   let outputItemSizes;
   let catalogItems;
   try {
-    if (results?.length < 2 && status === WorkItemStatus.SUCCESSFUL) {
-      catalogItems = await readCatalogItems(results[0]);
+    if (status === WorkItemStatus.SUCCESSFUL && !nextWorkflowStep) {
+      // if we are CREATING STAC CATALOGSth;e last step in the chain we should read the catalog items since they are
+      // needed for generating the output links we will save
+      catalogItems = await readCatalogsItems(results);
       durationMs = new Date().getTime() - startTime;
       logger.debug('timing.HWIUWJI.readCatalogItems.end', { durationMs });
     }
@@ -574,9 +591,6 @@ export async function preprocessWorkItem(
  * @param logger - the Logger for the request
  * @param checkCompletion - true if needs to check if the whole job has completed
  * @param thisStep - the current workflow step the work item is being processed in
- * @param nextStep - the next workflow step of the work item. If it has a string
- *                   value of NO_NEXT_STEP, it means the current step is the last step
- *                   and there is no next workflow step.
  */
 export async function processWorkItem(
   tx: Transaction,
@@ -584,9 +598,9 @@ export async function processWorkItem(
   job: Job,
   update: WorkItemUpdate,
   logger: Logger,
-  checkCompletion = true,
-  thisStep: WorkflowStep = undefined,
-  nextStep: WorkflowStep | string = undefined): Promise<void> {
+  checkCompletion,
+  thisStep: WorkflowStep,
+): Promise<void> {
   const { jobID } = job;
   const { status, errorMessage, catalogItems, outputItemSizes } = preprocessResult;
   const { workItemID, hits, results, scrollID } = update;
@@ -605,7 +619,7 @@ export async function processWorkItem(
       getWorkItemById,
       'HWIUWJI.getWorkItemById',
       logger))(tx, workItemID, true);
-    if (thisStep == undefined) {
+    if (!thisStep) {
       thisStep = await (await logAsyncExecutionTime(
         getWorkflowStepByJobIdStepIndex,
         'HWIUWJI.getWorkflowStepByJobIdStepIndex',
@@ -669,6 +683,11 @@ export async function processWorkItem(
       totalItemsSize = sum(outputItemSizes) / 1024 / 1024;
     }
 
+    if (COMPLETED_WORK_ITEM_STATUSES.includes(status)) {
+      thisStep.completed_work_item_count += 1;
+      await thisStep.save(tx);
+    }
+
     await (await logAsyncExecutionTime(
       updateWorkItemStatus,
       'HWIUWJI.updateWorkItemStatus',
@@ -690,7 +709,6 @@ export async function processWorkItem(
 
     let allWorkItemsForStepComplete = false;
 
-    
     // The number of 'hits' returned by a query-cmr could be less than when CMR was first
     // queried by harmony due to metadata deletions from CMR, so we update the job to reflect
     // that there are fewer items and to know when no more query-cmr jobs should be created.
@@ -703,10 +721,13 @@ export async function processWorkItem(
       logger.debug('timing.HWIUWJI.job.save.end', { durationMs });
 
       await (await logAsyncExecutionTime(
-        updateWorkItemCounts,
-        'HWIUWJI.updateWorkItemCounts',
+        updateCmrWorkItemCount,
+        'HWIUWJI.updateCmrWorkItemCount',
         logger))(tx, job);
     }
+
+    await job.updateProgress(tx);
+    await job.save(tx);
 
     if (checkCompletion) {
       allWorkItemsForStepComplete = await updateIsComplete(tx, jobID, job.numInputGranules, thisStep);
@@ -716,25 +737,19 @@ export async function processWorkItem(
       handleFailedWorkItems,
       'HWIUWJI.handleFailedWorkItems',
       logger))(tx, job, workItem, thisStep, status, logger, errorMessage);
-    let nextWorkflowStep;
     if (continueProcessing) {
-      if (nextStep == undefined) {
-        nextWorkflowStep = await (await logAsyncExecutionTime(
-          getWorkflowStepByJobIdStepIndex,
-          'HWIUWJI.getWorkflowStepByJobIdStepIndex',
-          logger))(tx, workItem.jobID, workItem.workflowStepIndex + 1);
-      } else if (nextStep == NO_NEXT_STEP) {
-        nextWorkflowStep = undefined;
-      } else {
-        nextWorkflowStep = nextStep;
-      }
+      const nextWorkflowStep = await (await logAsyncExecutionTime(
+        getWorkflowStepByJobIdStepIndex,
+        'HWIUWJI.getWorkflowStepByJobIdStepIndex',
+        logger))(tx, workItem.jobID, workItem.workflowStepIndex + 1);
 
-      if (nextWorkflowStep && (status !== WorkItemStatus.FAILED || nextWorkflowStep?.isBatched)) {
+      if (nextWorkflowStep && (status !== WorkItemStatus.FAILED || nextWorkflowStep?.hasAggregatedOutput)) {
         didCreateWorkItem = await (await logAsyncExecutionTime(
           createNextWorkItems,
           'HWIUWJI.createNextWorkItems',
           logger))(
           tx,
+          thisStep,
           nextWorkflowStep,
           logger,
           workItem,
@@ -750,7 +765,7 @@ export async function processWorkItem(
             logger))(nextWorkflowStep.serviceID);
         }
       }
-      if (nextWorkflowStep && status === WorkItemStatus.SUCCESSFUL) {
+      if (status === WorkItemStatus.SUCCESSFUL) {
         if (results && results.length > 0) {
           // set the scrollID for the next work item to the one we received from the update
           workItem.scrollID = scrollID;
@@ -762,13 +777,15 @@ export async function processWorkItem(
           // Failed to create the next work items when there should be work items.
           // Fail the job rather than leaving it orphaned in the running state
           logger.error('The work item update should have contained results to queue a next work item, but it did not.');
-          const message = 'Harmony internal failure: could not create the next work items for the request.';
+          const message = 'Harmony internal failure: service did not return any outputs.';
           await (await logAsyncExecutionTime(
             completeJob,
             'HWIUWJI.completeJob',
             logger))(tx, job, JobStatus.FAILED, logger, message);
         }
-      } else if (!nextWorkflowStep || allWorkItemsForStepComplete) {
+      }
+
+      if (!nextWorkflowStep) {
         // Finished with the chain for this granule
         if (status != WorkItemStatus.FAILED) {
           await (await logAsyncExecutionTime(
@@ -776,35 +793,39 @@ export async function processWorkItem(
             'HWIUWJI.addJobLinksForFinishedWorkItem',
             logger))(tx, job.jobID, catalogItems);
         }
-        job.completeBatch(thisStep.workItemCount);
-        if (allWorkItemsForStepComplete && !didCreateWorkItem && (!nextWorkflowStep || nextWorkflowStep.workItemCount === 0)) {
+      }
+
+      if (allWorkItemsForStepComplete) {
+        if (!didCreateWorkItem && (!nextWorkflowStep || nextWorkflowStep.workItemCount < 1)) {
           // If all granules are finished mark the job as finished
           const { finalStatus, finalMessage } = await getFinalStatusAndMessageForJob(tx, job);
           await (await logAsyncExecutionTime(
             completeJob,
             'HWIUWJI.completeJob',
             logger))(tx, job, finalStatus, logger, finalMessage);
-        } else {
-          // Either previewing or next step is a batched step and this item failed
-          if (job.status === JobStatus.PREVIEWING) {
-            // Special case to pause the job as soon as any single granule completes when in the previewing state
-            jobSaveStartTime = new Date().getTime();
-            await job.pauseAndSave(tx);
-            durationMs = new Date().getTime() - jobSaveStartTime;
-            logger.debug('timing.HWIUWJI.job.pauseAndSave.end', { durationMs });
-          } else {
-            jobSaveStartTime = new Date().getTime();
-            await job.save(tx);
-            durationMs = new Date().getTime() - jobSaveStartTime;
-            logger.debug('timing.HWIUWJI.job.save.end', { durationMs });
-          }
         }
       } else { // Currently only reach this condition for batched aggregation requests
-        jobSaveStartTime = new Date().getTime();
-        await job.save(tx);
-        durationMs = new Date().getTime() - jobSaveStartTime;
-        logger.debug('timing.HWIUWJI.job.save.end', { durationMs });
+
+        if (!nextWorkflowStep && job.status === JobStatus.PREVIEWING) {
+          // Special case to pause the job as soon as any single granule completes when in the previewing state
+          jobSaveStartTime = new Date().getTime();
+          await job.pauseAndSave(tx);
+          durationMs = new Date().getTime() - jobSaveStartTime;
+          logger.debug('timing.HWIUWJI.job.pauseAndSave.end', { durationMs });
+        } else {
+          jobSaveStartTime = new Date().getTime();
+          await job.save(tx);
+          durationMs = new Date().getTime() - jobSaveStartTime;
+          logger.debug('timing.HWIUWJI.job.save.end', { durationMs });
+        }
+
       }
+
+      jobSaveStartTime = new Date().getTime();
+      await job.save(tx);
+      durationMs = new Date().getTime() - jobSaveStartTime;
+      logger.debug('timing.HWIUWJI.job.save.end', { durationMs });
+
     }
   } catch (e) {
     logger.error(`Work item update failed for work item ${workItemID} and status ${status}`);
@@ -843,21 +864,14 @@ export async function processWorkItems(
         getWorkflowStepByJobIdStepIndex,
         'HWIUWJI.getWorkflowStepByJobIdStepIndex',
         logger))(tx, jobID, workflowStepIndex);
-      let nextStep: WorkflowStep | string = await (await logAsyncExecutionTime(
-        getWorkflowStepByJobIdStepIndex,
-        'HWIUWJI.getWorkflowStepByJobIdStepIndex',
-        logger))(tx, jobID, workflowStepIndex + 1);
-      if (nextStep == undefined) {
-        nextStep = NO_NEXT_STEP;
-      }
 
       const lastIndex = items.length - 1;
       for (let index = 0; index < items.length; index++) {
-        const { preprocessResult, update }  = items[index];
+        const { preprocessResult, update } = items[index];
         if (index < lastIndex) {
-          await processWorkItem(tx, preprocessResult, job, update, logger, false, thisStep, nextStep);
+          await processWorkItem(tx, preprocessResult, job, update, logger, false, thisStep);
         } else {
-          await processWorkItem(tx, preprocessResult, job, update, logger, true, thisStep, nextStep);
+          await processWorkItem(tx, preprocessResult, job, update, logger, true, thisStep);
         }
       }
     });
@@ -881,9 +895,17 @@ export async function handleWorkItemUpdateWithJobId(
   jobID: string,
   update: WorkItemUpdate,
   operation: object,
-  logger: Logger): Promise<void> {
+  logger: Logger,
+  loadNextWorkflowStep = false): Promise<void> {
   try {
-    const preprocessResult = await preprocessWorkItem(update, operation, logger);
+    let nextWorkflowStep = undefined;
+    if (loadNextWorkflowStep) {
+      nextWorkflowStep = await (await logAsyncExecutionTime(
+        getWorkflowStepByJobIdStepIndex,
+        'HWIUWJI.getWorkflowStepByJobIdStepIndex',
+        logger))(db, jobID, update.workflowStepIndex + 1);
+    }
+    const preprocessResult = await preprocessWorkItem(update, operation, logger, nextWorkflowStep);
     const transactionStart = new Date().getTime();
     await db.transaction(async (tx) => {
       const { job } = await (await logAsyncExecutionTime(
@@ -891,8 +913,8 @@ export async function handleWorkItemUpdateWithJobId(
         'HWIUWJI.Job.byJobID',
         logger))(tx, jobID, false, true);
 
-      await processWorkItem(tx, preprocessResult, job, update, logger);
-
+      await processWorkItem(tx, preprocessResult, job, update, logger, true, undefined);
+      await job.save(tx);
     });
     const durationMs = new Date().getTime() - transactionStart;
     logger.debug('timing.HWIUWJI.transaction.end', { durationMs });
@@ -914,10 +936,9 @@ export async function handleWorkItemUpdate(
   operation: object,
   logger: Logger): Promise<void> {
   const { workItemID } = update;
-  // get the jobID for the work item
   const jobID = await (await logAsyncExecutionTime(
     getJobIdForWorkItem,
     'getJobIdForWorkItem',
     logger))(workItemID);
-  await exports.handleWorkItemUpdateWithJobId(jobID, update, operation, logger);
+  await exports.handleWorkItemUpdateWithJobId(jobID, update, operation, logger, true, undefined);
 }

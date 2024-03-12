@@ -79,7 +79,6 @@ function previewingToPauseTest(username: string): void {
       ];
       await fakeServiceStacOutput(workItemQueryCmr.jobID, workItemQueryCmr.id, 4);
       await updateWorkItem(this.backend, workItemQueryCmr);
-
       const resServExample = await getWorkForService(this.backend, 'harmonyservices/service-example:latest');
       expect(resServExample.status).to.equal(200);
       const workItemServExample = JSON.parse(resServExample.text).workItem;

@@ -4,14 +4,13 @@ import * as yaml from 'js-yaml';
 import _, { get as getIn, partial } from 'lodash';
 
 import logger from '../../util/log';
-import { NotFoundError, ServerError } from '../../util/errors';
+import { HttpError, NotFoundError, ServerError } from '../../util/errors';
 import { isMimeTypeAccepted, allowsAny } from '../../util/content-negotiation';
 import { CmrCollection } from '../../util/cmr';
 import { addCollectionsToServicesByAssociation } from '../../middleware/service-selection';
 import { listToText, Conjunction, isInteger } from '@harmony/util/string';
 import TurboService from './turbo-service';
 import HttpService from './http-service';
-import NoOpService from './no-op-service';
 import DataOperation, { DataSource } from '../data-operation';
 import BaseService, { ServiceCollection, ServiceConfig } from './base-service';
 import RequestContext from '../request-context';
@@ -121,13 +120,15 @@ export function validateServiceConfig(config: ServiceConfig<unknown>): void {
   const variableName = `${config.name.toUpperCase().replace(/-/g, '_')}_COLLECTIONS`;
   const collectionString = process.env[variableName];
   if (!collectionString) {
-    if (config.umm_s === undefined || typeof config.umm_s !== 'string') {
-      throw new ServerError(`There must be one and only one umm_s record configured as a string for harmony service: ${config.name}`);
-    }
+    if (!config.capabilities.all_collections) {
+      if (config.umm_s === undefined || config.umm_s === '' || typeof config.umm_s !== 'string') {
+        throw new ServerError(`There must be one and only one umm_s record configured as a string for harmony service: ${config.name}`);
+      }
 
-    for (const coll of config.collections) {
-      if (coll && (!coll.variables && !coll.granule_limit)) {
-        throw new ServerError(`Collections cannot be configured for harmony service: ${config.name}, use umm_s instead.`);
+      for (const coll of config.collections) {
+        if (coll && (!coll.variables && !coll.granule_limit)) {
+          throw new ServerError(`Collections cannot be configured for harmony service: ${config.name}, use umm_s instead.`);
+        }
       }
     }
   } else {
@@ -152,10 +153,17 @@ serviceConfigs = loadServiceConfigs(env.cmrEndpoint);
 serviceConfigs.forEach(validateServiceConfig);
 export const serviceNames = serviceConfigs.map((c) => c.name);
 
+/**
+ * Reset the service configuration so that new environment variable values
+ * can be applied to services.yml.
+ */
+export function resetServiceConfigs(): void {
+  serviceConfigs = loadServiceConfigs(env.cmrEndpoint);
+}
+
 const serviceTypesToServiceClasses = {
   http: HttpService,
   turbo: TurboService,
-  noOp: NoOpService,
 };
 
 /**
@@ -230,7 +238,7 @@ function isCollectionMatch(
   operation: DataOperation,
   serviceConfig: ServiceConfig<unknown>,
 ): boolean {
-  return operation.sources.every((source) => {
+  return serviceConfig.capabilities?.all_collections || operation.sources.every((source) => {
     const rval = serviceConfig.collections?.some(partial(isServiceCollectionMatch, source));
     return rval;
   });
@@ -440,26 +448,20 @@ function supportsDimensionSubsetting(configs: ServiceConfig<unknown>[]): Service
   return configs.filter((config) => getIn(config, 'capabilities.subsetting.dimension', false));
 }
 
-const noOpService: ServiceConfig<void> = {
-  name: 'noOpService',
-  type: { name: 'noOp' },
-  capabilities: { output_formats: ['application/json'] },
-};
-
-class UnsupportedOperation extends Error {
+export class UnsupportedOperation extends HttpError {
   operation: DataOperation;
 
   requestedOperations: string[];
 
-  /**
-   * Creates an instance of an UnsupportedOperation
-   */
-  constructor(
-    operation: DataOperation,
-    requestedOperations: string[],
-    message = 'Unsupported Operation',
-  ) {
-    super(message);
+  constructor(operation: DataOperation, requestedOperations: string[]) {
+    const collections = operation.sources.map((s) => s.collection);
+
+    let message = `no operations can be performed on ${listToText(collections)}`;
+    if (requestedOperations.length > 0) {
+      message = `the requested combination of operations: ${listToText(requestedOperations)}`
+        + ` on ${listToText(collections)} is unsupported`;
+    }
+    super(422, message);
     this.operation = operation;
     this.requestedOperations = requestedOperations;
   }
@@ -753,25 +755,6 @@ function filterDimensionSubsettingMatches(
   return services;
 }
 
-/**
- * For certain UnsupportedOperation errors the root cause will be a combination of multiple
- * request parameters such as requesting variable subsetting and a specific output format.
- * This function will return a detailed message on what combination was unsupported.
- * @param error - The UnsupportedOperation that occurred.
- * @returns the reason the operation was not supported
- */
-function unsupportedCombinationMessage(error: UnsupportedOperation): string {
-  const { operation, requestedOperations } = error;
-  const collections = operation.sources.map((s) => s.collection);
-
-  let message = `no operations can be performed on ${listToText(collections)}`;
-  if (requestedOperations.length > 0) {
-    message = `the requested combination of operations: ${listToText(requestedOperations)}`
-      + ` on ${listToText(collections)} is unsupported`;
-  }
-  return message;
-}
-
 type FilterFunction = (
   // The operation to perform
   operation: DataOperation,
@@ -849,28 +832,18 @@ function filterServiceConfigs(
   configs: ServiceConfig<unknown>[],
   filterFns: FilterFunction[],
 ): ServiceConfig<unknown> {
-  let serviceConfig;
   let matches = configs;
   const requestedOperations = [];
-  try {
-    for (const filterFn of filterFns) {
-      matches = filterFn(operation, context, matches, requestedOperations);
-    }
-    const outputFormat = selectFormat(operation, context, matches);
-    if (outputFormat) {
-      operation.outputFormat = outputFormat; // eslint-disable-line no-param-reassign
-      matches = selectServicesForFormat(outputFormat, matches);
-    }
-    serviceConfig = matches[0];
-  } catch (e) {
-    if (e instanceof UnsupportedOperation) {
-      noOpService.message = unsupportedCombinationMessage(e);
-      logger.info(`Returning download links because ${noOpService.message}.`);
-      serviceConfig = noOpService;
-    } else {
-      throw e;
-    }
+  for (const filterFn of filterFns) {
+    matches = filterFn(operation, context, matches, requestedOperations);
   }
+  const outputFormat = selectFormat(operation, context, matches);
+  if (outputFormat) {
+    operation.outputFormat = outputFormat; // eslint-disable-line no-param-reassign
+    matches = selectServicesForFormat(outputFormat, matches);
+  }
+  const serviceConfig = matches[0];
+
   return serviceConfig;
 }
 
@@ -934,21 +907,23 @@ export function chooseServiceConfig(
   context: RequestContext,
   configs: ServiceConfig<unknown>[] = serviceConfigs,
 ): ServiceConfig<unknown> {
-  let serviceConfig = filterServiceConfigs(operation, context, configs, allFilterFns);
-
-  if (serviceConfig.name === 'noOpService' && !requiresStrictCapabilitiesMatching(operation, context)) {
-    // if we couldn't find a matching service, make a best effort to find a service that
-    // can do part of what the operation requested
-    serviceConfig = filterServiceConfigs(operation, context, configs, requiredFilterFns);
-    if (serviceConfig.name !== 'noOpService') {
-      serviceConfig = _.cloneDeep(serviceConfig);
-      serviceConfig.message = bestEffortMessage;
+  let serviceConfig;
+  try {
+    serviceConfig = filterServiceConfigs(operation, context, configs, allFilterFns);
+  } catch (e) {
+    if (e instanceof UnsupportedOperation) {
+      if (!requiresStrictCapabilitiesMatching(operation, context)) {
+        // if we couldn't find a matching service, make a best effort to find a service that
+        // can do part of what the operation requested
+        serviceConfig = filterServiceConfigs(operation, context, configs, requiredFilterFns);
+        serviceConfig = _.cloneDeep(serviceConfig);
+        serviceConfig.message = bestEffortMessage;
+      } else {
+        throw e;
+      }
+    } else {
+      throw e;
     }
-  }
-
-  // if we are asked to concatenate, but no matching concat service is available then throw an error
-  if (serviceConfig.name === 'noOpService' && operation.shouldConcatenate) {
-    throw new NotFoundError('no matching service');
   }
 
   return serviceConfig;

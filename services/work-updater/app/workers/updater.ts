@@ -2,7 +2,6 @@ import { Logger } from 'winston';
 import {
   WorkItemUpdateQueueItem,
   handleWorkItemUpdate,
-  handleWorkItemUpdateWithJobId,
   preprocessWorkItem,
   processWorkItems } from '../../../harmony/app/backends/workflow-orchestration/work-item-updates';
 import { getJobIdForWorkItem } from '../../../harmony/app/models/work-item';
@@ -12,6 +11,9 @@ import { queuefactory as qf } from '@harmony/util';
 import sleep from '../../../harmony/app/util/sleep';
 import { Worker } from '../../../harmony/app/workers/worker';
 import env from '../util/env';
+import { logAsyncExecutionTime } from '../../../harmony/app/util/log-execution';
+import { getWorkflowStepByJobIdStepIndex } from '../../../harmony/app/models/workflow-steps';
+import db from '../../../harmony/app/util/db';
 
 /**
  * Group work item updates by its workflow step and return the grouped work item updates
@@ -54,19 +56,19 @@ async function handleBatchWorkItemUpdatesWithJobId(
   // group updates by workflow step index to make sure at least one completion check is performed for each step
   const groups = groupByWorkflowStepIndex(updates);
   for (const workflowStepIndex of Object.keys(groups)) {
-    if (groups[workflowStepIndex].length == 1) {
-      const { update, operation } = groups[workflowStepIndex][0];
-      await handleWorkItemUpdateWithJobId(jobID, update, operation, logger);
-    } else {
-      const preprocessedWorkItems: WorkItemUpdateQueueItem[] = await Promise.all(
-        groups[workflowStepIndex].map(async (item: WorkItemUpdateQueueItem) => {
-          const { update, operation } = item;
-          const result = await preprocessWorkItem(update, operation, logger);
-          item.preprocessResult = result;
-          return item;
-        }));
-      await processWorkItems(jobID, parseInt(workflowStepIndex), preprocessedWorkItems, logger);
-    }
+    const nextWorkflowStep = await (await logAsyncExecutionTime(
+      getWorkflowStepByJobIdStepIndex,
+      'HWIUWJI.getWorkflowStepByJobIdStepIndex',
+      logger))(db, jobID, parseInt(workflowStepIndex) + 1);
+
+    const preprocessedWorkItems: WorkItemUpdateQueueItem[] = await Promise.all(
+      groups[workflowStepIndex].map(async (item: WorkItemUpdateQueueItem) => {
+        const { update, operation } = item;
+        const result = await preprocessWorkItem(update, operation, logger, nextWorkflowStep);
+        item.preprocessResult = result;
+        return item;
+      }));
+    await processWorkItems(jobID, parseInt(workflowStepIndex), preprocessedWorkItems, logger);
   }
   const durationMs = new Date().getTime() - startTime;
   logger.debug('timing.HWIUWJI.batch.end', { durationMs });

@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import * as tmp from 'tmp-promise';
 import { promises as fs } from 'fs';
 
-// do this before the import since the env module clones process.env on import 
+// do this before the import since the env module clones process.env on import
 const prevProcessEnv = process.env;
 process.env.CLIENT_ID = 'client-007';
 process.env.AWS_DEFAULT_REGION = 'us-east-3';
@@ -65,18 +65,18 @@ describe('HarmonyEnv', function () {
 
     it('sets service queue urls', function () {
       expect(this.validEnv.serviceQueueUrls['harmonyservices/service-example:latest'])
-        .to.eql('http://localstack:4566/queue/harmony-service-example.fifo');
-    });    
+        .to.eql('http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/harmony-service-example.fifo');
+    });
   });
 
   describe('When the environment is invalid', function () {
-    
+
     before(function () {
       this.invalidEnv = new HarmonyEnv();
       this.invalidEnv.port = -1;
       this.invalidEnv.callbackUrlRoot = 'foo';
     });
-    
+
     it('throws an error when validated', function () {
       expect(() => this.invalidEnv.validate()).to.throw;
     });
@@ -117,7 +117,7 @@ describe('HarmonyEnv', function () {
 
         @IsInt()
         intProp = 'int';
-      
+
         specialConfig(env: Record<string, string>): Partial<HarmonyEnvSubclass> {
           return {
             throttleDelay: env.THROTTLE === 'true' ? 1000 : 0,
@@ -132,7 +132,7 @@ describe('HarmonyEnv', function () {
       this.envDefaultsFile = await tmp.file();
       const defaultsContent = 'THROTTLE=false\nTHROTTLE_TYPE=fixed-window\nMAX_PER_SECOND=200\nFLOAT_CONFIG=3.5001';
       await fs.writeFile(this.envDefaultsFile.path, defaultsContent, 'utf8');
-      
+
       this.env = new HarmonyEnvSubclass(this.envDefaultsFile.path, this.dotEnvFile.path);
     });
     after(async function () {
@@ -151,7 +151,7 @@ describe('HarmonyEnv', function () {
     it('can set special case variables', function () {
       expect(this.env.throttleDelay).to.eql(0);
     });
- 
+
     it('prefers process.env over .env', function () {
       expect(this.env.awsDefaultRegion).to.eql('us-east-3');
     });

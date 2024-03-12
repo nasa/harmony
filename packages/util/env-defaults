@@ -85,13 +85,13 @@ DATABASE_URL=postgresql://postgres:password@localhost:5432/postgres
 USE_SERVICE_QUEUES=true
 
 # SQS queue used to request scheduling of work items for a service
-WORK_ITEM_SCHEDULER_QUEUE_URL=http://localstack:4566/000000000000/work-item-scheduler-queue
+WORK_ITEM_SCHEDULER_QUEUE_URL=http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/work-item-scheduler-queue
 
 # SQS queue used to process work item updates
-WORK_ITEM_UPDATE_QUEUE_URL=http://localstack:4566/000000000000/work-item-update-queue.fifo
+WORK_ITEM_UPDATE_QUEUE_URL=http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/work-item-update-queue.fifo
 
 # SQS queue used to process work item updates
-LARGE_WORK_ITEM_UPDATE_QUEUE_URL=http://localstack:4566/000000000000/large-work-item-update-queue.fifo
+LARGE_WORK_ITEM_UPDATE_QUEUE_URL=http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/large-work-item-update-queue.fifo
 
 # maximum number of items to pull from the queue at once for the large item queue (to avoid visibility timeouts)
 # if this is set to greater than 10 (the SQS max) then 10 will be used instead
@@ -104,22 +104,24 @@ SAME_REGION_ACCESS_ROLE=same-region-access-role
 # Long polling wait time (in seconds) for queues
 QUEUE_LONG_POLLING_WAIT_TIME_SEC=20
 
-GEOLOCO_SERVICE_QUEUE_URLS='["ldds/geoloco:latest,http://localstack:4566/queue/geoloco.fifo"]'
-GIOVANNI_ADAPTER_SERVICE_QUEUE_URLS='["harmonyservices/giovanni-adapter:latest,http://localstack:4566/queue/giovanni-adapter.fifo"]'
-HARMONY_GDAL_ADAPTER_SERVICE_QUEUE_URLS='["ghcr.io/nasa/harmony-gdal-adapter:latest,http://localstack:4566/queue/harmony-gdal-adapter.fifo"]'
-HYBIG_SERVICE_QUEUE_URLS='["sds/harmony-browse-image-generator:latest,http://localstack:4566/queue/hybig.fifo"]'
-HARMONY_SERVICE_EXAMPLE_SERVICE_QUEUE_URLS='["harmonyservices/service-example:latest,http://localstack:4566/queue/harmony-service-example.fifo"]'
-HARMONY_NETCDF_TO_ZARR_SERVICE_QUEUE_URLS='["ghcr.io/nasa/harmony-netcdf-to-zarr:latest,http://localstack:4566/queue/harmony-netcdf-to-zarr.fifo"]'
-HARMONY_REGRIDDER_SERVICE_QUEUE_URLS='["sds/harmony-regridder:latest,http://localstack:4566/queue/harmony-regridder.fifo"]'
-SWOT_REPROJECT_SERVICE_QUEUE_URLS='["sds/swot-reproject:latest,http://localstack:4566/queue/swot-reproject.fifo"]'
-HOSS_SERVICE_QUEUE_URLS='["ghcr.io/nasa/harmony-opendap-subsetter:latest,http://localstack:4566/queue/hoss.fifo"]'
-SDS_MASKFILL_SERVICE_QUEUE_URLS='["sds/maskfill-harmony:latest,http://localstack:4566/queue/sds-maskfill.fifo"]'
-TRAJECTORY_SUBSETTER_SERVICE_QUEUE_URLS='["sds/trajectory-subsetter:latest,http://localstack:4566/queue/trajectory-subsetter.fifo"]'
-PODAAC_CONCISE_SERVICE_QUEUE_URLS='["ghcr.io/podaac/concise:sit,http://localstack:4566/queue/podaac-concise.fifo"]'
-PODAAC_L2_SUBSETTER_SERVICE_QUEUE_URLS='["ghcr.io/podaac/l2ss-py:sit,http://localstack:4566/queue/podaac-l2-subsetter.fifo"]'
-PODAAC_PS3_SERVICE_QUEUE_URLS='["podaac/podaac-cloud/podaac-shapefile-subsetter:latest,http://localstack:4566/queue/podaac-shapefile-subsetter.fifo"]'
-PODAAC_NETCDF_CONVERTER_SERVICE_QUEUE_URLS='["podaac/podaac-cloud/podaac-netcdf-converter:latest,http://localstack:4566/queue/podaac-netcdf-converter.fifo"]'
-QUERY_CMR_SERVICE_QUEUE_URLS='["harmonyservices/query-cmr:latest,http://localstack:4566/queue/query-cmr.fifo"]'
+GEOLOCO_SERVICE_QUEUE_URLS='["ldds/geoloco:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/geoloco.fifo"]'
+GIOVANNI_ADAPTER_SERVICE_QUEUE_URLS='["harmonyservices/giovanni-adapter:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/giovanni-adapter.fifo"]'
+HARMONY_GDAL_ADAPTER_SERVICE_QUEUE_URLS='["ghcr.io/nasa/harmony-gdal-adapter:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/harmony-gdal-adapter.fifo"]'
+HYBIG_SERVICE_QUEUE_URLS='["ghcr.io/nasa/harmony-browse-image-generator:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/hybig.fifo"]'
+HARMONY_SERVICE_EXAMPLE_SERVICE_QUEUE_URLS='["harmonyservices/service-example:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/harmony-service-example.fifo"]'
+HARMONY_NETCDF_TO_ZARR_SERVICE_QUEUE_URLS='["ghcr.io/nasa/harmony-netcdf-to-zarr:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/harmony-netcdf-to-zarr.fifo"]'
+HARMONY_REGRIDDER_SERVICE_QUEUE_URLS='["sds/harmony-regridder:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/harmony-regridder.fifo"]'
+SWATH_PROJECTOR_SERVICE_QUEUE_URLS='["ghcr.io/nasa/harmony-swath-projector:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/swath-projector.fifo"]'
+HOSS_SERVICE_QUEUE_URLS='["ghcr.io/nasa/harmony-opendap-subsetter:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/hoss.fifo"]'
+SDS_MASKFILL_SERVICE_QUEUE_URLS='["sds/maskfill-harmony:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/sds-maskfill.fifo"]'
+TRAJECTORY_SUBSETTER_SERVICE_QUEUE_URLS='["sds/trajectory-subsetter:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/trajectory-subsetter.fifo"]'
+PODAAC_CONCISE_SERVICE_QUEUE_URLS='["ghcr.io/podaac/concise:sit,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/podaac-concise.fifo"]'
+PODAAC_L2_SUBSETTER_SERVICE_QUEUE_URLS='["ghcr.io/podaac/l2ss-py:sit,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/podaac-l2-subsetter.fifo"]'
+PODAAC_PS3_SERVICE_QUEUE_URLS='["podaac/podaac-cloud/podaac-shapefile-subsetter:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/podaac-shapefile-subsetter.fifo"]'
+PODAAC_NETCDF_CONVERTER_SERVICE_QUEUE_URLS='["podaac/podaac-cloud/podaac-netcdf-converter:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/podaac-netcdf-converter.fifo"]'
+QUERY_CMR_SERVICE_QUEUE_URLS='["harmonyservices/query-cmr:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/query-cmr.fifo"]'
+BATCHEE_SERVICE_QUEUE_URLS='["asdc-trade/batchee:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/batchee.fifo"]'
+STITCHEE_SERVICE_QUEUE_URLS='["asdc-trade/stitchee:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/stitchee.fifo"]'
 
 # The number of seconds to allow a pod to continue processing an active request before terminating a pod
 DEFAULT_POD_GRACE_PERIOD_SECS=14400

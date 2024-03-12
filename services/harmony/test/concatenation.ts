@@ -43,8 +43,7 @@ describe('testing concatenation', function () {
         it('has the `hasAggregatedOutput` flag set to false on the workflow step', async function () {
           const job = JSON.parse(this.res.text);
           const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
-
-          expect(workflowSteps[1].hasAggregatedOutput).to.equal(0);
+          expect(workflowSteps[0].hasAggregatedOutput).to.equal(0);
         });
       });
 
@@ -67,7 +66,7 @@ describe('testing concatenation', function () {
           const job = JSON.parse(this.res.text);
           const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
 
-          expect(workflowSteps[1].hasAggregatedOutput).to.equal(0);
+          expect(workflowSteps[0].hasAggregatedOutput).to.equal(0);
         });
       });
 
@@ -103,7 +102,6 @@ describe('testing concatenation', function () {
         hookRangesetRequest('1.0.0', collection, 'all', { query: badQuery, username: 'joe' });
 
         it('returns an error', async function () {
-
           expect(this.res.statusCode).to.equal(400);
           expect(this.res.body).to.eql({
             code: 'harmony.RequestValidationError',
@@ -121,12 +119,14 @@ describe('testing concatenation', function () {
 
         hookRangesetRequest('1.0.0', nonConcatCollection, 'all', { query, username: 'joe' });
 
-        it('returns a Not Found Error', async function () {
+        it('returns a 422 unprocessable status code', async function () {
+          expect(this.res.statusCode).to.eql(422);
+        });
 
-          expect(this.res.statusCode).to.eql(404);
+        it('returns a message indicating no service could process the request', async function () {
           expect(this.res.body).to.eql({
-            code: 'harmony.NotFoundError',
-            description: 'Error: no matching service',
+            code: 'harmony.UnsupportedOperation',
+            description: 'Error: the requested combination of operations: concatenation on C1104-PVC_TS2 is unsupported',
           });
         });
       });

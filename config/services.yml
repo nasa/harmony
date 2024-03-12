@@ -23,6 +23,32 @@ x-turbo-config: &default-turbo-config
 
 https://cmr.earthdata.nasa.gov:
 
+  - name: harmony/download
+    description: Service that performs no processing, it only returns download links for all of the matched granules from the CMR.
+    data_operation_version: '0.18.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/harmony/download
+    maximum_sync_granules: 0
+    capabilities:
+      subsetting:
+        bbox: false
+        variable: false
+        multiple_variable: false
+      reprojection: false
+      concatenation: false
+      all_collections: true
+      output_formats:
+        - application/netcdf # Incorrect mime-type, remove when no longer needed
+        - application/x-netcdf4
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
+
   - name: gesdisc/giovanni
     description: |
       A service to compose the Giovanni URL and invoke Giovanni service to produce output file to visualize, analyze,
@@ -105,6 +131,7 @@ https://cmr.earthdata.nasa.gov:
     umm_s: S2153799015-POCLOUD
     capabilities:
       concatenation: true
+      concatenate_by_default: true
       subsetting:
         bbox: false
         variable: false
@@ -143,6 +170,7 @@ https://cmr.earthdata.nasa.gov:
     umm_s: S2800188133-POCLOUD
     capabilities:
       concatenation: true
+      concatenate_by_default: true
       subsetting:
         temporal: true
         bbox: true
@@ -176,7 +204,7 @@ https://cmr.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/sds/trajectory-subsetter
-    umm_s: S2232210365-ORNL_CLOUD
+    umm_s: S2836723123-XYZ_PROV
     capabilities:
       subsetting:
         temporal: true
@@ -358,6 +386,32 @@ https://cmr.earthdata.nasa.gov:
 
 https://cmr.uat.earthdata.nasa.gov:
 
+  - name: harmony/download
+    description: Service that performs no processing, it only returns download links for all of the matched granules from the CMR.
+    data_operation_version: '0.18.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/harmony/download
+    maximum_sync_granules: 0
+    capabilities:
+      subsetting:
+        bbox: false
+        variable: false
+        multiple_variable: false
+      reprojection: false
+      concatenation: false
+      all_collections: true
+      output_formats:
+        - application/netcdf # Incorrect mime-type, remove when no longer needed
+        - application/x-netcdf4
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
+
   - name: ldds/geoloco
     description: |
       Service capable of reprojecting, resampling, regridding, and spatial and SDS subsetting HDF4/HDF-EOS2 SDS variables.
@@ -467,6 +521,7 @@ https://cmr.uat.earthdata.nasa.gov:
     umm_s: S1242328818-POCLOUD
     capabilities:
       concatenation: true
+      concatenate_by_default: true
       subsetting:
         bbox: false
         variable: false
@@ -505,6 +560,7 @@ https://cmr.uat.earthdata.nasa.gov:
     umm_s: S1261068840-POCLOUD
     capabilities:
       concatenation: true
+      concatenate_by_default: true
       subsetting:
         temporal: true
         bbox: true
@@ -525,7 +581,7 @@ https://cmr.uat.earthdata.nasa.gov:
         conditional:
           exists: ['concatenate']
 
-  - name: sds/swot-reproject
+  - name: sds/swath-projector
     description: |
       Takes NetCDF-4 input files and projects input swath variables to an output grid.
       Target CRS, output grid dimensions, extents and/or resolutions can be specified in the Harmony request.
@@ -536,7 +592,7 @@ https://cmr.uat.earthdata.nasa.gov:
         <<: *default-turbo-params
         env:
           <<: *default-turbo-env
-          STAGING_PATH: public/sds/swot-reproject
+          STAGING_PATH: public/sds/swath-projector
     umm_s: S1237974711-EEDTEST
     capabilities:
       subsetting:
@@ -549,7 +605,7 @@ https://cmr.uat.earthdata.nasa.gov:
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
-      - image: !Env ${SWOT_REPROJECT_IMAGE}
+      - image: !Env ${SWATH_PROJECTOR_IMAGE}
 
   - name: sds/harmony-regridder
     description: |
@@ -889,11 +945,11 @@ https://cmr.uat.earthdata.nasa.gov:
         conditional:
           format: ['application/x-zarr']
 
-  - name: harmony/swot-repr-netcdf-to-zarr
+  - name: harmony/swath-projector-netcdf-to-zarr
     description: |
-      ### Chained Service of the SDS SWOT reprojection and Harmony netcdf-to-zarr services.
+      ### Chained Service of the SDS Swath Projection and Harmony netcdf-to-zarr services.
 
-      #### SDS SWOT reprojection service
+      #### SDS Swath Projector service
       Takes NetCDF-4 input files and projects input swath variables to an output grid.
       Target CRS, output grid dimensions, extents and/or resolutions can be specified in the Harmony request.
 
@@ -908,7 +964,7 @@ https://cmr.uat.earthdata.nasa.gov:
         <<: *default-turbo-params
         env:
           <<: *default-turbo-env
-          STAGING_PATH: public/harmony/swot-repr-netcdf-to-zarr
+          STAGING_PATH: public/harmony/swath-projector-netcdf-to-zarr
     umm_s: S1240999847-EEDTEST
     maximum_sync_granules: 0
     capabilities:
@@ -925,7 +981,7 @@ https://cmr.uat.earthdata.nasa.gov:
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
-      - image: !Env ${SWOT_REPROJECT_IMAGE}
+      - image: !Env ${SWATH_PROJECTOR_IMAGE}
         operations: ['reproject']
         conditional:
           exists: ['reproject']
@@ -965,3 +1021,45 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
       - image: !Env ${HARMONY_SERVICE_EXAMPLE_IMAGE}
+
+  - name: l2-subsetter-batchee-stitchee-concise
+    description: |
+      Chained Service of the PODAAC L2-subsetter, Batchee, STITCHEE, and PODAAC CONCISE services.
+    data_operation_version: '0.18.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/asdc-trade/l2-subsetter-batchee-stitchee-concise
+    umm_s: S1262025641-LARC_CLOUD
+    capabilities:
+      concatenation: true
+      concatenate_by_default: true
+      extend: true
+      default_extend_dimensions: ['mirror_step']
+      subsetting:
+        bbox: true
+        variable: true
+        temporal: true
+      output_formats:
+        - application/netcdf4
+      reprojection: false
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
+      - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
+        operations: ['spatialSubset', 'variableSubset', 'temporalSubset']
+        conditional:
+          exists: ['spatialSubset', 'variableSubset', 'temporalSubset']
+      - image: !Env ${BATCHEE_IMAGE}
+        operations: ['concatenate']
+      - image: !Env ${STITCHEE_IMAGE}
+        operations: ['extend']
+      - image: !Env ${PODAAC_CONCISE_IMAGE}
+        is_batched: true
+        operations: ['concatenate']
+        conditional:
+          exists: ['concatenate']
+

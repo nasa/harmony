@@ -38,7 +38,7 @@
     "@kubernetes/client-node": "^0.17.1",
     "agentkeepalive": "^4.1.4",
     "aws-sdk": "^2.1482.0",
-    "axios": "^1.6.0",
+    "axios": "^1.6.5",
     "axios-retry": "^3.8.1",
     "class-validator": "^0.14.0",
     "date-fns": "^2.25.0",
