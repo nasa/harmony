@@ -35,6 +35,7 @@
     "@aws-sdk/s3-request-presigner": "^3.437.0",
     "@aws-sdk/url-parser": "^3.374.0",
     "@aws-sdk/util-format-url": "^3.433.0",
+    "@harmony/harmony": "workspace:*",
     "@harmony/util": "workspace:*",
     "ajv": "^8.8.0",
     "ajv-formats": "^2.1.1",

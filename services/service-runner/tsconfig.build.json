@@ -4,10 +4,13 @@
     "typeRoots": [
       "./node_modules/@types",
       "./app/stac"
-    ],
-    "outDir": "built"
+    ]
   },
   "include": [
     "./app/**/*"
+  ],
+  "exclude": [
+    "**/knexfile.js",
+    "db/**/*.js"
   ]
 }

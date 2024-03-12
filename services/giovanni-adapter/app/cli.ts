@@ -1,12 +1,12 @@
 import yargs from 'yargs';
-import DataOperation from '../../harmony/app/models/data-operation';
-import { createEncrypter, createDecrypter } from '../../harmony/app/util/crypto';
-import logger from '../../harmony/app/util/log';
+import DataOperation from '@harmony/harmony/app/models/data-operation';
+import { createEncrypter, createDecrypter } from '@harmony/harmony/app/util/crypto';
+import logger from '@harmony/harmony/app/util/log';
 import Catalog from './stac/catalog';
 import StacItem from './stac/item';
-import { BoundingBox } from '../../harmony/app/util/bounding-box';
-import { resolve } from '../../harmony/app/util/url';
-import { objectStoreForProtocol } from '../../harmony/app/util/object-store';
+import { BoundingBox } from '@harmony/harmony/app/util/bounding-box';
+import { resolve } from '@harmony/harmony/app/util/url';
+import { objectStoreForProtocol } from '@harmony/harmony/app/util/object-store';
 
 // giovanni globals
 import giovanniDatafieldConfig from '../config/giovanni-datafield.json';

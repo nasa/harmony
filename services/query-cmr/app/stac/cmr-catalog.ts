@@ -2,9 +2,9 @@ import path from 'path';
 import _ from 'lodash';
 import StacCatalog from './catalog';
 import StacItem from './item';
-import { CmrGranule } from '../../../harmony/app/util/cmr';
-import { computeMbr } from '../../../harmony/app/util/spatial/mbr';
-import logger from '../../../harmony/app/util/log';
+import { CmrGranule } from '@harmony/harmony/app/util/cmr';
+import { computeMbr } from '@harmony/harmony/app/util/spatial/mbr';
+import logger from '@harmony/harmony/app/util/log';
 import { Logger } from 'winston';
 
 /**

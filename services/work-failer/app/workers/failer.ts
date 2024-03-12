@@ -1,13 +1,13 @@
 import _ from 'lodash';
-import { JobStatus } from '../../../harmony/app/models/job';
-import WorkItem, { computeWorkItemDurationOutlierThresholdForJobService, getWorkItemsByUpdateAgeAndStatus } from '../../../harmony/app/models/work-item';
-import db from '../../../harmony/app/util/db';
-import log from '../../../harmony/app/util/log';
-import sleep from '../../../harmony/app/util/sleep';
-import { Worker } from '../../../harmony/app/workers/worker';
-import { WorkItemStatus } from '../../../harmony/app/models/work-item-interface';
+import { JobStatus } from '@harmony/harmony/app/models/job';
+import WorkItem, { computeWorkItemDurationOutlierThresholdForJobService, getWorkItemsByUpdateAgeAndStatus } from '@harmony/harmony/app/models/work-item';
+import db from '@harmony/harmony/app/util/db';
+import log from '@harmony/harmony/app/util/log';
+import sleep from '@harmony/harmony/app/util/sleep';
+import { Worker } from '@harmony/harmony/app/workers/worker';
+import { WorkItemStatus } from '@harmony/harmony/app/models/work-item-interface';
 import env from '../util/env';
-import { handleWorkItemUpdateWithJobId } from '../../../harmony/app/backends/workflow-orchestration/work-item-updates';
+import { handleWorkItemUpdateWithJobId } from '@harmony/harmony/app/backends/workflow-orchestration/work-item-updates';
 
 /**
  * Construct a message indicating that the given work item has exceeded the given duration

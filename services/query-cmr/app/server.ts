@@ -1,8 +1,8 @@
 import express, { Request, Response, NextFunction } from 'express';
 import { Server } from 'http';
 import env from './util/env';
-import { buildJsonErrorResponse, getCodeForError, getEndUserErrorMessage, getHttpStatusCode, HttpError } from '../../harmony/app/util/errors';
-import log from '../../harmony/app/util/log';
+import { buildJsonErrorResponse, getCodeForError, getEndUserErrorMessage, getHttpStatusCode, HttpError } from '@harmony/harmony/app/util/errors';
+import log from '@harmony/harmony/app/util/log';
 import router from './routers/router';
 
 /**

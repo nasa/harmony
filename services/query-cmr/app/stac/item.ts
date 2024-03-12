@@ -1,7 +1,7 @@
 import { strict as assert } from 'assert';
 import { v4 as uuid } from 'uuid';
 import { StacLink, StacAsset, StacItem } from './types';
-import { objectStoreForProtocol } from '../../../harmony/app/util/object-store';
+import { objectStoreForProtocol } from '@harmony/harmony/app/util/object-store';
 
 /**
  * Implementation of the StacCatalog type with constructor and write capabilities

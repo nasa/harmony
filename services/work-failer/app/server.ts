@@ -1,6 +1,6 @@
 import express from 'express';
 import env from './util/env';
-import log from '../../harmony/app/util/log';
+import log from '@harmony/harmony/app/util/log';
 import router from './routers/router';
 import { Server } from 'http';
 import Failer from './workers/failer';

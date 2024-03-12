@@ -138,6 +138,9 @@ importers:
       '@aws-sdk/util-format-url':
         specifier: ^3.433.0
         version: 3.433.0
+      '@harmony/harmony':
+        specifier: workspace:*
+        version: link:../harmony
       '@harmony/util':
         specifier: workspace:*
         version: link:../../packages/util
@@ -719,6 +722,9 @@ importers:
       '@aws-sdk/util-format-url':
         specifier: ^3.433.0
         version: 3.433.0
+      '@harmony/harmony':
+        specifier: workspace:*
+        version: link:../harmony
       '@harmony/util':
         specifier: workspace:*
         version: link:../../packages/util
@@ -882,6 +888,9 @@ importers:
       '@aws-sdk/util-format-url':
         specifier: ^3.433.0
         version: 3.433.0
+      '@harmony/harmony':
+        specifier: workspace:*
+        version: link:../harmony
       '@harmony/util':
         specifier: workspace:*
         version: link:../../packages/util
@@ -1021,6 +1030,9 @@ importers:
       '@aws-sdk/util-format-url':
         specifier: ^3.433.0
         version: 3.433.0
+      '@harmony/harmony':
+        specifier: workspace:*
+        version: link:../harmony
       '@harmony/util':
         specifier: workspace:*
         version: link:../../packages/util
@@ -1187,6 +1199,9 @@ importers:
       '@aws-sdk/util-format-url':
         specifier: ^3.433.0
         version: 3.433.0
+      '@harmony/harmony':
+        specifier: workspace:*
+        version: link:../harmony
       '@harmony/util':
         specifier: workspace:*
         version: link:../../packages/util
@@ -1344,6 +1359,9 @@ importers:
       '@aws-sdk/util-format-url':
         specifier: ^3.433.0
         version: 3.433.0
+      '@harmony/harmony':
+        specifier: workspace:*
+        version: link:../harmony
       '@harmony/util':
         specifier: workspace:*
         version: link:../../packages/util
@@ -1489,6 +1507,9 @@ importers:
       '@aws-sdk/util-format-url':
         specifier: ^3.433.0
         version: 3.433.0
+      '@harmony/harmony':
+        specifier: workspace:*
+        version: link:../harmony
       '@harmony/util':
         specifier: workspace:*
         version: link:../../packages/util

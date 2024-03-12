@@ -1,11 +1,11 @@
 import { Request, Response, NextFunction, Router } from 'express';
-import logger from '../../../harmony/app/util/log';
-import { resolve } from '../../../harmony/app/util/url';
-import DataOperation from '../../../harmony/app/models/data-operation';
-import { createEncrypter, createDecrypter } from '../../../harmony/app/util/crypto';
+import logger from '@harmony/harmony/app/util/log';
+import { resolve } from '@harmony/harmony/app/util/url';
+import DataOperation from '@harmony/harmony/app/models/data-operation';
+import { createEncrypter, createDecrypter } from '@harmony/harmony/app/util/crypto';
 import { queryGranules } from '../query';
-import { objectStoreForProtocol } from '../../../harmony/app/util/object-store';
-import { ServerError } from '../../../harmony/app/util/errors';
+import { objectStoreForProtocol } from '@harmony/harmony/app/util/object-store';
+import { ServerError } from '@harmony/harmony/app/util/errors';
 import { Logger } from 'winston';
 
 const encrypter = createEncrypter(process.env.SHARED_SECRET_KEY);

@@ -4,7 +4,7 @@
   "description": "Data services frontend",
   "main": "index.js",
   "scripts": {
-    "test": "eslint --ext .ts --ignore-pattern built . && nyc mocha && pnpm audit --audit-level high --prod",
+    "bld": "tsc -p ./tsconfig.build.json",
     "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha",
     "test-bail": "TS_NODE_TRANSPILE_ONLY=true mocha --bail",
     "coverage": "nyc mocha --load-env-files=false --bail 2>&1 | tee coverage-test.log",

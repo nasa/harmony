@@ -1,4 +1,4 @@
-import logger from '../../../harmony/app/util/log';
+import logger from '@harmony/harmony/app/util/log';
 import { k8sApi } from '../workers/scheduler';
 
 /**

@@ -4,13 +4,13 @@ import { expect } from 'chai';
 import { v4 as uuid } from 'uuid';
 import { Application } from 'express';
 import _ from 'lodash';
-import JobLink from '../../../harmony/app/models/job-link';
-import { Job, JobStatus, JobRecord, jobRecordFields, JobForDisplay, getRelatedLinks } from '../../../harmony/app/models/job';
-import { JobListing } from '../../../harmony/app/frontends/jobs';
-import db, { Transaction } from '../../../harmony/app/util/db';
-import { hookRequest } from '../../../harmony/test/helpers/hooks';
+import JobLink from '@harmony/harmony/app/models/job-link';
+import { Job, JobStatus, JobRecord, jobRecordFields, JobForDisplay, getRelatedLinks } from '@harmony/harmony/app/models/job';
+import { JobListing } from '@harmony/harmony/app/frontends/jobs';
+import db, { Transaction } from '@harmony/harmony/app/util/db';
+import { hookRequest } from '@harmony/harmony/test/helpers/hooks';
 import { truncateAll } from './db';
-import { RecordConstructor } from '../../../harmony/app/models/record';
+import { RecordConstructor } from '@harmony/harmony/app/models/record';
 
 export const adminUsername = 'adam';
 

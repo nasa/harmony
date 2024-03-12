@@ -2,10 +2,10 @@ import * as k8s from '@kubernetes/client-node';
 import stream from 'stream';
 import { sanitizeImage } from '@harmony/util/string';
 import env from '../util/env';
-import logger from '../../../harmony/app/util/log';
-import { resolve as resolveUrl } from '../../../harmony/app/util/url';
-import { objectStoreForProtocol } from '../../../harmony/app/util/object-store';
-import { WorkItemRecord, getStacLocation, getItemLogsLocation } from '../../../harmony/app/models/work-item-interface';
+import logger from '@harmony/harmony/app/util/log';
+import { resolve as resolveUrl } from '@harmony/harmony/app/util/url';
+import { objectStoreForProtocol } from '@harmony/harmony/app/util/object-store';
+import { WorkItemRecord, getStacLocation, getItemLogsLocation } from '@harmony/harmony/app/models/work-item-interface';
 import axios from 'axios';
 import { Logger } from 'winston';
 

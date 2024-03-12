@@ -1,11 +1,11 @@
 import * as k8s from '@kubernetes/client-node';
-import { Worker } from '../../../harmony/app/workers/worker';
+import { Worker } from '@harmony/harmony/app/workers/worker';
 import env from '../util/env';
-import logger from '../../../harmony/app/util/log';
-import { logAsyncExecutionTime } from '../../../harmony/app/util/log-execution';
+import logger from '@harmony/harmony/app/util/log';
+import { logAsyncExecutionTime } from '@harmony/harmony/app/util/log-execution';
 import { Logger } from 'winston';
 import { queuefactory as qf } from '@harmony/util';
-import { getWorkItemsFromDatabase } from '../../../harmony/app/backends/workflow-orchestration/work-item-polling';
+import { getWorkItemsFromDatabase } from '@harmony/harmony/app/backends/workflow-orchestration/work-item-polling';
 import { getPodsCountForPodName, getPodsCountForService } from '../util/k8s';
 import { Queue, ReceivedMessage } from '@harmony/util/queue';
 
