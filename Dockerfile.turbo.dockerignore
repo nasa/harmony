@@ -1,0 +1,10 @@
+**/node_modules
+**/test
+.git
+.env
+db/*.sqlite3
+**/logs
+docs
+workload
+fixtures
+**/built

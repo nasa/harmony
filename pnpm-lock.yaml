@@ -6,10 +6,279 @@ settings:
 
 overrides:
   trim-newlines: 4.0.1
+  fast-json-patch: 3.1.1
 
 importers:
 
   .:
+    dependencies:
+      '@aws-sdk/client-ecr':
+        specifier: ^3.437.0
+        version: 3.441.0
+      '@aws-sdk/client-s3':
+        specifier: ^3.437.0
+        version: 3.441.0
+      '@aws-sdk/client-sqs':
+        specifier: ^3.437.0
+        version: 3.441.0
+      '@aws-sdk/client-sts':
+        specifier: ^3.437.0
+        version: 3.441.0
+      '@aws-sdk/credential-provider-imds':
+        specifier: ^3.374.0
+        version: 3.374.0
+      '@aws-sdk/hash-node':
+        specifier: ^3.374.0
+        version: 3.374.0
+      '@aws-sdk/protocol-http':
+        specifier: ^3.374.0
+        version: 3.374.0
+      '@aws-sdk/s3-request-presigner':
+        specifier: ^3.437.0
+        version: 3.441.0
+      '@aws-sdk/url-parser':
+        specifier: ^3.374.0
+        version: 3.374.0
+      '@aws-sdk/util-format-url':
+        specifier: ^3.433.0
+        version: 3.433.0
+      '@harmony/util':
+        specifier: workspace:*
+        version: link:packages/util
+      '@kubernetes/client-node':
+        specifier: ^0.18.1
+        version: 0.18.1
+      '@mapbox/geojson-rewind':
+        specifier: ^0.5.0
+        version: 0.5.2
+      '@tmcw/togeojson':
+        specifier: ^4.2.0
+        version: 4.7.0
+      '@types/cookie':
+        specifier: ^0.4.1
+        version: 0.4.1
+      '@types/cookie-signature':
+        specifier: ^1.0.3
+        version: 1.1.1
+      '@types/express':
+        specifier: ^4.17.13
+        version: 4.17.20
+      '@types/js-yaml':
+        specifier: ^4.0.4
+        version: 4.0.8
+      '@types/multer':
+        specifier: ^1.4.7
+        version: 1.4.9
+      '@types/multer-s3':
+        specifier: ^3.0.0
+        version: 3.0.2
+      '@types/mustache':
+        specifier: ^4.1.2
+        version: 4.2.4
+      '@types/node-fetch':
+        specifier: ^2.5.12
+        version: 2.6.8
+      '@types/serve-favicon':
+        specifier: ^2.5.3
+        version: 2.5.6
+      '@types/shpjs':
+        specifier: ^3.4.1
+        version: 3.4.4
+      '@types/simple-oauth2':
+        specifier: ^2.5.5
+        version: 2.5.7
+      '@types/tmp':
+        specifier: ^0.2.3
+        version: 0.2.5
+      '@types/uuid':
+        specifier: ^8.3.1
+        version: 8.3.4
+      '@types/ws':
+        specifier: ^6.0.1
+        version: 6.0.4
+      '@xmldom/xmldom':
+        specifier: ^0.8.10
+        version: 0.8.10
+      ajv:
+        specifier: ^8.12.0
+        version: 8.12.0
+      ajv-formats:
+        specifier: ^2.1.1
+        version: 2.1.1(ajv@8.12.0)
+      ajv-formats-draft2019:
+        specifier: ^1.6.1
+        version: 1.6.1(ajv@8.12.0)
+      axios:
+        specifier: ^1.6.5
+        version: 1.6.7
+      body-parser:
+        specifier: ^1.19.0
+        version: 1.20.2
+      class-validator:
+        specifier: ^0.14.0
+        version: 0.14.0
+      cookie-parser:
+        specifier: ^1.4.5
+        version: 1.4.6
+      date-fns:
+        specifier: ^2.21.3
+        version: 2.30.0
+      dotenv:
+        specifier: ^10.0.0
+        version: 10.0.0
+      express:
+        specifier: ^4.17.3
+        version: 4.18.2
+      express-async-handler:
+        specifier: ^1.2.0
+        version: 1.2.0
+      express-openapi:
+        specifier: ^4.6.5
+        version: 4.6.5
+      express-validator:
+        specifier: ^6.13.0
+        version: 6.15.0
+      express-winston:
+        specifier: ^4.1.0
+        version: 4.2.0(winston@3.11.0)
+      fastq:
+        specifier: ^1.11.0
+        version: 1.15.0
+      form-data:
+        specifier: ^4.0.0
+        version: 4.0.0
+      gdal-async:
+        specifier: ~3.7.2-1
+        version: 3.7.2-1
+      highlight.js:
+        specifier: ^11.7.0
+        version: 11.9.0
+      js-yaml:
+        specifier: ^4.1.0
+        version: 4.1.0
+      json2csv:
+        specifier: ^5.0.7
+        version: 5.0.7
+      knex:
+        specifier: ^2.4.0
+        version: 2.5.1(pg-native@3.0.1)(pg@8.11.3)(sqlite3@5.1.6)
+      knex-paginate:
+        specifier: ^2.3.0
+        version: 2.3.0(knex@2.5.1)
+      lodash:
+        specifier: ^4.17.21
+        version: 4.17.21
+      logform:
+        specifier: ^2.4.0
+        version: 2.6.0
+      markdown-it:
+        specifier: ^13.0.1
+        version: 13.0.2
+      markdown-it-anchor:
+        specifier: ^8.6.7
+        version: 8.6.7(@types/markdown-it@13.0.5)(markdown-it@13.0.2)
+      markdown-it-copy:
+        specifier: ^1.2.0
+        version: 1.2.0
+      markdown-it-for-inline:
+        specifier: ^0.1.1
+        version: 0.1.1
+      markdown-it-github-toc:
+        specifier: ^3.2.4
+        version: 3.2.4
+      markdown-it-include:
+        specifier: ^2.0.0
+        version: 2.0.0(markdown-it@13.0.2)
+      markdown-it-mark:
+        specifier: ^3.0.1
+        version: 3.0.1
+      markdown-it-replace-link:
+        specifier: ^1.2.0
+        version: 1.2.0
+      markdown-it-toc-done-right:
+        specifier: ^4.2.0
+        version: 4.2.0
+      minipass:
+        specifier: ^3.2.1
+        version: 3.3.6
+      multer:
+        specifier: ^1.4.5-lts.1
+        version: 1.4.5-lts.1
+      multer-s3:
+        specifier: ^3.0.1
+        version: 3.0.1(@aws-sdk/client-s3@3.441.0)
+      mustache:
+        specifier: ^4.2.0
+        version: 4.2.0
+      mustache-express:
+        specifier: ^1.3.2
+        version: 1.3.2
+      node-fetch:
+        specifier: ^2.6.6
+        version: 2.7.0
+      p-queue:
+        specifier: ^7.1.0
+        version: 7.4.1
+      pg:
+        specifier: ^8.7.3
+        version: 8.11.3(pg-native@3.0.1)
+      pg-native:
+        specifier: ^3.0.1
+        version: 3.0.1
+      serve-favicon:
+        specifier: ^2.5.0
+        version: 2.5.0
+      shpjs:
+        specifier: ^4.0.2
+        version: 4.0.4
+      simple-oauth2:
+        specifier: git+https://github.com/bilts/simple-oauth2.git#fix-encoding
+        version: github.com/bilts/simple-oauth2/9ff4514d5692b5786a089f87fd12791d01ef40bb
+      source-map-support:
+        specifier: ^0.5.19
+        version: 0.5.21
+      sqlite3:
+        specifier: ^5.1.6
+        version: 5.1.6
+      swagger-ui-express:
+        specifier: ^4.1.4
+        version: 4.6.3(express@4.18.2)
+      tmp:
+        specifier: ^0.2.1
+        version: 0.2.1
+      tmp-promise:
+        specifier: ^3.0.3
+        version: 3.0.3
+      ts-node:
+        specifier: ^10.7.0
+        version: 10.9.1(@types/node@20.9.0)(typescript@5.2.2)
+      tsconfig-paths:
+        specifier: ^4.0.0
+        version: 4.2.0
+      tweetnacl:
+        specifier: ^1.0.3
+        version: 1.0.3
+      tweetnacl-util:
+        specifier: ^0.15.1
+        version: 0.15.1
+      typescript:
+        specifier: ^5.1.6
+        version: 5.2.2
+      unzipper:
+        specifier: ^0.10.11
+        version: 0.10.14
+      uuid:
+        specifier: ^8.3.2
+        version: 8.3.2
+      winston:
+        specifier: ^3.10.0
+        version: 3.11.0
+      xregexp:
+        specifier: ^5.0.2
+        version: 5.1.1
+      xstate:
+        specifier: ^4.31.0
+        version: 4.38.3
     devDependencies:
       eslint:
         specifier: ^8.48.0
@@ -368,8 +637,8 @@ importers:
         specifier: ^1.6.1
         version: 1.6.1(ajv@8.12.0)
       axios:
-        specifier: ^1.6.0
-        version: 1.6.0
+        specifier: ^1.6.5
+        version: 1.6.7
       body-parser:
         specifier: ^1.19.0
         version: 1.20.2
@@ -598,7 +867,7 @@ importers:
         version: 5.8.0
       axios-mock-adapter:
         specifier: ^1.18.2
-        version: 1.22.0(axios@1.6.0)
+        version: 1.22.0(axios@1.6.7)
       better-npm-audit:
         specifier: ^3.7.3
         version: 3.7.3
@@ -904,8 +1173,8 @@ importers:
         specifier: ^2.1482.0
         version: 2.1487.0
       axios:
-        specifier: ^1.6.0
-        version: 1.6.0
+        specifier: ^1.6.5
+        version: 1.6.7
       axios-retry:
         specifier: ^3.8.1
         version: 3.8.1
@@ -966,7 +1235,7 @@ importers:
         version: 2.0.15
       axios-mock-adapter:
         specifier: ^1.20.0
-        version: 1.22.0(axios@1.6.0)
+        version: 1.22.0(axios@1.6.7)
       better-npm-audit:
         specifier: ^3.7.3
         version: 3.7.3
@@ -1052,8 +1321,8 @@ importers:
         specifier: ^1.6.1
         version: 1.6.1(ajv@8.12.0)
       axios:
-        specifier: ^1.6.0
-        version: 1.6.0
+        specifier: ^1.6.5
+        version: 1.6.7
       axios-retry:
         specifier: ^3.8.1
         version: 3.8.1
@@ -1135,7 +1404,7 @@ importers:
         version: 2.0.15
       axios-mock-adapter:
         specifier: ^1.20.0
-        version: 1.22.0(axios@1.6.0)
+        version: 1.22.0(axios@1.6.7)
       better-npm-audit:
         specifier: ^3.7.3
         version: 3.7.3
@@ -1212,8 +1481,8 @@ importers:
         specifier: ^4.1.4
         version: 4.5.0
       axios:
-        specifier: ^1.6.0
-        version: 1.6.0
+        specifier: ^1.6.5
+        version: 1.6.7
       axios-retry:
         specifier: ^3.8.1
         version: 3.8.1
@@ -1292,7 +1561,7 @@ importers:
         version: 2.0.15
       axios-mock-adapter:
         specifier: ^1.20.0
-        version: 1.22.0(axios@1.6.0)
+        version: 1.22.0(axios@1.6.7)
       better-npm-audit:
         specifier: ^3.7.3
         version: 3.7.3
@@ -1375,8 +1644,8 @@ importers:
         specifier: ^4.1.4
         version: 4.5.0
       axios:
-        specifier: ^1.6.0
-        version: 1.6.0
+        specifier: ^1.6.5
+        version: 1.6.7
       axios-retry:
         specifier: ^3.8.1
         version: 3.8.1
@@ -1449,7 +1718,7 @@ importers:
         version: 2.0.15
       axios-mock-adapter:
         specifier: ^1.20.0
-        version: 1.22.0(axios@1.6.0)
+        version: 1.22.0(axios@1.6.7)
       better-npm-audit:
         specifier: ^3.7.3
         version: 3.7.3
@@ -1529,8 +1798,8 @@ importers:
         specifier: ^1.6.1
         version: 1.6.1(ajv@8.12.0)
       axios:
-        specifier: ^1.6.0
-        version: 1.6.0
+        specifier: ^1.6.5
+        version: 1.6.7
       axios-retry:
         specifier: ^3.8.1
         version: 3.8.1
@@ -1612,7 +1881,7 @@ importers:
         version: 2.0.15
       axios-mock-adapter:
         specifier: ^1.20.0
-        version: 1.22.0(axios@1.6.0)
+        version: 1.22.0(axios@1.6.7)
       better-npm-audit:
         specifier: ^3.7.3
         version: 3.7.3
@@ -2904,7 +3173,7 @@ packages:
     resolution: {integrity: sha512-je+kkrfcvPcwL5Tg8JRENRqlbzjdlZXyaR88UcnCdNW0AJ1jX9IfHRys1X7AwSroU2ug8ESNC+suoBw1vX833Q==}
     engines: {node: '>=16.0.0'}
     dependencies:
-      chalk: 4.1.0
+      chalk: 4.1.2
       execa: 5.0.0
       strong-log-transformer: 2.1.0
     dev: true
@@ -4214,7 +4483,7 @@ packages:
   /@types/cookie-signature@1.1.1:
     resolution: {integrity: sha512-o0sCF8GXWvGK+7UuXD+HIiWjTb8ODkkRchVPD3N9peA4RVoU5HShM1ztiuEXZj+5chu9ZhI2ro5q0+oeetu86Q==}
     dependencies:
-      '@types/node': 16.18.60
+      '@types/node': 20.9.0
     dev: false
 
   /@types/cookie@0.4.1:
@@ -4373,7 +4642,6 @@ packages:
     resolution: {integrity: sha512-nekiGu2NDb1BcVofVcEKMIwzlx4NjHlcjhoxxKBNLtz15Y1z7MYf549DFvkHSId02Ax6kGwWntIBPC3l/JZcmw==}
     dependencies:
       undici-types: 5.26.5
-    dev: true
 
   /@types/normalize-package-data@2.4.3:
     resolution: {integrity: sha512-ehPtgRgaULsFG8x0NeYJvmyH1hmlfsNLujHe9dQEia/7MAJYdzMSi19JtchUHjmBA6XC/75dK55mzZH+RyieSg==}
@@ -4389,7 +4657,7 @@ packages:
     resolution: {integrity: sha512-HuihY1+Vss5RS9ZHzRyTGIzwPTdrJBkCm/mAeLRYrOQu/MGqyezKXWOK1VhCnR+SDbp9G2mRUP+OVEqCrzpcfA==}
     dependencies:
       '@types/caseless': 0.12.4
-      '@types/node': 16.18.60
+      '@types/node': 20.9.0
       '@types/tough-cookie': 4.0.4
       form-data: 2.5.1
     dev: false
@@ -4421,7 +4689,7 @@ packages:
     resolution: {integrity: sha512-/uE9InBW7S/Sv6y4wtkybbTWX/KMzb+aPm8sYdEitmrED4EPKCX6S9g0Zibavq9juB8xS9JlgCs1bE3+TJSP3Q==}
     dependencies:
       '@types/geojson': 7946.0.12
-      '@types/node': 16.18.60
+      '@types/node': 20.9.0
 
   /@types/simple-oauth2@2.5.7:
     resolution: {integrity: sha512-PChwXIcZPD0lD/apQrN0IpKGBBmu98cQ6Aj9lXCyqZ3enObBTHCqBSxvBrsXVH48sW2qc0N3vvx1VRqkGfZOyg==}
@@ -4479,13 +4747,13 @@ packages:
   /@types/ws@6.0.4:
     resolution: {integrity: sha512-PpPrX7SZW9re6+Ha8ojZG4Se8AZXgf0GK6zmfqEuCsY49LFDNXO3SByp44X3dFEqtB73lkCDAdUazhAjVPiNwg==}
     dependencies:
-      '@types/node': 16.18.60
+      '@types/node': 20.9.0
     dev: false
 
   /@types/ws@8.5.8:
     resolution: {integrity: sha512-flUksGIQCnJd6sZ1l5dqCEG/ksaoAg/eUwiLAGTJQcfgvZJKF++Ta4bJA6A5aPSJmsr+xlseHn4KLgVlNnvPTg==}
     dependencies:
-      '@types/node': 16.18.60
+      '@types/node': 20.9.0
     dev: false
 
   /@types/yargs-parser@21.0.2:
@@ -5263,12 +5531,12 @@ packages:
     resolution: {integrity: sha512-NmWvPnx0F1SfrQbYwOi7OeaNGokp9XhzNioJ/CSBs8Qa4vxug81mhJEAVZwxXuBmYB5KDRfMq/F3RR0BIU7sWg==}
     dev: false
 
-  /axios-mock-adapter@1.22.0(axios@1.6.0):
+  /axios-mock-adapter@1.22.0(axios@1.6.7):
     resolution: {integrity: sha512-dmI0KbkyAhntUR05YY96qg2H6gg0XMl2+qTW0xmYg6Up+BFBAJYRLROMXRdDEL06/Wqwa0TJThAYvFtSFdRCZw==}
     peerDependencies:
       axios: '>= 0.17.0'
     dependencies:
-      axios: 1.6.0
+      axios: 1.6.7
       fast-deep-equal: 3.1.3
       is-buffer: 2.0.5
     dev: true
@@ -5280,10 +5548,10 @@ packages:
       is-retry-allowed: 2.2.0
     dev: false
 
-  /axios@1.6.0:
-    resolution: {integrity: sha512-EZ1DYihju9pwVB+jg67ogm+Tmqc6JmhamRN6I4Zt8DfZu5lbcQGw3ozH9lFejSJgs/ibaef3A9PMXPLeefFGJg==}
+  /axios@1.6.7:
+    resolution: {integrity: sha512-/hDJGff6/c7u0hDkvkGxR/oy6CbCs8ziCsC7SqmhjfozqiJGc8Z11wrv9z9lYfY4K8l+H9TpjcMDX0xOZmx+RA==}
     dependencies:
-      follow-redirects: 1.15.3
+      follow-redirects: 1.15.5
       form-data: 4.0.0
       proxy-from-env: 1.1.0
     transitivePeerDependencies:
@@ -5579,7 +5847,7 @@ packages:
       promise-inflight: 1.0.1
       rimraf: 3.0.2
       ssri: 9.0.1
-      tar: 6.1.11
+      tar: 6.2.0
       unique-filename: 2.0.1
     transitivePeerDependencies:
       - bluebird
@@ -5599,7 +5867,7 @@ packages:
       minipass-pipeline: 1.2.4
       p-map: 4.0.0
       ssri: 10.0.5
-      tar: 6.1.11
+      tar: 6.2.0
       unique-filename: 3.0.0
     dev: true
 
@@ -7140,10 +7408,6 @@ packages:
       pure-rand: 5.0.5
     dev: true
 
-  /fast-deep-equal@2.0.1:
-    resolution: {integrity: sha512-bCK/2Z4zLidyB4ReuIsvALH6w31YfAQDmXMqMx6FyfHqvBxtjC0eRumeSu4Bs3XtXwpyIywtSTrVT99BxY1f9w==}
-    dev: true
-
   /fast-deep-equal@3.1.3:
     resolution: {integrity: sha512-f3qQ9oQy9j2AhBe/H9VC91wLmKBCCU/gDOnKNAYG5hswO7BLKj09Hc5HYNz9cGI++xlpDCIgDaitVs03ATR84Q==}
 
@@ -7158,11 +7422,8 @@ packages:
       micromatch: 4.0.5
     dev: true
 
-  /fast-json-patch@2.2.1:
-    resolution: {integrity: sha512-4j5uBaTnsYAV5ebkidvxiLUYOwjQ+JSFljeqfTxCrH9bDmlCQaOJFS84oDJ2rAXZq2yskmk3ORfoP9DCwqFNig==}
-    engines: {node: '>= 0.4.0'}
-    dependencies:
-      fast-deep-equal: 2.0.1
+  /fast-json-patch@3.1.1:
+    resolution: {integrity: sha512-vf6IHUX2SBcA+5/+4883dsIjpBTqmfBjmYiWK1savxQmFk4JfBMLa7ynTYOs1Rolp/T1betJxHiGD3g1Mn8lUQ==}
     dev: true
 
   /fast-json-stable-stringify@2.1.0:
@@ -7304,8 +7565,8 @@ packages:
     resolution: {integrity: sha512-GRnmB5gPyJpAhTQdSZTSp9uaPSvl09KoYcMQtsB9rQoOmzs9dH6ffeccH+Z+cv6P68Hu5bC6JjRh4Ah/mHSNRw==}
     dev: false
 
-  /follow-redirects@1.15.3:
-    resolution: {integrity: sha512-1VzOtuEM8pC9SFU1E+8KfTjZyMztRsgEfwQl44z8A25uy13jSzTj6dyK2Df52iV0vgHCfBwLhDWevLn95w5v6Q==}
+  /follow-redirects@1.15.5:
+    resolution: {integrity: sha512-vSFWUON1B+yAw1VN4xMfxgn5fTUiaOzAJCKBwIIgT/+7CuGy9+r+5gITvP62j3RmaD5Ph65UaERdOSRGUzZtgw==}
     engines: {node: '>=4.0'}
     peerDependencies:
       debug: '*'
@@ -8557,7 +8818,7 @@ packages:
       chai-as-promised: 7.1.1(chai@4.3.10)
       chalk: 2.4.2
       commander: 2.20.3
-      fast-json-patch: 2.2.1
+      fast-json-patch: 3.1.1
       glob: 7.2.3
       iterare: 1.2.1
       jaeger-client: 3.19.0
@@ -8578,7 +8839,7 @@ packages:
     resolution: {integrity: sha512-LMIgiIrhigmPrs03JHpxUh2yISK3vLFPkAodPeo0+BuF7wA2FoQbkEg1u8gBYBThncu7e1oEDUfIXVuTqLRUjw==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
     dependencies:
-      chalk: 4.1.0
+      chalk: 4.1.2
       diff-sequences: 29.6.3
       jest-get-type: 29.6.3
       pretty-format: 29.7.0
@@ -9904,7 +10165,7 @@ packages:
       npmlog: 6.0.2
       rimraf: 3.0.2
       semver: 7.5.4
-      tar: 6.1.11
+      tar: 6.2.0
       which: 2.0.2
     transitivePeerDependencies:
       - bluebird
@@ -10142,8 +10403,8 @@ packages:
       '@yarnpkg/lockfile': 1.1.0
       '@yarnpkg/parsers': 3.0.0-rc.46
       '@zkochan/js-yaml': 0.0.6
-      axios: 1.6.0
-      chalk: 4.1.0
+      axios: 1.6.7
+      chalk: 4.1.2
       cli-cursor: 3.1.0
       cli-spinners: 2.6.1
       cliui: 8.0.1
@@ -10629,7 +10890,7 @@ packages:
       read-package-json-fast: 3.0.2
       sigstore: 1.9.0
       ssri: 10.0.5
-      tar: 6.1.11
+      tar: 6.2.0
     transitivePeerDependencies:
       - bluebird
       - supports-color
@@ -12532,7 +12793,6 @@ packages:
       typescript: 5.2.2
       v8-compile-cache-lib: 3.0.1
       yn: 3.1.1
-    dev: true
 
   /tsconfig-paths@3.14.2:
     resolution: {integrity: sha512-o/9iXgCYc5L/JxCHPe3Hvh8Q/2xm5Z+p18PESBU6Ff33695QnCHBEjcytY2q19ua7Mbl/DavtBOLq+oG0RCL+g==}
