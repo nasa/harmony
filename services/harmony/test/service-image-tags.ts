@@ -580,4 +580,186 @@ describe('Service image endpoint', async function () {
       });
     });
   });
+
+  describe('Enable and disable service image tag update', async function () {
+    describe('when a user is not in the EDL service admin groups', async function () {
+
+      describe('when get the service image tag update state', async function () {
+        before(async function () {
+          hookRedirect('joe');
+          this.res = await request(this.frontend).get('/service-image-tag/state').use(auth({ username: 'joe' }));
+        });
+
+        after(function () {
+          delete this.res;
+        });
+
+        it('returns a status 200', async function () {
+          expect(this.res.status).to.equal(200);
+        });
+
+        it('returns the service image information', async function () {
+          expect(this.res.body).to.eql({
+            'enabled': true,
+          });
+        });
+      });
+
+      describe('when enable the service image tag update', async function () {
+        before(async function () {
+          hookRedirect('joe');
+          this.res = await request(this.frontend).put('/service-image-tag/enable').use(auth({ username: 'joe' }));
+        });
+
+        after(function () {
+          delete this.res;
+        });
+
+        it('rejects the user', async function () {
+          expect(this.res.status).to.equal(403);
+        });
+
+        it('returns a meaningful error message', async function () {
+          expect(this.res.text).to.equal('User joe is not in the admin EDL group');
+        });
+      });
+
+      describe('when disable the service image tag update', async function () {
+        before(async function () {
+          hookRedirect('joe');
+          this.res = await request(this.frontend).put('/service-image-tag/disable').use(auth({ username: 'joe' }));
+        });
+
+        after(function () {
+          delete this.res;
+        });
+
+        it('rejects the user', async function () {
+          expect(this.res.status).to.equal(403);
+        });
+
+        it('returns a meaningful error message', async function () {
+          expect(this.res.text).to.equal('User joe is not in the admin EDL group');
+        });
+      });
+
+    });
+
+    describe('when a user is in the EDL service admin groups', async function () {
+
+      describe('when get the service image tag update state', async function () {
+        before(async function () {
+          hookRedirect('adam');
+          this.res = await request(this.frontend).get('/service-image-tag/state').use(auth({ username: 'adam' }));
+        });
+
+        after(function () {
+          delete this.res;
+        });
+
+        it('returns a status 200', async function () {
+          expect(this.res.status).to.equal(200);
+        });
+
+        it('returns the service image information', async function () {
+          expect(this.res.body).to.eql({
+            'enabled': true,
+          });
+        });
+      });
+
+      describe('when disable the service image tag update', async function () {
+        before(async function () {
+          hookRedirect('adam');
+          this.res = await request(this.frontend).put('/service-image-tag/disable').use(auth({ username: 'adam' }));
+        });
+
+        after(function () {
+          delete this.res;
+        });
+
+        it('returns a status 200', async function () {
+          expect(this.res.status).to.equal(200);
+        });
+
+        it('returns enabled false', async function () {
+          expect(this.res.body).to.eql({
+            'enabled': false,
+          });
+        });
+
+        describe('when trying to deploy service when service deployment is disabled', async function () {
+          let execStub;
+          hookDescribeImage({
+            imageDigest: '',
+            lastUpdated: undefined,
+          });
+          before(async function () {
+            execStub = sinon.stub(serviceImageTags, 'asyncExec').callsFake(() => Promise.resolve({}));
+            this.res = await request(this.frontend).put('/service-image-tag/harmony-service-example').use(auth({ username: 'adam' })).send({ tag: 'foo' });
+          });
+
+          after(function () {
+            execStub.restore();
+            delete this.res;
+          });
+
+          it('returns a status 403', async function () {
+            expect(this.res.status).to.equal(403);
+          });
+
+          it('returns service deployment is disbabled error message', async function () {
+            expect(this.res.text).to.eql('Service deployment is disabled.');
+          });
+        });
+      });
+
+      describe('when enable the service image tag update', async function () {
+        before(async function () {
+          hookRedirect('adam');
+          this.res = await request(this.frontend).put('/service-image-tag/enable').use(auth({ username: 'adam' }));
+        });
+
+        after(function () {
+          delete this.res;
+        });
+
+        it('returns a status 200', async function () {
+          expect(this.res.status).to.equal(200);
+        });
+
+        it('returns enabled true', async function () {
+          expect(this.res.body).to.eql({
+            'enabled': true,
+          });
+        });
+
+        describe('when deploy service when service deployment is enabled', async function () {
+          let execStub;
+          hookDescribeImage({
+            imageDigest: '',
+            lastUpdated: undefined,
+          });
+          before(async function () {
+            execStub = sinon.stub(serviceImageTags, 'asyncExec').callsFake(() => Promise.resolve({}));
+            this.res = await request(this.frontend).put('/service-image-tag/harmony-service-example').use(auth({ username: 'adam' })).send({ tag: 'foo' });
+          });
+
+          after(function () {
+            execStub.restore();
+            delete this.res;
+          });
+
+          it('returns a status 202', async function () {
+            expect(this.res.status).to.equal(202);
+          });
+
+          it('returns the tag we sent', async function () {
+            expect(this.res.body).to.eql({ 'tag': 'foo' });
+          });
+        });
+      });
+    });
+
+  });
 });

@@ -28,7 +28,7 @@ import { setLogLevel } from '../frontends/configuration';
 import getVersions from '../frontends/versions';
 import serviceInvoker from '../backends/service-invoker';
 import HarmonyRequest, { addRequestContextToOperation } from '../models/harmony-request';
-import { getServiceImageTag, getServiceImageTags, updateServiceImageTag } from '../frontends/service-image-tags';
+import { getServiceImageTag, getServiceImageTags, updateServiceImageTag, getServiceImageTagState, enableServiceImageTag, disableServiceImageTag } from '../frontends/service-image-tags';
 import cmrCollectionReader = require('../middleware/cmr-collection-reader');
 import cmrUmmCollectionReader = require('../middleware/cmr-umm-collection-reader');
 import env from '../util/env';
@@ -287,6 +287,9 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
 
   // service images
   result.get('/service-image-tag', asyncHandler(getServiceImageTags));
+  result.get('/service-image-tag/state', jsonParser, asyncHandler(getServiceImageTagState));
+  result.put('/service-image-tag/enable', jsonParser, asyncHandler(enableServiceImageTag));
+  result.put('/service-image-tag/disable', jsonParser, asyncHandler(disableServiceImageTag));
   result.get('/service-image-tag/:service', asyncHandler(getServiceImageTag));
   result.put('/service-image-tag/:service', jsonParser, asyncHandler(updateServiceImageTag));
 
