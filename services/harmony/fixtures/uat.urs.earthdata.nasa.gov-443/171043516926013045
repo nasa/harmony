@@ -1,0 +1,28 @@
+POST /oauth/revoke
+accept: application/json
+authorization: Basic Zm9vOmZvbw==
+content-type: application/x-www-form-urlencoded
+host: uat.urs.earthdata.nasa.gov
+body: token=fake_access&token_type_hint=access_token
+
+HTTP/1.1 200 OK
+server: nginx/1.22.1
+date: Thu, 14 Mar 2024 16:52:49 GMT
+content-type: text/html; charset=utf-8
+transfer-encoding: chunked
+connection: close
+x-frame-options: SAMEORIGIN
+x-xss-protection: 1; mode=block
+x-content-type-options: nosniff
+x-download-options: noopen
+x-permitted-cross-domain-policies: none
+referrer-policy: strict-origin-when-cross-origin
+cache-control: no-store
+pragma: no-cache
+expires: Fri, 01 Jan 1990 00:00:00 GMT
+www-authenticate: Basic realm="Application"
+x-request-id: aaf7a1b8-01cf-4378-bcdc-1b26b742bf69
+x-runtime: 0.008507
+strict-transport-security: max-age=31536000
+
+HTTP Basic:
