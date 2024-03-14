@@ -582,7 +582,7 @@ describe('Service image endpoint', async function () {
   });
 
   describe('Enable and disable service image tag update', async function () {
-    describe('when a user is not in the EDL service admin groups', async function () {
+    describe('when a user is a regular user, not in the EDL service admin groups', async function () {
 
       describe('when get the service image tag update state', async function () {
         before(async function () {
@@ -640,6 +640,69 @@ describe('Service image endpoint', async function () {
 
         it('returns a meaningful error message', async function () {
           expect(this.res.text).to.equal('User joe is not in the admin EDL group');
+        });
+      });
+
+    });
+
+    describe('when a user is in deployers group, not in the EDL service admin groups', async function () {
+
+      describe('when get the service image tag update state', async function () {
+        before(async function () {
+          hookRedirect('buzz');
+          this.res = await request(this.frontend).get('/service-image-tag/state').use(auth({ username: 'buzz' }));
+        });
+
+        after(function () {
+          delete this.res;
+        });
+
+        it('returns a status 200', async function () {
+          expect(this.res.status).to.equal(200);
+        });
+
+        it('returns the service image information', async function () {
+          expect(this.res.body).to.eql({
+            'enabled': true,
+          });
+        });
+      });
+
+      describe('when enable the service image tag update', async function () {
+        before(async function () {
+          hookRedirect('buzz');
+          this.res = await request(this.frontend).put('/service-image-tag/enable').use(auth({ username: 'buzz' }));
+        });
+
+        after(function () {
+          delete this.res;
+        });
+
+        it('rejects the user', async function () {
+          expect(this.res.status).to.equal(403);
+        });
+
+        it('returns a meaningful error message', async function () {
+          expect(this.res.text).to.equal('User buzz is not in the admin EDL group');
+        });
+      });
+
+      describe('when disable the service image tag update', async function () {
+        before(async function () {
+          hookRedirect('buzz');
+          this.res = await request(this.frontend).put('/service-image-tag/disable').use(auth({ username: 'buzz' }));
+        });
+
+        after(function () {
+          delete this.res;
+        });
+
+        it('rejects the user', async function () {
+          expect(this.res.status).to.equal(403);
+        });
+
+        it('returns a meaningful error message', async function () {
+          expect(this.res.text).to.equal('User buzz is not in the admin EDL group');
         });
       });
 
@@ -704,8 +767,8 @@ describe('Service image endpoint', async function () {
             delete this.res;
           });
 
-          it('returns a status 403', async function () {
-            expect(this.res.status).to.equal(403);
+          it('returns a status 503', async function () {
+            expect(this.res.status).to.equal(503);
           });
 
           it('returns service deployment is disbabled error message', async function () {
