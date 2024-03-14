@@ -70,13 +70,13 @@ async function handleCodeValidation(oauth2: OAuthClient, req, res, _next): Promi
  * @param res - The client response
  * @param _next - The next function in the middleware chain
  */
-function handleLogout(oauth2: OAuthClient, req, res, _next): void {
+async function handleLogout(oauth2: OAuthClient, req, res, _next): Promise<void> {
   const { redirect } = req.query;
 
   const { token } = req.signedCookies;
   if (token) {
     const oauthToken = oauth2.accessToken.create(token);
-    oauthToken.revokeAll();
+    await oauthToken.revokeAll();
     res.clearCookie('token', cookieOptions);
   }
   res.redirect(307, redirect || '/');
