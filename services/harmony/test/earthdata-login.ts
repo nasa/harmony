@@ -293,7 +293,7 @@ describe('Earthdata Login', function () {
         refresh_token: 'fake_refresh',
         endpoint: '/api/users/jdoe',
         expires_in: 3600,
-        expires_at: '2024-03-15T19:24:40.227Z'
+        expires_at: '2080-03-15T19:24:40.227Z'
       });
       const proto = Object.getPrototypeOf(oauthToken);
       this.revokeStub = stub(proto, 'revokeAll').returns(Promise.resolve());
