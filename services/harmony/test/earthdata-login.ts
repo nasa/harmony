@@ -284,6 +284,7 @@ describe('Earthdata Login', function () {
   describe('Logout request', function () {
     before(function () {
       // Stub revokeAll to avoid calling EDL
+      // Typically use EDL fixtures, but in this case the fixture generation was problematic
       // https://stackoverflow.com/a/44481134
       const oauth2 = simpleOAuth2.create(oauthOptions);
       const oauthToken = oauth2.accessToken.create({
