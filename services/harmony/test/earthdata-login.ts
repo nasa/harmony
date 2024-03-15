@@ -298,6 +298,7 @@ describe('Earthdata Login', function () {
       const proto = Object.getPrototypeOf(oauthToken);
       this.revokeStub = stub(proto, 'revokeAll').returns(Promise.resolve());
     });
+
     after(function () {
       this.revokeStub.restore();
     })
@@ -305,6 +306,10 @@ describe('Earthdata Login', function () {
     beforeEach(function () {
       this.req = request(this.frontend).get('/oauth2/logout');
     });
+
+    afterEach(function () {
+      this.revokeStub.resetHistory();
+    })
 
     describe('When the client supplies a token', function () {
       describe('and a "redirect" parameter has been set', function () {
@@ -320,6 +325,10 @@ describe('Earthdata Login', function () {
           expect(this.res.statusCode).to.equal(307);
           expect(this.res.headers.location).to.equal('/tohere');
         });
+
+        it('makes a call to revoke the access and refresh tokens', function () {
+          expect(this.revokeStub.called);
+        })
       });
 
       describe('and no "redirect" parameter has been set', function () {
@@ -335,6 +344,10 @@ describe('Earthdata Login', function () {
           expect(this.res.statusCode).to.equal(307);
           expect(this.res.headers.location).to.equal('/');
         });
+
+        it('makes a call to revoke the access and refresh tokens', function () {
+          expect(this.revokeStub.called);
+        })
       });
     });
 
@@ -348,6 +361,10 @@ describe('Earthdata Login', function () {
           expect(this.res.statusCode).to.equal(307);
           expect(this.res.headers.location).to.equal('/tohere');
         });
+
+        it('makes a call to revoke the access and refresh tokens', function () {
+          expect(this.revokeStub.called);
+        })
       });
 
       describe('and no "redirect" parameter has been set', function () {
@@ -359,6 +376,10 @@ describe('Earthdata Login', function () {
           expect(this.res.statusCode).to.equal(307);
           expect(this.res.headers.location).to.equal('/');
         });
+
+        it('makes a call to revoke the access and refresh tokens', function () {
+          expect(this.revokeStub.called);
+        })
       });
     });
   });
