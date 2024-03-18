@@ -402,7 +402,7 @@ export async function updateServiceImageTag(
  * @param value - The boolean value to be set for the enabled field
  */
 async function setEnabled( value: boolean ): Promise<void> {
-  const sql = `update service_deployment set enabled=${value}, updated_at=CURRENT_TIMESTAMP`;
+  const sql = `update service_deployment set enabled=${value}`;
   await db.transaction(async (tx) => {
     await tx.raw(sql);
   });
@@ -426,10 +426,9 @@ export async function getServiceImageTagState(
  * Set the enabled flag of service image tag update endpoint to the given value
  * @param req - The request object
  * @param res  - The response object
- * @param enabled  - The boolean value of enabled
  */
-export async function setServiceImageTagEnabled(
-  req: HarmonyRequest, res: Response, enabled: boolean,
+export async function setServiceImageTagState(
+  req: HarmonyRequest, res: Response,
 ): Promise<void> {
   const validations = [
     validateUserIsInAdminGroup,
@@ -439,31 +438,9 @@ export async function setServiceImageTagEnabled(
     if (! await validation(req, res)) return;
   }
 
+  const { enabled } = req.body;
+
   await setEnabled(enabled);
   res.statusCode = 200;
   res.send({ 'enabled': enabled });
-}
-
-/**
- * Enable the service image tag update endpoint
- * @param req - The request object
- * @param res  - The response object
- * @param _next  - The next middleware in the chain
- */
-export async function enableServiceImageTag(
-  req: HarmonyRequest, res: Response, _next: NextFunction,
-): Promise<void> {
-  await setServiceImageTagEnabled(req, res, true);
-}
-
-/**
- * Disable the service image tag update endpoint
- * @param req - The request object
- * @param res  - The response object
- * @param _next  - The next middleware in the chain
- */
-export async function disableServiceImageTag(
-  req: HarmonyRequest, res: Response, _next: NextFunction,
-): Promise<void> {
-  await setServiceImageTagEnabled(req, res, false);
 }
