@@ -124,6 +124,13 @@ CREATE TABLE `user_work` (
   UNIQUE(job_id, service_id)
 );
 
+CREATE TABLE `service_deployment` (
+  `enabled` boolean,
+  `updatedAt` datetime not null
+);
+
+INSERT INTO service_deployment (enabled, updatedAt) VALUES (true, CURRENT_TIMESTAMP);
+
 -- Note this is not a full list of the indices, we rely on the database migrations to create
 -- all the indexes in Postgres
 CREATE INDEX jobs_jobID_idx ON jobs(jobID);

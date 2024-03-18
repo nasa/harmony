@@ -1,10 +1,11 @@
 import { Response, NextFunction } from 'express';
 import HarmonyRequest from '../models/harmony-request';
 import { ECR } from '../util/container-registry';
-import { getEdlGroupInformation } from '../util/edl-api';
+import { getEdlGroupInformation, validateUserIsInAdminGroup } from '../util/edl-api';
 import { exec } from 'child_process';
 import * as path from 'path';
 import util from 'util';
+import db from '../util/db';
 import env from '../util/env';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -122,6 +123,44 @@ async function validateTaggedImageIsReachable(
 }
 
 /**
+ * Returns value of the enabled field of service_deployment table.
+ * @param tx - The database transaction
+ * @returns The boolean value of the enabled field
+ */
+async function getEnabled(): Promise<boolean> {
+  let enabled = true;
+  let results = null;
+  await db.transaction(async (tx) => {
+    results = await tx('service_deployment').select('enabled');
+  });
+
+  if (results[0].enabled === 0 || results[0].enabled === false) {
+    enabled = false;
+  }
+  return enabled;
+}
+
+/**
+ * Validate that the service deployment is enabled
+ * @param res - The response object - will be used to send an error if the validation fails
+ * @param url - The URL of the image including tag
+ * @returns A Promise containing `true` if the tagged image is reachable, `false` otherwise
+ */
+async function validateServiceDeploymentIsEnabled(
+  req: HarmonyRequest,
+  res: Response,
+): Promise<boolean> {
+  const enabled = await getEnabled();
+  if (!enabled) {
+    res.statusCode = 503;
+    res.send('Service deployment is disabled.');
+    return false;
+  }
+
+  return enabled;
+}
+
+/**
  * Returns an error message if the service does not exist
  * @param service - the canonical name of the service
  */
@@ -158,7 +197,7 @@ async function validateServiceExists(
  * Validate that the user is in the deployers or the admin group
  * @param req - The request object
  * @param res  - The response object - will be used to send an error if the validation fails
- * @returns A Promise containing `true` if the user in in either group, `false` otherwise
+ * @returns A Promise containing `true` if the user is in either group, `false` otherwise
  */
 async function validateUserIsInDeployerOrAdminGroup(
   req: HarmonyRequest, res: Response,
@@ -318,6 +357,7 @@ export async function updateServiceImageTag(
 
   const validations = [
     validateUserIsInDeployerOrAdminGroup,
+    validateServiceDeploymentIsEnabled,
     validateTagPresent,
     validateServiceExists,
     validateTag,
@@ -334,4 +374,52 @@ export async function updateServiceImageTag(
   module.exports.execDeployScript(req, service, tag);
   res.statusCode = 202;
   res.send({ 'tag': tag });
+}
+
+/**
+ * Set the enabled field in service_deployment table to the given vale.
+ * @param value - The boolean value to be set for the enabled field
+ */
+async function setEnabled( value: boolean ): Promise<void> {
+  const sql = `update service_deployment set enabled=${value}`;
+  await db.transaction(async (tx) => {
+    await tx.raw(sql);
+  });
+}
+
+/**
+ * Get the current enable/disable state of service image tag update endpoint
+ * @param req - The request object
+ * @param res  - The response object
+ * @param _next  - The next middleware in the chain
+ */
+export async function getServiceImageTagState(
+  req: HarmonyRequest, res: Response, _next: NextFunction,
+): Promise<void> {
+  const enabled = await getEnabled();
+  res.statusCode = 200;
+  res.send({ 'enabled': enabled });
+}
+
+/**
+ * Set the enabled flag of service image tag update endpoint to the given value
+ * @param req - The request object
+ * @param res  - The response object
+ */
+export async function setServiceImageTagState(
+  req: HarmonyRequest, res: Response,
+): Promise<void> {
+  const validations = [
+    validateUserIsInAdminGroup,
+  ];
+
+  for (const validation of validations) {
+    if (! await validation(req, res)) return;
+  }
+
+  const { enabled } = req.body;
+
+  await setEnabled(enabled);
+  res.statusCode = 200;
+  res.send({ 'enabled': enabled });
 }
