@@ -14,7 +14,9 @@
     "lint": "eslint --ext .ts .",
     "prebuild": "./bin/prebuild",
     "prebuild-m1": "./bin/prebuild",
+    "bld": "tsc -p ./tsconfig.build.json",
     "build": "tsc && docker build -f Dockerfile.mac --tag harmonyservices/work-updater:${VERSION:-latest} .",
+    "docker-build": "cd ../..; docker build . --target service --tag harmonyservices/work-updater:${VERSION:-latest} --build-arg PROJECT=work-updater --file=Dockerfile.turbo",
     "build-m1": "tsc && docker build -f Dockerfile.mac --platform linux/amd64 --tag harmonyservices/work-updater:${VERSION:-latest} .",
     "push-image": "./bin/push-image ${VERSION:-latest}",
     "publish": "docker push harmonyservices/work-updater:${VERSION:-latest}",
@@ -60,7 +62,8 @@
     "tweetnacl-util": "^0.15.1",
     "uuid": "^8.3.2",
     "winston": "^3.10.0",
-    "xstate": "^4.31.0"
+    "xstate": "^4.31.0",
+    "@types/geojson": "^7946.0.10"
   },
   "devDependencies": {
     "@types/chai": "^4.2.22",

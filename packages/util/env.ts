@@ -7,8 +7,6 @@ import * as winston from 'winston';
 import { IsInt, IsNotEmpty, IsNumber, IsUrl, Matches, Max, Min, ValidateIf, ValidationError, validateSync } from 'class-validator';
 import { isBoolean, isFloat, isInteger, parseBoolean } from './string';
 
-console.log('OKER');
-
 const logger = winston.createLogger({
   transports: [
     new winston.transports.Console(),

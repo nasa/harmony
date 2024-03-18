@@ -14,6 +14,8 @@
     "lint": "eslint --ext .ts .",
     "prebuild": "./bin/prebuild",
     "prebuild-m1": "./bin/prebuild",
+    "bld": "tsc -p ./tsconfig.build.json",
+    "docker-build": "cd ../..; docker build . --target service --tag harmonyservices/work-scheduler:${VERSION:-latest} --build-arg PROJECT=work-scheduler --file=Dockerfile.turbo",
     "build": "tsc && docker build -f Dockerfile.mac --tag harmonyservices/work-scheduler:${VERSION:-latest} .",
     "build-m1": "tsc && docker build -f Dockerfile.mac --platform linux/amd64 --tag harmonyservices/work-scheduler:${VERSION:-latest} .",
     "push-image": "./bin/push-image ${VERSION:-latest}",

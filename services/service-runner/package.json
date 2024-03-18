@@ -15,6 +15,7 @@
     "prebuild": "./bin/prebuild",
     "prebuild-m1": "./bin/prebuild",
     "bld": "tsc -p ./tsconfig.build.json",
+    "docker-build": "cd ../..; docker build . --target service --tag harmonyservices/service-runner:${VERSION:-latest} --build-arg PROJECT=service-runner --file=Dockerfile.turbo",
     "build": "tsc -p ./tsconfig.build.json  && docker build --tag harmonyservices/service-runner:${VERSION:-latest} .",
     "build-m1": "tsc -p ./tsconfig.build.json && docker build --platform linux/amd64 --tag harmonyservices/service-runner:${VERSION:-latest} .",
     "push-image": "./bin/push-image ${VERSION:-latest}",
@@ -48,6 +49,7 @@
     "lodash": "^4.17.21",
     "lodash.camelcase": "^4.3.0",
     "node-fetch": "^3.2.10",
+    "openid-client": "5.6.5",
     "python-shell": "^3.0.1",
     "tmp": "^0.2.1",
     "winston": "^3.10.0"

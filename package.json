@@ -16,7 +16,8 @@
     "watch-debug": "cd services/harmony && TS_NODE_TRANSPILE_ONLY=true nodemon --inspect=5858 -e ts,tsx,html --exec node -r tsconfig-paths/register -r ts-node/register app/server.ts",
     "build": "lerna exec --scope=harmony -- VERSION=${VERSION:-latest} npm run build",
     "build-sequential": "lerna exec --ignore harmony --concurrency 1 -- VERSION=${VERSION:-latest} npm run build",
-    "build-all": "lerna exec --ignore harmony -- VERSION=${VERSION:-latest} npm run build",
+    "build-all": "pnpm run -r docker-build",
+    "build-all-sequential": "pnpm run -r --workspace-concurrency 1 docker-build",
     "build-all-m1": "lerna exec --ignore harmony --concurrency 1 -- VERSION=${VERSION:-latest} npm run build-m1",
     "push-image-all": "lerna exec --ignore harmony --ignore @harmony/util --concurrency 1 -- ./bin/push-image ${VERSION:-latest}",
     "build-notebooks-image": "docker build --platform linux/amd64 -t harmonyservices/notebooks:${VERSION:-latest} -f Dockerfile-notebooks .",
@@ -37,7 +38,10 @@
   },
   "author": "NASA EOSDIS Harmony team",
   "license": "Apache-2.0",
-  "dependencies": {},
+  "dependencies": {
+    "pg": "^8.7.3",
+    "pg-native": "^3.0.1"
+  },
   "devDependencies": {
     "eslint": "^8.48.0",
     "eslint-config-airbnb-base": "^15.0.0",
