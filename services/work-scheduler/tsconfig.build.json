@@ -1,9 +1,13 @@
 {
-  "compilerOptions": {
-    "outDir": "built"
-  },
   "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "allowJs": false,
+    "typeRoots": [
+      "./node_modules/@types",
+      "./app/stac"
+    ],
+  },
   "include": [
-    "./app"
+    "./app/**/*"
   ]
 }

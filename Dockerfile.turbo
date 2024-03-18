@@ -55,9 +55,9 @@ ARG PORT=5000
 RUN mkdir -p /tmp/metadata
 WORKDIR "/$PROJECT/services/$PROJECT"
 COPY --from=builder /app/ "/$PROJECT/"
-# This is hacky, but it lets use use one target for all the services
+# This is hacky, but it lets us use one target for all the services
 # including harmony, without having the db directory in all the service images
-RUN if [ "$PROJECT" != "harmony" ]; then rm -rf "/$PROJECT/db"; fi
+RUN if [ "$PROJECT" != "harmony" ]; then rm -rf $PROJECT/db; else cp -rf /$PROJECT/db/* db; fi
 RUN mkdir -p "/$PROJECT/bin"
 COPY --from=pruner /src/bin/start-harmony-in-container "/$PROJECT/bin"
 EXPOSE $PORT
