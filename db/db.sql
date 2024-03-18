@@ -126,10 +126,10 @@ CREATE TABLE `user_work` (
 
 CREATE TABLE `service_deployment` (
   `enabled` boolean,
-  `updated_at` datetime not null
+  `updatedAt` datetime not null
 );
 
-INSERT INTO service_deployment (enabled, updated_at) VALUES (true, CURRENT_TIMESTAMP);
+INSERT INTO service_deployment (enabled, updatedAt) VALUES (true, CURRENT_TIMESTAMP);
 
 -- Note this is not a full list of the indices, we rely on the database migrations to create
 -- all the indexes in Postgres

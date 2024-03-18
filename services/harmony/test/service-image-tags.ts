@@ -608,7 +608,7 @@ describe('Service image endpoint', async function () {
       describe('when enable the service image tag update', async function () {
         before(async function () {
           hookRedirect('joe');
-          this.res = await request(this.frontend).put('/service-image-tag/enable').use(auth({ username: 'joe' }));
+          this.res = await request(this.frontend).put('/service-image-tag/state').use(auth({ username: 'joe' })).send({ enabled: true });
         });
 
         after(function () {
@@ -627,7 +627,7 @@ describe('Service image endpoint', async function () {
       describe('when disable the service image tag update', async function () {
         before(async function () {
           hookRedirect('joe');
-          this.res = await request(this.frontend).put('/service-image-tag/disable').use(auth({ username: 'joe' }));
+          this.res = await request(this.frontend).put('/service-image-tag/state').use(auth({ username: 'joe' })).send({ enabled: false });
         });
 
         after(function () {
@@ -671,7 +671,7 @@ describe('Service image endpoint', async function () {
       describe('when enable the service image tag update', async function () {
         before(async function () {
           hookRedirect('buzz');
-          this.res = await request(this.frontend).put('/service-image-tag/enable').use(auth({ username: 'buzz' }));
+          this.res = await request(this.frontend).put('/service-image-tag/state').use(auth({ username: 'buzz' })).send({ enabled: true });
         });
 
         after(function () {
@@ -690,7 +690,7 @@ describe('Service image endpoint', async function () {
       describe('when disable the service image tag update', async function () {
         before(async function () {
           hookRedirect('buzz');
-          this.res = await request(this.frontend).put('/service-image-tag/disable').use(auth({ username: 'buzz' }));
+          this.res = await request(this.frontend).put('/service-image-tag/state').use(auth({ username: 'buzz' })).send({ enabled: false });
         });
 
         after(function () {
@@ -734,7 +734,7 @@ describe('Service image endpoint', async function () {
       describe('when disable the service image tag update', async function () {
         before(async function () {
           hookRedirect('adam');
-          this.res = await request(this.frontend).put('/service-image-tag/disable').use(auth({ username: 'adam' }));
+          this.res = await request(this.frontend).put('/service-image-tag/state').use(auth({ username: 'adam' })).send({ enabled: false });
         });
 
         after(function () {
@@ -780,7 +780,7 @@ describe('Service image endpoint', async function () {
       describe('when enable the service image tag update', async function () {
         before(async function () {
           hookRedirect('adam');
-          this.res = await request(this.frontend).put('/service-image-tag/enable').use(auth({ username: 'adam' }));
+          this.res = await request(this.frontend).put('/service-image-tag/state').use(auth({ username: 'adam' })).send({ enabled: true });
         });
 
         after(function () {
