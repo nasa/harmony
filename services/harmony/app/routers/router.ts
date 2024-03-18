@@ -287,7 +287,7 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
 
   // service images
   result.get('/service-image-tag', asyncHandler(getServiceImageTags));
-  result.get('/service-image-tag/state', jsonParser, asyncHandler(getServiceImageTagState));
+  result.get('/service-image-tag/state', asyncHandler(getServiceImageTagState));
   result.put('/service-image-tag/state', jsonParser, asyncHandler(setServiceImageTagState));
   result.get('/service-image-tag/:service', asyncHandler(getServiceImageTag));
   result.put('/service-image-tag/:service', jsonParser, asyncHandler(updateServiceImageTag));
