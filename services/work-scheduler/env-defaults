@@ -16,4 +16,4 @@ SERVICE_QUEUE_BATCH_SIZE_COEFFICIENT=0.25
 WORK_ITEM_SCHEDULER_BATCH_SIZE=50
 # Maximum number of work items allowed on the work item update queue before halting scheduling
 # Set the value to -1 to always schedule work
-MAX_WORK_ITEMS_ON_UPDATE_QUEUE=3000
+MAX_WORK_ITEMS_ON_UPDATE_QUEUE=1200
