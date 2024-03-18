@@ -22,7 +22,9 @@ describe('Scheduler Worker', async function () {
     let getSchedulerQueueStub: SinonStub;
     let getQueueUrlForServiceStub: SinonStub;
     let getQueueForUrlStub: SinonStub;
+    let getWorkItemUpdateQueueStub: SinonStub;
     const schedulerQueue = new MemoryQueue();
+    const workItemUpdateQueue = new MemoryQueue();
     let serviceQueues;
 
     before(function () {
@@ -34,6 +36,9 @@ describe('Scheduler Worker', async function () {
       });
       getSchedulerQueueStub = sinon.stub(queueFactory, 'getWorkSchedulerQueue').callsFake(function () {
         return schedulerQueue;
+      });
+      getWorkItemUpdateQueueStub = sinon.stub(queueFactory, 'getQueueForType').callsFake(function () {
+        return workItemUpdateQueue;
       });
       getQueueUrlForServiceStub = sinon.stub(queueFactory, 'getQueueUrlForService').callsFake(function (serviceID: string) { return serviceID; });
       getQueueForUrlStub = sinon.stub(queueFactory, 'getQueueForUrl').callsFake(function (url: string) {
@@ -52,6 +57,7 @@ describe('Scheduler Worker', async function () {
       getSchedulerQueueStub.restore();
       getQueueForUrlStub.restore();
       getQueueUrlForServiceStub.restore();
+      getWorkItemUpdateQueueStub.restore();
     });
 
     describe('when there is no work on the scheduler queue', async function () {

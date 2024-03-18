@@ -4,10 +4,11 @@ import env from '../util/env';
 import logger from '../../../harmony/app/util/log';
 import { logAsyncExecutionTime } from '../../../harmony/app/util/log-execution';
 import { Logger } from 'winston';
-import { getQueueUrlForService, getQueueForUrl, getWorkSchedulerQueue } from '../../../harmony/app/util/queue/queue-factory';
+import { getQueueUrlForService, getQueueForUrl, getWorkSchedulerQueue, getQueueForType } from '../../../harmony/app/util/queue/queue-factory';
 import { getWorkItemsFromDatabase } from '../../../harmony/app/backends/workflow-orchestration/work-item-polling';
 import { getPodsCountForPodName, getPodsCountForService } from '../util/k8s';
-import { Queue, ReceivedMessage } from '../../../harmony/app/util/queue/queue';
+import { Queue, ReceivedMessage, WorkItemQueueType } from '../../../harmony/app/util/queue/queue';
+import sleep from '../../../harmony/app/util/sleep';
 
 const kc = new k8s.KubeConfig();
 kc.loadFromDefault();
@@ -117,6 +118,16 @@ export async function processSchedulerQueue(reqLogger: Logger): Promise<void> {
   const processedServiceIDs: string[] = [];
 
   reqLogger.debug(`Found ${queueItems.length} items in the scheduler queue`);
+
+  if (env.maxWorkItemsOnUpdateQueue !== -1) {
+    const smallUpdateQueue = getQueueForType(WorkItemQueueType.SMALL_ITEM_UPDATE);
+    const updateQueueCount = await smallUpdateQueue.getApproximateNumberOfMessages();
+    if (updateQueueCount > env.maxWorkItemsOnUpdateQueue) {
+      logger.warn(`Work item update queue is too large with ${updateQueueCount} items, will not schedule more work`);
+      await sleep(3000);
+      return;
+    }
+  }
   for (const queueItem of queueItems) {
     const serviceID = queueItem.body;
     if (!processedServiceIDs.includes(serviceID)) {
