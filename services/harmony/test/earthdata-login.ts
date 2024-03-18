@@ -10,7 +10,7 @@ import { itRespondsWithError } from './helpers/errors';
 import StubService from './helpers/stub-service';
 import { wmsRequest } from './helpers/wms';
 import simpleOAuth2 from 'simple-oauth2';
-import { oauthOptions } from 'app/middleware/earthdata-login-oauth-authorizer';
+import { oauthOptions } from '../app/middleware/earthdata-login-oauth-authorizer';
 
 const blankToken = /^token=s%3A\./; // The start of a signed empty token cookie
 const nonBlankToken = /^token=s%3A[^.]/; // The start of a signed non-empty token cookie
@@ -293,7 +293,7 @@ describe('Earthdata Login', function () {
         refresh_token: 'fake_refresh',
         endpoint: '/api/users/jdoe',
         expires_in: 3600,
-        expires_at: '2080-03-15T19:24:40.227Z'
+        expires_at: '2080-03-15T19:24:40.227Z',
       });
       const proto = Object.getPrototypeOf(oauthToken);
       this.revokeStub = stub(proto, 'revokeAll').returns(Promise.resolve());
@@ -301,7 +301,7 @@ describe('Earthdata Login', function () {
 
     after(function () {
       this.revokeStub.restore();
-    })
+    });
 
     beforeEach(function () {
       this.req = request(this.frontend).get('/oauth2/logout');
@@ -309,7 +309,7 @@ describe('Earthdata Login', function () {
 
     afterEach(function () {
       this.revokeStub.resetHistory();
-    })
+    });
 
     describe('When the client supplies a token', function () {
       describe('and a "redirect" parameter has been set', function () {
@@ -328,7 +328,7 @@ describe('Earthdata Login', function () {
 
         it('makes a call to revoke the access and refresh tokens', function () {
           expect(this.revokeStub.called);
-        })
+        });
       });
 
       describe('and no "redirect" parameter has been set', function () {
@@ -347,7 +347,7 @@ describe('Earthdata Login', function () {
 
         it('makes a call to revoke the access and refresh tokens', function () {
           expect(this.revokeStub.called);
-        })
+        });
       });
     });
 
@@ -364,7 +364,7 @@ describe('Earthdata Login', function () {
 
         it('makes a call to revoke the access and refresh tokens', function () {
           expect(this.revokeStub.called);
-        })
+        });
       });
 
       describe('and no "redirect" parameter has been set', function () {
@@ -379,7 +379,7 @@ describe('Earthdata Login', function () {
 
         it('makes a call to revoke the access and refresh tokens', function () {
           expect(this.revokeStub.called);
-        })
+        });
       });
     });
   });
