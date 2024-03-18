@@ -101,7 +101,7 @@ export function calculateNumItemsToQueue(
  * Read the scheduler queue and process any items in it
  *
  * @param reqLogger - a logger instance
- * @param schedulerDisabledDelay - how long to sleep when the scheduler is disabled because
+ * @param schedulerDisabledDelay - number of ms to sleep when the scheduler is disabled because
  * there are too many items on the work item update queue. Override to a small value in tests.
  * @returns A promise that resolves when the scheduler queue is empty
  * @throws An error if there is no queue URL for a service ID
