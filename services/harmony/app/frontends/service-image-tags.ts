@@ -1,7 +1,7 @@
 import { Response, NextFunction } from 'express';
 import HarmonyRequest from '../models/harmony-request';
 import { ECR } from '../util/container-registry';
-import { getEdlGroupInformation } from '../util/edl-api';
+import { getEdlGroupInformation, validateUserIsInAdminGroup } from '../util/edl-api';
 import { exec } from 'child_process';
 import * as path from 'path';
 import util from 'util';
@@ -209,27 +209,6 @@ async function validateUserIsInDeployerOrAdminGroup(
   if (!isServiceDeployer && !isAdmin) {
     res.statusCode = 403;
     res.send(`User ${req.user} is not in the service deployers or admin EDL groups`);
-    return false;
-  }
-  return true;
-}
-
-/**
- * Validate that the user is in the admin group
- * @param req - The request object
- * @param res  - The response object - will be used to send an error if the validation fails
- * @returns A Promise containing `true` if the user is in admin group, `false` otherwise
- */
-async function validateUserIsInAdminGroup(
-  req: HarmonyRequest, res: Response,
-): Promise<boolean> {
-  const { isAdmin } = await getEdlGroupInformation(
-    req.user, req.context.logger,
-  );
-
-  if (!isAdmin) {
-    res.statusCode = 403;
-    res.send(`User ${req.user} is not in the admin EDL group`);
     return false;
   }
   return true;
