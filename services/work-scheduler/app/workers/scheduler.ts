@@ -101,11 +101,15 @@ export function calculateNumItemsToQueue(
  * Read the scheduler queue and process any items in it
  *
  * @param reqLogger - a logger instance
+ * @param schedulerDisabledDelay - how long to sleep when the scheduler is disabled because
+ * there are too many items on the work item update queue. Override to a small value in tests.
  * @returns A promise that resolves when the scheduler queue is empty
  * @throws An error if there is no queue URL for a service ID
  * @throws An error if there is no queue for a queue URL
  **/
-export async function processSchedulerQueue(reqLogger: Logger): Promise<void> {
+export async function processSchedulerQueue(
+  reqLogger: Logger, schedulerDisabledDelay = 3000,
+): Promise<void> {
   reqLogger.debug('Processing scheduler queue');
   const startTime = new Date().getTime();
   let durationMs;
@@ -124,7 +128,7 @@ export async function processSchedulerQueue(reqLogger: Logger): Promise<void> {
     const updateQueueCount = await smallUpdateQueue.getApproximateNumberOfMessages();
     if (updateQueueCount > env.maxWorkItemsOnUpdateQueue) {
       logger.warn(`Work item update queue is too large with ${updateQueueCount} items, will not schedule more work`);
-      await sleep(3000);
+      await sleep(schedulerDisabledDelay);
       return;
     }
   }
