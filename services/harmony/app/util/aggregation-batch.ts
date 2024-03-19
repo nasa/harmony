@@ -12,7 +12,7 @@ import { objectStoreForProtocol } from './object-store';
 import axios from 'axios';
 import { getCatalogItemUrls, getCatalogLinks, readCatalogItems } from './stac';
 import WorkItemUpdate from '../models/work-item-update';
-import WorkflowStep, { decrementWorkItemCount, incrementWorkItemCount } from '../models/workflow-steps';
+import WorkflowStep from '../models/workflow-steps';
 import { WorkItemStatus } from '../models/work-item-interface';
 import WorkItem from '../models/work-item';
 import { incrementReadyCount } from '../models/user-work';
@@ -171,7 +171,7 @@ async function createStacCatalogForBatch(
  * Create a STAC catalog for a batch then create an aggregating work item to process it
  *
  * @param tx - the database transaction
- * @param workflowStep- the step in the workflow that needs batching
+ * @param workflowStep - the step in the workflow that needs batching
  * @param batch - the Batch to process
  * @param logger - the Logger for the request
  *
@@ -199,6 +199,8 @@ async function createCatalogAndWorkItemForBatch(
       stacCatalogLocation: catalogUrl,
       workflowStepIndex: workflowStep.stepIndex,
     });
+    workflowStep.workItemCount += 1;
+    await workflowStep.save(tx);
 
     await incrementReadyCount(tx, jobID, serviceID);
     await newWorkItem.save(tx);
@@ -208,8 +210,7 @@ async function createCatalogAndWorkItemForBatch(
 
     return true;
   } else {
-    logger.warn('Attempted to construct a work item for a batch, but there were no valid items in the batch. Decrementing the expected number of work items.');
-    await decrementWorkItemCount(tx, jobID, stepIndex);
+    logger.warn('Attempted to construct a work item for a batch, but there were no valid items in the batch.');
   }
   return false;
 }
@@ -238,7 +239,7 @@ export async function handleBatching(
   workItemStatus: WorkItemStatus,
   allWorkItemsForStepComplete: boolean)
   : Promise<boolean> {
-  const { jobID, serviceID, stepIndex } = workflowStep;
+  const { jobID, serviceID } = workflowStep;
   let { maxBatchInputs, maxBatchSizeInBytes } = workflowStep;
   let didCreateWorkItem = false;
   maxBatchInputs = maxBatchInputs || env.maxBatchInputs;
@@ -297,7 +298,10 @@ export async function handleBatching(
   const batchItems = await getByJobServiceBatch(tx, jobID, serviceID, null, true);
   let index = 0;
   let nextSortIndex: number;
+  // get the most recent batch so we can try to assign new items to it
   let currentBatch = await withHighestBatchIDForJobService(tx, jobID, serviceID);
+  // keep track of how big the batch is in terms of number of items and total size of the
+  // items in bytes
   let currentBatchSize = 0;
   let currentBatchCount = 0;
   if (currentBatch) {
@@ -305,7 +309,8 @@ export async function handleBatching(
     currentBatchSize = sum;
     currentBatchCount = count;
   }
-
+  // assign the new batch items to the most recent batch until it gets full. create a new
+  // batch if necessary - this becomes the most recent batch
   while (index < batchItems.length) {
     if (currentBatch) {
       // figure out what the next sort index in the batch should be
@@ -370,7 +375,6 @@ export async function handleBatching(
             currentBatch = newBatch;
             currentBatchCount = 0;
             currentBatchSize = 0;
-            await incrementWorkItemCount(tx, jobID, stepIndex);
           }
         } else {
           if (currentBatchSize + batchItem.itemSize > maxBatchSizeInBytes) {
@@ -397,7 +401,6 @@ export async function handleBatching(
           currentBatch = newBatch;
           currentBatchCount = 1;
           currentBatchSize = batchItem.itemSize;
-          await incrementWorkItemCount(tx, jobID, stepIndex);
           index += 1;
         }
       } else {

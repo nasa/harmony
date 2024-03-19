@@ -1,0 +1,33 @@
+#!/bin/bash -xe
+
+retry_command() {
+  set +e
+  local retries=$1
+  shift
+  local count=0
+
+  until "$@"; do
+    exit_code=$?
+    count=$((count + 1))
+
+    if [ $count -lt $retries ]; then
+      echo "Retrying command ($count/$retries)..."
+      # add additional debug info when the command is bin/bootstrap-harmony
+      if [[ "$@" == "bin/bootstrap-harmony" ]]; then
+        echo "Get extra debug info for command bin/bootstrap-harmony..."
+        kubectl cluster-info
+        kubectl -n harmony get pods
+        top -l 1 -s 0 | grep PhysMem
+        df -h
+      elif [[ "$@" == *"kubectl"* ]]; then
+        echo "kubectl command failed, restart colima."
+        colima stop
+        colima start --cpu 2 --memory 12 --with-kubernetes
+      fi
+      sleep 5
+    else
+      echo "Retry limit exceeded. Exiting..."
+      exit $exit_code
+    fi
+  done
+}

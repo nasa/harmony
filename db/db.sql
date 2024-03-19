@@ -73,9 +73,13 @@ CREATE TABLE `workflow_steps` (
   `workItemCount` integer not null,
   `hasAggregatedOutput` boolean not null default false,
   `isBatched` boolean not null default false,
+  `is_complete` boolean not null default false,
+  `is_sequential` boolean not null default false,
   `maxBatchInputs` integer,
   `maxBatchSizeInBytes` integer,
   `operation` text not null,
+  `completed_work_item_count` integer not null default 0,
+  `progress_weight` float not null default 1.0,
   `createdAt` datetime not null,
   `updatedAt` datetime not null,
   FOREIGN KEY(jobID) REFERENCES jobs(jobID),
@@ -119,6 +123,13 @@ CREATE TABLE `user_work` (
   FOREIGN KEY(job_id) REFERENCES jobs(jobID),
   UNIQUE(job_id, service_id)
 );
+
+CREATE TABLE `service_deployment` (
+  `enabled` boolean,
+  `updatedAt` datetime not null
+);
+
+INSERT INTO service_deployment (enabled, updatedAt) VALUES (true, CURRENT_TIMESTAMP);
 
 -- Note this is not a full list of the indices, we rely on the database migrations to create
 -- all the indexes in Postgres

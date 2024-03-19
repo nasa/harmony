@@ -84,6 +84,7 @@ else
         print "      reprojection: " REPROJECTION;
         print "    steps:";
         print "      - image: !Env ${QUERY_CMR_IMAGE}";
+        print "        is_sequential: true";
         print "      - image: !Env ${" SERVICE_NAME_UPPER "_IMAGE}";
     }
 }' config/services.yml > config/services.tmp.yml && mv config/services.tmp.yml config/services.yml
@@ -103,13 +104,13 @@ ${SERVICE_NAME_UPPER}_IMAGE=$ORGANIZATION/$SERVICE_NAME:latest
 ${SERVICE_NAME_UPPER}_REQUESTS_MEMORY=128Mi
 ${SERVICE_NAME_UPPER}_LIMITS_MEMORY=512Mi
 ${SERVICE_NAME_UPPER}_INVOCATION_ARGS='python -m $SERVICE_NAME'
-${SERVICE_NAME_UPPER}_SERVICE_QUEUE_URLS='["$ORGANIZATION/$SERVICE_NAME:latest,http://localstack:4566/queue/$SERVICE_NAME.fifo"]'
+${SERVICE_NAME_UPPER}_SERVICE_QUEUE_URLS='["$ORGANIZATION/$SERVICE_NAME:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/$SERVICE_NAME.fifo"]'
 
 EOF
 
   echo "Adding queue URL variable to packages/util env-defaults"
   cat <<-EOF >> packages/util/env-defaults
-${SERVICE_NAME_UPPER}_SERVICE_QUEUE_URLS='["$ORGANIZATION/$SERVICE_NAME:latest,http://localstack:4566/queue/$SERVICE_NAME.fifo"]'
+${SERVICE_NAME_UPPER}_SERVICE_QUEUE_URLS='["$ORGANIZATION/$SERVICE_NAME:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/$SERVICE_NAME.fifo"]'
 
 EOF
   echo "Configuring local .env file to deploy your service and add the collections to test"

@@ -13623,18 +13623,18 @@ https://cmr.uat.earthdata.nasa.gov:
         - application/netcdf # Incorrect mime-type, remove when no longer needed
         - application/x-netcdf4
 
-  - name: sds/swot-reproject
+  - name: sds/swath-projector
     data_operation_version: &#39;0.9.0&#39;
     type:
       &lt;&lt;: *default-turbo-config
       params:
         &lt;&lt;: *default-turbo-params
-        template: swot-reproject
-        image: !Env ${SWOT_REPR_IMAGE}
-        image_pull_policy: !Env ${SWOT_REPR_IMAGE_PULL_POLICY}
+        template: swath-projector
+        image: !Env ${SWATH_PROJECTOR_IMAGE}
+        image_pull_policy: !Env ${SWATH_PROJECTOR_IMAGE_PULL_POLICY}
         env:
           &lt;&lt;: *default-turbo-env
-          STAGING_PATH: public/sds/swot-reproject
+          STAGING_PATH: public/sds/swath-projector
     collections:
       - C1233860183-EEDTEST
       - C1233800302-EEDTEST
@@ -17803,7 +17803,7 @@ L 374.45 10.954061
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Access-Level-2-swath-regridded-data">Access Level 2 swath regridded data<a class="anchor-link" href="#Access-Level-2-swath-regridded-data">&#182;</a></h2><p>Moving outside of the <code>harmony/gdal</code> service, we will now request regridding from the <code>sds/swot-reproject</code> service using the <code>C1233860183-EEDTEST</code>, or Harmony L2 swath example, collection provided in NetCDF format.</p>
+<h2 id="Access-Level-2-swath-regridded-data">Access Level 2 swath regridded data<a class="anchor-link" href="#Access-Level-2-swath-regridded-data">&#182;</a></h2><p>Moving outside of the <code>harmony/gdal</code> service, we will now request regridding from the <code>sds/swath-projector</code> service using the <code>C1233860183-EEDTEST</code>, or Harmony L2 swath example, collection provided in NetCDF format.</p>
 <p>The Harmony API accepts several query parameters related to regridding and interpolation in addition to the reprojection parameters above:</p>
 <p><code>interpolation=&lt;String&gt;</code> - Both <code>near</code> and <code>bilinear</code> are valid options</p>
 <p><code>scaleSize=x,y</code> - 2 comma separated numbers as floats</p>

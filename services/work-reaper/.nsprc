@@ -1,7 +1,7 @@
 {
-  "1094183": {
+  "1096692": {
     "active": true,
-    "notes": "Ignored since there is no fix",
-    "expiry": "2023-12-01"
+    "notes": "Will fix in HARMONY-1724",
+    "expiry": "2024-08-01"
   }
 }

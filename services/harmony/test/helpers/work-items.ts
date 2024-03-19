@@ -103,7 +103,7 @@ export function hookWorkItemCreationEach(props: Partial<WorkItemRecord> = {}): v
  */
 export function hookWorkflowStepAndItemCreationEach(props: object = {}): void {
   const workItem = buildWorkItem(_.pick(props, ['jobID', 'serviceID', 'status', 'workflowStepIndex', 'scrollID', 'stacCatalogLocation']));
-  const workflowStep = buildWorkflowStep(_.pick(props, ['jobID', 'serviceID', 'stepIndex', 'workItemCount', 'operation']));
+  const workflowStep = buildWorkflowStep(_.pick(props, ['is_sequential', 'jobID', 'serviceID', 'stepIndex', 'workItemCount', 'operation']));
 
   workItem.jobID = workflowStep.jobID;
   workItem.serviceID = workflowStep.serviceID;
@@ -121,7 +121,7 @@ export function hookWorkflowStepAndItemCreationEach(props: object = {}): void {
  */
 export function hookWorkflowStepAndItemCreation(props: object = {}): void {
   const workItem = buildWorkItem(_.pick(props, ['jobID', 'serviceID', 'status', 'workflowStepIndex', 'scrollID', 'stacCatalogLocation']));
-  const workflowStep = buildWorkflowStep(_.pick(props, ['jobID', 'serviceID', 'stepIndex', 'workItemCount', 'operation']));
+  const workflowStep = buildWorkflowStep(_.pick(props, ['is_sequential', 'jobID', 'serviceID', 'stepIndex', 'workItemCount', 'operation']));
 
   workItem.jobID = workflowStep.jobID;
   workItem.serviceID = workflowStep.serviceID;

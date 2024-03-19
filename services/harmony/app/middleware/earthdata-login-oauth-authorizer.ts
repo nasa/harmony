@@ -179,7 +179,8 @@ export default function buildEdlAuthorizer(paths: Array<string | RegExp> = []): 
   return async function earthdataLoginAuthorizer(req: HarmonyRequest, res, next): Promise<void> {
     const oauth2 = simpleOAuth2.create(oauthOptions);
     const { token } = req.signedCookies;
-    const requiresAuth = paths.some((p) => req.path.match(p)) && !req.authorized;
+    const requiresAuth = paths.some((p) => req.path.match(p)) && !req.authorized
+      && req.method.toUpperCase() != 'PUT'; // we don't support PUT requests with the redirect
     let handler;
 
     try {

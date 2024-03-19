@@ -121,6 +121,24 @@ export async function readCatalogItems(catalogUrl: string): Promise<StacItem[]> 
 }
 
 /**
+ * Reads the content of the specified catalogs and returns an array of catalog items
+ * combined from all catalogs.
+ *
+ * @param catalogUrl - The URL of the catalog to be read. This URL is expected to point
+ * to an S3 resource and should be a string representing the S3 path to the catalog.
+ * @returns A Promise that resolves to an array of StacItem objects.
+ * @throws Exception If there is an error in accessing the S3 resource or in
+ *                   fetching the catalog items, the function may throw an exception.
+ */
+export async function readCatalogsItems(catalogUrls: string[]): Promise<StacItem[]> {
+  const promises = catalogUrls.map(catalogUrl => readCatalogItems(catalogUrl));
+  const itemsArrays = await Promise.all(promises);
+
+  const items = itemsArrays.flat();
+  return items;
+}
+
+/**
  * Return the links to the data items from a STAC catalog. Note that for most of our
  * services the data items are under item.assets.data, but for Giovanni the links are
  * under item.assets['Giovanni URL']. However to make it more general we return any link

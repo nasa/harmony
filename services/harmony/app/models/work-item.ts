@@ -9,7 +9,7 @@ import env from '../util/env';
 import { Job, JobStatus } from './job';
 import Record from './record';
 import WorkflowStep from './workflow-steps';
-import { WorkItemRecord, WorkItemStatus, getStacLocation, WorkItemQuery, COMPLETED_WORK_ITEM_STATUSES } from './work-item-interface';
+import { WorkItemRecord, WorkItemStatus, getStacLocation, WorkItemQuery } from './work-item-interface';
 import { eventEmitter } from '../events';
 import { getWorkSchedulerQueue } from '../../app/util/queue/queue-factory';
 
@@ -665,35 +665,6 @@ export async function maxSortIndexForJobService(
     .max('sortIndex', { as: 'max' })
     .first();
   return result?.max == null ? -1 : result.max;
-}
-
-/**
- * Return true if the workflow step for the job is definitely not completed.
- * NOTE: Even if this function returns false, the step _might_ be completed and should be
- * checked by comparing the completed work-item count to the total number of work-items for the
- * step.
- * @param tx - the transaction to use for querying
- * @param jobID - the ID of the job that created this step
- * @param workflowStepIndex - the index of the step in the workflow
- * @returns a promise containing a boolean that is `false` if the
- */
-export async function isDefinitelyNotComplete(
-  tx: Transaction,
-  jobID: string,
-  workflowStepIndex: number,
-): Promise<boolean> {
-  const whereClause: {} = {
-    jobID, workflowStepIndex,
-  };
-  const isNotCompleteResult = await tx
-    .select(tx.raw('EXISTS ? AS not_complete',
-      tx(WorkItem.table)
-        .select(tx.raw('1'))
-        .where(whereClause)
-        .andWhere('status', 'not in', COMPLETED_WORK_ITEM_STATUSES),
-    ));
-
-  return isNotCompleteResult[0]['not_complete'];
 }
 
 /**

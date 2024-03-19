@@ -10,9 +10,9 @@ import logger from '../../../harmony/app/util/log';
  * @returns Promise of prometheus-compatible metric message
  */
 async function _getHarmonyMetric(serviceID: string): Promise<string> {
-
   const timeout = 60_000; // Wait up to one minute for the harmony backend server to respond
-  const workUrl = `http://${env.backendHost}:${env.backendPort}/service/metrics`;
+  const protocol = env.backendHost === 'harmony' || env.backendHost === 'host.docker.internal' ? 'http' : 'https';
+  const workUrl = `${protocol}://${env.backendHost}:${env.backendPort}/service/metrics`;
   const response = await axios
     .get(workUrl, {
       params: { serviceID },

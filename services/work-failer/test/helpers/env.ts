@@ -36,6 +36,5 @@ use(chaiAsPromised);
 
 before(() => {
   stub(env, 'maxGranuleLimit').get(() => 2100);
-  stub(env, 'harmonyClientId').get(() => 'harmony-test');
-  stub(env, 'sharedSecretKey').get(() => Buffer.from('_THIS_IS_MY_32_CHARS_SECRET_KEY_', 'utf8'));
+  stub(env, 'clientId').get(() => 'harmony-test');
 });

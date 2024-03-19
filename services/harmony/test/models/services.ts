@@ -6,7 +6,7 @@ import { hookRangesetRequest } from '../helpers/ogc-api-coverages';
 import hookServersStartStop from '../helpers/servers';
 import { getMaxSynchronousGranules } from '../../app/models/services/base-service';
 import DataOperation, { CURRENT_SCHEMA_VERSION } from '../../app/models/data-operation';
-import { chooseServiceConfig, buildService } from '../../app/models/services';
+import { chooseServiceConfig, buildService, UnsupportedOperation } from '../../app/models/services';
 import env from '../../app/util/env';
 import TurboService from '../../app/models/services/turbo-service';
 import { buildOperation } from '../helpers/data-operation';
@@ -149,14 +149,9 @@ describe('services.chooseServiceConfig and services.buildService', function () {
         this.operation.outputFormat = 'image/gif';
       });
 
-      it('returns the no-op service', function () {
-        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
-        expect(serviceConfig.name).to.equal('noOpService');
-      });
-
-      it('returns a message indicating that there were no services that could support the provided format', function () {
-        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
-        expect(serviceConfig.message).to.equal('the requested combination of operations: reformatting to image/gif on C123-TEST is unsupported');
+      it('throws an exception', function () {
+        expect(() => chooseServiceConfig(this.operation, {}, this.config))
+          .to.throw(UnsupportedOperation, 'the requested combination of operations: reformatting to image/gif on C123-TEST is unsupported');
       });
     });
 
@@ -285,14 +280,9 @@ describe('services.chooseServiceConfig and services.buildService', function () {
         this.operation.outputFormat = 'application/x-netcdf4';
       });
 
-      it('returns the no-op service', function () {
-        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
-        expect(serviceConfig.name).to.equal('noOpService');
-      });
-
-      it('indicates the reason for choosing the no op service is the combination of reprojection and reformatting', function () {
-        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
-        expect(serviceConfig.message).to.equal('the requested combination of operations: reprojection and reformatting to application/x-netcdf4 on C123-TEST is unsupported');
+      it('throws an exception', function () {
+        expect(() => chooseServiceConfig(this.operation, {}, this.config))
+          .to.throw(UnsupportedOperation, 'reprojection and reformatting to application/x-netcdf4 on C123-TEST is unsupported');
       });
     });
 
@@ -303,14 +293,9 @@ describe('services.chooseServiceConfig and services.buildService', function () {
         this.operation.boundingRectangle = [0, 0, 10, 10];
       });
 
-      it('returns the no-op service', function () {
-        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
-        expect(serviceConfig.name).to.equal('noOpService');
-      });
-
-      it('indicates the reason for choosing the no op service is the combination of reprojection and reformatting', function () {
-        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
-        expect(serviceConfig.message).to.equal('the requested combination of operations: reprojection and reformatting to application/x-netcdf4 on C123-TEST is unsupported');
+      it('throws an exception', function () {
+        expect(() => chooseServiceConfig(this.operation, {}, this.config))
+          .to.throw(UnsupportedOperation, 'reprojection and reformatting to application/x-netcdf4 on C123-TEST is unsupported');
       });
     });
 
@@ -412,20 +397,9 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       operation.addSource(collectionId, shortName, versionId, [{ meta: { 'concept-id': 'V123-PROV1' }, umm: { Name: 'the-var' } }]);
       operation.outputFormat = 'application/x-zarr';
 
-      it('returns the no op service', function () {
-        const serviceConfig = chooseServiceConfig(operation, {}, this.config);
-        expect(serviceConfig.name).to.equal('noOpService');
-      });
-
-      it('uses the correct service class when building the service', function () {
-        const serviceConfig = chooseServiceConfig(operation, {}, this.config);
-        const service = buildService(serviceConfig, operation);
-        expect(service.constructor.name).to.equal('NoOpService');
-      });
-
-      it('indicates the reason for choosing the no op service is the combination of variable subsetting and the output format', function () {
-        const serviceConfig = chooseServiceConfig(operation, {}, this.config);
-        expect(serviceConfig.message).to.equal('the requested combination of operations: variable subsetting and reformatting to application/x-zarr on C123-TEST is unsupported');
+      it('throws an exception', function () {
+        expect(() => chooseServiceConfig(operation, {}, this.config))
+          .to.throw(UnsupportedOperation, 'variable subsetting and reformatting to application/x-zarr on C123-TEST is unsupported');
       });
     });
 
@@ -444,20 +418,9 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       operation.addSource(collectionId, shortName, versionId, [{ meta: { 'concept-id': 'V123-PROV1' }, umm: { Name: 'the-var' } }]);
       operation.outputFormat = 'image/foo';
 
-      it('returns the no op service', function () {
-        const serviceConfig = chooseServiceConfig(operation, {}, this.config);
-        expect(serviceConfig.name).to.equal('noOpService');
-      });
-
-      it('uses the correct service class when building the service', function () {
-        const serviceConfig = chooseServiceConfig(operation, {}, this.config);
-        const service = buildService(serviceConfig, operation);
-        expect(service.constructor.name).to.equal('NoOpService');
-      });
-
-      it('indicates the reason for choosing the no op service is the format', function () {
-        const serviceConfig = chooseServiceConfig(operation, {}, this.config);
-        expect(serviceConfig.message).to.equal('the requested combination of operations: variable subsetting and reformatting to image/foo on C123-TEST is unsupported');
+      it('throws an exception', function () {
+        expect(() => chooseServiceConfig(operation, {}, this.config))
+          .to.throw(UnsupportedOperation, 'variable subsetting and reformatting to image/foo on C123-TEST is unsupported');
       });
     });
   });
@@ -479,21 +442,9 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       ];
     });
 
-    it('returns the no op service', function () {
-      const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
-      expect(serviceConfig.name).to.equal('noOpService');
-    });
-
-    it('uses the correct service class when building the service', function () {
-      const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
-      const service = buildService(serviceConfig, this.operation);
-      expect(service.constructor.name).to.equal('NoOpService');
-      expect(service.operation).to.equal(this.operation);
-    });
-
-    it('indicates the reason for choosing the no op service is the collection not being configured for services', function () {
-      const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
-      expect(serviceConfig.message).to.equal('no operations can be performed on C123-TEST');
+    it('throws an exception', function () {
+      expect(() => chooseServiceConfig(this.operation, {}, this.config))
+        .to.throw(UnsupportedOperation, 'no operations can be performed on C123-TEST');
     });
   });
 
@@ -519,21 +470,9 @@ describe('services.chooseServiceConfig and services.buildService', function () {
         this.operation.boundingRectangle = [0, 0, 10, 10];
       });
 
-      it('returns the no op service', function () {
-        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
-        expect(serviceConfig.name).to.equal('noOpService');
-      });
-
-      it('uses the correct service class when building the service', function () {
-        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
-        const service = buildService(serviceConfig, this.operation);
-        expect(service.constructor.name).to.equal('NoOpService');
-        expect(service.operation).to.equal(this.operation);
-      });
-
-      it('indicates the reason for choosing the no op service is that spatial subsetting can not be performed', function () {
-        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
-        expect(serviceConfig.message).to.equal('the requested combination of operations: spatial subsetting on C123-TEST is unsupported');
+      it('throws an exception', function () {
+        expect(() => chooseServiceConfig(this.operation, {}, this.config))
+          .to.throw(UnsupportedOperation, 'the requested combination of operations: spatial subsetting on C123-TEST is unsupported');
       });
     });
 
@@ -542,21 +481,9 @@ describe('services.chooseServiceConfig and services.buildService', function () {
         this.operation.geojson = { pretend: 'geojson' };
       });
 
-      it('returns the no op service', function () {
-        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
-        expect(serviceConfig.name).to.equal('noOpService');
-      });
-
-      it('uses the correct service class when building the service', function () {
-        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
-        const service = buildService(serviceConfig, this.operation);
-        expect(service.constructor.name).to.equal('NoOpService');
-        expect(service.operation).to.equal(this.operation);
-      });
-
-      it('indicates the reason for choosing the no op service is that shapefile subsetting can not be performed', function () {
-        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
-        expect(serviceConfig.message).to.equal('the requested combination of operations: shapefile subsetting on C123-TEST is unsupported');
+      it('throws an exception', function () {
+        expect(() => chooseServiceConfig(this.operation, {}, this.config))
+          .to.throw(UnsupportedOperation, 'shapefile subsetting on C123-TEST is unsupported');
       });
     });
   });
@@ -637,15 +564,9 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       operation.addSource(collectionId, shortName, versionId);
       operation.outputFormat = 'text/csv';
 
-      it('does not return the service configured for variable-based service', function () {
-        const serviceConfig = chooseServiceConfig(operation, {}, this.config);
-        expect(serviceConfig.name).to.equal('noOpService');
-      });
-
-      it('uses the NoOp service class when building the service', function () {
-        const serviceConfig = chooseServiceConfig(operation, {}, this.config);
-        const service = buildService(serviceConfig, operation);
-        expect(service.constructor.name).to.equal('NoOpService');
+      it('throws an exception', function () {
+        expect(() => chooseServiceConfig(operation, {}, this.config))
+          .to.throw(UnsupportedOperation, 'no operations can be performed on C123-TEST');
       });
     });
 
@@ -654,15 +575,9 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       operation.addSource(collectionId, shortName, versionId, [{ meta: { 'concept-id': 'wrong-variable-Id' }, umm: { Name: 'wrong-var' } }]);
       operation.outputFormat = 'text/csv';
 
-      it('does not return the service configured for variable-based service', function () {
-        const serviceConfig = chooseServiceConfig(operation, {}, this.config);
-        expect(serviceConfig.name).to.equal('noOpService');
-      });
-
-      it('uses the NoOp service class when building the service', function () {
-        const serviceConfig = chooseServiceConfig(operation, {}, this.config);
-        const service = buildService(serviceConfig, operation);
-        expect(service.constructor.name).to.equal('NoOpService');
+      it('throws an exception', function () {
+        expect(() => chooseServiceConfig(operation, {}, this.config))
+          .to.throw(UnsupportedOperation, 'no operations can be performed on C123-TEST');
       });
     });
   });
@@ -734,15 +649,9 @@ describe('services.chooseServiceConfig and services.buildService', function () {
         { meta: { 'concept-id': variableId3 }, umm: { Name: 'the-var-3' } }]);
       operation.outputFormat = 'text/csv';
 
-      it('does not return the service configured for variable-based service', function () {
-        const serviceConfig = chooseServiceConfig(operation, {}, this.config);
-        expect(serviceConfig.name).to.equal('noOpService');
-      });
-
-      it('uses the NoOp service class when building the service', function () {
-        const serviceConfig = chooseServiceConfig(operation, {}, this.config);
-        const service = buildService(serviceConfig, operation);
-        expect(service.constructor.name).to.equal('NoOpService');
+      it('throws an exception', function () {
+        expect(() => chooseServiceConfig(operation, {}, this.config))
+          .to.throw(UnsupportedOperation, 'no operations can be performed on C123-TEST');
       });
     });
   });
@@ -856,6 +765,7 @@ describe('createWorkflowSteps', function () {
     },
     steps: [{
       image: 'query cmr',
+      is_sequential: true,
     }, {
       image: 'format transformer',
       operations: ['formatTransform'],

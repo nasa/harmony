@@ -13,6 +13,7 @@ All of the public endpoints for Harmony users other than the OGC Coverages and W
 | /stac                  | [The API for retrieving STAC catalog and catalog items for processed data](#stac-details)         |
 | /staging-bucket-policy | [The policy generator for external (user) bucket storage](#user-owned-buckets-for-harmony-output) |
 | /versions              | [Returns JSON indicating the image and tag each deployed service is running](#versions-details)   |
+| /service-image-tag              | [The API for managing service image tags/versions](#service-image-tags-details)   |
 | /workflow-ui           | The Workflow UI for monitoring and interacting with running jobs                                  |
 ---
 **Table {{tableCounter}}** - Harmony routes other than OGC Coverages and WMS

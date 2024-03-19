@@ -4,6 +4,9 @@ if [ -f .env ]; then
     echo "Skipping generating .env file because it already exists."
 else
     cat <<-EOF > .env
+		# Used to identify the client (sent in request headers)
+		CLIENT_ID=harmony-in-a-box
+
 		# Random string used to sign cookies.
 		COOKIE_SECRET=$(openssl rand -hex 128)
 
@@ -20,36 +23,42 @@ EOF
 		Running Harmony requires creating an Earthdata Login (EDL) application. If you need instructions for this or do not understand what this means, please contact the Harmony team for help. Once you have your EDL application created, please enter the credentials as prompted.
 
 PROMPT_EDL
-    echo "# See the \"OAuth 2 (Earthdata Login)\" section in the env-defaults file" >> .env
-    echo "# Contact a harmony developer if unsure what values to use" >> .env
-    # prompt for the users EDL app credentials
-    read -p "EDL Application Client ID: " OAUTH_CLIENT_ID
-    read -s -p "EDL Application UID: " OAUTH_UID
-    echo ""
-    read -s -p "EDL Application Password: " OAUTH_PASSWORD
-    echo ""
-    
+    if [ "$EXEC_CONTEXT" != "workflow" ]; then
+        echo "# See the \"OAuth 2 (Earthdata Login)\" section in the env-defaults file" >> .env
+        echo "# Contact a harmony developer if unsure what values to use" >> .env
+        # prompt for the users EDL app credentials
+        read -p "EDL Application Client ID: " OAUTH_CLIENT_ID
+        read -s -p "EDL Application UID: " OAUTH_UID
+        echo ""
+        read -s -p "EDL Application Password: " OAUTH_PASSWORD
+        echo ""
+    fi
+
     cat <<-EOF >> .env
 		OAUTH_CLIENT_ID=$OAUTH_CLIENT_ID
 		OAUTH_UID=$OAUTH_UID
 		OAUTH_PASSWORD=$OAUTH_PASSWORD
 EOF
-    
-    # prompt for LOCALLY_DEPLOYED_SERVICES
-    echo "Enter services to deploy (comma separated list):"
-    read -p "Hit <Enter> to use the default services: " LOCALLY_DEPLOYED_SERVICES
-    
-    # Add locally LOCALLY_DEPLOYED_SERVICES if it is defined (not zero length)
-    if [ ! -z "${LOCALLY_DEPLOYED_SERVICES}" ]; then
-        echo -e "\nLOCALLY_DEPLOYED_SERVICES=${LOCALLY_DEPLOYED_SERVICES}\n" >> .env
+
+    if [ "$EXEC_CONTEXT" != "workflow" ]; then
+        # prompt for LOCALLY_DEPLOYED_SERVICES
+        echo "Enter services to deploy (comma separated list):"
+        read -p "Hit <Enter> to use the default services: " LOCALLY_DEPLOYED_SERVICES
+
+        # Add locally LOCALLY_DEPLOYED_SERVICES if it is defined (not zero length)
+        if [ ! -z "${LOCALLY_DEPLOYED_SERVICES}" ]; then
+            echo -e "\nLOCALLY_DEPLOYED_SERVICES=${LOCALLY_DEPLOYED_SERVICES}\n" >> .env
+        fi
+
+        OS=`uname`
+        if [ "Linux" = "$OS" ]; then
+            echo -e "\n# Detected running on Linux so setting Linux specific env" >> .env
+            echo "CALLBACK_URL_ROOT=http://localhost:3001" >> .env
+            echo "BACKEND_HOST=localhost" >> .env
+            echo "KUBE_CONTEXT=minikube" >> .env
+        fi
+    else
+        echo -e "\nLOCALLY_DEPLOYED_SERVICES=harmony-service-example,giovanni-adapter\n" >> .env
     fi
-    
-    
-    OS=`uname`
-    if [ "Linux" = "$OS" ]; then
-        echo -e "\n# Detected running on Linux so setting Linux specific env" >> .env
-        echo "CALLBACK_URL_ROOT=http://localhost:3001" >> .env
-        echo "BACKEND_HOST=localhost" >> .env
-        echo "KUBE_CONTEXT=minikube" >> .env
-    fi
+
 fi

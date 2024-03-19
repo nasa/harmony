@@ -6,7 +6,7 @@
   "scripts": {
     "start": "ts-node app/server.ts",
     "start-dev": "strict-npm-engines && ts-node-dev --no-notify -r tsconfig-paths/register --watch app/views --respawn app/server",
-    "start-dev-fast": "TS_NODE_TRANSPILE_ONLY=true ts-node-dev --no-notify -r tsconfig-paths/register --respawn --inspect=127.0.0.1:9204 app/server",
+    "start-dev-fast": "TS_NODE_TRANSPILE_ONLY=true ts-node-dev --no-notify -r tsconfig-paths/register --respawn --inspect=127.0.0.1:${DEBUG_PORT:-9205} app/server",
     "test": "eslint --ext .ts . && nyc mocha && better-npm-audit audit",
     "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha",
     "lint": "eslint --ext .ts .",
@@ -40,7 +40,7 @@
     "ajv": "^8.8.0",
     "ajv-formats": "^2.1.1",
     "ajv-formats-draft2019": "^1.6.1",
-    "axios": "^1.6.0",
+    "axios": "^1.6.5",
     "axios-retry": "^3.8.1",
     "class-validator": "^0.14.0",
     "date-fns": "^2.25.0",

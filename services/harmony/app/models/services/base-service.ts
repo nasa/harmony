@@ -17,6 +17,7 @@ import HarmonyRequest from '../harmony-request';
 import UserWork from '../user-work';
 import { joinTexts } from '@harmony/util/string';
 import { makeWorkScheduleRequest } from '../../backends/workflow-orchestration/work-item-polling';
+import { QUERY_CMR_SERVICE_REGEX } from '../../backends/workflow-orchestration/util';
 
 export interface ServiceCapabilities {
   concatenation?: boolean;
@@ -31,6 +32,7 @@ export interface ServiceCapabilities {
   reprojection?: boolean;
   extend?: boolean;
   default_extend_dimensions?: string[];
+  all_collections?: boolean;
 }
 
 export interface ServiceStep {
@@ -39,19 +41,20 @@ export interface ServiceStep {
   max_batch_inputs?: number;
   max_batch_size_in_bytes?: number;
   is_batched?: boolean;
+  is_sequential?: boolean;
   conditional?: {
     exists?: string[];
     format?: string[];
     umm_c?: {
       native_format?: string[];
-    }
+    };
   };
 }
 
 export interface ServiceCollection {
   id: string;
   granule_limit?: number;
-  variables?: string[]
+  variables?: string[];
 }
 
 export interface ServiceConfig<ServiceParamType> {
@@ -226,7 +229,7 @@ export default abstract class BaseService<ServiceParamType> {
    *
    * @returns the final staging location of the service
    */
-  finalStagingLocation() : string {
+  finalStagingLocation(): string {
     const { requestId, destinationUrl } = this.operation;
     if (destinationUrl) {
       let destPath = destinationUrl.substring(5);
@@ -254,7 +257,7 @@ export default abstract class BaseService<ServiceParamType> {
 
     const { isAsync, jobID } = job;
     const requestMetric = getRequestMetric(req, this.operation, this.config.name);
-    logger.info(`Request metric for request ${jobID}`, { requestMetric: true, ...requestMetric } );
+    logger.info(`Request metric for request ${jobID}`, { requestMetric: true, ...requestMetric });
     this.operation.callback = `${env.callbackUrlRoot}/service/${jobID}`;
     return new Promise((resolve, reject) => {
       this._run(logger)
@@ -382,7 +385,7 @@ export default abstract class BaseService<ServiceParamType> {
    */
   protected _createFirstStepWorkItems(workflowStep: WorkflowStep): WorkItem[] {
     const workItems = [];
-    if ( this.operation.scrollIDs.length > 0 ) {
+    if (this.operation.scrollIDs.length > 0) {
       for (const scrollID of this.operation.scrollIDs) {
         workItems.push(new WorkItem({
           jobID: this.operation.requestId,
@@ -406,18 +409,16 @@ export default abstract class BaseService<ServiceParamType> {
    * Return the number of work items that should be created for a given step
    *
    * @param step - workflow service step
-   * @param operation - the operation
    * @returns  the number of work items for the given step
    */
-  protected _workItemCountForStep(step: ServiceStep, operation: DataOperation): number {
+  protected _workItemCountForStep(step: ServiceStep): number {
     const regex = /query\-cmr/;
     // query-cmr number of work items is a function of the page size and total granules
     if (step.image.match(regex)) {
       return Math.ceil(this.numInputGranules / env.cmrMaxPageSize);
-    } else if (stepHasAggregatedOutput(step, operation)) {
-      return 1;
     }
-    return this.numInputGranules;
+    // the rest will get filled in as we go
+    return 0;
   }
 
   /**
@@ -454,19 +455,25 @@ export default abstract class BaseService<ServiceParamType> {
           if (i === numSteps) {
             this.operation.stagingLocation = this.finalStagingLocation();
           }
+          let progressWeight = 1.0;
+          if (QUERY_CMR_SERVICE_REGEX.test(step.image)) {
+            progressWeight = 0.1;
+          }
           workflowSteps.push(new WorkflowStep({
             jobID: this.operation.requestId,
             serviceID: serviceImageToId(step.image),
             stepIndex: i,
-            workItemCount: this._workItemCountForStep(step, this.operation),
+            workItemCount: this._workItemCountForStep(step),
             operation: this.operation.serialize(
               this.config.data_operation_version,
               step.operations || [],
             ),
             hasAggregatedOutput: stepHasAggregatedOutput(step, this.operation),
             isBatched: !!step.is_batched && this.operation.shouldConcatenate,
+            is_sequential: !!step.is_sequential,
             maxBatchInputs: step.max_batch_inputs,
             maxBatchSizeInBytes: step.max_batch_size_in_bytes,
+            progress_weight: progressWeight,
           }));
         }
       }));
