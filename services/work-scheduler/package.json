@@ -42,7 +42,7 @@
     "openid-client": "5.6.5",
     "@types/node-fetch": "^2.5.12",
     "agentkeepalive": "^4.1.4",
-    "axios": "^1.6.5",
+    "axios": "^1.6.8",
     "axios-retry": "^3.8.1",
     "class-validator": "^0.14.0",
     "date-fns": "^2.25.0",
