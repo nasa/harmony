@@ -387,7 +387,7 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/ldds/subset-name-band
-    umm_s: C1378227407-LAADS
+    umm_s: S1261503923-LAADSCDUAT
     maximum_sync_granules: 0
     capabilities:
        subsetting:
