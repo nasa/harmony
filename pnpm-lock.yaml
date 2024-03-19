@@ -11,13 +11,6 @@ overrides:
 importers:
 
   .:
-    dependencies:
-      pg:
-        specifier: ^8.7.3
-        version: 8.11.3(pg-native@3.0.1)
-      pg-native:
-        specifier: ^3.0.1
-        version: 3.0.1
     devDependencies:
       eslint:
         specifier: ^8.48.0

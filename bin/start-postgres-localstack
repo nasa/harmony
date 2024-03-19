@@ -123,7 +123,7 @@ bin/port-forward start postgres ${POSTGRES_PORT}:5432
 
 # Try to run migrations when not using harmony in a box. If using harmony in a box and this fails,
 # the migrations will run during the bin/start-harmony script.
-DATABASE_TYPE=postgres DATABASE_URL="postgresql://postgres:password@localhost:${POSTGRES_PORT}/postgres" pnpm dlx knex --cwd db migrate:latest || true
+DATABASE_TYPE=postgres DATABASE_URL="postgresql://postgres:password@localhost:${POSTGRES_PORT}/postgres" pnpm --package=pg dlx knex --cwd db migrate:latest || true
 
 echo ''
 echo 'Localstack has started at http://localhost:4566/'

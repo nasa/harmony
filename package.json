@@ -38,10 +38,7 @@
   },
   "author": "NASA EOSDIS Harmony team",
   "license": "Apache-2.0",
-  "dependencies": {
-    "pg": "^8.7.3",
-    "pg-native": "^3.0.1"
-  },
+  "dependencies": {},
   "devDependencies": {
     "eslint": "^8.48.0",
     "eslint-config-airbnb-base": "^15.0.0",
