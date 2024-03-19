@@ -29,6 +29,10 @@ class HarmonyWorkSchedulerEnv extends HarmonyEnv {
   @IsInt()
   @Min(1)
   workItemSchedulerBatchSize: number;
+
+  @IsInt()
+  @Min(-1)
+  maxWorkItemsOnUpdateQueue: number;
 }
 
 const localPath = path.resolve(__dirname, '../../env-defaults');

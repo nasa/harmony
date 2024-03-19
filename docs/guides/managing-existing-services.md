@@ -92,3 +92,62 @@ Harmony validates that the image and tag are reachable - an error will be return
 
 **Important** from the [Docker documentation](https://docs.docker.com/engine/reference/commandline/image_tag/):
 >A tag name may contain lowercase and uppercase characters, digits, underscores, periods and dashes. A tag name may not start with a period or a dash and may contain a maximum of 128 characters.
+
+## Get the current enable/disable state of the service deployment feature
+
+```
+
+GET https://harmony.uat.earthdat.nasa.gov/service-image-tag/state
+
+```
+**Example 8** - Getting the current enable/disable state of the service deployment feature using the `service-image-tag` API
+
+The returned JSON response shows if the service deployment is currently enabled (true) or disabled (false):
+
+```JSON
+{
+  "enabled": true
+}
+```
+---
+**Example 9** - Harmony `service-image-tags` response for enable/disable state
+
+## Enable the service deployment feature
+The user must have admin permission in order to invoke this endpoint.
+
+For example:
+
+```
+curl -XPUT -H 'Authorization: bearer <your bearer token>' -H 'Content-type: application/json' https://harmony.uat.earthdat.nasa.gov/service-image-tag/state -d '{"enabled": true}'
+```
+---
+**Example 10** - Harmony `service-image-tags` request for enabling the service deployment
+
+The returned JSON response is the same as the get current state of the service deployment feature request above, indicating the current state:
+
+```JSON
+{
+  "enabled": true
+}
+```
+**Example 11** - Harmony `/service-image-tags` response for enabling the service deployment
+
+## Disable the service deployment feature
+The user must have admin permission in order to invoke this endpoint.
+
+For example:
+
+```
+curl -XPUT -H 'Authorization: bearer <your bearer token>' -H 'Content-type: application/json' https://harmony.uat.earthdat.nasa.gov/service-image-tag/state -d '{"enabled": false}'
+```
+---
+**Example 12** - Harmony `service-image-tags` request for disabling the service deployment
+
+The returned JSON response is the same as the get current state of the service deployment feature request above, indicating the current state:
+
+```JSON
+{
+  "enabled": false
+}
+```
+**Example 13** - Harmony `/service-image-tags` response for disabling the service deployment

@@ -12,6 +12,7 @@ import { MemoryQueue } from '../../harmony/test/helpers/memory-queue';
 import WorkItem from '../../harmony/app/models/work-item';
 import { WorkItemData } from '../../harmony/app/backends/workflow-orchestration/work-item-polling';
 import { calculateNumItemsToQueue } from '../app/workers/scheduler';
+import env from '../app/util/env';
 
 describe('Scheduler Worker', async function () {
   const service = 'foo:latest';
@@ -22,7 +23,9 @@ describe('Scheduler Worker', async function () {
     let getSchedulerQueueStub: SinonStub;
     let getQueueUrlForServiceStub: SinonStub;
     let getQueueForUrlStub: SinonStub;
+    let getWorkItemUpdateQueueStub: SinonStub;
     const schedulerQueue = new MemoryQueue();
+    const workItemUpdateQueue = new MemoryQueue();
     let serviceQueues;
 
     before(function () {
@@ -34,6 +37,9 @@ describe('Scheduler Worker', async function () {
       });
       getSchedulerQueueStub = sinon.stub(queueFactory, 'getWorkSchedulerQueue').callsFake(function () {
         return schedulerQueue;
+      });
+      getWorkItemUpdateQueueStub = sinon.stub(queueFactory, 'getQueueForType').callsFake(function () {
+        return workItemUpdateQueue;
       });
       getQueueUrlForServiceStub = sinon.stub(queueFactory, 'getQueueUrlForService').callsFake(function (serviceID: string) { return serviceID; });
       getQueueForUrlStub = sinon.stub(queueFactory, 'getQueueForUrl').callsFake(function (url: string) {
@@ -52,6 +58,7 @@ describe('Scheduler Worker', async function () {
       getSchedulerQueueStub.restore();
       getQueueForUrlStub.restore();
       getQueueUrlForServiceStub.restore();
+      getWorkItemUpdateQueueStub.restore();
     });
 
     describe('when there is no work on the scheduler queue', async function () {
@@ -122,6 +129,84 @@ describe('Scheduler Worker', async function () {
       it('puts messages on the queue', async function () {
         const numMessages = await serviceQueues[service].getApproximateNumberOfMessages();
         expect(numMessages).to.equal(1);
+      });
+
+      describe('and the work item queue has few items on it', async function () {
+        let maxWorkItemsStub;
+        beforeEach(async function () {
+          await schedulerQueue.purge();
+          await schedulerQueue.sendMessage(service);
+          serviceQueues = {};
+          serviceQueues[service] = new MemoryQueue();
+          for (let i = 0; i < 5; i++) {
+            await workItemUpdateQueue.sendMessage('foo');
+          }
+          maxWorkItemsStub = sinon.stub(env, 'maxWorkItemsOnUpdateQueue').get(() => 10);
+          await scheduler.processSchedulerQueue(logger, 1);
+        });
+        afterEach(async function () {
+          await schedulerQueue.purge();
+          await workItemUpdateQueue.purge();
+          serviceQueues = {};
+          maxWorkItemsStub.restore();
+        });
+
+        it('continues to schedule work', async function () {
+          const numMessages = await serviceQueues[service].getApproximateNumberOfMessages();
+          expect(numMessages).to.equal(1);
+        });
+      });
+
+      describe('and the work item queue has a large number of work items', async function () {
+        let maxWorkItemsStub;
+        beforeEach(async function () {
+          await schedulerQueue.purge();
+          await schedulerQueue.sendMessage(service);
+          serviceQueues = {};
+          serviceQueues[service] = new MemoryQueue();
+          for (let i = 0; i < 6; i++) {
+            await workItemUpdateQueue.sendMessage('foo');
+          }
+          maxWorkItemsStub = sinon.stub(env, 'maxWorkItemsOnUpdateQueue').get(() => 5);
+          await scheduler.processSchedulerQueue(logger, 1);
+        });
+        afterEach(async function () {
+          await schedulerQueue.purge();
+          await workItemUpdateQueue.purge();
+          serviceQueues = {};
+          maxWorkItemsStub.restore();
+        });
+
+        it('does not schedule any work', async function () {
+          const numMessages = await serviceQueues[service].getApproximateNumberOfMessages();
+          expect(numMessages).to.equal(0);
+        });
+      });
+
+      describe('and the scheduler is configured to continue queueing with a large number of items', async function () {
+        let maxWorkItemsStub;
+        beforeEach(async function () {
+          await schedulerQueue.purge();
+          await schedulerQueue.sendMessage(service);
+          serviceQueues = {};
+          serviceQueues[service] = new MemoryQueue();
+          for (let i = 0; i < 6; i++) {
+            await workItemUpdateQueue.sendMessage('foo');
+          }
+          maxWorkItemsStub = sinon.stub(env, 'maxWorkItemsOnUpdateQueue').get(() => -1);
+          await scheduler.processSchedulerQueue(logger, 1);
+        });
+        afterEach(async function () {
+          await schedulerQueue.purge();
+          await workItemUpdateQueue.purge();
+          serviceQueues = {};
+          maxWorkItemsStub.restore();
+        });
+
+        it('continues to schedule work', async function () {
+          const numMessages = await serviceQueues[service].getApproximateNumberOfMessages();
+          expect(numMessages).to.equal(1);
+        });
       });
     });
   });
