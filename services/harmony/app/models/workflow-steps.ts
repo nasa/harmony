@@ -13,7 +13,7 @@ const serializedFields = [
   'id', 'jobID', 'serviceID', 'stepIndex',
   'workItemCount', 'operation', 'createdAt', 'updatedAt',
   'hasAggregatedOutput', 'isBatched', 'is_sequential', 'is_complete', 'maxBatchInputs',
-  'maxBatchSizeInBytes',
+  'maxBatchSizeInBytes', 'completed_work_item_count', 'progress_weight',
 ];
 
 export interface WorkflowStepRecord {
@@ -51,6 +51,15 @@ export interface WorkflowStepRecord {
 
   // The upper limit on the combined sizes of all the files in a batch
   maxBatchSizeInBytes: number;
+
+  // The number of work-items that have been completed (successfully or otherwise)
+  completed_work_item_count: number;
+
+  // What percentage of the work for this step has been completed
+  progress: number;
+
+  // Relative contribution of this step to the overall job progress calculation
+  progress_weight: number;
 }
 
 /**
@@ -95,6 +104,15 @@ export default class WorkflowStep extends Record implements WorkflowStepRecord {
   // The upper limit on the combined sizes of all the files in a batch
   maxBatchSizeInBytes: number;
 
+  // The number of work-items that have been completed (successfully or otherwise)
+  completed_work_item_count: number;
+
+  // What percentage of the work for this step has been completed
+  progress: number;
+
+  // Relative contribution of this step to the overall job progress calculation
+  progress_weight: number;
+
   /**
  * Get the collections that are the sources for the given operation
  *
@@ -104,6 +122,27 @@ export default class WorkflowStep extends Record implements WorkflowStepRecord {
     const op = JSON.parse(this.operation);
     return op.sources.map(source => source.collection);
   }
+
+  /**
+   * Update the progress value based on the number of completed work-items for this step.
+   * NOTE: this should be called on the workflow steps in order since the progress
+   * computation depends on the progress of the previous step.
+   *
+   * @param prevStep - the previous step in the workflow (nil if this is the first step)
+   * @returns an integer number representing the percent progress
+   */
+  updateProgress(prevStep: WorkflowStep): number {
+    let workItemCount = Math.max(1, this.workItemCount);
+    const completedItemCount = Math.max(0, this.completed_work_item_count);
+    workItemCount = Math.max(workItemCount, completedItemCount);
+    let prevProgress = 1.0;
+    if (prevStep) {
+      prevProgress = Math.max(0, prevStep.progress) / 100.0;
+    }
+    this.progress = Math.floor(100.0 * prevProgress * completedItemCount / workItemCount);
+    return this.progress;
+  }
+
 }
 
 const tableFields = serializedFields.map((field) => `${WorkflowStep.table}.${field}`);
@@ -131,15 +170,16 @@ export async function getWorkflowStepById(
  * Returns all workflow steps for a job
  * @param tx - the transaction to use for querying
  * @param jobID - the job ID
- *
+ * @param fields - optional table fields to include in the result - default is all
  * @returns A promise with the workflow steps array
  */
 export async function getWorkflowStepsByJobId(
   tx: Transaction,
   jobID: string,
+  fields = tableFields,
 ): Promise<WorkflowStep[]> {
   const workItemData = await tx(WorkflowStep.table)
-    .select()
+    .select(...fields)
     .where({ jobID })
     .orderBy('id');
 
@@ -258,19 +298,6 @@ export async function decrementFutureWorkItemCount(tx: Transaction, jobID, stepI
 }
 
 /**
- * Increment the number of expected work items for the step. Used during batching.
- *
- * @param tx - the database transaction
- * @param jobID - the job ID
- * @param stepIndex - the current step index
- */
-export async function incrementWorkItemCount(tx: Transaction, jobID, stepIndex): Promise<void> {
-  await tx(WorkflowStep.table)
-    .where({ jobID, stepIndex })
-    .increment('workItemCount');
-}
-
-/**
  * Decrement the number of expected work items for the step. Used during batching when prior step
  * items fail and we end up with the final batch being empty.
  *
@@ -301,7 +328,9 @@ export async function updateIsComplete(tx: Transaction, jobID: string, numInputG
 
   if (step.is_sequential) {
     const completedCount = await workItemCountForStep(tx, jobID, stepIndex, COMPLETED_WORK_ITEM_STATUSES);
-    const expectedCount =  Math.ceil(numInputGranules / env.cmrMaxPageSize);
+    // TODO this is only true for query-cmr. If we add another sequential service we need to
+    // fix this.
+    const expectedCount = Math.ceil(numInputGranules / env.cmrMaxPageSize);
     isComplete = completedCount == expectedCount;
 
   } else {

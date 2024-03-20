@@ -1,5 +1,6 @@
 import * as axios from 'axios';
 import { ForbiddenError } from './errors';
+import { Response } from 'express';
 import { Logger } from 'winston';
 import env from './env';
 import HarmonyRequest from '../models/harmony-request';
@@ -91,6 +92,7 @@ async function getUserGroups(username: string, logger: Logger)
 export interface EdlGroupMembership {
   isAdmin: boolean;
   isLogViewer: boolean;
+  isServiceDeployer: boolean;
 }
 
 /**
@@ -98,7 +100,7 @@ export interface EdlGroupMembership {
  *
  * @param username - The EDL username
  * @param logger - The logger associated with the request
- * @returns A promise which resolves to info about whether the user is an admin or log viewer
+ * @returns A promise which resolves to info about whether the user is an admin, log viewer or service deployer
  */
 export async function getEdlGroupInformation(username: string, logger: Logger)
   : Promise<EdlGroupMembership> {
@@ -113,7 +115,12 @@ export async function getEdlGroupInformation(username: string, logger: Logger)
     isLogViewer = true;
   }
 
-  return { isAdmin, isLogViewer };
+  let isServiceDeployer = false;
+  if (groups.includes(env.serviceDeployerGroupId)) {
+    isServiceDeployer = true;
+  }
+
+  return { isAdmin, isLogViewer, isServiceDeployer };
 }
 
 /**
@@ -161,4 +168,25 @@ export async function verifyUserEula(username: string, eulaId: string, logger: L
     error: eulaResponse.error,
     acceptEulaUrl: eulaResponse.accept_eula_url,
   };
+}
+
+/**
+ * Validate that the user is in the admin group
+ * @param req - The request object
+ * @param res  - The response object - will be used to send an error if the validation fails
+ * @returns A Promise containing `true` if the user is in admin group, `false` otherwise
+ */
+export async function validateUserIsInAdminGroup(
+  req: HarmonyRequest, res: Response,
+): Promise<boolean> {
+  const { isAdmin } = await getEdlGroupInformation(
+    req.user, req.context.logger,
+  );
+
+  if (!isAdmin) {
+    res.statusCode = 403;
+    res.send(`User ${req.user} is not in the admin EDL group`);
+    return false;
+  }
+  return true;
 }

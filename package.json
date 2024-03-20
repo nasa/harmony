@@ -4,17 +4,17 @@
   "description": "Data services frontend",
   "main": "index.js",
   "scripts": {
-    "test": "lerna run test --load-env-files=false",
+    "test": "better-npm-audit audit && lerna run test --load-env-files=false",
     "test-fast": "lerna run test-fast --load-env-files=false",
     "test-bail": "lerna run test-bail --load-env-files=false",
-    "coverage": "lerna run coverage",
+    "coverage": "lerna run coverage --load-env-files=false",
     "lint": "lerna run lint",
     "start": "cd services/harmony && NODE_OPTIONS=--max-old-space-size=3096 ts-node -r tsconfig-paths/register app/server.ts",
     "start-dev": "cd services/harmony && strict-npm-engines && ts-node-dev --no-notify -r tsconfig-paths/register --watch app/views,public/js --respawn app/server",
     "start-dev-fast": "cd services/harmony && TS_NODE_TRANSPILE_ONLY=true ts-node-dev --no-notify -r tsconfig-paths/register --respawn --inspect=127.0.0.1:${DEBUG_PORT:-9200} app/server",
     "update-dev": "npm install && lerna run build && bin/restart-services",
     "watch-debug": "cd services/harmony && TS_NODE_TRANSPILE_ONLY=true nodemon --inspect=5858 -e ts,tsx,html --exec node -r tsconfig-paths/register -r ts-node/register app/server.ts",
-    "postinstall": "if test \"$NODE_ENV\" != \"production\" && test \"$LERNA\" != \"false\" ; then lerna exec -- npm install; fi",
+    "postinstall": "if test \"$NODE_ENV\" != \"production\" && test \"$LERNA\" != \"false\" ; then lerna exec --concurrency 1 -- npm install; fi",
     "build": "lerna exec --scope=harmony -- VERSION=${VERSION:-latest} npm run build",
     "build-sequential": "lerna exec --ignore harmony --concurrency 1 -- VERSION=${VERSION:-latest} npm run build",
     "build-all": "lerna exec --ignore harmony -- VERSION=${VERSION:-latest} npm run build",
@@ -92,7 +92,7 @@
     "ajv": "^8.12.0",
     "ajv-formats": "^2.1.1",
     "ajv-formats-draft2019": "^1.6.1",
-    "axios": "^1.6.5",
+    "axios": "^1.6.8",
     "body-parser": "^1.19.0",
     "class-validator": "^0.14.0",
     "cookie-parser": "^1.4.5",
@@ -205,7 +205,8 @@
     "supertest": "^6.1.3",
     "ts-node-dev": "^2.0.0"
   },
-  "resolutions": {
-    "trim-newlines": "4.0.1"
+  "overrides": {
+    "trim-newlines": "4.0.1",
+    "fast-json-patch": "3.1.1"
   }
 }

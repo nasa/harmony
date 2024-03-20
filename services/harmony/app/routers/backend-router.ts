@@ -1,5 +1,6 @@
 import { Router, json } from 'express';
 import asyncHandler from 'express-async-handler';
+import handleCallbackMessage from '../backends/deployment-callback';
 import { getWork, updateWorkItem } from '../backends/workflow-orchestration/workflow-orchestration';
 import { responseHandler } from '../backends/service-response';
 import { getEligibleWorkItemCountForServiceID } from '../backends/service-metrics';
@@ -22,6 +23,8 @@ export default function router(): Router {
   result.put('/work/:id', asyncHandler(updateWorkItem));
 
   result.get('/metrics', asyncHandler(getEligibleWorkItemCountForServiceID));
+
+  result.post('/deployment-callback', asyncHandler(handleCallbackMessage));
 
   result.use((err, _req, _res, _next) => {
     if (err) {

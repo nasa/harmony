@@ -270,10 +270,10 @@ describe('when testing a batched aggregation service', function () {
         });
 
         describe('when checking the jobs listing', function () {
-          it('lists the job as running and progress of 43 with 1 link to the first aggregated output', async function () {
+          it('lists the job as running and progress of 49 with 1 link to the first aggregated output', async function () {
             const job = await getFirstJob(db);
             expect(job.status).to.equal('running');
-            expect(job.progress).to.equal(50);
+            expect(job.progress).to.equal(49);
             const dataLinks = job.links.filter(link => link.rel === 'data');
             expect(dataLinks.length).to.equal(1);
           });
@@ -318,10 +318,10 @@ describe('when testing a batched aggregation service', function () {
           });
 
           describe('when checking the jobs listing', function () {
-            it('marks the job as running and progress of 86 with 2 links to the first two aggregated outputs', async function () {
+            it('marks the job as running and progress of 75 with 2 links to the first two aggregated outputs', async function () {
               const job = await getFirstJob(db);
               expect(job.status).to.equal('running');
-              expect(job.progress).to.equal(66);
+              expect(job.progress).to.equal(75);
               const dataLinks = job.links.filter(link => link.rel === 'data');
               expect(dataLinks.length).to.equal(2);
             });
@@ -530,10 +530,10 @@ describe('when testing a batched aggregation service', function () {
         });
 
         describe('when checking the jobs listing', function () {
-          it('lists the job as running and progress of 43 with 1 link to the first aggregated output', async function () {
+          it('lists the job as running and progress of 49 with 1 link to the first aggregated output', async function () {
             const job = await getFirstJob(db);
             expect(job.status).to.equal('running');
-            expect(job.progress).to.equal(50);
+            expect(job.progress).to.equal(49);
             const dataLinks = job.links.filter(link => link.rel === 'data');
             expect(dataLinks.length).to.equal(1);
           });
@@ -578,10 +578,10 @@ describe('when testing a batched aggregation service', function () {
           });
 
           describe('when checking the jobs listing', function () {
-            it('marks the job as running and progress of 86 with 2 links to the first two aggregated outputs', async function () {
+            it('marks the job as running and progress of 75 with 2 links to the first two aggregated outputs', async function () {
               const job = await getFirstJob(db);
               expect(job.status).to.equal('running');
-              expect(job.progress).to.equal(66);
+              expect(job.progress).to.equal(75);
               const dataLinks = job.links.filter(link => link.rel === 'data');
               expect(dataLinks.length).to.equal(2);
             });
@@ -766,10 +766,10 @@ describe('when testing a batched aggregation service', function () {
         });
 
         describe('when checking the jobs listing', function () {
-          it('lists the job as running and progress of 43 with 1 link to the first aggregated output', async function () {
+          it('lists the job as running and progress of 49 with 1 link to the first aggregated output', async function () {
             const job = await getFirstJob(db);
             expect(job.status).to.equal('running');
-            expect(job.progress).to.equal(50);
+            expect(job.progress).to.equal(49);
             const dataLinks = job.links.filter(link => link.rel === 'data');
             expect(dataLinks.length).to.equal(1);
           });
@@ -814,10 +814,10 @@ describe('when testing a batched aggregation service', function () {
           });
 
           describe('when checking the jobs listing', function () {
-            it('marks the job as running and progress of 86 with 2 links to the first two aggregated outputs', async function () {
+            it('marks the job as running and progress of 75 with 2 links to the first two aggregated outputs', async function () {
               const job = await getFirstJob(db);
               expect(job.status).to.equal('running');
-              expect(job.progress).to.equal(66);
+              expect(job.progress).to.equal(75);
               const dataLinks = job.links.filter(link => link.rel === 'data');
               expect(dataLinks.length).to.equal(2);
             });
@@ -1018,10 +1018,10 @@ describe('when testing a batched aggregation service', function () {
         });
 
         describe('when checking the jobs listing', function () {
-          it('lists the job as running and progress of 43 with 1 link to the first aggregated output', async function () {
+          it('lists the job as running and progress of 49 with 1 link to the first aggregated output', async function () {
             const job = await getFirstJob(db);
             expect(job.status).to.equal('running');
-            expect(job.progress).to.equal(50);
+            expect(job.progress).to.equal(49);
             const dataLinks = job.links.filter(link => link.rel === 'data');
             expect(dataLinks.length).to.equal(1);
           });
@@ -1066,10 +1066,10 @@ describe('when testing a batched aggregation service', function () {
           });
 
           describe('when checking the jobs listing', function () {
-            it('marks the job as running and progress of 86 with 2 links to the first two aggregated outputs', async function () {
+            it('marks the job as running and progress of 75 with 2 links to the first two aggregated outputs', async function () {
               const job = await getFirstJob(db);
               expect(job.status).to.equal('running');
-              expect(job.progress).to.equal(66);
+              expect(job.progress).to.equal(75);
               const dataLinks = job.links.filter(link => link.rel === 'data');
               expect(dataLinks.length).to.equal(2);
             });

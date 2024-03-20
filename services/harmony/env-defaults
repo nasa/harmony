@@ -40,7 +40,7 @@ METRICS_ENDPOINT=
 # The Metrics index to query (via the METRICS_ENDPOINT)
 METRICS_INDEX=
 
-# If set to true, only include EDL cookies if the request is made via https.
+# If set to true the listener for the harmony application will use HTTPS
 USE_HTTPS=false
 
 # Whether to run example service endpoints under /example.  Useful for
@@ -83,6 +83,9 @@ ADMIN_GROUP_ID=9b359064-287f-411f-b2cc-ed4429676900
 
 # The EDL Group ID for the group whose users can access logs in the workflow-ui for their own jobs or shareable jobs
 LOG_VIEWER_GROUP_ID=0cf2a427-96cc-453e-ae44-e28dd0958738
+
+# The EDL Group ID for the group whose users can deploy backend services
+SERVICE_DEPLOYER_GROUP_ID=e0f5c59f-ee8b-49e0-b23d-587f15e56441
 
 # The number of ms to wait between polling to check whether a synchronous request completed
 SYNC_REQUEST_POLL_INTERVAL_MS=100
@@ -366,7 +369,7 @@ HARMONY_GDAL_ADAPTER_LIMITS_CPU=128m
 HARMONY_GDAL_ADAPTER_LIMITS_MEMORY=8Gi
 HARMONY_GDAL_ADAPTER_INVOCATION_ARGS='python -m gdal_subsetter'
 
-HYBIG_IMAGE=sds/harmony-browse-image-generator:latest
+HYBIG_IMAGE=ghcr.io/nasa/harmony-browse-image-generator:latest
 HYBIG_REQUESTS_CPU=128m
 HYBIG_REQUESTS_MEMORY=128Mi
 HYBIG_LIMITS_CPU=128m
@@ -387,7 +390,8 @@ HARMONY_NETCDF_TO_ZARR_LIMITS_CPU=128m
 HARMONY_NETCDF_TO_ZARR_LIMITS_MEMORY=512Mi
 HARMONY_NETCDF_TO_ZARR_INVOCATION_ARGS='python -m harmony_netcdf_to_zarr'
 
-HARMONY_REGRIDDER_IMAGE=sds/harmony-regridder:latestHARMONY_REGRIDDER_REQUESTS_CPU=128m
+HARMONY_REGRIDDER_IMAGE=sds/harmony-regridder:latest
+HARMONY_REGRIDDER_REQUESTS_CPU=128m
 HARMONY_REGRIDDER_REQUESTS_MEMORY=128Mi
 HARMONY_REGRIDDER_LIMITS_CPU=128m
 HARMONY_REGRIDDER_LIMITS_MEMORY=512Mi
@@ -418,7 +422,7 @@ TRAJECTORY_SUBSETTER_IMAGE=sds/trajectory-subsetter:latest
 TRAJECTORY_SUBSETTER_REQUESTS_CPU=128m
 TRAJECTORY_SUBSETTER_REQUESTS_MEMORY=128Mi
 TRAJECTORY_SUBSETTER_LIMITS_CPU=128m
-TRAJECTORY_SUBSETTER_LIMITS_MEMORY=512Mi
+TRAJECTORY_SUBSETTER_LIMITS_MEMORY=8Gi
 TRAJECTORY_SUBSETTER_INVOCATION_ARGS='python harmony_service/adapter.py'
 
 PODAAC_CONCISE_IMAGE=ghcr.io/podaac/concise:sit
@@ -466,3 +470,17 @@ GEOLOCO_REQUESTS_MEMORY=128Mi
 GEOLOCO_LIMITS_CPU=2048m
 GEOLOCO_LIMITS_MEMORY=2048Mi
 GEOLOCO_INVOCATION_ARGS='python harmony_python_interface/adapter.py'
+
+BATCHEE_IMAGE=asdc-trade/batchee:latest
+BATCHEE_REQUESTS_MEMORY=128Mi
+BATCHEE_LIMITS_MEMORY=512Mi
+BATCHEE_INVOCATION_ARGS='./docker-entrypoint.sh'
+BATCHEE_SERVICE_QUEUE_URLS='["asdc-trade/batchee:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/batchee.fifo"]'
+
+STITCHEE_IMAGE=asdc-trade/stitchee:latest
+STITCHEE_REQUESTS_CPU=128m
+STITCHEE_LIMITS_CPU=128m
+STITCHEE_REQUESTS_MEMORY=128Mi
+STITCHEE_LIMITS_MEMORY=10Gi
+STITCHEE_INVOCATION_ARGS='./docker-entrypoint.sh'
+STITCHEE_SERVICE_QUEUE_URLS='["asdc-trade/stitchee:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/stitchee.fifo"]'

@@ -19,7 +19,7 @@ import { populateUserWorkFromWorkItems } from '../app/models/user-work';
 import { resetQueues } from './helpers/queue';
 
 /**
- * Create a job and some work times to be used by tests
+ * Create a job and some work steps/items to be used by tests
  *
  * @param initialCmrHits - The number of hits returned by the CMR the first time it is queries
  * @param initialQueryCmrWorkItemCount - The number of query-cmr work items anticipated by the
@@ -49,7 +49,7 @@ async function createJobAndWorkItems(
     jobID: job.jobID,
     serviceID: nonAggregateService,
     stepIndex: 2,
-    workItemCount: initialCmrHits,
+    workItemCount: 0,
     hasAggregatedOutput: false,
   }).save(db);
 
@@ -57,7 +57,7 @@ async function createJobAndWorkItems(
     jobID: job.jobID,
     serviceID: aggregateService,
     stepIndex: 3,
-    workItemCount: 1,
+    workItemCount: 0,
     hasAggregatedOutput: true,
   }).save(db);
 
@@ -86,8 +86,8 @@ async function testInitialConditions(initialCmrHits: number, initialQueryCmrWork
   it('sets the initial number of work items for each step', async function () {
     const workflowSteps = await getWorkflowStepsByJobId(db, this.jobID);
     expect(workflowSteps[0].workItemCount).equals(initialQueryCmrWorkItemCount);
-    expect(workflowSteps[1].workItemCount).equals(initialCmrHits);
-    expect(workflowSteps[2].workItemCount).equals(1);
+    expect(workflowSteps[1].workItemCount).equals(0);
+    expect(workflowSteps[2].workItemCount).equals(0);
   });
 }
 
@@ -296,11 +296,11 @@ describe('Workflow chaining for a collection configured for Swath Projector and 
           });
 
           describe('when checking the jobs listing', function () {
-            it('marks the job as in progress and 50 percent complete because 1 of 2 granules is complete', async function () {
+            it('marks the job as in progress and 52 percent complete because query-cmr is completely done and 1 of 2 granules is complete in the other services', async function () {
               const jobs = await Job.forUser(db, 'anonymous');
               const job = jobs.data[0];
               expect(job.status).to.equal('running');
-              expect(job.progress).to.equal(50);
+              expect(job.progress).to.equal(52);
             });
           });
 
@@ -664,7 +664,7 @@ describe('When a request spans multiple CMR pages', function () {
         jobID: job.jobID,
         serviceID: aggregateService,
         stepIndex: 2,
-        workItemCount: 1,
+        workItemCount: 0,
         hasAggregatedOutput: true,
       }).save(db);
 
@@ -698,6 +698,12 @@ describe('When a request spans multiple CMR pages', function () {
         await updateWorkItem(this.backend, workItem);
       });
 
+      it('sets job progress to 42 after completing the first query-cmr work-item', async function () {
+        const jobs = await Job.forUser(db, 'anonymous');
+        const job = jobs.data[0];
+        expect(job.progress).to.equal(42);
+      });
+
       it('does not generate the aggregation step until all query-cmr items are finished', async function () {
         const queuedCount = (await getWorkItemsByJobIdAndStepIndex(db, this.jobID, 2)).workItems.length;
         expect(queuedCount).equals(0);
@@ -714,6 +720,12 @@ describe('When a request spans multiple CMR pages', function () {
         workItem.outputItemSizes = [1, 1];
         await fakeServiceStacOutput(workItem.jobID, workItem.id, 2);
         await updateWorkItem(this.backend, workItem);
+      });
+
+      it('sets job progress to 50 after completing all the query-cmr work-items', async function () {
+        const jobs = await Job.forUser(db, 'anonymous');
+        const job = jobs.data[0];
+        expect(job.progress).to.equal(50);
       });
 
       it('queues the aggregating work item once all query-cmr items are finished', async function () {
@@ -796,7 +808,7 @@ describe('When a request spans multiple CMR pages', function () {
 
         it('does not update the number of work items for the aggregating step', async function () {
           const workflowStep = await getWorkflowStepByJobIdStepIndex(db, this.jobID, 3);
-          expect(workflowStep.workItemCount).equals(1);
+          expect(workflowStep.workItemCount).equals(0);
         });
 
         describe('and the number of worked items matches the new number', async function () {
@@ -872,7 +884,7 @@ describe('When a request spans multiple CMR pages', function () {
 
         it('does not update the number of work items for the aggregating step', async function () {
           const workflowStep = await getWorkflowStepByJobIdStepIndex(db, this.jobID, 3);
-          expect(workflowStep.workItemCount).equals(1);
+          expect(workflowStep.workItemCount).equals(0);
         });
 
         describe('and the number of worked items matches the initial number', function () {

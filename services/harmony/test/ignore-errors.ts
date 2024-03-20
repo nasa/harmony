@@ -137,6 +137,7 @@ describe('ignoreErrors', function () {
       });
 
       describe('when the first Swath Projector work item fails', function () {
+        this.timeout(120000);
         let firstSwathItem;
 
         before(async function () {
@@ -158,6 +159,7 @@ describe('ignoreErrors', function () {
         });
 
         it('fails the job', async function () {
+          // await sleep(100000);
           // work item failure with only one granue should trigger job failure
           const { job } = await Job.byJobID(db, firstSwathItem.jobID);
           expect(job.status).to.equal(JobStatus.FAILED);

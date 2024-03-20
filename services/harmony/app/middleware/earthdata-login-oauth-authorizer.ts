@@ -70,22 +70,13 @@ async function handleCodeValidation(oauth2: OAuthClient, req, res, _next): Promi
  * @param res - The client response
  * @param _next - The next function in the middleware chain
  */
-function handleLogout(oauth2: OAuthClient, req, res, _next): void {
+async function handleLogout(oauth2: OAuthClient, req, res, _next): Promise<void> {
   const { redirect } = req.query;
 
   const { token } = req.signedCookies;
   if (token) {
-    // Revocation does not currently work due to non-standard OAuth Impl.
-    // Bug: https://bugs.earthdata.nasa.gov/browse/URSFOUR-1042
-    //
-    // If we need to revoke in the mean time, we can
-    // DELETE /oauth2/token/{token}
-    //
-    // See https://developer.earthdata.nasa.gov/urs/urs-integration/working-with-the-earthdata-login-api/api-documentation
-    //
-    // const oauthToken = oauth2.accessToken.create(token);
-    // oauthToken.revokeAll();
-
+    const oauthToken = oauth2.accessToken.create(token);
+    await oauthToken.revokeAll();
     res.clearCookie('token', cookieOptions);
   }
   res.redirect(307, redirect || '/');
@@ -179,7 +170,8 @@ export default function buildEdlAuthorizer(paths: Array<string | RegExp> = []): 
   return async function earthdataLoginAuthorizer(req: HarmonyRequest, res, next): Promise<void> {
     const oauth2 = simpleOAuth2.create(oauthOptions);
     const { token } = req.signedCookies;
-    const requiresAuth = paths.some((p) => req.path.match(p)) && !req.authorized;
+    const requiresAuth = paths.some((p) => req.path.match(p)) && !req.authorized
+      && req.method.toUpperCase() != 'PUT'; // we don't support PUT requests with the redirect
     let handler;
 
     try {

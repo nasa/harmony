@@ -37,3 +37,4 @@ docs/outputs
 
 .netrc
 .ignore
+certs/
