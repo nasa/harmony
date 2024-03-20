@@ -470,7 +470,7 @@ GEOLOCO_REQUESTS_MEMORY=128Mi
 GEOLOCO_LIMITS_CPU=2048m
 GEOLOCO_LIMITS_MEMORY=2048Mi
 GEOLOCO_INVOCATION_ARGS='python harmony_python_interface/adapter.py'
-GEOLOCO_SERVICE_QUEUE_URLS='["ldds/geoloco:latest,http://localstack:4566/queue/geoloco.fifo"]'
+GEOLOCO_SERVICE_QUEUE_URLS='["ldds/geoloco:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/geoloco.fifo"]'
 
 SUBSETNAMEBAND_IMAGE=ldds/subset_band_name:latest
 SUBSETNAMEBAND_REQUESTS_CPU=128m
@@ -478,7 +478,7 @@ SUBSETNAMEBAND_REQUESTS_MEMORY=128Mi
 SUBSETNAMEBAND_LIMITS_CPU=2048m
 SUBSETNAMEBAND_LIMITS_MEMORY=2048Mi
 SUBSETNAMEBAND_INVOCATION_ARGS='python3 /app/harmony_python_interface/adapter.py'
-SUBSETNAMEBAND_SERVICE_QUEUE_URLS='["ldds/subset_band_name:latest,http://localstack:4566/queue/subsetnameband.fifo"]'
+SUBSETNAMEBAND_SERVICE_QUEUE_URLS='["ldds/subset_band_name:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/subsetnameband.fifo"]'
 
 BATCHEE_IMAGE=asdc-trade/batchee:latest
 BATCHEE_REQUESTS_MEMORY=128Mi
