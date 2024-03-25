@@ -34,6 +34,7 @@ const serviceImages = {
   'query-cmr': 'latest',
   'giovanni-adapter': 'latest',
   'geoloco': 'latest',
+  'subset_band_name': 'latest',
   'batchee': 'latest',
   'stitchee': 'latest',
 };
