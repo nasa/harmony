@@ -24,9 +24,9 @@ export const harmonyTaskServices = [
  * @returns The map of canonical service names to image tags.
  */
 export function getImageTagMap(): {} {
-  const imageMap = {};
+  const unsortedImageMap = {};
   for (const v of Object.keys(process.env)) {
-    if (v.endsWith('_IMAGE')) {
+    if (v.endsWith('_IMAGE') && v !== 'SERVICE_RUNNER_IMAGE') {
       const serviceName = v.slice(0, -6).toLowerCase().replaceAll('_', '-');
       // add in any services that are not Harmony core task services
       if (!harmonyTaskServices.includes(serviceName)) {
@@ -34,13 +34,19 @@ export function getImageTagMap(): {} {
         const match = image.match(/.*:(.*)/);
         if (match) {
           const tag = match[1] || '';
-          imageMap[serviceName] = tag;
+          unsortedImageMap[serviceName] = tag;
         }
       }
     }
   }
 
-  return imageMap;
+  const sortedImageMap = Object.keys(unsortedImageMap).sort().reduce((acc, key) => ({
+    ...acc,
+    [key]: unsortedImageMap[key],
+  }), {});
+
+
+  return sortedImageMap;
 }
 
 export interface EcrImageNameComponents {
@@ -280,8 +286,14 @@ export async function getServiceImageTags(
   if (! await validateUserIsInDeployerOrAdminGroup(req, res)) return;
 
   const imageMap = getImageTagMap();
+
+  const sortedImageMap = Object.keys(imageMap).sort().reduce((acc, key) => ({
+    ...acc,
+    [key]: imageMap[key],
+  }), {});
+
   res.statusCode = 200;
-  res.send(imageMap);
+  res.send(sortedImageMap);
 }
 
 /**
