@@ -1,4 +1,4 @@
-import { IsInt, IsNotEmpty, Min } from 'class-validator';
+import { IsInt, IsNotEmpty, Max, Min } from 'class-validator';
 import { HarmonyEnv } from '@harmony/util/env';
 import _ from 'lodash';
 import * as path from 'path';
@@ -97,6 +97,17 @@ class HarmonyServerEnv extends HarmonyEnv {
   @IsInt()
   @Min(1)
   maxPostFileSize: number;
+
+  @IsInt()
+  @Min(0)
+  @Max(65535)
+  backendPort: number;
+
+  exampleServices: boolean;
+
+  skipEarthdataLogin: boolean;
+
+  useHttps: boolean;
 
 }
 

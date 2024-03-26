@@ -4,7 +4,7 @@
   "description": "Harmony task that queries the CMR for an incoming message and produces a sources file as output",
   "main": "app/query-granules.ts",
   "scripts": {
-    "test": "eslint --ext .ts --ignore-pattern built . && nyc mocha && pnpm audit --audit-level high --prod",
+    "test": "eslint --ext .ts --ignore-pattern built . && nyc mocha --load-env-files=false && pnpm audit --audit-level high --prod",
     "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha",
     "test-bail": "TS_NODE_TRANSPILE_ONLY=true mocha --bail",
     "coverage": "nyc mocha",
@@ -13,15 +13,11 @@
     "start-dev-fast": "TS_NODE_TRANSPILE_ONLY=true ts-node-dev --no-notify -r tsconfig-paths/register --respawn --inspect=127.0.0.1:9230 app/server",
     "lint": "eslint --ext .ts .",
     "docker-example": "docker run --rm -it --env SHARED_SECRET_KEY=foo --env CMR_ENDPOINT='https://cmr.uat.earthdata.nasa.gov' -v $(pwd)/example:/app/example -v $(pwd)/temp:/app/temp harmonyservices/query-cmr:${VERSION:-latest}",
-    "prebuild": "./bin/prebuild",
-    "prebuild-m1": "./bin/prebuild",
     "bld": "tsc -p ./tsconfig.build.json",
-    "docker-build": "cd ../..; docker build . --target service --tag harmonyservices/query-cmr:${VERSION:-latest} --build-arg PROJECT=query-cmr --file=Dockerfile.turbo",
-    "build": "tsc --project ./tsconfig.build.json && docker build -t harmonyservices/query-cmr:${VERSION:-latest} .",
-    "build-m1": "tsc --project ./tsconfig.build.json && docker build --platform linux/amd64 -t harmonyservices/query-cmr:${VERSION:-latest} .",
-    "push-image": "./bin/push-image ${VERSION:-latest}",
-    "publish": "docker push harmonyservices/query-cmr:${VERSION:-latest}",
-    "better-audit": "better-npm-audit audit"
+    "build": "cd ../..; docker build . --target service --tag harmonyservices/query-cmr:${VERSION:-latest} --build-arg PROJECT=query-cmr --file=Dockerfile",
+    "build-m1": "cd ../..; docker build . --platform linux/amd64 --target service --tag harmonyservices/query-cmr:${VERSION:-latest} --build-arg PROJECT=query-cmr --file=Dockerfile",
+    "push-image": "../../bin/push-image query-cmr ${VERSION:-latest}",
+    "publish": "docker push harmonyservices/query-cmr:${VERSION:-latest}"
   },
   "keywords": [
     "NASA",

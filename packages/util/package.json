@@ -5,7 +5,7 @@
   "private": true,
   "main": "./index.ts",
   "scripts": {
-    "test": "eslint --ext .ts --ignore-pattern built . && nyc mocha && pnpm audit --audit-level high --prod",
+    "test": "eslint --ext .ts --ignore-pattern built . && nyc mocha --load-env-files=false && pnpm audit --audit-level high --prod",
     "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha",
     "test-bail": "TS_NODE_TRANSPILE_ONLY=true mocha --bail",
     "coverage": "nyc mocha",

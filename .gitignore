@@ -1,5 +1,6 @@
 # package directories
 node_modules
+.pnpm-store
 
 # Temp and log files
 *.log
