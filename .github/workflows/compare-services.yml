@@ -16,7 +16,7 @@ jobs:
           node-version: "18.x"
 
       - name: Install dependencies
-        run: pnpm i
+        run: corepack enable pnpm && pnpm i
 
       - name: Run service compare script
         run: SHARED_SECRET_KEY=foo pnpm compare-services

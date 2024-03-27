@@ -42,6 +42,7 @@ jobs:
       - name: Install dependencies
         run: |
           source bin/helper
+          retry_command 10 corepack enable pnpm
           retry_command 10 pnpm i
 
       - name: Start colima

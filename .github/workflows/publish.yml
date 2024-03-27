@@ -26,6 +26,7 @@ jobs:
         run: echo "${{ secrets.DOCKERHUB }}" | docker login -u "${DOCKER_USER}" --password-stdin
       - name: Setup Node
         run: |
+          corepack enable pnpm
           pnpm install
       - name: Build and publish images
         run: |
