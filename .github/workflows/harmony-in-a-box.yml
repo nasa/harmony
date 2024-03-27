@@ -17,11 +17,16 @@ jobs:
       - name: Install setuptools
         run: sudo -H pip install setuptools
 
-      - name: Install docker
+      - name: Set up Docker
+        uses: crazy-max/ghaction-setup-docker@v3
+
+      - name: Install kubectl
         run: |
           brew update
-          brew install docker
           brew install kubectl
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Install awslocal
         run: |
