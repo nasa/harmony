@@ -17,25 +17,24 @@ import hookDescribeImage from './helpers/container-registry';
 //
 
 const serviceImages = {
-  'service-runner': 'latest',
+  'batchee': 'latest',
+  'geoloco': 'latest',
+  'giovanni-adapter': 'latest',
   'harmony-gdal-adapter': 'latest',
-  'hybig': 'latest',
-  'harmony-service-example': 'latest',
   'harmony-netcdf-to-zarr': 'latest',
   'harmony-regridder': 'latest',
-  'swath-projector': 'latest',
+  'harmony-service-example': 'latest',
   'hoss': 'latest',
-  'sds-maskfill': 'latest',
-  'trajectory-subsetter': 'latest',
+  'hybig': 'latest',
   'podaac-concise': 'sit',
   'podaac-l2-subsetter': 'sit',
-  'podaac-ps3': 'latest',
   'podaac-netcdf-converter': 'latest',
+  'podaac-ps3': 'latest',
   'query-cmr': 'latest',
-  'giovanni-adapter': 'latest',
-  'geoloco': 'latest',
-  'batchee': 'latest',
+  'sds-maskfill': 'latest',
   'stitchee': 'latest',
+  'swath-projector': 'latest',
+  'trajectory-subsetter': 'latest',
 };
 
 const errorMsg404 = 'Service foo does not exist.\nThe existing services and their images are\n' +
@@ -216,7 +215,7 @@ describe('Service image endpoint', async function () {
         delete this.res;
       });
 
-      it('returns a map of images', async function () {
+      it('returns a map of images in alphabetical order', async function () {
         expect(this.res.status).to.equal(200);
         expect(this.res.body).to.eql(serviceImages);
       });
