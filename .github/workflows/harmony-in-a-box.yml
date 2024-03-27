@@ -27,6 +27,9 @@ jobs:
         run: |
           pip install awscli-local
 
+      - name: Enable pnpm
+        run: corepack enable pnpm
+
       - name: Set up pnpm dependency caching
         uses: actions/setup-node@v4
         with:
@@ -42,7 +45,6 @@ jobs:
       - name: Install dependencies
         run: |
           source bin/helper
-          retry_command 10 corepack enable pnpm
           retry_command 10 pnpm i
 
       - name: Start colima
