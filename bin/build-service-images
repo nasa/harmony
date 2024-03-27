@@ -44,45 +44,10 @@ done
 
 # build all the image in the 'services' directory
 function build_all {
-  parallel=$1
-  pids=()
-  for dir in services/*; do
-    [[ ! -d "$dir" ]] && continue
-    pushd "$dir"
-    if [[ $parallel -eq 1 ]]; then
-      npm run build &
-      pids+=($!)
-    else
-      npm run build
-    fi
-    popd
-  done
-
-  if [[ $parallel -eq 1 ]]; then
-    wait_for_pids $pids
-  fi
+  pnpm build-all
 }
 
-if [[ "$#" -eq 0 ]]; then
-  build_all $PARALLEL
-else
-  pids=()
-  for f in "$@"; do
-    pushd "services/${f}"
-    if [[ $PARALLEL -eq 1 ]]; then
-      echo "BUILDING ${f} IN PARALLEL"
-      npm run build &
-      pids+=($!)
-    else
-      echo "BUILDING ${f} IN SERIES"
-      npm run build
-    fi
-    popd
-  done
+build_all
 
-  if [[ $PARALLEL -eq 1 ]]; then
-    wait_for_pids $pids
-  fi
-fi
 
 

@@ -6,7 +6,7 @@ on:
       - main
   release:
     types:
-       - published
+      - published
 
 env:
   DOCKER_USER: bilts
@@ -26,7 +26,7 @@ jobs:
         run: echo "${{ secrets.DOCKERHUB }}" | docker login -u "${DOCKER_USER}" --password-stdin
       - name: Setup Node
         run: |
-          npm install
+          pnpm install
       - name: Build and publish images
         run: |
           # For tagged versions, translate e.g. "refs/tags/v1.2.3" -> "1.2.3"
@@ -38,6 +38,5 @@ jobs:
           [ "${VERSION}" == "harmony-412" ] && VERSION=latest
 
           # build and publish images for all services
-          VERSION="${VERSION}" lerna run build
-          VERSION="${VERSION}" lerna run publish
-
+          VERSION="${VERSION}" pnpm -r build
+          VERSION="${VERSION}" pnpm -r publish

@@ -14,7 +14,7 @@ echo "Starting Harmony server..."
 pushd services/harmony > /dev/null
 export PORT=3000
 export DEBUG_PORT=9200
-npm run start-dev-fast > logs/server.log 2>&1 &
+pnpm start-dev-fast > logs/server.log 2>&1 &
 popd > /dev/null
 
 sleep 3
@@ -24,7 +24,7 @@ echo "Starting the work scheduler..."
 pushd services/work-scheduler > /dev/null
 export PORT=5006
 export DEBUG_PORT=9206
-npm run start-dev-fast > logs/work-scheduler.log 2>&1 &
+pnpm start-dev-fast > logs/work-scheduler.log 2>&1 &
 popd > /dev/null
 
 sleep 3
@@ -39,7 +39,7 @@ pushd services/work-updater > /dev/null
 export PORT=5002
 export DEBUG_PORT=9202
 export WORK_ITEM_UPDATE_QUEUE_TYPE=large
-npm run start-dev-fast > logs/work-update-large.log 2>&1 &
+pnpm start-dev-fast > logs/work-update-large.log 2>&1 &
 
 sleep 3
 
@@ -47,7 +47,7 @@ echo "Starting the small job work updater..."
 export PORT=5003
 export DEBUG_PORT=9203
 export WORK_ITEM_UPDATE_QUEUE_TYPE=small
-npm run start-dev-fast > logs/work-update-small.log 2>&1 &
+pnpm start-dev-fast > logs/work-update-small.log 2>&1 &
 popd > /dev/null
 
 sleep 3
@@ -56,7 +56,7 @@ echo "Starting the work reaper..."
 pushd services/work-reaper > /dev/null
 export PORT=5004
 export DEBUG_PORT=9204
-npm run start-dev-fast > logs/work-reaper.log 2>&1 &
+pnpm start-dev-fast > logs/work-reaper.log 2>&1 &
 popd > /dev/null
 
 sleep 3
@@ -65,5 +65,5 @@ echo "Starting the work failer..."
 pushd services/work-failer > /dev/null
 export PORT=5005
 export DEBUG_PORT=9205
-npm run start-dev-fast > logs/work-failer.log 2>&1 &
+pnpm start-dev-fast > logs/work-failer.log 2>&1 &
 popd > /dev/null

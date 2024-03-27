@@ -1463,9 +1463,6 @@ importers:
       axios-mock-adapter:
         specifier: ^1.20.0
         version: 1.22.0(axios@1.6.8)
-      better-npm-audit:
-        specifier: ^3.7.3
-        version: 3.7.3
       chai:
         specifier: ^4.2.0
         version: 4.3.10
@@ -1626,9 +1623,6 @@ importers:
       axios-mock-adapter:
         specifier: ^1.20.0
         version: 1.22.0(axios@1.6.8)
-      better-npm-audit:
-        specifier: ^3.7.3
-        version: 3.7.3
       chai:
         specifier: ^4.2.0
         version: 4.3.10

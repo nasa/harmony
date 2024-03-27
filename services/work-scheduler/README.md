@@ -4,9 +4,8 @@ This folder contains the code and build scripts for the Harmony work scheduler,
 which is responsible for putting work-items on the service queues.
 
 ## Building the Work Scheduler
-
-1. Run `npm build` in this directory to build with the tag `latest`. To use a different tag,
-   run `VERSION=tag npm run build`.
+1. Run `pnpm build` in this directory to build with the tag `latest`. To use a different tag,
+   run `VERSION=tag pnpm build`.
 
 ## Using the Scheduler Locally
 
@@ -21,7 +20,7 @@ alone process outside of Docker. This can be done by first removing the version 
 kubernetes then starting up a node.js process to run the scheduler.
 1. `kubectl delete deployment harmony-work-scheduler -n harmony`
 2. `kubectl delete service harmony-work-scheduler -n harmony`
-3. `npm run start-dev-fast` (from this directory)
+3. `pnpm start-dev-fast` (from this directory)
 
 ## Pushing the Docker Image to ECR
 
@@ -29,7 +28,7 @@ If you want to do sandbox deployments with your custom scheduler image then you 
 push it to ECR. This can be done as follows:
 
 1. (only needed if building on Mac to build for AMD64 architecture)
-   `VERSION=<image-tag> npm run build-m1`
-2. `bin/push-image <image-tag>`
+   `VERSION=<image-tag> pnpm build-m1`
+2. `VERSION=<image-tag> pnpm push-image`
 
 This requires you to have your AWS credentials set for your sandbox.

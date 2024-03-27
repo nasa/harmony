@@ -2,35 +2,16 @@
 
 # build services - only to be used in CICD
 
-build() {
-     echo "BUILDING $1"
-     pushd "$1"
-     npm ci
-     npx tsc --project ./tsconfig.build.json 
-     npm prune --production
-     popd
-}
-
-link_env() {
-    pushd "$1"
-    mkdir -p built/packages/util
-    mkdir -p built/services/harmony
-    cp -r  ../../packages/util/built/* built/packages/util
-    cp ../../packages/util/env-defaults built/packages/util
-    cp ../harmony/env-defaults built/services/harmony
-    popd
-}
-
 chown -R root:root .
 set -ex
-npm ci
-
-build "packages/util"
+corepack enable pnpm
+pnpm i
 
 for subdir in services/*; do
-    if [[ -d "${subdir}" ]]; then
-        link_env "${subdir}"
-        build "${subdir}"
+    if [[ -d "${subdir}" ] && [ "${subdir}" != "services/harmony" ]]; then
+        pushd "${subdir}"
+        pnpm build
+        popd
     fi
 done
 

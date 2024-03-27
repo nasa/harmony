@@ -1,3 +1,2 @@
 #!/bin/bash
-#npm run start-dev-fast
 node app/server.js

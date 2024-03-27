@@ -12,18 +12,18 @@ SHARED_SECRET_KEY=foo ts-node app/cli --harmony-input "$(cat example/message.jso
 To build and run in Docker:
 
 ```
-npm run build
-npm run docker-example -- --harmony-input '$(cat example/message.json)' --query example/query.json -o temp
+pnpm build
+pnpm docker-example -- --harmony-input '$(cat example/message.json)' --query example/query.json -o temp
 ```
 
 To test:
 
 ```
-npm run test
+pnpm test
 ```
 
 To push to ECR:
 
 ```
-bin/push-image <tag>
+VERSION=<image-tag> pnpm push-image`
 ```

@@ -70,10 +70,15 @@ $ node --version
 v18.18.2
 ```
 
-Ensure npm is available and is version 9 or later.
+Enable pnpm:
 ```
-$ npm --version
-9.8.1
+corepack enable pnpm
+```
+
+Ensure pnpm is available and is version 3 or later.
+```
+$ pnpm --version
+8.15.5
 ```
 
 If either are not the correct versions and you are using NVM, install them and ensure your `PATH` is up-to-date by running:
@@ -82,7 +87,7 @@ If either are not the correct versions and you are using NVM, install them and e
 $ nvm install && nvm use
 ```
 
-The output should include node 18 and npm 9.
+The output should include node 18 .
 ```
 Now using node v18.18.2 (npm v9.8.1)
 ```
@@ -91,10 +96,10 @@ Be sure to **verify the version on the final line** to make sure the NVM binary 
 
 From the harmony project root, install library dependencies:
 ```
-$ npm install
+$ pnpm install
 ```
 
-Recommended: Add `./node_modules/.bin` to your `PATH`.  This will allow you to run binaries from installed node modules.  If you choose not to do this, you will need to prefix node module calls with `npx`, e.g. `npx mocha` instead of just `mocha`
+Recommended: Add `./node_modules/.bin` to your `PATH`.  This will allow you to run binaries from installed node modules.  If you choose not to do this, you will need to prefix node module calls with `pnpm dlx`, e.g. `pnpm dlx mocha` instead of just `mocha`
 
 ### Set Up Environment Variables
 
@@ -225,10 +230,10 @@ need to close Docker or disable Kubernetes support in the UI.  Note that the lat
 To run Harmony locally such that it reloads when files change (recommended during development), run
 
 ```
-$ npm run start-dev
+$ pnpm start-dev
 ```
 
-In production, we use `$ npm run start` which does the same but does not add the file watching and reloading behavior.
+In production, we use `$ pnpm start` which does the same but does not add the file watching and reloading behavior.
 
 You should see messages about the two applications listening on two ports, "frontend" and "backend."  The frontend application receives requests from users, while the backend application receives callbacks from services.
 
@@ -249,10 +254,10 @@ PNG from the test server.
 To run the linter, tests, and coverage checks as the CI environment will, run
 
 ```
-$ npm test
+$ pnpm test
 ```
 
-Harmony uses [eslint](https://eslint.org) as a linter, which can be invoked as `$ npx eslint` (or `$ eslint` if you have set up your `PATH`).  It uses [mocha](https://mochajs.org) for tests, `$ npx mocha`, and [nyc](https://istanbul.js.org) for code coverage, `$ npx nyc mocha`.
+Harmony uses [eslint](https://eslint.org) as a linter, which can be invoked as `$ pnpm dlx eslint` (or `$ eslint` if you have set up your `PATH`).  It uses [mocha](https://mochajs.org) for tests, `$ pnpm dlx mocha`, and [nyc](https://istanbul.js.org) for code coverage, `$ pnpm dlx nyc mocha`.
 
 ### Test Fixtures
 
@@ -272,20 +277,20 @@ To re-record everything, remove the fixtures directory and run the test suite. T
 
 The Harmony Docker image can be built with the following command:
 ```bash
-npm run build
+pnpm build
 ```
 
 The image can be deployed to DockerHub using the following commands:
 ```bash
-npm run publish
+pnpm publish
 ```
 
 ## Building Images and Pushing them to the Sandbox ECR
 
 1. Set your AWS profile to the sandbox, e.g., `export AWS_PROFILE=harmony-sandbox`
-2. `VERSION=<some-tag> npm run build-all` (or `VERSION=<some-tag> npm run build-all-m1` if you are building
+2. `VERSION=<some-tag> pnpm build-all` (or `VERSION=<some-tag> pnpm build-all-m1` if you are building
     on a Mac M1/M2 machine).
-3. `VERSION=<some-tag> npm run push-image-all`
+3. `VERSION=<some-tag> pnpm push-image-all`
 
 ## Contributing to Harmony
 

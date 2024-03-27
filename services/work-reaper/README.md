@@ -1,13 +1,13 @@
 # Harmony Work Reaper
 
 This folder contains the code and build scripts for the Harmony work reaper,
-which is responsible for deleting work items and workflow steps  that have 
+which is responsible for deleting work items and workflow steps  that have
 not been updated for a (configurable) period of time.
 
 ## Building the Work Reaper for Local Use
 
-1. Run `npm build` in this directory to build with the tag `latest`. To use a different tag,
-   run `VERSION=tag npm run build`.
+1. Run `pnpm build` in this directory to build with the tag `latest`. To use a different tag,
+   run `VERSION=tag pnpm build`.
 
 ## Using the Work Reaper Locally
 
@@ -20,7 +20,7 @@ If you are doing development of the reaper itself it is convenient to run it as 
 kubernetes then starting up a node.js process to run the updater.
 1. `kubectl delete deployment harmony-work-reaper -n harmony`
 2. `kubectl delete service harmony-work-reaper -n harmony`
-3. `npm run start-dev-fast` (from this directory)
+3. `pnpm start-dev-fast` (from this directory)
 
 ## Pushing the Docker Image to ECR
 
@@ -28,7 +28,7 @@ If you want to do sandbox deployments with your custom updater image then you ne
 push it to ECR. This can be done as follows:
 
 1. (only needed if building on Mac to build for AMD64 architecture)
-   `VERSION=<image-tag> npm run build-m1`
-2. `bin/push-image <image-tag>`
+   `VERSION=<image-tag> pnpm build-m1`
+2. `VERSION=<image-tag> pnpm push-image`
 
 This requires you to have your AWS credentials set for your sandbox.
