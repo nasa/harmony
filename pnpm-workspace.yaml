@@ -1,0 +1,7 @@
+packages:
+  # include all packages in direct subdirs of packages/
+  - 'packages/*'
+  # include service packages
+  - 'services/*'
+  # exclude packages that are inside test directories
+  - '!**/test/**'

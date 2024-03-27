@@ -3,7 +3,7 @@ import { Logger } from 'winston';
 import env from '../../util/env';
 import WorkItem, { getNextWorkItem, getNextWorkItems, getWorkItemStatus, updateWorkItemStatuses } from '../../models/work-item';
 import { getNextJobIdForUsernameAndService, getNextJobIds, getNextUsernameForWork, incrementRunningAndDecrementReadyCounts, recalculateCounts } from '../../models/user-work';
-import { getQueueForUrl, getQueueUrlForService, getWorkSchedulerQueue  } from '../../util/queue/queue-factory';
+import { queuefactory as qf  } from '@harmony/util';
 import { QUERY_CMR_SERVICE_REGEX, calculateQueryCmrLimit, processSchedulerQueue } from './util';
 import { WorkItemStatus } from '../../models/work-item-interface';
 
@@ -143,7 +143,7 @@ export async function getWorkItemsFromDatabase(
 export async function makeWorkScheduleRequest(serviceID: string): Promise<void> {
   // only do this if we are using service queues
   if (env.useServiceQueues) {
-    const schedulerQueue = getWorkSchedulerQueue();
+    const schedulerQueue = qf.getWorkSchedulerQueue();
     await schedulerQueue.sendMessage(serviceID);
   }
 }
@@ -153,10 +153,10 @@ export async function makeWorkScheduleRequest(serviceID: string): Promise<void> 
  * @param serviceID - The service ID for which to get work
  */
 export async function getWorkFromQueue(serviceID: string, reqLogger: Logger): Promise<WorkItemData | null> {
-  const queueUrl = getQueueUrlForService(serviceID);
+  const queueUrl = qf.getQueueUrlForService(serviceID);
   reqLogger.debug(`Short polling for work from queue ${queueUrl} for service ${serviceID}`);
 
-  const queue = getQueueForUrl(queueUrl);
+  const queue = qf.getQueueForUrl(queueUrl);
   if (!queue) {
     throw new Error(`No queue found for URL ${queueUrl}`);
   }

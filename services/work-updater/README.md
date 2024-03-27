@@ -5,8 +5,8 @@ which is responsible for reading work-item updates from a queue and handling pro
 
 ## Building the Work Updater for Local Use
 
-1. Run `npm build` in this directory to build with the tag `latest`. To use a different tag,
-   run `VERSION=tag npm run build`.
+1. Run `pnpm build` in this directory to build with the tag `latest`. To use a different tag,
+   run `VERSION=tag pnpm build`.
 
 ## Using the Updater Locally
 
@@ -20,7 +20,7 @@ alone process outside of Docker. This can be done by first removing the version 
 kubernetes then starting up a node.js process to run the updater.
 1. `kubectl delete deployment harmony-work-updater -n harmony`
 2. `kubectl delete service harmony-work-updater -n harmony`
-3. `npm run start-dev-fast` (from this directory)
+3. `pnpm start-dev-fast` (from this directory)
 
 ## Pushing the Docker Image to ECR
 
@@ -28,7 +28,7 @@ If you want to do sandbox deployments with your custom updater image then you ne
 push it to ECR. This can be done as follows:
 
 1. (only needed if building on Mac to build for AMD64 architecture)
-   `VERSION=<image-tag> npm run build-m1`
-2. `bin/push-image <image-tag>`
+   `VERSION=<image-tag> pnpm build-m1`
+2. `VERSION=<image-tag> pnpm push-image`
 
 This requires you to have your AWS credentials set for your sandbox.

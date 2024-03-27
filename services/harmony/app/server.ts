@@ -19,6 +19,7 @@ import logger from './util/log';
 import * as exampleBackend from '../example/http-backend';
 import cmrCollectionReader from './middleware/cmr-collection-reader';
 import * as fs from 'fs';
+import harmonyServerEnvObj from './util/env';
 
 /**
  * Returns middleware to add a request specific logger
@@ -218,5 +219,14 @@ export async function stop({
 }
 
 if (require.main === module) {
-  start(process.env);
+  // force a strict use of settings read from the server environment instead of from the process env
+  const config: Record<string, string> = {
+    PORT: harmonyServerEnvObj.port.toString(),
+    BACKEND_PORT: harmonyServerEnvObj.backendPort.toString(),
+    CALLBACK_URL_ROOT: harmonyServerEnvObj.callbackUrlRoot,
+    EXAMPLE_SERVICES: harmonyServerEnvObj.exampleServices?.toString(),
+    skipEarthdataLogin: harmonyServerEnvObj.skipEarthdataLogin?.toString(),
+    USE_HTTPS: harmonyServerEnvObj.useHttps?.toString(),
+  };
+  start(config);
 }

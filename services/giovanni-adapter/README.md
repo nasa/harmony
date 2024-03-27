@@ -12,12 +12,12 @@ SHARED_SECRET_KEY=foo ts-node app/cli --harmony-input "$(cat example/message.jso
 To build and run in Docker:
 
 ```
-npm run build
-npm run docker-example -- --harmony-input '$(cat example/message.json)' -o temp
+pnpm build
+pnpm docker-example -- --harmony-input '$(cat example/message.json)' -o temp
 ```
 
 To test:
 
 ```
-npm run test
+pnpm test
 ```

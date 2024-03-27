@@ -4,7 +4,7 @@ import { before, after, beforeEach, afterEach } from 'mocha';
 import { stub } from 'sinon';
 
 import util from 'util';
-import db from '../../../harmony/app/util/db';
+import db from '@harmony/harmony/app/util/db';
 
 export const tables = ['jobs', 'work_items', 'workflow_steps', 'job_links', 'user_work', 'job_errors', 'batches', 'batch_items'];
 

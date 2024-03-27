@@ -1,5 +1,5 @@
 {
-  "name": "harmony-work-updater",
+  "name": "@harmony/work-updater",
   "version": "1.0.0",
   "description": "",
   "main": "server.ts",
@@ -7,21 +7,20 @@
     "start": "ts-node app/server.ts",
     "start-dev": "strict-npm-engines && ts-node-dev --no-notify -r tsconfig-paths/register --watch app/views --respawn app/server",
     "start-dev-fast": "TS_NODE_TRANSPILE_ONLY=true ts-node-dev --no-notify -r tsconfig-paths/register --respawn --inspect=127.0.0.1:${DEBUG_PORT:-9202} app/server",
-    "test": "eslint --ext .ts . && nyc mocha && better-npm-audit audit",
+    "test": "eslint --ext .ts --ignore-pattern built . && nyc mocha --load-env-files=false && pnpm audit --audit-level high --prod",
     "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha",
-    "lint": "eslint --ext .ts .",
+    "test-bail": "TS_NODE_TRANSPILE_ONLY=true mocha --bail",
     "coverage": "nyc mocha",
-    "prebuild": "./bin/prebuild",
-    "prebuild-m1": "./bin/prebuild",
-    "build": "tsc && docker build -f Dockerfile.mac --tag harmonyservices/work-updater:${VERSION:-latest} .",
-    "build-m1": "tsc && docker build -f Dockerfile.mac --platform linux/amd64 --tag harmonyservices/work-updater:${VERSION:-latest} .",
-    "push-image": "./bin/push-image ${VERSION:-latest}",
-    "publish": "docker push harmonyservices/work-updater:${VERSION:-latest}",
-    "better-audit": "better-npm-audit audit"
+    "lint": "eslint --ext .ts .",
+    "bld": "tsc -p ./tsconfig.build.json",
+    "docker-build": "cd ../..; docker build . --target service --tag harmonyservices/work-updater:${VERSION:-latest} --build-arg PROJECT=work-updater --file=Dockerfile",
+    "docker-build-m1": "cd ../..; docker build . --platform linux/amd64 --target service --tag harmonyservices/work-updater:${VERSION:-latest} --build-arg PROJECT=work-updater --file=Dockerfile",
+    "push-image": "../../bin/push-image work-updater ${VERSION:-latest}",
+    "publish": "docker push harmonyservices/work-updater:${VERSION:-latest}"
   },
   "engines": {
     "node": "^18.18.2",
-    "npm": ">=8"
+    "pnpm": ">=8"
   },
   "author": "NASA EOSDIS Harmony team",
   "license": "Apache-2.0",
@@ -34,7 +33,8 @@
     "@aws-sdk/s3-request-presigner": "^3.437.0",
     "@aws-sdk/url-parser": "^3.374.0",
     "@aws-sdk/util-format-url": "^3.433.0",
-    "@harmony/util": "file:../../packages/util",
+    "@harmony/harmony": "workspace:*",
+    "@harmony/util": "workspace:*",
     "@types/node-fetch": "^2.5.12",
     "agentkeepalive": "^4.1.4",
     "ajv": "^8.8.0",
@@ -58,7 +58,8 @@
     "tweetnacl-util": "^0.15.1",
     "uuid": "^8.3.2",
     "winston": "^3.10.0",
-    "xstate": "^4.31.0"
+    "xstate": "^4.31.0",
+    "@types/geojson": "^7946.0.10"
   },
   "devDependencies": {
     "@types/chai": "^4.2.22",
@@ -70,7 +71,6 @@
     "@types/superagent": "^4.1.13",
     "@types/supertest": "^2.0.10",
     "axios-mock-adapter": "^1.20.0",
-    "better-npm-audit": "^3.7.3",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "eslint": "^8.43.0",

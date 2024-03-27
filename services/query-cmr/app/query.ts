@@ -1,9 +1,9 @@
 import _ from 'lodash';
 import StacCatalog from './stac/catalog';
 import CmrStacCatalog from './stac/cmr-catalog';
-import { queryGranulesWithSearchAfter } from '../../harmony/app/util/cmr';
-import DataOperation from '../../harmony/app/models/data-operation';
-import defaultLogger from '../../harmony/app/util/log';
+import { queryGranulesWithSearchAfter } from '@harmony/harmony/app/util/cmr';
+import DataOperation from '@harmony/harmony/app/models/data-operation';
+import defaultLogger from '@harmony/harmony/app/util/log';
 import { Logger } from 'winston';
 
 export interface DataSource {

@@ -1,4 +1,4 @@
-import logger from '../../../harmony/app/util/log';
+import logger from '@harmony/harmony/app/util/log';
 import axios, { AxiosError, AxiosInstance } from 'axios';
 import axiosRetry, { exponentialDelay, isNetworkOrIdempotentRequestError } from 'axios-retry';
 import Agent from 'agentkeepalive';

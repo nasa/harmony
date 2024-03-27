@@ -4,18 +4,17 @@
   "description": "Harmony task that queries the CMR for an incoming message and produces a sources file as output",
   "main": "app/query-granules.ts",
   "scripts": {
-    "test": "eslint --ext .ts . && nyc mocha && better-npm-audit audit",
+    "test": "eslint --ext .ts --ignore-pattern built . && nyc mocha --load-env-files=false && pnpm audit --audit-level high --prod",
     "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha",
-    "lint": "eslint --ext .ts .",
+    "test-bail": "TS_NODE_TRANSPILE_ONLY=true mocha --bail",
     "coverage": "nyc mocha",
+    "lint": "eslint --ext .ts .",
     "docker-example": "docker run --rm -it --env SHARED_SECRET_KEY=foo -v $(pwd)/example:/app/example -v $(pwd)/temp:/app/temp harmonyservices/giovanni-adapter:${VERSION:-latest}",
-    "prebuild": "./bin/prebuild",
-    "prebuild-m1": "./bin/prebuild",
-    "build": "tsc && docker build -t harmonyservices/giovanni-adapter:${VERSION:-latest} .",
-    "build-m1": "tsc && docker build --platform linux/amd64 -t harmonyservices/giovanni-adapter:${VERSION:-latest} .",
-    "push-image": "./bin/push-image ${VERSION:-latest}",
-    "publish": "docker push harmonyservices/giovanni-adapter:${VERSION:-latest}",
-    "better-audit": "better-npm-audit audit"
+    "bld": "tsc -p ./tsconfig.build.json",
+    "build": "cd ../..; docker build . --target service --tag harmonyservices/giovanni-adapter:${VERSION:-latest} --build-arg PROJECT=giovanni-adapter --file=Dockerfile",
+    "build-m1": "cd ../..; docker build . --platform linux/amd64 --target service --tag harmonyservices/giovanni-adapter:${VERSION:-latest} --build-arg PROJECT=giovanni-adapter --file=Dockerfile",
+    "push-image": "../../bin/push-image giovanni-adapter ${VERSION:-latest}",
+    "publish": "docker push harmonyservices/giovanni-adapter:${VERSION:-latest}"
   },
   "keywords": [
     "NASA",
@@ -34,7 +33,9 @@
     "@aws-sdk/s3-request-presigner": "^3.437.0",
     "@aws-sdk/url-parser": "^3.374.0",
     "@aws-sdk/util-format-url": "^3.433.0",
-    "@harmony/util": "file:../../packages/util",
+    "@harmony/harmony": "workspace:*",
+    "@harmony/util": "workspace:*",
+    "@types/geojson": "^7946.0.8",
     "ajv": "^8.8.0",
     "ajv-formats": "^2.1.1",
     "class-validator": "^0.14.0",
@@ -51,7 +52,7 @@
   },
   "engines": {
     "node": "^18.18.2",
-    "npm": ">=8"
+    "pnpm": ">=8"
   },
   "devDependencies": {
     "@types/chai": "^4.2.22",
@@ -72,7 +73,6 @@
     "@types/yargs": "^17.0.5",
     "@typescript-eslint/eslint-plugin": "^5.60.0",
     "@typescript-eslint/parser": "^5.60.0",
-    "better-npm-audit": "^3.7.3",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "eslint": "^8.43.0",

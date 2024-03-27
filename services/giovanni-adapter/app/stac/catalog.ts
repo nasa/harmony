@@ -3,8 +3,8 @@ import { v4 as uuid } from 'uuid';
 import _ from 'lodash';
 import StacItem from './item';
 import { StacCatalog, StacLink } from './types';
-import { objectStoreForProtocol } from '../../../harmony/app/util/object-store';
-import { resolve } from '../../../harmony/app/util/url';
+import { objectStoreForProtocol } from '@harmony/harmony/app/util/object-store';
+import { resolve } from '@harmony/harmony/app/util/url';
 
 /**
  * Implementation of the StacCatalog type with constructor, write function, and ability

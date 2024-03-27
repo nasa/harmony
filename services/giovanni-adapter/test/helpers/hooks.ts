@@ -1,10 +1,10 @@
-import { hookMockS3 } from '../../../harmony/test/helpers/object-store';
+import { hookMockS3 } from '@harmony/harmony/test/helpers/object-store';
 import { before } from 'mocha';
 
 import { use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 
-import { configureLogToFile } from '../../../harmony/app/util/log';
+import { configureLogToFile } from '@harmony/harmony/app/util/log';
 
 hookMockS3();
 

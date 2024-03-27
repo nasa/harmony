@@ -1,6 +1,13 @@
 {
-  "extends": "./tsconfig.base.json",
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "allowJs": false
+  },
   "include": [
     "./app/**/*"
+  ],
+  "exclude": [
+    "**/knexfile.js",
+    "db/**/*.js"
   ]
 }

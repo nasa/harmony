@@ -26,20 +26,19 @@ The specific steps to create a new service are
 1. `cd services`
 2. `cp work-scheduler <new service>`
 3. Modify the code in the `app` and `test` directories to implement/test your service.
-4. Modify the `Dockerfile`, `env-defaults`, and `config/service-template.yml` files as well as
-   the push scripts in the `bin` directory as needed.
+4. Modify the `env-defaults`, and `config/service-template.yaml` as needed.
 5. `cd <new service>`
-6. Build the Docker image with `npm run build`.
+6. Build the Docker image with `pnpm build`.
 7. Deploy the service with `kubectl -n harmony apply -f ./config/service-template.yaml`
 
-For sandbox deployments you can use the push scripts in the `bin` directory combined with `npm`
+For sandbox deployments you can use the push scripts in the `bin` directory combined with `pnpm`
 to build and deploy your image to AWS ECR:
 
 1. Set your AWS profile to the sandbox, e.g., `export AWS_PROFILE=harmony-sandbox`
-2. `VERSION=<some-tag> npm run build` (or `VERSION=<some-tag> npm run build-m1` if you are building
+2. `VERSION=<some-tag> pnpm build` (or `VERSION=<some-tag> pnpm build-m1` if you are building
     on a Mac M1/M2 machine).
-3. `bin/push-image-aws-cli2 <some-tag>`
+3. `VERSION=<some-tag> pnpm push-image`
 
-The service can be run directly during development using `npm run start-dev-fast` rather than
+The service can be run directly during development using `pnpm start-dev-fast` rather than
 running it as a kubernetes service. This is much more convenient than continually building the
 Docker image and redeploying.

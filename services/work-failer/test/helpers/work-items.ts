@@ -2,14 +2,14 @@ import { Application } from 'express';
 import { afterEach, beforeEach } from 'mocha';
 import request, { Test } from 'supertest';
 import _ from 'lodash';
-import WorkItem from '../../../harmony/app/models/work-item';
-import db, { Transaction } from '../../../harmony/app/util/db';
+import WorkItem from '@harmony/harmony/app/models/work-item';
+import db, { Transaction } from '@harmony/harmony/app/util/db';
 import { truncateAll } from './db';
-import { hookBackendRequest } from '../../../harmony/test/helpers/hooks';
+import { hookBackendRequest } from '@harmony/harmony/test/helpers/hooks';
 import { buildWorkflowStep, hookWorkflowStepCreation, hookWorkflowStepCreationEach } from './workflow-steps';
-import { RecordConstructor } from '../../../harmony/app/models/record';
-import { objectStoreForProtocol } from '../../../harmony/app/util/object-store';
-import { WorkItemStatus, WorkItemRecord, getStacLocation } from '../../../harmony/app/models/work-item-interface';
+import { RecordConstructor } from '@harmony/harmony/app/models/record';
+import { objectStoreForProtocol } from '@harmony/harmony/app/util/object-store';
+import { WorkItemStatus, WorkItemRecord, getStacLocation } from '@harmony/harmony/app/models/work-item-interface';
 
 export const exampleWorkItemProps = {
   jobID: '1',

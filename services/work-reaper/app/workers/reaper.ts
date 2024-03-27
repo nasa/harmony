@@ -1,11 +1,11 @@
 import _ from 'lodash';
-import { JobStatus, terminalStates } from '../../../harmony/app/models/job';
-import { getWorkItemIdsByJobUpdateAgeAndStatus, deleteWorkItemsById } from '../../../harmony/app/models/work-item';
-import { getWorkflowStepIdsByJobUpdateAgeAndStatus, deleteWorkflowStepsById } from '../../../harmony/app/models/workflow-steps';
-import db from '../../../harmony/app/util/db';
-import log from '../../../harmony/app/util/log';
-import sleep from '../../../harmony/app/util/sleep';
-import { Worker } from '../../../harmony/app/workers/worker';
+import { JobStatus, terminalStates } from '@harmony/harmony/app/models/job';
+import { getWorkItemIdsByJobUpdateAgeAndStatus, deleteWorkItemsById } from '@harmony/harmony/app/models/work-item';
+import { getWorkflowStepIdsByJobUpdateAgeAndStatus, deleteWorkflowStepsById } from '@harmony/harmony/app/models/workflow-steps';
+import db from '@harmony/harmony/app/util/db';
+import log from '@harmony/harmony/app/util/log';
+import sleep from '@harmony/harmony/app/util/sleep';
+import { Worker } from '@harmony/harmony/app/workers/worker';
 import env from '../util/env';
 
 

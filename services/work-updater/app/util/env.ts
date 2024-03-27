@@ -1,7 +1,7 @@
 import { IsIn, IsInt, Min } from 'class-validator';
 import * as path from 'path';
 import { HarmonyEnv } from '@harmony/util/env';
-import { WorkItemQueueType } from '../../../harmony/app/util/queue/queue';
+import { WorkItemQueueType } from '@harmony/util/queue';
 import _ from 'lodash';
 
 //
