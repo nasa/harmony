@@ -14,12 +14,14 @@
     "start-dev-fast": "cd services/harmony && TS_NODE_TRANSPILE_ONLY=true ts-node-dev --no-notify -r tsconfig-paths/register --respawn --inspect=127.0.0.1:${DEBUG_PORT:-9200} app/server",
     "update-dev": "pnpm i && pnpm  run -r build && bin/restart-services",
     "watch-debug": "cd services/harmony && TS_NODE_TRANSPILE_ONLY=true nodemon --inspect=5858 -e ts,tsx,html --exec node -r tsconfig-paths/register -r ts-node/register app/server.ts",
+    "build": "pnpm run --filter @harmony/harmony build",
+    "build-m1": "pnpm run --filter @harmony/harmony build-m1",
     "build-all": "pnpm run -r --workspace-concurrency 1 build",
     "build-all-m1": "pnpm run -r --workspace-concurrency 1 build-m1",
     "push-image-all": "pnpm run -r --workspace-concurrency 1 push-image",
     "build-notebooks-image": "docker build --platform linux/amd64 -t harmonyservices/notebooks:${VERSION:-latest} -f Dockerfile-notebooks .",
     "run-notebooks-image": "source .env && docker run -i -t --platform linux/amd64 --init -p 8888:8888 --env NB_EDL_USERNAME=\"${NB_EDL_USERNAME}\" --env NB_EDL_PASSWORD=\"${NB_EDL_PASSWORD}\" harmonyservices/notebooks:${VERSION:-latest}",
-    "publish": "pnpm exec --scope=harmony -- VERSION=${VERSION:-latest} pnpm run publish ",
+    "publish": "pnpm run --filter @harmony/harmony publish ",
     "compare-services": "SKIP_ENV_VALIDATION=true ts-node scripts/service-comparison.ts"
   },
   "keywords": [
@@ -44,6 +46,7 @@
     "eslint-plugin-jsdoc": "^46.2.6",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-tsdoc": "^0.2.17",
+    "ts-node": "10.9.2",
     "ts-node-dev": "^2.0.0"
   },
   "pnpm": {
