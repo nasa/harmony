@@ -11,25 +11,19 @@ import env from '../util/env';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 export const asyncExec = util.promisify(require('child_process').exec);
 
-
-export const harmonyTaskServices = [
-  'work-item-scheduler',
-  'work-item-updater',
-  'work-reaper',
-  'work-failer',
-];
-
 /**
  * Compute the map of services to tags. Harmony core services are excluded.
  * @returns The map of canonical service names to image tags.
  */
 export function getImageTagMap(): {} {
   const unsortedImageMap = {};
+  const deployedServices = env.locallyDeployedServices.split(',');
+  deployedServices.push('query-cmr');
   for (const v of Object.keys(process.env)) {
-    if (v.endsWith('_IMAGE') && v !== 'SERVICE_RUNNER_IMAGE') {
+    if (v.endsWith('_IMAGE')) {
       const serviceName = v.slice(0, -6).toLowerCase().replaceAll('_', '-');
-      // add in any services that are not Harmony core task services
-      if (!harmonyTaskServices.includes(serviceName)) {
+      // add in any services that are deployed in the environment
+      if (deployedServices.includes(serviceName)) {
         const image = process.env[v];
         const match = image.match(/.*:(.*)/);
         if (match) {

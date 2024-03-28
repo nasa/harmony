@@ -8,6 +8,8 @@ import { auth } from './helpers/auth';
 import * as serviceImageTags from '../app/frontends/service-image-tags';
 import { checkServiceExists, checkTag, getImageTagMap, ecrImageNameToComponents } from '../app/frontends/service-image-tags';
 import hookDescribeImage from './helpers/container-registry';
+import env from '../app/util/env';
+import { stub } from 'sinon';
 
 //
 // Tests for the service-image endpoint
@@ -28,8 +30,6 @@ const serviceImages = {
   'hybig': 'latest',
   'podaac-concise': 'sit',
   'podaac-l2-subsetter': 'sit',
-  'podaac-netcdf-converter': 'latest',
-  'podaac-ps3': 'latest',
   'query-cmr': 'latest',
   'sds-maskfill': 'latest',
   'stitchee': 'latest',
@@ -51,55 +51,53 @@ const tagContentErrorMsg = 'A tag name may contain lowercase and uppercase chara
 describe('getImageTagMap', function () {
   let originalEnv: NodeJS.ProcessEnv;
 
+  let envStub;
   beforeEach(function () {
-    // Save the original process.env
     originalEnv = process.env;
-
-    // Mock process.env for our tests
     process.env = {};
+    envStub = stub(env, 'locallyDeployedServices').get(() => 'my-service,another-service,missing-tag-service,no-image-env-var');
   });
 
   afterEach(function () {
-    // Restore the original process.env after each test
     process.env = originalEnv;
+    envStub.restore();
   });
 
   it('should correctly map service names to image tags, excluding Harmony core services', function () {
     // Setup
     process.env.MY_SERVICE_IMAGE = 'repo/my-service:latest';
     process.env.ANOTHER_SERVICE_IMAGE = 'repo/another-service:v1.2.3';
-    process.env.WORK_FAILER_IMAGE = 'harmonyservices/work-failer:latest';
     process.env.MISSING_TAG_IMAGE = 'repo/missing-tag-service';
+    process.env.NOT_DEPLOYED_SERVICE_IMAGE = 'repo/not-deployed:latest';
 
     const result = getImageTagMap();
 
     expect(result).to.be.an('object');
     expect(result).to.have.property('my-service', 'latest');
     expect(result).to.have.property('another-service', 'v1.2.3');
-    expect(result).not.to.have.property('work-failer');
+    expect(result).not.to.have.property('no-image-env-var');
     expect(result).not.to.have.property('missing-tag-service');
+    expect(result).not.to.have.property('not-deployed-service');
   });
 });
 
 describe('checkServiceExists', function () {
   let originalEnv: NodeJS.ProcessEnv;
 
+  let envStub;
   beforeEach(function () {
-    // Save the original process.env
     originalEnv = process.env;
+    envStub = stub(env, 'locallyDeployedServices').get(() => 'my-service,another-service,missing-tag-service,no-image-env-var');
 
-    // Mock process.env for our tests
     process.env = {};
-    // Setup
     process.env.MY_SERVICE_IMAGE = 'repo/my-service:latest';
     process.env.ANOTHER_SERVICE_IMAGE = 'repo/another-service:v1.2.3';
-    process.env.WORK_FAILER_IMAGE = 'harmonyservices/work-failer:latest';
     process.env.MISSING_TAG_IMAGE = 'repo/missing-tag-service';
   });
 
   afterEach(function () {
-    // Restore the original process.env after each test
     process.env = originalEnv;
+    envStub.restore();
   });
 
   it('should return null if the service exists', function () {
@@ -183,6 +181,21 @@ describe('ecrImageNameToComponents', function () {
 //
 
 describe('Service image endpoint', async function () {
+  let envStub;
+  beforeEach(function () {
+    envStub = stub(env, 'locallyDeployedServices').get(() => 'giovanni-adapter,harmony-service-example,harmony-netcdf-to-zarr,var-subsetter,swath-projector,harmony-gdal-adapter,podaac-concise,sds-maskfill,trajectory-subsetter,podaac-l2-subsetter,harmony-regridder,hybig,geoloco');
+  });
+
+  afterEach(function () {
+    envStub.restore();
+  });
+
+  const locallyDeployedServices = 'giovanni-adapter,harmony-service-example,harmony-netcdf-to-zarr,var-subsetter,swath-projector,harmony-gdal-adapter,podaac-concise,sds-maskfill,trajectory-subsetter,podaac-l2-subsetter,harmony-regridder,hybig,geoloco';
+
+  beforeEach(function () {
+    process.env.LOCALLY_DEPLOYED_SERVICES = locallyDeployedServices;
+  });
+
   hookServersStartStop({ skipEarthdataLogin: false });
 
   describe('List service images', async function () {
@@ -472,8 +485,8 @@ describe('Service image endpoint', async function () {
         originalEnv = process.env;
 
         // Setup
-        process.env.MY_ECR_SERVICE_IMAGE = '123456789012.dkr.ecr.us-west-2.amazonaws.com/harmony/my-repository:my-tag';
-        process.env.MY_GHCR_SERVICE_IMAGE = 'ghcr.io/nasa/my-repository:my-tag';
+        process.env.HOSS_IMAGE = '123456789012.dkr.ecr.us-west-2.amazonaws.com/harmony/my-repository:my-tag';
+        process.env.HARMONY_SERVICE_EXAMPLE_IMAGE = 'ghcr.io/nasa/my-repository:my-tag';
       });
 
       after(function () {
@@ -485,7 +498,7 @@ describe('Service image endpoint', async function () {
         hookDescribeImage(null);
 
         before(async function () {
-          this.res = await request(this.frontend).put('/service-image-tag/my-ecr-service').use(auth({ username: 'buzz' })).send({ tag: 'foo' });
+          this.res = await request(this.frontend).put('/service-image-tag/hoss').use(auth({ username: 'buzz' })).send({ tag: 'foo' });
         });
 
         after(function () {
@@ -508,7 +521,7 @@ describe('Service image endpoint', async function () {
         before(async function () {
           // resolve to non-zero exit code meaning script failed
           execStub = sinon.stub(serviceImageTags, 'asyncExec').callsFake(() => Promise.resolve({ err: { code: 1 } }));
-          this.res = await request(this.frontend).put('/service-image-tag/my-ghcr-service').use(auth({ username: 'buzz' })).send({ tag: 'foo' });
+          this.res = await request(this.frontend).put('/service-image-tag/harmony-service-example').use(auth({ username: 'buzz' })).send({ tag: 'foo' });
         });
 
         after(function () {
