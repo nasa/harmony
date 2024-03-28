@@ -13,7 +13,7 @@
     "coverage": "nyc mocha",
     "lint": "eslint --ext .ts .",
     "bld": "tsc -p ./tsconfig.build.json",
-    "docker-build": "cd ../..; docker build . --target service --tag harmonyservices/work-updater:${VERSION:-latest} --build-arg PROJECT=work-updater --file=Dockerfile",
+    "docker-build": "cd ../..; docker build . --target service --tag harmonyservices/work-updater:${VERSION:-latest} --file=Dockerfile.work-updater",
     "docker-build-m1": "cd ../..; docker build . --platform linux/amd64 --target service --tag harmonyservices/work-updater:${VERSION:-latest} --build-arg PROJECT=work-updater --file=Dockerfile",
     "push-image": "../../bin/push-image work-updater ${VERSION:-latest}",
     "publish": "docker push harmonyservices/work-updater:${VERSION:-latest}"

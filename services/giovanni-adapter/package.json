@@ -11,7 +11,7 @@
     "lint": "eslint --ext .ts .",
     "docker-example": "docker run --rm -it --env SHARED_SECRET_KEY=foo -v $(pwd)/example:/app/example -v $(pwd)/temp:/app/temp harmonyservices/giovanni-adapter:${VERSION:-latest}",
     "bld": "tsc -p ./tsconfig.build.json",
-    "build": "cd ../..; docker build . --target service --tag harmonyservices/giovanni-adapter:${VERSION:-latest} --build-arg PROJECT=giovanni-adapter --file=Dockerfile",
+    "build": "cd ../..; docker build . --target service --tag harmonyservices/giovanni-adapter:${VERSION:-latest} --file=Dockerfile.giovanni-adapter",
     "build-m1": "cd ../..; docker build . --platform linux/amd64 --target service --tag harmonyservices/giovanni-adapter:${VERSION:-latest} --build-arg PROJECT=giovanni-adapter --file=Dockerfile",
     "push-image": "../../bin/push-image giovanni-adapter ${VERSION:-latest}",
     "publish": "docker push harmonyservices/giovanni-adapter:${VERSION:-latest}"

@@ -6,14 +6,14 @@
   "scripts": {
     "start": "ts-node app/server.ts",
     "start-dev": "strict-npm-engines && ts-node-dev --no-notify -r tsconfig-paths/register --watch app/views --respawn app/server",
-    "start-dev-fast": "TS_NODE_TRANSPILE_ONLY=true ts-node-dev --no-notify -r tsconfig-paths/register --respawn --inspect=127.0.0.1:{{DEBUG_PORT:-9204} app/server",
+    "start-dev-fast": "TS_NODE_TRANSPILE_ONLY=true ts-node-dev --no-notify -r tsconfig-paths/register --respawn --inspect=127.0.0.1:${DEBUG_PORT:-9204} app/server",
     "test": "eslint --ext .ts --ignore-pattern built . && nyc mocha --load-env-files=false && pnpm audit --audit-level high --prod",
     "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha",
     "test-bail": "TS_NODE_TRANSPILE_ONLY=true mocha --bail",
     "coverage": "nyc mocha",
     "lint": "eslint --ext .ts .",
     "bld": "tsc -p ./tsconfig.build.json",
-    "build": "cd ../..; docker build . --target service --tag harmonyservices/work-reaper:${VERSION:-latest} --build-arg PROJECT=work-reaper --file=Dockerfile",
+    "build": "cd ../..; docker build . --target service --tag harmonyservices/work-reaper:${VERSION:-latest} --file=Dockerfile.work-reaper",
     "build-m1": "cd ../..; docker build . --platform linux/amd64 --target service --tag harmonyservices/work-reaper:${VERSION:-latest} --build-arg PROJECT=work-reaper --file=Dockerfile",
     "push-image": "../../bin/push-image work-reaper ${VERSION:-latest}",
     "publish": "docker push harmonyservices/work-reaper:${VERSION:-latest}"

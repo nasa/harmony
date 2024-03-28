@@ -46,6 +46,8 @@
     "eslint-plugin-jsdoc": "^46.2.6",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-tsdoc": "^0.2.17",
+    "knex": "^2.4.0",
+    "pg": "^8.7.3",
     "ts-node": "10.9.2",
     "ts-node-dev": "^2.0.0"
   },

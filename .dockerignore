@@ -1,9 +1,13 @@
-node_modules
+**/node_modules/
+**/test/
+.pnpm-store
 .git
 .env
 db/*.sqlite3
-logs
+coverage
+**/logs/
 docs
 workload
 fixtures
-built
+**/built/
+**/.DS_Store

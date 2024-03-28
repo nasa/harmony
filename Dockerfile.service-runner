@@ -13,17 +13,23 @@ RUN pnpm config set store-dir /.pnpm-store
 # Fetch dependencies ##############################################
 FROM base as deps
 WORKDIR /src
-COPY ./pnpm-lock.yaml /src
+COPY ./*.json .
+COPY ./*.yaml .
 RUN --mount=type=cache,id=pnpm,target=/.pnpm-store pnpm fetch
 RUN pnpm add -g typescript turbo
+RUN turbo telemetry disable
+
+# Copy packages library and harmony source #########################
+COPY ./packages ./packages
+COPY ./services/harmony ./services/harmony
+COPY ./services/service-runner ./services/service-runner
 
 # Prune projects ##################################################
 FROM deps AS pruner
-ARG PROJECT
 
 WORKDIR /src
-COPY . .
-RUN turbo prune --scope="@harmony/${PROJECT}" --docker
+
+RUN turbo prune --scope="@harmony/service-runner" --docker
 # turbo prune misses the top-level tsconfig.base.json for some reason
 COPY tsconfig.base.json /src/out/full
 
@@ -36,7 +42,7 @@ COPY --from=pruner /src/out/pnpm-lock.yaml ./pnpm-lock.yaml
 COPY --from=pruner /src/out/json/ .
 
 # Copy db directory
-COPY --from=pruner /src/db/ /app/db
+COPY ./db /app/db
 
 # Copy source code of isolated subworkspace and build it
 COPY --from=pruner /src/out/full/ .
@@ -49,16 +55,11 @@ RUN find /app -name "*.ts" -type f -delete
 
 # Build the service image #########################################
 FROM deps AS service
-ARG PROJECT
 ARG PORT=5000
 RUN mkdir -p /tmp/metadata
-WORKDIR "/$PROJECT/services/$PROJECT"
-COPY --from=builder /app/ "/$PROJECT/"
-# This is hacky, but it lets us use one target for all the services
-# including harmony, without having the db directory in all the service images
-RUN if [ "$PROJECT" != "harmony" ]; then rm -rf $PROJECT/db; else cp -rf /$PROJECT/db/* db; fi
-RUN mkdir -p "/$PROJECT/bin"
-COPY --from=pruner /src/bin/start-harmony-in-container "/$PROJECT/bin"
+WORKDIR "/service-runner/services/service-runner"
+COPY --from=builder /app/ "/service-runner/"
+RUN rm -rf service-runner/db
 EXPOSE $PORT
 CMD [ "node", "app/server.js" ]
 

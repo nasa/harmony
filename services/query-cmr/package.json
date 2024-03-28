@@ -14,7 +14,7 @@
     "lint": "eslint --ext .ts .",
     "docker-example": "docker run --rm -it --env SHARED_SECRET_KEY=foo --env CMR_ENDPOINT='https://cmr.uat.earthdata.nasa.gov' -v $(pwd)/example:/app/example -v $(pwd)/temp:/app/temp harmonyservices/query-cmr:${VERSION:-latest}",
     "bld": "tsc -p ./tsconfig.build.json",
-    "build": "cd ../..; docker build . --target service --tag harmonyservices/query-cmr:${VERSION:-latest} --build-arg PROJECT=query-cmr --file=Dockerfile",
+    "build": "cd ../..; docker build . --target service --tag harmonyservices/query-cmr:${VERSION:-latest} --file=Dockerfile.query-cmr",
     "build-m1": "cd ../..; docker build . --platform linux/amd64 --target service --tag harmonyservices/query-cmr:${VERSION:-latest} --build-arg PROJECT=query-cmr --file=Dockerfile",
     "push-image": "../../bin/push-image query-cmr ${VERSION:-latest}",
     "publish": "docker push harmonyservices/query-cmr:${VERSION:-latest}"
