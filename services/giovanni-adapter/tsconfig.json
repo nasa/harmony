@@ -1,7 +1,10 @@
 {
-  "extends": "./tsconfig.base.json",
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "typeRoots": [ "./node_modules/@types", "./app/stac" ],
+    "resolveJsonModule": true
   },
-  "include": [ "./app/**/*", "./test/**/*" ]
+  "include": [
+    "./app/**/*",
+    "./test/**/*"
+  ]
 }

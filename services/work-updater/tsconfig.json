@@ -1,16 +1,18 @@
 {
   "compilerOptions": {
-      "module": "commonjs",
-      "baseUrl": ".",
-      "moduleResolution": "node",
-      "target": "ES2021",
-      "esModuleInterop": true,
-      "experimentalDecorators": true,
-      "emitDecoratorMetadata": true,
-      "allowJs": true,
-      "noImplicitAny": false,
-      "sourceMap": true,
-      "outDir": "built"
+    "module": "commonjs",
+    "baseUrl": ".",
+    "moduleResolution": "node",
+    "target": "ES2021",
+    "esModuleInterop": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "allowJs": true,
+    "noImplicitAny": false,
+    "sourceMap": true
   },
-  "include": ["./app", "./test"]
+  "include": [
+    "./app",
+    "./test"
+  ]
 }

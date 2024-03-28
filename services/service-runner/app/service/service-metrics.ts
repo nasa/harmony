@@ -2,7 +2,7 @@ import { Response, Request, NextFunction } from 'express';
 import axios from 'axios';
 import env from '../util/env';
 import { keepAliveAgent } from '../util/axios-clients';
-import logger from '../../../harmony/app/util/log';
+import logger from '@harmony/harmony/app/util/log';
 
 /**
  * Get prometheus-compatible metric message from harmony backend

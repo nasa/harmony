@@ -2,8 +2,8 @@
 
 set -ex
 
-image="harmonyservices/giovanni-adapter"
-tag=${1:-latest}
+image="harmonyservices/$1"
+tag=${2:-latest}
 
 region=${AWS_DEFAULT_REGION-"us-west-2"}
 

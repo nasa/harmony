@@ -1,10 +1,10 @@
-import { Worker } from '../../../harmony/app/workers/worker';
+import { Worker } from '@harmony/harmony/app/workers/worker';
 import { sanitizeImage } from '@harmony/util/string';
 import env from '../util/env';
-import { WorkItemRecord, WorkItemStatus } from '../../../harmony/app/models/work-item-interface';
-import logger from '../../../harmony/app/util/log';
+import { WorkItemRecord, WorkItemStatus } from '@harmony/harmony/app/models/work-item-interface';
+import logger from '@harmony/harmony/app/util/log';
 import { runServiceFromPull, runQueryCmrFromPull } from '../service/service-runner';
-import sleep from '../../../harmony/app/util/sleep';
+import sleep from '@harmony/harmony/app/util/sleep';
 import createAxiosClientWithRetry, { isRetryable } from '../util/axios-clients';
 import path from 'path';
 import { existsSync, rmSync, accessSync, constants, promises as fs } from 'fs';

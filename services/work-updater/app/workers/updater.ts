@@ -3,13 +3,13 @@ import {
   WorkItemUpdateQueueItem,
   handleWorkItemUpdate,
   preprocessWorkItem,
-  processWorkItems } from '../../../harmony/app/backends/workflow-orchestration/work-item-updates';
-import { getJobIdForWorkItem } from '../../../harmony/app/models/work-item';
-import { default as defaultLogger } from '../../../harmony/app/util/log';
-import { WorkItemQueueType } from '../../../harmony/app/util/queue/queue';
-import { getQueueForType } from '../../../harmony/app/util/queue/queue-factory';
-import sleep from '../../../harmony/app/util/sleep';
-import { Worker } from '../../../harmony/app/workers/worker';
+  processWorkItems } from '@harmony/harmony/app/backends/workflow-orchestration/work-item-updates';
+import { getJobIdForWorkItem } from '@harmony/harmony/app/models/work-item';
+import { default as defaultLogger } from '@harmony/harmony/app/util/log';
+import { WorkItemQueueType } from '@harmony/util/queue';
+import { queuefactory as qf } from '@harmony/util';
+import sleep from '@harmony/harmony/app/util/sleep';
+import { Worker } from '@harmony/harmony/app/workers/worker';
 import env from '../util/env';
 import { logAsyncExecutionTime } from '../../../harmony/app/util/log-execution';
 import { getWorkflowStepByJobIdStepIndex } from '../../../harmony/app/models/workflow-steps';
@@ -118,7 +118,7 @@ export async function handleBatchWorkItemUpdates(
  * @param queueType - Type of the queue to read from
  */
 export async function batchProcessQueue(queueType: WorkItemQueueType): Promise<void> {
-  const queue = getQueueForType(queueType);
+  const queue = qf.getQueueForType(queueType);
   const startTime = Date.now();
   // use a smaller batch size for the large item update queue otherwise use the SQS max batch size
   // of 10

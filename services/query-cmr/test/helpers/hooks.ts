@@ -3,8 +3,8 @@ import { before } from 'mocha';
 import { use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 
-import { cmrApiConfig } from '../../../harmony/app/util/cmr';
-import { configureLogToFile } from '../../../harmony/app/util/log';
+import { cmrApiConfig } from '@harmony/harmony/app/util/cmr';
+import { configureLogToFile } from '@harmony/harmony/app/util/log';
 
 use(chaiAsPromised);
 

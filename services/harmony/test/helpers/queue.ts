@@ -1,11 +1,11 @@
 import { stub, SinonStub } from 'sinon';
-import * as qf from '../../app/util/queue/queue-factory';
+import { queuefactory as qf } from '@harmony/util';
+import { WorkItemQueueType } from '@harmony/util/queue';
 import * as util from '../../app/backends/workflow-orchestration/util';
 import { MemoryQueue } from './memory-queue';
 import { Logger } from 'winston';
 import logger from '../../app/util/log';
 import { getWorkFromDatabase } from '../../app/backends/workflow-orchestration/work-item-polling';
-import { WorkItemQueueType } from '../../app/util/queue/queue';
 
 let serviceQueues;
 let typeQueues;

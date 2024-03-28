@@ -3,8 +3,8 @@ import { NextFunction, Response } from 'express';
 import env from '../../util/env';
 import { Logger } from 'winston';
 import HarmonyRequest from '../../models/harmony-request';
-import { WorkItemQueueType } from '../../util/queue/queue';
-import { getQueueForType  } from '../../util/queue/queue-factory';
+import { WorkItemQueueType } from '@harmony/util/queue';
+import { queuefactory as qf  } from '@harmony/util';
 import { getWorkFromQueue, getWorkFromDatabase, WorkItemData } from './work-item-polling';
 import WorkItemUpdate from '../../models/work-item-update';
 import DataOperation from '../../models/data-operation';
@@ -77,7 +77,7 @@ export async function queueWorkItemUpdate(
 ): Promise<void> {
   // we use separate queues for small and large work item updates
   logger.debug(`Sending work item update to ${queueType} for ${update.workItemID}`);
-  const queue = getQueueForType(queueType);
+  const queue = qf.getQueueForType(queueType);
   await queue.sendMessage(JSON.stringify({ update, operation }), jobID).catch((e) => {
     logger.error(e);
   });

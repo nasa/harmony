@@ -1,14 +1,14 @@
 import * as k8s from '@kubernetes/client-node';
-import { Worker } from '../../../harmony/app/workers/worker';
+import { Worker } from '@harmony/harmony/app/workers/worker';
 import env from '../util/env';
-import logger from '../../../harmony/app/util/log';
-import { logAsyncExecutionTime } from '../../../harmony/app/util/log-execution';
+import logger from '@harmony/harmony/app/util/log';
+import { logAsyncExecutionTime } from '@harmony/harmony/app/util/log-execution';
 import { Logger } from 'winston';
-import { getQueueUrlForService, getQueueForUrl, getWorkSchedulerQueue, getQueueForType } from '../../../harmony/app/util/queue/queue-factory';
-import { getWorkItemsFromDatabase } from '../../../harmony/app/backends/workflow-orchestration/work-item-polling';
+import { queuefactory as qf } from '@harmony/util';
+import { getWorkItemsFromDatabase } from '@harmony/harmony/app/backends/workflow-orchestration/work-item-polling';
 import { getPodsCountForPodName, getPodsCountForService } from '../util/k8s';
-import { Queue, ReceivedMessage, WorkItemQueueType } from '../../../harmony/app/util/queue/queue';
-import sleep from '../../../harmony/app/util/sleep';
+import { Queue, ReceivedMessage, WorkItemQueueType } from '@harmony/util/queue';
+import sleep from '@harmony/harmony/app/util/sleep';
 
 const kc = new k8s.KubeConfig();
 kc.loadFromDefault();
@@ -113,7 +113,7 @@ export async function processSchedulerQueue(
   reqLogger.debug('Processing scheduler queue');
   const startTime = new Date().getTime();
   let durationMs;
-  const schedulerQueue = getWorkSchedulerQueue();
+  const schedulerQueue = qf.getWorkSchedulerQueue();
   const queueItems = await (await logAsyncExecutionTime(
     drainQueue,
     'PSQ.drainQueue',
@@ -124,7 +124,7 @@ export async function processSchedulerQueue(
   reqLogger.debug(`Found ${queueItems.length} items in the scheduler queue`);
 
   if (env.maxWorkItemsOnUpdateQueue !== -1) {
-    const smallUpdateQueue = getQueueForType(WorkItemQueueType.SMALL_ITEM_UPDATE);
+    const smallUpdateQueue = qf.getQueueForType(WorkItemQueueType.SMALL_ITEM_UPDATE);
     const updateQueueCount = await smallUpdateQueue.getApproximateNumberOfMessages();
     if (updateQueueCount > env.maxWorkItemsOnUpdateQueue) {
       logger.warn(`Work item update queue is too large with ${updateQueueCount} items, will not schedule more work`);
@@ -137,8 +137,8 @@ export async function processSchedulerQueue(
     if (!processedServiceIDs.includes(serviceID)) {
       processedServiceIDs.push(serviceID);
       reqLogger.info(`Processing scheduler queue item for service ${serviceID}`);
-      const queueUrl = getQueueUrlForService(serviceID);
-      const queue = getQueueForUrl(queueUrl);
+      const queueUrl = qf.getQueueUrlForService(serviceID);
+      const queue = qf.getQueueForUrl(queueUrl);
       if (!queue) {
         throw new Error(`No queue found for URL ${queueUrl}`);
       }
