@@ -131,6 +131,18 @@ CREATE TABLE `service_deployment` (
 
 INSERT INTO service_deployment (enabled, updatedAt) VALUES (true, CURRENT_TIMESTAMP);
 
+CREATE TABLE `service_deployments` (
+  `id` integer not null primary key autoincrement,
+  `deployment_id` char(36) not null,
+  `username` varchar(255) not null,
+  `service` varchar(255) not null,
+  `tag` varchar(255) not null,
+  `status` text check (`status` in ('running', 'successful', 'failed')) not null,
+  `message` varchar(4096),
+  `createdAt` datetime not null,
+  `updatedAt` datetime not null
+);
+
 -- Note this is not a full list of the indices, we rely on the database migrations to create
 -- all the indexes in Postgres
 CREATE INDEX jobs_jobID_idx ON jobs(jobID);
@@ -147,3 +159,4 @@ CREATE INDEX workflow_steps_jobID_StepIndex_idx ON workflow_steps(jobID, stepInd
 CREATE INDEX workflow_steps_serviceID_idx ON workflow_steps(serviceID);
 CREATE INDEX batch_jobID_service_ID_batchID ON batches(jobID, serviceID, batchID);
 CREATE INDEX batch_items_jobID_service_ID_batchID ON batch_items(jobID, serviceID, batchID);
+CREATE INDEX service_deployments_deployment_id_idx ON service_deployments(deployment_id);
