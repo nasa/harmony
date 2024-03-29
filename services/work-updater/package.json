@@ -12,7 +12,7 @@
     "test-bail": "TS_NODE_TRANSPILE_ONLY=true mocha --bail",
     "coverage": "nyc mocha",
     "lint": "eslint --ext .ts .",
-    "bld": "tsc -p ./tsconfig.build.json",
+    "bld": "TS_NODE_TRANSPILE_ONLY=true tsc -p ./tsconfig.build.json",
     "docker-build": "cd ../..; docker build . --target service --tag harmonyservices/work-updater:${VERSION:-latest} --file=Dockerfile.work-updater",
     "docker-build-m1": "cd ../..; docker build . --platform linux/amd64 --target service --tag harmonyservices/work-updater:${VERSION:-latest} --build-arg PROJECT=work-updater --file=Dockerfile",
     "push-image": "../../bin/push-image work-updater ${VERSION:-latest}",

@@ -191,7 +191,7 @@ export class HarmonyItem {
     // Determine the role based on mimetype
     if (mimetype) {
       const [type, subtype] = mimetype.split('/');
-      if (type === 'application') {
+      if (type === 'application' || type === 'jok') {
         if (subtype === 'json') {
           // application/json
           role = 'metadata';

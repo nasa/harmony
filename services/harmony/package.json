@@ -14,7 +14,7 @@
     "start-dev-fast": "TS_NODE_TRANSPILE_ONLY=true ts-node-dev --no-notify -r tsconfig-paths/register --respawn --inspect=127.0.0.1:${DEBUG_PORT:-9200} app/server",
     "copy-files": "copyfiles 'app/schemas/**/*' 'app/templates/**/*' 'app/frontends/templates/**/*' 'config/**/*' 'db/**/*' 'public/**/*' '../../config/services.yml' built",
     "watch-debug": "TS_NODE_TRANSPILE_ONLY=true nodemon --inspect=5858 -e ts,tsx,html --exec node -r tsconfig-paths/register -r ts-node/register app/server.ts",
-    "bld": "tsc -p ./tsconfig.build.json",
+    "bld": "TS_NODE_TRANSPILE_ONLY=true tsc -p ./tsconfig.build.json",
     "build": "cd ../..; docker build . --target service --tag harmonyservices/harmony:${VERSION:-latest} --file=Dockerfile.harmony",
     "build-m1": "cd ../..; docker build . --platform linux/amd64 --target service --tag harmonyservices/harmony:${VERSION:-latest} --build-arg PROJECT=harmony --file=Dockerfile",
     "run-notebooks-image": "source .env && docker run -i -t --platform linux/amd64 --init -p 8888:8888 --env NB_EDL_USERNAME=\"${NB_EDL_USERNAME}\" --env NB_EDL_PASSWORD=\"${NB_EDL_PASSWORD}\" harmonyservices/notebooks:${VERSION:-latest}",

@@ -7,59 +7,44 @@ RUN pip3 install --upgrade pip awscli awscli-local
 RUN pip3 install boto3==1.25.5
 RUN corepack enable
 ENV PNPM_HOME="/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
+ENV PATH="$PNPM_HOME:$PATH:node_modules/bin"
 RUN pnpm config set store-dir /.pnpm-store
 
 # Fetch dependencies ##############################################
 FROM base as deps
-WORKDIR /src
+WORKDIR /query-cmr/
 COPY ./*.json .
 COPY ./*.yaml .
-RUN --mount=type=cache,id=pnpm,target=/.pnpm-store pnpm fetch
-RUN pnpm add -g typescript turbo
-RUN turbo telemetry disable
-
-# Copy packages library and harmony source #########################
-COPY ./packages ./packages
-COPY ./services/harmony ./services/harmony
-COPY ./services/query-cmr ./services/query-cmr
-
-# Prune projects ##################################################
-FROM deps AS pruner
-
-WORKDIR /src
-
-RUN turbo prune --scope="@harmony/query-cmr" --docker
-# turbo prune misses the top-level tsconfig.base.json for some reason
-COPY tsconfig.base.json /src/out/full
+RUN mkdir -p /query-cmr/services/query-cmr
+COPY services/query-cmr/package.json /query-cmr/services/query-cmr
+RUN mkdir -p /query-cmr/services/harmony
+COPY services/harmony/package.json /query-cmr/services/harmony
+RUN mkdir -p /query-cmr/packages/util
+COPY packages/util/package.json /query-cmr/packages/util/package.json
+RUN --mount=type=cache,id=pnpm,target=/.pnpm-store pnpm install -r --frozen-lockfile
 
 # Build the project ###############################################
 FROM deps AS builder
-WORKDIR /app
 
-# Copy lockfile and package.json's of isolated subworkspace
-COPY --from=pruner /src/out/pnpm-lock.yaml ./pnpm-lock.yaml
-COPY --from=pruner /src/out/json/ .
+COPY ./packages ./packages
+COPY ./services/query-cmr ./services/query-cmr
+COPY ./services/harmony ./services/harmony
 
-# Copy db directory
-COPY ./db /app/db
+# Copy directories needed by query-cmr
+COPY ./db ./db
 
-# Copy source code of isolated subworkspace and build it
-COPY --from=pruner /src/out/full/ .
-RUN --mount=type=cache,id=pnpm,target=/.pnpm-store pnpm install -r --offline --prod --frozen-lockfile
+# Compile the TypeScript
 RUN pnpm run -r bld
 
 # Delete non-production node_modules and TypeScript source code
 RUN yes | pnpm prune --prod --no-optional
-RUN find /app -name "*.ts" -type f -delete
+RUN find /query-cmr -name "*.ts" -type f -delete
 
 # Build the service image #########################################
-FROM deps AS service
+FROM builder AS service
 ARG PORT=5000
 RUN mkdir -p /tmp/metadata
 WORKDIR "/query-cmr/services/query-cmr"
-COPY --from=builder /app/ "/query-cmr/"
-RUN rm -rf query-cmr/db
+RUN cp -rf /query-cmr/db/* ../harmony/db
 EXPOSE $PORT
 CMD [ "node", "app/server.js" ]
-

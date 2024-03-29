@@ -7,59 +7,44 @@ RUN pip3 install --upgrade pip awscli awscli-local
 RUN pip3 install boto3==1.25.5
 RUN corepack enable
 ENV PNPM_HOME="/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
+ENV PATH="$PNPM_HOME:$PATH:node_modules/bin"
 RUN pnpm config set store-dir /.pnpm-store
 
 # Fetch dependencies ##############################################
 FROM base as deps
-WORKDIR /src
+WORKDIR /work-updater/
 COPY ./*.json .
 COPY ./*.yaml .
-RUN --mount=type=cache,id=pnpm,target=/.pnpm-store pnpm fetch
-RUN pnpm add -g typescript turbo
-RUN turbo telemetry disable
-
-# Copy packages library and harmony source #########################
-COPY ./packages ./packages
-COPY ./services/harmony ./services/harmony
-COPY ./services/work-updater ./services/work-updater
-
-# Prune projects ##################################################
-FROM deps AS pruner
-
-WORKDIR /src
-
-RUN turbo prune --scope="@harmony/work-updater" --docker
-# turbo prune misses the top-level tsconfig.base.json for some reason
-COPY tsconfig.base.json /src/out/full
+RUN mkdir -p /work-updater/services/work-updater
+COPY services/work-updater/package.json /work-updater/services/work-updater
+RUN mkdir -p /work-updater/services/harmony
+COPY services/harmony/package.json /work-updater/services/harmony
+RUN mkdir -p /work-updater/packages/util
+COPY packages/util/package.json /work-updater/packages/util/package.json
+RUN --mount=type=cache,id=pnpm,target=/.pnpm-store pnpm install -r --frozen-lockfile
 
 # Build the project ###############################################
 FROM deps AS builder
-WORKDIR /app
 
-# Copy lockfile and package.json's of isolated subworkspace
-COPY --from=pruner /src/out/pnpm-lock.yaml ./pnpm-lock.yaml
-COPY --from=pruner /src/out/json/ .
+COPY ./packages ./packages
+COPY ./services/work-updater ./services/work-updater
+COPY ./services/harmony ./services/harmony
 
-# Copy db directory
-COPY ./db /app/db
+# Copy directories needed by work-updater
+COPY ./db ./db
 
-# Copy source code of isolated subworkspace and build it
-COPY --from=pruner /src/out/full/ .
-RUN --mount=type=cache,id=pnpm,target=/.pnpm-store pnpm install -r --offline --prod --frozen-lockfile
+# Compile the TypeScript
 RUN pnpm run -r bld
 
 # Delete non-production node_modules and TypeScript source code
 RUN yes | pnpm prune --prod --no-optional
-RUN find /app -name "*.ts" -type f -delete
+RUN find /work-updater -name "*.ts" -type f -delete
 
 # Build the service image #########################################
-FROM deps AS service
+FROM builder AS service
 ARG PORT=5000
 RUN mkdir -p /tmp/metadata
 WORKDIR "/work-updater/services/work-updater"
-COPY --from=builder /app/ "/work-updater/"
-RUN rm -rf work-updater/db
+RUN cp -rf /work-updater/db/* ../harmony/db
 EXPOSE $PORT
 CMD [ "node", "app/server.js" ]
-

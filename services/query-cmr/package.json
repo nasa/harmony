@@ -13,7 +13,7 @@
     "start-dev-fast": "TS_NODE_TRANSPILE_ONLY=true ts-node-dev --no-notify -r tsconfig-paths/register --respawn --inspect=127.0.0.1:9230 app/server",
     "lint": "eslint --ext .ts .",
     "docker-example": "docker run --rm -it --env SHARED_SECRET_KEY=foo --env CMR_ENDPOINT='https://cmr.uat.earthdata.nasa.gov' -v $(pwd)/example:/app/example -v $(pwd)/temp:/app/temp harmonyservices/query-cmr:${VERSION:-latest}",
-    "bld": "tsc -p ./tsconfig.build.json",
+    "bld": "TS_NODE_TRANSPILE_ONLY=true tsc -p ./tsconfig.build.json",
     "build": "cd ../..; docker build . --target service --tag harmonyservices/query-cmr:${VERSION:-latest} --file=Dockerfile.query-cmr",
     "build-m1": "cd ../..; docker build . --platform linux/amd64 --target service --tag harmonyservices/query-cmr:${VERSION:-latest} --build-arg PROJECT=query-cmr --file=Dockerfile",
     "push-image": "../../bin/push-image query-cmr ${VERSION:-latest}",
