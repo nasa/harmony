@@ -71,7 +71,6 @@ async function waitUntilStatusChange(deploymentId: string): Promise<boolean | nu
   return new Promise<boolean | null>((resolve) => {
     let elapsedTime = 0;
     const interval = setInterval(async () => {
-      // Call your function to check the result
       await db.transaction(async (tx) => {
         const { status } = await getDeploymentById(tx, deploymentId);
         deploymentStatus = status;
@@ -969,12 +968,13 @@ describe('Service self-deployment successful', async function () {
       });
 
       it('returns the deployment status successful', async function () {
-        const { deploymentId, username, service, tag, status } = this.res.body;
+        const { deploymentId, username, service, tag, status, message } = this.res.body;
         expect(deploymentId).to.eql(linkDeploymentId);
         expect(username).to.eql('buzz');
         expect(service).to.eql('harmony-service-example');
         expect(tag).to.eql('foo');
         expect(status).to.eql('successful');
+        expect(message).to.eql('Deployment successful');
       });
     });
 
