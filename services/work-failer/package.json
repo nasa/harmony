@@ -12,7 +12,7 @@
     "test-bail": "TS_NODE_TRANSPILE_ONLY=true mocha --bail",
     "coverage": "nyc mocha",
     "lint": "eslint --ext .ts .",
-    "bld": "TS_NODE_TRANSPILE_ONLY=true tsc -p ./tsconfig.build.json",
+    "bld": "esbuild `find app \\( -name '*.ts' \\)` --platform=node --tsconfig=./tsconfig.build.json --outdir=built/app",
     "build": "cd ../..; docker build . --target service --tag harmonyservices/work-failer:${VERSION:-latest} --file=Dockerfile.work-failer",
     "build-m1": "cd ../..; docker build . --platform linux/amd64 --target service --tag harmonyservices/work-failer:${VERSION:-latest} --build-arg PROJECT=work-failer --file=Dockerfile",
     "push-image": "../../bin/push-image work-failer ${VERSION:-latest}",
@@ -59,7 +59,8 @@
     "tweetnacl-util": "^0.15.1",
     "uuid": "^8.3.2",
     "winston": "^3.10.0",
-    "xstate": "^4.31.0"
+    "xstate": "^4.31.0",
+    "rope": "1.0.1-pre"
   },
   "devDependencies": {
     "@types/chai": "^4.2.22",

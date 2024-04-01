@@ -1,51 +1,37 @@
-ARG BASE_IMAGE=node:18-buster
-# Base of build ###################################################
-FROM $BASE_IMAGE as base
-RUN apt update && apt-get -y install sqlite3 python3 python3-pip python3-setuptools vim curl telnet
-RUN pip3 install --upgrade pip awscli awscli-local
-# Need to downgrade boto3 because there is a bug breaking creating SQS queues
-RUN pip3 install boto3==1.25.5
-RUN corepack enable
-ENV PNPM_HOME="/pnpm"
-ENV PATH="$PNPM_HOME:$PATH:node_modules/bin"
-RUN pnpm config set store-dir /.pnpm-store
-
-# Fetch dependencies ##############################################
-FROM base as deps
-WORKDIR /giovanni-adapter/
-COPY ./*.json .
-COPY ./*.yaml .
-RUN mkdir -p /giovanni-adapter/services/giovanni-adapter
-COPY services/giovanni-adapter/package.json /giovanni-adapter/services/giovanni-adapter
-RUN mkdir -p /giovanni-adapter/services/harmony
-COPY services/harmony/package.json /giovanni-adapter/services/harmony
-RUN mkdir -p /giovanni-adapter/packages/util
-COPY packages/util/package.json /giovanni-adapter/packages/util/package.json
-RUN --mount=type=cache,id=pnpm,target=/.pnpm-store pnpm install -r --frozen-lockfile
+FROM harmonyservices/harmony-base AS base
 
 # Build the project ###############################################
-FROM deps AS builder
+FROM base as builder
 
 COPY ./packages ./packages
 COPY ./services/giovanni-adapter ./services/giovanni-adapter
 COPY ./services/harmony ./services/harmony
 
-# Copy directories needed by giovanni-adapter
-COPY ./db ./db
+# Copy directories needed by query-cmr
+COPY ./db /harmony/db
 
 # Compile the TypeScript
-RUN pnpm run -r bld
-
-# Delete non-production node_modules and TypeScript source code
-RUN yes | pnpm prune --prod --no-optional
-RUN find /giovanni-adapter -name "*.ts" -type f -delete
+RUN pnpm --filter '@harmony/util' --filter '@harmony/harmony' --filter '@harmony/giovanni-adapter' run -r bld
 
 # Build the service image #########################################
-FROM builder AS service
+FROM base AS service
 ARG PORT=5000
 RUN mkdir -p /tmp/metadata
-WORKDIR "/giovanni-adapter/services/giovanni-adapter"
-RUN cp -rf /giovanni-adapter/db/* ../harmony/db
+WORKDIR "/harmony/services/giovanni-adapter"
+# Uncomment next line to delete dev modules - this takes about ten seconds, so
+# it is commented out by default
+# RUN yes | pnpm prune --prod --no-optional
+
+COPY --from=builder /harmony/packages/util/built/* /harmony/packages/util/
+COPY --from=builder /harmony/packages/util/env-defaults /harmony/packages/util/
+COPY --from=builder /harmony/services/harmony/built/* /harmony/services/harmony/app
+COPY --from=builder /harmony/services/harmony/env-defaults /harmony/services/harmony
+RUN mkdir -p /harmony/services/harmony/app/schemas
+COPY --from=builder /harmony/services/harmony/app/schemas/* /harmony/services/harmony/app/schemas
+RUN mkdir -p /harmony/services/harmony/db
+COPY --from=builder /harmony/db/* ../harmony/db
+COPY --from=builder /harmony/services/giovanni-adapter/built/* /harmony/services/giovanni-adapter/app
+RUN mkdir -p /harmony/services/giovanni-adapter/config
+COPY --from=builder /harmony/services/giovanni-adapter/config/* /harmony/services/giovanni-adapter/config
 EXPOSE $PORT
 CMD [ "node", "app/server.js" ]
-

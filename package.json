@@ -16,7 +16,8 @@
     "watch-debug": "cd services/harmony && TS_NODE_TRANSPILE_ONLY=true nodemon --inspect=5858 -e ts,tsx,html --exec node -r tsconfig-paths/register -r ts-node/register app/server.ts",
     "build": "pnpm run --filter @harmony/harmony build",
     "build-m1": "pnpm run --filter @harmony/harmony build-m1",
-    "build-all": "pnpm run -r --workspace-concurrency 1 build",
+    "build-all": "docker build . --target deps --tag harmonyservices/harmony-base:${VERSION-latest} --file=Dockerfile.base && pnpm run -r --workspace-concurrency 8 build",
+    "build-base": "docker build . --target deps --tag harmonyservices/harmony-base:${VERSION-latest} --file=Dockerfile.base",
     "build-all-m1": "pnpm run -r --workspace-concurrency 1 build-m1",
     "push-image-all": "pnpm run -r --workspace-concurrency 1 push-image",
     "build-notebooks-image": "docker build --platform linux/amd64 -t harmonyservices/notebooks:${VERSION:-latest} -f Dockerfile-notebooks .",
@@ -38,6 +39,7 @@
   "author": "NASA EOSDIS Harmony team",
   "license": "Apache-2.0",
   "devDependencies": {
+    "esbuild": "^0.20.2",
     "eslint": "^8.48.0",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-config-airbnb-typescript": "^17.0.0",

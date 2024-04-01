@@ -1,50 +1,35 @@
-ARG BASE_IMAGE=node:18-buster
-# Base of build ###################################################
-FROM $BASE_IMAGE as base
-RUN apt update && apt-get -y install sqlite3 python3 python3-pip python3-setuptools vim curl telnet
-RUN pip3 install --upgrade pip awscli awscli-local
-# Need to downgrade boto3 because there is a bug breaking creating SQS queues
-RUN pip3 install boto3==1.25.5
-RUN corepack enable
-ENV PNPM_HOME="/pnpm"
-ENV PATH="$PNPM_HOME:$PATH:node_modules/bin"
-RUN pnpm config set store-dir /.pnpm-store
-
-# Fetch dependencies ##############################################
-FROM base as deps
-WORKDIR /query-cmr/
-COPY ./*.json .
-COPY ./*.yaml .
-RUN mkdir -p /query-cmr/services/query-cmr
-COPY services/query-cmr/package.json /query-cmr/services/query-cmr
-RUN mkdir -p /query-cmr/services/harmony
-COPY services/harmony/package.json /query-cmr/services/harmony
-RUN mkdir -p /query-cmr/packages/util
-COPY packages/util/package.json /query-cmr/packages/util/package.json
-RUN --mount=type=cache,id=pnpm,target=/.pnpm-store pnpm install -r --frozen-lockfile
+FROM harmonyservices/harmony-base AS base
 
 # Build the project ###############################################
-FROM deps AS builder
+FROM base as builder
 
 COPY ./packages ./packages
 COPY ./services/query-cmr ./services/query-cmr
 COPY ./services/harmony ./services/harmony
 
 # Copy directories needed by query-cmr
-COPY ./db ./db
+COPY ./db /harmony/db
 
 # Compile the TypeScript
-RUN pnpm run -r bld
-
-# Delete non-production node_modules and TypeScript source code
-RUN yes | pnpm prune --prod --no-optional
-RUN find /query-cmr -name "*.ts" -type f -delete
+RUN pnpm --filter '@harmony/util' --filter '@harmony/harmony' --filter '@harmony/query-cmr' run -r bld
 
 # Build the service image #########################################
-FROM builder AS service
+FROM base AS service
 ARG PORT=5000
 RUN mkdir -p /tmp/metadata
-WORKDIR "/query-cmr/services/query-cmr"
-RUN cp -rf /query-cmr/db/* ../harmony/db
+WORKDIR "/harmony/services/query-cmr"
+# Uncomment next line to delete dev modules - this takes about ten seconds, so
+# it is commented out by default
+# RUN yes | pnpm prune --prod --no-optional
+
+COPY --from=builder /harmony/packages/util/built/* /harmony/packages/util/
+COPY --from=builder /harmony/packages/util/env-defaults /harmony/packages/util/
+COPY --from=builder /harmony/services/harmony/built/* /harmony/services/harmony/app
+COPY --from=builder /harmony/services/harmony/env-defaults /harmony/services/harmony
+RUN mkdir -p /harmony/services/harmony/app/schemas
+COPY --from=builder /harmony/services/harmony/app/schemas/* /harmony/services/harmony/app/schemas
+COPY --from=builder /harmony/services/query-cmr/built/* /harmony/services/query-cmr/app
+RUN mkdir -p /harmony/services/harmony/db
+COPY --from=builder /harmony/db/* ../harmony/db
 EXPOSE $PORT
 CMD [ "node", "app/server.js" ]

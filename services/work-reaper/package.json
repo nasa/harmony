@@ -12,7 +12,7 @@
     "test-bail": "TS_NODE_TRANSPILE_ONLY=true mocha --bail",
     "coverage": "nyc mocha",
     "lint": "eslint --ext .ts .",
-    "bld": "TS_NODE_TRANSPILE_ONLY=true tsc -p ./tsconfig.build.json",
+    "bld": "esbuild `find app \\( -name '*.ts' \\)` --platform=node --tsconfig=./tsconfig.build.json --outdir=built/app",
     "build": "cd ../..; docker build . --target service --tag harmonyservices/work-reaper:${VERSION:-latest} --file=Dockerfile.work-reaper",
     "build-m1": "cd ../..; docker build . --platform linux/amd64 --target service --tag harmonyservices/work-reaper:${VERSION:-latest} --build-arg PROJECT=work-reaper --file=Dockerfile",
     "push-image": "../../bin/push-image work-reaper ${VERSION:-latest}",

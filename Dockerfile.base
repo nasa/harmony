@@ -1,0 +1,36 @@
+ARG BASE_IMAGE=node:18-buster
+# Base of build ###################################################
+FROM $BASE_IMAGE as base
+RUN apt update && apt-get -y install sqlite3 python3 python3-pip python3-setuptools vim curl telnet
+RUN pip3 install --upgrade pip awscli awscli-local
+# Need to downgrade boto3 because there is a bug breaking creating SQS queues
+RUN pip3 install boto3==1.25.5
+RUN corepack enable
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH:node_modules/bin"
+RUN pnpm config set store-dir /.pnpm-store
+
+# Fetch dependencies ##############################################
+FROM base as deps
+WORKDIR /harmony/
+COPY ./*.json .
+COPY ./*.yaml .
+RUN mkdir -p /harmony/services/query-cmr
+COPY services/query-cmr/package.json /harmony/services/query-cmr
+RUN mkdir -p /harmony/services/service-runner
+COPY services/service-runner/package.json /harmony/services/service-runner
+RUN mkdir -p /harmony/services/work-failer
+COPY services/work-failer/package.json /harmony/services/work-failer
+RUN mkdir -p /harmony/services/work-reaper
+COPY services/work-reaper/package.json /harmony/services/work-reaper
+RUN mkdir -p /harmony/services/work-scheduler
+COPY services/work-scheduler/package.json /harmony/services/work-scheduler
+RUN mkdir -p /harmony/services/work-updater
+COPY services/work-updater/package.json /harmony/services/work-updater
+RUN mkdir -p /harmony/services/giovanni-adapter
+COPY services/giovanni-adapter/package.json /harmony/services/giovanni-adapter
+RUN mkdir -p /harmony/services/harmony
+COPY services/harmony/package.json /harmony/services/harmony
+RUN mkdir -p /query-cmr/packages/util
+COPY packages/util/package.json /harmony/packages/util/package.json
+RUN --mount=type=cache,id=pnpm,target=/.pnpm-store pnpm install -r --frozen-lockfile
