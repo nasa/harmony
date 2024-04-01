@@ -22,6 +22,9 @@ export default class ServiceDeployment extends Record {
   // The service tag associated with the deployment
   tag: string;
 
+  // The status of the deployment
+  status: string;
+
   // The error message of the deployment if applicable
   message: string;
 }

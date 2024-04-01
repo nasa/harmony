@@ -356,7 +356,7 @@ export async function execDeployScript(
         req.context.logger.info(`Script output: ${line}`);
       });
       await db.transaction(async (tx) => {
-        await setStatusMessage(tx, deploymentId, 'successful');
+        await setStatusMessage(tx, deploymentId, 'successful', 'Deployment successful');
       });
     }
   });
@@ -396,6 +396,7 @@ export async function updateServiceImageTag(
     service: service,
     tag: tag,
     status: 'running',
+    message: 'Deployment in progress',
   });
 
   await db.transaction(async (tx) => {
@@ -407,7 +408,7 @@ export async function updateServiceImageTag(
   res.statusCode = 202;
   res.send({
     'tag': tag,
-    'status_link': `${urlRoot}/service-image-tag/deployment/${deploymentId}`,
+    'statusLink': `${urlRoot}/service-image-tag/deployment/${deploymentId}`,
   });
 }
 
@@ -474,6 +475,18 @@ export async function getServiceDeployment(
     await db.transaction(async (tx) => {
       deployment = await getDeploymentById(tx, id);
     });
+    const { deployment_id, username, service, tag, status, message, createdAt, updatedAt } = deployment;
+    deployment = {
+      id: id,
+      deploymentId: deployment_id,
+      username: username,
+      service: service,
+      tag: tag,
+      status: status,
+      message: message,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+    };
   } catch (e) {
     req.context.logger.error(`Caught exception: ${e}`);
     deployment = undefined;

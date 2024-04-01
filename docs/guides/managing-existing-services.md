@@ -77,12 +77,12 @@ example above:
 ```
 **Example 6** - Harmony `/service-image-tags` request body for updating a tag
 
-The returned JSON response has a tag field indicating the new tag value and a status_link field with the url for getting the status of the service image deployment.
+The returned JSON response has a tag field indicating the new tag value and a statusLink field with the url for getting the status of the service image deployment.
 
 ```JSON
 {
   "tag": "new-version",
-  "status_link": "https://harmony.uat.earthdat.nasa.gov/service-image-tag/deployment/<deployment-id>"
+  "statusLink": "https://harmony.uat.earthdat.nasa.gov/service-image-tag/deployment/<deployment-id>"
 }
 ```
 **Example 7** - Harmony `/service-image-tags` response for a updating a single service
@@ -96,7 +96,7 @@ Harmony validates that the image and tag are reachable - an error will be return
 
 ## Get backend service image tag update status
 
-You can get the status of backend service tag update by following the `status_link` returned in the backend service tag update response.
+You can get the status of backend service tag update by following the `statusLink` returned in the backend service tag update response.
 
 For example:
 
@@ -110,12 +110,12 @@ The returned JSON response has the fields indicating the current status of the s
 ```JSON
 {
   id: 1,
-  deployment_id: "befb50e0-e467-4776-86c8-e7218f1123cc",
+  deploymentId: "befb50e0-e467-4776-86c8-e7218f1123cc",
   username: "yliu10",
   service: "giovanni-adapter",
   tag: "new-version",
   status: "successful",
-  message: null,
+  message: "Deployment successful",
   createdAt: "2024-03-29T14:56:29.151Z",
   updatedAt: "2024-03-29T14:56:29.273Z"
 }
