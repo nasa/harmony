@@ -44,6 +44,7 @@ export function getImageTagMap(): {} {
 }
 
 export interface EcrImageNameComponents {
+  registryId: string;
   host: string;
   region: string;
   repository: string;
@@ -61,8 +62,10 @@ export function ecrImageNameToComponents(name: string): EcrImageNameComponents {
   if (!match) return null;
 
   const [ _, host, region, repository, tag ] = match;
+  const registryId = host.split('.')[0]; // the AWS account ID
 
   return {
+    registryId,
     host,
     region,
     repository,
@@ -91,7 +94,7 @@ async function validateTaggedImageIsReachable(
 
   if (nameComponents) {
     // use the AWS CLI to check
-    const { region, repository } = nameComponents;
+    const { region, repository, registryId } = nameComponents;
     let endpoint = `https://ecr.${region}.amazonaws.com`;
     if (env.useLocalstack === true) {
       endpoint = `http://${env.localstackHost}:4566`;
@@ -100,7 +103,7 @@ async function validateTaggedImageIsReachable(
       region,
       endpoint,
     });
-    if (! await ecr.describeImage(repository, tag)) {
+    if (! await ecr.describeImage(repository, tag, registryId)) {
       isReachable = false;
     }
   } else {

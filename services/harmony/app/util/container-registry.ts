@@ -41,15 +41,17 @@ export class ECR {
    * Returns image information from ECR for the given image repository and tag.
    * @param repository - the image repository (e.g. harmonyservices/service-example)
    * @param tag - the image tag
+   * @param registryId - the registry ID/AWS account ID where the image lives (optional -- may
+   * not always be available)
    * @returns A Promise containing ImageDetails or null if the image/tag does not exist
    */
-  async describeImage(repository: string, tag: string): Promise<ImageDetails> {
+  async describeImage(repository: string, tag: string, registryId?: string): Promise<ImageDetails> {
     let cmd: DescribeImagesCommandInput = {
       repositoryName: repository,
       imageIds: [{ imageTag: tag }],
     };
-    if (repository.indexOf('ldds') > -1) {
-      cmd = { ...cmd, registryId: '***' }
+    if (registryId) {
+      cmd = { ...cmd, registryId }
     }
     const command = new DescribeImagesCommand(cmd);
     let response;
