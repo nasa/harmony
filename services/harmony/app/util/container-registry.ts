@@ -1,4 +1,4 @@
-import { ECRClient, DescribeImagesCommand, ECRClientConfig } from '@aws-sdk/client-ecr';
+import { ECRClient, DescribeImagesCommand, ECRClientConfig, DescribeImagesCommandInput } from '@aws-sdk/client-ecr';
 import env from './env';
 
 export interface ImageDetails {
@@ -44,10 +44,14 @@ export class ECR {
    * @returns A Promise containing ImageDetails or null if the image/tag does not exist
    */
   async describeImage(repository: string, tag: string): Promise<ImageDetails> {
-    const command = new DescribeImagesCommand({
+    let cmd: DescribeImagesCommandInput = {
       repositoryName: repository,
       imageIds: [{ imageTag: tag }],
-    });
+    };
+    if (repository.indexOf('ldds') > -1) {
+      cmd = { ...cmd, registryId: '***' }
+    }
+    const command = new DescribeImagesCommand(cmd);
     let response;
     try {
       response = await this.ecr.send(command);
