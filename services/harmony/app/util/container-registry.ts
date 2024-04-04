@@ -51,7 +51,7 @@ export class ECR {
       imageIds: [{ imageTag: tag }],
     };
     if (registryId) {
-      cmd = { ...cmd, registryId }
+      cmd = { ...cmd, registryId };
     }
     const command = new DescribeImagesCommand(cmd);
     let response;
