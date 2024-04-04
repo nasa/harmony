@@ -16,7 +16,7 @@
     "watch-debug": "cd services/harmony && TS_NODE_TRANSPILE_ONLY=true nodemon --inspect=5858 -e ts,tsx,html --exec node -r tsconfig-paths/register -r ts-node/register app/server.ts",
     "build": "pnpm run --filter @harmony/harmony build",
     "build-m1": "pnpm run --filter @harmony/harmony build-m1",
-    "build-all": "docker build . --target deps --tag harmonyservices/harmony-base:${VERSION-latest} --file=Dockerfile.base && pnpm run -r --workspace-concurrency 8 build",
+    "build-all": "docker build . --target deps --tag harmonyservices/harmony-base:${VERSION-latest} --file=Dockerfile.base && pnpm run -r --filter=\\!@harmony/harmony --workspace-concurrency 8 build",
     "build-base": "docker build . --target deps --tag harmonyservices/harmony-base:${VERSION-latest} --file=Dockerfile.base",
     "build-all-m1": "pnpm run -r --workspace-concurrency 1 build-m1",
     "push-image-all": "pnpm run -r --workspace-concurrency 1 push-image",
