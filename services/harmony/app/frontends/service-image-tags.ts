@@ -480,7 +480,6 @@ export async function getServiceDeployment(
     });
     const { deployment_id, username, service, tag, status, message, createdAt, updatedAt } = deployment;
     deployment = {
-      id: id,
       deploymentId: deployment_id,
       username: username,
       service: service,

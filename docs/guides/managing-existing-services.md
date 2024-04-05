@@ -109,7 +109,6 @@ The returned JSON response has the fields indicating the current status of the s
 
 ```JSON
 {
-  id: 1,
   deploymentId: "befb50e0-e467-4776-86c8-e7218f1123cc",
   username: "yliu10",
   service: "giovanni-adapter",
