@@ -200,6 +200,7 @@ describe('ecrImageNameToComponents', function () {
     const imageName = '123456789012.dkr.ecr.us-west-2.amazonaws.com/harmony/my-repository:my-tag';
 
     const expectedComponents = {
+      registryId: '123456789012',
       host: '123456789012.dkr.ecr.us-west-2.amazonaws.com',
       region: 'us-west-2',
       repository: 'harmony/my-repository',
