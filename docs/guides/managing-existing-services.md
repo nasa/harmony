@@ -77,11 +77,12 @@ example above:
 ```
 **Example 6** - Harmony `/service-image-tags` request body for updating a tag
 
-The returned JSON response is the same as the single service request above, indicating the new tag value
+The returned JSON response has a tag field indicating the new tag value and a statusLink field with the url for getting the status of the service image deployment.
 
 ```JSON
 {
-  "tag": "new-version"
+  "tag": "new-version",
+  "statusLink": "https://harmony.uat.earthdat.nasa.gov/service-image-tag/deployment/<deployment-id>"
 }
 ```
 **Example 7** - Harmony `/service-image-tags` response for a updating a single service
@@ -93,6 +94,34 @@ Harmony validates that the image and tag are reachable - an error will be return
 **Important** from the [Docker documentation](https://docs.docker.com/engine/reference/commandline/image_tag/):
 >A tag name may contain lowercase and uppercase characters, digits, underscores, periods and dashes. A tag name may not start with a period or a dash and may contain a maximum of 128 characters.
 
+## Get backend service image tag update status
+
+You can get the status of backend service tag update by following the `statusLink` returned in the backend service tag update response.
+
+For example:
+
+```
+curl -XGET -Ln -bj https://harmony.uat.earthdat.nasa.gov/service-image-tag/deployment/<deployment-id>
+```
+**Example 8** - Get service image tag update status
+
+The returned JSON response has the fields indicating the current status of the service image deployment.
+
+```JSON
+{
+  id: 1,
+  deploymentId: "befb50e0-e467-4776-86c8-e7218f1123cc",
+  username: "yliu10",
+  service: "giovanni-adapter",
+  tag: "new-version",
+  status: "successful",
+  message: "Deployment successful",
+  createdAt: "2024-03-29T14:56:29.151Z",
+  updatedAt: "2024-03-29T14:56:29.273Z"
+}
+```
+**Example 9** - Harmony get status of service image tag update response
+
 ## Get the current enable/disable state of the service deployment feature
 
 ```
@@ -100,7 +129,7 @@ Harmony validates that the image and tag are reachable - an error will be return
 GET https://harmony.uat.earthdat.nasa.gov/service-image-tag/state
 
 ```
-**Example 8** - Getting the current enable/disable state of the service deployment feature using the `service-image-tag` API
+**Example 10** - Getting the current enable/disable state of the service deployment feature using the `service-image-tag` API
 
 The returned JSON response shows if the service deployment is currently enabled (true) or disabled (false):
 
@@ -110,7 +139,7 @@ The returned JSON response shows if the service deployment is currently enabled 
 }
 ```
 ---
-**Example 9** - Harmony `service-image-tags` response for enable/disable state
+**Example 11** - Harmony `service-image-tags` response for enable/disable state
 
 ## Enable the service deployment feature
 The user must have admin permission in order to invoke this endpoint.
@@ -121,7 +150,7 @@ For example:
 curl -XPUT -H 'Authorization: bearer <your bearer token>' -H 'Content-type: application/json' https://harmony.uat.earthdat.nasa.gov/service-image-tag/state -d '{"enabled": true}'
 ```
 ---
-**Example 10** - Harmony `service-image-tags` request for enabling the service deployment
+**Example 12** - Harmony `service-image-tags` request for enabling the service deployment
 
 The returned JSON response is the same as the get current state of the service deployment feature request above, indicating the current state:
 
@@ -130,7 +159,7 @@ The returned JSON response is the same as the get current state of the service d
   "enabled": true
 }
 ```
-**Example 11** - Harmony `/service-image-tags` response for enabling the service deployment
+**Example 13** - Harmony `/service-image-tags` response for enabling the service deployment
 
 ## Disable the service deployment feature
 The user must have admin permission in order to invoke this endpoint.
@@ -141,7 +170,7 @@ For example:
 curl -XPUT -H 'Authorization: bearer <your bearer token>' -H 'Content-type: application/json' https://harmony.uat.earthdat.nasa.gov/service-image-tag/state -d '{"enabled": false}'
 ```
 ---
-**Example 12** - Harmony `service-image-tags` request for disabling the service deployment
+**Example 14** - Harmony `service-image-tags` request for disabling the service deployment
 
 The returned JSON response is the same as the get current state of the service deployment feature request above, indicating the current state:
 
@@ -150,4 +179,4 @@ The returned JSON response is the same as the get current state of the service d
   "enabled": false
 }
 ```
-**Example 13** - Harmony `/service-image-tags` response for disabling the service deployment
+**Example 15** - Harmony `/service-image-tags` response for disabling the service deployment
