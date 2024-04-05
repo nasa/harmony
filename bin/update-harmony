@@ -18,7 +18,7 @@ function usage
   echo "  -s|--services     Upate service images in addition to harmony images."
   echo "  -h|--help         Print this message."
   echo -e "\033[1mDESCRIPTION\033[0m"
-  echo "This script updates the Docker images used internally by Harmony then restars Harmony."
+  echo "This script updates the Docker images used internally by Harmony then restarts Harmony."
   echo "Optionally it can also update the service images."
 }
 
