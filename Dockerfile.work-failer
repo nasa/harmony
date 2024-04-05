@@ -22,14 +22,16 @@ WORKDIR "/harmony/services/work-failer"
 # it is commented out by default
 # RUN yes | pnpm prune --prod --no-optional
 
-COPY --from=builder /harmony/packages/util/built/* /harmony/packages/util/
+COPY --from=builder /harmony/packages/util/built/ /harmony/packages/util/
 COPY --from=builder /harmony/packages/util/env-defaults /harmony/packages/util/
-COPY --from=builder /harmony/services/harmony/built/* /harmony/services/harmony/app
+COPY --from=builder /harmony/services/harmony/built/ /harmony/services/harmony
 COPY --from=builder /harmony/services/harmony/env-defaults /harmony/services/harmony
 RUN mkdir -p /harmony/services/harmony/app/schemas
-COPY --from=builder /harmony/services/harmony/app/schemas/* /harmony/services/harmony/app/schemas
+COPY --from=builder /harmony/services/harmony/app/schemas/ /harmony/services/harmony/app/schemas
 RUN mkdir -p /harmony/services/harmony/db
-COPY --from=builder /harmony/db/* ../harmony/db
+COPY --from=builder /harmony/db/ ../harmony/db
+RUN mkdir -p /harmony/db
+COPY --from=builder /harmony/db/ /harmony/db
 COPY --from=builder /harmony/services/work-failer/built/* /harmony/services/work-failer/app
 COPY --from=builder /harmony/services/work-failer/env-defaults /harmony/services/work-failer/
 EXPOSE $PORT

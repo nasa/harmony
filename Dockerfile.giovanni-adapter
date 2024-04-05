@@ -24,7 +24,7 @@ WORKDIR "/harmony/services/giovanni-adapter"
 
 COPY --from=builder /harmony/packages/util/built/* /harmony/packages/util/
 COPY --from=builder /harmony/packages/util/env-defaults /harmony/packages/util/
-COPY --from=builder /harmony/services/harmony/built/* /harmony/services/harmony/app
+COPY --from=builder /harmony/services/harmony/built/* /harmony/services/harmony
 COPY --from=builder /harmony/services/harmony/env-defaults /harmony/services/harmony
 RUN mkdir -p /harmony/services/harmony/app/schemas
 COPY --from=builder /harmony/services/harmony/app/schemas/* /harmony/services/harmony/app/schemas

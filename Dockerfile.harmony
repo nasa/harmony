@@ -21,18 +21,24 @@ WORKDIR "/harmony/services/harmony"
 # it is commented out by default
 # RUN yes | pnpm prune --prod --no-optional
 
-COPY --from=builder /harmony/packages/util/built/* /harmony/packages/util/
+COPY --from=builder /harmony/packages/util/built/ /harmony/packages/util/
 COPY --from=builder /harmony/packages/util/env-defaults /harmony/packages/util/
-COPY --from=builder /harmony/services/harmony/built/* /harmony/services/harmony/app
+COPY --from=builder /harmony/services/harmony/built/ /harmony/services/harmony/
 COPY --from=builder /harmony/services/harmony/env-defaults /harmony/services/harmony
 RUN mkdir -p /harmony/services/harmony/app/markdown
-COPY --from=builder /harmony/services/harmony/app/markdown/* /harmony/services/harmony/app/markdown
+COPY --from=builder /harmony/services/harmony/app/markdown/ /harmony/services/harmony/app/markdown
 RUN mkdir -p /harmony/services/harmony/app/schemas
-COPY --from=builder /harmony/services/harmony/app/schemas/* /harmony/services/harmony/app/schemas
+COPY --from=builder /harmony/services/harmony/app/schemas/ /harmony/services/harmony/app/schemas/
 RUN mkdir -p /harmony/services/harmony/public
-COPY --from=builder /harmony/services/harmony/public/* /harmony/services/harmony/public
+COPY --from=builder /harmony/services/harmony/public/ /harmony/services/harmony/public/
 RUN mkdir -p /harmony/services/harmony/db
-COPY --from=builder /harmony/db/* ../harmony/db
+COPY --from=builder /harmony/db/ ../harmony/db
+RUN mkdir -p /harmony/db
+COPY --from=builder /harmony/db/ /harmony/db
+RUN mkdir -p /harmony/services/harmony/bin
+COPY ./bin/start-harmony-in-container /harmony/bin/
+RUN mkdir -p /harmony/services/harmony/app/views
+COPY ./services/harmony/app/views/ app/views
 EXPOSE $PORT
 CMD [ "node", "app/server.js" ]
 

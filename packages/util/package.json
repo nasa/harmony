@@ -10,7 +10,7 @@
     "test-bail": "TS_NODE_TRANSPILE_ONLY=true mocha --bail",
     "coverage": "nyc mocha",
     "lint": "eslint --ext .ts --ignore-pattern built .",
-    "bld": "esbuild ./*.ts --platform=node --tsconfig=./tsconfig.build.json --outdir=built",
+    "bld": "esbuild ./*.ts --platform=node --format=cjs --tsconfig=./tsconfig.build.json --outdir=built",
     "bldy": "tsc -p ./tsconfig.build.json"
   },
   "nyc": {
