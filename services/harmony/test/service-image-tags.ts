@@ -8,6 +8,8 @@ import { auth } from './helpers/auth';
 import * as serviceImageTags from '../app/frontends/service-image-tags';
 import { checkServiceExists, checkTag, getImageTagMap, ecrImageNameToComponents } from '../app/frontends/service-image-tags';
 import hookDescribeImage from './helpers/container-registry';
+import { getDeploymentById } from '../app/models/service-deployment';
+import db from '../app/util/db';
 import env from '../app/util/env';
 import { stub } from 'sinon';
 
@@ -43,6 +45,49 @@ const errorMsg404 = 'Service foo does not exist.\nThe existing services and thei
 const userErrorMsg = 'User joe is not in the service deployers or admin EDL groups';
 
 const tagContentErrorMsg = 'A tag name may contain lowercase and uppercase characters, digits, underscores, periods and dashes. A tag name may not start with a period or a dash and may contain a maximum of 128 characters.';
+
+/**
+ * Get deployment id from the given status link
+ *
+ * @param statusLink - the status link
+ * Returns deploymentId - the deployment id
+ */
+function getDeploymentIdFromStatusLink(statusLink: string): String {
+  const uuidRegex = /\/deployment\/([a-fA-F0-9-]+)$/;
+  const match = statusLink.match(uuidRegex);
+  return match ? match[1] : null;
+}
+
+/**
+ * Wait until deployment status is not running or time expires
+ *
+ * @param deploymentId - the deployment id
+ * Returns true if status changed from running, or false if timed out
+ */
+async function waitUntilStatusChange(deploymentId: string): Promise<boolean | null> {
+  let deploymentStatus = 'running';
+  const intervalMs = 100;
+  const timeoutMs = 5000;
+  return new Promise<boolean | null>((resolve) => {
+    let elapsedTime = 0;
+    const interval = setInterval(async () => {
+      await db.transaction(async (tx) => {
+        const { status } = await getDeploymentById(tx, deploymentId);
+        deploymentStatus = status;
+      });
+
+      if (deploymentStatus !== 'running') {
+        clearInterval(interval);
+        resolve(true);
+      } else if (elapsedTime >= timeoutMs) {
+        clearInterval(interval);
+        resolve(false);
+      }
+
+      elapsedTime += intervalMs;
+    }, intervalMs);
+  });
+}
 
 //
 // Unit tests
@@ -155,6 +200,7 @@ describe('ecrImageNameToComponents', function () {
     const imageName = '123456789012.dkr.ecr.us-west-2.amazonaws.com/harmony/my-repository:my-tag';
 
     const expectedComponents = {
+      registryId: '123456789012',
       host: '123456789012.dkr.ecr.us-west-2.amazonaws.com',
       region: 'us-west-2',
       repository: 'harmony/my-repository',
@@ -389,6 +435,8 @@ describe('Service image endpoint', async function () {
 
   describe('Update service image', function () {
     let execDeployScriptStub: sinon.SinonStub;
+    let link = null;
+    let deploymentId = null;
     before(async function () {
       execDeployScriptStub = sinon.stub(serviceImageTags, 'execDeployScript').callsFake(() => null);
     });
@@ -549,7 +597,6 @@ describe('Service image endpoint', async function () {
         // resolve without error meaning script executed OK
         execStub = sinon.stub(serviceImageTags, 'asyncExec').callsFake(() => Promise.resolve({}));
         this.res = await request(this.frontend).put('/service-image-tag/harmony-service-example').use(auth({ username: 'buzz' })).send({ tag: 'foo' });
-
       });
 
       after(function () {
@@ -562,7 +609,14 @@ describe('Service image endpoint', async function () {
       });
 
       it('returns the tag we sent', async function () {
-        expect(this.res.body).to.eql({ 'tag': 'foo' });
+        expect(this.res.body.tag).to.eql('foo');
+      });
+
+      it('returns statusLink', async function () {
+        link = this.res.body.statusLink;
+        expect(link).to.include('http://127.0.0.1:4000/service-image-tag/deployment/');
+        deploymentId = getDeploymentIdFromStatusLink(link);
+        expect(deploymentId).to.not.be.null;
       });
     });
 
@@ -588,7 +642,14 @@ describe('Service image endpoint', async function () {
       });
 
       it('returns the tag we sent', async function () {
-        expect(this.res.body).to.eql({ 'tag': 'foo' });
+        expect(this.res.body.tag).to.eql('foo');
+      });
+
+      it('returns statusLink', async function () {
+        link = this.res.body.statusLink;
+        expect(link).to.include('http://127.0.0.1:4000/service-image-tag/deployment/');
+        deploymentId = getDeploymentIdFromStatusLink(link);
+        expect(deploymentId).to.not.be.null;
       });
     });
   });
@@ -830,11 +891,193 @@ describe('Service image endpoint', async function () {
           });
 
           it('returns the tag we sent', async function () {
-            expect(this.res.body).to.eql({ 'tag': 'foo' });
+            expect(this.res.body.tag).to.eql('foo');
           });
         });
       });
     });
 
+  });
+});
+
+describe('Service self-deployment successful', async function () {
+  hookServersStartStop({ skipEarthdataLogin: false });
+
+  describe('Update service image successful', function () {
+    let execStub;
+    let execDeployScriptStub: sinon.SinonStub;
+    let link = null;
+    let linkDeploymentId = null;
+
+    hookDescribeImage({
+      imageDigest: '',
+      lastUpdated: undefined,
+    });
+
+    before(async function () {
+      // resolve without error meaning script executed OK
+      execStub = sinon.stub(serviceImageTags, 'asyncExec').callsFake(() => Promise.resolve({}));
+
+      // Stub out the exec function to simulate successful execution
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      execDeployScriptStub = sinon.stub(require('child_process'), 'exec');
+      execDeployScriptStub.callsArgWith(2, null, 'Success output', '');
+
+      this.res = await request(this.frontend).put('/service-image-tag/harmony-service-example').use(auth({ username: 'buzz' })).send({ tag: 'foo' });
+    });
+
+    after(function () {
+      execStub.restore();
+      execDeployScriptStub.restore();
+      delete this.res;
+    });
+
+    it('returns a status 202', async function () {
+      expect(this.res.status).to.equal(202);
+    });
+
+    it('returns the tag we sent', async function () {
+      expect(this.res.body.tag).to.eql('foo');
+    });
+
+    it('returns statusLink', async function () {
+      link = this.res.body.statusLink;
+      expect(link).to.include('http://127.0.0.1:4000/service-image-tag/deployment/');
+      linkDeploymentId = getDeploymentIdFromStatusLink(link);
+      expect(linkDeploymentId).to.not.be.null;
+    });
+
+    it('reaches a terminal status without timeout', async function () {
+      const noTimeout = await waitUntilStatusChange(linkDeploymentId);
+      expect(noTimeout).to.be.true;
+    });
+
+    describe('when get the status of successful deployment', async function () {
+      before(async function () {
+        // any user can call the get deployment status endpoint
+        hookRedirect('joe');
+        const { pathname } = new URL(link);
+        this.res = await request(this.frontend).get(pathname).use(auth({ username: 'joe' }));
+      });
+
+      after(function () {
+        delete this.res;
+      });
+
+      it('returns a status 200', async function () {
+        expect(this.res.status).to.equal(200);
+      });
+
+      it('returns the deployment status successful', async function () {
+        const { deploymentId, username, service, tag, status, message } = this.res.body;
+        expect(deploymentId).to.eql(linkDeploymentId);
+        expect(username).to.eql('buzz');
+        expect(service).to.eql('harmony-service-example');
+        expect(tag).to.eql('foo');
+        expect(status).to.eql('successful');
+        expect(message).to.eql('Deployment successful');
+      });
+    });
+
+    describe('when get the status with a nonexist deployment id', async function () {
+      before(async function () {
+        hookRedirect('joe');
+        this.res = await request(this.frontend).get('/service-image-tag/deployment/5a36085d-b40e-4296-96da-e406d7751166').use(auth({ username: 'joe' }));
+      });
+
+      after(function () {
+        delete this.res;
+      });
+
+      it('returns a status 404', async function () {
+        expect(this.res.status).to.equal(404);
+      });
+
+      it('returns the deployment status successful', async function () {
+        expect(this.res.body).to.eql({ 'error': 'Deployment does not exist' });
+      });
+    });
+  });
+});
+
+describe('Service self-deployment failure', async function () {
+  hookServersStartStop({ skipEarthdataLogin: false });
+
+  describe('Update service image failed', function () {
+    let execStub;
+    let execDeployScriptStub: sinon.SinonStub;
+    let link = null;
+    let linkDeploymentId = null;
+    const errorMessage = 'Script execution failed';
+
+    hookDescribeImage({
+      imageDigest: '',
+      lastUpdated: undefined,
+    });
+
+    before(async function () {
+      // resolve without error meaning script executed OK
+      execStub = sinon.stub(serviceImageTags, 'asyncExec').callsFake(() => Promise.resolve({}));
+
+      // Stub out the exec function to simulate failed execution
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      execDeployScriptStub = sinon.stub(require('child_process'), 'exec');
+      execDeployScriptStub.callsArgWith(2, new Error(errorMessage), 'Failure output', '');
+
+      this.res = await request(this.frontend).put('/service-image-tag/harmony-service-example').use(auth({ username: 'adam' })).send({ tag: 'foo' });
+    });
+
+    after(function () {
+      execStub.restore();
+      execDeployScriptStub.restore();
+      delete this.res;
+    });
+
+    it('returns a status 202', async function () {
+      expect(this.res.status).to.equal(202);
+    });
+
+    it('returns the tag we sent', async function () {
+      expect(this.res.body.tag).to.eql('foo');
+    });
+
+    it('returns statusLink', async function () {
+      link = this.res.body.statusLink;
+      expect(link).to.include('http://127.0.0.1:4000/service-image-tag/deployment/');
+      linkDeploymentId = getDeploymentIdFromStatusLink(link);
+      expect(linkDeploymentId).to.not.be.null;
+    });
+
+    it('reaches a terminal status without timeout', async function () {
+      const noTimeout = await waitUntilStatusChange(linkDeploymentId);
+      expect(noTimeout).to.be.true;
+    });
+
+    describe('when get the status of failed deployment', async function () {
+      before(async function () {
+        // any user can call the get deployment status endpoint
+        hookRedirect('joe');
+        const { pathname } = new URL(link);
+        this.res = await request(this.frontend).get(pathname).use(auth({ username: 'joe' }));
+      });
+
+      after(function () {
+        delete this.res;
+      });
+
+      it('returns a status 200', async function () {
+        expect(this.res.status).to.equal(200);
+      });
+
+      it('returns the deployment status failed and the proper error message', async function () {
+        const { deploymentId, username, service, tag, status, message } = this.res.body;
+        expect(deploymentId).to.eql(linkDeploymentId);
+        expect(username).to.eql('adam');
+        expect(service).to.eql('harmony-service-example');
+        expect(tag).to.eql('foo');
+        expect(status).to.eql('failed');
+        expect(message).to.eql(`Failed service deployment for deploymentId: ${deploymentId}. Error: ${errorMessage}`);
+      });
+    });
   });
 });

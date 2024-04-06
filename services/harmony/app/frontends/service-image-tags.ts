@@ -7,6 +7,9 @@ import * as path from 'path';
 import util from 'util';
 import db from '../util/db';
 import env from '../util/env';
+import { getRequestRoot } from '../util/url';
+import { v4 as uuid } from 'uuid';
+import ServiceDeployment, { setStatusMessage, getDeploymentById } from '../models/service-deployment';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 export const asyncExec = util.promisify(require('child_process').exec);
@@ -44,6 +47,7 @@ export function getImageTagMap(): {} {
 }
 
 export interface EcrImageNameComponents {
+  registryId: string;
   host: string;
   region: string;
   repository: string;
@@ -61,8 +65,10 @@ export function ecrImageNameToComponents(name: string): EcrImageNameComponents {
   if (!match) return null;
 
   const [ _, host, region, repository, tag ] = match;
+  const registryId = host.split('.')[0]; // the AWS account ID
 
   return {
+    registryId,
     host,
     region,
     repository,
@@ -91,7 +97,7 @@ async function validateTaggedImageIsReachable(
 
   if (nameComponents) {
     // use the AWS CLI to check
-    const { region, repository } = nameComponents;
+    const { region, repository, registryId } = nameComponents;
     let endpoint = `https://ecr.${region}.amazonaws.com`;
     if (env.useLocalstack === true) {
       endpoint = `http://${env.localstackHost}:4566`;
@@ -100,7 +106,7 @@ async function validateTaggedImageIsReachable(
       region,
       endpoint,
     });
-    if (! await ecr.describeImage(repository, tag)) {
+    if (! await ecr.describeImage(repository, tag, registryId)) {
       isReachable = false;
     }
   } else {
@@ -321,10 +327,11 @@ export async function getServiceImageTag(
  * @param req - The request object
  * @param service  - The name of the service to deploy
  * @param tag  - The service image tag to deploy
+ * @param deploymentId  - The deployment id
  */
-export function execDeployScript(
-  req: HarmonyRequest, service: string, tag: string,
-): void {
+export async function execDeployScript(
+  req: HarmonyRequest, service: string, tag: string, deploymentId: string,
+): Promise<void> {
   const currentPath = __dirname;
   const cicdDir = path.join(currentPath, '../../../../../harmony-ci-cd');
 
@@ -334,17 +341,25 @@ export function execDeployScript(
     cwd: cicdDir,
   };
 
-  exec(command, options, (error, stdout, _stderr) => {
-    // Split the stdout by line breaks
+  exec(command, options, async (error, stdout, _stderr) => {
     const lines = stdout.split('\n');
     if (error) {
       req.context.logger.error(`Error executing script: ${error.message}`);
       lines.forEach(line => {
         req.context.logger.info(`Failed script output: ${line}`);
       });
+      await db.transaction(async (tx) => {
+        await setStatusMessage(tx,
+          deploymentId,
+          'failed',
+          `Failed service deployment for deploymentId: ${deploymentId}. Error: ${error.message}`);
+      });
     } else {
       lines.forEach(line => {
         req.context.logger.info(`Script output: ${line}`);
+      });
+      await db.transaction(async (tx) => {
+        await setStatusMessage(tx, deploymentId, 'successful', 'Deployment successful');
       });
     }
   });
@@ -376,17 +391,35 @@ export async function updateServiceImageTag(
 
   const { service } = req.params;
   const { tag } = req.body;
+  const deploymentId = uuid();
 
-  module.exports.execDeployScript(req, service, tag);
+  const deployment = new ServiceDeployment({
+    deployment_id: deploymentId,
+    username: req.user,
+    service: service,
+    tag: tag,
+    status: 'running',
+    message: 'Deployment in progress',
+  });
+
+  await db.transaction(async (tx) => {
+    await deployment.save(tx);
+  });
+
+  module.exports.execDeployScript(req, service, tag, deploymentId);
+  const urlRoot = getRequestRoot(req);
   res.statusCode = 202;
-  res.send({ 'tag': tag });
+  res.send({
+    'tag': tag,
+    'statusLink': `${urlRoot}/service-image-tag/deployment/${deploymentId}`,
+  });
 }
 
 /**
  * Set the enabled field in service_deployment table to the given vale.
  * @param value - The boolean value to be set for the enabled field
  */
-async function setEnabled( value: boolean ): Promise<void> {
+async function setEnabled(value: boolean): Promise<void> {
   const sql = `update service_deployment set enabled=${value}`;
   await db.transaction(async (tx) => {
     await tx.raw(sql);
@@ -428,4 +461,45 @@ export async function setServiceImageTagState(
   await setEnabled(enabled);
   res.statusCode = 200;
   res.send({ 'enabled': enabled });
+}
+
+/**
+ * Get the service deployment for the given deployment id
+ * @param req - The request object
+ * @param res  - The response object
+ * @param _next  - The next middleware in the chain
+ */
+export async function getServiceDeployment(
+  req: HarmonyRequest, res: Response, _next: NextFunction,
+): Promise<void> {
+  const { id } = req.params;
+  let deployment;
+  try {
+    await db.transaction(async (tx) => {
+      deployment = await getDeploymentById(tx, id);
+    });
+    const { deployment_id, username, service, tag, status, message, createdAt, updatedAt } = deployment;
+    deployment = {
+      deploymentId: deployment_id,
+      username: username,
+      service: service,
+      tag: tag,
+      status: status,
+      message: message,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+    };
+  } catch (e) {
+    req.context.logger.error(`Caught exception: ${e}`);
+    deployment = undefined;
+  }
+
+  if (deployment === undefined) {
+    res.statusCode = 404;
+    res.send({ 'error': 'Deployment does not exist' });
+    return;
+  }
+
+  res.statusCode = 200;
+  res.send(deployment);
 }
