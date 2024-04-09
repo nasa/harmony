@@ -473,22 +473,11 @@ export async function getServiceDeployment(
   req: HarmonyRequest, res: Response, _next: NextFunction,
 ): Promise<void> {
   const { id } = req.params;
-  let deployment;
+  let deployment: ServiceDeployment;
   try {
     await db.transaction(async (tx) => {
       deployment = await getDeploymentById(tx, id);
     });
-    const { deployment_id, username, service, tag, status, message, createdAt, updatedAt } = deployment;
-    deployment = {
-      deploymentId: deployment_id,
-      username: username,
-      service: service,
-      tag: tag,
-      status: status,
-      message: message,
-      createdAt: createdAt,
-      updatedAt: updatedAt,
-    };
   } catch (e) {
     req.context.logger.error(`Caught exception: ${e}`);
     deployment = undefined;
@@ -501,5 +490,5 @@ export async function getServiceDeployment(
   }
 
   res.statusCode = 200;
-  res.send(deployment);
+  res.send(deployment.serialize());
 }
