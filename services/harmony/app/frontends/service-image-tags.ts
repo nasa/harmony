@@ -10,6 +10,7 @@ import env from '../util/env';
 import { getRequestRoot } from '../util/url';
 import { v4 as uuid } from 'uuid';
 import ServiceDeployment, { setStatusMessage, getDeploymentById, getDeployments } from '../models/service-deployment';
+import { keysToLowerCase } from '../util/object';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 export const asyncExec = util.promisify(require('child_process').exec);
@@ -505,8 +506,8 @@ export async function getServiceDeployments(
   if (!await validateUserIsInAdminGroup(req, res)) return;
   try {
     await db.transaction(async (tx) => {
-      const deployments = await getDeployments(tx);
-      res.statusCode = 200;
+      const queryLowerCase = keysToLowerCase(req.query);
+      const deployments = await getDeployments(tx, queryLowerCase.status, queryLowerCase.serviceid);
       res.send(deployments.map((deployment) => deployment.serialize()));
     });
   } catch (e) {
