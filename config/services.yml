@@ -335,7 +335,7 @@ https://cmr.earthdata.nasa.gov:
       JPEG outputs. This includes, where necessary, conversion to a GIBS
       supported Coordinate Reference System (CRS). Other projections can be
       requested, but will not be compatible with GIBS.
-    data_operation_version: '0.17.0'
+    data_operation_version: '0.18.0'
     type:
       <<: *default-turbo-config
       params:
@@ -343,7 +343,6 @@ https://cmr.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/sds/hybig
-    collections: []
     umm_s:
       - S2697183066-XYZ_PROV
     capabilities:
@@ -1093,4 +1092,3 @@ https://cmr.uat.earthdata.nasa.gov:
         operations: ['concatenate']
         conditional:
           exists: ['concatenate']
-
