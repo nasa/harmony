@@ -9,7 +9,7 @@ import db from '../util/db';
 import env from '../util/env';
 import { getRequestRoot } from '../util/url';
 import { v4 as uuid } from 'uuid';
-import ServiceDeployment, { setStatusMessage, getDeploymentById } from '../models/service-deployment';
+import ServiceDeployment, { setStatusMessage, getDeploymentById, getDeployments } from '../models/service-deployment';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 export const asyncExec = util.promisify(require('child_process').exec);
@@ -491,4 +491,26 @@ export async function getServiceDeployment(
 
   res.statusCode = 200;
   res.send(deployment.serialize());
+}
+
+/**
+ * Get the service deployments with optional filters applied
+ * @param req - The request object
+ * @param res  - The response object
+ * @param _next  - The next middleware in the chain
+ */
+export async function getServiceDeployments(
+  req: HarmonyRequest, res: Response, next: NextFunction,
+): Promise<void> {
+  if (!await validateUserIsInAdminGroup(req, res)) return;
+  try {
+    await db.transaction(async (tx) => {
+      const deployments = await getDeployments(tx);
+      res.statusCode = 200;
+      res.send(deployments.map((deployment) => deployment.serialize()));
+    });
+  } catch (e) {
+    req.context.logger.error(`Caught exception: ${e}`);
+    next(e);
+  }
 }
