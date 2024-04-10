@@ -85,7 +85,8 @@ export default function getCoverageRangeset(
     throw e;
   }
 
-  const varInfos = parseVariables(req.collections, req.params.collectionId);
+  const queryVars = req.query.variable as string | string[];
+  const varInfos = parseVariables(req.collections, req.params.collectionId, queryVars);
   for (const varInfo of varInfos) {
     operation.addSource(varInfo.collectionId, varInfo.shortName, varInfo.versionId,
       varInfo.variables, varInfo.coordinateVariables);

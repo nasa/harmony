@@ -1,5 +1,6 @@
 import { CmrCollection, CmrUmmVariable } from './cmr';
 import { RequestValidationError } from './errors';
+import { parseMultiValueParameter } from './parameter-parsing-helpers';
 
 export interface HarmonyVariable {
   id: string;
@@ -47,7 +48,7 @@ export function cmrVarToHarmonyVar(cmrVariable: CmrUmmVariable): HarmonyVariable
   }
 
   if (umm.VariableSubType) {
-    harmonyVariable.subtype =  umm.VariableSubType;
+    harmonyVariable.subtype = umm.VariableSubType;
   }
 
   if (umm.RelatedURLs) {
@@ -60,7 +61,7 @@ export function cmrVarToHarmonyVar(cmrVariable: CmrUmmVariable): HarmonyVariable
           subtype: relatedUrl.Subtype,
           description: relatedUrl.Description,
           format: relatedUrl.Format,
-          mimeType:relatedUrl.MimeType,
+          mimeType: relatedUrl.MimeType,
         };
       });
   }
@@ -95,7 +96,7 @@ const coordinateType = 'COORDINATE';
  * @returns The subset of variables that are coordinate variables
  */
 export function getCoordinateVariables(variables: CmrUmmVariable[]): CmrUmmVariable[] {
-  return variables.filter((v) => v.umm.VariableType === coordinateType );
+  return variables.filter((v) => v.umm.VariableType === coordinateType);
 }
 
 /**
@@ -112,6 +113,7 @@ export function getCoordinateVariables(variables: CmrUmmVariable[]): CmrUmmVaria
 export function parseVariables(
   eosdisCollections: CmrCollection[],
   collectionIdParam: string,
+  queryVars: string | string[] = null,
 ): VariableInfo[] {
   // Note that "collectionId" from the Open API spec is an OGC API Collection, which is
   // what we would call a variable (or sometimes a named group of variables).  In the
@@ -119,7 +121,7 @@ export function parseVariables(
   // to a UMM-C collection.  In the code, wherever possible, collections are UMM-C collections
   // and variables are UMM-Var variables.  The following line is the confusing part where we
   // translate between the two nomenclatures.
-  const variableIds = collectionIdParam.split(',');
+  let variableIds = collectionIdParam.split(',');
   const variableInfo = [];
 
   if (variableIds.indexOf('all') !== -1) {
@@ -129,10 +131,26 @@ export function parseVariables(
     }
     for (const collection of eosdisCollections) {
       const coordinateVariables = getCoordinateVariables(collection.variables);
-      variableInfo.push({ collectionId: collection.id, shortName: collection.short_name,
-        versionId: collection.version_id, coordinateVariables });
+      variableInfo.push({
+        collectionId: collection.id, shortName: collection.short_name,
+        versionId: collection.version_id, coordinateVariables,
+      });
     }
   } else {
+    if (variableIds.indexOf('parameter_vars') !== -1) {
+      if (!queryVars) {
+        throw new RequestValidationError('"parameter_vars" specified, but no variables given');
+      } else {
+        // variableIds = [(queryVars as string | string[])].flat();
+        variableIds = parseMultiValueParameter(queryVars);
+      }
+    } else {
+      // can't specify vars in the query AND in the path
+      if (queryVars) {
+        throw new RequestValidationError('Value "parameter_vars" must be used in the url path when variables are passed in the query parameters or request body');
+      }
+    }
+
     // Figure out which variables belong to which collections and whether any are missing.
     // Note that a single variable name may appear in multiple collections
     const missingVariables = new Set<string>(variableIds);
@@ -153,8 +171,10 @@ export function parseVariables(
           }
         }
       }
-      variableInfo.push({ collectionId: collection.id, shortName: collection.short_name,
-        versionId: collection.version_id, variables, coordinateVariables });
+      variableInfo.push({
+        collectionId: collection.id, shortName: collection.short_name,
+        versionId: collection.version_id, variables, coordinateVariables,
+      });
     }
     if (missingVariables.size > 0) {
       throw new RequestValidationError(`Coverages were not found for the provided variables: ${Array.from(missingVariables).join(', ')}`);
@@ -200,8 +220,10 @@ export function getVariablesForCollection(
   for (const collection of collections) {
     const coordinateVariables = getCoordinateVariables(collection.variables);
     const variables = variablesByCollection[collection.id];
-    variableInfo.push({ collectionId: collection.id, shortName: collection.short_name,
-      versionId: collection.version_id, variables, coordinateVariables });
+    variableInfo.push({
+      collectionId: collection.id, shortName: collection.short_name,
+      versionId: collection.version_id, variables, coordinateVariables,
+    });
   }
   return variableInfo;
 }

@@ -54,6 +54,42 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
   const cmrResp = JSON.parse(cmrRespStr.toString());
   const testGeoJson = JSON.parse(fs.readFileSync('./test/resources/complex_multipoly.geojson').toString());
 
+  describe('when provided variables in the web form', function () {
+    const form = {
+      subset: ['lon(17:98)', 'time("2020-01-02T00:00:00.000Z":"2020-01-02T01:00:00.000Z")'],
+      interpolation: 'near',
+      scaleExtent: '0,2500000.3,1500000,3300000',
+      scaleSize: '1.1,2',
+      height: 500,
+      width: 1000,
+      outputCrs: 'EPSG:4326',
+      variable: [variableName],
+    };
+
+    describe('and a valid shapefile', function () {
+      const shapeForm = { ...form, shapefile: { path: './test/resources/complex_multipoly.geojson', mimetype: 'application/geo+json' } };
+      StubService.hook({ params: { redirect: 'http://example.com' } });
+      cmrResp.headers = new fetch.Headers(cmrResp.headers);
+      hookPostRangesetRequest(version, collection, 'parameter_vars', shapeForm);
+
+      it('passes the source collection to the backend', function () {
+        console.log(`${JSON.stringify(this.res, null, 2)}`);
+        const source = this.service.operation.sources[0];
+        expect(source.collection).to.equal(collection);
+      });
+
+      it('passes the source variable to the backend', function () {
+        const source = this.service.operation.sources[0];
+        expect(source.variables.length === 1);
+        expect(source.variables[0].id).to.equal(expectedVariableId);
+      });
+
+      it('passes a shapefile URI to the backend', async function () {
+        expect(this.service.operation.geojson).to.include('shapefile');
+      });
+    });
+  });
+
   describe('when provided a valid set of field parameters', function () {
     const form = {
       subset: ['lon(17:98)', 'time("2020-01-02T00:00:00.000Z":"2020-01-02T01:00:00.000Z")'],
