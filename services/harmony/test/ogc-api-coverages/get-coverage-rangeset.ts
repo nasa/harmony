@@ -367,6 +367,24 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
     });
 
+    describe('Passing the "parameter_vars" pseudo-variable without specifying variables as parameters', function () {
+      const query = {
+        granuleId,
+      };
+
+      StubService.hook({ params: { redirect: 'http://example.com' } });
+      hookRangesetRequest(version, collection, pseudoVariableName, { query });
+
+      it('passes multiple variables to the backend service', function () {
+        expect(this.res.status).to.equal(400);
+        expect(this.res.body).to.eql({
+          'code': 'harmony.RequestValidationError',
+          'description': 'Error: "parameter_vars" specified, but no variables given',
+        });
+      });
+
+    });
+
     describe('Passing the variables in the query parameters', function () {
       const query = {
         granuleId,

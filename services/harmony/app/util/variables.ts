@@ -141,7 +141,6 @@ export function parseVariables(
       if (!queryVars) {
         throw new RequestValidationError('"parameter_vars" specified, but no variables given');
       } else {
-        // variableIds = [(queryVars as string | string[])].flat();
         variableIds = parseMultiValueParameter(queryVars);
       }
     } else {
