@@ -98,6 +98,7 @@ class HarmonyServerEnv extends HarmonyEnv {
   @Min(1)
   maxPostFileSize: number;
 
+  locallyDeployedServices: string;
 }
 
 const localPath = path.resolve(__dirname, '../../env-defaults');

@@ -189,36 +189,42 @@ export class HarmonyItem {
   addAsset(href: string, title: string, mimetype: string): void {
     let role = 'data';
     // Determine the role based on mimetype
-    const [type, subtype] = mimetype.split('/');
-    if (type === 'application') {
-      if (subtype === 'json') {
-        // application/json
-        role = 'metadata';
-      } else {
-        // application/nc, application/octet-stream ...
-        role = 'data';
+    if (mimetype) {
+      const [type, subtype] = mimetype.split('/');
+      if (type === 'application') {
+        if (subtype === 'json') {
+          // application/json
+          role = 'metadata';
+        } else {
+          // application/nc, application/octet-stream ...
+          role = 'data';
+        }
+      } else if (type === 'image') {
+        // image/*
+        role = 'overview';
+      } else if (type === 'text') {
+        if (subtype === 'xml') {
+          // text/xml
+          role = 'metadata';
+        } else {
+          // text/plain, text/csv, ...
+          role = 'data';
+        }
       }
-    } else if (type === 'image') {
-      // image/*
-      role = 'overview';
-    } else if (type === 'text') {
-      if (subtype === 'xml') {
-        // text/xml
-        role = 'metadata';
-      } else {
-        // text/plain, text/csv, ...
-        role = 'data';
-      }
+      this.assets[href] = {
+        href,
+        title,
+        type: mimetype,
+        roles: [role],
+      };
+    } else {
+      // type is not required - if we do not have the mimetype do not include it
+      this.assets[href] = {
+        href,
+        title,
+        roles: [role],
+      };
     }
-
-    // Using href as the key for assets; STAC clients seem to attach special meaning
-    // to some keys (ex: thumbnail)
-    this.assets[href] = {
-      href,
-      title,
-      type: mimetype,
-      roles: [role],
-    };
   }
 
   /**
