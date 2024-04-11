@@ -343,8 +343,7 @@ https://cmr.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/sds/hybig
-    umm_s:
-      - S2697183066-XYZ_PROV
+    umm_s: S2697183066-XYZ_PROV
     capabilities:
       subsetting:
         bbox: false
