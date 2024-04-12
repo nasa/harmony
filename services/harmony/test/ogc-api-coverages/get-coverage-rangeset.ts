@@ -343,6 +343,145 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     });
   });
 
+  describe('Using the "parameter_vars" pseudo-variable', function () {
+    const pseudoVariableName = 'parameter_vars';
+    const variableId1 = 'V1233801695-EEDTEST';
+    const variableId2 = 'V1233801696-EEDTEST';
+
+    describe('Passing the variables in the query parameters without using "parameter_vars"', function () {
+      const query = {
+        granuleId,
+        variable: [variableId1],
+      };
+
+      StubService.hook({ params: { redirect: 'http://example.com' } });
+      hookRangesetRequest(version, collection, variableId1, { query });
+
+      it('passes multiple variables to the backend service', function () {
+        expect(this.res.status).to.equal(400);
+        expect(this.res.body).to.eql({
+          'code': 'harmony.RequestValidationError',
+          'description': 'Error: Value "parameter_vars" must be used in the url path when variables are passed in the query parameters or request body',
+        });
+      });
+
+    });
+
+    describe('Passing the "parameter_vars" pseudo-variable without specifying variables as parameters', function () {
+      const query = {
+        granuleId,
+      };
+
+      StubService.hook({ params: { redirect: 'http://example.com' } });
+      hookRangesetRequest(version, collection, pseudoVariableName, { query });
+
+      it('passes multiple variables to the backend service', function () {
+        expect(this.res.status).to.equal(400);
+        expect(this.res.body).to.eql({
+          'code': 'harmony.RequestValidationError',
+          'description': 'Error: "parameter_vars" specified, but no variables given',
+        });
+      });
+
+    });
+
+    describe('Passing the variables in the query parameters', function () {
+      const query = {
+        granuleId,
+        variable: [variableId1, variableId2],
+      };
+
+      StubService.hook({ params: { redirect: 'http://example.com' } });
+      hookRangesetRequest(version, collection, pseudoVariableName, { query });
+
+      it('passes multiple variables to the backend service', function () {
+        const source = this.service.operation.sources[0];
+        expect(source.variables.length).to.equal(2);
+        expect(source.variables[0].id).to.equal(variableId1);
+        expect(source.variables[1].id).to.equal(variableId2);
+      });
+
+    });
+
+    describe('Passing the variables in the web form', function () {
+      const form = {
+        granuleId,
+        variable: `${variableId1},${variableId2}`,
+      };
+
+      StubService.hook({ params: { redirect: 'http://example.com' } });
+      hookPostRangesetRequest(version, collection, pseudoVariableName, form);
+
+      it('passes multiple variables to the backend service', function () {
+        const source = this.service.operation.sources[0];
+        expect(source.variables.length).to.equal(2);
+        expect(source.variables[0].id).to.equal(variableId1);
+        expect(source.variables[1].id).to.equal(variableId2);
+      });
+
+    });
+
+    describe('Passing the variables in the query and the web form', function () {
+      const form = {
+        granuleId,
+        variable: [variableId1],
+      };
+
+      const queryStr = `variable=${variableId2}`;
+
+      StubService.hook({ params: { redirect: 'http://example.com' } });
+      hookPostRangesetRequest(version, collection, pseudoVariableName, form, queryStr);
+
+      it('propagates the error message into the response', function () {
+        expect(this.res.text).to.include('Duplicate keys');
+      });
+
+      it('responds with an HTTP 400 "Bad Request" status code', function () {
+        expect(this.res.status).to.equal(400);
+      });
+
+    });
+
+    describe('Passing the variables in the web form using names as well as ids', function () {
+      const form = {
+        granuleId,
+        variable: `red_var,${variableId2}`,
+      };
+
+      StubService.hook({ params: { redirect: 'http://example.com' } });
+      hookPostRangesetRequest(version, collection, pseudoVariableName, form);
+
+      it('passes multiple variables to the backend service', function () {
+        const source = this.service.operation.sources[0];
+        expect(source.variables.length).to.equal(2);
+        expect(source.variables[0].id).to.equal(variableId1);
+        expect(source.variables[1].id).to.equal(variableId2);
+      });
+
+    });
+
+    describe('Passing many variables in the web form', function () {
+      const largeCollection = 'C20240409-EEDTEST';
+      const largeVarList = [];
+      for (let i = 0; i < 2000; i++) {
+        largeVarList.push(`V9999${i}-EEDTEST`);
+      }
+
+      const form = {
+        granuleId,
+        variable: largeVarList.join(','),
+      };
+
+      StubService.hook({ params: { redirect: 'http://example.com' } });
+      hookPostRangesetRequest(version, largeCollection, pseudoVariableName, form);
+
+      it('passes multiple variables to the backend service', function () {
+        const source = this.service.operation.sources[0];
+        expect(source.variables.length).to.equal(2000);
+      });
+    });
+  });
+
   describe('Not specifying a single granule ID', function () {
     const query = {};
 

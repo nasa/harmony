@@ -328,6 +328,35 @@ https://cmr.earthdata.nasa.gov:
         is_sequential: true
       - image: !Env ${HARMONY_GDAL_ADAPTER_IMAGE}
 
+  - name: sds/HyBIG
+    description: |
+      The Harmony Browse Image Generator (HyBIG) supports the conversion of
+      GeoTIFF inputs to Global Imagery Browse Services (GIBS) compatible PNG or
+      JPEG outputs. This includes, where necessary, conversion to a GIBS
+      supported Coordinate Reference System (CRS). Other projections can be
+      requested, but will not be compatible with GIBS.
+    data_operation_version: '0.18.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/sds/hybig
+    umm_s: S2697183066-XYZ_PROV
+    capabilities:
+      subsetting:
+        bbox: false
+        shape: false
+        temporal: false
+      output_formats:
+        - image/png
+        - image/jpeg
+      reprojection: true
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+      - image: !Env ${HYBIG_IMAGE}
+
   - name: harmony/netcdf-to-zarr
     description: |
       Converts NetCDF4 files to the Zarr format as faithfully as possible, preserving metadata.
@@ -1086,4 +1115,3 @@ https://cmr.uat.earthdata.nasa.gov:
         operations: ['concatenate']
         conditional:
           exists: ['concatenate']
-
