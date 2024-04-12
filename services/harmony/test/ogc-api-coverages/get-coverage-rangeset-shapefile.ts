@@ -73,7 +73,6 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
       hookPostRangesetRequest(version, collection, 'parameter_vars', shapeForm);
 
       it('passes the source collection to the backend', function () {
-        console.log(`${JSON.stringify(this.res, null, 2)}`);
         const source = this.service.operation.sources[0];
         expect(source.collection).to.equal(collection);
       });
