@@ -33,7 +33,7 @@ The returned JSON response is a map of canonical service names to tags:
   "query-cmr": "latest",
   "giovanni-adapter": "latest",
   "geoloco": "latest",
-  "subset_band_name": "latest"
+  "subset_name_band": "latest"
 }
 ```
 **Example 2** - Harmony `/service-image-tags` response

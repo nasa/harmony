@@ -36,7 +36,7 @@ const serviceImages = {
   'sds-maskfill': 'latest',
   'giovanni-adapter': 'latest',
   'geoloco': 'latest',
-  'subset_band_name': 'latest',
+  'subset_name_band': 'latest',
   'batchee': 'latest',
   'stitchee': 'latest',
   'swath-projector': 'latest',
