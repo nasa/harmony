@@ -49,6 +49,10 @@ export interface ServiceStep {
       native_format?: string[];
     };
   };
+  extra_args?: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    [key: string]: any; // Allow any string key and any value type
+  };
 }
 
 export interface ServiceCollection {
@@ -455,6 +459,14 @@ export default abstract class BaseService<ServiceParamType> {
           if (i === numSteps) {
             this.operation.stagingLocation = this.finalStagingLocation();
           }
+
+          if (step.extra_args) {
+            this.operation.extraArgs = step.extra_args;
+          } else {
+            // clear out extraArgs used by other steps
+            this.operation.removeExtraArgs();
+          }
+
           let progressWeight = 1.0;
           if (QUERY_CMR_SERVICE_REGEX.test(step.image)) {
             progressWeight = 0.1;

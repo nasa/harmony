@@ -8,7 +8,7 @@ import { CmrUmmCollection, CmrUmmVariable } from '../util/cmr';
 import { Encrypter, Decrypter } from '../util/crypto';
 import { cmrVarToHarmonyVar, HarmonyVariable } from '../util/variables';
 
-export const CURRENT_SCHEMA_VERSION = '0.18.0';
+export const CURRENT_SCHEMA_VERSION = '0.19.0';
 
 /**
  * Synchronously reads and parses the JSON Schema at the given path
@@ -40,6 +40,15 @@ let _schemaVersions: SchemaVersion[];
 function schemaVersions(): SchemaVersion[] {
   if (_schemaVersions) return _schemaVersions;
   _schemaVersions = [
+    {
+      version: '0.19.0',
+      schema: readSchema('0.19.0'),
+      down: (model): unknown => {
+        const revertedModel = _.cloneDeep(model);
+        delete revertedModel.extraArgs;
+        return revertedModel;
+      },
+    },
     {
       version: '0.18.0',
       schema: readSchema('0.18.0'),
@@ -878,6 +887,33 @@ export default class DataOperation {
    */
   set stagingLocation(value: string) {
     this.model.stagingLocation = value;
+  }
+
+  /**
+   * Gets the extraArgs
+   *
+   * @returns The extra arguments that will be passed to service worker
+   */
+  get extraArgs(): object {
+    return this.model.extraArgs;
+  }
+
+  /**
+   * Sets extraArgs
+   *
+   * @param extraArgs - The extra arguments that will be passed to service worker
+   */
+  set extraArgs(extraArgs: object) {
+    this.model.extraArgs = extraArgs;
+  }
+
+  /**
+   * Removes extraArgs
+   */
+  removeExtraArgs(): void {
+    if (this.model.extraArgs) {
+      delete this.model.extraArgs;
+    }
   }
 
   /**
