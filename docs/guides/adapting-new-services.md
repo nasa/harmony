@@ -68,9 +68,9 @@ Canceled requests are handled internally by Harmony. Harmony will prevent furthe
 
 ## 5. Error handling
 
-The best way to trigger a service failure when an unrecoverable condition is encountered is to extend HarmonyException (a class provided by the service library) and throw an exception of that type. The service library may also throw a HarmonyException when common errors are encountered. 
+The best way to trigger a service failure when an unrecoverable condition is encountered is to extend HarmonyException (a class provided by the service library) and throw an exception of that type. The service library may also throw a HarmonyException when common errors are encountered.
 
-Exceptions of this type (HarmonyException or a subclass) which are meant to be bubbled up to users should _not_ be suppressed by the service. The exception will automatically be caught/handled by the service library. The exception message will be passed on to Harmony and bubbled up to the end user (accessible via the errors field in the job status Harmony endpoint (`/jobs/<job-id>`) and in many cases via the final job message). When possible services should strive to give informative error messages that give the end user some sense of why the service failed, without revealing any internal details about the service that could be exploited. 
+Exceptions of this type (HarmonyException or a subclass) which are meant to be bubbled up to users should _not_ be suppressed by the service. The exception will automatically be caught/handled by the service library. The exception message will be passed on to Harmony and bubbled up to the end user (accessible via the errors field in the job status Harmony endpoint (`/jobs/<job-id>`) and in many cases via the final job message). When possible services should strive to give informative error messages that give the end user some sense of why the service failed, without revealing any internal details about the service that could be exploited.
 
 Here is a good example:
 ```
@@ -155,7 +155,7 @@ The structure of an entry in the [services.yml](../../config/services.yml) file 
 
 ```yaml
 - name: harmony/service-example    # A unique identifier string for the service, conventionally <team>/<service>
-  data_operation_version: '0.18.0' # The version of the data-operation messaging schema to use
+  data_operation_version: '0.19.0' # The version of the data-operation messaging schema to use
   has_granule_limit: true          # Optional flag indicating whether we will impose granule limts for the request. Default to true.
   default_sync: false              # Optional flag indicating whether we will force the request to run synchrously. Default to false.
   type:                            # Configuration for service invocation

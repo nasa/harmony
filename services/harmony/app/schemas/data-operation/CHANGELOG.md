@@ -1,6 +1,10 @@
+## [0.19.0] - 2024-04-10
+### Added
+- extraArgs - The extra arguments that will be passed to service worker
+
 ## [0.18.0] - 2023-08-28
 ### Added
-- sources.extendDimensions - The dimensions to extend (added inititally for TEMPO users)
+- extendDimensions - The dimensions to extend (added inititally for TEMPO users)
 
 ## [0.17.0] - 2022-07-12
 ### Added
