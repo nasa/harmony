@@ -1,28 +1,30 @@
 openapi: 3.0.1
 info:
   title: Harmony API conforming to OGC API - Coverages
-  description: 'Harmony API for requesting coverages for a range of NASA EOSDIS data
-    using thc OGC API - Coverages'
+  description:
+    "Harmony API for requesting coverages for a range of NASA EOSDIS data
+    using thc OGC API - Coverages"
   version: 1.0.0
 servers:
-- url: /{cmrCollectionId}/ogc-api-coverages/1.0.0
-  description: Harmony server
-  variables:
-    cmrCollectionId:
-      default: no-default-cmr-collection
-      description: The CMR Collection ID for the dataset whose coverage is being accessed
+  - url: /{cmrCollectionId}/ogc-api-coverages/1.0.0
+    description: Harmony server
+    variables:
+      cmrCollectionId:
+        default: no-default-cmr-collection
+        description: The CMR Collection ID for the dataset whose coverage is being accessed
 tags:
-- name: Capabilities
-  description: Essential characteristics of this API including information about the data.
-- name: Coverage
-  description: Access to data (coverage).
+  - name: Capabilities
+    description: Essential characteristics of this API including information about the data.
+  - name: Coverage
+    description: Access to data (coverage).
 paths:
   /:
     get:
       tags:
-      - Capabilities
+        - Capabilities
       summary: landing page of this API
-      description: The landing page provides links to the API definition, the Conformance
+      description:
+        The landing page provides links to the API definition, the Conformance
         statements and the metadata about the coverage data in this dataset.
       operationId: getLandingPage
       responses:
@@ -31,13 +33,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/root'
+                $ref: "#/components/schemas/root"
         default:
-          $ref: '#/components/responses/default'
+          $ref: "#/components/responses/default"
   /api:
     get:
       tags:
-      - OpenAPI
+        - OpenAPI
       summary: this OpenAPI Schema
       description: Returns the OpenAPI Schema for this coverage endpoint
       operationId: getSpecification
@@ -49,11 +51,11 @@ paths:
               schema:
                 type: string
         default:
-          $ref: '#/components/responses/default'
+          $ref: "#/components/responses/default"
   /conformance:
     get:
       tags:
-      - Capabilities
+        - Capabilities
       summary: information about standards that this API conforms to
       description: list all requirements classes specified in a standard
         that the server conforms to
@@ -64,191 +66,195 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/req-classes'
+                $ref: "#/components/schemas/req-classes"
         default:
-          $ref: '#/components/responses/default'
+          $ref: "#/components/responses/default"
   /collections:
     get:
       tags:
-      - Capabilities
+        - Capabilities
       summary: Describe the collections in the dataset
       operationId: describeCollections
       parameters:
-      - name: limit
-        in: query
-        description: Not yet implemented
-        required: false
-        style: form
-        explode: false
-        schema:
-          maximum: 10000
-          minimum: 1
-          type: integer
-          default: 10
-      - name: bbox
-        in: query
-        description: Not yet implemented
-        required: false
-        style: form
-        explode: false
-        schema:
-          maxItems: 6
-          minItems: 4
-          type: array
-          items:
-            type: number
-      - name: time
-        in: query
-        description: Not yet implemented
-        required: false
-        style: form
-        explode: false
-        schema:
-          type: string
-      - name: f
-        in: query
-        description: |
-          The optional f parameter indicates the output format which the server shall provide as part of the response document. It has preference over the HTTP Accept header. The default format is JSON.
-        required: false
-        style: form
-        explode: false
-        schema:
-          type: string
-          default: json
-          enum:
-          - json
-          - html
+        - name: limit
+          in: query
+          description: Not yet implemented
+          required: false
+          style: form
+          explode: false
+          schema:
+            maximum: 10000
+            minimum: 1
+            type: integer
+            default: 10
+        - name: bbox
+          in: query
+          description: Not yet implemented
+          required: false
+          style: form
+          explode: false
+          schema:
+            maxItems: 6
+            minItems: 4
+            type: array
+            items:
+              type: number
+        - name: time
+          in: query
+          description: Not yet implemented
+          required: false
+          style: form
+          explode: false
+          schema:
+            type: string
+        - name: f
+          in: query
+          description: |
+            The optional f parameter indicates the output format which the server shall provide as part of the response document. It has preference over the HTTP Accept header. The default format is JSON.
+          required: false
+          style: form
+          explode: false
+          schema:
+            type: string
+            default: json
+            enum:
+              - json
+              - html
       responses:
         "200":
           description: Metadata about the collections shared by this API.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/content'
+                $ref: "#/components/schemas/content"
             text/html:
               schema:
                 type: string
         default:
-          $ref: '#/components/responses/default'
+          $ref: "#/components/responses/default"
   /collections/{collectionId}:
     get:
       tags:
-      - Capabilities
+        - Capabilities
       summary: Describe the {collectionId} collection
       operationId: describeCollection
       parameters:
-      - name: collectionId
-        in: path
-        description: Not yet implemented
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
+        - name: collectionId
+          in: path
+          description: Not yet implemented
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
       responses:
         "200":
-          description: Metadata about the {collectionId} collection shared by this
+          description:
+            Metadata about the {collectionId} collection shared by this
             API.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/collectionInfo'
+                $ref: "#/components/schemas/collectionInfo"
             text/html:
               schema:
                 type: string
         default:
-          $ref: '#/components/responses/default'
+          $ref: "#/components/responses/default"
   /collections/{collectionId}/coverage:
     get:
       tags:
-      - Coverage
-      summary: (Not yet implemented) description of the coverage offering identified by {collectionId} including
+        - Coverage
+      summary:
+        (Not yet implemented) description of the coverage offering identified by {collectionId} including
         envelope
       description: Not yet implemented
       operationId: getCoverageOffering
       parameters:
-      - name: collectionId
-        in: path
-        description: Identifier (name) of a specific collection
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
+        - name: collectionId
+          in: path
+          description: Identifier (name) of a specific collection
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
       responses:
         "200":
           description: Information about the coverage collection.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/coverageOffering'
+                $ref: "#/components/schemas/coverageOffering"
             text/html:
               schema:
                 type: string
         default:
-          $ref: '#/components/responses/default'
+          $ref: "#/components/responses/default"
   /collections/{collectionId}/coverage/description:
     get:
       tags:
-      - Coverage
-      summary: (Not yet implemented) returns the whole coverage description consisting of domainset, rangetype,
+        - Coverage
+      summary:
+        (Not yet implemented) returns the whole coverage description consisting of domainset, rangetype,
         and metadata (but not the rangeset)
       description: Not yet implemented
       operationId: getCoverageDescription
       parameters:
-      - name: collectionId
-        in: path
-        description: Identifier (name) of a specific collection
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
-      - name: subset
-        in: query
-        description: Not yet implemented
-        required: false
-        style: form
-        explode: true
-        schema:
-          type: string
+        - name: collectionId
+          in: path
+          description: Identifier (name) of a specific collection
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+        - name: subset
+          in: query
+          description: Not yet implemented
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: string
       responses:
         "200":
           description: A coverage description.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/coverageDescription'
+                $ref: "#/components/schemas/coverageDescription"
             text/html:
               schema:
                 type: string
         default:
-          $ref: '#/components/responses/default'
+          $ref: "#/components/responses/default"
   /collections/{collectionId}/coverage/domainset:
     get:
       tags:
-      - Coverage
-      summary: (Not yet implemented) retrieve a coverages domainset; use content negotiation to request
+        - Coverage
+      summary:
+        (Not yet implemented) retrieve a coverages domainset; use content negotiation to request
         HTML or GeoJSON
       description: Not yet implemented
       operationId: getCoverageDomainSet
       parameters:
-      - name: collectionId
-        in: path
-        description: Identifier (name) of a specific collection
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
-      - name: subset
-        in: query
-        description: Not yet implemented
-        required: false
-        style: form
-        explode: true
-        schema:
-          type: string
+        - name: collectionId
+          in: path
+          description: Identifier (name) of a specific collection
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+        - name: subset
+          in: query
+          description: Not yet implemented
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: string
       responses:
         "200":
           description: A coverages domainset.
@@ -260,17 +266,18 @@ paths:
               schema:
                 type: string
         default:
-          $ref: '#/components/responses/default'
+          $ref: "#/components/responses/default"
   /collections/{collectionId}/coverage/rangetype:
     get:
       tags:
-      - Coverage
-      summary: (Not yet implemented) retrieve a coverage's rangetype; use content negotiation to request
+        - Coverage
+      summary:
+        (Not yet implemented) retrieve a coverage's rangetype; use content negotiation to request
         HTML or GeoJSON
       description: Not yet implemented
       operationId: getCoverageRangeType
       parameters:
-      - $ref: '#/components/parameters/collectionId'
+        - $ref: "#/components/parameters/collectionId"
       responses:
         "200":
           description: A coverage's rangetype.
@@ -282,98 +289,101 @@ paths:
               schema:
                 type: string
         default:
-          $ref: '#/components/responses/default'
+          $ref: "#/components/responses/default"
   /collections/{collectionId}/coverage/metadata:
     get:
       tags:
-      - Coverage
-      summary: (Not yet implemented) retrieve a coverage's metadata; use content negotiation to request
+        - Coverage
+      summary:
+        (Not yet implemented) retrieve a coverage's metadata; use content negotiation to request
         HTML or GeoJSON
       description: Not yet implemented
       operationId: getCoverageMetadata
       parameters:
-      - $ref: '#/components/parameters/collectionId'
+        - $ref: "#/components/parameters/collectionId"
       responses:
         "200":
           description: A coverage's metadata.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/coverageMetadata'
+                $ref: "#/components/schemas/coverageMetadata"
             text/html:
               schema:
                 type: string
         default:
-          $ref: '#/components/responses/default'
+          $ref: "#/components/responses/default"
   /collections/{collectionId}/coverage/rangeset:
     get:
       tags:
-      - Coverage
+        - Coverage
       summary: Retrieve a coverage's rangeset
       description: Retrieve the coverage's rangeset, i.e. its data values in their native format
       operationId: getCoverageRangeset
       parameters:
-      - $ref: '#/components/parameters/collectionId'
-      - $ref: '#/components/parameters/outputCrs'
-      - $ref: '#/components/parameters/subset'
-      - $ref: '#/components/parameters/interpolation'
-      - $ref: '#/components/parameters/scaleExtent'
-      - $ref: '#/components/parameters/scaleSize'
-      # Parameters below this line are not part of the OGC specification
-      - $ref: '#/components/parameters/concatenate'
-      - $ref: '#/components/parameters/granuleId'
-      - $ref: '#/components/parameters/point'
-      - $ref: '#/components/parameters/width'
-      - $ref: '#/components/parameters/height'
-      - $ref: '#/components/parameters/format'
-      - $ref: '#/components/parameters/forceAsync'
-      - $ref: '#/components/parameters/maxResults'
-      - $ref: '#/components/parameters/skipPreview'
-      - $ref: '#/components/parameters/ignoreErrors'
-      - $ref: '#/components/parameters/destinationUrl'
-      - $ref: '#/components/parameters/granuleName'
-      - $ref: '#/components/parameters/grid'
-      - $ref: '#/components/parameters/extend'
+        - $ref: "#/components/parameters/collectionId"
+        - $ref: "#/components/parameters/outputCrs"
+        - $ref: "#/components/parameters/subset"
+        - $ref: "#/components/parameters/interpolation"
+        - $ref: "#/components/parameters/scaleExtent"
+        - $ref: "#/components/parameters/scaleSize"
+        # Parameters below this line are not part of the OGC specification
+        - $ref: "#/components/parameters/concatenate"
+        - $ref: "#/components/parameters/granuleId"
+        - $ref: "#/components/parameters/point"
+        - $ref: "#/components/parameters/width"
+        - $ref: "#/components/parameters/height"
+        - $ref: "#/components/parameters/format"
+        - $ref: "#/components/parameters/forceAsync"
+        - $ref: "#/components/parameters/maxResults"
+        - $ref: "#/components/parameters/skipPreview"
+        - $ref: "#/components/parameters/ignoreErrors"
+        - $ref: "#/components/parameters/destinationUrl"
+        - $ref: "#/components/parameters/granuleName"
+        - $ref: "#/components/parameters/grid"
+        - $ref: "#/components/parameters/extend"
+        - $ref: "#/components/parameters/variable"
       responses:
         "200":
           description: A coverage's range set.
           content:
             image/*:
               schema:
-                $ref: '#/components/schemas/rangeSetImage'
+                $ref: "#/components/schemas/rangeSetImage"
             application/*:
               schema:
-                $ref: '#/components/schemas/rangeSetImage'
+                $ref: "#/components/schemas/rangeSetImage"
         default:
-          $ref: '#/components/responses/default'
+          $ref: "#/components/responses/default"
     post:
       tags:
-      - Coverage
+        - Coverage
       summary: Retrieve a coverage's rangeset
       description: Retrieve the coverage's rangeset, i.e. its data values in their native format
       operationId: postCoverageRangeset
       parameters:
-      - $ref: '#/components/parameters/collectionId'
-      - $ref: '#/components/parameters/outputCrs'
-      - $ref: '#/components/parameters/subset'
-      - $ref: '#/components/parameters/interpolation'
-      - $ref: '#/components/parameters/scaleExtent'
-      - $ref: '#/components/parameters/scaleSize'
-      # Parameters below this line are not part of the OGC specification
-      - $ref: '#/components/parameters/concatenate'
-      - $ref: '#/components/parameters/granuleId'
-      - $ref: '#/components/parameters/point'
-      - $ref: '#/components/parameters/width'
-      - $ref: '#/components/parameters/height'
-      - $ref: '#/components/parameters/format'
-      - $ref: '#/components/parameters/forceAsync'
-      - $ref: '#/components/parameters/maxResults'
-      - $ref: '#/components/parameters/skipPreview'
-      - $ref: '#/components/parameters/ignoreErrors'
-      - $ref: '#/components/parameters/destinationUrl'
-      - $ref: '#/components/parameters/granuleName'
-      - $ref: '#/components/parameters/grid'
-      - $ref: '#/components/parameters/extend'
+        - $ref: "#/components/parameters/collectionId"
+        - $ref: "#/components/parameters/outputCrs"
+        - $ref: "#/components/parameters/subset"
+        - $ref: "#/components/parameters/interpolation"
+        - $ref: "#/components/parameters/scaleExtent"
+        - $ref: "#/components/parameters/scaleSize"
+        # Parameters below this line are not part of the OGC specification
+        - $ref: "#/components/parameters/concatenate"
+        - $ref: "#/components/parameters/granuleId"
+        - $ref: "#/components/parameters/point"
+        - $ref: "#/components/parameters/width"
+        - $ref: "#/components/parameters/height"
+        - $ref: "#/components/parameters/format"
+        - $ref: "#/components/parameters/forceAsync"
+        - $ref: "#/components/parameters/maxResults"
+        - $ref: "#/components/parameters/skipPreview"
+        - $ref: "#/components/parameters/ignoreErrors"
+        - $ref: "#/components/parameters/destinationUrl"
+        - $ref: "#/components/parameters/granuleName"
+        - $ref: "#/components/parameters/grid"
+        - $ref: "#/components/parameters/extend"
+        - $ref: "#/components/parameters/variable"
       requestBody:
         content:
           multipart/form-data:
@@ -385,7 +395,7 @@ paths:
                   format: binary
             encoding:
               shapefile:
-                contentType: 'application/geo+json,application/shapefile+zip,application/vnd.google-earth.kml+xml'
+                contentType: "application/geo+json,application/shapefile+zip,application/vnd.google-earth.kml+xml"
 
       responses:
         "200":
@@ -393,49 +403,50 @@ paths:
           content:
             image/*:
               schema:
-                $ref: '#/components/schemas/rangeSetImage'
+                $ref: "#/components/schemas/rangeSetImage"
             application/*:
               schema:
-                $ref: '#/components/schemas/rangeSetImage'
+                $ref: "#/components/schemas/rangeSetImage"
         default:
-          $ref: '#/components/responses/default'
+          $ref: "#/components/responses/default"
   /collections/{collectionId}/coverage/all:
     get:
       tags:
-      - Coverage
-      summary: (Not yet implemented) retrieve a coverages rangeset; use content negotiation to request HTML
+        - Coverage
+      summary:
+        (Not yet implemented) retrieve a coverages rangeset; use content negotiation to request HTML
         or GeoJSON
       description: Not yet implemented
       operationId: getCoverageAll
       parameters:
-      - $ref: '#/components/parameters/collectionId'
-      - $ref: '#/components/parameters/subset'
-      - $ref: '#/components/parameters/rangeSubset'
-      - $ref: '#/components/parameters/scaleFactor'
-      - $ref: '#/components/parameters/scaleAxis'
-      - $ref: '#/components/parameters/scaleSize'
-      - $ref: '#/components/parameters/scaleExtent'
-      - $ref: '#/components/parameters/subsettingCrs'
-      - $ref: '#/components/parameters/outputCrs'
-      - $ref: '#/components/parameters/interpolation'
+        - $ref: "#/components/parameters/collectionId"
+        - $ref: "#/components/parameters/subset"
+        - $ref: "#/components/parameters/rangeSubset"
+        - $ref: "#/components/parameters/scaleFactor"
+        - $ref: "#/components/parameters/scaleAxis"
+        - $ref: "#/components/parameters/scaleSize"
+        - $ref: "#/components/parameters/scaleExtent"
+        - $ref: "#/components/parameters/subsettingCrs"
+        - $ref: "#/components/parameters/outputCrs"
+        - $ref: "#/components/parameters/interpolation"
       responses:
         "200":
           description: A full coverage.
           content:
             application/multipart+related:
               schema:
-                $ref: '#/components/schemas/coverageMultipart'
+                $ref: "#/components/schemas/coverageMultipart"
             image/*:
               schema:
-                $ref: '#/components/schemas/rangeSetImage'
+                $ref: "#/components/schemas/rangeSetImage"
             application/*:
               schema:
-                $ref: '#/components/schemas/rangeSetImage'
+                $ref: "#/components/schemas/rangeSetImage"
             text/html:
               schema:
                 type: string
         default:
-          $ref: '#/components/responses/default'
+          $ref: "#/components/responses/default"
 components:
   responses:
     default:
@@ -443,14 +454,14 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/exception'
+            $ref: "#/components/schemas/exception"
         text/html:
           schema:
             type: string
   schemas:
     exception:
       required:
-      - code
+        - code
       type: object
       properties:
         code:
@@ -459,47 +470,47 @@ components:
           type: string
     root:
       required:
-      - links
+        - links
       type: object
       properties:
         links:
           type: array
           example:
-          - href: http://data.example.org/
-            rel: self
-            type: application/json
-            title: this document
-          - href: http://data.example.org/api
-            rel: service
-            type: application/openapi+json;version=3.0
-            title: the API definition
-          - href: http://data.example.org/conformance
-            rel: conformance
-            type: application/json
-            title: OGC conformance classes implemented by this API
-          - href: http://data.example.org/collections
-            title: Metadata about the resource collections
+            - href: http://data.example.org/
+              rel: self
+              type: application/json
+              title: this document
+            - href: http://data.example.org/api
+              rel: service
+              type: application/openapi+json;version=3.0
+              title: the API definition
+            - href: http://data.example.org/conformance
+              rel: conformance
+              type: application/json
+              title: OGC conformance classes implemented by this API
+            - href: http://data.example.org/collections
+              title: Metadata about the resource collections
           items:
-            $ref: '#/components/schemas/link'
+            $ref: "#/components/schemas/link"
     req-classes:
       required:
-      - conformsTo
+        - conformsTo
       type: object
       properties:
         conformsTo:
           type: array
           example:
-          - http://www.opengis.net/spec/ogcapi-common/1.0/conf/core
-          - http://www.opengis.net/spec/ogcapi-common/1.0/conf/collections
-          - http://www.opengis.net/spec/ogcapi-common/1.0/conf/oas3
-          - http://www.opengis.net/spec/ogcapi-common/1.0/conf/html
-          - http://www.opengis.net/spec/ogcapi-common/1.0/conf/geojson
-          - http://www.opengis.net/spec/ogcapi-coverages/1.0/conf/core
+            - http://www.opengis.net/spec/ogcapi-common/1.0/conf/core
+            - http://www.opengis.net/spec/ogcapi-common/1.0/conf/collections
+            - http://www.opengis.net/spec/ogcapi-common/1.0/conf/oas3
+            - http://www.opengis.net/spec/ogcapi-common/1.0/conf/html
+            - http://www.opengis.net/spec/ogcapi-common/1.0/conf/geojson
+            - http://www.opengis.net/spec/ogcapi-coverages/1.0/conf/core
           items:
             type: string
     link:
       required:
-      - href
+        - href
       type: object
       properties:
         href:
@@ -515,35 +526,35 @@ components:
           example: en
     content:
       required:
-      - collections
-      - links
+        - collections
+        - links
       type: object
       properties:
         links:
           type: array
           example:
-          - href: http://data.example.org/collections.json
-            rel: self
-            type: application/json
-            title: this document
-          - href: http://data.example.org/collections.html
-            rel: alternate
-            type: text/html
-            title: this document as HTML
-          - href: http://schemas.example.org/1.0/foobar.xsd
-            rel: describedBy
-            type: application/xml
-            title: XML schema for Acme Corporation data
+            - href: http://data.example.org/collections.json
+              rel: self
+              type: application/json
+              title: this document
+            - href: http://data.example.org/collections.html
+              rel: alternate
+              type: text/html
+              title: this document as HTML
+            - href: http://schemas.example.org/1.0/foobar.xsd
+              rel: describedBy
+              type: application/xml
+              title: XML schema for Acme Corporation data
           items:
-            $ref: '#/components/schemas/link'
+            $ref: "#/components/schemas/link"
         collections:
           type: array
           items:
-            $ref: '#/components/schemas/collectionInfo'
+            $ref: "#/components/schemas/collectionInfo"
     collectionInfo:
       required:
-      - links
-      - name
+        - links
+        - name
       type: object
       properties:
         name:
@@ -561,21 +572,22 @@ components:
         links:
           type: array
           example:
-          - href: http://data.example.org/collections/buildings/items
-            rel: item
-            type: application/geo+json
-            title: Buildings
-          - href: http://example.org/concepts/building.html
-            rel: describedBy
-            type: text/html
-            title: Coverage for buildings
+            - href: http://data.example.org/collections/buildings/items
+              rel: item
+              type: application/geo+json
+              title: Buildings
+            - href: http://example.org/concepts/building.html
+              rel: describedBy
+              type: text/html
+              title: Coverage for buildings
           items:
-            $ref: '#/components/schemas/link'
+            $ref: "#/components/schemas/link"
         extent:
-          $ref: '#/components/schemas/extent'
+          $ref: "#/components/schemas/extent"
         crs:
           type: array
-          description: The coordinate reference systems in which geometries may be
+          description:
+            The coordinate reference systems in which geometries may be
             retrieved. Coordinate reference systems are identified by a URI. The first
             coordinate reference system is the coordinate reference system that is
             used by default. This is always "http://www.opengis.net/def/crs/OGC/1.3/CRS84",
@@ -583,49 +595,52 @@ components:
           items:
             type: string
           default:
-          - http://www.opengis.net/def/crs/OGC/1.3/CRS84
+            - http://www.opengis.net/def/crs/OGC/1.3/CRS84
     extent:
       type: object
       properties:
         crs:
           type: string
-          description: Coordinate reference system of the coordinates in the spatial
+          description:
+            Coordinate reference system of the coordinates in the spatial
             extent (property `spatial`). In the Core, only WGS84 longitude/latitude
             is supported. Extensions may support additional coordinate reference systems.
           default: http://www.opengis.net/def/crs/OGC/1.3/CRS84
           enum:
-          - http://www.opengis.net/def/crs/OGC/1.3/CRS84
+            - http://www.opengis.net/def/crs/OGC/1.3/CRS84
         spatial:
           maxItems: 6
           minItems: 4
           type: array
-          description: West, north, east, south edges of the spatial extent. The minimum
+          description:
+            West, north, east, south edges of the spatial extent. The minimum
             and maximum values apply to the coordinate reference system WGS84 longitude/latitude
             that is supported in the Core. If, for example, a projected coordinate
             reference system is used, the minimum and maximum values need to be adjusted.
           example:
-          - -180
-          - -90
-          - 180
-          - 90
+            - -180
+            - -90
+            - 180
+            - 90
           items:
             type: number
         trs:
           type: string
-          description: Temporal reference system of the coordinates in the temporal
+          description:
+            Temporal reference system of the coordinates in the temporal
             extent (property `temporal`). In the Core, only the Gregorian calendar
             is supported. Extensions may support additional temporal reference systems.
           default: http://www.opengis.net/def/uom/ISO-8601/0/Gregorian
           enum:
-          - http://www.opengis.net/def/uom/ISO-8601/0/Gregorian
+            - http://www.opengis.net/def/uom/ISO-8601/0/Gregorian
         temporal:
           maxItems: 2
           minItems: 2
           type: array
           description: Begin and end times of the temporal extent.
           example:
-          - 2011-11-11T12:22:11.000Z
-          - 2012-11-24T12:32:43.000Z
+            - 2011-11-11T12:22:11.000Z
+            - 2012-11-24T12:32:43.000Z
           items:
             type: string
             format: dateTime
@@ -744,16 +759,16 @@ components:
         on numeric ranges for that dimension.
 
         Examples:
-          - Subset to the lat/lon bounding box with southwest corner (-10, -10) and northeast corner (10, 10)
-            subset=lat(-10:10)&subset=lon(-10:10)
-          - Subset to all latitudes north of -10 degrees and all longitudes west of 10 degrees
-            subset=lat(-10:*)&subset=lon(*:10)
-          - Subset to only points with latitudes from -10 to 10 degrees, disregarding longitude
-            subset=lat(-10:10)
-          - Subset to the first month of 2020
-            subset=time("2020-01-01T00:00:00Z":"2020-02-01T00:00:00Z")
-          - Subset on arbitrary dimension "vertical" with a value between 0 and 20
-            subset=vertical(0:20)
+        - Subset to the lat/lon bounding box with southwest corner (-10, -10) and northeast corner (10, 10)
+        subset=lat(-10:10)&subset=lon(-10:10)
+        - Subset to all latitudes north of -10 degrees and all longitudes west of 10 degrees
+        subset=lat(-10:*)&subset=lon(*:10)
+        - Subset to only points with latitudes from -10 to 10 degrees, disregarding longitude
+        subset=lat(-10:10)
+        - Subset to the first month of 2020
+        subset=time("2020-01-01T00:00:00Z":"2020-02-01T00:00:00Z")
+        - Subset on arbitrary dimension "vertical" with a value between 0 and 20
+        subset=vertical(0:20)
 
         For full syntax and examples, see
         https://github.com/opengeospatial/ogc_api_coverages/blob/master/standard/clause_9_subset.adoc'
@@ -767,7 +782,8 @@ components:
     rangeSubset:
       name: rangeSubset
       in: query
-      description: subset the resulting coverage by choosing and/or rearrange particular
+      description:
+        subset the resulting coverage by choosing and/or rearrange particular
         fields
       required: false
       style: form
@@ -831,7 +847,8 @@ components:
     outputCrs:
       name: outputcrs
       in: query
-      description: reproject the output coverage to the given CRS.  Recognizes CRS types that can be inferred
+      description:
+        reproject the output coverage to the given CRS.  Recognizes CRS types that can be inferred
         by gdal, including EPSG codes, Proj4 strings, and OGC URLs (http://www.opengis.net/def/crs/...)
       required: false
       style: form
@@ -871,9 +888,9 @@ components:
       schema:
         type: string
         example:
-          - 'application/x-zarr'
-          - 'image/tiff'
-          - 'image/png'
+          - "application/x-zarr"
+          - "image/tiff"
+          - "image/png"
     forceAsync:
       name: forceAsync
       in: query
@@ -954,3 +971,16 @@ components:
       required: false
       schema:
         type: string
+    variable:
+      name: variable
+      in: query
+      description: |
+        the names or concept ids of the variables to subset
+      required: false
+      style: form
+      explode: true
+      schema:
+        type: array
+        items:
+          type: string
+          minLength: 1

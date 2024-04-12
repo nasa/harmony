@@ -28,7 +28,7 @@ As such it accepts parameters in the URL path as well as query parameters.
 | parameter | description |
 |-----------|-------------|
 | collection | (required) This is the NASA EOSDIS collection or data product. There are two options for inputting a collection of interest:<br/>1. Provide a concept ID, which is an ID provided in the Common Metadata Repository (CMR) metadata<br/>2. Use the data product short name, e.g. SENTINEL-1_INTERFEROGRAMS. Must be URL encoded. |
-| variable | (required) Names or concept ids of the UMM-Var variables to be retrieved, or "all" to retrieve all variables.<br/> Multiple variables may be retrieved by separating them with a comma. |
+| variable | (required) Names or concept ids of the UMM-Var variables to be retrieved, or "all" to retrieve all variables.<br/> Multiple variables may be retrieved by separating them with a comma.<br/>The psuedo-variable "parameter_vars" may be used, in which case the variables are specified using the `variable` query parameter or `variable` form data parameter. This is useful if you need to subset using many variables. |
 ---
 **Table {{tableCounter}}** - Harmony OGC Coverages API URL path (required) parameters
 
@@ -56,6 +56,7 @@ As such it accepts parameters in the URL path as well as query parameters.
 | skipPreview | if "true", override the default API behavior and never auto-pause jobs |
 | ignoreErrors | if "true", continue processing a request to completion even if some items fail. If "false" immediately fail the request. Defaults to true |
 | destinationUrl | destination url specified by the client; currently only s3 link urls are  supported (e.g. s3://my-bucket-name/mypath) and will result in the job being run asynchronously |
+| variable | the variable(s) to be used for variable subsetting. Multiple variables can be specified as a comma-separated list. This parameter is only used if the url `variable` path element is "parameter_vars" |
 ---
 **Table {{tableCounter}}** - Harmony OGC Coverages API query parameters
 
