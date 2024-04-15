@@ -34,7 +34,7 @@ const serviceImages = {
   'podaac-l2-subsetter': 'sit',
   'query-cmr': 'latest',
   'sds-maskfill': 'latest',
-  'subset_band_name': 'latest',
+  'subset-band-name': 'latest',
   'stitchee': 'latest',
   'swath-projector': 'latest',
   'trajectory-subsetter': 'latest',
