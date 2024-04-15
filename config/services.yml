@@ -470,9 +470,9 @@ https://cmr.uat.earthdata.nasa.gov:
         is_sequential: true
       - image: !Env ${GEOLOCO_IMAGE}
 
-  - name: ldds/subset-name-band
+  - name: ldds/subset-band-name
     description: |
-      Subset by Name and Band service capable of subsetting HDF4/HDF-EOS2 SDS variables by name and band.
+      Subset by Band and Name service capable of subsetting HDF4/HDF-EOS2 SDS variables by name and band.
     data_operation_version: '0.18.0'
     type:
       <<: *default-turbo-config
@@ -480,7 +480,7 @@ https://cmr.uat.earthdata.nasa.gov:
         <<: *default-turbo-params
         env:
           <<: *default-turbo-env
-          STAGING_PATH: public/ldds/subset-name-band
+          STAGING_PATH: public/ldds/subset-band-name
     umm_s: S1261503923-LAADSCDUAT
     maximum_sync_granules: 0
     capabilities:
