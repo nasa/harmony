@@ -1,5 +1,5 @@
 {
-  "$schema": "../app/schemas/data-operation/0.18.0/data-operation-v0.18.0.json",
+  "$schema": "../app/schemas/data-operation/0.18.0/data-operation-v0.19.0.json",
   "version": "0.18.0",
   "callback": "http://localhost/some-path",
   "stagingLocation": "s3://example-bucket/public/some-org/some-service/some-uuid/",
@@ -97,5 +97,8 @@
   "isSynchronous": false,
   "requestId": "c045c793-19f1-43b5-9547-c87a5c7dfadb",
   "client": "harmony-sit",
-  "concatenate": false
+  "concatenate": false,
+  "extraArgs": {
+    "cut": false
+  }
 }

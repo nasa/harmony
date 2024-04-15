@@ -129,5 +129,10 @@
   "accessToken": "FxLhvhM8JsmdxJHk4Edsmyn7Z0s5tkXe:4M2RrCrhVbS0IKxicg+ix567em1W5UDV9dSdkn3m",
   "isSynchronous": false,
   "stagingLocation": "s3://localStagingBucket/public/harmony/gdal/232110b5-5267-4b31-9057-70afd0673f65/",
-  "callback": "http://example.com/callback"
+  "callback": "http://example.com/callback",
+  "concatenate": false,
+  "extraArgs": {
+    "cut": false
+  },
+  "version": "0.19.0"
 }

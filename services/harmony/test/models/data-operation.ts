@@ -11,7 +11,7 @@ const expectedOutput = parseSchemaFile(`valid-operation-v${versions[0]}.json`);
 // The fields that all operations should contain
 const baseFields = new Set([
   'client', 'callback', 'stagingLocation', 'sources', 'format', 'user', 'accessToken',
-  'subset', 'isSynchronous', 'requestId', 'version', 'concatenate', 'extendDimensions',
+  'subset', 'isSynchronous', 'requestId', 'version', 'concatenate', 'extendDimensions', 'extraArgs',
 ]);
 
 describe('DataOperation', () => {
