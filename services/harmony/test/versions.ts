@@ -24,7 +24,7 @@ describe('Versions endpoint', function () {
         expect(services.map((s) => s.name)).to.eql([
           'harmony/download',
           'ldds/geoloco',
-          'ldds/subset_name_band',
+          'ldds/subset_band_name',
           'gesdisc/giovanni',
           'podaac/l2-subsetter',
           'podaac/concise',

@@ -491,7 +491,7 @@ https://cmr.uat.earthdata.nasa.gov:
          - application/x-hdf
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
-      - image: !Env ${SUBSET_NAME_BAND_IMAGE}
+      - image: !Env ${SUBSET_BAND_NAME_IMAGE}
       
   - name: gesdisc/giovanni
     description: |
