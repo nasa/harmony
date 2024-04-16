@@ -469,6 +469,30 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
       - image: !Env ${GEOLOCO_IMAGE}
+
+  - name: ldds/subset-band-name
+    description: |
+      Subset by Band and Name service capable of subsetting HDF4/HDF-EOS2 SDS variables by name and band.
+    data_operation_version: '0.18.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/ldds/subset-band-name
+    umm_s: S1261503923-LAADSCDUAT
+    maximum_sync_granules: 0
+    capabilities:
+       subsetting:
+         variable: true
+         multiple_variable: false
+       output_formats:
+         - application/x-hdf
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+      - image: !Env ${SUBSET_BAND_NAME_IMAGE}
+      
   - name: gesdisc/giovanni
     description: |
       A service to compose the Giovanni URL and invoke Giovanni service to produce output file to visualize, analyze,

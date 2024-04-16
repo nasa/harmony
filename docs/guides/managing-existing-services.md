@@ -32,7 +32,8 @@ The returned JSON response is a map of canonical service names to tags:
   "podaac-netcdf-converter": "latest",
   "query-cmr": "latest",
   "giovanni-adapter": "latest",
-  "geoloco": "latest"
+  "geoloco": "latest",
+  "subset-band-name": "latest"
 }
 ```
 **Example 2** - Harmony `/service-image-tags` response
