@@ -34,8 +34,8 @@ const serviceImages = {
   'podaac-l2-subsetter': 'sit',
   'query-cmr': 'latest',
   'sds-maskfill': 'latest',
-  'subset-band-name': 'latest',
   'stitchee': 'latest',
+  'subset-band-name': 'latest',
   'swath-projector': 'latest',
   'trajectory-subsetter': 'latest',
 };
@@ -237,7 +237,7 @@ describe('Service image endpoint', async function () {
     envStub.restore();
   });
 
-  const locallyDeployedServices = 'giovanni-adapter,harmony-service-example,harmony-netcdf-to-zarr,var-subsetter,swath-projector,harmony-gdal-adapter,podaac-concise,sds-maskfill,trajectory-subsetter,podaac-l2-subsetter,harmony-regridder,hybig,geoloco';
+  const locallyDeployedServices = 'giovanni-adapter,harmony-service-example,harmony-netcdf-to-zarr,var-subsetter,swath-projector,harmony-gdal-adapter,podaac-concise,sds-maskfill,trajectory-subsetter,podaac-l2-subsetter,harmony-regridder,hybig,geoloco,subset-band-name';
 
   beforeEach(function () {
     process.env.LOCALLY_DEPLOYED_SERVICES = locallyDeployedServices;
