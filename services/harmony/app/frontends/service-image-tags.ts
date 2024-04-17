@@ -189,7 +189,7 @@ async function validateServiceDeploymentIsEnabled(
 ): Promise<boolean> {
   const enabled = await getEnabled();
   if (!enabled) {
-    res.statusCode = 503;
+    res.statusCode = 423;
     res.send('Service deployment is disabled.');
     return false;
   }

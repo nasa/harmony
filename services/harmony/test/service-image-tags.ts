@@ -913,8 +913,8 @@ describe('Service image endpoint', async function () {
             delete this.res;
           });
 
-          it('returns a status 503', async function () {
-            expect(this.res.status).to.equal(503);
+          it('returns a status 423', async function () {
+            expect(this.res.status).to.equal(423);
           });
 
           it('returns service deployment is disbabled error message', async function () {
