@@ -649,7 +649,7 @@ describe('Service image endpoint', async function () {
           expect(this.res.status).to.equal(200);
         });
 
-        it('returns the service image information', async function () {
+        it('returns enabled true', async function () {
           expect(this.res.body).to.eql({
             'enabled': true,
           });
@@ -747,7 +747,7 @@ describe('Service image endpoint', async function () {
           expect(this.res.status).to.equal(200);
         });
 
-        it('returns the service image information', async function () {
+        it('returns enabled true', async function () {
           expect(this.res.body).to.eql({
             'enabled': true,
           });
@@ -810,7 +810,7 @@ describe('Service image endpoint', async function () {
           expect(this.res.status).to.equal(200);
         });
 
-        it('returns the service image information', async function () {
+        it('returns enabled true', async function () {
           expect(this.res.body).to.eql({
             'enabled': true,
           });
@@ -1012,27 +1012,6 @@ describe('Service image endpoint', async function () {
             const noTimeout = await waitUntilStatusChange(deploymentId);
             expect(noTimeout).to.be.true;
           });
-
-          describe('when get the service image tag update state after a successful service deployment', async function () {
-            before(async function () {
-              hookRedirect('adam');
-              this.res = await request(this.frontend).get('/service-image-tag/state').use(auth({ username: 'adam' }));
-            });
-
-            after(function () {
-              delete this.res;
-            });
-
-            it('returns a status 200', async function () {
-              expect(this.res.status).to.equal(200);
-            });
-
-            it('returns the service image information', async function () {
-              expect(this.res.body).to.eql({
-                'enabled': true,
-              });
-            });
-          });
         });
       });
     });
@@ -1116,6 +1095,27 @@ describe('Service self-deployment successful', async function () {
         expect(tag).to.eql('foo');
         expect(status).to.eql('successful');
         expect(message).to.eql('Deployment successful');
+      });
+    });
+
+    describe('when get the service image tag update state after a successful service deployment', async function () {
+      before(async function () {
+        hookRedirect('joe');
+        this.res = await request(this.frontend).get('/service-image-tag/state').use(auth({ username: 'joe' }));
+      });
+
+      after(function () {
+        delete this.res;
+      });
+
+      it('returns a status 200', async function () {
+        expect(this.res.status).to.equal(200);
+      });
+
+      it('returns enabled true', async function () {
+        expect(this.res.body).to.eql({
+          'enabled': true,
+        });
       });
     });
 
@@ -1219,6 +1219,27 @@ describe('Service self-deployment failure', async function () {
         expect(tag).to.eql('foo');
         expect(status).to.eql('failed');
         expect(message).to.eql(`Failed service deployment for deploymentId: ${deploymentId}. Error: ${errorMessage}`);
+      });
+    });
+
+    describe('when get the service image tag update state after a failed service deployment', async function () {
+      before(async function () {
+        hookRedirect('adam');
+        this.res = await request(this.frontend).get('/service-image-tag/state').use(auth({ username: 'adam' }));
+      });
+
+      after(function () {
+        delete this.res;
+      });
+
+      it('returns a status 200', async function () {
+        expect(this.res.status).to.equal(200);
+      });
+
+      it('returns enabled false', async function () {
+        expect(this.res.body).to.eql({
+          'enabled': false,
+        });
       });
     });
   });
