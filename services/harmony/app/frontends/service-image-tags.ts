@@ -147,6 +147,37 @@ async function getEnabled(): Promise<boolean> {
 }
 
 /**
+ * Set the enabled field in service_deployment table to the given vale.
+ * @param value - The boolean value to be set for the enabled field
+ * @returns a Promise containing the status code for the request.
+ * Status code 200 will be returned when successful.
+ * Status code 423 will be returned when trying to set enabled to false when it is already false
+ */
+export async function setEnabled(value: boolean): Promise<number> {
+  let results = null;
+  if (value === true) {
+    await db.transaction(async (tx) => {
+      results = await tx('service_deployment')
+        .update({ enabled: true })
+        .returning('enabled');
+    });
+  } else {
+    await db.transaction(async (tx) => {
+      results = await tx('service_deployment')
+        .where('enabled', true)
+        .update({ enabled: false })
+        .returning('enabled');
+    });
+  }
+
+  let statusCode = 200;
+  if (results[0] === undefined && value === false) {
+    statusCode = 423;
+  }
+  return statusCode;
+}
+
+/**
  * Validate that the service deployment is enabled
  * @param res - The response object - will be used to send an error if the validation fails
  * @param url - The URL of the image including tag
@@ -358,6 +389,8 @@ export async function execDeployScript(
       lines.forEach(line => {
         req.context.logger.info(`Script output: ${line}`);
       });
+      // only re-enable the service deployment on successful deployment
+      await setEnabled(true);
       await db.transaction(async (tx) => {
         await setStatusMessage(tx, deploymentId, 'successful', 'Deployment successful');
       });
@@ -389,6 +422,15 @@ export async function updateServiceImageTag(
     if (! await validation(req, res)) return;
   }
 
+  const statusCode = await setEnabled(false);
+  if (statusCode === 423) {
+    res.statusCode = statusCode;
+    const msg = 'Another harmony deployment or service deployment is currently running. '
+      + 'Please try again later. If you believe this is an error, please contact Harmony support.';
+    res.send(msg);
+    return;
+  }
+
   const { service } = req.params;
   const { tag } = req.body;
   const deploymentId = uuid();
@@ -412,17 +454,6 @@ export async function updateServiceImageTag(
   res.send({
     'tag': tag,
     'statusLink': `${urlRoot}/service-image-tag/deployment/${deploymentId}`,
-  });
-}
-
-/**
- * Set the enabled field in service_deployment table to the given vale.
- * @param value - The boolean value to be set for the enabled field
- */
-async function setEnabled(value: boolean): Promise<void> {
-  const sql = `update service_deployment set enabled=${value}`;
-  await db.transaction(async (tx) => {
-    await tx.raw(sql);
   });
 }
 
@@ -458,8 +489,8 @@ export async function setServiceImageTagState(
 
   const { enabled } = req.body;
 
-  await setEnabled(enabled);
-  res.statusCode = 200;
+  const statusCode = await setEnabled(enabled);
+  res.statusCode = statusCode;
   res.send({ 'enabled': enabled });
 }
 
