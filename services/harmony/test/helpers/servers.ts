@@ -49,7 +49,7 @@ export default function hookServersStartStop(opts = { skipEarthdataLogin: true }
     const locallyDeployedServices = 'giovanni-adapter,harmony-service-example,' +
       'harmony-netcdf-to-zarr,var-subsetter,swath-projector,harmony-gdal-adapter,' +
       'podaac-concise,sds-maskfill,trajectory-subsetter,podaac-l2-subsetter,harmony-regridder,' +
-      'hybig,geoloco,stitchee,batchee,hoss';
+      'hybig,geoloco,stitchee,batchee,hoss,subset-band-name';
     stub(env, 'locallyDeployedServices').get(() => locallyDeployedServices);
     process.env.OAUTH_REDIRECT_URI = `http://localhost:${servers.frontend.address().port}/oauth2/redirect`;
 
