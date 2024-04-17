@@ -9,8 +9,8 @@ export enum ServiceDeploymentStatus {
 }
 
 export type ServiceDeploymentForDisplay = 
-  Omit<ServiceDeployment, "deployment_id" | "id" | "validate" | "save" | "serialize"> &
-  { deploymentId: ServiceDeployment["deployment_id"] }
+  Omit<ServiceDeployment, 'deployment_id' | 'id' | 'validate' | 'save' | 'serialize'> &
+  { deploymentId: ServiceDeployment['deployment_id'] };
 
 /**
  *

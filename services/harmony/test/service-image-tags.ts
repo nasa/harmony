@@ -8,10 +8,11 @@ import { auth } from './helpers/auth';
 import * as serviceImageTags from '../app/frontends/service-image-tags';
 import { checkServiceExists, checkTag, getImageTagMap, ecrImageNameToComponents } from '../app/frontends/service-image-tags';
 import hookDescribeImage from './helpers/container-registry';
-import { getDeploymentById } from '../app/models/service-deployment';
+import ServiceDeployment, { ServiceDeploymentStatus, getDeploymentById } from '../app/models/service-deployment';
 import db from '../app/util/db';
 import env from '../app/util/env';
 import { stub } from 'sinon';
+import { hookTransaction } from './helpers/db';
 
 //
 // Tests for the service-image endpoint
@@ -226,6 +227,41 @@ describe('ecrImageNameToComponents', function () {
 //
 // Integration tests
 //
+
+describe('List service deployments endpoint', async function () {
+  const deployment1 = new ServiceDeployment({ deployment_id: 'abc', service: 'foo-service',
+    username: 'bob', tag: '1', status: ServiceDeploymentStatus.FAILED, message: 'it did not work, sorry'  });
+
+  hookServersStartStop({ skipEarthdataLogin: false });
+  hookTransaction();
+
+  before(async function () {
+    await deployment1.save(this.trx);
+    this.trx.commit();
+  });
+  after(function () {
+
+  });
+  
+  describe('when a user is not in the EDL service deployers or admin groups', async function () {
+    before(async function () {
+      hookRedirect('joe');
+      this.res = await request(this.frontend).get('/service-image-tag/deployment').use(auth({ username: 'joe' }));
+    });
+
+    after(function () {
+      delete this.res;
+    });
+
+    it('rejects the user', async function () {
+      expect(this.res.status).to.equal(403);
+    });
+
+    it('returns a meaningful error message', async function () {
+      expect(this.res.text).to.equal(userErrorMsg);
+    });
+  });
+});
 
 describe('Service image endpoint', async function () {
   let envStub;
