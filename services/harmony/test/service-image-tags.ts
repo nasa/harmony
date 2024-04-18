@@ -784,7 +784,7 @@ describe('Service image endpoint', async function () {
   });
 
   describe('Enable and disable service image tag update', async function () {
-    describe('when a user is a regular user, not in the EDL service admin groups', async function () {
+    describe('when a user is a regular user, not in the EDL service deployers or admin groups', async function () {
 
       describe('when get the service image tag update state', async function () {
         before(async function () {

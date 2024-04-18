@@ -491,8 +491,7 @@ export async function setServiceImageTagState(
 
   const { enabled } = req.body;
 
-  const statusCode = await setEnabled(enabled);
-  res.statusCode = statusCode;
+  res.statusCode = await setEnabled(enabled);
   res.send({ 'enabled': enabled });
 }
 
