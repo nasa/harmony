@@ -466,6 +466,8 @@ export async function updateServiceImageTag(
 export async function getServiceImageTagState(
   req: HarmonyRequest, res: Response, _next: NextFunction,
 ): Promise<void> {
+  if (! await validateUserIsInDeployerOrAdminGroup(req, res)) return;
+
   const enabled = await getEnabled();
   res.statusCode = 200;
   res.send({ 'enabled': enabled });
@@ -503,6 +505,8 @@ export async function setServiceImageTagState(
 export async function getServiceDeployment(
   req: HarmonyRequest, res: Response, _next: NextFunction,
 ): Promise<void> {
+  if (! await validateUserIsInDeployerOrAdminGroup(req, res)) return;
+
   const { id } = req.params;
   let deployment;
   try {
