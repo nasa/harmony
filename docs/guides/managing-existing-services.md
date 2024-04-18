@@ -180,3 +180,23 @@ The returned JSON response is the same as the get current state of the service d
 }
 ```
 **Example 15** - Harmony `/service-image-tags` response for disabling the service deployment
+
+## Getting the Deployment History for All Services
+```
+curl -Ln -bj https://harmony.uat.earthdata.nasa.gov/service-image-tag/deployment
+```
+
+## Getting the Deployment History for a Given Service
+
+```
+curl -Ln -bj https://harmony.uat.earthdata.nasa.gov/service-image-tag/deployment?serviceid=harmony-service-example
+```
+
+## Getting the Deployment History for Service Deployments with a Given Status
+```
+curl -Ln -bj https://harmony.uat.earthdata.nasa.gov/service-image-tag/deployment?status=running
+```
+
+Valid statuses are "running", "successful", and "failed".
+
+**Note** the deployment histories do not include information about normal (full) Harmony deployments.
