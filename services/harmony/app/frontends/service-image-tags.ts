@@ -9,7 +9,7 @@ import db from '../util/db';
 import env from '../util/env';
 import { getRequestRoot } from '../util/url';
 import { v4 as uuid } from 'uuid';
-import ServiceDeployment, { setStatusMessage, getDeploymentById, getDeployments } from '../models/service-deployment';
+import ServiceDeployment, { setStatusMessage, getDeploymentById, getDeployments, ServiceDeploymentStatus } from '../models/service-deployment';
 import { keysToLowerCase } from '../util/object';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -276,6 +276,28 @@ async function validateTagPresent(
 }
 
 /**
+ * Verify that the requested service deployment status is one of the valid statuses
+ * @param req - The request object
+ * @param res  - The response object - will be used to send an error if the validation fails
+ * @returns a Promise containing `true` if the status is valid, `false` otherwise
+ */
+async function validateStatusForListServiceRequest(
+  req: HarmonyRequest, res: Response,
+): Promise<boolean> {
+  const { status } = req.query;
+  if (status) {
+    const validStatuses = Object.values(ServiceDeploymentStatus).map((val) => JSON.stringify(val));
+    if (!validStatuses.includes(`"${status}"`)) {
+      const validString = validStatuses.join(',');
+      res.statusCode = 400;
+      res.send(`"${status}" is not a valid deployment status. Valid statuses are [${validString}]`);
+      return false;
+    }
+  }
+  return true;
+}
+
+/**
  * Get a map of the canonical service names to their current tags
  * @param req - The request object
  * @param res  - The response object
@@ -503,12 +525,20 @@ export async function getServiceDeployment(
 export async function getServiceDeployments(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
-  if (!await validateUserIsInAdminGroup(req, res)) return;
+  const validations = [
+    validateUserIsInDeployerOrAdminGroup,
+    validateStatusForListServiceRequest,
+  ];
+
+  for (const validation of validations) {
+    if (! await validation(req, res)) return;
+  }
   try {
     await db.transaction(async (tx) => {
       const queryLowerCase = keysToLowerCase(req.query);
       const deployments = await getDeployments(tx, queryLowerCase.status, queryLowerCase.serviceid);
-      res.send(deployments.map((deployment) => deployment.serialize()));
+      res.statusCode = 200;
+      res.send(deployments.map((deployment: ServiceDeployment) => deployment.serialize()));
     });
   } catch (e) {
     req.context.logger.error(`Caught exception: ${e}`);

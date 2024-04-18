@@ -229,20 +229,54 @@ describe('ecrImageNameToComponents', function () {
 //
 
 describe('List service deployments endpoint', async function () {
-  const deployment1 = new ServiceDeployment({ deployment_id: 'abc', service: 'foo-service',
-    username: 'bob', tag: '1', status: ServiceDeploymentStatus.FAILED, message: 'it did not work, sorry'  });
+  const failedDeployment = new ServiceDeployment({ deployment_id: 'abc', service: 'foo-service',
+    username: 'bob', tag: '1', status: ServiceDeploymentStatus.FAILED, message: 'Failed service deployment'  });
+
+  const successfulFooDeployment = new ServiceDeployment({
+    deployment_id: 'def', service: 'foo-service',
+    username: 'eve', tag: '1', status: ServiceDeploymentStatus.SUCCESSFUL, message: 'Deployment successful',
+  });
+
+  const successfulBuzzDeployment = new ServiceDeployment({
+    deployment_id: 'ghi', service: 'buzz-service',
+    username: 'buzz', tag: '1', status: ServiceDeploymentStatus.SUCCESSFUL, message: 'Deployment successful',
+  });
+
+  const runningDeployment = new ServiceDeployment({
+    deployment_id: 'jkl', service: 'buzz-service',
+    username: 'adam', tag: '1', status: ServiceDeploymentStatus.RUNNING, message: 'Deployment running',
+  });
+
+  let allServicesListing;
+  let fooServiceListing;
+  let buzzServiceListing;
+  let successfulServicesListing;
+  let runningServicesListing;
 
   hookServersStartStop({ skipEarthdataLogin: false });
   hookTransaction();
 
   before(async function () {
-    await deployment1.save(this.trx);
+    await failedDeployment.save(this.trx);
+    await successfulFooDeployment.save(this.trx);
+    await successfulBuzzDeployment.save(this.trx);
+    await runningDeployment.save(this.trx);
     this.trx.commit();
+    allServicesListing = JSON.stringify([failedDeployment, successfulFooDeployment, successfulBuzzDeployment, runningDeployment]
+      .map((deployment) => deployment.serialize()));
+    fooServiceListing = JSON.stringify([failedDeployment, successfulFooDeployment]
+      .map((deployment) => deployment.serialize()));
+    buzzServiceListing = JSON.stringify([successfulBuzzDeployment, runningDeployment]
+      .map((deployment) => deployment.serialize()));
+    successfulServicesListing = JSON.stringify([successfulFooDeployment, successfulBuzzDeployment]
+      .map((deployment) => deployment.serialize()));
+    runningServicesListing = JSON.stringify([runningDeployment]
+      .map((deployment) => deployment.serialize()));
   });
   after(function () {
 
   });
-  
+
   describe('when a user is not in the EDL service deployers or admin groups', async function () {
     before(async function () {
       hookRedirect('joe');
@@ -260,6 +294,164 @@ describe('List service deployments endpoint', async function () {
     it('returns a meaningful error message', async function () {
       expect(this.res.text).to.equal(userErrorMsg);
     });
+  });
+
+  describe('when a user is in the EDL service deployers group', async function () {
+    describe('and they request all service deployments', function () {
+      before(async function () {
+        hookRedirect('eve');
+        this.res = await request(this.frontend).get('/service-image-tag/deployment').use(auth({ username: 'eve' }));
+      });
+
+      after(function () {
+        delete this.res;
+      });
+
+      it('returns a success status', function () {
+        expect(this.res.status).to.equal(200);
+      });
+
+      it('returns all the deployments', function () {
+        expect(this.res.text).to.equal(allServicesListing);
+      });
+    });
+
+    describe('and they request deployments of a specific service', function () {
+      before(async function () {
+        hookRedirect('eve');
+        this.res = await request(this.frontend).get('/service-image-tag/deployment?serviceid=foo-service').use(auth({ username: 'eve' }));
+      });
+
+      after(function () {
+        delete this.res;
+      });
+
+      it('returns a success status', function () {
+        expect(this.res.status).to.equal(200);
+      });
+
+      it('returns all the deployments', function () {
+        expect(this.res.text).to.equal(fooServiceListing);
+      });
+    });
+
+    describe('and they request deployments with a specific status', function () {
+      before(async function () {
+        hookRedirect('eve');
+        this.res = await request(this.frontend).get('/service-image-tag/deployment?status=running').use(auth({ username: 'eve' }));
+      });
+
+      after(function () {
+        delete this.res;
+      });
+
+      it('returns a success status', function () {
+        expect(this.res.status).to.equal(200);
+      });
+
+      it('returns all the deployments', function () {
+        expect(this.res.text).to.equal(runningServicesListing);
+      });
+    });
+
+    describe('and they request deployments with an invalid status', function () {
+      before(async function () {
+        hookRedirect('eve');
+        this.res = await request(this.frontend).get('/service-image-tag/deployment?status=foo').use(auth({ username: 'eve' }));
+      });
+
+      after(function () {
+        delete this.res;
+      });
+
+      it('returns an error status', function () {
+        expect(this.res.status).to.equal(400);
+      });
+
+      it('returns a valid error message', function () {
+        expect(this.res.text).to.equal('"foo" is not a valid deployment status. Valid statuses are ["running","successful","failed"]');
+      });
+    });
+  });
+
+  describe('when a user is in the EDL admin group', async function () {
+    describe('and they request all service deployments', function () {
+      before(async function () {
+        hookRedirect('adam');
+        this.res = await request(this.frontend).get('/service-image-tag/deployment').use(auth({ username: 'adam' }));
+      });
+
+      after(function () {
+        delete this.res;
+      });
+
+      it('returns a success status', function () {
+        expect(this.res.status).to.equal(200);
+      });
+
+      it('returns all the deployments', function () {
+        expect(this.res.text).to.equal(allServicesListing);
+      });
+    });
+
+    describe('and they request deployments of a specific service', function () {
+      before(async function () {
+        hookRedirect('adam');
+        this.res = await request(this.frontend).get('/service-image-tag/deployment?serviceid=buzz-service').use(auth({ username: 'adam' }));
+      });
+
+      after(function () {
+        delete this.res;
+      });
+
+      it('returns a success status', function () {
+        expect(this.res.status).to.equal(200);
+      });
+
+      it('returns all the deployments', function () {
+        expect(this.res.text).to.equal(buzzServiceListing);
+      });
+    });
+
+    // HARMONY-1749
+    describe('and they request deployments with a specific status', function () {
+      before(async function () {
+        hookRedirect('adam');
+        this.res = await request(this.frontend).get('/service-image-tag/deployment?status=successful').use(auth({ username: 'adam' }));
+      });
+
+      after(function () {
+        delete this.res;
+      });
+
+      it('returns a success status', function () {
+        expect(this.res.status).to.equal(200);
+      });
+
+      it('returns all the deployments', function () {
+        expect(this.res.text).to.equal(successfulServicesListing);
+      });
+    });
+
+    describe('and they request deployments with an invalid status', function () {
+      before(async function () {
+        hookRedirect('adam');
+        this.res = await request(this.frontend).get('/service-image-tag/deployment?status=bar').use(auth({ username: 'adam' }));
+      });
+
+      after(function () {
+        delete this.res;
+      });
+
+      it('returns an error status', function () {
+        expect(this.res.status).to.equal(400);
+      });
+
+      it('returns a valid error message', function () {
+        expect(this.res.text).to.equal('"bar" is not a valid deployment status. Valid statuses are ["running","successful","failed"]');
+      });
+    });
+
   });
 });
 
