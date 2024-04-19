@@ -90,6 +90,8 @@ The returned JSON response has a tag field indicating the new tag value and a st
 
 >**Note** this is an asynchronous request, so the status code for the response will be `202 Accepted` - it may take several minutes for the entire update to complete.
 
+Only one service deployment can be run at any given time. If your request is rejected with error message: `Service deployment is disabled.`, it might be because either a Harmony deployment or another service deployment is running. Please wait for a few minutes, then retry your request. If the problem persists, contact Harmony support.
+
 Harmony validates that the image and tag are reachable - an error will be returned if not.
 
 **Important** from the [Docker documentation](https://docs.docker.com/engine/reference/commandline/image_tag/):

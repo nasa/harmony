@@ -6,7 +6,7 @@ import hookServersStartStop from './helpers/servers';
 import { hookRedirect } from './helpers/hooks';
 import { auth } from './helpers/auth';
 import * as serviceImageTags from '../app/frontends/service-image-tags';
-import { checkServiceExists, checkTag, getImageTagMap, ecrImageNameToComponents } from '../app/frontends/service-image-tags';
+import { checkServiceExists, checkTag, getImageTagMap, ecrImageNameToComponents, enableServiceDeployment } from '../app/frontends/service-image-tags';
 import hookDescribeImage from './helpers/container-registry';
 import ServiceDeployment, { ServiceDeploymentStatus, getDeploymentById } from '../app/models/service-deployment';
 import db from '../app/util/db';
@@ -503,7 +503,7 @@ describe('Service image endpoint', async function () {
         delete this.res;
       });
 
-      it('rejects the user', async function () {
+      it('rejects the request', async function () {
         expect(this.res.status).to.equal(403);
       });
 
@@ -558,7 +558,7 @@ describe('Service image endpoint', async function () {
           delete this.res;
         });
 
-        it('rejects the user', async function () {
+        it('rejects the request', async function () {
           expect(this.res.status).to.equal(403);
         });
 
@@ -578,7 +578,7 @@ describe('Service image endpoint', async function () {
           delete this.res;
         });
 
-        it('rejects the user', async function () {
+        it('rejects the request', async function () {
           expect(this.res.status).to.equal(403);
         });
 
@@ -678,13 +678,10 @@ describe('Service image endpoint', async function () {
 
       });
     });
-
   });
 
   describe('Update service image', function () {
     let execDeployScriptStub: sinon.SinonStub;
-    let link = null;
-    let deploymentId = null;
     before(async function () {
       execDeployScriptStub = sinon.stub(serviceImageTags, 'execDeployScript').callsFake(() => null);
     });
@@ -704,7 +701,7 @@ describe('Service image endpoint', async function () {
         delete this.res;
       });
 
-      it('rejects the user', async function () {
+      it('rejects the request', async function () {
         expect(this.res.status).to.equal(403);
       });
 
@@ -837,18 +834,30 @@ describe('Service image endpoint', async function () {
 
     describe('when the user is in the deployers group and a valid tag is sent in the request', async function () {
       let execStub;
+      let link = null;
+      let deploymentId = null;
       hookDescribeImage({
         imageDigest: '',
         lastUpdated: undefined,
       });
+
       before(async function () {
+        execDeployScriptStub.restore();
         // resolve without error meaning script executed OK
         execStub = sinon.stub(serviceImageTags, 'asyncExec').callsFake(() => Promise.resolve({}));
+
+        // Stub out the exec function to simulate successful execution
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        execDeployScriptStub = sinon.stub(require('child_process'), 'exec');
+        execDeployScriptStub.callsArgWith(2, null, 'Success output', '');
+
+        hookRedirect('buzz');
         this.res = await request(this.frontend).put('/service-image-tag/harmony-service-example').use(auth({ username: 'buzz' })).send({ tag: 'foo' });
       });
 
       after(function () {
         execStub.restore();
+        execDeployScriptStub.restore();
         delete this.res;
       });
 
@@ -865,23 +874,62 @@ describe('Service image endpoint', async function () {
         expect(link).to.include('http://127.0.0.1:4000/service-image-tag/deployment/');
         deploymentId = getDeploymentIdFromStatusLink(link);
         expect(deploymentId).to.not.be.null;
+      });
+
+      it('reaches a terminal status without timeout', async function () {
+        const noTimeout = await waitUntilStatusChange(deploymentId);
+        expect(noTimeout).to.be.true;
+      });
+
+      describe('when get the service image tag update state after a successful service deployment', async function () {
+        before(async function () {
+          hookRedirect('buzz');
+          this.res = await request(this.frontend).get('/service-image-tag/state').use(auth({ username: 'buzz' }));
+        });
+
+        after(function () {
+          delete this.res;
+        });
+
+        it('returns a status 200', async function () {
+          expect(this.res.status).to.equal(200);
+        });
+
+        it('returns enabled true', async function () {
+          expect(this.res.body).to.eql({
+            'enabled': true,
+          });
+        });
       });
     });
 
     describe('when the user is in the admin group and a valid tag is sent in the request', async function () {
       let execStub;
+      let link = null;
+      let deploymentId = null;
+
       hookDescribeImage({
         imageDigest: '',
         lastUpdated: undefined,
       });
+
       before(async function () {
-        // resolve to zero exit code meaning script executed OK
-        execStub = sinon.stub(serviceImageTags, 'asyncExec').callsFake(() => Promise.resolve(0));
+        execDeployScriptStub.restore();
+        // resolve without error meaning script executed OK
+        execStub = sinon.stub(serviceImageTags, 'asyncExec').callsFake(() => Promise.resolve({}));
+
+        // Stub out the exec function to simulate successful execution
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        execDeployScriptStub = sinon.stub(require('child_process'), 'exec');
+        execDeployScriptStub.callsArgWith(2, null, 'Success output', '');
+
+        hookRedirect('adam');
         this.res = await request(this.frontend).put('/service-image-tag/harmony-service-example').use(auth({ username: 'adam' })).send({ tag: 'foo' });
       });
 
       after(function () {
         execStub.restore();
+        execDeployScriptStub.restore();
         delete this.res;
       });
 
@@ -899,11 +947,131 @@ describe('Service image endpoint', async function () {
         deploymentId = getDeploymentIdFromStatusLink(link);
         expect(deploymentId).to.not.be.null;
       });
+
+      it('reaches a terminal status without timeout', async function () {
+        const noTimeout = await waitUntilStatusChange(deploymentId);
+        expect(noTimeout).to.be.true;
+      });
+
+      describe('when get the service image tag update state after a successful service deployment', async function () {
+        before(async function () {
+          hookRedirect('adam');
+          this.res = await request(this.frontend).get('/service-image-tag/state').use(auth({ username: 'adam' }));
+        });
+
+        after(function () {
+          delete this.res;
+        });
+
+        it('returns a status 200', async function () {
+          expect(this.res.status).to.equal(200);
+        });
+
+        it('returns the service image enabled true', async function () {
+          expect(this.res.body).to.eql({
+            'enabled': true,
+          });
+        });
+      });
+    });
+  });
+
+  describe('Get service deployment enabled state permission test', async function () {
+    const expectedState = { enabled: true };
+    describe('when a user is not in the EDL service deployers or admin groups', async function () {
+      before(async function () {
+        hookRedirect('joe');
+        this.res = await request(this.frontend).get('/service-image-tag/state').use(auth({ username: 'joe' }));
+      });
+
+      after(function () {
+        delete this.res;
+      });
+
+      it('rejects the request', async function () {
+        expect(this.res.status).to.equal(403);
+      });
+
+      it('returns a meaningful error message', async function () {
+        expect(this.res.text).to.equal(userErrorMsg);
+      });
+    });
+
+    describe('when a user is in the EDL service deployers group', async function () {
+      before(async function () {
+        hookRedirect('buzz');
+        this.res = await request(this.frontend).get('/service-image-tag/state').use(auth({ username: 'buzz' }));
+      });
+
+      after(function () {
+        delete this.res;
+      });
+
+      it('returns the expected result', async function () {
+        expect(this.res.status).to.equal(200);
+        expect(this.res.body).to.eql(expectedState);
+      });
+    });
+
+    describe('when a user is in the EDL admin group', async function () {
+      before(async function () {
+        hookRedirect('adam');
+        this.res = await request(this.frontend).get('/service-image-tag/state').use(auth({ username: 'adam' }));
+      });
+
+      after(function () {
+        delete this.res;
+      });
+
+      it('returns the expected result', async function () {
+        expect(this.res.status).to.equal(200);
+        expect(this.res.body).to.eql(expectedState);
+      });
     });
   });
 
   describe('Enable and disable service image tag update', async function () {
-    describe('when a user is a regular user, not in the EDL service admin groups', async function () {
+    describe('when validate enabled request body', async function () {
+      describe('when enable/disable the service image tag update with empty body', async function () {
+        before(async function () {
+          hookRedirect('adam');
+          this.res = await request(this.frontend).put('/service-image-tag/state').use(auth({ username: 'adam' })).send('');
+        });
+
+        after(function () {
+          delete this.res;
+        });
+
+        it('rejects the request', async function () {
+          expect(this.res.status).to.equal(400);
+        });
+
+        it('returns a meaningful error message', async function () {
+          expect(this.res.text).to.equal('\'enabled\' is a required body parameter');
+        });
+      });
+
+      describe('when enable/disable the service image tag update with invalid value', async function () {
+        before(async function () {
+          hookRedirect('adam');
+          this.res = await request(this.frontend).put('/service-image-tag/state').use(auth({ username: 'adam' })).send({ enabled: 'enabled' });
+        });
+
+        after(function () {
+          delete this.res;
+        });
+
+        it('rejects the request', async function () {
+          expect(this.res.status).to.equal(400);
+        });
+
+        it('returns a meaningful error message', async function () {
+          expect(this.res.text).to.equal('\'enabled\' can only take value of true or false');
+        });
+      });
+    });
+
+    describe('when a user is a regular user, not in the EDL service deployers or admin groups', async function () {
 
       describe('when get the service image tag update state', async function () {
         before(async function () {
@@ -915,14 +1083,12 @@ describe('Service image endpoint', async function () {
           delete this.res;
         });
 
-        it('returns a status 200', async function () {
-          expect(this.res.status).to.equal(200);
+        it('rejects the request', async function () {
+          expect(this.res.status).to.equal(403);
         });
 
-        it('returns the service image information', async function () {
-          expect(this.res.body).to.eql({
-            'enabled': true,
-          });
+        it('returns a meaningful error message', async function () {
+          expect(this.res.text).to.equal('User joe is not in the service deployers or admin EDL groups');
         });
       });
 
@@ -936,7 +1102,7 @@ describe('Service image endpoint', async function () {
           delete this.res;
         });
 
-        it('rejects the user', async function () {
+        it('rejects the request', async function () {
           expect(this.res.status).to.equal(403);
         });
 
@@ -955,7 +1121,7 @@ describe('Service image endpoint', async function () {
           delete this.res;
         });
 
-        it('rejects the user', async function () {
+        it('rejects the request', async function () {
           expect(this.res.status).to.equal(403);
         });
 
@@ -982,7 +1148,7 @@ describe('Service image endpoint', async function () {
           expect(this.res.status).to.equal(200);
         });
 
-        it('returns the service image information', async function () {
+        it('returns enabled true', async function () {
           expect(this.res.body).to.eql({
             'enabled': true,
           });
@@ -999,7 +1165,7 @@ describe('Service image endpoint', async function () {
           delete this.res;
         });
 
-        it('rejects the user', async function () {
+        it('rejects the request', async function () {
           expect(this.res.status).to.equal(403);
         });
 
@@ -1018,7 +1184,7 @@ describe('Service image endpoint', async function () {
           delete this.res;
         });
 
-        it('rejects the user', async function () {
+        it('rejects the request', async function () {
           expect(this.res.status).to.equal(403);
         });
 
@@ -1045,7 +1211,7 @@ describe('Service image endpoint', async function () {
           expect(this.res.status).to.equal(200);
         });
 
-        it('returns the service image information', async function () {
+        it('returns the service enabled true', async function () {
           expect(this.res.body).to.eql({
             'enabled': true,
           });
@@ -1073,27 +1239,43 @@ describe('Service image endpoint', async function () {
         });
 
         describe('when trying to deploy service when service deployment is disabled', async function () {
-          let execStub;
           hookDescribeImage({
             imageDigest: '',
             lastUpdated: undefined,
           });
           before(async function () {
-            execStub = sinon.stub(serviceImageTags, 'asyncExec').callsFake(() => Promise.resolve({}));
             this.res = await request(this.frontend).put('/service-image-tag/harmony-service-example').use(auth({ username: 'adam' })).send({ tag: 'foo' });
           });
 
           after(function () {
-            execStub.restore();
             delete this.res;
           });
 
-          it('returns a status 503', async function () {
-            expect(this.res.status).to.equal(503);
+          it('returns a status 423', async function () {
+            expect(this.res.status).to.equal(423);
           });
 
           it('returns service deployment is disbabled error message', async function () {
             expect(this.res.text).to.eql('Service deployment is disabled.');
+          });
+        });
+
+        describe('when trying to disable the service image tag update when it is already disabled', async function () {
+          before(async function () {
+            hookRedirect('adam');
+            this.res = await request(this.frontend).put('/service-image-tag/state').use(auth({ username: 'adam' })).send({ enabled: false });
+          });
+
+          after(function () {
+            delete this.res;
+          });
+
+          it('returns a status 423', async function () {
+            expect(this.res.status).to.equal(423);
+          });
+
+          it('returns the proper error message', async function () {
+            expect(this.res.text).to.eql('Unable to acquire service deployment lock. Try again later.');
           });
         });
       });
@@ -1120,17 +1302,31 @@ describe('Service image endpoint', async function () {
 
         describe('when deploy service when service deployment is enabled', async function () {
           let execStub;
+          let execDeployScriptStub: sinon.SinonStub;
+          let linkDeploymentId = null;
+          let statusPath = null;
+
           hookDescribeImage({
             imageDigest: '',
             lastUpdated: undefined,
           });
+
           before(async function () {
+            // resolve without error meaning script executed OK
             execStub = sinon.stub(serviceImageTags, 'asyncExec').callsFake(() => Promise.resolve({}));
+
+            // Stub out the exec function to simulate successful execution
+            // eslint-disable-next-line @typescript-eslint/no-var-requires
+            execDeployScriptStub = sinon.stub(require('child_process'), 'exec');
+            execDeployScriptStub.callsArgWith(2, null, 'Success output', '');
+
+            hookRedirect('adam');
             this.res = await request(this.frontend).put('/service-image-tag/harmony-service-example').use(auth({ username: 'adam' })).send({ tag: 'foo' });
           });
 
           after(function () {
             execStub.restore();
+            execDeployScriptStub.restore();
             delete this.res;
           });
 
@@ -1141,10 +1337,93 @@ describe('Service image endpoint', async function () {
           it('returns the tag we sent', async function () {
             expect(this.res.body.tag).to.eql('foo');
           });
+
+          it('returns statusLink', async function () {
+            const link = this.res.body.statusLink;
+            statusPath = new URL(link).pathname;
+            expect(link).to.include('http://127.0.0.1:4000/service-image-tag/deployment/');
+            linkDeploymentId = getDeploymentIdFromStatusLink(link);
+            expect(linkDeploymentId).to.not.be.null;
+          });
+
+          it('reaches a terminal status without timeout', async function () {
+            const noTimeout = await waitUntilStatusChange(linkDeploymentId);
+            expect(noTimeout).to.be.true;
+          });
+
+          describe('Get service deployment status permission test', async function () {
+            describe('when a user is not in the EDL service deployers or admin groups', async function () {
+              before(async function () {
+                hookRedirect('joe');
+                this.res = await request(this.frontend).get(statusPath).use(auth({ username: 'joe' }));
+              });
+
+              after(function () {
+                delete this.res;
+              });
+
+              it('rejects the request', async function () {
+                expect(this.res.status).to.equal(403);
+              });
+
+              it('returns a meaningful error message', async function () {
+                expect(this.res.text).to.equal(userErrorMsg);
+              });
+            });
+
+            describe('when a user is in the EDL service deployers group', async function () {
+              before(async function () {
+                hookRedirect('buzz');
+                this.res = await request(this.frontend).get(statusPath).use(auth({ username: 'buzz' }));
+              });
+
+              after(function () {
+                delete this.res;
+              });
+
+              it('returns status code 200', async function () {
+                expect(this.res.status).to.equal(200);
+              });
+
+              it('returns the deployment status successful', async function () {
+                const { deploymentId, username, service, tag, status, message } = this.res.body;
+                expect(deploymentId).to.eql(linkDeploymentId);
+                expect(username).to.eql('adam');
+                expect(service).to.eql('harmony-service-example');
+                expect(tag).to.eql('foo');
+                expect(status).to.eql('successful');
+                expect(message).to.eql('Deployment successful');
+              });
+            });
+
+            describe('when a user is in the EDL admin group', async function () {
+              before(async function () {
+                hookRedirect('adam');
+                this.res = await request(this.frontend).get(statusPath).use(auth({ username: 'adam' }));
+              });
+
+              after(function () {
+                delete this.res;
+              });
+
+              it('returns status code 200', async function () {
+                expect(this.res.status).to.equal(200);
+              });
+
+              it('returns the deployment status successful', async function () {
+                const { deploymentId, username, service, tag, status, message } = this.res.body;
+                expect(deploymentId).to.eql(linkDeploymentId);
+                expect(username).to.eql('adam');
+                expect(service).to.eql('harmony-service-example');
+                expect(tag).to.eql('foo');
+                expect(status).to.eql('successful');
+                expect(message).to.eql('Deployment successful');
+              });
+            });
+          });
         });
       });
     });
-
   });
 });
 
@@ -1171,6 +1450,7 @@ describe('Service self-deployment successful', async function () {
       execDeployScriptStub = sinon.stub(require('child_process'), 'exec');
       execDeployScriptStub.callsArgWith(2, null, 'Success output', '');
 
+      hookRedirect('buzz');
       this.res = await request(this.frontend).put('/service-image-tag/harmony-service-example').use(auth({ username: 'buzz' })).send({ tag: 'foo' });
     });
 
@@ -1202,10 +1482,9 @@ describe('Service self-deployment successful', async function () {
 
     describe('when get the status of successful deployment', async function () {
       before(async function () {
-        // any user can call the get deployment status endpoint
-        hookRedirect('joe');
+        hookRedirect('buzz');
         const { pathname } = new URL(link);
-        this.res = await request(this.frontend).get(pathname).use(auth({ username: 'joe' }));
+        this.res = await request(this.frontend).get(pathname).use(auth({ username: 'buzz' }));
       });
 
       after(function () {
@@ -1227,10 +1506,31 @@ describe('Service self-deployment successful', async function () {
       });
     });
 
+    describe('when get the service image tag update state after a successful service deployment', async function () {
+      before(async function () {
+        hookRedirect('buzz');
+        this.res = await request(this.frontend).get('/service-image-tag/state').use(auth({ username: 'buzz' }));
+      });
+
+      after(function () {
+        delete this.res;
+      });
+
+      it('returns a status 200', async function () {
+        expect(this.res.status).to.equal(200);
+      });
+
+      it('returns enabled true', async function () {
+        expect(this.res.body).to.eql({
+          'enabled': true,
+        });
+      });
+    });
+
     describe('when get the status with a nonexist deployment id', async function () {
       before(async function () {
-        hookRedirect('joe');
-        this.res = await request(this.frontend).get('/service-image-tag/deployment/5a36085d-b40e-4296-96da-e406d7751166').use(auth({ username: 'joe' }));
+        hookRedirect('buzz');
+        this.res = await request(this.frontend).get('/service-image-tag/deployment/5a36085d-b40e-4296-96da-e406d7751166').use(auth({ username: 'buzz' }));
       });
 
       after(function () {
@@ -1272,12 +1572,14 @@ describe('Service self-deployment failure', async function () {
       execDeployScriptStub = sinon.stub(require('child_process'), 'exec');
       execDeployScriptStub.callsArgWith(2, new Error(errorMessage), 'Failure output', '');
 
+      hookRedirect('adam');
       this.res = await request(this.frontend).put('/service-image-tag/harmony-service-example').use(auth({ username: 'adam' })).send({ tag: 'foo' });
     });
 
-    after(function () {
+    after(async function () {
       execStub.restore();
       execDeployScriptStub.restore();
+      await enableServiceDeployment();
       delete this.res;
     });
 
@@ -1303,10 +1605,9 @@ describe('Service self-deployment failure', async function () {
 
     describe('when get the status of failed deployment', async function () {
       before(async function () {
-        // any user can call the get deployment status endpoint
-        hookRedirect('joe');
+        hookRedirect('adam');
         const { pathname } = new URL(link);
-        this.res = await request(this.frontend).get(pathname).use(auth({ username: 'joe' }));
+        this.res = await request(this.frontend).get(pathname).use(auth({ username: 'adam' }));
       });
 
       after(function () {
@@ -1325,6 +1626,27 @@ describe('Service self-deployment failure', async function () {
         expect(tag).to.eql('foo');
         expect(status).to.eql('failed');
         expect(message).to.eql(`Failed service deployment for deploymentId: ${deploymentId}. Error: ${errorMessage}`);
+      });
+    });
+
+    describe('when get the service image tag update state after a failed service deployment', async function () {
+      before(async function () {
+        hookRedirect('adam');
+        this.res = await request(this.frontend).get('/service-image-tag/state').use(auth({ username: 'adam' }));
+      });
+
+      after(function () {
+        delete this.res;
+      });
+
+      it('returns a status 200', async function () {
+        expect(this.res.status).to.equal(200);
+      });
+
+      it('returns enabled false', async function () {
+        expect(this.res.body).to.eql({
+          'enabled': false,
+        });
       });
     });
   });
