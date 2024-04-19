@@ -540,6 +540,9 @@ export async function getServiceDeployments(
   try {
     await db.transaction(async (tx) => {
       const queryLowerCase = keysToLowerCase(req.query);
+      if (queryLowerCase.status) {
+        queryLowerCase.status = queryLowerCase.status.toString().toLowerCase();
+      }
       const deployments = await getDeployments(tx, queryLowerCase.status, queryLowerCase.service);
       res.statusCode = 200;
       res.send(deployments.map((deployment: ServiceDeployment) => deployment.serialize()));

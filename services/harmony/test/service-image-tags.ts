@@ -354,6 +354,25 @@ describe('List service deployments endpoint', async function () {
       });
     });
 
+    describe('and they request deployments with mixed case status', function () {
+      before(async function () {
+        hookRedirect('eve');
+        this.res = await request(this.frontend).get('/service-image-tag/deployment?status=RuNning').use(auth({ username: 'eve' }));
+      });
+
+      after(function () {
+        delete this.res;
+      });
+
+      it('returns a success status', function () {
+        expect(this.res.status).to.equal(200);
+      });
+
+      it('returns all the deployments', function () {
+        expect(this.res.text).to.equal(runningServicesListing);
+      });
+    });
+
     describe('and they request deployments with an invalid status', function () {
       before(async function () {
         hookRedirect('eve');
