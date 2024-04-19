@@ -256,7 +256,7 @@ describe('Service image endpoint', async function () {
         delete this.res;
       });
 
-      it('rejects the user', async function () {
+      it('rejects the request', async function () {
         expect(this.res.status).to.equal(403);
       });
 
@@ -311,7 +311,7 @@ describe('Service image endpoint', async function () {
           delete this.res;
         });
 
-        it('rejects the user', async function () {
+        it('rejects the request', async function () {
           expect(this.res.status).to.equal(403);
         });
 
@@ -331,7 +331,7 @@ describe('Service image endpoint', async function () {
           delete this.res;
         });
 
-        it('rejects the user', async function () {
+        it('rejects the request', async function () {
           expect(this.res.status).to.equal(403);
         });
 
@@ -454,7 +454,7 @@ describe('Service image endpoint', async function () {
         delete this.res;
       });
 
-      it('rejects the user', async function () {
+      it('rejects the request', async function () {
         expect(this.res.status).to.equal(403);
       });
 
@@ -741,7 +741,7 @@ describe('Service image endpoint', async function () {
         delete this.res;
       });
 
-      it('rejects the user', async function () {
+      it('rejects the request', async function () {
         expect(this.res.status).to.equal(403);
       });
 
@@ -795,7 +795,7 @@ describe('Service image endpoint', async function () {
           delete this.res;
         });
 
-        it('rejects the user', async function () {
+        it('rejects the request', async function () {
           expect(this.res.status).to.equal(400);
         });
 
@@ -814,7 +814,7 @@ describe('Service image endpoint', async function () {
           delete this.res;
         });
 
-        it('rejects the user', async function () {
+        it('rejects the request', async function () {
           expect(this.res.status).to.equal(400);
         });
 
@@ -828,22 +828,20 @@ describe('Service image endpoint', async function () {
 
       describe('when get the service image tag update state', async function () {
         before(async function () {
-          hookRedirect('buzz');
-          this.res = await request(this.frontend).get('/service-image-tag/state').use(auth({ username: 'buzz' }));
+          hookRedirect('joe');
+          this.res = await request(this.frontend).get('/service-image-tag/state').use(auth({ username: 'joe' }));
         });
 
         after(function () {
           delete this.res;
         });
 
-        it('returns a status 200', async function () {
-          expect(this.res.status).to.equal(200);
+        it('rejects the request', async function () {
+          expect(this.res.status).to.equal(403);
         });
 
-        it('returns enabled true', async function () {
-          expect(this.res.body).to.eql({
-            'enabled': true,
-          });
+        it('returns a meaningful error message', async function () {
+          expect(this.res.text).to.equal('User joe is not in the service deployers or admin EDL groups');
         });
       });
 
@@ -857,7 +855,7 @@ describe('Service image endpoint', async function () {
           delete this.res;
         });
 
-        it('rejects the user', async function () {
+        it('rejects the request', async function () {
           expect(this.res.status).to.equal(403);
         });
 
@@ -876,7 +874,7 @@ describe('Service image endpoint', async function () {
           delete this.res;
         });
 
-        it('rejects the user', async function () {
+        it('rejects the request', async function () {
           expect(this.res.status).to.equal(403);
         });
 
@@ -920,7 +918,7 @@ describe('Service image endpoint', async function () {
           delete this.res;
         });
 
-        it('rejects the user', async function () {
+        it('rejects the request', async function () {
           expect(this.res.status).to.equal(403);
         });
 
@@ -939,7 +937,7 @@ describe('Service image endpoint', async function () {
           delete this.res;
         });
 
-        it('rejects the user', async function () {
+        it('rejects the request', async function () {
           expect(this.res.status).to.equal(403);
         });
 
@@ -1117,7 +1115,7 @@ describe('Service image endpoint', async function () {
                 delete this.res;
               });
 
-              it('rejects the user', async function () {
+              it('rejects the request', async function () {
                 expect(this.res.status).to.equal(403);
               });
 
