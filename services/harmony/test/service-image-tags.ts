@@ -319,7 +319,7 @@ describe('List service deployments endpoint', async function () {
     describe('and they request deployments of a specific service', function () {
       before(async function () {
         hookRedirect('eve');
-        this.res = await request(this.frontend).get('/service-image-tag/deployment?serviceid=foo-service').use(auth({ username: 'eve' }));
+        this.res = await request(this.frontend).get('/service-image-tag/deployment?service=foo-service').use(auth({ username: 'eve' }));
       });
 
       after(function () {
@@ -397,7 +397,7 @@ describe('List service deployments endpoint', async function () {
     describe('and they request deployments of a specific service', function () {
       before(async function () {
         hookRedirect('adam');
-        this.res = await request(this.frontend).get('/service-image-tag/deployment?serviceid=buzz-service').use(auth({ username: 'adam' }));
+        this.res = await request(this.frontend).get('/service-image-tag/deployment?service=buzz-service').use(auth({ username: 'adam' }));
       });
 
       after(function () {

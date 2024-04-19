@@ -284,8 +284,11 @@ async function validateTagPresent(
 async function validateStatusForListServiceRequest(
   req: HarmonyRequest, res: Response,
 ): Promise<boolean> {
-  const { status } = req.query;
+  let { status } = req.query;
+  // only check the status if it is actually passed in - no status is a valid choice if the user
+  // wants results for any status
   if (status) {
+    status = status.toString().toLowerCase();
     const validStatuses = Object.values(ServiceDeploymentStatus).map((val) => JSON.stringify(val));
     if (!validStatuses.includes(`"${status}"`)) {
       const validString = validStatuses.join(',');
@@ -294,6 +297,7 @@ async function validateStatusForListServiceRequest(
       return false;
     }
   }
+
   return true;
 }
 
@@ -536,7 +540,7 @@ export async function getServiceDeployments(
   try {
     await db.transaction(async (tx) => {
       const queryLowerCase = keysToLowerCase(req.query);
-      const deployments = await getDeployments(tx, queryLowerCase.status, queryLowerCase.serviceid);
+      const deployments = await getDeployments(tx, queryLowerCase.status, queryLowerCase.service);
       res.statusCode = 200;
       res.send(deployments.map((deployment: ServiceDeployment) => deployment.serialize()));
     });
