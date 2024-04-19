@@ -6,7 +6,7 @@ import hookServersStartStop from './helpers/servers';
 import { hookRedirect } from './helpers/hooks';
 import { auth } from './helpers/auth';
 import * as serviceImageTags from '../app/frontends/service-image-tags';
-import { checkServiceExists, checkTag, getImageTagMap, ecrImageNameToComponents, setEnabled } from '../app/frontends/service-image-tags';
+import { checkServiceExists, checkTag, getImageTagMap, ecrImageNameToComponents, enableServiceDeployment } from '../app/frontends/service-image-tags';
 import hookDescribeImage from './helpers/container-registry';
 import { getDeploymentById } from '../app/models/service-deployment';
 import db from '../app/util/db';
@@ -784,6 +784,46 @@ describe('Service image endpoint', async function () {
   });
 
   describe('Enable and disable service image tag update', async function () {
+    describe('when validate enabled request body', async function () {
+      describe('when enable/disable the service image tag update with empty body', async function () {
+        before(async function () {
+          hookRedirect('adam');
+          this.res = await request(this.frontend).put('/service-image-tag/state').use(auth({ username: 'adam' })).send('');
+        });
+
+        after(function () {
+          delete this.res;
+        });
+
+        it('rejects the user', async function () {
+          expect(this.res.status).to.equal(400);
+        });
+
+        it('returns a meaningful error message', async function () {
+          expect(this.res.text).to.equal('\'enabled\' is a required body parameter');
+        });
+      });
+
+      describe('when enable/disable the service image tag update with invalid value', async function () {
+        before(async function () {
+          hookRedirect('adam');
+          this.res = await request(this.frontend).put('/service-image-tag/state').use(auth({ username: 'adam' })).send({ enabled: 'enabled' });
+        });
+
+        after(function () {
+          delete this.res;
+        });
+
+        it('rejects the user', async function () {
+          expect(this.res.status).to.equal(400);
+        });
+
+        it('returns a meaningful error message', async function () {
+          expect(this.res.text).to.equal('\'enabled\' can only take value of true or false');
+        });
+      });
+    });
+
     describe('when a user is a regular user, not in the EDL service deployers or admin groups', async function () {
 
       describe('when get the service image tag update state', async function () {
@@ -989,10 +1029,8 @@ describe('Service image endpoint', async function () {
             expect(this.res.status).to.equal(423);
           });
 
-          it('returns enabled false', async function () {
-            expect(this.res.body).to.eql({
-              'enabled': false,
-            });
+          it('returns the proper error message', async function () {
+            expect(this.res.text).to.eql('Unable to acquire service deployment lock. Try again later.');
           });
         });
       });
@@ -1296,7 +1334,7 @@ describe('Service self-deployment failure', async function () {
     after(async function () {
       execStub.restore();
       execDeployScriptStub.restore();
-      await setEnabled(true);
+      await enableServiceDeployment();
       delete this.res;
     });
 
