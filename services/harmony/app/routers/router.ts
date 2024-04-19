@@ -287,12 +287,12 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
 
   // service images
   result.get('/service-image-tag', asyncHandler(getServiceImageTags));
-  result.get('/service-image-tag/state', asyncHandler(getServiceImageTagState));
-  result.put('/service-image-tag/state', jsonParser, asyncHandler(setServiceImageTagState));
-  result.get('/service-image-tag/deployment/:id', asyncHandler(getServiceDeployment));
-  result.get('/service-image-tag/deployment', asyncHandler(getServiceDeployments));
   result.get('/service-image-tag/:service', asyncHandler(getServiceImageTag));
   result.put('/service-image-tag/:service', jsonParser, asyncHandler(updateServiceImageTag));
+  result.get('/service-deployment', asyncHandler(getServiceDeployments));
+  result.get('/service-deployment/:id', asyncHandler(getServiceDeployment));
+  result.get('/service-deployments-state', asyncHandler(getServiceImageTagState));
+  result.put('/service-deployments-state', jsonParser, asyncHandler(setServiceImageTagState));
 
   result.get('/*', () => { throw new NotFoundError('The requested page was not found.'); });
   result.post('/*', () => { throw new NotFoundError('The requested POST page was not found.'); });

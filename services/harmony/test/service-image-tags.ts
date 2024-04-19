@@ -55,7 +55,7 @@ const tagContentErrorMsg = 'A tag name may contain lowercase and uppercase chara
  * Returns deploymentId - the deployment id
  */
 function getDeploymentIdFromStatusLink(statusLink: string): String {
-  const uuidRegex = /\/deployment\/([a-fA-F0-9-]+)$/;
+  const uuidRegex = /service-deployment\/([a-fA-F0-9-]+)$/;
   const match = statusLink.match(uuidRegex);
   return match ? match[1] : null;
 }
@@ -280,7 +280,7 @@ describe('List service deployments endpoint', async function () {
   describe('when a user is not in the EDL service deployers or admin groups', async function () {
     before(async function () {
       hookRedirect('joe');
-      this.res = await request(this.frontend).get('/service-image-tag/deployment').use(auth({ username: 'joe' }));
+      this.res = await request(this.frontend).get('/service-deployment').use(auth({ username: 'joe' }));
     });
 
     after(function () {
@@ -300,7 +300,7 @@ describe('List service deployments endpoint', async function () {
     describe('and they request all service deployments', function () {
       before(async function () {
         hookRedirect('eve');
-        this.res = await request(this.frontend).get('/service-image-tag/deployment').use(auth({ username: 'eve' }));
+        this.res = await request(this.frontend).get('/service-deployment').use(auth({ username: 'eve' }));
       });
 
       after(function () {
@@ -319,7 +319,7 @@ describe('List service deployments endpoint', async function () {
     describe('and they request deployments of a specific service', function () {
       before(async function () {
         hookRedirect('eve');
-        this.res = await request(this.frontend).get('/service-image-tag/deployment?service=foo-service').use(auth({ username: 'eve' }));
+        this.res = await request(this.frontend).get('/service-deployment?service=foo-service').use(auth({ username: 'eve' }));
       });
 
       after(function () {
@@ -338,7 +338,7 @@ describe('List service deployments endpoint', async function () {
     describe('and they request deployments with a specific status', function () {
       before(async function () {
         hookRedirect('eve');
-        this.res = await request(this.frontend).get('/service-image-tag/deployment?status=running').use(auth({ username: 'eve' }));
+        this.res = await request(this.frontend).get('/service-deployment?status=running').use(auth({ username: 'eve' }));
       });
 
       after(function () {
@@ -357,7 +357,7 @@ describe('List service deployments endpoint', async function () {
     describe('and they request deployments with mixed case status', function () {
       before(async function () {
         hookRedirect('eve');
-        this.res = await request(this.frontend).get('/service-image-tag/deployment?status=RuNning').use(auth({ username: 'eve' }));
+        this.res = await request(this.frontend).get('/service-deployment?status=RuNning').use(auth({ username: 'eve' }));
       });
 
       after(function () {
@@ -376,7 +376,7 @@ describe('List service deployments endpoint', async function () {
     describe('and they request deployments with an invalid status', function () {
       before(async function () {
         hookRedirect('eve');
-        this.res = await request(this.frontend).get('/service-image-tag/deployment?status=foo').use(auth({ username: 'eve' }));
+        this.res = await request(this.frontend).get('/service-deployment?status=foo').use(auth({ username: 'eve' }));
       });
 
       after(function () {
@@ -397,7 +397,7 @@ describe('List service deployments endpoint', async function () {
     describe('and they request all service deployments', function () {
       before(async function () {
         hookRedirect('adam');
-        this.res = await request(this.frontend).get('/service-image-tag/deployment').use(auth({ username: 'adam' }));
+        this.res = await request(this.frontend).get('/service-deployment').use(auth({ username: 'adam' }));
       });
 
       after(function () {
@@ -416,7 +416,7 @@ describe('List service deployments endpoint', async function () {
     describe('and they request deployments of a specific service', function () {
       before(async function () {
         hookRedirect('adam');
-        this.res = await request(this.frontend).get('/service-image-tag/deployment?service=buzz-service').use(auth({ username: 'adam' }));
+        this.res = await request(this.frontend).get('/service-deployment?service=buzz-service').use(auth({ username: 'adam' }));
       });
 
       after(function () {
@@ -436,7 +436,7 @@ describe('List service deployments endpoint', async function () {
     describe('and they request deployments with a specific status', function () {
       before(async function () {
         hookRedirect('adam');
-        this.res = await request(this.frontend).get('/service-image-tag/deployment?status=successful').use(auth({ username: 'adam' }));
+        this.res = await request(this.frontend).get('/service-deployment?status=successful').use(auth({ username: 'adam' }));
       });
 
       after(function () {
@@ -455,7 +455,7 @@ describe('List service deployments endpoint', async function () {
     describe('and they request deployments with an invalid status', function () {
       before(async function () {
         hookRedirect('adam');
-        this.res = await request(this.frontend).get('/service-image-tag/deployment?status=bar').use(auth({ username: 'adam' }));
+        this.res = await request(this.frontend).get('/service-deployment?status=bar').use(auth({ username: 'adam' }));
       });
 
       after(function () {
@@ -871,7 +871,7 @@ describe('Service image endpoint', async function () {
 
       it('returns statusLink', async function () {
         link = this.res.body.statusLink;
-        expect(link).to.include('http://127.0.0.1:4000/service-image-tag/deployment/');
+        expect(link).to.include('http://127.0.0.1:4000/service-deployment/');
         deploymentId = getDeploymentIdFromStatusLink(link);
         expect(deploymentId).to.not.be.null;
       });
@@ -884,7 +884,7 @@ describe('Service image endpoint', async function () {
       describe('when get the service image tag update state after a successful service deployment', async function () {
         before(async function () {
           hookRedirect('buzz');
-          this.res = await request(this.frontend).get('/service-image-tag/state').use(auth({ username: 'buzz' }));
+          this.res = await request(this.frontend).get('/service-deployments-state').use(auth({ username: 'buzz' }));
         });
 
         after(function () {
@@ -943,7 +943,7 @@ describe('Service image endpoint', async function () {
 
       it('returns statusLink', async function () {
         link = this.res.body.statusLink;
-        expect(link).to.include('http://127.0.0.1:4000/service-image-tag/deployment/');
+        expect(link).to.include('http://127.0.0.1:4000/service-deployment/');
         deploymentId = getDeploymentIdFromStatusLink(link);
         expect(deploymentId).to.not.be.null;
       });
@@ -956,7 +956,7 @@ describe('Service image endpoint', async function () {
       describe('when get the service image tag update state after a successful service deployment', async function () {
         before(async function () {
           hookRedirect('adam');
-          this.res = await request(this.frontend).get('/service-image-tag/state').use(auth({ username: 'adam' }));
+          this.res = await request(this.frontend).get('/service-deployments-state').use(auth({ username: 'adam' }));
         });
 
         after(function () {
@@ -981,7 +981,7 @@ describe('Service image endpoint', async function () {
     describe('when a user is not in the EDL service deployers or admin groups', async function () {
       before(async function () {
         hookRedirect('joe');
-        this.res = await request(this.frontend).get('/service-image-tag/state').use(auth({ username: 'joe' }));
+        this.res = await request(this.frontend).get('/service-deployments-state').use(auth({ username: 'joe' }));
       });
 
       after(function () {
@@ -1000,7 +1000,7 @@ describe('Service image endpoint', async function () {
     describe('when a user is in the EDL service deployers group', async function () {
       before(async function () {
         hookRedirect('buzz');
-        this.res = await request(this.frontend).get('/service-image-tag/state').use(auth({ username: 'buzz' }));
+        this.res = await request(this.frontend).get('/service-deployments-state').use(auth({ username: 'buzz' }));
       });
 
       after(function () {
@@ -1016,7 +1016,7 @@ describe('Service image endpoint', async function () {
     describe('when a user is in the EDL admin group', async function () {
       before(async function () {
         hookRedirect('adam');
-        this.res = await request(this.frontend).get('/service-image-tag/state').use(auth({ username: 'adam' }));
+        this.res = await request(this.frontend).get('/service-deployments-state').use(auth({ username: 'adam' }));
       });
 
       after(function () {
@@ -1035,7 +1035,7 @@ describe('Service image endpoint', async function () {
       describe('when enable/disable the service image tag update with empty body', async function () {
         before(async function () {
           hookRedirect('adam');
-          this.res = await request(this.frontend).put('/service-image-tag/state').use(auth({ username: 'adam' })).send('');
+          this.res = await request(this.frontend).put('/service-deployments-state').use(auth({ username: 'adam' })).send('');
         });
 
         after(function () {
@@ -1054,7 +1054,7 @@ describe('Service image endpoint', async function () {
       describe('when enable/disable the service image tag update with invalid value', async function () {
         before(async function () {
           hookRedirect('adam');
-          this.res = await request(this.frontend).put('/service-image-tag/state').use(auth({ username: 'adam' })).send({ enabled: 'enabled' });
+          this.res = await request(this.frontend).put('/service-deployments-state').use(auth({ username: 'adam' })).send({ enabled: 'enabled' });
         });
 
         after(function () {
@@ -1076,7 +1076,7 @@ describe('Service image endpoint', async function () {
       describe('when get the service image tag update state', async function () {
         before(async function () {
           hookRedirect('joe');
-          this.res = await request(this.frontend).get('/service-image-tag/state').use(auth({ username: 'joe' }));
+          this.res = await request(this.frontend).get('/service-deployments-state').use(auth({ username: 'joe' }));
         });
 
         after(function () {
@@ -1095,7 +1095,7 @@ describe('Service image endpoint', async function () {
       describe('when enable the service image tag update', async function () {
         before(async function () {
           hookRedirect('joe');
-          this.res = await request(this.frontend).put('/service-image-tag/state').use(auth({ username: 'joe' })).send({ enabled: true });
+          this.res = await request(this.frontend).put('/service-deployments-state').use(auth({ username: 'joe' })).send({ enabled: true });
         });
 
         after(function () {
@@ -1114,7 +1114,7 @@ describe('Service image endpoint', async function () {
       describe('when disable the service image tag update', async function () {
         before(async function () {
           hookRedirect('joe');
-          this.res = await request(this.frontend).put('/service-image-tag/state').use(auth({ username: 'joe' })).send({ enabled: false });
+          this.res = await request(this.frontend).put('/service-deployments-state').use(auth({ username: 'joe' })).send({ enabled: false });
         });
 
         after(function () {
@@ -1137,7 +1137,7 @@ describe('Service image endpoint', async function () {
       describe('when get the service image tag update state', async function () {
         before(async function () {
           hookRedirect('buzz');
-          this.res = await request(this.frontend).get('/service-image-tag/state').use(auth({ username: 'buzz' }));
+          this.res = await request(this.frontend).get('/service-deployments-state').use(auth({ username: 'buzz' }));
         });
 
         after(function () {
@@ -1158,7 +1158,7 @@ describe('Service image endpoint', async function () {
       describe('when enable the service image tag update', async function () {
         before(async function () {
           hookRedirect('buzz');
-          this.res = await request(this.frontend).put('/service-image-tag/state').use(auth({ username: 'buzz' })).send({ enabled: true });
+          this.res = await request(this.frontend).put('/service-deployments-state').use(auth({ username: 'buzz' })).send({ enabled: true });
         });
 
         after(function () {
@@ -1177,7 +1177,7 @@ describe('Service image endpoint', async function () {
       describe('when disable the service image tag update', async function () {
         before(async function () {
           hookRedirect('buzz');
-          this.res = await request(this.frontend).put('/service-image-tag/state').use(auth({ username: 'buzz' })).send({ enabled: false });
+          this.res = await request(this.frontend).put('/service-deployments-state').use(auth({ username: 'buzz' })).send({ enabled: false });
         });
 
         after(function () {
@@ -1200,7 +1200,7 @@ describe('Service image endpoint', async function () {
       describe('when get the service image tag update state', async function () {
         before(async function () {
           hookRedirect('adam');
-          this.res = await request(this.frontend).get('/service-image-tag/state').use(auth({ username: 'adam' }));
+          this.res = await request(this.frontend).get('/service-deployments-state').use(auth({ username: 'adam' }));
         });
 
         after(function () {
@@ -1221,7 +1221,7 @@ describe('Service image endpoint', async function () {
       describe('when disable the service image tag update', async function () {
         before(async function () {
           hookRedirect('adam');
-          this.res = await request(this.frontend).put('/service-image-tag/state').use(auth({ username: 'adam' })).send({ enabled: false });
+          this.res = await request(this.frontend).put('/service-deployments-state').use(auth({ username: 'adam' })).send({ enabled: false });
         });
 
         after(function () {
@@ -1263,7 +1263,7 @@ describe('Service image endpoint', async function () {
         describe('when trying to disable the service image tag update when it is already disabled', async function () {
           before(async function () {
             hookRedirect('adam');
-            this.res = await request(this.frontend).put('/service-image-tag/state').use(auth({ username: 'adam' })).send({ enabled: false });
+            this.res = await request(this.frontend).put('/service-deployments-state').use(auth({ username: 'adam' })).send({ enabled: false });
           });
 
           after(function () {
@@ -1283,7 +1283,7 @@ describe('Service image endpoint', async function () {
       describe('when enable the service image tag update', async function () {
         before(async function () {
           hookRedirect('adam');
-          this.res = await request(this.frontend).put('/service-image-tag/state').use(auth({ username: 'adam' })).send({ enabled: true });
+          this.res = await request(this.frontend).put('/service-deployments-state').use(auth({ username: 'adam' })).send({ enabled: true });
         });
 
         after(function () {
@@ -1341,7 +1341,7 @@ describe('Service image endpoint', async function () {
           it('returns statusLink', async function () {
             const link = this.res.body.statusLink;
             statusPath = new URL(link).pathname;
-            expect(link).to.include('http://127.0.0.1:4000/service-image-tag/deployment/');
+            expect(link).to.include('http://127.0.0.1:4000/service-deployment/');
             linkDeploymentId = getDeploymentIdFromStatusLink(link);
             expect(linkDeploymentId).to.not.be.null;
           });
@@ -1470,7 +1470,7 @@ describe('Service self-deployment successful', async function () {
 
     it('returns statusLink', async function () {
       link = this.res.body.statusLink;
-      expect(link).to.include('http://127.0.0.1:4000/service-image-tag/deployment/');
+      expect(link).to.include('http://127.0.0.1:4000/service-deployment/');
       linkDeploymentId = getDeploymentIdFromStatusLink(link);
       expect(linkDeploymentId).to.not.be.null;
     });
@@ -1509,7 +1509,7 @@ describe('Service self-deployment successful', async function () {
     describe('when get the service image tag update state after a successful service deployment', async function () {
       before(async function () {
         hookRedirect('buzz');
-        this.res = await request(this.frontend).get('/service-image-tag/state').use(auth({ username: 'buzz' }));
+        this.res = await request(this.frontend).get('/service-deployments-state').use(auth({ username: 'buzz' }));
       });
 
       after(function () {
@@ -1530,7 +1530,7 @@ describe('Service self-deployment successful', async function () {
     describe('when get the status with a nonexist deployment id', async function () {
       before(async function () {
         hookRedirect('buzz');
-        this.res = await request(this.frontend).get('/service-image-tag/deployment/5a36085d-b40e-4296-96da-e406d7751166').use(auth({ username: 'buzz' }));
+        this.res = await request(this.frontend).get('/service-deployment/5a36085d-b40e-4296-96da-e406d7751166').use(auth({ username: 'buzz' }));
       });
 
       after(function () {
@@ -1593,7 +1593,7 @@ describe('Service self-deployment failure', async function () {
 
     it('returns statusLink', async function () {
       link = this.res.body.statusLink;
-      expect(link).to.include('http://127.0.0.1:4000/service-image-tag/deployment/');
+      expect(link).to.include('http://127.0.0.1:4000/service-deployment/');
       linkDeploymentId = getDeploymentIdFromStatusLink(link);
       expect(linkDeploymentId).to.not.be.null;
     });
@@ -1632,7 +1632,7 @@ describe('Service self-deployment failure', async function () {
     describe('when get the service image tag update state after a failed service deployment', async function () {
       before(async function () {
         hookRedirect('adam');
-        this.res = await request(this.frontend).get('/service-image-tag/state').use(auth({ username: 'adam' }));
+        this.res = await request(this.frontend).get('/service-deployments-state').use(auth({ username: 'adam' }));
       });
 
       after(function () {

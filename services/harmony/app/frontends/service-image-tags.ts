@@ -500,7 +500,7 @@ export async function updateServiceImageTag(
   res.statusCode = 202;
   res.send({
     'tag': tag,
-    'statusLink': `${urlRoot}/service-image-tag/deployment/${deploymentId}`,
+    'statusLink': `${urlRoot}/service-deployment/${deploymentId}`,
   });
 }
 
