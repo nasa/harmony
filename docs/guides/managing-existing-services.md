@@ -128,7 +128,7 @@ The returned JSON response has the fields indicating the current status of the s
 
 ```
 
-GET https://harmony.uat.earthdat.nasa.gov/service-image-tag/state
+GET https://harmony.uat.earthdat.nasa.gov/service-deployments-state
 
 ```
 **Example 10** - Getting the current enable/disable state of the service deployment feature using the `service-image-tag` API

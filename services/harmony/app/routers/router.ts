@@ -138,6 +138,7 @@ const authorizedRoutes = [
   '/service-results/*',
   '/workflow-ui*',
   '/service-image*',
+  '/service-deployment*',
 ];
 
 /**
