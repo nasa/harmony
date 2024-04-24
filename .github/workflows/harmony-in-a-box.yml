@@ -24,7 +24,6 @@ jobs:
     - name: Install docker
       run: |
         brew update
-        brew install python-setuptools
         brew install docker
         brew install kubectl
 
