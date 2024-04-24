@@ -19,13 +19,10 @@ jobs:
       run: |
         brew update
         brew install python
-        brew install libpq
+        brew install postgresql
         brew install gdal
         brew install docker
         brew install kubectl
-
-    - name: Link libpq
-      run: sudo ln -s $(brew --prefix)/opt/libpq/bin/psql /usr/local/bin/psql
 
     - name: Install setuptools
       run: brew install python-setuptools
