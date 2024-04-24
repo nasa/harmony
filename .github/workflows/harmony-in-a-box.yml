@@ -28,10 +28,7 @@ jobs:
       run: sudo ln -s $(brew --prefix)/opt/libpq/bin/psql /usr/local/bin/psql
 
     - name: Install setuptools
-      run: brew install setuptools
-
-    - name: Install python packaging
-      run: brew install packaging
+      run: brew install python-setuptools
 
     - name: Install awslocal
       run: |
