@@ -18,6 +18,9 @@ jobs:
     - name: Install setuptools
       run: sudo -H pip install setuptools
 
+    - name: Install python packaging
+      run: pip install packaging
+
     - name: Install docker
       run: |
         brew update
