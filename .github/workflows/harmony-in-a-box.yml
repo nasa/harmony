@@ -34,7 +34,7 @@ jobs:
     - name: Set up npm dependency caching
       uses: actions/setup-node@v4
       with:
-        node-version: 18
+        node-version: 18.18.2
         cache: 'npm'
         cache-dependency-path: '**/package-lock.json'
 
