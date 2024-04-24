@@ -21,9 +21,10 @@ jobs:
     - name: Install python packaging
       run: pip install packaging
 
-    - name: Install docker
+    - name: Install docker and gdal
       run: |
         brew update
+        brew install gdal
         brew install docker
         brew install kubectl
 
