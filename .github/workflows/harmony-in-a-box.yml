@@ -15,22 +15,23 @@ jobs:
     - name: Check out code
       uses: actions/checkout@v3
 
-    - name: Install setuptools
-      run: sudo -H pip install setuptools
-
-    - name: Install python packaging
-      run: pip install packaging
-
     - name: Install docker and gdal
       run: |
         brew update
+        brew install python
         brew install gdal
         brew install docker
         brew install kubectl
 
+    - name: Install setuptools
+      run: pip3 install setuptools
+
+    - name: Install python packaging
+      run: pip3 install packaging
+
     - name: Install awslocal
       run: |
-        pip install awscli-local
+        pip3 install awscli-local
 
     - name: Set up npm dependency caching
       uses: actions/setup-node@v4
