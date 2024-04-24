@@ -19,19 +19,23 @@ jobs:
       run: |
         brew update
         brew install python
+        brew install libpq
         brew install gdal
         brew install docker
         brew install kubectl
 
+    - name: Link libpq
+      run: sudo ln -s $(brew --prefix)/opt/libpq/bin/psql /usr/local/bin/psql
+
     - name: Install setuptools
-      run: pip3 install setuptools
+      run: brew install setuptools
 
     - name: Install python packaging
-      run: pip3 install packaging
+      run: brew install packaging
 
     - name: Install awslocal
       run: |
-        pip3 install awscli-local
+        brew install awscli-local
 
     - name: Set up npm dependency caching
       uses: actions/setup-node@v4
