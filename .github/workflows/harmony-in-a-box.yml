@@ -23,6 +23,7 @@ jobs:
         brew update
         brew install docker
         brew install kubectl
+        brew install python-setuptools
 
     - name: Install awslocal
       run: |
