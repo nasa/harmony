@@ -26,6 +26,7 @@ jobs:
         brew install python-setuptools
         brew install postgresql
         brew install gdal
+        brew install colima
 
     - name: Install awslocal
       run: |
