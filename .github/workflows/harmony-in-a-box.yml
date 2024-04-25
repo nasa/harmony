@@ -15,26 +15,26 @@ jobs:
     - name: Check out code
       uses: actions/checkout@v3
 
-    - name: Install docker and gdal
+    - name: Set architecture
+      run: arch -x86_64 bash
+
+    - name: Install setuptools
+      run: sudo -H pip install setuptools
+
+    - name: Install docker
       run: |
         brew update
-        brew install python
-        brew install postgresql
-        brew install gdal
         brew install docker
         brew install kubectl
 
-    - name: Install setuptools
-      run: brew install python-setuptools
-
     - name: Install awslocal
       run: |
-        brew install awscli-local
+        pip install awscli-local
 
     - name: Set up npm dependency caching
       uses: actions/setup-node@v4
       with:
-        node-version: 18.18.2
+        node-version: 18
         cache: 'npm'
         cache-dependency-path: '**/package-lock.json'
 
