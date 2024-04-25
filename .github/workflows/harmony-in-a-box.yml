@@ -15,9 +15,6 @@ jobs:
     - name: Check out code
       uses: actions/checkout@v3
 
-    - name: Set architecture
-      run: arch -x86_64 bash
-
     - name: Install setuptools
       run: sudo -H pip install setuptools
 
@@ -47,7 +44,7 @@ jobs:
     - name: Install dependencies
       run: |
         source bin/helper
-        retry_command 10 npm ci omit dev
+        retry_command 10  arch -x86_64 npm ci
 
     - name: Start colima
       run: colima start --cpu 2 --memory 12 --with-kubernetes
