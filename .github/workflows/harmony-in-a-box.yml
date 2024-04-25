@@ -47,7 +47,7 @@ jobs:
     - name: Install dependencies
       run: |
         source bin/helper
-        retry_command 10 npm ci
+        retry_command 10 npm ci omit dev
 
     - name: Start colima
       run: colima start --cpu 2 --memory 12 --with-kubernetes
