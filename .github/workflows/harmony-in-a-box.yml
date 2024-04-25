@@ -44,11 +44,13 @@ jobs:
         EDL_USER: ${{ secrets.LEO_EDL_USER }}
         EDL_PASSWORD: ${{ secrets.LEO_EDL_PASSWORD }}
 
+    - name: Install gdal-async
+      run:  npm install gdal-async --build-from-source --shared_gdal
+
     - name: Install dependencies
       run: |
         source bin/helper
-        npm install gdal-async --build-from-source --shared_gdal
-        retry_command 10  npm install
+        retry_command 10 npm install
 
     - name: Start colima
       run: colima start --cpu 2 --memory 12 --with-kubernetes
