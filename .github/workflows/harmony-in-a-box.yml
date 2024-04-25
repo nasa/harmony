@@ -25,6 +25,7 @@ jobs:
         brew install kubectl
         brew install python-setuptools
         brew install postgresql
+        brew install gdal
 
     - name: Install awslocal
       run: |
@@ -46,7 +47,8 @@ jobs:
     - name: Install dependencies
       run: |
         source bin/helper
-        retry_command 10  arch -x86_64 npm ci
+        npm install gdal-async --build-from-source --shared_gdal
+        retry_command 10  npm install
 
     - name: Start colima
       run: colima start --cpu 2 --memory 12 --with-kubernetes
