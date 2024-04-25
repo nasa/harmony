@@ -24,6 +24,7 @@ jobs:
         brew install docker
         brew install kubectl
         brew install python-setuptools
+        brew install postgresql
 
     - name: Install awslocal
       run: |
