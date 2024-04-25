@@ -44,8 +44,11 @@ jobs:
         EDL_USER: ${{ secrets.LEO_EDL_USER }}
         EDL_PASSWORD: ${{ secrets.LEO_EDL_PASSWORD }}
 
-    - name: Install gdal-async
+    - name: Install gdal-async top-level
       run:  npm install gdal-async@3.7.2-1 --build-from-source --shared_gdal
+
+    - name: Install gdal-async harmony
+      run:  cd services/harmony && npm install gdal-async@3.7.2-1 --build-from-source --shared_gdal
 
     - name: Install dependencies
       run: |
