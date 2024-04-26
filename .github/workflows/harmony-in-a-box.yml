@@ -20,7 +20,7 @@ jobs:
 
     - name: Install docker
       run: |
-        brew uninstall --zap qemu colima lima
+        brew uninstall --zap colima lima
         brew update
         brew upgrade
         brew install docker
