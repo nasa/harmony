@@ -20,7 +20,7 @@ import * as exampleBackend from '../example/http-backend';
 import cmrCollectionReader from './middleware/cmr-collection-reader';
 import * as fs from 'fs';
 
-// redact specific valuse from a request log
+// redact specific values from a request log
 export const requestFilter: expressWinston.RequestFilter = (req, propName) => {
   if (propName === 'headers') {
     const redacteProp = req[propName];
