@@ -20,14 +20,17 @@ jobs:
 
     - name: Install docker
       run: |
+        brew uninstall --zap qemu colima lima
         brew update
+        brew upgrade
         brew install docker
         brew install kubectl
         brew install python-setuptools
         brew install postgresql
         brew install gdal
+        brew install lima
         brew install colima
-        sudo ln -sf $HOME/.colima/default/docker.sock /var/run/docker.sock
+        brew install qemu
 
     - name: Install awslocal
       run: |
@@ -58,7 +61,7 @@ jobs:
         retry_command 1  npm install
 
     - name: Start colima
-      run: colima start --cpu 2 --memory 12 --with-kubernetes
+      run: colima start --cpu 2 --memory 12 --with-kubernetes -v
 
     - name: Check colima status
       run: colima status
