@@ -20,6 +20,21 @@ import * as exampleBackend from '../example/http-backend';
 import cmrCollectionReader from './middleware/cmr-collection-reader';
 import * as fs from 'fs';
 
+// redact specific valuse from a request log
+export const requestFilter: expressWinston.RequestFilter = (req, propName) => {
+  if (propName === 'headers') {
+    const redacteProp = req[propName];
+    if (redacteProp.cookie) {
+      redacteProp.cookie = '<redacted>';
+    }
+    if (redacteProp.authorization) {
+      redacteProp.authorization = '<redacted>';
+    }
+    return redacteProp;
+  }
+  return req[propName];
+};
+
 /**
  * Returns middleware to add a request specific logger
  *
@@ -27,12 +42,6 @@ import * as fs from 'fs';
  * @param ignorePaths - Don't log the request url and method if the req.path matches these patterns
  */
 function addRequestLogger(appLogger: Logger, ignorePaths: RegExp[] = []): RequestHandler {
-  const requestFilter = (req, propName): unknown => {
-    if (propName === 'headers') {
-      return { ...req[propName], cookie: '<redacted>' };
-    }
-    return req[propName];
-  };
   return expressWinston.logger({
     winstonInstance: appLogger,
     requestFilter,

@@ -1,8 +1,26 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
 import { createLoggerForTest } from '../helpers/log';
 import DataOperation from '../../app/models/data-operation';
 import HarmonyRequest from '../../app/models/harmony-request';
+import { requestFilter } from '../../app/server';
+import { FilterRequest } from 'express-winston';
+
+
+describe('request logging filter', function () {
+  it('returns a <redacted> cookie header, leaving other headers intact', function () {
+    const filtReq: FilterRequest = { headers: { cookie: 'cookie-value', Host: 'host-value' } } as any as FilterRequest;
+    const filtered = requestFilter(filtReq, 'headers');
+    expect(filtered).to.deep.equal({ cookie: '<redacted>', Host: 'host-value' });
+  });
+
+  it('returns a <redacted> authorization header, leaving other headers intact', function () {
+    const filtReq: FilterRequest = { headers: { authorization: 'auth-value', Host: 'host-value' } } as any as FilterRequest;
+    const filtered = requestFilter(filtReq, 'headers');
+    expect(filtered).to.deep.equal({ authorization: '<redacted>', Host: 'host-value' });
+  });
+});
 
 describe('util/log', function () {
   describe('jsonLogger', function () {
