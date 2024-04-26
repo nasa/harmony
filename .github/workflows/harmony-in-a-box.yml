@@ -27,6 +27,7 @@ jobs:
         brew install postgresql
         brew install gdal
         brew install colima
+        sudo ln -sf $HOME/.colima/default/docker.sock /var/run/docker.sock
 
     - name: Install awslocal
       run: |
