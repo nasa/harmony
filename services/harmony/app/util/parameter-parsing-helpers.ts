@@ -23,6 +23,22 @@ export function parseBoolean(valueStr: string): boolean {
 }
 
 /**
+ * Helper function for parameters that parses and validates numerical values.
+ * If the input string is not numerical, a ParameterParseError is thrown.
+ *
+ * @param valueStr - the unparsed number as it appears in the input
+ * @returns the parsed result
+ * @throws ParameterParseError - if there are errors while parsing (e.g., a NaN)
+ */
+export function parseNumber(valueStr: string | number): number {
+  const parsedNumber = Number(valueStr);
+  if (isNaN(parsedNumber)) {
+    throw new ParameterParseError(`'${valueStr}' must be a number.`);
+  }
+  return parsedNumber;
+}
+
+/**
  * Returns the parameter as parsed as an array of comma-separated values if
  * it was a string, or just returns the array if it's already parsed
  * @param value - The parameter value to parse (either an array or a string)
