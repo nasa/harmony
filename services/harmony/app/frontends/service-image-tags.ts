@@ -261,7 +261,10 @@ export function checkTag(tag: string): string {
   // See https://docs.docker.com/engine/reference/commandline/image_tag/
   const tagRegex = /^[a-zA-Z\d_][a-zA-Z\d\-_.]{0,127}$/;
   if (!tagRegex.test(tag)) {
-    return 'A tag name may contain lowercase and uppercase characters, digits, underscores, periods and dashes. A tag name may not start with a period or a dash and may contain a maximum of 128 characters.';
+    const message = 'A tag name may contain lowercase and uppercase characters, digits, ' +
+      'underscores, periods and dashes. A tag name may not start with a period or a dash and ' +
+      'may contain a maximum of 128 characters.';
+    return message;
   }
   return null;
 }

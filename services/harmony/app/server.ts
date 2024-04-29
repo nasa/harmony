@@ -21,18 +21,34 @@ import cmrCollectionReader from './middleware/cmr-collection-reader';
 import * as fs from 'fs';
 
 /**
+ * Mutate specific properties of the expressWinston request object
+ * in order to control what shows up in the logs.
+ * @param req - the expressWinston request
+ * @param propName - the property name
+ * @returns the mutated (or same) property value for the given property name
+ */
+export function requestFilter(req, propName): expressWinston.RequestFilter {
+  const redactedString = '<redacted>';
+  if (propName === 'headers') {
+    const headersObj = req[propName];
+    if (headersObj.cookie) {
+      headersObj.cookie = redactedString;
+    }
+    if (headersObj.authorization) {
+      headersObj.authorization = redactedString;
+    }
+    return headersObj;
+  }
+  return req[propName];
+}
+
+/**
  * Returns middleware to add a request specific logger
  *
  * @param appLogger - Request specific application logger
  * @param ignorePaths - Don't log the request url and method if the req.path matches these patterns
  */
 function addRequestLogger(appLogger: Logger, ignorePaths: RegExp[] = []): RequestHandler {
-  const requestFilter = (req, propName): unknown => {
-    if (propName === 'headers') {
-      return { ...req[propName], cookie: '<redacted>' };
-    }
-    return req[propName];
-  };
   return expressWinston.logger({
     winstonInstance: appLogger,
     requestFilter,
