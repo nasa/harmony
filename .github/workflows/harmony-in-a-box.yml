@@ -4,7 +4,8 @@ on: [push]
 
 jobs:
   harmony-in-a-box:
-
+    # TODO this is locked to macos-12 to fix an issue with the gdal dependency
+    # We will go back to macos-latest in HARMONY-1765
     runs-on: macos-12
 
     strategy:
