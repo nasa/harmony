@@ -14,6 +14,8 @@ export default interface HarmonyRequest extends Request {
   user: string;
   accessToken: string;
   authorized: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  files?: any;
 }
 
 /**

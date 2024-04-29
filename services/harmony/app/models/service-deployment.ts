@@ -98,15 +98,17 @@ export async function getDeploymentById(tx: Transaction, deploymentId: string): 
  * Returns deployment object
  */
 export async function getDeployments(tx: Transaction, status?: ServiceDeploymentStatus, service?: string): Promise<ServiceDeployment[]> {
-  const results = await tx(ServiceDeployment.table)
+  const query = tx(ServiceDeployment.table)
     .select()
-    .modify(async (queryBuilder) => {
+    .modify((queryBuilder) => {
       if (status) {
-        await queryBuilder.where('status', status);
+        void queryBuilder.where('status', status);
       }
       if (service) {
-        await queryBuilder.where('service', service);
+        void queryBuilder.where('service', service);
       }
     });
+
+  const results = await query;
   return results.map((result: Record) => new ServiceDeployment(result));
 }
