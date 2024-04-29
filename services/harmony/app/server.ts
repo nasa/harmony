@@ -20,20 +20,27 @@ import * as exampleBackend from '../example/http-backend';
 import cmrCollectionReader from './middleware/cmr-collection-reader';
 import * as fs from 'fs';
 
-// redact specific values from a request log
-export const requestFilter: expressWinston.RequestFilter = (req, propName) => {
+/**
+ * Mutate specific properties of the expressWinston request object
+ * in order to control what shows up in the logs.
+ * @param req - the expressWinston request
+ * @param propName - the property name
+ * @returns the mutated (or same) property value for the given property name
+ */
+export function requestFilter(req, propName): expressWinston.RequestFilter {
+  const redactedString = '<redacted>';
   if (propName === 'headers') {
-    const redacteProp = req[propName];
-    if (redacteProp.cookie) {
-      redacteProp.cookie = '<redacted>';
+    const headersObj = req[propName];
+    if (headersObj.cookie) {
+      headersObj.cookie = redactedString;
     }
-    if (redacteProp.authorization) {
-      redacteProp.authorization = '<redacted>';
+    if (headersObj.authorization) {
+      headersObj.authorization = redactedString;
     }
-    return redacteProp;
+    return headersObj;
   }
   return req[propName];
-};
+}
 
 /**
  * Returns middleware to add a request specific logger
