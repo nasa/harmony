@@ -5,7 +5,7 @@ on: [push]
 jobs:
   harmony-in-a-box:
 
-    runs-on: macos-latest
+    runs-on: macos-12
 
     strategy:
       matrix:
