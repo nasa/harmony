@@ -54,7 +54,6 @@ https://cmr.earthdata.nasa.gov:
       A service to compose the Giovanni URL and invoke Giovanni service to produce output file to visualize, analyze,
       and access vast amounts of Earth science remote sensing data without having to download the data.
     data_operation_version: '0.19.0'
-    enabled: !Env ${EXAMPLE_SERVICES}
     has_granule_limit: false
     # Replace the next two lines to default to synchronous once bearer tokens are supported by Giovanni
     # default_sync: true
@@ -72,8 +71,6 @@ https://cmr.earthdata.nasa.gov:
         variables:
         - V2548642027-GES_DISC
     capabilities:
-      concatenation: true
-      concatenate_by_default: true
       subsetting:
         temporal: true
         variable: true
@@ -82,7 +79,7 @@ https://cmr.earthdata.nasa.gov:
         - text/csv
     steps:
       - image: !Env ${GIOVANNI_ADAPTER_IMAGE}
-        operations: ['concatenate', 'variableSubset', 'temporalSubset']
+        operations: ['variableSubset', 'temporalSubset']
 
   - name: podaac/l2-subsetter
     description: |
@@ -293,7 +290,35 @@ https://cmr.earthdata.nasa.gov:
         conditional:
           exists: ['shapefileSubset', 'spatialSubset']
 
-  # OPS GDAL
+  - name: ldds/geoloco
+    description: |
+      Service capable of reprojecting, resampling, regridding, and spatial and SDS subsetting HDF4/HDF-EOS2 SDS variables.
+      The wrapper also retrieves the geolocation file name from the input file Core Metadata and downloads it from S3.
+      Works with L1B-L4 granules (L1B and L2 granule SDSs are automatically regridded with default setting granule resolution
+          and geographic projection).
+    data_operation_version: '0.19.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/ldds/geoloco
+    umm_s: S2951645688-LAADS
+    maximum_sync_granules: 0
+    capabilities:
+       subsetting:
+         bbox: true
+         variable: true
+         multiple_variable: true
+       output_formats:
+         - application/x-hdf
+       reprojection: true
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
+      - image: !Env ${GEOLOCO_IMAGE}
+
   - name: nasa/harmony-gdal-adapter
     description: |
       Service translating Harmony operations to GDAL commands.
@@ -492,7 +517,7 @@ https://cmr.uat.earthdata.nasa.gov:
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${SUBSET_BAND_NAME_IMAGE}
-      
+
   - name: gesdisc/giovanni
     description: |
       A service to compose the Giovanni URL and invoke Giovanni service to produce output file to visualize, analyze,
@@ -515,8 +540,6 @@ https://cmr.uat.earthdata.nasa.gov:
         variables:
         - V1256306287-GES_DISC
     capabilities:
-      concatenation: true
-      concatenate_by_default: true
       subsetting:
         temporal: true
         variable: true
@@ -525,7 +548,7 @@ https://cmr.uat.earthdata.nasa.gov:
         - text/csv
     steps:
       - image: !Env ${GIOVANNI_ADAPTER_IMAGE}
-        operations: ['concatenate', 'variableSubset', 'temporalSubset']
+        operations: ['variableSubset', 'temporalSubset']
 
   - name: podaac/l2-subsetter
     description: |
@@ -784,7 +807,6 @@ https://cmr.uat.earthdata.nasa.gov:
         - image/tiff
       reprojection: true
 
-  # UAT GDAL
   - name: nasa/harmony-gdal-adapter
     description: |
       Service translating Harmony operations to GDAL commands.
