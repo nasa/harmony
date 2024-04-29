@@ -191,7 +191,7 @@ curl -Ln -bj https://harmony.uat.earthdata.nasa.gov/service-deployment
 ## Getting the Deployment History for a Given Service
 
 ```
-curl -Ln -bj https://harmony.uat.earthdata.nasa.gov/service-deployment?serviceid=harmony-service-example
+curl -Ln -bj https://harmony.uat.earthdata.nasa.gov/service-deployment?service=harmony-service-example
 ```
 
 ## Getting the Deployment History for Service Deployments with a Given Status

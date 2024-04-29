@@ -282,7 +282,6 @@ describe('List service deployments endpoint', async function () {
       });
     });
 
-    // HARMONY-1749
     describe('and they request deployments with a specific status', function () {
       before(async function () {
         hookRedirect('adam');
