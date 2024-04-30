@@ -4,9 +4,30 @@
 
 import DataOperation from '../models/data-operation';
 import parseCRS from './crs';
-import { parseMultiValueParameter, parseNumber } from './parameter-parsing-helpers';
+import { ParameterParseError, parseMultiValueParameter, parseNumber } from './parameter-parsing-helpers';
 import HarmonyRequest from '../models/harmony-request';
 import { parseAcceptHeader } from './content-negotiation';
+import { RequestValidationError } from './errors';
+
+/**
+ * Helper function to convert parameter parsing errors into 400 errors for an end
+ * user that identifies the query parameter that was a problem and the message
+ * when failing to parse the parameter. If any other type of exception was thrown
+ * that exception is passed through unchanged.
+ *
+ * @param e - the exception that was thrown
+ * @param parameterName - the name of the query parameter that was being parsed
+ *
+ * @throws RequestValidationError if there was a specific parsing error message otherwise
+ * the original exception is thrown.
+ */
+function convertParameterParsingError(e: Error, parameterName: string): void {
+  if (e instanceof ParameterParseError) {
+    throw new RequestValidationError(`parsing query parameter '${parameterName}', value ${e.message}`);
+  } else {
+    throw (e);
+  }
+}
 
 /**
  * Handle the granuleName parameter in a Harmony query, adding it to the DataOperation
@@ -79,24 +100,22 @@ export function handleCrs(
  */
 export function handleScaleExtent(
   operation: DataOperation,
-  query: Record<string, number[]>): void;
-export function handleScaleExtent(
-  operation: DataOperation,
-  query: Record<string, string>): void;
-export function handleScaleExtent(
-  operation: DataOperation,
   query: Record<string, number[] | string>): void {
   if (query.scaleextent) {
-    if (typeof query.scaleextent === 'string') {
-      const scaleExtentString = query.scaleextent.replace('(', '').replace(')', '');
-      const [xMinString, yMinString, xMaxString, yMaxString] = scaleExtentString.split(/,\s*/);
-      operation.scaleExtent = {
-        x: { min: parseNumber(xMinString), max: parseNumber(xMaxString) },
-        y: { min: parseNumber(yMinString), max: parseNumber(yMaxString) },
-      };
-    } else {
-      const [xMin, yMin, xMax, yMax] = query.scaleextent;
-      operation.scaleExtent = { x: { min: xMin, max: xMax }, y: { min: yMin, max: yMax } };
+    try {
+      if (typeof query.scaleextent === 'string') {
+        const scaleExtentString = query.scaleextent.replace('(', '').replace(')', '');
+        const [xMinString, yMinString, xMaxString, yMaxString] = scaleExtentString.split(/,\s*/);
+        operation.scaleExtent = {
+          x: { min: parseNumber(xMinString), max: parseNumber(xMaxString) },
+          y: { min: parseNumber(yMinString), max: parseNumber(yMaxString) },
+        };
+      } else {
+        const [xMin, yMin, xMax, yMax] = query.scaleextent;
+        operation.scaleExtent = { x: { min: xMin, max: xMax }, y: { min: yMin, max: yMax } };
+      }
+    } catch (e) {
+      convertParameterParsingError(e, 'scaleExtent');
     }
   }
 }
@@ -110,21 +129,19 @@ export function handleScaleExtent(
  */
 export function handleScaleSize(
   operation: DataOperation,
-  query: Record<string, number[]>): void;
-export function handleScaleSize(
-  operation: DataOperation,
-  query: Record<string, string>): void;
-export function handleScaleSize(
-  operation: DataOperation,
   query: Record<string, number[] | string>): void {
   if (query.scalesize) {
-    if (typeof query.scalesize === 'string') {
-      const scaleSizeString: string = query.scalesize.replace('(', '').replace(')', '');
-      const [xString, yString] = scaleSizeString.split(/,\s*/);
-      operation.scaleSize = { x: parseNumber(xString), y: parseNumber(yString) };
-    } else {
-      const [x, y] = query.scalesize;
-      operation.scaleSize = { x, y };
+    try {
+      if (typeof query.scalesize === 'string') {
+        const scaleSizeString: string = query.scalesize.replace('(', '').replace(')', '');
+        const [xString, yString] = scaleSizeString.split(/,\s*/);
+        operation.scaleSize = { x: parseNumber(xString), y: parseNumber(yString) };
+      } else {
+        const [x, y] = query.scalesize;
+        operation.scaleSize = { x, y };
+      }
+    } catch (e) {
+      convertParameterParsingError(e, 'scaleSize');
     }
   }
 }
@@ -162,7 +179,11 @@ export function handleHeight(
   operation: DataOperation,
   query: Record<string, string>): void {
   if (query.height) {
-    operation.outputHeight = parseNumber(query.height);
+    try {
+      operation.outputHeight = parseNumber(query.height);
+    } catch (e) {
+      convertParameterParsingError(e, 'height');
+    }
   }
 }
 
@@ -178,6 +199,10 @@ export function handleWidth(
   operation: DataOperation,
   query: Record<string, string>): void {
   if (query.width) {
-    operation.outputWidth = parseNumber(query.width);
+    try {
+      operation.outputWidth = parseNumber(query.width);
+    } catch (e) {
+      convertParameterParsingError(e, 'width');
+    }
   }
 }
