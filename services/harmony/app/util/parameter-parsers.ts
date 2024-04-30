@@ -103,14 +103,14 @@ export function handleScaleExtent(
   query: Record<string, number[] | string>): void {
   if (query.scaleextent) {
     try {
+      let xMin, xMax, yMin, yMax;
       if (typeof query.scaleextent === 'string') {
         const scaleExtentString = query.scaleextent.replace('(', '').replace(')', '');
-        const [xMin, yMin, xMax, yMax] = scaleExtentString.split(/,\s*/).map(parseNumber);
-        operation.scaleExtent = { x: { min: xMin, max: xMax }, y: { min: yMin, max: yMax } };
+        [xMin, yMin, xMax, yMax] = scaleExtentString.split(/,\s*/).map(parseNumber);
       } else {
-        const [xMin, yMin, xMax, yMax] = query.scaleextent;
-        operation.scaleExtent = { x: { min: xMin, max: xMax }, y: { min: yMin, max: yMax } };
+        [xMin, yMin, xMax, yMax] = query.scaleextent;
       }
+      operation.scaleExtent = { x: { min: xMin, max: xMax }, y: { min: yMin, max: yMax } };
     } catch (e) {
       convertParameterParsingError(e, 'scaleExtent');
     }
@@ -129,14 +129,14 @@ export function handleScaleSize(
   query: Record<string, number[] | string>): void {
   if (query.scalesize) {
     try {
+      let x, y;
       if (typeof query.scalesize === 'string') {
         const scaleSizeString: string = query.scalesize.replace('(', '').replace(')', '');
-        const [x, y] = scaleSizeString.split(/,\s*/).map(parseNumber);
-        operation.scaleSize = { x, y };
+        [x, y] = scaleSizeString.split(/,\s*/).map(parseNumber);
       } else {
-        const [x, y] = query.scalesize;
-        operation.scaleSize = { x, y };
+        [x, y] = query.scalesize;
       }
+      operation.scaleSize = { x, y };
     } catch (e) {
       convertParameterParsingError(e, 'scaleSize');
     }
