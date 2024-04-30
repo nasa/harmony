@@ -105,11 +105,8 @@ export function handleScaleExtent(
     try {
       if (typeof query.scaleextent === 'string') {
         const scaleExtentString = query.scaleextent.replace('(', '').replace(')', '');
-        const [xMinString, yMinString, xMaxString, yMaxString] = scaleExtentString.split(/,\s*/);
-        operation.scaleExtent = {
-          x: { min: parseNumber(xMinString), max: parseNumber(xMaxString) },
-          y: { min: parseNumber(yMinString), max: parseNumber(yMaxString) },
-        };
+        const [xMin, yMin, xMax, yMax] = scaleExtentString.split(/,\s*/).map(parseNumber);
+        operation.scaleExtent = { x: { min: xMin, max: xMax }, y: { min: yMin, max: yMax } };
       } else {
         const [xMin, yMin, xMax, yMax] = query.scaleextent;
         operation.scaleExtent = { x: { min: xMin, max: xMax }, y: { min: yMin, max: yMax } };
@@ -134,8 +131,8 @@ export function handleScaleSize(
     try {
       if (typeof query.scalesize === 'string') {
         const scaleSizeString: string = query.scalesize.replace('(', '').replace(')', '');
-        const [xString, yString] = scaleSizeString.split(/,\s*/);
-        operation.scaleSize = { x: parseNumber(xString), y: parseNumber(yString) };
+        const [x, y] = scaleSizeString.split(/,\s*/).map(parseNumber);
+        operation.scaleSize = { x, y };
       } else {
         const [x, y] = query.scalesize;
         operation.scaleSize = { x, y };
@@ -173,7 +170,6 @@ export function handleFormat(
  *
  * @param operation - the DataOperation for the request
  * @param query - the query for the request
- * @param req - the request
  */
 export function handleHeight(
   operation: DataOperation,
@@ -193,7 +189,6 @@ export function handleHeight(
  *
  * @param operation - the DataOperation for the request
  * @param query - the query for the request
- * @param req - the request
  */
 export function handleWidth(
   operation: DataOperation,
