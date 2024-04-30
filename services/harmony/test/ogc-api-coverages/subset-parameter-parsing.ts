@@ -129,7 +129,7 @@ describe('OGC API Coverages - Utilities', function () {
       });
 
       it('throws a parse error when wrong number of point values are provided', function () {
-        expect(parsePointParamFn([-160.2, 80.2, 36.8])).to.throw(ParameterParseError, 'should point 2 values in "point" but got "-160.2,80.2,36.8" instead.');
+        expect(parsePointParamFn([-160.2, 80.2, 36.8])).to.throw(ParameterParseError, 'should have 2 values in "point" but received "-160.2,80.2,36.8" instead.');
       });
 
     });
