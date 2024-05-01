@@ -1118,6 +1118,7 @@ https://cmr.uat.earthdata.nasa.gov:
         bbox: true
         variable: true
         temporal: true
+        shape: true
       output_formats:
         - application/netcdf4
       reprojection: false
