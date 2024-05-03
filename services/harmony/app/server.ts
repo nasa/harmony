@@ -14,6 +14,7 @@ import router, { RouterConfig } from './routers/router';
 import RequestContext from './models/request-context';
 import HarmonyRequest from './models/harmony-request';
 import * as ogcCoveragesApi from './frontends/ogc-coverages';
+import * as ogcEdrApi from './frontends/ogc-edr';
 import serviceResponseRouter from './routers/backend-router';
 import logger from './util/log';
 import * as exampleBackend from '../example/http-backend';
@@ -158,6 +159,7 @@ function buildFrontendServer(port: number, hostBinding: string, config: RouterCo
   // Error handlers that format errors outside of their routes / middleware need to be mounted
   // at the top level, not on a child router, or they get skipped.
   ogcCoveragesApi.handleOpenApiErrors(app);
+  ogcEdrApi.handleOpenApiErrors(app);
   app.use(errorHandler);
 
   let listener;
