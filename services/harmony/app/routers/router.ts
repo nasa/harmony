@@ -22,6 +22,7 @@ import chooseService from '../middleware/service-selection';
 import shapefileConverter from '../middleware/shapefile-converter';
 import { NotFoundError } from '../util/errors';
 import * as ogcCoverageApi from '../frontends/ogc-coverages/index';
+import * as ogcEdrApi from '../frontends/ogc-edr/index';
 import { cloudAccessJson, cloudAccessSh } from '../frontends/cloud-access';
 import landingPage from '../frontends/landing-page';
 import { setLogLevel } from '../frontends/configuration';
@@ -139,6 +140,7 @@ const authorizedRoutes = [
   '/workflow-ui*',
   '/service-image*',
   '/service-deployment*',
+  '/ogc-api-edr/.*/collections/*',
 ];
 
 /**
@@ -167,6 +169,7 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   // Handle multipart/form-data (used for shapefiles). Files will be uploaded to
   // a bucket.
   result.post(collectionPrefix('(ogc-api-coverages)'), asyncHandler(shapefileUpload()));
+  result.post(/^\/ogc-api-edr\//, asyncHandler(shapefileUpload()));
 
   result.use(logged(earthdataLoginTokenAuthorizer(authorizedRoutes)));
 
@@ -189,9 +192,10 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   result.use(logged(cmrCollectionReader));
 
   ogcCoverageApi.addOpenApiRoutes(result);
+  ogcEdrApi.addOpenApiRoutes(result);
   result.use(collectionPrefix('wms'), service(logged(wmsFrontend)));
 
-  result.use(/^\/(wms|ogc-api-coverages)/, (req, res, next) => {
+  result.use(/^\/(wms|ogc-api-coverages|area)/, (req, res, next) => {
     next(new NotFoundError('Services can only be invoked when a valid collection is supplied in the URL path before the service name.'));
   });
   result.use(logged(shapefileConverter));
@@ -213,6 +217,8 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   result.get(collectionPrefix('wms'), asyncHandler(service(serviceInvoker)));
   result.get(/^.*?\/ogc-api-coverages\/.*?\/collections\/.*?\/coverage\/rangeset\/?$/, asyncHandler(service(serviceInvoker)));
   result.post(/^.*?\/ogc-api-coverages\/.*?\/collections\/.*?\/coverage\/rangeset\/?$/, asyncHandler(service(serviceInvoker)));
+  result.get(/^\/ogc-api-edr\/.*?\/collections\/.*?\/area\/?$/, asyncHandler(service(serviceInvoker)));
+  result.post(/^\/ogc-api-edr\/.*?\/collections\/.*?\/area\/?$/, asyncHandler(service(serviceInvoker)));
   result.get('/jobs', asyncHandler(getJobsListing));
   result.get('/jobs/:jobID', asyncHandler(getJobStatus));
 

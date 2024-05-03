@@ -8,10 +8,10 @@ import { EdlUserEulaInfo, verifyUserEula } from '../util/edl-api';
 
 // CMR Collection IDs separated by delimiters of single "+" or single whitespace
 // (some clients may translate + to space)
-const CMR_CONCEPT_ID_URL_PATH_REGEX = /^\/(?:C\d+-\w+[+\s])*(?:C\d+-\w+)+\//g;
+const CMR_CONCEPT_ID_URL_PATH_REGEX = /\/(?:C\d+-\w+[+\s])*(?:C\d+-\w+)+(?:\/|$)/g;
 
 // Regex for any routes that we expect to begin with a CMR collection identifier
-const COLLECTION_ROUTE_REGEX = /^(\/(?!docs).*\/)(wms|ogc-api-coverages)/;
+const COLLECTION_ROUTE_REGEX = /^(\/(?!docs).*\/)(wms|ogc-api-coverages|area)/;
 
 /**
  * Loads the variables for the given collection from the CMR and sets the collection's
@@ -88,7 +88,7 @@ async function cmrCollectionReader(req: HarmonyRequest, res, next: NextFunction)
   try {
     const collectionMatch = req.url.match(CMR_CONCEPT_ID_URL_PATH_REGEX);
     if (collectionMatch) {
-      const collectionIdStr = collectionMatch[0].substr(1, collectionMatch[0].length - 2);
+      const collectionIdStr = collectionMatch[0].replace(/\/$/, '').substr(1, collectionMatch[0].length - 1);
       const collectionIds = collectionIdStr.split(/[+\s]/g);
       req.collectionIds = collectionIds;
       req.context.logger.info(`Matched CMR concept IDs: ${collectionIds}`);
@@ -122,7 +122,9 @@ async function cmrCollectionReader(req: HarmonyRequest, res, next: NextFunction)
       // The request used a short name
       const shortNameMatch = req.url.match(COLLECTION_ROUTE_REGEX);
       if (shortNameMatch) {
-        const shortName = shortNameMatch[1].substr(1, shortNameMatch[1].length - 2);
+        const shortNamePart = shortNameMatch[1].substr(1, shortNameMatch[1].length - 2);
+        // fix the short name for ogc EDR requests
+        const shortName = shortNamePart.replace(/^ogc-api-edr\/1\.0\.0\/collections\//, '');
         const collections = await getCollectionsByShortName(shortName, req.accessToken);
         let pickedCollection = collections[0];
         if (collections.length > 1) {
