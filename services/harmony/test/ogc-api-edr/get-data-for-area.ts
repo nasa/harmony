@@ -197,7 +197,7 @@ describe('OGC API EDR - getEdrArea', function () {
           });
         });
 
-        describe('which is very largexxx', function () {
+        describe('which is very large', function () {
           const largeGranuleList = [];
           for (let i = 0; i < 2000; i++) {
             largeGranuleList.push(query.granuleId);
@@ -916,8 +916,7 @@ describe('OGC API EDR - getEdrArea', function () {
       });
     });
 
-    it('returns an HTTP 400 "Bad Request" error with explanatory message when "all" is specified with another coverage', async function () {
-      // it('returns an HTTP 400 "Bad Request" error with explanatory message when "all" is specified with another coverage', async function () {
+    it('returns an HTTP 400 "Bad Request" error with explanatory message when "all" is specified with another variable', async function () {
       const res = await edrRequest(
         this.frontend,
         version,
