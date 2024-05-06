@@ -11,8 +11,8 @@ import { ParameterParseError } from '../../util/parameter-parsing-helpers';
 import { parseVariables } from '../../util/variables';
 import { parsePointParam, parseSubsetParams, subsetParamsToBbox, subsetParamsToTemporal } from './util/subset-parameter-parsing';
 /**
- * Express middleware that responds to OGC API - Coverages coverage
- * rangeset requests.  Responds with the actual coverage data.
+ * Express middleware that responds to OGC API. Convert coverage request parameters
+ * into Data Operation.
  *
  * @param req - The request sent by the client
  * @param res - The response to send to the client
@@ -20,12 +20,11 @@ import { parsePointParam, parseSubsetParams, subsetParamsToBbox, subsetParamsToT
  * @throws RequestValidationError - Thrown if the request has validation problems and
  *   cannot be performed
  */
-export default function getCoverageRangeset(
+export function getRequestOperation(
   req: HarmonyRequest,
   res: Response,
   next: NextFunction,
 ): void {
-  req.context.frontend = 'ogcCoverages';
   const query = keysToLowerCase(req.query);
 
   const encrypter = createEncrypter(env.sharedSecretKey);
@@ -94,6 +93,26 @@ export default function getCoverageRangeset(
 
   req.operation = operation;
   next();
+}
+
+
+/**
+ * Express middleware that responds to OGC API - Coverages coverage
+ * rangeset requests.  Responds with the actual coverage data.
+ *
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
+ * @param next - The next express handler
+ * @throws RequestValidationError - Thrown if the request has validation problems and
+ *   cannot be performed
+ */
+export default function getCoverageRangeset(
+  req: HarmonyRequest,
+  res: Response,
+  next: NextFunction,
+): void {
+  req.context.frontend = 'ogcCoverages';
+  getRequestOperation(req, res, next);
 }
 
 
