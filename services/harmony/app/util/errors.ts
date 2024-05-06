@@ -1,3 +1,5 @@
+import { Application } from 'express';
+
 /* eslint-disable max-classes-per-file */ // This file creates multiple tag classes
 export class HttpError extends Error {
   statusCode: number;
@@ -100,4 +102,41 @@ export function getCodeForError(error: HttpError): string {
  */
 export function buildJsonErrorResponse(code: string, message: string): HttpErrorResponse {
   return { code, description: `Error: ${message}` };
+}
+
+/**
+ * Adds error handling appropriate to the OGC API to the given app
+ * @param app - The express application which needs error handling routes
+ */
+export function handleOpenApiErrors(app: Application): void {
+  app.use((err, req, res, next) => {
+    if (req.path.indexOf('/ogc-api-coverages/') === -1 &&
+      req.path.indexOf('/ogc-api-edr/') === -1) {
+      next(err);
+      return;
+    }
+
+    let statusCode;
+    let message;
+    let code;
+    if (err.status && err.errors) {
+      // OpenAPI Validation errors;
+      statusCode = +err.status;
+      code = 'openapi.ValidationError';
+      const messages = err.errors.map((error) => `${error.location} parameter "${error.path}" ${error.message}`);
+      message = messages.join('\n\t');
+    } else {
+      statusCode = getHttpStatusCode(err);
+      code = getCodeForError(err);
+      message = getEndUserErrorMessage(err);
+    }
+    res.status(statusCode).json(buildJsonErrorResponse(code, message));
+
+    if (statusCode < 500) {
+      req.context.logger.error(`[${code}] ${message}`);
+    } else {
+      // Make sure we get stack traces when we throw an unexpected exception
+      req.context.logger.error(err);
+    }
+  });
 }
