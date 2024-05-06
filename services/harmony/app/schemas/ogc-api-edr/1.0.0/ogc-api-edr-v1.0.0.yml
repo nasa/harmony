@@ -99,7 +99,6 @@ paths:
       description: This will provide information about the query types that are supported by the chosen collection Use content negotiation to request HTML or JSON
       operationId: describeCollection
       parameters:
-        - $ref: "#/components/parameters/collectionId"
         - $ref: "#/components/parameters/f"
       responses:
         "200":
@@ -123,7 +122,6 @@ paths:
       description: This will provide list of the avalable instances of the collection Use content negotiation to request HTML or JSON.
       operationId: getCollectionInstances
       parameters:
-        - $ref: "#/components/parameters/collectionId"
         - $ref: "#/components/parameters/f"
       responses:
         "200":
@@ -145,7 +143,6 @@ paths:
       description: Not yet implemented
       operationId: getDataForPoint
       parameters:
-        - $ref: "#/components/parameters/collectionId"
         - $ref: "#/components/parameters/positionCoords"
         - $ref: "#/components/parameters/z"
         - $ref: "#/components/parameters/datetime"
@@ -171,7 +168,6 @@ paths:
       description: Query end point for position queries
       operationId: postDataForPoint
       parameters:
-        - $ref: "#/components/parameters/collectionId"
         - $ref: "#/components/parameters/positionCoords"
         - $ref: "#/components/parameters/z"
         - $ref: "#/components/parameters/datetime"
@@ -207,11 +203,10 @@ paths:
     get:
       tags:
         - Collection data queries
-      summary: Query end point for area queries  of collection {collectionId} defined by a polygon
+      summary: Query end point for area queries of collection {collectionId} defined by a polygon
       description: Return the data values for the data area defined by the query parameters
       operationId: getDataForArea
       parameters:
-        - $ref: "#/components/parameters/collectionId"
         - $ref: "#/components/parameters/coords"
         - $ref: "#/components/parameters/z"
         - $ref: "#/components/parameters/datetime"
@@ -256,11 +251,10 @@ paths:
     post:
       tags:
         - Edr
-      summary: Retrieve a edr's rangeset
-      description: Retrieve the edr's rangeset, i.e. its data values in their native format
+      summary: Retrieve a collection's EDR by area
+      description: Query end point for area queries of collection {collectionId} defined by a polygon
       operationId: postDataForArea
       parameters:
-        - $ref: "#/components/parameters/collectionId"
         - $ref: "#/components/parameters/coords"
         - $ref: "#/components/parameters/z"
         - $ref: "#/components/parameters/datetime"
@@ -592,15 +586,15 @@ components:
       explode: false
       schema:
         type: string
-    collectionId:
-      name: collectionId
+    parameter-name:
+      name: parameter-name
       in: path
       description: |-
         Names or concept ids of the UMM-Var variables to be retrieved, or "all" to retrieve all variables within the CMR collection(s).
         Multiple variables may be retrieved by separating them with a comma.  This API interprets OGC "collections" to be
         equivalent to CMR "variables" which produces some overloading in the name.  In this document, a "collection" is
         a CMR / UMM-Var variable and a "CMR collection" is a CMR / UMM-C collection.
-      required: true
+      required: false
       style: simple
       explode: false
       schema:
@@ -709,15 +703,6 @@ components:
         type: string
       style: form
       explode: false
-    parameter-name:
-      name: parameter-name
-      in: query
-      description: comma delimited list of parameters to retrieve data for.  Valid parameters are listed in the collections metadata
-      schema:
-        type: string
-      style: form
-      explode: false
-      required: false
     crs:
       name: crs
       in: query

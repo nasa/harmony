@@ -34,7 +34,7 @@ describe('OGC API EDR - getEdrArea', function () {
 
       describe('when provided a valid set of parameters', function () {
         const query = {
-          variable: test.variableParam,
+          'parameter-name': test.variableParam,
           granuleId,
           outputCrs: 'EPSG:4326',
           // TODO: there's no service that can also support dimension subsetting for this collection
@@ -262,7 +262,7 @@ describe('OGC API EDR - getEdrArea', function () {
 
   describe('when provided an incorrectly named set of parameters', function () {
     StubService.hook({ params: { redirect: 'http://example.com' } });
-    hookEdrRequest(version, collection, { query: { granuleId, outputCrz: '', maxResultz: 100, variable: variableName } });
+    hookEdrRequest(version, collection, { query: { granuleId, outputCrz: '', maxResultz: 100, 'parameter-name': variableName } });
     it('rejects the request with an informative error message', function () {
       expect(this.res.status).to.equal(400);
       expect(this.res.text).to.include('Invalid parameter(s): outputCrz and maxResultz');
@@ -272,7 +272,7 @@ describe('OGC API EDR - getEdrArea', function () {
 
   describe('when passed a blank outputCrs', function () {
     StubService.hook({ params: { redirect: 'http://example.com' } });
-    hookEdrRequest(version, collection, { query: { granuleId, outputCrs: '', variable: variableName } });
+    hookEdrRequest(version, collection, { query: { granuleId, outputCrs: '', 'parameter-name': variableName } });
     it('accepts the request, passing an empty CRS to the backend', function () {
       expect(this.res.status).to.be.lessThan(400);
       expect(this.service.operation.crs).to.not.be;
@@ -294,7 +294,7 @@ describe('OGC API EDR - getEdrArea', function () {
     describe(test.description, function () {
       const query = {
         granuleId,
-        variable: test.variableParam,
+        'parameter-name': test.variableParam,
       };
       const variableId1 = 'V1233801695-EEDTEST';
       const variableId2 = 'V1233801696-EEDTEST';
@@ -315,7 +315,7 @@ describe('OGC API EDR - getEdrArea', function () {
     const variableId1 = 'V1233801695-EEDTEST';
     const query = {
       granuleId,
-      variable: `red_var,${variableId1}`,
+      'parameter-name': `red_var,${variableId1}`,
     };
 
     StubService.hook({ params: { redirect: 'http://example.com' } });
@@ -332,7 +332,7 @@ describe('OGC API EDR - getEdrArea', function () {
     const variableNames = 'all';
     const query = {
       granuleId,
-      variable: variableNames,
+      'parameter-name': variableNames,
     };
 
     StubService.hook({ params: { redirect: 'http://example.com' } });
@@ -345,7 +345,7 @@ describe('OGC API EDR - getEdrArea', function () {
   });
 
   describe('Not specifying a single granule ID', function () {
-    const query = { variable: variableName };
+    const query = { 'parameter-name': variableName };
 
     StubService.hook({ params: { status: 'successful' } });
     hookEdrRequest(version, collection, { query });
@@ -359,7 +359,7 @@ describe('OGC API EDR - getEdrArea', function () {
 
   describe('When specifying a collection short name instead of a CMR concept ID', function () {
     const shortName = 'harmony_example';
-    const query = { variable: variableName };
+    const query = { 'parameter-name': variableName };
 
     StubService.hook({ params: { status: 'successful' } });
     hookEdrRequest(version, shortName, { query });
@@ -373,7 +373,7 @@ describe('OGC API EDR - getEdrArea', function () {
 
   describe('when provided a valid temporal range', function () {
     const query = {
-      variable: variableName,
+      'parameter-name': variableName,
       outputCrs: 'EPSG:4326',
       // Time range matches exactly one granule
       subset: ['lat(0:10)', 'lon(-20.1:20)', 'time("2020-01-02T00:00:00.000Z":"2020-01-02T01:00:00.000Z")'],
@@ -403,7 +403,7 @@ describe('OGC API EDR - getEdrArea', function () {
 
       describe('and making a request would otherwise be synchronous', function () {
         hookEdrRequest(version, collection,
-          { query: { granuleId, forceAsync, variable: variableName } });
+          { query: { granuleId, forceAsync, 'parameter-name': variableName } });
 
         it('performs the request asynchronously', function () {
           expect(this.service.operation.isSynchronous).to.equal(false);
@@ -411,7 +411,7 @@ describe('OGC API EDR - getEdrArea', function () {
       });
 
       describe('and making a request would otherwise be asynchronous', function () {
-        hookEdrRequest(version, collection, { query: { forceAsync, variable: variableName } });
+        hookEdrRequest(version, collection, { query: { forceAsync, 'parameter-name': variableName } });
 
         it('performs the request asynchronously', function () {
           expect(this.service.operation.isSynchronous).to.equal(false);
@@ -424,7 +424,7 @@ describe('OGC API EDR - getEdrArea', function () {
 
       describe('and making a request would otherwise be synchronous', function () {
         hookEdrRequest(version, collection,
-          { query: { granuleId, forceAsync, variable: variableName } });
+          { query: { granuleId, forceAsync, 'parameter-name': variableName } });
 
         it('performs the request synchronously', function () {
           expect(this.service.operation.isSynchronous).to.equal(true);
@@ -432,7 +432,7 @@ describe('OGC API EDR - getEdrArea', function () {
       });
 
       describe('and making a request would otherwise be asynchronous', function () {
-        hookEdrRequest(version, collection, { query: { forceAsync, variable: variableName } });
+        hookEdrRequest(version, collection, { query: { forceAsync, 'parameter-name': variableName } });
 
         it('performs the request asynchronously', function () {
           expect(this.service.operation.isSynchronous).to.equal(false);
@@ -470,7 +470,7 @@ describe('OGC API EDR - getEdrArea', function () {
 
     describe('and maxResults is not set for the query', function () {
 
-      hookEdrRequest(version, collection, { username: 'jdoe1', query: { variable: variableName } });
+      hookEdrRequest(version, collection, { username: 'jdoe1', query: { 'parameter-name': variableName } });
       describe('retrieving its job status', function () {
         hookRedirect('jdoe1');
         it('returns a human-readable message field indicating the request has been limited to a subset of the granules determined by the collection configuration', function () {
@@ -488,7 +488,7 @@ describe('OGC API EDR - getEdrArea', function () {
     describe('and maxResults from the query is set to a value greater than the granule limit for the collection', function () {
       const maxResults = 10;
 
-      hookEdrRequest(version, collection, { username: 'jdoe1', query: { maxResults, variable: variableName } });
+      hookEdrRequest(version, collection, { username: 'jdoe1', query: { maxResults, 'parameter-name': variableName } });
       describe('retrieving its job status', function () {
         hookRedirect('jdoe1');
         it('returns a human-readable message field indicating the request has been limited to a subset of the granules determined by the collection configuration', function () {
@@ -506,7 +506,7 @@ describe('OGC API EDR - getEdrArea', function () {
     describe('and maxResults from the query is set to a value less than the granule limit for the collection', function () {
       const maxResults = 2;
 
-      hookEdrRequest(version, collection, { username: 'jdoe1', query: { maxResults, variable: variableName } });
+      hookEdrRequest(version, collection, { username: 'jdoe1', query: { maxResults, 'parameter-name': variableName } });
       describe('retrieving its job status', function () {
         hookRedirect('jdoe1');
         it('returns a human-readable message field indicating the request has been limited to a subset of the granules determined by maxResults', function () {
@@ -529,7 +529,7 @@ describe('OGC API EDR - getEdrArea', function () {
         this.glStub.restore();
       });
 
-      hookEdrRequest(version, collection, { username: 'jdoe1', query: { variable: variableName } });
+      hookEdrRequest(version, collection, { username: 'jdoe1', query: { 'parameter-name': variableName } });
       hookRedirect('jdoe1');
 
       it('returns a warning message about maxResults limiting the number of results', function () {
@@ -572,7 +572,7 @@ describe('OGC API EDR - getEdrArea', function () {
 
     describe('and maxResults is not set for the query', function () {
 
-      hookEdrRequest(version, collection, { username: 'jdoe1', query: { variable: variableName } });
+      hookEdrRequest(version, collection, { username: 'jdoe1', query: { 'parameter-name': variableName } });
       describe('retrieving its job status', function () {
         hookRedirect('jdoe1');
         it('returns a human-readable message field indicating the request has been limited to a subset of the granules determined by the collection configuration', function () {
@@ -590,7 +590,7 @@ describe('OGC API EDR - getEdrArea', function () {
     describe('and maxResults from the query is set to a value greater than the granule limit for the collection', function () {
       const maxResults = 10;
 
-      hookEdrRequest(version, collection, { username: 'jdoe1', query: { maxResults, variable: variableName } });
+      hookEdrRequest(version, collection, { username: 'jdoe1', query: { maxResults, 'parameter-name': variableName } });
       describe('retrieving its job status', function () {
         hookRedirect('jdoe1');
         it('returns a human-readable message field indicating the request has been limited to a subset of the granules determined by the collection configuration', function () {
@@ -608,7 +608,7 @@ describe('OGC API EDR - getEdrArea', function () {
     describe('and maxResults from the query is set to a value less than the granule limit for the collection', function () {
       const maxResults = 2;
 
-      hookEdrRequest(version, collection, { username: 'jdoe1', query: { maxResults, variable: variableName } });
+      hookEdrRequest(version, collection, { username: 'jdoe1', query: { maxResults, 'parameter-name': variableName } });
       describe('retrieving its job status', function () {
         hookRedirect('jdoe1');
         it('returns a human-readable message field indicating the request has been limited to a subset of the granules determined by maxResults', function () {
@@ -631,7 +631,7 @@ describe('OGC API EDR - getEdrArea', function () {
         this.glStub.restore();
       });
 
-      hookEdrRequest(version, collection, { username: 'jdoe1', query: { variable: variableName } });
+      hookEdrRequest(version, collection, { username: 'jdoe1', query: { 'parameter-name': variableName } });
       hookRedirect('jdoe1');
 
       it('returns a warning message about maxResults limiting the number of results', function () {
@@ -657,7 +657,7 @@ describe('OGC API EDR - getEdrArea', function () {
 
     describe('when providing an accept header for an unsupported format', function () {
       const headers = { accept: unsupportedFormat };
-      const query = { granuleId, variable: 'all' };
+      const query = { granuleId, 'parameter-name': 'all' };
       hookEdrRequest(version, collection, { headers, query });
       it('returns a 422 error response', function () {
         expect(this.res.status).to.equal(422);
@@ -673,7 +673,7 @@ describe('OGC API EDR - getEdrArea', function () {
     });
 
     describe('when providing an accept header and a format parameter', function () {
-      const pngQuery = { granuleId, variable: variableName, format: png };
+      const pngQuery = { granuleId, 'parameter-name': variableName, format: png };
       const headers = { accept: tiff };
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookEdrRequest(version, collection, { query: pngQuery, headers });
@@ -684,7 +684,7 @@ describe('OGC API EDR - getEdrArea', function () {
 
     describe('when providing */* for the accept header', function () {
       const headers = { accept: anyWildcard };
-      const query = { granuleId, variable: variableName };
+      const query = { granuleId, 'parameter-name': variableName };
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookEdrRequest(version, collection, { headers, query });
       it('chooses the first output format supported by the service (see services.yml)', function () {
@@ -694,7 +694,7 @@ describe('OGC API EDR - getEdrArea', function () {
 
     describe('when providing */tiff for the accept header', function () {
       const headers = { accept: imageWildcard };
-      const query = { granuleId, variable: variableName };
+      const query = { granuleId, 'parameter-name': variableName };
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookEdrRequest(version, collection, { headers, query });
       it('selects the first valid tiff format supported', function () {
@@ -704,7 +704,7 @@ describe('OGC API EDR - getEdrArea', function () {
 
     describe('when providing image/* for the accept header', function () {
       const headers = { accept: wildcardTiff };
-      const query = { granuleId, variable: variableName };
+      const query = { granuleId, 'parameter-name': variableName };
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookEdrRequest(version, collection, { headers, query });
       it('selects the first valid image format supported', function () {
@@ -714,7 +714,7 @@ describe('OGC API EDR - getEdrArea', function () {
 
     describe('when providing an accept header with a parameter', function () {
       const headers = { accept: `${zarr};q=0.9` };
-      const query = { granuleId, variable: 'all' };
+      const query = { granuleId, 'parameter-name': 'all' };
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookEdrRequest(version, collection, { headers, query });
       it('correctly parses the format from the header', function () {
@@ -725,7 +725,7 @@ describe('OGC API EDR - getEdrArea', function () {
     describe('when providing multiple formats supported by different services', function () {
       const headers = { accept: `${zarr}, ${tiff}` };
       describe('when requesting variable subsetting which is only supported by one of the services', function () {
-        const query = { granuleId, variable: variableName };
+        const query = { granuleId, 'parameter-name': variableName };
         StubService.hook({ params: { redirect: 'http://example.com' } });
         hookEdrRequest(version, collection, { headers, query });
         it('uses the backend service that supports variable subsetting', function () {
@@ -737,7 +737,7 @@ describe('OGC API EDR - getEdrArea', function () {
       });
 
       describe('when not requesting variable subsetting so either service could be used', function () {
-        const query = { granuleId, variable: 'all' };
+        const query = { granuleId, 'parameter-name': 'all' };
         StubService.hook({ params: { redirect: 'http://example.com' } });
         hookEdrRequest(version, collection, { headers, query });
         it('uses the first format in the list', function () {
@@ -751,7 +751,7 @@ describe('OGC API EDR - getEdrArea', function () {
 
     describe('when providing multiple formats with the highest priority being unsupported', function () {
       const headers = { accept: `${unsupportedFormat};q=1.0, ${zarr};q=0.5, ${tiff};q=0.8, ${png};q=0.85` };
-      const query = { granuleId, variable: variableName };
+      const query = { granuleId, 'parameter-name': variableName };
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookEdrRequest(version, collection, { headers, query });
       it('uses the highest quality value format that is supported', function () {
@@ -764,7 +764,7 @@ describe('OGC API EDR - getEdrArea', function () {
 
     describe('when providing multiple formats and not specifying a quality value for one of them', function () {
       const headers = { accept: `${zarr};q=0.5, ${tiff};q=0.8, ${png}` };
-      const query = { granuleId, variable: variableName };
+      const query = { granuleId, 'parameter-name': variableName };
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookEdrRequest(version, collection, { headers, query });
       it('treats the unspecified quality value as 1.0', function () {
@@ -774,7 +774,7 @@ describe('OGC API EDR - getEdrArea', function () {
 
     describe('when requesting an unsupported format followed by */*', function () {
       const headers = { accept: `${unsupportedFormat}, ${anyWildcard}` };
-      const query = { granuleId, variable: variableName };
+      const query = { granuleId, 'parameter-name': variableName };
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookEdrRequest(version, collection, { headers, query });
       it('returns a redirect 303 (and not a 404 error)', function () {
@@ -788,7 +788,7 @@ describe('OGC API EDR - getEdrArea', function () {
   });
 
   describe('when requesting no data transformations', function () {
-    const query = { variable: 'all' };
+    const query = { 'parameter-name': 'all' };
     StubService.hook({ params: { redirect: 'http://example.com' } });
     hookEdrRequest(version, collection, { query });
     it('selects the download link service to process the request', function () {
@@ -797,7 +797,7 @@ describe('OGC API EDR - getEdrArea', function () {
   });
 
   describe('when the database catches fire during an asynchronous request', function () {
-    const query = { variable: variableName };
+    const query = { 'parameter-name': variableName };
     hookDatabaseFailure();
     StubService.hook({ params: { redirect: 'http://example.com' } });
     hookEdrRequest(version, collection, { query });
@@ -828,9 +828,9 @@ describe('OGC API EDR - getEdrArea', function () {
     ): void {
       it(`returns an HTTP 400 "Bad Request" error with explanatory message ${message}`, async function () {
         // eslint-disable-next-line @typescript-eslint/dot-notation
-        if (!queryParams['variable']) {
+        if (queryParams['parameter-name'] === undefined) {
           // eslint-disable-next-line @typescript-eslint/dot-notation
-          queryParams['variable'] = 'all';
+          queryParams['parameter-name'] = 'all';
         }
         const res = await edrRequest(
           this.frontend,
@@ -854,6 +854,11 @@ describe('OGC API EDR - getEdrArea', function () {
     itReturnsAValidationError(
       { granuleId: '' },
       'query parameter "granuleId[0]" should NOT be shorter than 1 characters',
+    );
+    itReturnsAValidationError(
+      { granuleId, 'parameter-name': '' },
+      'Paremter "parameter-name" cannot be empty',
+      'harmony.RequestValidationError',
     );
     itReturnsAValidationError(
       { granuleId, outputCrs: 'EPSG:1' },
@@ -907,7 +912,7 @@ describe('OGC API EDR - getEdrArea', function () {
         this.frontend,
         version,
         collection,
-        { query: { granuleId, variable: 'NotAVariable' } },
+        { query: { granuleId, 'parameter-name': 'NotAVariable' } },
       );
       expect(res.status).to.equal(400);
       expect(res.body).to.eql({
@@ -921,7 +926,7 @@ describe('OGC API EDR - getEdrArea', function () {
         this.frontend,
         version,
         collection,
-        { query: { granuleId, variable: `all,${variableName}` } },
+        { query: { granuleId, 'parameter-name': `all,${variableName}` } },
       );
       expect(res.status).to.equal(400);
       expect(res.body).to.eql({
@@ -933,7 +938,7 @@ describe('OGC API EDR - getEdrArea', function () {
 
   describe('when using a collection with coordinate variables', function () {
     const collectionId = 'C1243747507-EEDTEST';
-    const query = { variable: 'sea_surface_temperature' };
+    const query = { 'parameter-name': 'sea_surface_temperature' };
     StubService.hook({ params: { redirect: 'http://example.com' } });
 
     hookEdrRequest(version, collectionId, { query });
@@ -955,7 +960,7 @@ describe('OGC API EDR - getEdrArea with the extend query parameter', async funct
   hookServersStartStop();
   hookEdrRequest('1.0.0',
     'C1233800302-EEDTEST',
-    { query: { variable: 'all', extend: 'dimension_var', skipPreview: 'true', maxResults: 2 }, username: 'joe' });
+    { query: { 'parameter-name': 'all', extend: 'dimension_var', skipPreview: 'true', maxResults: 2 }, username: 'joe' });
 
   it('returns a 422 error response', function () {
     expect(this.res.status).to.equal(422);
@@ -990,13 +995,13 @@ describe('OGC API EDR - getEdrArea with a collection not configured for services
   hookServersStartStop();
 
   describe('when not requesting any transformations', function () {
-    const query = { variable: 'all' };
+    const query = { 'parameter-name': 'all' };
     hookEdrRequest(version, collection, { username: 'joe', query });
     itRedirectsToJobStatusUrl();
   });
 
   describe('when requesting any transformation such as reformatting to png', function () {
-    const query = { variable: 'all', format: 'image/png' };
+    const query = { 'parameter-name': 'all', format: 'image/png' };
     hookEdrRequest(version, collection, { username: 'joe', query });
 
     it('returns a 422 error response', function () {
