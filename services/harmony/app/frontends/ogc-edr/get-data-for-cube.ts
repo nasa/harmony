@@ -9,9 +9,11 @@ import { RequestValidationError } from '../../util/errors';
 import { keysToLowerCase } from '../../util/object';
 import { ParameterParseError } from '../../util/parameter-parsing-helpers';
 import { parseVariables } from '../../util/variables';
-import { parsePointParam, parseSubsetParams, subsetParamsToBbox, subsetParamsToTemporal } from '../ogc-coverages/util/subset-parameter-parsing';
+import { parseBbox, parseDatetime } from './util/helper';
+import { parseSubsetParams } from '../ogc-coverages/util/subset-parameter-parsing';
+
 /**
- * Express middleware that responds to OGC API - EDR requests.
+ * Express middleware that responds to OGC API - EDR cube requests.
  * Responds with the actual EDR data.
  *
  * @param req - The request sent by the client
@@ -61,22 +63,6 @@ export default function getDataForCube(
         });
       }
     });
-
-    const bbox = subsetParamsToBbox(subset);
-    if (bbox) {
-      operation.boundingRectangle = bbox;
-    }
-    const point = parsePointParam(query.point);
-    if (point) {
-      if (bbox) {
-        throw new RequestValidationError('bounding_box and point query parameters should not co-exist');
-      }
-      operation.spatialPoint = point;
-    }
-    const { start, end } = subsetParamsToTemporal(subset);
-    if (start || end) {
-      operation.temporal = { start, end };
-    }
   } catch (e) {
     if (e instanceof ParameterParseError) {
       // Turn parsing exceptions into 400 errors pinpointing the source parameter
@@ -85,12 +71,21 @@ export default function getDataForCube(
     throw e;
   }
 
+  const bbox = parseBbox(query.bbox as string);
+  if (bbox) {
+    operation.boundingRectangle = bbox;
+  }
+
+  const { start, end } = parseDatetime(query.datetime);
+  if (start || end) {
+    operation.temporal = { start, end };
+  }
+
   if (!req.query['parameter-name']) {
     throw new RequestValidationError('Paremter "parameter-name" cannot be empty');
   }
 
   const queryVars = req.query['parameter-name'] as string | string[];
-
   const varInfos = parseVariables(req.collections, 'parameter_vars', queryVars);
   for (const varInfo of varInfos) {
     operation.addSource(varInfo.collectionId, varInfo.shortName, varInfo.versionId,

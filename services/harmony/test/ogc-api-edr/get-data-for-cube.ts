@@ -39,7 +39,8 @@ describe('OGC API EDR - getEdrCube', function () {
           outputCrs: 'EPSG:4326',
           // TODO: there's no service that can also support dimension subsetting for this collection
           // subset: ['lat(0:10)', 'lon(-20.1:20)', 'time("2020-01-02T00:00:00.000Z":"2020-01-02T01:00:00.000Z")', 'foo(1.1:10)'],
-          subset: ['lat(0:10)', 'lon(-20.1:20)', 'time("2020-01-02T00:00:00.000Z":"2020-01-02T01:00:00.000Z")'],
+          bbox: '-20.1,0,20,10',
+          datetime: '2020-01-02T00:00:00.000Z/2020-01-02T01:00:00.000Z',
           interpolation: 'near',
           // TODO: it might only make sense to include width and height with a scaleExtent
           // and scaleSize by itself
@@ -217,8 +218,8 @@ describe('OGC API EDR - getEdrCube', function () {
 
         describe('which contains both form and query parameter', function () {
           const queryLocal = { ...query };
-          delete queryLocal.subset;
-          const queryParameterString = 'subset=time%28%222020-01-02T00%3A00%3A00Z%22%3A%222020-01-02T01%3A00%3A00Z%22%29';
+          delete queryLocal.datetime;
+          const queryParameterString = 'datetime=2020-01-02T00%3A00%3A00Z%2F2020-01-02T01%3A00%3A00Z';
           StubService.hook({ params: { redirect: 'http://example.com' } });
           hookPostEdrRequest(
             version,
@@ -229,8 +230,8 @@ describe('OGC API EDR - getEdrCube', function () {
 
           it('passes the temporal range to the backend service', function () {
             const { start, end } = this.service.operation.temporal;
-            expect(start).to.equal('2020-01-02T00:00:00.000Z');
-            expect(end).to.equal('2020-01-02T01:00:00.000Z');
+            expect(start).to.equal('2020-01-02T00:00:00Z');
+            expect(end).to.equal('2020-01-02T01:00:00Z');
           });
 
           it('successfully queries CMR and accepts the request', function () {
@@ -239,7 +240,7 @@ describe('OGC API EDR - getEdrCube', function () {
         });
 
         describe('which has a duplicate key from form and query parameter', function () {
-          const queryParameterString = 'subset=time%28%222020-01-02T00%3A00%3A00Z%22%3A%222020-01-02T01%3A00%3A00Z%22%29';
+          const queryParameterString = 'datetime=2020-01-02T00%3A00%3A00Z%2F2020-01-02T01%3A00%3A00Z';
           StubService.hook({ params: { redirect: 'http://example.com' } });
           hookPostEdrRequest(
             version,
@@ -376,7 +377,8 @@ describe('OGC API EDR - getEdrCube', function () {
       'parameter-name': variableName,
       outputCrs: 'EPSG:4326',
       // Time range matches exactly one granule
-      subset: ['lat(0:10)', 'lon(-20.1:20)', 'time("2020-01-02T00:00:00.000Z":"2020-01-02T01:00:00.000Z")'],
+      bbox: '-20.1,0,20,10',
+      datetime: '2020-01-02T00:00:00.000Z/2020-01-02T01:00:00.000Z',
     };
 
     describe('calling the backend service', function () {
