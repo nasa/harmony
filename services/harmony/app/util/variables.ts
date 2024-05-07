@@ -117,7 +117,9 @@ function validateVariables(variableIds: string[], queryVars: string | string[]):
     if (!queryVars) {
       throw new RequestValidationError('"parameter_vars" specified, but no variables given');
     }
-    if (queryVars.indexOf('all') !== -1 && queryVars.length !== 1) {
+    if (queryVars !== 'all' &&
+      queryVars.indexOf('all') !== -1 &&
+      queryVars.length !== 1) {
       throw new RequestValidationError('"all" cannot be specified alongside other variables');
     }
   } else {
@@ -156,7 +158,10 @@ export function parseVariables(
 
   const variableInfo = [];
   if (variableIds.indexOf('all') !== -1 ||
-    (variableIds.indexOf('parameter_vars') !== -1 && queryVars && queryVars[0] === 'all')) {
+    (variableIds.indexOf('parameter_vars') !== -1 &&
+      queryVars &&
+      (queryVars === 'all' ||
+        queryVars[0] === 'all'))) {
     // If the variable ID is "all" do not subset by variable
     for (const collection of eosdisCollections) {
       const coordinateVariables = getCoordinateVariables(collection.variables);
