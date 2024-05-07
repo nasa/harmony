@@ -6,8 +6,8 @@ import * as yaml from 'js-yaml';
 import getLandingPage from '../ogc-coverages/get-landing-page';
 import getRequirementsClasses from '../ogc-coverages/get-requirements-classes';
 
-import getDataForArea from './get-edr-area';
-import postDataForArea from './post-edr-area';
+import getDataForCube from './get-data-for-cube';
+import postDataForCube from './post-data-for-cube';
 
 import HarmonyRequest from '../../models/harmony-request';
 
@@ -20,7 +20,7 @@ interface OgcSchemaHttpMethod {
 interface OgcSchemaEdr {
   paths : {
     // eslint-disable-next-line @typescript-eslint/naming-convention
-    '/collections/{collectionId}/area': {
+    '/collections/{collectionId}/cube': {
       get: OgcSchemaHttpMethod,
       post: OgcSchemaHttpMethod
     }
@@ -33,10 +33,10 @@ const openApiPath = path.join(openApiRoot, `ogc-api-edr-v${version}.yml`);
 export const openApiContent = fs.readFileSync(openApiPath, 'utf-8');
 const ogcSchemaEdr = yaml.load(openApiContent, { schema: yaml.DEFAULT_SCHEMA }) as OgcSchemaEdr;
 export const edrGetParams = ogcSchemaEdr
-  .paths['/collections/{collectionId}/area'].get.parameters
+  .paths['/collections/{collectionId}/cube'].get.parameters
   .map(param => param.$ref.split('/').pop());
 export const edrPostParams = ['shapefile'].concat(ogcSchemaEdr
-  .paths['/collections/{collectionId}/area'].post.parameters
+  .paths['/collections/{collectionId}/cube'].post.parameters
   .map(param => param.$ref.split('/').pop()));
 
 /**
@@ -84,8 +84,8 @@ export function addOpenApiRoutes(app: Router): void {
       getCollectionInstances: TODO,
       getDataForPoint: TODO,
       postDataForPoint: TODO,
-      getDataForArea,
-      postDataForArea,
+      getDataForCube,
+      postDataForCube,
     },
   });
 }

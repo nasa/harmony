@@ -65,7 +65,7 @@ export function hookLandingPage(collection: string, version: string): void {
 }
 
 /**
- * Performs getDataForArea request on the given collection with the given params
+ * Performs getDataForCube request on the given collection with the given params
  *
  * @param app - The express application (typically this.frontend)
  * @param version - The OGC EDR API version
@@ -82,7 +82,7 @@ export function edrRequest(
     cookies = null }: QueryOptions = {},
 ): Test {
   let req = request(app)
-    .get(`/ogc-api-edr/${version}/collections/${collection}/area`)
+    .get(`/ogc-api-edr/${version}/collections/${collection}/cube`)
     .query(query)
     .set(headers);
 
@@ -93,7 +93,7 @@ export function edrRequest(
 }
 
 /**
- * Performs getDataForArea request on the given collection with the given params
+ * Performs getDataForCube request on the given collection with the given params
  * using a multipart/form-data POST
  *
  * @param app - The express application (typically this.frontend)
@@ -106,7 +106,7 @@ export function edrRequest(
 export function postEdrRequest(
   app: Express.Application, version: string, collection: string, form: object, queryString = '',
 ): Test {
-  let urlPathAndParam = `/ogc-api-edr/${version}/collections/${collection}/area`;
+  let urlPathAndParam = `/ogc-api-edr/${version}/collections/${collection}/cube`;
   if (queryString) urlPathAndParam += `?${queryString}`;
   let req = request(app)
     .post(urlPathAndParam);
@@ -125,7 +125,7 @@ export function postEdrRequest(
 }
 
 /**
- * Adds before/after hooks to run an OGC API getDataForArea request
+ * Adds before/after hooks to run an OGC API getDataForCube request
  *
  * @param version - The OGC EDR API version
  * @param collection - The CMR Collection ID to perform a service on
@@ -160,7 +160,7 @@ export function hookEdrRequest(
 }
 
 /**
- * Adds before/after hooks to run a POST getDataForArea request
+ * Adds before/after hooks to run a POST getDataForCube request
  *
  * @param version - The OGC API version
  * @param collection - The CMR Collection ID to perform a service on

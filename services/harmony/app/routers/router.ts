@@ -195,7 +195,7 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   ogcEdrApi.addOpenApiRoutes(result);
   result.use(collectionPrefix('wms'), service(logged(wmsFrontend)));
 
-  result.use(/^\/(wms|ogc-api-coverages|area)/, (req, res, next) => {
+  result.use(/^\/(wms|ogc-api-coverages|cube)/, (req, res, next) => {
     next(new NotFoundError('Services can only be invoked when a valid collection is supplied in the URL path before the service name.'));
   });
   result.use(logged(shapefileConverter));
@@ -217,8 +217,8 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   result.get(collectionPrefix('wms'), asyncHandler(service(serviceInvoker)));
   result.get(/^.*?\/ogc-api-coverages\/.*?\/collections\/.*?\/coverage\/rangeset\/?$/, asyncHandler(service(serviceInvoker)));
   result.post(/^.*?\/ogc-api-coverages\/.*?\/collections\/.*?\/coverage\/rangeset\/?$/, asyncHandler(service(serviceInvoker)));
-  result.get(/^\/ogc-api-edr\/.*?\/collections\/.*?\/area\/?$/, asyncHandler(service(serviceInvoker)));
-  result.post(/^\/ogc-api-edr\/.*?\/collections\/.*?\/area\/?$/, asyncHandler(service(serviceInvoker)));
+  result.get(/^\/ogc-api-edr\/.*?\/collections\/.*?\/cube\/?$/, asyncHandler(service(serviceInvoker)));
+  result.post(/^\/ogc-api-edr\/.*?\/collections\/.*?\/cube\/?$/, asyncHandler(service(serviceInvoker)));
   result.get('/jobs', asyncHandler(getJobsListing));
   result.get('/jobs/:jobID', asyncHandler(getJobStatus));
 

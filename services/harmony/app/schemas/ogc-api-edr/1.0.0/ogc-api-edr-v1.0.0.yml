@@ -143,7 +143,7 @@ paths:
       description: Not yet implemented
       operationId: getDataForPoint
       parameters:
-        - $ref: "#/components/parameters/positionCoords"
+        - $ref: "#/components/parameters/coords"
         - $ref: "#/components/parameters/z"
         - $ref: "#/components/parameters/datetime"
         - $ref: "#/components/parameters/parameter-name"
@@ -168,7 +168,7 @@ paths:
       description: Query end point for position queries
       operationId: postDataForPoint
       parameters:
-        - $ref: "#/components/parameters/positionCoords"
+        - $ref: "#/components/parameters/coords"
         - $ref: "#/components/parameters/z"
         - $ref: "#/components/parameters/datetime"
         - $ref: "#/components/parameters/parameter-name"
@@ -199,21 +199,19 @@ paths:
                 type: string
         default:
           $ref: "#/components/responses/default"
-  /collections/{collectionId}/area:
+  /collections/{collectionId}/cube:
     get:
       tags:
         - Collection data queries
-      summary: Query end point for area queries of collection {collectionId} defined by a polygon
-      description: Return the data values for the data area defined by the query parameters
-      operationId: getDataForArea
+      summary: Query end point for Cube queries  of collection {collectionId} defined by a cube
+      description: Return the data values for the data Cube defined by the query parameters
+      operationId: getDataForCube
       parameters:
-        - $ref: "#/components/parameters/coords"
+        - $ref: "#/components/parameters/bbox"
         - $ref: "#/components/parameters/z"
         - $ref: "#/components/parameters/datetime"
         - $ref: "#/components/parameters/parameter-name"
         - $ref: "#/components/parameters/crs"
-        - $ref: "#/components/parameters/resolution-x"
-        - $ref: "#/components/parameters/resolution-y"
         - $ref: "#/components/parameters/f"
         # Parameters below this line are not part of the OGC specification
         - $ref: "#/components/parameters/outputCrs"
@@ -251,17 +249,15 @@ paths:
     post:
       tags:
         - Edr
-      summary: Retrieve a collection's EDR by area
-      description: Query end point for area queries of collection {collectionId} defined by a polygon
-      operationId: postDataForArea
+      summary: Query end point for Cube queries  of collection {collectionId} defined by a cube
+      description: Return the data values for the data Cube defined by the query parameters
+      operationId: postDataForCube
       parameters:
-        - $ref: "#/components/parameters/coords"
+        - $ref: "#/components/parameters/bbox"
         - $ref: "#/components/parameters/z"
         - $ref: "#/components/parameters/datetime"
         - $ref: "#/components/parameters/parameter-name"
         - $ref: "#/components/parameters/crs"
-        - $ref: "#/components/parameters/resolution-x"
-        - $ref: "#/components/parameters/resolution-y"
         - $ref: "#/components/parameters/f"
         # Parameters below this line are not part of the OGC specification
         - $ref: "#/components/parameters/outputCrs"
@@ -542,21 +538,43 @@ components:
     bbox:
       name: bbox
       in: query
-      description: |
-        Only collections that have a geometry that intersects the bounding box are selected. The bounding box is provided as four or six numbers, depending on whether the coordinate reference system includes a vertical axis (elevation or depth):
-        * Lower left corner, coordinate axis 1 * Lower left corner, coordinate axis 2 * Lower left corner, coordinate axis 3 (optional) * Upper right corner, coordinate axis 1 * Upper right corner, coordinate axis 2 * Upper right corner, coordinate axis 3 (optional)
-        The coordinate reference system of the values is WGS84 longitude/latitude (http://www.opengis.net/def/crs/OGC/1.3/CRS84) unless a different coordinate reference system is specified in the parameter `bbox-crs`.
-        For WGS84 longitude/latitude the values are in most cases the sequence of minimum longitude, minimum latitude, maximum longitude and maximum latitude. However, in cases where the box spans the antimeridian the first value (west-most box edge) is larger than the third value (east-most box edge).
-        If a collection has multiple spatial geometry properties, it is the decision of the server whether only a single spatial geometry property is used to determine the extent or all relevant geometries.
+      description: |-
+        Only features that have a geometry that intersects the bounding box are selected.
+        The bounding box is provided as four or six numbers, depending on whether the
+        coordinate reference system includes a vertical axis (height or depth):
+        * Lower left corner, coordinate axis 1
+        * Lower left corner, coordinate axis 2
+        * Minimum value, coordinate axis 3 (optional)
+        * Upper right corner, coordinate axis 1
+        * Upper right corner, coordinate axis 2
+        * Maximum value, coordinate axis 3 (optional)
+        The coordinate reference system of the values is WGS 84 longitude/latitude
+        (http://www.opengis.net/def/crs/OGC/1.3/CRS84) unless a different coordinate
+        reference system is specified in the parameter `bbox-crs`.
+        For WGS 84 longitude/latitude the values are in most cases the sequence of
+        minimum longitude, minimum latitude, maximum longitude and maximum latitude.
+        However, in cases where the box spans the antimeridian the first value
+        (west-most box edge) is larger than the third value (east-most box edge).
+        If the vertical axis is included, the third and the sixth number are the
+        bottom and the top of the 3-dimensional bounding box.
+        If a feature has multiple spatial geometry properties, it is the decision of the
+        server whether only a single spatial geometry property is used to determine
+        the extent or all relevant geometries.
       required: false
+      schema:
+        oneOf:
+          - items:
+              minItems: 4
+              maxItems: 4
+              type: number
+            type: array
+          - items:
+              minItems: 6
+              maxItems: 6
+              type: number
+            type: array
       style: form
       explode: false
-      schema:
-        maxItems: 6
-        minItems: 4
-        type: array
-        items:
-          type: number
     point:
       name: point
       in: query
@@ -599,7 +617,7 @@ components:
       explode: false
       schema:
         type: string
-    positionCoords:
+    coords:
       name: coords
       in: query
       description: |-
@@ -620,32 +638,6 @@ components:
 
         the coordinate values will depend on the CRS parameter, if this is not defined
         the values will be assumed to WGS84 values (i.e x=longitude and y=latitude)
-      required: false
-      schema:
-        type: string
-    coords:
-      name: coords
-      in: query
-      description: |-
-        Only data that has a geometry that intersects the area defined by the polygon
-        are selected.
-
-        The polygon is defined using a Well Known Text string following
-
-        coords=POLYGON((x y,x1 y1,x2 y2,...,xn yn x y))
-
-        which are values in the coordinate system defined by the crs query parameter
-        (if crs is not defined the values will be assumed to be WGS84 longitude/latitude coordinates).
-
-        For instance a polygon that roughly describes an area that contains
-        South West England in WGS84 would look like:
-
-        coords=POLYGON((-6.1 50.3,-4.35 51.4,-2.6 51.6,-2.8 50.6,-5.3 49.9,-6.1,50.3))
-
-        see http://portal.opengeospatial.org/files/?artifact_id=25355 and
-        https://en.wikipedia.org/wiki/Well-known_text_representation_of_geometry
-
-        The coords parameter will only support 2D POLYGON definitions
       required: false
       schema:
         type: string
@@ -711,36 +703,6 @@ components:
       example: native
       schema:
         type: string
-    resolution-x:
-      name: resolution-x
-      in: query
-      description: |
-        Defined it the user requires data at a different resolution from the native resolution of the data along the x-axis
-
-        If this is a single value it denotes the number of intervals to retrieve data for along the x-axis
-
-          i.e. resolution-x=10
-
-        would retrieve 10 values along the x-axis from the minimum x coordinate to maximum x coordinate (i.e. a value at both the minimum x and maximum x coordinates and 8 values between).
-      required: false
-      schema:
-        items:
-          type: string
-    resolution-y:
-      name: resolution-y
-      in: query
-      description: |
-        Defined it the user requires data at a different resolution from the native resolution of the data along the y-axis
-
-        If this is a single value it denotes the number of intervals to retrieve data for along the y-axis
-
-          i.e. resolution-y=10
-
-        would retrieve 10 values along the y-axis from the minimum y coordinate to maximum y coordinate (i.e. a value at both the minimum y and maximum y coordinates and 8 values between).
-      required: false
-      schema:
-        items:
-          type: string
     f:
       name: f
       in: query

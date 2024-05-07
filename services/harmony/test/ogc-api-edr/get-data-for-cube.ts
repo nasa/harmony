@@ -12,7 +12,7 @@ import { stub } from 'sinon';
 import env from '../../app/util/env';
 import { hookDatabaseFailure } from '../helpers/db';
 
-describe('OGC API EDR - getEdrArea', function () {
+describe('OGC API EDR - getEdrCube', function () {
   const collection = 'C1233800302-EEDTEST';
   const granuleId = 'G1233800352-EEDTEST';
   const variableId = 'V1233801695-EEDTEST';
@@ -956,7 +956,7 @@ describe('OGC API EDR - getEdrArea', function () {
   });
 });
 
-describe('OGC API EDR - getEdrArea with the extend query parameter', async function () {
+describe('OGC API EDR - getEdrCube with the extend query parameter', async function () {
   hookServersStartStop();
   hookEdrRequest('1.0.0',
     'C1233800302-EEDTEST',
@@ -988,7 +988,7 @@ describe('OGC API EDR - getEdrArea with the extend query parameter', async funct
   // });
 });
 
-describe('OGC API EDR - getEdrArea with a collection not configured for services', function () {
+describe('OGC API EDR - getEdrCube with a collection not configured for services', function () {
   const collection = 'C1243745256-EEDTEST';
   const version = '1.0.0';
 

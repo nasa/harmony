@@ -11,8 +11,8 @@ import { ParameterParseError } from '../../util/parameter-parsing-helpers';
 import { parseVariables } from '../../util/variables';
 import { parsePointParam, parseSubsetParams, subsetParamsToBbox, subsetParamsToTemporal } from '../ogc-coverages/util/subset-parameter-parsing';
 /**
- * Express middleware that responds to OGC API - EDR
- * rangeset requests.  Responds with the actual EDR data.
+ * Express middleware that responds to OGC API - EDR requests.
+ * Responds with the actual EDR data.
  *
  * @param req - The request sent by the client
  * @param res - The response to send to the client
@@ -20,7 +20,7 @@ import { parsePointParam, parseSubsetParams, subsetParamsToBbox, subsetParamsToT
  * @throws RequestValidationError - Thrown if the request has validation problems and
  *   cannot be performed
  */
-export default function getDataForArea(
+export default function getDataForCube(
   req: HarmonyRequest,
   res: Response,
   next: NextFunction,
