@@ -64,7 +64,7 @@ for Production.
 For example:
 
 ```
-curl -XPUT https://harmony.uat.earthdata.nasa.gov/service-image-tag/#canonical-service-name  -H 'Authorization: bearer <your bearer token>'  -d '{"tag": "new-version"}' -H 'Content-type: application/json'
+curl -XPUT https://harmony.uat.earthdata.nasa.gov/service-image-tag/#canonical-service-name  -H 'Authorization: Bearer <your bearer token>'  -d '{"tag": "new-version"}' -H 'Content-type: application/json'
 ```
 **Example 5** - Updating a specific backend service image tag using the `/service-image-tags` API
 
@@ -149,7 +149,7 @@ The user must have admin permission in order to invoke this endpoint.
 For example:
 
 ```
-curl -XPUT -H 'Authorization: bearer <your bearer token>' -H 'Content-type: application/json' https://harmony.uat.earthdata.nasa.gov/service-deployments-state -d '{"enabled": true}'
+curl -XPUT -H 'Authorization: Bearer <your bearer token>' -H 'Content-type: application/json' https://harmony.uat.earthdata.nasa.gov/service-deployments-state -d '{"enabled": true}'
 ```
 ---
 **Example 12** - Harmony `service-image-tags` request for enabling the service deployment
@@ -169,7 +169,7 @@ The user must have admin permission in order to invoke this endpoint.
 For example:
 
 ```
-curl -XPUT -H 'Authorization: bearer <your bearer token>' -H 'Content-type: application/json' https://harmony.uat.earthdata.nasa.gov/service-deployments-state -d '{"enabled": false}'
+curl -XPUT -H 'Authorization: Bearer <your bearer token>' -H 'Content-type: application/json' https://harmony.uat.earthdata.nasa.gov/service-deployments-state -d '{"enabled": false}'
 ```
 ---
 **Example 14** - Harmony `service-image-tags` request for disabling the service deployment

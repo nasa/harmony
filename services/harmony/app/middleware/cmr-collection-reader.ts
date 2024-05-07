@@ -124,7 +124,7 @@ async function cmrCollectionReader(req: HarmonyRequest, res, next: NextFunction)
       if (shortNameMatch) {
         const shortNamePart = shortNameMatch[1].substr(1, shortNameMatch[1].length - 2);
         // fix the short name for ogc EDR requests
-        const shortName = shortNamePart.replace(/^ogc-api-edr\/1\.0\.0\/collections\//, '');
+        const shortName = shortNamePart.replace(/^ogc-api-edr\/.*\/collections\//, '');
         const collections = await getCollectionsByShortName(shortName, req.accessToken);
         let pickedCollection = collections[0];
         if (collections.length > 1) {
