@@ -2,14 +2,14 @@ import { NextFunction, Response } from 'express';
 import DataOperation from '../../models/data-operation';
 import HarmonyRequest from '../../models/harmony-request';
 import wrap from '../../util/array';
-import { handleCrs, handleExtend, handleFormat, handleGranuleIds, handleGranuleNames, handleScaleExtent, handleScaleSize } from '../../util/parameter-parsers';
+import { handleCrs, handleExtend, handleGranuleIds, handleGranuleNames, handleScaleExtent, handleScaleSize } from '../../util/parameter-parsers';
 import { createDecrypter, createEncrypter } from '../../util/crypto';
 import env from '../../util/env';
 import { RequestValidationError } from '../../util/errors';
 import { keysToLowerCase } from '../../util/object';
 import { ParameterParseError } from '../../util/parameter-parsing-helpers';
 import { parseVariables } from '../../util/variables';
-import { parseBbox, parseDatetime } from './util/helper';
+import { parseBbox, parseDatetime, handleFormat } from './util/helper';
 import { parseSubsetParams } from '../ogc-coverages/util/subset-parameter-parsing';
 
 /**

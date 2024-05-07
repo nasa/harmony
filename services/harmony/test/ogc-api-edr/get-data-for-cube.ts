@@ -48,7 +48,7 @@ describe('OGC API EDR - getEdrCube', function () {
           scaleSize: '1.1,2',
           height: 500,
           width: 1000,
-          format: 'image/png',
+          f: 'image/png',
           skipPreview: 'true',
           // extend: 'lat,lon', TODO: HARMONY-1569 support extend
         };
@@ -675,7 +675,7 @@ describe('OGC API EDR - getEdrCube', function () {
     });
 
     describe('when providing an accept header and a format parameter', function () {
-      const pngQuery = { granuleId, 'parameter-name': variableName, format: png };
+      const pngQuery = { granuleId, 'parameter-name': variableName, f: png };
       const headers = { accept: tiff };
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookEdrRequest(version, collection, { query: pngQuery, headers });
@@ -1003,7 +1003,7 @@ describe('OGC API EDR - getEdrCube with a collection not configured for services
   });
 
   describe('when requesting any transformation such as reformatting to png', function () {
-    const query = { 'parameter-name': 'all', format: 'image/png' };
+    const query = { 'parameter-name': 'all', f: 'image/png' };
     hookEdrRequest(version, collection, { username: 'joe', query });
 
     it('returns a 422 error response', function () {

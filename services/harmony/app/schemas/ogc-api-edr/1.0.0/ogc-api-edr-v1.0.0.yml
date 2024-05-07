@@ -224,7 +224,6 @@ paths:
         - $ref: "#/components/parameters/point"
         - $ref: "#/components/parameters/width"
         - $ref: "#/components/parameters/height"
-        - $ref: "#/components/parameters/format"
         - $ref: "#/components/parameters/forceAsync"
         - $ref: "#/components/parameters/maxResults"
         - $ref: "#/components/parameters/skipPreview"
@@ -233,7 +232,6 @@ paths:
         - $ref: "#/components/parameters/granuleName"
         - $ref: "#/components/parameters/grid"
         - $ref: "#/components/parameters/extend"
-        - $ref: "#/components/parameters/variable"
       responses:
         "200":
           description: A collection's EDR.
@@ -270,7 +268,6 @@ paths:
         - $ref: "#/components/parameters/point"
         - $ref: "#/components/parameters/width"
         - $ref: "#/components/parameters/height"
-        - $ref: "#/components/parameters/format"
         - $ref: "#/components/parameters/forceAsync"
         - $ref: "#/components/parameters/maxResults"
         - $ref: "#/components/parameters/skipPreview"
@@ -279,7 +276,6 @@ paths:
         - $ref: "#/components/parameters/granuleName"
         - $ref: "#/components/parameters/grid"
         - $ref: "#/components/parameters/extend"
-        - $ref: "#/components/parameters/variable"
       requestBody:
         content:
           multipart/form-data:
@@ -609,9 +605,7 @@ components:
       in: path
       description: |-
         Names or concept ids of the UMM-Var variables to be retrieved, or "all" to retrieve all variables within the CMR collection(s).
-        Multiple variables may be retrieved by separating them with a comma.  This API interprets OGC "collections" to be
-        equivalent to CMR "variables" which produces some overloading in the name.  In this document, a "collection" is
-        a CMR / UMM-Var variable and a "CMR collection" is a CMR / UMM-C collection.
+        Multiple variables may be retrieved by separating them with a comma.
       required: false
       style: simple
       explode: false
@@ -726,20 +720,10 @@ components:
       name: subset
       in: query
       description: '
-        get a subset of the edr by slicing or trimming among one axis.  Harmony supports
-        the axes "lat" and "lon" for spatial subsetting, and "time" for temporal, regardless of the names
-        of those axes in the data files. Harmony also supports arbitrary dimension names for subsetting
-        on numeric ranges for that dimension.
+        Harmony supports arbitrary dimension names for subsetting on numeric ranges for that dimension.
+        "lat", "lon" and "time" subset will be ignored by EDR.
 
         Examples:
-        - Subset to the lat/lon bounding box with southwest corner (-10, -10) and northeast corner (10, 10)
-        subset=lat(-10:10)&subset=lon(-10:10)
-        - Subset to all latitudes north of -10 degrees and all longitudes west of 10 degrees
-        subset=lat(-10:*)&subset=lon(*:10)
-        - Subset to only points with latitudes from -10 to 10 degrees, disregarding longitude
-        subset=lat(-10:10)
-        - Subset to the first month of 2020
-        subset=time("2020-01-01T00:00:00Z":"2020-02-01T00:00:00Z")
         - Subset on arbitrary dimension "vertical" with a value between 0 and 20
         subset=vertical(0:20)
 
@@ -752,17 +736,6 @@ components:
         type: array
         items:
           type: string
-    rangeSubset:
-      name: rangeSubset
-      in: query
-      description:
-        subset the resulting edr by choosing and/or rearrange particular
-        fields
-      required: false
-      style: form
-      explode: true
-      schema:
-        type: string
     scaleFactor:
       name: scaleFactor
       in: query
@@ -853,17 +826,6 @@ components:
       schema:
         type: integer
         minimum: 1
-    format:
-      name: format
-      in: query
-      description: the output mime type to return
-      required: false
-      schema:
-        type: string
-        example:
-          - "application/x-zarr"
-          - "image/tiff"
-          - "image/png"
     forceAsync:
       name: forceAsync
       in: query
@@ -944,16 +906,3 @@ components:
       required: false
       schema:
         type: string
-    variable:
-      name: variable
-      in: query
-      description: |
-        the names or concept ids of the variables to subset
-      required: false
-      style: form
-      explode: true
-      schema:
-        type: array
-        items:
-          type: string
-          minLength: 1

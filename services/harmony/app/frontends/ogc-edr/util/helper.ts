@@ -1,5 +1,7 @@
-import { TemporalStringRange } from '../../../models/data-operation';
+import DataOperation, { TemporalStringRange } from '../../../models/data-operation';
 import { ParameterParseError } from '../../../util/parameter-parsing-helpers';
+import HarmonyRequest from '../../../models/harmony-request';
+import { parseAcceptHeader } from '../../../util/content-negotiation';
 
 const unbounded_datetime = '..';
 
@@ -46,4 +48,25 @@ export function parseDatetime(value: string): TemporalStringRange {
   }
 
   return temporal;
+}
+
+/**
+ * Set the output format for the request.
+ *
+ * @param operation - the DataOperation for the request
+ * @param query - the query for the request
+ * @param req - The request
+ */
+export function handleFormat(
+  operation: DataOperation,
+  query: Record<string, string>,
+  req: HarmonyRequest): void {
+  if (query.f) {
+    operation.outputFormat = query.f;
+  } else if (req.headers.accept) {
+    const acceptedMimeTypes = parseAcceptHeader(req.headers.accept);
+    req.context.requestedMimeTypes = acceptedMimeTypes
+      .map((v: { mimeType: string }) => v.mimeType)
+      .filter((v) => v);
+  }
 }
