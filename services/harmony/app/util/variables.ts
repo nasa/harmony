@@ -104,11 +104,7 @@ export function getCoordinateVariables(variables: CmrUmmVariable[]): CmrUmmVaria
  * @param variableIds - The variable ids in url path
  * @param queryVars - The variables in query params
  */
-function validateVariables(variableIds: string[], queryVars: string | string[]): void {
-  if (variableIds.indexOf('all') !== -1 && variableIds.length !== 1) {
-    throw new RequestValidationError('"all" cannot be specified alongside other variables');
-  }
-
+export function validateVariables(variableIds: string[], queryVars: string | string[]): void {
   if (variableIds.indexOf('all') !== -1 && variableIds.length !== 1) {
     throw new RequestValidationError('"all" cannot be specified alongside other variables');
   }

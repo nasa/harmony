@@ -27,7 +27,7 @@ interface OgcSchemaEdr {
   }
 }
 
-export const version = '1.0.0';
+export const version = '1.1.0';
 const openApiRoot = path.join(__dirname, '..', '..', 'schemas', 'ogc-api-edr', version);
 const openApiPath = path.join(openApiRoot, `ogc-api-edr-v${version}.yml`);
 export const openApiContent = fs.readFileSync(openApiPath, 'utf-8');
