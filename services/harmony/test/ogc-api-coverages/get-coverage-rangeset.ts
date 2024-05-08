@@ -978,7 +978,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     );
     itReturnsAValidationError(
       { granuleId, outputCrs: 'EPSG:1' },
-      'query parameter "outputCrs" could not be parsed.  Try an EPSG code or Proj4 string.',
+      'query parameter "crs/outputCrs" could not be parsed.  Try an EPSG code or Proj4 string.',
       'harmony.RequestValidationError',
     );
     itReturnsAValidationError(
