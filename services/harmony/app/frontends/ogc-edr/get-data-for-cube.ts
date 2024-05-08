@@ -81,11 +81,12 @@ export default function getDataForCube(
     operation.temporal = { start, end };
   }
 
-  if (!req.query['parameter-name']) {
-    throw new RequestValidationError('Paremter "parameter-name" cannot be empty');
+  let queryVars = req.query['parameter-name'] as string | string[];
+  if (!queryVars) {
+    // set variables to 'all' when no parameter-name is provided for EDR request
+    queryVars = ['all'];
   }
 
-  const queryVars = req.query['parameter-name'] as string | string[];
   const varInfos = parseVariables(req.collections, 'parameter_vars', queryVars);
   for (const varInfo of varInfos) {
     operation.addSource(varInfo.collectionId, varInfo.shortName, varInfo.versionId,
@@ -95,5 +96,3 @@ export default function getDataForCube(
   req.operation = operation;
   next();
 }
-
-
