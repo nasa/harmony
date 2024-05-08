@@ -214,7 +214,6 @@ paths:
         - $ref: "#/components/parameters/crs"
         - $ref: "#/components/parameters/f"
         # Parameters below this line are not part of the OGC specification
-        - $ref: "#/components/parameters/outputCrs"
         - $ref: "#/components/parameters/subset"
         - $ref: "#/components/parameters/interpolation"
         - $ref: "#/components/parameters/scaleExtent"
@@ -258,7 +257,6 @@ paths:
         - $ref: "#/components/parameters/crs"
         - $ref: "#/components/parameters/f"
         # Parameters below this line are not part of the OGC specification
-        - $ref: "#/components/parameters/outputCrs"
         - $ref: "#/components/parameters/subset"
         - $ref: "#/components/parameters/interpolation"
         - $ref: "#/components/parameters/scaleExtent"
@@ -785,17 +783,6 @@ components:
       name: subsettingcrs
       in: query
       description: specify the projection in which the subsets are expressed
-      required: false
-      style: form
-      explode: true
-      schema:
-        type: string
-    outputCrs:
-      name: outputcrs
-      in: query
-      description:
-        reproject the output edr to the given CRS.  Recognizes CRS types that can be inferred
-        by gdal, including EPSG codes, Proj4 strings, and OGC URLs (http://www.opengis.net/def/crs/...)
       required: false
       style: form
       explode: true

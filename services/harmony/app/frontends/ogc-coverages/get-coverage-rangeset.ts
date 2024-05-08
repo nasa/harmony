@@ -32,11 +32,11 @@ export default function getCoverageRangeset(
   const decrypter = createDecrypter(env.sharedSecretKey);
   const operation = new DataOperation(null, encrypter, decrypter);
 
-  handleFormat(operation, query, req);
+  handleFormat(operation, query.format, req);
   handleExtend(operation, query);
   handleGranuleIds(operation, query);
   handleGranuleNames(operation, query);
-  handleCrs(operation, query);
+  handleCrs(operation, query.outputcrs);
   handleScaleExtent(operation, query);
   handleScaleSize(operation, query);
   handleHeight(operation, query);

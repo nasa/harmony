@@ -83,9 +83,9 @@ export function handleExtend(
  */
 export function handleCrs(
   operation: DataOperation,
-  query: Record<string, string>): void {
-  if (query.outputcrs) {
-    const [crs, srs] = parseCRS(query.outputcrs);
+  outputcrs: string): void {
+  if (outputcrs) {
+    const [crs, srs] = parseCRS(outputcrs);
     operation.crs = crs;
     operation.srs = srs;
   }
@@ -152,10 +152,10 @@ export function handleScaleSize(
  */
 export function handleFormat(
   operation: DataOperation,
-  query: Record<string, string>,
+  format: string,
   req: HarmonyRequest): void {
-  if (query.format) {
-    operation.outputFormat = query.format;
+  if (format) {
+    operation.outputFormat = format;
   } else if (req.headers.accept) {
     const acceptedMimeTypes = parseAcceptHeader(req.headers.accept);
     req.context.requestedMimeTypes = acceptedMimeTypes

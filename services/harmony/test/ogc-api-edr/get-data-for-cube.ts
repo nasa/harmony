@@ -36,7 +36,7 @@ describe('OGC API EDR - getEdrCube', function () {
         const query = {
           'parameter-name': test.variableParam,
           granuleId,
-          outputCrs: 'EPSG:4326',
+          crs: 'EPSG:4326',
           // TODO: there's no service that can also support dimension subsetting for this collection
           // subset: ['lat(0:10)', 'lon(-20.1:20)', 'time("2020-01-02T00:00:00.000Z":"2020-01-02T01:00:00.000Z")', 'foo(1.1:10)'],
           bbox: '-20.1,0,20,10',
@@ -78,7 +78,7 @@ describe('OGC API EDR - getEdrCube', function () {
             expect(source.coordinateVariables).to.eql([]);
           });
 
-          it('passes the outputCrs parameter to the backend in Proj4 format', function () {
+          it('passes the crs parameter to the backend in Proj4 format', function () {
             expect(this.service.operation.crs).to.equal('+proj=longlat +datum=WGS84 +no_defs');
           });
 
@@ -271,9 +271,9 @@ describe('OGC API EDR - getEdrCube', function () {
     });
   });
 
-  describe('when passed a blank outputCrs', function () {
+  describe('when passed a blank crs', function () {
     StubService.hook({ params: { redirect: 'http://example.com' } });
-    hookEdrRequest(version, collection, { query: { granuleId, outputCrs: '', 'parameter-name': variableName } });
+    hookEdrRequest(version, collection, { query: { granuleId, crs: '', 'parameter-name': variableName } });
     it('accepts the request, passing an empty CRS to the backend', function () {
       expect(this.res.status).to.be.lessThan(400);
       expect(this.service.operation.crs).to.not.be;
@@ -375,7 +375,7 @@ describe('OGC API EDR - getEdrCube', function () {
   describe('when provided a valid temporal range', function () {
     const query = {
       'parameter-name': variableName,
-      outputCrs: 'EPSG:4326',
+      crs: 'EPSG:4326',
       // Time range matches exactly one granule
       bbox: '-20.1,0,20,10',
       datetime: '2020-01-02T00:00:00.000Z/2020-01-02T01:00:00.000Z',
@@ -863,8 +863,8 @@ describe('OGC API EDR - getEdrCube', function () {
       'harmony.RequestValidationError',
     );
     itReturnsAValidationError(
-      { granuleId, outputCrs: 'EPSG:1' },
-      'query parameter "outputCrs" could not be parsed.  Try an EPSG code or Proj4 string.',
+      { granuleId, crs: 'EPSG:1' },
+      'query parameter "crs/outputCrs" could not be parsed.  Try an EPSG code or Proj4 string.',
       'harmony.RequestValidationError',
     );
     itReturnsAValidationError(
