@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { parseBbox } from '../../../app/frontends/ogc-edr/util/helper';
+import { parseBbox, parseDatetime } from '../../../app/frontends/ogc-edr/util/helper';
 import { ParameterParseError } from '../../../app/util/parameter-parsing-helpers';
 
 describe('parseBbox function', function () {
@@ -24,5 +24,51 @@ describe('parseBbox function', function () {
     const value = '';
     const result = parseBbox(value);
     expect(result).to.be.undefined;
+  });
+});
+
+describe('parseDatetime function', function () {
+  // TODO: This parsing is wrong and needs to be changed
+  it('parses date-time correctly', function () {
+    const value = '2018-02-12T23:20:50Z';
+    const result = parseDatetime(value);
+    expect(result).to.eql({ start: '2018-02-12T23:20:50Z' });
+  });
+
+  it('parses bounded interval correctly', function () {
+    const value = '2018-02-12T00:00:00Z/2018-03-18T12:31:12Z';
+    const result = parseDatetime(value);
+    expect(result).to.eql({
+      start: '2018-02-12T00:00:00Z',
+      end: '2018-03-18T12:31:12Z',
+    });
+  });
+
+  it('parses half-bounded start interval correctly', function () {
+    const value = '../2018-03-18T12:31:12Z';
+    const result = parseDatetime(value);
+    expect(result).to.eql({
+      end: '2018-03-18T12:31:12Z',
+    });
+  });
+
+  it('parses half-bounded end interval correctly', function () {
+    const value = '2018-02-12T00:00:00Z/..';
+    const result = parseDatetime(value);
+    expect(result).to.eql({
+      start: '2018-02-12T00:00:00Z',
+    });
+  });
+
+  it('returns empty object for empty input', function () {
+    const value = '';
+    const result = parseDatetime(value);
+    expect(result).to.eql({});
+  });
+
+  it('returns empty object for undefined input', function () {
+    const value = undefined;
+    const result = parseDatetime(value as string);
+    expect(result).to.eql({});
   });
 });
