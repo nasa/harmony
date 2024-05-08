@@ -195,7 +195,7 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   ogcEdrApi.addOpenApiRoutes(result);
   result.use(collectionPrefix('wms'), service(logged(wmsFrontend)));
 
-  result.use(/^\/(wms|ogc-api-coverages|cube)/, (req, res, next) => {
+  result.use(/^\/(wms|ogc-api-coverages)/, (req, res, next) => {
     next(new NotFoundError('Services can only be invoked when a valid collection is supplied in the URL path before the service name.'));
   });
   result.use(logged(shapefileConverter));

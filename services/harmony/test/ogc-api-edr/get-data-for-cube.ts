@@ -17,7 +17,7 @@ describe('OGC API EDR - getEdrCube', function () {
   const granuleId = 'G1233800352-EEDTEST';
   const variableId = 'V1233801695-EEDTEST';
   const variableName = 'red_var';
-  const version = '1.0.0';
+  const version = '1.1.0';
 
   hookServersStartStop();
 
@@ -960,7 +960,7 @@ describe('OGC API EDR - getEdrCube', function () {
 
 describe('OGC API EDR - getEdrCube with the extend query parameter', async function () {
   hookServersStartStop();
-  hookEdrRequest('1.0.0',
+  hookEdrRequest('1.1.0',
     'C1233800302-EEDTEST',
     { query: { 'parameter-name': 'all', extend: 'dimension_var', skipPreview: 'true', maxResults: 2 }, username: 'joe' });
 
@@ -979,20 +979,20 @@ describe('OGC API EDR - getEdrCube with the extend query parameter', async funct
   // TODO - HARMONY-1569 add tests after we have added a service that supports extend
   // describe('when requesting all vars and extending dimension_var', function () {
   //   StubService.hook({ params: { redirect: 'http://example.com' } });
-  //   hookEdrRequest('1.0.0', 'C1233800302-EEDTEST', 'all', { query: { extend: 'dimension_var', skipPreview: 'true', maxResults: 2 }, username: 'joe' });
+  //   hookEdrRequest('1.1.0', 'C1233800302-EEDTEST', 'all', { query: { extend: 'dimension_var', skipPreview: 'true', maxResults: 2 }, username: 'joe' });
   //   itRedirectsToJobStatusUrl();
   // });
 
   // describe('when requesting red_var and extending lat,lon', function () {
   //   StubService.hook({ params: { redirect: 'http://example.com' } });
-  //   hookEdrRequest('1.0.0', 'C1233800302-EEDTEST', 'red_var', { query: { extend: 'lat,lon' }, username: 'joe' });
+  //   hookEdrRequest('1.1.0', 'C1233800302-EEDTEST', 'red_var', { query: { extend: 'lat,lon' }, username: 'joe' });
   //   itRedirectsToJobStatusUrl();
   // });
 });
 
 describe('OGC API EDR - getEdrCube with a collection not configured for services', function () {
   const collection = 'C1243745256-EEDTEST';
-  const version = '1.0.0';
+  const version = '1.1.0';
 
   hookServersStartStop();
 

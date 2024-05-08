@@ -1,12 +1,19 @@
-openapi: 3.0.1
+openapi: 3.0.3
 info:
-  title: Harmony API conforming to OGC API - EDR
+  title: A sample API conforming to version 1.1.0 of the OGC API - Environmental Data
+    Retrieval Standard
   description:
-    "Harmony API for requesting EDR for a range of NASA EOSDIS data
-    using thc OGC API - EDR"
-  version: 1.0.0
+    "A sample API conforming to version 1.1.0 of the [OGC API - Environmental Data  Retrieval](https://ogcapi.ogc.org/edr/) Standard.
+    Copyright (c) 2023 Open Geospatial Consortium.
+    To obtain additional rights of use, visit http://www.opengeospatial.org/legal/
+    The Environmental Data Retrieval (EDR) Application Programming Interface
+    (API) provides a family of lightweight query interfaces to access spatio-temporal
+    data resources by requesting data at a Position, within an Area, along a Trajectory
+    or through a Corridor. A spatio-temporal data resource is a collection of spatio-temporal
+    data that can be sampled using the EDR query pattern geometries."
+  version: 1.1.0
 servers:
-  - url: /ogc-api-EDR/1.0.0
+  - url: /ogc-api-EDR/1.1.0
     description: Harmony server
     variables:
       cmrCollectionId:
