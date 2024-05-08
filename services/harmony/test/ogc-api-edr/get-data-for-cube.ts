@@ -329,6 +329,20 @@ describe('OGC API EDR - getEdrCube', function () {
     });
   });
 
+  describe('Subsetting without parameter-name default to "all"', function () {
+    const query = {
+      granuleId,
+    };
+
+    StubService.hook({ params: { redirect: 'http://example.com' } });
+    hookEdrRequest(version, collection, { query });
+
+    it('passes no variables to the backend service', function () {
+      const source = this.service.operation.sources[0];
+      expect(source.variables).to.not.be;
+    });
+  });
+
   describe('Subsetting to "all" variables', function () {
     const variableNames = 'all';
     const query = {
@@ -856,11 +870,6 @@ describe('OGC API EDR - getEdrCube', function () {
     itReturnsAValidationError(
       { granuleId: '' },
       'query parameter "granuleId[0]" should NOT be shorter than 1 characters',
-    );
-    itReturnsAValidationError(
-      { granuleId, 'parameter-name': '' },
-      'Paremter "parameter-name" cannot be empty',
-      'harmony.RequestValidationError',
     );
     itReturnsAValidationError(
       { granuleId, crs: 'EPSG:1' },
