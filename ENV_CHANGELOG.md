@@ -2,6 +2,11 @@
 Any changes to the environment variables will be documented in this file in chronological
 order with the most recent changes first.
 
+## 2204-04-25
+### Changed
+- HARMONY_REGRIDDER_IMAGE - Updated to point to ghcr.io hosted image.
+- HARMONY_REGRIDDER_SERVICE_QUEUE_URLS - Updates to point to ghcr.io image.
+
 ## 2024-02-19
 ### Changed
 - TRAJECTORY_SUBSETTER_LIMITS_MEMORY - Increased to 8Gi to accommodate large GEDI L1B files.

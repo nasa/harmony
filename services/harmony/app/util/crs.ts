@@ -49,7 +49,7 @@ export default function parseCRS(
     return [crs, srs];
   } catch (e) {
     if (validate) {
-      throw new RequestValidationError('query parameter "outputCrs" could not be parsed.  Try an EPSG code or Proj4 string.');
+      throw new RequestValidationError('query parameter "crs/outputCrs" could not be parsed.  Try an EPSG code or Proj4 string.');
     } else {
       return [queryCRS_, null];
     }

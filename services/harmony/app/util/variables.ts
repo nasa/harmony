@@ -100,6 +100,33 @@ export function getCoordinateVariables(variables: CmrUmmVariable[]): CmrUmmVaria
 }
 
 /**
+ * validate variable and queryVars parameters, throw exception if failed
+ * @param variableIds - The variable ids in url path
+ * @param queryVars - The variables in query params
+ */
+export function validateVariables(variableIds: string[], queryVars: string | string[]): void {
+  if (variableIds.indexOf('all') !== -1 && variableIds.length !== 1) {
+    throw new RequestValidationError('"all" cannot be specified alongside other variables');
+  }
+
+  if (variableIds.indexOf('parameter_vars') !== -1) {
+    if (!queryVars) {
+      throw new RequestValidationError('"parameter_vars" specified, but no variables given');
+    }
+    if (queryVars !== 'all' &&
+      queryVars.indexOf('all') !== -1 &&
+      queryVars.length !== 1) {
+      throw new RequestValidationError('"all" cannot be specified alongside other variables');
+    }
+  } else {
+    // can't specify vars in the query AND in the path
+    if (queryVars) {
+      throw new RequestValidationError('Value "parameter_vars" must be used in the url path when variables are passed in the query parameters or request body');
+    }
+  }
+}
+
+/**
  * Given a list of EOSDIS collections and variables parsed from the CMR and an OGC
  * collectionId parameter return the full variables which match.
  *
@@ -122,13 +149,16 @@ export function parseVariables(
   // and variables are UMM-Var variables.  The following line is the confusing part where we
   // translate between the two nomenclatures.
   let variableIds = collectionIdParam.split(',');
-  const variableInfo = [];
 
-  if (variableIds.indexOf('all') !== -1) {
+  validateVariables(variableIds, queryVars);
+
+  const variableInfo = [];
+  if (variableIds.indexOf('all') !== -1 ||
+    (variableIds.indexOf('parameter_vars') !== -1 &&
+      queryVars &&
+      (queryVars === 'all' ||
+        queryVars[0] === 'all'))) {
     // If the variable ID is "all" do not subset by variable
-    if (variableIds.length !== 1) {
-      throw new RequestValidationError('"all" cannot be specified alongside other variables');
-    }
     for (const collection of eosdisCollections) {
       const coordinateVariables = getCoordinateVariables(collection.variables);
       variableInfo.push({
@@ -137,17 +167,8 @@ export function parseVariables(
       });
     }
   } else {
-    if (variableIds.indexOf('parameter_vars') !== -1) {
-      if (!queryVars) {
-        throw new RequestValidationError('"parameter_vars" specified, but no variables given');
-      } else {
-        variableIds = parseMultiValueParameter(queryVars);
-      }
-    } else {
-      // can't specify vars in the query AND in the path
-      if (queryVars) {
-        throw new RequestValidationError('Value "parameter_vars" must be used in the url path when variables are passed in the query parameters or request body');
-      }
+    if (variableIds.indexOf('parameter_vars') !== -1 && queryVars) {
+      variableIds = parseMultiValueParameter(queryVars);
     }
 
     // Figure out which variables belong to which collections and whether any are missing.

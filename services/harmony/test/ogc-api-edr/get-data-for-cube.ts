@@ -3,7 +3,7 @@ import { describe, it } from 'mocha';
 import _ from 'lodash';
 import isUUID from '../../app/util/uuid';
 import { itRedirectsToJobStatusUrl } from '../helpers/jobs';
-import { hookPostRangesetRequest, hookRangesetRequest, rangesetRequest } from '../helpers/ogc-api-coverages';
+import { hookPostEdrRequest, hookEdrRequest, edrRequest } from '../helpers/ogc-api-edr';
 import hookServersStartStop from '../helpers/servers';
 import StubService, { hookServices } from '../helpers/stub-service';
 import { ServiceConfig } from '../../app/models/services/base-service';
@@ -12,12 +12,12 @@ import { stub } from 'sinon';
 import env from '../../app/util/env';
 import { hookDatabaseFailure } from '../helpers/db';
 
-describe('OGC API Coverages - getCoverageRangeset', function () {
+describe('OGC API EDR - getEdrCube', function () {
   const collection = 'C1233800302-EEDTEST';
   const granuleId = 'G1233800352-EEDTEST';
   const variableId = 'V1233801695-EEDTEST';
   const variableName = 'red_var';
-  const version = '1.0.0';
+  const version = '1.1.0';
 
   hookServersStartStop();
 
@@ -34,11 +34,13 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
       describe('when provided a valid set of parameters', function () {
         const query = {
+          'parameter-name': test.variableParam,
           granuleId,
-          outputCrs: 'EPSG:4326',
+          crs: 'EPSG:4326',
           // TODO: there's no service that can also support dimension subsetting for this collection
           // subset: ['lat(0:10)', 'lon(-20.1:20)', 'time("2020-01-02T00:00:00.000Z":"2020-01-02T01:00:00.000Z")', 'foo(1.1:10)'],
-          subset: ['lat(0:10)', 'lon(-20.1:20)', 'time("2020-01-02T00:00:00.000Z":"2020-01-02T01:00:00.000Z")'],
+          bbox: '-20.1,0,20,10',
+          datetime: '2020-01-02T00:00:00.000Z/2020-01-02T01:00:00.000Z',
           interpolation: 'near',
           // TODO: it might only make sense to include width and height with a scaleExtent
           // and scaleSize by itself
@@ -46,14 +48,14 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
           scaleSize: '1.1,2',
           height: 500,
           width: 1000,
-          format: 'image/png',
+          f: 'image/png',
           skipPreview: 'true',
           // extend: 'lat,lon', TODO: HARMONY-1569 support extend
         };
 
         describe('calling the backend service', function () {
           StubService.hook({ params: { redirect: 'http://example.com' } });
-          hookRangesetRequest(version, collection, test.variableParam, { query });
+          hookEdrRequest(version, collection, { query });
 
           it('provides a staging location to the backend', function () {
             const location = this.service.operation.stagingLocation;
@@ -76,7 +78,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
             expect(source.coordinateVariables).to.eql([]);
           });
 
-          it('passes the outputCrs parameter to the backend in Proj4 format', function () {
+          it('passes the crs parameter to the backend in Proj4 format', function () {
             expect(this.service.operation.crs).to.equal('+proj=longlat +datum=WGS84 +no_defs');
           });
 
@@ -144,7 +146,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
         describe('and the backend service calls back with an error parameter', function () {
           StubService.hook({ params: { error: 'Something bad happened' } });
-          hookRangesetRequest(version, collection, test.variableParam, { query });
+          hookEdrRequest(version, collection, { query });
 
           it('propagates the error message into the response', function () {
             expect(this.res.text).to.include('Something bad happened');
@@ -157,7 +159,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
         describe('and the backend service calls back with a redirect', function () {
           StubService.hook({ params: { redirect: 'http://example.com' } });
-          hookRangesetRequest(version, collection, test.variableParam, { query });
+          hookEdrRequest(version, collection, { query });
 
           it('redirects the client to the provided URL', function () {
             expect(this.res.status).to.equal(303);
@@ -167,7 +169,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
         describe('and the backend service calls back with a redirect to an S3 location', function () {
           StubService.hook({ params: { redirect: 's3://my-bucket/public/my-object.tif' } });
-          hookRangesetRequest(version, collection, test.variableParam, { query });
+          hookEdrRequest(version, collection, { query });
 
           it('redirects the client to a presigned url', function () {
             expect(this.res.status).to.equal(303);
@@ -184,7 +186,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
               'Content-Disposition': 'filename="out.txt"',
             },
           });
-          hookRangesetRequest(version, collection, test.variableParam, { query });
+          hookEdrRequest(version, collection, { query });
 
           it('returns an HTTP 303 redirect status code to the provided data', function () {
             expect(this.res.status).to.equal(303);
@@ -203,10 +205,9 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
           }
 
           StubService.hook({ params: { redirect: 'http://example.com' } });
-          hookPostRangesetRequest(
+          hookPostEdrRequest(
             version,
             collection,
-            test.variableParam,
             { ...query, granuleId: largeGranuleList.join(',') },
           );
 
@@ -217,21 +218,20 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
         describe('which contains both form and query parameter', function () {
           const queryLocal = { ...query };
-          delete queryLocal.subset;
-          const queryParameterString = 'subset=time%28%222020-01-02T00%3A00%3A00Z%22%3A%222020-01-02T01%3A00%3A00Z%22%29';
+          delete queryLocal.datetime;
+          const queryParameterString = 'datetime=2020-01-02T00%3A00%3A00Z%2F2020-01-02T01%3A00%3A00Z';
           StubService.hook({ params: { redirect: 'http://example.com' } });
-          hookPostRangesetRequest(
+          hookPostEdrRequest(
             version,
             collection,
-            test.variableParam,
             queryLocal,
             queryParameterString,
           );
 
           it('passes the temporal range to the backend service', function () {
             const { start, end } = this.service.operation.temporal;
-            expect(start).to.equal('2020-01-02T00:00:00.000Z');
-            expect(end).to.equal('2020-01-02T01:00:00.000Z');
+            expect(start).to.equal('2020-01-02T00:00:00Z');
+            expect(end).to.equal('2020-01-02T01:00:00Z');
           });
 
           it('successfully queries CMR and accepts the request', function () {
@@ -240,12 +240,11 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
         });
 
         describe('which has a duplicate key from form and query parameter', function () {
-          const queryParameterString = 'subset=time%28%222020-01-02T00%3A00%3A00Z%22%3A%222020-01-02T01%3A00%3A00Z%22%29';
+          const queryParameterString = 'datetime=2020-01-02T00%3A00%3A00Z%2F2020-01-02T01%3A00%3A00Z';
           StubService.hook({ params: { redirect: 'http://example.com' } });
-          hookPostRangesetRequest(
+          hookPostEdrRequest(
             version,
             collection,
-            test.variableParam,
             query,
             queryParameterString,
           );
@@ -264,7 +263,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
   describe('when provided an incorrectly named set of parameters', function () {
     StubService.hook({ params: { redirect: 'http://example.com' } });
-    hookRangesetRequest(version, collection, variableName, { query: { granuleId, outputCrz: '', maxResultz: 100 } });
+    hookEdrRequest(version, collection, { query: { granuleId, outputCrz: '', maxResultz: 100, 'parameter-name': variableName } });
     it('rejects the request with an informative error message', function () {
       expect(this.res.status).to.equal(400);
       expect(this.res.text).to.include('Invalid parameter(s): outputCrz and maxResultz');
@@ -272,9 +271,9 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     });
   });
 
-  describe('when passed a blank outputCrs', function () {
+  describe('when passed a blank crs', function () {
     StubService.hook({ params: { redirect: 'http://example.com' } });
-    hookRangesetRequest(version, collection, variableName, { query: { granuleId, outputCrs: '' } });
+    hookEdrRequest(version, collection, { query: { granuleId, crs: '', 'parameter-name': variableName } });
     it('accepts the request, passing an empty CRS to the backend', function () {
       expect(this.res.status).to.be.lessThan(400);
       expect(this.service.operation.crs).to.not.be;
@@ -296,12 +295,13 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     describe(test.description, function () {
       const query = {
         granuleId,
+        'parameter-name': test.variableParam,
       };
       const variableId1 = 'V1233801695-EEDTEST';
       const variableId2 = 'V1233801696-EEDTEST';
 
       StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookRangesetRequest(version, collection, test.variableParam, { query });
+      hookEdrRequest(version, collection, { query });
 
       it('passes multiple variables to the backend service', function () {
         const source = this.service.operation.sources[0];
@@ -313,13 +313,14 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
   }
 
   describe('Subsetting variables with duplicate in mixed name and concept-id', function () {
+    const variableId1 = 'V1233801695-EEDTEST';
     const query = {
       granuleId,
+      'parameter-name': `red_var,${variableId1}`,
     };
-    const variableId1 = 'V1233801695-EEDTEST';
 
     StubService.hook({ params: { redirect: 'http://example.com' } });
-    hookRangesetRequest(version, collection, `red_var,${variableId1}`, { query });
+    hookEdrRequest(version, collection, { query });
 
     it('passes a single variable to the backend service', function () {
       const source = this.service.operation.sources[0];
@@ -328,14 +329,13 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     });
   });
 
-  describe('Subsetting to "all" variables', function () {
-    const variableNames = 'all';
+  describe('Subsetting without parameter-name default to "all"', function () {
     const query = {
       granuleId,
     };
 
     StubService.hook({ params: { redirect: 'http://example.com' } });
-    hookRangesetRequest(version, collection, variableNames, { query });
+    hookEdrRequest(version, collection, { query });
 
     it('passes no variables to the backend service', function () {
       const source = this.service.operation.sources[0];
@@ -343,150 +343,27 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     });
   });
 
-  describe('Using the "parameter_vars" pseudo-variable', function () {
-    const pseudoVariableName = 'parameter_vars';
-    const variableId1 = 'V1233801695-EEDTEST';
-    const variableId2 = 'V1233801696-EEDTEST';
+  describe('Subsetting to "all" variables', function () {
+    const variableNames = 'all';
+    const query = {
+      granuleId,
+      'parameter-name': variableNames,
+    };
 
-    describe('Passing the variables in the query parameters without using "parameter_vars"', function () {
-      const query = {
-        granuleId,
-        variable: [variableId1],
-      };
+    StubService.hook({ params: { redirect: 'http://example.com' } });
+    hookEdrRequest(version, collection, { query });
 
-      StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookRangesetRequest(version, collection, variableId1, { query });
-
-      it('passes multiple variables to the backend service', function () {
-        expect(this.res.status).to.equal(400);
-        expect(this.res.body).to.eql({
-          'code': 'harmony.RequestValidationError',
-          'description': 'Error: Value "parameter_vars" must be used in the url path when variables are passed in the query parameters or request body',
-        });
-      });
-
-    });
-
-    describe('Passing the "parameter_vars" pseudo-variable without specifying variables as parameters', function () {
-      const query = {
-        granuleId,
-      };
-
-      StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookRangesetRequest(version, collection, pseudoVariableName, { query });
-
-      it('passes multiple variables to the backend service', function () {
-        expect(this.res.status).to.equal(400);
-        expect(this.res.body).to.eql({
-          'code': 'harmony.RequestValidationError',
-          'description': 'Error: "parameter_vars" specified, but no variables given',
-        });
-      });
-
-    });
-
-    describe('Passing the variables in the query parameters', function () {
-      const query = {
-        granuleId,
-        variable: [variableId1, variableId2],
-      };
-
-      StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookRangesetRequest(version, collection, pseudoVariableName, { query });
-
-      it('passes multiple variables to the backend service', function () {
-        const source = this.service.operation.sources[0];
-        expect(source.variables.length).to.equal(2);
-        expect(source.variables[0].id).to.equal(variableId1);
-        expect(source.variables[1].id).to.equal(variableId2);
-      });
-
-    });
-
-    describe('Passing the variables in the web form', function () {
-      const form = {
-        granuleId,
-        variable: `${variableId1},${variableId2}`,
-      };
-
-      StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookPostRangesetRequest(version, collection, pseudoVariableName, form);
-
-      it('passes multiple variables to the backend service', function () {
-        const source = this.service.operation.sources[0];
-        expect(source.variables.length).to.equal(2);
-        expect(source.variables[0].id).to.equal(variableId1);
-        expect(source.variables[1].id).to.equal(variableId2);
-      });
-
-    });
-
-    describe('Passing the variables in the query and the web form', function () {
-      const form = {
-        granuleId,
-        variable: [variableId1],
-      };
-
-      const queryStr = `variable=${variableId2}`;
-
-      StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookPostRangesetRequest(version, collection, pseudoVariableName, form, queryStr);
-
-      it('propagates the error message into the response', function () {
-        expect(this.res.text).to.include('Duplicate keys');
-      });
-
-      it('responds with an HTTP 400 "Bad Request" status code', function () {
-        expect(this.res.status).to.equal(400);
-      });
-
-    });
-
-    describe('Passing the variables in the web form using names as well as ids', function () {
-      const form = {
-        granuleId,
-        variable: `red_var,${variableId2}`,
-      };
-
-      StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookPostRangesetRequest(version, collection, pseudoVariableName, form);
-
-      it('passes multiple variables to the backend service', function () {
-        const source = this.service.operation.sources[0];
-        expect(source.variables.length).to.equal(2);
-        expect(source.variables[0].id).to.equal(variableId1);
-        expect(source.variables[1].id).to.equal(variableId2);
-      });
-
-    });
-
-    describe('Passing many variables in the web form', function () {
-      const largeCollection = 'C20240409-EEDTEST';
-      const largeVarList = [];
-      for (let i = 0; i < 2000; i++) {
-        largeVarList.push(`V9999${i}-EEDTEST`);
-      }
-
-      const form = {
-        granuleId,
-        variable: largeVarList.join(','),
-      };
-
-      StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookPostRangesetRequest(version, largeCollection, pseudoVariableName, form);
-
-      it('passes multiple variables to the backend service', function () {
-        const source = this.service.operation.sources[0];
-        expect(source.variables.length).to.equal(2000);
-      });
+    it('passes no variables to the backend service', function () {
+      const source = this.service.operation.sources[0];
+      expect(source.variables).to.not.be;
     });
   });
 
   describe('Not specifying a single granule ID', function () {
-    const query = {};
+    const query = { 'parameter-name': variableName };
 
     StubService.hook({ params: { status: 'successful' } });
-    hookRangesetRequest(version, collection, variableName, { query });
+    hookEdrRequest(version, collection, { query });
 
     it('is processed asynchronously', function () {
       expect(this.service.operation.isSynchronous).to.equal(false);
@@ -497,9 +374,10 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
   describe('When specifying a collection short name instead of a CMR concept ID', function () {
     const shortName = 'harmony_example';
+    const query = { 'parameter-name': variableName };
 
     StubService.hook({ params: { status: 'successful' } });
-    hookRangesetRequest(version, shortName, variableName, {});
+    hookEdrRequest(version, shortName, { query });
 
     it('is processed asynchronously', function () {
       expect(this.service.operation.isSynchronous).to.equal(false);
@@ -510,14 +388,16 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
   describe('when provided a valid temporal range', function () {
     const query = {
-      outputCrs: 'EPSG:4326',
+      'parameter-name': variableName,
+      crs: 'EPSG:4326',
       // Time range matches exactly one granule
-      subset: ['lat(0:10)', 'lon(-20.1:20)', 'time("2020-01-02T00:00:00.000Z":"2020-01-02T01:00:00.000Z")'],
+      bbox: '-20.1,0,20,10',
+      datetime: '2020-01-02T00:00:00.000Z/2020-01-02T01:00:00.000Z',
     };
 
     describe('calling the backend service', function () {
       StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookRangesetRequest(version, collection, variableName, { query });
+      hookEdrRequest(version, collection, { query });
 
       it('synchronously makes the request', function () {
         expect(this.service.operation.isSynchronous).to.equal(true);
@@ -538,8 +418,8 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       const forceAsync = true;
 
       describe('and making a request would otherwise be synchronous', function () {
-        hookRangesetRequest(version, collection, variableName,
-          { query: { granuleId, forceAsync } });
+        hookEdrRequest(version, collection,
+          { query: { granuleId, forceAsync, 'parameter-name': variableName } });
 
         it('performs the request asynchronously', function () {
           expect(this.service.operation.isSynchronous).to.equal(false);
@@ -547,7 +427,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       });
 
       describe('and making a request would otherwise be asynchronous', function () {
-        hookRangesetRequest(version, collection, variableName, { query: { forceAsync } });
+        hookEdrRequest(version, collection, { query: { forceAsync, 'parameter-name': variableName } });
 
         it('performs the request asynchronously', function () {
           expect(this.service.operation.isSynchronous).to.equal(false);
@@ -559,8 +439,8 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       const forceAsync = false;
 
       describe('and making a request would otherwise be synchronous', function () {
-        hookRangesetRequest(version, collection, variableName,
-          { query: { granuleId, forceAsync } });
+        hookEdrRequest(version, collection,
+          { query: { granuleId, forceAsync, 'parameter-name': variableName } });
 
         it('performs the request synchronously', function () {
           expect(this.service.operation.isSynchronous).to.equal(true);
@@ -568,7 +448,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       });
 
       describe('and making a request would otherwise be asynchronous', function () {
-        hookRangesetRequest(version, collection, variableName, { query: { forceAsync } });
+        hookEdrRequest(version, collection, { query: { forceAsync, 'parameter-name': variableName } });
 
         it('performs the request asynchronously', function () {
           expect(this.service.operation.isSynchronous).to.equal(false);
@@ -606,7 +486,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
     describe('and maxResults is not set for the query', function () {
 
-      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1', query: {} });
+      hookEdrRequest(version, collection, { username: 'jdoe1', query: { 'parameter-name': variableName } });
       describe('retrieving its job status', function () {
         hookRedirect('jdoe1');
         it('returns a human-readable message field indicating the request has been limited to a subset of the granules determined by the collection configuration', function () {
@@ -624,7 +504,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     describe('and maxResults from the query is set to a value greater than the granule limit for the collection', function () {
       const maxResults = 10;
 
-      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1', query: { maxResults } });
+      hookEdrRequest(version, collection, { username: 'jdoe1', query: { maxResults, 'parameter-name': variableName } });
       describe('retrieving its job status', function () {
         hookRedirect('jdoe1');
         it('returns a human-readable message field indicating the request has been limited to a subset of the granules determined by the collection configuration', function () {
@@ -642,7 +522,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     describe('and maxResults from the query is set to a value less than the granule limit for the collection', function () {
       const maxResults = 2;
 
-      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1', query: { maxResults } });
+      hookEdrRequest(version, collection, { username: 'jdoe1', query: { maxResults, 'parameter-name': variableName } });
       describe('retrieving its job status', function () {
         hookRedirect('jdoe1');
         it('returns a human-readable message field indicating the request has been limited to a subset of the granules determined by maxResults', function () {
@@ -665,7 +545,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
         this.glStub.restore();
       });
 
-      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1', query: {} });
+      hookEdrRequest(version, collection, { username: 'jdoe1', query: { 'parameter-name': variableName } });
       hookRedirect('jdoe1');
 
       it('returns a warning message about maxResults limiting the number of results', function () {
@@ -708,7 +588,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
     describe('and maxResults is not set for the query', function () {
 
-      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1', query: {} });
+      hookEdrRequest(version, collection, { username: 'jdoe1', query: { 'parameter-name': variableName } });
       describe('retrieving its job status', function () {
         hookRedirect('jdoe1');
         it('returns a human-readable message field indicating the request has been limited to a subset of the granules determined by the collection configuration', function () {
@@ -726,7 +606,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     describe('and maxResults from the query is set to a value greater than the granule limit for the collection', function () {
       const maxResults = 10;
 
-      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1', query: { maxResults } });
+      hookEdrRequest(version, collection, { username: 'jdoe1', query: { maxResults, 'parameter-name': variableName } });
       describe('retrieving its job status', function () {
         hookRedirect('jdoe1');
         it('returns a human-readable message field indicating the request has been limited to a subset of the granules determined by the collection configuration', function () {
@@ -744,7 +624,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     describe('and maxResults from the query is set to a value less than the granule limit for the collection', function () {
       const maxResults = 2;
 
-      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1', query: { maxResults } });
+      hookEdrRequest(version, collection, { username: 'jdoe1', query: { maxResults, 'parameter-name': variableName } });
       describe('retrieving its job status', function () {
         hookRedirect('jdoe1');
         it('returns a human-readable message field indicating the request has been limited to a subset of the granules determined by maxResults', function () {
@@ -767,7 +647,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
         this.glStub.restore();
       });
 
-      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1', query: {} });
+      hookEdrRequest(version, collection, { username: 'jdoe1', query: { 'parameter-name': variableName } });
       hookRedirect('jdoe1');
 
       it('returns a warning message about maxResults limiting the number of results', function () {
@@ -790,11 +670,11 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     const wildcardTiff = '*/tiff';
     const zarr = 'application/x-zarr';
     const unsupportedFormat = 'text/plain';
-    const query = { granuleId };
 
     describe('when providing an accept header for an unsupported format', function () {
       const headers = { accept: unsupportedFormat };
-      hookRangesetRequest(version, collection, 'all', { headers, query });
+      const query = { granuleId, 'parameter-name': 'all' };
+      hookEdrRequest(version, collection, { headers, query });
       it('returns a 422 error response', function () {
         expect(this.res.status).to.equal(422);
       });
@@ -809,10 +689,10 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     });
 
     describe('when providing an accept header and a format parameter', function () {
-      const pngQuery = { granuleId, format: png };
+      const pngQuery = { granuleId, 'parameter-name': variableName, f: png };
       const headers = { accept: tiff };
       StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookRangesetRequest(version, collection, variableName, { query: pngQuery, headers });
+      hookEdrRequest(version, collection, { query: pngQuery, headers });
       it('gives the format parameter precedence over the accept header', function () {
         expect(this.service.operation.outputFormat).to.equal(png);
       });
@@ -820,8 +700,9 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
     describe('when providing */* for the accept header', function () {
       const headers = { accept: anyWildcard };
+      const query = { granuleId, 'parameter-name': variableName };
       StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookRangesetRequest(version, collection, variableName, { headers, query });
+      hookEdrRequest(version, collection, { headers, query });
       it('chooses the first output format supported by the service (see services.yml)', function () {
         expect(this.service.operation.outputFormat).to.equal(tiff);
       });
@@ -829,8 +710,9 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
     describe('when providing */tiff for the accept header', function () {
       const headers = { accept: imageWildcard };
+      const query = { granuleId, 'parameter-name': variableName };
       StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookRangesetRequest(version, collection, variableName, { headers, query });
+      hookEdrRequest(version, collection, { headers, query });
       it('selects the first valid tiff format supported', function () {
         expect(this.service.operation.outputFormat).to.equal(tiff);
       });
@@ -838,8 +720,9 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
     describe('when providing image/* for the accept header', function () {
       const headers = { accept: wildcardTiff };
+      const query = { granuleId, 'parameter-name': variableName };
       StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookRangesetRequest(version, collection, variableName, { headers, query });
+      hookEdrRequest(version, collection, { headers, query });
       it('selects the first valid image format supported', function () {
         expect(this.service.operation.outputFormat).to.equal(tiff);
       });
@@ -847,8 +730,9 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
     describe('when providing an accept header with a parameter', function () {
       const headers = { accept: `${zarr};q=0.9` };
+      const query = { granuleId, 'parameter-name': 'all' };
       StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookRangesetRequest(version, collection, 'all', { headers, query });
+      hookEdrRequest(version, collection, { headers, query });
       it('correctly parses the format from the header', function () {
         expect(this.service.operation.outputFormat).to.equal(zarr);
       });
@@ -857,8 +741,9 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     describe('when providing multiple formats supported by different services', function () {
       const headers = { accept: `${zarr}, ${tiff}` };
       describe('when requesting variable subsetting which is only supported by one of the services', function () {
+        const query = { granuleId, 'parameter-name': variableName };
         StubService.hook({ params: { redirect: 'http://example.com' } });
-        hookRangesetRequest(version, collection, variableName, { headers, query });
+        hookEdrRequest(version, collection, { headers, query });
         it('uses the backend service that supports variable subsetting', function () {
           expect(this.service.config.name).to.equal('harmony/service-example');
         });
@@ -868,8 +753,9 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       });
 
       describe('when not requesting variable subsetting so either service could be used', function () {
+        const query = { granuleId, 'parameter-name': 'all' };
         StubService.hook({ params: { redirect: 'http://example.com' } });
-        hookRangesetRequest(version, collection, 'all', { headers, query });
+        hookEdrRequest(version, collection, { headers, query });
         it('uses the first format in the list', function () {
           expect(this.service.operation.outputFormat).to.equal(zarr);
         });
@@ -881,8 +767,9 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
     describe('when providing multiple formats with the highest priority being unsupported', function () {
       const headers = { accept: `${unsupportedFormat};q=1.0, ${zarr};q=0.5, ${tiff};q=0.8, ${png};q=0.85` };
+      const query = { granuleId, 'parameter-name': variableName };
       StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookRangesetRequest(version, collection, variableName, { headers, query });
+      hookEdrRequest(version, collection, { headers, query });
       it('uses the highest quality value format that is supported', function () {
         expect(this.service.operation.outputFormat).to.equal(png);
       });
@@ -893,8 +780,9 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
     describe('when providing multiple formats and not specifying a quality value for one of them', function () {
       const headers = { accept: `${zarr};q=0.5, ${tiff};q=0.8, ${png}` };
+      const query = { granuleId, 'parameter-name': variableName };
       StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookRangesetRequest(version, collection, variableName, { headers, query });
+      hookEdrRequest(version, collection, { headers, query });
       it('treats the unspecified quality value as 1.0', function () {
         expect(this.service.operation.outputFormat).to.equal(png);
       });
@@ -902,8 +790,9 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
     describe('when requesting an unsupported format followed by */*', function () {
       const headers = { accept: `${unsupportedFormat}, ${anyWildcard}` };
+      const query = { granuleId, 'parameter-name': variableName };
       StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookRangesetRequest(version, collection, variableName, { headers, query });
+      hookEdrRequest(version, collection, { headers, query });
       it('returns a redirect 303 (and not a 404 error)', function () {
         expect(this.res.status).to.equal(303);
       });
@@ -915,17 +804,19 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
   });
 
   describe('when requesting no data transformations', function () {
+    const query = { 'parameter-name': 'all' };
     StubService.hook({ params: { redirect: 'http://example.com' } });
-    hookRangesetRequest(version, collection, 'all');
+    hookEdrRequest(version, collection, { query });
     it('selects the download link service to process the request', function () {
       expect(this.service.config.name).to.equal('harmony/download');
     });
   });
 
   describe('when the database catches fire during an asynchronous request', function () {
+    const query = { 'parameter-name': variableName };
     hookDatabaseFailure();
     StubService.hook({ params: { redirect: 'http://example.com' } });
-    hookRangesetRequest(version, collection, variableName, {});
+    hookEdrRequest(version, collection, { query });
 
     it('returns an HTTP 500 error with the JSON error format', function () {
       expect(this.res.status).to.eql(500);
@@ -949,14 +840,18 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
      * ("all", or variable name(s) or concept ID(s) comma separated, defaults to the value of variableName)
      */
     function itReturnsAValidationError(
-      queryParams: object, message: string, code = 'openapi.ValidationError', variable = variableName,
+      queryParams: object, message: string, code = 'openapi.ValidationError',
     ): void {
       it(`returns an HTTP 400 "Bad Request" error with explanatory message ${message}`, async function () {
-        const res = await rangesetRequest(
+        // eslint-disable-next-line @typescript-eslint/dot-notation
+        if (queryParams['parameter-name'] === undefined) {
+          // eslint-disable-next-line @typescript-eslint/dot-notation
+          queryParams['parameter-name'] = 'all';
+        }
+        const res = await edrRequest(
           this.frontend,
           version,
           collection,
-          variable,
           { query: queryParams },
         );
         expect(res.status).to.equal(400);
@@ -977,7 +872,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       'query parameter "granuleId[0]" should NOT be shorter than 1 characters',
     );
     itReturnsAValidationError(
-      { granuleId, outputCrs: 'EPSG:1' },
+      { granuleId, crs: 'EPSG:1' },
       'query parameter "crs/outputCrs" could not be parsed.  Try an EPSG code or Proj4 string.',
       'harmony.RequestValidationError',
     );
@@ -1024,12 +919,11 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     );
 
     it('returns an HTTP 400 "Bad Request" error with explanatory message when the variable does not exist', async function () {
-      const res = await rangesetRequest(
+      const res = await edrRequest(
         this.frontend,
         version,
         collection,
-        'NotAVariable',
-        { query: { granuleId } },
+        { query: { granuleId, 'parameter-name': 'NotAVariable' } },
       );
       expect(res.status).to.equal(400);
       expect(res.body).to.eql({
@@ -1038,13 +932,12 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       });
     });
 
-    it('returns an HTTP 400 "Bad Request" error with explanatory message when "all" is specified with another coverage', async function () {
-      const res = await rangesetRequest(
+    it('returns an HTTP 400 "Bad Request" error with explanatory message when "all" is specified with another variable', async function () {
+      const res = await edrRequest(
         this.frontend,
         version,
         collection,
-        `all,${variableName}`,
-        { query: { granuleId } },
+        { query: { granuleId, 'parameter-name': `all,${variableName}` } },
       );
       expect(res.status).to.equal(400);
       expect(res.body).to.eql({
@@ -1056,9 +949,10 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
   describe('when using a collection with coordinate variables', function () {
     const collectionId = 'C1243747507-EEDTEST';
+    const query = { 'parameter-name': 'sea_surface_temperature' };
     StubService.hook({ params: { redirect: 'http://example.com' } });
 
-    hookRangesetRequest(version, collectionId, 'sea_surface_temperature', {});
+    hookEdrRequest(version, collectionId, { query });
 
     it('includes coordinate variables', function () {
       const source = this.service.operation.sources[0];
@@ -1073,9 +967,11 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
   });
 });
 
-describe('OGC API Coverages - getCoverageRangeset with the extend query parameter', async function () {
+describe('OGC API EDR - getEdrCube with the extend query parameter', async function () {
   hookServersStartStop();
-  hookRangesetRequest('1.0.0', 'C1233800302-EEDTEST', 'all', { query: { extend: 'dimension_var', skipPreview: 'true', maxResults: 2 }, username: 'joe' });
+  hookEdrRequest('1.1.0',
+    'C1233800302-EEDTEST',
+    { query: { 'parameter-name': 'all', extend: 'dimension_var', skipPreview: 'true', maxResults: 2 }, username: 'joe' });
 
   it('returns a 422 error response', function () {
     expect(this.res.status).to.equal(422);
@@ -1092,30 +988,32 @@ describe('OGC API Coverages - getCoverageRangeset with the extend query paramete
   // TODO - HARMONY-1569 add tests after we have added a service that supports extend
   // describe('when requesting all vars and extending dimension_var', function () {
   //   StubService.hook({ params: { redirect: 'http://example.com' } });
-  //   hookRangesetRequest('1.0.0', 'C1233800302-EEDTEST', 'all', { query: { extend: 'dimension_var', skipPreview: 'true', maxResults: 2 }, username: 'joe' });
+  //   hookEdrRequest('1.1.0', 'C1233800302-EEDTEST', 'all', { query: { extend: 'dimension_var', skipPreview: 'true', maxResults: 2 }, username: 'joe' });
   //   itRedirectsToJobStatusUrl();
   // });
 
   // describe('when requesting red_var and extending lat,lon', function () {
   //   StubService.hook({ params: { redirect: 'http://example.com' } });
-  //   hookRangesetRequest('1.0.0', 'C1233800302-EEDTEST', 'red_var', { query: { extend: 'lat,lon' }, username: 'joe' });
+  //   hookEdrRequest('1.1.0', 'C1233800302-EEDTEST', 'red_var', { query: { extend: 'lat,lon' }, username: 'joe' });
   //   itRedirectsToJobStatusUrl();
   // });
 });
 
-describe('OGC API Coverages - getCoverageRangeset with a collection not configured for services', function () {
+describe('OGC API EDR - getEdrCube with a collection not configured for services', function () {
   const collection = 'C1243745256-EEDTEST';
-  const version = '1.0.0';
+  const version = '1.1.0';
 
   hookServersStartStop();
 
   describe('when not requesting any transformations', function () {
-    hookRangesetRequest(version, collection, 'all', { username: 'joe' });
+    const query = { 'parameter-name': 'all' };
+    hookEdrRequest(version, collection, { username: 'joe', query });
     itRedirectsToJobStatusUrl();
   });
 
   describe('when requesting any transformation such as reformatting to png', function () {
-    hookRangesetRequest(version, collection, 'all', { username: 'joe', query: { format: 'image/png' } });
+    const query = { 'parameter-name': 'all', f: 'image/png' };
+    hookEdrRequest(version, collection, { username: 'joe', query });
 
     it('returns a 422 error response', function () {
       expect(this.res.status).to.equal(422);

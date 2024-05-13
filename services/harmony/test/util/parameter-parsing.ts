@@ -1,6 +1,6 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import { ParameterParseError, parseBoolean, parseMultiValueParameter } from '../../app/util/parameter-parsing-helpers';
+import { ParameterParseError, parseBoolean, parseMultiValueParameter, parseNumber } from '../../app/util/parameter-parsing-helpers';
 
 describe('util/parameter-parsing', function () {
   describe('#parseMultiValueParameter', function () {
@@ -61,6 +61,34 @@ describe('util/parameter-parsing', function () {
 
     it('throws a parse error for "truthy"', function () {
       expect(parseBooleanFn('truthy')).to.throw(ParameterParseError, '\'truthy\' must be \'false\' or \'true\'');
+    });
+  });
+
+  describe('#parseNumber', function () {
+
+    // Function that returns a function that calls parseNumber with the given value,
+    // necesssary for setting mocha expectations about exceptions.
+    // Copied from parseBolean tests.
+    const parseNumberFn = (value) => (): number => parseNumber(value);
+
+    it('returns 123 for "123"', function () {
+      expect(parseNumber('123')).to.equal(123);
+    });
+
+    it('returns 123 for 123', function () {
+      expect(parseNumber(123)).to.equal(123);
+    });
+
+    it('returns 123.45 for "123.45"', function () {
+      expect(parseNumber('123.45')).to.equal(123.45);
+    });
+
+    it('returns 123.45 for 123.45', function () {
+      expect(parseNumber(123.45)).to.equal(123.45);
+    });
+
+    it('throws a parse error for "abc"', function () {
+      expect(parseNumberFn('abc')).to.throw(ParameterParseError, '\'abc\' must be a number.');
     });
   });
 });

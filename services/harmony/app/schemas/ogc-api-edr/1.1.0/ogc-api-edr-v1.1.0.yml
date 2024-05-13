@@ -1,0 +1,902 @@
+openapi: 3.0.3
+info:
+  title: A sample API conforming to version 1.1.0 of the OGC API - Environmental Data
+    Retrieval Standard
+  description:
+    "A sample API conforming to version 1.1.0 of the [OGC API - Environmental Data  Retrieval](https://ogcapi.ogc.org/edr/) Standard.
+    Copyright (c) 2023 Open Geospatial Consortium.
+    To obtain additional rights of use, visit http://www.opengeospatial.org/legal/
+    The Environmental Data Retrieval (EDR) Application Programming Interface
+    (API) provides a family of lightweight query interfaces to access spatio-temporal
+    data resources by requesting data at a Position, within an Area, along a Trajectory
+    or through a Corridor. A spatio-temporal data resource is a collection of spatio-temporal
+    data that can be sampled using the EDR query pattern geometries."
+  version: 1.1.0
+servers:
+  - url: /ogc-api-EDR/1.1.0
+    description: Harmony server
+    variables:
+      cmrCollectionId:
+        default: no-default-cmr-collection
+        description: The CMR Collection ID for the dataset whose edr is being accessed
+tags:
+  - name: Capabilities
+    description: Essential characteristics of this API including information about the data.
+  - name: Edr
+    description: Access to data (edr).
+paths:
+  /:
+    get:
+      tags:
+        - Capabilities
+      summary: landing page of this API
+      description:
+        The landing page provides links to the API definition, the Conformance
+        statements and the metadata about the edr data in this dataset.
+      operationId: getLandingPage
+      responses:
+        "200":
+          description: links to the API capabilities
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/root"
+        default:
+          $ref: "#/components/responses/default"
+  /api:
+    get:
+      tags:
+        - OpenAPI
+      summary: this OpenAPI Schema
+      description: Returns the OpenAPI Schema for this edr endpoint
+      operationId: getSpecification
+      responses:
+        "200":
+          description: this OpenAPI Schema
+          content:
+            "text/openapi+yaml;version=3.0":
+              schema:
+                type: string
+        default:
+          $ref: "#/components/responses/default"
+  /conformance:
+    get:
+      tags:
+        - Capabilities
+      summary: information about standards that this API conforms to
+      description: list all requirements classes specified in a standard
+        that the server conforms to
+      operationId: getRequirementsClasses
+      responses:
+        "200":
+          description: the URIs of all requirements classes supported by the server
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/req-classes"
+        default:
+          $ref: "#/components/responses/default"
+  /collections:
+    get:
+      tags:
+        - Capabilities
+      summary: List the avialable collections from the service
+      operationId: describeCollections
+      parameters:
+        - $ref: "#/components/parameters/bbox"
+        - $ref: "#/components/parameters/datetime"
+        - $ref: "#/components/parameters/f"
+      responses:
+        "200":
+          description: Metadata about the collections shared by this API.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/content"
+            text/html:
+              schema:
+                type: string
+        default:
+          $ref: "#/components/responses/default"
+  /collections/{collectionId}:
+    get:
+      tags:
+        - Collection metadata
+      summary: List query types supported by the collection
+      description: This will provide information about the query types that are supported by the chosen collection Use content negotiation to request HTML or JSON
+      operationId: describeCollection
+      parameters:
+        - $ref: "#/components/parameters/f"
+      responses:
+        "200":
+          description:
+            Metadata about the {collectionId} collection shared by this
+            API.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/collectionInfo"
+            text/html:
+              schema:
+                type: string
+        default:
+          $ref: "#/components/responses/default"
+  /collections/{collectionId}/instances:
+    get:
+      tags:
+        - Instance metadata
+      summary: List data instances of {collectionId}
+      description: This will provide list of the avalable instances of the collection Use content negotiation to request HTML or JSON.
+      operationId: getCollectionInstances
+      parameters:
+        - $ref: "#/components/parameters/f"
+      responses:
+        "200":
+          description: Information about the edr collection.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/edrOffering"
+            text/html:
+              schema:
+                type: string
+        default:
+          $ref: "#/components/responses/default"
+  /collections/{collectionId}/position:
+    get:
+      tags:
+        - Collection data queries
+      summary: Query end point for position queries  of collection {collectionId}
+      description: Not yet implemented
+      operationId: getDataForPoint
+      parameters:
+        - $ref: "#/components/parameters/coords"
+        - $ref: "#/components/parameters/z"
+        - $ref: "#/components/parameters/datetime"
+        - $ref: "#/components/parameters/parameter-name"
+        - $ref: "#/components/parameters/crs"
+        - $ref: "#/components/parameters/f"
+      responses:
+        "200":
+          description: A edr description.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/edrDescription"
+            text/html:
+              schema:
+                type: string
+        default:
+          $ref: "#/components/responses/default"
+    post:
+      tags:
+        - Collection data queries
+      summary: Query end point for position queries  of collection {collectionId}
+      description: Query end point for position queries
+      operationId: postDataForPoint
+      parameters:
+        - $ref: "#/components/parameters/coords"
+        - $ref: "#/components/parameters/z"
+        - $ref: "#/components/parameters/datetime"
+        - $ref: "#/components/parameters/parameter-name"
+        - $ref: "#/components/parameters/crs"
+        - $ref: "#/components/parameters/f"
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                shapefile:
+                  type: string
+                  format: binary
+            encoding:
+              shapefile:
+                contentType: "application/geo+json,application/shapefile+zip,application/vnd.google-earth.kml+xml"
+
+      responses:
+        "200":
+          description: A edr description.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/edrDescription"
+            text/html:
+              schema:
+                type: string
+        default:
+          $ref: "#/components/responses/default"
+  /collections/{collectionId}/cube:
+    get:
+      tags:
+        - Collection data queries
+      summary: Query end point for Cube queries  of collection {collectionId} defined by a cube
+      description: Return the data values for the data Cube defined by the query parameters
+      operationId: getDataForCube
+      parameters:
+        - $ref: "#/components/parameters/bbox"
+        - $ref: "#/components/parameters/z"
+        - $ref: "#/components/parameters/datetime"
+        - $ref: "#/components/parameters/parameter-name"
+        - $ref: "#/components/parameters/crs"
+        - $ref: "#/components/parameters/f"
+        # Parameters below this line are not part of the OGC specification
+        - $ref: "#/components/parameters/subset"
+        - $ref: "#/components/parameters/interpolation"
+        - $ref: "#/components/parameters/scaleExtent"
+        - $ref: "#/components/parameters/scaleSize"
+        - $ref: "#/components/parameters/concatenate"
+        - $ref: "#/components/parameters/granuleId"
+        - $ref: "#/components/parameters/point"
+        - $ref: "#/components/parameters/width"
+        - $ref: "#/components/parameters/height"
+        - $ref: "#/components/parameters/forceAsync"
+        - $ref: "#/components/parameters/maxResults"
+        - $ref: "#/components/parameters/skipPreview"
+        - $ref: "#/components/parameters/ignoreErrors"
+        - $ref: "#/components/parameters/destinationUrl"
+        - $ref: "#/components/parameters/granuleName"
+        - $ref: "#/components/parameters/grid"
+        - $ref: "#/components/parameters/extend"
+      responses:
+        "200":
+          description: A collection's EDR.
+          content:
+            image/*:
+              schema:
+                $ref: "#/components/schemas/edrImage"
+            application/*:
+              schema:
+                $ref: "#/components/schemas/edrImage"
+        default:
+          $ref: "#/components/responses/default"
+    post:
+      tags:
+        - Edr
+      summary: Query end point for Cube queries  of collection {collectionId} defined by a cube
+      description: Return the data values for the data Cube defined by the query parameters
+      operationId: postDataForCube
+      parameters:
+        - $ref: "#/components/parameters/bbox"
+        - $ref: "#/components/parameters/z"
+        - $ref: "#/components/parameters/datetime"
+        - $ref: "#/components/parameters/parameter-name"
+        - $ref: "#/components/parameters/crs"
+        - $ref: "#/components/parameters/f"
+        # Parameters below this line are not part of the OGC specification
+        - $ref: "#/components/parameters/subset"
+        - $ref: "#/components/parameters/interpolation"
+        - $ref: "#/components/parameters/scaleExtent"
+        - $ref: "#/components/parameters/scaleSize"
+        - $ref: "#/components/parameters/concatenate"
+        - $ref: "#/components/parameters/granuleId"
+        - $ref: "#/components/parameters/point"
+        - $ref: "#/components/parameters/width"
+        - $ref: "#/components/parameters/height"
+        - $ref: "#/components/parameters/forceAsync"
+        - $ref: "#/components/parameters/maxResults"
+        - $ref: "#/components/parameters/skipPreview"
+        - $ref: "#/components/parameters/ignoreErrors"
+        - $ref: "#/components/parameters/destinationUrl"
+        - $ref: "#/components/parameters/granuleName"
+        - $ref: "#/components/parameters/grid"
+        - $ref: "#/components/parameters/extend"
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                shapefile:
+                  type: string
+                  format: binary
+            encoding:
+              shapefile:
+                contentType: "application/geo+json,application/shapefile+zip,application/vnd.google-earth.kml+xml"
+
+      responses:
+        "200":
+          description: A edr's range set.
+          content:
+            image/*:
+              schema:
+                $ref: "#/components/schemas/edrImage"
+            application/*:
+              schema:
+                $ref: "#/components/schemas/edrImage"
+        default:
+          $ref: "#/components/responses/default"
+components:
+  responses:
+    default:
+      description: An error occured.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/exception"
+        text/html:
+          schema:
+            type: string
+  schemas:
+    exception:
+      required:
+        - code
+      type: object
+      properties:
+        code:
+          type: string
+        description:
+          type: string
+    root:
+      required:
+        - links
+      type: object
+      properties:
+        links:
+          type: array
+          example:
+            - href: http://data.example.org/
+              rel: self
+              type: application/json
+              title: this document
+            - href: http://data.example.org/api
+              rel: service
+              type: application/openapi+json;version=3.0
+              title: the API definition
+            - href: http://data.example.org/conformance
+              rel: conformance
+              type: application/json
+              title: OGC conformance classes implemented by this API
+            - href: http://data.example.org/collections
+              title: Metadata about the resource collections
+          items:
+            $ref: "#/components/schemas/link"
+    req-classes:
+      required:
+        - conformsTo
+      type: object
+      properties:
+        conformsTo:
+          type: array
+          example:
+            - http://www.opengis.net/spec/ogcapi-common/1.0/conf/core
+            - http://www.opengis.net/spec/ogcapi-common/1.0/conf/collections
+            - http://www.opengis.net/spec/ogcapi-common/1.0/conf/oas3
+            - http://www.opengis.net/spec/ogcapi-common/1.0/conf/html
+            - http://www.opengis.net/spec/ogcapi-common/1.0/conf/geojson
+            - http://www.opengis.net/spec/ogcapi-EDR/1.0/conf/core
+          items:
+            type: string
+    link:
+      required:
+        - href
+      type: object
+      properties:
+        href:
+          type: string
+        rel:
+          type: string
+          example: prev
+        type:
+          type: string
+          example: application/geo+json
+        hreflang:
+          type: string
+          example: en
+    content:
+      required:
+        - collections
+        - links
+      type: object
+      properties:
+        links:
+          type: array
+          example:
+            - href: http://data.example.org/collections.json
+              rel: self
+              type: application/json
+              title: this document
+            - href: http://data.example.org/collections.html
+              rel: alternate
+              type: text/html
+              title: this document as HTML
+            - href: http://schemas.example.org/1.0/foobar.xsd
+              rel: describedBy
+              type: application/xml
+              title: XML schema for Acme Corporation data
+          items:
+            $ref: "#/components/schemas/link"
+        collections:
+          type: array
+          items:
+            $ref: "#/components/schemas/collectionInfo"
+    collectionInfo:
+      required:
+        - links
+        - name
+      type: object
+      properties:
+        name:
+          type: string
+          description: identifier of the collection used, for example, in URIs
+          example: buildings
+        title:
+          type: string
+          description: human readable title of the collection
+          example: Buildings
+        description:
+          type: string
+          description: a description of the data in the collection
+          example: Buildings in the city of Bonn.
+        links:
+          type: array
+          example:
+            - href: http://data.example.org/collections/buildings/items
+              rel: item
+              type: application/geo+json
+              title: Buildings
+            - href: http://example.org/concepts/building.html
+              rel: describedBy
+              type: text/html
+              title: Edr for buildings
+          items:
+            $ref: "#/components/schemas/link"
+        extent:
+          $ref: "#/components/schemas/extent"
+        crs:
+          type: array
+          description:
+            The coordinate reference systems in which geometries may be
+            retrieved. Coordinate reference systems are identified by a URI. The first
+            coordinate reference system is the coordinate reference system that is
+            used by default. This is always "http://www.opengis.net/def/crs/OGC/1.3/CRS84",
+            i.e. WGS84 longitude/latitude.
+          items:
+            type: string
+          default:
+            - http://www.opengis.net/def/crs/OGC/1.3/CRS84
+    extent:
+      type: object
+      properties:
+        crs:
+          type: string
+          description:
+            Coordinate reference system of the coordinates in the spatial
+            extent (property `spatial`). In the Core, only WGS84 longitude/latitude
+            is supported. Extensions may support additional coordinate reference systems.
+          default: http://www.opengis.net/def/crs/OGC/1.3/CRS84
+          enum:
+            - http://www.opengis.net/def/crs/OGC/1.3/CRS84
+        spatial:
+          maxItems: 6
+          minItems: 4
+          type: array
+          description:
+            West, north, east, south edges of the spatial extent. The minimum
+            and maximum values apply to the coordinate reference system WGS84 longitude/latitude
+            that is supported in the Core. If, for example, a projected coordinate
+            reference system is used, the minimum and maximum values need to be adjusted.
+          example:
+            - -180
+            - -90
+            - 180
+            - 90
+          items:
+            type: number
+        trs:
+          type: string
+          description:
+            Temporal reference system of the coordinates in the temporal
+            extent (property `temporal`). In the Core, only the Gregorian calendar
+            is supported. Extensions may support additional temporal reference systems.
+          default: http://www.opengis.net/def/uom/ISO-8601/0/Gregorian
+          enum:
+            - http://www.opengis.net/def/uom/ISO-8601/0/Gregorian
+        temporal:
+          maxItems: 2
+          minItems: 2
+          type: array
+          description: Begin and end times of the temporal extent.
+          example:
+            - 2011-11-11T12:22:11.000Z
+            - 2012-11-24T12:32:43.000Z
+          items:
+            type: string
+            format: dateTime
+    edrOffering:
+      type: string
+    edrDescription:
+      type: string
+    edrMetadata:
+      type: string
+    edrMultipart:
+      type: string
+    edrImage:
+      type: string
+  parameters:
+    limit:
+      name: limit
+      in: query
+      description: |
+        The optional limit parameter limits the number of items that are
+        presented in the response document.
+
+        Only items are counted that are on the first level of the collection in
+        the response document. Nested objects contained within the explicitly
+        requested items shall not be counted.
+
+        * Minimum = 1
+        * Maximum = 10000
+        * Default = 10
+      required: false
+      style: form
+      explode: false
+      schema:
+        maximum: 10000
+        minimum: 1
+        type: integer
+        default: 10
+    bbox:
+      name: bbox
+      in: query
+      description: |-
+        Only features that have a geometry that intersects the bounding box are selected.
+        The bounding box is provided as four or six numbers, depending on whether the
+        coordinate reference system includes a vertical axis (height or depth):
+        * Lower left corner, coordinate axis 1
+        * Lower left corner, coordinate axis 2
+        * Minimum value, coordinate axis 3 (optional)
+        * Upper right corner, coordinate axis 1
+        * Upper right corner, coordinate axis 2
+        * Maximum value, coordinate axis 3 (optional)
+        The coordinate reference system of the values is WGS 84 longitude/latitude
+        (http://www.opengis.net/def/crs/OGC/1.3/CRS84) unless a different coordinate
+        reference system is specified in the parameter `bbox-crs`.
+        For WGS 84 longitude/latitude the values are in most cases the sequence of
+        minimum longitude, minimum latitude, maximum longitude and maximum latitude.
+        However, in cases where the box spans the antimeridian the first value
+        (west-most box edge) is larger than the third value (east-most box edge).
+        If the vertical axis is included, the third and the sixth number are the
+        bottom and the top of the 3-dimensional bounding box.
+        If a feature has multiple spatial geometry properties, it is the decision of the
+        server whether only a single spatial geometry property is used to determine
+        the extent or all relevant geometries.
+      required: false
+      schema:
+        oneOf:
+          - items:
+              minItems: 4
+              maxItems: 4
+              type: number
+            type: array
+          - items:
+              minItems: 6
+              maxItems: 6
+              type: number
+            type: array
+      style: form
+      explode: false
+    point:
+      name: point
+      in: query
+      description: |
+        Only collections that have a geometry that contains a spatial point are selected. The spatial point is provided as two numbers:
+        * Longitude, coordinate axis 1 * Latitude, coordinate axis 2
+        The coordinate reference system of the values is WGS84 longitude/latitude (http://www.opengis.net/def/crs/OGC/1.3/CRS84).
+      required: false
+      style: form
+      explode: false
+      schema:
+        maxItems: 2
+        minItems: 2
+        type: array
+        items:
+          type: number
+    time:
+      name: time
+      in: query
+      description: |-
+        Either a date-time or a period string that adheres to RFC 3339. Examples:
+        * A date-time: "2018-02-12T23:20:50Z" * A period: "2018-02-12T00:00:00Z/2018-03-18T12:31:12Z" or "2018-02-12T00:00:00Z/P1M6DT12H31M12S"
+        Only collections that have a temporal property that intersects the value of `time` are selected.
+        If a collection has multiple temporal properties, it is the decision of the server whether only a single temporal property is used to determine the extent or all relevant temporal properties.
+      required: false
+      style: form
+      explode: false
+      schema:
+        type: string
+    parameter-name:
+      name: parameter-name
+      in: path
+      description: |-
+        Names or concept ids of the UMM-Var variables to be retrieved, or "all" to retrieve all variables within the CMR collection(s).
+        Multiple variables may be retrieved by separating them with a comma.
+      required: false
+      style: simple
+      explode: false
+      schema:
+        type: string
+    coords:
+      name: coords
+      in: query
+      description: |-
+        location(s) to return data for, the coordinates are defined by a Well Known Text
+        (wkt) string. to retrieve a single location :
+
+        POINT(x y) i.e. POINT(0 51.48) for Greenwich, London
+
+        And for a list of locations
+
+        MULTIPOINT((x y),(x1 y1),(x2 y2),(x3 y3))
+
+        i.e.
+        MULTIPOINT((38.9 -77),(48.85 2.35),(39.92 116.38),(-35.29 149.1),(51.5 -0.1))
+
+        see http://portal.opengeospatial.org/files/?artifact_id=25355 and
+        https://en.wikipedia.org/wiki/Well-known_text_representation_of_geometry
+
+        the coordinate values will depend on the CRS parameter, if this is not defined
+        the values will be assumed to WGS84 values (i.e x=longitude and y=latitude)
+      required: false
+      schema:
+        type: string
+    z:
+      name: z
+      in: query
+      description: |
+        Define the vertical level to return data from
+        i.e. z=level
+
+        for instance if the 850hPa pressure level is being queried
+
+        z=850
+
+        or a range to return data for all levels between and including 2 defined levels
+        i.e. z=minimum value/maximum value
+
+        for instance if all values between and including 10m and 100m
+
+        z=10/100
+
+        finally a list of height values can be specified
+        i.e. z=value1,value2,value3
+
+        for instance if values at 2m, 10m and 80m are required
+
+        z=2,10,80
+
+        An Arithmetic sequence using Recurring height intervals, the difference is the number of recurrences is defined at the start
+        and the amount to increment the height by is defined at the end
+
+        i.e. z=Rn/min height/height interval
+
+        so if the request was for 20 height levels 50m apart starting at 100m:
+
+        z=R20/100/50
+
+        When not specified data from all available heights SHOULD be returned
+      required: false
+      schema:
+        type: string
+      style: form
+      explode: false
+    datetime:
+      name: datetime
+      in: query
+      description: |-
+        Either a date-time or an interval. Date and time expressions adhere to RFC 3339. Intervals may be bounded or half-bounded (double-dots at start or end).
+        Examples:
+        * A date-time: "2018-02-12T23:20:50Z" * A bounded interval: "2018-02-12T00:00:00Z/2018-03-18T12:31:12Z" * Half-bounded intervals: "2018-02-12T00:00:00Z/.." or "../2018-03-18T12:31:12Z"
+        Only resources that have a temporal property that intersects the value of `datetime` are selected.
+        If a feature has multiple temporal properties, it is the decision of the server whether only a single temporal property is used to determine the extent or all relevant temporal properties.
+      required: false
+      schema:
+        type: string
+      style: form
+      explode: false
+    crs:
+      name: crs
+      in: query
+      description: identifier (id) of the coordinate system to return data in list of valid crs identifiers for the chosen collection are defined in the metadata responses.  If not supplied the coordinate reference system will default to WGS84.
+      required: false
+      example: native
+      schema:
+        type: string
+    f:
+      name: f
+      in: query
+      description: format to return the data response in
+      required: false
+      schema:
+        type: string
+    granuleId:
+      name: granuleId
+      in: query
+      description: The CMR Granule ID for the granule which should be retrieved
+      required: false
+      style: form
+      explode: true
+      schema:
+        type: array
+        items:
+          type: string
+          minLength: 1
+    subset:
+      name: subset
+      in: query
+      description: '
+        Harmony supports arbitrary dimension names for subsetting on numeric ranges for that dimension.
+        "lat", "lon" and "time" subset will be ignored by EDR.
+
+        Examples:
+        - Subset on arbitrary dimension "vertical" with a value between 0 and 20
+        subset=vertical(0:20)
+
+        For full syntax and examples, see
+        https://github.com/opengeospatial/ogc_api_EDR/blob/master/standard/clause_9_subset.adoc'
+      required: false
+      style: form
+      explode: true
+      schema:
+        type: array
+        items:
+          type: string
+    scaleFactor:
+      name: scaleFactor
+      in: query
+      description: scale the resulting edr either among all axes by a given factor
+      required: false
+      style: form
+      explode: true
+      schema:
+        type: string
+    scaleAxis:
+      name: scaleAxis
+      in: query
+      description: scale the resulting edr either among one axis by a given factor
+      required: false
+      style: form
+      explode: true
+      schema:
+        type: string
+    scaleSize:
+      name: scaleSize
+      in: query
+      description: scale the resulting edr either among one axis to a given size
+      required: false
+      style: form
+      explode: false
+      schema:
+        minItems: 2
+        maxItems: 2
+        type: array
+        items:
+          type: number
+          minimum: 0
+    scaleExtent:
+      name: scaleExtent
+      in: query
+      description: scale the resulting edr either among one axis to a given extent
+      required: false
+      style: form
+      explode: false
+      schema:
+        minItems: 4
+        maxItems: 4
+        type: array
+        items:
+          type: number
+    subsettingCrs:
+      name: subsettingcrs
+      in: query
+      description: specify the projection in which the subsets are expressed
+      required: false
+      style: form
+      explode: true
+      schema:
+        type: string
+    interpolation:
+      name: interpolation
+      in: query
+      description: specify the interpolation method used during reprojection and scaling
+      required: false
+      style: form
+      explode: true
+      schema:
+        type: string
+    width:
+      name: width
+      in: query
+      description: number of columns to return in the output edr
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+    height:
+      name: height
+      in: query
+      description: number of rows to return in the output edr
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+    forceAsync:
+      name: forceAsync
+      in: query
+      description: if "true", override the default API behavior and always treat the request as asynchronous
+      required: false
+      schema:
+        type: boolean
+    maxResults:
+      name: maxResults
+      in: query
+      description: limits the number of input granules processed in the request
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+    concatenate:
+      name: concatenate
+      in: query
+      description: requests results to be concatenated into a single result
+      required: false
+      schema:
+        type: string
+    skipPreview:
+      name: skipPreview
+      in: query
+      description: if "true", override the default API behavior and never auto-pause jobs
+      required: false
+      schema:
+        type: boolean
+    ignoreErrors:
+      name: ignoreErrors
+      in: query
+      description: |
+        if "true", continue processing a request to completion even if some items fail. If "false",
+        immediately fail the request on the first failure. Defaults to true.
+      required: false
+      schema:
+        type: boolean
+    destinationUrl:
+      name: destinationUrl
+      in: query
+      description: |
+        destination url specified by the client, currently only s3 link url is supported
+        (e.g. s3://my-bucket-name/mypath) and will result in the job being run asynchronously
+      required: false
+      schema:
+        type: string
+    granuleName:
+      name: granuleName
+      in: query
+      description: |
+        passed to the CMR search as the readable_granule_name parameter. Supports * and ? wildcards
+        for multiple and single character matches. Wildcards can be used any place in the name,
+        but leading wildcards are discouraged as they require a lot of resources for the underlying
+        search.
+      required: false
+      style: form
+      explode: true
+      schema:
+        type: array
+        items:
+          type: string
+          minLength: 1
+    grid:
+      name: grid
+      in: query
+      description: |
+        the name of the output grid to use for regridding requests. The name must match the UMM
+        grid name in the CMR.
+      required: false
+      schema:
+        type: string
+    extend:
+      name: extend
+      in: query
+      description: |
+        the name or concept id of the variable to extend
+      required: false
+      schema:
+        type: string

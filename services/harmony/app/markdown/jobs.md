@@ -24,7 +24,7 @@ Returns the list of Harmony jobs submitted by the user. By default, 10 jobs are 
 **Table {{tableCounter}}** - Harmony jobs endpoint parameters
 
 ##### <a name="jobs-response"></a> Response
-The returned JSON response will list the total number of jobs that blong to the user, details of the jobs on the current page and links to traverse to the previous, next, first or last pages of the result set:
+The returned JSON response will list the total number of jobs that belong to the user, details of the jobs on the current page and links to traverse to the previous, next, first or last pages of the result set:
 
 | field | description                                                                                                            |
 |-------|------------------------------------------------------------------------------------------------------------------------|

@@ -2,17 +2,19 @@ import { NextFunction, Response } from 'express';
 import DataOperation from '../../models/data-operation';
 import HarmonyRequest from '../../models/harmony-request';
 import wrap from '../../util/array';
-import { handleCrs, handleExtend, handleFormat, handleGranuleIds, handleGranuleNames, handleHeight, handleScaleExtent, handleScaleSize, handleWidth } from '../../util/parameter-parsers';
+import { handleCrs, handleExtend, handleFormat, handleGranuleIds, handleGranuleNames, handleScaleExtent, handleScaleSize } from '../../util/parameter-parsers';
 import { createDecrypter, createEncrypter } from '../../util/crypto';
 import env from '../../util/env';
 import { RequestValidationError } from '../../util/errors';
 import { keysToLowerCase } from '../../util/object';
 import { ParameterParseError } from '../../util/parameter-parsing-helpers';
 import { parseVariables } from '../../util/variables';
-import { parsePointParam, parseSubsetParams, subsetParamsToBbox, subsetParamsToTemporal } from './util/subset-parameter-parsing';
+import { parseBbox, parseDatetime } from './util/helper';
+import { parseSubsetParams } from '../ogc-coverages/util/subset-parameter-parsing';
+
 /**
- * Express middleware that responds to OGC API - Coverages coverage
- * rangeset requests.  Responds with the actual coverage data.
+ * Express middleware that responds to OGC API - EDR cube requests.
+ * Responds with the actual EDR data.
  *
  * @param req - The request sent by the client
  * @param res - The response to send to the client
@@ -20,29 +22,29 @@ import { parsePointParam, parseSubsetParams, subsetParamsToBbox, subsetParamsToT
  * @throws RequestValidationError - Thrown if the request has validation problems and
  *   cannot be performed
  */
-export default function getCoverageRangeset(
+export default function getDataForCube(
   req: HarmonyRequest,
   res: Response,
   next: NextFunction,
 ): void {
-  req.context.frontend = 'ogcCoverages';
+  req.context.frontend = 'ogcEdr';
   const query = keysToLowerCase(req.query);
 
   const encrypter = createEncrypter(env.sharedSecretKey);
   const decrypter = createDecrypter(env.sharedSecretKey);
   const operation = new DataOperation(null, encrypter, decrypter);
 
-  handleFormat(operation, query.format, req);
+  handleFormat(operation, query.f, req);
   handleExtend(operation, query);
   handleGranuleIds(operation, query);
   handleGranuleNames(operation, query);
-  handleCrs(operation, query.outputcrs);
+  handleCrs(operation, query.crs);
   handleScaleExtent(operation, query);
   handleScaleSize(operation, query);
-  handleHeight(operation, query);
-  handleWidth(operation, query);
 
   operation.interpolationMethod = query.interpolation;
+  operation.outputWidth = query.width;
+  operation.outputHeight = query.height;
   if (query.forceasync) {
     operation.isSynchronous = false;
   }
@@ -61,22 +63,6 @@ export default function getCoverageRangeset(
         });
       }
     });
-
-    const bbox = subsetParamsToBbox(subset);
-    if (bbox) {
-      operation.boundingRectangle = bbox;
-    }
-    const point = parsePointParam(query.point);
-    if (point) {
-      if (bbox) {
-        throw new RequestValidationError('bounding_box and point query parameters should not co-exist');
-      }
-      operation.spatialPoint = point;
-    }
-    const { start, end } = subsetParamsToTemporal(subset);
-    if (start || end) {
-      operation.temporal = { start, end };
-    }
   } catch (e) {
     if (e instanceof ParameterParseError) {
       // Turn parsing exceptions into 400 errors pinpointing the source parameter
@@ -85,8 +71,23 @@ export default function getCoverageRangeset(
     throw e;
   }
 
-  const queryVars = req.query.variable as string | string[];
-  const varInfos = parseVariables(req.collections, req.params.collectionId, queryVars);
+  const bbox = parseBbox(query.bbox as string);
+  if (bbox) {
+    operation.boundingRectangle = bbox;
+  }
+
+  const { start, end } = parseDatetime(query.datetime);
+  if (start || end) {
+    operation.temporal = { start, end };
+  }
+
+  let queryVars = req.query['parameter-name'] as string | string[];
+  if (!queryVars) {
+    // set variables to 'all' when no parameter-name is provided for EDR request
+    queryVars = ['all'];
+  }
+
+  const varInfos = parseVariables(req.collections, 'parameter_vars', queryVars);
   for (const varInfo of varInfos) {
     operation.addSource(varInfo.collectionId, varInfo.shortName, varInfo.versionId,
       varInfo.variables, varInfo.coordinateVariables);
@@ -95,5 +96,3 @@ export default function getCoverageRangeset(
   req.operation = operation;
   next();
 }
-
-

@@ -3,13 +3,12 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { Application, Response, Router } from 'express';
 import * as yaml from 'js-yaml';
-import getLandingPage from './get-landing-page';
-import getRequirementsClasses from './get-requirements-classes';
+import getLandingPage from '../ogc-coverages/get-landing-page';
+import getRequirementsClasses from '../ogc-coverages/get-requirements-classes';
 
-import getCoverageRangeset from './get-coverage-rangeset';
-import postCoverageRangeset from './post-coverage-rangeset';
+import getDataForCube from './get-data-for-cube';
+import postDataForCube from './post-data-for-cube';
 
-import { describeCollection, describeCollections } from './describe-collections';
 import HarmonyRequest from '../../models/harmony-request';
 
 interface OgcSchemaHttpMethod {
@@ -18,26 +17,26 @@ interface OgcSchemaHttpMethod {
   }[]
 }
 
-interface OgcSchemaCoverages {
+interface OgcSchemaEdr {
   paths : {
     // eslint-disable-next-line @typescript-eslint/naming-convention
-    '/collections/{collectionId}/coverage/rangeset': {
+    '/collections/{collectionId}/cube': {
       get: OgcSchemaHttpMethod,
       post: OgcSchemaHttpMethod
     }
   }
 }
 
-export const version = '1.0.0';
-const openApiRoot = path.join(__dirname, '..', '..', 'schemas', 'ogc-api-coverages', version);
-const openApiPath = path.join(openApiRoot, `ogc-api-coverages-v${version}.yml`);
+export const version = '1.1.0';
+const openApiRoot = path.join(__dirname, '..', '..', 'schemas', 'ogc-api-edr', version);
+const openApiPath = path.join(openApiRoot, `ogc-api-edr-v${version}.yml`);
 export const openApiContent = fs.readFileSync(openApiPath, 'utf-8');
-const ogcSchemaCoverages = yaml.load(openApiContent, { schema: yaml.DEFAULT_SCHEMA }) as OgcSchemaCoverages;
-export const coverageRangesetGetParams = ogcSchemaCoverages
-  .paths['/collections/{collectionId}/coverage/rangeset'].get.parameters
+const ogcSchemaEdr = yaml.load(openApiContent, { schema: yaml.DEFAULT_SCHEMA }) as OgcSchemaEdr;
+export const edrGetParams = ogcSchemaEdr
+  .paths['/collections/{collectionId}/cube'].get.parameters
   .map(param => param.$ref.split('/').pop());
-export const coverageRangesetPostParams = ['shapefile'].concat(ogcSchemaCoverages
-  .paths['/collections/{collectionId}/coverage/rangeset'].post.parameters
+export const edrPostParams = ['shapefile'].concat(ogcSchemaEdr
+  .paths['/collections/{collectionId}/cube'].post.parameters
   .map(param => param.$ref.split('/').pop()));
 
 /**
@@ -60,11 +59,11 @@ function TODO(req: HarmonyRequest, res: Response): void {
 function getSpecification(req: HarmonyRequest, res: Response): void {
   // Defined inline because the index file deals with the YAML spec.
   res.append('Content-type', 'text/openapi+yaml;version=3.0');
-  res.send(openApiContent.replace('no-default-cmr-collection', req.collectionIds.join('/')));
+  res.send(openApiContent);
 }
 
 /**
- * Sets up the express application with the OpenAPI routes for OGC API - Coverages
+ * Sets up the express application with the OpenAPI routes for OGC API - EDR
  *
  * @param app - The express application
  */
@@ -80,17 +79,13 @@ export function addOpenApiRoutes(app: Router): void {
       getLandingPage,
       getRequirementsClasses,
       getSpecification,
-      describeCollections,
-      describeCollection,
-      getCoverageOffering: TODO,
-      getCoverageDescription: TODO,
-      getCoverageDomainSet: TODO,
-      getCoverageRangeType: TODO,
-      getCoverageMetadata: TODO,
-      getCoverageRangeset,
-      postCoverageRangeset,
-      getCoverageAll: TODO,
+      describeCollections: TODO,
+      describeCollection: TODO,
+      getCollectionInstances: TODO,
+      getDataForPoint: TODO,
+      postDataForPoint: TODO,
+      getDataForCube,
+      postDataForCube,
     },
   });
 }
-

@@ -5,6 +5,7 @@ import { Conjunction, listToText } from '@harmony/util/string';
 import { keysToLowerCase } from '../util/object';
 import { defaultObjectStore } from '../util/object-store';
 import { coverageRangesetGetParams, coverageRangesetPostParams } from '../frontends/ogc-coverages/index';
+import { edrGetParams, edrPostParams } from '../frontends/ogc-edr/index';
 import env from '../util/env';
 import { getRequestRoot } from '../util/url';
 import { validateNoConflictingGridParameters } from '../util/grids';
@@ -16,6 +17,7 @@ const { awsDefaultRegion } = env;
  */
 
 const RANGESET_ROUTE_REGEX = /^\/.*\/ogc-api-coverages\/.*\/collections\/.*\/coverage\/rangeset/;
+const EDR_ROUTE_REGEX = /^\/ogc-api-edr\/.*\/collections\/.*\/cube/;
 
 /**
  * The accepted values for the `linkType` parameter for job status requests
@@ -163,6 +165,18 @@ function validateCoverageRangesetParameterNames(req: HarmonyRequest): void {
 }
 
 /**
+ * Validate that the req query parameter names are correct according to Harmony implementation of OGC EDR spec.
+ *
+ * @param req - The client request
+ * @throws RequestValidationError - if disallowed parameters are detected
+ */
+function validateEdrParameterNames(req: HarmonyRequest): void {
+  const requestedParams = Object.keys(req.query);
+  const allowedParams = req.method.toLowerCase() == 'get' ? edrGetParams : edrPostParams;
+  validateParameterNames(requestedParams, allowedParams);
+}
+
+/**
  * Express.js middleware to validate parameters. This must be installed after the error handler
  * middleware.
  *
@@ -179,6 +193,9 @@ export default async function parameterValidation(
     await validateDestinationUrlParameter(req);
     if (req.url.match(RANGESET_ROUTE_REGEX)) {
       validateCoverageRangesetParameterNames(req);
+    }
+    if (req.url.match(EDR_ROUTE_REGEX)) {
+      validateEdrParameterNames(req);
     }
   } catch (e) {
     return next(e);
