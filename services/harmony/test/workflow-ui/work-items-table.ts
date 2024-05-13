@@ -359,6 +359,25 @@ describe('Workflow UI work items table route', function () {
         });
       });
 
+      describe('who sets the limit to 0', function () {
+        hookWorkflowUIWorkItems({ username: 'bo', jobID: targetJob.jobID, query: { limit: 0 } });
+        it('the backend sets the page limit to 1', function () {
+          const listing = this.res.text;
+          console.log(listing);
+          expect((listing.match(/work-item-table-row/g) || []).length).to.equal(1);
+          expect(listing).to.contain('1-1 of 6 (page 1 of 6)');
+        });
+      });
+
+      describe('who sets the limit to -1', function () {
+        hookWorkflowUIWorkItems({ username: 'bo', jobID: targetJob.jobID, query: { limit: -1 } });
+        it('the backend sets the page limit to 1', function () {
+          const listing = this.res.text;
+          expect((listing.match(/work-item-table-row/g) || []).length).to.equal(1);
+          expect(listing).to.contain('1-1 of 6 (page 1 of 6)');
+        });
+      });
+
       describe('who requests page 2 of the work items table, with a limit of 1 and status IN [SUCCESSFUL]', function () {
         hookWorkflowUIWorkItems({ username: 'bo', jobID: targetJob.jobID, query: { limit: 1, page: 2, tableFilter: successfulFilter } });
         it('returns a link to the previous page', function () {

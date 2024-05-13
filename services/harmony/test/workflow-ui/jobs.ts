@@ -273,6 +273,26 @@ describe('Workflow UI jobs route', function () {
       });
     });
 
+    describe('who sets the limit to 0', function () {
+      hookWorkflowUIJobs({ username: 'woody', limit: 0 });
+      it('the backend sets the page limit to 1', function () {
+        const listing = this.res.text;
+        expect((listing.match(/job-table-row/g) || []).length).to.equal(1);
+        expect(listing).to.contain('1-1 of 3 (page 1 of 3)');
+        expect(listing).to.contain(mustache.render('<input name="limit" type="number" class="form-control" value="1">', {}));
+      });
+    });
+
+    describe('who sets the limit to -1', function () {
+      hookWorkflowUIJobs({ username: 'woody', limit: 0 });
+      it('the backend sets the page limit to 1', function () {
+        const listing = this.res.text;
+        expect((listing.match(/job-table-row/g) || []).length).to.equal(1);
+        expect(listing).to.contain('1-1 of 3 (page 1 of 3)');
+        expect(listing).to.contain(mustache.render('<input name="limit" type="number" class="form-control" value="1">', {}));
+      });
+    });
+
     describe('who asks for more than env.maxPageSize jobs', function () {
       hookWorkflowUIJobs({ username: 'woody', limit: env.maxPageSize + 999 });
       it('returns all of the users jobs without error', function () {
