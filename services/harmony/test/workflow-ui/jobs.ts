@@ -174,6 +174,15 @@ describe('Workflow UI jobs route', function () {
       });
     });
 
+    describe('who has 0 jobs', function () { 
+      hookWorkflowUIJobs({ username: 'eve' });
+      it('the paging descriptor makes sense', function () {
+        const listing = this.res.text;
+        expect((listing.match(/job-table-row/g) || []).length).to.equal(0);
+        expect(listing).to.contain('0-0 of 0 (page 1 of 1)');
+      });
+    });
+
     describe('who filters jobs by update date >=', function () {
       hookWorkflowUIJobs({ username: 'woody', tzoffsetminutes: '0', fromdatetime: '2023-01-06T14:12', datekind: 'updatedAt' });
       it('returns the job with an acceptable updatedAt date', function () {
