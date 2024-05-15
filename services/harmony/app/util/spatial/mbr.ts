@@ -284,6 +284,7 @@ export function computeMbr(spatial: Spatial): BoundingBox | undefined {
  * @returns an MBR or undefined
  */
 export function computeUmmMbr(spatial: UmmSpatial): BoundingBox | undefined {
+  if (!spatial) return;
   const { Points, BoundingRectangles, Lines, GPolygons } = spatial;
   let mbrs;
 
