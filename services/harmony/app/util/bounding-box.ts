@@ -146,13 +146,13 @@ export default function boxStringsToBox(boxStrings: string[]): BoundingBox {
 /**
  * Convert a BoundingRectangleType to a BoundingBox
  *
- * @param BoundingRectangleType - a map of WestBoundingCoordinate, NorthBoundingCoordinate,
- * EastBoundingCoordinate and SouthBoundingCoordinate
+ * @param br - a bounding rectangle in the form of a map of WestBoundingCoordinate,
+ * SouthBoundingCoordinate, EastBoundingCoordinate and NorthBoundingCoordinate
  * @returns a tuple of floats in `[W,S,E,N]` format
  */
 export function boundingRectangleToBox(br: BoundingRectangleType): BoundingBox {
-  const { WestBoundingCoordinate, NorthBoundingCoordinate, EastBoundingCoordinate, SouthBoundingCoordinate } = br;
-  return [WestBoundingCoordinate, NorthBoundingCoordinate, EastBoundingCoordinate, SouthBoundingCoordinate];
+  const { WestBoundingCoordinate, SouthBoundingCoordinate, EastBoundingCoordinate, NorthBoundingCoordinate } = br;
+  return [WestBoundingCoordinate, SouthBoundingCoordinate, EastBoundingCoordinate, NorthBoundingCoordinate];
 }
 
 /**
