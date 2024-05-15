@@ -68,7 +68,7 @@ async function fetchPostArgsToFields(
 function hookQueryGranules(maxCmrGranules = 100): void {
   const output = {
     headers: new fetch.Headers({}),
-    ...JSON.parse(fs.readFileSync(path.resolve(__dirname, 'resources/atom-granules.json'), 'utf8')),
+    ...JSON.parse(fs.readFileSync(path.resolve(__dirname, 'resources/umm-granules.json'), 'utf8')),
   };
 
   let fetchPost: sinon.SinonStub;

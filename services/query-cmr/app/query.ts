@@ -27,10 +27,10 @@ export interface DataSource {
 async function querySearchAfter(
   token: string,
   scrollId: string,
-  filePrefix: string,
   maxCmrGranules: number,
   logger: Logger = defaultLogger,
 ): Promise<[number, number[], StacCatalog[], string, number]> {
+  const filePrefix = './granule';
   let sessionKey, searchAfter;
   if (scrollId) {
     [sessionKey, searchAfter] = scrollId.split(':', 2);
@@ -41,14 +41,20 @@ async function querySearchAfter(
     null,
     sessionKey,
     searchAfter,
+    'umm_json',
   );
+
   const { hits } = cmrResponse;
   const newSearchAfter = cmrResponse.searchAfter;
   logger.info(`CMR Hits: ${hits}, Number of granules returned in this page: ${cmrResponse.granules.length}`);
   let totalItemsSize = 0;
   const outputItemSizes = [];
   const catalogs = cmrResponse.granules.map((granule) => {
-    const granuleSize = granule.granule_size ? parseFloat(granule.granule_size) : 0;
+    const archiveInfo = granule.umm.DataGranule?.ArchiveAndDistributionInformation;
+    let granuleSize = 0;
+    if (archiveInfo && archiveInfo.length > 0) {
+      granuleSize = archiveInfo[0].Size;
+    }
     let granuleSizeInBytes = granuleSize * 1024 * 1024;
     // NaN will fail the first check
     if (granuleSizeInBytes != granuleSizeInBytes || granuleSizeInBytes < 0) {
@@ -56,12 +62,12 @@ async function querySearchAfter(
     }
     outputItemSizes.push(granuleSizeInBytes);
     totalItemsSize += granuleSize;
-    const result = new CmrStacCatalog({ description: `CMR collection ${granule.collection_concept_id}, granule ${granule.id}` });
+    const result = new CmrStacCatalog({ description: `CMR collection ${granule.meta['collection-concept-id']}, granule ${granule.meta['concept-id']}` });
     result.links.push({
       rel: 'harmony_source',
-      href: `${process.env.CMR_ENDPOINT}/search/concepts/${granule.collection_concept_id}`,
+      href: `${process.env.CMR_ENDPOINT}/search/concepts/${granule.meta['collection-concept-id']}`,
     });
-    result.addCmrGranules([granule], `${filePrefix}_${granule.id}_`, logger);
+    result.addCmrUmmGranules([granule], `${filePrefix}_${granule.meta['concept-id']}_`, logger);
 
     return result;
   });
@@ -93,7 +99,7 @@ export async function queryGranules(
 ): Promise<[number, number[], StacCatalog[], string, number]> {
   const { unencryptedAccessToken } = operation;
   const [totalItemsSize, outputItemSizes, catalogs, newScrollId, hits] =
-    await querySearchAfter(unencryptedAccessToken, scrollId, './granule', maxCmrGranules, logger);
+    await querySearchAfter(unencryptedAccessToken, scrollId, maxCmrGranules, logger);
 
   return [totalItemsSize, outputItemSizes, catalogs, newScrollId, hits];
 }

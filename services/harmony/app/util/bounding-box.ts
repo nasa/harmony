@@ -1,3 +1,5 @@
+import { BoundingRectangleType } from './spatial/umm-spatial';
+
 const { max, min } = Math;
 
 export type BoundingBox = [number, number, number, number];
@@ -135,6 +137,33 @@ export default function boxStringsToBox(boxStrings: string[]): BoundingBox {
   if (!boxStrings || boxStrings.length === 0) return null;
 
   const boxes = boxStrings.map(_boundingBoxStringToBoundingBox).filter((val) => val);
+  if (boxes.length === 1) return boxes[0];
+
+  // find a single minimal bounding box that contains all the boxes
+  return boxes.reduce((mbr, nextBox) => joinBoundingBoxes(mbr, nextBox));
+}
+
+/**
+ * Convert a BoundingRectangleType to a BoundingBox
+ *
+ * @param BoundingRectangleType - a map of WestBoundingCoordinate, NorthBoundingCoordinate,
+ * EastBoundingCoordinate and SouthBoundingCoordinate
+ * @returns a tuple of floats in `[W,S,E,N]` format
+ */
+export function boundingRectangleToBox(br: BoundingRectangleType): BoundingBox {
+  const { WestBoundingCoordinate, NorthBoundingCoordinate, EastBoundingCoordinate, SouthBoundingCoordinate } = br;
+  return [WestBoundingCoordinate, NorthBoundingCoordinate, EastBoundingCoordinate, SouthBoundingCoordinate];
+}
+
+/**
+ * Convert an array of bounding boxes to a minimal bounding box that contains all of the sub bounding boxes
+ *
+ * @param brs - a list of BoundingRectangleTypes
+ * @returns a tuple of floats in `[W,S,E,N]` format
+ */
+export function boundingRectanglesToBox(brs: BoundingRectangleType[]): BoundingBox {
+  if (!brs || brs.length === 0) return null;
+  const boxes = brs.map(boundingRectangleToBox);
   if (boxes.length === 1) return boxes[0];
 
   // find a single minimal bounding box that contains all the boxes
