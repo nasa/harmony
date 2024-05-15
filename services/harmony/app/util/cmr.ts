@@ -9,6 +9,7 @@ import { CmrError } from './errors';
 import { defaultObjectStore, objectStoreForProtocol } from './object-store';
 import env from './env';
 import logger from './log';
+import { UmmSpatial } from './spatial/umm-spatial';
 
 const { cmrEndpoint, cmrMaxPageSize, clientId, stagingBucket } = env;
 
@@ -86,61 +87,29 @@ export interface CmrGranule {
 
 export interface CmrUmmGranule {
   meta: {
-    'concept-type': string;
     'concept-id': string;
-    'revision-id': number;
-    'native-id': string;
     'collection-concept-id': string;
-    'provider-id': string;
-    'format': string;
-    'revision-date': string;
   };
   umm: {
-    TemporalExtent: {
-      RangeDateTime: {
+    TemporalExtent?: {
+      RangeDateTime?: {
         EndingDateTime: string;
         BeginningDateTime: string;
       };
-      SingleDateTime: string;
-    };
-    MetadataSpecification: {
-      URL: string;
-      Name: string;
-      Version: string;
+      SingleDateTime?: string;
     };
     GranuleUR: string;
-    ProviderDates: {
-      Type: string;
-      Date: string;
-    }[];
-    SpatialExtent: {
-      HorizontalSpatialDomain: {
-        Geometry: {
-          GPolygons: {
-            Boundary: {
-              Points: {
-                Longitude: number;
-                Latitude: number;
-              }[];
-            };
-          }[];
-        };
+    SpatialExtent?: {
+      HorizontalSpatialDomain?: {
+        Geometry: UmmSpatial;
       };
     };
-    DataGranule: {
-      ArchiveAndDistributionInformation: {
-        SizeUnit: string;
+    DataGranule?: {
+      ArchiveAndDistributionInformation?: {
         Size: number;
-        Name: string;
       }[];
-      DayNightFlag: string;
-      ProductionDateTime: string;
     };
-    CollectionReference: {
-      Version: string;
-      ShortName: string;
-    };
-    RelatedUrls: {
+    RelatedUrls?: {
       URL: string;
       Type: string;
       Description?: string;
