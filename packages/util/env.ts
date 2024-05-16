@@ -138,6 +138,7 @@ const ipRegex = /^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$/;
 const domainHostRegex = /^([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})$/;
 export const hostRegexWhitelist = { host_whitelist: [/localhost/, /localstack/, /harmony/, ipRegex, domainHostRegex] };
 export const awsRegionRegex = /(us(-gov)?|ap|ca|cn|eu|sa)-(central|(north|south)?(east|west)?)-\d/;
+export const memorySizeRegex = /\d+(GB|MB|TB|KB|gb|mb|tb|kb)/;
 
 export class HarmonyEnv {
 
@@ -187,6 +188,9 @@ export class HarmonyEnv {
 
   @IsNotEmpty()
   logLevel: string;
+
+  @Matches(memorySizeRegex)
+  maxQueryCmrJsonSize: string;
 
   @IsInt()
   @Min(0)

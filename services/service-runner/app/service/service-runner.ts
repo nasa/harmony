@@ -8,6 +8,7 @@ import { objectStoreForProtocol } from '../../../harmony/app/util/object-store';
 import { WorkItemRecord, getStacLocation, getItemLogsLocation } from '../../../harmony/app/models/work-item-interface';
 import axios from 'axios';
 import { Logger } from 'winston';
+import { writeFileSync } from 'fs';
 
 const kc = new k8s.KubeConfig();
 kc.loadFromDefault();
@@ -257,6 +258,23 @@ export async function runServiceFromPull(workItem: WorkItemRecord, workItemLogge
         resolve({ error: `Worker timed out after ${workerTimeout / 1000.0} seconds` });
       }, workerTimeout);
 
+      // use a temporary file on the shared volume mount to pass the operation if the operation is large
+      const operationJsonFile = '/tmp/operation.json';
+      const operationJson = JSON.stringify(operation);
+      let operationCommandLine = '--harmony-input';
+      let operationCommandLineValue = operationJson;
+      // 262144 is the max SQS message size, so any operation + other stuff we add that is
+      //  bigger than that is considered BIG and therefore requires special handling. In this case
+      // we use a file to pass the operation to harmony-service-lib instead of a command line argument.
+      // `--harmony-input` is being deprecated - once all providers have updated to version 1.20 of
+      // harmony - service - lib then we will remove `--harmony-input` here and just use
+      // `--harmony-input-file`.
+      if (operationJson.length > 100000) {
+        operationCommandLine = '--harmony-input-file';
+        operationCommandLineValue = operationJsonFile;
+        writeFileSync(operationJsonFile, operationJson);
+      }
+
       exec.exec(
         'harmony',
         env.myPodName,
@@ -265,8 +283,8 @@ export async function runServiceFromPull(workItem: WorkItemRecord, workItemLogge
           ...commandLine,
           '--harmony-action',
           'invoke',
-          '--harmony-input',
-          `${JSON.stringify(operation)}`,
+          operationCommandLine,
+          operationCommandLineValue,
           '--harmony-sources',
           stacCatalogLocation,
           '--harmony-metadata-dir',

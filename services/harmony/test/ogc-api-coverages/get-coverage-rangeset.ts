@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
 import _ from 'lodash';
+import { stub } from 'sinon';
 import isUUID from '../../app/util/uuid';
 import { itRedirectsToJobStatusUrl } from '../helpers/jobs';
 import { hookPostRangesetRequest, hookRangesetRequest, rangesetRequest } from '../helpers/ogc-api-coverages';
@@ -8,7 +9,6 @@ import hookServersStartStop from '../helpers/servers';
 import StubService, { hookServices } from '../helpers/stub-service';
 import { ServiceConfig } from '../../app/models/services/base-service';
 import { hookRedirect } from '../helpers/hooks';
-import { stub } from 'sinon';
 import env from '../../app/util/env';
 import { hookDatabaseFailure } from '../helpers/db';
 

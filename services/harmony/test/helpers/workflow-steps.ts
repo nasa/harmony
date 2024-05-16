@@ -1,4 +1,5 @@
 import { afterEach, beforeEach } from 'mocha';
+import _ from 'lodash';
 import WorkflowStep, { WorkflowStepRecord } from '../../app/models/workflow-steps';
 import db, { Transaction } from '../../app/util/db';
 import { truncateAll } from './db';
@@ -6,7 +7,34 @@ import { parseSchemaFile } from './data-operation';
 import DataOperation, { CURRENT_SCHEMA_VERSION } from '../../app/models/data-operation';
 import { RecordConstructor } from '../../app/models/record';
 
-export const validOperation = new DataOperation(parseSchemaFile('valid-operation-input.json')).serialize(CURRENT_SCHEMA_VERSION);
+const baseOperation = new DataOperation(parseSchemaFile('valid-operation-input.json'));
+export const validOperation = baseOperation.serialize(CURRENT_SCHEMA_VERSION);
+
+const baseVariable = {
+  'id': 'V1233801717-EEDTEST',
+  'name': 'alpha_var',
+  'fullPath': 'data/colors/red_var',
+  'relatedUrls': [
+    {
+      'description': 'This URL points to some text data.',
+      'urlContentType': 'DistributionURL',
+      'type': 'GET DATA',
+      'url': 'http://example.com/file649.txt',
+    },
+  ],
+  'type': 'SCIENCE_VARIABLE',
+  'subtype': 'SCIENCE_ARRAY',
+};
+
+const manyVariables = [];
+for (let i = 0; i < 10000; i++) {
+  const variable = _.cloneDeep(baseVariable);
+  variable.id = `V9999${i}-EEDTEST`;
+  manyVariables.push(variable);
+}
+const operationWithManyVariables = _.cloneDeep(baseOperation);
+operationWithManyVariables.sources[0].variables = manyVariables;
+export const validOperationWithManyVariables = operationWithManyVariables.serialize(CURRENT_SCHEMA_VERSION);
 
 const exampleProps = {
   jobID: '1',

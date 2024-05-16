@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { parse } from 'cookie';
 import { Application } from 'express';
 import { after, before, describe, it } from 'mocha';
+import { spy } from 'sinon';
 import request, { Test } from 'supertest';
 import * as url from 'url';
 import { auth } from './auth';

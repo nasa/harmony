@@ -46,7 +46,7 @@ export default function start(_config: Record<string, string>): Server {
 
   const app = express();
 
-  app.use(express.json());
+  app.use(express.json({ limit: env.maxQueryCmrJsonSize }));
   app.use('/', router());
   app.use(errorHandler);
 
