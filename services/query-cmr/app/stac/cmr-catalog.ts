@@ -65,6 +65,13 @@ export default class CmrStacCatalog extends StacCatalog {
       const bbox = computeUmmMbr(granule.umm.SpatialExtent?.HorizontalSpatialDomain?.Geometry) || [-180, -90, 180, 90];
       const geometry = bboxToGeometry(bbox);
 
+      let startDateTime = granule.umm.TemporalExtent?.SingleDateTime;
+      let endDateTime = granule.umm.TemporalExtent?.SingleDateTime;
+      if (granule.umm.TemporalExtent?.RangeDateTime?.BeginningDateTime) {
+        startDateTime = granule.umm.TemporalExtent.RangeDateTime.BeginningDateTime;
+        endDateTime = granule.umm.TemporalExtent.RangeDateTime.EndingDateTime;
+      }
+
       const isOpenDapLink = (l): boolean => (l.Description && (l.Description.toLowerCase().indexOf('opendap') !== -1))
         || (l.URL.toLowerCase().indexOf('opendap') !== -1);
       const links = (granule.umm.RelatedUrls || []).filter((g) => (g.Type === 'GET DATA' ||
@@ -102,9 +109,9 @@ export default class CmrStacCatalog extends StacCatalog {
           geometry,
           assets,
           properties: {
-            start_datetime: granule.umm.TemporalExtent?.RangeDateTime?.BeginningDateTime,
-            end_datetime: granule.umm.TemporalExtent?.RangeDateTime?.EndingDateTime,
-            datetime: granule.umm.TemporalExtent?.SingleDateTime,
+            start_datetime: startDateTime,
+            end_datetime: endDateTime,
+            datetime: startDateTime,
           },
         });
         this.children.push(item);
