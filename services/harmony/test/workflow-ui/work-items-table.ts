@@ -16,6 +16,7 @@ import MockDate from 'mockdate';
 
 // main objects used in the tests
 const targetJob = buildJob({ status: JobStatus.FAILED, username: 'bo' });
+const woodysJob = buildJob({ status: JobStatus.PREVIEWING, username: 'woody' });
 
 // build docker image urls / serviceIds
 const ecrImage = 'dataservices/query-it:latest'; // non-sensitive part
@@ -107,6 +108,7 @@ describe('Workflow UI work items table route', function () {
   describe('for logged-in users', function () {
     hookTransaction();
     before(async function () {
+      await woodysJob.save(this.trx);
       await targetJob.save(this.trx);
       MockDate.set('2021-01-04T14:12:05.000Z');
       await item1.save(this.trx);
@@ -356,6 +358,34 @@ describe('Workflow UI work items table route', function () {
         it('returns a QUEUED work item', function () {
           const listing = this.res.text;
           expect(listing).to.contain(`<span class="badge bg-warning">${WorkItemStatus.QUEUED.valueOf()}</span>`);
+        });
+      });
+
+      describe('who sets the limit to 0', function () {
+        hookWorkflowUIWorkItems({ username: 'bo', jobID: targetJob.jobID, query: { limit: 0 } });
+        it('the backend sets the page limit to 1', function () {
+          const listing = this.res.text;
+          console.log(listing);
+          expect((listing.match(/work-item-table-row/g) || []).length).to.equal(1);
+          expect(listing).to.contain('1-1 of 6 (page 1 of 6)');
+        });
+      });
+
+      describe('who sets the limit to -1', function () {
+        hookWorkflowUIWorkItems({ username: 'bo', jobID: targetJob.jobID, query: { limit: -1 } });
+        it('the backend sets the page limit to 1', function () {
+          const listing = this.res.text;
+          expect((listing.match(/work-item-table-row/g) || []).length).to.equal(1);
+          expect(listing).to.contain('1-1 of 6 (page 1 of 6)');
+        });
+      });
+
+      describe('who has 0 work items in their job', function () {
+        hookWorkflowUIWorkItems({ username: 'woody', jobID: woodysJob.jobID, query: { limit: 0 } });
+        it('the paging descriptor makes sense', function () {
+          const listing = this.res.text;
+          expect((listing.match(/work-item-table-row/g) || []).length).to.equal(0);
+          expect(listing).to.contain('0-0 of 0 (page 1 of 1)');
         });
       });
 

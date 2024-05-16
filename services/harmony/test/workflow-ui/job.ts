@@ -88,6 +88,20 @@ describe('Workflow UI job route', function () {
           expect(listing).to.contain(`<input name="limit" type="number" class="form-control" value="${env.maxPageSize}">`);
         });
       });
+      describe('requests 0 work items', function () {
+        hookWorkflowUIJob({ jobID: nonShareableJob.jobID, username: 'woody', query: { limit: 0 } });
+        it('sets the page limit input to 1', function () {
+          const listing = this.res.text;
+          expect(listing).to.contain('<input name="limit" type="number" class="form-control" value="1">');
+        });
+      });
+      describe('requests a negative number of work items', function () {
+        hookWorkflowUIJob({ jobID: nonShareableJob.jobID, username: 'woody', query: { limit: -1 } });
+        it('sets the page limit input to 1', function () {
+          const listing = this.res.text;
+          expect(listing).to.contain('<input name="limit" type="number" class="form-control" value="1">');
+        });
+      });
       describe('requests a shareable job that they do not own', function () {
         hookWorkflowUIJob({ jobID: shareableJob.jobID, username: 'woody' });
         it('returns an HTTP success response', function () {
