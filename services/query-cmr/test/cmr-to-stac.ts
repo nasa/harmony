@@ -28,6 +28,7 @@ describe('addCmrUmmGranules to catalog', function () {
   describe('asset extraction', function () {
     let catalog: CmrCatalog;
     let assets: { [name: string]: StacAsset };
+    let properties: { [name: string]: StacAsset };
     before(function () {
       catalog = new CmrCatalog({ description: 'test' });
       catalog.addCmrUmmGranules([{
@@ -38,8 +39,8 @@ describe('addCmrUmmGranules to catalog', function () {
         umm: {
           TemporalExtent: {
             RangeDateTime: {
-              EndingDateTime: '2019-01-01T00:00:00Z',
-              BeginningDateTime: '2019-01-02T00:00:00Z',
+              BeginningDateTime: '2019-01-01T00:00:00Z',
+              EndingDateTime: '2019-01-02T00:00:00Z',
             },
           },
           GranuleUR: 'g0',
@@ -102,8 +103,8 @@ describe('addCmrUmmGranules to catalog', function () {
         umm: {
           TemporalExtent: {
             RangeDateTime: {
-              EndingDateTime: '2019-01-01T00:00:00Z',
-              BeginningDateTime: '2019-01-02T00:00:00Z',
+              BeginningDateTime: '2019-01-01T00:00:00Z',
+              EndingDateTime: '2019-01-02T00:00:00Z',
             },
           },
           GranuleUR: 'g1',
@@ -111,6 +112,14 @@ describe('addCmrUmmGranules to catalog', function () {
       }], './test/granule_');
       // eslint-disable-next-line prefer-destructuring
       assets = (catalog.children[0] as StacItem).assets;
+      // eslint-disable-next-line prefer-destructuring
+      properties = (catalog.children[0] as StacItem).properties;
+    });
+
+    it('extracts temporal info', function () {
+      expect(properties.start_datetime).to.equal('2019-01-01T00:00:00Z');
+      expect(properties.end_datetime).to.equal('2019-01-02T00:00:00Z');
+      expect(properties.datetime).to.equal('2019-01-01T00:00:00Z');
     });
 
     it('extracts non-inherited data links', function () {
