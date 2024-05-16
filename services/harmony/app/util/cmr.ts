@@ -93,8 +93,8 @@ export interface CmrUmmGranule {
   umm: {
     TemporalExtent?: {
       RangeDateTime?: {
-        EndingDateTime: string;
         BeginningDateTime: string;
+        EndingDateTime?: string;
       };
       SingleDateTime?: string;
     };
@@ -106,7 +106,7 @@ export interface CmrUmmGranule {
     };
     DataGranule?: {
       ArchiveAndDistributionInformation?: {
-        Size: number;
+        Size?: number;
       }[];
     };
     RelatedUrls?: {
