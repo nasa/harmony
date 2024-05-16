@@ -78,6 +78,6 @@
     "typescript": "^4.4.4"
   },
   "overrides": {
-    "semver": "7.3.2"
+    "semver": "^7.6.2"
   }
 }
