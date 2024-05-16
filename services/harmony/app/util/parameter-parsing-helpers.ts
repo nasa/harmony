@@ -1,5 +1,6 @@
 import { RequestValidationError } from './errors';
 import HarmonyRequest from '../models/harmony-request';
+import wellknown, { GeoJSONGeometryOrNull } from 'wellknown';
 
 /**
  * Tag class for denoting errors during parsing
@@ -48,6 +49,25 @@ export function parseMultiValueParameter(value: string[] | string): string[] {
     return value;
   }
   return value.split(',').map((v) => v.trim());
+}
+
+/**
+ * Parses portion of WKT that are supported as parameters in harmony.
+ * @param wkt - The WKT string
+ * @returns wellknown GeoJSON representation of the WKT string
+ * @throws ParameterParseError if it cannot be parsed or harmony does not support the WKT type
+ */
+export function parseWkt(wkt): GeoJSONGeometryOrNull {
+  const supportedTypes = ['LineString', 'Polygon', 'Point'];
+  const geoJson = wellknown.parse(wkt);
+  if (geoJson) {
+    if (!supportedTypes.includes(geoJson.type)) {
+      throw new ParameterParseError(`Unsupported WKT type ${geoJson.type}.`);
+    }
+  } else {
+    throw new ParameterParseError(`Unable to parse WKT string ${wkt}.`);
+  }
+  return geoJson;
 }
 
 /**

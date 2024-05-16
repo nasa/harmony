@@ -250,11 +250,19 @@ export interface CmrRelatedUrl {
 
 export interface CmrQuery
   extends NodeJS.Dict<string | string[] | number | number[] | boolean | boolean[] | null> {
+  bounding_box?: string;
+  circle?: string;
+  collection_concept_id?: string;
   concept_id?: string | string[];
-  readable_granule_name?: string | string[];
-  page_size?: number;
   downloadable?: boolean;
+  geojson?: string;
+  line?: string;
+  page_size?: number;
+  point?: string;
+  polygon?: string[];
+  readable_granule_name?: string | string[];
   scroll?: string;
+  temporal?: string;
 }
 
 export interface CmrAclQuery extends CmrQuery {
@@ -996,4 +1004,14 @@ export function filterGranuleLinks(
 ): CmrGranuleLink[] {
   return granule.links.filter((g) => (g.rel.endsWith('/data#') || g.rel.endsWith('/service#'))
     && !g.inherited);
+}
+
+/**
+ * Converts the provided WKT obejct to CMR query parameters
+ * @param wkt - The WKT object to convert
+ * @returns an object containing the query parameters
+ */
+export function wktToCmrQueryParams(_wkt): Object {
+  const queryParams = {};
+  return queryParams;
 }

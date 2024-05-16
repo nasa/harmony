@@ -141,6 +141,7 @@
     "typescript": "^5.1.6",
     "unzipper": "^0.10.11",
     "uuid": "^8.3.2",
+    "wellknown": "^0.5.0",
     "winston": "^3.10.0",
     "xregexp": "^5.0.2",
     "xstate": "^4.31.0"
@@ -162,6 +163,7 @@
     "@types/sinon": "^10.0.6",
     "@types/superagent": "^4.1.11",
     "@types/supertest": "^2.0.10",
+    "@types/wellknown": "^0.5.8",
     "@typescript-eslint/eslint-plugin": "^5.60.0",
     "@typescript-eslint/parser": "^5.60.0",
     "aws-sdk-mock": "^5.1.0",
