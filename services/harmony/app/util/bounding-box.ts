@@ -144,7 +144,7 @@ export default function boxStringsToBox(boxStrings: string[]): BoundingBox {
 }
 
 /**
- * Convert a BoundingRectangleType to a BoundingBox
+ * Convert a UMM BoundingRectangleType to a BoundingBox
  *
  * @param br - a bounding rectangle in the form of a map of WestBoundingCoordinate,
  * SouthBoundingCoordinate, EastBoundingCoordinate and NorthBoundingCoordinate

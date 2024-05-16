@@ -52,9 +52,13 @@ async function querySearchAfter(
   const catalogs = cmrResponse.granules.map((granule) => {
     const archiveInfo = granule.umm.DataGranule?.ArchiveAndDistributionInformation;
     let granuleSize = 0;
-    if (archiveInfo && archiveInfo.length > 0) {
-      granuleSize = archiveInfo[0].Size;
+    for (const info of archiveInfo || []) {
+      if (info.Size) {
+        granuleSize = info.Size;
+        break;
+      }
     }
+
     let granuleSizeInBytes = granuleSize * 1024 * 1024;
     // NaN will fail the first check
     if (granuleSizeInBytes != granuleSizeInBytes || granuleSizeInBytes < 0) {
