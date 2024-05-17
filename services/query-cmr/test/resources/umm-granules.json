@@ -1,0 +1,292 @@
+{
+  "size": 0,
+  "timeout": 0,
+  "data": {
+    "hits": 3,
+    "took": 120,
+    "items": [
+      {
+        "meta": {
+          "concept-type": "granule",
+          "concept-id": "G1233800343-EEDTEST",
+          "revision-id": 4,
+          "native-id": "001_00_7f00ff_global",
+          "collection-concept-id": "C1233800302-EEDTEST",
+          "provider-id": "EEDTEST",
+          "format": "application/vnd.nasa.cmr.umm+json",
+          "revision-date": "2022-06-10T13:22:14.996Z"
+        },
+        "umm": {
+          "TemporalExtent": {
+            "RangeDateTime": {
+              "BeginningDateTime": "2020-01-01T00:00:00.000Z",
+              "EndingDateTime": "2020-01-01T01:59:59.000Z"
+            }
+          },
+          "GranuleUR": "001_00_7f00ff_global",
+          "SpatialExtent": {
+            "HorizontalSpatialDomain": {
+              "Geometry": {
+                "BoundingRectangles": [
+                  {
+                    "WestBoundingCoordinate": -180.0,
+                    "EastBoundingCoordinate": 180.0,
+                    "NorthBoundingCoordinate": 90.0,
+                    "SouthBoundingCoordinate": -90.0
+                  }
+                ]
+              }
+            }
+          },
+          "ProviderDates": [
+            {
+              "Date": "2020-02-25T21:43:11.000Z",
+              "Type": "Insert"
+            },
+            {
+              "Date": "2020-02-25T21:43:11.000Z",
+              "Type": "Update"
+            }
+          ],
+          "CollectionReference": {
+            "ShortName": "harmony_example",
+            "Version": "1"
+          },
+          "PGEVersionClass": {
+            "PGEVersion": "6.1.9"
+          },
+          "RelatedUrls": [
+            {
+              "URL": "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-eedtest-data/C1233800302-EEDTEST/nc/001_00_7f00ff_global.nc",
+              "Type": "GET DATA",
+              "MimeType": "application/x-netcdf"
+            },
+            {
+              "URL": "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-eedtest-data/C1233800302-EEDTEST/tiff/001_00_7f00ff_global.tif",
+              "Type": "GET DATA",
+              "MimeType": "image/tiff"
+            }
+          ],
+          "DataGranule": {
+            "DayNightFlag": "Both",
+            "Identifiers": [
+              {
+                "Identifier": "001_00_7f00ff_global",
+                "IdentifierType": "ProducerGranuleId"
+              }
+            ],
+            "ProductionDateTime": "2020-02-25T21:43:11.000Z",
+            "ArchiveAndDistributionInformation": [
+              {
+                "Name": "Not provided",
+                "Size": 1.3701868057250977,
+                "SizeUnit": "MB"
+              }
+            ]
+          },
+          "MetadataSpecification": {
+            "URL": "https://cdn.earthdata.nasa.gov/umm/granule/v1.6.6",
+            "Name": "UMM-G",
+            "Version": "1.6.6"
+          }
+        }
+      },
+      {
+        "meta": {
+          "concept-type": "granule",
+          "concept-id": "G1233800344-EEDTEST",
+          "revision-id": 4,
+          "native-id": "001_01_7f00ff_africa",
+          "collection-concept-id": "C1233800302-EEDTEST",
+          "provider-id": "EEDTEST",
+          "format": "application/vnd.nasa.cmr.umm+json",
+          "revision-date": "2022-06-10T13:45:37.583Z"
+        },
+        "umm": {
+          "TemporalExtent": {
+            "RangeDateTime": {
+              "BeginningDateTime": "2020-01-01T02:00:00.000Z",
+              "EndingDateTime": "2020-01-01T03:59:59.000Z"
+            }
+          },
+          "GranuleUR": "001_01_7f00ff_africa",
+          "SpatialExtent": {
+            "HorizontalSpatialDomain": {
+              "Geometry": {
+                "BoundingRectangles": [
+                  {
+                    "WestBoundingCoordinate": -25.399999999999977,
+                    "EastBoundingCoordinate": 63.50000000000003,
+                    "NorthBoundingCoordinate": 37.4,
+                    "SouthBoundingCoordinate": -34.9
+                  }
+                ]
+              }
+            }
+          },
+          "ProviderDates": [
+            {
+              "Date": "2020-02-25T21:43:11.000Z",
+              "Type": "Insert"
+            },
+            {
+              "Date": "2020-02-25T21:43:11.000Z",
+              "Type": "Update"
+            }
+          ],
+          "CollectionReference": {
+            "ShortName": "harmony_example",
+            "Version": "1"
+          },
+          "PGEVersionClass": {
+            "PGEVersion": "6.1.9"
+          },
+          "RelatedUrls": [
+            {
+              "URL": "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-eedtest-data/C1233800302-EEDTEST/nc/001_01_7f00ff_africa.nc",
+              "Type": "GET DATA",
+              "MimeType": "application/x-netcdf"
+            },
+            {
+              "URL": "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-eedtest-data/C1233800302-EEDTEST/tiff/001_01_7f00ff_africa.tif",
+              "Type": "GET DATA",
+              "MimeType": "image/tiff"
+            }
+          ],
+          "DataGranule": {
+            "DayNightFlag": "Both",
+            "Identifiers": [
+              {
+                "Identifier": "001_01_7f00ff_africa",
+                "IdentifierType": "ProducerGranuleId"
+              }
+            ],
+            "ProductionDateTime": "2020-02-25T21:43:11.000Z",
+            "ArchiveAndDistributionInformation": [
+              {
+                "Name": "Not provided",
+                "Size": 0.29718685150146484,
+                "SizeUnit": "MB"
+              }
+            ]
+          },
+          "MetadataSpecification": {
+            "URL": "https://cdn.earthdata.nasa.gov/umm/granule/v1.6.6",
+            "Name": "UMM-G",
+            "Version": "1.6.6"
+          }
+        }
+      },
+      {
+        "meta": {
+          "concept-type": "granule",
+          "concept-id": "G1234866411-EEDTEST",
+          "revision-id": 3,
+          "native-id": "001_01_7f00ff_africa_poly",
+          "collection-concept-id": "C1233800302-EEDTEST",
+          "provider-id": "EEDTEST",
+          "format": "application/vnd.nasa.cmr.umm+json",
+          "revision-date": "2022-06-10T13:45:38.134Z"
+        },
+        "umm": {
+          "TemporalExtent": {
+            "RangeDateTime": {
+              "BeginningDateTime": "2020-01-01T02:00:00.000Z",
+              "EndingDateTime": "2020-01-01T03:59:59.000Z"
+            }
+          },
+          "GranuleUR": "001_01_7f00ff_africa_poly",
+          "SpatialExtent": {
+            "HorizontalSpatialDomain": {
+              "Geometry": {
+                "GPolygons": [
+                  {
+                    "Boundary": {
+                      "Points": [
+                        {
+                          "Longitude": 5.0,
+                          "Latitude": 36.0
+                        },
+                        {
+                          "Longitude": 25.0,
+                          "Latitude": 34.0
+                        },
+                        {
+                          "Longitude": 63.0,
+                          "Latitude": 34.0
+                        },
+                        {
+                          "Longitude": 63.0,
+                          "Latitude": 37.0
+                        },
+                        {
+                          "Longitude": 25.0,
+                          "Latitude": 37.0
+                        },
+                        {
+                          "Longitude": 5.0,
+                          "Latitude": 36.0
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "ProviderDates": [
+            {
+              "Date": "2020-02-25T21:43:11.000Z",
+              "Type": "Insert"
+            },
+            {
+              "Date": "2020-02-25T21:43:11.000Z",
+              "Type": "Update"
+            }
+          ],
+          "CollectionReference": {
+            "ShortName": "harmony_example",
+            "Version": "1"
+          },
+          "PGEVersionClass": {
+            "PGEVersion": "6.1.9"
+          },
+          "RelatedUrls": [
+            {
+              "URL": "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-eedtest-data/C1233800302-EEDTEST/nc/001_01_7f00ff_africa.nc",
+              "Type": "GET DATA",
+              "MimeType": "application/x-netcdf"
+            },
+            {
+              "URL": "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-eedtest-data/C1233800302-EEDTEST/tiff/001_01_7f00ff_africa.tif",
+              "Type": "GET DATA",
+              "MimeType": "image/tiff"
+            }
+          ],
+          "DataGranule": {
+            "DayNightFlag": "Both",
+            "Identifiers": [
+              {
+                "Identifier": "001_01_7f00ff_africa_poly",
+                "IdentifierType": "ProducerGranuleId"
+              }
+            ],
+            "ProductionDateTime": "2020-02-25T21:43:11.000Z",
+            "ArchiveAndDistributionInformation": [
+              {
+                "Name": "Not provided",
+                "Size": 0.29718685150146484,
+                "SizeUnit": "MB"
+              }
+            ]
+          },
+          "MetadataSpecification": {
+            "URL": "https://cdn.earthdata.nasa.gov/umm/granule/v1.6.6",
+            "Name": "UMM-G",
+            "Version": "1.6.6"
+          }
+        }
+      }
+    ]
+  }
+}

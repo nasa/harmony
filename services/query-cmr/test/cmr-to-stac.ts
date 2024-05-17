@@ -24,86 +24,102 @@ describe('bboxToGeometry conversion', function () {
   });
 });
 
-describe('addCmrGranules to catalog', function () {
+describe('addCmrUmmGranules to catalog', function () {
   describe('asset extraction', function () {
     let catalog: CmrCatalog;
     let assets: { [name: string]: StacAsset };
+    let properties: { [name: string]: StacAsset };
     before(function () {
       catalog = new CmrCatalog({ description: 'test' });
-      catalog.addCmrGranules([{
-        id: 'G0_TEST',
-        title: 'g0',
-        time_start: '2019-01-01T00:00:00Z',
-        time_end: '2019-01-02T00:00:00Z',
-        links: [
-          {
-            rel: 'http://esipfed.org/ns/fedsearch/1.1/data#',
-            type: 'application/x-netcdf4',
-            href: './g0_0.nc4',
-            title: 'Data 0',
+      catalog.addCmrUmmGranules([{
+        meta: {
+          'concept-id': 'G0_TEST',
+          'collection-concept-id': 'C0-TEST',
+        },
+        umm: {
+          TemporalExtent: {
+            RangeDateTime: {
+              BeginningDateTime: '2019-01-01T00:00:00Z',
+              EndingDateTime: '2019-01-02T00:00:00Z',
+            },
+          },
+          GranuleUR: 'g0',
+          RelatedUrls: [{
+            URL: './g0_0.nc4',
+            Type: 'GET DATA',
+            Description: 'Data 0',
+            MimeType: 'application/x-netcdf4',
           },
           {
-            rel: 'http://esipfed.org/ns/fedsearch/1.1/data#',
-            type: 'application/x-netcdf4',
-            href: './g0_1.nc4',
-            title: 'Data 1',
+            URL: './g0_1.nc4',
+            Type: 'GET DATA',
+            Description: 'Data 1',
+            MimeType: 'application/x-netcdf4',
           },
           {
-            rel: 'http://esipfed.org/ns/fedsearch/1.1/data#',
-            type: 'application/x-netcdf4',
-            href: './g0_2.nc4',
-            title: 'Inherited Data 2',
-            inherited: true,
+            URL: './g0_3.json',
+            Type: 'EXTENDED METADATA',
+            Description: 'Metadata 3',
+            MimeType: 'application/json',
           },
           {
-            rel: 'http://esipfed.org/ns/fedsearch/1.1/metadata#',
-            type: 'application/json',
-            href: './g0_3.json',
-            title: 'Metadata 3',
+            URL: './g0_4.nc4',
+            Type: 'USE SERVICE API',
+            Description: 'OPeNDAP Data 4',
+            MimeType: 'application/x-netcdf4',
           },
           {
-            rel: 'http://esipfed.org/ns/fedsearch/1.1/data#',
-            type: 'application/x-netcdf4',
-            href: './g0_4.nc4',
-            title: 'OPeNDAP Data 4',
+            URL: './g0_5.nc4',
+            Type: 'USE SERVICE API',
+            Description: 'OPeNDAP Data 5',
+            MimeType: 'application/x-netcdf4',
           },
           {
-            rel: 'http://esipfed.org/ns/fedsearch/1.1/data#',
-            type: 'application/x-netcdf4',
-            href: './g0_5.nc4',
-            title: 'OPeNDAP Data 5',
+            URL: 'https://gesdisc.nasa.gov/opendap/Aqua_AIRS_Level3/AIR222P5.006/2002/AIRS.2222.09.01.L3.RetQuant_IR005.v6.0.9.0.G111160515.hdf',
+            Type: 'USE SERVICE API',
+            Description: 'OPeNDAP request URL (GET DATA : OPENDAP DATA)',
+            MimeType: 'application/x-hdf',
           },
           {
-            rel: 'http://esipfed.org/ns/fedsearch/1.1/service#',
-            title: 'OPeNDAP request URL (GET DATA : OPENDAP DATA)',
-            href: 'https://gesdisc.nasa.gov/opendap/Aqua_AIRS_Level3/AIR222P5.006/2002/AIRS.2222.09.01.L3.RetQuant_IR005.v6.0.9.0.G111160515.hdf',
-            type: 'application/x-hdf',
+            URL: 'https://gesdisc.nasa.gov/opentrap/Aqua_AIRS_Level3/AIR222P5.006/2002/abcd.2222.09.01.L3.RetQuant_IR005.v6.0.9.0.G111160515.hdf',
+            Type: 'USE SERVICE API',
+            Description: 'OPeNTRAP request URL',
+            MimeType: 'application/x-hdf',
           },
           {
-            rel: 'http://esipfed.org/ns/fedsearch/1.1/service#',
-            title: 'OPeNTRAP request URL',
-            href: 'https://gesdisc.nasa.gov/opentrap/Aqua_AIRS_Level3/AIR222P5.006/2002/abcd.2222.09.01.L3.RetQuant_IR005.v6.0.9.0.G111160515.hdf',
-            type: 'application/x-hdf',
+            URL: 'https://gesdisc.nasa.gov/opendap/Aqua_AIRS_Level3/AIR222P5.006/2002/123.2222.09.01.L3.RetQuant_IR005.v6.0.9.0.G111160515.hdf',
+            Type: 'GET DATA',
+            Description: 'OPeNDAP request URL (GET DATA : OPENDAP DATA)',
+            MimeType: 'application/x-hdf',
           },
-          {
-            rel: 'http://esipfed.org/ns/fedsearch/1.1/data#',
-            title: 'OPeNDAP request URL (GET DATA : OPENDAP DATA)',
-            href: 'https://gesdisc.nasa.gov/opendap/Aqua_AIRS_Level3/AIR222P5.006/2002/123.2222.09.01.L3.RetQuant_IR005.v6.0.9.0.G111160515.hdf',
-            type: 'application/x-hdf',
+          ],
+        },
+      },
+      {
+        meta: {
+          'concept-id': 'G1_TEST',
+          'collection-concept-id': 'C0-TEST',
+        },
+        umm: {
+          TemporalExtent: {
+            RangeDateTime: {
+              BeginningDateTime: '2019-01-01T00:00:00Z',
+              EndingDateTime: '2019-01-02T00:00:00Z',
+            },
           },
-        ],
-      }, {
-        id: 'G1_TEST',
-        title: 'g1',
-        time_start: '2019-01-01T00:00:00Z',
-        time_end: '2019-01-02T00:00:00Z',
+          GranuleUR: 'g1',
+        },
       }], './test/granule_');
       // eslint-disable-next-line prefer-destructuring
       assets = (catalog.children[0] as StacItem).assets;
+      // eslint-disable-next-line prefer-destructuring
+      properties = (catalog.children[0] as StacItem).properties;
     });
 
-    it('ignores inherited links', function () {
-      expect(_.map(_.values(assets), 'href')).to.not.include('./g0_2.nc4');
+    it('extracts temporal info', function () {
+      expect(properties.start_datetime).to.equal('2019-01-01T00:00:00Z');
+      expect(properties.end_datetime).to.equal('2019-01-02T00:00:00Z');
+      expect(properties.datetime).to.equal('2019-01-01T00:00:00Z');
     });
 
     it('extracts non-inherited data links', function () {

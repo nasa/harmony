@@ -1,4 +1,5 @@
-import boxStringsToBox, { BoundingBox } from '../bounding-box';
+import { PointType, UmmSpatial, getUmmShape } from './umm-spatial';
+import boxStringsToBox, { BoundingBox, boundingRectanglesToBox } from '../bounding-box';
 import Arc from './arc';
 import { Coordinate, LatLng } from './coordinate';
 import { getShape, containsPole, NORTH_POLE, SOUTH_POLE } from './geo';
@@ -198,7 +199,7 @@ function removeDuplicateEndpoint(ring: string): string {
  * @param precision - the number of decimal places to which to round each ordinate
  * @returns an Mbr with coordinates at the given precision
  */
-function roundMbrCoordiinates(mbr: BoundingBox, precision = 8): BoundingBox {
+function roundMbrCoordinates(mbr: BoundingBox, precision = 8): BoundingBox {
   return mbr.map((ord: number) => {
     const fixed = ord.toFixed(precision);
     return parseFloat(fixed);
@@ -234,7 +235,7 @@ function normalizeMbr(mbr: BoundingBox): BoundingBox {
 }
 
 /**
- * Create an Mbr from a spatial object
+ * Create an Mbr from a ATOM JSON spatial object
  * @param spatial - a an object containing a point, bounding box, or polygon
  * @returns an MBR or undefined
  */
@@ -274,5 +275,49 @@ export function computeMbr(spatial: Spatial): BoundingBox | undefined {
     });
   }
 
-  return mbrs && normalizeMbr(swneToWsen(roundMbrCoordiinates(mergeMbrs(mbrs))));
+  return mbrs && normalizeMbr(swneToWsen(roundMbrCoordinates(mergeMbrs(mbrs))));
+}
+
+/**
+ * Create an Mbr from an UMM JSON spatial object
+ * @param spatial - a an object containing UMM Geometry info
+ * @returns an MBR or undefined
+ */
+export function computeUmmMbr(spatial: UmmSpatial): BoundingBox | undefined {
+  if (!spatial) return;
+  const { Points, BoundingRectangles, Lines, GPolygons } = spatial;
+  let mbrs;
+
+  if (Points) {
+    mbrs = Points.map((point: PointType): BoundingBox => {
+      const { Longitude, Latitude } = point;
+      return [Latitude - EPSILON, Longitude - EPSILON, Latitude + EPSILON, Longitude + EPSILON];
+    });
+  } else if (BoundingRectangles) {
+    return boundingRectanglesToBox(BoundingRectangles);
+  } else if (Lines) {
+    mbrs = Lines.map((line): BoundingBox => {
+      const lineShape = getUmmShape(line.Points);
+      return findSimpleMbr(lineShape);
+    });
+  } else if (GPolygons) {
+    mbrs = GPolygons.map((polygon): BoundingBox => {
+      const polyShape = getUmmShape(polygon.Boundary.Points.slice(0, -1));
+      const mbr = findSimpleMbr(polyShape);
+      const pole = containsPole(polyShape);
+      if (pole === NORTH_POLE) {
+        mbr[1] = -180;
+        mbr[3] = 180;
+        mbr[2] = 90;
+      }
+      if (pole === SOUTH_POLE) {
+        mbr[1] = -180;
+        mbr[3] = 180;
+        mbr[0] = -90;
+      }
+      return mbr;
+    });
+  }
+
+  return mbrs && normalizeMbr(swneToWsen(roundMbrCoordinates(mergeMbrs(mbrs))));
 }

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 import FormData from 'form-data';
 import * as fs from 'fs';
 import { v4 as uuid } from 'uuid';
@@ -8,6 +9,7 @@ import { CmrError } from './errors';
 import { defaultObjectStore, objectStoreForProtocol } from './object-store';
 import env from './env';
 import logger from './log';
+import { UmmSpatial } from './spatial/umm-spatial';
 
 const { cmrEndpoint, cmrMaxPageSize, clientId, stagingBucket } = env;
 
@@ -83,6 +85,40 @@ export interface CmrGranule {
   collection_concept_id?: string;
 }
 
+export interface CmrUmmGranule {
+  meta: {
+    'concept-id': string;
+    'collection-concept-id': string;
+  };
+  umm: {
+    TemporalExtent?: {
+      RangeDateTime?: {
+        BeginningDateTime: string;
+        EndingDateTime?: string;
+      };
+      SingleDateTime?: string;
+    };
+    GranuleUR: string;
+    SpatialExtent?: {
+      HorizontalSpatialDomain?: {
+        Geometry: UmmSpatial;
+      };
+    };
+    DataGranule?: {
+      ArchiveAndDistributionInformation?: {
+        Size?: number;
+      }[];
+    };
+    RelatedUrls?: {
+      URL: string;
+      Type: string;
+      Description?: string;
+      Subtype?: string;
+      MimeType?: string;
+    }[];
+  };
+}
+
 export interface CmrGranuleLink {
   rel: string;
   href: string;
@@ -95,6 +131,14 @@ export interface CmrGranuleLink {
 export interface CmrGranuleHits {
   hits: number;
   granules: CmrGranule[];
+  scrollID?: string;
+  sessionKey?: string;
+  searchAfter?: string;
+}
+
+export interface CmrUmmGranuleHits {
+  hits: number;
+  granules: CmrUmmGranule[];
   scrollID?: string;
   sessionKey?: string;
   searchAfter?: string;
@@ -249,6 +293,13 @@ export interface CmrGranulesResponse extends CmrResponse {
     feed: {
       entry: CmrGranule[];
     };
+  };
+}
+
+export interface CmrUmmGranulesResponse extends CmrResponse {
+  data: {
+    items: CmrUmmGranule[];
+    hits: number;
   };
 }
 
@@ -666,13 +717,19 @@ export async function queryGranuleUsingMultipartForm(
   form: CmrQuery,
   token: string,
   extraHeaders = {},
-): Promise<CmrGranuleHits> {
-  const granuleResponse = await _cmrPost('/search/granules.json', form, token, extraHeaders) as CmrGranulesResponse;
+  resultFormat = 'json',
+): Promise<CmrGranuleHits | CmrUmmGranuleHits> {
+  let granuleResponse = null;
+  if (resultFormat === 'json') {
+    granuleResponse = await _cmrPost(`/search/granules.${resultFormat}`, form, token, extraHeaders) as CmrGranulesResponse;
+  } else {
+    granuleResponse = await _cmrPost(`/search/granules.${resultFormat}`, form, token, extraHeaders) as CmrUmmGranulesResponse;
+  }
   const cmrHits = parseInt(granuleResponse.headers.get('cmr-hits'), 10);
   const searchAfter = granuleResponse.headers.get('cmr-search-after');
   return {
     hits: cmrHits,
-    granules: granuleResponse.data.feed.entry,
+    granules: (resultFormat === 'json') ? granuleResponse.data.feed.entry : granuleResponse.data.items,
     searchAfter,
   };
 }
@@ -834,11 +891,12 @@ export async function queryGranulesWithSearchAfter(
   query?: CmrQuery,
   sessionKey?: string,
   searchAfterHeader?: string,
-): Promise<CmrGranuleHits> {
+  resultFormat = 'json',
+): Promise<CmrGranuleHits | CmrUmmGranuleHits> {
   const baseQuery = {
     page_size: cmrMaxPageSize ? Math.min(limit, cmrMaxPageSize) : limit,
   };
-  let response: CmrGranuleHits;
+  let response: CmrGranuleHits | CmrUmmGranuleHits;
   let headers = {};
   if (searchAfterHeader) {
     headers = { 'cmr-search-after': searchAfterHeader };
@@ -852,6 +910,7 @@ export async function queryGranulesWithSearchAfter(
       fullQuery,
       token,
       headers,
+      resultFormat,
     );
     response.sessionKey = sessionKey;
   } else {
@@ -864,6 +923,7 @@ export async function queryGranulesWithSearchAfter(
       fullQuery,
       token,
       {},
+      resultFormat,
     );
     // NOTE response.hits in this case will be the cmr-hits total, not the number of granules
     // returned in this request
@@ -891,10 +951,12 @@ export function queryGranulesForCollection(
     page_size: Math.min(limit, cmrMaxPageSize),
   };
 
-  return queryGranuleUsingMultipartForm({
+  const result: unknown = queryGranuleUsingMultipartForm({
     ...baseQuery,
     ...query,
   }, token);
+
+  return result as Promise<CmrGranuleHits>;
 }
 
 
