@@ -35,6 +35,7 @@ function buildIntegerParseError(min: number, max: number, paramName: string): Re
  * @param min - The minimum acceptable value the number
  * @param max - The maximum acceptable value the number
  * @param useMaxWhenExceeded - If true, return 'max' (rather than an error) when the integer provided exceeds 'max'
+ * @param useMinWhenExceeded - If true, return 'min' (rather than an error) when the integer provided exceeds 'min'
  * @returns The numeric value of the parameter
  * @throws {@link RequestValidationError} If the passed value is not a positive integer
  */
@@ -45,6 +46,7 @@ function parseIntegerParam(
   min: number = null,
   max: number = null,
   useMaxWhenExceeded = false,
+  useMinWhenExceeded = false,
 ): number {
   const strValue = req.query[paramName];
   if (!strValue) {
@@ -52,9 +54,15 @@ function parseIntegerParam(
   }
   const value = +strValue;
   if (Number.isNaN(value)
-    || !Number.isSafeInteger(value)
-    || (min !== null && value < min)) {
+    || !Number.isSafeInteger(value)) {
     throw buildIntegerParseError(min, max, paramName);
+  }
+  if ((min !== null && value < min)) {
+    if (!useMinWhenExceeded) {
+      throw buildIntegerParseError(min, max, paramName);
+    } else {
+      return min;
+    }
   }
   if ((max !== null && value > max)) {
     if (!useMaxWhenExceeded) {
@@ -70,14 +78,23 @@ function parseIntegerParam(
  * Gets the paging parameters from the given request
  * @param req - The Express request possibly containing paging params
  * @param defaultPageSize - The page size to use if no `limit` parameter is in the query
- * @param useMaxWhenExceeded - If true, return 'max' (rather than an error) when the integer provided exceeds 'max'
+ * @param minPageSize - The minimum desired page size
+ * @param useMaxPageSizeWhenExceeded - If true, return 'max' (rather than an error) when the integer provided exceeds 'max'
+ * @param useMinPageSizeWhenExceeded - If true, return 'min' (rather than an error) when the integer provided exceeds 'min'
  * @returns The paging parameters
  * @throws {@link RequestValidationError} If invalid paging parameters are provided
  */
-export function getPagingParams(req: Request, defaultPageSize: number, useMaxWhenExceeded = false): PagingParams {
+export function getPagingParams(
+  req: Request, 
+  defaultPageSize: number, 
+  minPageSize = 0,
+  useMaxPageSizeWhenExceeded = false,
+  useMinPageSizeWhenExceeded = false): PagingParams {
   return {
     page: parseIntegerParam(req, 'page', 1, 1),
-    limit: parseIntegerParam(req, 'limit', defaultPageSize, 0, env.maxPageSize, useMaxWhenExceeded),
+    limit: parseIntegerParam(
+      req, 'limit', defaultPageSize, minPageSize, env.maxPageSize,
+      useMaxPageSizeWhenExceeded, useMinPageSizeWhenExceeded),
   };
 }
 

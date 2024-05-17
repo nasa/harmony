@@ -295,7 +295,7 @@ export async function getJobs(
     const dateKind = requestQuery.datekind || 'createdAt';
     const { tableQuery, originalValues } = parseQuery(requestQuery, JobStatus, isAdminRoute);
     const jobQuery = tableQueryToJobQuery(tableQuery, isAdminRoute, req.user);
-    const { page, limit } = getPagingParams(req, env.defaultJobListPageSize, true);
+    const { page, limit } = getPagingParams(req, env.defaultJobListPageSize, 1, true, true);
     const { data: jobs, pagination } = await Job.queryAll(db, jobQuery, page, limit);
     setPagingHeaders(res, pagination);
     const pageLinks = getPagingLinks(req, pagination, true);
@@ -356,7 +356,7 @@ export async function getJob(
   try {
     const isAdmin = await isAdminUser(req);
     const job = await getJobIfAllowed(jobID, req.user, isAdmin, req.accessToken, true);
-    const { page, limit } = getPagingParams(req, defaultWorkItemPageSize, true);
+    const { page, limit } = getPagingParams(req, defaultWorkItemPageSize, 1, true, true);
     const requestQuery = keysToLowerCase(req.query);
     const fromDateTime = requestQuery.fromdatetime;
     const toDateTime = requestQuery.todatetime;
@@ -513,7 +513,7 @@ export async function getWorkItemsTable(
       res.status(204).json({ status: job.status });
       return;
     }
-    const { page, limit } = getPagingParams(req, defaultWorkItemPageSize, true);
+    const { page, limit } = getPagingParams(req, defaultWorkItemPageSize, 1, true, true);
     const requestQuery = keysToLowerCase(req.query);
     const { tableQuery } = parseQuery(requestQuery, WorkItemStatus);
     const itemQuery = tableQueryToWorkItemQuery(tableQuery, jobID);
@@ -610,7 +610,7 @@ export async function getJobsTable(
     const requestQuery = keysToLowerCase(req.query);
     const { tableQuery } = parseQuery(requestQuery, JobStatus, req.context.isAdminAccess);
     const jobQuery = tableQueryToJobQuery(tableQuery, isAdmin, req.user);
-    const { page, limit } = getPagingParams(req, env.defaultJobListPageSize, true);
+    const { page, limit } = getPagingParams(req, env.defaultJobListPageSize, 1, true, true);
     const jobsRes = await Job.queryAll(db, jobQuery, page, limit);
     const jobs = jobsRes.data;
     const { pagination } = jobsRes;
