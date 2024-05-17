@@ -266,9 +266,6 @@ export async function runServiceFromPull(workItem: WorkItemRecord, workItemLogge
       // 262144 is the max SQS message size, so any operation + other stuff we add that is
       //  bigger than that is considered BIG and therefore requires special handling. In this case
       // we use a file to pass the operation to harmony-service-lib instead of a command line argument.
-      // `--harmony-input` is being deprecated - once all providers have updated to version 1.20 of
-      // harmony - service - lib then we will remove `--harmony-input` here and just use
-      // `--harmony-input-file`.
       if (operationJson.length > 100000) {
         operationCommandLine = '--harmony-input-file';
         operationCommandLineValue = operationJsonFile;

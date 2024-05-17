@@ -14,7 +14,6 @@ import { MemoryCache } from '../app/util/cache/memory-cache';
 /**
  * Create a job with many variables and some work steps/items to be used by tests
  *
- * @param nonAggregateService - identifier for a service that does not aggregate
  * @param service - identifier for a service
  * @returns a promise containing the id of the created job
  */
