@@ -20,8 +20,7 @@ export type WorkItemData = {
 /**
  * Function to fetch the operation for a work-item when it is not in the cache
  *
- * @param jobID - the id of the job
- * @param serviceID - the id of the service to get operation for
+ * @param key - comma-separated combination of job ID and service ID
  * @returns The data operation JSON string read from the database
 */
 async function operationFetcher(key: string): Promise<string> {
