@@ -146,7 +146,7 @@ paths:
     get:
       tags:
         - Collection data queries
-      summary: Query end point for position queries  of collection {collectionId}
+      summary: Query end point for position queries of collection {collectionId}
       description: Not yet implemented
       operationId: getDataForPoint
       parameters:
@@ -171,7 +171,7 @@ paths:
     post:
       tags:
         - Collection data queries
-      summary: Query end point for position queries  of collection {collectionId}
+      summary: Query end point for position queries of collection {collectionId}
       description: Query end point for position queries
       operationId: postDataForPoint
       parameters:
@@ -210,7 +210,7 @@ paths:
     get:
       tags:
         - Collection data queries
-      summary: Query end point for Cube queries  of collection {collectionId} defined by a cube
+      summary: Query end point for Cube queries of collection {collectionId} defined by a cube
       description: Return the data values for the data Cube defined by the query parameters
       operationId: getDataForCube
       parameters:
@@ -253,7 +253,7 @@ paths:
     post:
       tags:
         - Edr
-      summary: Query end point for Cube queries  of collection {collectionId} defined by a cube
+      summary: Query end point for Cube queries of collection {collectionId} defined by a cube
       description: Return the data values for the data Cube defined by the query parameters
       operationId: postDataForCube
       parameters:
@@ -296,7 +296,107 @@ paths:
 
       responses:
         "200":
-          description: A edr's range set.
+          description: An EDR's range set.
+          content:
+            image/*:
+              schema:
+                $ref: "#/components/schemas/edrImage"
+            application/*:
+              schema:
+                $ref: "#/components/schemas/edrImage"
+        default:
+          $ref: "#/components/responses/default"
+  /collections/{collectionId}/area:
+    get:
+      tags:
+        - Collection data queries
+      summary: Query end point for Area queries of collection {collectionId} defined by a polygon
+      description: Return the data values for the data area defined by the query parameters
+      operationId: getDataForArea
+      parameters:
+        - $ref: "#/components/parameters/coords"
+        - $ref: "#/components/parameters/z"
+        - $ref: "#/components/parameters/datetime"
+        - $ref: "#/components/parameters/parameter-name"
+        - $ref: "#/components/parameters/crs"
+        - $ref: "#/components/parameters/f"
+        # Parameters below this line are not part of the OGC specification
+        - $ref: "#/components/parameters/subset"
+        - $ref: "#/components/parameters/interpolation"
+        - $ref: "#/components/parameters/scaleExtent"
+        - $ref: "#/components/parameters/scaleSize"
+        - $ref: "#/components/parameters/concatenate"
+        - $ref: "#/components/parameters/granuleId"
+        - $ref: "#/components/parameters/point"
+        - $ref: "#/components/parameters/width"
+        - $ref: "#/components/parameters/height"
+        - $ref: "#/components/parameters/forceAsync"
+        - $ref: "#/components/parameters/maxResults"
+        - $ref: "#/components/parameters/skipPreview"
+        - $ref: "#/components/parameters/ignoreErrors"
+        - $ref: "#/components/parameters/destinationUrl"
+        - $ref: "#/components/parameters/granuleName"
+        - $ref: "#/components/parameters/grid"
+        - $ref: "#/components/parameters/extend"
+      responses:
+        "200":
+          description: A collection's EDR.
+          content:
+            image/*:
+              schema:
+                $ref: "#/components/schemas/edrImage"
+            application/*:
+              schema:
+                $ref: "#/components/schemas/edrImage"
+        default:
+          $ref: "#/components/responses/default"
+    post:
+      tags:
+        - Edr
+      summary: Query end point for area queries of collection {collectionId} defined by a polygon
+      description: Return the data values for the data area defined by the query parameters
+      operationId: postDataForArea
+      parameters:
+        - $ref: "#/components/parameters/coords"
+        - $ref: "#/components/parameters/z"
+        - $ref: "#/components/parameters/datetime"
+        - $ref: "#/components/parameters/parameter-name"
+        - $ref: "#/components/parameters/crs"
+        - $ref: "#/components/parameters/f"
+        # Parameters below this line are not part of the OGC specification
+        - $ref: "#/components/parameters/subset"
+        - $ref: "#/components/parameters/interpolation"
+        - $ref: "#/components/parameters/scaleExtent"
+        - $ref: "#/components/parameters/scaleSize"
+        - $ref: "#/components/parameters/concatenate"
+        - $ref: "#/components/parameters/granuleId"
+        - $ref: "#/components/parameters/point"
+        - $ref: "#/components/parameters/width"
+        - $ref: "#/components/parameters/height"
+        - $ref: "#/components/parameters/forceAsync"
+        - $ref: "#/components/parameters/maxResults"
+        - $ref: "#/components/parameters/skipPreview"
+        - $ref: "#/components/parameters/ignoreErrors"
+        - $ref: "#/components/parameters/destinationUrl"
+        - $ref: "#/components/parameters/granuleName"
+        - $ref: "#/components/parameters/grid"
+        - $ref: "#/components/parameters/extend"
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                shapefile:
+                  type: string
+                  format: binary
+            encoding:
+              shapefile:
+                contentType: "application/geo+json,application/shapefile+zip,application/vnd.google-earth.kml+xml"
+
+      responses:
+        "200":
+          description: An EDR's range set.
           content:
             image/*:
               schema:

@@ -29,9 +29,11 @@ export function wktToCmrQueryParams(wkt: string): CmrQuery {
       // polygons list.
       queryParams['polygon[]'] = flattenCoordinates(geoJson.coordinates[0]);
       break;
-    // case 'MultiPolygon':
-    //   queryParams['polygon[]'] = geoJson.coordinates.map((polygon) => flattenCoordinates(polygon));
-    //   break;
+    case 'MultiPolygon':
+      // Similar to polygon - the polygonWrapper is an array with the first element being the
+      // outer polygon and the second element an interior hole. We ignore the interior hole
+      queryParams['polygon[]'] = geoJson.coordinates.map((polygonWrapper) => flattenCoordinates(polygonWrapper[0]));
+      break;
     case 'LineString':
       // Assuming that both WKT and CMR use (lon, lat) in that order for each coordinate
       queryParams['line[]'] = flattenCoordinates(geoJson.coordinates);

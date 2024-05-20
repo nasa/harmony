@@ -1,28 +1,29 @@
-import { NextFunction, Response } from 'express';
+import { createDecrypter, createEncrypter } from '../../util/crypto';
+import { handleCrs, handleExtend, handleFormat, handleGranuleIds, handleGranuleNames, handleScaleExtent, handleScaleSize } from '../../util/parameter-parsers';
+import { keysToLowerCase } from '../../util/object';
+import { ParameterParseError, mergeParameters, parseWkt } from '../../util/parameter-parsing-helpers';
+import { parseSubsetParams } from '../ogc-coverages/util/subset-parameter-parsing';
+import { Response, NextFunction } from 'express';
 import DataOperation from '../../models/data-operation';
+import env from '../../util/env';
 import HarmonyRequest from '../../models/harmony-request';
 import wrap from '../../util/array';
-import { handleCrs, handleExtend, handleFormat, handleGranuleIds, handleGranuleNames, handleScaleExtent, handleScaleSize } from '../../util/parameter-parsers';
-import { createDecrypter, createEncrypter } from '../../util/crypto';
-import env from '../../util/env';
 import { RequestValidationError } from '../../util/errors';
-import { keysToLowerCase } from '../../util/object';
-import { ParameterParseError, mergeParameters } from '../../util/parameter-parsing-helpers';
 import { parseVariables } from '../../util/variables';
-import { parseBbox, parseDatetime } from './util/helper';
-import { parseSubsetParams } from '../ogc-coverages/util/subset-parameter-parsing';
+import { parseDatetime } from './util/helper';
 
 /**
- * Express middleware that responds to OGC API - EDR cube requests.
+ * Express middleware that responds to OGC API - EDR Area GET requests.
  * Responds with the actual EDR data.
+ *
+ * This function merely sets up a query and proxies the request to the `getDataForArea`
+ * function.
  *
  * @param req - The request sent by the client
  * @param res - The response to send to the client
  * @param next - The next express handler
- * @throws RequestValidationError - Thrown if the request has validation problems and
- *   cannot be performed
  */
-export function getDataForCube(
+export function getDataForArea(
   req: HarmonyRequest,
   res: Response,
   next: NextFunction,
@@ -71,9 +72,9 @@ export function getDataForCube(
     throw e;
   }
 
-  const bbox = parseBbox(query.bbox as string);
-  if (bbox) {
-    operation.boundingRectangle = bbox;
+  const geoJson = parseWkt(query.coords);
+  if (geoJson) {
+    operation.geojson = JSON.stringify(geoJson);
   }
 
   const { start, end } = parseDatetime(query.datetime);
@@ -98,17 +99,17 @@ export function getDataForCube(
 }
 
 /**
- * Express middleware that responds to OGC API - EDR POST requests.
+ * Express middleware that responds to OGC API - EDR Area POST requests.
  * Responds with the actual EDR data.
  *
- * This function merely sets up a query and proxies the request to the `getDataForCube`
+ * This function merely sets up a query and proxies the request to the `getDataForArea`
  * function.
  *
  * @param req - The request sent by the client
  * @param res - The response to send to the client
  * @param next - The next express handler
  */
-export function postDataForCube(
+export function postDataForArea(
   req: HarmonyRequest,
   res: Response,
   next: NextFunction,
@@ -116,5 +117,5 @@ export function postDataForCube(
   // merge form parameters into the query
   mergeParameters(req);
 
-  getDataForCube(req, res, next);
+  getDataForArea(req, res, next);
 }

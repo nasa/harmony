@@ -6,8 +6,8 @@ import * as yaml from 'js-yaml';
 import getLandingPage from '../ogc-coverages/get-landing-page';
 import getRequirementsClasses from '../ogc-coverages/get-requirements-classes';
 
-import getDataForCube from './get-data-for-cube';
-import postDataForCube from './post-data-for-cube';
+import { getDataForCube, postDataForCube } from './get-data-for-cube';
+import { getDataForArea, postDataForArea } from './get-data-for-area';
 
 import HarmonyRequest from '../../models/harmony-request';
 
@@ -86,6 +86,8 @@ export function addOpenApiRoutes(app: Router): void {
       postDataForPoint: TODO,
       getDataForCube,
       postDataForCube,
+      getDataForArea,
+      postDataForArea,
     },
   });
 }
