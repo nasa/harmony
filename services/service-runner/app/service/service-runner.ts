@@ -30,6 +30,10 @@ const { workerTimeout } = env;
 // service exit code for Out Of Memory error
 const OOM_EXIT_CODE = '137';
 
+// maximum size a data operation can be before it must be passed as a file using --harmony-input-file <path>
+// instead of passed as a command line argument using --harmony-input
+const MAX_INLINE_OPERATION_SIZE = 100000;
+
 /**
  * A writable stream that is passed to the k8s exec call for the worker container.
  * Captures, logs and stores the logs of the worker container's execution.
@@ -258,15 +262,15 @@ export async function runServiceFromPull(workItem: WorkItemRecord, workItemLogge
         resolve({ error: `Worker timed out after ${workerTimeout / 1000.0} seconds` });
       }, workerTimeout);
 
-      // use a temporary file on the shared volume mount to pass the operation if the operation is large
-      const operationJsonFile = '/tmp/operation.json';
       const operationJson = JSON.stringify(operation);
       let operationCommandLine = '--harmony-input';
       let operationCommandLineValue = operationJson;
       // 262144 is the max SQS message size, so any operation + other stuff we add that is
       //  bigger than that is considered BIG and therefore requires special handling. In this case
       // we use a file to pass the operation to harmony-service-lib instead of a command line argument.
-      if (operationJson.length > 100000) {
+      if (operationJson.length > MAX_INLINE_OPERATION_SIZE) {
+        // use a temporary file on the shared volume mount to pass the operation if the operation is large
+        const operationJsonFile = '/tmp/operation.json';
         operationCommandLine = '--harmony-input-file';
         operationCommandLineValue = operationJsonFile;
         writeFileSync(operationJsonFile, operationJson);
