@@ -1,7 +1,11 @@
 import db, { Transaction } from '../../util/db';
 import { Logger } from 'winston';
-import env from '../../util/env';
+import { Cache } from '../../util/cache/cache';
+import { MemoryCache } from '../../util/cache/memory-cache';
+import WorkflowStep from '../../models/workflow-steps';
 import WorkItem, { getNextWorkItem, getNextWorkItems, getWorkItemStatus, updateWorkItemStatuses } from '../../models/work-item';
+import env from '../../util/env';
+import logger from '../../util/log';
 import { getNextJobIdForUsernameAndService, getNextJobIds, getNextUsernameForWork, incrementRunningAndDecrementReadyCounts, recalculateCounts } from '../../models/user-work';
 import { getQueueForUrl, getQueueUrlForService, getWorkSchedulerQueue  } from '../../util/queue/queue-factory';
 import { QUERY_CMR_SERVICE_REGEX, calculateQueryCmrLimit, processSchedulerQueue } from './util';
@@ -11,6 +15,35 @@ export type WorkItemData = {
   workItem: WorkItem,
   maxCmrGranules?: number
 };
+
+
+/**
+ * Function to fetch the operation for a work-item when it is not in the cache
+ *
+ * @param key - comma-separated combination of job ID and service ID
+ * @returns The data operation JSON string read from the database
+*/
+async function operationFetcher(key: string): Promise<string> {
+  let result = undefined;
+  const [jobID, serviceID] = key.split(',');
+  await db.transaction(async (tx) => {
+    try {
+      const workflowStepData = await tx(WorkflowStep.table)
+        .select(['operation'])
+        .where('jobID', '=', jobID)
+        .andWhere({ serviceID })
+        .first();
+      result = workflowStepData.operation;
+    } catch (err) {
+      logger.error(`Error getting operation of jobID: ${jobID} and serviceID: ${serviceID} from database: ${err.message}`);
+    }
+  });
+
+  return result;
+}
+
+const operationCache: Cache = new MemoryCache(operationFetcher);
+
 
 /**
  * Get a work item from the database for the given service ID.
@@ -184,6 +217,15 @@ export async function getWorkFromQueue(serviceID: string, reqLogger: Logger): Pr
     await queue.deleteMessage(queueItem.receipt);
     reqLogger.debug(`Deleted work item with receipt ${queueItem.receipt} from queue ${queueUrl}`);
     const item = JSON.parse(queueItem.body) as WorkItemData;
+    // get the operation for the step
+    const operationJson = await operationCache.fetch(`${item.workItem.jobID},${item.workItem.serviceID}`);
+    if (operationJson) {
+      const operation = JSON.parse(operationJson);
+      // Make sure that the staging location is unique for every work item in a job
+      // in case a service for the same job produces an output with the same file name
+      operation.stagingLocation += `${item.workItem.id}/`;
+      item.workItem.operation = operation;
+    }
     // make sure the item wasn't canceled and set the status to running
     try {
       await db.transaction(async (tx) => {

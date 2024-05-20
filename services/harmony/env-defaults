@@ -123,6 +123,9 @@ MAX_POST_FILE_SIZE=2000000000
 # Maximum number of multipart parts to accept when providing a shapefile
 MAX_POST_FILE_PARTS=100
 
+# Maximum size (in bytes) of the cache for data operations
+MAX_DATA_OPERATION_CACHE_SIZE=512000000
+
 #############################################################################
 #                        OAuth 2 (Earthdata Login)                          #
 #                                                                           #

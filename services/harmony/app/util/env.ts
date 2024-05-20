@@ -98,6 +98,10 @@ class HarmonyServerEnv extends HarmonyEnv {
   @Min(1)
   maxPostFileSize: number;
 
+  @IsInt()
+  @Min(1)
+  maxDataOperationCacheSize: number;
+
   locallyDeployedServices: string;
 }
 

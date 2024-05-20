@@ -106,6 +106,11 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
     outputItemSizes } = req.body;
   const totalItemsSize = req.body.totalItemsSize ? parseFloat(req.body.totalItemsSize) : 0;
 
+  // remove variables as these may be too large to fit on the queue and aren't used for updates
+  for (const source of operation.sources) {
+    source.variables = [];
+  }
+
   const update = {
     workItemID: parseInt(id),
     status,

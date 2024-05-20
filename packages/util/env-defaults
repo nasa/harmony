@@ -63,6 +63,9 @@ DEFAULT_RESULT_PAGE_SIZE=2000
 # or maximum_async_granules we will override the configuration to limit to this value.
 MAX_GRANULE_LIMIT=10000000
 
+# max JSON payload that can be sent to query-cmr via express. Should take the form of '100mb', etc.
+MAX_QUERY_CMR_JSON_SIZE=400mb
+
 # String to identify the type of environment.  Options:
 #  - "development" for local development.
 #  - "production" for deployments with a separate postgres server (SIT, UAT, Production).
