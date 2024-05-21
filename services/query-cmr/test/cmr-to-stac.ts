@@ -92,6 +92,12 @@ describe('addCmrUmmGranules to catalog', function () {
             Description: 'OPeNDAP request URL (GET DATA : OPENDAP DATA)',
             MimeType: 'application/x-hdf',
           },
+          {
+            URL: 'https://archive.gesdisc.nasa.gov/Aqua_AIRS_Level3/AIR222P5.006/browse_source.zip',
+            Type: 'GET DATA',
+            Description: 'Download browse_source.zip',
+            Subtype: 'BROWSE IMAGE SOURCE',
+          },
           ],
         },
       },
@@ -175,6 +181,13 @@ describe('addCmrUmmGranules to catalog', function () {
         description: 'OPeNDAP request URL (GET DATA : OPENDAP DATA)',
         type: 'application/x-hdf',
         roles: ['data', 'opendap'],
+      });
+      expect(assets.browse).to.eql({
+        href: 'https://archive.gesdisc.nasa.gov/Aqua_AIRS_Level3/AIR222P5.006/browse_source.zip',
+        title: 'browse_source.zip',
+        description: 'Download browse_source.zip',
+        type: undefined,
+        roles: ['visual'],
       });
       expect(assets.data2).to.be.undefined;
     });
