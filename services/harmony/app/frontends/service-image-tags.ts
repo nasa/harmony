@@ -1,7 +1,7 @@
 import { Response, NextFunction } from 'express';
 import HarmonyRequest from '../models/harmony-request';
 import { ECR } from '../util/container-registry';
-import { getEdlGroupInformation, validateUserIsInAdminGroup } from '../util/edl-api';
+import { getEdlGroupInformation, validateUserIsInCoreGroup } from '../util/edl-api';
 import { exec } from 'child_process';
 import * as path from 'path';
 import util from 'util';
@@ -230,21 +230,21 @@ async function validateServiceExists(
 }
 
 /**
- * Validate that the user is in the deployers or the admin group
+ * Validate that the user is in the deployers or the core permissions group
  * @param req - The request object
  * @param res  - The response object - will be used to send an error if the validation fails
  * @returns A Promise containing `true` if the user is in either group, `false` otherwise
  */
-async function validateUserIsInDeployerOrAdminGroup(
+async function validateUserIsInDeployerOrCoreGroup(
   req: HarmonyRequest, res: Response,
 ): Promise<boolean> {
-  const { isAdmin, isServiceDeployer } = await getEdlGroupInformation(
+  const { hasCorePermissions, isServiceDeployer } = await getEdlGroupInformation(
     req.user, req.context.logger,
   );
 
-  if (!isServiceDeployer && !isAdmin) {
+  if (!isServiceDeployer && !hasCorePermissions) {
     res.statusCode = 403;
-    res.send(`User ${req.user} is not in the service deployers or admin EDL groups`);
+    res.send(`User ${req.user} is not in the service deployers or core EDL groups`);
     return false;
   }
   return true;
@@ -364,7 +364,7 @@ async function validateDeploymentState(
 export async function getServiceImageTags(
   req: HarmonyRequest, res: Response, _next: NextFunction,
 ): Promise<void> {
-  if (! await validateUserIsInDeployerOrAdminGroup(req, res)) return;
+  if (! await validateUserIsInDeployerOrCoreGroup(req, res)) return;
 
   const imageMap = getImageTagMap();
 
@@ -387,7 +387,7 @@ export async function getServiceImageTag(
   req: HarmonyRequest, res: Response, _next: NextFunction,
 ): Promise<void> {
   const validations = [
-    validateUserIsInDeployerOrAdminGroup,
+    validateUserIsInDeployerOrCoreGroup,
     validateServiceExists,
   ];
 
@@ -460,7 +460,7 @@ export async function updateServiceImageTag(
 ): Promise<void> {
 
   const validations = [
-    validateUserIsInDeployerOrAdminGroup,
+    validateUserIsInDeployerOrCoreGroup,
     validateServiceDeploymentIsEnabled,
     validateTagPresent,
     validateServiceExists,
@@ -516,7 +516,7 @@ export async function updateServiceImageTag(
 export async function getServiceImageTagState(
   req: HarmonyRequest, res: Response, _next: NextFunction,
 ): Promise<void> {
-  if (! await validateUserIsInDeployerOrAdminGroup(req, res)) return;
+  if (! await validateUserIsInDeployerOrCoreGroup(req, res)) return;
 
   const enabled = await getEnabled();
   res.statusCode = 200;
@@ -532,7 +532,7 @@ export async function setServiceImageTagState(
   req: HarmonyRequest, res: Response,
 ): Promise<void> {
   const validations = [
-    validateUserIsInAdminGroup,
+    validateUserIsInCoreGroup,
     validateDeploymentState,
   ];
 
@@ -566,7 +566,7 @@ export async function setServiceImageTagState(
 export async function getServiceDeployment(
   req: HarmonyRequest, res: Response, _next: NextFunction,
 ): Promise<void> {
-  if (! await validateUserIsInDeployerOrAdminGroup(req, res)) return;
+  if (! await validateUserIsInDeployerOrCoreGroup(req, res)) return;
 
   const { id } = req.params;
   let deployment: ServiceDeployment;
@@ -599,7 +599,7 @@ export async function getServiceDeployments(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
   const validations = [
-    validateUserIsInDeployerOrAdminGroup,
+    validateUserIsInDeployerOrCoreGroup,
     validateStatusForListServiceRequest,
   ];
 

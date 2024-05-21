@@ -93,6 +93,7 @@ export interface EdlGroupMembership {
   isAdmin: boolean;
   isLogViewer: boolean;
   isServiceDeployer: boolean;
+  hasCorePermissions: boolean;
 }
 
 /**
@@ -100,7 +101,8 @@ export interface EdlGroupMembership {
  *
  * @param username - The EDL username
  * @param logger - The logger associated with the request
- * @returns A promise which resolves to info about whether the user is an admin, log viewer or service deployer
+ * @returns A promise which resolves to info about whether the user is an admin, log viewer or service deployer,
+ * and has core permissions (e.g. allowing user to access server configuration endpoints)
  */
 export async function getEdlGroupInformation(username: string, logger: Logger)
   : Promise<EdlGroupMembership> {
@@ -120,7 +122,12 @@ export async function getEdlGroupInformation(username: string, logger: Logger)
     isServiceDeployer = true;
   }
 
-  return { isAdmin, isLogViewer, isServiceDeployer };
+  let hasCorePermissions = false;
+  if (groups.includes(env.corePermissionsGroupId)) {
+    hasCorePermissions = true;
+  }
+
+  return { isAdmin, isLogViewer, isServiceDeployer, hasCorePermissions };
 }
 
 /**
@@ -171,21 +178,21 @@ export async function verifyUserEula(username: string, eulaId: string, logger: L
 }
 
 /**
- * Validate that the user is in the admin group
+ * Validate that the user is in the core permissions group
  * @param req - The request object
  * @param res  - The response object - will be used to send an error if the validation fails
- * @returns A Promise containing `true` if the user is in admin group, `false` otherwise
+ * @returns A Promise containing `true` if the user is in core permissions group, `false` otherwise
  */
-export async function validateUserIsInAdminGroup(
+export async function validateUserIsInCoreGroup(
   req: HarmonyRequest, res: Response,
 ): Promise<boolean> {
-  const { isAdmin } = await getEdlGroupInformation(
+  const { hasCorePermissions } = await getEdlGroupInformation(
     req.user, req.context.logger,
   );
 
-  if (!isAdmin) {
+  if (!hasCorePermissions) {
     res.statusCode = 403;
-    res.send(`User ${req.user} is not in the admin EDL group`);
+    res.send(`User ${req.user} is not in the core EDL group`);
     return false;
   }
   return true;
