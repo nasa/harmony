@@ -169,7 +169,6 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   // Handle multipart/form-data (used for shapefiles). Files will be uploaded to
   // a bucket.
   result.post(collectionPrefix('(ogc-api-coverages)'), asyncHandler(shapefileUpload()));
-  result.post(/^\/ogc-api-edr\//, asyncHandler(shapefileUpload()));
 
   result.use(logged(earthdataLoginTokenAuthorizer(authorizedRoutes)));
 

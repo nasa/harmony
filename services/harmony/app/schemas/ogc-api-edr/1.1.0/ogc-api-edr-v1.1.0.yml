@@ -146,7 +146,7 @@ paths:
     get:
       tags:
         - Collection data queries
-      summary: Query end point for position queries  of collection {collectionId}
+      summary: Query end point for position queries of collection {collectionId}
       description: Not yet implemented
       operationId: getDataForPoint
       parameters:
@@ -171,9 +171,141 @@ paths:
     post:
       tags:
         - Collection data queries
-      summary: Query end point for position queries  of collection {collectionId}
+      summary: Query end point for position queries of collection {collectionId}
       description: Query end point for position queries
       operationId: postDataForPoint
+      parameters:
+        - $ref: "#/components/parameters/coords"
+        - $ref: "#/components/parameters/z"
+        - $ref: "#/components/parameters/datetime"
+        - $ref: "#/components/parameters/parameter-name"
+        - $ref: "#/components/parameters/crs"
+        - $ref: "#/components/parameters/f"
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                shapefile:
+                  type: string
+                  format: binary
+            encoding:
+              shapefile:
+                contentType: "application/geo+json,application/shapefile+zip,application/vnd.google-earth.kml+xml"
+
+      responses:
+        "200":
+          description: A edr description.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/edrDescription"
+            text/html:
+              schema:
+                type: string
+        default:
+          $ref: "#/components/responses/default"
+  /collections/{collectionId}/radius:
+    get:
+      tags:
+        - Collection data queries
+      summary: Query end point for radius queries of collection {collectionId}
+      description: Query end point for to return values within a defined radius of a point queries
+      operationId: getDataForRadius
+      parameters:
+        - $ref: "#/components/parameters/coords"
+        - $ref: "#/components/parameters/within"
+        - $ref: "#/components/parameters/within-units"
+        - $ref: "#/components/parameters/z"
+        - $ref: "#/components/parameters/datetime"
+        - $ref: "#/components/parameters/parameter-name"
+        - $ref: "#/components/parameters/crs"
+        - $ref: "#/components/parameters/f"
+      responses:
+        "200":
+          description: A edr description.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/edrDescription"
+            text/html:
+              schema:
+                type: string
+        default:
+          $ref: "#/components/responses/default"
+    post:
+      tags:
+        - Collection data queries
+      summary: Query end point for radius queries of collection {collectionId}
+      description: Query end point for to return values within a defined radius of a point queries
+      operationId: postDataForRadius
+      parameters:
+        - $ref: "#/components/parameters/coords"
+        - $ref: "#/components/parameters/within"
+        - $ref: "#/components/parameters/within-units"
+        - $ref: "#/components/parameters/z"
+        - $ref: "#/components/parameters/datetime"
+        - $ref: "#/components/parameters/parameter-name"
+        - $ref: "#/components/parameters/crs"
+        - $ref: "#/components/parameters/f"
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                shapefile:
+                  type: string
+                  format: binary
+            encoding:
+              shapefile:
+                contentType: "application/geo+json,application/shapefile+zip,application/vnd.google-earth.kml+xml"
+
+      responses:
+        "200":
+          description: A edr description.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/edrDescription"
+            text/html:
+              schema:
+                type: string
+        default:
+          $ref: "#/components/responses/default"
+  /collections/{collectionId}/area:
+    get:
+      tags:
+        - Collection data queries
+      summary: Query end point for area queries of collection {collectionId} defined by a polygon
+      description: Return the data values for the data area defined by the query parameters
+      operationId: getDataForArea
+      parameters:
+        - $ref: "#/components/parameters/coords"
+        - $ref: "#/components/parameters/z"
+        - $ref: "#/components/parameters/datetime"
+        - $ref: "#/components/parameters/parameter-name"
+        - $ref: "#/components/parameters/crs"
+        - $ref: "#/components/parameters/f"
+      responses:
+        "200":
+          description: A edr description.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/edrDescription"
+            text/html:
+              schema:
+                type: string
+        default:
+          $ref: "#/components/responses/default"
+    post:
+      tags:
+        - Collection data queries
+      summary: Query end point for area queries of collection {collectionId} defined by a polygon
+      description: Return the data values for the data area defined by the query parameters
+      operationId: postDataForArea
       parameters:
         - $ref: "#/components/parameters/coords"
         - $ref: "#/components/parameters/z"
@@ -257,6 +389,7 @@ paths:
       description: Return the data values for the data Cube defined by the query parameters
       operationId: postDataForCube
       parameters:
+        - $ref: "#/components/parameters/collectionId"
         - $ref: "#/components/parameters/bbox"
         - $ref: "#/components/parameters/z"
         - $ref: "#/components/parameters/datetime"
@@ -283,20 +416,29 @@ paths:
         - $ref: "#/components/parameters/extend"
       requestBody:
         content:
-          multipart/form-data:
+          application/json:
             schema:
               type: object
+              required:
+                - bbox
               properties:
-                shapefile:
+                bbox:
                   type: string
-                  format: binary
-            encoding:
-              shapefile:
-                contentType: "application/geo+json,application/shapefile+zip,application/vnd.google-earth.kml+xml"
-
+                z:
+                  type: string
+                datetime:
+                  type: string
+                parameter-name:
+                  type: array
+                  items:
+                    type: string
+                crs:
+                  type: string
+                f:
+                  type: string
       responses:
         "200":
-          description: A edr's range set.
+          description: A collection's EDR.
           content:
             image/*:
               schema:
@@ -514,6 +656,13 @@ components:
     edrImage:
       type: string
   parameters:
+    collectionId:
+      name: collectionId
+      in: path
+      description: Identifier (id) of a specific collection
+      required: true
+      schema:
+        type: string
     limit:
       name: limit
       in: query
@@ -638,6 +787,22 @@ components:
         the coordinate values will depend on the CRS parameter, if this is not defined
         the values will be assumed to WGS84 values (i.e x=longitude and y=latitude)
       required: false
+      schema:
+        type: string
+    within:
+      name: within
+      in: query
+      description: Defines radius of area around defined coordinates to include in the data selection
+      required: true
+      example: 10
+      schema:
+        type: number
+    within-units:
+      name: within-units
+      in: query
+      description: Distance units for the within parameter
+      required: true
+      example: KM
       schema:
         type: string
     z:
