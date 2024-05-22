@@ -6,7 +6,7 @@ import { hookRedirect } from './helpers/hooks';
 import hookServersStartStop from './helpers/servers';
 import request from 'supertest';
 
-const userErrorMsg = 'User joe is not in the service deployers or admin EDL groups';
+const userErrorMsg = 'User joe does not have permission to access this resource';
 
 describe('List service deployments endpoint', async function () {
   const failedFooDeployment = new ServiceDeployment({ deployment_id: 'abc', service: 'foo-service',
@@ -19,7 +19,7 @@ describe('List service deployments endpoint', async function () {
 
   const runningFooDeployment = new ServiceDeployment({
     deployment_id: 'jkl', service: 'foo-service',
-    username: 'adam', tag: '1', status: ServiceDeploymentStatus.RUNNING, message: 'Deployment running',
+    username: 'coraline', tag: '1', status: ServiceDeploymentStatus.RUNNING, message: 'Deployment running',
   });
 
   const successfulBuzzDeployment = new ServiceDeployment({
@@ -70,7 +70,7 @@ describe('List service deployments endpoint', async function () {
 
   });
 
-  describe('when a user is not in the EDL service deployers or admin groups', async function () {
+  describe('when a user is not in the EDL service deployers or core permissions groups', async function () {
     before(async function () {
       hookRedirect('joe');
       this.res = await request(this.frontend).get('/service-deployment').use(auth({ username: 'joe' }));
@@ -243,11 +243,11 @@ describe('List service deployments endpoint', async function () {
     });
   });
 
-  describe('when a user is in the EDL admin group', async function () {
+  describe('when a user is in the EDL core permissions group', async function () {
     describe('and they request all service deployments', function () {
       before(async function () {
-        hookRedirect('adam');
-        this.res = await request(this.frontend).get('/service-deployment').use(auth({ username: 'adam' }));
+        hookRedirect('coraline');
+        this.res = await request(this.frontend).get('/service-deployment').use(auth({ username: 'coraline' }));
       });
 
       after(function () {
@@ -265,8 +265,8 @@ describe('List service deployments endpoint', async function () {
 
     describe('and they request deployments of a specific service', function () {
       before(async function () {
-        hookRedirect('adam');
-        this.res = await request(this.frontend).get('/service-deployment?service=buzz-service').use(auth({ username: 'adam' }));
+        hookRedirect('coraline');
+        this.res = await request(this.frontend).get('/service-deployment?service=buzz-service').use(auth({ username: 'coraline' }));
       });
 
       after(function () {
@@ -284,8 +284,8 @@ describe('List service deployments endpoint', async function () {
 
     describe('and they request deployments with a specific status', function () {
       before(async function () {
-        hookRedirect('adam');
-        this.res = await request(this.frontend).get('/service-deployment?status=successful').use(auth({ username: 'adam' }));
+        hookRedirect('coraline');
+        this.res = await request(this.frontend).get('/service-deployment?status=successful').use(auth({ username: 'coraline' }));
       });
 
       after(function () {
@@ -303,8 +303,8 @@ describe('List service deployments endpoint', async function () {
 
     describe('and they request deployments with an invalid status', function () {
       before(async function () {
-        hookRedirect('adam');
-        this.res = await request(this.frontend).get('/service-deployment?status=bar').use(auth({ username: 'adam' }));
+        hookRedirect('coraline');
+        this.res = await request(this.frontend).get('/service-deployment?status=bar').use(auth({ username: 'coraline' }));
       });
 
       after(function () {

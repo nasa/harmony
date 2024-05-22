@@ -244,7 +244,7 @@ async function validateUserIsInDeployerOrCoreGroup(
 
   if (!isServiceDeployer && !hasCorePermissions) {
     res.statusCode = 403;
-    res.send(`User ${req.user} is not in the service deployers or core EDL groups`);
+    res.send(`User ${req.user} does not have permission to access this resource`);
     return false;
   }
   return true;
