@@ -10,7 +10,7 @@ import log from '../util/log';
 import shapefileUpload from '../middleware/shapefile-upload';
 import earthdataLoginTokenAuthorizer from '../middleware/earthdata-login-token-authorizer';
 import earthdataLoginOauthAuthorizer from '../middleware/earthdata-login-oauth-authorizer';
-import admin from '../middleware/admin';
+import { admin, core } from '../middleware/permission-groups';
 import wmsFrontend from '../frontends/wms';
 import { getJobsListing, getJobStatus, cancelJob, resumeJob, pauseJob, skipJobPreview, skipJobsPreview, cancelJobs, resumeJobs, pauseJobs } from '../frontends/jobs';
 import { getJobs, getJob, getWorkItemsTable, getJobLinks, getWorkItemLogs, retry, getWorkItemTableRow, redirectWithoutTrailingSlash, getJobsTable } from '../frontends/workflow-ui';
@@ -177,6 +177,7 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
     result.use(logged(earthdataLoginOauthAuthorizer(authorizedRoutes)));
   }
 
+  result.use('/core/*', core);
   if (env.adminGroupId) {
     result.use('/admin/*', admin);
   } else {
@@ -274,7 +275,7 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
 
   result.get('/staging-bucket-policy', asyncHandler(getStagingBucketPolicy));
 
-  result.get('/admin/configuration/log-level', asyncHandler(setLogLevel));
+  result.get('/core/configuration/log-level', asyncHandler(setLogLevel));
 
   result.get('/capabilities', asyncHandler(getCollectionCapabilitiesJson));
   // Enable HTML view with HARMONY-1393
