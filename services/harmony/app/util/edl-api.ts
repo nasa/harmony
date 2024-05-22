@@ -192,7 +192,7 @@ export async function validateUserIsInCoreGroup(
 
   if (!hasCorePermissions) {
     res.statusCode = 403;
-    res.send(`User ${req.user} is not in the core EDL group`);
+    res.send(`User ${req.user} does not have permission to access this resource`);
     return false;
   }
   return true;
