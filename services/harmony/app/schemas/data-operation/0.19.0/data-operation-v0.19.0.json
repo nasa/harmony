@@ -359,8 +359,15 @@
             "$ref": "#/definitions/SpatialPoint"
           },
           "shape": {
-            "description": "Reference to a location containing a shape within which the service should spatially subset.  If present, the resource will always be GeoJSON (application/geo+json) in an object store (S3)",
-            "$ref": "#/definitions/RemoteResource"
+            "description": "Reference to a shape within which the service should spatially subset. The shape can either be a URI to a GeoJSON object store (S3) or a GeoJSON string.",
+            "oneOf": [
+              {
+                "$ref": "#/definitions/RemoteResource"
+              },
+              {
+                "type": "string"
+              }
+            ]
           },
           "dimensions": {
             "description": "Dimensions to subset against.",

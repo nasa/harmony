@@ -20,7 +20,7 @@ export function wktToCmrQueryParams(wkt: string): CmrQuery {
   const geoJson = parseWkt(wkt);
   const queryParams: CmrQuery = {};
 
-  console.log(`GeoJSON: ${JSON.stringify(geoJson)}`);
+  // console.log(`GeoJSON: ${JSON.stringify(geoJson)}`);
   switch (geoJson.type) {
     case 'Polygon':
       // Both WKT and CMR specify the polygon in counter-clockwise order so no need to reorder

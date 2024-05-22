@@ -62,7 +62,8 @@ export function getRequestRoot(req): string {
 }
 
 /**
- * Resolves a target URL relative to a base URL in a manner similar to that of a web browser resolving an anchor tag
+ * Resolves a target URL relative to a base URL in a manner similar to that of a web browser
+ * resolving an anchor tag.
  * https://nodejs.org/api/url.html#urlresolvefrom-to
  * @param from - the base URL
  * @param to - the target URL
@@ -76,4 +77,18 @@ export function resolve(from, to): string {
     return pathname + search + hash;
   }
   return resolvedUrl.toString();
+}
+
+/**
+ * Checks if a string is a valid URI
+ * @param str - the string to check
+ * @returns true if the string is a valid URI and false otherwise
+ */
+export function isValidUri(str: string): boolean {
+  try {
+    new URL(str);
+    return true;
+  } catch (_) {
+    return false;
+  }
 }
