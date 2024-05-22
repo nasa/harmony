@@ -923,7 +923,7 @@ describe('Service image endpoint', async function () {
         });
 
         it('returns a meaningful error message', async function () {
-          expect(this.res.text).to.equal('User buzz is not in the core permissions EDL group');
+          expect(this.res.text).to.equal('User buzz does not have permission to access this resource');
         });
       });
 
@@ -942,7 +942,7 @@ describe('Service image endpoint', async function () {
         });
 
         it('returns a meaningful error message', async function () {
-          expect(this.res.text).to.equal('User buzz is not in the core permissions EDL group');
+          expect(this.res.text).to.equal('User buzz does not have permission to access this resource');
         });
       });
 
