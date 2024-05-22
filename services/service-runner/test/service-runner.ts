@@ -12,6 +12,7 @@ import { getItemLogsLocation, WorkItemRecord } from '../../harmony/app/models/wo
 import { uploadLogs } from '../app/service/service-runner';
 import sinon from 'sinon';
 import axios from 'axios';
+import { readFileSync } from 'fs';
 
 const { _getErrorMessage, _getStacCatalogs } = serviceRunner.exportedForTesting;
 
@@ -333,6 +334,46 @@ describe('Service Runner', function () {
       it('returns an error message', async function () {
         const result = await serviceRunner.runServiceFromPull(workItem);
         expect(result.error).to.equal('The harmonyservices/query-cmr:latest service failed.');
+      });
+    });
+
+    describe('when geojson is passed as a string', async function () {
+      const invocArgs = env.invocationArgs;
+      const workItem = new WorkItem({
+        jobID: '123',
+        serviceID: 'abc',
+        workflowStepIndex: 1,
+        operation: {
+          requestID: 'foo',
+          subset: {
+            shape: 'fake geojson',
+          },
+        },
+        id: 1,
+      });
+      let execStub;
+      before(async function () {
+        env.invocationArgs = 'abc\n123';
+        execStub = sinon.stub(k8s, 'Exec').callsFake(
+          function () {
+            return {
+              exec: (): void => {},
+            };
+          });
+        await serviceRunner.runServiceFromPull(workItem);
+      });
+
+      after(function () {
+        execStub.restore();
+        env.invocationArgs = invocArgs;
+      });
+
+      it('saves the geojson to the /tmp directory', async function () {
+        const geoJSon = readFileSync('/tmp/shapefile.json');
+        expect(geoJSon).equals(workItem.operation.geojson);
+      });
+      it('replaces the geojson string in the operation with the file url', async function () {
+        expect(workItem.operation.geojson).equals('/tmp/shapefile.json');
       });
     });
   });

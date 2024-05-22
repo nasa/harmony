@@ -251,6 +251,16 @@ export async function runServiceFromPull(workItem: WorkItemRecord, workItemLogge
       commandLine = env.invocationArgs.split(' ');
     }
 
+    // if the `geojson` field in the operation is not an object with an `href` field then it must be ßa string
+    // containing the actual geojson. in that case we save it to a file in the shared /tmp directory and
+    // replace the `geojson` entry with the file url
+    const geoJson = operation.geojson;
+    if (typeof geoJson === 'string') {
+      const geoJsonFile = '/tmp/shapefile.json';
+      writeFileSync(geoJsonFile, geoJson);
+      operation.geojson = `file://${geoJsonFile}`;
+    }
+
     const catalogDir = getStacLocation(workItem);
     return await new Promise<ServiceResponse>((resolve) => {
       workItemLogger.debug(`CALLING WORKER for pod ${env.myPodName}`);
