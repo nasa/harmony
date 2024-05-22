@@ -1,7 +1,7 @@
 import { initialize } from 'express-openapi';
 import * as fs from 'fs';
 import * as path from 'path';
-import { Application, Response, Router } from 'express';
+import express, { Application, Response, Router } from 'express';
 import * as yaml from 'js-yaml';
 import getLandingPage from '../ogc-coverages/get-landing-page';
 import getRequirementsClasses from '../ogc-coverages/get-requirements-classes';
@@ -35,9 +35,9 @@ const ogcSchemaEdr = yaml.load(openApiContent, { schema: yaml.DEFAULT_SCHEMA }) 
 export const edrGetParams = ogcSchemaEdr
   .paths['/collections/{collectionId}/cube'].get.parameters
   .map(param => param.$ref.split('/').pop());
-export const edrPostParams = ['shapefile'].concat(ogcSchemaEdr
+export const edrPostParams = ogcSchemaEdr
   .paths['/collections/{collectionId}/cube'].post.parameters
-  .map(param => param.$ref.split('/').pop()));
+  .map(param => param.$ref.split('/').pop());
 
 /**
  * Express handler that returns a 501 error and "not yet implemented" message to the client
@@ -68,6 +68,7 @@ function getSpecification(req: HarmonyRequest, res: Response): void {
  * @param app - The express application
  */
 export function addOpenApiRoutes(app: Router): void {
+  app.use(express.json());
   initialize({
     app: app as Application,
     apiDoc: openApiContent,
@@ -84,6 +85,10 @@ export function addOpenApiRoutes(app: Router): void {
       getCollectionInstances: TODO,
       getDataForPoint: TODO,
       postDataForPoint: TODO,
+      getDataForRadius: TODO,
+      postDataForRadius: TODO,
+      getDataForArea: TODO,
+      postDataForArea: TODO,
       getDataForCube,
       postDataForCube,
     },

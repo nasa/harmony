@@ -94,13 +94,11 @@ export function edrRequest(
 
 /**
  * Performs getDataForCube request on the given collection with the given params
- * using a multipart/form-data POST
  *
  * @param app - The express application (typically this.frontend)
  * @param version - The OGC version
  * @param collection - The CMR Collection ID to perform a service on
- * @param form - The form parameters to pass to the request
- * @param queryString - The query string parameters to pass to the request
+ * @param form - The JSON to pass to the request
  * @returns An 'awaitable' object that resolves to a Response
  */
 export function postEdrRequest(
@@ -108,18 +106,12 @@ export function postEdrRequest(
 ): Test {
   let urlPathAndParam = `/ogc-api-edr/${version}/collections/${collection}/cube`;
   if (queryString) urlPathAndParam += `?${queryString}`;
-  let req = request(app)
-    .post(urlPathAndParam);
-
-  Object.keys(form).forEach((key) => {
-    if (key === 'shapefile') {
-      req = req.attach(key, form[key].path, { contentType: form[key].mimetype, filename: 'foobar' });
-
-      // req = req.attach(key, form[key].path, 'foobar');
-    } else {
-      req = req.field(key, form[key]);
-    }
-  });
+  // POST parameter-name is of type array, not string
+  form['parameter-name'] = form['parameter-name'].split(',');
+  const req = request(app)
+    .post(urlPathAndParam)
+    .send(form)
+    .set('Content-Type', 'application/json');
 
   return req;
 }
