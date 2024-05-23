@@ -91,6 +91,10 @@ export function addOpenApiRoutes(app: Router): void {
       postDataForArea: TODO,
       getDataForCube,
       postDataForCube,
+      getDataForTrajectory: TODO,
+      postDataForTrajectory: TODO,
+      getDataForCorridor: TODO,
+      postDataForCorridor: TODO,
     },
   });
 }

@@ -109,9 +109,7 @@ paths:
         - $ref: "#/components/parameters/f"
       responses:
         "200":
-          description:
-            Metadata about the {collectionId} collection shared by this
-            API.
+          description: Metadata about the {collectionId} collection shared by this API
           content:
             application/json:
               schema:
@@ -132,7 +130,7 @@ paths:
         - $ref: "#/components/parameters/f"
       responses:
         "200":
-          description: Information about the edr collection.
+          description: Metadata about the instance of {collectionId} collection shared by this API
           content:
             application/json:
               schema:
@@ -147,25 +145,44 @@ paths:
       tags:
         - Collection data queries
       summary: Query end point for position queries of collection {collectionId}
-      description: Not yet implemented
+      description: Query end point for position queries
       operationId: getDataForPoint
       parameters:
+        - $ref: "#/components/parameters/collectionId"
         - $ref: "#/components/parameters/coords"
         - $ref: "#/components/parameters/z"
         - $ref: "#/components/parameters/datetime"
         - $ref: "#/components/parameters/parameter-name"
         - $ref: "#/components/parameters/crs"
         - $ref: "#/components/parameters/f"
+        # Parameters below this line are not part of the OGC specification
+        - $ref: "#/components/parameters/subset"
+        - $ref: "#/components/parameters/interpolation"
+        - $ref: "#/components/parameters/scaleExtent"
+        - $ref: "#/components/parameters/scaleSize"
+        - $ref: "#/components/parameters/concatenate"
+        - $ref: "#/components/parameters/granuleId"
+        - $ref: "#/components/parameters/point"
+        - $ref: "#/components/parameters/width"
+        - $ref: "#/components/parameters/height"
+        - $ref: "#/components/parameters/forceAsync"
+        - $ref: "#/components/parameters/maxResults"
+        - $ref: "#/components/parameters/skipPreview"
+        - $ref: "#/components/parameters/ignoreErrors"
+        - $ref: "#/components/parameters/destinationUrl"
+        - $ref: "#/components/parameters/granuleName"
+        - $ref: "#/components/parameters/grid"
+        - $ref: "#/components/parameters/extend"
       responses:
         "200":
-          description: A edr description.
+          description: A collection's EDR.
           content:
-            application/json:
+            image/*:
               schema:
-                $ref: "#/components/schemas/edrDescription"
-            text/html:
+                $ref: "#/components/schemas/edrImage"
+            application/*:
               schema:
-                type: string
+                $ref: "#/components/schemas/edrImage"
         default:
           $ref: "#/components/responses/default"
     post:
@@ -175,35 +192,64 @@ paths:
       description: Query end point for position queries
       operationId: postDataForPoint
       parameters:
+        - $ref: "#/components/parameters/collectionId"
+        # Parameters below this line are not part of the OGC specification
         - $ref: "#/components/parameters/coords"
         - $ref: "#/components/parameters/z"
         - $ref: "#/components/parameters/datetime"
         - $ref: "#/components/parameters/parameter-name"
         - $ref: "#/components/parameters/crs"
         - $ref: "#/components/parameters/f"
+        - $ref: "#/components/parameters/subset"
+        - $ref: "#/components/parameters/interpolation"
+        - $ref: "#/components/parameters/scaleExtent"
+        - $ref: "#/components/parameters/scaleSize"
+        - $ref: "#/components/parameters/concatenate"
+        - $ref: "#/components/parameters/granuleId"
+        - $ref: "#/components/parameters/point"
+        - $ref: "#/components/parameters/width"
+        - $ref: "#/components/parameters/height"
+        - $ref: "#/components/parameters/forceAsync"
+        - $ref: "#/components/parameters/maxResults"
+        - $ref: "#/components/parameters/skipPreview"
+        - $ref: "#/components/parameters/ignoreErrors"
+        - $ref: "#/components/parameters/destinationUrl"
+        - $ref: "#/components/parameters/granuleName"
+        - $ref: "#/components/parameters/grid"
+        - $ref: "#/components/parameters/extend"
       requestBody:
         content:
-          multipart/form-data:
+          application/json:
             schema:
               type: object
+              required:
+                - coords
               properties:
-                shapefile:
+                coords:
+                  description: Well Known Text Point definition
                   type: string
-                  format: binary
-            encoding:
-              shapefile:
-                contentType: "application/geo+json,application/shapefile+zip,application/vnd.google-earth.kml+xml"
-
+                z:
+                  type: string
+                datetime:
+                  type: string
+                parameter-name:
+                  type: array
+                  items:
+                    type: string
+                crs:
+                  type: string
+                f:
+                  type: string
       responses:
         "200":
-          description: A edr description.
+          description: A collection's EDR.
           content:
-            application/json:
+            image/*:
               schema:
-                $ref: "#/components/schemas/edrDescription"
-            text/html:
+                $ref: "#/components/schemas/edrImage"
+            application/*:
               schema:
-                type: string
+                $ref: "#/components/schemas/edrImage"
         default:
           $ref: "#/components/responses/default"
   /collections/{collectionId}/radius:
@@ -211,9 +257,10 @@ paths:
       tags:
         - Collection data queries
       summary: Query end point for radius queries of collection {collectionId}
-      description: Query end point for to return values within a defined radius of a point queries
+      description: Query end point to return values within a defined radius of a point queries
       operationId: getDataForRadius
       parameters:
+        - $ref: "#/components/parameters/collectionId"
         - $ref: "#/components/parameters/coords"
         - $ref: "#/components/parameters/within"
         - $ref: "#/components/parameters/within-units"
@@ -222,25 +269,45 @@ paths:
         - $ref: "#/components/parameters/parameter-name"
         - $ref: "#/components/parameters/crs"
         - $ref: "#/components/parameters/f"
+        # Parameters below this line are not part of the OGC specification
+        - $ref: "#/components/parameters/subset"
+        - $ref: "#/components/parameters/interpolation"
+        - $ref: "#/components/parameters/scaleExtent"
+        - $ref: "#/components/parameters/scaleSize"
+        - $ref: "#/components/parameters/concatenate"
+        - $ref: "#/components/parameters/granuleId"
+        - $ref: "#/components/parameters/point"
+        - $ref: "#/components/parameters/width"
+        - $ref: "#/components/parameters/height"
+        - $ref: "#/components/parameters/forceAsync"
+        - $ref: "#/components/parameters/maxResults"
+        - $ref: "#/components/parameters/skipPreview"
+        - $ref: "#/components/parameters/ignoreErrors"
+        - $ref: "#/components/parameters/destinationUrl"
+        - $ref: "#/components/parameters/granuleName"
+        - $ref: "#/components/parameters/grid"
+        - $ref: "#/components/parameters/extend"
       responses:
         "200":
-          description: A edr description.
+          description: A collection's EDR.
           content:
-            application/json:
+            image/*:
               schema:
-                $ref: "#/components/schemas/edrDescription"
-            text/html:
+                $ref: "#/components/schemas/edrImage"
+            application/*:
               schema:
-                type: string
+                $ref: "#/components/schemas/edrImage"
         default:
           $ref: "#/components/responses/default"
     post:
       tags:
         - Collection data queries
       summary: Query end point for radius queries of collection {collectionId}
-      description: Query end point for to return values within a defined radius of a point queries
+      description: Query end point to return values within a defined radius of a point queries
       operationId: postDataForRadius
       parameters:
+        - $ref: "#/components/parameters/collectionId"
+        # Parameters below this line are not part of the OGC specification
         - $ref: "#/components/parameters/coords"
         - $ref: "#/components/parameters/within"
         - $ref: "#/components/parameters/within-units"
@@ -249,29 +316,62 @@ paths:
         - $ref: "#/components/parameters/parameter-name"
         - $ref: "#/components/parameters/crs"
         - $ref: "#/components/parameters/f"
+        - $ref: "#/components/parameters/subset"
+        - $ref: "#/components/parameters/interpolation"
+        - $ref: "#/components/parameters/scaleExtent"
+        - $ref: "#/components/parameters/scaleSize"
+        - $ref: "#/components/parameters/concatenate"
+        - $ref: "#/components/parameters/granuleId"
+        - $ref: "#/components/parameters/point"
+        - $ref: "#/components/parameters/width"
+        - $ref: "#/components/parameters/height"
+        - $ref: "#/components/parameters/forceAsync"
+        - $ref: "#/components/parameters/maxResults"
+        - $ref: "#/components/parameters/skipPreview"
+        - $ref: "#/components/parameters/ignoreErrors"
+        - $ref: "#/components/parameters/destinationUrl"
+        - $ref: "#/components/parameters/granuleName"
+        - $ref: "#/components/parameters/grid"
+        - $ref: "#/components/parameters/extend"
       requestBody:
         content:
-          multipart/form-data:
+          application/json:
             schema:
               type: object
+              required:
+                - coords
+                - within
+                - within-units
               properties:
-                shapefile:
+                coords:
+                  description: Well Known Text Point definition
                   type: string
-                  format: binary
-            encoding:
-              shapefile:
-                contentType: "application/geo+json,application/shapefile+zip,application/vnd.google-earth.kml+xml"
-
+                within:
+                  type: number
+                within-units:
+                  type: string
+                z:
+                  type: string
+                datetime:
+                  type: string
+                parameter-name:
+                  type: array
+                  items:
+                    type: string
+                crs:
+                  type: string
+                f:
+                  type: string
       responses:
         "200":
-          description: A edr description.
+          description: A collection's EDR.
           content:
-            application/json:
+            image/*:
               schema:
-                $ref: "#/components/schemas/edrDescription"
-            text/html:
+                $ref: "#/components/schemas/edrImage"
+            application/*:
               schema:
-                type: string
+                $ref: "#/components/schemas/edrImage"
         default:
           $ref: "#/components/responses/default"
   /collections/{collectionId}/area:
@@ -282,22 +382,43 @@ paths:
       description: Return the data values for the data area defined by the query parameters
       operationId: getDataForArea
       parameters:
+        - $ref: "#/components/parameters/collectionId"
         - $ref: "#/components/parameters/coords"
         - $ref: "#/components/parameters/z"
         - $ref: "#/components/parameters/datetime"
         - $ref: "#/components/parameters/parameter-name"
         - $ref: "#/components/parameters/crs"
+        - $ref: "#/components/parameters/resolution-x"
+        - $ref: "#/components/parameters/resolution-y"
         - $ref: "#/components/parameters/f"
+        # Parameters below this line are not part of the OGC specification
+        - $ref: "#/components/parameters/subset"
+        - $ref: "#/components/parameters/interpolation"
+        - $ref: "#/components/parameters/scaleExtent"
+        - $ref: "#/components/parameters/scaleSize"
+        - $ref: "#/components/parameters/concatenate"
+        - $ref: "#/components/parameters/granuleId"
+        - $ref: "#/components/parameters/point"
+        - $ref: "#/components/parameters/width"
+        - $ref: "#/components/parameters/height"
+        - $ref: "#/components/parameters/forceAsync"
+        - $ref: "#/components/parameters/maxResults"
+        - $ref: "#/components/parameters/skipPreview"
+        - $ref: "#/components/parameters/ignoreErrors"
+        - $ref: "#/components/parameters/destinationUrl"
+        - $ref: "#/components/parameters/granuleName"
+        - $ref: "#/components/parameters/grid"
+        - $ref: "#/components/parameters/extend"
       responses:
         "200":
-          description: A edr description.
+          description: A collection's EDR.
           content:
-            application/json:
+            image/*:
               schema:
-                $ref: "#/components/schemas/edrDescription"
-            text/html:
+                $ref: "#/components/schemas/edrImage"
+            application/*:
               schema:
-                type: string
+                $ref: "#/components/schemas/edrImage"
         default:
           $ref: "#/components/responses/default"
     post:
@@ -307,35 +428,70 @@ paths:
       description: Return the data values for the data area defined by the query parameters
       operationId: postDataForArea
       parameters:
+        - $ref: "#/components/parameters/collectionId"
+        # Parameters below this line are not part of the OGC specification
         - $ref: "#/components/parameters/coords"
         - $ref: "#/components/parameters/z"
         - $ref: "#/components/parameters/datetime"
         - $ref: "#/components/parameters/parameter-name"
         - $ref: "#/components/parameters/crs"
+        - $ref: "#/components/parameters/resolution-x"
+        - $ref: "#/components/parameters/resolution-y"
         - $ref: "#/components/parameters/f"
+        - $ref: "#/components/parameters/subset"
+        - $ref: "#/components/parameters/interpolation"
+        - $ref: "#/components/parameters/scaleExtent"
+        - $ref: "#/components/parameters/scaleSize"
+        - $ref: "#/components/parameters/concatenate"
+        - $ref: "#/components/parameters/granuleId"
+        - $ref: "#/components/parameters/point"
+        - $ref: "#/components/parameters/width"
+        - $ref: "#/components/parameters/height"
+        - $ref: "#/components/parameters/forceAsync"
+        - $ref: "#/components/parameters/maxResults"
+        - $ref: "#/components/parameters/skipPreview"
+        - $ref: "#/components/parameters/ignoreErrors"
+        - $ref: "#/components/parameters/destinationUrl"
+        - $ref: "#/components/parameters/granuleName"
+        - $ref: "#/components/parameters/grid"
+        - $ref: "#/components/parameters/extend"
       requestBody:
         content:
-          multipart/form-data:
+          application/json:
             schema:
               type: object
+              required:
+                - coords
               properties:
-                shapefile:
+                coords:
+                  description: Well Known Text Polygon definition
                   type: string
-                  format: binary
-            encoding:
-              shapefile:
-                contentType: "application/geo+json,application/shapefile+zip,application/vnd.google-earth.kml+xml"
-
+                z:
+                  type: string
+                datetime:
+                  type: string
+                parameter-name:
+                  type: array
+                  items:
+                    type: string
+                crs:
+                  type: string
+                resolution-x:
+                  type: string
+                resolution-y:
+                  type: string
+                f:
+                  type: string
       responses:
         "200":
           description: A edr description.
           content:
-            application/json:
+            image/*:
               schema:
-                $ref: "#/components/schemas/edrDescription"
-            text/html:
+                $ref: "#/components/schemas/edrImage"
+            application/*:
               schema:
-                type: string
+                $ref: "#/components/schemas/edrImage"
         default:
           $ref: "#/components/responses/default"
   /collections/{collectionId}/cube:
@@ -346,6 +502,7 @@ paths:
       description: Return the data values for the data Cube defined by the query parameters
       operationId: getDataForCube
       parameters:
+        - $ref: "#/components/parameters/collectionId"
         - $ref: "#/components/parameters/bbox"
         - $ref: "#/components/parameters/z"
         - $ref: "#/components/parameters/datetime"
@@ -384,19 +541,19 @@ paths:
           $ref: "#/components/responses/default"
     post:
       tags:
-        - Edr
+        - Collection data queries
       summary: Query end point for Cube queries  of collection {collectionId} defined by a cube
       description: Return the data values for the data Cube defined by the query parameters
       operationId: postDataForCube
       parameters:
         - $ref: "#/components/parameters/collectionId"
+        # Parameters below this line are not part of the OGC specification
         - $ref: "#/components/parameters/bbox"
         - $ref: "#/components/parameters/z"
         - $ref: "#/components/parameters/datetime"
         - $ref: "#/components/parameters/parameter-name"
         - $ref: "#/components/parameters/crs"
         - $ref: "#/components/parameters/f"
-        # Parameters below this line are not part of the OGC specification
         - $ref: "#/components/parameters/subset"
         - $ref: "#/components/parameters/interpolation"
         - $ref: "#/components/parameters/scaleExtent"
@@ -432,6 +589,258 @@ paths:
                   type: array
                   items:
                     type: string
+                crs:
+                  type: string
+                f:
+                  type: string
+      responses:
+        "200":
+          description: A collection's EDR.
+          content:
+            image/*:
+              schema:
+                $ref: "#/components/schemas/edrImage"
+            application/*:
+              schema:
+                $ref: "#/components/schemas/edrImage"
+        default:
+          $ref: "#/components/responses/default"
+  /collections/{collectionId}/trajectory:
+    get:
+      tags:
+        - Collection data queries
+      summary: Query end point for trajectory queries of collection {collectionId} defined by a wkt linestring and a iso8601 time period
+      description: Return the data values for the Trajectory defined by the query parameters
+      operationId: getDataForTrajectory
+      parameters:
+        - $ref: "#/components/parameters/collectionId"
+        - $ref: "#/components/parameters/coords"
+        - $ref: "#/components/parameters/z"
+        - $ref: "#/components/parameters/datetime"
+        - $ref: "#/components/parameters/parameter-name"
+        - $ref: "#/components/parameters/crs"
+        - $ref: "#/components/parameters/f"
+        # Parameters below this line are not part of the OGC specification
+        - $ref: "#/components/parameters/subset"
+        - $ref: "#/components/parameters/interpolation"
+        - $ref: "#/components/parameters/scaleExtent"
+        - $ref: "#/components/parameters/scaleSize"
+        - $ref: "#/components/parameters/concatenate"
+        - $ref: "#/components/parameters/granuleId"
+        - $ref: "#/components/parameters/point"
+        - $ref: "#/components/parameters/width"
+        - $ref: "#/components/parameters/height"
+        - $ref: "#/components/parameters/forceAsync"
+        - $ref: "#/components/parameters/maxResults"
+        - $ref: "#/components/parameters/skipPreview"
+        - $ref: "#/components/parameters/ignoreErrors"
+        - $ref: "#/components/parameters/destinationUrl"
+        - $ref: "#/components/parameters/granuleName"
+        - $ref: "#/components/parameters/grid"
+        - $ref: "#/components/parameters/extend"
+      responses:
+        "200":
+          description: A collection's EDR.
+          content:
+            image/*:
+              schema:
+                $ref: "#/components/schemas/edrImage"
+            application/*:
+              schema:
+                $ref: "#/components/schemas/edrImage"
+        default:
+          $ref: "#/components/responses/default"
+    post:
+      tags:
+        - Collection data queries
+      summary: Query end point for trajectory queries of collection {collectionId} defined by a wkt linestring and a iso8601 time period
+      description: Return the data values for the Trajectory defined by the query parameters
+      operationId: postDataForTrajectory
+      parameters:
+        - $ref: "#/components/parameters/collectionId"
+        # Parameters below this line are not part of the OGC specification
+        - $ref: "#/components/parameters/coords"
+        - $ref: "#/components/parameters/z"
+        - $ref: "#/components/parameters/datetime"
+        - $ref: "#/components/parameters/parameter-name"
+        - $ref: "#/components/parameters/crs"
+        - $ref: "#/components/parameters/f"
+        - $ref: "#/components/parameters/subset"
+        - $ref: "#/components/parameters/interpolation"
+        - $ref: "#/components/parameters/scaleExtent"
+        - $ref: "#/components/parameters/scaleSize"
+        - $ref: "#/components/parameters/concatenate"
+        - $ref: "#/components/parameters/granuleId"
+        - $ref: "#/components/parameters/point"
+        - $ref: "#/components/parameters/width"
+        - $ref: "#/components/parameters/height"
+        - $ref: "#/components/parameters/forceAsync"
+        - $ref: "#/components/parameters/maxResults"
+        - $ref: "#/components/parameters/skipPreview"
+        - $ref: "#/components/parameters/ignoreErrors"
+        - $ref: "#/components/parameters/destinationUrl"
+        - $ref: "#/components/parameters/granuleName"
+        - $ref: "#/components/parameters/grid"
+        - $ref: "#/components/parameters/extend"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - coords
+              properties:
+                coords:
+                  description: Well Known Text Point definition
+                  type: string
+                z:
+                  type: string
+                datetime:
+                  type: string
+                parameter-name:
+                  type: array
+                  items:
+                    type: string
+                crs:
+                  type: string
+                f:
+                  type: string
+      responses:
+        "200":
+          description: A collection's EDR.
+          content:
+            image/*:
+              schema:
+                $ref: "#/components/schemas/edrImage"
+            application/*:
+              schema:
+                $ref: "#/components/schemas/edrImage"
+        default:
+          $ref: "#/components/responses/default"
+  /collections/{collectionId}/corridor:
+    get:
+      tags:
+        - Collection data queries
+      summary: Query end point for Corridor queries of collection {collectionId} defined by a polygon
+      description: Return the data values for the Corridor defined by the query parameters
+      operationId: getDataForCorridor
+      parameters:
+        - $ref: "#/components/parameters/collectionId"
+        - $ref: "#/components/parameters/coords"
+        - $ref: "#/components/parameters/z"
+        - $ref: "#/components/parameters/datetime"
+        - $ref: "#/components/parameters/parameter-name"
+        - $ref: "#/components/parameters/corridor-width"
+        - $ref: "#/components/parameters/width-units"
+        - $ref: "#/components/parameters/corridor-height"
+        - $ref: "#/components/parameters/height-units"
+        - $ref: "#/components/parameters/resolution-x"
+        - $ref: "#/components/parameters/resolution-y"
+        - $ref: "#/components/parameters/crs"
+        - $ref: "#/components/parameters/f"
+        # Parameters below this line are not part of the OGC specification
+        - $ref: "#/components/parameters/subset"
+        - $ref: "#/components/parameters/interpolation"
+        - $ref: "#/components/parameters/scaleExtent"
+        - $ref: "#/components/parameters/scaleSize"
+        - $ref: "#/components/parameters/concatenate"
+        - $ref: "#/components/parameters/granuleId"
+        - $ref: "#/components/parameters/point"
+        - $ref: "#/components/parameters/width"
+        - $ref: "#/components/parameters/height"
+        - $ref: "#/components/parameters/forceAsync"
+        - $ref: "#/components/parameters/maxResults"
+        - $ref: "#/components/parameters/skipPreview"
+        - $ref: "#/components/parameters/ignoreErrors"
+        - $ref: "#/components/parameters/destinationUrl"
+        - $ref: "#/components/parameters/granuleName"
+        - $ref: "#/components/parameters/grid"
+        - $ref: "#/components/parameters/extend"
+      responses:
+        "200":
+          description: A collection's EDR.
+          content:
+            image/*:
+              schema:
+                $ref: "#/components/schemas/edrImage"
+            application/*:
+              schema:
+                $ref: "#/components/schemas/edrImage"
+        default:
+          $ref: "#/components/responses/default"
+    post:
+      tags:
+        - Collection data queries
+      summary: Query end point for Corridor queries  of collection {collectionId} defined by a polygon
+      description: Return the data values for the Corridor defined by the query parameters
+      operationId: postDataForCorridor
+      parameters:
+        - $ref: "#/components/parameters/collectionId"
+        # Parameters below this line are not part of the OGC specification
+        - $ref: "#/components/parameters/coords"
+        - $ref: "#/components/parameters/z"
+        - $ref: "#/components/parameters/datetime"
+        - $ref: "#/components/parameters/parameter-name"
+        - $ref: "#/components/parameters/corridor-width"
+        - $ref: "#/components/parameters/width-units"
+        - $ref: "#/components/parameters/corridor-height"
+        - $ref: "#/components/parameters/height-units"
+        - $ref: "#/components/parameters/resolution-x"
+        - $ref: "#/components/parameters/resolution-y"
+        - $ref: "#/components/parameters/crs"
+        - $ref: "#/components/parameters/f"
+        - $ref: "#/components/parameters/subset"
+        - $ref: "#/components/parameters/interpolation"
+        - $ref: "#/components/parameters/scaleExtent"
+        - $ref: "#/components/parameters/scaleSize"
+        - $ref: "#/components/parameters/concatenate"
+        - $ref: "#/components/parameters/granuleId"
+        - $ref: "#/components/parameters/point"
+        - $ref: "#/components/parameters/width"
+        - $ref: "#/components/parameters/height"
+        - $ref: "#/components/parameters/forceAsync"
+        - $ref: "#/components/parameters/maxResults"
+        - $ref: "#/components/parameters/skipPreview"
+        - $ref: "#/components/parameters/ignoreErrors"
+        - $ref: "#/components/parameters/destinationUrl"
+        - $ref: "#/components/parameters/granuleName"
+        - $ref: "#/components/parameters/grid"
+        - $ref: "#/components/parameters/extend"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - coords
+                - corridor-width
+                - width-units
+                - corridor-height
+                - height-units
+              properties:
+                coords:
+                  description: Well Known Text LineString definition
+                  type: string
+                z:
+                  type: string
+                datetime:
+                  type: string
+                parameter-name:
+                  type: array
+                  items:
+                    type: string
+                corridor-width:
+                  type: string
+                width-units:
+                  type: string
+                corridor-height:
+                  type: string
+                height-units:
+                  type: string
+                resolution-x:
+                  type: string
+                resolution-y:
+                  type: string
                 crs:
                   type: string
                 f:
@@ -786,7 +1195,7 @@ components:
 
         the coordinate values will depend on the CRS parameter, if this is not defined
         the values will be assumed to WGS84 values (i.e x=longitude and y=latitude)
-      required: false
+      required: true
       schema:
         type: string
     within:
@@ -865,6 +1274,94 @@ components:
       description: identifier (id) of the coordinate system to return data in list of valid crs identifiers for the chosen collection are defined in the metadata responses.  If not supplied the coordinate reference system will default to WGS84.
       required: false
       example: native
+      schema:
+        type: string
+    resolution-x:
+      name: resolution-x
+      in: query
+      description: |
+        Defined it the user requires data at a different resolution from the native resolution of the data along the x-axis
+
+        If this is a single value it denotes the number of intervals to retrieve data for along the x-axis
+
+          i.e. resolution-x=10
+
+        would retrieve 10 values along the x-axis from the minimum x coordinate to maximum x coordinate (i.e. a value at both the minimum x and maximum x coordinates and 8 values between).
+      required: false
+      schema:
+        items:
+          type: string
+    resolution-y:
+      name: resolution-y
+      in: query
+      description: |
+        Defined it the user requires data at a different resolution from the native resolution of the data along the y-axis
+
+        If this is a single value it denotes the number of intervals to retrieve data for along the y-axis
+
+          i.e. resolution-y=10
+
+        would retrieve 10 values along the y-axis from the minimum y coordinate to maximum y coordinate (i.e. a value at both the minimum y and maximum y coordinates and 8 values between).
+      required: false
+      schema:
+        items:
+          type: string
+    corridor-width:
+      name: corridor-width
+      in: query
+      description: |
+        width of the corridor
+
+        The width value represents the whole width of the corridor where
+        the trajectory supplied in the `coords` query parameter is the centre
+        point of the corridor
+
+        `corridor-width={width}`
+
+        e.g.  corridor-width=100
+
+        Would be a request for a corridor 100 units wide with the coords parameter values being the centre point of the requested corridor,
+        the request would be for data values 50 units either side of the trajectory coordinates defined in the coords parameter.
+
+        The width units supported by the collection will be provided in the API metadata responses
+      required: true
+      schema:
+        type: string
+    width-units:
+      name: width-units
+      in: query
+      description: Distance units for the corridor-width parameter
+      required: true
+      example: KM
+      schema:
+        type: string
+    corridor-height:
+      name: corridor-height
+      in: query
+      description: |
+        height of the corridor
+
+        The height value represents the whole height of the corridor where
+        the trajectory supplied in the `coords` query parameter is the centre
+        point of the corridor
+
+        `corridor-height={height}`
+
+        e.g.  corridor-height=100
+
+        Would be a request for a corridor 100 units high with the coords parameter values being the centre point of the requested corridor,
+        the request would be for data values 50 units either side of the trajectory coordinates defined in the coords parameter.
+
+        The height units supported by the collection will be provided in the API metadata responses
+      required: true
+      schema:
+        type: string
+    height-units:
+      name: height-units
+      in: query
+      description: Distance units for the corridor-height parameter
+      required: true
+      example: KM
       schema:
         type: string
     f:
