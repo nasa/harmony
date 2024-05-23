@@ -87,7 +87,7 @@ LOG_VIEWER_GROUP_ID=0cf2a427-96cc-453e-ae44-e28dd0958738
 # The EDL Group ID for the group whose users can deploy backend services
 SERVICE_DEPLOYER_GROUP_ID=e0f5c59f-ee8b-49e0-b23d-587f15e56441
 
-# This EDL Group ID confers special privileges (typically reserved for the core dev team) on its members
+# This EDL Group ID allows the user to perform actions like changing log level and enabling service deployments
 CORE_PERMISSIONS_GROUP_ID=1759aff6-70f4-426c-b5c3-319c8ab6e870
 
 # The number of ms to wait between polling to check whether a synchronous request completed
