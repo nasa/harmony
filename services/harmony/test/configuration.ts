@@ -4,10 +4,10 @@ import hookServersStartStop from './helpers/servers';
 import { hookConfigureLogLevel } from './helpers/configuration';
 
 
-describe('/admin/configuration', function () {
+describe('/core/configuration', function () {
   hookServersStartStop({ skipEarthdataLogin: false });
   describe('/log-level', function () {
-    describe('when the user is part of the admin group', function () {
+    describe('when the user is part of the core permissions group', function () {
       describe('and makes a request using only the level parameter and a valid value', function () {
         hookConfigureLogLevel({ username: 'coraline', query: { level: 'error' } });
         it('returns an HTTP success response', function () {
