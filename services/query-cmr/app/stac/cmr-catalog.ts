@@ -74,10 +74,13 @@ export default class CmrStacCatalog extends StacCatalog {
 
       const isOpenDapLink = (l): boolean => (l.Description && (l.Description.toLowerCase().indexOf('opendap') !== -1))
         || (l.URL.toLowerCase().indexOf('opendap') !== -1);
-      const links = (granule.umm.RelatedUrls || []).filter((g) => (g.Type === 'GET DATA' ||
-        (g.Type === 'USE SERVICE API' && isOpenDapLink(g))));
+      const isBrowseLink = (l): boolean => (l.Type === 'GET DATA' && l.Subtype === 'BROWSE IMAGE SOURCE');
 
-      const [opendapLinks, dataLinks] = _.partition(links, (l) => isOpenDapLink(l));
+      const links = (granule.umm.RelatedUrls || []).filter((g) =>
+        (g.Type === 'GET DATA' || (g.Type === 'USE SERVICE API' && isOpenDapLink(g))));
+      const [opendapLinks, dataBrowseLinks] = _.partition(links, (l) => isOpenDapLink(l));
+      const [browseLinks, dataLinks] = _.partition(dataBrowseLinks, (l) => isBrowseLink(l));
+
       // Give the first data link the title 'data' and suffix subsequent ones with their index
       const dataAssets = dataLinks.map((link, j) => ([
         `data${j === 0 ? '' : j}`,
@@ -99,7 +102,17 @@ export default class CmrStacCatalog extends StacCatalog {
           roles: ['data', 'opendap'],
         },
       ]));
-      const assets = _.fromPairs(dataAssets.concat(opendapAssets));
+      const browseAssets = browseLinks.map((link, j) => ([
+        `browse${j === 0 ? '' : j}`,
+        {
+          href: link.URL,
+          title: path.basename(link.URL),
+          description: link.Description,
+          type: link.MimeType,
+          roles: ['visual'],
+        },
+      ]));
+      const assets = _.fromPairs(dataAssets.concat(opendapAssets).concat(browseAssets));
 
       if (Object.keys(assets).length === 0) {
         granuleLogger.warn(`Granule ${granule.meta['concept-id']} had no data links and will be excluded from results`);
