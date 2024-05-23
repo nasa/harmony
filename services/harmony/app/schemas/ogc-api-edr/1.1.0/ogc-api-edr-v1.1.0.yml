@@ -691,7 +691,7 @@ paths:
                 - coords
               properties:
                 coords:
-                  description: Well Known Text Point definition
+                  description: Well Known Text LineString definition
                   type: string
                 z:
                   type: string
