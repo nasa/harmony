@@ -49,7 +49,7 @@ describe('OGC API EDR - getEdrCube', function () {
           height: 500,
           width: 1000,
           f: 'image/png',
-          skipPreview: 'true',
+          skipPreview: true,
           // extend: 'lat,lon', TODO: HARMONY-1569 support extend
         };
 
