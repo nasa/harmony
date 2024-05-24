@@ -1269,7 +1269,7 @@ components:
         type: string
     parameter-name:
       name: parameter-name
-      in: path
+      in: query
       description: |-
         Names or concept ids of the UMM-Var variables to be retrieved, or "all" to retrieve all variables within the CMR collection(s).
         Multiple variables may be retrieved by separating them with a comma.
