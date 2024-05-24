@@ -193,36 +193,13 @@ paths:
       operationId: postDataForPoint
       parameters:
         - $ref: "#/components/parameters/collectionId"
-        # Parameters below this line are not part of the OGC specification
-        - $ref: "#/components/parameters/coords"
-        - $ref: "#/components/parameters/z"
-        - $ref: "#/components/parameters/datetime"
-        - $ref: "#/components/parameters/parameter-name"
-        - $ref: "#/components/parameters/crs"
-        - $ref: "#/components/parameters/f"
-        - $ref: "#/components/parameters/subset"
-        - $ref: "#/components/parameters/interpolation"
-        - $ref: "#/components/parameters/scaleExtent"
-        - $ref: "#/components/parameters/scaleSize"
-        - $ref: "#/components/parameters/concatenate"
-        - $ref: "#/components/parameters/granuleId"
-        - $ref: "#/components/parameters/point"
-        - $ref: "#/components/parameters/width"
-        - $ref: "#/components/parameters/height"
-        - $ref: "#/components/parameters/forceAsync"
-        - $ref: "#/components/parameters/maxResults"
-        - $ref: "#/components/parameters/skipPreview"
-        - $ref: "#/components/parameters/ignoreErrors"
-        - $ref: "#/components/parameters/destinationUrl"
-        - $ref: "#/components/parameters/granuleName"
-        - $ref: "#/components/parameters/grid"
-        - $ref: "#/components/parameters/extend"
       requestBody:
         content:
           application/json:
             schema:
               type: object
               required:
+                - parameter-name
                 - coords
               properties:
                 coords:
@@ -239,6 +216,48 @@ paths:
                 crs:
                   type: string
                 f:
+                  type: string
+                subset:
+                  type: array
+                  items:
+                    type: string
+                interpolation:
+                  type: string
+                scaleExtent:
+                  type: array
+                  items:
+                    type: number
+                scaleSize:
+                  type: array
+                  items:
+                    type: number
+                concatenate:
+                  type: string
+                granuleId:
+                  type: array
+                  items:
+                    type: string
+                width:
+                  type: integer
+                height:
+                  type: integer
+                forceAsync:
+                  type: boolean
+                maxResults:
+                  type: integer
+                skipPreview:
+                  type: boolean
+                ignoreErrors:
+                  type: boolean
+                destinationUrl:
+                  type: string
+                granuleName:
+                  type: array
+                  items:
+                    type: string
+                grid:
+                  type: string
+                extend:
                   type: string
       responses:
         "200":
@@ -307,38 +326,13 @@ paths:
       operationId: postDataForRadius
       parameters:
         - $ref: "#/components/parameters/collectionId"
-        # Parameters below this line are not part of the OGC specification
-        - $ref: "#/components/parameters/coords"
-        - $ref: "#/components/parameters/within"
-        - $ref: "#/components/parameters/within-units"
-        - $ref: "#/components/parameters/z"
-        - $ref: "#/components/parameters/datetime"
-        - $ref: "#/components/parameters/parameter-name"
-        - $ref: "#/components/parameters/crs"
-        - $ref: "#/components/parameters/f"
-        - $ref: "#/components/parameters/subset"
-        - $ref: "#/components/parameters/interpolation"
-        - $ref: "#/components/parameters/scaleExtent"
-        - $ref: "#/components/parameters/scaleSize"
-        - $ref: "#/components/parameters/concatenate"
-        - $ref: "#/components/parameters/granuleId"
-        - $ref: "#/components/parameters/point"
-        - $ref: "#/components/parameters/width"
-        - $ref: "#/components/parameters/height"
-        - $ref: "#/components/parameters/forceAsync"
-        - $ref: "#/components/parameters/maxResults"
-        - $ref: "#/components/parameters/skipPreview"
-        - $ref: "#/components/parameters/ignoreErrors"
-        - $ref: "#/components/parameters/destinationUrl"
-        - $ref: "#/components/parameters/granuleName"
-        - $ref: "#/components/parameters/grid"
-        - $ref: "#/components/parameters/extend"
       requestBody:
         content:
           application/json:
             schema:
               type: object
               required:
+                - parameter-name
                 - coords
                 - within
                 - within-units
@@ -361,6 +355,48 @@ paths:
                 crs:
                   type: string
                 f:
+                  type: string
+                subset:
+                  type: array
+                  items:
+                    type: string
+                interpolation:
+                  type: string
+                scaleExtent:
+                  type: array
+                  items:
+                    type: number
+                scaleSize:
+                  type: array
+                  items:
+                    type: number
+                concatenate:
+                  type: string
+                granuleId:
+                  type: array
+                  items:
+                    type: string
+                width:
+                  type: integer
+                height:
+                  type: integer
+                forceAsync:
+                  type: boolean
+                maxResults:
+                  type: integer
+                skipPreview:
+                  type: boolean
+                ignoreErrors:
+                  type: boolean
+                destinationUrl:
+                  type: string
+                granuleName:
+                  type: array
+                  items:
+                    type: string
+                grid:
+                  type: string
+                extend:
                   type: string
       responses:
         "200":
@@ -429,38 +465,13 @@ paths:
       operationId: postDataForArea
       parameters:
         - $ref: "#/components/parameters/collectionId"
-        # Parameters below this line are not part of the OGC specification
-        - $ref: "#/components/parameters/coords"
-        - $ref: "#/components/parameters/z"
-        - $ref: "#/components/parameters/datetime"
-        - $ref: "#/components/parameters/parameter-name"
-        - $ref: "#/components/parameters/crs"
-        - $ref: "#/components/parameters/resolution-x"
-        - $ref: "#/components/parameters/resolution-y"
-        - $ref: "#/components/parameters/f"
-        - $ref: "#/components/parameters/subset"
-        - $ref: "#/components/parameters/interpolation"
-        - $ref: "#/components/parameters/scaleExtent"
-        - $ref: "#/components/parameters/scaleSize"
-        - $ref: "#/components/parameters/concatenate"
-        - $ref: "#/components/parameters/granuleId"
-        - $ref: "#/components/parameters/point"
-        - $ref: "#/components/parameters/width"
-        - $ref: "#/components/parameters/height"
-        - $ref: "#/components/parameters/forceAsync"
-        - $ref: "#/components/parameters/maxResults"
-        - $ref: "#/components/parameters/skipPreview"
-        - $ref: "#/components/parameters/ignoreErrors"
-        - $ref: "#/components/parameters/destinationUrl"
-        - $ref: "#/components/parameters/granuleName"
-        - $ref: "#/components/parameters/grid"
-        - $ref: "#/components/parameters/extend"
       requestBody:
         content:
           application/json:
             schema:
               type: object
               required:
+                - parameter-name
                 - coords
               properties:
                 coords:
@@ -481,6 +492,48 @@ paths:
                 resolution-y:
                   type: string
                 f:
+                  type: string
+                subset:
+                  type: array
+                  items:
+                    type: string
+                interpolation:
+                  type: string
+                scaleExtent:
+                  type: array
+                  items:
+                    type: number
+                scaleSize:
+                  type: array
+                  items:
+                    type: number
+                concatenate:
+                  type: string
+                granuleId:
+                  type: array
+                  items:
+                    type: string
+                width:
+                  type: integer
+                height:
+                  type: integer
+                forceAsync:
+                  type: boolean
+                maxResults:
+                  type: integer
+                skipPreview:
+                  type: boolean
+                ignoreErrors:
+                  type: boolean
+                destinationUrl:
+                  type: string
+                granuleName:
+                  type: array
+                  items:
+                    type: string
+                grid:
+                  type: string
+                extend:
                   type: string
       responses:
         "200":
@@ -547,36 +600,13 @@ paths:
       operationId: postDataForCube
       parameters:
         - $ref: "#/components/parameters/collectionId"
-        # Parameters below this line are not part of the OGC specification
-        - $ref: "#/components/parameters/bbox"
-        - $ref: "#/components/parameters/z"
-        - $ref: "#/components/parameters/datetime"
-        - $ref: "#/components/parameters/parameter-name"
-        - $ref: "#/components/parameters/crs"
-        - $ref: "#/components/parameters/f"
-        - $ref: "#/components/parameters/subset"
-        - $ref: "#/components/parameters/interpolation"
-        - $ref: "#/components/parameters/scaleExtent"
-        - $ref: "#/components/parameters/scaleSize"
-        - $ref: "#/components/parameters/concatenate"
-        - $ref: "#/components/parameters/granuleId"
-        - $ref: "#/components/parameters/point"
-        - $ref: "#/components/parameters/width"
-        - $ref: "#/components/parameters/height"
-        - $ref: "#/components/parameters/forceAsync"
-        - $ref: "#/components/parameters/maxResults"
-        - $ref: "#/components/parameters/skipPreview"
-        - $ref: "#/components/parameters/ignoreErrors"
-        - $ref: "#/components/parameters/destinationUrl"
-        - $ref: "#/components/parameters/granuleName"
-        - $ref: "#/components/parameters/grid"
-        - $ref: "#/components/parameters/extend"
       requestBody:
         content:
           application/json:
             schema:
               type: object
               required:
+                - parameter-name
                 - bbox
               properties:
                 bbox:
@@ -592,6 +622,48 @@ paths:
                 crs:
                   type: string
                 f:
+                  type: string
+                subset:
+                  type: array
+                  items:
+                    type: string
+                interpolation:
+                  type: string
+                scaleExtent:
+                  type: array
+                  items:
+                    type: number
+                scaleSize:
+                  type: array
+                  items:
+                    type: number
+                concatenate:
+                  type: string
+                granuleId:
+                  type: array
+                  items:
+                    type: string
+                width:
+                  type: integer
+                height:
+                  type: integer
+                forceAsync:
+                  type: boolean
+                maxResults:
+                  type: integer
+                skipPreview:
+                  type: boolean
+                ignoreErrors:
+                  type: boolean
+                destinationUrl:
+                  type: string
+                granuleName:
+                  type: array
+                  items:
+                    type: string
+                grid:
+                  type: string
+                extend:
                   type: string
       responses:
         "200":
@@ -658,36 +730,13 @@ paths:
       operationId: postDataForTrajectory
       parameters:
         - $ref: "#/components/parameters/collectionId"
-        # Parameters below this line are not part of the OGC specification
-        - $ref: "#/components/parameters/coords"
-        - $ref: "#/components/parameters/z"
-        - $ref: "#/components/parameters/datetime"
-        - $ref: "#/components/parameters/parameter-name"
-        - $ref: "#/components/parameters/crs"
-        - $ref: "#/components/parameters/f"
-        - $ref: "#/components/parameters/subset"
-        - $ref: "#/components/parameters/interpolation"
-        - $ref: "#/components/parameters/scaleExtent"
-        - $ref: "#/components/parameters/scaleSize"
-        - $ref: "#/components/parameters/concatenate"
-        - $ref: "#/components/parameters/granuleId"
-        - $ref: "#/components/parameters/point"
-        - $ref: "#/components/parameters/width"
-        - $ref: "#/components/parameters/height"
-        - $ref: "#/components/parameters/forceAsync"
-        - $ref: "#/components/parameters/maxResults"
-        - $ref: "#/components/parameters/skipPreview"
-        - $ref: "#/components/parameters/ignoreErrors"
-        - $ref: "#/components/parameters/destinationUrl"
-        - $ref: "#/components/parameters/granuleName"
-        - $ref: "#/components/parameters/grid"
-        - $ref: "#/components/parameters/extend"
       requestBody:
         content:
           application/json:
             schema:
               type: object
               required:
+                - parameter-name
                 - coords
               properties:
                 coords:
@@ -704,6 +753,48 @@ paths:
                 crs:
                   type: string
                 f:
+                  type: string
+                subset:
+                  type: array
+                  items:
+                    type: string
+                interpolation:
+                  type: string
+                scaleExtent:
+                  type: array
+                  items:
+                    type: number
+                scaleSize:
+                  type: array
+                  items:
+                    type: number
+                concatenate:
+                  type: string
+                granuleId:
+                  type: array
+                  items:
+                    type: string
+                width:
+                  type: integer
+                height:
+                  type: integer
+                forceAsync:
+                  type: boolean
+                maxResults:
+                  type: integer
+                skipPreview:
+                  type: boolean
+                ignoreErrors:
+                  type: boolean
+                destinationUrl:
+                  type: string
+                granuleName:
+                  type: array
+                  items:
+                    type: string
+                grid:
+                  type: string
+                extend:
                   type: string
       responses:
         "200":
@@ -776,42 +867,13 @@ paths:
       operationId: postDataForCorridor
       parameters:
         - $ref: "#/components/parameters/collectionId"
-        # Parameters below this line are not part of the OGC specification
-        - $ref: "#/components/parameters/coords"
-        - $ref: "#/components/parameters/z"
-        - $ref: "#/components/parameters/datetime"
-        - $ref: "#/components/parameters/parameter-name"
-        - $ref: "#/components/parameters/corridor-width"
-        - $ref: "#/components/parameters/width-units"
-        - $ref: "#/components/parameters/corridor-height"
-        - $ref: "#/components/parameters/height-units"
-        - $ref: "#/components/parameters/resolution-x"
-        - $ref: "#/components/parameters/resolution-y"
-        - $ref: "#/components/parameters/crs"
-        - $ref: "#/components/parameters/f"
-        - $ref: "#/components/parameters/subset"
-        - $ref: "#/components/parameters/interpolation"
-        - $ref: "#/components/parameters/scaleExtent"
-        - $ref: "#/components/parameters/scaleSize"
-        - $ref: "#/components/parameters/concatenate"
-        - $ref: "#/components/parameters/granuleId"
-        - $ref: "#/components/parameters/point"
-        - $ref: "#/components/parameters/width"
-        - $ref: "#/components/parameters/height"
-        - $ref: "#/components/parameters/forceAsync"
-        - $ref: "#/components/parameters/maxResults"
-        - $ref: "#/components/parameters/skipPreview"
-        - $ref: "#/components/parameters/ignoreErrors"
-        - $ref: "#/components/parameters/destinationUrl"
-        - $ref: "#/components/parameters/granuleName"
-        - $ref: "#/components/parameters/grid"
-        - $ref: "#/components/parameters/extend"
       requestBody:
         content:
           application/json:
             schema:
               type: object
               required:
+                - parameter-name
                 - coords
                 - corridor-width
                 - width-units
@@ -844,6 +906,48 @@ paths:
                 crs:
                   type: string
                 f:
+                  type: string
+                subset:
+                  type: array
+                  items:
+                    type: string
+                interpolation:
+                  type: string
+                scaleExtent:
+                  type: array
+                  items:
+                    type: number
+                scaleSize:
+                  type: array
+                  items:
+                    type: number
+                concatenate:
+                  type: string
+                granuleId:
+                  type: array
+                  items:
+                    type: string
+                width:
+                  type: integer
+                height:
+                  type: integer
+                forceAsync:
+                  type: boolean
+                maxResults:
+                  type: integer
+                skipPreview:
+                  type: boolean
+                ignoreErrors:
+                  type: boolean
+                destinationUrl:
+                  type: string
+                granuleName:
+                  type: array
+                  items:
+                    type: string
+                grid:
+                  type: string
+                extend:
                   type: string
       responses:
         "200":

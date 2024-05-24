@@ -35,9 +35,6 @@ const ogcSchemaEdr = yaml.load(openApiContent, { schema: yaml.DEFAULT_SCHEMA }) 
 export const edrGetParams = ogcSchemaEdr
   .paths['/collections/{collectionId}/cube'].get.parameters
   .map(param => param.$ref.split('/').pop());
-export const edrPostParams = ogcSchemaEdr
-  .paths['/collections/{collectionId}/cube'].post.parameters
-  .map(param => param.$ref.split('/').pop());
 
 /**
  * Express handler that returns a 501 error and "not yet implemented" message to the client

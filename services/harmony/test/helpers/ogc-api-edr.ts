@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/dot-notation */
 import { parse } from 'cookie';
 import { Application } from 'express';
 import { after, before } from 'mocha';
@@ -108,6 +109,9 @@ export function postEdrRequest(
   if (queryString) urlPathAndParam += `?${queryString}`;
   // POST parameter-name is of type array, not string
   form['parameter-name'] = form['parameter-name'].split(',');
+  form['granuleId'] = form['granuleId'].split(',');
+  form['scaleExtent'] = form['scaleExtent'].split(',').map(Number);
+  form['scaleSize'] = form['scaleSize'].split(',').map(Number);
   const req = request(app)
     .post(urlPathAndParam)
     .send(form)
