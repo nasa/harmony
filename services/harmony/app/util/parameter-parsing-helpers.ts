@@ -57,8 +57,10 @@ export function parseMultiValueParameter(value: string[] | string): string[] {
  * @returns wellknown GeoJSON representation of the WKT string
  * @throws ParameterParseError if it cannot be parsed or harmony does not support the WKT type
  */
-export function parseWkt(wkt): GeoJSONGeometryOrNull {
-  const supportedTypes = ['LineString', 'Polygon', 'Point'];
+export function parseWkt(wkt: string): GeoJSONGeometryOrNull {
+  // TODO - Will implement lines and points in separate tickets
+  // const supportedTypes = ['Polygon', 'MultiPolygon', 'Point', 'MultiPoint', 'LineString', 'MultiLineString'];
+  const supportedTypes = ['Polygon', 'MultiPolygon'];
   const geoJson = wellknown.parse(wkt);
   if (geoJson) {
     if (!supportedTypes.includes(geoJson.type)) {

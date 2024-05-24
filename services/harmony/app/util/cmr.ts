@@ -10,6 +10,7 @@ import { defaultObjectStore, objectStoreForProtocol } from './object-store';
 import env from './env';
 import logger from './log';
 import { UmmSpatial } from './spatial/umm-spatial';
+import { isValidUri } from './url';
 
 const { cmrEndpoint, cmrMaxPageSize, clientId, stagingBucket } = env;
 
@@ -445,19 +446,42 @@ export async function fetchPost(
 }
 
 /**
- * Process a GeoJSON entry by downloading the file from S3 and adding an entry for it in
- * a mulitpart/form-data object to be uploaded to the CMR.
- *
- * @param geoJsonUrl - The location of the shapefile
- * @param formData - the Form data
- * @returns The a promise for a temporary filename containing the shapefile
+ * Helper function to check if a string is valid JSON
+ * @param str - the string to check
+ * @returns true if the string can be parsed as JSON and false otherwise
  */
-async function processGeoJson(geoJsonUrl: string, formData: FormData): Promise<string> {
-  const tempFile = await objectStoreForProtocol(geoJsonUrl).downloadFile(geoJsonUrl);
-  formData.append('shapefile', fs.createReadStream(tempFile), {
-    contentType: 'application/geo+json',
-  });
-  return tempFile;
+function isValidJSON(str: string): boolean {
+  try {
+    JSON.parse(str);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+/**
+ * Process a GeoJSON entry by downloading the file from S3 and adding an entry for it in
+ * a mulitpart/form-data object to be uploaded to the CMR. If the geojson is a string rather
+ * than a reference to a file, just directly set the content in the passed in formdata
+ *
+ * @param geoJsonOrUri - Either a geojson string or the URI to the shapefile
+ * @param formData - the form data to which to add the shapefile
+ * @returns a promise for a temporary filename containing the shapefile or null if no file is used
+ */
+async function processGeoJson(geoJsonOrUri: string, formData: FormData): Promise<string> {
+  if (isValidUri(geoJsonOrUri) || !isValidJSON(geoJsonOrUri)) {
+    const tempFile = await objectStoreForProtocol(geoJsonOrUri).downloadFile(geoJsonOrUri);
+    formData.append('shapefile', fs.createReadStream(tempFile), {
+      contentType: 'application/geo+json',
+    });
+    return tempFile;
+  } else {
+    formData.append('shapefile', geoJsonOrUri, {
+      contentType: 'application/geo+json',
+    });
+  }
+
+  return null;
 }
 
 /**

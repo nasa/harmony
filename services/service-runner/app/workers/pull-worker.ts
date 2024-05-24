@@ -10,6 +10,7 @@ import path from 'path';
 import { existsSync, rmSync, accessSync, constants, promises as fs } from 'fs';
 import { exit } from 'process';
 import { AxiosError } from 'axios';
+import DataOperation from '../../../harmony/app/models/data-operation';
 
 /**
  * Retries axios connection errors using default retry logic unless the pod is being terminated
@@ -99,7 +100,12 @@ async function _pullWork(): Promise<{ item?: WorkItemRecord; status?: number; er
       return { status: response.status };
     }
 
-    return { item: response.data.workItem, maxCmrGranules: response.data.maxCmrGranules, status: response.status };
+    const item = response.data.workItem;
+    if (item.operation) {
+      item.operation = new DataOperation(item.operation);
+    }
+
+    return { item, maxCmrGranules: response.data.maxCmrGranules, status: response.status };
   } catch (err) {
     if (err.response) {
       return { status: err.response.status, error: err.response.data };

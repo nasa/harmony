@@ -13,6 +13,7 @@ import { uploadLogs } from '../app/service/service-runner';
 import sinon from 'sinon';
 import axios from 'axios';
 import { readFileSync } from 'fs';
+import DataOperation from '../../harmony/app/models/data-operation';
 
 const { _getErrorMessage, _getStacCatalogs } = serviceRunner.exportedForTesting;
 
@@ -343,12 +344,12 @@ describe('Service Runner', function () {
         jobID: '123',
         serviceID: 'abc',
         workflowStepIndex: 1,
-        operation: {
+        operation: new DataOperation({
           requestID: 'foo',
           subset: {
             shape: 'fake geojson',
           },
-        },
+        }),
         id: 1,
       });
       let execStub;
@@ -369,11 +370,11 @@ describe('Service Runner', function () {
       });
 
       it('saves the geojson to the /tmp directory', async function () {
-        const geoJSon = readFileSync('/tmp/shapefile.json');
-        expect(geoJSon).equals(workItem.operation.geojson);
+        const geoJSon = String(readFileSync('/tmp/shapefile.json'));
+        expect(geoJSon).equals('fake geojson');
       });
       it('replaces the geojson string in the operation with the file url', async function () {
-        expect(workItem.operation.geojson).equals('/tmp/shapefile.json');
+        expect(workItem.operation.geojson).equals('file:///tmp/shapefile.json');
       });
     });
   });
