@@ -22,8 +22,8 @@ servers:
 tags:
   - name: Capabilities
     description: Essential characteristics of this API including information about the data.
-  - name: Edr
-    description: Access to data (edr).
+  - name: Collection data queries
+    description: Access to data via EDR routes.
 paths:
   /:
     get:

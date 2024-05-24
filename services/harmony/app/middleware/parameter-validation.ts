@@ -172,8 +172,7 @@ function validateCoverageRangesetParameterNames(req: HarmonyRequest): void {
  */
 function validateEdrParameterNames(req: HarmonyRequest): void {
   const requestedParams = Object.keys(req.query);
-  const allowedParams = edrGetParams;
-  validateParameterNames(requestedParams, allowedParams);
+  validateParameterNames(requestedParams, edrGetParams);
 }
 
 /**
