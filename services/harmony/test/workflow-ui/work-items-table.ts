@@ -365,7 +365,6 @@ describe('Workflow UI work items table route', function () {
         hookWorkflowUIWorkItems({ username: 'bo', jobID: targetJob.jobID, query: { limit: 0 } });
         it('the backend sets the page limit to 1', function () {
           const listing = this.res.text;
-          console.log(listing);
           expect((listing.match(/work-item-table-row/g) || []).length).to.equal(1);
           expect(listing).to.contain('1-1 of 6 (page 1 of 6)');
         });

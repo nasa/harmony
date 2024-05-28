@@ -1,5 +1,5 @@
 ## Using the Service APIs
-This section provides an introduction to the Harmony service APIs for launching services for collections using either OGC Coverages or WMS. For more details on the OGC Coverages API see the [API Documentation](/docs/api).
+This section provides an introduction to the Harmony service APIs for launching services for collections using [OGC Coverages API](/docs/api), [OGC EDR API](/docs/edr-api) or WMS.
 
 Each API requires a CMR collection concept ID or short name, and transformations can be performed using
 one of the following endpoints ({collectionId} and {variable} are placeholders):
@@ -11,6 +11,13 @@ one of the following endpoints ({collectionId} and {variable} are placeholders):
 
 ```
 **Example {{exampleCounter}}** - OGC Coverages endpoint
+
+```
+
+{{root}}/ogc-api-edr/1.1.0/collections/{collectionId}/cube
+
+```
+**Example {{exampleCounter}}** - OGC EDR endpoint
 
 ```
 
@@ -71,6 +78,60 @@ curl -Lnbj {{root}}/{{exampleCollection}}/ogc-api-coverages/1.0.0/collections/ba
 
 ```
 **Example {{exampleCounter}}** - Curl command for an OGC Coverages request
+
+#### OGC EDR Request Parameters
+
+The Harmony services REST API also conforms to the OGC EDR API version 1.1.0.
+As such it accepts parameters in the URL path as well as query parameters.
+Currently only the `/cube` route is supported for data search. Other EDR search routes will be supported in the near future.
+
+##### URL Path Parameters
+| parameter | description |
+|-----------|-------------|
+| collection | (required) This is the NASA EOSDIS collection or data product. There are two options for inputting a collection of interest:<br/>1. Provide a concept ID, which is an ID provided in the Common Metadata Repository (CMR) metadata<br/>2. Use the data product short name, e.g. SENTINEL-1_INTERFEROGRAMS. Must be URL encoded. |
+---
+**Table {{tableCounter}}** - Harmony OGC EDR API URL path (required) parameters
+
+<br/>
+<br/>
+
+##### Query Parameters
+| parameter | description |
+|-----------|-------------|
+| bbox | The bounding box is provided as four or six numbers, depending on whether the coordinate reference system includes a vertical axis (height or depth):<br/>* Lower left corner, coordinate axis 1<br/>* Lower left corner, coordinate axis 2<br/>* Minimum value, coordinate axis 3 (optional)<br/>* Upper right corner, coordinate axis 1<br/>* Upper right corner, coordinate axis 2<br/>* Maximum value, coordinate axis 3 (optional)<br/>The coordinate reference system of the values is WGS 84 longitude/latitude (http://www.opengis.net/def/crs/OGC/1.3/CRS84) unless a different coordinate reference system is specified in the parameter bbox-crs. For WGS 84 longitude/latitude the values are in most cases the sequence of minimum longitude, minimum latitude, maximum longitude and maximum latitude. However, in cases where the box spans the antimeridian the first value (west-most box edge) is larger than the third value (east-most box edge). If the vertical axis is included, the third and the sixth number are the bottom and the top of the 3-dimensional bounding box. If a feature has multiple spatial geometry properties, it is the decision of the server whether only a single spatial geometry property is used to determine the extent or all relevant geometries. |
+| z | Define the vertical levels to return data from. The value will override any vertical values defined in the BBOX query parameter. A range to return data for all levels between and including 2 defined levels<br/>i.e. z=minimum value/maximum value. For instance if all values between and including 10m and 100m<br/>z=10/100<br/>A list of height values can be specified, i.e. z=value1,value2,value3. For instance if values at 2m, 10m and 80m are required<br/>z=2,10,80<br/>An Arithmetic sequence using Recurring height intervals, the difference is the number of recurrences is defined at the start and the amount to increment the height by is defined at the end, i.e. z=Rn/min height/height interval. So if the request was for 20 height levels 50m apart starting at 100m:<br/>z=R20/100/50<br/>When not specified data from all available heights SHOULD be returned |
+| datetime | Either a date-time or an interval. Date and time expressions adhere to RFC 3339. Intervals may be bounded or half-bounded (double-dots at start or end).<br/>Examples:<br/>* A date-time: "2018-02-12T23:20:50Z"<br/>* A bounded interval: "2018-02-12T00:00:00Z/2018-03-18T12:31:12Z"<br/>* Half-bounded intervals: "2018-02-12T00:00:00Z/.." or "../2018-03-18T12:31:12Z"<br/>Only resources that have a temporal property that intersects the value of `datetime` are selected. If a feature has multiple temporal properties, it is the decision of the server whether only a single temporal property is used to determine the extent or all relevant temporal properties. |
+| parameter-name | Names or concept ids of the UMM-Var variables to be retrieved. Without parameter-name or a value of "all" to retrieve all variables. <br/> Multiple variables may be retrieved by separating them with a comma. |
+| crs | reproject the output coverage to the given CRS. Recognizes CRS types that can be  |inferred by gdal, including EPSG codes, Proj4 strings, and OGC EDR URLs (http://www.opengis.net/def/crs/...) |
+| f | the mime-type of the output format to return |
+| subset | get a subset of the coverage by slicing or trimming along one axis. Harmony supports arbitrary dimension names for subsetting on numeric ranges for that dimension. |
+| interpolation | specify the interpolation method used during reprojection and scaling |
+| scaleExtent | scale the resulting coverage along one axis to a given extent |
+| scaleSize | scale the resulting coverage along one axis to a given size |
+| concatenate | requests results to be concatenated into a single result |
+| granuleId | the CMR Granule ID for the granule which should be retrieved |
+| granuleName | passed to the CMR search as the readable_granule_name parameter. Supports * and ?  wildcards for multiple and single character matches. Wildcards can be used any place in the name, but leading wildcards are discouraged as they require a lot of resources for the underlying search |
+| grid | the name of the output grid to use for regridding requests. The name must match the UMM  |grid name in the CMR.
+| width | number of columns to return in the output coverage |
+| height | number of rows to return in the output coverage |
+| forceAsync | if "true", override the default API behavior and always treat the request as asynchronous |
+| maxResults | limits the number of input files processed in the request |
+| skipPreview | if "true", override the default API behavior and never auto-pause jobs |
+| ignoreErrors | if "true", continue processing a request to completion even if some items fail. If "false" immediately fail the request. Defaults to true |
+| destinationUrl | destination url specified by the client; currently only s3 link urls are  supported (e.g. s3://my-bucket-name/mypath) and will result in the job being run asynchronously |
+---
+**Table {{tableCounter}}** - Harmony OGC EDR API query parameters
+
+For `POST` requests, the body should be `application/json`.
+
+A sample OGC EDR request is as follows
+
+```
+
+curl -Lnbj {{root}}/ogc-api-edr/1.1.0/collections/{{exampleCollection}}/cube?maxResults=1
+
+```
+**Example {{exampleCounter}}** - Curl command for an OGC EDR request
 
 #### WMS Requests
 
