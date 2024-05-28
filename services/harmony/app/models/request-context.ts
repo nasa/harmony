@@ -24,6 +24,12 @@ export default class RequestContext {
    */
   isAdminAccess?: boolean;
 
+  /**
+   * True if the request is from a verified core permissions member making a request against a core interface
+   * (/core/*)
+   */
+  isCoreAccess?: boolean;
+
   serviceConfig?: ServiceConfig<unknown>;
 
   messages?: string[];

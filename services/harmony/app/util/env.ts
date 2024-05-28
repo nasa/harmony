@@ -67,6 +67,9 @@ class HarmonyServerEnv extends HarmonyEnv {
   @IsNotEmpty()
   serviceDeployerGroupId: string;
 
+  @IsNotEmpty()
+  corePermissionsGroupId: string;
+
   @IsInt()
   @Min(1)
   syncRequestPollIntervalMs: number;
