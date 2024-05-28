@@ -213,7 +213,12 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   result.get('/', asyncHandler(landingPage));
   result.get('/versions', asyncHandler(getVersions));
   result.get('/docs', asyncHandler(docsPage));
-  result.use('/docs/api', swaggerUi.serve, swaggerUi.setup(yaml.load(ogcCoverageApi.openApiContent), { customJs: '/js/docs/analytics-tag.js' }));
+
+  const coverageApiDoc = yaml.load(ogcCoverageApi.openApiContent);
+  const edrApiDoc = yaml.load(ogcEdrApi.openApiContent);
+  result.use('/docs/api', swaggerUi.serveFiles(coverageApiDoc), swaggerUi.setup(coverageApiDoc, { customJs: '/js/docs/analytics-tag.js' }));
+  result.use('/docs/edr-api', swaggerUi.serveFiles(edrApiDoc), swaggerUi.setup(edrApiDoc, { customJs: '/js/docs/analytics-tag.js' }));
+
   result.get(collectionPrefix('wms'), asyncHandler(service(serviceInvoker)));
   result.get(/^.*?\/ogc-api-coverages\/.*?\/collections\/.*?\/coverage\/rangeset\/?$/, asyncHandler(service(serviceInvoker)));
   result.post(/^.*?\/ogc-api-coverages\/.*?\/collections\/.*?\/coverage\/rangeset\/?$/, asyncHandler(service(serviceInvoker)));

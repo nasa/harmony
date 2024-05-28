@@ -35,7 +35,11 @@ describe('Documentation page', function () {
     });
 
     it('links to a Swagger UI for the coverages API', function () {
-      expect(this.res.text).to.match(/<a[^>]* href="\/docs\/api"[^>]*>API Documentation<\/a>/);
+      expect(this.res.text).to.match(/<a[^>]* href="\/docs\/api"[^>]*>OGC Coverages API<\/a>/);
+    });
+
+    it('links to a Swagger UI for the EDR API', function () {
+      expect(this.res.text).to.match(/<a[^>]* href="\/docs\/edr-api"[^>]*>OGC EDR API<\/a>/);
     });
 
     it('displays the current Harmony version', function () {
@@ -44,6 +48,10 @@ describe('Documentation page', function () {
 
     it('provides an absolute URL template for the OGC API Coverages endpoint', function () {
       expect(this.res.text).to.match(/http[s]*:\/\/[^/]+\/{collectionId}\/ogc-api-coverages\/1\.0\.0/);
+    });
+
+    it('provides an absolute URL template for the OGC API EDR endpoint', function () {
+      expect(this.res.text).to.match(/http[s]*:\/\/[^/]+\/ogc-api-edr\/1\.1\.0\/collections\/{collectionId}\/cube/);
     });
 
     it('provides an absolute URL template for the WMS endpoint', function () {

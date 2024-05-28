@@ -1,9 +1,9 @@
 openapi: 3.0.3
 info:
-  title: A sample API conforming to version 1.1.0 of the OGC API - Environmental Data
+  title: Harmony API conforming to version 1.1.0 of the OGC API - Environmental Data
     Retrieval Standard
   description:
-    "A sample API conforming to version 1.1.0 of the [OGC API - Environmental Data  Retrieval](https://ogcapi.ogc.org/edr/) Standard.
+    "Harmony API conforming to version 1.1.0 of the [OGC API - Environmental Data  Retrieval](https://ogcapi.ogc.org/edr/) Standard.
     Copyright (c) 2023 Open Geospatial Consortium.
     To obtain additional rights of use, visit http://www.opengeospatial.org/legal/
     The Environmental Data Retrieval (EDR) Application Programming Interface
