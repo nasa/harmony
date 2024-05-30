@@ -13,7 +13,6 @@ import { uploadLogs } from '../app/service/service-runner';
 import sinon from 'sinon';
 import axios from 'axios';
 import { readFileSync } from 'fs';
-import DataOperation from '../../harmony/app/models/data-operation';
 
 const { _getErrorMessage, _getStacCatalogs } = serviceRunner.exportedForTesting;
 
@@ -344,12 +343,12 @@ describe('Service Runner', function () {
         jobID: '123',
         serviceID: 'abc',
         workflowStepIndex: 1,
-        operation: new DataOperation({
+        operation: {
           requestID: 'foo',
           subset: {
             shape: 'fake geojson',
           },
-        }),
+        },
         id: 1,
       });
       let execStub;

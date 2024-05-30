@@ -861,8 +861,8 @@ paths:
           $ref: "#/components/responses/default"
     post:
       tags:
-        - Edr
-      summary: Query end point for Corridor queries  of collection {collectionId} defined by a polygon
+        - Collection data queries
+      summary: Query end point for Corridor queries of collection {collectionId} defined by a polygon
       description: Return the data values for the Corridor defined by the query parameters
       operationId: postDataForCorridor
       parameters:
