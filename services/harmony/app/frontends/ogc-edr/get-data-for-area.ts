@@ -72,9 +72,19 @@ export function getDataForArea(
     throw e;
   }
 
-  const geoJson = parseWkt(query.coords);
-  if (geoJson) {
-    operation.geojson = JSON.stringify(geoJson);
+  if (query.coords) {
+    try {
+      const geoJson = parseWkt(query.coords);
+      if (geoJson) {
+        operation.geojson = JSON.stringify(geoJson);
+      }
+    } catch (e) {
+      if (e instanceof ParameterParseError) {
+        // Turn parsing exceptions into 400 errors pinpointing the source parameter
+        throw new RequestValidationError(`query parameter "coords" ${e.message}`);
+      }
+      throw e;
+    }
   }
 
   const { start, end } = parseDatetime(query.datetime);

@@ -61,15 +61,19 @@ export function parseWkt(wkt: string): GeoJSONGeometryOrNull {
   // TODO - Will implement lines and points in separate tickets
   // const supportedTypes = ['Polygon', 'MultiPolygon', 'Point', 'MultiPoint', 'LineString', 'MultiLineString'];
   const supportedTypes = ['Polygon', 'MultiPolygon'];
-  const geoJson = wellknown.parse(wkt);
-  if (geoJson) {
-    if (!supportedTypes.includes(geoJson.type)) {
-      throw new ParameterParseError(`Unsupported WKT type ${geoJson.type}.`);
+  try {
+    const geoJson = wellknown.parse(wkt);
+    if (geoJson) {
+      if (!supportedTypes.includes(geoJson.type)) {
+        throw new ParameterParseError(`Unsupported WKT type ${geoJson.type}.`);
+      }
+    } else {
+      throw new ParameterParseError(`Unable to parse WKT string ${wkt}.`);
     }
-  } else {
+    return geoJson;
+  } catch (e) {
     throw new ParameterParseError(`Unable to parse WKT string ${wkt}.`);
   }
-  return geoJson;
 }
 
 /**
