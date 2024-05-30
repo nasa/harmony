@@ -17,7 +17,8 @@ CREATE TABLE `jobs` (
   `collectionIds` text not null,
   `ignoreErrors` boolean not null,
   `destination_url` varchar(8192),
-  `service_name` varchar(255)
+  `service_name` varchar(255),
+  `providerIds` text[]
 );
 
 CREATE TABLE `job_links` (
