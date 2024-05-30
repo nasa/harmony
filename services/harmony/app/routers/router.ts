@@ -10,7 +10,7 @@ import log from '../util/log';
 import shapefileUpload from '../middleware/shapefile-upload';
 import earthdataLoginTokenAuthorizer from '../middleware/earthdata-login-token-authorizer';
 import earthdataLoginOauthAuthorizer from '../middleware/earthdata-login-oauth-authorizer';
-import admin from '../middleware/admin';
+import { admin, core } from '../middleware/permission-groups';
 import wmsFrontend from '../frontends/wms';
 import { getJobsListing, getJobStatus, cancelJob, resumeJob, pauseJob, skipJobPreview, skipJobsPreview, cancelJobs, resumeJobs, pauseJobs } from '../frontends/jobs';
 import { getJobs, getJob, getWorkItemsTable, getJobLinks, getWorkItemLogs, retry, getWorkItemTableRow, redirectWithoutTrailingSlash, getJobsTable } from '../frontends/workflow-ui';
@@ -169,7 +169,6 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   // Handle multipart/form-data (used for shapefiles). Files will be uploaded to
   // a bucket.
   result.post(collectionPrefix('(ogc-api-coverages)'), asyncHandler(shapefileUpload()));
-  result.post(/^\/ogc-api-edr\//, asyncHandler(shapefileUpload()));
 
   result.use(logged(earthdataLoginTokenAuthorizer(authorizedRoutes)));
 
@@ -177,6 +176,7 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
     result.use(logged(earthdataLoginOauthAuthorizer(authorizedRoutes)));
   }
 
+  result.use('/core/*', core);
   if (env.adminGroupId) {
     result.use('/admin/*', admin);
   } else {
@@ -213,7 +213,12 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   result.get('/', asyncHandler(landingPage));
   result.get('/versions', asyncHandler(getVersions));
   result.get('/docs', asyncHandler(docsPage));
-  result.use('/docs/api', swaggerUi.serve, swaggerUi.setup(yaml.load(ogcCoverageApi.openApiContent), { customJs: '/js/docs/analytics-tag.js' }));
+
+  const coverageApiDoc = yaml.load(ogcCoverageApi.openApiContent);
+  const edrApiDoc = yaml.load(ogcEdrApi.openApiContent);
+  result.use('/docs/api', swaggerUi.serveFiles(coverageApiDoc), swaggerUi.setup(coverageApiDoc, { customJs: '/js/docs/analytics-tag.js' }));
+  result.use('/docs/edr-api', swaggerUi.serveFiles(edrApiDoc), swaggerUi.setup(edrApiDoc, { customJs: '/js/docs/analytics-tag.js' }));
+
   result.get(collectionPrefix('wms'), asyncHandler(service(serviceInvoker)));
   result.get(/^.*?\/ogc-api-coverages\/.*?\/collections\/.*?\/coverage\/rangeset\/?$/, asyncHandler(service(serviceInvoker)));
   result.post(/^.*?\/ogc-api-coverages\/.*?\/collections\/.*?\/coverage\/rangeset\/?$/, asyncHandler(service(serviceInvoker)));
@@ -274,7 +279,7 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
 
   result.get('/staging-bucket-policy', asyncHandler(getStagingBucketPolicy));
 
-  result.get('/admin/configuration/log-level', asyncHandler(setLogLevel));
+  result.get('/core/configuration/log-level', asyncHandler(setLogLevel));
 
   result.get('/capabilities', asyncHandler(getCollectionCapabilitiesJson));
   // Enable HTML view with HARMONY-1393

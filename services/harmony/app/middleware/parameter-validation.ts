@@ -5,7 +5,7 @@ import { Conjunction, listToText } from '@harmony/util/string';
 import { keysToLowerCase } from '../util/object';
 import { defaultObjectStore } from '../util/object-store';
 import { coverageRangesetGetParams, coverageRangesetPostParams } from '../frontends/ogc-coverages/index';
-import { edrGetParams, edrPostParams } from '../frontends/ogc-edr/index';
+import { edrGetParams } from '../frontends/ogc-edr/index';
 import env from '../util/env';
 import { getRequestRoot } from '../util/url';
 import { validateNoConflictingGridParameters } from '../util/grids';
@@ -172,8 +172,7 @@ function validateCoverageRangesetParameterNames(req: HarmonyRequest): void {
  */
 function validateEdrParameterNames(req: HarmonyRequest): void {
   const requestedParams = Object.keys(req.query);
-  const allowedParams = req.method.toLowerCase() == 'get' ? edrGetParams : edrPostParams;
-  validateParameterNames(requestedParams, allowedParams);
+  validateParameterNames(requestedParams, edrGetParams);
 }
 
 /**
