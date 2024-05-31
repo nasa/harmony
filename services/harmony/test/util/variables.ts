@@ -50,4 +50,19 @@ describe('validateVariables', function () {
     expect(() => validateVariables(variableIds, null)).not.to.throw(RequestValidationError);
   });
 
+  describe('when variables have the word "all" in their names', function () {
+    describe('and the queryVars are passed as an array', function () {
+      const variableIds = ['parameter_vars'];
+      it('should not throw an error', function () {
+        expect(() => validateVariables(variableIds, ['var1', 'var_all_2'])).not.to.throw(RequestValidationError);
+      });
+    });
+    describe('and the queryVars are passed as a string', function () {
+      const variableIds = ['parameter_vars'];
+      it('should not throw an error', function () {
+        expect(() => validateVariables(variableIds, 'var_all_1,var2')).not.to.throw(RequestValidationError);
+      });
+    });
+  });
+
 });

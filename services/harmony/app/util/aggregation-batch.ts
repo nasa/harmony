@@ -113,7 +113,7 @@ Promise<number[]> {
       outputItemSizes = outputItemSizes.concat(sizes);
     }
   }
-  return outputItemSizes;
+  return outputItemSizes.map(Math.floor);
 }
 
 /**
