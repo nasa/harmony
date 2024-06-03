@@ -257,6 +257,7 @@ export interface DataSource {
   collection: string;
   shortName: string;
   versionId: string;
+  providerId: string;
   coordinateVariables: HarmonyVariable[];
   variables: HarmonyVariable[];
   granules: HarmonyGranule[];
@@ -425,6 +426,18 @@ export default class DataOperation {
   }
 
   /**
+   * Returns the data provider IDs (from the data operation sources)
+   * as a list of strings
+   *
+   * @returns string[] of data providers IDs
+   */
+  get providerIds(): string[] {
+    const providerIdsArr: Set<string> = this.model.sources.map((s: DataSource) => s.providerId);
+    const providerIdsDeduplicated: string[] = [...new Set(providerIdsArr)];
+    return providerIdsDeduplicated;
+  }
+
+  /**
    * Adds a new service data source to the list of those to operate on
    *
    * @param collection - The CMR ID of the collection being operated on
@@ -443,7 +456,8 @@ export default class DataOperation {
   ): void {
     const variables = vars?.map(cmrVarToHarmonyVar);
     const coordinateVariables = cmrCoordinateVariables?.map(cmrVarToHarmonyVar);
-    this.model.sources.push({ collection, shortName, versionId, variables, coordinateVariables });
+    const providerId = collection.split('-')[1]; // parse provider from collection (e.g. C1244141250-EEDTEST)
+    this.model.sources.push({ collection, shortName, versionId, providerId, variables, coordinateVariables });
   }
 
   /**

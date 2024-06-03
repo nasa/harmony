@@ -71,6 +71,7 @@ export interface JobRecord {
   updatedAt?: Date | number;
   numInputGranules: number;
   collectionIds: string[];
+  providerIds: string[];
   destination_url?: string;
   service_name?: string,
 }
@@ -367,6 +368,8 @@ export class Job extends DBRecord implements JobRecord {
   destination_url?: string;
 
   service_name?: string;
+
+  providerIds: string[];
 
   /**
    * Get the job message for the current status.
