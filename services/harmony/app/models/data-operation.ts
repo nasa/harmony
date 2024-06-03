@@ -432,7 +432,9 @@ export default class DataOperation {
    * @returns string[] of data providers IDs
    */
   get providerIds(): string[] {
-    const providerIdsArr: Set<string> = this.model.sources.map((s: DataSource) => s.providerId);
+    const providerIdsArr: Set<string> = this.model.sources.map((s: DataSource) => {
+      return s.collection.split('-')[1]; // parse provider from collection (e.g. C1244141250-EEDTEST)
+    });
     const providerIdsDeduplicated: string[] = [...new Set(providerIdsArr)];
     return providerIdsDeduplicated;
   }
@@ -456,8 +458,7 @@ export default class DataOperation {
   ): void {
     const variables = vars?.map(cmrVarToHarmonyVar);
     const coordinateVariables = cmrCoordinateVariables?.map(cmrVarToHarmonyVar);
-    const providerId = collection.split('-')[1]; // parse provider from collection (e.g. C1244141250-EEDTEST)
-    this.model.sources.push({ collection, shortName, versionId, providerId, variables, coordinateVariables });
+    this.model.sources.push({ collection, shortName, versionId, variables, coordinateVariables });
   }
 
   /**
