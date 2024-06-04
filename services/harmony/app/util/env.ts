@@ -1,5 +1,5 @@
-import { IsInt, IsNotEmpty, Min } from 'class-validator';
-import { HarmonyEnv } from '@harmony/util/env';
+import { IsInt, IsNotEmpty, Matches, Min } from 'class-validator';
+import { HarmonyEnv, memorySizeRegex } from '@harmony/util/env';
 import _ from 'lodash';
 import * as path from 'path';
 
@@ -100,6 +100,9 @@ class HarmonyServerEnv extends HarmonyEnv {
   @IsInt()
   @Min(1)
   maxPostFileSize: number;
+
+  @Matches(memorySizeRegex)
+  maxHarmonyBackEndJsonSize: string;
 
   @IsInt()
   @Min(1)
