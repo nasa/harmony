@@ -270,7 +270,11 @@ export async function runServiceFromPull(
     if (typeof geoJson === 'string') {
       const geoJsonFile = '/tmp/shapefile.json';
       writeFileSync(geoJsonFile, geoJson);
-      operation.geojson = `file://${geoJsonFile}`;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (operation as any).subset.shape = {
+        href: `file://${geoJsonFile}`,
+        type: 'application/geo+json',
+      };
     }
 
     const catalogDir = getStacLocation(workItem);

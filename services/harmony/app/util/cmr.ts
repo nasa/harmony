@@ -1,16 +1,22 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import FormData from 'form-data';
 import * as fs from 'fs';
+import { promises as pfs } from 'fs';
+import tmp from 'tmp';
 import { v4 as uuid } from 'uuid';
 import { get, isArray } from 'lodash';
 import fetch, { Response } from 'node-fetch';
 import * as querystring from 'querystring';
+import { Readable } from 'stream';
 import { CmrError } from './errors';
 import { defaultObjectStore, objectStoreForProtocol } from './object-store';
 import env from './env';
 import logger from './log';
 import { UmmSpatial } from './spatial/umm-spatial';
 import { isValidUri } from './url';
+import * as util from 'util';
+
+const createTmpFileName = util.promisify(tmp.tmpName);
 
 const { cmrEndpoint, cmrMaxPageSize, clientId, stagingBucket } = env;
 
@@ -462,7 +468,7 @@ function isValidJSON(str: string): boolean {
 /**
  * Process a GeoJSON entry by downloading the file from S3 and adding an entry for it in
  * a mulitpart/form-data object to be uploaded to the CMR. If the geojson is a string rather
- * than a reference to a file, just directly set the content in the passed in formdata
+ * than a reference to a file, just directly set the content in the passed in form-data
  *
  * @param geoJsonOrUri - Either a geojson string or the URI to the shapefile
  * @param formData - the form data to which to add the shapefile
@@ -476,7 +482,14 @@ async function processGeoJson(geoJsonOrUri: string, formData: FormData): Promise
     });
     return tempFile;
   } else {
-    formData.append('shapefile', geoJsonOrUri, {
+    // formData.append('shapefile', geoJsonOrUri, {
+    logger.error('GEOJSON :');
+    logger.error(geoJsonOrUri);
+    const tempFile = await createTmpFileName();
+    await pfs.writeFile(tempFile, geoJsonOrUri);
+    formData.append('shapefile', fs.createReadStream(tempFile), {
+    // const strm = Readable.from(geoJsonOrUri);
+    // formData.append('shapefile', strm, {
       contentType: 'application/geo+json',
     });
   }

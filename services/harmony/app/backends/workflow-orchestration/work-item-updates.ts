@@ -553,8 +553,8 @@ export async function preprocessWorkItem(
   let catalogItems;
   try {
     if (status === WorkItemStatus.SUCCESSFUL && !nextWorkflowStep) {
-      // if we are CREATING STAC CATALOGSth;e last step in the chain we should read the catalog items since they are
-      // needed for generating the output links we will save
+      // if we are CREATING STAC CATALOGS for the last step in the chain we should read the catalog items
+      // since they are needed for generating the output links we will save
       catalogItems = await readCatalogsItems(results);
       durationMs = new Date().getTime() - startTime;
       logger.debug('timing.HWIUWJI.readCatalogItems.end', { durationMs });
