@@ -87,8 +87,17 @@ describe('util/parameter-parsing', function () {
       const wkt = 'POLYGON((10 10, 20 20, 30 10, 10 10))';
       const result = parseWkt(wkt);
       const expected = {
-        type: 'Polygon',
-        coordinates: [[[10, 10], [20, 20], [30, 10], [10, 10]]],
+        'type': 'FeatureCollection',
+        'features': [
+          {
+            'type': 'Feature',
+            'geometry': {
+              type: 'Polygon',
+              coordinates: [[[10, 10], [20, 20], [30, 10], [10, 10]]],
+            },
+            'properties': {},
+          },
+        ],
       };
       expect(result).to.deep.equal(expected);
     });
@@ -97,15 +106,25 @@ describe('util/parameter-parsing', function () {
       const wkt = 'POLYGON((0 0, 50 0, 50 50, 0 50, 0 0), (10 10, 40 10, 40 40, 10 40, 10 10))';
       const result = parseWkt(wkt);
       const expected = {
-        type: 'Polygon',
-        coordinates: [
-          [
-            [0, 0], [50, 0], [50, 50], [0, 50], [0, 0],
-          ],
-          [
-            [10, 10], [40, 10], [40, 40], [10, 40], [10, 10],
-          ],
-        ] };
+        'type': 'FeatureCollection',
+        'features': [
+          {
+            'type': 'Feature',
+            'geometry': {
+              type: 'Polygon',
+              coordinates: [
+                [
+                  [0, 0], [50, 0], [50, 50], [0, 50], [0, 0],
+                ],
+                [
+                  [10, 10], [40, 10], [40, 40], [10, 40], [10, 10],
+                ],
+              ],
+            },
+            'properties': {},
+          },
+        ],
+      };
       expect(result).to.deep.equal(expected);
     });
 
@@ -113,11 +132,21 @@ describe('util/parameter-parsing', function () {
       const wkt = 'MULTIPOLYGON(((10 10, 20 20, 30 10, 10 10)),((40 40, 50 50, 60 40, 40 40)))';
       const result = parseWkt(wkt);
       const expected = {
-        type: 'MultiPolygon',
-        coordinates: [
-          [[[10, 10], [20, 20], [30, 10], [10, 10]]],
-          [[[40, 40], [50, 50], [60, 40], [40, 40]]],
-        ] };
+        'type': 'FeatureCollection',
+        'features': [
+          {
+            'type': 'Feature',
+            'geometry': {
+              type: 'MultiPolygon',
+              coordinates: [
+                [[[10, 10], [20, 20], [30, 10], [10, 10]]],
+                [[[40, 40], [50, 50], [60, 40], [40, 40]]],
+              ],
+            },
+            'properties': {},
+          },
+        ],
+      };
       expect(result).to.deep.equal(expected);
     });
 
@@ -125,16 +154,26 @@ describe('util/parameter-parsing', function () {
       const wkt = 'MULTIPOLYGON(((40 40, 70 40, 70 70, 40 70, 40 40), (50 50, 60 50, 60 60, 50 60, 50 50)), ((100 100, 130 100, 130 130, 100 130, 100 100)))';
       const result = parseWkt(wkt);
       const expected = {
-        type: 'MultiPolygon',
-        coordinates: [
-          [
-            [[40, 40], [70, 40], [70, 70], [40, 70], [40, 40]],
-            [[50, 50], [60, 50], [60, 60], [50, 60], [50, 50]],
-          ],
-          [
-            [[100, 100], [130, 100], [130, 130], [100, 130], [100, 100]],
-          ],
-        ] };
+        'type': 'FeatureCollection',
+        'features': [
+          {
+            'type': 'Feature',
+            'geometry': {
+              type: 'MultiPolygon',
+              coordinates: [
+                [
+                  [[40, 40], [70, 40], [70, 70], [40, 70], [40, 40]],
+                  [[50, 50], [60, 50], [60, 60], [50, 60], [50, 50]],
+                ],
+                [
+                  [[100, 100], [130, 100], [130, 130], [100, 130], [100, 100]],
+                ],
+              ],
+            },
+            'properties': {},
+          },
+        ],
+      };
       expect(result).to.deep.equal(expected);
     });
 

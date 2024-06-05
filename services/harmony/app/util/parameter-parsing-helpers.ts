@@ -1,6 +1,6 @@
 import { RequestValidationError } from './errors';
 import HarmonyRequest from '../models/harmony-request';
-import wellknown, { GeoJSONGeometryOrNull } from 'wellknown';
+import wellknown from 'wellknown';
 import _ from 'lodash';
 
 /**

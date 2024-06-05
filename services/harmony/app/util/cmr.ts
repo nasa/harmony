@@ -7,7 +7,6 @@ import { v4 as uuid } from 'uuid';
 import { get, isArray } from 'lodash';
 import fetch, { Response } from 'node-fetch';
 import * as querystring from 'querystring';
-import { Readable } from 'stream';
 import { CmrError } from './errors';
 import { defaultObjectStore, objectStoreForProtocol } from './object-store';
 import env from './env';

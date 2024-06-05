@@ -372,8 +372,10 @@ describe('Service Runner', function () {
         const geoJSon = String(readFileSync('/tmp/shapefile.json'));
         expect(geoJSon).equals('fake geojson');
       });
-      it('replaces the geojson string in the operation with the file url', async function () {
-        expect(workItem.operation.geojson).equals('file:///tmp/shapefile.json');
+      it('replaces the geojson string in the operation with the shape entry', async function () {
+        console.log(JSON.stringify(workItem.operation));
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        expect((workItem.operation as any).subset.shape.href).equals('file:///tmp/shapefile.json');
       });
     });
   });
