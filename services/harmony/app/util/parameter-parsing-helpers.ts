@@ -41,10 +41,14 @@ export function parseNumber(valueStr: string | number): number {
 
 /**
  * Returns the parameter as parsed as an array of comma-separated values if
- * it was a string, or just returns the array if it's already parsed
+ * it was a string, or just returns the array if it's already parsed. Returns
+ * an empty array if the parameter is null.
  * @param value - The parameter value to parse (either an array or a string)
  */
 export function parseMultiValueParameter(value: string[] | string): string[] {
+  if (value === null) {
+    return [];
+  }
   if (value instanceof Array) {
     return value;
   }
