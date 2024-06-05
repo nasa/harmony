@@ -1,5 +1,6 @@
 import { Router, json } from 'express';
 import asyncHandler from 'express-async-handler';
+import env from '../util/env';
 import handleCallbackMessage from '../backends/deployment-callback';
 import { getWork, updateWorkItem } from '../backends/workflow-orchestration/workflow-orchestration';
 import { responseHandler } from '../backends/service-response';
@@ -16,7 +17,7 @@ export default function router(): Router {
   const result = Router();
   result.use(json({
     type: 'application/json',
-    limit: '500kb',
+    limit: env.maxHarmonyBackEndJsonSize,
   }));
   result.post('/:requestId/response', asyncHandler(responseHandler));
   result.get('/work', asyncHandler(getWork));
