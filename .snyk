@@ -4,4 +4,4 @@ ignore:
   SNYK-JS-SEMVER-3247795:
     - '*':
         reason: 'Upgrade would break gdal-async dependency which is fixed to a specific version.'
-        expires: 2020-04-04T17:33:45.004Z
+        expires:
