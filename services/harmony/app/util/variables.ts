@@ -105,22 +105,21 @@ export function getCoordinateVariables(variables: CmrUmmVariable[]): CmrUmmVaria
  * @param queryVars - The variables in query params
  */
 export function validateVariables(variableIds: string[], queryVars: string | string[]): void {
+  queryVars = parseMultiValueParameter(queryVars);
   if (variableIds.indexOf('all') !== -1 && variableIds.length !== 1) {
     throw new RequestValidationError('"all" cannot be specified alongside other variables');
   }
 
   if (variableIds.indexOf('parameter_vars') !== -1) {
-    if (!queryVars) {
+    if (!queryVars || queryVars.length < 1) {
       throw new RequestValidationError('"parameter_vars" specified, but no variables given');
     }
-    if (queryVars !== 'all' &&
-      queryVars.indexOf('all') !== -1 &&
-      queryVars.length !== 1) {
+    if (queryVars.indexOf('all') !== -1 && queryVars.length !== 1) {
       throw new RequestValidationError('"all" cannot be specified alongside other variables');
     }
   } else {
     // can't specify vars in the query AND in the path
-    if (queryVars) {
+    if (queryVars.length > 0) {
       throw new RequestValidationError('Value "parameter_vars" must be used in the url path when variables are passed in the query parameters or request body');
     }
   }
@@ -132,6 +131,8 @@ export function validateVariables(variableIds: string[], queryVars: string | str
  *
  * @param eosdisCollections - An array of collections
  * @param collectionIdParam - The OGC collectionId query parameter
+ * @param queryVars - A string of comma separated variable names or an array of variable names
+ * - taken from the request object via the `variable` parameter
  * @returns an array of objects with a collectionId and list
  *   of variables e.g. `[{ collectionId: C123-PROV1, variables: [<Variable object>] }]`
  * @throws RequestValidationError - if the requested OGC collection ID parameter is not valid
