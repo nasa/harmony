@@ -257,7 +257,6 @@ export interface DataSource {
   collection: string;
   shortName: string;
   versionId: string;
-  providerId: string;
   coordinateVariables: HarmonyVariable[];
   variables: HarmonyVariable[];
   granules: HarmonyGranule[];
