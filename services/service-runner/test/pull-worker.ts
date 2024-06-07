@@ -1,4 +1,3 @@
-import MockAdapter from 'axios-mock-adapter';
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
 import * as sinon from 'sinon';
@@ -10,6 +9,8 @@ import * as pullWorker from '../app/workers/pull-worker';
 import PullWorker from '../app/workers/pull-worker';
 import * as serviceRunner from '../app/service/service-runner';
 import { existsSync, writeFileSync, mkdirSync } from 'fs';
+import { WorkItemRecord } from '../../harmony/app/models/work-item-interface';
+import { buildOperation } from '../../harmony/test/helpers/data-operation';
 
 const {
   _pullWork,
@@ -209,8 +210,32 @@ describe('Pull Worker', async function () {
     describe('when _pullWork runs', async function () {
       let pullStub: SinonStub;
       let doWorkStub: SinonStub;
-      const mock = new MockAdapter(axiosUpdateWork);
+      let axiosStub: SinonStub;
       const dir = `${env.workingDir}/abc123`;
+      const fakeOperation = buildOperation('foo');
+      fakeOperation.sources = [
+        {
+          collection: 'fubar',
+          shortName: 'fubar',
+          versionId: '1',
+          coordinateVariables: [],
+          granules: [],
+          variables: [{ id: 'foo', name: 'foo', fullPath: '' }, { id: 'bar', name: 'bar', fullPath: '' }],
+        },
+      ];
+
+      const fakeWorkItemRecord: WorkItemRecord = {
+        id: 1,
+        jobID: 'foo',
+        serviceID: 'bar',
+        workflowStepIndex: 1,
+        retryCount: 0,
+        duration: 0,
+        updatedAt: new Date(),
+        createdAt: new Date(),
+        sortIndex: 1,
+        operation: fakeOperation,
+      };
       beforeEach(function () {
         if (!existsSync(dir)) {
           mkdirSync(dir);
@@ -219,16 +244,24 @@ describe('Pull Worker', async function () {
         if (!existsSync(file)) {
           writeFileSync(file, '1');
         }
-        pullStub = sinon.stub(pullWorker.exportedForTesting, '_pullWork').callsFake(async function () { return {}; });
+        pullStub = sinon.stub(pullWorker.exportedForTesting, '_pullWork').callsFake(async function () { return { item: fakeWorkItemRecord }; });
         doWorkStub = sinon.stub(pullWorker.exportedForTesting, '_doWork').callsFake(async function (): Promise<WorkItem> {
-          return new WorkItem({});
+          return new WorkItem(fakeWorkItemRecord);
         });
-        mock.onPut().reply(200, 'OK');
+        axiosStub = sinon.stub(axiosUpdateWork, 'put').callsFake(async function (_url, _item) {
+          return [200, 'OK'];
+        });
       });
       this.afterEach(function () {
         pullStub.restore();
         doWorkStub.restore();
-        mock.restore();
+        axiosStub.restore();
+      });
+
+      it('removes the variables from the operation before updating the work-item', async function () {
+        await _pullAndDoWork(false);
+        const update = axiosStub.getCall(0).args[1];
+        expect(update.operation.sources[0].variables).to.eql([]);
       });
 
       it('cleans the working directory', async function () {
@@ -246,7 +279,6 @@ describe('Pull Worker', async function () {
     describe('when _pullWork throws an exception', async function () {
       let pullStub: SinonStub;
       let doWorkStub: SinonStub;
-      const mock = new MockAdapter(axiosUpdateWork);
       beforeEach(function () {
         pullStub = sinon.stub(pullWorker.exportedForTesting, '_pullWork').callsFake(async function () {
           throw new Error('something bad happened');
@@ -254,12 +286,10 @@ describe('Pull Worker', async function () {
         doWorkStub = sinon.stub(pullWorker.exportedForTesting, '_doWork').callsFake(async function (): Promise<WorkItem> {
           return new WorkItem({});
         });
-        mock.onPut().reply(200, 'OK');
       });
       this.afterEach(function () {
         pullStub.restore();
         doWorkStub.restore();
-        mock.restore();
       });
 
       it('deletes the WORKING lock file', async function () {
@@ -276,7 +306,6 @@ describe('Pull Worker', async function () {
     describe('when _doWork throws an exception', async function () {
       let pullStub: SinonStub;
       let doWorkStub: SinonStub;
-      const mock = new MockAdapter(axiosUpdateWork);
       beforeEach(function () {
         pullStub = sinon.stub(pullWorker.exportedForTesting, '_pullWork').callsFake(async function (): Promise<{ item?: WorkItem; status?: number; error?: string }> {
           return {};
@@ -285,12 +314,10 @@ describe('Pull Worker', async function () {
           throw new Error('something bad happened');
         });
 
-        mock.onPut().reply(200, 'OK');
       });
       this.afterEach(function () {
         pullStub.restore();
         doWorkStub.restore();
-        mock.restore();
       });
 
       it('deletes the WORKING lock file', async function () {

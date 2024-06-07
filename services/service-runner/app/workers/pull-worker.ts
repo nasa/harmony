@@ -222,6 +222,12 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
       workItem.duration = Date.now() - startTime;
       // call back to Harmony to mark the work unit as complete or failed
       workItemLogger.debug(`Sending response to Harmony for results of work item with id ${workItem.id} for job id ${workItem.jobID}`);
+
+      // don't need to send variables back
+      for (const source of workItem.operation.sources) {
+        source.variables = [];
+      }
+
       try {
         await axiosUpdateWork.put(`${workUrl}/${workItem.id}`, workItem);
       } catch (e) {
