@@ -1,0 +1,31 @@
+POST /search/granules.json
+accept: application/json
+content-type: multipart/form-data; boundary=----------------------------012345678901234567890123
+accept-encoding: gzip,deflate
+body: ------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"page_size\"\r\n\r\n2\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"shapefile\"; filename=\"shapefile\"\r\nContent-Type: application/geo+json\r\n\r\n{\"type\":\"FeatureCollection\",\"features\":[{\"type\":\"Feature\",\"geometry\":{\"type\":\"Polygon\",\"coordinates\":[[[-65.390625,-13.239945],[-29.882813,-50.958427],[17.929688,30.145127],[-65.390625,-13.239945]]]},\"properties\":{}}]}\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"collection_concept_id\"\r\n\r\nC1233800302-EEDTEST\r\n------------------------------012345678901234567890123--\r\n
+
+HTTP/1.1 200 OK
+content-type: application/json;charset=utf-8
+transfer-encoding: chunked
+connection: close
+date: Mon, 10 Jun 2024 21:19:32 GMT
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: 6d86e098-3984-4085-b544-c7a2b6d57dd9
+content-sha1: 565ec28f79e4b53dacd14043f5d3adf8f472350c
+strict-transport-security: max-age=31536000; includeSubDomains; preload
+cmr-search-after: ["eedtest",1577844000000,1233800344]
+cmr-hits: 79
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Search-After, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 40
+x-request-id: wyyEIiO5a2ph9tPa3bjA1GHIPc7N9ZF2uFp0m6xeyyx7Yp5GAnxiGA==
+content-md5: c3fbf44a52eb9ef43d7ace6935b9c137
+server: ServerTokens ProductOnly
+x-cache: Miss from cloudfront
+via: 1.1 c601f966b37ebf3a1ddf28f033b35904.cloudfront.net (CloudFront)
+x-amz-cf-pop: SFO53-C1
+x-amz-cf-id: wyyEIiO5a2ph9tPa3bjA1GHIPc7N9ZF2uFp0m6xeyyx7Yp5GAnxiGA==
+
+{"feed":{"updated":"2024-06-10T21:19:32.163Z","id":"https://cmr.uat.earthdata.nasa.gov:443/search/granules.json","title":"ECHO granule metadata","entry":[{"producer_granule_id":"001_00_7f00ff_global","boxes":["-90 -180 90 180"],"time_start":"2020-01-01T00:00:00.000Z","updated":"2020-02-25T21:43:11.000Z","dataset_id":"Harmony Example Data","data_center":"EEDTEST","title":"001_00_7f00ff_global","coordinate_system":"CARTESIAN","day_night_flag":"BOTH","time_end":"2020-01-01T01:59:59.000Z","id":"G1233800343-EEDTEST","original_format":"UMM_JSON","granule_size":"1.3701868057250977","browse_flag":false,"collection_concept_id":"C1233800302-EEDTEST","online_access_flag":true,"links":[{"rel":"http://esipfed.org/ns/fedsearch/1.1/data#","type":"application/x-netcdf","hreflang":"en-US","href":"https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-eedtest-data/C1233800302-EEDTEST/nc/001_00_7f00ff_global.nc"},{"rel":"http://esipfed.org/ns/fedsearch/1.1/data#","type":"image/tiff","hreflang":"en-US","href":"https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-eedtest-data/C1233800302-EEDTEST/tiff/001_00_7f00ff_global.tif"}]},{"producer_granule_id":"001_01_7f00ff_africa","boxes":["-34.9 -25.4 37.4 63.5"],"time_start":"2020-01-01T02:00:00.000Z","updated":"2020-02-25T21:43:11.000Z","dataset_id":"Harmony Example Data","data_center":"EEDTEST","title":"001_01_7f00ff_africa","coordinate_system":"CARTESIAN","day_night_flag":"BOTH","time_end":"2020-01-01T03:59:59.000Z","id":"G1233800344-EEDTEST","original_format":"UMM_JSON","granule_size":"0.29718685150146484","browse_flag":false,"collection_concept_id":"C1233800302-EEDTEST","online_access_flag":true,"links":[{"rel":"http://esipfed.org/ns/fedsearch/1.1/data#","type":"application/x-netcdf","hreflang":"en-US","href":"https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-eedtest-data/C1233800302-EEDTEST/nc/001_01_7f00ff_africa.nc"},{"rel":"http://esipfed.org/ns/fedsearch/1.1/data#","type":"image/tiff","hreflang":"en-US","href":"https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-eedtest-data/C1233800302-EEDTEST/tiff/001_01_7f00ff_africa.tif"}]}]}}

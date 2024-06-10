@@ -32,9 +32,22 @@ const openApiRoot = path.join(__dirname, '..', '..', 'schemas', 'ogc-api-edr', v
 const openApiPath = path.join(openApiRoot, `ogc-api-edr-v${version}.yml`);
 export const openApiContent = fs.readFileSync(openApiPath, 'utf-8');
 const ogcSchemaEdr = yaml.load(openApiContent, { schema: yaml.DEFAULT_SCHEMA }) as OgcSchemaEdr;
-export const edrGetParams = ogcSchemaEdr
-  .paths['/collections/{collectionId}/cube'].get.parameters
-  .map(param => param.$ref.split('/').pop());
+
+/**
+ * Parse parameter entries from a schema file
+ * @param action - type of request in the schema, e.g., 'cube', 'area'
+ * @returns an array of parameter names
+ */
+function getParameters(action: string): string[] {
+  return ogcSchemaEdr
+    .paths[`/collections/{collectionId}/${action}`].get.parameters
+    .map(param => param.$ref.split('/').pop());
+}
+
+export const edrGetParams = {
+  'cube': getParameters('cube'),
+  'area': getParameters('area'),
+};
 
 /**
  * Express handler that returns a 501 error and "not yet implemented" message to the client
