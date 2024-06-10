@@ -19,14 +19,14 @@
     "notes": "Will fix in HARMONY-1729",
     "expiry": "2024-08-01"
   },
-  "1096915": {
+  "1097493": {
     "active": true,
-    "notes": "Will not fix. Only moderate vulnerability for functionality we don't use. Upgrade would break gdal-async dependency which is fixed to a specific version.",
-    "expiry": "2024-08-01"
+    "notes": "ignored because it doesn't affect us and there is not current patch",
+    "expiry": "2024-09-01"
   },
   "1097346": {
     "active": true,
     "notes": "ignored because it doesn't affect us and there is not current patch",
-    "expiry": "2024-08-01"
+    "expiry": "2024-09-01"
   }
 }
