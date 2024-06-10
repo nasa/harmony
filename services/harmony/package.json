@@ -203,6 +203,7 @@
   "overrides": {
     "trim-newlines": "4.0.1",
     "fast-json-patch": "3.1.1",
-    "semver": "^7.6.2"
+    "semver": "^7.6.2",
+    "braces": "^3.0.3"
   }
 }
