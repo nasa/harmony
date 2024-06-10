@@ -473,6 +473,7 @@ export function itIncludesRequestUrl(expectedPath: string): void {
 export function itRedirectsToJobStatusUrl(): void {
   it('returns a redirect to the job status URL', function () {
     const { status, headers } = this.res;
+    console.log(JSON.stringify(this.res));
     const { location } = headers;
     expect(status).to.equal(303);
     expect(location).to.match(/^\/jobs\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
