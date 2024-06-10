@@ -12,6 +12,8 @@ import { stub } from 'sinon';
 import env from '../../app/util/env';
 import { hookDatabaseFailure } from '../helpers/db';
 
+const bigTriangleWKT = 'POLYGON ((-65.390625 -13.239945, -29.882813 -50.958427, 17.929688 30.145127, -65.390625 -13.239945))';
+
 describe('OGC API EDR - getEdrArea', function () {
   const collection = 'C1233800302-EEDTEST';
   const granuleId = 'G1233800352-EEDTEST';
@@ -39,7 +41,7 @@ describe('OGC API EDR - getEdrArea', function () {
           crs: 'EPSG:4326',
           // TODO: there's no service that can also support dimension subsetting for this collection
           // subset: ['lat(0:10)', 'lon(-20.1:20)', 'time("2020-01-02T00:00:00.000Z":"2020-01-02T01:00:00.000Z")', 'foo(1.1:10)'],
-          coords: 'POLYGON ((-64.8 32.3, -65.5 18.3, -80.3 25.2, -64.8 32.3))',
+          coords: bigTriangleWKT,
           datetime: '2020-01-02T00:00:00.000Z/2020-01-02T01:00:00.000Z',
           interpolation: 'near',
           // TODO: it might only make sense to include width and height with a scaleExtent
@@ -98,8 +100,9 @@ describe('OGC API EDR - getEdrArea', function () {
             expect(isUUID(this.service.operation.requestId)).to.equal(true);
           });
 
-          it('transforms subset lat and lon parameters into a backend bounding box subset request', function () {
-            expect(this.service.operation.boundingRectangle).to.eql([-20.1, 0, 20, 10]);
+          it('includes a shapefile in the service operation', function () {
+            console.log(JSON.stringify(this.service));
+            expect(this.service.operation.model.subset.shape).to.eql('{"type":"FeatureCollection","features":[{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-65.390625,-13.239945],[-29.882813,-50.958427],[17.929688,30.145127],[-65.390625,-13.239945]]]},"properties":{}}]}');
           });
 
           // TODO: Add dimension subsetting test once collection supports it
@@ -266,7 +269,7 @@ describe('OGC API EDR - getEdrArea', function () {
 
   describe('when provided an incorrectly named set of parameters', function () {
     StubService.hook({ params: { redirect: 'http://example.com' } });
-    hookEdrRequest(version, collection, 'area', { query: { coords: 'POLYGON ((-64.8 32.3, -65.5 18.3, -80.3 25.2, -64.8 32.3))', granuleId, outputCrz: '', maxResultz: 100, 'parameter-name': variableName } });
+    hookEdrRequest(version, collection, 'area', { query: { coords: bigTriangleWKT, granuleId, outputCrz: '', maxResultz: 100, 'parameter-name': variableName } });
     it('rejects the request with an informative error message', function () {
       expect(this.res.status).to.equal(400);
       expect(this.res.text).to.include('Invalid parameter(s): outputCrz and maxResultz');
@@ -276,7 +279,7 @@ describe('OGC API EDR - getEdrArea', function () {
 
   describe('when passed a blank crs', function () {
     StubService.hook({ params: { redirect: 'http://example.com' } });
-    hookEdrRequest(version, collection, 'area', { query: { coords: 'POLYGON ((-64.8 32.3, -65.5 18.3, -80.3 25.2, -64.8 32.3))', granuleId, crs: '', 'parameter-name': variableName } });
+    hookEdrRequest(version, collection, 'area', { query: { coords: bigTriangleWKT, granuleId, crs: '', 'parameter-name': variableName } });
     it('accepts the request, passing an empty CRS to the backend', function () {
       expect(this.res.status).to.be.lessThan(400);
       expect(this.service.operation.crs).to.not.be;
@@ -297,7 +300,7 @@ describe('OGC API EDR - getEdrArea', function () {
   for (const test of multiVariablesTests) {
     describe(test.description, function () {
       const query = {
-        coords: 'POLYGON ((-64.8 32.3, -65.5 18.3, -80.3 25.2, -64.8 32.3))',
+        coords: bigTriangleWKT,
         granuleId,
         'parameter-name': test.variableParam,
       };
@@ -319,7 +322,7 @@ describe('OGC API EDR - getEdrArea', function () {
   describe('Subsetting variables with duplicate in mixed name and concept-id', function () {
     const variableId1 = 'V1233801695-EEDTEST';
     const query = {
-      coords: 'POLYGON ((-64.8 32.3, -65.5 18.3, -80.3 25.2, -64.8 32.3))',
+      coords: bigTriangleWKT,
       granuleId,
       'parameter-name': `red_var,${variableId1}`,
     };
@@ -336,7 +339,7 @@ describe('OGC API EDR - getEdrArea', function () {
 
   describe('Subsetting without parameter-name default to "all"', function () {
     const query = {
-      coords: 'POLYGON ((-64.8 32.3, -65.5 18.3, -80.3 25.2, -64.8 32.3))',
+      coords: bigTriangleWKT,
       granuleId,
     };
 
@@ -344,6 +347,7 @@ describe('OGC API EDR - getEdrArea', function () {
     hookEdrRequest(version, collection, 'area', { query });
 
     it('passes no variables to the backend service', function () {
+      console.log(JSON.stringify(this.res));
       const source = this.service.operation.sources[0];
       expect(source.variables).to.not.be;
     });
@@ -352,7 +356,7 @@ describe('OGC API EDR - getEdrArea', function () {
   describe('Subsetting to "all" variables', function () {
     const variableNames = 'all';
     const query = {
-      coords: 'POLYGON ((-64.8 32.3, -65.5 18.3, -80.3 25.2, -64.8 32.3))',
+      coords: bigTriangleWKT,
       granuleId,
       'parameter-name': variableNames,
     };
@@ -367,7 +371,7 @@ describe('OGC API EDR - getEdrArea', function () {
   });
 
   describe('Not specifying a single granule ID', function () {
-    const query = { coords: 'POLYGON ((-64.8 32.3, -65.5 18.3, -80.3 25.2, -64.8 32.3))', 'parameter-name': variableName };
+    const query = { coords: bigTriangleWKT, 'parameter-name': variableName };
 
     StubService.hook({ params: { status: 'successful' } });
     hookEdrRequest(version, collection, 'area', { query });
@@ -395,7 +399,7 @@ describe('OGC API EDR - getEdrArea', function () {
 
   describe('when provided a valid temporal range', function () {
     const query = {
-      coords: 'POLYGON ((-64.8 32.3, -65.5 18.3, -80.3 25.2, -64.8 32.3))',
+      coords: bigTriangleWKT,
       'parameter-name': variableName,
       crs: 'EPSG:4326',
       // Time range matches exactly one granule
@@ -427,7 +431,7 @@ describe('OGC API EDR - getEdrArea', function () {
 
       describe('and making a request would otherwise be synchronous', function () {
         hookEdrRequest(version, collection, 'area',
-          { query: { coords: 'POLYGON ((-64.8 32.3, -65.5 18.3, -80.3 25.2, -64.8 32.3))', granuleId, forceAsync, 'parameter-name': variableName } });
+          { query: { coords: bigTriangleWKT, granuleId, forceAsync, 'parameter-name': variableName } });
 
         it('performs the request asynchronously', function () {
           expect(this.service.operation.isSynchronous).to.equal(false);
@@ -435,7 +439,7 @@ describe('OGC API EDR - getEdrArea', function () {
       });
 
       describe('and making a request would otherwise be asynchronous', function () {
-        hookEdrRequest(version, collection, 'area', { query: { coords: 'POLYGON ((-64.8 32.3, -65.5 18.3, -80.3 25.2, -64.8 32.3))', forceAsync, 'parameter-name': variableName } });
+        hookEdrRequest(version, collection, 'area', { query: { coords: bigTriangleWKT, forceAsync, 'parameter-name': variableName } });
 
         it('performs the request asynchronously', function () {
           expect(this.service.operation.isSynchronous).to.equal(false);
@@ -448,7 +452,7 @@ describe('OGC API EDR - getEdrArea', function () {
 
       describe('and making a request would otherwise be synchronous', function () {
         hookEdrRequest(version, collection, 'area',
-          { query: { coords: 'POLYGON ((-64.8 32.3, -65.5 18.3, -80.3 25.2, -64.8 32.3))', granuleId, forceAsync, 'parameter-name': variableName } });
+          { query: { coords: bigTriangleWKT, granuleId, forceAsync, 'parameter-name': variableName } });
 
         it('performs the request synchronously', function () {
           expect(this.service.operation.isSynchronous).to.equal(true);
@@ -456,7 +460,7 @@ describe('OGC API EDR - getEdrArea', function () {
       });
 
       describe('and making a request would otherwise be asynchronous', function () {
-        hookEdrRequest(version, collection, 'area', { query: { coords: 'POLYGON ((-64.8 32.3, -65.5 18.3, -80.3 25.2, -64.8 32.3))', forceAsync, 'parameter-name': variableName } });
+        hookEdrRequest(version, collection, 'area', { query: { coords: bigTriangleWKT, forceAsync, 'parameter-name': variableName } });
 
         it('performs the request asynchronously', function () {
           expect(this.service.operation.isSynchronous).to.equal(false);
@@ -494,7 +498,7 @@ describe('OGC API EDR - getEdrArea', function () {
 
     describe('and maxResults is not set for the query', function () {
 
-      hookEdrRequest(version, collection, 'area', { username: 'jdoe1', query: { coords: 'POLYGON ((-64.8 32.3, -65.5 18.3, -80.3 25.2, -64.8 32.3))', 'parameter-name': variableName } });
+      hookEdrRequest(version, collection, 'area', { username: 'jdoe1', query: { coords: bigTriangleWKT, 'parameter-name': variableName } });
       describe('retrieving its job status', function () {
         hookRedirect('jdoe1');
         it('returns a human-readable message field indicating the request has been limited to a subset of the granules determined by the collection configuration', function () {
@@ -512,7 +516,7 @@ describe('OGC API EDR - getEdrArea', function () {
     describe('and maxResults from the query is set to a value greater than the granule limit for the collection', function () {
       const maxResults = 10;
 
-      hookEdrRequest(version, collection, 'area', { username: 'jdoe1', query: { coords: 'POLYGON ((-64.8 32.3, -65.5 18.3, -80.3 25.2, -64.8 32.3))', maxResults, 'parameter-name': variableName } });
+      hookEdrRequest(version, collection, 'area', { username: 'jdoe1', query: { coords: bigTriangleWKT, maxResults, 'parameter-name': variableName } });
       describe('retrieving its job status', function () {
         hookRedirect('jdoe1');
         it('returns a human-readable message field indicating the request has been limited to a subset of the granules determined by the collection configuration', function () {
@@ -530,7 +534,7 @@ describe('OGC API EDR - getEdrArea', function () {
     describe('and maxResults from the query is set to a value less than the granule limit for the collection', function () {
       const maxResults = 2;
 
-      hookEdrRequest(version, collection, 'area', { username: 'jdoe1', query: { coords: 'POLYGON ((-64.8 32.3, -65.5 18.3, -80.3 25.2, -64.8 32.3))', maxResults, 'parameter-name': variableName } });
+      hookEdrRequest(version, collection, 'area', { username: 'jdoe1', query: { coords: bigTriangleWKT, maxResults, 'parameter-name': variableName } });
       describe('retrieving its job status', function () {
         hookRedirect('jdoe1');
         it('returns a human-readable message field indicating the request has been limited to a subset of the granules determined by maxResults', function () {
@@ -553,7 +557,7 @@ describe('OGC API EDR - getEdrArea', function () {
         this.glStub.restore();
       });
 
-      hookEdrRequest(version, collection, 'area', { username: 'jdoe1', query: { coords: 'POLYGON ((-64.8 32.3, -65.5 18.3, -80.3 25.2, -64.8 32.3))', 'parameter-name': variableName } });
+      hookEdrRequest(version, collection, 'area', { username: 'jdoe1', query: { coords: bigTriangleWKT, 'parameter-name': variableName } });
       hookRedirect('jdoe1');
 
       it('returns a warning message about maxResults limiting the number of results', function () {
@@ -596,7 +600,7 @@ describe('OGC API EDR - getEdrArea', function () {
 
     describe('and maxResults is not set for the query', function () {
 
-      hookEdrRequest(version, collection, 'area', { username: 'jdoe1', query: { coords: 'POLYGON ((-64.8 32.3, -65.5 18.3, -80.3 25.2, -64.8 32.3))', 'parameter-name': variableName } });
+      hookEdrRequest(version, collection, 'area', { username: 'jdoe1', query: { coords: bigTriangleWKT, 'parameter-name': variableName } });
       describe('retrieving its job status', function () {
         hookRedirect('jdoe1');
         it('returns a human-readable message field indicating the request has been limited to a subset of the granules determined by the collection configuration', function () {
@@ -614,7 +618,7 @@ describe('OGC API EDR - getEdrArea', function () {
     describe('and maxResults from the query is set to a value greater than the granule limit for the collection', function () {
       const maxResults = 10;
 
-      hookEdrRequest(version, collection, 'area', { username: 'jdoe1', query: { coords: 'POLYGON ((-64.8 32.3, -65.5 18.3, -80.3 25.2, -64.8 32.3))', maxResults, 'parameter-name': variableName } });
+      hookEdrRequest(version, collection, 'area', { username: 'jdoe1', query: { coords: bigTriangleWKT, maxResults, 'parameter-name': variableName } });
       describe('retrieving its job status', function () {
         hookRedirect('jdoe1');
         it('returns a human-readable message field indicating the request has been limited to a subset of the granules determined by the collection configuration', function () {
@@ -632,7 +636,7 @@ describe('OGC API EDR - getEdrArea', function () {
     describe('and maxResults from the query is set to a value less than the granule limit for the collection', function () {
       const maxResults = 2;
 
-      hookEdrRequest(version, collection, 'area', { username: 'jdoe1', query: { coords: 'POLYGON ((-64.8 32.3, -65.5 18.3, -80.3 25.2, -64.8 32.3))', maxResults, 'parameter-name': variableName } });
+      hookEdrRequest(version, collection, 'area', { username: 'jdoe1', query: { coords: bigTriangleWKT, maxResults, 'parameter-name': variableName } });
       describe('retrieving its job status', function () {
         hookRedirect('jdoe1');
         it('returns a human-readable message field indicating the request has been limited to a subset of the granules determined by maxResults', function () {
@@ -655,7 +659,7 @@ describe('OGC API EDR - getEdrArea', function () {
         this.glStub.restore();
       });
 
-      hookEdrRequest(version, collection, 'area', { username: 'jdoe1', query: { coords: 'POLYGON ((-64.8 32.3, -65.5 18.3, -80.3 25.2, -64.8 32.3))', 'parameter-name': variableName } });
+      hookEdrRequest(version, collection, 'area', { username: 'jdoe1', query: { coords: bigTriangleWKT, 'parameter-name': variableName } });
       hookRedirect('jdoe1');
 
       it('returns a warning message about maxResults limiting the number of results', function () {
@@ -681,7 +685,7 @@ describe('OGC API EDR - getEdrArea', function () {
 
     describe('when providing an accept header for an unsupported format', function () {
       const headers = { accept: unsupportedFormat };
-      const query = { coords: 'POLYGON ((-64.8 32.3, -65.5 18.3, -80.3 25.2, -64.8 32.3))', granuleId, 'parameter-name': 'all' };
+      const query = { coords: bigTriangleWKT, granuleId, 'parameter-name': 'all' };
       hookEdrRequest(version, collection, 'area', { headers, query });
       it('returns a 422 error response', function () {
         expect(this.res.status).to.equal(422);
@@ -697,7 +701,7 @@ describe('OGC API EDR - getEdrArea', function () {
     });
 
     describe('when providing an accept header and a format parameter', function () {
-      const pngQuery = { coords: 'POLYGON ((-64.8 32.3, -65.5 18.3, -80.3 25.2, -64.8 32.3))', granuleId, 'parameter-name': variableName, f: png };
+      const pngQuery = { coords: bigTriangleWKT, granuleId, 'parameter-name': variableName, f: png };
       const headers = { accept: tiff };
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookEdrRequest(version, collection, 'area', { query: pngQuery, headers });
@@ -708,7 +712,7 @@ describe('OGC API EDR - getEdrArea', function () {
 
     describe('when providing */* for the accept header', function () {
       const headers = { accept: anyWildcard };
-      const query = { coords: 'POLYGON ((-64.8 32.3, -65.5 18.3, -80.3 25.2, -64.8 32.3))', granuleId, 'parameter-name': variableName };
+      const query = { coords: bigTriangleWKT, granuleId, 'parameter-name': variableName };
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookEdrRequest(version, collection, 'area', { headers, query });
       it('chooses the first output format supported by the service (see services.yml)', function () {
@@ -718,7 +722,7 @@ describe('OGC API EDR - getEdrArea', function () {
 
     describe('when providing */tiff for the accept header', function () {
       const headers = { accept: imageWildcard };
-      const query = { coords: 'POLYGON ((-64.8 32.3, -65.5 18.3, -80.3 25.2, -64.8 32.3))', granuleId, 'parameter-name': variableName };
+      const query = { coords: bigTriangleWKT, granuleId, 'parameter-name': variableName };
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookEdrRequest(version, collection, 'area', { headers, query });
       it('selects the first valid tiff format supported', function () {
@@ -728,7 +732,7 @@ describe('OGC API EDR - getEdrArea', function () {
 
     describe('when providing image/* for the accept header', function () {
       const headers = { accept: wildcardTiff };
-      const query = { coords: 'POLYGON ((-64.8 32.3, -65.5 18.3, -80.3 25.2, -64.8 32.3))', granuleId, 'parameter-name': variableName };
+      const query = { coords: bigTriangleWKT, granuleId, 'parameter-name': variableName };
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookEdrRequest(version, collection, 'area', { headers, query });
       it('selects the first valid image format supported', function () {
@@ -738,7 +742,7 @@ describe('OGC API EDR - getEdrArea', function () {
 
     describe('when providing an accept header with a parameter', function () {
       const headers = { accept: `${zarr};q=0.9` };
-      const query = { coords: 'POLYGON ((-64.8 32.3, -65.5 18.3, -80.3 25.2, -64.8 32.3))', granuleId, 'parameter-name': 'all' };
+      const query = { coords: bigTriangleWKT, granuleId, 'parameter-name': 'all' };
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookEdrRequest(version, collection, 'area', { headers, query });
       it('correctly parses the format from the header', function () {
@@ -749,7 +753,7 @@ describe('OGC API EDR - getEdrArea', function () {
     describe('when providing multiple formats supported by different services', function () {
       const headers = { accept: `${zarr}, ${tiff}` };
       describe('when requesting variable subsetting which is only supported by one of the services', function () {
-        const query = { coords: 'POLYGON ((-64.8 32.3, -65.5 18.3, -80.3 25.2, -64.8 32.3))', granuleId, 'parameter-name': variableName };
+        const query = { coords: bigTriangleWKT, granuleId, 'parameter-name': variableName };
         StubService.hook({ params: { redirect: 'http://example.com' } });
         hookEdrRequest(version, collection, 'area', { headers, query });
         it('uses the backend service that supports variable subsetting', function () {
@@ -761,7 +765,7 @@ describe('OGC API EDR - getEdrArea', function () {
       });
 
       describe('when not requesting variable subsetting so either service could be used', function () {
-        const query = { coords: 'POLYGON ((-64.8 32.3, -65.5 18.3, -80.3 25.2, -64.8 32.3))', granuleId, 'parameter-name': 'all' };
+        const query = { coords: bigTriangleWKT, granuleId, 'parameter-name': 'all' };
         StubService.hook({ params: { redirect: 'http://example.com' } });
         hookEdrRequest(version, collection, 'area', { headers, query });
         it('uses the first format in the list', function () {
@@ -775,7 +779,7 @@ describe('OGC API EDR - getEdrArea', function () {
 
     describe('when providing multiple formats with the highest priority being unsupported', function () {
       const headers = { accept: `${unsupportedFormat};q=1.0, ${zarr};q=0.5, ${tiff};q=0.8, ${png};q=0.85` };
-      const query = { coords: 'POLYGON ((-64.8 32.3, -65.5 18.3, -80.3 25.2, -64.8 32.3))', granuleId, 'parameter-name': variableName };
+      const query = { coords: bigTriangleWKT, granuleId, 'parameter-name': variableName };
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookEdrRequest(version, collection, 'area', { headers, query });
       it('uses the highest quality value format that is supported', function () {
@@ -788,7 +792,7 @@ describe('OGC API EDR - getEdrArea', function () {
 
     describe('when providing multiple formats and not specifying a quality value for one of them', function () {
       const headers = { accept: `${zarr};q=0.5, ${tiff};q=0.8, ${png}` };
-      const query = { coords: 'POLYGON ((-64.8 32.3, -65.5 18.3, -80.3 25.2, -64.8 32.3))', granuleId, 'parameter-name': variableName };
+      const query = { coords: bigTriangleWKT, granuleId, 'parameter-name': variableName };
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookEdrRequest(version, collection, 'area', { headers, query });
       it('treats the unspecified quality value as 1.0', function () {
@@ -798,7 +802,7 @@ describe('OGC API EDR - getEdrArea', function () {
 
     describe('when requesting an unsupported format followed by */*', function () {
       const headers = { accept: `${unsupportedFormat}, ${anyWildcard}` };
-      const query = { coords: 'POLYGON ((-64.8 32.3, -65.5 18.3, -80.3 25.2, -64.8 32.3))', granuleId, 'parameter-name': variableName };
+      const query = { coords: bigTriangleWKT, granuleId, 'parameter-name': variableName };
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookEdrRequest(version, collection, 'area', { headers, query });
       it('returns a redirect 303 (and not a 404 error)', function () {
@@ -812,16 +816,17 @@ describe('OGC API EDR - getEdrArea', function () {
   });
 
   describe('when requesting no data transformations', function () {
-    const query = { coords: 'POLYGON ((-64.8 32.3, -65.5 18.3, -80.3 25.2, -64.8 32.3))', 'parameter-name': 'all' };
+    const query = { coords: bigTriangleWKT, 'parameter-name': 'all' };
     StubService.hook({ params: { redirect: 'http://example.com' } });
     hookEdrRequest(version, collection, 'area', { query });
     it('selects the download link service to process the request', function () {
+      console.log(JSON.stringify(this.res));
       expect(this.service.config.name).to.equal('harmony/download');
     });
   });
 
   describe('when the database catches fire during an asynchronous request', function () {
-    const query = { coords: 'POLYGON ((-64.8 32.3, -65.5 18.3, -80.3 25.2, -64.8 32.3))', 'parameter-name': variableName };
+    const query = { coords: bigTriangleWKT, 'parameter-name': variableName };
     hookDatabaseFailure();
     StubService.hook({ params: { redirect: 'http://example.com' } });
     hookEdrRequest(version, collection, 'area', { query });
@@ -863,6 +868,7 @@ describe('OGC API EDR - getEdrArea', function () {
           'area',
           { query: queryParams },
         );
+        console.log(JSON.stringify(res));
         expect(res.status).to.equal(400);
         expect(res.body).to.eql({
           code,
@@ -872,57 +878,57 @@ describe('OGC API EDR - getEdrArea', function () {
     }
 
     itReturnsAValidationError(
-      { granuleId: 'G123-BOGUS' },
+      { granuleId: 'G123-BOGUS', coords: bigTriangleWKT },
       'No matching granules found.',
       'harmony.RequestValidationError',
     );
     itReturnsAValidationError(
-      { granuleId: '' },
+      { granuleId: '', coords: bigTriangleWKT },
       'query parameter "granuleId[0]" should NOT be shorter than 1 characters',
     );
     itReturnsAValidationError(
-      { granuleId, crs: 'EPSG:1' },
+      { granuleId, crs: 'EPSG:1', coords: bigTriangleWKT },
       'query parameter "crs/outputCrs" could not be parsed.  Try an EPSG code or Proj4 string.',
       'harmony.RequestValidationError',
     );
     itReturnsAValidationError(
-      { granuleId, scaleExtent: '1,55,100,250,330' },
+      { granuleId, scaleExtent: '1,55,100,250,330', coords: bigTriangleWKT },
       'query parameter "scaleExtent" should NOT have more than 4 items',
     );
     itReturnsAValidationError(
-      { granuleId, scaleExtent: '1,55,100' },
+      { granuleId, scaleExtent: '1,55,100', coords: bigTriangleWKT },
       'query parameter "scaleExtent" should NOT have fewer than 4 items',
     );
     itReturnsAValidationError(
-      { granuleId, scaleExtent: '1,55,100,nonsense' },
+      { granuleId, scaleExtent: '1,55,100,nonsense', coords: bigTriangleWKT },
       'query parameter "scaleExtent[3]" should be number',
     );
     itReturnsAValidationError(
-      { granuleId, scaleSize: '1.5' },
+      { granuleId, scaleSize: '1.5', coords: bigTriangleWKT },
       'query parameter "scaleSize" should NOT have fewer than 2 items',
     );
     itReturnsAValidationError(
-      { granuleId, scaleSize: '1.5,3,35' },
+      { granuleId, scaleSize: '1.5,3,35', coords: bigTriangleWKT },
       'query parameter "scaleSize" should NOT have more than 2 items',
     );
     itReturnsAValidationError(
-      { granuleId, scaleSize: '1.5,nonsense' },
+      { granuleId, scaleSize: '1.5,nonsense', coords: bigTriangleWKT },
       'query parameter "scaleSize[1]" should be number',
     );
     itReturnsAValidationError(
-      { granuleId, scaleSize: '-1.3,55.3' },
+      { granuleId, scaleSize: '-1.3,55.3', coords: bigTriangleWKT },
       'query parameter "scaleSize[0]" should be >= 0',
     );
-    itReturnsAValidationError({ granuleId, width: 0 }, 'query parameter "width" should be >= 1');
-    itReturnsAValidationError({ granuleId, height: 0 }, 'query parameter "height" should be >= 1');
+    itReturnsAValidationError({ granuleId, width: 0, coords: bigTriangleWKT }, 'query parameter "width" should be >= 1');
+    itReturnsAValidationError({ granuleId, height: 0, coords: bigTriangleWKT }, 'query parameter "height" should be >= 1');
     // See util-parameter-parsing.js spec for full details on spatial and temporal subset validation
     itReturnsAValidationError(
-      { granuleId, subset: 'lat(nonsense:20)' },
+      { granuleId, subset: 'lat(nonsense:20)', coords: bigTriangleWKT },
       'query parameter "subset" subset dimension "lat" has an invalid numeric value "nonsense"',
       'harmony.RequestValidationError',
     );
     itReturnsAValidationError(
-      { granuleId, subset: 'time("nonsense":"2010-01-01T01:00:00Z")' },
+      { granuleId, subset: 'time("nonsense":"2010-01-01T01:00:00Z")', coords: bigTriangleWKT },
       'query parameter "subset" subset dimension "time" has an invalid date time "nonsense"',
       'harmony.RequestValidationError',
     );
@@ -933,7 +939,7 @@ describe('OGC API EDR - getEdrArea', function () {
         version,
         collection,
         'area',
-        { query: { coords: 'POLYGON ((-64.8 32.3, -65.5 18.3, -80.3 25.2, -64.8 32.3))', granuleId, 'parameter-name': 'NotAVariable' } },
+        { query: { coords: bigTriangleWKT, granuleId, 'parameter-name': 'NotAVariable' } },
       );
       expect(res.status).to.equal(400);
       expect(res.body).to.eql({
@@ -948,7 +954,7 @@ describe('OGC API EDR - getEdrArea', function () {
         version,
         collection,
         'area',
-        { query: { coords: 'POLYGON ((-64.8 32.3, -65.5 18.3, -80.3 25.2, -64.8 32.3))', granuleId, 'parameter-name': `all,${variableName}` } },
+        { query: { coords: bigTriangleWKT, granuleId, 'parameter-name': `all,${variableName}` } },
       );
       expect(res.status).to.equal(400);
       expect(res.body).to.eql({
@@ -960,7 +966,7 @@ describe('OGC API EDR - getEdrArea', function () {
 
   describe('when using a collection with coordinate variables', function () {
     const collectionId = 'C1243747507-EEDTEST';
-    const query = { coords: 'POLYGON ((-64.8 32.3, -65.5 18.3, -80.3 25.2, -64.8 32.3))', 'parameter-name': 'sea_surface_temperature' };
+    const query = { coords: bigTriangleWKT, 'parameter-name': 'sea_surface_temperature' };
     StubService.hook({ params: { redirect: 'http://example.com' } });
 
     hookEdrRequest(version, collectionId, 'area', { query });
@@ -983,7 +989,7 @@ describe('OGC API EDR - getEdrArea with the extend query parameter', async funct
   hookEdrRequest('1.1.0',
     'C1233800302-EEDTEST',
     'area',
-    { query: { coords: 'POLYGON ((-64.8 32.3, -65.5 18.3, -80.3 25.2, -64.8 32.3))', 'parameter-name': 'all', extend: 'dimension_var', skipPreview: 'true', maxResults: 2 }, username: 'joe' });
+    { query: { coords: bigTriangleWKT, 'parameter-name': 'all', extend: 'dimension_var', skipPreview: 'true', maxResults: 2 }, username: 'joe' });
 
   it('returns a 422 error response', function () {
     expect(this.res.status).to.equal(422);
@@ -1018,7 +1024,7 @@ describe('OGC API EDR - getEdrArea with a collection not configured for services
   hookServersStartStop();
 
   describe('when requesting an area subset', function () {
-    const query = { coords: 'POLYGON ((-64.8 32.3, -65.5 18.3, -80.3 25.2, -64.8 32.3))', 'parameter-name': 'all' };
+    const query = { coords: bigTriangleWKT, 'parameter-name': 'all' };
     hookEdrRequest(version, collection, 'area', { username: 'joe', query });
 
     it('returns a 422 error response', function () {
