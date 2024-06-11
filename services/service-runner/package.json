@@ -72,5 +72,8 @@
     "superagent": "^8.0.6",
     "ts-node": "^10.4.0",
     "typescript": "^5.1.6"
+  },
+  "overrides": {
+    "braces": "^3.0.3"
   }
 }

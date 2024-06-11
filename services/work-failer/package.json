@@ -85,6 +85,7 @@
     "typescript": "^4.4.4"
   },
   "overrides": {
-    "semver": "^7.6.2"
+    "semver": "^7.6.2",
+    "braces": "^3.0.3"
   }
 }
