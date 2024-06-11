@@ -153,7 +153,7 @@ curl -Lnbj {{root}}/ogc-api-edr/1.1.0/collections/{{exampleCollection}}/cube?max
 ##### OGC EDR Area Subsetting Query Parameters
 | parameter | description |
 |-----------|-------------|
-| coords | (Required) A Well Known Text (WKT) polygon or multi-polygon string. Coordinates MUST be in counter-clockwise order. |
+| coords | (required) A Well Known Text (WKT) polygon or multi-polygon string. Coordinates MUST be in counter-clockwise order. |
 ---
 **Table {{tableCounter}}** - OGC EDR API area parameters
 
