@@ -861,29 +861,6 @@ paths:
       operationId: postDataForCorridor
       parameters:
         - $ref: "#/components/parameters/collectionId"
-        - $ref: "#/components/parameters/coords"
-        - $ref: "#/components/parameters/z"
-        - $ref: "#/components/parameters/datetime"
-        - $ref: "#/components/parameters/parameter-name"
-        - $ref: "#/components/parameters/crs"
-        - $ref: "#/components/parameters/f"
-        # Parameters below this line are not part of the OGC specification
-        - $ref: "#/components/parameters/subset"
-        - $ref: "#/components/parameters/interpolation"
-        - $ref: "#/components/parameters/scaleExtent"
-        - $ref: "#/components/parameters/scaleSize"
-        - $ref: "#/components/parameters/concatenate"
-        - $ref: "#/components/parameters/granuleId"
-        - $ref: "#/components/parameters/width"
-        - $ref: "#/components/parameters/height"
-        - $ref: "#/components/parameters/forceAsync"
-        - $ref: "#/components/parameters/maxResults"
-        - $ref: "#/components/parameters/skipPreview"
-        - $ref: "#/components/parameters/ignoreErrors"
-        - $ref: "#/components/parameters/destinationUrl"
-        - $ref: "#/components/parameters/granuleName"
-        - $ref: "#/components/parameters/grid"
-        - $ref: "#/components/parameters/extend"
       requestBody:
         content:
           application/json:

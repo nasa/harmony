@@ -76,10 +76,10 @@ export function hookLandingPage(collection: string, version: string): void {
  * @returns The response
  */
 export function edrRequest(
+  queryType: 'cube' | 'area',
   app: Application,
   version: string = defaultVersion,
   collection: string = defaultCollection,
-  queryType: 'cube' | 'area' = 'cube',
   { query = {},
     headers = {},
     cookies = null }: QueryOptions = {},
@@ -106,10 +106,10 @@ export function edrRequest(
  * @returns An 'awaitable' object that resolves to a Response
  */
 export function postEdrRequest(
+  queryType: 'cube' | 'area',
   app: Express.Application,
   version: string,
   collection: string,
-  queryType: 'cube' | 'area',
   form: object,
   queryString = '',
 ): Test {
@@ -137,7 +137,7 @@ export function postEdrRequest(
  * @param options - additional options for the request
  */
 export function hookEdrRequest(
-  version?: string, collection?: string, queryType: 'cube' | 'area' = 'cube', {
+  queryType: 'cube' | 'area', version?: string, collection?: string, {
     query = {},
     headers = {},
     username = undefined }: QueryOptions = {},
@@ -145,18 +145,18 @@ export function hookEdrRequest(
   before(async function () {
     if (!username) {
       this.res = await edrRequest(
+        queryType,
         this.frontend,
         version,
         collection,
-        queryType,
         { query, headers },
       );
     } else {
       this.res = await edrRequest(
+        queryType,
         this.frontend,
         version,
         collection,
-        queryType,
         { query, headers },
       ).use(auth({ username }));
     }
@@ -176,14 +176,14 @@ export function hookEdrRequest(
  * @param queryString - The query string parameters to pass to the request
  */
 export function hookPostEdrRequest(
-  version: string, collection: string, queryType: 'cube' | 'area', form: object, queryString = '',
+  queryType: 'cube' | 'area', version: string, collection: string, form: object, queryString = '',
 ): void {
   before(async function () {
     this.res = await postEdrRequest(
+      queryType,
       this.frontend,
       version,
       collection,
-      queryType,
       form,
       queryString,
     );
@@ -210,10 +210,10 @@ export function hookPostEdrRequest(
         const query = redirect.split('?')[1];
 
         this.res = await edrRequest(
+          queryType,
           this.frontend,
           version,
           collection,
-          queryType,
           {
             query: query as unknown as object, // Fix along with HARMONY-290 to parse query params
             cookies,
