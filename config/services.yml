@@ -554,11 +554,12 @@ https://cmr.uat.earthdata.nasa.gov:
     capabilities:
        subsetting:
          variable: true
-         multiple_variable: false
+         multiple_variable: true
        output_formats:
          - application/x-hdf
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
       - image: !Env ${SUBSET_BAND_NAME_IMAGE}
 
   - name: gesdisc/giovanni
