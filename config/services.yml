@@ -559,6 +559,7 @@ https://cmr.uat.earthdata.nasa.gov:
          - application/x-hdf
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
       - image: !Env ${SUBSET_BAND_NAME_IMAGE}
 
   - name: gesdisc/giovanni
