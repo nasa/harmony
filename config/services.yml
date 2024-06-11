@@ -554,7 +554,7 @@ https://cmr.uat.earthdata.nasa.gov:
     capabilities:
        subsetting:
          variable: true
-         multiple_variable: false
+         multiple_variable: true
        output_formats:
          - application/x-hdf
     steps:
