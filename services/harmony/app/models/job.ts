@@ -24,7 +24,7 @@ const { awsDefaultRegion } = env;
 export const jobRecordFields = [
   'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'request',
   'numInputGranules', 'jobID', 'requestId', 'batchesCompleted', 'isAsync', 'ignoreErrors', 'destination_url',
-  'service_name',
+  'service_name', 'provider_ids',
 ];
 
 const stagingBucketTitle = `Results in AWS S3. Access from AWS ${awsDefaultRegion} with keys from /cloud-access.sh`;
@@ -71,6 +71,7 @@ export interface JobRecord {
   updatedAt?: Date | number;
   numInputGranules: number;
   collectionIds: string[];
+  provider_ids?: string[];
   destination_url?: string;
   service_name?: string,
 }
@@ -367,6 +368,8 @@ export class Job extends DBRecord implements JobRecord {
   destination_url?: string;
 
   service_name?: string;
+
+  provider_ids?: string[];
 
   /**
    * Get the job message for the current status.

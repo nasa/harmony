@@ -415,4 +415,22 @@ describe('DataOperation', () => {
       });
     });
   });
+
+  describe('#providerIds', () => {
+    const collection1 = 'C123-PROVA';
+    const collection2 = 'CXYZ-PROVA';
+    const collection3 = 'C000-PROVB';
+    const shortName = '';
+    const versionId = '1';
+    const variables = [];
+    const coordinateVariables = [];
+
+    const operation = new DataOperation();
+    operation.addSource(collection1, shortName, versionId, variables, coordinateVariables);
+    operation.addSource(collection2, shortName, versionId, variables, coordinateVariables);
+    operation.addSource(collection3, shortName, versionId, variables, coordinateVariables);
+    it('returns a list of unique provider IDs', function () {
+      expect(operation.providerIds).to.deep.eq(['PROVA', 'PROVB']);
+    });
+  });
 });
