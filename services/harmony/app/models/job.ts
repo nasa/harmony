@@ -131,6 +131,9 @@ export interface JobQuery {
     username?: { in: boolean, values: string[] };
     jobID?: { in: boolean, values: string[] };
   }
+  whereOverlap?: { // returns records where the arrays (do/don't) overlap (&& array operator)
+    provider_ids?: { overlap: boolean, values: string[] };
+  }
   orderBy?: {
     field: string;
     value: string;
@@ -431,6 +434,17 @@ export class Job extends DBRecord implements JobRecord {
         constraints?.orderBy?.field ?? 'createdAt',
         constraints?.orderBy?.value ?? 'desc')
       .modify((queryBuilder) => {
+        if (constraints.whereOverlap) {
+          for (const jobField in constraints.whereOverlap) {
+            const constraint = constraints.whereOverlap[jobField];
+            // builds raw SQL like: provider_ids && \'{"EEDTEST","prov"}\'
+            if (constraint.overlap) {
+              void queryBuilder.whereRaw(`${jobField} && \'{"${constraint.values.join('","')}"}\'`);
+            } else {
+              void queryBuilder.whereRaw(`NOT ${jobField} && \'{"${constraint.values.join('","')}"}\'`);
+            }
+          }
+        }
         if (constraints.whereIn) {
           for (const jobField in constraints.whereIn) {
             const constraint = constraints.whereIn[jobField];
