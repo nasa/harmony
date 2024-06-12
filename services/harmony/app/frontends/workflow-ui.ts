@@ -48,12 +48,14 @@ interface TableQuery {
   statusValues: string[],
   serviceValues: string[],
   userValues: string[],
+  providerValues: string[],
   from: Date,
   to: Date,
   dateKind: 'createdAt' | 'updatedAt',
   allowStatuses: boolean,
   allowServices: boolean,
   allowUsers: boolean,
+  allowProviders: boolean,
 }
 
 /**
@@ -77,9 +79,11 @@ function parseQuery( /* eslint-disable @typescript-eslint/no-explicit-any */
     statusValues: [],
     serviceValues: [],
     userValues: [],
+    providerValues: [],
     allowStatuses: true,
     allowServices: true,
     allowUsers: true,
+    allowProviders: true,
     // date controls
     from: undefined,
     to: undefined,
@@ -91,6 +95,7 @@ function parseQuery( /* eslint-disable @typescript-eslint/no-explicit-any */
     tableQuery.allowStatuses = !(requestQuery.disallowstatus === 'on');
     tableQuery.allowServices = !(requestQuery.disallowservice === 'on');
     tableQuery.allowUsers = !(requestQuery.disallowuser === 'on');
+    tableQuery.allowProviders = !(requestQuery.disallowprovider === 'on');
     const selectedOptions: { field: string, dbValue: string, value: string }[] = JSON.parse(requestQuery.tablefilter);
     const validStatusSelections = selectedOptions
       .filter(option => option.field === 'status' && Object.values<string>(statusEnum).includes(option.dbValue));
@@ -101,15 +106,20 @@ function parseQuery( /* eslint-disable @typescript-eslint/no-explicit-any */
     const validUserSelections = selectedOptions
       .filter(option => isAdminAccess && /^user: [A-Za-z0-9\.\_]{4,30}$/.test(option.value));
     const userValues = validUserSelections.map(option => option.value.split('user: ')[1]);
-    if ((statusValues.length + serviceValues.length + userValues.length) > maxFilters) {
+    const validProviderSelections = selectedOptions
+      .filter(option => isAdminAccess && /^prov: [A-Z0-9_]{1,100}$/.test(option.value));
+    const providerValues = validProviderSelections.map(option => option.value.split('prov: ')[1]);
+    if ((statusValues.length + serviceValues.length + userValues.length + providerValues.length) > maxFilters) {
       throw new RequestValidationError(`Maximum amount of filters (${maxFilters}) was exceeded.`);
     }
     originalValues = JSON.stringify(validStatusSelections
       .concat(validServiceSelections)
-      .concat(validUserSelections));
+      .concat(validUserSelections)
+      .concat(validProviderSelections));
     tableQuery.statusValues = statusValues;
     tableQuery.serviceValues = serviceValues;
     tableQuery.userValues = userValues;
+    tableQuery.providerValues = providerValues;
   }
   // everything in the Workflow UI uses the browser timezone, so we need a timezone offset
   const offSetMs = parseInt(requestQuery.tzoffsetminutes || 0) * 60 * 1000;
