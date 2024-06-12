@@ -42,7 +42,9 @@ function initFilter(currentUser, services, isAdminRoute, tableFilter) {
       }
       if (isAdminRoute) {
         // check if the tag loosely resembles a valid EDL username
-        return /^user: [A-Za-z0-9._]{4,30}$/.test(tag.value);
+        return /^user: [A-Za-z0-9._]{4,30}$/.test(tag.value)
+        // check if the tag resembles a valid provider ID
+        || /^prov: [A-Z0-9_]{1,100}$/.test(tag.value);
       }
       return false;
     },
@@ -198,6 +200,9 @@ async function loadRows(params) {
   if (params.disallowUser) {
     tableUrl += `&disallowUser=${params.disallowUser}`;
   }
+  if (params.disallowProvider) {
+    tableUrl += `&disallowProvider=${params.disallowProvider}`;
+  }
   const res = await fetch(tableUrl, {
     method: 'POST',
     headers: {
@@ -232,6 +237,7 @@ const jobsTable = {
    * disallowStatus - whether to load the table with disallow status "on" or "off".
    * disallowService - whether to load the table with disallow service "on" or "off".
    * disallowUser - whether to load the table with disallow user "on" or "off".
+   * disallowProvider - whether to load the table with disallow provider "on" or "off".
    * currentUser - the current Harmony user
    * services - service names from services.yml
    * isAdminRoute - whether the current page is /admin/...
