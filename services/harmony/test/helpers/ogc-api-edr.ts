@@ -71,10 +71,12 @@ export function hookLandingPage(collection: string, version: string): void {
  * @param app - The express application (typically this.frontend)
  * @param version - The OGC EDR API version
  * @param collection - The CMR Collection ID to perform a service on
+ * @param queryType - the type of call to make, e.g., 'cube'
  * @param options - additional options for the request
  * @returns The response
  */
 export function edrRequest(
+  queryType: 'cube' | 'area',
   app: Application,
   version: string = defaultVersion,
   collection: string = defaultCollection,
@@ -83,7 +85,7 @@ export function edrRequest(
     cookies = null }: QueryOptions = {},
 ): Test {
   let req = request(app)
-    .get(`/ogc-api-edr/${version}/collections/${collection}/cube`)
+    .get(`/ogc-api-edr/${version}/collections/${collection}/${queryType}`)
     .query(query)
     .set(headers);
 
@@ -99,13 +101,19 @@ export function edrRequest(
  * @param app - The express application (typically this.frontend)
  * @param version - The OGC version
  * @param collection - The CMR Collection ID to perform a service on
+ * @param queryType - the type of call to make, e.g., 'cube'
  * @param form - The JSON to pass to the request
  * @returns An 'awaitable' object that resolves to a Response
  */
 export function postEdrRequest(
-  app: Express.Application, version: string, collection: string, form: object, queryString = '',
+  queryType: 'cube' | 'area',
+  app: Express.Application,
+  version: string,
+  collection: string,
+  form: object,
+  queryString = '',
 ): Test {
-  let urlPathAndParam = `/ogc-api-edr/${version}/collections/${collection}/cube`;
+  let urlPathAndParam = `/ogc-api-edr/${version}/collections/${collection}/${queryType}`;
   if (queryString) urlPathAndParam += `?${queryString}`;
   // POST parameter-name is of type array, not string
   form['parameter-name'] = form['parameter-name'].split(',');
@@ -125,10 +133,11 @@ export function postEdrRequest(
  *
  * @param version - The OGC EDR API version
  * @param collection - The CMR Collection ID to perform a service on
+ * @param queryType - the type of call to make, e.g., 'cube'
  * @param options - additional options for the request
  */
 export function hookEdrRequest(
-  version?: string, collection?: string, {
+  queryType: 'cube' | 'area', version?: string, collection?: string, {
     query = {},
     headers = {},
     username = undefined }: QueryOptions = {},
@@ -136,6 +145,7 @@ export function hookEdrRequest(
   before(async function () {
     if (!username) {
       this.res = await edrRequest(
+        queryType,
         this.frontend,
         version,
         collection,
@@ -143,6 +153,7 @@ export function hookEdrRequest(
       );
     } else {
       this.res = await edrRequest(
+        queryType,
         this.frontend,
         version,
         collection,
@@ -161,13 +172,15 @@ export function hookEdrRequest(
  * @param version - The OGC API version
  * @param collection - The CMR Collection ID to perform a service on
  * @param form - The form data to be POST'd
+ * @param queryType - the type of call to make, e.g., 'cube'
  * @param queryString - The query string parameters to pass to the request
  */
 export function hookPostEdrRequest(
-  version: string, collection: string, form: object, queryString = '',
+  queryType: 'cube' | 'area', version: string, collection: string, form: object, queryString = '',
 ): void {
   before(async function () {
     this.res = await postEdrRequest(
+      queryType,
       this.frontend,
       version,
       collection,
@@ -197,6 +210,7 @@ export function hookPostEdrRequest(
         const query = redirect.split('?')[1];
 
         this.res = await edrRequest(
+          queryType,
           this.frontend,
           version,
           collection,

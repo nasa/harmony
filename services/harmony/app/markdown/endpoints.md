@@ -1,6 +1,6 @@
 ## Summary of Available Endpoints
 
-All of the public endpoints for Harmony users other than the OGC Coverages and WMS APIs are listed in the following table. The Coverages and WMS APIs are described in the [Using the Service APIs section](#using-the-service-apis).
+All of the public endpoints for Harmony users other than the OGC Coverages, EDR, and WMS APIs are listed in the following table. The Coverages and WMS APIs are described in the [Using the Service APIs section](#using-the-service-apis).
 
 | route                  | description                                                                                       |
 |------------------------|---------------------------------------------------------------------------------------------------|

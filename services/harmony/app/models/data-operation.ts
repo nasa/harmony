@@ -7,6 +7,7 @@ import logger from '../util/log';
 import { CmrUmmCollection, CmrUmmVariable } from '../util/cmr';
 import { Encrypter, Decrypter } from '../util/crypto';
 import { cmrVarToHarmonyVar, HarmonyVariable } from '../util/variables';
+import { isValidUri } from '../util/url';
 
 export const CURRENT_SCHEMA_VERSION = '0.19.0';
 
@@ -650,21 +651,32 @@ export default class DataOperation {
   }
 
   /**
-   * Sets the object store URI to the geojson shape used for spatial subsetting
+   * Sets the geojson directly or the URI to the geojson shape used for spatial subsetting
    *
    * @param geojsonUri - A URI to the geojson shape
    */
-  set geojson(geojsonUri: string) {
-    this.model.subset.shape = { type: 'application/geo+json', href: geojsonUri };
+  set geojson(geoJsonOrUri: string) {
+    if (isValidUri(geoJsonOrUri)) {
+      this.model.subset.shape = { type: 'application/geo+json', href: geoJsonOrUri };
+    } else {
+      this.model.subset.shape = geoJsonOrUri;
+    }
   }
 
   /**
-   * Gets the object store URI for the geojson shape used for spatial subsetting
+   * Gets the geojson shape or the URI for the geojson shape used for spatial subsetting
    *
-   * @returns A URI to the geojson shape
+   * @returns The geojson or the URI to the geojson shape
    */
   get geojson(): string {
-    return this.model.subset.shape && this.model.subset.shape.href;
+    if (this.model.subset.shape) {
+      if (typeof this.model.subset.shape === 'string') {
+        return this.model.subset.shape;
+      } else {
+        return this.model.subset.shape.href;
+      }
+    }
+    return null;
   }
 
   /**

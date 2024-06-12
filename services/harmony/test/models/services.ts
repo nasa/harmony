@@ -225,7 +225,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
     describe('and the request needs shapefile subsetting', function () {
       beforeEach(function () {
-        this.operation.geojson = { pretend: 'geojson' };
+        this.operation.geojson = 'some pretend geojson';
       });
 
       it('chooses the service that supports shapefile subsetting', function () {
@@ -478,7 +478,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
     describe('and the request needs shapefile subsetting only', function () {
       beforeEach(function () {
-        this.operation.geojson = { pretend: 'geojson' };
+        this.operation.geojson = 'some pretend geojson';
       });
 
       it('throws an exception', function () {

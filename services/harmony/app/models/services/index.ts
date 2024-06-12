@@ -885,6 +885,7 @@ function requiresStrictCapabilitiesMatching(
     && !requiresReformatting(operation, context)
     && !requiresConcatenation(operation)
     && !requiresDimensionSubsetting(operation)
+    && !requiresExtend(operation)
   ) {
     return true;
   }
