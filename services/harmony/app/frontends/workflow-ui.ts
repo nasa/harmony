@@ -337,6 +337,7 @@ export async function getJobs(
       disallowStatusChecked: !tableQuery.allowStatuses ? 'checked' : '',
       disallowServiceChecked: !tableQuery.allowServices ? 'checked' : '',
       disallowUserChecked: !tableQuery.allowUsers ? 'checked' : '',
+      disallowProviderChecked: !tableQuery.allowProviders ? 'checked' : '',
       toDateTime,
       fromDateTime,
       dateQuery: `?fromDateTime=${encodeURIComponent(fromDateTime || '')}&toDateTime=${encodeURIComponent(toDateTime || '')}` +
