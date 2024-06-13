@@ -288,7 +288,6 @@ function tableQueryToJobQuery(tableQuery: TableQuery, isAdmin: boolean, user: st
       in: true,
     };
   }
-  console.log(jobQuery);
   return jobQuery;
 }
 
@@ -632,7 +631,7 @@ export async function getJobsTable(
     const jobsRes = await Job.queryAll(db, jobQuery, page, limit);
     const jobs = jobsRes.data;
     const { pagination } = jobsRes;
-    const selectAllChecked = jobs.every((j) => jobIDs.indexOf(j.jobID) > -1) ? 'checked' : '';
+    const selectAllChecked = jobs.every((j) => j.hasTerminalStatus() || (jobIDs.indexOf(j.jobID) > -1)) ? 'checked' : '';
     const selectAllBox = jobs.some((j) => !j.hasTerminalStatus()) ?
       `<input id="select-jobs" type="checkbox" title="select/deselect all jobs" autocomplete="off" ${selectAllChecked}>` : '';
     const tableContext = {
