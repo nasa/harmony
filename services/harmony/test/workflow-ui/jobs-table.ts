@@ -163,6 +163,33 @@ describe('Workflow UI jobs table route', function () {
         );
       });
     });
+    describe('with all nonterminal jobs selected', function () {
+      hookWorkflowUIJobRows({ username: 'adam', jobIDs: [woodyJob1.jobID, adamJob1.jobID], query: { page: 1, limit: 10 } });
+      it('returns the select all jobs checkbox checked', async function () {
+        const response = this.res.text;
+        expect(response).contains('<input id="select-jobs" type="checkbox" title="select/deselect all jobs" autocomplete="off" checked>');
+      });
+      it('has all select job checkboxes checked', function () {
+        const response = this.res.text;
+        expect(response).contains(`<input id="select-${woodyJob1.jobID}" class="select-job" type="checkbox" data-id="${woodyJob1.jobID}" data-status="${woodyJob1.status}" autocomplete="off" checked>`);
+        expect(response).contains(`<input id="select-${adamJob1.jobID}" class="select-job" type="checkbox" data-id="${adamJob1.jobID}" data-status="${adamJob1.status}" autocomplete="off" checked>`);
+      });
+    });
+    describe('with 1 nonterminal job selected and one nonterminal job not selected', function () {
+      hookWorkflowUIJobRows({ username: 'adam', jobIDs: [woodyJob1.jobID], query: { page: 1, limit: 10 } });
+      it('returns the select all jobs checkbox unchecked', async function () {
+        const response = this.res.text;
+        expect(response).contains('<input id="select-jobs" type="checkbox" title="select/deselect all jobs" autocomplete="off" >');
+      });
+      it('has one job checkbox checked', async function () {
+        const response = this.res.text;
+        expect(response).contains(`<input id="select-${woodyJob1.jobID}" class="select-job" type="checkbox" data-id="${woodyJob1.jobID}" data-status="${woodyJob1.status}" autocomplete="off" checked>`);
+      });
+      it('has one job checkbox unchecked', async function () {
+        const response = this.res.text;
+        expect(response).contains(`<input id="select-${adamJob1.jobID}" class="select-job" type="checkbox" data-id="${adamJob1.jobID}" data-status="${adamJob1.status}" autocomplete="off" >`);
+      });
+    });
   });
 
   describe('a user who requests someone else\'s job (but is NOT an admin)', function () {
