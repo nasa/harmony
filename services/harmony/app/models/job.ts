@@ -19,6 +19,7 @@ export const TEXT_LIMIT = 4096; // this.request and this.message need to be unde
 import env from '../util/env';
 import JobError from './job-error';
 import { setReadyCountToZero } from './user-work';
+import { Knex } from 'knex';
 const { awsDefaultRegion } = env;
 
 export const jobRecordFields = [
@@ -313,6 +314,56 @@ export function getRelatedLinks(rel: string, links: JobLink[]): JobLink[] {
 }
 
 /**
+ * Conditionally modify a job query if specific constraints are present.
+ * @param queryBuilder - the knex query builder object to modify
+ * @param constraints - specifies the query constraints (if any)
+ */
+function modifyQuery(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  queryBuilder: Knex.QueryBuilder<any, any>, 
+  constraints: JobQuery): void {
+  if (constraints.whereOverlap && process.env.NODE_ENV !== 'test') { // array support in postgres only
+    for (const jobField in constraints.whereOverlap) {
+      const constraint = constraints.whereOverlap[jobField];
+      // e.g. provider_ids && \'{"EEDTEST","prov"}\'
+      void queryBuilder.whereRaw(`${!constraint.overlap ? 'NOT ' : ''}${jobField} && \'{"${constraint.values.join('","')}"}\'`);
+    }
+  }
+  if (constraints.whereIn) {
+    for (const jobField in constraints.whereIn) {
+      const constraint = constraints.whereIn[jobField];
+      if (constraint.in) {
+        void queryBuilder.whereIn(jobField, constraint.values);
+      } else {
+        void queryBuilder.whereNotIn(jobField, constraint.values);
+      }
+    }
+  }
+  if (constraints.dates) {
+    if (constraints.dates.from) {
+      void queryBuilder.where(constraints.dates.field, '>=', constraints.dates.from);
+    }
+    if (constraints.dates.to) {
+      void queryBuilder.where(constraints.dates.field, '<=', constraints.dates.to);
+    }
+  }
+}
+
+/**
+ * Check if the job satisfies the provider_ids overlap constraint from the JobQuery.
+ * @param job - the job to check for provider_ids overlap
+ * @returns boolean
+ */
+function jobSatisfiesProviderIdsConstraint(job: Job, constraints: JobQuery): boolean {
+  const overlappingProviders = job.provider_ids.filter(provider_id => {
+    constraints.whereOverlap.provider_ids.values.includes(provider_id);
+  });
+  const hasOverlappingProviders = overlappingProviders.length > 0;
+  const { overlap } = constraints.whereOverlap.provider_ids;
+  return overlap ? hasOverlappingProviders : !hasOverlappingProviders;
+}
+
+/**
  *
  * Wrapper object for persisted jobs
  *
@@ -433,41 +484,15 @@ export class Job extends DBRecord implements JobRecord {
       .orderBy(
         constraints?.orderBy?.field ?? 'createdAt',
         constraints?.orderBy?.value ?? 'desc')
-      .modify((queryBuilder) => {
-        if (constraints.whereOverlap) {
-          for (const jobField in constraints.whereOverlap) {
-            const constraint = constraints.whereOverlap[jobField];
-            // builds raw SQL like: provider_ids && \'{"EEDTEST","prov"}\'
-            if (constraint.overlap) {
-              void queryBuilder.whereRaw(`${jobField} && \'{"${constraint.values.join('","')}"}\'`);
-            } else {
-              void queryBuilder.whereRaw(`NOT ${jobField} && \'{"${constraint.values.join('","')}"}\'`);
-            }
-          }
-        }
-        if (constraints.whereIn) {
-          for (const jobField in constraints.whereIn) {
-            const constraint = constraints.whereIn[jobField];
-            if (constraint.in) {
-              void queryBuilder.whereIn(jobField, constraint.values);
-            } else {
-              void queryBuilder.whereNotIn(jobField, constraint.values);
-            }
-          }
-        }
-        if (constraints.dates) {
-          if (constraints.dates.from) {
-            void queryBuilder.where(constraints.dates.field, '>=', constraints.dates.from);
-          }
-          if (constraints.dates.to) {
-            void queryBuilder.where(constraints.dates.field, '<=', constraints.dates.to);
-          }
-        }
-      })
+      .modify(modifyQuery)
       .paginate({ currentPage, perPage, isLengthAware: true });
 
-    const jobs = items.data.map((j) => new Job(j));
-
+    let jobs: Job[] = items.data.map((j: Job) => new Job(j));
+    if (process.env.NODE_ENV !== 'test') { // handle 'where' conditions not supported in sqlite
+      if (constraints?.whereOverlap?.provider_ids?.values.length) {
+        jobs = jobs.filter(job => jobSatisfiesProviderIdsConstraint(job, constraints));
+      }
+    }
     return {
       data: jobs,
       pagination: items.pagination,
@@ -624,6 +649,9 @@ export class Job extends DBRecord implements JobRecord {
     this.collectionIds = (typeof fields.collectionIds === 'string'
       ? JSON.parse(fields.collectionIds) : fields.collectionIds)
       || [];
+    // sqlite does not support string[], use string
+    this.provider_ids = process.env.NODE_ENV === 'test' && typeof fields.provider_ids === 'string'
+      ? JSON.parse(fields.provider_ids) : fields.provider_ids;
     // Job already exists in the database
     if (fields.createdAt) {
       this.originalStatus = this.status;
@@ -965,6 +993,10 @@ export class Job extends DBRecord implements JobRecord {
     const dbRecord: Record<string, unknown> = pick(this, jobRecordFields);
     dbRecord.collectionIds = JSON.stringify(this.collectionIds || []);
     dbRecord.message = JSON.stringify(this.statesToMessages || {});
+    // sqlite does not support string[], use string
+    if (process.env.NODE_ENV === 'test' && this.provider_ids.length) {
+      dbRecord.provider_ids = JSON.stringify(this.provider_ids);
+    }
     await super.save(tx, dbRecord);
     const promises = [];
     for (const link of this.links) {

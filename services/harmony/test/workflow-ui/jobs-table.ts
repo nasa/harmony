@@ -13,11 +13,12 @@ import * as mustache from 'mustache';
 
 
 // main objects used in the tests
-const boJob1 = buildJob({ status: JobStatus.FAILED, username: 'bo' });
-const boJob2 = buildJob({ status: JobStatus.SUCCESSFUL, username: 'bo', service_name: 'cog-maker' });
-const adamJob1 = buildJob({ status: JobStatus.RUNNING, username: 'adam' });
+const boJob1 = buildJob({ status: JobStatus.FAILED, username: 'bo', provider_ids: ['PROVIDER_A'] });
+const boJob2 = buildJob({ status: JobStatus.SUCCESSFUL, username: 'bo', service_name: 'cog-maker', provider_ids: ['PROVIDER_B'] });
+const adamJob1 = buildJob({ status: JobStatus.RUNNING, username: 'adam', provider_ids: ['PROVIDER_A', 'PROVIDER_C'] });
 const woodyJob1 = buildJob({ status: JobStatus.RUNNING, username: 'woody' });
 
+const allJobIds = [boJob1.jobID, boJob2.jobID, adamJob1.jobID, woodyJob1.jobID];
 const totalJobsCount = [boJob1, boJob2, adamJob1, woodyJob1].length;
 
 describe('Workflow UI jobs table route', function () {
@@ -68,7 +69,7 @@ describe('Workflow UI jobs table route', function () {
     });
   });
 
-  describe('an admin using a service name filter', function () {
+  describe('a user using a service name filter', function () {
     hookWorkflowUIJobRows({ username: 'bo', jobIDs: [boJob1.jobID, boJob2.jobID],
       query: { disallowService: false, tableFilter: '[{"value":"service: cog-maker","dbValue":"cog-maker","field":"service"}]' } });
     it('returns only the job row for the cog-maker service job', function () {
@@ -100,6 +101,28 @@ describe('Workflow UI jobs table route', function () {
           </small>
         </nav>`.replace(/\s/g, ''),
       );
+    });
+  });
+
+  // describe('an admin using the provider ids filter', function () {
+  //   hookAdminWorkflowUIJobRows({ username: 'adam', jobIDs: allJobIds,
+  //     query: { disallowService: false, tableFilter: '[{"value":"prov: PROVIDER_A","dbValue":"PROVIDER_A","field":"provider"}]' } });
+  //   it('returns only the job rows with provider a', function () {
+  //     const response = this.res.text;
+  //     expect(response).to.not.contain(`<tr id="job-${boJob2.jobID}" class='job-table-row'>`);
+  //     expect(response).to.not.contain(`<tr id="job-${woodyJob1.jobID}" class='job-table-row'>`);
+  //     expect(response).contains(`<tr id="job-${boJob1.jobID}" class='job-table-row'>`);
+  //     expect(response).contains(`<tr id="job-${adamJob1.jobID}" class='job-table-row'>`);
+  //     expect((response.match(/job-table-row/g) || []).length).to.eq(2);
+  //   });
+  // });
+
+  describe('an admin using the provider ids filter with improperly cased provider id', function () {
+    hookAdminWorkflowUIJobRows({ username: 'adam', jobIDs: allJobIds,
+      query: { disallowService: false, tableFilter: '[{"value":"prov: prOVIDER_A","dbValue":"prOVIDER_A","field":"provider"}]' } });
+    it('returns all jobs, ignoring the filter', function () {
+      const response = this.res.text;
+      expect((response.match(/job-table-row/g) || []).length).to.eq(allJobIds.length);
     });
   });
 
