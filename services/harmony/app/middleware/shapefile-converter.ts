@@ -1,6 +1,9 @@
+/* eslint-disable require-jsdoc */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { get } from 'lodash';
 import rewind from '@mapbox/geojson-rewind';
 import * as togeojson from '@tmcw/togeojson';
+import splitGeoJson from 'geojson-antimeridian-cut';
 
 import { DOMParser } from '@xmldom/xmldom';
 import * as shpjs from 'shpjs';
@@ -82,6 +85,108 @@ const contentTypesToConverters = {
 };
 
 /**
+ *
+ * @param lon - longitude
+ * @returns
+ */
+function normalizeLongitude(lon: number): number {
+  while (lon > 180) lon -= 360;
+  while (lon < -180) lon += 360;
+  return lon;
+}
+
+/**
+ *
+ * @param geojson - normalize all the longitudes in the file to [-180,180]
+ * @returns
+ */
+export function normalizeGeoJsonCoords(geojson: any): any {
+  function normalizeCoordinates(coordinates: any): any {
+    if (Array.isArray(coordinates[0])) {
+      return coordinates.map(normalizeCoordinates);
+    } else {
+      return [normalizeLongitude(coordinates[0]), coordinates[1]];
+    }
+  }
+
+  function normalizeGeometry(geometry: any): any {
+    if (geometry.type === 'Point') {
+      geometry.coordinates = normalizeCoordinates(geometry.coordinates);
+    } else if (geometry.type === 'MultiPoint' || geometry.type === 'LineString') {
+      geometry.coordinates = geometry.coordinates.map(normalizeCoordinates);
+    } else if (geometry.type === 'Polygon' || geometry.type === 'MultiLineString') {
+      geometry.coordinates = geometry.coordinates.map(ring => ring.map(normalizeCoordinates));
+    } else if (geometry.type === 'MultiPolygon') {
+      geometry.coordinates = geometry.coordinates.map(polygon => polygon.map(ring => ring.map(normalizeCoordinates)));
+    } else if (geometry.type === 'GeometryCollection') {
+      geometry.geometries = geometry.geometries.map(normalizeGeometry);
+    }
+    return geometry;
+  }
+
+  function normalizeFeature(feature: any): any {
+    if (feature.type === 'Feature') {
+      feature.geometry = normalizeGeometry(feature.geometry);
+    } else if (feature.type === 'FeatureCollection') {
+      feature.features = feature.features.map(normalizeFeature);
+    }
+    return feature;
+  }
+
+  return normalizeFeature(geojson);
+}
+
+/**
+ * Change longitudes of a geojson file to be in the [-180, 180] range and split at antimeridian
+ * if needed
+ * @param geoJson - An object representing the json for a geojson file
+ * @returns A string with the normalized geojson
+ */
+export function normalizeGeoJson(geoJson: object): string {
+  let newGeoJson = normalizeGeoJsonCoords(geoJson);
+
+  // eslint-disable-next-line @typescript-eslint/dot-notation
+  for (const index in newGeoJson['features']) {
+    // eslint-disable-next-line @typescript-eslint/dot-notation
+    const feature = newGeoJson['features'][index];
+    const normalizedGeoJson = splitGeoJson(feature);
+    // eslint-disable-next-line @typescript-eslint/dot-notation
+    newGeoJson['features'][index] = normalizedGeoJson;
+  }
+
+  // force ccw winding
+  newGeoJson = rewind(newGeoJson, false);
+  return newGeoJson;
+
+}
+
+/**
+ * Handle any weird cases like splitting geometry that crosses the antimeridian
+ * @param url - the url of the geojson file
+ * @param isLocal - whether the url is a downloaded file (true) or needs to be downloaded (false)
+ */
+async function normalizeGeoJsonFile(url: string, isLocal: boolean, logger: Logger): Promise<string> {
+  logger.debug('Normalizing geojson');
+  const store = defaultObjectStore();
+  let originalGeoJson: object;
+  const localFile = url;
+  if (!isLocal) {
+    originalGeoJson = await store.getObjectJson(url);
+  } else {
+    originalGeoJson = (await fs.readFile(localFile)).toJSON();
+  }
+  const normalizedGeoJson = normalizeGeoJson(originalGeoJson);
+
+  // Uncomment this line to save the normalized file locally during development
+  // await fs.writeFile('normalized.geojson', JSON.stringify(normalizedGeoJson));
+
+  const uploadUrl = `${url}-normalized.geojson`;
+  await store.upload(JSON.stringify(normalizedGeoJson), uploadUrl);
+
+  return uploadUrl;
+}
+
+/**
  * Express.js middleware which extracts shapefiles from the incoming request and
  * ensures that they are in GeoJSON in the data operation
  *
@@ -123,7 +228,7 @@ export default async function shapefileConverter(req, res, next: NextFunction): 
         }
       }
     } else {
-      operation.geojson = url;
+      operation.geojson = await normalizeGeoJsonFile(url, false, req.context.logger);
     }
   } catch (e) {
     if (e instanceof HttpError) {

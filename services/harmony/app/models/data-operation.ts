@@ -992,6 +992,7 @@ export default class DataOperation {
     const valid = validatorInstance.validate(version, toWrite);
     if (!valid) {
       logger.error(`Invalid JSON: ${JSON.stringify(toWrite)}`);
+      logger.error(JSON.stringify(validatorInstance.errors));
       throw new TypeError(`Invalid JSON produced: ${JSON.stringify(validatorInstance.errors)}`);
     }
 
