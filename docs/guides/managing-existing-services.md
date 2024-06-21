@@ -133,23 +133,24 @@ GET https://harmony.uat.earthdata.nasa.gov/service-deployments-state
 ```
 **Example 10** - Getting the current enable/disable state of the service deployment feature using the `service-image-tag` API
 
-The returned JSON response shows if the service deployment is currently enabled (true) or disabled (false):
+The returned JSON response shows if the service deployment is currently enabled (true) or disabled (false) and any optional message:
 
 ```JSON
 {
-  "enabled": true
+  "enabled": true,
+  "message": "Manually enabled by David"
 }
 ```
 ---
 **Example 11** - Harmony `service-image-tags` response for enable/disable state
 
 ## Enable the service deployment feature
-The user must have admin permission in order to invoke this endpoint.
+The user must have admin permission in order to invoke this endpoint. User can provide an optional message in the JSON body to indicate the reason for enabling. This message will be persisted in database and returned when user retrieves the service deployment state later.
 
 For example:
 
 ```
-curl -XPUT -H 'Authorization: Bearer <your bearer token>' -H 'Content-type: application/json' https://harmony.uat.earthdata.nasa.gov/service-deployments-state -d '{"enabled": true}'
+curl -XPUT -H 'Authorization: Bearer <your bearer token>' -H 'Content-type: application/json' https://harmony.uat.earthdata.nasa.gov/service-deployments-state -d '{"enabled": true, "message": "Manually enabled by David"}'
 ```
 ---
 **Example 12** - Harmony `service-image-tags` request for enabling the service deployment
@@ -158,18 +159,19 @@ The returned JSON response is the same as the get current state of the service d
 
 ```JSON
 {
-  "enabled": true
+  "enabled": true,
+  "message": "Manually enabled by David"
 }
 ```
 **Example 13** - Harmony `/service-image-tags` response for enabling the service deployment
 
 ## Disable the service deployment feature
-The user must have admin permission in order to invoke this endpoint.
+The user must have admin permission in order to invoke this endpoint. User can provide an optional message in the JSON body to indicate the reason for disabling. This message will be persisted in database and returned when user retrieves the service deployment state later.
 
 For example:
 
 ```
-curl -XPUT -H 'Authorization: Bearer <your bearer token>' -H 'Content-type: application/json' https://harmony.uat.earthdata.nasa.gov/service-deployments-state -d '{"enabled": false}'
+curl -XPUT -H 'Authorization: Bearer <your bearer token>' -H 'Content-type: application/json' https://harmony.uat.earthdata.nasa.gov/service-deployments-state -d '{"enabled": false, "message": "Manually disabled by David"}'
 ```
 ---
 **Example 14** - Harmony `service-image-tags` request for disabling the service deployment
@@ -178,7 +180,8 @@ The returned JSON response is the same as the get current state of the service d
 
 ```JSON
 {
-  "enabled": false
+  "enabled": false,
+  "message": "Manually disabled by David"
 }
 ```
 **Example 15** - Harmony `/service-image-tags` response for disabling the service deployment
