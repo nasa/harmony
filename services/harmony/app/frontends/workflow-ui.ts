@@ -243,7 +243,7 @@ function jobRenderingFunctions(logger: Logger, requestQuery: Record<string, any>
  * @returns JobQuery
  */
 function tableQueryToJobQuery(tableQuery: TableQuery, isAdmin: boolean, user: string, jobIDs?: string[]): JobQuery {
-  const jobQuery: JobQuery = { where: {}, whereIn: {}, whereOverlap: {} };
+  const jobQuery: JobQuery = { where: {}, whereIn: {} };
   if (tableQuery.sortGranules) {
     jobQuery.orderBy = {
       field: 'numInputGranules',
@@ -272,9 +272,9 @@ function tableQueryToJobQuery(tableQuery: TableQuery, isAdmin: boolean, user: st
     };
   }
   if (tableQuery.providerValues.length) {
-    jobQuery.whereOverlap.provider_ids = {
+    jobQuery.whereIn.provider_id = {
       values: tableQuery.providerValues,
-      overlap: tableQuery.allowProviders,
+      in: tableQuery.allowProviders,
     };
   }
   if (tableQuery.from || tableQuery.to) {

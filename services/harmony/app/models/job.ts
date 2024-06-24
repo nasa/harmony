@@ -25,7 +25,7 @@ const { awsDefaultRegion } = env;
 export const jobRecordFields = [
   'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'request',
   'numInputGranules', 'jobID', 'requestId', 'batchesCompleted', 'isAsync', 'ignoreErrors', 'destination_url',
-  'service_name', 'provider_ids',
+  'service_name', 'provider_id',
 ];
 
 const stagingBucketTitle = `Results in AWS S3. Access from AWS ${awsDefaultRegion} with keys from /cloud-access.sh`;
@@ -72,7 +72,7 @@ export interface JobRecord {
   updatedAt?: Date | number;
   numInputGranules: number;
   collectionIds: string[];
-  provider_ids?: string[];
+  provider_id?: string;
   destination_url?: string;
   service_name?: string,
 }
@@ -129,11 +129,9 @@ export interface JobQuery {
   whereIn?: {
     status?: { in: boolean, values: string[] };
     service_name?: { in: boolean, values: string[] };
+    provider_id?: { in: boolean, values: string[] };
     username?: { in: boolean, values: string[] };
     jobID?: { in: boolean, values: string[] };
-  }
-  whereOverlap?: { // returns records where the arrays (do/don't) overlap (&& array operator)
-    provider_ids?: { overlap: boolean, values: string[] };
   }
   orderBy?: {
     field: string;
@@ -322,13 +320,6 @@ function modifyQuery(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   queryBuilder: Knex.QueryBuilder<any, any>, 
   constraints: JobQuery): void {
-  if (constraints.whereOverlap && process.env.NODE_ENV !== 'test') { // array support in postgres only
-    for (const jobField in constraints.whereOverlap) {
-      const constraint = constraints.whereOverlap[jobField];
-      // e.g. provider_ids && \'{"EEDTEST","prov"}\'
-      void queryBuilder.whereRaw(`${!constraint.overlap ? 'NOT ' : ''}${jobField} && \'{"${constraint.values.join('","')}"}\'`);
-    }
-  }
   if (constraints.whereIn) {
     for (const jobField in constraints.whereIn) {
       const constraint = constraints.whereIn[jobField];
@@ -347,20 +338,6 @@ function modifyQuery(
       void queryBuilder.where(constraints.dates.field, '<=', constraints.dates.to);
     }
   }
-}
-
-/**
- * Check if the job satisfies the provider_ids overlap constraint from the JobQuery.
- * @param job - the job to check for provider_ids overlap
- * @returns boolean
- */
-function jobSatisfiesProviderIdsConstraint(job: Job, constraints: JobQuery): boolean {
-  const overlappingProviders = job.provider_ids.filter(provider_id => {
-    constraints.whereOverlap.provider_ids.values.includes(provider_id);
-  });
-  const hasOverlappingProviders = overlappingProviders.length > 0;
-  const { overlap } = constraints.whereOverlap.provider_ids;
-  return overlap ? hasOverlappingProviders : !hasOverlappingProviders;
 }
 
 /**
@@ -423,7 +400,7 @@ export class Job extends DBRecord implements JobRecord {
 
   service_name?: string;
 
-  provider_ids?: string[];
+  provider_id?: string;
 
   /**
    * Get the job message for the current status.
@@ -487,12 +464,8 @@ export class Job extends DBRecord implements JobRecord {
       .modify(modifyQuery)
       .paginate({ currentPage, perPage, isLengthAware: true });
 
-    let jobs: Job[] = items.data.map((j: Job) => new Job(j));
-    if (process.env.NODE_ENV !== 'test') { // handle 'where' conditions not supported in sqlite
-      if (constraints?.whereOverlap?.provider_ids?.values.length) {
-        jobs = jobs.filter(job => jobSatisfiesProviderIdsConstraint(job, constraints));
-      }
-    }
+    const jobs: Job[] = items.data.map((j: Job) => new Job(j));
+
     return {
       data: jobs,
       pagination: items.pagination,
@@ -649,9 +622,6 @@ export class Job extends DBRecord implements JobRecord {
     this.collectionIds = (typeof fields.collectionIds === 'string'
       ? JSON.parse(fields.collectionIds) : fields.collectionIds)
       || [];
-    // sqlite does not support string[], use string
-    this.provider_ids = process.env.NODE_ENV === 'test' && typeof fields.provider_ids === 'string'
-      ? JSON.parse(fields.provider_ids) : fields.provider_ids;
     // Job already exists in the database
     if (fields.createdAt) {
       this.originalStatus = this.status;
@@ -993,10 +963,6 @@ export class Job extends DBRecord implements JobRecord {
     const dbRecord: Record<string, unknown> = pick(this, jobRecordFields);
     dbRecord.collectionIds = JSON.stringify(this.collectionIds || []);
     dbRecord.message = JSON.stringify(this.statesToMessages || {});
-    // sqlite does not support string[], use string
-    if (process.env.NODE_ENV === 'test' && this.provider_ids.length) {
-      dbRecord.provider_ids = JSON.stringify(this.provider_ids);
-    }
     await super.save(tx, dbRecord);
     const promises = [];
     for (const link of this.links) {

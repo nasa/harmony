@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
-import _ from 'lodash';
+import _, { Collection } from 'lodash';
 import logger from '../util/log';
 import { CmrUmmCollection, CmrUmmVariable } from '../util/cmr';
 import { Encrypter, Decrypter } from '../util/crypto';
@@ -426,17 +426,15 @@ export default class DataOperation {
   }
 
   /**
-   * Returns the data provider IDs (from the data operation sources)
-   * as a list of strings
+   * Returns the data provider ID (from the data operation sources)
    *
-   * @returns string[] of data providers IDs
+   * @returns the provider ID (parsed from the collection ID)
    */
-  get providerIds(): string[] {
-    const providerIdsArr: Set<string> = this.model.sources.map((s: DataSource) => {
-      return s.collection.split('-')[1]; // parse provider from collection (e.g. C1244141250-EEDTEST)
-    });
-    const providerIdsDeduplicated: string[] = [...new Set(providerIdsArr)];
-    return providerIdsDeduplicated;
+  get providerId(): string | undefined {
+    const { sources } = this;
+    if (sources && sources.length > 0) {
+      return sources[0].collection.split('-')[1];
+    }
   }
 
   /**
