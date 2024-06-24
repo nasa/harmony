@@ -5,6 +5,7 @@ import { getEdlGroupInformation, validateUserIsInCoreGroup } from '../util/edl-a
 import { exec } from 'child_process';
 import * as path from 'path';
 import util from 'util';
+import { truncateString } from '@harmony/util/string';
 import db from '../util/db';
 import env from '../util/env';
 import { getRequestRoot } from '../util/url';
@@ -65,7 +66,7 @@ export function ecrImageNameToComponents(name: string): EcrImageNameComponents {
   const match = name.match(componentRegex);
   if (!match) return null;
 
-  const [ _, host, region, repository, tag ] = match;
+  const [_, host, region, repository, tag] = match;
   const registryId = host.split('.')[0]; // the AWS account ID
 
   return {
@@ -155,7 +156,8 @@ async function getEnabledAndMessage(): Promise<{ enabled: boolean, message: stri
  */
 export async function enableServiceDeployment(message: string): Promise<void> {
   await db.transaction(async (tx) => {
-    await tx('service_deployment').update({ enabled: true, message: message });
+    await tx('service_deployment')
+      .update({ enabled: true, message: truncateString(message, 4096) });
   });
 }
 
@@ -345,7 +347,7 @@ async function validateStatusForListServiceRequest(
 async function validateDeploymentState(
   req: HarmonyRequest, res: Response,
 ): Promise<boolean> {
-  if ( (!req.body || req.body.enabled === undefined)) {
+  if ((!req.body || req.body.enabled === undefined)) {
     res.statusCode = 400;
     res.send('\'enabled\' is a required body parameter');
     return false;
