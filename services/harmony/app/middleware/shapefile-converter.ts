@@ -140,9 +140,9 @@ export function normalizeGeoJsonCoords(geojson: any): any {
  * Change longitudes of a geojson file to be in the [-180, 180] range and split at antimeridian
  * if needed
  * @param geoJson - An object representing the json for a geojson file
- * @returns A string with the normalized geojson
+ * @returns An object with the normalized geojson
  */
-export function normalizeGeoJson(geoJson: object): string {
+export function normalizeGeoJson(geoJson: object): object {
   let newGeoJson = normalizeGeoJsonCoords(geoJson);
 
   // eslint-disable-next-line @typescript-eslint/dot-notation
@@ -157,7 +157,6 @@ export function normalizeGeoJson(geoJson: object): string {
   // force ccw winding
   newGeoJson = rewind(newGeoJson, false);
   return newGeoJson;
-
 }
 
 /**
