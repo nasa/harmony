@@ -23,10 +23,5 @@
     "active": true,
     "notes": "ignored because it doesn't affect us and there is not current patch",
     "expiry": "2024-09-01"
-  },
-  "1097346": {
-    "active": true,
-    "notes": "ignored because it doesn't affect us and there is not current patch",
-    "expiry": "2024-09-01"
   }
 }

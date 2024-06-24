@@ -17,7 +17,7 @@ const { awsDefaultRegion } = env;
  */
 
 const RANGESET_ROUTE_REGEX = /^\/.*\/ogc-api-coverages\/.*\/collections\/.*\/coverage\/rangeset/;
-const EDR_ROUTE_REGEX = /^\/ogc-api-edr\/.*\/collections\/.*\/cube/;
+const EDR_ROUTE_REGEX = /^\/ogc-api-edr\/.*\/collections\/.*\/(cube|area)/;
 
 /**
  * The accepted values for the `linkType` parameter for job status requests
@@ -172,7 +172,8 @@ function validateCoverageRangesetParameterNames(req: HarmonyRequest): void {
  */
 function validateEdrParameterNames(req: HarmonyRequest): void {
   const requestedParams = Object.keys(req.query);
-  validateParameterNames(requestedParams, edrGetParams);
+  const action = EDR_ROUTE_REGEX.exec(req.url)[1];
+  validateParameterNames(requestedParams, edrGetParams[action]);
 }
 
 /**

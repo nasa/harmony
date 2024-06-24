@@ -6,8 +6,8 @@ import * as yaml from 'js-yaml';
 import getLandingPage from '../ogc-coverages/get-landing-page';
 import getRequirementsClasses from '../ogc-coverages/get-requirements-classes';
 
-import getDataForCube from './get-data-for-cube';
-import postDataForCube from './post-data-for-cube';
+import { getDataForCube, postDataForCube } from './get-data-for-cube';
+import { getDataForArea, postDataForArea } from './get-data-for-area';
 
 import HarmonyRequest from '../../models/harmony-request';
 
@@ -32,9 +32,22 @@ const openApiRoot = path.join(__dirname, '..', '..', 'schemas', 'ogc-api-edr', v
 const openApiPath = path.join(openApiRoot, `ogc-api-edr-v${version}.yml`);
 export const openApiContent = fs.readFileSync(openApiPath, 'utf-8');
 const ogcSchemaEdr = yaml.load(openApiContent, { schema: yaml.DEFAULT_SCHEMA }) as OgcSchemaEdr;
-export const edrGetParams = ogcSchemaEdr
-  .paths['/collections/{collectionId}/cube'].get.parameters
-  .map(param => param.$ref.split('/').pop());
+
+/**
+ * Parse parameter entries from a schema file
+ * @param action - type of request in the schema, e.g., 'cube', 'area'
+ * @returns an array of parameter names
+ */
+function getParameters(action: string): string[] {
+  return ogcSchemaEdr
+    .paths[`/collections/{collectionId}/${action}`].get.parameters
+    .map(param => param.$ref.split('/').pop());
+}
+
+export const edrGetParams = {
+  'cube': getParameters('cube'),
+  'area': getParameters('area'),
+};
 
 /**
  * Express handler that returns a 501 error and "not yet implemented" message to the client
@@ -84,10 +97,10 @@ export function addOpenApiRoutes(app: Router): void {
       postDataForPoint: TODO,
       getDataForRadius: TODO,
       postDataForRadius: TODO,
-      getDataForArea: TODO,
-      postDataForArea: TODO,
       getDataForCube,
       postDataForCube,
+      getDataForArea,
+      postDataForArea,
       getDataForTrajectory: TODO,
       postDataForTrajectory: TODO,
       getDataForCorridor: TODO,

@@ -1,5 +1,7 @@
 import { RequestValidationError } from './errors';
 import HarmonyRequest from '../models/harmony-request';
+import wellknown from 'wellknown';
+import _ from 'lodash';
 
 /**
  * Tag class for denoting errors during parsing
@@ -52,6 +54,46 @@ export function parseMultiValueParameter(value: string[] | string): string[] {
     return value;
   }
   return value.split(',').map((v) => v.trim());
+}
+
+const geoJsonTemplate =
+  { 'type': 'FeatureCollection',
+    'features': [
+
+      { 'type': 'Feature',
+        'geometry': {},
+        'properties': {},
+      },
+    ],
+  };
+
+/**
+ * Parses portion of WKT that are supported as parameters in harmony.
+ * @param wkt - The WKT string
+ * @returns GeoJSON object representation of the WKT string
+ * @throws ParameterParseError if it cannot be parsed or harmony does not support the WKT type
+ */
+export function parseWkt(wkt: string): Object {
+  // TODO - Will implement lines and points in separate tickets
+  // const supportedTypes = ['Polygon', 'MultiPolygon', 'Point', 'MultiPoint', 'LineString', 'MultiLineString'];
+  const supportedTypes = ['Polygon', 'MultiPolygon'];
+  let wktGeoJson;
+  const geoJson = _.cloneDeep(geoJsonTemplate);
+  try {
+    wktGeoJson = wellknown.parse(wkt);
+  } catch (e) {
+    throw new ParameterParseError(`Unable to parse WKT string ${wkt}.`);
+  }
+  if (wktGeoJson) {
+    if (!supportedTypes.includes(wktGeoJson.type)) {
+      throw new ParameterParseError(`Unsupported WKT type ${wktGeoJson.type}.`);
+    }
+    geoJson.features[0].geometry = wktGeoJson;
+
+  } else {
+    throw new ParameterParseError(`Unable to parse WKT string ${wkt}.`);
+  }
+  return geoJson;
 }
 
 /**

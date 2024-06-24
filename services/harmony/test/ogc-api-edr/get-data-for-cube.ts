@@ -55,7 +55,7 @@ describe('OGC API EDR - getEdrCube', function () {
 
         describe('calling the backend service', function () {
           StubService.hook({ params: { redirect: 'http://example.com' } });
-          hookEdrRequest(version, collection, { query });
+          hookEdrRequest('cube', version, collection, { query });
 
           it('provides a staging location to the backend', function () {
             const location = this.service.operation.stagingLocation;
@@ -146,7 +146,7 @@ describe('OGC API EDR - getEdrCube', function () {
 
         describe('and the backend service calls back with an error parameter', function () {
           StubService.hook({ params: { error: 'Something bad happened' } });
-          hookEdrRequest(version, collection, { query });
+          hookEdrRequest('cube', version, collection, { query });
 
           it('propagates the error message into the response', function () {
             expect(this.res.text).to.include('Something bad happened');
@@ -159,7 +159,7 @@ describe('OGC API EDR - getEdrCube', function () {
 
         describe('and the backend service calls back with a redirect', function () {
           StubService.hook({ params: { redirect: 'http://example.com' } });
-          hookEdrRequest(version, collection, { query });
+          hookEdrRequest('cube', version, collection, { query });
 
           it('redirects the client to the provided URL', function () {
             expect(this.res.status).to.equal(303);
@@ -169,7 +169,7 @@ describe('OGC API EDR - getEdrCube', function () {
 
         describe('and the backend service calls back with a redirect to an S3 location', function () {
           StubService.hook({ params: { redirect: 's3://my-bucket/public/my-object.tif' } });
-          hookEdrRequest(version, collection, { query });
+          hookEdrRequest('cube', version, collection, { query });
 
           it('redirects the client to a presigned url', function () {
             expect(this.res.status).to.equal(303);
@@ -186,7 +186,7 @@ describe('OGC API EDR - getEdrCube', function () {
               'Content-Disposition': 'filename="out.txt"',
             },
           });
-          hookEdrRequest(version, collection, { query });
+          hookEdrRequest('cube', version, collection, { query });
 
           it('returns an HTTP 303 redirect status code to the provided data', function () {
             expect(this.res.status).to.equal(303);
@@ -206,6 +206,7 @@ describe('OGC API EDR - getEdrCube', function () {
 
           StubService.hook({ params: { redirect: 'http://example.com' } });
           hookPostEdrRequest(
+            'cube',
             version,
             collection,
             { ...query, granuleId: largeGranuleList.join(',') },
@@ -222,6 +223,7 @@ describe('OGC API EDR - getEdrCube', function () {
           const queryParameterString = 'datetime=2020-01-02T00%3A00%3A00Z%2F2020-01-02T01%3A00%3A00Z';
           StubService.hook({ params: { redirect: 'http://example.com' } });
           hookPostEdrRequest(
+            'cube',
             version,
             collection,
             queryLocal,
@@ -243,6 +245,7 @@ describe('OGC API EDR - getEdrCube', function () {
           const queryParameterString = 'datetime=2020-01-02T00%3A00%3A00Z%2F2020-01-02T01%3A00%3A00Z';
           StubService.hook({ params: { redirect: 'http://example.com' } });
           hookPostEdrRequest(
+            'cube',
             version,
             collection,
             query,
@@ -263,7 +266,7 @@ describe('OGC API EDR - getEdrCube', function () {
 
   describe('when provided an incorrectly named set of parameters', function () {
     StubService.hook({ params: { redirect: 'http://example.com' } });
-    hookEdrRequest(version, collection, { query: { granuleId, outputCrz: '', maxResultz: 100, 'parameter-name': variableName } });
+    hookEdrRequest('cube', version, collection, { query: { granuleId, outputCrz: '', maxResultz: 100, 'parameter-name': variableName } });
     it('rejects the request with an informative error message', function () {
       expect(this.res.status).to.equal(400);
       expect(this.res.text).to.include('Invalid parameter(s): outputCrz and maxResultz');
@@ -273,7 +276,7 @@ describe('OGC API EDR - getEdrCube', function () {
 
   describe('when passed a blank crs', function () {
     StubService.hook({ params: { redirect: 'http://example.com' } });
-    hookEdrRequest(version, collection, { query: { granuleId, crs: '', 'parameter-name': variableName } });
+    hookEdrRequest('cube', version, collection, { query: { granuleId, crs: '', 'parameter-name': variableName } });
     it('accepts the request, passing an empty CRS to the backend', function () {
       expect(this.res.status).to.be.lessThan(400);
       expect(this.service.operation.crs).to.not.be;
@@ -301,7 +304,7 @@ describe('OGC API EDR - getEdrCube', function () {
       const variableId2 = 'V1233801696-EEDTEST';
 
       StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookEdrRequest(version, collection, { query });
+      hookEdrRequest('cube', version, collection, { query });
 
       it('passes multiple variables to the backend service', function () {
         const source = this.service.operation.sources[0];
@@ -320,7 +323,7 @@ describe('OGC API EDR - getEdrCube', function () {
     };
 
     StubService.hook({ params: { redirect: 'http://example.com' } });
-    hookEdrRequest(version, collection, { query });
+    hookEdrRequest('cube', version, collection, { query });
 
     it('passes a single variable to the backend service', function () {
       const source = this.service.operation.sources[0];
@@ -335,7 +338,7 @@ describe('OGC API EDR - getEdrCube', function () {
     };
 
     StubService.hook({ params: { redirect: 'http://example.com' } });
-    hookEdrRequest(version, collection, { query });
+    hookEdrRequest('cube', version, collection, { query });
 
     it('passes no variables to the backend service', function () {
       const source = this.service.operation.sources[0];
@@ -351,7 +354,7 @@ describe('OGC API EDR - getEdrCube', function () {
     };
 
     StubService.hook({ params: { redirect: 'http://example.com' } });
-    hookEdrRequest(version, collection, { query });
+    hookEdrRequest('cube', version, collection, { query });
 
     it('passes no variables to the backend service', function () {
       const source = this.service.operation.sources[0];
@@ -363,7 +366,7 @@ describe('OGC API EDR - getEdrCube', function () {
     const query = { 'parameter-name': variableName };
 
     StubService.hook({ params: { status: 'successful' } });
-    hookEdrRequest(version, collection, { query });
+    hookEdrRequest('cube', version, collection, { query });
 
     it('is processed asynchronously', function () {
       expect(this.service.operation.isSynchronous).to.equal(false);
@@ -377,7 +380,7 @@ describe('OGC API EDR - getEdrCube', function () {
     const query = { 'parameter-name': variableName };
 
     StubService.hook({ params: { status: 'successful' } });
-    hookEdrRequest(version, shortName, { query });
+    hookEdrRequest('cube', version, shortName, { query });
 
     it('is processed asynchronously', function () {
       expect(this.service.operation.isSynchronous).to.equal(false);
@@ -397,7 +400,7 @@ describe('OGC API EDR - getEdrCube', function () {
 
     describe('calling the backend service', function () {
       StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookEdrRequest(version, collection, { query });
+      hookEdrRequest('cube', version, collection, { query });
 
       it('synchronously makes the request', function () {
         expect(this.service.operation.isSynchronous).to.equal(true);
@@ -418,7 +421,7 @@ describe('OGC API EDR - getEdrCube', function () {
       const forceAsync = true;
 
       describe('and making a request would otherwise be synchronous', function () {
-        hookEdrRequest(version, collection,
+        hookEdrRequest('cube', version, collection,
           { query: { granuleId, forceAsync, 'parameter-name': variableName } });
 
         it('performs the request asynchronously', function () {
@@ -427,7 +430,7 @@ describe('OGC API EDR - getEdrCube', function () {
       });
 
       describe('and making a request would otherwise be asynchronous', function () {
-        hookEdrRequest(version, collection, { query: { forceAsync, 'parameter-name': variableName } });
+        hookEdrRequest('cube', version, collection, { query: { forceAsync, 'parameter-name': variableName } });
 
         it('performs the request asynchronously', function () {
           expect(this.service.operation.isSynchronous).to.equal(false);
@@ -439,7 +442,7 @@ describe('OGC API EDR - getEdrCube', function () {
       const forceAsync = false;
 
       describe('and making a request would otherwise be synchronous', function () {
-        hookEdrRequest(version, collection,
+        hookEdrRequest('cube', version, collection,
           { query: { granuleId, forceAsync, 'parameter-name': variableName } });
 
         it('performs the request synchronously', function () {
@@ -448,7 +451,7 @@ describe('OGC API EDR - getEdrCube', function () {
       });
 
       describe('and making a request would otherwise be asynchronous', function () {
-        hookEdrRequest(version, collection, { query: { forceAsync, 'parameter-name': variableName } });
+        hookEdrRequest('cube', version, collection, { query: { forceAsync, 'parameter-name': variableName } });
 
         it('performs the request asynchronously', function () {
           expect(this.service.operation.isSynchronous).to.equal(false);
@@ -486,7 +489,7 @@ describe('OGC API EDR - getEdrCube', function () {
 
     describe('and maxResults is not set for the query', function () {
 
-      hookEdrRequest(version, collection, { username: 'jdoe1', query: { 'parameter-name': variableName } });
+      hookEdrRequest('cube', version, collection, { username: 'jdoe1', query: { 'parameter-name': variableName } });
       describe('retrieving its job status', function () {
         hookRedirect('jdoe1');
         it('returns a human-readable message field indicating the request has been limited to a subset of the granules determined by the collection configuration', function () {
@@ -504,7 +507,7 @@ describe('OGC API EDR - getEdrCube', function () {
     describe('and maxResults from the query is set to a value greater than the granule limit for the collection', function () {
       const maxResults = 10;
 
-      hookEdrRequest(version, collection, { username: 'jdoe1', query: { maxResults, 'parameter-name': variableName } });
+      hookEdrRequest('cube', version, collection, { username: 'jdoe1', query: { maxResults, 'parameter-name': variableName } });
       describe('retrieving its job status', function () {
         hookRedirect('jdoe1');
         it('returns a human-readable message field indicating the request has been limited to a subset of the granules determined by the collection configuration', function () {
@@ -522,7 +525,7 @@ describe('OGC API EDR - getEdrCube', function () {
     describe('and maxResults from the query is set to a value less than the granule limit for the collection', function () {
       const maxResults = 2;
 
-      hookEdrRequest(version, collection, { username: 'jdoe1', query: { maxResults, 'parameter-name': variableName } });
+      hookEdrRequest('cube', version, collection, { username: 'jdoe1', query: { maxResults, 'parameter-name': variableName } });
       describe('retrieving its job status', function () {
         hookRedirect('jdoe1');
         it('returns a human-readable message field indicating the request has been limited to a subset of the granules determined by maxResults', function () {
@@ -545,7 +548,7 @@ describe('OGC API EDR - getEdrCube', function () {
         this.glStub.restore();
       });
 
-      hookEdrRequest(version, collection, { username: 'jdoe1', query: { 'parameter-name': variableName } });
+      hookEdrRequest('cube', version, collection, { username: 'jdoe1', query: { 'parameter-name': variableName } });
       hookRedirect('jdoe1');
 
       it('returns a warning message about maxResults limiting the number of results', function () {
@@ -588,7 +591,7 @@ describe('OGC API EDR - getEdrCube', function () {
 
     describe('and maxResults is not set for the query', function () {
 
-      hookEdrRequest(version, collection, { username: 'jdoe1', query: { 'parameter-name': variableName } });
+      hookEdrRequest('cube', version, collection, { username: 'jdoe1', query: { 'parameter-name': variableName } });
       describe('retrieving its job status', function () {
         hookRedirect('jdoe1');
         it('returns a human-readable message field indicating the request has been limited to a subset of the granules determined by the collection configuration', function () {
@@ -606,7 +609,7 @@ describe('OGC API EDR - getEdrCube', function () {
     describe('and maxResults from the query is set to a value greater than the granule limit for the collection', function () {
       const maxResults = 10;
 
-      hookEdrRequest(version, collection, { username: 'jdoe1', query: { maxResults, 'parameter-name': variableName } });
+      hookEdrRequest('cube', version, collection, { username: 'jdoe1', query: { maxResults, 'parameter-name': variableName } });
       describe('retrieving its job status', function () {
         hookRedirect('jdoe1');
         it('returns a human-readable message field indicating the request has been limited to a subset of the granules determined by the collection configuration', function () {
@@ -624,7 +627,7 @@ describe('OGC API EDR - getEdrCube', function () {
     describe('and maxResults from the query is set to a value less than the granule limit for the collection', function () {
       const maxResults = 2;
 
-      hookEdrRequest(version, collection, { username: 'jdoe1', query: { maxResults, 'parameter-name': variableName } });
+      hookEdrRequest('cube', version, collection, { username: 'jdoe1', query: { maxResults, 'parameter-name': variableName } });
       describe('retrieving its job status', function () {
         hookRedirect('jdoe1');
         it('returns a human-readable message field indicating the request has been limited to a subset of the granules determined by maxResults', function () {
@@ -647,7 +650,7 @@ describe('OGC API EDR - getEdrCube', function () {
         this.glStub.restore();
       });
 
-      hookEdrRequest(version, collection, { username: 'jdoe1', query: { 'parameter-name': variableName } });
+      hookEdrRequest('cube', version, collection, { username: 'jdoe1', query: { 'parameter-name': variableName } });
       hookRedirect('jdoe1');
 
       it('returns a warning message about maxResults limiting the number of results', function () {
@@ -674,7 +677,7 @@ describe('OGC API EDR - getEdrCube', function () {
     describe('when providing an accept header for an unsupported format', function () {
       const headers = { accept: unsupportedFormat };
       const query = { granuleId, 'parameter-name': 'all' };
-      hookEdrRequest(version, collection, { headers, query });
+      hookEdrRequest('cube', version, collection, { headers, query });
       it('returns a 422 error response', function () {
         expect(this.res.status).to.equal(422);
       });
@@ -692,7 +695,7 @@ describe('OGC API EDR - getEdrCube', function () {
       const pngQuery = { granuleId, 'parameter-name': variableName, f: png };
       const headers = { accept: tiff };
       StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookEdrRequest(version, collection, { query: pngQuery, headers });
+      hookEdrRequest('cube', version, collection, { query: pngQuery, headers });
       it('gives the format parameter precedence over the accept header', function () {
         expect(this.service.operation.outputFormat).to.equal(png);
       });
@@ -702,7 +705,7 @@ describe('OGC API EDR - getEdrCube', function () {
       const headers = { accept: anyWildcard };
       const query = { granuleId, 'parameter-name': variableName };
       StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookEdrRequest(version, collection, { headers, query });
+      hookEdrRequest('cube', version, collection, { headers, query });
       it('chooses the first output format supported by the service (see services.yml)', function () {
         expect(this.service.operation.outputFormat).to.equal(tiff);
       });
@@ -712,7 +715,7 @@ describe('OGC API EDR - getEdrCube', function () {
       const headers = { accept: imageWildcard };
       const query = { granuleId, 'parameter-name': variableName };
       StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookEdrRequest(version, collection, { headers, query });
+      hookEdrRequest('cube', version, collection, { headers, query });
       it('selects the first valid tiff format supported', function () {
         expect(this.service.operation.outputFormat).to.equal(tiff);
       });
@@ -722,7 +725,7 @@ describe('OGC API EDR - getEdrCube', function () {
       const headers = { accept: wildcardTiff };
       const query = { granuleId, 'parameter-name': variableName };
       StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookEdrRequest(version, collection, { headers, query });
+      hookEdrRequest('cube', version, collection, { headers, query });
       it('selects the first valid image format supported', function () {
         expect(this.service.operation.outputFormat).to.equal(tiff);
       });
@@ -732,7 +735,7 @@ describe('OGC API EDR - getEdrCube', function () {
       const headers = { accept: `${zarr};q=0.9` };
       const query = { granuleId, 'parameter-name': 'all' };
       StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookEdrRequest(version, collection, { headers, query });
+      hookEdrRequest('cube', version, collection, { headers, query });
       it('correctly parses the format from the header', function () {
         expect(this.service.operation.outputFormat).to.equal(zarr);
       });
@@ -743,7 +746,7 @@ describe('OGC API EDR - getEdrCube', function () {
       describe('when requesting variable subsetting which is only supported by one of the services', function () {
         const query = { granuleId, 'parameter-name': variableName };
         StubService.hook({ params: { redirect: 'http://example.com' } });
-        hookEdrRequest(version, collection, { headers, query });
+        hookEdrRequest('cube', version, collection, { headers, query });
         it('uses the backend service that supports variable subsetting', function () {
           expect(this.service.config.name).to.equal('harmony/service-example');
         });
@@ -755,7 +758,7 @@ describe('OGC API EDR - getEdrCube', function () {
       describe('when not requesting variable subsetting so either service could be used', function () {
         const query = { granuleId, 'parameter-name': 'all' };
         StubService.hook({ params: { redirect: 'http://example.com' } });
-        hookEdrRequest(version, collection, { headers, query });
+        hookEdrRequest('cube', version, collection, { headers, query });
         it('uses the first format in the list', function () {
           expect(this.service.operation.outputFormat).to.equal(zarr);
         });
@@ -769,7 +772,7 @@ describe('OGC API EDR - getEdrCube', function () {
       const headers = { accept: `${unsupportedFormat};q=1.0, ${zarr};q=0.5, ${tiff};q=0.8, ${png};q=0.85` };
       const query = { granuleId, 'parameter-name': variableName };
       StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookEdrRequest(version, collection, { headers, query });
+      hookEdrRequest('cube', version, collection, { headers, query });
       it('uses the highest quality value format that is supported', function () {
         expect(this.service.operation.outputFormat).to.equal(png);
       });
@@ -782,7 +785,7 @@ describe('OGC API EDR - getEdrCube', function () {
       const headers = { accept: `${zarr};q=0.5, ${tiff};q=0.8, ${png}` };
       const query = { granuleId, 'parameter-name': variableName };
       StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookEdrRequest(version, collection, { headers, query });
+      hookEdrRequest('cube', version, collection, { headers, query });
       it('treats the unspecified quality value as 1.0', function () {
         expect(this.service.operation.outputFormat).to.equal(png);
       });
@@ -792,7 +795,7 @@ describe('OGC API EDR - getEdrCube', function () {
       const headers = { accept: `${unsupportedFormat}, ${anyWildcard}` };
       const query = { granuleId, 'parameter-name': variableName };
       StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookEdrRequest(version, collection, { headers, query });
+      hookEdrRequest('cube', version, collection, { headers, query });
       it('returns a redirect 303 (and not a 404 error)', function () {
         expect(this.res.status).to.equal(303);
       });
@@ -806,7 +809,7 @@ describe('OGC API EDR - getEdrCube', function () {
   describe('when requesting no data transformations', function () {
     const query = { 'parameter-name': 'all' };
     StubService.hook({ params: { redirect: 'http://example.com' } });
-    hookEdrRequest(version, collection, { query });
+    hookEdrRequest('cube', version, collection, { query });
     it('selects the download link service to process the request', function () {
       expect(this.service.config.name).to.equal('harmony/download');
     });
@@ -816,7 +819,7 @@ describe('OGC API EDR - getEdrCube', function () {
     const query = { 'parameter-name': variableName };
     hookDatabaseFailure();
     StubService.hook({ params: { redirect: 'http://example.com' } });
-    hookEdrRequest(version, collection, { query });
+    hookEdrRequest('cube', version, collection, { query });
 
     it('returns an HTTP 500 error with the JSON error format', function () {
       expect(this.res.status).to.eql(500);
@@ -849,6 +852,7 @@ describe('OGC API EDR - getEdrCube', function () {
           queryParams['parameter-name'] = 'all';
         }
         const res = await edrRequest(
+          'cube',
           this.frontend,
           version,
           collection,
@@ -920,6 +924,7 @@ describe('OGC API EDR - getEdrCube', function () {
 
     it('returns an HTTP 400 "Bad Request" error with explanatory message when the variable does not exist', async function () {
       const res = await edrRequest(
+        'cube',
         this.frontend,
         version,
         collection,
@@ -934,6 +939,7 @@ describe('OGC API EDR - getEdrCube', function () {
 
     it('returns an HTTP 400 "Bad Request" error with explanatory message when "all" is specified with another variable', async function () {
       const res = await edrRequest(
+        'cube',
         this.frontend,
         version,
         collection,
@@ -952,7 +958,7 @@ describe('OGC API EDR - getEdrCube', function () {
     const query = { 'parameter-name': 'sea_surface_temperature' };
     StubService.hook({ params: { redirect: 'http://example.com' } });
 
-    hookEdrRequest(version, collectionId, { query });
+    hookEdrRequest('cube', version, collectionId, { query });
 
     it('includes coordinate variables', function () {
       const source = this.service.operation.sources[0];
@@ -969,7 +975,9 @@ describe('OGC API EDR - getEdrCube', function () {
 
 describe('OGC API EDR - getEdrCube with the extend query parameter', async function () {
   hookServersStartStop();
-  hookEdrRequest('1.1.0',
+  hookEdrRequest(
+    'cube',
+    '1.1.0',
     'C1233800302-EEDTEST',
     { query: { 'parameter-name': 'all', extend: 'dimension_var', skipPreview: 'true', maxResults: 2 }, username: 'joe' });
 
@@ -1007,13 +1015,13 @@ describe('OGC API EDR - getEdrCube with a collection not configured for services
 
   describe('when not requesting any transformations', function () {
     const query = { 'parameter-name': 'all' };
-    hookEdrRequest(version, collection, { username: 'joe', query });
+    hookEdrRequest('cube', version, collection, { username: 'joe', query });
     itRedirectsToJobStatusUrl();
   });
 
   describe('when requesting any transformation such as reformatting to png', function () {
     const query = { 'parameter-name': 'all', f: 'image/png' };
-    hookEdrRequest(version, collection, { username: 'joe', query });
+    hookEdrRequest('cube', version, collection, { username: 'joe', query });
 
     it('returns a 422 error response', function () {
       expect(this.res.status).to.equal(422);

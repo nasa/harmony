@@ -1,6 +1,6 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import { getRequestUrl, getSanitizedRequestUrl, getRequestRoot } from '../../app/util/url';
+import { getRequestUrl, getSanitizedRequestUrl, getRequestRoot, isValidUri } from '../../app/util/url';
 
 /**
  * Returns a request object to be used in tests to simulate different URLs
@@ -127,3 +127,29 @@ describe('util/url', function () {
     });
   });
 });
+
+describe('isValidUri', function () {
+  it('should return true for a valid http URI', function () {
+    expect(isValidUri('http://example.com')).to.be.true;
+  });
+
+  it('should return true for a valid https URI', function () {
+    expect(isValidUri('https://example.com')).to.be.true;
+  });
+
+  it('should return true for a valid s3 URI', function () {
+    expect(isValidUri('s3://bucket-name/key')).to.be.true;
+  });
+
+  it('should return true for a valid file URI', function () {
+    expect(isValidUri('file:///tmp/shapefile.txt')).to.be.true;
+    expect(isValidUri('file:///C:/path/to/file.txt')).to.be.true;
+  });
+
+  it('should return false for an invalid URI', function () {
+    expect(isValidUri('invalid-uri')).to.be.false;
+    expect(isValidUri('http://')).to.be.false;
+    expect(isValidUri('')).to.be.false;
+  });
+});
+

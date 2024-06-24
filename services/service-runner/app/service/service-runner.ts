@@ -5,7 +5,9 @@ import env from '../util/env';
 import logger from '../../../harmony/app/util/log';
 import { resolve as resolveUrl } from '../../../harmony/app/util/url';
 import { objectStoreForProtocol } from '../../../harmony/app/util/object-store';
-import { WorkItemRecord, getStacLocation, getItemLogsLocation } from '../../../harmony/app/models/work-item-interface';
+import {
+  WorkItemRecord, getStacLocation, getItemLogsLocation,
+} from '../../../harmony/app/models/work-item-interface';
 import axios from 'axios';
 import { Logger } from 'winston';
 import { writeFileSync } from 'fs';
@@ -30,8 +32,9 @@ const { workerTimeout } = env;
 // service exit code for Out Of Memory error
 const OOM_EXIT_CODE = '137';
 
-// maximum size a data operation can be before it must be passed as a file using --harmony-input-file <path>
-// instead of passed as a command line argument using --harmony-input
+// maximum size a data operation can be before it must be passed as a file using
+// --harmony-input-file <path> instead of passed as a command line argument using
+// --harmony-input <operation>
 const MAX_INLINE_OPERATION_SIZE = 100000;
 
 /**
@@ -146,7 +149,9 @@ function _getErrorMessageOfStatus(status: k8s.V1Status, msg = 'Unknown error'): 
  * @param workItemLogger - Logger for logging messages
  * @returns An error message
  */
-async function _getErrorMessage(status: k8s.V1Status, catalogDir: string, workItemLogger: Logger = logger): Promise<string> {
+async function _getErrorMessage(
+  status: k8s.V1Status, catalogDir: string, workItemLogger: Logger = logger,
+): Promise<string> {
   // expect JSON logs entries
   try {
     const s3 = objectStoreForProtocol('s3');
@@ -217,7 +222,9 @@ export async function runQueryCmrFromPull(
  * @param workItem - the work item that the logs are for
  * @param logs - logs array from the k8s exec call
  */
-export async function uploadLogs(workItem: WorkItemRecord, logs: (string | object)[]): Promise<object> {
+export async function uploadLogs(
+  workItem: WorkItemRecord, logs: (string | object)[],
+): Promise<object> {
   let newFileContent;
   const retryMessage = `Start of service execution (retryCount=${workItem.retryCount}, id=${workItem.id})`;
   if (logs.length > 0 && (typeof logs[0] === 'string' || logs[0] instanceof String)) {
@@ -240,7 +247,9 @@ export async function uploadLogs(workItem: WorkItemRecord, logs: (string | objec
  * @param workItem - The item to be worked on in the service
  * @param workItemLogger - The logger to use
  */
-export async function runServiceFromPull(workItem: WorkItemRecord, workItemLogger = logger): Promise<ServiceResponse> {
+export async function runServiceFromPull(
+  workItem: WorkItemRecord, workItemLogger = logger,
+): Promise<ServiceResponse> {
   try {
     const serviceName = sanitizeImage(env.harmonyService);
     const error = `The ${serviceName} service failed.`;
@@ -249,6 +258,23 @@ export async function runServiceFromPull(workItem: WorkItemRecord, workItemLogge
     let commandLine = env.invocationArgs.split('\n');
     if (commandLine.length == 1) {
       commandLine = env.invocationArgs.split(' ');
+    }
+
+    // if the shape field in the operation is not an object with an `href` field then it must
+    // be a string containing the actual geojson. in that case we save it to a file in the shared
+    // /tmp directory and replace the `geojson` entry with the file url. Note that operation is
+    // not an instance of the DataOperation class, it is an object that matches the JSON schema
+    // model so instead of operation.geojson we use operation.subset.shape.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const geoJson = (operation as any).subset?.shape;
+    if (typeof geoJson === 'string') {
+      const geoJsonFile = '/tmp/shapefile.json';
+      writeFileSync(geoJsonFile, geoJson);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (operation as any).subset.shape = {
+        href: `file://${geoJsonFile}`,
+        type: 'application/geo+json',
+      };
     }
 
     const catalogDir = getStacLocation(workItem);
@@ -266,10 +292,12 @@ export async function runServiceFromPull(workItem: WorkItemRecord, workItemLogge
       let operationCommandLine = '--harmony-input';
       let operationCommandLineValue = operationJson;
       // 262144 is the max SQS message size, so any operation + other stuff we add that is
-      //  bigger than that is considered BIG and therefore requires special handling. In this case
-      // we use a file to pass the operation to harmony-service-lib instead of a command line argument.
+      // bigger than that is considered BIG and therefore requires special handling. In this case
+      // we use a file to pass the operation to harmony-service-lib instead of a command line
+      // argument.
       if (operationJson.length > MAX_INLINE_OPERATION_SIZE) {
-        // use a temporary file on the shared volume mount to pass the operation if the operation is large
+        // use a temporary file on the shared volume mount to pass the operation if the operation
+        // is large
         const operationJsonFile = '/tmp/operation.json';
         operationCommandLine = '--harmony-input-file';
         operationCommandLineValue = operationJsonFile;

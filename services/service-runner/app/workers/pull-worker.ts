@@ -99,7 +99,9 @@ async function _pullWork(): Promise<{ item?: WorkItemRecord; status?: number; er
       return { status: response.status };
     }
 
-    return { item: response.data.workItem, maxCmrGranules: response.data.maxCmrGranules, status: response.status };
+    const item = response.data.workItem;
+
+    return { item, maxCmrGranules: response.data.maxCmrGranules, status: response.status };
   } catch (err) {
     if (err.response) {
       return { status: err.response.status, error: err.response.data };
