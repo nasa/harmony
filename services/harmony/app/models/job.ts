@@ -320,6 +320,7 @@ function modifyQuery(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   queryBuilder: Knex.QueryBuilder<any, any>, 
   constraints: JobQuery): void {
+  if (constraints === undefined) return;
   if (constraints.whereIn) {
     for (const jobField in constraints.whereIn) {
       const constraint = constraints.whereIn[jobField];
