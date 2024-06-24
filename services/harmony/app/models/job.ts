@@ -19,7 +19,6 @@ export const TEXT_LIMIT = 4096; // this.request and this.message need to be unde
 import env from '../util/env';
 import JobError from './job-error';
 import { setReadyCountToZero } from './user-work';
-import { Knex } from 'knex';
 const { awsDefaultRegion } = env;
 
 export const jobRecordFields = [

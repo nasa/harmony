@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
-import _, { Collection } from 'lodash';
+import _ from 'lodash';
 import logger from '../util/log';
 import { CmrUmmCollection, CmrUmmVariable } from '../util/cmr';
 import { Encrypter, Decrypter } from '../util/crypto';
