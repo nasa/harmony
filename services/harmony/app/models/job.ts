@@ -126,7 +126,7 @@ export interface JobQuery {
     to?: Date;
     field: 'createdAt' | 'updatedAt';
   }
-  whereIn?: { // TODO case insensitive
+  whereIn?: {
     status?: { in: boolean, values: string[] };
     service_name?: { in: boolean, values: string[] };
     provider_id?: { in: boolean, values: string[] };

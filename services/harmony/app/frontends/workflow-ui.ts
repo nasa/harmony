@@ -108,7 +108,7 @@ function parseQuery( /* eslint-disable @typescript-eslint/no-explicit-any */
     const userValues = validUserSelections.map(option => option.value.split('user: ')[1]);
     const validProviderSelections = selectedOptions
       .filter(option => isAdminAccess && /^prov: [A-Z0-9_]{1,100}$/.test(option.value));
-    const providerValues = validProviderSelections.map(option => option.value.split('prov: ')[1]);
+    const providerValues = validProviderSelections.map(option => option.value.split('prov: ')[1].toLowerCase());
     if ((statusValues.length + serviceValues.length + userValues.length + providerValues.length) > maxFilters) {
       throw new RequestValidationError(`Maximum amount of filters (${maxFilters}) was exceeded.`);
     }
