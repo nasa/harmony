@@ -175,10 +175,6 @@ async function normalizeGeoJsonFile(url: string, isLocal: boolean, logger: Logge
     originalGeoJson = (await fs.readFile(localFile)).toJSON();
   }
   const normalizedGeoJson = normalizeGeoJson(originalGeoJson);
-
-  // Uncomment this line to save the normalized file locally during development
-  // await fs.writeFile('normalized.geojson', JSON.stringify(normalizedGeoJson));
-
   const uploadUrl = `${url}-normalized.geojson`;
   await store.upload(JSON.stringify(normalizedGeoJson), uploadUrl);
 
