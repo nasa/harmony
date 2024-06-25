@@ -24,6 +24,7 @@ const woodyJob1 = buildJob({
   isAsync: true,
   numInputGranules: 89723,
   service_name: 'harmony/service-example',
+  provider_id: 'provider_a',
 });
 
 const woodyJob2 = buildJob({
@@ -36,6 +37,7 @@ const woodyJob2 = buildJob({
   isAsync: true,
   numInputGranules: 35051,
   service_name: 'harmony/service-example',
+  provider_id: 'provider_a',
 });
 
 const woodySyncJob = buildJob({
@@ -48,6 +50,7 @@ const woodySyncJob = buildJob({
   isAsync: false,
   numInputGranules: 12615,
   service_name: 'harmony/netcdf-to-zarr',
+  provider_id: 'provider_b',
 });
 
 const buzzJob1 = buildJob({
@@ -59,26 +62,31 @@ const buzzJob1 = buildJob({
   request: 'http://example.com/harmony?request=buzz1&turbo=true',
   isAsync: true,
   numInputGranules: 10,
+  provider_id: 'provider_1',
 });
 
 const sidJob1 = buildJob({
   username: 'sid',
   status: JobStatus.RUNNING_WITH_ERRORS,
+  provider_id: 'provider_1',
 });
 
 const sidJob2 = buildJob({
   username: 'sid',
   status: JobStatus.COMPLETE_WITH_ERRORS,
+  provider_id: 'provider_2',
 });
 
 const sidJob3 = buildJob({
   username: 'sid',
   status: JobStatus.PAUSED,
+  provider_id: 'provider_3',
 });
 
 const sidJob4 = buildJob({
   username: 'sid',
   status: JobStatus.PREVIEWING,
+  provider_id: 'provider_q',
 });
 
 describe('Workflow UI jobs route', function () {
@@ -488,6 +496,23 @@ describe('Workflow UI jobs route', function () {
       });
     });
 
+    describe('who filters by provider, but is not an admin', function () {
+      const tableFilter = '[{"value":"prov: provider_z","dbValue":"provider_z","field":"provider"}]';
+      hookWorkflowUIJobs({ username: 'woody', disallowProvider: 'on', tableFilter });
+      it('ignores the provider filter, returning all of woody\'s jobs', function () {
+        const listing = this.res.text;
+        expect((listing.match(/job-table-row/g) || []).length).to.equal(3);
+      });
+      it('does not return the disallowProvider HTML checkbox', function () {
+        const listing = this.res.text;
+        expect((listing.match(/<input (?=.*name="disallowProvider").*>/g) || []).length).to.equal(0);
+      });
+      it('has no provider filters selected', function () {
+        const listing = this.res.text;
+        expect(listing).to.not.contain(mustache.render('{{prov}}', { prov: 'prov: prov_a' }));
+      });
+    });
+
     describe('who filters by a particular combination of filter types', function () {
       const tableFilter = '[{"value":"service: harmony/service-example","dbValue":"harmony/service-example","field":"service"},{"value":"status: failed","dbValue":"failed","field":"status"}]';
       hookWorkflowUIJobs({ username: 'woody', disallowService: 'on', disallowStatus: '', tableFilter });
@@ -624,6 +649,44 @@ describe('Workflow UI jobs route', function () {
           expect(listing).to.contain('status: previewing');
           expect(listing).to.not.contain('status: failed');
           expect(listing).to.not.contain('status: successful');
+        });
+      });
+
+      describe('and the admin filters by provider IN [provider_b]', function () {
+        const tableFilter = '[{"value":"prov: provider_b","dbValue":"provider_b","field":"provider"}]';
+        hookAdminWorkflowUIJobs({ username: 'adam', disallowProvider: '', tableFilter });
+        it('returns the matching job', function () {
+          const listing = this.res.text;
+          expect((listing.match(/job-table-row/g) || []).length).to.equal(1);
+        });
+        it('returns the disallowProvider HTML checkbox unchecked', function () {
+          const listing = this.res.text;
+          expect((listing.match(/<input (?=.*name="disallowProvider")(?!.*checked).*>/g) || []).length).to.equal(1);
+          expect((listing.match(/<input (?=.*name="disallowProvider")(?=.*checked).*>/g) || []).length).to.equal(0);
+        });
+        it('has the provider filter selected', function () {
+          const listing = this.res.text;
+          expect(listing).to.contain(mustache.render('{{prov}}', { prov: 'prov: provider_b' }));
+        });
+      });
+
+      describe('and the admin filters by provider NOT IN [provider_b, provider_z]', function () {
+        const tableFilter = '[{"value":"prov: provider_b","dbValue":"provider_b","field":"provider"},{"value":"prov: provider_z","dbValue":"provider_z","field":"provider"}]';
+        hookAdminWorkflowUIJobs({ username: 'adam', disallowProvider: 'on', tableFilter });
+        it('returns the jobs that do not match providers b and z', function () {
+          const listing = this.res.text;
+          expect((listing.match(/job-table-row/g) || []).length).to.equal(7);
+          expect(listing).to.not.contain(mustache.render('{{req}}', { req: woodySyncJob.jobID }));
+        });
+        it('returns the disallowProvider HTML checkbox checked', function () {
+          const listing = this.res.text;
+          expect((listing.match(/<input (?=.*name="disallowProvider")(?!.*checked).*>/g) || []).length).to.equal(0);
+          expect((listing.match(/<input (?=.*name="disallowProvider")(?=.*checked).*>/g) || []).length).to.equal(1);
+        });
+        it('has the provider b and z filters selected', function () {
+          const listing = this.res.text;
+          expect(listing).to.contain(mustache.render('{{prov}}', { prov: 'prov: provider_b' }));
+          expect(listing).to.contain(mustache.render('{{prov}}', { prov: 'prov: provider_z' }));
         });
       });
 
