@@ -69,6 +69,13 @@ data:
           duration: $PROMETHEUS_NODE_NOT_READY_WAIT_FOR
         annotations:
           summary: "AlertManager has detected Node(s) in an unready state."
+      - alert: PodRestartAlert
+        expr: increase(kube_pod_container_status_restarts_total[5m]) > 3
+        for:  $PROMETHEUS_POD_NOT_HEALTHY_WAIT_FOR
+        labels:
+          severity: warning
+        annotations:
+          summary: "AlertManager has detected Pods in multiple restarting state."
   prometheus.yml: |
     global:
       scrape_interval:     15s
