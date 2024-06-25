@@ -44,7 +44,7 @@ function initFilter(currentUser, services, isAdminRoute, tableFilter) {
         // check if the tag loosely resembles a valid EDL username
         return /^user: [A-Za-z0-9._]{4,30}$/.test(tag.value)
         // check if the tag resembles a valid provider ID
-        || /^prov: [A-Z0-9_]{1,100}$/.test(tag.value);
+        || /^prov: [A-Za-z0-9_]{1,100}$/.test(tag.value);
       }
       return false;
     },

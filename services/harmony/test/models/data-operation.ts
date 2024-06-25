@@ -416,7 +416,7 @@ describe('DataOperation', () => {
     });
   });
 
-  describe('#providerIds', () => {
+  describe('#providerId', () => {
     const collection1 = 'C123-PROVA';
     const collection2 = 'CXYZ-PROVA';
     const collection3 = 'C000-PROVB';
@@ -429,8 +429,8 @@ describe('DataOperation', () => {
     operation.addSource(collection1, shortName, versionId, variables, coordinateVariables);
     operation.addSource(collection2, shortName, versionId, variables, coordinateVariables);
     operation.addSource(collection3, shortName, versionId, variables, coordinateVariables);
-    it('returns a list of unique provider IDs', function () {
-      expect(operation.providerIds).to.deep.eq(['PROVA', 'PROVB']);
+    it('returns a single provider ID', function () {
+      expect(operation.providerId).to.eq('PROVA');
     });
   });
 });

@@ -462,7 +462,7 @@ export class Job extends DBRecord implements JobRecord {
       .orderBy(
         constraints?.orderBy?.field ?? 'createdAt',
         constraints?.orderBy?.value ?? 'desc')
-      .modify(modifyQuery)
+      .modify((queryBuilder) => modifyQuery(queryBuilder, constraints))
       .paginate({ currentPage, perPage, isLengthAware: true });
 
     const jobs: Job[] = items.data.map((j: Job) => new Job(j));
