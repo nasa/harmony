@@ -132,7 +132,6 @@ async function validateTaggedImageIsReachable(
 
 /**
  * Returns the values of the enabled and message fields of the service_deployment table.
- * @param tx - The database transaction
  * @returns An object containing the boolean value of the enabled field and the message string
  */
 async function getEnabledAndMessage(): Promise<{ enabled: boolean, message: string }> {
@@ -183,8 +182,8 @@ async function acquireServiceDeploymentLock(message: string): Promise<boolean> {
 
 /**
  * Validate that the service deployment is enabled
- * @param res - The response object - will be used to send an error if the validation fails
- * @param url - The URL of the image including tag
+ * @param req - The request object
+ * @param res  - The response object - will be used to send an error if the validation fails
  * @returns A Promise containing `true` if the tagged image is reachable, `false` otherwise
  */
 async function validateServiceDeploymentIsEnabled(
