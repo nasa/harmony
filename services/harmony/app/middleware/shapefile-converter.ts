@@ -85,7 +85,8 @@ const contentTypesToConverters = {
 };
 
 /**
- *
+ * Convert longitudes outside the [-180,180] range to [-180,180]
+ * Note: this will only handle longitudes in the [-360,360] range
  * @param lon - longitude
  * @returns
  */
@@ -96,8 +97,8 @@ function normalizeLongitude(lon: number): number {
 }
 
 /**
- *
- * @param geojson - normalize all the longitudes in the file to [-180,180]
+ * normalize all the longitudes in the file to [-180,180]
+ * @param geojson - the object representing the geojson
  * @returns
  */
 export function normalizeGeoJsonCoords(geojson: any): any {
