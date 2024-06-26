@@ -1,4 +1,3 @@
-/* eslint-disable require-jsdoc */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { get, isEqual } from 'lodash';
 import rewind from '@mapbox/geojson-rewind';
@@ -102,6 +101,7 @@ function normalizeLongitude(lon: number): number {
  * @returns
  */
 export function normalizeGeoJsonCoords(geojson: any): any {
+  // eslint-disable-next-line require-jsdoc
   function normalizeCoordinates(coordinates: any): any {
     if (Array.isArray(coordinates[0])) {
       return coordinates.map(normalizeCoordinates);
@@ -110,6 +110,7 @@ export function normalizeGeoJsonCoords(geojson: any): any {
     }
   }
 
+  // eslint-disable-next-line require-jsdoc
   function normalizeGeometry(geometry: any): any {
     if (geometry.type === 'Point') {
       geometry.coordinates = normalizeCoordinates(geometry.coordinates);
@@ -125,6 +126,7 @@ export function normalizeGeoJsonCoords(geojson: any): any {
     return geometry;
   }
 
+  // eslint-disable-next-line require-jsdoc
   function normalizeFeature(feature: any): any {
     if (feature.type === 'Feature') {
       feature.geometry = normalizeGeometry(feature.geometry);
