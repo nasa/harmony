@@ -253,25 +253,25 @@ function tableQueryToJobQuery(tableQuery: TableQuery, isAdmin: boolean, user: st
   if (!isAdmin) {
     jobQuery.where.username = user;
   }
-  if (tableQuery.statusValues.length) {
+  if (tableQuery.statusValues.length > 0) {
     jobQuery.whereIn.status = {
       values: tableQuery.statusValues,
       in: tableQuery.allowStatuses,
     };
   }
-  if (tableQuery.serviceValues.length) {
+  if (tableQuery.serviceValues.length > 0) {
     jobQuery.whereIn.service_name = {
       values: tableQuery.serviceValues,
       in: tableQuery.allowServices,
     };
   }
-  if (tableQuery.userValues.length) {
+  if (tableQuery.userValues.length > 0) {
     jobQuery.whereIn.username = {
       values: tableQuery.userValues,
       in: tableQuery.allowUsers,
     };
   }
-  if (tableQuery.providerValues.length) {
+  if (tableQuery.providerValues.length > 0) {
     jobQuery.whereIn.provider_id = {
       values: tableQuery.providerValues,
       in: tableQuery.allowProviders,
