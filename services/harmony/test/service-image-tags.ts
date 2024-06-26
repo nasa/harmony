@@ -651,6 +651,7 @@ describe('Service image endpoint', async function () {
         it('returns enabled true', async function () {
           expect(this.res.body).to.eql({
             'enabled': true,
+            'message': `Re-enable service deployment after successful deployment: ${deploymentId}`,
           });
         });
       });
@@ -721,16 +722,13 @@ describe('Service image endpoint', async function () {
         });
 
         it('returns the service image enabled true', async function () {
-          expect(this.res.body).to.eql({
-            'enabled': true,
-          });
+          expect(this.res.body.enabled).to.eql(true);
         });
       });
     });
   });
 
   describe('Get service deployment enabled state permission test', async function () {
-    const expectedState = { enabled: true };
     describe('when a user is not in the EDL service deployers or core permissions groups', async function () {
       before(async function () {
         hookRedirect('joe');
@@ -762,7 +760,7 @@ describe('Service image endpoint', async function () {
 
       it('returns the expected result', async function () {
         expect(this.res.status).to.equal(200);
-        expect(this.res.body).to.eql(expectedState);
+        expect(this.res.body.enabled).to.eql(true);
       });
     });
 
@@ -778,7 +776,7 @@ describe('Service image endpoint', async function () {
 
       it('returns the expected result', async function () {
         expect(this.res.status).to.equal(200);
-        expect(this.res.body).to.eql(expectedState);
+        expect(this.res.body.enabled).to.eql(true);
       });
     });
   });
@@ -902,9 +900,7 @@ describe('Service image endpoint', async function () {
         });
 
         it('returns enabled true', async function () {
-          expect(this.res.body).to.eql({
-            'enabled': true,
-          });
+          expect(this.res.body.enabled).to.eql(true);
         });
       });
 
@@ -965,9 +961,7 @@ describe('Service image endpoint', async function () {
         });
 
         it('returns the service enabled true', async function () {
-          expect(this.res.body).to.eql({
-            'enabled': true,
-          });
+          expect(this.res.body.enabled).to.eql(true);
         });
       });
 
@@ -988,6 +982,7 @@ describe('Service image endpoint', async function () {
         it('returns enabled false', async function () {
           expect(this.res.body).to.eql({
             'enabled': false,
+            'message': 'Manually disabled by coraline',
           });
         });
 
@@ -1009,7 +1004,7 @@ describe('Service image endpoint', async function () {
           });
 
           it('returns service deployment is disbabled error message', async function () {
-            expect(this.res.text).to.eql('Service deployment is disabled.');
+            expect(this.res.text).to.eql('Service deployment is disabled. Reason: Manually disabled by coraline.');
           });
         });
 
@@ -1028,7 +1023,7 @@ describe('Service image endpoint', async function () {
           });
 
           it('returns the proper error message', async function () {
-            expect(this.res.text).to.eql('Unable to acquire service deployment lock. Try again later.');
+            expect(this.res.text).to.eql('Unable to acquire service deployment lock. Reason: Manually disabled by coraline. Try again later.');
           });
         });
       });
@@ -1048,9 +1043,7 @@ describe('Service image endpoint', async function () {
         });
 
         it('returns enabled true', async function () {
-          expect(this.res.body).to.eql({
-            'enabled': true,
-          });
+          expect(this.res.body.enabled).to.eql(true);
         });
 
         describe('when deploy service when service deployment is enabled', async function () {
@@ -1274,9 +1267,7 @@ describe('Service self-deployment successful', async function () {
       });
 
       it('returns enabled true', async function () {
-        expect(this.res.body).to.eql({
-          'enabled': true,
-        });
+        expect(this.res.body.enabled).to.eql(true);
       });
     });
 
@@ -1332,7 +1323,7 @@ describe('Service self-deployment failure', async function () {
     after(async function () {
       execStub.restore();
       execDeployScriptStub.restore();
-      await enableServiceDeployment();
+      await enableServiceDeployment('');
       delete this.res;
     });
 
@@ -1399,6 +1390,7 @@ describe('Service self-deployment failure', async function () {
       it('returns enabled false', async function () {
         expect(this.res.body).to.eql({
           'enabled': false,
+          'message': `Locked for service deployment: http://127.0.0.1:4000/service-deployment/${linkDeploymentId}`,
         });
       });
     });
