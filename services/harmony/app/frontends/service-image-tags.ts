@@ -5,6 +5,7 @@ import { getEdlGroupInformation, validateUserIsInCoreGroup } from '../util/edl-a
 import { exec } from 'child_process';
 import * as path from 'path';
 import util from 'util';
+import { truncateString } from '@harmony/util/string';
 import db from '../util/db';
 import env from '../util/env';
 import { getRequestRoot } from '../util/url';
@@ -65,7 +66,7 @@ export function ecrImageNameToComponents(name: string): EcrImageNameComponents {
   const match = name.match(componentRegex);
   if (!match) return null;
 
-  const [ _, host, region, repository, tag ] = match;
+  const [_, host, region, repository, tag] = match;
   const registryId = host.split('.')[0]; // the AWS account ID
 
   return {
@@ -130,29 +131,32 @@ async function validateTaggedImageIsReachable(
 }
 
 /**
- * Returns value of the enabled field of service_deployment table.
- * @param tx - The database transaction
- * @returns The boolean value of the enabled field
+ * Returns the values of the enabled and message fields of the service_deployment table.
+ * @returns An object containing the boolean value of the enabled field and the message string
  */
-async function getEnabled(): Promise<boolean> {
+async function getEnabledAndMessage(): Promise<{ enabled: boolean, message: string }> {
   let enabled = true;
+  let message = '';
   let results = null;
   await db.transaction(async (tx) => {
-    results = await tx('service_deployment').select('enabled');
+    results = await tx('service_deployment').select('enabled', 'message');
   });
 
   if (results[0].enabled === 0 || results[0].enabled === false) {
     enabled = false;
   }
-  return enabled;
+  [{ message }] = results;
+
+  return { enabled, message };
 }
 
 /**
  * Set the enabled to true in service_deployment table
  */
-export async function enableServiceDeployment(): Promise<void> {
+export async function enableServiceDeployment(message: string): Promise<void> {
   await db.transaction(async (tx) => {
-    await tx('service_deployment').update({ enabled: true });
+    await tx('service_deployment')
+      .update({ enabled: true, message: truncateString(message, 4096) });
   });
 }
 
@@ -161,12 +165,12 @@ export async function enableServiceDeployment(): Promise<void> {
  * If the enabled value is already false, return false to indicate unable to acquire the lock.
  * @returns a Promise of boolean to indicate if the lock is successfully acquired.
  */
-async function acquireServiceDeploymentLock(): Promise<boolean> {
+async function acquireServiceDeploymentLock(message: string): Promise<boolean> {
   let results = null;
   await db.transaction(async (tx) => {
     results = await tx('service_deployment')
       .where('enabled', true)
-      .update({ enabled: false })
+      .update({ enabled: false, message: message })
       .returning('enabled');
   });
 
@@ -178,18 +182,18 @@ async function acquireServiceDeploymentLock(): Promise<boolean> {
 
 /**
  * Validate that the service deployment is enabled
- * @param res - The response object - will be used to send an error if the validation fails
- * @param url - The URL of the image including tag
+ * @param req - The request object
+ * @param res  - The response object - will be used to send an error if the validation fails
  * @returns A Promise containing `true` if the tagged image is reachable, `false` otherwise
  */
 async function validateServiceDeploymentIsEnabled(
   req: HarmonyRequest,
   res: Response,
 ): Promise<boolean> {
-  const enabled = await getEnabled();
+  const { enabled, message } = await getEnabledAndMessage();
   if (!enabled) {
     res.statusCode = 423;
-    res.send('Service deployment is disabled.');
+    res.send(`Service deployment is disabled. Reason: ${message}.`);
     return false;
   }
 
@@ -342,7 +346,7 @@ async function validateStatusForListServiceRequest(
 async function validateDeploymentState(
   req: HarmonyRequest, res: Response,
 ): Promise<boolean> {
-  if ( (!req.body || req.body.enabled === undefined)) {
+  if ((!req.body || req.body.enabled === undefined)) {
     res.statusCode = 400;
     res.send('\'enabled\' is a required body parameter');
     return false;
@@ -440,7 +444,7 @@ export async function execDeployScript(
         req.context.logger.info(`Script output: ${line}`);
       });
       // only re-enable the service deployment on successful deployment
-      await enableServiceDeployment();
+      await enableServiceDeployment(`Re-enable service deployment after successful deployment: ${deploymentId}`);
       await db.transaction(async (tx) => {
         await setStatusMessage(tx, deploymentId, 'successful', 'Deployment successful');
       });
@@ -472,18 +476,20 @@ export async function updateServiceImageTag(
     if (! await validation(req, res)) return;
   }
 
-  const lockAcquired = await acquireServiceDeploymentLock();
+  const urlRoot = getRequestRoot(req);
+  const deploymentId = uuid();
+  const message = `Locked for service deployment: ${urlRoot}/service-deployment/${deploymentId}`;
+  const lockAcquired = await acquireServiceDeploymentLock(message);
   if (lockAcquired === false) {
     res.statusCode = 423;
-    const msg = 'Another harmony deployment or service deployment is currently running. '
-      + 'Please try again later. If you believe this is an error, please contact Harmony support.';
+    const result = await getEnabledAndMessage();
+    const msg = `Unable to acquire service deployment lock. Reason: ${result.message}. Try again later.`;
     res.send(msg);
     return;
   }
 
   const { service } = req.params;
   const { tag } = req.body;
-  const deploymentId = uuid();
 
   const deployment = new ServiceDeployment({
     deployment_id: deploymentId,
@@ -499,7 +505,6 @@ export async function updateServiceImageTag(
   });
 
   module.exports.execDeployScript(req, service, tag, deploymentId);
-  const urlRoot = getRequestRoot(req);
   res.statusCode = 202;
   res.send({
     'tag': tag,
@@ -518,9 +523,9 @@ export async function getServiceImageTagState(
 ): Promise<void> {
   if (! await validateUserIsInDeployerOrCoreGroup(req, res)) return;
 
-  const enabled = await getEnabled();
+  const { enabled, message } = await getEnabledAndMessage();
   res.statusCode = 200;
-  res.send({ 'enabled': enabled });
+  res.send({ 'enabled': enabled, 'message': message });
 }
 
 /**
@@ -540,21 +545,25 @@ export async function setServiceImageTagState(
     if (! await validation(req, res)) return;
   }
 
-  const { enabled } = req.body;
+  const { enabled, message } = req.body;
+  let deploymentMsg = '';
   if (enabled === true) {
-    await enableServiceDeployment();
+    deploymentMsg = message ? message : `Manually enabled by ${req.user}`;
+    await enableServiceDeployment(deploymentMsg);
   } else {
     // disable service deployment
-    const lockAcquired = await acquireServiceDeploymentLock();
+    deploymentMsg = message ? message : `Manually disabled by ${req.user}`;
+    const lockAcquired = await acquireServiceDeploymentLock(deploymentMsg);
     if (lockAcquired === false) {
+      const result = await getEnabledAndMessage();
       res.statusCode = 423;
-      res.send('Unable to acquire service deployment lock. Try again later.');
+      res.send(`Unable to acquire service deployment lock. Reason: ${result.message}. Try again later.`);
       return;
     }
   }
 
   res.statusCode = 200;
-  res.send({ 'enabled': enabled });
+  res.send({ 'enabled': enabled, message: deploymentMsg });
 }
 
 /**

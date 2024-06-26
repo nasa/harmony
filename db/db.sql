@@ -127,10 +127,11 @@ CREATE TABLE `user_work` (
 
 CREATE TABLE `service_deployment` (
   `enabled` boolean,
+  `message` varchar(4096),
   `updatedAt` datetime not null
 );
 
-INSERT INTO service_deployment (enabled, updatedAt) VALUES (true, CURRENT_TIMESTAMP);
+INSERT INTO service_deployment (enabled, message, updatedAt) VALUES (true, '', CURRENT_TIMESTAMP);
 
 CREATE TABLE `service_deployments` (
   `id` integer not null primary key autoincrement,
