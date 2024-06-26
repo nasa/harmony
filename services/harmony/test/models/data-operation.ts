@@ -430,7 +430,7 @@ describe('DataOperation', () => {
     operation.addSource(collection2, shortName, versionId, variables, coordinateVariables);
     operation.addSource(collection3, shortName, versionId, variables, coordinateVariables);
     it('returns a single provider ID', function () {
-      expect(operation.providerId).to.eq('PROVA');
+      expect(operation.providerId).to.eq('prova');
     });
   });
 });

@@ -433,7 +433,7 @@ export default class DataOperation {
   get providerId(): string | undefined {
     const { sources } = this;
     if (sources && sources.length > 0) {
-      return sources[0].collection.split('-')[1];
+      return sources[0].collection.split('-')[1].toLowerCase();
     }
   }
 
