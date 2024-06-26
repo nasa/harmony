@@ -82,20 +82,20 @@ const twoTrianglesOnEitherSideOfAntimeridian = {
         coordinates: [
           [
             [
-              137.0443248426335,
-              -23.187360507938507,
+              -151.34381596015533,
+              4.994679551918452,
             ],
             [
-              142.60865606481002,
-              -30.037061045258376,
+              -145.9836860515562,
+              -3.1183737385664188,
             ],
             [
-              147.98806952083328,
-              -23.833953853558924,
+              -139.34984479441488,
+              5.680029195822215,
             ],
             [
-              137.0443248426335,
-              -23.187360507938507,
+              -151.34381596015533,
+              4.994679551918452,
             ],
           ],
         ],
@@ -109,20 +109,20 @@ const twoTrianglesOnEitherSideOfAntimeridian = {
         coordinates: [
           [
             [
-              195.41830544133046,
-              -17.162025743177352,
+              147.2919221979366,
+              6.698088472127779,
             ],
             [
-              210.29952727018542,
-              -25.268090986321695,
+              152.58879278200553,
+              -3.1660630298596857,
             ],
             [
-              211.48923396024566,
-              -13.895953534230472,
+              163.56990277600974,
+              7.576864398832285,
             ],
             [
-              195.41830544133046,
-              -17.162025743177352,
+              147.2919221979366,
+              6.698088472127779,
             ],
           ],
         ],
@@ -244,6 +244,72 @@ const outsideLongitudeRangeSampleGeoJson = {
         coordinates: [[-190, 10], [190, 20]],
       },
       properties: {},
+    },
+  ],
+};
+
+const clockwiseWindingGeoJson = {
+  type: 'FeatureCollection',
+  features: [
+    {
+      type: 'Feature',
+      properties: {},
+      geometry: {
+        coordinates: [
+          [
+            [
+              -79.93769413144278,
+              37.88089617938101,
+            ],
+            [
+              -74.4094454860988,
+              41.45283160828291,
+            ],
+            [
+              -69.48801019683185,
+              34.167397708133024,
+            ],
+            [
+              -79.93769413144278,
+              37.88089617938101,
+            ],
+          ],
+        ],
+        type: 'Polygon',
+      },
+    },
+  ],
+};
+
+const correctedWindingGeoJson = {
+  type: 'FeatureCollection',
+  features: [
+    {
+      type: 'Feature',
+      properties: {},
+      geometry: {
+        coordinates: [
+          [
+            [
+              -79.93769413144278,
+              37.88089617938101,
+            ],
+            [
+              -69.48801019683185,
+              34.167397708133024,
+            ],
+            [
+              -74.4094454860988,
+              41.45283160828291,
+            ],
+            [
+              -79.93769413144278,
+              37.88089617938101,
+            ],
+          ],
+        ],
+        type: 'Polygon',
+      },
     },
   ],
 };
@@ -371,6 +437,11 @@ describe('normalizeGeoJson', function () {
   it('splits polygons at the antimeridian', function () {
     const normalizedGeoJson = normalizeGeoJson(crossingAntimeridianWithLongitudesOutsideRangeSampleGeoJson);
     expect(normalizedGeoJson).to.eql(expectedNormalization);
+  });
+
+  it('correct clockwise polygon winding to counter-clockwise', function () {
+    const normalizedGeoJson = normalizeGeoJson(clockwiseWindingGeoJson);
+    expect(normalizedGeoJson).to.eql(correctedWindingGeoJson);
   });
 
   it('does not change the result when called more than once', function () {

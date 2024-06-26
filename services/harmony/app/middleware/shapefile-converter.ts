@@ -141,7 +141,7 @@ export function normalizeGeoJsonCoords(geojson: any): any {
 
 /**
  * Change longitudes of a geojson file to be in the [-180, 180] range and split at antimeridian
- * if needed
+ * if needed. Will also change coordinate order to counter-clockwise if needed.
  * @param geoJson - An object representing the json for a geojson file
  * @returns An object with the normalized geojson
  */
