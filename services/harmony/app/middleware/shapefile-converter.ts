@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { get, isEqual } from 'lodash';
+import { get, isEqual, cloneDeep } from 'lodash';
 import rewind from '@mapbox/geojson-rewind';
 import * as togeojson from '@tmcw/togeojson';
 import splitGeoJson from 'geojson-antimeridian-cut';
@@ -98,7 +98,7 @@ function normalizeLongitude(lon: number): number {
 /**
  * normalize all the longitudes in the file to [-180,180]
  * @param geojson - the object representing the geojson
- * @returns
+ * @returns - the object with the normalized longitudes
  */
 export function normalizeGeoJsonCoords(geojson: any): any {
   // eslint-disable-next-line require-jsdoc
@@ -136,7 +136,7 @@ export function normalizeGeoJsonCoords(geojson: any): any {
     return feature;
   }
 
-  return normalizeFeature(geojson);
+  return normalizeFeature(cloneDeep(geojson));
 }
 
 /**
@@ -166,6 +166,7 @@ export function normalizeGeoJson(geoJson: object): object {
  * Handle any weird cases like splitting geometry that crosses the antimeridian
  * @param url - the url of the geojson file
  * @param isLocal - whether the url is a downloaded file (true) or needs to be downloaded (false)
+ * @returns the link to the geojson file
  */
 async function normalizeGeoJsonFile(url: string, isLocal: boolean): Promise<string> {
   const store = defaultObjectStore();
