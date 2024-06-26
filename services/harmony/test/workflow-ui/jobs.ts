@@ -690,6 +690,38 @@ describe('Workflow UI jobs route', function () {
         });
       });
 
+      describe('who filters by a particular combination of filter types', function () {
+        const tableFilter = '[{"value":"service: harmony/netcdf-to-zarr","dbValue":"harmony/netcdf-to-zarr","field":"service"},{"value":"user: woody","dbValue":"woody","field":"user"},{"value":"prov: provider_b","dbValue":"provider_b","field":"provider"}]';
+        hookAdminWorkflowUIJobs({ username: 'adam', tableFilter });
+        it('returns the harmony/netcdf-to-zarr job', function () {
+          const listing = this.res.text;
+          console.log(listing);
+          expect((listing.match(/job-table-row/g) || []).length).to.equal(1);
+          const serviceExampleTd = mustache.render('<td>{{service}}</td>', { service: 'harmony/service-example' });
+          const serviceExampleRegExp = new RegExp(serviceExampleTd, 'g');
+          expect((listing.match(serviceExampleRegExp) || []).length).to.equal(0);
+          const netcdfToZarrTd = mustache.render('<td>{{service}}</td>', { service: 'harmony/netcdf-to-zarr' });
+          const netcdfToZarrRegExp = new RegExp(netcdfToZarrTd, 'g');
+          expect((listing.match(netcdfToZarrRegExp) || []).length).to.equal(1);
+  
+          expect(listing).to.contain(`<span class="badge bg-danger">${JobStatus.FAILED.valueOf()}</span>`);
+          expect(listing).to.not.contain(`<span class="badge bg-success">${JobStatus.SUCCESSFUL.valueOf()}</span>`);
+          expect(listing).to.not.contain(`<span class="badge bg-info">${JobStatus.RUNNING.valueOf()}</span>`);
+        });
+        it('has the appropriate HTML (un)checked', function () {
+          const listing = this.res.text;
+          expect((listing.match(/<input (?=.*name="disallowUser")(?!.*checked).*>/g) || []).length).to.equal(1);
+          expect((listing.match(/<input (?=.*name="disallowService")(?!=.*checked).*>/g) || []).length).to.equal(1);
+          expect((listing.match(/<input (?=.*name="disallowProvider")(?!.*checked).*>/g) || []).length).to.equal(1);
+        });
+        it('has the appropriate filters selected', function () {
+          const listing = this.res.text;
+          expect(listing).to.contain(mustache.render('{{service}}', { service: 'service: harmony/netcdf-to-zarr' }));
+          expect(listing).to.contain(mustache.render('{{user}}', { user: 'user: woody' }));
+          expect(listing).to.contain(mustache.render('{{provider}}', { provider: 'prov: provider_b' }));
+        });
+      });
+
       describe('when the user is not part of the admin group', function () {
         hookAdminWorkflowUIJobs({ username: 'eve' });
         it('returns an error', function () {
