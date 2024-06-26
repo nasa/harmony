@@ -75,7 +75,7 @@ data:
         labels:
           severity: warning
         annotations:
-          summary: "AlertManager has detected Pods in multiple restarting state."
+          summary: "Container on the pod has restarted multiple times in the last 5 minutes."
   prometheus.yml: |
     global:
       scrape_interval:     15s
