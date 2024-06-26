@@ -1,6 +1,6 @@
 /* eslint-disable require-jsdoc */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { get } from 'lodash';
+import { get, isEqual } from 'lodash';
 import rewind from '@mapbox/geojson-rewind';
 import * as togeojson from '@tmcw/togeojson';
 import splitGeoJson from 'geojson-antimeridian-cut';
@@ -164,8 +164,7 @@ export function normalizeGeoJson(geoJson: object): object {
  * @param url - the url of the geojson file
  * @param isLocal - whether the url is a downloaded file (true) or needs to be downloaded (false)
  */
-async function normalizeGeoJsonFile(url: string, isLocal: boolean, logger: Logger): Promise<string> {
-  logger.debug('Normalizing geojson');
+async function normalizeGeoJsonFile(url: string, isLocal: boolean): Promise<string> {
   const store = defaultObjectStore();
   let originalGeoJson: object;
   const localFile = url;
@@ -175,10 +174,15 @@ async function normalizeGeoJsonFile(url: string, isLocal: boolean, logger: Logge
     originalGeoJson = (await fs.readFile(localFile)).toJSON();
   }
   const normalizedGeoJson = normalizeGeoJson(originalGeoJson);
-  const uploadUrl = `${url}-normalized.geojson`;
-  await store.upload(JSON.stringify(normalizedGeoJson), uploadUrl);
 
-  return uploadUrl;
+  let resultUrl = url;
+
+  if (!isEqual(originalGeoJson, normalizedGeoJson)) {
+    resultUrl = `${url}-normalized.geojson`;
+    await store.upload(JSON.stringify(normalizedGeoJson), resultUrl);
+  }
+
+  return resultUrl;
 }
 
 /**
@@ -223,7 +227,7 @@ export default async function shapefileConverter(req, res, next: NextFunction): 
         }
       }
     } else {
-      operation.geojson = await normalizeGeoJsonFile(url, false, req.context.logger);
+      operation.geojson = await normalizeGeoJsonFile(url, false);
     }
   } catch (e) {
     if (e instanceof HttpError) {
