@@ -19,12 +19,13 @@ export const TEXT_LIMIT = 4096; // this.request and this.message need to be unde
 import env from '../util/env';
 import JobError from './job-error';
 import { setReadyCountToZero } from './user-work';
+import { Knex } from 'knex';
 const { awsDefaultRegion } = env;
 
 export const jobRecordFields = [
   'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'request',
   'numInputGranules', 'jobID', 'requestId', 'batchesCompleted', 'isAsync', 'ignoreErrors', 'destination_url',
-  'service_name', 'provider_ids',
+  'service_name', 'provider_id',
 ];
 
 const stagingBucketTitle = `Results in AWS S3. Access from AWS ${awsDefaultRegion} with keys from /cloud-access.sh`;
@@ -71,7 +72,7 @@ export interface JobRecord {
   updatedAt?: Date | number;
   numInputGranules: number;
   collectionIds: string[];
-  provider_ids?: string[];
+  provider_id?: string;
   destination_url?: string;
   service_name?: string,
 }
@@ -128,6 +129,7 @@ export interface JobQuery {
   whereIn?: {
     status?: { in: boolean, values: string[] };
     service_name?: { in: boolean, values: string[] };
+    provider_id?: { in: boolean, values: string[] };
     username?: { in: boolean, values: string[] };
     jobID?: { in: boolean, values: string[] };
   }
@@ -310,6 +312,36 @@ export function getRelatedLinks(rel: string, links: JobLink[]): JobLink[] {
 }
 
 /**
+ * Conditionally modify a job query if specific constraints are present.
+ * @param queryBuilder - the knex query builder object to modify
+ * @param constraints - specifies the query constraints (if any)
+ */
+function modifyQuery(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  queryBuilder: Knex.QueryBuilder<any, any>, 
+  constraints: JobQuery): void {
+  if (constraints === undefined) return;
+  if (constraints.whereIn) {
+    for (const jobField in constraints.whereIn) {
+      const constraint = constraints.whereIn[jobField];
+      if (constraint.in) {
+        void queryBuilder.whereIn(jobField, constraint.values);
+      } else {
+        void queryBuilder.whereNotIn(jobField, constraint.values);
+      }
+    }
+  }
+  if (constraints.dates) {
+    if (constraints.dates.from) {
+      void queryBuilder.where(constraints.dates.field, '>=', constraints.dates.from);
+    }
+    if (constraints.dates.to) {
+      void queryBuilder.where(constraints.dates.field, '<=', constraints.dates.to);
+    }
+  }
+}
+
+/**
  *
  * Wrapper object for persisted jobs
  *
@@ -369,7 +401,7 @@ export class Job extends DBRecord implements JobRecord {
 
   service_name?: string;
 
-  provider_ids?: string[];
+  provider_id?: string;
 
   /**
    * Get the job message for the current status.
@@ -430,29 +462,10 @@ export class Job extends DBRecord implements JobRecord {
       .orderBy(
         constraints?.orderBy?.field ?? 'createdAt',
         constraints?.orderBy?.value ?? 'desc')
-      .modify((queryBuilder) => {
-        if (constraints.whereIn) {
-          for (const jobField in constraints.whereIn) {
-            const constraint = constraints.whereIn[jobField];
-            if (constraint.in) {
-              void queryBuilder.whereIn(jobField, constraint.values);
-            } else {
-              void queryBuilder.whereNotIn(jobField, constraint.values);
-            }
-          }
-        }
-        if (constraints.dates) {
-          if (constraints.dates.from) {
-            void queryBuilder.where(constraints.dates.field, '>=', constraints.dates.from);
-          }
-          if (constraints.dates.to) {
-            void queryBuilder.where(constraints.dates.field, '<=', constraints.dates.to);
-          }
-        }
-      })
+      .modify((queryBuilder) => modifyQuery(queryBuilder, constraints))
       .paginate({ currentPage, perPage, isLengthAware: true });
 
-    const jobs = items.data.map((j) => new Job(j));
+    const jobs: Job[] = items.data.map((j: Job) => new Job(j));
 
     return {
       data: jobs,

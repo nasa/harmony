@@ -426,17 +426,15 @@ export default class DataOperation {
   }
 
   /**
-   * Returns the data provider IDs (from the data operation sources)
-   * as a list of strings
+   * Returns the data provider ID (from the data operation sources)
    *
-   * @returns string[] of data providers IDs
+   * @returns the provider ID (parsed from the collection ID)
    */
-  get providerIds(): string[] {
-    const providerIdsArr: Set<string> = this.model.sources.map((s: DataSource) => {
-      return s.collection.split('-')[1]; // parse provider from collection (e.g. C1244141250-EEDTEST)
-    });
-    const providerIdsDeduplicated: string[] = [...new Set(providerIdsArr)];
-    return providerIdsDeduplicated;
+  get providerId(): string | undefined {
+    const { sources } = this;
+    if (sources && sources.length > 0) {
+      return sources[0].collection.split('-')[1].toLowerCase();
+    }
   }
 
   /**

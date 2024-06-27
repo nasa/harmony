@@ -48,12 +48,14 @@ interface TableQuery {
   statusValues: string[],
   serviceValues: string[],
   userValues: string[],
+  providerValues: string[],
   from: Date,
   to: Date,
   dateKind: 'createdAt' | 'updatedAt',
   allowStatuses: boolean,
   allowServices: boolean,
   allowUsers: boolean,
+  allowProviders: boolean,
 }
 
 /**
@@ -77,9 +79,11 @@ function parseQuery( /* eslint-disable @typescript-eslint/no-explicit-any */
     statusValues: [],
     serviceValues: [],
     userValues: [],
+    providerValues: [],
     allowStatuses: true,
     allowServices: true,
     allowUsers: true,
+    allowProviders: true,
     // date controls
     from: undefined,
     to: undefined,
@@ -91,6 +95,7 @@ function parseQuery( /* eslint-disable @typescript-eslint/no-explicit-any */
     tableQuery.allowStatuses = !(requestQuery.disallowstatus === 'on');
     tableQuery.allowServices = !(requestQuery.disallowservice === 'on');
     tableQuery.allowUsers = !(requestQuery.disallowuser === 'on');
+    tableQuery.allowProviders = !(requestQuery.disallowprovider === 'on');
     const selectedOptions: { field: string, dbValue: string, value: string }[] = JSON.parse(requestQuery.tablefilter);
     const validStatusSelections = selectedOptions
       .filter(option => option.field === 'status' && Object.values<string>(statusEnum).includes(option.dbValue));
@@ -101,15 +106,20 @@ function parseQuery( /* eslint-disable @typescript-eslint/no-explicit-any */
     const validUserSelections = selectedOptions
       .filter(option => isAdminAccess && /^user: [A-Za-z0-9\.\_]{4,30}$/.test(option.value));
     const userValues = validUserSelections.map(option => option.value.split('user: ')[1]);
-    if ((statusValues.length + serviceValues.length + userValues.length) > maxFilters) {
+    const validProviderSelections = selectedOptions
+      .filter(option => isAdminAccess && /^prov: [A-Za-z0-9_]{1,100}$/.test(option.value));
+    const providerValues = validProviderSelections.map(option => option.value.split('prov: ')[1].toLowerCase());
+    if ((statusValues.length + serviceValues.length + userValues.length + providerValues.length) > maxFilters) {
       throw new RequestValidationError(`Maximum amount of filters (${maxFilters}) was exceeded.`);
     }
     originalValues = JSON.stringify(validStatusSelections
       .concat(validServiceSelections)
-      .concat(validUserSelections));
+      .concat(validUserSelections)
+      .concat(validProviderSelections));
     tableQuery.statusValues = statusValues;
     tableQuery.serviceValues = serviceValues;
     tableQuery.userValues = userValues;
+    tableQuery.providerValues = providerValues;
   }
   // everything in the Workflow UI uses the browser timezone, so we need a timezone offset
   const offSetMs = parseInt(requestQuery.tzoffsetminutes || 0) * 60 * 1000;
@@ -243,22 +253,28 @@ function tableQueryToJobQuery(tableQuery: TableQuery, isAdmin: boolean, user: st
   if (!isAdmin) {
     jobQuery.where.username = user;
   }
-  if (tableQuery.statusValues.length) {
+  if (tableQuery.statusValues.length > 0) {
     jobQuery.whereIn.status = {
       values: tableQuery.statusValues,
       in: tableQuery.allowStatuses,
     };
   }
-  if (tableQuery.serviceValues.length) {
+  if (tableQuery.serviceValues.length > 0) {
     jobQuery.whereIn.service_name = {
       values: tableQuery.serviceValues,
       in: tableQuery.allowServices,
     };
   }
-  if (tableQuery.userValues.length) {
+  if (tableQuery.userValues.length > 0) {
     jobQuery.whereIn.username = {
       values: tableQuery.userValues,
       in: tableQuery.allowUsers,
+    };
+  }
+  if (tableQuery.providerValues.length > 0) {
+    jobQuery.whereIn.provider_id = {
+      values: tableQuery.providerValues,
+      in: tableQuery.allowProviders,
     };
   }
   if (tableQuery.from || tableQuery.to) {
@@ -320,6 +336,7 @@ export async function getJobs(
       disallowStatusChecked: !tableQuery.allowStatuses ? 'checked' : '',
       disallowServiceChecked: !tableQuery.allowServices ? 'checked' : '',
       disallowUserChecked: !tableQuery.allowUsers ? 'checked' : '',
+      disallowProviderChecked: !tableQuery.allowProviders ? 'checked' : '',
       toDateTime,
       fromDateTime,
       dateQuery: `?fromDateTime=${encodeURIComponent(fromDateTime || '')}&toDateTime=${encodeURIComponent(toDateTime || '')}` +
@@ -614,7 +631,7 @@ export async function getJobsTable(
     const jobsRes = await Job.queryAll(db, jobQuery, page, limit);
     const jobs = jobsRes.data;
     const { pagination } = jobsRes;
-    const selectAllChecked = jobs.every((j) => jobIDs.indexOf(j.jobID) > -1) ? 'checked' : '';
+    const selectAllChecked = jobs.every((j) => j.hasTerminalStatus() || (jobIDs.indexOf(j.jobID) > -1)) ? 'checked' : '';
     const selectAllBox = jobs.some((j) => !j.hasTerminalStatus()) ?
       `<input id="select-jobs" type="checkbox" title="select/deselect all jobs" autocomplete="off" ${selectAllChecked}>` : '';
     const tableContext = {
