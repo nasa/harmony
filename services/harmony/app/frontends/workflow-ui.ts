@@ -24,6 +24,8 @@ import { handleWorkItemUpdateWithJobId } from '../backends/workflow-orchestratio
 // Default to retrieving this number of work items per page
 const defaultWorkItemPageSize = 100;
 
+const providerIds = Job.getUniqueProviderIds(db);
+
 /**
  * Maps job status to display class.
  */
@@ -304,6 +306,8 @@ export async function getJobs(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
   try {
+    const ids = await providerIds;
+    console.log(ids);
     const isAdminRoute = req.context.isAdminAccess;
     const requestQuery = keysToLowerCase(req.query);
     const fromDateTime = requestQuery.fromdatetime;

@@ -595,6 +595,19 @@ export class Job extends DBRecord implements JobRecord {
   }
 
   /**
+   * Get all of the unique provider Ids.
+   * @param tx - the transaction to use for querying
+   * @returns a promise resolving to ann array of provider Ids
+   */
+  static async getUniqueProviderIds(tx: Transaction): Promise<string[]> {
+    const results = await tx(Job.table)
+      .whereNotNull('provider_id')
+      .distinct('provider_id');
+    console.log(results);
+    return results.map((job) => job.provider_id);
+  }
+
+  /**
    * Creates a Job instance.
    *
    * @param fields - Object containing fields to set on the record
