@@ -107,7 +107,7 @@ describe('Workflow UI jobs table route', function () {
   describe('a user who  is an admin', function () {
     describe('using the provider ids filter', function () {
       hookAdminWorkflowUIJobRows({ username: 'adam', jobIDs: allJobIds,
-        query: { disallowService: false, tableFilter: '[{"value":"prov: PROVIDER_A","dbValue":"PROVIDER_A","field":"provider"}]' } });
+        query: { disallowService: false, tableFilter: '[{"value":"provider: PROVIDER_A","dbValue":"PROVIDER_A","field":"provider"}]' } });
       it('returns only the job rows with provider a', function () {
         const response = this.res.text;
         expect(response).to.not.contain(`<tr id="job-${boJob2.jobID}" class='job-table-row'>`);
@@ -120,7 +120,7 @@ describe('Workflow UI jobs table route', function () {
   
     describe('using the provider ids filter with improperly cased provider id', function () {
       hookAdminWorkflowUIJobRows({ username: 'adam', jobIDs: allJobIds,
-        query: { disallowService: false, tableFilter: '[{"value":"prov: prOVIDER_A","dbValue":"prOVIDER_A","field":"provider"}]' } });
+        query: { disallowService: false, tableFilter: '[{"value":"provider: prOVIDER_A","dbValue":"prOVIDER_A","field":"provider"}]' } });
       it('lower cases the user defined provider filter, matching jobs with provider_a', function () {
         const response = this.res.text;
         expect(response).to.not.contain(`<tr id="job-${boJob2.jobID}" class='job-table-row'>`);
@@ -133,7 +133,7 @@ describe('Workflow UI jobs table route', function () {
   
     describe('using the provider ids filter with two provider ids', function () {
       hookAdminWorkflowUIJobRows({ username: 'adam', jobIDs: allJobIds,
-        query: { disallowService: false, tableFilter: '[{"value":"prov: prOVIDER_A","dbValue":"prOVIDER_A","field":"provider"},{"value":"prov: prOVIDER_b","dbValue":"prOVIDER_b","field":"provider"}]' } });
+        query: { disallowService: false, tableFilter: '[{"value":"provider: prOVIDER_A","dbValue":"prOVIDER_A","field":"provider"},{"value":"provider: prOVIDER_b","dbValue":"prOVIDER_b","field":"provider"}]' } });
       it('returns jobs matching any of the user defined provider ids', function () {
         const response = this.res.text;
         expect(response).to.not.contain(`<tr id="job-${woodyJob1.jobID}" class='job-table-row'>`);

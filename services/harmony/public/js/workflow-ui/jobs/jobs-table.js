@@ -12,10 +12,11 @@ let statuses = [];
  * Build the jobs filter with filter facets like 'status' and 'user'.
   * @param {string} currentUser - the current Harmony user
   * @param {string[]} services - service names from services.yml
+  * @param {string[]} providers - array of provider ids
   * @param {boolean} isAdminRoute - whether the current page is /admin/...
   * @param {object[]} tableFilter - initial tags that will populate the input
  */
-function initFilter(currentUser, services, isAdminRoute, tableFilter) {
+function initFilter(currentUser, services, providers, isAdminRoute, tableFilter) {
   const filterInput = document.querySelector('input[name="tableFilter"]');
   const allowedList = [
     { value: 'status: successful', dbValue: 'successful', field: 'status' },
@@ -32,6 +33,8 @@ function initFilter(currentUser, services, isAdminRoute, tableFilter) {
   allowedList.push(...serviceList);
   if (isAdminRoute) {
     allowedList.push({ value: `user: ${currentUser}`, dbValue: currentUser, field: 'user' });
+    const providerList = providers.map((provider) => ({ value: `provider: ${provider}`, dbValue: provider, field: 'provider' }));
+    allowedList.push(...providerList);
   }
   const allowedValues = allowedList.map((t) => t.value);
   const tagInput = new Tagify(filterInput, {
@@ -44,7 +47,7 @@ function initFilter(currentUser, services, isAdminRoute, tableFilter) {
         // check if the tag loosely resembles a valid EDL username
         return /^user: [A-Za-z0-9._]{4,30}$/.test(tag.value)
         // check if the tag resembles a valid provider ID
-        || /^prov: [A-Za-z0-9_]{1,100}$/.test(tag.value);
+        || /^provider: [A-Za-z0-9_]{1,100}$/.test(tag.value);
       }
       return false;
     },
@@ -240,6 +243,7 @@ const jobsTable = {
    * disallowProvider - whether to load the table with disallow provider "on" or "off".
    * currentUser - the current Harmony user
    * services - service names from services.yml
+   * providers - unique provider ids from the jobs table
    * isAdminRoute - whether the current page is /admin/...
    * tableFilter - initial tags that will populate the input
    * fromDateTime - date time string that constrains by date
@@ -254,7 +258,7 @@ const jobsTable = {
       async () => loadRows(params),
     );
     formatDates('.date-td');
-    initFilter(params.currentUser, params.services, params.isAdminRoute, params.tableFilter);
+    initFilter(params.currentUser, params.services, params.providers, params.isAdminRoute, params.tableFilter);
     initCopyHandler('.copy-request');
     initSelectHandler('.select-job');
     initSelectAllHandler();
