@@ -564,9 +564,13 @@ export async function preprocessWorkItem(
     durationMs = new Date().getTime() - resultStartTime;
     logger.debug('timing.HWIUWJI.getResultItemSize.end', { durationMs });
   } catch (e) {
-    errorMessage = 'Could not get result item file size';
+    errorMessage = 'Could not get result item file size from output STAC';
     logger.error(errorMessage);
-    logger.error(e);
+    logger.error('Caught exception:', {
+      message: e.message,
+      name: e.name,
+      stack: e.stack,
+    });
     status = WorkItemStatus.FAILED;
   }
   const result: WorkItemPreprocessInfo = {
