@@ -24,7 +24,6 @@ import { handleWorkItemUpdateWithJobId } from '../backends/workflow-orchestratio
 // Default to retrieving this number of work items per page
 const defaultWorkItemPageSize = 100;
 
-
 /**
  * Maps job status to display class.
  */
