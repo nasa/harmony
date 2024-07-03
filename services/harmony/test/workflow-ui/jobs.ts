@@ -509,7 +509,7 @@ describe('Workflow UI jobs route', function () {
       });
       it('has no provider filters selected', function () {
         const listing = this.res.text;
-        expect(listing).to.not.contain(mustache.render('{{prov}}', { provider: 'provider: prov_a' }));
+        expect(listing).to.not.contain(mustache.render('{{provider}}', { provider: 'provider: prov_a' }));
       });
     });
 
@@ -666,7 +666,7 @@ describe('Workflow UI jobs route', function () {
         });
         it('has the provider filter selected', function () {
           const listing = this.res.text;
-          expect(listing).to.contain(mustache.render('{{prov}}', { provider: 'provider: provider_b' }));
+          expect(listing).to.contain(mustache.render('{{provider}}', { provider: 'provider: provider_b' }));
         });
       });
 
@@ -685,8 +685,8 @@ describe('Workflow UI jobs route', function () {
         });
         it('has the provider b and z filters selected', function () {
           const listing = this.res.text;
-          expect(listing).to.contain(mustache.render('{{prov}}', { provider: 'provider: provider_b' }));
-          expect(listing).to.contain(mustache.render('{{prov}}', { provider: 'provider: provider_z' }));
+          expect(listing).to.contain(mustache.render('{{provider}}', { provider: 'provider: provider_b' }));
+          expect(listing).to.contain(mustache.render('{{provider}}', { provider: 'provider: provider_z' }));
         });
       });
 
