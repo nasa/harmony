@@ -22,6 +22,9 @@ import { setReadyCountToZero } from './user-work';
 import { Knex } from 'knex';
 const { awsDefaultRegion } = env;
 
+// Lazily load the list of unique provider ids, once, when requested
+let providerIdsSnapshot: string[];
+
 export const jobRecordFields = [
   'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'request',
   'numInputGranules', 'jobID', 'requestId', 'batchesCompleted', 'isAsync', 'ignoreErrors', 'destination_url',
@@ -312,6 +315,18 @@ export function getRelatedLinks(rel: string, links: JobLink[]): JobLink[] {
 }
 
 /**
+ * Get all of the unique provider Ids.
+ * @param tx - the transaction to use for querying
+ * @returns a promise resolving to ann array of provider Ids
+ */
+async function getUniqueProviderIds(tx: Transaction): Promise<string[]> {
+  const results = await tx('jobs')
+    .whereNotNull('provider_id')
+    .distinct('provider_id');
+  return results.map((job) => job.provider_id);
+}
+
+/**
  * Conditionally modify a job query if specific constraints are present.
  * @param queryBuilder - the knex query builder object to modify
  * @param constraints - specifies the query constraints (if any)
@@ -594,17 +609,21 @@ export class Job extends DBRecord implements JobRecord {
     return new Date(response[0].latest_update);
   }
 
+
   /**
-   * Get all of the unique provider Ids.
+   * Get a list of unique provider ids (singleton, loaded once per server startup)
    * @param tx - the transaction to use for querying
-   * @returns a promise resolving to ann array of provider Ids
+   * @returns list of provider ids as a string[]
    */
-  static async getUniqueProviderIds(tx: Transaction): Promise<string[]> {
-    const results = await tx(Job.table)
-      .whereNotNull('provider_id')
-      .distinct('provider_id');
-    console.log(results);
-    return results.map((job) => job.provider_id);
+  static async getProviderIdsSnapshot(tx: Transaction): Promise<string[]> {
+    if (providerIdsSnapshot === undefined) {
+      try {
+        providerIdsSnapshot = await getUniqueProviderIds(tx);
+      } catch {
+        providerIdsSnapshot = [];
+      }
+    }
+    return providerIdsSnapshot;
   }
 
   /**

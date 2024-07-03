@@ -23,7 +23,6 @@ import { handleWorkItemUpdateWithJobId } from '../backends/workflow-orchestratio
 
 // Default to retrieving this number of work items per page
 const defaultWorkItemPageSize = 100;
-let providerIds: string[];
 
 
 /**
@@ -306,16 +305,11 @@ export async function getJobs(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
   try {
-    if (providerIds === undefined) {
-      try {
-        providerIds = await Job.getUniqueProviderIds(db);
-      } catch {
-        providerIds = [];
-        req.context.logger.info('Failed to query provider ids');
-      }
-    }
-    console.log(providerIds);
     const isAdminRoute = req.context.isAdminAccess;
+    let providerIds = [];
+    if (isAdminRoute) {
+      providerIds = await Job.getProviderIdsSnapshot(db);
+    }
     const requestQuery = keysToLowerCase(req.query);
     const fromDateTime = requestQuery.fromdatetime;
     const toDateTime = requestQuery.todatetime;
