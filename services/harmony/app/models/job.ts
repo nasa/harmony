@@ -318,7 +318,7 @@ export function getRelatedLinks(rel: string, links: JobLink[]): JobLink[] {
 /**
  * Get all of the unique provider Ids.
  * @param tx - the transaction to use for querying
- * @returns a promise resolving to ann array of provider Ids
+ * @returns a promise resolving to an array of provider Ids
  */
 async function getUniqueProviderIds(tx: Transaction): Promise<string[]> {
   const results = await tx('jobs')
