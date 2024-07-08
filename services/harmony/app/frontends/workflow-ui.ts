@@ -307,7 +307,7 @@ export async function getJobs(
     const isAdminRoute = req.context.isAdminAccess;
     let providerIds = [];
     if (isAdminRoute) {
-      providerIds = await Job.getProviderIdsSnapshot(db);
+      providerIds = await Job.getProviderIdsSnapshot(db, req.context.logger);
     }
     const requestQuery = keysToLowerCase(req.query);
     const fromDateTime = requestQuery.fromdatetime;

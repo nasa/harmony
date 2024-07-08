@@ -20,6 +20,7 @@ import env from '../util/env';
 import JobError from './job-error';
 import { setReadyCountToZero } from './user-work';
 import { Knex } from 'knex';
+import { Logger } from 'winston';
 const { awsDefaultRegion } = env;
 
 // Lazily load the list of unique provider ids, once, when requested
@@ -613,13 +614,15 @@ export class Job extends DBRecord implements JobRecord {
   /**
    * Get a list of unique provider ids (singleton, loaded once per server startup)
    * @param tx - the transaction to use for querying
+   * @param logger - the logger to use
    * @returns list of provider ids as a string[]
    */
-  static async getProviderIdsSnapshot(tx: Transaction): Promise<string[]> {
+  static async getProviderIdsSnapshot(tx: Transaction, logger: Logger): Promise<string[]> {
     if (providerIdsSnapshot === undefined) {
       try {
         providerIdsSnapshot = await getUniqueProviderIds(tx);
-      } catch {
+      } catch (e) {
+        logger.error(e);
         providerIdsSnapshot = [];
       }
     }
