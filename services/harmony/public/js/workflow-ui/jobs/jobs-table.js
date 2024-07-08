@@ -12,10 +12,11 @@ let statuses = [];
  * Build the jobs filter with filter facets like 'status' and 'user'.
   * @param {string} currentUser - the current Harmony user
   * @param {string[]} services - service names from services.yml
+  * @param {string[]} providers - array of provider ids
   * @param {boolean} isAdminRoute - whether the current page is /admin/...
   * @param {object[]} tableFilter - initial tags that will populate the input
  */
-function initFilter(currentUser, services, isAdminRoute, tableFilter) {
+function initFilter(currentUser, services, providers, isAdminRoute, tableFilter) {
   const filterInput = document.querySelector('input[name="tableFilter"]');
   const allowedList = [
     { value: 'status: successful', dbValue: 'successful', field: 'status' },
@@ -30,6 +31,8 @@ function initFilter(currentUser, services, isAdminRoute, tableFilter) {
   ];
   const serviceList = services.map((service) => ({ value: `service: ${service}`, dbValue: service, field: 'service' }));
   allowedList.push(...serviceList);
+  const providerList = providers.map((provider) => ({ value: `provider: ${provider}`, dbValue: provider, field: 'provider' }));
+  allowedList.push(...providerList);
   if (isAdminRoute) {
     allowedList.push({ value: `user: ${currentUser}`, dbValue: currentUser, field: 'user' });
   }
@@ -37,14 +40,12 @@ function initFilter(currentUser, services, isAdminRoute, tableFilter) {
   const tagInput = new Tagify(filterInput, {
     whitelist: allowedList,
     validate(tag) {
-      if (allowedValues.includes(tag.value)) {
+      if (allowedValues.includes(tag.value) || /^provider: [A-Za-z0-9_]{1,100}$/.test(tag.value)) {
         return true;
       }
       if (isAdminRoute) {
         // check if the tag loosely resembles a valid EDL username
-        return /^user: [A-Za-z0-9._]{4,30}$/.test(tag.value)
-        // check if the tag resembles a valid provider ID
-        || /^prov: [A-Za-z0-9_]{1,100}$/.test(tag.value);
+        return /^user: [A-Za-z0-9._]{4,30}$/.test(tag.value);
       }
       return false;
     },
@@ -196,12 +197,10 @@ async function loadRows(params) {
   + `&tzOffsetMinutes=${params.tzOffsetMinutes}&dateKind=${params.dateKind}`
   + `&sortGranules=${params.sortGranules}`
   + `&disallowStatus=${params.disallowStatus}`
-  + `&disallowService=${params.disallowService}`;
+  + `&disallowService=${params.disallowService}`
+  + `&disallowProvider=${params.disallowProvider}`;
   if (params.disallowUser) {
     tableUrl += `&disallowUser=${params.disallowUser}`;
-  }
-  if (params.disallowProvider) {
-    tableUrl += `&disallowProvider=${params.disallowProvider}`;
   }
   const res = await fetch(tableUrl, {
     method: 'POST',
@@ -240,6 +239,7 @@ const jobsTable = {
    * disallowProvider - whether to load the table with disallow provider "on" or "off".
    * currentUser - the current Harmony user
    * services - service names from services.yml
+   * providers - unique provider ids from the jobs table
    * isAdminRoute - whether the current page is /admin/...
    * tableFilter - initial tags that will populate the input
    * fromDateTime - date time string that constrains by date
@@ -254,7 +254,7 @@ const jobsTable = {
       async () => loadRows(params),
     );
     formatDates('.date-td');
-    initFilter(params.currentUser, params.services, params.isAdminRoute, params.tableFilter);
+    initFilter(params.currentUser, params.services, params.providers, params.isAdminRoute, params.tableFilter);
     initCopyHandler('.copy-request');
     initSelectHandler('.select-job');
     initSelectAllHandler();

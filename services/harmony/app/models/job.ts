@@ -20,7 +20,11 @@ import env from '../util/env';
 import JobError from './job-error';
 import { setReadyCountToZero } from './user-work';
 import { Knex } from 'knex';
+import { Logger } from 'winston';
 const { awsDefaultRegion } = env;
+
+// Lazily load the list of unique provider ids, once, when requested
+let providerIdsSnapshot: string[];
 
 export const jobRecordFields = [
   'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'request',
@@ -312,6 +316,18 @@ export function getRelatedLinks(rel: string, links: JobLink[]): JobLink[] {
 }
 
 /**
+ * Get all of the unique provider Ids.
+ * @param tx - the transaction to use for querying
+ * @returns a promise resolving to an array of provider Ids
+ */
+async function getUniqueProviderIds(tx: Transaction): Promise<string[]> {
+  const results = await tx('jobs')
+    .whereNotNull('provider_id')
+    .distinct('provider_id');
+  return results.map((job) => job.provider_id);
+}
+
+/**
  * Conditionally modify a job query if specific constraints are present.
  * @param queryBuilder - the knex query builder object to modify
  * @param constraints - specifies the query constraints (if any)
@@ -592,6 +608,25 @@ export class Job extends DBRecord implements JobRecord {
   static async getTimeOfMostRecentlyUpdatedJob(tx: Transaction): Promise<Date> {
     const response = await tx(Job.table).max('updatedAt as latest_update');
     return new Date(response[0].latest_update);
+  }
+
+
+  /**
+   * Get a list of unique provider ids (singleton, loaded once per server startup)
+   * @param tx - the transaction to use for querying
+   * @param logger - the logger to use
+   * @returns list of provider ids as a string[]
+   */
+  static async getProviderIdsSnapshot(tx: Transaction, logger: Logger): Promise<string[]> {
+    if (providerIdsSnapshot === undefined) {
+      try {
+        providerIdsSnapshot = await getUniqueProviderIds(tx);
+      } catch (e) {
+        logger.error(e);
+        providerIdsSnapshot = [];
+      }
+    }
+    return providerIdsSnapshot;
   }
 
   /**

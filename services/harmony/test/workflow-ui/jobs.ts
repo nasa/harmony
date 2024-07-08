@@ -497,19 +497,19 @@ describe('Workflow UI jobs route', function () {
     });
 
     describe('who filters by provider, but is not an admin', function () {
-      const tableFilter = '[{"value":"prov: provider_z","dbValue":"provider_z","field":"provider"}]';
+      const tableFilter = '[{"value":"provider: provider_z","dbValue":"provider_z","field":"provider"}]';
       hookWorkflowUIJobs({ username: 'woody', disallowProvider: 'on', tableFilter });
-      it('ignores the provider filter, returning all of woody\'s jobs', function () {
+      it('negates the provider filter, returning all of woody\'s jobs', function () {
         const listing = this.res.text;
         expect((listing.match(/job-table-row/g) || []).length).to.equal(3);
       });
-      it('does not return the disallowProvider HTML checkbox', function () {
+      it('does return the disallowProvider HTML checkbox', function () {
         const listing = this.res.text;
-        expect((listing.match(/<input (?=.*name="disallowProvider").*>/g) || []).length).to.equal(0);
+        expect((listing.match(/<input (?=.*name="disallowProvider").*>/g) || []).length).to.equal(1);
       });
-      it('has no provider filters selected', function () {
+      it('has one provider filter selected', function () {
         const listing = this.res.text;
-        expect(listing).to.not.contain(mustache.render('{{prov}}', { prov: 'prov: prov_a' }));
+        expect(listing).to.contain(mustache.render('{{provider}}', { provider: 'provider: provider_z' }));
       });
     });
 
@@ -653,7 +653,7 @@ describe('Workflow UI jobs route', function () {
       });
 
       describe('and the admin filters by provider IN [provider_b]', function () {
-        const tableFilter = '[{"value":"prov: provider_b","dbValue":"provider_b","field":"provider"}]';
+        const tableFilter = '[{"value":"provider: provider_b","dbValue":"provider_b","field":"provider"}]';
         hookAdminWorkflowUIJobs({ username: 'adam', disallowProvider: '', tableFilter });
         it('returns the matching job', function () {
           const listing = this.res.text;
@@ -666,12 +666,12 @@ describe('Workflow UI jobs route', function () {
         });
         it('has the provider filter selected', function () {
           const listing = this.res.text;
-          expect(listing).to.contain(mustache.render('{{prov}}', { prov: 'prov: provider_b' }));
+          expect(listing).to.contain(mustache.render('{{provider}}', { provider: 'provider: provider_b' }));
         });
       });
 
       describe('and the admin filters by provider NOT IN [provider_b, provider_z]', function () {
-        const tableFilter = '[{"value":"prov: provider_b","dbValue":"provider_b","field":"provider"},{"value":"prov: provider_z","dbValue":"provider_z","field":"provider"}]';
+        const tableFilter = '[{"value":"provider: provider_b","dbValue":"provider_b","field":"provider"},{"value":"provider: provider_z","dbValue":"provider_z","field":"provider"}]';
         hookAdminWorkflowUIJobs({ username: 'adam', disallowProvider: 'on', tableFilter });
         it('returns the jobs that do not match providers b and z', function () {
           const listing = this.res.text;
@@ -685,13 +685,13 @@ describe('Workflow UI jobs route', function () {
         });
         it('has the provider b and z filters selected', function () {
           const listing = this.res.text;
-          expect(listing).to.contain(mustache.render('{{prov}}', { prov: 'prov: provider_b' }));
-          expect(listing).to.contain(mustache.render('{{prov}}', { prov: 'prov: provider_z' }));
+          expect(listing).to.contain(mustache.render('{{provider}}', { provider: 'provider: provider_b' }));
+          expect(listing).to.contain(mustache.render('{{provider}}', { provider: 'provider: provider_z' }));
         });
       });
 
       describe('who filters by a particular combination of filter types', function () {
-        const tableFilter = '[{"value":"service: harmony/netcdf-to-zarr","dbValue":"harmony/netcdf-to-zarr","field":"service"},{"value":"user: woody","dbValue":"woody","field":"user"},{"value":"prov: provider_b","dbValue":"provider_b","field":"provider"}]';
+        const tableFilter = '[{"value":"service: harmony/netcdf-to-zarr","dbValue":"harmony/netcdf-to-zarr","field":"service"},{"value":"user: woody","dbValue":"woody","field":"user"},{"value":"provider: provider_b","dbValue":"provider_b","field":"provider"}]';
         hookAdminWorkflowUIJobs({ username: 'adam', tableFilter });
         it('returns the harmony/netcdf-to-zarr job', function () {
           const listing = this.res.text;
@@ -718,7 +718,7 @@ describe('Workflow UI jobs route', function () {
           const listing = this.res.text;
           expect(listing).to.contain(mustache.render('{{service}}', { service: 'service: harmony/netcdf-to-zarr' }));
           expect(listing).to.contain(mustache.render('{{user}}', { user: 'user: woody' }));
-          expect(listing).to.contain(mustache.render('{{provider}}', { provider: 'prov: provider_b' }));
+          expect(listing).to.contain(mustache.render('{{provider}}', { provider: 'provider: provider_b' }));
         });
       });
 

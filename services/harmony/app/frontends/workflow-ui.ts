@@ -107,8 +107,8 @@ function parseQuery( /* eslint-disable @typescript-eslint/no-explicit-any */
       .filter(option => isAdminAccess && /^user: [A-Za-z0-9\.\_]{4,30}$/.test(option.value));
     const userValues = validUserSelections.map(option => option.value.split('user: ')[1]);
     const validProviderSelections = selectedOptions
-      .filter(option => isAdminAccess && /^prov: [A-Za-z0-9_]{1,100}$/.test(option.value));
-    const providerValues = validProviderSelections.map(option => option.value.split('prov: ')[1].toLowerCase());
+      .filter(option => /^provider: [A-Za-z0-9_]{1,100}$/.test(option.value));
+    const providerValues = validProviderSelections.map(option => option.value.split('provider: ')[1].toLowerCase());
     if ((statusValues.length + serviceValues.length + userValues.length + providerValues.length) > maxFilters) {
       throw new RequestValidationError(`Maximum amount of filters (${maxFilters}) was exceeded.`);
     }
@@ -305,6 +305,8 @@ export async function getJobs(
 ): Promise<void> {
   try {
     const isAdminRoute = req.context.isAdminAccess;
+    const providerIds = (await Job.getProviderIdsSnapshot(db, req.context.logger))
+      .map((providerId) => providerId.toUpperCase());
     const requestQuery = keysToLowerCase(req.query);
     const fromDateTime = requestQuery.fromdatetime;
     const toDateTime = requestQuery.todatetime;
@@ -332,6 +334,7 @@ export async function getJobs(
       jobs,
       selectAllBox,
       serviceNames: JSON.stringify(serviceNames),
+      providerIds: JSON.stringify(providerIds),
       sortGranules: requestQuery.sortgranules,
       disallowStatusChecked: !tableQuery.allowStatuses ? 'checked' : '',
       disallowServiceChecked: !tableQuery.allowServices ? 'checked' : '',
