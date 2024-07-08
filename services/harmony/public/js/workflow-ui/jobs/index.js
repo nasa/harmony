@@ -14,9 +14,9 @@ params.providers = JSON.parse(tableFilter.getAttribute('data-providers'));
 
 params.disallowStatus = document.getElementsByName('disallowStatus')[0].checked ? 'on' : '';
 params.disallowService = document.getElementsByName('disallowService')[0].checked ? 'on' : '';
+params.disallowProvider = document.getElementsByName('disallowProvider')[0].checked ? 'on' : '';
 if (isAdminRoute) {
   params.disallowUser = document.getElementsByName('disallowUser')[0].checked ? 'on' : '';
-  params.disallowProvider = document.getElementsByName('disallowProvider')[0].checked ? 'on' : '';
 }
 ['page', 'limit', 'fromDateTime', 'toDateTime', 'tzOffsetMinutes'].forEach((name) => {
   params[name] = document.getElementsByName(name)[0].value;

@@ -31,23 +31,21 @@ function initFilter(currentUser, services, providers, isAdminRoute, tableFilter)
   ];
   const serviceList = services.map((service) => ({ value: `service: ${service}`, dbValue: service, field: 'service' }));
   allowedList.push(...serviceList);
+  const providerList = providers.map((provider) => ({ value: `provider: ${provider}`, dbValue: provider, field: 'provider' }));
+  allowedList.push(...providerList);
   if (isAdminRoute) {
     allowedList.push({ value: `user: ${currentUser}`, dbValue: currentUser, field: 'user' });
-    const providerList = providers.map((provider) => ({ value: `provider: ${provider}`, dbValue: provider, field: 'provider' }));
-    allowedList.push(...providerList);
   }
   const allowedValues = allowedList.map((t) => t.value);
   const tagInput = new Tagify(filterInput, {
     whitelist: allowedList,
     validate(tag) {
-      if (allowedValues.includes(tag.value)) {
+      if (allowedValues.includes(tag.value) || /^provider: [A-Za-z0-9_]{1,100}$/.test(tag.value)) {
         return true;
       }
       if (isAdminRoute) {
         // check if the tag loosely resembles a valid EDL username
-        return /^user: [A-Za-z0-9._]{4,30}$/.test(tag.value)
-        // check if the tag resembles a valid provider ID
-        || /^provider: [A-Za-z0-9_]{1,100}$/.test(tag.value);
+        return /^user: [A-Za-z0-9._]{4,30}$/.test(tag.value);
       }
       return false;
     },
@@ -199,12 +197,10 @@ async function loadRows(params) {
   + `&tzOffsetMinutes=${params.tzOffsetMinutes}&dateKind=${params.dateKind}`
   + `&sortGranules=${params.sortGranules}`
   + `&disallowStatus=${params.disallowStatus}`
-  + `&disallowService=${params.disallowService}`;
+  + `&disallowService=${params.disallowService}`
+  + `&disallowProvider=${params.disallowProvider}`;
   if (params.disallowUser) {
     tableUrl += `&disallowUser=${params.disallowUser}`;
-  }
-  if (params.disallowProvider) {
-    tableUrl += `&disallowProvider=${params.disallowProvider}`;
   }
   const res = await fetch(tableUrl, {
     method: 'POST',

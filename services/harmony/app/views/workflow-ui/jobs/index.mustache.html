@@ -76,13 +76,13 @@
                             negate users
                         </label>
                     </div>
+                    {{/isAdminRoute}}
                     <div class="form-check">
                         <input type="checkbox" class="form-check-input" name="disallowProvider" {{disallowProviderChecked}}>
                         <label class="form-check-label" for="disallowProvider">
                             negate providers
                         </label>
                     </div>
-                    {{/isAdminRoute}}
                     <div class="input-group mt-2">
                       <span class="input-group-text">page size</span>
                       <input name="limit" type="number" class="form-control" value="{{limit}}">

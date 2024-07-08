@@ -499,17 +499,17 @@ describe('Workflow UI jobs route', function () {
     describe('who filters by provider, but is not an admin', function () {
       const tableFilter = '[{"value":"provider: provider_z","dbValue":"provider_z","field":"provider"}]';
       hookWorkflowUIJobs({ username: 'woody', disallowProvider: 'on', tableFilter });
-      it('ignores the provider filter, returning all of woody\'s jobs', function () {
+      it('negates the provider filter, returning all of woody\'s jobs', function () {
         const listing = this.res.text;
         expect((listing.match(/job-table-row/g) || []).length).to.equal(3);
       });
-      it('does not return the disallowProvider HTML checkbox', function () {
+      it('does return the disallowProvider HTML checkbox', function () {
         const listing = this.res.text;
-        expect((listing.match(/<input (?=.*name="disallowProvider").*>/g) || []).length).to.equal(0);
+        expect((listing.match(/<input (?=.*name="disallowProvider").*>/g) || []).length).to.equal(1);
       });
-      it('has no provider filters selected', function () {
+      it('has one provider filter selected', function () {
         const listing = this.res.text;
-        expect(listing).to.not.contain(mustache.render('{{provider}}', { provider: 'provider: prov_a' }));
+        expect(listing).to.contain(mustache.render('{{provider}}', { provider: 'provider: provider_z' }));
       });
     });
 
