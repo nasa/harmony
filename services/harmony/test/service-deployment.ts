@@ -5,12 +5,13 @@ import { hookTransaction } from './helpers/db';
 import { hookRedirect } from './helpers/hooks';
 import hookServersStartStop from './helpers/servers';
 import request from 'supertest';
+import MockDate from 'mockdate';
 
 const userErrorMsg = 'User joe does not have permission to access this resource';
 
 describe('List service deployments endpoint', async function () {
   const failedFooDeployment = new ServiceDeployment({ deployment_id: 'abc', service: 'foo-service',
-    username: 'bob', tag: '1', status: ServiceDeploymentStatus.FAILED, message: 'Failed service deployment'  });
+    username: 'bob', tag: '1', status: ServiceDeploymentStatus.FAILED, message: 'Failed service deployment' });
 
   const successfulFooDeployment = new ServiceDeployment({
     deployment_id: 'def', service: 'foo-service',
@@ -45,21 +46,28 @@ describe('List service deployments endpoint', async function () {
   hookTransaction();
 
   before(async function () {
+    // set dates so that we can test ordering
+    MockDate.set('2021-01-01T14:12:05.000Z');
     await failedFooDeployment.save(this.trx);
+    MockDate.set('2021-01-02T14:12:05.000Z');
     await successfulFooDeployment.save(this.trx);
+    MockDate.set('2021-01-03T14:12:05.000Z');
     await runningFooDeployment.save(this.trx);
+    MockDate.set('2021-01-04T14:12:05.000Z');
     await successfulBuzzDeployment.save(this.trx);
+    MockDate.set('2021-01-05T14:12:05.000Z');
     await runningBuzzDeployment.save(this.trx);
     this.trx.commit();
-    allServicesListing = JSON.stringify([failedFooDeployment, successfulFooDeployment, runningFooDeployment, successfulBuzzDeployment, runningBuzzDeployment]
+    MockDate.reset();
+    allServicesListing = JSON.stringify([runningBuzzDeployment, successfulBuzzDeployment, runningFooDeployment, successfulFooDeployment, failedFooDeployment]
       .map((deployment) => deployment.serialize()));
-    fooServiceListing = JSON.stringify([failedFooDeployment, successfulFooDeployment, runningFooDeployment]
+    fooServiceListing = JSON.stringify([runningFooDeployment, successfulFooDeployment, failedFooDeployment]
       .map((deployment) => deployment.serialize()));
-    buzzServiceListing = JSON.stringify([successfulBuzzDeployment, runningBuzzDeployment]
+    buzzServiceListing = JSON.stringify([runningBuzzDeployment, successfulBuzzDeployment]
       .map((deployment) => deployment.serialize()));
-    successfulServicesListing = JSON.stringify([successfulFooDeployment, successfulBuzzDeployment]
+    successfulServicesListing = JSON.stringify([successfulBuzzDeployment, successfulFooDeployment]
       .map((deployment) => deployment.serialize()));
-    runningServicesListing = JSON.stringify([runningFooDeployment, runningBuzzDeployment]
+    runningServicesListing = JSON.stringify([runningBuzzDeployment, runningFooDeployment]
       .map((deployment) => deployment.serialize()));
     failedServicesListing = JSON.stringify([failedFooDeployment]
       .map((deployment) => deployment.serialize()));
