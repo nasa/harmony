@@ -46,7 +46,7 @@ describe('List service deployments endpoint', async function () {
   hookTransaction();
 
   before(async function () {
-    // set dates so that we can test ordering
+    // set dates so that we can test ordering (expecting order by createdAt, desc)
     MockDate.set('2021-01-01T14:12:05.000Z');
     await failedFooDeployment.save(this.trx);
     MockDate.set('2021-01-02T14:12:05.000Z');
