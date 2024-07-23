@@ -81,7 +81,7 @@ describe('Workflow UI job route', function () {
           expect(listing).to.contain('<input name="limit" type="number" class="form-control" value="1">');
         });
       });
-      describe('requests their own job from the jobs page', function () {
+      describe('requests their own job from the jobs page, providing a jobsLink query parameter', function () {
         hookWorkflowUIJob({ jobID: nonShareableJob.jobID, username: 'woody', query: { limit: 1, jobsLink: 'http://localhost:3000/admin/workflow-ui?page=1&limit=10&status=failed' } });
         it('returns a breadcrumb that includes the jobs page link, with filters intact', async function () {
           const listing = this.res.text;
