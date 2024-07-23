@@ -343,9 +343,9 @@ export async function getJobs(
       disallowProviderChecked: !tableQuery.allowProviders ? 'checked' : '',
       toDateTime,
       fromDateTime,
-      dateQuery: `?fromDateTime=${encodeURIComponent(fromDateTime || '')}&toDateTime=${encodeURIComponent(toDateTime || '')}` +
-        `&dateKind=${dateKind}&tzOffsetMinutes=${requestQuery.tzoffsetminutes || ''}`,
-      jobsLinkQuery: `&jobsLinkQuery=${encodeURIComponent(currentPage.href)}`,
+      jobLinkQuery: `?fromDateTime=${encodeURIComponent(fromDateTime || '')}&toDateTime=${encodeURIComponent(toDateTime || '')}` +
+        `&dateKind=${dateKind}&tzOffsetMinutes=${requestQuery.tzoffsetminutes || ''}` +
+        `&jobsLink=${encodeURIComponent(currentPage.href)}`,
       updatedAtChecked: dateKind == 'updatedAt' ? 'checked' : '',
       createdAtChecked: dateKind != 'updatedAt' ? 'checked' : '',
       selectedFilters: originalValues,
@@ -397,7 +397,7 @@ export async function getJob(
       version,
       isAdminRoute: req.context.isAdminAccess,
       isAdminOrOwner: job.belongsToOrIsAdmin(req.user, isAdmin),
-      jobsLink: requestQuery.jobslinkquery || (req.context.isAdminAccess ? '/admin/workflow-ui' : '/workflow-ui'),
+      jobsLink: requestQuery.jobslink || (req.context.isAdminAccess ? '/admin/workflow-ui' : '/workflow-ui'),
     });
   } catch (e) {
     req.context.logger.error(e);
