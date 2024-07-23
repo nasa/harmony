@@ -40,12 +40,11 @@
         aria-label="breadcrumb">
         <div class="breadcrumb  d-flex flex-row justify-content-between">
             <ol class="breadcrumb p-0 m-0">
+                <li class="breadcrumb-item"><a href="{{{jobsLink}}}">Jobs</a></li>
                 {{#isAdminRoute}}
-                <li class="breadcrumb-item"><a href="/admin/workflow-ui">Jobs</a></li>
                 <li class="breadcrumb-item active" aria-current="page">{{job.jobID}} (<a href="/admin/jobs/{{job.jobID}}">Job Status</a>)</li>
                 {{/isAdminRoute}}
                 {{^isAdminRoute}}
-                <li class="breadcrumb-item"><a href="/workflow-ui">Jobs</a></li>
                 <li class="breadcrumb-item active" aria-current="page">{{job.jobID}} (<a href="/jobs/{{job.jobID}}">Job Status</a>)</li>
                 {{/isAdminRoute}}
             </ol>
