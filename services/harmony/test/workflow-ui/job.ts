@@ -81,6 +81,13 @@ describe('Workflow UI job route', function () {
           expect(listing).to.contain('<input name="limit" type="number" class="form-control" value="1">');
         });
       });
+      describe('requests their own job from the jobs page', function () {
+        hookWorkflowUIJob({ jobID: nonShareableJob.jobID, username: 'woody', query: { limit: 1, jobsLink: 'http://localhost:3000/admin/workflow-ui?page=1&limit=10' } });
+        it('returns a breadcrumb that includes the jobs page link, with filters intact', async function () {
+          const listing = this.res.text;
+          expect(listing).to.contain(mustache.render('<a href="http://localhost:3000/admin/workflow-ui?page=1&limit=10">Jobs</a>', {}));
+        });
+      });
       describe('requests more than the max limit of work items', function () {
         hookWorkflowUIJob({ jobID: nonShareableJob.jobID, username: 'woody', query: { limit: 9999999999 } });
         it('sets the page limit input to the expected value', function () {
