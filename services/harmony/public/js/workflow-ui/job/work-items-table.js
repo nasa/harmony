@@ -35,7 +35,7 @@ import PubSub from '../../pub-sub.js';
  * @returns Boolean indicating whether the job is still running
  */
 async function load(params, checkJobStatus) {
-  let tableUrl = `./${params.jobID}/work-items?page=${params.page}&limit=${params.limit}&checkJobStatus=${checkJobStatus}`;
+  let tableUrl = `./${params.jobID}/work-items?page=${params.currentPage}&limit=${params.limit}&checkJobStatus=${checkJobStatus}`;
   tableUrl += `&tableFilter=${encodeURIComponent(params.tableFilter)}&disallowStatus=${params.disallowStatus}`;
   tableUrl += `&fromDateTime=${encodeURIComponent(params.fromDateTime)}&toDateTime=${encodeURIComponent(params.toDateTime)}`;
   tableUrl += `&tzOffsetMinutes=${params.tzOffsetMinutes}&dateKind=${params.dateKind}`;
@@ -131,7 +131,7 @@ export default {
    * @param {object} params - Parameters that define what will appear in the table.
    * Params contains the follwing attributes:
    * jobId - id of the job that the work items are linked to.
-   * page - page number for the work items.
+   * currentPage - page number for the work items.
    * limit - limit on the number of work items in a page.
    * disallowStatus - whether to load the table with disallow status "on" or "off".
    * tableFilter - a list of filter objects (as a string).
