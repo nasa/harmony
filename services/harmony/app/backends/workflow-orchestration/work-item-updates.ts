@@ -557,12 +557,12 @@ export async function preprocessWorkItem(
       // since they are needed for generating the output links we will save
       catalogItems = await readCatalogsItems(results);
       durationMs = new Date().getTime() - startTime;
-      logger.debug('timing.HWIUWJI.readCatalogItems.end', { durationMs });
+      logger.info('timing.HWIUWJI.readCatalogItems.end', { durationMs });
     }
     const resultStartTime = new Date().getTime();
     outputItemSizes = await resultItemSizes(update, operation, logger);
     durationMs = new Date().getTime() - resultStartTime;
-    logger.debug('timing.HWIUWJI.getResultItemSize.end', { durationMs });
+    logger.info('timing.HWIUWJI.getResultItemSize.end', { durationMs });
   } catch (e) {
     if (catalogItems) {
       errorMessage = 'Cannot get result item file size from output STAC';
@@ -657,7 +657,7 @@ export async function processWorkItem(
         const workitemSaveStartTime = new Date().getTime();
         await workItem.save(tx);
         durationMs = new Date().getTime() - workitemSaveStartTime;
-        logger.debug('timing.HWIUWJI.workItem.save.end', { durationMs });
+        logger.info('timing.HWIUWJI.workItem.save.end', { durationMs });
         await (await logAsyncExecutionTime(
           incrementReadyAndDecrementRunningCounts,
           'HWIUWJI.incrementReadyAndDecrementRunningCounts',
@@ -723,7 +723,7 @@ export async function processWorkItem(
       jobSaveStartTime = new Date().getTime();
       await job.save(tx);
       durationMs = new Date().getTime() - jobSaveStartTime;
-      logger.debug('timing.HWIUWJI.job.save.end', { durationMs });
+      logger.info('timing.HWIUWJI.job.save.end', { durationMs });
 
       await (await logAsyncExecutionTime(
         updateCmrWorkItemCount,
@@ -816,12 +816,12 @@ export async function processWorkItem(
           jobSaveStartTime = new Date().getTime();
           await job.pauseAndSave(tx);
           durationMs = new Date().getTime() - jobSaveStartTime;
-          logger.debug('timing.HWIUWJI.job.pauseAndSave.end', { durationMs });
+          logger.info('timing.HWIUWJI.job.pauseAndSave.end', { durationMs });
         } else {
           jobSaveStartTime = new Date().getTime();
           await job.save(tx);
           durationMs = new Date().getTime() - jobSaveStartTime;
-          logger.debug('timing.HWIUWJI.job.save.end', { durationMs });
+          logger.info('timing.HWIUWJI.job.save.end', { durationMs });
         }
 
       }
@@ -829,7 +829,7 @@ export async function processWorkItem(
       jobSaveStartTime = new Date().getTime();
       await job.save(tx);
       durationMs = new Date().getTime() - jobSaveStartTime;
-      logger.debug('timing.HWIUWJI.job.save.end', { durationMs });
+      logger.info('timing.HWIUWJI.job.save.end', { durationMs });
 
     }
   } catch (e) {
@@ -838,7 +838,7 @@ export async function processWorkItem(
   }
 
   durationMs = new Date().getTime() - startTime;
-  logger.debug('timing.HWIUWJI.end', { durationMs });
+  logger.info('timing.HWIUWJI.end', { durationMs });
   logger.debug(`Finished handling work item update for ${workItemID} and status ${status} in ${durationMs} ms`);
 }
 
@@ -881,7 +881,7 @@ export async function processWorkItems(
       }
     });
     const durationMs = new Date().getTime() - transactionStart;
-    logger.debug('timing.HWIUWJI.transaction.end', { durationMs });
+    logger.info('timing.HWIUWJI.transaction.end', { durationMs });
   } catch (e) {
     logger.error('Unable to acquire lock on Jobs table');
     logger.error(e);
@@ -922,7 +922,7 @@ export async function handleWorkItemUpdateWithJobId(
       await job.save(tx);
     });
     const durationMs = new Date().getTime() - transactionStart;
-    logger.debug('timing.HWIUWJI.transaction.end', { durationMs });
+    logger.info('timing.HWIUWJI.transaction.end', { durationMs });
   } catch (e) {
     logger.error(`Failed to process work item update for work item: ${update.workItemID}`);
     logger.error(e);
