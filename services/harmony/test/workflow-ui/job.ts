@@ -95,6 +95,15 @@ describe('Workflow UI job route', function () {
           expect(listing).to.contain(`<input name="limit" type="number" class="form-control" value="${env.maxPageSize}">`);
         });
       });
+      describe('requests page 2', function () {
+        hookWorkflowUIJob({ jobID: nonShareableJob.jobID, username: 'woody', query: { page: 2 } });
+        it('sets the current page number to 2', function () {
+          expect(this.res.text).to.contain('<input type="hidden" name="currentPage" value="2" />');
+        });
+        it('sets the page number to 1 for filter submissions', function () {
+          expect(this.res.text).to.contain('<input type="hidden" name="page" value="1" />');
+        });
+      });
       describe('requests 0 work items', function () {
         hookWorkflowUIJob({ jobID: nonShareableJob.jobID, username: 'woody', query: { limit: 0 } });
         it('sets the page limit input to 1', function () {
