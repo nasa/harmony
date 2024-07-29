@@ -20,6 +20,11 @@ describe('request logging filter', function () {
     const filtered = requestFilter(filtReq, 'headers');
     expect(filtered).to.deep.equal({ authorization: '<redacted>', Host: 'host-value' });
   });
+  it('returns a <redacted> cookie-secret header, leaving other headers intact', function () {
+    const filtReq: FilterRequest = { headers: { 'cookie-secret': 'secret-value', Host: 'host-value' } } as any as FilterRequest;
+    const filtered = requestFilter(filtReq, 'headers');
+    expect(filtered).to.deep.equal({ 'cookie-secret': '<redacted>', Host: 'host-value' });
+  });
 });
 
 describe('util/log', function () {
