@@ -321,6 +321,7 @@ export async function getJobs(
     const lastPage = pageLinks.find((l) => l.rel === 'last');
     const nextPage = pageLinks.find((l) => l.rel === 'next');
     const previousPage = pageLinks.find((l) => l.rel === 'prev');
+    const currentPage = pageLinks.find((l) => l.rel === 'self');
     const paginationDisplay = getPaginationDisplay(pagination);
     const selectAllBox = jobs.some((j) => !j.hasTerminalStatus()) ?
       '<input id="select-jobs" type="checkbox" title="select/deselect all jobs" autocomplete="off">' : '';
@@ -342,8 +343,9 @@ export async function getJobs(
       disallowProviderChecked: !tableQuery.allowProviders ? 'checked' : '',
       toDateTime,
       fromDateTime,
-      dateQuery: `?fromDateTime=${encodeURIComponent(fromDateTime || '')}&toDateTime=${encodeURIComponent(toDateTime || '')}` +
-        `&dateKind=${dateKind}&tzOffsetMinutes=${requestQuery.tzoffsetminutes || ''}`,
+      jobLinkQuery: `?fromDateTime=${encodeURIComponent(fromDateTime || '')}&toDateTime=${encodeURIComponent(toDateTime || '')}` +
+        `&dateKind=${dateKind}&tzOffsetMinutes=${requestQuery.tzoffsetminutes || ''}` +
+        `&jobsLink=${encodeURIComponent(currentPage.href)}`,
       updatedAtChecked: dateKind == 'updatedAt' ? 'checked' : '',
       createdAtChecked: dateKind != 'updatedAt' ? 'checked' : '',
       selectedFilters: originalValues,
@@ -395,6 +397,7 @@ export async function getJob(
       version,
       isAdminRoute: req.context.isAdminAccess,
       isAdminOrOwner: job.belongsToOrIsAdmin(req.user, isAdmin),
+      jobsLink: requestQuery.jobslink || (req.context.isAdminAccess ? '/admin/workflow-ui' : '/workflow-ui'),
     });
   } catch (e) {
     req.context.logger.error(e);

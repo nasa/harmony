@@ -71,7 +71,7 @@ async function handleBatchWorkItemUpdatesWithJobId(
     await processWorkItems(jobID, parseInt(workflowStepIndex), preprocessedWorkItems, logger);
   }
   const durationMs = new Date().getTime() - startTime;
-  logger.debug('timing.HWIUWJI.batch.end', { durationMs });
+  logger.info('timing.HWIUWJI.batch.end', { durationMs });
 }
 
 /**
