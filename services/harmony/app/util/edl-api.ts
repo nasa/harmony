@@ -186,6 +186,13 @@ export async function verifyUserEula(username: string, eulaId: string, logger: L
 export async function validateUserIsInCoreGroup(
   req: HarmonyRequest, res: Response,
 ): Promise<boolean> {
+  // if request has cookie-secret header, it is in the core permissions group
+  const headerSecret = req.headers['cookie-secret'];
+  const secret = process.env.COOKIE_SECRET;
+  if (headerSecret === secret) {
+    return true;
+  }
+
   const { hasCorePermissions } = await getEdlGroupInformation(
     req.user, req.context.logger,
   );
