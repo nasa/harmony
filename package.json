@@ -208,6 +208,7 @@
   },
   "overrides": {
     "trim-newlines": "4.0.1",
-    "fast-json-patch": "3.1.1"
+    "fast-json-patch": "3.1.1",
+    "fast-xml-parser": "4.4.1"
   }
 }
