@@ -341,6 +341,12 @@ describe('Workflow UI jobs route', function () {
         const listing = this.res.text;
         expect(listing).to.contain('2-2 of 3 (page 2 of 3)');
       });
+      it('sets the current page number to 2', function () {
+        expect(this.res.text).to.contain('<input type="hidden" name="currentPage" value="2" />');
+      });
+      it('sets the page number to 1 for filter submissions', function () {
+        expect(this.res.text).to.contain('<input type="hidden" name="page" value="1" />');
+      });
     });
 
     describe('who has 3 jobs and asks for page 3, with a limit of 1', function () {
@@ -695,7 +701,6 @@ describe('Workflow UI jobs route', function () {
         hookAdminWorkflowUIJobs({ username: 'adam', tableFilter });
         it('returns the harmony/netcdf-to-zarr job', function () {
           const listing = this.res.text;
-          console.log(listing);
           expect((listing.match(/job-table-row/g) || []).length).to.equal(1);
           const serviceExampleTd = mustache.render('<td>{{service}}</td>', { service: 'harmony/service-example' });
           const serviceExampleRegExp = new RegExp(serviceExampleTd, 'g');

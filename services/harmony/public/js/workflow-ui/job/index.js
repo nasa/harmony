@@ -9,7 +9,7 @@ async function init() {
   // Retrieve the parameters (from the original page request)
   // that will be used to poll for work items
   const params = {};
-  ['page', 'limit', 'jobID', 'fromDateTime', 'toDateTime', 'tzOffsetMinutes'].forEach((name) => {
+  ['currentPage', 'limit', 'jobID', 'fromDateTime', 'toDateTime', 'tzOffsetMinutes'].forEach((name) => {
     params[name] = document.getElementsByName(name)[0].value;
   });
   params.tableFilter = document.getElementsByName('tableFilter')[0].getAttribute('data-value');

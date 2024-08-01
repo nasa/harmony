@@ -18,7 +18,7 @@ params.disallowProvider = document.getElementsByName('disallowProvider')[0].chec
 if (isAdminRoute) {
   params.disallowUser = document.getElementsByName('disallowUser')[0].checked ? 'on' : '';
 }
-['page', 'limit', 'fromDateTime', 'toDateTime', 'tzOffsetMinutes'].forEach((name) => {
+['currentPage', 'limit', 'fromDateTime', 'toDateTime', 'tzOffsetMinutes'].forEach((name) => {
   params[name] = document.getElementsByName(name)[0].value;
 });
 params.dateKind = document.getElementById('dateKindUpdated').checked ? 'updatedAt' : 'createdAt';

@@ -192,7 +192,7 @@ function initSelectAllHandler() {
 async function loadRows(params) {
   let tableUrl = './workflow-ui/jobs';
   tableUrl += `?tableFilter=${encodeURIComponent(params.tableFilter)}`
-  + `&page=${params.page}&limit=${params.limit}`
+  + `&page=${params.currentPage}&limit=${params.limit}`
   + `&fromDateTime=${encodeURIComponent(params.fromDateTime)}&toDateTime=${encodeURIComponent(params.toDateTime)}`
   + `&tzOffsetMinutes=${params.tzOffsetMinutes}&dateKind=${params.dateKind}`
   + `&sortGranules=${params.sortGranules}`
@@ -231,7 +231,7 @@ const jobsTable = {
    * Initialize the jobs table.
    * @param {object} params - Parameters that define what will appear in the table.
    * Params contains the follwing attributes:
-   * page - page number for the jobs
+   * currentPage - page number for the jobs
    * limit - limit on the number of jobs in a page
    * disallowStatus - whether to load the table with disallow status "on" or "off".
    * disallowService - whether to load the table with disallow service "on" or "off".
