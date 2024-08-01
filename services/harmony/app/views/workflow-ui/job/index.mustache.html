@@ -58,7 +58,8 @@
             <div class="col-2">
                 <form id="work-items-query-form" action="./{{job.jobID}}" method="get" class="pt-2">
                     <input type="hidden" name="jobID" value="{{job.jobID}}" />
-                    <input type="hidden" name="page" value="{{page}}" />
+                    <input type="hidden" name="currentPage" value="{{page}}" />
+                    <input type="hidden" name="page" value="1" />
                     {{> workflow-ui/date-time-picker}}
                     <input name="tableFilter" class="form-control table-filter mb-2" placeholder="add a filter"
                         data-value="{{selectedFilters}}" data-is-admin-route="{{isAdminRoute}}">
