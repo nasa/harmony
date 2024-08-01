@@ -37,6 +37,9 @@ export function requestFilter(req, propName): expressWinston.RequestFilter {
     if (headersObj.authorization) {
       headersObj.authorization = redactedString;
     }
+    if (headersObj['cookie-secret']) {
+      headersObj['cookie-secret'] = redactedString;
+    }
     return headersObj;
   }
   return req[propName];

@@ -100,6 +100,7 @@ export async function getDeploymentById(tx: Transaction, deploymentId: string): 
 export async function getDeployments(tx: Transaction, status?: ServiceDeploymentStatus, service?: string): Promise<ServiceDeployment[]> {
   const query = tx(ServiceDeployment.table)
     .select()
+    .orderBy('createdAt', 'desc')
     .modify((queryBuilder) => {
       if (status) {
         void queryBuilder.where('status', status);
