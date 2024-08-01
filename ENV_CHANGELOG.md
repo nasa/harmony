@@ -2,7 +2,11 @@
 Any changes to the environment variables will be documented in this file in chronological
 order with the most recent changes first.
 
-## 2204-04-25
+## 2024-07-31
+### Changed
+- HYBIG\_INVOCATION\_ARGS changed to call new `harmony_service` package to support V2 HyBIG.
+
+## 2024-04-25
 ### Changed
 - HARMONY_REGRIDDER_IMAGE - Updated to point to ghcr.io hosted image.
 - HARMONY_REGRIDDER_SERVICE_QUEUE_URLS - Updates to point to ghcr.io image.
