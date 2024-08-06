@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=node:18-buster
+ARG BASE_IMAGE=node:22.5.1-alpine
 FROM $BASE_IMAGE
 
 RUN apt update && apt-get -y install sqlite3 python3 python3-pip python3-setuptools

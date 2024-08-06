@@ -1,4 +1,4 @@
-FROM node:18-buster
+FROM node:22.5.1-alpine
 
 RUN apt-get update && apt-get -y install postgresql
 RUN git config --global url."https://".insteadOf ssh://
