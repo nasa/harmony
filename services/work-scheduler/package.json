@@ -46,6 +46,7 @@
     "express": "^4.17.3",
     "knex": "^2.4.0",
     "knex-paginate": "^2.3.0",
+    "libpq": "^1.8.13",
     "lodash": "^4.17.21",
     "lodash.camelcase": "^4.3.0",
     "lru-cache": "^10.2.2",
