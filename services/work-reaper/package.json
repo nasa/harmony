@@ -20,7 +20,7 @@
     "better-audit": "better-npm-audit audit"
   },
   "engines": {
-    "node": "^18.18.2",
+    "node": "^22.5.1",
     "npm": ">=8"
   },
   "author": "NASA EOSDIS Harmony team",

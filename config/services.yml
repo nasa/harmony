@@ -841,7 +841,7 @@ https://cmr.uat.earthdata.nasa.gov:
     type:
       name: http
       params:
-        url: http://localhost:4000/example/harmony
+        url: http://127.0.0.1:4000/example/harmony
     umm_s: S1233603903-EEDTEST
     capabilities:
       subsetting:
