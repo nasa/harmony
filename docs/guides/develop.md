@@ -8,7 +8,7 @@ For developing Harmony on _**Windows**_ follow this document as well as the info
 
 Required:
 * A local copy of this repository.  Using `git clone` is strongly recommended
-* Node.js version 18.  We strongly recommend installing [NVM](https://github.com/nvm-sh/nvm) to add and manage node versions.
+* Node.js version 22.  We strongly recommend installing [NVM](https://github.com/nvm-sh/nvm) to add and manage node versions.
 * Mac OSX, Linux, or similar command line tooling.  Harmony is tested to run on OSX >= 10.14 and Amazon Linux 2.  Command-line instructions and bash helper files under [bin/](bin/) are tested on OSX >= 10.14.
 * [git](https://git-scm.com) - Used to clone this repository
 * Mac:
@@ -63,14 +63,14 @@ or
 arch -x86_64 bash
 ```
 
-Ensure node is available and is the correct version, 18.x.y.
+Ensure node is available and is the correct version, 22.x.y.
 
 ```
 $ node --version
-v18.18.2
+v22.5.1
 ```
 
-Ensure npm is available and is version 9 or later.
+Ensure npm is available and is version 10 or later.
 ```
 $ npm --version
 9.8.1
@@ -82,9 +82,9 @@ If either are not the correct versions and you are using NVM, install them and e
 $ nvm install && nvm use
 ```
 
-The output should include node 18 and npm 9.
+The output should include node 22 and npm 10.
 ```
-Now using node v18.18.2 (npm v9.8.1)
+Now using node v22.5.1 (npm v10.8.2)
 ```
 
 Be sure to **verify the version on the final line** to make sure the NVM binary appears first in your `PATH`.

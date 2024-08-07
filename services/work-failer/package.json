@@ -13,14 +13,14 @@
     "coverage": "nyc mocha",
     "prebuild": "./bin/prebuild",
     "prebuild-m1": "./bin/prebuild",
-    "build": "tsc --project ./tsconfig.build.json && docker build -f Dockerfile.mac --tag harmonyservices/work-failer:${VERSION:-latest} .",
-    "build-m1": "tsc --project ./tsconfig.build.json && docker build -f Dockerfile.mac --platform linux/amd64 --tag harmonyservices/work-failer:${VERSION:-latest} .",
+    "build": "tsc --project ./tsconfig.build.json && docker build --tag harmonyservices/work-failer:${VERSION:-latest} .",
+    "build-m1": "tsc --project ./tsconfig.build.json && docker build --platform linux/amd64 --tag harmonyservices/work-failer:${VERSION:-latest} .",
     "push-image": "./bin/push-image ${VERSION:-latest}",
     "publish": "docker push harmonyservices/work-failer:${VERSION:-latest}",
     "better-audit": "better-npm-audit audit"
   },
   "engines": {
-    "node": "^18.18.2",
+    "node": "^22.5.1",
     "npm": ">=8"
   },
   "author": "NASA EOSDIS Harmony team",
@@ -48,6 +48,7 @@
     "express": "^4.17.3",
     "knex": "^2.4.0",
     "knex-paginate": "^2.3.0",
+    "libpq": "^1.8.13",
     "lodash": "^4.17.21",
     "lodash.camelcase": "^4.3.0",
     "lru-cache": "^10.2.2",

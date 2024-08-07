@@ -45,13 +45,13 @@ export default function hookServersStartStop(opts = { skipEarthdataLogin: true }
     this.frontend = servers.frontend;
     this.backend = servers.backend;
 
-    stub(env, 'callbackUrlRoot').get(() => `http://localhost:${servers.backend.address().port}`);
+    stub(env, 'callbackUrlRoot').get(() => `http://127.0.0.1:${servers.backend.address().port}`);
     const locallyDeployedServices = 'giovanni-adapter,harmony-service-example,' +
       'harmony-netcdf-to-zarr,var-subsetter,swath-projector,harmony-gdal-adapter,' +
       'podaac-concise,sds-maskfill,trajectory-subsetter,podaac-l2-subsetter,harmony-regridder,' +
       'hybig,geoloco,stitchee,batchee,hoss,subset-band-name';
     stub(env, 'locallyDeployedServices').get(() => locallyDeployedServices);
-    process.env.OAUTH_REDIRECT_URI = `http://localhost:${servers.frontend.address().port}/oauth2/redirect`;
+    process.env.OAUTH_REDIRECT_URI = `http://127.0.0.1:${servers.frontend.address().port}/oauth2/redirect`;
 
     if (stubOAuthClientCredentialsReq) {
       stubEdlRequest(

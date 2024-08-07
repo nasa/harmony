@@ -10,11 +10,11 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18.x]
+        node-version: [22.x]
 
     steps:
     - name: Check out code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Install setuptools
       run: sudo -H pip install setuptools
@@ -32,7 +32,7 @@ jobs:
     - name: Set up npm dependency caching
       uses: actions/setup-node@v4
       with:
-        node-version: 18
+        node-version: 22
         cache: 'npm'
         cache-dependency-path: '**/package-lock.json'
 

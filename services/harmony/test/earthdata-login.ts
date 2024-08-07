@@ -166,7 +166,7 @@ describe('Earthdata Login', function () {
       beforeEach(function () {
         stubEdlRequest(
           '/oauth/token',
-          { grant_type: 'authorization_code', code: 'abc123', redirect_uri: `http://localhost:${this.frontend.address().port}/oauth2/redirect` },
+          { grant_type: 'authorization_code', code: 'abc123', redirect_uri: `http://127.0.0.1:${this.frontend.address().port}/oauth2/redirect` },
           token({ accessToken: 'validated' }),
         );
       });
@@ -237,7 +237,7 @@ describe('Earthdata Login', function () {
             .get('/oauth2/redirect')
             .query({ code: 'abc123', state: 'xyz' });
         });
-        
+
         // In this case, the state query parameter will be compared against an undefined
         // state cookie. (handleNeedsAuthorized, which sets the cookie has not been called.)
         it('returns an invalid request status code', function () {
