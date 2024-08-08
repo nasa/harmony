@@ -7,7 +7,7 @@ import _ from 'lodash';
  * Tag class for denoting errors during parsing
  *
  */
-export class ParameterParseError extends Error {}
+export class ParameterParseError extends Error { }
 
 /**
   * Helper function for parameters that parses and validates boolean values. A null value
@@ -57,15 +57,38 @@ export function parseMultiValueParameter(value: string[] | string): string[] {
 }
 
 const geoJsonTemplate =
-  { 'type': 'FeatureCollection',
-    'features': [
+{
+  'type': 'FeatureCollection',
+  'features': [
 
-      { 'type': 'Feature',
-        'geometry': {},
-        'properties': {},
-      },
-    ],
-  };
+    {
+      'type': 'Feature',
+      'geometry': {},
+      'properties': {},
+    },
+  ],
+};
+
+/**
+ * Validate the WKT from the query parameter and throw error if invalid.
+ *
+ * @param wkt - The WKT string to be validated.
+ * @throws RequestValidationError if the WKT string is invalid.
+ */
+export function validateWkt(wkt: string): void {
+  try {
+    const parsed = wellknown.parse(wkt);
+    if (parsed === null || parsed === undefined) {
+      throw new RequestValidationError(`query parameter "coords" Invalid WKT string: ${wkt}`);
+    }
+  } catch (e) {
+    if (e instanceof ParameterParseError) {
+      // Turn parsing exceptions into 400 errors pinpointing the source parameter
+      throw new RequestValidationError(`query parameter "coords" ${e.message}`);
+    }
+    throw e;
+  }
+}
 
 /**
  * Parses portion of WKT that are supported as parameters in harmony.

@@ -5,7 +5,7 @@ import { Conjunction, listToText } from '@harmony/util/string';
 import { keysToLowerCase } from '../util/object';
 import { defaultObjectStore } from '../util/object-store';
 import { coverageRangesetGetParams, coverageRangesetPostParams } from '../frontends/ogc-coverages/index';
-import { edrGetParams } from '../frontends/ogc-edr/index';
+import { getEdrParameters } from '../frontends/ogc-edr/index';
 import env from '../util/env';
 import { getRequestRoot } from '../util/url';
 import { validateNoConflictingGridParameters } from '../util/grids';
@@ -17,7 +17,7 @@ const { awsDefaultRegion } = env;
  */
 
 const RANGESET_ROUTE_REGEX = /^\/.*\/ogc-api-coverages\/.*\/collections\/.*\/coverage\/rangeset/;
-const EDR_ROUTE_REGEX = /^\/ogc-api-edr\/.*\/collections\/.*\/(cube|area)/;
+const EDR_ROUTE_REGEX = /^\/ogc-api-edr\/.*\/collections\/.*\/(cube|area|position)/;
 
 /**
  * The accepted values for the `linkType` parameter for job status requests
@@ -173,7 +173,7 @@ function validateCoverageRangesetParameterNames(req: HarmonyRequest): void {
 function validateEdrParameterNames(req: HarmonyRequest): void {
   const requestedParams = Object.keys(req.query);
   const action = EDR_ROUTE_REGEX.exec(req.url)[1];
-  validateParameterNames(requestedParams, edrGetParams[action]);
+  validateParameterNames(requestedParams, getEdrParameters(action));
 }
 
 /**
