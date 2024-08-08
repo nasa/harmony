@@ -54,11 +54,8 @@ function wktMultipointToMultipolygon(wktMultipoint: string, sideLength: number):
   }
 
   const pointsStr = match[1];
-  console.log(`============pointsStr: ${pointsStr}`);
-
   const points = pointsStr.split(',').map(pointStr => {
     const cleanedPointStr = pointStr.replace(/[()]/g, '').trim();
-    console.log(`============cleanedPointStr: ${cleanedPointStr}`);
     const [x, y] = cleanedPointStr.split(/\s+/).map(Number);
     return { x, y };
   });
