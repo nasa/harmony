@@ -1270,7 +1270,7 @@ components:
         MULTIPOINT((x y),(x1 y1),(x2 y2),(x3 y3))
 
         i.e.
-        MULTIPOINT((38.9 -77),(48.85 2.35),(39.92 116.38),(-35.29 149.1),(51.5 -0.1))
+        MULTIPOINT((38.9 -77),(48.85 2.35),(39.92 16.38),(-35.29 49.1),(51.5 -0.1))
 
         see http://portal.opengeospatial.org/files/?artifact_id=25355 and
         https://en.wikipedia.org/wiki/Well-known_text_representation_of_geometry

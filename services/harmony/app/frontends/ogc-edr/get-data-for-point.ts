@@ -47,15 +47,18 @@ function wktPointToPolygon(wktPoint: string, sideLength: number): string {
 */
 function wktMultipointToMultipolygon(wktMultipoint: string, sideLength: number): string {
   validateWkt(wktMultipoint);
-  const match = wktMultipoint.match(/MULTIPOINT\s*\(\s*((?:\([\d.]+\s+[\d.]+\),?\s*)+)\s*\)/);
+  const match = wktMultipoint.match(/MULTIPOINT\s*\(\s*((?:\([-\d.]+\s+[-\d.]+\),?\s*)+)\s*\)/);
   if (!match) {
     throw new RequestValidationError(
       `query parameter "coords" invalid WKT MULTIPOINT format: ${wktMultipoint}`);
   }
 
   const pointsStr = match[1];
-  const points = pointsStr.split('), (').map(pointStr => {
+  console.log(`============pointsStr: ${pointsStr}`);
+
+  const points = pointsStr.split(',').map(pointStr => {
     const cleanedPointStr = pointStr.replace(/[()]/g, '').trim();
+    console.log(`============cleanedPointStr: ${cleanedPointStr}`);
     const [x, y] = cleanedPointStr.split(/\s+/).map(Number);
     return { x, y };
   });

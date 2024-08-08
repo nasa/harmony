@@ -90,7 +90,7 @@ curl -Lnbj {{root}}/{{exampleCollection}}/ogc-api-coverages/1.0.0/collections/ba
 
 The Harmony services REST API also conforms to the OGC EDR API version 1.1.0.
 As such it accepts parameters in the URL path as well as query parameters.
-Currently only the `/cube` and `/area` routes are supported for spatial subsetting. Other EDR routes will be supported in the future.
+Currently only the `/position`, `/cube` and `/area` routes are supported for spatial subsetting. Other EDR routes will be supported in the future.
 
 ##### URL Path Parameters
 | parameter | description |
@@ -166,6 +166,22 @@ curl -Lnbj {{root}}/ogc-api-edr/1.1.0/collections/{{exampleCollection}}/area?max
 
 ```
 **Example {{exampleCounter}}** - Curl command for an OGC EDR area request
+
+##### OGC EDR Position Subsetting Query Parameters
+| parameter | description |
+|-----------|-------------|
+| coords | (required) A Well Known Text (WKT) point or multi-point string. |
+---
+**Table {{tableCounter}}** - OGC EDR API position parameters
+
+A sample OGC EDR position request is as follows
+
+```
+
+curl -Lnbj {{root}}/ogc-api-edr/1.1.0/collections/{{exampleCollection}}/position?maxResults=1&parameter-name=all&coords=POINT%20(-40%2010)
+
+```
+**Example {{exampleCounter}}** - Curl command for an OGC EDR position request
 
 #### WMS Requests
 
