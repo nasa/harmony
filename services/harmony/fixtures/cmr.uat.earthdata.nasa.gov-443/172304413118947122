@@ -1,0 +1,31 @@
+POST /search/granules.json
+accept: application/json
+content-type: multipart/form-data; boundary=----------------------------012345678901234567890123
+accept-encoding: gzip,deflate
+body: ------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"page_size\"\r\n\r\n100\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"temporal\"\r\n\r\n2020-01-01T00:00:00.000Z,2020-01-02T01:00:00.000Z\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"concept_id\"\r\n\r\nG1233800343-EEDTEST\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"shapefile\"; filename=\"shapefile\"\r\nContent-Type: application/geo+json\r\n\r\n{\"type\":\"FeatureCollection\",\"features\":[{\"type\":\"Feature\",\"geometry\":{\"type\":\"Polygon\",\"coordinates\":[[[-40.00005,9.99995],[-39.99995,9.99995],[-39.99995,10.00005],[-40.00005,10.00005],[-40.00005,9.99995]]]},\"properties\":{}}]}\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"collection_concept_id\"\r\n\r\nC1233800302-EEDTEST\r\n------------------------------012345678901234567890123--\r\n
+
+HTTP/1.1 200 OK
+content-type: application/json;charset=utf-8
+transfer-encoding: chunked
+connection: keep-alive
+date: Wed, 07 Aug 2024 15:22:11 GMT
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: 4b208236-a3b5-4ea0-9319-4fb73eba1bab
+content-sha1: e24df153ffc1738ddb25cd069a0637fe2c128057
+strict-transport-security: max-age=31536000; includeSubDomains; preload
+cmr-search-after: ["eedtest",1577836800000,1233800343]
+cmr-hits: 1
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Search-After, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 48
+x-request-id: 5duluL-AhwvgZdIPO6XcfQbplYC33uQl6t_SVqgiX0Rwe05gyFmfJQ==
+content-md5: 044a797d66b20a4bc241e1a9b0c7888e
+server: ServerTokens ProductOnly
+x-cache: Miss from cloudfront
+via: 1.1 256c939cf1832de7feb46a6e31fda270.cloudfront.net (CloudFront)
+x-amz-cf-pop: DFW57-P5
+x-amz-cf-id: 5duluL-AhwvgZdIPO6XcfQbplYC33uQl6t_SVqgiX0Rwe05gyFmfJQ==
+
+{"feed":{"updated":"2024-08-07T15:22:11.172Z","id":"https://cmr.uat.earthdata.nasa.gov:443/search/granules.json","title":"ECHO granule metadata","entry":[{"producer_granule_id":"001_00_7f00ff_global","boxes":["-90 -180 90 180"],"time_start":"2020-01-01T00:00:00.000Z","updated":"2020-02-25T21:43:11.000Z","dataset_id":"Harmony Example Data","data_center":"EEDTEST","title":"001_00_7f00ff_global","coordinate_system":"CARTESIAN","day_night_flag":"BOTH","time_end":"2020-01-01T01:59:59.000Z","id":"G1233800343-EEDTEST","original_format":"UMM_JSON","granule_size":"1.3701868057250977","browse_flag":false,"collection_concept_id":"C1233800302-EEDTEST","online_access_flag":true,"links":[{"rel":"http://esipfed.org/ns/fedsearch/1.1/data#","type":"application/x-netcdf","hreflang":"en-US","href":"https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-eedtest-data/C1233800302-EEDTEST/nc/001_00_7f00ff_global.nc"},{"rel":"http://esipfed.org/ns/fedsearch/1.1/data#","type":"image/tiff","hreflang":"en-US","href":"https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-eedtest-data/C1233800302-EEDTEST/tiff/001_00_7f00ff_global.tif"}]}]}}

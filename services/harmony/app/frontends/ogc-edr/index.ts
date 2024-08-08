@@ -8,6 +8,7 @@ import getRequirementsClasses from '../ogc-coverages/get-requirements-classes';
 
 import { getDataForCube, postDataForCube } from './get-data-for-cube';
 import { getDataForArea, postDataForArea } from './get-data-for-area';
+import { getDataForPoint, postDataForPoint } from './get-data-for-point';
 
 import HarmonyRequest from '../../models/harmony-request';
 
@@ -38,16 +39,11 @@ const ogcSchemaEdr = yaml.load(openApiContent, { schema: yaml.DEFAULT_SCHEMA }) 
  * @param action - type of request in the schema, e.g., 'cube', 'area'
  * @returns an array of parameter names
  */
-function getParameters(action: string): string[] {
+export function getEdrParameters(action: string): string[] {
   return ogcSchemaEdr
     .paths[`/collections/{collectionId}/${action}`].get.parameters
     .map(param => param.$ref.split('/').pop());
 }
-
-export const edrGetParams = {
-  'cube': getParameters('cube'),
-  'area': getParameters('area'),
-};
 
 /**
  * Express handler that returns a 501 error and "not yet implemented" message to the client
@@ -93,8 +89,8 @@ export function addOpenApiRoutes(app: Router): void {
       describeCollections: TODO,
       describeCollection: TODO,
       getCollectionInstances: TODO,
-      getDataForPoint: TODO,
-      postDataForPoint: TODO,
+      getDataForPoint,
+      postDataForPoint,
       getDataForRadius: TODO,
       postDataForRadius: TODO,
       getDataForCube,

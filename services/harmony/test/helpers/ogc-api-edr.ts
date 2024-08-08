@@ -9,6 +9,7 @@ export const defaultCollection = 'C1233800302-EEDTEST';
 export const defaultGranuleId = 'G1233800352-EEDTEST';
 export const defaultCoverageId = 'all';
 export const defaultVersion = '1.1.0';
+type supportedEdrQueryType = 'cube' | 'area' | 'position';
 
 interface QueryOptions {
   query?: object;
@@ -76,7 +77,7 @@ export function hookLandingPage(collection: string, version: string): void {
  * @returns The response
  */
 export function edrRequest(
-  queryType: 'cube' | 'area',
+  queryType: supportedEdrQueryType,
   app: Application,
   version: string = defaultVersion,
   collection: string = defaultCollection,
@@ -106,7 +107,7 @@ export function edrRequest(
  * @returns An 'awaitable' object that resolves to a Response
  */
 export function postEdrRequest(
-  queryType: 'cube' | 'area',
+  queryType: supportedEdrQueryType,
   app: Express.Application,
   version: string,
   collection: string,
@@ -137,7 +138,7 @@ export function postEdrRequest(
  * @param options - additional options for the request
  */
 export function hookEdrRequest(
-  queryType: 'cube' | 'area', version?: string, collection?: string, {
+  queryType: supportedEdrQueryType, version?: string, collection?: string, {
     query = {},
     headers = {},
     username = undefined }: QueryOptions = {},
@@ -176,7 +177,7 @@ export function hookEdrRequest(
  * @param queryString - The query string parameters to pass to the request
  */
 export function hookPostEdrRequest(
-  queryType: 'cube' | 'area', version: string, collection: string, form: object, queryString = '',
+  queryType: supportedEdrQueryType, version: string, collection: string, form: object, queryString = '',
 ): void {
   before(async function () {
     this.res = await postEdrRequest(

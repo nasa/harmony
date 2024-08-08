@@ -11,7 +11,7 @@ import { EdlUserEulaInfo, verifyUserEula } from '../util/edl-api';
 const CMR_CONCEPT_ID_URL_PATH_REGEX = /\/(?:C\d+-\w+[+\s])*(?:C\d+-\w+)+(?:\/|$)/g;
 
 // Regex for any routes that we expect to begin with a CMR collection identifier
-const COLLECTION_ROUTE_REGEX = /^(\/(?!docs).*\/)(wms|ogc-api-coverages|cube|area)/;
+const COLLECTION_ROUTE_REGEX = /^(\/(?!docs).*\/)(wms|ogc-api-coverages|cube|area|position)/;
 
 /**
  * Loads the variables for the given collection from the CMR and sets the collection's
