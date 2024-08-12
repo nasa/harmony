@@ -522,8 +522,7 @@ export async function updateServiceImageTag(
 export async function getServiceImageTagState(
   req: HarmonyRequest, res: Response, _next: NextFunction,
 ): Promise<void> {
-  if (!hasCookieSecret(req))
-    if (! await validateUserIsInDeployerOrCoreGroup(req, res)) return;
+  if (!hasCookieSecret(req) && ! await validateUserIsInDeployerOrCoreGroup(req, res)) return;
 
   const { enabled, message } = await getEnabledAndMessage();
   res.statusCode = 200;
