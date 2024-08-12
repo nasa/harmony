@@ -1397,6 +1397,54 @@ describe('Service self-deployment failure', async function () {
   });
 });
 
+describe('get service deployments state with cookie-secret', async function () {
+  beforeEach(function () {
+    process.env.COOKIE_SECRET = 'cookie-secret-value';
+  });
+
+  hookServersStartStop({ skipEarthdataLogin: true });
+
+  describe('when incorrect cookie-secret header is provided', async function () {
+    before(async function () {
+      this.res = await request(this.frontend)
+        .get('/service-deployments-state')
+        .set('cookie-secret', 'wrong_secret');
+    });
+
+    after(function () {
+      delete this.res;
+    });
+
+    it('rejects the request', async function () {
+      expect(this.res.status).to.equal(403);
+    });
+
+    it('returns a meaningful error message', async function () {
+      expect(this.res.text).to.equal('User undefined does not have permission to access this resource');
+    });
+  });
+
+  describe('when correct cookie-secret header is provided', async function () {
+    before(async function () {
+      this.res = await request(this.frontend)
+        .get('/service-deployments-state')
+        .set('cookie-secret', process.env.COOKIE_SECRET);
+    });
+
+    after(function () {
+      delete this.res;
+    });
+
+    it('returns a status 200', async function () {
+      expect(this.res.status).to.equal(200);
+    });
+
+    it('returns the service enabled true', async function () {
+      expect(this.res.body.enabled).to.eql(true);
+    });
+  });
+});
+
 describe('Update service deployments state with cookie-secret', async function () {
   beforeEach(function () {
     process.env.COOKIE_SECRET = 'cookie-secret-value';

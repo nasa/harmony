@@ -1,4 +1,5 @@
 import * as axios from 'axios';
+import { hasCookieSecret } from './cookie-secret';
 import { ForbiddenError } from './errors';
 import { Response } from 'express';
 import { Logger } from 'winston';
@@ -187,20 +188,17 @@ export async function validateUserIsInCoreGroup(
   req: HarmonyRequest, res: Response,
 ): Promise<boolean> {
   // if request has cookie-secret header, it is in the core permissions group
-  const headerSecret = req.headers['cookie-secret'];
-  const secret = process.env.COOKIE_SECRET;
-  if (headerSecret === secret) {
-    return true;
+  if (! hasCookieSecret(req)) {
+    const { hasCorePermissions } = await getEdlGroupInformation(
+      req.user, req.context.logger,
+    );
+
+    if (!hasCorePermissions) {
+      res.statusCode = 403;
+      res.send(`User ${req.user} does not have permission to access this resource`);
+      return false;
+    }
   }
 
-  const { hasCorePermissions } = await getEdlGroupInformation(
-    req.user, req.context.logger,
-  );
-
-  if (!hasCorePermissions) {
-    res.statusCode = 403;
-    res.send(`User ${req.user} does not have permission to access this resource`);
-    return false;
-  }
   return true;
 }
