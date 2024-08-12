@@ -1,6 +1,7 @@
-FROM node:18-buster
+FROM node:22.5.1-alpine
 
-RUN apt-get update && apt-get -y install postgresql
+RUN apk update
+RUN apk add bash vim curl git python3 postgresql-client make gcc g++ libc-dev libpq-dev
 RUN git config --global url."https://".insteadOf ssh://
 
 RUN mkdir -p /work-updater/services/work-updater
