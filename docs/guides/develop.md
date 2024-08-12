@@ -32,7 +32,7 @@ Highly Recommended:
 
 Optional:
 * [awscli-local](https://github.com/localstack/awscli-local) - CLI helpers for interacting with localstack
-* [Python](https://www.python.org) version 3.7 - Useful for locally running and testing harmony-docker and other backend services
+* [Python](https://www.python.org) version 3.11 - Useful for locally running and testing harmony-docker and other backend services
 
 ## Set up Environment
 

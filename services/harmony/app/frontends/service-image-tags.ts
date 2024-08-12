@@ -1,6 +1,7 @@
 import { Response, NextFunction } from 'express';
 import HarmonyRequest from '../models/harmony-request';
 import { ECR } from '../util/container-registry';
+import { hasCookieSecret } from '../util/cookie-secret';
 import { getEdlGroupInformation, validateUserIsInCoreGroup } from '../util/edl-api';
 import { exec } from 'child_process';
 import * as path from 'path';
@@ -521,7 +522,8 @@ export async function updateServiceImageTag(
 export async function getServiceImageTagState(
   req: HarmonyRequest, res: Response, _next: NextFunction,
 ): Promise<void> {
-  if (! await validateUserIsInDeployerOrCoreGroup(req, res)) return;
+  if (!hasCookieSecret(req))
+    if (! await validateUserIsInDeployerOrCoreGroup(req, res)) return;
 
   const { enabled, message } = await getEnabledAndMessage();
   res.statusCode = 200;
