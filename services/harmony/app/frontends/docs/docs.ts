@@ -76,7 +76,7 @@ function markdownInterpolate(token: string, mappings: { [key: string]: () => str
  * @param root - The root of the URL for the environment.
  * @returns a promise that resolves to a string.
  */
-async function generateDocumentation(root: string): Promise<string> {
+export async function generateDocumentation(root: string): Promise<string> {
   let { tableCount, exampleCount } = await getTableAndExampleCounts();
   let exampleCollectionId = UAT_COLLECTION_ID;
   if (root === PROD_ROOT) {
@@ -106,6 +106,7 @@ async function generateDocumentation(root: string): Promise<string> {
         root: () => root,
         exampleCounter: () => `${exampleCount--}`,
         tableCounter: () => `${tableCount--}`,
+        previewThreshold: () => `${env.previewThreshold}`,
       });
     })
     // interpolate values in non-inline tags

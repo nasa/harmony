@@ -7,8 +7,19 @@ import env from '../app/util/env';
 import version from '../app/util/version';
 import { hookDocumentationPage } from './helpers/documentation-page';
 
+const TEST_PREVIEW_THRESHOLD = 1234;
+
 describe('Documentation page', function () {
   hookServersStartStop();
+
+  let currentPreviewThreshold;
+  before(function () {
+    currentPreviewThreshold = env.previewThreshold;
+    env.previewThreshold = TEST_PREVIEW_THRESHOLD;
+  });
+  after(function () {
+    env.previewThreshold = currentPreviewThreshold;
+  });
 
   describe('when hitting the Harmony documentation page URL', function () {
     hookDocumentationPage();
@@ -84,6 +95,10 @@ describe('Documentation page', function () {
 
     it('provides a section on the jobs API and the workflow-UI', function () {
       expect(this.res.text).to.include('<h3 id="monitoring-jobs-with-the-jobs-api-and-the-workflow-ui"');
+    });
+
+    it('includes a statement documenting the preview threshold', function () {
+      expect(this.res.text).to.include(`<p><strong>Note:</strong> The current threshold in this environment for the number of granules that will trigger automatic pausing of a job is <strong>${TEST_PREVIEW_THRESHOLD}</strong>.</p>`);
     });
 
     it('provides a section on the stac endpoints', function () {
