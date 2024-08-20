@@ -108,6 +108,8 @@ granules are processed. This allows the user to examine the output to make sure 
 look right before waiting for the entire job to complete. If things looks good, the
 user can resume the paused job, if not they can cancel the paused job.
 
+**Note:** The current threshold in this environment for the number of granules that will trigger automatic pausing of a job is **{{previewThreshold}}**.
+
 If a user wishes to skip this step they can pass the `skipPreview` flag mentioned in the
 [Services API section](#using-the-service-apis), or they can tell an already running job
 to skip the preview using the following:
