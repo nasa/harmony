@@ -22,6 +22,7 @@ jobs:
         brew update
         brew install docker
         brew install kubectl
+        brew install colima
 
     - name: Install awslocal
       run: |
