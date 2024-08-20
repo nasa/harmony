@@ -46,11 +46,13 @@
     "express": "^4.17.3",
     "knex": "^2.4.0",
     "knex-paginate": "^2.3.0",
+    "libpq": "^1.8.13",
     "lodash": "^4.17.21",
     "lodash.camelcase": "^4.3.0",
     "lru-cache": "^10.2.2",
     "node-fetch": "^2.5.12",
     "pg": "^8.7.3",
+    "pg-native": "^3.0.1",
     "tmp": "^0.2.1",
     "winston": "^3.10.0",
     "xstate": "^4.31.0"
