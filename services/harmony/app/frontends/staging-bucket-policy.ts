@@ -46,10 +46,6 @@ export function bucketKeyFromBucketPath(bucketPath: string): [string, string] {
     key = matches[4];
   }
 
-  if (key?.includes('//')) {
-    throw new RequestValidationError(`'${bucketPath}' is not a valid bucket name with optional path`);
-  }
-
   // strip off trailing /
   if (key?.endsWith('/')) {
     key = key.slice(0, -1);

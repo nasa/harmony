@@ -161,14 +161,28 @@ describe('staging-bucket-policy route', function () {
     });
 
     describe('and the user provides an invalid bucket path', async function () {
-      hookStagingBucketPolicy({ bucketPath: 'my-bucket//foo' });
-      it('returns a 400 error', function () {
-        expect(this.res.statusCode).to.equal(400);
+      describe('due to repeated forward slashes', async function () {
+        hookStagingBucketPolicy({ bucketPath: 'my-bucket//foo' });
+        it('returns a 400 error', function () {
+          expect(this.res.statusCode).to.equal(400);
+        });
+
+        it('returns an appropriate error message', function () {
+          const error = JSON.parse(this.res.text);
+          expect(error.description).to.eql('Error: bucketPath parameter value contains repeated forward slashes (//)');
+        });
       });
 
-      it('returns an appropriate error message', function () {
-        const error = JSON.parse(this.res.text);
-        expect(error.description).to.eql('Error: \'my-bucket//foo\' is not a valid bucket name with optional path');
+      describe('due to unsupported characters', async function () {
+        hookStagingBucketPolicy({ bucketPath: '\'"/></script><script>function(){qxss6sxG94mr};</script>' });
+        it('returns a 400 error', function () {
+          expect(this.res.statusCode).to.equal(400);
+        });
+
+        it('returns an appropriate error message', function () {
+          const error = JSON.parse(this.res.text);
+          expect(error.description).to.eql('Error: bucketPath parameter value contains unsupported characters');
+        });
       });
     });
   });
