@@ -2,6 +2,10 @@
 Any changes to the environment variables will be documented in this file in chronological
 order with the most recent changes first.
 
+## 2024-08-30
+### Added  
+- Added environment defaults for NET2COG service
+
 ## 2024-07-31
 ### Changed
 - HYBIG\_INVOCATION\_ARGS changed to call new `harmony_service` package to support V2 HyBIG.
