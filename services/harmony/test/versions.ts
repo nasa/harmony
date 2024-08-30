@@ -34,6 +34,7 @@ describe('Versions endpoint', function () {
           'sds/variable-subsetter',
           'sds/maskfill',
           'sds/trajectory-subsetter',
+          "net2cog",
           'nasa/harmony-gdal-adapter',
           'sds/HyBIG',
           'sds/HOSS-geographic',
