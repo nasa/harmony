@@ -851,6 +851,31 @@ https://cmr.uat.earthdata.nasa.gov:
         - image/tiff
       reprojection: true
 
+  - name: net2cog
+    description: |
+      Converts NetCDF files to COG. Includes extension for running in NASA Harmony. https://github.com/podaac/net2cog
+    data_operation_version: '0.19.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/harmony/net2cog
+    umm_s: S1268612173-POCLOUD
+    capabilities:
+      subsetting:
+        variable: true
+      output_formats:
+        - image/tiff
+        # Don't know how specific/accuate this should be. This is (as far as I can tell) the 'official' mime-type that specifies COG. Got this value from https://github.com/opengeospatial/CloudOptimizedGeoTIFF/issues/1 and from pystac media type constant https://pystac.readthedocs.io/en/stable/api/media_type.html
+        - image/tiff; application=geotiff; profile=cloud-optimized
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
+      - image: !Env ${NET2COG_IMAGE}
+
+
   - name: nasa/harmony-gdal-adapter
     description: |
       Service translating Harmony operations to GDAL commands.
