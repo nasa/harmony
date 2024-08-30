@@ -3,6 +3,7 @@ import simpleOAuth2, { OAuthClient, Token } from 'simple-oauth2';
 import { RequestHandler, NextFunction } from 'express';
 import { cookieOptions, setCookiesForEdl } from '../util/cookies';
 import { listToText } from '@harmony/util/string';
+import { hasCookieSecret } from '../util/cookie-secret';
 import { ForbiddenError, RequestValidationError } from '../util/errors';
 import HarmonyRequest from '../models/harmony-request';
 import env from '../util/env';
@@ -170,8 +171,10 @@ export default function buildEdlAuthorizer(paths: Array<string | RegExp> = []): 
   return async function earthdataLoginAuthorizer(req: HarmonyRequest, res, next): Promise<void> {
     const oauth2 = simpleOAuth2.create(oauthOptions);
     const { token } = req.signedCookies;
-    const requiresAuth = paths.some((p) => req.path.match(p)) && !req.authorized
-      && req.method.toUpperCase() != 'PUT'; // we don't support PUT requests with the redirect
+    const requiresAuth = paths.some((p) => req.path.match(p)) &&
+      !req.authorized &&
+      req.method.toUpperCase() != 'PUT' && // we don't support PUT requests with the redirect
+      !(req.path.toLowerCase().startsWith('/service-deployments-state') && hasCookieSecret(req));
     let handler;
 
     try {
