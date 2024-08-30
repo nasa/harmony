@@ -128,6 +128,33 @@ async function validateDestinationUrlParameter(req: HarmonyRequest): Promise<voi
 }
 
 /**
+ * Validate that the `bucketPath` parameter is a valid S3 url or bucket name with optional path
+ *
+ * @param req - The client request
+ */
+function validateBucketPathParameter(req: HarmonyRequest): void {
+  const bucketPathRegex = /^(?:(?:(?:s|S)?3:\/\/)?([a-z0-9][a-z0-9.-]{1,61}[a-z0-9])(?:(?:\.s3\.amazonaws\.com)?)(?:\/((?:[0-9a-zA-Z.!\-_*'()\/?,+:;=@$& ])*)?)?)$/;
+  const keys = keysToLowerCase(req.query);
+  const bucketPath = keys.bucketpath;
+
+  if (!bucketPath) return;
+
+  const matches = bucketPath.match(bucketPathRegex);
+
+  if (!matches) {
+    throw new RequestValidationError('bucketPath parameter value contains unsupported characters');
+  }
+
+  // check for the case of repeated forward slashes
+  if (matches.length == 3) {
+    const bucketPlusPath = matches[1] + '/' + matches[2];
+    if (bucketPlusPath?.includes('//')) {
+      throw new RequestValidationError('bucketPath parameter value contains repeated forward slashes (//)');
+    }
+  }
+}
+
+/**
  * Validate that the parameter names are correct.
  *  (Performs case insensitive comparison.)
  *
@@ -191,6 +218,7 @@ export default async function parameterValidation(
     validateLinkTypeParameter(req);
     validateNoConflictingGridParameters(req.query);
     await validateDestinationUrlParameter(req);
+    validateBucketPathParameter(req);
     if (req.url.match(RANGESET_ROUTE_REGEX)) {
       validateCoverageRangesetParameterNames(req);
     }
