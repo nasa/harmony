@@ -489,12 +489,12 @@ SUBSET_BAND_NAME_LIMITS_MEMORY=2048Mi
 SUBSET_BAND_NAME_INVOCATION_ARGS='python3 /app/harmony_python_interface/adapter.py'
 SUBSET_BAND_NAME_SERVICE_QUEUE_URLS='["ldds/subset-band-name:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/subset-band-name.fifo"]'
 
-BATCHEE_IMAGE=asdc-trade/batchee:latest
+BATCHEE_IMAGE=ghcr.io/nasa/batchee:latest
 BATCHEE_REQUESTS_MEMORY=128Mi
 BATCHEE_LIMITS_MEMORY=512Mi
 BATCHEE_INVOCATION_ARGS='./docker-entrypoint.sh'
 
-STITCHEE_IMAGE=asdc-trade/stitchee:latest
+STITCHEE_IMAGE=ghcr.io/nasa/stitchee:latest
 STITCHEE_REQUESTS_CPU=128m
 STITCHEE_LIMITS_CPU=128m
 STITCHEE_REQUESTS_MEMORY=128Mi
