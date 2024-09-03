@@ -890,8 +890,8 @@ https://cmr.uat.earthdata.nasa.gov:
       subsetting:
         variable: true
       output_formats:
-        - image/tiff
-        # Don't know how specific/accuate this should be. This is (as far as I can tell) the 'official' mime-type that specifies COG. Got this value from https://github.com/opengeospatial/CloudOptimizedGeoTIFF/issues/1 and from pystac media type constant https://pystac.readthedocs.io/en/stable/api/media_type.html
+        # According to https://github.com/opengeospatial/CloudOptimizedGeoTIFF/issues/1 this is the "official" media type for COG.
+        # pystac agrees https://pystac.readthedocs.io/en/stable/api/media_type.html
         - image/tiff; application=geotiff; profile=cloud-optimized
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
