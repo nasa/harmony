@@ -8,6 +8,7 @@ import { exit } from 'process';
 import { loadServiceConfigs } from '../services/harmony/app/models/services';
 import { CmrUmmService, cmrApiConfig, getServicesByIds } from '../services/harmony/app/util/cmr';
 import { ServiceConfig } from '../services/harmony/app/models/services/base-service';
+import validation from 'ajv/dist/vocabularies/validation';
 
 /**
  * Validates spatial subsetting configuration matches
@@ -167,13 +168,27 @@ async function runComparisons(environments = allEnvironments): Promise<void> {
       const ummRecord = ummRecordsMap[harmonyConfig.umm_s];
       const validationMessages = performValidations(ummRecord, harmonyConfig);
       if (validationMessages.length > 0) {
-        // TODO this is a temporary check until the UMM records for this service chain are updated
-        // to match the changes in services.yml
-        if (harmonyConfig.name != 'l2-subsetter-batchee-stitchee-concise') {
+        // For SAMBAH we're allowing for a difference in concatenate_by_default since for API
+        // users they want that to be false, but in EDSC they want the default to be to have the
+        // box checked.
+        if (harmonyConfig.name == 'l2-subsetter-batchee-stitchee-concise') {
+          // only _warn_ about concatenate by default difference - other messages are actual errors
+          const failureMessages = validationMessages.reduce((acc, message) => {
+            if (message != 'Concatenate by default mismatch: harmony is false and UMM-S is true.') {
+              acc.push(message);
+            } else {
+              console.log(`WARNING: ${harmonyConfig.name} and ${ummRecord.meta['concept-id']} differ:\n    - ${message}`);
+            }
+            return acc;
+          }, []);
+
+          if (failureMessages.length > 0) {
+            exitCode = 1;
+            console.log(`ERROR: Validation failures for ${harmonyConfig.name} and ${ummRecord.meta['concept-id']}:\n    - ${failureMessages.join('\n    - ')}`);
+          }
+        } else {
           exitCode = 1;
           console.log(`ERROR: Validation failures for ${harmonyConfig.name} and ${ummRecord.meta['concept-id']}:\n    - ${validationMessages.join('\n    - ')}`);
-        } else {
-          console.log(`WARNING: ${harmonyConfig.name} and ${ummRecord.meta['concept-id']} differ:\n    - ${validationMessages.join('\n    - ')}`);
         }
       }
     }
