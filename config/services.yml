@@ -867,9 +867,10 @@ https://cmr.uat.earthdata.nasa.gov:
       subsetting:
         variable: true
       output_formats:
-        # According to https://github.com/opengeospatial/CloudOptimizedGeoTIFF/issues/1 this is the "official" media type for COG.
+        # According to https://github.com/opengeospatial/CloudOptimizedGeoTIFF/issues/1 "image/tiff; application=geotiff; profile=cloud-optimized" is the media type that should be used for COG.
         # pystac agrees https://pystac.readthedocs.io/en/stable/api/media_type.html
-        - image/tiff; application=geotiff; profile=cloud-optimized
+        # Harmony only matches on the part before the first semi-colon
+        - image/tiff
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
