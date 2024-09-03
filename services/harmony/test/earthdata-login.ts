@@ -384,8 +384,8 @@ describe('Earthdata Login', function () {
     });
   });
 
-  describe('serive-deployments-state route and cookie-secret', function () {
-    describe('When cookie-secret is provided', function () {
+  describe('service-deployments-state route and cookie-secret', function () {
+    describe('When correct cookie-secret is provided', function () {
       before(async function () {
         this.res = await request(this.frontend)
           .get('/service-deployments-state')
