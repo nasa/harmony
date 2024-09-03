@@ -384,6 +384,46 @@ describe('Earthdata Login', function () {
     });
   });
 
+  describe('serive-deployments-state route and cookie-secret', function () {
+    describe('When cookie-secret is provided', function () {
+      before(async function () {
+        this.res = await request(this.frontend)
+          .get('/service-deployments-state')
+          .set('cookie-secret', 'foo');
+      });
+
+      it('does not redirect to Earthdata Login', function () {
+        expect(this.res.statusCode).to.equal(200);
+        expect(this.res.headers.location).to.be.undefined;
+      });
+    });
+
+    describe('When cookie-secret is wrong', function () {
+      before(async function () {
+        this.res = await request(this.frontend)
+          .get('/service-deployments-state')
+          .set('cookie-secret', 'bar');
+      });
+
+      it('redirects to Earthdata Login', function () {
+        expect(this.res.statusCode).to.equal(303);
+        expect(this.res.headers.location).to.include(process.env.OAUTH_HOST);
+      });
+    });
+
+    describe('When cookie-secret is not provided', function () {
+      before(async function () {
+        this.res = await request(this.frontend)
+          .get('/service-deployments-state');
+      });
+
+      it('redirects to Earthdata Login', function () {
+        expect(this.res.statusCode).to.equal(303);
+        expect(this.res.headers.location).to.include(process.env.OAUTH_HOST);
+      });
+    });
+  });
+
   describe('Calls to unauthenticated resources', function () {
     describe('When loading the site root', function () {
       beforeEach(function () {
