@@ -279,6 +279,41 @@ describe('Individual job status route', function () {
           expect(job.message).to.include('The job has completed successfully');
         });
 
+        it('supplies a link to the STAC catalog', function () {
+          const job = JSON.parse(this.res.text);
+          console.log(JSON.stringify(job));
+          expect(job.stac).to.equal('abc');
+        });
+
+        itIncludesADataExpirationField();
+      });
+    });
+
+    describe('when the job has completed with errors', function () {
+      StubService.hook({ params: { status: 'complete_with_errors', httpBackend: 'true' } });
+      hookRangesetRequest(version, collection, variableName, { username: 'jdoe4' });
+      before(async function () {
+        await this.service.complete();
+      });
+
+      describe('retrieving its job status', function () {
+        hookRedirect('jdoe4');
+
+        it('returns a status field of "complete_with_errors"', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.status).to.eql('complete_with_errors');
+        });
+
+        it('returns a human-readable message field corresponding to its state', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.message).to.include('The job has completed with errors. See the errors field for more details');
+        });
+
+        // it('supplies a link to the STAC catalog', function () {
+        //   const job = JSON.parse(this.res.text);
+        //   expect(job.stac).to.equal('abc');
+        // });
+
         itIncludesADataExpirationField();
       });
     });
