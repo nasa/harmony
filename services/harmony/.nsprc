@@ -9,11 +9,6 @@
     "notes": "Will fix in HARMONY-1729",
     "expiry": "2024-11-01"
   },
-  "1097493": {
-    "active": true,
-    "notes": "ignored because it doesn't affect us and there is not current patch",
-    "expiry": "2024-11-01"
-  },
   "1097346": {
     "active": true,
     "notes": "ignored because it doesn't affect us and there is not current patch",
