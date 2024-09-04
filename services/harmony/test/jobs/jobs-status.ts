@@ -31,7 +31,7 @@ function hasSTACLink(job: Record<string, object>): boolean {
   if (Array.isArray(links)) {
     for (const link of links) {
       const { rel } = link;
-      if (rel == 'stac-catalog-json') {
+      if (rel === 'stac-catalog-json') {
         return true;
       }
     }
