@@ -1470,6 +1470,7 @@ describe('ignoreErrors', function () {
           await updateWorkItem(this.backend, workItem4);
 
           const { job } = await Job.byJobID(db, firstSwathItem.jobID);
+          console.log(JSON.stringify(job.status));
           expect(job.status).to.equal(JobStatus.COMPLETE_WITH_ERRORS);
           expect(job.progress).to.equal(100);
         });

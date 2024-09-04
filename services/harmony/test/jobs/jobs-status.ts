@@ -12,6 +12,7 @@ import StubService from '../helpers/stub-service';
 import { hookRedirect, hookUrl } from '../helpers/hooks';
 import { hookRangesetRequest } from '../helpers/ogc-api-coverages';
 import env from '../../app/util/env';
+import { Body } from 'node-fetch';
 
 const aJob = buildJob({ username: 'joe' });
 const pausedJob = buildJob({ username: 'joe' });
@@ -260,10 +261,19 @@ describe('Individual job status route', function () {
     });
 
     describe('when the job has completed successfully', function () {
-      StubService.hook({ params: { status: 'successful', httpBackend: 'true' } });
+      StubService.hook({
+        params: { status: 'successful' },
+        body: 'realistic mock data',
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+          'Content-Disposition': 'filename="out.txt"',
+          'Content-Length': 'realistic mock data'.length,
+        },
+      });
       hookRangesetRequest(version, collection, variableName, { username: 'jdoe3' });
       before(async function () {
         await this.service.complete();
+        console.log(JSON.stringify(this.res, null, 2));
       });
 
       describe('retrieving its job status', function () {
