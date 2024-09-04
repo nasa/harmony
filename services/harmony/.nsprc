@@ -4,16 +4,6 @@
     "notes": "Will fix in HARMONY-1650",
     "expiry": "2024-11-01"
   },
-  "1096482": {
-    "active": true,
-    "notes": "Will fix in HARMONY-1700",
-    "expiry": "2024-11-01"
-  },
-  "1096484": {
-    "active": true,
-    "notes": "Will fix in HARMONY-1700",
-    "expiry": "2024-11-01"
-  },
   "1096727": {
     "active": true,
     "notes": "Will fix in HARMONY-1729",
@@ -22,11 +12,11 @@
   "1097493": {
     "active": true,
     "notes": "ignored because it doesn't affect us and there is not current patch",
-    "expiry": "2024-09-01"
+    "expiry": "2024-11-01"
   },
   "1097346": {
     "active": true,
     "notes": "ignored because it doesn't affect us and there is not current patch",
-    "expiry": "2024-09-01"
+    "expiry": "2024-11-01"
   }
 }

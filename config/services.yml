@@ -412,7 +412,25 @@ https://cmr.earthdata.nasa.gov:
 
   - name: l2-subsetter-batchee-stitchee-concise
     description: |
-      Chained Service of the PODAAC L2-subsetter, Batchee, STITCHEE, and PODAAC CONCISE services.
+      ### Subsetter And Multi-dimensional Batched Aggregation in Harmony (SAMBAH)
+      Chained Service of the L2-subsetter, Batchee, STITCHEE, and CONCISE services.
+      Additional documentation [here](https://stitchee.readthedocs.io/en/latest/sambah_readme/).
+      #### L2 swath subsetter (L2-subsetter)
+      * Works with trajectory (1D) and along track/across track data.
+      * Works with netCDF and HDF5 input files.
+      * Supports variable subsetting.
+      * Supports temporal subsetting.
+      * Supports shape subsetting
+      * Works with hierarchical groups.
+      * Outputs netCDF4.
+      #### Batchee
+      * Service groups together filenames so that further operations (such as concatenation) can be performed separately on each group of files.
+      #### STITCH by Extending a dimEnsion (Stitchee)
+      * Service concatenates a group of netCDF data files along an existing dimension.
+      #### CONCatenation SErvice (CONCISE)
+      * Service capable of "concatenating" multiple netCDF files into a single netCDF file.
+      The resulting file has an extra dimension with size equal to the number of input files, where each slice in that dimension corresponds to the data from one of the input files.
+
     data_operation_version: '0.19.0'
     type:
       <<: *default-turbo-config
@@ -424,13 +442,14 @@ https://cmr.earthdata.nasa.gov:
     umm_s: S2940253910-LARC_CLOUD
     capabilities:
       concatenation: true
-      concatenate_by_default: true
+      concatenate_by_default: false
       extend: true
       default_extend_dimensions: ['mirror_step']
       subsetting:
         bbox: true
         variable: true
         temporal: true
+        shape: true
       output_formats:
         - application/netcdf4
       reprojection: false
@@ -438,15 +457,19 @@ https://cmr.earthdata.nasa.gov:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
       - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
-        operations: ['spatialSubset', 'variableSubset', 'temporalSubset']
+        operations: ['spatialSubset', 'shapefileSubset', 'variableSubset', 'temporalSubset']
         conditional:
-          exists: ['spatialSubset', 'variableSubset', 'temporalSubset']
+          exists: ['spatialSubset', 'shapefileSubset', 'variableSubset', 'temporalSubset']
         extra_args:
           cut: false
       - image: !Env ${BATCHEE_IMAGE}
         operations: ['concatenate']
+        conditional:
+          exists: ['concatenate']
       - image: !Env ${STITCHEE_IMAGE}
         operations: ['extend']
+        conditional:
+          exists: ['concatenate']
       - image: !Env ${PODAAC_CONCISE_IMAGE}
         is_batched: true
         operations: ['concatenate']
@@ -1169,7 +1192,25 @@ https://cmr.uat.earthdata.nasa.gov:
 
   - name: l2-subsetter-batchee-stitchee-concise
     description: |
-      Chained Service of the PODAAC L2-subsetter, Batchee, STITCHEE, and PODAAC CONCISE services.
+      ### Subsetter And Multi-dimensional Batched Aggregation in Harmony (SAMBAH)
+      Chained Service of the L2-subsetter, Batchee, STITCHEE, and CONCISE services.
+      Additional documentation [here](https://stitchee.readthedocs.io/en/latest/sambah_readme/).
+      #### L2 swath subsetter (L2-subsetter)
+      * Works with trajectory (1D) and along track/across track data.
+      * Works with netCDF and HDF5 input files.
+      * Supports variable subsetting.
+      * Supports temporal subsetting.
+      * Supports shape subsetting
+      * Works with hierarchical groups.
+      * Outputs netCDF4.
+      #### Batchee
+      * Service groups together filenames so that further operations (such as concatenation) can be performed separately on each group of files.
+      #### STITCH by Extending a dimEnsion (Stitchee)
+      * Service concatenates a group of netCDF data files along an existing dimension.
+      #### CONCatenation SErvice (CONCISE)
+      * Service capable of "concatenating" multiple netCDF files into a single netCDF file.
+      The resulting file has an extra dimension with size equal to the number of input files, where each slice in that dimension corresponds to the data from one of the input files.
+      The resulting file has an extra dimension with size equal to the number of input files, where each slice in that dimension corresponds to the data from one of the input files.
     data_operation_version: '0.19.0'
     type:
       <<: *default-turbo-config
@@ -1181,13 +1222,14 @@ https://cmr.uat.earthdata.nasa.gov:
     umm_s: S1262025641-LARC_CLOUD
     capabilities:
       concatenation: true
-      concatenate_by_default: true
+      concatenate_by_default: false
       extend: true
       default_extend_dimensions: ['mirror_step']
       subsetting:
         bbox: true
         variable: true
         temporal: true
+        shape: true
       output_formats:
         - application/netcdf4
       reprojection: false
@@ -1195,15 +1237,19 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
       - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
-        operations: ['spatialSubset', 'variableSubset', 'temporalSubset']
+        operations: ['spatialSubset', 'shapefileSubset', 'variableSubset', 'temporalSubset']
         conditional:
-          exists: ['spatialSubset', 'variableSubset', 'temporalSubset']
+          exists: ['spatialSubset', 'shapefileSubset', 'variableSubset', 'temporalSubset']
         extra_args:
           cut: false
       - image: !Env ${BATCHEE_IMAGE}
         operations: ['concatenate']
+        conditional:
+          exists: ['concatenate']
       - image: !Env ${STITCHEE_IMAGE}
         operations: ['extend']
+        conditional:
+          exists: ['concatenate']
       - image: !Env ${PODAAC_CONCISE_IMAGE}
         is_batched: true
         operations: ['concatenate']
