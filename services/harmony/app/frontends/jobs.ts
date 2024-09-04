@@ -50,7 +50,7 @@ function getLinksForDisplay(job: JobForDisplay, urlRoot: string, statusLinkRel: 
     // Remove the S3 bucket and prefix link
     links = links.filter((link) => link.rel !== 's3-access');
   }
-  if (job.status === JobStatus.SUCCESSFUL && needsStacLink(dataLinks)) {
+  if ([JobStatus.SUCCESSFUL, JobStatus.COMPLETE_WITH_ERRORS].includes(job.status) && needsStacLink(dataLinks)) {
     links.unshift(new JobLink(getStacCatalogLink(urlRoot, job.jobID)));
   }
   // add cancel, pause, resume, etc. links if applicable
