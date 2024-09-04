@@ -242,7 +242,7 @@ describe('Individual job status route', function () {
 
         it('does not supply a link to the STAC catalog', function () {
           const job = JSON.parse(this.res.text);
-          expect(job.stac).to.be.undefined;
+          expect(hasSTACLink(job)).to.be.false;
         });
 
         itIncludesADataExpirationField();
@@ -271,7 +271,7 @@ describe('Individual job status route', function () {
 
         it('does not supply a link to the STAC catalog', function () {
           const job = JSON.parse(this.res.text);
-          expect(job.stac).to.be.undefined;
+          expect(hasSTACLink(job)).to.be.false;
         });
 
         itIncludesADataExpirationField();
@@ -402,7 +402,7 @@ describe('Individual job status route', function () {
 
         it('does not supply a link to the STAC catalog', function () {
           const job = JSON.parse(this.res.text);
-          expect(job.stac).to.be.undefined;
+          expect(hasSTACLink(job)).to.be.false;
         });
 
         itIncludesADataExpirationField();
@@ -432,7 +432,7 @@ describe('Individual job status route', function () {
 
         it('does not supply a link to the STAC catalog', function () {
           const job = JSON.parse(this.res.text);
-          expect(job.stac).to.be.undefined;
+          expect(hasSTACLink(job)).to.be.false;
         });
 
         itIncludesADataExpirationField();
