@@ -34,7 +34,6 @@ export function hookUrl(urlOrFn: Function | string, username = 'anonymous', quer
     let req = request(this.frontend).get(url).query(query);
     if (username) req = req.use(auth({ username }));
     this.res = await req;
-    console.log(JSON.stringify(this.res, null, 2));
   });
 
   after(function () {

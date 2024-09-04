@@ -51,7 +51,6 @@ function getLinksForDisplay(job: JobForDisplay, urlRoot: string, statusLinkRel: 
     links = links.filter((link) => link.rel !== 's3-access');
   }
   if ([JobStatus.SUCCESSFUL, JobStatus.COMPLETE_WITH_ERRORS].includes(job.status) && needsStacLink(dataLinks)) {
-  // if (job.status === JobStatus.SUCCESSFUL && needsStacLink(dataLinks)) {
     links.unshift(new JobLink(getStacCatalogLink(urlRoot, job.jobID)));
   }
   // add cancel, pause, resume, etc. links if applicable
