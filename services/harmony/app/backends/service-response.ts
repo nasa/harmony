@@ -137,8 +137,6 @@ export async function responseHandler(req: Request, res: Response): Promise<void
 
   try {
     const queryOverrides = {} as CallbackQuery;
-    console.log(`QUERY:\n${JSON.stringify(query, null, 2)}`);
-    console.log(`HEADERS:\n${JSON.stringify(req.headers, null, 2)}`);
     if (!query.item?.href && !query.error && req.headers['content-length'] && req.headers['content-length'] !== '0') {
       // If the callback doesn't contain a redirect or error and has some content in the body,
       // assume the content is a file result.
@@ -159,7 +157,6 @@ export async function responseHandler(req: Request, res: Response): Promise<void
       if (!filename) {
         throw new TypeError('Services providing output via POST body must send a filename via a "Content-Disposition" header or "item[title]" query parameter');
       }
-      console.log(`FILENAME: ${filename}`);
       item.href = stagingLocation + filename;
       logger.info(`Staging to ${item.href}`);
       await store.upload(req, item.href, +req.headers['content-length'], item.type || query.item?.type);
@@ -170,7 +167,6 @@ export async function responseHandler(req: Request, res: Response): Promise<void
       }
     }
 
-    console.log('A==========');
     const fields = _.merge({}, query, queryOverrides);
     if (job.isAsync && fields.status === JobStatus.SUCCESSFUL && !fields.httpBackend) {
       // This is temporary until we decide how we want to use callbacks. We avoid updating
@@ -180,34 +176,26 @@ export async function responseHandler(req: Request, res: Response): Promise<void
     delete fields.httpBackend;
     logger.info(`Updating job ${job.id}`, { fields });
 
-    console.log('B=============');
-
     if (!query.error && query.httpBackend?.toLowerCase() === 'true') {
       // this is temporary until we decide how we want to use callbacks
       job.succeed();
     }
-
     updateJobFields(logger, job, fields);
     await job.save(trx);
     await trx.commit();
-
-    console.log('C=================');
 
     const durationMs = new Date().getTime() - startTime;
     logger.info('timing.backend-request.end', { durationMs });
 
     res.status(200);
     res.send('Ok');
-    console.log('D============');
   } catch (e) {
-    console.log('E=============');
     await trx.rollback();
     const status = e.statusCode || (e instanceof TypeError ? 400 : 500);
     res.status(status);
     const errorCode = (status >= 400 && status <= 499) ? 'harmony.RequestValidationError' : 'harmony.UnknownError';
     res.json({ code: errorCode, message: e.message });
     logger.error(e);
-    console.log('F=============');
   } finally {
     if (job.hasTerminalStatus()) {
       const durationMs = +job.updatedAt - +job.createdAt;

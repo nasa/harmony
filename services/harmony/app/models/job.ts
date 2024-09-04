@@ -334,7 +334,7 @@ async function getUniqueProviderIds(tx: Transaction): Promise<string[]> {
  */
 function modifyQuery(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  queryBuilder: Knex.QueryBuilder<any, any>, 
+  queryBuilder: Knex.QueryBuilder<any, any>,
   constraints: JobQuery): void {
   if (constraints === undefined) return;
   if (constraints.whereIn) {

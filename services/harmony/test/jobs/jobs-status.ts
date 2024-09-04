@@ -12,7 +12,6 @@ import StubService from '../helpers/stub-service';
 import { hookRedirect, hookUrl } from '../helpers/hooks';
 import { hookRangesetRequest } from '../helpers/ogc-api-coverages';
 import env from '../../app/util/env';
-import { Body } from 'node-fetch';
 
 const aJob = buildJob({ username: 'joe' });
 const pausedJob = buildJob({ username: 'joe' });
@@ -20,6 +19,25 @@ pausedJob.pause();
 const previewingJob = buildJob({ username: 'joe', status: JobStatus.PREVIEWING });
 
 const timeStampRegex = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z/;
+
+/**
+ * Returns true if the given job has a link to a STAC catalog
+ * @param job - a serialized job
+ * @returns `true` if the job has a link to a STAC catalog
+ */
+function hasSTACLink(job: Record<string, object>): boolean {
+  const result = false;
+  const { links } = job;
+  if (Array.isArray(links)) {
+    for (const link of links) {
+      const { rel } = link;
+      if (rel == 'stac-catalog-json') {
+        return true;
+      }
+    }
+  }
+  return result;
+}
 
 /**
  * Defines test for presence of dataExpiration field
@@ -262,18 +280,21 @@ describe('Individual job status route', function () {
 
     describe('when the job has completed successfully', function () {
       StubService.hook({
-        params: { status: 'successful' },
-        body: 'realistic mock data',
-        headers: {
-          'Content-Type': 'text/plain; charset=utf-8',
-          'Content-Disposition': 'filename="out.txt"',
-          'Content-Length': 'realistic mock data'.length,
+        params: {
+          item: {
+            href: 'https://example.com',
+            type: 'image/gif',
+            bbox: '-10,-10,10,10',
+            temporal: '2020-01-01T00:00:00.000Z,2020-01-02T00:00:00.000Z',
+          },
+          status: 'successful',
+          httpBackend: 'true',
+
         },
       });
       hookRangesetRequest(version, collection, variableName, { username: 'jdoe3' });
       before(async function () {
         await this.service.complete();
-        console.log(JSON.stringify(this.res, null, 2));
       });
 
       describe('retrieving its job status', function () {
@@ -291,8 +312,7 @@ describe('Individual job status route', function () {
 
         it('supplies a link to the STAC catalog', function () {
           const job = JSON.parse(this.res.text);
-          console.log(JSON.stringify(job));
-          expect(job.stac).to.equal('abc');
+          expect(hasSTACLink(job)).to.be.true;
         });
 
         itIncludesADataExpirationField();
@@ -300,7 +320,19 @@ describe('Individual job status route', function () {
     });
 
     describe('when the job has completed with errors', function () {
-      StubService.hook({ params: { status: 'complete_with_errors', httpBackend: 'true' } });
+      StubService.hook({
+        params: {
+          item: {
+            href: 'https://example.com',
+            type: 'image/gif',
+            bbox: '-10,-10,10,10',
+            temporal: '2020-01-01T00:00:00.000Z,2020-01-02T00:00:00.000Z',
+          },
+          status: 'complete_with_errors',
+          httpBackend: 'true',
+
+        },
+      });
       hookRangesetRequest(version, collection, variableName, { username: 'jdoe4' });
       before(async function () {
         await this.service.complete();
@@ -319,10 +351,10 @@ describe('Individual job status route', function () {
           expect(job.message).to.include('The job has completed with errors. See the errors field for more details');
         });
 
-        // it('supplies a link to the STAC catalog', function () {
-        //   const job = JSON.parse(this.res.text);
-        //   expect(job.stac).to.equal('abc');
-        // });
+        it('supplies a link to the STAC catalog', function () {
+          const job = JSON.parse(this.res.text);
+          expect(hasSTACLink(job)).to.be.true;
+        });
 
         itIncludesADataExpirationField();
       });
