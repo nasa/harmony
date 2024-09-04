@@ -46,7 +46,6 @@ async function handleStacRequest(
       }
 
       if ([JobStatus.SUCCESSFUL, JobStatus.COMPLETE_WITH_ERRORS].includes(job.status)) {
-      // if (job.status === 'successful') {
         if (stacDataLinks.length) {
           job.links = stacDataLinks;
           const urlRoot = getRequestRoot(req);
