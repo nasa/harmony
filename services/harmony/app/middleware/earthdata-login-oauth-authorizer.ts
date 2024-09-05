@@ -1,5 +1,5 @@
 import axios from 'axios';
-import simpleOAuth2, { OAuthClient, Token } from 'simple-oauth2';
+import { AuthorizationCode, Token, ModuleOptions } from 'simple-oauth2';
 import { RequestHandler, NextFunction } from 'express';
 import { cookieOptions, setCookiesForEdl } from '../util/cookies';
 import { listToText } from '@harmony/util/string';
@@ -15,12 +15,15 @@ if (missingVars.length > 0) {
   throw new Error(`Earthdata Login configuration error: You must set ${listToText(missingVars)} in the environment`);
 }
 
-export const oauthOptions = {
+export const oauthOptions: ModuleOptions = {
   client: {
     id: process.env.OAUTH_CLIENT_ID,
     secret: process.env.OAUTH_PASSWORD,
   },
   auth: { tokenHost: process.env.OAUTH_HOST },
+  options: {
+    credentialsEncodingMode: 'loose',
+  },
 };
 
 // Earthdata Login (OAuth2) tokens have the following structure:
@@ -43,7 +46,7 @@ export const oauthOptions = {
  * @param res - The client response
  * @param _next - The next function in the middleware chain
  */
-async function handleCodeValidation(oauth2: OAuthClient, req, res, _next): Promise<void> {
+async function handleCodeValidation(oauth2: AuthorizationCode, req, res, _next): Promise<void> {
   const { state } = req.signedCookies;
 
   if (state !== req.query.state) {
@@ -55,8 +58,7 @@ async function handleCodeValidation(oauth2: OAuthClient, req, res, _next): Promi
     redirect_uri: process.env.OAUTH_REDIRECT_URI,
   };
 
-  const oauthToken = await oauth2.authorizationCode.getToken(tokenConfig);
-  const { token } = oauth2.accessToken.create(oauthToken);
+  const { token } = await oauth2.getToken(tokenConfig);
   res.cookie('token', token, cookieOptions);
   res.clearCookie('redirect', cookieOptions);
   res.redirect(307, req.signedCookies.redirect || '/');
@@ -71,12 +73,12 @@ async function handleCodeValidation(oauth2: OAuthClient, req, res, _next): Promi
  * @param res - The client response
  * @param _next - The next function in the middleware chain
  */
-async function handleLogout(oauth2: OAuthClient, req, res, _next): Promise<void> {
+async function handleLogout(oauth2: AuthorizationCode, req, res, _next): Promise<void> {
   const { redirect } = req.query;
 
   const { token } = req.signedCookies;
   if (token) {
-    const oauthToken = oauth2.accessToken.create(token);
+    const oauthToken = oauth2.createToken(token);
     await oauthToken.revokeAll();
     res.clearCookie('token', cookieOptions);
   }
@@ -92,10 +94,10 @@ async function handleLogout(oauth2: OAuthClient, req, res, _next): Promise<void>
  * @param res - The client response
  * @param _next - The next function in the middleware chain
  */
-function handleNeedsAuthorized(oauth2: OAuthClient, req, res, _next): void {
+function handleNeedsAuthorized(oauth2: AuthorizationCode, req, res, _next): void {
   const state = setCookiesForEdl(req, res, cookieOptions);
 
-  const url = oauth2.authorizationCode.authorizeURL({
+  const url = oauth2.authorizeURL({
     redirect_uri: process.env.OAUTH_REDIRECT_URI,
     state,
   });
@@ -110,7 +112,7 @@ function handleNeedsAuthorized(oauth2: OAuthClient, req, res, _next): void {
  */
 async function validateUserToken(token: Token): Promise<void> {
   await axios.post(
-    `${oauthOptions.auth.tokenHost}/oauth/tokens/user?token=${encodeURIComponent(token.access_token)}`,
+    `${oauthOptions.auth.tokenHost}/oauth/tokens/user?token=${encodeURIComponent(token.access_token as string)}`,
     null,
     {
       auth: {
@@ -132,9 +134,9 @@ async function validateUserToken(token: Token): Promise<void> {
  *
  * @returns The result of calling the adapter's redirect method
  */
-async function handleAuthorized(oauth2: OAuthClient, req, res, next: NextFunction): Promise<void> {
+async function handleAuthorized(oauth2: AuthorizationCode, req, res, next: NextFunction): Promise<void> {
   const { token } = req.signedCookies;
-  const oauthToken = oauth2.accessToken.create(token);
+  const oauthToken = oauth2.createToken(token);
   req.accessToken = oauthToken.token.access_token;
   try {
     if (oauthToken.expired()) {
@@ -144,7 +146,7 @@ async function handleAuthorized(oauth2: OAuthClient, req, res, next: NextFunctio
     } else {
       await validateUserToken(oauthToken.token);
     }
-    const user = oauthToken.token.endpoint.split('/').pop();
+    const user = (oauthToken.token.endpoint as string).split('/').pop();
     req.context.logger = req.context.logger.child({ user });
     req.user = user;
     next();
@@ -169,7 +171,7 @@ async function handleAuthorized(oauth2: OAuthClient, req, res, next: NextFunctio
  */
 export default function buildEdlAuthorizer(paths: Array<string | RegExp> = []): RequestHandler {
   return async function earthdataLoginAuthorizer(req: HarmonyRequest, res, next): Promise<void> {
-    const oauth2 = simpleOAuth2.create(oauthOptions);
+    const oauth2 = new AuthorizationCode(oauthOptions);
     const { token } = req.signedCookies;
     const requiresAuth = paths.some((p) => req.path.match(p)) &&
       !req.authorized &&
