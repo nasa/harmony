@@ -13,7 +13,7 @@ const edlUserGroupsBaseUrl = `${env.oauthHost}/api/user_groups/groups_for_user`;
 const edlVerifyUserEulaUrl = (username: string, eulaId: string): string =>
   `${env.oauthHost}/api/users/${username}/verify_user_eula?eula_id=${eulaId}`;
 
-const oauth2 = new ClientCredentials(oauthOptions);
+let oauth2: ClientCredentials;
 let harmonyClientToken: AccessToken; // valid for 30 days
 
 /**
@@ -23,8 +23,12 @@ let harmonyClientToken: AccessToken; // valid for 30 days
  */
 export async function getClientCredentialsToken(logger: Logger): Promise<string> {
   try {
-    if (!harmonyClientToken || harmonyClientToken.expired()) {
+    if (oauth2 === undefined) {
+      oauth2 = new ClientCredentials(oauthOptions);
+    }
+    if (harmonyClientToken === undefined || harmonyClientToken.expired()) {
       harmonyClientToken = await oauth2.getToken({});
+      console.log('harmonyClientToken', harmonyClientToken);
     }
     return harmonyClientToken.token.access_token as string;
   } catch (e) {
