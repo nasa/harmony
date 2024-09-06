@@ -2,7 +2,7 @@ import { stub, match, SinonStub } from 'sinon';
 import axios from 'axios';
 import { serialize } from 'cookie';
 import { sign } from 'cookie-signature';
-import { prototype } from 'simple-oauth2/lib/client';
+import { Client } from 'simple-oauth2/lib/client';
 import { Plugin, SuperAgentRequest } from 'superagent';
 import { Token } from 'simple-oauth2';
 
@@ -17,7 +17,7 @@ import { Token } from 'simple-oauth2';
  * @returns The sinon stub that was created
  */
 export function stubEdlRequest(url: string, params: object, response: object): SinonStub {
-  return stub(prototype, 'request').withArgs(url, params).resolves(response);
+  return stub(Client.prototype, 'request').withArgs(url, params).resolves(response);
 }
 
 /**
@@ -32,14 +32,14 @@ export function stubEdlRequest(url: string, params: object, response: object): S
  */
 export function stubEdlError(url: string, params: object, message: string): SinonStub {
   const error = new Error(message);
-  return stub(prototype, 'request').withArgs(url, params).throws(error);
+  return stub(Client.prototype, 'request').withArgs(url, params).throws(error);
 }
 
 /**
  * Removes stubs from Earthdata Login requests
  */
 export function unstubEdlRequest(): void {
-  prototype.request.restore();
+  Client.prototype.request.restore();
 }
 
 /**

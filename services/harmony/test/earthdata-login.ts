@@ -9,7 +9,7 @@ import { auth, authRedirect, token, stubEdlRequest, stubEdlError, unstubEdlReque
 import { itRespondsWithError } from './helpers/errors';
 import StubService from './helpers/stub-service';
 import { wmsRequest } from './helpers/wms';
-import simpleOAuth2 from 'simple-oauth2';
+import { AuthorizationCode } from 'simple-oauth2';
 import { oauthOptions } from '../app/middleware/earthdata-login-oauth-authorizer';
 
 const blankToken = /^token=s%3A\./; // The start of a signed empty token cookie
@@ -282,33 +282,18 @@ describe('Earthdata Login', function () {
   });
 
   describe('Logout request', function () {
-    before(function () {
-      // Stub revokeAll to avoid calling EDL
-      // Typically use EDL fixtures, but in this case the fixture generation was problematic
-      // https://stackoverflow.com/a/44481134
-      const oauth2 = simpleOAuth2.create(oauthOptions);
-      const oauthToken = oauth2.accessToken.create({
-        token_type: 'Bearer',
-        access_token: 'fake_access',
-        refresh_token: 'fake_refresh',
-        endpoint: '/api/users/jdoe',
-        expires_in: 3600,
-        expires_at: '2080-03-15T19:24:40.227Z',
-      });
-      const proto = Object.getPrototypeOf(oauthToken);
-      this.revokeStub = stub(proto, 'revokeAll').returns(Promise.resolve());
-    });
-
-    after(function () {
-      this.revokeStub.restore();
-    });
 
     beforeEach(function () {
       this.req = request(this.frontend).get('/oauth2/logout');
+      this.revokeStub = stubEdlRequest(
+        '/oauth/revoke',
+        {},
+        {},
+      );
     });
 
     afterEach(function () {
-      this.revokeStub.resetHistory();
+      unstubEdlRequest();
     });
 
     describe('When the client supplies a token', function () {
