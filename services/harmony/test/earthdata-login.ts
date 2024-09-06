@@ -2,15 +2,13 @@ import { expect } from 'chai';
 import { describe, it, beforeEach, afterEach } from 'mocha';
 import request from 'supertest';
 import axios from 'axios';
-import { SinonStub, match, stub } from 'sinon';
+import { SinonStub, match } from 'sinon';
 
 import hookServersStartStop from './helpers/servers';
 import { auth, authRedirect, token, stubEdlRequest, stubEdlError, unstubEdlRequest } from './helpers/auth';
 import { itRespondsWithError } from './helpers/errors';
 import StubService from './helpers/stub-service';
 import { wmsRequest } from './helpers/wms';
-import { AuthorizationCode } from 'simple-oauth2';
-import { oauthOptions } from '../app/middleware/earthdata-login-oauth-authorizer';
 
 const blankToken = /^token=s%3A\./; // The start of a signed empty token cookie
 const nonBlankToken = /^token=s%3A[^.]/; // The start of a signed non-empty token cookie
