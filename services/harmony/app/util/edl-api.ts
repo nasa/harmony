@@ -28,7 +28,6 @@ export async function getClientCredentialsToken(logger: Logger): Promise<string>
     }
     if (harmonyClientToken === undefined || harmonyClientToken.expired()) {
       harmonyClientToken = await oauth2.getToken({});
-      console.log('harmonyClientToken', harmonyClientToken);
     }
     return harmonyClientToken.token.access_token as string;
   } catch (e) {
