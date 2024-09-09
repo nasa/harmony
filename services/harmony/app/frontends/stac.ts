@@ -1,5 +1,5 @@
 import { ILengthAwarePagination } from 'knex-paginate';
-import { Job, JobForDisplay } from '../models/job';
+import { Job, JobForDisplay, JobStatus } from '../models/job';
 import { keysToLowerCase } from '../util/object';
 import isUUID from '../util/uuid';
 import { getRequestRoot } from '../util/url';
@@ -45,7 +45,7 @@ async function handleStacRequest(
         throw new NotFoundError(`Unable to find job ${jobId}`);
       }
 
-      if (job.status === 'successful') {
+      if ([JobStatus.SUCCESSFUL, JobStatus.COMPLETE_WITH_ERRORS].includes(job.status)) {
         if (stacDataLinks.length) {
           job.links = stacDataLinks;
           const urlRoot = getRequestRoot(req);

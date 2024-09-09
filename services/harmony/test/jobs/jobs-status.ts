@@ -21,6 +21,25 @@ const previewingJob = buildJob({ username: 'joe', status: JobStatus.PREVIEWING }
 const timeStampRegex = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z/;
 
 /**
+ * Returns true if the given job has a link to a STAC catalog
+ * @param job - a serialized job
+ * @returns `true` if the job has a link to a STAC catalog
+ */
+function hasSTACLink(job: Record<string, object>): boolean {
+  const result = false;
+  const { links } = job;
+  if (Array.isArray(links)) {
+    for (const link of links) {
+      const { rel } = link;
+      if (rel === 'stac-catalog-json') {
+        return true;
+      }
+    }
+  }
+  return result;
+}
+
+/**
  * Defines test for presence of dataExpiration field
  */
 function itIncludesADataExpirationField(): void {
@@ -223,7 +242,7 @@ describe('Individual job status route', function () {
 
         it('does not supply a link to the STAC catalog', function () {
           const job = JSON.parse(this.res.text);
-          expect(job.stac).to.be.undefined;
+          expect(hasSTACLink(job)).to.be.false;
         });
 
         itIncludesADataExpirationField();
@@ -252,7 +271,7 @@ describe('Individual job status route', function () {
 
         it('does not supply a link to the STAC catalog', function () {
           const job = JSON.parse(this.res.text);
-          expect(job.stac).to.be.undefined;
+          expect(hasSTACLink(job)).to.be.false;
         });
 
         itIncludesADataExpirationField();
@@ -260,7 +279,19 @@ describe('Individual job status route', function () {
     });
 
     describe('when the job has completed successfully', function () {
-      StubService.hook({ params: { status: 'successful', httpBackend: 'true' } });
+      StubService.hook({
+        params: {
+          item: {
+            href: 'https://example.com',
+            type: 'image/gif',
+            bbox: '-10,-10,10,10',
+            temporal: '2020-01-01T00:00:00.000Z,2020-01-02T00:00:00.000Z',
+          },
+          status: 'successful',
+          httpBackend: 'true',
+
+        },
+      });
       hookRangesetRequest(version, collection, variableName, { username: 'jdoe3' });
       before(async function () {
         await this.service.complete();
@@ -277,6 +308,52 @@ describe('Individual job status route', function () {
         it('returns a human-readable message field corresponding to its state', function () {
           const job = JSON.parse(this.res.text);
           expect(job.message).to.include('The job has completed successfully');
+        });
+
+        it('supplies a link to the STAC catalog', function () {
+          const job = JSON.parse(this.res.text);
+          expect(hasSTACLink(job)).to.be.true;
+        });
+
+        itIncludesADataExpirationField();
+      });
+    });
+
+    describe('when the job has completed with errors', function () {
+      StubService.hook({
+        params: {
+          item: {
+            href: 'https://example.com',
+            type: 'image/gif',
+            bbox: '-10,-10,10,10',
+            temporal: '2020-01-01T00:00:00.000Z,2020-01-02T00:00:00.000Z',
+          },
+          status: 'complete_with_errors',
+          httpBackend: 'true',
+
+        },
+      });
+      hookRangesetRequest(version, collection, variableName, { username: 'jdoe4' });
+      before(async function () {
+        await this.service.complete();
+      });
+
+      describe('retrieving its job status', function () {
+        hookRedirect('jdoe4');
+
+        it('returns a status field of "complete_with_errors"', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.status).to.eql('complete_with_errors');
+        });
+
+        it('returns a human-readable message field corresponding to its state', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.message).to.include('The job has completed with errors. See the errors field for more details');
+        });
+
+        it('supplies a link to the STAC catalog', function () {
+          const job = JSON.parse(this.res.text);
+          expect(hasSTACLink(job)).to.be.true;
         });
 
         itIncludesADataExpirationField();
@@ -325,7 +402,7 @@ describe('Individual job status route', function () {
 
         it('does not supply a link to the STAC catalog', function () {
           const job = JSON.parse(this.res.text);
-          expect(job.stac).to.be.undefined;
+          expect(hasSTACLink(job)).to.be.false;
         });
 
         itIncludesADataExpirationField();
@@ -355,7 +432,7 @@ describe('Individual job status route', function () {
 
         it('does not supply a link to the STAC catalog', function () {
           const job = JSON.parse(this.res.text);
-          expect(job.stac).to.be.undefined;
+          expect(hasSTACLink(job)).to.be.false;
         });
 
         itIncludesADataExpirationField();

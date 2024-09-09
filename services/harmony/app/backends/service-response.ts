@@ -180,7 +180,6 @@ export async function responseHandler(req: Request, res: Response): Promise<void
       // this is temporary until we decide how we want to use callbacks
       job.succeed();
     }
-
     updateJobFields(logger, job, fields);
     await job.save(trx);
     await trx.commit();
