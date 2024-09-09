@@ -32,7 +32,11 @@ export function stubEdlRequest(url: string, params: object, response: object): S
  */
 export function stubEdlError(url: string, params: object, message: string): SinonStub {
   const error = new Error(message);
-  return stub(Client.prototype, 'request').withArgs(url, params).throws(error);
+  const errorStub =  stub(Client.prototype, 'request').withArgs(url);
+  if (params !== undefined) {
+    errorStub.withArgs(params);
+  }
+  return errorStub.throws(error);
 }
 
 /**

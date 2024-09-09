@@ -471,4 +471,26 @@ describe('Earthdata Login', function () {
       });
     });
   });
+
+  describe('When an EDL oauth endpoint fails', function () {
+    before(async function () {
+      this.req = request(this.frontend).get('/oauth2/logout').use(auth({ username: fakeUsername }));
+      this.revokeStub = stubEdlError(
+        '/oauth/revoke',
+        undefined,
+        'EDL is having problems',
+      );
+      this.res = await this.req;
+    });
+
+    after(function () {
+      unstubEdlRequest();
+    });
+
+    it('Harmony returns an error page', function () {
+      expect(this.res.statusCode).to.equal(500);
+      expect(this.res.text).to.include('Earthdata is currently unavailable');
+    });
+  
+  });
 });
