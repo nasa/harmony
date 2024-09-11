@@ -2,15 +2,13 @@ import { expect } from 'chai';
 import { describe, it, beforeEach, afterEach } from 'mocha';
 import request from 'supertest';
 import axios from 'axios';
-import { SinonStub, match, stub } from 'sinon';
+import { SinonStub, match } from 'sinon';
 
 import hookServersStartStop from './helpers/servers';
 import { auth, authRedirect, token, stubEdlRequest, stubEdlError, unstubEdlRequest } from './helpers/auth';
 import { itRespondsWithError } from './helpers/errors';
 import StubService from './helpers/stub-service';
 import { wmsRequest } from './helpers/wms';
-import simpleOAuth2 from 'simple-oauth2';
-import { oauthOptions } from '../app/middleware/earthdata-login-oauth-authorizer';
 
 const blankToken = /^token=s%3A\./; // The start of a signed empty token cookie
 const nonBlankToken = /^token=s%3A[^.]/; // The start of a signed non-empty token cookie
@@ -282,33 +280,18 @@ describe('Earthdata Login', function () {
   });
 
   describe('Logout request', function () {
-    before(function () {
-      // Stub revokeAll to avoid calling EDL
-      // Typically use EDL fixtures, but in this case the fixture generation was problematic
-      // https://stackoverflow.com/a/44481134
-      const oauth2 = simpleOAuth2.create(oauthOptions);
-      const oauthToken = oauth2.accessToken.create({
-        token_type: 'Bearer',
-        access_token: 'fake_access',
-        refresh_token: 'fake_refresh',
-        endpoint: '/api/users/jdoe',
-        expires_in: 3600,
-        expires_at: '2080-03-15T19:24:40.227Z',
-      });
-      const proto = Object.getPrototypeOf(oauthToken);
-      this.revokeStub = stub(proto, 'revokeAll').returns(Promise.resolve());
-    });
-
-    after(function () {
-      this.revokeStub.restore();
-    });
 
     beforeEach(function () {
       this.req = request(this.frontend).get('/oauth2/logout');
+      this.revokeStub = stubEdlRequest(
+        '/oauth/revoke',
+        {},
+        {},
+      );
     });
 
     afterEach(function () {
-      this.revokeStub.resetHistory();
+      unstubEdlRequest();
     });
 
     describe('When the client supplies a token', function () {
@@ -487,5 +470,27 @@ describe('Earthdata Login', function () {
         });
       });
     });
+  });
+
+  describe('When an EDL oauth endpoint fails', function () {
+    before(async function () {
+      this.req = request(this.frontend).get('/oauth2/logout').use(auth({ username: fakeUsername }));
+      this.revokeStub = stubEdlError(
+        '/oauth/revoke',
+        undefined,
+        'EDL is having problems',
+      );
+      this.res = await this.req;
+    });
+
+    after(function () {
+      unstubEdlRequest();
+    });
+
+    it('Harmony returns an error page', function () {
+      expect(this.res.statusCode).to.equal(500);
+      expect(this.res.text).to.include('Earthdata is currently unavailable');
+    });
+  
   });
 });

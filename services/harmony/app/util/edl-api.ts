@@ -6,14 +6,14 @@ import { Logger } from 'winston';
 import env from './env';
 import HarmonyRequest from '../models/harmony-request';
 import { oauthOptions } from '../middleware/earthdata-login-oauth-authorizer';
-import simpleOAuth2, { AccessToken } from 'simple-oauth2';
+import { ClientCredentials, AccessToken } from 'simple-oauth2';
 
 const edlUserRequestUrl = `${env.oauthHost}/oauth/tokens/user`;
 const edlUserGroupsBaseUrl = `${env.oauthHost}/api/user_groups/groups_for_user`;
 const edlVerifyUserEulaUrl = (username: string, eulaId: string): string =>
   `${env.oauthHost}/api/users/${username}/verify_user_eula?eula_id=${eulaId}`;
 
-const oauth2 = simpleOAuth2.create(oauthOptions);
+let oauth2: ClientCredentials;
 let harmonyClientToken: AccessToken; // valid for 30 days
 
 /**
@@ -23,11 +23,13 @@ let harmonyClientToken: AccessToken; // valid for 30 days
  */
 export async function getClientCredentialsToken(logger: Logger): Promise<string> {
   try {
-    if (!harmonyClientToken || harmonyClientToken.expired()) {
-      const oauthToken = await oauth2.clientCredentials.getToken({});
-      harmonyClientToken = oauth2.accessToken.create(oauthToken);
+    if (oauth2 === undefined) {
+      oauth2 = new ClientCredentials(oauthOptions);
     }
-    return harmonyClientToken.token.access_token;
+    if (harmonyClientToken === undefined || harmonyClientToken.expired()) {
+      harmonyClientToken = await oauth2.getToken({});
+    }
+    return harmonyClientToken.token.access_token as string;
   } catch (e) {
     logger.error('Failed to get client credentials for harmony user.');
     logger.error(e);
