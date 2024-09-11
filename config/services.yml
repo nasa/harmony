@@ -335,9 +335,10 @@ https://cmr.earthdata.nasa.gov:
       subsetting:
         variable: true
       output_formats:
+        # According to https://github.com/opengeospatial/CloudOptimizedGeoTIFF/issues/1 "image/tiff; application=geotiff; profile=cloud-optimized" is the media type that should be used for COG.
+        # pystac agrees https://pystac.readthedocs.io/en/stable/api/media_type.html
+        # Harmony only matches on the part before the first semi-colon
         - image/tiff
-        # Don't know how specific/accuate this should be. This is (as far as I can tell) the 'official' mime-type that specifies COG. Got this value from https://github.com/opengeospatial/CloudOptimizedGeoTIFF/issues/1 and from pystac media type constant https://pystac.readthedocs.io/en/stable/api/media_type.html
-        - image/tiff; application=geotiff; profile=cloud-optimized
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
