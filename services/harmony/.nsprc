@@ -9,9 +9,29 @@
     "notes": "Will fix in HARMONY-1729",
     "expiry": "2024-11-01"
   },
-  "1097346": {
+  "1099520": {
     "active": true,
-    "notes": "ignored because it doesn't affect us and there is not current patch",
+    "notes": "Will fix in HARMONY-1868",
+    "expiry": "2024-11-01"
+  },
+  "1099519": {
+    "active": true,
+    "notes": "Will fix in HARMONY-1867",
+    "expiry": "2024-11-01"
+  },
+  "1099529": {
+    "active": true,
+    "notes": "Will fix in HARMONY-1869",
+    "expiry": "2024-11-01"
+  },
+  "1099525": {
+    "active": true,
+    "notes": "Will fix in HARMONY-1870",
+    "expiry": "2024-11-01"
+  },
+  "1099527": {
+    "active": true,
+    "notes": "Will fix in HARMONY-1871",
     "expiry": "2024-11-01"
   }
 }
