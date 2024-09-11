@@ -94,7 +94,7 @@ spec:
       - env:
         - name: POSTGRES_PASSWORD
           value: password
-        image: postgres:13-alpine
+        image: pgvector/pgvector:pg13
         name: main
         ports:
         - containerPort: 5432
