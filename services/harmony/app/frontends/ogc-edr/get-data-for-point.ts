@@ -93,7 +93,7 @@ export function convertWktToPolygon(wkt: string, sideLength: number = POINT_PREC
 }
 
 /**
- * Express middleware that responds to OGC API - EDR Area GET requests.
+ * Express middleware that responds to OGC API - EDR Position GET requests.
  * Responds with the actual EDR data.
  *
  * @param req - The request sent by the client
@@ -130,7 +130,7 @@ export function getDataForPoint(
 }
 
 /**
- * Express middleware that responds to OGC API - EDR Area POST requests.
+ * Express middleware that responds to OGC API - EDR Position POST requests.
  * Responds with the actual EDR data.
  *
  * This function merely sets up a query and proxies the request to the `getDataForPoint`
