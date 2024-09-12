@@ -8,7 +8,6 @@ import { exit } from 'process';
 import { loadServiceConfigs } from '../services/harmony/app/models/services';
 import { CmrUmmService, cmrApiConfig, getServicesByIds } from '../services/harmony/app/util/cmr';
 import { ServiceConfig } from '../services/harmony/app/models/services/base-service';
-import validation from 'ajv/dist/vocabularies/validation';
 
 /**
  * Validates spatial subsetting configuration matches
