@@ -45,7 +45,9 @@ void (async (): Promise<void> => {
     const embedding = await getEmbedding(text);
     console.log('Embedding:', JSON.stringify(embedding));
     console.log(`LENGTH: ${embedding.length}`);
-    await storeEmbedding(db, 'C-1234TEST', 'V-1234TEST', text);
+    await db.transaction(async (tx) => {
+      await storeEmbedding(tx, 'C-1234TEST', 'V-1234TEST', text);
+    });
   } catch (error) {
     console.error('Failed to generate or store embedding:', error);
   }
