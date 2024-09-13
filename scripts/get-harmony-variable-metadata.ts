@@ -1,4 +1,3 @@
-/* eslint-disable require-jsdoc */
 import { loadServiceConfigs } from '../services/harmony/app/models/services';
 import { cmrApiConfig, CmrUmmCollection, CmrUmmService, getServicesByIds, getUmmCollectionsByIds, getVariablesByIds } from '../services/harmony/app/util/cmr';
 import * as fs from 'fs';
@@ -9,7 +8,13 @@ const environmentMapping = {
   'uat': 'https://cmr.uat.earthdata.nasa.gov',
 };
 
-// Function to chunk an array into smaller arrays of a specific size
+/**
+ * Function to chunk an array into smaller arrays of a specific size
+ * @template T
+ * @param {T[]} array - The array to be chunked
+ * @param {number} chunkSize - The size of each chunk
+ * @returns {T[][]} - An array of arrays (chunks)
+ */
 function chunkArray<T>(array: T[], chunkSize: number): T[][] {
   const chunks = [];
   for (let i = 0; i < array.length; i += chunkSize) {
@@ -18,7 +23,13 @@ function chunkArray<T>(array: T[], chunkSize: number): T[][] {
   return chunks;
 }
 
-async function processCollectionsInChunksConcurrently(collections: Set<string>, chunkSize: number) {
+/**
+ * Processes collections in chunks and fetches UMM collections concurrently.
+ * @param {Set<string>} collections - Set of collection IDs
+ * @param {number} chunkSize - The number of collections to process per chunk
+ * @returns {Promise<CmrUmmCollection[]>} - A flattened array of collection metadata
+ */
+async function processCollectionsInChunksConcurrently(collections: Set<string>, chunkSize: number): Promise<CmrUmmCollection[]> {
   const collectionArray = Array.from(collections);
   const chunks = chunkArray(collectionArray, chunkSize);
 
@@ -27,7 +38,12 @@ async function processCollectionsInChunksConcurrently(collections: Set<string>, 
   return results.flat();
 }
 
-async function processVariablesConcurrently(collectionMetadata: Array<CmrUmmCollection>) {
+/**
+ * Processes variables associated with collections concurrently.
+ * @param {CmrUmmCollection[]} collectionMetadata - Array of collection metadata
+ * @returns {Promise<Record<string, any>>} - An object with collection IDs as keys and arrays of variables as values
+ */
+async function processVariablesConcurrently(collectionMetadata: Array<CmrUmmCollection>): Promise<Record<string, any>> {
   const promises = collectionMetadata.map(async (collection) => {
     if (collection.meta.associations?.variables) {
       const variableChunks = chunkArray(collection.meta.associations.variables, 100);
@@ -63,9 +79,10 @@ async function processVariablesConcurrently(collectionMetadata: Array<CmrUmmColl
 
 /**
  * Creates a map of concept ID to UMM-S record
- * @param ummRecords - an array of UMM-S records
+ * @param {CmrUmmService[]} ummRecords - An array of UMM-S records
+ * @returns {Record<string, CmrUmmService>} - A map of concept IDs to UMM-S records
  */
-function createUmmRecordsMap(ummRecords: CmrUmmService[]): { [key: string]: CmrUmmService } {
+function createUmmRecordsMap(ummRecords: CmrUmmService[]): Record<string, CmrUmmService> {
   return ummRecords.reduce((allRecords, ummRecord) => {
     const conceptId = ummRecord.meta['concept-id'];
     allRecords[conceptId] = ummRecord;
@@ -73,8 +90,14 @@ function createUmmRecordsMap(ummRecords: CmrUmmService[]): { [key: string]: CmrU
   }, {});
 }
 
-
-async function saveVariablesByCollection(variablesByCollection: Record<string, any>, collectionMetadata: Array<CmrUmmCollection>) {
+/**
+ * Saves variables by collection to a JSON file.
+ * @param {Record<string, any>} variablesByCollection - Object with collection IDs as keys and variables as values
+ * @param {CmrUmmCollection[]} collectionMetadata - Array of collection metadata
+ * @param {string} env - The CMR environment
+ * @returns {Promise<void>} - A promise that resolves when the file is written
+ */
+async function saveVariablesByCollection(variablesByCollection: Record<string, any>, collectionMetadata: Array<CmrUmmCollection>, env: string): Promise<void> {
   const output = [];
 
   for (const collection of collectionMetadata) {
@@ -101,16 +124,15 @@ async function saveVariablesByCollection(variablesByCollection: Record<string, a
   }
 
   // Write the result to a JSON file
-  const outputPath = './variable_metadata.json';
+  const outputPath = `./variable_metadata_${env}.json`;
   fs.writeFileSync(outputPath, JSON.stringify(output, null, 2), 'utf-8');
-  logger.info(`Saved output for ${output.length} variable metdata entries to ${outputPath}`);
+  logger.info(`Saved output for ${output.length} variable metadata entries to ${outputPath}`);
 }
 
 /**
- * Runs the service comparison reporting any validation messages. If there are any errors print them out
- * and exit with a non-zero exit code.
- *
- * @param env - the CMR environment to check against
+ * Runs the service comparison and reports any validation messages. Exits with a non-zero code on errors.
+ * @param {string} env - The CMR environment to check against
+ * @returns {Promise<void>} - A promise that resolves when metadata processing is complete
  */
 async function getMetadata(env: string): Promise<void> {
   logger.info(`*** Running get metadata for ${env}`);
@@ -142,21 +164,23 @@ async function getMetadata(env: string): Promise<void> {
     providers.add(provider);
   });
 
-  logger.info(`There are ${services.size} services in ${env} associated with ${collections.size} collections`)
+  logger.info(`There are ${services.size} services in ${env} associated with ${collections.size} collections`);
 
   // Get the full collection metadata for all of the collections - including the variable IDs
-  logger.info('Querying for collection metadata and variable associations')
+  logger.info('Querying for collection metadata and variable associations');
   const collectionMetadata = await processCollectionsInChunksConcurrently(collections, 20);
 
   // Now for each collection get the variable metadata
-  logger.info('Querying for variable metadata')
+  logger.info('Querying for variable metadata');
   const variableMapping = await processVariablesConcurrently(collectionMetadata);
 
-  await saveVariablesByCollection(variableMapping, collectionMetadata);
+  await saveVariablesByCollection(variableMapping, collectionMetadata, env);
 }
 
 /**
- * Main function called from npm run metadata-uat or npm run metadata-prod
+ * Main function to fetch metadata, called from npm run metadata-uat or npm run metadata-prod
+ * @param {string} environment - The environment (uat or prod) to process metadata for
+ * @returns {Promise<void>} - A promise that resolves when the metadata processing is complete
  */
 async function main(environment: string): Promise<void> {
   await getMetadata(environment);
