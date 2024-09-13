@@ -81,7 +81,7 @@ A sample OGC Coverages request is as follows
 
 ```
 
-curl -Lnbj {{root}}/{{exampleCollection}}/ogc-api-coverages/1.0.0/collections/bathymetry/coverage/rangeset?maxResults=1
+curl -Lnbj "{{root}}/{{exampleCollection}}/ogc-api-coverages/1.0.0/collections/bathymetry/coverage/rangeset?maxResults=1"
 
 ```
 **Example {{exampleCounter}}** - Curl command for an OGC Coverages request
@@ -90,7 +90,7 @@ curl -Lnbj {{root}}/{{exampleCollection}}/ogc-api-coverages/1.0.0/collections/ba
 
 The Harmony services REST API also conforms to the OGC EDR API version 1.1.0.
 As such it accepts parameters in the URL path as well as query parameters.
-Currently only the `/position`, `/cube` and `/area` routes are supported for spatial subsetting. Other EDR routes will be supported in the future.
+Currently only the `/position`, `/cube`, `/trajectory` and `/area` routes are supported for spatial subsetting. Other EDR routes will be supported in the future.
 
 ##### URL Path Parameters
 | parameter | description |
@@ -145,7 +145,7 @@ A sample OGC EDR cube request is as follows
 
 ```
 
-curl -Lnbj {{root}}/ogc-api-edr/1.1.0/collections/{{exampleCollection}}/cube?maxResults=1
+curl -Lnbj "{{root}}/ogc-api-edr/1.1.0/collections/{{exampleCollection}}/cube?maxResults=1&bbox=-140,20,-50,60" -o output
 
 ```
 **Example {{exampleCounter}}** - Curl command for an OGC EDR cube request
@@ -153,7 +153,7 @@ curl -Lnbj {{root}}/ogc-api-edr/1.1.0/collections/{{exampleCollection}}/cube?max
 ##### OGC EDR Area Subsetting Query Parameters
 | parameter | description |
 |-----------|-------------|
-| coords | (required) A Well Known Text (WKT) polygon or multi-polygon string. Coordinates MUST be in counter-clockwise order. |
+| coords | (required) A Well Known Text (WKT) POLYGON or MULTIPOLYGON string. Coordinates MUST be in counter-clockwise order. |
 ---
 **Table {{tableCounter}}** - OGC EDR API area parameters
 
@@ -161,8 +161,7 @@ A sample OGC EDR area request is as follows
 
 ```
 
-curl -Lnbj {{root}}/ogc-api-edr/1.1.0/collections/{{exampleCollection}}/area?maxResults=1&parameter-name=all&coords=POLYGON%20%28%28-65.390625%20-13.239945%2C%20-29.882813%20-50.958427%2C%2017.929688%2030.145127%2C%20-65.
-390625%20-13.239945%29%29
+curl -Lnbj "{{root}}/ogc-api-edr/1.1.0/collections/{{exampleCollection}}/area?maxResults=1&parameter-name=all&coords=POLYGON%20%28%28-65.390625%20-13.239945%2C%20-29.882813%20-50.958427%2C%2017.929688%2030.145127%2C%20-65.390625%20-13.239945%29%29" -o output
 
 ```
 **Example {{exampleCounter}}** - Curl command for an OGC EDR area request
@@ -170,7 +169,7 @@ curl -Lnbj {{root}}/ogc-api-edr/1.1.0/collections/{{exampleCollection}}/area?max
 ##### OGC EDR Position Subsetting Query Parameters
 | parameter | description |
 |-----------|-------------|
-| coords | (required) A Well Known Text (WKT) point or multi-point string. |
+| coords | (required) A Well Known Text (WKT) POINT or MULTIPOINT string. |
 ---
 **Table {{tableCounter}}** - OGC EDR API position parameters
 
@@ -178,10 +177,26 @@ A sample OGC EDR position request is as follows
 
 ```
 
-curl -Lnbj {{root}}/ogc-api-edr/1.1.0/collections/{{exampleCollection}}/position?maxResults=1&parameter-name=all&coords=POINT%20(-40%2010)
+curl -Lnbj "{{root}}/ogc-api-edr/1.1.0/collections/{{exampleCollection}}/position?maxResults=1&parameter-name=all&coords=POINT%20(-40%2010)" -o output
 
 ```
 **Example {{exampleCounter}}** - Curl command for an OGC EDR position request
+
+##### OGC EDR Trajectory Subsetting Query Parameters
+| parameter | description |
+|-----------|-------------|
+| coords | (required) A Well Known Text (WKT) LINESTRING or MULTILINESTRING string. |
+---
+**Table {{tableCounter}}** - OGC EDR API trajectory parameters
+
+A sample OGC EDR trajectory request is as follows
+
+```
+
+curl -Lnbj "{{root}}/ogc-api-edr/1.1.0/collections/{{exampleCollection}}/trajectory?maxResults=1&parameter-name=all&coords=LINESTRING(-40%2010%2C%2030%2010)" -o output
+
+```
+**Example {{exampleCounter}}** - Curl command for an OGC EDR trajectory request
 
 #### WMS Requests
 
