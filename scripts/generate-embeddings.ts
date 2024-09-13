@@ -1,8 +1,13 @@
+import * as fs from 'fs';
+import * as path from 'path';
 import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime';
 import knexfile from '../db/knexfile';
 import { knex, Knex } from 'knex';
 import pgvector from 'pgvector/knex';
-// import db, { Transaction } from '../services/harmony/app/util/db';
+
+// Get the file path from the command line arguments
+const args = process.argv.slice(2);
+const filePath = args[0];
 
 const client = new BedrockRuntimeClient({ region: 'us-west-2' });
 
@@ -42,20 +47,30 @@ async function storeEmbedding(tx: Knex.Transaction, collection_id: string, varia
   await tx('umm_embeddings').insert([item]);
 }
 
-// Example usage
+
 void (async (): Promise<void> => {
-  const text = 'Hello, world';
+
+  // Check if the file exists
+  if (!fs.existsSync(filePath)) {
+    console.error('File does not exist:', filePath);
+    // eslint-disable-next-line no-process-exit
+    process.exit(1);
+  }
 
   try {
+    const fileContents = fs.readFileSync(filePath, 'utf-8');
+    const rows = JSON.parse(fileContents);
     const db = knex(knexfile);
-    const embedding = await getEmbedding(text);
-    console.log('Embedding:', JSON.stringify(embedding));
-    console.log(`LENGTH: ${embedding.length}`);
-    await db.transaction(async (tx) => {
-      await storeEmbedding(tx, 'C-1234TEST', 'V-1234TEST', text);
-    });
+    for (const row of rows) {
+      const { collectionId, variableId, text } = row;
+      console.log(`PROCESSION ${collectionId}: ${variableId}`);
+      await db.transaction(async (tx) => {
+        await storeEmbedding(tx, collectionId, variableId, text);
+      });
+
+    }
 
   } catch (error) {
-    console.error('Failed to generate or store embedding:', error);
+    console.error('Failed to generate and store embedding:', error);
   }
 })();
