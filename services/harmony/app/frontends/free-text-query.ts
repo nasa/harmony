@@ -6,6 +6,9 @@ import fetch from 'node-fetch';
 import { polygon, buffer } from '@turf/turf';
 import HarmonyRequest from '../models/harmony-request';
 import { parseNumber } from '../util/parameter-parsing-helpers';
+import knexfile from '../../../../db/knexfile';
+import { knex } from 'knex';
+import pgvector from 'pgvector/knex';
 
 /**
  * get GeoJSON for a given place
@@ -42,6 +45,13 @@ interface ModelOutput {
   bufferNumber: number | null;
   bufferUnits: string | null;
   timeInterval: string | null;
+  outputFormat: string | null;
+}
+
+interface GeneratedHarmonyRequestParameters {
+  collection: string;
+  variable: string;
+  timeInterval
   outputFormat: string | null;
 }
 
@@ -88,6 +98,24 @@ function parseModelOutput(rawOutput: string): ModelOutput {
 }
 
 /**
+ *  Get an embedding for a given string
+ *
+ * @param input - the string to get the embedding for
+ */
+async function getEmbedding(input: string): Promise<number[]> {
+  const embeddingModelId = 'amazon.titan-embed-text-v1';
+  const client = new BedrockRuntimeClient({ region: 'us-west-2' });
+  const response = await client.send(new InvokeModelCommand({
+    body: JSON.stringify({ inputText: input }),
+    modelId: embeddingModelId,
+    contentType: 'application/json',
+    accept: 'application/json',
+  }));
+  const responseBody = JSON.parse(new TextDecoder().decode(response.body));
+  return responseBody.embedding;
+}
+
+/**
  * Endpoint to make requests using free text
  *
  * @param req - The request sent by the client
@@ -121,7 +149,6 @@ export async function freeTextQuery(
       },
     };
 
-    const embeddingModelId = 'amazon.titan-embed-text-v1';
     const queryModelId = 'amazon.titan-text-express-v1';
 
     const response = await client.send(new InvokeModelCommand({
@@ -134,6 +161,21 @@ export async function freeTextQuery(
     const output = responseBody.results[0].outputText;
     console.log(`OUTPUT: ${JSON.stringify(output, null, 2)}`);
     const modelOutput = parseModelOutput(output);
+
+
+    const embedding = await getEmbedding(modelOutput.propertyOfInterest);
+
+    const sql = `SELECT collection_id, variable_id FROM umm_embeddings ORDER BY embedding <-> '[${embedding}]' LIMIT 1;`;
+
+    const db = knex(knexfile);
+    // const rows = await db('umm_embeddings')
+    //   .orderBy(knex.l2Distance('embedding', embedding))
+    //   .limit(1);
+    const dbResult = await db.raw(sql);
+    // console.log(JSON.stringify(dbResult, null, 2));
+    const { collection_id, variable_id } = dbResult.rows[0];
+    console.log(`COLLECTION ID: ${collection_id}  VARIABLE ID: ${variable_id}`);
+
     res.send(modelOutput);
 
     // Create the buffer around the polygon
@@ -142,12 +184,4 @@ export async function freeTextQuery(
     req.context.logger.error(e);
     next(e);
   }
-  // next(req);
-  // try {
-  //   const capabilities = await getCollectionCapabilities(collection);
-  //   res.render('capabilities/index', { capabilities });
-  // } catch (e) {
-  //   req.context.logger.error(e);
-  //   next(e);
-  // }
 }
