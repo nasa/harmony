@@ -1,6 +1,8 @@
 import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime';
+import knexfile from '../db/knexfile';
+import { knex, Knex } from 'knex';
 import pgvector from 'pgvector/knex';
-import db, { Transaction } from '../services/harmony/app/util/db';
+// import db, { Transaction } from '../services/harmony/app/util/db';
 
 const client = new BedrockRuntimeClient({ region: 'us-west-2' });
 
@@ -22,12 +24,15 @@ async function getEmbedding(input: string): Promise<number[]> {
 }
 
 /**
+ * Get an embedding vector for the given text and store it along with
+ * the concept_ids for the collection/variable in the database
  *
+ * @param tx - The database transaction
  * @param collection_id - the CMR collection concept id
  * @param variable_id - the CMR variable concept id
  * @param text - the combined text of the collection and variable descriptions
  */
-async function storeEmbedding(tx: Transaction, collection_id: string, variable_id: string, text: string): Promise<void> {
+async function storeEmbedding(tx: Knex.Transaction, collection_id: string, variable_id: string, text: string): Promise<void> {
   const embedding = await getEmbedding(text);
   const item = {
     collection_id,
@@ -42,12 +47,14 @@ void (async (): Promise<void> => {
   const text = 'Hello, world';
 
   try {
+    const db = knex(knexfile);
     const embedding = await getEmbedding(text);
     console.log('Embedding:', JSON.stringify(embedding));
     console.log(`LENGTH: ${embedding.length}`);
     await db.transaction(async (tx) => {
       await storeEmbedding(tx, 'C-1234TEST', 'V-1234TEST', text);
     });
+
   } catch (error) {
     console.error('Failed to generate or store embedding:', error);
   }
