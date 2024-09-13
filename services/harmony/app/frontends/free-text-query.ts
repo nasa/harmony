@@ -1,0 +1,153 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { Response, NextFunction } from 'express';
+import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime';
+import { Feature, FeatureCollection, Polygon } from 'geojson';
+import fetch from 'node-fetch';
+import { polygon, buffer } from '@turf/turf';
+import HarmonyRequest from '../models/harmony-request';
+import { parseNumber } from '../util/parameter-parsing-helpers';
+
+/**
+ * get GeoJSON for a given place
+ *
+ * @param placeName - the place/region by name
+ * @returns
+ */
+export async function getGeoJsonByPlaceName(placeName: string): Promise<any> {
+  // Nominatim API endpoint to search for a place by name and return GeoJSON format
+  const url = `https://nominatim.openstreetmap.org/search?format=geojson&polygon_geojson=1&q=${encodeURIComponent(placeName)}`;
+
+  try {
+    // Fetch the GeoJSON data
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error(`Error fetching data for ${placeName}: ${response.statusText}`);
+    }
+
+    // Parse the JSON response
+    const geoJson = await response.json();
+
+    // Return the GeoJSON
+    return geoJson;
+  } catch (error) {
+    console.error(`Error fetching GeoJSON: ${error.message}`);
+    throw error;
+  }
+}
+
+interface ModelOutput {
+  propertyOfInterest: string;
+  placeOfInterest: string | null;
+  bufferNumber: number | null;
+  bufferUnits: string | null;
+  timeInterval: string | null;
+  outputFormat: string | null;
+}
+
+const distanceUnits = {
+  'mi': 'miles',
+  'mile': 'miles',
+  'miles': 'miles',
+  'km': 'kilometers',
+  'kilometer': 'kilometers',
+  'kilometers': 'kilometers',
+};
+
+/**
+ * Parse the output of an LLM to get information needed to make a Harmony query
+ * TODO make this more robust
+ *
+ * @param rawOutput - the output from the LLM
+ */
+function parseModelOutput(rawOutput: string): ModelOutput {
+  const rawOutputLines = rawOutput.split('\n');
+  rawOutputLines.splice(0, 2);
+  rawOutputLines.splice(rawOutputLines.length - 1, 1);
+  console.log(`LINES: ${JSON.stringify(rawOutputLines, null, 2)}`);
+  const rawOutputJson = JSON.parse(rawOutputLines.join('\n')).rows[0];
+  const placeOfInterest = rawOutputJson['Place of interest'] === 'N/A' ? null : rawOutputJson['Place of interest'];
+  const bufferStr: string = rawOutputJson['Buffer radius'];
+  let bufferNumber;
+  let bufferUnits;
+  if (bufferStr != 'N/A') {
+    bufferNumber = parseNumber(bufferStr.split(' ')[0]);
+    bufferUnits = distanceUnits[bufferStr.split(' ')[1]];
+  }
+  const timeInterval = rawOutputJson['Time interval'] === 'N/A' ? null : rawOutputJson['Time interval'];
+  const outputFormat = rawOutputJson['File format'] == 'N/A' ? null : rawOutputJson['File format'];
+
+  return {
+    propertyOfInterest: rawOutputJson['Measured property of interest'],
+    placeOfInterest,
+    bufferNumber,
+    bufferUnits,
+    timeInterval,
+    outputFormat,
+  };
+}
+
+/**
+ * Endpoint to make requests using free text
+ *
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
+ * @param next - The next function in the call chain
+ * @returns The job links (pause, resume, etc.)
+ */
+export async function freeTextQuery(
+  req: HarmonyRequest, res: Response, next: NextFunction,
+): Promise<void> {
+  try {
+    // get the region, buffer (if any), property, time interval (if any), and output format
+    // (if given) using AWS Bedrock
+    const client = new BedrockRuntimeClient({ region: 'us-west-2' });
+
+    const inputText = `
+    Given the following text, identify the place of interest, the buffer radius,
+    the time interval in ISO 8601 format, i.e., 'yyyy-MM-dd HH:mm:ss +zzzz',
+    the measured property of interest, and the desired file format.
+    If the time interval is present it should always be returned as an interval, not a single time.
+    Format your response as a JSON file using 'N/A' for any fields that are not present.\n\n`
+      + req.body.query;
+
+    const titanConfig = {
+      inputText,
+      textGenerationConfig: {
+        maxTokenCount: 4096,
+        stopSequences: [],
+        temperature: 0,
+        topP: 1,
+      },
+    };
+
+    const embeddingModelId = 'amazon.titan-embed-text-v1';
+    const queryModelId = 'amazon.titan-text-express-v1';
+
+    const response = await client.send(new InvokeModelCommand({
+      body: JSON.stringify(titanConfig),
+      modelId: queryModelId,
+      contentType: 'application/json',
+      accept: 'application/json',
+    }));
+    const responseBody = JSON.parse(new TextDecoder().decode(response.body));
+    const output = responseBody.results[0].outputText;
+    console.log(`OUTPUT: ${JSON.stringify(output, null, 2)}`);
+    const modelOutput = parseModelOutput(output);
+    res.send(modelOutput);
+
+    // Create the buffer around the polygon
+    // const buffered = buffer(fetchedGeojson, bufferDistance, { units: 'kilometers' });
+  } catch (e) {
+    req.context.logger.error(e);
+    next(e);
+  }
+  // next(req);
+  // try {
+  //   const capabilities = await getCollectionCapabilities(collection);
+  //   res.render('capabilities/index', { capabilities });
+  // } catch (e) {
+  //   req.context.logger.error(e);
+  //   next(e);
+  // }
+}

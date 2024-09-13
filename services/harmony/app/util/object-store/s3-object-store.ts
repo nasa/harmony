@@ -58,8 +58,8 @@ export class S3ObjectStore implements ObjectStore {
         forcePathStyle: true,
       };
 
-      process.env.AWS_ACCESS_KEY_ID = 'localstack';
-      process.env.AWS_SECRET_ACCESS_KEY = 'localstack';
+      // process.env.AWS_ACCESS_KEY_ID = 'localstack';
+      // process.env.AWS_SECRET_ACCESS_KEY = 'localstack';
 
       config = {
         apiVersion: '2006-03-01',

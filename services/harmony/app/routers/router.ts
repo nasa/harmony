@@ -41,6 +41,7 @@ import docsPage from '../frontends/docs/docs';
 import { getCollectionCapabilitiesJson } from '../frontends/capabilities';
 import extendDefault from '../middleware/extend';
 import { getAdminHealth, getHealth } from '../frontends/health';
+import { freeTextQuery } from '../frontends/free-text-query';
 export interface RouterConfig {
   PORT?: string | number; // The port to run the frontend server on
   BACKEND_PORT?: string | number; // The port to run the backend server on
@@ -305,6 +306,9 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   result.get('/service-deployment/:id', asyncHandler(getServiceDeployment));
   result.get('/service-deployments-state', asyncHandler(getServiceImageTagState));
   result.put('/service-deployments-state', jsonParser, asyncHandler(setServiceImageTagState));
+
+  // query by free text
+  result.post('/free-text', asyncHandler(freeTextQuery));
 
   result.get('/*', () => { throw new NotFoundError('The requested page was not found.'); });
   result.post('/*', () => { throw new NotFoundError('The requested POST page was not found.'); });
