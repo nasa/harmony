@@ -9,93 +9,155 @@ import { getDataCommon } from './get-data-common';
 const LINESTRING_PRECISION = 0.0001;
 
 /**
- * Converts a WKT LineString string to a WKT POLYGON string.
- * The polygon is a narrow rectangle centered around the line.
+ * Calculates the signed area of a polygon given its vertices.
+ * If the area is positive, the points are in counter-clockwise order.
+ * If negative, the points are in clockwise order.
  *
- * @param wktLineString - The WKT LineString string to convert.
- * @param sideLength - The length of the side of the square polygon.
- * @returns The converted WKT POLYGON string.
- * @throws RequestValidationError if the WKT POINT string format is invalid.
+ * @param points - The vertices of the polygon.
+ * @returns The signed area of the polygon.
  */
-function wktLineStringToPolygon(wktLineString: string, sideLength: number): string {
+function calculateSignedArea(points: Array<{ x: number; y: number }>): number {
+  let area = 0;
+  const n = points.length;
+
+  for (let i = 0; i < n; i++) {
+    const p1 = points[i];
+    const p2 = points[(i + 1) % n]; // Wrap around to the first point
+    area += (p1.x * p2.y) - (p2.x * p1.y);
+  }
+
+  return area / 2;
+}
+
+/**
+* Ensures the points of a polygon are ordered counter-clockwise.
+*
+* @param points - The vertices of the polygon.
+* @returns The vertices in counter-clockwise order.
+*/
+function ensureCounterClockwise(points: Array<{ x: number; y: number }>): Array<{ x: number; y: number }> {
+  const area = calculateSignedArea(points);
+
+  // If the area is negative, the points are in clockwise order, so reverse them
+  if (area < 0) {
+    return points.reverse();
+  }
+
+  return points;
+}
+
+/**
+ * Converts a two-point segment (line) into a polygon with a buffer.
+ * Ensures that the polygon points are in counter-clockwise order.
+ *
+ * @param segment - The two points defining the line segment.
+ * @param sideLength - The buffer distance (side length) to create around the segment.
+ * @returns The vertices of the polygon in counter-clockwise order.
+ */
+function convertSegmentToPolygon(segment: Array<{ x: number; y: number }>, sideLength: number): Array<{ x: number; y: number }> {
+  const [p1, p2] = segment;
+
+  const dx = p2.x - p1.x;
+  const dy = p2.y - p1.y;
+  const length = Math.sqrt(dx * dx + dy * dy);
+
+  const unitDx = dx / length;
+  const unitDy = dy / length;
+
+  const perpLeft = { x: -unitDy, y: unitDx };
+  const perpRight = { x: unitDy, y: -unitDx };
+
+  const halfSide = sideLength / 2;
+
+  const leftBuffer = [
+    { x: p1.x + perpLeft.x * halfSide, y: p1.y + perpLeft.y * halfSide },
+    { x: p2.x + perpLeft.x * halfSide, y: p2.y + perpLeft.y * halfSide },
+  ];
+
+  const rightBuffer = [
+    { x: p1.x + perpRight.x * halfSide, y: p1.y + perpRight.y * halfSide },
+    { x: p2.x + perpRight.x * halfSide, y: p2.y + perpRight.y * halfSide },
+  ];
+
+  // Close the polygon
+  let polygonPoints = [...leftBuffer, ...rightBuffer.reverse(), leftBuffer[0]];
+
+  // Ensure the polygon is counter-clockwise
+  polygonPoints = ensureCounterClockwise(polygonPoints);
+
+  return polygonPoints;
+}
+
+/**
+* Converts a WKT LineString coords part into a list of polygons by splitting the LineString into
+* two-point segments and converting each segment into a polygon.
+*
+* @param wktLineCoords - The WKT LineString coords part in string to convert.
+* @param sideLength - The buffer distance (side length) to create around each segment.
+* @returns The WKT Polygon coords part in string with counter-clockwise ordered points.
+* @throws RequestValidationError - If the input does not have at least two points.
+*/
+function convertLineStringCoordsToPolygons(wktLineCoords: string, sideLength: number): string[] {
+  const points = wktLineCoords.split(',').map(coord => {
+    const [x, y] = coord.trim().split(/\s+/).map(Number);
+    return { x, y };
+  });
+
+  if (points.length < 2) {
+    throw new Error('LineString must contain at least two points');
+  }
+
+  const polygons: string[] = [];
+
+  // Loop through consecutive points to create line segments
+  for (let i = 0; i < points.length - 1; i++) {
+    const segment = [points[i], points[i + 1]];
+
+    // Convert each segment into a polygon
+    const polygonPoints = convertSegmentToPolygon(segment, sideLength);
+
+    // Convert polygon points to WKT format
+    const polygonString = polygonPoints.map(p => `${p.x} ${p.y}`).join(', ');
+
+    polygons.push(`((${polygonString}))`);
+  }
+
+  return polygons;
+}
+
+/**
+* Converts a WKT LINESTRING into a WKT POLYGON/MULTIPOLYGON by splitting the LINESTRING into
+* two-point segments and converting each segment into a polygon.
+*
+* @param wktLineString - The WKT LINESTRING to convert.
+* @param sideLength - The buffer distance (side length) to create around each segment.
+* @returns The WKT POLYGON/MULTIPOLYGON string with counter-clockwise ordered points for each polygon.
+* @throws RequestValidationError - If the input is not a valid WKT LINESTRING.
+*/
+function convertLineStringToPolygon(wktLineString: string, sideLength: number): string {
   validateWkt(wktLineString);
   const match = wktLineString.match(/LINESTRING\s*\((.*)\)/);
   if (!match) {
     throw new RequestValidationError(`query parameter "coords" invalid WKT LINESTRING format: ${wktLineString}`);
   }
 
-  const coordinates = match[1].trim();
-  const points = coordinates.split(',').map(coord => {
-    const [x, y] = coord.trim().split(/\s+/).map(Number);
-    return { x, y };
-  });
+  const polygons = convertLineStringCoordsToPolygons(match[1], sideLength);
 
-  console.log(`==========points: ${JSON.stringify(points)}`);
-
-  // Check if there are at least two points
-  if (points.length < 2) {
-    throw new Error('LineString must contain at least two points');
+  let wktPolygon = '';
+  if (polygons.length > 1) {
+    wktPolygon = `MULTIPOLYGON (${polygons.join(', ')})`;
+  } else {
+    wktPolygon = `POLYGON ${polygons.join(', ')}`;
   }
 
-  const halfSide = sideLength / 2;
-
-  // Create a buffer around the LineString
-  const leftBuffer: Array<{ x: number; y: number }> = [];
-  const rightBuffer: Array<{ x: number; y: number }> = [];
-
-  for (let i = 0; i < points.length - 1; i++) {
-    const p1 = points[i];
-    const p2 = points[i + 1];
-
-    // Calculate the direction vector between p1 and p2
-    const dx = p2.x - p1.x;
-    const dy = p2.y - p1.y;
-    const length = Math.sqrt(dx * dx + dy * dy);
-
-    // Normalize the direction vector to get the perpendicular vector
-    const unitDx = dx / length;
-    const unitDy = dy / length;
-
-    // Perpendicular vectors to the left and right
-    const perpLeft = { x: -unitDy, y: unitDx };
-    const perpRight = { x: unitDy, y: -unitDx };
-
-    // Create points to the left and right of p1 and p2
-    leftBuffer.push({
-      x: p1.x + perpLeft.x * halfSide,
-      y: p1.y + perpLeft.y * halfSide,
-    });
-    rightBuffer.unshift({
-      x: p1.x + perpRight.x * halfSide,
-      y: p1.y + perpRight.y * halfSide,
-    });
-
-    if (i === points.length - 2) {
-      leftBuffer.push({
-        x: p2.x + perpLeft.x * halfSide,
-        y: p2.y + perpLeft.y * halfSide,
-      });
-      rightBuffer.unshift({
-        x: p2.x + perpRight.x * halfSide,
-        y: p2.y + perpRight.y * halfSide,
-      });
-    }
-  }
-  console.log(`==========leftBuffer: ${JSON.stringify(leftBuffer)}`);
-  console.log(`==========rightBuffer: ${JSON.stringify(rightBuffer)}`);
-  console.log(`==========all: ${JSON.stringify([...leftBuffer, ...rightBuffer])}`);
-
-  // Combine left and right buffers to form the polygon
-  const polygonPoints = [...leftBuffer, ...rightBuffer, leftBuffer[0]].map(p => `${p.x} ${p.y}`).join(', ');
-
-  return `POLYGON ((${polygonPoints}))`;
+  return wktPolygon;
 }
 
 /**
- * Removes unnecessary spaces between LineStrings in a WKT MultiLineString.
+ * Removes unnecessary spaces between LineStrings in a WKT MULTILINESTRING.
  *
- * @param wktMultiLineString - The WKT MultiLineString to process.
- * @returns The WKT MultiLineString with the spaces removed.
+ * @param wktMultiLineString - The WKT MULTILINESTRING to process.
+ * @returns The WKT MULTILINESTRING with the spaces removed.
  */
 function cleanMultiLineString(wktMultiLineString: string): string {
   // Use regex to remove spaces after each comma between LineStrings
@@ -103,91 +165,44 @@ function cleanMultiLineString(wktMultiLineString: string): string {
 }
 
 /**
-* Converts a WKT MultiLineString to a WKT MultiPolygon by creating a buffer around each LineString.
+* Converts a WKT MULTILINESTRING to a WKT MULTIPOLYGON by creating a buffer around each LineString.
 *
-* @param wktMultiLineString - The WKT MultiLineString string to convert.
+* @param wktMultiLineString - The WKT MULTILINESTRING string to convert.
 * @param sideLength - The buffer distance (side length) to create around each LineString.
 * @returns The converted WKT MULTIPOLYGON string.
-* @throws RequestValidationError if the WKT MULTIPOINT string format is invalid.
+* @throws RequestValidationError if the WKT MULTILINESTRING string format is invalid.
 */
 function wktMultiLineStringToMultipolygon(
   wktMultiLineString: string,
   sideLength: number): string {
+
   validateWkt(wktMultiLineString);
   const match = wktMultiLineString.match(/MULTILINESTRING\s*\(\((.*)\)\)/);
   if (!match) {
     throw new RequestValidationError(
-      `query parameter "coords" invalid WKT MULTIPOINT format: ${wktMultiLineString}`);
+      `query parameter "coords" invalid WKT MULTILINESTRING format: ${wktMultiLineString}`);
   }
 
   const multiLS = cleanMultiLineString(match[1]);
 
   const lineStrings = multiLS.split('),(').map(lineStr => lineStr.trim());
 
-  const polygons: string[] = lineStrings.map(lineStr => {
-    const points = lineStr.split(',').map(coord => {
-      const [x, y] = coord.trim().split(/\s+/).map(Number);
-      return { x, y };
-    });
+  let polygons: string[] = [];
 
-    if (points.length < 2) {
-      throw new Error('Each LineString must contain at least two points');
-    }
-
-    const halfSide = sideLength / 2;
-
-    const leftBuffer: Array<{ x: number; y: number }> = [];
-    const rightBuffer: Array<{ x: number; y: number }> = [];
-
-    for (let i = 0; i < points.length - 1; i++) {
-      const p1 = points[i];
-      const p2 = points[i + 1];
-
-      const dx = p2.x - p1.x;
-      const dy = p2.y - p1.y;
-      const length = Math.sqrt(dx * dx + dy * dy);
-
-      const unitDx = dx / length;
-      const unitDy = dy / length;
-
-      const perpLeft = { x: -unitDy, y: unitDx };
-      const perpRight = { x: unitDy, y: -unitDx };
-
-      leftBuffer.push({
-        x: p1.x + perpLeft.x * halfSide,
-        y: p1.y + perpLeft.y * halfSide,
-      });
-      rightBuffer.unshift({
-        x: p1.x + perpRight.x * halfSide,
-        y: p1.y + perpRight.y * halfSide,
-      });
-
-      if (i === points.length - 2) {
-        leftBuffer.push({
-          x: p2.x + perpLeft.x * halfSide,
-          y: p2.y + perpLeft.y * halfSide,
-        });
-        rightBuffer.unshift({
-          x: p2.x + perpRight.x * halfSide,
-          y: p2.y + perpRight.y * halfSide,
-        });
-      }
-    }
-
-    const polygonPoints = [...leftBuffer, ...rightBuffer, leftBuffer[0]].map(
-      p => `${p.x} ${p.y}`).join(', ');
-
-    return `((${polygonPoints}))`;
+  // Convert each LineString to MultiPolygon and add to result
+  lineStrings.forEach(lineString => {
+    const linePolygons = convertLineStringCoordsToPolygons(lineString, sideLength);
+    polygons = polygons.concat(linePolygons);
   });
 
   return `MULTIPOLYGON (${polygons.join(', ')})`;
 }
 
 /**
-* Converts a WKT LINESTRING or WKT MULTILINESTRING string to a WKT POLYGON or WKT MULTIPOLYGON string.
+* Converts a WKT LINESTRING/MULTILINESTRING string to a WKT POLYGON/MULTIPOLYGON string.
 *
 * @param wkt - The WKT LINESTRING or WKT MULTILINESTRING string to convert.
-* @param sideLength - The length of the side of each square polygon,
+* @param sideLength - The length of the side around each endpoint of the line,
 *                     defaults to 0.0001. It is about 11 meters in precision.
 * @returns The converted WKT POLYGON or WKT MULTIPOLYGON string.
 * @throws RequestValidationError if the WKT string format is invalid.
@@ -195,8 +210,9 @@ function wktMultiLineStringToMultipolygon(
 export function convertWktLineToPolygon(
   wkt: string,
   sideLength: number = LINESTRING_PRECISION): string {
+
   if (wkt.startsWith('LINESTRING')) {
-    return wktLineStringToPolygon(wkt, sideLength);
+    return convertLineStringToPolygon(wkt, sideLength);
   } else if (wkt.startsWith('MULTILINESTRING')) {
     return wktMultiLineStringToMultipolygon(wkt, sideLength);
   } else {
@@ -232,7 +248,7 @@ export function getDataForTrajectory(
     } catch (e) {
       if (e instanceof ParameterParseError) {
         // Turn parsing exceptions into 400 errors pinpointing the source parameter
-        throw new ServerError(`POINT/MULTIPOINT coverted POLYGON/MULTIPOLYGON is invalid ${e.message}`);
+        throw new ServerError(`LINESTRING/MULTILINESTRING coverted POLYGON/MULTIPOLYGON is invalid ${e.message}`);
       }
       throw e;
     }

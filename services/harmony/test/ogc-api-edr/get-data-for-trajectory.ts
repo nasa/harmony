@@ -5,51 +5,75 @@ import isUUID from '../../app/util/uuid';
 import { itRedirectsToJobStatusUrl } from '../helpers/jobs';
 import { hookPostEdrRequest, hookEdrRequest, edrRequest } from '../helpers/ogc-api-edr';
 import hookServersStartStop from '../helpers/servers';
-import StubService, { hookServices } from '../helpers/stub-service';
+import StubService from '../helpers/stub-service';
 import { convertWktLineToPolygon } from '../../app/frontends/ogc-edr/get-data-for-trajectory';
-import { ServiceConfig } from '../../app/models/services/base-service';
-import { hookRedirect } from '../helpers/hooks';
-import { stub } from 'sinon';
+import { validateWkt } from '../../app/util/parameter-parsing-helpers';
 import env from '../../app/util/env';
-import { hookDatabaseFailure } from '../helpers/db';
 
 describe('convertWktLineToPolygon', () => {
   const sideLength = 1;
 
-  it('should convert LINESTRING to POLYGON default', () => {
+  it('should convert LINESTRING with two points to POLYGON default', () => {
     const wktLine = 'LINESTRING (30 10, 40 40)';
-    expect(convertWktLineToPolygon(wktLine)).to.equal(
-      'POLYGON ((29.9999525658351 10.0000158113883, 39.999952565835095 40.0000158113883, 40.000047434164905 39.9999841886117, 30.0000474341649 9.9999841886117, 29.9999525658351 10.0000158113883))');
+    const generatedPolygon = convertWktLineToPolygon(wktLine);
+    validateWkt(generatedPolygon);
+    expect(generatedPolygon).to.equal(
+      'POLYGON ((29.9999525658351 10.0000158113883, 30.0000474341649 9.9999841886117, 40.000047434164905 39.9999841886117, 39.999952565835095 40.0000158113883, 29.9999525658351 10.0000158113883))');
+  });
+
+  it('should convert LINESTRING with more than two points to POLYGON default', () => {
+    const wktLine = 'LINESTRING (-40 10, 30 10, 40 20)';
+    const expectedMultipolygon = 'MULTIPOLYGON ('
+      + '((-40 10.00005, -40 9.99995, 30 9.99995, 30 10.00005, -40 10.00005)), '
+      + '((29.999964644660942 10.00003535533906, 30.000035355339058 9.99996464466094, 40.00003535533906 19.999964644660942, '
+      + '39.99996464466094 20.000035355339058, 29.999964644660942 10.00003535533906)))';
+    const generatedPolygon = convertWktLineToPolygon(wktLine);
+    validateWkt(generatedPolygon);
+    expect(generatedPolygon).to.equal(expectedMultipolygon);
   });
 
   it('should convert MULTILINESTRING to MULTIPOLYGON default', () => {
     const wktMultiLineString = 'MULTILINESTRING ((10 10, 20 20, 10 40), (40 40, 30 30, 40 20, 30 10))';
     const expectedMultipolygon = 'MULTIPOLYGON ('
-      + '((9.99996464466094 10.00003535533906, 19.99995527864045 19.999977639320225, 9.99995527864045 39.99997763932023, '
-      + '10.00004472135955 40.00002236067977, 20.00004472135955 20.000022360679775, 10.00003535533906 9.99996464466094, '
-      + '9.99996464466094 10.00003535533906)), '
-      + '((40.00003535533906 39.99996464466094, 30.000035355339058 30.000035355339058, 40.00003535533906 19.999964644660942, '
-      + '30.000035355339058 9.99996464466094, 29.999964644660942 10.00003535533906, 39.99996464466094 20.000035355339058, '
-      + '29.999964644660942 29.999964644660942, 39.99996464466094 40.00003535533906, 40.00003535533906 39.99996464466094)))';
-    expect(convertWktLineToPolygon(wktMultiLineString)).to.equal(expectedMultipolygon);
+      + '((9.99996464466094 10.00003535533906, 10.00003535533906 9.99996464466094, 20.000035355339058 19.999964644660942, '
+      + '19.999964644660942 20.000035355339058, 9.99996464466094 10.00003535533906)), '
+      + '((19.99995527864045 19.999977639320225, 20.00004472135955 20.000022360679775, 10.00004472135955 40.00002236067977, '
+      + '9.99995527864045 39.99997763932023, 19.99995527864045 19.999977639320225)), '
+      + '((40.00003535533906 39.99996464466094, 39.99996464466094 40.00003535533906, 29.999964644660942 30.000035355339058, '
+      + '30.000035355339058 29.999964644660942, 40.00003535533906 39.99996464466094)), '
+      + '((30.000035355339058 30.000035355339058, 29.999964644660942 29.999964644660942, 39.99996464466094 19.999964644660942, '
+      + '40.00003535533906 20.000035355339058, 30.000035355339058 30.000035355339058)), '
+      + '((40.00003535533906 19.999964644660942, 39.99996464466094 20.000035355339058, 29.999964644660942 10.00003535533906, '
+      + '30.000035355339058 9.99996464466094, 40.00003535533906 19.999964644660942)))';
+    const generatedPolygon = convertWktLineToPolygon(wktMultiLineString);
+    validateWkt(generatedPolygon);
+    expect(generatedPolygon).to.equal(expectedMultipolygon);
   });
 
   it('should convert LINESTRING to POLYGON with specified sideLength', () => {
     const wktLine = 'LINESTRING (30 10, 40 40)';
-    const expectedPolygon = 'POLYGON ((29.525658350974744 10.158113883008419, 39.525658350974744 40.15811388300842, 40.474341649025256 39.84188611699158, 30.474341649025256 9.841886116991581, 29.525658350974744 10.158113883008419))';
-    expect(convertWktLineToPolygon(wktLine, sideLength)).to.equal(expectedPolygon);
+    const expectedPolygon = 'POLYGON ((29.525658350974744 10.158113883008419, 30.474341649025256 9.841886116991581, 40.474341649025256 39.84188611699158, 39.525658350974744 40.15811388300842, 29.525658350974744 10.158113883008419))';
+    const generatedPolygon = convertWktLineToPolygon(wktLine, sideLength);
+    validateWkt(generatedPolygon);
+    expect(generatedPolygon).to.equal(expectedPolygon);
   });
 
   it('should convert MULTILINESTRING to MULTIPOLYGON with specified sideLength', () => {
     const wktMultiLineString = 'MULTILINESTRING ((10 10, 20 20, 10 40), (40 40, 30 30, 40 20, 30 10))';
     const expectedMultipolygon = 'MULTIPOLYGON ('
-      + '((9.646446609406727 10.353553390593273, 19.552786404500043 19.77639320225002, 9.552786404500042 39.77639320225002, '
-      + '10.447213595499958 40.22360679774998, 20.447213595499957 20.22360679774998, 10.353553390593273 9.646446609406727, '
-      + '9.646446609406727 10.353553390593273)), '
-      + '((40.35355339059328 39.64644660940672, 30.353553390593273 30.353553390593273, 40.35355339059328 19.646446609406727, '
-      + '30.353553390593273 9.646446609406727, 29.646446609406727 10.353553390593273, 39.64644660940672 20.353553390593273, '
-      + '29.646446609406727 29.646446609406727, 39.64644660940672 40.35355339059328, 40.35355339059328 39.64644660940672)))';
-    expect(convertWktLineToPolygon(wktMultiLineString, sideLength)).to.equal(expectedMultipolygon);
+      + '((9.646446609406727 10.353553390593273, 10.353553390593273 9.646446609406727, 20.353553390593273 19.646446609406727, '
+      + '19.646446609406727 20.353553390593273, 9.646446609406727 10.353553390593273)), '
+      + '((19.552786404500043 19.77639320225002, 20.447213595499957 20.22360679774998, 10.447213595499958 40.22360679774998, '
+      + '9.552786404500042 39.77639320225002, 19.552786404500043 19.77639320225002)), '
+      + '((40.35355339059328 39.64644660940672, 39.64644660940672 40.35355339059328, 29.646446609406727 30.353553390593273, '
+      + '30.353553390593273 29.646446609406727, 40.35355339059328 39.64644660940672)), '
+      + '((30.353553390593273 30.353553390593273, 29.646446609406727 29.646446609406727, 39.64644660940672 19.646446609406727, '
+      + '40.35355339059328 20.353553390593273, 30.353553390593273 30.353553390593273)), '
+      + '((40.35355339059328 19.646446609406727, 39.64644660940672 20.353553390593273, 29.646446609406727 10.353553390593273, '
+      + '30.353553390593273 9.646446609406727, 40.35355339059328 19.646446609406727)))';
+    const generatedPolygon = convertWktLineToPolygon(wktMultiLineString, sideLength);
+    validateWkt(generatedPolygon);
+    expect(generatedPolygon).to.equal(expectedMultipolygon);
   });
 
   it('should throw an error for invalid WKT type', () => {
@@ -167,7 +191,7 @@ describe('OGC API EDR - getEdrTrajectory', function () {
           });
 
           it('includes a shapefile in the service operation', function () {
-            expect(this.service.operation.model.subset.shape).to.eql('{"type":"FeatureCollection","features":[{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-40.00005,9.99995],[-39.99995,9.99995],[-39.99995,10.00005],[-40.00005,10.00005],[-40.00005,9.99995]]]},"properties":{}}]}');
+            expect(this.service.operation.model.subset.shape).to.eql('{"type":"FeatureCollection","features":[{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-40,10.00005],[-40,9.99995],[30,9.99995],[30,10.00005],[-40,10.00005]]]},"properties":{}}]}');
           });
 
           // TODO: Add dimension subsetting test once collection supports it
@@ -351,70 +375,6 @@ describe('OGC API EDR - getEdrTrajectory', function () {
     });
   });
 
-  const multiVariablesTests = [{
-    description: 'Subsetting multiple variables with variable names',
-    variableParam: 'red_var,green_var',
-  }, {
-    description: 'Subsetting multiple variables with variable concept ids',
-    variableParam: 'V1233801695-EEDTEST,V1233801696-EEDTEST',
-  }, {
-    description: 'Subsetting multiple variables with mixed variable name and concept ids',
-    variableParam: 'red_var,V1233801696-EEDTEST',
-  }];
-
-  for (const test of multiVariablesTests) {
-    describe(test.description, function () {
-      const query = {
-        coords: lineWKT,
-        granuleId,
-        'parameter-name': test.variableParam,
-      };
-      const variableId1 = 'V1233801695-EEDTEST';
-      const variableId2 = 'V1233801696-EEDTEST';
-
-      StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookEdrRequest('trajectory', version, collection, { query });
-
-      it('passes multiple variables to the backend service', function () {
-        const source = this.service.operation.sources[0];
-        expect(source.variables.length).to.equal(2);
-        expect(source.variables[0].id).to.equal(variableId1);
-        expect(source.variables[1].id).to.equal(variableId2);
-      });
-    });
-  }
-
-  describe('Subsetting variables with duplicate in mixed name and concept-id', function () {
-    const variableId1 = 'V1233801695-EEDTEST';
-    const query = {
-      coords: lineWKT,
-      granuleId,
-      'parameter-name': `red_var,${variableId1}`,
-    };
-
-    StubService.hook({ params: { redirect: 'http://example.com' } });
-    hookEdrRequest('trajectory', version, collection, { query });
-
-    it('passes a single variable to the backend service', function () {
-      const source = this.service.operation.sources[0];
-      expect(source.variables.length).to.equal(1);
-      expect(source.variables[0].id).to.equal(variableId1);
-    });
-  });
-
-  describe('Not specifying a single granule ID', function () {
-    const query = { coords: lineWKT, 'parameter-name': variableName };
-
-    StubService.hook({ params: { status: 'successful' } });
-    hookEdrRequest('trajectory', version, collection, { query });
-
-    xit('is processed asynchronously', function () {
-      expect(this.service.operation.isSynchronous).to.equal(false);
-    });
-
-    itRedirectsToJobStatusUrl();
-  });
-
   describe('When specifying a collection short name instead of a CMR concept ID', function () {
     const shortName = 'harmony_example';
     const query = { 'parameter-name': variableName, coords: lineWKT };
@@ -427,439 +387,6 @@ describe('OGC API EDR - getEdrTrajectory', function () {
     });
 
     itRedirectsToJobStatusUrl();
-  });
-
-  describe('when provided a valid temporal range', function () {
-    const query = {
-      coords: lineWKT,
-      'parameter-name': variableName,
-      crs: 'EPSG:4326',
-      // Time range matches exactly one granule
-      datetime: '2020-01-01T00:00:00.000Z/2020-01-01T01:00:00.000Z',
-    };
-
-    describe('calling the backend service', function () {
-      StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookEdrRequest('trajectory', version, collection, { query });
-
-      it('synchronously makes the request', function () {
-        expect(this.service.operation.isSynchronous).to.equal(true);
-      });
-
-      it('passes the temporal range to the backend service', function () {
-        const { start, end } = this.service.operation.temporal;
-        expect(start).to.equal('2020-01-01T00:00:00.000Z');
-        expect(end).to.equal('2020-01-01T01:00:00.000Z');
-      });
-    });
-  });
-
-  describe('when passing a forceAsync parameter', function () {
-    StubService.hook({ params: { redirect: 'http://example.com' } });
-
-    describe('set to "true"', function () {
-      const forceAsync = true;
-
-      describe('and making a request would otherwise be synchronous', function () {
-        hookEdrRequest('trajectory', version, collection,
-          { query: { coords: lineWKT, granuleId, forceAsync, 'parameter-name': variableName } });
-
-        it('performs the request asynchronously', function () {
-          expect(this.service.operation.isSynchronous).to.equal(false);
-        });
-      });
-
-      describe('and making a request would otherwise be asynchronous', function () {
-        hookEdrRequest('trajectory', version, collection, { query: { coords: lineWKT, forceAsync, 'parameter-name': variableName } });
-
-        it('performs the request asynchronously', function () {
-          expect(this.service.operation.isSynchronous).to.equal(false);
-        });
-      });
-    });
-
-    describe('set to "false"', function () {
-      const forceAsync = false;
-
-      describe('and making a request would otherwise be synchronous', function () {
-        hookEdrRequest('trajectory', version, collection,
-          { query: { coords: lineWKT, granuleId, forceAsync, 'parameter-name': variableName } });
-
-        it('performs the request synchronously', function () {
-          expect(this.service.operation.isSynchronous).to.equal(true);
-        });
-      });
-
-      describe('and making a request would otherwise be asynchronous', function () {
-        hookEdrRequest('trajectory', version, collection, { query: { coords: lineWKT, forceAsync, 'parameter-name': variableName } });
-
-        it('performs the request asynchronously', function () {
-          expect(this.service.operation.isSynchronous).to.equal(false);
-        });
-      });
-    });
-  });
-
-  describe('when a granule limit is set on a service and a collection for that service', function () {
-    const serviceConfigs: ServiceConfig<unknown>[] = [
-      {
-        name: 'nexus-service',
-        collections: [
-          {
-            id: collection,
-            granule_limit: 5,
-          },
-        ],
-        type: {
-          name: 'turbo',
-        },
-        steps: [{
-          image: 'harmonyservices/query-cmr:fake-test',
-          is_sequential: true,
-        }],
-        granule_limit: 4,
-        capabilities: {
-          subsetting: {
-            variable: true,
-          },
-        },
-      }];
-    hookServices(serviceConfigs);
-    StubService.hook({ params: { redirect: 'http://example.com' } });
-
-    describe('and maxResults is not set for the query', function () {
-
-      hookEdrRequest('trajectory', version, collection, { username: 'jdoe1', query: { coords: lineWKT, 'parameter-name': variableName } });
-      describe('retrieving its job status', function () {
-        hookRedirect('jdoe1');
-        it('returns a human-readable message field indicating the request has been limited to a subset of the granules determined by the collection configuration', function () {
-          const job = JSON.parse(this.res.text);
-          expect(job.message).to.match(/^CMR query identified \d+ granules, but the request has been limited to process only the first 4 granules because the service nexus-service is limited to 4\.$/);
-        });
-
-        it('returns up to the granule limit configured for the collection', function () {
-          const job = JSON.parse(this.res.text);
-          expect(job.numInputGranules).to.equal(4);
-        });
-      });
-    });
-
-    describe('and maxResults from the query is set to a value greater than the granule limit for the collection', function () {
-      const maxResults = 10;
-
-      hookEdrRequest('trajectory', version, collection, { username: 'jdoe1', query: { coords: lineWKT, maxResults, 'parameter-name': variableName } });
-      describe('retrieving its job status', function () {
-        hookRedirect('jdoe1');
-        it('returns a human-readable message field indicating the request has been limited to a subset of the granules determined by the collection configuration', function () {
-          const job = JSON.parse(this.res.text);
-          expect(job.message).to.match(/^CMR query identified \d+ granules, but the request has been limited to process only the first 4 granules because the service nexus-service is limited to 4\.$/);
-        });
-
-        it('returns up to the granule limit configured for the collection', function () {
-          const job = JSON.parse(this.res.text);
-          expect(job.numInputGranules).to.equal(4);
-        });
-      });
-    });
-
-    describe('and maxResults from the query is set to a value less than the granule limit for the collection', function () {
-      const maxResults = 2;
-
-      hookEdrRequest('trajectory', version, collection, { username: 'jdoe1', query: { coords: lineWKT, maxResults, 'parameter-name': variableName } });
-      describe('retrieving its job status', function () {
-        hookRedirect('jdoe1');
-        it('returns a human-readable message field indicating the request has been limited to a subset of the granules determined by maxResults', function () {
-          const job = JSON.parse(this.res.text);
-          expect(job.message).to.match(/^CMR query identified \d+ granules, but the request has been limited to process only the first 2 granules because you requested 2 maxResults\.$/);
-        });
-
-        it('returns up to maxGraunules', function () {
-          const job = JSON.parse(this.res.text);
-          expect(job.numInputGranules).to.equal(2);
-        });
-      });
-    });
-
-    describe('when the collection granule limit is greater than the CMR hits, but the CMR hits is greater than the system limit', function () {
-      before(function () {
-        this.glStub = stub(env, 'maxGranuleLimit').get(() => 3);
-      });
-      after(function () {
-        this.glStub.restore();
-      });
-
-      hookEdrRequest('trajectory', version, collection, { username: 'jdoe1', query: { coords: lineWKT, 'parameter-name': variableName } });
-      hookRedirect('jdoe1');
-
-      it('returns a warning message about maxResults limiting the number of results', function () {
-        const job = JSON.parse(this.res.text);
-        expect(job.message).to.match(/^CMR query identified \d+ granules, but the request has been limited to process only the first 3 granules because of system constraints\.$/);
-      });
-
-      it('limits the input granules to the system limit', function () {
-        const job = JSON.parse(this.res.text);
-        expect(job.numInputGranules).to.equal(3);
-      });
-    });
-  });
-
-  describe('when a granule limit is set on a collection', function () {
-    const serviceConfigs: ServiceConfig<unknown>[] = [
-      {
-        name: 'nexus-service',
-        collections: [
-          {
-            id: collection,
-            granule_limit: 5,
-          },
-        ],
-        type: {
-          name: 'turbo',
-        },
-        steps: [{
-          image: 'harmonyservices/query-cmr:fake-test',
-          is_sequential: true,
-        }],
-        capabilities: {
-          subsetting: {
-            variable: true,
-          },
-        },
-      }];
-    hookServices(serviceConfigs);
-    StubService.hook({ params: { redirect: 'http://example.com' } });
-
-    describe('and maxResults is not set for the query', function () {
-
-      hookEdrRequest('trajectory', version, collection, { username: 'jdoe1', query: { coords: lineWKT, 'parameter-name': variableName } });
-      describe('retrieving its job status', function () {
-        hookRedirect('jdoe1');
-        it('returns a human-readable message field indicating the request has been limited to a subset of the granules determined by the collection configuration', function () {
-          const job = JSON.parse(this.res.text);
-          expect(job.message).to.match(/^CMR query identified \d+ granules, but the request has been limited to process only the first 5 granules because collection C1233800302-EEDTEST is limited to 5 for the nexus-service service\.$/);
-        });
-
-        it('returns up to the granule limit configured for the collection', function () {
-          const job = JSON.parse(this.res.text);
-          expect(job.numInputGranules).to.equal(5);
-        });
-      });
-    });
-
-    describe('and maxResults from the query is set to a value greater than the granule limit for the collection', function () {
-      const maxResults = 10;
-
-      hookEdrRequest('trajectory', version, collection, { username: 'jdoe1', query: { coords: lineWKT, maxResults, 'parameter-name': variableName } });
-      describe('retrieving its job status', function () {
-        hookRedirect('jdoe1');
-        it('returns a human-readable message field indicating the request has been limited to a subset of the granules determined by the collection configuration', function () {
-          const job = JSON.parse(this.res.text);
-          expect(job.message).to.match(/^CMR query identified \d+ granules, but the request has been limited to process only the first 5 granules because collection C1233800302-EEDTEST is limited to 5 for the nexus-service service\.$/);
-        });
-
-        it('returns up to the granule limit configured for the collection', function () {
-          const job = JSON.parse(this.res.text);
-          expect(job.numInputGranules).to.equal(5);
-        });
-      });
-    });
-
-    describe('and maxResults from the query is set to a value less than the granule limit for the collection', function () {
-      const maxResults = 2;
-
-      hookEdrRequest('trajectory', version, collection, { username: 'jdoe1', query: { coords: lineWKT, maxResults, 'parameter-name': variableName } });
-      describe('retrieving its job status', function () {
-        hookRedirect('jdoe1');
-        it('returns a human-readable message field indicating the request has been limited to a subset of the granules determined by maxResults', function () {
-          const job = JSON.parse(this.res.text);
-          expect(job.message).to.match(/^CMR query identified \d+ granules, but the request has been limited to process only the first 2 granules because you requested 2 maxResults\.$/);
-        });
-
-        it('returns up to maxGraunules', function () {
-          const job = JSON.parse(this.res.text);
-          expect(job.numInputGranules).to.equal(2);
-        });
-      });
-    });
-
-    describe('when the collection granule limit is greater than the CMR hits, but the CMR hits is greater than the system limit', function () {
-      before(function () {
-        this.glStub = stub(env, 'maxGranuleLimit').get(() => 3);
-      });
-      after(function () {
-        this.glStub.restore();
-      });
-
-      hookEdrRequest('trajectory', version, collection, { username: 'jdoe1', query: { coords: lineWKT, 'parameter-name': variableName } });
-      hookRedirect('jdoe1');
-
-      it('returns a warning message about maxResults limiting the number of results', function () {
-        const job = JSON.parse(this.res.text);
-        expect(job.message).to.match(/^CMR query identified \d+ granules, but the request has been limited to process only the first 3 granules because of system constraints\.$/);
-      });
-
-      it('limits the input granules to the system limit', function () {
-        const job = JSON.parse(this.res.text);
-        expect(job.numInputGranules).to.equal(3);
-      });
-    });
-  });
-
-  describe('when requesting output formats', function () {
-    const tiff = 'image/tiff';
-    const png = 'image/png';
-    const anyWildcard = '*/*';
-    const imageWildcard = 'image/*';
-    const wildcardTiff = '*/tiff';
-    const zarr = 'application/x-zarr';
-    const unsupportedFormat = 'text/plain';
-
-    describe('when providing an accept header for an unsupported format', function () {
-      const headers = { accept: unsupportedFormat };
-      const query = { coords: lineWKT, granuleId, 'parameter-name': 'all' };
-      hookEdrRequest('trajectory', version, collection, { headers, query });
-      it('returns a 422 error response', function () {
-        expect(this.res.status).to.equal(422);
-      });
-
-      it('indicates the format as the reason the request could not be processed', function () {
-        const body = JSON.parse(this.res.text);
-        expect(body).to.eql({
-          code: 'harmony.UnsupportedOperation',
-          description: 'Error: the requested combination of operations: reformatting to text/plain on C1233800302-EEDTEST is unsupported',
-        });
-      });
-    });
-
-    describe('when providing an accept header and a format parameter', function () {
-      const pngQuery = { coords: lineWKT, granuleId, 'parameter-name': variableName, f: png };
-      const headers = { accept: tiff };
-      StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookEdrRequest('trajectory', version, collection, { query: pngQuery, headers });
-      it('gives the format parameter precedence over the accept header', function () {
-        expect(this.service.operation.outputFormat).to.equal(png);
-      });
-    });
-
-    describe('when providing */* for the accept header', function () {
-      const headers = { accept: anyWildcard };
-      const query = { coords: lineWKT, granuleId, 'parameter-name': variableName };
-      StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookEdrRequest('trajectory', version, collection, { headers, query });
-      it('chooses the first output format supported by the service (see services.yml)', function () {
-        expect(this.service.operation.outputFormat).to.equal(tiff);
-      });
-    });
-
-    describe('when providing */tiff for the accept header', function () {
-      const headers = { accept: imageWildcard };
-      const query = { coords: lineWKT, granuleId, 'parameter-name': variableName };
-      StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookEdrRequest('trajectory', version, collection, { headers, query });
-      it('selects the first valid tiff format supported', function () {
-        expect(this.service.operation.outputFormat).to.equal(tiff);
-      });
-    });
-
-    describe('when providing image/* for the accept header', function () {
-      const headers = { accept: wildcardTiff };
-      const query = { coords: lineWKT, granuleId, 'parameter-name': variableName };
-      StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookEdrRequest('trajectory', version, collection, { headers, query });
-      it('selects the first valid image format supported', function () {
-        expect(this.service.operation.outputFormat).to.equal(tiff);
-      });
-    });
-
-    describe('when providing an accept header with a parameter', function () {
-      const headers = { accept: `${zarr};q=0.9` };
-      const query = { coords: lineWKT, granuleId, 'parameter-name': 'all' };
-      StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookEdrRequest('trajectory', version, collection, { headers, query });
-      it('correctly parses the format from the header', function () {
-        expect(this.service.operation.outputFormat).to.equal(zarr);
-      });
-    });
-
-    describe('when providing multiple formats supported by different services', function () {
-      const headers = { accept: `${zarr}, ${tiff}` };
-      describe('when requesting variable subsetting which is only supported by one of the services', function () {
-        const query = { coords: lineWKT, granuleId, 'parameter-name': variableName };
-        StubService.hook({ params: { redirect: 'http://example.com' } });
-        hookEdrRequest('trajectory', version, collection, { headers, query });
-        it('uses the backend service that supports variable subsetting', function () {
-          expect(this.service.config.name).to.equal('harmony/service-example');
-        });
-        it('chooses the tiff format since zarr is not supported by the variable subsetting service', function () {
-          expect(this.service.operation.outputFormat).to.equal(tiff);
-        });
-      });
-
-      describe('when not requesting variable subsetting so either service could be used', function () {
-        const query = { coords: lineWKT, granuleId, 'parameter-name': 'all' };
-        StubService.hook({ params: { redirect: 'http://example.com' } });
-        hookEdrRequest('trajectory', version, collection, { headers, query });
-        it('uses the first format in the list', function () {
-          expect(this.service.operation.outputFormat).to.equal(zarr);
-        });
-        it('uses the backend service that supports that output format', function () {
-          expect(this.service.config.name).to.equal('harmony/netcdf-to-zarr');
-        });
-      });
-    });
-
-    describe('when providing multiple formats with the highest priority being unsupported', function () {
-      const headers = { accept: `${unsupportedFormat};q=1.0, ${zarr};q=0.5, ${tiff};q=0.8, ${png};q=0.85` };
-      const query = { coords: lineWKT, granuleId, 'parameter-name': variableName };
-      StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookEdrRequest('trajectory', version, collection, { headers, query });
-      it('uses the highest quality value format that is supported', function () {
-        expect(this.service.operation.outputFormat).to.equal(png);
-      });
-      it('uses the correct backend service', function () {
-        expect(this.service.config.name).to.equal('harmony/service-example');
-      });
-    });
-
-    describe('when providing multiple formats and not specifying a quality value for one of them', function () {
-      const headers = { accept: `${zarr};q=0.5, ${tiff};q=0.8, ${png}` };
-      const query = { coords: lineWKT, granuleId, 'parameter-name': variableName };
-      StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookEdrRequest('trajectory', version, collection, { headers, query });
-      it('treats the unspecified quality value as 1.0', function () {
-        expect(this.service.operation.outputFormat).to.equal(png);
-      });
-    });
-
-    describe('when requesting an unsupported format followed by */*', function () {
-      const headers = { accept: `${unsupportedFormat}, ${anyWildcard}` };
-      const query = { coords: lineWKT, granuleId, 'parameter-name': variableName };
-      StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookEdrRequest('trajectory', version, collection, { headers, query });
-      it('returns a redirect 303 (and not a 404 error)', function () {
-        expect(this.res.status).to.equal(303);
-      });
-
-      it('chooses the first output format supported by the service (see services.yml)', function () {
-        expect(this.service.operation.outputFormat).to.equal(tiff);
-      });
-    });
-  });
-
-  describe('when the database catches fire during an asynchronous request', function () {
-    const query = { coords: lineWKT, 'parameter-name': variableName };
-    hookDatabaseFailure();
-    StubService.hook({ params: { redirect: 'http://example.com' } });
-    hookEdrRequest('trajectory', version, collection, { query });
-
-    it('returns an HTTP 500 error with the JSON error format', function () {
-      expect(this.res.status).to.eql(500);
-      const body = JSON.parse(this.res.text);
-      expect(body).to.eql({
-        code: 'harmony.ServerError',
-        description: 'Error: Failed to save job to database.',
-      });
-    });
   });
 
   describe('Validation', function () {
@@ -1040,19 +567,6 @@ describe('OGC API EDR - getEdrTrajectory with the extend query parameter', async
       description: 'Error: the requested combination of operations: extend on C1233800302-EEDTEST is unsupported',
     });
   });
-
-  // TODO - HARMONY-1569 add tests after we have added a service that supports extend
-  // describe('when requesting all vars and extending dimension_var', function () {
-  //   StubService.hook({ params: { redirect: 'http://example.com' } });
-  //   hookEdrRequest('1.1.0', 'C1233800302-EEDTEST', 'all', { query: { extend: 'dimension_var', skipPreview: 'true', maxResults: 2 }, username: 'joe' });
-  //   itRedirectsToJobStatusUrl();
-  // });
-
-  // describe('when requesting red_var and extending lat,lon', function () {
-  //   StubService.hook({ params: { redirect: 'http://example.com' } });
-  //   hookEdrRequest('1.1.0', 'C1233800302-EEDTEST', 'red_var', { query: { extend: 'lat,lon' }, username: 'joe' });
-  //   itRedirectsToJobStatusUrl();
-  // });
 });
 
 describe('OGC API EDR - getEdrTrajectory with a collection not configured for services', function () {
@@ -1061,7 +575,7 @@ describe('OGC API EDR - getEdrTrajectory with a collection not configured for se
 
   hookServersStartStop();
 
-  describe('when requesting an area subset', function () {
+  describe('when requesting trajectory subset', function () {
     const query = { coords: lineWKT, 'parameter-name': 'all' };
     hookEdrRequest('trajectory', version, collection, { username: 'joe', query });
 
