@@ -165,7 +165,9 @@ export async function freeTextQuery(
 
     const embedding = await getEmbedding(modelOutput.propertyOfInterest);
 
-    const sql = `SELECT collection_id, variable_id FROM umm_embeddings ORDER BY embedding <-> '[${embedding}]' LIMIT 1;`;
+    const sql = `SELECT collection_id, variable_id, 1 - (embedding <=> '[${embedding}]') AS similarity FROM umm_embeddings ORDER BY embedding <=> '[${embedding}]' LIMIT 5;`;
+    // const sql = `SELECT collection_id, variable_id, (embedding <-> '[${embedding}]') AS similarity FROM umm_embeddings ORDER BY embedding <-> '[${embedding}]' DESC LIMIT 5;`;
+
 
     const db = knex(knexfile);
     // const rows = await db('umm_embeddings')
@@ -173,8 +175,13 @@ export async function freeTextQuery(
     //   .limit(1);
     const dbResult = await db.raw(sql);
     // console.log(JSON.stringify(dbResult, null, 2));
-    const { collection_id, variable_id } = dbResult.rows[0];
-    console.log(`COLLECTION ID: ${collection_id}  VARIABLE ID: ${variable_id}`);
+
+    for (const { collection_id, variable_id, similarity } of dbResult.rows) {
+      console.log(`COLLECTION ID: ${collection_id}  VARIABLE ID: ${variable_id}  SIMILARITY: ${similarity}`);
+    }
+
+    const { collection_id, variable_id, similarity } = dbResult.rows[0];
+    console.log(`BEST MATCH: COLLECTION ID: ${collection_id}  VARIABLE ID: ${variable_id}  SIMILARITY: ${similarity}`);
 
     res.send(modelOutput);
 
