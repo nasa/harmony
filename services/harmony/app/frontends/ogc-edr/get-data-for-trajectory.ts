@@ -8,6 +8,8 @@ import { getDataCommon } from './get-data-common';
 // LINESTRING to POLYGON conversion side length, 0.0001 is about 11 meters in precision
 const LINESTRING_PRECISION = 0.0001;
 
+type Point = { x: number, y: number };
+
 /**
  * Calculates the signed area of a polygon given its vertices.
  * If the area is positive, the points are in counter-clockwise order.
@@ -16,7 +18,7 @@ const LINESTRING_PRECISION = 0.0001;
  * @param points - The vertices of the polygon.
  * @returns The signed area of the polygon.
  */
-function calculateSignedArea(points: Array<{ x: number; y: number }>): number {
+function calculateSignedArea(points: Point[]): number {
   let area = 0;
   const n = points.length;
 
@@ -35,7 +37,7 @@ function calculateSignedArea(points: Array<{ x: number; y: number }>): number {
 * @param points - The vertices of the polygon.
 * @returns The vertices in counter-clockwise order.
 */
-function ensureCounterClockwise(points: Array<{ x: number; y: number }>): Array<{ x: number; y: number }> {
+function ensureCounterClockwise(points: Point[]): Point[] {
   const area = calculateSignedArea(points);
 
   // If the area is negative, the points are in clockwise order, so reverse them
@@ -54,7 +56,7 @@ function ensureCounterClockwise(points: Array<{ x: number; y: number }>): Array<
  * @param sideLength - The buffer distance (side length) to create around the segment.
  * @returns The vertices of the polygon in counter-clockwise order.
  */
-function convertSegmentToPolygon(segment: Array<{ x: number; y: number }>, sideLength: number): Array<{ x: number; y: number }> {
+function convertSegmentToPolygon(segment: [Point, Point], sideLength: number): Point[] {
   const [p1, p2] = segment;
 
   const dx = p2.x - p1.x;
@@ -111,7 +113,7 @@ function convertLineStringCoordsToPolygons(wktLineCoords: string, sideLength: nu
 
   // Loop through consecutive points to create line segments
   for (let i = 0; i < points.length - 1; i++) {
-    const segment = [points[i], points[i + 1]];
+    const segment: [Point, Point] = [points[i], points[i + 1]];
 
     // Convert each segment into a polygon
     const polygonPoints = convertSegmentToPolygon(segment, sideLength);
@@ -154,17 +156,6 @@ function convertLineStringToPolygon(wktLineString: string, sideLength: number): 
 }
 
 /**
- * Removes unnecessary spaces between LineStrings in a WKT MULTILINESTRING.
- *
- * @param wktMultiLineString - The WKT MULTILINESTRING to process.
- * @returns The WKT MULTILINESTRING with the spaces removed.
- */
-function cleanMultiLineString(wktMultiLineString: string): string {
-  // Use regex to remove spaces after each comma between LineStrings
-  return wktMultiLineString.replace(/\),\s*\(/g, '),(');
-}
-
-/**
 * Converts a WKT MULTILINESTRING to a WKT MULTIPOLYGON by creating a buffer around each LineString.
 *
 * @param wktMultiLineString - The WKT MULTILINESTRING string to convert.
@@ -183,7 +174,7 @@ function wktMultiLineStringToMultipolygon(
       `query parameter "coords" invalid WKT MULTILINESTRING format: ${wktMultiLineString}`);
   }
 
-  const multiLS = cleanMultiLineString(match[1]);
+  const multiLS = match[1].replace(/\),\s*\(/g, '),(');
 
   const lineStrings = multiLS.split('),(').map(lineStr => lineStr.trim());
 
