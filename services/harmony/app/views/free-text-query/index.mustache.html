@@ -20,6 +20,68 @@
       max-width: 100%;
       max-height: 100%;
     }
+
+.lds-ellipsis,
+.lds-ellipsis div {
+  box-sizing: border-box;
+}
+.lds-ellipsis {
+  display: inline-block;
+  position: relative;
+  width: 80px;
+  height: 80px;
+}
+.lds-ellipsis div {
+  position: absolute;
+  top: 33.33333px;
+  width: 13.33333px;
+  height: 13.33333px;
+  border-radius: 50%;
+  background: currentColor;
+  animation-timing-function: cubic-bezier(0, 1, 1, 0);
+}
+.lds-ellipsis div:nth-child(1) {
+  left: 8px;
+  animation: lds-ellipsis1 0.6s infinite;
+}
+.lds-ellipsis div:nth-child(2) {
+  left: 8px;
+  animation: lds-ellipsis2 0.6s infinite;
+}
+.lds-ellipsis div:nth-child(3) {
+  left: 32px;
+  animation: lds-ellipsis2 0.6s infinite;
+}
+.lds-ellipsis div:nth-child(4) {
+  left: 56px;
+  animation: lds-ellipsis3 0.6s infinite;
+}
+@keyframes lds-ellipsis1 {
+  0% {
+    transform: scale(0);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes lds-ellipsis3 {
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(0);
+  }
+}
+@keyframes lds-ellipsis2 {
+  0% {
+    transform: translate(0, 0);
+  }
+  100% {
+    transform: translate(24px, 0);
+  }
+}
+
+
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify@4.16.4"></script>
   <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify@4.16.4/dist/tagify.polyfills.min.js"></script>
@@ -53,6 +115,12 @@
       <input type="submit" value="submit" class="submitButton">
     </form>
     <br/>
+    <div id="spinner" class="lds-ellipsis" style="display:none;">
+      <div></div>
+      <div></div>
+      <div></div>
+      <div></div>
+    </div>
     <pre id="model-output"> </pre>
     <br/>
     <div id="map" style="width: 600px; height: 400px;"></div>
@@ -82,6 +150,8 @@
   <script>
 
     async function postForm(form) {
+      const spinner = document.getElementById('spinner');
+      spinner.style.display = 'block';
       const response = await fetch("./free-text", {
         method: "POST",
         body: JSON.stringify({
@@ -91,6 +161,8 @@
           "Content-type": "application/json; charset=UTF-8"
         }
       });
+
+      spinner.style.display = 'none';
 
       const json = await response.json();
       const geoJson = json.geoJson;
