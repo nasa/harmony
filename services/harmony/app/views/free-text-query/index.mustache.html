@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="../../../css/eui.min.css">
+  <link rel="stylesheet" href="../../../css/default.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <link href="https://cdn.jsdelivr.net/npm/@yaireo/tagify@4.16.4/dist/tagify.css" rel="stylesheet" type="text/css" />
+  <link rel="stylesheet" href="../../../css/workflow-ui/default.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <style>
+    .leaflet-container {
+      height: 400px;
+      width: 600px;
+      max-width: 100%;
+      max-height: 100%;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify@4.16.4"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify@4.16.4/dist/tagify.polyfills.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+    integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"
+    defer></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.0.0-alpha1/js/bootstrap.min.js"
+    integrity="sha384-oesi62hOLfzrys4LxRF63OJCXdXDipiYWBnvTl9Y9/TRlw5xlKIEHpNyvvDShgf/" crossorigin="anonymous"
+    defer></script>
+  <script language="javascript" id="_fed_an_ua_tag"
+    src="https://dap.digitalgov.gov/Universal-Federated-Analytics-Min.js?agency=NASA&subagency=GSFC&dclink=true"
+    defer></script>
+  <title>Harmony</title>
+</head>
+
+<body class="d-flex flex-column h-100">
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container-lg">
+      <a class="navbar-brand nasa" href="/">Earthdata Harmony</a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+        aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+    </div>
+  </nav>
+
+  <div style="margin-left: 20px;">
+    <form id="free-text-query-form" action="javascript:;" onsubmit="postForm( this );" class="pt-2">
+      <textarea name="query" cols="40" rows="5" placeholder="enter free text query"></textarea>
+      <br/>
+      <input type="submit" value="submit" class="submitButton">
+    </form>
+    <br/>
+    <pre id="model-output"> </pre>
+    <br/>
+    <div id="map" style="width: 600px; height: 400px;"></div>
+  </div>
+  </body>
+
+  <footer class="mt-auto">
+    <div class="container-lg">
+      <div class="row pt-3">
+        <div class="col-md-8">
+          <ul class="list-inline">
+            <li class="list-inline-item">NASA Official: Stephen Berrick</li>
+            <li class="list-inline-item"><a href="http://www.nasa.gov/FOIA/index.html">FOIA</a></li>
+            <li class="list-inline-item"><a href="http://www.nasa.gov/about/highlights/HP_Privacy.html">NASA
+                Privacy Policy</a></li>
+            <li class="list-inline-item"><a href="http://www.usa.gov/">USA.gov</a></li>
+            <li class="list-inline-item"><a href="#" onclick="javascript:feedback.showForm();">Feedback</a>
+            </li>
+          </ul>
+        </div>
+        <div class="col-md-4">
+          <p class="text-right"><a href="/versions"><span class="badge bg-dark">v {{version}}</span></a></p>
+        </div>
+      </div>
+    </div>
+  </footer>
+  <script>
+
+    async function postForm(form) {
+      const response = await fetch("./free-text", {
+        method: "POST",
+        body: JSON.stringify({
+          query: form.query.value
+        }),
+        headers: {
+          "Content-type": "application/json; charset=UTF-8"
+        }
+      });
+
+      const json = await response.json();
+      const geoJson = json.geoJson;
+      const results = {
+        propertyOfInterest: json.propertyOfInterest,
+        placeOfInterest: json.placeOfInterest,
+        buffer: `${json.bufferNumber} ${json.bufferUnits}`,
+        collection: `${json.collection}`,
+        variable: `${json.variable}`,
+        temporalRange: `${json.timeInterval}`,
+        outputFormat: `${json.outputFormat}`,
+      }
+      document.getElementById('model-output').innerHTML = JSON.stringify(results, null, 2);
+
+      const map = L.map('map').setView([51.505, -0.09], 1);
+
+      const tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+      }).addTo(map);
+
+      L.geoJSON(geoJson).addTo(map);
+
+      return false;
+    }
+
+  </script>
+  <script type="text/javascript" src="https://fbm.earthdata.nasa.gov/for/Harmony/feedback.js"></script>
+  <script type="text/javascript">feedback.init({ showIcon: false });</script>
+</body>
+
+</html>

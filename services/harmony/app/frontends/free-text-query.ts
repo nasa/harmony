@@ -48,10 +48,15 @@ interface ModelOutput {
 }
 
 interface GeneratedHarmonyRequestParameters {
+  propertyOfInterest: string;
+  placeOfInterest: string | null;
+  bufferNumber: number | null;
+  bufferUnits: string | null;
   collection: string;
   variable: string;
-  timeInterval
+  timeInterval: string | null;
   outputFormat: string | null;
+  geoJson: string | null;
 }
 
 const distanceUnits = {
@@ -122,7 +127,7 @@ async function getEmbedding(input: string): Promise<number[]> {
  * @param next - The next function in the call chain
  * @returns The job links (pause, resume, etc.)
  */
-export async function freeTextQuery(
+export async function freeTextQueryPost(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
   try {
@@ -171,7 +176,7 @@ export async function freeTextQuery(
       }
     }
 
-    console.log(`GEOJSON: ${JSON.stringify(geoJson, null, 2)}`);
+    // console.log(`GEOJSON: ${JSON.stringify(geoJson, null, 2)}`);
 
 
     const embedding = await getEmbedding(modelOutput.propertyOfInterest);
@@ -181,9 +186,7 @@ export async function freeTextQuery(
 
 
     const db = knex(knexfile);
-    // const rows = await db('umm_embeddings')
-    //   .orderBy(knex.l2Distance('embedding', embedding))
-    //   .limit(1);
+
     const dbResult = await db.raw(sql);
     // console.log(JSON.stringify(dbResult, null, 2));
 
@@ -194,10 +197,36 @@ export async function freeTextQuery(
     const { collection_id, variable_id, similarity } = dbResult.rows[0];
     console.log(`BEST MATCH: COLLECTION ID: ${collection_id}  VARIABLE ID: ${variable_id}  SIMILARITY: ${similarity}`);
 
-    res.send(modelOutput);
+    const harmonyParams: GeneratedHarmonyRequestParameters = {
+      propertyOfInterest: modelOutput.propertyOfInterest,
+      placeOfInterest: modelOutput.placeOfInterest,
+      bufferNumber: modelOutput.bufferNumber,
+      bufferUnits: modelOutput.bufferUnits,
+      collection: collection_id,
+      variable: variable_id,
+      timeInterval: modelOutput.timeInterval,
+      outputFormat: modelOutput.outputFormat,
+      geoJson,
+    };
+    res.send(harmonyParams);
 
   } catch (e) {
     req.context.logger.error(e);
     next(e);
   }
+}
+
+/**
+ * Endpoint to make requests using free text
+ *
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
+ * @param next - The next function in the call chain
+ * @returns The job links (pause, resume, etc.)
+ */
+export async function freeTextQueryGet(
+  _req: HarmonyRequest, res: Response, _next: NextFunction,
+): Promise<void> {
+  res.render('free-text-query/index', {
+  });
 }
