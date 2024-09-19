@@ -11,50 +11,15 @@ const LINESTRING_PRECISION = 0.0001;
 type Point = { x: number, y: number };
 
 /**
- * Calculates the signed area of a polygon given its vertices.
- * If the area is positive, the points are in counter-clockwise order.
- * If negative, the points are in clockwise order.
- *
- * @param points - The vertices of the polygon.
- * @returns The signed area of the polygon.
- */
-function calculateSignedArea(points: Point[]): number {
-  let area = 0;
-  const n = points.length;
-
-  for (let i = 0; i < n; i++) {
-    const p1 = points[i];
-    const p2 = points[(i + 1) % n]; // Wrap around to the first point
-    area += (p1.x * p2.y) - (p2.x * p1.y);
-  }
-
-  return area / 2;
-}
-
-/**
-* Ensures the points of a polygon are ordered counter-clockwise.
-*
-* @param points - The vertices of the polygon.
-* @returns The vertices in counter-clockwise order.
-*/
-function ensureCounterClockwise(points: Point[]): Point[] {
-  const area = calculateSignedArea(points);
-
-  // If the area is negative, the points are in clockwise order, so reverse them
-  if (area < 0) {
-    return points.reverse();
-  }
-
-  return points;
-}
-
-/**
  * Converts a two-point segment (line) into a polygon with a buffer.
- * Ensures that the polygon points are in counter-clockwise order.
+ * This function does not ensure that the polygon points are in counter-clockwise order
+ * because the converted polygons will eventually be normalized in parseWkt function
+ * to make sure the generated GeoJSON has the correct coordinates order and is splitted
+ * across the antimeridian.
  *
  * @param segment - The two points defining the line segment.
  * @param sideLength - The buffer distance (side length) to create around the segment.
- * @returns The vertices of the polygon in counter-clockwise order.
+ * @returns The vertices of the polygon.
  */
 function convertSegmentToPolygon(segment: [Point, Point], sideLength: number): Point[] {
   const [p1, p2] = segment;
@@ -82,10 +47,7 @@ function convertSegmentToPolygon(segment: [Point, Point], sideLength: number): P
   ];
 
   // Close the polygon
-  let polygonPoints = [...leftBuffer, ...rightBuffer.reverse(), leftBuffer[0]];
-
-  // Ensure the polygon is counter-clockwise
-  polygonPoints = ensureCounterClockwise(polygonPoints);
+  const polygonPoints = [...leftBuffer, ...rightBuffer.reverse(), leftBuffer[0]];
 
   return polygonPoints;
 }
@@ -96,7 +58,7 @@ function convertSegmentToPolygon(segment: [Point, Point], sideLength: number): P
 *
 * @param wktLineCoords - The WKT LineString coords part in string to convert.
 * @param sideLength - The buffer distance (side length) to create around each segment.
-* @returns The WKT Polygon coords part in string with counter-clockwise ordered points.
+* @returns The WKT Polygon coords part in string.
 * @throws RequestValidationError - If the input does not have at least two points.
 */
 function convertLineStringCoordsToPolygons(wktLineCoords: string, sideLength: number): string[] {
@@ -133,7 +95,7 @@ function convertLineStringCoordsToPolygons(wktLineCoords: string, sideLength: nu
 *
 * @param wktLineString - The WKT LINESTRING to convert.
 * @param sideLength - The buffer distance (side length) to create around each segment.
-* @returns The WKT POLYGON/MULTIPOLYGON string with counter-clockwise ordered points for each polygon.
+* @returns The WKT POLYGON/MULTIPOLYGON string with points for each polygon.
 * @throws RequestValidationError - If the input is not a valid WKT LINESTRING.
 */
 function convertLineStringToPolygon(wktLineString: string, sideLength: number): string {
