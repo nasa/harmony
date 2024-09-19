@@ -1,14 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Response, NextFunction } from 'express';
 import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime';
-import { Feature, FeatureCollection, Polygon } from 'geojson';
 import fetch from 'node-fetch';
-import { polygon, buffer } from '@turf/turf';
+import { buffer, Units } from '@turf/turf';
 import HarmonyRequest from '../models/harmony-request';
 import { parseNumber } from '../util/parameter-parsing-helpers';
 import knexfile from '../../../../db/knexfile';
 import { knex } from 'knex';
-import pgvector from 'pgvector/knex';
 
 /**
  * get GeoJSON for a given place
@@ -19,10 +17,11 @@ import pgvector from 'pgvector/knex';
 export async function getGeoJsonByPlaceName(placeName: string): Promise<any> {
   // Nominatim API endpoint to search for a place by name and return GeoJSON format
   const url = `https://nominatim.openstreetmap.org/search?format=geojson&polygon_geojson=1&q=${encodeURIComponent(placeName)}`;
+  console.log(`OPEN STREET MAPS URL: ${url}`);
 
   try {
     // Fetch the GeoJSON data
-    const response = await fetch(url);
+    const response = await fetch(url, { headers: { 'User-agent': 'harmony' } });
 
     if (!response.ok) {
       throw new Error(`Error fetching data for ${placeName}: ${response.statusText}`);
@@ -162,6 +161,18 @@ export async function freeTextQuery(
     console.log(`OUTPUT: ${JSON.stringify(output, null, 2)}`);
     const modelOutput = parseModelOutput(output);
 
+    let geoJson;
+
+    if (modelOutput.placeOfInterest) {
+      geoJson = await getGeoJsonByPlaceName(modelOutput.placeOfInterest);
+      if (modelOutput.bufferUnits) {
+        // Create the buffer around the polygon
+        geoJson = buffer(geoJson, modelOutput.bufferNumber, { units: modelOutput.bufferUnits as Units });
+      }
+    }
+
+    console.log(`GEOJSON: ${JSON.stringify(geoJson, null, 2)}`);
+
 
     const embedding = await getEmbedding(modelOutput.propertyOfInterest);
 
@@ -185,8 +196,6 @@ export async function freeTextQuery(
 
     res.send(modelOutput);
 
-    // Create the buffer around the polygon
-    // const buffered = buffer(fetchedGeojson, bufferDistance, { units: 'kilometers' });
   } catch (e) {
     req.context.logger.error(e);
     next(e);
