@@ -84,7 +84,7 @@ describe('util/parameter-parsing', function () {
 
   describe('#parseWkt', () => {
     it('should parse a valid Polygon WKT string', () => {
-      const wkt = 'POLYGON((10 10, 20 20, 30 10, 10 10))';
+      const wkt = 'POLYGON((10 10, 30 10, 20 20, 10 10))';
       const result = parseWkt(wkt);
       const expected = {
         'type': 'FeatureCollection',
@@ -93,7 +93,7 @@ describe('util/parameter-parsing', function () {
             'type': 'Feature',
             'geometry': {
               type: 'Polygon',
-              coordinates: [[[10, 10], [20, 20], [30, 10], [10, 10]]],
+              coordinates: [[[10, 10], [30, 10], [20, 20], [10, 10]]],
             },
             'properties': {},
           },
@@ -103,8 +103,9 @@ describe('util/parameter-parsing', function () {
     });
 
     it('should parse a Polygon WKT string with a hole', () => {
-      const wkt = 'POLYGON((0 0, 50 0, 50 50, 0 50, 0 0), (10 10, 40 10, 40 40, 10 40, 10 10))';
+      const wkt = 'POLYGON((0 0, 50 0, 50 50, 0 50, 0 0), (10 10, 10 40, 40 40, 40 10, 10 10))';
       const result = parseWkt(wkt);
+      // Holes within the polygon should have their coordinates listed in clockwise order
       const expected = {
         'type': 'FeatureCollection',
         'features': [
@@ -117,7 +118,7 @@ describe('util/parameter-parsing', function () {
                   [0, 0], [50, 0], [50, 50], [0, 50], [0, 0],
                 ],
                 [
-                  [10, 10], [40, 10], [40, 40], [10, 40], [10, 10],
+                  [10, 10], [10, 40], [40, 40], [40, 10], [10, 10],
                 ],
               ],
             },
@@ -129,7 +130,7 @@ describe('util/parameter-parsing', function () {
     });
 
     it('should parse a valid MultiPolygon WKT string', () => {
-      const wkt = 'MULTIPOLYGON(((10 10, 20 20, 30 10, 10 10)),((40 40, 50 50, 60 40, 40 40)))';
+      const wkt = 'MULTIPOLYGON(((10 10, 30 10, 20 20, 10 10)),((40 40, 60 40, 50 50, 40 40)))';
       const result = parseWkt(wkt);
       const expected = {
         'type': 'FeatureCollection',
@@ -139,8 +140,8 @@ describe('util/parameter-parsing', function () {
             'geometry': {
               type: 'MultiPolygon',
               coordinates: [
-                [[[10, 10], [20, 20], [30, 10], [10, 10]]],
-                [[[40, 40], [50, 50], [60, 40], [40, 40]]],
+                [[[10, 10], [30, 10], [20, 20], [10, 10]]],
+                [[[40, 40], [60, 40], [50, 50], [40, 40]]],
               ],
             },
             'properties': {},
@@ -151,7 +152,7 @@ describe('util/parameter-parsing', function () {
     });
 
     it('should parse a MultiPolygon WKT string with holes', () => {
-      const wkt = 'MULTIPOLYGON(((40 40, 70 40, 70 70, 40 70, 40 40), (50 50, 60 50, 60 60, 50 60, 50 50)), ((100 100, 130 100, 130 130, 100 130, 100 100)))';
+      const wkt = 'MULTIPOLYGON(((40 40, 70 40, 70 70, 40 70, 40 40), (50 50, 50 60, 60 60, 60 50, 50 50)), ((100 100, 130 100, 130 130, 100 130, 100 100)))';
       const result = parseWkt(wkt);
       const expected = {
         'type': 'FeatureCollection',
@@ -163,7 +164,7 @@ describe('util/parameter-parsing', function () {
               coordinates: [
                 [
                   [[40, 40], [70, 40], [70, 70], [40, 70], [40, 40]],
-                  [[50, 50], [60, 50], [60, 60], [50, 60], [50, 50]],
+                  [[50, 50], [50, 60], [60, 60], [60, 50], [50, 50]],
                 ],
                 [
                   [[100, 100], [130, 100], [130, 130], [100, 130], [100, 100]],
