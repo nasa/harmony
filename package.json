@@ -27,6 +27,7 @@
     "compare-services": "SKIP_ENV_VALIDATION=true ts-node scripts/service-comparison.ts",
     "metadata-uat": "SKIP_ENV_VALIDATION=true ts-node scripts/get-harmony-variable-metadata.ts uat",
     "metadata-prod": "SKIP_ENV_VALIDATION=true ts-node scripts/get-harmony-variable-metadata.ts prod",
+    "generate-embeddings": "SKIP_ENV_VALIDATION=true NODE_ENV=production DATABASE_URL=postgresql://postgres:password@localhost:5432/postgres ts-node scripts/generate-embeddings.ts",
     "better-audit": "better-npm-audit audit && lerna run better-audit"
   },
   "keywords": [
