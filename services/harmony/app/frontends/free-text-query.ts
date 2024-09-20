@@ -206,7 +206,7 @@ export async function freeTextQueryPost(
     }
 
     const conceptIds = dbResult.rows.map(a => a.collection_id);
-    const temporalParam = modelOutput.timeInterval.replace(/\+00:00/g, '').replace('/', ',');
+    const temporalParam = modelOutput.timeInterval?.replace(/\+00:00/g, '').replace('/', ',');
 
     const collQuery: CmrQuery = {
       concept_id: conceptIds,

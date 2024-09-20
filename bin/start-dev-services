@@ -17,6 +17,10 @@ export DEBUG_PORT=9200
 npm run start-dev-fast > logs/server.log 2>&1 &
 popd > /dev/null
 
+if [ "$TESTING_FREE_TEXT_QUERY" == "true" ]; then
+  exit 0
+fi
+
 sleep 3
 
 # create the work scheduler
