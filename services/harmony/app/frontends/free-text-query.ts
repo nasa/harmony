@@ -3,6 +3,11 @@ import { Response, NextFunction } from 'express';
 import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime';
 import fetch from 'node-fetch';
 import { buffer, Units } from '@turf/turf';
+import { v4 as uuid } from 'uuid';
+import { CmrQuery, queryCollectionUsingMultipartForm } from '../util/cmr';
+import env from '../util/env';
+import { keysToLowerCase } from '../util/object';
+import { defaultObjectStore } from '../util/object-store';
 import HarmonyRequest from '../models/harmony-request';
 import { parseNumber } from '../util/parameter-parsing-helpers';
 import knexfile from '../../../../db/knexfile';
@@ -79,20 +84,21 @@ function parseModelOutput(rawOutput: string): ModelOutput {
   rawOutputLines.splice(0, 2);
   rawOutputLines.splice(rawOutputLines.length - 1, 1);
   console.log(`LINES: ${JSON.stringify(rawOutputLines, null, 2)}`);
-  const rawOutputJson = JSON.parse(rawOutputLines.join('\n')).rows[0];
-  const placeOfInterest = rawOutputJson['Place of interest'] === 'N/A' ? null : rawOutputJson['Place of interest'];
-  const bufferStr: string = rawOutputJson['Buffer radius'];
+  const rawOutputJson = keysToLowerCase(JSON.parse(rawOutputLines.join('\n')).rows[0]);
+
+  const placeOfInterest = rawOutputJson['place of interest'] === 'N/A' ? null : rawOutputJson['place of interest'];
+  const bufferStr: string = rawOutputJson['buffer radius'];
   let bufferNumber;
   let bufferUnits;
   if (bufferStr != 'N/A') {
     bufferNumber = parseNumber(bufferStr.split(' ')[0]);
     bufferUnits = distanceUnits[bufferStr.split(' ')[1]];
   }
-  const timeInterval = rawOutputJson['Time interval'] === 'N/A' ? null : rawOutputJson['Time interval'];
-  const outputFormat = rawOutputJson['File format'] == 'N/A' ? null : rawOutputJson['File format'];
+  const timeInterval = rawOutputJson['time interval'] === 'N/A' ? null : rawOutputJson['time interval'];
+  const outputFormat = rawOutputJson['file format'] == 'N/A' ? null : rawOutputJson['file format'];
 
   return {
-    propertyOfInterest: rawOutputJson['Measured property of interest'],
+    propertyOfInterest: rawOutputJson['measured property of interest'],
     placeOfInterest,
     bufferNumber,
     bufferUnits,
@@ -165,6 +171,7 @@ export async function freeTextQueryPost(
     const output = responseBody.results[0].outputText;
     console.log(`OUTPUT: ${JSON.stringify(output, null, 2)}`);
     const modelOutput = parseModelOutput(output);
+    console.log(`modelOutput: ${JSON.stringify(modelOutput)}`);
 
     let geoJson;
 
@@ -178,10 +185,14 @@ export async function freeTextQueryPost(
 
     // console.log(`GEOJSON: ${JSON.stringify(geoJson, null, 2)}`);
 
+    const store = defaultObjectStore();
+    const prefix = `public/free-text-${uuid()}`;
+    const url = defaultObjectStore().getUrlString({ bucket: env.artifactBucket, key: prefix });
+    await store.upload(JSON.stringify(geoJson), url);
 
     const embedding = await getEmbedding(modelOutput.propertyOfInterest);
 
-    const sql = `SELECT collection_id, variable_id, 1 - (embedding <=> '[${embedding}]') AS similarity FROM umm_embeddings ORDER BY embedding <=> '[${embedding}]' LIMIT 5;`;
+    const sql = `SELECT collection_id, variable_id, 1 - (embedding <=> '[${embedding}]') AS similarity FROM umm_embeddings ORDER BY embedding <=> '[${embedding}]' LIMIT 50;`;
     // const sql = `SELECT collection_id, variable_id, (embedding <-> '[${embedding}]') AS similarity FROM umm_embeddings ORDER BY embedding <-> '[${embedding}]' DESC LIMIT 5;`;
 
 
@@ -194,16 +205,44 @@ export async function freeTextQueryPost(
       console.log(`COLLECTION ID: ${collection_id}  VARIABLE ID: ${variable_id}  SIMILARITY: ${similarity}`);
     }
 
-    const { collection_id, variable_id, similarity } = dbResult.rows[0];
-    console.log(`BEST MATCH: COLLECTION ID: ${collection_id}  VARIABLE ID: ${variable_id}  SIMILARITY: ${similarity}`);
+    const conceptIds = dbResult.rows.map(a => a.collection_id);
+    const temporalParam = modelOutput.timeInterval.replace(/\+00:00/g, '').replace('/', ',');
+
+    const collQuery: CmrQuery = {
+      concept_id: conceptIds,
+      geojson: url,
+      page_size: 100,
+      temporal: temporalParam,
+      include_granule_counts: 'true',
+      'simplify-shapefile': 'true',
+    };
+
+    const collsWithGranules = await queryCollectionUsingMultipartForm(collQuery, req.accessToken);
+
+    // list of collection concept ids that has granule found with the spatial and temporal search
+    const collConceptIds = collsWithGranules.collections.filter(c => c.granule_count > 0).map(c => c.id);
+    console.log(`Collections with granules matching spatial and temporal search: ${JSON.stringify(collConceptIds)}`);
+
+    let collectionId = null;
+    let variableId = null;
+
+    // The first collection in the embedding query result that has granules is the best match
+    if (dbResult.rows && collConceptIds.length > 0) {
+      const { collection_id, variable_id, similarity } = dbResult.rows.find(item => collConceptIds.includes(item.collection_id));
+      collectionId = collection_id;
+      variableId = variable_id;
+      console.log(`BEST MATCH: COLLECTION ID: ${collection_id}  VARIABLE ID: ${variable_id}  SIMILARITY: ${similarity}`);
+    } else {
+      console.log('No matching collections are found');
+    }
 
     const harmonyParams: GeneratedHarmonyRequestParameters = {
       propertyOfInterest: modelOutput.propertyOfInterest,
       placeOfInterest: modelOutput.placeOfInterest,
       bufferNumber: modelOutput.bufferNumber,
       bufferUnits: modelOutput.bufferUnits,
-      collection: collection_id,
-      variable: variable_id,
+      collection: collectionId,
+      variable: variableId,
       timeInterval: modelOutput.timeInterval,
       outputFormat: modelOutput.outputFormat,
       geoJson,

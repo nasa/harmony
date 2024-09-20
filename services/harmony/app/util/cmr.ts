@@ -70,6 +70,15 @@ export interface CmrCollection {
   variables?: CmrUmmVariable[];
   tags?: CmrTags;
   eula_identifiers?: string[];
+  granule_count?: number;
+}
+
+export interface CmrCollectionHits {
+  hits: number;
+  collections: CmrCollection[];
+  scrollID?: string;
+  sessionKey?: string;
+  searchAfter?: string;
 }
 
 export interface CmrGranule {
@@ -260,6 +269,11 @@ export interface CmrQuery
   readable_granule_name?: string | string[];
   scroll?: string;
   temporal?: string;
+  // Make the type string to avoid runtime error during formData streaming:
+  // The "chunk" argument must be of type string or an instance of Buffer or Uint8Array.
+  // Received type boolean (true)
+  include_granule_counts?: string;
+  'simplify-shapefile'?: string;
 }
 
 export interface CmrAclQuery extends CmrQuery {
@@ -1029,4 +1043,28 @@ export function filterGranuleLinks(
 ): CmrGranuleLink[] {
   return granule.links.filter((g) => (g.rel.endsWith('/data#') || g.rel.endsWith('/service#'))
     && !g.inherited);
+}
+
+/**
+ * Performs a CMR collections.json search with the given form data
+ *
+ * @param form - The key/value pairs to search including a `shapefile` parameter
+ * pointing to a file on the file system
+ * @param token - Access token for user request
+ * @param extraHeaders - Additional headers to pass with the request
+ * @returns The granule search results
+ */
+export async function queryCollectionUsingMultipartForm(
+  form: CmrQuery,
+  token: string,
+  extraHeaders = {},
+): Promise<CmrCollectionHits> {
+  const collResponse = await _cmrPost('/search/collections.json', form, token, extraHeaders) as CmrCollectionsResponse;
+  const cmrHits = parseInt(collResponse.headers.get('cmr-hits'), 10);
+  const searchAfter = collResponse.headers.get('cmr-search-after');
+  return {
+    hits: cmrHits,
+    collections: collResponse.data.feed.entry,
+    searchAfter,
+  };
 }
