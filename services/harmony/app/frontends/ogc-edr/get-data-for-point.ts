@@ -2,7 +2,7 @@ import { keysToLowerCase } from '../../util/object';
 import { ParameterParseError, mergeParameters, parseWkt, validateWkt } from '../../util/parameter-parsing-helpers';
 import { Response, NextFunction } from 'express';
 import HarmonyRequest from '../../models/harmony-request';
-import { ServerError, RequestValidationError } from '../../util/errors';
+import { RequestValidationError } from '../../util/errors';
 import { getDataCommon } from './get-data-common';
 
 // POINT to POLYGON conversion side length, 0.0001 is about 11 meters in precision
@@ -120,7 +120,7 @@ export function getDataForPoint(
     } catch (e) {
       if (e instanceof ParameterParseError) {
         // Turn parsing exceptions into 400 errors pinpointing the source parameter
-        throw new ServerError(`POINT/MULTIPOINT coverted POLYGON/MULTIPOLYGON is invalid ${e.message}`);
+        throw new RequestValidationError(`POINT/MULTIPOINT converted POLYGON/MULTIPOLYGON is invalid ${e.message}`);
       }
       throw e;
     }
