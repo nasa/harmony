@@ -71,6 +71,7 @@ As such it accepts parameters in the URL path as well as query parameters.
 | ignoreErrors | if "true", continue processing a request to completion even if some items fail. If "false" immediately fail the request. Defaults to true |
 | destinationUrl | destination url specified by the client; currently only s3 link urls are  supported (e.g. s3://my-bucket-name/mypath) and will result in the job being run asynchronously |
 | variable | the variable(s) to be used for variable subsetting. Multiple variables can be specified as a comma-separated list. This parameter is only used if the url `variable` path element is "parameter_vars" |
+| averagingType | requests the data to be averaged over either time or area |
 ---
 **Table {{tableCounter}}** - Harmony OGC Coverages API query parameters
 
@@ -131,6 +132,7 @@ Currently only the `/position`, `/cube` and `/area` routes are supported for spa
 | subset | get a subset of the coverage by slicing or trimming along one axis. Harmony supports arbitrary dimension names for subsetting on numeric ranges for that dimension. |
 | height | number of rows to return in the output coverage |
 | width | number of columns to return in the output coverage |
+| averagingType | requests the data to be averaged over either time or area |
 ---
 **Table {{tableCounter}}** - Harmony extended parameters for all OGC EDR API routes
 
