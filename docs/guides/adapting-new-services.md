@@ -179,6 +179,9 @@ The structure of an entry in the [services.yml](../../config/services.yml) file 
       temporal: true              # Can subset by a time range
       variable: true              # Can subset by UMM-Var variable
       multiple_variable: true     # Can subset multiple variables at once
+    averaging:
+      time: true                  # Can perform averaging over time
+      area: true                  # Can perform averaging over area
     output_formats:               # A list of output mime types the service can produce
       - image/tiff
       - image/png
