@@ -139,6 +139,7 @@ CREATE TABLE `service_deployments` (
   `username` varchar(255) not null,
   `service` varchar(255) not null,
   `tag` varchar(255) not null,
+  `regression_image_tag` varchar(255),
   `status` text check (`status` in ('running', 'successful', 'failed')) not null,
   `message` varchar(4096),
   `createdAt` datetime not null,

@@ -498,12 +498,14 @@ export async function updateServiceImageTag(
 
   const { service } = req.params;
   const { tag, test } = req.body;
+  const regressionImageTag = test ? test : 'latest';
 
   const deployment = new ServiceDeployment({
     deployment_id: deploymentId,
     username: req.user,
     service: service,
     tag: tag,
+    regression_image_tag: regressionImageTag,
     status: 'running',
     message: 'Deployment in progress',
   });
@@ -512,7 +514,6 @@ export async function updateServiceImageTag(
     await deployment.save(tx);
   });
 
-  const regressionImageTag = test ? test : 'latest';
   module.exports.execDeployScript(req, service, tag, deploymentId, regressionImageTag);
   res.statusCode = 202;
   res.send({
