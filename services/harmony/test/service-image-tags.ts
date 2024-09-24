@@ -1242,11 +1242,13 @@ describe('Service self-deployment successful', async function () {
       });
 
       it('returns the deployment status successful', async function () {
-        const { deploymentId, username, service, tag, status, message } = this.res.body;
+        const { deploymentId, username, service, tag, regressionImageTag, status, message } = this.res.body;
         expect(deploymentId).to.eql(linkDeploymentId);
         expect(username).to.eql('buzz');
         expect(service).to.eql('harmony-service-example');
         expect(tag).to.eql('foo');
+        // regressionImageTag is set to the default value
+        expect(regressionImageTag).to.eql('latest');
         expect(status).to.eql('successful');
         expect(message).to.eql('Deployment successful');
       });
@@ -1317,7 +1319,7 @@ describe('Service self-deployment failure', async function () {
       execDeployScriptStub.callsArgWith(2, new Error(errorMessage), 'Failure output', '');
 
       hookRedirect('coraline');
-      this.res = await request(this.frontend).put('/service-image-tag/harmony-service-example').use(auth({ username: 'coraline' })).send({ tag: 'foo' });
+      this.res = await request(this.frontend).put('/service-image-tag/harmony-service-example').use(auth({ username: 'coraline' })).send({ tag: 'foo', test: '1.2.3' });
     });
 
     after(async function () {
@@ -1363,11 +1365,13 @@ describe('Service self-deployment failure', async function () {
       });
 
       it('returns the deployment status failed and the proper error message', async function () {
-        const { deploymentId, username, service, tag, status, message } = this.res.body;
+        const { deploymentId, username, service, tag, regressionImageTag, status, message } = this.res.body;
         expect(deploymentId).to.eql(linkDeploymentId);
         expect(username).to.eql('coraline');
         expect(service).to.eql('harmony-service-example');
         expect(tag).to.eql('foo');
+        // regressionImageTag matches the specified regression image tag via the 'test' field in the update request
+        expect(regressionImageTag).to.eql('1.2.3');
         expect(status).to.eql('failed');
         expect(message).to.eql(`Failed service deployment for deploymentId: ${deploymentId}. Error: ${errorMessage}`);
       });
