@@ -1051,7 +1051,7 @@ describe('OGC API EDR - getEdrPosition with a collection not configured for serv
 
   hookServersStartStop();
 
-  describe('when requesting an area subset', function () {
+  describe('when requesting position subset', function () {
     const query = { coords: pointWKT, 'parameter-name': 'all' };
     hookEdrRequest('position', version, collection, { username: 'joe', query });
 

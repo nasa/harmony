@@ -17,7 +17,7 @@ const { awsDefaultRegion } = env;
  */
 
 const RANGESET_ROUTE_REGEX = /^\/.*\/ogc-api-coverages\/.*\/collections\/.*\/coverage\/rangeset/;
-const EDR_ROUTE_REGEX = /^\/ogc-api-edr\/.*\/collections\/.*\/(cube|area|position)/;
+const EDR_ROUTE_REGEX = /^\/ogc-api-edr\/.*\/collections\/.*\/(cube|area|position|trajectory)/;
 
 /**
  * The accepted values for the `linkType` parameter for job status requests
