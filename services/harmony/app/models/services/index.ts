@@ -448,6 +448,42 @@ function supportsDimensionSubsetting(configs: ServiceConfig<unknown>[]): Service
   return configs.filter((config) => getIn(config, 'capabilities.subsetting.dimension', false));
 }
 
+/**
+ * Returns true if the operation requires time averaging
+ * @param operation - The operation to perform.
+ * @returns true if the provided operation requires time averaging and false otherwise
+ */
+function requiresTimeAveraging(operation: DataOperation): boolean {
+  return operation.averagingType === 'time';
+}
+
+/**
+ * Returns any services that support time averaging from the list of configs
+ * @param configs - The potential matching service configurations
+ * @returns Any configurations that support time averaging
+ */
+function supportsTimeAveraging(configs: ServiceConfig<unknown>[]): ServiceConfig<unknown>[] {
+  return configs.filter((config) => getIn(config, 'capabilities.averaging.time', false));
+}
+
+/**
+ * Returns true if the operation requires area averaging
+ * @param operation - The operation to perform.
+ * @returns true if the provided operation requires area averaging and false otherwise
+ */
+function requiresAreaAveraging(operation: DataOperation): boolean {
+  return operation.averagingType === 'area';
+}
+
+/**
+ * Returns any services that support area averaging from the list of configs
+ * @param configs - The potential matching service configurations
+ * @returns Any configurations that support area averaging
+ */
+function supportsAreaAveraging(configs: ServiceConfig<unknown>[]): ServiceConfig<unknown>[] {
+  return configs.filter((config) => getIn(config, 'capabilities.averaging.area', false));
+}
+
 export class UnsupportedOperation extends HttpError {
   operation: DataOperation;
 
@@ -755,6 +791,64 @@ function filterDimensionSubsettingMatches(
   return services;
 }
 
+/**
+ * Returns any services that support time averaging from the list of configs
+ * if the operation requires time averaging.
+ * @param operation - The operation to perform.
+ * @param context - Additional context that's not part of the operation, but influences the
+ *     choice regarding the service to use
+ * @param configs - All service configurations that have matched up to this call
+ * @param requestedOperations - Operations that have been considered in filtering out services up to
+ *     this call
+ * @returns Any service configurations that could still support the request
+ */
+function filterTimeAveragingMatches(
+  operation: DataOperation,
+  context: RequestContext,
+  configs: ServiceConfig<unknown>[],
+  requestedOperations: string[],
+): ServiceConfig<unknown>[] {
+  let services = configs;
+  if (requiresTimeAveraging(operation)) {
+    requestedOperations.push('time averaging');
+    services = supportsTimeAveraging(configs);
+  }
+
+  if (services.length === 0) {
+    throw new UnsupportedOperation(operation, requestedOperations);
+  }
+  return services;
+}
+
+/**
+ * Returns any services that support area averaging from the list of configs
+ * if the operation requires area averaging.
+ * @param operation - The operation to perform.
+ * @param context - Additional context that's not part of the operation, but influences the
+ *     choice regarding the service to use
+ * @param configs - All service configurations that have matched up to this call
+ * @param requestedOperations - Operations that have been considered in filtering out services up to
+ *     this call
+ * @returns Any service configurations that could still support the request
+ */
+function filterAreaAveragingMatches(
+  operation: DataOperation,
+  context: RequestContext,
+  configs: ServiceConfig<unknown>[],
+  requestedOperations: string[],
+): ServiceConfig<unknown>[] {
+  let services = configs;
+  if (requiresAreaAveraging(operation)) {
+    requestedOperations.push('area averaging');
+    services = supportsAreaAveraging(configs);
+  }
+
+  if (services.length === 0) {
+    throw new UnsupportedOperation(operation, requestedOperations);
+  }
+  return services;
+}
+
 type FilterFunction = (
   // The operation to perform
   operation: DataOperation,
@@ -781,6 +875,8 @@ const allFilterFns = [
   filterDimensionSubsettingMatches,
   filterReprojectionMatches,
   filterExtendMatches,
+  filterAreaAveragingMatches,
+  filterTimeAveragingMatches,
   // This filter must be last because it chooses a format based on the accepted MimeTypes and
   // the remaining services that could support the operation. If it ran earlier we could
   // potentially eliminate services that a different accepted MimeType would have allowed. We
@@ -798,6 +894,8 @@ const requiredFilterFns = [
   filterDimensionSubsettingMatches,
   filterReprojectionMatches,
   filterExtendMatches,
+  filterAreaAveragingMatches,
+  filterTimeAveragingMatches,
   // See caveat above in allFilterFns about why this filter must be applied last
   filterOutputFormatMatches,
 ];
