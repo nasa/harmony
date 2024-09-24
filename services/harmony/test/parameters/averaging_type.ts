@@ -85,4 +85,23 @@ describe('averagingType', function () {
       });
     });
   });
+
+  describe('when making a request with an invalid averagingType', function () {
+    const badAveragingQuery = {
+      averagingType: 'no not that',
+    };
+    hookRangesetRequest('1.0.0', collection, 'all', { query: { ...badAveragingQuery } });
+
+    it('returns a 400 status code for the request', async function () {
+      expect(this.res.status).to.equal(400);
+    });
+
+    it('returns a message indicating that the averagingType value is invalid', async function () {
+      const errorMessage = {
+        'code': 'harmony.RequestValidationError',
+        'description': 'Error: query parameter "averagingType" must be either "time" or "area"',
+      };
+      expect(this.res.body).to.eql(errorMessage);
+    });
+  });
 });
