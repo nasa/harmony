@@ -413,16 +413,23 @@ export async function getServiceImageTag(
  * @param req - The request object
  * @param service  - The name of the service to deploy
  * @param tag  - The service image tag to deploy
+ * @param regressionImageTag  - The regression image tag to run the regression test with
  * @param deploymentId  - The deployment id
  */
 export async function execDeployScript(
-  req: HarmonyRequest, service: string, tag: string, deploymentId: string,
+  req: HarmonyRequest,
+  service: string,
+  tag: string,
+  deploymentId: string,
+  regressionImageTag: string,
 ): Promise<void> {
   const currentPath = __dirname;
   const cicdDir = path.join(currentPath, '../../../../../harmony-ci-cd');
 
-  req.context.logger.info(`Execute script: ./bin/exec-deploy-service ${service} ${tag}`);
-  const command = `./bin/exec-deploy-service ${service} ${tag}`;
+  req.context.logger.info(
+    `Execute script: ./bin/exec-deploy-service ${service} ${tag} ${regressionImageTag}`);
+  const command = `./bin/exec-deploy-service ${service} ${tag} ${regressionImageTag}`;
+
   const options = {
     cwd: cicdDir,
   };
@@ -490,7 +497,7 @@ export async function updateServiceImageTag(
   }
 
   const { service } = req.params;
-  const { tag } = req.body;
+  const { tag, test } = req.body;
 
   const deployment = new ServiceDeployment({
     deployment_id: deploymentId,
@@ -505,7 +512,8 @@ export async function updateServiceImageTag(
     await deployment.save(tx);
   });
 
-  module.exports.execDeployScript(req, service, tag, deploymentId);
+  const regressionImageTag = test ? test : 'latest';
+  module.exports.execDeployScript(req, service, tag, deploymentId, regressionImageTag);
   res.statusCode = 202;
   res.send({
     'tag': tag,
