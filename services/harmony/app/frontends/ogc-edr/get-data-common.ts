@@ -1,7 +1,7 @@
 import DataOperation from '../../models/data-operation';
 import HarmonyRequest from '../../models/harmony-request';
 import wrap from '../../util/array';
-import { handleCrs, handleExtend, handleFormat, handleGranuleIds, handleGranuleNames, handleScaleExtent, handleScaleSize } from '../../util/parameter-parsers';
+import { handleAveragingType, handleCrs, handleExtend, handleFormat, handleGranuleIds, handleGranuleNames, handleScaleExtent, handleScaleSize } from '../../util/parameter-parsers';
 import { createDecrypter, createEncrypter } from '../../util/crypto';
 import env from '../../util/env';
 import { RequestValidationError } from '../../util/errors';
@@ -35,6 +35,7 @@ export function getDataCommon(
   handleCrs(operation, query.crs);
   handleScaleExtent(operation, query);
   handleScaleSize(operation, query);
+  handleAveragingType(operation, query);
 
   operation.interpolationMethod = query.interpolation;
   operation.outputWidth = query.width;
