@@ -483,6 +483,27 @@ describe('Service image endpoint', async function () {
       });
     });
 
+    describe('when invalid fields are provided in the request', async function () {
+
+      before(async function () {
+        hookRedirect('buzz');
+        this.res = await request(this.frontend).put('/service-image-tag/hoss').use(auth({ username: 'buzz' })).send(
+          { tag: 'latest', unsupportedOne: 'foo',  unsupportedTwo: 'foo' });
+      });
+
+      after(function () {
+        delete this.res;
+      });
+
+      it('returns a status 400', async function () {
+        expect(this.res.status).to.equal(400);
+      });
+
+      it('returns a meaningful error message', async function () {
+        expect(this.res.text).to.equal('Invalid body parameter(s): unsupportedOne and unsupportedTwo. Allowed body parameters are: tag and test.');
+      });
+    });
+
     describe('when the tag is not sent in the request', async function () {
 
       before(async function () {
@@ -1319,7 +1340,8 @@ describe('Service self-deployment failure', async function () {
       execDeployScriptStub.callsArgWith(2, new Error(errorMessage), 'Failure output', '');
 
       hookRedirect('coraline');
-      this.res = await request(this.frontend).put('/service-image-tag/harmony-service-example').use(auth({ username: 'coraline' })).send({ tag: 'foo', test: '1.2.3' });
+      this.res = await request(this.frontend).put('/service-image-tag/harmony-service-example').use(auth({ username: 'coraline' })).send(
+        { tag: 'foo', test: '1.2.3' });
     });
 
     after(async function () {
