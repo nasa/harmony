@@ -870,13 +870,13 @@ const allFilterFns = [
   filterConcatenationMatches,
   filterVariableSubsettingMatches,
   filterSpatialSubsettingMatches,
-  filterShapefileSubsettingMatches,
   filterTemporalSubsettingMatches,
   filterDimensionSubsettingMatches,
   filterReprojectionMatches,
   filterExtendMatches,
   filterAreaAveragingMatches,
   filterTimeAveragingMatches,
+  filterShapefileSubsettingMatches,
   // This filter must be last because it chooses a format based on the accepted MimeTypes and
   // the remaining services that could support the operation. If it ran earlier we could
   // potentially eliminate services that a different accepted MimeType would have allowed. We
