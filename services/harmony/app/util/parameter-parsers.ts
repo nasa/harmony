@@ -212,11 +212,11 @@ export function handleWidth(
 export function handleAveragingType(
   operation: DataOperation,
   query: Record<string, string>): void {
-  if (query.averagingtype) {
-    const value = query.averagingtype.toLowerCase();
+  if (query.average) {
+    const value = query.average.toLowerCase();
     if (value !== 'time' && value !== 'area') {
-      throw new RequestValidationError('query parameter "averagingType" must be either "time" or "area"');
+      throw new RequestValidationError('query parameter "average" must be either "time" or "area"');
     }
-    operation.averagingType = value;
+    operation.average = value;
   }
 }

@@ -201,7 +201,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
     describe('and the request needs area averaging', function () {
       beforeEach(function () {
-        this.operation.averagingType = 'area';
+        this.operation.average = 'area';
       });
 
       it('chooses the service that supports area averaging', function () {
@@ -212,7 +212,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
     describe('and the request needs time averaging', function () {
       beforeEach(function () {
-        this.operation.averagingType = 'time';
+        this.operation.average = 'time';
       });
 
       it('chooses the service that supports time averaging', function () {
