@@ -310,7 +310,7 @@ export default class DataOperation {
 
   ignoreErrors?: boolean;
 
-  averagingType: string;
+  average: string;
 
   destinationUrl: string;
 

@@ -14,7 +14,7 @@ import { partialApply } from '../helpers/util';
 const collection = 'C1233800302-EEDTEST';
 const edrVersion = '1.1.0';
 
-// We want to test the averagingType parameter on each of the following APIs, so we'll
+// We want to test the average parameter on each of the following APIs, so we'll
 // run the same tests against each in a loop
 const endpointFunctions = [{
   label: 'OGC Coverages',
@@ -39,12 +39,12 @@ const endpointFunctions = [{
 }];
 
 for (const { label, endpointFn, extraArgs } of endpointFunctions) {
-  describe(`averagingType for ${label} API`, function () {
+  describe(`average for ${label} API`, function () {
     hookServersStartStop();
 
-    describe('when making a request with averagingType time', function () {
+    describe('when making a request with average time', function () {
       const averagingTimeQuery = {
-        averagingType: 'time',
+        average: 'time',
       };
 
       describe('for a collection that can support it', function () {
@@ -57,7 +57,7 @@ for (const { label, endpointFn, extraArgs } of endpointFunctions) {
         });
 
         xit('specifies to perform time averaging in the operation', async function () {
-          expect(this.service.operation.averagingType).to.equal('time');
+          expect(this.service.operation.average).to.equal('time');
         });
       });
 
@@ -77,9 +77,9 @@ for (const { label, endpointFn, extraArgs } of endpointFunctions) {
       });
     });
 
-    describe('when making a request with averagingType area', function () {
+    describe('when making a request with average area', function () {
       const averagingAreaQuery = {
-        averagingType: 'area',
+        average: 'area',
       };
 
       describe('for a collection that can support it', function () {
@@ -92,7 +92,7 @@ for (const { label, endpointFn, extraArgs } of endpointFunctions) {
         });
 
         xit('specifies to perform area averaging in the operation', async function () {
-          expect(this.service.operation.averagingType).to.equal('area');
+          expect(this.service.operation.average).to.equal('area');
         });
       });
 
@@ -112,9 +112,9 @@ for (const { label, endpointFn, extraArgs } of endpointFunctions) {
       });
     });
 
-    describe('when making a request with an invalid averagingType', function () {
+    describe('when making a request with an invalid average', function () {
       const badAveragingQuery = {
-        averagingType: 'no not that',
+        average: 'no not that',
       };
       endpointFn({ query: { ...badAveragingQuery, ...extraArgs } });
 
@@ -122,10 +122,10 @@ for (const { label, endpointFn, extraArgs } of endpointFunctions) {
         expect(this.res.status).to.equal(400);
       });
 
-      it('returns a message indicating that the averagingType value is invalid', async function () {
+      it('returns a message indicating that the average value is invalid', async function () {
         const errorMessage = {
           'code': 'harmony.RequestValidationError',
-          'description': 'Error: query parameter "averagingType" must be either "time" or "area"',
+          'description': 'Error: query parameter "average" must be either "time" or "area"',
         };
         expect(this.res.body).to.eql(errorMessage);
       });

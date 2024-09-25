@@ -454,7 +454,7 @@ function supportsDimensionSubsetting(configs: ServiceConfig<unknown>[]): Service
  * @returns true if the provided operation requires time averaging and false otherwise
  */
 function requiresTimeAveraging(operation: DataOperation): boolean {
-  return operation.averagingType === 'time';
+  return operation.average === 'time';
 }
 
 /**
@@ -472,7 +472,7 @@ function supportsTimeAveraging(configs: ServiceConfig<unknown>[]): ServiceConfig
  * @returns true if the provided operation requires area averaging and false otherwise
  */
 function requiresAreaAveraging(operation: DataOperation): boolean {
-  return operation.averagingType === 'area';
+  return operation.average === 'area';
 }
 
 /**
