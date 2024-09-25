@@ -172,7 +172,7 @@ export async function getJobStatus(
     let errors: JobError[];
 
     await db.transaction(async (tx) => {
-      ({ job, pagination } = await Job.byJobID(tx, jobID, true, false, page, limit));
+      ({ job, pagination } = await Job.byJobID(tx, jobID, true, true, false, page, limit));
       errors = await getErrorsForJob(tx, jobID);
     });
     if (!job) {

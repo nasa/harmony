@@ -21,6 +21,7 @@ import JobError from './job-error';
 import { setReadyCountToZero } from './user-work';
 import { Knex } from 'knex';
 import { Logger } from 'winston';
+import { getLabelsForJob, setLabelsForJob } from './label';
 const { awsDefaultRegion } = env;
 
 // Lazily load the list of unique provider ids, once, when requested
@@ -102,6 +103,8 @@ export class JobForDisplay {
   dataExpiration?: Date;
 
   links: JobLink[];
+
+  labels: string[];
 
   request: string;
 
@@ -419,6 +422,8 @@ export class Job extends DBRecord implements JobRecord {
 
   provider_id?: string;
 
+  labels: string[];
+
   /**
    * Get the job message for the current status.
    * @returns the message string describing the job
@@ -504,6 +509,7 @@ export class Job extends DBRecord implements JobRecord {
     tx: Transaction,
     constraints: JobQuery = {},
     includeLinks = false,
+    includeLabels = false,
     lock = false,
     currentPage = 0,
     perPage = env.defaultResultPageSize,
@@ -515,10 +521,15 @@ export class Job extends DBRecord implements JobRecord {
     const result = await query;
     const job = result ? new Job(result) : null;
     let paginationInfo;
-    if (job && includeLinks) {
-      const linkData = await getLinksForJob(tx, job.jobID, currentPage, perPage);
-      job.links = linkData.data;
-      paginationInfo = linkData.pagination;
+    if (job) {
+      if (includeLinks) {
+        const linkData = await getLinksForJob(tx, job.jobID, currentPage, perPage);
+        job.links = linkData.data;
+        paginationInfo = linkData.pagination;
+      }
+      if (includeLabels) {
+        job.labels = await getLabelsForJob(tx, job.jobID);
+      }
     }
     return { job, pagination: paginationInfo };
   }
@@ -544,17 +555,18 @@ export class Job extends DBRecord implements JobRecord {
   * @param transaction - the transaction to use for querying
   * @param jobID - the jobID for the job that should be retrieved
   * @param includeLinks - if true include the job links when returning the job
+  * @param includeLabels - if true include the labels when returning the job
   * @param lock - if true lock the row in the jobs table
   * @param currentPage - the index of the page of job links to show
   * @param perPage - the number of job links to include per page
   * @returns the Job with the given JobID or null if not found
   */
   static async byJobID(
-    tx: Transaction, jobID: string, includeLinks = false, lock = false, currentPage = 0,
+    tx: Transaction, jobID: string, includeLinks = false, includeLabels = false, lock = false, currentPage = 0,
     perPage = env.defaultResultPageSize,
   ): Promise<{ job: Job; pagination: ILengthAwarePagination }> {
     const constraints = { where: { jobID } };
-    return Job.queryForSingleJob(tx, constraints, includeLinks, lock, currentPage, perPage);
+    return Job.queryForSingleJob(tx, constraints, includeLinks, includeLabels, lock, currentPage, perPage);
   }
 
   /**
@@ -580,6 +592,7 @@ export class Job extends DBRecord implements JobRecord {
    * @param username - the username associated with the job
    * @param jobID - the job ID for the request
    * @param includeLinks - if true, load all JobLinks into job.links
+   * @param includeLabels - if true include labels with the job
    * @param lock - if true lock the row in the jobs table
    * @param currentPage - the index of the page of links to show
    * @param perPage - the number of link results per page
@@ -591,12 +604,13 @@ export class Job extends DBRecord implements JobRecord {
     username,
     jobID,
     includeLinks = false,
+    includeLabels = false,
     lock = false,
     currentPage = 0,
     perPage = env.defaultResultPageSize,
   ): Promise<{ job: Job; pagination: ILengthAwarePagination }> {
     const constraints = { where: { username, jobID } };
-    return Job.queryForSingleJob(tx, constraints, includeLinks, lock, currentPage, perPage);
+    return Job.queryForSingleJob(tx, constraints, includeLinks, includeLabels, lock, currentPage, perPage);
   }
 
   /**
@@ -1008,6 +1022,7 @@ export class Job extends DBRecord implements JobRecord {
       }
     }
     await Promise.all(promises);
+    await setLabelsForJob(tx, this.jobID, this.username, this.labels);
   }
 
   /**
@@ -1026,6 +1041,7 @@ export class Job extends DBRecord implements JobRecord {
       updatedAt: new Date(this.updatedAt),
       dataExpiration: this.getDataExpiration(),
       links: this.links,
+      labels: this.labels,
       request: this.request,
       numInputGranules: this.numInputGranules,
       jobID: this.jobID,

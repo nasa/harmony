@@ -172,6 +172,7 @@ paths:
         - $ref: "#/components/parameters/granuleName"
         - $ref: "#/components/parameters/grid"
         - $ref: "#/components/parameters/extend"
+        - $ref: "#/components/parameters/label"
       responses:
         "200":
           description: A collection's EDR.
@@ -258,6 +259,10 @@ paths:
                   type: string
                 extend:
                   type: string
+                label:
+                  type: array
+                  items:
+                    type: string
       responses:
         "200":
           description: A collection's EDR.
@@ -304,6 +309,7 @@ paths:
         - $ref: "#/components/parameters/granuleName"
         - $ref: "#/components/parameters/grid"
         - $ref: "#/components/parameters/extend"
+        - $ref: "#/components/parameters/label"
       responses:
         "200":
           description: A collection's EDR.
@@ -396,6 +402,10 @@ paths:
                   type: string
                 extend:
                   type: string
+                label:
+                  type: array
+                  items:
+                    type: string
       responses:
         "200":
           description: A collection's EDR.
@@ -442,6 +452,7 @@ paths:
         - $ref: "#/components/parameters/granuleName"
         - $ref: "#/components/parameters/grid"
         - $ref: "#/components/parameters/extend"
+        - $ref: "#/components/parameters/label"
       responses:
         "200":
           description: A collection's EDR.
@@ -532,6 +543,10 @@ paths:
                   type: string
                 extend:
                   type: string
+                label:
+                  type: array
+                  items:
+                    type: string
       responses:
         "200":
           description: A edr description.
@@ -576,6 +591,7 @@ paths:
         - $ref: "#/components/parameters/granuleName"
         - $ref: "#/components/parameters/grid"
         - $ref: "#/components/parameters/extend"
+        - $ref: "#/components/parameters/label"
       responses:
         "200":
           description: A collection's EDR.
@@ -661,6 +677,10 @@ paths:
                   type: string
                 extend:
                   type: string
+                label:
+                  type: array
+                  items:
+                    type: string
       responses:
         "200":
           description: A collection's EDR.
@@ -705,6 +725,7 @@ paths:
         - $ref: "#/components/parameters/granuleName"
         - $ref: "#/components/parameters/grid"
         - $ref: "#/components/parameters/extend"
+        - $ref: "#/components/parameters/label"
       responses:
         "200":
           description: A collection's EDR.
@@ -791,6 +812,10 @@ paths:
                   type: string
                 extend:
                   type: string
+                label:
+                  type: array
+                  items:
+                    type: string
       responses:
         "200":
           description: A collection's EDR.
@@ -841,6 +866,7 @@ paths:
         - $ref: "#/components/parameters/granuleName"
         - $ref: "#/components/parameters/grid"
         - $ref: "#/components/parameters/extend"
+        - $ref: "#/components/parameters/label"
       responses:
         "200":
           description: A collection's EDR.
@@ -943,6 +969,10 @@ paths:
                   type: string
                 extend:
                   type: string
+                label:
+                  type: array
+                  items:
+                    type: string
       responses:
         "200":
           description: A collection's EDR.
@@ -1644,3 +1674,16 @@ components:
       required: false
       schema:
         type: string
+    label:
+      name: label
+      in: query
+      description: |
+        the labels for the job
+      required: false
+      style: form
+      explode: true
+      schema:
+        type: array
+        items:
+          type: string
+          minLength: 1
