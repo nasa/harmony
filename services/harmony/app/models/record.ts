@@ -2,6 +2,7 @@
 import _ from 'lodash';
 import logger from '../util/log';
 import db, { Transaction } from '../util/db';
+import { ServerError } from '../util/errors';
 
 export interface RecordConstructor extends Function {
   table: string;
@@ -98,6 +99,7 @@ export default abstract class Record {
         [this.id] = await stmt;
       } catch (e) {
         logger.error(e);
+        throw new ServerError('Failed to save to database.');
       }
     } else {
       await transaction((this.constructor as RecordConstructor).table)
@@ -118,8 +120,8 @@ export default abstract class Record {
    * @throws Error - if the record is invalid
    */
   static async insertBatch(
-    transaction: Transaction, 
-    records: Record[], 
+    transaction: Transaction,
+    records: Record[],
     fieldsList: Partial<Record>[] = records,
   ): Promise<void> {
     const recordConstructor = records[0]?.constructor;
