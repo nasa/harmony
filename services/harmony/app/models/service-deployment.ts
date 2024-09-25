@@ -9,10 +9,10 @@ export enum ServiceDeploymentStatus {
 }
 
 export type ServiceDeploymentForDisplay =
-  Omit<ServiceDeployment, 'deployment_id' | 'id' | 'regression_image_tag' | 'validate' | 'save' | 'serialize'> &
+  Omit<ServiceDeployment, 'deployment_id' | 'id' | 'regression_test_version' | 'validate' | 'save' | 'serialize'> &
   {
     deploymentId: ServiceDeployment['deployment_id'],
-    regressionImageTag: ServiceDeployment['regression_image_tag']
+    regressionTestVersion: ServiceDeployment['regression_test_version']
   };
 
 /**
@@ -35,8 +35,8 @@ export default class ServiceDeployment extends Record {
   // The service tag associated with the deployment
   tag: string;
 
-  // The regression image tag to run the regression test with
-  regression_image_tag: string;
+  // The regression test version to run the regression test with
+  regression_test_version: string;
 
   // The status of the deployment
   status: string;
@@ -45,13 +45,13 @@ export default class ServiceDeployment extends Record {
   message: string;
 
   serialize(): ServiceDeploymentForDisplay {
-    const { deployment_id, username, service, tag, regression_image_tag, status, message, createdAt, updatedAt } = this;
+    const { deployment_id, username, service, tag, regression_test_version, status, message, createdAt, updatedAt } = this;
     const serializedDeployment = {
       deploymentId: deployment_id,
       username,
       service,
       tag,
-      regressionImageTag: regression_image_tag,
+      regressionTestVersion: regression_test_version,
       status,
       message,
       createdAt,

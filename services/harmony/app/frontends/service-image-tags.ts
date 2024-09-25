@@ -322,8 +322,7 @@ async function validateRequestParams(
   req: HarmonyRequest, res: Response,
 ): Promise<boolean> {
   const requestedParams = Object.keys(req.body);
-  // const allowedParams = ['tag', 'regression_test_version'];
-  const allowedParams = ['tag', 'test'];
+  const allowedParams = ['tag', 'regression_test_version'];
   const invalidParams = [];
   requestedParams.forEach((param, index) => {
     if (!allowedParams.includes(param)) {
@@ -441,7 +440,7 @@ export async function getServiceImageTag(
  * @param req - The request object
  * @param service  - The name of the service to deploy
  * @param tag  - The service image tag to deploy
- * @param regressionImageTag  - The regression image tag to run the regression test with
+ * @param regressionTestVersion  - The regression test version to run the regression test with
  * @param deploymentId  - The deployment id
  */
 export async function execDeployScript(
@@ -449,14 +448,14 @@ export async function execDeployScript(
   service: string,
   tag: string,
   deploymentId: string,
-  regressionImageTag: string,
+  regressionTestVersion: string,
 ): Promise<void> {
   const currentPath = __dirname;
   const cicdDir = path.join(currentPath, '../../../../../harmony-ci-cd');
 
   req.context.logger.info(
-    `Execute script: ./bin/exec-deploy-service ${service} ${tag} ${regressionImageTag}`);
-  const command = `./bin/exec-deploy-service ${service} ${tag} ${regressionImageTag}`;
+    `Execute script: ./bin/exec-deploy-service ${service} ${tag} ${regressionTestVersion}`);
+  const command = `./bin/exec-deploy-service ${service} ${tag} ${regressionTestVersion}`;
 
   const options = {
     cwd: cicdDir,
@@ -526,15 +525,15 @@ export async function updateServiceImageTag(
   }
 
   const { service } = req.params;
-  const { tag, test } = req.body;
-  const regressionImageTag = test ? test : 'latest';
+  const { tag, regression_test_version } = req.body;
+  const regressionTestVersion = regression_test_version ? regression_test_version : 'latest';
 
   const deployment = new ServiceDeployment({
     deployment_id: deploymentId,
     username: req.user,
     service: service,
     tag: tag,
-    regression_image_tag: regressionImageTag,
+    regression_test_version: regressionTestVersion,
     status: 'running',
     message: 'Deployment in progress',
   });
@@ -543,7 +542,7 @@ export async function updateServiceImageTag(
     await deployment.save(tx);
   });
 
-  module.exports.execDeployScript(req, service, tag, deploymentId, regressionImageTag);
+  module.exports.execDeployScript(req, service, tag, deploymentId, regressionTestVersion);
   res.statusCode = 202;
   res.send({
     'tag': tag,

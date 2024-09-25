@@ -500,7 +500,7 @@ describe('Service image endpoint', async function () {
       });
 
       it('returns a meaningful error message', async function () {
-        expect(this.res.text).to.equal('Invalid body parameter(s): unsupportedOne and unsupportedTwo. Allowed body parameters are: tag and test.');
+        expect(this.res.text).to.equal('Invalid body parameter(s): unsupportedOne and unsupportedTwo. Allowed body parameters are: tag and regression_test_version.');
       });
     });
 
@@ -1263,13 +1263,13 @@ describe('Service self-deployment successful', async function () {
       });
 
       it('returns the deployment status successful', async function () {
-        const { deploymentId, username, service, tag, regressionImageTag, status, message } = this.res.body;
+        const { deploymentId, username, service, tag, regressionTestVersion, status, message } = this.res.body;
         expect(deploymentId).to.eql(linkDeploymentId);
         expect(username).to.eql('buzz');
         expect(service).to.eql('harmony-service-example');
         expect(tag).to.eql('foo');
-        // regressionImageTag is set to the default value
-        expect(regressionImageTag).to.eql('latest');
+        // regressionTestVersion is set to the default value
+        expect(regressionTestVersion).to.eql('latest');
         expect(status).to.eql('successful');
         expect(message).to.eql('Deployment successful');
       });
@@ -1341,7 +1341,7 @@ describe('Service self-deployment failure', async function () {
 
       hookRedirect('coraline');
       this.res = await request(this.frontend).put('/service-image-tag/harmony-service-example').use(auth({ username: 'coraline' })).send(
-        { tag: 'foo', test: '1.2.3' });
+        { tag: 'foo', regression_test_version: '1.2.3' });
     });
 
     after(async function () {
@@ -1387,13 +1387,13 @@ describe('Service self-deployment failure', async function () {
       });
 
       it('returns the deployment status failed and the proper error message', async function () {
-        const { deploymentId, username, service, tag, regressionImageTag, status, message } = this.res.body;
+        const { deploymentId, username, service, tag, regressionTestVersion, status, message } = this.res.body;
         expect(deploymentId).to.eql(linkDeploymentId);
         expect(username).to.eql('coraline');
         expect(service).to.eql('harmony-service-example');
         expect(tag).to.eql('foo');
-        // regressionImageTag matches the specified regression image tag via the 'test' field in the update request
-        expect(regressionImageTag).to.eql('1.2.3');
+        // regressionTestVersion matches the specified value of the 'regression_test_version' field in the request body
+        expect(regressionTestVersion).to.eql('1.2.3');
         expect(status).to.eql('failed');
         expect(message).to.eql(`Failed service deployment for deploymentId: ${deploymentId}. Error: ${errorMessage}`);
       });
