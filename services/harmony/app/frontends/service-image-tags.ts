@@ -6,7 +6,7 @@ import { getEdlGroupInformation, validateUserIsInCoreGroup } from '../util/edl-a
 import { exec } from 'child_process';
 import * as path from 'path';
 import util from 'util';
-import { truncateString } from '@harmony/util/string';
+import { Conjunction, listToText, truncateString } from '@harmony/util/string';
 import db from '../util/db';
 import env from '../util/env';
 import { getRequestRoot } from '../util/url';
@@ -313,6 +313,34 @@ async function validateTagPresent(
 }
 
 /**
+ * Verify that all parameters provided in request body are supported.
+ * @param req - The request object
+ * @param res  - The response object - will be used to send an error if the validation fails
+ * @returns a Promise containing `true` if the tag is valid, false if not
+ */
+async function validateRequestParams(
+  req: HarmonyRequest, res: Response,
+): Promise<boolean> {
+  const requestedParams = Object.keys(req.body);
+  // const allowedParams = ['tag', 'regression_test_version'];
+  const allowedParams = ['tag', 'test'];
+  const invalidParams = [];
+  requestedParams.forEach((param, index) => {
+    if (!allowedParams.includes(param)) {
+      invalidParams.push(requestedParams[index]);
+    }
+  });
+  if (invalidParams.length) {
+    const incorrectListString = listToText(invalidParams, Conjunction.AND);
+    const allowedListString = listToText(allowedParams, Conjunction.AND);
+    res.statusCode = 400;
+    res.send(`Invalid body parameter(s): ${incorrectListString}. Allowed body parameters are: ${allowedListString}.`);
+    return false;
+  }
+  return true;
+}
+
+/**
  * Verify that the requested service deployment status is one of the valid statuses
  * @param req - The request object
  * @param res  - The response object - will be used to send an error if the validation fails
@@ -475,6 +503,7 @@ export async function updateServiceImageTag(
     validateUserIsInDeployerOrCoreGroup,
     validateServiceDeploymentIsEnabled,
     validateTagPresent,
+    validateRequestParams,
     validateServiceExists,
     validateTag,
     validateTaggedImageIsReachable,
