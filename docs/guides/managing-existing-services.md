@@ -116,7 +116,7 @@ The returned JSON response has the fields indicating the current status of the s
   username: "yliu10",
   service: "giovanni-adapter",
   tag: "new-version",
-  regressionImageTag: "1.0.0",
+  regressionTestVersion: "1.0.0",
   status: "successful",
   message: "Deployment successful",
   createdAt: "2024-03-29T14:56:29.151Z",

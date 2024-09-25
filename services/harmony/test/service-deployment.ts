@@ -11,26 +11,26 @@ const userErrorMsg = 'User joe does not have permission to access this resource'
 
 describe('List service deployments endpoint', async function () {
   const failedFooDeployment = new ServiceDeployment({ deployment_id: 'abc', service: 'foo-service',
-    username: 'bob', tag: '1', regression_image_tag: 'latest', status: ServiceDeploymentStatus.FAILED, message: 'Failed service deployment' });
+    username: 'bob', tag: '1', regression_test_version: 'latest', status: ServiceDeploymentStatus.FAILED, message: 'Failed service deployment' });
 
   const successfulFooDeployment = new ServiceDeployment({
     deployment_id: 'def', service: 'foo-service',
-    username: 'eve', tag: '1', regression_image_tag: 'latest', status: ServiceDeploymentStatus.SUCCESSFUL, message: 'Deployment successful',
+    username: 'eve', tag: '1', regression_test_version: 'latest', status: ServiceDeploymentStatus.SUCCESSFUL, message: 'Deployment successful',
   });
 
   const runningFooDeployment = new ServiceDeployment({
     deployment_id: 'jkl', service: 'foo-service',
-    username: 'coraline', tag: '1', regression_image_tag: 'latest', status: ServiceDeploymentStatus.RUNNING, message: 'Deployment running',
+    username: 'coraline', tag: '1', regression_test_version: 'latest', status: ServiceDeploymentStatus.RUNNING, message: 'Deployment running',
   });
 
   const successfulBuzzDeployment = new ServiceDeployment({
     deployment_id: 'ghi', service: 'buzz-service',
-    username: 'joe', tag: '1', regression_image_tag: 'latest', status: ServiceDeploymentStatus.SUCCESSFUL, message: 'Deployment successful',
+    username: 'joe', tag: '1', regression_test_version: 'latest', status: ServiceDeploymentStatus.SUCCESSFUL, message: 'Deployment successful',
   });
 
   const runningBuzzDeployment = new ServiceDeployment({
     deployment_id: 'jkl', service: 'buzz-service',
-    username: 'adam', tag: '1', regression_image_tag: 'latest', status: ServiceDeploymentStatus.RUNNING, message: 'Deployment running',
+    username: 'adam', tag: '1', regression_test_version: 'latest', status: ServiceDeploymentStatus.RUNNING, message: 'Deployment running',
   });
 
 
