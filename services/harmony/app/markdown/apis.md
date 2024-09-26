@@ -126,7 +126,7 @@ Currently only the `/position`, `/cube`, `/trajectory` and `/area` routes are su
 | grid | the name of the output grid to use for regridding requests. The name must match the UMM  |grid name in the CMR.
 | ignoreErrors | if "true", continue processing a request to completion even if some items fail. If "false" immediately fail the request. Defaults to true |
 | interpolation | specify the interpolation method used during reprojection and scaling |
-| label | the label(s) to add for the job that runs the request. Multiple labels can be specified as a comma-separated list.
+| label | the label(s) to add for the job that runs the request. Multiple labels can be specified as a comma-separated list or as an array in the JSON body for POST requests.
 | maxResults | limits the number of input files processed in the request |
 | scaleExtent | scale the resulting coverage along one axis to a given extent |
 | scaleSize | scale the resulting coverage along one axis to a given size |
