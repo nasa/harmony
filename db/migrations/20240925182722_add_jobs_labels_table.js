@@ -3,7 +3,7 @@
  * @returns { Promise<void> }
  */
 exports.up = function (knex) {
-  return knex.schema.createTable('labels', (t) => {
+  return knex.schema.createTable('jobs_labels', (t) => {
     t.increments('id')
       .primary();
 
@@ -13,10 +13,10 @@ exports.up = function (knex) {
       .inTable('jobs')
       .onDelete('CASCADE');
 
-    t.integer('user_label_id', 255)
+    t.integer('label_id')
       .notNullable()
       .references('id')
-      .inTable('user_labels');
+      .inTable('labels');
 
     t.timestamp('createdAt')
       .notNullable();
@@ -25,6 +25,7 @@ exports.up = function (knex) {
       .notNullable();
 
     t.index(['job_id']);
+    t.index(['label_id']);
   });
 };
 
@@ -34,5 +35,5 @@ exports.up = function (knex) {
  */
 exports.down = function(knex) {
   return knex.schema
-    .dropTable('labels');
+    .dropTable('jobs_labels');
 };

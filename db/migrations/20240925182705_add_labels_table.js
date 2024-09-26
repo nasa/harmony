@@ -4,7 +4,7 @@
  */
 exports.up = function (knex) {
   return knex.schema
-    .createTable('user_labels', (t) => {
+    .createTable('labels', (t) => {
       t.increments('id').primary();
       t.string('username', 255).notNullable();
       t.string('value', 255).notNullable();
@@ -12,8 +12,9 @@ exports.up = function (knex) {
       t.timestamp('updatedAt').notNullable();
       t.unique(['username', 'value']);
       t.index(['username']);
+      t.index(['value']);
     }).raw(`
-      ALTER TABLE "user_labels"
+      ALTER TABLE "labels"
       ADD CONSTRAINT "lower_case_value"
       CHECK (value = lower(value))
     `);
@@ -25,5 +26,5 @@ exports.up = function (knex) {
  */
 exports.down = function(knex) {
   return knex.schema
-    .dropTable('user_labels');
+    .dropTable('labels');
 };

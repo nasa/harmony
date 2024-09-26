@@ -46,7 +46,7 @@ CREATE TABLE `job_errors` (
   FOREIGN KEY(jobID) REFERENCES jobs(jobID)
 );
 
-CREATE TABLE `user_labels` (
+CREATE TABLE `labels` (
   `id` integer not null primary key autoincrement,
   `username` varchar(255) not null,
   `value` varchar(255) not null,
@@ -55,14 +55,14 @@ CREATE TABLE `user_labels` (
   UNIQUE(username, value)
 );
 
-CREATE TABLE `labels` (
+CREATE TABLE `jobs_labels` (
   `id` integer not null primary key autoincrement,
   `job_id` char(36) not null,
-  `user_label_id` integer not null,
+  `label_id` integer not null,
   `createdAt` datetime not null,
   `updatedAt` datetime not null,
-  FOREIGN KEY(user_label_id) REFERENCES user_labels(id)
   FOREIGN KEY(job_id) REFERENCES jobs(jobID)
+  FOREIGN KEY(label_id) REFERENCES labels(id)
 );
 
 CREATE TABLE `work_items` (

@@ -11,11 +11,11 @@ export async function getLabelsForJob(
   transaction: Transaction,
   jobID: string,
 ): Promise<string[]> {
-  const query = transaction('labels')
+  const query = transaction('jobs_labels')
     .where({ job_id: jobID })
-    .orderBy(['labels.id'])
-    .innerJoin('user_labels', 'labels.user_label_id', '=', 'user_labels.id')
-    .select(['user_labels.value']);
+    .orderBy(['jobs_labels.id'])
+    .innerJoin('labels', 'jobs_labels.label_id', '=', 'labels.id')
+    .select(['labels.value']);
 
   const rows = await query;
 
@@ -41,28 +41,30 @@ export async function setLabelsForJob(
   if (!labels) return;
 
   // delete any labels that already exist for the job
-  await transaction('labels')
+  await transaction('jobs_labels')
     .where({ job_id: jobID })
     .delete();
 
   if (labels.length > 0) {
     const now = new Date();
     const lowerCaseLabels = labels.map((label) => label.toLowerCase());
-    const userLabelRows = lowerCaseLabels.map((label) => {
+    const labelRows = lowerCaseLabels.map((label) => {
       return { username, value: label, createdAt: now, updatedAt: now };
     });
 
-    const insertedRows = await transaction('user_labels')
-      .insert(userLabelRows)
+    // this will insert the labels - if a label already exists for a given user
+    // it will just update the `updatedAt` timestamp
+    const insertedRows = await transaction('labels')
+      .insert(labelRows)
       .returning('id')
       .onConflict(['username', 'value'])
       .merge(['updatedAt']);
 
     const ids = insertedRows.map((row) => row.id);
-    const labelRows = ids.map((id) => {
-      return { job_id: jobID, user_label_id: id, createdAt: now, updatedAt: now };
+    const jobsLabelRows = ids.map((id) => {
+      return { job_id: jobID, label_id: id, createdAt: now, updatedAt: now };
     });
 
-    await transaction('labels').insert(labelRows);
+    await transaction('jobs_labels').insert(jobsLabelRows);
   }
 }
