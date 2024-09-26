@@ -26,7 +26,7 @@ export async function getLabelsForJob(
  *  Set the labels for a given job/user. This is atomic - all the labels are set at once. Any
  * existing labels are replaced.
  * @param transaction - the transaction to use for querying
- * @param jobID - the id of the job the labels belong to
+ * @param jobID - the UUID associated with the job
  * @param username - the username the labels belong to
  * @param labels - the array of strings representing the labels. These will be forced to lower-case.
  * If this is an empty array then any existing labels for the job will be cleared.

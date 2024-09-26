@@ -98,6 +98,7 @@ export default abstract class Record {
         [this.id] = await stmt;
       } catch (e) {
         logger.error(e);
+        throw (e);
       }
     } else {
       await transaction((this.constructor as RecordConstructor).table)
@@ -118,8 +119,8 @@ export default abstract class Record {
    * @throws Error - if the record is invalid
    */
   static async insertBatch(
-    transaction: Transaction, 
-    records: Record[], 
+    transaction: Transaction,
+    records: Record[],
     fieldsList: Partial<Record>[] = records,
   ): Promise<void> {
     const recordConstructor = records[0]?.constructor;
@@ -147,6 +148,7 @@ export default abstract class Record {
       }
     } catch (e) {
       logger.error(e);
+      throw (e);
     }
   }
 }
