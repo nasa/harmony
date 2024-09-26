@@ -343,6 +343,7 @@ paths:
         - $ref: "#/components/parameters/grid"
         - $ref: "#/components/parameters/extend"
         - $ref: "#/components/parameters/variable"
+        - $ref: "#/components/parameters/average"
       responses:
         "200":
           description: A coverage's range set.
@@ -384,6 +385,7 @@ paths:
         - $ref: "#/components/parameters/grid"
         - $ref: "#/components/parameters/extend"
         - $ref: "#/components/parameters/variable"
+        - $ref: "#/components/parameters/average"
       requestBody:
         content:
           multipart/form-data:
@@ -984,3 +986,12 @@ components:
         items:
           type: string
           minLength: 1
+    average:
+      name: average
+      in: query
+      description: |
+        requests the data to be averaged over time or area
+      required: false
+      schema:
+        type: string
+

@@ -28,6 +28,10 @@ export interface ServiceCapabilities {
     variable?: boolean;
     multiple_variable?: true;
   };
+  averaging?: {
+    time?: boolean;
+    area?: boolean;
+  };
   output_formats?: string[];
   reprojection?: boolean;
   extend?: boolean;
