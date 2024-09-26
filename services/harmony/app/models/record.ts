@@ -2,6 +2,7 @@
 import _ from 'lodash';
 import logger from '../util/log';
 import db, { Transaction } from '../util/db';
+import { ServerError } from '../util/errors';
 
 export interface RecordConstructor extends Function {
   table: string;
@@ -98,7 +99,7 @@ export default abstract class Record {
         [this.id] = await stmt;
       } catch (e) {
         logger.error(e);
-        throw (e);
+        throw new ServerError('Failed to save to database.');
       }
     } else {
       await transaction((this.constructor as RecordConstructor).table)

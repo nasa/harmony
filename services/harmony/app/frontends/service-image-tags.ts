@@ -6,7 +6,7 @@ import { getEdlGroupInformation, validateUserIsInCoreGroup } from '../util/edl-a
 import { exec } from 'child_process';
 import * as path from 'path';
 import util from 'util';
-import { truncateString } from '@harmony/util/string';
+import { Conjunction, listToText, truncateString } from '@harmony/util/string';
 import db from '../util/db';
 import env from '../util/env';
 import { getRequestRoot } from '../util/url';
@@ -313,6 +313,33 @@ async function validateTagPresent(
 }
 
 /**
+ * Verify that all parameters provided in request body are supported.
+ * @param req - The request object
+ * @param res  - The response object - will be used to send an error if the validation fails
+ * @returns a Promise containing `true` if the tag is valid, false if not
+ */
+async function validateRequestParams(
+  req: HarmonyRequest, res: Response,
+): Promise<boolean> {
+  const requestedParams = Object.keys(req.body);
+  const allowedParams = ['tag', 'regression_test_version'];
+  const invalidParams = [];
+  requestedParams.forEach((param, index) => {
+    if (!allowedParams.includes(param)) {
+      invalidParams.push(requestedParams[index]);
+    }
+  });
+  if (invalidParams.length) {
+    const incorrectListString = listToText(invalidParams, Conjunction.AND);
+    const allowedListString = listToText(allowedParams, Conjunction.AND);
+    res.statusCode = 400;
+    res.send(`Invalid body parameter(s): ${incorrectListString}. Allowed body parameters are: ${allowedListString}.`);
+    return false;
+  }
+  return true;
+}
+
+/**
  * Verify that the requested service deployment status is one of the valid statuses
  * @param req - The request object
  * @param res  - The response object - will be used to send an error if the validation fails
@@ -413,16 +440,23 @@ export async function getServiceImageTag(
  * @param req - The request object
  * @param service  - The name of the service to deploy
  * @param tag  - The service image tag to deploy
+ * @param regressionTestVersion  - The regression test version to run the regression test with
  * @param deploymentId  - The deployment id
  */
 export async function execDeployScript(
-  req: HarmonyRequest, service: string, tag: string, deploymentId: string,
+  req: HarmonyRequest,
+  service: string,
+  tag: string,
+  deploymentId: string,
+  regressionTestVersion: string,
 ): Promise<void> {
   const currentPath = __dirname;
   const cicdDir = path.join(currentPath, '../../../../../harmony-ci-cd');
 
-  req.context.logger.info(`Execute script: ./bin/exec-deploy-service ${service} ${tag}`);
-  const command = `./bin/exec-deploy-service ${service} ${tag}`;
+  req.context.logger.info(
+    `Execute script: ./bin/exec-deploy-service ${service} ${tag} ${regressionTestVersion}`);
+  const command = `./bin/exec-deploy-service ${service} ${tag} ${regressionTestVersion}`;
+
   const options = {
     cwd: cicdDir,
   };
@@ -468,6 +502,7 @@ export async function updateServiceImageTag(
     validateUserIsInDeployerOrCoreGroup,
     validateServiceDeploymentIsEnabled,
     validateTagPresent,
+    validateRequestParams,
     validateServiceExists,
     validateTag,
     validateTaggedImageIsReachable,
@@ -490,13 +525,15 @@ export async function updateServiceImageTag(
   }
 
   const { service } = req.params;
-  const { tag } = req.body;
+  const { tag, regression_test_version } = req.body;
+  const regressionTestVersion = regression_test_version ? regression_test_version : 'latest';
 
   const deployment = new ServiceDeployment({
     deployment_id: deploymentId,
     username: req.user,
     service: service,
     tag: tag,
+    regression_test_version: regressionTestVersion,
     status: 'running',
     message: 'Deployment in progress',
   });
@@ -505,7 +542,7 @@ export async function updateServiceImageTag(
     await deployment.save(tx);
   });
 
-  module.exports.execDeployScript(req, service, tag, deploymentId);
+  module.exports.execDeployScript(req, service, tag, deploymentId, regressionTestVersion);
   res.statusCode = 202;
   res.send({
     'tag': tag,

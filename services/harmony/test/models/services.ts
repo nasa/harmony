@@ -107,6 +107,28 @@ describe('services.chooseServiceConfig and services.buildService', function () {
             },
           },
         },
+        {
+          name: 'time-averaging-service',
+          type: { name: 'turbo' },
+          collections: [{ id: collectionId }],
+          capabilities: {
+            averaging: {
+              time: true,
+            },
+            output_formats: ['application/x-netcdf4'],
+          },
+        },
+        {
+          name: 'area-averaging-service',
+          type: { name: 'turbo' },
+          collections: [{ id: collectionId }],
+          capabilities: {
+            averaging: {
+              area: true,
+            },
+            output_formats: ['application/x-netcdf4'],
+          },
+        },
       ];
     });
 
@@ -174,6 +196,28 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       it('chooses the service that supports dimension extension', function () {
         const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
         expect(serviceConfig.name).to.equal('extend-service');
+      });
+    });
+
+    describe('and the request needs area averaging', function () {
+      beforeEach(function () {
+        this.operation.average = 'area';
+      });
+
+      it('chooses the service that supports area averaging', function () {
+        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        expect(serviceConfig.name).to.equal('area-averaging-service');
+      });
+    });
+
+    describe('and the request needs time averaging', function () {
+      beforeEach(function () {
+        this.operation.average = 'time';
+      });
+
+      it('chooses the service that supports time averaging', function () {
+        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        expect(serviceConfig.name).to.equal('time-averaging-service');
       });
     });
 

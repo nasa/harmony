@@ -172,6 +172,7 @@ paths:
         - $ref: "#/components/parameters/granuleName"
         - $ref: "#/components/parameters/grid"
         - $ref: "#/components/parameters/extend"
+        - $ref: "#/components/parameters/average"
         - $ref: "#/components/parameters/label"
       responses:
         "200":
@@ -263,6 +264,8 @@ paths:
                   type: array
                   items:
                     type: string
+                average:
+                  type: string
       responses:
         "200":
           description: A collection's EDR.
@@ -309,6 +312,7 @@ paths:
         - $ref: "#/components/parameters/granuleName"
         - $ref: "#/components/parameters/grid"
         - $ref: "#/components/parameters/extend"
+        - $ref: "#/components/parameters/average"
         - $ref: "#/components/parameters/label"
       responses:
         "200":
@@ -406,6 +410,8 @@ paths:
                   type: array
                   items:
                     type: string
+                average:
+                  type: string
       responses:
         "200":
           description: A collection's EDR.
@@ -452,6 +458,7 @@ paths:
         - $ref: "#/components/parameters/granuleName"
         - $ref: "#/components/parameters/grid"
         - $ref: "#/components/parameters/extend"
+        - $ref: "#/components/parameters/average"
         - $ref: "#/components/parameters/label"
       responses:
         "200":
@@ -547,6 +554,8 @@ paths:
                   type: array
                   items:
                     type: string
+                average:
+                  type: string
       responses:
         "200":
           description: A edr description.
@@ -591,6 +600,7 @@ paths:
         - $ref: "#/components/parameters/granuleName"
         - $ref: "#/components/parameters/grid"
         - $ref: "#/components/parameters/extend"
+        - $ref: "#/components/parameters/average"
         - $ref: "#/components/parameters/label"
       responses:
         "200":
@@ -681,6 +691,8 @@ paths:
                   type: array
                   items:
                     type: string
+                average:
+                  type: string
       responses:
         "200":
           description: A collection's EDR.
@@ -725,6 +737,7 @@ paths:
         - $ref: "#/components/parameters/granuleName"
         - $ref: "#/components/parameters/grid"
         - $ref: "#/components/parameters/extend"
+        - $ref: "#/components/parameters/average"
         - $ref: "#/components/parameters/label"
       responses:
         "200":
@@ -816,6 +829,8 @@ paths:
                   type: array
                   items:
                     type: string
+                average:
+                  type: string
       responses:
         "200":
           description: A collection's EDR.
@@ -866,6 +881,7 @@ paths:
         - $ref: "#/components/parameters/granuleName"
         - $ref: "#/components/parameters/grid"
         - $ref: "#/components/parameters/extend"
+        - $ref: "#/components/parameters/average"
         - $ref: "#/components/parameters/label"
       responses:
         "200":
@@ -973,6 +989,8 @@ paths:
                   type: array
                   items:
                     type: string
+                average:
+                  type: string
       responses:
         "200":
           description: A collection's EDR.
@@ -1671,6 +1689,14 @@ components:
       in: query
       description: |
         the name or concept id of the variable to extend
+      required: false
+      schema:
+        type: string
+    average:
+      name: average
+      in: query
+      description: |
+        requests the data to be averaged over time or area
       required: false
       schema:
         type: string

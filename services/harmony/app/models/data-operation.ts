@@ -310,6 +310,8 @@ export default class DataOperation {
 
   ignoreErrors?: boolean;
 
+  average: string;
+
   destinationUrl: string;
 
   ummCollections: CmrUmmCollection[];

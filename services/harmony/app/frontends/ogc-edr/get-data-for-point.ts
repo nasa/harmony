@@ -2,7 +2,7 @@ import { keysToLowerCase } from '../../util/object';
 import { ParameterParseError, mergeParameters, parseWkt, validateWkt } from '../../util/parameter-parsing-helpers';
 import { Response, NextFunction } from 'express';
 import HarmonyRequest from '../../models/harmony-request';
-import { ServerError, RequestValidationError } from '../../util/errors';
+import { RequestValidationError } from '../../util/errors';
 import { getDataCommon } from './get-data-common';
 
 // POINT to POLYGON conversion side length, 0.0001 is about 11 meters in precision
@@ -93,7 +93,7 @@ export function convertWktToPolygon(wkt: string, sideLength: number = POINT_PREC
 }
 
 /**
- * Express middleware that responds to OGC API - EDR Area GET requests.
+ * Express middleware that responds to OGC API - EDR Position GET requests.
  * Responds with the actual EDR data.
  *
  * @param req - The request sent by the client
@@ -120,7 +120,7 @@ export function getDataForPoint(
     } catch (e) {
       if (e instanceof ParameterParseError) {
         // Turn parsing exceptions into 400 errors pinpointing the source parameter
-        throw new ServerError(`POINT/MULTIPOINT coverted POLYGON/MULTIPOLYGON is invalid ${e.message}`);
+        throw new RequestValidationError(`POINT/MULTIPOINT converted POLYGON/MULTIPOLYGON is invalid ${e.message}`);
       }
       throw e;
     }
@@ -130,7 +130,7 @@ export function getDataForPoint(
 }
 
 /**
- * Express middleware that responds to OGC API - EDR Area POST requests.
+ * Express middleware that responds to OGC API - EDR Position POST requests.
  * Responds with the actual EDR data.
  *
  * This function merely sets up a query and proxies the request to the `getDataForPoint`
