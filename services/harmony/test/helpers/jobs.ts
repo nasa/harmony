@@ -16,7 +16,7 @@ export const adminUsername = 'adam';
 
 export const expectedJobKeys = [
   'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'dataExpiration',
-  'links', 'request', 'numInputGranules', 'jobID',
+  'links', 'labels', 'request', 'numInputGranules', 'jobID',
 ];
 
 const exampleProps = {
