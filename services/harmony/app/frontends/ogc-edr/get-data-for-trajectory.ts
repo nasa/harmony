@@ -2,11 +2,9 @@ import { keysToLowerCase } from '../../util/object';
 import { ParameterParseError, mergeParameters, parseWkt, validateWkt } from '../../util/parameter-parsing-helpers';
 import { Response, NextFunction } from 'express';
 import HarmonyRequest from '../../models/harmony-request';
+import env from '../../util/env';
 import { RequestValidationError } from '../../util/errors';
 import { getDataCommon } from './get-data-common';
-
-// LINESTRING to POLYGON conversion side length, 0.0001 is about 11 meters in precision
-const LINESTRING_PRECISION = 0.0001;
 
 type Point = { x: number, y: number };
 
@@ -162,7 +160,7 @@ function wktMultiLineStringToMultipolygon(
 */
 export function convertWktLineToPolygon(
   wkt: string,
-  sideLength: number = LINESTRING_PRECISION): string {
+  sideLength: number = env.wktPrecision): string {
 
   if (wkt.startsWith('LINESTRING')) {
     return convertLineStringToPolygon(wkt, sideLength);

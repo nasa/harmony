@@ -108,6 +108,8 @@ class HarmonyServerEnv extends HarmonyEnv {
   @Min(1)
   maxDataOperationCacheSize: number;
 
+  wktPrecision: number;
+
   locallyDeployedServices: string;
 }
 
