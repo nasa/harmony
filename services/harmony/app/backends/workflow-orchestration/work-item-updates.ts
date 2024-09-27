@@ -863,7 +863,7 @@ export async function processWorkItems(
       const { job } = await (await logAsyncExecutionTime(
         Job.byJobID,
         'HWIUWJI.Job.byJobID',
-        logger))(tx, jobID, false, true);
+        logger))(tx, jobID, false, false, true);
 
       const thisStep: WorkflowStep = await (await logAsyncExecutionTime(
         getWorkflowStepByJobIdStepIndex,
@@ -916,7 +916,7 @@ export async function handleWorkItemUpdateWithJobId(
       const { job } = await (await logAsyncExecutionTime(
         Job.byJobID,
         'HWIUWJI.Job.byJobID',
-        logger))(tx, jobID, false, true);
+        logger))(tx, jobID, false, false, true);
 
       await processWorkItem(tx, preprocessResult, job, update, logger, true, undefined);
       await job.save(tx);

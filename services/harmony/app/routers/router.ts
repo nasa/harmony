@@ -41,6 +41,7 @@ import docsPage from '../frontends/docs/docs';
 import { getCollectionCapabilitiesJson } from '../frontends/capabilities';
 import extendDefault from '../middleware/extend';
 import { getAdminHealth, getHealth } from '../frontends/health';
+import handleLabelParameter from '../middleware/label';
 export interface RouterConfig {
   PORT?: string | number; // The port to run the frontend server on
   BACKEND_PORT?: string | number; // The port to run the backend server on
@@ -199,6 +200,7 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
     next(new NotFoundError('Services can only be invoked when a valid collection is supplied in the URL path before the service name.'));
   });
   result.use(logged(shapefileConverter));
+  result.use(handleLabelParameter);
   result.use(logged(parameterValidation));
   result.use(logged(parseGridMiddleware));
   result.use(logged(preServiceConcatenationHandler));

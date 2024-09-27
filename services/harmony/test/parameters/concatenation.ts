@@ -1,10 +1,10 @@
 import { expect } from 'chai';
-import { getWorkflowStepsByJobId } from '../app/models/workflow-steps';
-import db from '../app/util/db';
-import { hookRedirect } from './helpers/hooks';
-import { hookRangesetRequest } from './helpers/ogc-api-coverages';
-import hookServersStartStop from './helpers/servers';
-import StubService from './helpers/stub-service';
+import { getWorkflowStepsByJobId } from '../../app/models/workflow-steps';
+import db from '../../app/util/db';
+import { hookRedirect } from '../helpers/hooks';
+import { hookRangesetRequest } from '../helpers/ogc-api-coverages';
+import hookServersStartStop from '../helpers/servers';
+import StubService from '../helpers/stub-service';
 
 describe('testing concatenation', function () {
   describe('for a CONCISE workflow', function () {
