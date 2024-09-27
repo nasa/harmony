@@ -18,7 +18,6 @@ import UserWork from '../user-work';
 import { joinTexts } from '@harmony/util/string';
 import { makeWorkScheduleRequest } from '../../backends/workflow-orchestration/work-item-polling';
 import { QUERY_CMR_SERVICE_REGEX } from '../../backends/workflow-orchestration/util';
-import { parseMultiValueParameter } from '../../util/parameter-parsing-helpers';
 
 export interface ServiceCapabilities {
   concatenation?: boolean;
@@ -262,10 +261,9 @@ export default abstract class BaseService<ServiceParamType> {
     logger.info('Invoking service for operation', { operation: this.operation });
     // TODO handle the skipPreview parameter here when implementing HARMONY-1129
     const job = this._createJob(getRequestUrl(req));
-    const labels = req.query.label;
-    if (labels) {
-      job.labels = parseMultiValueParameter(labels as string);
-    }
+    const labels = req.body.label;
+    job.labels = labels || [];
+
     await this._createAndSaveWorkflow(job);
 
     const { isAsync, jobID } = job;

@@ -2,7 +2,7 @@
 # This script will delete all of the kubernetes harmony resources. If you use this script
 # you will also delete all of your local harmony jobs since the database will be destroyed.
 
-# this will only have an effect if the development servies are running - otherwise it does
+# this will only have an effect if the development services are running - otherwise it does
 # nothing
 bin/stop-dev-services
 

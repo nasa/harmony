@@ -7,6 +7,7 @@ import { hookRangesetRequest } from '../helpers/ogc-api-coverages';
 import { hookRedirect } from '../helpers/hooks';
 import { Job } from '../../app/models/job';
 import { hookEdrRequest } from '../helpers/ogc-api-edr';
+import { generateRandomString } from '../helpers/string';
 
 const collection = 'C1233800302-EEDTEST';
 const granuleId = 'G1233800343-EEDTEST';
@@ -32,12 +33,10 @@ const hookPartials = {
   // eslint-disable-next-line @typescript-eslint/naming-convention
   'OGC Coverages': (label: string[]): void => {
     hookRangesetRequest('1.0.0', collection, 'all', { query: { label }, username: 'joe' });
-    hookRedirect('joe');
   },
   // eslint-disable-next-line @typescript-eslint/naming-convention
   'OGC EDR (GET)': (label: string[]): void => {
     hookEdrRequest('position', '1.1.0', collection, { query: { ...edrQuery, label }, username: 'joe' });
-    hookRedirect('joe');
   },
 };
 
@@ -50,6 +49,7 @@ describe('labels', function () {
       describe('when passing in a single label with the request', function () {
 
         hookPartials[apiType](['foo']);
+        hookRedirect('joe');
 
         it('returns a 200 status code for the request', async function () {
           expect(this.res.status).to.equal(200);
@@ -66,6 +66,7 @@ describe('labels', function () {
     describe('when passing in multiple labels with the request', function () {
 
       hookPartials[apiType](['bar', 'buzz']);
+      hookRedirect('joe');
 
       it('returns a 200 status code for the request', async function () {
         expect(this.res.status).to.equal(200);
@@ -81,6 +82,7 @@ describe('labels', function () {
     describe('when passing in mixed case labels with the request', function () {
 
       hookPartials[apiType](['Bar', 'buzz', 'bAZz']);
+      hookRedirect('joe');
 
       it('returns a 200 status code for the request', async function () {
         expect(this.res.status).to.equal(200);
@@ -96,6 +98,7 @@ describe('labels', function () {
     describe('when passing in labels with non-word characters with the request', function () {
 
       hookPartials[apiType](['b🙂ar', 'bu#!zz']);
+      hookRedirect('joe');
 
       it('returns a 200 status code for the request', async function () {
         expect(this.res.status).to.equal(200);
@@ -105,6 +108,20 @@ describe('labels', function () {
         const jobStatus = JSON.parse(this.res.text);
         const job = await Job.byJobID(db, jobStatus.jobID, false, true, false);
         expect(job.job.labels).deep.equal(['b🙂ar', 'bu#!zz']);
+      });
+    });
+
+    describe('when passing in labels that are more than 255 characters long', async function () {
+      // a long label that does not contain commas
+      const veryLongLabel = generateRandomString(256, [0x002C]);
+      hookPartials[apiType](['b🙂ar', veryLongLabel]);
+
+      it('returns a 400 status code for the request', async function () {
+        expect(this.res.status).to.equal(400);
+      });
+
+      it('returns a meaningful error message', async function () {
+        expect(this.res.text).to.include('Labels must consist of at least one 1 and no more than 255 characters');
       });
     });
   }

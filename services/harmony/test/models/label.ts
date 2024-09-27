@@ -3,7 +3,41 @@ import { describe, it } from 'mocha';
 import { expect } from 'chai';
 import { buildJob, getFirstJob } from '../helpers/jobs';
 import { hookTransactionEach } from '../helpers/db';
-import { setLabelsForJob } from '../../app/models/label';
+import { checkLabel, setLabelsForJob } from '../../app/models/label';
+
+// unit tests for `checkLabel`
+describe('checkLabel', function () {
+  it('should return null for valid labels', function () {
+    // Examples of valid labels
+    const validLabels = [
+      'latest',
+      '1.0',
+      'v1.😱.1',
+      'version_1.2.3',
+      'a'.repeat(255), // Maximum length
+    ];
+
+    validLabels.forEach(label => {
+      const result = checkLabel(label);
+      expect(result).to.be.null;
+    });
+  });
+
+  it('should return an error message for invalid labels', function () {
+    // Examples of invalid labels
+    const invalidLabels = [
+      '', // empty
+      'a'.repeat(256), // Exceeds maximum length
+    ];
+
+    const errorMessage = 'Labels must consist of at least one 1 and no more than 255 characters.';
+
+    invalidLabels.forEach(label => {
+      const result = checkLabel(label);
+      expect(result).to.equal(errorMessage);
+    });
+  });
+});
 
 describe('label CRUD', function () {
   hookTransactionEach();

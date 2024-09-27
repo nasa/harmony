@@ -9,6 +9,7 @@ import { getEdrParameters } from '../frontends/ogc-edr/index';
 import env from '../util/env';
 import { getRequestRoot } from '../util/url';
 import { validateNoConflictingGridParameters } from '../util/grids';
+import { checkLabel } from '../models/label';
 
 const { awsDefaultRegion } = env;
 
@@ -155,6 +156,25 @@ function validateBucketPathParameter(req: HarmonyRequest): void {
 }
 
 /**
+ * Verify that the given label is valid. Send an error if it is not.
+ * @param req - The request object
+ * @throws RequestValidationError - if a label is invalid (too short or too long)
+ */
+export function validateLabelParameter(req: HarmonyRequest): void {
+  const labels = req.body.label;
+
+  if (labels) {
+    for (const label of labels) {
+      const errMsg = checkLabel(label);
+
+      if (errMsg) {
+        throw new RequestValidationError(errMsg);
+      }
+    }
+  }
+}
+
+/**
  * Validate that the parameter names are correct.
  *  (Performs case insensitive comparison.)
  *
@@ -225,6 +245,7 @@ export default async function parameterValidation(
     if (req.url.match(EDR_ROUTE_REGEX)) {
       validateEdrParameterNames(req);
     }
+    validateLabelParameter(req);
   } catch (e) {
     return next(e);
   }
