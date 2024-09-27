@@ -258,7 +258,7 @@ export async function getJobIfAllowed(
   enableShareability: boolean,
 ): Promise<Job> {
   validateJobId(jobID);
-  const { job } = await Job.byJobID(db, jobID, false, false);
+  const { job } = await Job.byJobID(db, jobID, false, false, false);
   if (!job) {
     throw new NotFoundError();
   }

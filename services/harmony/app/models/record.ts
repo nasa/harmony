@@ -149,6 +149,7 @@ export default abstract class Record {
       }
     } catch (e) {
       logger.error(e);
+      throw (e);
     }
   }
 }

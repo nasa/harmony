@@ -344,6 +344,7 @@ paths:
         - $ref: "#/components/parameters/extend"
         - $ref: "#/components/parameters/variable"
         - $ref: "#/components/parameters/average"
+        - $ref: "#/components/parameters/label"
       responses:
         "200":
           description: A coverage's range set.
@@ -386,6 +387,7 @@ paths:
         - $ref: "#/components/parameters/extend"
         - $ref: "#/components/parameters/variable"
         - $ref: "#/components/parameters/average"
+        - $ref: "#/components/parameters/label"
       requestBody:
         content:
           multipart/form-data:
@@ -994,4 +996,16 @@ components:
       required: false
       schema:
         type: string
-
+    label:
+      name: label
+      in: query
+      description: |
+        the labels for the job
+      required: false
+      style: form
+      explode: true
+      schema:
+        type: array
+        items:
+          type: string
+          minLength: 1
