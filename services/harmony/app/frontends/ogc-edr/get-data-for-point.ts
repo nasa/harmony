@@ -2,11 +2,9 @@ import { keysToLowerCase } from '../../util/object';
 import { ParameterParseError, mergeParameters, parseWkt, validateWkt } from '../../util/parameter-parsing-helpers';
 import { Response, NextFunction } from 'express';
 import HarmonyRequest from '../../models/harmony-request';
+import env from '../../util/env';
 import { RequestValidationError } from '../../util/errors';
 import { getDataCommon } from './get-data-common';
-
-// POINT to POLYGON conversion side length, 0.0001 is about 11 meters in precision
-const POINT_PRECISION = 0.0001;
 
 /**
  * Converts a WKT POINT string to a WKT POLYGON string.
@@ -82,7 +80,7 @@ function wktMultipointToMultipolygon(wktMultipoint: string, sideLength: number):
 * @returns The converted WKT POLYGON or WKT MULTIPOLYGON string.
 * @throws RequestValidationError if the WKT string format is invalid.
 */
-export function convertWktToPolygon(wkt: string, sideLength: number = POINT_PRECISION): string {
+export function convertWktToPolygon(wkt: string, sideLength: number = env.wktPrecision): string {
   if (wkt.startsWith('POINT')) {
     return wktPointToPolygon(wkt, sideLength);
   } else if (wkt.startsWith('MULTIPOINT')) {
