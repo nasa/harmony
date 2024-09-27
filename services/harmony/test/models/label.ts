@@ -26,11 +26,10 @@ describe('checkLabel', function () {
   it('should return an error message for invalid labels', function () {
     // Examples of invalid labels
     const invalidLabels = [
-      '', // empty
       'a'.repeat(256), // Exceeds maximum length
     ];
 
-    const errorMessage = 'Labels must consist of at least one 1 and no more than 255 characters.';
+    const errorMessage = 'Labels may not exceed 255 characters in length.';
 
     invalidLabels.forEach(label => {
       const result = checkLabel(label);

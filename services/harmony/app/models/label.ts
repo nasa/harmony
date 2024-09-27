@@ -1,14 +1,14 @@
 import { Transaction } from '../util/db';
 
 /**
- * Returns an error message if a label is empty or exceeds 255 characters in length
+ * Returns an error message if a label exceeds 255 characters in length
  *
  * @param tag - The image tag to check
  * @returns An error message if the tag is not valid, null otherwise
  */
 export function checkLabel(label: string): string {
-  if (label.length < 1 || label.length > 255) {
-    const message = 'Labels must consist of at least one 1 and no more than 255 characters.';
+  if (label.length > 255) {
+    const message = 'Labels may not exceed 255 characters in length.';
     return message;
   }
   return null;

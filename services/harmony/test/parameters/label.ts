@@ -121,7 +121,7 @@ describe('labels', function () {
       });
 
       it('returns a meaningful error message', async function () {
-        expect(this.res.text).to.include('Labels must consist of at least one 1 and no more than 255 characters');
+        expect(this.res.text).to.include('Labels may not exceed 255 characters in length.');
       });
     });
   }
