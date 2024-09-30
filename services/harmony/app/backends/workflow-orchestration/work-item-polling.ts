@@ -187,7 +187,7 @@ export async function makeWorkScheduleRequest(serviceID: string): Promise<void> 
  */
 export async function getWorkFromQueue(serviceID: string, reqLogger: Logger): Promise<WorkItemData | null> {
   const queueUrl = getQueueUrlForService(serviceID);
-  reqLogger.debug(`Short polling for work from queue ${queueUrl} for service ${serviceID}`);
+  reqLogger.silly(`Short polling for work from queue ${queueUrl} for service ${serviceID}`);
 
   const queue = getQueueForUrl(queueUrl);
   if (!queue) {
@@ -197,7 +197,7 @@ export async function getWorkFromQueue(serviceID: string, reqLogger: Logger): Pr
   // get a message from the service queue without using long-polling
   let queueItem = await queue.getMessage(0);
   if (!queueItem) {
-    reqLogger.debug(`No work found on queue ${queueUrl} for service ${serviceID} - requesting work from scheduler`);
+    reqLogger.silly(`No work found on queue ${queueUrl} for service ${serviceID} - requesting work from scheduler`);
     // put a message on the scheduler queue asking it to schedule some WorkItems for this service
     await makeWorkScheduleRequest(serviceID);
 
@@ -205,12 +205,11 @@ export async function getWorkFromQueue(serviceID: string, reqLogger: Logger): Pr
     await processSchedulerQueue(reqLogger);
 
     // long poll for work before giving up
-    reqLogger.debug(`Long polling for work on queue ${queueUrl} for service ${serviceID}`);
+    reqLogger.silly(`Long polling for work on queue ${queueUrl} for service ${serviceID}`);
     queueItem = await queue.getMessage();
   }
 
   if (queueItem) {
-    // reqLogger.debug(`Found work item ${JSON.stringify(queueItem, null, 2)} on queue ${queueUrl}`);
     reqLogger.debug(`Found work item on queue ${queueUrl}`);
     // normally we would process this before deleting the message, but we instead are relying on
     // our retry mechanism to requeue the message if the worker fails
@@ -242,7 +241,7 @@ export async function getWorkFromQueue(serviceID: string, reqLogger: Logger): Pr
       reqLogger.error(`Error updating work item status to running: ${err.message}`);
     }
   } else {
-    reqLogger.debug(`No work found on queue ${queueUrl} for service ${serviceID}`);
+    reqLogger.silly(`No work found on queue ${queueUrl} for service ${serviceID}`);
   }
 
   return null;
