@@ -1,4 +1,4 @@
-import { IsInt, IsNotEmpty, Matches, Min } from 'class-validator';
+import { IsInt, IsNotEmpty, IsPositive, Matches, Min } from 'class-validator';
 import { HarmonyEnv, memorySizeRegex } from '@harmony/util/env';
 import _ from 'lodash';
 import * as path from 'path';
@@ -107,6 +107,9 @@ class HarmonyServerEnv extends HarmonyEnv {
   @IsInt()
   @Min(1)
   maxDataOperationCacheSize: number;
+
+  @IsPositive()
+  wktPrecision: number;
 
   locallyDeployedServices: string;
 }

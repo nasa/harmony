@@ -36,14 +36,14 @@ The returned JSON response is a map of canonical service names to tags:
   "subset-band-name": "latest"
 }
 ```
-**Example 2** - Harmony `/service-image-tags` response
+**Example 2** - Harmony `/service-image-tag` response
 
 ## Get backend service tag (version) information for a specific service
 
 ```
 curl -Ln -bj https://harmony.uat.earthdata.nasa.gov/service-image-tag/#canonical-service-name
 ```
-**Example 3** - Getting a specific backend service image tag using the `/service-image-tags` API
+**Example 3** - Getting a specific backend service image tag using the `/service-image-tag` API
 
 The returned JSON response is a map with a single `tag` field:
 
@@ -52,7 +52,7 @@ The returned JSON response is a map with a single `tag` field:
   "tag": "1.2.3"
 }
 ```
-**Example 4** - Harmony `/service-image-tags` response for a single service
+**Example 4** - Harmony `/service-image-tag` response for a single service
 
 ## Update backend service tag (version) for a specific service
 
@@ -66,17 +66,17 @@ For example:
 ```
 curl -XPUT https://harmony.uat.earthdata.nasa.gov/service-image-tag/#canonical-service-name  -H 'Authorization: Bearer <your bearer token>'  -d '{"tag": "new-version"}' -H 'Content-type: application/json'
 ```
-**Example 5** - Updating a specific backend service image tag using the `/service-image-tags` API
+**Example 5** - Updating a specific backend service image tag using the `/service-image-tag` API
 
-The body of the `PUT` request should be a JSON object with a `tag` field indicating the tag of the updated service image and an optional `test` field with the value of the tag of the regression test docker image, the value 'latest' will be used when `test` field is omitted.
+The body of the `PUT` request should be a JSON object with a `tag` field indicating the tag of the updated service image and an optional `regression_test_version` field with the value of the tag of the regression test docker image, the value 'latest' will be used when `regression_test_version` field is omitted.
 
 ```JSON
 {
   "tag": "new-version",
-  "test": "1.0.0"
+  "regression_test_version": "1.0.0"
 }
 ```
-**Example 6** - Harmony `/service-image-tags` request body for updating a tag
+**Example 6** - Harmony `/service-image-tag` request body for updating a tag
 
 The returned JSON response has a tag field indicating the new tag value and a statusLink field with the url for getting the status of the service image deployment.
 
@@ -86,7 +86,7 @@ The returned JSON response has a tag field indicating the new tag value and a st
   "statusLink": "https://harmony.uat.earthdata.nasa.gov/service-deployment/<deployment-id>"
 }
 ```
-**Example 7** - Harmony `/service-image-tags` response for a updating a single service
+**Example 7** - Harmony `/service-image-tag` response for a updating a single service
 
 >**Note** this is an asynchronous request, so the status code for the response will be `202 Accepted` - it may take several minutes for the entire update to complete.
 
@@ -132,7 +132,7 @@ The returned JSON response has the fields indicating the current status of the s
 GET https://harmony.uat.earthdata.nasa.gov/service-deployments-state
 
 ```
-**Example 10** - Getting the current enable/disable state of the service deployment feature using the `service-image-tag` API
+**Example 10** - Getting the current enable/disable state of the service deployment feature using the `service-deployments-state` API
 
 The returned JSON response shows if the service deployment is currently enabled (true) or disabled (false) and any optional message:
 
@@ -143,7 +143,7 @@ The returned JSON response shows if the service deployment is currently enabled 
 }
 ```
 ---
-**Example 11** - Harmony `service-image-tags` response for enable/disable state
+**Example 11** - Harmony `service-deployments-state` response for enable/disable state
 
 ## Enable the service deployment feature
 The user must have admin permission in order to invoke this endpoint. User can provide an optional message in the JSON body to indicate the reason for enabling. This message will be persisted in database and returned when user retrieves the service deployment state later.
@@ -154,7 +154,7 @@ For example:
 curl -XPUT -H 'Authorization: Bearer <your bearer token>' -H 'Content-type: application/json' https://harmony.uat.earthdata.nasa.gov/service-deployments-state -d '{"enabled": true, "message": "Manually enabled by David"}'
 ```
 ---
-**Example 12** - Harmony `service-image-tags` request for enabling the service deployment
+**Example 12** - Harmony `service-deployments-state` request for enabling the service deployment
 
 The returned JSON response is the same as the get current state of the service deployment feature request above, indicating the current state:
 
@@ -164,7 +164,7 @@ The returned JSON response is the same as the get current state of the service d
   "message": "Manually enabled by David"
 }
 ```
-**Example 13** - Harmony `/service-image-tags` response for enabling the service deployment
+**Example 13** - Harmony `/service-deployments-state` response for enabling the service deployment
 
 ## Disable the service deployment feature
 The user must have admin permission in order to invoke this endpoint. User can provide an optional message in the JSON body to indicate the reason for disabling. This message will be persisted in database and returned when user retrieves the service deployment state later.
@@ -175,7 +175,7 @@ For example:
 curl -XPUT -H 'Authorization: Bearer <your bearer token>' -H 'Content-type: application/json' https://harmony.uat.earthdata.nasa.gov/service-deployments-state -d '{"enabled": false, "message": "Manually disabled by David"}'
 ```
 ---
-**Example 14** - Harmony `service-image-tags` request for disabling the service deployment
+**Example 14** - Harmony `service-deployments-state` request for disabling the service deployment
 
 The returned JSON response is the same as the get current state of the service deployment feature request above, indicating the current state:
 
@@ -185,7 +185,7 @@ The returned JSON response is the same as the get current state of the service d
   "message": "Manually disabled by David"
 }
 ```
-**Example 15** - Harmony `/service-image-tags` response for disabling the service deployment
+**Example 15** - Harmony `/service-deployments-state` response for disabling the service deployment
 
 ## Getting the Deployment History for All Services
 ```
