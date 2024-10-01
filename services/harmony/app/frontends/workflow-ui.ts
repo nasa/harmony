@@ -568,6 +568,7 @@ export async function getWorkItemsTable(
           .replace('/work-items', '')
           .replace(/(&|\?)checkJobStatus=(true|false)/, '') : '');
       },
+      ...jobRenderingFunctions(req.context.logger, requestQuery),
     });
   } catch (e) {
     req.context.logger.error(e);
