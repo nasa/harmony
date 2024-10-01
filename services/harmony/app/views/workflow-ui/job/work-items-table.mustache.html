@@ -1,5 +1,18 @@
-<div id="job-alert" class="alert alert-{{statusClass}} overflow-auto" role="alert">
+<div class="job-alert alert alert-{{statusClass}} overflow-auto" role="alert">
     {{job.message}}
+</div>
+
+<div class="d-flex flex-row justify-content-between mb-2 mt-1">
+    <div>
+        <i class="bi bi-copy text-primary copy-request" data-text="{{job.request}}"
+            data-truncated="{{jobRequestIsTruncated}}"></i>
+        <span title="{{jobRequest}}" class="text-muted job-url-text">{{job.request}}</span>
+    </div>
+    <div>
+        <span class="badge bg-label">The Light</span>
+        <span class="badge bg-label">Light Cool</span>
+        <span class="badge bg-label">LightABC</span>
+    </div>
 </div>
 
 <table class="table table-sm">
