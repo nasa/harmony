@@ -15,7 +15,6 @@ import env from '../util/env';
 import JobError, { getErrorsForJob } from '../models/job-error';
 import _ from 'lodash';
 import { isAdminUser } from '../util/edl-api';
-import { getLabelsForJob } from '../models/label';
 
 /**
  * Returns true if the job contains S3 direct access links
@@ -134,10 +133,7 @@ export async function getJobsListing(
     }
     let listing;
     await db.transaction(async (tx) => {
-      listing = await Job.queryAll(tx, query, page, limit);
-      for (const job of listing.data) {
-        job.labels = await getLabelsForJob(tx, job.jobID);
-      }
+      listing = await Job.queryAll(tx, query, page, limit, true);
     });
     const serializedJobs = listing.data.map((j) => getJobForDisplay(j, root, 'none', []));
     const response: JobListing = {

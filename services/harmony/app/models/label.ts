@@ -1,5 +1,8 @@
 import { Transaction } from '../util/db';
 
+export const LABELS_TABLE = 'labels';
+export const JOBS_LABELS_TABLE = 'jobs_labels';
+
 /**
  * Returns an error message if a label exceeds 255 characters in length
  *

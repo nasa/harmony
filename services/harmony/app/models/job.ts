@@ -1,4 +1,4 @@
-import { pick } from 'lodash';
+import _, { pick } from 'lodash';
 import { ILengthAwarePagination } from 'knex-paginate'; // For types only
 import { createMachine } from 'xstate';
 import { CmrPermission, CmrPermissionsMap, getCollectionsByIds, getPermissions, CmrTagKeys } from '../util/cmr';
@@ -7,7 +7,7 @@ import { ConflictError } from '../util/errors';
 import { createPublicPermalink } from '../frontends/service-results';
 import { truncateString } from '@harmony/util/string';
 import DBRecord from './record';
-import { Transaction } from '../util/db';
+import db, { Transaction } from '../util/db';
 import JobLink, { getLinksForJob, JobLinkOrRecord } from './job-link';
 import WorkflowStep, { getWorkflowStepsByJobId } from './workflow-steps';
 
@@ -21,7 +21,7 @@ import JobError from './job-error';
 import { setReadyCountToZero } from './user-work';
 import { Knex } from 'knex';
 import { Logger } from 'winston';
-import { getLabelsForJob, setLabelsForJob } from './label';
+import { LABELS_TABLE, JOBS_LABELS_TABLE, getLabelsForJob, setLabelsForJob } from './label';
 const { awsDefaultRegion } = env;
 
 // Lazily load the list of unique provider ids, once, when requested
@@ -361,6 +361,23 @@ function modifyQuery(
 }
 
 /**
+ * Sets the fields on the where clauses (see JobQuery) to be prefixed with a table name to avoid
+ * ambiguities when joining with other tables
+ * @param query - the where clauses to process
+ * @returns An object with it's fields prefixed with the jobs table name
+ */
+function setTableNameForWhereClauses(table: string, whereClauses: {}): {} {
+  const result = {};
+  Object.entries(whereClauses).forEach(([key, value]) => {
+    if (value !== undefined) {
+      result[`${table}.${key}`] = value;
+    }
+  });
+
+  return result;
+}
+
+/**
  *
  * Wrapper object for persisted jobs
  *
@@ -476,17 +493,48 @@ export class Job extends DBRecord implements JobRecord {
     constraints: JobQuery = { where: {} },
     currentPage = 0,
     perPage = 10,
+    includeLabels = false,
   ): Promise<{ data: Job[]; pagination: ILengthAwarePagination }> {
-    const items = await tx(Job.table)
-      .select()
-      .where(constraints.where)
-      .orderBy(
-        constraints?.orderBy?.field ?? 'createdAt',
-        constraints?.orderBy?.value ?? 'desc')
-      .modify((queryBuilder) => modifyQuery(queryBuilder, constraints))
-      .paginate({ currentPage, perPage, isLengthAware: true });
+    let query;
 
-    const jobs: Job[] = items.data.map((j: Job) => new Job(j));
+    if (includeLabels) {
+      let aggCommand = 'GROUP_CONCAT';
+      if (db.client.config.client === 'pg') {
+        aggCommand = 'STRING_AGG';
+      }
+
+      query = tx(Job.table)
+        .select(`${Job.table}.*`, tx.raw(`${aggCommand}(${LABELS_TABLE}.value, ',') AS label_values`))
+        .leftOuterJoin(`${JOBS_LABELS_TABLE}`, `${Job.table}.jobID`, '=', `${JOBS_LABELS_TABLE}.job_id`)
+        .leftOuterJoin(`${LABELS_TABLE}`, `${JOBS_LABELS_TABLE}.label_id`, '=', `${LABELS_TABLE}.id`)
+        .where(setTableNameForWhereClauses(Job.table, constraints.where))
+        .groupBy(`${Job.table}.id`)
+        .orderBy(
+          constraints?.orderBy?.field ?? 'createdAt',
+          constraints?.orderBy?.value ?? 'desc')
+        .modify((queryBuilder) => modifyQuery(queryBuilder, constraints));
+
+
+    } else {
+      query = tx(Job.table)
+        .select()
+        .where(constraints.where)
+        .orderBy(
+          constraints?.orderBy?.field ?? 'createdAt',
+          constraints?.orderBy?.value ?? 'desc')
+        .modify((queryBuilder) => modifyQuery(queryBuilder, constraints));
+    }
+
+    query = query.paginate({ currentPage, perPage, isLengthAware: true });
+    const items = await query;
+
+    const jobs: Job[] = items.data.map((j: JobWithLabels) => {
+      const job = new Job(j);
+      if (includeLabels && j.label_values) {
+        job.labels = j.label_values.split(',');
+      }
+      return job;
+    });
 
     return {
       data: jobs,
@@ -1089,4 +1137,8 @@ export class Job extends DBRecord implements JobRecord {
   }
 
 
+}
+
+interface JobWithLabels extends Job {
+  label_values: string; // comma-separated list
 }
