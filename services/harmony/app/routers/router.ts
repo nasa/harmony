@@ -70,11 +70,11 @@ function logged(fn: RequestHandler): RequestHandler {
     req.context.logger = child;
     const startTime = new Date().getTime();
     try {
-      child.debug('Invoking middleware');
+      child.silly('Invoking middleware');
       return fn(req, res, next);
     } finally {
       const msTaken = new Date().getTime() - startTime;
-      child.debug('Completed middleware', { durationMs: msTaken });
+      child.silly('Completed middleware', { durationMs: msTaken });
       if (req.context.logger === child) {
         // Other middlewares may have changed the logger.  This generally happens
         // when `next()` is an async call that the middleware doesn't await.  Note
