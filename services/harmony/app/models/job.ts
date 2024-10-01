@@ -364,7 +364,7 @@ function modifyQuery(
  * Sets the fields on the where clauses (see JobQuery) to be prefixed with a table name to avoid
  * ambiguities when joining with other tables
  * @param query - the where clauses to process
- * @returns An object with it's fields prefixed with the jobs table name
+ * @returns An object with its fields prefixed with the table name
  */
 function setTableNameForWhereClauses(table: string, whereClauses: {}): {} {
   const result = {};
@@ -498,13 +498,8 @@ export class Job extends DBRecord implements JobRecord {
     let query;
 
     if (includeLabels) {
-      let aggCommand = 'GROUP_CONCAT';
-      if (db.client.config.client === 'pg') {
-        aggCommand = 'STRING_AGG';
-      }
-
       query = tx(Job.table)
-        .select(`${Job.table}.*`, tx.raw(`${aggCommand}(${LABELS_TABLE}.value, ',') AS label_values`))
+        .select(`${Job.table}.*`, tx.raw(`STRING_AGG(${LABELS_TABLE}.value, ',') AS label_values`))
         .leftOuterJoin(`${JOBS_LABELS_TABLE}`, `${Job.table}.jobID`, '=', `${JOBS_LABELS_TABLE}.job_id`)
         .leftOuterJoin(`${LABELS_TABLE}`, `${JOBS_LABELS_TABLE}.label_id`, '=', `${LABELS_TABLE}.id`)
         .where(setTableNameForWhereClauses(Job.table, constraints.where))
@@ -513,8 +508,6 @@ export class Job extends DBRecord implements JobRecord {
           constraints?.orderBy?.field ?? 'createdAt',
           constraints?.orderBy?.value ?? 'desc')
         .modify((queryBuilder) => modifyQuery(queryBuilder, constraints));
-
-
     } else {
       query = tx(Job.table)
         .select()
