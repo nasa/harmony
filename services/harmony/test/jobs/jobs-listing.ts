@@ -116,11 +116,6 @@ describe('Jobs listing route', function () {
         expect(containsJob(buzzJob1, listing)).to.be.false;
       });
 
-      it('does not return synchronous jobs', function () {
-        const listing = JSON.parse(this.res.text);
-        expect(containsJob(woodySyncJob, listing)).to.be.false;
-      });
-
       it("includes a link to the job's status in each job's list of links", function () {
         const jobs = JSON.parse(this.res.text).jobs.map((j) => new Job(j)) as Job[];
         const itemLinks = jobs.map((j) => j.getRelatedLinks('item')[0] || null);
@@ -131,7 +126,7 @@ describe('Jobs listing route', function () {
       it('includes labels in the jobs links', function () {
         const jobs = JSON.parse(this.res.text).jobs.map((j) => new Job(j)) as Job[];
         const labels = jobs.map((j) => j.labels);
-        expect(labels).deep.equal([woodyJob2Labels, woodyJob1Labels]);
+        expect(labels).deep.equal([[], woodyJob2Labels, woodyJob1Labels]);
       });
 
       it("does not include data links in any job's list of links", function () {

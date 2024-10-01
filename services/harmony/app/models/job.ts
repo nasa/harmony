@@ -525,6 +525,8 @@ export class Job extends DBRecord implements JobRecord {
       const job = new Job(j);
       if (includeLabels && j.label_values) {
         job.labels = j.label_values.split(',');
+      } else {
+        job.labels = [];
       }
       return job;
     });

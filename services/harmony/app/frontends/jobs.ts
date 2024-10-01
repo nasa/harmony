@@ -129,7 +129,6 @@ export async function getJobsListing(
     const query: JobQuery = { where: {} };
     if (!req.context.isAdminAccess) {
       query.where.username = req.user;
-      query.where.isAsync = true;
     }
     let listing;
     await db.transaction(async (tx) => {

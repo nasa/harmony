@@ -6,8 +6,8 @@ export const JOBS_LABELS_TABLE = 'jobs_labels';
 /**
  * Returns an error message if a label exceeds 255 characters in length
  *
- * @param tag - The image tag to check
- * @returns An error message if the tag is not valid, null otherwise
+ * @param label - The label to check
+ * @returns An error message if the label is not valid, null otherwise
  */
 export function checkLabel(label: string): string {
   if (label.length > 255) {
@@ -15,6 +15,16 @@ export function checkLabel(label: string): string {
     return message;
   }
   return null;
+}
+
+/**
+ * Trim the whitespace from the beginning/end of a label and convert it to lowercase
+ *
+ * @param label - the label to normalize
+ * @returns - label converted to lowercase with leading/trailing whitespace trimmed
+ */
+export function normalizeLabel(label: string): string {
+  return label.trim().toLowerCase();
 }
 
 /**
@@ -64,8 +74,7 @@ export async function setLabelsForJob(
 
   if (labels.length > 0) {
     const now = new Date();
-    const lowerCaseLabels = labels.map((label) => label.toLowerCase());
-    const labelRows = lowerCaseLabels.map((label) => {
+    const labelRows = labels.map((label) => {
       return { username, value: label, createdAt: now, updatedAt: now };
     });
 
