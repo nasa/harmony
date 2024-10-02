@@ -314,7 +314,7 @@ export async function getJobs(
     const { tableQuery, originalValues } = parseQuery(requestQuery, JobStatus, isAdminRoute);
     const jobQuery = tableQueryToJobQuery(tableQuery, isAdminRoute, req.user);
     const { page, limit } = getPagingParams(req, env.defaultJobListPageSize, 1, true, true);
-    const { data: jobs, pagination } = await Job.queryAll(db, jobQuery, page, limit);
+    const { data: jobs, pagination } = await Job.queryAll(db, jobQuery, page, limit, true);
     setPagingHeaders(res, pagination);
     const pageLinks = getPagingLinks(req, pagination, true);
     const firstPage = pageLinks.find((l) => l.rel === 'first');

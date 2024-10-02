@@ -5,8 +5,8 @@
         <span title="{{jobRequest}}" class="text-muted job-url-text">{{jobRequestDisplay}}</span>
     </div>
     <div>
-        <span class="badge bg-label">The Light</span>
-        <span class="badge bg-label">Light Cool</span>
-        <span class="badge bg-label">LightABC</span>
+        {{#labels}}
+        <span class="badge bg-label">{{.}}</span>
+        {{/labels}}
     </div>
 </div>
