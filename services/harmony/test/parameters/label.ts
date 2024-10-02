@@ -111,6 +111,31 @@ describe('labels', function () {
       });
     });
 
+    describe('when passing in labels with leading or trailing whitespace with the request', function () {
+
+      hookPartials[apiType](['  bar', 'buzz    ', '   bazz ', '\t foo\t  ']);
+      hookRedirect('joe');
+
+      it('trims the whitespace and adds the labels to the job', async function () {
+        const jobStatus = JSON.parse(this.res.text);
+        const job = await Job.byJobID(db, jobStatus.jobID, false, true, false);
+        expect(job.job.labels).deep.equal(['bar', 'buzz', 'bazz', 'foo']);
+      });
+    });
+
+    describe('when passing in labels with just whitespace with the request', function () {
+
+      hookPartials[apiType](['foo', '  \t \t  ']);
+
+      it('returns a 400 status code for the request', async function () {
+        expect(this.res.status).to.equal(400);
+      });
+
+      it('returns a meaningful error message', async function () {
+        expect(this.res.text).to.include('Labels must contain at least one non-whitespace character');
+      });
+    });
+
     describe('when passing in labels that are more than 255 characters long', async function () {
       // a long label that does not contain commas
       const veryLongLabel = generateRandomString(256, [0x002C]);

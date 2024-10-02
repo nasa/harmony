@@ -129,11 +129,10 @@ export async function getJobsListing(
     const query: JobQuery = { where: {} };
     if (!req.context.isAdminAccess) {
       query.where.username = req.user;
-      query.where.isAsync = true;
     }
     let listing;
     await db.transaction(async (tx) => {
-      listing = await Job.queryAll(tx, query, page, limit);
+      listing = await Job.queryAll(tx, query, page, limit, true);
     });
     const serializedJobs = listing.data.map((j) => getJobForDisplay(j, root, 'none', []));
     const response: JobListing = {
