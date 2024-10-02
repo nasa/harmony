@@ -70,11 +70,11 @@ function logged(fn: RequestHandler): RequestHandler {
     req.context.logger = child;
     const startTime = new Date().getTime();
     try {
-      child.debug('Invoking middleware');
+      child.silly('Invoking middleware');
       return fn(req, res, next);
     } finally {
       const msTaken = new Date().getTime() - startTime;
-      child.debug('Completed middleware', { durationMs: msTaken });
+      child.silly('Completed middleware', { durationMs: msTaken });
       if (req.context.logger === child) {
         // Other middlewares may have changed the logger.  This generally happens
         // when `next()` is an async call that the middleware doesn't await.  Note
@@ -226,8 +226,11 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   result.post(/^.*?\/ogc-api-coverages\/.*?\/collections\/.*?\/coverage\/rangeset\/?$/, asyncHandler(service(serviceInvoker)));
   result.get(/^\/ogc-api-edr\/.*?\/collections\/.*?\/(cube|area|position|trajectory)\/?$/, asyncHandler(service(serviceInvoker)));
   result.post(/^\/ogc-api-edr\/.*?\/collections\/.*?\/(cube|area|position|trajectory)\/?$/, asyncHandler(service(serviceInvoker)));
+
   result.get('/jobs', asyncHandler(getJobsListing));
   result.get('/jobs/:jobID', asyncHandler(getJobStatus));
+  result.get('/admin/jobs', asyncHandler(getJobsListing));
+  result.get('/admin/jobs/:jobID', asyncHandler(getJobStatus));
 
   result.post('/jobs/:jobID/cancel', asyncHandler(cancelJob));
   result.post('/admin/jobs/:jobID/cancel', asyncHandler(cancelJob));
@@ -250,9 +253,6 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   result.post('/admin/jobs/:jobID/pause', asyncHandler(pauseJob));
   result.get('/jobs/:jobID/pause', asyncHandler(pauseJob));
   result.get('/admin/jobs/:jobID/pause', asyncHandler(pauseJob));
-
-  result.get('/admin/jobs', asyncHandler(getJobsListing));
-  result.get('/admin/jobs/:jobID', asyncHandler(getJobStatus));
 
   const jsonParser = json();
   result.post('/jobs/cancel', jsonParser, asyncHandler(cancelJobs));

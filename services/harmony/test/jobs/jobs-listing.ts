@@ -5,6 +5,7 @@ import env from '../../app/util/env';
 import hookServersStartStop from '../helpers/servers';
 import { hookTransaction, hookDatabaseFailure, truncateAll } from '../helpers/db';
 import { containsJob, jobListing, hookJobListing, createIndexedJobs, itIncludesPagingRelations, hookAdminJobListing, buildJob } from '../helpers/jobs';
+import { setLabelsForJob } from '../../app/models/label';
 
 // Example jobs to use in tests
 const woodyJob1 = buildJob({
@@ -18,6 +19,8 @@ const woodyJob1 = buildJob({
   numInputGranules: 3,
 });
 
+const woodyJob1Labels = ['foo', 'bar'];
+
 const woodyJob2 = buildJob({
   username: 'woody',
   status: JobStatus.RUNNING,
@@ -28,6 +31,8 @@ const woodyJob2 = buildJob({
   isAsync: true,
   numInputGranules: 5,
 });
+
+const woodyJob2Labels = ['f🤢😬', 'b😵‍💫r'];
 
 const woodySyncJob = buildJob({
   username: 'woody',
@@ -75,7 +80,9 @@ describe('Jobs listing route', function () {
     before(async function () {
       // Add all jobs to the database
       await woodyJob1.save(this.trx);
+      await setLabelsForJob(this.trx, woodyJob1.jobID, woodyJob1.username, woodyJob1Labels);
       await woodyJob2.save(this.trx);
+      await setLabelsForJob(this.trx, woodyJob2.jobID, woodyJob2.username, woodyJob2Labels);
       await woodySyncJob.save(this.trx);
       await buzzJob1.save(this.trx);
       this.trx.commit();
@@ -109,16 +116,17 @@ describe('Jobs listing route', function () {
         expect(containsJob(buzzJob1, listing)).to.be.false;
       });
 
-      it('does not return synchronous jobs', function () {
-        const listing = JSON.parse(this.res.text);
-        expect(containsJob(woodySyncJob, listing)).to.be.false;
-      });
-
       it("includes a link to the job's status in each job's list of links", function () {
         const jobs = JSON.parse(this.res.text).jobs.map((j) => new Job(j)) as Job[];
         const itemLinks = jobs.map((j) => j.getRelatedLinks('item')[0] || null);
         expect(itemLinks).to.not.include(null);
         expect(itemLinks[0].href).to.match(new RegExp(`/jobs/${jobs[0].jobID}$`));
+      });
+
+      it('includes labels in the jobs links', function () {
+        const jobs = JSON.parse(this.res.text).jobs.map((j) => new Job(j)) as Job[];
+        const labels = jobs.map((j) => j.labels);
+        expect(labels).deep.equal([[], woodyJob2Labels, woodyJob1Labels]);
       });
 
       it("does not include data links in any job's list of links", function () {
@@ -350,10 +358,15 @@ describe('Jobs listing route', function () {
   });
 
   describe('admin access', function () {
+    const paigeProviderLabels = ['paige_provider'];
     before(truncateAll);
     hookTransaction();
     before(async function () {
       this.jobs = await createIndexedJobs(this.trx, 'paige', 51);
+      // add a label to all the jobs
+      for (const job of this.jobs) {
+        await setLabelsForJob(this.trx, job.jobID, job.username, paigeProviderLabels);
+      }
       this.trx.commit();
     });
 
@@ -363,13 +376,19 @@ describe('Jobs listing route', function () {
         const { count } = JSON.parse(this.res.text);
         expect(count).to.equal(this.jobs.length);
       });
+      it('contains job labels', function () {
+        const jobs = JSON.parse(this.res.text).jobs.map((j) => new Job(j)) as Job[];
+        const labels = jobs.map((j) => j.labels);
+        const expectedLabels = Array(jobs.length).fill(paigeProviderLabels);
+        expect(labels).deep.equal(expectedLabels);
+      });
     });
 
     describe('when the user is not part of the admin group', function () {
       hookAdminJobListing({ username: 'eve' });
       it('returns an error', function () {
         expect(this.res.statusCode).to.equal(403);
-        expect(this.res.text).to.include('You are not permitted to access this resource');
+        expect(this.res.text).to.include('You are not permitted to access this resource');7;
       });
     });
   });

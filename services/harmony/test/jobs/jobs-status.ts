@@ -7,11 +7,12 @@ import request from 'supertest';
 import { itReturnsUnchangedDataLinksForZarr, itProvidesAWorkingHttpUrl } from '../helpers/job-status';
 import hookServersStartStop from '../helpers/servers';
 import { hookTransaction, hookDatabaseFailure } from '../helpers/db';
-import { jobStatus, hookJobStatus, jobsEqual, itIncludesRequestUrl, buildJob } from '../helpers/jobs';
+import { jobStatus, hookJobStatus, jobsEqual, itIncludesRequestUrl, buildJob, hookAdminJobStatus } from '../helpers/jobs';
 import StubService from '../helpers/stub-service';
 import { hookRedirect, hookUrl } from '../helpers/hooks';
 import { hookRangesetRequest } from '../helpers/ogc-api-coverages';
 import env from '../../app/util/env';
+import { setLabelsForJob } from '../../app/models/label';
 
 const aJob = buildJob({ username: 'joe' });
 const pausedJob = buildJob({ username: 'joe' });
@@ -54,10 +55,12 @@ function itIncludesADataExpirationField(): void {
 }
 
 describe('Individual job status route', function () {
+  const aJobLabels = ['foo', 'bar'];
   hookServersStartStop({ skipEarthdataLogin: false });
   hookTransaction();
   before(async function () {
     await aJob.save(this.trx);
+    await setLabelsForJob(this.trx, aJob.jobID, aJob.username, aJobLabels);
     await pausedJob.save(this.trx);
     await previewingJob.save(this.trx);
     this.trx.commit();
@@ -80,42 +83,60 @@ describe('Individual job status route', function () {
     });
   });
 
-  describe('For a logged-in user who owns the running job', function () {
-    hookJobStatus({ jobID, username: 'joe' });
-    it('returns an HTTP success response', function () {
-      expect(this.res.statusCode).to.equal(200);
-    });
+  const jobStatusHooks = [
+    {
+      description: 'For a logged-in user who owns the running job',
+      hook: (): void => hookJobStatus({ jobID, username: 'joe' }),
+    },
+    {
+      description: 'For a logged-in admin user',
+      hook: (): void => hookAdminJobStatus({ jobID, username: 'adam' }),
+    },
+  ];
 
-    it('returns a single job record in JSON format', function () {
-      const actualJob = JSON.parse(this.res.text);
-      expect(jobsEqual(aJob, actualJob)).to.be.true;
-    });
+  for (const { description, hook } of jobStatusHooks) {
+    describe(description, function () {
+      hook();
+      it('returns an HTTP success response', function () {
+        expect(this.res.statusCode).to.equal(200);
+      });
 
-    it('includes a "self" relation on the returned job', function () {
-      const job = new Job(JSON.parse(this.res.text));
-      const selves = job.getRelatedLinks('self');
-      expect(selves.length).to.equal(1);
-      expect(selves[0].href).to.match(new RegExp(`.*?${this.res.req.path}\\?page=1&limit=2000$`));
-    });
+      it('returns a single job record in JSON format', function () {
+        const actualJob = JSON.parse(this.res.text);
+        expect(jobsEqual(aJob, actualJob)).to.be.true;
+      });
 
-    it('includes links for canceling and pausing the job', function () {
-      const job = new Job(JSON.parse(this.res.text));
-      const pauseLinks = job.getRelatedLinks('pauser');
-      expect(pauseLinks.length).to.equal(1);
-      const cancelLinks = job.getRelatedLinks('canceler');
-      expect(cancelLinks.length).to.equal(1);
-    });
+      it('includes a "self" relation on the returned job', function () {
+        const job = new Job(JSON.parse(this.res.text));
+        const selves = job.getRelatedLinks('self');
+        expect(selves.length).to.equal(1);
+        expect(selves[0].href).to.match(new RegExp(`.*?${this.res.req.path}\\?page=1&limit=2000$`));
+      });
 
-    it('does not include irrelevant state change links', function () {
-      const job = new Job(JSON.parse(this.res.text));
-      const resumeLinks = job.getRelatedLinks('resumer');
-      expect(resumeLinks.length).to.equal(0);
-      const previewSkipLinks = job.getRelatedLinks('preview-skipper');
-      expect(previewSkipLinks.length).to.equal(0);
-    });
+      it('includes links for canceling and pausing the job', function () {
+        const job = new Job(JSON.parse(this.res.text));
+        const pauseLinks = job.getRelatedLinks('pauser');
+        expect(pauseLinks.length).to.equal(1);
+        const cancelLinks = job.getRelatedLinks('canceler');
+        expect(cancelLinks.length).to.equal(1);
+      });
 
-    itIncludesADataExpirationField();
-  });
+      it('does not include irrelevant state change links', function () {
+        const job = new Job(JSON.parse(this.res.text));
+        const resumeLinks = job.getRelatedLinks('resumer');
+        expect(resumeLinks.length).to.equal(0);
+        const previewSkipLinks = job.getRelatedLinks('preview-skipper');
+        expect(previewSkipLinks.length).to.equal(0);
+      });
+
+      it('includes job labels', function () {
+        const job = new Job(JSON.parse(this.res.text));
+        expect(job.labels).deep.equal(aJobLabels);
+      });
+
+      itIncludesADataExpirationField();
+    });
+  }
 
   describe('For a logged-in user who owns the previewing job', function () {
     hookJobStatus({ jobID: previewingJobID, username: 'joe' });
