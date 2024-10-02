@@ -388,7 +388,7 @@ describe('Jobs listing route', function () {
       hookAdminJobListing({ username: 'eve' });
       it('returns an error', function () {
         expect(this.res.statusCode).to.equal(403);
-        expect(this.res.text).to.include('You are not permitted to access this resource');7;
+        expect(this.res.text).to.include('You are not permitted to access this resource');
       });
     });
   });
