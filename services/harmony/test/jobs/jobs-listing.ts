@@ -127,7 +127,7 @@ describe('Jobs listing route', function () {
         const jobs = JSON.parse(this.res.text).jobs.map((j) => new Job(j)) as Job[];
         // need to use a consistent sort since the timestamps in sqlite are not fine-grained
         // enough to guarantee the jobs are returned in the order they are created
-        const labels = jobs.sort((job) => job.progress).map((j) => j.labels);
+        const labels = jobs.sort((jobA, jobB) => jobA.progress - jobB.progress).map((j) => j.labels);
         expect(labels).deep.equal([[], woodyJob2Labels, woodyJob1Labels]);
       });
 
