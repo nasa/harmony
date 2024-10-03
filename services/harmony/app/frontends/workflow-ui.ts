@@ -635,7 +635,7 @@ export async function getJobsTable(
     const { tableQuery } = parseQuery(requestQuery, JobStatus, req.context.isAdminAccess);
     const jobQuery = tableQueryToJobQuery(tableQuery, isAdmin, req.user);
     const { page, limit } = getPagingParams(req, env.defaultJobListPageSize, 1, true, true);
-    const jobsRes = await Job.queryAll(db, jobQuery, page, limit);
+    const jobsRes = await Job.queryAll(db, jobQuery, page, limit, true);
     const jobs = jobsRes.data;
     const { pagination } = jobsRes;
     const selectAllChecked = jobs.every((j) => j.hasTerminalStatus() || (jobIDs.indexOf(j.jobID) > -1)) ? 'checked' : '';
