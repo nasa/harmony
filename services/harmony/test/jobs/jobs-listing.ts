@@ -32,7 +32,7 @@ const woodyJob2 = buildJob({
   numInputGranules: 5,
 });
 
-const woodyJob2Labels = ['f🤢😬', 'b😵‍💫r'];
+const woodyJob2Labels = ['foo', 'bazz'];
 
 const woodySyncJob = buildJob({
   username: 'woody',
@@ -125,7 +125,9 @@ describe('Jobs listing route', function () {
 
       it('includes labels in the jobs links', function () {
         const jobs = JSON.parse(this.res.text).jobs.map((j) => new Job(j)) as Job[];
-        const labels = jobs.map((j) => j.labels);
+        // need to use a consistent sort since the timestamps in sqlite are not fine-grained
+        // enough to guarantee the jobs are returned in the order they are created
+        const labels = jobs.sort((jobA, jobB) => jobA.progress - jobB.progress).map((j) => j.labels);
         expect(labels).deep.equal([[], woodyJob2Labels, woodyJob1Labels]);
       });
 
