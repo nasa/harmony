@@ -125,6 +125,7 @@ describe('Jobs listing route', function () {
 
       it('includes labels in the jobs links', function () {
         const jobs = JSON.parse(this.res.text).jobs.map((j) => new Job(j)) as Job[];
+        console.log(`JOBS: ${JSON.stringify(jobs, null, 2)}`);
         const labels = jobs.map((j) => j.labels);
         expect(labels).deep.equal([[], woodyJob2Labels, woodyJob1Labels]);
       });
