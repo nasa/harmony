@@ -32,7 +32,7 @@ const woodyJob2 = buildJob({
   numInputGranules: 5,
 });
 
-const woodyJob2Labels = ['f🤢😬', 'b😵‍💫r'];
+const woodyJob2Labels = ['foo', 'bazz'];
 
 const woodySyncJob = buildJob({
   username: 'woody',
