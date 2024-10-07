@@ -378,9 +378,9 @@ describe('Workflow UI jobs route', function () {
       it('returns only failed jobs', function () {
         const listing = this.res.text;
         expect((listing.match(/job-table-row/g) || []).length).to.equal(1);
-        expect(listing).to.contain(`<span class="badge bg-danger">${JobStatus.FAILED.valueOf()}</span>`);
-        expect(listing).to.not.contain(`<span class="badge bg-success">${JobStatus.SUCCESSFUL.valueOf()}</span>`);
-        expect(listing).to.not.contain(`<span class="badge bg-info">${JobStatus.RUNNING.valueOf()}</span>`);
+        expect(listing).to.contain(`<span class="badge rounded-pill bg-danger">${JobStatus.FAILED.valueOf()}</span>`);
+        expect(listing).to.not.contain(`<span class="badge rounded-pill bg-success">${JobStatus.SUCCESSFUL.valueOf()}</span>`);
+        expect(listing).to.not.contain(`<span class="badge rounded-pill bg-info">${JobStatus.RUNNING.valueOf()}</span>`);
       });
       it('does not have disallowStatus HTML checked', function () {
         const listing = this.res.text;
@@ -400,9 +400,9 @@ describe('Workflow UI jobs route', function () {
       it('returns failed and successful jobs', function () {
         const listing = this.res.text;
         expect((listing.match(/job-table-row/g) || []).length).to.equal(2);
-        expect(listing).to.contain(`<span class="badge bg-danger">${JobStatus.FAILED.valueOf()}</span>`);
-        expect(listing).to.contain(`<span class="badge bg-success">${JobStatus.SUCCESSFUL.valueOf()}</span>`);
-        expect(listing).to.not.contain(`<span class="badge bg-info">${JobStatus.RUNNING.valueOf()}</span>`);
+        expect(listing).to.contain(`<span class="badge rounded-pill bg-danger">${JobStatus.FAILED.valueOf()}</span>`);
+        expect(listing).to.contain(`<span class="badge rounded-pill bg-success">${JobStatus.SUCCESSFUL.valueOf()}</span>`);
+        expect(listing).to.not.contain(`<span class="badge rounded-pill bg-info">${JobStatus.RUNNING.valueOf()}</span>`);
       });
       it('does not have disallowStatus HTML checked', function () {
         const listing = this.res.text;
@@ -440,9 +440,9 @@ describe('Workflow UI jobs route', function () {
       it('returns all jobs that are not failed or successful', function () {
         const listing = this.res.text;
         expect((listing.match(/job-table-row/g) || []).length).to.equal(1);
-        expect(listing).to.not.contain(`<span class="badge bg-danger">${JobStatus.FAILED.valueOf()}</span>`);
-        expect(listing).to.not.contain(`<span class="badge bg-success">${JobStatus.SUCCESSFUL.valueOf()}</span>`);
-        expect(listing).to.contain(`<span class="badge bg-info">${JobStatus.RUNNING.valueOf()}</span>`);
+        expect(listing).to.not.contain(`<span class="badge rounded-pill bg-danger">${JobStatus.FAILED.valueOf()}</span>`);
+        expect(listing).to.not.contain(`<span class="badge rounded-pill bg-success">${JobStatus.SUCCESSFUL.valueOf()}</span>`);
+        expect(listing).to.contain(`<span class="badge rounded-pill bg-info">${JobStatus.RUNNING.valueOf()}</span>`);
       });
       it('does have disallowStatus HTML checked', function () {
         const listing = this.res.text;
@@ -532,9 +532,9 @@ describe('Workflow UI jobs route', function () {
         const netcdfToZarrRegExp = new RegExp(netcdfToZarrTd, 'g');
         expect((listing.match(netcdfToZarrRegExp) || []).length).to.equal(1);
 
-        expect(listing).to.contain(`<span class="badge bg-danger">${JobStatus.FAILED.valueOf()}</span>`);
-        expect(listing).to.not.contain(`<span class="badge bg-success">${JobStatus.SUCCESSFUL.valueOf()}</span>`);
-        expect(listing).to.not.contain(`<span class="badge bg-info">${JobStatus.RUNNING.valueOf()}</span>`);
+        expect(listing).to.contain(`<span class="badge rounded-pill bg-danger">${JobStatus.FAILED.valueOf()}</span>`);
+        expect(listing).to.not.contain(`<span class="badge rounded-pill bg-success">${JobStatus.SUCCESSFUL.valueOf()}</span>`);
+        expect(listing).to.not.contain(`<span class="badge rounded-pill bg-info">${JobStatus.RUNNING.valueOf()}</span>`);
       });
       it('has the appropriate HTML (un)checked', function () {
         const listing = this.res.text;
@@ -603,13 +603,13 @@ describe('Workflow UI jobs route', function () {
         it('returns jobs with the aforementioned statuses', function () {
           const listing = this.res.text;
           expect((listing.match(/job-table-row/g) || []).length).to.equal(4);
-          expect(listing).to.contain(`<span class="badge bg-warning">${JobStatus.RUNNING_WITH_ERRORS.valueOf()}</span>`);
-          expect(listing).to.contain(`<span class="badge bg-success">${JobStatus.COMPLETE_WITH_ERRORS.valueOf()}</span>`);
-          expect(listing).to.contain(`<span class="badge bg-warning">${JobStatus.PAUSED.valueOf()}</span>`);
-          expect(listing).to.contain(`<span class="badge bg-info">${JobStatus.PREVIEWING.valueOf()}</span>`);
-          expect(listing).to.not.contain(`<span class="badge bg-danger">${JobStatus.FAILED.valueOf()}</span>`);
-          expect(listing).to.not.contain(`<span class="badge bg-success">${JobStatus.SUCCESSFUL.valueOf()}</span>`);
-          expect(listing).to.not.contain(`<span class="badge bg-info">${JobStatus.RUNNING.valueOf()}</span>`);
+          expect(listing).to.contain(`<span class="badge rounded-pill bg-warning">${JobStatus.RUNNING_WITH_ERRORS.valueOf()}</span>`);
+          expect(listing).to.contain(`<span class="badge rounded-pill bg-success">${JobStatus.COMPLETE_WITH_ERRORS.valueOf()}</span>`);
+          expect(listing).to.contain(`<span class="badge rounded-pill bg-warning">${JobStatus.PAUSED.valueOf()}</span>`);
+          expect(listing).to.contain(`<span class="badge rounded-pill bg-info">${JobStatus.PREVIEWING.valueOf()}</span>`);
+          expect(listing).to.not.contain(`<span class="badge rounded-pill bg-danger">${JobStatus.FAILED.valueOf()}</span>`);
+          expect(listing).to.not.contain(`<span class="badge rounded-pill bg-success">${JobStatus.SUCCESSFUL.valueOf()}</span>`);
+          expect(listing).to.not.contain(`<span class="badge rounded-pill bg-info">${JobStatus.RUNNING.valueOf()}</span>`);
         });
         it('does not have disallowStatus HTML checked', function () {
           const listing = this.res.text;
@@ -635,13 +635,13 @@ describe('Workflow UI jobs route', function () {
         it('returns jobs without the aforementioned statuses', function () {
           const listing = this.res.text;
           expect((listing.match(/job-table-row/g) || []).length).to.equal(4);
-          expect(listing).to.not.contain(`<span class="badge bg-warning">${JobStatus.RUNNING_WITH_ERRORS.valueOf()}</span>`);
-          expect(listing).to.not.contain(`<span class="badge bg-success">${JobStatus.COMPLETE_WITH_ERRORS.valueOf()}</span>`);
-          expect(listing).to.not.contain(`<span class="badge bg-warning">${JobStatus.PAUSED.valueOf()}</span>`);
-          expect(listing).to.not.contain(`<span class="badge bg-info">${JobStatus.PREVIEWING.valueOf()}</span>`);
-          expect(listing).to.contain(`<span class="badge bg-danger">${JobStatus.FAILED.valueOf()}</span>`);
-          expect(listing).to.contain(`<span class="badge bg-success">${JobStatus.SUCCESSFUL.valueOf()}</span>`);
-          expect(listing).to.contain(`<span class="badge bg-info">${JobStatus.RUNNING.valueOf()}</span>`);
+          expect(listing).to.not.contain(`<span class="badge rounded-pill bg-warning">${JobStatus.RUNNING_WITH_ERRORS.valueOf()}</span>`);
+          expect(listing).to.not.contain(`<span class="badge rounded-pill bg-success">${JobStatus.COMPLETE_WITH_ERRORS.valueOf()}</span>`);
+          expect(listing).to.not.contain(`<span class="badge rounded-pill bg-warning">${JobStatus.PAUSED.valueOf()}</span>`);
+          expect(listing).to.not.contain(`<span class="badge rounded-pill bg-info">${JobStatus.PREVIEWING.valueOf()}</span>`);
+          expect(listing).to.contain(`<span class="badge rounded-pill bg-danger">${JobStatus.FAILED.valueOf()}</span>`);
+          expect(listing).to.contain(`<span class="badge rounded-pill bg-success">${JobStatus.SUCCESSFUL.valueOf()}</span>`);
+          expect(listing).to.contain(`<span class="badge rounded-pill bg-info">${JobStatus.RUNNING.valueOf()}</span>`);
         });
         it('does have disallowStatus HTML checked', function () {
           const listing = this.res.text;
@@ -709,9 +709,9 @@ describe('Workflow UI jobs route', function () {
           const netcdfToZarrRegExp = new RegExp(netcdfToZarrTd, 'g');
           expect((listing.match(netcdfToZarrRegExp) || []).length).to.equal(1);
   
-          expect(listing).to.contain(`<span class="badge bg-danger">${JobStatus.FAILED.valueOf()}</span>`);
-          expect(listing).to.not.contain(`<span class="badge bg-success">${JobStatus.SUCCESSFUL.valueOf()}</span>`);
-          expect(listing).to.not.contain(`<span class="badge bg-info">${JobStatus.RUNNING.valueOf()}</span>`);
+          expect(listing).to.contain(`<span class="badge rounded-pill bg-danger">${JobStatus.FAILED.valueOf()}</span>`);
+          expect(listing).to.not.contain(`<span class="badge rounded-pill bg-success">${JobStatus.SUCCESSFUL.valueOf()}</span>`);
+          expect(listing).to.not.contain(`<span class="badge rounded-pill bg-info">${JobStatus.RUNNING.valueOf()}</span>`);
         });
         it('has the appropriate HTML (un)checked', function () {
           const listing = this.res.text;

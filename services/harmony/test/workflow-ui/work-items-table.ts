@@ -342,7 +342,7 @@ describe('Workflow UI work items table route', function () {
         });
         it('returns a SUCCESSFUL work item', function () {
           const listing = this.res.text;
-          expect(listing).to.contain(`<span class="badge bg-success">${WorkItemStatus.SUCCESSFUL.valueOf()}</span>`);
+          expect(listing).to.contain(`<span class="badge rounded-pill bg-success">${WorkItemStatus.SUCCESSFUL.valueOf()}</span>`);
         });
       });
 
@@ -357,7 +357,7 @@ describe('Workflow UI work items table route', function () {
         });
         it('returns a QUEUED work item', function () {
           const listing = this.res.text;
-          expect(listing).to.contain(`<span class="badge bg-warning">${WorkItemStatus.QUEUED.valueOf()}</span>`);
+          expect(listing).to.contain(`<span class="badge rounded-pill bg-warning">${WorkItemStatus.QUEUED.valueOf()}</span>`);
         });
       });
 
@@ -402,7 +402,7 @@ describe('Workflow UI work items table route', function () {
         });
         it('returns a SUCCESSFUL work item', function () {
           const listing = this.res.text;
-          expect(listing).to.contain(`<span class="badge bg-success">${WorkItemStatus.SUCCESSFUL.valueOf()}</span>`);
+          expect(listing).to.contain(`<span class="badge rounded-pill bg-success">${WorkItemStatus.SUCCESSFUL.valueOf()}</span>`);
         });
       });
 
@@ -425,7 +425,7 @@ describe('Workflow UI work items table route', function () {
         });
         it('returns a SUCCESSFUL work item', function () {
           const listing = this.res.text;
-          expect(listing).to.contain(`<span class="badge bg-success">${WorkItemStatus.SUCCESSFUL.valueOf()}</span>`);
+          expect(listing).to.contain(`<span class="badge rounded-pill bg-success">${WorkItemStatus.SUCCESSFUL.valueOf()}</span>`);
         });
       });
 
@@ -442,11 +442,11 @@ describe('Workflow UI work items table route', function () {
         it('returns only running work items', function () {
           const listing = this.res.text;
           expect((listing.match(/work-item-table-row/g) || []).length).to.equal(2);
-          expect(listing).to.not.contain(`<span class="badge bg-danger">${WorkItemStatus.FAILED.valueOf()}</span>`);
-          expect(listing).to.not.contain(`<span class="badge bg-success">${WorkItemStatus.SUCCESSFUL.valueOf()}</span>`);
-          expect(listing).to.not.contain(`<span class="badge bg-secondary">${WorkItemStatus.CANCELED.valueOf()}</span>`);
-          expect(listing).to.not.contain(`<span class="badge bg-primary">${WorkItemStatus.READY.valueOf()}</span>`);
-          expect(listing).to.contain(`<span class="badge bg-info">${WorkItemStatus.RUNNING.valueOf()}</span>`);
+          expect(listing).to.not.contain(`<span class="badge rounded-pill bg-danger">${WorkItemStatus.FAILED.valueOf()}</span>`);
+          expect(listing).to.not.contain(`<span class="badge rounded-pill bg-success">${WorkItemStatus.SUCCESSFUL.valueOf()}</span>`);
+          expect(listing).to.not.contain(`<span class="badge rounded-pill bg-secondary">${WorkItemStatus.CANCELED.valueOf()}</span>`);
+          expect(listing).to.not.contain(`<span class="badge rounded-pill bg-primary">${WorkItemStatus.READY.valueOf()}</span>`);
+          expect(listing).to.contain(`<span class="badge rounded-pill bg-info">${WorkItemStatus.RUNNING.valueOf()}</span>`);
         });
       });
     });
@@ -542,12 +542,12 @@ describe('Workflow UI work items table route', function () {
         it('returns only non-running work items', function () {
           const listing = this.res.text;
           expect((listing.match(/work-item-table-row/g) || []).length).to.equal(4);
-          expect(listing).to.not.contain(`<span class="badge bg-danger">${WorkItemStatus.FAILED.valueOf()}</span>`);
-          expect(listing).to.contain(`<span class="badge bg-success">${WorkItemStatus.SUCCESSFUL.valueOf()}</span>`);
-          expect(listing).to.contain(`<span class="badge bg-warning">${WorkItemStatus.QUEUED.valueOf()}</span>`);
-          expect(listing).to.not.contain(`<span class="badge bg-secondary">${WorkItemStatus.CANCELED.valueOf()}</span>`);
-          expect(listing).to.not.contain(`<span class="badge bg-primary">${WorkItemStatus.READY.valueOf()}</span>`);
-          expect(listing).to.not.contain(`<span class="badge bg-info">${WorkItemStatus.RUNNING.valueOf()}</span>`);
+          expect(listing).to.not.contain(`<span class="badge rounded-pill bg-danger">${WorkItemStatus.FAILED.valueOf()}</span>`);
+          expect(listing).to.contain(`<span class="badge rounded-pill bg-success">${WorkItemStatus.SUCCESSFUL.valueOf()}</span>`);
+          expect(listing).to.contain(`<span class="badge rounded-pill bg-warning">${WorkItemStatus.QUEUED.valueOf()}</span>`);
+          expect(listing).to.not.contain(`<span class="badge rounded-pill bg-secondary">${WorkItemStatus.CANCELED.valueOf()}</span>`);
+          expect(listing).to.not.contain(`<span class="badge rounded-pill bg-primary">${WorkItemStatus.READY.valueOf()}</span>`);
+          expect(listing).to.not.contain(`<span class="badge rounded-pill bg-info">${WorkItemStatus.RUNNING.valueOf()}</span>`);
         });
       });
 

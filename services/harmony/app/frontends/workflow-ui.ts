@@ -278,7 +278,7 @@ function tableQueryToJobQuery(tableQuery: TableQuery, isAdmin: boolean, user: st
     };
   }
   if (tableQuery.from || tableQuery.to) {
-    jobQuery.dates = { field: tableQuery.dateKind };
+    jobQuery.dates = { field: `jobs.${tableQuery.dateKind}` };
     jobQuery.dates.from = tableQuery.from;
     jobQuery.dates.to = tableQuery.to;
   }

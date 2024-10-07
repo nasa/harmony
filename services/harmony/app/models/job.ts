@@ -131,7 +131,7 @@ export interface JobQuery {
   dates?: {
     from?: Date;
     to?: Date;
-    field: 'createdAt' | 'updatedAt';
+    field: 'jobs.createdAt' | 'jobs.updatedAt';
   }
   whereIn?: {
     status?: { in: boolean, values: string[] };
@@ -331,6 +331,23 @@ async function getUniqueProviderIds(tx: Transaction): Promise<string[]> {
 }
 
 /**
+ * Sets the fields on the where clauses (see JobQuery) to be prefixed with a table name to avoid
+ * ambiguities when joining with other tables
+ * @param query - the where clauses to process
+ * @returns An object with its fields prefixed with the table name
+ */
+function setTableNameForWhereClauses(table: string, whereClauses: {}): {} {
+  const result = {};
+  Object.entries(whereClauses).forEach(([key, value]) => {
+    if (value !== undefined) {
+      result[`${table}.${key}`] = value;
+    }
+  });
+
+  return result;
+}
+
+/**
  * Conditionally modify a job query if specific constraints are present.
  * @param queryBuilder - the knex query builder object to modify
  * @param constraints - specifies the query constraints (if any)
@@ -341,6 +358,7 @@ function modifyQuery(
   constraints: JobQuery): void {
   if (constraints === undefined) return;
   if (constraints.whereIn) {
+    constraints.whereIn = setTableNameForWhereClauses('jobs', constraints.whereIn);
     for (const jobField in constraints.whereIn) {
       const constraint = constraints.whereIn[jobField];
       if (constraint.in) {
@@ -358,23 +376,6 @@ function modifyQuery(
       void queryBuilder.where(constraints.dates.field, '<=', constraints.dates.to);
     }
   }
-}
-
-/**
- * Sets the fields on the where clauses (see JobQuery) to be prefixed with a table name to avoid
- * ambiguities when joining with other tables
- * @param query - the where clauses to process
- * @returns An object with its fields prefixed with the table name
- */
-function setTableNameForWhereClauses(table: string, whereClauses: {}): {} {
-  const result = {};
-  Object.entries(whereClauses).forEach(([key, value]) => {
-    if (value !== undefined) {
-      result[`${table}.${key}`] = value;
-    }
-  });
-
-  return result;
 }
 
 /**
