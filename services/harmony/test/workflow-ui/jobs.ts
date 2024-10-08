@@ -11,6 +11,7 @@ import env from '../../app/util/env';
 import { auth } from '../helpers/auth';
 import { renderNavLink } from './helpers';
 import MockDate from 'mockdate';
+import { setLabelsForJob } from '../../app/models/label';
 
 
 // Example jobs to use in tests
@@ -133,6 +134,9 @@ describe('Workflow UI jobs route', function () {
       await sidJob3.save(this.trx);
       await sidJob4.save(this.trx);
 
+      await setLabelsForJob(this.trx, woodyJob1.jobID, woodyJob1.username, ['blue-label', 'yellow-label']);
+      await setLabelsForJob(this.trx, sidJob1.jobID, sidJob1.username, ['label-1', 'label-2']);
+
       this.trx.commit();
       MockDate.reset();
     });
@@ -174,6 +178,15 @@ describe('Workflow UI jobs route', function () {
         [woodyJob1.request, woodyJob2.request, woodySyncJob.request]
           .forEach((req) => expect(listing).to.contain(mustache.render('{{req}}', { req })));
         expect((listing.match(/job-table-row/g) || []).length).to.equal(3);
+      });
+
+      it('displays the labels for the user\'s jobs', function () {
+        const listing = this.res.text;
+        expect(listing).to.contain(mustache.render(
+          `{{#labels}}
+        <span class="badge bg-label">{{.}}</span>
+        {{/labels}}`, 
+          { labels: woodyJob1.labels }));
       });
 
       it('does not return jobs for other users', function () {
@@ -573,6 +586,20 @@ describe('Workflow UI jobs route', function () {
           const listing = this.res.text;
           expect(listing).to.contain('<td>woody</td>');
           expect(listing).to.contain('<td>buzz</td>');
+        });
+
+        it('displays the labels for those jobs', function () {
+          const listing = this.res.text;
+          expect(listing).to.contain(mustache.render(
+            `{{#labels}}
+          <span class="badge bg-label">{{.}}</span>
+          {{/labels}}`, 
+            { labels: woodyJob1.labels }));
+          expect(listing).to.contain(mustache.render(
+            `{{#labels}}
+          <span class="badge bg-label">{{.}}</span>
+          {{/labels}}`, 
+            { labels: sidJob1.labels }));
         });
       });
 
