@@ -18,10 +18,14 @@ export async function addJobLabels(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
   try {
-    req.context.logger.info(`Adding label(s) ${JSON.stringify(req.body.label)} to job ${req.params.jobID} for user ${req.user}`);
-    await db.transaction(async (trx) => {
-      await addLabelsToJob(trx, req.params.jobID, req.user, req.body.label);
-    });
+    req.context.logger.info('BODY:');
+    req.context.logger.info(`${JSON.stringify(req.body, null, 2)}`);
+    for (const jobId of req.body.job) {
+      req.context.logger.info(`Adding label(s) ${JSON.stringify(req.body.label)} to job ${jobId} for user ${req.user}`);
+      await db.transaction(async (trx) => {
+        await addLabelsToJob(trx, jobId, req.user, req.body.label);
+      });
+    }
 
     res.status(200);
     res.send('OK');
