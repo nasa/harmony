@@ -222,7 +222,7 @@ describe('Workflow UI work items table route', function () {
           const listing = this.res.text;
           expect(listing).to.contain(mustache.render('<th scope="col">retry</th>', {}));
         });
-        it('returns the request details for the job', function () {
+        it('returns the job details (like labels and request URL)', function () {
           const listing = this.res.text;
           expect(listing).to.contain(mustache.render(
             `{{#labels}}
@@ -230,6 +230,7 @@ describe('Workflow UI work items table route', function () {
           {{/labels}}`, 
             { labels: targetJob.labels }));
           expect(listing).to.contain('job-url-text');
+          expect(listing).to.contain('copy-request');
         });
       });
 
