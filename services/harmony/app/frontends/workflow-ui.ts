@@ -324,7 +324,7 @@ export async function getJobs(
     const previousPage = pageLinks.find((l) => l.rel === 'prev');
     const currentPage = pageLinks.find((l) => l.rel === 'self');
     const paginationDisplay = getPaginationDisplay(pagination);
-    const selectAllBox = !isAdminRoute || jobs.some((j) => !j.hasTerminalStatus()) ?
+    const selectAllBox = jobs.length > 0 && (!isAdminRoute || jobs.some((j) => !j.hasTerminalStatus())) ?
       '<input id="select-jobs" type="checkbox" title="select/deselect all jobs" autocomplete="off">' : '';
     res.render('workflow-ui/jobs/index', {
       version,
@@ -640,7 +640,7 @@ export async function getJobsTable(
     const jobs = jobsRes.data;
     const { pagination } = jobsRes;
     const selectAllChecked = jobs.every((j) => (j.hasTerminalStatus() && isAdminRoute) || (jobIDs.indexOf(j.jobID) > -1)) ? 'checked' : '';
-    const selectAllBox = !isAdminRoute || jobs.some((j) => !j.hasTerminalStatus()) ?
+    const selectAllBox = jobs.length > 0 && (!isAdminRoute || jobs.some((j) => !j.hasTerminalStatus())) ?
       `<input id="select-jobs" type="checkbox" title="select/deselect all jobs" autocomplete="off" ${selectAllChecked}>` : '';
     const tableContext = {
       jobs,
