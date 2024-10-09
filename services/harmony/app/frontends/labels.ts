@@ -21,14 +21,8 @@ export async function addJobLabels(
   const isAdmin = await isAdminUser(req);
 
   try {
-    // for (const jobId of req.body.job) {
-    //   req.context.logger.info(`Adding label(s) ${JSON.stringify(req.body.label)} to job ${jobId} for user ${req.user}`);
-    //   await db.transaction(async (trx) => {
-    //     await addLabelsToJob(trx, jobId, req.user, req.body.label);
-    //   });
-    // }
     await db.transaction(async (trx) => {
-      await addLabelsToJobs(trx, req.body.job, req.user, req.body.label, isAdmin);
+      await addLabelsToJobs(trx, req.body.jobID, req.user, req.body.label, isAdmin);
     });
 
     res.status(201);
