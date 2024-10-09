@@ -143,7 +143,7 @@ const authorizedRoutes = [
   '/service-image*',
   '/service-deployment*',
   '/ogc-api-edr/.*/collections/*',
-  '/labels*',
+  '/labels',
 ];
 
 /**
@@ -263,8 +263,8 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   result.post('/jobs/pause', jsonParser, asyncHandler(pauseJobs));
 
   // job labels
-  result.put('/labels', jsonParser, asyncHandler(addJobLabels)); // add label(s)
-  result.delete('/labels', jsonParser, asyncHandler(deleteJobLabels)); // delete label(s)
+  result.put('/labels', jsonParser, asyncHandler(addJobLabels));
+  result.delete('/labels', jsonParser, asyncHandler(deleteJobLabels));
 
   result.get('/admin/request-metrics', asyncHandler(getRequestMetrics));
 

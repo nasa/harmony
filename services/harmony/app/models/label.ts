@@ -1,6 +1,6 @@
 import { Transaction } from '../util/db';
 import { Job } from './job';
-import { ForbiddenError, NotFoundError, RequestValidationError } from '../util/errors';
+import { NotFoundError, RequestValidationError } from '../util/errors';
 import isUUID from '../util/uuid';
 
 export const LABELS_TABLE = 'labels';
@@ -34,28 +34,41 @@ export function normalizeLabel(label: string): string {
  * Verify that the user can change the labels on a give job. Currently only job owners can
  * change the labels for a job.
  * @param trx - the transaction to use for querying
- * @param jobID - the UUID associated with the job
+ * @param jobIds - the UUIDs associated with the jobs
  * @throws `ForbiddenError` if the user does not own the job.
  */
 export async function verifyUserAccessToUpdateLabels(
   trx: Transaction,
-  jobID: string,
-  username: string): Promise<void> {
-  if (!isUUID(jobID)) {
-    throw new RequestValidationError(`jobId ${jobID} is in invalid format.`);
+  jobIds: string[],
+  username: string,
+  isAdmin: boolean = false): Promise<void> {
+  for (const jobId of jobIds) {
+    if (!isUUID(jobId)) {
+      throw new RequestValidationError(`jobId ${jobId} is in invalid format.`);
+    }
   }
-  const jobOwner = await trx(Job.table).select('username').where('jobID', '=', jobID).first();
-  console.log(`JOB OWNER: ${JSON.stringify(jobOwner, null, 2)}`);
-  if (!jobOwner) {
-    throw new NotFoundError('Job does not exist');
+  const rows = await trx(Job.table).select('jobID', 'username')
+    .where('jobID', 'in', jobIds);
+  const foundJobs = [];
+  for (const row of rows) {
+    const jobId = row.jobID;
+    const jobOwner = row.username;
+    if (jobOwner != username && !isAdmin) {
+      //throw new ForbiddenError(`You do not have permission to update labels on job ${jobId}`);
+      throw new NotFoundError();
+    }
+    foundJobs.push(jobId);
   }
-  console.log(`USER NAME: ${username}  JOB OWNER: ${JSON.stringify(jobOwner, null, 2)}`);
-  if (username !== jobOwner.username) {
-    throw new ForbiddenError('You do not have permission to update labels on this job');
+
+  for (const jobId of jobIds) {
+    if (!foundJobs.includes(jobId)) {
+      throw new NotFoundError(`Unable to find job ${jobId}`);
+    }
   }
 }
 
 /**
+ * Save labels for a user to the labels table
  *
  * @param trx - the transaction to use for querying
  * @param labels - the string values for the labels
@@ -139,50 +152,56 @@ export async function setLabelsForJob(
 }
 
 /**
- *  Add labels to a given job for the given user. Any labels that already exist for the given
+ *  Add labels to the given jobs for the given user. Any labels that already exist for the given
  * job will not be re-added or replaced.
  * @param trx - the transaction to use for querying
- * @param jobID - the UUID associated with the job
+ * @param jobIDs - the UUIDs associated with the jobs
  * @param username - the username the labels belong to
  * @param labels - the array of strings representing the labels.
  */
-export async function addLabelsToJob(
+export async function addLabelsToJobs(
   trx: Transaction,
-  jobID: string,
+  jobIDs: string[],
   username: string,
   labels: string[],
+  isAdmin: boolean = false,
 ): Promise<void> {
-  await verifyUserAccessToUpdateLabels(trx, jobID, username);
+  await verifyUserAccessToUpdateLabels(trx, jobIDs, username, isAdmin);
   const now = new Date();
-  const existingLabels = await getLabelsForJob(trx, jobID);
-  const labelsToAdd = labels.filter(label => !existingLabels.includes(label));
-  if (labelsToAdd.length > 0) {
-    const ids = await saveLabels(trx, labelsToAdd, now, username);
-    const jobsLabelRows = ids.map((id) => {
-      return { job_id: jobID, label_id: id, createdAt: now, updatedAt: now };
-    });
-
-    await trx(JOBS_LABELS_TABLE).insert(jobsLabelRows);
+  const labelIds = await saveLabels(trx, labels, now, username);
+  const rowsToAdd = [];
+  for (const jobID of jobIDs) {
+    for (const labelId of labelIds) {
+      rowsToAdd.push({ job_id: jobID, label_id: labelId, createdAt: now, updatedAt: now });
+    }
+  }
+  if (rowsToAdd.length > 0) {
+    await trx(JOBS_LABELS_TABLE).insert(rowsToAdd)
+      .onConflict(['job_id', 'label_id'])
+      .merge(['updatedAt']);
   }
 }
 
+
 /**
- *  Delete labels from a given job for the given user.
+ *  Delete one or more labels from the given jobs for the given user.
  * @param trx - the transaction to use for querying
- * @param jobID - the UUID associated with the job
+ * @param jobIDs - the UUIDs associated with the jobs
  * @param username - the username the labels belong to
  * @param labels - the array of strings representing the labels.
+ * @param isAdmin - true if the user is an admin user
  */
-export async function deleteLabelsFromJob(
+export async function deleteLabelsFromJobs(
   trx: Transaction,
-  jobID: string,
+  jobIDs: string[],
   username: string,
   labels: string[],
+  isAdmin: boolean = false,
 ): Promise<void> {
-  await verifyUserAccessToUpdateLabels(trx, jobID, username);
+  await verifyUserAccessToUpdateLabels(trx, jobIDs, username, isAdmin);
 
   await trx(JOBS_LABELS_TABLE)
-    .where(`${JOBS_LABELS_TABLE}.job_id`, '=', jobID)
+    .where(`${JOBS_LABELS_TABLE}.job_id`, 'in', jobIDs)
     .join(LABELS_TABLE, `${JOBS_LABELS_TABLE}.label_id`, '=', `${LABELS_TABLE}.id`)
     .where(`${LABELS_TABLE}.value`, 'in', labels)
     .del();

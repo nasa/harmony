@@ -63,6 +63,7 @@ CREATE TABLE `jobs_labels` (
   `updatedAt` datetime not null,
   FOREIGN KEY(job_id) REFERENCES jobs(jobID)
   FOREIGN KEY(label_id) REFERENCES labels(id)
+  UNIQUE(job_id, label_id)
 );
 
 CREATE TABLE `work_items` (
