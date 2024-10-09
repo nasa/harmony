@@ -198,6 +198,12 @@ function jobRenderingFunctions(logger: Logger, requestQuery: Record<string, any>
         return this.request;
       }
     },
+    jobLabelsDisplay(): string {
+      return this.labels.map((label) => {
+        const labelText = truncateString(label, 30);
+        return `<span class="badge bg-label" title="${label}">${labelText}</span>`;
+      }).join(' ');
+    },
     jobMessage(): string {
       if (this.message) {
         return truncateString(this.message, 100);
