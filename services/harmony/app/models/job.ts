@@ -333,7 +333,8 @@ async function getUniqueProviderIds(tx: Transaction): Promise<string[]> {
 /**
  * Sets the fields on the where clauses (see JobQuery) to be prefixed with a table name to avoid
  * ambiguities when joining with other tables
- * @param query - the where clauses to process
+ * @param table - the table name to prefix to the field name
+ * @param whereClauses - the where clauses to process
  * @returns An object with its fields prefixed with the table name
  */
 function setTableNameForWhereClauses(table: string, whereClauses: {}): {} {
