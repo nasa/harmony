@@ -9,7 +9,7 @@ import {
 import HarmonyRequest from '../models/harmony-request';
 
 const errorTemplate = fs.readFileSync(path.join(__dirname, '../views/server-error.mustache.html'), { encoding: 'utf8' });
-const jsonErrorRoutesRegex = /jobs|capabilities|ogc-api-coverages|ogc-api-edr|service-deployment(?:s-state)?|service-image-tag|stac|metrics|health|configuration|workflow-ui\/.*\/(?:links|logs|retry)/;
+const jsonErrorRoutesRegex = /jobs|labels|capabilities|ogc-api-coverages|ogc-api-edr|service-deployment(?:s-state)?|service-image-tag|stac|metrics|health|configuration|workflow-ui\/.*\/(?:links|logs|retry)/;
 
 /**
  * Returns true if the provided error should be returned as JSON.

@@ -42,6 +42,7 @@ import { getCollectionCapabilitiesJson } from '../frontends/capabilities';
 import extendDefault from '../middleware/extend';
 import { getAdminHealth, getHealth } from '../frontends/health';
 import handleLabelParameter from '../middleware/label';
+import { addJobLabels, deleteJobLabels } from '../frontends/labels';
 export interface RouterConfig {
   PORT?: string | number; // The port to run the frontend server on
   BACKEND_PORT?: string | number; // The port to run the backend server on
@@ -142,6 +143,7 @@ const authorizedRoutes = [
   '/service-image*',
   '/service-deployment*',
   '/ogc-api-edr/.*/collections/*',
+  '/labels',
 ];
 
 /**
@@ -259,6 +261,10 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   result.post('/jobs/resume', jsonParser, asyncHandler(resumeJobs));
   result.post('/jobs/skip-preview', jsonParser, asyncHandler(skipJobsPreview));
   result.post('/jobs/pause', jsonParser, asyncHandler(pauseJobs));
+
+  // job labels
+  result.put('/labels', jsonParser, asyncHandler(addJobLabels));
+  result.delete('/labels', jsonParser, asyncHandler(deleteJobLabels));
 
   result.get('/admin/request-metrics', asyncHandler(getRequestMetrics));
 

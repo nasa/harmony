@@ -14,6 +14,8 @@
 
 !!!include(jobs.md)!!!
 
+!!!include(labels.md)!!!
+
 !!!include(stac.md)!!!
 
 !!!include(cloud-access.md)!!!

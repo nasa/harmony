@@ -1,0 +1,26 @@
+GET /api/user_groups/groups_for_user/bob
+accept: application/json, text/plain, */*
+authorization: Bearer fake_access
+accept-encoding: gzip, compress, deflate, br
+
+HTTP/1.1 401 Unauthorized
+server: nginx/1.22.1
+date: Wed, 09 Oct 2024 18:16:43 GMT
+content-type: application/json; charset=utf-8
+transfer-encoding: chunked
+connection: keep-alive
+x-frame-options: SAMEORIGIN
+x-xss-protection: 1; mode=block
+x-content-type-options: nosniff
+x-download-options: noopen
+x-permitted-cross-domain-policies: none
+referrer-policy: strict-origin-when-cross-origin
+cache-control: no-store
+pragma: no-cache
+expires: Fri, 01 Jan 1990 00:00:00 GMT
+www-authenticate: Bearer realm="Earthdata Login",error="invalid_token"
+x-request-id: 3c72fe06-5bf9-4a32-a148-8f444a27906e
+x-runtime: 0.002180
+strict-transport-security: max-age=31536000
+
+{"error":"invalid_token"}
