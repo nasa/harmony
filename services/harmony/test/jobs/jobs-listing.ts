@@ -128,7 +128,7 @@ describe('Jobs listing route', function () {
         // need to use a consistent sort since the timestamps in sqlite are not fine-grained
         // enough to guarantee the jobs are returned in the order they are created
         const labels = jobs.sort((jobA, jobB) => jobA.progress - jobB.progress).map((j) => j.labels);
-        expect(labels).deep.equal([[], woodyJob2Labels, woodyJob1Labels]);
+        expect(labels).deep.equal([[], ['bazz', 'foo'], ['bar', 'foo']]);
       });
 
       it("does not include data links in any job's list of links", function () {

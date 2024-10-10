@@ -500,7 +500,7 @@ export class Job extends DBRecord implements JobRecord {
 
     if (includeLabels) {
       query = tx(Job.table)
-        .select(`${Job.table}.*`, tx.raw(`STRING_AGG(${LABELS_TABLE}.value, ',') AS label_values`))
+        .select(`${Job.table}.*`, tx.raw(`STRING_AGG(${LABELS_TABLE}.value, ',' order by value) AS label_values`))
         .leftOuterJoin(`${JOBS_LABELS_TABLE}`, `${Job.table}.jobID`, '=', `${JOBS_LABELS_TABLE}.job_id`)
         .leftOuterJoin(`${LABELS_TABLE}`, `${JOBS_LABELS_TABLE}.label_id`, '=', `${LABELS_TABLE}.id`)
         .where(setTableNameForWhereClauses(Job.table, constraints.where))
