@@ -91,7 +91,7 @@ describe('labels', function () {
       it('converts the labels to lowercase', async function () {
         const jobStatus = JSON.parse(this.res.text);
         const job = await Job.byJobID(db, jobStatus.jobID, false, true, false);
-        expect(job.job.labels).deep.equal(['bar', 'buzz', 'bazz']);
+        expect(job.job.labels).deep.equal(['bar', 'bazz', 'buzz']);
       });
     });
 
@@ -107,7 +107,7 @@ describe('labels', function () {
       it('adds the labels to the job', async function () {
         const jobStatus = JSON.parse(this.res.text);
         const job = await Job.byJobID(db, jobStatus.jobID, false, true, false);
-        expect(job.job.labels).deep.equal(['b🙂ar', 'bu#!zz']);
+        expect(job.job.labels).deep.equal(['bu#!zz', 'b🙂ar']);
       });
     });
 
@@ -119,7 +119,7 @@ describe('labels', function () {
       it('trims the whitespace and adds the labels to the job', async function () {
         const jobStatus = JSON.parse(this.res.text);
         const job = await Job.byJobID(db, jobStatus.jobID, false, true, false);
-        expect(job.job.labels).deep.equal(['bar', 'buzz', 'bazz', 'foo']);
+        expect(job.job.labels).deep.equal(['bar', 'bazz', 'buzz', 'foo']);
       });
     });
 

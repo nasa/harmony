@@ -25,7 +25,7 @@ describe('Job label CRUD', function () {
           const response = await addJobsLabels(this.frontend, [jobID], ['foo', '  Bar  '], 'joe');
           expect(response.status).to.equal(201);
           const savedJob = await getFirstJob(db, { where: { jobID } });
-          expect(savedJob.labels).deep.equal(['foo', 'bar']);
+          expect(savedJob.labels).deep.equal(['bar', 'foo']);
         });
       });
 
@@ -53,7 +53,7 @@ describe('Job label CRUD', function () {
           const response = await addJobsLabels(this.frontend, [jobID], ['foo', '  Buzz  '], 'adam');
           expect(response.status).to.equal(201);
           const savedJob = await getFirstJob(db, { where: { jobID } });
-          expect(savedJob.labels).deep.equal(['foo', 'bar', 'buzz']);
+          expect(savedJob.labels).deep.equal(['bar', 'buzz', 'foo']);
         });
       });
     });
@@ -77,7 +77,7 @@ describe('Job label CRUD', function () {
           const response = await deleteJobsLabels(this.frontend, [jobID], ['label1'], 'joe');
           expect(response.status).to.equal(204);
           const savedJob = await getFirstJob(db, { where: { jobID } });
-          expect(savedJob.labels).deep.equal(['foo', 'bar', 'buzz', 'label2']);
+          expect(savedJob.labels).deep.equal(['bar', 'buzz', 'foo', 'label2']);
         });
       });
 
@@ -86,7 +86,7 @@ describe('Job label CRUD', function () {
           const response = await deleteJobsLabels(this.frontend, [jobID], ['label1', 'missing-label'], 'joe');
           expect(response.status).to.equal(204);
           const savedJob = await getFirstJob(db, { where: { jobID } });
-          expect(savedJob.labels).deep.equal(['foo', 'bar', 'buzz', 'label2']);
+          expect(savedJob.labels).deep.equal(['bar', 'buzz', 'foo', 'label2']);
         });
       });
 
@@ -114,7 +114,7 @@ describe('Job label CRUD', function () {
           const response = await deleteJobsLabels(this.frontend, [jobID], ['label2', 'buzz'], 'adam');
           expect(response.status).to.equal(204);
           const savedJob = await getFirstJob(db, { where: { jobID } });
-          expect(savedJob.labels).deep.equal(['foo', 'bar', 'label1']);
+          expect(savedJob.labels).deep.equal(['bar', 'foo', 'label1']);
         });
       });
     });

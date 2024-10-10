@@ -119,7 +119,7 @@ export async function getLabelsForJob(
 ): Promise<string[]> {
   const query = trx(JOBS_LABELS_TABLE)
     .where({ job_id: jobId })
-    .orderBy([`${JOBS_LABELS_TABLE}.id`])
+    .orderBy([`${LABELS_TABLE}.value`])
     .innerJoin(LABELS_TABLE, `${JOBS_LABELS_TABLE}.label_id`, '=', `${LABELS_TABLE}.id`)
     .select([`${LABELS_TABLE}.value`]);
 

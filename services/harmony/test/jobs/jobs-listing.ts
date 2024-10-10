@@ -19,7 +19,7 @@ const woodyJob1 = buildJob({
   numInputGranules: 3,
 });
 
-const woodyJob1Labels = ['foo', 'bar'];
+const woodyJob1Labels = ['foo', 'bar', '0', 'a', 'z'];
 
 const woodyJob2 = buildJob({
   username: 'woody',
@@ -123,12 +123,12 @@ describe('Jobs listing route', function () {
         expect(itemLinks[0].href).to.match(new RegExp(`/jobs/${jobs[0].jobID}$`));
       });
 
-      it('includes labels in the jobs links', function () {
+      it('includes labels in the jobs links, sorted alphabetically', function () {
         const jobs = JSON.parse(this.res.text).jobs.map((j) => new Job(j)) as Job[];
         // need to use a consistent sort since the timestamps in sqlite are not fine-grained
         // enough to guarantee the jobs are returned in the order they are created
         const labels = jobs.sort((jobA, jobB) => jobA.progress - jobB.progress).map((j) => j.labels);
-        expect(labels).deep.equal([[], woodyJob2Labels, woodyJob1Labels]);
+        expect(labels).deep.equal([[], ['bazz', 'foo'], ['0', 'a', 'bar', 'foo', 'z']]);
       });
 
       it("does not include data links in any job's list of links", function () {
