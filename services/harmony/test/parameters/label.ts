@@ -123,6 +123,18 @@ describe('labels', function () {
       });
     });
 
+    describe('when passing in repeated labels with the request', function () {
+
+      hookPartials[apiType](['bar', 'buzz', 'bar', '   buzz ']);
+      hookRedirect('joe');
+
+      it('it deduplicates the labels', async function () {
+        const jobStatus = JSON.parse(this.res.text);
+        const job = await Job.byJobID(db, jobStatus.jobID, false, true, false);
+        expect(job.job.labels).deep.equal(['bar', 'buzz']);
+      });
+    });
+
     describe('when passing in labels with just whitespace with the request', function () {
 
       hookPartials[apiType](['foo', '  \t \t  ']);

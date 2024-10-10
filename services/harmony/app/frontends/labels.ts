@@ -49,7 +49,7 @@ export async function deleteJobLabels(
 
   try {
     await db.transaction(async (trx) => {
-      await deleteLabelsFromJobs(trx, req.body.job, req.user, req.body.label, isAdmin);
+      await deleteLabelsFromJobs(trx, req.body.jobID, req.user, req.body.label, isAdmin);
     });
 
     res.status(204);

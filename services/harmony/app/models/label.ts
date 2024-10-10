@@ -3,8 +3,9 @@ import { Job } from './job';
 import { NotFoundError, RequestValidationError } from '../util/errors';
 import isUUID from '../util/uuid';
 
-export const LABELS_TABLE = 'labels';
-export const JOBS_LABELS_TABLE = 'jobs_labels';
+export const LABELS_TABLE = 'raw_labels';
+export const JOBS_LABELS_TABLE = 'jobs_raw_labels';
+export const USERS_LABELS_TABLE = 'users_labels';
 
 /**
  * Returns an error message if a label exceeds 255 characters in length
@@ -54,7 +55,6 @@ export async function verifyUserAccessToUpdateLabels(
     const jobId = row.jobID;
     const jobOwner = row.username;
     if (jobOwner != username && !isAdmin) {
-      //throw new ForbiddenError(`You do not have permission to update labels on job ${jobId}`);
       throw new NotFoundError();
     }
     foundJobs.push(jobId);
@@ -68,7 +68,7 @@ export async function verifyUserAccessToUpdateLabels(
 }
 
 /**
- * Save labels for a user to the labels table
+ * Save labels for a user to the raw_labels table and to the users_labels table
  *
  * @param trx - the transaction to use for querying
  * @param labels - the string values for the labels
@@ -80,15 +80,26 @@ async function saveLabels(
   labels: string[],
   timeStamp: Date,
   username: string): Promise<string[]> {
-  const labelRows = labels.map((label) => {
-    return { username, value: label, createdAt: timeStamp, updatedAt: timeStamp };
+  const uniqueLabels = Array.from(new Set(labels));
+  const labelRows = uniqueLabels.map((label) => {
+    return { value: label, createdAt: timeStamp, updatedAt: timeStamp };
   });
 
-  // this will upsert the labels - if a label already exists for a given user
+  // this will 'upsert' the labels - if a label already exists
   // it will just update the `updatedAt` timestamp
   const insertedRows = await trx(LABELS_TABLE)
     .insert(labelRows)
-    .returning('id')
+    .returning(['id', 'value'])
+    .onConflict(['value'])
+    .merge(['updatedAt']);
+
+  const usersRawLabelsRows = [];
+  for (const row of insertedRows) {
+    usersRawLabelsRows.push({ username, value: row.value, createdAt: timeStamp, updatedAt: timeStamp });
+  }
+
+  await trx(USERS_LABELS_TABLE)
+    .insert(usersRawLabelsRows)
     .onConflict(['username', 'value'])
     .merge(['updatedAt']);
 
@@ -98,16 +109,16 @@ async function saveLabels(
 /**
  * Returns the labels for a given job
  * @param trx - the transaction to use for querying
- * @param jobID - the UUID associated with the job
+ * @param jobId - the UUID associated with the job
  *
  * @returns A promise that resolves to an array of strings, one for each label
  */
 export async function getLabelsForJob(
   trx: Transaction,
-  jobID: string,
+  jobId: string,
 ): Promise<string[]> {
   const query = trx(JOBS_LABELS_TABLE)
-    .where({ job_id: jobID })
+    .where({ job_id: jobId })
     .orderBy([`${JOBS_LABELS_TABLE}.id`])
     .innerJoin(LABELS_TABLE, `${JOBS_LABELS_TABLE}.label_id`, '=', `${LABELS_TABLE}.id`)
     .select([`${LABELS_TABLE}.value`]);
@@ -121,14 +132,14 @@ export async function getLabelsForJob(
  *  Set the labels for a given job/user. This is atomic - all the labels are set at once. Any
  * existing labels are replaced.
  * @param trx - the transaction to use for querying
- * @param jobID - the UUID associated with the job
+ * @param jobId - the UUID associated with the job
  * @param username - the username the labels belong to
  * @param labels - the array of strings representing the labels. These will be forced to lower-case.
  * If this is an empty array then any existing labels for the job will be cleared.
  */
 export async function setLabelsForJob(
   trx: Transaction,
-  jobID: string,
+  jobId: string,
   username: string,
   labels: string[],
 ): Promise<void> {
@@ -137,14 +148,14 @@ export async function setLabelsForJob(
 
   // delete any labels that already exist for the job
   await trx(JOBS_LABELS_TABLE)
-    .where({ job_id: jobID })
+    .where({ job_id: jobId })
     .delete();
 
   if (labels.length > 0) {
     const now = new Date();
     const ids = await saveLabels(trx, labels, now, username);
     const jobsLabelRows = ids.map((id) => {
-      return { job_id: jobID, label_id: id, createdAt: now, updatedAt: now };
+      return { job_id: jobId, label_id: id, createdAt: now, updatedAt: now };
     });
 
     await trx(JOBS_LABELS_TABLE).insert(jobsLabelRows);
@@ -155,24 +166,24 @@ export async function setLabelsForJob(
  *  Add labels to the given jobs for the given user. Any labels that already exist for the given
  * job will not be re-added or replaced.
  * @param trx - the transaction to use for querying
- * @param jobIDs - the UUIDs associated with the jobs
+ * @param jobIds - the UUIDs associated with the jobs
  * @param username - the username the labels belong to
  * @param labels - the array of strings representing the labels.
  */
 export async function addLabelsToJobs(
   trx: Transaction,
-  jobIDs: string[],
+  jobIds: string[],
   username: string,
   labels: string[],
   isAdmin: boolean = false,
 ): Promise<void> {
-  await verifyUserAccessToUpdateLabels(trx, jobIDs, username, isAdmin);
+  await verifyUserAccessToUpdateLabels(trx, jobIds, username, isAdmin);
   const now = new Date();
   const labelIds = await saveLabels(trx, labels, now, username);
   const rowsToAdd = [];
-  for (const jobID of jobIDs) {
+  for (const jobId of jobIds) {
     for (const labelId of labelIds) {
-      rowsToAdd.push({ job_id: jobID, label_id: labelId, createdAt: now, updatedAt: now });
+      rowsToAdd.push({ job_id: jobId, label_id: labelId, createdAt: now, updatedAt: now });
     }
   }
   if (rowsToAdd.length > 0) {
@@ -182,27 +193,30 @@ export async function addLabelsToJobs(
   }
 }
 
-
 /**
  *  Delete one or more labels from the given jobs for the given user.
  * @param trx - the transaction to use for querying
- * @param jobIDs - the UUIDs associated with the jobs
+ * @param jobIds - the UUIDs associated with the jobs
  * @param username - the username the labels belong to
  * @param labels - the array of strings representing the labels.
  * @param isAdmin - true if the user is an admin user
  */
 export async function deleteLabelsFromJobs(
   trx: Transaction,
-  jobIDs: string[],
+  jobIds: string[],
   username: string,
   labels: string[],
   isAdmin: boolean = false,
 ): Promise<void> {
-  await verifyUserAccessToUpdateLabels(trx, jobIDs, username, isAdmin);
+  await verifyUserAccessToUpdateLabels(trx, jobIds, username, isAdmin);
 
-  await trx(JOBS_LABELS_TABLE)
-    .where(`${JOBS_LABELS_TABLE}.job_id`, 'in', jobIDs)
-    .join(LABELS_TABLE, `${JOBS_LABELS_TABLE}.label_id`, '=', `${LABELS_TABLE}.id`)
-    .where(`${LABELS_TABLE}.value`, 'in', labels)
+  // unfortunately sqlite doesn't seem to like deletes with joins, so we have to do this in two
+  // queries
+  const labelIds = await trx(`${LABELS_TABLE}`)
+    .select('id')
+    .where('value', 'in', labels);
+  await trx(`${JOBS_LABELS_TABLE}`)
+    .where('job_id', 'in', jobIds)
+    .andWhere('label_id', 'in', labelIds.map(row => row.id))
     .del();
 }
