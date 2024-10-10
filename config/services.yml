@@ -348,7 +348,7 @@ https://cmr.earthdata.nasa.gov:
     description: |
       Service translating Harmony operations to GDAL commands.
       Supports spatial bounding box, temporal, variable, and shapefile, reprojection,
-      and output to NetCDF4, COG, PNG, and GIF.
+      and output to NetCDF4 or COG.
       Operates on input file types supported by GDAL (most EOSDIS data).
       Most operations assume L3 data, though it is likely that some work on L2.
     data_operation_version: '0.19.0'
@@ -370,8 +370,6 @@ https://cmr.earthdata.nasa.gov:
       output_formats:
         - application/x-netcdf4
         - image/tiff
-        - image/png
-        - image/gif
       reprojection: true
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
@@ -929,7 +927,7 @@ https://cmr.uat.earthdata.nasa.gov:
     description: |
       Service translating Harmony operations to GDAL commands.
       Supports spatial bounding box, temporal, variable, and shapefile, reprojection,
-      and output to NetCDF4, COG, PNG, and GIF.
+      and output to NetCDF4 or COG.
       Operates on input file types supported by GDAL (most EOSDIS data).
       Most operations assume L3 data, though it is likely that some work on L2.
     data_operation_version: '0.19.0'
@@ -951,8 +949,6 @@ https://cmr.uat.earthdata.nasa.gov:
       output_formats:
         - application/x-netcdf4
         - image/tiff
-        - image/png
-        - image/gif
       reprojection: true
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
