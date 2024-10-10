@@ -134,7 +134,7 @@ describe('Workflow UI jobs route', function () {
       await sidJob3.save(this.trx);
       await sidJob4.save(this.trx);
 
-      await setLabelsForJob(this.trx, woodyJob1.jobID, woodyJob1.username, ['blue-label', 'yellow-label']);
+      await setLabelsForJob(this.trx, woodyJob1.jobID, woodyJob1.username, ['blue-label', 'z-last-label', 'yellow-label', '1st-label']);
       await setLabelsForJob(this.trx, sidJob1.jobID, sidJob1.username, ['label-1', 'label-2']);
 
       this.trx.commit();
@@ -180,13 +180,11 @@ describe('Workflow UI jobs route', function () {
         expect((listing.match(/job-table-row/g) || []).length).to.equal(3);
       });
 
-      it('displays the labels for the user\'s jobs', function () {
-        const listing = this.res.text;
+      it('displays the sorted labels for the user\'s jobs', function () {
+        const listing = this.res.text;  
         expect(listing).to.contain(mustache.render(
-          `{{#labels}}
-        <span class="badge bg-label">{{.}}</span>
-        {{/labels}}`, 
-          { labels: woodyJob1.labels }));
+          '{{#labels}} <span class="badge bg-label" title="{{.}}">{{.}}</span>{{/labels}}', 
+          { labels: ['1st-label', 'blue-label', 'yellow-label', 'z-last-label'] }));
       });
 
       it('does not return jobs for other users', function () {
@@ -591,15 +589,11 @@ describe('Workflow UI jobs route', function () {
         it('displays the labels for those jobs', function () {
           const listing = this.res.text;
           expect(listing).to.contain(mustache.render(
-            `{{#labels}}
-          <span class="badge bg-label">{{.}}</span>
-          {{/labels}}`, 
-            { labels: woodyJob1.labels }));
+            '{{#labels}} <span class="badge bg-label" title="{{.}}">{{.}}</span>{{/labels}}', 
+            { labels: ['1st-label', 'blue-label', 'yellow-label', 'z-last-label'] }));
           expect(listing).to.contain(mustache.render(
-            `{{#labels}}
-          <span class="badge bg-label">{{.}}</span>
-          {{/labels}}`, 
-            { labels: sidJob1.labels }));
+            '{{#labels}} <span class="badge bg-label" title="{{.}}">{{.}}</span>{{/labels}}', 
+            { labels: ['label-1', 'label-2'] }));
         });
       });
 
