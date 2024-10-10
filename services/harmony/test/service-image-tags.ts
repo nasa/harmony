@@ -324,7 +324,7 @@ describe('Service image endpoint', async function () {
       describe('when the service does exist', async function () {
         before(async function () {
           hookRedirect('joe');
-          this.res = await request(this.frontend).get('/service-image-tag/hoss').use(auth({ username: 'joe' }));
+          this.res = await request(this.frontend).get('/service-image-tag/trajectory-subsetter').use(auth({ username: 'joe' }));
         });
 
         after(function () {
@@ -367,7 +367,7 @@ describe('Service image endpoint', async function () {
       describe('when the service does exist', async function () {
         before(async function () {
           hookRedirect('buzz');
-          this.res = await request(this.frontend).get('/service-image-tag/hoss').use(auth({ username: 'buzz' }));
+          this.res = await request(this.frontend).get('/service-image-tag/trajectory-subsetter').use(auth({ username: 'buzz' }));
         });
 
         after(function () {
@@ -412,7 +412,7 @@ describe('Service image endpoint', async function () {
       describe('when the service does exist', async function () {
         before(async function () {
           hookRedirect('coraline');
-          this.res = await request(this.frontend).get('/service-image-tag/hoss').use(auth({ username: 'coraline' }));
+          this.res = await request(this.frontend).get('/service-image-tag/trajectory-subsetter').use(auth({ username: 'coraline' }));
         });
 
         after(function () {
