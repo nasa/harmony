@@ -105,8 +105,9 @@
     "end": "2020-02-20T15:00:00.000Z"
   },
   "concatenate": false,
+  "average": "time",
   "extraArgs": {
     "cut": false
   },
-  "version": "0.19.0"
+  "version": "0.20.0"
 }
