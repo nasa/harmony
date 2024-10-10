@@ -9,7 +9,7 @@ import { Encrypter, Decrypter } from '../util/crypto';
 import { cmrVarToHarmonyVar, HarmonyVariable } from '../util/variables';
 import { isValidUri } from '../util/url';
 
-export const CURRENT_SCHEMA_VERSION = '0.19.0';
+export const CURRENT_SCHEMA_VERSION = '0.20.0';
 
 /**
  * Synchronously reads and parses the JSON Schema at the given path
@@ -41,6 +41,15 @@ let _schemaVersions: SchemaVersion[];
 function schemaVersions(): SchemaVersion[] {
   if (_schemaVersions) return _schemaVersions;
   _schemaVersions = [
+    {
+      version: '0.20.0',
+      schema: readSchema('0.20.0'),
+      down: (model): unknown => {
+        const revertedModel = _.cloneDeep(model);
+        delete revertedModel.average;
+        return revertedModel;
+      },
+    },
     {
       version: '0.19.0',
       schema: readSchema('0.19.0'),
@@ -310,8 +319,6 @@ export default class DataOperation {
 
   ignoreErrors?: boolean;
 
-  average: string;
-
   destinationUrl: string;
 
   ummCollections: CmrUmmCollection[];
@@ -473,6 +480,22 @@ export default class DataOperation {
    */
   set shouldConcatenate(value: boolean) {
     this.model.concatenate = value;
+  }
+
+  /**
+   * Gets the averaging method to use
+   *
+   * @returns the averaging method to use
+   */
+  get average(): string {
+    return this.model.average;
+  }
+
+  /**
+   * Sets the averaging method to use
+   */
+  set average(value: string) {
+    this.model.average = value;
   }
 
   /**
