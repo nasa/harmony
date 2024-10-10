@@ -47,3 +47,11 @@
 #workflow-ui-jobs-table .job-table-row {
     border-bottom-color: white;
 }
+
+.bg-label {
+    background-color: #92a7ba !important;
+}
+
+.job-alert {
+    margin-bottom: 0;
+}

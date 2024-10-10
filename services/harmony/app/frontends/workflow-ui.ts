@@ -199,6 +199,12 @@ function jobRenderingFunctions(logger: Logger, requestQuery: Record<string, any>
         return this.request;
       }
     },
+    jobLabelsDisplay(): string {
+      return this.labels.map((label) => {
+        const labelText = truncateString(label, 30);
+        return `<span class="badge bg-label" title="${label}">${labelText}</span>`;
+      }).join(' ');
+    },
     jobMessage(): string {
       if (this.message) {
         return truncateString(this.message, 100);
@@ -279,7 +285,7 @@ function tableQueryToJobQuery(tableQuery: TableQuery, isAdmin: boolean, user: st
     };
   }
   if (tableQuery.from || tableQuery.to) {
-    jobQuery.dates = { field: tableQuery.dateKind };
+    jobQuery.dates = { field: `jobs.${tableQuery.dateKind}` };
     jobQuery.dates.from = tableQuery.from;
     jobQuery.dates.to = tableQuery.to;
   }
@@ -315,7 +321,7 @@ export async function getJobs(
     const { tableQuery, originalValues } = parseQuery(requestQuery, JobStatus, isAdminRoute);
     const jobQuery = tableQueryToJobQuery(tableQuery, isAdminRoute, req.user);
     const { page, limit } = getPagingParams(req, env.defaultJobListPageSize, 1, true, true);
-    const { data: jobs, pagination } = await Job.queryAll(db, jobQuery, page, limit);
+    const { data: jobs, pagination } = await Job.queryAll(db, jobQuery, page, limit, true);
     setPagingHeaders(res, pagination);
     const pageLinks = getPagingLinks(req, pagination, true);
     const firstPage = pageLinks.find((l) => l.rel === 'first');
@@ -569,6 +575,7 @@ export async function getWorkItemsTable(
           .replace('/work-items', '')
           .replace(/(&|\?)checkJobStatus=(true|false)/, '') : '');
       },
+      ...jobRenderingFunctions(req.context.logger, requestQuery),
     });
   } catch (e) {
     req.context.logger.error(e);
@@ -636,7 +643,7 @@ export async function getJobsTable(
     const { tableQuery } = parseQuery(requestQuery, JobStatus, isAdminRoute);
     const jobQuery = tableQueryToJobQuery(tableQuery, isAdmin, req.user);
     const { page, limit } = getPagingParams(req, env.defaultJobListPageSize, 1, true, true);
-    const jobsRes = await Job.queryAll(db, jobQuery, page, limit);
+    const jobsRes = await Job.queryAll(db, jobQuery, page, limit, true);
     const jobs = jobsRes.data;
     const { pagination } = jobsRes;
     const selectAllChecked = jobs.every((j) => (j.hasTerminalStatus() && isAdminRoute) || (jobIDs.indexOf(j.jobID) > -1)) ? 'checked' : '';
