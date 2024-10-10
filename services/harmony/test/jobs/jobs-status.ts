@@ -55,7 +55,7 @@ function itIncludesADataExpirationField(): void {
 }
 
 describe('Individual job status route', function () {
-  const aJobLabels = ['foo', 'bar'];
+  const aJobLabels = ['foo', 'bar', '000', 'z-label'];
   hookServersStartStop({ skipEarthdataLogin: false });
   hookTransaction();
   before(async function () {
@@ -129,9 +129,9 @@ describe('Individual job status route', function () {
         expect(previewSkipLinks.length).to.equal(0);
       });
 
-      it('includes job labels', function () {
+      it('includes sorted job labels', function () {
         const job = new Job(JSON.parse(this.res.text));
-        expect(job.labels).deep.equal(aJobLabels);
+        expect(job.labels).deep.equal(['000', 'bar', 'foo', 'z-label']);
       });
 
       itIncludesADataExpirationField();
