@@ -62,7 +62,7 @@ describe('label CRUD', function () {
     it('sets the labels for the job', async function () {
       await setLabelsForJob(this.trx, this.job.jobID, this.job.username, labels);
       const newJob = await getFirstJob(this.trx);
-      expect(newJob.labels).deep.equal(labels);
+      expect(newJob.labels).deep.equal(['bar', 'foo']);
     });
   });
 

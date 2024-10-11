@@ -9,6 +9,7 @@ import * as sinon from 'sinon';
 import * as services from '../../app/models/services';
 import MockDate from 'mockdate';
 import * as mustache from 'mustache';
+import { setLabelsForJob } from '../../app/models/label';
 
 
 
@@ -33,6 +34,7 @@ describe('Workflow UI jobs table route', function () {
     await boJob2.save(this.trx);
     await adamJob1.save(this.trx);
     await woodyJob1.save(this.trx);
+    await setLabelsForJob(this.trx, woodyJob1.jobID, woodyJob1.username, ['my-label']);
     this.trx.commit();
   });
   after(function () {
@@ -47,6 +49,18 @@ describe('Workflow UI jobs table route', function () {
       expect(response).to.not.contain(`<tr id="job-${boJob1.jobID}" class='job-table-row'>`);
       expect(response).contains(`<tr id="job-${boJob2.jobID}" class='job-table-row'>`);
       expect((response.match(/job-table-row/g) || []).length).to.eq(1);
+    });
+  });
+
+  describe('a user requesting a job with a label', function () {
+    hookWorkflowUIJobRows({ username: 'woody', jobIDs: [woodyJob1.jobID] });
+    it('returns the expected label(s) for the job', function () {
+      const listing = this.res.text;
+      expect(listing).to.contain(mustache.render(
+        `{{#labels}}
+      <span class="badge bg-label">{{.}}</span>
+      {{/labels}}`, 
+        { labels: woodyJob1.labels }));
     });
   });
 

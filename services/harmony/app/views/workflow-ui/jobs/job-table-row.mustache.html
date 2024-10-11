@@ -5,14 +5,13 @@
     {{#isAdminRoute}}
     <td>{{username}}</td>
     {{/isAdminRoute}}
-    <td><span class="badge bg-{{jobBadge}}">{{status}}</span></td>
+    <td><span class="badge rounded-pill bg-{{jobBadge}}">{{status}}</span></td>
     <td id="message-td" title="{{message}}">{{jobMessage}}</td>
     <td>{{numInputGranules}}</td>
     <td>{{progress}}%</td>
     <td class="date-td" data-time="{{jobCreatedAt}}"></td>
     <td class="date-td" data-time="{{jobUpdatedAt}}"></td>
 </tr>
-<th id="copy-{{jobID}}" class="job-url-th" colspan="9">
-    <i class="bi bi-copy text-primary copy-request" data-text="{{request}}" data-truncated="{{jobRequestIsTruncated}}"></i>
-    <span title="{{jobRequest}}" class="text-muted job-url-text">{{jobRequestDisplay}}</span>
+<th id="copy-{{jobID}}" class="job-url-th" colspan="12">
+    {{> workflow-ui/request-preview}}
 </th>

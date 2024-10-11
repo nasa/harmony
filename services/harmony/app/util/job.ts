@@ -256,9 +256,10 @@ export async function getJobIfAllowed(
   isAdmin: boolean,
   accessToken: string,
   enableShareability: boolean,
+  includeLabels = true,
 ): Promise<Job> {
   validateJobId(jobID);
-  const { job } = await Job.byJobID(db, jobID, false, false, false);
+  const { job } = await Job.byJobID(db, jobID, false, includeLabels, false);
   if (!job) {
     throw new NotFoundError();
   }

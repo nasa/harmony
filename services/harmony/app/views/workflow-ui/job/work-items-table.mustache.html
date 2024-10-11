@@ -1,6 +1,12 @@
-<div id="job-alert" class="alert alert-{{statusClass}} overflow-auto" role="alert">
+<div class="job-alert alert alert-{{statusClass}} overflow-auto" role="alert">
     {{job.message}}
 </div>
+
+{{#job}}
+<div class="mb-2 mt-1">
+    {{> workflow-ui/request-preview}}
+</div>
+{{/job}}
 
 <table class="table table-sm">
     <thead class="sticky-top bg-white">
