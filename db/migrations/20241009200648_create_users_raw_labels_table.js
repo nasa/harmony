@@ -26,32 +26,34 @@ exports.up = function (knex) {
       // Populate the raw_labels, jobs_raw_labels, and users_labels tables
       const now = new Date();
       const rows = await knex.select(['username', 'job_id', 'value']).from('jobs_labels').innerJoin('labels', 'jobs_labels.label_id', '=', 'labels.id');
-      const uniqueRawLabels = Array.from(new Set(rows.map((row) => row.value)));
-      const rawLabelRows = uniqueRawLabels.map((value) => { return { value, createdAt: now, updatedAt: now, }; });
-      const labelIdValues = await knex('raw_labels').insert(rawLabelRows).returning(['id', 'value']);
-      // make a map of values to row ids
-      const labelValueIds = labelIdValues.reduce((acc, idValue) => {
-        const { id, value } = idValue;
-        acc[value] = id;
-        return acc;
-      }, {});
+      if (rows.length > 0) {
+        const uniqueRawLabels = Array.from(new Set(rows.map((row) => row.value)));
+        const rawLabelRows = uniqueRawLabels.map((value) => { return { value, createdAt: now, updatedAt: now, }; });
+        const labelIdValues = await knex('raw_labels').insert(rawLabelRows).returning(['id', 'value']);
+        // make a map of values to row ids
+        const labelValueIds = labelIdValues.reduce((acc, idValue) => {
+          const { id, value } = idValue;
+          acc[value] = id;
+          return acc;
+        }, {});
 
-      let jobsRawLabelRows = [];
-      let usersLabelsRows = [];
+        let jobsRawLabelRows = [];
+        let usersLabelsRows = [];
 
-      rows.forEach((row) => {
-        const jobID = row.job_id;
-        const { username, value } = row;
-        const labelId = labelValueIds[value];
+        rows.forEach((row) => {
+          const jobID = row.job_id;
+          const { username, value } = row;
+          const labelId = labelValueIds[value];
 
-        jobsRawLabelRows.push({ job_id: jobID, label_id: labelId, createdAt: now, updatedAt: now });
-        usersLabelsRows.push({ username, value, createdAt: now, updatedAt: now });
-      });
-      // remove duplicates
-      jobsRawLabelRows = Array.from(new Set(jobsRawLabelRows.map(JSON.stringify))).map(JSON.parse);
-      usersLabelsRows = Array.from(new Set(usersLabelsRows.map(JSON.stringify))).map(JSON.parse);
-      await knex('jobs_raw_labels').insert(jobsRawLabelRows);
-      await knex('users_labels').insert(usersLabelsRows);
+          jobsRawLabelRows.push({ job_id: jobID, label_id: labelId, createdAt: now, updatedAt: now });
+          usersLabelsRows.push({ username, value, createdAt: now, updatedAt: now });
+        });
+        // remove duplicates
+        jobsRawLabelRows = Array.from(new Set(jobsRawLabelRows.map(JSON.stringify))).map(JSON.parse);
+        usersLabelsRows = Array.from(new Set(usersLabelsRows.map(JSON.stringify))).map(JSON.parse);
+        await knex('jobs_raw_labels').insert(jobsRawLabelRows);
+        await knex('users_labels').insert(usersLabelsRows);
+      }
     });
 };
 
