@@ -532,6 +532,7 @@ export async function getWorkItemsTable(
   const { jobID } = req.params;
   const { checkJobStatus } = req.query;
   try {
+    const isAdminRoute = req.context.isAdminAccess;
     const { isAdmin, isLogViewer } = await getEdlGroupInformation(
       req.user, req.context.logger,
     );
@@ -575,7 +576,7 @@ export async function getWorkItemsTable(
           .replace('/work-items', '')
           .replace(/(&|\?)checkJobStatus=(true|false)/, '') : '');
       },
-      ...jobRenderingFunctions(req.context.logger, requestQuery),
+      ...jobRenderingFunctions(req.context.logger, requestQuery, isAdminRoute),
     });
   } catch (e) {
     req.context.logger.error(e);
