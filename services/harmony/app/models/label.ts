@@ -32,7 +32,7 @@ export function normalizeLabel(label: string): string {
 }
 
 /**
- * Verify that the user can change the labels on a give job. Currently only job owners can
+ * Verify that the user can change the labels on a given job. Currently only job owners and admin can
  * change the labels for a job.
  * @param trx - the transaction to use for querying
  * @param jobIds - the UUIDs associated with the jobs

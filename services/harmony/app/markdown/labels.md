@@ -7,12 +7,12 @@ job status page and in the workflow-ui.
 Labels can be added to existing jobs by the job owner, or anyone with admin permissions, using an HTTP PUT request and specifying the job IDs and labels in the body of the PUT. An EDL bearer token must be provided and a `Content-Type: application/json` header. A `curl` example that adds two labels to two different jobs follows:
 
 ```
-curl -bj {{root}} -XPUT -d '{"jobID": ["<YOUR FIRST JOB ID>", "<YOUR SECOND JOB ID>"], "label": ["foo", "bar"]}'  -H "Content-Type: application/json" -H "Authorization: bearer <YOUR BEARER TOKEN>"
+curl -bj {{root}}/labels -XPUT -d '{"jobID": ["<YOUR FIRST JOB ID>", "<YOUR SECOND JOB ID>"], "label": ["foo", "bar"]}'  -H "Content-Type: application/json" -H "Authorization: bearer <YOUR BEARER TOKEN>"
 ```
 
 Similarly, labels can be removed from one or more jobs using an HTTP DELETE:
 
 ```
-curl -bj {{root}} -XDELETE -d '{"jobID": ["<YOUR FIRST JOB ID>", "<YOUR SECOND JOB ID>"], "label": ["foo"]}'  -H "Content-Type: application/json" -H "Authorization: bearer <YOUR BEARER TOKEN>"
+curl -bj {{root}}/labels -XDELETE -d '{"jobID": ["<YOUR FIRST JOB ID>", "<YOUR SECOND JOB ID>"], "label": ["foo"]}'  -H "Content-Type: application/json" -H "Authorization: bearer <YOUR BEARER TOKEN>"
 ```
 
