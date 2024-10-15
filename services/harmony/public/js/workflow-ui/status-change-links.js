@@ -33,11 +33,7 @@ class StatusChangeLinks {
           ${link.href.split('/').pop()}
         </a>
       </li>`;
-    return `
-    <ul class="nav">
-      ${links.map(linkToLi).join('')}
-    </ul>
-    `;
+    return `${links.map(linkToLi).join('')}`;
   }
 
   /**
@@ -57,7 +53,8 @@ class StatusChangeLinks {
    */
   insertLinksHtml(links, linksContainerId) {
     const html = this.buildLinksHtml(links);
-    document.getElementById(linksContainerId).innerHTML = html;
+    document.getElementById(linksContainerId).innerHTML = html
+      + document.getElementById(linksContainerId).innerHTML;
     document.querySelectorAll('.state-change-link').forEach((link) => {
       link.addEventListener('click', (event) => {
         this.handleClick(event);

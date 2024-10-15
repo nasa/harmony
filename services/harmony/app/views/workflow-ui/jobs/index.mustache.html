@@ -42,9 +42,14 @@
             <ol class="breadcrumb p-0 m-0">
                 <li class="breadcrumb-item active" aria-current="page">Jobs</li>
             </ol>
-            <div id="job-state-links-container">
+            <ul id="job-state-links-container" class="nav" data-is-admin-or-owner="{{isAdminOrOwner}}">
                 <!-- job state change links will go here -->
-            </div>
+                <li>
+                    <a href="#" rel="label" title="label" class="nav-link py-0 px-2">
+                      label
+                    </a>
+                </li>
+            </ul>
         </div>
     </nav>
     <div class="container-fluid">
