@@ -50,6 +50,9 @@
                         <li class="mx-2 mb-2">
                             <input type="text" class="form-control" id="exampleDropdownFormPassword2" placeholder="label name">
                         </li>
+                        {{#labels}}
+                        <li><a class="dropdown-item" href="#">{{.}}</a></li>
+                        {{/labels}}
                         <li><a class="dropdown-item" href="#">green</a></li>
                         <li><a class="dropdown-item active" href="#" aria-current="true">yellow-label-yellow</a></li>
                         <li><a class="dropdown-item" href="#">purple</a></li>

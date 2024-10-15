@@ -129,6 +129,26 @@ export async function getLabelsForJob(
 }
 
 /**
+ * Returns the labels for a given user
+ * @param trx - the transaction to use for querying
+ * @param username - the username associated with the labels
+ *
+ * @returns A promise that resolves to an array of strings, one for each label
+ */
+export async function getLabelsForUser(
+  trx: Transaction,
+  username: string,
+): Promise<string[]> {
+  const query = trx(USERS_LABELS_TABLE)
+    .select(['value'])
+    .where({ username });
+
+  const rows = (await query).map((object) => object.value);
+  console.log(rows);
+  return rows;
+}
+
+/**
  *  Set the labels for a given job/user. This is atomic - all the labels are set at once. Any
  * existing labels are replaced.
  * @param trx - the transaction to use for querying
