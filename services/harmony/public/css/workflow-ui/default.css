@@ -55,3 +55,7 @@
 .job-alert {
     margin-bottom: 0;
 }
+
+#label-nav-item > * {
+    z-index: 1021;
+}

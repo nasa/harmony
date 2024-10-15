@@ -44,10 +44,13 @@
             </ol>
             <ul id="job-state-links-container" class="nav" data-is-admin-or-owner="{{isAdminOrOwner}}">
                 <!-- job state change links will go here -->
-                <li>
-                    <a href="#" rel="label" title="label" class="nav-link py-0 px-2">
-                      label
-                    </a>
+                <li id="label-nav-item" class="nav-item dropleft">
+                    <a class="nav-link dropdown-toggle py-0 px-2" data-toggle="dropdown" href="#" role="button" aria-expanded="false">label</a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#">green</a></li>
+                        <li><a class="dropdown-item active" href="#" aria-current="true">yellow</a></li>
+                        <li><a class="dropdown-item" href="#">purple</a></li>
+                    </ul>
                 </li>
             </ul>
         </div>
