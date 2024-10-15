@@ -131,6 +131,7 @@
   "stagingLocation": "s3://localStagingBucket/public/harmony/gdal/232110b5-5267-4b31-9057-70afd0673f65/",
   "callback": "http://example.com/callback",
   "concatenate": false,
+  "average": "time",
   "extraArgs": {
     "cut": false
   },

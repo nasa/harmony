@@ -1,3 +1,7 @@
+## [0.20.0] - 2024-10-10
+### Added
+- average - The averaging method to use. Initially Giovanni plans to support 'time' or 'area' averaging.
+
 ## [0.19.0] - 2024-04-10
 ### Added
 - extraArgs - The extra arguments that will be passed to service worker

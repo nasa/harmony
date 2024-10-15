@@ -25,6 +25,7 @@ export default async function handleLabelParameter(
       if (lbl === '') {
         res.status(400);
         res.send('Labels must contain at least one non-whitespace character');
+        return;
       }
     }
     req.body.label = label;
