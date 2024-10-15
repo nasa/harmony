@@ -32,17 +32,18 @@ export function normalizeLabel(label: string): string {
 }
 
 /**
- * Verify that the user can change the labels on a given job. Currently only job owners and admin can
+ * Verify that the user can change the labels on a given job. Currently only job owners can
  * change the labels for a job.
  * @param trx - the transaction to use for querying
  * @param jobIds - the UUIDs associated with the jobs
+ * @param _isAdmin - currently unused - left here to allow admin access in the future
  * @throws `ForbiddenError` if the user does not own the job.
  */
 export async function verifyUserAccessToUpdateLabels(
   trx: Transaction,
   jobIds: string[],
   username: string,
-  isAdmin: boolean = false): Promise<void> {
+  _isAdmin: boolean = false): Promise<void> {
   for (const jobId of jobIds) {
     if (!isUUID(jobId)) {
       throw new RequestValidationError(`jobId ${jobId} is in invalid format.`);
@@ -54,7 +55,7 @@ export async function verifyUserAccessToUpdateLabels(
   for (const row of rows) {
     const jobId = row.jobID;
     const jobOwner = row.username;
-    if (jobOwner != username && !isAdmin) {
+    if (jobOwner != username) {
       throw new NotFoundError();
     }
     foundJobs.push(jobId);

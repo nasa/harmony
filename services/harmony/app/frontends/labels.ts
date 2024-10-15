@@ -5,9 +5,10 @@ import HarmonyRequest from '../models/harmony-request';
 import { addLabelsToJobs, deleteLabelsFromJobs } from '../models/label';
 import db from '../util/db';
 import { isAdminUser } from '../util/edl-api';
+import { keysToLowerCase } from '../util/object';
 
 /**
- * Express.js handler that adds one or more labels to a job `(POST /labels/{jobID}/add)`.
+ * Express.js handler that adds one or more labels to a job `(PUT /labels)`.
  * Currently only the job owner can add labels (no admin access).
  *
  * @param req - The request sent by the client
@@ -22,7 +23,9 @@ export async function addJobLabels(
 
   try {
     await db.transaction(async (trx) => {
-      await addLabelsToJobs(trx, req.body.jobID, req.user, req.body.label, isAdmin);
+      const lowerCaseBody = keysToLowerCase(req.body);
+      console.log(`BODY: ${JSON.stringify(lowerCaseBody)}`);
+      await addLabelsToJobs(trx, lowerCaseBody.jobid, req.user, lowerCaseBody.label, isAdmin);
     });
 
     res.status(201);
@@ -34,7 +37,7 @@ export async function addJobLabels(
 }
 
 /**
- * Express.js handler that removes one or more labels from a job `(POST /labels/{jobID}/delete)`.
+ * Express.js handler that removes one or more labels from a job `(DELETE /labels)`.
  * Currently only the job owner can add labels (no admin access).
  *
  * @param req - The request sent by the client
@@ -49,7 +52,8 @@ export async function deleteJobLabels(
 
   try {
     await db.transaction(async (trx) => {
-      await deleteLabelsFromJobs(trx, req.body.jobID, req.user, req.body.label, isAdmin);
+      const lowerCaseBody = keysToLowerCase(req.body);
+      await deleteLabelsFromJobs(trx, lowerCaseBody.jobid, req.user, lowerCaseBody.label, isAdmin);
     });
 
     res.status(204);
