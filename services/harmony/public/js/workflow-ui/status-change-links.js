@@ -53,8 +53,9 @@ class StatusChangeLinks {
    */
   insertLinksHtml(links, linksContainerId) {
     const html = this.buildLinksHtml(links);
-    document.getElementById(linksContainerId).innerHTML = html
-      + document.getElementById(linksContainerId).innerHTML;
+    const tmp = document.createElement('ul');
+    tmp.innerHTML = html;
+    document.getElementById(linksContainerId).appendChild(...tmp.childNodes);
     document.querySelectorAll('.state-change-link').forEach((link) => {
       link.addEventListener('click', (event) => {
         this.handleClick(event);
