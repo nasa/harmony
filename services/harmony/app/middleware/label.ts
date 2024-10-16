@@ -2,6 +2,7 @@ import { Response, NextFunction } from 'express';
 import HarmonyRequest from '../models/harmony-request';
 import { parseMultiValueParameter } from '../util/parameter-parsing-helpers';
 import { normalizeLabel } from '../models/label';
+import { keysToLowerCase } from '../util/object';
 
 /**
  * Express.js middleware to convert label parameter to an array (if needed) and add
@@ -15,7 +16,9 @@ export default async function handleLabelParameter(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
   // Check if 'label' exists in the query parameters (GET), form-encoded body, or JSON body
-  let label = req.query.label || req.body.label;
+  const lowerCaseQuery = keysToLowerCase(req.query);
+  const lowerCaseBody = keysToLowerCase(req.body);
+  let label = lowerCaseQuery.label || lowerCaseBody.label;
 
   // If 'label' exists, convert it to an array (if not already) and assign it to 'label' in the body
   if (label) {

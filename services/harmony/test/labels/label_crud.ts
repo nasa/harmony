@@ -49,7 +49,7 @@ describe('Job label CRUD', function () {
 
     describe('When the user is an admin user that did not create the job', function () {
       describe('When the jobs and labels are valid', function () {
-        it('sets the labels on the jobs', async function () {
+        xit('sets the labels on the jobs', async function () {
           const response = await addJobsLabels(this.frontend, [jobID], ['foo', '  Buzz  '], 'adam');
           expect(response.status).to.equal(201);
           const savedJob = await getFirstJob(db, { where: { jobID } });
@@ -77,7 +77,9 @@ describe('Job label CRUD', function () {
           const response = await deleteJobsLabels(this.frontend, [jobID], ['label1'], 'joe');
           expect(response.status).to.equal(204);
           const savedJob = await getFirstJob(db, { where: { jobID } });
-          expect(savedJob.labels).deep.equal(['bar', 'buzz', 'foo', 'label2']);
+          // TODO uncomment this line and remove the following when admin access to labels is enabled
+          // expect(savedJob.labels).deep.equal(['bar', 'buzz', 'foo', 'label2']);
+          expect(savedJob.labels).deep.equal(['bar', 'foo', 'label2']);
         });
       });
 
@@ -86,7 +88,9 @@ describe('Job label CRUD', function () {
           const response = await deleteJobsLabels(this.frontend, [jobID], ['label1', 'missing-label'], 'joe');
           expect(response.status).to.equal(204);
           const savedJob = await getFirstJob(db, { where: { jobID } });
-          expect(savedJob.labels).deep.equal(['bar', 'buzz', 'foo', 'label2']);
+          // TODO uncomment this line and remove the following when admin access to labels is enabled
+          // expect(savedJob.labels).deep.equal(['bar', 'buzz', 'foo', 'label2']);
+          expect(savedJob.labels).deep.equal(['bar', 'foo', 'label2']);
         });
       });
 
@@ -105,12 +109,11 @@ describe('Job label CRUD', function () {
           expect(JSON.parse(response.text).description).to.equal('Error: Unable to find job aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa');
         });
       });
-
     });
 
     describe('When the user is an admin user that did not create the job', function () {
       describe('When the jobs and labels are valid', function () {
-        it('deletes the labels from the jobs', async function () {
+        xit('deletes the labels from the jobs', async function () {
           const response = await deleteJobsLabels(this.frontend, [jobID], ['label2', 'buzz'], 'adam');
           expect(response.status).to.equal(204);
           const savedJob = await getFirstJob(db, { where: { jobID } });

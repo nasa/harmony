@@ -43,6 +43,7 @@ import extendDefault from '../middleware/extend';
 import { getAdminHealth, getHealth } from '../frontends/health';
 import handleLabelParameter from '../middleware/label';
 import { addJobLabels, deleteJobLabels } from '../frontends/labels';
+import handleJobIDParameter from '../middleware/job-id';
 export interface RouterConfig {
   PORT?: string | number; // The port to run the frontend server on
   BACKEND_PORT?: string | number; // The port to run the backend server on
@@ -203,6 +204,7 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   });
   result.use(logged(shapefileConverter));
   result.use(handleLabelParameter);
+  result.use(handleJobIDParameter);
   result.use(logged(parameterValidation));
   result.use(logged(parseGridMiddleware));
   result.use(logged(preServiceConcatenationHandler));
