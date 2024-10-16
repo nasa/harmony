@@ -1,6 +1,7 @@
 import jobsTable from './jobs-table.js';
 import JobsStatusChangeLinks from './jobs-status-change-links.js';
 import toasts from '../toasts.js';
+import labels from '../labels.js';
 
 const params = {};
 
@@ -30,3 +31,5 @@ const jobStatusLinks = new JobsStatusChangeLinks();
 jobStatusLinks.init('job-state-links-container', 'job-selected');
 
 toasts.init();
+
+labels.init();
