@@ -112,15 +112,15 @@ The returned JSON response has the fields indicating the current status of the s
 
 ```JSON
 {
-  deploymentId: "befb50e0-e467-4776-86c8-e7218f1123cc",
-  username: "yliu10",
-  service: "giovanni-adapter",
-  tag: "new-version",
-  regressionTestVersion: "1.0.0",
-  status: "successful",
-  message: "Deployment successful",
-  createdAt: "2024-03-29T14:56:29.151Z",
-  updatedAt: "2024-03-29T14:56:29.273Z"
+  "deploymentId": "befb50e0-e467-4776-86c8-e7218f1123cc",
+  "username": "yliu10",
+  "service": "giovanni-adapter",
+  "tag": "new-version",
+  "regressionTestVersion": "1.0.0",
+  "status": "successful",
+  "message": "Deployment successful",
+  "createdAt": "2024-03-29T14:56:29.151Z",
+  "updatedAt": "2024-03-29T14:56:29.273Z"
 }
 ```
 **Example 9** - Harmony get status of service image tag update response
