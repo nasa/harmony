@@ -40,13 +40,17 @@
                 <!-- job state change links will go here -->
                 <li id="label-nav-item" class="nav-item dropstart">
                     <a class="nav-link dropdown-toggle py-0 px-2" data-bs-toggle="dropdown" data-bs-auto-close="outside" href="#" role="button" aria-expanded="false">label</a>
-                    <ul id="labels-list" class="dropdown-menu mt-2">
+                    <ul class="dropdown-menu mt-2">
                         <li class="mx-2 mb-2">
                             <input type="text" class="form-control" id="label-search" placeholder="label name">
                         </li>
-                        {{#labels}}
-                        <li class="label-li"><a class="dropdown-item label-item" data-value="{{.}}" href="#">{{.}}</a></li>
-                        {{/labels}}
+                        <li>
+                            <ul id="labels-list">
+                            {{#labels}}
+                            <li class="label-li"><a class="dropdown-item label-item" data-value="{{.}}" href="#">{{.}}</a></li>
+                            {{/labels}}
+                            </ul>
+                        </li>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item" href="#"><i class="bi bi-tags"></i>&nbsp;apply</a></li>
                     </ul>

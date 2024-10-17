@@ -67,5 +67,7 @@
 #labels-list {
     overflow: hidden;
     overflow-y: auto;
-    max-height: calc(100vh - 150px);
+    max-height: calc(100vh - 300px);
+    list-style: none;
+    padding: 5px 0;
 }
