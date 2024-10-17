@@ -63,3 +63,9 @@
 .dropdown-divider {
     border-top: 1px solid #6b7c8d;
 }
+
+#labels-list {
+    overflow: hidden;
+    overflow-y: auto;
+    max-height: calc(100vh - 150px);
+}
