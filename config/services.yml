@@ -397,6 +397,8 @@ https://cmr.earthdata.nasa.gov:
         bbox: false
         shape: false
         temporal: false
+        variable: true
+        multiple_variable: false
       output_formats:
         - image/png
         - image/jpeg
@@ -976,6 +978,8 @@ https://cmr.uat.earthdata.nasa.gov:
         bbox: false
         shape: false
         temporal: false
+        variable: true
+        multiple_variable: false
       output_formats:
         - image/png
         - image/jpeg
