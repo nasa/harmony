@@ -142,7 +142,8 @@ export async function getLabelsForUser(
 ): Promise<string[]> {
   const query = trx(USERS_LABELS_TABLE)
     .select(['value'])
-    .where({ username });
+    .where({ username })
+    .orderBy('value');
 
   const rows = (await query).map((object) => object.value);
   console.log(rows);
