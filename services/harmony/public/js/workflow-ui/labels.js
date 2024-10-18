@@ -1,3 +1,6 @@
+const labelItems = document.querySelectorAll('#labels-list .label-li');
+const labelDropdown = document.getElementById('label-dropdown-a');
+
 /**
  *
  */
@@ -7,7 +10,14 @@ function handleLabelClick(event) {
   labelElement.classList.toggle('active');
 }
 
-const labelItems = document.querySelectorAll('#labels-list .label-li');
+/**
+ *
+ */
+function deselectAll() {
+  document.querySelectorAll('.label-item').forEach((item) => {
+    item.classList.remove('active');
+  });
+}
 
 /**
  *
@@ -32,6 +42,9 @@ function bindEventListeners() {
     item.addEventListener('click', (event) => {
       handleLabelClick(event);
     }, false);
+  });
+  labelDropdown.addEventListener('hidden.bs.dropdown', () => {
+    deselectAll();
   });
 }
 
