@@ -4,16 +4,36 @@ const labelDropdown = document.getElementById('label-dropdown-a');
 /**
  *
  */
-function handleLabelClick(event) {
-  event.preventDefault();
-  const labelElement = event.target;
-  labelElement.classList.toggle('active');
+function getLabelCount() {
+  return document.querySelectorAll('.label-item.active').length;
 }
 
 /**
  *
  */
-function deselectAll() {
+function setLabelCounterDisplay(count) {
+  if (count === 0) {
+    document.getElementById('label-counter').classList.add('d-none');
+  } else {
+    document.getElementById('label-counter').classList.remove('d-none');
+    document.getElementById('label-counter').textContent = count;
+  }
+}
+
+/**
+ *
+ */
+function handleLabelClick(event) {
+  event.preventDefault();
+  const labelElement = event.target;
+  labelElement.classList.toggle('active');
+  setLabelCounterDisplay(getLabelCount());
+}
+
+/**
+ *
+ */
+function deselectAllLabels() {
   document.querySelectorAll('.label-item').forEach((item) => {
     item.classList.remove('active');
   });
@@ -22,7 +42,7 @@ function deselectAll() {
 /**
  *
  */
-function filterList() {
+function filterLabelsList() {
   const searchValue = document.querySelector('#label-search').value.toLowerCase().trim();
   for (const labelItem of labelItems) {
     const labelName = labelItem.innerText.toLowerCase().trim();
@@ -36,7 +56,7 @@ function filterList() {
 function bindEventListeners() {
   const labelSearchElement = document.getElementById('label-search');
   labelSearchElement.addEventListener('keyup', () => {
-    filterList();
+    filterLabelsList();
   });
   document.querySelectorAll('.label-item').forEach((item) => {
     item.addEventListener('click', (event) => {
@@ -44,8 +64,27 @@ function bindEventListeners() {
     }, false);
   });
   labelDropdown.addEventListener('hidden.bs.dropdown', () => {
-    deselectAll();
+    deselectAllLabels();
   });
+}
+
+/**
+ *
+ */
+function getLabelsForSelectedJobs() {
+  const labelsSet = new Set();
+  document.querySelectorAll('.select-job').forEach((jobEl) => {
+    let labels = [];
+    if (jobEl.checked) {
+      const jobID = jobEl.getAttribute('data-id');
+      const labelsString = document.querySelector(`#job-labels-display-${jobID}`).getAttribute('data-labels');
+      if (labelsString !== '') {
+        labels = labelsString.split(',');
+        labels.forEach((item) => labelsSet.add(item));
+      }
+    }
+  });
+  return labelsSet;
 }
 
 /**
