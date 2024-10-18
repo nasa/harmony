@@ -65,6 +65,7 @@ function bindEventListeners() {
   });
   labelDropdown.addEventListener('hidden.bs.dropdown', () => {
     deselectAllLabels();
+    setLabelCounterDisplay(getLabelCount());
   });
 }
 
