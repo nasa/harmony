@@ -33,6 +33,18 @@ function handleLabelClick(event) {
 /**
  *
  */
+function selectLabels(labelNames) {
+  const labelsListElement = document.getElementById('labels-list');
+  for (const name of labelNames) {
+    const labelElement = labelsListElement.querySelector(`a[name="${name}"]`);
+    labelElement.classList.add('active');
+  }
+  setLabelCounterDisplay(getLabelCount());
+}
+
+/**
+ *
+ */
 function deselectAllLabels() {
   document.querySelectorAll('.label-item').forEach((item) => {
     item.classList.remove('active');
@@ -53,6 +65,25 @@ function filterLabelsList() {
 /**
  *
  */
+function getLabelsForSelectedJobs() {
+  const labelsSet = new Set();
+  document.querySelectorAll('.select-job').forEach((jobEl) => {
+    let labels = [];
+    if (jobEl.checked) {
+      const jobID = jobEl.getAttribute('data-id');
+      const labelsString = document.querySelector(`#job-labels-display-${jobID}`).getAttribute('data-labels');
+      if (labelsString !== '') {
+        labels = labelsString.split(',');
+        labels.forEach((item) => labelsSet.add(item));
+      }
+    }
+  });
+  return Array.from(labelsSet);
+}
+
+/**
+ *
+ */
 function bindEventListeners() {
   const labelSearchElement = document.getElementById('label-search');
   labelSearchElement.addEventListener('keyup', () => {
@@ -67,25 +98,10 @@ function bindEventListeners() {
     deselectAllLabels();
     setLabelCounterDisplay(getLabelCount());
   });
-}
-
-/**
- *
- */
-function getLabelsForSelectedJobs() {
-  const labelsSet = new Set();
-  document.querySelectorAll('.select-job').forEach((jobEl) => {
-    let labels = [];
-    if (jobEl.checked) {
-      const jobID = jobEl.getAttribute('data-id');
-      const labelsString = document.querySelector(`#job-labels-display-${jobID}`).getAttribute('data-labels');
-      if (labelsString !== '') {
-        labels = labelsString.split(',');
-        labels.forEach((item) => labelsSet.add(item));
-      }
-    }
+  labelDropdown.addEventListener('show.bs.dropdown', () => {
+    selectLabels(getLabelsForSelectedJobs());
+    setLabelCounterDisplay(getLabelCount());
   });
-  return labelsSet;
 }
 
 /**
