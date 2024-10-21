@@ -1,3 +1,5 @@
+import jobsTable from './jobs/jobs-table.js';
+
 const labelItems = document.querySelectorAll('#labels-list .label-li');
 const labelDropdown = document.getElementById('label-dropdown-a');
 
@@ -6,6 +8,14 @@ const labelDropdown = document.getElementById('label-dropdown-a');
  */
 function getLabelCount() {
   return document.querySelectorAll('.label-item.active').length;
+}
+
+/**
+ *
+ */
+function setJobCounterDisplay(count) {
+  const display = ` apply to ${count} job${count === 1 ? '' : 's'}`;
+  document.getElementById('job-counter').textContent = count ? display : '';
 }
 
 /**
@@ -101,6 +111,7 @@ function bindEventListeners() {
   labelDropdown.addEventListener('show.bs.dropdown', () => {
     selectLabels(getLabelsForSelectedJobs());
     setLabelCounterDisplay(getLabelCount());
+    setJobCounterDisplay(jobsTable.getJobIds().length);
   });
 }
 
