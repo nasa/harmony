@@ -1,5 +1,7 @@
 import jobsTable from './jobs/jobs-table.js';
+import toasts from './toasts.js';
 
+const submitLink = document.getElementById('submit-labels-a');
 const labelItems = document.querySelectorAll('#labels-list .label-li');
 const labelLinks = document.querySelectorAll('#labels-list .label-li a');
 
@@ -8,6 +10,15 @@ const labelLinks = document.querySelectorAll('#labels-list .label-li a');
  */
 function getSelectedLabelsCount() {
   return document.querySelectorAll('.label-item.active').length;
+}
+
+/**
+ *
+ */
+function getSelectedLabelValues() {
+  return [].slice.call(document.querySelectorAll('.label-item.active a')).map(
+    (labelAnchor) => labelAnchor.getAttribute('data-value'),
+  );
 }
 
 /**
@@ -130,12 +141,35 @@ function setLabelLinksDisabled(selectedJobsCount) {
  *
  */
 function setSubmitLinkDisabled(selectedJobsCount) {
-  const submitLink = document.getElementById('submit-labels-a');
   if (selectedJobsCount === 0) {
     submitLink.classList.add('disabled');
   } else {
     submitLink.classList.remove('disabled');
   }
+}
+
+/**
+ * Responds to a submit link click event
+ * (hits relevant Harmony url, shows user the response).
+ * @param {Event} event - the click event
+ */
+function handleSubmitClick(event) {
+  event.preventDefault();
+  toasts.showUpper(`Labeling ${jobsTable.getJobIds().length} jobs...`);
+  console.log(getSelectedLabelValues());
+  console.log(jobsTable.getJobIds());
+  // const link = event.target;
+  // const stateChangeUrl = link.getAttribute('href');
+  // const res = await fetch(stateChangeUrl);
+  // const data = await res.json();
+  // if (res.status === 200) {
+  //   toasts.showUpper(`The job is now ${data.status}`);
+  //   PubSub.publish('table-state-change');
+  // } else if (data.description) {
+  //   toasts.showUpper(data.description);
+  // } else {
+  //   toasts.showUpper('The update failed.');
+  // }
 }
 
 /**
@@ -166,6 +200,9 @@ function bindEventListeners() {
     setJobCounterDisplay(selectedJobsCount);
     setLabelLinksDisabled(selectedJobsCount);
     setSubmitLinkDisabled(selectedJobsCount);
+  });
+  submitLink.addEventListener('click', (event) => {
+    handleSubmitClick(event);
   });
 }
 
