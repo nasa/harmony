@@ -129,6 +129,18 @@ function setLabelLinksDisabled(selectedJobsCount) {
 /**
  *
  */
+function setSubmitLinkDisabled(selectedJobsCount) {
+  const submitLink = document.getElementById('submit-labels-a');
+  if (selectedJobsCount === 0) {
+    submitLink.classList.add('disabled');
+  } else {
+    submitLink.classList.remove('disabled');
+  }
+}
+
+/**
+ *
+ */
 function bindEventListeners() {
   const labelSearchElement = document.getElementById('label-search');
   labelSearchElement.addEventListener('keyup', () => {
@@ -153,6 +165,7 @@ function bindEventListeners() {
     const selectedJobsCount = jobsTable.getJobIds().length;
     setJobCounterDisplay(selectedJobsCount);
     setLabelLinksDisabled(selectedJobsCount);
+    setSubmitLinkDisabled(selectedJobsCount);
   });
 }
 
