@@ -1,6 +1,6 @@
 ### <a name="cloud-access-details"></a> Getting in region S3 AWS access keys using the cloud-access API
 
-Harmony supports analysis in place without forcing a user to download the outputs from their requests. The results for each harmony request are stored an AWS S3 bucket in the us-west-2 region. In order to access these results natively in S3 the user can get temporary AWS access credentials using the harmony cloud-access endpoints. Note that data can only be accessed from within the us-west-2 region.
+Harmony supports analysis in place without forcing a user to download the outputs from their requests. The results for each harmony request are stored in an AWS S3 bucket in the us-west-2 region. In order to access these results natively in S3, the user can get temporary AWS access credentials using the harmony cloud-access endpoints. Note that data can only be accessed from within the us-west-2 region.
 
 #### Get AWS S3 access credentials as JSON
 
