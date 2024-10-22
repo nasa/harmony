@@ -1,12 +1,11 @@
 import jobsTable from './jobs/jobs-table.js';
 
 const labelItems = document.querySelectorAll('#labels-list .label-li');
-const labelDropdown = document.getElementById('label-dropdown-a');
 
 /**
  *
  */
-function getLabelCount() {
+function getSelectedLabelsCount() {
   return document.querySelectorAll('.label-item.active').length;
 }
 
@@ -37,7 +36,7 @@ function handleLabelClick(event) {
   event.preventDefault();
   const labelElement = event.target;
   labelElement.classList.toggle('active');
-  setLabelCounterDisplay(getLabelCount());
+  setLabelCounterDisplay(getSelectedLabelsCount());
 }
 
 /**
@@ -49,7 +48,7 @@ function selectLabels(labelNames) {
     const labelElement = labelsListElement.querySelector(`a[name="${name}"]`);
     labelElement.classList.add('active');
   }
-  setLabelCounterDisplay(getLabelCount());
+  setLabelCounterDisplay(getSelectedLabelsCount());
 }
 
 /**
@@ -64,12 +63,25 @@ function deselectAllLabels() {
 /**
  *
  */
+function getVisibleLabelsCount() {
+  const labelItemsArray = [].slice.call(labelItems);
+  const displayShow = labelItemsArray.filter((el) => getComputedStyle(el).display !== 'none');
+  return displayShow.length;
+}
+
+/**
+ *
+ */
 function filterLabelsList() {
   const searchValue = document.querySelector('#label-search').value.toLowerCase().trim();
+  let visibleCount = 0;
   for (const labelItem of labelItems) {
     const labelName = labelItem.innerText.toLowerCase().trim();
-    labelItem.style.display = labelName.startsWith(searchValue) ? '' : 'none';
+    const isMatch = labelName.startsWith(searchValue);
+    labelItem.style.display = isMatch ? '' : 'none';
+    if (isMatch) visibleCount += 1;
   }
+  document.getElementById('no-match-li').style.display = visibleCount === 0 ? '' : 'none';
 }
 
 /**
@@ -104,13 +116,14 @@ function bindEventListeners() {
       handleLabelClick(event);
     }, false);
   });
+  const labelDropdown = document.getElementById('label-dropdown-a');
   labelDropdown.addEventListener('hidden.bs.dropdown', () => {
     deselectAllLabels();
-    setLabelCounterDisplay(getLabelCount());
+    setLabelCounterDisplay(getSelectedLabelsCount());
   });
   labelDropdown.addEventListener('show.bs.dropdown', () => {
     selectLabels(getLabelsForSelectedJobs());
-    setLabelCounterDisplay(getLabelCount());
+    setLabelCounterDisplay(getSelectedLabelsCount());
     setJobCounterDisplay(jobsTable.getJobIds().length);
   });
 }
