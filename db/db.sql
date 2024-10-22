@@ -181,6 +181,7 @@ CREATE INDEX jobs_updatedAt_id ON jobs(updatedAt);
 CREATE INDEX jobs_status_idx ON jobs(status);
 CREATE INDEX jobs_username_idx ON jobs(jobID, username);
 CREATE INDEX job_links_jobID_idx ON job_links(jobID);
+CREATE INDEX job_links_jobID_id_idx ON job_links(jobID, id);
 CREATE INDEX job_errors_jobID_idx ON job_errors(jobID);
 CREATE INDEX work_items_jobID_idx ON work_items(jobID);
 CREATE INDEX work_items_serviceID_idx ON work_items(serviceID);
