@@ -1,6 +1,7 @@
 import jobsTable from './jobs/jobs-table.js';
 
 const labelItems = document.querySelectorAll('#labels-list .label-li');
+const labelLinks = document.querySelectorAll('#labels-list .label-li a');
 
 /**
  *
@@ -14,7 +15,7 @@ function getSelectedLabelsCount() {
  */
 function setJobCounterDisplay(count) {
   const display = ` apply to ${count} job${count === 1 ? '' : 's'}`;
-  document.getElementById('job-counter').textContent = count ? display : '';
+  document.getElementById('job-counter').textContent = count ? display : '0 jobs selected';
 }
 
 /**
@@ -87,6 +88,15 @@ function filterLabelsList() {
 /**
  *
  */
+function showAllLabels() {
+  for (const labelItem of labelItems) {
+    labelItem.style.display = '';
+  }
+}
+
+/**
+ *
+ */
 function getLabelsForSelectedJobs() {
   const labelsSet = new Set();
   document.querySelectorAll('.select-job').forEach((jobEl) => {
@@ -106,6 +116,19 @@ function getLabelsForSelectedJobs() {
 /**
  *
  */
+function setLabelLinksDisabled(selectedJobsCount) {
+  for (const labelItemLink of labelLinks) {
+    if (selectedJobsCount === 0) {
+      labelItemLink.classList.add('disabled');
+    } else {
+      labelItemLink.classList.remove('disabled');
+    }
+  }
+}
+
+/**
+ *
+ */
 function bindEventListeners() {
   const labelSearchElement = document.getElementById('label-search');
   labelSearchElement.addEventListener('keyup', () => {
@@ -120,11 +143,16 @@ function bindEventListeners() {
   labelDropdown.addEventListener('hidden.bs.dropdown', () => {
     deselectAllLabels();
     setLabelCounterDisplay(getSelectedLabelsCount());
+    document.getElementById('label-search').value = '';
+    showAllLabels();
+    document.getElementById('no-match-li').style.display = 'none';
   });
   labelDropdown.addEventListener('show.bs.dropdown', () => {
     selectLabels(getLabelsForSelectedJobs());
     setLabelCounterDisplay(getSelectedLabelsCount());
-    setJobCounterDisplay(jobsTable.getJobIds().length);
+    const selectedJobsCount = jobsTable.getJobIds().length;
+    setJobCounterDisplay(selectedJobsCount);
+    setLabelLinksDisabled(selectedJobsCount);
   });
 }
 
