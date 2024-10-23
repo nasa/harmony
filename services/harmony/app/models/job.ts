@@ -140,6 +140,7 @@ export interface JobQuery {
     username?: { in: boolean, values: string[] };
     jobID?: { in: boolean, values: string[] };
   }
+  labels?: string[];
   orderBy?: {
     field: string;
     value: string;
@@ -500,16 +501,39 @@ export class Job extends DBRecord implements JobRecord {
     let query;
 
     if (includeLabels) {
-      query = tx(Job.table)
-        .select(`${Job.table}.*`, tx.raw(`STRING_AGG(${LABELS_TABLE}.value, ',' order by value) AS label_values`))
-        .leftOuterJoin(`${JOBS_LABELS_TABLE}`, `${Job.table}.jobID`, '=', `${JOBS_LABELS_TABLE}.job_id`)
-        .leftOuterJoin(`${LABELS_TABLE}`, `${JOBS_LABELS_TABLE}.label_id`, '=', `${LABELS_TABLE}.id`)
-        .where(setTableNameForWhereClauses(Job.table, constraints.where))
-        .groupBy(`${Job.table}.id`)
-        .orderBy(
-          constraints?.orderBy?.field ?? 'createdAt',
-          constraints?.orderBy?.value ?? 'desc')
-        .modify((queryBuilder) => modifyQuery(queryBuilder, constraints));
+      if (constraints.labels) { // Requesting to limit the jobs based on the provided labels
+        query = tx(Job.table)
+          .select(`${Job.table}.*`, tx.raw(`STRING_AGG(${LABELS_TABLE}.value, ',' order by value) AS label_values`))
+          .leftOuterJoin(`${JOBS_LABELS_TABLE}`, `${Job.table}.jobID`, '=', `${JOBS_LABELS_TABLE}.job_id`)
+          .leftOuterJoin(`${LABELS_TABLE}`, `${JOBS_LABELS_TABLE}.label_id`, '=', `${LABELS_TABLE}.id`)
+          // Subquery that filters to get the list of jobIDs that match any of the provided labels
+          // Need to do this as a subquery otherwise the labels field in the jobs only include
+          // labels that were in the query rather than the full list of labels for each job
+          .whereIn(`${Job.table}.jobID`, function () {
+            void this.select(`${JOBS_LABELS_TABLE}.job_id`)
+              .from(`${JOBS_LABELS_TABLE}`)
+              .leftOuterJoin(`${LABELS_TABLE}`, `${JOBS_LABELS_TABLE}.label_id`, '=', `${LABELS_TABLE}.id`)
+              .whereIn(`${LABELS_TABLE}.value`, constraints.labels)
+              .groupBy(`${JOBS_LABELS_TABLE}.job_id`);
+          })
+          .where(setTableNameForWhereClauses(Job.table, constraints.where))
+          .groupBy(`${Job.table}.id`)
+          .orderBy(
+            constraints?.orderBy?.field ?? 'createdAt',
+            constraints?.orderBy?.value ?? 'desc')
+          .modify((queryBuilder) => modifyQuery(queryBuilder, constraints));
+      } else {
+        query = tx(Job.table)
+          .select(`${Job.table}.*`, tx.raw(`STRING_AGG(${LABELS_TABLE}.value, ',' order by value) AS label_values`))
+          .leftOuterJoin(`${JOBS_LABELS_TABLE}`, `${Job.table}.jobID`, '=', `${JOBS_LABELS_TABLE}.job_id`)
+          .leftOuterJoin(`${LABELS_TABLE}`, `${JOBS_LABELS_TABLE}.label_id`, '=', `${LABELS_TABLE}.id`)
+          .where(setTableNameForWhereClauses(Job.table, constraints.where))
+          .groupBy(`${Job.table}.id`)
+          .orderBy(
+            constraints?.orderBy?.field ?? 'createdAt',
+            constraints?.orderBy?.value ?? 'desc')
+          .modify((queryBuilder) => modifyQuery(queryBuilder, constraints));
+      }
     } else {
       query = tx(Job.table)
         .select()

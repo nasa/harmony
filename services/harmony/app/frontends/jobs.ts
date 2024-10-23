@@ -15,6 +15,7 @@ import env from '../util/env';
 import JobError, { getErrorsForJob } from '../models/job-error';
 import _ from 'lodash';
 import { isAdminUser } from '../util/edl-api';
+import { parseMultiValueParameter } from '../util/parameter-parsing-helpers';
 
 /**
  * Returns true if the job contains S3 direct access links
@@ -126,9 +127,16 @@ export async function getJobsListing(
     req.context.logger.info(`Get jobs listing for user ${req.user}`);
     const root = getRequestRoot(req);
     const { page, limit } = getPagingParams(req, env.defaultJobListPageSize);
+    let labels = [];
+    if (req.query.label) {
+      labels = parseMultiValueParameter(req.query.label as string);
+    }
     const query: JobQuery = { where: {} };
     if (!req.context.isAdminAccess) {
       query.where.username = req.user;
+    }
+    if (labels.length > 0) {
+      query.labels = labels;
     }
     let listing;
     await db.transaction(async (tx) => {
