@@ -36,33 +36,29 @@
             <ol class="breadcrumb p-0 m-0">
                 <li class="breadcrumb-item active" aria-current="page">Jobs</li>
             </ol>
-            <ul id="job-state-links-container" class="nav" data-is-admin-or-owner="{{isAdminOrOwner}}">
-                <!-- job state change links will go here -->
-                <li id="label-nav-item" class="nav-item dropstart">
-                    <a id="label-dropdown-a" class="nav-link dropdown-toggle py-0 px-2" data-bs-toggle="dropdown" data-bs-auto-close="outside" href="#" role="button" aria-expanded="false">label</a>
-                    <ul class="dropdown-menu mt-2">
-                        <li class="mx-2 mb-2">
-                            <input type="text" class="form-control" id="label-search" placeholder="label name">
-                        </li>
-                        <li id="no-match-li" class="fw-light text-center fs-6" style="display: none;"><i>no matches</i></li>
-                        <li>
-                            <ul id="labels-list">
-                            {{#labels}}
-                            <li class="label-li"><a class="dropdown-item label-item" name="{{.}}" data-value="{{.}}" href="#">{{.}}</a></li>
-                            {{/labels}}
-                            </ul>
-                        </li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li>
-                            <a id="submit-labels-a" class="dropdown-item disabled" href="#" title="replace each selected job's tags with the currently chosen tags">
-                                <span id="label-counter" class="badge rounded-pill bg-success d-none">3</span>
-                                <i class="bi bi-tags"></i>
-                                <span id="job-counter">&nbsp;apply to 12 jobs</span>
-                            </a>
-                        </li>
-                    </ul>
-                </li>
-            </ul>
+            <div class="d-flex flex-row">
+                <ul id="job-state-links-container" class="nav" data-is-admin-or-owner="{{isAdminOrOwner}}">
+                    <!-- job state change links will go here -->
+                    <li id="label-nav-item" class="nav-item dropstart">
+                        <a id="label-dropdown-a" class="nav-link dropdown-toggle py-0 px-2" data-bs-toggle="dropdown" data-bs-auto-close="outside" href="#" role="button" aria-expanded="false">label</a>
+                        <ul class="dropdown-menu mt-2">
+                            <li class="mx-2 mb-2">
+                                <input type="text" class="form-control" id="label-search" placeholder="label name">
+                            </li>
+                            <li id="no-match-li" class="fw-light text-center fs-6" style="display: none;"><i>no matches</i></li>
+                            <li>
+                                <ul id="labels-list">
+                                {{#labels}}
+                                <li class="label-li"><a class="dropdown-item label-item" name="{{.}}" data-value="{{.}}" href="#">{{.}}</a></li>
+                                {{/labels}}
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+                <span id="job-counter" class="badge rounded-pill bg-info d-none ml-1" style="line-height: inherit;">3</span>&nbsp;
+                <span id="job-counter-message" class="d-none">jobs</span>
+            </div>
         </div>
     </nav>
     <div class="container-fluid">

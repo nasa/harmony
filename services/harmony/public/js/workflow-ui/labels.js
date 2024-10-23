@@ -1,5 +1,6 @@
 import jobsTable from './jobs/jobs-table.js';
 import toasts from './toasts.js';
+import PubSub from '../pub-sub.js';
 
 const submitLink = document.getElementById('submit-labels-a');
 const labelItems = document.querySelectorAll('#labels-list .label-li');
@@ -16,29 +17,9 @@ function getSelectedLabelsCount() {
  *
  */
 function getSelectedLabelValues() {
-  return [].slice.call(document.querySelectorAll('.label-item.active a')).map(
+  return [].slice.call(document.querySelectorAll('.label-item.active')).map(
     (labelAnchor) => labelAnchor.getAttribute('data-value'),
   );
-}
-
-/**
- *
- */
-function setJobCounterDisplay(count) {
-  const display = ` apply to ${count} job${count === 1 ? '' : 's'}`;
-  document.getElementById('job-counter').textContent = count ? display : '0 jobs selected';
-}
-
-/**
- *
- */
-function setLabelCounterDisplay(count) {
-  if (count === 0) {
-    document.getElementById('label-counter').classList.add('d-none');
-  } else {
-    document.getElementById('label-counter').classList.remove('d-none');
-    document.getElementById('label-counter').textContent = count;
-  }
 }
 
 /**
@@ -48,7 +29,6 @@ function handleLabelClick(event) {
   event.preventDefault();
   const labelElement = event.target;
   labelElement.classList.toggle('active');
-  setLabelCounterDisplay(getSelectedLabelsCount());
 }
 
 /**
@@ -60,7 +40,6 @@ function selectLabels(labelNames) {
     const labelElement = labelsListElement.querySelector(`a[name="${name}"]`);
     labelElement.classList.add('active');
   }
-  setLabelCounterDisplay(getSelectedLabelsCount());
 }
 
 /**
@@ -153,23 +132,30 @@ function setSubmitLinkDisabled(selectedJobsCount) {
  * (hits relevant Harmony url, shows user the response).
  * @param {Event} event - the click event
  */
-function handleSubmitClick(event) {
+async function handleSubmitClick(event) {
   event.preventDefault();
-  toasts.showUpper(`Labeling ${jobsTable.getJobIds().length} jobs...`);
-  console.log(getSelectedLabelValues());
-  console.log(jobsTable.getJobIds());
-  // const link = event.target;
-  // const stateChangeUrl = link.getAttribute('href');
-  // const res = await fetch(stateChangeUrl);
-  // const data = await res.json();
-  // if (res.status === 200) {
-  //   toasts.showUpper(`The job is now ${data.status}`);
-  //   PubSub.publish('table-state-change');
-  // } else if (data.description) {
-  //   toasts.showUpper(data.description);
-  // } else {
-  //   toasts.showUpper('The update failed.');
-  // }
+  const jobIds = jobsTable.getJobIds();
+  const postfix = jobIds.length === 1 ? '' : 's';
+  toasts.showUpper(`Labeling ${jobIds.length} job${postfix}...`);
+  // console.log(getSelectedLabelValues());
+  // console.log(jobsTable.getJobIds());
+  const res = await fetch('/labels', {
+    method: 'PUT',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ jobId: jobIds, label: getSelectedLabelValues() }),
+  });
+  const isAre = jobIds.length > 1 ? 'have' : 'has';
+  if (res.status === 201) {
+    toasts.showUpper(`The selected job${postfix} ${isAre} been labeled.`);
+  } else {
+    toasts.showUpper('The update failed.');
+  }
+  PubSub.publish(
+    'row-state-change',
+  );
 }
 
 /**
@@ -188,14 +174,12 @@ function bindEventListeners() {
   const labelDropdown = document.getElementById('label-dropdown-a');
   labelDropdown.addEventListener('hidden.bs.dropdown', () => {
     deselectAllLabels();
-    setLabelCounterDisplay(getSelectedLabelsCount());
     document.getElementById('label-search').value = '';
     showAllLabels();
     document.getElementById('no-match-li').style.display = 'none';
   });
   labelDropdown.addEventListener('show.bs.dropdown', () => {
     selectLabels(getLabelsForSelectedJobs());
-    setLabelCounterDisplay(getSelectedLabelsCount());
     const selectedJobsCount = jobsTable.getJobIds().length;
     setJobCounterDisplay(selectedJobsCount);
     setLabelLinksDisabled(selectedJobsCount);
