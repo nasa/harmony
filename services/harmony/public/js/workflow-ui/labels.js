@@ -6,21 +6,35 @@ import PubSub from '../pub-sub.js';
 const labelLinks = document.querySelectorAll('#labels-list .label-li a');
 
 /**
- *
+ * Responds to a submit link click event
+ * (hits relevant Harmony url, shows user the response).
+ * @param {Event} event - the click event
  */
-function getSelectedLabelValues() {
-  return [].slice.call(document.querySelectorAll('.label-item.active')).map(
-    (labelAnchor) => labelAnchor.getAttribute('data-value'),
-  );
-}
-
-/**
- *
- */
-function handleLabelClick(event) {
+async function handleSubmitClick(event, method) {
   event.preventDefault();
   const labelElement = event.target;
-  labelElement.classList.toggle('active');
+  const jobIds = jobsTable.getJobIds();
+  const postfix = jobIds.length === 1 ? '' : 's';
+  toasts.showUpper(`Labeling ${jobIds.length} job${postfix}...`);
+  // console.log(getSelectedLabelValues());
+  // console.log(jobsTable.getJobIds());
+  const res = await fetch('/labels', {
+    method,
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ jobId: jobIds, label: [] }),
+  });
+  const isAre = jobIds.length > 1 ? 'have' : 'has';
+  if (res.status === 201) {
+    toasts.showUpper(`The selected job${postfix} ${isAre} been labeled.`);
+  } else {
+    toasts.showUpper('The update failed.');
+  }
+  PubSub.publish(
+    'row-state-change',
+  );
 }
 
 /**
@@ -34,6 +48,9 @@ function selectLabels(labelNames) {
     const labelElementClone = labelElement.cloneNode(true);
     labelElementClone.setAttribute('title', `remove "${labelElementClone.innerText}" label from all selected jobs`);
     labelElementClone.classList.add('label-clone');
+    labelElementClone.addEventListener('click', (event) => {
+      handleSubmitClick(event, 'DELETE');
+    }, false);
     const labelCloneAnchor = labelElementClone.firstChild;
     labelCloneAnchor.innerText = `✔️ ${labelCloneAnchor.innerText}`;
     document.getElementById('labels-list').prepend(labelElementClone);
@@ -50,6 +67,8 @@ function deselectAllLabels() {
   while (clonedLabels[0]) {
     clonedLabels[0].parentNode.removeChild(clonedLabels[0]);
   }
+  [].slice.call(document.getElementsByClassName('label-promoted'))
+    .forEach((el) => el.classList.remove('label-promoted'));
 }
 
 /**
@@ -63,7 +82,7 @@ function filterLabelsList() {
     if (labelItem.classList.contains('label-promoted')) { // skip, stays hidden
       continue;
     }
-    const labelName = labelItem.innerText.toLowerCase().trim();
+    const labelName = labelItem.firstChild.getAttribute('data-value').toLowerCase().trim();
     const isMatch = labelName.startsWith(searchValue);
     labelItem.style.display = isMatch ? '' : 'none';
     if (isMatch) visibleCount += 1;
@@ -121,37 +140,6 @@ function setLabelLinksDisabled(selectedJobsCount) {
 }
 
 /**
- * Responds to a submit link click event
- * (hits relevant Harmony url, shows user the response).
- * @param {Event} event - the click event
- */
-async function handleSubmitClick(event) {
-  event.preventDefault();
-  const jobIds = jobsTable.getJobIds();
-  const postfix = jobIds.length === 1 ? '' : 's';
-  toasts.showUpper(`Labeling ${jobIds.length} job${postfix}...`);
-  // console.log(getSelectedLabelValues());
-  // console.log(jobsTable.getJobIds());
-  const res = await fetch('/labels', {
-    method: 'PUT',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ jobId: jobIds, label: getSelectedLabelValues() }),
-  });
-  const isAre = jobIds.length > 1 ? 'have' : 'has';
-  if (res.status === 201) {
-    toasts.showUpper(`The selected job${postfix} ${isAre} been labeled.`);
-  } else {
-    toasts.showUpper('The update failed.');
-  }
-  PubSub.publish(
-    'row-state-change',
-  );
-}
-
-/**
  *
  */
 function bindEventListeners() {
@@ -161,7 +149,7 @@ function bindEventListeners() {
   });
   document.querySelectorAll('.label-item').forEach((item) => {
     item.addEventListener('click', (event) => {
-      handleLabelClick(event);
+      handleSubmitClick(event, 'PUT');
     }, false);
   });
   const labelDropdown = document.getElementById('label-dropdown-a');
