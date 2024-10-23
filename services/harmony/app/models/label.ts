@@ -1,3 +1,4 @@
+import { profanity, CensorType } from '@2toad/profanity';
 import { Transaction } from '../util/db';
 import { Job } from './job';
 import { NotFoundError, RequestValidationError } from '../util/errors';
@@ -14,11 +15,16 @@ export const USERS_LABELS_TABLE = 'users_labels';
  * @returns An error message if the label is not valid, null otherwise
  */
 export function checkLabel(label: string): string {
+  let message = null;
+
   if (label.length > 255) {
-    const message = 'Labels may not exceed 255 characters in length.';
-    return message;
+    message = 'Labels may not exceed 255 characters in length.';
+  } else if (profanity.exists(label, ['en', 'de', 'es', 'fr'])) {
+    const censored = profanity.censor(label, CensorType.AllVowels, ['en', 'de', 'es', 'fr']);
+    message = `${censored} is not an allowed label`;
   }
-  return null;
+
+  return message;
 }
 
 /**

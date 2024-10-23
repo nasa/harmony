@@ -2,8 +2,13 @@
 Any changes to the environment variables will be documented in this file in chronological
 order with the most recent changes first.
 
+# 2024-10-23
+### Added
+- LABELS_ALLOW_LIST - comma-separated list of values that are explicitly allowed for labels
+- LABELS_FORBID_LIST - comma-separated list of values that are explicitly forbidden for labels
+
 ## 2024-08-30
-### Added  
+### Added
 - Added environment defaults for NET2COG service
 
 ## 2024-07-31
