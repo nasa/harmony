@@ -4,6 +4,8 @@ import toasts from './toasts.js';
 import PubSub from '../pub-sub.js';
 
 const labelLinks = document.querySelectorAll('#labels-list .label-li a');
+const labelDropdown = document.getElementById('label-dropdown-a');
+const bsDropdown = new bootstrap.Dropdown(labelDropdown);
 
 /**
  * Responds to a submit link click event
@@ -11,11 +13,13 @@ const labelLinks = document.querySelectorAll('#labels-list .label-li a');
  * @param {Event} event - the click event
  */
 async function handleSubmitClick(event, method) {
+  bsDropdown.hide();
   event.preventDefault();
-  const labelElement = event.target;
+  const labelName = event.target.getAttribute('data-value');
   const jobIds = jobsTable.getJobIds();
   const postfix = jobIds.length === 1 ? '' : 's';
-  toasts.showUpper(`Labeling ${jobIds.length} job${postfix}...`);
+  const action = method === 'PUT' ? 'Adding' : 'Removing';
+  toasts.showUpper(`${action} "${labelName}" label for ${jobIds.length} job${postfix}...`);
   // console.log(getSelectedLabelValues());
   // console.log(jobsTable.getJobIds());
   const res = await fetch('/labels', {
@@ -24,17 +28,17 @@ async function handleSubmitClick(event, method) {
       Accept: 'application/json',
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ jobId: jobIds, label: [] }),
+    body: JSON.stringify({ jobId: jobIds, label: [labelName] }),
   });
   const isAre = jobIds.length > 1 ? 'have' : 'has';
-  if (res.status === 201) {
-    toasts.showUpper(`The selected job${postfix} ${isAre} been labeled.`);
+  if (res.status === 201 || res.status === 204) {
+    toasts.showUpper(`The selected job${postfix} ${isAre} been updated.`);
+    PubSub.publish(
+      'row-state-change',
+    );
   } else {
     toasts.showUpper('The update failed.');
   }
-  PubSub.publish(
-    'row-state-change',
-  );
 }
 
 /**
@@ -130,12 +134,19 @@ function getLabelsForSelectedJobs() {
  *
  */
 function setLabelLinksDisabled(selectedJobsCount) {
-  for (const labelItemLink of labelLinks) {
-    if (selectedJobsCount === 0) {
+  if (selectedJobsCount === 0) {
+    for (const labelItemLink of labelLinks) {
       labelItemLink.classList.add('disabled');
-    } else {
-      labelItemLink.classList.remove('disabled');
     }
+  }
+}
+
+/**
+ *
+ */
+function setLabelLinksEnabled() {
+  for (const labelItemLink of labelLinks) {
+      labelItemLink.classList.remove('disabled');
   }
 }
 
@@ -152,9 +163,9 @@ function bindEventListeners() {
       handleSubmitClick(event, 'PUT');
     }, false);
   });
-  const labelDropdown = document.getElementById('label-dropdown-a');
   labelDropdown.addEventListener('hidden.bs.dropdown', () => {
     deselectAllLabels();
+    setLabelLinksEnabled();
     document.getElementById('label-search').value = '';
     showAllLabels();
     document.getElementById('no-match-li').style.display = 'none';
