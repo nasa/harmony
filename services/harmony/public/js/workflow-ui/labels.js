@@ -85,18 +85,24 @@ function showAllLabels() {
 }
 
 /**
- *
+ * Get the intersection of jobs' labels so that we know which labels
+ * will be marked for potential deletion in the dropdown.
  */
 function getLabelsForSelectedJobs() {
-  const labelsSet = new Set();
+  let labelsSet = new Set();
+  let firstChecked = true;
   document.querySelectorAll('.select-job').forEach((jobEl) => {
-    let labels = [];
     if (jobEl.checked) {
       const jobID = jobEl.getAttribute('data-id');
       const labelsString = document.querySelector(`#job-labels-display-${jobID}`).getAttribute('data-labels');
-      if (labelsString !== '') {
-        labels = labelsString.split(',');
+      const currentSet = new Set();
+      const labels = labelsString === '' ? [] : labelsString.split(',');
+      labels.forEach((item) => currentSet.add(item));
+      if (firstChecked) { // init labelsSet
         labels.forEach((item) => labelsSet.add(item));
+        firstChecked = false;
+      } else {
+        labelsSet = labelsSet.intersection(currentSet);
       }
     }
   });
