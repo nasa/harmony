@@ -9,13 +9,6 @@ const labelLinks = document.querySelectorAll('#labels-list .label-li a');
 /**
  *
  */
-function getSelectedLabelsCount() {
-  return document.querySelectorAll('.label-item.active').length;
-}
-
-/**
- *
- */
 function getSelectedLabelValues() {
   return [].slice.call(document.querySelectorAll('.label-item.active')).map(
     (labelAnchor) => labelAnchor.getAttribute('data-value'),
@@ -49,15 +42,6 @@ function deselectAllLabels() {
   document.querySelectorAll('.label-item').forEach((item) => {
     item.classList.remove('active');
   });
-}
-
-/**
- *
- */
-function getVisibleLabelsCount() {
-  const labelItemsArray = [].slice.call(labelItems);
-  const displayShow = labelItemsArray.filter((el) => getComputedStyle(el).display !== 'none');
-  return displayShow.length;
 }
 
 /**
@@ -123,17 +107,6 @@ function setLabelLinksDisabled(selectedJobsCount) {
 }
 
 /**
- *
- */
-function setSubmitLinkDisabled(selectedJobsCount) {
-  if (selectedJobsCount === 0) {
-    submitLink.classList.add('disabled');
-  } else {
-    submitLink.classList.remove('disabled');
-  }
-}
-
-/**
  * Responds to a submit link click event
  * (hits relevant Harmony url, shows user the response).
  * @param {Event} event - the click event
@@ -187,9 +160,7 @@ function bindEventListeners() {
   labelDropdown.addEventListener('show.bs.dropdown', () => {
     selectLabels(getLabelsForSelectedJobs());
     const selectedJobsCount = jobsTable.getJobIds().length;
-    setJobCounterDisplay(selectedJobsCount);
     setLabelLinksDisabled(selectedJobsCount);
-    setSubmitLinkDisabled(selectedJobsCount);
   });
   submitLink.addEventListener('click', (event) => {
     handleSubmitClick(event);
