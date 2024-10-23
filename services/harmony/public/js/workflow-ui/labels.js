@@ -1,9 +1,8 @@
+/* eslint-disable no-continue */
 import jobsTable from './jobs/jobs-table.js';
 import toasts from './toasts.js';
 import PubSub from '../pub-sub.js';
 
-const submitLink = document.getElementById('submit-labels-a');
-const labelItems = document.querySelectorAll('#labels-list .label-li');
 const labelLinks = document.querySelectorAll('#labels-list .label-li a');
 
 /**
@@ -28,10 +27,18 @@ function handleLabelClick(event) {
  *
  */
 function selectLabels(labelNames) {
+  const labelNamesReversed = labelNames.reverse();
   const labelsListElement = document.getElementById('labels-list');
-  for (const name of labelNames) {
-    const labelElement = labelsListElement.querySelector(`a[name="${name}"]`);
-    labelElement.classList.add('active');
+  for (const name of labelNamesReversed) {
+    const labelElement = labelsListElement.querySelector(`a[name="${name}"]`).parentNode;
+    const labelElementClone = labelElement.cloneNode(true);
+    labelElementClone.setAttribute('title', `remove "${labelElementClone.innerText}" label from all selected jobs`);
+    labelElementClone.classList.add('label-clone');
+    const labelCloneAnchor = labelElementClone.firstChild;
+    labelCloneAnchor.innerText = `✔️ ${labelCloneAnchor.innerText}`;
+    document.getElementById('labels-list').prepend(labelElementClone);
+    labelElement.style.display = 'none';
+    labelElement.classList.add('label-promoted');
   }
 }
 
@@ -39,9 +46,10 @@ function selectLabels(labelNames) {
  *
  */
 function deselectAllLabels() {
-  document.querySelectorAll('.label-item').forEach((item) => {
-    item.classList.remove('active');
-  });
+  const clonedLabels = document.getElementsByClassName('label-clone');
+  while (clonedLabels[0]) {
+    clonedLabels[0].parentNode.removeChild(clonedLabels[0]);
+  }
 }
 
 /**
@@ -49,8 +57,12 @@ function deselectAllLabels() {
  */
 function filterLabelsList() {
   const searchValue = document.querySelector('#label-search').value.toLowerCase().trim();
+  const labelItems = document.querySelectorAll('#labels-list .label-li');
   let visibleCount = 0;
   for (const labelItem of labelItems) {
+    if (labelItem.classList.contains('label-promoted')) { // skip, stays hidden
+      continue;
+    }
     const labelName = labelItem.innerText.toLowerCase().trim();
     const isMatch = labelName.startsWith(searchValue);
     labelItem.style.display = isMatch ? '' : 'none';
@@ -63,6 +75,7 @@ function filterLabelsList() {
  *
  */
 function showAllLabels() {
+  const labelItems = document.querySelectorAll('#labels-list .label-li');
   for (const labelItem of labelItems) {
     labelItem.style.display = '';
   }
@@ -90,6 +103,7 @@ function getLabelsForSelectedJobs() {
       }
     }
   });
+  console.log(Array.from(labelsSet));
   return Array.from(labelsSet);
 }
 
@@ -161,9 +175,6 @@ function bindEventListeners() {
     selectLabels(getLabelsForSelectedJobs());
     const selectedJobsCount = jobsTable.getJobIds().length;
     setLabelLinksDisabled(selectedJobsCount);
-  });
-  submitLink.addEventListener('click', (event) => {
-    handleSubmitClick(event);
   });
 }
 
