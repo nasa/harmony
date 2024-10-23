@@ -137,8 +137,9 @@ WKT_PRECISION=0.0001
 
 # Comma-separated list of label values that are explicitly allowed
 LABELS_ALLOW_LIST=
-# Comma-separated list of label values that are explicitly forbidden
-LABELS_FORBID_LIST=
+# Comma-separated list of label values that are explicitly forbidden, with the first one just
+# for demo purposes
+LABELS_FORBID_LIST=this_is_a_forbidden_label
 
 #############################################################################
 #                        OAuth 2 (Earthdata Login)                          #
