@@ -24,7 +24,6 @@ export async function addJobLabels(
   try {
     await db.transaction(async (trx) => {
       const lowerCaseBody = keysToLowerCase(req.body);
-      console.log(`BODY: ${JSON.stringify(lowerCaseBody)}`);
       await addLabelsToJobs(trx, lowerCaseBody.jobid, req.user, lowerCaseBody.label, isAdmin);
     });
 

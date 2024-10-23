@@ -135,6 +135,11 @@ MAX_DATA_OPERATION_CACHE_SIZE=512000000
 # WKT POINT/LINESTRING to POLYGON conversion side length, 0.0001 is about 11 meters in precision
 WKT_PRECISION=0.0001
 
+# Comma-separated list of label values that are explicitly allowed
+LABELS_ALLOW_LIST=
+# Comma-separated list of label values that are explicitly forbidden
+LABELS_FORBID_LIST=
+
 #############################################################################
 #                        OAuth 2 (Earthdata Login)                          #
 #                                                                           #

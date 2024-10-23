@@ -1,11 +1,16 @@
 import { expect } from 'chai';
+import { profanity } from '@2toad/profanity';
 import { hookTransaction } from '../helpers/db';
 import { buildJob, getFirstJob } from '../helpers/jobs';
 import { addJobsLabels, deleteJobsLabels } from '../helpers/labels';
 import hookServersStartStop from '../helpers/servers';
 import db from '../../app/util/db';
+import env from '../../app/util/env';
+import { stub } from 'sinon';
 
 describe('Job label CRUD', function () {
+  const envLabelsAllowListStub = stub(env, 'labelsAllowList').get(() => 'butt');
+  const envLabelsForbidListStub = stub(env, 'labelsForbidList').get(() => 'buzz');
   hookServersStartStop({ skipEarthdataLogin: false });
   hookTransaction();
   const joeJob1 = buildJob({ username: 'joe' });
@@ -13,6 +18,13 @@ describe('Job label CRUD', function () {
     await joeJob1.save(this.trx);
     this.trx.commit();
     this.trx = null;
+  });
+
+  after(function () {
+    envLabelsAllowListStub.restore();
+    envLabelsForbidListStub.restore();
+    profanity.whitelist.removeWords(['butt']);
+    profanity.removeWords(['buzz']);
   });
 
   const { jobID } = joeJob1;
@@ -45,6 +57,23 @@ describe('Job label CRUD', function () {
         });
       });
 
+      describe('When a label is a forbidden', function () {
+        it('Returns an error for the label', async function () {
+          const response = await addJobsLabels(this.frontend, [jobID], ['foo', 'buzz'], 'joe');
+          expect(response.status).to.equal(400);
+          expect(JSON.parse(response.text).description).to.equal('Error: b*zz is not an allowed label');
+        });
+      });
+
+      describe('When a label is on the allowed list', function () {
+        it('Returns an error for the label', async function () {
+          const response = await addJobsLabels(this.frontend, [jobID], ['butt'], 'joe');
+          expect(response.status).to.equal(201);
+          const savedJob = await getFirstJob(db, { where: { jobID } });
+          expect(savedJob.labels).deep.equal(['bar', 'butt', 'foo']);
+        });
+      });
+
     });
 
     describe('When the user is an admin user that did not create the job', function () {
@@ -74,7 +103,7 @@ describe('Job label CRUD', function () {
     describe('When the user created the jobs', function () {
       describe('When the jobs and labels are valid', function () {
         it('deletes the labels from the jobs', async function () {
-          const response = await deleteJobsLabels(this.frontend, [jobID], ['label1'], 'joe');
+          const response = await deleteJobsLabels(this.frontend, [jobID], ['butt', 'label1'], 'joe');
           expect(response.status).to.equal(204);
           const savedJob = await getFirstJob(db, { where: { jobID } });
           // TODO uncomment this line and remove the following when admin access to labels is enabled
