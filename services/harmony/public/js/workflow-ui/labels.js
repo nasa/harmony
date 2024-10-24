@@ -114,8 +114,8 @@ function showAllLabels() {
 
 /**
  * Get the intersection set of the labels of selected jobs so that
- * we know which labels will be promoted (to the top of the list)
- * and marked for potential deletion in the dropdown.
+ * we know which labels will be promoted (to the top of the labels list)
+ * and marked for potential removal from their associated jobs.
  */
 function getLabelsForSelectedJobs() {
   let labelsSet = new Set();
