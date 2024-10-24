@@ -18,10 +18,8 @@ async function handleSubmitClick(event, method) {
   const labelName = event.target.getAttribute('data-value');
   const jobIds = jobsTable.getJobIds();
   const postfix = jobIds.length === 1 ? '' : 's';
-  const action = method === 'PUT' ? 'Adding' : 'Removing';
-  toasts.showUpper(`${action} "${labelName}" label for ${jobIds.length} job${postfix}...`);
-  // console.log(getSelectedLabelValues());
-  // console.log(jobsTable.getJobIds());
+  let action = method === 'PUT' ? 'Adding' : 'Removing';
+  toasts.showUpper(`${action} label...`);
   const res = await fetch('/labels', {
     method,
     headers: {
@@ -30,9 +28,9 @@ async function handleSubmitClick(event, method) {
     },
     body: JSON.stringify({ jobId: jobIds, label: [labelName] }),
   });
-  const isAre = jobIds.length > 1 ? 'have' : 'has';
+  action = method === 'PUT' ? 'Added' : 'Removed';
   if (res.status === 201 || res.status === 204) {
-    toasts.showUpper(`The selected job${postfix} ${isAre} been updated.`);
+    toasts.showUpper(`${action} "${labelName}" label for ${jobIds.length} job${postfix}.`);
     PubSub.publish(
       'row-state-change',
     );
