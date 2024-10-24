@@ -3,17 +3,21 @@ import jobsTable from './jobs/jobs-table.js';
 import toasts from './toasts.js';
 import PubSub from '../pub-sub.js';
 
+// the anchor elements that correspond to a label
 const labelLinks = document.querySelectorAll('#labels-list .label-li a');
+
+// the dropdown that contains label list items
 const labelDropdown = document.getElementById('label-dropdown-a');
 const bsDropdown = new bootstrap.Dropdown(labelDropdown);
 
 /**
- * Responds to a submit link click event
+ * Responds to a submit link click event by adding or removing
+ * a label.
  * (hits relevant Harmony url, shows user the response).
  * @param {Event} event - the click event
+ * @param {string} method - the HTTP method
  */
 async function handleSubmitClick(event, method) {
-  bsDropdown.hide();
   event.preventDefault();
   const labelName = event.target.getAttribute('data-value');
   const jobIds = jobsTable.getJobIds();
@@ -40,9 +44,11 @@ async function handleSubmitClick(event, method) {
 }
 
 /**
- *
+ * Promotes the specified label items by inserting clones at the
+ * top of the list and hiding the original label items.
+ * @param {string[]} labelNames - the list of labels to promote
  */
-function selectLabels(labelNames) {
+function promoteLabels(labelNames) {
   const labelNamesReversed = labelNames.reverse();
   const labelsListElement = document.getElementById('labels-list');
   for (const name of labelNamesReversed) {
@@ -51,6 +57,7 @@ function selectLabels(labelNames) {
     labelElementClone.setAttribute('title', `remove "${labelElementClone.innerText}" label from all selected jobs`);
     labelElementClone.classList.add('label-clone');
     labelElementClone.addEventListener('click', (event) => {
+      bsDropdown.hide();
       handleSubmitClick(event, 'DELETE');
     }, false);
     const labelCloneAnchor = labelElementClone.firstChild;
@@ -62,9 +69,12 @@ function selectLabels(labelNames) {
 }
 
 /**
- *
+ * Demotes any labels (back to their normal alphabetical position)
+ * that were promoted to the top of the list.
+ * In practice, this means deleting the promoted clone, and unhiding the
+ * original label.
  */
-function deselectAllLabels() {
+function demoteLabels() {
   const clonedLabels = document.getElementsByClassName('label-clone');
   while (clonedLabels[0]) {
     clonedLabels[0].parentNode.removeChild(clonedLabels[0]);
@@ -74,7 +84,7 @@ function deselectAllLabels() {
 }
 
 /**
- *
+ * Filters the list of label items based on user input.
  */
 function filterLabelsList() {
   const searchValue = document.querySelector('#label-search').value.toLowerCase().trim();
@@ -93,7 +103,7 @@ function filterLabelsList() {
 }
 
 /**
- *
+ * Unhides all label items.
  */
 function showAllLabels() {
   const labelItems = document.querySelectorAll('#labels-list .label-li');
@@ -103,8 +113,9 @@ function showAllLabels() {
 }
 
 /**
- * Get the intersection of jobs' labels so that we know which labels
- * will be marked for potential deletion in the dropdown.
+ * Get the intersection set of the labels of selected jobs so that
+ * we know which labels will be promoted (to the top of the list)
+ * and marked for potential deletion in the dropdown.
  */
 function getLabelsForSelectedJobs() {
   let labelsSet = new Set();
@@ -124,12 +135,11 @@ function getLabelsForSelectedJobs() {
       }
     }
   });
-  console.log(Array.from(labelsSet));
   return Array.from(labelsSet);
 }
 
 /**
- *
+ * Disable all label anchor elements.
  */
 function setLabelLinksDisabled(selectedJobsCount) {
   if (selectedJobsCount === 0) {
@@ -140,16 +150,16 @@ function setLabelLinksDisabled(selectedJobsCount) {
 }
 
 /**
- *
+ * Enable all label anchor elements.
  */
 function setLabelLinksEnabled() {
   for (const labelItemLink of labelLinks) {
-      labelItemLink.classList.remove('disabled');
+    labelItemLink.classList.remove('disabled');
   }
 }
 
 /**
- *
+ * Bind event handlers to their respective elements.
  */
 function bindEventListeners() {
   const labelSearchElement = document.getElementById('label-search');
@@ -158,30 +168,33 @@ function bindEventListeners() {
   });
   document.querySelectorAll('.label-item').forEach((item) => {
     item.addEventListener('click', (event) => {
+      bsDropdown.hide();
       handleSubmitClick(event, 'PUT');
     }, false);
   });
   labelDropdown.addEventListener('hidden.bs.dropdown', () => {
-    deselectAllLabels();
+    demoteLabels();
     setLabelLinksEnabled();
     document.getElementById('label-search').value = '';
     showAllLabels();
     document.getElementById('no-match-li').style.display = 'none';
   });
   labelDropdown.addEventListener('show.bs.dropdown', () => {
-    selectLabels(getLabelsForSelectedJobs());
+    promoteLabels(getLabelsForSelectedJobs());
     const selectedJobsCount = jobsTable.getJobIds().length;
     setLabelLinksDisabled(selectedJobsCount);
   });
 }
 
 /**
- *
+ * The labeling dropdown object allows users to
+ * add and remove labels from selected jobs.
  */
 export default {
 
   /**
-   *
+   * Initializes the labeling interactivity associated with
+   * the labels dropdown link.
    */
   init() {
     bindEventListeners();
