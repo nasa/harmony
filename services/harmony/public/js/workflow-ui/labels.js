@@ -117,7 +117,7 @@ function showAllLabels() {
  * we know which labels will be promoted (to the top of the labels list)
  * and marked for potential removal from their associated jobs.
  */
-function getLabelsForSelectedJobs() {
+function getLabelsIntersectionForSelectedJobs() {
   let labelsSet = new Set();
   let firstChecked = true;
   document.querySelectorAll('.select-job').forEach((jobEl) => {
@@ -180,7 +180,7 @@ function bindEventListeners() {
     document.getElementById('no-match-li').style.display = 'none';
   });
   labelDropdown.addEventListener('show.bs.dropdown', () => {
-    promoteLabels(getLabelsForSelectedJobs());
+    promoteLabels(getLabelsIntersectionForSelectedJobs());
     const selectedJobsCount = jobsTable.getJobIds().length;
     setLabelLinksDisabled(selectedJobsCount);
   });
