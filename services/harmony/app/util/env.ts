@@ -112,6 +112,10 @@ class HarmonyServerEnv extends HarmonyEnv {
   wktPrecision: number;
 
   locallyDeployedServices: string;
+
+  labelsAllowList: string;
+
+  labelsForbidList: string;
 }
 
 const localPath = path.resolve(__dirname, '../../env-defaults');
