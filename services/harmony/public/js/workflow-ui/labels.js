@@ -8,7 +8,10 @@ const labelLinks = document.querySelectorAll('#labels-list .label-li a');
 
 // the dropdown that contains label list items
 const labelDropdown = document.getElementById('label-dropdown-a');
-const bsDropdown = new bootstrap.Dropdown(labelDropdown);
+let bsDropdown;
+if (labelDropdown) {
+  bsDropdown = new bootstrap.Dropdown(labelDropdown);
+}
 
 /**
  * Responds to a submit link click event by adding or removing

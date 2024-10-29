@@ -39,6 +39,8 @@
             <div class="d-flex flex-row">
                 <ul id="job-state-links-container" class="nav" data-is-admin-or-owner="{{isAdminOrOwner}}">
                     <!-- job state change links will go here -->
+                     {{^isAdminRoute}}
+                     {{#labels}}
                     <li id="label-nav-item" class="nav-item dropstart">
                         <a id="label-dropdown-a" class="nav-link dropdown-toggle py-0 px-2" data-bs-toggle="dropdown" data-bs-auto-close="outside" href="#" role="button" aria-expanded="false">label</a>
                         <ul class="dropdown-menu mt-2">
@@ -55,6 +57,8 @@
                             </li>
                         </ul>
                     </li>
+                    {{/labels}}
+                    {{/isAdminRoute}}
                 </ul>
                 <span id="job-counter" class="badge rounded-pill bg-info d-none ml-1" style="line-height: inherit;">3</span>&nbsp;
                 <span id="job-counter-message" class="d-none">jobs</span>

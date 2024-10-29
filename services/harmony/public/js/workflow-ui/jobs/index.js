@@ -32,4 +32,7 @@ jobStatusLinks.init('job-state-links-container', 'job-selected');
 
 toasts.init();
 
-labels.init();
+const labelDropdown = document.getElementById('label-dropdown-a');
+if (labelDropdown) {
+  labels.init();
+}
