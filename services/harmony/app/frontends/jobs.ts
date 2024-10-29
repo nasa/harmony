@@ -15,7 +15,6 @@ import env from '../util/env';
 import JobError, { getErrorsForJob } from '../models/job-error';
 import _ from 'lodash';
 import { isAdminUser } from '../util/edl-api';
-import { parseMultiValueParameter } from '../util/parameter-parsing-helpers';
 
 /**
  * Returns true if the job contains S3 direct access links
