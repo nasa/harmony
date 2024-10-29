@@ -3,15 +3,9 @@ import jobsTable from './jobs/jobs-table.js';
 import toasts from './toasts.js';
 import PubSub from '../pub-sub.js';
 
-// the anchor elements that correspond to a label
-const labelLinks = document.querySelectorAll('#labels-list .label-li a');
-
-// the dropdown that contains label list items
-const labelDropdown = document.getElementById('label-dropdown-a');
 let bsDropdown;
-if (labelDropdown) {
-  bsDropdown = new bootstrap.Dropdown(labelDropdown);
-}
+let labelLinks;
+let labelDropdown;
 
 /**
  * Responds to a submit link click event by adding or removing
@@ -200,6 +194,14 @@ export default {
    * the labels dropdown link.
    */
   init() {
+    // the anchor elements that correspond to a label
+    labelLinks = document.querySelectorAll('#labels-list .label-li a');
+    // the dropdown that contains label list items
+    labelDropdown = document.getElementById('label-dropdown-a');
+    if (labelDropdown) {
+      bsDropdown = new bootstrap.Dropdown(labelDropdown);
+    }
     bindEventListeners();
   },
+  promoteLabels,
 };
