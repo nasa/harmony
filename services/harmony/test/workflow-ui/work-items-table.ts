@@ -408,6 +408,10 @@ describe('Workflow UI work items table route', function () {
           ['limit=1', 'page=1', `tableFilter=${encodeURIComponent(successfulFilter)}`].forEach((param) => expect(listing).to.contain(
             mustache.render('{{param}}', { param })));
         });
+        it('removes /work-items from the paging links', function () {
+          const listing = this.res.text;
+          expect(listing).to.not.contain('&#x2F;work-items');
+        });
         it('returns only one work item', function () {
           const listing = this.res.text;
           expect(listing).to.contain(mustache.render('<td>{{id}}</td>', { id: 2 }));
