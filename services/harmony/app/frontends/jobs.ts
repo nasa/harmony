@@ -127,17 +127,13 @@ export async function getJobsListing(
     req.context.logger.info(`Get jobs listing for user ${req.user}`);
     const root = getRequestRoot(req);
     const { page, limit } = getPagingParams(req, env.defaultJobListPageSize);
-    let labels = [];
-    if (req.query.label) {
-      labels = parseMultiValueParameter(req.query.label as string);
-    }
     const query: JobQuery = { where: {} };
+    query.labels = req.body.label;
+
     if (!req.context.isAdminAccess) {
       query.where.username = req.user;
     }
-    if (labels.length > 0) {
-      query.labels = labels;
-    }
+
     let listing;
     await db.transaction(async (tx) => {
       listing = await Job.queryAll(tx, query, page, limit, true);
