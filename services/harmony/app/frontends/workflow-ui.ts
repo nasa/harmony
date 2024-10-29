@@ -552,6 +552,15 @@ export async function getWorkItemsTable(
     const lastPage = pageLinks.find((l) => l.rel === 'last');
     const nextPage = pageLinks.find((l) => l.rel === 'next');
     const previousPage = pageLinks.find((l) => l.rel === 'prev');
+    const links = [
+      { ...firstPage, linkTitle: 'first' },
+      { ...previousPage, linkTitle: 'previous' },
+      { ...nextPage, linkTitle: 'next' },
+      { ...lastPage, linkTitle: 'last' },
+    ];
+    links.forEach(link => (link.href = link.href ? link.href
+      .replace('/work-items', '')
+      .replace(/(&|\?)checkJobStatus=(true|false)/, '') : ''));
     const paginationDisplay = getPaginationDisplay(pagination);
     setPagingHeaders(res, pagination);
     res.render('workflow-ui/job/work-items-table', {
@@ -562,17 +571,10 @@ export async function getWorkItemsTable(
       statusClass: statusClass[job.status],
       workItems,
       ...workItemRenderingFunctions(job, isAdmin, isLogViewer, req.user),
-      links: [
-        { ...firstPage, linkTitle: 'first' },
-        { ...previousPage, linkTitle: 'previous' },
-        { ...nextPage, linkTitle: 'next' },
-        { ...lastPage, linkTitle: 'last' },
-      ],
+      links,
       linkDisabled() { return (this.href ? '' : 'disabled'); },
       linkHref() {
-        return (this.href ? this.href
-          .replace('/work-items', '')
-          .replace(/(&|\?)checkJobStatus=(true|false)/, '') : '');
+        return this.href;
       },
       ...jobRenderingFunctions(req.context.logger, requestQuery),
     });
