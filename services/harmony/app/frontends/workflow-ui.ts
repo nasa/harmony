@@ -20,7 +20,7 @@ import { serviceNames } from '../models/services';
 import { getEdlGroupInformation, isAdminUser } from '../util/edl-api';
 import { ILengthAwarePagination } from 'knex-paginate';
 import { handleWorkItemUpdateWithJobId } from '../backends/workflow-orchestration/work-item-updates';
-import { getLabelsForUser } from 'app/models/label';
+import { getLabelsForUser } from '../models/label';
 
 // Default to retrieving this number of work items per page
 const defaultWorkItemPageSize = 100;
