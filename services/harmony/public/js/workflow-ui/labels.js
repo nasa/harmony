@@ -211,4 +211,6 @@ export default {
   getLabelsIntersectionForSelectedJobs,
   setLabelLinksDisabled,
   setLabelLinksEnabled,
+  filterLabelsList,
+  showAllLabels,
 };

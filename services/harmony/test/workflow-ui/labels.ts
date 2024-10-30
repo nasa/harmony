@@ -59,4 +59,41 @@ describe('labels.js', () => {
       }
     });
   });
+  describe('filterLabelsList', () => {
+    it('hides labels that do not match the search input value', () => {
+      (document.querySelector('#label-search') as HTMLInputElement).value = 'blu';
+      Labels.filterLabelsList();
+      const labelsListElement = document.getElementById('labels-list');
+      const blueLi = labelsListElement.querySelector('a[name="blue"]').closest('li');
+      const greenLi = labelsListElement.querySelector('a[name="green"]').closest('li');
+      const yellowLi = labelsListElement.querySelector('a[name="yellow"]').closest('li');
+      expect(blueLi.style.display).to.not.equal('none');
+      expect(greenLi.style.display).to.equal('none');
+      expect(yellowLi.style.display).to.equal('none');
+    });
+    it('shows a no matches list item when the search input value does not match any labels', () => {
+      (document.querySelector('#label-search') as HTMLInputElement).value = 'bluez';
+      Labels.filterLabelsList();
+      const labelsListElement = document.getElementById('labels-list');
+      const blueLi = labelsListElement.querySelector('a[name="blue"]').closest('li');
+      const greenLi = labelsListElement.querySelector('a[name="green"]').closest('li');
+      const yellowLi = labelsListElement.querySelector('a[name="yellow"]').closest('li');
+      const noMatchLi = document.getElementById('no-match-li');
+      expect(blueLi.style.display).to.equal('none');
+      expect(greenLi.style.display).to.equal('none');
+      expect(yellowLi.style.display).to.equal('none');
+      expect(noMatchLi.style.display).to.not.equal('none');
+    });
+  });
+  describe('showAllLabels', () => {
+    it('unhides all labels', () => {
+      (document.querySelector('#label-search') as HTMLInputElement).value = 'bluez';
+      Labels.filterLabelsList();
+      Labels.showAllLabels();
+      const labelItems = document.querySelectorAll('#labels-list .label-li');
+      for (const labelItem of labelItems) {
+        expect((labelItem as HTMLInputElement).style.display).to.equal('');
+      }
+    });
+  });
 });
