@@ -76,7 +76,7 @@ function demoteLabels() {
   while (clonedLabels[0]) {
     clonedLabels[0].parentNode.removeChild(clonedLabels[0]);
   }
-  [].slice.call(document.getElementsByClassName('label-promoted'))
+  Array.from(document.getElementsByClassName('label-promoted'))
     .forEach((el) => el.classList.remove('label-promoted'));
 }
 
@@ -136,11 +136,13 @@ function getLabelsIntersectionForSelectedJobs() {
 }
 
 /**
- * Disable all label anchor elements.
+ * Disable all label anchor elements if no jobs are selected.
+ * @param {number} selectedJobsCount - count of selected jobs
+ * @param {Element[]} labelItemLinks - list of label link elements
  */
-function setLabelLinksDisabled(selectedJobsCount) {
+function setLabelLinksDisabled(selectedJobsCount, labelItemLinks) {
   if (selectedJobsCount === 0) {
-    for (const labelItemLink of labelLinks) {
+    for (const labelItemLink of labelItemLinks) {
       labelItemLink.classList.add('disabled');
     }
   }
@@ -148,9 +150,10 @@ function setLabelLinksDisabled(selectedJobsCount) {
 
 /**
  * Enable all label anchor elements.
+ * @param {Element[]} labelItemLinks - list of label link elements
  */
-function setLabelLinksEnabled() {
-  for (const labelItemLink of labelLinks) {
+function setLabelLinksEnabled(labelItemLinks) {
+  for (const labelItemLink of labelItemLinks) {
     labelItemLink.classList.remove('disabled');
   }
 }
@@ -171,7 +174,7 @@ function bindEventListeners() {
   });
   labelDropdown.addEventListener('hidden.bs.dropdown', () => {
     demoteLabels();
-    setLabelLinksEnabled();
+    setLabelLinksEnabled(labelLinks);
     document.getElementById('label-search').value = '';
     showAllLabels();
     document.getElementById('no-match-li').style.display = 'none';
@@ -179,7 +182,7 @@ function bindEventListeners() {
   labelDropdown.addEventListener('show.bs.dropdown', () => {
     promoteLabels(getLabelsIntersectionForSelectedJobs());
     const selectedJobsCount = jobsTable.getJobIds().length;
-    setLabelLinksDisabled(selectedJobsCount);
+    setLabelLinksDisabled(selectedJobsCount, labelLinks);
   });
 }
 
@@ -195,7 +198,7 @@ export default {
    */
   init() {
     // the anchor elements that correspond to a label
-    labelLinks = document.querySelectorAll('#labels-list .label-li a');
+    labelLinks = Array.from(document.querySelectorAll('#labels-list .label-li a'));
     // the dropdown that contains label list items
     labelDropdown = document.getElementById('label-dropdown-a');
     if (labelDropdown) {
@@ -204,4 +207,8 @@ export default {
     bindEventListeners();
   },
   promoteLabels,
+  demoteLabels,
+  getLabelsIntersectionForSelectedJobs,
+  setLabelLinksDisabled,
+  setLabelLinksEnabled,
 };
