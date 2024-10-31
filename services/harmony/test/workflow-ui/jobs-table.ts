@@ -217,16 +217,25 @@ describe('Workflow UI jobs table route', function () {
         );
       });
     });
-    describe('with all nonterminal jobs selected', function () {
+    describe('with all nonterminal jobs selected using the non-admin route', function () {
       hookWorkflowUIJobRows({ username: 'adam', jobIDs: [woodyJob1.jobID, adamJob1.jobID], query: { page: 1, limit: 10 } });
-      it('returns the select all jobs checkbox checked', async function () {
+      // "select all" box should be unchecked because of the 2 unselected terminal jobs (which can be selected for tagging)
+      it('returns the select all jobs checkbox unchecked', async function () {
         const response = this.res.text;
-        expect(response).contains('<input id="select-jobs" type="checkbox" title="select/deselect all jobs" autocomplete="off" checked>');
+        expect(response).contains('<input id="select-jobs" type="checkbox" title="select/deselect all jobs" autocomplete="off" >');
       });
       it('has all select job checkboxes checked', function () {
         const response = this.res.text;
         expect(response).contains(`<input id="select-${woodyJob1.jobID}" class="select-job" type="checkbox" data-id="${woodyJob1.jobID}" data-status="${woodyJob1.status}" autocomplete="off" checked>`);
         expect(response).contains(`<input id="select-${adamJob1.jobID}" class="select-job" type="checkbox" data-id="${adamJob1.jobID}" data-status="${adamJob1.status}" autocomplete="off" checked>`);
+      });
+    });
+    describe('with all nonterminal jobs selected using the admin route', function () {
+      hookAdminWorkflowUIJobRows({ username: 'adam', jobIDs: [woodyJob1.jobID, adamJob1.jobID], query: { page: 1, limit: 10 } });
+      // "select all" box should be checked because the 2 terminal jobs cannot be selected for tagging using the admin route
+      it('returns the select all jobs checkbox checked', async function () {
+        const response = this.res.text;
+        expect(response).contains('<input id="select-jobs" type="checkbox" title="select/deselect all jobs" autocomplete="off" checked>');
       });
     });
     describe('with 1 nonterminal job selected and one nonterminal job not selected', function () {
