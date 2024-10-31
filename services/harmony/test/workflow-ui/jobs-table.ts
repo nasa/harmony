@@ -224,10 +224,13 @@ describe('Workflow UI jobs table route', function () {
         const response = this.res.text;
         expect(response).contains('<input id="select-jobs" type="checkbox" title="select/deselect all jobs" autocomplete="off" >');
       });
-      it('has all select job checkboxes checked', function () {
+      // the 2 unselected terminal jobs can be selected for tagging
+      it('has 2 select job checkboxes unchecked and 2 checked', function () {
         const response = this.res.text;
         expect(response).contains(`<input id="select-${woodyJob1.jobID}" class="select-job" type="checkbox" data-id="${woodyJob1.jobID}" data-status="${woodyJob1.status}" autocomplete="off" checked>`);
         expect(response).contains(`<input id="select-${adamJob1.jobID}" class="select-job" type="checkbox" data-id="${adamJob1.jobID}" data-status="${adamJob1.status}" autocomplete="off" checked>`);
+        expect(response).contains(`<input id="select-${boJob1.jobID}" class="select-job" type="checkbox" data-id="${boJob1.jobID}" data-status="${boJob1.status}" autocomplete="off" >`);
+        expect(response).contains(`<input id="select-${boJob2.jobID}" class="select-job" type="checkbox" data-id="${boJob2.jobID}" data-status="${boJob2.status}" autocomplete="off" >`);
       });
     });
     describe('with all nonterminal jobs selected using the admin route', function () {
@@ -236,6 +239,14 @@ describe('Workflow UI jobs table route', function () {
       it('returns the select all jobs checkbox checked', async function () {
         const response = this.res.text;
         expect(response).contains('<input id="select-jobs" type="checkbox" title="select/deselect all jobs" autocomplete="off" checked>');
+      });
+      // the 2 terminal jobs cannot be tagged from the admin endpoint
+      it('has only 2 select job checkboxes, for the nonterminal jobs', function () {
+        const response = this.res.text;
+        expect(response).contains(`<input id="select-${woodyJob1.jobID}" class="select-job" type="checkbox" data-id="${woodyJob1.jobID}" data-status="${woodyJob1.status}" autocomplete="off" checked>`);
+        expect(response).contains(`<input id="select-${adamJob1.jobID}" class="select-job" type="checkbox" data-id="${adamJob1.jobID}" data-status="${adamJob1.status}" autocomplete="off" checked>`);
+        expect(response).not.contains(`<input id="select-${boJob1.jobID}" class="select-job" type="checkbox" data-id="${boJob1.jobID}" data-status="${boJob1.status}" autocomplete="off" >`);
+        expect(response).not.contains(`<input id="select-${boJob2.jobID}" class="select-job" type="checkbox" data-id="${boJob2.jobID}" data-status="${boJob2.status}" autocomplete="off" >`);
       });
     });
     describe('with 1 nonterminal job selected and one nonterminal job not selected', function () {
