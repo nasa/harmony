@@ -403,6 +403,10 @@ describe('Workflow UI jobs route', function () {
         expect(listing).to.not.contain('status: successful');
         expect(listing).to.not.contain('status: running');
       });
+      it('returns the select all jobs checkbox to support actions like tagging', async function () {
+        const response = this.res.text;
+        expect(response).contains('<input id="select-jobs" type="checkbox" title="select/deselect all jobs" autocomplete="off">');
+      });
     });
 
     describe('who filters by status IN [failed, successful]', function () {
@@ -694,6 +698,10 @@ describe('Workflow UI jobs route', function () {
         it('has the provider filter selected', function () {
           const listing = this.res.text;
           expect(listing).to.contain(mustache.render('{{provider}}', { provider: 'provider: provider_b' }));
+        });
+        it('does not return the select all checkbox since there are no nonterminal jobs', async function () {
+          const response = this.res.text;
+          expect(response).not.contains('<input id="select-jobs"');
         });
       });
 

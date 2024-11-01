@@ -146,7 +146,6 @@ export async function getLabelsForUser(
     .orderBy('value');
 
   const rows = (await query).map((object) => object.value);
-  console.log(rows);
   return rows;
 }
 
