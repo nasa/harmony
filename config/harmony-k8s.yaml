@@ -20,9 +20,6 @@ spec:
           image: $HARMONY_IMAGE
           command:
             - "/harmony/bin/start-harmony-in-container"
-          env:
-            - name: HARMONY_IMAGE
-              value: "harmonyservices/harmony:latest"
           envFrom:
             - configMapRef:
                 name: harmony-env
