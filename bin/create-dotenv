@@ -62,12 +62,13 @@ EOF
     fi
 
     # set Harmony core services to use the stable image by default for harmony-in-a-box
+    echo "HARMONY_IMAGE=harmonyservices/harmony:stable" >> .env
     echo "QUERY_CMR_IMAGE=harmonyservices/query-cmr:stable" >> .env
+    echo "QUERY_CMR_SERVICE_QUEUE_URLS='[\"harmonyservices/query-cmr:stable,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/query-cmr.fifo\"]'" >> .env
     echo "SERVICE_RUNNER_IMAGE=harmonyservices/service-runner:stable" >> .env
     echo "WORK_ITEM_SCHEDULER_IMAGE=harmonyservices/work-scheduler:stable" >> .env
     echo "WORK_ITEM_UPDATER_IMAGE=harmonyservices/work-updater:stable" >> .env
     echo "WORK_REAPER_IMAGE=harmonyservices/work-reaper:stable" >> .env
     echo "WORK_FAILER_IMAGE=harmonyservices/work-failer:stable" >> .env
-    echo "HARMONY_IMAGE=harmonyservices/harmony:stable" >> .env
 
 fi

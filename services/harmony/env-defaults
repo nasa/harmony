@@ -344,6 +344,9 @@ WORK_REAPER_POD_REPLICAS=1
 # The number of work failer pods to run
 WORK_FAILER_POD_REPLICAS=1
 
+# harmony image only used for dev
+HARMONY_IMAGE=harmonyservices/harmony:latest
+
 # The service runner image used as a sidecar for polling for work for
 SERVICE_RUNNER_REQUESTS_CPU=128m
 SERVICE_RUNNER_REQUESTS_MEMORY=128Mi
