@@ -80,7 +80,8 @@ function refreshSelected() {
 }
 
 /**
- *
+ * Shows a visual counter for how many jobs have been selected via checkbox.
+ * @param {number} count - the number to display
  */
 function setJobCounterDisplay(count) {
   const jobCounterElement = document.getElementById('job-counter');
