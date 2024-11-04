@@ -8,6 +8,8 @@ import { promisify } from 'util';
 import * as http from 'http';
 import * as https from 'https';
 import { Logger } from 'winston';
+import { profanity } from '@2toad/profanity';
+import env from './util/env';
 import errorHandler from './middleware/error-handler';
 import logForRoutes from './middleware/log-for-routes';
 import router, { RouterConfig } from './routers/router';
@@ -196,6 +198,19 @@ export function start(config: Record<string, string>): {
   frontend: http.Server | https.Server;
   backend: http.Server | https.Server;
 } {
+
+  // add explicitly allowed words for label filter
+  let allowList = [];
+  if (env.labelsAllowList) {
+    allowList = env.labelsAllowList.split(',');
+  }
+  profanity.whitelist.addWords(allowList);
+  // set explicitly forbidden words for label filter
+  let forbiddenList = [];
+  if (env.labelsForbidList) {
+    forbiddenList = env.labelsForbidList.split(',');
+  }
+  profanity.addWords(forbiddenList);
 
   // Log unhandled promise rejections and do not crash the node process
   process.on('unhandledRejection', (reason, _promise) => {

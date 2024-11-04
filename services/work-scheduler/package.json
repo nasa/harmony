@@ -26,6 +26,7 @@
   "author": "NASA EOSDIS Harmony team",
   "license": "Apache-2.0",
   "dependencies": {
+    "@2toad/profanity": "^3.0.1",
     "@aws-sdk/client-s3": "^3.437.0",
     "@aws-sdk/client-sqs": "^3.437.0",
     "@aws-sdk/credential-provider-imds": "^3.374.0",

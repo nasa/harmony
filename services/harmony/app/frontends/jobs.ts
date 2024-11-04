@@ -127,9 +127,12 @@ export async function getJobsListing(
     const root = getRequestRoot(req);
     const { page, limit } = getPagingParams(req, env.defaultJobListPageSize);
     const query: JobQuery = { where: {} };
+    query.labels = req.body.label;
+
     if (!req.context.isAdminAccess) {
       query.where.username = req.user;
     }
+
     let listing;
     await db.transaction(async (tx) => {
       listing = await Job.queryAll(tx, query, page, limit, true);

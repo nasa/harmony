@@ -23,8 +23,8 @@ describe('Versions endpoint', function () {
         const services = JSON.parse(this.res.text);
         expect(services.map((s) => s.name)).to.eql([
           'harmony/download',
-          'ldds/geoloco',
           'ldds/subset-band-name',
+          'ldds/geoloco',
           'gesdisc/giovanni',
           'podaac/l2-subsetter',
           'podaac/concise',
