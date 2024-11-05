@@ -198,6 +198,16 @@ describe('Workflow UI jobs table route', function () {
       });
     });
 
+    describe('requesting jobs with a given label', function () {
+      hookAdminWorkflowUIJobRows({ username: 'adam', jobIDs: [woodyJob1.jobID, woodyJob2.jobID], query: { tableFilter: `[{"value":"label: ${woodyJob1Labels}","dbValue":"${woodyJob1Labels}","field":"label"}]` } });
+      it('returns only the job row for the job with the label', function () {
+        const response = this.res.text;
+        expect(response).to.not.contain(`<tr id="job-${woodyJob2.jobID}" class='job-table-row'>`);
+        expect(response).contains(`<tr id="job-${woodyJob1.jobID}" class='job-table-row'>`);
+        expect((response.match(/job-table-row/g) || []).length).to.eq(1);
+      });
+    });
+
     describe('with one page', function () {
       hookWorkflowUIJobRows({ username: 'adam', jobIDs: [boJob1.jobID, adamJob1.jobID], query: { page: 1, limit: 10 } });
       it('returns all jobs', async function () {
