@@ -18,9 +18,12 @@ const boJob1 = buildJob({ status: JobStatus.FAILED, username: 'bo', provider_id:
 const boJob2 = buildJob({ status: JobStatus.SUCCESSFUL, username: 'bo', service_name: 'cog-maker', provider_id: 'provider_b' });
 const adamJob1 = buildJob({ status: JobStatus.RUNNING, username: 'adam', provider_id: 'provider_a' });
 const woodyJob1 = buildJob({ status: JobStatus.RUNNING, username: 'woody' });
+const woodyJob2 = buildJob({ status: JobStatus.RUNNING, username: 'woody' });
 
-const allJobIds = [boJob1.jobID, boJob2.jobID, adamJob1.jobID, woodyJob1.jobID];
-const totalJobsCount = [boJob1, boJob2, adamJob1, woodyJob1].length;
+const woodyJob1Labels = ['my-label'];
+
+const allJobIds = [boJob1.jobID, boJob2.jobID, adamJob1.jobID, woodyJob1.jobID, woodyJob2.jobID];
+const totalJobsCount = [boJob1, boJob2, adamJob1, woodyJob1, woodyJob2].length;
 
 describe('Workflow UI jobs table route', function () {
   hookServersStartStop({ skipEarthdataLogin: false });
@@ -34,7 +37,8 @@ describe('Workflow UI jobs table route', function () {
     await boJob2.save(this.trx);
     await adamJob1.save(this.trx);
     await woodyJob1.save(this.trx);
-    await setLabelsForJob(this.trx, woodyJob1.jobID, woodyJob1.username, ['my-label']);
+    await woodyJob2.save(this.trx);
+    await setLabelsForJob(this.trx, woodyJob1.jobID, woodyJob1.username, woodyJob1Labels);
     this.trx.commit();
   });
   after(function () {
@@ -52,15 +56,25 @@ describe('Workflow UI jobs table route', function () {
     });
   });
 
+  describe('a user requesting jobs with a given label', function () {
+    hookWorkflowUIJobRows({ username: 'woody', jobIDs: [woodyJob1.jobID, woodyJob2.jobID], query: { tableFilter: `[{"value":"label: ${woodyJob1Labels}","dbValue":"${woodyJob1Labels}","field":"label"}]` } });
+    it('returns only the job row for the job with the label', function () {
+      const response = this.res.text;
+      expect(response).to.not.contain(`<tr id="job-${woodyJob2.jobID}" class='job-table-row'>`);
+      expect(response).contains(`<tr id="job-${woodyJob1.jobID}" class='job-table-row'>`);
+      expect((response.match(/job-table-row/g) || []).length).to.eq(1);
+    });
+  });
+
   describe('a user requesting a job with a label', function () {
     hookWorkflowUIJobRows({ username: 'woody', jobIDs: [woodyJob1.jobID] });
     it('returns the expected label(s) for the job', function () {
       const listing = this.res.text;
       expect(listing).to.contain(mustache.render(
         `{{#labels}}
-      <span class="badge bg-label">{{.}}</span>
-      {{/labels}}`, 
-        { labels: woodyJob1.labels }));
+      <span class="badge bg-label" title="{{.}}">{{.}}</span>
+      {{/labels}}`,
+        { labels: woodyJob1Labels }));
     });
   });
 
@@ -73,7 +87,7 @@ describe('Workflow UI jobs table route', function () {
       dateKind, tzOffsetMinutes, fromDateTime, toDateTime } });
     it('includes the date filters on the paging links', function () {
       const renderedDateQuery = mustache.render('{{query}}', {
-        query : `dateKind=${dateKind}` + 
+        query : `dateKind=${dateKind}` +
           `&tzOffsetMinutes=${tzOffsetMinutes}` +
           `&fromDateTime=${encodeURIComponent(fromDateTime)}` +
           `&toDateTime=${encodeURIComponent(toDateTime)}`,
@@ -131,7 +145,7 @@ describe('Workflow UI jobs table route', function () {
         expect((response.match(/job-table-row/g) || []).length).to.eq(2);
       });
     });
-  
+
     describe('using the provider ids filter with improperly cased provider id', function () {
       hookAdminWorkflowUIJobRows({ username: 'adam', jobIDs: allJobIds,
         query: { disallowService: false, tableFilter: '[{"value":"provider: prOVIDER_A","dbValue":"prOVIDER_A","field":"provider"}]' } });
@@ -144,7 +158,7 @@ describe('Workflow UI jobs table route', function () {
         expect((response.match(/job-table-row/g) || []).length).to.eq(2);
       });
     });
-  
+
     describe('using the provider ids filter with two provider ids', function () {
       hookAdminWorkflowUIJobRows({ username: 'adam', jobIDs: allJobIds,
         query: { disallowService: false, tableFilter: '[{"value":"provider: prOVIDER_A","dbValue":"prOVIDER_A","field":"provider"},{"value":"provider: prOVIDER_b","dbValue":"prOVIDER_b","field":"provider"}]' } });
@@ -167,19 +181,20 @@ describe('Workflow UI jobs table route', function () {
         expect((response.match(/job-table-row/g) || []).length).to.eq(totalJobsCount);
       });
     });
-  
+
     describe('who uses a user filter with the admin route', function () {
-      hookAdminWorkflowUIJobRows({ username: 'adam', jobIDs: [woodyJob1.jobID],
+      hookAdminWorkflowUIJobRows({ username: 'adam', jobIDs: [woodyJob1.jobID, woodyJob2.jobID],
         query: { disallowUser: 'on', tableFilter: '[{"value":"user: woody","dbValue":"woody","field":"user"}]' } });
       it('returns only the job rows matching the user filter', function () {
         const response = this.res.text;
         expect(response).to.not.contain(`<tr id="job-${woodyJob1.jobID}" class='job-table-row'>`);
+        expect(response).to.not.contain(`<tr id="job-${woodyJob2.jobID}" class='job-table-row'>`);
         expect((response.match(/job-table-row/g) || []).length).to.eq(3);
       });
       it('returns updated paging links that reflect the impact of the user filter', function () {
         // the filter should filter out woody's job
         const response = this.res.text;
-        expect(response).to.contain(`1-${totalJobsCount - 1} of ${totalJobsCount - 1} (page 1 of 1)`);
+        expect(response).to.contain(`1-${totalJobsCount - 2} of ${totalJobsCount - 2} (page 1 of 1)`);
       });
     });
 
@@ -207,7 +222,7 @@ describe('Workflow UI jobs table route', function () {
                     <a class="page-link" href="http:&#x2F;&#x2F;127.0.0.1:4000&#x2F;workflow-ui?page&#x3D;2&amp;limit&#x3D;1" title="next">next</a>
                 </li>
                 <li class="page-item ">
-                    <a class="page-link" href="http:&#x2F;&#x2F;127.0.0.1:4000&#x2F;workflow-ui?page&#x3D;4&amp;limit&#x3D;1" title="last">last</a>
+                    <a class="page-link" href="http:&#x2F;&#x2F;127.0.0.1:4000&#x2F;workflow-ui?page&#x3D;5&amp;limit&#x3D;1" title="last">last</a>
                 </li>
             </ul>
             <small class="text-muted">
@@ -218,7 +233,7 @@ describe('Workflow UI jobs table route', function () {
       });
     });
     describe('with all nonterminal jobs selected', function () {
-      hookWorkflowUIJobRows({ username: 'adam', jobIDs: [woodyJob1.jobID, adamJob1.jobID], query: { page: 1, limit: 10 } });
+      hookWorkflowUIJobRows({ username: 'adam', jobIDs: [woodyJob1.jobID, woodyJob2.jobID, adamJob1.jobID], query: { page: 1, limit: 10 } });
       it('returns the select all jobs checkbox checked', async function () {
         const response = this.res.text;
         expect(response).contains('<input id="select-jobs" type="checkbox" title="select/deselect all jobs" autocomplete="off" checked>');
