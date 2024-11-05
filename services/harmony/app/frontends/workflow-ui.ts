@@ -21,6 +21,7 @@ import { getEdlGroupInformation, isAdminUser } from '../util/edl-api';
 import { ILengthAwarePagination } from 'knex-paginate';
 import { handleWorkItemUpdateWithJobId } from '../backends/workflow-orchestration/work-item-updates';
 import { getLabelsForUser } from '../models/label';
+import { logAsyncExecutionTime } from '../util/log-execution';
 
 // Default to retrieving this number of work items per page
 const defaultWorkItemPageSize = 100;
@@ -316,7 +317,7 @@ export async function getJobs(
     const isAdminRoute = req.context.isAdminAccess;
     const providerIds = (await Job.getProviderIdsSnapshot(db, req.context.logger))
       .map((providerId) => providerId.toUpperCase());
-    const labels = await getLabelsForUser(db, req.user, env.labelFilterCompletionCount, isAdminRoute);
+    const labels = await (await logAsyncExecutionTime(getLabelsForUser, 'HWIUWJI.getLabelsForUser', req.context.logger))(db, req.user, env.labelFilterCompletionCount, isAdminRoute);
     const requestQuery = keysToLowerCase(req.query);
     const fromDateTime = requestQuery.fromdatetime;
     const toDateTime = requestQuery.todatetime;
