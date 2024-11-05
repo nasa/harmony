@@ -10,6 +10,7 @@ params.isAdminRoute = isAdminRoute;
 params.tableFilter = tableFilter.getAttribute('data-value');
 params.currentUser = tableFilter.getAttribute('data-current-user');
 params.services = JSON.parse(tableFilter.getAttribute('data-services'));
+params.labels = JSON.parse(tableFilter.getAttribute('data-labels'));
 params.providers = JSON.parse(tableFilter.getAttribute('data-providers'));
 
 params.disallowStatus = document.getElementsByName('disallowStatus')[0].checked ? 'on' : '';

@@ -12,10 +12,11 @@ let statuses = [];
   * @param {string} currentUser - the current Harmony user
   * @param {string[]} services - service names from services.yml
   * @param {string[]} providers - array of provider ids
+  * @param {string[]} labels - known job labels
   * @param {boolean} isAdminRoute - whether the current page is /admin/...
   * @param {object[]} tableFilter - initial tags that will populate the input
  */
-function initFilter(currentUser, services, providers, isAdminRoute, tableFilter) {
+function initFilter(currentUser, services, providers, labels, isAdminRoute, tableFilter) {
   const filterInput = document.querySelector('input[name="tableFilter"]');
   const allowedList = [
     { value: 'status: successful', dbValue: 'successful', field: 'status' },
@@ -32,6 +33,8 @@ function initFilter(currentUser, services, providers, isAdminRoute, tableFilter)
   allowedList.push(...serviceList);
   const providerList = providers.map((provider) => ({ value: `provider: ${provider}`, dbValue: provider, field: 'provider' }));
   allowedList.push(...providerList);
+  const labelList = labels.map((label) => ({ value: `label: ${label}`, dbValue: label, field: 'label' }));
+  allowedList.push(...labelList);
   if (isAdminRoute) {
     allowedList.push({ value: `user: ${currentUser}`, dbValue: currentUser, field: 'user' });
   }
@@ -203,7 +206,7 @@ const jobsTable = {
       async () => loadRows(params),
     );
     formatDates('.date-td');
-    initFilter(params.currentUser, params.services, params.providers, params.isAdminRoute, params.tableFilter);
+    initFilter(params.currentUser, params.services, params.providers, params.labels, params.isAdminRoute, params.tableFilter);
     initCopyHandler('.copy-request');
     initSelectHandler('.select-job');
     initSelectAllHandler();

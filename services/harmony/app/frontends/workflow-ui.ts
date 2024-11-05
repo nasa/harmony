@@ -20,6 +20,7 @@ import { serviceNames } from '../models/services';
 import { getEdlGroupInformation, isAdminUser } from '../util/edl-api';
 import { ILengthAwarePagination } from 'knex-paginate';
 import { handleWorkItemUpdateWithJobId } from '../backends/workflow-orchestration/work-item-updates';
+import { getLabelsForUser } from '../models/label';
 
 // Default to retrieving this number of work items per page
 const defaultWorkItemPageSize = 100;
@@ -49,6 +50,7 @@ interface TableQuery {
   serviceValues: string[],
   userValues: string[],
   providerValues: string[],
+  labelValues: string[],
   from: Date,
   to: Date,
   dateKind: 'createdAt' | 'updatedAt',
@@ -80,6 +82,7 @@ function parseQuery( /* eslint-disable @typescript-eslint/no-explicit-any */
     serviceValues: [],
     userValues: [],
     providerValues: [],
+    labelValues: [],
     allowStatuses: true,
     allowServices: true,
     allowUsers: true,
@@ -313,6 +316,7 @@ export async function getJobs(
     const isAdminRoute = req.context.isAdminAccess;
     const providerIds = (await Job.getProviderIdsSnapshot(db, req.context.logger))
       .map((providerId) => providerId.toUpperCase());
+    const labels = await getLabelsForUser(db, req.user, env.labelFilterCompletionCount, isAdminRoute);
     const requestQuery = keysToLowerCase(req.query);
     const fromDateTime = requestQuery.fromdatetime;
     const toDateTime = requestQuery.todatetime;
@@ -342,6 +346,7 @@ export async function getJobs(
       selectAllBox,
       serviceNames: JSON.stringify(serviceNames),
       providerIds: JSON.stringify(providerIds),
+      labels: JSON.stringify(labels),
       sortGranules: requestQuery.sortgranules,
       disallowStatusChecked: !tableQuery.allowStatuses ? 'checked' : '',
       disallowServiceChecked: !tableQuery.allowServices ? 'checked' : '',
