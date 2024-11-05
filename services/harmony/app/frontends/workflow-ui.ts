@@ -642,12 +642,9 @@ export async function getJobsTable(
   try {
     const isAdminRoute = req.context.isAdminAccess;
     const { jobIDs } = req.body;
-    const { isAdmin } = await getEdlGroupInformation(
-      req.user, req.context.logger,
-    );
     const requestQuery = keysToLowerCase(req.query);
     const { tableQuery } = parseQuery(requestQuery, JobStatus, isAdminRoute);
-    const jobQuery = tableQueryToJobQuery(tableQuery, isAdmin, req.user);
+    const jobQuery = tableQueryToJobQuery(tableQuery, isAdminRoute, req.user);
     const { page, limit } = getPagingParams(req, env.defaultJobListPageSize, 1, true, true);
     const jobsRes = await Job.queryAll(db, jobQuery, page, limit, true);
     const jobs = jobsRes.data;

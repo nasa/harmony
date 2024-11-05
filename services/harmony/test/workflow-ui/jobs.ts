@@ -449,6 +449,14 @@ describe('Workflow UI jobs route', function () {
       });
     });
 
+    describe('who filters by an valid username via the nonadmin route', function () {
+      hookWorkflowUIJobs({ username: 'adam', tableFilter: '[{"value":"user: adam"}]' });
+      it('ignores the username because the user filter is unavailable via the nonadmin route', function () {
+        const listing = this.res.text;
+        expect(listing).to.not.contain('user: adam');
+      });
+    });
+
     describe('who filters by status NOT IN [failed, successful]', function () {
       const tableFilter = '[{"value":"status: failed","dbValue":"failed","field":"status"},{"value":"status: successful","dbValue":"successful","field":"status"}]';
       hookWorkflowUIJobs({ username: 'woody', disallowStatus: 'on', tableFilter });
