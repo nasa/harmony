@@ -51,7 +51,7 @@ describe('Work item failure retries', function () {
       hookRangesetRequest('1.0.0', collection, 'all', { query: { ...reprojectAndZarrQuery, ...{ maxResults: 1 } } });
       hookRedirect('joe');
       before(async function () {
-        const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+        const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
         const { workItem } = JSON.parse(res.text);
 
         workItem.status = WorkItemStatus.FAILED;
@@ -70,7 +70,7 @@ describe('Work item failure retries', function () {
       });
       describe('and then the work-item succeeds', async function () {
         before(async function () {
-          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
           const { workItem } = JSON.parse(res.text);
 
           workItem.status = WorkItemStatus.SUCCESSFUL;
@@ -92,7 +92,7 @@ describe('Work item failure retries', function () {
       hookRangesetRequest('1.0.0', collection, 'all', { query: { ...reprojectAndZarrQuery, ...{ maxResults: 1 } } });
       hookRedirect('joe');
       before(async function () {
-        const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+        const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
         const { workItem } = JSON.parse(res.text);
 
         workItem.status = WorkItemStatus.FAILED;
@@ -111,7 +111,7 @@ describe('Work item failure retries', function () {
       });
       describe('and then the work-item fails a second time', async function () {
         before(async function () {
-          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
           const { workItem } = JSON.parse(res.text);
 
           workItem.status = WorkItemStatus.FAILED;
@@ -131,7 +131,7 @@ describe('Work item failure retries', function () {
       });
       describe('and then the work-item succeeds', async function () {
         before(async function () {
-          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
           const { workItem } = JSON.parse(res.text);
 
           workItem.status = WorkItemStatus.SUCCESSFUL;
@@ -152,7 +152,7 @@ describe('Work item failure retries', function () {
       hookRangesetRequest('1.0.0', collection, 'all', { query: { ...reprojectAndZarrQuery, ...{ maxResults: 1 } } });
       hookRedirect('joe');
       before(async function () {
-        const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+        const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
         const { workItem } = JSON.parse(res.text);
 
         workItem.status = WorkItemStatus.FAILED;
@@ -171,7 +171,7 @@ describe('Work item failure retries', function () {
       });
       describe('and then the work-item fails a second time', async function () {
         before(async function () {
-          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
           const { workItem } = JSON.parse(res.text);
 
           workItem.status = WorkItemStatus.FAILED;
@@ -191,7 +191,7 @@ describe('Work item failure retries', function () {
       });
       describe('and then the work-item fails a third time', async function () {
         before(async function () {
-          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
           const { workItem } = JSON.parse(res.text);
 
           workItem.status = WorkItemStatus.FAILED;
