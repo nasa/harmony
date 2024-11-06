@@ -112,7 +112,7 @@ function parseQuery( /* eslint-disable @typescript-eslint/no-explicit-any */
     const userValues = validUserSelections.map(option => option.value.split('user: ')[1]);
     const labelSelections = selectedOptions
       .filter(option => option.field === 'label');
-    const labelValues = labelSelections.map(option => option.dbValue)
+    const labelValues = labelSelections.map(option => option.dbValue);
     const validProviderSelections = selectedOptions
       .filter(option => /^provider: [A-Za-z0-9_]{1,100}$/.test(option.value));
     const providerValues = validProviderSelections.map(option => option.value.split('provider: ')[1].toLowerCase());
