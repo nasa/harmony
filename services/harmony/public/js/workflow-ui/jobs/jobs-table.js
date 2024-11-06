@@ -42,7 +42,9 @@ function initFilter(currentUser, services, providers, labels, isAdminRoute, tabl
   const tagInput = new Tagify(filterInput, {
     whitelist: allowedList,
     validate(tag) {
-      if (allowedValues.includes(tag.value) || /^provider: [A-Za-z0-9_]{1,100}$/.test(tag.value)) {
+      if (allowedValues.includes(tag.value)
+        || /^provider: [A-Za-z0-9_]{1,100}$/.test(tag.value)
+        || /^label: .{1,100}$/.test(tag.value)) {
         return true;
       }
       if (isAdminRoute) {

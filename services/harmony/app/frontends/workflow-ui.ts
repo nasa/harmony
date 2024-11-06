@@ -110,9 +110,9 @@ function parseQuery( /* eslint-disable @typescript-eslint/no-explicit-any */
     const validUserSelections = selectedOptions
       .filter(option => isAdminAccess && /^user: [A-Za-z0-9\.\_]{4,30}$/.test(option.value));
     const userValues = validUserSelections.map(option => option.value.split('user: ')[1]);
-    const labelSelections = selectedOptions
-      .filter(option => option.field === 'label');
-    const labelValues = labelSelections.map(option => option.dbValue);
+    const validLabelSelections = selectedOptions
+      .filter(option => /^label: .{1,100}$/.test(option.value));
+    const labelValues = validLabelSelections.map(option => option.value.split('label: ')[1].toLowerCase());
     const validProviderSelections = selectedOptions
       .filter(option => /^provider: [A-Za-z0-9_]{1,100}$/.test(option.value));
     const providerValues = validProviderSelections.map(option => option.value.split('provider: ')[1].toLowerCase());
@@ -123,7 +123,7 @@ function parseQuery( /* eslint-disable @typescript-eslint/no-explicit-any */
       .concat(validServiceSelections)
       .concat(validUserSelections)
       .concat(validProviderSelections)
-      .concat(labelSelections));
+      .concat(validLabelSelections));
     tableQuery.statusValues = statusValues;
     tableQuery.serviceValues = serviceValues;
     tableQuery.userValues = userValues;
