@@ -39,7 +39,7 @@ async function createJobAndWorkItems(
 
   await buildWorkflowStep({
     jobID: job.jobID,
-    serviceID: 'harmonyservices/query-cmr:latest',
+    serviceID: 'harmonyservices/query-cmr:stable',
     stepIndex: 1,
     is_sequential: true,
     workItemCount: initialQueryCmrWorkItemCount,
@@ -63,7 +63,7 @@ async function createJobAndWorkItems(
 
   await buildWorkItem({
     jobID: job.jobID,
-    serviceID: 'harmonyservices/query-cmr:latest',
+    serviceID: 'harmonyservices/query-cmr:stable',
     workflowStepIndex: 1,
   }).save(db);
 
@@ -126,11 +126,11 @@ describe('when a work item callback request does not return the results to const
     });
 
     it('finds the queued work item, but query-cmr fails to return a catalog for the next work items', async function () {
-      const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+      const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
       expect(res.status).to.equal(200);
       const { workItem, maxCmrGranules } = JSON.parse(res.text);
       expect(maxCmrGranules).to.equal(2);
-      expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:latest');
+      expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:stable');
       workItem.status = WorkItemStatus.SUCCESSFUL;
       workItem.results = [];
       await updateWorkItem(this.backend, workItem);
@@ -191,7 +191,7 @@ describe('Workflow chaining for a collection configured for Swath Projector and 
       const job = JSON.parse(this.res.text);
       const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
 
-      expect(workflowSteps[0].serviceID).to.equal('harmonyservices/query-cmr:latest');
+      expect(workflowSteps[0].serviceID).to.equal('harmonyservices/query-cmr:stable');
     });
 
     it('then requests reprojection using Swath Projector', async function () {
@@ -232,11 +232,11 @@ describe('Workflow chaining for a collection configured for Swath Projector and 
 
     describe('when checking for a query-cmr work item', function () {
       it('finds the item and can complete it', async function () {
-        const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+        const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
         expect(res.status).to.equal(200);
         const { workItem, maxCmrGranules } = JSON.parse(res.text);
         expect(maxCmrGranules).to.equal(2);
-        expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:latest');
+        expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:stable');
         workItem.status = WorkItemStatus.SUCCESSFUL;
         workItem.results = [
           getStacLocation(workItem, 'catalog0.json'),
@@ -347,7 +347,7 @@ describe('Workflow chaining for a collection configured for Swath Projector and 
     hookRedirect('joe');
 
     before(async function () {
-      const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+      const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
       const { workItem, maxCmrGranules } = JSON.parse(res.text);
       expect(maxCmrGranules).to.equal(3);
       workItem.status = WorkItemStatus.SUCCESSFUL;
@@ -393,7 +393,7 @@ describe('Workflow chaining for a collection configured for Swath Projector and 
         // job failure should trigger cancellation of any pending work items
         const currentWorkItems = (await getWorkItemsByJobId(db, job.jobID)).workItems;
         expect(currentWorkItems.length).to.equal(4);
-        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
+        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.CANCELED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(2);
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
       });
@@ -414,7 +414,7 @@ describe('Workflow chaining for a collection configured for Swath Projector and 
 
         const currentWorkItems = (await getWorkItemsByJobId(db, firstSwathItem.jobID)).workItems;
         expect(currentWorkItems.length).to.equal(4);
-        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
+        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.CANCELED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(2);
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
       });
@@ -436,7 +436,7 @@ describe('Workflow chaining for a collection configured for Swath Projector and 
     hookRedirect('joe');
 
     before(async function () {
-      const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+      const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
       const { workItem, maxCmrGranules } = JSON.parse(res.text);
       expect(maxCmrGranules).to.equal(3);
       workItem.status = WorkItemStatus.SUCCESSFUL;
@@ -506,7 +506,7 @@ describe('Workflow chaining for a collection configured for Swath Projector and 
       const job = JSON.parse(this.res.text);
       const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
 
-      expect(workflowSteps[0].serviceID).to.equal('harmonyservices/query-cmr:latest');
+      expect(workflowSteps[0].serviceID).to.equal('harmonyservices/query-cmr:stable');
     });
 
     it('then requests reformatting using netcdf-to-zarr', async function () {
@@ -541,7 +541,7 @@ describe('Workflow chaining for a collection configured for Swath Projector and 
       const job = JSON.parse(this.res.text);
       const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
 
-      expect(workflowSteps[0].serviceID).to.equal('harmonyservices/query-cmr:latest');
+      expect(workflowSteps[0].serviceID).to.equal('harmonyservices/query-cmr:stable');
     });
 
     it('then requests reprojection using the Swath Projector', async function () {
@@ -590,7 +590,7 @@ describe('When a request spans multiple CMR pages', function () {
 
       describe('when checking for a query-cmr work item', function () {
         it('finds a query-cmr item along with a maxCmrGranules limit', async function () {
-          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
           const { workItem, maxCmrGranules } = JSON.parse(res.text);
           expect(maxCmrGranules).equals(3);
           workItem.status = WorkItemStatus.SUCCESSFUL;
@@ -608,7 +608,7 @@ describe('When a request spans multiple CMR pages', function () {
         });
 
         it('limits the next query-cmr task based on how many STAC items have already been generated', async function () {
-          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
           const { workItem, maxCmrGranules } = JSON.parse(res.text);
           expect(maxCmrGranules).equals(2);
           workItem.status = WorkItemStatus.SUCCESSFUL;
@@ -625,7 +625,7 @@ describe('When a request spans multiple CMR pages', function () {
         });
 
         it('does not generate any more work for query-cmr once the next step work items are generated', async function () {
-          const nextStepWorkResponse = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+          const nextStepWorkResponse = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
           expect(nextStepWorkResponse.statusCode).to.equal(404);
         });
 
@@ -654,7 +654,7 @@ describe('When a request spans multiple CMR pages', function () {
 
       await buildWorkflowStep({
         jobID: job.jobID,
-        serviceID: 'harmonyservices/query-cmr:latest',
+        serviceID: 'harmonyservices/query-cmr:stable',
         stepIndex: 1,
         is_sequential: true,
         workItemCount: 2,
@@ -670,7 +670,7 @@ describe('When a request spans multiple CMR pages', function () {
 
       await buildWorkItem({
         jobID: job.jobID,
-        serviceID: 'harmonyservices/query-cmr:latest',
+        serviceID: 'harmonyservices/query-cmr:stable',
         workflowStepIndex: 1,
         scrollID: '123abc',
       }).save(db);
@@ -685,7 +685,7 @@ describe('When a request spans multiple CMR pages', function () {
 
     describe('when checking for a query-cmr work item', function () {
       it('finds a query-cmr item along with a maxCmrGranules limit', async function () {
-        const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+        const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
         const { workItem, maxCmrGranules } = JSON.parse(res.text);
         expect(maxCmrGranules).equals(3);
         workItem.status = WorkItemStatus.SUCCESSFUL;
@@ -710,7 +710,7 @@ describe('When a request spans multiple CMR pages', function () {
       });
 
       it('limits the next query-cmr task based on how many STAC items have already been generated', async function () {
-        const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+        const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
         const { workItem, maxCmrGranules } = JSON.parse(res.text);
         expect(maxCmrGranules).equals(2);
         workItem.status = WorkItemStatus.SUCCESSFUL;
@@ -734,7 +734,7 @@ describe('When a request spans multiple CMR pages', function () {
       });
 
       it('does not generate any more work for query-cmr once the next step work items are generated', async function () {
-        const nextStepWorkResponse = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+        const nextStepWorkResponse = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
         expect(nextStepWorkResponse.statusCode).to.equal(404);
       });
 
@@ -779,7 +779,7 @@ describe('When a request spans multiple CMR pages', function () {
           await testInitialConditions(initialCmrHits, initialQueryCmrWorkItemCount);
 
           for (let i = 0; i < finalQueryCmrWorkItemCount; i++) {
-            const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+            const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
             const { workItem } = JSON.parse(res.text);
             workItem.status = WorkItemStatus.SUCCESSFUL;
             workItem.hits = finalCmrHits;
@@ -849,7 +849,7 @@ describe('When a request spans multiple CMR pages', function () {
           await testInitialConditions(initialCmrHits, initialQueryCmrWorkItemCount);
 
           for (let i = 0; i < initialQueryCmrWorkItemCount; i++) {
-            const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+            const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
             const { workItem } = JSON.parse(res.text);
             workItem.status = WorkItemStatus.SUCCESSFUL;
             workItem.hits = finalCmrHits;
@@ -863,7 +863,7 @@ describe('When a request spans multiple CMR pages', function () {
         });
 
         it('does not look for more granules for the job', async function () {
-          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
           expect(res.statusCode).equals(404);
         });
 

@@ -123,7 +123,7 @@ PODAAC_CONCISE_SERVICE_QUEUE_URLS='["ghcr.io/podaac/concise:sit,http://sqs.us-we
 PODAAC_L2_SUBSETTER_SERVICE_QUEUE_URLS='["ghcr.io/podaac/l2ss-py:sit,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/podaac-l2-subsetter.fifo"]'
 PODAAC_PS3_SERVICE_QUEUE_URLS='["podaac/podaac-cloud/podaac-shapefile-subsetter:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/podaac-shapefile-subsetter.fifo"]'
 PODAAC_NETCDF_CONVERTER_SERVICE_QUEUE_URLS='["podaac/podaac-cloud/podaac-netcdf-converter:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/podaac-netcdf-converter.fifo"]'
-QUERY_CMR_SERVICE_QUEUE_URLS='["harmonyservices/query-cmr:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/query-cmr.fifo"]'
+QUERY_CMR_SERVICE_QUEUE_URLS='["harmonyservices/query-cmr:stable,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/query-cmr.fifo"]'
 BATCHEE_SERVICE_QUEUE_URLS='["ghcr.io/nasa/batchee:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/batchee.fifo"]'
 STITCHEE_SERVICE_QUEUE_URLS='["ghcr.io/nasa/stitchee:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/stitchee.fifo"]'
 
