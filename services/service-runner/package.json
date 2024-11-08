@@ -78,6 +78,7 @@
   "overrides": {
     "braces": "^3.0.3",
     "fast-xml-parser": "4.4.1",
-    "jsonpath-plus": "^10.0.7"
+    "jsonpath-plus": "^10.0.7",
+    "cross-spawn": "^7.0.5"
   }
 }
