@@ -85,6 +85,6 @@
     "semver": "^7.6.2",
     "braces": "^3.0.3",
     "fast-xml-parser": "4.4.1",
-    "jsonpath-plus": "^10.0.0"
+    "jsonpath-plus": "^10.0.7"
   }
 }
