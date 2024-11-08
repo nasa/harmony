@@ -140,6 +140,8 @@ LABELS_ALLOW_LIST=
 # Comma-separated list of label values that are explicitly forbidden, with the first one just
 # for demo purposes
 LABELS_FORBID_LIST=this_is_a_forbidden_label
+# The max number of labels to retrieve to populate label filter auto-complete
+LABEL_FILTER_COMPLETION_COUNT=10
 
 #############################################################################
 #                        OAuth 2 (Earthdata Login)                          #
