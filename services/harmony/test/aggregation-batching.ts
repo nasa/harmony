@@ -85,7 +85,7 @@ describe('when testing a batched aggregation service', function () {
         const job = JSON.parse(this.res.text);
         const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
 
-        expect(workflowSteps[0].serviceID).to.equal('harmonyservices/query-cmr:latest');
+        expect(workflowSteps[0].serviceID).to.equal('harmonyservices/query-cmr:stable');
       });
 
       it('then requests aggregation using concise', async function () {
@@ -111,11 +111,11 @@ describe('when testing a batched aggregation service', function () {
 
       describe('when checking for a query-cmr work item', function () {
         it('finds the item and can complete it', async function () {
-          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
           expect(res.status).to.equal(200);
           const { workItem, maxCmrGranules } = JSON.parse(res.text);
           expect(maxCmrGranules).to.equal(2);
-          expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:latest');
+          expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:stable');
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = [
             getStacLocation(workItem, 'catalog0.json'),
@@ -191,7 +191,7 @@ describe('when testing a batched aggregation service', function () {
       it('starts with the query-cmr task', async function () {
         const job = JSON.parse(this.res.text);
         const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
-        expect(workflowSteps[0].serviceID).to.equal('harmonyservices/query-cmr:latest');
+        expect(workflowSteps[0].serviceID).to.equal('harmonyservices/query-cmr:stable');
       });
 
       it('then requests aggregation using concise', async function () {
@@ -207,11 +207,11 @@ describe('when testing a batched aggregation service', function () {
 
       describe('when first checking for a query-cmr work item', function () {
         it('finds the first item and can complete it', async function () {
-          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
           expect(res.status).to.equal(200);
           const { workItem, maxCmrGranules } = JSON.parse(res.text);
           expect(maxCmrGranules).to.equal(2);
-          expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:latest');
+          expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:stable');
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = [
             getStacLocation(workItem, 'catalog0.json'),
@@ -233,11 +233,11 @@ describe('when testing a batched aggregation service', function () {
 
       describe('when checking for a query-cmr work item for the second time', function () {
         it('finds the second item and can complete it', async function () {
-          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
           expect(res.status).to.equal(200);
           const { workItem, maxCmrGranules } = JSON.parse(res.text);
           expect(maxCmrGranules).to.equal(2);
-          expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:latest');
+          expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:stable');
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = [
             getStacLocation(workItem, 'catalog0.json'),
@@ -282,11 +282,11 @@ describe('when testing a batched aggregation service', function () {
 
       describe('when checking for a query-cmr work item for the third time', function () {
         it('finds the third item and can complete it', async function () {
-          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
           expect(res.status).to.equal(200);
           const { workItem, maxCmrGranules } = JSON.parse(res.text);
           expect(maxCmrGranules).to.equal(2);
-          expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:latest');
+          expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:stable');
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = [
             getStacLocation(workItem, 'catalog0.json'),
@@ -331,11 +331,11 @@ describe('when testing a batched aggregation service', function () {
 
       describe('when checking for a query-cmr work item for the fourth time', function () {
         it('finds the fourth item and can complete it', async function () {
-          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
           expect(res.status).to.equal(200);
           const { workItem, maxCmrGranules } = JSON.parse(res.text);
           expect(maxCmrGranules).to.equal(1);
-          expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:latest');
+          expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:stable');
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = [
             getStacLocation(workItem, 'catalog.json'),
@@ -346,7 +346,7 @@ describe('when testing a batched aggregation service', function () {
         });
 
         describe('when checking for another query-cmr work item', function () {
-          hookGetWorkForService('harmonyservices/query-cmr:latest');
+          hookGetWorkForService('harmonyservices/query-cmr:stable');
           it('does not find a work item since all inputs have been received', async function () {
             expect(this.res.status).to.equal(404);
           });
@@ -426,7 +426,7 @@ describe('when testing a batched aggregation service', function () {
             concatenation: true,
           },
           steps: [{
-            image: 'harmonyservices/query-cmr:latest',
+            image: 'harmonyservices/query-cmr:stable',
             is_sequential: true,
           }, {
             image: 'ghcr.io/podaac/concise:sit',
@@ -451,7 +451,7 @@ describe('when testing a batched aggregation service', function () {
       it('starts with the query-cmr task', async function () {
         const job = JSON.parse(this.res.text);
         const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
-        expect(workflowSteps[0].serviceID).to.equal('harmonyservices/query-cmr:latest');
+        expect(workflowSteps[0].serviceID).to.equal('harmonyservices/query-cmr:stable');
       });
 
       it('then requests aggregation using concise', async function () {
@@ -467,11 +467,11 @@ describe('when testing a batched aggregation service', function () {
 
       describe('when first checking for a query-cmr work item', function () {
         it('finds the first item and can complete it', async function () {
-          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
           expect(res.status).to.equal(200);
           const { workItem, maxCmrGranules } = JSON.parse(res.text);
           expect(maxCmrGranules).to.equal(2);
-          expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:latest');
+          expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:stable');
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = [
             getStacLocation(workItem, 'catalog0.json'),
@@ -493,11 +493,11 @@ describe('when testing a batched aggregation service', function () {
 
       describe('when checking for a query-cmr work item for the second time', function () {
         it('finds the second item and can complete it', async function () {
-          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
           expect(res.status).to.equal(200);
           const { workItem, maxCmrGranules } = JSON.parse(res.text);
           expect(maxCmrGranules).to.equal(2);
-          expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:latest');
+          expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:stable');
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = [
             getStacLocation(workItem, 'catalog0.json'),
@@ -542,11 +542,11 @@ describe('when testing a batched aggregation service', function () {
 
       describe('when checking for a query-cmr work item for the third time', function () {
         it('finds the third item and can complete it', async function () {
-          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
           expect(res.status).to.equal(200);
           const { workItem, maxCmrGranules } = JSON.parse(res.text);
           expect(maxCmrGranules).to.equal(2);
-          expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:latest');
+          expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:stable');
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = [
             getStacLocation(workItem, 'catalog0.json'),
@@ -591,11 +591,11 @@ describe('when testing a batched aggregation service', function () {
 
       describe('when checking for a query-cmr work item for the fourth time', function () {
         it('finds the fourth item and can complete it', async function () {
-          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
           expect(res.status).to.equal(200);
           const { workItem, maxCmrGranules } = JSON.parse(res.text);
           expect(maxCmrGranules).to.equal(1);
-          expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:latest');
+          expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:stable');
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = [
             getStacLocation(workItem, 'catalog.json'),
@@ -606,7 +606,7 @@ describe('when testing a batched aggregation service', function () {
         });
 
         describe('when checking for another query-cmr work item', function () {
-          hookGetWorkForService('harmonyservices/query-cmr:latest');
+          hookGetWorkForService('harmonyservices/query-cmr:stable');
           it('does not find a work item since all inputs have been received', async function () {
             expect(this.res.status).to.equal(404);
           });
@@ -686,7 +686,7 @@ describe('when testing a batched aggregation service', function () {
       it('starts with the query-cmr task', async function () {
         const job = JSON.parse(this.res.text);
         const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
-        expect(workflowSteps[0].serviceID).to.equal('harmonyservices/query-cmr:latest');
+        expect(workflowSteps[0].serviceID).to.equal('harmonyservices/query-cmr:stable');
       });
 
       it('then requests aggregation using concise', async function () {
@@ -702,11 +702,11 @@ describe('when testing a batched aggregation service', function () {
 
       describe('when first checking for a query-cmr work item', function () {
         it('finds the first item and can complete it', async function () {
-          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
           expect(res.status).to.equal(200);
           const { workItem, maxCmrGranules } = JSON.parse(res.text);
           expect(maxCmrGranules).to.equal(2);
-          expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:latest');
+          expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:stable');
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = [
             getStacLocation(workItem, 'catalog0.json'),
@@ -729,11 +729,11 @@ describe('when testing a batched aggregation service', function () {
 
       describe('when checking for a query-cmr work item for the second time', function () {
         it('finds the second item and can complete it', async function () {
-          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
           expect(res.status).to.equal(200);
           const { workItem, maxCmrGranules } = JSON.parse(res.text);
           expect(maxCmrGranules).to.equal(2);
-          expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:latest');
+          expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:stable');
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = [
             getStacLocation(workItem, 'catalog0.json'),
@@ -778,11 +778,11 @@ describe('when testing a batched aggregation service', function () {
 
       describe('when checking for a query-cmr work item for the third time', function () {
         it('finds the third item and can complete it', async function () {
-          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
           expect(res.status).to.equal(200);
           const { workItem, maxCmrGranules } = JSON.parse(res.text);
           expect(maxCmrGranules).to.equal(2);
-          expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:latest');
+          expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:stable');
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = [
             getStacLocation(workItem, 'catalog0.json'),
@@ -827,11 +827,11 @@ describe('when testing a batched aggregation service', function () {
 
       describe('when checking for a query-cmr work item for the fourth time', function () {
         it('finds the fourth item and can complete it', async function () {
-          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
           expect(res.status).to.equal(200);
           const { workItem, maxCmrGranules } = JSON.parse(res.text);
           expect(maxCmrGranules).to.equal(1);
-          expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:latest');
+          expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:stable');
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = [
             getStacLocation(workItem, 'catalog.json'),
@@ -842,7 +842,7 @@ describe('when testing a batched aggregation service', function () {
         });
 
         describe('when checking for another query-cmr work item', function () {
-          hookGetWorkForService('harmonyservices/query-cmr:latest');
+          hookGetWorkForService('harmonyservices/query-cmr:stable');
           it('does not find a work item since all inputs have been received', async function () {
             expect(this.res.status).to.equal(404);
           });
@@ -936,7 +936,7 @@ describe('when testing a batched aggregation service', function () {
             concatenation: true,
           },
           steps: [{
-            image: 'harmonyservices/query-cmr:latest',
+            image: 'harmonyservices/query-cmr:stable',
             is_sequential: true,
           }, {
             image: 'ghcr.io/podaac/concise:sit',
@@ -954,11 +954,11 @@ describe('when testing a batched aggregation service', function () {
 
       describe('when first checking for a query-cmr work item', function () {
         it('finds the first item and can complete it', async function () {
-          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
           expect(res.status).to.equal(200);
           const { workItem, maxCmrGranules } = JSON.parse(res.text);
           expect(maxCmrGranules).to.equal(2);
-          expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:latest');
+          expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:stable');
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = [
             getStacLocation(workItem, 'catalog0.json'),
@@ -981,11 +981,11 @@ describe('when testing a batched aggregation service', function () {
 
       describe('when checking for a query-cmr work item for the second time', function () {
         it('finds the second item and can complete it', async function () {
-          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
           expect(res.status).to.equal(200);
           const { workItem, maxCmrGranules } = JSON.parse(res.text);
           expect(maxCmrGranules).to.equal(2);
-          expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:latest');
+          expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:stable');
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = [
             getStacLocation(workItem, 'catalog0.json'),
@@ -1030,11 +1030,11 @@ describe('when testing a batched aggregation service', function () {
 
       describe('when checking for a query-cmr work item for the third time', function () {
         it('finds the third item and can complete it', async function () {
-          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
           expect(res.status).to.equal(200);
           const { workItem, maxCmrGranules } = JSON.parse(res.text);
           expect(maxCmrGranules).to.equal(2);
-          expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:latest');
+          expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:stable');
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = [
             getStacLocation(workItem, 'catalog0.json'),
@@ -1079,11 +1079,11 @@ describe('when testing a batched aggregation service', function () {
 
       describe('when checking for a query-cmr work item for the fourth time', function () {
         it('finds the fourth item and can complete it', async function () {
-          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
           expect(res.status).to.equal(200);
           const { workItem, maxCmrGranules } = JSON.parse(res.text);
           expect(maxCmrGranules).to.equal(1);
-          expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:latest');
+          expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:stable');
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = [
             getStacLocation(workItem, 'catalog.json'),
@@ -1094,7 +1094,7 @@ describe('when testing a batched aggregation service', function () {
         });
 
         describe('when checking for another query-cmr work item', function () {
-          hookGetWorkForService('harmonyservices/query-cmr:latest');
+          hookGetWorkForService('harmonyservices/query-cmr:stable');
           it('does not find a work item since all inputs have been received', async function () {
             expect(this.res.status).to.equal(404);
           });
@@ -1201,7 +1201,7 @@ describe('when testing a batched aggregation service', function () {
           const job = JSON.parse(this.res.text);
           const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
 
-          expect(workflowSteps[0].serviceID).to.equal('harmonyservices/query-cmr:latest');
+          expect(workflowSteps[0].serviceID).to.equal('harmonyservices/query-cmr:stable');
         });
 
         it('then requests subsetting using l2ss', async function () {
@@ -1221,13 +1221,13 @@ describe('when testing a batched aggregation service', function () {
 
       describe('when the query-cmr service has run', async function () {
         it('gets and updates work for query-cmr', async function () {
-          let res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+          let res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
           expect(res.status).to.equal(200);
           let workItem = createCmrResult(res.text, 2);
           await fakeServiceStacOutput(workItem.jobID, workItem.id, 2, 1);
           await updateWorkItem(this.backend, workItem);
 
-          res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+          res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
           expect(res.status).to.equal(200);
           workItem = createCmrResult(res.text, 2);
           await fakeServiceStacOutput(workItem.jobID, workItem.id, 2, 1);
@@ -1325,7 +1325,7 @@ describe('when testing a batched aggregation service', function () {
         const job = JSON.parse(this.res.text);
         const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
 
-        expect(workflowSteps[0].serviceID).to.equal('harmonyservices/query-cmr:latest');
+        expect(workflowSteps[0].serviceID).to.equal('harmonyservices/query-cmr:stable');
       });
 
       it('then requests subsetting using l2ss', async function () {
@@ -1345,11 +1345,11 @@ describe('when testing a batched aggregation service', function () {
     });
     describe('when checking for a query-cmr work item', function () {
       it('finds the item and can complete it', async function () {
-        const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+        const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
         expect(res.status).to.equal(200);
         const { workItem, maxCmrGranules } = JSON.parse(res.text);
         expect(maxCmrGranules).to.equal(1);
-        expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:latest');
+        expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:stable');
         workItem.status = WorkItemStatus.SUCCESSFUL;
         workItem.results = [
           getStacLocation(workItem, 'catalog0.json'),

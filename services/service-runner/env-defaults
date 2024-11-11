@@ -2,7 +2,7 @@
 PORT=5000
 # The port on which a worker container listens for work from the manager container
 WORKER_PORT=5001
-HARMONY_SERVICE="harmonyservices/query-cmr:latest"
+HARMONY_SERVICE="harmonyservices/query-cmr:stable"
 SERVICE_RUNNER_IMAGE="harmonyservices/service-runner:latest"
 BACKEND_HOST=harmony
 BACKEND_PORT=3001

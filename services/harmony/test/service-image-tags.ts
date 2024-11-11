@@ -32,7 +32,7 @@ const serviceImages = {
   'hybig': 'latest',
   'podaac-concise': 'sit',
   'podaac-l2-subsetter': 'sit',
-  'query-cmr': 'latest',
+  'query-cmr': 'stable',
   'sds-maskfill': 'latest',
   'stitchee': 'latest',
   'subset-band-name': 'latest',
