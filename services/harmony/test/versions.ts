@@ -44,6 +44,7 @@ describe('Versions endpoint', function () {
           'harmony/swath-projector-netcdf-to-zarr',
           'harmony/service-example',
           'l2-subsetter-batchee-stitchee-concise',
+          'asf/opera-rtc-s1-browse',
         ]);
       });
 
