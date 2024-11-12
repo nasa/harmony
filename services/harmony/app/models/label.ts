@@ -247,3 +247,33 @@ export async function deleteLabelsFromJobs(
     .andWhere('label_id', 'in', labelIds.map(row => row.id))
     .del();
 }
+
+/**
+ * Get the list of most recently used labels for the user, or for all users if this request is
+ * coming from an /admin route
+ * @param trx - the transaction to use for querying
+ * @param username - the username of the user requesting labels
+ * @param count - the number of labels to return
+ * @param isAdminRoute - true if the route used in this request is an /admin route
+ * @returns up to `count` most recently used labels for the user, or for all users if this is
+ * coming from an /admin route
+ */
+export async function getLabelsForUser(
+  trx: Transaction,
+  username: string,
+  count: number,
+  isAdminRoute: boolean = false,
+): Promise<string[]> {
+  const query = trx(`${USERS_LABELS_TABLE}`)
+    .select('value')
+    .orderBy('updatedAt', 'desc')
+    .limit(count)
+    .modify((queryBuilder) => {
+      if (!isAdminRoute) {
+        void queryBuilder.where({ username });
+      }
+    });
+
+  const results = await query;
+  return results.map((result) => result.value);
+}

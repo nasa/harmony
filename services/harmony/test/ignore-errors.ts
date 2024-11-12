@@ -57,7 +57,7 @@ describe('ignoreErrors', function () {
       hookRedirect('joe');
 
       before(async function () {
-        const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+        const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
         const { workItem, maxCmrGranules } = JSON.parse(res.text);
         expect(maxCmrGranules).to.equal(1);
         workItem.status = WorkItemStatus.SUCCESSFUL;
@@ -103,7 +103,7 @@ describe('ignoreErrors', function () {
           expect(job.progress).to.equal(100);
           const currentWorkItems = (await getWorkItemsByJobId(db, job.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(3);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest').length).to.equal(1);
         });
@@ -121,7 +121,7 @@ describe('ignoreErrors', function () {
       hookRedirect('joe');
 
       before(async function () {
-        const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+        const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
         const { workItem, maxCmrGranules } = JSON.parse(res.text);
         expect(maxCmrGranules).to.equal(1);
         workItem.status = WorkItemStatus.SUCCESSFUL;
@@ -169,7 +169,7 @@ describe('ignoreErrors', function () {
         it('correctly sets the work items status', async function () {
           const currentWorkItems = (await getWorkItemsByJobId(db, firstSwathItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(2);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
         });
 
@@ -192,7 +192,7 @@ describe('ignoreErrors', function () {
       hookRedirect('joe');
 
       before(async function () {
-        const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+        const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
         const { workItem, maxCmrGranules } = JSON.parse(res.text);
         expect(maxCmrGranules).to.equal(2);
         workItem.status = WorkItemStatus.SUCCESSFUL;
@@ -233,7 +233,7 @@ describe('ignoreErrors', function () {
           expect(job.status).to.equal(JobStatus.RUNNING_WITH_ERRORS);
           const currentWorkItems = (await getWorkItemsByJobId(db, job.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(3);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
           expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
         });
@@ -273,7 +273,7 @@ describe('ignoreErrors', function () {
           expect(job.message).to.equal('The job failed with 2 errors. See the errors field for more details');
           const currentWorkItems = (await getWorkItemsByJobId(db, job.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(4);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest').length).to.equal(1);
@@ -286,7 +286,7 @@ describe('ignoreErrors', function () {
       hookRedirect('joe');
 
       before(async function () {
-        const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+        const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
         const { workItem, maxCmrGranules } = JSON.parse(res.text);
         expect(maxCmrGranules).to.equal(3);
         workItem.status = WorkItemStatus.SUCCESSFUL;
@@ -331,7 +331,7 @@ describe('ignoreErrors', function () {
         it('does not queue a zarr step for the work item that failed', async function () {
           const currentWorkItems = (await getWorkItemsByJobId(db, firstSwathItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(4);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
           expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(2);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
         });
@@ -391,7 +391,7 @@ describe('ignoreErrors', function () {
       let maxErrorsStub;
       before(async function () {
         maxErrorsStub = stub(env, 'maxErrorsForJob').get(() => 1);
-        const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+        const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
         const { workItem, maxCmrGranules } = JSON.parse(res.text);
         expect(maxCmrGranules).to.equal(4);
         workItem.status = WorkItemStatus.SUCCESSFUL;
@@ -407,7 +407,7 @@ describe('ignoreErrors', function () {
 
         const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
         expect(currentWorkItems.length).to.equal(5);
-        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
+        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
         expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(4);
       });
       after(function () {
@@ -468,7 +468,7 @@ describe('ignoreErrors', function () {
         it('does not queue a zarr step for the work item that failed', async function () {
           const currentWorkItems = (await getWorkItemsByJobId(db, secondSwathItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(6);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
           expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(2);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
@@ -518,7 +518,7 @@ describe('ignoreErrors', function () {
           // job failure should trigger cancellation of any pending work items
           const currentWorkItems = (await getWorkItemsByJobId(db, thirdSwathItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(6);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.CANCELED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(2);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
@@ -536,7 +536,7 @@ describe('ignoreErrors', function () {
         let workItem: WorkItem;
         // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
         while (shouldLoop) {
-          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
           workItem = JSON.parse(res.text).workItem as WorkItem;
           workItem.status = WorkItemStatus.FAILED;
           workItem.results = [];
@@ -553,7 +553,7 @@ describe('ignoreErrors', function () {
       it('marks the work items as failed', async function () {
         const currentWorkItems = (await getWorkItemsByJobId(db, this.workItem.jobID)).workItems;
         expect(currentWorkItems.length).to.equal(1);
-        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
+        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
       });
 
       it('marks the job as failed', async function () {
@@ -581,7 +581,7 @@ describe('ignoreErrors', function () {
 
         before(async function () {
           stub(env, 'cmrMaxPageSize').get(() => 3);
-          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
           const { workItem } = JSON.parse(res.text);
           workItemJobID = workItem.jobID;
           workItem.status = WorkItemStatus.SUCCESSFUL;
@@ -597,8 +597,8 @@ describe('ignoreErrors', function () {
         it('queues 3 Swath Projector work items and 1 more query-cmr work item', async function () {
           const currentWorkItems = (await getWorkItemsByJobId(db, workItemJobID)).workItems;
           expect(currentWorkItems.length).to.equal(5);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
           expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(3);
         });
 
@@ -665,7 +665,7 @@ describe('ignoreErrors', function () {
           let shouldLoop = true;
           // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
           while (shouldLoop) {
-            const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+            const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
             secondQueryCmrItem = JSON.parse(res.text).workItem;
             secondQueryCmrItem.status = WorkItemStatus.FAILED;
             secondQueryCmrItem.results = [];
@@ -686,8 +686,8 @@ describe('ignoreErrors', function () {
         it('cancels any remaining work items', async function () {
           const currentWorkItems = (await getWorkItemsByJobId(db, secondQueryCmrItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(6);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.CANCELED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
@@ -702,7 +702,7 @@ describe('ignoreErrors', function () {
         hookRedirect('joe');
 
         before(async function () {
-          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
           const { workItem, maxCmrGranules } = JSON.parse(res.text);
           expect(maxCmrGranules).to.equal(3);
           workItem.status = WorkItemStatus.SUCCESSFUL;
@@ -747,7 +747,7 @@ describe('ignoreErrors', function () {
           it('does not construct a work item for PO.DAAC Concise when the first item fails', async function () {
             const currentWorkItems = (await getWorkItemsByJobId(db, firstL2SSItem.jobID)).workItems;
             expect(currentWorkItems.length).to.equal(4);
-            expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
+            expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
             expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(2);
             expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
           });
@@ -761,7 +761,7 @@ describe('ignoreErrors', function () {
             await updateWorkItem(this.backend, workItem);
             const currentWorkItems = (await getWorkItemsByJobId(db, firstL2SSItem.jobID)).workItems;
             expect(currentWorkItems.length).to.equal(4);
-            expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
+            expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
             expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
             expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
             expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
@@ -777,7 +777,7 @@ describe('ignoreErrors', function () {
 
             const currentWorkItems = (await getWorkItemsByJobId(db, firstL2SSItem.jobID)).workItems;
             expect(currentWorkItems.length).to.equal(5);
-            expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
+            expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
             expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/podaac/concise:sit').length).to.equal(1);
             expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(2);
             expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
@@ -815,7 +815,7 @@ describe('ignoreErrors', function () {
         let batchSizeStub;
         before(async function () {
           batchSizeStub = stub(env, 'maxBatchInputs').get(() => 1);
-          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
           const { workItem, maxCmrGranules } = JSON.parse(res.text);
           expect(maxCmrGranules).to.equal(3);
           workItem.status = WorkItemStatus.SUCCESSFUL;
@@ -845,7 +845,7 @@ describe('ignoreErrors', function () {
             await updateWorkItem(this.backend, workItem);
             const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
             expect(currentWorkItems.length).to.equal(5);
-            expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
+            expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
             expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/podaac/concise:sit').length).to.equal(1);
             expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(2);
             expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
@@ -879,7 +879,7 @@ describe('ignoreErrors', function () {
           it('does not construct another PO.DAAC Concise work item', async function () {
             const currentWorkItems = (await getWorkItemsByJobId(db, secondL2SSItem.jobID)).workItems;
             expect(currentWorkItems.length).to.equal(5);
-            expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
+            expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
             expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/podaac/concise:sit').length).to.equal(1);
             expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
             expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
@@ -896,7 +896,7 @@ describe('ignoreErrors', function () {
 
             const currentWorkItems = (await getWorkItemsByJobId(db, secondL2SSItem.jobID)).workItems;
             expect(currentWorkItems.length).to.equal(6);
-            expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
+            expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
             expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/podaac/concise:sit').length).to.equal(2);
             expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(2);
             expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
@@ -945,7 +945,7 @@ describe('ignoreErrors', function () {
         let batchSizeStub;
         before(async function () {
           batchSizeStub = stub(env, 'maxBatchInputs').get(() => 1);
-          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
           const { workItem, maxCmrGranules } = JSON.parse(res.text);
           expect(maxCmrGranules).to.equal(3);
           workItem.status = WorkItemStatus.SUCCESSFUL;
@@ -975,7 +975,7 @@ describe('ignoreErrors', function () {
             await updateWorkItem(this.backend, workItem);
             const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
             expect(currentWorkItems.length).to.equal(5);
-            expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
+            expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
             expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/podaac/concise:sit').length).to.equal(1);
             expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(2);
             expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
@@ -992,7 +992,7 @@ describe('ignoreErrors', function () {
             await updateWorkItem(this.backend, workItem);
             const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
             expect(currentWorkItems.length).to.equal(6);
-            expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
+            expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
             expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/podaac/concise:sit').length).to.equal(2);
             expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
             expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(2);
@@ -1026,7 +1026,7 @@ describe('ignoreErrors', function () {
           it('does not construct another PO.DAAC Concise work item', async function () {
             const currentWorkItems = (await getWorkItemsByJobId(db, lastL2SSItem.jobID)).workItems;
             expect(currentWorkItems.length).to.equal(6);
-            expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
+            expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
             expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/podaac/concise:sit').length).to.equal(2);
             expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(2);
             expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
@@ -1075,7 +1075,7 @@ describe('ignoreErrors', function () {
         let batchSizeStub;
         before(async function () {
           batchSizeStub = stub(env, 'maxBatchInputs').get(() => 1);
-          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
           const { workItem, maxCmrGranules } = JSON.parse(res.text);
           expect(maxCmrGranules).to.equal(3);
           workItem.status = WorkItemStatus.SUCCESSFUL;
@@ -1105,7 +1105,7 @@ describe('ignoreErrors', function () {
             await updateWorkItem(this.backend, workItem);
             const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
             expect(currentWorkItems.length).to.equal(5);
-            expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
+            expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
             expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/podaac/concise:sit').length).to.equal(1);
             expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(2);
             expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
@@ -1122,7 +1122,7 @@ describe('ignoreErrors', function () {
             await updateWorkItem(this.backend, workItem);
             const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
             expect(currentWorkItems.length).to.equal(6);
-            expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
+            expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
             expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/podaac/concise:sit').length).to.equal(2);
             expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
             expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(2);
@@ -1156,7 +1156,7 @@ describe('ignoreErrors', function () {
           it('does not construct another PO.DAAC Concise work item', async function () {
             const currentWorkItems = (await getWorkItemsByJobId(db, lastL2SSItem.jobID)).workItems;
             expect(currentWorkItems.length).to.equal(6);
-            expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
+            expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
             expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/podaac/concise:sit').length).to.equal(2);
             expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(2);
             expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
@@ -1218,7 +1218,7 @@ describe('ignoreErrors', function () {
         let maxErrorsStub;
         before(async function () {
           maxErrorsStub = stub(env, 'maxErrorsForJob').get(() => 1);
-          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
           const { workItem, maxCmrGranules } = JSON.parse(res.text);
           expect(maxCmrGranules).to.equal(4);
           workItem.status = WorkItemStatus.SUCCESSFUL;
@@ -1234,7 +1234,7 @@ describe('ignoreErrors', function () {
 
           const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(5);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
           expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(4);
         });
         after(function () {
@@ -1288,7 +1288,7 @@ describe('ignoreErrors', function () {
           it('does not queue a Concise step for the work item that failed', async function () {
             const currentWorkItems = (await getWorkItemsByJobId(db, secondL2SSItem.jobID)).workItems;
             expect(currentWorkItems.length).to.equal(5);
-            expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
+            expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
             expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(2);
             expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
             expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
@@ -1336,7 +1336,7 @@ describe('ignoreErrors', function () {
             // job failure should trigger cancellation of any pending work items
             const currentWorkItems = (await getWorkItemsByJobId(db, thirdL2SSItem.jobID)).workItems;
             expect(currentWorkItems.length).to.equal(5);
-            expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
+            expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
             expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.CANCELED && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
             expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(2);
             expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
@@ -1353,7 +1353,7 @@ describe('ignoreErrors', function () {
           let workItem: WorkItem;
           // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
           while (shouldLoop) {
-            const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+            const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
             workItem = JSON.parse(res.text).workItem as WorkItem;
             workItem.status = WorkItemStatus.FAILED;
             workItem.results = [];
@@ -1370,7 +1370,7 @@ describe('ignoreErrors', function () {
         it('marks the work items as failed', async function () {
           const currentWorkItems = (await getWorkItemsByJobId(db, this.workItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
         });
 
         it('marks the job as failed', async function () {
@@ -1387,7 +1387,7 @@ describe('ignoreErrors', function () {
       hookRedirect('joe');
 
       before(async function () {
-        const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+        const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
         const { workItem, maxCmrGranules } = JSON.parse(res.text);
         expect(maxCmrGranules).to.equal(3);
         workItem.status = WorkItemStatus.SUCCESSFUL;
@@ -1432,7 +1432,7 @@ describe('ignoreErrors', function () {
         it('does not queue a zarr step for the work item that failed', async function () {
           const currentWorkItems = (await getWorkItemsByJobId(db, firstSwathItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(4);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
           expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(2);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
         });
@@ -1492,7 +1492,7 @@ describe('ignoreErrors', function () {
       hookRedirect('joe');
 
       before(async function () {
-        const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+        const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
         const { workItem, maxCmrGranules } = JSON.parse(res.text);
         expect(maxCmrGranules).to.equal(3);
         workItem.status = WorkItemStatus.SUCCESSFUL;
@@ -1537,7 +1537,7 @@ describe('ignoreErrors', function () {
         it('does not queue a zarr step for the work item that failed', async function () {
           const currentWorkItems = (await getWorkItemsByJobId(db, firstSwathItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(4);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.CANCELED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(2);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
         });

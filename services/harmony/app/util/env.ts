@@ -116,6 +116,10 @@ class HarmonyServerEnv extends HarmonyEnv {
   labelsAllowList: string;
 
   labelsForbidList: string;
+
+  @IsInt()
+  @Min(1)
+  labelFilterCompletionCount: number;
 }
 
 const localPath = path.resolve(__dirname, '../../env-defaults');

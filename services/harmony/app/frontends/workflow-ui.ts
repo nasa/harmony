@@ -21,6 +21,7 @@ import { getEdlGroupInformation, isAdminUser } from '../util/edl-api';
 import { ILengthAwarePagination } from 'knex-paginate';
 import { handleWorkItemUpdateWithJobId } from '../backends/workflow-orchestration/work-item-updates';
 import { getLabelsForUser } from '../models/label';
+import { logAsyncExecutionTime } from '../util/log-execution';
 
 // Default to retrieving this number of work items per page
 const defaultWorkItemPageSize = 100;
@@ -50,6 +51,7 @@ interface TableQuery {
   serviceValues: string[],
   userValues: string[],
   providerValues: string[],
+  labelValues: string[],
   from: Date,
   to: Date,
   dateKind: 'createdAt' | 'updatedAt',
@@ -81,6 +83,7 @@ function parseQuery( /* eslint-disable @typescript-eslint/no-explicit-any */
     serviceValues: [],
     userValues: [],
     providerValues: [],
+    labelValues: [],
     allowStatuses: true,
     allowServices: true,
     allowUsers: true,
@@ -107,6 +110,9 @@ function parseQuery( /* eslint-disable @typescript-eslint/no-explicit-any */
     const validUserSelections = selectedOptions
       .filter(option => isAdminAccess && /^user: [A-Za-z0-9\.\_]{4,30}$/.test(option.value));
     const userValues = validUserSelections.map(option => option.value.split('user: ')[1]);
+    const validLabelSelections = selectedOptions
+      .filter(option => /^label: .{1,100}$/.test(option.value));
+    const labelValues = validLabelSelections.map(option => option.value.split('label: ')[1].toLowerCase());
     const validProviderSelections = selectedOptions
       .filter(option => /^provider: [A-Za-z0-9_]{1,100}$/.test(option.value));
     const providerValues = validProviderSelections.map(option => option.value.split('provider: ')[1].toLowerCase());
@@ -116,11 +122,13 @@ function parseQuery( /* eslint-disable @typescript-eslint/no-explicit-any */
     originalValues = JSON.stringify(validStatusSelections
       .concat(validServiceSelections)
       .concat(validUserSelections)
-      .concat(validProviderSelections));
+      .concat(validProviderSelections)
+      .concat(validLabelSelections));
     tableQuery.statusValues = statusValues;
     tableQuery.serviceValues = serviceValues;
     tableQuery.userValues = userValues;
     tableQuery.providerValues = providerValues;
+    tableQuery.labelValues = labelValues;
   }
   // everything in the Workflow UI uses the browser timezone, so we need a timezone offset
   const offSetMs = parseInt(requestQuery.tzoffsetminutes || 0) * 60 * 1000;
@@ -296,6 +304,9 @@ function tableQueryToJobQuery(tableQuery: TableQuery, isAdmin: boolean, user: st
       in: true,
     };
   }
+  if (tableQuery.labelValues && tableQuery.labelValues.length > 0) {
+    jobQuery.labels = tableQuery.labelValues;
+  }
   return jobQuery;
 }
 
@@ -315,7 +326,7 @@ export async function getJobs(
     const isAdminRoute = req.context.isAdminAccess;
     const providerIds = (await Job.getProviderIdsSnapshot(db, req.context.logger))
       .map((providerId) => providerId.toUpperCase());
-    const labels = await getLabelsForUser(db, req.user);
+    const labels = await (await logAsyncExecutionTime(getLabelsForUser, 'HWIUWJI.getLabelsForUser', req.context.logger))(db, req.user, env.labelFilterCompletionCount, isAdminRoute);
     const requestQuery = keysToLowerCase(req.query);
     const fromDateTime = requestQuery.fromdatetime;
     const toDateTime = requestQuery.todatetime;
@@ -346,6 +357,7 @@ export async function getJobs(
       selectAllBox,
       serviceNames: JSON.stringify(serviceNames),
       providerIds: JSON.stringify(providerIds),
+      labels: JSON.stringify(labels),
       sortGranules: requestQuery.sortgranules,
       disallowStatusChecked: !tableQuery.allowStatuses ? 'checked' : '',
       disallowServiceChecked: !tableQuery.allowServices ? 'checked' : '',

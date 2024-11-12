@@ -2,6 +2,10 @@
 Any changes to the environment variables will be documented in this file in chronological
 order with the most recent changes first.
 
+# 2024-11-05
+### Added
+- LABEL_FILTER_COMPLETION_COUNT - the max number of labels to retrieve to populate label filter auto-complete
+
 # 2024-10-23
 ### Added
 - LABELS_ALLOW_LIST - comma-separated list of values that are explicitly allowed for labels

@@ -18,7 +18,7 @@ describe('Service Metrics', async function () {
   });
 
   describe('when prometheus pulls the metric', async function () {
-    const serviceID = 'harmonyservices/query-cmr:latest';
+    const serviceID = 'harmonyservices/query-cmr:stable';
     before(function () {
       env.harmonyService = serviceID;
     });
