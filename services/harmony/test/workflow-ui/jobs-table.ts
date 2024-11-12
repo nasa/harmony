@@ -244,15 +244,15 @@ describe('Workflow UI jobs table route', function () {
     });
     describe('with all nonterminal jobs selected using the admin route', function () {
       hookAdminWorkflowUIJobRows({ username: 'adam', jobIDs: [woodyJob1.jobID, adamJob1.jobID, boJob1.jobID], query: { page: 1, limit: 10 } });
-      // "select all" box should be checked because the 2 terminal jobs cannot be selected for tagging using the admin route
-      it('returns the select all jobs checkbox checked', async function () {
+      // "select all" box should be unchecked because 1 job is still running
+      it('returns the select all jobs checkbox unchecked', async function () {
         const response = this.res.text;
-        expect(response).contains('<input id="select-jobs" type="checkbox" title="select/deselect all jobs" autocomplete="off" checked>');
+        expect(response).contains('<input id="select-jobs" type="checkbox" title="select/deselect all jobs" autocomplete="off" >');
       });
-      // the terminal jobs cannot be tagged from the admin endpoint
-      it('has only 3 select job checkboxes, for the nonterminal jobs', function () {
+      it('has only 4 select job checkboxes, for the nonterminal jobs', function () {
         const response = this.res.text;
         expect(response).contains(`<input id="select-${woodyJob1.jobID}" class="select-job" type="checkbox" data-id="${woodyJob1.jobID}" data-status="${woodyJob1.status}" autocomplete="off" checked>`);
+        expect(response).contains(`<input id="select-${woodyJob2.jobID}" class="select-job" type="checkbox" data-id="${woodyJob2.jobID}" data-status="${woodyJob2.status}" autocomplete="off" >`);
         expect(response).contains(`<input id="select-${adamJob1.jobID}" class="select-job" type="checkbox" data-id="${adamJob1.jobID}" data-status="${adamJob1.status}" autocomplete="off" checked>`);
         expect(response).contains(`<input id="select-${boJob1.jobID}" class="select-job" type="checkbox" data-id="${boJob1.jobID}" data-status="${boJob1.status}" autocomplete="off" checked>`);
         expect(response).not.contains(`<input id="select-${boJob2.jobID}" class="select-job" type="checkbox" data-id="${boJob2.jobID}" data-status="${boJob2.status}" autocomplete="off" >`);
