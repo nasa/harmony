@@ -258,7 +258,7 @@ export async function deleteLabelsFromJobs(
  * @returns up to `count` most recently used labels for the user, or for all users if this is
  * coming from an /admin route
  */
-export async function getLabelsForUser(
+export async function getRecentLabelsForUser(
   trx: Transaction,
   username: string,
   count: number,

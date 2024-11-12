@@ -20,7 +20,7 @@ import { serviceNames } from '../models/services';
 import { getEdlGroupInformation, isAdminUser } from '../util/edl-api';
 import { ILengthAwarePagination } from 'knex-paginate';
 import { handleWorkItemUpdateWithJobId } from '../backends/workflow-orchestration/work-item-updates';
-import { getLabelsForUser } from '../models/label';
+import { getLabelsForUser, getRecentLabelsForUser } from '../models/label';
 import { logAsyncExecutionTime } from '../util/log-execution';
 
 // Default to retrieving this number of work items per page
@@ -326,7 +326,8 @@ export async function getJobs(
     const isAdminRoute = req.context.isAdminAccess;
     const providerIds = (await Job.getProviderIdsSnapshot(db, req.context.logger))
       .map((providerId) => providerId.toUpperCase());
-    const labels = await (await logAsyncExecutionTime(getLabelsForUser, 'HWIUWJI.getLabelsForUser', req.context.logger))(db, req.user, env.labelFilterCompletionCount, isAdminRoute);
+    const recentLabels = await (await logAsyncExecutionTime(getRecentLabelsForUser, 'HWIUWJI.getRecentLabelsForUser', req.context.logger))(db, req.user, env.labelFilterCompletionCount, isAdminRoute);
+    const labels = await getLabelsForUser(db, req.user);
     const requestQuery = keysToLowerCase(req.query);
     const fromDateTime = requestQuery.fromdatetime;
     const toDateTime = requestQuery.todatetime;
@@ -357,7 +358,7 @@ export async function getJobs(
       selectAllBox,
       serviceNames: JSON.stringify(serviceNames),
       providerIds: JSON.stringify(providerIds),
-      labels: JSON.stringify(labels),
+      recentLabels: JSON.stringify(recentLabels),
       sortGranules: requestQuery.sortgranules,
       disallowStatusChecked: !tableQuery.allowStatuses ? 'checked' : '',
       disallowServiceChecked: !tableQuery.allowServices ? 'checked' : '',
