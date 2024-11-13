@@ -7,6 +7,39 @@ import hookServersStartStop from '../helpers/servers';
 import db from '../../app/util/db';
 import env from '../../app/util/env';
 import { stub } from 'sinon';
+import { getLabelsForUser } from '../../app/models/label';
+
+describe('Get Labels', function () {
+  const joeJob = buildJob({ username: 'joe' });
+  const jillJob = buildJob({ username: 'jill' });
+  hookServersStartStop({ skipEarthdataLogin: false });
+  hookTransaction();
+  before(async function () {
+    await joeJob.save(this.trx);
+    await jillJob.save(this.trx);
+    this.trx.commit();
+    this.trx = null;
+  });
+
+  describe('When getting labels using the admin route', function () {
+    describe('When multiple users use the same label', function () {
+      it('the label only appears once in the returned list', async function () {
+        await addJobsLabels(this.frontend, [joeJob.jobID], ['foo', 'bar'], 'joe');
+        await addJobsLabels(this.frontend, [jillJob.jobID], ['foo', 'boo'], 'jill');
+        // get up to ten labels across all users
+        const labels = await getLabelsForUser(
+          db,
+          'adam',
+          10,
+          true
+        );
+        expect(labels).deep.equal(['foo', 'boo', 'bar']);
+      });
+    });
+  });
+
+
+});
 
 describe('Job label CRUD', function () {
   const envLabelsAllowListStub = stub(env, 'labelsAllowList').get(() => 'butt');
