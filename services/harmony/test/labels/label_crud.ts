@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { profanity } from '@2toad/profanity';
-import { hookTransaction } from '../helpers/db';
+import { hookTransaction, truncateAll } from '../helpers/db';
 import { buildJob, getFirstJob } from '../helpers/jobs';
 import { addJobsLabels, deleteJobsLabels } from '../helpers/labels';
 import hookServersStartStop from '../helpers/servers';
@@ -13,12 +13,12 @@ describe('Get Labels', function () {
   const joeJob = buildJob({ username: 'joe' });
   const jillJob = buildJob({ username: 'jill' });
   hookServersStartStop({ skipEarthdataLogin: false });
-  hookTransaction();
   before(async function () {
-    await joeJob.save(this.trx);
-    await jillJob.save(this.trx);
-    this.trx.commit();
-    this.trx = null;
+    await truncateAll();
+    const trx = await db.transaction();
+    await joeJob.save(trx);
+    await jillJob.save(trx);
+    trx.commit();
   });
 
   describe('When getting labels using the admin route', function () {
@@ -31,14 +31,12 @@ describe('Get Labels', function () {
           db,
           'adam',
           10,
-          true
+          true,
         );
         expect(labels).deep.equal(['foo', 'boo', 'bar']);
       });
     });
   });
-
-
 });
 
 describe('Job label CRUD', function () {
