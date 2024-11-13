@@ -37,6 +37,22 @@ describe('Get Labels', function () {
       });
     });
   });
+
+  describe('When multiple users add labels', function () {
+    it('returns the most recently used labels', async function () {
+      await addJobsLabels(this.frontend, [joeJob.jobID], ['one'], 'joe');
+      await addJobsLabels(this.frontend, [joeJob.jobID], ['two'], 'joe');
+      await addJobsLabels(this.frontend, [jillJob.jobID], ['three', 'four'], 'jill');
+      // get up to three labels across all users
+      const labels = await getLabelsForUser(
+        db,
+        'adam',
+        3,
+        true,
+      );
+      expect(labels).deep.equal(['three', 'four', 'two']);
+    });
+  });
 });
 
 describe('Job label CRUD', function () {
