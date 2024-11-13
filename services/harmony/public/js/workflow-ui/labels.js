@@ -6,6 +6,7 @@ import PubSub from '../pub-sub.js';
 let bsDropdown;
 let labelLinks;
 let labelDropdown;
+let labelNavItem;
 
 /**
  * Responds to a submit link click event by adding or removing
@@ -159,6 +160,18 @@ function setLabelLinksEnabled(labelItemLinks) {
 }
 
 /**
+ * Hide/show labels dropdown based on the number of jobs selected.
+ * @param {number} selectedJobsCount - count of selected jobs
+ */
+function toggleLabelNavVisibility(selectedJobsCount) {
+  if (selectedJobsCount === 0) {
+    labelNavItem.classList.add('d-none');
+  } else {
+    labelNavItem.classList.remove('d-none');
+  }
+}
+
+/**
  * Bind event handlers to their respective elements.
  */
 function bindEventListeners() {
@@ -201,10 +214,15 @@ export default {
     labelLinks = Array.from(document.querySelectorAll('#labels-list .label-li a'));
     // the dropdown that contains label list items
     labelDropdown = document.getElementById('label-dropdown-a');
+    labelNavItem = document.getElementById('label-nav-item');
     if (labelDropdown) {
       bsDropdown = new bootstrap.Dropdown(labelDropdown);
     }
     bindEventListeners();
+    PubSub.subscribe(
+      'job-selected',
+      () => this.toggleLabelNavVisibility(jobsTable.getJobIds().length),
+    );
   },
   promoteLabels,
   demoteLabels,
@@ -213,4 +231,5 @@ export default {
   setLabelLinksEnabled,
   filterLabelsList,
   showAllLabels,
+  toggleLabelNavVisibility,
 };
