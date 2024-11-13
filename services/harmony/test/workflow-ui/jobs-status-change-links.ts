@@ -22,8 +22,8 @@ describe('JobsStatusChangeLinks', function () {
       before(async function () {
         links = jobsStatusChangeLinks.fetchLinksForStatuses(['paused', 'successful']);
       });
-      it('Returns 0 job status change links', function () {
-        expect(links.length).to.eq(0);
+      it('Returns 2 job status change links', function () {
+        expect(links.length).to.eq(2);
       });
     });
     describe('with paused status', function () {
@@ -80,11 +80,12 @@ describe('JobsStatusChangeLinks', function () {
       before(async function () {
         links = jobsStatusChangeLinks.fetchLinksForStatuses(['running', 'previewing']);
       });
-      it('Returns pause and cancel status change link', function () {
-        expect(links.length).to.eq(2);
+      it('Returns pause, cancel and skip preview status change link', function () {
+        expect(links.length).to.eq(3);
         const linkRels = links.map((l) => l.rel);
         expect(linkRels).contains('pauser');
         expect(linkRels).contains('canceler');
+        expect(linkRels).contains('preview-skipper');
       });
     });
     describe('with running and paused statuses', function () {
@@ -92,10 +93,12 @@ describe('JobsStatusChangeLinks', function () {
       before(async function () {
         links = jobsStatusChangeLinks.fetchLinksForStatuses(['running', 'paused']);
       });
-      it('Returns cancel status change link', function () {
-        expect(links.length).to.eq(1);
+      it('Returns cancel, resume and pause status change link', function () {
+        expect(links.length).to.eq(3);
         const linkRels = links.map((l) => l.rel);
         expect(linkRels).contains('canceler');
+        expect(linkRels).contains('resumer');
+        expect(linkRels).contains('pauser');
       });
     });
   });
