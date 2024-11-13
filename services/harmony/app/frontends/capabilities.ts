@@ -29,6 +29,7 @@ interface CollectionCapabilitiesV1 {
   variableSubset: boolean;
   bboxSubset: boolean;
   shapeSubset: boolean;
+  temporalSubset: boolean;
   concatenate: boolean;
   reproject: boolean;
   outputFormats: string[];
@@ -43,6 +44,7 @@ interface CollectionCapabilitiesV2 {
   variableSubset: boolean;
   bboxSubset: boolean;
   shapeSubset: boolean;
+  temporalSubset: boolean;
   concatenate: boolean;
   reproject: boolean;
   outputFormats: string[];
@@ -140,6 +142,7 @@ async function getCollectionCapabilitiesV1(collection: CmrCollection)
     && matchingServices.some((s) => s.capabilities.subsetting.variable === true);
   const bboxSubset = matchingServices.some((s) => s.capabilities.subsetting.bbox === true);
   const shapeSubset = matchingServices.some((s) => s.capabilities.subsetting.shape === true);
+  const temporalSubset = matchingServices.some((s) => s.capabilities.subsetting.temporal === true);
   const concatenate = matchingServices.some((s) => s.capabilities.concatenation === true);
   const reproject = matchingServices.some((s) => s.capabilities.reprojection === true);
   const outputFormats = new Set(matchingServices.flatMap((s) => s.capabilities.output_formats));
@@ -147,7 +150,7 @@ async function getCollectionCapabilitiesV1(collection: CmrCollection)
   const shortName = collection.short_name;
   const services = matchingServices.map((s) => _.pick(s, ['name', 'capabilities']));
   const capabilities = {
-    conceptId, shortName, variableSubset, bboxSubset, shapeSubset,
+    conceptId, shortName, variableSubset, bboxSubset, shapeSubset, temporalSubset,
     concatenate, reproject, outputFormats: Array.from(outputFormats), services, variables, capabilitiesVersion,
   };
   return capabilities;
@@ -171,6 +174,7 @@ async function getCollectionCapabilitiesV2(collection: CmrCollection)
     && matchingServices.some((s) => s.capabilities.subsetting.variable === true);
   const bboxSubset = matchingServices.some((s) => s.capabilities.subsetting.bbox === true);
   const shapeSubset = matchingServices.some((s) => s.capabilities.subsetting.shape === true);
+  const temporalSubset = matchingServices.some((s) => s.capabilities.subsetting.temporal === true);
   const concatenate = matchingServices.some((s) => s.capabilities.concatenation === true);
   const reproject = matchingServices.some((s) => s.capabilities.reprojection === true);
   const outputFormats = new Set(matchingServices.flatMap((s) => s.capabilities.output_formats));
@@ -178,7 +182,7 @@ async function getCollectionCapabilitiesV2(collection: CmrCollection)
   const shortName = collection.short_name;
   const services = matchingServices.map((s) => getServiceV2(s));
   const capabilities = {
-    conceptId, shortName, variableSubset, bboxSubset, shapeSubset,
+    conceptId, shortName, variableSubset, bboxSubset, shapeSubset, temporalSubset,
     concatenate, reproject, outputFormats: Array.from(outputFormats), services, variables, capabilitiesVersion,
   };
   return capabilities;

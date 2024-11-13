@@ -25,6 +25,7 @@ export interface ServiceCapabilities {
   subsetting?: {
     bbox?: boolean;
     shape?: boolean;
+    temporal?: boolean;
     variable?: boolean;
     multiple_variable?: true;
   };
