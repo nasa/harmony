@@ -1,12 +1,59 @@
 import { expect } from 'chai';
 import { profanity } from '@2toad/profanity';
-import { hookTransaction } from '../helpers/db';
+import { hookTransaction, truncateAll } from '../helpers/db';
 import { buildJob, getFirstJob } from '../helpers/jobs';
 import { addJobsLabels, deleteJobsLabels } from '../helpers/labels';
 import hookServersStartStop from '../helpers/servers';
 import db from '../../app/util/db';
 import env from '../../app/util/env';
 import { stub } from 'sinon';
+import { getLabelsForUser } from '../../app/models/label';
+
+describe('Get Labels', function () {
+  const joeJob = buildJob({ username: 'joe' });
+  const jillJob = buildJob({ username: 'jill' });
+  hookServersStartStop({ skipEarthdataLogin: false });
+  before(async function () {
+    await truncateAll();
+    const trx = await db.transaction();
+    await joeJob.save(trx);
+    await jillJob.save(trx);
+    await trx.commit();
+  });
+
+  describe('When getting labels using the admin route', function () {
+    describe('When multiple users use the same label', function () {
+      it('the label only appears once in the returned list', async function () {
+        await addJobsLabels(this.frontend, [joeJob.jobID], ['foo', 'bar'], 'joe');
+        await addJobsLabels(this.frontend, [jillJob.jobID], ['foo', 'boo'], 'jill');
+        // get up to ten labels across all users
+        const labels = await getLabelsForUser(
+          db,
+          'adam',
+          10,
+          true,
+        );
+        expect(labels).deep.equal(['foo', 'boo', 'bar']);
+      });
+    });
+  });
+
+  describe('When multiple users add labels', function () {
+    it('returns the most recently used labels', async function () {
+      await addJobsLabels(this.frontend, [joeJob.jobID], ['one'], 'joe');
+      await addJobsLabels(this.frontend, [joeJob.jobID], ['two'], 'joe');
+      await addJobsLabels(this.frontend, [jillJob.jobID], ['three', 'four'], 'jill');
+      // get up to three labels across all users
+      const labels = await getLabelsForUser(
+        db,
+        'adam',
+        3,
+        true,
+      );
+      expect(labels).deep.equal(['three', 'four', 'two']);
+    });
+  });
+});
 
 describe('Job label CRUD', function () {
   const envLabelsAllowListStub = stub(env, 'labelsAllowList').get(() => 'butt');
