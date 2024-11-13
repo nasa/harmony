@@ -1,10 +1,25 @@
 import { expect } from 'chai';
 import { describe, it, before } from 'mocha';
 import JobsStatusChangeLinks from '../../public/js/workflow-ui/jobs/jobs-status-change-links';
+import { JSDOM } from 'jsdom';
+import path from 'path';
 
 
 describe('JobsStatusChangeLinks', function () {
   const jobsStatusChangeLinks = new JobsStatusChangeLinks();
+  
+  describe('getActionableJobIDs()', () => {
+    beforeEach(async () => {
+      const dom = await JSDOM.fromFile(path.resolve(__dirname, 'labels.html'), { url: 'http://localhost' });
+      global.window = dom.window as unknown as Window & typeof globalThis;
+      global.document = dom.window.document;
+    });
+    it('', () => {
+
+      JobsStatusChangeLinks.getActionableJobIDs();
+
+    });
+  });
   describe('fetchLinks()', function () {
     let links;
     before(async function () {

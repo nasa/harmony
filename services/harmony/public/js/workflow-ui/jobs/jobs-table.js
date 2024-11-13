@@ -257,7 +257,7 @@ const jobsTable = {
    * @returns the job status string
    */
   getJobStatus(jobID) {
-    return document.querySelector(`#job-${jobID}`).getAttribute('data-status');
+    return document.querySelector(`#select-${jobID}`).getAttribute('data-status');
   },
 };
 
