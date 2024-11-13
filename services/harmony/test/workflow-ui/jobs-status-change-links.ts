@@ -7,17 +7,29 @@ import path from 'path';
 
 describe('JobsStatusChangeLinks', function () {
   const jobsStatusChangeLinks = new JobsStatusChangeLinks();
-  
+
   describe('getActionableJobIDs()', () => {
+    const previewingJobID = '580b48e6-845e-4e83-bcb8-60a1a3b0b6b9';
+    const runningJobID = '058184f7-498c-4aa5-a3df-96a3a49b7d19';
+    const pausedJobID = '38d2b820-0b52-475d-8cb0-0b9f7775f767';
     beforeEach(async () => {
       const dom = await JSDOM.fromFile(path.resolve(__dirname, 'labels.html'), { url: 'http://localhost' });
       global.window = dom.window as unknown as Window & typeof globalThis;
       global.document = dom.window.document;
     });
-    it('', () => {
-
-      JobsStatusChangeLinks.getActionableJobIDs();
-
+    describe('when the jobIDs specified cannot be paused, and the target link=pauser', function () {
+      it('returns no job IDs', () => {
+        const targetLink = document.querySelector("a.state-change-link[rel='pauser']");
+        const actionableJobIDs = jobsStatusChangeLinks.getActionableJobIDs([pausedJobID], targetLink);
+        expect(actionableJobIDs.length).to.equal(0);
+      });
+    });
+    describe('when 2 of the 3 jobIDs specified can be paused, and the target link=pauser', function () {
+      it('returns 2 job IDs', () => {
+        const targetLink = document.querySelector("a.state-change-link[rel='pauser']");
+        const actionableJobIDs = jobsStatusChangeLinks.getActionableJobIDs([pausedJobID, runningJobID, previewingJobID], targetLink);
+        expect(actionableJobIDs).to.deep.equal([runningJobID, previewingJobID]);
+      });
     });
   });
   describe('fetchLinks()', function () {

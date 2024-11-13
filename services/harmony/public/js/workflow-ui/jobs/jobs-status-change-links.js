@@ -81,7 +81,7 @@ class JobsStatusChangeLinks extends StatusChangeLinks {
    * @param {EventTarget} link - the link whose href will be used as the filter
    * @returns filtered list of job IDs
    */
-  static getActionableJobIDs(jobIDs, link) {
+  getActionableJobIDs(jobIDs, link) {
     const actionableJobIDs = [];
     for (const jobID of jobIDs) {
       const links = this.fetchLinksForStatuses([jobsTable.getJobStatus(jobID)]);
