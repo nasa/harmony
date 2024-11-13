@@ -18,7 +18,7 @@ describe('Get Labels', function () {
     const trx = await db.transaction();
     await joeJob.save(trx);
     await jillJob.save(trx);
-    trx.commit();
+    await trx.commit();
   });
 
   describe('When getting labels using the admin route', function () {
