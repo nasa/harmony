@@ -250,6 +250,15 @@ const jobsTable = {
   getJobIds() {
     return jobIDs;
   },
+
+  /**
+   * Gets the status of the specified job.
+   * @param {string} jobID - the job to retrieve status for
+   * @returns the job status string
+   */
+  getJobStatus(jobID) {
+    return document.querySelector(`#job-${jobID}`).getAttribute('data-status');
+  },
 };
 
 export default jobsTable;
