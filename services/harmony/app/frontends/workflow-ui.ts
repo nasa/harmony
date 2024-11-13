@@ -327,7 +327,7 @@ export async function getJobs(
     const providerIds = (await Job.getProviderIdsSnapshot(db, req.context.logger))
       .map((providerId) => providerId.toUpperCase());
     const recentLabels = await (await logAsyncExecutionTime(getRecentLabelsForUser, 'HWIUWJI.getRecentLabelsForUser', req.context.logger))(db, req.user, env.labelFilterCompletionCount, isAdminRoute);
-    const labels = await getLabelsForUser(db, req.user);
+    const labels = env.uiLabeling ? await getLabelsForUser(db, req.user) : [];
     const requestQuery = keysToLowerCase(req.query);
     const fromDateTime = requestQuery.fromdatetime;
     const toDateTime = requestQuery.todatetime;
