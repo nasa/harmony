@@ -266,7 +266,8 @@ export async function getRecentLabelsForUser(
 ): Promise<string[]> {
   const query = trx(`${USERS_LABELS_TABLE}`)
     .select('value')
-    .orderBy('updatedAt', 'desc')
+    .groupBy('value')
+    .orderByRaw(`max("${USERS_LABELS_TABLE}"."updatedAt") desc`)
     .limit(count)
     .modify((queryBuilder) => {
       if (!isAdminRoute) {

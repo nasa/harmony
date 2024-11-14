@@ -29,7 +29,7 @@ describe('Testing collection capabilities', function () {
 
         it('includes all of the expected fields in the response according to the default version', function () {
           const expectedFields = [
-            'conceptId', 'shortName', 'variableSubset', 'bboxSubset', 'shapeSubset',
+            'conceptId', 'shortName', 'variableSubset', 'bboxSubset', 'shapeSubset', 'temporalSubset',
             'concatenate', 'reproject', 'outputFormats', 'services', 'variables', 'capabilitiesVersion',
           ];
           const capabilities = JSON.parse(this.res.text);
@@ -59,6 +59,11 @@ describe('Testing collection capabilities', function () {
         it('sets the shapeSubset field correctly', function () {
           const capabilities = JSON.parse(this.res.text);
           expect(capabilities.shapeSubset).to.equal(true);
+        });
+
+        it('sets the temporalSubset field correctly', function () {
+          const capabilities = JSON.parse(this.res.text);
+          expect(capabilities.temporalSubset).to.equal(true);
         });
 
         it('sets the concatenate field correctly', function () {
@@ -190,7 +195,7 @@ describe('Testing collection capabilities', function () {
 
         it('includes all of the expected fields in the version 1 response', function () {
           const expectedFields = [
-            'conceptId', 'shortName', 'variableSubset', 'bboxSubset', 'shapeSubset',
+            'conceptId', 'shortName', 'variableSubset', 'bboxSubset', 'shapeSubset', 'temporalSubset',
             'concatenate', 'reproject', 'outputFormats', 'services', 'variables', 'capabilitiesVersion',
           ];
           const capabilities = JSON.parse(this.res.text);
@@ -220,6 +225,11 @@ describe('Testing collection capabilities', function () {
         it('sets the shapeSubset field correctly in the version 1 response', function () {
           const capabilities = JSON.parse(this.res.text);
           expect(capabilities.shapeSubset).to.equal(true);
+        });
+
+        it('sets the temporalSubset field correctly in the version 1 response', function () {
+          const capabilities = JSON.parse(this.res.text);
+          expect(capabilities.temporalSubset).to.equal(true);
         });
 
         it('sets the concatenate field correctly in the version 1 response', function () {
