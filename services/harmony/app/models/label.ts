@@ -31,7 +31,7 @@ export function checkLabel(label: string): string {
  * Trim the whitespace from the beginning/end of a label and convert it to lowercase
  *
  * @param label - the label to normalize
- * @returns - label converted to lowercase with leading/trailing whitespace trimmed
+ * @returns - label converted to lowercase with leading/trailing whitespace trimmed and commas removed
  */
 export function normalizeLabel(label: string): string {
   return label.trim().toLowerCase().replaceAll(',', '');

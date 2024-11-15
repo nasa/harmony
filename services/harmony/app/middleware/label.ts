@@ -18,20 +18,27 @@ export default async function handleLabelParameter(
   // Check if 'label' exists in the query parameters (GET), form-encoded body, or JSON body
   const lowerCaseQuery = keysToLowerCase(req.query);
   const lowerCaseBody = keysToLowerCase(req.body);
-  let label = lowerCaseQuery.label || lowerCaseBody.label;
+  const label = lowerCaseQuery.label || lowerCaseBody.label;
 
   // If 'label' exists, convert it to an array (if not already) and assign it to 'label' in the body
   if (label) {
-    label = parseMultiValueParameter(label);
-    label = label.map(normalizeLabel);
-    for (const lbl of label) {
+    const labels = parseMultiValueParameter(label);
+    const normalizedLabels = labels.map(normalizeLabel);
+    for (const lbl of normalizedLabels) {
       if (lbl === '') {
         res.status(400);
         res.send('Labels must contain at least one non-whitespace character');
         return;
       }
     }
-    req.body.label = label;
+    for (const lbl of labels) {
+      if (lbl.indexOf(',') > -1) {
+        res.status(400);
+        res.send('Labels cannot contain commas');
+        return;
+      }
+    }
+    req.body.label = normalizedLabels;
   }
 
   // Call next to pass control to the next middleware or route handler
