@@ -34,7 +34,7 @@ export function checkLabel(label: string): string {
  * @returns - label converted to lowercase with leading/trailing whitespace trimmed
  */
 export function normalizeLabel(label: string): string {
-  return label.trim().toLowerCase();
+  return label.trim().toLowerCase().replaceAll(',', '');
 }
 
 /**
