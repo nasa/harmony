@@ -25,7 +25,7 @@ describe('Versions endpoint', function () {
           'harmony/download',
           'ldds/subset-band-name',
           'ldds/geoloco',
-          'gesdisc/giovanni',
+          'giovanni-time-series-adapter',
           'podaac/l2-subsetter',
           'podaac/concise',
           'podaac/l2-subsetter-concise',
