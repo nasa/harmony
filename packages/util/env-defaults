@@ -109,7 +109,7 @@ QUEUE_LONG_POLLING_WAIT_TIME_SEC=20
 
 GEOLOCO_SERVICE_QUEUE_URLS='["ldds/geoloco:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/geoloco.fifo"]'
 SUBSET_BAND_NAME_SERVICE_QUEUE_URLS='["ldds/subset-band-name:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/subset-band-name.fifo"]'
-GIOVANNI_TIME_SERIES_ADAPTER_SERVICE_QUEUE_URLS='["giovanni-time-series-adapter:sit-1.0,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/giovanni-time-series-adapter.fifo"]'
+GIOVANNI_TIME_SERIES_ADAPTER_SERVICE_QUEUE_URLS='["giovanni-time-series-adapter:1.0.0,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/giovanni-time-series-adapter.fifo"]'
 HARMONY_GDAL_ADAPTER_SERVICE_QUEUE_URLS='["ghcr.io/nasa/harmony-gdal-adapter:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/harmony-gdal-adapter.fifo"]'
 HYBIG_SERVICE_QUEUE_URLS='["ghcr.io/nasa/harmony-browse-image-generator:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/hybig.fifo"]'
 HARMONY_SERVICE_EXAMPLE_SERVICE_QUEUE_URLS='["harmonyservices/service-example:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/harmony-service-example.fifo"]'
