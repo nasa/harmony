@@ -22,6 +22,7 @@ import { ILengthAwarePagination } from 'knex-paginate';
 import { handleWorkItemUpdateWithJobId } from '../backends/workflow-orchestration/work-item-updates';
 import { getLabelsForUser, getRecentLabelsForUser } from '../models/label';
 import { logAsyncExecutionTime } from '../util/log-execution';
+import _ from 'lodash';
 
 // Default to retrieving this number of work items per page
 const defaultWorkItemPageSize = 100;
@@ -211,7 +212,7 @@ function jobRenderingFunctions(logger: Logger, requestQuery: Record<string, any>
     jobLabelsDisplay(): string {
       return this.labels.map((label) => {
         const labelText = truncateString(label, 30);
-        return `<span class="badge bg-label" title="${label}">${labelText}</span>`;
+        return `<span class="badge bg-label" title="${label}">${_.escape(labelText)}</span>`;
       }).join(' ');
     },
     jobMessage(): string {
