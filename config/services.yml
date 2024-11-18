@@ -664,7 +664,7 @@ https://cmr.uat.earthdata.nasa.gov:
     description: |
       A service to compose the Giovanni URL for a time series and invoke Giovanni service to produce output file to visualize, analyze,
       and access vast amounts of Earth science remote sensing data without having to download the data.
-    data_operation_version: '0.19.0'
+    data_operation_version: '0.20.0'
     has_granule_limit: false
     # Replace the next two lines to default to synchronous once bearer tokens are supported by Giovanni
     # default_sync: true
