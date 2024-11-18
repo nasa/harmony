@@ -660,11 +660,11 @@ https://cmr.uat.earthdata.nasa.gov:
         is_sequential: true
       - image: !Env ${GEOLOCO_IMAGE}
 
-  - name: gesdisc/giovanni
+  - name: giovanni-time-series-adapter
     description: |
-      A service to compose the Giovanni URL and invoke Giovanni service to produce output file to visualize, analyze,
+      A service to compose the Giovanni URL for a time series and invoke Giovanni service to produce output file to visualize, analyze,
       and access vast amounts of Earth science remote sensing data without having to download the data.
-    data_operation_version: '0.20.0'
+    data_operation_version: '0.19.0'
     has_granule_limit: false
     # Replace the next two lines to default to synchronous once bearer tokens are supported by Giovanni
     # default_sync: true
@@ -678,9 +678,9 @@ https://cmr.uat.earthdata.nasa.gov:
           STAGING_PATH: public/gesdisc/giovanni
     umm_s: S1258984104-GES_DISC
     collections:
-      - id: C1225808238-GES_DISC
+      - id: C1215802935-GES_DISC
         variables:
-        - V1256306287-GES_DISC
+        - V1268438218-GES_DISC
     capabilities:
       subsetting:
         temporal: true
@@ -689,7 +689,7 @@ https://cmr.uat.earthdata.nasa.gov:
       output_formats:
         - text/csv
     steps:
-      - image: !Env ${GIOVANNI_ADAPTER_IMAGE}
+      - image: !Env ${GIOVANNI_TIME_SERIES_ADAPTER_IMAGE}
         operations: ['variableSubset', 'temporalSubset']
 
   - name: podaac/l2-subsetter
