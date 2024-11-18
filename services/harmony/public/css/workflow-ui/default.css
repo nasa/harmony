@@ -55,3 +55,23 @@
 .job-alert {
     margin-bottom: 0;
 }
+
+#label-nav-item > * {
+    z-index: 1021;
+}
+
+.dropdown-divider {
+    border-top: 1px solid #6b7c8d;
+}
+
+#labels-list {
+    overflow: hidden;
+    overflow-y: auto;
+    max-height: calc(100vh - 300px);
+    list-style: none;
+    padding: 5px 0;
+}
+
+.label-li {
+    max-width: 200px;
+}

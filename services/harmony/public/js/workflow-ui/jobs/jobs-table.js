@@ -85,6 +85,25 @@ function refreshSelected() {
 }
 
 /**
+ * Shows a visual counter for how many jobs have been selected via checkbox.
+ * @param {number} count - the number to display
+ */
+function setJobCounterDisplay(count) {
+  const jobCounterElement = document.getElementById('job-counter');
+  jobCounterElement.textContent = count;
+  const display = ` job${count === 1 ? '' : 's'}`;
+  const jobCounterMessageElement = document.getElementById('job-counter-message');
+  jobCounterMessageElement.textContent = display;
+  if (count === 0) {
+    jobCounterElement.classList.add('d-none');
+    jobCounterMessageElement.classList.add('d-none');
+  } else {
+    jobCounterElement.classList.remove('d-none');
+    jobCounterMessageElement.classList.remove('d-none');
+  }
+}
+
+/**
  * Intitialize the select box click handler for all job rows.
  * @param {string} selector - defines which box(es) to bind the handler to
  */
@@ -106,6 +125,7 @@ function initSelectHandler(selector) {
       const numSelected = jobIDs.length;
       const areAllJobsSelected = numSelectable === numSelected;
       document.getElementById('select-jobs').checked = areAllJobsSelected;
+      setJobCounterDisplay(jobIDs.length);
       PubSub.publish('job-selected');
     });
   });
@@ -135,6 +155,7 @@ function initSelectAllHandler() {
         jobEl.checked = false;
       }
     });
+    setJobCounterDisplay(jobIDs.length);
     PubSub.publish('job-selected');
   });
 }
@@ -228,6 +249,15 @@ const jobsTable = {
    */
   getJobIds() {
     return jobIDs;
+  },
+
+  /**
+   * Gets the status of the specified job.
+   * @param {string} jobID - the job to retrieve status for
+   * @returns the job status string
+   */
+  getJobStatus(jobID) {
+    return document.querySelector(`#select-${jobID}`).getAttribute('data-status');
   },
 };
 

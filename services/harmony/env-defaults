@@ -260,6 +260,13 @@ DEFAULT_POD_GRACE_PERIOD_SECS=14400
 LOCALSTACK_K8S_HOST=localstack
 
 ###########################################################################
+#                            Feature Toggles                              #
+###########################################################################
+
+# Toggle whether the labeling dropdown should be enabled in the workflow ui
+UI_LABELING=true
+
+###########################################################################
 #                             Prometheus Config                           #
 #                                                                         #
 # This section is irrelevant for local development unless you are a       #

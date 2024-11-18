@@ -66,7 +66,7 @@ As such it accepts parameters in the URL path as well as query parameters.
 | height | number of rows to return in the output coverage |
 | forceAsync | if "true", override the default API behavior and always treat the request as asynchronous |
 | format | the mime-type of the output format to return |
-| label | the label(s) to add for the job that runs the request. Multiple labels can be specified as a comma-separated list. A label can contain any characters up to a 255 character limit, but if a label contains commas the request can only be a POST with with the label field in the body. It is best practice to avoid commas in labels. Labels will be rejected if deemed inappropriate. Labels are always converted to lower case.
+| label | the label(s) to add for the job that runs the request. Multiple labels can be specified as a comma-separated list. A label can contain any characters except for commas up to a 255 character limit. Labels will be rejected if deemed inappropriate. Labels are always converted to lower case.
 | maxResults | limits the number of input files processed in the request |
 | skipPreview | if "true", override the default API behavior and never auto-pause jobs |
 | ignoreErrors | if "true", continue processing a request to completion even if some items fail. If "false" immediately fail the request. Defaults to true |
