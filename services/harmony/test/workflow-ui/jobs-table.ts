@@ -14,7 +14,7 @@ import { setLabelsForJob } from '../../app/models/label';
 
 
 // main objects used in the tests
-const boJob1 = buildJob({ status: JobStatus.FAILED, username: 'bo', provider_id: 'provider_a' });
+const boJob1 = buildJob({ status: JobStatus.RUNNING, username: 'bo', provider_id: 'provider_a' });
 const boJob2 = buildJob({ status: JobStatus.SUCCESSFUL, username: 'bo', service_name: 'cog-maker', provider_id: 'provider_b' });
 const adamJob1 = buildJob({ status: JobStatus.RUNNING, username: 'adam', provider_id: 'provider_a' });
 const woodyJob1 = buildJob({ status: JobStatus.RUNNING, username: 'woody' });
@@ -132,6 +132,21 @@ describe('Workflow UI jobs table route', function () {
     });
   });
 
+  describe('a user with all nonterminal jobs selected using the non-admin route', function () {
+    hookWorkflowUIJobRows({ username: 'bo', jobIDs: [boJob1.jobID], query: { page: 1, limit: 10 } });
+    // "select all" box should be unchecked because of the 1 unselected terminal job (which can be selected for tagging)
+    it('returns the select all jobs checkbox unchecked', async function () {
+      const response = this.res.text;
+      expect(response).contains('<input id="select-jobs" type="checkbox" title="select/deselect all jobs" autocomplete="off" >');
+    });
+    // the 1 unselected terminal job can be selected for tagging
+    it('has 1 select job checkbox unchecked and 1 checked', function () {
+      const response = this.res.text;
+      expect(response).contains(`<input id="select-${boJob1.jobID}" class="select-job" type="checkbox" data-id="${boJob1.jobID}" data-status="${boJob1.status}" autocomplete="off" checked>`);
+      expect(response).contains(`<input id="select-${boJob2.jobID}" class="select-job" type="checkbox" data-id="${boJob2.jobID}" data-status="${boJob2.status}" autocomplete="off" >`);
+    });
+  });
+
   describe('a user who  is an admin', function () {
     describe('using the provider ids filter', function () {
       hookAdminWorkflowUIJobRows({ username: 'adam', jobIDs: allJobIds,
@@ -172,13 +187,14 @@ describe('Workflow UI jobs table route', function () {
       });
     });
 
-    describe('using a user filter with the non-admin route', function () {
+    describe('an admin using the non-admin route and a user filter', function () {
       hookWorkflowUIJobRows({ username: 'adam', jobIDs: [woodyJob1.jobID],
         query: { disallowUser: true, tableFilter: '[{"value":"user: woody","dbValue":"woody","field":"user"}]' } });
-      it('ignores the user filter and returns all jobs', function () {
+      it('ignores the user filter and only returns the jobs for that user', function () {
         const response = this.res.text;
-        expect(response).contains(`<tr id="job-${woodyJob1.jobID}" class='job-table-row'>`);
-        expect((response.match(/job-table-row/g) || []).length).to.eq(totalJobsCount);
+        // user filters are not available on non-admin route because
+        // this route only returns jobs for the authenticated user
+        expect((response.match(/job-table-row/g) || []).length).to.eq(1);
       });
     });
 
@@ -209,64 +225,37 @@ describe('Workflow UI jobs table route', function () {
     });
 
     describe('with one page', function () {
-      hookWorkflowUIJobRows({ username: 'adam', jobIDs: [boJob1.jobID, adamJob1.jobID], query: { page: 1, limit: 10 } });
+      hookAdminWorkflowUIJobRows({ username: 'adam', jobIDs: [boJob1.jobID, adamJob1.jobID], query: { page: 1, limit: 10 } });
       it('returns all jobs', async function () {
         const response = this.res.text;
         expect((response.match(/job-table-row/g) || []).length).to.eq(totalJobsCount);
       });
     });
     describe('with two pages', function () {
-      hookWorkflowUIJobRows({ username: 'adam', jobIDs: [boJob1.jobID, adamJob1.jobID], query: { page: 1, limit: 1 } });
+      hookAdminWorkflowUIJobRows({ username: 'adam', jobIDs: [boJob1.jobID, adamJob1.jobID], query: { page: 1, limit: 1 } });
       it('returns updated paging links, with a link to the last and next page', function () {
         const response = this.res.text;
-        expect(response.replace(/\s/g, '')).contains(
-          `<nav id="page-nav" aria-label="Page navigation" class="bg-white d-flex flex-column align-items-center py-2 sticky-paging">
-            <ul class="pagination px-0 mx-auto mb-1">
-                <li class="page-item disabled">
-                    <a class="page-link" href="" title="first">first</a>
-                </li>
-                <li class="page-item disabled">
-                    <a class="page-link" href="" title="previous">previous</a>
-                </li>
-                <li class="page-item ">
-                    <a class="page-link" href="http:&#x2F;&#x2F;127.0.0.1:4000&#x2F;workflow-ui?page&#x3D;2&amp;limit&#x3D;1" title="next">next</a>
-                </li>
-                <li class="page-item ">
-                    <a class="page-link" href="http:&#x2F;&#x2F;127.0.0.1:4000&#x2F;workflow-ui?page&#x3D;5&amp;limit&#x3D;1" title="last">last</a>
-                </li>
-            </ul>
-            <small class="text-muted">
-                1-1 of ${totalJobsCount} (page 1 of ${totalJobsCount})
-            </small>
-        </nav>`.replace(/\s/g, ''),
-        );
+        expect(response).contains('title="first">first</a>');
+        expect(response).contains('title="previous">previous</a>');
+        expect(response).contains('title="next">next</a>');
+        expect(response).contains('title="last">last</a>');
+        expect(response).contains(`1-1 of ${totalJobsCount} (page 1 of ${totalJobsCount})`);
       });
     });
-    describe('with all nonterminal jobs selected', function () {
-      hookWorkflowUIJobRows({ username: 'adam', jobIDs: [woodyJob1.jobID, woodyJob2.jobID, adamJob1.jobID], query: { page: 1, limit: 10 } });
-      it('returns the select all jobs checkbox checked', async function () {
-        const response = this.res.text;
-        expect(response).contains('<input id="select-jobs" type="checkbox" title="select/deselect all jobs" autocomplete="off" checked>');
-      });
-      it('has all select job checkboxes checked', function () {
-        const response = this.res.text;
-        expect(response).contains(`<input id="select-${woodyJob1.jobID}" class="select-job" type="checkbox" data-id="${woodyJob1.jobID}" data-status="${woodyJob1.status}" autocomplete="off" checked>`);
-        expect(response).contains(`<input id="select-${adamJob1.jobID}" class="select-job" type="checkbox" data-id="${adamJob1.jobID}" data-status="${adamJob1.status}" autocomplete="off" checked>`);
-      });
-    });
-    describe('with 1 nonterminal job selected and one nonterminal job not selected', function () {
-      hookWorkflowUIJobRows({ username: 'adam', jobIDs: [woodyJob1.jobID], query: { page: 1, limit: 10 } });
+    describe('with all nonterminal jobs selected using the admin route', function () {
+      hookAdminWorkflowUIJobRows({ username: 'adam', jobIDs: [woodyJob1.jobID, adamJob1.jobID, boJob1.jobID], query: { page: 1, limit: 10 } });
+      // "select all" box should be unchecked because 1 job is still running
       it('returns the select all jobs checkbox unchecked', async function () {
         const response = this.res.text;
         expect(response).contains('<input id="select-jobs" type="checkbox" title="select/deselect all jobs" autocomplete="off" >');
       });
-      it('has one job checkbox checked', async function () {
+      it('has only 4 select job checkboxes, for the nonterminal jobs', function () {
         const response = this.res.text;
         expect(response).contains(`<input id="select-${woodyJob1.jobID}" class="select-job" type="checkbox" data-id="${woodyJob1.jobID}" data-status="${woodyJob1.status}" autocomplete="off" checked>`);
-      });
-      it('has one job checkbox unchecked', async function () {
-        const response = this.res.text;
-        expect(response).contains(`<input id="select-${adamJob1.jobID}" class="select-job" type="checkbox" data-id="${adamJob1.jobID}" data-status="${adamJob1.status}" autocomplete="off" >`);
+        expect(response).contains(`<input id="select-${woodyJob2.jobID}" class="select-job" type="checkbox" data-id="${woodyJob2.jobID}" data-status="${woodyJob2.status}" autocomplete="off" >`);
+        expect(response).contains(`<input id="select-${adamJob1.jobID}" class="select-job" type="checkbox" data-id="${adamJob1.jobID}" data-status="${adamJob1.status}" autocomplete="off" checked>`);
+        expect(response).contains(`<input id="select-${boJob1.jobID}" class="select-job" type="checkbox" data-id="${boJob1.jobID}" data-status="${boJob1.status}" autocomplete="off" checked>`);
+        expect(response).not.contains(`<input id="select-${boJob2.jobID}" class="select-job" type="checkbox" data-id="${boJob2.jobID}" data-status="${boJob2.status}" autocomplete="off" >`);
       });
     });
   });

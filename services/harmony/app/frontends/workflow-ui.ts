@@ -20,8 +20,9 @@ import { serviceNames } from '../models/services';
 import { getEdlGroupInformation, isAdminUser } from '../util/edl-api';
 import { ILengthAwarePagination } from 'knex-paginate';
 import { handleWorkItemUpdateWithJobId } from '../backends/workflow-orchestration/work-item-updates';
-import { getLabelsForUser } from '../models/label';
+import { getLabelsForUser, getRecentLabelsForUser } from '../models/label';
 import { logAsyncExecutionTime } from '../util/log-execution';
+import _ from 'lodash';
 
 // Default to retrieving this number of work items per page
 const defaultWorkItemPageSize = 100;
@@ -168,10 +169,11 @@ function getPaginationDisplay(pagination: ILengthAwarePagination): { from: strin
  * a row of the jobs table.
  * @param logger - the logger to use
  * @param requestQuery - the query parameters from the request
- * @param checked - whether the job should be selected
+ * @param isAdminRoute - whether the current endpoint being accessed is /admin/*
+ * @param jobIDs - list of IDs for selected jobs
  * @returns an object with rendering functions
  */
-function jobRenderingFunctions(logger: Logger, requestQuery: Record<string, any>, jobIDs: string[] = []): object {
+function jobRenderingFunctions(logger: Logger, requestQuery: Record<string, any>, isAdminRoute: boolean, jobIDs: string[] = []): object {
   return {
     jobBadge(): string {
       return statusClass[this.status];
@@ -210,7 +212,7 @@ function jobRenderingFunctions(logger: Logger, requestQuery: Record<string, any>
     jobLabelsDisplay(): string {
       return this.labels.map((label) => {
         const labelText = truncateString(label, 30);
-        return `<span class="badge bg-label" title="${label}">${labelText}</span>`;
+        return `<span class="badge bg-label" title="${label}">${_.escape(labelText)}</span>`;
       }).join(' ');
     },
     jobMessage(): string {
@@ -220,7 +222,7 @@ function jobRenderingFunctions(logger: Logger, requestQuery: Record<string, any>
     },
     jobSelectBox(): string {
       const checked = jobIDs.indexOf(this.jobID) > -1 ? 'checked' : '';
-      if (this.hasTerminalStatus()) {
+      if (this.hasTerminalStatus() && isAdminRoute) {
         return '';
       }
       return `<input id="select-${this.jobID}" class="select-job" type="checkbox" data-id="${this.jobID}" data-status="${this.status}" autocomplete="off" ${checked}></input>`;
@@ -325,7 +327,8 @@ export async function getJobs(
     const isAdminRoute = req.context.isAdminAccess;
     const providerIds = (await Job.getProviderIdsSnapshot(db, req.context.logger))
       .map((providerId) => providerId.toUpperCase());
-    const labels = await (await logAsyncExecutionTime(getLabelsForUser, 'HWIUWJI.getLabelsForUser', req.context.logger))(db, req.user, env.labelFilterCompletionCount, isAdminRoute);
+    const recentLabels = await (await logAsyncExecutionTime(getRecentLabelsForUser, 'HWIUWJI.getRecentLabelsForUser', req.context.logger))(db, req.user, env.labelFilterCompletionCount, isAdminRoute);
+    const labels = env.uiLabeling ? await getLabelsForUser(db, req.user) : [];
     const requestQuery = keysToLowerCase(req.query);
     const fromDateTime = requestQuery.fromdatetime;
     const toDateTime = requestQuery.todatetime;
@@ -342,7 +345,7 @@ export async function getJobs(
     const previousPage = pageLinks.find((l) => l.rel === 'prev');
     const currentPage = pageLinks.find((l) => l.rel === 'self');
     const paginationDisplay = getPaginationDisplay(pagination);
-    const selectAllBox = jobs.some((j) => !j.hasTerminalStatus()) ?
+    const selectAllBox = jobs.length > 0 && (!isAdminRoute || jobs.some((j) => !j.hasTerminalStatus())) ?
       '<input id="select-jobs" type="checkbox" title="select/deselect all jobs" autocomplete="off">' : '';
     res.render('workflow-ui/jobs/index', {
       version,
@@ -352,10 +355,11 @@ export async function getJobs(
       currentUser: req.user,
       isAdminRoute,
       jobs,
+      labels,
       selectAllBox,
       serviceNames: JSON.stringify(serviceNames),
       providerIds: JSON.stringify(providerIds),
-      labels: JSON.stringify(labels),
+      recentLabels: JSON.stringify(recentLabels),
       sortGranules: requestQuery.sortgranules,
       disallowStatusChecked: !tableQuery.allowStatuses ? 'checked' : '',
       disallowServiceChecked: !tableQuery.allowServices ? 'checked' : '',
@@ -375,7 +379,7 @@ export async function getJobs(
         { ...nextPage, linkTitle: 'next' },
         { ...lastPage, linkTitle: 'last' },
       ],
-      ...jobRenderingFunctions(req.context.logger, requestQuery),
+      ...jobRenderingFunctions(req.context.logger, requestQuery, isAdminRoute),
     });
   } catch (e) {
     req.context.logger.error(e);
@@ -545,6 +549,7 @@ export async function getWorkItemsTable(
   const { jobID } = req.params;
   const { checkJobStatus } = req.query;
   try {
+    const isAdminRoute = req.context.isAdminAccess;
     const { isAdmin, isLogViewer } = await getEdlGroupInformation(
       req.user, req.context.logger,
     );
@@ -590,7 +595,7 @@ export async function getWorkItemsTable(
       linkHref() {
         return this.href;
       },
-      ...jobRenderingFunctions(req.context.logger, requestQuery),
+      ...jobRenderingFunctions(req.context.logger, requestQuery, isAdminRoute),
     });
   } catch (e) {
     req.context.logger.error(e);
@@ -649,24 +654,22 @@ export async function getJobsTable(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
   try {
+    const isAdminRoute = req.context.isAdminAccess;
     const { jobIDs } = req.body;
-    const { isAdmin } = await getEdlGroupInformation(
-      req.user, req.context.logger,
-    );
     const requestQuery = keysToLowerCase(req.query);
-    const { tableQuery } = parseQuery(requestQuery, JobStatus, req.context.isAdminAccess);
-    const jobQuery = tableQueryToJobQuery(tableQuery, isAdmin, req.user);
+    const { tableQuery } = parseQuery(requestQuery, JobStatus, isAdminRoute);
+    const jobQuery = tableQueryToJobQuery(tableQuery, isAdminRoute, req.user);
     const { page, limit } = getPagingParams(req, env.defaultJobListPageSize, 1, true, true);
     const jobsRes = await Job.queryAll(db, jobQuery, page, limit, true);
     const jobs = jobsRes.data;
     const { pagination } = jobsRes;
-    const selectAllChecked = jobs.every((j) => j.hasTerminalStatus() || (jobIDs.indexOf(j.jobID) > -1)) ? 'checked' : '';
-    const selectAllBox = jobs.some((j) => !j.hasTerminalStatus()) ?
+    const selectAllChecked = jobs.every((j) => (j.hasTerminalStatus() && isAdminRoute) || (jobIDs.indexOf(j.jobID) > -1)) ? 'checked' : '';
+    const selectAllBox = jobs.length > 0 && (!isAdminRoute || jobs.some((j) => !j.hasTerminalStatus())) ?
       `<input id="select-jobs" type="checkbox" title="select/deselect all jobs" autocomplete="off" ${selectAllChecked}>` : '';
     const tableContext = {
       jobs,
       selectAllBox,
-      ...jobRenderingFunctions(req.context.logger, requestQuery, jobIDs),
+      ...jobRenderingFunctions(req.context.logger, requestQuery, isAdminRoute, jobIDs),
       isAdminRoute: req.context.isAdminAccess,
     };
     const tableHtml = await new Promise<string>((resolve, reject) => req.app.render(
