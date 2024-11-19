@@ -229,10 +229,11 @@ LOG_STDOUT=false
 # The services to deploy locally. A comma-separated list of services that the bin/deploy-services
 # script should attempt to deploy. By default only a couple of harmony example services are deployed.
 # When specifying another service to be deployed make sure the name matches the lower and dash case
-# prefix for the image variable name. For example to deploy the Giovanni adapter image which has
-# a variable name of GIOVANNI_ADAPTER_IMAGE you would specify giovanni-adapter (converting to lowercase
-# and dash case and dropping _IMAGE. Make sure if the image for the service is not publicly available
-# that you have built the docker image locally, otherwise the service will fail to start.
+# prefix for the image variable name. For example to deploy the harmony service example image which
+# has a variable name of HARMONY_SERVICE_EXAMPLE_IMAGE you would specify harmony-service-example
+# (converting to lowercase, converting to dash case, and dropping _IMAGE). Make sure if the image
+# for the service is not publicly available that you have built the docker image locally, otherwise
+# the service will fail to start.
 LOCALLY_DEPLOYED_SERVICES=harmony-service-example
 
 # Local development: Use the following to set the Kubernetes context used by start scripts

@@ -49,9 +49,9 @@ https://cmr.earthdata.nasa.gov:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
 
-  - name: gesdisc/giovanni
+  - name: giovanni-time-series-adapter
     description: |
-      A service to compose the Giovanni URL and invoke Giovanni service to produce output file to visualize, analyze,
+      A service to compose the Giovanni URL for a time series and invoke Giovanni service to produce output file to visualize, analyze,
       and access vast amounts of Earth science remote sensing data without having to download the data.
     data_operation_version: '0.20.0'
     has_granule_limit: false
@@ -78,7 +78,7 @@ https://cmr.earthdata.nasa.gov:
       output_formats:
         - text/csv
     steps:
-      - image: !Env ${GIOVANNI_ADAPTER_IMAGE}
+      - image: !Env ${GIOVANNI_TIME_SERIES_ADAPTER_IMAGE}
         operations: ['variableSubset', 'temporalSubset']
 
   - name: podaac/l2-subsetter

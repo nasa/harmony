@@ -101,7 +101,7 @@ describe('Backend service metrics endpoint', function () {
   });
 
   describe('when hitting the service/metrics endpoint with an existing serviceID', async function () {
-    const serviceID = 'harmony/query-cmr:latest';
+    const serviceID = 'harmony/query-cmr:stable';
 
     // The number of work items that should be returned for each of the job statuses
     const testParametersList = [

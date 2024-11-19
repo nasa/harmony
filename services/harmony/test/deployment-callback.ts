@@ -4,13 +4,13 @@ import hookServersStartStop from './helpers/servers';
 import { getServiceConfigs } from '../app/models/services';
 import { ServiceConfig } from '../app/models/services/base-service';
 
-const serviceName = 'gesdisc/giovanni';
-const serviceNewTag = 'harmonyservices/giovanni-adapter:newtag';
+const serviceName = 'harmony/service-example';
+const serviceNewTag = 'harmonyservices/service-example:newtag';
 
 const callbackMessage = {
-  deployService: 'giovanni-adapter',
+  deployService: 'harmony-service-example',
   image: serviceNewTag,
-  serviceQueueUrls: '["harmonyservices/giovanni-adapter:test,https://sqs.us-west-2.amazonaws.com/123456/giovanni-adapter-test-0-sandbox"]',
+  serviceQueueUrls: '["harmonyservices/harmony-service-example:test,https://sqs.us-west-2.amazonaws.com/123456/harmony-service-example-test-0-sandbox"]',
 };
 
 /**
@@ -22,13 +22,15 @@ const callbackMessage = {
 function findImageByName(configs: ServiceConfig<unknown>[], targetName: string): string | undefined {
   for (const config of configs) {
     if (config.name === targetName) {
-      // Assuming the first step has the desired image
-      const firstStep = config.steps[0];
-      if (firstStep && firstStep.image) {
-        return firstStep.image;
+      // Assuming the second step has the desired image
+      const secondStep = config.steps[1];
+      if (secondStep && secondStep.image) {
+        return secondStep.image;
       }
     }
   }
+
+
   return undefined;
 }
 
@@ -37,12 +39,12 @@ describe('Deployment callback endpoint', async function () {
   let originalImage;
   before(function () {
     // Save the original process.env
-    originalImage = process.env.GIOVANNI_ADAPTER_IMAGE;
+    originalImage = process.env.HARMONY_SERVICE_EXAMPLE_IMAGE;
   });
 
   after(function () {
     // Restore the original process.env after test
-    process.env.GIOVANNI_ADAPTER_IMAGE = originalImage;
+    process.env.HARMONY_SERVICE_EXAMPLE_IMAGE = originalImage;
   });
 
   describe('handle callback message', function () {
@@ -101,8 +103,17 @@ describe('Deployment callback endpoint', async function () {
           .set('Content-Type', 'application/json');
       });
 
-      after(function () {
+      after(async function () {
         delete this.res;
+        // Set the image back to the original tag to prevent breaking other tests outside this file
+        // loadServiceConfigs(env.cmrEndpoint);
+        const originalImageCallback = callbackMessage;
+        originalImageCallback.image = 'harmonyservices/service-example:latest';
+        await request(this.backend)
+          .post('/service/deployment-callback')
+          .send(originalImageCallback)
+          .set('cookie-secret', process.env.COOKIE_SECRET)
+          .set('Content-Type', 'application/json');
       });
 
       it('runs the request successfully', async function () {
@@ -115,7 +126,7 @@ describe('Deployment callback endpoint', async function () {
 
       it('updates the image tag', async function () {
         let serviceImage = findImageByName(configs, serviceName);
-        expect(serviceImage).to.equal('harmonyservices/giovanni-adapter:latest');
+        expect(serviceImage).to.equal('harmonyservices/service-example:latest');
         // get the service config again and verify that it is updated to the new tag
         serviceImage = findImageByName(getServiceConfigs(), serviceName);
         expect(serviceImage).to.equal(serviceNewTag);

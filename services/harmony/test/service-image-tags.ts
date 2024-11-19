@@ -23,7 +23,7 @@ import { stub } from 'sinon';
 const serviceImages = {
   'batchee': 'latest',
   'geoloco': 'latest',
-  'giovanni-adapter': 'latest',
+  'giovanni-time-series-adapter': '1.0.0',
   'harmony-gdal-adapter': 'latest',
   'harmony-netcdf-to-zarr': 'latest',
   'harmony-regridder': 'latest',
@@ -230,17 +230,11 @@ describe('ecrImageNameToComponents', function () {
 describe('Service image endpoint', async function () {
   let envStub;
   beforeEach(function () {
-    envStub = stub(env, 'locallyDeployedServices').get(() => 'giovanni-adapter,harmony-service-example,harmony-netcdf-to-zarr,var-subsetter,swath-projector,harmony-gdal-adapter,podaac-concise,sds-maskfill,trajectory-subsetter,podaac-l2-subsetter,harmony-regridder,hybig,geoloco');
+    envStub = stub(env, 'locallyDeployedServices').get(() => 'harmony-service-example,harmony-netcdf-to-zarr,var-subsetter,swath-projector,harmony-gdal-adapter,podaac-concise,sds-maskfill,trajectory-subsetter,podaac-l2-subsetter,harmony-regridder,hybig,geoloco');
   });
 
   afterEach(function () {
     envStub.restore();
-  });
-
-  const locallyDeployedServices = 'giovanni-adapter,harmony-service-example,harmony-netcdf-to-zarr,var-subsetter,swath-projector,harmony-gdal-adapter,podaac-concise,sds-maskfill,trajectory-subsetter,podaac-l2-subsetter,harmony-regridder,hybig,geoloco,subset-band-name';
-
-  beforeEach(function () {
-    process.env.LOCALLY_DEPLOYED_SERVICES = locallyDeployedServices;
   });
 
   hookServersStartStop({ skipEarthdataLogin: false });
