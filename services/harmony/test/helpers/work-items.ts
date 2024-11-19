@@ -13,7 +13,7 @@ import { objectStoreForProtocol } from '../../app/util/object-store';
 
 export const exampleWorkItemProps = {
   jobID: '1',
-  serviceID: 'harmony-services/query-cmr:latest',
+  serviceID: 'harmony-services/query-cmr:stable',
   status: WorkItemStatus.READY,
   workflowStepIndex: 0,
 } as WorkItemRecord;
