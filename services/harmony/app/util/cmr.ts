@@ -11,6 +11,9 @@ import env from './env';
 import logger from './log';
 import { UmmSpatial } from './spatial/umm-spatial';
 import { isValidUri } from './url';
+import HarmonyRequest from '../models/harmony-request';
+import RequestContext from '../models/request-context';
+import { request } from 'http';
 
 const { cmrEndpoint, cmrMaxPageSize, clientId, stagingBucket } = env;
 
@@ -351,6 +354,17 @@ export interface CmrUmmCollectionsResponse extends CmrResponse {
 function _makeTokenHeader(token: string): object {
   return cmrApiConfig.useToken && token ? { Authorization: `Bearer ${token}` } : {};
 }
+
+/**
+ * Create a X-Request-Id header for the given request ID
+ *
+ * @param requestId - The request ID for the user's request
+ * @returns An object with an 'X-Request-Id' key and and id as the value
+ */
+function makeXRequestIdHeader(requestId: string): object {
+  return { 'X-Request-Id': requestId };
+}
+
 /**
  * Handle any errors in the CMR response
  *
@@ -374,6 +388,7 @@ function _handleCmrErrors(response: Response): void {
 /**
  * Performs a CMR GET at the given path with the given query string
  *
+ * @param context - Information related to the user's request
  * @param path - The absolute path on the CMR API to the resource being queried
  * @param query - The key/value pairs to send to the CMR query string
  * @param token - Access token for user request
@@ -381,12 +396,13 @@ function _handleCmrErrors(response: Response): void {
  * @returns The CMR query result
  */
 export async function cmrGetBase(
-  path: string, query: CmrQuery, token: string, extraHeaders = {},
+  context: RequestContext, path: string, query: CmrQuery, token: string, extraHeaders = {},
 ): Promise<CmrResponse> {
   const querystr = querystring.stringify(query);
   const headers = {
     ...clientIdHeader,
     ..._makeTokenHeader(token),
+    ...makeXRequestIdHeader(context.id),
     ...acceptJsonHeader,
     ...extraHeaders,
   };
@@ -403,6 +419,7 @@ export async function cmrGetBase(
  * Performs a CMR GET at the given path with the given query string. This function wraps
  * `cmrGetBase` to make it easier to test.
  *
+ * @param context - Information related to the user's request
  * @param path - The absolute path on the CMR API to the resource being queried
  * @param query - The key/value pairs to send to the CMR query string
  * @param token - Access token for user request
@@ -410,9 +427,9 @@ export async function cmrGetBase(
  * @throws CmrError - If the CMR returns an error status
  */
 async function _cmrGet(
-  path: string, query: CmrQuery, token: string,
+  context: RequestContext, path: string, query: CmrQuery, token: string,
 ): Promise<CmrResponse> {
-  const response = await cmrGetBase(path, query, token);
+  const response = await cmrGetBase(context, path, query, token);
   _handleCmrErrors(response);
   return response;
 }
@@ -521,6 +538,7 @@ function handleWildcards(formData: FormData, form: CmrQuery, field: string): voi
 /**
  * Post a query to the CMR with the parameters in the given form
  *
+ * @param context - Information related to the user's request
  * @param path - The absolute path on the CMR API to the resource being queried
  * @param form - An object with keys and values representing the parameters for the query
  * @param token - Access token for the user
@@ -528,6 +546,7 @@ function handleWildcards(formData: FormData, form: CmrQuery, field: string): voi
  * @returns The CMR query result
  */
 export async function cmrPostBase(
+  context: RequestContext,
   path: string,
   form: object,
   token: string,
@@ -579,6 +598,7 @@ export async function cmrPostBase(
  * Post a query to the CMR with the parameters in the given form. This function wraps
  * `CmrPostBase` to make it easier to test.
  *
+ * @param context - Information related to the user's request
  * @param path - The absolute path on the cmR API to the resource being queried
  * @param form - An object with keys and values representing the parameters for the query
  * @param token - Access token for the user
@@ -587,12 +607,17 @@ export async function cmrPostBase(
  * @throws CmrError - If the CMR returns an error status
  */
 async function _cmrPost(
+  context: RequestContext,
   path: string,
   form: CmrQuery,
   token: string,
   extraHeaders = {},
 ): Promise<CmrResponse> {
-  const response = await module.exports.cmrPostBase(path, form, token, extraHeaders);
+  const headers = {
+    ...extraHeaders,
+    'X-Request-Id': context.id
+  }
+  const response = await module.exports.cmrPostBase(path, form, token, headers);
   _handleCmrErrors(response);
 
   return response;
@@ -631,14 +656,15 @@ async function _cmrPostBody(
  * Performs a CMR variables.json search with the given query string. If there are more
  * than 2000 variables, page through the variable results until all are retrieved.
  *
+ * @param context - Information related to the user's request
  * @param query - The key/value pairs to search
  * @param token - Access token for user request
  * @returns The variable search results
  */
 export async function getAllVariables(
-  query: CmrQuery, token: string,
+  context: RequestContext, query: CmrQuery, token: string,
 ): Promise<Array<CmrUmmVariable>> {
-  const variablesResponse = await _cmrPost('/search/variables.umm_json_v1_8_1', query, token) as CmrVariablesResponse;
+  const variablesResponse = await _cmrPost(context, '/search/variables.umm_json_v1_8_1', query, token) as CmrVariablesResponse;
   const { hits } = variablesResponse.data;
   let variables = variablesResponse.data.items;
   let numVariablesRetrieved = variables.length;
@@ -648,7 +674,7 @@ export async function getAllVariables(
     page_num += 1;
     logger.debug(`Paging through variables = ${page_num}, numVariablesRetrieved = ${numVariablesRetrieved}, total hits ${hits}`);
     query.page_num = page_num;
-    const response = await _cmrPost('/search/variables.umm_json_v1_8_1', query, token) as CmrVariablesResponse;
+    const response = await _cmrPost(context, '/search/variables.umm_json_v1_8_1', query, token) as CmrVariablesResponse;
     const pageOfVariables = response.data.items;
     variables = variables.concat(pageOfVariables);
     numVariablesRetrieved += pageOfVariables.length;
@@ -665,14 +691,15 @@ export async function getAllVariables(
  * Performs a CMR services.umm_json search with the given query string. If there are more
  * than 2000 services, page through the service results until all are retrieved.
  *
+ * @param context - Information related to the user's request
  * @param query - The key/value pairs to search
  * @param token - Access token for user request
  * @returns The services search results
  */
 export async function getAllServices(
-  query: CmrQuery, token: string,
+  context: RequestContext, query: CmrQuery, token: string,
 ): Promise<Array<CmrUmmService>> {
-  const servicesResponse = await _cmrPost('/search/services.umm_json_v1_5_2', query, token) as CmrServicesResponse;
+  const servicesResponse = await _cmrPost(context, '/search/services.umm_json_v1_5_2', query, token) as CmrServicesResponse;
   const { hits } = servicesResponse.data;
   let services = servicesResponse.data.items;
   let numServicesRetrieved = services.length;
@@ -682,7 +709,7 @@ export async function getAllServices(
     page_num += 1;
     logger.debug(`Paging through services = ${page_num}, numServicesRetrieved = ${numServicesRetrieved}, total hits ${hits}`);
     query.page_num = page_num;
-    const response = await _cmrPost('/search/services.umm_json_v1_5_2', query, token) as CmrServicesResponse;
+    const response = await _cmrPost(context, '/search/services.umm_json_v1_5_2', query, token) as CmrServicesResponse;
     const pageOfServices = response.data.items;
     services = services.concat(pageOfServices);
     numServicesRetrieved += pageOfServices.length;
@@ -698,48 +725,52 @@ export async function getAllServices(
 /**
  * Performs a CMR collections.json search with the given query string
  *
+ * @param context - Information related to the user's request
  * @param query - The key/value pairs to search
  * @param token - Access token for user request
  * @returns The collection search results
  */
 async function queryCollections(
-  query: CmrQuery, token: string,
+  context: RequestContext, query: CmrQuery, token: string,
 ): Promise<Array<CmrCollection>> {
-  const collectionsResponse = await _cmrGet('/search/collections.json', query, token) as CmrCollectionsResponse;
+  const collectionsResponse = await _cmrGet(context, '/search/collections.json', query, token) as CmrCollectionsResponse;
   return collectionsResponse.data.feed.entry;
 }
 
 /**
  * Performs a CMR collections.umm_json search with the given query string
  *
+ * @param context - Information related to the user's request
  * @param query - The key/value pairs to search
  * @param token - Access token for user request
  * @returns The umm collection search results
  */
 async function queryUmmCollections(
-  query: CmrQuery, token: string,
+  context: RequestContext, query: CmrQuery, token: string,
 ): Promise<Array<CmrUmmCollection>> {
-  const ummResponse = await _cmrGet('/search/collections.umm_json_v1_17_3', query, token) as CmrUmmCollectionsResponse;
+  const ummResponse = await _cmrGet(context, '/search/collections.umm_json_v1_17_3', query, token) as CmrUmmCollectionsResponse;
   return ummResponse.data.items;
 }
 
 /**
  * Performs a CMR grids.umm_json search with the given query string
  *
+ * @param context - Information related to the user's request
  * @param query - The key/value pairs to search
  * @param token - Access token for user request
  * @returns The grid search results
  */
 async function queryGrids(
-  query: CmrQuery, token: string,
+  context: RequestContext, query: CmrQuery, token: string,
 ): Promise<Array<CmrUmmGrid>> {
-  const gridsResponse = await _cmrGet('/search/grids.umm_json', query, token) as CmrGridsResponse;
+  const gridsResponse = await _cmrGet(context, '/search/grids.umm_json', query, token) as CmrGridsResponse;
   return gridsResponse.data.items;
 }
 
 /**
  * Performs a CMR granules.json search with the given form data
  *
+ * @param context - Information related to the user's request
  * @param form - The key/value pairs to search including a `shapefile` parameter
  * pointing to a file on the file system
  * @param token - Access token for user request
@@ -747,6 +778,7 @@ async function queryGrids(
  * @returns The granule search results
  */
 export async function queryGranuleUsingMultipartForm(
+  context: RequestContext,
   form: CmrQuery,
   token: string,
   extraHeaders = {},
@@ -754,9 +786,9 @@ export async function queryGranuleUsingMultipartForm(
 ): Promise<CmrGranuleHits | CmrUmmGranuleHits> {
   let granuleResponse = null;
   if (resultFormat === 'json') {
-    granuleResponse = await _cmrPost(`/search/granules.${resultFormat}`, form, token, extraHeaders) as CmrGranulesResponse;
+    granuleResponse = await _cmrPost(context, `/search/granules.${resultFormat}`, form, token, extraHeaders) as CmrGranulesResponse;
   } else {
-    granuleResponse = await _cmrPost(`/search/granules.${resultFormat}`, form, token, extraHeaders) as CmrUmmGranulesResponse;
+    granuleResponse = await _cmrPost(context, `/search/granules.${resultFormat}`, form, token, extraHeaders) as CmrUmmGranulesResponse;
   }
   const cmrHits = parseInt(granuleResponse.headers.get('cmr-hits'), 10);
   const searchAfter = granuleResponse.headers.get('cmr-search-after');
@@ -770,12 +802,14 @@ export async function queryGranuleUsingMultipartForm(
 /**
  * Queries and returns the CMR JSON collections corresponding to the given CMR Collection IDs
  *
+ * @param context - Information related to the user's request
  * @param ids - The collection IDs to find
  * @param token - Access token for user request
  * @param includeTags - Include tags with tag_key matching this value
  * @returns The collections with the given ids
  */
-export function getCollectionsByIds(
+export async function getCollectionsByIds(
+  context: RequestContext,
   ids: Array<string>,
   token: string,
   includeTags?: string,
@@ -787,18 +821,20 @@ export function getCollectionsByIds(
       page_size: cmrMaxPageSize,
     },
   };
-  return queryCollections(query, token);
+  return queryCollections(context, query, token);
 }
 
 /**
  * Queries and returns the CMR UMM JSON collections corresponding to the given CMR Collection IDs
  *
+ * @param context - Information related to the user's request
  * @param ids - The collection IDs to find
  * @param token - Access token for user request
  * @param includeTags - Include tags with tag_key matching this value
  * @returns The umm collections with the given ids
  */
-export function getUmmCollectionsByIds(
+export async function getUmmCollectionsByIds(
+  context: RequestContext,
   ids: Array<string>,
   token: string,
 ): Promise<Array<CmrUmmCollection>> {
@@ -806,24 +842,27 @@ export function getUmmCollectionsByIds(
     concept_id: ids,
     page_size: cmrMaxPageSize,
   };
-  return queryUmmCollections(query, token);
+  return queryUmmCollections(context, query, token);
 }
 
 /**
  * Queries and returns the CMR JSON collections corresponding to the given collection short names
  *
+ * @param context - Information related to the user's request
  * @param shortName - The collection short name to search for
  * @param token - Access token for user request
  * @returns The collections with the given ids
  */
-export function getCollectionsByShortName(
-  shortName: string, token: string,
+export async function getCollectionsByShortName(
+  context: RequestContext, shortName: string, token: string,
 ): Promise<Array<CmrCollection>> {
-  return queryCollections({
-    short_name: shortName,
-    page_size: cmrMaxPageSize,
-    sort_key: '-revisionDate',
-  }, token);
+  return queryCollections(
+    context,
+    {
+      short_name: shortName,
+      page_size: cmrMaxPageSize,
+      sort_key: '-revisionDate',
+    }, token);
 }
 
 // We have an environment variable called CMR_MAX_PAGE_SIZE which is used for how many items
@@ -835,33 +874,38 @@ const ACTUAL_CMR_MAX_PAGE_SIZE = 2000;
 /**
  * Queries and returns the CMR JSON variables corresponding to the given CMR Variable IDs
  *
+ * @param context - Information related to the user's request
  * @param ids - The variable IDs to find
  * @param token - Access token for user request
  * @returns The variables with the given ids
  */
-export function getVariablesByIds(
+export async function getVariablesByIds(
+  context: RequestContext,
   ids: Array<string>,
   token: string,
 ): Promise<Array<CmrUmmVariable>> {
-  return getAllVariables({
-    concept_id: ids,
-    page_size: ACTUAL_CMR_MAX_PAGE_SIZE,
-  }, token);
+  return getAllVariables(
+    context,
+    {
+      concept_id: ids,
+      page_size: ACTUAL_CMR_MAX_PAGE_SIZE,
+    }, token);
 }
 
 /**
  * Queries and returns the CMR JSON variables that are associated with the given CMR JSON collection
  *
+ * @param context - Information related to the user's request
  * @param collection - The collection whose variables should be returned
  * @param token - Access token for user request
  * @returns The variables associated with the input collection
  */
 export async function getVariablesForCollection(
-  collection: CmrCollection, token: string,
+  context: RequestContext, collection: CmrCollection, token: string,
 ): Promise<Array<CmrUmmVariable>> {
   const varIds = collection.associations && collection.associations.variables;
   if (varIds) {
-    return getVariablesByIds(varIds, token);
+    return getVariablesByIds(context, varIds, token);
   }
   return [];
 }
@@ -869,31 +913,36 @@ export async function getVariablesForCollection(
 /**
  * Queries and returns the CMR JSON services corresponding to the given CMR UMM Service IDs
  *
+ * @param context - Information related to the user's request
  * @param ids - The CMR concept IDs for the services to find
  * @param token - Access token for user request
  * @returns The services with the given ids
  */
-export function getServicesByIds(
+export async function getServicesByIds(
+  context: RequestContext,
   ids: Array<string>,
   token: string,
 ): Promise<Array<CmrUmmService>> {
-  return getAllServices({
-    concept_id: ids,
-    page_size: ACTUAL_CMR_MAX_PAGE_SIZE,
-  }, token);
+  return getAllServices(
+    context,
+    {
+      concept_id: ids,
+      page_size: ACTUAL_CMR_MAX_PAGE_SIZE,
+    }, token);
 }
 
 /**
  * Queries the CMR grids for grid(s) with the given name. Ideally only one grid should match.
  *
+ * @param context - Information related to the user's request
  * @param gridName - The name of the grid for which to search
  * @param token - Access token for user request
  * @returns an array of UMM Grids matching the passed in name (ideally only one item)
  */
 export async function getGridsByName(
-  gridName: string, token: string,
+  context: RequestContext, gridName: string, token: string,
 ): Promise<Array<CmrUmmGrid>> {
-  return queryGrids({ name: gridName, page_size: ACTUAL_CMR_MAX_PAGE_SIZE }, token);
+  return queryGrids(context, { name: gridName, page_size: ACTUAL_CMR_MAX_PAGE_SIZE }, token);
 }
 
 /**
@@ -909,16 +958,18 @@ function s3UrlForStoredQueryParams(sessionKey: string): string {
 /**
  * Queries and returns the CMR JSON granules for the given search after values and session key.
  *
- * @param collectionId - The ID of the collection whose granules should be searched
- * @param query - The CMR granule query parameters to pass
+ * @param context - Information related to the user's request
  * @param token - Access token for user request
  * @param limit - The maximum number of granules to return in this page of results
+ * @param query - The CMR granule query parameters to pass
  * @param sessionKey - Key used to look up query parameters
  * @param searchAfterHeader - Value string to use for the cmr-search-after header
+ * @param resultFormat - Desired output format for the query - defaults to `json`
  * @returns A CmrGranuleHits object containing the granules associated with the input collection
  * and a session key and cmr-search-after header
  */
 export async function queryGranulesWithSearchAfter(
+  context: RequestContext,
   token: string,
   limit: number,
   query?: CmrQuery,
@@ -940,6 +991,7 @@ export async function queryGranulesWithSearchAfter(
     const storedQuery = await defaultObjectStore().getObjectJson(url);
     const fullQuery = { ...baseQuery, ...storedQuery };
     response = await queryGranuleUsingMultipartForm(
+      context,
       fullQuery,
       token,
       headers,
@@ -953,6 +1005,7 @@ export async function queryGranulesWithSearchAfter(
     await defaultObjectStore().upload(JSON.stringify(query), url);
     const fullQuery = { ...baseQuery, ...query };
     response = await queryGranuleUsingMultipartForm(
+      context,
       fullQuery,
       token,
       {},
@@ -970,6 +1023,7 @@ export async function queryGranulesWithSearchAfter(
  * Queries and returns the CMR JSON granules for the given collection ID with the given query
  * params.  Uses multipart/form-data POST to accommodate large queries and shapefiles.
  *
+ * @param context - Information related to the user's request
  * @param collectionId - The ID of the collection whose granules should be searched
  * @param query - The CMR granule query parameters to pass
  * @param token - Access token for user request
@@ -977,17 +1031,19 @@ export async function queryGranulesWithSearchAfter(
  * @returns The granules associated with the input collection
  */
 export function queryGranulesForCollection(
-  collectionId: string, query: CmrQuery, token: string, limit = 10,
+  context: RequestContext, collectionId: string, query: CmrQuery, token: string, limit = 10,
 ): Promise<CmrGranuleHits> {
   const baseQuery = {
     collection_concept_id: collectionId,
     page_size: Math.min(limit, cmrMaxPageSize),
   };
 
-  const result: unknown = queryGranuleUsingMultipartForm({
-    ...baseQuery,
-    ...query,
-  }, token);
+  const result: unknown = queryGranuleUsingMultipartForm(
+    context,
+    {
+      ...baseQuery,
+      ...query,
+    }, token);
 
   return result as Promise<CmrGranuleHits>;
 }
@@ -996,6 +1052,7 @@ export function queryGranulesForCollection(
 /**
  * Queries and returns the CMR permissions for each concept specified
  *
+ * @param context - Information related to the user's request
  * @param ids - Check the user permissions for these concept IDs
  * @param token - Access token for user request
  * @param username - Check the collection permissions for this user,
@@ -1003,6 +1060,7 @@ export function queryGranulesForCollection(
  * @returns The CmrPermissionsMap which maps concept id to a permissions array
  */
 export async function getPermissions(
+  context: RequestContext,
   ids: Array<string>,
   token: string,
   username?: string,
@@ -1014,7 +1072,7 @@ export async function getPermissions(
   const query: CmrAclQuery = username
     ? { user_id: username, ...baseQuery }
     : { user_type: 'guest', ...baseQuery };
-  const permissionsResponse = await _cmrGet('/access-control/permissions', query, token) as CmrPermissionsResponse;
+  const permissionsResponse = await _cmrGet(context, '/access-control/permissions', query, token) as CmrPermissionsResponse;
   return permissionsResponse.data;
 }
 
