@@ -14,7 +14,7 @@ export interface DataSource {
 /**
  * Queries a single page of CMR granules using search after parameters, generating a STAC catalog for
  * each granule in the page.
- * @param - requestId - The request ID of the job associated with this search
+ * @param requestId - The request ID of the job associated with this search
  * @param token - The token to use for the query
  * @param scrollId - Scroll session id used in the CMR-Scroll-Id header for granule search
  * @param maxCmrGranules - The maximum size of the page to request from CMR

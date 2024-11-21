@@ -3,6 +3,7 @@ import { before, after } from 'mocha';
 import { stub, SinonStub } from 'sinon';
 import { hookGetQueueForType, hookGetQueueForUrl, hookGetQueueUrlForService, hookGetWorkSchedulerQueue, hookProcessSchedulerQueue } from './queue';
 import * as cmr from '../../app/util/cmr';
+import RequestContext from '../../app/models/request-context';
 
 hookGetQueueForType();
 hookGetQueueForUrl();
@@ -39,7 +40,7 @@ before(function () {
 
   // Stub fetchPost to provide a string body rather than a FormData stream
   stub(cmr, 'fetchPost').callsFake(async function (
-    path: string, formData: FormData, headers: { [key: string]: string },
+    context: RequestContext, path: string, formData: FormData, headers: { [key: string]: string },
   ): Promise<cmr.CmrResponse> {
     // Read the body into a stream
     const chunks = [];
@@ -49,7 +50,7 @@ before(function () {
       formData.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
       formData.resume();
     });
-    return originalFetchPost(path, body, headers);
+    return originalFetchPost(context, path, body, headers);
   });
 });
 

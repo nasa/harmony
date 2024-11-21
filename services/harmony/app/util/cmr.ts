@@ -11,9 +11,7 @@ import env from './env';
 import logger from './log';
 import { UmmSpatial } from './spatial/umm-spatial';
 import { isValidUri } from './url';
-import HarmonyRequest from '../models/harmony-request';
 import RequestContext from '../models/request-context';
-import { request } from 'http';
 
 const { cmrEndpoint, cmrMaxPageSize, clientId, stagingBucket } = env;
 
@@ -440,18 +438,23 @@ async function _cmrGet(
  * uploads to the CMR. By pulling it into a separate function we can stub it to have
  * the necessary response.
  *
+ * @param context - Information related to the user's request
  * @param path - The URL path
  * @param formData - A FormData object or string body to be POST'd
  * @param headers - The headers to be sent with the POST
  * @returns A SuperAgent Response object
  */
 export async function fetchPost(
-  path: string, formData: FormData | string, headers: { [key: string]: string },
+  context: RequestContext, path: string, formData: FormData | string, headers: { [key: string]: string },
 ): Promise<CmrResponse> {
+  const fullHeaders = {
+    ...headers,
+    ...makeXRequestIdHeader(context.id),
+  };
   const response: CmrResponse = await fetch(`${cmrApiConfig.baseURL}${path}`, {
     method: 'POST',
     body: formData,
-    headers,
+    headers: fullHeaders,
   });
   response.data = await response.json();
 
@@ -580,7 +583,7 @@ export async function cmrPostBase(
   };
 
   try {
-    const response = await module.exports.fetchPost(path, formData, headers);
+    const response = await module.exports.fetchPost(context, path, formData, headers);
     return response;
   } finally {
     if (shapefile) {
@@ -615,9 +618,9 @@ async function _cmrPost(
 ): Promise<CmrResponse> {
   const headers = {
     ...extraHeaders,
-    'X-Request-Id': context.id
-  }
-  const response = await module.exports.cmrPostBase(path, form, token, headers);
+    'X-Request-Id': context.id,
+  };
+  const response = await module.exports.cmrPostBase(context, path, form, token, headers);
   _handleCmrErrors(response);
 
   return response;
