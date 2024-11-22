@@ -551,7 +551,7 @@ export async function getWorkItemsTable(
   try {
     const isAdminRoute = req.context.isAdminAccess;
     const { isAdmin, isLogViewer } = await getEdlGroupInformation(
-      req.user, req.context.logger,
+      req.context, req.user,
     );
     const isAdminOrLogViewer = isAdmin || isLogViewer;
     const job = await getJobIfAllowed(jobID, req.user, isAdmin, req.accessToken, true);
@@ -617,7 +617,7 @@ export async function getWorkItemTableRow(
   const { jobID, id } = req.params;
   try {
     const { isAdmin, isLogViewer } = await getEdlGroupInformation(
-      req.user, req.context.logger,
+      req.context, req.user,
     );
     const isAdminOrLogViewer = isAdmin || isLogViewer;
     const job = await getJobIfAllowed(jobID, req.user, isAdmin, req.accessToken, true);
@@ -727,7 +727,7 @@ export async function getWorkItemLogs(
   const { id, jobID } = req.params;
   try {
     const { isAdmin, isLogViewer } = await getEdlGroupInformation(
-      req.user, req.context.logger,
+      req.context, req.user,
     );
     const isAdminOrLogViewer = isAdmin || isLogViewer;
     if (!isAdminOrLogViewer) {

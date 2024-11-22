@@ -12,7 +12,10 @@ hookGetQueueUrlForService();
 hookProcessSchedulerQueue();
 
 process.env.REPLAY = process.env.REPLAY || 'record';
-require('replay');
+import replay from 'replay';
+// Update replay.headers to avoid recording 'X-Requested-Id', but still record other 'X-*' headers
+replay.headers = replay.headers.filter((re) => re.toString() != /^x-/.toString());
+replay.headers.push(/^(?!x-request-id$)x-/);
 
 // Patch our requests so they work repeatably in node-replay with multipart form
 // data.

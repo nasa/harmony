@@ -2,11 +2,12 @@ import * as axios from 'axios';
 import { hasCookieSecret } from './cookie-secret';
 import { ForbiddenError } from './errors';
 import { Response } from 'express';
-import { Logger } from 'winston';
 import env from './env';
 import HarmonyRequest from '../models/harmony-request';
 import { oauthOptions } from '../middleware/earthdata-login-oauth-authorizer';
 import { ClientCredentials, AccessToken } from 'simple-oauth2';
+import RequestContext from '../models/request-context';
+import { Logger } from 'winston';
 
 const edlUserRequestUrl = `${env.oauthHost}/oauth/tokens/user`;
 const edlUserGroupsBaseUrl = `${env.oauthHost}/api/user_groups/groups_for_user`;
@@ -27,6 +28,7 @@ export async function getClientCredentialsToken(logger: Logger): Promise<string>
       oauth2 = new ClientCredentials(oauthOptions);
     }
     if (harmonyClientToken === undefined || harmonyClientToken.expired()) {
+      // There appears to be no way to pass in an `X-Request-Id` header with a call to `getToken`
       harmonyClientToken = await oauth2.getToken({});
     }
     return harmonyClientToken.token.access_token as string;
@@ -41,15 +43,16 @@ export async function getClientCredentialsToken(logger: Logger): Promise<string>
  * Makes a request to the EDL users endpoint to validate a token and return the user ID
  * associated with that token.
  *
+ * @param context - Information related to the user's request
  * @param userToken - The user's token
- * @param logger - The logger associated with the request
  * @returns the username associated with the token
  * @throws ForbiddenError if the token is invalid
  */
-export async function getUserIdRequest(userToken: string, logger: Logger)
+export async function getUserIdRequest(context: RequestContext, userToken: string)
   : Promise<string> {
+  const { logger } = context;
   try {
-    const clientToken = await getClientCredentialsToken(logger);
+    const clientToken = await getClientCredentialsToken(context.logger);
     const response = await axios.default.post(
       edlUserRequestUrl,
       null,
@@ -58,7 +61,7 @@ export async function getUserIdRequest(userToken: string, logger: Logger)
           client_id: env.oauthClientId,
           token: userToken,
         },
-        headers: { authorization: `Bearer ${clientToken}` },
+        headers: { authorization: `Bearer ${clientToken}`, 'X-Request-Id': context.id },
       },
     );
     return response.data.uid;
@@ -72,16 +75,17 @@ export async function getUserIdRequest(userToken: string, logger: Logger)
 /**
  * Returns the groups to which a user belongs
  *
+ * @param context - Information related to the user's request
  * @param username - The EDL username
- * @param logger - The logger associated with the request
  * @returns the groups to which the user belongs
  */
-async function getUserGroups(username: string, logger: Logger)
+async function getUserGroups(context: RequestContext, username: string)
   : Promise<string[]> {
+  const { logger } = context;
   try {
-    const clientToken = await getClientCredentialsToken(logger);
+    const clientToken = await getClientCredentialsToken(context.logger);
     const response = await axios.default.get(
-      `${edlUserGroupsBaseUrl}/${username}`, { headers: { Authorization: `Bearer ${clientToken}` } },
+      `${edlUserGroupsBaseUrl}/${username}`, { headers: { Authorization: `Bearer ${clientToken}`, 'X-Request-Id': context.id } },
     );
     const groups = response.data?.user_groups.map((group) => group.group_id) || [];
     return groups;
@@ -102,14 +106,14 @@ export interface EdlGroupMembership {
 /**
  * Returns the harmony relevant group information for a user with two keys isAdmin and isLogViewer.
  *
+ * @param context - Information related to the user's request
  * @param username - The EDL username
- * @param logger - The logger associated with the request
  * @returns A promise which resolves to info about whether the user is an admin, log viewer or service deployer,
  * and has core permissions (e.g. allowing user to access server configuration endpoints)
  */
-export async function getEdlGroupInformation(username: string, logger: Logger)
+export async function getEdlGroupInformation(context: RequestContext, username: string)
   : Promise<EdlGroupMembership> {
-  const groups = await getUserGroups(username, logger);
+  const groups = await getUserGroups(context, username);
   let isAdmin = false;
   if (groups.includes(env.adminGroupId)) {
     isAdmin = true;
@@ -139,7 +143,7 @@ export async function getEdlGroupInformation(username: string, logger: Logger)
  */
 export async function isAdminUser(req: HarmonyRequest): Promise<boolean> {
   const isAdmin = req.context.isAdminAccess ||
-    (await getEdlGroupInformation(req.user, req.context.logger)).isAdmin;
+    (await getEdlGroupInformation(req.context, req.user)).isAdmin;
   return isAdmin;
 }
 
@@ -152,20 +156,20 @@ export interface EdlUserEulaInfo {
 /**
  * Check whether the user has accepted a EULA.
  *
+ * @param context - Information related to the user's request
  * @param username - The EDL username
  * @param eulaId - The id of the EULA (from the collection metadata)
- * @param logger - The logger associated with the request
  * @returns A promise which resolves to info about whether the user has accepted a EULA,
  * and if not, where they can go to accept it
  */
-export async function verifyUserEula(username: string, eulaId: string, logger: Logger)
+export async function verifyUserEula(context: RequestContext, username: string, eulaId: string)
   : Promise<EdlUserEulaInfo> {
   let statusCode: number;
   let eulaResponse: { msg: string, error: string, accept_eula_url: string };
   try {
-    const clientToken = await getClientCredentialsToken(logger);
+    const clientToken = await getClientCredentialsToken(context.logger);
     const response = await axios.default.get(
-      edlVerifyUserEulaUrl(username, eulaId), { headers: { Authorization: `Bearer ${clientToken}` } },
+      edlVerifyUserEulaUrl(username, eulaId), { headers: { Authorization: `Bearer ${clientToken}`, 'X-Request-Id': context.id } },
     );
     eulaResponse = response.data;
     statusCode = response.status;
@@ -192,7 +196,7 @@ export async function validateUserIsInCoreGroup(
   // if request has cookie-secret header, it is in the core permissions group
   if (! hasCookieSecret(req)) {
     const { hasCorePermissions } = await getEdlGroupInformation(
-      req.user, req.context.logger,
+      req.context, req.user,
     );
 
     if (!hasCorePermissions) {
