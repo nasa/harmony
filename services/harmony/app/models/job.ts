@@ -990,6 +990,7 @@ export class Job extends DBRecord implements JobRecord {
    */
   async collectionsHaveEulaRestriction(accessToken: string): Promise<boolean> {
     const cmrCollections = await getCollectionsByIds(
+      { 'id': this.requestId },
       this.collectionIds,
       accessToken,
       CmrTagKeys.HasEula,
@@ -1007,7 +1008,7 @@ export class Job extends DBRecord implements JobRecord {
    * @returns true or false
    */
   async collectionsHaveGuestReadRestriction(accessToken: string): Promise<boolean> {
-    const permissionsMap: CmrPermissionsMap = await getPermissions(this.collectionIds, accessToken);
+    const permissionsMap: CmrPermissionsMap = await getPermissions({ 'id': this.requestId }, this.collectionIds, accessToken);
     return this.collectionIds.some((collectionId) => (
       !permissionsMap[collectionId]
         || !(permissionsMap[collectionId].indexOf(CmrPermission.Read) > -1)));

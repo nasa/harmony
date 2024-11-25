@@ -244,7 +244,7 @@ async function validateUserIsInDeployerOrCoreGroup(
   req: HarmonyRequest, res: Response,
 ): Promise<boolean> {
   const { hasCorePermissions, isServiceDeployer } = await getEdlGroupInformation(
-    req.user, req.context.logger,
+    req.context, req.user,
   );
 
   if (!isServiceDeployer && !hasCorePermissions) {
