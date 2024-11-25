@@ -8,6 +8,10 @@ testing is performed using [locust.io](https://locust.io/).
 $ pip install -r requirements.txt
 ```
 
+## Required environment variables
+All harmony requests will require authentication with EDL. Set the `WORKLOAD_BEARER_TOKEN` environment variable to
+an EDL bearer token for your user in the appropriate environment for your run (either UAT or production).
+
 ## Running
 To start a new performance test execute the following:
 ```
@@ -20,10 +24,6 @@ $ locust --tags sync
 ```
 
 For a full listing of capabilities see the [locust documentation](https://docs.locust.io/en/stable/index.html).
-
-### Required environment variables
-All harmony requests will require authentication with EDL. Set the `WORKLOAD_BEARER_TOKEN` environment variable to
-an EDL bearer token for your user in the appropriate environment for your run (either UAT or production).
 
 ### Using a proxy
 You can use a socks proxy to execute a run against a sandbox environment which does not have direct access. For
