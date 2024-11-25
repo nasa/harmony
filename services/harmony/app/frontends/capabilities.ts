@@ -73,7 +73,7 @@ async function loadCollectionInfo(req: HarmonyRequest): Promise<CmrCollection> {
   } else if (collectionid && shortname) {
     throw new RequestValidationError('Must specify only one of collectionId or shortName, not both');
   } else if (collectionid) {
-    collections = await getCollectionsByIds([collectionid], req.accessToken);
+    collections = await getCollectionsByIds(req.context, [collectionid], req.accessToken);
     if (collections.length === 0) {
       const message = `${collectionid} must be a CMR collection identifier, but `
         + 'we could not find a matching collection. Please make sure the collection ID '
@@ -82,7 +82,7 @@ async function loadCollectionInfo(req: HarmonyRequest): Promise<CmrCollection> {
     }
     pickedCollection = collections[0];
   } else {
-    collections = await getCollectionsByShortName(shortname, req.accessToken);
+    collections = await getCollectionsByShortName(req.context, shortname, req.accessToken);
     if (collections.length === 0) {
       const message = `Unable to find collection short name ${shortname} in the CMR. Please `
         + ' make sure the short name is correct and that you have access to the collection.';
@@ -96,7 +96,7 @@ async function loadCollectionInfo(req: HarmonyRequest): Promise<CmrCollection> {
       pickedCollection = harmonyCollection || pickedCollection;
     }
   }
-  pickedCollection.variables = await getVariablesForCollection(pickedCollection, req.accessToken);
+  pickedCollection.variables = await getVariablesForCollection(req.context, pickedCollection, req.accessToken);
   return pickedCollection;
 }
 

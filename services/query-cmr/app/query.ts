@@ -14,6 +14,7 @@ export interface DataSource {
 /**
  * Queries a single page of CMR granules using search after parameters, generating a STAC catalog for
  * each granule in the page.
+ * @param requestId - The request ID of the job associated with this search
  * @param token - The token to use for the query
  * @param scrollId - Scroll session id used in the CMR-Scroll-Id header for granule search
  * @param maxCmrGranules - The maximum size of the page to request from CMR
@@ -25,6 +26,7 @@ export interface DataSource {
  * cmr hits.
  */
 async function querySearchAfter(
+  requestId: string,
   token: string,
   scrollId: string,
   maxCmrGranules: number,
@@ -36,6 +38,7 @@ async function querySearchAfter(
     [sessionKey, searchAfter] = scrollId.split(':', 2);
   }
   const cmrResponse = await queryGranulesWithSearchAfter(
+    { 'id': requestId },
     token,
     maxCmrGranules,
     null,
@@ -103,7 +106,7 @@ export async function queryGranules(
 ): Promise<[number, number[], StacCatalog[], string, number]> {
   const { unencryptedAccessToken } = operation;
   const [totalItemsSize, outputItemSizes, catalogs, newScrollId, hits] =
-    await querySearchAfter(unencryptedAccessToken, scrollId, maxCmrGranules, logger);
+    await querySearchAfter(operation.requestId, unencryptedAccessToken, scrollId, maxCmrGranules, logger);
 
   return [totalItemsSize, outputItemSizes, catalogs, newScrollId, hits];
 }

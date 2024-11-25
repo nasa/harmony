@@ -227,7 +227,7 @@ describe('Workflow UI work items table route', function () {
           expect(listing).to.contain(mustache.render(
             `{{#labels}}
           <span class="badge bg-label">{{.}}</span>
-          {{/labels}}`, 
+          {{/labels}}`,
             { labels: targetJob.labels }));
           expect(listing).to.contain('job-url-text');
           expect(listing).to.contain('copy-request');

@@ -162,7 +162,7 @@ async function runComparisons(environments = allEnvironments): Promise<void> {
     const harmonyServiceConfigs = loadServiceConfigs(environment)
       .filter((config) => config.umm_s); // Ignore any service definitions that do not point to a UMM-S record
     const ummConceptIds = harmonyServiceConfigs.map((config) => config.umm_s);
-    const ummRecords = await getServicesByIds(ummConceptIds, null);
+    const ummRecords = await getServicesByIds({ id: 'harmony-service-comparison-script' }, ummConceptIds, null);
     const ummRecordsMap = createUmmRecordsMap(ummRecords);
     for (const harmonyConfig of harmonyServiceConfigs) {
       const ummRecord = ummRecordsMap[harmonyConfig.umm_s];
