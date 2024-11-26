@@ -17,7 +17,7 @@ class HarmonyUatUser(BaseHarmonyUser):
             'granuleId': 'G1233800343-EEDTEST',
             'outputCrs': 'EPSG:4326',
             'format': 'image/png',
-            'label': '0,workload'
+            'label': 'wl-req-1,workload'
         }
         self._sync_request(name, collection, variable, params, 1)
 
@@ -36,7 +36,7 @@ class HarmonyUatUser(BaseHarmonyUser):
             'outputCrs': 'EPSG:4326',
             'format': 'image/png',
             'forceAsync': 'true',
-            'label': '1,workload'
+            'label': 'wl-req-0,workload'
         }
         self._async_request(name, collection, variable, params, 0)
 
@@ -52,7 +52,7 @@ class HarmonyUatUser(BaseHarmonyUser):
             'outputCrs': 'EPSG:4326',
             'format': 'image/png',
             'maxResults': 50,
-            'label': '2,workload'
+            'label': 'wl-req-14,workload'
         }
         self._async_request(name, collection, variable, params, 14)
 
@@ -65,7 +65,7 @@ class HarmonyUatUser(BaseHarmonyUser):
             'outputCrs': '+proj=lcc +lat_1=43 +lat_2=62 +lat_0=30 +lon_0=10 +x_0=0 +y_0=0 +ellps=intl +units=m no_defs',
             'interpolation': 'near',
             'scaleExtent': '-7000000,1000000,8000000,8000000',
-            'label': '3,workload'
+            'label': 'wl-req-2,workload'
         }
         self._sync_request(name, collection, variable, params, 2)
 
@@ -76,7 +76,7 @@ class HarmonyUatUser(BaseHarmonyUser):
         params = {
             'format': 'application/x-zarr',
             'maxResults': '48',
-            'label': '4,workload'
+            'label': 'wl-req-3,workload'
         }
         self._async_request(name, collection, variable, params, 3)
 
@@ -90,7 +90,7 @@ class HarmonyUatUser(BaseHarmonyUser):
             'interpolation': 'near',
             'scaleExtent': '-7000000,1000000,8000000,8000000',
             'format': 'application/x-zarr',
-            'label': '5,workload'
+            'label': 'wl-req-4,workload'
         }
         self._async_request(name, collection, variable, params, 4)
 
@@ -101,7 +101,7 @@ class HarmonyUatUser(BaseHarmonyUser):
         params = {
             'format': 'application/x-zarr',
             'maxResults': '1',
-            'label': '6,workload'
+            'label': 'wl-req-5,workload'
         }
         self._async_request(name, collection, variable, params, 5)
 
@@ -116,7 +116,7 @@ class HarmonyUatUser(BaseHarmonyUser):
                 'lat(23:24)',
                 'time("2014-10-30T15:00:00Z":"2014-10-30T15:59:00Z")'
             ],
-            'label': '7,workload'
+            'label': 'wl-req-6,workload'
         }
         self._sync_request(name, collection, variable, params, 6)
 
@@ -130,7 +130,7 @@ class HarmonyUatUser(BaseHarmonyUser):
                 'lon(-160:160)',
                 'lat(-80:80)'
             ],
-            'label': '8,workload'
+            'label': 'wl-req-7,workload'
         }
         self._sync_request(name, collection, variable, params, 7)
 
@@ -141,7 +141,7 @@ class HarmonyUatUser(BaseHarmonyUser):
                                       safe='')
         params = {
             'granuleid': 'G1245840469-EEDTEST',
-            'label': '9,workload'
+            'label': 'wl-req-8,workload'
         }
         self._sync_request(name, collection, variable, params, 8)
 
@@ -156,7 +156,7 @@ class HarmonyUatUser(BaseHarmonyUser):
                 'time("2019-06-22T00:00:00Z":"2019-06-22T23:59:59Z")'
             ],
             'maxResults': 50,
-            'label': '10,workload'
+            'label': 'wl-req-9,workload'
         }
         self._async_request(name, collection, variable, params, 9)
 
@@ -167,7 +167,7 @@ class HarmonyUatUser(BaseHarmonyUser):
         params = {
             'maxResults': 1,
             'format': 'application/x-zarr',
-            'label': '11,workload'
+            'label': 'wl-req-10,workload'
         }
         self._async_request(name, collection, variable, params, 10)
 
@@ -178,7 +178,7 @@ class HarmonyUatUser(BaseHarmonyUser):
         params = {
             'maxResults': 2,
             'concatenate': 'true',
-            'label': '12,workload'
+            'label': 'wl-req-11,workload'
         }
         self._async_request(name, collection, variable, params, 11)
 
@@ -189,7 +189,7 @@ class HarmonyUatUser(BaseHarmonyUser):
         params = {
             'maxResults': 50,
             'concatenate': 'true',
-            'label': '13,workload'
+            'label': 'wl-req-15,workload'
         }
         self._async_request(name, collection, variable, params, 15)
 
@@ -204,7 +204,7 @@ class HarmonyUatUser(BaseHarmonyUser):
                 'lat(-60:-30)',
                 'lon(-120:-90)',
             ],
-            'label': '14,workload'
+            'label': 'wl-req-12,workload'
         }
         self._sync_request(name, collection, variable, params, 12)
 
@@ -219,7 +219,7 @@ class HarmonyUatUser(BaseHarmonyUser):
                 'lon(0:180)',
             ],
             'format': 'application/x-zarr',
-            'label': '15,workload'
+            'label': 'wl-req-13,workload'
         }
         self._async_request(name, collection, variable, params, 13)
 
