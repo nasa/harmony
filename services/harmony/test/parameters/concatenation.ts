@@ -12,7 +12,7 @@ describe('testing concatenation', function () {
     const serviceTag = 'ghcr.io/podaac/concise:sit';
 
     describe('When passing the concatenate parameter', function () {
-      hookServersStartStop({ SKIP_EARTHDATA_LOGIN: false });
+      hookServersStartStop({ USE_EDL_CLIENT_APP: true });
 
       describe('calling the backend service', function () {
         const query = {
@@ -139,7 +139,7 @@ describe('testing concatenation', function () {
     const conciseImage = 'ghcr.io/podaac/concise:sit';
 
     describe('When passing the concatenate parameter and spatial subsetting', function () {
-      hookServersStartStop( { SKIP_EARTHDATA_LOGIN: false });
+      hookServersStartStop( { USE_EDL_CLIENT_APP: true });
       const query = {
         concatenate: true,
         subset: 'lat(0:90)',

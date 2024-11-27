@@ -65,7 +65,7 @@ const shareableJob = buildJob({
 const shareableItem1 = buildWorkItem({ jobID: shareableJob.jobID, status: WorkItemStatus.RUNNING, id: 10 });
 
 describe('Workflow UI work items table row route', function () {
-  hookServersStartStop({ SKIP_EARTHDATA_LOGIN: false });
+  hookServersStartStop({ USE_EDL_CLIENT_APP: true });
 
   let retryLimit;
   before(async function () {

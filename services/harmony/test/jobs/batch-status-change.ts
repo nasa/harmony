@@ -15,7 +15,7 @@ import { JobStatus, Job } from '../../app/models/job';
 
 
 describe('jobs/cancel, jobs/resume, jobs/skip-preview, jobs/resume', function () {
-  hookServersStartStop({ SKIP_EARTHDATA_LOGIN: false });
+  hookServersStartStop({ USE_EDL_CLIENT_APP: true });
 
   describe('Canceling multiple jobs', function () {
     hookTransaction();

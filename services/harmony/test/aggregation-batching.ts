@@ -53,7 +53,7 @@ async function getBatchItemsForWorkItem(workItem: WorkItem): Promise<String[]> {
 }
 
 describe('when testing a batched aggregation service', function () {
-  hookServersStartStop({ SKIP_EARTHDATA_LOGIN: false });
+  hookServersStartStop({ USE_EDL_CLIENT_APP: true });
   const collection = 'C1243729749-EEDTEST';
   describe('with only one batch that should be created', function () {
     let batchInputsStub;

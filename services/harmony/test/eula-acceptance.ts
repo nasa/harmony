@@ -18,7 +18,7 @@ describe('EULA acceptance validation', function () {
     skipPreview: 'true',
   };
 
-  hookServersStartStop({ SKIP_EARTHDATA_LOGIN: false });
+  hookServersStartStop({ USE_EDL_CLIENT_APP: true });
 
   describe('When the collection has 2 unaccepted EULAS', function () {
     hookRangesetRequest(

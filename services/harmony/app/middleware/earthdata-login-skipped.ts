@@ -1,10 +1,10 @@
 import HarmonyRequest from '../models/harmony-request';
 import env from '../util/env';
 
-if (process.env.SKIP_EARTHDATA_LOGIN === 'true' && !process.env.EDL_TOKEN) {
+if (process.env.USE_EDL_CLIENT_APP === 'false' && !process.env.EDL_TOKEN) {
   throw new Error(
     'Earthdata Login configuration error: You must set EDL_TOKEN in the environment ' +
-    'when SKIP_EARTHDATA_LOGIN is true',
+    'when USE_EDL_CLIENT_APP is false',
   );
 }
 

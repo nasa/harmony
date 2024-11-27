@@ -101,7 +101,7 @@ const completedNonStacJob = buildJob({
 });
 
 describe('STAC item route', function () {
-  hookServersStartStop({ SKIP_EARTHDATA_LOGIN: false });
+  hookServersStartStop({ USE_EDL_CLIENT_APP: true });
   hookTransaction();
   before(async function () {
     await runningJob.save(this.trx);

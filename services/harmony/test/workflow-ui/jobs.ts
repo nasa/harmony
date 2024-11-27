@@ -91,7 +91,7 @@ const sidJob4 = buildJob({
 });
 
 describe('Workflow UI jobs route', function () {
-  hookServersStartStop({ SKIP_EARTHDATA_LOGIN: false });
+  hookServersStartStop({ USE_EDL_CLIENT_APP: true });
 
   before(async function () {
     await truncateAll();

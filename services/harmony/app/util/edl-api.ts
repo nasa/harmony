@@ -114,7 +114,7 @@ export interface EdlGroupMembership {
 export async function getEdlGroupInformation(context: RequestContext, username: string)
   : Promise<EdlGroupMembership> {
 
-  if (env.skipEarthdataLogin) {
+  if (!env.useEdlClientApp) {
     return { isAdmin: false, isLogViewer: false, isServiceDeployer: false, hasCorePermissions: false };
   }
 
@@ -147,7 +147,7 @@ export async function getEdlGroupInformation(context: RequestContext, username: 
  * @param req - the harmony request
  */
 export async function isAdminUser(req: HarmonyRequest): Promise<boolean> {
-  if (env.skipEarthdataLogin) return false;
+  if (!env.useEdlClientApp) return false;
 
   const isAdmin = req.context.isAdminAccess ||
     (await getEdlGroupInformation(req.context, req.user)).isAdmin;

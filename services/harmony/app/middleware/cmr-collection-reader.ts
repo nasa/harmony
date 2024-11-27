@@ -40,7 +40,7 @@ async function loadVariablesForCollection(context: RequestContext, collection: C
  * @throws ServerError, ForbiddenError, NotFoundError
  */
 async function verifyEulaAcceptance(collections: CmrCollection[], req: HarmonyRequest): Promise<void> {
-  if (!env.skipEarthdataLogin) {
+  if (env.useEdlClientApp) {
     const acceptEulaUrls = [];
     for (const collection of collections) {
       if (collection.eula_identifiers) {

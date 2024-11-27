@@ -32,7 +32,7 @@ const item1 = buildWorkItem(
 
 describe('Workflow UI directly accessing log files', function () {
 
-  hookServersStartStop({ SKIP_EARTHDATA_LOGIN: false });
+  hookServersStartStop({ USE_EDL_CLIENT_APP: true });
 
   before(async function () {
     await truncateAll();

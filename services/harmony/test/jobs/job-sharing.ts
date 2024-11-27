@@ -83,7 +83,7 @@ const jobWithMultipleCollections = buildJob({
 const jobIDWithMultipleCollections = jobWithMultipleCollections.requestId;
 
 describe('Sharing job results with someone other than its owner', function () {
-  hookServersStartStop({ SKIP_EARTHDATA_LOGIN: false });
+  hookServersStartStop({ USE_EDL_CLIENT_APP: true });
 
   hookTransaction();
   before(async function () {

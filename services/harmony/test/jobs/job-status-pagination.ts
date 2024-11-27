@@ -8,7 +8,7 @@ import db from '../../app/util/db';
 import env from '../../app/util/env';
 
 describe('Individual job status route - pagination', function () {
-  hookServersStartStop({ SKIP_EARTHDATA_LOGIN: false });
+  hookServersStartStop({ USE_EDL_CLIENT_APP: true });
 
   const links: JobLink[] = [] as JobLink[];
   const aJob = buildJob({ username: 'joe', links });

@@ -5,7 +5,7 @@ import { hookConfigureLogLevel } from './helpers/configuration';
 
 
 describe('/core/configuration', function () {
-  hookServersStartStop({ SKIP_EARTHDATA_LOGIN: false });
+  hookServersStartStop({ USE_EDL_CLIENT_APP: true });
   describe('/log-level', function () {
     describe('when the user is part of the core permissions group', function () {
       describe('and makes a request using only the level parameter and a valid value', function () {

@@ -4,7 +4,7 @@ import hookServersStartStop from './helpers/servers';
 import { hookCloudAccessJson, hookCloudAccessSh, hookStubAssumeRole, sampleCloudAccessShResponse } from './helpers/cloud-access';
 
 describe('Cloud access', function () {
-  hookServersStartStop({ SKIP_EARTHDATA_LOGIN: false });
+  hookServersStartStop({ USE_EDL_CLIENT_APP: true });
   hookStubAssumeRole();
 
   describe('When not authenticated', function () {

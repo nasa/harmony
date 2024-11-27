@@ -12,7 +12,7 @@ import { getRecentLabelsForUser } from '../../app/models/label';
 describe('Get Labels', function () {
   const joeJob = buildJob({ username: 'joe' });
   const jillJob = buildJob({ username: 'jill' });
-  hookServersStartStop({ SKIP_EARTHDATA_LOGIN: false });
+  hookServersStartStop({ USE_EDL_CLIENT_APP: true });
   before(async function () {
     await truncateAll();
     const trx = await db.transaction();
@@ -58,7 +58,7 @@ describe('Get Labels', function () {
 describe('Job label CRUD', function () {
   const envLabelsAllowListStub = stub(env, 'labelsAllowList').get(() => 'butt');
   const envLabelsForbidListStub = stub(env, 'labelsForbidList').get(() => 'buzz');
-  hookServersStartStop({ SKIP_EARTHDATA_LOGIN: false });
+  hookServersStartStop({ USE_EDL_CLIENT_APP: true });
   hookTransaction();
   const joeJob1 = buildJob({ username: 'joe' });
   before(async function () {

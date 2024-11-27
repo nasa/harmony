@@ -121,7 +121,7 @@ class HarmonyServerEnv extends HarmonyEnv {
   uiLabeling: boolean;
 
   @IsBoolean()
-  skipEarthdataLogin: boolean;
+  useEdlClientApp: boolean;
 
   edlToken: string;
 }

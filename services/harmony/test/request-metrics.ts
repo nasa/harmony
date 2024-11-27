@@ -60,7 +60,7 @@ describe('/admin/request-metrics', function () {
   const workflowStepRecords = workflowStepData.map(makePartialWorkflowStepRecord);
   const workItemRecords = workItemData.map(makePartialWorkItemRecord);
 
-  hookServersStartStop({ SKIP_EARTHDATA_LOGIN: false });
+  hookServersStartStop({ USE_EDL_CLIENT_APP: true });
 
   before(truncateAll);
   after(truncateAll);

@@ -48,7 +48,7 @@ const completedJobProps = {
 };
 
 describe('STAC catalog route', function () {
-  hookServersStartStop({ SKIP_EARTHDATA_LOGIN: false });
+  hookServersStartStop({ USE_EDL_CLIENT_APP: true });
   hookTransaction();
   const runningJob = buildJob(runningJobProps);
   const completedJob = buildJob(completedJobProps);

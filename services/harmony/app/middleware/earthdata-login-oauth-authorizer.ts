@@ -8,12 +8,12 @@ import { ForbiddenError, RequestValidationError } from '../util/errors';
 import HarmonyRequest from '../models/harmony-request';
 import env from '../util/env';
 
-if (process.env.SKIP_EARTHDATA_LOGIN !== 'true') {
+if (process.env.USE_EDL_CLIENT_APP === 'true') {
   const vars = ['OAUTH_CLIENT_ID', 'OAUTH_UID', 'OAUTH_PASSWORD', 'OAUTH_REDIRECT_URI', 'OAUTH_HOST'];
 
   const missingVars = vars.filter((v) => !process.env[v]);
   if (missingVars.length > 0) {
-    throw new Error(`Earthdata Login configuration error: You must set ${listToText(missingVars)} in the environment`);
+    throw new Error(`Earthdata Login configuration error: When USE_EDL_CLIENT_APP is true you must set ${listToText(missingVars)} in the environment`);
   }
 }
 

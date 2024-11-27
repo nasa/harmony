@@ -26,7 +26,7 @@ const allJobIds = [boJob1.jobID, boJob2.jobID, adamJob1.jobID, woodyJob1.jobID, 
 const totalJobsCount = [boJob1, boJob2, adamJob1, woodyJob1, woodyJob2].length;
 
 describe('Workflow UI jobs table route', function () {
-  hookServersStartStop({ SKIP_EARTHDATA_LOGIN: false });
+  hookServersStartStop({ USE_EDL_CLIENT_APP: true });
 
   hookTransaction();
   let servicesStub: sinon.SinonStub;

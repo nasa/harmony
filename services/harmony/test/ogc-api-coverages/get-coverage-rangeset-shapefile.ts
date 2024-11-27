@@ -48,7 +48,7 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
   const variableName = 'red_var';
   const version = '1.0.0';
 
-  hookServersStartStop({ SKIP_EARTHDATA_LOGIN: false });
+  hookServersStartStop({ USE_EDL_CLIENT_APP: true });
 
   const cmrRespStr = fs.readFileSync('./test/resources/africa_shapefile_post_response.json');
   const cmrResp = JSON.parse(cmrRespStr.toString());

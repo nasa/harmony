@@ -29,7 +29,7 @@ import { setLogLevel } from '../frontends/configuration';
 import getVersions from '../frontends/versions';
 import serviceInvoker from '../backends/service-invoker';
 import HarmonyRequest, { addRequestContextToOperation } from '../models/harmony-request';
-import { getServiceImageTag, getServiceImageTags, updateServiceImageTag, getServiceImageTagState, setServiceImageTagState, getServiceDeployment, getServiceDeployments } from '../frontends/service-image-tags';
+import { getServiceImageTag, getServiceImageTags, updateServiceImageTag, getServiceDeploymentsState, setServiceDeploymentsState, getServiceDeployment, getServiceDeployments } from '../frontends/service-image-tags';
 import cmrCollectionReader = require('../middleware/cmr-collection-reader');
 import cmrUmmCollectionReader = require('../middleware/cmr-umm-collection-reader');
 import env from '../util/env';
@@ -53,7 +53,7 @@ export interface RouterConfig {
   // True if we should run example services, false otherwise.  Should be false
   // in production.  Defaults to true until we have real HTTP services.
   EXAMPLE_SERVICES?: string;
-  SKIP_EARTHDATA_LOGIN?: string; // True if we should skip using EDL
+  USE_EDL_CLIENT_APP?: string; // True if we use the EDL client app
   USE_HTTPS?: string; // True if the server should use https
 }
 
@@ -153,10 +153,10 @@ const authorizedRoutes = [
  * Creates and returns an express.Router instance that has the middleware
  * and handlers necessary to respond to frontend service requests
  *
- * @param SKIP_EARTHDATA_LOGIN - Opt to skip Earthdata Login
+ * @param USE_EDL_CLIENT_APP - Opt to skip Earthdata Login
  * @returns A router which can respond to frontend service requests
  */
-export default function router({ SKIP_EARTHDATA_LOGIN = 'false' }: RouterConfig): express.Router {
+export default function router({ USE_EDL_CLIENT_APP = 'false' }: RouterConfig): express.Router {
   const result = express.Router();
 
   const secret = process.env.COOKIE_SECRET;
@@ -176,7 +176,7 @@ export default function router({ SKIP_EARTHDATA_LOGIN = 'false' }: RouterConfig)
   // a bucket.
   result.post(collectionPrefix('(ogc-api-coverages)'), asyncHandler(shapefileUpload()));
 
-  if (`${SKIP_EARTHDATA_LOGIN}` !== 'true') {
+  if (`${USE_EDL_CLIENT_APP}` !== 'false') {
     result.use(logged(earthdataLoginTokenAuthorizer(authorizedRoutes)));
     result.use(logged(earthdataLoginOauthAuthorizer(authorizedRoutes)));
   } else {
@@ -316,8 +316,8 @@ export default function router({ SKIP_EARTHDATA_LOGIN = 'false' }: RouterConfig)
   result.put('/service-image-tag/:service', jsonParser, asyncHandler(updateServiceImageTag));
   result.get('/service-deployment', asyncHandler(getServiceDeployments));
   result.get('/service-deployment/:id', asyncHandler(getServiceDeployment));
-  result.get('/service-deployments-state', asyncHandler(getServiceImageTagState));
-  result.put('/service-deployments-state', jsonParser, asyncHandler(setServiceImageTagState));
+  result.get('/service-deployments-state', asyncHandler(getServiceDeploymentsState));
+  result.put('/service-deployments-state', jsonParser, asyncHandler(setServiceDeploymentsState));
 
   result.get('/*', () => { throw new NotFoundError('The requested page was not found.'); });
   result.post('/*', () => { throw new NotFoundError('The requested POST page was not found.'); });
