@@ -42,7 +42,7 @@ describe('Work Backends', function () {
     operation: validOperation,
   } as Partial<WorkflowStepRecord>;
 
-  hookServersStartStop({ skipEarthdataLogin: true });
+  hookServersStartStop({ SKIP_EARTHDATA_LOGIN: true });
 
   describe('when getting a work item', function () {
     const runningJob = new Job({

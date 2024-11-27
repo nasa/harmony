@@ -113,6 +113,11 @@ export interface EdlGroupMembership {
  */
 export async function getEdlGroupInformation(context: RequestContext, username: string)
   : Promise<EdlGroupMembership> {
+
+  if (env.skipEarthdataLogin) {
+    return { isAdmin: false, isLogViewer: false, isServiceDeployer: false, hasCorePermissions: false };
+  }
+
   const groups = await getUserGroups(context, username);
   let isAdmin = false;
   if (groups.includes(env.adminGroupId)) {
@@ -142,6 +147,8 @@ export async function getEdlGroupInformation(context: RequestContext, username: 
  * @param req - the harmony request
  */
 export async function isAdminUser(req: HarmonyRequest): Promise<boolean> {
+  if (env.skipEarthdataLogin) return false;
+
   const isAdmin = req.context.isAdminAccess ||
     (await getEdlGroupInformation(req.context, req.user)).isAdmin;
   return isAdmin;

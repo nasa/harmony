@@ -10,7 +10,7 @@ import db from '../../app/util/db';
 import env from '../../app/util/env';
 
 describe('STAC - pagination', function () {
-  hookServersStartStop({ skipEarthdataLogin: false });
+  hookServersStartStop({ SKIP_EARTHDATA_LOGIN: false });
 
   const links: JobLink[] = [] as JobLink[];
   const aJob = buildJob(

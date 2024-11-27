@@ -4,7 +4,7 @@ import hookServersStartStop from './helpers/servers';
 import { hookCloudAccessJson, hookCloudAccessSh, hookStubAssumeRole, sampleCloudAccessShResponse } from './helpers/cloud-access';
 
 describe('Cloud access', function () {
-  hookServersStartStop({ skipEarthdataLogin: false });
+  hookServersStartStop({ SKIP_EARTHDATA_LOGIN: false });
   hookStubAssumeRole();
 
   describe('When not authenticated', function () {

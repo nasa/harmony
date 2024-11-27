@@ -99,7 +99,7 @@ function previewingToPauseTest(username: string): void {
 }
 
 describe('Auto-pausing jobs', function () {
-  hookServersStartStop({ skipEarthdataLogin: false });
+  hookServersStartStop({ SKIP_EARTHDATA_LOGIN: false });
   let sizeOfObjectStub;
   before(async function () {
     env.previewThreshold = 3;

@@ -41,7 +41,7 @@ const hookPartials = {
 };
 
 describe('labels', function () {
-  hookServersStartStop({ skipEarthdataLogin: false });
+  hookServersStartStop({ SKIP_EARTHDATA_LOGIN: false });
 
   for (const apiType of Object.keys(hookPartials)) {
     describe(`${apiType}`, function () {

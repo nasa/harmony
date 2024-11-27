@@ -53,7 +53,7 @@ async function getBatchItemsForWorkItem(workItem: WorkItem): Promise<String[]> {
 }
 
 describe('when testing a batched aggregation service', function () {
-  hookServersStartStop({ skipEarthdataLogin: false });
+  hookServersStartStop({ SKIP_EARTHDATA_LOGIN: false });
   const collection = 'C1243729749-EEDTEST';
   describe('with only one batch that should be created', function () {
     let batchInputsStub;

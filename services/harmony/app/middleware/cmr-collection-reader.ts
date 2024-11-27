@@ -6,6 +6,7 @@ import HarmonyRequest from '../models/harmony-request';
 import { listToText } from '@harmony/util/string';
 import { EdlUserEulaInfo, verifyUserEula } from '../util/edl-api';
 import RequestContext from '../models/request-context';
+import env from '../util/env';
 
 // CMR Collection IDs separated by delimiters of single "+" or single whitespace
 // (some clients may translate + to space)
@@ -39,26 +40,28 @@ async function loadVariablesForCollection(context: RequestContext, collection: C
  * @throws ServerError, ForbiddenError, NotFoundError
  */
 async function verifyEulaAcceptance(collections: CmrCollection[], req: HarmonyRequest): Promise<void> {
-  const acceptEulaUrls = [];
-  for (const collection of collections) {
-    if (collection.eula_identifiers) {
-      for (const eulaId of collection.eula_identifiers) {
-        const eulaInfo: EdlUserEulaInfo = await verifyUserEula(req.context, req.user, eulaId);
-        if (eulaInfo.statusCode == 404 && eulaInfo.acceptEulaUrl) { // EULA wasn't accepted
-          acceptEulaUrls.push(eulaInfo.acceptEulaUrl);
-        } else if (eulaInfo.statusCode == 404) {
-          req.context.logger.error(`EULA (${eulaId}) verfification failed with statusCode 404. Error: ${eulaInfo.error}`);
-          throw new NotFoundError(`EULA ${eulaId} could not be found.`);
-        } else if (eulaInfo.statusCode !== 200) {
-          req.context.logger.error(`EULA (${eulaId}) verfification failed. Error: ${eulaInfo.error}`);
-          throw new ServerError(`EULA (${eulaId}) verfification failed unexpectedly.`);
+  if (!env.skipEarthdataLogin) {
+    const acceptEulaUrls = [];
+    for (const collection of collections) {
+      if (collection.eula_identifiers) {
+        for (const eulaId of collection.eula_identifiers) {
+          const eulaInfo: EdlUserEulaInfo = await verifyUserEula(req.context, req.user, eulaId);
+          if (eulaInfo.statusCode == 404 && eulaInfo.acceptEulaUrl) { // EULA wasn't accepted
+            acceptEulaUrls.push(eulaInfo.acceptEulaUrl);
+          } else if (eulaInfo.statusCode == 404) {
+            req.context.logger.error(`EULA (${eulaId}) verfification failed with statusCode 404. Error: ${eulaInfo.error}`);
+            throw new NotFoundError(`EULA ${eulaId} could not be found.`);
+          } else if (eulaInfo.statusCode !== 200) {
+            req.context.logger.error(`EULA (${eulaId}) verfification failed. Error: ${eulaInfo.error}`);
+            throw new ServerError(`EULA (${eulaId}) verfification failed unexpectedly.`);
+          }
         }
       }
     }
-  }
-  if (acceptEulaUrls.length > 0) {
-    throw new ForbiddenError('You may access the requested data by resubmitting your request ' +
-      `after accepting the following EULA(s): ${acceptEulaUrls.join(', ')}.`);
+    if (acceptEulaUrls.length > 0) {
+      throw new ForbiddenError('You may access the requested data by resubmitting your request ' +
+        `after accepting the following EULA(s): ${acceptEulaUrls.join(', ')}.`);
+    }
   }
 }
 

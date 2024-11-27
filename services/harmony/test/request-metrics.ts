@@ -60,7 +60,7 @@ describe('/admin/request-metrics', function () {
   const workflowStepRecords = workflowStepData.map(makePartialWorkflowStepRecord);
   const workItemRecords = workItemData.map(makePartialWorkItemRecord);
 
-  hookServersStartStop({ skipEarthdataLogin: false });
+  hookServersStartStop({ SKIP_EARTHDATA_LOGIN: false });
 
   before(truncateAll);
   after(truncateAll);

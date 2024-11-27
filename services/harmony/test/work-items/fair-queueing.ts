@@ -64,7 +64,7 @@ const workItemData = [
 ];
 
 describe('Fair Queueing', function () {
-  hookServersStartStop({ skipEarthdataLogin: true });
+  hookServersStartStop({ SKIP_EARTHDATA_LOGIN: true });
 
   describe('When work is requested for a service and no work items are currently running', function () {
     const jobRecords = jobData.map(makePartialJobRecord);

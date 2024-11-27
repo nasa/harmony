@@ -210,7 +210,7 @@ const encrypter = createEncrypter(env.sharedSecretKey);
 const decrypter = createDecrypter(env.sharedSecretKey);
 
 describe('Skipping job preview', function () {
-  hookServersStartStop({ skipEarthdataLogin: false });
+  hookServersStartStop({ SKIP_EARTHDATA_LOGIN: false });
 
   describe('User endpoint', function () {
     const skipPreviewEndpointHooks = {

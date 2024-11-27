@@ -65,7 +65,7 @@ async function createJobAndWorkItems(serviceID: string, jobStatus: JobStatus): P
 
 describe('Backend service metrics endpoint', function () {
 
-  hookServersStartStop({ skipEarthdataLogin: true });
+  hookServersStartStop({ SKIP_EARTHDATA_LOGIN: true });
 
   describe('when hitting the service/metrics endpoint without serviceID parameter', function () {
     hookServiceMetrics();

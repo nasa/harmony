@@ -18,7 +18,7 @@ const fakeUsername = 'testy_mctestface';
 
 describe('Earthdata Login', function () {
   StubService.hookEach();
-  hookServersStartStop({ skipEarthdataLogin: false }, false);
+  hookServersStartStop({ SKIP_EARTHDATA_LOGIN: false }, false);
 
   describe('Calls to authenticated resources', function () {
     describe('When a request provides no token', function () {
@@ -491,6 +491,6 @@ describe('Earthdata Login', function () {
       expect(this.res.statusCode).to.equal(500);
       expect(this.res.text).to.include('Earthdata is currently unavailable');
     });
-  
+
   });
 });

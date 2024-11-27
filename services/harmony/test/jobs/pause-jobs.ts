@@ -340,7 +340,7 @@ describe('Pausing and resuming a job - user endpoint', function () {
   for (const [httpMethod, resumeEndpointHook] of Object.entries(resumeEndpointHooks)) {
     const pauseEndpointHook = pauseEndpointHooks[httpMethod];
     describe(`Pausing and resuming using ${httpMethod}`, function () {
-      hookServersStartStop({ skipEarthdataLogin: false });
+      hookServersStartStop({ SKIP_EARTHDATA_LOGIN: false });
       describe('Resuming a job', function () {
         let token;
         hookTransaction();
@@ -542,7 +542,7 @@ describe('Pausing and resuming a job - admin endpoint', function () {
   for (const [httpMethod, resumeEndpointHook] of Object.entries(resumeEndpointHooks)) {
     const pauseEndpointHook = pauseEndpointHooks[httpMethod];
     describe(`Pausing and resuming using ${httpMethod}`, function () {
-      hookServersStartStop({ skipEarthdataLogin: false });
+      hookServersStartStop({ SKIP_EARTHDATA_LOGIN: false });
       describe('Resuming a job', function () {
         hookTransaction();
         const joeJob1 = buildJob({ username: normalUsername });

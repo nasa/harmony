@@ -15,7 +15,7 @@ import { JobStatus, Job } from '../../app/models/job';
 
 
 describe('jobs/cancel, jobs/resume, jobs/skip-preview, jobs/resume', function () {
-  hookServersStartStop({ skipEarthdataLogin: false });
+  hookServersStartStop({ SKIP_EARTHDATA_LOGIN: false });
 
   describe('Canceling multiple jobs', function () {
     hookTransaction();

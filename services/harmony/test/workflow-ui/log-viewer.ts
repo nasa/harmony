@@ -32,7 +32,7 @@ const item1 = buildWorkItem(
 
 describe('Workflow UI directly accessing log files', function () {
 
-  hookServersStartStop({ skipEarthdataLogin: false });
+  hookServersStartStop({ SKIP_EARTHDATA_LOGIN: false });
 
   before(async function () {
     await truncateAll();

@@ -20,7 +20,7 @@ describe('Workflow UI retry', function () {
   const item1 = buildWorkItem({ jobID: job.jobID, status: WorkItemStatus.RUNNING, workflowStepIndex: 0, id: 1 });
   const item2 = buildWorkItem({ jobID: job.jobID, status: WorkItemStatus.RUNNING, workflowStepIndex: 0, id: 2 });
 
-  hookServersStartStop({ skipEarthdataLogin: false });
+  hookServersStartStop({ SKIP_EARTHDATA_LOGIN: false });
   hookTransaction();
 
   before(async function () {

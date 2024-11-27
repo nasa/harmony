@@ -7,7 +7,7 @@ import { hookUrl } from './helpers/hooks';
 import { FileStore } from '../app/util/object-store/file-store';
 
 describe('service-results', function () {
-  hookServersStartStop({ skipEarthdataLogin: false });
+  hookServersStartStop({ SKIP_EARTHDATA_LOGIN: false });
 
   describe('createPublicPermalink', function () {
     it('returns Harmony permalink when given an S3 link prefixed with /public/', function () {

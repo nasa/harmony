@@ -35,7 +35,7 @@ const shareableJob = buildJob({
 });
 
 describe('Workflow UI job route', function () {
-  hookServersStartStop({ skipEarthdataLogin: false });
+  hookServersStartStop({ SKIP_EARTHDATA_LOGIN: false });
   hookTransaction();
 
   before(async function () {

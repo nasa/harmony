@@ -59,7 +59,7 @@ const buzzJob1 = buildJob({
 let defaultJobListPageSize;
 
 describe('Jobs listing route', function () {
-  hookServersStartStop({ skipEarthdataLogin: false });
+  hookServersStartStop({ SKIP_EARTHDATA_LOGIN: false });
   describe('For a user who is not logged in', function () {
     before(async function () {
       this.res = await jobListing(this.frontend).redirects(0);

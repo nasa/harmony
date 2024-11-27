@@ -44,6 +44,8 @@ import { getAdminHealth, getHealth } from '../frontends/health';
 import handleLabelParameter from '../middleware/label';
 import { addJobLabels, deleteJobLabels } from '../frontends/labels';
 import handleJobIDParameter from '../middleware/job-id';
+import earthdataLoginSkipped from '../middleware/earthdata-login-skipped';
+
 export interface RouterConfig {
   PORT?: string | number; // The port to run the frontend server on
   BACKEND_PORT?: string | number; // The port to run the backend server on
@@ -51,7 +53,7 @@ export interface RouterConfig {
   // True if we should run example services, false otherwise.  Should be false
   // in production.  Defaults to true until we have real HTTP services.
   EXAMPLE_SERVICES?: string;
-  skipEarthdataLogin?: string; // True if we should skip using EDL
+  SKIP_EARTHDATA_LOGIN?: string; // True if we should skip using EDL
   USE_HTTPS?: string; // True if the server should use https
 }
 
@@ -151,10 +153,10 @@ const authorizedRoutes = [
  * Creates and returns an express.Router instance that has the middleware
  * and handlers necessary to respond to frontend service requests
  *
- * @param skipEarthdataLogin - Opt to skip Earthdata Login
+ * @param SKIP_EARTHDATA_LOGIN - Opt to skip Earthdata Login
  * @returns A router which can respond to frontend service requests
  */
-export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): express.Router {
+export default function router({ SKIP_EARTHDATA_LOGIN = 'false' }: RouterConfig): express.Router {
   const result = express.Router();
 
   const secret = process.env.COOKIE_SECRET;
@@ -174,10 +176,11 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   // a bucket.
   result.post(collectionPrefix('(ogc-api-coverages)'), asyncHandler(shapefileUpload()));
 
-  result.use(logged(earthdataLoginTokenAuthorizer(authorizedRoutes)));
-
-  if (`${skipEarthdataLogin}` !== 'true') {
+  if (`${SKIP_EARTHDATA_LOGIN}` !== 'true') {
+    result.use(logged(earthdataLoginTokenAuthorizer(authorizedRoutes)));
     result.use(logged(earthdataLoginOauthAuthorizer(authorizedRoutes)));
+  } else {
+    result.use(logged(earthdataLoginSkipped));
   }
 
   result.use('/core/*', core);

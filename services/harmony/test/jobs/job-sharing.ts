@@ -83,7 +83,7 @@ const jobWithMultipleCollections = buildJob({
 const jobIDWithMultipleCollections = jobWithMultipleCollections.requestId;
 
 describe('Sharing job results with someone other than its owner', function () {
-  hookServersStartStop({ skipEarthdataLogin: false });
+  hookServersStartStop({ SKIP_EARTHDATA_LOGIN: false });
 
   hookTransaction();
   before(async function () {

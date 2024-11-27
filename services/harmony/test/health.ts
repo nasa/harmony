@@ -24,7 +24,7 @@ const databaseDownHealthResponse = {
 };
 
 describe('Health endpoints', function () {
-  hookServersStartStop({ skipEarthdataLogin: false });
+  hookServersStartStop({ SKIP_EARTHDATA_LOGIN: false });
 
   describe('When calling /health', function () {
     describe('When not authenticated', function () {

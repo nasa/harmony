@@ -48,7 +48,7 @@ const completedJobProps = {
 };
 
 describe('STAC catalog route', function () {
-  hookServersStartStop({ skipEarthdataLogin: false });
+  hookServersStartStop({ SKIP_EARTHDATA_LOGIN: false });
   hookTransaction();
   const runningJob = buildJob(runningJobProps);
   const completedJob = buildJob(completedJobProps);

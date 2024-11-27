@@ -101,7 +101,7 @@ const completedNonStacJob = buildJob({
 });
 
 describe('STAC item route', function () {
-  hookServersStartStop({ skipEarthdataLogin: false });
+  hookServersStartStop({ SKIP_EARTHDATA_LOGIN: false });
   hookTransaction();
   before(async function () {
     await runningJob.save(this.trx);

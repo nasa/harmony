@@ -12,12 +12,12 @@ process.env.EXAMPLE_SERVICES = 'true';
  *
  * Important for tests: any tests that make a request and follow a redirect to the job status
  * page expect that the job can be shared with any user. If a job cannot be shared (collection
- * is not public or has a EULA), you must set skipEarthdataLogin: false, supply a username
+ * is not public or has a EULA), you must set SKIP_EARTHDATA_LOGIN: false, supply a username
  * when making the request, and supply the same username when following the redirect to the
  * job status.
  *
  * Example:
- * `hookServersStartStop({ skipEarthdataLogin: false });`
+ * `hookServersStartStop({ SKIP_EARTHDATA_LOGIN: false });`
  * `hookRangesetRequest('1.0.0', collection, 'all', { query, username: 'joe' });`
  * `hookRedirect('joe');`
  *
@@ -25,15 +25,15 @@ process.env.EXAMPLE_SERVICES = 'true';
  * @param stubOAuthClientCredentialsReq - Whether to replace OAuth client_credentials API calls to EDL
  * with a stub that returns a fake_access token
  */
-export default function hookServersStartStop(opts = { skipEarthdataLogin: true }, stubOAuthClientCredentialsReq = true): void {
+export default function hookServersStartStop(opts = { SKIP_EARTHDATA_LOGIN: true }, stubOAuthClientCredentialsReq = true): void {
   let servers = null;
   before(async function () {
     // Skip Earthdata Login unless the test says to do otherwise
-    const skipEdl = opts.skipEarthdataLogin ? 'true' : 'false';
+    const skipEdl = opts.SKIP_EARTHDATA_LOGIN ? 'true' : 'false';
     // Start Harmony on a random open port
     servers = await harmony.start({
       EXAMPLE_SERVICES: 'true',
-      skipEarthdataLogin: skipEdl,
+      SKIP_EARTHDATA_LOGIN: skipEdl,
       startWorkflowTerminationListener: 'false',
       startWorkReaper: 'false',
       startWorkFailer: 'false',
