@@ -10,6 +10,7 @@ import stacItemCreate from './stac-item';
 import stacCatalogCreate from './stac-catalog';
 import db from '../util/db';
 import env from '../util/env';
+import { asyncLocalStorage } from '../util/async-store';
 
 /**
  * Generic handler for STAC requests
@@ -100,7 +101,8 @@ export async function getStacCatalog(req, res, next): Promise<void> {
       }, pagingParams,
     );
   } catch (e) {
-    req.context.logger.error(e);
+    const context = asyncLocalStorage.getStore();
+    context.logger.error(e);
     next(e);
   }
 }
@@ -135,7 +137,8 @@ export async function getStacItem(req, res, next): Promise<void> {
       linkType,
     );
   } catch (e) {
-    req.context.logger.error(e);
+    const context = asyncLocalStorage.getStore();
+    context.logger.error(e);
     next(e);
   }
 }

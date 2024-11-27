@@ -15,6 +15,7 @@ import env from '../util/env';
 import JobError, { getErrorsForJob } from '../models/job-error';
 import _ from 'lodash';
 import { isAdminUser } from '../util/edl-api';
+import { asyncLocalStorage } from '../util/async-store';
 
 /**
  * Returns true if the job contains S3 direct access links
@@ -122,14 +123,15 @@ export interface JobListing {
 export async function getJobsListing(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
+  const context = asyncLocalStorage.getStore();
   try {
-    req.context.logger.info(`Get jobs listing for user ${req.user}`);
+    context.logger.info(`Get jobs listing for user ${req.user}`);
     const root = getRequestRoot(req);
     const { page, limit } = getPagingParams(req, env.defaultJobListPageSize);
     const query: JobQuery = { where: {} };
     query.labels = req.body.label;
 
-    if (!req.context.isAdminAccess) {
+    if (!context.isAdminAccess) {
       query.where.username = req.user;
     }
 
@@ -146,7 +148,7 @@ export async function getJobsListing(
     setPagingHeaders(res, listing.pagination);
     res.json(response);
   } catch (e) {
-    req.context.logger.error(e);
+    context.logger.error(e);
     next(e);
   }
 }
@@ -165,7 +167,8 @@ export async function getJobStatus(
   const { jobID } = req.params;
   const keys = keysToLowerCase(req.query);
   const linkType = keys.linktype?.toLowerCase();
-  req.context.logger.info(`Get job status for job ${jobID} and user ${req.user}`);
+  const context = asyncLocalStorage.getStore();
+  context.logger.info(`Get job status for job ${jobID} and user ${req.user}`);
   try {
     validateJobId(jobID);
     const { page, limit } = getPagingParams(req, env.defaultResultPageSize);
@@ -192,7 +195,7 @@ export async function getJobStatus(
     const jobForDisplay = getJobForDisplay(job, urlRoot, linkType, errors);
     res.send(jobForDisplay);
   } catch (e) {
-    req.context.logger.error(e);
+    context.logger.error(e);
     next(e);
   }
 }
@@ -211,24 +214,25 @@ export async function changeJobState(
   next: NextFunction,
   jobFn: (jobID: string, logger: Logger, username: string, token: string) => Promise<void>,
 ): Promise<void> {
+const context = asyncLocalStorage.getStore();
   try {
     const { jobID } = req.params;
     validateJobId(jobID);
     let username: string;
 
-    if (!req.context.isAdminAccess) {
+    if (!context.isAdminAccess) {
       username = req.user;
     }
 
-    await jobFn(jobID, req.context.logger, username, req.accessToken);
+    await jobFn(jobID, context.logger, username, req.accessToken);
 
-    if (req.context.isAdminAccess) {
+    if (context.isAdminAccess) {
       res.redirect(`/admin/jobs/${jobID}`);
     } else {
       res.redirect(`/jobs/${jobID}`);
     }
   } catch (e) {
-    req.context.logger.error(e);
+    context.logger.error(e);
     if (e instanceof TypeError) {
       next(new RequestValidationError(e.message));
     } else {
@@ -251,6 +255,7 @@ export async function changeJobsState(
 ): Promise<void> {
   let processedCount = 0;
   try {
+  const context = asyncLocalStorage.getStore();
     const { jobIDs } = req.body;
     let username: string;
     const isAdmin = await isAdminUser(req);
@@ -260,7 +265,7 @@ export async function changeJobsState(
     }
     for (const jobID of jobIDs) {
       validateJobId(jobID);
-      await jobFn(jobID, req.context.logger, username, req.accessToken);
+      await jobFn(jobID, context.logger, username, req.accessToken);
       processedCount += 1;
     }
   } catch (e) {
@@ -282,7 +287,8 @@ export async function cancelJob(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
   const { jobID } = req.params;
-  req.context.logger.info(`Cancel requested for job ${jobID} by user ${req.user}`);
+const context = asyncLocalStorage.getStore();
+  context.logger.info(`Cancel requested for job ${jobID} by user ${req.user}`);
   await changeJobState(req, res, next, cancelAndSaveJob);
 }
 
@@ -298,7 +304,8 @@ export async function cancelJob(
 export async function resumeJob(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
-  req.context.logger.info(`Resume requested for job ${req.params.jobID} by user ${req.user}`);
+const context = asyncLocalStorage.getStore();
+  context.logger.info(`Resume requested for job ${req.params.jobID} by user ${req.user}`);
   await changeJobState(req, res, next, resumeAndSaveJob);
 }
 
@@ -315,7 +322,8 @@ export async function resumeJob(
 export async function skipJobPreview(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
-  req.context.logger.info(`Skip preview requested for job ${req.params.jobID} by user ${req.user}`);
+const context = asyncLocalStorage.getStore();
+  context.logger.info(`Skip preview requested for job ${req.params.jobID} by user ${req.user}`);
   await changeJobState(req, res, next, skipPreviewAndSaveJob);
 }
 
@@ -331,7 +339,8 @@ export async function skipJobPreview(
 export async function pauseJob(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
-  req.context.logger.info(`Pause requested for job ${req.params.jobID} by user ${req.user}`);
+const context = asyncLocalStorage.getStore();
+  context.logger.info(`Pause requested for job ${req.params.jobID} by user ${req.user}`);
   await changeJobState(req, res, next, pauseAndSaveJob);
 }
 
@@ -346,7 +355,8 @@ export async function pauseJob(
 export async function cancelJobs(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
-  req.context.logger.info(`Cancel requested for jobs ${req.body.jobIDs} by user ${req.user}`);
+const context = asyncLocalStorage.getStore();
+  context.logger.info(`Cancel requested for jobs ${req.body.jobIDs} by user ${req.user}`);
   await changeJobsState(req, next, cancelAndSaveJob);
   res.status(200).json({ status: 'canceled' });
 }
@@ -362,7 +372,8 @@ export async function cancelJobs(
 export async function resumeJobs(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
-  req.context.logger.info(`Resume requested for jobs ${req.body.jobIDs} by user ${req.user}`);
+const context = asyncLocalStorage.getStore();
+  context.logger.info(`Resume requested for jobs ${req.body.jobIDs} by user ${req.user}`);
   await changeJobsState(req, next, resumeAndSaveJob);
   res.status(200).json({ status: 'running' });
 }
@@ -378,7 +389,8 @@ export async function resumeJobs(
 export async function skipJobsPreview(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
-  req.context.logger.info(`Skip preview requested for jobs ${req.body.jobIDs} by user ${req.user}`);
+const context = asyncLocalStorage.getStore();
+  context.logger.info(`Skip preview requested for jobs ${req.body.jobIDs} by user ${req.user}`);
   await changeJobsState(req, next, skipPreviewAndSaveJob);
   res.status(200).json({ status: 'running' });
 }
@@ -394,7 +406,8 @@ export async function skipJobsPreview(
 export async function pauseJobs(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
-  req.context.logger.info(`Pause requested for jobs ${req.body.jobIDs} by user ${req.user}`);
+const context = asyncLocalStorage.getStore();
+  context.logger.info(`Pause requested for jobs ${req.body.jobIDs} by user ${req.user}`);
   await changeJobsState(req, next, pauseAndSaveJob);
   res.status(200).json({ status: 'paused' });
 }

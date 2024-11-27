@@ -10,6 +10,7 @@ import { Parser } from 'json2csv';
 import { getTotalWorkItemSizesForJobID } from '../models/work-item';
 import _ from 'lodash';
 import { validateParameterNames } from '../middleware/parameter-validation';
+import { asyncLocalStorage } from '../util/async-store';
 
 export const metricsFields = [
   'timeTakenSeconds', 'numInputGranules', 'totalGranuleSizeMb', 'numVariables', 'concatenate',
@@ -162,7 +163,8 @@ const allowedParams = ['limit', 'page'];
 export default async function getRequestMetrics(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
-  req.context.logger.info(`Generating request metrics requested by user ${req.user}`);
+  const context = asyncLocalStorage.getStore();
+  context.logger.info(`Generating request metrics requested by user ${req.user}`);
   try {
     validateParameterNames(Object.keys(req.query), allowedParams);
     const { page, limit } = getPagingParams(req, env.defaultJobListPageSize);
@@ -173,7 +175,7 @@ export default async function getRequestMetrics(
 
       for (const job of jobs.data) {
         const steps = await getWorkflowStepsByJobId(tx, job.jobID);
-        const row = getServiceMetricsFromSteps(steps, req.context.logger);
+        const row = getServiceMetricsFromSteps(steps, context.logger);
         row.numInputGranules = job.numInputGranules;
         row.timeTakenSeconds = (job.updatedAt.getTime() - job.createdAt.getTime()) / 1000;
         const workItemSizes = await getTotalWorkItemSizesForJobID(tx, job.jobID);
@@ -191,7 +193,7 @@ export default async function getRequestMetrics(
     res.header('Content-Type', 'text/csv');
     res.send(csv);
   } catch (e) {
-    req.context.logger.error(e);
+    context.logger.error(e);
     next(e);
   }
 }

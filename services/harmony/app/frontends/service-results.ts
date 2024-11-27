@@ -2,6 +2,7 @@ import { URL } from 'url';
 import { NextFunction } from 'express';
 import { objectStoreForProtocol } from '../util/object-store';
 import { NotFoundError } from '../util/errors';
+import { asyncLocalStorage } from '../util/async-store';
 
 /**
  * Given a URL that is not necessarily public-facing, produces a URL to that data
@@ -61,11 +62,13 @@ export function createPublicPermalink(
 export async function getServiceResult(req, res, next: NextFunction): Promise<void> {
   const { bucket, key } = req.params;
   const url = `s3://${bucket}/${key}`;
+  const context = asyncLocalStorage.getStore();
 
   const objectStore = objectStoreForProtocol('s3');
   if (objectStore) {
+    const context = asyncLocalStorage.getStore();
     try {
-      req.context.logger.info(`Signing ${url}`);
+      context.logger.info(`Signing ${url}`);
       const result = await objectStore.signGetObject(url, { 'A-userid': req.user });
       // Direct clients to reuse the redirect for 10 minutes before asking for a new one
       res.append('Cache-Control', 'private, max-age=600');
@@ -73,12 +76,12 @@ export async function getServiceResult(req, res, next: NextFunction): Promise<vo
     } catch (e) {
       // Thrown if signing fails, either due to inadequate bucket permissions or
       // an object not existing.
-      req.context.logger.error(`Error signing URL "${url}": ${e}`);
+      context.logger.error(`Error signing URL "${url}": ${e}`);
       next(new NotFoundError());
     }
   } else {
     // Should never happen as long as we're only dealing with S3
-    req.context.logger.error(`No object store found for URL "${url}"`);
+    context.logger.error(`No object store found for URL "${url}"`);
     next(new NotFoundError());
   }
 }

@@ -10,6 +10,7 @@ import env from '../util/env';
 import { getRequestRoot } from '../util/url';
 import { validateNoConflictingGridParameters } from '../util/grids';
 import { checkLabel } from '../models/label';
+import { asyncLocalStorage } from '../util/async-store';
 
 const { awsDefaultRegion } = env;
 
@@ -93,7 +94,8 @@ async function validateBucketIsInRegion(req: HarmonyRequest, destinationUrl: str
  */
 async function validateDestinationUrlWritable(req: HarmonyRequest, destinationUrl: string): Promise<void> {
   try {
-    const requestId = req.context.id;
+    const context = asyncLocalStorage.getStore();
+    const requestId = context.id;
     const requestUrl = destinationUrl.endsWith('/') ? destinationUrl + requestId : destinationUrl + '/' + requestId;
     const statusUrl = requestUrl + '/harmony-job-status-link';
     const statusLink = getRequestRoot(req) + '/jobs/' + requestId;

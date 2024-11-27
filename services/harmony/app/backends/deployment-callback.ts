@@ -3,6 +3,7 @@ import HarmonyRequest from '../models/harmony-request';
 import * as services from '../models/services/index';
 import env from '../util/env';
 import _ from 'lodash';
+import { asyncLocalStorage } from '../util/async-store';
 
 /**
  * Express.js handler that handls deployment callback message for deploying a service.
@@ -20,7 +21,8 @@ import _ from 'lodash';
  * @param res - The response to send to the client
  */
 export default async function handleCallbackMessage(req: HarmonyRequest, res: Response): Promise<void> {
-  const logger = req.context.logger.child({ component: 'snsHandler.handleCallbackMessage' });
+  const context = asyncLocalStorage.getStore();
+  const logger = context.logger.child({ component: 'snsHandler.handleCallbackMessage' });
   const headerSecret = req.headers['cookie-secret'];
   const secret = process.env.COOKIE_SECRET;
   logger.info(`handleCallbackMessage: ${JSON.stringify(req.body)}`);

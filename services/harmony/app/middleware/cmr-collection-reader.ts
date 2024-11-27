@@ -6,6 +6,7 @@ import HarmonyRequest from '../models/harmony-request';
 import { listToText } from '@harmony/util/string';
 import { EdlUserEulaInfo, verifyUserEula } from '../util/edl-api';
 import RequestContext from '../models/request-context';
+import { asyncLocalStorage } from '../util/async-store';
 
 // CMR Collection IDs separated by delimiters of single "+" or single whitespace
 // (some clients may translate + to space)
@@ -21,14 +22,13 @@ const EDR_COLLECTION_ROUTE_REGEX = /^\/ogc-api-edr\/.*\/collections\/(.*)\//;
  * Loads the variables for the given collection from the CMR and sets the collection's
  * "variables" attribute to the result
  *
- * @param context - The context for the user's request
  * @param collection - The collection whose variables should be loaded
  * @param token - Access token for user request
  * @returns Resolves when the loading completes
  */
-async function loadVariablesForCollection(context: RequestContext, collection: CmrCollection, token: string): Promise<void> {
+async function loadVariablesForCollection(collection: CmrCollection, token: string): Promise<void> {
   const c = collection; // We are mutating collection
-  c.variables = await getVariablesForCollection(context, collection, token);
+  c.variables = await getVariablesForCollection(collection, token);
 }
 
 /**
@@ -40,17 +40,19 @@ async function loadVariablesForCollection(context: RequestContext, collection: C
  */
 async function verifyEulaAcceptance(collections: CmrCollection[], req: HarmonyRequest): Promise<void> {
   const acceptEulaUrls = [];
+  const context = asyncLocalStorage.getStore();
+
   for (const collection of collections) {
     if (collection.eula_identifiers) {
       for (const eulaId of collection.eula_identifiers) {
-        const eulaInfo: EdlUserEulaInfo = await verifyUserEula(req.context, req.user, eulaId);
+        const eulaInfo: EdlUserEulaInfo = await verifyUserEula(req.user, eulaId);
         if (eulaInfo.statusCode == 404 && eulaInfo.acceptEulaUrl) { // EULA wasn't accepted
           acceptEulaUrls.push(eulaInfo.acceptEulaUrl);
         } else if (eulaInfo.statusCode == 404) {
-          req.context.logger.error(`EULA (${eulaId}) verfification failed with statusCode 404. Error: ${eulaInfo.error}`);
+          context.logger.error(`EULA (${eulaId}) verfification failed with statusCode 404. Error: ${eulaInfo.error}`);
           throw new NotFoundError(`EULA ${eulaId} could not be found.`);
         } else if (eulaInfo.statusCode !== 200) {
-          req.context.logger.error(`EULA (${eulaId}) verfification failed. Error: ${eulaInfo.error}`);
+          context.logger.error(`EULA (${eulaId}) verfification failed. Error: ${eulaInfo.error}`);
           throw new ServerError(`EULA (${eulaId}) verfification failed unexpectedly.`);
         }
       }
@@ -91,14 +93,16 @@ async function verifyEulaAcceptance(collections: CmrCollection[], req: HarmonyRe
  */
 async function cmrCollectionReader(req: HarmonyRequest, res, next: NextFunction): Promise<void> {
   try {
+    const context = asyncLocalStorage.getStore();
+
     const collectionMatch = req.url.match(CMR_CONCEPT_ID_URL_PATH_REGEX);
     if (collectionMatch) {
       const collectionIdStr = collectionMatch[0].replace(/\/$/, '').substr(1, collectionMatch[0].length - 1);
       const collectionIds = collectionIdStr.split(/[+\s]/g);
       req.collectionIds = collectionIds;
-      req.context.logger.info(`Matched CMR concept IDs: ${collectionIds}`);
+      context.logger.info(`Matched CMR concept IDs: ${collectionIds}`);
 
-      req.collections = await getCollectionsByIds(req.context, collectionIds, req.accessToken);
+      req.collections = await getCollectionsByIds(collectionIds, req.accessToken);
       const { collections } = req;
 
       await verifyEulaAcceptance(collections, req);
@@ -120,7 +124,7 @@ async function cmrCollectionReader(req: HarmonyRequest, res, next: NextFunction)
 
       const promises = [];
       for (const collection of collections) {
-        promises.push(loadVariablesForCollection(req.context, collection, req.accessToken));
+        promises.push(loadVariablesForCollection(collection, req.accessToken));
       }
       await Promise.all(promises);
     } else {
@@ -135,7 +139,7 @@ async function cmrCollectionReader(req: HarmonyRequest, res, next: NextFunction)
           shortName = shortNameMatch[2].substr(1, shortNameMatch[2].length - 2);
         }
 
-        const collections = await getCollectionsByShortName(req.context, shortName, req.accessToken);
+        const collections = await getCollectionsByShortName(shortName, req.accessToken);
         let pickedCollection = collections[0];
         if (collections.length > 1) {
           // If there are multiple collections matching prefer a collection that is configured
@@ -148,10 +152,10 @@ async function cmrCollectionReader(req: HarmonyRequest, res, next: NextFunction)
 
           req.collections = [pickedCollection];
           req.collectionIds = [pickedCollection.id];
-          await loadVariablesForCollection(req.context, pickedCollection, req.accessToken);
+          await loadVariablesForCollection(pickedCollection, req.accessToken);
           if (collections.length > 1) {
             const collectionLandingPage = `${cmrApiConfig.baseURL}/concepts/${pickedCollection.id}`;
-            req.context.messages.push(`There were ${collections.length} collections that matched the`
+            context.messages.push(`There were ${collections.length} collections that matched the`
             + ` provided short name ${shortName}. See ${collectionLandingPage} for details on the`
             + ' selected collection. The version ID for the selected collection is '
             + `${pickedCollection.version_id}. To use a different collection submit a new request`

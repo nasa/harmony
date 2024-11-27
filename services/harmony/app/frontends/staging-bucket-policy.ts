@@ -1,3 +1,4 @@
+import { asyncLocalStorage } from '../util/async-store';
 import { RequestValidationError } from '../util/errors';
 import SecureTokenService from '../util/sts';
 
@@ -88,7 +89,8 @@ export async function getStagingBucketPolicy(req, res): Promise<void> {
     policyTemplate.Statement[1].Resource = `arn:aws:s3:::${bucket}`;
     res.send(policyTemplate);
   } catch (e) {
-    const { logger } = req.context;
+    const context = asyncLocalStorage.getStore();
+    const { logger } = context;
     logger.error(e);
     throw new RequestValidationError('Failed to generate bucket policy. Bucket policy generation is only available on AWS Harmony deployments');
   }

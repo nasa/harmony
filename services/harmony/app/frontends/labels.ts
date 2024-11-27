@@ -6,6 +6,7 @@ import { addLabelsToJobs, deleteLabelsFromJobs } from '../models/label';
 import db from '../util/db';
 import { isAdminUser } from '../util/edl-api';
 import { keysToLowerCase } from '../util/object';
+import { asyncLocalStorage } from '../util/async-store';
 
 /**
  * Express.js handler that adds one or more labels to a job `(PUT /labels)`.
@@ -30,7 +31,8 @@ export async function addJobLabels(
     res.status(201);
     res.send('OK');
   } catch (e) {
-    req.context.logger.error(e);
+    const context = asyncLocalStorage.getStore();
+    context.logger.error(e);
     next(e);
   }
 }
@@ -58,7 +60,8 @@ export async function deleteJobLabels(
     res.status(204);
     res.send();
   } catch (e) {
-    req.context.logger.error(e);
+    const context = asyncLocalStorage.getStore();
+    context.logger.error(e);
     next(e);
   }
 }

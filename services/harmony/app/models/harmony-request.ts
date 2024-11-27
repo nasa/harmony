@@ -1,13 +1,12 @@
 import { Response, NextFunction, Request } from 'express';
 import { CmrCollection } from '../util/cmr';
-import RequestContext from './request-context';
 import DataOperation from './data-operation';
+import { asyncLocalStorage } from '../util/async-store';
 
 /**
  * Contains additional information about a request
  */
 export default interface HarmonyRequest extends Request {
-  context: RequestContext;
   collections: CmrCollection[];
   collectionIds: string[];
   operation: DataOperation;
@@ -22,20 +21,21 @@ export default interface HarmonyRequest extends Request {
  * Middleware to add request context information to the data operation.
  *
  * @param req - The client request, containing an operation
- * @param res - The client response
+ * @param _res - The server response (not used)
  * @param next - The next function in the middleware chain
  *
  */
 export function addRequestContextToOperation(
-  req: HarmonyRequest, res: Response, next: NextFunction,
+  req: HarmonyRequest, _res: Response, next: NextFunction,
 ): void {
-  const { operation, context } = req;
+  const context = asyncLocalStorage.getStore();
+  const { operation} = req;
 
   if (!operation) return next();
 
   operation.requestId = context.id;
-  if (req.context.messages.length > 0) {
-    operation.message = req.context.messages.join(' ');
+  if (context.messages.length > 0) {
+    operation.message = context.messages.join(' ');
   }
   operation.requestStartTime = context.startTime;
   return next();

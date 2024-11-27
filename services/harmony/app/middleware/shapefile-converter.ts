@@ -15,6 +15,7 @@ import { RequestValidationError, HttpError, ServerError } from '../util/errors';
 import { defaultObjectStore } from '../util/object-store';
 import { listToText } from '@harmony/util/string';
 import { cookieOptions } from '../util/cookies';
+import { asyncLocalStorage } from '../util/async-store';
 
 /**
  * Converts the given ESRI Shapefile to GeoJSON and returns the resulting file.   Note,
@@ -199,6 +200,7 @@ async function normalizeGeoJsonFile(url: string, isLocal: boolean): Promise<stri
  */
 export default async function shapefileConverter(req, res, next: NextFunction): Promise<void> {
   const { operation } = req;
+  const context = asyncLocalStorage.getStore();
 
   try {
     const shapefile = get(req, 'files.shapefile[0]') || get(req, 'file') || req.signedCookies.shapefile;
@@ -208,7 +210,7 @@ export default async function shapefileConverter(req, res, next: NextFunction): 
       next();
       return;
     }
-    req.context.shapefile = shapefile;
+    context.shapefile = shapefile;
     const store = defaultObjectStore();
 
     const { mimetype } = shapefile;
@@ -223,7 +225,7 @@ export default async function shapefileConverter(req, res, next: NextFunction): 
       const originalFile = await store.downloadFile(url);
       let convertedFile;
       try {
-        convertedFile = await converter.geoJsonConverter(originalFile, req.context.logger);
+        convertedFile = await converter.geoJsonConverter(originalFile, context.logger);
         operation.geojson = await store.uploadFile(convertedFile, `${url}.geojson`);
       } finally {
         if (convertedFile) {
@@ -238,7 +240,7 @@ export default async function shapefileConverter(req, res, next: NextFunction): 
       next(e);
       return;
     }
-    req.context.logger.error(e);
+    context.logger.error(e);
     next(new ServerError('A problem occurred when attempting to convert the provided shapefile'));
     return;
   }

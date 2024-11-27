@@ -1,6 +1,7 @@
 import { RequestHandler } from 'express';
 import HarmonyRequest from '../models/harmony-request';
 import { getUserIdRequest } from '../util/edl-api';
+import { asyncLocalStorage } from '../util/async-store';
 
 const BEARER_TOKEN_REGEX = new RegExp('^Bearer ([-a-zA-Z0-9._~+/]+)$', 'i');
 
@@ -24,7 +25,7 @@ export default function buildEdlAuthorizer(paths: Array<string | RegExp> = []): 
         const userToken = match[1];
         try {
           // Get the username for the provided token from EDL
-          const username = await getUserIdRequest(req.context, userToken);
+          const username = await getUserIdRequest(userToken);
           req.user = username;
           req.accessToken = userToken;
           req.authorized = true;

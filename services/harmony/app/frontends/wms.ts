@@ -16,6 +16,7 @@ import * as urlUtil from '../util/url';
 import { handleGranuleNames } from '../util/parameter-parsers';
 import env from '../util/env';
 import { getVariablesForCollection } from '../util/variables';
+import { asyncLocalStorage } from '../util/async-store';
 
 const readFile = promisify(fs.readFile);
 
@@ -257,7 +258,8 @@ function getMap(req, res, next: NextFunction): void {
  * @param next - The next function in the chain
  */
 export default async function wmsFrontend(req, res, next: NextFunction): Promise<void> {
-  req.context.frontend = 'wms';
+  const context = asyncLocalStorage.getStore();
+  context.frontend = 'wms';
   const query = keysToLowerCase(req.query);
   req.wmsQuery = query;
 
@@ -280,7 +282,7 @@ export default async function wmsFrontend(req, res, next: NextFunction): Promise
   } catch (e) {
     // TODO: Handle 'exceptions' param (HARMONY-40)
     if (e instanceof RequestValidationError) {
-      req.context.logger.error(e.message);
+      context.logger.error(e.message);
       return requestError(res, e.message);
     }
 

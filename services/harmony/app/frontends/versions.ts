@@ -7,6 +7,7 @@ import { getServiceConfigs } from '../models/services';
 import { ServiceConfig } from '../models/services/base-service';
 import HarmonyRequest from '../models/harmony-request';
 import { TurboServiceParams } from '../models/services/turbo-service';
+import { asyncLocalStorage } from '../util/async-store';
 
 interface ServiceVersion {
   name: string;
@@ -70,7 +71,8 @@ async function getServiceForDisplay(
  */
 export default async function getVersions(req: HarmonyRequest, res: Response): Promise<void> {
   const ecr = defaultContainerRegistry();
-  const logger = req.context.logger.child({ component: 'versions.getVersions' });
+  const context = asyncLocalStorage.getStore();
+  const logger = context.logger.child({ component: 'versions.getVersions' });
   const turboServices = await Promise.all((getServiceConfigs() as ServiceConfig<TurboServiceParams>[])
     .filter((s) => s.type.name === 'turbo')
     .map((service) => getServiceForDisplay(service, ecr, logger)));

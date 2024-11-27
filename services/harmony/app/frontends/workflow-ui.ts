@@ -23,6 +23,7 @@ import { handleWorkItemUpdateWithJobId } from '../backends/workflow-orchestratio
 import { getLabelsForUser, getRecentLabelsForUser } from '../models/label';
 import { logAsyncExecutionTime } from '../util/log-execution';
 import _ from 'lodash';
+import { asyncLocalStorage } from '../util/async-store';
 
 // Default to retrieving this number of work items per page
 const defaultWorkItemPageSize = 100;
@@ -323,11 +324,12 @@ function tableQueryToJobQuery(tableQuery: TableQuery, isAdmin: boolean, user: st
 export async function getJobs(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
+  const context = asyncLocalStorage.getStore();
   try {
-    const isAdminRoute = req.context.isAdminAccess;
-    const providerIds = (await Job.getProviderIdsSnapshot(db, req.context.logger))
+    const isAdminRoute = context.isAdminAccess;
+    const providerIds = (await Job.getProviderIdsSnapshot(db, context.logger))
       .map((providerId) => providerId.toUpperCase());
-    const recentLabels = await (await logAsyncExecutionTime(getRecentLabelsForUser, 'HWIUWJI.getRecentLabelsForUser', req.context.logger))(db, req.user, env.labelFilterCompletionCount, isAdminRoute);
+    const recentLabels = await (await logAsyncExecutionTime(getRecentLabelsForUser, 'HWIUWJI.getRecentLabelsForUser', context.logger))(db, req.user, env.labelFilterCompletionCount, isAdminRoute);
     const labels = env.uiLabeling ? await getLabelsForUser(db, req.user) : [];
     const requestQuery = keysToLowerCase(req.query);
     const fromDateTime = requestQuery.fromdatetime;
@@ -379,10 +381,10 @@ export async function getJobs(
         { ...nextPage, linkTitle: 'next' },
         { ...lastPage, linkTitle: 'last' },
       ],
-      ...jobRenderingFunctions(req.context.logger, requestQuery, isAdminRoute),
+      ...jobRenderingFunctions(context.logger, requestQuery, isAdminRoute),
     });
   } catch (e) {
-    req.context.logger.error(e);
+    context.logger.error(e);
     next(e);
   }
 }
@@ -399,6 +401,7 @@ export async function getJob(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
   const { jobID } = req.params;
+  const context = asyncLocalStorage.getStore();
   try {
     const isAdmin = await isAdminUser(req);
     const job = await getJobIfAllowed(jobID, req.user, isAdmin, req.accessToken, true);
@@ -419,12 +422,12 @@ export async function getJob(
       disallowStatusChecked: requestQuery.disallowstatus === 'on' ? 'checked' : '',
       selectedFilters: originalValues,
       version,
-      isAdminRoute: req.context.isAdminAccess,
+      isAdminRoute: context.isAdminAccess,
       isAdminOrOwner: job.belongsToOrIsAdmin(req.user, isAdmin),
-      jobsLink: requestQuery.jobslink || (req.context.isAdminAccess ? '/admin/workflow-ui' : '/workflow-ui'),
+      jobsLink: requestQuery.jobslink || (context.isAdminAccess ? '/admin/workflow-ui' : '/workflow-ui'),
     });
   } catch (e) {
-    req.context.logger.error(e);
+    context.logger.error(e);
     next(e);
   }
 }
@@ -451,7 +454,8 @@ export async function getJobLinks(
       getJobStateChangeLinks(job, urlRoot, isAdmin);
     res.send(links);
   } catch (e) {
-    req.context.logger.error(e);
+    const context = asyncLocalStorage.getStore();
+    context.logger.error(e);
     next(e);
   }
 }
@@ -548,11 +552,11 @@ export async function getWorkItemsTable(
 ): Promise<void> {
   const { jobID } = req.params;
   const { checkJobStatus } = req.query;
+  const context = asyncLocalStorage.getStore();
+
   try {
-    const isAdminRoute = req.context.isAdminAccess;
-    const { isAdmin, isLogViewer } = await getEdlGroupInformation(
-      req.context, req.user,
-    );
+    const isAdminRoute = context.isAdminAccess;
+    const { isAdmin, isLogViewer } = await getEdlGroupInformation(req.user);
     const isAdminOrLogViewer = isAdmin || isLogViewer;
     const job = await getJobIfAllowed(jobID, req.user, isAdmin, req.accessToken, true);
     if (([JobStatus.SUCCESSFUL, JobStatus.CANCELED, JobStatus.FAILED, JobStatus.COMPLETE_WITH_ERRORS]
@@ -595,10 +599,10 @@ export async function getWorkItemsTable(
       linkHref() {
         return this.href;
       },
-      ...jobRenderingFunctions(req.context.logger, requestQuery, isAdminRoute),
+      ...jobRenderingFunctions(context.logger, requestQuery, isAdminRoute),
     });
   } catch (e) {
-    req.context.logger.error(e);
+    context.logger.error(e);
     next(e);
   }
 }
@@ -616,9 +620,7 @@ export async function getWorkItemTableRow(
 ): Promise<void> {
   const { jobID, id } = req.params;
   try {
-    const { isAdmin, isLogViewer } = await getEdlGroupInformation(
-      req.context, req.user,
-    );
+    const { isAdmin, isLogViewer } = await getEdlGroupInformation(req.user);
     const isAdminOrLogViewer = isAdmin || isLogViewer;
     const job = await getJobIfAllowed(jobID, req.user, isAdmin, req.accessToken, true);
     // even though we only want one row/item we should still respect the current user's table filters
@@ -637,7 +639,8 @@ export async function getWorkItemTableRow(
       ...workItemRenderingFunctions(job, isAdmin, isLogViewer, req.user),
     });
   } catch (e) {
-    req.context.logger.error(e);
+    const context = asyncLocalStorage.getStore();
+    context.logger.error(e);
     next(e);
   }
 }
@@ -653,8 +656,10 @@ export async function getWorkItemTableRow(
 export async function getJobsTable(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
+  const context = asyncLocalStorage.getStore();
+
   try {
-    const isAdminRoute = req.context.isAdminAccess;
+    const isAdminRoute = context.isAdminAccess;
     const { jobIDs } = req.body;
     const requestQuery = keysToLowerCase(req.query);
     const { tableQuery } = parseQuery(requestQuery, JobStatus, isAdminRoute);
@@ -669,8 +674,8 @@ export async function getJobsTable(
     const tableContext = {
       jobs,
       selectAllBox,
-      ...jobRenderingFunctions(req.context.logger, requestQuery, isAdminRoute, jobIDs),
-      isAdminRoute: req.context.isAdminAccess,
+      ...jobRenderingFunctions(context.logger, requestQuery, isAdminRoute, jobIDs),
+      isAdminRoute: context.isAdminAccess,
     };
     const tableHtml = await new Promise<string>((resolve, reject) => req.app.render(
       'workflow-ui/jobs/jobs-table', tableContext, (err, html) => {
@@ -708,7 +713,7 @@ export async function getJobsTable(
       }));
     res.send(tableHtml + pagingHtml);
   } catch (e) {
-    req.context.logger.error(e);
+    context.logger.error(e);
     next(e);
   }
 }
@@ -725,10 +730,10 @@ export async function getWorkItemLogs(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
   const { id, jobID } = req.params;
+  const context = asyncLocalStorage.getStore();
+
   try {
-    const { isAdmin, isLogViewer } = await getEdlGroupInformation(
-      req.context, req.user,
-    );
+    const { isAdmin, isLogViewer } = await getEdlGroupInformation(req.user);
     const isAdminOrLogViewer = isAdmin || isLogViewer;
     if (!isAdminOrLogViewer) {
       throw new ForbiddenError();
@@ -737,7 +742,7 @@ export async function getWorkItemLogs(
       .getObjectJson(getItemLogsLocation({ id: parseInt(id), jobID }));
     res.json(logs);
   } catch (e) {
-    req.context.logger.error(e);
+    context.logger.error(e);
     next(e);
   }
 }
@@ -753,6 +758,8 @@ export async function retry(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
   const { jobID, id } = req.params;
+  const context = asyncLocalStorage.getStore();
+
   try {
     const isAdmin = await isAdminUser(req);
     await getJobIfAllowed(jobID, req.user, isAdmin, req.accessToken, false); // validate access to the work item's job
@@ -763,7 +770,7 @@ export async function retry(
     if (item.retryCount >= env.workItemRetryLimit) {
       res.status(200).send({ message: 'The item does not have any retries left.' });
     }
-    const workItemLogger = req.context.logger.child({ workItemId: item.id });
+    const workItemLogger = context.logger.child({ workItemId: item.id });
     const workItemUpdate = {
       workItemID: item.id, status: WorkItemStatus.FAILED, scrollID: item.scrollID, hits: null, results: [],
       totalItemsSize: item.totalItemsSize, errorMessage: 'A user attempted to trigger a retry via the Workflow UI.',
@@ -774,7 +781,7 @@ export async function retry(
 
     res.status(200).send({ message: 'The item was successfully requeued.' });
   } catch (e) {
-    req.context.logger.error(e);
+    context.logger.error(e);
     next(e);
   }
 }

@@ -44,6 +44,7 @@ import { getAdminHealth, getHealth } from '../frontends/health';
 import handleLabelParameter from '../middleware/label';
 import { addJobLabels, deleteJobLabels } from '../frontends/labels';
 import handleJobIDParameter from '../middleware/job-id';
+import { asyncLocalStorage } from '../util/async-store';
 export interface RouterConfig {
   PORT?: string | number; // The port to run the frontend server on
   BACKEND_PORT?: string | number; // The port to run the backend server on
@@ -67,9 +68,10 @@ export interface RouterConfig {
 function logged(fn: RequestHandler): RequestHandler {
   const scope = `middleware.${fn.name}`;
   return async (req: HarmonyRequest, res, next): Promise<void> => {
-    const { logger } = req.context;
+    const context = asyncLocalStorage.getStore();
+    const { logger } = context;
     const child = logger.child({ component: scope });
-    req.context.logger = child;
+    context.logger = child;
     const startTime = new Date().getTime();
     try {
       child.silly('Invoking middleware');
@@ -77,13 +79,13 @@ function logged(fn: RequestHandler): RequestHandler {
     } finally {
       const msTaken = new Date().getTime() - startTime;
       child.silly('Completed middleware', { durationMs: msTaken });
-      if (req.context.logger === child) {
+      if (context.logger === child) {
         // Other middlewares may have changed the logger.  This generally happens
         // when `next()` is an async call that the middleware doesn't await.  Note
         // this method does not perfectly guarantee the correct logger is always
         // used.  To do that, each middleware needs to set up and tear down its own
         // logger.
-        req.context.logger = logger;
+        context.logger = logger;
       }
     }
   };
@@ -99,9 +101,10 @@ function logged(fn: RequestHandler): RequestHandler {
  */
 function service(fn: RequestHandler): RequestHandler {
   return async (req: HarmonyRequest, res, next): Promise<void> => {
-    const { logger } = req.context;
+    const context = asyncLocalStorage.getStore();
+    const { logger } = context;
     const child = logger.child({ component: `service.${fn.name}` });
-    req.context.logger = child;
+    context.logger = child;
     try {
       if (!req.collections || req.collections.length === 0) {
         throw new NotFoundError('Services can only be invoked when a valid collection is supplied in the URL path before the service name.');
@@ -112,9 +115,9 @@ function service(fn: RequestHandler): RequestHandler {
       child.error(e);
       next(e);
     } finally {
-      if (req.context.logger === child) {
+      if (context.logger === child) {
         // See note in `logged`.  The logger may have changed during middleware execution
-        req.context.logger = logger;
+        context.logger = logger;
       }
     }
   };

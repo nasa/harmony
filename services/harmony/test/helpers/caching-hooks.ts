@@ -43,7 +43,7 @@ before(function () {
 
   // Stub fetchPost to provide a string body rather than a FormData stream
   stub(cmr, 'fetchPost').callsFake(async function (
-    context: RequestContext, path: string, formData: FormData, headers: { [key: string]: string },
+    path: string, formData: FormData, headers: { [key: string]: string },
   ): Promise<cmr.CmrResponse> {
     // Read the body into a stream
     const chunks = [];
@@ -53,7 +53,7 @@ before(function () {
       formData.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
       formData.resume();
     });
-    return originalFetchPost(context, path, body, headers);
+    return originalFetchPost(path, body, headers);
   });
 });
 

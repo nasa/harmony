@@ -3,6 +3,7 @@ import { ServiceConfig } from '../models/services/base-service';
 import HarmonyRequest from '../models/harmony-request';
 import { chooseServiceConfig, getServiceConfigs } from '../models/services';
 import { CmrCollection } from '../util/cmr';
+import { asyncLocalStorage } from '../util/async-store';
 
 /**
  * Add collections to service configs
@@ -47,10 +48,12 @@ export function addCollectionsToServicesByAssociation(collections: CmrCollection
 export default function chooseService(
   req: HarmonyRequest, _res: Response, next: NextFunction,
 ): void {
-  const { operation, context } = req;
+  const { operation } = req;
   if (!operation?.sources) {
     return next();
   }
+
+  const context = asyncLocalStorage.getStore();
 
   let serviceConfig: ServiceConfig<unknown>;
   const configs = addCollectionsToServicesByAssociation(req.collections);

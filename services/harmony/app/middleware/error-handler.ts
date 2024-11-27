@@ -7,6 +7,7 @@ import {
   getEndUserErrorMessage, getCodeForError,
 } from '../util/errors';
 import HarmonyRequest from '../models/harmony-request';
+import { asyncLocalStorage } from '../util/async-store';
 
 const errorTemplate = fs.readFileSync(path.join(__dirname, '../views/server-error.mustache.html'), { encoding: 'utf8' });
 const jsonErrorRoutesRegex = /jobs|labels|capabilities|ogc-api-coverages|ogc-api-edr|service-deployment(?:s-state)?|service-image-tag|stac|metrics|health|configuration|workflow-ui\/.*\/(?:links|logs|retry)/;
@@ -50,7 +51,8 @@ export default function errorHandler(
   const message = getEndUserErrorMessage(error);
   const code = getCodeForError(error);
 
-  req.context.logger.error(error);
+  const context = asyncLocalStorage.getStore();
+  context.logger.error(error);
 
   if (shouldReturnJson(error, req)) {
     res.status(statusCode).json(buildJsonErrorResponse(code, message));

@@ -1,6 +1,7 @@
 import { NextFunction } from 'express';
 import { getUmmCollectionsByIds } from '../util/cmr';
 import HarmonyRequest from '../models/harmony-request';
+import { asyncLocalStorage } from '../util/async-store';
 
 /**
  * Express.js middleware that reads the UMM JSON format of the collections and load them into operation
@@ -11,9 +12,10 @@ import HarmonyRequest from '../models/harmony-request';
  */
 async function cmrUmmCollectionReader(req: HarmonyRequest, res, next: NextFunction): Promise<void> {
   try {
-    const hasUmmConditional = req.context.serviceConfig?.steps?.filter((s) => s.conditional?.umm_c);
+    const context = asyncLocalStorage.getStore();
+    const hasUmmConditional = context.serviceConfig?.steps?.filter((s) => s.conditional?.umm_c);
     if (hasUmmConditional && hasUmmConditional.length > 0) {
-      req.operation.ummCollections = await getUmmCollectionsByIds(req.context, req.collectionIds, req.accessToken);
+      req.operation.ummCollections = await getUmmCollectionsByIds(req.collectionIds, req.accessToken);
     }
     next();
   } catch (error) {

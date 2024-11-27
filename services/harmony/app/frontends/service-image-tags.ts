@@ -13,6 +13,7 @@ import { getRequestRoot } from '../util/url';
 import { v4 as uuid } from 'uuid';
 import ServiceDeployment, { setStatusMessage, getDeploymentById, getDeployments, ServiceDeploymentStatus } from '../models/service-deployment';
 import { keysToLowerCase } from '../util/object';
+import { asyncLocalStorage } from '../util/async-store';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 export const asyncExec = util.promisify(require('child_process').exec);
@@ -243,9 +244,7 @@ async function validateServiceExists(
 async function validateUserIsInDeployerOrCoreGroup(
   req: HarmonyRequest, res: Response,
 ): Promise<boolean> {
-  const { hasCorePermissions, isServiceDeployer } = await getEdlGroupInformation(
-    req.context, req.user,
-  );
+  const { hasCorePermissions, isServiceDeployer } = await getEdlGroupInformation(req.user);
 
   if (!isServiceDeployer && !hasCorePermissions) {
     res.statusCode = 403;
@@ -452,8 +451,9 @@ export async function execDeployScript(
 ): Promise<void> {
   const currentPath = __dirname;
   const cicdDir = path.join(currentPath, '../../../../../harmony-ci-cd');
+  const context = asyncLocalStorage.getStore();
 
-  req.context.logger.info(
+  context.logger.info(
     `Execute script: ./bin/exec-deploy-service ${service} ${tag} ${regressionTestVersion}`);
   const command = `./bin/exec-deploy-service ${service} ${tag} ${regressionTestVersion}`;
 
@@ -464,9 +464,9 @@ export async function execDeployScript(
   exec(command, options, async (error, stdout, _stderr) => {
     const lines = stdout.split('\n');
     if (error) {
-      req.context.logger.error(`Error executing script: ${error.message}`);
+      context.logger.error(`Error executing script: ${error.message}`);
       lines.forEach(line => {
-        req.context.logger.info(`Failed script output: ${line}`);
+        context.logger.info(`Failed script output: ${line}`);
       });
       await db.transaction(async (tx) => {
         await setStatusMessage(tx,
@@ -476,7 +476,7 @@ export async function execDeployScript(
       });
     } else {
       lines.forEach(line => {
-        req.context.logger.info(`Script output: ${line}`);
+        context.logger.info(`Script output: ${line}`);
       });
       // only re-enable the service deployment on successful deployment
       await enableServiceDeployment(`Re-enable service deployment after successful deployment: ${deploymentId}`);
@@ -622,7 +622,8 @@ export async function getServiceDeployment(
       deployment = await getDeploymentById(tx, id);
     });
   } catch (e) {
-    req.context.logger.error(`Caught exception: ${e}`);
+    const context = asyncLocalStorage.getStore();
+    context.logger.error(`Caught exception: ${e}`);
     deployment = undefined;
   }
 
@@ -664,7 +665,8 @@ export async function getServiceDeployments(
       res.send(deployments.map((deployment: ServiceDeployment) => deployment.serialize()));
     });
   } catch (e) {
-    req.context.logger.error(`Caught exception: ${e}`);
+    const context = asyncLocalStorage.getStore();
+    context.logger.error(`Caught exception: ${e}`);
     next(e);
   }
 }

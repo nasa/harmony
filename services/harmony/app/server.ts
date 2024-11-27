@@ -9,6 +9,7 @@ import * as http from 'http';
 import * as https from 'https';
 import { Logger } from 'winston';
 import { profanity } from '@2toad/profanity';
+import { asyncLocalStorage } from './util/async-store';
 import env from './util/env';
 import errorHandler from './middleware/error-handler';
 import logForRoutes from './middleware/log-for-routes';
@@ -57,25 +58,33 @@ function addRequestLogger(appLogger: Logger, ignorePaths: RegExp[] = []): Reques
   return expressWinston.logger({
     winstonInstance: appLogger,
     requestFilter,
-    dynamicMeta(req: HarmonyRequest) { return { requestId: req.context.id }; },
+    dynamicMeta(_req: HarmonyRequest) {
+      const context = asyncLocalStorage.getStore();
+      return { requestId: context.id };
+    },
     ignoreRoute(req) { return ignorePaths.some((p) => req.path.match(p)); },
   });
 }
 
 /**
- * Returns middleware to set a requestID for a request if the request does not already
- * have one set. Also adds requestUrl to the logger info object.
+ * Returns middleware to set a request context with a request ID and logger in the
+ * AsyncLocalStorage. Also adds requestUrl to the logger info object.
  *
  * @param appLogger - Request specific application logger
+ * @param ignorePaths - Don't log the request url and method if the req.path matches these patterns
  */
-function addRequestId(appLogger: Logger): RequestHandler {
-  return (req: HarmonyRequest, res: Response, next: NextFunction): void => {
-    const requestId = req.context?.id || uuid();
+function generateContextMiddleware(appLogger: Logger, ignorePaths: RegExp[] = []): RequestHandler {
+  const context = asyncLocalStorage.getStore();
+  return (req: HarmonyRequest, _res: Response, next: NextFunction): void => {
+    const requestId = req.params.requestId || uuid();
     const requestUrl = req.url;
     const context = new RequestContext(requestId);
     context.logger = appLogger.child({ requestId, requestUrl });
-    req.context = context;
-    next();
+
+    // perform the request using the context
+    asyncLocalStorage.run(context, () => {
+      next();
+    });
   };
 }
 
@@ -89,17 +98,9 @@ function addRequestId(appLogger: Logger): RequestHandler {
  */
 function buildBackendServer(port: number, hostBinding: string, useHttps: string): http.Server | https.Server {
   const appLogger = logger.child({ application: 'backend' });
-  const setRequestId = (req: HarmonyRequest, res: Response, next: NextFunction): void => {
-    const { requestId } = req.params;
-
-    const context = new RequestContext(requestId);
-    req.context = context;
-    next();
-  };
 
   const app = express();
-  app.use('/service/:requestId/*', setRequestId);
-  app.use(addRequestId(appLogger));
+  app.use(generateContextMiddleware(appLogger));
 
   // we don't need express-winston to log every service work polling request
   const servicePollingRegexp = /^\/service\/(work|metrics)$/;
@@ -141,7 +142,7 @@ function buildBackendServer(port: number, hostBinding: string, useHttps: string)
 function buildFrontendServer(port: number, hostBinding: string, config: RouterConfig): http.Server | https.Server {
   const appLogger = logger.child({ application: 'frontend' });
   const app = express();
-  app.use(addRequestId(appLogger));
+  app.use(generateContextMiddleware(appLogger));
   app.use(addRequestLogger(appLogger));
 
   // currently, only service requests are timed (for the frontend)
