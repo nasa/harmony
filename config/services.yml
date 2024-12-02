@@ -1041,7 +1041,7 @@ https://cmr.uat.earthdata.nasa.gov:
 
   - name: harmony-smap-l2-gridder
     description: |
-      SMAP L2 Gridding Service. Takes L2G trajectories and reformats the data into the appropriate gridded output.
+      Harmony SMAP L2 Gridding Service. Takes L2G trajectories and reformats the data into the appropriate gridded output.
     data_operation_version: '0.20.0'
     type:
       <<: *default-turbo-config
