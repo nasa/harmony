@@ -1050,7 +1050,7 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/nasa/harmony-smap-l2-gridder
-    umm_s: ''
+    umm_s: S1272606802-EEDTEST
     capabilities:
       concatenation: false
       subsetting:
