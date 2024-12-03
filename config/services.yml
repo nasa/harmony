@@ -1063,7 +1063,7 @@ https://cmr.uat.earthdata.nasa.gov:
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
-      - image: !Env ${HARMONY_SMAP_L2_GRIDDER_IMAGE}
+      - image: !Env ${SMAP_L2_GRIDDER_IMAGE}
 
   # CHAINED SERVICES BELOW HERE
   - name: sds/HOSS-geographic
