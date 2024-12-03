@@ -31,6 +31,7 @@ The returned JSON response is a map of canonical service names to tags:
   "podaac-ps3": "latest",
   "podaac-netcdf-converter": "latest",
   "query-cmr": "latest",
+  "smap-l2-gridder": "latest",
   "giovanni-time-series-adapter": "latest",
   "geoloco": "latest",
   "subset-band-name": "latest"
