@@ -86,17 +86,20 @@ export default class Failer implements Worker {
     let done = false;
     let startingId = 0;
     let numExpired = 0;
-    const batchSize = env.workFailerBatchSize;
+    let batchSize = env.workFailerBatchSize;
     log.info('Work failer processing started.');
 
     while (!done) {
       if (env.maxWorkItemsOnUpdateQueueFailer !== -1) {
         const smallUpdateQueue = getQueueForType(WorkItemQueueType.SMALL_ITEM_UPDATE);
         const updateQueueCount = await smallUpdateQueue.getApproximateNumberOfMessages();
-        if (updateQueueCount > env.maxWorkItemsOnUpdateQueueFailer) {
+        if (updateQueueCount >= env.maxWorkItemsOnUpdateQueueFailer) {
           log.warn(`Work item update queue is too large with ${updateQueueCount} items, will not fail more work`);
           await sleep(failerDisabledDelay);
           continue;
+        } else {
+          const slotsAvailable = env.maxWorkItemsOnUpdateQueueFailer - updateQueueCount;
+          batchSize = slotsAvailable < batchSize ? slotsAvailable : batchSize;
         }
       }
       const { workItems, jobServiceThresholds, maxId: newId } = await this.getExpiredWorkItems(lastUpdateOlderThanMinutes, startingId, batchSize);
