@@ -1039,7 +1039,7 @@ https://cmr.uat.earthdata.nasa.gov:
         is_sequential: true
       - image: !Env ${HYBIG_IMAGE}
 
-  - name: sds/smap-l2-gridder
+  - name: sds/harmony-smap-l2-gridder
     description: |
       Harmony SMAP L2 Gridding Service. Takes L2G trajectories and reformats the data into the appropriate gridded output.
     data_operation_version: '0.20.0'
@@ -1049,7 +1049,7 @@ https://cmr.uat.earthdata.nasa.gov:
         <<: *default-turbo-params
         env:
           <<: *default-turbo-env
-          STAGING_PATH: public/sds/smap-l2-gridder
+          STAGING_PATH: public/sds/harmony-smap-l2-gridder
     umm_s: S1272606802-EEDTEST
     capabilities:
       concatenation: false

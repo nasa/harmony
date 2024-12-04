@@ -22,6 +22,7 @@ The returned JSON response is a map of canonical service names to tags:
   "harmony-service-example": "latest",
   "harmony-netcdf-to-zarr": "latest",
   "harmony-regridder": "latest",
+  "harmony-smap-l2-gridder": "latest",
   "swath-projector": "latest",
   "hoss": "latest",
   "sds-maskfill": "latest",
@@ -31,7 +32,6 @@ The returned JSON response is a map of canonical service names to tags:
   "podaac-ps3": "latest",
   "podaac-netcdf-converter": "latest",
   "query-cmr": "latest",
-  "smap-l2-gridder": "latest",
   "giovanni-time-series-adapter": "latest",
   "geoloco": "latest",
   "subset-band-name": "latest"
