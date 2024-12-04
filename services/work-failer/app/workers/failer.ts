@@ -81,7 +81,7 @@ export default class Failer implements Worker {
    */
   async handleWorkItemUpdates(
     lastUpdateOlderThanMinutes: number,
-    failerDisabledDelay = 3000,
+    failerDisabledDelay = 20000,
   ): Promise<void> {
     let done = false;
     let startingId = 0;
