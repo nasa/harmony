@@ -37,6 +37,7 @@ describe('Versions endpoint', function () {
           'net2cog',
           'nasa/harmony-gdal-adapter',
           'sds/HyBIG',
+	  'sds/harmony-smap-l2-gridder',
           'sds/HOSS-geographic',
           'sds/HOSS-projection-gridded',
           'harmony/netcdf-to-zarr',

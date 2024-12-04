@@ -22,6 +22,7 @@ The returned JSON response is a map of canonical service names to tags:
   "harmony-service-example": "latest",
   "harmony-netcdf-to-zarr": "latest",
   "harmony-regridder": "latest",
+  "harmony-smap-l2-gridder": "latest",
   "swath-projector": "latest",
   "hoss": "latest",
   "sds-maskfill": "latest",
