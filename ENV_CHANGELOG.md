@@ -2,13 +2,17 @@
 Any changes to the environment variables will be documented in this file in chronological
 order with the most recent changes first.
 
-# 2024-12-03
+# 2024-12-04
 ### Added
 - USE_EDL_CLIENT_APP - whether to use an EDL client application to enable admin and deployment endpoints and allow OAuth workflows.
 - EDL_TOKEN - required if USE_EDL_CLIENT_APP is set to false. An EDL token to use for all requests to the CMR and to download data in backend services.
 
 ### Changed
 OAUTH_CLIENT_ID, OAUTH_UID, OAUTH_PASSWORD, and OAUTH_REDIRECT_URI are no longer required if USE_EDL_CLIENT_APP is false.
+
+# 2024-12-03
+### Added
+- Added enviroment defaults for Harmony SMAP L2 Gridding Service
 
 # 2024-11-05
 ### Added
