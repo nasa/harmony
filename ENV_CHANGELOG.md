@@ -8,7 +8,7 @@ order with the most recent changes first.
 - EDL_TOKEN - required if USE_EDL_CLIENT_APP is set to false. An EDL token to use for all requests to the CMR and to download data in backend services.
 
 ### Changed
-OAUTH_CLIENT_ID, OAUTH_UID, OAUTH_PASSWORD, and OAUTH_REDIRECT_URI are no longer required if USE_EDL_CLIENT_APP is false.
+- OAUTH_CLIENT_ID, OAUTH_UID, OAUTH_PASSWORD, and OAUTH_REDIRECT_URI are no longer required if USE_EDL_CLIENT_APP is false.
 
 # 2024-12-03
 ### Added
