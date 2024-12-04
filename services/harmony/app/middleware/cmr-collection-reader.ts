@@ -5,7 +5,6 @@ import { ForbiddenError, NotFoundError, ServerError } from '../util/errors';
 import HarmonyRequest from '../models/harmony-request';
 import { listToText } from '@harmony/util/string';
 import { EdlUserEulaInfo, verifyUserEula } from '../util/edl-api';
-import RequestContext from '../models/request-context';
 import { asyncLocalStorage } from '../util/async-store';
 
 // CMR Collection IDs separated by delimiters of single "+" or single whitespace

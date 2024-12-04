@@ -10,7 +10,7 @@ const fakeContext = {
 describe('util/cmr', function () {
   describe('getVariablesByIds', function () {
     it('returns a valid response, given a huge number of variables', async function () {
-      asyncLocalStorage.run(fakeContext, async () => {
+      await asyncLocalStorage.run(fakeContext, async () => {
         const validVariableId = 'V1233801695-EEDTEST';
         const ids = [...Array(300).keys()].map((num) => `V${num}-YOCLOUD`).concat(validVariableId);
         const variables = await getVariablesByIds(ids, '');
@@ -19,7 +19,7 @@ describe('util/cmr', function () {
     });
 
     it('contains related URLs when the CMR variable has them', async function () {
-      asyncLocalStorage.run(fakeContext, async () => {
+      await asyncLocalStorage.run(fakeContext, async () => {
         const expectedRelatedUrls: CmrRelatedUrl[] = [{
           URL: 'https://colormap_server.earthdata.nasa.gov/sea_surface_temperature/green-based',
           URLContentType: 'VisualizationURL',
@@ -38,7 +38,7 @@ describe('util/cmr', function () {
 
   describe('getAllVariables', function () {
     it('successfully retrieves all variables over multiple pages', async function () {
-      asyncLocalStorage.run(fakeContext, async () => {
+      await asyncLocalStorage.run(fakeContext, async () => {
         const variableIds = ['V1233801695-EEDTEST', 'V1233801696-EEDTEST', 'V1233801716-EEDTEST', 'V1233801717-EEDTEST'];
         const query = {
           concept_id: variableIds,
@@ -52,7 +52,7 @@ describe('util/cmr', function () {
 
   describe('when issuing a granuleName query with wildcards', function () {
     it('it handles * at the beginning', async function () {
-      asyncLocalStorage.run(fakeContext, async () => {
+      await asyncLocalStorage.run(fakeContext, async () => {
         const query: CmrQuery = {
           concept_id: 'C1233800302-EEDTEST',
           readable_granule_name: '*oceania_east',
@@ -71,7 +71,7 @@ describe('util/cmr', function () {
     });
 
     it('it handles * in the middle', async function () {
-      asyncLocalStorage.run(fakeContext, async () => {
+      await asyncLocalStorage.run(fakeContext, async () => {
         const query: CmrQuery = {
           concept_id: 'C1233800302-EEDTEST',
           readable_granule_name: '001_*_east',
@@ -89,7 +89,7 @@ describe('util/cmr', function () {
     });
 
     it('it handles * at the end', async function () {
-      asyncLocalStorage.run(fakeContext, async () => {
+      await asyncLocalStorage.run(fakeContext, async () => {
         const query: CmrQuery = {
           concept_id: 'C1233800302-EEDTEST',
           readable_granule_name: '001_*',
@@ -107,7 +107,7 @@ describe('util/cmr', function () {
     });
 
     it('it handles ? at the beginning', async function () {
-      asyncLocalStorage.run(fakeContext, async () => {
+      await asyncLocalStorage.run(fakeContext, async () => {
         const query: CmrQuery = {
           concept_id: 'C1233800302-EEDTEST',
           readable_granule_name: '?01_08_7f00ff_oceania_east',
@@ -118,7 +118,7 @@ describe('util/cmr', function () {
     });
 
     it('it handles ? in the middle', async function () {
-      asyncLocalStorage.run(fakeContext, async () => {
+      await asyncLocalStorage.run(fakeContext, async () => {
         const query: CmrQuery = {
           concept_id: 'C1233800302-EEDTEST',
           readable_granule_name: '001_08_7f00ff_?ceania_east',
@@ -129,7 +129,7 @@ describe('util/cmr', function () {
     });
 
     it('it handles ? at the end', async function () {
-      asyncLocalStorage.run(fakeContext, async () => {
+      await asyncLocalStorage.run(fakeContext, async () => {
         const query: CmrQuery = {
           concept_id: 'C1233800302-EEDTEST',
           readable_granule_name: '001_08_7f00ff_oceania_eas?',

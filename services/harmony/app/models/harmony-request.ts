@@ -29,7 +29,7 @@ export function addRequestContextToOperation(
   req: HarmonyRequest, _res: Response, next: NextFunction,
 ): void {
   const context = asyncLocalStorage.getStore();
-  const { operation} = req;
+  const { operation } = req;
 
   if (!operation) return next();
 

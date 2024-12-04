@@ -71,10 +71,8 @@ function addRequestLogger(appLogger: Logger, ignorePaths: RegExp[] = []): Reques
  * AsyncLocalStorage. Also adds requestUrl to the logger info object.
  *
  * @param appLogger - Request specific application logger
- * @param ignorePaths - Don't log the request url and method if the req.path matches these patterns
  */
-function generateContextMiddleware(appLogger: Logger, ignorePaths: RegExp[] = []): RequestHandler {
-  const context = asyncLocalStorage.getStore();
+function generateContextMiddleware(appLogger: Logger): RequestHandler {
   return (req: HarmonyRequest, _res: Response, next: NextFunction): void => {
     const requestId = req.params.requestId || uuid();
     const requestUrl = req.url;

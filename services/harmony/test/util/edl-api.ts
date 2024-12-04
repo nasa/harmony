@@ -24,7 +24,7 @@ describe('util/edl-api', function () {
     });
     describe('when the user is not part of the service deployers group', function () {
       it('returns isServiceDeployer:false', async function () {
-        asyncLocalStorage.run(fakeContext, async () => {
+        await asyncLocalStorage.run(fakeContext, async () => {
           const groups = await getEdlGroupInformation('joe');
           expect(groups.isServiceDeployer).is.false;
         });
@@ -32,7 +32,7 @@ describe('util/edl-api', function () {
     });
     describe('when the user is part of the service deployers and log viewers group', function () {
       it('returns isServiceDeployer:true', async function () {
-        asyncLocalStorage.run(fakeContext, async () => {
+        await asyncLocalStorage.run(fakeContext, async () => {
           const groups = await getEdlGroupInformation('eve');
           expect(groups.isServiceDeployer).is.true;
         });
@@ -40,7 +40,7 @@ describe('util/edl-api', function () {
     });
     describe('when the user is part of the service deployers group', function () {
       it('returns isServiceDeployer:true', async function () {
-        asyncLocalStorage.run(fakeContext, async () => {
+        await asyncLocalStorage.run(fakeContext, async () => {
           const groups = await getEdlGroupInformation('buzz');
           expect(groups.isServiceDeployer).is.true;
         });

@@ -10,6 +10,9 @@
     "allowJs": true,
     "noImplicitAny": false,
     "sourceMap": true,
-    "outDir": "built"
+    "outDir": "built",
+    "typeRoots": [
+      "node_modules/@types"
+    ]
   }
 }

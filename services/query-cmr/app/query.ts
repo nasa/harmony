@@ -38,7 +38,6 @@ async function querySearchAfter(
     [sessionKey, searchAfter] = scrollId.split(':', 2);
   }
   const cmrResponse = await queryGranulesWithSearchAfter(
-    { 'id': requestId },
     token,
     maxCmrGranules,
     null,

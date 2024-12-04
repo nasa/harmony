@@ -66,7 +66,6 @@ export async function getServiceResult(req, res, next: NextFunction): Promise<vo
 
   const objectStore = objectStoreForProtocol('s3');
   if (objectStore) {
-    const context = asyncLocalStorage.getStore();
     try {
       context.logger.info(`Signing ${url}`);
       const result = await objectStore.signGetObject(url, { 'A-userid': req.user });

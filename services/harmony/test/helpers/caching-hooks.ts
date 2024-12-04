@@ -3,7 +3,6 @@ import { before, after } from 'mocha';
 import { stub, SinonStub } from 'sinon';
 import { hookGetQueueForType, hookGetQueueForUrl, hookGetQueueUrlForService, hookGetWorkSchedulerQueue, hookProcessSchedulerQueue } from './queue';
 import * as cmr from '../../app/util/cmr';
-import RequestContext from '../../app/models/request-context';
 
 hookGetQueueForType();
 hookGetQueueForUrl();

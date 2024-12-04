@@ -214,7 +214,7 @@ export async function changeJobState(
   next: NextFunction,
   jobFn: (jobID: string, logger: Logger, username: string, token: string) => Promise<void>,
 ): Promise<void> {
-const context = asyncLocalStorage.getStore();
+  const context = asyncLocalStorage.getStore();
   try {
     const { jobID } = req.params;
     validateJobId(jobID);
@@ -255,7 +255,7 @@ export async function changeJobsState(
 ): Promise<void> {
   let processedCount = 0;
   try {
-  const context = asyncLocalStorage.getStore();
+    const context = asyncLocalStorage.getStore();
     const { jobIDs } = req.body;
     let username: string;
     const isAdmin = await isAdminUser(req);
@@ -287,7 +287,7 @@ export async function cancelJob(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
   const { jobID } = req.params;
-const context = asyncLocalStorage.getStore();
+  const context = asyncLocalStorage.getStore();
   context.logger.info(`Cancel requested for job ${jobID} by user ${req.user}`);
   await changeJobState(req, res, next, cancelAndSaveJob);
 }
@@ -304,7 +304,7 @@ const context = asyncLocalStorage.getStore();
 export async function resumeJob(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
-const context = asyncLocalStorage.getStore();
+  const context = asyncLocalStorage.getStore();
   context.logger.info(`Resume requested for job ${req.params.jobID} by user ${req.user}`);
   await changeJobState(req, res, next, resumeAndSaveJob);
 }
@@ -322,7 +322,7 @@ const context = asyncLocalStorage.getStore();
 export async function skipJobPreview(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
-const context = asyncLocalStorage.getStore();
+  const context = asyncLocalStorage.getStore();
   context.logger.info(`Skip preview requested for job ${req.params.jobID} by user ${req.user}`);
   await changeJobState(req, res, next, skipPreviewAndSaveJob);
 }
@@ -339,7 +339,7 @@ const context = asyncLocalStorage.getStore();
 export async function pauseJob(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
-const context = asyncLocalStorage.getStore();
+  const context = asyncLocalStorage.getStore();
   context.logger.info(`Pause requested for job ${req.params.jobID} by user ${req.user}`);
   await changeJobState(req, res, next, pauseAndSaveJob);
 }
@@ -355,7 +355,7 @@ const context = asyncLocalStorage.getStore();
 export async function cancelJobs(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
-const context = asyncLocalStorage.getStore();
+  const context = asyncLocalStorage.getStore();
   context.logger.info(`Cancel requested for jobs ${req.body.jobIDs} by user ${req.user}`);
   await changeJobsState(req, next, cancelAndSaveJob);
   res.status(200).json({ status: 'canceled' });
@@ -372,7 +372,7 @@ const context = asyncLocalStorage.getStore();
 export async function resumeJobs(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
-const context = asyncLocalStorage.getStore();
+  const context = asyncLocalStorage.getStore();
   context.logger.info(`Resume requested for jobs ${req.body.jobIDs} by user ${req.user}`);
   await changeJobsState(req, next, resumeAndSaveJob);
   res.status(200).json({ status: 'running' });
@@ -389,7 +389,7 @@ const context = asyncLocalStorage.getStore();
 export async function skipJobsPreview(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
-const context = asyncLocalStorage.getStore();
+  const context = asyncLocalStorage.getStore();
   context.logger.info(`Skip preview requested for jobs ${req.body.jobIDs} by user ${req.user}`);
   await changeJobsState(req, next, skipPreviewAndSaveJob);
   res.status(200).json({ status: 'running' });
@@ -406,7 +406,7 @@ const context = asyncLocalStorage.getStore();
 export async function pauseJobs(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
-const context = asyncLocalStorage.getStore();
+  const context = asyncLocalStorage.getStore();
   context.logger.info(`Pause requested for jobs ${req.body.jobIDs} by user ${req.user}`);
   await changeJobsState(req, next, pauseAndSaveJob);
   res.status(200).json({ status: 'paused' });

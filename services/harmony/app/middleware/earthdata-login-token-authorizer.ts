@@ -1,7 +1,6 @@
 import { RequestHandler } from 'express';
 import HarmonyRequest from '../models/harmony-request';
 import { getUserIdRequest } from '../util/edl-api';
-import { asyncLocalStorage } from '../util/async-store';
 
 const BEARER_TOKEN_REGEX = new RegExp('^Bearer ([-a-zA-Z0-9._~+/]+)$', 'i');
 

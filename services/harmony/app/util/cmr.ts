@@ -30,10 +30,6 @@ const acceptJsonHeader = {
   Accept: 'application/json',
 };
 
-const jsonContentTypeHeader = {
-  'Content-Type': 'application/json',
-};
-
 export enum CmrPermission {
   Read = 'read',
   Update = 'update',
@@ -855,7 +851,6 @@ export async function getVariablesByIds(
 export async function getVariablesForCollection(
   collection: CmrCollection, token: string,
 ): Promise<Array<CmrUmmVariable>> {
-  const context = asyncLocalStorage.getStore();
   const varIds = collection.associations && collection.associations.variables;
   if (varIds) {
     return getVariablesByIds(varIds, token);
