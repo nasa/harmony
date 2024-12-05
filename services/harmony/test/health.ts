@@ -24,7 +24,7 @@ const databaseDownHealthResponse = {
 };
 
 describe('Health endpoints', function () {
-  hookServersStartStop({ skipEarthdataLogin: false });
+  hookServersStartStop({ USE_EDL_CLIENT_APP: true });
 
   describe('When calling /health', function () {
     describe('When not authenticated', function () {

@@ -91,7 +91,7 @@ const sidJob4 = buildJob({
 });
 
 describe('Workflow UI jobs route', function () {
-  hookServersStartStop({ skipEarthdataLogin: false });
+  hookServersStartStop({ USE_EDL_CLIENT_APP: true });
 
   before(async function () {
     await truncateAll();
@@ -181,9 +181,9 @@ describe('Workflow UI jobs route', function () {
       });
 
       it('displays the sorted labels for the user\'s jobs', function () {
-        const listing = this.res.text;  
+        const listing = this.res.text;
         expect(listing).to.contain(mustache.render(
-          '{{#labels}} <span class="badge bg-label" title="{{.}}">{{.}}</span>{{/labels}}', 
+          '{{#labels}} <span class="badge bg-label" title="{{.}}">{{.}}</span>{{/labels}}',
           { labels: ['1st-label', 'blue-label', 'yellow-label', 'z-last-label'] }));
       });
 
@@ -193,7 +193,7 @@ describe('Workflow UI jobs route', function () {
       });
     });
 
-    describe('who has 0 jobs', function () { 
+    describe('who has 0 jobs', function () {
       hookWorkflowUIJobs({ username: 'eve' });
       it('the paging descriptor makes sense', function () {
         const listing = this.res.text;
@@ -601,10 +601,10 @@ describe('Workflow UI jobs route', function () {
         it('displays the labels for those jobs', function () {
           const listing = this.res.text;
           expect(listing).to.contain(mustache.render(
-            '{{#labels}} <span class="badge bg-label" title="{{.}}">{{.}}</span>{{/labels}}', 
+            '{{#labels}} <span class="badge bg-label" title="{{.}}">{{.}}</span>{{/labels}}',
             { labels: ['1st-label', 'blue-label', 'yellow-label', 'z-last-label'] }));
           expect(listing).to.contain(mustache.render(
-            '{{#labels}} <span class="badge bg-label" title="{{.}}">{{.}}</span>{{/labels}}', 
+            '{{#labels}} <span class="badge bg-label" title="{{.}}">{{.}}</span>{{/labels}}',
             { labels: ['label-1', 'label-2'] }));
         });
       });
@@ -745,7 +745,7 @@ describe('Workflow UI jobs route', function () {
           const netcdfToZarrTd = mustache.render('<td>{{service}}</td>', { service: 'harmony/netcdf-to-zarr' });
           const netcdfToZarrRegExp = new RegExp(netcdfToZarrTd, 'g');
           expect((listing.match(netcdfToZarrRegExp) || []).length).to.equal(1);
-  
+
           expect(listing).to.contain(`<span class="badge rounded-pill bg-danger">${JobStatus.FAILED.valueOf()}</span>`);
           expect(listing).to.not.contain(`<span class="badge rounded-pill bg-success">${JobStatus.SUCCESSFUL.valueOf()}</span>`);
           expect(listing).to.not.contain(`<span class="badge rounded-pill bg-info">${JobStatus.RUNNING.valueOf()}</span>`);

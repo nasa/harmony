@@ -20,29 +20,43 @@ else
 
 EOF
     cat <<-PROMPT_EDL
-		Running Harmony requires creating an Earthdata Login (EDL) application. If you need instructions for this or do not understand what this means, please contact the Harmony team for help. Once you have your EDL application created, please enter the credentials as prompted.
+    Harmony can optionally use a user created Earthdata Login (EDL) client application to enable access
+    to administrative routes such as deployment endpoints as well as directly accessing logs from the
+    workflow-ui. These features are not generally useful for locally testing services, and so creation
+    of an EDL client is not necessary. To simplify getting started you can instead provide an EDL token
+    that will be used.
 
 PROMPT_EDL
     if [ "$EXEC_CONTEXT" != "workflow" ]; then
-        echo "# See the \"OAuth 2 (Earthdata Login)\" section in the env-defaults file" >> .env
-        echo "# Contact a harmony developer if unsure what values to use" >> .env
-        # prompt for the users EDL app credentials
-        read -p "EDL Application Client ID: " OAUTH_CLIENT_ID
-        read -s -p "EDL Application UID: " OAUTH_UID
-        echo ""
-        read -s -p "EDL Application Password: " OAUTH_PASSWORD
-        echo ""
+        read -p "To provide an EDL client application respond 'y', otherwise to supply just an EDL token hit <Enter>: " USE_EDL_CLIENT_APP
+    else
+        USE_EDL_CLIENT_APP="y"
+    fi
+    if [ "${USE_EDL_CLIENT_APP}" != "y" ]; then
+      read -s -p "EDL token to use for authentication (obtained using the Generate Token functionality from https://uat.urs.earthdata.nasa.gov/profile): " EDL_TOKEN
+      echo "# Note that EDL tokens expire. If the token is no longer valid obtain a new one from https://uat.urs.earthdata.nasa.gov/profile" >> .env
+      echo "EDL_TOKEN=$EDL_TOKEN" >> .env
+      echo "USE_EDL_CLIENT_APP=false" >> .env
+    else
+      echo "# See the \"OAuth 2 (Earthdata Login)\" section in the env-defaults file" >> .env
+      echo "# Contact a harmony developer if unsure what values to use" >> .env
+      # prompt for the users EDL app credentials
+      read -p "EDL Application Client ID: " OAUTH_CLIENT_ID
+      read -s -p "EDL Application UID: " OAUTH_UID
+      echo ""
+      read -s -p "EDL Application Password: " OAUTH_PASSWORD
+      echo ""
+      cat <<-OAUTH_EOF >> .env
+OAUTH_CLIENT_ID=$OAUTH_CLIENT_ID
+OAUTH_UID=$OAUTH_UID
+OAUTH_PASSWORD=$OAUTH_PASSWORD
+OAUTH_EOF
     fi
 
-    cat <<-EOF >> .env
-		OAUTH_CLIENT_ID=$OAUTH_CLIENT_ID
-		OAUTH_UID=$OAUTH_UID
-		OAUTH_PASSWORD=$OAUTH_PASSWORD
-EOF
-
     if [ "$EXEC_CONTEXT" != "workflow" ]; then
+        echo ""
         # prompt for LOCALLY_DEPLOYED_SERVICES
-        echo "Enter services to deploy (comma separated list):"
+        echo "Enter services to deploy (comma separated list)."
         read -p "Hit <Enter> to use the default services: " LOCALLY_DEPLOYED_SERVICES
 
         # Add locally LOCALLY_DEPLOYED_SERVICES if it is defined (not zero length)

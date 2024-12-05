@@ -42,7 +42,7 @@ describe('List service deployments endpoint', async function () {
   let failedServicesListing;
   let runningAndFooServiceListing;
 
-  hookServersStartStop({ skipEarthdataLogin: false });
+  hookServersStartStop({ USE_EDL_CLIENT_APP: true });
   hookTransaction();
 
   before(async function () {

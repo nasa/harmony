@@ -15,7 +15,7 @@ describe('Earthdata login bearer token passing', function () {
   const username = 'joe';
   // StubService.hookEach();
   // StubService.hook({ params: { status: 'successful' } });
-  hookServersStartStop({ skipEarthdataLogin: false });
+  hookServersStartStop({ USE_EDL_CLIENT_APP: true });
   describe('Calls to authenticated resources', function () {
     describe('When providing a valid token', function () {
       StubService.hook({ params: { redirect: 'http://example.com' } });

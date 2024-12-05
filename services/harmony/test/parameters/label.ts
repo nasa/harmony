@@ -41,7 +41,7 @@ const hookPartials = {
 };
 
 describe('labels', function () {
-  hookServersStartStop({ skipEarthdataLogin: false });
+  hookServersStartStop({ USE_EDL_CLIENT_APP: true });
 
   for (const apiType of Object.keys(hookPartials)) {
     describe(`${apiType}`, function () {

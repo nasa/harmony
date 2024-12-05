@@ -173,6 +173,14 @@ LABEL_FILTER_COMPLETION_COUNT=10
 # For example, if OAUTH_HOST points to UAT EDL, downloading data from a
 # TEA endpoint that's integrated with PROD EDL will fail.
 
+# Setting USE_EDL_CLIENT_APP to false and setting an EDL_TOKEN will prevent making
+# use of any Earthdata login API calls and instead pass that EDL_TOKEN to CMR and
+# backend service downloads. By bypassing EDL all admin features in harmony will be
+# disabled since harmony will not authenticate with EDL using a client app.
+
+USE_EDL_CLIENT_APP=true
+EDL_TOKEN=
+
 OAUTH_CLIENT_ID=
 OAUTH_UID=
 OAUTH_PASSWORD=

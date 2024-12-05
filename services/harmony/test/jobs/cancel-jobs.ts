@@ -25,7 +25,7 @@ describe('Canceling a job - user endpoint', function () {
   };
   for (const [httpMethod, cancelEndpointHook] of Object.entries(cancelEndpointHooks)) {
     describe(`Canceling using ${httpMethod}`, function () {
-      hookServersStartStop({ skipEarthdataLogin: false });
+      hookServersStartStop({ USE_EDL_CLIENT_APP: true });
       hookTransaction();
       const joeJob1 = buildJob({ username: 'joe' });
       before(async function () {
@@ -224,7 +224,7 @@ describe('Canceling a job - admin endpoint', function () {
   };
   for (const [httpMethod, cancelEndpointHook] of Object.entries(cancelEndpointHooks)) {
     describe(`Canceling using ${httpMethod}`, function () {
-      hookServersStartStop({ skipEarthdataLogin: false });
+      hookServersStartStop({ USE_EDL_CLIENT_APP: true });
       hookTransaction();
       const joeJob1 = buildJob({ username: 'joe' });
       before(async function () {

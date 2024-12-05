@@ -56,7 +56,7 @@ function itIncludesADataExpirationField(): void {
 
 describe('Individual job status route', function () {
   const aJobLabels = ['foo', 'bar', '000', 'z-label'];
-  hookServersStartStop({ skipEarthdataLogin: false });
+  hookServersStartStop({ USE_EDL_CLIENT_APP: true });
   hookTransaction();
   before(async function () {
     await aJob.save(this.trx);

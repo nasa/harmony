@@ -79,7 +79,7 @@ const otherItem3 = buildWorkItem({ jobID: otherJob.jobID, status: WorkItemStatus
 const logsTableHeader = '>logs</th>';
 
 describe('Workflow UI work items table route', function () {
-  hookServersStartStop({ skipEarthdataLogin: false });
+  hookServersStartStop({ USE_EDL_CLIENT_APP: true });
 
   before(async function () {
     await truncateAll();
