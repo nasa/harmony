@@ -6,7 +6,7 @@ import chai, { expect } from 'chai';
 import { describe, it } from 'mocha';
 import * as sinon from 'sinon';
 import * as fetch from 'node-fetch';
-import { Stream } from 'form-data';
+import { Stream } from 'stream';
 import { queryGranules } from '../app/query';
 import * as cmr from '../../harmony/app/util/cmr';
 import DataOperation from '../../harmony/app/models/data-operation';
