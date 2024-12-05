@@ -49,7 +49,7 @@ async function formDataToString(formdata: CombinedStream): Promise<string> {
  * @returns key/value pairs of form data name to value
  */
 async function fetchPostArgsToFields(
-  [_a, _b, formdata],
+  [_a, formdata],
 ): Promise<any> { // eslint-disable-line @typescript-eslint/no-explicit-any
   const data = (await formDataToString(formdata)).replace(/----+[0-9]+-*\r\n/g, '');
   const result = {};

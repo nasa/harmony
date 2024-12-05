@@ -80,9 +80,8 @@ function generateContextMiddleware(appLogger: Logger): RequestHandler {
     context.logger = appLogger.child({ requestId, requestUrl });
 
     // perform the request using the context
-    asyncLocalStorage.run(context, () => {
-      next();
-    });
+    asyncLocalStorage.enterWith(context);
+    next();
   };
 }
 
