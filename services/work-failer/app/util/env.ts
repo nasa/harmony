@@ -23,6 +23,10 @@ class FailerHarmonyEnv extends HarmonyEnv {
   @Min(1)
   failableWorkAgeMinutes: number;
 
+  @IsInt()
+  @Min(-1)
+  maxWorkItemsOnUpdateQueueFailer: number;
+
 }
 
 const localPath = path.resolve(__dirname, '../../env-defaults');

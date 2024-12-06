@@ -2,6 +2,10 @@
 Any changes to the environment variables will be documented in this file in chronological
 order with the most recent changes first.
 
+# 2024-12-03
+### Added
+- Added enviroment defaults for Harmony SMAP L2 Gridding Service
+
 # 2024-11-05
 ### Added
 - LABEL_FILTER_COMPLETION_COUNT - the max number of labels to retrieve to populate label filter auto-complete

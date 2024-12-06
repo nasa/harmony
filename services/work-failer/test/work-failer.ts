@@ -99,7 +99,7 @@ describe('WorkFailer', function () {
     let oldItems = [];
     it('proccesses work item updates for items that are RUNNING and have not been updated for the specified duration', async function () {
       MockDate.set('1/2/2000'); // some items should now be a day old
-      await workFailer.handleWorkItemUpdates(failDurationMinutes);
+      await workFailer.handleWorkItemUpdates(failDurationMinutes, 1);
 
       // check that both old items were re-queued
       const twoOldJobItems = (await getWorkItemsByJobId(db, twoOldJob.jobID)).workItems;
@@ -169,7 +169,7 @@ describe('WorkFailer', function () {
         // have been running for a whole day and should get picked up again by the WorkFailer
         MockDate.set(failerDate);
 
-        await workFailer.handleWorkItemUpdates(failDurationMinutes);
+        await workFailer.handleWorkItemUpdates(failDurationMinutes, 1);
 
         items = (await getWorkItemsByJobId(db, job.jobID)).workItems;
 
