@@ -120,8 +120,6 @@ export function postRangesetRequest(
   Object.keys(form).forEach((key) => {
     if (key === 'shapefile') {
       req = req.attach(key, form[key].path, { contentType: form[key].mimetype, filename: 'foobar' });
-
-      // req = req.attach(key, form[key].path, 'foobar');
     } else {
       req = req.field(key, form[key]);
     }

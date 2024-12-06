@@ -1,13 +1,15 @@
 import { NextFunction } from 'express';
 import HarmonyRequest from '../models/harmony-request';
+import { asyncLocalStorage } from '../util/async-store';
 
 /**
  * Set the request operation extendDimensions value to the default if applicable
  * @param req - The client request
  */
 export function setExtendDimensionsDefault(req: HarmonyRequest): void {
-  const extend = req.context.serviceConfig?.capabilities?.extend;
-  const defaultExtendDimensions = req.context.serviceConfig?.capabilities?.default_extend_dimensions;
+  const context = asyncLocalStorage.getStore();
+  const extend = context.serviceConfig?.capabilities?.extend;
+  const defaultExtendDimensions = context.serviceConfig?.capabilities?.default_extend_dimensions;
   // set extendDimension to the default if there is one configured and no provided value
   if (extend && defaultExtendDimensions && !req.operation?.extendDimensions) {
     req.operation.extendDimensions = defaultExtendDimensions;

@@ -6,6 +6,7 @@ import InvocationResult from '../models/services/invocation-result';
 import HarmonyRequest from '../models/harmony-request';
 
 import env from '../util/env';
+import { asyncLocalStorage } from '../util/async-store';
 
 /**
  * Copies the header with the given name from the given request to the given response
@@ -69,14 +70,15 @@ export default async function serviceInvoker(
   req: HarmonyRequest, res: Response,
 ): Promise<RequestHandler> {
   const startTime = new Date().getTime();
+  const context = asyncLocalStorage.getStore();
 
   req.operation.user = req.user || 'anonymous';
   req.operation.client = env.clientId;
   req.operation.accessToken = req.accessToken || '';
-  const service = services.buildService(req.context.serviceConfig, req.operation);
+  const service = services.buildService(context.serviceConfig, req.operation);
 
   let serviceResult = null;
-  const serviceLogger = req.context.logger.child({
+  const serviceLogger = context.logger.child({
     application: 'backend',
     component: `${service.constructor.name}`,
   });
@@ -90,7 +92,7 @@ export default async function serviceInvoker(
   }
   const msTaken = new Date().getTime() - startTime;
   const { model } = service.operation;
-  const { frontend, logger } = req.context;
+  const { frontend, logger } = context;
   const spatialSubset = model.subset !== undefined && Object.keys(model.subset).length > 0;
   const temporalSubset = model.temporal !== undefined && Object.keys(model.temporal).length > 0;
   const varSources = model.sources.filter((s) => s.variables && s.variables.length > 0);

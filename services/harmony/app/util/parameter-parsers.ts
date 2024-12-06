@@ -8,6 +8,7 @@ import { ParameterParseError, parseMultiValueParameter, parseNumber } from './pa
 import HarmonyRequest from '../models/harmony-request';
 import { parseAcceptHeader } from './content-negotiation';
 import { RequestValidationError } from './errors';
+import { asyncLocalStorage } from './async-store';
 
 /**
  * Helper function to convert parameter parsing errors into 400 errors for an end
@@ -157,8 +158,9 @@ export function handleFormat(
   if (format) {
     operation.outputFormat = format;
   } else if (req.headers.accept) {
+    const context = asyncLocalStorage.getStore();
     const acceptedMimeTypes = parseAcceptHeader(req.headers.accept);
-    req.context.requestedMimeTypes = acceptedMimeTypes
+    context.requestedMimeTypes = acceptedMimeTypes
       .map((v: { mimeType: string }) => v.mimeType)
       .filter((v) => v);
   }

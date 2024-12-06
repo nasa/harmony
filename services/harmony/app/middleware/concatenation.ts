@@ -3,6 +3,7 @@ import { ParameterParseError, parseBoolean } from '../util/parameter-parsing-hel
 import HarmonyRequest from '../models/harmony-request';
 import { RequestValidationError } from '../util/errors';
 import { keysToLowerCase } from '../util/object';
+import { asyncLocalStorage } from '../util/async-store';
 
 /**
  * Middleware to determine whether the request should concatenate results. Called prior
@@ -48,7 +49,8 @@ export function postServiceConcatenationHandler(
   req: HarmonyRequest, _res: Response, next: NextFunction,
 ): void {
   const query = keysToLowerCase(req.query);
-  const { operation, context } = req;
+  const { operation } = req;
+  const context = asyncLocalStorage.getStore();
 
   if (!operation) {
     return next();

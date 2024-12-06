@@ -6,6 +6,7 @@ import HarmonyRequest from '../models/harmony-request';
 import RequestContext from '../models/request-context';
 
 import env from '../util/env';
+import { asyncLocalStorage } from '../util/async-store';
 
 const { sameRegionAccessRole, awsDefaultRegion } = env;
 
@@ -45,13 +46,14 @@ async function assumeS3OutputsRole(
 export async function cloudAccessJson(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
-  req.context.logger = req.context.logger.child({ component: 'cloudAccess.cloudAccessJson' });
-  req.context.logger.info(`Generating same region access keys for ${req.user}`);
+  const context = asyncLocalStorage.getStore();
+  context.logger = context.logger.child({ component: 'cloudAccess.cloudAccessJson' });
+  context.logger.info(`Generating same region access keys for ${req.user}`);
   try {
-    const credentials = await assumeS3OutputsRole(req.context, req.user);
+    const credentials = await assumeS3OutputsRole(context, req.user);
     res.send(credentials);
   } catch (e) {
-    req.context.logger.error(e);
+    context.logger.error(e);
     next(new ServerError('Failed to assume role to generate access keys.'));
   }
 }
@@ -73,11 +75,12 @@ const awsFieldMappings = {
  * @returns Resolves when the request is complete
  */
 export async function cloudAccessSh(req, res): Promise<void> {
-  req.context.logger = req.context.logger.child({ component: 'cloudAccess.cloudAccessSh' });
-  req.context.logger.info(`Generating same region access keys for ${req.user}`);
+  const context = asyncLocalStorage.getStore();
+  context.logger = context.logger.child({ component: 'cloudAccess.cloudAccessSh' });
+  context.logger.info(`Generating same region access keys for ${req.user}`);
   res.set('Content-Type', 'application/x-sh');
   try {
-    const credentials = await assumeS3OutputsRole(req.context, req.user);
+    const credentials = await assumeS3OutputsRole(context, req.user);
     let response = preamble;
     response += `# Keys will expire on ${credentials.Expiration.toUTCString()}\n\n`;
     for (const key of Object.keys(awsFieldMappings)) {
@@ -85,7 +88,7 @@ export async function cloudAccessSh(req, res): Promise<void> {
     }
     res.send(response);
   } catch (e) {
-    req.context.logger.error(e);
+    context.logger.error(e);
     res.status(500);
     res.send('>&2 echo "Error: Failed to assume role to generate access keys."');
   }

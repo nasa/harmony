@@ -11,7 +11,10 @@
       "noImplicitAny": false,
       "resolveJsonModule": true,
       "sourceMap": true,
-      "outDir": "built"
+      "outDir": "built",
+      "typeRoots": [
+        "node_modules/@types"
+      ]
   },
   "include": ["./app", "./test"]
 }

@@ -10,6 +10,7 @@ import { BoundingBox } from '../util/bounding-box';
 import env from '../util/env';
 import { defaultObjectStore } from '../util/object-store';
 import { CmrCollection, CmrGranule, CmrQuery, filterGranuleLinks, queryGranulesForCollection, queryGranulesWithSearchAfter } from '../util/cmr';
+import { asyncLocalStorage } from '../util/async-store';
 
 /** Reasons why the number of processed granules might be limited to less than what the CMR
  * returns
@@ -59,10 +60,10 @@ function getMaxGranules(req: HarmonyRequest, collection: string):
 { maxGranules: number; reason: GranuleLimitReason; } {
   let reason = GranuleLimitReason.None;
   let maxResults = Number.MAX_SAFE_INTEGER;
+  const context = asyncLocalStorage.getStore();
 
-  if (req.context.serviceConfig.has_granule_limit !== false) {
+  if (context.serviceConfig.has_granule_limit !== false) {
     const query = keysToLowerCase(req.query);
-    const { context } = req;
     maxResults = env.maxGranuleLimit;
     reason = GranuleLimitReason.System;
 
@@ -111,8 +112,9 @@ export function baseResultsLimitedMessage(hits: number, maxGranules: number): st
 function getResultsLimitedMessage(req: HarmonyRequest, collection: string): string {
   const { operation } = req;
   let message;
+  const context = asyncLocalStorage.getStore();
 
-  if ( req.context.serviceConfig.has_granule_limit == false ) return message;
+  if ( context.serviceConfig.has_granule_limit == false ) return message;
 
   const { maxGranules, reason } = getMaxGranules(req, collection);
 
@@ -125,11 +127,11 @@ function getResultsLimitedMessage(req: HarmonyRequest, collection: string): stri
         break;
 
       case GranuleLimitReason.Service:
-        message += ` because the service ${req.context.serviceConfig.name} is limited to ${maxGranules}.`;
+        message += ` because the service ${context.serviceConfig.name} is limited to ${maxGranules}.`;
         break;
 
       case GranuleLimitReason.Collection:
-        message += ` because collection ${collection} is limited to ${maxGranules} for the ${req.context.serviceConfig.name} service.`;
+        message += ` because collection ${collection} is limited to ${maxGranules} for the ${context.serviceConfig.name} service.`;
         break;
 
       default:
@@ -155,7 +157,8 @@ async function cmrGranuleLocatorTurbo(
 ): Promise<void> {
   // Same boilerplate as before
   const { operation } = req;
-  const { logger } = req.context;
+  const context = asyncLocalStorage.getStore();
+  const { logger } = context;
 
   if (!operation) return next();
 
@@ -191,10 +194,9 @@ async function cmrGranuleLocatorTurbo(
       }
 
       // Only perform CMR granule query when needed by the first step
-      if ( req.context.serviceConfig.steps[0].image.match('harmonyservices/query-cmr:.*') ) {
+      if ( context.serviceConfig.steps[0].image.match('harmonyservices/query-cmr:.*') ) {
         cmrQuery.collection_concept_id = source.collection;
         const { hits, sessionKey } = await queryGranulesWithSearchAfter(
-          req.context,
           req.accessToken,
           maxGranules,
           cmrQuery,
@@ -211,15 +213,15 @@ async function cmrGranuleLocatorTurbo(
 
       const limitedMessage = getResultsLimitedMessage(req, source.collection);
       if (limitedMessage) {
-        req.context.messages.push(limitedMessage);
+        context.messages.push(limitedMessage);
       }
     });
     await Promise.all(queries);
   } catch (e) {
     if (e instanceof RequestValidationError || e instanceof CmrError) {
       // Avoid giving confusing errors about GeoJSON due to upstream converted files
-      if (e.message.indexOf('GeoJSON') !== -1 && req.context.shapefile) {
-        e.message = e.message.replace('GeoJSON', `GeoJSON (converted from the provided ${req.context.shapefile.typeName})`);
+      if (e.message.indexOf('GeoJSON') !== -1 && context.shapefile) {
+        e.message = e.message.replace('GeoJSON', `GeoJSON (converted from the provided ${context.shapefile.typeName})`);
       }
       return next(e);
     }
@@ -244,7 +246,8 @@ async function cmrGranuleLocatorNonTurbo(
   req: HarmonyRequest, res: ServerResponse, next: NextFunction,
 ): Promise<void> {
   const { operation } = req;
-  const { logger } = req.context;
+  const context = asyncLocalStorage.getStore();
+  const { logger } = context;
 
   if (!operation) return next();
 
@@ -268,7 +271,7 @@ async function cmrGranuleLocatorNonTurbo(
 
   operation.cmrHits = 0;
   try {
-    const artifactPrefix = `s3://${env.artifactBucket}/harmony-inputs/query/${req.context.id}/`;
+    const artifactPrefix = `s3://${env.artifactBucket}/harmony-inputs/query/${context.id}/`;
     const { sources } = operation;
     const queries = sources.map(async (source, i) => {
       logger.info(`Querying granules for ${source.collection}`, { cmrQuery, collection: source.collection });
@@ -281,7 +284,7 @@ async function cmrGranuleLocatorNonTurbo(
         cmrQuery.geojson = operation.geojson;
       }
       cmrResponse = await queryGranulesForCollection(
-        req.context,
+        context,
         source.collection,
         cmrQuery,
         req.accessToken,
@@ -322,7 +325,7 @@ async function cmrGranuleLocatorNonTurbo(
       }
       const limitedMessage = getResultsLimitedMessage(req, source.collection);
       if (limitedMessage) {
-        req.context.messages.push(limitedMessage);
+        context.messages.push(limitedMessage);
       }
       return Object.assign(source, { granules });
     });
@@ -332,8 +335,8 @@ async function cmrGranuleLocatorNonTurbo(
   } catch (e) {
     if (e instanceof RequestValidationError || e instanceof CmrError) {
       // Avoid giving confusing errors about GeoJSON due to upstream converted files
-      if (e.message.indexOf('GeoJSON') !== -1 && req.context.shapefile) {
-        e.message = e.message.replace('GeoJSON', `GeoJSON (converted from the provided ${req.context.shapefile.typeName})`);
+      if (e.message.indexOf('GeoJSON') !== -1 && context.shapefile) {
+        e.message = e.message.replace('GeoJSON', `GeoJSON (converted from the provided ${context.shapefile.typeName})`);
       }
       return next(e);
     }
@@ -355,7 +358,8 @@ async function cmrGranuleLocatorNonTurbo(
 export default async function cmrGranuleLocator(
   req: HarmonyRequest, res: ServerResponse, next: NextFunction,
 ): Promise<void> {
-  if (req.context?.serviceConfig?.type?.name === 'turbo') {
+  const context = asyncLocalStorage.getStore();
+  if (context?.serviceConfig?.type?.name === 'turbo') {
     await cmrGranuleLocatorTurbo(req, res, next);
   } else {
     await cmrGranuleLocatorNonTurbo(req, res, next);

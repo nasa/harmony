@@ -8,6 +8,7 @@ import { getQueueForType  } from '../../util/queue/queue-factory';
 import { getWorkFromQueue, getWorkFromDatabase, WorkItemData } from './work-item-polling';
 import WorkItemUpdate from '../../models/work-item-update';
 import DataOperation from '../../models/data-operation';
+import { asyncLocalStorage } from '../../util/async-store';
 
 const MAX_TRY_COUNT = 1;
 const RETRY_DELAY = 1000 * 120;
@@ -23,7 +24,8 @@ const QUERY_CMR_SERVICE_REGEX = /harmonyservices\/query-cmr:.*/;
 export async function getWork(
   req: HarmonyRequest, res: Response, next: NextFunction, tryCount = 1,
 ): Promise<void> {
-  const reqLogger = req.context.logger;
+  const context = asyncLocalStorage.getStore();
+  const reqLogger = context.logger;
   const { serviceID, podName } = req.query;
   // reqLogger.info(`Getting work for service ${serviceID} and pod ${podName}`);
 
@@ -125,7 +127,8 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
     outputItemSizes,
     duration,
   };
-  const workItemLogger = req.context.logger.child({ workItemId: update.workItemID });
+  const context = asyncLocalStorage.getStore();
+  const workItemLogger = context.logger.child({ workItemId: update.workItemID });
   const queueType = results?.length > 1 ? WorkItemQueueType.LARGE_ITEM_UPDATE : WorkItemQueueType.SMALL_ITEM_UPDATE;
   await queueWorkItemUpdate(operation.requestId, update, operation, queueType, workItemLogger);
 

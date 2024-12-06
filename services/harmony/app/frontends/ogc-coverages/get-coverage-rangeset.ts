@@ -10,22 +10,24 @@ import { keysToLowerCase } from '../../util/object';
 import { ParameterParseError } from '../../util/parameter-parsing-helpers';
 import { parseVariables } from '../../util/variables';
 import { parsePointParam, parseSubsetParams, subsetParamsToBbox, subsetParamsToTemporal } from './util/subset-parameter-parsing';
+import { asyncLocalStorage } from '../../util/async-store';
 /**
  * Express middleware that responds to OGC API - Coverages coverage
  * rangeset requests.  Responds with the actual coverage data.
  *
  * @param req - The request sent by the client
- * @param res - The response to send to the client
+ * @param res - The response to send to the client (not used)
  * @param next - The next express handler
  * @throws RequestValidationError - Thrown if the request has validation problems and
  *   cannot be performed
  */
 export default function getCoverageRangeset(
   req: HarmonyRequest,
-  res: Response,
+  _res: Response,
   next: NextFunction,
 ): void {
-  req.context.frontend = 'ogcCoverages';
+  const context = asyncLocalStorage.getStore();
+  context.frontend = 'ogcCoverages';
   const query = keysToLowerCase(req.query);
 
   const encrypter = createEncrypter(env.sharedSecretKey);

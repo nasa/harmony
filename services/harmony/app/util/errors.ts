@@ -1,4 +1,5 @@
 import { Application } from 'express';
+import { asyncLocalStorage } from './async-store';
 
 /* eslint-disable max-classes-per-file */ // This file creates multiple tag classes
 export class HttpError extends Error {
@@ -132,11 +133,13 @@ export function handleOpenApiErrors(app: Application): void {
     }
     res.status(statusCode).json(buildJsonErrorResponse(code, message));
 
+    const context = asyncLocalStorage.getStore();
+
     if (statusCode < 500) {
-      req.context.logger.error(`[${code}] ${message}`);
+      context.logger.error(`[${code}] ${message}`);
     } else {
       // Make sure we get stack traces when we throw an unexpected exception
-      req.context.logger.error(err);
+      context.logger.error(err);
     }
   });
 }

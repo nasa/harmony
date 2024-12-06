@@ -6,12 +6,14 @@ import chai, { expect } from 'chai';
 import { describe, it } from 'mocha';
 import * as sinon from 'sinon';
 import * as fetch from 'node-fetch';
-import { Stream } from 'form-data';
+import { Stream } from 'stream';
+import { default as defaultLogger } from '../../harmony/app/util/log';
 import { queryGranules } from '../app/query';
 import * as cmr from '../../harmony/app/util/cmr';
 import DataOperation from '../../harmony/app/models/data-operation';
 import { FileStore } from '../../harmony/app/util/object-store/file-store';
 import { CmrError } from '../../harmony/app/util/errors';
+import { asyncLocalStorage } from '../../harmony/app/util/async-store';
 
 chai.use(require('chai-as-promised'));
 
@@ -49,7 +51,7 @@ async function formDataToString(formdata: CombinedStream): Promise<string> {
  * @returns key/value pairs of form data name to value
  */
 async function fetchPostArgsToFields(
-  [_a, _b, formdata],
+  [_a, formdata],
 ): Promise<any> { // eslint-disable-line @typescript-eslint/no-explicit-any
   const data = (await formDataToString(formdata)).replace(/----+[0-9]+-*\r\n/g, '');
   const result = {};
@@ -72,19 +74,26 @@ function hookQueryGranules(maxCmrGranules = 100): void {
     ...JSON.parse(fs.readFileSync(path.resolve(__dirname, 'resources/umm-granules.json'), 'utf8')),
   };
 
+  const fakeContext = {
+    id: '1234',
+    logger: defaultLogger,
+  };
+
   let fetchPost: sinon.SinonStub;
   before(async function () {
-    // Stub cmr fetch post to return the contents of queries
-    fetchPost = sinon.stub(cmr, 'fetchPost');
-    fetchPost.returns(Promise.resolve(output));
-    this.downloadStub = sinon.stub(FileStore.prototype, 'getObject').returns(Promise.resolve('{"collection_concept_id": "C001-TEST"}'));
+    await asyncLocalStorage.run(fakeContext, async () => {
+      // Stub cmr fetch post to return the contents of queries
+      fetchPost = sinon.stub(cmr, 'fetchPost');
+      fetchPost.returns(Promise.resolve(output));
+      this.downloadStub = sinon.stub(FileStore.prototype, 'getObject').returns(Promise.resolve('{"collection_concept_id": "C001-TEST"}'));
 
-    // Actually call it
-    this.result = await queryGranules(operation, 'scrollId', maxCmrGranules);
+      // Actually call it
+      this.result = await queryGranules(operation, 'scrollId', maxCmrGranules);
 
-    // Map the call arguments into something we can actually assert against
-    this.queryFields = await Promise.all(fetchPost.args.map(fetchPostArgsToFields));
-    this.queryFields = this.queryFields.sort((a, b) => a._index - b._index);
+      // Map the call arguments into something we can actually assert against
+      this.queryFields = await Promise.all(fetchPost.args.map(fetchPostArgsToFields));
+      this.queryFields = this.queryFields.sort((a, b) => a._index - b._index);
+    });
   });
   after(function () {
     this.downloadStub.restore();
@@ -200,8 +209,15 @@ describe('query#queryGranules', function () {
   describe('when the CMR returns an error', async function () {
     hookQueryGranulesWithError();
 
+    const fakeContext = {
+      id: '1234',
+      logger: defaultLogger,
+    };
+
     it('throws an error containing the CMR error message', async function () {
-      await expect(queryGranules(operation, null, 1)).to.be.rejectedWith(CmrError, 'Failed to query CMR');
+      await asyncLocalStorage.run(fakeContext, async () => {
+        await expect(queryGranules(operation, null, 1)).to.be.rejectedWith(CmrError, 'Failed to query CMR');
+      });
     });
 
   });

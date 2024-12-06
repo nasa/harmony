@@ -5,6 +5,7 @@ import { getGridsByName } from './cmr';
 import parseCRS from './crs';
 import { RequestValidationError } from './errors';
 import { keysToLowerCase } from './object';
+import { asyncLocalStorage } from './async-store';
 
 /**
  * Throws an error if the grid name parameter is included along with regridding parameters.
@@ -40,10 +41,11 @@ export async function parseGridMiddleware(
   if (query.grid) {
     try {
       validateNoConflictingGridParameters(query);
+      const context = asyncLocalStorage.getStore();
       const gridName = query.grid;
-      const grids = await getGridsByName(req.context, gridName, req.accessToken );
+      const grids = await getGridsByName(gridName, req.accessToken );
       if (grids.length > 1) {
-        req.context.logger.warn(`Multiple grids returned for name ${gridName}, choosing the first one returned by CMR.`);
+        context.logger.warn(`Multiple grids returned for name ${gridName}, choosing the first one returned by CMR.`);
       } else if (grids.length == 0) {
         throw new RequestValidationError(`Unknown grid ${gridName}`);
       }

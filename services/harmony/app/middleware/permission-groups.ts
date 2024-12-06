@@ -2,6 +2,7 @@ import { Response, NextFunction } from 'express';
 import HarmonyRequest from '../models/harmony-request';
 import { ForbiddenError } from '../util/errors';
 import { getEdlGroupInformation } from '../util/edl-api';
+import { asyncLocalStorage } from '../util/async-store';
 
 /**
  * Middleware to enforce ACLs on admin interfaces.  If the user is part
@@ -17,9 +18,10 @@ export async function admin(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
   try {
-    const { isAdmin } = await getEdlGroupInformation(req.context, req.user);
+    const context = asyncLocalStorage.getStore();
+    const { isAdmin } = await getEdlGroupInformation(req.user);
     if (isAdmin) {
-      req.context.isAdminAccess = true;
+      context.isAdminAccess = true;
       next();
     } else {
       next(new ForbiddenError('You are not permitted to access this resource'));
@@ -36,16 +38,17 @@ export async function admin(
  * error
  *
  * @param req - The client request
- * @param res - The client response
+ * @param _res - The client response (not used)
  * @param next -  The next function in the middleware chain
  */
 export async function core(
-  req: HarmonyRequest, res: Response, next: NextFunction,
+  req: HarmonyRequest, _res: Response, next: NextFunction,
 ): Promise<void> {
   try {
-    const { hasCorePermissions } = await getEdlGroupInformation(req.context, req.user);
+    const context = asyncLocalStorage.getStore();
+    const { hasCorePermissions } = await getEdlGroupInformation(req.user);
     if (hasCorePermissions) {
-      req.context.isCoreAccess = true;
+      context.isCoreAccess = true;
       next();
     } else {
       next(new ForbiddenError('You are not permitted to access this resource'));

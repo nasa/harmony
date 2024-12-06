@@ -10,6 +10,7 @@ import { ParameterParseError } from '../../util/parameter-parsing-helpers';
 import { parseVariables } from '../../util/variables';
 import { parseDatetime } from './util/helper';
 import { parseSubsetParams } from '../ogc-coverages/util/subset-parameter-parsing';
+import { asyncLocalStorage } from '../../util/async-store';
 
 /**
  * Common code for OGC EDR spatial queries.
@@ -21,7 +22,8 @@ import { parseSubsetParams } from '../ogc-coverages/util/subset-parameter-parsin
 export function getDataCommon(
   req: HarmonyRequest,
 ): void {
-  req.context.frontend = 'ogcEdr';
+  const context = asyncLocalStorage.getStore();
+  context.frontend = 'ogcEdr';
   const query = keysToLowerCase(req.query);
 
   const encrypter = createEncrypter(env.sharedSecretKey);

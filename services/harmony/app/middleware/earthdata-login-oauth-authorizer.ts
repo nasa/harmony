@@ -7,6 +7,7 @@ import { hasCookieSecret } from '../util/cookie-secret';
 import { ForbiddenError, RequestValidationError } from '../util/errors';
 import HarmonyRequest from '../models/harmony-request';
 import env from '../util/env';
+import { asyncLocalStorage } from '../util/async-store';
 
 const vars = ['OAUTH_CLIENT_ID', 'OAUTH_UID', 'OAUTH_PASSWORD', 'OAUTH_REDIRECT_URI', 'OAUTH_HOST', 'COOKIE_SECRET'];
 
@@ -135,6 +136,7 @@ async function validateUserToken(token: Token): Promise<void> {
  * @returns The result of calling the adapter's redirect method
  */
 async function handleAuthorized(oauth2: AuthorizationCode, req, res, next: NextFunction): Promise<void> {
+  const context = asyncLocalStorage.getStore();
   const { token } = req.signedCookies;
   const oauthToken = oauth2.createToken(token);
   req.accessToken = oauthToken.token.access_token;
@@ -147,12 +149,12 @@ async function handleAuthorized(oauth2: AuthorizationCode, req, res, next: NextF
       await validateUserToken(oauthToken.token);
     }
     const user = (oauthToken.token.endpoint as string).split('/').pop();
-    req.context.logger = req.context.logger.child({ user });
+    context.logger = context.logger.child({ user });
     req.user = user;
     next();
   } catch (e) {
-    req.context.logger.error('Failed to refresh expired token, forcing login through EDL.');
-    req.context.logger.error(e.stack);
+    context.logger.error('Failed to refresh expired token, forcing login through EDL.');
+    context.logger.error(e.stack);
     res.clearCookie('token', cookieOptions);
     handleNeedsAuthorized(oauth2, req, res, next);
   }
@@ -201,7 +203,8 @@ export default function buildEdlAuthorizer(paths: Array<string | RegExp> = []): 
       }
       await handler(oauth2, req, res, next);
     } catch (e) {
-      req.context.logger.error(e.stack);
+      const context = asyncLocalStorage.getStore();
+      context.logger.error(e.stack);
       if (e.message.startsWith('Response Error')) { // URS Error
         res.clearCookie('token', cookieOptions);
         next(new ForbiddenError());

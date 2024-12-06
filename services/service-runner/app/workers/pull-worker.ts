@@ -10,6 +10,7 @@ import path from 'path';
 import { existsSync, rmSync, accessSync, constants, promises as fs } from 'fs';
 import { exit } from 'process';
 import { AxiosError } from 'axios';
+import { asyncLocalStorage } from '../../../harmony/app/util/async-store';
 
 /**
  * Retries axios connection errors using default retry logic unless the pod is being terminated
@@ -48,7 +49,6 @@ const axiosGetWork = createAxiosClientWithRetry(
 );
 const axiosUpdateWork = createAxiosClientWithRetry(maxPutWorkRetries, maxDelayMs, exponentialOffset);
 
-let pullCounter = 0;
 // how many pulls to execute before logging - used to keep log message count reasonable
 const pullLogPeriod = 10;
 
@@ -136,13 +136,13 @@ async function emptyDirectory(directory: string, matchingFilter?: RegExp): Promi
  *
  * @param workItem - the work to be done
  * @param maxCmrGranules - limits the page of granules in the query-cmr task
- * @param workItemLogger - the logger to use
  */
 async function _doWork(
   workItem: WorkItemRecord,
   maxCmrGranules: number,
-  workItemLogger = logger,
 ): Promise<WorkItemRecord> {
+  const context = asyncLocalStorage.getStore();
+  const workItemLogger = context.logger;
   const newWorkItem = workItem;
   workItemLogger.debug('Calling work function');
   // work items with a scrollID are only for the query-cmr service
@@ -208,11 +208,7 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
       // expected if file does not exist
     }
 
-    pullCounter += 1;
     logger.debug('Polling for work');
-    if (pullCounter === pullLogPeriod) {
-      pullCounter = 0;
-    }
 
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
     const work = await exportedForTesting._pullWork();
@@ -220,7 +216,14 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
       const startTime = Date.now();
       const workItemLogger = logger.child({ workItemId: work.item.id });
       workItemLogger.debug(`Performing work for work item with id ${work.item.id} for job id ${work.item.jobID}`);
-      const workItem = await _doWork(work.item, work.maxCmrGranules, workItemLogger);
+      let workItem;
+      const context = {
+        id: work.item.operation.requestId,
+        logger: workItemLogger,
+      }
+      await asyncLocalStorage.run(context, async () => {
+        workItem = await _doWork(work.item, work.maxCmrGranules);
+      });
       workItem.duration = Date.now() - startTime;
       // call back to Harmony to mark the work unit as complete or failed
       workItemLogger.debug(`Sending response to Harmony for results of work item with id ${workItem.id} for job id ${workItem.jobID}`);
