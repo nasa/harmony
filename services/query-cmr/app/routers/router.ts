@@ -6,7 +6,6 @@ import { createEncrypter, createDecrypter } from '../../../harmony/app/util/cryp
 import { queryGranules } from '../query';
 import { objectStoreForProtocol } from '../../../harmony/app/util/object-store';
 import { ServerError } from '../../../harmony/app/util/errors';
-import { Logger } from 'winston';
 import RequestContext from '../../../harmony/app/models/request-context';
 import { asyncLocalStorage } from '../../../harmony/app/util/async-store';
 
@@ -80,7 +79,7 @@ async function doWorkHandler(req: Request, res: Response, next: NextFunction): P
   let workLogger;
   try {
     const workReq: QueryCmrRequest = req.body;
-    const { requestId } = workReq.harmonyInput as any;
+    const { requestId } = workReq.harmonyInput as { requestId: string };
     const context = new RequestContext(requestId);
     workLogger = logger.child({ workItemId: workReq.workItemId });
     context.logger = workLogger;

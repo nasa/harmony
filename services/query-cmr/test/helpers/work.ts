@@ -1,9 +1,10 @@
 import fs, { promises } from 'fs';
 import path from 'path';
 import { stub, spy, SinonStub } from 'sinon';
-
+import { default as defaultLogger } from '../../../harmony/app/util/log';
 import * as query from '../../app/query';
 import { doWork, QueryCmrRequest } from '../../app/routers/router';
+import { asyncLocalStorage } from '../../../harmony/app/util/async-store';
 
 /**
  * Stubs the queryGranulesScrolling method and calls doWork with the given args, unlinking
@@ -13,6 +14,10 @@ import { doWork, QueryCmrRequest } from '../../app/routers/router';
  */
 export function hookDoWork(workReq: QueryCmrRequest, output): void {
   let outputDir = null;
+  const fakeContext = {
+    id: '1234',
+    logger: defaultLogger,
+  };
   before(async function () {
     stub(query, 'queryGranules').callsFake((...callArgs) => {
       this.callArgs = callArgs;
@@ -21,7 +26,9 @@ export function hookDoWork(workReq: QueryCmrRequest, output): void {
     spy(promises, 'mkdir');
     // eslint-disable-next-line prefer-destructuring
     outputDir = workReq.outputDir;
-    await doWork(workReq);
+    await asyncLocalStorage.run(fakeContext, async () => {
+      await doWork(workReq);
+    });
   });
   after(function () {
     if (this.callArgs) {
