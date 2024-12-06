@@ -3,8 +3,7 @@ import StacCatalog from './stac/catalog';
 import CmrStacCatalog from './stac/cmr-catalog';
 import { queryGranulesWithSearchAfter } from '../../harmony/app/util/cmr';
 import DataOperation from '../../harmony/app/models/data-operation';
-import defaultLogger from '../../harmony/app/util/log';
-import { Logger } from 'winston';
+import { asyncLocalStorage } from '../../harmony/app/util/async-store';
 
 export interface DataSource {
   collection: string;
@@ -14,24 +13,22 @@ export interface DataSource {
 /**
  * Queries a single page of CMR granules using search after parameters, generating a STAC catalog for
  * each granule in the page.
- * @param requestId - The request ID of the job associated with this search
  * @param token - The token to use for the query
  * @param scrollId - Scroll session id used in the CMR-Scroll-Id header for granule search
  * @param maxCmrGranules - The maximum size of the page to request from CMR
  * @param filePrefix - The prefix to give each granule STAC item placed in the directory
- * @param logger - The logger to use for logging messages
  * @returns a tuple containing
  * the total size of the granules returned by this call, an array of sizes (in bytes) of each granule,
  * an array of STAC catalogs, a new session/search_after string (formerly scrollID), and the total
  * cmr hits.
  */
 async function querySearchAfter(
-  requestId: string,
   token: string,
   scrollId: string,
   maxCmrGranules: number,
-  logger: Logger = defaultLogger,
 ): Promise<[number, number[], StacCatalog[], string, number]> {
+  const context = asyncLocalStorage.getStore();
+  const { logger } = context;
   const filePrefix = './granule';
   let sessionKey, searchAfter;
   if (scrollId) {
@@ -92,7 +89,6 @@ async function querySearchAfter(
  * @param scrollId - The colon separated session key and search after string, i.e.,
  * `session_key:search_after_string`
  * @param maxCmrGranules - The maximum size of the page to request from CMR
- * @param logger - The logger to use for logging messages
  * @returns a tuple containing
  * the total size of the granules returned by this call, an array of STAC catalogs,
  * a new session/search_after string (formerly scrollID), and the total cmr hits.
@@ -101,11 +97,10 @@ export async function queryGranules(
   operation: DataOperation,
   scrollId: string,
   maxCmrGranules: number,
-  logger: Logger = defaultLogger,
 ): Promise<[number, number[], StacCatalog[], string, number]> {
   const { unencryptedAccessToken } = operation;
   const [totalItemsSize, outputItemSizes, catalogs, newScrollId, hits] =
-    await querySearchAfter(operation.requestId, unencryptedAccessToken, scrollId, maxCmrGranules, logger);
+    await querySearchAfter(unencryptedAccessToken, scrollId, maxCmrGranules);
 
   return [totalItemsSize, outputItemSizes, catalogs, newScrollId, hits];
 }
