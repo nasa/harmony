@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { describe, it } from 'mocha';
 import * as sinon from 'sinon';
 import { SinonStub } from 'sinon';
+import { default as defaultLogger } from '../../harmony/app/util/log';
 import env from '../app/util/env';
 import WorkItem from '../../harmony/app/models/work-item';
 import { hookGetWorkRequest } from './helpers/pull-worker';
@@ -11,6 +12,7 @@ import * as serviceRunner from '../app/service/service-runner';
 import { existsSync, writeFileSync, mkdirSync } from 'fs';
 import { WorkItemRecord } from '../../harmony/app/models/work-item-interface';
 import { buildOperation } from '../../harmony/test/helpers/data-operation';
+import { asyncLocalStorage } from '../../harmony/app/util/async-store';
 
 const {
   _pullWork,
@@ -139,6 +141,11 @@ describe('Pull Worker', async function () {
     let queryCmrSpy: sinon.SinonSpy;
     let serviceSpy: sinon.SinonSpy;
     const invocArgs = env.invocationArgs;
+    const fakeContext = {
+      id: '1234',
+      logger: defaultLogger,
+    };
+
     beforeEach(function () {
       queryCmrSpy = sinon.spy(serviceRunner, 'runQueryCmrFromPull');
       serviceSpy = sinon.spy(serviceRunner, 'runServiceFromPull');
@@ -162,8 +169,11 @@ describe('Pull Worker', async function () {
           operation: { requestID: 'foo' },
           id: 1,
         });
+
         it('calls runQueryCmrFromPull', async function () {
-          await _doWork(workItem, 1);
+          await asyncLocalStorage.run(fakeContext, async () => {
+            await _doWork(workItem, 1);
+          });
           expect(queryCmrSpy.called).to.be.true;
         });
       });
@@ -177,7 +187,9 @@ describe('Pull Worker', async function () {
           id: 1,
         });
         it('calls runServiceFromPull', async function () {
-          await _doWork(workItem, 1);
+          await asyncLocalStorage.run(fakeContext, async () => {
+            await _doWork(workItem, 1);
+          });
           expect(serviceSpy.called).to.be.true;
         });
       });
