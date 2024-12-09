@@ -16,16 +16,12 @@ class HarmonyServerEnv extends HarmonyEnv {
   @IsNotEmpty()
   adminGroupId: string;
 
-  @IsNotEmpty()
   oauthClientId: string;
 
-  @IsNotEmpty()
   oauthHost: string;
 
-  @IsNotEmpty()
   oauthPassword: string;
 
-  @IsNotEmpty()
   oauthUid: string;
 
   @IsNotEmpty()
@@ -123,6 +119,11 @@ class HarmonyServerEnv extends HarmonyEnv {
 
   @IsBoolean()
   uiLabeling: boolean;
+
+  @IsBoolean()
+  useEdlClientApp: boolean;
+
+  edlToken: string;
 }
 
 const localPath = path.resolve(__dirname, '../../env-defaults');

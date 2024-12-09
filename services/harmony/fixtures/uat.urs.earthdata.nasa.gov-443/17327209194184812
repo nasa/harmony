@@ -1,0 +1,26 @@
+GET /api/user_groups/groups_for_user/anonymous
+accept: application/json, text/plain, */*
+authorization: Bearer fake_access
+accept-encoding: gzip, compress, deflate, br
+
+HTTP/1.1 401 Unauthorized
+server: nginx/1.22.1
+date: Wed, 27 Nov 2024 15:21:59 GMT
+content-type: application/json; charset=utf-8
+transfer-encoding: chunked
+connection: keep-alive
+x-frame-options: SAMEORIGIN
+x-xss-protection: 1; mode=block
+x-content-type-options: nosniff
+x-download-options: noopen
+x-permitted-cross-domain-policies: none
+referrer-policy: strict-origin-when-cross-origin
+cache-control: no-store
+pragma: no-cache
+expires: Fri, 01 Jan 1990 00:00:00 GMT
+www-authenticate: Bearer realm="Earthdata Login",error="invalid_token"
+x-request-id: 766e5d76-bc63-455b-bae5-f74129cad960
+x-runtime: 0.002251
+strict-transport-security: max-age=31536000
+
+{"error":"invalid_token"}

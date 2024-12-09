@@ -237,7 +237,7 @@ describe('Service image endpoint', async function () {
     envStub.restore();
   });
 
-  hookServersStartStop({ skipEarthdataLogin: false });
+  hookServersStartStop({ USE_EDL_CLIENT_APP: true });
 
   describe('List service images', async function () {
     describe('when a user is not in the EDL service deployers or core permissions groups', async function () {
@@ -1189,7 +1189,7 @@ describe('Service image endpoint', async function () {
 });
 
 describe('Service self-deployment successful', async function () {
-  hookServersStartStop({ skipEarthdataLogin: false });
+  hookServersStartStop({ USE_EDL_CLIENT_APP: true });
 
   describe('Update service image successful', function () {
     let execStub;
@@ -1310,7 +1310,7 @@ describe('Service self-deployment successful', async function () {
 });
 
 describe('Service self-deployment failure', async function () {
-  hookServersStartStop({ skipEarthdataLogin: false });
+  hookServersStartStop({ USE_EDL_CLIENT_APP: true });
 
   describe('Update service image failed', function () {
     let execStub;
@@ -1422,7 +1422,7 @@ describe('get service deployments state with cookie-secret', async function () {
     process.env.COOKIE_SECRET = 'cookie-secret-value';
   });
 
-  hookServersStartStop({ skipEarthdataLogin: true });
+  hookServersStartStop();
 
   describe('when incorrect cookie-secret header is provided', async function () {
     before(async function () {
@@ -1440,7 +1440,7 @@ describe('get service deployments state with cookie-secret', async function () {
     });
 
     it('returns a meaningful error message', async function () {
-      expect(this.res.text).to.equal('User undefined does not have permission to access this resource');
+      expect(this.res.text).to.equal('User anonymous does not have permission to access this resource');
     });
   });
 
@@ -1470,7 +1470,7 @@ describe('Update service deployments state with cookie-secret', async function (
     process.env.COOKIE_SECRET = 'cookie-secret-value';
   });
 
-  hookServersStartStop({ skipEarthdataLogin: true });
+  hookServersStartStop();
 
   describe('when incorrect cookie-secret header is provided', async function () {
     before(async function () {
@@ -1490,7 +1490,7 @@ describe('Update service deployments state with cookie-secret', async function (
     });
 
     it('returns a meaningful error message', async function () {
-      expect(this.res.text).to.equal('User undefined does not have permission to access this resource');
+      expect(this.res.text).to.equal('User anonymous does not have permission to access this resource');
     });
   });
 
