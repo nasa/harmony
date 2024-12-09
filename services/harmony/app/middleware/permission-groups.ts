@@ -17,7 +17,7 @@ export async function admin(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
   try {
-    const { isAdmin } = await getEdlGroupInformation(req.user, req.context.logger);
+    const { isAdmin } = await getEdlGroupInformation(req.context, req.user);
     if (isAdmin) {
       req.context.isAdminAccess = true;
       next();
@@ -43,7 +43,7 @@ export async function core(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
   try {
-    const { hasCorePermissions } = await getEdlGroupInformation(req.user, req.context.logger);
+    const { hasCorePermissions } = await getEdlGroupInformation(req.context, req.user);
     if (hasCorePermissions) {
       req.context.isCoreAccess = true;
       next();

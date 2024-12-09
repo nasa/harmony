@@ -44,9 +44,10 @@ class JobsStatusChangeLinks extends StatusChangeLinks {
     event.preventDefault();
     const link = event.target;
     const jobIDs = jobsTable.getJobIds();
-    const postfix = jobIDs.length > 1 ? 's' : '';
+    const actionableJobIDs = this.getActionableJobIDs(jobIDs, link);
+    const postfix = actionableJobIDs.length > 1 ? 's' : '';
     // eslint-disable-next-line no-alert, no-restricted-globals
-    if (!confirm(`Are you sure you want to ${(link.textContent || link.innerText).trim()} ${jobIDs.length} job${postfix}?`)) {
+    if (!confirm(`Are you sure you want to ${(link.textContent || link.innerText).trim()} ${actionableJobIDs.length} job${postfix}?`)) {
       return;
     }
     toasts.showUpper('Changing job state...');
@@ -57,10 +58,10 @@ class JobsStatusChangeLinks extends StatusChangeLinks {
         Accept: 'application/json',
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ jobIDs }),
+      body: JSON.stringify({ jobIDs: actionableJobIDs }),
     });
     const data = await res.json();
-    const isAre = jobIDs.length > 1 ? 'are' : 'is';
+    const isAre = actionableJobIDs.length > 1 ? 'are' : 'is';
     if (res.status === 200) {
       toasts.showUpper(`The selected job${postfix} ${isAre} now ${data.status}.`);
     } else if (data.description) {
@@ -74,6 +75,25 @@ class JobsStatusChangeLinks extends StatusChangeLinks {
   }
 
   /**
+   * Filter the job IDs to only those jobs that can be operated on by the action
+   * represented by the link's href attribute.
+   * @param {string[]} jobIDs - the job IDs to filter
+   * @param {EventTarget} link - the link whose href will be used as the filter
+   * @returns filtered list of job IDs
+   */
+  getActionableJobIDs(jobIDs, link) {
+    const actionableJobIDs = [];
+    for (const jobID of jobIDs) {
+      const links = this.fetchLinksForStatuses([jobsTable.getJobStatus(jobID)]);
+      const jobHasTargetLink = links.some((linkForStatus) => link.getAttribute('href') === linkForStatus.href);
+      if (jobHasTargetLink) {
+        actionableJobIDs.push(jobID);
+      }
+    }
+    return actionableJobIDs;
+  }
+
+  /**
    * Get job state change links (pause, resume, etc.) depending on jobs' statuses.
    * @param {string[]} statuses - fetch links relevant to these job statuses
    */
@@ -83,25 +103,17 @@ class JobsStatusChangeLinks extends StatusChangeLinks {
     const hasRunningWithErrors = statuses.indexOf('running_with_errors') > -1;
     const hasPreviewing = statuses.indexOf('previewing') > -1;
     const hasPaused = statuses.indexOf('paused') > -1;
-    const hasCompleteWithErrors = statuses.indexOf('complete_with_errors') > -1;
-    const hasCanceled = statuses.indexOf('canceled') > -1;
-    const hasFailed = statuses.indexOf('failed') > -1;
-    const hasSuccessful = statuses.indexOf('successful') > -1;
-    const hasTerminalStatus = hasCompleteWithErrors || hasCanceled || hasFailed || hasSuccessful;
-    if (hasTerminalStatus) {
-      return [];
-    }
-    const hasActionableStatus = hasRunning || hasRunningWithErrors || hasPreviewing || hasPaused;
-    if (hasActionableStatus) {
+    const hasActiveStatus = hasRunning || hasRunningWithErrors || hasPreviewing;
+    if (hasActiveStatus || hasPaused) {
       links.push(cancelLink);
     }
-    if (!hasPaused && hasActionableStatus) {
+    if (hasActiveStatus) {
       links.push(pauseLink);
     }
-    if (hasPaused && !hasRunning && !hasRunningWithErrors && !hasPreviewing) {
+    if (hasPaused) {
       links.push(resumeLink);
     }
-    if (hasPreviewing && !hasRunning && !hasRunningWithErrors && !hasPaused) {
+    if (hasPreviewing) {
       links.push(skipPreviewLink);
     }
     return links;

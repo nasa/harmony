@@ -20,6 +20,7 @@ Returns the list of Harmony jobs submitted by the user. By default, 10 jobs are 
 |-----------|-----------------------------|
 | page      | Current page number         |
 | limit     | Number of jobs in each page |
+| label     | Filters jobs to those which include at least one of the labels specified. Multiple labels can be specified using a comma-separated list.|
 ---
 **Table {{tableCounter}}** - Harmony jobs endpoint parameters
 

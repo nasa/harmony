@@ -1,0 +1,277 @@
+<html lang="en" class="h-100"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- <link rel="stylesheet" href="../../../css/eui.min.css">
+    <link rel="stylesheet" href="../../../css/default.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link href="https://cdn.jsdelivr.net/npm/@yaireo/tagify@4.16.4/dist/tagify.css" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="../../../css/workflow-ui/default.css">
+    <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify@4.16.4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify@4.16.4/dist/tagify.polyfills.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous" defer=""></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous" defer=""></script>
+    <script language="javascript" id="_fed_an_ua_tag" src="https://dap.digitalgov.gov/Universal-Federated-Analytics-Min.js?agency=NASA&amp;subagency=GSFC&amp;dclink=true" defer=""></script>
+    <script language="javascript" type="module" src="../../../js/workflow-ui/jobs/index.js" defer=""></script> -->
+    <title>Harmony</title>
+<!-- <link rel="stylesheet" type="text/css" href="https://fbm.earthdata.nasa.gov/for/Harmony/feedback.css"><script type="text/javascript" src="https://www.googletagmanager.com/gtag/js?id=G-CSLL4ZEK4L"></script> -->
+</head>
+
+<body class="d-flex flex-column h-100">
+    <div aria-live="polite" aria-atomic="true" class="position-relative">
+        <div class="toast-container px-2 py-2">
+          <div id="upper-toast" class="toast align-items-center" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+              <div class="toast-body">
+                <!-- toast text -->
+             </div>
+            </div>
+          </div>
+          <div id="lower-toast" class="toast align-items-center" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+              <div class="toast-body">
+                <!-- toast text -->
+             </div>
+            </div>
+          </div>
+        </div>
+      </div>    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-lg">
+            <a class="navbar-brand nasa" href="/">Earthdata Harmony</a>
+        </div>
+    </nav>
+    <nav class="ml-0 pl-0" style="--bs-breadcrumb-divider: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M2.5 0L1 1.5 3.5 4 1 6.5 2.5 8l4-4-4-4z' fill='currentColor'/%3E%3C/svg%3E&quot;);" aria-label="breadcrumb">
+        <div class="breadcrumb  d-flex flex-row justify-content-between">
+            <ol class="breadcrumb p-0 m-0">
+                <li class="breadcrumb-item active" aria-current="page">Jobs</li>
+            </ol>
+            <div class="d-flex flex-row">
+                <ul id="job-state-links-container" class="nav" data-is-admin-or-owner=""><li>
+        <a href="/jobs/cancel" rel="canceler" title="Cancels the job." class="state-change-link nav-link py-0 px-2 d-none">
+          cancel
+        </a>
+      </li><li>
+        <a href="/jobs/pause" rel="pauser" title="Pauses the job." class="state-change-link nav-link py-0 px-2 d-none">
+          pause
+        </a>
+      </li><li>
+        <a href="/jobs/resume" rel="resumer" title="Resumes the job." class="state-change-link nav-link py-0 px-2 d-none">
+          resume
+        </a>
+      </li><li>
+        <a href="/jobs/skip-preview" rel="preview-skipper" title="Skips preview and runs the job." class="state-change-link nav-link py-0 px-2 d-none">
+          skip-preview
+        </a>
+      </li>
+                    <!-- job state change links will go here -->
+                    <li id="label-nav-item" class="nav-item dropstart">
+                        <a id="label-dropdown-a" class="nav-link dropdown-toggle py-0 px-2" data-bs-toggle="dropdown" data-bs-auto-close="outside" href="#" role="button" aria-expanded="false">label</a>
+                        <ul class="dropdown-menu mt-2">
+                            <li class="mx-2 mb-2">
+                                <input type="text" class="form-control" id="label-search" placeholder="label name">
+                            </li>
+                            <li id="no-match-li" class="fw-light text-center fs-6" style="display: none;"><i>no matches</i></li>
+                            <li>
+                                <ul id="labels-list">
+                                <li class="label-li"><a class="dropdown-item label-item" name="blue" data-value="blue" href="#">blue</a></li>
+                                <li class="label-li"><a class="dropdown-item label-item" name="green" data-value="green" href="#">green</a></li>
+                                <li class="label-li"><a class="dropdown-item label-item" name="yellow" data-value="yellow" href="#">yellow</a></li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+                <span id="job-counter" class="badge rounded-pill bg-info ml-1 d-none" style="line-height: inherit;">0</span>&nbsp;
+                <span id="job-counter-message" class="d-none"> jobs</span>
+            </div>
+        </div>
+    </nav>
+    <div class="container-fluid">
+        <div class="row pb-4">
+            <div class="col-2">
+                <form id="jobs-query-form" action="./workflow-ui" method="get" class="pt-2">
+                    <input type="hidden" name="currentPage" value="1">
+                    <input type="hidden" name="page" value="1">
+                    <input type="hidden" name="tzOffsetMinutes" value="240">
+                    <script type="text/javascript">
+                        document.getElementsByName('tzOffsetMinutes')[0].setAttribute('value', (new Date()).getTimezoneOffset());
+                    </script>
+                    <div class="input-group mb-2">
+                        <span class="input-group-text helpful-span" title="Filter by start datetime (in your browser's timezone). Time of day is required.">from</span>
+                        <input type="datetime-local" pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}" class="form-control" name="fromDateTime" value="" placeholder="2017-06-01T08:30">
+                    </div>
+                    <div class="input-group mb-2">
+                        <span class="input-group-text helpful-span" title="Filter by end datetime (in your browser's timezone). Time of day is required.">to</span>
+                        <input type="datetime-local" pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}" class="form-control" name="toDateTime" value="" placeholder="2017-06-01T08:30">
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input checked="" class="form-check-input" type="radio" name="dateKind" value="createdAt" id="dateKindCreated">
+                        <label class="form-check-label" for="dateKindCreated">createdAt</label>
+                    </div>
+                    <div class="form-check form-check-inline mb-3">
+                        <input class="form-check-input" type="radio" name="dateKind" value="updatedAt" id="dateKindUpdated">
+                        <label class="form-check-label" for="dateKindUpdated">updatedAt</label>
+                    </div>                    <input id="sort-granules" type="hidden" name="sortGranules" value="">
+                    <tags class="tagify table-filter form-control mb-2 tagify--noTags tagify--empty" tabindex="-1">
+            <span contenteditable="" tabindex="0" data-placeholder="add a filter" aria-placeholder="add a filter" class="tagify__input" role="textbox" aria-autocomplete="both" aria-multiline="false"></span>
+                ​
+        </tags><input name="tableFilter" class="table-filter form-control mb-2" placeholder="add a filter" data-value="[]" data-current-user="vinverso" data-services="[&quot;harmony/download&quot;,&quot;ldds/geoloco&quot;,&quot;ldds/subset-band-name&quot;,&quot;gesdisc/giovanni&quot;,&quot;podaac/l2-subsetter&quot;,&quot;podaac/concise&quot;,&quot;podaac/l2-subsetter-concise&quot;,&quot;sds/swath-projector&quot;,&quot;sds/harmony-regridder&quot;,&quot;sds/variable-subsetter&quot;,&quot;sds/maskfill&quot;,&quot;sds/trajectory-subsetter&quot;,&quot;harmony/example&quot;,&quot;net2cog&quot;,&quot;nasa/harmony-gdal-adapter&quot;,&quot;sds/HyBIG&quot;,&quot;sds/HOSS-geographic&quot;,&quot;sds/HOSS-projection-gridded&quot;,&quot;harmony/netcdf-to-zarr&quot;,&quot;harmony/podaac-l2-subsetter-netcdf-to-zarr&quot;,&quot;harmony/swath-projector-netcdf-to-zarr&quot;,&quot;harmony/service-example&quot;,&quot;l2-subsetter-batchee-stitchee-concise&quot;]" data-providers="[&quot;EEDTEST&quot;]" data-is-admin-route="false" tabindex="-1">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" name="disallowStatus">
+                        <label class="form-check-label" for="disallowStatus">
+                            negate statuses
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" name="disallowService">
+                        <label class="form-check-label" for="disallowService">
+                            negate services
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" name="disallowProvider">
+                        <label class="form-check-label" for="disallowProvider">
+                            negate providers
+                        </label>
+                    </div>
+                    <div class="input-group mt-2">
+                      <span class="input-group-text">page size</span>
+                      <input name="limit" type="number" class="form-control" value="10">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm mt-3"><i class="bi bi-filter-circle"></i> apply</button>
+                </form>
+            </div>
+            <div class="col-10" id="jobs-table-container">
+                <table id="workflow-ui-jobs-table" class="table table-sm">
+                    <thead class="sticky-top bg-white">
+                        <tr class="align-middle">
+                            <th scope="col"><input id="select-jobs" type="checkbox" title="select/deselect all jobs" autocomplete="off"></th>
+                            <th scope="col">jobID</th>
+                            <th scope="col">service</th>
+                            <th scope="col">status</th>
+                            <th scope="col">message</th>
+                            <th scope="col">
+                                <div class="d-flex flex-row align-items-center">
+                                    <div>granules</div>&nbsp;
+                                    <div class="d-flex flex-column">
+                                        <a href="#" onclick="document.getElementById('sort-granules').value='asc';document.getElementById('jobs-query-form').submit();" class="" style="height:12px;">
+        <i class="bi bi-caret-up-fill" title="apply ascending sort"></i>
+      </a>
+      <a href="#" onclick="document.getElementById('sort-granules').value='desc';document.getElementById('jobs-query-form').submit();" class="">
+        <i class="bi bi-caret-down-fill" title="apply descending sort"></i>
+      </a>
+                                    </div>
+                                </div>
+                            </th>
+                            <th scope="col">progress</th>
+                            <th scope="col">createdAt</th>
+                            <th scope="col">updatedAt</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr id="job-580b48e6-845e-4e83-bcb8-60a1a3b0b6b9" class="job-table-row">
+                            <td><input id="select-580b48e6-845e-4e83-bcb8-60a1a3b0b6b9" class="select-job" type="checkbox" data-id="580b48e6-845e-4e83-bcb8-60a1a3b0b6b9" data-status="previewing" autocomplete="off"></td>
+                            <th scope="row"><a href="workflow-ui/580b48e6-845e-4e83-bcb8-60a1a3b0b6b9?fromDateTime=&amp;toDateTime=&amp;dateKind=createdAt&amp;tzOffsetMinutes=&amp;jobsLink=http%3A%2F%2Flocalhost%3A3000%2Fworkflow-ui%3Fpage%3D1%26limit%3D10">580b48e6-845e-4e83-bcb8-60a1a3b0b6b9</a></th>
+                            <td>harmony/service-example</td>
+                            <td><span class="badge rounded-pill bg-info">previewing</span></td>
+                            <td id="message-td" title="The job is generating a preview before auto-pausing">The job is generating a preview before auto-pausing</td>
+                            <td>177</td>
+                            <td>0%</td>
+                            <td class="date-td" data-time="1730228117830">10/29/2024, 2:55:17 PM</td>
+                            <td class="date-td" data-time="1730228437015">10/29/2024, 3:00:37 PM</td>
+                        </tr>
+                        <tr><th id="copy-580b48e6-845e-4e83-bcb8-60a1a3b0b6b9" class="job-url-th" colspan="12">
+                            <div class="d-flex flex-row justify-content-between">
+                                <div>
+                                    <i class="bi bi-copy text-primary copy-request" data-text="http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?format=image%2Ftiff" data-truncated="false"></i>
+                                    <span title="http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?format=image/tiff" class="text-muted job-url-text">/C1233800302-EEDTEST/ogc-api-coverages/.../all/...?format=image/tiff</span>
+                                </div>
+                                <div class="ml-1" id="job-labels-display-580b48e6-845e-4e83-bcb8-60a1a3b0b6b9" data-labels="">
+                                    
+                                </div>
+                            </div>                        </th>                        </tr><tr id="job-058184f7-498c-4aa5-a3df-96a3a49b7d19" class="job-table-row">
+                            <td><input id="select-058184f7-498c-4aa5-a3df-96a3a49b7d19" class="select-job" type="checkbox" data-id="058184f7-498c-4aa5-a3df-96a3a49b7d19" data-status="running" autocomplete="off"></td>
+                            <th scope="row"><a href="workflow-ui/058184f7-498c-4aa5-a3df-96a3a49b7d19?fromDateTime=&amp;toDateTime=&amp;dateKind=createdAt&amp;tzOffsetMinutes=&amp;jobsLink=http%3A%2F%2Flocalhost%3A3000%2Fworkflow-ui%3Fpage%3D1%26limit%3D10">058184f7-498c-4aa5-a3df-96a3a49b7d19</a></th>
+                            <td>harmony/service-example</td>
+                            <td><span class="badge rounded-pill bg-info">running</span></td>
+                            <td id="message-td" title="The job is generating a preview before auto-pausing">The job is generating a preview before auto-pausing</td>
+                            <td>177</td>
+                            <td>0%</td>
+                            <td class="date-td" data-time="1730228103036">10/29/2024, 2:55:03 PM</td>
+                            <td class="date-td" data-time="1730228440966">10/29/2024, 3:00:40 PM</td>
+                        </tr>
+                        <tr><th id="copy-058184f7-498c-4aa5-a3df-96a3a49b7d19" class="job-url-th" colspan="12">
+                            <div class="d-flex flex-row justify-content-between">
+                                <div>
+                                    <i class="bi bi-copy text-primary copy-request" data-text="http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?format=image%2Ftiff&amp;label=blue" data-truncated="false"></i>
+                                    <span title="http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?format=image/tiff&amp;label=blue" class="text-muted job-url-text">/C1233800302-EEDTEST/ogc-api-coverages/.../all/...?format=image/tiff&amp;label=blue</span>
+                                </div>
+                                <div class="ml-1" id="job-labels-display-058184f7-498c-4aa5-a3df-96a3a49b7d19" data-labels="blue">
+                                    <span class="badge bg-label" title="blue">blue</span>
+                                </div>
+                            </div>                        </th>                        </tr><tr id="job-38d2b820-0b52-475d-8cb0-0b9f7775f767" class="job-table-row">
+                            <td><input id="select-38d2b820-0b52-475d-8cb0-0b9f7775f767" class="select-job" type="checkbox" data-id="38d2b820-0b52-475d-8cb0-0b9f7775f767" data-status="paused" autocomplete="off"></td>
+                            <th scope="row"><a href="workflow-ui/38d2b820-0b52-475d-8cb0-0b9f7775f767?fromDateTime=&amp;toDateTime=&amp;dateKind=createdAt&amp;tzOffsetMinutes=&amp;jobsLink=http%3A%2F%2Flocalhost%3A3000%2Fworkflow-ui%3Fpage%3D1%26limit%3D10">38d2b820-0b52-475d-8cb0-0b9f7775f767</a></th>
+                            <td>harmony/service-example</td>
+                            <td><span class="badge rounded-pill bg-info">paused</span></td>
+                            <td id="message-td" title="The job is generating a preview before auto-pausing">The job is generating a preview before auto-pausing</td>
+                            <td>177</td>
+                            <td>0%</td>
+                            <td class="date-td" data-time="1730228097386">10/29/2024, 2:54:57 PM</td>
+                            <td class="date-td" data-time="1730228444774">10/29/2024, 3:00:44 PM</td>
+                        </tr>
+                        <tr><th id="copy-38d2b820-0b52-475d-8cb0-0b9f7775f767" class="job-url-th" colspan="12">
+                            <div class="d-flex flex-row justify-content-between">
+                                <div>
+                                    <i class="bi bi-copy text-primary copy-request" data-text="http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?format=image%2Ftiff&amp;label=blue&amp;label=yellow&amp;label=green" data-truncated="false"></i>
+                                    <span title="http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?format=image/tiff&amp;label=blue&amp;label=yellow&amp;label=green" class="text-muted job-url-text">/C1233800302-EEDTEST/ogc-api-coverages/.../all/...?format=image/tiff&amp;label=blue&amp;label=yellow&amp;label=green</span>
+                                </div>
+                                <div class="ml-1" id="job-labels-display-38d2b820-0b52-475d-8cb0-0b9f7775f767" data-labels="blue,green,yellow">
+                                    <span class="badge bg-label" title="blue">blue</span> <span class="badge bg-label" title="green">green</span> <span class="badge bg-label" title="yellow">yellow</span>
+                                </div>
+                            </div>                        </th>                    </tr></tbody>
+                </table>                <nav id="page-nav" aria-label="Page navigation" class="bg-white d-flex flex-column align-items-center py-2 sticky-paging">
+                    <ul class="pagination px-0 mx-auto mb-1">
+                        <li class="page-item disabled">
+                            <a class="page-link" href="" title="first">first</a>
+                        </li>
+                        <li class="page-item disabled">
+                            <a class="page-link" href="" title="previous">previous</a>
+                        </li>
+                        <li class="page-item disabled">
+                            <a class="page-link" href="" title="next">next</a>
+                        </li>
+                        <li class="page-item disabled">
+                            <a class="page-link" href="" title="last">last</a>
+                        </li>
+                    </ul>
+                    <small class="text-muted">
+                        1-3 of 3 (page 1 of 1)
+                    </small>
+                </nav>            </div>
+        </div>
+    </div>
+    <footer class="mt-auto">
+        <div class="container-lg">
+            <div class="row pt-3">
+                <div class="col-md-8">
+                    <ul class="list-inline">
+                        <li class="list-inline-item">NASA Official: Stephen Berrick</li>
+                        <li class="list-inline-item"><a href="http://www.nasa.gov/FOIA/index.html">FOIA</a></li>
+                        <li class="list-inline-item"><a href="http://www.nasa.gov/about/highlights/HP_Privacy.html">NASA
+                                Privacy Policy</a></li>
+                        <li class="list-inline-item"><a href="http://www.usa.gov/">USA.gov</a></li>
+                        <li class="list-inline-item"><a href="#" onclick="javascript:feedback.showForm();">Feedback</a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <p class="text-right"><a href="/versions"><span class="badge bg-dark">v 0.0.0</span></a></p>
+                </div>
+            </div>
+        </div>
+    </footer>
+    <!-- <script type="text/javascript" src="https://fbm.earthdata.nasa.gov/for/Harmony/feedback.js"></script>
+    <script type="text/javascript">feedback.init({ showIcon: false });</script> -->
+
+
+</body></html>

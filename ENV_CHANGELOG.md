@@ -2,8 +2,29 @@
 Any changes to the environment variables will be documented in this file in chronological
 order with the most recent changes first.
 
+# 2024-12-04
+### Added
+- USE_EDL_CLIENT_APP - whether to use an EDL client application to enable admin and deployment endpoints and allow OAuth workflows.
+- EDL_TOKEN - required if USE_EDL_CLIENT_APP is set to false. An EDL token to use for all requests to the CMR and to download data in backend services.
+
+### Changed
+- OAUTH_CLIENT_ID, OAUTH_UID, OAUTH_PASSWORD, and OAUTH_REDIRECT_URI are no longer required if USE_EDL_CLIENT_APP is false.
+
+# 2024-12-03
+### Added
+- Added enviroment defaults for Harmony SMAP L2 Gridding Service
+
+# 2024-11-05
+### Added
+- LABEL_FILTER_COMPLETION_COUNT - the max number of labels to retrieve to populate label filter auto-complete
+
+# 2024-10-23
+### Added
+- LABELS_ALLOW_LIST - comma-separated list of values that are explicitly allowed for labels
+- LABELS_FORBID_LIST - comma-separated list of values that are explicitly forbidden for labels
+
 ## 2024-08-30
-### Added  
+### Added
 - Added environment defaults for NET2COG service
 
 ## 2024-07-31

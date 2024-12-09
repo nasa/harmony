@@ -12,12 +12,12 @@ process.env.EXAMPLE_SERVICES = 'true';
  *
  * Important for tests: any tests that make a request and follow a redirect to the job status
  * page expect that the job can be shared with any user. If a job cannot be shared (collection
- * is not public or has a EULA), you must set skipEarthdataLogin: false, supply a username
+ * is not public or has a EULA), you must set USE_EDL_CLIENT_APP: true, supply a username
  * when making the request, and supply the same username when following the redirect to the
  * job status.
  *
  * Example:
- * `hookServersStartStop({ skipEarthdataLogin: false });`
+ * `hookServersStartStop({ USE_EDL_CLIENT_APP: true });`
  * `hookRangesetRequest('1.0.0', collection, 'all', { query, username: 'joe' });`
  * `hookRedirect('joe');`
  *
@@ -25,15 +25,15 @@ process.env.EXAMPLE_SERVICES = 'true';
  * @param stubOAuthClientCredentialsReq - Whether to replace OAuth client_credentials API calls to EDL
  * with a stub that returns a fake_access token
  */
-export default function hookServersStartStop(opts = { skipEarthdataLogin: true }, stubOAuthClientCredentialsReq = true): void {
+export default function hookServersStartStop(opts = { USE_EDL_CLIENT_APP: false }, stubOAuthClientCredentialsReq = true): void {
   let servers = null;
   before(async function () {
     // Skip Earthdata Login unless the test says to do otherwise
-    const skipEdl = opts.skipEarthdataLogin ? 'true' : 'false';
+    const useEdlClientApp = opts.USE_EDL_CLIENT_APP ? 'true' : 'false';
     // Start Harmony on a random open port
     servers = await harmony.start({
       EXAMPLE_SERVICES: 'true',
-      skipEarthdataLogin: skipEdl,
+      USE_EDL_CLIENT_APP: useEdlClientApp,
       startWorkflowTerminationListener: 'false',
       startWorkReaper: 'false',
       startWorkFailer: 'false',
@@ -46,7 +46,7 @@ export default function hookServersStartStop(opts = { skipEarthdataLogin: true }
     this.backend = servers.backend;
 
     stub(env, 'callbackUrlRoot').get(() => `http://127.0.0.1:${servers.backend.address().port}`);
-    const locallyDeployedServices = 'giovanni-adapter,harmony-service-example,' +
+    const locallyDeployedServices = 'giovanni-time-series-adapter,harmony-service-example,' +
       'harmony-netcdf-to-zarr,var-subsetter,swath-projector,harmony-gdal-adapter,' +
       'podaac-concise,sds-maskfill,trajectory-subsetter,podaac-l2-subsetter,harmony-regridder,' +
       'hybig,geoloco,stitchee,batchee,hoss,subset-band-name';

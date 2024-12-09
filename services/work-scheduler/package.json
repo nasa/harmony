@@ -26,6 +26,7 @@
   "author": "NASA EOSDIS Harmony team",
   "license": "Apache-2.0",
   "dependencies": {
+    "@2toad/profanity": "^3.0.1",
     "@aws-sdk/client-s3": "^3.437.0",
     "@aws-sdk/client-sqs": "^3.437.0",
     "@aws-sdk/credential-provider-imds": "^3.374.0",
@@ -35,7 +36,7 @@
     "@aws-sdk/url-parser": "^3.374.0",
     "@aws-sdk/util-format-url": "^3.433.0",
     "@harmony/util": "file:../../packages/util",
-    "@kubernetes/client-node": "^0.17.1",
+    "@kubernetes/client-node": "^0.22.3",
     "@types/node-fetch": "^2.5.12",
     "agentkeepalive": "^4.1.4",
     "axios": "^1.7.4",
@@ -83,6 +84,8 @@
   "overrides": {
     "semver": "^7.6.2",
     "braces": "^3.0.3",
-    "fast-xml-parser": "4.4.1"
+    "fast-xml-parser": "4.4.1",
+    "jsonpath-plus": "^10.0.7",
+    "cross-spawn": "^7.0.5"
   }
 }

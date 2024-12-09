@@ -16,7 +16,7 @@ export const metricsFields = [
   'reproject', 'synchronous', 'spatialSubset', 'shapefileSubset', 'chainLength',
   'harmonyGdalAdapter', 'harmonyServiceExample', 'harmonyNetcdfToZarr', 'swathProjector',
   'hoss', 'sdsMaskfill', 'trajectorySubsetter', 'podaacConcise',
-  'podaacL2Subsetter', 'giovanniAdapter',
+  'podaacL2Subsetter', 'giovanniTimeSeriesAdapter',
 ];
 
 interface RequestMetrics {
@@ -29,7 +29,7 @@ interface RequestMetrics {
   trajectorySubsetter: number;
   podaacConcise: number;
   podaacL2Subsetter: number;
-  giovanniAdapter: number;
+  giovanniTimeSeriesAdapter: number;
   numInputGranules: number;
   totalGranuleSizeMb: number;
   timeTakenSeconds: number;
@@ -77,8 +77,8 @@ function getServiceNameFromID(serviceID: string, logger: Logger): string {
     case /podaac\/l2ss-py/.test(serviceID):
       serviceName = 'podaacL2Subsetter';
       break;
-    case /giovanni-adapter/.test(serviceID):
-      serviceName = 'giovanniAdapter';
+    case /giovanni-time-series-adapter/.test(serviceID):
+      serviceName = 'giovanniTimeSeriesAdapter';
       break;
     case /query\-cmr/.test(serviceID):
       break;
@@ -105,7 +105,7 @@ function getServiceMetricsFromSteps(steps: WorkflowStep[], logger: Logger): Part
     trajectorySubsetter: 0,
     podaacConcise: 0,
     podaacL2Subsetter: 0,
-    giovanniAdapter: 0,
+    giovanniTimeSeriesAdapter: 0,
     numVariables: 0,
     concatenate: 0,
     reproject: 0,

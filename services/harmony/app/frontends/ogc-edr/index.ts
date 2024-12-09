@@ -9,6 +9,7 @@ import getRequirementsClasses from '../ogc-coverages/get-requirements-classes';
 import { getDataForCube, postDataForCube } from './get-data-for-cube';
 import { getDataForArea, postDataForArea } from './get-data-for-area';
 import { getDataForPoint, postDataForPoint } from './get-data-for-point';
+import { getDataForTrajectory, postDataForTrajectory } from './get-data-for-trajectory';
 
 import HarmonyRequest from '../../models/harmony-request';
 
@@ -97,8 +98,8 @@ export function addOpenApiRoutes(app: Router): void {
       postDataForCube,
       getDataForArea,
       postDataForArea,
-      getDataForTrajectory: TODO,
-      postDataForTrajectory: TODO,
+      getDataForTrajectory,
+      postDataForTrajectory,
       getDataForCorridor: TODO,
       postDataForCorridor: TODO,
     },

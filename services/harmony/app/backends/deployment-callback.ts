@@ -13,9 +13,9 @@ import _ from 'lodash';
  *  image - full image url with tag for the deployed service
  *  serviceQueueUrls - a list contains the service image to queue url mapping as defined in HarmonyEnv class.
  * Here is an example:
- *  \{"deployService":"giovanni-adapter",
- *   "image":"123456.dkr.ecr.us-west-2.amazonaws.com/harmonyservices/giovanni-adapter:latest",
- *   "serviceQueueUrls":"[\"123456.dkr.ecr.us-west-2.amazonaws.com/harmonyservices/giovanni-adapter:latest.....\"]"\}
+ *  \{"deployService":"harmony-service-example",
+ *   "image":"123456.dkr.ecr.us-west-2.amazonaws.com/harmonyservices/service-example:latest",
+ *   "serviceQueueUrls":"[\"123456.dkr.ecr.us-west-2.amazonaws.com/harmonyservices/service-example:latest.....\"]"\}
  * @param req - The request sent by the client
  * @param res - The response to send to the client
  */

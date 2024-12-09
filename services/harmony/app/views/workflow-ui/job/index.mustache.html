@@ -14,9 +14,7 @@
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
         integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"
         defer></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.0.0-alpha1/js/bootstrap.min.js"
-        integrity="sha384-oesi62hOLfzrys4LxRF63OJCXdXDipiYWBnvTl9Y9/TRlw5xlKIEHpNyvvDShgf/" crossorigin="anonymous"
-        defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous" defer></script>
     <script language="javascript" id="_fed_an_ua_tag"
         src="https://dap.digitalgov.gov/Universal-Federated-Analytics-Min.js?agency=NASA&subagency=GSFC&dclink=true"
         defer></script>
@@ -29,10 +27,6 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container-lg">
             <a class="navbar-brand nasa" href="/">Earthdata Harmony</a>
-            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
-                aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
         </div>
     </nav>
     <nav class="ml-0 pl-0"
@@ -48,9 +42,9 @@
                 <li class="breadcrumb-item active" aria-current="page">{{job.jobID}} (<a href="/jobs/{{job.jobID}}">Job Status</a>)</li>
                 {{/isAdminRoute}}
             </ol>
-            <div id="job-state-links-container" data-is-admin-or-owner="{{isAdminOrOwner}}">
+            <ul id="job-state-links-container" class="nav" data-is-admin-or-owner="{{isAdminOrOwner}}">
                 <!-- job state change links will go here -->
-            </div>
+            </ul>
         </div>
     </nav>
     <div class="container-fluid">

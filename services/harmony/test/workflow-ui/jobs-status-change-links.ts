@@ -1,10 +1,37 @@
 import { expect } from 'chai';
 import { describe, it, before } from 'mocha';
 import JobsStatusChangeLinks from '../../public/js/workflow-ui/jobs/jobs-status-change-links';
+import { JSDOM } from 'jsdom';
+import path from 'path';
 
 
 describe('JobsStatusChangeLinks', function () {
   const jobsStatusChangeLinks = new JobsStatusChangeLinks();
+
+  describe('getActionableJobIDs()', () => {
+    const previewingJobID = '580b48e6-845e-4e83-bcb8-60a1a3b0b6b9';
+    const runningJobID = '058184f7-498c-4aa5-a3df-96a3a49b7d19';
+    const pausedJobID = '38d2b820-0b52-475d-8cb0-0b9f7775f767';
+    beforeEach(async () => {
+      const dom = await JSDOM.fromFile(path.resolve(__dirname, 'labels.html'), { url: 'http://localhost' });
+      global.window = dom.window as unknown as Window & typeof globalThis;
+      global.document = dom.window.document;
+    });
+    describe('when the jobIDs specified cannot be paused, and the target link=pauser', function () {
+      it('returns no job IDs', () => {
+        const targetLink = document.querySelector("a.state-change-link[rel='pauser']");
+        const actionableJobIDs = jobsStatusChangeLinks.getActionableJobIDs([pausedJobID], targetLink);
+        expect(actionableJobIDs.length).to.equal(0);
+      });
+    });
+    describe('when 2 of the 3 jobIDs specified can be paused, and the target link=pauser', function () {
+      it('returns 2 job IDs', () => {
+        const targetLink = document.querySelector("a.state-change-link[rel='pauser']");
+        const actionableJobIDs = jobsStatusChangeLinks.getActionableJobIDs([pausedJobID, runningJobID, previewingJobID], targetLink);
+        expect(actionableJobIDs).to.deep.equal([runningJobID, previewingJobID]);
+      });
+    });
+  });
   describe('fetchLinks()', function () {
     let links;
     before(async function () {
@@ -22,8 +49,8 @@ describe('JobsStatusChangeLinks', function () {
       before(async function () {
         links = jobsStatusChangeLinks.fetchLinksForStatuses(['paused', 'successful']);
       });
-      it('Returns 0 job status change links', function () {
-        expect(links.length).to.eq(0);
+      it('Returns 2 job status change links', function () {
+        expect(links.length).to.eq(2);
       });
     });
     describe('with paused status', function () {
@@ -80,11 +107,12 @@ describe('JobsStatusChangeLinks', function () {
       before(async function () {
         links = jobsStatusChangeLinks.fetchLinksForStatuses(['running', 'previewing']);
       });
-      it('Returns pause and cancel status change link', function () {
-        expect(links.length).to.eq(2);
+      it('Returns pause, cancel and skip preview status change link', function () {
+        expect(links.length).to.eq(3);
         const linkRels = links.map((l) => l.rel);
         expect(linkRels).contains('pauser');
         expect(linkRels).contains('canceler');
+        expect(linkRels).contains('preview-skipper');
       });
     });
     describe('with running and paused statuses', function () {
@@ -92,10 +120,12 @@ describe('JobsStatusChangeLinks', function () {
       before(async function () {
         links = jobsStatusChangeLinks.fetchLinksForStatuses(['running', 'paused']);
       });
-      it('Returns cancel status change link', function () {
-        expect(links.length).to.eq(1);
+      it('Returns cancel, resume and pause status change link', function () {
+        expect(links.length).to.eq(3);
         const linkRels = links.map((l) => l.rel);
         expect(linkRels).contains('canceler');
+        expect(linkRels).contains('resumer');
+        expect(linkRels).contains('pauser');
       });
     });
   });

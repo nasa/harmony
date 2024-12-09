@@ -16,7 +16,7 @@ export const adminUsername = 'adam';
 
 export const expectedJobKeys = [
   'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'dataExpiration',
-  'links', 'request', 'numInputGranules', 'jobID',
+  'links', 'labels', 'request', 'numInputGranules', 'jobID',
 ];
 
 const exampleProps = {
@@ -593,6 +593,6 @@ export async function getFirstJob(
 ): Promise<Job> {
   const { data } = await Job.queryAll(tx, constraints);
   const firstJobID = data[0].jobID;
-  const { job } = await Job.byJobID(tx, firstJobID, true);
+  const { job } = await Job.byJobID(tx, firstJobID, true, true);
   return job;
 }

@@ -1,5 +1,6 @@
 import { RequestValidationError } from './errors';
 import HarmonyRequest from '../models/harmony-request';
+import { normalizeGeoJson } from '../middleware/shapefile-converter';
 import wellknown from 'wellknown';
 import _ from 'lodash';
 
@@ -116,7 +117,7 @@ export function parseWkt(wkt: string): Object {
   } else {
     throw new ParameterParseError(`Unable to parse WKT string ${wkt}.`);
   }
-  return geoJson;
+  return normalizeGeoJson(geoJson);
 }
 
 /**

@@ -18,7 +18,7 @@ describe('EULA acceptance validation', function () {
     skipPreview: 'true',
   };
 
-  hookServersStartStop({ skipEarthdataLogin: false });
+  hookServersStartStop({ USE_EDL_CLIENT_APP: true });
 
   describe('When the collection has 2 unaccepted EULAS', function () {
     hookRangesetRequest(
@@ -29,7 +29,7 @@ describe('EULA acceptance validation', function () {
     );
 
     it('Provides accept EULA URLs', function () {
-      const description = 'Error: You may access the requested data by resubmitting your request after accepting the following EULA(s): ' + 
+      const description = 'Error: You may access the requested data by resubmitting your request after accepting the following EULA(s): ' +
         'https://uat.urs.earthdata.nasa.gov/accept_eula?eula_id=be7c8c07-65f7-4e63-a81d-78dfa187870e, ' +
         'https://uat.urs.earthdata.nasa.gov/accept_eula?eula_id=a5242e69-dc27-455c-b2bc-1991af58f719.';
       expect(JSON.parse(this.res.text).description).to.eq(description);
@@ -49,7 +49,7 @@ describe('EULA acceptance validation', function () {
     );
 
     it('Provides accept EULA URLs', function () {
-      const description = 'Error: You may access the requested data by resubmitting your request after accepting the following EULA(s): ' + 
+      const description = 'Error: You may access the requested data by resubmitting your request after accepting the following EULA(s): ' +
         'https://uat.urs.earthdata.nasa.gov/accept_eula?eula_id=be7c8c07-65f7-4e63-a81d-78dfa187870e, ' +
         'https://uat.urs.earthdata.nasa.gov/accept_eula?eula_id=a5242e69-dc27-455c-b2bc-1991af58f719.';
       expect(JSON.parse(this.res.text).description).to.eq(description);
@@ -69,7 +69,7 @@ describe('EULA acceptance validation', function () {
     );
 
     it('Provides accept EULA URLs', function () {
-      const description = 'Error: You may access the requested data by resubmitting your request after accepting the following EULA(s): ' + 
+      const description = 'Error: You may access the requested data by resubmitting your request after accepting the following EULA(s): ' +
         'https://uat.urs.earthdata.nasa.gov/accept_eula?eula_id=be7c8c07-65f7-4e63-a81d-78dfa187870e.';
       expect(JSON.parse(this.res.text).description).to.eq(description);
     });

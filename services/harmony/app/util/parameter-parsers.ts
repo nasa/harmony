@@ -201,3 +201,22 @@ export function handleWidth(
     }
   }
 }
+
+/**
+ * Handle the averaging parameter in a Harmony query, adding it to the DataOperation
+ * if necessary.
+ *
+ * @param operation - the DataOperation for the request
+ * @param query - the query for the request
+ */
+export function handleAveragingType(
+  operation: DataOperation,
+  query: Record<string, string>): void {
+  if (query.average) {
+    const value = query.average.toLowerCase();
+    if (value !== 'time' && value !== 'area') {
+      throw new RequestValidationError('query parameter "average" must be either "time" or "area"');
+    }
+    operation.average = value;
+  }
+}

@@ -1,6 +1,5 @@
 /* eslint-disable no-param-reassign */
-import { formatDates } from '../table.js';
-import toasts from '../toasts.js';
+import { formatDates, initCopyHandler } from '../table.js';
 import PubSub from '../../pub-sub.js';
 
 // all of the currently selected job IDs
@@ -13,10 +12,11 @@ let statuses = [];
   * @param {string} currentUser - the current Harmony user
   * @param {string[]} services - service names from services.yml
   * @param {string[]} providers - array of provider ids
+  * @param {string[]} labels - known job labels
   * @param {boolean} isAdminRoute - whether the current page is /admin/...
   * @param {object[]} tableFilter - initial tags that will populate the input
  */
-function initFilter(currentUser, services, providers, isAdminRoute, tableFilter) {
+function initFilter(currentUser, services, providers, labels, isAdminRoute, tableFilter) {
   const filterInput = document.querySelector('input[name="tableFilter"]');
   const allowedList = [
     { value: 'status: successful', dbValue: 'successful', field: 'status' },
@@ -33,6 +33,8 @@ function initFilter(currentUser, services, providers, isAdminRoute, tableFilter)
   allowedList.push(...serviceList);
   const providerList = providers.map((provider) => ({ value: `provider: ${provider}`, dbValue: provider, field: 'provider' }));
   allowedList.push(...providerList);
+  const labelList = labels.map((label) => ({ value: `label: ${label}`, dbValue: label, field: 'label' }));
+  allowedList.push(...labelList);
   if (isAdminRoute) {
     allowedList.push({ value: `user: ${currentUser}`, dbValue: currentUser, field: 'user' });
   }
@@ -40,7 +42,9 @@ function initFilter(currentUser, services, providers, isAdminRoute, tableFilter)
   const tagInput = new Tagify(filterInput, {
     whitelist: allowedList,
     validate(tag) {
-      if (allowedValues.includes(tag.value) || /^provider: [A-Za-z0-9_]{1,100}$/.test(tag.value)) {
+      if (allowedValues.includes(tag.value)
+        || /^provider: [A-Za-z0-9_]{1,100}$/.test(tag.value)
+        || /^label: .{1,100}$/.test(tag.value)) {
         return true;
       }
       if (isAdminRoute) {
@@ -62,56 +66,6 @@ function initFilter(currentUser, services, providers, isAdminRoute, tableFilter)
 }
 
 /**
- * Fallback method for copying text to clipboard.
- * @param {string} text - the text to copy
- */
-function fallbackCopyTextToClipboard(text) {
-  const textArea = document.createElement('textarea');
-  textArea.value = text;
-  // Avoid scrolling to bottom
-  textArea.style.top = '0';
-  textArea.style.left = '0';
-  textArea.style.position = 'fixed';
-  document.body.appendChild(textArea);
-  textArea.focus();
-  textArea.select();
-  try {
-    document.execCommand('copy');
-  } finally {
-    document.body.removeChild(textArea);
-  }
-}
-
-/**
- * Method for copying the text to the clipboard.
- * @param {string} text - the text to copy
- */
-async function copyTextToClipboard(text) {
-  if (!navigator.clipboard) {
-    fallbackCopyTextToClipboard(text);
-    return;
-  }
-  await navigator.clipboard.writeText(text);
-}
-
-/**
- * Intitialize the copy click handler for all copy buttons.
- * @param {string} selector - defines which button(s) to bind the handler to
- */
-async function initCopyHandler(selector) {
-  // https://stackoverflow.com/questions/400212/how-do-i-copy-to-the-clipboard-in-javascript
-  document.querySelectorAll(selector).forEach((el) => {
-    el.addEventListener('click', (event) => {
-      copyTextToClipboard(event.target.getAttribute('data-text'));
-      const isTruncated = event.target.getAttribute('data-truncated') === 'true';
-      toasts.showUpper(
-          `✅ Copied to clipboard${isTruncated ? '. WARNING: this request text was truncated due to length constraints.' : ''}`,
-      );
-    });
-  });
-}
-
-/**
  * Repopulate the job IDs and statuses arrays which
  * track which jobs are selected.
  */
@@ -128,6 +82,25 @@ function refreshSelected() {
     }
   });
   PubSub.publish('job-selected');
+}
+
+/**
+ * Shows a visual counter for how many jobs have been selected via checkbox.
+ * @param {number} count - the number to display
+ */
+function setJobCounterDisplay(count) {
+  const jobCounterElement = document.getElementById('job-counter');
+  jobCounterElement.textContent = count;
+  const display = ` job${count === 1 ? '' : 's'}`;
+  const jobCounterMessageElement = document.getElementById('job-counter-message');
+  jobCounterMessageElement.textContent = display;
+  if (count === 0) {
+    jobCounterElement.classList.add('d-none');
+    jobCounterMessageElement.classList.add('d-none');
+  } else {
+    jobCounterElement.classList.remove('d-none');
+    jobCounterMessageElement.classList.remove('d-none');
+  }
 }
 
 /**
@@ -152,6 +125,7 @@ function initSelectHandler(selector) {
       const numSelected = jobIDs.length;
       const areAllJobsSelected = numSelectable === numSelected;
       document.getElementById('select-jobs').checked = areAllJobsSelected;
+      setJobCounterDisplay(jobIDs.length);
       PubSub.publish('job-selected');
     });
   });
@@ -181,6 +155,7 @@ function initSelectAllHandler() {
         jobEl.checked = false;
       }
     });
+    setJobCounterDisplay(jobIDs.length);
     PubSub.publish('job-selected');
   });
 }
@@ -254,7 +229,7 @@ const jobsTable = {
       async () => loadRows(params),
     );
     formatDates('.date-td');
-    initFilter(params.currentUser, params.services, params.providers, params.isAdminRoute, params.tableFilter);
+    initFilter(params.currentUser, params.services, params.providers, params.labels, params.isAdminRoute, params.tableFilter);
     initCopyHandler('.copy-request');
     initSelectHandler('.select-job');
     initSelectAllHandler();
@@ -274,6 +249,15 @@ const jobsTable = {
    */
   getJobIds() {
     return jobIDs;
+  },
+
+  /**
+   * Gets the status of the specified job.
+   * @param {string} jobID - the job to retrieve status for
+   * @returns the job status string
+   */
+  getJobStatus(jobID) {
+    return document.querySelector(`#select-${jobID}`).getAttribute('data-status');
   },
 };
 

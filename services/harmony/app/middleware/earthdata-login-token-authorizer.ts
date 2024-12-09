@@ -21,11 +21,10 @@ export default function buildEdlAuthorizer(paths: Array<string | RegExp> = []): 
     if (authHeader) {
       const match = authHeader.match(BEARER_TOKEN_REGEX);
       if (match) {
-        const { logger } = req.context;
         const userToken = match[1];
         try {
           // Get the username for the provided token from EDL
-          const username = await getUserIdRequest(userToken, logger);
+          const username = await getUserIdRequest(req.context, userToken);
           req.user = username;
           req.accessToken = userToken;
           req.authorized = true;

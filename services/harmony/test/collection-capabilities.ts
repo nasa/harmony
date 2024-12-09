@@ -29,7 +29,7 @@ describe('Testing collection capabilities', function () {
 
         it('includes all of the expected fields in the response according to the default version', function () {
           const expectedFields = [
-            'conceptId', 'shortName', 'variableSubset', 'bboxSubset', 'shapeSubset',
+            'conceptId', 'shortName', 'variableSubset', 'bboxSubset', 'shapeSubset', 'temporalSubset',
             'concatenate', 'reproject', 'outputFormats', 'services', 'variables', 'capabilitiesVersion',
           ];
           const capabilities = JSON.parse(this.res.text);
@@ -61,6 +61,11 @@ describe('Testing collection capabilities', function () {
           expect(capabilities.shapeSubset).to.equal(true);
         });
 
+        it('sets the temporalSubset field correctly', function () {
+          const capabilities = JSON.parse(this.res.text);
+          expect(capabilities.temporalSubset).to.equal(true);
+        });
+
         it('sets the concatenate field correctly', function () {
           const capabilities = JSON.parse(this.res.text);
           expect(capabilities.concatenate).to.equal(true);
@@ -74,7 +79,7 @@ describe('Testing collection capabilities', function () {
         it('sets the outputFormats field correctly', function () {
           const capabilities = JSON.parse(this.res.text);
           const expectedFormats = [
-            'application/x-netcdf4', 'image/tiff', 'image/png', 'image/gif', 'application/x-zarr',
+            'application/x-netcdf4', 'image/tiff', 'application/x-zarr', 'image/png', 'image/gif',
           ];
           expect(capabilities.outputFormats).to.eql(expectedFormats);
         });
@@ -190,7 +195,7 @@ describe('Testing collection capabilities', function () {
 
         it('includes all of the expected fields in the version 1 response', function () {
           const expectedFields = [
-            'conceptId', 'shortName', 'variableSubset', 'bboxSubset', 'shapeSubset',
+            'conceptId', 'shortName', 'variableSubset', 'bboxSubset', 'shapeSubset', 'temporalSubset',
             'concatenate', 'reproject', 'outputFormats', 'services', 'variables', 'capabilitiesVersion',
           ];
           const capabilities = JSON.parse(this.res.text);
@@ -222,6 +227,11 @@ describe('Testing collection capabilities', function () {
           expect(capabilities.shapeSubset).to.equal(true);
         });
 
+        it('sets the temporalSubset field correctly in the version 1 response', function () {
+          const capabilities = JSON.parse(this.res.text);
+          expect(capabilities.temporalSubset).to.equal(true);
+        });
+
         it('sets the concatenate field correctly in the version 1 response', function () {
           const capabilities = JSON.parse(this.res.text);
           expect(capabilities.concatenate).to.equal(true);
@@ -235,7 +245,7 @@ describe('Testing collection capabilities', function () {
         it('sets the outputFormats field correctly in the version 1 response', function () {
           const capabilities = JSON.parse(this.res.text);
           const expectedFormats = [
-            'application/x-netcdf4', 'image/tiff', 'image/png', 'image/gif', 'application/x-zarr',
+            'application/x-netcdf4', 'image/tiff', 'application/x-zarr', 'image/png', 'image/gif',
           ];
           expect(capabilities.outputFormats).to.eql(expectedFormats);
         });

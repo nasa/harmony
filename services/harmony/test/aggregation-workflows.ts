@@ -298,7 +298,7 @@ describe('When a workflow has an aggregating step in the middle and end and star
   let nonAggregateWorkItem2;
 
   hookServersStartStop();
-  const queryCmr = 'harmonyservices/query-cmr:latest';
+  const queryCmr = 'harmonyservices/query-cmr:stable';
   const firstAggregateService = 'batchee';
   const secondAggregateService = 'concise';
   const nonAggregateService = 'stitchee';

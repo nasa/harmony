@@ -26,46 +26,54 @@ async function handleStacRequest(
   const { jobId } = req.params;
   if (!isUUID(jobId)) {
     throw new RequestValidationError(`jobId ${jobId} is in invalid format.`);
-  } else {
-    await db.transaction(async (tx) => {
-      // load the job with only the requested STAC data links
-      // (using paging parameters)
-      const {
-        job,
-      } = await Job.byJobID(
-        tx, jobId,
-      );
-      const {
-        data: stacDataLinks,
-        pagination,
-      } = await getLinksForJob(
-        tx, jobId, pagingParams.page, pagingParams.limit, 'data', true,
-      );
-      if (!job) {
-        throw new NotFoundError(`Unable to find job ${jobId}`);
-      }
+  }
 
-      if ([JobStatus.SUCCESSFUL, JobStatus.COMPLETE_WITH_ERRORS].includes(job.status)) {
-        if (stacDataLinks.length) {
-          job.links = stacDataLinks;
-          const urlRoot = getRequestRoot(req);
-          // default to s3 links
-          const lType = linkType || 's3';
-          const serializedJob = job.serialize(urlRoot, lType);
-          res.json(callback(serializedJob, pagination));
-        } else if ((await job.hasLinks(tx, 'data', true))) {
-          if (req.params.itemIndex) {
-            throw new RequestValidationError('STAC item index is out of bounds');
-          } else {
-            throw new RequestValidationError('The requested paging parameters were out of bounds');
-          }
+  let job: Job = null;
+  let stacDataLinks = null;
+  let pagination = null;
+  // get the job and its data links (using paging parameters) from database
+  await db.transaction(async (tx) => {
+    const jobResult = await Job.byJobID(tx, jobId);
+    // eslint-disable-next-line prefer-destructuring
+    job = jobResult.job;
+    if (!job) {
+      throw new NotFoundError(`Unable to find job ${jobId}`);
+    }
+
+    const linkResult = await getLinksForJob(
+      tx, jobId, pagingParams.page, pagingParams.limit, 'data', true,
+    );
+    stacDataLinks = linkResult.data;
+    // eslint-disable-next-line prefer-destructuring
+    pagination = linkResult.pagination;
+  });
+
+  if ([JobStatus.SUCCESSFUL, JobStatus.COMPLETE_WITH_ERRORS].includes(job.status)) {
+    if (stacDataLinks.length) {
+      job.links = stacDataLinks;
+      const urlRoot = getRequestRoot(req);
+      // default to s3 links
+      const lType = linkType || 's3';
+      const serializedJob = job.serialize(urlRoot, lType);
+      res.json(callback(serializedJob, pagination));
+    } else {
+      let hasDataLinks = false;
+      await db.transaction(async (tx) => {
+        hasDataLinks = await job.hasLinks(tx, 'data', true);
+      });
+
+      if (hasDataLinks) {
+        if (req.params.itemIndex) {
+          throw new RequestValidationError('STAC item index is out of bounds');
         } else {
-          throw new NotFoundError(`Service did not provide STAC items for job ${jobId}`);
+          throw new RequestValidationError('The requested paging parameters were out of bounds');
         }
       } else {
-        throw new ConflictError(`Job ${jobId} is not complete`);
+        throw new NotFoundError(`Service did not provide STAC items for job ${jobId}`);
       }
-    });
+    }
+  } else {
+    throw new ConflictError(`Job ${jobId} is not complete`);
   }
 }
 

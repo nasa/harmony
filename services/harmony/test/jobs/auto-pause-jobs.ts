@@ -67,7 +67,7 @@ function skipPreviewLinkTest(username: string): void {
 function previewingToPauseTest(username: string): void {
   describe('and a granule has completed processing', async function () {
     before(async function () {
-      const resQueryCmr = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+      const resQueryCmr = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
       expect(resQueryCmr.status).to.equal(200);
       const workItemQueryCmr = JSON.parse(resQueryCmr.text).workItem;
       workItemQueryCmr.status = WorkItemStatus.SUCCESSFUL;
@@ -99,7 +99,7 @@ function previewingToPauseTest(username: string): void {
 }
 
 describe('Auto-pausing jobs', function () {
-  hookServersStartStop({ skipEarthdataLogin: false });
+  hookServersStartStop({ USE_EDL_CLIENT_APP: true });
   let sizeOfObjectStub;
   before(async function () {
     env.previewThreshold = 3;

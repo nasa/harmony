@@ -46,6 +46,34 @@ CREATE TABLE `job_errors` (
   FOREIGN KEY(jobID) REFERENCES jobs(jobID)
 );
 
+CREATE TABLE `raw_labels` (
+  `id` integer not null primary key autoincrement,
+  `value` varchar(255) not null,
+  `createdAt` datetime not null,
+  `updatedAt` datetime not null,
+  UNIQUE(value)
+);
+
+CREATE TABLE `jobs_raw_labels` (
+  `id` integer not null primary key autoincrement,
+  `job_id` char(36) not null,
+  `label_id` integer not null,
+  `createdAt` datetime not null,
+  `updatedAt` datetime not null,
+  FOREIGN KEY(job_id) REFERENCES jobs(jobID)
+  FOREIGN KEY(label_id) REFERENCES raw_labels(id)
+  UNIQUE(job_id, label_id)
+);
+
+CREATE TABLE `users_labels` (
+  `id` integer not null primary key autoincrement,
+  `username` varchar(255) not null,
+  `value` varchar(255) not null,
+  `createdAt` datetime not null,
+  `updatedAt` datetime not null,
+  UNIQUE(username, value)
+);
+
 CREATE TABLE `work_items` (
   `id` integer not null primary key autoincrement,
   `jobID` char(36) not null,
@@ -139,6 +167,7 @@ CREATE TABLE `service_deployments` (
   `username` varchar(255) not null,
   `service` varchar(255) not null,
   `tag` varchar(255) not null,
+  `regression_test_version` varchar(255),
   `status` text check (`status` in ('running', 'successful', 'failed')) not null,
   `message` varchar(4096),
   `createdAt` datetime not null,
@@ -152,6 +181,7 @@ CREATE INDEX jobs_updatedAt_id ON jobs(updatedAt);
 CREATE INDEX jobs_status_idx ON jobs(status);
 CREATE INDEX jobs_username_idx ON jobs(jobID, username);
 CREATE INDEX job_links_jobID_idx ON job_links(jobID);
+CREATE INDEX job_links_jobID_id_idx ON job_links(jobID, id);
 CREATE INDEX job_errors_jobID_idx ON job_errors(jobID);
 CREATE INDEX work_items_jobID_idx ON work_items(jobID);
 CREATE INDEX work_items_serviceID_idx ON work_items(serviceID);

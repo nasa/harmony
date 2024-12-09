@@ -23,9 +23,9 @@ describe('Versions endpoint', function () {
         const services = JSON.parse(this.res.text);
         expect(services.map((s) => s.name)).to.eql([
           'harmony/download',
-          'ldds/geoloco',
           'ldds/subset-band-name',
-          'gesdisc/giovanni',
+          'ldds/geoloco',
+          'giovanni-time-series-adapter',
           'podaac/l2-subsetter',
           'podaac/concise',
           'podaac/l2-subsetter-concise',
@@ -37,6 +37,7 @@ describe('Versions endpoint', function () {
           'net2cog',
           'nasa/harmony-gdal-adapter',
           'sds/HyBIG',
+	  'sds/harmony-smap-l2-gridder',
           'sds/HOSS-geographic',
           'sds/HOSS-projection-gridded',
           'harmony/netcdf-to-zarr',
@@ -44,6 +45,7 @@ describe('Versions endpoint', function () {
           'harmony/swath-projector-netcdf-to-zarr',
           'harmony/service-example',
           'l2-subsetter-batchee-stitchee-concise',
+          'asf/opera-rtc-s1-browse',
         ]);
       });
 

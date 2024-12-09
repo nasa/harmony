@@ -29,7 +29,7 @@ import { setLogLevel } from '../frontends/configuration';
 import getVersions from '../frontends/versions';
 import serviceInvoker from '../backends/service-invoker';
 import HarmonyRequest, { addRequestContextToOperation } from '../models/harmony-request';
-import { getServiceImageTag, getServiceImageTags, updateServiceImageTag, getServiceImageTagState, setServiceImageTagState, getServiceDeployment, getServiceDeployments } from '../frontends/service-image-tags';
+import { getServiceImageTag, getServiceImageTags, updateServiceImageTag, getServiceDeploymentsState, setServiceDeploymentsState, getServiceDeployment, getServiceDeployments } from '../frontends/service-image-tags';
 import cmrCollectionReader = require('../middleware/cmr-collection-reader');
 import cmrUmmCollectionReader = require('../middleware/cmr-umm-collection-reader');
 import env from '../util/env';
@@ -42,6 +42,11 @@ import { getCollectionCapabilitiesJson } from '../frontends/capabilities';
 import extendDefault from '../middleware/extend';
 import { getAdminHealth, getHealth } from '../frontends/health';
 import { freeTextQueryGet, freeTextQueryPost } from '../frontends/free-text-query';
+import handleLabelParameter from '../middleware/label';
+import { addJobLabels, deleteJobLabels } from '../frontends/labels';
+import handleJobIDParameter from '../middleware/job-id';
+import earthdataLoginSkipped from '../middleware/earthdata-login-skipped';
+
 export interface RouterConfig {
   PORT?: string | number; // The port to run the frontend server on
   BACKEND_PORT?: string | number; // The port to run the backend server on
@@ -49,7 +54,7 @@ export interface RouterConfig {
   // True if we should run example services, false otherwise.  Should be false
   // in production.  Defaults to true until we have real HTTP services.
   EXAMPLE_SERVICES?: string;
-  skipEarthdataLogin?: string; // True if we should skip using EDL
+  USE_EDL_CLIENT_APP?: string; // True if we use the EDL client app
   USE_HTTPS?: string; // True if the server should use https
 }
 
@@ -70,11 +75,11 @@ function logged(fn: RequestHandler): RequestHandler {
     req.context.logger = child;
     const startTime = new Date().getTime();
     try {
-      child.debug('Invoking middleware');
+      child.silly('Invoking middleware');
       return fn(req, res, next);
     } finally {
       const msTaken = new Date().getTime() - startTime;
-      child.debug('Completed middleware', { durationMs: msTaken });
+      child.silly('Completed middleware', { durationMs: msTaken });
       if (req.context.logger === child) {
         // Other middlewares may have changed the logger.  This generally happens
         // when `next()` is an async call that the middleware doesn't await.  Note
@@ -142,16 +147,17 @@ const authorizedRoutes = [
   '/service-image*',
   '/service-deployment*',
   '/ogc-api-edr/.*/collections/*',
+  '/labels',
 ];
 
 /**
  * Creates and returns an express.Router instance that has the middleware
  * and handlers necessary to respond to frontend service requests
  *
- * @param skipEarthdataLogin - Opt to skip Earthdata Login
+ * @param USE_EDL_CLIENT_APP - Opt to skip Earthdata Login
  * @returns A router which can respond to frontend service requests
  */
-export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): express.Router {
+export default function router({ USE_EDL_CLIENT_APP = 'false' }: RouterConfig): express.Router {
   const result = express.Router();
 
   const secret = process.env.COOKIE_SECRET;
@@ -171,10 +177,11 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   // a bucket.
   result.post(collectionPrefix('(ogc-api-coverages)'), asyncHandler(shapefileUpload()));
 
-  result.use(logged(earthdataLoginTokenAuthorizer(authorizedRoutes)));
-
-  if (`${skipEarthdataLogin}` !== 'true') {
+  if (`${USE_EDL_CLIENT_APP}` !== 'false') {
+    result.use(logged(earthdataLoginTokenAuthorizer(authorizedRoutes)));
     result.use(logged(earthdataLoginOauthAuthorizer(authorizedRoutes)));
+  } else {
+    result.use(logged(earthdataLoginSkipped));
   }
 
   result.use('/core/*', core);
@@ -200,6 +207,8 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
     next(new NotFoundError('Services can only be invoked when a valid collection is supplied in the URL path before the service name.'));
   });
   result.use(logged(shapefileConverter));
+  result.use(handleLabelParameter);
+  result.use(handleJobIDParameter);
   result.use(logged(parameterValidation));
   result.use(logged(parseGridMiddleware));
   result.use(logged(preServiceConcatenationHandler));
@@ -223,10 +232,13 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   result.get(collectionPrefix('wms'), asyncHandler(service(serviceInvoker)));
   result.get(/^.*?\/ogc-api-coverages\/.*?\/collections\/.*?\/coverage\/rangeset\/?$/, asyncHandler(service(serviceInvoker)));
   result.post(/^.*?\/ogc-api-coverages\/.*?\/collections\/.*?\/coverage\/rangeset\/?$/, asyncHandler(service(serviceInvoker)));
-  result.get(/^\/ogc-api-edr\/.*?\/collections\/.*?\/(cube|area|position)\/?$/, asyncHandler(service(serviceInvoker)));
-  result.post(/^\/ogc-api-edr\/.*?\/collections\/.*?\/(cube|area|position)\/?$/, asyncHandler(service(serviceInvoker)));
+  result.get(/^\/ogc-api-edr\/.*?\/collections\/.*?\/(cube|area|position|trajectory)\/?$/, asyncHandler(service(serviceInvoker)));
+  result.post(/^\/ogc-api-edr\/.*?\/collections\/.*?\/(cube|area|position|trajectory)\/?$/, asyncHandler(service(serviceInvoker)));
+
   result.get('/jobs', asyncHandler(getJobsListing));
   result.get('/jobs/:jobID', asyncHandler(getJobStatus));
+  result.get('/admin/jobs', asyncHandler(getJobsListing));
+  result.get('/admin/jobs/:jobID', asyncHandler(getJobStatus));
 
   result.post('/jobs/:jobID/cancel', asyncHandler(cancelJob));
   result.post('/admin/jobs/:jobID/cancel', asyncHandler(cancelJob));
@@ -250,14 +262,15 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   result.get('/jobs/:jobID/pause', asyncHandler(pauseJob));
   result.get('/admin/jobs/:jobID/pause', asyncHandler(pauseJob));
 
-  result.get('/admin/jobs', asyncHandler(getJobsListing));
-  result.get('/admin/jobs/:jobID', asyncHandler(getJobStatus));
-
   const jsonParser = json();
   result.post('/jobs/cancel', jsonParser, asyncHandler(cancelJobs));
   result.post('/jobs/resume', jsonParser, asyncHandler(resumeJobs));
   result.post('/jobs/skip-preview', jsonParser, asyncHandler(skipJobsPreview));
   result.post('/jobs/pause', jsonParser, asyncHandler(pauseJobs));
+
+  // job labels
+  result.put('/labels', jsonParser, asyncHandler(addJobLabels));
+  result.delete('/labels', jsonParser, asyncHandler(deleteJobLabels));
 
   result.get('/admin/request-metrics', asyncHandler(getRequestMetrics));
 
@@ -304,8 +317,8 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   result.put('/service-image-tag/:service', jsonParser, asyncHandler(updateServiceImageTag));
   result.get('/service-deployment', asyncHandler(getServiceDeployments));
   result.get('/service-deployment/:id', asyncHandler(getServiceDeployment));
-  result.get('/service-deployments-state', asyncHandler(getServiceImageTagState));
-  result.put('/service-deployments-state', jsonParser, asyncHandler(setServiceImageTagState));
+  result.get('/service-deployments-state', asyncHandler(getServiceDeploymentsState));
+  result.put('/service-deployments-state', jsonParser, asyncHandler(setServiceDeploymentsState));
 
   // query by free text
   result.get('/free-text', asyncHandler(freeTextQueryGet));

@@ -23,6 +23,14 @@ else
     source .env
 fi
 
+# Validate environment
+if [ "${USE_EDL_CLIENT_APP}" == "false" ]; then
+  if [ -z "${EDL_TOKEN}" ]; then
+    echo "Error: EDL_TOKEN must be set when USE_EDL_CLIENT_APP is 'false'."
+    exit 1
+  fi
+fi
+
 # Used to decide whether or not to run harmony in k8s
 export LOCAL_DEV
 export KUBE_CONTEXT

@@ -20,7 +20,7 @@ describe('Testing job progress', function () {
 
     describe('when the query-cmr work-item is retrieved and processed', async function () {
       it('sets the job progress to 9', async function () {
-        const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+        const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
         const { workItem } = JSON.parse(res.text);
         workItem.status = WorkItemStatus.SUCCESSFUL;
         workItem.results = [
@@ -87,7 +87,7 @@ describe('Testing job progress', function () {
 
     describe('when the query-cmr work-item is retrieved and processed', async function () {
       it('sets the job progress to 4', async function () {
-        const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+        const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
         const { workItem } = JSON.parse(res.text);
         workItem.status = WorkItemStatus.SUCCESSFUL;
         workItem.results = [

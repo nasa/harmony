@@ -333,7 +333,7 @@ describe('Service Runner', function () {
 
       it('returns an error message', async function () {
         const result = await serviceRunner.runServiceFromPull(workItem);
-        expect(result.error).to.equal('The harmonyservices/query-cmr:latest service failed.');
+        expect(result.error).to.equal('The harmonyservices/query-cmr:stable service failed.');
       });
     });
 

@@ -23,7 +23,7 @@ import { stub } from 'sinon';
 const serviceImages = {
   'batchee': 'latest',
   'geoloco': 'latest',
-  'giovanni-adapter': 'latest',
+  'giovanni-time-series-adapter': '1.0.0',
   'harmony-gdal-adapter': 'latest',
   'harmony-netcdf-to-zarr': 'latest',
   'harmony-regridder': 'latest',
@@ -32,7 +32,7 @@ const serviceImages = {
   'hybig': 'latest',
   'podaac-concise': 'sit',
   'podaac-l2-subsetter': 'sit',
-  'query-cmr': 'latest',
+  'query-cmr': 'stable',
   'sds-maskfill': 'latest',
   'stitchee': 'latest',
   'subset-band-name': 'latest',
@@ -230,20 +230,14 @@ describe('ecrImageNameToComponents', function () {
 describe('Service image endpoint', async function () {
   let envStub;
   beforeEach(function () {
-    envStub = stub(env, 'locallyDeployedServices').get(() => 'giovanni-adapter,harmony-service-example,harmony-netcdf-to-zarr,var-subsetter,swath-projector,harmony-gdal-adapter,podaac-concise,sds-maskfill,trajectory-subsetter,podaac-l2-subsetter,harmony-regridder,hybig,geoloco');
+    envStub = stub(env, 'locallyDeployedServices').get(() => 'harmony-service-example,harmony-netcdf-to-zarr,var-subsetter,swath-projector,harmony-gdal-adapter,podaac-concise,sds-maskfill,trajectory-subsetter,podaac-l2-subsetter,harmony-regridder,hybig,geoloco');
   });
 
   afterEach(function () {
     envStub.restore();
   });
 
-  const locallyDeployedServices = 'giovanni-adapter,harmony-service-example,harmony-netcdf-to-zarr,var-subsetter,swath-projector,harmony-gdal-adapter,podaac-concise,sds-maskfill,trajectory-subsetter,podaac-l2-subsetter,harmony-regridder,hybig,geoloco,subset-band-name';
-
-  beforeEach(function () {
-    process.env.LOCALLY_DEPLOYED_SERVICES = locallyDeployedServices;
-  });
-
-  hookServersStartStop({ skipEarthdataLogin: false });
+  hookServersStartStop({ USE_EDL_CLIENT_APP: true });
 
   describe('List service images', async function () {
     describe('when a user is not in the EDL service deployers or core permissions groups', async function () {
@@ -324,7 +318,7 @@ describe('Service image endpoint', async function () {
       describe('when the service does exist', async function () {
         before(async function () {
           hookRedirect('joe');
-          this.res = await request(this.frontend).get('/service-image-tag/hoss').use(auth({ username: 'joe' }));
+          this.res = await request(this.frontend).get('/service-image-tag/trajectory-subsetter').use(auth({ username: 'joe' }));
         });
 
         after(function () {
@@ -367,7 +361,7 @@ describe('Service image endpoint', async function () {
       describe('when the service does exist', async function () {
         before(async function () {
           hookRedirect('buzz');
-          this.res = await request(this.frontend).get('/service-image-tag/hoss').use(auth({ username: 'buzz' }));
+          this.res = await request(this.frontend).get('/service-image-tag/trajectory-subsetter').use(auth({ username: 'buzz' }));
         });
 
         after(function () {
@@ -412,7 +406,7 @@ describe('Service image endpoint', async function () {
       describe('when the service does exist', async function () {
         before(async function () {
           hookRedirect('coraline');
-          this.res = await request(this.frontend).get('/service-image-tag/hoss').use(auth({ username: 'coraline' }));
+          this.res = await request(this.frontend).get('/service-image-tag/trajectory-subsetter').use(auth({ username: 'coraline' }));
         });
 
         after(function () {
@@ -480,6 +474,27 @@ describe('Service image endpoint', async function () {
 
       it('returns a meaningful error message', async function () {
         expect(this.res.text).to.equal(errorMsg404);
+      });
+    });
+
+    describe('when invalid fields are provided in the request', async function () {
+
+      before(async function () {
+        hookRedirect('buzz');
+        this.res = await request(this.frontend).put('/service-image-tag/hoss').use(auth({ username: 'buzz' })).send(
+          { tag: 'latest', unsupportedOne: 'foo',  unsupportedTwo: 'foo' });
+      });
+
+      after(function () {
+        delete this.res;
+      });
+
+      it('returns a status 400', async function () {
+        expect(this.res.status).to.equal(400);
+      });
+
+      it('returns a meaningful error message', async function () {
+        expect(this.res.text).to.equal('Invalid body parameter(s): unsupportedOne and unsupportedTwo. Allowed body parameters are: tag and regression_test_version.');
       });
     });
 
@@ -1174,7 +1189,7 @@ describe('Service image endpoint', async function () {
 });
 
 describe('Service self-deployment successful', async function () {
-  hookServersStartStop({ skipEarthdataLogin: false });
+  hookServersStartStop({ USE_EDL_CLIENT_APP: true });
 
   describe('Update service image successful', function () {
     let execStub;
@@ -1242,11 +1257,13 @@ describe('Service self-deployment successful', async function () {
       });
 
       it('returns the deployment status successful', async function () {
-        const { deploymentId, username, service, tag, status, message } = this.res.body;
+        const { deploymentId, username, service, tag, regressionTestVersion, status, message } = this.res.body;
         expect(deploymentId).to.eql(linkDeploymentId);
         expect(username).to.eql('buzz');
         expect(service).to.eql('harmony-service-example');
         expect(tag).to.eql('foo');
+        // regressionTestVersion is set to the default value
+        expect(regressionTestVersion).to.eql('latest');
         expect(status).to.eql('successful');
         expect(message).to.eql('Deployment successful');
       });
@@ -1293,7 +1310,7 @@ describe('Service self-deployment successful', async function () {
 });
 
 describe('Service self-deployment failure', async function () {
-  hookServersStartStop({ skipEarthdataLogin: false });
+  hookServersStartStop({ USE_EDL_CLIENT_APP: true });
 
   describe('Update service image failed', function () {
     let execStub;
@@ -1317,7 +1334,8 @@ describe('Service self-deployment failure', async function () {
       execDeployScriptStub.callsArgWith(2, new Error(errorMessage), 'Failure output', '');
 
       hookRedirect('coraline');
-      this.res = await request(this.frontend).put('/service-image-tag/harmony-service-example').use(auth({ username: 'coraline' })).send({ tag: 'foo' });
+      this.res = await request(this.frontend).put('/service-image-tag/harmony-service-example').use(auth({ username: 'coraline' })).send(
+        { tag: 'foo', regression_test_version: '1.2.3' });
     });
 
     after(async function () {
@@ -1363,11 +1381,13 @@ describe('Service self-deployment failure', async function () {
       });
 
       it('returns the deployment status failed and the proper error message', async function () {
-        const { deploymentId, username, service, tag, status, message } = this.res.body;
+        const { deploymentId, username, service, tag, regressionTestVersion, status, message } = this.res.body;
         expect(deploymentId).to.eql(linkDeploymentId);
         expect(username).to.eql('coraline');
         expect(service).to.eql('harmony-service-example');
         expect(tag).to.eql('foo');
+        // regressionTestVersion matches the specified value of the 'regression_test_version' field in the request body
+        expect(regressionTestVersion).to.eql('1.2.3');
         expect(status).to.eql('failed');
         expect(message).to.eql(`Failed service deployment for deploymentId: ${deploymentId}. Error: ${errorMessage}`);
       });
@@ -1402,7 +1422,7 @@ describe('get service deployments state with cookie-secret', async function () {
     process.env.COOKIE_SECRET = 'cookie-secret-value';
   });
 
-  hookServersStartStop({ skipEarthdataLogin: true });
+  hookServersStartStop();
 
   describe('when incorrect cookie-secret header is provided', async function () {
     before(async function () {
@@ -1420,7 +1440,7 @@ describe('get service deployments state with cookie-secret', async function () {
     });
 
     it('returns a meaningful error message', async function () {
-      expect(this.res.text).to.equal('User undefined does not have permission to access this resource');
+      expect(this.res.text).to.equal('User anonymous does not have permission to access this resource');
     });
   });
 
@@ -1450,7 +1470,7 @@ describe('Update service deployments state with cookie-secret', async function (
     process.env.COOKIE_SECRET = 'cookie-secret-value';
   });
 
-  hookServersStartStop({ skipEarthdataLogin: true });
+  hookServersStartStop();
 
   describe('when incorrect cookie-secret header is provided', async function () {
     before(async function () {
@@ -1470,7 +1490,7 @@ describe('Update service deployments state with cookie-secret', async function (
     });
 
     it('returns a meaningful error message', async function () {
-      expect(this.res.text).to.equal('User undefined does not have permission to access this resource');
+      expect(this.res.text).to.equal('User anonymous does not have permission to access this resource');
     });
   });
 

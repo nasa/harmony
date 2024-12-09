@@ -194,6 +194,7 @@ async function cmrGranuleLocatorTurbo(
       if ( req.context.serviceConfig.steps[0].image.match('harmonyservices/query-cmr:.*') ) {
         cmrQuery.collection_concept_id = source.collection;
         const { hits, sessionKey } = await queryGranulesWithSearchAfter(
+          req.context,
           req.accessToken,
           maxGranules,
           cmrQuery,
@@ -280,6 +281,7 @@ async function cmrGranuleLocatorNonTurbo(
         cmrQuery.geojson = operation.geojson;
       }
       cmrResponse = await queryGranulesForCollection(
+        req.context,
         source.collection,
         cmrQuery,
         req.accessToken,

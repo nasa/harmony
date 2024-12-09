@@ -25,8 +25,13 @@ export interface ServiceCapabilities {
   subsetting?: {
     bbox?: boolean;
     shape?: boolean;
+    temporal?: boolean;
     variable?: boolean;
     multiple_variable?: true;
+  };
+  averaging?: {
+    time?: boolean;
+    area?: boolean;
   };
   output_formats?: string[];
   reprojection?: boolean;
@@ -257,6 +262,9 @@ export default abstract class BaseService<ServiceParamType> {
     logger.info('Invoking service for operation', { operation: this.operation });
     // TODO handle the skipPreview parameter here when implementing HARMONY-1129
     const job = this._createJob(getRequestUrl(req));
+    const labels = req.body.label;
+    job.labels = labels || [];
+
     await this._createAndSaveWorkflow(job);
 
     const { isAsync, jobID } = job;
@@ -297,7 +305,7 @@ export default abstract class BaseService<ServiceParamType> {
       do {
         // Sleep and poll for completion.  We could also use SNS or similar for a faster response
         await new Promise((resolve) => setTimeout(resolve, env.syncRequestPollIntervalMs));
-        ({ job } = await Job.byJobID(db, jobID, true));
+        ({ job } = await Job.byJobID(db, jobID, true, true, true));
       } while (!job.hasTerminalStatus());
 
       if (job.status === JobStatus.FAILED) {

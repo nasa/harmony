@@ -217,7 +217,7 @@ export async function freeTextQueryPost(
       'simplify-shapefile': 'true',
     };
 
-    const collsWithGranules = await queryCollectionUsingMultipartForm(collQuery, req.accessToken);
+    const collsWithGranules = await queryCollectionUsingMultipartForm({}, collQuery, req.accessToken);
 
     // list of collection concept ids that has granule found with the spatial and temporal search
     const collConceptIds = collsWithGranules.collections.filter(c => c.granule_count > 0).map(c => c.id);

@@ -126,7 +126,7 @@ export async function responseHandler(req: Request, res: Response): Promise<void
 
   const trx = await db.transaction();
 
-  const { job } = await Job.byJobID(trx, requestId, true, false, 1, 1);
+  const { job } = await Job.byJobID(trx, requestId, true, false, false, 1, 1);
   if (!job) {
     await trx.rollback();
     res.status(404);

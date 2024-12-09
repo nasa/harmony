@@ -25,7 +25,7 @@ async function createJobAndWorkItemsWithManyVariables(
 
   await buildWorkflowStep({
     jobID: job.jobID,
-    serviceID: 'harmonyservices/query-cmr:latest',
+    serviceID: 'harmonyservices/query-cmr:stable',
     stepIndex: 1,
     is_sequential: true,
     workItemCount: 1,
@@ -42,7 +42,7 @@ async function createJobAndWorkItemsWithManyVariables(
 
   await buildWorkItem({
     jobID: job.jobID,
-    serviceID: 'harmonyservices/query-cmr:latest',
+    serviceID: 'harmonyservices/query-cmr:stable',
     workflowStepIndex: 1,
   }).save(db);
 
@@ -67,7 +67,7 @@ describe('When a request contains many variables', async function () {
   });
 
   it('includes all the variables in the data operation', async function () {
-    const queryCmrRes = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+    const queryCmrRes = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
     const queryCmrWorkItem = JSON.parse(queryCmrRes.text).workItem;
     queryCmrWorkItem.status = WorkItemStatus.SUCCESSFUL;
     queryCmrWorkItem.results = [getStacLocation(queryCmrWorkItem, 'catalog.json')];

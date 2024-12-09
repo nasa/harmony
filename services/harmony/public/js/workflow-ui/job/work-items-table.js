@@ -1,4 +1,4 @@
-import { formatDates } from '../table.js';
+import { formatDates, initCopyHandler } from '../table.js';
 import toasts from '../toasts.js';
 import PubSub from '../../pub-sub.js';
 
@@ -45,6 +45,7 @@ async function load(params, checkJobStatus) {
     document.getElementById('workflow-items-table-container').innerHTML = template;
     bindRetryButtonClickHandler('tr button.retry-button');
     formatDates('.date-td');
+    initCopyHandler('.copy-request');
     return true;
   }
   return false;

@@ -2,7 +2,7 @@ import { NextFunction, Response } from 'express';
 import DataOperation from '../../models/data-operation';
 import HarmonyRequest from '../../models/harmony-request';
 import wrap from '../../util/array';
-import { handleCrs, handleExtend, handleFormat, handleGranuleIds, handleGranuleNames, handleHeight, handleScaleExtent, handleScaleSize, handleWidth } from '../../util/parameter-parsers';
+import { handleAveragingType, handleCrs, handleExtend, handleFormat, handleGranuleIds, handleGranuleNames, handleHeight, handleScaleExtent, handleScaleSize, handleWidth } from '../../util/parameter-parsers';
 import { createDecrypter, createEncrypter } from '../../util/crypto';
 import env from '../../util/env';
 import { RequestValidationError } from '../../util/errors';
@@ -41,6 +41,7 @@ export default function getCoverageRangeset(
   handleScaleSize(operation, query);
   handleHeight(operation, query);
   handleWidth(operation, query);
+  handleAveragingType(operation, query);
 
   operation.interpolationMethod = query.interpolation;
   if (query.forceasync) {

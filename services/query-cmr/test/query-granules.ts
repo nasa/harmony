@@ -16,6 +16,7 @@ import { CmrError } from '../../harmony/app/util/errors';
 chai.use(require('chai-as-promised'));
 
 const operation = new DataOperation({
+  requestId: 'aaaaaaaa-bbbb-1234-cccc-dddddddddddd',
   unencryptedAccessToken: 'shhhhh!',
   sources: [{ collection: 'C001-TEST' }, { collection: 'C002-TEST' }],
 });
@@ -48,7 +49,7 @@ async function formDataToString(formdata: CombinedStream): Promise<string> {
  * @returns key/value pairs of form data name to value
  */
 async function fetchPostArgsToFields(
-  [_, formdata],
+  [_a, _b, formdata],
 ): Promise<any> { // eslint-disable-line @typescript-eslint/no-explicit-any
   const data = (await formDataToString(formdata)).replace(/----+[0-9]+-*\r\n/g, '');
   const result = {};

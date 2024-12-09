@@ -127,13 +127,15 @@ export async function getJobsListing(
     const root = getRequestRoot(req);
     const { page, limit } = getPagingParams(req, env.defaultJobListPageSize);
     const query: JobQuery = { where: {} };
+    query.labels = req.body.label;
+
     if (!req.context.isAdminAccess) {
       query.where.username = req.user;
-      query.where.isAsync = true;
     }
+
     let listing;
     await db.transaction(async (tx) => {
-      listing = await Job.queryAll(tx, query, page, limit);
+      listing = await Job.queryAll(tx, query, page, limit, true);
     });
     const serializedJobs = listing.data.map((j) => getJobForDisplay(j, root, 'none', []));
     const response: JobListing = {
@@ -172,7 +174,7 @@ export async function getJobStatus(
     let errors: JobError[];
 
     await db.transaction(async (tx) => {
-      ({ job, pagination } = await Job.byJobID(tx, jobID, true, false, page, limit));
+      ({ job, pagination } = await Job.byJobID(tx, jobID, true, true, false, page, limit));
       errors = await getErrorsForJob(tx, jobID);
     });
     if (!job) {

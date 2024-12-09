@@ -3,6 +3,8 @@ import { JobStatus } from '../../../harmony/app/models/job';
 import WorkItem, { computeWorkItemDurationOutlierThresholdForJobService, getWorkItemsByUpdateAgeAndStatus } from '../../../harmony/app/models/work-item';
 import db from '../../../harmony/app/util/db';
 import log from '../../../harmony/app/util/log';
+import { WorkItemQueueType } from '../../../harmony/app/util/queue/queue';
+import { getQueueForType } from '../../../harmony/app/util/queue/queue-factory';
 import sleep from '../../../harmony/app/util/sleep';
 import { Worker } from '../../../harmony/app/workers/worker';
 import { WorkItemStatus } from '../../../harmony/app/models/work-item-interface';
@@ -73,16 +75,33 @@ export default class Failer implements Worker {
   /**
    * Find work items that're older than lastUpdateOlderThanMinutes and call handleWorkItemUpdate.
    * @param lastUpdateOlderThanMinutes - upper limit on the duration since the last update
+   * @param failerDisabledDelay - number of ms to sleep when the failer is disabled because
+   * there are too many items on the work item update queue. Override to a small value in tests.
    * @returns Resolves when the request is complete
    */
-  async handleWorkItemUpdates(lastUpdateOlderThanMinutes: number): Promise<void> {
+  async handleWorkItemUpdates(
+    lastUpdateOlderThanMinutes: number,
+    failerDisabledDelay = 20000,
+  ): Promise<void> {
     let done = false;
     let startingId = 0;
     let numExpired = 0;
-    const batchSize = env.workFailerBatchSize;
+    let batchSize = env.workFailerBatchSize;
     log.info('Work failer processing started.');
 
     while (!done) {
+      if (env.maxWorkItemsOnUpdateQueueFailer !== -1) {
+        const smallUpdateQueue = getQueueForType(WorkItemQueueType.SMALL_ITEM_UPDATE);
+        const updateQueueCount = await smallUpdateQueue.getApproximateNumberOfMessages();
+        if (updateQueueCount >= env.maxWorkItemsOnUpdateQueueFailer) {
+          log.warn(`Work item update queue is too large with ${updateQueueCount} items, will not fail more work`);
+          await sleep(failerDisabledDelay);
+          continue;
+        } else {
+          const slotsAvailable = env.maxWorkItemsOnUpdateQueueFailer - updateQueueCount;
+          batchSize = slotsAvailable < batchSize ? slotsAvailable : batchSize;
+        }
+      }
       const { workItems, jobServiceThresholds, maxId: newId } = await this.getExpiredWorkItems(lastUpdateOlderThanMinutes, startingId, batchSize);
 
       if (newId > startingId) {

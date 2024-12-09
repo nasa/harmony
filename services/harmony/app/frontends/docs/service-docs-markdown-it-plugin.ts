@@ -33,7 +33,7 @@ function getServiceTable(md: MarkDownIt, serviceCaps: ServiceCapabilities): unkn
   // main header
   tableTokens.push(new Token('table_row_open', 'tr', 1));
   const titleHeader = new Token('table_header_open', 'th', 1);
-  titleHeader.attrPush(['colspan', '7']);
+  titleHeader.attrPush(['colspan', '8']);
   titleHeader.attrPush(['class', 'table_title']);
   tableTokens.push(titleHeader);
   let itemToken = new Token('inline', '', 0);
@@ -47,7 +47,7 @@ function getServiceTable(md: MarkDownIt, serviceCaps: ServiceCapabilities): unkn
   // first sub header
   tableTokens.push(new Token('table_row_open', 'tr', 1));
   const subsettingHeader = new Token('table_header_open', 'th', 1);
-  subsettingHeader.attrPush(['colspan', '4']);
+  subsettingHeader.attrPush(['colspan', '5']);
   tableTokens.push(subsettingHeader);
   itemToken = new Token('inline', '', 0);
   itemToken.content = 'subsetting';
@@ -100,6 +100,15 @@ function getServiceTable(md: MarkDownIt, serviceCaps: ServiceCapabilities): unkn
   tableTokens.push(headerToken);
   itemToken = new Token('inline', '', 0);
   itemToken.content = 'shape';
+  itemToken.type = 'text';
+  itemToken.children = [];
+  tableTokens.push(itemToken);
+  tableTokens.push(new Token('table_header_close', 'td', -1));
+  headerToken = new Token('table_header_open', 'th', 1);
+  headerToken.attrPush(['class', 'subheader']);
+  tableTokens.push(headerToken);
+  itemToken = new Token('inline', '', 0);
+  itemToken.content = 'temporal';
   itemToken.type = 'text';
   itemToken.children = [];
   tableTokens.push(itemToken);
@@ -170,6 +179,13 @@ function getServiceTable(md: MarkDownIt, serviceCaps: ServiceCapabilities): unkn
   tableTokens.push(new Token('table_data_open', 'td', 1));
   itemToken = new Token('inline', '', 0);
   itemToken.content = serviceCaps.subsetting.shape ? 'Y' : 'N';
+  itemToken.type = 'text';
+  itemToken.children = [];
+  tableTokens.push(itemToken);
+  tableTokens.push(new Token('table_data_close', 'td', -1));
+  tableTokens.push(new Token('table_data_open', 'td', 1));
+  itemToken = new Token('inline', '', 0);
+  itemToken.content = serviceCaps.subsetting.temporal ? 'Y' : 'N';
   itemToken.type = 'text';
   itemToken.children = [];
   tableTokens.push(itemToken);

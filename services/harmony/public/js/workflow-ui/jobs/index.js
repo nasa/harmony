@@ -1,6 +1,7 @@
 import jobsTable from './jobs-table.js';
 import JobsStatusChangeLinks from './jobs-status-change-links.js';
 import toasts from '../toasts.js';
+import labels from '../labels.js';
 
 const params = {};
 
@@ -10,6 +11,7 @@ params.isAdminRoute = isAdminRoute;
 params.tableFilter = tableFilter.getAttribute('data-value');
 params.currentUser = tableFilter.getAttribute('data-current-user');
 params.services = JSON.parse(tableFilter.getAttribute('data-services'));
+params.labels = JSON.parse(tableFilter.getAttribute('data-labels'));
 params.providers = JSON.parse(tableFilter.getAttribute('data-providers'));
 
 params.disallowStatus = document.getElementsByName('disallowStatus')[0].checked ? 'on' : '';
@@ -30,3 +32,8 @@ const jobStatusLinks = new JobsStatusChangeLinks();
 jobStatusLinks.init('job-state-links-container', 'job-selected');
 
 toasts.init();
+
+const labelDropdown = document.getElementById('label-dropdown-a');
+if (labelDropdown) {
+  labels.init();
+}

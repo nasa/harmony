@@ -1,4 +1,4 @@
-import { pick } from 'lodash';
+import _, { pick } from 'lodash';
 import { ILengthAwarePagination } from 'knex-paginate'; // For types only
 import { createMachine } from 'xstate';
 import { CmrPermission, CmrPermissionsMap, getCollectionsByIds, getPermissions, CmrTagKeys } from '../util/cmr';
@@ -21,6 +21,7 @@ import JobError from './job-error';
 import { setReadyCountToZero } from './user-work';
 import { Knex } from 'knex';
 import { Logger } from 'winston';
+import { LABELS_TABLE, JOBS_LABELS_TABLE, getLabelsForJob, setLabelsForJob } from './label';
 const { awsDefaultRegion } = env;
 
 // Lazily load the list of unique provider ids, once, when requested
@@ -103,6 +104,8 @@ export class JobForDisplay {
 
   links: JobLink[];
 
+  labels: string[];
+
   request: string;
 
   numInputGranules: number;
@@ -128,7 +131,7 @@ export interface JobQuery {
   dates?: {
     from?: Date;
     to?: Date;
-    field: 'createdAt' | 'updatedAt';
+    field: 'jobs.createdAt' | 'jobs.updatedAt';
   }
   whereIn?: {
     status?: { in: boolean, values: string[] };
@@ -137,6 +140,7 @@ export interface JobQuery {
     username?: { in: boolean, values: string[] };
     jobID?: { in: boolean, values: string[] };
   }
+  labels?: string[];
   orderBy?: {
     field: string;
     value: string;
@@ -328,6 +332,24 @@ async function getUniqueProviderIds(tx: Transaction): Promise<string[]> {
 }
 
 /**
+ * Sets the fields on the where clauses (see JobQuery) to be prefixed with a table name to avoid
+ * ambiguities when joining with other tables
+ * @param table - the table name to prefix to the field name
+ * @param whereClauses - the where clauses to process
+ * @returns An object with its fields prefixed with the table name
+ */
+function setTableNameForWhereClauses(table: string, whereClauses: {}): {} {
+  const result = {};
+  Object.entries(whereClauses).forEach(([key, value]) => {
+    if (value !== undefined) {
+      result[`${table}.${key}`] = value;
+    }
+  });
+
+  return result;
+}
+
+/**
  * Conditionally modify a job query if specific constraints are present.
  * @param queryBuilder - the knex query builder object to modify
  * @param constraints - specifies the query constraints (if any)
@@ -338,6 +360,7 @@ function modifyQuery(
   constraints: JobQuery): void {
   if (constraints === undefined) return;
   if (constraints.whereIn) {
+    constraints.whereIn = setTableNameForWhereClauses('jobs', constraints.whereIn);
     for (const jobField in constraints.whereIn) {
       const constraint = constraints.whereIn[jobField];
       if (constraint.in) {
@@ -419,6 +442,8 @@ export class Job extends DBRecord implements JobRecord {
 
   provider_id?: string;
 
+  labels: string[];
+
   /**
    * Get the job message for the current status.
    * @returns the message string describing the job
@@ -471,17 +496,66 @@ export class Job extends DBRecord implements JobRecord {
     constraints: JobQuery = { where: {} },
     currentPage = 0,
     perPage = 10,
+    includeLabels = false,
   ): Promise<{ data: Job[]; pagination: ILengthAwarePagination }> {
-    const items = await tx(Job.table)
-      .select()
-      .where(constraints.where)
-      .orderBy(
-        constraints?.orderBy?.field ?? 'createdAt',
-        constraints?.orderBy?.value ?? 'desc')
-      .modify((queryBuilder) => modifyQuery(queryBuilder, constraints))
-      .paginate({ currentPage, perPage, isLengthAware: true });
+    let query;
 
-    const jobs: Job[] = items.data.map((j: Job) => new Job(j));
+    if (includeLabels) {
+      if (constraints.labels) { // Requesting to limit the jobs based on the provided labels
+        query = tx(Job.table)
+          .select(`${Job.table}.*`, tx.raw(`STRING_AGG(${LABELS_TABLE}.value, ',' order by value) AS label_values`))
+          .leftOuterJoin(`${JOBS_LABELS_TABLE}`, `${Job.table}.jobID`, '=', `${JOBS_LABELS_TABLE}.job_id`)
+          .leftOuterJoin(`${LABELS_TABLE}`, `${JOBS_LABELS_TABLE}.label_id`, '=', `${LABELS_TABLE}.id`)
+          // Subquery that filters to get the list of jobIDs that match any of the provided labels
+          // Need to do this as a subquery otherwise the labels field in the jobs only include
+          // labels that were in the query rather than the full list of labels for each job
+          .whereIn(`${Job.table}.jobID`, function () {
+            void this.select(`${JOBS_LABELS_TABLE}.job_id`)
+              .from(`${JOBS_LABELS_TABLE}`)
+              .leftOuterJoin(`${LABELS_TABLE}`, `${JOBS_LABELS_TABLE}.label_id`, '=', `${LABELS_TABLE}.id`)
+              .whereIn(`${LABELS_TABLE}.value`, constraints.labels)
+              .groupBy(`${JOBS_LABELS_TABLE}.job_id`);
+          })
+          .where(setTableNameForWhereClauses(Job.table, constraints.where))
+          .groupBy(`${Job.table}.id`)
+          .orderBy(
+            constraints?.orderBy?.field ?? 'createdAt',
+            constraints?.orderBy?.value ?? 'desc')
+          .modify((queryBuilder) => modifyQuery(queryBuilder, constraints));
+      } else {
+        query = tx(Job.table)
+          .select(`${Job.table}.*`, tx.raw(`STRING_AGG(${LABELS_TABLE}.value, ',' order by value) AS label_values`))
+          .leftOuterJoin(`${JOBS_LABELS_TABLE}`, `${Job.table}.jobID`, '=', `${JOBS_LABELS_TABLE}.job_id`)
+          .leftOuterJoin(`${LABELS_TABLE}`, `${JOBS_LABELS_TABLE}.label_id`, '=', `${LABELS_TABLE}.id`)
+          .where(setTableNameForWhereClauses(Job.table, constraints.where))
+          .groupBy(`${Job.table}.id`)
+          .orderBy(
+            constraints?.orderBy?.field ?? 'createdAt',
+            constraints?.orderBy?.value ?? 'desc')
+          .modify((queryBuilder) => modifyQuery(queryBuilder, constraints));
+      }
+    } else {
+      query = tx(Job.table)
+        .select()
+        .where(constraints.where)
+        .orderBy(
+          constraints?.orderBy?.field ?? 'createdAt',
+          constraints?.orderBy?.value ?? 'desc')
+        .modify((queryBuilder) => modifyQuery(queryBuilder, constraints));
+    }
+
+    query = query.paginate({ currentPage, perPage, isLengthAware: true });
+    const items = await query;
+
+    const jobs: Job[] = items.data.map((j: JobWithLabels) => {
+      const job = new Job(j);
+      if (includeLabels && j.label_values) {
+        job.labels = j.label_values.split(',');
+      } else {
+        job.labels = [];
+      }
+      return job;
+    });
 
     return {
       data: jobs,
@@ -504,6 +578,7 @@ export class Job extends DBRecord implements JobRecord {
     tx: Transaction,
     constraints: JobQuery = {},
     includeLinks = false,
+    includeLabels = false,
     lock = false,
     currentPage = 0,
     perPage = env.defaultResultPageSize,
@@ -515,10 +590,15 @@ export class Job extends DBRecord implements JobRecord {
     const result = await query;
     const job = result ? new Job(result) : null;
     let paginationInfo;
-    if (job && includeLinks) {
-      const linkData = await getLinksForJob(tx, job.jobID, currentPage, perPage);
-      job.links = linkData.data;
-      paginationInfo = linkData.pagination;
+    if (job) {
+      if (includeLinks) {
+        const linkData = await getLinksForJob(tx, job.jobID, currentPage, perPage);
+        job.links = linkData.data;
+        paginationInfo = linkData.pagination;
+      }
+      if (includeLabels) {
+        job.labels = await getLabelsForJob(tx, job.jobID);
+      }
     }
     return { job, pagination: paginationInfo };
   }
@@ -544,17 +624,18 @@ export class Job extends DBRecord implements JobRecord {
   * @param transaction - the transaction to use for querying
   * @param jobID - the jobID for the job that should be retrieved
   * @param includeLinks - if true include the job links when returning the job
+  * @param includeLabels - if true include the labels when returning the job
   * @param lock - if true lock the row in the jobs table
   * @param currentPage - the index of the page of job links to show
   * @param perPage - the number of job links to include per page
   * @returns the Job with the given JobID or null if not found
   */
   static async byJobID(
-    tx: Transaction, jobID: string, includeLinks = false, lock = false, currentPage = 0,
+    tx: Transaction, jobID: string, includeLinks = false, includeLabels = false, lock = false, currentPage = 0,
     perPage = env.defaultResultPageSize,
   ): Promise<{ job: Job; pagination: ILengthAwarePagination }> {
     const constraints = { where: { jobID } };
-    return Job.queryForSingleJob(tx, constraints, includeLinks, lock, currentPage, perPage);
+    return Job.queryForSingleJob(tx, constraints, includeLinks, includeLabels, lock, currentPage, perPage);
   }
 
   /**
@@ -580,6 +661,7 @@ export class Job extends DBRecord implements JobRecord {
    * @param username - the username associated with the job
    * @param jobID - the job ID for the request
    * @param includeLinks - if true, load all JobLinks into job.links
+   * @param includeLabels - if true include labels with the job
    * @param lock - if true lock the row in the jobs table
    * @param currentPage - the index of the page of links to show
    * @param perPage - the number of link results per page
@@ -591,12 +673,13 @@ export class Job extends DBRecord implements JobRecord {
     username,
     jobID,
     includeLinks = false,
+    includeLabels = false,
     lock = false,
     currentPage = 0,
     perPage = env.defaultResultPageSize,
   ): Promise<{ job: Job; pagination: ILengthAwarePagination }> {
     const constraints = { where: { username, jobID } };
-    return Job.queryForSingleJob(tx, constraints, includeLinks, lock, currentPage, perPage);
+    return Job.queryForSingleJob(tx, constraints, includeLinks, includeLabels, lock, currentPage, perPage);
   }
 
   /**
@@ -907,6 +990,7 @@ export class Job extends DBRecord implements JobRecord {
    */
   async collectionsHaveEulaRestriction(accessToken: string): Promise<boolean> {
     const cmrCollections = await getCollectionsByIds(
+      { 'id': this.requestId },
       this.collectionIds,
       accessToken,
       CmrTagKeys.HasEula,
@@ -924,7 +1008,7 @@ export class Job extends DBRecord implements JobRecord {
    * @returns true or false
    */
   async collectionsHaveGuestReadRestriction(accessToken: string): Promise<boolean> {
-    const permissionsMap: CmrPermissionsMap = await getPermissions(this.collectionIds, accessToken);
+    const permissionsMap: CmrPermissionsMap = await getPermissions({ 'id': this.requestId }, this.collectionIds, accessToken);
     return this.collectionIds.some((collectionId) => (
       !permissionsMap[collectionId]
         || !(permissionsMap[collectionId].indexOf(CmrPermission.Read) > -1)));
@@ -1008,6 +1092,7 @@ export class Job extends DBRecord implements JobRecord {
       }
     }
     await Promise.all(promises);
+    await setLabelsForJob(tx, this.jobID, this.username, this.labels);
   }
 
   /**
@@ -1026,6 +1111,7 @@ export class Job extends DBRecord implements JobRecord {
       updatedAt: new Date(this.updatedAt),
       dataExpiration: this.getDataExpiration(),
       links: this.links,
+      labels: this.labels,
       request: this.request,
       numInputGranules: this.numInputGranules,
       jobID: this.jobID,
@@ -1073,4 +1159,8 @@ export class Job extends DBRecord implements JobRecord {
   }
 
 
+}
+
+interface JobWithLabels extends Job {
+  label_values: string; // comma-separated list
 }
