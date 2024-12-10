@@ -33,7 +33,7 @@ async function processCollectionsInChunksConcurrently(collections: Set<string>, 
   const collectionArray = Array.from(collections);
   const chunks = chunkArray(collectionArray, chunkSize);
 
-  const promises = chunks.map(chunk => getUmmCollectionsByIds(chunk, process.env.BEARER_TOKEN));
+  const promises = chunks.map(chunk => getUmmCollectionsByIds({}, chunk, process.env.BEARER_TOKEN));
   const results = await Promise.all(promises);
   return results.flat();
 }
@@ -45,12 +45,12 @@ async function processCollectionsInChunksConcurrently(collections: Set<string>, 
  */
 async function processVariablesConcurrently(collectionMetadata: Array<CmrUmmCollection>): Promise<Record<string, any>> {
   const promises = collectionMetadata.map(async (collection) => {
-    if (collection.meta.associations?.variables) {
-      const variableChunks = chunkArray(collection.meta.associations.variables, 100);
+    if ((collection.meta as any).associations?.variables) {
+      const variableChunks = chunkArray((collection.meta as any).associations.variables, 100);
 
       // Fetch variables in chunks
       const chunkPromises = variableChunks.map(chunk =>
-        getVariablesByIds(chunk, process.env.BEARER_TOKEN),
+        getVariablesByIds({}, chunk as string[], process.env.BEARER_TOKEN),
       );
 
       // Wait for all chunked promises to resolve
@@ -108,8 +108,8 @@ async function saveVariablesByCollection(variablesByCollection: Record<string, a
       const variableId = variable.meta['concept-id'];
 
       // Build the text string with required fields
-      const text = `Abstract: ${collection.umm.Abstract || ''} ` +
-                   `ISOTopicCategories: ${collection.umm.ISOTopicCategories?.join(', ') || ''} ` +
+      const text = `Abstract: ${(collection.umm as any).Abstract || ''} ` +
+                   `ISOTopicCategories: ${(collection.umm as any).ISOTopicCategories?.join(', ') || ''} ` +
                    `Name: ${variable.umm.Name || ''} ` +
                    `Definition: ${variable.umm.Definition || ''} ` +
                    `Units: ${variable.umm.Units || ''}`;
@@ -144,12 +144,16 @@ async function getMetadata(env: string): Promise<void> {
     .filter((config) => config.umm_s); // Ignore any service definitions that do not point to a UMM-S record
   const ummConceptIds = harmonyServiceConfigs.map((config) => config.umm_s);
   const services = new Set<string>(ummConceptIds);
-  const ummRecords = await getServicesByIds(ummConceptIds, null);
+  const ummRecords = await getServicesByIds({}, ummConceptIds, null);
   const ummRecordsMap = createUmmRecordsMap(ummRecords);
+  let count = 1;
   for (const harmonyConfig of harmonyServiceConfigs) {
+    console.log(count);
+    count += 1;
     const ummRecord = ummRecordsMap[harmonyConfig.umm_s];
-    if (ummRecord.meta.associations) {
-      for (const collection of ummRecord.meta.associations.collections) {
+    if ((ummRecord.meta as any).associations.collections) {
+      console.log(JSON.stringify((ummRecord as any).meta.associations.collections, null, 2));
+      for (const collection of (ummRecord as any).meta.associations.collections) {
         collections.add(collection);
       }
     }
