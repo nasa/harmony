@@ -11,7 +11,7 @@ import { auth } from './auth';
  * @returns An awaitable object that resolves to the request response
  */
 function stacCatalog(
-  app: Express.Application,
+  app,
   jobId: string,
   query: object = {},
 ): request.Test {
@@ -28,7 +28,7 @@ function stacCatalog(
  * @returns An awaitable object that resolves to the request response
  */
 function stacItem(
-  app: Express.Application,
+  app,
   jobId: string,
   index: number,
   query: object = {},

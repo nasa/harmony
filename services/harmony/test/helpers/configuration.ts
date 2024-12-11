@@ -11,8 +11,7 @@ import { hookRequest } from './hooks';
  * e.g. \{username: 'billy', query: \{...\}\}
  */
 export function configureLogLevel(
-  app: Express.Application,
-  options: { username?: string; query?: object },
+  app, options: { username?: string; query?: object },
 ): Test {
   const { query } = options;
   return request(app).get('/core/configuration/log-level').query(query);

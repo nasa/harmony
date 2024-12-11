@@ -1,5 +1,4 @@
 import request, { Test } from 'supertest';
-import { Application } from 'express';
 import _ from 'lodash';
 import { hookRequest } from './hooks';
 
@@ -9,7 +8,7 @@ import { hookRequest } from './hooks';
  * @param query - Mapping of query param names to values
  * @returns The response
  */
-export function workflowUIJobs(app: Application, query: object = {}): Test {
+export function workflowUIJobs(app, query: object = {}): Test {
   return request(app).get('/workflow-ui').query(query);
 }
 
@@ -19,7 +18,7 @@ export function workflowUIJobs(app: Application, query: object = {}): Test {
  * @param query - Mapping of query param names to values
  * @returns The response
  */
-export function adminWorkflowUIJobs(app: Application, query: object = {}): Test {
+export function adminWorkflowUIJobs(app, query: object = {}): Test {
   return request(app).get('/admin/workflow-ui').query(query);
 }
 
@@ -32,7 +31,7 @@ export function adminWorkflowUIJobs(app: Application, query: object = {}): Test 
  * e.g. \{jobID: job.jobID, username: 'billy', query: \{...\}\}
  */
 export function workflowUIJob(
-  app: Express.Application,
+  app,
   options: { jobID: string; username?: string; query?: object },
 ): Test {
   const { jobID, query } = options;
@@ -49,7 +48,7 @@ export function workflowUIJob(
  * e.g. \{jobID: job.jobID, username: 'billy', query: \{...\}\}
  */
 export function adminWorkflowUIJob(
-  app: Express.Application,
+  app,
   options: { jobID: string; username?: string; query?: object },
 ): Test {
   const { jobID, query } = options;
@@ -66,7 +65,7 @@ export function adminWorkflowUIJob(
  * e.g. \{jobID: job.jobID, username: 'billy', query: \{...\}\}
  */
 export function workflowUIWorkItems(
-  app: Express.Application,
+  app,
   options: { jobID: string; username?: string; query?: object },
 ): Test {
   const { jobID, query } = options;
@@ -83,7 +82,7 @@ export function workflowUIWorkItems(
  * e.g. \{jobID: job.jobID, username: 'billy', query: \{...\}\}
  */
 export function adminWorkflowUIWorkItems(
-  app: Express.Application,
+  app,
   options: { jobID: string; username?: string; query?: object },
 ): Test {
   const { jobID, query } = options;
@@ -100,7 +99,7 @@ export function adminWorkflowUIWorkItems(
  * e.g. \{jobID: job.jobID, id: workItemId, username: 'billy', query: \{...\}\}
  */
 export function workflowUIWorkItemsRow(
-  app: Express.Application,
+  app,
   options: { jobID: string; id: number, username?: string; query?: object },
 ): Test {
   const { jobID, id, query } = options;
@@ -117,7 +116,7 @@ export function workflowUIWorkItemsRow(
  * e.g. \{ jobIDs, username: 'billy', query: \{...\}\}
  */
 export function workflowUIJobRows(
-  app: Express.Application,
+  app,
   options: { username: string; query: object, jobIDs: string[] },
 ): Test {
   const { jobIDs, query } = options;
@@ -134,7 +133,7 @@ export function workflowUIJobRows(
  * e.g. \{ jobIDs, username: 'billy', query: \{...\}\}
  */
 export function adminWorkflowUIJobRows(
-  app: Express.Application,
+  app,
   options: { username: string; query: object, jobIDs: string[] },
 ): Test {
   const { jobIDs, query } = options;
@@ -151,7 +150,7 @@ export function adminWorkflowUIJobRows(
  * e.g. \{jobID: job.jobID, id: workItemId, username: 'billy' \}
  */
 export function workflowUIWorkItemRetry(
-  app: Express.Application,
+  app,
   options: { jobID: string; id: number, username?: string; },
 ): Test {
   const { jobID, id } = options;
@@ -167,7 +166,7 @@ export function workflowUIWorkItemRetry(
  * e.g. \{jobID: job.jobID, username: 'billy', query: \{...\}\}
  */
 export function workflowUILinks(
-  app: Express.Application,
+  app,
   options: { jobID: string; username?: string; query?: object },
 ): Test {
   const { jobID, query } = options;
@@ -184,7 +183,7 @@ export function workflowUILinks(
  * e.g. \{jobID: job.jobID, username: 'billy', query: \{...\}\}
  */
 export function adminWorkflowUILinks(
-  app: Express.Application,
+  app,
   options: { jobID: string; username?: string; query?: object },
 ): Test {
   const { jobID, query } = options;
@@ -201,7 +200,7 @@ export function adminWorkflowUILinks(
  * e.g. \{jobID: job.jobID, id: workItemId, username: 'billy', query: \{...\}\}
  */
 export function workflowUILogs(
-  app: Express.Application,
+  app,
   options: { jobID: string; id: number, username?: string; },
 ): Test {
   const { jobID, id } = options;

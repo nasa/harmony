@@ -10,7 +10,7 @@ import { AssumeRoleCommandOutput } from '@aws-sdk/client-sts';
  * @param app - The express application (typically this.frontend)
  * @returns The response
  */
-export function cloudAccessJson(app: Express.Application): request.Test {
+export function cloudAccessJson(app): request.Test {
   return request(app).get('/cloud-access');
 }
 
@@ -19,7 +19,7 @@ export function cloudAccessJson(app: Express.Application): request.Test {
  * @param app - The express application (typically this.frontend)
  * @returns The response
  */
-export function cloudAccessSh(app: Express.Application): request.Test {
+export function cloudAccessSh(app): request.Test {
   return request(app).get('/cloud-access.sh');
 }
 

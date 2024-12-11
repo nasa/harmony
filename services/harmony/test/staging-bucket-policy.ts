@@ -13,7 +13,7 @@ import sts from '../app/util/sts';
  * @param bucketPath - the bucket name and optional path (url encoded)
  * @returns the response
  */
-function stagingBucketPolicy(app: Express.Application, bucketPath): request.Test {
+function stagingBucketPolicy(app, bucketPath): request.Test {
   let req = request(app).get('/staging-bucket-policy');
   if (bucketPath) {
     req = req.query(bucketPath);
