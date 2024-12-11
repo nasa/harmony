@@ -31,7 +31,8 @@
     "@types/chai": "Chai dependency is locked",
     "@types/chai-as-promised": "chai-as-promised dependency is locked",
     "eslint": "The eslint-config-airbnb-typescript project is no longer maintained and limits eslint < 9.",
-    "node-fetch": "Version 3 requires ESM and has other breaking changes - see https://github.com/node-fetch/node-fetch/blob/main/docs/v3-UPGRADE-GUIDE.md"
+    "node-fetch": "Version 3 requires ESM and has other breaking changes - see https://github.com/node-fetch/node-fetch/blob/main/docs/v3-UPGRADE-GUIDE.md",
+    "shpjs": "Version 5 requires ESM"
   },
   "dependencies": {
     "@2toad/profanity": "^3.0.1",
@@ -70,7 +71,7 @@
     "node-fetch": ">=2.7.0 <3.0.0",
     "pg": "^8.7.3",
     "pg-native": "^3.0.1",
-    "shpjs": "^6.1.0",
+    "shpjs": ">=4.0.4 <5.0.0",
     "tmp": "^0.2.1",
     "tmp-promise": "^3.0.3",
     "tweetnacl": "^1.0.3",
