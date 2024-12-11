@@ -4,6 +4,7 @@ import { Application } from 'express';
 import { after, before } from 'mocha';
 import request, { Test } from 'supertest';
 import { auth } from './auth';
+import { IncomingHttpHeaders } from 'http';
 
 export const defaultCollection = 'C1233800302-EEDTEST';
 export const defaultGranuleId = 'G1233800352-EEDTEST';
@@ -88,7 +89,7 @@ export function edrRequest(
   let req = request(app)
     .get(`/ogc-api-edr/${version}/collections/${collection}/${queryType}`)
     .query(query)
-    .set(headers);
+    .set(headers as IncomingHttpHeaders);
 
   if (cookies) {
     req = req.set('Cookie', [cookies as unknown as string]);
@@ -108,7 +109,7 @@ export function edrRequest(
  */
 export function postEdrRequest(
   queryType: supportedEdrQueryType,
-  app: Express.Application,
+  app,
   version: string,
   collection: string,
   form: object,
