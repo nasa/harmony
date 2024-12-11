@@ -58,7 +58,10 @@ interface GeneratedHarmonyRequestParameters {
   bufferNumber: number | null;
   bufferUnits: string | null;
   collection: string;
+  collectionName: string;
   variable: string;
+  variableName: string;
+  variableDefinition: string;
   timeInterval: string | null;
   outputFormat: string | null;
   geoJson: string | null;
@@ -192,7 +195,7 @@ export async function freeTextQueryPost(
 
     const embedding = await getEmbedding(modelOutput.propertyOfInterest);
 
-    const sql = `SELECT collection_id, variable_id, 1 - (embedding <=> '[${embedding}]') AS similarity FROM umm_embeddings ORDER BY embedding <=> '[${embedding}]' LIMIT 50;`;
+    const sql = `SELECT collection_id, collection_name, variable_id, variable_name, variable_definition, 1 - (embedding <=> '[${embedding}]') AS similarity FROM umm_embeddings ORDER BY embedding <=> '[${embedding}]' LIMIT 50;`;
     // const sql = `SELECT collection_id, variable_id, (embedding <-> '[${embedding}]') AS similarity FROM umm_embeddings ORDER BY embedding <-> '[${embedding}]' DESC LIMIT 5;`;
 
 
@@ -201,8 +204,8 @@ export async function freeTextQueryPost(
     const dbResult = await db.raw(sql);
     // console.log(JSON.stringify(dbResult, null, 2));
 
-    for (const { collection_id, variable_id, similarity } of dbResult.rows) {
-      console.log(`COLLECTION ID: ${collection_id}  VARIABLE ID: ${variable_id}  SIMILARITY: ${similarity}`);
+    for (const { collection_id, collection_name, variable_id, variable_name, similarity } of dbResult.rows) {
+      console.log(`COLLECTION ID: ${collection_id}  COLLECTION NAME: ${collection_name} VARIABLE ID: ${variable_id}  VARIABLE NAME: ${variable_name} SIMILARITY: ${similarity}`);
     }
 
     const conceptIds = dbResult.rows.map(a => a.collection_id);
@@ -224,13 +227,19 @@ export async function freeTextQueryPost(
     console.log(`Collections with granules matching spatial and temporal search: ${JSON.stringify(collConceptIds)}`);
 
     let collectionId = null;
+    let collectionName = null;
     let variableId = null;
+    let variableName = null;
+    let variableDefinition = null;
 
     // The first collection in the embedding query result that has granules is the best match
     if (dbResult.rows && collConceptIds.length > 0) {
-      const { collection_id, variable_id, similarity } = dbResult.rows.find(item => collConceptIds.includes(item.collection_id));
+      const { collection_id, collection_name, variable_id, variable_name, variable_definition, similarity } = dbResult.rows.find(item => collConceptIds.includes(item.collection_id));
       collectionId = collection_id;
+      collectionName = collection_name;
       variableId = variable_id;
+      variableName = variable_name;
+      variableDefinition = variable_definition;
       console.log(`BEST MATCH: COLLECTION ID: ${collection_id}  VARIABLE ID: ${variable_id}  SIMILARITY: ${similarity}`);
     } else {
       console.log('No matching collections are found');
@@ -242,7 +251,10 @@ export async function freeTextQueryPost(
       bufferNumber: modelOutput.bufferNumber,
       bufferUnits: modelOutput.bufferUnits,
       collection: collectionId,
+      collectionName,
       variable: variableId,
+      variableName,
+      variableDefinition,
       timeInterval: modelOutput.timeInterval,
       outputFormat: modelOutput.outputFormat,
       geoJson,

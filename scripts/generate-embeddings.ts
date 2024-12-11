@@ -16,7 +16,10 @@ const client = new BedrockRuntimeClient({ region: 'us-west-2' });
 
 interface Embedding {
   collectionId: string;
+  collectionName: string;
   variableId: string;
+  variableName: string;
+  variableDefinition: string;
   text: string;
 }
 
@@ -48,11 +51,14 @@ async function getEmbedding(input: string): Promise<number[]> {
  * @returns - A promise that resolves when the batch is successfully inserted into the database.
  */
 async function storeEmbeddingsBatch(tx: Knex.Transaction, batch: Embedding[], queue: PQueue): Promise<void> {
-  const items = await Promise.all(batch.map(async ({ collectionId, variableId, text }) => {
+  const items = await Promise.all(batch.map(async ({ collectionId, collectionName, variableId, variableName, variableDefinition, text }) => {
     const embedding = await queue.add(() => getEmbedding(text)); // Use PQueue to limit concurrency
     return {
       collection_id: collectionId,
+      collection_name: collectionName,
       variable_id: variableId,
+      variable_name: variableName,
+      variable_definition: variableDefinition,
       embedding: pgvector.toSql(embedding),
     };
   }));
@@ -77,6 +83,12 @@ void (async (): Promise<void> => {
     const batches = [];
     for (let i = 0; i < rows.length; i += DB_BATCH_SIZE) {
       batches.push(rows.slice(i, i + DB_BATCH_SIZE));
+    }
+
+    const batchesTotal = batches.length * DB_BATCH_SIZE;
+    const remainder = rows.length - batchesTotal;
+    if (remainder > 0) {
+      batches.push(rows.slice(batchesTotal, batchesTotal + remainder))
     }
 
     let n = 0;

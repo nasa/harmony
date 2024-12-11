@@ -12,7 +12,16 @@ exports.up = function(knex) {
     t.string('collection_id')
       .notNullable();
 
+    t.string('collection_name')
+      .notNullable();
+
     t.string('variable_id')
+      .notNullable();
+
+    t.string('variable_name')
+      .notNullable();
+
+    t.text('variable_definition')
       .notNullable();
 
     t.vector('embedding', 1536);

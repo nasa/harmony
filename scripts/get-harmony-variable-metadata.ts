@@ -102,22 +102,30 @@ async function saveVariablesByCollection(variablesByCollection: Record<string, a
 
   for (const collection of collectionMetadata) {
     const collectionId = collection.meta['concept-id'];
+    const collectionName = (collection.umm as any).EntryTitle;
     const variables = variablesByCollection[collectionId] || [];
 
     for (const variable of variables) {
+      // console.log(JSON.stringify(variable, null, 2));
       const variableId = variable.meta['concept-id'];
+      const variableName = variable.umm.Name;
+      const variableDefinition = variable.umm.Definition;
 
       // Build the text string with required fields
       const text = `Abstract: ${(collection.umm as any).Abstract || ''} ` +
                    `ISOTopicCategories: ${(collection.umm as any).ISOTopicCategories?.join(', ') || ''} ` +
-                   `Name: ${variable.umm.Name || ''} ` +
+                  // `Name: ${variable.umm.Name || ''} ` +
+                  `Name: ${variable.umm.Name || ''} ` +
                    `Definition: ${variable.umm.Definition || ''} ` +
                    `Units: ${variable.umm.Units || ''}`;
 
       // Add this entry to the output
       output.push({
         collectionId,
+        collectionName,
         variableId,
+        variableName,
+        variableDefinition,
         text,
       });
     }
@@ -146,13 +154,10 @@ async function getMetadata(env: string): Promise<void> {
   const services = new Set<string>(ummConceptIds);
   const ummRecords = await getServicesByIds({}, ummConceptIds, null);
   const ummRecordsMap = createUmmRecordsMap(ummRecords);
-  let count = 1;
   for (const harmonyConfig of harmonyServiceConfigs) {
-    console.log(count);
-    count += 1;
     const ummRecord = ummRecordsMap[harmonyConfig.umm_s];
     if ((ummRecord.meta as any).associations.collections) {
-      console.log(JSON.stringify((ummRecord as any).meta.associations.collections, null, 2));
+      // console.log(JSON.stringify((ummRecord as any).meta.associations.collections, null, 2));
       for (const collection of (ummRecord as any).meta.associations.collections) {
         collections.add(collection);
       }
