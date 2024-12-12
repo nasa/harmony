@@ -18,7 +18,7 @@ const reprojectAndZarrQuery = {
   format: 'application/x-zarr',
   ignoreErrors: true,
   concatenate: false,
-  destinationUrl: 's3://dummy/p1',
+  destinationUrl: 's3://dummy/P1',
 };
 
 /**
@@ -72,7 +72,7 @@ describe('when setting destinationUrl on ogc request', function () {
     it('the job has harmony-job-status-link file created with the job status link', async function () {
       expect(this.res.status).to.equal(200);
       const jobId = JSON.parse(this.res.text).jobID;
-      const s3Url = 's3://dummy/p1/' + jobId + '/harmony-job-status-link';
+      const s3Url = 's3://dummy/P1/' + jobId + '/harmony-job-status-link';
       const statusLink = await defaultObjectStore().getObject(s3Url);
       // this.res.request.url is the job status link
       expect(statusLink).to.equal(this.res.request.url);
@@ -80,7 +80,7 @@ describe('when setting destinationUrl on ogc request', function () {
 
     it('sets the destination_url on the job in db', async function () {
       const retrieved = await Job.forUser(this.trx, 'anonymous');
-      expect(retrieved.data[0].destination_url).to.eq('s3://dummy/p1');
+      expect(retrieved.data[0].destination_url).to.eq('s3://dummy/P1');
     });
   });
 
