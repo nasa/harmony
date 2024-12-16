@@ -2,6 +2,7 @@
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "resolveJsonModule": true,
+    "skipLibCheck": true // Optional: Ignores type definition errors in node_modules
   },
   "include": [
     "./app/**/*",
