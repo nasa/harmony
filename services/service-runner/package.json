@@ -30,10 +30,11 @@
     "chai-as-promised": "Version 8 requires ESM",
     "@types/chai": "Chai dependency is locked",
     "@types/chai-as-promised": "chai-as-promised dependency is locked",
-    "eslint": "The eslint-config-airbnb-typescript project is no longer maintained and limits eslint < 9."
+    "eslint": "The eslint-config-airbnb-typescript project is no longer maintained and limits eslint < 9.",
+    "@aws-sdk/client-s3": "Downgraded this library to a known working version due to performance issues."
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.437.0",
+    "@aws-sdk/client-s3": "3.437.0",
     "@aws-sdk/credential-provider-imds": "^3.374.0",
     "@aws-sdk/hash-node": "^3.374.0",
     "@aws-sdk/protocol-http": "^3.374.0",
