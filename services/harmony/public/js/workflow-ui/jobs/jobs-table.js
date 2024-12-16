@@ -161,6 +161,22 @@ function initSelectAllHandler() {
 }
 
 /**
+ * Replace the HTML of the jobs table. Reinitialize event handlers and formatting.
+ * @param {*} htmlRes - The HTML from the successful Jobs table response
+ */
+function handleSuccessResponse(htmlRes) {
+  const tmp = document.createElement('div');
+  tmp.innerHTML = `<div class="col-10" id="jobs-table-container">${htmlRes}</div>`;
+  document.getElementById('jobs-table-container').replaceWith(...tmp.childNodes);
+  initSelectHandler('.select-job');
+  initSelectAllHandler();
+  initCopyHandler('.copy-request');
+  formatDates('.date-td');
+  refreshSelected();
+  setJobCounterDisplay(jobIDs.length);
+}
+
+/**
  * Query Harmony for up to date version of particular HTML rows of the jobs table.
  * @param {object} params - parameters that define what will appear in the table row
  */
@@ -186,14 +202,7 @@ async function loadRows(params) {
   });
   if (res.status === 200) {
     const htmlRes = await res.text();
-    const tmp = document.createElement('div');
-    tmp.innerHTML = `<div class="col-10" id="jobs-table-container">${htmlRes}</div>`;
-    document.getElementById('jobs-table-container').replaceWith(...tmp.childNodes);
-    initSelectHandler('.select-job');
-    initSelectAllHandler();
-    initCopyHandler('.copy-request');
-    formatDates('.date-td');
-    refreshSelected();
+    handleSuccessResponse(htmlRes);
   }
 }
 
