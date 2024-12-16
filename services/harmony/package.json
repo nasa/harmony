@@ -195,7 +195,7 @@
     "jsonschema": "^1.4.1",
     "just-permutations": "2.1.1",
     "lerna": "^8.1.8",
-    "mocha": "^11.0.1",
+    "mocha": "^9.1.3",
     "mocha-junit-reporter": "^2.0.0",
     "mocha-multi": "^1.1.3",
     "mock-aws-s3": "^4.0.1",
