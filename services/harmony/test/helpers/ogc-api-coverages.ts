@@ -1,10 +1,10 @@
 import { expect } from 'chai';
 import { parse } from 'cookie';
-import { Application } from 'express';
 import { after, before, describe, it } from 'mocha';
 import request, { Test } from 'supertest';
 import * as url from 'url';
 import { auth } from './auth';
+import { IncomingHttpHeaders } from 'http';
 
 export const defaultCollection = 'C1233800302-EEDTEST';
 export const defaultGranuleId = 'G1233800352-EEDTEST';
@@ -77,7 +77,7 @@ export function hookLandingPage(collection: string, version: string): void {
  * @returns The response
  */
 export function rangesetRequest(
-  app: Application,
+  app,
   version: string = defaultVersion,
   collection: string = defaultCollection,
   coverageId: string = defaultCoverageId,
@@ -89,7 +89,7 @@ export function rangesetRequest(
   let req = request(app)
     .get(`/${collection}/ogc-api-coverages/${version}/collections/${encodedCoverageId}/coverage/rangeset`)
     .query(query)
-    .set(headers);
+    .set(headers as IncomingHttpHeaders);
 
   if (cookies) {
     req = req.set('Cookie', [cookies as unknown as string]);
@@ -110,7 +110,7 @@ export function rangesetRequest(
  * @returns An 'awaitable' object that resolves to a Response
  */
 export function postRangesetRequest(
-  app: Express.Application, version: string, collection: string, coverageId: string, form: object, queryString = '',
+  app, version: string, collection: string, coverageId: string, form: object, queryString = '',
 ): Test {
   let urlPathAndParam = `/${collection}/ogc-api-coverages/${version}/collections/${coverageId}/coverage/rangeset`;
   if (queryString) urlPathAndParam += `?${queryString}`;
@@ -320,7 +320,7 @@ export function describeRelation(rel: string, description: string, fn: Function)
  * @returns The response
  */
 export function coveragesSpecRequest(
-  app: Express.Application, collection: string, version: string,
+  app, collection: string, version: string,
 ): request.Test {
   return request(app).get(`/${collection}/ogc-api-coverages/${version}/api`);
 }
@@ -334,7 +334,7 @@ export function coveragesSpecRequest(
  * @returns The response
  */
 export function coveragesLandingPageRequest(
-  app: Express.Application, collection: string, version: string,
+  app, collection: string, version: string,
 ): request.Test {
   return request(app).get(`/${collection}/ogc-api-coverages/${version}/`);
 }
@@ -349,7 +349,7 @@ export function coveragesLandingPageRequest(
  * @returns The response
  */
 export function describeCollectionsRequest(
-  app: Express.Application, collection: string, version: string, query: object,
+  app, collection: string, version: string, query: object,
 ): request.Test {
   return request(app)
     .get(`/${collection}/ogc-api-coverages/${version}/collections`)
@@ -386,7 +386,7 @@ export function hookDescribeCollectionsRequest(
  * @returns The response
  */
 export function describeCollectionRequest(
-  app: Express.Application,
+  app,
   collection: string,
   version: string,
   variablePath: string,

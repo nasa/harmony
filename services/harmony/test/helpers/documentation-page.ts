@@ -6,7 +6,7 @@ import { hookRequest } from './hooks';
  * @param app - The express application (typically this.frontend)
  * @returns The response
  */
-export function documentationPage(app: Express.Application): request.Test {
+export function documentationPage(app): request.Test {
   return request(app).get('/docs');
 }
 
