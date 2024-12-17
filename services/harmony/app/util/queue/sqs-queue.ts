@@ -34,7 +34,7 @@ export class SqsQueue extends Queue {
       WaitTimeSeconds: waitTimeSeconds,
     });
     const response = await this.sqs.send(command);
-    if (response.Messages) {
+    if (response.Messages?.length > 0) {
       const message = response.Messages[0];
       return {
         receipt: message.ReceiptHandle,

@@ -113,7 +113,7 @@ async function validateDestinationUrlWritable(req: HarmonyRequest, destinationUr
  */
 async function validateDestinationUrlParameter(req: HarmonyRequest): Promise<void> {
   const keys = keysToLowerCase(req.query);
-  const destUrl = keys.destinationurl?.toLowerCase();
+  const destUrl = keys.destinationurl?.replace('S3://', 's3://');
   if (destUrl) {
     if (!destUrl.startsWith('s3://')) {
       throw new RequestValidationError(`Invalid destinationUrl '${destUrl}', must start with s3://`);

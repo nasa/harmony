@@ -47,7 +47,11 @@ function optionalTag(tag: string): string {
 
 const textformat = winston.format.printf(
   (info) => {
-    let message = `${info.timestamp} [${info.level}]${optionalTag(info.application)}${optionalTag(info.requestId)}${optionalTag(info.component)}: ${info.message}`;
+    let message = `${info.timestamp} [${info.level}]` +
+      `${optionalTag(info.application as string)}` +
+      `${optionalTag(info.requestId as string)}` +
+      `${optionalTag(info.component as string)}: ${info.message}`;
+
     if (info.stack) message += `\n${info.stack}`;
     return message;
   },

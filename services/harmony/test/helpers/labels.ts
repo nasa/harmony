@@ -8,7 +8,7 @@ import { auth } from './auth';
  * @param jobIDs - The job ids
  * @param labels - the labels to add to the jobs
  */
-export function addJobsLabels(app: Express.Application, jobIds: string[], labels: string[], username: string): Test {
+export function addJobsLabels(app, jobIds: string[], labels: string[], username: string): Test {
   return request(app).put('/labels').use(auth({ username })).send({ jobID: jobIds, label: labels  });
 }
 
@@ -19,6 +19,6 @@ export function addJobsLabels(app: Express.Application, jobIds: string[], labels
  * @param jobIDs - The job ids
  * @param labels - the labels to set delete from the jobs
  */
-export function deleteJobsLabels(app: Express.Application, jobIds: string[], labels: string[], username: string): Test {
+export function deleteJobsLabels(app, jobIds: string[], labels: string[], username: string): Test {
   return request(app).delete('/labels').use(auth({ username })).send({ jobID: jobIds, label: labels });
 }

@@ -6,7 +6,7 @@ import { hookRequest } from './hooks';
  * @param app - The express application (typically this.frontend)
  * @returns The response
  */
-export function versions(app: Express.Application): request.Test {
+export function versions(app): request.Test {
   return request(app).get('/versions');
 }
 

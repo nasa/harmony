@@ -57,15 +57,15 @@ async function _kmlToGeoJson(filename: string, logger: Logger): Promise<string> 
       /**
        * locator is always need for error position info
        */
-      locator: {},
+      locator: true,
       errorHandler: (_level, msg): void => {
         logger.error(msg);
         throw new RequestValidationError('The provided KML file could not be parsed. Please check its validity before retrying.');
       },
     };
     const file = await fs.readFile(filename, 'utf8');
-    const kml = new DOMParser(parserOpts).parseFromString(file);
-    const converted = togeojson.kml(kml);
+    const kml = new DOMParser(parserOpts).parseFromString(file, '');
+    const converted = togeojson.kml(kml as unknown as any);
     await fs.writeFile(geoJsonFile.path, JSON.stringify(converted), 'utf8');
   } catch (e) {
     if (geoJsonFile) geoJsonFile.cleanup();

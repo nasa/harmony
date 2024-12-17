@@ -34,7 +34,7 @@ export const validGetMapQuery = {
  * @returns The response
  */
 export function wmsRequest(
-  app: Express.Application, collection: string = validCollection, query: object = validGetMapQuery,
+  app, collection: string = validCollection, query: object = validGetMapQuery,
 ): Test {
   return request(app)
     .get(`/${collection}/wms`)
