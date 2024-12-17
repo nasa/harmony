@@ -268,6 +268,8 @@ const jobsTable = {
   getJobStatus(jobID) {
     return document.querySelector(`#select-${jobID}`).getAttribute('data-status');
   },
+
+  handleSuccessResponse,
 };
 
 export default jobsTable;
