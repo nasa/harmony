@@ -1,0 +1,128 @@
+
+    <table id="workflow-ui-jobs-table" class="table table-sm">
+        <thead class="sticky-top bg-white">
+            <tr class="align-middle">
+                <th scope="col"><input id="select-jobs" type="checkbox" title="select/deselect all jobs" autocomplete="off"></th>
+                <th scope="col">jobID</th>
+                <th scope="col">service</th>
+                <th scope="col">status</th>
+                <th scope="col">message</th>
+                <th scope="col">
+                    <div class="d-flex flex-row align-items-center">
+                        <div>granules</div>&nbsp;
+                        <div class="d-flex flex-column">
+                            <a href="#" onclick="document.getElementById('sort-granules').value='asc';document.getElementById('jobs-query-form').submit();" class="" style="height:12px;">
+<i class="bi bi-caret-up-fill" title="apply ascending sort"></i>
+</a>
+<a href="#" onclick="document.getElementById('sort-granules').value='desc';document.getElementById('jobs-query-form').submit();" class="">
+<i class="bi bi-caret-down-fill" title="apply descending sort"></i>
+</a>
+                        </div>
+                    </div>
+                </th>
+                <th scope="col">progress</th>
+                <th scope="col">createdAt</th>
+                <th scope="col">updatedAt</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr id="job-3f94ec65-baa6-446d-bb11-bfd3890ea7c6" class="job-table-row">
+                <td><input id="select-3f94ec65-baa6-446d-bb11-bfd3890ea7c6" class="select-job" type="checkbox" data-id="3f94ec65-baa6-446d-bb11-bfd3890ea7c6" data-status="running" autocomplete="off" checked></td>
+                <th scope="row"><a href="workflow-ui/3f94ec65-baa6-446d-bb11-bfd3890ea7c6?fromDateTime=&amp;toDateTime=&amp;dateKind=createdAt&amp;tzOffsetMinutes=&amp;jobsLink=http%3A%2F%2Flocalhost%3A3000%2Fworkflow-ui%3Fpage%3D1%26limit%3D10">3f94ec65-baa6-446d-bb11-bfd3890ea7c6</a></th>
+                <td>harmony/service-example</td>
+                <td><span class="badge rounded-pill bg-info">running</span></td>
+                <td id="message-td" title="The job is being processed">The job is being processed</td>
+                <td>1</td>
+                <td>9%</td>
+                <td class="date-td" data-time="1734364907924">12/16/2024, 11:01:47 AM</td>
+                <td class="date-td" data-time="1734364909789">12/16/2024, 11:01:49 AM</td>
+            </tr>
+            <tr><th id="copy-3f94ec65-baa6-446d-bb11-bfd3890ea7c6" class="job-url-th" colspan="12">
+                <div class="d-flex flex-row justify-content-between">
+                    <div>
+                        <i class="bi bi-copy text-primary copy-request" data-text="http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?granuleId=G1233800343-EEDTEST&amp;format=image%2Ftiff" data-truncated="false"></i>
+                        <span title="http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?granuleId=G1233800343-EEDTEST&amp;format=image/tiff" class="text-muted job-url-text">/C1233800302-EEDTEST/ogc-api-coverages/.../all/...?granuleId=G1233800343-EEDTEST&amp;format=image/tiff</span>
+                    </div>
+                    <div class="ml-1" id="job-labels-display-3f94ec65-baa6-446d-bb11-bfd3890ea7c6" data-labels="">
+                        
+                    </div>
+                </div>                        </th>                        </tr><tr id="job-be304c5d-0968-49c1-a1e6-eefde5dd6eab" class="job-table-row">
+                <td><input id="select-be304c5d-0968-49c1-a1e6-eefde5dd6eab" class="select-job" type="checkbox" data-id="be304c5d-0968-49c1-a1e6-eefde5dd6eab" data-status="successful" autocomplete="off"></td>
+                <th scope="row"><a href="workflow-ui/be304c5d-0968-49c1-a1e6-eefde5dd6eab?fromDateTime=&amp;toDateTime=&amp;dateKind=createdAt&amp;tzOffsetMinutes=&amp;jobsLink=http%3A%2F%2Flocalhost%3A3000%2Fworkflow-ui%3Fpage%3D1%26limit%3D10">be304c5d-0968-49c1-a1e6-eefde5dd6eab</a></th>
+                <td>harmony/service-example</td>
+                <td><span class="badge rounded-pill bg-success">successful</span></td>
+                <td id="message-td" title="The job has completed successfully">The job has completed successfully</td>
+                <td>1</td>
+                <td>100%</td>
+                <td class="date-td" data-time="1734364907559">12/16/2024, 11:01:47 AM</td>
+                <td class="date-td" data-time="1734364923623">12/16/2024, 11:02:03 AM</td>
+            </tr>
+            <tr><th id="copy-be304c5d-0968-49c1-a1e6-eefde5dd6eab" class="job-url-th" colspan="12">
+                <div class="d-flex flex-row justify-content-between">
+                    <div>
+                        <i class="bi bi-copy text-primary copy-request" data-text="http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?granuleId=G1233800343-EEDTEST&amp;format=image%2Ftiff" data-truncated="false"></i>
+                        <span title="http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?granuleId=G1233800343-EEDTEST&amp;format=image/tiff" class="text-muted job-url-text">/C1233800302-EEDTEST/ogc-api-coverages/.../all/...?granuleId=G1233800343-EEDTEST&amp;format=image/tiff</span>
+                    </div>
+                    <div class="ml-1" id="job-labels-display-be304c5d-0968-49c1-a1e6-eefde5dd6eab" data-labels="">
+                        
+                    </div>
+                </div>                        </th>                        </tr><tr id="job-20009fb7-e95b-431b-9857-7e50071a2827" class="job-table-row">
+                <td><input id="select-20009fb7-e95b-431b-9857-7e50071a2827" class="select-job" type="checkbox" data-id="20009fb7-e95b-431b-9857-7e50071a2827" data-status="successful" autocomplete="off"></td>
+                <th scope="row"><a href="workflow-ui/20009fb7-e95b-431b-9857-7e50071a2827?fromDateTime=&amp;toDateTime=&amp;dateKind=createdAt&amp;tzOffsetMinutes=&amp;jobsLink=http%3A%2F%2Flocalhost%3A3000%2Fworkflow-ui%3Fpage%3D1%26limit%3D10">20009fb7-e95b-431b-9857-7e50071a2827</a></th>
+                <td>harmony/service-example</td>
+                <td><span class="badge rounded-pill bg-success">successful</span></td>
+                <td id="message-td" title="The job has completed successfully">The job has completed successfully</td>
+                <td>1</td>
+                <td>100%</td>
+                <td class="date-td" data-time="1734364899440">12/16/2024, 11:01:39 AM</td>
+                <td class="date-td" data-time="1734364913509">12/16/2024, 11:01:53 AM</td>
+            </tr>
+            <tr><th id="copy-20009fb7-e95b-431b-9857-7e50071a2827" class="job-url-th" colspan="12">
+                <div class="d-flex flex-row justify-content-between">
+                    <div>
+                        <i class="bi bi-copy text-primary copy-request" data-text="http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?granuleId=G1233800343-EEDTEST&amp;format=image%2Ftiff" data-truncated="false"></i>
+                        <span title="http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?granuleId=G1233800343-EEDTEST&amp;format=image/tiff" class="text-muted job-url-text">/C1233800302-EEDTEST/ogc-api-coverages/.../all/...?granuleId=G1233800343-EEDTEST&amp;format=image/tiff</span>
+                    </div>
+                    <div class="ml-1" id="job-labels-display-20009fb7-e95b-431b-9857-7e50071a2827" data-labels="">
+                        
+                    </div>
+                </div>                        </th>                        </tr><tr id="job-3ad89e91-5c02-4805-b352-083797504319" class="job-table-row">
+                <td><input id="select-3ad89e91-5c02-4805-b352-083797504319" class="select-job" type="checkbox" data-id="3ad89e91-5c02-4805-b352-083797504319" data-status="successful" autocomplete="off" checked></td>
+                <th scope="row"><a href="workflow-ui/3ad89e91-5c02-4805-b352-083797504319?fromDateTime=&amp;toDateTime=&amp;dateKind=createdAt&amp;tzOffsetMinutes=&amp;jobsLink=http%3A%2F%2Flocalhost%3A3000%2Fworkflow-ui%3Fpage%3D1%26limit%3D10">3ad89e91-5c02-4805-b352-083797504319</a></th>
+                <td>harmony/service-example</td>
+                <td><span class="badge rounded-pill bg-success">successful</span></td>
+                <td id="message-td" title="The job has completed successfully">The job has completed successfully</td>
+                <td>1</td>
+                <td>100%</td>
+                <td class="date-td" data-time="1733252214362">12/3/2024, 1:56:54 PM</td>
+                <td class="date-td" data-time="1733252229597">12/3/2024, 1:57:09 PM</td>
+            </tr>
+            <tr><th id="copy-3ad89e91-5c02-4805-b352-083797504319" class="job-url-th" colspan="12">
+                <div class="d-flex flex-row justify-content-between">
+                    <div>
+                        <i class="bi bi-copy text-primary copy-request" data-text="http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?granuleId=G1233800343-EEDTEST&amp;format=image%2Ftiff" data-truncated="false"></i>
+                        <span title="http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?granuleId=G1233800343-EEDTEST&amp;format=image/tiff" class="text-muted job-url-text">/C1233800302-EEDTEST/ogc-api-coverages/.../all/...?granuleId=G1233800343-EEDTEST&amp;format=image/tiff</span>
+                    </div>
+                    <div class="ml-1" id="job-labels-display-3ad89e91-5c02-4805-b352-083797504319" data-labels="">
+                        
+                    </div>
+                </div>                        </th>                    </tr></tbody>
+    </table>                <nav id="page-nav" aria-label="Page navigation" class="bg-white d-flex flex-column align-items-center py-2 sticky-paging">
+        <ul class="pagination px-0 mx-auto mb-1">
+            <li class="page-item disabled">
+                <a class="page-link" href="" title="first">first</a>
+            </li>
+            <li class="page-item disabled">
+                <a class="page-link" href="" title="previous">previous</a>
+            </li>
+            <li class="page-item disabled">
+                <a class="page-link" href="" title="next">next</a>
+            </li>
+            <li class="page-item disabled">
+                <a class="page-link" href="" title="last">last</a>
+            </li>
+        </ul>
+        <small class="text-muted">
+            1-4 of 4 (page 1 of 1)
+        </small>
+    </nav>

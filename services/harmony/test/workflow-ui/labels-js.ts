@@ -4,7 +4,7 @@ import path from 'path';
 import Labels from '../../public/js/workflow-ui/labels';
 
 beforeEach(async () => {
-  const dom = await JSDOM.fromFile(path.resolve(__dirname, 'labels.html'), { url: 'http://localhost' });
+  const dom = await JSDOM.fromFile(path.resolve(__dirname, 'jobs.html'), { url: 'http://localhost' });
   global.window = dom.window as unknown as Window & typeof globalThis;
   global.document = dom.window.document;
 });

@@ -21,6 +21,7 @@ import logger from './util/log';
 import * as exampleBackend from '../example/http-backend';
 import cmrCollectionReader from './middleware/cmr-collection-reader';
 import * as fs from 'fs';
+import qs from 'qs';
 
 /**
  * Mutate specific properties of the expressWinston request object
@@ -141,6 +142,9 @@ function buildBackendServer(port: number, hostBinding: string, useHttps: string)
 function buildFrontendServer(port: number, hostBinding: string, config: RouterConfig): http.Server | https.Server {
   const appLogger = logger.child({ application: 'frontend' });
   const app = express();
+  app.set('query parser', (str) =>
+    qs.parse(str, { comma: true }),
+  );
   app.use(addRequestId(appLogger));
   app.use(addRequestLogger(appLogger));
 
