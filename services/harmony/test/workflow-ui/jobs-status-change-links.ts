@@ -13,7 +13,7 @@ describe('JobsStatusChangeLinks', function () {
     const runningJobID = '058184f7-498c-4aa5-a3df-96a3a49b7d19';
     const pausedJobID = '38d2b820-0b52-475d-8cb0-0b9f7775f767';
     beforeEach(async () => {
-      const dom = await JSDOM.fromFile(path.resolve(__dirname, 'labels.html'), { url: 'http://localhost' });
+      const dom = await JSDOM.fromFile(path.resolve(__dirname, 'jobs.html'), { url: 'http://localhost' });
       global.window = dom.window as unknown as Window & typeof globalThis;
       global.document = dom.window.document;
     });
