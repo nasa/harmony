@@ -11,7 +11,7 @@ import { hookRequest } from './hooks';
  * e.g. \{username: 'billy', query: \{...\}\}
  */
 export function getRequestMetrics(
-  app: Express.Application,
+  app,
   options: { username?: string; query?: object },
 ): Test {
   const { query } = options;

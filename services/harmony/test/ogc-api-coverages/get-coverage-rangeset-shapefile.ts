@@ -28,7 +28,7 @@ import { defaultObjectStore } from '../../app/util/object-store';
 function commonValidationSteps(
   app: Application, res: Response, version: string, collection: string, variableName: string,
 ): Test {
-  const shapefileHeader = res.header['set-cookie'].filter((cookie) => {
+  const shapefileHeader = (res.header['set-cookie'] as unknown as string[]).filter((cookie) => {
     const decoded = decodeURIComponent(cookie);
     const parsed = parse(decoded);
     return parsed.shapefile;

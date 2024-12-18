@@ -75,7 +75,7 @@ function logged(fn: RequestHandler): RequestHandler {
     const startTime = new Date().getTime();
     try {
       child.silly('Invoking middleware');
-      return fn(req, res, next);
+      await fn(req, res, next);
     } finally {
       const msTaken = new Date().getTime() - startTime;
       child.silly('Completed middleware', { durationMs: msTaken });

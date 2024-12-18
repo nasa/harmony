@@ -6,7 +6,7 @@ import { hookRequest } from './hooks';
  * @param app - The express application (typically this.frontend)
  * @returns The response
  */
-export function getAdminHealth(app: Express.Application): request.Test {
+export function getAdminHealth(app): request.Test {
   return request(app).get('/admin/health');
 }
 
@@ -15,7 +15,7 @@ export function getAdminHealth(app: Express.Application): request.Test {
  * @param app - The express application (typically this.frontend)
  * @returns The response
  */
-export function getHealth(app: Express.Application): request.Test {
+export function getHealth(app): request.Test {
   return request(app).get('/health');
 }
 

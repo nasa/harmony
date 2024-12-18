@@ -2,7 +2,6 @@ import request, { Test } from 'supertest';
 import { it } from 'mocha';
 import { expect } from 'chai';
 import { v4 as uuid } from 'uuid';
-import { Application } from 'express';
 import _ from 'lodash';
 import JobLink from '../../app/models/job-link';
 import { Job, JobStatus, JobRecord, jobRecordFields, JobForDisplay, getRelatedLinks, JobQuery } from '../../app/models/job';
@@ -174,7 +173,7 @@ export function containsJob(job: JobRecord, jobList: JobListing): boolean {
  * @param query - Mapping of query param names to values
  * @returns The response
  */
-export function jobListing(app: Application, query: object = {}): Test {
+export function jobListing(app, query: object = {}): Test {
   return request(app).get('/jobs').query(query);
 }
 
@@ -184,7 +183,7 @@ export function jobListing(app: Application, query: object = {}): Test {
  * @param query - Mapping of query param names to values
  * @returns The response
  */
-export function adminJobListing(app: Application, query: object = {}): Test {
+export function adminJobListing(app, query: object = {}): Test {
   return request(app).get('/admin/jobs').query(query);
 }
 
@@ -195,7 +194,7 @@ export function adminJobListing(app: Application, query: object = {}): Test {
  * @param job - The job
  * @param query - Mapping of query param names to values
  */
-export function jobStatus(app: Express.Application, options): Test {
+export function jobStatus(app, options): Test {
   const { jobID, query } = options;
   const actualQuery = query || {};
   return request(app).get(`/jobs/${jobID}`).query(actualQuery);
@@ -207,7 +206,7 @@ export function jobStatus(app: Express.Application, options): Test {
  * @param app - The express application (typically this.frontend)
  * @param job - The job
  */
-export function adminJobStatus(app: Express.Application, options): Test {
+export function adminJobStatus(app, options): Test {
   const { jobID, query } = options;
   const actualQuery = query || {};
   return request(app).get(`/admin/jobs/${jobID}`).query(actualQuery);
@@ -219,7 +218,7 @@ export function adminJobStatus(app: Express.Application, options): Test {
  * @param app - The express application (typically this.frontend)
  * @param job - The job
  */
-export function cancelJob(app: Express.Application, { jobID }: Job): Test {
+export function cancelJob(app, { jobID }: Job): Test {
   return request(app).post(`/jobs/${jobID}/cancel`);
 }
 
@@ -229,7 +228,7 @@ export function cancelJob(app: Express.Application, { jobID }: Job): Test {
  * @param app - The express application (typically this.frontend)
  * @param job - The job
  */
-export function adminCancelJob(app: Express.Application, { jobID }: Job): Test {
+export function adminCancelJob(app, { jobID }: Job): Test {
   return request(app).post(`/admin/jobs/${jobID}/cancel`);
 }
 
@@ -239,7 +238,7 @@ export function adminCancelJob(app: Express.Application, { jobID }: Job): Test {
  * @param app - The express application (typically this.frontend)
  * @param job - The job
  */
-export function cancelJobWithGET(app: Express.Application, { jobID }: Job): Test {
+export function cancelJobWithGET(app, { jobID }: Job): Test {
   return request(app).get(`/jobs/${jobID}/cancel`);
 }
 
@@ -249,7 +248,7 @@ export function cancelJobWithGET(app: Express.Application, { jobID }: Job): Test
  * @param app - The express application (typically this.frontend)
  * @param job - The job
  */
-export function adminCancelJobWithGET(app: Express.Application, { jobID }: Job): Test {
+export function adminCancelJobWithGET(app, { jobID }: Job): Test {
   return request(app).get(`/admin/jobs/${jobID}/cancel`);
 }
 
@@ -259,7 +258,7 @@ export function adminCancelJobWithGET(app: Express.Application, { jobID }: Job):
  * @param app - The express application (typically this.frontend)
  * @param job - The job
  */
-export function resumeJob(app: Express.Application, { jobID }: Job): Test {
+export function resumeJob(app, { jobID }: Job): Test {
   return request(app).post(`/jobs/${jobID}/resume`);
 }
 
@@ -269,7 +268,7 @@ export function resumeJob(app: Express.Application, { jobID }: Job): Test {
  * @param app - The express application (typically this.frontend)
  * @param job - The job
  */
-export function adminResumeJob(app: Express.Application, { jobID }: Job): Test {
+export function adminResumeJob(app, { jobID }: Job): Test {
   return request(app).post(`/admin/jobs/${jobID}/resume`);
 }
 
@@ -279,7 +278,7 @@ export function adminResumeJob(app: Express.Application, { jobID }: Job): Test {
  * @param app - The express application (typically this.frontend)
  * @param job - The job
  */
-export function resumeJobWithGET(app: Express.Application, { jobID }: Job): Test {
+export function resumeJobWithGET(app, { jobID }: Job): Test {
   return request(app).get(`/jobs/${jobID}/resume`);
 }
 
@@ -289,7 +288,7 @@ export function resumeJobWithGET(app: Express.Application, { jobID }: Job): Test
  * @param app - The express application (typically this.frontend)
  * @param job - The job
  */
-export function adminResumeJobWithGET(app: Express.Application, { jobID }: Job): Test {
+export function adminResumeJobWithGET(app, { jobID }: Job): Test {
   return request(app).get(`/admin/jobs/${jobID}/resume`);
 }
 
@@ -299,7 +298,7 @@ export function adminResumeJobWithGET(app: Express.Application, { jobID }: Job):
  * @param app - The express application (typically this.frontend)
  * @param job - The job
  */
-export function skipPreview(app: Express.Application, { jobID }: Job): Test {
+export function skipPreview(app, { jobID }: Job): Test {
   return request(app).post(`/jobs/${jobID}/skip-preview`);
 }
 
@@ -309,7 +308,7 @@ export function skipPreview(app: Express.Application, { jobID }: Job): Test {
  * @param app - The express application (typically this.frontend)
  * @param job - The job
  */
-export function adminSkipPreview(app: Express.Application, { jobID }: Job): Test {
+export function adminSkipPreview(app, { jobID }: Job): Test {
   return request(app).post(`/admin/jobs/${jobID}/skip-preview`);
 }
 
@@ -319,7 +318,7 @@ export function adminSkipPreview(app: Express.Application, { jobID }: Job): Test
  * @param app - The express application (typically this.frontend)
  * @param job - The job
  */
-export function skipPreviewWithGET(app: Express.Application, { jobID }: Job): Test {
+export function skipPreviewWithGET(app, { jobID }: Job): Test {
   return request(app).get(`/jobs/${jobID}/skip-preview`);
 }
 
@@ -329,7 +328,7 @@ export function skipPreviewWithGET(app: Express.Application, { jobID }: Job): Te
  * @param app - The express application (typically this.frontend)
  * @param job - The job
  */
-export function adminSkipPreviewWithGET(app: Express.Application, { jobID }: Job): Test {
+export function adminSkipPreviewWithGET(app, { jobID }: Job): Test {
   return request(app).get(`/admin/jobs/${jobID}/skip-preview`);
 }
 
@@ -339,7 +338,7 @@ export function adminSkipPreviewWithGET(app: Express.Application, { jobID }: Job
  * @param app - The express application (typically this.frontend)
  * @param job - The job
  */
-export function pauseJob(app: Express.Application, { jobID }: Job): Test {
+export function pauseJob(app, { jobID }: Job): Test {
   return request(app).post(`/jobs/${jobID}/pause`);
 }
 
@@ -349,7 +348,7 @@ export function pauseJob(app: Express.Application, { jobID }: Job): Test {
  * @param app - The express application (typically this.frontend)
  * @param job - The job
  */
-export function adminPauseJob(app: Express.Application, { jobID }: Job): Test {
+export function adminPauseJob(app, { jobID }: Job): Test {
   return request(app).post(`/admin/jobs/${jobID}/pause`);
 }
 
@@ -359,7 +358,7 @@ export function adminPauseJob(app: Express.Application, { jobID }: Job): Test {
  * @param app - The express application (typically this.frontend)
  * @param job - The job
  */
-export function pauseJobWithGET(app: Express.Application, { jobID }: Job): Test {
+export function pauseJobWithGET(app, { jobID }: Job): Test {
   return request(app).get(`/jobs/${jobID}/pause`);
 }
 
@@ -369,7 +368,7 @@ export function pauseJobWithGET(app: Express.Application, { jobID }: Job): Test 
  * @param app - The express application (typically this.frontend)
  * @param job - The job
  */
-export function adminPauseJobWithGET(app: Express.Application, { jobID }: Job): Test {
+export function adminPauseJobWithGET(app, { jobID }: Job): Test {
   return request(app).get(`/admin/jobs/${jobID}/pause`);
 }
 
@@ -379,7 +378,7 @@ export function adminPauseJobWithGET(app: Express.Application, { jobID }: Job): 
  * @param app - The express application (typically this.frontend)
  * @param jobIDs - The job ids
  */
-export function skipPreviewJobs(app: Express.Application, { jobIDs } : { jobIDs: string[] }): Test {
+export function skipPreviewJobs(app, { jobIDs } : { jobIDs: string[] }): Test {
   return request(app).post('/jobs/skip-preview').send({ jobIDs });
 }
 
@@ -389,7 +388,7 @@ export function skipPreviewJobs(app: Express.Application, { jobIDs } : { jobIDs:
  * @param app - The express application (typically this.frontend)
  * @param jobIDs - The job ids
  */
-export function pauseJobs(app: Express.Application, { jobIDs } : { jobIDs: string[] }): Test {
+export function pauseJobs(app, { jobIDs } : { jobIDs: string[] }): Test {
   return request(app).post('/jobs/pause').send({ jobIDs });
 }
 
@@ -399,7 +398,7 @@ export function pauseJobs(app: Express.Application, { jobIDs } : { jobIDs: strin
  * @param app - The express application (typically this.frontend)
  * @param jobIDs - The job ids
  */
-export function resumeJobs(app: Express.Application, { jobIDs } : { jobIDs: string[] }): Test {
+export function resumeJobs(app, { jobIDs } : { jobIDs: string[] }): Test {
   return request(app).post('/jobs/resume').send({ jobIDs });
 }
 
@@ -409,7 +408,7 @@ export function resumeJobs(app: Express.Application, { jobIDs } : { jobIDs: stri
  * @param app - The express application (typically this.frontend)
  * @param jobIDs - The job ids
  */
-export function cancelJobs(app: Express.Application, { jobIDs } : { jobIDs: string[] }): Test {
+export function cancelJobs(app, { jobIDs } : { jobIDs: string[] }): Test {
   return request(app).post('/jobs/cancel').send({ jobIDs });
 }
 
