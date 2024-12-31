@@ -7,35 +7,88 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/nasa/harmony/core-services/internal/appcontext"
 	"github.com/nasa/harmony/core-services/internal/db"
+	logs "github.com/nasa/harmony/core-services/internal/log"
 	"github.com/nasa/harmony/core-services/internal/models/job"
 )
 
-func DeleteTerminalWorkItems(ctx context.Context, notUpdatedForMinutes int, jobStatus []job.JobStatus) {
+func deleteTerminalWorkItems(ctx context.Context, notUpdatedForMinutes int, jobStatus []job.JobStatus) {
 	var done = false
 	var startingId = 0
-	// var totalDeleted = 0
+	var totalDeleted int64 = 0
 	batchSize, err := strconv.Atoi(os.Getenv("WORK_REAPER_BATCH_SIZE"))
 	if err != nil {
 		// use default batch size
 		batchSize = 100
 	}
 
-	contextData := ctx.Value(appcontext.DataKey{}).(appcontext.ContextData)
-	logger := contextData.Logger
+	logger := logs.GetLoggerForContext(ctx)
 
-	logger.Info("Work reaper delete terminal items started.")
+	logger.Info("Work reaper delete terminal items started")
 
 	for !done {
-		workItemIds := db.GetWorkItemIdsByJobUpdateAgeAndStatus(ctx, notUpdatedForMinutes, jobStatus, startingId, batchSize)
+		workItemIds, err := db.GetWorkItemIdsByJobUpdateAgeAndStatus(ctx, notUpdatedForMinutes, jobStatus, startingId, batchSize)
+		if err != nil {
+			logger.Error("Failed to get work-item ids for deletion")
+		}
 		if len(workItemIds) > 0 {
 			logger.Info(fmt.Sprintf("Deleting %d work-items", len(workItemIds)))
-			// fmt.Println("WORK ITEM IDS:")
-			// for _, id := range workItemIds {
-			// 	fmt.Println(id)
-			// }
+			numDeleted, err := db.DeleteWorkItemsById(ctx, workItemIds)
+			if err != nil {
+				logger.Error("Failed to delete work-items")
+			}
+			totalDeleted += numDeleted
 		}
-		done = true
+
+		if len(workItemIds) < batchSize {
+			done = true
+		}
 	}
+
+	logger.Info(fmt.Sprintf("Done deleting work-items. Total work-items deleted: %d", totalDeleted))
+}
+
+func deleteTerminalWorkflowSteps(ctx context.Context, notUpdatedForMinutes int, jobStatus []job.JobStatus) {
+	var done = false
+	var startingId = 0
+	var totalDeleted int64 = 0
+	batchSize, err := strconv.Atoi(os.Getenv("WORK_REAPER_BATCH_SIZE"))
+	if err != nil {
+		// use default batch size
+		batchSize = 100
+	}
+
+	logger := logs.GetLoggerForContext(ctx)
+
+	logger.Info("Work reaper delete terminal workflow steps started")
+
+	for !done {
+		workItemIds, err := db.GetWorkflowStepIdsByJobUpdateAgeAndStatus(ctx, notUpdatedForMinutes, jobStatus, startingId, batchSize)
+		if err != nil {
+			logger.Error("Failed to get workflow step ids for deletion")
+		}
+		if len(workItemIds) > 0 {
+			logger.Info(fmt.Sprintf("Deleting %d workflow steps", len(workItemIds)))
+			numDeleted, err := db.DeleteWorkflowStepsById(ctx, workItemIds)
+			if err != nil {
+				logger.Error("Failed to delete workflow steps")
+			}
+			totalDeleted += numDeleted
+		}
+
+		if len(workItemIds) < batchSize {
+			done = true
+		}
+	}
+}
+
+func DeleteOldWork(ctx context.Context) {
+	reapableWOrkAgeMinutes, err := strconv.Atoi(os.Getenv("REAPABLE_WORK_AGE_MINUTES"))
+	if err != nil {
+		// TODO this is just set to 1 for dev purposes - it should have a better default
+		reapableWOrkAgeMinutes = 1
+	}
+	deleteTerminalWorkItems(ctx, reapableWOrkAgeMinutes, job.TerminalStatuses)
+	deleteTerminalWorkflowSteps(ctx, reapableWOrkAgeMinutes, job.TerminalStatuses)
+
 }

@@ -4,10 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"log/slog"
-	"os"
-	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -15,17 +11,15 @@ import (
 
 	"github.com/nasa/harmony/core-services/internal/appcontext"
 	"github.com/nasa/harmony/core-services/internal/cronjobs/workreaper"
+	"github.com/nasa/harmony/core-services/internal/db"
+	"github.com/nasa/harmony/core-services/internal/env"
 	logs "github.com/nasa/harmony/core-services/internal/log"
-	"github.com/nasa/harmony/core-services/internal/models/job"
 	"github.com/nasa/harmony/core-services/internal/registry"
 
 	_ "github.com/jackc/pgx/v5/stdlib" // Standard library bindings for pgx
 
-	"github.com/joho/godotenv"
-
 	"github.com/robfig/cron"
 
-	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/go-playground/validator/v10"
@@ -37,64 +31,39 @@ const PLUGIN_RESTART_DELAY = 5 * time.Second
 var validate *validator.Validate
 
 func main() {
-	// read the env from .env
-	err := godotenv.Load()
-	if err != nil {
-		// try one directory up - useful when running locally
-		err = godotenv.Load("../.env")
-		if err != nil {
-			log.Fatal("Error loading .env file")
-		}
-	}
+	// TODO is this better than using an implicitly called `init` function?
+	env.InitEnvVars()
 
-	var logLevel = logs.GetLogLevel()
-
-	var logger *slog.Logger
-	if strings.ToLower(os.Getenv("TEXT_LOGGER")) == "true" {
-		logger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: logLevel}))
-	} else {
-		logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: logLevel}))
-	}
+	logger := logs.NewLogger()
 
 	logger.Info("Running ...")
 
-	postgresUrl := os.Getenv("DATABASE_URL")
-
-	var db *sqlx.DB
-
-	if os.Getenv("DATABASE_TYPE") == "sqlite" {
-		db, err = sqlx.Connect("sqlite3", filepath.Join("db", "test.sqlite3"))
-		if err != nil {
-			log.Fatalln(err)
-		}
-	} else {
-		db, err = sqlx.Connect("pgx", postgresUrl)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-
 	ctx := context.Background()
+	contextData := appcontext.ContextData{Logger: logger, DB: db.GetDB(logger)}
+	ctx = context.WithValue(ctx, appcontext.DataKey{}, contextData)
 
-	ctx = context.WithValue(ctx, appcontext.DataKey{}, appcontext.ContextData{Logger: logger, DB: db})
-
+	// set up cron jobs
+	// NOTE: cron jobs are run asynchronously, so a job will restart even if it is still running from
+	// the last time it was started. If this is a problem then the job should provide its own
+	// synchronization to abort restarts
 	crn := cron.New()
-	crn.AddFunc("@every 10s", func() { workreaper.DeleteTerminalWorkItems(ctx, 1, job.TerminalStatuses) })
+	crn.AddFunc("@every 30s", func() { workreaper.DeleteOldWork(ctx) })
 	crn.AddFunc("@every 1m", func() { panic("Oh, no!") })
 	crn.AddFunc("0 8 15 * * *", func() { log.Print("OK") })
 	crn.Start()
 
-	var exitSignalChan = make(chan registry.Plugin)
-	for name, plugin := range registry.Registry {
-		fmt.Println("Found plugin", name)
-		registry.RunPlugin(ctx, exitSignalChan, plugin)
+	// start up non-cron/long-running services
+	var exitSignalChan = make(chan registry.Service)
+	for name, service := range registry.Registry {
+		fmt.Println("Found service", name)
+		registry.RunService(ctx, exitSignalChan, service)
 	}
 
 	// block forever
 	for {
-		plugin := <-exitSignalChan
-		log.Print("Restarting plugin ", plugin.Name())
-		registry.RunPlugin(ctx, exitSignalChan, plugin)
+		service := <-exitSignalChan
+		log.Print("Restarting service ", service.Name())
+		registry.RunService(ctx, exitSignalChan, service)
 
 	}
 

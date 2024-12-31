@@ -3,34 +3,37 @@ package registry
 import (
 	"context"
 	"fmt"
+
+	logs "github.com/nasa/harmony/core-services/internal/log"
 )
 
-// Registry holds registered plugins
-var Registry = make(map[string]Plugin)
+// Registry holds registered services
+var Registry = make(map[string]Service)
 
-// Plugin interface
-type Plugin interface {
+// Service interface
+type Service interface {
 	Name() string
 	Execute(context.Context)
 }
 
-// Register registers a plugin
-func Register(p Plugin) {
-	fmt.Println("Registering plugin", p.Name())
-	Registry[p.Name()] = p
+// Register registers a services
+func Register(s Service) {
+	fmt.Println("Registering service", s.Name())
+	Registry[s.Name()] = s
 }
 
-// Run a plugin in a goroutine, signalling on the given channel if the plugin crashes so
-// it can be restarted by calling RunPlugin again
-func RunPlugin(ctx context.Context, ch chan Plugin, plugin Plugin) {
+// Run a service in a goroutine, signaling on the given channel if the service crashes so
+// it can be restarted by calling RunService again
+func RunService(ctx context.Context, ch chan Service, s Service) {
+	logger := logs.GetLoggerForContext(ctx)
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
-				fmt.Println("Recovered from panic:", r)
-				ch <- plugin
+				logger.Error("Recovered from panic:", r)
+				ch <- s
 			}
 		}()
-		fmt.Println("Using ", plugin.Name)
-		plugin.Execute(ctx)
+		logger.Info(fmt.Sprintf("Using service %s", s.Name()))
+		s.Execute(ctx)
 	}()
 }
