@@ -124,6 +124,10 @@
     <pre id="model-output"> </pre>
     <br/>
     <div id="map" style="width: 600px; height: 400px;"></div>
+    <div id="image-container">
+      <p id="job-status"></p>
+      <img id="dynamic-image" src="" alt="Dynamic Image" style="display:none;" />
+    </div>
   </div>
   </body>
 
@@ -151,55 +155,96 @@
     var map;
     var geoJsonLayer;
 
+    async function pollJobStatus(statusUrl) {
+      const statusElement = document.getElementById('job-status');
+      const imageElement = document.getElementById('dynamic-image');
+
+      // Function to poll the job status
+      async function checkStatus() {
+        const response = await fetch(statusUrl, {
+          method: 'GET',
+          // headers: {
+          //   'Content-type': 'application/json; charset=UTF-8'
+          // }
+        });
+
+        const data = await response.json();
+
+        if (data.status === 'successful') {
+          // Update the image when the job is ready
+          imageUrl = data.links[1]?.href;
+          imageElement.src = imageUrl;
+          imageElement.style.display = 'block';
+          statusElement.style.display = 'none';
+        } else if (data.status !== 'running') {
+          statusElement.innerText = 'The request failed.';
+        } else {
+          // Keep polling if the job is still in progress
+          statusElement.innerText = 'Harmony request in progress. Please wait...';
+          setTimeout(checkStatus, 2000); // Poll every 2 seconds
+        }
+      }
+
+      checkStatus(); // Start polling
+    }
+
     async function postForm(form) {
       const spinner = document.getElementById('spinner');
-      document.getElementById('model-output').innerHTML = '';
-      if (geoJsonLayer) {
-        geoJsonLayer.clearLayers();
-      }
+      const outputElement = document.getElementById('model-output');
+      outputElement.innerHTML = '';
       spinner.style.display = 'block';
-      const response = await fetch("./free-text", {
-        method: "POST",
-        body: JSON.stringify({
-          query: form.query.value
-        }),
-        headers: {
-          "Content-type": "application/json; charset=UTF-8"
+
+      try {
+        const response = await fetch("./free-text", {
+          method: "POST",
+          body: JSON.stringify({ query: form.query.value }),
+          headers: {
+            "Content-type": "application/json; charset=UTF-8"
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`Error: ${response.statusText}`);
         }
-      });
 
-      spinner.style.display = 'none';
+        const json = await response.json();
+        const geoJson = json.geoJson;
 
-      const json = await response.json();
-      const geoJson = json.geoJson;
-      const results = {
-        propertyOfInterest: json.propertyOfInterest,
-        placeOfInterest: json.placeOfInterest,
-        buffer: `${json.bufferNumber} ${json.bufferUnits}`,
-        collectionId: `${json.collection}`,
-        collectionName: `${json.collectionName}`,
-        variableId: `${json.variable}`,
-        variableName: `${json.variableName}`,
-        variableDefinition: `${json.variableDefinition}`,
-        temporalRange: `${json.timeInterval}`,
-        outputFormat: `${json.outputFormat}`,
+        const results = {
+          propertyOfInterest: json.propertyOfInterest,
+          placeOfInterest: json.placeOfInterest,
+          buffer: `${json.bufferNumber} ${json.bufferUnits}`,
+          collectionId: `${json.collection}`,
+          collectionName: `${json.collectionName}`,
+          variableId: `${json.variable}`,
+          variableName: `${json.variableName}`,
+          variableDefinition: `${json.variableDefinition}`,
+          temporalRange: `${json.timeInterval}`,
+          outputFormat: `${json.outputFormat}`,
+        };
+        outputElement.innerHTML = JSON.stringify(results, null, 2);
+
+        if (!map) {
+          map = L.map('map').setView([51.505, -0.09], 1);
+          L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap contributors'
+          }).addTo(map);
+        }
+
+        if (geoJsonLayer && map.hasLayer(geoJsonLayer)) {
+          map.removeLayer(geoJsonLayer);
+        }
+
+        geoJsonLayer = L.geoJSON(geoJson).addTo(map);
+        map.fitBounds(geoJsonLayer.getBounds());
+        pollJobStatus(json.statusUrl);
+      } catch (error) {
+        console.error(error);
+        outputElement.innerHTML = 'An error occurred. Please try again.';
+      } finally {
+        spinner.style.display = 'none';
       }
-      document.getElementById('model-output').innerHTML = JSON.stringify(results, null, 2);
-
-      if (!map) {
-        map = L.map('map').setView([51.505, -0.09], 1);
-
-        const tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          maxZoom: 19,
-          attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        }).addTo(map);
-      }
-
-
-      geoJsonLayer = L.geoJSON(geoJson).addTo(map);
-      map.fitBounds(geoJsonLayer.getBounds());
-
-      return false;
     }
 
   </script>

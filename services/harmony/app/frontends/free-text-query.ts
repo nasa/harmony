@@ -12,6 +12,7 @@ import HarmonyRequest from '../models/harmony-request';
 import { parseNumber } from '../util/parameter-parsing-helpers';
 import knexfile from '../../../../db/knexfile';
 import { knex } from 'knex';
+import * as querystring from 'querystring';
 
 /**
  * get GeoJSON for a given place
@@ -65,6 +66,7 @@ interface GeneratedHarmonyRequestParameters {
   timeInterval: string | null;
   outputFormat: string | null;
   geoJson: string | null;
+  statusUrl: string;
 }
 
 const distanceUnits = {
@@ -126,6 +128,51 @@ async function getEmbedding(input: string): Promise<number[]> {
   }));
   const responseBody = JSON.parse(new TextDecoder().decode(response.body));
   return responseBody.embedding;
+}
+
+
+/**
+ * Create a token header for the given access token string
+ *
+ * @param token - The access token for the user
+ * @returns An object with an 'Authorization' key and 'Bearer token' as the value,
+ * or an empty object if the token is not set
+ */
+function _makeTokenHeader(token: string): object {
+  return { Authorization: `Bearer ${token}` };
+}
+
+interface HarmonyJobStatus {
+  links: Array<{
+    href: string;
+    [key: string]: any; // allows additional fields in each link object
+  }>;
+  [key: string]: any; // allows additional top-level fields in the status object
+}
+
+/**
+ * TODO
+ */
+async function submitHarmonyRequest(collection, variable, queryParams, token): Promise<HarmonyJobStatus> {
+  queryParams.forceAsync = true;
+  queryParams.maxResults = 1;
+  const encodedVariable = encodeURIComponent(variable);
+  const baseUrl = `http://localhost:3000/${collection}/ogc-api-coverages/1.0.0/collections/${encodedVariable}/coverage/rangeset`;
+  const querystr = querystring.stringify(queryParams);
+  const headers = {
+    ..._makeTokenHeader(token),
+  };
+
+  console.log(`Making request to ${baseUrl}?${querystr}`);
+  const response = await fetch(`${baseUrl}?${querystr}`,
+    {
+      method: 'GET',
+      headers,
+    });
+  const data = await response.json();
+  console.log(JSON.stringify(data));
+  // return await response.json();
+  return data;
 }
 
 /**
@@ -198,7 +245,6 @@ export async function freeTextQueryPost(
     const sql = `SELECT collection_id, collection_name, variable_id, variable_name, variable_definition, 1 - (embedding <=> '[${embedding}]') AS similarity FROM umm_embeddings ORDER BY embedding <=> '[${embedding}]' LIMIT 50;`;
     // const sql = `SELECT collection_id, variable_id, (embedding <-> '[${embedding}]') AS similarity FROM umm_embeddings ORDER BY embedding <-> '[${embedding}]' DESC LIMIT 5;`;
 
-
     const db = knex(knexfile);
 
     const dbResult = await db.raw(sql);
@@ -209,10 +255,11 @@ export async function freeTextQueryPost(
     }
 
     const conceptIds = dbResult.rows.map(a => a.collection_id);
+    const conceptIdsSet = new Set(conceptIds);
     const temporalParam = modelOutput.timeInterval?.replace(/\+00:00/g, '').replace('/', ',');
 
     const collQuery: CmrQuery = {
-      concept_id: conceptIds,
+      concept_id: Array.from(conceptIdsSet) as unknown as any,
       geojson: url,
       page_size: 100,
       temporal: temporalParam,
@@ -223,6 +270,7 @@ export async function freeTextQueryPost(
     const collsWithGranules = await queryCollectionUsingMultipartForm({}, collQuery, req.accessToken);
 
     // list of collection concept ids that has granule found with the spatial and temporal search
+    collsWithGranules.collections.map(c => console.log(`Collection ${c.id} has ${c.granule_count} granules.`));
     const collConceptIds = collsWithGranules.collections.filter(c => c.granule_count > 0).map(c => c.id);
     console.log(`Collections with granules matching spatial and temporal search: ${JSON.stringify(collConceptIds)}`);
 
@@ -245,6 +293,14 @@ export async function freeTextQueryPost(
       console.log('No matching collections are found');
     }
 
+    // Submit the request off to harmony - TODO figure out shapefile and temporal
+    // const temporal = getTemporalQueryParam(temporalParam);
+    const queryParams = {} as unknown as any;
+    if (modelOutput.outputFormat) {
+      queryParams.outputFormat = modelOutput.outputFormat;
+    }
+
+    const harmonyJob = await submitHarmonyRequest(collectionId, variableId, queryParams, req.accessToken);
     const harmonyParams: GeneratedHarmonyRequestParameters = {
       propertyOfInterest: modelOutput.propertyOfInterest,
       placeOfInterest: modelOutput.placeOfInterest,
@@ -258,7 +314,9 @@ export async function freeTextQueryPost(
       timeInterval: modelOutput.timeInterval,
       outputFormat: modelOutput.outputFormat,
       geoJson,
+      statusUrl: harmonyJob.links[2].href,
     };
+
     res.send(harmonyParams);
 
   } catch (e) {
