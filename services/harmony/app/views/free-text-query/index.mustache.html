@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en" class="h-100">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,85 +15,147 @@
   <style>
     .leaflet-container {
       height: 400px;
-      width: 600px;
-      max-width: 100%;
+      width: 100%;
       max-height: 100%;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
 
-.lds-ellipsis,
-.lds-ellipsis div {
-  box-sizing: border-box;
-}
-.lds-ellipsis {
-  display: inline-block;
-  position: relative;
-  width: 80px;
-  height: 80px;
-}
-.lds-ellipsis div {
-  position: absolute;
-  top: 33.33333px;
-  width: 13.33333px;
-  height: 13.33333px;
-  border-radius: 50%;
-  background: currentColor;
-  animation-timing-function: cubic-bezier(0, 1, 1, 0);
-}
-.lds-ellipsis div:nth-child(1) {
-  left: 8px;
-  animation: lds-ellipsis1 0.6s infinite;
-}
-.lds-ellipsis div:nth-child(2) {
-  left: 8px;
-  animation: lds-ellipsis2 0.6s infinite;
-}
-.lds-ellipsis div:nth-child(3) {
-  left: 32px;
-  animation: lds-ellipsis2 0.6s infinite;
-}
-.lds-ellipsis div:nth-child(4) {
-  left: 56px;
-  animation: lds-ellipsis3 0.6s infinite;
-}
-@keyframes lds-ellipsis1 {
-  0% {
-    transform: scale(0);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-@keyframes lds-ellipsis3 {
-  0% {
-    transform: scale(1);
-  }
-  100% {
-    transform: scale(0);
-  }
-}
-@keyframes lds-ellipsis2 {
-  0% {
-    transform: translate(0, 0);
-  }
-  100% {
-    transform: translate(24px, 0);
-  }
-}
+    .main-container {
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
 
+    .content-wrapper {
+      display: flex;
+      gap: 2rem;
+      margin-bottom: 2rem;
+    }
 
+    .left-panel {
+      flex: 1;
+      min-width: 300px;
+    }
+
+    .right-panel {
+      flex: 1;
+      min-width: 300px;
+    }
+
+    .query-form {
+      margin-bottom: 2rem;
+    }
+
+    .query-form textarea {
+      width: 100%;
+      padding: 1rem;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      font-family: inherit;
+    }
+
+    .submitButton {
+      background-color: #0b3d91;
+      color: white;
+      padding: 0.5rem 2rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .submitButton:hover {
+      background-color: #0a3278;
+    }
+
+    #model-output {
+      background-color: #f8f9fa;
+      padding: 1rem;
+      border-radius: 8px;
+      margin: 1rem 0;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    .image-container {
+      margin: 2rem 0;
+      padding: 1rem;
+      border: 2px dashed #ddd;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    #dynamic-image {
+      max-width: 100%;
+      border-radius: 4px;
+    }
+
+    .lds-ellipsis {
+      display: inline-block;
+      position: relative;
+      width: 80px;
+      height: 80px;
+      margin: 0 auto;
+    }
+
+    .lds-ellipsis div {
+      position: absolute;
+      top: 33px;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: #0b3d91;
+      animation-timing-function: cubic-bezier(0, 1, 1, 0);
+    }
+
+    .lds-ellipsis div:nth-child(1) {
+      left: 8px;
+      animation: lds-ellipsis1 0.6s infinite;
+    }
+
+    .lds-ellipsis div:nth-child(2) {
+      left: 8px;
+      animation: lds-ellipsis2 0.6s infinite;
+    }
+
+    .lds-ellipsis div:nth-child(3) {
+      left: 32px;
+      animation: lds-ellipsis2 0.6s infinite;
+    }
+
+    .lds-ellipsis div:nth-child(4) {
+      left: 56px;
+      animation: lds-ellipsis3 0.6s infinite;
+    }
+
+    @keyframes lds-ellipsis1 {
+      0% { transform: scale(0); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes lds-ellipsis3 {
+      0% { transform: scale(1); }
+      100% { transform: scale(0); }
+    }
+
+    @keyframes lds-ellipsis2 {
+      0% { transform: translate(0, 0); }
+      100% { transform: translate(24px, 0); }
+    }
+
+    #job-status {
+      color: #666;
+      text-align: center;
+      margin: 1rem 0;
+    }
+
+    .loading-container {
+      text-align: center;
+      margin: 1rem 0;
+    }
   </style>
-  <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify@4.16.4"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify@4.16.4/dist/tagify.polyfills.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
-    integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"
-    defer></script>
-  <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.0.0-alpha1/js/bootstrap.min.js"
-    integrity="sha384-oesi62hOLfzrys4LxRF63OJCXdXDipiYWBnvTl9Y9/TRlw5xlKIEHpNyvvDShgf/" crossorigin="anonymous"
-    defer></script>
-  <script language="javascript" id="_fed_an_ua_tag"
-    src="https://dap.digitalgov.gov/Universal-Federated-Analytics-Min.js?agency=NASA&subagency=GSFC&dclink=true"
-    defer></script>
-  <title>Harmony</title>
 </head>
 
 <body class="d-flex flex-column h-100">
@@ -108,28 +169,34 @@
     </div>
   </nav>
 
-  <div style="margin-left: 20px;">
-    <form id="free-text-query-form" action="javascript:;" onsubmit="postForm( this );" class="pt-2">
-      <textarea name="query" cols="40" rows="5" placeholder="enter free text query"></textarea>
-      <br/>
-      <input type="submit" value="submit" class="submitButton">
-    </form>
-    <br/>
-    <div id="spinner" class="lds-ellipsis" style="display:none;">
-      <div></div>
-      <div></div>
-      <div></div>
-      <div></div>
-    </div>
-    <pre id="model-output"> </pre>
-    <br/>
-    <div id="map" style="width: 600px; height: 400px;"></div>
-    <div id="image-container">
-      <p id="job-status"></p>
-      <img id="dynamic-image" src="" alt="Dynamic Image" style="display:none;" />
+  <div class="main-container">
+    <div class="content-wrapper">
+      <div class="left-panel">
+        <form id="free-text-query-form" action="javascript:;" onsubmit="postForm(this);" class="query-form">
+          <textarea name="query" rows="5" placeholder="Enter free text query"></textarea>
+          <br/>
+          <input type="submit" value="Submit Query" class="submitButton">
+        </form>
+
+        <div class="loading-container">
+          <div id="spinner" class="lds-ellipsis" style="display:none;">
+            <div></div><div></div><div></div><div></div>
+          </div>
+        </div>
+
+        <pre id="model-output"></pre>
+
+        <div class="image-container">
+          <p id="job-status"></p>
+          <img id="dynamic-image" src="" alt="Dynamic Image" style="display:none;" />
+        </div>
+      </div>
+
+      <div class="right-panel">
+        <div id="map"></div>
+      </div>
     </div>
   </div>
-  </body>
 
   <footer class="mt-auto">
     <div class="container-lg">
@@ -138,11 +205,9 @@
           <ul class="list-inline">
             <li class="list-inline-item">NASA Official: Stephen Berrick</li>
             <li class="list-inline-item"><a href="http://www.nasa.gov/FOIA/index.html">FOIA</a></li>
-            <li class="list-inline-item"><a href="http://www.nasa.gov/about/highlights/HP_Privacy.html">NASA
-                Privacy Policy</a></li>
+            <li class="list-inline-item"><a href="http://www.nasa.gov/about/highlights/HP_Privacy.html">NASA Privacy Policy</a></li>
             <li class="list-inline-item"><a href="http://www.usa.gov/">USA.gov</a></li>
-            <li class="list-inline-item"><a href="#" onclick="javascript:feedback.showForm();">Feedback</a>
-            </li>
+            <li class="list-inline-item"><a href="#" onclick="javascript:feedback.showForm();">Feedback</a></li>
           </ul>
         </div>
         <div class="col-md-4">
@@ -188,7 +253,7 @@
       checkStatus(); // Start polling
     }
 
-    async function postForm(form) {
+  async function postForm(form) {
       const spinner = document.getElementById('spinner');
       const outputElement = document.getElementById('model-output');
       outputElement.innerHTML = '';
@@ -251,5 +316,4 @@
   <script type="text/javascript" src="https://fbm.earthdata.nasa.gov/for/Harmony/feedback.js"></script>
   <script type="text/javascript">feedback.init({ showIcon: false });</script>
 </body>
-
 </html>
