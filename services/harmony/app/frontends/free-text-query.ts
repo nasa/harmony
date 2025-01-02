@@ -13,6 +13,8 @@ import { parseNumber } from '../util/parameter-parsing-helpers';
 import knexfile from '../../../../db/knexfile';
 import { knex } from 'knex';
 import * as querystring from 'querystring';
+import { Logger } from 'winston';
+// import { FileStore } from '../util/object-store/file-store';
 
 /**
  * get GeoJSON for a given place
@@ -175,6 +177,16 @@ async function submitHarmonyRequest(collection, variable, queryParams, token): P
   return data;
 }
 
+let globalLogger: Logger;
+
+/**
+ * Log performance
+ */
+function logPerf(startTime, msg): DOMHighResTimeStamp {
+  const endTime = performance.now();
+  globalLogger.info(`PERF: ${(endTime - startTime).toFixed(0)} ms for ${msg}`);
+  return endTime;
+}
 /**
  * Endpoint to make requests using free text
  *
@@ -187,10 +199,12 @@ export async function freeTextQueryPost(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
   try {
+    globalLogger = req.context.logger;
     // get the region, buffer (if any), property, time interval (if any), and output format
     // (if given) using AWS Bedrock
+    let now = performance.now();
     const client = new BedrockRuntimeClient({ region: 'us-west-2' });
-
+    now = logPerf(now, 'create bedrock client');
     const inputText = `
     Given the following text, identify the place of interest, the buffer radius,
     the time interval in ISO 8601 format, i.e., 'yyyy-MM-dd HH:mm:ss +zzzz',
@@ -217,10 +231,12 @@ export async function freeTextQueryPost(
       contentType: 'application/json',
       accept: 'application/json',
     }));
+    now = logPerf(now, 'query bedrock to parse user query');
     const responseBody = JSON.parse(new TextDecoder().decode(response.body));
     const output = responseBody.results[0].outputText;
     console.log(`OUTPUT: ${JSON.stringify(output, null, 2)}`);
     const modelOutput = parseModelOutput(output);
+    now = logPerf(now, 'parse bedrock response');
     console.log(`modelOutput: ${JSON.stringify(modelOutput)}`);
 
     let geoJson;
@@ -231,16 +247,21 @@ export async function freeTextQueryPost(
         // Create the buffer around the polygon
         geoJson = buffer(geoJson, modelOutput.bufferNumber, { units: modelOutput.bufferUnits as Units });
       }
+      now = logPerf(now, 'Get GeoJSON from place name');
     }
 
     // console.log(`GEOJSON: ${JSON.stringify(geoJson, null, 2)}`);
 
     const store = defaultObjectStore();
+    // const store = new FileStore();
     const prefix = `public/free-text-${uuid()}`;
-    const url = defaultObjectStore().getUrlString({ bucket: env.artifactBucket, key: prefix });
+    // const url = defaultObjectStore().getUrlString({ bucket: env.artifactBucket, key: prefix });
+    const url = store.getUrlString({ bucket: env.artifactBucket, key: prefix });
     await store.upload(JSON.stringify(geoJson), url);
+    now = logPerf(now, 'upload shape to S3');
 
     const embedding = await getEmbedding(modelOutput.propertyOfInterest);
+    now = logPerf(now, 'generate embedding based on property of interest');
 
     const sql = `SELECT collection_id, collection_name, variable_id, variable_name, variable_definition, 1 - (embedding <=> '[${embedding}]') AS similarity FROM umm_embeddings ORDER BY embedding <=> '[${embedding}]' LIMIT 50;`;
     // const sql = `SELECT collection_id, variable_id, (embedding <-> '[${embedding}]') AS similarity FROM umm_embeddings ORDER BY embedding <-> '[${embedding}]' DESC LIMIT 5;`;
@@ -248,6 +269,8 @@ export async function freeTextQueryPost(
     const db = knex(knexfile);
 
     const dbResult = await db.raw(sql);
+
+    now = logPerf(now, 'query database for embedding similarity');
     // console.log(JSON.stringify(dbResult, null, 2));
 
     for (const { collection_id, collection_name, variable_id, variable_name, similarity } of dbResult.rows) {
@@ -268,6 +291,7 @@ export async function freeTextQueryPost(
     };
 
     const collsWithGranules = await queryCollectionUsingMultipartForm({}, collQuery, req.accessToken);
+    now = logPerf(now, 'query CMR for granule counts for collections');
 
     // list of collection concept ids that has granule found with the spatial and temporal search
     collsWithGranules.collections.map(c => console.log(`Collection ${c.id} has ${c.granule_count} granules.`));
@@ -297,10 +321,11 @@ export async function freeTextQueryPost(
     // const temporal = getTemporalQueryParam(temporalParam);
     const queryParams = {} as unknown as any;
     if (modelOutput.outputFormat) {
-      queryParams.outputFormat = modelOutput.outputFormat;
+      queryParams.format = modelOutput.outputFormat;
     }
 
     const harmonyJob = await submitHarmonyRequest(collectionId, variableId, queryParams, req.accessToken);
+    logPerf(now, 'submit harmony request');
     const harmonyParams: GeneratedHarmonyRequestParameters = {
       propertyOfInterest: modelOutput.propertyOfInterest,
       placeOfInterest: modelOutput.placeOfInterest,

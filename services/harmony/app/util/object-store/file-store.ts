@@ -25,7 +25,7 @@ export class FileStore implements ObjectStore {
    *
    * @param root - root directory to store files
    */
-  constructor(root = '/tmp') {
+  constructor(root = '/tmp/') {
     this.fileStoreRoot = root;
   }
 
@@ -35,7 +35,7 @@ export class FileStore implements ObjectStore {
    * @returns
    */
   _getFilename(paramsOrUrl): string {
-    return paramsOrUrl.replace('s3://', `${this.fileStoreRoot}/`);
+    return paramsOrUrl.replace('s3://', `${this.fileStoreRoot}`);
   }
 
   signGetObject(objectUrl: string, params: { [key: string]: string }): Promise<string> {
