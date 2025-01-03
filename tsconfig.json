@@ -6,7 +6,7 @@
   "include": [
     "./services/**/app/**/*",
     "./services/**/test/**/*",
-    "scripts/*",
+    "./scripts/*",
     "./packages/**/*",
     "./packages/**/test/**/*",
     "./example/**/*"

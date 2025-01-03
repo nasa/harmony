@@ -70,6 +70,7 @@ async function storeEmbeddingsBatch(tx: Knex.Transaction, batch: Embedding[], qu
 void (async (): Promise<void> => {
   if (!fs.existsSync(filePath)) {
     logger.error('File does not exist:', filePath);
+    // eslint-disable-next-line no-process-exit
     process.exit(1);
   }
 
@@ -88,7 +89,7 @@ void (async (): Promise<void> => {
     const batchesTotal = batches.length * DB_BATCH_SIZE;
     const remainder = rows.length - batchesTotal;
     if (remainder > 0) {
-      batches.push(rows.slice(batchesTotal, batchesTotal + remainder))
+      batches.push(rows.slice(batchesTotal, batchesTotal + remainder));
     }
 
     let n = 0;

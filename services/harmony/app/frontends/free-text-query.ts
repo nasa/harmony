@@ -263,7 +263,9 @@ export async function freeTextQueryPost(
     const embedding = await getEmbedding(modelOutput.propertyOfInterest);
     now = logPerf(now, 'generate embedding based on property of interest');
 
-    const sql = `SELECT collection_id, collection_name, variable_id, variable_name, variable_definition, 1 - (embedding <=> '[${embedding}]') AS similarity FROM umm_embeddings ORDER BY embedding <=> '[${embedding}]' LIMIT 50;`;
+    // const sql = `SELECT collection_id, collection_name, variable_id, variable_name, variable_definition, 1 - (embedding <=> '[${embedding}]') AS similarity FROM umm_embeddings ORDER BY embedding <=> '[${embedding}]' LIMIT 50;`;
+
+    const sql = `SELECT collection_id, collection_name, variable_id, variable_name, variable_definition, 1 - (embedding <=> '[${embedding}]') AS similarity FROM umm_embeddings ORDER BY embedding <=> '[${embedding}]' LIMIT 10;`;
     // const sql = `SELECT collection_id, variable_id, (embedding <-> '[${embedding}]') AS similarity FROM umm_embeddings ORDER BY embedding <-> '[${embedding}]' DESC LIMIT 5;`;
 
     const db = knex(knexfile);
@@ -279,10 +281,11 @@ export async function freeTextQueryPost(
 
     const conceptIds = dbResult.rows.map(a => a.collection_id);
     const conceptIdsSet = new Set(conceptIds);
+    const conceptIdsArray = Array.from(conceptIdsSet) as string[];
     const temporalParam = modelOutput.timeInterval?.replace(/\+00:00/g, '').replace('/', ',');
 
     const collQuery: CmrQuery = {
-      concept_id: Array.from(conceptIdsSet) as unknown as any,
+      concept_id: conceptIdsArray,
       geojson: url,
       page_size: 100,
       temporal: temporalParam,
@@ -291,9 +294,29 @@ export async function freeTextQueryPost(
     };
 
     const collsWithGranules = await queryCollectionUsingMultipartForm({}, collQuery, req.accessToken);
+
+    // // Run all queries in parallel
+    // const queries = conceptIdsArray.map((conceptId) => {
+    //   const collQuery: CmrQuery = {
+    //     concept_id: conceptId,
+    //     geojson: url,
+    //     page_size: 100,
+    //     temporal: temporalParam,
+    //     include_granule_counts: 'true',
+    //     'simplify-shapefile': 'true',
+    //   };
+
+    //   return queryCollectionUsingMultipartForm({}, collQuery, req.accessToken);
+    // });
+    // const results = await Promise.all(queries);
+
+    // const collsWithGranules = results.flatMap(result => result.collections);
+
     now = logPerf(now, 'query CMR for granule counts for collections');
 
     // list of collection concept ids that has granule found with the spatial and temporal search
+    // collsWithGranules.map(c => console.log(`Collection ${c.id} has ${c.granule_count} granules.`));
+    // const collConceptIds = collsWithGranules.filter(c => c.granule_count > 0).map(c => c.id);
     collsWithGranules.collections.map(c => console.log(`Collection ${c.id} has ${c.granule_count} granules.`));
     const collConceptIds = collsWithGranules.collections.filter(c => c.granule_count > 0).map(c => c.id);
     console.log(`Collections with granules matching spatial and temporal search: ${JSON.stringify(collConceptIds)}`);

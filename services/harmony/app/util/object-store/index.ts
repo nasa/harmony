@@ -26,7 +26,6 @@ export function defaultObjectStore(): ObjectStore {
  * @returns an object store for interacting with the given protocol
  */
 export function objectStoreForProtocol(protocol?: string): ObjectStore {
-  console.log(`protocol is ${protocol}`);
   if (!protocol) {
     return null;
   }

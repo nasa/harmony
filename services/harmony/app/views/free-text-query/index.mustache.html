@@ -80,16 +80,22 @@
     }
 
     .image-container {
+      width: 360px;
+      height: 200px;
       margin: 2rem 0;
       padding: 1rem;
       border: 2px dashed #ddd;
       border-radius: 8px;
       text-align: center;
+      overflow: hidden;
     }
 
     #dynamic-image {
-      max-width: 100%;
+      width: 100%;
+      height: auto;
+      object-fit: contain;
       border-radius: 4px;
+      display: block;
     }
 
     .lds-ellipsis {
@@ -155,6 +161,11 @@
       text-align: center;
       margin: 1rem 0;
     }
+
+    #map {
+      contain: layout size paint;
+    }
+
   </style>
 </head>
 
@@ -253,10 +264,28 @@
       checkStatus(); // Start polling
     }
 
-  async function postForm(form) {
+    async function postForm(form) {
       const spinner = document.getElementById('spinner');
       const outputElement = document.getElementById('model-output');
+      const imageElement = document.getElementById('dynamic-image');
+      const statusElement = document.getElementById('job-status');
+      const mapElement = document.getElementById('map');
+
+      // Clear previous outputs
+      // mapElement.innerHTML = '';
+      mapElement.style.display = 'none';
+
       outputElement.innerHTML = '';
+      imageElement.style.display = 'none';
+      imageElement.src = '';
+      statusElement.style.display = 'none';
+
+      // Reset map completely
+      if (map) {
+        map.remove();
+        map = null;
+      }
+
       spinner.style.display = 'block';
 
       try {
@@ -288,21 +317,18 @@
           outputFormat: `${json.outputFormat}`,
         };
         outputElement.innerHTML = JSON.stringify(results, null, 2);
+        mapElement.style.display = 'block';
 
-        if (!map) {
-          map = L.map('map').setView([51.505, -0.09], 1);
-          L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '&copy; OpenStreetMap contributors'
-          }).addTo(map);
-        }
-
-        if (geoJsonLayer && map.hasLayer(geoJsonLayer)) {
-          map.removeLayer(geoJsonLayer);
-        }
+        // Create fresh map only after getting new data
+        map = L.map('map').setView([51.505, -0.09], 1);
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
 
         geoJsonLayer = L.geoJSON(geoJson).addTo(map);
         map.fitBounds(geoJsonLayer.getBounds());
+        statusElement.style.display = 'block';
         pollJobStatus(json.statusUrl);
       } catch (error) {
         console.error(error);
