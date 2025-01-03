@@ -2,6 +2,9 @@
 import { Response, NextFunction } from 'express';
 import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime';
 import fetch from 'node-fetch';
+import FormData from 'form-data';
+import axios from 'axios';
+import { Readable } from 'stream';
 import { buffer, Units } from '@turf/turf';
 import { v4 as uuid } from 'uuid';
 import { CmrQuery, queryCollectionUsingMultipartForm } from '../util/cmr';
@@ -155,7 +158,7 @@ interface HarmonyJobStatus {
 /**
  * TODO
  */
-async function submitHarmonyRequest(collection, variable, queryParams, token): Promise<HarmonyJobStatus> {
+async function submitHarmonyRequest(collection, variable, queryParams, geoJson: string, token): Promise<HarmonyJobStatus> {
   queryParams.forceAsync = true;
   queryParams.maxResults = 1;
   const encodedVariable = encodeURIComponent(variable);
@@ -163,15 +166,47 @@ async function submitHarmonyRequest(collection, variable, queryParams, token): P
   const querystr = querystring.stringify(queryParams);
   const headers = {
     ..._makeTokenHeader(token),
+    'Content-Type': 'multipart/form-data'
   };
 
+  const formData = new FormData();
+  // const readable = new Readable();
+  // readable.push(geoJson);
+  // readable.push(null);
+  const readableStream = Readable.from(JSON.stringify(geoJson));
+
+  // formData.append('shapefile', readableStream );
+  // formData.append('shapefile', new Blob([geoJson]));
+  formData.append('shapefile', JSON.stringify(geoJson), {
+    filename: 'data.geojson',
+    contentType: 'application/geo+json',
+  });
+
   console.log(`Making request to ${baseUrl}?${querystr}`);
-  const response = await fetch(`${baseUrl}?${querystr}`,
-    {
-      method: 'GET',
-      headers,
-    });
-  const data = await response.json();
+
+  const response = await axios.post(`${baseUrl}?${querystr}`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+      ...headers
+    }
+  });
+
+  // const response = await fetch(`${baseUrl}?${querystr}`,
+  //   {
+  //     method: 'POST',
+  //     headers,
+  //     body: formData,
+  //   });
+  // const response = await axios.post(`${baseUrl}?${querystr}`, formData, {
+  //   headers
+  // });
+  // const response = await axios.post(`${baseUrl}?${querystr}`, {
+  //     shapefile: readableStream,
+  // },
+  //   { ...headers}
+  // );
+  // console.log(`RESPONSE ${JSON.stringify(response, null, 2)}`);
+  const data = await response.data;
   console.log(JSON.stringify(data));
   // return await response.json();
   return data;
@@ -347,7 +382,7 @@ export async function freeTextQueryPost(
       queryParams.format = modelOutput.outputFormat;
     }
 
-    const harmonyJob = await submitHarmonyRequest(collectionId, variableId, queryParams, req.accessToken);
+    const harmonyJob = await submitHarmonyRequest(collectionId, variableId, queryParams, geoJson, req.accessToken);
     logPerf(now, 'submit harmony request');
     const harmonyParams: GeneratedHarmonyRequestParameters = {
       propertyOfInterest: modelOutput.propertyOfInterest,

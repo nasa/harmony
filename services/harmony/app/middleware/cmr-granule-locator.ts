@@ -188,6 +188,7 @@ async function cmrGranuleLocatorTurbo(
 
       if (operation.geojson) {
         cmrQuery.geojson = operation.geojson;
+        cmrQuery['simplify-shapefile'] = 'true';
       }
 
       // Only perform CMR granule query when needed by the first step
