@@ -148,6 +148,30 @@ function buildFrontendServer(port: number, hostBinding: string, config: RouterCo
   app.use(addRequestId(appLogger));
   app.use(addRequestLogger(appLogger));
 
+  app.use((req, res, next) => {
+    const allowedOrigins = ['http://localhost:3000', 'http://localhost:4572'];
+    const origin = req.headers.origin;
+
+    console.log(`ORIGIN==============> ${origin}`);
+
+    // if (allowedOrigins.includes(origin)) {
+    //   res.header('Access-Control-Allow-Origin', origin);
+    // }
+
+    res.header('Access-Control-Allow-Origin', '*');
+
+    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type');
+    res.header('Access-Control-Allow-Credentials', 'true');
+
+    // Handle preflight
+    if (req.method === 'OPTIONS') {
+      return res.status(200).end();
+    }
+
+    next();
+  });
+
   // currently, only service requests are timed (for the frontend)
   app.use(logForRoutes('timing.frontend-request.start', 'allow', [cmrCollectionReader.collectionRegex]));
 

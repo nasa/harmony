@@ -1,0 +1,12 @@
+#!/bin/bash
+
+awslocal s3api put-bucket-cors --bucket local-staging-bucket --cors-configuration '{
+  "CORSRules": [
+    {
+      "AllowedOrigins": ["http://localhost:3000"],
+      "AllowedMethods": ["GET", "HEAD"],
+      "AllowedHeaders": ["*"],
+      "ExposeHeaders": ["ETag"]
+    }
+  ]
+}'
