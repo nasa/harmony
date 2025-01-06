@@ -256,6 +256,9 @@
           // Update the image when the job is ready
           const imageUrl = data.links[1]?.href;
           console.log(imageUrl);
+          imageElement.src = imageUrl;
+          imageElement.style.display = 'block';
+          statusElement.style.display = 'none';
           // const parseGeoraster = require("georaster");
           const resultResp = await fetch(imageUrl, { method: 'GET'});
           if (!resultResp.ok) {
@@ -348,9 +351,6 @@
           // ], { radius: 25 }).addTo(map2);
 
 
-          imageElement.src = imageUrl;
-          imageElement.style.display = 'block';
-          statusElement.style.display = 'none';
         } else if (data.status !== 'running') {
           statusElement.innerText = 'The request failed.';
         } else {
