@@ -142,6 +142,7 @@ function buildBackendServer(port: number, hostBinding: string, useHttps: string)
 function buildFrontendServer(port: number, hostBinding: string, config: RouterConfig): http.Server | https.Server {
   const appLogger = logger.child({ application: 'frontend' });
   const app = express();
+  app.use(express.json({ limit: '10mb' }));
   app.set('query parser', (str) =>
     qs.parse(str, { comma: true }),
   );

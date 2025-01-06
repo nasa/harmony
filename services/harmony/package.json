@@ -226,7 +226,8 @@
     "strict-npm-engines": "^0.0.1",
     "superagent": "^10.1.1",
     "supertest": "^7.0.0",
-    "ts-node-dev": "^2.0.0"
+    "ts-node-dev": "^2.0.0",
+    "@turf/turf": "^7.2.0"
   },
   "overrides": {
     "trim-newlines": "4.0.1",

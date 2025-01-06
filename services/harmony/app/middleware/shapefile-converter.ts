@@ -3,6 +3,7 @@ import { get, isEqual, cloneDeep } from 'lodash';
 import rewind from '@mapbox/geojson-rewind';
 import * as togeojson from '@tmcw/togeojson';
 import splitGeoJson from 'geojson-antimeridian-cut';
+import * as turf from '@turf/turf';
 
 import { DOMParser } from '@xmldom/xmldom';
 import * as shpjs from 'shpjs';
@@ -15,6 +16,9 @@ import { RequestValidationError, HttpError, ServerError } from '../util/errors';
 import { defaultObjectStore } from '../util/object-store';
 import { listToText } from '@harmony/util/string';
 import { cookieOptions } from '../util/cookies';
+import HarmonyRequest from '../models/harmony-request';
+import { keysToLowerCase } from '../util/object';
+import { point } from 'leaflet';
 
 /**
  * Converts the given ESRI Shapefile to GeoJSON and returns the resulting file.   Note,
@@ -143,9 +147,10 @@ export function normalizeGeoJsonCoords(geojson: any): any {
  * Change longitudes of a geojson file to be in the [-180, 180] range and split at antimeridian
  * if needed. Will also change coordinate order to counter-clockwise if needed.
  * @param geoJson - An object representing the json for a geojson file
+ * @parm simplifyShapefile - if true, reduce the point count of the shapefile - defaults to false
  * @returns An object with the normalized geojson
  */
-export function normalizeGeoJson(geoJson: object): object {
+export function normalizeGeoJson(geoJson: object, simplifyShapefile = false): object {
   let newGeoJson = normalizeGeoJsonCoords(geoJson);
 
   // eslint-disable-next-line @typescript-eslint/dot-notation
@@ -159,6 +164,28 @@ export function normalizeGeoJson(geoJson: object): object {
 
   // force ccw winding
   newGeoJson = rewind(newGeoJson, false);
+
+  if (simplifyShapefile) {
+    let tolerance = 0.1;
+    const highQuality = true;
+    let pointCount = geoJsonPointCount(newGeoJson);
+    console.log(`INITIAL POINT COUNT: ${pointCount}`);
+    let loopCount = 0;
+    // loop up to five times, or until the point count of the geojson is <= 5000
+    // TODO put these constants (5, 5000) in env vars or some such
+    while (loopCount < 5 && pointCount > 5000) {
+      newGeoJson = turf.simplify(newGeoJson, { tolerance, highQuality });
+      pointCount = geoJsonPointCount(newGeoJson);
+      console.log(`POINT COUNT: ${pointCount}`);
+      tolerance = tolerance * 10.0;
+      loopCount++;
+    }
+    console.log(`FINAL POINT COUNT: ${pointCount}`);
+  } else {
+    console.log("NOT SIMPLIFYING SHAPEFILE");
+  }
+  console.log(`SHAPEFILE: ${JSON.stringify(newGeoJson, null, 2)}`);
+
   return newGeoJson;
 }
 
@@ -166,9 +193,10 @@ export function normalizeGeoJson(geoJson: object): object {
  * Handle any weird cases like splitting geometry that crosses the antimeridian
  * @param url - the url of the geojson file
  * @param isLocal - whether the url is a downloaded file (true) or needs to be downloaded (false)
+ * @parm simplifyShapefile - if true, reduce the point count of the shapefile - defaults to false
  * @returns the link to the geojson file
  */
-async function normalizeGeoJsonFile(url: string, isLocal: boolean): Promise<string> {
+async function normalizeGeoJsonFile(url: string, isLocal: boolean, simplifyShapefle = false): Promise<string> {
   const store = defaultObjectStore();
   let originalGeoJson: object;
   const localFile = url;
@@ -177,7 +205,7 @@ async function normalizeGeoJsonFile(url: string, isLocal: boolean): Promise<stri
   } else {
     originalGeoJson = (await fs.readFile(localFile)).toJSON();
   }
-  const normalizedGeoJson = normalizeGeoJson(originalGeoJson);
+  const normalizedGeoJson = normalizeGeoJson(originalGeoJson, simplifyShapefle);
 
   let resultUrl = url;
 
@@ -190,15 +218,35 @@ async function normalizeGeoJsonFile(url: string, isLocal: boolean): Promise<stri
 }
 
 /**
+ * Get the count of the points in a geojson file
+ * @param geoJson A geojson object
+ * @returns the number of points in the geojson file
+ */
+function geoJsonPointCount(geoJson: turf.AllGeoJSON): number {
+  let pointCount = 0;
+  turf.coordEach(geoJson, () => {
+    pointCount += 1;
+  });
+  return pointCount;
+}
+
+/**
  * Express.js middleware which extracts shapefiles from the incoming request and
- * ensures that they are in GeoJSON in the data operation
+ * ensures that they are in GeoJSON in the data operation, optionally reducing the number
+ * of points in the shapefile to fit the CMR limit (5000)
  *
  * @param req - The client request, containing an operation
  * @param res - The client response
  * @param next - The next function in the middleware chain
  */
-export default async function shapefileConverter(req, res, next: NextFunction): Promise<void> {
+export default async function shapefileConverter(req: HarmonyRequest, res, next: NextFunction): Promise<void> {
   const { operation } = req;
+
+  // TODO add proper handling/documentation of the simplifyShapefile parameter
+  const lowerCaseQuery = keysToLowerCase(req.query);
+  const lowerCaseBody = keysToLowerCase(req.body);
+  const simplifyShapefile = lowerCaseQuery.simplifyshapefile || lowerCaseBody.simplifyshapefile;
+  // const simplifyShapefile = true;
 
   try {
     const shapefile = get(req, 'files.shapefile[0]') || get(req, 'file') || req.signedCookies.shapefile;
@@ -224,6 +272,7 @@ export default async function shapefileConverter(req, res, next: NextFunction): 
       let convertedFile;
       try {
         convertedFile = await converter.geoJsonConverter(originalFile, req.context.logger);
+        // TODO handle simplification for converted file
         operation.geojson = await store.uploadFile(convertedFile, `${url}.geojson`);
       } finally {
         if (convertedFile) {
@@ -231,7 +280,11 @@ export default async function shapefileConverter(req, res, next: NextFunction): 
         }
       }
     } else {
-      operation.geojson = await normalizeGeoJsonFile(url, false);
+      console.log('NO NEED TO CONVERT GEOJSON');
+      let geoJson = await normalizeGeoJsonFile(url, false, simplifyShapefile);
+
+
+      operation.geojson = geoJson;
     }
   } catch (e) {
     if (e instanceof HttpError) {

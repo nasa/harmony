@@ -166,6 +166,7 @@ interface HarmonyJobStatus {
 async function submitHarmonyRequest(collection, variable, queryParams, geoJson: string, token): Promise<HarmonyJobStatus> {
   queryParams.forceAsync = true;
   queryParams.maxResults = 1;
+  queryParams.simplifyShapefile = true;
   const encodedVariable = encodeURIComponent(variable);
   const baseUrl = `http://localhost:3000/${collection}/ogc-api-coverages/1.0.0/collections/${encodedVariable}/coverage/rangeset`;
   const querystr = querystring.stringify(queryParams);
@@ -186,6 +187,7 @@ async function submitHarmonyRequest(collection, variable, queryParams, geoJson: 
     filename: 'data.geojson',
     contentType: 'application/geo+json',
   });
+  // formData.append('simplifyShapefile', 'true');
 
   console.log(`Making request to ${baseUrl}?${querystr}`);
 
