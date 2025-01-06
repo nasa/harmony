@@ -353,9 +353,8 @@
           <br/>
           <input type="submit" value="Submit Query" class="submitButton">
         </form>
-        <div id="map" style="width: 600px; height: 350px; background-color: lightgray; display: none"></div>
+        <div id="map" style="width: 600px; height: 350px; background-color: lightgray; visibility: hidden;"></div>
         <div>
-          <!-- <pre id="model-output" style="width: 400px;"></pre> -->
           <div id="formatted-model-output" class="dataset-container" style="flex: 1;">
             <h2 class="dataset-title">LLM Output</h2>
             <div class="dataset-details">
@@ -498,7 +497,6 @@
   <script type='module'>
     import h5wasm from "https://cdn.jsdelivr.net/npm/h5wasm@0.4.9/dist/esm/hdf5_hl.js";
     var map;
-    var map2;
     var geoJsonLayer;
 
     export async function getCmrResults(cmrQueryParams) {
@@ -628,20 +626,6 @@
 
           console.log(`PLOTTING ${heatMapData.length} POINTS`);
 
-          map2 = L.map('map2').setView([50.5, 30.5], 1);
-          const heat = L.heatLayer(heatMapData, { radius: 25, max: maxVal - minVal, blur: 0, minOpacity: 1 }).addTo(map2);
-          map2.fitBounds([
-            [minLat, minLon],
-            [maxLat, maxLon],
-          ]);
-          const heat2 = L.heatLayer(heatMapData, { radius: 10, max: maxVal - minVal, blur: 0, minOpacity: 1 }).addTo(map);
-          // map2.fitBounds(heat.getBounds());
-          // var heat = L.heatLayer([
-          //   [50.5, 30.5, 0.2], // lat, lng, intensity
-          //   [50.6, 30.4, 0.5],
-          // ], { radius: 25 }).addTo(map2);
-
-
         } else if (data.status !== 'running') {
           statusElement.innerText = 'The request failed.';
         } else {
@@ -669,7 +653,7 @@
 
       // Clear previous outputs
       // mapElement.innerHTML = '';
-      mapElement.style.display = 'none';
+      mapElement.style.visibility = 'hidden';
 
       imageElement.style.display = 'none';
       imageElement.src = '';
@@ -727,7 +711,7 @@
         modelTimeEnd.innerHTML = times[1];
         modelOutputFormat.innerHTML = json.outputFormat;
         // outputElement.innerHTML = JSON.stringify(results, null, 2);
-        mapElement.style.display = 'block';
+        mapElement.style.visibility = 'visible';
 
         // Create fresh map only after getting new data
         map = L.map('map').setView([51.505, -0.09], 1);
