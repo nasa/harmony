@@ -72,6 +72,7 @@ interface GeneratedHarmonyRequestParameters {
   outputFormat: string | null;
   geoJson: string | null;
   statusUrl: string;
+  collections: any;
 }
 
 const distanceUnits = {
@@ -166,14 +167,14 @@ async function submitHarmonyRequest(collection, variable, queryParams, geoJson: 
   const querystr = querystring.stringify(queryParams);
   const headers = {
     ..._makeTokenHeader(token),
-    'Content-Type': 'multipart/form-data'
+    'Content-Type': 'multipart/form-data',
   };
 
   const formData = new FormData();
   // const readable = new Readable();
   // readable.push(geoJson);
   // readable.push(null);
-  const readableStream = Readable.from(JSON.stringify(geoJson));
+  const _readableStream = Readable.from(JSON.stringify(geoJson));
 
   // formData.append('shapefile', readableStream );
   // formData.append('shapefile', new Blob([geoJson]));
@@ -187,8 +188,8 @@ async function submitHarmonyRequest(collection, variable, queryParams, geoJson: 
   const response = await axios.post(`${baseUrl}?${querystr}`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
-      ...headers
-    }
+      ...headers,
+    },
   });
 
   // const response = await fetch(`${baseUrl}?${querystr}`,
@@ -298,25 +299,27 @@ export async function freeTextQueryPost(
     const embedding = await getEmbedding(modelOutput.propertyOfInterest);
     now = logPerf(now, 'generate embedding based on property of interest');
 
-    // const sql = `SELECT collection_id, collection_name, variable_id, variable_name, variable_definition, 1 - (embedding <=> '[${embedding}]') AS similarity FROM umm_embeddings ORDER BY embedding <=> '[${embedding}]' LIMIT 50;`;
 
-    const sql = `SELECT collection_id, collection_name, variable_id, variable_name, variable_definition, 1 - (embedding <=> '[${embedding}]') AS similarity FROM umm_embeddings ORDER BY embedding <=> '[${embedding}]' LIMIT 10;`;
-    // const sql = `SELECT collection_id, variable_id, (embedding <-> '[${embedding}]') AS similarity FROM umm_embeddings ORDER BY embedding <-> '[${embedding}]' DESC LIMIT 5;`;
-
+    // const sql = `SELECT collection_id, collection_name, variable_id, variable_name, variable_definition, 1 - (embedding <=> '[${embedding}]') AS similarity FROM umm_embeddings ORDER BY embedding <=> '[${embedding}]' LIMIT 10;`;
+    const topCollectionsSQL = `SELECT collection_id, MAX(1 - (embedding <=> '[${embedding}]')) AS max_similarity FROM umm_embeddings GROUP BY collection_id ORDER BY max_similarity DESC LIMIT 20`;
     const db = knex(knexfile);
 
-    const dbResult = await db.raw(sql);
+    const dbResult = await db.raw(topCollectionsSQL);
 
-    now = logPerf(now, 'query database for embedding similarity');
+    now = logPerf(now, 'query database for top collections embedding similarity');
     // console.log(JSON.stringify(dbResult, null, 2));
 
-    for (const { collection_id, collection_name, variable_id, variable_name, similarity } of dbResult.rows) {
-      console.log(`COLLECTION ID: ${collection_id}  COLLECTION NAME: ${collection_name} VARIABLE ID: ${variable_id}  VARIABLE NAME: ${variable_name} SIMILARITY: ${similarity}`);
+    // for (const { collection_id, collection_name, variable_id, variable_name, similarity } of dbResult.rows) {
+    //   console.log(`COLLECTION ID: ${collection_id}  COLLECTION NAME: ${collection_name} VARIABLE ID: ${variable_id}  VARIABLE NAME: ${variable_name} SIMILARITY: ${similarity}`);
+    // }
+
+    for (const { collection_id, max_similarity } of dbResult.rows) {
+      console.log(`COLLECTION ID: ${collection_id} SIMILARITY: ${max_similarity}`);
     }
 
-    const conceptIds = dbResult.rows.map(a => a.collection_id);
-    const conceptIdsSet = new Set(conceptIds);
-    const conceptIdsArray = Array.from(conceptIdsSet) as string[];
+    const conceptIdsArray = dbResult.rows.map(a => a.collection_id);
+    // const conceptIdsSet = new Set(conceptIds);
+    // const conceptIdsArray = Array.from(conceptIdsSet) as string[];
     const temporalParam = modelOutput.timeInterval?.replace(/\+00:00/g, '').replace('/', ',');
 
     const collQuery: CmrQuery = {
@@ -353,8 +356,39 @@ export async function freeTextQueryPost(
     // collsWithGranules.map(c => console.log(`Collection ${c.id} has ${c.granule_count} granules.`));
     // const collConceptIds = collsWithGranules.filter(c => c.granule_count > 0).map(c => c.id);
     collsWithGranules.collections.map(c => console.log(`Collection ${c.id} has ${c.granule_count} granules.`));
-    const collConceptIds = collsWithGranules.collections.filter(c => c.granule_count > 0).map(c => c.id);
-    console.log(`Collections with granules matching spatial and temporal search: ${JSON.stringify(collConceptIds)}`);
+    const collConceptIdsWithGranules: string[] = collsWithGranules.collections
+      .filter(c => c.granule_count > 0)
+      .map(c => c.id);
+
+    // Look for the top 3 collections that have granules based on order of embedding similarity
+    const collConceptIds = [];
+    let numFound = 0;
+    for (const collectionId of conceptIdsArray) {
+      if (collConceptIdsWithGranules.includes(collectionId)) {
+        collConceptIds.push(collectionId);
+        numFound = numFound + 1;
+        if (numFound >= 3) {
+          break;
+        }
+      }
+    }
+
+    console.log(`Top 3 collections with granules matching spatial and temporal search: ${JSON.stringify(collConceptIds)}`);
+
+    const collectionInfo = {};
+    for (const collectionId of conceptIdsArray) {
+      // Query for the top 5 variables by similarity for that collection ID
+      const topVariablesSQL = `SELECT collection_name, variable_id, variable_name, variable_definition, 1 - (embedding <=> '[${embedding}]') AS similarity FROM umm_embeddings WHERE collection_id = '${collectionId}' ORDER BY similarity DESC LIMIT 5;`;
+
+      const dbVarResults = await db.raw(topVariablesSQL);
+
+      now = logPerf(now, 'Query database for top variables');
+
+      // for (const row of dbVarResults.rows) {
+      console.log(`Top 5 variables: ${JSON.stringify(dbVarResults.rows)}`);
+      // }
+      collectionInfo[collectionId] = dbVarResults.rows;
+    }
 
     let collectionId = null;
     let collectionName = null;
@@ -363,14 +397,13 @@ export async function freeTextQueryPost(
     let variableDefinition = null;
 
     // The first collection in the embedding query result that has granules is the best match
-    if (dbResult.rows && collConceptIds.length > 0) {
-      const { collection_id, collection_name, variable_id, variable_name, variable_definition, similarity } = dbResult.rows.find(item => collConceptIds.includes(item.collection_id));
-      collectionId = collection_id;
-      collectionName = collection_name;
-      variableId = variable_id;
-      variableName = variable_name;
-      variableDefinition = variable_definition;
-      console.log(`BEST MATCH: COLLECTION ID: ${collection_id}  VARIABLE ID: ${variable_id}  SIMILARITY: ${similarity}`);
+    if (collConceptIds.length > 0) {
+      collectionId = collConceptIds[0];
+      collectionName = collectionInfo[collectionId][0].collection_name;
+      variableId = collectionInfo[collectionId][0].variable_id;
+      variableName = collectionInfo[collectionId][0].variable_name;
+      variableDefinition = collectionInfo[collectionId][0].variable_definition;
+      console.log(`BEST MATCH: COLLECTION ID: ${collectionId}  VARIABLE ID: ${variableId}  SIMILARITY: ${collectionInfo[collectionId][0].similarity}`);
     } else {
       console.log('No matching collections are found');
     }
@@ -398,6 +431,7 @@ export async function freeTextQueryPost(
       outputFormat: modelOutput.outputFormat,
       geoJson,
       statusUrl: harmonyJob.links[2].href,
+      collections: collectionInfo,
     };
 
     res.send(harmonyParams);

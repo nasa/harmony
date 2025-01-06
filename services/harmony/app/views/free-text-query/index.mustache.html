@@ -415,6 +415,8 @@
           variableDefinition: `${json.variableDefinition}`,
           temporalRange: `${json.timeInterval}`,
           outputFormat: `${json.outputFormat}`,
+          // New field containing info for the top 3 collections and the top 5 variables for each of those collections
+          // collections: `${JSON.stringify(json.collections)}`
         };
         outputElement.innerHTML = JSON.stringify(results, null, 2);
         mapElement.style.display = 'block';
