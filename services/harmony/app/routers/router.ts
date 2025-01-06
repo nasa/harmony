@@ -41,7 +41,7 @@ import docsPage from '../frontends/docs/docs';
 import { getCollectionCapabilitiesJson } from '../frontends/capabilities';
 import extendDefault from '../middleware/extend';
 import { getAdminHealth, getHealth } from '../frontends/health';
-import { freeTextQueryGet, freeTextQueryPost } from '../frontends/free-text-query';
+import { freeTextGetCmrResults, freeTextQueryGet, freeTextQueryPost } from '../frontends/free-text-query';
 import handleLabelParameter from '../middleware/label';
 import { addJobLabels, deleteJobLabels } from '../frontends/labels';
 import handleJobIDParameter from '../middleware/job-id';
@@ -323,6 +323,7 @@ export default function router({ USE_EDL_CLIENT_APP = 'false' }: RouterConfig): 
   // query by free text
   result.get('/free-text', asyncHandler(freeTextQueryGet));
   result.post('/free-text', asyncHandler(freeTextQueryPost));
+  result.post('/free-text-query-cmr', asyncHandler(freeTextGetCmrResults));
 
   result.get('/*', () => { throw new NotFoundError('The requested page was not found.'); });
   result.post('/*', () => { throw new NotFoundError('The requested POST page was not found.'); });

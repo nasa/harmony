@@ -63,14 +63,18 @@ interface GeneratedHarmonyRequestParameters {
   placeOfInterest: string | null;
   bufferNumber: number | null;
   bufferUnits: string | null;
+  timeInterval: string | null;
+  outputFormat: string | null;
+  geoJson: string | null;
+  url: string | null;
+}
+
+interface CmrAndHarmonyResponse {
   collection: string;
   collectionName: string;
   variable: string;
   variableName: string;
   variableDefinition: string;
-  timeInterval: string | null;
-  outputFormat: string | null;
-  geoJson: string | null;
   statusUrl: string;
   collections: any;
 }
@@ -223,13 +227,164 @@ function logPerf(startTime, msg): DOMHighResTimeStamp {
   globalLogger.info(`PERF: ${(endTime - startTime).toFixed(0)} ms for ${msg}`);
   return endTime;
 }
+
+/**
+ * TODO
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
+ * @param next - The next function in the call chain
+ */
+export async function freeTextGetCmrResults(
+  req: HarmonyRequest, res: Response, next: NextFunction,
+): Promise<void> {
+  try {
+    let now = performance.now();
+    const { propertyOfInterest, timeInterval, geoJson, url, outputFormat } = req.body;
+    const embedding = await getEmbedding(propertyOfInterest);
+    now = logPerf(now, 'generate embedding based on property of interest');
+
+
+    // const sql = `SELECT collection_id, collection_name, variable_id, variable_name, variable_definition, 1 - (embedding <=> '[${embedding}]') AS similarity FROM umm_embeddings ORDER BY embedding <=> '[${embedding}]' LIMIT 10;`;
+    const topCollectionsSQL = `SELECT collection_id, MAX(1 - (embedding <=> '[${embedding}]')) AS max_similarity FROM umm_embeddings GROUP BY collection_id ORDER BY max_similarity DESC LIMIT 20`;
+    const db = knex(knexfile);
+
+    const dbResult = await db.raw(topCollectionsSQL);
+
+    now = logPerf(now, 'query database for top collections embedding similarity');
+    // console.log(JSON.stringify(dbResult, null, 2));
+
+    // for (const { collection_id, collection_name, variable_id, variable_name, similarity } of dbResult.rows) {
+    //   console.log(`COLLECTION ID: ${collection_id}  COLLECTION NAME: ${collection_name} VARIABLE ID: ${variable_id}  VARIABLE NAME: ${variable_name} SIMILARITY: ${similarity}`);
+    // }
+
+    for (const { collection_id, max_similarity } of dbResult.rows) {
+      console.log(`COLLECTION ID: ${collection_id} SIMILARITY: ${max_similarity}`);
+    }
+
+    const conceptIdsArray = dbResult.rows.map(a => a.collection_id);
+    // const conceptIdsSet = new Set(conceptIds);
+    // const conceptIdsArray = Array.from(conceptIdsSet) as string[];
+    const temporalParam = timeInterval?.replace(/\+00:00/g, '').replace('/', ',');
+
+    const collQuery: CmrQuery = {
+      concept_id: conceptIdsArray,
+      geojson: url,
+      page_size: 100,
+      temporal: temporalParam,
+      include_granule_counts: 'true',
+      'simplify-shapefile': 'true',
+    };
+
+    const collsWithGranules = await queryCollectionUsingMultipartForm({}, collQuery, req.accessToken);
+
+    // // Run all queries in parallel
+    // const queries = conceptIdsArray.map((conceptId) => {
+    //   const collQuery: CmrQuery = {
+    //     concept_id: conceptId,
+    //     geojson: url,
+    //     page_size: 100,
+    //     temporal: temporalParam,
+    //     include_granule_counts: 'true',
+    //     'simplify-shapefile': 'true',
+    //   };
+
+    //   return queryCollectionUsingMultipartForm({}, collQuery, req.accessToken);
+    // });
+    // const results = await Promise.all(queries);
+
+    // const collsWithGranules = results.flatMap(result => result.collections);
+
+    now = logPerf(now, 'query CMR for granule counts for collections');
+
+    // list of collection concept ids that has granule found with the spatial and temporal search
+    // collsWithGranules.map(c => console.log(`Collection ${c.id} has ${c.granule_count} granules.`));
+    // const collConceptIds = collsWithGranules.filter(c => c.granule_count > 0).map(c => c.id);
+    collsWithGranules.collections.map(c => console.log(`Collection ${c.id} has ${c.granule_count} granules.`));
+    const collConceptIdsWithGranules: string[] = collsWithGranules.collections
+      .filter(c => c.granule_count > 0)
+      .map(c => c.id);
+
+    // Look for the top 3 collections that have granules based on order of embedding similarity
+    const collConceptIds = [];
+    let numFound = 0;
+    for (const collectionId of conceptIdsArray) {
+      if (collConceptIdsWithGranules.includes(collectionId)) {
+        collConceptIds.push(collectionId);
+        numFound = numFound + 1;
+        if (numFound >= 3) {
+          break;
+        }
+      }
+    }
+
+    console.log(`Top 3 collections with granules matching spatial and temporal search: ${JSON.stringify(collConceptIds)}`);
+
+    const collectionInfo = {};
+    for (const collectionId of collConceptIds) {
+      // Query for the top 5 variables by similarity for that collection ID
+      const topVariablesSQL = `SELECT collection_name, variable_id, variable_name, variable_definition, 1 - (embedding <=> '[${embedding}]') AS similarity FROM umm_embeddings WHERE collection_id = '${collectionId}' ORDER BY similarity DESC LIMIT 5;`;
+
+      const dbVarResults = await db.raw(topVariablesSQL);
+
+      now = logPerf(now, 'Query database for top variables');
+
+      // for (const row of dbVarResults.rows) {
+      console.log(`Top 5 variables: ${JSON.stringify(dbVarResults.rows)}`);
+      // }
+      collectionInfo[collectionId] = dbVarResults.rows;
+    }
+
+    let collectionId = null;
+    let collectionName = null;
+    let variableId = null;
+    let variableName = null;
+    let variableDefinition = null;
+
+    // The first collection in the embedding query result that has granules is the best match
+    if (collConceptIds.length > 0) {
+      collectionId = collConceptIds[0];
+      collectionName = collectionInfo[collectionId][0].collection_name;
+      variableId = collectionInfo[collectionId][0].variable_id;
+      variableName = collectionInfo[collectionId][0].variable_name;
+      variableDefinition = collectionInfo[collectionId][0].variable_definition;
+      console.log(`BEST MATCH: COLLECTION ID: ${collectionId}  VARIABLE ID: ${variableId}  SIMILARITY: ${collectionInfo[collectionId][0].similarity}`);
+    } else {
+      console.log('No matching collections are found');
+    }
+
+    // Submit the request off to harmony - TODO figure out shapefile and temporal
+    // const temporal = getTemporalQueryParam(temporalParam);
+    const queryParams = {} as unknown as any;
+    if (outputFormat) {
+      queryParams.format = outputFormat;
+    }
+
+    const harmonyJob = await submitHarmonyRequest(collectionId, variableId, queryParams, geoJson, req.accessToken);
+    logPerf(now, 'submit harmony request');
+    const cmrResults: CmrAndHarmonyResponse = {
+      collection: collectionId,
+      collectionName,
+      variable: variableId,
+      variableName,
+      variableDefinition,
+      statusUrl: harmonyJob.links[2].href,
+      collections: collectionInfo,
+    };
+
+    res.send(cmrResults);
+  } catch (e) {
+    req.context.logger.error(e);
+    next(e);
+  }
+}
+
+
 /**
  * Endpoint to make requests using free text
  *
  * @param req - The request sent by the client
  * @param res - The response to send to the client
  * @param next - The next function in the call chain
- * @returns The job links (pause, resume, etc.)
  */
 export async function freeTextQueryPost(
   req: HarmonyRequest, res: Response, next: NextFunction,
@@ -294,144 +449,19 @@ export async function freeTextQueryPost(
     // const url = defaultObjectStore().getUrlString({ bucket: env.artifactBucket, key: prefix });
     const url = store.getUrlString({ bucket: env.artifactBucket, key: prefix });
     await store.upload(JSON.stringify(geoJson), url);
-    now = logPerf(now, 'upload shape to S3');
+    logPerf(now, 'upload shape to S3');
 
-    const embedding = await getEmbedding(modelOutput.propertyOfInterest);
-    now = logPerf(now, 'generate embedding based on property of interest');
+    // End of part 1 - understand request and display map
 
-
-    // const sql = `SELECT collection_id, collection_name, variable_id, variable_name, variable_definition, 1 - (embedding <=> '[${embedding}]') AS similarity FROM umm_embeddings ORDER BY embedding <=> '[${embedding}]' LIMIT 10;`;
-    const topCollectionsSQL = `SELECT collection_id, MAX(1 - (embedding <=> '[${embedding}]')) AS max_similarity FROM umm_embeddings GROUP BY collection_id ORDER BY max_similarity DESC LIMIT 20`;
-    const db = knex(knexfile);
-
-    const dbResult = await db.raw(topCollectionsSQL);
-
-    now = logPerf(now, 'query database for top collections embedding similarity');
-    // console.log(JSON.stringify(dbResult, null, 2));
-
-    // for (const { collection_id, collection_name, variable_id, variable_name, similarity } of dbResult.rows) {
-    //   console.log(`COLLECTION ID: ${collection_id}  COLLECTION NAME: ${collection_name} VARIABLE ID: ${variable_id}  VARIABLE NAME: ${variable_name} SIMILARITY: ${similarity}`);
-    // }
-
-    for (const { collection_id, max_similarity } of dbResult.rows) {
-      console.log(`COLLECTION ID: ${collection_id} SIMILARITY: ${max_similarity}`);
-    }
-
-    const conceptIdsArray = dbResult.rows.map(a => a.collection_id);
-    // const conceptIdsSet = new Set(conceptIds);
-    // const conceptIdsArray = Array.from(conceptIdsSet) as string[];
-    const temporalParam = modelOutput.timeInterval?.replace(/\+00:00/g, '').replace('/', ',');
-
-    const collQuery: CmrQuery = {
-      concept_id: conceptIdsArray,
-      geojson: url,
-      page_size: 100,
-      temporal: temporalParam,
-      include_granule_counts: 'true',
-      'simplify-shapefile': 'true',
-    };
-
-    const collsWithGranules = await queryCollectionUsingMultipartForm({}, collQuery, req.accessToken);
-
-    // // Run all queries in parallel
-    // const queries = conceptIdsArray.map((conceptId) => {
-    //   const collQuery: CmrQuery = {
-    //     concept_id: conceptId,
-    //     geojson: url,
-    //     page_size: 100,
-    //     temporal: temporalParam,
-    //     include_granule_counts: 'true',
-    //     'simplify-shapefile': 'true',
-    //   };
-
-    //   return queryCollectionUsingMultipartForm({}, collQuery, req.accessToken);
-    // });
-    // const results = await Promise.all(queries);
-
-    // const collsWithGranules = results.flatMap(result => result.collections);
-
-    now = logPerf(now, 'query CMR for granule counts for collections');
-
-    // list of collection concept ids that has granule found with the spatial and temporal search
-    // collsWithGranules.map(c => console.log(`Collection ${c.id} has ${c.granule_count} granules.`));
-    // const collConceptIds = collsWithGranules.filter(c => c.granule_count > 0).map(c => c.id);
-    collsWithGranules.collections.map(c => console.log(`Collection ${c.id} has ${c.granule_count} granules.`));
-    const collConceptIdsWithGranules: string[] = collsWithGranules.collections
-      .filter(c => c.granule_count > 0)
-      .map(c => c.id);
-
-    // Look for the top 3 collections that have granules based on order of embedding similarity
-    const collConceptIds = [];
-    let numFound = 0;
-    for (const collectionId of conceptIdsArray) {
-      if (collConceptIdsWithGranules.includes(collectionId)) {
-        collConceptIds.push(collectionId);
-        numFound = numFound + 1;
-        if (numFound >= 3) {
-          break;
-        }
-      }
-    }
-
-    console.log(`Top 3 collections with granules matching spatial and temporal search: ${JSON.stringify(collConceptIds)}`);
-
-    const collectionInfo = {};
-    for (const collectionId of conceptIdsArray) {
-      // Query for the top 5 variables by similarity for that collection ID
-      const topVariablesSQL = `SELECT collection_name, variable_id, variable_name, variable_definition, 1 - (embedding <=> '[${embedding}]') AS similarity FROM umm_embeddings WHERE collection_id = '${collectionId}' ORDER BY similarity DESC LIMIT 5;`;
-
-      const dbVarResults = await db.raw(topVariablesSQL);
-
-      now = logPerf(now, 'Query database for top variables');
-
-      // for (const row of dbVarResults.rows) {
-      console.log(`Top 5 variables: ${JSON.stringify(dbVarResults.rows)}`);
-      // }
-      collectionInfo[collectionId] = dbVarResults.rows;
-    }
-
-    let collectionId = null;
-    let collectionName = null;
-    let variableId = null;
-    let variableName = null;
-    let variableDefinition = null;
-
-    // The first collection in the embedding query result that has granules is the best match
-    if (collConceptIds.length > 0) {
-      collectionId = collConceptIds[0];
-      collectionName = collectionInfo[collectionId][0].collection_name;
-      variableId = collectionInfo[collectionId][0].variable_id;
-      variableName = collectionInfo[collectionId][0].variable_name;
-      variableDefinition = collectionInfo[collectionId][0].variable_definition;
-      console.log(`BEST MATCH: COLLECTION ID: ${collectionId}  VARIABLE ID: ${variableId}  SIMILARITY: ${collectionInfo[collectionId][0].similarity}`);
-    } else {
-      console.log('No matching collections are found');
-    }
-
-    // Submit the request off to harmony - TODO figure out shapefile and temporal
-    // const temporal = getTemporalQueryParam(temporalParam);
-    const queryParams = {} as unknown as any;
-    if (modelOutput.outputFormat) {
-      queryParams.format = modelOutput.outputFormat;
-    }
-
-    const harmonyJob = await submitHarmonyRequest(collectionId, variableId, queryParams, geoJson, req.accessToken);
-    logPerf(now, 'submit harmony request');
     const harmonyParams: GeneratedHarmonyRequestParameters = {
       propertyOfInterest: modelOutput.propertyOfInterest,
       placeOfInterest: modelOutput.placeOfInterest,
       bufferNumber: modelOutput.bufferNumber,
       bufferUnits: modelOutput.bufferUnits,
-      collection: collectionId,
-      collectionName,
-      variable: variableId,
-      variableName,
-      variableDefinition,
       timeInterval: modelOutput.timeInterval,
       outputFormat: modelOutput.outputFormat,
       geoJson,
-      statusUrl: harmonyJob.links[2].href,
-      collections: collectionInfo,
+      url,
     };
 
     res.send(harmonyParams);
@@ -448,7 +478,6 @@ export async function freeTextQueryPost(
  * @param req - The request sent by the client
  * @param res - The response to send to the client
  * @param next - The next function in the call chain
- * @returns The job links (pause, resume, etc.)
  */
 export async function freeTextQueryGet(
   _req: HarmonyRequest, res: Response, _next: NextFunction,

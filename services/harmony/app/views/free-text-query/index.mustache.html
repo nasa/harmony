@@ -237,6 +237,19 @@
     var map2;
     var geoJsonLayer;
 
+    export async function getCmrResults(cmrQueryParams) {
+      const response = await fetch("./free-text-query-cmr", {
+          method: "POST",
+          body: JSON.stringify(cmrQueryParams),
+          headers: {
+            "Content-type": "application/json; charset=UTF-8"
+          }
+        });
+
+      const data = await response.json();
+      pollJobStatus(data.statusUrl);
+    }
+
     export function pollJobStatus(statusUrl) {
       const statusElement = document.getElementById('job-status');
       const imageElement = document.getElementById('dynamic-image');
@@ -363,7 +376,6 @@
       checkStatus(); // Start polling
     }
 
-
     window.postForm  =  async function postForm(form) {
       const spinner = document.getElementById('spinner');
       const outputElement = document.getElementById('model-output');
@@ -408,11 +420,11 @@
           propertyOfInterest: json.propertyOfInterest,
           placeOfInterest: json.placeOfInterest,
           buffer: `${json.bufferNumber} ${json.bufferUnits}`,
-          collectionId: `${json.collection}`,
-          collectionName: `${json.collectionName}`,
-          variableId: `${json.variable}`,
-          variableName: `${json.variableName}`,
-          variableDefinition: `${json.variableDefinition}`,
+          // collectionId: `${json.collection}`,
+          // collectionName: `${json.collectionName}`,
+          // variableId: `${json.variable}`,
+          // variableName: `${json.variableName}`,
+          // variableDefinition: `${json.variableDefinition}`,
           temporalRange: `${json.timeInterval}`,
           outputFormat: `${json.outputFormat}`,
           // New field containing info for the top 3 collections and the top 5 variables for each of those collections
@@ -431,7 +443,8 @@
         geoJsonLayer = L.geoJSON(geoJson).addTo(map);
         map.fitBounds(geoJsonLayer.getBounds());
         statusElement.style.display = 'block';
-        pollJobStatus(json.statusUrl);
+        await getCmrResults(json);
+        // pollJobStatus(json.statusUrl);
       } catch (error) {
         console.error(error);
         outputElement.innerHTML = 'An error occurred. Please try again.';
