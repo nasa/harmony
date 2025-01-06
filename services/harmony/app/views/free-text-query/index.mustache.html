@@ -82,6 +82,8 @@
       word-wrap: break-word;
     }
 
+
+    /* Needed to prevent the image from causing things to resize
     .image-container {
       width: 360px;
       height: 200px;
@@ -91,9 +93,25 @@
       border-radius: 8px;
       text-align: center;
       overflow: hidden;
+    } */
+
+    #dynamic-image-1 {
+      width: 100%;
+      height: auto;
+      object-fit: contain;
+      border-radius: 4px;
+      display: block;
     }
 
-    #dynamic-image {
+    #dynamic-image-2 {
+      width: 100%;
+      height: auto;
+      object-fit: contain;
+      border-radius: 4px;
+      display: block;
+    }
+
+    #dynamic-image-3 {
       width: 100%;
       height: auto;
       object-fit: contain;
@@ -169,6 +187,94 @@
       contain: layout size paint;
     }
 
+    /* .dataset-container {
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 16px;
+      margin: 16px 0;
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+    } */
+
+    .dataset-title {
+      margin: 0;
+      padding: 0 0 8px 0;
+      font-size: 1.5em;
+      color: #333;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .dataset-details {
+      margin: 16px 0;
+      line-height: 1.5;
+    }
+
+    .variables-section {
+      margin-top: 8px;
+    }
+
+    #variables-list {
+      list-style-type: disc;
+      padding-left: 20px;
+      margin: 8px 0 0 0;
+    }
+
+    #variables-list li {
+      margin: 4px 0;
+    }
+
+    #variables-list li.selected {
+      font-weight: bold;
+      color: #007BFF; /* Emphasis color */
+    }
+
+    .image-container {
+      margin-top: 16px;
+      text-align: center;
+    }
+
+    .image-container #job-status {
+      font-size: 1em;
+      color: #555;
+    }
+
+    .image-container img {
+      max-width: 100%;
+      height: auto;
+      margin-top: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      display: none; /* Initially hidden until loaded */
+    }
+
+    .datasets-container {
+      display: flex;
+      flex-wrap: wrap; /* Allows wrapping if the screen size is too small */
+      gap: 16px; /* Spacing between dataset containers */
+      justify-content: center; /* Centers the datasets horizontally */
+      padding: 16px;
+    }
+
+    .dataset-container {
+      flex: 1 1 calc(33.333% - 32px); /* 3 datasets per row with some spacing */
+      max-width: 300px; /* Optional: set a max width for consistency */
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 16px;
+      background-color: #f9f9f9;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .dataset-title {
+      text-align: center;
+      font-size: 1.2em;
+      margin-bottom: 8px;
+    }
+
+    .image-container {
+      margin-top: 16px;
+      text-align: center;
+    }
   </style>
 </head>
 
@@ -185,33 +291,103 @@
 
   <div class="main-container">
     <div class="content-wrapper">
-      <div class="left-panel">
+      <!-- Top Section: Free Text Query Form, Loading Container, Model Output, and Map -->
+      <div id="top-section" style="display: flex; gap: 20px; align-items: flex-start;">
         <form id="free-text-query-form" action="javascript:;" onsubmit="postForm(this);" class="query-form">
           <textarea name="query" rows="5" placeholder="Enter free text query"></textarea>
           <br/>
           <input type="submit" value="Submit Query" class="submitButton">
         </form>
+        <div id="map" style="width: 500px; height: 300px; background-color: lightgray; display: none"></div>
+      </div>
+    </div>
 
-        <div class="loading-container" style="display: flex; align-items: center;">
-          <div id="spinner" class="lds-ellipsis" style="display:none;">
-            <div></div><div></div><div></div><div></div>
+    <div class="loading-container" style="display: flex; align-items: center;">
+      <div id="spinner" class="lds-ellipsis" style="display:none;">
+        <div></div><div></div><div></div><div></div>
+      </div>
+      <div id="status-message" style="text-align: left; margin-left: 10px; display: none;">
+        Analyzing query
+      </div>
+      <pre id="model-output"></pre>
+    </div>
+
+
+    <!-- Datasets Section: 3 Datasets -->
+    <div class="datasets-container" style="display: flex; gap: 20px;">
+      <!-- Dataset 1 -->
+      <div class="dataset-container" style="flex: 1;">
+        <h2 class="dataset-title">Dataset Information</h2>
+        <div class="dataset-details">
+          <div>
+            <strong>CMR Concept ID:</strong> <span id="cmr-concept-id-1"></span>
           </div>
-          <div id="status-message" style="text-align: left; margin-left: 10px; display: none;">
-            Analyzing query
+          <div>
+            <strong>Collection Short Name:</strong> <span id="collection-short-name-1"></span>
+          </div>
+          <div>
+            <strong>Collection Description:</strong> <span id="collection-description-1"></span>
+          </div>
+          <div class="variables-section">
+            <strong>Top 5 Variables:</strong>
+            <ul id="variables-list-1">
+            </ul>
           </div>
         </div>
-
-        <pre id="model-output"></pre>
-
         <div class="image-container">
-          <p id="job-status"></p>
-          <img id="dynamic-image" src="" alt="Dynamic Image" style="display:none;" />
+          <p id="job-status-1"></p>
+          <img id="dynamic-image-1" src="" alt="Dynamic Image" style="display: none;" />
         </div>
       </div>
 
-      <div class="right-panel">
-        <div id="map"></div>
-        <div id="map2"></div>
+      <!-- Dataset 2 -->
+      <div class="dataset-container" style="flex: 1;">
+        <h2 class="dataset-title">Dataset Information</h2>
+        <div class="dataset-details">
+          <div>
+            <strong>CMR Concept ID:</strong> <span id="cmr-concept-id-2"></span>
+          </div>
+          <div>
+            <strong>Collection Short Name:</strong> <span id="collection-short-name-2"></span>
+          </div>
+          <div>
+            <strong>Collection Description:</strong> <span id="collection-description-2"></span>
+          </div>
+          <div class="variables-section">
+            <strong>Top 5 Variables:</strong>
+            <ul id="variables-list-2">
+            </ul>
+          </div>
+        </div>
+        <div class="image-container">
+          <p id="job-status-2"></p>
+          <img id="dynamic-image-2" src="" alt="Dynamic Image" style="display: none;" />
+        </div>
+      </div>
+
+      <!-- Dataset 3 -->
+      <div class="dataset-container" style="flex: 1;">
+        <h2 class="dataset-title">Dataset Information</h2>
+        <div class="dataset-details">
+          <div>
+            <strong>CMR Concept ID:</strong> <span id="cmr-concept-id-3"></span>
+          </div>
+          <div>
+            <strong>Collection Short Name:</strong> <span id="collection-short-name-3"></span>
+          </div>
+          <div>
+            <strong>Collection Description:</strong> <span id="collection-description-3"></span>
+          </div>
+          <div class="variables-section">
+            <strong>Top 5 Variables:</strong>
+            <ul id="variables-list-3">
+            </ul>
+          </div>
+        </div>
+        <div class="image-container">
+          <p id="job-status-3"></p>
+          <img id="dynamic-image-3" src="" alt="Dynamic Image" style="display: none;" />
+        </div>
       </div>
     </div>
   </div>
@@ -263,8 +439,8 @@
     }
 
     export function pollJobStatus(statusUrl) {
-      const statusElement = document.getElementById('job-status');
-      const imageElement = document.getElementById('dynamic-image');
+      const statusElement = document.getElementById('job-status-1');
+      const imageElement = document.getElementById('dynamic-image-1');
       const spinner = document.getElementById('spinner');
       const status = document.getElementById('status-message');
 
@@ -397,8 +573,8 @@
       const spinner = document.getElementById('spinner');
       const status = document.getElementById('status-message');
       const outputElement = document.getElementById('model-output');
-      const imageElement = document.getElementById('dynamic-image');
-      const statusElement = document.getElementById('job-status');
+      const imageElement = document.getElementById('dynamic-image-1');
+      const statusElement = document.getElementById('job-status-1');
       const mapElement = document.getElementById('map');
 
       // Clear previous outputs
