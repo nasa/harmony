@@ -75,15 +75,6 @@
       background-color: #0a3278;
     }
 
-    #model-output {
-      background-color: #f8f9fa;
-      padding: 1rem;
-      border-radius: 8px;
-      margin: 1rem 0;
-      white-space: pre-wrap;
-      word-wrap: break-word;
-    }
-
 
     /* Needed to prevent the image from causing things to resize
     .image-container {
@@ -278,6 +269,10 @@
       text-align: center;
     }
 
+    .model-item {
+
+    }
+
     /* Apply the flex layout to the container */
     .header {
       display: flex;
@@ -354,13 +349,41 @@
       <!-- Top Section: Free Text Query Form, Loading Container, Model Output, and Map -->
       <div id="top-section" style="display: flex; gap: 20px; align-items: flex-start;">
         <form id="free-text-query-form" action="javascript:;" onsubmit="postForm(this);" class="query-form">
-          <textarea name="query" rows="5" placeholder="Enter free text query"></textarea>
+          <textarea name="query" rows="5" style="width:400px;" placeholder="Enter free text query"></textarea>
           <br/>
           <input type="submit" value="Submit Query" class="submitButton">
         </form>
         <div id="map" style="width: 600px; height: 350px; background-color: lightgray; display: none"></div>
         <div>
-          <pre id="model-output"></pre>
+          <!-- <pre id="model-output" style="width: 400px;"></pre> -->
+          <div id="formatted-model-output" class="dataset-container" style="flex: 1;">
+            <h2 class="dataset-title">LLM Output</h2>
+            <div class="dataset-details">
+              <div>
+                <strong>Property of Interest:</strong> <span id="model-property-of-interest"></span>
+              </div>
+              <div>
+                <strong>Place of Interest:</strong> <span id="model-place-of-interest"></span>
+              </div>
+              <div>
+                <strong>Buffer:</strong> <span id="model-buffer"></span>
+              </div>
+              <div>
+                <strong>Time Start:</strong> <span id="model-time-start"></span>
+              </div>
+              <div>
+                <strong>Time End:</strong> <span id="model-time-end"></span>
+              </div>
+              <div>
+                <strong>Output Format:</strong> <span id="model-output-format"></span>
+              </div>
+            </div>
+            <div class="image-container">
+              <p id="job-status-1"></p>
+              <img id="dynamic-image-1" src="" alt="Dynamic Image" style="display: none;" />
+            </div>
+          </div>
+
           <div class="loading-container" style="display: flex; align-items: center;">
             <div id="spinner" class="lds-ellipsis" style="display:none;">
               <div></div><div></div><div></div><div></div>
@@ -634,16 +657,20 @@
     window.postForm  =  async function postForm(form) {
       const spinner = document.getElementById('spinner');
       const status = document.getElementById('status-message');
-      const outputElement = document.getElementById('model-output');
       const imageElement = document.getElementById('dynamic-image-1');
       const statusElement = document.getElementById('job-status-1');
       const mapElement = document.getElementById('map');
+      const modelPropertyOfInterest = document.getElementById('model-property-of-interest');
+      const modelPlaceOfInterest = document.getElementById('model-place-of-interest');
+      const modelBuffer = document.getElementById('model-buffer');
+      const modelTimeStart = document.getElementById('model-time-start');
+      const modelTimeEnd = document.getElementById('model-time-end');
+      const modelOutputFormat = document.getElementById('model-output-format');
 
       // Clear previous outputs
       // mapElement.innerHTML = '';
       mapElement.style.display = 'none';
 
-      outputElement.innerHTML = '';
       imageElement.style.display = 'none';
       imageElement.src = '';
       statusElement.style.display = 'none';
@@ -687,7 +714,19 @@
           // New field containing info for the top 3 collections and the top 5 variables for each of those collections
           // collections: `${JSON.stringify(json.collections)}`
         };
-        outputElement.innerHTML = JSON.stringify(results, null, 2);
+        modelPropertyOfInterest.innerHTML = json.propertyOfInterest;
+        modelPlaceOfInterest.innerHTML = json.placeOfInterest;
+        modelBuffer.innerHTML = `${json.bufferNumber} ${json.bufferUnits}`;
+        let times;
+        if (json.timeInterval.includes('/')) {
+          times = json.timeInterval.split('/');
+        } else {
+          times = json.timeInterval.split(',');
+        }
+        modelTimeStart.innerHTML = times[0];
+        modelTimeEnd.innerHTML = times[1];
+        modelOutputFormat.innerHTML = json.outputFormat;
+        // outputElement.innerHTML = JSON.stringify(results, null, 2);
         mapElement.style.display = 'block';
 
         // Create fresh map only after getting new data
