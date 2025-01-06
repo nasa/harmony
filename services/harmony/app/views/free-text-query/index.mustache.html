@@ -197,7 +197,7 @@
             <div></div><div></div><div></div><div></div>
           </div>
           <div id="status-message" style="text-align: left; margin-left: 10px; display: none;">
-            Loading, please wait...
+            Analyzing query
           </div>
         </div>
 
@@ -241,21 +241,32 @@
     var geoJsonLayer;
 
     export async function getCmrResults(cmrQueryParams) {
-      const response = await fetch("./free-text-query-cmr", {
-          method: "POST",
-          body: JSON.stringify(cmrQueryParams),
-          headers: {
-            "Content-type": "application/json; charset=UTF-8"
-          }
-        });
+      try {
+        const status = document.getElementById('status-message');
+        const spinner = document.getElementById('spinner');
+        const response = await fetch("./free-text-query-cmr", {
+            method: "POST",
+            body: JSON.stringify(cmrQueryParams),
+            headers: {
+              "Content-type": "application/json; charset=UTF-8"
+            }
+          });
 
-      const data = await response.json();
-      pollJobStatus(data.statusUrl);
+        const data = await response.json();
+        status.innerHTML = 'Waiting for harmony output';
+        pollJobStatus(data.statusUrl);
+      } catch (e) {
+        console.log(e);
+        spinner.style.display = 'none';
+        status.style.display = 'none';
+      }
     }
 
     export function pollJobStatus(statusUrl) {
       const statusElement = document.getElementById('job-status');
       const imageElement = document.getElementById('dynamic-image');
+      const spinner = document.getElementById('spinner');
+      const status = document.getElementById('status-message');
 
       // Function to poll the job status
       async function checkStatus() {
@@ -275,6 +286,9 @@
           imageElement.src = imageUrl;
           imageElement.style.display = 'block';
           statusElement.style.display = 'none';
+          spinner.style.display = 'none';
+          status.style.display = 'none';
+
           // const parseGeoraster = require("georaster");
           const resultResp = await fetch(imageUrl, { method: 'GET'});
           if (!resultResp.ok) {
@@ -455,7 +469,6 @@
       } catch (error) {
         console.error(error);
         status.innerHTML = 'An error occurred. Please try again.';
-      } finally {
         spinner.style.display = 'none';
         status.style.display = 'none';
       }

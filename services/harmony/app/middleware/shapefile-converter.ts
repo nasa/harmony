@@ -182,9 +182,9 @@ export function normalizeGeoJson(geoJson: object, simplifyShapefile = false): ob
     }
     console.log(`FINAL POINT COUNT: ${pointCount}`);
   } else {
-    console.log("NOT SIMPLIFYING SHAPEFILE");
+    console.log('NOT SIMPLIFYING SHAPEFILE');
   }
-  console.log(`SHAPEFILE: ${JSON.stringify(newGeoJson, null, 2)}`);
+  // console.log(`SHAPEFILE: ${JSON.stringify(newGeoJson, null, 2)}`);
 
   return newGeoJson;
 }
@@ -281,7 +281,7 @@ export default async function shapefileConverter(req: HarmonyRequest, res, next:
       }
     } else {
       console.log('NO NEED TO CONVERT GEOJSON');
-      let geoJson = await normalizeGeoJsonFile(url, false, simplifyShapefile);
+      const geoJson = await normalizeGeoJsonFile(url, false, simplifyShapefile);
 
 
       operation.geojson = geoJson;
