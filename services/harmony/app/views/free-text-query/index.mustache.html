@@ -25,9 +25,11 @@
     }
 
     .main-container {
-      max-width: 1200px;
+      width: 100%;
+      max-width: 1800px;
       margin: 2rem auto;
       padding: 0 1rem;
+      align-content: center;
     }
 
     .content-wrapper {
@@ -257,7 +259,7 @@
 
     .dataset-container {
       flex: 1 1 calc(33.333% - 32px); /* 3 datasets per row with some spacing */
-      max-width: 300px; /* Optional: set a max width for consistency */
+      /* max-width: 300px; Optional: set a max width for consistency */
       border: 1px solid #ccc;
       border-radius: 8px;
       padding: 16px;
@@ -275,6 +277,64 @@
       margin-top: 16px;
       text-align: center;
     }
+
+    /* Apply the flex layout to the container */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+    }
+
+    /* Make the logo div flex to the left */
+    .logo {
+      flex: 1;
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+    }
+
+    /* Center the navigation links */
+    .nav-links {
+      flex: 2;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Ensure the profile section is right-aligned */
+    .profile {
+      flex: 1;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+    }
+
+    /* Fix the height issue and spacing of the header */
+    .header {
+      height: 80px; /* Adjust as needed */
+      padding: 0 20px;
+    }
+
+    /* Adjust the profile section icon and text */
+    .profile i {
+      margin-right: 10px;
+    }
+
+    /* Add a little space between nav links */
+    .nav-links a {
+      margin: 0 15px;
+      text-decoration: none;
+      color: #333;
+    }
+
+    /* Ensure that header stays within the screen width */
+    .header-wrapper {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+    }
+
   </style>
 </head>
 
@@ -298,19 +358,21 @@
           <br/>
           <input type="submit" value="Submit Query" class="submitButton">
         </form>
-        <div id="map" style="width: 500px; height: 300px; background-color: lightgray; display: none"></div>
+        <div id="map" style="width: 600px; height: 350px; background-color: lightgray; display: none"></div>
+        <div>
+          <pre id="model-output"></pre>
+          <div class="loading-container" style="display: flex; align-items: center;">
+            <div id="spinner" class="lds-ellipsis" style="display:none;">
+              <div></div><div></div><div></div><div></div>
+            </div>
+            <div id="status-message" style="text-align: center; display: none;">
+              Analyzing query
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="loading-container" style="display: flex; align-items: center;">
-      <div id="spinner" class="lds-ellipsis" style="display:none;">
-        <div></div><div></div><div></div><div></div>
-      </div>
-      <div id="status-message" style="text-align: left; margin-left: 10px; display: none;">
-        Analyzing query
-      </div>
-      <pre id="model-output"></pre>
-    </div>
 
 
     <!-- Datasets Section: 3 Datasets -->
