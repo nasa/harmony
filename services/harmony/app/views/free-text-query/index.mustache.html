@@ -192,9 +192,12 @@
           <input type="submit" value="Submit Query" class="submitButton">
         </form>
 
-        <div class="loading-container">
+        <div class="loading-container" style="display: flex; align-items: center;">
           <div id="spinner" class="lds-ellipsis" style="display:none;">
             <div></div><div></div><div></div><div></div>
+          </div>
+          <div id="status-message" style="text-align: left; margin-left: 10px; display: none;">
+            Loading, please wait...
           </div>
         </div>
 
@@ -378,6 +381,7 @@
 
     window.postForm  =  async function postForm(form) {
       const spinner = document.getElementById('spinner');
+      const status = document.getElementById('status-message');
       const outputElement = document.getElementById('model-output');
       const imageElement = document.getElementById('dynamic-image');
       const statusElement = document.getElementById('job-status');
@@ -399,6 +403,7 @@
       }
 
       spinner.style.display = 'block';
+      status.style.display = 'block';
 
       try {
         const response = await fetch("./free-text", {
@@ -443,13 +448,16 @@
         geoJsonLayer = L.geoJSON(geoJson).addTo(map);
         map.fitBounds(geoJsonLayer.getBounds());
         statusElement.style.display = 'block';
+
+        status.innerHTML = 'Querying CMR';
         await getCmrResults(json);
         // pollJobStatus(json.statusUrl);
       } catch (error) {
         console.error(error);
-        outputElement.innerHTML = 'An error occurred. Please try again.';
+        status.innerHTML = 'An error occurred. Please try again.';
       } finally {
         spinner.style.display = 'none';
+        status.style.display = 'none';
       }
     }
 
