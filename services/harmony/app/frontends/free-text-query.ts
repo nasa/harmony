@@ -168,7 +168,9 @@ async function submitHarmonyRequest(collection, variable, queryParams, geoJson: 
   queryParams.maxResults = 1;
   queryParams.simplifyShapefile = true;
   const encodedVariable = encodeURIComponent(variable);
-  const baseUrl = `http://localhost:3000/${collection}/ogc-api-coverages/1.0.0/collections/${encodedVariable}/coverage/rangeset`;
+  // const baseUrl = `http://localhost:3000/${collection}/ogc-api-coverages/1.0.0/collections/${encodedVariable}/coverage/rangeset`;
+  const root = process.env.OAUTH_REDIRECT_URI.replace('/oauth2/redirect', '');
+  const baseUrl = `${root}/${collection}/ogc-api-coverages/1.0.0/collections/${encodedVariable}/coverage/rangeset`;
   const querystr = querystring.stringify(queryParams);
   const headers = {
     ..._makeTokenHeader(token),

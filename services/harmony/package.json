@@ -89,7 +89,7 @@
     "@linzjs/geojson": "^7.1.0",
     "@mapbox/geojson-rewind": "^0.5.2",
     "@tmcw/togeojson": "^4.2.0",
-    "@turf/turf": "^7.1.0",
+    "@turf/turf": "^7.2.0",
     "@types/cookie": "^0.4.1",
     "@types/cookie-signature": "^1.0.3",
     "@types/express": "^4.17.13",
@@ -130,6 +130,7 @@
     "json2csv": "^5.0.7",
     "knex": "^2.4.0",
     "knex-paginate": "^2.3.0",
+    "leaflet": "^1.9.4",
     "libpq": "^1.8.13",
     "lodash": "^4.17.21",
     "logform": "^2.4.0",
@@ -226,8 +227,7 @@
     "strict-npm-engines": "^0.0.1",
     "superagent": "^10.1.1",
     "supertest": "^7.0.0",
-    "ts-node-dev": "^2.0.0",
-    "@turf/turf": "^7.2.0"
+    "ts-node-dev": "^2.0.0"
   },
   "overrides": {
     "trim-newlines": "4.0.1",
