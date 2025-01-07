@@ -525,6 +525,89 @@
       }
     }
 
+    async function plotResultMap(jobNumber, resultUrl) {
+      const statusElement = document.getElementById(`job-status-${jobNumber}`);
+      const mapElementId = `map${jobNumber}`;
+      const resultResp = await fetch(resultUrl, { method: 'GET' });
+      if (!resultResp.ok) {
+        throw new Error(`Response status: ${response.status}`);
+      }
+      const buffer = await resultResp.arrayBuffer();
+      const length = buffer.byteLength;
+      console.log(`BUFFER LENGTH========= ${length}`);
+
+      // the WASM loads asychronously, and you can get the module like this:
+      const Module = await h5wasm.ready;
+
+      // then you can get the FileSystem object from the Module:
+      const { FS } = Module;
+
+      FS.writeFile("sans59510.nxs.ngv", new Uint8Array(buffer));
+
+      // use mode "r" for reading.  All modes can be found in h5wasm.ACCESS_MODES
+      let f = new h5wasm.File("sans59510.nxs.ngv", "r");
+      console.log(`KEYS: ${JSON.stringify(f.keys())}`);
+      let vals = f.get("sea_surface_temperature");
+      console.log(JSON.stringify(vals.metadata, null, 2));
+      let lat = f.get("lat");
+      console.log(JSON.stringify(lat.metadata, null, 2));
+      let lon = f.get("lon");
+      console.log(JSON.stringify(lon.metadata, null, 2));
+
+      const heatMapData = [];
+      const valData = vals.value;
+      const latData = lat.value;
+      const lonData = lon.value;
+      const normalizedValues = [];
+
+      let minLat = 1000;
+      let minLon = 1000;
+      let maxLat = -1000;
+      let maxLon = -1000;
+      let minVal = 10000;
+      let maxVal = -10000;
+      for (const index in valData) {
+        const v = valData[index];
+        if (v != -32768) {
+          minVal = minVal > v ? v : minVal;
+          maxVal = maxVal < v ? v : maxVal;
+        }
+      }
+
+      for (const index in valData) {
+        const v = valData[index];
+        if (v != -32768) {
+          const lat = latData[index];
+          const lon = lonData[index];
+          minLat = minLat > lat ? lat : minLat;
+          minLon = minLon > lon ? lon : minLon;
+          maxLat = maxLat < lat ? lat : maxLat;
+          maxLon = maxLon < lon ? lon : maxLon;
+
+          heatMapData.push([lat, lon, v - minVal]);
+        }
+      }
+
+      console.log(`VALUE BOUNDS: (${minVal}, ${maxVal})`);
+
+      console.log(`BOUNDS: ((${minLat}, ${minLon}}), (${maxLat}, ${maxLon}))`);
+
+      console.log(`PLOTTING ${heatMapData.length} POINTS`);
+
+      const mapElement1 = document.getElementById(mapElementId);
+      mapElement1.style.display = 'block';
+      const map1 = L.map(mapElementId).setView([51.505, -0.09], 1);
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(map1);
+
+      geoJsonLayer = L.geoJSON(geoJson).addTo(map1);
+      map1.fitBounds(geoJsonLayer.getBounds());
+      statusElement.style.display = 'none';
+      const heat = L.heatLayer(heatMapData, { radius: 10, max: maxVal - minVal, blur: 0, minOpacity: 1 }).addTo(map1);
+    }
+
     export function pollJobStatus(statusUrl) {
       const statusElement = document.getElementById('job-status-1');
       const imageElement = document.getElementById('dynamic-image-1');
@@ -557,92 +640,7 @@
             imageElement.src = imageUrl;
             imageElement.style.display = 'block';
           } else {
-             const resultResp = await fetch(imageUrl, { method: 'GET' });
-            if (!resultResp.ok) {
-              throw new Error(`Response status: ${response.status}`);
-            }
-            const buffer = await resultResp.arrayBuffer();
-            const length = buffer.byteLength;
-            console.log(`BUFFER LENGTH========= ${length}`);
-
-            // the WASM loads asychronously, and you can get the module like this:
-            const Module = await h5wasm.ready;
-
-            // then you can get the FileSystem object from the Module:
-            const { FS } = Module;
-
-            // Or, you can directly get the FS if you don't care about the rest
-            // of the module:
-            // const { FS } = await h5wasm.ready;
-
-            // let response = await fetch("https://ncnr.nist.gov/pub/ncnrdata/vsans/202003/24845/data/sans59510.nxs.ngv");
-            // let ab = await response.arrayBuffer();
-
-            FS.writeFile("sans59510.nxs.ngv", new Uint8Array(buffer));
-
-            // use mode "r" for reading.  All modes can be found in h5wasm.ACCESS_MODES
-            let f = new h5wasm.File("sans59510.nxs.ngv", "r");
-            // File {path: "/", file_id: 72057594037927936n, filename: "data.h5", mode: "r"}
-            console.log(`KEYS: ${JSON.stringify(f.keys())}`);
-            let vals = f.get("sea_surface_temperature");
-            console.log(JSON.stringify(vals.metadata, null, 2));
-            let lat = f.get("lat");
-            console.log(JSON.stringify(lat.metadata, null, 2));
-            let lon = f.get("lon");
-            console.log(JSON.stringify(lon.metadata, null, 2));
-
-            const heatMapData = [];
-            const valData = vals.value;
-            const latData = lat.value;
-            const lonData = lon.value;
-            const normalizedValues = [];
-
-            let minLat = 1000;
-            let minLon = 1000;
-            let maxLat = -1000;
-            let maxLon = -1000;
-            let minVal = 10000;
-            let maxVal = -10000;
-            for (const index in valData) {
-              const v = valData[index];
-              if (v != -32768) {
-                minVal = minVal > v ? v : minVal;
-                maxVal = maxVal < v ? v : maxVal;
-              }
-            }
-
-            for (const index in valData) {
-              const v = valData[index];
-              if (v != -32768) {
-                const lat = latData[index];
-                const lon = lonData[index];
-                minLat = minLat > lat ? lat : minLat;
-                minLon = minLon > lon ? lon : minLon;
-                maxLat = maxLat < lat ? lat : maxLat;
-                maxLon = maxLon < lon ? lon : maxLon;
-
-                heatMapData.push([lat, lon, v - minVal]);
-              }
-            }
-
-            console.log(`VALUE BOUNDS: (${minVal}, ${maxVal})`);
-
-            console.log(`BOUNDS: ((${minLat}, ${minLon}}), (${maxLat}, ${maxLon}))`);
-
-            console.log(`PLOTTING ${heatMapData.length} POINTS`);
-
-            const mapElement1 = document.getElementById('map1');
-            mapElement1.style.display = 'block';
-            const map1 = L.map('map1').setView([51.505, -0.09], 1);
-            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-              maxZoom: 19,
-              attribution: '&copy; OpenStreetMap contributors'
-            }).addTo(map1);
-
-            geoJsonLayer = L.geoJSON(geoJson).addTo(map1);
-            map1.fitBounds(geoJsonLayer.getBounds());
-            statusElement.style.display = 'none';
-            const heat = L.heatLayer(heatMapData, { radius: 10, max: maxVal - minVal, blur: 0, minOpacity: 1 }).addTo(map1);
+            plotResultMap(1, imageUrl);
           }
 
         } else if (data.status !== 'running') {
