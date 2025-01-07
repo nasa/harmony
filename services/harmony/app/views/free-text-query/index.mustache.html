@@ -75,6 +75,22 @@
       background-color: #0a3278;
     }
 
+   .runJobButton {
+      background-color: #0b3d91;
+      color: white;
+      padding: 0.5rem 2rem;
+      border: none;
+      border-radius: 4px;
+      margin-top: 20px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .runJobButton:hover {
+      background-color: #0a3278;
+    }
+
+
 
     /* Needed to prevent the image from causing things to resize
     .image-container {
@@ -419,6 +435,9 @@
           <img id="dynamic-image-1" src="" alt="Dynamic Image" style="display: none;" />
         </div>
         <div id="map1" style="width: 450px; height: 250px; background-color: lightgray; display: none;"></div>
+        <form id="job1-submit-form" action="javascript:;" onsubmit="runJob(1);" class="query-form">
+          <input type="submit" id="job1-submit" value="Run Job" class="runJobButton" style="display: none";>
+        </form>
       </div>
 
       <!-- Dataset 2 -->
@@ -447,6 +466,9 @@
           <img id="dynamic-image-2" src="" alt="Dynamic Image" style="display: none;" />
         </div>
         <div id="map2" style="width: 450px; height: 250px; background-color: lightgray; display: none;"></div>
+        <form id="job2-submit-form" action="javascript:;" onsubmit="runJob(2);" class="query-form">
+          <input type="submit" id="job2-submit" value="Run Job" class="runJobButton" style="display: none";>
+        </form>
       </div>
 
       <!-- Dataset 3 -->
@@ -475,6 +497,9 @@
           <img id="dynamic-image-3" src="" alt="Dynamic Image" style="display: none;" />
         </div>
         <div id="map3" style="width: 450px; height: 250px; background-color: lightgray; display: none;"></div>
+        <form id="job2-submit-form" action="javascript:;" onsubmit="runJob(3);" class="query-form">
+          <input type="submit" id="job3-submit" value="Run Job" class="runJobButton" style="display: none";>
+        </form>
       </div>
     </div>
   </div>
@@ -555,9 +580,14 @@
       }
     }
 
-    async function plotResultMap(dataSetId, resultUrl) {
-      const statusElement = document.getElementById(`job-status-${dataSetId}`);
-      const mapElementId = `map${dataSetId}`;
+    export async function runJob(datasetId) {
+      // TODO make this work
+      console.log(`Running job ${datasetId}`);
+    }
+
+    async function plotResultMap(datasetId, resultUrl) {
+      const statusElement = document.getElementById(`job-status-${datasetId}`);
+      const mapElementId = `map${datasetId}`;
       const resultResp = await fetch(resultUrl, { method: 'GET' });
       if (!resultResp.ok) {
         throw new Error(`Response status: ${response.status}`);
@@ -574,7 +604,7 @@
 
       FS.writeFile("sans59510.nxs.ngv", new Uint8Array(buffer));
 
-      const variableName = dataSetInfo[dataSetId - 1].variable_name;
+      const variableName = dataSetInfo[datasetId - 1].variable_name;
       // use mode "r" for reading.  All modes can be found in h5wasm.ACCESS_MODES
       let f = new h5wasm.File("sans59510.nxs.ngv", "r");
       // console.log(`KEYS: ${JSON.stringify(f.keys())}`);
@@ -692,6 +722,9 @@
           } else {
             plotResultMap(datasetId, imageUrl);
           }
+
+          const jobSubmitButton = document.getElementById(`job${datasetId}-submit`);
+          jobSubmitButton.style.display = "block";
 
         } else if (data.status !== 'running') {
           statusElement.innerText = 'The request failed.';
