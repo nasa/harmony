@@ -418,6 +418,7 @@
           <p id="job-status-1"></p>
           <img id="dynamic-image-1" src="" alt="Dynamic Image" style="display: none;" />
         </div>
+        <div id="map1" style="width: 450px; height: 250px; background-color: lightgray; display: none;"></div>
       </div>
 
       <!-- Dataset 2 -->
@@ -443,6 +444,7 @@
           <p id="job-status-2"></p>
           <img id="dynamic-image-2" src="" alt="Dynamic Image" style="display: none;" />
         </div>
+        <div id="map2" style="width: 450px; height: 250px; background-color: lightgray; display: none;"></div>
       </div>
 
       <!-- Dataset 3 -->
@@ -468,6 +470,7 @@
           <p id="job-status-3"></p>
           <img id="dynamic-image-3" src="" alt="Dynamic Image" style="display: none;" />
         </div>
+        <div id="map3" style="width: 450px; height: 250px; background-color: lightgray; display: none;"></div>
       </div>
     </div>
   </div>
@@ -493,6 +496,7 @@
   <script type='module'>
     import h5wasm from "https://cdn.jsdelivr.net/npm/h5wasm@0.4.9/dist/esm/hdf5_hl.js";
     var map;
+    var geoJson;
     var geoJsonLayer;
 
     export async function getCmrResults(cmrQueryParams) {
@@ -535,93 +539,107 @@
         const data = await response.json();
 
         if (data.status === 'successful') {
-          // Update the image when the job is ready
-          const imageUrl = data.links[1]?.href;
-          console.log(imageUrl);
-          imageElement.src = imageUrl;
-          imageElement.style.display = 'block';
+
           statusElement.style.display = 'none';
           spinner.style.display = 'none';
           status.style.display = 'none';
 
-          // const parseGeoraster = require("georaster");
-          const resultResp = await fetch(imageUrl, { method: 'GET'});
-          if (!resultResp.ok) {
-            throw new Error(`Response status: ${response.status}`);
-          }
-          const buffer = await resultResp.arrayBuffer();
-          const length = buffer.byteLength;
-          console.log(`BUFFER LENGTH========= ${length}`);
-
-
-
-
-          // the WASM loads asychronously, and you can get the module like this:
-          const Module = await h5wasm.ready;
-
-          // then you can get the FileSystem object from the Module:
-          const { FS } = Module;
-
-          // Or, you can directly get the FS if you don't care about the rest
-          // of the module:
-          // const { FS } = await h5wasm.ready;
-
-          // let response = await fetch("https://ncnr.nist.gov/pub/ncnrdata/vsans/202003/24845/data/sans59510.nxs.ngv");
-          // let ab = await response.arrayBuffer();
-
-          FS.writeFile("sans59510.nxs.ngv", new Uint8Array(buffer));
-
-          // use mode "r" for reading.  All modes can be found in h5wasm.ACCESS_MODES
-          let f = new h5wasm.File("sans59510.nxs.ngv", "r");
-          // File {path: "/", file_id: 72057594037927936n, filename: "data.h5", mode: "r"}
-          console.log(`KEYS: ${JSON.stringify(f.keys())}`);
-          let vals = f.get("sea_surface_temperature");
-          console.log(JSON.stringify(vals.metadata, null, 2));
-          let lat = f.get("lat");
-          console.log(JSON.stringify(lat.metadata, null, 2));
-          let lon = f.get("lon");
-          console.log(JSON.stringify(lon.metadata, null, 2));
-
-          const heatMapData = [];
-          const valData = vals.value;
-          const latData = lat.value;
-          const lonData = lon.value;
-          const normalizedValues = [];
-
-          let minLat = 1000;
-          let minLon = 1000;
-          let maxLat = -1000;
-          let maxLon = -1000;
-          let minVal = 10000;
-          let maxVal = -10000;
-          for (const index in valData) {
-            const v = valData[index]
-            if (v != -32768) {
-              minVal = minVal > v ? v : minVal;
-              maxVal = maxVal < v ? v : maxVal;
+          // Update the image when the job is ready
+          console.log(JSON.stringify(data, null, 2,));
+          const resultType = data.links[1]?.type
+          const imageUrl = data.links[1]?.href;
+          if (resultType === "image/png" || resultType === "image/jpeg" || resultType === "image/jpg") {
+            console.log(imageUrl);
+            imageElement.src = imageUrl;
+            imageElement.style.display = 'block';
+          } else {
+             const resultResp = await fetch(imageUrl, { method: 'GET' });
+            if (!resultResp.ok) {
+              throw new Error(`Response status: ${response.status}`);
             }
-          }
+            const buffer = await resultResp.arrayBuffer();
+            const length = buffer.byteLength;
+            console.log(`BUFFER LENGTH========= ${length}`);
 
-          for (const index in valData) {
-            const v = valData[index];
-            if (v != -32768) {
-              const lat = latData[index];
-              const lon = lonData[index];
-              minLat = minLat > lat ? lat : minLat;
-              minLon = minLon > lon ? lon : minLon;
-              maxLat = maxLat < lat ? lat : maxLat;
-              maxLon = maxLon < lon ? lon : maxLon;
+            // the WASM loads asychronously, and you can get the module like this:
+            const Module = await h5wasm.ready;
 
-              heatMapData.push([lat, lon, v - minVal]);
+            // then you can get the FileSystem object from the Module:
+            const { FS } = Module;
+
+            // Or, you can directly get the FS if you don't care about the rest
+            // of the module:
+            // const { FS } = await h5wasm.ready;
+
+            // let response = await fetch("https://ncnr.nist.gov/pub/ncnrdata/vsans/202003/24845/data/sans59510.nxs.ngv");
+            // let ab = await response.arrayBuffer();
+
+            FS.writeFile("sans59510.nxs.ngv", new Uint8Array(buffer));
+
+            // use mode "r" for reading.  All modes can be found in h5wasm.ACCESS_MODES
+            let f = new h5wasm.File("sans59510.nxs.ngv", "r");
+            // File {path: "/", file_id: 72057594037927936n, filename: "data.h5", mode: "r"}
+            console.log(`KEYS: ${JSON.stringify(f.keys())}`);
+            let vals = f.get("sea_surface_temperature");
+            console.log(JSON.stringify(vals.metadata, null, 2));
+            let lat = f.get("lat");
+            console.log(JSON.stringify(lat.metadata, null, 2));
+            let lon = f.get("lon");
+            console.log(JSON.stringify(lon.metadata, null, 2));
+
+            const heatMapData = [];
+            const valData = vals.value;
+            const latData = lat.value;
+            const lonData = lon.value;
+            const normalizedValues = [];
+
+            let minLat = 1000;
+            let minLon = 1000;
+            let maxLat = -1000;
+            let maxLon = -1000;
+            let minVal = 10000;
+            let maxVal = -10000;
+            for (const index in valData) {
+              const v = valData[index];
+              if (v != -32768) {
+                minVal = minVal > v ? v : minVal;
+                maxVal = maxVal < v ? v : maxVal;
+              }
             }
+
+            for (const index in valData) {
+              const v = valData[index];
+              if (v != -32768) {
+                const lat = latData[index];
+                const lon = lonData[index];
+                minLat = minLat > lat ? lat : minLat;
+                minLon = minLon > lon ? lon : minLon;
+                maxLat = maxLat < lat ? lat : maxLat;
+                maxLon = maxLon < lon ? lon : maxLon;
+
+                heatMapData.push([lat, lon, v - minVal]);
+              }
+            }
+
+            console.log(`VALUE BOUNDS: (${minVal}, ${maxVal})`);
+
+            console.log(`BOUNDS: ((${minLat}, ${minLon}}), (${maxLat}, ${maxLon}))`);
+
+            console.log(`PLOTTING ${heatMapData.length} POINTS`);
+
+            const mapElement1 = document.getElementById('map1');
+            mapElement1.style.display = 'block';
+            const map1 = L.map('map1').setView([51.505, -0.09], 1);
+            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+              maxZoom: 19,
+              attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map1);
+
+            geoJsonLayer = L.geoJSON(geoJson).addTo(map1);
+            map1.fitBounds(geoJsonLayer.getBounds());
+            statusElement.style.display = 'none';
+            const heat = L.heatLayer(heatMapData, { radius: 10, max: maxVal - minVal, blur: 0, minOpacity: 1 }).addTo(map1);
           }
-
-          console.log(`VALUE BOUNDS: (${minVal}, ${maxVal})`);
-
-          console.log(`BOUNDS: ((${minLat}, ${minLon}}), (${maxLat}, ${maxLon}))`);
-
-          console.log(`PLOTTING ${heatMapData.length} POINTS`);
-          const heat = L.heatLayer(heatMapData, { radius: 25, max: maxVal - minVal, blur: 0, minOpacity: 1 }).addTo(map);
 
         } else if (data.status !== 'running') {
           statusElement.innerText = 'The request failed.';
@@ -679,7 +697,7 @@
         }
 
         const json = await response.json();
-        const geoJson = json.geoJson;
+        geoJson = json.geoJson;
 
         const results = {
           propertyOfInterest: json.propertyOfInterest,
