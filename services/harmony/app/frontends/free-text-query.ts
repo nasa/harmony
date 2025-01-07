@@ -70,7 +70,7 @@ interface GeneratedHarmonyRequestParameters {
 }
 
 interface CmrAndHarmonyResponse {
-  statusUrl: string;
+  statusUrls: string[];
   collections: any;
 }
 
@@ -349,10 +349,22 @@ export async function freeTextGetCmrResults(
       queryParams.format = outputFormat;
     }
 
-    const harmonyJob = await submitHarmonyRequest(collectionsInfo[0][0].collection_id, collectionsInfo[0][0].variable_id, queryParams, geoJson, req.accessToken);
-    logPerf(now, 'submit harmony request');
+    const statusUrls = [];
+    i = 0;
+    for (const collectionId of collConceptIds) {
+      // const harmonyJob = await submitHarmonyRequest(collectionsInfo[i][0].collection_id, collectionsInfo[i][0].variable_id, queryParams, geoJson, req.accessToken);
+      try {
+        const harmonyJob = await submitHarmonyRequest(collectionId, collectionsInfo[i][0].variable_id, queryParams, geoJson, req.accessToken);
+        const statusUrl = harmonyJob.links[2].href;
+        statusUrls.push(statusUrl);
+        i = i + 1;
+        logPerf(now, 'submit harmony request');
+      } catch (e) {
+        console.log(`Failed to submit harmony request: ${e}`);
+      }
+    }
     const cmrResults: CmrAndHarmonyResponse = {
-      statusUrl: harmonyJob.links[2].href,
+      statusUrls,
       collections: collectionsInfo,
     };
 

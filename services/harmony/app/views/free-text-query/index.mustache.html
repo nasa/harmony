@@ -542,7 +542,11 @@
         }
 
         status.innerHTML = 'Waiting for harmony output';
-        pollJobStatus(data.statusUrl);
+        let i = 0;
+        for (const url of data.statusUrls) {
+          i = i + 1;
+          pollJobStatus(url, i);
+        }
       } catch (e) {
         console.log(e);
         spinner.style.display = 'none';
@@ -633,9 +637,9 @@
       const heat = L.heatLayer(heatMapData, { radius: 10, max: maxVal - minVal, blur: 0, minOpacity: 1 }).addTo(map1);
     }
 
-    export function pollJobStatus(statusUrl) {
-      const statusElement = document.getElementById('job-status-1');
-      const imageElement = document.getElementById('dynamic-image-1');
+    export function pollJobStatus(statusUrl, datasetId) {
+      const statusElement = document.getElementById(`job-status-${datasetId}`);
+      const imageElement = document.getElementById(`dynamic-image-${datasetId}`);
       const spinner = document.getElementById('spinner');
       const status = document.getElementById('status-message');
 
