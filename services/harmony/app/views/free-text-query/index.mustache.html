@@ -649,7 +649,11 @@
       }).addTo(map1);
 
       geoJsonLayer = L.geoJSON(geoJson).addTo(map1);
-      map1.fitBounds(geoJsonLayer.getBounds());
+      // map1.fitBounds(geoJsonLayer.getBounds());
+      map1.fitBounds([
+        [minLat, minLon],
+        [maxLat, maxLon],
+      ]);
       statusElement.style.display = 'none';
       const heat = L.heatLayer(heatMapData, { radius: 10, max: maxVal - minVal, blur: 0, minOpacity: 1 }).addTo(map1);
     }
