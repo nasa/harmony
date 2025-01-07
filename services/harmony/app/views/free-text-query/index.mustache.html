@@ -621,6 +621,7 @@
           console.log(`BOUNDS: ((${minLat}, ${minLon}}), (${maxLat}, ${maxLon}))`);
 
           console.log(`PLOTTING ${heatMapData.length} POINTS`);
+          const heat = L.heatLayer(heatMapData, { radius: 25, max: maxVal - minVal, blur: 0, minOpacity: 1 }).addTo(map);
 
         } else if (data.status !== 'running') {
           statusElement.innerText = 'The request failed.';
