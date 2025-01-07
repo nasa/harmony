@@ -406,6 +406,9 @@
           <div>
             <strong>Variable Description:</strong> <span id="variable-description-1"></span>
           </div>
+          <div>
+            <strong>Granule count:</strong> <span id="granule-count-1"></span>
+          </div>
           <!-- <div class="variables-section">
             <strong>Top 5 Variables:</strong>
             <ul id="variables-list-1"></ul>
@@ -420,21 +423,24 @@
 
       <!-- Dataset 2 -->
       <div id="dataset-container-2" class="dataset-container" style="flex: 1;">
-        <h2 class="dataset-title">Dataset Information</h2>
+        <h2 id="dataset-title-2" class="dataset-title"></h2>
         <div class="dataset-details">
-          <div>
-            <strong>CMR Concept ID:</strong> <span id="cmr-concept-id-2"></span>
-          </div>
-          <div>
-            <strong>Collection Short Name:</strong> <span id="collection-short-name-2"></span>
-          </div>
           <div>
             <strong>Collection Description:</strong> <span id="collection-description-2"></span>
           </div>
-          <div class="variables-section">
+          <div>
+            <strong>Variable:</strong> <span id="variable-title-2"></span>
+          </div>
+          <div>
+            <strong>Variable Description:</strong> <span id="variable-description-2"></span>
+          </div>
+          <div>
+            <strong>Granule count:</strong> <span id="granule-count-2"></span>
+          </div>
+          <!-- <div class="variables-section">
             <strong>Top 5 Variables:</strong>
             <ul id="variables-list-2"></ul>
-          </div>
+          </div> -->
         </div>
         <div class="image-container">
           <p id="job-status-2"></p>
@@ -445,21 +451,24 @@
 
       <!-- Dataset 3 -->
       <div id="dataset-container-3" class="dataset-container" style="flex: 1;">
-        <h2 class="dataset-title">Dataset Information</h2>
+        <h2 id="dataset-title-3" class="dataset-title"></h2>
         <div class="dataset-details">
-          <div>
-            <strong>CMR Concept ID:</strong> <span id="cmr-concept-id-3"></span>
-          </div>
-          <div>
-            <strong>Collection Short Name:</strong> <span id="collection-short-name-3"></span>
-          </div>
           <div>
             <strong>Collection Description:</strong> <span id="collection-description-3"></span>
           </div>
-          <div class="variables-section">
+          <div>
+            <strong>Variable:</strong> <span id="variable-title-3"></span>
+          </div>
+          <div>
+            <strong>Variable Description:</strong> <span id="variable-description-3"></span>
+          </div>
+          <div>
+            <strong>Granule count:</strong> <span id="granule-count-3"></span>
+          </div>
+          <!-- <div class="variables-section">
             <strong>Top 5 Variables:</strong>
             <ul id="variables-list-3"></ul>
-          </div>
+          </div> -->
         </div>
         <div class="image-container">
           <p id="job-status-3"></p>
@@ -509,12 +518,22 @@
         const data = await response.json();
         const datasetId = 1;
         const datasetElement = document.getElementById(`dataset-container-${datasetId}`);
+
         const datasetTitle = datasetElement.querySelector(`#dataset-title-${datasetId}`);
-        datasetTitle.textContent = `${data.collectionName} (${data.collection})`;
+        datasetTitle.textContent = `${data.collectionName} (`;
+        const link = document.createElement('a');
+        link.href = `https://cmr.uat.earthdata.nasa.gov/concepts/${data.collection}`;
+        link.textContent = data.collection;
+        link.target = '_blank';
+        datasetTitle.appendChild(link);
+        datasetTitle.appendChild(document.createTextNode(')'));
+
         const variableTitle = datasetElement.querySelector(`#variable-title-${datasetId}`);
-        const variableDescription = datasetElement.querySelector(`#variable-description-${datasetId}`);
         variableTitle.textContent = `${data.variableName} (${data.variable})`;
+        const variableDescription = datasetElement.querySelector(`#variable-description-${datasetId}`);
         variableDescription.textContent = data.variableDefinition;
+        const granuleCount = datasetElement.querySelector(`#granule-count-${datasetId}`);
+        granuleCount.textContent = data.granuleCount;
 
         status.innerHTML = 'Waiting for harmony output';
         pollJobStatus(data.statusUrl);

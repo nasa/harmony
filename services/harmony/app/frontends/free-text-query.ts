@@ -76,6 +76,7 @@ interface CmrAndHarmonyResponse {
   variableName: string;
   variableDefinition: string;
   statusUrl: string;
+  granuleCount: string;
   collections: any;
 }
 
@@ -342,6 +343,7 @@ export async function freeTextGetCmrResults(
     let variableId = null;
     let variableName = null;
     let variableDefinition = null;
+    let granuleCount = null;
 
     // The first collection in the embedding query result that has granules is the best match
     if (collConceptIds.length > 0) {
@@ -350,6 +352,7 @@ export async function freeTextGetCmrResults(
       variableId = collectionInfo[collectionId][0].variable_id;
       variableName = collectionInfo[collectionId][0].variable_name;
       variableDefinition = collectionInfo[collectionId][0].variable_definition;
+      granuleCount = collsWithGranules[0].granule_count;
       console.log(`BEST MATCH: COLLECTION ID: ${collectionId}  VARIABLE ID: ${variableId}  SIMILARITY: ${collectionInfo[collectionId][0].similarity}`);
     } else {
       console.log('No matching collections are found');
@@ -372,6 +375,7 @@ export async function freeTextGetCmrResults(
       variableDefinition,
       statusUrl: harmonyJob.links[2].href,
       collections: collectionInfo,
+      granuleCount,
     };
 
     res.send(cmrResults);
