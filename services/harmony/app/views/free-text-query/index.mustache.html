@@ -391,28 +391,25 @@
       </div>
     </div>
 
-
-
     <!-- Datasets Section: 3 Datasets -->
     <div class="datasets-container" style="display: flex; gap: 20px;">
       <!-- Dataset 1 -->
-      <div class="dataset-container" style="flex: 1;">
-        <h2 class="dataset-title">Dataset Information</h2>
+      <div id="dataset-container-1" class="dataset-container" style="flex: 1;">
+        <h2 id="dataset-title-1" class="dataset-title"></h2>
         <div class="dataset-details">
-          <div>
-            <strong>CMR Concept ID:</strong> <span id="cmr-concept-id-1"></span>
-          </div>
-          <div>
-            <strong>Collection Short Name:</strong> <span id="collection-short-name-1"></span>
-          </div>
           <div>
             <strong>Collection Description:</strong> <span id="collection-description-1"></span>
           </div>
-          <div class="variables-section">
-            <strong>Top 5 Variables:</strong>
-            <ul id="variables-list-1">
-            </ul>
+          <div>
+            <strong>Variable:</strong> <span id="variable-title-1"></span>
           </div>
+          <div>
+            <strong>Variable Description:</strong> <span id="variable-description-1"></span>
+          </div>
+          <!-- <div class="variables-section">
+            <strong>Top 5 Variables:</strong>
+            <ul id="variables-list-1"></ul>
+          </div> -->
         </div>
         <div class="image-container">
           <p id="job-status-1"></p>
@@ -422,7 +419,7 @@
       </div>
 
       <!-- Dataset 2 -->
-      <div class="dataset-container" style="flex: 1;">
+      <div id="dataset-container-2" class="dataset-container" style="flex: 1;">
         <h2 class="dataset-title">Dataset Information</h2>
         <div class="dataset-details">
           <div>
@@ -436,8 +433,7 @@
           </div>
           <div class="variables-section">
             <strong>Top 5 Variables:</strong>
-            <ul id="variables-list-2">
-            </ul>
+            <ul id="variables-list-2"></ul>
           </div>
         </div>
         <div class="image-container">
@@ -448,7 +444,7 @@
       </div>
 
       <!-- Dataset 3 -->
-      <div class="dataset-container" style="flex: 1;">
+      <div id="dataset-container-3" class="dataset-container" style="flex: 1;">
         <h2 class="dataset-title">Dataset Information</h2>
         <div class="dataset-details">
           <div>
@@ -462,8 +458,7 @@
           </div>
           <div class="variables-section">
             <strong>Top 5 Variables:</strong>
-            <ul id="variables-list-3">
-            </ul>
+            <ul id="variables-list-3"></ul>
           </div>
         </div>
         <div class="image-container">
@@ -512,12 +507,21 @@
           });
 
         const data = await response.json();
+        const datasetId = 1;
+        const datasetElement = document.getElementById(`dataset-container-${datasetId}`);
+        const datasetTitle = datasetElement.querySelector(`#dataset-title-${datasetId}`);
+        datasetTitle.textContent = `${data.collectionName} (${data.collection})`;
+        const variableTitle = datasetElement.querySelector(`#variable-title-${datasetId}`);
+        const variableDescription = datasetElement.querySelector(`#variable-description-${datasetId}`);
+        variableTitle.textContent = `${data.variableName} (${data.variable})`;
+        variableDescription.textContent = data.variableDefinition;
+
         status.innerHTML = 'Waiting for harmony output';
         pollJobStatus(data.statusUrl);
       } catch (e) {
         console.log(e);
         spinner.style.display = 'none';
-        status.style.display = 'none';
+        status.innerHTML = 'Failed to query CMR and submit harmony request';
       }
     }
 

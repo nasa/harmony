@@ -279,7 +279,7 @@ export async function freeTextGetCmrResults(
       'simplify-shapefile': 'true',
     };
 
-    const collsWithGranules = await queryCollectionUsingMultipartForm({}, collQuery, req.accessToken);
+    const collsWithGranuleCounts = await queryCollectionUsingMultipartForm({}, collQuery, req.accessToken);
 
     // // Run all queries in parallel
     // const queries = conceptIdsArray.map((conceptId) => {
@@ -303,10 +303,9 @@ export async function freeTextGetCmrResults(
     // list of collection concept ids that has granule found with the spatial and temporal search
     // collsWithGranules.map(c => console.log(`Collection ${c.id} has ${c.granule_count} granules.`));
     // const collConceptIds = collsWithGranules.filter(c => c.granule_count > 0).map(c => c.id);
-    collsWithGranules.collections.map(c => console.log(`Collection ${c.id} has ${c.granule_count} granules.`));
-    const collConceptIdsWithGranules: string[] = collsWithGranules.collections
-      .filter(c => c.granule_count > 0)
-      .map(c => c.id);
+    collsWithGranuleCounts.collections.map(c => console.log(`Collection ${c.id} has ${c.granule_count} granules.`));
+    const collsWithGranules = collsWithGranuleCounts.collections.filter(c => c.granule_count > 0);
+    const collConceptIdsWithGranules: string[] = collsWithGranules.map(c => c.id);
 
     // Look for the top 3 collections that have granules based on order of embedding similarity
     const collConceptIds = [];

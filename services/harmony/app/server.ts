@@ -150,10 +150,8 @@ function buildFrontendServer(port: number, hostBinding: string, config: RouterCo
   app.use(addRequestLogger(appLogger));
 
   app.use((req, res, next) => {
-    const allowedOrigins = ['http://localhost:3000', 'http://localhost:4572'];
-    const origin = req.headers.origin;
-
-    console.log(`ORIGIN==============> ${origin}`);
+    // const allowedOrigins = ['http://localhost:3000', 'http://localhost:4572'];
+    // const { origin } = req.headers;
 
     // if (allowedOrigins.includes(origin)) {
     //   res.header('Access-Control-Allow-Origin', origin);
