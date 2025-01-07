@@ -502,10 +502,11 @@
     var map;
     var geoJson;
     var geoJsonLayer;
+    var dataSetInfo = [];
 
     export async function getCmrResults(cmrQueryParams) {
+      const status = document.getElementById('status-message');
       try {
-        const status = document.getElementById('status-message');
         const spinner = document.getElementById('spinner');
         const response = await fetch("./free-text-query-cmr", {
             method: "POST",
@@ -519,8 +520,8 @@
         let datasetId = 0
         for (const collectionInfo of data.collections) {
           datasetId = datasetId + 1;
-
           const dataset = collectionInfo[0];
+          dataSetInfo[datasetId - 1] = dataset;
           // const datasetId = 1;
           const datasetElement = document.getElementById(`dataset-container-${datasetId}`);
 
@@ -554,9 +555,9 @@
       }
     }
 
-    async function plotResultMap(jobNumber, resultUrl) {
-      const statusElement = document.getElementById(`job-status-${jobNumber}`);
-      const mapElementId = `map${jobNumber}`;
+    async function plotResultMap(dataSetId, resultUrl) {
+      const statusElement = document.getElementById(`job-status-${dataSetId}`);
+      const mapElementId = `map${dataSetId}`;
       const resultResp = await fetch(resultUrl, { method: 'GET' });
       if (!resultResp.ok) {
         throw new Error(`Response status: ${response.status}`);
@@ -573,15 +574,25 @@
 
       FS.writeFile("sans59510.nxs.ngv", new Uint8Array(buffer));
 
+      const variableName = dataSetInfo[dataSetId - 1].variable_name;
       // use mode "r" for reading.  All modes can be found in h5wasm.ACCESS_MODES
       let f = new h5wasm.File("sans59510.nxs.ngv", "r");
-      console.log(`KEYS: ${JSON.stringify(f.keys())}`);
-      let vals = f.get("sea_surface_temperature");
-      console.log(JSON.stringify(vals.metadata, null, 2));
+      // console.log(`KEYS: ${JSON.stringify(f.keys())}`);
+      console.log(`VARIABLE NAME: ${variableName}`);
+      let vals = f.get(variableName);
+      // console.log('ATTRS:');
+      // console.log(JSON.stringify(vals.attrs, (key, value) =>
+      //   typeof value === 'bigint' ? value.toString() : value, 2));
+      // console.log('VALS:');
+      // console.log(JSON.stringify(vals, (key, value) =>
+      //   typeof value === 'bigint' ? value.toString() : value, 2));
+      // console.log(JSON.stringify(vals.metadata, null, 2));
+      // const fillValue = f.get(`/${variableName}/_FillValue`).value;
+      // console.log(`FILL VALUE: ${fillValue}`);
       let lat = f.get("lat");
-      console.log(JSON.stringify(lat.metadata, null, 2));
+      // console.log(JSON.stringify(lat.metadata, null, 2));
       let lon = f.get("lon");
-      console.log(JSON.stringify(lon.metadata, null, 2));
+      // console.log(JSON.stringify(lon.metadata, null, 2));
 
       const heatMapData = [];
       const valData = vals.value;
@@ -595,9 +606,15 @@
       let maxLon = -1000;
       let minVal = 10000;
       let maxVal = -10000;
+      let fillValue = 1000000000;
+      for (const value of valData) {
+        if (fillValue > value) {
+          fillValue = value;
+        }
+      }
       for (const index in valData) {
         const v = valData[index];
-        if (v != -32768) {
+        if (v != fillValue) {
           minVal = minVal > v ? v : minVal;
           maxVal = maxVal < v ? v : maxVal;
         }
@@ -605,7 +622,7 @@
 
       for (const index in valData) {
         const v = valData[index];
-        if (v != -32768) {
+        if (v != fillValue) {
           const lat = latData[index];
           const lon = lonData[index];
           minLat = minLat > lat ? lat : minLat;
@@ -669,7 +686,7 @@
             imageElement.src = imageUrl;
             imageElement.style.display = 'block';
           } else {
-            plotResultMap(1, imageUrl);
+            plotResultMap(datasetId, imageUrl);
           }
 
         } else if (data.status !== 'running') {
