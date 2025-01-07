@@ -516,24 +516,30 @@
           });
 
         const data = await response.json();
-        const datasetId = 1;
-        const datasetElement = document.getElementById(`dataset-container-${datasetId}`);
+        let datasetId = 0
+        for (const collectionInfo of data.collections) {
+          datasetId = datasetId + 1;
 
-        const datasetTitle = datasetElement.querySelector(`#dataset-title-${datasetId}`);
-        datasetTitle.textContent = `${data.collectionName} (`;
-        const link = document.createElement('a');
-        link.href = `https://cmr.uat.earthdata.nasa.gov/concepts/${data.collection}`;
-        link.textContent = data.collection;
-        link.target = '_blank';
-        datasetTitle.appendChild(link);
-        datasetTitle.appendChild(document.createTextNode(')'));
+          const dataset = collectionInfo[0];
+          // const datasetId = 1;
+          const datasetElement = document.getElementById(`dataset-container-${datasetId}`);
 
-        const variableTitle = datasetElement.querySelector(`#variable-title-${datasetId}`);
-        variableTitle.textContent = `${data.variableName} (${data.variable})`;
-        const variableDescription = datasetElement.querySelector(`#variable-description-${datasetId}`);
-        variableDescription.textContent = data.variableDefinition;
-        const granuleCount = datasetElement.querySelector(`#granule-count-${datasetId}`);
-        granuleCount.textContent = data.granuleCount;
+          const datasetTitle = datasetElement.querySelector(`#dataset-title-${datasetId}`);
+          datasetTitle.textContent = `${dataset.collection_name} (`;
+          const link = document.createElement('a');
+          link.href = `https://cmr.uat.earthdata.nasa.gov/concepts/${dataset.collection_id}`;
+          link.textContent = dataset.collection_id;
+          link.target = '_blank';
+          datasetTitle.appendChild(link);
+          datasetTitle.appendChild(document.createTextNode(')'));
+
+          const variableTitle = datasetElement.querySelector(`#variable-title-${datasetId}`);
+          variableTitle.textContent = `${dataset.variable_name} (${dataset.variable_id})`;
+          const variableDescription = datasetElement.querySelector(`#variable-description-${datasetId}`);
+          variableDescription.textContent = dataset.variable_definition;
+          const granuleCount = datasetElement.querySelector(`#granule-count-${datasetId}`);
+          granuleCount.textContent = dataset.granule_count;
+        }
 
         status.innerHTML = 'Waiting for harmony output';
         pollJobStatus(data.statusUrl);

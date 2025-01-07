@@ -70,13 +70,7 @@ interface GeneratedHarmonyRequestParameters {
 }
 
 interface CmrAndHarmonyResponse {
-  collection: string;
-  collectionName: string;
-  variable: string;
-  variableName: string;
-  variableDefinition: string;
   statusUrl: string;
-  granuleCount: string;
   collections: any;
 }
 
@@ -323,7 +317,8 @@ export async function freeTextGetCmrResults(
 
     console.log(`Top 3 collections with granules matching spatial and temporal search: ${JSON.stringify(collConceptIds)}`);
 
-    const collectionInfo = {};
+    const collectionsInfo = [];
+    let i = 0;
     for (const collectionId of collConceptIds) {
       // Query for the top 5 variables by similarity for that collection ID
       const topVariablesSQL = `SELECT collection_name, variable_id, variable_name, variable_definition, 1 - (embedding <=> '[${embedding}]') AS similarity FROM umm_embeddings WHERE collection_id = '${collectionId}' ORDER BY similarity DESC LIMIT 5;`;
@@ -332,28 +327,17 @@ export async function freeTextGetCmrResults(
 
       now = logPerf(now, 'Query database for top variables');
 
-      // for (const row of dbVarResults.rows) {
       console.log(`Top 5 variables: ${JSON.stringify(dbVarResults.rows)}`);
-      // }
-      collectionInfo[collectionId] = dbVarResults.rows;
+      const collectionInfo = dbVarResults.rows;
+      collectionInfo[0].collection_id = collectionId;
+      collectionInfo[0].granule_count = collsWithGranules[i].granule_count;
+      collectionsInfo.push(collectionInfo);
+      i = i + 1;
     }
 
-    let collectionId = null;
-    let collectionName = null;
-    let variableId = null;
-    let variableName = null;
-    let variableDefinition = null;
-    let granuleCount = null;
-
-    // The first collection in the embedding query result that has granules is the best match
+    console.log(JSON.stringify(collectionsInfo));
     if (collConceptIds.length > 0) {
-      collectionId = collConceptIds[0];
-      collectionName = collectionInfo[collectionId][0].collection_name;
-      variableId = collectionInfo[collectionId][0].variable_id;
-      variableName = collectionInfo[collectionId][0].variable_name;
-      variableDefinition = collectionInfo[collectionId][0].variable_definition;
-      granuleCount = collsWithGranules[0].granule_count;
-      console.log(`BEST MATCH: COLLECTION ID: ${collectionId}  VARIABLE ID: ${variableId}  SIMILARITY: ${collectionInfo[collectionId][0].similarity}`);
+      console.log(`Found ${collConceptIds.length} matching collections`);
     } else {
       console.log('No matching collections are found');
     }
@@ -365,17 +349,11 @@ export async function freeTextGetCmrResults(
       queryParams.format = outputFormat;
     }
 
-    const harmonyJob = await submitHarmonyRequest(collectionId, variableId, queryParams, geoJson, req.accessToken);
+    const harmonyJob = await submitHarmonyRequest(collectionsInfo[0][0].collection_id, collectionsInfo[0][0].variable_id, queryParams, geoJson, req.accessToken);
     logPerf(now, 'submit harmony request');
     const cmrResults: CmrAndHarmonyResponse = {
-      collection: collectionId,
-      collectionName,
-      variable: variableId,
-      variableName,
-      variableDefinition,
       statusUrl: harmonyJob.links[2].href,
-      collections: collectionInfo,
-      granuleCount,
+      collections: collectionsInfo,
     };
 
     res.send(cmrResults);
