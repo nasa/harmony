@@ -7,7 +7,7 @@ import axios from 'axios';
 import { Readable } from 'stream';
 import { buffer, Units } from '@turf/turf';
 import { v4 as uuid } from 'uuid';
-import { CmrQuery, queryCollectionUsingMultipartForm } from '../util/cmr';
+import { CmrQuery, getUmmCollectionsByIds, queryCollectionUsingMultipartForm } from '../util/cmr';
 import env from '../util/env';
 import { keysToLowerCase } from '../util/object';
 import { defaultObjectStore } from '../util/object-store';
@@ -17,6 +17,7 @@ import knexfile from '../../../../db/knexfile';
 import { knex } from 'knex';
 import * as querystring from 'querystring';
 import { Logger } from 'winston';
+// import { respond } from 'xstate/lib/actions';
 // import { FileStore } from '../util/object-store/file-store';
 
 /**
@@ -229,6 +230,56 @@ function logPerf(startTime, msg): DOMHighResTimeStamp {
 
 /**
  * TODO
+ */
+export async function getUsageAdvice(collectionIds, token): Promise<string> {
+  try {
+    const collectionMetadata = await getUmmCollectionsByIds({}, collectionIds, token);
+    const descriptions = collectionMetadata.map(c => (c.umm as any).Abstract);
+
+    console.log(`Collection descriptions are ${descriptions}`);
+    const client = new BedrockRuntimeClient({ region: 'us-west-2' });
+    const inputText = `I will provide you with three different dataset descriptions.
+    Based on those descriptions explain how each dataset is useful.
+    DATASET 1:
+    ${descriptions[0]}
+
+    DATASET 2:
+    ${descriptions[1]}
+
+    DATASET 3:
+    ${descriptions[2]}`;
+
+    const titanConfig = {
+      inputText,
+      textGenerationConfig: {
+        maxTokenCount: 8192,
+        stopSequences: [],
+        temperature: 0,
+        topP: 1,
+      },
+    };
+
+    const queryModelId = 'amazon.titan-text-express-v1';
+
+    const response = await client.send(new InvokeModelCommand({
+      body: JSON.stringify(titanConfig),
+      modelId: queryModelId,
+      contentType: 'application/json',
+      accept: 'application/json',
+    }));
+    const responseBody = await JSON.parse(new TextDecoder().decode(response.body));
+    // const responseBody = await response.body.text(); // Properly consume the response stream
+    // const parsedBody = JSON.parse(responseBody);
+    console.log(`Usage description response body: ${JSON.stringify(responseBody)}`);
+    const output = responseBody.results[0].outputText;
+    return output;
+  } catch (e) {
+    console.log('Failed to get collection explanations');
+  }
+}
+
+/**
+ * TODO
  * @param req - The request sent by the client
  * @param res - The response to send to the client
  * @param next - The next function in the call chain
@@ -317,6 +368,9 @@ export async function freeTextGetCmrResults(
 
     console.log(`Top 3 collections with granules matching spatial and temporal search: ${JSON.stringify(collConceptIds)}`);
 
+    // const collectionUsage = await getUsageAdvice(collConceptIds, req.accessToken);
+    // console.log(`CDD collection usage: ${collectionUsage}`);
+
     const collectionsInfo = [];
     let i = 0;
     for (const collectionId of collConceptIds) {
@@ -331,6 +385,7 @@ export async function freeTextGetCmrResults(
       const collectionInfo = dbVarResults.rows;
       collectionInfo[0].collection_id = collectionId;
       collectionInfo[0].granule_count = collsWithGranules[i].granule_count;
+      // collectionInfo[0].collection_description = collectionUsage;
       collectionsInfo.push(collectionInfo);
       i = i + 1;
     }
@@ -344,9 +399,24 @@ export async function freeTextGetCmrResults(
 
     // Submit the request off to harmony - TODO figure out shapefile and temporal
     // const temporal = getTemporalQueryParam(temporalParam);
+    console.log(`CDD: temporalParam is ${temporalParam}`);
     const queryParams = {} as unknown as any;
     if (outputFormat) {
       queryParams.format = outputFormat;
+    }
+    if (temporalParam) {
+      const [startDate, endDate] = temporalParam.split(',');
+
+      // Normalize each part to an ISO string
+      const normalizeDate = (date: string): string => {
+        // If the date already has a time component, use it as-is; otherwise, append `T00:00:00`
+        const normalized = date.includes('T') ? date : `${date}T00:00:00.000Z`;
+        return new Date(normalized).toISOString();
+      };
+
+      const startTime = normalizeDate(startDate);
+      const endTime = normalizeDate(endDate);
+      queryParams.subset = `time("${startTime}":"${endTime}")`;
     }
 
     const statusUrls = [];

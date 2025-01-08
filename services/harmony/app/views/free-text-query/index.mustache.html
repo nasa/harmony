@@ -547,7 +547,7 @@
           datasetId = datasetId + 1;
           const dataset = collectionInfo[0];
           dataSetInfo[datasetId - 1] = dataset;
-          // const datasetId = 1;
+
           const datasetElement = document.getElementById(`dataset-container-${datasetId}`);
 
           const datasetTitle = datasetElement.querySelector(`#dataset-title-${datasetId}`);
@@ -558,6 +558,9 @@
           link.target = '_blank';
           datasetTitle.appendChild(link);
           datasetTitle.appendChild(document.createTextNode(')'));
+
+          // const collectionUsage = document.getElementById(`collection-description-${datasetId}`);
+          // collectionUsage.textContent = dataset.collection_description;
 
           const variableTitle = datasetElement.querySelector(`#variable-title-${datasetId}`);
           variableTitle.textContent = `${dataset.variable_name} (${dataset.variable_id})`;
@@ -824,7 +827,7 @@
         map.fitBounds(geoJsonLayer.getBounds());
         statusElement.style.display = 'block';
 
-        status.innerHTML = 'Querying CMR';
+        status.innerHTML = 'Finding collections and variables';
         await getCmrResults(json);
         // pollJobStatus(json.statusUrl);
       } catch (error) {
