@@ -260,7 +260,7 @@ function jobRenderingFunctions(logger: Logger, requestQuery: Record<string, any>
  * @returns JobQuery
  */
 function tableQueryToJobQuery(tableQuery: TableQuery, isAdmin: boolean, user: string, jobIDs?: string[]): JobQuery {
-  const jobQuery: JobQuery = { where: {}, whereIn: {} };
+  const jobQuery: JobQuery = { where: {}, whereIn: {}, orderBy: { field: 'jobs.id', value: 'desc' } };
   if (tableQuery.sortGranules) {
     jobQuery.orderBy = {
       field: 'numInputGranules',
