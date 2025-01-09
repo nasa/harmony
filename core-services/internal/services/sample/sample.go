@@ -2,45 +2,62 @@ package sample
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
+	"time"
 
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/sqs"
+	logs "github.com/nasa/harmony/core-services/internal/log"
 	"github.com/nasa/harmony/core-services/internal/registry"
 )
 
-type User struct {
-	UserId    int    `db:"user_id"`
-	FirstName string `db:"first_name"`
-	LastName  string `db:"last_name"`
-	Email     string
-	Password  sql.NullString
+// Service example
+type SampleService struct{}
+
+func (p *SampleService) Name() string {
+	return "sample-service"
 }
 
-// MyPlugin example
-type MyPlugin struct{}
+func (p *SampleService) Execute(ctx context.Context) {
+	for {
+		listAWSQueues(ctx)
+		time.Sleep(60 * time.Second)
+	}
 
-func (p *MyPlugin) Name() string {
-	return "sample-plugin"
 }
 
-func (p *MyPlugin) Execute(ctx context.Context) {
-	fmt.Println("Executing Sample plugin")
-	// Query the database, storing results in a []User (wrapped in []interface{})
-	// people := []User{}
-	// contextValue := ctx.Value("data")
-	// var contextData = contextValue.(appcontext.ContextData)
-	// var db *sqlx.DB = contextData.DB
-
-	// db.Select(&people, "SELECT * FROM user ORDER BY first_name ASC")
-	// jane, jason := people[0], people[1]
-
-	// fmt.Printf("Jane: %#v\nJason: %#v\n", jane, jason)
-	// time.Sleep(30 * time.Second)
-	// fmt.Println("Panicking Sample plugin")
-	// panic("Faking a problem")
+func listAWSQueues(ctx context.Context) {
+	logger := logs.GetLoggerForContext(ctx)
+	logger.Info("Executing Sample service")
+	// CODE BELOW HERE IS JUST SCRATCH CODE TO TEST AWS SDK
+	sdkConfig, err := config.LoadDefaultConfig(context.TODO())
+	if err != nil {
+		logger.Info("Couldn't load default configuration. Have you set up your AWS account?")
+		logger.Error(err.Error())
+		return
+	}
+	sqsClient := sqs.NewFromConfig(sdkConfig)
+	logger.Info("Let's list the queues for your account.")
+	var queueUrls []string
+	paginator := sqs.NewListQueuesPaginator(sqsClient, &sqs.ListQueuesInput{})
+	for paginator.HasMorePages() {
+		output, err := paginator.NextPage(context.TODO())
+		if err != nil {
+			logger.Error(fmt.Sprintf("Couldn't get queues. Here's why: %v\n", err))
+			break
+		} else {
+			queueUrls = append(queueUrls, output.QueueUrls...)
+		}
+	}
+	if len(queueUrls) == 0 {
+		logger.Info("You don't have any queues!")
+	} else {
+		for _, queueUrl := range queueUrls {
+			logger.Info(fmt.Sprintf("\t%v\n", queueUrl))
+		}
+	}
 }
 
 func init() {
-	fmt.Println("SAMPLE PLUGIN")
-	registry.Register(&MyPlugin{})
+	registry.Register(&SampleService{})
 }

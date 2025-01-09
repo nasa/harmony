@@ -29,7 +29,7 @@ func RunService(ctx context.Context, ch chan Service, s Service) {
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
-				logger.Error("Recovered from panic:", r)
+				logger.Error(fmt.Sprintf("Recovered from panic: %v", r))
 				ch <- s
 			}
 		}()

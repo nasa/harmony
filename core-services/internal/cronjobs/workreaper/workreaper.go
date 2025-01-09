@@ -80,6 +80,8 @@ func deleteTerminalWorkflowSteps(ctx context.Context, notUpdatedForMinutes int, 
 			done = true
 		}
 	}
+
+	logger.Info(fmt.Sprintf("Done deleting workflow steps. Total workflow steps deleted: %d", totalDeleted))
 }
 
 func DeleteOldWork(ctx context.Context) {

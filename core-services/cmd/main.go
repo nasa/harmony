@@ -6,8 +6,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/service/sqs"
+	"github.com/go-logr/logr"
 
 	"github.com/nasa/harmony/core-services/internal/appcontext"
 	"github.com/nasa/harmony/core-services/internal/cronjobs/workreaper"
@@ -15,10 +14,11 @@ import (
 	"github.com/nasa/harmony/core-services/internal/env"
 	logs "github.com/nasa/harmony/core-services/internal/log"
 	"github.com/nasa/harmony/core-services/internal/registry"
+	_ "github.com/nasa/harmony/core-services/internal/services/sample"
 
 	_ "github.com/jackc/pgx/v5/stdlib" // Standard library bindings for pgx
 
-	"github.com/robfig/cron"
+	"github.com/robfig/cron/v3"
 
 	_ "github.com/mattn/go-sqlite3"
 
@@ -42,14 +42,24 @@ func main() {
 	contextData := appcontext.ContextData{Logger: logger, DB: db.GetDB(logger)}
 	ctx = context.WithValue(ctx, appcontext.DataKey{}, contextData)
 
+	// create a wrapper to pass our logger to the cron manager
+	lgr := logr.FromSlogHandler(logger.Handler())
+
 	// set up cron jobs
-	// NOTE: cron jobs are run asynchronously, so a job will restart even if it is still running from
-	// the last time it was started. If this is a problem then the job should provide its own
-	// synchronization to abort restarts
-	crn := cron.New()
+	// skip jobs that are already running when their time comes around and recover from panics in jobs
+	// so that this application doesn't crash
+	crn := cron.New(cron.WithChain(
+		cron.Recover(lgr),
+		cron.SkipIfStillRunning(cron.DefaultLogger),
+	))
 	crn.AddFunc("@every 30s", func() { workreaper.DeleteOldWork(ctx) })
-	crn.AddFunc("@every 1m", func() { panic("Oh, no!") })
-	crn.AddFunc("0 8 15 * * *", func() { log.Print("OK") })
+	crn.AddFunc("* * * * *", func() {
+		logger.Info("Every minute")
+		time.Sleep(10 * time.Second)
+		logger.Info("Every minute done")
+	})
+	// test of panic recovery
+	// crn.AddFunc("@every 1m", func() { panic("Oh, no!") })
 	crn.Start()
 
 	// start up non-cron/long-running services
@@ -59,39 +69,10 @@ func main() {
 		registry.RunService(ctx, exitSignalChan, service)
 	}
 
-	// block forever
+	// loop forever while blocking on the error channel. restart any services that fail
 	for {
 		service := <-exitSignalChan
 		log.Print("Restarting service ", service.Name())
 		registry.RunService(ctx, exitSignalChan, service)
-
 	}
-
-	sdkConfig, err := config.LoadDefaultConfig(context.TODO())
-	if err != nil {
-		fmt.Println("Couldn't load default configuration. Have you set up your AWS account?")
-		fmt.Println(err)
-		return
-	}
-	sqsClient := sqs.NewFromConfig(sdkConfig)
-	fmt.Println("Let's list the queues for your account.")
-	var queueUrls []string
-	paginator := sqs.NewListQueuesPaginator(sqsClient, &sqs.ListQueuesInput{})
-	for paginator.HasMorePages() {
-		output, err := paginator.NextPage(context.TODO())
-		if err != nil {
-			log.Printf("Couldn't get queues. Here's why: %v\n", err)
-			break
-		} else {
-			queueUrls = append(queueUrls, output.QueueUrls...)
-		}
-	}
-	if len(queueUrls) == 0 {
-		fmt.Println("You don't have any queues!")
-	} else {
-		for _, queueUrl := range queueUrls {
-			fmt.Printf("\t%v\n", queueUrl)
-		}
-	}
-
 }
