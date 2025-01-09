@@ -1,4 +1,5 @@
 import { TemporalStringRange } from '../../../models/data-operation';
+import logger from '../../../util/log';
 import { ParameterParseError } from '../../../util/parameter-parsing-helpers';
 
 const unbounded_datetime = '..';
@@ -11,15 +12,29 @@ const unbounded_datetime = '..';
  * in most cases the sequence of minimum longitude, minimum latitude,
  * maximum longitude and maximum latitude.
  */
-export function parseBbox(value: string): number[] | null {
+export function parseBbox(value: string | string[] | number[]): number[] | null {
   if (value) {
-    const bbox: number[] = (value as string).split(',').map(Number);
-    if (bbox.length == 4) {
-      return bbox;
-    } else if (bbox.length == 6) {
-      return [bbox[0], bbox[1], bbox[3], bbox[4]];
-    } else {
-      throw new ParameterParseError('Parameter "bbox" can only have 4 or 6 numbers.');
+    try {
+      let bbox;
+      if (Array.isArray(value)) {
+        bbox = value.map(Number);
+      } else {
+        bbox = value.split(',').map(Number);
+      }
+      if (bbox.length === 4) {
+        return bbox;
+      } else if (bbox.length === 6) {
+        return [bbox[0], bbox[1], bbox[3], bbox[4]];
+      } else if (bbox.length > 0) {
+        throw new ParameterParseError('Parameter "bbox" can only have 4 or 6 numbers.');
+      }
+    } catch (e) {
+      if (e instanceof ParameterParseError) {
+        throw e;
+      } else {
+        logger.error(e);
+        throw new ParameterParseError('Unable to parse "bbox" parameter');
+      }
     }
   }
 }
