@@ -1,9 +1,10 @@
 import { NextFunction, Response } from 'express';
 import HarmonyRequest from '../../models/harmony-request';
 import { keysToLowerCase } from '../../util/object';
-import { mergeParameters } from '../../util/parameter-parsing-helpers';
+import { mergeParameters, ParameterParseError } from '../../util/parameter-parsing-helpers';
 import { parseBbox } from './util/helper';
 import { getDataCommon } from './get-data-common';
+import { RequestValidationError } from '../../util/errors';
 
 /**
  * Express middleware that responds to OGC API - EDR cube requests.
@@ -24,12 +25,18 @@ export function getDataForCube(
   const query = keysToLowerCase(req.query);
   const { operation } = req;
 
-  const bbox = parseBbox(query.bbox as string);
-  if (bbox) {
-    operation.boundingRectangle = bbox;
+  try {
+    const bbox = parseBbox(query.bbox as string);
+    if (bbox) {
+      operation.boundingRectangle = bbox;
+    }
+    next();
+  } catch (e) {
+    if (e instanceof ParameterParseError) {
+      throw new RequestValidationError(e.message);
+    }
+    throw e;
   }
-
-  next();
 }
 
 /**
