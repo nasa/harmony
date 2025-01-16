@@ -207,6 +207,7 @@ function bindEventListeners() {
   });
   document.querySelector('#create-label-link').addEventListener('click', (event) => {
     handleSubmitClick(event, 'PUT');
+    bsDropdown.hide();
   });
 }
 
