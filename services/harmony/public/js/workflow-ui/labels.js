@@ -36,6 +36,9 @@ async function handleSubmitClick(event, method) {
     PubSub.publish(
       'row-state-change',
     );
+  } else if (res.status === 400) {
+    const responseText = await res.text();
+    toasts.showUpper(responseText);
   } else {
     toasts.showUpper('The update failed.');
   }
@@ -98,6 +101,11 @@ function filterLabelsList() {
     if (isMatch) visibleCount += 1;
   }
   document.getElementById('no-match-li').style.display = visibleCount === 0 ? '' : 'none';
+  if (visibleCount === 0) {
+    const createLabelLink = document.querySelector('#create-label-link');
+    createLabelLink.textContent = `Create/apply "${searchValue}"?`;
+    createLabelLink.setAttribute('data-value', searchValue);
+  }
 }
 
 /**
@@ -196,6 +204,9 @@ function bindEventListeners() {
     promoteLabels(getLabelsIntersectionForSelectedJobs());
     const selectedJobsCount = jobsTable.getJobIds().length;
     setLabelLinksDisabled(selectedJobsCount, labelLinks);
+  });
+  document.querySelector('#create-label-link').addEventListener('click', (event) => {
+    handleSubmitClick(event, 'PUT');
   });
 }
 
