@@ -49,7 +49,14 @@ function start_port_forwarding() {
   fi
 
   kubectl wait -n harmony --for=condition=ready pod -l app="$service_name" --timeout=120s
-  nohup kubectl -n harmony port-forward "service/${service_name}" "${args[@]}" > "logs/port-forward-${service_name}.log" 2>&1 &
+  if [ "$USE_KRELAY" == "true" ]; then
+    echo "Using krelay to set up port forwarding for $service_name"
+    nohup kubectl relay "service/${service_name}" "${args[@]}" -n harmony > "logs/port-forward-${service_name}.log" 2>&1 &
+    # krelay does not have a good way to indicate that it is ready, so we have to restort to this for right now
+    sleep 3
+  else
+    nohup kubectl -n harmony port-forward "service/${service_name}" "${args[@]}" > "logs/port-forward-${service_name}.log" 2>&1 &
+  fi
   echo "Port forwarding started for service: ${service_name}, port pairs: ${port_pairs[*]}"
 }
 
