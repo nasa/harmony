@@ -7,7 +7,10 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func InitEnvVars() {
+type HarmonyEnv struct {
+}
+
+func InitEnvVars() HarmonyEnv {
 	// read the env from .env
 	err := godotenv.Load()
 	if err != nil {
@@ -17,4 +20,6 @@ func InitEnvVars() {
 			log.Fatal("Error loading .env file")
 		}
 	}
+
+	return HarmonyEnv{}
 }

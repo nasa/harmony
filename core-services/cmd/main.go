@@ -21,18 +21,13 @@ import (
 	"github.com/robfig/cron/v3"
 
 	_ "github.com/mattn/go-sqlite3"
-
-	"github.com/go-playground/validator/v10"
 )
 
 const PLUGIN_RESTART_DELAY = 5 * time.Second
 
-// use a single instance of Validate, it caches struct info
-var validate *validator.Validate
-
 func main() {
-	// TODO is this better than using an implicitly called `init` function?
-	env.InitEnvVars()
+	baseEnv := env.InitEnvVars()
+	workReaperEnv := workreaper.InitEnv(baseEnv)
 
 	logger := logs.NewLogger()
 
@@ -52,7 +47,9 @@ func main() {
 		cron.Recover(lgr),
 		cron.SkipIfStillRunning(cron.DefaultLogger),
 	))
-	crn.AddFunc("@every 30s", func() { workreaper.DeleteOldWork(ctx) })
+	crn.AddFunc(workReaperEnv.WorkReaperCron, func() {
+		workreaper.DeleteOldWork(ctx, workReaperEnv)
+	})
 	crn.AddFunc("* * * * *", func() {
 		logger.Info("Every minute")
 		time.Sleep(10 * time.Second)
