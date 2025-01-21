@@ -90,6 +90,7 @@ describe('labels.js', () => {
       expect(blueLi.style.display).to.not.equal('none');
       expect(greenLi.style.display).to.equal('none');
       expect(yellowLi.style.display).to.equal('none');
+      expect(document.getElementById('labels-li').style.display).to.equal('');
     });
     it('shows a no matches list item when the search input value does not match any labels', () => {
       (document.querySelector('#label-search') as HTMLInputElement).value = 'bluez';
@@ -104,6 +105,7 @@ describe('labels.js', () => {
       expect(yellowLi.style.display).to.equal('none');
       expect(noMatchLi.style.display).to.not.equal('none');
       expect(noMatchLi.querySelector('#create-label-link').textContent).to.equal('Create/apply "bluez"?');
+      expect(document.getElementById('labels-li').style.display).to.equal('none');
     });
   });
   describe('showAllLabels', () => {
