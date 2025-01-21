@@ -52,7 +52,7 @@ function start_port_forwarding() {
   if [ "$USE_KRELAY" == "true" ]; then
     echo "Using krelay to set up port forwarding for $service_name"
     nohup kubectl relay "service/${service_name}" "${args[@]}" -n harmony > "logs/port-forward-${service_name}.log" 2>&1 &
-    # krelay does not have a good way to indicate that it is ready, so we have to restort to this for right now
+    # krelay does not have a good way to indicate that it is ready, so we have to resort to this for right now
     sleep 3
   else
     nohup kubectl -n harmony port-forward "service/${service_name}" "${args[@]}" > "logs/port-forward-${service_name}.log" 2>&1 &
