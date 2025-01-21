@@ -3,6 +3,8 @@ import jobsTable from './jobs/jobs-table.js';
 import toasts from './toasts.js';
 import PubSub from '../pub-sub.js';
 
+// eslint-disable-next-line import/no-mutable-exports
+let labelsModule;
 let bsDropdown;
 let labelLinks;
 let labelDropdown;
@@ -42,6 +44,44 @@ async function handleSubmitClick(event, method) {
   } else {
     toasts.showUpper('The update failed.');
   }
+  if (res.status === 201) {
+    labelsModule.insertNewLabelAlphabetically(labelName);
+  }
+}
+
+/**
+ * Inserts a new label item into the labels list in alphabetical order.
+ * @param {string} labelName - The name/value of the label to insert
+ */
+function insertNewLabelAlphabetically(labelName) {
+  const labelsListElement = document.getElementById('labels-list');
+
+  // Create the new label element
+  const newLabelElement = document.createElement('li');
+  newLabelElement.className = 'label-li';
+  newLabelElement.innerHTML = `<a class="dropdown-item label-item text-truncate" name="${labelName}" data-value="${labelName}" href="#">${labelName}</a>`;
+
+  // Get all existing label items
+  const labelItems = Array.from(labelsListElement.getElementsByClassName('label-li'))
+    .filter((item) => !item.classList.contains('label-clone')); // Exclude promoted clones
+
+  // Find the correct position to insert the new label
+  const insertIndex = labelItems.findIndex((item) => {
+    const itemText = item.querySelector('a').getAttribute('data-value')
+      .toLowerCase();
+    return itemText > labelName.toLowerCase();
+  });
+
+  // If no position found (should be at end) or no existing labels
+  if (insertIndex === -1) {
+    labelsListElement.appendChild(newLabelElement);
+  } else {
+    labelsListElement.insertBefore(newLabelElement, labelItems[insertIndex]);
+  }
+  newLabelElement.addEventListener('click', (event) => {
+    bsDropdown.hide();
+    handleSubmitClick(event, 'PUT');
+  }, false);
 }
 
 /**
@@ -85,6 +125,17 @@ function demoteLabels() {
 }
 
 /**
+ * Show or hide the list of labels.
+ * @param {boolean} show - true/false
+ */
+function showHideLabelsList(show) {
+  const labelsLi = document.getElementById('labels-li');
+  if (labelsLi) {
+    labelsLi.style.display = show ? '' : 'none';
+  }
+}
+
+/**
  * Filters the list of label items based on user input.
  */
 function filterLabelsList() {
@@ -100,22 +151,26 @@ function filterLabelsList() {
     labelItem.style.display = isMatch ? '' : 'none';
     if (isMatch) visibleCount += 1;
   }
-  document.getElementById('no-match-li').style.display = visibleCount === 0 ? '' : 'none';
+  document.getElementById('no-match-li').style.display = (visibleCount === 0 && searchValue !== '') ? '' : 'none';
   if (visibleCount === 0) {
     const createLabelLink = document.querySelector('#create-label-link');
     createLabelLink.textContent = `Create/apply "${searchValue}"?`;
     createLabelLink.setAttribute('data-value', searchValue);
   }
+  showHideLabelsList(visibleCount > 0);
 }
 
 /**
  * Unhides all label items.
  */
 function showAllLabels() {
+  let hasItems = false;
   const labelItems = document.querySelectorAll('#labels-list .label-li');
   for (const labelItem of labelItems) {
     labelItem.style.display = '';
+    hasItems = true;
   }
+  showHideLabelsList(hasItems);
 }
 
 /**
@@ -215,7 +270,7 @@ function bindEventListeners() {
  * The labeling dropdown object allows users to
  * add and remove labels from selected jobs.
  */
-export default {
+labelsModule = {
 
   /**
    * Initializes the labeling interactivity associated with
@@ -230,6 +285,8 @@ export default {
     if (labelDropdown) {
       bsDropdown = new bootstrap.Dropdown(labelDropdown);
     }
+    const hasItems = document.querySelectorAll('#labels-list .label-li').length > 0;
+    showHideLabelsList(hasItems);
     bindEventListeners();
     PubSub.subscribe(
       'job-selected',
@@ -244,4 +301,7 @@ export default {
   filterLabelsList,
   showAllLabels,
   toggleLabelNavVisibility,
+  insertNewLabelAlphabetically,
 };
+
+export default labelsModule;
