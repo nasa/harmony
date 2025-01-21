@@ -16,8 +16,9 @@ let labelNavItem;
  * (hits relevant Harmony url, shows user the response).
  * @param {Event} event - the click event
  * @param {string} method - the HTTP method
+ * @param {boolean} insertNew - insert a list element for the new label
  */
-async function handleSubmitClick(event, method) {
+async function handleSubmitClick(event, method, insertNew) {
   event.preventDefault();
   const labelName = event.target.getAttribute('data-value');
   const jobIds = jobsTable.getJobIds();
@@ -41,11 +42,11 @@ async function handleSubmitClick(event, method) {
   } else if (res.status === 400) {
     const responseText = await res.text();
     toasts.showUpper(responseText);
+    if (insertNew) {
+      labelsModule.insertNewLabelAlphabetically(labelName);
+    }
   } else {
     toasts.showUpper('The update failed.');
-  }
-  if (res.status === 201) {
-    labelsModule.insertNewLabelAlphabetically(labelName);
   }
 }
 
@@ -261,7 +262,7 @@ function bindEventListeners() {
     setLabelLinksDisabled(selectedJobsCount, labelLinks);
   });
   document.querySelector('#create-label-link').addEventListener('click', (event) => {
-    handleSubmitClick(event, 'PUT');
+    handleSubmitClick(event, 'PUT', true);
     bsDropdown.hide();
   });
 }
