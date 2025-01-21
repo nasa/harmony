@@ -11,6 +11,30 @@ let labelDropdown;
 let labelNavItem;
 
 /**
+ * Handle actions that are taken after adding/removing labels for jobs.
+ * @param {Response} res - the response from the labels endpoint
+ * @param {string} labelName - the name of the label that was added or removed
+ * @param {boolean} insertNew - whether to insert a new label list element
+ * @param {string} successMessage - success message to show the user
+ */
+async function handleLabelsResponse(res, labelName, insertNew, successMessage) {
+  if (res.status === 201 || res.status === 204) {
+    if (insertNew) {
+      labelsModule.insertNewLabelAlphabetically(labelName);
+    }
+    toasts.showUpper(successMessage);
+    PubSub.publish(
+      'row-state-change',
+    );
+  } else if (res.status === 400) {
+    const responseText = await res.text();
+    toasts.showUpper(responseText);
+  } else {
+    toasts.showUpper('The update failed.');
+  }
+}
+
+/**
  * Responds to a submit link click event by adding or removing
  * a label.
  * (hits relevant Harmony url, shows user the response).
@@ -34,20 +58,8 @@ async function handleSubmitClick(event, method, insertNew) {
     body: JSON.stringify({ jobId: jobIds, label: [labelName] }),
   });
   action = method === 'PUT' ? 'Added' : 'Removed';
-  if (res.status === 201 || res.status === 204) {
-    toasts.showUpper(`${action} "${labelName}" label for ${jobIds.length} job${postfix}.`);
-    PubSub.publish(
-      'row-state-change',
-    );
-  } else if (res.status === 400) {
-    const responseText = await res.text();
-    toasts.showUpper(responseText);
-    if (insertNew) {
-      labelsModule.insertNewLabelAlphabetically(labelName);
-    }
-  } else {
-    toasts.showUpper('The update failed.');
-  }
+  const successMessage = `${action} "${labelName}" label for ${jobIds.length} job${postfix}.`;
+  await handleLabelsResponse(res, labelName, insertNew, successMessage);
 }
 
 /**
