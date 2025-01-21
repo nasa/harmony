@@ -103,6 +103,7 @@ describe('labels.js', () => {
       expect(greenLi.style.display).to.equal('none');
       expect(yellowLi.style.display).to.equal('none');
       expect(noMatchLi.style.display).to.not.equal('none');
+      expect(noMatchLi.querySelector('#create-label-link').textContent).to.equal('Create/apply "bluez"?');
     });
   });
   describe('showAllLabels', () => {
