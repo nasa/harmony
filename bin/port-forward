@@ -63,6 +63,9 @@ function start_port_forwarding() {
 function stop_port_forwarding() {
   local service_name="$1"
   local process_name="kubectl -n harmony port-forward service/${service_name}"
+  if [ "$USE_KRELAY" == "true" ]; then
+    process_name="kubectl-relay service/${service_name}"
+  fi
   local running=$(pgrep -f "${process_name}")
   if [ -n "${running}" ]; then
     echo "Stopping port forwarding for service: ${service_name}"
@@ -76,6 +79,9 @@ function stop_port_forwarding() {
 function is_port_forwarding_running() {
   local service_name="$1"
   local process_name="kubectl -n harmony port-forward service/${service_name}"
+  if [ "$USE_KRELAY" == "true" ]; then
+    process_name="kubectl-relay service/${service_name}"
+  fi
   pgrep -f "${process_name}" >/dev/null
 }
 
