@@ -45,8 +45,10 @@ export default {
    * @param {string} text - the text for the toast
    */
   showUpper(text) {
-    setToastText(upperToastId, text);
-    toastObj[upperToastId].show();
+    if (Object.keys(toastObj).length) {
+      setToastText(upperToastId, text);
+      toastObj[upperToastId].show();
+    }
   },
 
   /**
@@ -54,7 +56,9 @@ export default {
    * @param {string} text - the text for the toast
    */
   showLower(text) {
-    setToastText(lowerToastId, text);
-    toastObj[lowerToastId].show();
+    if (Object.keys(toastObj).length) {
+      setToastText(lowerToastId, text);
+      toastObj[lowerToastId].show();
+    }
   },
 };

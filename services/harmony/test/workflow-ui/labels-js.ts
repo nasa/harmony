@@ -10,6 +10,26 @@ beforeEach(async () => {
 });
 
 describe('labels.js', () => { 
+  describe('handleLabelsResponse', () => {
+    it('inserts a new label when insertNew is true', async () => {
+      await Labels.handleLabelsResponse({ status: 201 }, 'a new one', true, 'it worked!');
+      const labelsListElement = document.getElementById('labels-list');
+      expect(labelsListElement.querySelector('a[name="a new one"]')).to.not.be.undefined;
+    });
+  });
+  describe('insertNewLabelAlphabetically', () => {
+    it('inserts a new label alphabetically, in the proper position', async () => {
+      await Labels.insertNewLabelAlphabetically('purple');
+      const labelsListElement = document.getElementById('labels-list');
+      const labelItems = Array.from(labelsListElement.getElementsByClassName('label-li'));
+      const insertIndex = labelItems.findIndex((item) => {
+        const itemText = item.querySelector('a').getAttribute('data-value')
+          .toLowerCase();
+        return itemText === 'purple';
+      });
+      expect(insertIndex).to.equal(2);
+    });
+  });
   describe('promoteLabels', () => {
     it('promotes the given list of labels', () => {
       const labelsListElement = document.getElementById('labels-list');

@@ -315,6 +315,7 @@ labelsModule = {
   showAllLabels,
   toggleLabelNavVisibility,
   insertNewLabelAlphabetically,
+  handleLabelsResponse,
 };
 
 export default labelsModule;
