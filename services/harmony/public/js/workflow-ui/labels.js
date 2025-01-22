@@ -265,10 +265,10 @@ function bindEventListeners() {
     demoteLabels();
     setLabelLinksEnabled(labelLinks);
     document.getElementById('label-search').value = '';
-    showAllLabels();
     document.getElementById('no-match-li').style.display = 'none';
   });
   labelDropdown.addEventListener('show.bs.dropdown', () => {
+    showAllLabels();
     promoteLabels(getLabelsIntersectionForSelectedJobs());
     const selectedJobsCount = jobsTable.getJobIds().length;
     setLabelLinksDisabled(selectedJobsCount, labelLinks);
