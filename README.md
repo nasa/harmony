@@ -23,6 +23,8 @@ built-in Kubernetes cluster (including `kubectl`) which can be enabled in prefer
 * [openssl](https://www.openssl.org/) Read [this installation guide](https://github.com/openssl/openssl/blob/master/NOTES-WINDOWS.md) if you're a Windows user and openssl is not installed on your machine already.
 * [envsubst](https://pypi.org/project/envsubst) - Used to substitute environment variable placeholders inside configuration files.
 * [Earthdata Login token in UAT](https://uat.urs.earthdata.nasa.gov) - You will need to create an account and then use the "Generate Token" link from your profile page to obtain a token.
+* (optional) [k9s](https://k9scli.io/) - An easy to use GUI for `kubectl`. `k9s` makes it easy to monitor and control your local kubernetes cluster.
+* (optional) [krelay](https://github.com/knight42/krelay?tab=readme-ov-file#installation) - If you are running into problems with port forwarding, `krelay` may help.
 
 2. Download this repository (or download the zip file from GitHub)
 ```bash
@@ -36,7 +38,12 @@ git clone https://github.com/nasa/harmony.git
   ```
    Edit the `.env` file if you want to add any image tags for a custom service (see the `env-defaults` file). You can skip this step for now if you just want to use the default service tags.
 
-4. Run the bootstrap script and answer the prompts (if any)
+4. (optional) Tell Harmony to use `krelay` for port forwarding. You must have installed `krelay` using the link above. This is only advised if you are having issues with the standard port forwarding. One advantage to `krelay` over the standard port forwarding is that with `krelay` the port forwarding will survive pod restarts.
+```bash
+export USE_KRELAY=true
+```
+
+5. Run the bootstrap script and answer the prompts (if any)
 ```bash
 cd harmony && ./bin/bootstrap-harmony
 ```
