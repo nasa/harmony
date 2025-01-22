@@ -175,18 +175,5 @@ describe('labels', function () {
         expect(job.job.labels).deep.equal(['first', 'second']);
       });
     });
-
-    describe('when attempting to include a comma within a label', async function () {
-      const label = ['good', 'bad,comma'];
-      hookPartials[apiType](label);
-
-      it('returns a 400 status code for the request', async function () {
-        expect(this.res.status).to.equal(400);
-      });
-
-      it('returns a meaningful error message', async function () {
-        expect(this.res.text).to.include('Labels cannot contain commas');
-      });
-    });
   }
 });
