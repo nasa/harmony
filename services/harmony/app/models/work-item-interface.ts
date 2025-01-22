@@ -9,12 +9,14 @@ export enum WorkItemStatus {
   SUCCESSFUL = 'successful',
   FAILED = 'failed',
   CANCELED = 'canceled',
+  EMPTY_RESULT = 'empty-result',
 }
 
 export const COMPLETED_WORK_ITEM_STATUSES = [
   WorkItemStatus.SUCCESSFUL,
   WorkItemStatus.FAILED,
   WorkItemStatus.CANCELED,
+  WorkItemStatus.EMPTY_RESULT,
 ];
 
 export interface WorkItemRecord {
