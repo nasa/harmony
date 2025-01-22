@@ -107,6 +107,7 @@ SAME_REGION_ACCESS_ROLE=same-region-access-role
 # Long polling wait time (in seconds) for queues
 QUEUE_LONG_POLLING_WAIT_TIME_SEC=20
 
+GIOVANNI_AVERAGING_SERVICES_ADAPTER_SERVICE_QUEUE_URLS='["giovanni-averaging-adapter:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/giovanni-averaging-adapter.fifo"]'
 GEOLOCO_SERVICE_QUEUE_URLS='["ldds/geoloco:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/geoloco.fifo"]'
 SUBSET_BAND_NAME_SERVICE_QUEUE_URLS='["ldds/subset-band-name:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/subset-band-name.fifo"]'
 GIOVANNI_TIME_SERIES_ADAPTER_SERVICE_QUEUE_URLS='["giovanni-time-series-adapter:1.0.0,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/giovanni-time-series-adapter.fifo"]'
