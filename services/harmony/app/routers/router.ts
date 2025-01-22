@@ -29,7 +29,7 @@ import { setLogLevel } from '../frontends/configuration';
 import getVersions from '../frontends/versions';
 import serviceInvoker from '../backends/service-invoker';
 import HarmonyRequest, { addRequestContextToOperation } from '../models/harmony-request';
-import { getServiceImageTag, getServiceImageTags, updateServiceImageTag, getServiceImageTagState, setServiceImageTagState, getServiceDeployment, getServiceDeployments } from '../frontends/service-image-tags';
+import { getServiceImageTag, getServiceImageTags, updateServiceImageTag, getServiceDeploymentsState, setServiceDeploymentsState, getServiceDeployment, getServiceDeployments } from '../frontends/service-image-tags';
 import cmrCollectionReader = require('../middleware/cmr-collection-reader');
 import cmrUmmCollectionReader = require('../middleware/cmr-umm-collection-reader');
 import env from '../util/env';
@@ -44,6 +44,8 @@ import { getAdminHealth, getHealth } from '../frontends/health';
 import handleLabelParameter from '../middleware/label';
 import { addJobLabels, deleteJobLabels } from '../frontends/labels';
 import handleJobIDParameter from '../middleware/job-id';
+import earthdataLoginSkipped from '../middleware/earthdata-login-skipped';
+
 export interface RouterConfig {
   PORT?: string | number; // The port to run the frontend server on
   BACKEND_PORT?: string | number; // The port to run the backend server on
@@ -51,7 +53,7 @@ export interface RouterConfig {
   // True if we should run example services, false otherwise.  Should be false
   // in production.  Defaults to true until we have real HTTP services.
   EXAMPLE_SERVICES?: string;
-  skipEarthdataLogin?: string; // True if we should skip using EDL
+  USE_EDL_CLIENT_APP?: string; // True if we use the EDL client app
   USE_HTTPS?: string; // True if the server should use https
 }
 
@@ -73,7 +75,7 @@ function logged(fn: RequestHandler): RequestHandler {
     const startTime = new Date().getTime();
     try {
       child.silly('Invoking middleware');
-      return fn(req, res, next);
+      await fn(req, res, next);
     } finally {
       const msTaken = new Date().getTime() - startTime;
       child.silly('Completed middleware', { durationMs: msTaken });
@@ -151,10 +153,10 @@ const authorizedRoutes = [
  * Creates and returns an express.Router instance that has the middleware
  * and handlers necessary to respond to frontend service requests
  *
- * @param skipEarthdataLogin - Opt to skip Earthdata Login
+ * @param USE_EDL_CLIENT_APP - Opt to skip Earthdata Login
  * @returns A router which can respond to frontend service requests
  */
-export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): express.Router {
+export default function router({ USE_EDL_CLIENT_APP = 'false' }: RouterConfig): express.Router {
   const result = express.Router();
 
   const secret = process.env.COOKIE_SECRET;
@@ -174,10 +176,11 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   // a bucket.
   result.post(collectionPrefix('(ogc-api-coverages)'), asyncHandler(shapefileUpload()));
 
-  result.use(logged(earthdataLoginTokenAuthorizer(authorizedRoutes)));
-
-  if (`${skipEarthdataLogin}` !== 'true') {
+  if (`${USE_EDL_CLIENT_APP}` !== 'false') {
+    result.use(logged(earthdataLoginTokenAuthorizer(authorizedRoutes)));
     result.use(logged(earthdataLoginOauthAuthorizer(authorizedRoutes)));
+  } else {
+    result.use(logged(earthdataLoginSkipped));
   }
 
   result.use('/core/*', core);
@@ -313,8 +316,8 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   result.put('/service-image-tag/:service', jsonParser, asyncHandler(updateServiceImageTag));
   result.get('/service-deployment', asyncHandler(getServiceDeployments));
   result.get('/service-deployment/:id', asyncHandler(getServiceDeployment));
-  result.get('/service-deployments-state', asyncHandler(getServiceImageTagState));
-  result.put('/service-deployments-state', jsonParser, asyncHandler(setServiceImageTagState));
+  result.get('/service-deployments-state', asyncHandler(getServiceDeploymentsState));
+  result.put('/service-deployments-state', jsonParser, asyncHandler(setServiceDeploymentsState));
 
   result.get('/*', () => { throw new NotFoundError('The requested page was not found.'); });
   result.post('/*', () => { throw new NotFoundError('The requested POST page was not found.'); });

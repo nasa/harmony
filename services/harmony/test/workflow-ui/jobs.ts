@@ -91,7 +91,7 @@ const sidJob4 = buildJob({
 });
 
 describe('Workflow UI jobs route', function () {
-  hookServersStartStop({ skipEarthdataLogin: false });
+  hookServersStartStop({ USE_EDL_CLIENT_APP: true });
 
   before(async function () {
     await truncateAll();
@@ -181,9 +181,9 @@ describe('Workflow UI jobs route', function () {
       });
 
       it('displays the sorted labels for the user\'s jobs', function () {
-        const listing = this.res.text;  
+        const listing = this.res.text;
         expect(listing).to.contain(mustache.render(
-          '{{#labels}} <span class="badge bg-label" title="{{.}}">{{.}}</span>{{/labels}}', 
+          '{{#labels}} <span class="badge bg-label" title="{{.}}">{{.}}</span>{{/labels}}',
           { labels: ['1st-label', 'blue-label', 'yellow-label', 'z-last-label'] }));
       });
 
@@ -193,7 +193,7 @@ describe('Workflow UI jobs route', function () {
       });
     });
 
-    describe('who has 0 jobs', function () { 
+    describe('who has 0 jobs', function () {
       hookWorkflowUIJobs({ username: 'eve' });
       it('the paging descriptor makes sense', function () {
         const listing = this.res.text;
@@ -403,6 +403,10 @@ describe('Workflow UI jobs route', function () {
         expect(listing).to.not.contain('status: successful');
         expect(listing).to.not.contain('status: running');
       });
+      it('returns the select all jobs checkbox to support actions like tagging', async function () {
+        const response = this.res.text;
+        expect(response).contains('<input id="select-jobs" type="checkbox" title="select/deselect all jobs" autocomplete="off">');
+      });
     });
 
     describe('who filters by status IN [failed, successful]', function () {
@@ -442,6 +446,14 @@ describe('Workflow UI jobs route', function () {
         const listing = this.res.text;
         expect(listing).to.not.contain('user: jo');
         expect(listing).to.contain('user: woody');
+      });
+    });
+
+    describe('who filters by an valid username via the nonadmin route', function () {
+      hookWorkflowUIJobs({ username: 'adam', tableFilter: '[{"value":"user: adam"}]' });
+      it('ignores the username because the user filter is unavailable via the nonadmin route', function () {
+        const listing = this.res.text;
+        expect(listing).to.not.contain('user: adam');
       });
     });
 
@@ -589,10 +601,10 @@ describe('Workflow UI jobs route', function () {
         it('displays the labels for those jobs', function () {
           const listing = this.res.text;
           expect(listing).to.contain(mustache.render(
-            '{{#labels}} <span class="badge bg-label" title="{{.}}">{{.}}</span>{{/labels}}', 
+            '{{#labels}} <span class="badge bg-label" title="{{.}}">{{.}}</span>{{/labels}}',
             { labels: ['1st-label', 'blue-label', 'yellow-label', 'z-last-label'] }));
           expect(listing).to.contain(mustache.render(
-            '{{#labels}} <span class="badge bg-label" title="{{.}}">{{.}}</span>{{/labels}}', 
+            '{{#labels}} <span class="badge bg-label" title="{{.}}">{{.}}</span>{{/labels}}',
             { labels: ['label-1', 'label-2'] }));
         });
       });
@@ -695,6 +707,10 @@ describe('Workflow UI jobs route', function () {
           const listing = this.res.text;
           expect(listing).to.contain(mustache.render('{{provider}}', { provider: 'provider: provider_b' }));
         });
+        it('does not return the select all checkbox since there are no nonterminal jobs', async function () {
+          const response = this.res.text;
+          expect(response).not.contains('<input id="select-jobs"');
+        });
       });
 
       describe('and the admin filters by provider NOT IN [provider_b, provider_z]', function () {
@@ -729,7 +745,7 @@ describe('Workflow UI jobs route', function () {
           const netcdfToZarrTd = mustache.render('<td>{{service}}</td>', { service: 'harmony/netcdf-to-zarr' });
           const netcdfToZarrRegExp = new RegExp(netcdfToZarrTd, 'g');
           expect((listing.match(netcdfToZarrRegExp) || []).length).to.equal(1);
-  
+
           expect(listing).to.contain(`<span class="badge rounded-pill bg-danger">${JobStatus.FAILED.valueOf()}</span>`);
           expect(listing).to.not.contain(`<span class="badge rounded-pill bg-success">${JobStatus.SUCCESSFUL.valueOf()}</span>`);
           expect(listing).to.not.contain(`<span class="badge rounded-pill bg-info">${JobStatus.RUNNING.valueOf()}</span>`);

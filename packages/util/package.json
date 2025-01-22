@@ -25,7 +25,9 @@
       ".tsx"
     ],
     "exclude": [
-      "**/*.d.ts"
+      "node_modules/**",
+      "build/**",
+      "test/**"
     ],
     "lines": 70,
     "reporter": [
@@ -34,11 +36,6 @@
     ],
     "include": [
       "**/*.ts"
-    ],
-    "exclude": [
-      "node_modules/**",
-      "build/**",
-      "test/**"
     ]
   },
   "keywords": [
@@ -49,34 +46,39 @@
   ],
   "author": "NASA EOSDIS Harmony team",
   "license": "Apache-2.0",
+  "lockedDependenciesComments": {
+    "chai": "Version 5 requires ESM which breaks running mocha. It's not clear what changes need to be made to fix it.",
+    "@types/chai": "Chai dependency is locked",
+    "eslint": "The eslint-config-airbnb-typescript project is no longer maintained and limits eslint < 9."
+  },
   "dependencies": {
     "class-validator": "^0.14.0",
     "dotenv": "^16.3.1",
     "lodash": "^4.17.21",
-    "reflect-metadata": "^0.1.13",
-    "typescript": "^5.1.6",
+    "reflect-metadata": "^0.2.2",
     "winston": "^3.10.0"
   },
   "devDependencies": {
-    "@types/chai": "^4.2.22",
-    "chai": "^4.3.7",
-    "eslint": "^8.43.0",
+    "@types/chai": ">=4.2.22 <5.0.0",
+    "chai": ">=4.3.7 <5.0.0",
+    "eslint": ">=8.43.0 <9.0.0",
     "eslint-config-airbnb-base": "^15.0.0",
-    "eslint-config-airbnb-typescript": "^17.0.0",
+    "eslint-config-airbnb-typescript": "^18.0.0",
     "eslint-plugin-import": "^2.27.5",
-    "eslint-plugin-jsdoc": "^46.2.6",
+    "eslint-plugin-jsdoc": "^50.6.0",
     "eslint-plugin-node": "^11.1.0",
-    "eslint-plugin-tsdoc": "^0.2.17",
-    "mocha": "^10.2.0",
-    "nyc": "^15.1.0",
-    "rimraf": "^5.0.1",
+    "eslint-plugin-tsdoc": "^0.4.0",
+    "mocha": "^11.0.1",
+    "nyc": "^17.1.0",
+    "rimraf": "^6.0.1",
     "strict-npm-engines": "^0.0.1",
     "tmp-promise": "^3.0.3",
-    "ts-node-dev": "^2.0.0",
     "ts-node": "^10.4.0",
-    "typescript": "^4.4.4"
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.7.2"
   },
   "overrides": {
-    "braces": "^3.0.3"
+    "braces": "^3.0.3",
+    "cross-spawn": "7.0.5"
   }
 }

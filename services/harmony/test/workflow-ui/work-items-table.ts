@@ -79,7 +79,7 @@ const otherItem3 = buildWorkItem({ jobID: otherJob.jobID, status: WorkItemStatus
 const logsTableHeader = '>logs</th>';
 
 describe('Workflow UI work items table route', function () {
-  hookServersStartStop({ skipEarthdataLogin: false });
+  hookServersStartStop({ USE_EDL_CLIENT_APP: true });
 
   before(async function () {
     await truncateAll();
@@ -227,7 +227,7 @@ describe('Workflow UI work items table route', function () {
           expect(listing).to.contain(mustache.render(
             `{{#labels}}
           <span class="badge bg-label">{{.}}</span>
-          {{/labels}}`, 
+          {{/labels}}`,
             { labels: targetJob.labels }));
           expect(listing).to.contain('job-url-text');
           expect(listing).to.contain('copy-request');

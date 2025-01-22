@@ -173,6 +173,14 @@ LABEL_FILTER_COMPLETION_COUNT=10
 # For example, if OAUTH_HOST points to UAT EDL, downloading data from a
 # TEA endpoint that's integrated with PROD EDL will fail.
 
+# Setting USE_EDL_CLIENT_APP to false and setting an EDL_TOKEN will prevent making
+# use of any Earthdata login API calls and instead pass that EDL_TOKEN to CMR and
+# backend service downloads. By bypassing EDL all admin features in harmony will be
+# disabled since harmony will not authenticate with EDL using a client app.
+
+USE_EDL_CLIENT_APP=true
+EDL_TOKEN=
+
 OAUTH_CLIENT_ID=
 OAUTH_UID=
 OAUTH_PASSWORD=
@@ -229,10 +237,11 @@ LOG_STDOUT=false
 # The services to deploy locally. A comma-separated list of services that the bin/deploy-services
 # script should attempt to deploy. By default only a couple of harmony example services are deployed.
 # When specifying another service to be deployed make sure the name matches the lower and dash case
-# prefix for the image variable name. For example to deploy the Giovanni adapter image which has
-# a variable name of GIOVANNI_ADAPTER_IMAGE you would specify giovanni-adapter (converting to lowercase
-# and dash case and dropping _IMAGE. Make sure if the image for the service is not publicly available
-# that you have built the docker image locally, otherwise the service will fail to start.
+# prefix for the image variable name. For example to deploy the harmony service example image which
+# has a variable name of HARMONY_SERVICE_EXAMPLE_IMAGE you would specify harmony-service-example
+# (converting to lowercase, converting to dash case, and dropping _IMAGE). Make sure if the image
+# for the service is not publicly available that you have built the docker image locally, otherwise
+# the service will fail to start.
 LOCALLY_DEPLOYED_SERVICES=harmony-service-example
 
 # Local development: Use the following to set the Kubernetes context used by start scripts
@@ -258,6 +267,13 @@ DEFAULT_POD_GRACE_PERIOD_SECS=14400
 # Hostname for k8s services to use to connect to Localstack - this is only used by the
 # script that creates the env var config map for local development
 LOCALSTACK_K8S_HOST=localstack
+
+###########################################################################
+#                            Feature Toggles                              #
+###########################################################################
+
+# Toggle whether the labeling dropdown should be enabled in the workflow ui
+UI_LABELING=true
 
 ###########################################################################
 #                             Prometheus Config                           #
@@ -480,12 +496,12 @@ QUERY_CMR_REQUESTS_MEMORY=128Mi
 QUERY_CMR_LIMITS_CPU=128m
 QUERY_CMR_LIMITS_MEMORY=512Mi
 
-GIOVANNI_ADAPTER_IMAGE=harmonyservices/giovanni-adapter:latest
-GIOVANNI_ADAPTER_REQUESTS_CPU=128m
-GIOVANNI_ADAPTER_REQUESTS_MEMORY=128Mi
-GIOVANNI_ADAPTER_LIMITS_CPU=128m
-GIOVANNI_ADAPTER_LIMITS_MEMORY=512Mi
-GIOVANNI_ADAPTER_INVOCATION_ARGS='node services/giovanni-adapter/app/cli'
+GIOVANNI_TIME_SERIES_ADAPTER_IMAGE=giovanni-time-series-adapter:1.0.0
+GIOVANNI_TIME_SERIES_ADAPTER_REQUESTS_CPU=128m
+GIOVANNI_TIME_SERIES_ADAPTER_REQUESTS_MEMORY=128Mi
+GIOVANNI_TIME_SERIES_ADAPTER_LIMITS_CPU=128m
+GIOVANNI_TIME_SERIES_ADAPTER_LIMITS_MEMORY=512Mi
+GIOVANNI_TIME_SERIES_ADAPTER_INVOCATION_ARGS='python3 -m giovanni_time_series_adapter'
 
 GEOLOCO_IMAGE=ldds/geoloco:latest
 GEOLOCO_REQUESTS_CPU=128m
@@ -528,3 +544,9 @@ OPERA_RTC_S1_BROWSE_REQUESTS_MEMORY=512Mi
 OPERA_RTC_S1_BROWSE_LIMITS_MEMORY=512Mi
 OPERA_RTC_S1_BROWSE_INVOCATION_ARGS='/usr/local/bin/_entrypoint.sh python -m opera_rtc_s1_browse.harmony_service'
 OPERA_RTC_S1_BROWSE_SERVICE_QUEUE_URLS='["ghcr.io/asfhyp3/opera-rtc-s1-browse:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/opera-rtc-s1-browse.fifo"]'
+
+HARMONY_SMAP_L2_GRIDDER_IMAGE=ghcr.io/nasa/harmony-smap-l2-gridder:latest
+HARMONY_SMAP_L2_GRIDDER_REQUESTS_MEMORY=128Mi
+HARMONY_SMAP_L2_GRIDDER_LIMITS_MEMORY=8Gi
+HARMONY_SMAP_L2_GRIDDER_INVOCATION_ARGS='python -m harmony_service'
+HARMONY_SMAP_L2_GRIDDER_SERVICE_QUEUE_URLS='["ghcr.io/nasa/harmony-smap-l2-gridder:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/harmony-smap-l2-gridder.fifo"]'

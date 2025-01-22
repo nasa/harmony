@@ -7,12 +7,12 @@ import hookServersStartStop from '../helpers/servers';
 import db from '../../app/util/db';
 import env from '../../app/util/env';
 import { stub } from 'sinon';
-import { getLabelsForUser } from '../../app/models/label';
+import { getRecentLabelsForUser } from '../../app/models/label';
 
 describe('Get Labels', function () {
   const joeJob = buildJob({ username: 'joe' });
   const jillJob = buildJob({ username: 'jill' });
-  hookServersStartStop({ skipEarthdataLogin: false });
+  hookServersStartStop({ USE_EDL_CLIENT_APP: true });
   before(async function () {
     await truncateAll();
     const trx = await db.transaction();
@@ -27,7 +27,7 @@ describe('Get Labels', function () {
         await addJobsLabels(this.frontend, [joeJob.jobID], ['foo', 'bar'], 'joe');
         await addJobsLabels(this.frontend, [jillJob.jobID], ['foo', 'boo'], 'jill');
         // get up to ten labels across all users
-        const labels = await getLabelsForUser(
+        const labels = await getRecentLabelsForUser(
           db,
           'adam',
           10,
@@ -44,7 +44,7 @@ describe('Get Labels', function () {
       await addJobsLabels(this.frontend, [joeJob.jobID], ['two'], 'joe');
       await addJobsLabels(this.frontend, [jillJob.jobID], ['three', 'four'], 'jill');
       // get up to three labels across all users
-      const labels = await getLabelsForUser(
+      const labels = await getRecentLabelsForUser(
         db,
         'adam',
         3,
@@ -58,7 +58,7 @@ describe('Get Labels', function () {
 describe('Job label CRUD', function () {
   const envLabelsAllowListStub = stub(env, 'labelsAllowList').get(() => 'butt');
   const envLabelsForbidListStub = stub(env, 'labelsForbidList').get(() => 'buzz');
-  hookServersStartStop({ skipEarthdataLogin: false });
+  hookServersStartStop({ USE_EDL_CLIENT_APP: true });
   hookTransaction();
   const joeJob1 = buildJob({ username: 'joe' });
   before(async function () {

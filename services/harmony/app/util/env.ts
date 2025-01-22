@@ -1,4 +1,4 @@
-import { IsInt, IsNotEmpty, IsPositive, Matches, Min } from 'class-validator';
+import { IsBoolean, IsInt, IsNotEmpty, IsPositive, Matches, Min } from 'class-validator';
 import { HarmonyEnv, memorySizeRegex } from '@harmony/util/env';
 import _ from 'lodash';
 import * as path from 'path';
@@ -16,16 +16,12 @@ class HarmonyServerEnv extends HarmonyEnv {
   @IsNotEmpty()
   adminGroupId: string;
 
-  @IsNotEmpty()
   oauthClientId: string;
 
-  @IsNotEmpty()
   oauthHost: string;
 
-  @IsNotEmpty()
   oauthPassword: string;
 
-  @IsNotEmpty()
   oauthUid: string;
 
   @IsNotEmpty()
@@ -120,6 +116,14 @@ class HarmonyServerEnv extends HarmonyEnv {
   @IsInt()
   @Min(1)
   labelFilterCompletionCount: number;
+
+  @IsBoolean()
+  uiLabeling: boolean;
+
+  @IsBoolean()
+  useEdlClientApp: boolean;
+
+  edlToken: string;
 }
 
 const localPath = path.resolve(__dirname, '../../env-defaults');

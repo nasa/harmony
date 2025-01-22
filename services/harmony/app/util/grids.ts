@@ -41,7 +41,7 @@ export async function parseGridMiddleware(
     try {
       validateNoConflictingGridParameters(query);
       const gridName = query.grid;
-      const grids = await getGridsByName(gridName, req.accessToken );
+      const grids = await getGridsByName(req.context, gridName, req.accessToken );
       if (grids.length > 1) {
         req.context.logger.warn(`Multiple grids returned for name ${gridName}, choosing the first one returned by CMR.`);
       } else if (grids.length == 0) {

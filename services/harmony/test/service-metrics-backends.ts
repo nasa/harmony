@@ -65,7 +65,7 @@ async function createJobAndWorkItems(serviceID: string, jobStatus: JobStatus): P
 
 describe('Backend service metrics endpoint', function () {
 
-  hookServersStartStop({ skipEarthdataLogin: true });
+  hookServersStartStop({ USE_EDL_CLIENT_APP: true });
 
   describe('when hitting the service/metrics endpoint without serviceID parameter', function () {
     hookServiceMetrics();
@@ -101,7 +101,7 @@ describe('Backend service metrics endpoint', function () {
   });
 
   describe('when hitting the service/metrics endpoint with an existing serviceID', async function () {
-    const serviceID = 'harmony/query-cmr:latest';
+    const serviceID = 'harmony/query-cmr:stable';
 
     // The number of work items that should be returned for each of the job statuses
     const testParametersList = [

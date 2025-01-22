@@ -38,7 +38,7 @@ export const validOperationWithManyVariables = operationWithManyVariables.serial
 
 const exampleProps = {
   jobID: '1',
-  serviceID: 'harmony-services/query-cmr:latest',
+  serviceID: 'harmony-services/query-cmr:stable',
   stepIndex: 0,
   workItemCount: 10,
   operation: validOperation,

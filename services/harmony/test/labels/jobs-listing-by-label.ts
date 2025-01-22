@@ -5,7 +5,7 @@ import hookServersStartStop from '../helpers/servers';
 import db from '../../app/util/db';
 
 describe('Get jobs listing by label', function () {
-  hookServersStartStop({ skipEarthdataLogin: false });
+  hookServersStartStop({ USE_EDL_CLIENT_APP: true });
   const joeJob1 = buildJob({ username: 'joe' });
   const joeJob2 = buildJob({ username: 'joe' });
   const jillJob1 = buildJob({ username: 'jill' });

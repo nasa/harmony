@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# stop any running krelay pods
+kubectl delete pods -l app=krelay-server
+
 # start postgress, localstack, and harmony in the harmony namespace in the local kubernetes cluster
 
 ./bin/start-postgres-localstack

@@ -28,7 +28,7 @@ import { defaultObjectStore } from '../../app/util/object-store';
 function commonValidationSteps(
   app: Application, res: Response, version: string, collection: string, variableName: string,
 ): Test {
-  const shapefileHeader = res.header['set-cookie'].filter((cookie) => {
+  const shapefileHeader = (res.header['set-cookie'] as unknown as string[]).filter((cookie) => {
     const decoded = decodeURIComponent(cookie);
     const parsed = parse(decoded);
     return parsed.shapefile;
@@ -48,7 +48,7 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
   const variableName = 'red_var';
   const version = '1.0.0';
 
-  hookServersStartStop({ skipEarthdataLogin: false });
+  hookServersStartStop({ USE_EDL_CLIENT_APP: true });
 
   const cmrRespStr = fs.readFileSync('./test/resources/africa_shapefile_post_response.json');
   const cmrResp = JSON.parse(cmrRespStr.toString());

@@ -22,6 +22,7 @@ The returned JSON response is a map of canonical service names to tags:
   "harmony-service-example": "latest",
   "harmony-netcdf-to-zarr": "latest",
   "harmony-regridder": "latest",
+  "harmony-smap-l2-gridder": "latest",
   "swath-projector": "latest",
   "hoss": "latest",
   "sds-maskfill": "latest",
@@ -31,7 +32,7 @@ The returned JSON response is a map of canonical service names to tags:
   "podaac-ps3": "latest",
   "podaac-netcdf-converter": "latest",
   "query-cmr": "latest",
-  "giovanni-adapter": "latest",
+  "giovanni-time-series-adapter": "latest",
   "geoloco": "latest",
   "subset-band-name": "latest"
 }
@@ -114,7 +115,7 @@ The returned JSON response has the fields indicating the current status of the s
 {
   "deploymentId": "befb50e0-e467-4776-86c8-e7218f1123cc",
   "username": "yliu10",
-  "service": "giovanni-adapter",
+  "service": "harmony-service-example",
   "tag": "new-version",
   "regressionTestVersion": "1.0.0",
   "status": "successful",

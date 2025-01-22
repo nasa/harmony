@@ -66,11 +66,11 @@ As such it accepts parameters in the URL path as well as query parameters.
 | height | number of rows to return in the output coverage |
 | forceAsync | if "true", override the default API behavior and always treat the request as asynchronous |
 | format | the mime-type of the output format to return |
-| label | the label(s) to add for the job that runs the request. Multiple labels can be specified as a comma-separated list. A label can contain any characters up to a 255 character limit, but if a label contains commas the request can only be a POST with with the label field in the body. It is best practice to avoid commas in labels. Labels will be rejected if deemed inappropriate. Labels are always converted to lower case.
+| label | the label(s) to add for the job that runs the request. Multiple labels can be specified as a comma-separated list. A label can contain any characters except for commas up to a 255 character limit. Labels will be rejected if deemed inappropriate. Labels are always converted to lower case.
 | maxResults | limits the number of input files processed in the request |
 | skipPreview | if "true", override the default API behavior and never auto-pause jobs |
 | ignoreErrors | if "true", continue processing a request to completion even if some items fail. If "false" immediately fail the request. Defaults to true |
-| destinationUrl | destination url specified by the client; currently only s3 link urls are  supported (e.g. s3://my-bucket-name/mypath) and will result in the job being run asynchronously |
+| destinationUrl | destination url specified by the client; currently only s3 link urls are supported (e.g. s3://my-bucket-name/mypath) and will result in the job being run asynchronously |
 | variable | the variable(s) to be used for variable subsetting. Multiple variables can be specified as a comma-separated list. This parameter is only used if the url `variable` path element is "parameter_vars" |
 | average | requests the data to be averaged over either time or area |
 ---
@@ -120,7 +120,7 @@ Currently only the `/position`, `/cube`, `/trajectory` and `/area` routes are su
 |-----------|-------------|
 | concatenate | requests results to be concatenated into a single result |
 | forceAsync | if "true", override the default API behavior and always treat the request as asynchronous |
-| destinationUrl | destination url specified by the client; currently only s3 link urls are  supported (e.g. s3://my-bucket-name/mypath) and will result in the job being run asynchronously |
+| destinationUrl | destination url specified by the client; currently only s3 link urls are supported (e.g. s3://my-bucket-name/mypath) and will result in the job being run asynchronously |
 | granuleId | the CMR Granule ID for the granule which should be retrieved |
 | granuleName | passed to the CMR search as the readable_granule_name parameter. Supports * and ?  wildcards for multiple and single character matches. Wildcards can be used any place in the name, but leading wildcards are discouraged as they require a lot of resources for the underlying search |
 | grid | the name of the output grid to use for regridding requests. The name must match the UMM  |grid name in the CMR.

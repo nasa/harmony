@@ -244,7 +244,7 @@ async function validateUserIsInDeployerOrCoreGroup(
   req: HarmonyRequest, res: Response,
 ): Promise<boolean> {
   const { hasCorePermissions, isServiceDeployer } = await getEdlGroupInformation(
-    req.user, req.context.logger,
+    req.context, req.user,
   );
 
   if (!isServiceDeployer && !hasCorePermissions) {
@@ -556,7 +556,7 @@ export async function updateServiceImageTag(
  * @param res  - The response object
  * @param _next  - The next middleware in the chain
  */
-export async function getServiceImageTagState(
+export async function getServiceDeploymentsState(
   req: HarmonyRequest, res: Response, _next: NextFunction,
 ): Promise<void> {
   if (!hasCookieSecret(req) && ! await validateUserIsInDeployerOrCoreGroup(req, res)) return;
@@ -571,7 +571,7 @@ export async function getServiceImageTagState(
  * @param req - The request object
  * @param res  - The response object
  */
-export async function setServiceImageTagState(
+export async function setServiceDeploymentsState(
   req: HarmonyRequest, res: Response,
 ): Promise<void> {
   const validations = [

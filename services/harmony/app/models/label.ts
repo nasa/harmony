@@ -31,10 +31,10 @@ export function checkLabel(label: string): string {
  * Trim the whitespace from the beginning/end of a label and convert it to lowercase
  *
  * @param label - the label to normalize
- * @returns - label converted to lowercase with leading/trailing whitespace trimmed
+ * @returns - label converted to lowercase with leading/trailing whitespace trimmed and commas removed
  */
 export function normalizeLabel(label: string): string {
-  return label.trim().toLowerCase();
+  return label.trim().toLowerCase().replaceAll(',', '');
 }
 
 /**
@@ -133,6 +133,26 @@ export async function getLabelsForJob(
   const rows = await query;
 
   return rows.map((row) => row.value);
+}
+
+/**
+ * Returns the labels for a given user
+ * @param trx - the transaction to use for querying
+ * @param username - the username associated with the labels
+ *
+ * @returns A promise that resolves to an array of strings, one for each label
+ */
+export async function getLabelsForUser(
+  trx: Transaction,
+  username: string,
+): Promise<string[]> {
+  const query = trx(USERS_LABELS_TABLE)
+    .select(['value'])
+    .where({ username })
+    .orderBy('value');
+
+  const rows = (await query).map((object) => object.value);
+  return rows;
 }
 
 /**
@@ -238,7 +258,7 @@ export async function deleteLabelsFromJobs(
  * @returns up to `count` most recently used labels for the user, or for all users if this is
  * coming from an /admin route
  */
-export async function getLabelsForUser(
+export async function getRecentLabelsForUser(
   trx: Transaction,
   username: string,
   count: number,

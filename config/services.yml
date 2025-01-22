@@ -48,9 +48,9 @@ https://cmr.earthdata.nasa.gov:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
 
-  - name: gesdisc/giovanni
+  - name: giovanni-time-series-adapter
     description: |
-      A service to compose the Giovanni URL and invoke Giovanni service to produce output file to visualize, analyze,
+      A service to compose the Giovanni URL for a time series and invoke Giovanni service to produce output file to visualize, analyze,
       and access vast amounts of Earth science remote sensing data without having to download the data.
     data_operation_version: "0.20.0"
     has_granule_limit: false
@@ -66,9 +66,9 @@ https://cmr.earthdata.nasa.gov:
           STAGING_PATH: public/gesdisc/giovanni
     umm_s: S2739607260-GES_DISC
     collections:
-      - id: C1598621093-GES_DISC
+      - id: C1276812830-GES_DISC
         variables:
-          - V2548642027-GES_DISC
+          - V3171509330-GES_DISC
     capabilities:
       subsetting:
         temporal: true
@@ -77,7 +77,7 @@ https://cmr.earthdata.nasa.gov:
       output_formats:
         - text/csv
     steps:
-      - image: !Env ${GIOVANNI_ADAPTER_IMAGE}
+      - image: !Env ${GIOVANNI_TIME_SERIES_ADAPTER_IMAGE}
         operations: ["variableSubset", "temporalSubset"]
 
   - name: podaac/l2-subsetter
@@ -584,6 +584,32 @@ https://cmr.earthdata.nasa.gov:
         is_sequential: true
       - image: !Env ${HARMONY_SERVICE_EXAMPLE_IMAGE}
 
+  - name: asf/opera-rtc-s1-browse
+    description: Service that generates GIBS-compliant browse imagery for the OPERA_L2_RTC-S1 collection
+    data_operation_version: "0.20.0"
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/asf/opera-rtc-s1-browse
+    umm_s: S3295265807-ASF
+    maximum_sync_granules: 0
+    capabilities:
+      concatenation: false
+      subsetting:
+        bbox: false
+        variable: false
+        temporal: false
+      output_formats:
+        - image/png
+      reprojection: true
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+      - image: !Env ${OPERA_RTC_S1_BROWSE_IMAGE}
+      - image: !Env ${HYBIG_IMAGE}
+
 https://cmr.uat.earthdata.nasa.gov:
   - name: harmony/download
     description: Service that performs no processing, it only returns download links for all of the matched granules from the CMR.
@@ -664,9 +690,9 @@ https://cmr.uat.earthdata.nasa.gov:
         is_sequential: true
       - image: !Env ${GEOLOCO_IMAGE}
 
-  - name: gesdisc/giovanni
+  - name: giovanni-time-series-adapter
     description: |
-      A service to compose the Giovanni URL and invoke Giovanni service to produce output file to visualize, analyze,
+      A service to compose the Giovanni URL for a time series and invoke Giovanni service to produce output file to visualize, analyze,
       and access vast amounts of Earth science remote sensing data without having to download the data.
     data_operation_version: "0.20.0"
     has_granule_limit: false
@@ -682,9 +708,9 @@ https://cmr.uat.earthdata.nasa.gov:
           STAGING_PATH: public/gesdisc/giovanni
     umm_s: S1258984104-GES_DISC
     collections:
-      - id: C1225808238-GES_DISC
+      - id: C1215802935-GES_DISC
         variables:
-          - V1256306287-GES_DISC
+          - V1268438218-GES_DISC
     capabilities:
       subsetting:
         temporal: true
@@ -693,7 +719,7 @@ https://cmr.uat.earthdata.nasa.gov:
       output_formats:
         - text/csv
     steps:
-      - image: !Env ${GIOVANNI_ADAPTER_IMAGE}
+      - image: !Env ${GIOVANNI_TIME_SERIES_ADAPTER_IMAGE}
         operations: ["variableSubset", "temporalSubset"]
 
   - name: podaac/l2-subsetter
@@ -1047,6 +1073,32 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
       - image: !Env ${HYBIG_IMAGE}
+
+  - name: sds/harmony-smap-l2-gridder
+    description: |
+      Harmony SMAP L2 Gridding Service. Takes L2G trajectories and reformats the data into the appropriate gridded output.
+    data_operation_version: "0.20.0"
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/sds/harmony-smap-l2-gridder
+    umm_s: S1272606802-EEDTEST
+    capabilities:
+      concatenation: false
+      subsetting:
+        bbox: false
+        variable: false
+        temporal: false
+      output_formats:
+        - application/x-netcdf4
+      reprojection: true
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
+      - image: !Env ${HARMONY_SMAP_L2_GRIDDER_IMAGE}
 
   # CHAINED SERVICES BELOW HERE
   - name: sds/HOSS-geographic
