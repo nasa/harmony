@@ -22,9 +22,8 @@ async function handleLabelsResponse(res, insertNew, successMessage, tagInput) {
     if (insertNew) {
       const label = (await res.json()).labels[0];
       labelsModule.insertNewLabelAlphabetically(label);
-      const t = await tagInput;
       const newTag = { value: `label: ${label}`, dbValue: label, field: 'label' };
-      t.whitelist.push(newTag);
+      tagInput.whitelist.push(newTag);
     }
     toasts.showUpper(successMessage);
     PubSub.publish(
@@ -303,9 +302,9 @@ labelsModule = {
   /**
    * Initializes the labeling interactivity associated with
    * the labels dropdown link.
-   * @param {object} tagInput - the tag input instance
+   * @param {Promise<object>} tagInputPromise - the tag input instance
    */
-  init(tagInput) {
+  async init(tagInputPromise) {
     // the anchor elements that correspond to a label
     labelLinks = Array.from(document.querySelectorAll('#labels-list .label-li a'));
     // the dropdown that contains label list items
@@ -316,7 +315,7 @@ labelsModule = {
     }
     const hasItems = document.querySelectorAll('#labels-list .label-li').length > 0;
     showHideLabelsList(hasItems);
-    bindEventListeners(tagInput);
+    bindEventListeners((await tagInputPromise));
     PubSub.subscribe(
       'job-selected',
       () => this.toggleLabelNavVisibility(jobsTable.getJobIds().length),
