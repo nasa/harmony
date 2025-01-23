@@ -77,6 +77,7 @@ function parseQuery( /* eslint-disable @typescript-eslint/no-explicit-any */
   isAdminAccess = false,
   maxFilters = 30,
 ): { tableQuery: TableQuery, originalValues: string } {
+  console.log(requestQuery);
   const tableQuery: TableQuery = {
     sortGranules: undefined,
     // tag input
@@ -113,6 +114,7 @@ function parseQuery( /* eslint-disable @typescript-eslint/no-explicit-any */
     const userValues = validUserSelections.map(option => option.value.split('user: ')[1]);
     const validLabelSelections = selectedOptions
       .filter(option => /^label: .{1,100}$/.test(option.value));
+    // TODO - truncated label values should pull value from diff. field?
     const labelValues = validLabelSelections.map(option => option.value.split('label: ')[1].toLowerCase());
     const validProviderSelections = selectedOptions
       .filter(option => /^provider: [A-Za-z0-9_]{1,100}$/.test(option.value));
@@ -145,6 +147,7 @@ function parseQuery( /* eslint-disable @typescript-eslint/no-explicit-any */
   if (requestQuery.fromdatetime || requestQuery.todatetime) {
     tableQuery.dateKind = requestQuery.datekind || 'createdAt';
   }
+  console.log(tableQuery);
   return { tableQuery, originalValues };
 }
 
