@@ -13,14 +13,16 @@ let labelNavItem;
 /**
  * Handle actions that are taken after adding/removing labels for jobs.
  * @param {Response} res - the response from the labels endpoint
- * @param {string} labelName - the name of the label that was added or removed
  * @param {boolean} insertNew - whether to insert a new label list element
  * @param {string} successMessage - success message to show the user
+ * @param {object} tagInput - the tag input instance
  */
-async function handleLabelsResponse(res, labelName, insertNew, successMessage) {
+async function handleLabelsResponse(res, insertNew, successMessage, tagInput) {
   if (res.status === 201 || res.status === 204) {
     if (insertNew) {
-      labelsModule.insertNewLabelAlphabetically(labelName);
+      const label = (await res.json()).labels[0];
+      labelsModule.insertNewLabelAlphabetically(label);
+      (await tagInput).createTagElem({ value: `label: ${label}`, dbValue: label, field: 'label' });
     }
     toasts.showUpper(successMessage);
     PubSub.publish(
@@ -41,8 +43,9 @@ async function handleLabelsResponse(res, labelName, insertNew, successMessage) {
  * @param {Event} event - the click event
  * @param {string} method - the HTTP method
  * @param {boolean} insertNew - insert a list element for the new label
+ * @param {object} tagInput - the tag input instance
  */
-async function handleSubmitClick(event, method, insertNew) {
+async function handleSubmitClick(event, method, insertNew, tagInput) {
   event.preventDefault();
   const labelName = event.target.getAttribute('data-value');
   const jobIds = jobsTable.getJobIds();
@@ -59,7 +62,7 @@ async function handleSubmitClick(event, method, insertNew) {
   });
   action = method === 'PUT' ? 'Added' : 'Removed';
   const successMessage = `${action} "${labelName}" label for ${jobIds.length} job${postfix}.`;
-  await handleLabelsResponse(res, labelName, insertNew, successMessage);
+  await handleLabelsResponse(res, insertNew, successMessage, tagInput);
 }
 
 /**
@@ -155,6 +158,10 @@ function filterLabelsList() {
   const searchValue = document.querySelector('#label-search').value.toLowerCase().trim();
   const labelItems = document.querySelectorAll('#labels-list .label-li');
   let visibleCount = 0;
+  let hasExactMatch = false;
+  if (searchValue.length === 255) {
+    toasts.showUpper('Label length is limited to 255.');
+  }
   for (const labelItem of labelItems) {
     if (labelItem.classList.contains('label-promoted')) { // skip, stays hidden
       continue;
@@ -163,12 +170,17 @@ function filterLabelsList() {
     const isMatch = labelName.startsWith(searchValue);
     labelItem.style.display = isMatch ? '' : 'none';
     if (isMatch) visibleCount += 1;
+    if (searchValue === labelName) {
+      hasExactMatch = true;
+    }
   }
-  document.getElementById('no-match-li').style.display = (visibleCount === 0 && searchValue !== '') ? '' : 'none';
-  if (visibleCount === 0) {
+  if (!hasExactMatch) {
     const createLabelLink = document.querySelector('#create-label-link');
     createLabelLink.textContent = `Create/apply "${searchValue}"?`;
     createLabelLink.setAttribute('data-value', searchValue);
+    document.getElementById('no-match-li').style.display = '';
+  } else {
+    document.getElementById('no-match-li').style.display = 'none';
   }
   showHideLabelsList(visibleCount > 0);
 }
@@ -249,8 +261,9 @@ function toggleLabelNavVisibility(selectedJobsCount) {
 
 /**
  * Bind event handlers to their respective elements.
+ * @param {object} tagInput - the tag input instance
  */
-function bindEventListeners() {
+function bindEventListeners(tagInput) {
   const labelSearchElement = document.getElementById('label-search');
   labelSearchElement.addEventListener('keyup', () => {
     filterLabelsList();
@@ -274,7 +287,7 @@ function bindEventListeners() {
     setLabelLinksDisabled(selectedJobsCount, labelLinks);
   });
   document.querySelector('#create-label-link').addEventListener('click', (event) => {
-    handleSubmitClick(event, 'PUT', true);
+    handleSubmitClick(event, 'PUT', true, tagInput);
     bsDropdown.hide();
   });
 }
@@ -288,8 +301,9 @@ labelsModule = {
   /**
    * Initializes the labeling interactivity associated with
    * the labels dropdown link.
+   * @param {object} tagInput - the tag input instance
    */
-  init() {
+  init(tagInput) {
     // the anchor elements that correspond to a label
     labelLinks = Array.from(document.querySelectorAll('#labels-list .label-li a'));
     // the dropdown that contains label list items
@@ -300,7 +314,7 @@ labelsModule = {
     }
     const hasItems = document.querySelectorAll('#labels-list .label-li').length > 0;
     showHideLabelsList(hasItems);
-    bindEventListeners();
+    bindEventListeners(tagInput);
     PubSub.subscribe(
       'job-selected',
       () => this.toggleLabelNavVisibility(jobsTable.getJobIds().length),

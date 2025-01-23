@@ -26,7 +26,7 @@ if (isAdminRoute) {
 params.dateKind = document.getElementById('dateKindUpdated').checked ? 'updatedAt' : 'createdAt';
 params.sortGranules = document.getElementById('sort-granules').value;
 
-jobsTable.init(params);
+const tagInput = jobsTable.init(params);
 
 const jobStatusLinks = new JobsStatusChangeLinks();
 jobStatusLinks.init('job-state-links-container', 'job-selected');
@@ -35,5 +35,5 @@ toasts.init();
 
 const labelDropdown = document.getElementById('label-dropdown-a');
 if (labelDropdown) {
-  labels.init();
+  labels.init(tagInput);
 }

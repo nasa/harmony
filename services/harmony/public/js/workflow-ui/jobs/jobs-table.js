@@ -9,12 +9,13 @@ let statuses = [];
 
 /**
  * Build the jobs filter with filter facets like 'status' and 'user'.
-  * @param {string} currentUser - the current Harmony user
-  * @param {string[]} services - service names from services.yml
-  * @param {string[]} providers - array of provider ids
-  * @param {string[]} labels - known job labels
-  * @param {boolean} isAdminRoute - whether the current page is /admin/...
-  * @param {object[]} tableFilter - initial tags that will populate the input
+ * @param {string} currentUser - the current Harmony user
+ * @param {string[]} services - service names from services.yml
+ * @param {string[]} providers - array of provider ids
+ * @param {string[]} labels - known job labels
+ * @param {boolean} isAdminRoute - whether the current page is /admin/...
+ * @param {object[]} tableFilter - initial tags that will populate the input
+ * @returns the tag input instance
  */
 function initFilter(currentUser, services, providers, labels, isAdminRoute, tableFilter) {
   const filterInput = document.querySelector('input[name="tableFilter"]');
@@ -63,6 +64,8 @@ function initFilter(currentUser, services, providers, labels, isAdminRoute, tabl
   });
   const initialTags = JSON.parse(tableFilter);
   tagInput.addTags(initialTags);
+
+  return tagInput;
 }
 
 /**
@@ -231,6 +234,7 @@ const jobsTable = {
    * tzOffsetMinutes - offset from UTC
    * dateKind - updatedAt or createdAt
    * sortGranules - sort the rows ascending ('asc') or descending ('desc')
+   * @returns the tag input instance
    */
   async init(params) {
     PubSub.subscribe(
@@ -238,10 +242,19 @@ const jobsTable = {
       async () => loadRows(params),
     );
     formatDates('.date-td');
-    initFilter(params.currentUser, params.services, params.providers, params.labels, params.isAdminRoute, params.tableFilter);
+    const tagInput = initFilter(
+      params.currentUser,
+      params.services,
+      params.providers,
+      params.labels,
+      params.isAdminRoute,
+      params.tableFilter,
+    );
     initCopyHandler('.copy-request');
     initSelectHandler('.select-job');
     initSelectAllHandler();
+
+    return tagInput;
   },
 
   /**
