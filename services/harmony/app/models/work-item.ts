@@ -256,7 +256,7 @@ export async function getNextWorkItems(
         .whereIn('id', workItemData.map((w) => w.id));
     }
   } catch (e) {
-    logger.error(`Error getting next work item for service [${serviceID}] and job [${jobID}]`);
+    logger.error(`Error getting next work items for service [${serviceID}] and job [${jobID}]`);
     logger.error(e);
     throw e;
   }
