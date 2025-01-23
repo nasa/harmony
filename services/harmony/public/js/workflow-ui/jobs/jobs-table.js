@@ -34,7 +34,10 @@ function initFilter(currentUser, services, providers, labels, isAdminRoute, tabl
   allowedList.push(...serviceList);
   const providerList = providers.map((provider) => ({ value: `provider: ${provider}`, dbValue: provider, field: 'provider' }));
   allowedList.push(...providerList);
-  const labelList = labels.map((label) => ({ value: `label: ${label}`, dbValue: label, field: 'label' }));
+  const labelList = labels.map((l) => {
+    const lDisplay = l.length < 15 ? l : `${l.slice(0, 12)}...`;
+    return ({ value: `label: ${lDisplay}`, dbValue: l, field: 'label', searchBy: l });
+  });
   allowedList.push(...labelList);
   if (isAdminRoute) {
     allowedList.push({ value: `user: ${currentUser}`, dbValue: currentUser, field: 'user' });
