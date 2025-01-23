@@ -476,7 +476,7 @@ describe('Work Backends', function () {
       });
     });
 
-    describe('when the work item completes with an empty result', async function () {
+    describe('when the work item completes with no data', async function () {
       hookJobCreation(jobRecord);
       hookWorkflowStepCreation(workflowStepRecord);
       const runningWorkItemRecord = {
@@ -487,29 +487,29 @@ describe('Work Backends', function () {
         },
       };
       hookWorkItemCreation(runningWorkItemRecord);
-      const emptyResultWorkItemRecord = {
+      const noDataWorkItemRecord = {
         ...workItemRecord,
         ...{
-          status: WorkItemStatus.EMPTY_RESULT,
+          status: WorkItemStatus.NO_DATA,
           results: [getStacLocation({ id: workItemRecord.id, jobID: workItemRecord.jobID }, 'catalog.json')],
           outputItemSizes: [],
           duration: 0,
         },
       };
       before(async () => {
-        await fakeServiceStacOutput(emptyResultWorkItemRecord.jobID, emptyResultWorkItemRecord.id);
+        await fakeServiceStacOutput(noDataWorkItemRecord.jobID, noDataWorkItemRecord.id);
       });
-      hookWorkItemUpdate((r) => r.send(emptyResultWorkItemRecord));
+      hookWorkItemUpdate((r) => r.send(noDataWorkItemRecord));
 
-      it('sets the work item status to empty result', async function () {
+      it('sets the work item status to no-data', async function () {
         const updatedWorkItem = await getWorkItemById(db, this.workItem.id);
-        expect(updatedWorkItem.status).to.equal(WorkItemStatus.EMPTY_RESULT);
+        expect(updatedWorkItem.status).to.equal(WorkItemStatus.NO_DATA);
       });
 
       describe('and the worker computed duration is less than the harmony computed duration', async function () {
         it('sets the work item duration to the harmony computed duration', async function () {
           const updatedWorkItem = await getWorkItemById(db, this.workItem.id);
-          expect(updatedWorkItem.duration).to.be.greaterThan(emptyResultWorkItemRecord.duration);
+          expect(updatedWorkItem.duration).to.be.greaterThan(noDataWorkItemRecord.duration);
         });
       });
 
@@ -602,7 +602,7 @@ describe('Work Backends', function () {
     }
 
     // tests to make sure work-items cannot be updated once they are in a terminal state
-    for (const terminalState of [WorkItemStatus.CANCELED, WorkItemStatus.FAILED, WorkItemStatus.SUCCESSFUL, WorkItemStatus.EMPTY_RESULT]) {
+    for (const terminalState of [WorkItemStatus.CANCELED, WorkItemStatus.FAILED, WorkItemStatus.SUCCESSFUL, WorkItemStatus.NO_DATA]) {
       describe(`When the work-item is already in state "${terminalState}"`, async function () {
         const newWorkItemRecord = {
           ...workItemRecord, ...{ status: terminalState },

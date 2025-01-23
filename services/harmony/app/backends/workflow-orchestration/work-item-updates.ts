@@ -553,7 +553,7 @@ export async function preprocessWorkItem(
   let catalogItems;
   try {
     // TODO fix this in HARMONY-1995
-    if ([WorkItemStatus.SUCCESSFUL, WorkItemStatus.EMPTY_RESULT].includes(status) && !nextWorkflowStep) {
+    if ([WorkItemStatus.SUCCESSFUL, WorkItemStatus.NO_DATA].includes(status) && !nextWorkflowStep) {
       // if we are CREATING STAC CATALOGS for the last step in the chain we should read the catalog items
       // since they are needed for generating the output links we will save
       catalogItems = await readCatalogsItems(results);

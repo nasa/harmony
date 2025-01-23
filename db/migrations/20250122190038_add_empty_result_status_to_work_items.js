@@ -7,7 +7,7 @@ exports.up = function (knex, Promise) {
     ALTER TABLE "work_items"
     DROP CONSTRAINT "work_items_status_check",
     ADD CONSTRAINT "work_items_status_check"
-    CHECK (status IN ('ready', 'queued', 'running', 'successful', 'failed', 'canceled', 'empty-result'))
+    CHECK (status IN ('ready', 'queued', 'running', 'successful', 'failed', 'canceled', 'no-data'))
   `);
 };
 
