@@ -59,7 +59,6 @@ export default function chooseService(
   } catch (e) {
     return next(e);
   }
-  console.log(`CDD: Chose service config: ${serviceConfig.name}`);
   context.serviceConfig = serviceConfig;
   return next();
 }

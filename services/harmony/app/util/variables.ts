@@ -140,7 +140,6 @@ function constructVariableInfoWithoutValidation(
   eosdisCollections: CmrCollection[],
   variables: string[],
 ): VariableInfo[] {
-  console.log(`CDD: I am constructing it without CMR validation: ${JSON.stringify(eosdisCollections)}`);
   const variableInfo = [];
 
   // Construct an imitation of what CMR would return from UMM-Var since we are not using variables
@@ -218,7 +217,6 @@ export function getVariableInfo(
   variableIds: string[],
   shouldValidateUmmVar: boolean,
 ): VariableInfo[] {
-  console.log(`CDD: variableIds are (${variableIds}) and the length is ${variableIds.length}`);
   let variableInfo = [];
   if (!shouldValidateUmmVar) {
     variableInfo = constructVariableInfoWithoutValidation(eosdisCollections, variableIds);
@@ -333,10 +331,6 @@ export function validateAndSetVariables(
       context.requestedVariables,
       context.serviceConfig.validate_variables !== false,
     );
-
-    console.log(`Var infos are: ${JSON.stringify(varInfos)}`);
-
-    console.log(`Requested variables were ${context.requestedVariables}`);
 
     for (const varInfo of varInfos) {
       operation.addSource(varInfo.collectionId, varInfo.shortName, varInfo.versionId,
