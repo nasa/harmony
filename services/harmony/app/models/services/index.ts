@@ -243,9 +243,6 @@ function isCollectionMatch(
   serviceConfig: ServiceConfig<unknown>,
 ): boolean {
   return serviceConfig.capabilities?.all_collections || context.collectionIds.every((collectionId) => {
-    if (serviceConfig.name === 'harmony/service-example') console.log(`CDD Checking matches for ${collectionId} in ${serviceConfig.collections.map((sc) => sc.id)} for service ${serviceConfig.name}`);
-    const allCollections = serviceConfig.collections?.map((sc) => sc.id);
-    if (allCollections.includes(collectionId)) console.log(`Found collection ${collectionId} in ${allCollections}`);
     return serviceConfig.collections?.map((sc) => sc.id).includes(collectionId);
   });
   // return serviceConfig.capabilities?.all_collections || operation.sources.every((source) => {
@@ -339,8 +336,6 @@ function requiresConcatenation(operation: DataOperation): boolean {
  * @returns true if the provided operation requires variable subsetting and false otherwise
  */
 function requiresVariableSubsetting(context: RequestContext): boolean {
-  // console.log(`Context is ${JSON.stringify(context)}`);
-  // console.log(`Requested variables length is : ${context.requestedVariables?.length} and boolean is ${context.requestedVariables?.length > 0}`);
   return context.requestedVariables?.length > 0;
 }
 
@@ -590,9 +585,7 @@ function filterVariableSubsettingMatches(
   let matches = configs;
   if (requiresVariableSubsetting(context)) {
     requestedOperations.push('variable subsetting');
-    console.log(`CDD Before there were ${matches.length} matches: ${matches.map((s) => s.name)}`);
     matches = supportsVariableSubsetting(configs);
-    console.log(`CDD After there were ${matches.length} matches`);
   }
 
   if (matches.length === 0) {
@@ -1027,9 +1020,7 @@ export function chooseServiceConfig(
   let serviceConfig;
   try {
     serviceConfig = filterServiceConfigs(operation, context, configs, allFilterFns);
-    console.log(`CDD - it found a service with strict filtering used (so can't be HyBIG) ${serviceConfig.name}`);
   } catch (e) {
-    console.log(`CDD - bad news - an exception was thrown: ${e.message}`);
     if (e instanceof UnsupportedOperation) {
       if (!requiresStrictCapabilitiesMatching(operation, context)) {
         // if we couldn't find a matching service, make a best effort to find a service that

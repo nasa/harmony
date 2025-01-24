@@ -10,12 +10,13 @@ import parseCRS from '../util/crs';
 import { createDecrypter, createEncrypter } from '../util/crypto';
 import { NotFoundError, RequestValidationError } from '../util/errors';
 import { keysToLowerCase } from '../util/object';
-import { parseMultiValueParameter } from '../util/parameter-parsing-helpers';
+import { ParameterParseError, parseMultiValueParameter } from '../util/parameter-parsing-helpers';
 import * as urlUtil from '../util/url';
 
 import { handleGranuleNames } from '../util/parameter-parsers';
 import env from '../util/env';
 import { getVariablesForCollection } from '../util/variables';
+import logger from '../util/log';
 
 const readFile = promisify(fs.readFile);
 
@@ -177,6 +178,39 @@ async function getCapabilities(req, res, _next: NextFunction): Promise<void> {
 }
 
 /**
+ * Given a bbox value, parse it into a list of numbers after performing validations
+ *
+ * @param value - bbox query parameter value
+ * @returns An array of 4 numbers corresponding to the bbox definition,
+ * in most cases the sequence of minimum longitude, minimum latitude,
+ * maximum longitude and maximum latitude.
+ */
+function parseBbox(value: string | string[] | number[]): number[] | null {
+  if (value) {
+    try {
+      let bbox;
+      if (Array.isArray(value)) {
+        bbox = value.map(Number);
+      } else {
+        bbox = value.split(',').map(Number);
+      }
+      if (bbox.length === 4) {
+        return bbox;
+      } else if (bbox.length > 0) {
+        throw new ParameterParseError('Parameter "bbox" can only have 4 numbers.');
+      }
+    } catch (e) {
+      if (e instanceof ParameterParseError) {
+        throw e;
+      } else {
+        logger.error(e);
+        throw new ParameterParseError('Unable to parse "bbox" parameter');
+      }
+    }
+  }
+}
+
+/**
  * Express.js-style handler that handles calls to WMS GetMap requests
  *
  * @param req - The request sent by the client
@@ -212,11 +246,6 @@ function getMap(req, res, next: NextFunction): void {
   const varInfos = getVariablesForCollection(query.layers, req.context.collections);
   const requestedVariables = varInfos.flatMap((varInfo) => varInfo.variables.map((v) => v.umm.Name));
   req.context.requestedVariables = requestedVariables;
-  console.log(`CDD: Var infos are ${JSON.stringify(varInfos)}, layers were ${query.layers}, requested vars: ${JSON.stringify(requestedVariables)}`);
-  // for (const varInfo of varInfos) {
-  //   operation.addSource(varInfo.collectionId, varInfo.shortName, varInfo.versionId,
-  //     varInfo.variables, varInfo.coordinateVariables);
-  // }
 
   const [crs, srs] = parseCRS(query.crs, false);
   operation.crs = crs || query.crs;
@@ -232,7 +261,7 @@ function getMap(req, res, next: NextFunction): void {
     operation.outputDpi = parseInt(dpi, 10);
   }
 
-  const [west, south, east, north] = query.bbox.map((c) => parseFloat(c));
+  const [west, south, east, north] = parseBbox(query.bbox);
   operation.boundingRectangle = [west, south, east, north];
 
   if (query.granuleid) {
