@@ -499,11 +499,11 @@ export class Job extends DBRecord implements JobRecord {
     includeLabels = false,
   ): Promise<{ data: Job[]; pagination: ILengthAwarePagination }> {
     let query;
-
+    const labelDelimiter = '*&%$#';
     if (includeLabels) {
       if (constraints.labels) { // Requesting to limit the jobs based on the provided labels
         query = tx(Job.table)
-          .select(`${Job.table}.*`, tx.raw(`STRING_AGG(${LABELS_TABLE}.value, ',' order by value) AS label_values`))
+          .select(`${Job.table}.*`, tx.raw(`STRING_AGG(${LABELS_TABLE}.value, '${labelDelimiter}' order by value) AS label_values`))
           .leftOuterJoin(`${JOBS_LABELS_TABLE}`, `${Job.table}.jobID`, '=', `${JOBS_LABELS_TABLE}.job_id`)
           .leftOuterJoin(`${LABELS_TABLE}`, `${JOBS_LABELS_TABLE}.label_id`, '=', `${LABELS_TABLE}.id`)
           // Subquery that filters to get the list of jobIDs that match any of the provided labels
@@ -524,7 +524,7 @@ export class Job extends DBRecord implements JobRecord {
           .modify((queryBuilder) => modifyQuery(queryBuilder, constraints));
       } else {
         query = tx(Job.table)
-          .select(`${Job.table}.*`, tx.raw(`STRING_AGG(${LABELS_TABLE}.value, ',' order by value) AS label_values`))
+          .select(`${Job.table}.*`, tx.raw(`STRING_AGG(${LABELS_TABLE}.value, '${labelDelimiter}' order by value) AS label_values`))
           .leftOuterJoin(`${JOBS_LABELS_TABLE}`, `${Job.table}.jobID`, '=', `${JOBS_LABELS_TABLE}.job_id`)
           .leftOuterJoin(`${LABELS_TABLE}`, `${JOBS_LABELS_TABLE}.label_id`, '=', `${LABELS_TABLE}.id`)
           .where(setTableNameForWhereClauses(Job.table, constraints.where))
@@ -550,7 +550,7 @@ export class Job extends DBRecord implements JobRecord {
     const jobs: Job[] = items.data.map((j: JobWithLabels) => {
       const job = new Job(j);
       if (includeLabels && j.label_values) {
-        job.labels = j.label_values.split(',');
+        job.labels = j.label_values.split(labelDelimiter);
       } else {
         job.labels = [];
       }
