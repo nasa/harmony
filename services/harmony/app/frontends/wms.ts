@@ -129,7 +129,7 @@ function requestError(res, message: string): void {
 async function getCapabilities(req, res, _next: NextFunction): Promise<void> {
   const collections = [];
 
-  for (const collection of req.collections) {
+  for (const collection of req.context.collections) {
     let bbox;
     if (collection.boxes && collection.boxes.length === 1) {
       const box = collection.boxes[0].split(' ');
@@ -209,11 +209,14 @@ function getMap(req, res, next: NextFunction): void {
   const decrypter = createDecrypter(env.sharedSecretKey);
   const operation = new DataOperation(null, encrypter, decrypter);
 
-  const varInfos = getVariablesForCollection(query.layers, req.collections);
-  for (const varInfo of varInfos) {
-    operation.addSource(varInfo.collectionId, varInfo.shortName, varInfo.versionId,
-      varInfo.variables, varInfo.coordinateVariables);
-  }
+  const varInfos = getVariablesForCollection(query.layers, req.context.collections);
+  const requestedVariables = varInfos.flatMap((varInfo) => varInfo.variables.map((v) => v.umm.Name));
+  req.context.requestedVariables = requestedVariables;
+  console.log(`CDD: Var infos are ${JSON.stringify(varInfos)}, layers were ${query.layers}, requested vars: ${JSON.stringify(requestedVariables)}`);
+  // for (const varInfo of varInfos) {
+  //   operation.addSource(varInfo.collectionId, varInfo.shortName, varInfo.versionId,
+  //     varInfo.variables, varInfo.coordinateVariables);
+  // }
 
   const [crs, srs] = parseCRS(query.crs, false);
   operation.crs = crs || query.crs;
@@ -229,7 +232,7 @@ function getMap(req, res, next: NextFunction): void {
     operation.outputDpi = parseInt(dpi, 10);
   }
 
-  const [west, south, east, north] = query.bbox.split(',').map((c) => parseFloat(c));
+  const [west, south, east, north] = query.bbox.map((c) => parseFloat(c));
   operation.boundingRectangle = [west, south, east, north];
 
   if (query.granuleid) {

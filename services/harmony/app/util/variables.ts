@@ -218,6 +218,7 @@ export function getVariableInfo(
   variableIds: string[],
   shouldValidateUmmVar: boolean,
 ): VariableInfo[] {
+  console.log(`CDD: variableIds are (${variableIds}) and the length is ${variableIds.length}`);
   let variableInfo = [];
   if (!shouldValidateUmmVar) {
     variableInfo = constructVariableInfoWithoutValidation(eosdisCollections, variableIds);
