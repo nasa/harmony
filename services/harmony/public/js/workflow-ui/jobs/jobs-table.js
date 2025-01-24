@@ -72,7 +72,7 @@ function initFilter(currentUser, services, providers, labels, isAdminRoute, tabl
             ${this.getAttributes(tagData)}>
           <x title='' class="${this.settings.classNames.tagX}" role='button' aria-label='remove tag'></x>
           <div>
-              <span class="${this.settings.classNames.tagText} text-truncate">${trimForDisplay(tagData.value.split(': ')[1], 20)}</span>
+              <span class="${this.settings.classNames.tagText}">${trimForDisplay(tagData.value.split(': ')[1], 20)}</span>
           </div>
         </tag>`;
       },
