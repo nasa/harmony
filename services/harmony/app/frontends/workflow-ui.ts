@@ -77,7 +77,6 @@ function parseQuery( /* eslint-disable @typescript-eslint/no-explicit-any */
   isAdminAccess = false,
   maxFilters = 30,
 ): { tableQuery: TableQuery, originalValues: string } {
-  console.log(requestQuery);
   const tableQuery: TableQuery = {
     sortGranules: undefined,
     // tag input
@@ -146,7 +145,6 @@ function parseQuery( /* eslint-disable @typescript-eslint/no-explicit-any */
   if (requestQuery.fromdatetime || requestQuery.todatetime) {
     tableQuery.dateKind = requestQuery.datekind || 'createdAt';
   }
-  console.log(tableQuery);
   return { tableQuery, originalValues };
 }
 
