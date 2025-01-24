@@ -1,4 +1,4 @@
-import { WorkItemStatus, getStacLocation, WorkItemRecord } from './../../app/models/work-item-interface';
+import { WorkItemStatus, getStacLocation, WorkItemRecord, WorkItemSubStatus } from './../../app/models/work-item-interface';
 import { Job, JobRecord, JobStatus, terminalStates } from './../../app/models/job';
 import { describe, it } from 'mocha';
 import * as sinon from 'sinon';
@@ -490,7 +490,8 @@ describe('Work Backends', function () {
       const noDataWorkItemRecord = {
         ...workItemRecord,
         ...{
-          status: WorkItemStatus.NO_DATA,
+          status: WorkItemStatus.WARNING,
+          subStatus: WorkItemSubStatus.NO_DATA,
           results: [getStacLocation({ id: workItemRecord.id, jobID: workItemRecord.jobID }, 'catalog.json')],
           outputItemSizes: [],
           duration: 0,
@@ -501,9 +502,10 @@ describe('Work Backends', function () {
       });
       hookWorkItemUpdate((r) => r.send(noDataWorkItemRecord));
 
-      it('sets the work item status to no-data', async function () {
+      it('sets the work item status to warning with no-data', async function () {
         const updatedWorkItem = await getWorkItemById(db, this.workItem.id);
-        expect(updatedWorkItem.status).to.equal(WorkItemStatus.NO_DATA);
+        expect(updatedWorkItem.status).to.equal(WorkItemStatus.WARNING);
+        expect(updatedWorkItem.subStatus).to.equal(WorkItemSubStatus.NO_DATA);
       });
 
       describe('and the worker computed duration is less than the harmony computed duration', async function () {
@@ -602,7 +604,7 @@ describe('Work Backends', function () {
     }
 
     // tests to make sure work-items cannot be updated once they are in a terminal state
-    for (const terminalState of [WorkItemStatus.CANCELED, WorkItemStatus.FAILED, WorkItemStatus.SUCCESSFUL, WorkItemStatus.NO_DATA]) {
+    for (const terminalState of [WorkItemStatus.CANCELED, WorkItemStatus.FAILED, WorkItemStatus.SUCCESSFUL, WorkItemStatus.WARNING]) {
       describe(`When the work-item is already in state "${terminalState}"`, async function () {
         const newWorkItemRecord = {
           ...workItemRecord, ...{ status: terminalState },

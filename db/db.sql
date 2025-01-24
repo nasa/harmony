@@ -41,6 +41,18 @@ CREATE TABLE `job_errors` (
   `jobID` char(36) not null,
   `url` varchar(4096) not null,
   `message` varchar(4096) not null,
+  `level` varchar(255) check (
+  `level` in (
+    'error',
+    'warning'
+  )
+  ) not null default 'error',
+  `category` varchar(255) check (
+    `category` in (
+      'generic',
+      'no-data'
+    )
+  ) not null default 'generic',
   `createdAt` datetime not null,
   `updatedAt` datetime not null,
   FOREIGN KEY(jobID) REFERENCES jobs(jobID)
@@ -80,7 +92,8 @@ CREATE TABLE `work_items` (
   `workflowStepIndex` integer not null,
   `scrollID` varchar(4096),
   `serviceID` varchar(255) not null,
-  `status` text check (`status` in ('ready', 'queued', 'running', 'successful', 'failed', 'canceled', 'no-data')) not null,
+  `status` varchar(255) check (`status` in ('ready', 'queued', 'running', 'successful', 'failed', 'canceled', 'warning')) not null,
+  `subStatus` varchar(255) check (`subStatus` in ('no-data')),
   `stacCatalogLocation` varchar(255),
   `totalItemsSize` double precision not null default 0,
   `outputItemSizesJson` text,
@@ -183,9 +196,12 @@ CREATE INDEX jobs_username_idx ON jobs(jobID, username);
 CREATE INDEX job_links_jobID_idx ON job_links(jobID);
 CREATE INDEX job_links_jobID_id_idx ON job_links(jobID, id);
 CREATE INDEX job_errors_jobID_idx ON job_errors(jobID);
+CREATE INDEX job_errors_level_idx ON job_errors(level);
+CREATE INDEX job_errors_category_idx ON job_errors(category);
 CREATE INDEX work_items_jobID_idx ON work_items(jobID);
 CREATE INDEX work_items_serviceID_idx ON work_items(serviceID);
 CREATE INDEX work_items_status_idx ON work_items(status);
+CREATE INDEX work_items_subStatus_idx ON work_items(subStatus);
 CREATE INDEX workflow_steps_jobID_idx ON workflow_steps(jobID);
 CREATE INDEX workflow_steps_jobID_StepIndex_idx ON workflow_steps(jobID, stepIndex);
 CREATE INDEX workflow_steps_serviceID_idx ON workflow_steps(serviceID);

@@ -9,7 +9,7 @@ import env from '../util/env';
 import { Job, JobStatus } from './job';
 import Record from './record';
 import WorkflowStep from './workflow-steps';
-import { WorkItemRecord, WorkItemStatus, getStacLocation, WorkItemQuery } from './work-item-interface';
+import { WorkItemRecord, WorkItemStatus, getStacLocation, WorkItemQuery, WorkItemSubStatus } from './work-item-interface';
 import { eventEmitter } from '../events';
 import { getWorkSchedulerQueue } from '../../app/util/queue/queue-factory';
 
@@ -50,6 +50,9 @@ export default class WorkItem extends Record implements WorkItemRecord {
 
   // The status of the operation - see WorkItemStatus
   status?: WorkItemStatus;
+
+  // The sub-status of the operation - see WorkItemSubStatus
+  subStatus?: WorkItemSubStatus;
 
   // error message if status === FAILED
   errorMessage?: string;
@@ -297,6 +300,7 @@ export async function getWorkItemStatus(
  * @param tx - the transaction to use for querying
  * @param id - the id of the WorkItem
  * @param status - the status to set for the WorkItem
+ * @param subStatus - the sub-status to set for the WorkItem
  * @param duration - how long the work item took to process
  * @param totalItemsSize - the combined sizes of all the input granules for this work item
  * @param outputItemSizes - the separate size of each granule in the output for this work item
@@ -305,6 +309,7 @@ export async function updateWorkItemStatus(
   tx: Transaction,
   id: number,
   status: WorkItemStatus,
+  subStatus: WorkItemSubStatus,
   duration: number,
   totalItemsSize: number,
   outputItemSizes: number[],
@@ -313,11 +318,11 @@ export async function updateWorkItemStatus(
   const outputItemSizesJson = JSON.stringify(outputItemSizes);
   try {
     await tx(WorkItem.table)
-      .update({ status, duration, totalItemsSize, outputItemSizesJson: outputItemSizesJson, updatedAt: new Date() })
+      .update({ status, subStatus, duration, totalItemsSize, outputItemSizesJson: outputItemSizesJson, updatedAt: new Date() })
       .where({ id });
-    logger.debug(`Status for work item ${id} set to ${status}`);
+    logger.debug(`Status for work item ${id} set to ${status} | ${subStatus}`);
   } catch (e) {
-    logger.error(`Failed to update work item ${id} status to ${status}`);
+    logger.error(`Failed to update work item ${id} status to ${status} | ${subStatus}`);
     logger.error(e);
     throw e;
   }
@@ -328,14 +333,16 @@ export async function updateWorkItemStatus(
  * @param tx - the transaction to use for querying
  * @param ids - the ids of the WorkItems
  * @param status - the status to set for the WorkItems
+ * @param subStatus - the sub-status to set for the WorkItems
  */
 export async function updateWorkItemStatuses(
   tx: Transaction,
   ids: number[],
   status: WorkItemStatus,
+  subStatus?: WorkItemSubStatus,
 ): Promise<void> {
   const now = new Date();
-  let update = { status, updatedAt: now };
+  let update = { status, subStatus, updatedAt: now };
   // if we are setting the status to running, also set the startedAt time
   if (status === WorkItemStatus.RUNNING) {
     update = { ...update, ...{ startedAt: now } };
