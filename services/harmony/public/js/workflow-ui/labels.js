@@ -24,7 +24,7 @@ async function handleLabelsResponse(res, insertNew, successMessage, tagInput) {
       const label = (await res.json()).labels[0];
       labelsModule.insertNewLabelAlphabetically(label);
       const newTag = { value: `label: ${trimForDisplay(label, 30)}`, dbValue: label, field: 'label', searchBy: label };
-      tagInput.whitelist.push(newTag);
+      tagInput?.whitelist?.push(newTag);
     }
     toasts.showUpper(successMessage);
     PubSub.publish(
