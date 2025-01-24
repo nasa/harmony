@@ -12,7 +12,7 @@ import { parseVariables } from '../../util/variables';
 import { parsePointParam, parseSubsetParams, subsetParamsToBbox, subsetParamsToTemporal } from './util/subset-parameter-parsing';
 /**
  * Express middleware that responds to OGC API - Coverages coverage
- * rangeset requests.  Responds with the actual coverage data.
+ * rangeset requests. Responds with the actual coverage data.
  *
  * @param req - The request sent by the client
  * @param res - The response to send to the client
@@ -87,11 +87,8 @@ export default function getCoverageRangeset(
   }
 
   const queryVars = req.query.variable as string | string[];
-  const varInfos = parseVariables(req.collections, req.params.collectionId, queryVars);
-  for (const varInfo of varInfos) {
-    operation.addSource(varInfo.collectionId, varInfo.shortName, varInfo.versionId,
-      varInfo.variables, varInfo.coordinateVariables);
-  }
+  const requestedVariables = parseVariables(req.params.collectionId, queryVars);
+  req.context.requestedVariables = requestedVariables;
 
   req.operation = operation;
   next();

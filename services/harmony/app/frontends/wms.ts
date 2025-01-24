@@ -264,7 +264,7 @@ export default async function wmsFrontend(req, res, next: NextFunction): Promise
   try {
     validateParamIn(query, 'service', ['WMS']);
     validateParamIn(query, 'request', ['GetCapabilities', 'GetMap']);
-    if (!req.collections.every(services.isCollectionSupported)) {
+    if (!req.context.collections.every(services.isCollectionSupported)) {
       throw new NotFoundError('There is no service configured to support transformations on the provided collection via WMS.');
     }
 

@@ -53,12 +53,13 @@ export default function chooseService(
   }
 
   let serviceConfig: ServiceConfig<unknown>;
-  const configs = addCollectionsToServicesByAssociation(req.collections);
+  const configs = addCollectionsToServicesByAssociation(req.context.collections);
   try {
     serviceConfig = chooseServiceConfig(operation, context, configs);
   } catch (e) {
     return next(e);
   }
+  console.log(`CDD: Chose service config: ${serviceConfig.name}`);
   context.serviceConfig = serviceConfig;
   return next();
 }

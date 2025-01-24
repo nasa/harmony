@@ -1,5 +1,5 @@
 import { Response, NextFunction, Request } from 'express';
-import { CmrCollection } from '../util/cmr';
+// import { CmrCollection } from '../util/cmr';
 import RequestContext from './request-context';
 import DataOperation from './data-operation';
 
@@ -8,8 +8,8 @@ import DataOperation from './data-operation';
  */
 export default interface HarmonyRequest extends Request {
   context: RequestContext;
-  collections: CmrCollection[];
-  collectionIds: string[];
+  // collections: CmrCollection[];
+  // collectionIds: string[];
   operation: DataOperation;
   user: string;
   accessToken: string;

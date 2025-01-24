@@ -1,7 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
-import _, { get as getIn, partial } from 'lodash';
+// import _, { get as getIn, partial } from 'lodash';
+import _, { get as getIn } from 'lodash';
 
 import logger from '../../util/log';
 import { HttpError, NotFoundError, ServerError } from '../../util/errors';
@@ -11,8 +12,10 @@ import { addCollectionsToServicesByAssociation } from '../../middleware/service-
 import { listToText, Conjunction, isInteger } from '@harmony/util/string';
 import TurboService from './turbo-service';
 import HttpService from './http-service';
-import DataOperation, { DataSource } from '../data-operation';
-import BaseService, { ServiceCollection, ServiceConfig } from './base-service';
+// import DataOperation, { DataSource } from '../data-operation';
+import DataOperation from '../data-operation';
+// import BaseService, { ServiceCollection, ServiceConfig } from './base-service';
+import BaseService, { ServiceConfig } from './base-service';
 import RequestContext from '../request-context';
 import env from '../../util/env';
 
@@ -220,10 +223,10 @@ function supportsConcatenation(configs: ServiceConfig<unknown>[]): ServiceConfig
  * for the service collection or all the variables in the source are also in the service
  * collection, `false` otherwise
  */
-function isServiceCollectionMatch(source: DataSource, servColl: ServiceCollection): boolean {
-  return servColl.id === source.collection &&
-    (!servColl.variables || source.variables?.every((v) => servColl.variables?.includes(v.id)));
-}
+// function isServiceCollectionMatch(source: DataSource, servColl: ServiceCollection): boolean {
+//   return servColl.id === source.collection &&
+//     (!servColl.variables || source.variables?.every((v) => servColl.variables?.includes(v.id)));
+// }
 
 /**
  * Returns true if all of the collections in the given operation can be operated on by
@@ -236,12 +239,19 @@ function isServiceCollectionMatch(source: DataSource, servColl: ServiceCollectio
  */
 function isCollectionMatch(
   operation: DataOperation,
+  context: RequestContext,
   serviceConfig: ServiceConfig<unknown>,
 ): boolean {
-  return serviceConfig.capabilities?.all_collections || operation.sources.every((source) => {
-    const rval = serviceConfig.collections?.some(partial(isServiceCollectionMatch, source));
-    return rval;
+  return serviceConfig.capabilities?.all_collections || context.collectionIds.every((collectionId) => {
+    if (serviceConfig.name === 'harmony/service-example') console.log(`CDD Checking matches for ${collectionId} in ${serviceConfig.collections.map((sc) => sc.id)} for service ${serviceConfig.name}`);
+    const allCollections = serviceConfig.collections?.map((sc) => sc.id);
+    if (allCollections.includes(collectionId)) console.log(`Found collection ${collectionId} in ${allCollections}`);
+    return serviceConfig.collections?.map((sc) => sc.id).includes(collectionId);
   });
+  // return serviceConfig.capabilities?.all_collections || operation.sources.every((source) => {
+  //   const rval = serviceConfig.collections?.some(partial(isServiceCollectionMatch, source));
+  //   return rval;
+  // });
 }
 
 /**
@@ -324,11 +334,14 @@ function requiresConcatenation(operation: DataOperation): boolean {
 
 /**
  * Returns true if the operation requires variable subsetting
- * @param operation - The operation to perform.
+ * @param context - Additional context that's not part of the operation, but influences the
+ *     choice regarding the service to use
  * @returns true if the provided operation requires variable subsetting and false otherwise
  */
-function requiresVariableSubsetting(operation: DataOperation): boolean {
-  return operation.shouldVariableSubset;
+function requiresVariableSubsetting(context: RequestContext): boolean {
+  // console.log(`Context is ${JSON.stringify(context)}`);
+  // console.log(`Requested variables length is : ${context.requestedVariables?.length} and boolean is ${context.requestedVariables?.length > 0}`);
+  return context.requestedVariables?.length > 0;
 }
 
 /**
@@ -487,10 +500,12 @@ function supportsAreaAveraging(configs: ServiceConfig<unknown>[]): ServiceConfig
 export class UnsupportedOperation extends HttpError {
   operation: DataOperation;
 
+  context: RequestContext;
+
   requestedOperations: string[];
 
-  constructor(operation: DataOperation, requestedOperations: string[]) {
-    const collections = operation.sources.map((s) => s.collection);
+  constructor(operation: DataOperation, context: RequestContext, requestedOperations: string[]) {
+    const collections = context.collectionIds;
 
     let message = `no operations can be performed on ${listToText(collections)}`;
     if (requestedOperations.length > 0) {
@@ -499,6 +514,7 @@ export class UnsupportedOperation extends HttpError {
     }
     super(422, message);
     this.operation = operation;
+    this.context = context;
     this.requestedOperations = requestedOperations;
   }
 }
@@ -526,7 +542,7 @@ function filterConcatenationMatches(
   }
 
   if (matches.length === 0) {
-    throw new UnsupportedOperation(operation, requestedOperations);
+    throw new UnsupportedOperation(operation, context, requestedOperations);
   }
   return matches;
 }
@@ -547,9 +563,9 @@ function filterCollectionMatches(
   configs: ServiceConfig<unknown>[],
   requestedOperations: string[],
 ): ServiceConfig<unknown>[] {
-  const matches = configs.filter((config) => isCollectionMatch(operation, config));
+  const matches = configs.filter((config) => isCollectionMatch(operation, context, config));
   if (matches.length === 0) {
-    throw new UnsupportedOperation(operation, requestedOperations);
+    throw new UnsupportedOperation(operation, context, requestedOperations);
   }
   return matches;
 }
@@ -572,13 +588,15 @@ function filterVariableSubsettingMatches(
   requestedOperations: string[],
 ): ServiceConfig<unknown>[] {
   let matches = configs;
-  if (requiresVariableSubsetting(operation)) {
+  if (requiresVariableSubsetting(context)) {
     requestedOperations.push('variable subsetting');
+    console.log(`CDD Before there were ${matches.length} matches: ${matches.map((s) => s.name)}`);
     matches = supportsVariableSubsetting(configs);
+    console.log(`CDD After there were ${matches.length} matches`);
   }
 
   if (matches.length === 0) {
-    throw new UnsupportedOperation(operation, requestedOperations);
+    throw new UnsupportedOperation(operation, context, requestedOperations);
   }
   return matches;
 }
@@ -612,7 +630,7 @@ function filterOutputFormatMatches(
   }
 
   if (services.length === 0) {
-    throw new UnsupportedOperation(operation, requestedOperations);
+    throw new UnsupportedOperation(operation, context, requestedOperations);
   }
   return services;
 }
@@ -641,7 +659,7 @@ function filterSpatialSubsettingMatches(
   }
 
   if (services.length === 0) {
-    throw new UnsupportedOperation(operation, requestedOperations);
+    throw new UnsupportedOperation(operation, context, requestedOperations);
   }
   return services;
 }
@@ -670,7 +688,7 @@ function filterReprojectionMatches(
   }
 
   if (services.length === 0) {
-    throw new UnsupportedOperation(operation, requestedOperations);
+    throw new UnsupportedOperation(operation, context, requestedOperations);
   }
   return services;
 }
@@ -699,7 +717,7 @@ function filterShapefileSubsettingMatches(
   }
 
   if (services.length === 0) {
-    throw new UnsupportedOperation(operation, requestedOperations);
+    throw new UnsupportedOperation(operation, context, requestedOperations);
   }
   return services;
 }
@@ -728,7 +746,7 @@ function filterTemporalSubsettingMatches(
   }
 
   if (services.length === 0) {
-    throw new UnsupportedOperation(operation, requestedOperations);
+    throw new UnsupportedOperation(operation, context, requestedOperations);
   }
   return services;
 }
@@ -757,7 +775,7 @@ function filterExtendMatches(
   }
 
   if (services.length === 0) {
-    throw new UnsupportedOperation(operation, requestedOperations);
+    throw new UnsupportedOperation(operation, context, requestedOperations);
   }
   return services;
 }
@@ -786,7 +804,7 @@ function filterDimensionSubsettingMatches(
   }
 
   if (services.length === 0) {
-    throw new UnsupportedOperation(operation, requestedOperations);
+    throw new UnsupportedOperation(operation, context, requestedOperations);
   }
   return services;
 }
@@ -815,7 +833,7 @@ function filterTimeAveragingMatches(
   }
 
   if (services.length === 0) {
-    throw new UnsupportedOperation(operation, requestedOperations);
+    throw new UnsupportedOperation(operation, context, requestedOperations);
   }
   return services;
 }
@@ -844,7 +862,7 @@ function filterAreaAveragingMatches(
   }
 
   if (services.length === 0) {
-    throw new UnsupportedOperation(operation, requestedOperations);
+    throw new UnsupportedOperation(operation, context, requestedOperations);
   }
   return services;
 }
@@ -978,7 +996,7 @@ function requiresStrictCapabilitiesMatching(
   if (
     // Request is only asking for one of temporal or spatial subsetting and
     // is not asking for any other operation, so force making matching strict
-    !requiresVariableSubsetting(operation)
+    !requiresVariableSubsetting(context)
     && !requiresReprojection(operation)
     && !requiresReformatting(operation, context)
     && !requiresConcatenation(operation)
@@ -1009,7 +1027,9 @@ export function chooseServiceConfig(
   let serviceConfig;
   try {
     serviceConfig = filterServiceConfigs(operation, context, configs, allFilterFns);
+    console.log(`CDD - it found a service with strict filtering used (so can't be HyBIG) ${serviceConfig.name}`);
   } catch (e) {
+    console.log(`CDD - bad news - an exception was thrown: ${e.message}`);
     if (e instanceof UnsupportedOperation) {
       if (!requiresStrictCapabilitiesMatching(operation, context)) {
         // if we couldn't find a matching service, make a best effort to find a service that

@@ -677,10 +677,11 @@ https://cmr.uat.earthdata.nasa.gov:
           <<: *default-turbo-env
           STAGING_PATH: public/gesdisc/giovanni
     umm_s: S1258984104-GES_DISC
-    collections:
-      - id: C1215802935-GES_DISC
-        variables:
-        - V1268438218-GES_DISC
+    validate_variables: false
+    # collections:
+    #   - id: C1215802935-GES_DISC
+    #     variables:
+    #     - V1268438218-GES_DISC
     capabilities:
       subsetting:
         temporal: true
@@ -1286,6 +1287,7 @@ https://cmr.uat.earthdata.nasa.gov:
         - image/png
         - image/gif
       reprojection: true
+    # validate_variables: false
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
