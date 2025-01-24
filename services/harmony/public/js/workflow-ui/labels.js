@@ -2,6 +2,7 @@
 import jobsTable from './jobs/jobs-table.js';
 import toasts from './toasts.js';
 import PubSub from '../pub-sub.js';
+import { trimForDisplay } from './table.js';
 
 // eslint-disable-next-line import/no-mutable-exports
 let labelsModule;
@@ -22,7 +23,7 @@ async function handleLabelsResponse(res, insertNew, successMessage, tagInput) {
     if (insertNew) {
       const label = (await res.json()).labels[0];
       labelsModule.insertNewLabelAlphabetically(label);
-      const newTag = { value: `label: ${label}`, dbValue: label, field: 'label' };
+      const newTag = { value: `label: ${trimForDisplay(label, 30)}`, dbValue: label, field: 'label', searchBy: label };
       tagInput.whitelist.push(newTag);
     }
     toasts.showUpper(successMessage);

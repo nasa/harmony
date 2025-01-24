@@ -1,5 +1,5 @@
 /* eslint-disable no-param-reassign */
-import { formatDates, initCopyHandler } from '../table.js';
+import { formatDates, initCopyHandler, trimForDisplay } from '../table.js';
 import PubSub from '../../pub-sub.js';
 
 // all of the currently selected job IDs
@@ -34,10 +34,7 @@ function initFilter(currentUser, services, providers, labels, isAdminRoute, tabl
   allowedList.push(...serviceList);
   const providerList = providers.map((provider) => ({ value: `provider: ${provider}`, dbValue: provider, field: 'provider' }));
   allowedList.push(...providerList);
-  const labelList = labels.map((l) => {
-    const lDisplay = l.length < 15 ? l : `${l.slice(0, 12)}...`;
-    return ({ value: `label: ${lDisplay}`, dbValue: l, field: 'label', searchBy: l });
-  });
+  const labelList = labels.map((label) => ({ value: `label: ${trimForDisplay(label, 30)}`, dbValue: label, field: 'label', searchBy: label }));
   allowedList.push(...labelList);
   if (isAdminRoute) {
     allowedList.push({ value: `user: ${currentUser}`, dbValue: currentUser, field: 'user' });
@@ -63,6 +60,21 @@ function initFilter(currentUser, services, providers, labels, isAdminRoute, tabl
       maxItems: 15,
       enabled: 0,
       closeOnSelect: true,
+    },
+    templates: {
+      tag(tagData) {
+        return `<tag title="${tagData.dbValue}"
+            contenteditable='false'
+            spellcheck='false'
+            tabIndex="${this.settings.a11y.focusableTags ? 0 : -1}"
+            class="${this.settings.classNames.tag}"
+            ${this.getAttributes(tagData)}>
+          <x title='' class="${this.settings.classNames.tagX}" role='button' aria-label='remove tag'></x>
+          <div>
+              <span class="${this.settings.classNames.tagText}">${trimForDisplay(tagData.value.split(': ')[1], 20)}</span>
+          </div>
+        </tag>`;
+      },
     },
   });
   const initialTags = JSON.parse(tableFilter);

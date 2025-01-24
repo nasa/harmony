@@ -77,10 +77,24 @@ async function initCopyHandler(selector) {
 }
 
 /**
+ * If the string is longer than n, trim it to n-3 and add ellipsis
+ * @param {string} str - the string to trim if it exceeds n
+ * @param {*} n - trim to n chars and append ...
+ * @returns trimmed string
+ */
+function trimForDisplay(str, n) {
+  if (!str) {
+    return '';
+  }
+  return str.length < n ? str : `${str.slice(0, n - 3)}...`;
+}
+
+/**
  * Utility for commonly used table logic.
  */
 export {
   formatDates,
   initTooltips,
   initCopyHandler,
+  trimForDisplay,
 };
