@@ -77,11 +77,8 @@ export function getDataCommon(
     queryVars = ['all'];
   }
 
-  const varInfos = parseVariables(req.collections, 'parameter_vars', queryVars);
-  for (const varInfo of varInfos) {
-    operation.addSource(varInfo.collectionId, varInfo.shortName, varInfo.versionId,
-      varInfo.variables, varInfo.coordinateVariables);
-  }
+  const requestedVariables = parseVariables('parameter_vars', queryVars);
+  req.context.requestedVariables = requestedVariables;
 
   req.operation = operation;
 }

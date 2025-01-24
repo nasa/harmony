@@ -21,6 +21,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       const operation = new DataOperation();
       operation.addSource(collectionId, shortName, versionId);
       this.operation = operation;
+      this.context = { collectionIds: [collectionId] };
       this.config = [
         {
           name: 'should-never-be-picked',
@@ -138,12 +139,12 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       });
 
       it('returns the first service with tiff support for the collection', function () {
-        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        const serviceConfig = chooseServiceConfig(this.operation, this.context, this.config);
         expect(serviceConfig.name).to.equal('tiff-png-bbox-service');
       });
 
       it('uses the correct service class when building the service', function () {
-        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        const serviceConfig = chooseServiceConfig(this.operation, this.context, this.config);
         const service = buildService(serviceConfig, this.operation);
         expect(service.constructor.name).to.equal('HttpService');
       });
@@ -155,12 +156,12 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       });
 
       it('returns the first service with png support for the collection', function () {
-        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        const serviceConfig = chooseServiceConfig(this.operation, this.context, this.config);
         expect(serviceConfig.name).to.equal('tiff-png-bbox-service');
       });
 
       it('uses the correct service class when building the service', function () {
-        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        const serviceConfig = chooseServiceConfig(this.operation, this.context, this.config);
         const service = buildService(serviceConfig, this.operation);
         expect(service.constructor.name).to.equal('HttpService');
       });
@@ -172,7 +173,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       });
 
       it('throws an exception', function () {
-        expect(() => chooseServiceConfig(this.operation, {}, this.config))
+        expect(() => chooseServiceConfig(this.operation, this.context, this.config))
           .to.throw(UnsupportedOperation, 'the requested combination of operations: reformatting to image/gif on C123-TEST is unsupported');
       });
     });
@@ -183,7 +184,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       });
 
       it('chooses the service that supports spatial subsetting', function () {
-        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        const serviceConfig = chooseServiceConfig(this.operation, this.context, this.config);
         expect(serviceConfig.name).to.equal('tiff-png-bbox-service');
       });
     });
@@ -194,7 +195,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       });
 
       it('chooses the service that supports dimension extension', function () {
-        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        const serviceConfig = chooseServiceConfig(this.operation, this.context, this.config);
         expect(serviceConfig.name).to.equal('extend-service');
       });
     });
@@ -205,7 +206,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       });
 
       it('chooses the service that supports area averaging', function () {
-        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        const serviceConfig = chooseServiceConfig(this.operation, this.context, this.config);
         expect(serviceConfig.name).to.equal('area-averaging-service');
       });
     });
@@ -216,7 +217,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       });
 
       it('chooses the service that supports time averaging', function () {
-        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        const serviceConfig = chooseServiceConfig(this.operation, this.context, this.config);
         expect(serviceConfig.name).to.equal('time-averaging-service');
       });
     });
@@ -228,12 +229,12 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       });
 
       it('chooses the service that supports netcdf output, but not spatial subsetting', function () {
-        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        const serviceConfig = chooseServiceConfig(this.operation, this.context, this.config);
         expect(serviceConfig.name).to.equal('shapefile-tiff-netcdf-service');
       });
 
       it('indicates that it could not clip based on the spatial extent', function () {
-        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        const serviceConfig = chooseServiceConfig(this.operation, this.context, this.config);
         expect(serviceConfig.message).to.equal('Data in output files may extend outside the spatial and temporal bounds you requested.');
       });
     });
@@ -245,7 +246,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       });
 
       it('chooses the service that supports temporal subsetting and netcdf-4 format', function () {
-        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        const serviceConfig = chooseServiceConfig(this.operation, this.context, this.config);
         expect(serviceConfig.name).to.equal('temporal-netcdf-service');
       });
     });
@@ -257,12 +258,12 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       });
 
       it('chooses the first service that supports tiff format, but not temporal subsetting since no service can perform both', function () {
-        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        const serviceConfig = chooseServiceConfig(this.operation, this.context, this.config);
         expect(serviceConfig.name).to.equal('tiff-png-bbox-service');
       });
 
       it('indicates that it could not clip based on the spatial extent', function () {
-        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        const serviceConfig = chooseServiceConfig(this.operation, this.context, this.config);
         expect(serviceConfig.message).to.equal('Data in output files may extend outside the spatial and temporal bounds you requested.');
       });
     });
@@ -273,7 +274,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       });
 
       it('chooses the service that supports shapefile subsetting', function () {
-        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        const serviceConfig = chooseServiceConfig(this.operation, this.context, this.config);
         expect(serviceConfig.name).to.equal('shapefile-tiff-netcdf-service');
       });
     });
@@ -284,7 +285,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       });
 
       it('chooses the service that supports dimension subsetting', function () {
-        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        const serviceConfig = chooseServiceConfig(this.operation, this.context, this.config);
         expect(serviceConfig.name).to.equal('dimension-service');
       });
     });
@@ -297,12 +298,12 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       });
 
       it('returns the service that supports reprojection, but not temporal or shapefile subsetting', function () {
-        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        const serviceConfig = chooseServiceConfig(this.operation, this.context, this.config);
         expect(serviceConfig.name).to.equal('tiff-png-reprojection-service');
       });
 
       it('indicates that it could not clip based on the spatial or temporal extents', function () {
-        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        const serviceConfig = chooseServiceConfig(this.operation, this.context, this.config);
         expect(serviceConfig.message).to.equal('Data in output files may extend outside the spatial and temporal bounds you requested.');
       });
     });
@@ -313,7 +314,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       });
 
       it('chooses the service that supports reprojection', function () {
-        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        const serviceConfig = chooseServiceConfig(this.operation, this.context, this.config);
         expect(serviceConfig.name).to.equal('tiff-png-reprojection-service');
       });
     });
@@ -325,7 +326,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       });
 
       it('throws an exception', function () {
-        expect(() => chooseServiceConfig(this.operation, {}, this.config))
+        expect(() => chooseServiceConfig(this.operation, this.context, this.config))
           .to.throw(UnsupportedOperation, 'reprojection and reformatting to application/x-netcdf4 on C123-TEST is unsupported');
       });
     });
@@ -338,7 +339,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       });
 
       it('throws an exception', function () {
-        expect(() => chooseServiceConfig(this.operation, {}, this.config))
+        expect(() => chooseServiceConfig(this.operation, this.context, this.config))
           .to.throw(UnsupportedOperation, 'reprojection and reformatting to application/x-netcdf4 on C123-TEST is unsupported');
       });
     });
@@ -352,7 +353,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       });
 
       it('chooses the service that supports concatenation and netcdf-4 format', function () {
-        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        const serviceConfig = chooseServiceConfig(this.operation, this.context, this.config);
         expect(serviceConfig.name).to.equal('netcdf-service');
       });
     });
@@ -381,12 +382,12 @@ describe('services.chooseServiceConfig and services.buildService', function () {
     });
 
     it('returns the service configured for the collection', function () {
-      const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+      const serviceConfig = chooseServiceConfig(this.operation, this.context, this.config);
       expect(serviceConfig.name).to.equal('matching-service');
     });
 
     it('uses the correct service class when building the service', function () {
-      const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+      const serviceConfig = chooseServiceConfig(this.operation, this.context, this.config);
       const service = buildService(serviceConfig, this.operation);
       expect(service.constructor.name).to.equal('TurboService');
     });
@@ -425,12 +426,12 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       operation.outputFormat = 'image/tiff';
 
       it('returns the service configured for variable subsetting', function () {
-        const serviceConfig = chooseServiceConfig(operation, {}, this.config);
+        const serviceConfig = chooseServiceConfig(operation, this.context, this.config);
         expect(serviceConfig.name).to.equal('variable-subsetter');
       });
 
       it('uses the correct service class when building the service', function () {
-        const serviceConfig = chooseServiceConfig(operation, {}, this.config);
+        const serviceConfig = chooseServiceConfig(operation, this.context, this.config);
         const service = buildService(serviceConfig, operation);
         expect(service.constructor.name).to.equal('TurboService');
       });
@@ -442,7 +443,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       operation.outputFormat = 'application/x-zarr';
 
       it('throws an exception', function () {
-        expect(() => chooseServiceConfig(operation, {}, this.config))
+        expect(() => chooseServiceConfig(operation, { requestedVariables: ['the-var'] }, this.config))
           .to.throw(UnsupportedOperation, 'variable subsetting and reformatting to application/x-zarr on C123-TEST is unsupported');
       });
     });
@@ -452,7 +453,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       operation.addSource(collectionId, shortName, versionId);
       operation.outputFormat = 'application/x-zarr';
       it('returns the non-variable subsetter service that does support the format', function () {
-        const serviceConfig = chooseServiceConfig(operation, {}, this.config);
+        const serviceConfig = chooseServiceConfig(operation, this.context, this.config);
         expect(serviceConfig.name).to.equal('non-variable-subsetter');
       });
     });
@@ -463,7 +464,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       operation.outputFormat = 'image/foo';
 
       it('throws an exception', function () {
-        expect(() => chooseServiceConfig(operation, {}, this.config))
+        expect(() => chooseServiceConfig(operation, { collectionIds: [collectionId], requestedVariables: ['the-var'] }, this.config))
           .to.throw(UnsupportedOperation, 'variable subsetting and reformatting to image/foo on C123-TEST is unsupported');
       });
     });
@@ -487,7 +488,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
     });
 
     it('throws an exception', function () {
-      expect(() => chooseServiceConfig(this.operation, {}, this.config))
+      expect(() => chooseServiceConfig(this.operation, this.context, this.config))
         .to.throw(UnsupportedOperation, 'no operations can be performed on C123-TEST');
     });
   });
@@ -515,7 +516,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       });
 
       it('throws an exception', function () {
-        expect(() => chooseServiceConfig(this.operation, {}, this.config))
+        expect(() => chooseServiceConfig(this.operation, this.context, this.config))
           .to.throw(UnsupportedOperation, 'the requested combination of operations: spatial subsetting on C123-TEST is unsupported');
       });
     });
@@ -526,7 +527,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       });
 
       it('throws an exception', function () {
-        expect(() => chooseServiceConfig(this.operation, {}, this.config))
+        expect(() => chooseServiceConfig(this.operation, this.context, this.config))
           .to.throw(UnsupportedOperation, 'shapefile subsetting on C123-TEST is unsupported');
       });
     });
@@ -589,7 +590,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
         operation = new DataOperation();
         operation.addSource(collectionId, shortName, versionId, [{ meta: { 'concept-id': variableId }, umm: { Name: 'the-var' } }]);
         operation.outputFormat = 'text/csv';
-        const serviceConfig = chooseServiceConfig(operation, {}, this.config);
+        const serviceConfig = chooseServiceConfig(operation, this.context, this.config);
         expect(serviceConfig.name).to.equal('variable-based-service');
       });
 
@@ -597,7 +598,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
         operation = new DataOperation();
         operation.addSource(collectionId, shortName, versionId, [{ meta: { 'concept-id': variableId }, umm: { Name: 'the-var' } }]);
         operation.outputFormat = 'text/csv';
-        const serviceConfig = chooseServiceConfig(operation, {}, this.config);
+        const serviceConfig = chooseServiceConfig(operation, this.context, this.config);
         const service = buildService(serviceConfig, operation);
         expect(service.constructor.name).to.equal('TurboService');
       });
@@ -609,7 +610,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       operation.outputFormat = 'text/csv';
 
       it('throws an exception', function () {
-        expect(() => chooseServiceConfig(operation, {}, this.config))
+        expect(() => chooseServiceConfig(operation, this.context, this.config))
           .to.throw(UnsupportedOperation, 'no operations can be performed on C123-TEST');
       });
     });
@@ -620,7 +621,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       operation.outputFormat = 'text/csv';
 
       it('throws an exception', function () {
-        expect(() => chooseServiceConfig(operation, {}, this.config))
+        expect(() => chooseServiceConfig(operation, this.context, this.config))
           .to.throw(UnsupportedOperation, 'no operations can be performed on C123-TEST');
       });
     });
@@ -658,12 +659,12 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       operation.outputFormat = 'text/csv';
 
       it('returns the service configured for variable-based service', function () {
-        const serviceConfig = chooseServiceConfig(operation, {}, this.config);
+        const serviceConfig = chooseServiceConfig(operation, this.context, this.config);
         expect(serviceConfig.name).to.equal('variable-based-service');
       });
 
       it('uses the correct service class when building the service', function () {
-        const serviceConfig = chooseServiceConfig(operation, {}, this.config);
+        const serviceConfig = chooseServiceConfig(operation, this.context, this.config);
         const service = buildService(serviceConfig, operation);
         expect(service.constructor.name).to.equal('TurboService');
       });
@@ -676,12 +677,12 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       operation.outputFormat = 'text/csv';
 
       it('returns the service configured for variable-based service', function () {
-        const serviceConfig = chooseServiceConfig(operation, {}, this.config);
+        const serviceConfig = chooseServiceConfig(operation, this.context, this.config);
         expect(serviceConfig.name).to.equal('variable-based-service');
       });
 
       it('uses the correct service class when building the service', function () {
-        const serviceConfig = chooseServiceConfig(operation, {}, this.config);
+        const serviceConfig = chooseServiceConfig(operation, this.context, this.config);
         const service = buildService(serviceConfig, operation);
         expect(service.constructor.name).to.equal('TurboService');
       });
@@ -694,7 +695,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       operation.outputFormat = 'text/csv';
 
       it('throws an exception', function () {
-        expect(() => chooseServiceConfig(operation, {}, this.config))
+        expect(() => chooseServiceConfig(operation, this.context, this.config))
           .to.throw(UnsupportedOperation, 'no operations can be performed on C123-TEST');
       });
     });

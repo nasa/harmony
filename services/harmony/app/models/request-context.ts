@@ -1,5 +1,6 @@
 import { Logger } from 'winston';
 import { ServiceConfig } from './services/base-service';
+import { CmrCollection } from '../util/cmr';
 
 interface ShapefileObject {
   typeName?: string;
@@ -35,6 +36,12 @@ export default class RequestContext {
   messages?: string[];
 
   startTime?: Date;
+
+  requestedVariables?: string[];
+
+  collectionIds?: string[];
+
+  collections?: CmrCollection[];
 
   /**
    * Creates an instance of RequestContext.
