@@ -42,6 +42,7 @@ function initFilter(currentUser, services, providers, labels, isAdminRoute, tabl
   const allowedValues = allowedList.map((t) => t.value);
   const tagInput = new Tagify(filterInput, {
     whitelist: allowedList,
+    delimiters: null,
     validate(tag) {
       if (allowedValues.includes(tag.value)
         || /^provider: [A-Za-z0-9_]{1,100}$/.test(tag.value)
