@@ -213,7 +213,7 @@ function getLabelsIntersectionForSelectedJobs() {
       const jobID = jobEl.getAttribute('data-id');
       const labelsString = document.querySelector(`#job-labels-display-${jobID}`).getAttribute('data-labels');
       const currentSet = new Set();
-      const labels = labelsString === '' ? [] : labelsString.split(',');
+      const labels = JSON.parse(labelsString);
       labels.forEach((item) => currentSet.add(item));
       if (firstChecked) { // init labelsSet
         labels.forEach((item) => labelsSet.add(item));

@@ -209,6 +209,9 @@ function jobRenderingFunctions(logger: Logger, requestQuery: Record<string, any>
         return this.request;
       }
     },
+    jobLabels(): string {
+      return  JSON.stringify(this.labels || []);
+    },
     jobLabelsDisplay(): string {
       return this.labels.map((label) => {
         const labelText = truncateString(label, 30);
