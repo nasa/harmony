@@ -10,7 +10,7 @@ export enum WorkItemStatus {
   FAILED = 'failed',
   CANCELED = 'canceled',
   WARNING = 'warning',
-};
+}
 
 // additional information about the status - currently only relevant for WARNING status
 export enum WorkItemSubStatus {
