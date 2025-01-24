@@ -83,3 +83,7 @@
 #create-label-link {
     word-wrap: break-word;
 }
+
+.toast, .toast-container {
+    z-index: 1021;
+}
