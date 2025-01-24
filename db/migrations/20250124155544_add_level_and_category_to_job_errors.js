@@ -8,9 +8,7 @@ exports.up = function (knex, Promise) {
     ADD COLUMN "level" VARCHAR(255) DEFAULT 'error' NOT NULL,
     ADD CONSTRAINT "job_errors_level_check"
     CHECK (level IN ('error', 'warning')),
-    ADD COLUMN "category" VARCHAR(255) DEFAULT 'generic' NOT NULL,
-    ADD CONSTRAINT "job_errors_category_check"
-    CHECK (category IN ('generic', 'no-data'));
+    ADD COLUMN "category" VARCHAR(255) DEFAULT 'generic' NOT NULL;
 
     CREATE INDEX job_errors_level ON job_errors (level);
     CREATE INDEX job_errors_category ON job_errors (category)

@@ -609,13 +609,13 @@ export async function processWorkItem(
 ): Promise<void> {
   const { jobID } = job;
   const { status, errorMessage, catalogItems, outputItemSizes } = preprocessResult;
-  const { workItemID, hits, results, scrollID, subStatus } = update;
+  const { workItemID, hits, results, scrollID, sub_status } = update;
   const startTime = new Date().getTime();
   let durationMs;
   let jobSaveStartTime;
   let didCreateWorkItem = false;
   if (status === WorkItemStatus.SUCCESSFUL || status === WorkItemStatus.WARNING) {
-    logger.info(`Updating work item ${workItemID} to ${status} | ${subStatus}`);
+    logger.info(`Updating work item ${workItemID} to ${status} | ${sub_status}`);
   }
 
   try {
@@ -701,7 +701,7 @@ export async function processWorkItem(
       tx,
       workItemID,
       status,
-      subStatus,
+      sub_status,
       duration,
       totalItemsSize,
       outputItemSizes);
@@ -713,7 +713,7 @@ export async function processWorkItem(
     logger.info(`Updated work item. Duration (ms) was: ${duration}`);
 
     workItem.status = status;
-    workItem.subStatus = subStatus;
+    workItem.sub_status = sub_status;
 
     let allWorkItemsForStepComplete = false;
 

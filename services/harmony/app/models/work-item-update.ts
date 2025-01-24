@@ -15,7 +15,7 @@ export default interface WorkItemUpdate {
   status?: WorkItemStatus;
 
   // The sub-status of the operation - see WorkItemSubStatus
-  subStatus?: WorkItemSubStatus;
+  sub_status?: WorkItemSubStatus;
 
   // The ID of the scroll session (only used for the query cmr service)
   scrollID?: string;

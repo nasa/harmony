@@ -52,7 +52,7 @@ export default class WorkItem extends Record implements WorkItemRecord {
   status?: WorkItemStatus;
 
   // The sub-status of the operation - see WorkItemSubStatus
-  subStatus?: WorkItemSubStatus;
+  sub_status?: WorkItemSubStatus;
 
   // error message if status === FAILED
   errorMessage?: string;
@@ -300,7 +300,7 @@ export async function getWorkItemStatus(
  * @param tx - the transaction to use for querying
  * @param id - the id of the WorkItem
  * @param status - the status to set for the WorkItem
- * @param subStatus - the sub-status to set for the WorkItem
+ * @param sub_status - the sub-status to set for the WorkItem
  * @param duration - how long the work item took to process
  * @param totalItemsSize - the combined sizes of all the input granules for this work item
  * @param outputItemSizes - the separate size of each granule in the output for this work item
@@ -309,7 +309,7 @@ export async function updateWorkItemStatus(
   tx: Transaction,
   id: number,
   status: WorkItemStatus,
-  subStatus: WorkItemSubStatus,
+  sub_status: WorkItemSubStatus,
   duration: number,
   totalItemsSize: number,
   outputItemSizes: number[],
@@ -318,11 +318,11 @@ export async function updateWorkItemStatus(
   const outputItemSizesJson = JSON.stringify(outputItemSizes);
   try {
     await tx(WorkItem.table)
-      .update({ status, subStatus, duration, totalItemsSize, outputItemSizesJson: outputItemSizesJson, updatedAt: new Date() })
+      .update({ status, sub_status, duration, totalItemsSize, outputItemSizesJson: outputItemSizesJson, updatedAt: new Date() })
       .where({ id });
-    logger.debug(`Status for work item ${id} set to ${status} | ${subStatus}`);
+    logger.debug(`Status for work item ${id} set to ${status} | ${sub_status}`);
   } catch (e) {
-    logger.error(`Failed to update work item ${id} status to ${status} | ${subStatus}`);
+    logger.error(`Failed to update work item ${id} status to ${status} | ${sub_status}`);
     logger.error(e);
     throw e;
   }
@@ -333,16 +333,16 @@ export async function updateWorkItemStatus(
  * @param tx - the transaction to use for querying
  * @param ids - the ids of the WorkItems
  * @param status - the status to set for the WorkItems
- * @param subStatus - the sub-status to set for the WorkItems
+ * @param sub_status - the sub-status to set for the WorkItems
  */
 export async function updateWorkItemStatuses(
   tx: Transaction,
   ids: number[],
   status: WorkItemStatus,
-  subStatus?: WorkItemSubStatus,
+  sub_status?: WorkItemSubStatus,
 ): Promise<void> {
   const now = new Date();
-  let update = { status, subStatus, updatedAt: now };
+  let update = { status, sub_status, updatedAt: now };
   // if we are setting the status to running, also set the startedAt time
   if (status === WorkItemStatus.RUNNING) {
     update = { ...update, ...{ startedAt: now } };

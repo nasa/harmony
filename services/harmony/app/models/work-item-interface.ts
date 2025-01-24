@@ -44,7 +44,7 @@ export interface WorkItemRecord {
   status?: WorkItemStatus;
 
   // The sub-status of the operation - see WorkItemSubStatus
-  subStatus?: WorkItemSubStatus;
+  sub_status?: WorkItemSubStatus;
 
   // error message if status === FAILED
   errorMessage?: string;
