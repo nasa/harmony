@@ -187,6 +187,7 @@ The structure of an entry in the [services.yml](../../config/services.yml) file 
       - image/png
       - image/gif
     reprojection: true            # The service supports reprojection
+  validate_variables: true        # Whether to validate the requested variables exist in the CMR. Defaults to true.
   steps:
       - image: !Env ${QUERY_CMR_IMAGE} # The image to use for the first step in the chain
       - image: !Env ${HARMONY_EXAMPLE_IMAGE}     # The image to use for the second step in the chain
