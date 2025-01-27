@@ -12,7 +12,8 @@ beforeEach(async () => {
 describe('labels.js', () => { 
   describe('handleLabelsResponse', () => {
     it('inserts a new label when insertNew is true', async () => {
-      await Labels.handleLabelsResponse({ status: 201, json: async () => ({ labels: ['a new one'] }) }, 'a new one', true, 'it worked!');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await Labels.handleLabelsResponse({ status: 201, json: async () => ({ labels: ['a new one'] }) } as any, true, 'it worked!', { });
       const labelsListElement = document.getElementById('labels-list');
       expect(labelsListElement.querySelector('a[name="a new one"]')).to.not.be.undefined;
     });
