@@ -51,7 +51,7 @@ describe('UMM variable validation', function () {
     hookServersStartStop();
     const serviceConfigs = [
       {
-        name: 'test-variable-validation-on',
+        name: 'test-variable-validation-disabled',
         data_operation_version: '0.20.0',
         type: {
           name: 'turbo',
