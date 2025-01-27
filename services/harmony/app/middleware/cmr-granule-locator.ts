@@ -29,7 +29,7 @@ enum GranuleLimitReason {
  * @returns the collection from the request that has the given id
  */
 function getCollectionFromRequest(req: HarmonyRequest, collectionId: string): CmrCollection {
-  return req.collections.find((collection) => collection.id === collectionId);
+  return req.context.collections.find((collection) => collection.id === collectionId);
 }
 
 /**

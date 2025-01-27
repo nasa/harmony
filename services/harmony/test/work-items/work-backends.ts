@@ -1,4 +1,4 @@
-import { WorkItemStatus, getStacLocation, WorkItemRecord } from './../../app/models/work-item-interface';
+import { WorkItemStatus, getStacLocation, WorkItemRecord, WorkItemSubStatus } from './../../app/models/work-item-interface';
 import { Job, JobRecord, JobStatus, terminalStates } from './../../app/models/job';
 import { describe, it } from 'mocha';
 import * as sinon from 'sinon';
@@ -476,6 +476,71 @@ describe('Work Backends', function () {
       });
     });
 
+    describe('when the work item completes with no data', async function () {
+      hookJobCreation(jobRecord);
+      hookWorkflowStepCreation(workflowStepRecord);
+      const runningWorkItemRecord = {
+        ...workItemRecord,
+        ...{
+          status: WorkItemStatus.RUNNING,
+          startedAt: new Date(),
+        },
+      };
+      hookWorkItemCreation(runningWorkItemRecord);
+      const noDataWorkItemRecord = {
+        ...workItemRecord,
+        ...{
+          status: WorkItemStatus.WARNING,
+          sub_status: WorkItemSubStatus.NO_DATA,
+          results: [getStacLocation({ id: workItemRecord.id, jobID: workItemRecord.jobID }, 'catalog.json')],
+          outputItemSizes: [],
+          duration: 0,
+        },
+      };
+      before(async () => {
+        await fakeServiceStacOutput(noDataWorkItemRecord.jobID, noDataWorkItemRecord.id);
+      });
+      hookWorkItemUpdate((r) => r.send(noDataWorkItemRecord));
+
+      it('sets the work item status to warning with no-data', async function () {
+        const updatedWorkItem = await getWorkItemById(db, this.workItem.id);
+        expect(updatedWorkItem.status).to.equal(WorkItemStatus.WARNING);
+        expect(updatedWorkItem.sub_status).to.equal(WorkItemSubStatus.NO_DATA);
+      });
+
+      describe('and the worker computed duration is less than the harmony computed duration', async function () {
+        it('sets the work item duration to the harmony computed duration', async function () {
+          const updatedWorkItem = await getWorkItemById(db, this.workItem.id);
+          expect(updatedWorkItem.duration).to.be.greaterThan(noDataWorkItemRecord.duration);
+        });
+      });
+
+      describe('and the work item is the last in the chain', async function () {
+        it('sets the job updatedAt field to the current time', async function () {
+          const { job: updatedJob } = await Job.byJobID(db, this.job.jobID);
+          expect(updatedJob.updatedAt.valueOf()).to.greaterThan(this.job.updatedAt.valueOf());
+        });
+
+        // TODO this will change with HARMONY-1995
+        it('adds a link for the work results to the job', async function () {
+          const { job: updatedJob } = await Job.byJobID(db, this.job.jobID, true);
+          expect(updatedJob.links.filter(
+            (jobLink) => jobLink.href === expectedLink,
+          ).length).to.equal(1);
+        });
+
+        it('sets the job status to complete', async function () {
+          const { job: updatedJob } = await Job.byJobID(db, this.job.jobID);
+          expect(updatedJob.status === JobStatus.SUCCESSFUL);
+        });
+
+        it('sets the job progress to 100', async function () {
+          const { job: updatedJob } = await Job.byJobID(db, this.job.jobID);
+          expect(updatedJob.progress).to.equal(100);
+        });
+      });
+    });
+
     describe('when a retried work item succeeds on the original worker before the retry finishes', async function () {
       hookJobCreation(jobRecord);
       hookWorkflowStepCreation(workflowStepRecord);
@@ -539,7 +604,7 @@ describe('Work Backends', function () {
     }
 
     // tests to make sure work-items cannot be updated once they are in a terminal state
-    for (const terminalState of [WorkItemStatus.CANCELED, WorkItemStatus.FAILED, WorkItemStatus.SUCCESSFUL]) {
+    for (const terminalState of [WorkItemStatus.CANCELED, WorkItemStatus.FAILED, WorkItemStatus.SUCCESSFUL, WorkItemStatus.WARNING]) {
       describe(`When the work-item is already in state "${terminalState}"`, async function () {
         const newWorkItemRecord = {
           ...workItemRecord, ...{ status: terminalState },

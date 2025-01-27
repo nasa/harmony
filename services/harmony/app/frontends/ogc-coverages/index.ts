@@ -60,7 +60,7 @@ function TODO(req: HarmonyRequest, res: Response): void {
 function getSpecification(req: HarmonyRequest, res: Response): void {
   // Defined inline because the index file deals with the YAML spec.
   res.append('Content-type', 'text/openapi+yaml;version=3.0');
-  res.send(openApiContent.replace('no-default-cmr-collection', req.collectionIds.join('/')));
+  res.send(openApiContent.replace('no-default-cmr-collection', req.context.collectionIds.join('/')));
 }
 
 /**

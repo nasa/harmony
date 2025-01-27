@@ -13,12 +13,12 @@ async function cmrUmmCollectionReader(req: HarmonyRequest, res, next: NextFuncti
   try {
     const hasUmmConditional = req.context.serviceConfig?.steps?.filter((s) => s.conditional?.umm_c);
     if (hasUmmConditional && hasUmmConditional.length > 0) {
-      req.operation.ummCollections = await getUmmCollectionsByIds(req.context, req.collectionIds, req.accessToken);
+      req.operation.ummCollections = await getUmmCollectionsByIds(req.context, req.context.collectionIds, req.accessToken);
     }
     next();
   } catch (error) {
-    req.collectionIds = [];
-    req.collections = [];
+    req.context.collectionIds = [];
+    req.context.collections = [];
     next(error);
   }
 }

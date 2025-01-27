@@ -9,12 +9,19 @@ export enum WorkItemStatus {
   SUCCESSFUL = 'successful',
   FAILED = 'failed',
   CANCELED = 'canceled',
+  WARNING = 'warning',
+}
+
+// additional information about the status - currently only relevant for WARNING status
+export enum WorkItemSubStatus {
+  NO_DATA = 'no-data', // the service responded with no data
 }
 
 export const COMPLETED_WORK_ITEM_STATUSES = [
   WorkItemStatus.SUCCESSFUL,
   WorkItemStatus.FAILED,
   WorkItemStatus.CANCELED,
+  WorkItemStatus.WARNING,
 ];
 
 export interface WorkItemRecord {
@@ -35,6 +42,9 @@ export interface WorkItemRecord {
 
   // The status of the operation - see WorkItemStatus
   status?: WorkItemStatus;
+
+  // The sub-status of the operation - see WorkItemSubStatus
+  sub_status?: WorkItemSubStatus;
 
   // error message if status === FAILED
   errorMessage?: string;
