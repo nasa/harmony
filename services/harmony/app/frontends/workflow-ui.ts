@@ -102,21 +102,27 @@ function parseQuery( /* eslint-disable @typescript-eslint/no-explicit-any */
     tableQuery.allowUsers = !(requestQuery.disallowuser === 'on');
     tableQuery.allowProviders = !(requestQuery.disallowprovider === 'on');
     const selectedOptions: { field: string, dbValue: string, value: string }[] = JSON.parse(requestQuery.tablefilter);
+    
     const validStatusSelections = selectedOptions
       .filter(option => option.field === 'status' && Object.values<string>(statusEnum).includes(option.dbValue));
     const statusValues = validStatusSelections.map(option => option.dbValue);
+    
     const validServiceSelections = selectedOptions
       .filter(option => option.field === 'service' && serviceNames.includes(option.dbValue));
     const serviceValues = validServiceSelections.map(option => option.dbValue);
+    
     const validUserSelections = selectedOptions
       .filter(option => isAdminAccess && /^user: [A-Za-z0-9\.\_]{4,30}$/.test(option.value));
     const userValues = validUserSelections.map(option => option.value.split('user: ')[1]);
+    
     const validLabelSelections = selectedOptions
       .filter(option => /^label: .{1,100}$/.test(option.value));
     const labelValues = validLabelSelections.map(option => option.dbValue || option.value.split('label: ')[1].toLowerCase());
+    
     const validProviderSelections = selectedOptions
       .filter(option => /^provider: [A-Za-z0-9_]{1,100}$/.test(option.value));
     const providerValues = validProviderSelections.map(option => option.value.split('provider: ')[1].toLowerCase());
+    
     if ((statusValues.length + serviceValues.length + userValues.length + providerValues.length) > maxFilters) {
       throw new RequestValidationError(`Maximum amount of filters (${maxFilters}) was exceeded.`);
     }
