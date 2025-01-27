@@ -1,11 +1,14 @@
-/* eslint-disable no-continue */
 import jobsTable from './jobs/jobs-table.js';
 import toasts from './toasts.js';
 import PubSub from '../pub-sub.js';
 import { trimForDisplay } from './table.js';
 
-// eslint-disable-next-line import/no-mutable-exports
-let labelsModule;
+/**
+ * The labeling dropdown object allows users to
+ * add and remove labels from selected jobs.
+ */
+// need this ref so that we can access some functions before they're defined
+const labelsModule = {};
 let bsDropdown;
 let labelLinks;
 let labelDropdown;
@@ -166,6 +169,7 @@ function filterLabelsList() {
   }
   for (const labelItem of labelItems) {
     if (labelItem.classList.contains('label-promoted')) { // skip, stays hidden
+      // eslint-disable-next-line no-continue
       continue;
     }
     const labelName = labelItem.firstChild.getAttribute('data-value').toLowerCase().trim();
@@ -294,44 +298,39 @@ function bindEventListeners(tagInput) {
   });
 }
 
-/**
- * The labeling dropdown object allows users to
- * add and remove labels from selected jobs.
- */
-labelsModule = {
 
-  /**
-   * Initializes the labeling interactivity associated with
-   * the labels dropdown link.
-   * @param {Promise<object>} tagInputPromise - the tag input instance
-   */
-  async init(tagInputPromise) {
-    // the anchor elements that correspond to a label
-    labelLinks = Array.from(document.querySelectorAll('#labels-list .label-li a'));
-    // the dropdown that contains label list items
-    labelDropdown = document.getElementById('label-dropdown-a');
-    labelNavItem = document.getElementById('label-nav-item');
-    if (labelDropdown) {
-      bsDropdown = new bootstrap.Dropdown(labelDropdown);
-    }
-    const hasItems = document.querySelectorAll('#labels-list .label-li').length > 0;
-    showHideLabelsList(hasItems);
-    bindEventListeners((await tagInputPromise));
-    PubSub.subscribe(
-      'job-selected',
-      () => this.toggleLabelNavVisibility(jobsTable.getJobIds().length),
-    );
-  },
-  promoteLabels,
-  demoteLabels,
-  getLabelsIntersectionForSelectedJobs,
-  setLabelLinksDisabled,
-  setLabelLinksEnabled,
-  filterLabelsList,
-  showAllLabels,
-  toggleLabelNavVisibility,
-  insertNewLabelAlphabetically,
-  handleLabelsResponse,
+/**
+ * Initializes the labeling interactivity associated with
+ * the labels dropdown link.
+ * @param {Promise<object>} tagInputPromise - the tag input instance
+ */
+labelsModule.init = async (tagInputPromise) => {
+  // the anchor elements that correspond to a label
+  labelLinks = Array.from(document.querySelectorAll('#labels-list .label-li a'));
+  // the dropdown that contains label list items
+  labelDropdown = document.getElementById('label-dropdown-a');
+  labelNavItem = document.getElementById('label-nav-item');
+  if (labelDropdown) {
+    bsDropdown = new bootstrap.Dropdown(labelDropdown);
+  }
+  const hasItems = document.querySelectorAll('#labels-list .label-li').length > 0;
+  showHideLabelsList(hasItems);
+  bindEventListeners((await tagInputPromise));
+  PubSub.subscribe(
+    'job-selected',
+    () => toggleLabelNavVisibility(jobsTable.getJobIds().length),
+  );
 };
+
+labelsModule.promoteLabels = promoteLabels;
+labelsModule.demoteLabels = demoteLabels;
+labelsModule.getLabelsIntersectionForSelectedJobs = getLabelsIntersectionForSelectedJobs;
+labelsModule.setLabelLinksDisabled = setLabelLinksDisabled;
+labelsModule.setLabelLinksEnabled = setLabelLinksEnabled;
+labelsModule.filterLabelsList = filterLabelsList;
+labelsModule.showAllLabels = showAllLabels
+labelsModule.toggleLabelNavVisibility = toggleLabelNavVisibility;
+labelsModule.insertNewLabelAlphabetically = insertNewLabelAlphabetically;
+labelsModule.handleLabelsResponse = handleLabelsResponse;
 
 export default labelsModule;
