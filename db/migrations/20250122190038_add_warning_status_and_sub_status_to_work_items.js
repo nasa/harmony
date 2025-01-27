@@ -8,11 +8,9 @@ exports.up = function (knex, Promise) {
     DROP CONSTRAINT "work_items_status_check",
     ADD CONSTRAINT "work_items_status_check"
     CHECK (status IN ('ready', 'queued', 'running', 'successful', 'failed', 'canceled', 'warning')),
-    ADD COLUMN "sub_status" VARCHAR(255),
-    ADD CONSTRAINT "work_items_sub_status_check"
-    CHECK (sub_status IN (null, 'no-data'));
+    ADD COLUMN "sub_status" VARCHAR(255);
 
-    CREATE INDEX work_items_sub_status ON work_items (sub_status)
+    CREATE INDEX work_items_sub_status ON work_items (sub_status);
   `);
 };
 
@@ -22,8 +20,8 @@ exports.up = function (knex, Promise) {
  */
 exports.down = function (knex) {
   return knex.schema.raw(`
+    DROP_INDEX work_items_sub_status;
     ALTER TABLE "work_items"
-    DROP CONSTRAINT "work_items_sub_status_check",
     DROP COLUMN "sub_status"),
     DROP CONSTRAINT "work_items_status_check",
     ADD CONSTRAINT "work_items_status_check"
