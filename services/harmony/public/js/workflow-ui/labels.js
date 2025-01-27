@@ -298,7 +298,6 @@ function bindEventListeners(tagInput) {
   });
 }
 
-
 /**
  * Initializes the labeling interactivity associated with
  * the labels dropdown link.
