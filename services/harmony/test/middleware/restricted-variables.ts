@@ -36,7 +36,7 @@ describe('testing variables configured directly in services.yml', function () {
     });
   });
 
-  describe('when submitting a request for a supported variable', function () {
+  describe('when submitting a request for an unsupported variable', function () {
     hookRangesetRequest('1.0.0', collectionId, unsupportedVariable, { query: {}, username: 'joe' });
 
     it('rejects the request', function () {
