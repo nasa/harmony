@@ -1,7 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
-// import _, { get as getIn, partial } from 'lodash';
 import _, { get as getIn } from 'lodash';
 
 import logger from '../../util/log';
@@ -12,9 +11,7 @@ import { addCollectionsToServicesByAssociation } from '../../middleware/service-
 import { listToText, Conjunction, isInteger } from '@harmony/util/string';
 import TurboService from './turbo-service';
 import HttpService from './http-service';
-// import DataOperation, { DataSource } from '../data-operation';
 import DataOperation from '../data-operation';
-// import BaseService, { ServiceCollection, ServiceConfig } from './base-service';
 import BaseService, { ServiceConfig } from './base-service';
 import RequestContext from '../request-context';
 import env from '../../util/env';
@@ -214,21 +211,6 @@ function supportsConcatenation(configs: ServiceConfig<unknown>[]): ServiceConfig
 }
 
 /**
- * Determines whether or not a given ServiceCollection supports a given DataSource, i.e.,
- * the Service Collection has a matching collection id and variables
- *
- * @param source - The DataSource from an operation
- * @param servColl - The ServiceCollection defined in services.yml
- * @returns `true` if the collections are the same and if variables are not defined
- * for the service collection or all the variables in the source are also in the service
- * collection, `false` otherwise
- */
-// function isServiceCollectionMatch(source: DataSource, servColl: ServiceCollection): boolean {
-//   return servColl.id === source.collection &&
-//     (!servColl.variables || source.variables?.every((v) => servColl.variables?.includes(v.id)));
-// }
-
-/**
  * Returns true if all of the collections in the given operation can be operated on by
  * the given service.
  *
@@ -245,10 +227,6 @@ function isCollectionMatch(
   return serviceConfig.capabilities?.all_collections || context.collectionIds.every((collectionId) => {
     return serviceConfig.collections?.map((sc) => sc.id).includes(collectionId);
   });
-  // return serviceConfig.capabilities?.all_collections || operation.sources.every((source) => {
-  //   const rval = serviceConfig.collections?.some(partial(isServiceCollectionMatch, source));
-  //   return rval;
-  // });
 }
 
 /**
