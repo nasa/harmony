@@ -69,7 +69,7 @@ export function handleGranuleIds(
 export function handleExtend(
   operation: DataOperation,
   query: Record<string, string>): void {
-  if (query.extend) {
+  if (query.extend && query.extend !== 'false') {
     operation.extendDimensions = parseMultiValueParameter(query.extend);
   }
 }
