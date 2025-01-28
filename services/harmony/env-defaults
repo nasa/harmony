@@ -547,6 +547,6 @@ OPERA_RTC_S1_BROWSE_SERVICE_QUEUE_URLS='["ghcr.io/asfhyp3/opera-rtc-s1-browse:la
 
 HARMONY_SMAP_L2_GRIDDER_IMAGE=ghcr.io/nasa/harmony-smap-l2-gridder:latest
 HARMONY_SMAP_L2_GRIDDER_REQUESTS_MEMORY=128Mi
-HARMONY_SMAP_L2_GRIDDER_LIMITS_MEMORY=8Gi
+HARMONY_SMAP_L2_GRIDDER_LIMITS_MEMORY=16Gi
 HARMONY_SMAP_L2_GRIDDER_INVOCATION_ARGS='python -m harmony_service'
 HARMONY_SMAP_L2_GRIDDER_SERVICE_QUEUE_URLS='["ghcr.io/nasa/harmony-smap-l2-gridder:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/harmony-smap-l2-gridder.fifo"]'
