@@ -499,7 +499,7 @@ export class Job extends DBRecord implements JobRecord {
     includeLabels = false,
   ): Promise<{ data: Job[]; pagination: ILengthAwarePagination }> {
     let query;
-    const labelDelimiter = '*&%$#';
+    const labelDelimiter = '*&%$#'; // can't use comma because some labels contain commas
     if (includeLabels) {
       if (constraints.labels) { // Requesting to limit the jobs based on the provided labels
         query = tx(Job.table)
