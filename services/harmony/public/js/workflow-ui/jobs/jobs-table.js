@@ -1,5 +1,5 @@
 /* eslint-disable no-param-reassign */
-import { formatDates, initCopyHandler } from '../table.js';
+import { formatDates, initCopyHandler, trimForDisplay } from '../table.js';
 import PubSub from '../../pub-sub.js';
 
 // all of the currently selected job IDs
@@ -9,12 +9,13 @@ let statuses = [];
 
 /**
  * Build the jobs filter with filter facets like 'status' and 'user'.
-  * @param {string} currentUser - the current Harmony user
-  * @param {string[]} services - service names from services.yml
-  * @param {string[]} providers - array of provider ids
-  * @param {string[]} labels - known job labels
-  * @param {boolean} isAdminRoute - whether the current page is /admin/...
-  * @param {object[]} tableFilter - initial tags that will populate the input
+ * @param {string} currentUser - the current Harmony user
+ * @param {string[]} services - service names from services.yml
+ * @param {string[]} providers - array of provider ids
+ * @param {string[]} labels - known job labels
+ * @param {boolean} isAdminRoute - whether the current page is /admin/...
+ * @param {object[]} tableFilter - initial tags that will populate the input
+ * @returns the tag input instance
  */
 function initFilter(currentUser, services, providers, labels, isAdminRoute, tableFilter) {
   const filterInput = document.querySelector('input[name="tableFilter"]');
@@ -33,7 +34,7 @@ function initFilter(currentUser, services, providers, labels, isAdminRoute, tabl
   allowedList.push(...serviceList);
   const providerList = providers.map((provider) => ({ value: `provider: ${provider}`, dbValue: provider, field: 'provider' }));
   allowedList.push(...providerList);
-  const labelList = labels.map((label) => ({ value: `label: ${label}`, dbValue: label, field: 'label' }));
+  const labelList = labels.map((label) => ({ value: `label: ${trimForDisplay(label, 30)}`, dbValue: label, field: 'label', searchBy: label }));
   allowedList.push(...labelList);
   if (isAdminRoute) {
     allowedList.push({ value: `user: ${currentUser}`, dbValue: currentUser, field: 'user' });
@@ -41,6 +42,7 @@ function initFilter(currentUser, services, providers, labels, isAdminRoute, tabl
   const allowedValues = allowedList.map((t) => t.value);
   const tagInput = new Tagify(filterInput, {
     whitelist: allowedList,
+    delimiters: null, // prevent characters like "," from triggering input submission
     validate(tag) {
       if (allowedValues.includes(tag.value)
         || /^provider: [A-Za-z0-9_]{1,100}$/.test(tag.value)
@@ -60,9 +62,26 @@ function initFilter(currentUser, services, providers, labels, isAdminRoute, tabl
       enabled: 0,
       closeOnSelect: true,
     },
+    templates: {
+      tag(tagData) {
+        return `<tag title="${tagData.dbValue}"
+            contenteditable='false'
+            spellcheck='false'
+            tabIndex="${this.settings.a11y.focusableTags ? 0 : -1}"
+            class="${this.settings.classNames.tag}"
+            ${this.getAttributes(tagData)}>
+          <x title='' class="${this.settings.classNames.tagX}" role='button' aria-label='remove tag'></x>
+          <div>
+              <span class="${this.settings.classNames.tagText}">${trimForDisplay(tagData.value.split(': ')[1], 20)}</span>
+          </div>
+        </tag>`;
+      },
+    },
   });
   const initialTags = JSON.parse(tableFilter);
   tagInput.addTags(initialTags);
+
+  return tagInput;
 }
 
 /**
@@ -231,6 +250,7 @@ const jobsTable = {
    * tzOffsetMinutes - offset from UTC
    * dateKind - updatedAt or createdAt
    * sortGranules - sort the rows ascending ('asc') or descending ('desc')
+   * @returns the tag input instance
    */
   async init(params) {
     PubSub.subscribe(
@@ -238,10 +258,19 @@ const jobsTable = {
       async () => loadRows(params),
     );
     formatDates('.date-td');
-    initFilter(params.currentUser, params.services, params.providers, params.labels, params.isAdminRoute, params.tableFilter);
+    const tagInput = initFilter(
+      params.currentUser,
+      params.services,
+      params.providers,
+      params.labels,
+      params.isAdminRoute,
+      params.tableFilter,
+    );
     initCopyHandler('.copy-request');
     initSelectHandler('.select-job');
     initSelectAllHandler();
+
+    return tagInput;
   },
 
   /**

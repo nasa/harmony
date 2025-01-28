@@ -177,15 +177,12 @@ describe('labels', function () {
     });
 
     describe('when attempting to include a comma within a label', async function () {
-      const label = ['good', 'bad,comma'];
+      const label = ['good', 'ok,comma'];
       hookPartials[apiType](label);
+      hookRedirect('joe');
 
-      it('returns a 400 status code for the request', async function () {
-        expect(this.res.status).to.equal(400);
-      });
-
-      it('returns a meaningful error message', async function () {
-        expect(this.res.text).to.include('Labels cannot contain commas');
+      it('returns a 200 status code for the request', async function () {
+        expect(this.res.status).to.equal(200);
       });
     });
   }
