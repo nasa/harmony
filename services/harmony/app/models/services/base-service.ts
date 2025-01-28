@@ -84,6 +84,7 @@ export interface ServiceConfig<ServiceParamType> {
   message?: string;
   maximum_sync_granules?: number;
   steps?: ServiceStep[];
+  validate_variables?: boolean;
 }
 
 /**

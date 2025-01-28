@@ -1,3 +1,5 @@
+import { NextFunction, Response } from 'express';
+import HarmonyRequest from '../models/harmony-request';
 import { CmrCollection, CmrUmmVariable } from './cmr';
 import { RequestValidationError } from './errors';
 import { parseMultiValueParameter } from './parameter-parsing-helpers';
@@ -126,23 +128,55 @@ export function validateVariables(variableIds: string[], queryVars: string | str
 }
 
 /**
- * Given a list of EOSDIS collections and variables parsed from the CMR and an OGC
- * collectionId parameter return the full variables which match.
+ * Creates the variable info objects without looking anything up in CMR. Passes in all of the variables
+ * provided to all of the collections in the request and leaves it up to the service to validate.
  *
  * @param eosdisCollections - An array of collections
+ * @param variableIds - The list of variables
+ * @returns an array of objects with a collectionId and list
+ *   of variables e.g. `[{ collectionId: C123-PROV1, variables: [<Variable object>] }]`
+ */
+function constructVariableInfoWithoutValidation(
+  eosdisCollections: CmrCollection[],
+  variables: string[],
+): VariableInfo[] {
+  const variableInfo = [];
+
+  // Construct an imitation of what CMR would return from UMM-Var since we are not using variables
+  // from the CMR, but later functions expect the variables in CMR form
+  const imitationCmrVariables = [];
+  for (const variable of variables) {
+    imitationCmrVariables.push({
+      umm: { Name: variable },
+      meta: { 'concept-id': 'unknown' },
+    });
+  }
+  for (const collection of eosdisCollections) {
+    const coordinateVariables = getCoordinateVariables(collection.variables);
+    variableInfo.push({
+      collectionId: collection.id, shortName: collection.short_name,
+      versionId: collection.version_id, variables: imitationCmrVariables,
+      coordinateVariables,
+    });
+  }
+  return variableInfo;
+}
+
+/**
+ * Returns the
+ * collectionId parameter return the full variables which match.
+ *
  * @param collectionIdParam - The OGC collectionId query parameter
  * @param queryVars - A string of comma separated variable names or an array of variable names
  * - taken from the request object via the `variable` parameter
- * @returns an array of objects with a collectionId and list
- *   of variables e.g. `[{ collectionId: C123-PROV1, variables: [<Variable object>] }]`
- * @throws RequestValidationError - if the requested OGC collection ID parameter is not valid
- * based on the variables in the collections
+ * @returns an array of requested variables (either concept IDs or variable names)
+ * @throws RequestValidationError - if the parameter combinations for query parmameters and
+ * route are invalid for specifying variables
  */
 export function parseVariables(
-  eosdisCollections: CmrCollection[],
   collectionIdParam: string,
-  queryVars: string | string[] = null,
-): VariableInfo[] {
+  queryVars: string | string[],
+): string[] {
   // Note that "collectionId" from the Open API spec is an OGC API Collection, which is
   // what we would call a variable (or sometimes a named group of variables).  In the
   // OpenAPI spec doc, a "collection" refers to a UMM-Var variable, and a "CMR collection" refers
@@ -153,52 +187,79 @@ export function parseVariables(
 
   validateVariables(variableIds, queryVars);
 
-  const variableInfo = [];
-  if (variableIds.indexOf('all') !== -1 ||
-    (variableIds.indexOf('parameter_vars') !== -1 &&
-      queryVars &&
-      (queryVars === 'all' ||
-        queryVars[0] === 'all'))) {
-    // If the variable ID is "all" do not subset by variable
-    for (const collection of eosdisCollections) {
-      const coordinateVariables = getCoordinateVariables(collection.variables);
-      variableInfo.push({
-        collectionId: collection.id, shortName: collection.short_name,
-        versionId: collection.version_id, coordinateVariables,
-      });
-    }
-  } else {
-    if (variableIds.indexOf('parameter_vars') !== -1 && queryVars) {
-      variableIds = parseMultiValueParameter(queryVars);
-    }
+  if (variableIds.indexOf('parameter_vars') !== -1 && queryVars) {
+    variableIds = parseMultiValueParameter(queryVars);
+  }
 
-    // Figure out which variables belong to which collections and whether any are missing.
-    // Note that a single variable name may appear in multiple collections
-    const missingVariables = new Set<string>(variableIds);
-    for (const collection of eosdisCollections) {
-      // Get the list of variables configured in services.yml for this collection. If the
-      // returned set is empty then we will ignore it, otherwise we will only add variables
-      // in that set
-      const coordinateVariables = getCoordinateVariables(collection.variables);
-      const variables = [];
-      for (const variableId of variableIds) {
-        const variable = collection.variables.find((v) => doesPathMatch(v, variableId));
-        if (variable) {
-          missingVariables.delete(variableId);
-          // only add the variable to the list if it does not exist.
-          // This is to guard against when variable name mixed with concept id that references the same variable
-          if (variables.find(v => v.meta['concept-id'] === variable.meta['concept-id']) === undefined) {
-            variables.push(variable);
+  // No variables requested to be subset
+  if (variableIds.length === 1 && variableIds[0] === 'all') {
+    variableIds = [];
+  }
+  return variableIds;
+}
+
+/**
+ * Given a list of EOSDIS collections and variables parsed from the CMR and an OGC
+ * collectionId parameter return the full variables which match.
+ *
+ * @param eosdisCollections - An array of collections
+ * @param collectionIdParam - The OGC collectionId query parameter
+ * @param queryVars - A string of comma separated variable names or an array of variable names
+ * - taken from the request object via the `variable` parameter
+ * @param shouldValidateUmmVar - True if we should verify the variables exist in the CMR
+ * @returns an array of objects with a collectionId and list
+ *   of variables e.g. `[{ collectionId: C123-PROV1, variables: [<Variable object>] }]`
+ * @throws RequestValidationError - if the requested OGC collection ID parameter is not valid
+ * based on the variables in the collections
+ */
+export function getVariableInfo(
+  eosdisCollections: CmrCollection[],
+  variableIds: string[],
+  shouldValidateUmmVar: boolean,
+): VariableInfo[] {
+  let variableInfo = [];
+  if (!shouldValidateUmmVar) {
+    variableInfo = constructVariableInfoWithoutValidation(eosdisCollections, variableIds);
+  } else {
+    if (variableIds.length === 0) {
+      // "All" variables or none were requested to be subset, just provide the coordinate variables
+      // Do not provide a list of variables to subset
+      for (const collection of eosdisCollections) {
+        const coordinateVariables = getCoordinateVariables(collection.variables);
+        variableInfo.push({
+          collectionId: collection.id, shortName: collection.short_name,
+          versionId: collection.version_id, coordinateVariables,
+        });
+      }
+    } else {
+      // Figure out which variables belong to which collections and whether any are missing.
+      // Note that a single variable name may appear in multiple collections
+      const missingVariables = new Set<string>(variableIds);
+      for (const collection of eosdisCollections) {
+        // Get the list of variables configured in services.yml for this collection. If the
+        // returned set is empty then we will ignore it, otherwise we will only add variables
+        // in that set
+        const coordinateVariables = getCoordinateVariables(collection.variables);
+        const variables = [];
+        for (const variableId of variableIds) {
+          const variable = collection.variables.find((v) => doesPathMatch(v, variableId));
+          if (variable) {
+            missingVariables.delete(variableId);
+            // only add the variable to the list if it does not exist.
+            // This is to guard against when variable name mixed with concept id that references the same variable
+            if (variables.find(v => v.meta['concept-id'] === variable.meta['concept-id']) === undefined) {
+              variables.push(variable);
+            }
           }
         }
+        variableInfo.push({
+          collectionId: collection.id, shortName: collection.short_name,
+          versionId: collection.version_id, variables, coordinateVariables,
+        });
       }
-      variableInfo.push({
-        collectionId: collection.id, shortName: collection.short_name,
-        versionId: collection.version_id, variables, coordinateVariables,
-      });
-    }
-    if (missingVariables.size > 0) {
-      throw new RequestValidationError(`Coverages were not found for the provided variables: ${Array.from(missingVariables).join(', ')}`);
+      if (missingVariables.size > 0) {
+        throw new RequestValidationError(`Coverages were not found for the provided variables: ${Array.from(missingVariables).join(', ')}`);
+      }
     }
   }
   return variableInfo;
@@ -247,4 +308,37 @@ export function getVariablesForCollection(
     });
   }
   return variableInfo;
+}
+
+/**
+ * Middleware to match the requested variables with CMR UMM-Var records to get
+ * the required variable information
+ * @param req - The client request, containing an operation
+ * @param res - The client response
+ * @param next - The next function in the middleware chain
+ */
+export function validateAndSetVariables(
+  req: HarmonyRequest, _res: Response, next: NextFunction,
+): void {
+  const { operation, context } = req;
+  if (!operation?.sources) {
+    return next();
+  }
+
+  try {
+    const varInfos = getVariableInfo(
+      context.collections,
+      context.requestedVariables,
+      context.serviceConfig.validate_variables !== false,
+    );
+
+    for (const varInfo of varInfos) {
+      operation.addSource(varInfo.collectionId, varInfo.shortName, varInfo.versionId,
+        varInfo.variables, varInfo.coordinateVariables);
+    }
+  } catch (e) {
+    return next(e);
+  }
+
+  return next();
 }

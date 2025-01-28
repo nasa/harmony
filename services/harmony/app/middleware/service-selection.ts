@@ -53,7 +53,7 @@ export default function chooseService(
   }
 
   let serviceConfig: ServiceConfig<unknown>;
-  const configs = addCollectionsToServicesByAssociation(req.collections);
+  const configs = addCollectionsToServicesByAssociation(req.context.collections);
   try {
     serviceConfig = chooseServiceConfig(operation, context, configs);
   } catch (e) {

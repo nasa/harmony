@@ -45,6 +45,8 @@ import handleLabelParameter from '../middleware/label';
 import { addJobLabels, deleteJobLabels } from '../frontends/labels';
 import handleJobIDParameter from '../middleware/job-id';
 import earthdataLoginSkipped from '../middleware/earthdata-login-skipped';
+import { validateAndSetVariables } from '../util/variables';
+import validateRestrictedVariables from '../middleware/restricted-variables';
 
 export interface RouterConfig {
   PORT?: string | number; // The port to run the frontend server on
@@ -105,7 +107,7 @@ function service(fn: RequestHandler): RequestHandler {
     const child = logger.child({ component: `service.${fn.name}` });
     req.context.logger = child;
     try {
-      if (!req.collections || req.collections.length === 0) {
+      if (!req.context.collections || req.context.collections.length === 0) {
         throw new NotFoundError('Services can only be invoked when a valid collection is supplied in the URL path before the service name.');
       }
       child.info('Running service');
@@ -213,6 +215,9 @@ export default function router({ USE_EDL_CLIENT_APP = 'false' }: RouterConfig): 
   result.use(logged(preServiceConcatenationHandler));
   result.use(logged(chooseService));
   result.use(logged(postServiceConcatenationHandler));
+  result.use(logged(validateAndSetVariables));
+  result.use(logged(validateRestrictedVariables));
+
   result.use(logged(cmrUmmCollectionReader));
   result.use(logged(cmrGranuleLocator));
   result.use(logged(addRequestContextToOperation));
