@@ -1409,7 +1409,7 @@ https://cmr.uat.earthdata.nasa.gov:
           <<: *default-turbo-env
           STAGING_PATH: public/gesdisc/giovanni
     # Put UMM-S concept id in quotes later
-    umm_s: ""
+    umm_s: "S1272947465-GES_DISC"
     collections:
       - id: C1215802935-GES_DISC
         variables:
