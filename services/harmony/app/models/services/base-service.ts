@@ -192,6 +192,19 @@ function stepRequired(step: ServiceStep, operation: DataOperation): boolean {
       }
     }
   }
+
+  if (
+    required &&
+    step.conditional?.exists?.includes('extend') &&
+    (!operation.extendDimensions || operation.extendDimensions.length === 0) &&
+    step.conditional?.exists.includes('concatenate')
+  ) {
+    // Special temporary case which can occur if extend=false is specified and the step is
+    // configured to run if either extend or concatenate is provided. Once EDSC is updated to be
+    // able to provide the extend parameter and not use concatenate as a proxy we can remove
+    // this case.
+    required = false;
+  }
   return required;
 }
 

@@ -18,7 +18,7 @@ export function setExtendDimensionsDefault(req: HarmonyRequest): void {
   // concatenation is requested for a service that supports extend, we also specify extend
   if (
     (operation?.extendDimensions?.length === 1 && operation.extendDimensions[0] === 'true') ||
-    (operation.shouldConcatenate && !(operation?.extendDimensions?.length > 0))
+    (operation.shouldConcatenate && !(operation?.extendDimensions?.length > 0) && req.query?.extend !== 'false')
   ) {
     operation.extendDimensions = defaultExtendDimensions;
   }
