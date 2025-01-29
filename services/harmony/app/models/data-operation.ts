@@ -483,7 +483,7 @@ export default class DataOperation {
   }
 
   /**
-   * Gets whether or not the data should be concatenated
+   * Gets whether or not the data should be extended
    */
   get shouldExtend(): boolean {
     return !!(this.model.extendDimensions?.length > 0);
