@@ -158,7 +158,7 @@ async function getWorkItemUrl(workItem, logger): Promise<string> {
 
 /**
  * Checks if the work item failed and if so handles the logic of determining whether to
- * fail the job or continue to processing. If there's an error it adds it to the job_errors
+ * fail the job or continue to processing. If there's an error it adds it to the job_messages
  * table.
  *
  * @param tx - The database transaction
@@ -625,10 +625,7 @@ export async function processWorkItem(
   let didCreateWorkItem = false;
 
   let { status } = preprocessResult;
-  // TODO remove this in HARMONY-1995 - treat WARNING as failure for now
-  if (status === WorkItemStatus.WARNING) {
-    status = WorkItemStatus.FAILED;
-  }
+
   // TODO HARMONY-1995 add status === WorkItemStatus.WARNING here
   if (status === WorkItemStatus.SUCCESSFUL) {
     logger.info(`Updating work item ${workItemID} to ${status}`);

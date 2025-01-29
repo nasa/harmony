@@ -375,5 +375,5 @@ export async function runServiceFromPull(
 
 export const exportedForTesting = {
   _getStacCatalogs,
-  _getErrorMessage: _getErrorInfo,
+  _getErrorInfo: _getErrorInfo,
 };

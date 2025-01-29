@@ -147,7 +147,7 @@ describe('ignoreErrors', function () {
             const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
             firstSwathItem = JSON.parse(res.text).workItem;
             firstSwathItem.status = WorkItemStatus.FAILED;
-            firstSwathItem.errorMessage = 'Specific failure reason';
+            firstSwathItem.message = 'Specific failure reason';
             firstSwathItem.results = [];
 
             await updateWorkItem(this.backend, firstSwathItem);
@@ -488,7 +488,7 @@ describe('ignoreErrors', function () {
             thirdSwathItem = JSON.parse(res.text).workItem;
             thirdSwathItem.status = WorkItemStatus.FAILED;
             thirdSwathItem.results = [];
-            thirdSwathItem.errorMessage = 'Did not reach 88 MPH.';
+            thirdSwathItem.message = 'Did not reach 88 MPH.';
 
             await updateWorkItem(this.backend, thirdSwathItem);
 
@@ -540,7 +540,7 @@ describe('ignoreErrors', function () {
           workItem = JSON.parse(res.text).workItem as WorkItem;
           workItem.status = WorkItemStatus.FAILED;
           workItem.results = [];
-          workItem.errorMessage = 'Bad scroll session';
+          workItem.message = 'Bad scroll session';
           await updateWorkItem(this.backend, workItem);
           // check to see if the work-item has failed completely
           workItem = await getWorkItemById(db, workItem.id);
@@ -1183,7 +1183,7 @@ describe('ignoreErrors', function () {
                 const lastConciseItem = JSON.parse(res.text).workItem;
                 lastConciseItem.status = WorkItemStatus.FAILED;
                 lastConciseItem.results = [];
-                lastConciseItem.errorMessage = 'batch failed';
+                lastConciseItem.message = 'batch failed';
 
                 await updateWorkItem(this.backend, lastConciseItem);
 
@@ -1306,7 +1306,7 @@ describe('ignoreErrors', function () {
               thirdL2SSItem = JSON.parse(res.text).workItem;
               thirdL2SSItem.status = WorkItemStatus.FAILED;
               thirdL2SSItem.results = [];
-              thirdL2SSItem.errorMessage = 'Did not reach 88 MPH.';
+              thirdL2SSItem.message = 'Did not reach 88 MPH.';
 
               await updateWorkItem(this.backend, thirdL2SSItem);
 
@@ -1357,7 +1357,7 @@ describe('ignoreErrors', function () {
             workItem = JSON.parse(res.text).workItem as WorkItem;
             workItem.status = WorkItemStatus.FAILED;
             workItem.results = [];
-            workItem.errorMessage = 'Bad scroll session';
+            workItem.message = 'Bad scroll session';
             await updateWorkItem(this.backend, workItem);
             // check to see if the work-item has failed completely
             workItem = await getWorkItemById(db, workItem.id);

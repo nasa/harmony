@@ -14,7 +14,7 @@ import sinon from 'sinon';
 import axios from 'axios';
 import { readFileSync } from 'fs';
 
-const { _getErrorMessage, _getStacCatalogs } = serviceRunner.exportedForTesting;
+const { _getErrorInfo: _getErrorInfo, _getStacCatalogs } = serviceRunner.exportedForTesting;
 
 const exampleStatus: k8s.V1Status = {
   message: 'example status',
@@ -35,6 +35,7 @@ const oomStatus: k8s.V1Status = {
 
 const workItemWithErrorJson = 's3://stac-catalogs/abc/123/outputs/';
 const workItemWithoutErrorJson = 's3://stac-catalogs/abc/456/outputs/';
+const workItemWithNoDataWarningJson = 's3://stac-catalogs/abc/789/outputs/';
 
 const dummyCatalog = {
   'stac_version': '1.0.0-beta.2',
@@ -57,25 +58,51 @@ const dummyCatalog = {
 };
 
 describe('Service Runner', function () {
-  describe('_getErrorMessage()', function () {
-    before(async function () {
-      const s3 = objectStoreForProtocol('s3');
-      const errorJson = JSON.stringify({ 'error': 'Service error message', 'category': 'Service' });
-      const errorJsonUrl = resolve(workItemWithErrorJson, 'error.json');
-      await s3.upload(errorJson, errorJsonUrl, null, 'application/json');
-    });
-    describe('when there is an error.json file associated with the WorkItem', async function () {
-      it('returns the error message from error.json', async function () {
-        const errorMessage = await _getErrorMessage(exampleStatus, workItemWithErrorJson);
-        expect(errorMessage).equal('Service error message');
+  describe('_getErrorInfo()', function () {
+    describe('with error', function () {
+      before(async function () {
+        const s3 = objectStoreForProtocol('s3');
+        const errorJson = JSON.stringify({ 'error': 'Service error message', 'category': 'Service' });
+        const errorJsonUrl = resolve(workItemWithErrorJson, 'error.json');
+        await s3.upload(errorJson, errorJsonUrl, null, 'application/json');
+      });
+      describe('when there is an error.json file associated with the WorkItem', async function () {
+        it('returns the error information from error.json', async function () {
+          const errorInfo = await _getErrorInfo(exampleStatus, workItemWithErrorJson);
+          const errorMessage = errorInfo.error;
+          const { level, category } = errorInfo;
+          expect(errorMessage).equal('Service error message');
+          expect(level).equal('error');
+          expect(category).equal('service');
+        });
+      });
+      describe('when the error status code is 137', async function () {
+        it('returns "OOM error"', async function () {
+          const errorMessage = (await _getErrorInfo(oomStatus, workItemWithoutErrorJson)).error;
+          expect(errorMessage).equal('Service failed due to running out of memory');
+        });
       });
     });
-    describe('when the error status code is 137', async function () {
-      it('returns "OOM error"', async function () {
-        const errorMessage = await _getErrorMessage(oomStatus, workItemWithoutErrorJson);
-        expect(errorMessage).equal('Service failed due to running out of memory');
+
+    describe('with no-data warning', function () {
+      before(async function () {
+        const s3 = objectStoreForProtocol('s3');
+        const errorJson = JSON.stringify({ 'error': 'No data found', level: 'Warning', 'category': 'no data' });
+        const errorJsonUrl = resolve(workItemWithNoDataWarningJson, 'error.json');
+        await s3.upload(errorJson, errorJsonUrl, null, 'application/json');
+      });
+      describe('when there is an error.json file associated with the WorkItem', async function () {
+        it('returns the error information from error.json', async function () {
+          const errorInfo = await _getErrorInfo(exampleStatus, workItemWithNoDataWarningJson);
+          const errorMessage = errorInfo.error;
+          const { level, category } = errorInfo;
+          expect(errorMessage).equal('No data found');
+          expect(level).equal('warning');
+          expect(category).equal('no data');
+        });
       });
     });
+
   });
 
   describe('_getStacCatalogs()', function () {

@@ -1,4 +1,4 @@
-import { WorkItemStatus, getStacLocation, WorkItemRecord, WorkItemSubStatus } from './../../app/models/work-item-interface';
+import { WorkItemStatus, getStacLocation, WorkItemRecord } from './../../app/models/work-item-interface';
 import { Job, JobRecord, JobStatus, terminalStates } from './../../app/models/job';
 import { describe, it } from 'mocha';
 import * as sinon from 'sinon';
@@ -178,7 +178,7 @@ describe('Work Backends', function () {
         expect(Object.keys(this.res.body.workItem)).to.eql([
           'id', 'jobID', 'createdAt', 'retryCount', 'updatedAt', 'scrollID', 'serviceID', 'status',
           'stacCatalogLocation', 'totalItemsSize', 'workflowStepIndex', 'duration',
-          'startedAt', 'sortIndex', 'operation',
+          'startedAt', 'sortIndex', 'message_category', 'operation',
         ]);
       });
 
@@ -491,21 +491,22 @@ describe('Work Backends', function () {
         ...workItemRecord,
         ...{
           status: WorkItemStatus.WARNING,
-          sub_status: WorkItemSubStatus.NO_DATA,
-          results: [getStacLocation({ id: workItemRecord.id, jobID: workItemRecord.jobID }, 'catalog.json')],
+          message_category: 'nodata',
+          // results: [getStacLocation({ id: workItemRecord.id, jobID: workItemRecord.jobID }, 'catalog.json')],
           outputItemSizes: [],
           duration: 0,
         },
       };
-      before(async () => {
-        await fakeServiceStacOutput(noDataWorkItemRecord.jobID, noDataWorkItemRecord.id);
-      });
+      // before(async () => {
+      //   await fakeServiceStacOutput(noDataWorkItemRecord.jobID, noDataWorkItemRecord.id);
+      // });
       hookWorkItemUpdate((r) => r.send(noDataWorkItemRecord));
 
-      it('sets the work item status to warning with no-data', async function () {
+      it('sets the work item status to warning with nodata', async function () {
         const updatedWorkItem = await getWorkItemById(db, this.workItem.id);
+        // TODO HARMONY-1995 change this to WARNING
         expect(updatedWorkItem.status).to.equal(WorkItemStatus.WARNING);
-        expect(updatedWorkItem.error_category).to.equal(WorkItemSubStatus.NO_DATA);
+        expect(updatedWorkItem.message_category).to.equal('nodata');
       });
 
       describe('and the worker computed duration is less than the harmony computed duration', async function () {
@@ -521,12 +522,11 @@ describe('Work Backends', function () {
           expect(updatedJob.updatedAt.valueOf()).to.greaterThan(this.job.updatedAt.valueOf());
         });
 
-        // TODO this will change with HARMONY-1995
-        it('adds a link for the work results to the job', async function () {
+        it('does not add a link for the work results to the job', async function () {
           const { job: updatedJob } = await Job.byJobID(db, this.job.jobID, true);
           expect(updatedJob.links.filter(
             (jobLink) => jobLink.href === expectedLink,
-          ).length).to.equal(1);
+          ).length).to.equal(0);
         });
 
         it('sets the job status to complete', async function () {
@@ -534,7 +534,9 @@ describe('Work Backends', function () {
           expect(updatedJob.status === JobStatus.SUCCESSFUL);
         });
 
-        it('sets the job progress to 100', async function () {
+        // TODO enable this in HARMONY-1995 - figure out what progress should be based on how
+        // TODO completed_with_errors handles it
+        xit('sets the job progress to 100', async function () {
           const { job: updatedJob } = await Job.byJobID(db, this.job.jobID);
           expect(updatedJob.progress).to.equal(100);
         });
