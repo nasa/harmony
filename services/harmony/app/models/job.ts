@@ -17,7 +17,7 @@ export const EXPIRATION_DAYS = 30;
 export const TEXT_LIMIT = 4096; // this.request and this.message need to be under the 4,096 char limit
 
 import env from '../util/env';
-import JobError from './job-error';
+import JobMessage from './job-message';
 import { setReadyCountToZero } from './user-work';
 import { Knex } from 'knex';
 import { Logger } from 'winston';
@@ -69,7 +69,7 @@ export interface JobRecord {
   progress?: number;
   batchesCompleted?: number;
   links?: JobLinkOrRecord[];
-  errors?: JobError[];
+  errors?: JobMessage[];
   request: string;
   isAsync?: boolean;
   ignoreErrors?: boolean;
@@ -110,7 +110,7 @@ export class JobForDisplay {
 
   numInputGranules: number;
 
-  errors?: JobError[];
+  errors?: JobMessage[];
 
 }
 
@@ -406,7 +406,7 @@ export class Job extends DBRecord implements JobRecord {
 
   links: JobLink[];
 
-  errors: JobError[];
+  errors: JobMessage[];
 
   private statesToMessages: { [key in JobStatus]?: string };
 

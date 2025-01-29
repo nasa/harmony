@@ -12,11 +12,6 @@ export enum WorkItemStatus {
   WARNING = 'warning',
 }
 
-// additional information about the status - currently only relevant for WARNING status
-export enum WorkItemSubStatus {
-  NO_DATA = 'no-data', // the service responded with no data
-}
-
 export const COMPLETED_WORK_ITEM_STATUSES = [
   WorkItemStatus.SUCCESSFUL,
   WorkItemStatus.FAILED,
@@ -43,11 +38,11 @@ export interface WorkItemRecord {
   // The status of the operation - see WorkItemStatus
   status?: WorkItemStatus;
 
-  // The sub-status of the operation - see WorkItemSubStatus
-  sub_status?: WorkItemSubStatus;
+  // message if status === FAILED or status === WARNING
+  message?: string;
 
-  // error message if status === FAILED
-  errorMessage?: string;
+  // The type of event the message is related to,
+  message_category?: string;
 
   // The location of the STAC catalog for the item(s) to process
   stacCatalogLocation?: string;

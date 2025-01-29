@@ -505,7 +505,7 @@ describe('Work Backends', function () {
       it('sets the work item status to warning with no-data', async function () {
         const updatedWorkItem = await getWorkItemById(db, this.workItem.id);
         expect(updatedWorkItem.status).to.equal(WorkItemStatus.WARNING);
-        expect(updatedWorkItem.sub_status).to.equal(WorkItemSubStatus.NO_DATA);
+        expect(updatedWorkItem.error_category).to.equal(WorkItemSubStatus.NO_DATA);
       });
 
       describe('and the worker computed duration is less than the harmony computed duration', async function () {
