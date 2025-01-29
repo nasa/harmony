@@ -4,7 +4,7 @@ import HarmonyRequest from '../../app/models/harmony-request';
 import DataOperation from '../../app/models/data-operation';
 import { setExtendDimensionsDefault } from '../../app/middleware/extend';
 
-describe('extend serivce default value', function () {
+describe('extend service default value', function () {
   beforeEach(function () {
     const collectionId = 'C123-TEST';
     const shortName = 'harmony_example';
@@ -56,6 +56,17 @@ describe('extend serivce default value', function () {
     });
   });
 
+  describe('and the request specifies concatenation to be true, but specifies extend to be false', function () {
+    beforeEach(function () {
+      this.req.operation.shouldConcatenate = true;
+      this.req.query = { extend: 'false' };
+    });
+    it('does not set extendDimensions', function () {
+      setExtendDimensionsDefault(this.req);
+      expect(this.req.operation.extendDimensions).to.equal(undefined);
+    });
+  });
+
   describe('and the request provides dimension extension', function () {
     beforeEach(function () {
       this.req.operation.extendDimensions = ['lat', 'lon'];
@@ -79,7 +90,7 @@ describe('extend serivce default value', function () {
   });
 });
 
-describe('extend serivce misconfigured without default value', function () {
+describe('extend service misconfigured without default value', function () {
   beforeEach(function () {
     const collectionId = 'C123-TEST';
     const shortName = 'harmony_example';
