@@ -161,7 +161,7 @@ async function _getErrorInfo(
     if (await s3.objectExists(errorFile)) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const errorEntries: any = await s3.getObjectJson(errorFile);
-      const error = errorEntries.error;
+      const { error } = errorEntries;
       const level = errorEntries.level ? errorEntries.level.toLowerCase() : 'error';
       const category = errorEntries.category?.toLowerCase();
       if (category) {
@@ -170,7 +170,7 @@ async function _getErrorInfo(
       return { error, level };
     }
     const error = _getErrorMessageOfStatus(status);
-    return { error, level: 'error' }
+    return { error, level: 'error' };
   } catch (e) {
     workItemLogger.error(`Caught exception: ${e}`);
     workItemLogger.error(`Unable to parse out error from catalog location: ${catalogDir}`);
@@ -345,13 +345,13 @@ export async function runServiceFromPull(
             } else {
               clearTimeout(timeout);
               const errorEntries = await _getErrorInfo(status, catalogDir, workItemLogger);
-              const error = `${serviceName}: ${errorEntries.error}`;
+              const errorMessage = `${serviceName}: ${errorEntries.error}`;
               const errorLevel = errorEntries.level;
               const errorCategory = errorEntries.category;
               if (errorCategory) {
-                resolve({error, errorLevel, errorCategory})
+                resolve({ error: errorMessage, errorLevel, errorCategory });
               }
-              resolve({ error, errorLevel });
+              resolve({ error: errorMessage, errorLevel });
             }
           } catch (e) {
             workItemLogger.error('Unable to upload logs. Caught exception:');

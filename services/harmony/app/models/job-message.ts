@@ -109,7 +109,7 @@ export async function getMessagesForJob(
 export async function getMessageCountForJob(
   tx: Transaction,
   jobID: string,
-  level: JobMessageLevel = JobMessageLevel.ERROR
+  level: JobMessageLevel = JobMessageLevel.ERROR,
 ): Promise<number> {
   const count = await tx(JobMessage.table)
     .select()

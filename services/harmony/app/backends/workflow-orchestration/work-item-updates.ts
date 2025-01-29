@@ -119,14 +119,14 @@ async function addJobMessageForWorkItem(
   url: string,
   message: string,
   level: JobMessageLevel = JobMessageLevel.ERROR,
-  message_category?: string
+  message_category?: string,
 ): Promise<void> {
-  const jobMessage= new JobMessage({
+  const jobMessage = new JobMessage({
     jobID: job.jobID,
     url,
     message,
     level,
-    message_category
+    message_category,
   });
   await jobMessage.save(tx);
 }
@@ -617,14 +617,12 @@ export async function processWorkItem(
   thisStep: WorkflowStep,
 ): Promise<void> {
   const { jobID } = job;
-  const { catalogItems, outputItemSizes } = preprocessResult;
+  const { status, catalogItems, outputItemSizes } = preprocessResult;
   const { workItemID, hits, results, scrollID, message, message_category  } = update;
   const startTime = new Date().getTime();
   let durationMs;
   let jobSaveStartTime;
   let didCreateWorkItem = false;
-
-  let { status } = preprocessResult;
 
   // TODO HARMONY-1995 add status === WorkItemStatus.WARNING here
   if (status === WorkItemStatus.SUCCESSFUL) {
@@ -798,11 +796,11 @@ export async function processWorkItem(
           // Failed to create the next work items when there should be work items.
           // Fail the job rather than leaving it orphaned in the running state
           logger.error('The work item update should have contained results to queue a next work item, but it did not.');
-          const message = 'Harmony internal failure: service did not return any outputs.';
+          const errMessage = 'Harmony internal failure: service did not return any outputs.';
           await (await logAsyncExecutionTime(
             completeJob,
             'HWIUWJI.completeJob',
-            logger))(tx, job, JobStatus.FAILED, logger, message);
+            logger))(tx, job, JobStatus.FAILED, logger, errMessage);
         }
       }
 
@@ -851,7 +849,6 @@ export async function processWorkItem(
   } catch (e) {
     logger.error(`Work item update failed for work item ${workItemID} and status ${status}`);
     logger.error(e);
-    logger.error(e.stack)
   }
 
   durationMs = new Date().getTime() - startTime;

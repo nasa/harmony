@@ -28,7 +28,7 @@ export enum WorkItemEvent {
 const serializedFields = [
   'id', 'jobID', 'createdAt', 'retryCount', 'updatedAt', 'scrollID', 'serviceID', 'status',
   'stacCatalogLocation', 'totalItemsSize', 'workflowStepIndex', 'duration', 'startedAt',
-  'sortIndex', 'message_category'
+  'sortIndex', 'message_category',
 ];
 
 /**
