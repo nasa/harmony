@@ -10,6 +10,27 @@ beforeEach(async () => {
 });
 
 describe('labels.js', () => { 
+  describe('handleLabelsResponse', () => {
+    it('inserts a new label when insertNew is true', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await Labels.handleLabelsResponse({ status: 201, json: async () => ({ labels: ['a new one'] }) } as any, true, 'it worked!', { });
+      const labelsListElement = document.getElementById('labels-list');
+      expect(labelsListElement.querySelector('a[name="a new one"]')).to.not.be.undefined;
+    });
+  });
+  describe('insertNewLabelAlphabetically', () => {
+    it('inserts a new label alphabetically, in the proper position', async () => {
+      await Labels.insertNewLabelAlphabetically('purple');
+      const labelsListElement = document.getElementById('labels-list');
+      const labelItems = Array.from(labelsListElement.getElementsByClassName('label-li'));
+      const insertIndex = labelItems.findIndex((item) => {
+        const itemText = item.querySelector('a').getAttribute('data-value')
+          .toLowerCase();
+        return itemText === 'purple';
+      });
+      expect(insertIndex).to.equal(2);
+    });
+  });
   describe('promoteLabels', () => {
     it('promotes the given list of labels', () => {
       const labelsListElement = document.getElementById('labels-list');
@@ -70,6 +91,7 @@ describe('labels.js', () => {
       expect(blueLi.style.display).to.not.equal('none');
       expect(greenLi.style.display).to.equal('none');
       expect(yellowLi.style.display).to.equal('none');
+      expect(document.getElementById('labels-li').style.display).to.equal('');
     });
     it('shows a no matches list item when the search input value does not match any labels', () => {
       (document.querySelector('#label-search') as HTMLInputElement).value = 'bluez';
@@ -83,6 +105,27 @@ describe('labels.js', () => {
       expect(greenLi.style.display).to.equal('none');
       expect(yellowLi.style.display).to.equal('none');
       expect(noMatchLi.style.display).to.not.equal('none');
+      expect(noMatchLi.querySelector('#create-label-link').textContent).to.equal('Create/apply "bluez"?');
+      expect(document.getElementById('labels-li').style.display).to.equal('none');
+    });
+    it('hides labels that do not match and subsequently unhides them when the search value is removed', () => {
+      (document.querySelector('#label-search') as HTMLInputElement).value = 'blu';
+      Labels.filterLabelsList();
+      const labelsListElement = document.getElementById('labels-list');
+      const blueLi = labelsListElement.querySelector('a[name="blue"]').closest('li');
+      const greenLi = labelsListElement.querySelector('a[name="green"]').closest('li');
+      const yellowLi = labelsListElement.querySelector('a[name="yellow"]').closest('li');
+      expect(blueLi.style.display).to.not.equal('none');
+      expect(greenLi.style.display).to.equal('none');
+      expect(yellowLi.style.display).to.equal('none');
+      expect(document.getElementById('labels-li').style.display).to.equal('');
+      
+      (document.querySelector('#label-search') as HTMLInputElement).value = '';
+      Labels.filterLabelsList();
+      expect(blueLi.style.display).to.not.equal('none');
+      expect(greenLi.style.display).to.not.equal('none');
+      expect(yellowLi.style.display).to.not.equal('none');
+      expect(document.getElementById('labels-li').style.display).to.equal('');
     });
   });
   describe('showAllLabels', () => {

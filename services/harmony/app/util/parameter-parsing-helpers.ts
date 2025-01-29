@@ -48,7 +48,7 @@ export function parseNumber(valueStr: string | number): number {
  * @param value - The parameter value to parse (either an array or a string)
  */
 export function parseMultiValueParameter(value: string[] | string): string[] {
-  if (value === null) {
+  if (value === null || value === undefined) {
     return [];
   }
   if (value instanceof Array) {

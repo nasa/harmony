@@ -41,15 +41,16 @@
                     <!-- job state change links will go here -->
                      {{^isAdminRoute}}
                      {{#jobs.length}}
-                     {{#labels.length}}
                     <li id="label-nav-item" class="nav-item dropstart d-none">
                         <a id="label-dropdown-a" class="nav-link dropdown-toggle py-0 px-2" data-bs-toggle="dropdown" data-bs-auto-close="outside" href="#" role="button" aria-expanded="false">label</a>
-                        <ul class="dropdown-menu mt-2">
-                            <li class="mx-2 mb-2">
-                                <input type="text" class="form-control" id="label-search" placeholder="label name">
+                        <ul id="label-dropdown-menu" class="dropdown-menu mt-2">
+                            <li class="mx-2">
+                                <input type="text" class="form-control" id="label-search" placeholder="label name" maxlength="255">
                             </li>
-                            <li id="no-match-li" class="fw-light text-center fs-6" style="display: none;"><i>no matches</i></li>
-                            <li>
+                            <li id="no-match-li" class="fw-light text-center fs-6 mx-2 mt-2" style="display: none;">
+                                <a href="#" id="create-label-link">Create Label</a>
+                            </li>
+                            <li id="labels-li" style="display: none;">
                                 <ul id="labels-list">
                                 {{#labels}}
                                 <li class="label-li"><a class="dropdown-item label-item text-truncate" name="{{.}}" data-value="{{.}}" href="#">{{.}}</a></li>
@@ -58,7 +59,6 @@
                             </li>
                         </ul>
                     </li>
-                    {{/labels.length}}
                     {{/jobs.length}}
                     {{/isAdminRoute}}
                 </ul>

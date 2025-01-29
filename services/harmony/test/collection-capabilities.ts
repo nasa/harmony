@@ -153,7 +153,7 @@ describe('Testing collection capabilities', function () {
       it('returns an error message indicating the collection could not be found', function () {
         expect(JSON.parse(this.res.text)).to.eql({
           code: 'harmony.NotFoundError',
-          description: 'Error: Unable to find collection short name YouCallThatAShortName? in the CMR. Please  make sure the short name is correct and that you have access to the collection.',
+          description: 'Error: Unable to find collection short name YouCallThatAShortName? in the CMR. Please make sure the short name is correct and that you have access to the collection.',
         });
       });
     });

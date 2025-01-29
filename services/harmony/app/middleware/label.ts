@@ -23,13 +23,6 @@ export default async function handleLabelParameter(
   // If 'label' exists, convert it to an array (if not already) and assign it to 'label' in the body
   if (label) {
     const labels = parseMultiValueParameter(label);
-    for (const lbl of labels) {
-      if (lbl.indexOf(',') > -1) {
-        res.status(400);
-        res.send('Labels cannot contain commas');
-        return;
-      }
-    }
     const normalizedLabels = labels.map(normalizeLabel);
     for (const lbl of normalizedLabels) {
       if (lbl === '') {

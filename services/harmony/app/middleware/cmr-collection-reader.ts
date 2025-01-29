@@ -67,10 +67,10 @@ async function verifyEulaAcceptance(collections: CmrCollection[], req: HarmonyRe
 
 /**
  * Express.js middleware that reads a list of slash-separated CMR Collection IDs
- * from a URL and adds two attributes to the req object:
+ * from a URL and adds two attributes to the request context:
  *
- *   req.collectionIds: An array of the resolved collection IDs
- *   req.collections: An array of the CMR (JSON) collections, each with a "variables" attribute
+ *   req.context.collectionIds: An array of the resolved collection IDs
+ *   req.context.collections: An array of the CMR (JSON) collections, each with a "variables" attribute
  *      containing the Collection's UMM-Var variables
  *
  * After resolving the above, req.url will be altered to remove the collections as follows:
@@ -86,7 +86,7 @@ async function verifyEulaAcceptance(collections: CmrCollection[], req: HarmonyRe
  * \}
  *
  * If no collection IDs are present at the front of the path, does not alter req.url and sets
- * req.collectionIds and req.collections to empty arrays.
+ * req.context.collectionIds and req.context.collections to empty arrays.
  *
  * @param req - The client request
  * @param res - The client response
@@ -98,11 +98,11 @@ async function cmrCollectionReader(req: HarmonyRequest, res, next: NextFunction)
     if (collectionMatch) {
       const collectionIdStr = collectionMatch[0].replace(/\/$/, '').substr(1, collectionMatch[0].length - 1);
       const collectionIds = collectionIdStr.split(/[+\s]/g);
-      req.collectionIds = collectionIds;
+      req.context.collectionIds = collectionIds;
       req.context.logger.info(`Matched CMR concept IDs: ${collectionIds}`);
 
-      req.collections = await getCollectionsByIds(req.context, collectionIds, req.accessToken);
-      const { collections } = req;
+      req.context.collections = await getCollectionsByIds(req.context, collectionIds, req.accessToken);
+      const { collections } = req.context;
 
       await verifyEulaAcceptance(collections, req);
 
@@ -149,8 +149,8 @@ async function cmrCollectionReader(req: HarmonyRequest, res, next: NextFunction)
         if (pickedCollection) {
           await verifyEulaAcceptance([pickedCollection], req);
 
-          req.collections = [pickedCollection];
-          req.collectionIds = [pickedCollection.id];
+          req.context.collections = [pickedCollection];
+          req.context.collectionIds = [pickedCollection.id];
           await loadVariablesForCollection(req.context, pickedCollection, req.accessToken);
           if (collections.length > 1) {
             const collectionLandingPage = `${cmrApiConfig.baseURL}/concepts/${pickedCollection.id}`;
@@ -170,8 +170,8 @@ async function cmrCollectionReader(req: HarmonyRequest, res, next: NextFunction)
     }
     next();
   } catch (error) {
-    req.collectionIds = [];
-    req.collections = [];
+    req.context.collectionIds = [];
+    req.context.collections = [];
     next(error);
   }
 }

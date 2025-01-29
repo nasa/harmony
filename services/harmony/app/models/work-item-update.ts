@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { WorkItemStatus } from './work-item-interface';
+import { WorkItemStatus, WorkItemSubStatus } from './work-item-interface';
 
 /**
  *
@@ -13,6 +13,9 @@ export default interface WorkItemUpdate {
 
   // The status of the operation - see WorkItemStatus
   status?: WorkItemStatus;
+
+  // The sub-status of the operation - see WorkItemSubStatus
+  sub_status?: WorkItemSubStatus;
 
   // The ID of the scroll session (only used for the query cmr service)
   scrollID?: string;

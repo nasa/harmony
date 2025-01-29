@@ -13,6 +13,9 @@
     "noImplicitAny": false,
     "sourceMap": true,
     "outDir": "built",
+    "typeRoots": [
+      "node_modules/@types"
+    ],
   },
   "include": [
     "./app",

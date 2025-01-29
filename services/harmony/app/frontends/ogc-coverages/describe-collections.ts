@@ -4,7 +4,7 @@ import HarmonyRequest from '../../models/harmony-request';
 import { RequestValidationError } from '../../util/errors';
 import { keysToLowerCase } from '../../util/object';
 import { getSanitizedRequestUrl } from '../../util/url';
-import { parseVariables, fullPath } from '../../util/variables';
+import { parseVariables, fullPath, getVariableInfo } from '../../util/variables';
 import { getServiceConfigs } from '../../models/services';
 
 const WGS84 = 'http://www.opengis.net/def/crs/OGC/1.3/CRS84';
@@ -72,7 +72,7 @@ function buildCollectionInfo(
  * Get a list of variables that are defined in the service configs as being available for
  * processing for the given collection. If the returned set is empty this means there are no
  * limits set as to which variables a service will process.
- * @param collection - the CMR collection 
+ * @param collection - the CMR collection
  * @returns A Set of variable IDs obtained from service configs
  */
 function getSupportedVariablesForCollection(
@@ -111,7 +111,7 @@ export function describeCollections(req: HarmonyRequest, res: Response): void {
   const ogcCollections = [];
   const requestUrl = getSanitizedRequestUrl(req, false);
   const ogcApiRoot = requestUrl.replace(/\/collections$/, '');
-  for (const collection of req.collections) {
+  for (const collection of req.context.collections) {
     const collectionShortLabel = `${collection.short_name} v${collection.version_id}`;
     const rootLink = {
       title: `OGC coverages API root for ${collectionShortLabel}`,
@@ -136,7 +136,7 @@ export function describeCollections(req: HarmonyRequest, res: Response): void {
     }
     for (const variable of collection.variables) {
       // if a service has limited the variables for the collection, only allow variables in that
-      // set 
+      // set
       if (supportedVariables.has(variable.meta['concept-id']) || supportedVariables.size === 0) {
         const collectionInfo = buildCollectionInfo(
           collection, variable, `${requestUrl}/${encodeURIComponent(fullPath(variable))}`, extent,
@@ -165,11 +165,12 @@ export function describeCollection(req: HarmonyRequest, res: Response): void {
   if (query.f && query.f !== 'json') {
     throw new RequestValidationError(`Unsupported format "${query.f}". Currently only the json format is supported.`);
   }
-  const collection = req.collections[0];
+  const collection = req.context.collections[0];
   const requestUrl = getSanitizedRequestUrl(req, false);
   const extent = generateExtent(collection);
-  const variableInfo = parseVariables([collection], req.params.collectionId);
-  const variable = variableInfo[0].variables[0];
+  const requestedVariableId = parseVariables(req.params.collectionId, []);
+  const variableInfos = getVariableInfo([collection], requestedVariableId, true);
+  const variable = variableInfos[0].variables[0];
   const collectionInfo = buildCollectionInfo(collection, variable, requestUrl, extent);
   res.send(collectionInfo);
 }

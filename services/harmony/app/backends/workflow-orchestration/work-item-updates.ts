@@ -552,7 +552,8 @@ export async function preprocessWorkItem(
   let outputItemSizes;
   let catalogItems;
   try {
-    if (status === WorkItemStatus.SUCCESSFUL && !nextWorkflowStep) {
+    // TODO fix this in HARMONY-1995
+    if ([WorkItemStatus.SUCCESSFUL, WorkItemStatus.WARNING].includes(status) && !nextWorkflowStep) {
       // if we are CREATING STAC CATALOGS for the last step in the chain we should read the catalog items
       // since they are needed for generating the output links we will save
       catalogItems = await readCatalogsItems(results);
@@ -608,13 +609,13 @@ export async function processWorkItem(
 ): Promise<void> {
   const { jobID } = job;
   const { status, errorMessage, catalogItems, outputItemSizes } = preprocessResult;
-  const { workItemID, hits, results, scrollID } = update;
+  const { workItemID, hits, results, scrollID, sub_status } = update;
   const startTime = new Date().getTime();
   let durationMs;
   let jobSaveStartTime;
   let didCreateWorkItem = false;
-  if (status === WorkItemStatus.SUCCESSFUL) {
-    logger.info(`Updating work item ${workItemID} to ${status}`);
+  if (status === WorkItemStatus.SUCCESSFUL || status === WorkItemStatus.WARNING) {
+    logger.info(`Updating work item ${workItemID} to ${status} | ${sub_status}`);
   }
 
   try {
@@ -700,6 +701,7 @@ export async function processWorkItem(
       tx,
       workItemID,
       status,
+      sub_status,
       duration,
       totalItemsSize,
       outputItemSizes);
@@ -711,6 +713,7 @@ export async function processWorkItem(
     logger.info(`Updated work item. Duration (ms) was: ${duration}`);
 
     workItem.status = status;
+    workItem.sub_status = sub_status;
 
     let allWorkItemsForStepComplete = false;
 

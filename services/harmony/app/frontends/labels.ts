@@ -14,7 +14,7 @@ import { keysToLowerCase } from '../util/object';
  * @param req - The request sent by the client
  * @param res - The response to send to the client
  * @param next - The next function in the call chain
- * @returns Resolves when the request is complete
+ * @returns Resolves when the request is complete, returning labels on success
  */
 export async function addJobLabels(
   req: HarmonyRequest, res: Response, next: NextFunction,
@@ -28,7 +28,7 @@ export async function addJobLabels(
     });
 
     res.status(201);
-    res.send('OK');
+    res.send({ labels: req.body.label });
   } catch (e) {
     req.context.logger.error(e);
     next(e);

@@ -85,7 +85,7 @@ async function loadCollectionInfo(req: HarmonyRequest): Promise<CmrCollection> {
     collections = await getCollectionsByShortName(req.context, shortname, req.accessToken);
     if (collections.length === 0) {
       const message = `Unable to find collection short name ${shortname} in the CMR. Please `
-        + ' make sure the short name is correct and that you have access to the collection.';
+        + 'make sure the short name is correct and that you have access to the collection.';
       throw new NotFoundError(message);
     }
     pickedCollection = collections[0];
