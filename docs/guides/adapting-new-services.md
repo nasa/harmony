@@ -46,7 +46,7 @@ then invokes a single service image. If setting up a more complex service chain 
 
 
 # Requirements for Harmony Services
-In order for a service to run in Harmony several things need to be provided as covered in the following sections. A simple reference service, [harmony-service-example](https://github.com/nasa/harmony-service-example), provides examples of each. For examples of services that are being used in production see [harmony-netcdf-to-zarr](https://github.com/nasa/harmony-netcdf-to-zarr) and [podaac-l2ss-py](https://github.com/podaac/l2ss-py). This document describes how to fulfill these requirements in depth.
+In order for a service to run in Harmony, several things need to be provided as covered in the following sections. For examples of Harmony services and development guidance, see [Examples and Guidance](https://github.com/nasa/harmony-service-lib-py/blob/main/README.md#examples-and-guidance).
 
 ## 1. Allowing Harmony to invoke services
 
@@ -54,7 +54,7 @@ Harmony provides a Python library, [harmony-service-lib-py](https://github.com/n
 
 ## 2. Accepting Harmony requests
 
-When invoking a service, Harmony provides an input detailing the specific operations the service should perform and the URLs of the data it should perform the operations on. Each new service will need to adapt this message into an actual service invocation, typically transforming the JSON input into method calls, command-line invocations, or HTTP requests. See the latest [Harmony data-operation schema](../../services/harmony/app/schemas/) for details on Harmony's JSON input format.
+When invoking a service, Harmony provides an input detailing the specific operations the service should perform and a STAC catalog detailing the URLs of the data it should perform the operations on. See the latest [Harmony data-operation schema](../../services/harmony/app/schemas/data-operation) for details on Harmony's operation input JSON format. Harmony invokes the service running in Kubernetes via [Harmony Service CLI](https://github.com/nasa/harmony-service-lib-py/blob/main/README.md#where-it-fits-in). Each new service will need to adapt this Harmony Service CLI command-line invocation into an actual service invocation, typically transforming the JSON input and source data into method calls, command-line invocations, or HTTP requests to generate the service output.
 
 Ideally, this adaptation would consist only of necessary complexity peculiar to the service in question. Please let the team know if there are components that can make this process easier and consider sending a pull request or publishing your code if you believe it can help future services.
 
@@ -68,62 +68,7 @@ Canceled requests are handled internally by Harmony. Harmony will prevent furthe
 
 ## 5. Error handling
 
-The best way to trigger a service failure when an unrecoverable condition is encountered is to extend HarmonyException (a class provided by the service library) and throw an exception of that type. The service library may also throw a HarmonyException when common errors are encountered.
-
-Exceptions of this type (HarmonyException or a subclass) which are meant to be bubbled up to users should _not_ be suppressed by the service. The exception will automatically be caught/handled by the service library. The exception message will be passed on to Harmony and bubbled up to the end user (accessible via the errors field in the job status Harmony endpoint (`/jobs/<job-id>`) and in many cases via the final job message). When possible services should strive to give informative error messages that give the end user some sense of why the service failed, without revealing any internal details about the service that could be exploited.
-
-Here is a good example:
-```
-"""This module contains custom exceptions specific to the Harmony GDAL Adapter
-    service. These exceptions are intended to allow for clearer messages to the
-    end-user and easier debugging of expected errors that arise during an
-    invocation of the service.
-"""
-
-from harmony.exceptions import HarmonyException
-
-class HGAException(HarmonyException):
-    """Base class for exceptions in the Harmony GDAL Adapter."""
-
-    def __init__(self, message):
-        super().__init__(message, 'nasa/harmony-gdal-adapter')
-
-
-class DownloadError(HGAException):
-    """ This exception is raised when the Harmony GDAL Adapter cannot retrieve
-        input data.
-    """
-    def __init__(self, url, message):
-        super().__init__(f'Could not download resource: {url}, {message}')
-
-
-class UnknownFileFormatError(HGAException):
-    """ This is raised when the input file format is one that cannot by
-        processed by the Harmony GDAL Adapter.
-    """
-    def __init__(self, file_format):
-        super().__init__('Cannot process unrecognised file format: '
-                         f'"{file_format}"')
-
-
-class IncompatibleVariablesError(HGAException):
-    """ This exception is raised when the dataset variables requested are not
-    compatible, i.e. they have different projections, geotransforms, sizes or
-    data types.
-    """
-    def __init__(self, message):
-        super().__init__(f'Incompatible variables: {message}')
-
-
-class MultipleZippedNetCDF4FilesError(HGAException):
-    """ This exception is raised when the input file supplied to HGA is a zip
-        file containing multiple NetCDF-4 files, as these cannot be aggregated.
-    """
-    def __init__(self, zip_file):
-        super().__init__(f'Multiple NetCDF-4 files within input: {zip_file}.')
-```
-
-Services can fail for other unforeseen reasons, like running out of memory, in which case Harmony will make an effort to provide a standardized error message. Just because a service invocation results in failure does not mean that the entire job itself will fail. Other factors that come into play are retries and cases where a job completes with errors (partial success). Retries happen automatically (up to a Harmony-wide configured limit) on failed data downloads and service failures.
+For unrecoverable conditions, services should raise a `HarmonyException` (or subclass) to trigger a failure. The exception message will be forwarded to Harmony and visible to end users through the job status endpoint (`/jobs/<job-id>`). For details, see [Error Handling](https://github.com/nasa/harmony-service-lib-py/blob/main/README.md#error-handling).
 
 ## 6. Defining environment variables in env-defaults
 
@@ -270,17 +215,7 @@ resources allocated (disk space, memory).
 ## 8. Docker Container Images
 The service and all necessary code and dependencies to allow it to run should be packaged in a Docker container image. Docker images can be staged anywhere Harmony can reach them, e.g. ghcr.io, Dockerhub or AWS ECR. If the image cannot be made publicly available, contact the harmony team to determine how to provide access to the image.
 
-Harmony will run the Docker image, passing the following command-line parameters:
-
-`--harmony-action <action> --harmony-input <input> --harmony-sources <sources-file> --harmony-metadata-dir <output-dir>`
-
-`<action>` is the action Harmony wants the service to perform. Currently, Harmony only uses `invoke`, which requests that the service be run and exit. The service library Harmony provides also supports a `start` action with parameter `--harmony-queue-url <url>`, which requests that the service be started as a long running service that reads requests from an SQS queue. This is likely to be deprecated.
-
-`<input>` is a JSON string containing the details of the service operation to be run. See the latest [Harmony data-operation schema](../../services/harmony/app/schemas/) for format details.
-
-`<sources-file>` file path that contains a STAC catalog with items and metadata to be processed by the service. The intent of this file is to allow Harmony to externalize the potentially very long list of input sources to avoid command line limits while retaining the remainder of the message on the command line for easier manipulation in workflow definitions.
-
-`<output-dir>` is the file path where output metadata should be written. The resulting STAC catalog will be written to catalog.json in the supplied dir with child resources in the same directory or a descendant directory.
+Harmony will run the Docker image through its entrypoint according to the [Harmony Service CLI](https://github.com/nasa/harmony-service-lib-py/blob/main/README.md#where-it-fits-in).
 
 The `Dockerfile` in the harmony-service-example project serves as a minimal example of how to set up Docker to accept these inputs using the `ENTRYPOINT` declaration.
 
