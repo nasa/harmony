@@ -96,12 +96,12 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
   const { id } = req.params;
   const {
     status,
-    sub_status,
     hits,
     results,
     scrollID,
     workflowStepIndex,
-    errorMessage,
+    message,
+    message_category,
     duration,
     operation,
     outputItemSizes } = req.body;
@@ -117,12 +117,12 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
   const update = {
     workItemID: parseInt(id),
     status,
-    sub_status,
     hits,
     results,
     scrollID,
     workflowStepIndex,
-    errorMessage,
+    message,
+    message_category,
     totalItemsSize,
     outputItemSizes,
     duration,

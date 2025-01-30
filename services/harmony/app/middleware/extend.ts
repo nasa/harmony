@@ -6,11 +6,21 @@ import HarmonyRequest from '../models/harmony-request';
  * @param req - The client request
  */
 export function setExtendDimensionsDefault(req: HarmonyRequest): void {
+  const { operation } = req;
   const extend = req.context.serviceConfig?.capabilities?.extend;
   const defaultExtendDimensions = req.context.serviceConfig?.capabilities?.default_extend_dimensions;
-  // set extendDimension to the default if there is one configured and no provided value
-  if (extend && defaultExtendDimensions && !req.operation?.extendDimensions) {
-    req.operation.extendDimensions = defaultExtendDimensions;
+
+  if (!extend || !defaultExtendDimensions) return;
+
+  // Set extendDimension to the default if the user specified extend=true or the user requested
+  // concatenation but did not specify extend dimensions. The case tying it to whether concatenation
+  // is requested is temporary - right now ESDC does not support extend directly so we assume if
+  // concatenation is requested for a service that supports extend, we also specify extend
+  if (
+    (operation?.extendDimensions?.length === 1 && operation.extendDimensions[0] === 'true') ||
+    (operation.shouldConcatenate && !(operation?.extendDimensions?.length > 0) && req.query?.extend !== 'false')
+  ) {
+    operation.extendDimensions = defaultExtendDimensions;
   }
 }
 
