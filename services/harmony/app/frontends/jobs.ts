@@ -12,7 +12,7 @@ import { getPagingParams, getPagingLinks, setPagingHeaders } from '../util/pagin
 import HarmonyRequest from '../models/harmony-request';
 import db from '../util/db';
 import env from '../util/env';
-import JobError, { getErrorsForJob } from '../models/job-error';
+import JobMessage, { getMessagesForJob } from '../models/job-message';
 import _ from 'lodash';
 import { isAdminUser } from '../util/edl-api';
 
@@ -91,7 +91,7 @@ function getMessageForDisplay(job: JobForDisplay, urlRoot: string): string {
  * @param errors - a list of errors for the job
  * @returns the job for display
  */
-function getJobForDisplay(job: Job, urlRoot: string, linkType?: string, errors?: JobError[]): JobForDisplay {
+function getJobForDisplay(job: Job, urlRoot: string, linkType?: string, errors?: JobMessage[]): JobForDisplay {
   const serializedJob = job.serialize(urlRoot, linkType);
   const statusLinkRel = linkType === 'none' ? 'item' : 'self';
   serializedJob.links = getLinksForDisplay(serializedJob, urlRoot, statusLinkRel, job.destination_url);
@@ -100,7 +100,7 @@ function getJobForDisplay(job: Job, urlRoot: string, linkType?: string, errors?:
   }
 
   if (errors.length > 0) {
-    serializedJob.errors =  errors.map((e) => _.pick(e, ['url', 'message'])) as JobError[];
+    serializedJob.errors =  errors.map((e) => _.pick(e, ['url', 'message'])) as JobMessage[];
   }
 
   return serializedJob;
@@ -171,11 +171,11 @@ export async function getJobStatus(
     const { page, limit } = getPagingParams(req, env.defaultResultPageSize);
     let job: Job;
     let pagination;
-    let errors: JobError[];
+    let errors: JobMessage[];
 
     await db.transaction(async (tx) => {
       ({ job, pagination } = await Job.byJobID(tx, jobID, true, true, false, page, limit));
-      errors = await getErrorsForJob(tx, jobID);
+      errors = await getMessagesForJob(tx, jobID);
     });
     if (!job) {
       throw new NotFoundError(`Unable to find job ${jobID}`);
