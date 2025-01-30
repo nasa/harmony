@@ -492,14 +492,11 @@ describe('Work Backends', function () {
         ...{
           status: WorkItemStatus.WARNING,
           message_category: 'nodata',
-          // results: [getStacLocation({ id: workItemRecord.id, jobID: workItemRecord.jobID }, 'catalog.json')],
           outputItemSizes: [],
           duration: 0,
         },
       };
-      // before(async () => {
-      //   await fakeServiceStacOutput(noDataWorkItemRecord.jobID, noDataWorkItemRecord.id);
-      // });
+
       hookWorkItemUpdate((r) => r.send(noDataWorkItemRecord));
 
       it('sets the work item status to warning with nodata', async function () {

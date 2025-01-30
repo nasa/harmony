@@ -41,7 +41,7 @@ export interface WorkItemRecord {
   // message if status === FAILED or status === WARNING
   message?: string;
 
-  // The type of event the message is related to,
+  // The type of event to which the message is related
   message_category?: string;
 
   // The location of the STAC catalog for the item(s) to process
