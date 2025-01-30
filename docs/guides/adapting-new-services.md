@@ -68,7 +68,7 @@ Canceled requests are handled internally by Harmony. Harmony will prevent furthe
 
 ## 5. Error handling
 
-For unrecoverable conditions, services should raise a `HarmonyException` (or subclass) to trigger a failure. The exception message will be forwarded to Harmony and visible to end users through the job status endpoint (`/jobs/<job-id>`). For details, see [Error Handling](https://github.com/nasa/harmony-service-lib-py/blob/main/README.md#error-handling).
+For unrecoverable conditions, services should raise exception to trigger a failure. The exception message will be forwarded to Harmony and visible to end users through the job status endpoint (`/jobs/<job-id>`). See [Error Handling](https://github.com/nasa/harmony-service-lib-py/blob/main/README.md#error-handling) for detailed error handling guidance when using the preferred harmony-service-lib-py for service development.
 
 ## 6. Defining environment variables in env-defaults
 
