@@ -483,6 +483,13 @@ export default class DataOperation {
   }
 
   /**
+   * Gets whether or not the data should be extended
+   */
+  get shouldExtend(): boolean {
+    return !!(this.model.extendDimensions?.length > 0);
+  }
+
+  /**
    * Gets the averaging method to use
    *
    * @returns the averaging method to use
