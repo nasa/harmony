@@ -1,12 +1,45 @@
-/* eslint-disable no-continue */
 import jobsTable from './jobs/jobs-table.js';
 import toasts from './toasts.js';
 import PubSub from '../pub-sub.js';
+import { trimForDisplay } from './table.js';
 
+/**
+ * The labeling dropdown object allows users to
+ * add and remove labels from selected jobs.
+ */
+// need this ref so that we can access some functions before they're defined
+const labelsModule = {};
 let bsDropdown;
 let labelLinks;
 let labelDropdown;
 let labelNavItem;
+
+/**
+ * Handle actions that are taken after adding/removing labels for jobs.
+ * @param {Response} res - the response from the labels endpoint
+ * @param {boolean} insertNew - whether to insert a new label list element
+ * @param {string} successMessage - success message to show the user
+ * @param {object} tagInput - the tag input instance
+ */
+async function handleLabelsResponse(res, insertNew, successMessage, tagInput) {
+  if (res.status === 201 || res.status === 204) {
+    if (insertNew) {
+      const label = (await res.json()).labels[0];
+      labelsModule.insertNewLabelAlphabetically(label);
+      const newTag = { value: `label: ${trimForDisplay(label, 30)}`, dbValue: label, field: 'label', searchBy: label };
+      tagInput?.whitelist?.push(newTag);
+    }
+    toasts.showUpper(successMessage);
+    PubSub.publish(
+      'row-state-change',
+    );
+  } else if (res.status === 400) {
+    const responseText = await res.text();
+    toasts.showUpper(responseText);
+  } else {
+    toasts.showUpper('The update failed.');
+  }
+}
 
 /**
  * Responds to a submit link click event by adding or removing
@@ -14,8 +47,10 @@ let labelNavItem;
  * (hits relevant Harmony url, shows user the response).
  * @param {Event} event - the click event
  * @param {string} method - the HTTP method
+ * @param {boolean} insertNew - insert a list element for the new label
+ * @param {object} tagInput - the tag input instance
  */
-async function handleSubmitClick(event, method) {
+async function handleSubmitClick(event, method, insertNew, tagInput) {
   event.preventDefault();
   const labelName = event.target.getAttribute('data-value');
   const jobIds = jobsTable.getJobIds();
@@ -31,14 +66,43 @@ async function handleSubmitClick(event, method) {
     body: JSON.stringify({ jobId: jobIds, label: [labelName] }),
   });
   action = method === 'PUT' ? 'Added' : 'Removed';
-  if (res.status === 201 || res.status === 204) {
-    toasts.showUpper(`${action} "${labelName}" label for ${jobIds.length} job${postfix}.`);
-    PubSub.publish(
-      'row-state-change',
-    );
+  const successMessage = `${action} "${labelName}" label for ${jobIds.length} job${postfix}.`;
+  await handleLabelsResponse(res, insertNew, successMessage, tagInput);
+}
+
+/**
+ * Inserts a new label item into the labels list in alphabetical order.
+ * @param {string} labelName - The name/value of the label to insert
+ */
+function insertNewLabelAlphabetically(labelName) {
+  const labelsListElement = document.getElementById('labels-list');
+
+  // Create the new label element
+  const newLabelElement = document.createElement('li');
+  newLabelElement.className = 'label-li';
+  newLabelElement.innerHTML = `<a class="dropdown-item label-item text-truncate" name="${labelName}" data-value="${labelName}" href="#">${labelName}</a>`;
+
+  // Get all existing label items
+  const labelItems = Array.from(labelsListElement.getElementsByClassName('label-li'))
+    .filter((item) => !item.classList.contains('label-clone')); // Exclude promoted clones
+
+  // Find the correct position to insert the new label
+  const insertIndex = labelItems.findIndex((item) => {
+    const itemText = item.querySelector('a').getAttribute('data-value')
+      .toLowerCase();
+    return itemText > labelName.toLowerCase();
+  });
+
+  // If no position found (should be at end) or no existing labels
+  if (insertIndex === -1) {
+    labelsListElement.appendChild(newLabelElement);
   } else {
-    toasts.showUpper('The update failed.');
+    labelsListElement.insertBefore(newLabelElement, labelItems[insertIndex]);
   }
+  newLabelElement.addEventListener('click', (event) => {
+    bsDropdown.hide();
+    handleSubmitClick(event, 'PUT');
+  }, false);
 }
 
 /**
@@ -82,32 +146,62 @@ function demoteLabels() {
 }
 
 /**
+ * Show or hide the list of labels.
+ * @param {boolean} show - true/false
+ */
+function showHideLabelsList(show) {
+  const labelsLi = document.getElementById('labels-li');
+  if (labelsLi) {
+    labelsLi.style.display = show ? '' : 'none';
+  }
+}
+
+/**
  * Filters the list of label items based on user input.
  */
 function filterLabelsList() {
   const searchValue = document.querySelector('#label-search').value.toLowerCase().trim();
   const labelItems = document.querySelectorAll('#labels-list .label-li');
   let visibleCount = 0;
+  let hasExactMatch = false;
+  if (searchValue.length === 255) {
+    toasts.showUpper('Label length is limited to 255.');
+  }
   for (const labelItem of labelItems) {
     if (labelItem.classList.contains('label-promoted')) { // skip, stays hidden
+      // eslint-disable-next-line no-continue
       continue;
     }
     const labelName = labelItem.firstChild.getAttribute('data-value').toLowerCase().trim();
     const isMatch = labelName.startsWith(searchValue);
     labelItem.style.display = isMatch ? '' : 'none';
     if (isMatch) visibleCount += 1;
+    if (searchValue === labelName) {
+      hasExactMatch = true;
+    }
   }
-  document.getElementById('no-match-li').style.display = visibleCount === 0 ? '' : 'none';
+  if (!hasExactMatch) {
+    const createLabelLink = document.querySelector('#create-label-link');
+    createLabelLink.textContent = `Create/apply "${searchValue}"?`;
+    createLabelLink.setAttribute('data-value', searchValue);
+    document.getElementById('no-match-li').style.display = '';
+  } else {
+    document.getElementById('no-match-li').style.display = 'none';
+  }
+  showHideLabelsList(visibleCount > 0);
 }
 
 /**
  * Unhides all label items.
  */
 function showAllLabels() {
+  let hasItems = false;
   const labelItems = document.querySelectorAll('#labels-list .label-li');
   for (const labelItem of labelItems) {
     labelItem.style.display = '';
+    hasItems = true;
   }
+  showHideLabelsList(hasItems);
 }
 
 /**
@@ -123,7 +217,7 @@ function getLabelsIntersectionForSelectedJobs() {
       const jobID = jobEl.getAttribute('data-id');
       const labelsString = document.querySelector(`#job-labels-display-${jobID}`).getAttribute('data-labels');
       const currentSet = new Set();
-      const labels = labelsString === '' ? [] : labelsString.split(',');
+      const labels = JSON.parse(labelsString);
       labels.forEach((item) => currentSet.add(item));
       if (firstChecked) { // init labelsSet
         labels.forEach((item) => labelsSet.add(item));
@@ -173,8 +267,9 @@ function toggleLabelNavVisibility(selectedJobsCount) {
 
 /**
  * Bind event handlers to their respective elements.
+ * @param {object} tagInput - the tag input instance
  */
-function bindEventListeners() {
+function bindEventListeners(tagInput) {
   const labelSearchElement = document.getElementById('label-search');
   labelSearchElement.addEventListener('keyup', () => {
     filterLabelsList();
@@ -189,47 +284,52 @@ function bindEventListeners() {
     demoteLabels();
     setLabelLinksEnabled(labelLinks);
     document.getElementById('label-search').value = '';
-    showAllLabels();
     document.getElementById('no-match-li').style.display = 'none';
   });
   labelDropdown.addEventListener('show.bs.dropdown', () => {
+    showAllLabels();
     promoteLabels(getLabelsIntersectionForSelectedJobs());
     const selectedJobsCount = jobsTable.getJobIds().length;
     setLabelLinksDisabled(selectedJobsCount, labelLinks);
   });
+  document.querySelector('#create-label-link').addEventListener('click', (event) => {
+    handleSubmitClick(event, 'PUT', true, tagInput);
+    bsDropdown.hide();
+  });
 }
 
 /**
- * The labeling dropdown object allows users to
- * add and remove labels from selected jobs.
+ * Initializes the labeling interactivity associated with
+ * the labels dropdown link.
+ * @param {Promise<object>} tagInputPromise - the tag input instance
  */
-export default {
-
-  /**
-   * Initializes the labeling interactivity associated with
-   * the labels dropdown link.
-   */
-  init() {
-    // the anchor elements that correspond to a label
-    labelLinks = Array.from(document.querySelectorAll('#labels-list .label-li a'));
-    // the dropdown that contains label list items
-    labelDropdown = document.getElementById('label-dropdown-a');
-    labelNavItem = document.getElementById('label-nav-item');
-    if (labelDropdown) {
-      bsDropdown = new bootstrap.Dropdown(labelDropdown);
-    }
-    bindEventListeners();
-    PubSub.subscribe(
-      'job-selected',
-      () => this.toggleLabelNavVisibility(jobsTable.getJobIds().length),
-    );
-  },
-  promoteLabels,
-  demoteLabels,
-  getLabelsIntersectionForSelectedJobs,
-  setLabelLinksDisabled,
-  setLabelLinksEnabled,
-  filterLabelsList,
-  showAllLabels,
-  toggleLabelNavVisibility,
+labelsModule.init = async (tagInputPromise) => {
+  // the anchor elements that correspond to a label
+  labelLinks = Array.from(document.querySelectorAll('#labels-list .label-li a'));
+  // the dropdown that contains label list items
+  labelDropdown = document.getElementById('label-dropdown-a');
+  labelNavItem = document.getElementById('label-nav-item');
+  if (labelDropdown) {
+    bsDropdown = new bootstrap.Dropdown(labelDropdown);
+  }
+  const hasItems = document.querySelectorAll('#labels-list .label-li').length > 0;
+  showHideLabelsList(hasItems);
+  bindEventListeners((await tagInputPromise));
+  PubSub.subscribe(
+    'job-selected',
+    () => toggleLabelNavVisibility(jobsTable.getJobIds().length),
+  );
 };
+
+labelsModule.promoteLabels = promoteLabels;
+labelsModule.demoteLabels = demoteLabels;
+labelsModule.getLabelsIntersectionForSelectedJobs = getLabelsIntersectionForSelectedJobs;
+labelsModule.setLabelLinksDisabled = setLabelLinksDisabled;
+labelsModule.setLabelLinksEnabled = setLabelLinksEnabled;
+labelsModule.filterLabelsList = filterLabelsList;
+labelsModule.showAllLabels = showAllLabels;
+labelsModule.toggleLabelNavVisibility = toggleLabelNavVisibility;
+labelsModule.insertNewLabelAlphabetically = insertNewLabelAlphabetically;
+labelsModule.handleLabelsResponse = handleLabelsResponse;
+
+export default labelsModule;

@@ -75,3 +75,15 @@
 .label-li {
     max-width: 200px;
 }
+
+#label-dropdown-menu {
+    max-width: 40vw;
+}
+
+#create-label-link {
+    word-wrap: break-word;
+}
+
+.toast, .toast-container {
+    z-index: 1021;
+}
