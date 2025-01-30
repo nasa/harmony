@@ -160,9 +160,17 @@ async function _doWork(
     newWorkItem.totalItemsSize = serviceResponse.totalItemsSize;
     newWorkItem.outputItemSizes = serviceResponse.outputItemSizes;
   } else {
-    workItemLogger.error(`Service failed with error: ${serviceResponse.error}`);
-    newWorkItem.status = WorkItemStatus.FAILED;
-    newWorkItem.errorMessage = `${serviceResponse.error}`;
+    if (serviceResponse.errorLevel?.toLowerCase() === WorkItemStatus.WARNING.toString()) {
+      workItemLogger.warn(`Service succeeded with warning: ${serviceResponse.error}`);
+      newWorkItem.status = WorkItemStatus.WARNING;
+      newWorkItem.message = serviceResponse.error;
+      newWorkItem.message_category = serviceResponse.errorCategory;
+    } else {
+      workItemLogger.error(`Service failed with error: ${serviceResponse.error}`);
+      newWorkItem.status = WorkItemStatus.FAILED;
+      newWorkItem.message = serviceResponse.error;
+      newWorkItem.message_category = serviceResponse.errorCategory;
+    }
   }
 
   return newWorkItem;

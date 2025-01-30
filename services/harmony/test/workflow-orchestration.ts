@@ -376,7 +376,7 @@ describe('Workflow chaining for a collection configured for Swath Projector and 
           const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
           firstSwathItem = JSON.parse(res.text).workItem;
           firstSwathItem.status = WorkItemStatus.FAILED;
-          firstSwathItem.errorMessage = 'That was just a practice try, right?';
+          firstSwathItem.message = 'That was just a practice try, right?';
           firstSwathItem.results = [];
           await updateWorkItem(this.backend, firstSwathItem);
 

@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { WorkItemStatus, WorkItemSubStatus } from './work-item-interface';
+import { WorkItemStatus } from './work-item-interface';
 
 /**
  *
@@ -13,9 +13,6 @@ export default interface WorkItemUpdate {
 
   // The status of the operation - see WorkItemStatus
   status?: WorkItemStatus;
-
-  // The sub-status of the operation - see WorkItemSubStatus
-  sub_status?: WorkItemSubStatus;
 
   // The ID of the scroll session (only used for the query cmr service)
   scrollID?: string;
@@ -35,8 +32,12 @@ export default interface WorkItemUpdate {
   // The size (in bytes) of each data item produced by this work item (used for batching)
   outputItemSizes?: number[];
 
-  // error message if status === FAILED
-  errorMessage?: string;
+  // message from service processing
+  message?: string;
+
+  // The category of the message from the service
+  message_category?: string;
+
 
   // how long the work item took to process
   duration?: number;
