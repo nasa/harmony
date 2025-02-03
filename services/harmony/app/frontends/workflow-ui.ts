@@ -484,7 +484,7 @@ function workItemRenderingFunctions(job: Job, isAdmin: boolean, isLogViewer: boo
   badgeClasses[WorkItemStatus.WARNING] = 'warning';
   return {
     workflowItemBadge(): string { return badgeClasses[this.status]; },
-    workflowItemStatus(): string { return this.sub_status ? `${this.status}: ${this.sub_status}` : this.status; },
+    workflowItemStatus(): string { return this.message_category ? `${this.status}: ${this.message_category}` : this.status; },
     workflowItemStep(): string { return sanitizeImage(this.serviceID); },
     workflowItemCreatedAt(): string { return this.createdAt.getTime(); },
     workflowItemUpdatedAt(): string { return this.updatedAt.getTime(); },
