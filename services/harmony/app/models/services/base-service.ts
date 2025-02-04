@@ -84,6 +84,7 @@ export interface ServiceConfig<ServiceParamType> {
   message?: string;
   maximum_sync_granules?: number;
   steps?: ServiceStep[];
+  validate_variables?: boolean;
 }
 
 /**
@@ -119,13 +120,14 @@ function serviceImageToId(image: string): string {
 }
 
 const conditionToOperationField = {
-  reproject: 'crs',
+  concatenate: 'shouldConcatenate',
+  extend: 'shouldExtend',
   reformat: 'outputFormat',
-  variableSubset: 'shouldVariableSubset',
+  reproject: 'crs',
   shapefileSubset: 'shouldShapefileSubset',
   spatialSubset: 'shouldSpatialSubset',
   temporalSubset: 'shouldTemporalSubset',
-  concatenate: 'shouldConcatenate',
+  variableSubset: 'shouldVariableSubset',
 };
 
 /**
@@ -133,6 +135,7 @@ const conditionToOperationField = {
  */
 const aggregatingOperations = [
   'concatenate',
+  'extend',
 ];
 
 /**
@@ -143,7 +146,10 @@ const aggregatingOperations = [
  * @returns true if the step is an aggregating step, false otherwise
  */
 function stepHasAggregatedOutput(step: ServiceStep, operation: DataOperation): boolean {
-  return operation.shouldConcatenate && _.intersection(aggregatingOperations, step.operations).length > 0;
+  return (
+    (operation.shouldConcatenate || operation.shouldExtend) &&
+    _.intersection(aggregatingOperations, step.operations).length > 0
+  );
 }
 
 /**
@@ -185,6 +191,19 @@ function stepRequired(step: ServiceStep, operation: DataOperation): boolean {
         required = true;
       }
     }
+  }
+
+  if (
+    required &&
+    step.conditional?.exists?.includes('extend') &&
+    (!operation.extendDimensions || operation.extendDimensions.length === 0) &&
+    step.conditional?.exists.includes('concatenate')
+  ) {
+    // Special temporary case which can occur if extend=false is specified and the step is
+    // configured to run if either extend or concatenate is provided. Once EDSC is updated to be
+    // able to provide the extend parameter and not use concatenate as a proxy we can remove
+    // this case.
+    required = false;
   }
   return required;
 }

@@ -9,12 +9,14 @@ export enum WorkItemStatus {
   SUCCESSFUL = 'successful',
   FAILED = 'failed',
   CANCELED = 'canceled',
+  WARNING = 'warning',
 }
 
 export const COMPLETED_WORK_ITEM_STATUSES = [
   WorkItemStatus.SUCCESSFUL,
   WorkItemStatus.FAILED,
   WorkItemStatus.CANCELED,
+  WorkItemStatus.WARNING,
 ];
 
 export interface WorkItemRecord {
@@ -36,8 +38,11 @@ export interface WorkItemRecord {
   // The status of the operation - see WorkItemStatus
   status?: WorkItemStatus;
 
-  // error message if status === FAILED
-  errorMessage?: string;
+  // message if status === FAILED or status === WARNING
+  message?: string;
+
+  // The type of event to which the message is related
+  message_category?: string;
 
   // The location of the STAC catalog for the item(s) to process
   stacCatalogLocation?: string;

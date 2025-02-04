@@ -32,8 +32,12 @@ export default interface WorkItemUpdate {
   // The size (in bytes) of each data item produced by this work item (used for batching)
   outputItemSizes?: number[];
 
-  // error message if status === FAILED
-  errorMessage?: string;
+  // message from service processing
+  message?: string;
+
+  // The category of the message from the service
+  message_category?: string;
+
 
   // how long the work item took to process
   duration?: number;

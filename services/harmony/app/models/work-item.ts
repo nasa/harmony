@@ -28,7 +28,7 @@ export enum WorkItemEvent {
 const serializedFields = [
   'id', 'jobID', 'createdAt', 'retryCount', 'updatedAt', 'scrollID', 'serviceID', 'status',
   'stacCatalogLocation', 'totalItemsSize', 'workflowStepIndex', 'duration', 'startedAt',
-  'sortIndex',
+  'sortIndex', 'message_category',
 ];
 
 /**
@@ -51,8 +51,11 @@ export default class WorkItem extends Record implements WorkItemRecord {
   // The status of the operation - see WorkItemStatus
   status?: WorkItemStatus;
 
-  // error message if status === FAILED
-  errorMessage?: string;
+  // Additional information about the message returned from the service
+  message_category?: string;
+
+  // error or warning message if status === FAILED or status === WARNING
+  message?: string;
 
   // The location of the STAC catalog for the item(s) to process
   stacCatalogLocation?: string;
@@ -256,7 +259,7 @@ export async function getNextWorkItems(
         .whereIn('id', workItemData.map((w) => w.id));
     }
   } catch (e) {
-    logger.error(`Error getting next work item for service [${serviceID}] and job [${jobID}]`);
+    logger.error(`Error getting next work items for service [${serviceID}] and job [${jobID}]`);
     logger.error(e);
     throw e;
   }
@@ -297,6 +300,7 @@ export async function getWorkItemStatus(
  * @param tx - the transaction to use for querying
  * @param id - the id of the WorkItem
  * @param status - the status to set for the WorkItem
+ * @param message_category - the message category to set for the WorkItem
  * @param duration - how long the work item took to process
  * @param totalItemsSize - the combined sizes of all the input granules for this work item
  * @param outputItemSizes - the separate size of each granule in the output for this work item
@@ -305,6 +309,7 @@ export async function updateWorkItemStatus(
   tx: Transaction,
   id: number,
   status: WorkItemStatus,
+  message_category: string,
   duration: number,
   totalItemsSize: number,
   outputItemSizes: number[],
@@ -313,11 +318,11 @@ export async function updateWorkItemStatus(
   const outputItemSizesJson = JSON.stringify(outputItemSizes);
   try {
     await tx(WorkItem.table)
-      .update({ status, duration, totalItemsSize, outputItemSizesJson: outputItemSizesJson, updatedAt: new Date() })
+      .update({ status, message_category, duration, totalItemsSize, outputItemSizesJson: outputItemSizesJson, updatedAt: new Date() })
       .where({ id });
-    logger.debug(`Status for work item ${id} set to ${status}`);
+    logger.debug(`Status for work item ${id} set to ${status} | ${message_category}`);
   } catch (e) {
-    logger.error(`Failed to update work item ${id} status to ${status}`);
+    logger.error(`Failed to update work item ${id} status to ${status} | ${message_category}`);
     logger.error(e);
     throw e;
   }
@@ -328,14 +333,16 @@ export async function updateWorkItemStatus(
  * @param tx - the transaction to use for querying
  * @param ids - the ids of the WorkItems
  * @param status - the status to set for the WorkItems
+ * @param message_category - the message category to set for the WorkItems
  */
 export async function updateWorkItemStatuses(
   tx: Transaction,
   ids: number[],
   status: WorkItemStatus,
+  message_category?: string,
 ): Promise<void> {
   const now = new Date();
-  let update = { status, updatedAt: now };
+  let update = { status, message_category, updatedAt: now };
   // if we are setting the status to running, also set the startedAt time
   if (status === WorkItemStatus.RUNNING) {
     update = { ...update, ...{ startedAt: now } };
