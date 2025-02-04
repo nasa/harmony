@@ -307,7 +307,6 @@ https://cmr.earthdata.nasa.gov:
       subsetting:
         variable: true
         multiple_variable: true
-        dimension: true
       output_formats:
         - application/x-hdf
     steps:
@@ -625,6 +624,7 @@ https://cmr.uat.earthdata.nasa.gov:
       subsetting:
         variable: true
         multiple_variable: true
+        dimension: true
       output_formats:
         - application/x-hdf
     steps:
