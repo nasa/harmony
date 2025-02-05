@@ -1,4 +1,4 @@
-import { formatDates, initCopyHandler } from '../table.js';
+import { formatDates, initCopyHandler, trimForDisplay } from '../table.js';
 import toasts from '../toasts.js';
 import PubSub from '../../pub-sub.js';
 
@@ -97,11 +97,13 @@ function initFilter(tableFilter) {
     { value: 'status: running', dbValue: 'running', field: 'status' },
     { value: 'status: failed', dbValue: 'failed', field: 'status' },
     { value: 'status: queued', dbValue: 'queued', field: 'status' },
+    { value: 'status: warning', dbValue: 'warning', field: 'status' },
   ];
   const allowedValues = allowedList.map((t) => t.value);
   // eslint-disable-next-line no-new
   const tagInput = new Tagify(filterInput, {
     whitelist: allowedList,
+    delimiters: null,
     validate(tag) {
       if (allowedValues.includes(tag.value)) {
         return true;
@@ -114,6 +116,21 @@ function initFilter(tableFilter) {
       maxItems: 15,
       enabled: 0,
       closeOnSelect: true,
+    },
+    templates: {
+      tag(tagData) {
+        return `<tag title="${tagData.dbValue}"
+            contenteditable='false'
+            spellcheck='false'
+            tabIndex="${this.settings.a11y.focusableTags ? 0 : -1}"
+            class="${this.settings.classNames.tag}"
+            ${this.getAttributes(tagData)}>
+          <x title='' class="${this.settings.classNames.tagX}" role='button' aria-label='remove tag'></x>
+          <div>
+              <span class="${this.settings.classNames.tagText}">${trimForDisplay(tagData.value.split(': ')[1], 20)}</span>
+          </div>
+        </tag>`;
+      },
     },
   });
   const initialTags = JSON.parse(tableFilter);
