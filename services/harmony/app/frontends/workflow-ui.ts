@@ -437,6 +437,7 @@ export async function getJob(
       updatedAtChecked: dateKind == 'updatedAt' ? 'checked' : '',
       createdAtChecked: dateKind != 'updatedAt' ? 'checked' : '',
       disallowStatusChecked: requestQuery.disallowstatus === 'on' ? 'checked' : '',
+      disallowMessageCategoryChecked: requestQuery.disallowmessagecategory === 'on' ? 'checked' : '',
       selectedFilters: originalValues,
       version,
       isAdminRoute: req.context.isAdminAccess,

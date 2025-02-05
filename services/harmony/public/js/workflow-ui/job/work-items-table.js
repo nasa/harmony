@@ -36,7 +36,7 @@ import PubSub from '../../pub-sub.js';
  */
 async function load(params, checkJobStatus) {
   let tableUrl = `./${params.jobID}/work-items?page=${params.currentPage}&limit=${params.limit}&checkJobStatus=${checkJobStatus}`;
-  tableUrl += `&tableFilter=${encodeURIComponent(params.tableFilter)}&disallowStatus=${params.disallowStatus}`;
+  tableUrl += `&tableFilter=${encodeURIComponent(params.tableFilter)}&disallowStatus=${params.disallowStatus}&disallowMessageCategory=${params.disallowMessageCategory}`;
   tableUrl += `&fromDateTime=${encodeURIComponent(params.fromDateTime)}&toDateTime=${encodeURIComponent(params.toDateTime)}`;
   tableUrl += `&tzOffsetMinutes=${params.tzOffsetMinutes}&dateKind=${params.dateKind}`;
   const res = await fetch(tableUrl);
