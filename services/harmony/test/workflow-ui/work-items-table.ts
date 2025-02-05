@@ -131,6 +131,8 @@ describe('Workflow UI work items table route', function () {
       await otherItem3.save(this.trx);
       const otherItem4 = buildWorkItem({ jobID: otherJob.jobID, status: WorkItemStatus.READY });
       await otherItem4.save(this.trx);
+      const otherItem5 = buildWorkItem({ jobID: otherJob.jobID, status: WorkItemStatus.WARNING, message_category: 'no-data' });
+      await otherItem5.save(this.trx);
       const otherStep1 = buildWorkflowStep({ jobID: otherJob.jobID, stepIndex: 1 });
       await otherStep1.save(this.trx);
       const otherStep2 = buildWorkflowStep({ jobID: otherJob.jobID, stepIndex: 2 });
@@ -572,7 +574,7 @@ describe('Workflow UI work items table route', function () {
         hookWorkflowUIWorkItems({ username: 'adam', jobID: otherJob.jobID });
         it('returns metrics logs links for each each work item', function () {
           const listing = this.res.text;
-          expect((listing.match(/logs-metrics/g) || []).length).to.equal(4);
+          expect((listing.match(/logs-metrics/g) || []).length).to.equal(5);
         });
       });
 
@@ -582,6 +584,24 @@ describe('Workflow UI work items table route', function () {
         it('sets the appropriate time range query parameter for the metrics url', async function () {
           const dateString = (await getWorkItemById(db, otherItem3.id)).createdAt.toISOString();
           expect(this.res.text).to.contain(`from:'${dateString}',to:'now'`);
+        });
+      });
+
+      describe('when the admin filters otherJob\'s items by status IN [WARNING]', function () {
+        hookWorkflowUIWorkItems({ username: 'adam', jobID: otherJob.jobID,
+          query: { tableFilter: '[{"value":"status: warning","dbValue":"warning","field":"status"}]' } });
+        it('contains the WARNING work item', async function () {
+          expect((this.res.text.match(/work-item-table-row/g) || []).length).to.equal(1);
+          expect(this.res.text).to.contain(`<span class="badge rounded-pill bg-warning">${WorkItemStatus.WARNING.valueOf()}: no-data</span>`);
+        });
+      });
+
+      describe('when the admin filters otherJob\'s items by message_category IN [no-data]', function () {
+        hookWorkflowUIWorkItems({ username: 'adam', jobID: otherJob.jobID,
+          query: { tableFilter: '[{"value":"message category: no-data","dbValue":"no-data","field":"message_category"}]' } });
+        it('contains the no-data work item', async function () {
+          expect((this.res.text.match(/work-item-table-row/g) || []).length).to.equal(1);
+          expect(this.res.text).to.contain(`<span class="badge rounded-pill bg-warning">${WorkItemStatus.WARNING.valueOf()}: no-data</span>`);
         });
       });
 
