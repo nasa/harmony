@@ -100,12 +100,14 @@ function initFilter(tableFilter) {
     { value: 'status: warning', dbValue: 'warning', field: 'status' },
   ];
   const allowedValues = allowedList.map((t) => t.value);
+  allowedList.push({ value: 'message category: no-data', dbValue: 'no-data', field: 'message_category' });
   // eslint-disable-next-line no-new
   const tagInput = new Tagify(filterInput, {
     whitelist: allowedList,
     delimiters: null,
     validate(tag) {
-      if (allowedValues.includes(tag.value)) {
+      if (allowedValues.includes(tag.value)
+        || /^message category: .{1,100}$/.test(tag.value)) {
         return true;
       }
       return false;

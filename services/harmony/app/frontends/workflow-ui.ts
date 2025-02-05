@@ -53,6 +53,8 @@ interface TableQuery {
   userValues: string[],
   providerValues: string[],
   labelValues: string[],
+  messageCategoryValues: string[],
+  allowMessageCategoryValues: boolean,
   from: Date,
   to: Date,
   dateKind: 'createdAt' | 'updatedAt',
@@ -85,10 +87,12 @@ function parseQuery( /* eslint-disable @typescript-eslint/no-explicit-any */
     userValues: [],
     providerValues: [],
     labelValues: [],
+    messageCategoryValues: [],
     allowStatuses: true,
     allowServices: true,
     allowUsers: true,
     allowProviders: true,
+    allowMessageCategoryValues: true,
     // date controls
     from: undefined,
     to: undefined,
@@ -101,6 +105,7 @@ function parseQuery( /* eslint-disable @typescript-eslint/no-explicit-any */
     tableQuery.allowServices = !(requestQuery.disallowservice === 'on');
     tableQuery.allowUsers = !(requestQuery.disallowuser === 'on');
     tableQuery.allowProviders = !(requestQuery.disallowprovider === 'on');
+    tableQuery.allowMessageCategoryValues = !(requestQuery.disallowmessagecategory === 'on');
     const selectedOptions: { field: string, dbValue: string, value: string }[] = JSON.parse(requestQuery.tablefilter);
     
     const validStatusSelections = selectedOptions
@@ -123,6 +128,10 @@ function parseQuery( /* eslint-disable @typescript-eslint/no-explicit-any */
       .filter(option => /^provider: [A-Za-z0-9_]{1,100}$/.test(option.value));
     const providerValues = validProviderSelections.map(option => option.value.split('provider: ')[1].toLowerCase());
     
+    const validMessageCategorySelections = selectedOptions
+      .filter(option => /^message category: .{1,100}$/.test(option.value));
+    const messageCategoryValues = validMessageCategorySelections.map(option => option.dbValue || option.value.split('message category: ')[1].toLowerCase());
+
     if ((statusValues.length + serviceValues.length + userValues.length + providerValues.length) > maxFilters) {
       throw new RequestValidationError(`Maximum amount of filters (${maxFilters}) was exceeded.`);
     }
@@ -130,12 +139,14 @@ function parseQuery( /* eslint-disable @typescript-eslint/no-explicit-any */
       .concat(validServiceSelections)
       .concat(validUserSelections)
       .concat(validProviderSelections)
-      .concat(validLabelSelections));
+      .concat(validLabelSelections)
+      .concat(validMessageCategorySelections));
     tableQuery.statusValues = statusValues;
     tableQuery.serviceValues = serviceValues;
     tableQuery.userValues = userValues;
     tableQuery.providerValues = providerValues;
     tableQuery.labelValues = labelValues;
+    tableQuery.messageCategoryValues = messageCategoryValues;
   }
   // everything in the Workflow UI uses the browser timezone, so we need a timezone offset
   const offSetMs = parseInt(requestQuery.tzoffsetminutes || 0) * 60 * 1000;
@@ -536,6 +547,12 @@ function tableQueryToWorkItemQuery(tableFilter: TableQuery, jobID: string, id?: 
     itemQuery.whereIn.status = {
       values: tableFilter.statusValues,
       in: tableFilter.allowStatuses,
+    };
+  }
+  if (tableFilter.messageCategoryValues.length) {
+    itemQuery.whereIn.message_category = {
+      values: tableFilter.messageCategoryValues,
+      in: tableFilter.allowMessageCategoryValues,
     };
   }
   if (tableFilter.from || tableFilter.to) {
