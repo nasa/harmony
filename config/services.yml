@@ -653,11 +653,14 @@ https://cmr.uat.earthdata.nasa.gov:
          bbox: true
          variable: true
          multiple_variable: true
+         dimension: true
        output_formats:
          - application/x-hdf
        reprojection: true
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
+      - image: !Env ${SUBSET_BAND_NAME_IMAGE}
         is_sequential: true
       - image: !Env ${GEOLOCO_IMAGE}
 
