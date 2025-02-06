@@ -100,7 +100,7 @@ function initFilter(tableFilter) {
     { value: 'status: warning', dbValue: 'warning', field: 'status' },
   ];
   const allowedValues = allowedList.map((t) => t.value);
-  allowedList.push({ value: 'message category: no-data', dbValue: 'no-data', field: 'message_category' });
+  allowedList.push({ value: 'message category: nodata', dbValue: 'nodata', field: 'message_category' });
   // eslint-disable-next-line no-new
   const tagInput = new Tagify(filterInput, {
     whitelist: allowedList,
