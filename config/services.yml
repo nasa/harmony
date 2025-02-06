@@ -661,7 +661,8 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
       - image: !Env ${SUBSET_BAND_NAME_IMAGE}
-        is_sequential: true
+        conditional:
+          exists: [ 'variableSubset', 'dimensionSubset']
       - image: !Env ${GEOLOCO_IMAGE}
 
   - name: giovanni-time-series-adapter
