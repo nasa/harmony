@@ -124,7 +124,7 @@ describe('Workflow UI work items table route', function () {
       await step2.save(this.trx);
 
       await otherJob.save(this.trx);
-      const otherItem1 = buildWorkItem({ jobID: otherJob.jobID, status: WorkItemStatus.CANCELED });
+      const otherItem1 = buildWorkItem({ jobID: otherJob.jobID, status: WorkItemStatus.CANCELED, message_category: 'jeepers' });
       await otherItem1.save(this.trx);
       const otherItem2 = buildWorkItem({ jobID: otherJob.jobID, status: WorkItemStatus.FAILED });
       await otherItem2.save(this.trx);
@@ -602,6 +602,16 @@ describe('Workflow UI work items table route', function () {
         it('contains the no-data work item', async function () {
           expect((this.res.text.match(/work-item-table-row/g) || []).length).to.equal(1);
           expect(this.res.text).to.contain(`<span class="badge rounded-pill bg-warning">${WorkItemStatus.WARNING.valueOf()}: no-data</span>`);
+        });
+      });
+
+      describe('when the admin filters otherJob\'s items by message_category NOT IN [no-data]', function () {
+        hookWorkflowUIWorkItems({ username: 'adam', jobID: otherJob.jobID,
+          query: { disallowMessageCategory: 'on', tableFilter: '[{"value":"message category: no-data","dbValue":"no-data","field":"message_category"}]' } });
+        it('contains all but the no-data work item', async function () {
+          expect((this.res.text.match(/work-item-table-row/g) || []).length).to.equal(4);
+          expect(this.res.text).to.not.contain(`<span class="badge rounded-pill bg-warning">${WorkItemStatus.WARNING.valueOf()}: no-data</span>`);
+          expect(this.res.text).to.contain(`<span class="badge rounded-pill bg-secondary">${WorkItemStatus.CANCELED.valueOf()}: jeepers</span>`);
         });
       });
 
