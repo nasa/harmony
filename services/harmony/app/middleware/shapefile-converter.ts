@@ -1,20 +1,28 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { get, isEqual, cloneDeep } from 'lodash';
-import rewind from '@mapbox/geojson-rewind';
-import * as togeojson from '@tmcw/togeojson';
-import splitGeoJson from 'geojson-antimeridian-cut';
 
-import { DOMParser } from '@xmldom/xmldom';
-import * as shpjs from 'shpjs';
-import * as tmp from 'tmp-promise';
-
-import { Logger } from 'winston';
 import { NextFunction } from 'express';
 import { promises as fs } from 'fs';
-import { RequestValidationError, HttpError, ServerError } from '../util/errors';
-import { defaultObjectStore } from '../util/object-store';
+// eslint-disable-next-line node/no-missing-import
+import { Feature, MultiPoint, MultiPolygon, Point, Polygon } from 'geojson';
+import splitGeoJson from 'geojson-antimeridian-cut';
+import { cloneDeep, get, isEqual } from 'lodash';
+import * as shpjs from 'shpjs';
+import * as tmp from 'tmp-promise';
+import { Logger } from 'winston';
+
 import { listToText } from '@harmony/util/string';
+import rewind from '@mapbox/geojson-rewind';
+import * as togeojson from '@tmcw/togeojson';
+import { circle } from '@turf/circle';
+import { multiPolygon, point, Units } from '@turf/helpers';
+import { DOMParser } from '@xmldom/xmldom';
+
 import { cookieOptions } from '../util/cookies';
+import env from '../util/env';
+import { HttpError, RequestValidationError, ServerError } from '../util/errors';
+import { defaultObjectStore } from '../util/object-store';
+
+const APPROXIMATE_METERS_PER_DEGREE = 111139.0;
 
 /**
  * Converts the given ESRI Shapefile to GeoJSON and returns the resulting file.   Note,
@@ -84,6 +92,82 @@ const contentTypesToConverters = {
 };
 
 /**
+ * Compute the number of sides for the Polygon that will approximate a circle of the given
+ * radius
+ * @param radius - radius of the circle in meters that is centered on a Point
+ * @returns the radius
+ */
+export function numberOfSidesForPointCircle(radius: number): number {
+  return Math.ceil((env.maxPointCircleSides - 3) * (1.0 - env.pointCircleFunctionBase ** radius) + 3);
+}
+
+/**
+ * Compute a polygon approximating the circle centered at the given point with the given radius
+ * or a default radius if none is provided
+ * NOTE: Radius is read from the the `properties` field of the `Point` and should be in meters.
+ * The `properties` field is not preserved
+ *
+ * @param pnt - geojson Point for the center of the circle
+ * @returns a geojson polygon
+ */
+function pointToPolygon(pnt: Feature<Point>): Feature<Polygon, {}> {
+  const radius = pnt.properties?.radius || env.wktPrecision * APPROXIMATE_METERS_PER_DEGREE / 2.0;
+  // the number of sides for the polygon increases with radius asymptotically toward a max
+  // the minimum number of sides is 4 (a square)
+  const sides = numberOfSidesForPointCircle(radius);
+  const options = { steps: sides, units: 'meters' as Units, properties: {} };
+  return circle(pnt, radius, options);
+}
+
+/**
+ * Compute polygons approximating the circles centered at the given points with the given radius
+ * or a default radius if none is provided
+ * NOTE: Radius is read from the the `properties` field of the `MultiPoint` and should be in meters.
+ * The `properties` field is not preserved
+ * @param points - geojson MultiPoint representing the centers of the circles
+ * @returns a geojson MultiPolygon containing the computed polygons
+ */
+function multiPointToPolygons(points: Feature<MultiPoint>): Feature<MultiPolygon, {}> {
+  const resultCoords = [];
+  const { coordinates } = points.geometry;
+  const radius = points.properties?.radius || env.wktPrecision * APPROXIMATE_METERS_PER_DEGREE / 2.0;
+
+  for (const index in coordinates) {
+    const [lon, lat] = coordinates[index];
+    const p = point([lon, lat], { radius });
+    const poly = pointToPolygon(p);
+    const polyCoords = poly.geometry.coordinates;
+    resultCoords.push(polyCoords);
+  }
+
+  return multiPolygon(resultCoords);
+}
+
+/**
+ *  Convert any Point or MultiPoint entries in the geojson to Polygons
+ * @param geojson - the object representing the geojson
+ */
+export function convertPointsToPolygons(geojson: any): any {
+  if (geojson.features && geojson.features.length > 0) {
+    // this is probably brittle, but I don't know a better way to get the features
+    const features: Feature[] = geojson.features.map(feature => {
+      switch (feature.geometry.type) {
+        case 'Point':
+          return pointToPolygon(feature);
+          break;
+        case 'MultiPoint':
+          return multiPointToPolygons(feature);
+          break;
+      }
+      return feature;
+    });
+    geojson.features = features;
+  }
+
+  return geojson;
+}
+
+/**
  * Convert longitudes outside the [-180,180] range to [-180,180]
  * Note: this will only handle longitudes in the [-360,360] range
  * @param lon - longitude
@@ -147,6 +231,7 @@ export function normalizeGeoJsonCoords(geojson: any): any {
  */
 export function normalizeGeoJson(geoJson: object): object {
   let newGeoJson = normalizeGeoJsonCoords(geoJson);
+  newGeoJson = convertPointsToPolygons(newGeoJson);
 
   // eslint-disable-next-line @typescript-eslint/dot-notation
   for (const index in newGeoJson['features']) {

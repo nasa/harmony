@@ -20,6 +20,12 @@ bin/port-forward stop postgres
 kubectl delete pods -l app=krelay-server
 kubectl delete ns harmony
 
+# stop any running krelay processes
+for PID in $( ps -ef | grep kubectl-relay | grep service | awk '{print $2}' )
+do
+  kill -9 $PID
+done
+
 # stop any services running in development mode
 for DEBUG_PORT in 9200 9201 9202 9203
 do
