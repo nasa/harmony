@@ -1,0 +1,21 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.2832,
+          34.03321
+        ]
+      },
+      "properties": {
+        "radius": 136593
+      }
+    }
+  ],
+  "properties": {
+    "summary": "Shapefile created by Earthdata Search to support spatial subsetting when requesting data from Harmony."
+  }
+}

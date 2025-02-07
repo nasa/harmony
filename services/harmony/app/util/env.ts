@@ -107,6 +107,12 @@ class HarmonyServerEnv extends HarmonyEnv {
   @IsPositive()
   wktPrecision: number;
 
+  @IsPositive()
+  maxPointCircleSides: number;
+
+  @IsPositive()
+  pointCircleFunctionBase: number;
+
   locallyDeployedServices: string;
 
   labelsAllowList: string;
