@@ -1,25 +1,40 @@
-import env from '../../util/env';
-import { logAsyncExecutionTime } from '../../util/log-execution';
-import { v4 as uuid } from 'uuid';
-import WorkItemUpdate from '../../models/work-item-update';
-import WorkflowStep, { getWorkflowStepByJobIdStepIndex, updateIsComplete } from '../../models/workflow-steps';
-import { Logger } from 'winston';
 import _, { ceil, range, sum } from 'lodash';
-import { JobStatus, Job } from '../../models/job';
-import JobMessage, { getMessageCountForJob, getMessagesForJob, JobMessageLevel } from '../../models/job-message';
+import { v4 as uuid } from 'uuid';
+import { Logger } from 'winston';
+
+import {
+  calculateQueryCmrLimit, QUERY_CMR_SERVICE_REGEX,
+} from '../../backends/workflow-orchestration/util';
+import { makeWorkScheduleRequest } from '../../backends/workflow-orchestration/work-item-polling';
+import { Job, JobStatus } from '../../models/job';
 import JobLink, { getJobDataLinkCount } from '../../models/job-link';
-import { incrementReadyCount, deleteUserWorkForJob, incrementReadyAndDecrementRunningCounts, decrementRunningCount } from '../../models/user-work';
-import WorkItem, { maxSortIndexForJobService, workItemCountForStep, getWorkItemsByJobIdAndStepIndex, getWorkItemById, updateWorkItemStatus, getJobIdForWorkItem } from '../../models/work-item';
-import { WorkItemStatus, COMPLETED_WORK_ITEM_STATUSES } from '../../models/work-item-interface';
-import { outputStacItemUrls, handleBatching, resultItemSizes } from '../../util/aggregation-batch';
-import db, { Transaction, batchSize } from '../../util/db';
+import JobMessage, {
+  getMessageCountForJob, getMessagesForJob, JobMessageLevel,
+} from '../../models/job-message';
+import {
+  decrementRunningCount, deleteUserWorkForJob, incrementReadyAndDecrementRunningCounts,
+  incrementReadyCount,
+} from '../../models/user-work';
+import WorkItem, {
+  getJobIdForWorkItem, getWorkItemById, getWorkItemsByJobIdAndStepIndex, maxSortIndexForJobService,
+  updateWorkItemStatus, workItemCountForStep,
+} from '../../models/work-item';
+import { COMPLETED_WORK_ITEM_STATUSES, WorkItemStatus } from '../../models/work-item-interface';
+import WorkItemUpdate from '../../models/work-item-update';
+import WorkflowStep, {
+  getWorkflowStepByJobIdStepIndex, updateIsComplete,
+} from '../../models/workflow-steps';
+import { handleBatching, outputStacItemUrls, resultItemSizes } from '../../util/aggregation-batch';
+import db, { batchSize, Transaction } from '../../util/db';
+import env from '../../util/env';
 import { ServiceError } from '../../util/errors';
 import { completeJob } from '../../util/job';
+import { logAsyncExecutionTime } from '../../util/log-execution';
 import { objectStoreForProtocol } from '../../util/object-store';
-import { StacItem, readCatalogItems, StacItemLink, StacCatalog, readCatalogsItems } from '../../util/stac';
+import {
+  readCatalogItems, readCatalogsItems, StacCatalog, StacItem, StacItemLink,
+} from '../../util/stac';
 import { resolve } from '../../util/url';
-import { QUERY_CMR_SERVICE_REGEX, calculateQueryCmrLimit } from '../../backends/workflow-orchestration/util';
-import { makeWorkScheduleRequest } from '../../backends/workflow-orchestration/work-item-polling';
 
 /**
  * A structure holding the preprocess info of a work item
@@ -85,8 +100,9 @@ async function getFinalStatusAndMessageForJob(tx: Transaction, job: Job):
 Promise<{ finalStatus: JobStatus, finalMessage: string; }> {
   let finalStatus = JobStatus.SUCCESSFUL;
   const errorCount = await getMessageCountForJob(tx, job.jobID, JobMessageLevel.ERROR);
+  const warningCount = await getMessageCountForJob(tx, job.jobID, JobMessageLevel.WARNING);
   const dataLinkCount = await getJobDataLinkCount(tx, job.jobID);
-  if (errorCount > 0) {
+  if (errorCount + warningCount > 0) {
     if (dataLinkCount > 0) {
       finalStatus = JobStatus.COMPLETE_WITH_ERRORS;
     } else {
@@ -94,9 +110,10 @@ Promise<{ finalStatus: JobStatus, finalMessage: string; }> {
     }
   }
   let finalMessage = '';
-  if ((errorCount > 1) && (finalStatus == JobStatus.FAILED)) {
-    finalMessage = `The job failed with ${errorCount} errors. See the errors field for more details`;
-  } else if ((errorCount == 1) && (finalStatus == JobStatus.FAILED)) {
+  // TODO stop treating warnings as errors in HARMONY-1995
+  if ((errorCount + warningCount > 1) && (finalStatus == JobStatus.FAILED)) {
+    finalMessage = `The job failed with ${errorCount} errors and ${warningCount} warnings. See the errors and warnings fields for more details`;
+  } else if ((errorCount == 1 || warningCount == 1) && (finalStatus == JobStatus.FAILED)) {
     const jobError = (await getMessagesForJob(tx, job.jobID, 1))[0];
     finalMessage = jobError.message;
   }
@@ -184,7 +201,11 @@ async function handleFailedWorkItems(
       let jobMessage;
 
       if (errorMessage) {
-        jobMessage = `WorkItem failed: ${errorMessage}`;
+        let failedOrWarned = 'failed';
+        if (status === WorkItemStatus.WARNING) {
+          failedOrWarned = 'warned';
+        }
+        jobMessage = `WorkItem ${failedOrWarned}: ${errorMessage}`;
       }
 
       if (QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)) {
@@ -199,14 +220,24 @@ async function handleFailedWorkItems(
           jobMessage = 'WorkItem failed with an unknown error';
         }
 
-        // TODO HARMONY-1995 set the level in this call to error or warning - just use error for now
-        await addJobMessageForWorkItem(tx, job, url, jobMessage);
+        let level: JobMessageLevel;
+        switch (status) {
+          case WorkItemStatus.FAILED:
+            level = JobMessageLevel.ERROR;
+            break;
+          case WorkItemStatus.WARNING:
+            level = JobMessageLevel.WARNING;
+            break;
+        }
+        await addJobMessageForWorkItem(tx, job, url, jobMessage, level, workItem.message_category);
       }
 
       if (continueProcessing) {
         const errorCount = await getMessageCountForJob(tx, job.jobID);
-        if (errorCount > env.maxErrorsForJob) {
-          jobMessage = `Maximum allowed errors ${env.maxErrorsForJob} exceeded. See the errors field for more details`;
+        // TODO handle this properly in HARMONY-1995 - for now just treat warnings like errors
+        const warningCount = await getMessageCountForJob(tx, job.jobID, JobMessageLevel.WARNING);
+        if (errorCount + warningCount > env.maxErrorsForJob) {
+          jobMessage = `Maximum allowed errors and warnings ${env.maxErrorsForJob} exceeded. See the errors and warnings fields for more details`;
           logger.warn(jobMessage);
           continueProcessing = false;
         }
@@ -762,7 +793,8 @@ export async function processWorkItem(
         'HWIUWJI.getWorkflowStepByJobIdStepIndex',
         logger))(tx, workItem.jobID, workItem.workflowStepIndex + 1);
 
-      if (nextWorkflowStep && (status !== WorkItemStatus.FAILED || nextWorkflowStep?.hasAggregatedOutput)) {
+      if (nextWorkflowStep && (![WorkItemStatus.FAILED, WorkItemStatus.WARNING].includes(status)
+        || nextWorkflowStep?.hasAggregatedOutput)) {
         didCreateWorkItem = await (await logAsyncExecutionTime(
           createNextWorkItems,
           'HWIUWJI.createNextWorkItems',

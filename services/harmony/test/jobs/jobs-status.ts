@@ -1,25 +1,49 @@
-import { EXPIRATION_DAYS, Job, JobStatus } from './../../app/models/job';
 import { expect } from 'chai';
+import { after, before, describe, it } from 'mocha';
 import { stub } from 'sinon';
-import { describe, it, before, after } from 'mocha';
-import { v4 as uuid } from 'uuid';
 import request from 'supertest';
-import { itReturnsUnchangedDataLinksForZarr, itProvidesAWorkingHttpUrl } from '../helpers/job-status';
-import hookServersStartStop from '../helpers/servers';
-import { hookTransaction, hookDatabaseFailure } from '../helpers/db';
-import { jobStatus, hookJobStatus, jobsEqual, itIncludesRequestUrl, buildJob, hookAdminJobStatus } from '../helpers/jobs';
-import StubService from '../helpers/stub-service';
-import { hookRedirect, hookUrl } from '../helpers/hooks';
-import { hookRangesetRequest } from '../helpers/ogc-api-coverages';
-import env from '../../app/util/env';
+import { v4 as uuid } from 'uuid';
+
+import { EXPIRATION_DAYS, Job, JobStatus } from '../../app/models/job';
+import JobMessage, { JobMessageLevel } from '../../app/models/job-message';
 import { setLabelsForJob } from '../../app/models/label';
+import env from '../../app/util/env';
+import { hookDatabaseFailure, hookTransaction } from '../helpers/db';
+import { hookRedirect, hookUrl } from '../helpers/hooks';
+import {
+  itProvidesAWorkingHttpUrl, itReturnsUnchangedDataLinksForZarr,
+} from '../helpers/job-status';
+import {
+  buildJob, hookAdminJobStatus, hookJobStatus, itIncludesRequestUrl, jobsEqual, jobStatus,
+} from '../helpers/jobs';
+import { hookRangesetRequest } from '../helpers/ogc-api-coverages';
+import hookServersStartStop from '../helpers/servers';
+import StubService from '../helpers/stub-service';
 
 const aJob = buildJob({ username: 'joe' });
 const pausedJob = buildJob({ username: 'joe' });
 pausedJob.pause();
 const previewingJob = buildJob({ username: 'joe', status: JobStatus.PREVIEWING });
+const warningMessage = new JobMessage({
+  jobID: null,
+  url: 'https://example.com',
+  level: JobMessageLevel.WARNING,
+  message: 'Service could not get data',
+  message_category: 'nodata',
+});
+const warningJob = buildJob({ username: 'joe', status: JobStatus.FAILED, message: 'Service could not get data', messages: [warningMessage] });
 
 const timeStampRegex = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z/;
+
+// const reprojectAndZarrQuery = {
+//   maxResults: 1,
+//   outputCrs: 'EPSG:4326',
+//   interpolation: 'near',
+//   scaleExtent: '0,2500000.3,1500000,3300000',
+//   scaleSize: '1.1,2',
+//   format: 'application/x-zarr',
+//   concatenate: false,
+// };
 
 /**
  * Returns true if the given job has a link to a STAC catalog
@@ -63,11 +87,13 @@ describe('Individual job status route', function () {
     await setLabelsForJob(this.trx, aJob.jobID, aJob.username, aJobLabels);
     await pausedJob.save(this.trx);
     await previewingJob.save(this.trx);
+    await warningJob.save(this.trx);
     this.trx.commit();
   });
   const jobID = aJob.requestId;
   const pausedjobID = pausedJob.requestId;
   const previewingJobID = previewingJob.requestId;
+  const warningJobID = warningJob.requestId;
 
   describe('For a user who is not logged in', function () {
     before(async function () {
@@ -187,6 +213,47 @@ describe('Individual job status route', function () {
       expect(pauseLinks.length).to.equal(0);
       const previewSkipLinks = job.getRelatedLinks('preview-skipper');
       expect(previewSkipLinks.length).to.equal(0);
+    });
+
+    itIncludesADataExpirationField();
+  });
+
+  // TODO change for HARMONY-1995
+  describe('when the job is failed due to warning', function () {
+    hookJobStatus({ jobID: warningJobID, username: 'joe' });
+
+    it('returns a status field of "failed"', function () {
+      const job = JSON.parse(this.res.text);
+      expect(job.status).to.eql('failed');
+    });
+
+    it('returns a human-readable message field corresponding to its state', function () {
+      const job = JSON.parse(this.res.text);
+      expect(job.message).to.include('Service could not get data');
+    });
+
+    it('does not include links for canceling and resuming the job', function () {
+      const job = new Job(JSON.parse(this.res.text));
+      const resumeLinks = job.getRelatedLinks('resumer');
+      expect(resumeLinks.length).to.equal(0);
+      const cancelLinks = job.getRelatedLinks('canceler');
+      expect(cancelLinks.length).to.equal(0);
+    });
+
+    it('does not include irrelevant state change links', function () {
+      const job = new Job(JSON.parse(this.res.text));
+      const pauseLinks = job.getRelatedLinks('pauser');
+      expect(pauseLinks.length).to.equal(0);
+      const previewSkipLinks = job.getRelatedLinks('preview-skipper');
+      expect(previewSkipLinks.length).to.equal(0);
+    });
+
+    it('includes a warning message', function () {
+      const job = JSON.parse(this.res.text);
+      const { warnings } = job;
+      expect(warnings.length).to.equal(1);
+      expect(warnings[0].url).to.eql(warningMessage.url);
+      expect(warnings[0].message).to.eql(warningMessage.message);
     });
 
     itIncludesADataExpirationField();
