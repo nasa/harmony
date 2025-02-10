@@ -1317,6 +1317,7 @@ describe('Service self-deployment failure', async function () {
     let execDeployScriptStub: sinon.SinonStub;
     let link = null;
     let linkDeploymentId = null;
+    let deploymentLogPath = null;
     const errorMessage = 'Script execution failed';
 
     hookDescribeImage({
@@ -1382,6 +1383,7 @@ describe('Service self-deployment failure', async function () {
 
       it('returns the deployment status failed and the proper error message', async function () {
         const { deploymentId, username, service, tag, regressionTestVersion, status, message } = this.res.body;
+        deploymentLogPath = `/deployment-logs/${deploymentId}`;
         expect(deploymentId).to.eql(linkDeploymentId);
         expect(username).to.eql('coraline');
         expect(service).to.eql('harmony-service-example');
@@ -1389,7 +1391,45 @@ describe('Service self-deployment failure', async function () {
         // regressionTestVersion matches the specified value of the 'regression_test_version' field in the request body
         expect(regressionTestVersion).to.eql('1.2.3');
         expect(status).to.eql('failed');
-        expect(message).to.eql(`Failed service deployment for deploymentId: ${deploymentId}. Error: ${errorMessage}`);
+        expect(message).to.include(`Failed service deployment for deploymentId: ${deploymentId}.`);
+        expect(message).to.include(`See details at: http://127.0.0.1:4000${deploymentLogPath}`);
+      });
+    });
+
+    describe('when get the service deployment log with authorized user', async function () {
+      before(async function () {
+        hookRedirect('coraline');
+        this.res = await request(this.frontend).get(deploymentLogPath).use(auth({ username: 'coraline' }));
+      });
+
+      after(function () {
+        delete this.res;
+      });
+
+      it('returns a status 200', async function () {
+        expect(this.res.status).to.equal(200);
+      });
+
+      it('returns enabled false', async function () {
+        expect(this.res.body).to.eql(['Failure output']);
+      });
+    });
+
+    describe('when get the service deployment log with unauthorized user', async function () {
+      before(async function () {
+        hookRedirect('coraline');
+        this.res = await request(this.frontend).get(deploymentLogPath).use(auth({ username: 'joe' }));
+      });
+
+      after(function () {
+        delete this.res;
+      });
+
+      it('returns a status 403', async function () {
+        expect(this.res.status).to.equal(403);
+      });
+      it('returns a meaningful error message', async function () {
+        expect(this.res.text).to.equal('User joe does not have permission to access this resource');
       });
     });
 
