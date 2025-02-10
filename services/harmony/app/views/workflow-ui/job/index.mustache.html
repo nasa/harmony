@@ -63,6 +63,12 @@
                             negate statuses
                         </label>
                     </div>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" name="disallowMessageCategory" {{disallowMessageCategoryChecked}}>
+                        <label class="form-check-label" for="disallowMessageCategory">
+                            negate message categories
+                        </label>
+                    </div>
                     <div class="input-group mt-2">
                       <span class="input-group-text">page size</span>
                       <input name="limit" type="number" class="form-control" value="{{limit}}">

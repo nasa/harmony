@@ -1,19 +1,22 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { expect } from 'chai';
 /* eslint-disable max-len */
 import { parse } from 'cookie';
-import * as fetch from 'node-fetch';
-import { describe, it } from 'mocha';
-import { expect } from 'chai';
-import { Response, Test } from 'supertest';
-import * as fs from 'fs';
 import { Application } from 'express';
-import isUUID from '../../app/util/uuid';
-import hookServersStartStop from '../helpers/servers';
-import StubService from '../helpers/stub-service';
-import { auth } from '../helpers/auth';
-import { rangesetRequest, postRangesetRequest, hookPostRangesetRequest, stripSignature } from '../helpers/ogc-api-coverages';
-import hookCmr from '../helpers/stub-cmr';
+import * as fs from 'fs';
+import { describe, it } from 'mocha';
+import * as fetch from 'node-fetch';
+import { Response, Test } from 'supertest';
+
 import { defaultObjectStore } from '../../app/util/object-store';
+import isUUID from '../../app/util/uuid';
+import { auth } from '../helpers/auth';
+import {
+  hookPostRangesetRequest, postRangesetRequest, rangesetRequest, stripSignature,
+} from '../helpers/ogc-api-coverages';
+import hookServersStartStop from '../helpers/servers';
+import hookCmr from '../helpers/stub-cmr';
+import StubService from '../helpers/stub-service';
 
 /**
  * Common steps in the validation tests
@@ -67,7 +70,7 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
     };
 
     describe('and a valid shapefile', function () {
-      const shapeForm = { ...form, shapefile: { path: './test/resources/complex_multipoly.geojson', mimetype: 'application/geo+json' } };
+      const shapeForm = { ...form, shapefile: { path: './test/resources/pointWithRadius.geojson', mimetype: 'application/geo+json' } };
       StubService.hook({ params: { redirect: 'http://example.com' } });
       cmrResp.headers = new fetch.Headers(cmrResp.headers);
       hookPostRangesetRequest(version, collection, 'parameter_vars', shapeForm);

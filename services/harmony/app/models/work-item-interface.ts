@@ -91,6 +91,7 @@ export interface WorkItemQuery {
   };
   whereIn?: {
     status?: { in: boolean, values: string[] };
+    message_category?: { in: boolean, values: string[] };
   };
   dates?: {
     from?: Date;

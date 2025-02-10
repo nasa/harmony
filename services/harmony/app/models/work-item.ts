@@ -431,7 +431,7 @@ export async function queryAll(
           if (constraint.in) {
             void queryBuilder.whereIn(field, constraint.values);
           } else {
-            void queryBuilder.whereNotIn(field, constraint.values);
+            void queryBuilder.where(builder => builder.whereNotIn(field, constraint.values).orWhereNull(field));
           }
         }
       }

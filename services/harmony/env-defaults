@@ -135,6 +135,14 @@ MAX_DATA_OPERATION_CACHE_SIZE=512000000
 # WKT POINT/LINESTRING to POLYGON conversion side length, 0.0001 is about 11 meters in precision
 WKT_PRECISION=0.0001
 
+# Maximum number of sides for a polygon created from a geojson Point with radius
+MAX_POINT_CIRCLE_SIDES=100
+
+# The base of the exponential function used to calculate the number of sides a polygon should
+# have to approximate the circle around a point with a given radius
+# Must be greater than zero and less than one
+POINT_CIRCLE_FUNCTION_BASE=0.99999
+
 # Comma-separated list of label values that are explicitly allowed
 LABELS_ALLOW_LIST=
 # Comma-separated list of label values that are explicitly forbidden, with the first one just
