@@ -1,15 +1,18 @@
-import request, { Test } from 'supertest';
-import { it } from 'mocha';
 import { expect } from 'chai';
-import { v4 as uuid } from 'uuid';
 import _ from 'lodash';
-import JobLink from '../../app/models/job-link';
-import { Job, JobStatus, JobRecord, jobRecordFields, JobForDisplay, getRelatedLinks, JobQuery } from '../../app/models/job';
+import { it } from 'mocha';
+import request, { Test } from 'supertest';
+import { v4 as uuid } from 'uuid';
+
 import { JobListing } from '../../app/frontends/jobs';
-import db, { Transaction } from '../../app/util/db';
-import { hookRequest } from './hooks';
-import { truncateAll } from './db';
+import {
+  getRelatedLinks, Job, JobForDisplay, JobQuery, JobRecord, jobRecordFields, JobStatus,
+} from '../../app/models/job';
+import JobLink from '../../app/models/job-link';
 import { RecordConstructor } from '../../app/models/record';
+import db, { Transaction } from '../../app/util/db';
+import { truncateAll } from './db';
+import { hookRequest } from './hooks';
 
 export const adminUsername = 'adam';
 
