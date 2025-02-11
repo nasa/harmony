@@ -35,16 +35,6 @@ const warningJob = buildJob({ username: 'joe', status: JobStatus.FAILED, message
 
 const timeStampRegex = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z/;
 
-// const reprojectAndZarrQuery = {
-//   maxResults: 1,
-//   outputCrs: 'EPSG:4326',
-//   interpolation: 'near',
-//   scaleExtent: '0,2500000.3,1500000,3300000',
-//   scaleSize: '1.1,2',
-//   format: 'application/x-zarr',
-//   concatenate: false,
-// };
-
 /**
  * Returns true if the given job has a link to a STAC catalog
  * @param job - a serialized job
