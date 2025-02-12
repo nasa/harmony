@@ -514,7 +514,6 @@ describe('convertPointsToPolygons', () => {
     const expectedOutputJson = fs.readFileSync(path.resolve(__dirname, `resources/${expectedOutputFile}.geojson`), 'utf8');
 
     const normalizedGeoJson = convertPointsToPolygons(testGeoJson);
-    console.log(`${JSON.stringify(normalizedGeoJson, null, 2)}`);
     it('should convert Points to Polygons', function () {
       expect(normalizedGeoJson.features[0].geometry.type).to.equal('Polygon');
       expect(JSON.stringify(normalizedGeoJson, null, 2)).to.eql(expectedOutputJson);
@@ -530,7 +529,6 @@ describe('convertPointsToPolygons', () => {
     const expectedOutputJson = fs.readFileSync(path.resolve(__dirname, `resources/${expectedOutputFile}.geojson`), 'utf8');
 
     const normalizedGeoJson = convertPointsToPolygons(testGeoJson);
-    console.log(`${JSON.stringify(normalizedGeoJson, null, 2)}`);
     it('should convert MultiPoints to MultiPolygons', function () {
       expect(normalizedGeoJson.features[0].geometry.type).to.equal('MultiPolygon');
       expect(JSON.stringify(normalizedGeoJson, null, 2)).to.eql(expectedOutputJson);
