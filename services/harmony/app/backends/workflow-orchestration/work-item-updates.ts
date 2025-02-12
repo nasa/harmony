@@ -655,10 +655,7 @@ export async function processWorkItem(
   let jobSaveStartTime;
   let didCreateWorkItem = false;
 
-  // TODO HARMONY-1995 add status === WorkItemStatus.WARNING here
-  if (status === WorkItemStatus.SUCCESSFUL) {
-    logger.info(`Updating work item ${workItemID} to ${status}`);
-  }
+  logger.info(`Received update for work item ${workItemID} to ${status}`);
 
   try {
     // lock the work item so we can update it - need to do this after locking jobs table above
