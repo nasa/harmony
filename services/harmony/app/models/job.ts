@@ -10,7 +10,7 @@ import { createPublicPermalink } from '../frontends/service-results';
 import {
   CmrPermission, CmrPermissionsMap, CmrTagKeys, getCollectionsByIds, getPermissions,
 } from '../util/cmr';
-import { Transaction } from '../util/db';
+import db, { Transaction } from '../util/db';
 import env from '../util/env';
 import { ConflictError } from '../util/errors';
 import { removeEmptyProperties } from '../util/object';
@@ -335,6 +335,21 @@ async function getUniqueProviderIds(tx: Transaction): Promise<string[]> {
     .whereNotNull('provider_id')
     .distinct('provider_id');
   return results.map((job) => job.provider_id);
+}
+
+/**
+ * Get the job status for the given job ID
+ *
+ * @param jobID - the job ID
+ * @returns the job status for the given job ID
+ */
+export async function getJobStatusForJobID(jobID: string): Promise<JobStatus> {
+  return (
+    await db('jobs')
+      .select('status')
+      .where({ jobID })
+      .first()
+  )?.status;
 }
 
 /**

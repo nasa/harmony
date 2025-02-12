@@ -911,18 +911,22 @@ export async function processWorkItems(
         'HWIUWJI.Job.byJobID',
         logger))(tx, jobID, false, false, true);
 
-      const thisStep: WorkflowStep = await (await logAsyncExecutionTime(
-        getWorkflowStepByJobIdStepIndex,
-        'HWIUWJI.getWorkflowStepByJobIdStepIndex',
-        logger))(tx, jobID, workflowStepIndex);
+      if (job.hasTerminalStatus()) {
+        logger.warn(`Ignoring work item updates for job ${jobID} in terminal state ${job.status}.`);
+      } else {
+        const thisStep: WorkflowStep = await (await logAsyncExecutionTime(
+          getWorkflowStepByJobIdStepIndex,
+          'HWIUWJI.getWorkflowStepByJobIdStepIndex',
+          logger))(tx, jobID, workflowStepIndex);
 
-      const lastIndex = items.length - 1;
-      for (let index = 0; index < items.length; index++) {
-        const { preprocessResult, update } = items[index];
-        if (index < lastIndex) {
-          await processWorkItem(tx, preprocessResult, job, update, logger, false, thisStep);
-        } else {
-          await processWorkItem(tx, preprocessResult, job, update, logger, true, thisStep);
+        const lastIndex = items.length - 1;
+        for (let index = 0; index < items.length; index++) {
+          const { preprocessResult, update } = items[index];
+          if (index < lastIndex) {
+            await processWorkItem(tx, preprocessResult, job, update, logger, false, thisStep);
+          } else {
+            await processWorkItem(tx, preprocessResult, job, update, logger, true, thisStep);
+          }
         }
       }
     });
