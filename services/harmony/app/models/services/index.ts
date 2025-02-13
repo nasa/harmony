@@ -1,20 +1,21 @@
 import * as fs from 'fs';
-import * as path from 'path';
 import * as yaml from 'js-yaml';
 import _, { get as getIn } from 'lodash';
+import * as path from 'path';
 
-import logger from '../../util/log';
-import { HttpError, NotFoundError, ServerError } from '../../util/errors';
-import { isMimeTypeAccepted, allowsAny } from '../../util/content-negotiation';
-import { CmrCollection } from '../../util/cmr';
+import { Conjunction, isInteger, listToText } from '@harmony/util/string';
+
 import { addCollectionsToServicesByAssociation } from '../../middleware/service-selection';
-import { listToText, Conjunction, isInteger } from '@harmony/util/string';
-import TurboService from './turbo-service';
-import HttpService from './http-service';
-import DataOperation from '../data-operation';
-import BaseService, { ServiceConfig } from './base-service';
-import RequestContext from '../request-context';
+import { CmrCollection } from '../../util/cmr';
+import { allowsAny, isMimeTypeAccepted } from '../../util/content-negotiation';
 import env from '../../util/env';
+import { HttpError, NotFoundError, ServerError } from '../../util/errors';
+import logger from '../../util/log';
+import DataOperation from '../data-operation';
+import RequestContext from '../request-context';
+import BaseService, { ServiceConfig } from './base-service';
+import HttpService from './http-service';
+import TurboService from './turbo-service';
 
 let serviceConfigs: ServiceConfig<unknown>[] = null;
 
@@ -107,6 +108,11 @@ function validateServiceConfigSteps(config: ServiceConfig<unknown>): void {
       if (maxBatchInputs > env.maxGranuleLimit) {
         logger.warn(`Service ${config.name} attempting to allow more than the max allowed granules in a batch. `
           + `Configured to use ${maxBatchInputs}, but will be limited to ${env.maxGranuleLimit}`);
+      }
+    }
+    if (step.image.match(/harmonyservices\/query\-cmr:.*/)) {
+      if (!step.is_sequential) {
+        throw new TypeError(`Invalid is_sequential ${step.is_sequential}. query-cmr steps must always have sequential = true.`);
       }
     }
   }

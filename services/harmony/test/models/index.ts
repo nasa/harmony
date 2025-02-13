@@ -1,6 +1,9 @@
 import { expect } from 'chai';
-import { loadServiceConfigs, loadServiceConfigsFromFile, getServiceConfigs, validateServiceConfig } from '../../app/models/services';
 import _ from 'lodash';
+
+import {
+  getServiceConfigs, loadServiceConfigs, loadServiceConfigsFromFile, validateServiceConfig,
+} from '../../app/models/services';
 
 const cmrEndpoints = {
   'uat': 'https://cmr.uat.earthdata.nasa.gov',
@@ -72,6 +75,34 @@ describe('Services.yml validation', function () {
     it('throws an exception', function () {
       const configs = loadServiceConfigsFromFile(cmrEndpoints.prod, '../../../test/resources/services_with_colls_prod.yml');
       expect(() => configs.forEach(validateServiceConfig)).to.throw(/Collections cannot be configured for harmony service: with-collections, use umm_s instead./);
+    });
+  });
+
+  describe('services.yml with unset is_sequential for query-cmr in UAT is invalid', function () {
+    it('throws an exception', function () {
+      const configs = loadServiceConfigsFromFile(cmrEndpoints.uat, '../../../test/resources/services_with_unset_is_sequential_query_cmr_uat.yml');
+      expect(() => configs.forEach(validateServiceConfig)).to.throw(/Invalid is_sequential undefined. query-cmr steps must always have sequential = true./);
+    });
+  });
+
+  describe('services.yml with unset is_sequential for query-cmr in PROD is invalid', function () {
+    it('throws an exception', function () {
+      const configs = loadServiceConfigsFromFile(cmrEndpoints.prod, '../../../test/resources/services_with_unset_is_sequential_query_cmr_prod.yml');
+      expect(() => configs.forEach(validateServiceConfig)).to.throw(/Invalid is_sequential undefined. query-cmr steps must always have sequential = true./);
+    });
+  });
+
+  describe('services.yml with false is_sequential for query-cmr in UAT is invalid', function () {
+    it('throws an exception', function () {
+      const configs = loadServiceConfigsFromFile(cmrEndpoints.uat, '../../../test/resources/services_with_false_is_sequential_query_cmr_uat.yml');
+      expect(() => configs.forEach(validateServiceConfig)).to.throw(/Invalid is_sequential false. query-cmr steps must always have sequential = true./);
+    });
+  });
+
+  describe('services.yml with false is_sequential for query-cmr in PROD is invalid', function () {
+    it('throws an exception', function () {
+      const configs = loadServiceConfigsFromFile(cmrEndpoints.prod, '../../../test/resources/services_with_false_is_sequential_query_cmr_prod.yml');
+      expect(() => configs.forEach(validateServiceConfig)).to.throw(/Invalid is_sequential false. query-cmr steps must always have sequential = true./);
     });
   });
 });

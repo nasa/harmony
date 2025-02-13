@@ -194,7 +194,6 @@ const stateMachine = createMachine(
           active: true,
         },
         on: Object.fromEntries([
-          [JobEvent.COMPLETE, { target: JobStatus.SUCCESSFUL }],
           [JobEvent.COMPLETE_WITH_ERRORS, { target: JobStatus.COMPLETE_WITH_ERRORS }],
           [JobEvent.CANCEL, { target: JobStatus.CANCELED }],
           [JobEvent.FAIL, { target: JobStatus.FAILED }],
