@@ -1,0 +1,51 @@
+# Order for each CMR endpoint in this file will reflect precedence of the service when
+# multiple services handle a collection
+
+# Default turbo configuration
+x-turbo-config: &default-turbo-config
+  name: turbo
+  params: &default-turbo-params
+    env: &default-turbo-env
+      USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
+      LOCALSTACK_HOST: !Env ${BACKEND_HOST}
+      AWS_DEFAULT_REGION: us-west-2
+      STAGING_BUCKET: !Env ${STAGING_BUCKET}
+      TEXT_LOGGER: !Env ${TEXT_LOGGER}
+      BACKEND_HOST: !Env ${BACKEND_HOST}
+      EDL_USERNAME: !Env ${EDL_USERNAME}
+      EDL_PASSWORD: !Env ${EDL_PASSWORD}
+      OAUTH_UID: !Env ${OAUTH_UID}
+      OAUTH_PASSWORD: !Env ${OAUTH_PASSWORD}
+      OAUTH_HOST: !Env ${OAUTH_HOST}
+      OAUTH_CLIENT_ID: !Env ${OAUTH_CLIENT_ID}
+      OAUTH_REDIRECT_URI: !Env ${OAUTH_REDIRECT_URI}
+      FALLBACK_AUTHN_ENABLED: !Env ${FALLBACK_AUTHN_ENABLED}
+
+https://cmr.uat.earthdata.nasa.gov:
+
+  - name: non-sequential-query-cmr
+    description: |
+      testing service configuration with query-cmr with no is_sequential:
+    data_operation_version: '0.20.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/asf/opera-rtc-s1-browse
+    umm_s: S1271728813-ASF
+    maximum_sync_granules: 0
+    capabilities:
+      concatenation: false
+      subsetting:
+        bbox: false
+        variable: false
+        temporal: false
+      output_formats:
+        - image/png
+      reprojection: true
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+      - image: !Env ${OPERA_RTC_S1_BROWSE_IMAGE}
+      - image: !Env ${HYBIG_IMAGE}
