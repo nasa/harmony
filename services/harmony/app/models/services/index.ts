@@ -110,10 +110,9 @@ function validateServiceConfigSteps(config: ServiceConfig<unknown>): void {
           + `Configured to use ${maxBatchInputs}, but will be limited to ${env.maxGranuleLimit}`);
       }
     }
-    if (step.image.match(/harmonyservices\/query\-cmr:.*/)) {
-      if (!step.is_sequential) {
-        throw new TypeError(`Invalid is_sequential ${step.is_sequential}. query-cmr steps must always have sequential = true.`);
-      }
+    if (step.image.match(/harmonyservices\/query\-cmr:.*/) && !step.is_sequential) {
+
+      throw new TypeError(`Invalid is_sequential ${step.is_sequential}. query-cmr steps must always have sequential = true.`);
     }
   }
 }
