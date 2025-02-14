@@ -511,12 +511,12 @@ describe('convertPointsToPolygons', () => {
   ];
 
   for (const [testGeoJson, expectedOutputFile] of pointTestCases) {
-    const expectedOutputJson = fs.readFileSync(path.resolve(__dirname, `resources/${expectedOutputFile}.geojson`), 'utf8');
+    const expectedOutputJson = JSON.parse(fs.readFileSync(path.resolve(__dirname, `resources/${expectedOutputFile}.geojson`), 'utf8'));
 
     const normalizedGeoJson = convertPointsToPolygons(testGeoJson);
     it('should convert Points to Polygons', function () {
       expect(normalizedGeoJson.features[0].geometry.type).to.equal('Polygon');
-      expect(JSON.stringify(normalizedGeoJson, null, 2)).to.eql(expectedOutputJson);
+      expect(normalizedGeoJson).to.eql(expectedOutputJson);
     });
   }
 
@@ -526,12 +526,12 @@ describe('convertPointsToPolygons', () => {
   ];
 
   for (const [testGeoJson, expectedOutputFile] of multiPointTestCases) {
-    const expectedOutputJson = fs.readFileSync(path.resolve(__dirname, `resources/${expectedOutputFile}.geojson`), 'utf8');
+    const expectedOutputJson = JSON.parse(fs.readFileSync(path.resolve(__dirname, `resources/${expectedOutputFile}.geojson`), 'utf8'));
 
     const normalizedGeoJson = convertPointsToPolygons(testGeoJson);
     it('should convert MultiPoints to MultiPolygons', function () {
       expect(normalizedGeoJson.features[0].geometry.type).to.equal('MultiPolygon');
-      expect(JSON.stringify(normalizedGeoJson, null, 2)).to.eql(expectedOutputJson);
+      expect(normalizedGeoJson).to.eql(expectedOutputJson);
     });
   }
 
