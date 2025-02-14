@@ -429,6 +429,7 @@ https://cmr.earthdata.nasa.gov:
       reprojection: true
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
       - image: !Env ${HYBIG_IMAGE}
 
   - name: harmony/netcdf-to-zarr
@@ -576,6 +577,7 @@ https://cmr.earthdata.nasa.gov:
       reprojection: true
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
       - image: !Env ${OPERA_RTC_S1_BROWSE_IMAGE}
       - image: !Env ${HYBIG_IMAGE}
 
@@ -1385,5 +1387,6 @@ https://cmr.uat.earthdata.nasa.gov:
       reprojection: true
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
       - image: !Env ${OPERA_RTC_S1_BROWSE_IMAGE}
       - image: !Env ${HYBIG_IMAGE}

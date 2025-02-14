@@ -44,6 +44,7 @@ https://cmr.uat.earthdata.nasa.gov:
         - application/x-netcdf4
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
       - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
 
   - name: podaac/l2-subsetter
@@ -75,5 +76,6 @@ https://cmr.uat.earthdata.nasa.gov:
         - application/x-netcdf4
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
       - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
 

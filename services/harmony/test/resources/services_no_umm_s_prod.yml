@@ -52,6 +52,7 @@ https://cmr.earthdata.nasa.gov:
         - application/x-netcdf4
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
       - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
 
 
@@ -76,4 +77,5 @@ https://cmr.earthdata.nasa.gov:
         - application/x-netcdf4
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
       - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
