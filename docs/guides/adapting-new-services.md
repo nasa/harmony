@@ -38,6 +38,7 @@ then invokes a single service image. If setting up a more complex service chain 
   - [5. Error handling](#5-error-handling)
   - [6. Defining environment variables in env-defaults](#6-defining-environment-variables-in-env-defaults)
   - [7. Registering services in services.yml](#7-registering-services-in-servicesyml)
+    - [Sequential Steps](#sequential-steps)
     - [Aggregation Steps](#aggregation-steps)
   - [8. Docker Container Images](#8-docker-container-images)
   - [9. Recommendations for service implementations](#9-recommendations-for-service-implementations)
@@ -135,6 +136,7 @@ The structure of an entry in the [services.yml](../../config/services.yml) file 
   validate_variables: true        # Whether to validate the requested variables exist in the CMR. Defaults to true.
   steps:
       - image: !Env ${QUERY_CMR_IMAGE} # The image to use for the first step in the chain
+        is_sequential: true       # Required for query-cmr
       - image: !Env ${HARMONY_EXAMPLE_IMAGE}     # The image to use for the second step in the chain
 ```
 
@@ -151,6 +153,7 @@ The following `steps` entry is for a chain of services including the PODAAC L2 S
 ```yaml
 steps:
   - image: !Env ${QUERY_CMR_IMAGE}
+    is_sequential: true
   - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
     operations: ['spatialSubset', 'variableSubset']
     conditional:
@@ -168,6 +171,7 @@ There is also a `conditional` option on `umm-c` `native_format` that compares wi
 ```yaml
 steps:
   - image: !Env ${QUERY_CMR_IMAGE}
+    is_sequential: true
   - image: !Env ${NET_2_COG_IMAGE}
     conditional:
       umm_c:
@@ -176,6 +180,13 @@ steps:
 ```
 
 Here we have the query-cmr service (this service is the first in every current workflow). This is followed by the optional NetCDF to COG service, which will only be invoked when the collection's UMM-C native format is one of the values that are defined (case insensitive) in the steps configuration (i.e. `[netcdf-4]`). Finally, we have the HyBIG service that converts the GeoTIFF inputs from the previous step to Global Imagery Browse Services (GIBS) compatible PNG or JPEG outputs. See [10. Service chaining](#10-service-chaining) for more info.
+
+### Sequential Steps
+Most steps will produce all of the pieces of work (known as work-items) for a service immediately when the step begins. This allows all of the work-items to be worked in parallel. It is possible, however, for new work-items for the same service to be produced as the step is being worked. In this case, the work-items must be worked sequentially. Steps that must be worked sequentially should include `is_sequential: true` in their definition.
+
+An example of this is the query-cmr service. Each invocation of the query-cmr service can only return up to 2000 granules (due to the CMR page size limit), so, if the job has more granules than that, query-cmr is invoked multiple times. Because the number of granules reported by the CMR may change at any time, we cannot know ahead of time exactly how many invocations we need. So, if the job has more granules than 2000, query-cmr is invoked sequentially until all granules are returned.
+
+For most services `is_sequential: true` is not necessary.
 
 ### Aggregation Steps
 Services that provide aggregation, e.g., concatenation for CONCISE, require that all inputs are
@@ -195,6 +206,7 @@ The following `steps` entry is an example one might use for an aggregating servi
 ```yaml
 steps:
   - image: !Env ${QUERY_CMR_IMAGE}
+    is_sequential: true
   - image: !Env ${EXAMPLE_AGGREGATING_SERVICE_IMAGE}
     is_batched: true
     max_batch_inputs: 100
