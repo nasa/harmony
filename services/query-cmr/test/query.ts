@@ -1,5 +1,3 @@
-
-
 import { expect } from 'chai';
 
 import logger from '../../harmony/app/util/log';
