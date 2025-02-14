@@ -1,14 +1,57 @@
 import _ from 'lodash';
+import { Logger } from 'winston';
+
+import DataOperation from '../../harmony/app/models/data-operation';
+import { queryGranulesWithSearchAfter } from '../../harmony/app/util/cmr';
+import defaultLogger from '../../harmony/app/util/log';
 import StacCatalog from './stac/catalog';
 import CmrStacCatalog from './stac/cmr-catalog';
-import { queryGranulesWithSearchAfter } from '../../harmony/app/util/cmr';
-import DataOperation from '../../harmony/app/models/data-operation';
-import defaultLogger from '../../harmony/app/util/log';
-import { Logger } from 'winston';
 
 export interface DataSource {
   collection: string;
   variables: unknown;
+}
+
+/**
+ * Calculates the granule size in bytes based on the CMR metadata
+ *
+ * @param logger - the logger
+ * @param archiveInfo - the ArchiveAndDistributionInformation field from the CMR
+ * @returns the file size of the granule in bytes
+ */
+export function getGranuleSizeInBytes(
+  logger: Logger,
+  archiveInfo?: { SizeInBytes?: number; Size?: number; SizeUnit?: string }[],
+): number {
+  let granuleSizeInBytes = 0;
+
+  for (const info of archiveInfo || []) {
+    if (typeof info.SizeInBytes === 'number') {
+      granuleSizeInBytes += info.SizeInBytes;
+    } else if (typeof info.Size === 'number' && info.SizeUnit) {
+      switch (info.SizeUnit) {
+      case 'KB':
+        granuleSizeInBytes += info.Size * 1024;
+        break;
+      case 'MB':
+        granuleSizeInBytes += info.Size * 1024 * 1024;
+        break;
+      case 'GB':
+        granuleSizeInBytes += info.Size * 1024 * 1024 * 1024;
+        break;
+      case 'TB':
+        granuleSizeInBytes += info.Size * 1024 * 1024 * 1024 * 1024;
+        break;
+      case 'PB':
+        granuleSizeInBytes += info.Size * 1024 * 1024 * 1024 * 1024 * 1024;
+        break;
+      default:
+        logger.warn(`Unknown SizeUnit: ${info.SizeUnit}`);
+      }
+    }
+  }
+
+  return granuleSizeInBytes;
 }
 
 /**
@@ -54,21 +97,10 @@ async function querySearchAfter(
   const outputItemSizes = [];
   const catalogs = cmrResponse.granules.map((granule) => {
     const archiveInfo = granule.umm.DataGranule?.ArchiveAndDistributionInformation;
-    let granuleSize = 0;
-    for (const info of archiveInfo || []) {
-      if (info.Size) {
-        granuleSize = info.Size;
-        break;
-      }
-    }
-
-    let granuleSizeInBytes = granuleSize * 1024 * 1024;
-    // NaN will fail the first check
-    if (granuleSizeInBytes != granuleSizeInBytes || granuleSizeInBytes < 0) {
-      granuleSizeInBytes = 0;
-    }
+    const granuleSizeInBytes = getGranuleSizeInBytes(logger, archiveInfo);
     outputItemSizes.push(granuleSizeInBytes);
-    totalItemsSize += granuleSize;
+    const granuleSizeInMB = granuleSizeInBytes / 1024 / 1024;
+    totalItemsSize += granuleSizeInMB;
     const result = new CmrStacCatalog({ description: `CMR collection ${granule.meta['collection-concept-id']}, granule ${granule.meta['concept-id']}` });
     result.links.push({
       rel: 'harmony_source',
