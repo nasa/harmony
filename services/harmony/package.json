@@ -207,7 +207,6 @@
     "jsdom": "^25.0.1",
     "jsonschema": "^1.4.1",
     "just-permutations": "^2.2.1",
-    "lerna": "^8.1.8",
     "mocha": "^11.0.1",
     "mocha-junit-reporter": "^2.0.0",
     "mocha-multi": "^1.1.3",
