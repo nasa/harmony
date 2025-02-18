@@ -1,9 +1,10 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
+
+import hookDescribeImage from './helpers/container-registry';
 import hookServersStartStop from './helpers/servers';
 import { hookServices } from './helpers/stub-service';
 import { hookVersions } from './helpers/versions';
-import hookDescribeImage from './helpers/container-registry';
 
 describe('Versions endpoint', function () {
   hookServersStartStop();
@@ -34,18 +35,18 @@ describe('Versions endpoint', function () {
           'sds/variable-subsetter',
           'sds/maskfill',
           'sds/trajectory-subsetter',
-          'net2cog',
           'nasa/harmony-gdal-adapter',
           'sds/HyBIG',
-	  'sds/harmony-smap-l2-gridder',
+          'sds/harmony-smap-l2-gridder',
           'sds/HOSS-geographic',
           'sds/HOSS-projection-gridded',
           'harmony/netcdf-to-zarr',
           'harmony/podaac-l2-subsetter-netcdf-to-zarr',
           'harmony/swath-projector-netcdf-to-zarr',
-          'harmony/service-example',
-          'l2-subsetter-batchee-stitchee-concise',
           'asf/opera-rtc-s1-browse',
+          'l2-subsetter-batchee-stitchee-concise',
+          'net2cog',
+          'harmony/service-example',
         ]);
       });
 
