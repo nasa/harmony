@@ -40,11 +40,11 @@ describe('Versions endpoint', function () {
           'sds/harmony-smap-l2-gridder',
           'sds/HOSS-geographic',
           'sds/HOSS-projection-gridded',
+          'l2-subsetter-batchee-stitchee-concise',
           'harmony/netcdf-to-zarr',
           'harmony/podaac-l2-subsetter-netcdf-to-zarr',
           'harmony/swath-projector-netcdf-to-zarr',
           'asf/opera-rtc-s1-browse',
-          'l2-subsetter-batchee-stitchee-concise',
           'net2cog',
           'harmony/service-example',
         ]);

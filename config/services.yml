@@ -407,34 +407,6 @@ https://cmr.earthdata.nasa.gov:
         is_sequential: true
       - image: !Env ${HYBIG_IMAGE}
 
-  - name: harmony/netcdf-to-zarr
-    description: |
-      Converts NetCDF4 files to the Zarr format as faithfully as possible, preserving metadata.
-      The service attempts to optimize chunking in both time and space via heuristic algorithm in the output Zarr store.
-    data_operation_version: '0.20.0'
-    type:
-      <<: *default-turbo-config
-      params:
-        <<: *default-turbo-params
-        env:
-          <<: *default-turbo-env
-          STAGING_PATH: public/harmony/netcdf-to-zarr
-    umm_s: S2839491596-XYZ_PROV
-    maximum_sync_granules: 0
-    capabilities:
-      concatenation: true
-      concatenate_by_default: false
-      subsetting:
-        variable: false
-      output_formats:
-        - application/x-zarr
-    steps:
-      - image: !Env ${QUERY_CMR_IMAGE}
-        is_sequential: true
-      - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
-        is_batched: false
-        operations: ['reformat', 'concatenate']
-
   - name: l2-subsetter-batchee-stitchee-concise
     description: |
       ### Subsetter And Multi-dimensional Batched Aggregation in Harmony (SAMBAH)
@@ -500,6 +472,35 @@ https://cmr.earthdata.nasa.gov:
         operations: ['concatenate']
         conditional:
           exists: ['concatenate']
+
+  # Reformatting services below. Any other transformation service should be added above.
+  - name: harmony/netcdf-to-zarr
+    description: |
+      Converts NetCDF4 files to the Zarr format as faithfully as possible, preserving metadata.
+      The service attempts to optimize chunking in both time and space via heuristic algorithm in the output Zarr store.
+    data_operation_version: '0.20.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/harmony/netcdf-to-zarr
+    umm_s: S2839491596-XYZ_PROV
+    maximum_sync_granules: 0
+    capabilities:
+      concatenation: true
+      concatenate_by_default: false
+      subsetting:
+        variable: false
+      output_formats:
+        - application/x-zarr
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
+      - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
+        is_batched: false
+        operations: ['reformat', 'concatenate']
 
   - name: net2cog
     description: |
@@ -1099,6 +1100,73 @@ https://cmr.uat.earthdata.nasa.gov:
         conditional:
           exists: ['shapefileSubset', 'spatialSubset']
 
+  - name: l2-subsetter-batchee-stitchee-concise
+    description: |
+      ### Subsetter And Multi-dimensional Batched Aggregation in Harmony (SAMBAH)
+      Chained Service of the L2-subsetter, Batchee, STITCHEE, and CONCISE services.
+      Additional documentation [here](https://stitchee.readthedocs.io/en/latest/sambah_readme/).
+      #### L2 swath subsetter (L2-subsetter)
+      * Works with trajectory (1D) and along track/across track data.
+      * Works with netCDF and HDF5 input files.
+      * Supports variable subsetting.
+      * Supports temporal subsetting.
+      * Supports shape subsetting
+      * Works with hierarchical groups.
+      * Outputs netCDF4.
+      #### Batchee
+      * Service groups together filenames so that further operations (such as concatenation) can be performed separately on each group of files.
+      #### STITCH by Extending a dimEnsion (Stitchee)
+      * Service concatenates a group of netCDF data files along an existing dimension.
+      #### CONCatenation SErvice (CONCISE)
+      * Service capable of "concatenating" multiple netCDF files into a single netCDF file.
+      The resulting file has an extra dimension with size equal to the number of input files, where each slice in that dimension corresponds to the data from one of the input files.
+      The resulting file has an extra dimension with size equal to the number of input files, where each slice in that dimension corresponds to the data from one of the input files.
+    data_operation_version: '0.20.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/asdc-trade/l2-subsetter-batchee-stitchee-concise
+    umm_s: S1262025641-LARC_CLOUD
+    capabilities:
+      concatenation: true
+      concatenate_by_default: false
+      extend: true
+      default_extend_dimensions: ['mirror_step']
+      subsetting:
+        bbox: true
+        variable: true
+        temporal: true
+        shape: true
+      output_formats:
+        - application/netcdf4
+      reprojection: false
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
+      - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
+        operations: ['spatialSubset', 'shapefileSubset', 'variableSubset', 'temporalSubset']
+        conditional:
+          exists: ['spatialSubset', 'shapefileSubset', 'variableSubset', 'temporalSubset']
+        extra_args:
+          cut: false
+      - image: !Env ${BATCHEE_IMAGE}
+        operations: ['concatenate']
+        conditional:
+          exists: ['concatenate', 'extend']
+      - image: !Env ${STITCHEE_IMAGE}
+        operations: ['extend']
+        conditional:
+          exists: ['concatenate', 'extend']
+      - image: !Env ${PODAAC_CONCISE_IMAGE}
+        is_batched: true
+        operations: ['concatenate']
+        conditional:
+          exists: ['concatenate']
+
+  # Reformatting services below. Any other transformation service should be added above.
   - name: harmony/netcdf-to-zarr
     description: |
       Converts NetCDF4 files to the Zarr format as faithfully as possible, preserving metadata.
@@ -1245,72 +1313,6 @@ https://cmr.uat.earthdata.nasa.gov:
         is_sequential: true
       - image: !Env ${OPERA_RTC_S1_BROWSE_IMAGE}
       - image: !Env ${HYBIG_IMAGE}
-
-  - name: l2-subsetter-batchee-stitchee-concise
-    description: |
-      ### Subsetter And Multi-dimensional Batched Aggregation in Harmony (SAMBAH)
-      Chained Service of the L2-subsetter, Batchee, STITCHEE, and CONCISE services.
-      Additional documentation [here](https://stitchee.readthedocs.io/en/latest/sambah_readme/).
-      #### L2 swath subsetter (L2-subsetter)
-      * Works with trajectory (1D) and along track/across track data.
-      * Works with netCDF and HDF5 input files.
-      * Supports variable subsetting.
-      * Supports temporal subsetting.
-      * Supports shape subsetting
-      * Works with hierarchical groups.
-      * Outputs netCDF4.
-      #### Batchee
-      * Service groups together filenames so that further operations (such as concatenation) can be performed separately on each group of files.
-      #### STITCH by Extending a dimEnsion (Stitchee)
-      * Service concatenates a group of netCDF data files along an existing dimension.
-      #### CONCatenation SErvice (CONCISE)
-      * Service capable of "concatenating" multiple netCDF files into a single netCDF file.
-      The resulting file has an extra dimension with size equal to the number of input files, where each slice in that dimension corresponds to the data from one of the input files.
-      The resulting file has an extra dimension with size equal to the number of input files, where each slice in that dimension corresponds to the data from one of the input files.
-    data_operation_version: '0.20.0'
-    type:
-      <<: *default-turbo-config
-      params:
-        <<: *default-turbo-params
-        env:
-          <<: *default-turbo-env
-          STAGING_PATH: public/asdc-trade/l2-subsetter-batchee-stitchee-concise
-    umm_s: S1262025641-LARC_CLOUD
-    capabilities:
-      concatenation: true
-      concatenate_by_default: false
-      extend: true
-      default_extend_dimensions: ['mirror_step']
-      subsetting:
-        bbox: true
-        variable: true
-        temporal: true
-        shape: true
-      output_formats:
-        - application/netcdf4
-      reprojection: false
-    steps:
-      - image: !Env ${QUERY_CMR_IMAGE}
-        is_sequential: true
-      - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
-        operations: ['spatialSubset', 'shapefileSubset', 'variableSubset', 'temporalSubset']
-        conditional:
-          exists: ['spatialSubset', 'shapefileSubset', 'variableSubset', 'temporalSubset']
-        extra_args:
-          cut: false
-      - image: !Env ${BATCHEE_IMAGE}
-        operations: ['concatenate']
-        conditional:
-          exists: ['concatenate', 'extend']
-      - image: !Env ${STITCHEE_IMAGE}
-        operations: ['extend']
-        conditional:
-          exists: ['concatenate', 'extend']
-      - image: !Env ${PODAAC_CONCISE_IMAGE}
-        is_batched: true
-        operations: ['concatenate']
-        conditional:
-          exists: ['concatenate']
 
   - name: net2cog
     description: |
