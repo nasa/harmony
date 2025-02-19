@@ -35,7 +35,6 @@ describe('Versions endpoint', function () {
           'sds/variable-subsetter',
           'sds/maskfill',
           'sds/trajectory-subsetter',
-          'nasa/harmony-gdal-adapter',
           'sds/HyBIG',
           'sds/harmony-smap-l2-gridder',
           'sds/HOSS-geographic',
@@ -46,6 +45,7 @@ describe('Versions endpoint', function () {
           'harmony/swath-projector-netcdf-to-zarr',
           'asf/opera-rtc-s1-browse',
           'net2cog',
+          'nasa/harmony-gdal-adapter',
           'harmony/service-example',
         ]);
       });

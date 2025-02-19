@@ -343,38 +343,6 @@ https://cmr.earthdata.nasa.gov:
         is_sequential: true
       - image: !Env ${GEOLOCO_IMAGE}
 
-  - name: nasa/harmony-gdal-adapter
-    description: |
-      Service translating Harmony operations to GDAL commands.
-      Supports spatial bounding box, temporal, variable, and shapefile, reprojection,
-      and output to NetCDF4 or COG.
-      Operates on input file types supported by GDAL (most EOSDIS data).
-      Most operations assume L3 data, though it is likely that some work on L2.
-    data_operation_version: '0.20.0'
-    type:
-      <<: *default-turbo-config
-      params:
-        <<: *default-turbo-params
-        env:
-          <<: *default-turbo-env
-          STAGING_PATH: public/nasa/harmony-gdal-adapter
-    umm_s: S2606110201-XYZ_PROV
-    capabilities:
-      subsetting:
-        temporal: true
-        shape: true
-        bbox: true
-        variable: true
-        multiple_variable: true
-      output_formats:
-        - application/x-netcdf4
-        - image/tiff
-      reprojection: true
-    steps:
-      - image: !Env ${QUERY_CMR_IMAGE}
-        is_sequential: true
-      - image: !Env ${HARMONY_GDAL_ADAPTER_IMAGE}
-
   - name: sds/HyBIG
     description: |
       The Harmony Browse Image Generator (HyBIG) supports the conversion of
@@ -553,6 +521,38 @@ https://cmr.earthdata.nasa.gov:
         is_sequential: true
       - image: !Env ${OPERA_RTC_S1_BROWSE_IMAGE}
       - image: !Env ${HYBIG_IMAGE}
+
+  - name: nasa/harmony-gdal-adapter
+    description: |
+      Service translating Harmony operations to GDAL commands.
+      Supports spatial bounding box, temporal, variable, and shapefile, reprojection,
+      and output to NetCDF4 or COG.
+      Operates on input file types supported by GDAL (most EOSDIS data).
+      Most operations assume L3 data, though it is likely that some work on L2.
+    data_operation_version: '0.20.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/nasa/harmony-gdal-adapter
+    umm_s: S2606110201-XYZ_PROV
+    capabilities:
+      subsetting:
+        temporal: true
+        shape: true
+        bbox: true
+        variable: true
+        multiple_variable: true
+      output_formats:
+        - application/x-netcdf4
+        - image/tiff
+      reprojection: true
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
+      - image: !Env ${HARMONY_GDAL_ADAPTER_IMAGE}
 
   - name: harmony/service-example
     description: |
@@ -936,38 +936,6 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${TRAJECTORY_SUBSETTER_IMAGE}
         operations: ['variableSubset', 'spatialSubset', 'shapefileSubset', 'temporalSubset']
 
-  - name: nasa/harmony-gdal-adapter
-    description: |
-      Service translating Harmony operations to GDAL commands.
-      Supports spatial bounding box, temporal, variable, and shapefile, reprojection,
-      and output to NetCDF4 or COG.
-      Operates on input file types supported by GDAL (most EOSDIS data).
-      Most operations assume L3 data, though it is likely that some work on L2.
-    data_operation_version: '0.20.0'
-    type:
-      <<: *default-turbo-config
-      params:
-        <<: *default-turbo-params
-        env:
-          <<: *default-turbo-env
-          STAGING_PATH: public/nasa/harmony-gdal-adapter
-    umm_s: S1245787332-EEDTEST
-    capabilities:
-      subsetting:
-        temporal: true
-        shape: true
-        bbox: true
-        variable: true
-        multiple_variable: true
-      output_formats:
-        - application/x-netcdf4
-        - image/tiff
-      reprojection: true
-    steps:
-      - image: !Env ${QUERY_CMR_IMAGE}
-        is_sequential: true
-      - image: !Env ${HARMONY_GDAL_ADAPTER_IMAGE}
-
   - name: sds/HyBIG
     description: |
       The Harmony Browse Image Generator (HyBIG) supports the conversion of
@@ -1338,6 +1306,38 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
       - image: !Env ${NET2COG_IMAGE}
+
+  - name: nasa/harmony-gdal-adapter
+    description: |
+      Service translating Harmony operations to GDAL commands.
+      Supports spatial bounding box, temporal, variable, and shapefile, reprojection,
+      and output to NetCDF4 or COG.
+      Operates on input file types supported by GDAL (most EOSDIS data).
+      Most operations assume L3 data, though it is likely that some work on L2.
+    data_operation_version: '0.20.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/nasa/harmony-gdal-adapter
+    umm_s: S1245787332-EEDTEST
+    capabilities:
+      subsetting:
+        temporal: true
+        shape: true
+        bbox: true
+        variable: true
+        multiple_variable: true
+      output_formats:
+        - application/x-netcdf4
+        - image/tiff
+      reprojection: true
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
+      - image: !Env ${HARMONY_GDAL_ADAPTER_IMAGE}
 
   - name: harmony/service-example
     description: |
