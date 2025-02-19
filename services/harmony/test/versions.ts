@@ -40,12 +40,12 @@ describe('Versions endpoint', function () {
           'sds/HOSS-geographic',
           'sds/HOSS-projection-gridded',
           'l2-subsetter-batchee-stitchee-concise',
-          'harmony/netcdf-to-zarr',
           'harmony/podaac-l2-subsetter-netcdf-to-zarr',
           'harmony/swath-projector-netcdf-to-zarr',
           'asf/opera-rtc-s1-browse',
           'net2cog',
           'nasa/harmony-gdal-adapter',
+          'harmony/netcdf-to-zarr',
           'harmony/service-example',
         ]);
       });
