@@ -1135,98 +1135,6 @@ https://cmr.uat.earthdata.nasa.gov:
           exists: ['concatenate']
 
   # Reformatting services below. Any other transformation service should be added above.
-  - name: harmony/podaac-l2-subsetter-netcdf-to-zarr
-    description: |
-      ### Chained Service of the PODAAC L2 swath subsetter and Harmony netcdf-to-zarr services.
-
-      #### PODAAC L2 swath subsetter
-      * Works with Trajectory (1D) and Along track/across track data.
-      * Works with NetCDF and HDF5 inputfiles
-      * Variable subsetting supported
-      * works with hierarchical groups
-      Outputs netcdf4.
-
-      #### Harmony netcdf-to-zarr service
-      Converts NetCDF4 files to the Zarr format as faithfully as possible, preserving metadata.
-      The service attempts to optimize chunking in both time and space via heuristic algorithm in the output Zarr store.
-    data_operation_version: '0.20.0'
-    type:
-      <<: *default-turbo-config
-      params:
-        <<: *default-turbo-params
-        env:
-          <<: *default-turbo-env
-          STAGING_PATH: public/harmony/podaac-l2-subsetter-netcdf-to-zarr
-    maximum_sync_granules: 0
-    umm_s: S1239265626-EEDTEST
-    capabilities:
-      concatenation: true
-      concatenate_by_default: false
-      subsetting:
-        temporal: true
-        bbox: true
-        variable: true
-      output_formats:
-        - application/x-zarr
-    steps:
-      - image: !Env ${QUERY_CMR_IMAGE}
-        is_sequential: true
-      - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
-        operations: ['spatialSubset', 'variableSubset', 'temporalSubset']
-        conditional:
-          exists: ['spatialSubset', 'variableSubset', 'temporalSubset']
-      - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
-        is_batched: false
-        operations: ['reformat', 'concatenate']
-        conditional:
-          format: ['application/x-zarr']
-
-  - name: harmony/swath-projector-netcdf-to-zarr
-    description: |
-      ### Chained Service of the SDS Swath Projection and Harmony netcdf-to-zarr services.
-
-      #### SDS Swath Projector service
-      Takes NetCDF-4 input files and projects input swath variables to an output grid.
-      Target CRS, output grid dimensions, extents and/or resolutions can be specified in the Harmony request.
-
-      #### Harmony netcdf-to-zarr service
-      Converts NetCDF4 files to the Zarr format as faithfully as possible, preserving metadata.
-      The service attempts to optimize chunking in both time and space via heuristic algorithm in the output Zarr store.
-
-    data_operation_version: '0.20.0'
-    type:
-      <<: *default-turbo-config
-      params:
-        <<: *default-turbo-params
-        env:
-          <<: *default-turbo-env
-          STAGING_PATH: public/harmony/swath-projector-netcdf-to-zarr
-    umm_s: S1240999847-EEDTEST
-    maximum_sync_granules: 0
-    capabilities:
-      concatenation: true
-      concatenate_by_default: false
-      subsetting:
-        bbox: false
-        variable: false
-      output_formats:
-        - application/netcdf # Incorrect mime-type, remove when no longer needed
-        - application/x-netcdf4
-        - application/x-zarr
-      reprojection: true
-    steps:
-      - image: !Env ${QUERY_CMR_IMAGE}
-        is_sequential: true
-      - image: !Env ${SWATH_PROJECTOR_IMAGE}
-        operations: ['reproject']
-        conditional:
-          exists: ['reproject']
-      - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
-        is_batched: false
-        operations: ['reformat', 'concatenate']
-        conditional:
-          format: ['application/x-zarr']
-
   - name: asf/opera-rtc-s1-browse
     description: Service that generates GIBS-compliant browse imagery for the OPERA_L2_RTC-S1 collection
     data_operation_version: '0.20.0'
@@ -1338,6 +1246,98 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
         is_batched: false
         operations: ['reformat', 'concatenate']
+
+  - name: harmony/podaac-l2-subsetter-netcdf-to-zarr
+    description: |
+      ### Chained Service of the PODAAC L2 swath subsetter and Harmony netcdf-to-zarr services.
+
+      #### PODAAC L2 swath subsetter
+      * Works with Trajectory (1D) and Along track/across track data.
+      * Works with NetCDF and HDF5 inputfiles
+      * Variable subsetting supported
+      * works with hierarchical groups
+      Outputs netcdf4.
+
+      #### Harmony netcdf-to-zarr service
+      Converts NetCDF4 files to the Zarr format as faithfully as possible, preserving metadata.
+      The service attempts to optimize chunking in both time and space via heuristic algorithm in the output Zarr store.
+    data_operation_version: '0.20.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/harmony/podaac-l2-subsetter-netcdf-to-zarr
+    maximum_sync_granules: 0
+    umm_s: S1239265626-EEDTEST
+    capabilities:
+      concatenation: true
+      concatenate_by_default: false
+      subsetting:
+        temporal: true
+        bbox: true
+        variable: true
+      output_formats:
+        - application/x-zarr
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
+      - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
+        operations: ['spatialSubset', 'variableSubset', 'temporalSubset']
+        conditional:
+          exists: ['spatialSubset', 'variableSubset', 'temporalSubset']
+      - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
+        is_batched: false
+        operations: ['reformat', 'concatenate']
+        conditional:
+          format: ['application/x-zarr']
+
+  - name: harmony/swath-projector-netcdf-to-zarr
+    description: |
+      ### Chained Service of the SDS Swath Projection and Harmony netcdf-to-zarr services.
+
+      #### SDS Swath Projector service
+      Takes NetCDF-4 input files and projects input swath variables to an output grid.
+      Target CRS, output grid dimensions, extents and/or resolutions can be specified in the Harmony request.
+
+      #### Harmony netcdf-to-zarr service
+      Converts NetCDF4 files to the Zarr format as faithfully as possible, preserving metadata.
+      The service attempts to optimize chunking in both time and space via heuristic algorithm in the output Zarr store.
+
+    data_operation_version: '0.20.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/harmony/swath-projector-netcdf-to-zarr
+    umm_s: S1240999847-EEDTEST
+    maximum_sync_granules: 0
+    capabilities:
+      concatenation: true
+      concatenate_by_default: false
+      subsetting:
+        bbox: false
+        variable: false
+      output_formats:
+        - application/netcdf # Incorrect mime-type, remove when no longer needed
+        - application/x-netcdf4
+        - application/x-zarr
+      reprojection: true
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
+      - image: !Env ${SWATH_PROJECTOR_IMAGE}
+        operations: ['reproject']
+        conditional:
+          exists: ['reproject']
+      - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
+        is_batched: false
+        operations: ['reformat', 'concatenate']
+        conditional:
+          format: ['application/x-zarr']
 
   - name: harmony/service-example
     description: |
