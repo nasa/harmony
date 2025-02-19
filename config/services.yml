@@ -442,34 +442,6 @@ https://cmr.earthdata.nasa.gov:
           exists: ['concatenate']
 
   # Reformatting services below. Any other transformation service should be added above.
-  - name: harmony/netcdf-to-zarr
-    description: |
-      Converts NetCDF4 files to the Zarr format as faithfully as possible, preserving metadata.
-      The service attempts to optimize chunking in both time and space via heuristic algorithm in the output Zarr store.
-    data_operation_version: '0.20.0'
-    type:
-      <<: *default-turbo-config
-      params:
-        <<: *default-turbo-params
-        env:
-          <<: *default-turbo-env
-          STAGING_PATH: public/harmony/netcdf-to-zarr
-    umm_s: S2839491596-XYZ_PROV
-    maximum_sync_granules: 0
-    capabilities:
-      concatenation: true
-      concatenate_by_default: false
-      subsetting:
-        variable: false
-      output_formats:
-        - application/x-zarr
-    steps:
-      - image: !Env ${QUERY_CMR_IMAGE}
-        is_sequential: true
-      - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
-        is_batched: false
-        operations: ['reformat', 'concatenate']
-
   - name: net2cog
     description: |
       Converts NetCDF files to COG. Includes extension for running in NASA Harmony. https://github.com/podaac/net2cog
@@ -553,6 +525,34 @@ https://cmr.earthdata.nasa.gov:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
       - image: !Env ${HARMONY_GDAL_ADAPTER_IMAGE}
+
+  - name: harmony/netcdf-to-zarr
+    description: |
+      Converts NetCDF4 files to the Zarr format as faithfully as possible, preserving metadata.
+      The service attempts to optimize chunking in both time and space via heuristic algorithm in the output Zarr store.
+    data_operation_version: '0.20.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/harmony/netcdf-to-zarr
+    umm_s: S2839491596-XYZ_PROV
+    maximum_sync_granules: 0
+    capabilities:
+      concatenation: true
+      concatenate_by_default: false
+      subsetting:
+        variable: false
+      output_formats:
+        - application/x-zarr
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
+      - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
+        is_batched: false
+        operations: ['reformat', 'concatenate']
 
   - name: harmony/service-example
     description: |
@@ -1135,34 +1135,6 @@ https://cmr.uat.earthdata.nasa.gov:
           exists: ['concatenate']
 
   # Reformatting services below. Any other transformation service should be added above.
-  - name: harmony/netcdf-to-zarr
-    description: |
-      Converts NetCDF4 files to the Zarr format as faithfully as possible, preserving metadata.
-      The service attempts to optimize chunking in both time and space via heuristic algorithm in the output Zarr store.
-    data_operation_version: '0.20.0'
-    type:
-      <<: *default-turbo-config
-      params:
-        <<: *default-turbo-params
-        env:
-          <<: *default-turbo-env
-          STAGING_PATH: public/harmony/netcdf-to-zarr
-    umm_s: S1237980031-EEDTEST
-    maximum_sync_granules: 0
-    capabilities:
-      concatenation: true
-      concatenate_by_default: false
-      subsetting:
-        variable: false
-      output_formats:
-        - application/x-zarr
-    steps:
-      - image: !Env ${QUERY_CMR_IMAGE}
-        is_sequential: true
-      - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
-        is_batched: false
-        operations: ['reformat', 'concatenate']
-
   - name: harmony/podaac-l2-subsetter-netcdf-to-zarr
     description: |
       ### Chained Service of the PODAAC L2 swath subsetter and Harmony netcdf-to-zarr services.
@@ -1338,6 +1310,34 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
       - image: !Env ${HARMONY_GDAL_ADAPTER_IMAGE}
+
+  - name: harmony/netcdf-to-zarr
+    description: |
+      Converts NetCDF4 files to the Zarr format as faithfully as possible, preserving metadata.
+      The service attempts to optimize chunking in both time and space via heuristic algorithm in the output Zarr store.
+    data_operation_version: '0.20.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/harmony/netcdf-to-zarr
+    umm_s: S1237980031-EEDTEST
+    maximum_sync_granules: 0
+    capabilities:
+      concatenation: true
+      concatenate_by_default: false
+      subsetting:
+        variable: false
+      output_formats:
+        - application/x-zarr
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
+      - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
+        is_batched: false
+        operations: ['reformat', 'concatenate']
 
   - name: harmony/service-example
     description: |
