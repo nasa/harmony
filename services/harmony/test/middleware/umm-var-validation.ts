@@ -12,7 +12,7 @@ describe('UMM variable validation', function () {
     const serviceConfigs = [
       {
         name: 'test-variable-validation-on',
-        data_operation_version: '0.20.0',
+        data_operation_version: '0.21.0',
         type: {
           name: 'turbo',
         },
@@ -52,7 +52,7 @@ describe('UMM variable validation', function () {
     const serviceConfigs = [
       {
         name: 'test-variable-validation-disabled',
-        data_operation_version: '0.20.0',
+        data_operation_version: '0.21.0',
         type: {
           name: 'turbo',
         },

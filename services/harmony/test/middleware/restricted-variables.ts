@@ -12,7 +12,7 @@ describe('testing variables configured directly in services.yml', function () {
   const serviceConfigs = [
     {
       name: 'test-variables',
-      data_operation_version: '0.20.0',
+      data_operation_version: '0.21.0',
       type: {
         name: 'turbo',
       },

@@ -46,6 +46,11 @@ export function getDataCommon(
 
   operation.ignoreErrors = query.ignoreerrors === false ? false : true;
   operation.destinationUrl = query.destinationurl;
+
+  if (query.pixelsubset !== undefined) {
+    operation.pixelSubset = query.pixelsubset;
+  }
+
   try {
     const subset = parseSubsetParams(wrap(query.subset));
     operation.dimensions = [];

@@ -6,6 +6,7 @@ import { v4 as uuid } from 'uuid';
 export const samplesDir = './test/resources/data-operation-samples';
 
 export const versions = [
+  '0.21.0',
   '0.20.0',
   '0.19.0',
   '0.18.0',

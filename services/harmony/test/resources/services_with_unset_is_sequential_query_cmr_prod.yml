@@ -26,7 +26,7 @@ https://cmr.earthdata.nasa.gov:
   - name: non-sequential-query-cmr
     description: |
       testing service configuration with query-cmr with no is_sequential:
-    data_operation_version: '0.20.0'
+    data_operation_version: '0.21.0'
     type:
       <<: *default-turbo-config
       params:

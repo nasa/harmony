@@ -12,7 +12,7 @@ const expectedOutput = parseSchemaFile(`valid-operation-v${versions[0]}.json`);
 const baseFields = new Set([
   'client', 'callback', 'stagingLocation', 'sources', 'format', 'user', 'accessToken',
   'subset', 'isSynchronous', 'requestId', 'version', 'concatenate', 'extendDimensions',
-  'extraArgs', 'average',
+  'extraArgs', 'average', 'pixelSubset',
 ]);
 
 describe('DataOperation', () => {
