@@ -52,6 +52,7 @@ describe('OGC API EDR - getEdrArea', function () {
           width: 1000,
           f: 'image/png',
           skipPreview: true,
+          pixelSubset: true,
           // extend: 'lat,lon', TODO: HARMONY-1569 support extend
         };
 
@@ -138,6 +139,10 @@ describe('OGC API EDR - getEdrArea', function () {
 
           it('passes the format parameter to the backend', function () {
             expect(this.service.operation.outputFormat).to.equal('image/png');
+          });
+
+          it('passes the pixelSubset parameter to the backend', function () {
+            expect(this.service.operation.pixelSubset).to.be.true;
           });
 
           // TODO: HARMONY-1569 support extend
