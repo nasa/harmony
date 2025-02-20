@@ -1,3 +1,7 @@
+## [0.21.0] - 2025-02-18
+### Added
+- pixelSubset - true/false - true if pixel subset should be performed by the service.
+
 ## [0.20.0] - 2024-10-10
 ### Added
 - average - The averaging method to use. Initially Giovanni plans to support 'time' or 'area' averaging.
