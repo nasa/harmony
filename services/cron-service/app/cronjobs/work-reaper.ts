@@ -10,11 +10,11 @@ import env from '../util/env';
 import { CronJob } from './cronjob';
 
 /**
-   * Find work items that are older than notUpdatedForMinutes and delete them.
-   * @param notUpdatedForMinutes - upper limit on the duration since the last update
-   * @param jobStatus - a list of terminal job statuses
-   * @returns Resolves when the request is complete
-   */
+ * Find work items that are older than notUpdatedForMinutes and delete them.
+ * @param notUpdatedForMinutes - upper limit on the duration since the last update
+ * @param jobStatus - a list of terminal job statuses
+ * @returns Resolves when the request is complete
+ */
 async function deleteTerminalWorkItems(ctx: Context, notUpdatedForMinutes: number, jobStatus: JobStatus[]): Promise < void> {
   let done = false;
   let startingId = 0;
@@ -51,11 +51,11 @@ async function deleteTerminalWorkItems(ctx: Context, notUpdatedForMinutes: numbe
 
 
 /**
-   * Find workflow steps that are older than notUpdatedForMinutes and delete them.
-   * @param notUpdatedForMinutes - upper limit on the duration since the last update
-   * @param jobStatus - a list of terminal job statuses
-   * @returns Resolves when the request is complete
-   */
+ * Find workflow steps that are older than notUpdatedForMinutes and delete them.
+ * @param notUpdatedForMinutes - upper limit on the duration since the last update
+ * @param jobStatus - a list of terminal job statuses
+ * @returns Resolves when the request is complete
+ */
 async function deleteTerminalWorkflowSteps(ctx: Context, notUpdatedForMinutes: number, jobStatus: JobStatus[]): Promise < void> {
   let done = false;
   let startingId = 0;
