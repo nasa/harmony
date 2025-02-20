@@ -3,7 +3,6 @@ import express from 'express';
 
 import db from '../../harmony/app/util/db';
 import log from '../../harmony/app/util/log';
-import { Example } from './cronjobs/example';
 import { WorkReaper } from './cronjobs/work-reaper';
 import router from './routers/router';
 import { Context } from './util/context';
@@ -17,15 +16,11 @@ export default function start(): void {
   // add cron entries here
   // see https://www.npmjs.com/package/croner#pattern for allowable crontab strings
   const cronEntries: [string, { run(ctx: Context): void; name: string; }][] = [
-    ['*/10 * * * * *', Example], // every 10 seconds
-    ['*/6 * * * *', WorkReaper], // every 6 minutes
+    [env.workReaperCron, WorkReaper],
   ];
 
   for (const [cronSpec, jobClass] of cronEntries) {
-    // only run the example service if specifically asked to do so
-    if (jobClass.name === 'Example' && !env.runExample) continue;
-
-    const logger = log.child({ cronJob: jobClass.name });
+    const logger = log.child({ 'cron_job': jobClass.name });
     const ctx: Context = {
       logger,
       db,
@@ -42,8 +37,7 @@ export default function start(): void {
     );
   }
 
-
-  // set up a express server for the health endpoint - used by k8s to monitor the pod
+  // set up an express server for the health endpoint - used by k8s to monitor the pod
   const app = express();
 
   app.use(express.json());

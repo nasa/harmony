@@ -1,7 +1,8 @@
-import { IsBoolean, IsInt, Min } from 'class-validator';
+import { IsInt, Min } from 'class-validator';
 import * as path from 'path';
 
 import { HarmonyEnv } from '../../../../packages/util/env';
+import { IsCrontab } from './cron-validation';
 
 //
 // env module
@@ -11,13 +12,9 @@ import { HarmonyEnv } from '../../../../packages/util/env';
 
 class CronServiceHarmonyEnv extends HarmonyEnv {
 
-  @IsBoolean()
-  runExample: boolean;
-
   // work reaper specific vars
-  @IsInt()
-  @Min(1)
-  workReaperPeriodSec: number;
+  @IsCrontab()
+  workReaperCron: string;
 
   @IsInt()
   @Min(1)

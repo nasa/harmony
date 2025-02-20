@@ -4,17 +4,17 @@ RUN apk update
 RUN apk add bash vim curl git python3 postgresql-client make gcc g++ libc-dev libpq-dev
 RUN git config --global url."https://".insteadOf ssh://
 
-RUN mkdir -p /work-updater/services/work-updater
+RUN mkdir -p /cron-service/services/cron-service
 
-COPY package.json package-lock.json /work-updater/services/work-updater/
-WORKDIR /work-updater/services/work-updater
+COPY package.json package-lock.json /cron-service/services/cron-service/
+WORKDIR /cron-service/services/cron-service
 RUN npm ci
 
-COPY env-defaults /work-updater/services/work-updater/
-COPY built /work-updater/
-WORKDIR /work-updater
+COPY env-defaults /cron-service/services/cron-service/
+COPY built /cron-service/
+WORKDIR /cron-service
 # This symlink is needed to make module loading work correctly
-RUN ln -s services/work-updater/node_modules .
-WORKDIR /work-updater/services/work-updater
+RUN ln -s services/cron-service/node_modules .
+WORKDIR /cron-service/services/cron-service
 
 ENTRYPOINT [ "node", "app/server.js"]
