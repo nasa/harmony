@@ -364,9 +364,6 @@ LARGE_WORK_UPDATER_POD_REPLICAS=1
 # The number of update queue processors to run for the small work-item queue
 SMALL_WORK_UPDATER_POD_REPLICAS=1
 
-# The number of work reaper pods to run
-WORK_REAPER_POD_REPLICAS=1
-
 # The number of work failer pods to run
 WORK_FAILER_POD_REPLICAS=1
 
@@ -394,12 +391,12 @@ WORK_ITEM_UPDATER_LIMITS_CPU=1024m
 WORK_ITEM_UPDATER_LIMITS_MEMORY=512Mi
 WORK_ITEM_UPDATER_IMAGE=harmonyservices/work-updater:stable
 
-# work reaper
-WORK_REAPER_REQUESTS_CPU=128m
-WORK_REAPER_REQUESTS_MEMORY=128Mi
-WORK_REAPER_LIMITS_CPU=512m
-WORK_REAPER_LIMITS_MEMORY=512Mi
-WORK_REAPER_IMAGE=harmonyservices/work-reaper:stable
+# cron service
+CRON_SERVICE_REQUESTS_CPU=128m
+CRON_SERVICE_REQUESTS_MEMORY=128Mi
+CRON_SERVICE_LIMITS_CPU=512m
+CRON_SERVICE_LIMITS_MEMORY=512Mi
+CRON_SERVICE_IMAGE=harmonyservices/cron-service:stable
 
 # work failer
 WORK_FAILER_REQUESTS_CPU=128m

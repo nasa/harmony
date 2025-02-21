@@ -1,30 +1,30 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: harmony-work-reaper
+  name: harmony-cron-service
   labels:
-    name: harmony-work-reaper
+    name: harmony-cron-service
 spec:
-  replicas: $WORK_REAPER_POD_REPLICAS
+  replicas: 1
   selector:
     matchLabels:
-      name: harmony-work-reaper
+      name: harmony-cron-service
   template:
     metadata:
       labels:
-        name: harmony-work-reaper
+        name: harmony-cron-service
     spec:
       containers:
-        - name: harmony-work-reaper
+        - name: harmony-cron-service
           imagePullPolicy: IfNotPresent
-          image: $WORK_REAPER_IMAGE
+          image: $CRON_SERVICE_IMAGE
           resources:
             limits:
-              memory: $WORK_REAPER_LIMITS_MEMORY
-              cpu: $WORK_REAPER_LIMITS_CPU
+              memory: $CRON_SERVICE_LIMITS_MEMORY
+              cpu: $CRON_SERVICE_LIMITS_CPU
             requests:
-              memory: $WORK_REAPER_REQUESTS_MEMORY
-              cpu: $WORK_REAPER_REQUESTS_CPU
+              memory: $CRON_SERVICE_REQUESTS_MEMORY
+              cpu: $CRON_SERVICE_REQUESTS_CPU
           envFrom:
           - configMapRef:
               name: harmony-env
@@ -35,15 +35,13 @@ spec:
             value: '$REAPABLE_WORK_AGE_MINUTES'
           - name: WORK_REAPER_BATCH_SIZE
             value: '$WORK_REAPER_BATCH_SIZE'
-          - name: WORK_REAPER_PERIOD_SEC
-            value: '$WORK_REAPER_PERIOD_SEC'
           ports:
             - containerPort: $PORT
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: harmony-work-reaper
+  name: harmony-cron-service
 spec:
   ports:
     - name: frontend
@@ -51,5 +49,5 @@ spec:
       targetPort: $PORT
       protocol: TCP
   selector:
-    name: harmony-work-reaper
+    name: harmony-cron-service
   type: ClusterIP

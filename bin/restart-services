@@ -4,7 +4,7 @@ env_save=$(export -p)
 set -a
 source "./services/work-scheduler/env-defaults"
 source "./services/work-updater/env-defaults"
-source "./services/work-reaper/env-defaults"
+source "./services/cron-service/env-defaults"
 source "./services/work-failer/env-defaults"
 source "packages/util/env-defaults"
 source "./services/harmony/env-defaults"
@@ -19,7 +19,7 @@ if [ "$current_context" != "colima" ] && [ "$current_context" != "docker-desktop
   exit 1
 fi
 
-for service in ${LOCALLY_DEPLOYED_SERVICES//,/ } query-cmr harmony-work-scheduler harmony-small-work-updater harmony-large-work-updater harmony-work-failer harmony-work-reaper
+for service in ${LOCALLY_DEPLOYED_SERVICES//,/ } query-cmr harmony-work-scheduler harmony-small-work-updater harmony-large-work-updater harmony-work-failer harmony-cron-service
 do
     echo "stopping $service"
     kubectl delete deployment "$service" -n harmony

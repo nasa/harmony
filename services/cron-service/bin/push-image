@@ -2,7 +2,7 @@
 
 set -ex
 
-image="harmonyservices/work-reaper"
+image="harmonyservices/cron-service"
 tag=${1:-latest}
 
 region=${AWS_DEFAULT_REGION-"us-west-2"}
