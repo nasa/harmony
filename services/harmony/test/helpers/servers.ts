@@ -1,5 +1,6 @@
-import { before, after } from 'mocha';
+import { after, before } from 'mocha';
 import { stub } from 'sinon';
+
 import * as harmony from '../../app/server';
 import env from '../../app/util/env';
 import { stubEdlRequest, token, unstubEdlRequest } from './auth';
@@ -35,7 +36,7 @@ export default function hookServersStartStop(opts = { USE_EDL_CLIENT_APP: false 
       EXAMPLE_SERVICES: 'true',
       USE_EDL_CLIENT_APP: useEdlClientApp,
       startWorkflowTerminationListener: 'false',
-      startWorkReaper: 'false',
+      startCronService: 'false',
       startWorkFailer: 'false',
       startWorkItemUpdateQueueProcessor: 'false',
       // Hardcoded to 4000 to match the port in the url for the example HTTP service in services.yml

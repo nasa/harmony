@@ -52,11 +52,11 @@ popd > /dev/null
 
 sleep 3
 
-echo "Starting the work reaper..."
-pushd services/work-reaper > /dev/null
+echo "Starting the cron service..."
+pushd services/cron-service > /dev/null
 export PORT=5004
 export DEBUG_PORT=9204
-npm run start-dev-fast > logs/work-reaper.log 2>&1 &
+npm run start-dev-fast > logs/cron-service.log 2>&1 &
 popd > /dev/null
 
 sleep 3
