@@ -56,9 +56,8 @@ if [ ! "$LOCAL_DEV" = true ]; then
     exit 1
   fi
   envsubst < $file | kubectl apply -f - -n harmony
-fi
 
-# create the work failer
+  # create the work failer
   file="services/work-failer/config/service-template.yaml"
   if [ ! -f "$file" ]; then
     echo "work failer template was not found."
