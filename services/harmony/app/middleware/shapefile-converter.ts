@@ -23,6 +23,7 @@ import { HttpError, RequestValidationError, ServerError } from '../util/errors';
 import { defaultObjectStore } from '../util/object-store';
 
 const APPROXIMATE_METERS_PER_DEGREE = 111139.0;
+const COORDINATE_PRECISION = 6; // in decimal places
 
 /**
  * Converts the given ESRI Shapefile to GeoJSON and returns the resulting file.   Note,
@@ -180,6 +181,18 @@ function normalizeLongitude(lon: number): number {
 }
 
 /**
+ *  Round a number to a given precision
+ *
+ * @param num - the number to be rounded
+ * @param decimals  - the number of decimal places to round to
+ * @returns A number with the given number of decimal places
+ */
+function setPrecision(num: number, decimals: number = COORDINATE_PRECISION): number {
+  const factor = Math.pow(10, decimals);
+  return Math.round(num * factor) / factor;
+}
+
+/**
  * normalize all the longitudes in the file to [-180,180]
  * @param geojson - the object representing the geojson
  * @returns - the object with the normalized longitudes
@@ -190,7 +203,9 @@ export function normalizeGeoJsonCoords(geojson: any): any {
     if (Array.isArray(coordinates[0])) {
       return coordinates.map(normalizeCoordinates);
     } else {
-      return [normalizeLongitude(coordinates[0]), coordinates[1]];
+      const normCoords = [normalizeLongitude(coordinates[0]), coordinates[1]];
+      // set all coordinates to six decimal places of precision
+      return normCoords.map(value => setPrecision(value));
     }
   }
 
@@ -242,8 +257,12 @@ export function normalizeGeoJson(geoJson: object): object {
     newGeoJson['features'][index] = normalizedGeoJson;
   }
 
+  // need to renormalize coordinates after splitting, since the splitter might
+  // change coordinate precision
+  newGeoJson = normalizeGeoJsonCoords(newGeoJson);
   // force ccw winding
   newGeoJson = rewind(newGeoJson, false);
+
   return newGeoJson;
 }
 
