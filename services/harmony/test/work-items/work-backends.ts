@@ -501,7 +501,6 @@ describe('Work Backends', function () {
 
       it('sets the work item status to warning with nodata', async function () {
         const updatedWorkItem = await getWorkItemById(db, this.workItem.id);
-        // TODO HARMONY-1995 change this to WARNING
         expect(updatedWorkItem.status).to.equal(WorkItemStatus.WARNING);
         expect(updatedWorkItem.message_category).to.equal('nodata');
       });
@@ -531,9 +530,7 @@ describe('Work Backends', function () {
           expect(updatedJob.status === JobStatus.SUCCESSFUL);
         });
 
-        // TODO enable this in HARMONY-1995 - figure out what progress should be based on how
-        // TODO completed_with_errors handles it
-        xit('sets the job progress to 100', async function () {
+        it('sets the job progress to 100', async function () {
           const { job: updatedJob } = await Job.byJobID(db, this.job.jobID);
           expect(updatedJob.progress).to.equal(100);
         });

@@ -9,7 +9,7 @@ import { makeWorkScheduleRequest } from '../../backends/workflow-orchestration/w
 import { Job, JobStatus } from '../../models/job';
 import JobLink, { getJobDataLinkCount } from '../../models/job-link';
 import JobMessage, {
-  getMessageCountForJob, getMessagesForJob, JobMessageLevel,
+  getMessageCountForJob, getErrorMessagesForJob, getWarningMessagesForJob, JobMessageLevel,
 } from '../../models/job-message';
 import {
   decrementRunningCount, deleteUserWorkForJob, incrementReadyAndDecrementRunningCounts,
@@ -102,20 +102,27 @@ Promise<{ finalStatus: JobStatus, finalMessage: string; }> {
   const errorCount = await getMessageCountForJob(tx, job.jobID, JobMessageLevel.ERROR);
   const warningCount = await getMessageCountForJob(tx, job.jobID, JobMessageLevel.WARNING);
   const dataLinkCount = await getJobDataLinkCount(tx, job.jobID);
-  if (errorCount + warningCount > 0) {
+  if (errorCount > 0) {
     if (dataLinkCount > 0) {
       finalStatus = JobStatus.COMPLETE_WITH_ERRORS;
     } else {
       finalStatus = JobStatus.FAILED;
     }
+  } else if (warningCount > 0) {
+    finalStatus = JobStatus.SUCCESSFUL;
   }
+
   let finalMessage = '';
-  // TODO stop treating warnings as errors in HARMONY-1995
-  if ((errorCount + warningCount > 1) && (finalStatus == JobStatus.FAILED)) {
+  if ((errorCount > 1) && (finalStatus == JobStatus.FAILED)) {
     finalMessage = `The job failed with ${errorCount} errors and ${warningCount} warnings. See the errors and warnings fields for more details`;
-  } else if ((errorCount == 1 || warningCount == 1) && (finalStatus == JobStatus.FAILED)) {
-    const jobError = (await getMessagesForJob(tx, job.jobID, 1))[0];
+  } else if ((errorCount == 1) && (finalStatus == JobStatus.FAILED)) {
+    const jobError = (await getErrorMessagesForJob(tx, job.jobID, 1))[0];
     finalMessage = jobError.message;
+  } else if ((warningCount > 1) && (finalStatus == JobStatus.SUCCESSFUL)) {
+    finalMessage = `The job succeeded with ${warningCount} warnings. See the warnings fields for more details`;
+  } else if ((warningCount == 1) && (finalStatus == JobStatus.SUCCESSFUL)) {
+    const jobWarning = (await getWarningMessagesForJob(tx, job.jobID, 1))[0];
+    finalMessage = jobWarning.message;
   }
   return { finalStatus, finalMessage };
 }
@@ -193,9 +200,7 @@ async function handleFailedWorkItems(
   logger: Logger, errorMessage: string,
 ): Promise<boolean> {
   let continueProcessing = true;
-  // If the response is an error then maybe set the job status to 'failed'
-  // TODO fix this in HARMONY-1995
-  if (status === WorkItemStatus.FAILED || status == WorkItemStatus.WARNING) {
+  if (status === WorkItemStatus.FAILED || status === WorkItemStatus.WARNING) {
     continueProcessing = job.ignoreErrors;
     if (!job.hasTerminalStatus()) {
       let jobMessage;
@@ -232,23 +237,26 @@ async function handleFailedWorkItems(
         await addJobMessageForWorkItem(tx, job, url, jobMessage, level, workItem.message_category);
       }
 
-      if (continueProcessing) {
-        const errorCount = await getMessageCountForJob(tx, job.jobID);
-        // TODO handle this properly in HARMONY-1995 - for now just treat warnings like errors
-        const warningCount = await getMessageCountForJob(tx, job.jobID, JobMessageLevel.WARNING);
-        if (errorCount + warningCount > env.maxErrorsForJob) {
-          jobMessage = `Maximum allowed errors and warnings ${env.maxErrorsForJob} exceeded. See the errors and warnings fields for more details`;
-          logger.warn(jobMessage);
-          continueProcessing = false;
-        }
-      }
-
-      if (!continueProcessing) {
-        await completeJob(tx, job, JobStatus.FAILED, logger, jobMessage);
+      if (status === WorkItemStatus.WARNING) {
+        // always continue processing for warning work item
+        continueProcessing = true;
       } else {
-        if (job.status == JobStatus.RUNNING) {
-          job.status = JobStatus.RUNNING_WITH_ERRORS;
-          await job.save(tx);
+        if (continueProcessing) {
+          const errorCount = await getMessageCountForJob(tx, job.jobID);
+          if (errorCount > env.maxErrorsForJob) {
+            jobMessage = `Maximum allowed errors ${env.maxErrorsForJob} exceeded. See the errors fields for more details`;
+            logger.warn(jobMessage);
+            continueProcessing = false;
+          }
+        }
+
+        if (!continueProcessing) {
+          await completeJob(tx, job, JobStatus.FAILED, logger, jobMessage);
+        } else {
+          if (job.status == JobStatus.RUNNING) {
+            job.status = JobStatus.RUNNING_WITH_ERRORS;
+            await job.save(tx);
+          }
         }
       }
     }

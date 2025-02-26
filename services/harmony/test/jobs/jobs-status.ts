@@ -31,7 +31,7 @@ const warningMessage = new JobMessage({
   message: 'Service could not get data',
   message_category: 'nodata',
 });
-const warningJob = buildJob({ username: 'joe', status: JobStatus.FAILED, message: 'Service could not get data', messages: [warningMessage] });
+const warningJob = buildJob({ username: 'joe', status: JobStatus.SUCCESSFUL, message: 'Service could not get data', messages: [warningMessage] });
 
 const timeStampRegex = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z/;
 
@@ -208,13 +208,12 @@ describe('Individual job status route', function () {
     itIncludesADataExpirationField();
   });
 
-  // TODO change for HARMONY-1995
-  describe('when the job is failed due to warning', function () {
+  describe('when the job is successful with warning', function () {
     hookJobStatus({ jobID: warningJobID, username: 'joe' });
 
-    it('returns a status field of "failed"', function () {
+    it('returns a status field of "successful"', function () {
       const job = JSON.parse(this.res.text);
-      expect(job.status).to.eql('failed');
+      expect(job.status).to.eql('successful');
     });
 
     it('returns a human-readable message field corresponding to its state', function () {

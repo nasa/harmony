@@ -221,12 +221,9 @@ describe('ignoreErrors', function () {
           await updateWorkItem(this.backend, firstSwathItem);
         });
 
-        // TODO HARMONY-1995 - set up appropriate warning handling. For now we treat warnings as
-        // TODO errors, but we eventually want to do the right thing based on the warning
-        it('fails the job', async function () {
-          // work item warning with only one granule should trigger job failure
+        it('sets the job as successful', async function () {
           const { job } = await Job.byJobID(db, firstSwathItem.jobID);
-          expect(job.status).to.equal(JobStatus.FAILED);
+          expect(job.status).to.equal(JobStatus.SUCCESSFUL);
           expect(job.message).to.equal('WorkItem warned: Specific warning reason');
         });
 
