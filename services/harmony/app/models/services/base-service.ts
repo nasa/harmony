@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import { Logger } from 'winston';
 import { v4 as uuid } from 'uuid';
-import WorkItem from '../work-item';
+import WorkItem, { allWorkItemsNoData } from '../work-item';
 import WorkflowStep from '../workflow-steps';
 import InvocationResult from './invocation-result';
 import { Job, JobStatus, statesToDefaultMessages } from '../job';
@@ -336,7 +336,15 @@ export default abstract class BaseService<ServiceParamType> {
         if (links.length === 1) {
           result = { redirect: links[0].href };
         } else {
-          result = { error: `The backend service provided ${links.length} outputs when 1 was required`, statusCode: 500 };
+          let allItemsAreNoData = false;
+          await db.transaction(async (tx) => {
+            allItemsAreNoData = await allWorkItemsNoData(tx, jobID);
+          });
+          if (allItemsAreNoData) {
+            result = { redirect: `/jobs/${jobID}`, headers: {} };
+          } else {
+            result = { error: `The backend service provided ${links.length} outputs when 1 was required`, statusCode: 500 };
+          }
         }
       }
     } catch (e) {

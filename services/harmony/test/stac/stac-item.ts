@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { describe, it, before } from 'mocha';
 import { v4 as uuid } from 'uuid';
 import itReturnsTheExpectedStacResponse from '../helpers/stac-item';
+import { hookAllWorkItemsNoData } from '../helpers/work-items';
 import { buildJob } from '../helpers/jobs';
 import hookServersStartStop from '../helpers/servers';
 import { hookTransaction } from '../helpers/db';
@@ -102,6 +103,7 @@ const completedNonStacJob = buildJob({
 
 describe('STAC item route', function () {
   hookServersStartStop({ USE_EDL_CLIENT_APP: true });
+  hookAllWorkItemsNoData();
   hookTransaction();
   before(async function () {
     await runningJob.save(this.trx);

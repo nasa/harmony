@@ -1,5 +1,6 @@
 import { ILengthAwarePagination } from 'knex-paginate';
 import { Job, JobForDisplay, JobStatus } from '../models/job';
+import { allWorkItemsNoData } from '../models/work-item';
 import { keysToLowerCase } from '../util/object';
 import isUUID from '../util/uuid';
 import { getRequestRoot } from '../util/url';
@@ -67,6 +68,20 @@ async function handleStacRequest(
           throw new RequestValidationError('STAC item index is out of bounds');
         } else {
           throw new RequestValidationError('The requested paging parameters were out of bounds');
+        }
+      } else if (job.status === JobStatus.SUCCESSFUL) {
+        let allItemsAreNoData = false;
+        await db.transaction(async (tx) => {
+          allItemsAreNoData = await allWorkItemsNoData(tx, jobId);
+        });
+
+        if (allItemsAreNoData) {
+          const urlRoot = getRequestRoot(req);
+          const lType = linkType || 's3';
+          const serializedJob = job.serialize(urlRoot, lType);
+          res.json(callback(serializedJob, pagination));
+        } else {
+          throw new NotFoundError(`Service did not provide STAC items for job ${jobId}`);
         }
       } else {
         throw new NotFoundError(`Service did not provide STAC items for job ${jobId}`);

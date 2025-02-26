@@ -488,7 +488,7 @@ export async function getWorkItemsByJobId(
 ): Promise<{ workItems: WorkItem[]; pagination: ILengthAwarePagination }> {
   const query: WorkItemQuery = {
     where: { jobID },
-    orderBy : { field: 'id', value: sortOrder },
+    orderBy: { field: 'id', value: sortOrder },
   };
   return queryAll(tx, query, currentPage, perPage);
 }
@@ -747,6 +747,33 @@ export async function getScrollIdForJob(
     return workItems.workItems[0]?.scrollID;
   }
   return null;
+}
+
+/**
+ * Return true if all work items of the given job have NoData warning
+ *
+ * @param tx - transaction to use for the query
+ * @param jobID - the job ID
+ * @returns true or false
+ */
+export async function allWorkItemsNoData(
+  tx: Transaction,
+  jobID: string,
+): Promise < boolean > {
+  const workflowStepIndexResults = await tx(WorkItem.table)
+    .max('workflowStepIndex as maxIndex')
+    .where({ jobID });
+
+  const workflowStepIndex = workflowStepIndexResults[0].maxIndex;
+
+  const data = await tx(WorkItem.table)
+    .where({
+      jobID,
+      workflowStepIndex,
+    })
+    .whereNot('message_category', 'nodata');
+
+  return data.length === 0;
 }
 
 /**

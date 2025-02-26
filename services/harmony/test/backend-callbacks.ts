@@ -3,6 +3,7 @@ import { expect } from 'chai';
 import request from 'supertest';
 import { HTTPError } from 'superagent';
 import { Job, JobStatus } from '../app/models/job';
+import { hookAllWorkItemsNoData } from './helpers/work-items';
 import JobLink from '../app/models/job-link';
 import { truncateAll } from './helpers/db';
 import hookServersStartStop from './helpers/servers';
@@ -19,6 +20,7 @@ describe('Backend Callbacks', function () {
   const href = 'https://example.com/foo';
 
   hookServersStartStop();
+  hookAllWorkItemsNoData();
 
   beforeEach(truncateAll);
   after(truncateAll);
