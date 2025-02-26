@@ -332,6 +332,148 @@ describe('Workflow chaining for a collection configured for Swath Projector and 
     });
   });
 
+  describe('when a request has service returns nodata warning', function () {
+    const reprojectAndZarrQuery = {
+      maxResults: 2,
+      outputCrs: 'EPSG:4326',
+      interpolation: 'near',
+      scaleExtent: '0,2500000.3,1500000,3300000',
+      scaleSize: '1.1,2',
+      format: 'application/x-zarr',
+      concatenate: false, // Aggregated workflows are tested above
+    };
+
+    hookRangesetRequest('1.0.0', collection, 'all', { query: reprojectAndZarrQuery });
+    hookRedirect('joe');
+
+    it('generates a workflow with 3 steps', async function () {
+      const job = JSON.parse(this.res.text);
+      const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
+
+      expect(workflowSteps.length).to.equal(3);
+    });
+
+    it('starts with the query-cmr task', async function () {
+      const job = JSON.parse(this.res.text);
+      const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
+
+      expect(workflowSteps[0].serviceID).to.equal('harmonyservices/query-cmr:stable');
+    });
+
+    it('then requests reprojection using Swath Projector', async function () {
+      const job = JSON.parse(this.res.text);
+      const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
+
+      expect(workflowSteps[1].serviceID).to.equal('ghcr.io/nasa/harmony-swath-projector:latest');
+    });
+
+    it('then requests reformatting using netcdf-to-zarr', async function () {
+      const job = JSON.parse(this.res.text);
+      const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
+
+      expect(workflowSteps[2].serviceID).to.equal('ghcr.io/nasa/harmony-netcdf-to-zarr:latest');
+    });
+
+    it('returns a human-readable message field indicating the request has been limited to a subset of the granules', function () {
+      const job = JSON.parse(this.res.text);
+      expect(job.message).to.equal('CMR query identified 177 granules, but the request has been limited to process only the first 2 granules because you requested 2 maxResults.');
+    });
+
+    // Verify it only queues a work item for the query-cmr task
+    describe('when checking for a Swath Projector work item', function () {
+      hookGetWorkForService('ghcr.io/nasa/harmony-swath-projector:latest');
+
+      it('does not find a work item', async function () {
+        expect(this.res.status).to.equal(404);
+      });
+    });
+
+    describe('when checking for a netcdf-to-zarr work item', function () {
+      hookGetWorkForService('ghcr.io/nasa/harmony-netcdf-to-zarr:latest');
+
+      it('does not find a work item', async function () {
+        expect(this.res.status).to.equal(404);
+      });
+    });
+
+    describe('when checking for a query-cmr work item', function () {
+      it('finds the item and can complete it', async function () {
+        const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
+        expect(res.status).to.equal(200);
+        const { workItem, maxCmrGranules } = JSON.parse(res.text);
+        expect(maxCmrGranules).to.equal(2);
+        expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:stable');
+        workItem.status = WorkItemStatus.SUCCESSFUL;
+        workItem.results = [
+          getStacLocation(workItem, 'catalog0.json'),
+          getStacLocation(workItem, 'catalog1.json'),
+        ];
+        workItem.outputItemSizes = [1, 2];
+        await fakeServiceStacOutput(workItem.jobID, workItem.id, 2);
+        await updateWorkItem(this.backend, workItem);
+      });
+
+      describe('when a service returns a nodata warning', function () {
+        let firstSwathItem;
+
+        before(async function () {
+          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
+          firstSwathItem = JSON.parse(res.text).workItem;
+          firstSwathItem.status = WorkItemStatus.WARNING;
+          firstSwathItem.message = 'The service found nodata to process';
+          firstSwathItem.message_category = 'nodata';
+          firstSwathItem.results = [];
+          await updateWorkItem(this.backend, firstSwathItem);
+        });
+
+        describe('when checking to see if netcdf-to-zarr work is queued', function () {
+          let res;
+          let workItem;
+          before(async function () {
+            res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest');
+          });
+          it('does not find any netcdf-to-zarr service work item', async function () {
+            expect(res.status).to.equal(404);
+          });
+
+          describe('when checking the jobs listing', function () {
+            it('marks the job as in progress and 28 percent complete because query-cmr is completely done and 1 granule only completes in one step', async function () {
+              const jobs = await Job.forUser(db, 'anonymous');
+              const job = jobs.data[0];
+              expect(job.status).to.equal('running');
+              expect(job.progress).to.equal(28);
+            });
+          });
+
+          describe('when completing all steps for the second granule', function () {
+            it('wish I could do this in the describe', async function () {
+              for await (const service of ['ghcr.io/nasa/harmony-swath-projector:latest', 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest']) {
+                res = await getWorkForService(this.backend, service);
+                // eslint-disable-next-line prefer-destructuring
+                workItem = JSON.parse(res.text).workItem;
+                workItem.status = WorkItemStatus.SUCCESSFUL;
+                workItem.results = [getStacLocation(workItem, 'catalog.json')];
+                workItem.outputItemSizes = [2];
+                await fakeServiceStacOutput(workItem.jobID, workItem.id);
+                await updateWorkItem(this.backend, workItem);
+              }
+            });
+
+            describe('when checking the jobs listing', function () {
+              it('marks the job as successful and progress of 100 with 3 links', async function () {
+                const job = await getFirstJob(db);
+                expect(job.status).to.equal('successful');
+                expect(job.progress).to.equal(100);
+                expect(job.links.length).to.equal(3);
+                expect(job.message).to.equal('WorkItem warned: The service found nodata to process');
+              });
+            });
+          });
+        });
+      });
+    });
+  });
+
   describe('when making a request and the job fails while in progress', function () {
     const reprojectAndZarrQuery = {
       maxResults: 3,
