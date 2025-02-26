@@ -1,7 +1,7 @@
-FROM node:22.14.0-alpine
+FROM node:22.14.0
 
-RUN apk update
-RUN apk add bash vim curl git python3 postgresql-client make gcc g++ libc-dev libpq-dev
+RUN apt-get update
+RUN apt-get install -y vim git python3 postgresql-client make gcc g++ libc-dev libpq-dev
 RUN git config --global url."https://".insteadOf ssh://
 
 RUN mkdir -p /cron-service/services/cron-service
