@@ -1,19 +1,19 @@
 import { Logger } from 'winston';
+
 import {
-  WorkItemUpdateQueueItem,
-  handleWorkItemUpdate,
-  preprocessWorkItem,
-  processWorkItems } from '../../../harmony/app/backends/workflow-orchestration/work-item-updates';
+  handleWorkItemUpdate, preprocessWorkItem, processWorkItems, WorkItemUpdateQueueItem,
+} from '../../../harmony/app/backends/workflow-orchestration/work-item-updates';
+import { getJobStatusForJobID, terminalStates } from '../../../harmony/app/models/job';
 import { getJobIdForWorkItem } from '../../../harmony/app/models/work-item';
+import { getWorkflowStepByJobIdStepIndex } from '../../../harmony/app/models/workflow-steps';
+import db from '../../../harmony/app/util/db';
 import { default as defaultLogger } from '../../../harmony/app/util/log';
+import { logAsyncExecutionTime } from '../../../harmony/app/util/log-execution';
 import { WorkItemQueueType } from '../../../harmony/app/util/queue/queue';
 import { getQueueForType } from '../../../harmony/app/util/queue/queue-factory';
 import sleep from '../../../harmony/app/util/sleep';
 import { Worker } from '../../../harmony/app/workers/worker';
 import env from '../util/env';
-import { logAsyncExecutionTime } from '../../../harmony/app/util/log-execution';
-import { getWorkflowStepByJobIdStepIndex } from '../../../harmony/app/models/workflow-steps';
-import db from '../../../harmony/app/util/db';
 
 /**
  * Group work item updates by its workflow step and return the grouped work item updates
@@ -105,11 +105,16 @@ export async function handleBatchWorkItemUpdates(
     }, {});
   // process each job's updates
   for (const jobID in jobUpdates) {
-    const startTime = Date.now();
-    logger.debug(`Processing ${jobUpdates[jobID].length} work item updates for job ${jobID}`);
-    await handleBatchWorkItemUpdatesWithJobId(jobID, jobUpdates[jobID], logger);
-    const endTime = Date.now();
-    logger.debug(`Processing ${jobUpdates[jobID].length} work item updates for job ${jobID} took ${endTime - startTime} ms`);
+    const jobStatus = await getJobStatusForJobID(jobID);
+    if (terminalStates.includes(jobStatus)) {
+      logger.warn(`Ignoring work item updates for job ${jobID} in terminal state ${jobStatus}.`);
+    } else {
+      const startTime = Date.now();
+      logger.debug(`Processing ${jobUpdates[jobID].length} work item updates for job ${jobID}`);
+      await handleBatchWorkItemUpdatesWithJobId(jobID, jobUpdates[jobID], logger);
+      const endTime = Date.now();
+      logger.debug(`Processing ${jobUpdates[jobID].length} work item updates for job ${jobID} took ${endTime - startTime} ms`);
+    }
   }
 }
 

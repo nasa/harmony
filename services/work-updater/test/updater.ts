@@ -1,24 +1,24 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
 import * as sinon from 'sinon';
-import { SinonSpy, SinonStub } from 'sinon';
 import { Logger } from 'winston';
-import * as updater from '../app/workers/updater';
+
+import * as wiu from '../../harmony/app/backends/workflow-orchestration/work-item-updates';
+import DataOperation from '../../harmony/app/models/data-operation';
+import * as wi from '../../harmony/app/models/work-item';
+import WorkItemUpdate from '../../harmony/app/models/work-item-update';
+import { WorkItemQueueType } from '../../harmony/app/util/queue/queue';
 import * as queueFactory from '../../harmony/app/util/queue/queue-factory';
 import { MemoryQueue } from '../../harmony/test/helpers/memory-queue';
-import * as wi from '../../harmony/app/models/work-item';
-import * as wiu from '../../harmony/app/backends/workflow-orchestration/work-item-updates';
-import { WorkItemQueueType } from '../../harmony/app/util/queue/queue';
-import WorkItemUpdate from '../../harmony/app/models/work-item-update';
-import DataOperation from '../../harmony/app/models/data-operation';
+import * as updater from '../app/workers/updater';
 
 describe('Updater Worker', async function () {
   const smallUpdateQueue = new MemoryQueue();
   const largeUpdateQueue = new MemoryQueue();
-  let getQueueForTypeStub: SinonStub;
-  let getJobIdForWorkItemStub: SinonStub;
-  let handleWorkItemUpdateWithJobIdStub: SinonStub;
-  let handleBatchWorkItemUpdatesSpy: SinonSpy;
+  let getQueueForTypeStub: sinon.SinonStub;
+  let getJobIdForWorkItemStub: sinon.SinonStub;
+  let handleWorkItemUpdateWithJobIdStub: sinon.SinonStub;
+  let handleBatchWorkItemUpdatesSpy: sinon.SinonSpy;
 
   before(function () {
     getQueueForTypeStub = sinon.stub(queueFactory, 'getQueueForType').callsFake(function (type: WorkItemQueueType) {
@@ -48,7 +48,7 @@ describe('Updater Worker', async function () {
     handleBatchWorkItemUpdatesSpy.resetHistory();
   });
 
-  describe('large job update', async function () {
+  describe('large update', async function () {
 
     beforeEach(async function () {
       await largeUpdateQueue.purge();
@@ -104,7 +104,7 @@ describe('Updater Worker', async function () {
     });
   });
 
-  describe('small job update', async function () {
+  describe('small update', async function () {
 
     beforeEach(async function () {
       await smallUpdateQueue.purge();

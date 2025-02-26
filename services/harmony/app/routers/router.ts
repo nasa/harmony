@@ -29,7 +29,7 @@ import { setLogLevel } from '../frontends/configuration';
 import getVersions from '../frontends/versions';
 import serviceInvoker from '../backends/service-invoker';
 import HarmonyRequest, { addRequestContextToOperation } from '../models/harmony-request';
-import { getServiceImageTag, getServiceImageTags, updateServiceImageTag, getServiceDeploymentsState, setServiceDeploymentsState, getServiceDeployment, getServiceDeployments } from '../frontends/service-image-tags';
+import { getServiceImageTag, getServiceImageTags, updateServiceImageTag, getServiceDeploymentsState, setServiceDeploymentsState, getServiceDeployment, getServiceDeployments, getDeploymentLogs } from '../frontends/service-image-tags';
 import cmrCollectionReader = require('../middleware/cmr-collection-reader');
 import cmrUmmCollectionReader = require('../middleware/cmr-umm-collection-reader');
 import env from '../util/env';
@@ -143,6 +143,7 @@ const authorizedRoutes = [
   '/configuration*',
   '/jobs*',
   '/logs*',
+  '/deployment-logs*',
   '/service-results/*',
   '/workflow-ui*',
   '/service-image*',
@@ -294,6 +295,7 @@ export default function router({ USE_EDL_CLIENT_APP = 'false' }: RouterConfig): 
   result.post('/admin/workflow-ui/jobs', jsonParser, asyncHandler(getJobsTable));
 
   result.get('/logs/:jobID/:id', asyncHandler(getWorkItemLogs));
+  result.get('/deployment-logs/:deploymentId', asyncHandler(getDeploymentLogs));
 
   result.get('/staging-bucket-policy', asyncHandler(getStagingBucketPolicy));
 

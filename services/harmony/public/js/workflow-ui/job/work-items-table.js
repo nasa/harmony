@@ -1,4 +1,4 @@
-import { formatDates, initCopyHandler } from '../table.js';
+import { formatDates, initCopyHandler, trimForDisplay } from '../table.js';
 import toasts from '../toasts.js';
 import PubSub from '../../pub-sub.js';
 
@@ -36,7 +36,7 @@ import PubSub from '../../pub-sub.js';
  */
 async function load(params, checkJobStatus) {
   let tableUrl = `./${params.jobID}/work-items?page=${params.currentPage}&limit=${params.limit}&checkJobStatus=${checkJobStatus}`;
-  tableUrl += `&tableFilter=${encodeURIComponent(params.tableFilter)}&disallowStatus=${params.disallowStatus}`;
+  tableUrl += `&tableFilter=${encodeURIComponent(params.tableFilter)}&disallowStatus=${params.disallowStatus}&disallowMessageCategory=${params.disallowMessageCategory}`;
   tableUrl += `&fromDateTime=${encodeURIComponent(params.fromDateTime)}&toDateTime=${encodeURIComponent(params.toDateTime)}`;
   tableUrl += `&tzOffsetMinutes=${params.tzOffsetMinutes}&dateKind=${params.dateKind}`;
   const res = await fetch(tableUrl);
@@ -97,13 +97,17 @@ function initFilter(tableFilter) {
     { value: 'status: running', dbValue: 'running', field: 'status' },
     { value: 'status: failed', dbValue: 'failed', field: 'status' },
     { value: 'status: queued', dbValue: 'queued', field: 'status' },
+    { value: 'status: warning', dbValue: 'warning', field: 'status' },
   ];
   const allowedValues = allowedList.map((t) => t.value);
+  allowedList.push({ value: 'message category: nodata', dbValue: 'nodata', field: 'message_category' });
   // eslint-disable-next-line no-new
   const tagInput = new Tagify(filterInput, {
     whitelist: allowedList,
+    delimiters: null,
     validate(tag) {
-      if (allowedValues.includes(tag.value)) {
+      if (allowedValues.includes(tag.value)
+        || /^message category: .{1,100}$/.test(tag.value)) {
         return true;
       }
       return false;
@@ -114,6 +118,21 @@ function initFilter(tableFilter) {
       maxItems: 15,
       enabled: 0,
       closeOnSelect: true,
+    },
+    templates: {
+      tag(tagData) {
+        return `<tag title="${tagData.dbValue}"
+            contenteditable='false'
+            spellcheck='false'
+            tabIndex="${this.settings.a11y.focusableTags ? 0 : -1}"
+            class="${this.settings.classNames.tag}"
+            ${this.getAttributes(tagData)}>
+          <x title='' class="${this.settings.classNames.tagX}" role='button' aria-label='remove tag'></x>
+          <div>
+              <span class="${this.settings.classNames.tagText}">${trimForDisplay(tagData.value.split(': ')[1], 20)}</span>
+          </div>
+        </tag>`;
+      },
     },
   });
   const initialTags = JSON.parse(tableFilter);

@@ -13,6 +13,7 @@ import { getRequestRoot } from '../util/url';
 import { v4 as uuid } from 'uuid';
 import ServiceDeployment, { setStatusMessage, getDeploymentById, getDeployments, ServiceDeploymentStatus } from '../models/service-deployment';
 import { keysToLowerCase } from '../util/object';
+import { objectStoreForProtocol } from '../util/object-store';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 export const asyncExec = util.promisify(require('child_process').exec);
@@ -435,6 +436,15 @@ export async function getServiceImageTag(
 }
 
 /**
+ *  Get the log location of service deployment errors
+ *
+ * @param deploymentId - The id of service deployment
+ */
+function getLogLocation(deploymentId: string ): string {
+  return `s3://${env.artifactBucket}/${deploymentId}/errors.json`;
+}
+
+/**
  *  Execute the deploy service script asynchronously
  *
  * @param req - The request object
@@ -465,6 +475,15 @@ export async function execDeployScript(
     const lines = stdout.split('\n');
     if (error) {
       req.context.logger.error(`Error executing script: ${error.message}`);
+
+      // save the service deployment errors to S3
+      const logLocation = getLogLocation(deploymentId);
+      const s3 = objectStoreForProtocol('s3');
+      await s3.upload(JSON.stringify(lines), logLocation);
+
+      const urlRoot = getRequestRoot(req);
+      const logUrl = `${urlRoot}/deployment-logs/${deploymentId}`;
+
       lines.forEach(line => {
         req.context.logger.info(`Failed script output: ${line}`);
       });
@@ -472,7 +491,7 @@ export async function execDeployScript(
         await setStatusMessage(tx,
           deploymentId,
           'failed',
-          `Failed service deployment for deploymentId: ${deploymentId}. Error: ${error.message}`);
+          `Failed service deployment for deploymentId: ${deploymentId}. See details at: ${logUrl}`);
       });
     } else {
       lines.forEach(line => {
@@ -665,6 +684,36 @@ export async function getServiceDeployments(
     });
   } catch (e) {
     req.context.logger.error(`Caught exception: ${e}`);
+    next(e);
+  }
+}
+
+/**
+ * Get the logs for a service deployment.
+ *
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
+ * @param next - The next function in the call chain
+ * @returns The logs string for the service deployment
+ */
+export async function getDeploymentLogs(
+  req: HarmonyRequest, res: Response, next: NextFunction,
+): Promise<void> {
+  const validations = [
+    validateUserIsInDeployerOrCoreGroup,
+  ];
+
+  for (const validation of validations) {
+    if (! await validation(req, res)) return;
+  }
+
+  const { deploymentId } = req.params;
+  try {
+    const logs =  await objectStoreForProtocol('s3')
+      .getObjectJson(getLogLocation(deploymentId));
+    res.json(logs);
+  } catch (e) {
+    req.context.logger.error(e);
     next(e);
   }
 }

@@ -63,6 +63,12 @@
                             negate statuses
                         </label>
                     </div>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" name="disallowMessageCategory" {{disallowMessageCategoryChecked}}>
+                        <label class="form-check-label" for="disallowMessageCategory">
+                            negate message categories
+                        </label>
+                    </div>
                     <div class="input-group mt-2">
                       <span class="input-group-text">page size</span>
                       <input name="limit" type="number" class="form-control" value="{{limit}}">
@@ -81,7 +87,7 @@
             <div class="row pt-1">
                 <div class="col-md-8">
                     <ul class="list-inline">
-                        <li class="list-inline-item">NASA Official: Stephen Berrick</li>
+                        <li class="list-inline-item">NASA Official: Doug Newman</li>
                         <li class="list-inline-item"><a href="http://www.nasa.gov/FOIA/index.html">FOIA</a></li>
                         <li class="list-inline-item"><a href="http://www.nasa.gov/about/highlights/HP_Privacy.html">NASA
                                 Privacy Policy</a></li>

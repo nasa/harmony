@@ -1,6 +1,6 @@
 {
-  "$schema": "../app/schemas/data-operation/0.20.0/data-operation-v0.20.0.json",
-  "version": "0.20.0",
+  "$schema": "../app/schemas/data-operation/0.21.0/data-operation-v0.21.0.json",
+  "version": "0.21.0",
   "callback": "http://localhost/some-path",
   "stagingLocation": "s3://example-bucket/public/some-org/some-service/some-uuid/",
   "user": "jdoe",
@@ -99,6 +99,7 @@
   "client": "harmony-sit",
   "concatenate": false,
   "average": "time",
+  "pixelSubset": false,
   "extraArgs": {
     "cut": false
   }

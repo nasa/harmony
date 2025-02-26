@@ -9,7 +9,7 @@ import env from '../util/env';
 import { Job, JobStatus } from './job';
 import Record from './record';
 import WorkflowStep from './workflow-steps';
-import { WorkItemRecord, WorkItemStatus, getStacLocation, WorkItemQuery, WorkItemSubStatus } from './work-item-interface';
+import { WorkItemRecord, WorkItemStatus, getStacLocation, WorkItemQuery } from './work-item-interface';
 import { eventEmitter } from '../events';
 import { getWorkSchedulerQueue } from '../../app/util/queue/queue-factory';
 
@@ -28,7 +28,7 @@ export enum WorkItemEvent {
 const serializedFields = [
   'id', 'jobID', 'createdAt', 'retryCount', 'updatedAt', 'scrollID', 'serviceID', 'status',
   'stacCatalogLocation', 'totalItemsSize', 'workflowStepIndex', 'duration', 'startedAt',
-  'sortIndex',
+  'sortIndex', 'message_category',
 ];
 
 /**
@@ -51,11 +51,11 @@ export default class WorkItem extends Record implements WorkItemRecord {
   // The status of the operation - see WorkItemStatus
   status?: WorkItemStatus;
 
-  // The sub-status of the operation - see WorkItemSubStatus
-  sub_status?: WorkItemSubStatus;
+  // Additional information about the message returned from the service
+  message_category?: string;
 
-  // error message if status === FAILED
-  errorMessage?: string;
+  // error or warning message if status === FAILED or status === WARNING
+  message?: string;
 
   // The location of the STAC catalog for the item(s) to process
   stacCatalogLocation?: string;
@@ -300,7 +300,7 @@ export async function getWorkItemStatus(
  * @param tx - the transaction to use for querying
  * @param id - the id of the WorkItem
  * @param status - the status to set for the WorkItem
- * @param sub_status - the sub-status to set for the WorkItem
+ * @param message_category - the message category to set for the WorkItem
  * @param duration - how long the work item took to process
  * @param totalItemsSize - the combined sizes of all the input granules for this work item
  * @param outputItemSizes - the separate size of each granule in the output for this work item
@@ -309,7 +309,7 @@ export async function updateWorkItemStatus(
   tx: Transaction,
   id: number,
   status: WorkItemStatus,
-  sub_status: WorkItemSubStatus,
+  message_category: string,
   duration: number,
   totalItemsSize: number,
   outputItemSizes: number[],
@@ -318,11 +318,11 @@ export async function updateWorkItemStatus(
   const outputItemSizesJson = JSON.stringify(outputItemSizes);
   try {
     await tx(WorkItem.table)
-      .update({ status, sub_status, duration, totalItemsSize, outputItemSizesJson: outputItemSizesJson, updatedAt: new Date() })
+      .update({ status, message_category, duration, totalItemsSize, outputItemSizesJson: outputItemSizesJson, updatedAt: new Date() })
       .where({ id });
-    logger.debug(`Status for work item ${id} set to ${status} | ${sub_status}`);
+    logger.debug(`Status for work item ${id} set to ${status} | ${message_category}`);
   } catch (e) {
-    logger.error(`Failed to update work item ${id} status to ${status} | ${sub_status}`);
+    logger.error(`Failed to update work item ${id} status to ${status} | ${message_category}`);
     logger.error(e);
     throw e;
   }
@@ -333,16 +333,16 @@ export async function updateWorkItemStatus(
  * @param tx - the transaction to use for querying
  * @param ids - the ids of the WorkItems
  * @param status - the status to set for the WorkItems
- * @param sub_status - the sub-status to set for the WorkItems
+ * @param message_category - the message category to set for the WorkItems
  */
 export async function updateWorkItemStatuses(
   tx: Transaction,
   ids: number[],
   status: WorkItemStatus,
-  sub_status?: WorkItemSubStatus,
+  message_category?: string,
 ): Promise<void> {
   const now = new Date();
-  let update = { status, sub_status, updatedAt: now };
+  let update = { status, message_category, updatedAt: now };
   // if we are setting the status to running, also set the startedAt time
   if (status === WorkItemStatus.RUNNING) {
     update = { ...update, ...{ startedAt: now } };
@@ -431,7 +431,7 @@ export async function queryAll(
           if (constraint.in) {
             void queryBuilder.whereIn(field, constraint.values);
           } else {
-            void queryBuilder.whereNotIn(field, constraint.values);
+            void queryBuilder.where(builder => builder.whereNotIn(field, constraint.values).orWhereNull(field));
           }
         }
       }

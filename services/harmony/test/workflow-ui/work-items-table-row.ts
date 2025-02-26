@@ -37,7 +37,7 @@ const step2 = buildWorkflowStep(
 // build the items
 // give them an id so we know what id to request in the tests
 const item1 = buildWorkItem(
-  { jobID: targetJob.jobID, workflowStepIndex: 1, serviceID: step1ServiceId, status: WorkItemStatus.RUNNING, id: 1 },
+  { jobID: targetJob.jobID, workflowStepIndex: 1, serviceID: step1ServiceId, status: WorkItemStatus.RUNNING, id: 1, message_category: 'smoothly' },
 );
 const item2 = buildWorkItem(
   { jobID: targetJob.jobID, workflowStepIndex: 1, serviceID: step1ServiceId, status: WorkItemStatus.SUCCESSFUL, id: 2 },
@@ -190,6 +190,10 @@ describe('Workflow UI work items table row route', function () {
           const listing = this.res.text;
           expect((listing.match(/retry-button/g) || []).length).to.equal(1);
         });
+        it('returns the message_category along with the main status', async function () {
+          const listing = this.res.text;
+          expect(listing).to.contain(`<span class="badge rounded-pill bg-info">${WorkItemStatus.RUNNING.valueOf()}: smoothly</span>`);
+        });
       });
 
       describe('who requests a queued work item for their job', function () {
@@ -288,7 +292,7 @@ describe('Workflow UI work items table row route', function () {
           expect(listing).to.not.contain(`<span class="badge rounded-pill bg-success">${WorkItemStatus.SUCCESSFUL.valueOf()}</span>`);
           expect(listing).to.not.contain(`<span class="badge rounded-pill bg-secondary">${WorkItemStatus.CANCELED.valueOf()}</span>`);
           expect(listing).to.not.contain(`<span class="badge rounded-pill bg-primary">${WorkItemStatus.READY.valueOf()}</span>`);
-          expect(listing).to.contain(`<span class="badge rounded-pill bg-info">${WorkItemStatus.RUNNING.valueOf()}</span>`);
+          expect(listing).to.contain(`<span class="badge rounded-pill bg-info">${WorkItemStatus.RUNNING.valueOf()}: smoothly</span>`);
         });
       });
     });

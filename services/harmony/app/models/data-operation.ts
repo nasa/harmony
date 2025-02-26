@@ -9,7 +9,7 @@ import { Encrypter, Decrypter } from '../util/crypto';
 import { cmrVarToHarmonyVar, HarmonyVariable } from '../util/variables';
 import { isValidUri } from '../util/url';
 
-export const CURRENT_SCHEMA_VERSION = '0.20.0';
+export const CURRENT_SCHEMA_VERSION = '0.21.0';
 
 /**
  * Synchronously reads and parses the JSON Schema at the given path
@@ -41,6 +41,15 @@ let _schemaVersions: SchemaVersion[];
 function schemaVersions(): SchemaVersion[] {
   if (_schemaVersions) return _schemaVersions;
   _schemaVersions = [
+    {
+      version: '0.21.0',
+      schema: readSchema('0.21.0'),
+      down: (model): unknown => {
+        const revertedModel = _.cloneDeep(model);
+        delete revertedModel.pixelSubset;
+        return revertedModel;
+      },
+    },
     {
       version: '0.20.0',
       schema: readSchema('0.20.0'),
@@ -480,6 +489,13 @@ export default class DataOperation {
    */
   set shouldConcatenate(value: boolean) {
     this.model.concatenate = value;
+  }
+
+  /**
+   * Gets whether or not the data should be extended
+   */
+  get shouldExtend(): boolean {
+    return !!(this.model.extendDimensions?.length > 0);
   }
 
   /**
@@ -963,6 +979,24 @@ export default class DataOperation {
     if (this.model.extraArgs) {
       delete this.model.extraArgs;
     }
+  }
+
+  /**
+   * Gets whether the service should perform pixel subset or not.
+   *
+   * @returns pixelSubset
+   */
+  get pixelSubset(): boolean {
+    return this.model.pixelSubset;
+  }
+
+  /**
+   * Sets whether the service should perform pixel subset or not.
+   *
+   * @param value - The pixelSubset flag
+   */
+  set pixelSubset(value: boolean) {
+    this.model.pixelSubset = value;
   }
 
   /**

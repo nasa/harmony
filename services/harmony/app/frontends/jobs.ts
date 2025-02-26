@@ -1,20 +1,26 @@
-import { Response, NextFunction } from 'express';
+import { NextFunction, Response } from 'express';
+import _ from 'lodash';
 import { Logger } from 'winston';
-import { Job, JobStatus, JobQuery, JobForDisplay, getRelatedLinks } from '../models/job';
-import { keysToLowerCase } from '../util/object';
-import { cancelAndSaveJob, pauseAndSaveJob, resumeAndSaveJob, skipPreviewAndSaveJob, validateJobId } from '../util/job';
+
+import HarmonyRequest from '../models/harmony-request';
+import { getRelatedLinks, Job, JobForDisplay, JobQuery, JobStatus } from '../models/job';
 import JobLink from '../models/job-link';
+import JobMessage, { getMessagesForJob, JobMessageLevel } from '../models/job-message';
+import db from '../util/db';
+import { isAdminUser } from '../util/edl-api';
+import env from '../util/env';
+import { NotFoundError, RequestValidationError, ServerError } from '../util/errors';
+import {
+  cancelAndSaveJob, pauseAndSaveJob, resumeAndSaveJob, skipPreviewAndSaveJob, validateJobId,
+} from '../util/job';
+import {
+  getCloudAccessJsonLink, getCloudAccessShLink, getJobStateChangeLinks, getStacCatalogLink,
+  getStatusLink, Link,
+} from '../util/links';
+import { keysToLowerCase } from '../util/object';
+import { getPagingLinks, getPagingParams, setPagingHeaders } from '../util/pagination';
 import { needsStacLink } from '../util/stac';
 import { getRequestRoot } from '../util/url';
-import { getCloudAccessJsonLink, getCloudAccessShLink, getJobStateChangeLinks, getStacCatalogLink, getStatusLink, Link } from '../util/links';
-import { RequestValidationError, NotFoundError, ServerError } from '../util/errors';
-import { getPagingParams, getPagingLinks, setPagingHeaders } from '../util/pagination';
-import HarmonyRequest from '../models/harmony-request';
-import db from '../util/db';
-import env from '../util/env';
-import JobError, { getErrorsForJob } from '../models/job-error';
-import _ from 'lodash';
-import { isAdminUser } from '../util/edl-api';
 
 /**
  * Returns true if the job contains S3 direct access links
@@ -88,10 +94,10 @@ function getMessageForDisplay(job: JobForDisplay, urlRoot: string): string {
  * @param job - the serialized job
  * @param urlRoot - the root URL to be used when constructing links
  * @param linkType - the type to use for data links (http|https|s3|none)
- * @param errors - a list of errors for the job
+ * @param messages - a list of messages for the job
  * @returns the job for display
  */
-function getJobForDisplay(job: Job, urlRoot: string, linkType?: string, errors?: JobError[]): JobForDisplay {
+function getJobForDisplay(job: Job, urlRoot: string, linkType?: string, messages?: JobMessage[]): JobForDisplay {
   const serializedJob = job.serialize(urlRoot, linkType);
   const statusLinkRel = linkType === 'none' ? 'item' : 'self';
   serializedJob.links = getLinksForDisplay(serializedJob, urlRoot, statusLinkRel, job.destination_url);
@@ -99,8 +105,22 @@ function getJobForDisplay(job: Job, urlRoot: string, linkType?: string, errors?:
     serializedJob.message = getMessageForDisplay(serializedJob, urlRoot);
   }
 
+  const errors = [];
+  const warnings = [];
+  for (const message of messages) {
+    if (message.level === JobMessageLevel.ERROR) {
+      errors.push(message);
+    } else {
+      warnings.push(message);
+    }
+  }
+
   if (errors.length > 0) {
-    serializedJob.errors =  errors.map((e) => _.pick(e, ['url', 'message'])) as JobError[];
+    serializedJob.errors =  errors.map((e) => _.pick(e, ['url', 'message'])) as JobMessage[];
+  }
+
+  if (warnings.length > 0) {
+    serializedJob.warnings = warnings.map((e) => _.pick(e, ['url', 'message'])) as JobMessage[];
   }
 
   return serializedJob;
@@ -171,11 +191,11 @@ export async function getJobStatus(
     const { page, limit } = getPagingParams(req, env.defaultResultPageSize);
     let job: Job;
     let pagination;
-    let errors: JobError[];
+    let messages: JobMessage[];
 
     await db.transaction(async (tx) => {
       ({ job, pagination } = await Job.byJobID(tx, jobID, true, true, false, page, limit));
-      errors = await getErrorsForJob(tx, jobID);
+      messages = await getMessagesForJob(tx, jobID);
     });
     if (!job) {
       throw new NotFoundError(`Unable to find job ${jobID}`);
@@ -189,7 +209,7 @@ export async function getJobStatus(
     const urlRoot = getRequestRoot(req);
     const pagingLinks = getPagingLinks(req, pagination).map((link) => new JobLink(link));
     job.links = job.links.concat(pagingLinks);
-    const jobForDisplay = getJobForDisplay(job, urlRoot, linkType, errors);
+    const jobForDisplay = getJobForDisplay(job, urlRoot, linkType, messages);
     res.send(jobForDisplay);
   } catch (e) {
     req.context.logger.error(e);

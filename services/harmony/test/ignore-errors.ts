@@ -1,18 +1,19 @@
 import { expect } from 'chai';
 import { stub } from 'sinon';
-import WorkItem, { getWorkItemById, getWorkItemsByJobId } from '../app/models/work-item';
-import db from '../app/util/db';
+
 import { Job, JobStatus } from '../app/models/job';
+import WorkItem, { getWorkItemById, getWorkItemsByJobId } from '../app/models/work-item';
+import { getStacLocation, WorkItemStatus } from '../app/models/work-item-interface';
+import * as aggregationBatch from '../app/util/aggregation-batch';
+import db from '../app/util/db';
+import env from '../app/util/env';
+import { truncateAll } from './helpers/db';
 import { hookRedirect } from './helpers/hooks';
+import { jobStatus } from './helpers/jobs';
 import { hookRangesetRequest } from './helpers/ogc-api-coverages';
+import { resetQueues } from './helpers/queue';
 import hookServersStartStop from './helpers/servers';
 import { fakeServiceStacOutput, getWorkForService, updateWorkItem } from './helpers/work-items';
-import { getStacLocation, WorkItemStatus } from '../app/models/work-item-interface';
-import { truncateAll } from './helpers/db';
-import env from '../app/util/env';
-import { jobStatus } from './helpers/jobs';
-import * as aggregationBatch from '../app/util/aggregation-batch';
-import { resetQueues } from './helpers/queue';
 
 const reprojectAndZarrQuery = {
   maxResults: 1,
@@ -147,7 +148,7 @@ describe('ignoreErrors', function () {
             const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
             firstSwathItem = JSON.parse(res.text).workItem;
             firstSwathItem.status = WorkItemStatus.FAILED;
-            firstSwathItem.errorMessage = 'Specific failure reason';
+            firstSwathItem.message = 'Specific failure reason';
             firstSwathItem.results = [];
 
             await updateWorkItem(this.backend, firstSwathItem);
@@ -159,8 +160,7 @@ describe('ignoreErrors', function () {
         });
 
         it('fails the job', async function () {
-          // await sleep(100000);
-          // work item failure with only one granue should trigger job failure
+          // work item failure with only one granule should trigger job failure
           const { job } = await Job.byJobID(db, firstSwathItem.jobID);
           expect(job.status).to.equal(JobStatus.FAILED);
           expect(job.message).to.equal('WorkItem failed: Specific failure reason');
@@ -183,6 +183,70 @@ describe('ignoreErrors', function () {
           await updateWorkItem(this.backend, firstSwathItem);
           const swathItem = await getWorkItemById(db, firstSwathItem.id);
           expect(swathItem.status).to.equal(WorkItemStatus.FAILED);
+        });
+      });
+    });
+
+    describe('when making a request for a single granule and one of its work items warns', function () {
+      hookRangesetRequest('1.0.0', collection, 'all', { query: { ...reprojectAndZarrQuery, ...{ maxResults: 1, ignoreErrors: true } } });
+      hookRedirect('joe');
+
+      before(async function () {
+        const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
+        const { workItem, maxCmrGranules } = JSON.parse(res.text);
+        expect(maxCmrGranules).to.equal(1);
+        workItem.status = WorkItemStatus.SUCCESSFUL;
+        workItem.results = [
+          getStacLocation(workItem, 'catalog.json'),
+        ];
+        workItem.outputItemSizes = [1];
+        await fakeServiceStacOutput(workItem.jobID, workItem.id, 1);
+        await updateWorkItem(this.backend, workItem);
+        const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
+        expect(currentWorkItems.length).to.equal(2);
+        expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
+      });
+
+      describe('when the first Swath Projector work item warns', function () {
+        this.timeout(120000);
+        let firstSwathItem;
+
+        before(async function () {
+          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
+          firstSwathItem = JSON.parse(res.text).workItem;
+          firstSwathItem.status = WorkItemStatus.WARNING;
+          firstSwathItem.message = 'Specific warning reason';
+          firstSwathItem.results = [];
+
+          await updateWorkItem(this.backend, firstSwathItem);
+        });
+
+        // TODO HARMONY-1995 - set up appropriate warning handling. For now we treat warnings as
+        // TODO errors, but we eventually want to do the right thing based on the warning
+        it('fails the job', async function () {
+          // work item warning with only one granule should trigger job failure
+          const { job } = await Job.byJobID(db, firstSwathItem.jobID);
+          expect(job.status).to.equal(JobStatus.FAILED);
+          expect(job.message).to.equal('WorkItem warned: Specific warning reason');
+        });
+
+        it('correctly sets the work items status', async function () {
+          const currentWorkItems = (await getWorkItemsByJobId(db, firstSwathItem.jobID)).workItems;
+          expect(currentWorkItems.length).to.equal(2);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.WARNING && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
+        });
+
+        it('does not find any further Swath Projector work', async function () {
+          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
+          expect(res.status).to.equal(404);
+        });
+
+        it('does not allow any further work item updates', async function () {
+          firstSwathItem.status = WorkItemStatus.SUCCESSFUL;
+          await updateWorkItem(this.backend, firstSwathItem);
+          const swathItem = await getWorkItemById(db, firstSwathItem.id);
+          expect(swathItem.status).to.equal(WorkItemStatus.WARNING);
         });
       });
     });
@@ -270,7 +334,7 @@ describe('ignoreErrors', function () {
           // all work items failing should trigger job failure
           const { job } = await Job.byJobID(db, secondSwathItem.jobID);
           expect(job.status).to.equal(JobStatus.FAILED);
-          expect(job.message).to.equal('The job failed with 2 errors. See the errors field for more details');
+          expect(job.message).to.equal('The job failed with 2 errors and 0 warnings. See the errors and warnings fields for more details');
           const currentWorkItems = (await getWorkItemsByJobId(db, job.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(4);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
@@ -488,7 +552,7 @@ describe('ignoreErrors', function () {
             thirdSwathItem = JSON.parse(res.text).workItem;
             thirdSwathItem.status = WorkItemStatus.FAILED;
             thirdSwathItem.results = [];
-            thirdSwathItem.errorMessage = 'Did not reach 88 MPH.';
+            thirdSwathItem.message = 'Did not reach 88 MPH.';
 
             await updateWorkItem(this.backend, thirdSwathItem);
 
@@ -540,7 +604,7 @@ describe('ignoreErrors', function () {
           workItem = JSON.parse(res.text).workItem as WorkItem;
           workItem.status = WorkItemStatus.FAILED;
           workItem.results = [];
-          workItem.errorMessage = 'Bad scroll session';
+          workItem.message = 'Bad scroll session';
           await updateWorkItem(this.backend, workItem);
           // check to see if the work-item has failed completely
           workItem = await getWorkItemById(db, workItem.id);
@@ -1183,7 +1247,7 @@ describe('ignoreErrors', function () {
                 const lastConciseItem = JSON.parse(res.text).workItem;
                 lastConciseItem.status = WorkItemStatus.FAILED;
                 lastConciseItem.results = [];
-                lastConciseItem.errorMessage = 'batch failed';
+                lastConciseItem.message = 'batch failed';
 
                 await updateWorkItem(this.backend, lastConciseItem);
 
@@ -1306,7 +1370,7 @@ describe('ignoreErrors', function () {
               thirdL2SSItem = JSON.parse(res.text).workItem;
               thirdL2SSItem.status = WorkItemStatus.FAILED;
               thirdL2SSItem.results = [];
-              thirdL2SSItem.errorMessage = 'Did not reach 88 MPH.';
+              thirdL2SSItem.message = 'Did not reach 88 MPH.';
 
               await updateWorkItem(this.backend, thirdL2SSItem);
 
@@ -1357,7 +1421,7 @@ describe('ignoreErrors', function () {
             workItem = JSON.parse(res.text).workItem as WorkItem;
             workItem.status = WorkItemStatus.FAILED;
             workItem.results = [];
-            workItem.errorMessage = 'Bad scroll session';
+            workItem.message = 'Bad scroll session';
             await updateWorkItem(this.backend, workItem);
             // check to see if the work-item has failed completely
             workItem = await getWorkItemById(db, workItem.id);

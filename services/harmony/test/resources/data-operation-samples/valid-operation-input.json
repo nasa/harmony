@@ -106,8 +106,9 @@
   },
   "concatenate": false,
   "average": "time",
+  "pixelSubset": false,
   "extraArgs": {
     "cut": false
   },
-  "version": "0.20.0"
+  "version": "0.21.0"
 }

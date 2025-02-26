@@ -1,15 +1,17 @@
-import { Worker } from '../../../harmony/app/workers/worker';
+import { AxiosError } from 'axios';
+import { accessSync, constants, existsSync, promises as fs, rmSync } from 'fs';
+import path from 'path';
+import { exit } from 'process';
+
 import { sanitizeImage } from '@harmony/util/string';
-import env from '../util/env';
+
 import { WorkItemRecord, WorkItemStatus } from '../../../harmony/app/models/work-item-interface';
 import logger from '../../../harmony/app/util/log';
-import { runServiceFromPull, runQueryCmrFromPull } from '../service/service-runner';
 import sleep from '../../../harmony/app/util/sleep';
+import { Worker } from '../../../harmony/app/workers/worker';
+import { runQueryCmrFromPull, runServiceFromPull } from '../service/service-runner';
 import createAxiosClientWithRetry, { isRetryable } from '../util/axios-clients';
-import path from 'path';
-import { existsSync, rmSync, accessSync, constants, promises as fs } from 'fs';
-import { exit } from 'process';
-import { AxiosError } from 'axios';
+import env from '../util/env';
 
 /**
  * Retries axios connection errors using default retry logic unless the pod is being terminated
@@ -160,9 +162,17 @@ async function _doWork(
     newWorkItem.totalItemsSize = serviceResponse.totalItemsSize;
     newWorkItem.outputItemSizes = serviceResponse.outputItemSizes;
   } else {
-    workItemLogger.error(`Service failed with error: ${serviceResponse.error}`);
-    newWorkItem.status = WorkItemStatus.FAILED;
-    newWorkItem.errorMessage = `${serviceResponse.error}`;
+    if (serviceResponse.errorLevel?.toLowerCase() === WorkItemStatus.WARNING.toString()) {
+      workItemLogger.warn(`Service succeeded with warning: ${serviceResponse.error}`);
+      newWorkItem.status = WorkItemStatus.WARNING;
+      newWorkItem.message = serviceResponse.error;
+      newWorkItem.message_category = serviceResponse.errorCategory;
+    } else {
+      workItemLogger.error(`Service failed with error: ${serviceResponse.error}`);
+      newWorkItem.status = WorkItemStatus.FAILED;
+      newWorkItem.message = serviceResponse.error;
+      newWorkItem.message_category = serviceResponse.errorCategory;
+    }
   }
 
   return newWorkItem;

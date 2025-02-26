@@ -1,32 +1,46 @@
-import env from '../../util/env';
-import { logAsyncExecutionTime } from '../../util/log-execution';
-import { v4 as uuid } from 'uuid';
-import WorkItemUpdate from '../../models/work-item-update';
-import WorkflowStep, { getWorkflowStepByJobIdStepIndex, updateIsComplete } from '../../models/workflow-steps';
-import { Logger } from 'winston';
 import _, { ceil, range, sum } from 'lodash';
-import { JobStatus, Job } from '../../models/job';
-import JobError, { getErrorCountForJob, getErrorsForJob } from '../../models/job-error';
+import { v4 as uuid } from 'uuid';
+import { Logger } from 'winston';
+
+import {
+  calculateQueryCmrLimit, QUERY_CMR_SERVICE_REGEX,
+} from '../../backends/workflow-orchestration/util';
+import { makeWorkScheduleRequest } from '../../backends/workflow-orchestration/work-item-polling';
+import { Job, JobStatus } from '../../models/job';
 import JobLink, { getJobDataLinkCount } from '../../models/job-link';
-import { incrementReadyCount, deleteUserWorkForJob, incrementReadyAndDecrementRunningCounts, decrementRunningCount } from '../../models/user-work';
-import WorkItem, { maxSortIndexForJobService, workItemCountForStep, getWorkItemsByJobIdAndStepIndex, getWorkItemById, updateWorkItemStatus, getJobIdForWorkItem } from '../../models/work-item';
-import { WorkItemStatus, COMPLETED_WORK_ITEM_STATUSES } from '../../models/work-item-interface';
-import { outputStacItemUrls, handleBatching, resultItemSizes } from '../../util/aggregation-batch';
-import db, { Transaction, batchSize } from '../../util/db';
+import JobMessage, {
+  getMessageCountForJob, getMessagesForJob, JobMessageLevel,
+} from '../../models/job-message';
+import {
+  decrementRunningCount, deleteUserWorkForJob, incrementReadyAndDecrementRunningCounts,
+  incrementReadyCount,
+} from '../../models/user-work';
+import WorkItem, {
+  getJobIdForWorkItem, getWorkItemById, getWorkItemsByJobIdAndStepIndex, maxSortIndexForJobService,
+  updateWorkItemStatus, workItemCountForStep,
+} from '../../models/work-item';
+import { COMPLETED_WORK_ITEM_STATUSES, WorkItemStatus } from '../../models/work-item-interface';
+import WorkItemUpdate from '../../models/work-item-update';
+import WorkflowStep, {
+  getWorkflowStepByJobIdStepIndex, updateIsComplete,
+} from '../../models/workflow-steps';
+import { handleBatching, outputStacItemUrls, resultItemSizes } from '../../util/aggregation-batch';
+import db, { batchSize, Transaction } from '../../util/db';
+import env from '../../util/env';
 import { ServiceError } from '../../util/errors';
 import { completeJob } from '../../util/job';
+import { logAsyncExecutionTime } from '../../util/log-execution';
 import { objectStoreForProtocol } from '../../util/object-store';
-import { StacItem, readCatalogItems, StacItemLink, StacCatalog, readCatalogsItems } from '../../util/stac';
+import {
+  readCatalogItems, readCatalogsItems, StacCatalog, StacItem, StacItemLink,
+} from '../../util/stac';
 import { resolve } from '../../util/url';
-import { QUERY_CMR_SERVICE_REGEX, calculateQueryCmrLimit } from '../../backends/workflow-orchestration/util';
-import { makeWorkScheduleRequest } from '../../backends/workflow-orchestration/work-item-polling';
 
 /**
  * A structure holding the preprocess info of a work item
  */
 export type WorkItemPreprocessInfo = {
   status?: WorkItemStatus;
-  errorMessage?: string;
   catalogItems: StacItem[];
   outputItemSizes: number[];
 };
@@ -85,9 +99,10 @@ async function addJobLinksForFinishedWorkItem(
 async function getFinalStatusAndMessageForJob(tx: Transaction, job: Job):
 Promise<{ finalStatus: JobStatus, finalMessage: string; }> {
   let finalStatus = JobStatus.SUCCESSFUL;
-  const errorCount = await getErrorCountForJob(tx, job.jobID);
+  const errorCount = await getMessageCountForJob(tx, job.jobID, JobMessageLevel.ERROR);
+  const warningCount = await getMessageCountForJob(tx, job.jobID, JobMessageLevel.WARNING);
   const dataLinkCount = await getJobDataLinkCount(tx, job.jobID);
-  if (errorCount > 0) {
+  if (errorCount + warningCount > 0) {
     if (dataLinkCount > 0) {
       finalStatus = JobStatus.COMPLETE_WITH_ERRORS;
     } else {
@@ -95,32 +110,42 @@ Promise<{ finalStatus: JobStatus, finalMessage: string; }> {
     }
   }
   let finalMessage = '';
-  if ((errorCount > 1) && (finalStatus == JobStatus.FAILED)) {
-    finalMessage = `The job failed with ${errorCount} errors. See the errors field for more details`;
-  } else if ((errorCount == 1) && (finalStatus == JobStatus.FAILED)) {
-    const jobError = (await getErrorsForJob(tx, job.jobID, 1))[0];
+  // TODO stop treating warnings as errors in HARMONY-1995
+  if ((errorCount + warningCount > 1) && (finalStatus == JobStatus.FAILED)) {
+    finalMessage = `The job failed with ${errorCount} errors and ${warningCount} warnings. See the errors and warnings fields for more details`;
+  } else if ((errorCount == 1 || warningCount == 1) && (finalStatus == JobStatus.FAILED)) {
+    const jobError = (await getMessagesForJob(tx, job.jobID, 1))[0];
     finalMessage = jobError.message;
   }
   return { finalStatus, finalMessage };
 }
 
 /**
- * If a work item has an error adds the error to the job_errors database table.
+ * If a work item has a message adds the message to the job_messages database table.
  *
  * @param tx - The database transaction
  * @param job - The job record
  * @param url - The URL to include in the error
- * @param message - An error message to include in the error
+ * @param message - An message to include in the job message ss
+ * @param level - The optional message level (default 'error')
+ * @param message_category - The optional category of the message
  */
-async function addErrorForWorkItem(
-  tx: Transaction, job: Job, url: string, message: string,
+async function addJobMessageForWorkItem(
+  tx: Transaction,
+  job: Job,
+  url: string,
+  message: string,
+  level: JobMessageLevel = JobMessageLevel.ERROR,
+  message_category?: string,
 ): Promise<void> {
-  const error = new JobError({
+  const jobMessage = new JobMessage({
     jobID: job.jobID,
     url,
     message,
+    level,
+    message_category,
   });
-  await error.save(tx);
+  await jobMessage.save(tx);
 }
 
 
@@ -150,7 +175,7 @@ async function getWorkItemUrl(workItem, logger): Promise<string> {
 
 /**
  * Checks if the work item failed and if so handles the logic of determining whether to
- * fail the job or continue to processing. If there's an error it adds it to the job_errors
+ * fail the job or continue to processing. If there's an error it adds it to the job_messages
  * table.
  *
  * @param tx - The database transaction
@@ -169,13 +194,18 @@ async function handleFailedWorkItems(
 ): Promise<boolean> {
   let continueProcessing = true;
   // If the response is an error then maybe set the job status to 'failed'
-  if (status === WorkItemStatus.FAILED) {
+  // TODO fix this in HARMONY-1995
+  if (status === WorkItemStatus.FAILED || status == WorkItemStatus.WARNING) {
     continueProcessing = job.ignoreErrors;
     if (!job.hasTerminalStatus()) {
       let jobMessage;
 
       if (errorMessage) {
-        jobMessage = `WorkItem failed: ${errorMessage}`;
+        let failedOrWarned = 'failed';
+        if (status === WorkItemStatus.WARNING) {
+          failedOrWarned = 'warned';
+        }
+        jobMessage = `WorkItem ${failedOrWarned}: ${errorMessage}`;
       }
 
       if (QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)) {
@@ -189,13 +219,25 @@ async function handleFailedWorkItems(
         if (!jobMessage) {
           jobMessage = 'WorkItem failed with an unknown error';
         }
-        await addErrorForWorkItem(tx, job, url, jobMessage);
+
+        let level: JobMessageLevel;
+        switch (status) {
+          case WorkItemStatus.FAILED:
+            level = JobMessageLevel.ERROR;
+            break;
+          case WorkItemStatus.WARNING:
+            level = JobMessageLevel.WARNING;
+            break;
+        }
+        await addJobMessageForWorkItem(tx, job, url, jobMessage, level, workItem.message_category);
       }
 
       if (continueProcessing) {
-        const errorCount = await getErrorCountForJob(tx, job.jobID);
-        if (errorCount > env.maxErrorsForJob) {
-          jobMessage = `Maximum allowed errors ${env.maxErrorsForJob} exceeded. See the errors field for more details`;
+        const errorCount = await getMessageCountForJob(tx, job.jobID);
+        // TODO handle this properly in HARMONY-1995 - for now just treat warnings like errors
+        const warningCount = await getMessageCountForJob(tx, job.jobID, JobMessageLevel.WARNING);
+        if (errorCount + warningCount > env.maxErrorsForJob) {
+          jobMessage = `Maximum allowed errors and warnings ${env.maxErrorsForJob} exceeded. See the errors and warnings fields for more details`;
           logger.warn(jobMessage);
           continueProcessing = false;
         }
@@ -543,7 +585,7 @@ export async function preprocessWorkItem(
 ): Promise<WorkItemPreprocessInfo> {
   const startTime = new Date().getTime();
   const { results } = update;
-  let { errorMessage, status } = update;
+  let { message, status } = update;
 
   // Get the sizes of all the data items/granules returned for the WorkItem and STAC item links
   // when batching. This needs to be done outside the main db transaction since it involves reading
@@ -552,8 +594,7 @@ export async function preprocessWorkItem(
   let outputItemSizes;
   let catalogItems;
   try {
-    // TODO fix this in HARMONY-1995
-    if ([WorkItemStatus.SUCCESSFUL, WorkItemStatus.WARNING].includes(status) && !nextWorkflowStep) {
+    if (status == WorkItemStatus.SUCCESSFUL && !nextWorkflowStep) {
       // if we are CREATING STAC CATALOGS for the last step in the chain we should read the catalog items
       // since they are needed for generating the output links we will save
       catalogItems = await readCatalogsItems(results);
@@ -566,18 +607,17 @@ export async function preprocessWorkItem(
     logger.info('timing.HWIUWJI.getResultItemSize.end', { durationMs });
   } catch (e) {
     if (catalogItems) {
-      errorMessage = 'Cannot get result item file size from output STAC';
+      message = 'Cannot get result item file size from output STAC';
     } else {
-      errorMessage = 'Cannot parse STAC catalog output from service';
+      message = 'Cannot parse STAC catalog output from service';
     }
 
-    logger.error(errorMessage);
+    logger.error(message);
     logger.error(`Caught exception: ${e.message}`, { name: e.name, stack: e.stack });
     status = WorkItemStatus.FAILED;
   }
   const result: WorkItemPreprocessInfo = {
     status,
-    errorMessage,
     catalogItems,
     outputItemSizes,
   };
@@ -608,15 +648,14 @@ export async function processWorkItem(
   thisStep: WorkflowStep,
 ): Promise<void> {
   const { jobID } = job;
-  const { status, errorMessage, catalogItems, outputItemSizes } = preprocessResult;
-  const { workItemID, hits, results, scrollID, sub_status } = update;
+  const { status, catalogItems, outputItemSizes } = preprocessResult;
+  const { workItemID, hits, results, scrollID, message, message_category  } = update;
   const startTime = new Date().getTime();
   let durationMs;
   let jobSaveStartTime;
   let didCreateWorkItem = false;
-  if (status === WorkItemStatus.SUCCESSFUL || status === WorkItemStatus.WARNING) {
-    logger.info(`Updating work item ${workItemID} to ${status} | ${sub_status}`);
-  }
+
+  logger.info(`Received update for work item ${workItemID} to ${status}`);
 
   try {
     // lock the work item so we can update it - need to do this after locking jobs table above
@@ -666,7 +705,7 @@ export async function processWorkItem(
         return;
       } else {
         logger.warn(`Retry limit of ${env.workItemRetryLimit} exceeded`);
-        logger.warn(`Updating work item for ${workItemID} to ${status} with message ${errorMessage}`);
+        logger.warn(`Updating work item for ${workItemID} to ${status} with message ${message}`);
       }
     }
 
@@ -701,7 +740,7 @@ export async function processWorkItem(
       tx,
       workItemID,
       status,
-      sub_status,
+      message_category,
       duration,
       totalItemsSize,
       outputItemSizes);
@@ -713,7 +752,7 @@ export async function processWorkItem(
     logger.info(`Updated work item. Duration (ms) was: ${duration}`);
 
     workItem.status = status;
-    workItem.sub_status = sub_status;
+    workItem.message_category = message_category;
 
     let allWorkItemsForStepComplete = false;
 
@@ -744,14 +783,15 @@ export async function processWorkItem(
     const continueProcessing = await (await logAsyncExecutionTime(
       handleFailedWorkItems,
       'HWIUWJI.handleFailedWorkItems',
-      logger))(tx, job, workItem, thisStep, status, logger, errorMessage);
+      logger))(tx, job, workItem, thisStep, status, logger, message);
     if (continueProcessing) {
       const nextWorkflowStep = await (await logAsyncExecutionTime(
         getWorkflowStepByJobIdStepIndex,
         'HWIUWJI.getWorkflowStepByJobIdStepIndex',
         logger))(tx, workItem.jobID, workItem.workflowStepIndex + 1);
 
-      if (nextWorkflowStep && (status !== WorkItemStatus.FAILED || nextWorkflowStep?.hasAggregatedOutput)) {
+      if (nextWorkflowStep && (![WorkItemStatus.FAILED, WorkItemStatus.WARNING].includes(status)
+        || nextWorkflowStep?.hasAggregatedOutput)) {
         didCreateWorkItem = await (await logAsyncExecutionTime(
           createNextWorkItems,
           'HWIUWJI.createNextWorkItems',
@@ -785,17 +825,17 @@ export async function processWorkItem(
           // Failed to create the next work items when there should be work items.
           // Fail the job rather than leaving it orphaned in the running state
           logger.error('The work item update should have contained results to queue a next work item, but it did not.');
-          const message = 'Harmony internal failure: service did not return any outputs.';
+          const errMessage = 'Harmony internal failure: service did not return any outputs.';
           await (await logAsyncExecutionTime(
             completeJob,
             'HWIUWJI.completeJob',
-            logger))(tx, job, JobStatus.FAILED, logger, message);
+            logger))(tx, job, JobStatus.FAILED, logger, errMessage);
         }
       }
 
       if (!nextWorkflowStep) {
         // Finished with the chain for this granule
-        if (status != WorkItemStatus.FAILED) {
+        if (status == WorkItemStatus.SUCCESSFUL) {
           await (await logAsyncExecutionTime(
             addJobLinksForFinishedWorkItem,
             'HWIUWJI.addJobLinksForFinishedWorkItem',
@@ -868,18 +908,22 @@ export async function processWorkItems(
         'HWIUWJI.Job.byJobID',
         logger))(tx, jobID, false, false, true);
 
-      const thisStep: WorkflowStep = await (await logAsyncExecutionTime(
-        getWorkflowStepByJobIdStepIndex,
-        'HWIUWJI.getWorkflowStepByJobIdStepIndex',
-        logger))(tx, jobID, workflowStepIndex);
+      if (job.hasTerminalStatus()) {
+        logger.warn(`Ignoring work item updates for job ${jobID} in terminal state ${job.status}.`);
+      } else {
+        const thisStep: WorkflowStep = await (await logAsyncExecutionTime(
+          getWorkflowStepByJobIdStepIndex,
+          'HWIUWJI.getWorkflowStepByJobIdStepIndex',
+          logger))(tx, jobID, workflowStepIndex);
 
-      const lastIndex = items.length - 1;
-      for (let index = 0; index < items.length; index++) {
-        const { preprocessResult, update } = items[index];
-        if (index < lastIndex) {
-          await processWorkItem(tx, preprocessResult, job, update, logger, false, thisStep);
-        } else {
-          await processWorkItem(tx, preprocessResult, job, update, logger, true, thisStep);
+        const lastIndex = items.length - 1;
+        for (let index = 0; index < items.length; index++) {
+          const { preprocessResult, update } = items[index];
+          if (index < lastIndex) {
+            await processWorkItem(tx, preprocessResult, job, update, logger, false, thisStep);
+          } else {
+            await processWorkItem(tx, preprocessResult, job, update, logger, true, thisStep);
+          }
         }
       }
     });

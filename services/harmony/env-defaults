@@ -135,6 +135,14 @@ MAX_DATA_OPERATION_CACHE_SIZE=512000000
 # WKT POINT/LINESTRING to POLYGON conversion side length, 0.0001 is about 11 meters in precision
 WKT_PRECISION=0.0001
 
+# Maximum number of sides for a polygon created from a geojson Point with radius
+MAX_POINT_CIRCLE_SIDES=100
+
+# The base of the exponential function used to calculate the number of sides a polygon should
+# have to approximate the circle around a point with a given radius
+# Must be greater than zero and less than one
+POINT_CIRCLE_FUNCTION_BASE=0.99999
+
 # Comma-separated list of label values that are explicitly allowed
 LABELS_ALLOW_LIST=
 # Comma-separated list of label values that are explicitly forbidden, with the first one just
@@ -356,9 +364,6 @@ LARGE_WORK_UPDATER_POD_REPLICAS=1
 # The number of update queue processors to run for the small work-item queue
 SMALL_WORK_UPDATER_POD_REPLICAS=1
 
-# The number of work reaper pods to run
-WORK_REAPER_POD_REPLICAS=1
-
 # The number of work failer pods to run
 WORK_FAILER_POD_REPLICAS=1
 
@@ -386,12 +391,12 @@ WORK_ITEM_UPDATER_LIMITS_CPU=1024m
 WORK_ITEM_UPDATER_LIMITS_MEMORY=512Mi
 WORK_ITEM_UPDATER_IMAGE=harmonyservices/work-updater:stable
 
-# work reaper
-WORK_REAPER_REQUESTS_CPU=128m
-WORK_REAPER_REQUESTS_MEMORY=128Mi
-WORK_REAPER_LIMITS_CPU=512m
-WORK_REAPER_LIMITS_MEMORY=512Mi
-WORK_REAPER_IMAGE=harmonyservices/work-reaper:stable
+# cron service
+CRON_SERVICE_REQUESTS_CPU=128m
+CRON_SERVICE_REQUESTS_MEMORY=128Mi
+CRON_SERVICE_LIMITS_CPU=512m
+CRON_SERVICE_LIMITS_MEMORY=512Mi
+CRON_SERVICE_IMAGE=harmonyservices/cron-service:stable
 
 # work failer
 WORK_FAILER_REQUESTS_CPU=128m

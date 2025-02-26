@@ -22,6 +22,8 @@ export interface ServiceResponse {
   totalItemsSize?: number;
   outputItemSizes?: number[];
   error?: string;
+  errorLevel?: 'warning' | 'error';
+  errorCategory?: string;
   hits?: number;
   scrollID?: string;
 }
@@ -139,7 +141,7 @@ function _getErrorMessageOfStatus(status: k8s.V1Status, msg = 'Unknown error'): 
 }
 
 /**
- * Get the error message from error.json (if the backend service provided it)
+ * Get the error information from error.json (if the backend service provided it)
  * or use the k8s status to generate one. This error message
  * is often used to populate the user-facing job's message and errors fields.
  *
@@ -147,25 +149,33 @@ function _getErrorMessageOfStatus(status: k8s.V1Status, msg = 'Unknown error'): 
  * @param catalogDir - A string path for the outputs directory of the WorkItem
  * (e.g. s3://artifacts/requestId/workItemId/outputs/).
  * @param workItemLogger - Logger for logging messages
- * @returns An error message
+ * @returns An error message and level and possibly an error category
  */
-async function _getErrorMessage(
+async function _getErrorInfo(
   status: k8s.V1Status, catalogDir: string, workItemLogger: Logger = logger,
-): Promise<string> {
+): Promise<{ error: string; level: 'error' | 'warning';  category?: string }> {
   // expect JSON logs entries
   try {
     const s3 = objectStoreForProtocol('s3');
     const errorFile = resolveUrl(catalogDir, 'error.json');
     if (await s3.objectExists(errorFile)) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const logEntry: any = await s3.getObjectJson(errorFile);
-      return logEntry.error;
+      const errorEntries: any = await s3.getObjectJson(errorFile);
+      const { error } = errorEntries;
+      const level = errorEntries.level ? errorEntries.level.toLowerCase() : 'error';
+      const category = errorEntries.category?.toLowerCase();
+      if (category) {
+        return { error, level, category };
+      }
+      return { error, level };
     }
-    return _getErrorMessageOfStatus(status);
+    const error = _getErrorMessageOfStatus(status);
+    return { error, level: 'error' };
   } catch (e) {
     workItemLogger.error(`Caught exception: ${e}`);
     workItemLogger.error(`Unable to parse out error from catalog location: ${catalogDir}`);
-    return _getErrorMessageOfStatus(status, 'Service terminated without error message');
+    const error = _getErrorMessageOfStatus(status, 'Service terminated without error message');
+    return { error, level: 'error' };
   }
 }
 
@@ -334,21 +344,26 @@ export async function runServiceFromPull(
               resolve({ batchCatalogs: catalogs });
             } else {
               clearTimeout(timeout);
-              const logErr = await _getErrorMessage(status, catalogDir, workItemLogger);
-              const errMsg = `${serviceName}: ${logErr}`;
-              resolve({ error: errMsg });
+              const errorEntries = await _getErrorInfo(status, catalogDir, workItemLogger);
+              const errorMessage = `${serviceName}: ${errorEntries.error}`;
+              const errorLevel = errorEntries.level;
+              const errorCategory = errorEntries.category;
+              if (errorCategory) {
+                resolve({ error: errorMessage, errorLevel, errorCategory });
+              }
+              resolve({ error: errorMessage, errorLevel });
             }
           } catch (e) {
             workItemLogger.error('Unable to upload logs. Caught exception:');
             workItemLogger.error(e);
-            resolve({ error });
+            resolve({ error, errorLevel: 'error' });
           }
         },
       ).catch((e) => {
         clearTimeout(timeout);
         workItemLogger.error('Kubernetes client exec caught exception:');
         workItemLogger.error(e);
-        resolve({ error });
+        resolve({ error, errorLevel: 'error' });
       });
     });
   } catch (e) {
@@ -360,5 +375,5 @@ export async function runServiceFromPull(
 
 export const exportedForTesting = {
   _getStacCatalogs,
-  _getErrorMessage,
+  _getErrorInfo: _getErrorInfo,
 };

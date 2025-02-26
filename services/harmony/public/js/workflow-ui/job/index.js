@@ -14,6 +14,7 @@ async function init() {
   });
   params.tableFilter = document.getElementsByName('tableFilter')[0].getAttribute('data-value');
   params.disallowStatus = document.getElementsByName('disallowStatus')[0].checked ? 'on' : '';
+  params.disallowMessageCategory = document.getElementsByName('disallowMessageCategory')[0].checked ? 'on' : '';
   params.dateKind = document.getElementById('dateKindUpdated').checked ? 'updatedAt' : 'createdAt';
 
   // kick off job state change links logic if this user is allowed to change the job state

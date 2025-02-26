@@ -1,22 +1,26 @@
 // functions used for creating batches of inputs to aggregation steps
 
-import { Logger } from 'winston';
-import { v4 as uuid } from 'uuid';
-import { Transaction } from '../util/db';
-import BatchItem, { getByJobServiceBatch, getCurrentBatchSizeAndCount, getItemUrlsForJobServiceBatch, getMaxSortIndexForJobServiceBatch } from '../models/batch-item';
-import { Batch, withHighestBatchIDForJobService } from '../models/batch';
-import { createDecrypter, createEncrypter } from './crypto';
-import env from './env';
-import DataOperation from '../models/data-operation';
-import { objectStoreForProtocol } from './object-store';
 import axios from 'axios';
-import { getCatalogItemUrls, getCatalogLinks, readCatalogItems } from './stac';
+import { v4 as uuid } from 'uuid';
+import { Logger } from 'winston';
+
+import { makeWorkScheduleRequest } from '../backends/workflow-orchestration/work-item-polling';
+import { Batch, withHighestBatchIDForJobService } from '../models/batch';
+import BatchItem, {
+  getByJobServiceBatch, getCurrentBatchSizeAndCount, getItemUrlsForJobServiceBatch,
+  getMaxSortIndexForJobServiceBatch,
+} from '../models/batch-item';
+import DataOperation from '../models/data-operation';
+import { incrementReadyCount } from '../models/user-work';
+import WorkItem from '../models/work-item';
+import { WorkItemStatus } from '../models/work-item-interface';
 import WorkItemUpdate from '../models/work-item-update';
 import WorkflowStep from '../models/workflow-steps';
-import { WorkItemStatus } from '../models/work-item-interface';
-import WorkItem from '../models/work-item';
-import { incrementReadyCount } from '../models/user-work';
-import { makeWorkScheduleRequest } from '../backends/workflow-orchestration/work-item-polling';
+import { Transaction } from '../util/db';
+import { createDecrypter, createEncrypter } from './crypto';
+import env from './env';
+import { objectStoreForProtocol } from './object-store';
+import { getCatalogItemUrls, getCatalogLinks, readCatalogItems } from './stac';
 
 /**
  * Get the size in bytes of the object at the given url
@@ -88,7 +92,6 @@ Promise<number[]> {
     // get the ones that were not provided
     // eslint-disable-next-line prefer-destructuring
     outputItemSizes = update.outputItemSizes;
-
   } else if (update.results) {
     const encrypter = createEncrypter(env.sharedSecretKey);
     const decrypter = createDecrypter(env.sharedSecretKey);
