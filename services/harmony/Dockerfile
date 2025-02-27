@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=node:22.5.1
+ARG BASE_IMAGE=node:22.14.0
 FROM $BASE_IMAGE
 
 RUN apt-get update && apt-get install -y sqlite3 libsqlite3-dev python3 python3-pip python3-venv libpq-dev build-essential

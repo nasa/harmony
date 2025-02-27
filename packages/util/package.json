@@ -14,7 +14,7 @@
     "better-audit": "better-npm-audit audit"
   },
   "engines": {
-    "node": "^22.5.1",
+    "node": "^22.14.0",
     "npm": ">=8"
   },
   "nyc": {
