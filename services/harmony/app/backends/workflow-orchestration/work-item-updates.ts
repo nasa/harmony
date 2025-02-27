@@ -114,12 +114,12 @@ Promise<{ finalStatus: JobStatus, finalMessage: string; }> {
 
   let finalMessage = '';
   if ((errorCount > 1) && (finalStatus == JobStatus.FAILED)) {
-    finalMessage = `The job failed with ${errorCount} errors and ${warningCount} warnings. See the errors and warnings fields for more details`;
+    finalMessage = `The job failed with ${errorCount} errors and ${warningCount} warnings. See the errors and warnings fields of the job status page for more details.`;
   } else if ((errorCount == 1) && (finalStatus == JobStatus.FAILED)) {
     const jobError = (await getErrorMessagesForJob(tx, job.jobID, 1))[0];
     finalMessage = jobError.message;
   } else if ((warningCount > 1) && (finalStatus == JobStatus.SUCCESSFUL)) {
-    finalMessage = `The job succeeded with ${warningCount} warnings. See the warnings fields for more details`;
+    finalMessage = `The job succeeded with ${warningCount} warnings. See the warnings field of the job status page for more details.`;
   } else if ((warningCount == 1) && (finalStatus == JobStatus.SUCCESSFUL)) {
     const jobWarning = (await getWarningMessagesForJob(tx, job.jobID, 1))[0];
     finalMessage = jobWarning.message;
