@@ -3,7 +3,6 @@ import { expect } from 'chai';
 import request from 'supertest';
 import { HTTPError } from 'superagent';
 import { Job, JobStatus } from '../app/models/job';
-import { hookAllWorkItemsNoData } from './helpers/work-items';
 import JobLink from '../app/models/job-link';
 import { truncateAll } from './helpers/db';
 import hookServersStartStop from './helpers/servers';
@@ -20,7 +19,6 @@ describe('Backend Callbacks', function () {
   const href = 'https://example.com/foo';
 
   hookServersStartStop();
-  hookAllWorkItemsNoData();
 
   beforeEach(truncateAll);
   after(truncateAll);
@@ -34,8 +32,8 @@ describe('Backend Callbacks', function () {
       hookCallbackEach((r) => r.query({ status: 'successful', httpBackend: 'true' }), true);
 
       it('sends a synchronous failure explaining that there were no results', async function () {
-        expect(this.userResp.statusCode).to.equal(500);
-        expect(this.userResp.text).to.include('The backend service provided 0 outputs when 1 was required');
+        expect(this.userResp.statusCode).to.eql(303);
+        expect(this.userResp.headers.location).to.include('/jobs/');
       });
     });
 
