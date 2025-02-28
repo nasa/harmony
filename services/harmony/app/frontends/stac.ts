@@ -1,6 +1,5 @@
 import { ILengthAwarePagination } from 'knex-paginate';
 import { Job, JobForDisplay, JobStatus } from '../models/job';
-import { allWorkItemsNoData } from '../models/work-item';
 import { keysToLowerCase } from '../util/object';
 import isUUID from '../util/uuid';
 import { getRequestRoot } from '../util/url';
@@ -50,7 +49,7 @@ async function handleStacRequest(
   });
 
   if ([JobStatus.SUCCESSFUL, JobStatus.COMPLETE_WITH_ERRORS].includes(job.status)) {
-    if (stacDataLinks.length) {
+    if (stacDataLinks.length > 0) {
       job.links = stacDataLinks;
       const urlRoot = getRequestRoot(req);
       // default to s3 links
@@ -70,18 +69,13 @@ async function handleStacRequest(
           throw new RequestValidationError('The requested paging parameters were out of bounds');
         }
       } else if (job.status === JobStatus.SUCCESSFUL) {
-        let allItemsAreNoData = false;
-        await db.transaction(async (tx) => {
-          allItemsAreNoData = await allWorkItemsNoData(tx, jobId);
-        });
-
-        if (allItemsAreNoData) {
+        if (req.params.itemIndex) {
+          throw new NotFoundError(`Service did not provide STAC items for job ${jobId}`);
+        } else {
           const urlRoot = getRequestRoot(req);
           const lType = linkType || 's3';
           const serializedJob = job.serialize(urlRoot, lType);
           res.json(callback(serializedJob, pagination));
-        } else {
-          throw new NotFoundError(`Service did not provide STAC items for job ${jobId}`);
         }
       } else {
         throw new NotFoundError(`Service did not provide STAC items for job ${jobId}`);

@@ -1,9 +1,8 @@
 import { Application } from 'express';
 import { afterEach, beforeEach } from 'mocha';
-import { stub, SinonStub } from 'sinon';
 import request, { Test } from 'supertest';
 import _ from 'lodash';
-import WorkItem,  * as wi from '../../app/models/work-item';
+import WorkItem from '../../app/models/work-item';
 import db, { Transaction } from '../../app/util/db';
 import { truncateAll } from './db';
 import { hookBackendRequest } from './hooks';
@@ -293,16 +292,4 @@ export async function fakeServiceStacOutput(
     await s3.upload(JSON.stringify(exampleItem, null, 4), granuleUrl, null, 'application/json');
 
   }
-}
-
-/**
- * This function stubs the allWorkItemsNoData function for testing purposes
- **/
-export function hookAllWorkItemsNoData(): void {
-  before(function () {
-    stub(wi, 'allWorkItemsNoData').callsFake(async () => false);
-  });
-  after(function () {
-    (wi.allWorkItemsNoData as SinonStub).restore();
-  });
 }

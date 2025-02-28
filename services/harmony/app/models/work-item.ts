@@ -750,33 +750,6 @@ export async function getScrollIdForJob(
 }
 
 /**
- * Return true if all work items of the given job have NoData warning
- *
- * @param tx - transaction to use for the query
- * @param jobID - the job ID
- * @returns true or false
- */
-export async function allWorkItemsNoData(
-  tx: Transaction,
-  jobID: string,
-): Promise < boolean > {
-  const workflowStepIndexResults = await tx(WorkItem.table)
-    .max('workflowStepIndex as maxIndex')
-    .where({ jobID });
-
-  const workflowStepIndex = workflowStepIndexResults[0].maxIndex;
-
-  const data = await tx(WorkItem.table)
-    .where({
-      jobID,
-      workflowStepIndex,
-    })
-    .whereNot('message_category', 'nodata');
-
-  return data.length === 0;
-}
-
-/**
  * Returns the sum of the work item sizes for all work items for the provided jobID.
  * @param tx - the transaction to use for querying
  * @param jobID - the ID of the job
