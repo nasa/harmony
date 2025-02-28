@@ -8,224 +8,224 @@ import {
 
 // Simple geojson that should not change when normalized
 const simpleGeoJson = {
-  type: 'FeatureCollection',
-  features: [
+  'type': 'FeatureCollection',
+  'features': [
     {
-      type: 'Feature',
-      properties: {},
-      geometry: {
-        coordinates: [
+      'type': 'Feature',
+      'geometry': {
+        'type': 'Polygon',
+        'coordinates': [
           [
             [
-              -82.9060361200349,
-              38.00126623623561,
+              -82.906036,
+              38.001266,
             ],
             [
-              -75.38499926660272,
-              32.861695354064466,
+              -75.384999,
+              32.861695,
             ],
             [
-              -68.87841600268153,
-              38.08582977237779,
+              -68.878416,
+              38.08583,
             ],
             [
-              -76.49247626991905,
-              40.05822321215504,
+              -76.492476,
+              40.058223,
             ],
             [
-              -82.9060361200349,
-              38.00126623623561,
+              -82.906036,
+              38.001266,
             ],
           ],
         ],
-        type: 'Polygon',
       },
+      'properties': {},
     },
   ],
 };
 
 const acrossThePrimeMeridianGeoJson = {
-  type: 'FeatureCollection',
-  features: [
+  'type': 'FeatureCollection',
+  'features': [
     {
-      type: 'Feature',
-      properties: {},
-      geometry: {
-        coordinates: [
+      'type': 'Feature',
+      'geometry': {
+        'type': 'Polygon',
+        'coordinates': [
           [
             [
-              -27.762963687656622,
-              53.53504835094779,
+              -27.762964,
+              53.535048,
             ],
             [
-              -2.572594944586797,
-              43.36615583927019,
+              -2.572595,
+              43.366156,
             ],
             [
-              27.826200868334553,
-              52.35925317733364,
+              27.826201,
+              52.359253,
             ],
             [
-              -27.762963687656622,
-              53.53504835094779,
+              -27.762964,
+              53.535048,
             ],
           ],
         ],
-        type: 'Polygon',
       },
+      'properties': {},
     },
   ],
 };
 
 const twoTrianglesOnEitherSideOfAntimeridian = {
-  type: 'FeatureCollection',
-  features: [
+  'type': 'FeatureCollection',
+  'features': [
     {
-      type: 'Feature',
-      properties: {},
-      geometry: {
-        coordinates: [
+      'type': 'Feature',
+      'geometry': {
+        'type': 'Polygon',
+        'coordinates': [
           [
             [
-              -151.34381596015533,
-              4.994679551918452,
+              -151.343816,
+              4.99468,
             ],
             [
-              -145.9836860515562,
-              -3.1183737385664188,
+              -145.983686,
+              -3.118374,
             ],
             [
-              -139.34984479441488,
-              5.680029195822215,
+              -139.349845,
+              5.680029,
             ],
             [
-              -151.34381596015533,
-              4.994679551918452,
+              -151.343816,
+              4.99468,
             ],
           ],
         ],
-        type: 'Polygon',
       },
+      'properties': {},
     },
     {
-      type: 'Feature',
-      properties: {},
-      geometry: {
-        coordinates: [
+      'type': 'Feature',
+      'geometry': {
+        'type': 'Polygon',
+        'coordinates': [
           [
             [
-              147.2919221979366,
-              6.698088472127779,
+              147.291922,
+              6.698088,
             ],
             [
-              152.58879278200553,
-              -3.1660630298596857,
+              152.588793,
+              -3.166063,
             ],
             [
-              163.56990277600974,
-              7.576864398832285,
+              163.569903,
+              7.576864,
             ],
             [
-              147.2919221979366,
-              6.698088472127779,
+              147.291922,
+              6.698088,
             ],
           ],
         ],
-        type: 'Polygon',
       },
+      'properties': {},
     },
   ],
 };
 
 const acrossTheEquatorGeoJson = {
-  type: 'FeatureCollection',
-  features: [
+  'type': 'FeatureCollection',
+  'features': [
     {
-      type: 'Feature',
-      properties: {},
-      geometry: {
-        coordinates: [
+      'type': 'Feature',
+      'geometry': {
+        'type': 'Polygon',
+        'coordinates': [
           [
             [
-              -35.272765984652466,
-              2.203467669034154,
+              -35.272766,
+              2.203468,
             ],
             [
-              -20.609947107159712,
-              -19.022693890415283,
+              -20.609947,
+              -19.022694,
             ],
             [
-              -19.098948215635716,
-              10.7567274283346,
+              -19.098948,
+              10.756727,
             ],
             [
-              -35.272765984652466,
-              2.203467669034154,
+              -35.272766,
+              2.203468,
             ],
           ],
         ],
-        type: 'Polygon',
       },
+      'properties': {},
     },
   ],
 };
 
 const twoTrianglesAboveAndBelowEquatorGeoJson = {
-  type: 'FeatureCollection',
-  features: [
+  'type': 'FeatureCollection',
+  'features': [
     {
-      type: 'Feature',
-      properties: {},
-      geometry: {
-        coordinates: [
+      'type': 'Feature',
+      'geometry': {
+        'type': 'Polygon',
+        'coordinates': [
           [
             [
-              -45.50020023177265,
-              28.211401906489115,
+              -45.5002,
+              28.211402,
             ],
             [
-              -35.60798563975604,
-              18.52021996710917,
+              -35.607986,
+              18.52022,
             ],
             [
-              -26.94301338420678,
-              26.264323354545937,
+              -26.943013,
+              26.264323,
             ],
             [
-              -45.50020023177265,
-              28.211401906489115,
+              -45.5002,
+              28.211402,
             ],
           ],
         ],
-        type: 'Polygon',
       },
+      'properties': {},
     },
     {
-      type: 'Feature',
-      properties: {},
-      geometry: {
-        coordinates: [
+      'type': 'Feature',
+      'geometry': {
+        'type': 'Polygon',
+        'coordinates': [
           [
             [
-              -22.480605886727545,
-              -16.237132962151293,
+              -22.480606,
+              -16.237133,
             ],
             [
-              -18.51090445734397,
-              -23.549769469071293,
+              -18.510904,
+              -23.549769,
             ],
             [
-              -10.330945128376158,
-              -17.20479596029881,
+              -10.330945,
+              -17.204796,
             ],
             [
-              -22.480605886727545,
-              -16.237132962151293,
+              -22.480606,
+              -16.237133,
             ],
           ],
         ],
-        type: 'Polygon',
       },
+      'properties': {},
     },
   ],
 };
@@ -369,20 +369,20 @@ const correctedWindingGeoJson = {
         coordinates: [
           [
             [
-              -79.93769413144278,
-              37.88089617938101,
+              -79.937694,
+              37.880896,
             ],
             [
-              -69.48801019683185,
-              34.167397708133024,
+              -69.48801,
+              34.167398,
             ],
             [
-              -74.4094454860988,
-              41.45283160828291,
+              -74.409445,
+              41.452832,
             ],
             [
-              -79.93769413144278,
-              37.88089617938101,
+              -79.937694,
+              37.880896,
             ],
           ],
         ],
@@ -407,42 +407,42 @@ const crossingAntimeridianWithLongitudesOutsideRangeSampleGeoJson = {
 };
 
 const expectedNormalization = {
-  type: 'FeatureCollection',
-  features: [
+  'type': 'FeatureCollection',
+  'features': [
     {
-      type: 'Feature',
-      geometry: {
-        type: 'MultiPolygon',
-        coordinates: [
+      'type': 'Feature',
+      'geometry': {
+        'type': 'MultiPolygon',
+        'coordinates': [
           [
             [
               [
                 180,
-                -72.059188039277,
+                -72.059188,
               ],
               [
-                170.60164453159817,
-                -71.30184718454765,
+                170.601645,
+                -71.301847,
               ],
               [
-                163.06576870146043,
-                -74.24875148066187,
+                163.065769,
+                -74.248751,
               ],
               [
-                160.98873544703898,
-                -76.99500221847319,
+                160.988735,
+                -76.995002,
               ],
               [
-                163.98384918739302,
-                -78.29244034236493,
-              ],
-              [
-                180,
-                -78.64537560073987,
+                163.983849,
+                -78.29244,
               ],
               [
                 180,
-                -72.059188039277,
+                -78.645375,
+              ],
+              [
+                180,
+                -72.059188,
               ],
             ],
           ],
@@ -450,33 +450,33 @@ const expectedNormalization = {
             [
               [
                 -180,
-                -78.64537560073987,
+                -78.645375,
               ],
               [
-                -162.51718990801453,
-                -79.03063047059774,
+                -162.51719,
+                -79.03063,
               ],
               [
-                -148.37161275139798,
-                -76.90896062169273,
+                -148.371613,
+                -76.908961,
               ],
               [
-                -142.83828400653184,
-                -75.05376361670923,
-              ],
-              [
-                -180,
-                -72.059188039277,
+                -142.838284,
+                -75.053764,
               ],
               [
                 -180,
-                -78.64537560073987,
+                -72.059188,
+              ],
+              [
+                -180,
+                -78.645375,
               ],
             ],
           ],
         ],
       },
-      properties: {},
+      'properties': {},
     },
   ],
 };
@@ -513,7 +513,8 @@ describe('convertPointsToPolygons', () => {
   for (const [testGeoJson, expectedOutputFile] of pointTestCases) {
     const expectedOutputJson = JSON.parse(fs.readFileSync(path.resolve(__dirname, `resources/${expectedOutputFile}.geojson`), 'utf8'));
 
-    const normalizedGeoJson = convertPointsToPolygons(testGeoJson);
+    let normalizedGeoJson = convertPointsToPolygons(testGeoJson);
+    normalizedGeoJson = normalizeGeoJsonCoords(normalizedGeoJson);
     it('should convert Points to Polygons', function () {
       expect(normalizedGeoJson.features[0].geometry.type).to.equal('Polygon');
       expect(normalizedGeoJson).to.eql(expectedOutputJson);
@@ -528,7 +529,8 @@ describe('convertPointsToPolygons', () => {
   for (const [testGeoJson, expectedOutputFile] of multiPointTestCases) {
     const expectedOutputJson = JSON.parse(fs.readFileSync(path.resolve(__dirname, `resources/${expectedOutputFile}.geojson`), 'utf8'));
 
-    const normalizedGeoJson = convertPointsToPolygons(testGeoJson);
+    let normalizedGeoJson = convertPointsToPolygons(testGeoJson);
+    normalizedGeoJson = normalizeGeoJsonCoords(normalizedGeoJson);
     it('should convert MultiPoints to MultiPolygons', function () {
       expect(normalizedGeoJson.features[0].geometry.type).to.equal('MultiPolygon');
       expect(normalizedGeoJson).to.eql(expectedOutputJson);
@@ -571,7 +573,7 @@ describe('normalizeGeoJson', function () {
     expect(normalizedGeoJson).to.eql(expectedNormalization);
   });
 
-  it('correct clockwise polygon winding to counter-clockwise', function () {
+  it('corrects clockwise polygon winding to counter-clockwise', function () {
     const normalizedGeoJson = normalizeGeoJson(clockwiseWindingGeoJson);
     expect(normalizedGeoJson).to.eql(correctedWindingGeoJson);
   });
