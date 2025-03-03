@@ -2,7 +2,7 @@ import axios from 'axios';
 import { NextFunction, Response } from 'express';
 
 import HarmonyRequest from '../models/harmony-request';
-import { buildJsonErrorResponse } from '../util/errors';
+import { ExternalValidationError } from '../util/errors';
 
 /**
  * Middleware to validate users against an external endpoint configured for a service.
@@ -30,14 +30,13 @@ export async function externalValidation(
   } catch (e) {
     req.context.logger.error('External validation failed');
     if (e.response) {
-      const statusCode = e.response.status;
-      res.status(statusCode).json(buildJsonErrorResponse(statusCode, e.response.data));
-      req.context.logger.error(`[${statusCode}] ${e.response.data}`);
+      return next(new ExternalValidationError(e.response.data, e.response.status));
     } else {
+      req.context.logger.error('THROWING 500 ERROR');
+      req.context.logger.error(JSON.stringify(e, null, 2));
       req.context.logger.error(e);
       return next(e);
     }
-    return;
   }
 
   return next();
