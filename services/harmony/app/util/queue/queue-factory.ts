@@ -1,5 +1,5 @@
 import env from '../env';
-import { WorkItemQueueType, Queue } from './queue';
+import { Queue, WorkItemQueueType } from './queue';
 import { SqsQueue } from './sqs-queue';
 
 const queuesByType = {};

@@ -1,53 +1,65 @@
-import process from 'process';
+import cookieParser from 'cookie-parser';
 import express, { json, RequestHandler } from 'express';
 import asyncHandler from 'express-async-handler';
-import cookieParser from 'cookie-parser';
-import swaggerUi from 'swagger-ui-express';
 import * as yaml from 'js-yaml';
-import log from '../util/log';
+import process from 'process';
+import swaggerUi from 'swagger-ui-express';
 
-// Middleware requires in outside-in order
-import shapefileUpload from '../middleware/shapefile-upload';
-import earthdataLoginTokenAuthorizer from '../middleware/earthdata-login-token-authorizer';
-import earthdataLoginOauthAuthorizer from '../middleware/earthdata-login-oauth-authorizer';
-import { admin, core } from '../middleware/permission-groups';
-import wmsFrontend from '../frontends/wms';
-import { getJobsListing, getJobStatus, cancelJob, resumeJob, pauseJob, skipJobPreview, skipJobsPreview, cancelJobs, resumeJobs, pauseJobs } from '../frontends/jobs';
-import { getJobs, getJob, getWorkItemsTable, getJobLinks, getWorkItemLogs, retry, getWorkItemTableRow, redirectWithoutTrailingSlash, getJobsTable } from '../frontends/workflow-ui';
-import { getStacCatalog, getStacItem } from '../frontends/stac';
-import { getServiceResult } from '../frontends/service-results';
-import cmrGranuleLocator from '../middleware/cmr-granule-locator';
-import parameterValidation from '../middleware/parameter-validation';
-import chooseService from '../middleware/service-selection';
-import shapefileConverter from '../middleware/shapefile-converter';
-import { NotFoundError } from '../util/errors';
+import serviceInvoker from '../backends/service-invoker';
+import { getCollectionCapabilitiesJson } from '../frontends/capabilities';
+import { cloudAccessJson, cloudAccessSh } from '../frontends/cloud-access';
+import { setLogLevel } from '../frontends/configuration';
+import docsPage from '../frontends/docs/docs';
+import { getAdminHealth, getHealth } from '../frontends/health';
+import {
+  cancelJob, cancelJobs, getJobsListing, getJobStatus, pauseJob, pauseJobs, resumeJob, resumeJobs,
+  skipJobPreview, skipJobsPreview,
+} from '../frontends/jobs';
+import { addJobLabels, deleteJobLabels } from '../frontends/labels';
+import landingPage from '../frontends/landing-page';
 import * as ogcCoverageApi from '../frontends/ogc-coverages/index';
 import * as ogcEdrApi from '../frontends/ogc-edr/index';
-import { cloudAccessJson, cloudAccessSh } from '../frontends/cloud-access';
-import landingPage from '../frontends/landing-page';
-import { setLogLevel } from '../frontends/configuration';
+import getRequestMetrics from '../frontends/request-metrics';
+import {
+  getDeploymentLogs, getServiceDeployment, getServiceDeployments, getServiceDeploymentsState,
+  getServiceImageTag, getServiceImageTags, setServiceDeploymentsState, updateServiceImageTag,
+} from '../frontends/service-image-tags';
+import { getServiceResult } from '../frontends/service-results';
+import { getStacCatalog, getStacItem } from '../frontends/stac';
+import { getStagingBucketPolicy } from '../frontends/staging-bucket-policy';
 import getVersions from '../frontends/versions';
-import serviceInvoker from '../backends/service-invoker';
+import wmsFrontend from '../frontends/wms';
+import {
+  getJob, getJobLinks, getJobs, getJobsTable, getWorkItemLogs, getWorkItemsTable,
+  getWorkItemTableRow, redirectWithoutTrailingSlash, retry,
+} from '../frontends/workflow-ui';
+import cmrGranuleLocator from '../middleware/cmr-granule-locator';
+import {
+  postServiceConcatenationHandler, preServiceConcatenationHandler,
+} from '../middleware/concatenation';
+import earthdataLoginOauthAuthorizer from '../middleware/earthdata-login-oauth-authorizer';
+import earthdataLoginSkipped from '../middleware/earthdata-login-skipped';
+import earthdataLoginTokenAuthorizer from '../middleware/earthdata-login-token-authorizer';
+import extendDefault from '../middleware/extend';
+import { externalValidation } from '../middleware/external-validation';
+import handleJobIDParameter from '../middleware/job-id';
+import handleLabelParameter from '../middleware/label';
+import parameterValidation from '../middleware/parameter-validation';
+import { admin, core } from '../middleware/permission-groups';
+import validateRestrictedVariables from '../middleware/restricted-variables';
+import chooseService from '../middleware/service-selection';
+import shapefileConverter from '../middleware/shapefile-converter';
+// Middleware requires in outside-in order
+import shapefileUpload from '../middleware/shapefile-upload';
 import HarmonyRequest, { addRequestContextToOperation } from '../models/harmony-request';
-import { getServiceImageTag, getServiceImageTags, updateServiceImageTag, getServiceDeploymentsState, setServiceDeploymentsState, getServiceDeployment, getServiceDeployments, getDeploymentLogs } from '../frontends/service-image-tags';
+import env from '../util/env';
+import { NotFoundError } from '../util/errors';
+import { parseGridMiddleware } from '../util/grids';
+import log from '../util/log';
+import { validateAndSetVariables } from '../util/variables';
+
 import cmrCollectionReader = require('../middleware/cmr-collection-reader');
 import cmrUmmCollectionReader = require('../middleware/cmr-umm-collection-reader');
-import env from '../util/env';
-import { postServiceConcatenationHandler, preServiceConcatenationHandler } from '../middleware/concatenation';
-import getRequestMetrics from '../frontends/request-metrics';
-import { getStagingBucketPolicy } from '../frontends/staging-bucket-policy';
-import { parseGridMiddleware } from '../util/grids';
-import docsPage from '../frontends/docs/docs';
-import { getCollectionCapabilitiesJson } from '../frontends/capabilities';
-import extendDefault from '../middleware/extend';
-import { getAdminHealth, getHealth } from '../frontends/health';
-import handleLabelParameter from '../middleware/label';
-import { addJobLabels, deleteJobLabels } from '../frontends/labels';
-import handleJobIDParameter from '../middleware/job-id';
-import earthdataLoginSkipped from '../middleware/earthdata-login-skipped';
-import { validateAndSetVariables } from '../util/variables';
-import validateRestrictedVariables from '../middleware/restricted-variables';
-
 export interface RouterConfig {
   PORT?: string | number; // The port to run the frontend server on
   BACKEND_PORT?: string | number; // The port to run the backend server on
@@ -216,6 +228,7 @@ export default function router({ USE_EDL_CLIENT_APP = 'false' }: RouterConfig): 
   result.use(logged(preServiceConcatenationHandler));
   result.use(logged(chooseService));
   result.use(logged(postServiceConcatenationHandler));
+  result.use(logged(externalValidation));
   result.use(logged(validateAndSetVariables));
   result.use(logged(validateRestrictedVariables));
 

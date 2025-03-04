@@ -102,8 +102,8 @@ The structure of an entry in the [services.yml](../../config/services.yml) file 
 ```yaml
 - name: harmony/service-example    # A unique identifier string for the service, conventionally <team>/<service>
   data_operation_version: '0.21.0' # The version of the data-operation messaging schema to use
-  has_granule_limit: true          # Optional flag indicating whether we will impose granule limts for the request. Default to true.
-  default_sync: false              # Optional flag indicating whether we will force the request to run synchrously. Default to false.
+  has_granule_limit: true          # Optional flag indicating whether we will impose granule limits for the request. Default to true.
+  default_sync: false              # Optional flag indicating whether we will force the request to run synchronously. Default to false.
   type:                            # Configuration for service invocation
       <<: *default-turbo-config    # To reduce boilerplate, services.yml includes default configuration suitable for all Docker based services.
       params:
@@ -134,6 +134,7 @@ The structure of an entry in the [services.yml](../../config/services.yml) file 
       - image/gif
     reprojection: true            # The service supports reprojection
   validate_variables: true        # Whether to validate the requested variables exist in the CMR. Defaults to true.
+  external_validation_url: http://example.com # Optional endpoint to be called to validate the user making a request
   steps:
       - image: !Env ${QUERY_CMR_IMAGE} # The image to use for the first step in the chain
         is_sequential: true       # Required for query-cmr
@@ -184,7 +185,7 @@ Here we have the query-cmr service (this service is the first in every current w
 ### Sequential Steps
 Most steps will produce all of the pieces of work (known as work-items) for a service immediately when the step begins. This allows all of the work-items to be worked in parallel. It is possible, however, for new work-items for the same service to be produced as the step is being worked. In this case, the work-items must be worked sequentially. Steps that must be worked sequentially should include `is_sequential: true` in their definition.
 
-An example of this is the query-cmr service. Each invocation of the query-cmr service can only return up to 2000 granules (due to the CMR page size limit), so, if the job has more granules than that, query-cmr is invoked multiple times. Because the number of granules reported by the CMR may change at any time, we cannot know ahead of time exactly how many invocations we need. So, if the job has more granules than 2000, query-cmr is invoked sequentially until all granules are returned.
+An example of this is the query-cmr service. Each invocation of the query-cmr service can only return up to 2000 granules (due to the CMR page size limit), so, if the job has more granules than that, query-cmr is invoked multiple times. This must be done sequentially due to the way the CMR uses a scroll ID for paging.
 
 For most services `is_sequential: true` is not necessary.
 
