@@ -1352,7 +1352,6 @@ https://cmr.uat.earthdata.nasa.gov:
           <<: *default-turbo-env
           STAGING_PATH: public/harmony/service-example
     umm_s: S1257851197-EEDTEST
-    external_validation_url: 'http://localhost:3333'
     collections:
       - id: C1243747507-EEDTEST
         granule_limit: 100 # added to test collection granule limits for HARMONY-795
