@@ -525,11 +525,11 @@ export async function getWorkItemsByJobIdAndStepIndex(
 }
 
 /**
- * Get all work item ids associated with jobs that haven't been updated for a
- * certain amount of minutes and that have a particular JobStatus
+ * Get all work item ids associated with jobs that haven't been updated
+ * since updatedAtCutoff and that have a particular JobStatus
  * @param tx - the transaction to use for querying
- * @param notUpdatedForMinutes - jobs with updateAt older than notUpdatedForMinutes ago
- * will be joined with the returned work items
+ * @param updatedAtCutoff - jobs with updatedAt older than updatedAtCutoff will be
+ * joined with the returned work items
  * @param jobStatus - only jobs with this status will be joined
  * @param startingId - the work item id to begin the query with, i.e. query work items with id greater than startingId
  * @param batchSize - the batch size
@@ -538,16 +538,15 @@ export async function getWorkItemsByJobIdAndStepIndex(
  */
 export async function getWorkItemIdsByJobUpdateAgeAndStatus(
   tx: Transaction,
-  notUpdatedForMinutes: number,
+  updatedAtCutoff: Date,
   jobStatus: JobStatus[],
   startingId = 0,
   batchSize = 2000,
 ): Promise<number[]> {
-  const pastDate = subMinutes(new Date(), notUpdatedForMinutes);
   const workItemIds = (await tx(`${WorkItem.table} as w`)
     .innerJoin(Job.table, 'w.jobID', '=', `${Job.table}.jobID`)
     .select(['w.id'])
-    .where(`${Job.table}.updatedAt`, '<', pastDate)
+    .where(`${Job.table}.updatedAt`, '<', updatedAtCutoff)
     .whereIn(`${Job.table}.status`, jobStatus)
     .where('w.id', '>', startingId)
     .orderBy('w.id', 'asc')

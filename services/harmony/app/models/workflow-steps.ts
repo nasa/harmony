@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/dot-notation */
 import env from '../util/env';
-import { subMinutes } from 'date-fns';
 import _ from 'lodash';
 import { Transaction } from '../util/db';
 import { Job, JobStatus } from './job';
@@ -234,7 +233,7 @@ export async function getWorkflowStepByJobIdServiceId(
  * Get all workflow step ids associated with jobs that haven't been updated for a
  * certain amount of minutes and that have a particular JobStatus
  * @param tx - the transaction to use for querying
- * @param notUpdatedForMinutes - jobs with updateAt older than notUpdatedForMinutes ago will be
+ * @param updatedAtCutoff - jobs with updatedAt older than updatedAtCutoff will be
  * joined with the returned workflow steps
  * @param jobStatus - only jobs with this status will be joined
  * @param startingId - the workflow step id to begin the query with, i.e. query workflow steps
@@ -245,16 +244,15 @@ export async function getWorkflowStepByJobIdServiceId(
  */
 export async function getWorkflowStepIdsByJobUpdateAgeAndStatus(
   tx: Transaction,
-  notUpdatedForMinutes: number,
+  updatedAtCutoff: Date,
   jobStatus: JobStatus[],
   startingId = 0,
   batchSize = 2000,
 ): Promise<number[]> {
-  const pastDate = subMinutes(new Date(), notUpdatedForMinutes);
   const workflowStepIds = (await tx(WorkflowStep.table)
     .innerJoin(Job.table, `${WorkflowStep.table}.jobID`, '=', `${Job.table}.jobID`)
     .select([`${WorkflowStep.table}.id`])
-    .where(`${Job.table}.updatedAt`, '<', pastDate)
+    .where(`${Job.table}.updatedAt`, '<', updatedAtCutoff)
     .whereIn(`${Job.table}.status`, jobStatus)
     .where(`${WorkflowStep.table}.id`, '>', startingId)
     .orderBy(`${WorkflowStep.table}.id`, 'asc')
