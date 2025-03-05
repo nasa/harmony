@@ -1,3 +1,4 @@
+import { subMinutes } from 'date-fns';
 import { JobStatus, terminalStates } from '../../../harmony/app/models/job';
 import {
   deleteWorkItemsById, getWorkItemIdsByJobUpdateAgeAndStatus,
@@ -10,12 +11,12 @@ import env from '../util/env';
 import { CronJob } from './cronjob';
 
 /**
- * Find work items that are older than notUpdatedForMinutes and delete them.
- * @param notUpdatedForMinutes - upper limit on the duration since the last update
+ * Find work items that are older than updatedAtCutoff and delete them.
+ * @param updatedAtCutoff - updatedAt cutoff time since the last update
  * @param jobStatus - a list of terminal job statuses
  * @returns Resolves when the request is complete
  */
-async function deleteTerminalWorkItems(ctx: Context, notUpdatedForMinutes: number, jobStatus: JobStatus[]): Promise < void> {
+async function deleteTerminalWorkItems(ctx: Context, updatedAtCutoff: Date, jobStatus: JobStatus[]): Promise < void> {
   let done = false;
   let startingId = 0;
   let totalDeleted = 0;
@@ -26,7 +27,7 @@ async function deleteTerminalWorkItems(ctx: Context, notUpdatedForMinutes: numbe
   while (!done) {
     try {
       const workItemIds = await getWorkItemIdsByJobUpdateAgeAndStatus(
-        db, notUpdatedForMinutes, jobStatus, startingId, batchSize,
+        db, updatedAtCutoff, jobStatus, startingId, batchSize,
       );
       if (workItemIds.length > 0) {
         const numItemsDeleted = await deleteWorkItemsById(db, workItemIds);
@@ -51,12 +52,12 @@ async function deleteTerminalWorkItems(ctx: Context, notUpdatedForMinutes: numbe
 
 
 /**
- * Find workflow steps that are older than notUpdatedForMinutes and delete them.
- * @param notUpdatedForMinutes - upper limit on the duration since the last update
+ * Find workflow steps that are older than updatedAtCutoff and delete them.
+ * @param updatedAtCutoff - updatedAt cutoff time since the last update
  * @param jobStatus - a list of terminal job statuses
  * @returns Resolves when the request is complete
  */
-async function deleteTerminalWorkflowSteps(ctx: Context, notUpdatedForMinutes: number, jobStatus: JobStatus[]): Promise < void> {
+async function deleteTerminalWorkflowSteps(ctx: Context, updatedAtCutoff: Date, jobStatus: JobStatus[]): Promise < void> {
   let done = false;
   let startingId = 0;
   let totalDeleted = 0;
@@ -67,7 +68,7 @@ async function deleteTerminalWorkflowSteps(ctx: Context, notUpdatedForMinutes: n
   while (!done) {
     try {
       const workflowSteps = await getWorkflowStepIdsByJobUpdateAgeAndStatus(
-        db, notUpdatedForMinutes, jobStatus, startingId, batchSize,
+        db, updatedAtCutoff, jobStatus, startingId, batchSize,
       );
       if (workflowSteps.length > 0) {
         const numItemsDeleted = await deleteWorkflowStepsById(db, workflowSteps);
@@ -99,14 +100,15 @@ export class WorkReaper extends CronJob {
     const { logger } = ctx;
     logger.debug('Running');
     try {
+      const updatedAtCutoff = subMinutes(new Date(), env.reapableWorkAgeMinutes);
       await deleteTerminalWorkItems(
         ctx,
-        env.reapableWorkAgeMinutes,
+        updatedAtCutoff,
         terminalStates,
       );
       await deleteTerminalWorkflowSteps(
         ctx,
-        env.reapableWorkAgeMinutes,
+        updatedAtCutoff,
         terminalStates,
       );
     } catch (e) {

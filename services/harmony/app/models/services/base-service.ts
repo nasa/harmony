@@ -1,23 +1,25 @@
 import _ from 'lodash';
-import { Logger } from 'winston';
 import { v4 as uuid } from 'uuid';
-import WorkItem from '../work-item';
-import WorkflowStep from '../workflow-steps';
-import InvocationResult from './invocation-result';
-import { Job, JobStatus, statesToDefaultMessages } from '../job';
-import DataOperation from '../data-operation';
-import { defaultObjectStore } from '../../util/object-store';
-import { RequestValidationError, ServerError } from '../../util/errors';
+import { Logger } from 'winston';
+
+import { joinTexts } from '@harmony/util/string';
+
+import { QUERY_CMR_SERVICE_REGEX } from '../../backends/workflow-orchestration/util';
+import { makeWorkScheduleRequest } from '../../backends/workflow-orchestration/work-item-polling';
 import db from '../../util/db';
 import env from '../../util/env';
-import { WorkItemStatus } from '../work-item-interface';
+import { RequestValidationError, ServerError } from '../../util/errors';
 import { getRequestMetric } from '../../util/metrics';
+import { defaultObjectStore } from '../../util/object-store';
 import { getRequestUrl } from '../../util/url';
+import DataOperation from '../data-operation';
 import HarmonyRequest from '../harmony-request';
+import { Job, JobStatus, statesToDefaultMessages } from '../job';
 import UserWork from '../user-work';
-import { joinTexts } from '@harmony/util/string';
-import { makeWorkScheduleRequest } from '../../backends/workflow-orchestration/work-item-polling';
-import { QUERY_CMR_SERVICE_REGEX } from '../../backends/workflow-orchestration/util';
+import WorkItem from '../work-item';
+import { WorkItemStatus } from '../work-item-interface';
+import WorkflowStep from '../workflow-steps';
+import InvocationResult from './invocation-result';
 
 export interface ServiceCapabilities {
   concatenation?: boolean;
@@ -85,6 +87,7 @@ export interface ServiceConfig<ServiceParamType> {
   maximum_sync_granules?: number;
   steps?: ServiceStep[];
   validate_variables?: boolean;
+  external_validation_url?: string;
 }
 
 /**
