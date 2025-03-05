@@ -6,6 +6,7 @@ import HarmonyRequest from '../models/harmony-request';
 import { getRelatedLinks, Job, JobForDisplay, JobQuery, JobStatus } from '../models/job';
 import JobLink from '../models/job-link';
 import JobMessage, { getMessagesForJob, JobMessageLevel } from '../models/job-message';
+import { getTotalWorkItemSizesForJobID } from '../models/work-item';
 import db from '../util/db';
 import { isAdminUser } from '../util/edl-api';
 import env from '../util/env';
@@ -192,10 +193,16 @@ export async function getJobStatus(
     let job: Job;
     let pagination;
     let messages: JobMessage[];
+    let workItemsSizes: { originalSize: number; outputSize: number; };
 
+    // TODO does this really need to be in a transaction?
     await db.transaction(async (tx) => {
       ({ job, pagination } = await Job.byJobID(tx, jobID, true, true, false, page, limit));
       messages = await getMessagesForJob(tx, jobID);
+      // only get data reduction numbers when the job is complete and at least partially successful
+      if ([JobStatus.SUCCESSFUL, JobStatus.COMPLETE_WITH_ERRORS].includes(job.status)) {
+        workItemsSizes = await getTotalWorkItemSizesForJobID(tx, jobID);
+      }
     });
     if (!job) {
       throw new NotFoundError(`Unable to find job ${jobID}`);
@@ -210,6 +217,10 @@ export async function getJobStatus(
     const pagingLinks = getPagingLinks(req, pagination).map((link) => new JobLink(link));
     job.links = job.links.concat(pagingLinks);
     const jobForDisplay = getJobForDisplay(job, urlRoot, linkType, messages);
+    if (workItemsSizes) {
+      jobForDisplay.originalDataSize = workItemsSizes.originalSize;
+      jobForDisplay.outputDataSize = workItemsSizes.outputSize;
+    }
     res.send(jobForDisplay);
   } catch (e) {
     req.context.logger.error(e);
