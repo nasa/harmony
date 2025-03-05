@@ -32,6 +32,7 @@ export async function externalValidation(
   } catch (e) {
     req.context.logger.error('External validation failed');
     if (e.response) {
+      req.context.logger.error(`Validation status: ${e.response.status}`);
       req.context.logger.error(`Validation response: ${JSON.stringify(e.response.data, null, 2)}`);
       return next(new ExternalValidationError(e.response.data, e.response.status));
     } else {
