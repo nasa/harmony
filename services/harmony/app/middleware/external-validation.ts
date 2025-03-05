@@ -17,6 +17,8 @@ export async function externalValidation(
   const url = context?.serviceConfig?.external_validation_url;
   if (!url) return next();
 
+  req.context.logger.info('timing.external-validation.start');
+  const startTime = new Date().getTime();
   try {
     await axios.post(
       url,
@@ -30,13 +32,15 @@ export async function externalValidation(
   } catch (e) {
     req.context.logger.error('External validation failed');
     if (e.response) {
+      req.context.logger.error(`Validation response: ${JSON.stringify(e.response.data, null, 2)}`);
       return next(new ExternalValidationError(e.response.data, e.response.status));
     } else {
-      req.context.logger.error('THROWING 500 ERROR');
-      req.context.logger.error(JSON.stringify(e, null, 2));
-      req.context.logger.error(e);
+      req.context.logger.error(`Error calling validation endpoint: ${url}.`);
       return next(e);
     }
+  } finally {
+    const durationMs = new Date().getTime() - startTime;
+    req.context.logger.info('timing.external-validation.end', { durationMs });
   }
 
   return next();
