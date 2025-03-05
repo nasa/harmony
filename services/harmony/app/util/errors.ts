@@ -28,6 +28,12 @@ export class ForbiddenError extends HttpError {
   }
 }
 
+export class ExternalValidationError extends HttpError {
+  constructor(message = 'External validation failed', code = 403) {
+    super(code, message);
+  }
+}
+
 export class ServerError extends HttpError {
   constructor(message = 'An unexpected error occurred') {
     super(500, message);
@@ -68,7 +74,7 @@ export function getEndUserErrorMessage(error: HttpError): string {
 
 /**
  * Returns the appropriate http status code for the provided error
- * @param error - The error that occured
+ * @param error - The error that occurred
  * @returns the http status code
  */
 export function getHttpStatusCode(error: HttpError): number {
@@ -83,7 +89,7 @@ export function getHttpStatusCode(error: HttpError): number {
 
 /**
  * Returns the appropriate string code to use for the JSON response to indicate a type of error
- * @param error - The error that occured
+ * @param error - The error that occurred
  * @returns a string indicating the class of error that occurred
  */
 export function getCodeForError(error: HttpError): string {

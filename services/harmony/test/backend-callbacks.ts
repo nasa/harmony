@@ -32,8 +32,8 @@ describe('Backend Callbacks', function () {
       hookCallbackEach((r) => r.query({ status: 'successful', httpBackend: 'true' }), true);
 
       it('sends a synchronous failure explaining that there were no results', async function () {
-        expect(this.userResp.statusCode).to.equal(500);
-        expect(this.userResp.text).to.include('The backend service provided 0 outputs when 1 was required');
+        expect(this.userResp.statusCode).to.eql(303);
+        expect(this.userResp.headers.location).to.include('/jobs/');
       });
     });
 

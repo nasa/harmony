@@ -49,7 +49,7 @@ async function handleStacRequest(
   });
 
   if ([JobStatus.SUCCESSFUL, JobStatus.COMPLETE_WITH_ERRORS].includes(job.status)) {
-    if (stacDataLinks.length) {
+    if (stacDataLinks.length > 0) {
       job.links = stacDataLinks;
       const urlRoot = getRequestRoot(req);
       // default to s3 links
@@ -67,6 +67,15 @@ async function handleStacRequest(
           throw new RequestValidationError('STAC item index is out of bounds');
         } else {
           throw new RequestValidationError('The requested paging parameters were out of bounds');
+        }
+      } else if (job.status === JobStatus.SUCCESSFUL) {
+        if (req.params.itemIndex) {
+          throw new NotFoundError(`Service did not provide STAC items for job ${jobId}`);
+        } else {
+          const urlRoot = getRequestRoot(req);
+          const lType = linkType || 's3';
+          const serializedJob = job.serialize(urlRoot, lType);
+          res.json(callback(serializedJob, pagination));
         }
       } else {
         throw new NotFoundError(`Service did not provide STAC items for job ${jobId}`);

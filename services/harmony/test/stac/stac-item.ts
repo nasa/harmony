@@ -92,11 +92,7 @@ const completedNonStacJob = buildJob({
   message: 'it is done',
   progress: 100,
   numInputGranules: 12,
-  links: [{
-    href: 'http://example.com',
-    type: 'application/octet-stream',
-    rel: 'data',
-  }],
+  links: [],
   request: 'http://example.com/harmony?job=completedJob',
 });
 
