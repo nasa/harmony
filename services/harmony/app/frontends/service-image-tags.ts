@@ -436,12 +436,12 @@ export async function getServiceImageTag(
 }
 
 /**
- *  Get the log location of service deployment errors
+ *  Get the log location of service deployment
  *
  * @param deploymentId - The id of service deployment
  */
 function getLogLocation(deploymentId: string ): string {
-  return `s3://${env.artifactBucket}/${deploymentId}/errors.json`;
+  return `s3://${env.artifactBucket}/${deploymentId}/log.json`;
 }
 
 /**
@@ -450,8 +450,8 @@ function getLogLocation(deploymentId: string ): string {
  * @param req - The request object
  * @param service  - The name of the service to deploy
  * @param tag  - The service image tag to deploy
- * @param regressionTestVersion  - The regression test version to run the regression test with
  * @param deploymentId  - The deployment id
+ * @param regressionTestVersion  - The regression test version to run the regression test with
  */
 export async function execDeployScript(
   req: HarmonyRequest,
@@ -473,17 +473,15 @@ export async function execDeployScript(
 
   exec(command, options, async (error, stdout, _stderr) => {
     const lines = stdout.split('\n');
+    // save the service deployment log to S3
+    const s3 = objectStoreForProtocol('s3');
+    const logLocation = getLogLocation(deploymentId);
+    await s3.upload(JSON.stringify(lines), logLocation);
+
+    const urlRoot = getRequestRoot(req);
+    const logUrl = `${urlRoot}/deployment-logs/${deploymentId}`;
     if (error) {
       req.context.logger.error(`Error executing script: ${error.message}`);
-
-      // save the service deployment errors to S3
-      const logLocation = getLogLocation(deploymentId);
-      const s3 = objectStoreForProtocol('s3');
-      await s3.upload(JSON.stringify(lines), logLocation);
-
-      const urlRoot = getRequestRoot(req);
-      const logUrl = `${urlRoot}/deployment-logs/${deploymentId}`;
-
       lines.forEach(line => {
         req.context.logger.info(`Failed script output: ${line}`);
       });
@@ -500,7 +498,10 @@ export async function execDeployScript(
       // only re-enable the service deployment on successful deployment
       await enableServiceDeployment(`Re-enable service deployment after successful deployment: ${deploymentId}`);
       await db.transaction(async (tx) => {
-        await setStatusMessage(tx, deploymentId, 'successful', 'Deployment successful');
+        await setStatusMessage(tx,
+          deploymentId,
+          'successful',
+          `Deployment successful. See details at: ${logUrl}`);
       });
     }
   });
