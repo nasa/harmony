@@ -18,7 +18,6 @@ import {
   getCloudAccessJsonLink, getCloudAccessShLink, getJobStateChangeLinks, getStacCatalogLink,
   getStatusLink, Link,
 } from '../util/links';
-import { configureLogToFile } from '../util/log';
 import { keysToLowerCase } from '../util/object';
 import { getPagingLinks, getPagingParams, setPagingHeaders } from '../util/pagination';
 import { needsStacLink } from '../util/stac';
