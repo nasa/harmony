@@ -1,17 +1,20 @@
 /* eslint-disable @typescript-eslint/dot-notation */
 import { subMinutes } from 'date-fns';
 import { ILengthAwarePagination } from 'knex-paginate';
-import _ from 'lodash';
-import logger from '../util/log';
+import _, { last } from 'lodash';
+
+import { getWorkSchedulerQueue } from '../../app/util/queue/queue-factory';
+import { eventEmitter } from '../events';
 import db, { Transaction } from '../util/db';
-import DataOperation from './data-operation';
 import env from '../util/env';
+import logger from '../util/log';
+import DataOperation from './data-operation';
 import { Job, JobStatus } from './job';
 import Record from './record';
+import {
+  getStacLocation, WorkItemQuery, WorkItemRecord, WorkItemStatus,
+} from './work-item-interface';
 import WorkflowStep from './workflow-steps';
-import { WorkItemRecord, WorkItemStatus, getStacLocation, WorkItemQuery } from './work-item-interface';
-import { eventEmitter } from '../events';
-import { getWorkSchedulerQueue } from '../../app/util/queue/queue-factory';
 
 // The step index for the query-cmr task. Right now query-cmr only runs as the first step -
 // if this changes we will have to revisit this

@@ -114,9 +114,11 @@ export class JobForDisplay {
 
   numInputGranules: number;
 
-  originalDataSize?: number;
+  originalDataSize?: string;
 
-  outputDataSize?: number;
+  outputDataSize?: string;
+
+  dataSizePercentChange?: string;
 
   errors?: JobMessage[];
 
