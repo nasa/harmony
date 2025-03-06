@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/dot-notation */
 import { subMinutes } from 'date-fns';
 import { ILengthAwarePagination } from 'knex-paginate';
-import _, { last } from 'lodash';
+import _ from 'lodash';
 
 import { getWorkSchedulerQueue } from '../../app/util/queue/queue-factory';
 import { eventEmitter } from '../events';
