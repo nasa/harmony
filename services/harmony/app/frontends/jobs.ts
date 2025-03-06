@@ -18,6 +18,7 @@ import {
   getCloudAccessJsonLink, getCloudAccessShLink, getJobStateChangeLinks, getStacCatalogLink,
   getStatusLink, Link,
 } from '../util/links';
+import { configureLogToFile } from '../util/log';
 import { keysToLowerCase } from '../util/object';
 import { getPagingLinks, getPagingParams, setPagingHeaders } from '../util/pagination';
 import { needsStacLink } from '../util/stac';
@@ -196,7 +197,7 @@ export function sizeChangeMessage(
   } else if (diff > 0) {
     let percent = (diff / sizes.originalSize * 100.0).toFixed(precision);
     // due to JS precision issues, big changes will appear to be 100% reduction, which is impossible
-    if (percent === '100.00') percent = '99.99';
+    if (percent === 100.0.toFixed(precision)) percent = 99.99.toFixed(precision);
 
     result = `${percent}% reduction`;
   } else {

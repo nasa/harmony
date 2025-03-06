@@ -1087,9 +1087,17 @@ describe('unit tests for size reduction calcuation functions', function () {
   }
 
   describe('when the size reduction is very large', function () {
-    it('does not claim 100% size reduction', function () {
-      expect(sizeChangeMessage({ originalSize: 1234567890, outputSize: 1 })).to.eql('99.99% reduction');
-    });
+    const precisionTestCases = [
+      [2, '99.99% reduction'],
+      [3, '99.990% reduction'],
+      [5, '99.99000% reduction'],
+    ];
+
+    for (const testCase of precisionTestCases) {
+      it('does not claim 100% size reduction', function () {
+        expect(sizeChangeMessage({ originalSize: 1234567890, outputSize: 1 }, +testCase[0])).to.eql(testCase[1]);
+      });
+    }
   });
 
   describe('when the original size is zero', function () {
