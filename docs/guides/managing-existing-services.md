@@ -109,7 +109,7 @@ curl -XGET -Ln -bj https://harmony.uat.earthdata.nasa.gov/service-deployment/<de
 ```
 **Example 8** - Get service image tag update status
 
-The returned JSON response has the fields indicating the current status of the service image deployment.
+The returned JSON response has the fields indicating the current status of the service image deployment. The service deployment log can be viewed via the link provided in `message` once the deployment is complete.
 
 ```JSON
 {
@@ -119,7 +119,7 @@ The returned JSON response has the fields indicating the current status of the s
   "tag": "new-version",
   "regressionTestVersion": "1.0.0",
   "status": "successful",
-  "message": "Deployment successful",
+  "message": "Deployment successful. See details at: https://harmony.uat.earthdata.nasa.gov/deployment-logs/befb50e0-e467-4776-86c8-e7218f1123cc",
   "createdAt": "2024-03-29T14:56:29.151Z",
   "updatedAt": "2024-03-29T14:56:29.273Z"
 }
