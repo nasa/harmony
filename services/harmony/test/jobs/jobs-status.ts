@@ -100,10 +100,14 @@ describe('Individual job status route', function () {
     await initialSuccessJobWorkItem2.save(this.trx);
     const finalSuccessJobWorkItem2 = buildWorkItem({ jobID: successfulJob.jobID, workflowStepIndex: 2, status: WorkItemStatus.WARNING, totalItemsSize: 0.09361064147949219 });
     await finalSuccessJobWorkItem2.save(this.trx);
+    // re-save job to update its data reduction metrics
+    await successfulJob.save(this.trx);
     const initialWarningJobWorkItem = buildWorkItem({ jobID: warningJob.jobID, workflowStepIndex: 1, status: WorkItemStatus.SUCCESSFUL, totalItemsSize: 1.3701868057250977 });
     await initialWarningJobWorkItem.save(this.trx);
     const finalWarningJobWorkItem = buildWorkItem({ jobID: warningJob.jobID, workflowStepIndex: 2, status: WorkItemStatus.WARNING, totalItemsSize: 0.09036064147949219 });
     await finalWarningJobWorkItem.save(this.trx);
+    // re-save job to update its data reduction metrics
+    await warningJob.save(this.trx);
     this.trx.commit();
   });
   const jobID = aJob.requestId;

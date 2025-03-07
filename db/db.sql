@@ -92,7 +92,6 @@ CREATE TABLE `work_items` (
   `status` varchar(255) check (`status` in ('ready', 'queued', 'running', 'successful', 'failed', 'canceled', 'warning')) not null,
   `message_category` varchar(255),
   `stacCatalogLocation` varchar(255),
-  `original_items_size` double precision,
   `totalItemsSize` double precision not null default 0,
   `outputItemSizesJson` text,
   `retryCount` integer not null default 0,

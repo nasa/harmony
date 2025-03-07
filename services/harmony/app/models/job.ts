@@ -1113,15 +1113,17 @@ export class Job extends DBRecord implements JobRecord {
     const truncatedFailureMessage = truncateString(this.getMessage(JobStatus.FAILED), TEXT_LIMIT - reservedMessageChars);
     this.setMessage(truncatedFailureMessage, JobStatus.FAILED);
     this.request = truncateString(this.request, TEXT_LIMIT);
-    const dbRecord: Record<string, unknown> = pick(this, jobRecordFields);
-    dbRecord.collectionIds = JSON.stringify(this.collectionIds || []);
-    dbRecord.message = JSON.stringify(this.statesToMessages || {});
+
     // only get data reduction numbers when the job is complete and at least partially successful
     if (this.status === JobStatus.SUCCESSFUL || this.status === JobStatus.COMPLETE_WITH_ERRORS) {
       const workItemsSizes = await getTotalWorkItemSizesForJobID(tx, this.jobID);
       this.original_data_size = workItemsSizes.originalSize;
       this.output_data_size = workItemsSizes.outputSize;
     }
+
+    const dbRecord: Record<string, unknown> = pick(this, jobRecordFields);
+    dbRecord.collectionIds = JSON.stringify(this.collectionIds || []);
+    dbRecord.message = JSON.stringify(this.statesToMessages || {});
     await super.save(tx, dbRecord);
     const promises = [];
     for (const link of this.links) {
