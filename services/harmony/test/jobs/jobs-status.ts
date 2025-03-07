@@ -79,7 +79,6 @@ describe('Individual job status route', function () {
   hookTransaction();
   before(async function () {
     await aJob.save(this.trx);
-    console.log(`JOB ID: ${aJob.jobID}`);
     await setLabelsForJob(this.trx, aJob.jobID, aJob.username, aJobLabels);
     await pausedJob.save(this.trx);
     await previewingJob.save(this.trx);

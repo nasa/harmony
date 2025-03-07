@@ -18,7 +18,9 @@ CREATE TABLE `jobs` (
   `ignoreErrors` boolean not null,
   `destination_url` varchar(8192),
   `service_name` varchar(255),
-  `provider_id` varchar(255)
+  `provider_id` varchar(255),
+  `original_data_size` double precision,
+  `output_data_size` double precision
 );
 
 CREATE TABLE `job_links` (
@@ -90,6 +92,7 @@ CREATE TABLE `work_items` (
   `status` varchar(255) check (`status` in ('ready', 'queued', 'running', 'successful', 'failed', 'canceled', 'warning')) not null,
   `message_category` varchar(255),
   `stacCatalogLocation` varchar(255),
+  `original_items_size` double precision,
   `totalItemsSize` double precision not null default 0,
   `outputItemSizesJson` text,
   `retryCount` integer not null default 0,

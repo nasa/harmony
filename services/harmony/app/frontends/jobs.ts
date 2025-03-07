@@ -242,18 +242,11 @@ export async function getJobStatus(
   try {
     validateJobId(jobID);
     const { page, limit } = getPagingParams(req, env.defaultResultPageSize);
-    let workItemsSizes: { originalSize: number; outputSize: number; };
-
     const { job, pagination } = await Job.byJobID(db, jobID, true, true, false, page, limit);
     if (!job) {
       throw new NotFoundError(`Unable to find job ${jobID}`);
     }
     const messages: JobMessage[] = await getMessagesForJob(db, jobID);
-    // only get data reduction numbers when the job is complete and at least partially successful
-    if ([JobStatus.SUCCESSFUL, JobStatus.COMPLETE_WITH_ERRORS].includes(job.status)) {
-      workItemsSizes = await getTotalWorkItemSizesForJobID(db, jobID);
-    }
-
     const isAdmin = await isAdminUser(req);
     const isAdminOrOwner = job.belongsToOrIsAdmin(req.user, isAdmin);
     const isJobShareable = await job.isShareable(req.accessToken);
@@ -264,10 +257,11 @@ export async function getJobStatus(
     const pagingLinks = getPagingLinks(req, pagination).map((link) => new JobLink(link));
     job.links = job.links.concat(pagingLinks);
     const jobForDisplay = getJobForDisplay(job, urlRoot, linkType, messages);
-    if (workItemsSizes) {
-      jobForDisplay.originalDataSize = formatDataSize(workItemsSizes.originalSize);
-      jobForDisplay.outputDataSize = formatDataSize(workItemsSizes.outputSize);
-      jobForDisplay.dataSizePercentChange = sizeChangeMessage(workItemsSizes);
+    if (job.original_data_size && job.output_data_size) {
+      jobForDisplay.originalDataSize = formatDataSize(job.original_data_size);
+      jobForDisplay.outputDataSize = formatDataSize(job.output_data_size);
+      jobForDisplay.dataSizePercentChange =
+        sizeChangeMessage({ originalSize: job.original_data_size, outputSize: job.output_data_size });
     }
     res.send(jobForDisplay);
   } catch (e) {

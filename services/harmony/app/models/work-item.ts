@@ -31,7 +31,7 @@ export enum WorkItemEvent {
 const serializedFields = [
   'id', 'jobID', 'createdAt', 'retryCount', 'updatedAt', 'scrollID', 'serviceID', 'status',
   'stacCatalogLocation', 'totalItemsSize', 'workflowStepIndex', 'duration', 'startedAt',
-  'sortIndex', 'message_category',
+  'sortIndex', 'message_category', 'original_items_size',
 ];
 
 /**
@@ -72,7 +72,13 @@ export default class WorkItem extends Record implements WorkItemRecord {
   // The location of the resulting STAC catalog(s) (not serialized)
   results?: string[];
 
-  // The sum of the sizes of the granules associated with this work item
+  // The sum of the sizes of the original granules/inputs that fed into the service chain to
+  // which this work-item belongs. This may be one granule or a batch of granules, depending
+  // on the service chain. The sum of these across all service chains for a given job is equal
+  // to the total size of the input data for the job.
+  original_items_size?: number;
+
+  // The sum of the sizes of the outputs associated with this work item
   totalItemsSize?: number;
 
   // The size (in bytes) of each STAC item produced by this work item (used for batching)
@@ -109,7 +115,7 @@ export default class WorkItem extends Record implements WorkItemRecord {
   /**
    * Saves the work items to the database using a single SQL statement.
    *
-   * @param transaction - The transaction to use for saving the job link
+   * @param transaction - The transaction to use for saving the work-items
    * @param workItems - The work items to save
    */
   static async insertBatch(transaction: Transaction, workItems: WorkItem[]): Promise<void> {
