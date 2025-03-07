@@ -4,9 +4,11 @@ import { stub } from 'sinon';
 import request from 'supertest';
 import { v4 as uuid } from 'uuid';
 
+import { formatDataSize, sizeChangeMessage } from '../../app/frontends/jobs';
 import { EXPIRATION_DAYS, Job, JobStatus } from '../../app/models/job';
 import JobMessage, { JobMessageLevel } from '../../app/models/job-message';
 import { setLabelsForJob } from '../../app/models/label';
+import { WorkItemStatus } from '../../app/models/work-item-interface';
 import env from '../../app/util/env';
 import { hookDatabaseFailure, hookTransaction } from '../helpers/db';
 import { hookRedirect, hookUrl } from '../helpers/hooks';
@@ -19,6 +21,8 @@ import {
 import { hookRangesetRequest } from '../helpers/ogc-api-coverages';
 import hookServersStartStop from '../helpers/servers';
 import StubService from '../helpers/stub-service';
+import { buildWorkItem } from '../helpers/work-items';
+import { buildWorkflowStep } from '../helpers/workflow-steps';
 
 const aJob = buildJob({ username: 'joe' });
 const pausedJob = buildJob({ username: 'joe' });
@@ -32,6 +36,7 @@ const warningMessage = new JobMessage({
   message_category: 'nodata',
 });
 const warningJob = buildJob({ username: 'joe', status: JobStatus.SUCCESSFUL, message: 'Service could not get data', messages: [warningMessage] });
+const successfulJob = buildJob({ username: 'joe', status: JobStatus.SUCCESSFUL, message: 'Success' });
 
 const timeStampRegex = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z/;
 
@@ -78,12 +83,38 @@ describe('Individual job status route', function () {
     await pausedJob.save(this.trx);
     await previewingJob.save(this.trx);
     await warningJob.save(this.trx);
+    await successfulJob.save(this.trx);
+    const initialSuccessJobWorkflowStep = buildWorkflowStep({ jobID: successfulJob.jobID, stepIndex: 1 });
+    await initialSuccessJobWorkflowStep.save(this.trx);
+    const finalSuccessJobWorkflowStep = buildWorkflowStep({ jobID: successfulJob.jobID, stepIndex: 2 });
+    await finalSuccessJobWorkflowStep.save(this.trx);
+    const initialWarningJobWorkflowStep = buildWorkflowStep({ jobID: warningJob.jobID, stepIndex: 1 });
+    await initialWarningJobWorkflowStep.save(this.trx);
+    const finalWarningJobWorkflowStep = buildWorkflowStep({ jobID: warningJob.jobID, stepIndex: 2 });
+    await finalWarningJobWorkflowStep.save(this.trx);
+    const initialSuccessJobWorkItem1 = buildWorkItem({ jobID: successfulJob.jobID, workflowStepIndex: 1, status: WorkItemStatus.SUCCESSFUL, totalItemsSize: 1.3701868057250977 });
+    await initialSuccessJobWorkItem1.save(this.trx);
+    const finalSuccessJobWorkItem1 = buildWorkItem({ jobID: successfulJob.jobID, workflowStepIndex: 2, status: WorkItemStatus.WARNING, totalItemsSize: 0.09036064147949219 });
+    await finalSuccessJobWorkItem1.save(this.trx);
+    const initialSuccessJobWorkItem2 = buildWorkItem({ jobID: successfulJob.jobID, workflowStepIndex: 1, status: WorkItemStatus.SUCCESSFUL, totalItemsSize: 1.7018680517250977 });
+    await initialSuccessJobWorkItem2.save(this.trx);
+    const finalSuccessJobWorkItem2 = buildWorkItem({ jobID: successfulJob.jobID, workflowStepIndex: 2, status: WorkItemStatus.WARNING, totalItemsSize: 0.09361064147949219 });
+    await finalSuccessJobWorkItem2.save(this.trx);
+    // re-save job to update its data reduction metrics
+    await successfulJob.save(this.trx);
+    const initialWarningJobWorkItem = buildWorkItem({ jobID: warningJob.jobID, workflowStepIndex: 1, status: WorkItemStatus.SUCCESSFUL, totalItemsSize: 1.3701868057250977 });
+    await initialWarningJobWorkItem.save(this.trx);
+    const finalWarningJobWorkItem = buildWorkItem({ jobID: warningJob.jobID, workflowStepIndex: 2, status: WorkItemStatus.WARNING, totalItemsSize: 0.09036064147949219 });
+    await finalWarningJobWorkItem.save(this.trx);
+    // re-save job to update its data reduction metrics
+    await warningJob.save(this.trx);
     this.trx.commit();
   });
   const jobID = aJob.requestId;
   const pausedjobID = pausedJob.requestId;
   const previewingJobID = previewingJob.requestId;
   const warningJobID = warningJob.requestId;
+  const successJobID = successfulJob.requestId;
 
   describe('For a user who is not logged in', function () {
     before(async function () {
@@ -150,6 +181,13 @@ describe('Individual job status route', function () {
         expect(job.labels).deep.equal(['000', 'bar', 'foo', 'z-label']);
       });
 
+      it('does not include data size reduction information', function () {
+        const job = JSON.parse(this.res.text);
+        expect(job.originalDataSize).to.be.undefined;
+        expect(job.outputDataSize).to.be.undefined;
+        expect(job.dataSizePercentChange).to.be.undefined;
+      });
+
       itIncludesADataExpirationField();
     });
   }
@@ -171,6 +209,13 @@ describe('Individual job status route', function () {
       const job = new Job(JSON.parse(this.res.text));
       const resumeLinks = job.getRelatedLinks('resumer');
       expect(resumeLinks.length).to.equal(0);
+    });
+
+    it('does not include data size reduction information', function () {
+      const job = JSON.parse(this.res.text);
+      expect(job.originalDataSize).to.be.undefined;
+      expect(job.outputDataSize).to.be.undefined;
+      expect(job.dataSizePercentChange).to.be.undefined;
     });
 
     itIncludesADataExpirationField();
@@ -203,6 +248,52 @@ describe('Individual job status route', function () {
       expect(pauseLinks.length).to.equal(0);
       const previewSkipLinks = job.getRelatedLinks('preview-skipper');
       expect(previewSkipLinks.length).to.equal(0);
+    });
+
+    it('does not include data size reduction information', function () {
+      const job = JSON.parse(this.res.text);
+      expect(job.originalDataSize).to.be.undefined;
+      expect(job.outputDataSize).to.be.undefined;
+      expect(job.dataSizePercentChange).to.be.undefined;
+    });
+
+    itIncludesADataExpirationField();
+  });
+
+  describe('when the job is successful', function () {
+    hookJobStatus({ jobID: successJobID, username: 'joe' });
+
+    it('returns a status field of "successful"', function () {
+      const job = JSON.parse(this.res.text);
+      expect(job.status).to.eql('successful');
+    });
+
+    it('returns a human-readable message field corresponding to its state', function () {
+      const job = JSON.parse(this.res.text);
+      expect(job.message).to.include('Success');
+    });
+
+    it('does not include links for canceling and resuming the job', function () {
+      const job = new Job(JSON.parse(this.res.text));
+      const resumeLinks = job.getRelatedLinks('resumer');
+      expect(resumeLinks.length).to.equal(0);
+      const cancelLinks = job.getRelatedLinks('canceler');
+      expect(cancelLinks.length).to.equal(0);
+    });
+
+    it('does not include irrelevant state change links', function () {
+      const job = new Job(JSON.parse(this.res.text));
+      const pauseLinks = job.getRelatedLinks('pauser');
+      expect(pauseLinks.length).to.equal(0);
+      const previewSkipLinks = job.getRelatedLinks('preview-skipper');
+      expect(previewSkipLinks.length).to.equal(0);
+    });
+
+    it('includes data size reduction information', function () {
+      const job = JSON.parse(this.res.text);
+      expect(job.originalDataSize).to.eql('3.07 MiB');
+      expect(job.outputDataSize).to.eql('188.39 KiB');
+      expect(job.dataSizePercentChange).to.eql('94.01% reduction');
     });
 
     itIncludesADataExpirationField();
@@ -243,6 +334,13 @@ describe('Individual job status route', function () {
       expect(warnings.length).to.equal(1);
       expect(warnings[0].url).to.eql(warningMessage.url);
       expect(warnings[0].message).to.eql(warningMessage.message);
+    });
+
+    it('includes data size reduction information', function () {
+      const job = JSON.parse(this.res.text);
+      expect(job.originalDataSize).to.eql('1.37 MiB');
+      expect(job.outputDataSize).to.eql('92.53 KiB');
+      expect(job.dataSizePercentChange).to.eql('93.41% reduction');
     });
 
     itIncludesADataExpirationField();
@@ -965,6 +1063,55 @@ describe('Individual job status route', function () {
           expect(job.numInputGranules).to.equal(2);
         });
       });
+    });
+  });
+});
+
+describe('unit tests for size reduction calcuation functions', function () {
+  // loop over some test cases for formatDataSize and sizeChangeMessage
+  const testCases = [
+    [1.3701868057250977, 0.09036064147949219, '1.37 MiB', '92.53 KiB', '93.41% reduction'],
+    [100.29018617250945, 10.0149421, '100.29 MiB', '10.01 MiB', '90.01% reduction'],
+    [1234567890, 9876543, '1.15 PiB', '9.42 TiB', '99.20% reduction'],
+    [10241024, 10024.5, '9.77 TiB', '9.79 GiB', '99.90% reduction'],
+    [1024, 10024, '1.00 GiB', '9.79 GiB', '878.91% increase'],
+  ];
+
+  for (const testCase of testCases) {
+    const originalSize = +testCase[0];
+    const outputSize = +testCase[1];
+    it('formats MiB as a human readable string', function () {
+      expect(formatDataSize(originalSize)).to.eql(testCase[2]);
+      expect(formatDataSize(outputSize)).to.eql(testCase[3]);
+    });
+    it('provides a human-readable message about the size change of the data', function () {
+      expect(sizeChangeMessage({ originalSize, outputSize })).to.eql(testCase[4]);
+    });
+  }
+
+  describe('when the size reduction is very large', function () {
+    const precisionTestCases = [
+      [2, '99.99% reduction'],
+      [3, '99.990% reduction'],
+      [5, '99.99000% reduction'],
+    ];
+
+    for (const testCase of precisionTestCases) {
+      it('does not claim 100% size reduction', function () {
+        expect(sizeChangeMessage({ originalSize: 1234567890, outputSize: 1 }, +testCase[0])).to.eql(testCase[1]);
+      });
+    }
+  });
+
+  describe('when the original size is zero', function () {
+    it('warns that the percent change does not apply', function () {
+      expect(sizeChangeMessage({ originalSize: 0, outputSize: 0 })).to.eql('Original size is 0 - percent size change N/A');
+    });
+  });
+
+  describe('when the output size is zero', function () {
+    it('warns that the percent change does not apply', function () {
+      expect(sizeChangeMessage({ originalSize: 100, outputSize: 0 })).to.eql('Output size is 0 - percent size change N/A');
     });
   });
 });

@@ -9,7 +9,7 @@ import { makeWorkScheduleRequest } from '../../backends/workflow-orchestration/w
 import { Job, JobStatus } from '../../models/job';
 import JobLink, { getJobDataLinkCount } from '../../models/job-link';
 import JobMessage, {
-  getMessageCountForJob, getErrorMessagesForJob, getWarningMessagesForJob, JobMessageLevel,
+  getErrorMessagesForJob, getMessageCountForJob, getWarningMessagesForJob, JobMessageLevel,
 } from '../../models/job-message';
 import {
   decrementRunningCount, deleteUserWorkForJob, incrementReadyAndDecrementRunningCounts,
@@ -324,6 +324,7 @@ async function createAggregatingWorkItem(
   const itemLinks: StacItemLink[] = [];
   const s3 = objectStoreForProtocol('s3');
   // get all the previous results
+  // TODO if we start supporting work-item warnings that still have output data, this will need to include them as well
   const workItemCount = await workItemCountForStep(tx, currentWorkItem.jobID, nextStep.stepIndex - 1, WorkItemStatus.SUCCESSFUL);
   if (workItemCount < 1) return false; // nothing to aggregate
   let page = 1;

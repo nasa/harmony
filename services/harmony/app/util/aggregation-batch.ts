@@ -195,6 +195,7 @@ async function createCatalogAndWorkItemForBatch(
       batchItemUrls);
 
     // create a work item for the batch
+    // TODO add calculation for source_items_size here
     const newWorkItem = new WorkItem({
       jobID,
       serviceID,
