@@ -172,6 +172,58 @@ export async function getJobsListing(
 }
 
 /**
+ * Get a message explaining the change in size from the input to the output
+ *
+ * @param sizes - original and output sizes of the input in MiB (1024 x 1024 bytes)
+ * @param precision - the number of decimal places to allow in the output
+ * @returns a message explaining the size change as a percentage
+ */
+export function sizeChangeMessage(
+  sizes: { originalSize: number; outputSize: number; },
+  precision: number = 2): string {
+  if (sizes.originalSize === 0) {
+    return 'Original size is 0 - percent size change N/A';
+  }
+  if (sizes.outputSize === 0) {
+    return 'Output size is 0 - percent size change N/A';
+  }
+  let result: string;
+  const diff = sizes.originalSize - sizes.outputSize;
+  if (diff < 0) {
+    const percent = (-diff / sizes.originalSize * 100.0).toFixed(precision);
+    result = `${percent}% increase`;
+  } else if (diff > 0) {
+    let percent = (diff / sizes.originalSize * 100.0).toFixed(precision);
+    // due to JS precision issues, big changes will appear to be 100% reduction, which is impossible
+    if (percent === 100.0.toFixed(precision)) percent = 99.99.toFixed(precision);
+
+    result = `${percent}% reduction`;
+  } else {
+    result = 'no change';
+  }
+
+  return result;
+}
+
+/**
+ * Format a data size number as a string for human presentation
+ * @param mibSize - the float size in MiB (1024x1024 bytes)
+ * @param precision - the number of decimal places to allow in the output
+ * @returns a string representing the size using B, KiB, MiB, etc., notation
+ */
+export function formatDataSize(mibSize: number, precision: number = 2): string {
+  const units = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB'];
+  let size = mibSize * 1024 * 1024;
+  let unitIndex = 0;
+  while (size >= 1024 && unitIndex < units.length - 1) {
+    size /= 1024;
+    unitIndex++;
+  }
+
+  return `${size.toFixed(precision)} ${units[unitIndex]}`;
+}
+
+/**
  * Express.js handler that returns job status for a single job `(/jobs/{jobID})`
  *
  * @param req - The request sent by the client
@@ -189,17 +241,11 @@ export async function getJobStatus(
   try {
     validateJobId(jobID);
     const { page, limit } = getPagingParams(req, env.defaultResultPageSize);
-    let job: Job;
-    let pagination;
-    let messages: JobMessage[];
-
-    await db.transaction(async (tx) => {
-      ({ job, pagination } = await Job.byJobID(tx, jobID, true, true, false, page, limit));
-      messages = await getMessagesForJob(tx, jobID);
-    });
+    const { job, pagination } = await Job.byJobID(db, jobID, true, true, false, page, limit);
     if (!job) {
       throw new NotFoundError(`Unable to find job ${jobID}`);
     }
+    const messages: JobMessage[] = await getMessagesForJob(db, jobID);
     const isAdmin = await isAdminUser(req);
     const isAdminOrOwner = job.belongsToOrIsAdmin(req.user, isAdmin);
     const isJobShareable = await job.isShareable(req.accessToken);
@@ -210,6 +256,12 @@ export async function getJobStatus(
     const pagingLinks = getPagingLinks(req, pagination).map((link) => new JobLink(link));
     job.links = job.links.concat(pagingLinks);
     const jobForDisplay = getJobForDisplay(job, urlRoot, linkType, messages);
+    if (job.original_data_size && job.output_data_size) {
+      jobForDisplay.originalDataSize = formatDataSize(job.original_data_size);
+      jobForDisplay.outputDataSize = formatDataSize(job.output_data_size);
+      jobForDisplay.dataSizePercentChange =
+        sizeChangeMessage({ originalSize: job.original_data_size, outputSize: job.output_data_size });
+    }
     res.send(jobForDisplay);
   } catch (e) {
     req.context.logger.error(e);
