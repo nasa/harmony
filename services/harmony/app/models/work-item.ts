@@ -762,7 +762,9 @@ export async function getScrollIdForJob(
 export async function getTotalWorkItemSizesForJobID(
   tx: Transaction,
   jobID: string,
-): Promise<{ originalSize: number, outputSize: number }> {
+): Promise<{ originalSize: number, outputSize: number; }> {
+  logger.info('timing.getTotalWorkItemSizesForJobID.start');
+  const startTime = new Date().getTime();
   const workflowStepIndexResults = await tx(WorkflowStep.table)
     .select()
     .min('stepIndex')
@@ -802,6 +804,8 @@ export async function getTotalWorkItemSizesForJobID(
     outputSize = Number(outputSizeResults[0]['sum(`totalItemsSize`)']);
   }
 
+  const durationMs = new Date().getTime() - startTime;
+  logger.info('timing.getTotalWorkItemSizesForJobID.end', { durationMs });
 
   return { originalSize, outputSize };
 }

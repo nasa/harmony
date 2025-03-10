@@ -6,7 +6,6 @@ import HarmonyRequest from '../models/harmony-request';
 import { getRelatedLinks, Job, JobForDisplay, JobQuery, JobStatus } from '../models/job';
 import JobLink from '../models/job-link';
 import JobMessage, { getMessagesForJob, JobMessageLevel } from '../models/job-message';
-import { getTotalWorkItemSizesForJobID } from '../models/work-item';
 import db from '../util/db';
 import { isAdminUser } from '../util/edl-api';
 import env from '../util/env';
