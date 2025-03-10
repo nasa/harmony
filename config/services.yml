@@ -1236,6 +1236,7 @@ https://cmr.uat.earthdata.nasa.gov:
           <<: *default-turbo-env
           STAGING_PATH: public/gesdisc/giovanni
     umm_s: S1272947465-GES_DISC
+    validate_variables: false
     capabilities:
       subsetting:
         bbox: true
