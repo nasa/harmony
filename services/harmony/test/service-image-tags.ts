@@ -1153,7 +1153,7 @@ describe('Service image endpoint', async function () {
                 expect(service).to.eql('harmony-service-example');
                 expect(tag).to.eql('foo');
                 expect(status).to.eql('successful');
-                expect(message).to.eql('Deployment successful');
+                expect(message).to.include('Deployment successful');
               });
             });
 
@@ -1178,7 +1178,7 @@ describe('Service image endpoint', async function () {
                 expect(service).to.eql('harmony-service-example');
                 expect(tag).to.eql('foo');
                 expect(status).to.eql('successful');
-                expect(message).to.eql('Deployment successful');
+                expect(message).to.include('Deployment successful');
               });
             });
           });
@@ -1196,6 +1196,7 @@ describe('Service self-deployment successful', async function () {
     let execDeployScriptStub: sinon.SinonStub;
     let link = null;
     let linkDeploymentId = null;
+    let deploymentLogPath = null;
 
     hookDescribeImage({
       imageDigest: '',
@@ -1258,6 +1259,7 @@ describe('Service self-deployment successful', async function () {
 
       it('returns the deployment status successful', async function () {
         const { deploymentId, username, service, tag, regressionTestVersion, status, message } = this.res.body;
+        deploymentLogPath = `/deployment-logs/${deploymentId}`;
         expect(deploymentId).to.eql(linkDeploymentId);
         expect(username).to.eql('buzz');
         expect(service).to.eql('harmony-service-example');
@@ -1265,7 +1267,45 @@ describe('Service self-deployment successful', async function () {
         // regressionTestVersion is set to the default value
         expect(regressionTestVersion).to.eql('latest');
         expect(status).to.eql('successful');
-        expect(message).to.eql('Deployment successful');
+        expect(message).to.include('Deployment successful');
+        expect(message).to.include(`See details at: http://127.0.0.1:4000${deploymentLogPath}`);
+      });
+    });
+
+    describe('when get the service deployment log with authorized user', async function () {
+      before(async function () {
+        hookRedirect('coraline');
+        this.res = await request(this.frontend).get(deploymentLogPath).use(auth({ username: 'coraline' }));
+      });
+
+      after(function () {
+        delete this.res;
+      });
+
+      it('returns a status 200', async function () {
+        expect(this.res.status).to.equal(200);
+      });
+
+      it('returns enabled false', async function () {
+        expect(this.res.body).to.eql(['Success output']);
+      });
+    });
+
+    describe('when get the service deployment log with unauthorized user', async function () {
+      before(async function () {
+        hookRedirect('coraline');
+        this.res = await request(this.frontend).get(deploymentLogPath).use(auth({ username: 'joe' }));
+      });
+
+      after(function () {
+        delete this.res;
+      });
+
+      it('returns a status 403', async function () {
+        expect(this.res.status).to.equal(403);
+      });
+      it('returns a meaningful error message', async function () {
+        expect(this.res.text).to.equal('User joe does not have permission to access this resource');
       });
     });
 

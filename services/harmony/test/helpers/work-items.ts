@@ -1,15 +1,20 @@
 import { Application } from 'express';
+import _ from 'lodash';
 import { afterEach, beforeEach } from 'mocha';
 import request, { Test } from 'supertest';
-import _ from 'lodash';
+
+import { RecordConstructor } from '../../app/models/record';
 import WorkItem from '../../app/models/work-item';
+import {
+  getStacLocation, WorkItemRecord, WorkItemStatus,
+} from '../../app/models/work-item-interface';
 import db, { Transaction } from '../../app/util/db';
+import { objectStoreForProtocol } from '../../app/util/object-store';
 import { truncateAll } from './db';
 import { hookBackendRequest } from './hooks';
-import { buildWorkflowStep, hookWorkflowStepCreation, hookWorkflowStepCreationEach } from './workflow-steps';
-import { RecordConstructor } from '../../app/models/record';
-import { WorkItemStatus, WorkItemRecord, getStacLocation } from '../../app/models/work-item-interface';
-import { objectStoreForProtocol } from '../../app/util/object-store';
+import {
+  buildWorkflowStep, hookWorkflowStepCreation, hookWorkflowStepCreationEach,
+} from './workflow-steps';
 
 export const exampleWorkItemProps = {
   jobID: '1',
@@ -45,7 +50,7 @@ export function buildWorkItem(fields: Partial<WorkItemRecord> = {}): WorkItem {
 
 /**
  * Save a work item without validating or updating createdAt/updatedAt
- * @param tx - The transaction to use for saving the job
+ * @param tx - The transaction to use for saving the work item
  * @param fields - The fields to save to the database, defaults to example values
  * @returns The saved work item
  * @throws Error - if the save to the database fails
