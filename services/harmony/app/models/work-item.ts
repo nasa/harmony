@@ -2,16 +2,19 @@
 import { subMinutes } from 'date-fns';
 import { ILengthAwarePagination } from 'knex-paginate';
 import _ from 'lodash';
-import logger from '../util/log';
+
+import { getWorkSchedulerQueue } from '../../app/util/queue/queue-factory';
+import { eventEmitter } from '../events';
 import db, { Transaction } from '../util/db';
-import DataOperation from './data-operation';
 import env from '../util/env';
+import logger from '../util/log';
+import DataOperation from './data-operation';
 import { Job, JobStatus } from './job';
 import Record from './record';
+import {
+  getStacLocation, WorkItemQuery, WorkItemRecord, WorkItemStatus,
+} from './work-item-interface';
 import WorkflowStep from './workflow-steps';
-import { WorkItemRecord, WorkItemStatus, getStacLocation, WorkItemQuery } from './work-item-interface';
-import { eventEmitter } from '../events';
-import { getWorkSchedulerQueue } from '../../app/util/queue/queue-factory';
 
 // The step index for the query-cmr task. Right now query-cmr only runs as the first step -
 // if this changes we will have to revisit this
@@ -69,7 +72,7 @@ export default class WorkItem extends Record implements WorkItemRecord {
   // The location of the resulting STAC catalog(s) (not serialized)
   results?: string[];
 
-  // The sum of the sizes of the granules associated with this work item
+  // The sum of the sizes of the outputs associated with this work item
   totalItemsSize?: number;
 
   // The size (in bytes) of each STAC item produced by this work item (used for batching)
@@ -106,7 +109,7 @@ export default class WorkItem extends Record implements WorkItemRecord {
   /**
    * Saves the work items to the database using a single SQL statement.
    *
-   * @param transaction - The transaction to use for saving the job link
+   * @param transaction - The transaction to use for saving the work-items
    * @param workItems - The work items to save
    */
   static async insertBatch(transaction: Transaction, workItems: WorkItem[]): Promise<void> {
@@ -759,7 +762,9 @@ export async function getScrollIdForJob(
 export async function getTotalWorkItemSizesForJobID(
   tx: Transaction,
   jobID: string,
-): Promise<{ originalSize: number, outputSize: number }> {
+): Promise<{ originalSize: number, outputSize: number; }> {
+  logger.info('timing.getTotalWorkItemSizesForJobID.start');
+  const startTime = new Date().getTime();
   const workflowStepIndexResults = await tx(WorkflowStep.table)
     .select()
     .min('stepIndex')
@@ -799,6 +804,8 @@ export async function getTotalWorkItemSizesForJobID(
     outputSize = Number(outputSizeResults[0]['sum(`totalItemsSize`)']);
   }
 
+  const durationMs = new Date().getTime() - startTime;
+  logger.info('timing.getTotalWorkItemSizesForJobID.end', { durationMs });
 
   return { originalSize, outputSize };
 }
