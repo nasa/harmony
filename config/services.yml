@@ -307,6 +307,7 @@ https://cmr.earthdata.nasa.gov:
       subsetting:
         variable: true
         multiple_variable: true
+        dimension: true
       output_formats:
         - application/x-hdf
     steps:
@@ -335,12 +336,16 @@ https://cmr.earthdata.nasa.gov:
          bbox: true
          variable: true
          multiple_variable: true
+         dimension: true
        output_formats:
          - application/x-hdf
        reprojection: true
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
+      - image: !Env ${SUBSET_BAND_NAME_IMAGE}
+        conditional:
+          exists: [ 'variableSubset', 'dimensionSubset' ]
       - image: !Env ${GEOLOCO_IMAGE}
 
   - name: sds/HyBIG
@@ -1218,6 +1223,39 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
       - image: !Env ${HARMONY_GDAL_ADAPTER_IMAGE}
+
+  - name: giovanni-averaging-services-adapter
+    description: |
+      A service to compute averaging over specified dimensions on Zarr data on a Dask cluster running in Cloud Giovanni. A time-averaged map
+      will produce a GEOTIFF and an area-averaged timeseries will produce a CSV.
+    data_operation_version: '0.20.0'
+    has_granule_limit: false
+    # Replace the next two lines to default to synchronous once bearer tokens are supported by Giovanni
+    # default_sync: true
+    maximum_sync_granules: -1
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/gesdisc/giovanni
+    umm_s: S1272947465-GES_DISC
+    validate_variables: false
+    capabilities:
+      subsetting:
+        bbox: true
+        temporal: true
+        variable: true
+        multiple_variable: false
+      averaging:
+        time: true
+        area: true
+      output_formats:
+        - text/csv
+        - image/tiff
+    steps:
+      - image: !Env ${GIOVANNI_AVERAGING_SERVICES_ADAPTER_IMAGE}
 
   - name: harmony/netcdf-to-zarr
     description: |
