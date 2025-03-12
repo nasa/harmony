@@ -1,7 +1,10 @@
 import DataOperation from '../../models/data-operation';
 import HarmonyRequest from '../../models/harmony-request';
 import wrap from '../../util/array';
-import { handleAveragingType, handleCrs, handleExtend, handleFormat, handleGranuleIds, handleGranuleNames, handleScaleExtent, handleScaleSize } from '../../util/parameter-parsers';
+import {
+  handleAveragingType, handleCrs, handleExtend, handleFormat, handleGranuleIds, handleGranuleNames,
+  handleScaleExtent, handleScaleSize, handleForceAsync, handleIgnoreErrors, handlePixelSubset,
+} from '../../util/parameter-parsers';
 import { createDecrypter, createEncrypter } from '../../util/crypto';
 import env from '../../util/env';
 import { RequestValidationError } from '../../util/errors';
@@ -36,20 +39,14 @@ export function getDataCommon(
   handleScaleExtent(operation, query);
   handleScaleSize(operation, query);
   handleAveragingType(operation, query);
+  handleForceAsync(operation, query);
+  handleIgnoreErrors(operation, query);
+  handlePixelSubset(operation, query);
 
   operation.interpolationMethod = query.interpolation;
   operation.outputWidth = query.width;
   operation.outputHeight = query.height;
-  if (query.forceasync) {
-    operation.isSynchronous = false;
-  }
-
-  operation.ignoreErrors = query.ignoreerrors === false ? false : true;
   operation.destinationUrl = query.destinationurl;
-
-  if (query.pixelsubset !== undefined) {
-    operation.pixelSubset = query.pixelsubset;
-  }
 
   try {
     const subset = parseSubsetParams(wrap(query.subset));

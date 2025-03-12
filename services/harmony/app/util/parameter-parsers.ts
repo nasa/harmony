@@ -220,3 +220,79 @@ export function handleAveragingType(
     operation.average = value;
   }
 }
+
+/**
+ * Handle the forceAsync parameter in a Harmony query, adding it to the DataOperation
+ * if necessary.
+ *
+ * @param operation - the DataOperation for the request
+ * @param query - the query for the request
+ */
+export function handleForceAsync(
+  operation: DataOperation,
+  query: Record<string, string | boolean>): void {
+  if (query.forceasync !== undefined) {
+    if (query.forceasync === true) {
+      operation.isSynchronous = false;
+    } else if (query.forceasync !== false) {
+      const value = query.forceasync.toLowerCase();
+      if (value === 'true') {
+        operation.isSynchronous = false;
+      } else if (value !== 'false') {
+        throw new RequestValidationError('query parameter "forceAsync" must be either true or false');
+      }
+    }
+  }
+}
+
+/**
+ * Handle the ignoreErrors parameter in a Harmony query, adding it to the DataOperation
+ * if necessary.
+ *
+ * @param operation - the DataOperation for the request
+ * @param query - the query for the request
+ */
+export function handleIgnoreErrors(
+  operation: DataOperation,
+  query: Record<string, string | boolean>): void {
+  if (query.ignoreerrors === undefined) {
+    operation.ignoreErrors = true;
+  } else if (query.ignoreerrors === true || query.ignoreerrors === false) {
+    operation.ignoreErrors = query.ignoreerrors;
+  } else {
+    const value = query.ignoreerrors.toLowerCase();
+    if (value === 'true') {
+      operation.ignoreErrors = true;
+    } else if (value === 'false') {
+      operation.ignoreErrors = false;
+    } else {
+      throw new RequestValidationError('query parameter "ignoreErrors" must be either true or false');
+    }
+  }
+}
+
+/**
+ * Handle the pixelSubset parameter in a Harmony query, adding it to the DataOperation
+ * if necessary.
+ *
+ * @param operation - the DataOperation for the request
+ * @param query - the query for the request
+ */
+export function handlePixelSubset(
+  operation: DataOperation,
+  query: Record<string, string | boolean>): void {
+  if (query.pixelsubset !== undefined) {
+    if (query.pixelsubset === true || query.pixelsubset === false) {
+      operation.pixelSubset = query.pixelsubset;
+    } else {
+      const value = query.pixelsubset.toLowerCase();
+      if (value === 'true') {
+        operation.pixelSubset = true;
+      } else if (value === 'false') {
+        operation.pixelSubset = false;
+      } else {
+        throw new RequestValidationError('query parameter "pixelSubset" must be either true or false');
+      }
+    }
+  }
+}

@@ -492,8 +492,8 @@ async function processGeoJson(geoJsonOrUri: string, formData: FormData): Promise
     });
     return tempFile;
   } else {
-    logger.error('GEOJSON :');
-    logger.error(geoJsonOrUri);
+    logger.info('GEOJSON :');
+    logger.info(geoJsonOrUri);
     const buf = Buffer.from(geoJsonOrUri);
     formData.append('shapefile', buf, {
       contentType: 'application/geo+json',
