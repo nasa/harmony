@@ -51,8 +51,8 @@ describe('OGC API EDR - getEdrArea', function () {
           height: 500,
           width: 1000,
           f: 'image/png',
-          skipPreview: true,
-          pixelSubset: true,
+          skipPreview: 'true',
+          pixelSubset: 'true',
           // extend: 'lat,lon', TODO: HARMONY-1569 support extend
         };
 
@@ -397,7 +397,7 @@ describe('OGC API EDR - getEdrArea', function () {
     StubService.hook({ params: { redirect: 'http://example.com' } });
 
     describe('set to "true"', function () {
-      const forceAsync = true;
+      const forceAsync = 'true';
 
       describe('and making a request would otherwise be synchronous', function () {
         hookEdrRequest('area', version, collection,
@@ -418,7 +418,7 @@ describe('OGC API EDR - getEdrArea', function () {
     });
 
     describe('set to "false"', function () {
-      const forceAsync = false;
+      const forceAsync = 'false';
 
       describe('and making a request would otherwise be synchronous', function () {
         hookEdrRequest('area', version, collection,
