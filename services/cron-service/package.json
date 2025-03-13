@@ -50,6 +50,7 @@
     "@aws-sdk/url-parser": "^3.374.0",
     "@aws-sdk/util-format-url": "^3.433.0",
     "@harmony/util": "file:../../packages/util",
+    "@kubernetes/client-node": "^1.0.0",
     "@mapbox/geojson-rewind": "^0.5.2",
     "@tmcw/togeojson": ">=5.8.1 <6.0.0",
     "@turf/circle": "^7.2.0",

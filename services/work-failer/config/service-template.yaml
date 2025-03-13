@@ -27,16 +27,9 @@ spec:
               cpu: $WORK_FAILER_REQUESTS_CPU
           envFrom:
           - configMapRef:
-              name: harmony-env
+              name: work-failer-env
           - secretRef:
               name: harmony-secrets
-          env:
-          - name: FAILABLE_WORK_AGE_MINUTES
-            value: '$FAILABLE_WORK_AGE_MINUTES'
-          - name: WORK_FAILER_BATCH_SIZE
-            value: '$WORK_FAILER_BATCH_SIZE'
-          - name: WORK_FAILER_PERIOD_SEC
-            value: '$WORK_FAILER_PERIOD_SEC'
           ports:
             - containerPort: $PORT
 ---
