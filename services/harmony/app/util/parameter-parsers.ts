@@ -8,6 +8,7 @@ import { ParameterParseError, parseMultiValueParameter, parseNumber } from './pa
 import HarmonyRequest from '../models/harmony-request';
 import { parseAcceptHeader } from './content-negotiation';
 import { RequestValidationError } from './errors';
+import { parseBoolean } from '@harmony/util/string';
 
 /**
  * Helper function to convert parameter parsing errors into 400 errors for an end
@@ -218,5 +219,88 @@ export function handleAveragingType(
       throw new RequestValidationError('query parameter "average" must be either "time" or "area"');
     }
     operation.average = value;
+  }
+}
+
+const booleanParameters = ['forceAsync', 'concatenate', 'skipPreview', 'ignoreErrors', 'pixelSubset'];
+
+/**
+ * Validate a boolean field has value that can be converted to boolean if present
+ * Throws an error if the value is not 'true' or 'false'.
+ *
+ * @param field - The name of the query parameter being parsed.
+ * @param value - The value to be parsed.
+ * @throws RequestValidationError if the value is not 'true' or 'false'.
+ */
+export function validateBooleanField(field: string, value: string): void {
+  if (value !== undefined) {
+    const strValue = value.toString().toLowerCase();
+    if (strValue !== 'true' && strValue !== 'false') {
+      throw new RequestValidationError(`query parameter "${field}" must be either true or false`);
+    }
+  }
+}
+
+// Disable no-explicit-any for this file, since most methods will operate on objects generically
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+/**
+ * Perform the valiation for boolean parameters to make sure
+ * their values are valid strings ('true' or 'false').
+ *
+ * @param query - the query for the request
+ * @throws RequestValidationError if any field value is not 'true' or 'false'.
+ */
+export function validateBooleanParameters(
+  query: Record<string, any>): void {
+  for (const field of booleanParameters) {
+    validateBooleanField(field, query[field]);
+  }
+}
+
+/**
+ * Handle the forceAsync parameter in a Harmony query, adding it to the DataOperation
+ * if necessary.
+ *
+ * @param operation - the DataOperation for the request
+ * @param query - the query for the request
+ */
+export function handleForceAsync(
+  operation: DataOperation,
+  query: Record<string, string>): void {
+  if (query.forceasync !== undefined && parseBoolean(query.forceasync)) {
+    operation.isSynchronous = false;
+  }
+}
+
+/**
+ * Handle the ignoreErrors parameter in a Harmony query, adding it to the DataOperation
+ * if necessary.
+ *
+ * @param operation - the DataOperation for the request
+ * @param query - the query for the request
+ */
+export function handleIgnoreErrors(
+  operation: DataOperation,
+  query: Record<string, string>): void {
+  if (query.ignoreerrors === undefined) {
+    operation.ignoreErrors = true;
+  } else {
+    operation.ignoreErrors = parseBoolean(query.ignoreerrors);
+  }
+}
+
+/**
+ * Handle the pixelSubset parameter in a Harmony query, adding it to the DataOperation
+ * if necessary.
+ *
+ * @param operation - the DataOperation for the request
+ * @param query - the query for the request
+ */
+export function handlePixelSubset(
+  operation: DataOperation,
+  query: Record<string, string>): void {
+  if (query.pixelsubset !== undefined) {
+    operation.pixelSubset = parseBoolean(query.pixelsubset);
   }
 }

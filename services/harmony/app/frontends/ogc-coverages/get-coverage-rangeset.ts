@@ -2,7 +2,11 @@ import { NextFunction, Response } from 'express';
 import DataOperation from '../../models/data-operation';
 import HarmonyRequest from '../../models/harmony-request';
 import wrap from '../../util/array';
-import { handleAveragingType, handleCrs, handleExtend, handleFormat, handleGranuleIds, handleGranuleNames, handleHeight, handleScaleExtent, handleScaleSize, handleWidth } from '../../util/parameter-parsers';
+import {
+  validateBooleanParameters, handleAveragingType, handleCrs, handleExtend, handleFormat,
+  handleGranuleIds, handleGranuleNames, handleHeight, handleScaleExtent, handleScaleSize,
+  handleWidth, handleForceAsync, handleIgnoreErrors, handlePixelSubset,
+} from '../../util/parameter-parsers';
 import { createDecrypter, createEncrypter } from '../../util/crypto';
 import env from '../../util/env';
 import { RequestValidationError } from '../../util/errors';
@@ -26,6 +30,7 @@ export default function getCoverageRangeset(
   next: NextFunction,
 ): void {
   req.context.frontend = 'ogcCoverages';
+  validateBooleanParameters(req.query);
   const query = keysToLowerCase(req.query);
 
   const encrypter = createEncrypter(env.sharedSecretKey);
@@ -42,18 +47,12 @@ export default function getCoverageRangeset(
   handleHeight(operation, query);
   handleWidth(operation, query);
   handleAveragingType(operation, query);
+  handleForceAsync(operation, query);
+  handleIgnoreErrors(operation, query);
+  handlePixelSubset(operation, query);
 
   operation.interpolationMethod = query.interpolation;
-  if (query.forceasync) {
-    operation.isSynchronous = false;
-  }
-
-  operation.ignoreErrors = query.ignoreerrors === false ? false : true;
   operation.destinationUrl = query.destinationurl;
-
-  if (query.pixelsubset !== undefined) {
-    operation.pixelSubset = query.pixelsubset;
-  }
 
   try {
     const subset = parseSubsetParams(wrap(query.subset));
