@@ -2,7 +2,7 @@ import { describe, it } from 'mocha';
 import { expect } from 'chai';
 import { ParameterParseError, parseBoolean, parseMultiValueParameter, parseNumber, parseWkt } from '../../app/util/parameter-parsing-helpers';
 
-describe('util/parameter-parsing', function () {
+describe('util/parameter-parsing-helpers', function () {
   describe('#parseMultiValueParameter', function () {
     it('returns an array unchanged when it receives an array', function () {
       expect(parseMultiValueParameter(['foo', 'bar'])).to.eql(['foo', 'bar']);
