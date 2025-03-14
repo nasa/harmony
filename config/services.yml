@@ -12,14 +12,11 @@ x-turbo-config: &default-turbo-config
       STAGING_BUCKET: !Env ${STAGING_BUCKET}
       TEXT_LOGGER: !Env ${TEXT_LOGGER}
       BACKEND_HOST: !Env ${BACKEND_HOST}
-      EDL_USERNAME: !Env ${EDL_USERNAME}
-      EDL_PASSWORD: !Env ${EDL_PASSWORD}
       OAUTH_UID: !Env ${OAUTH_UID}
       OAUTH_PASSWORD: !Env ${OAUTH_PASSWORD}
       OAUTH_HOST: !Env ${OAUTH_HOST}
       OAUTH_CLIENT_ID: !Env ${OAUTH_CLIENT_ID}
       OAUTH_REDIRECT_URI: !Env ${OAUTH_REDIRECT_URI}
-      FALLBACK_AUTHN_ENABLED: !Env ${FALLBACK_AUTHN_ENABLED}
 
 https://cmr.earthdata.nasa.gov:
 

@@ -27,14 +27,12 @@ spec:
               cpu: $WORK_ITEM_UPDATER_REQUESTS_CPU
           envFrom:
           - configMapRef:
-              name: harmony-env
+              name: work-updater-env
           - secretRef:
               name: harmony-secrets
           env:
           - name: WORK_ITEM_UPDATE_QUEUE_TYPE
             value: large
-          - name: WORK_ITEM_RETRY_LIMIT
-            value: '$WORK_ITEM_RETRY_LIMIT'
           ports:
             - containerPort: $PORT
 ---
