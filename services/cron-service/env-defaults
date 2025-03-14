@@ -9,3 +9,6 @@ REAPABLE_WORK_AGE_MINUTES=20160
 
 # The batch size of the work reaper service
 WORK_REAPER_BATCH_SIZE=2000
+
+# The cron schedule for restarting Prometheus if it is down
+RESTART_PROMETHEUS_CRON="*/10 * * * *" # every 10 minutes
