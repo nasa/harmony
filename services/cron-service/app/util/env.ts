@@ -24,6 +24,9 @@ class CronServiceHarmonyEnv extends HarmonyEnv {
   @Min(1)
   reapableWorkAgeMinutes: number;
 
+  // Restart prometheus
+  @IsCrontab()
+  restartPrometheusCron: string;
 }
 // end work reaper specific vars
 
