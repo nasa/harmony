@@ -22,14 +22,14 @@ const reprojectAndZarrQuery = {
   scaleExtent: '0,2500000.3,1500000,3300000',
   scaleSize: '1.1,2',
   format: 'application/x-zarr',
-  concatenate: 'false',
+  concatenate: false,
 };
 
 const l2ssAndConciseQuery = {
   subset: 'lat(0:90)',
-  concatenate: 'false',
+  concatenate: false,
   maxResults: 1,
-  ignoreErrors: 'true',
+  ignoreErrors: true,
 };
 
 const collection = 'C1233800302-EEDTEST';
@@ -1549,7 +1549,7 @@ describe('ignoreErrors', function () {
 
   describe('when setting ignoreErrors=false', function () {
     describe('when making a request for 3 granules and one fails while in progress', function () {
-      hookRangesetRequest('1.0.0', collection, 'all', { query: { ...reprojectAndZarrQuery, ...{ maxResults: 3, ignoreErrors: 'false' } } });
+      hookRangesetRequest('1.0.0', collection, 'all', { query: { ...reprojectAndZarrQuery, ...{ maxResults: 3, ignoreErrors: false } } });
       hookRedirect('joe');
 
       before(async function () {
