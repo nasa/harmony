@@ -244,13 +244,13 @@ paths:
                 height:
                   type: integer
                 forceAsync:
-                  type: boolean
+                  type: string
                 maxResults:
                   type: integer
                 skipPreview:
-                  type: boolean
+                  type: string
                 ignoreErrors:
-                  type: boolean
+                  type: string
                 destinationUrl:
                   type: string
                 granuleName:
@@ -268,7 +268,7 @@ paths:
                 average:
                   type: string
                 pixelSubset:
-                  type: boolean
+                  type: string
       responses:
         "200":
           description: A collection's EDR.
@@ -393,13 +393,13 @@ paths:
                 height:
                   type: integer
                 forceAsync:
-                  type: boolean
+                  type: string
                 maxResults:
                   type: integer
                 skipPreview:
-                  type: boolean
+                  type: string
                 ignoreErrors:
-                  type: boolean
+                  type: string
                 destinationUrl:
                   type: string
                 granuleName:
@@ -417,7 +417,7 @@ paths:
                 average:
                   type: string
                 pixelSubset:
-                  type: boolean
+                  type: string
       responses:
         "200":
           description: A collection's EDR.
@@ -540,13 +540,13 @@ paths:
                 height:
                   type: integer
                 forceAsync:
-                  type: boolean
+                  type: string
                 maxResults:
                   type: integer
                 skipPreview:
-                  type: boolean
+                  type: string
                 ignoreErrors:
-                  type: boolean
+                  type: string
                 destinationUrl:
                   type: string
                 granuleName:
@@ -564,7 +564,7 @@ paths:
                 average:
                   type: string
                 pixelSubset:
-                  type: boolean
+                  type: string
       responses:
         "200":
           description: A edr description.
@@ -680,13 +680,13 @@ paths:
                 height:
                   type: integer
                 forceAsync:
-                  type: boolean
+                  type: string
                 maxResults:
                   type: integer
                 skipPreview:
-                  type: boolean
+                  type: string
                 ignoreErrors:
-                  type: boolean
+                  type: string
                 destinationUrl:
                   type: string
                 granuleName:
@@ -704,7 +704,7 @@ paths:
                 average:
                   type: string
                 pixelSubset:
-                  type: boolean
+                  type: string
       responses:
         "200":
           description: A collection's EDR.
@@ -821,13 +821,13 @@ paths:
                 height:
                   type: integer
                 forceAsync:
-                  type: boolean
+                  type: string
                 maxResults:
                   type: integer
                 skipPreview:
-                  type: boolean
+                  type: string
                 ignoreErrors:
-                  type: boolean
+                  type: string
                 destinationUrl:
                   type: string
                 granuleName:
@@ -845,7 +845,7 @@ paths:
                 average:
                   type: string
                 pixelSubset:
-                  type: boolean
+                  type: string
       responses:
         "200":
           description: A collection's EDR.
@@ -984,13 +984,13 @@ paths:
                 height:
                   type: integer
                 forceAsync:
-                  type: boolean
+                  type: string
                 maxResults:
                   type: integer
                 skipPreview:
-                  type: boolean
+                  type: string
                 ignoreErrors:
-                  type: boolean
+                  type: string
                 destinationUrl:
                   type: string
                 granuleName:
@@ -1008,7 +1008,7 @@ paths:
                 average:
                   type: string
                 pixelSubset:
-                  type: boolean
+                  type: string
       responses:
         "200":
           description: A collection's EDR.
@@ -1636,7 +1636,7 @@ components:
       description: if "true", override the default API behavior and always treat the request as asynchronous
       required: false
       schema:
-        type: boolean
+        type: string
     maxResults:
       name: maxResults
       in: query
@@ -1658,7 +1658,7 @@ components:
       description: if "true", override the default API behavior and never auto-pause jobs
       required: false
       schema:
-        type: boolean
+        type: string
     ignoreErrors:
       name: ignoreErrors
       in: query
@@ -1667,7 +1667,7 @@ components:
         immediately fail the request on the first failure. Defaults to true.
       required: false
       schema:
-        type: boolean
+        type: string
     destinationUrl:
       name: destinationUrl
       in: query
@@ -1738,4 +1738,4 @@ components:
         if "true", pixel subset will be performed by the service
       required: false
       schema:
-        type: boolean
+        type: string

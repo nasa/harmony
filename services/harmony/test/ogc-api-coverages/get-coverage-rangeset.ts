@@ -535,7 +535,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     StubService.hook({ params: { redirect: 'http://example.com' } });
 
     describe('set to "true"', function () {
-      const forceAsync = true;
+      const forceAsync = 'true';
 
       describe('and making a request would otherwise be synchronous', function () {
         hookRangesetRequest(version, collection, variableName,
@@ -556,7 +556,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     });
 
     describe('set to "false"', function () {
-      const forceAsync = false;
+      const forceAsync = 'false';
 
       describe('and making a request would otherwise be synchronous', function () {
         hookRangesetRequest(version, collection, variableName,

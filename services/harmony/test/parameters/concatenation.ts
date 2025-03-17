@@ -105,7 +105,7 @@ describe('testing concatenation', function () {
           expect(this.res.statusCode).to.equal(400);
           expect(this.res.body).to.eql({
             code: 'harmony.RequestValidationError',
-            description: 'Error: query parameter "concatenate" \'random\' must be \'false\' or \'true\'',
+            description: 'Error: query parameter \"concatenate\" must be either true or false',
           });
         });
       });
