@@ -1095,29 +1095,20 @@ export function filterGranuleLinks(
 /**
  * Returns CMR health information
  *
- * @returns a promise resolving to the DependencyStatus of CMR
+ * @returns A Promise containing `true` if CMR is up
  */
-export async function getCmrHealth(): Promise<object> {
+export async function isCmrHealthy(): Promise<boolean> {
   try {
     const response: CmrResponse = await fetch(`${cmrApiConfig.baseURL}/search/health`);
     response.data = await response.json();
     if (response.status === 200) {
-      return {
-        name: 'cmr',
-        status: 'up',
-      };
+      return true;
     } else {
-      return {
-        name: 'cmr',
-        status: 'down',
-        message: `${JSON.stringify(response.data)}`,
-      };
+      return false;
     }
-  } catch (error) {
-    return {
-      name: 'cmr',
-      status: 'down',
-      message: 'Unable to get CMR health info',
-    };
+  } catch (e) {
+    logger.error('Unable to get CMR health info');
+    logger.error(e);
+    return false;
   }
 }

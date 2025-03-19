@@ -7,12 +7,12 @@ import * as edl from '../../app/util/edl-api';
 /**
  * Hooks to stub CMR and EDL health checks for specific tests.
  */
-export function hookCmrEdlHealthCheck(cmrStatus: object, edlStatus: boolean): void {
+export function hookCmrEdlHealthCheck(cmrStatus: boolean, edlStatus: boolean): void {
   let cmrStub;
   let edlStub;
 
   before(function () {
-    cmrStub = sinon.stub(cmr, 'getCmrHealth').callsFake(async () => cmrStatus);
+    cmrStub = sinon.stub(cmr, 'isCmrHealthy').callsFake(async () => cmrStatus);
     edlStub = sinon.stub(edl, 'isEdlHealthy').callsFake(async () => edlStatus);
   });
 

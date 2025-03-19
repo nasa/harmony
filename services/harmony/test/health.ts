@@ -50,7 +50,7 @@ const dependenciesDownHealthResponse = {
   {
     name: 'cmr',
     status: 'down',
-    message: 'cmr is down',
+    message: 'CMR is down. For details see: https://cmr.uat.earthdata.nasa.gov/search/health',
   },
   {
     name: 'edl',
@@ -65,7 +65,7 @@ describe('Health endpoints', function () {
   describe('When calling /health', function () {
     describe('When not authenticated', function () {
       describe('When the system is healthy', function () {
-        hookCmrEdlHealthCheck({ name: 'cmr', status: 'up' }, true);
+        hookCmrEdlHealthCheck(true, true);
         hookGetHealth();
         it('returns a 200 status code', function () {
           expect(this.res.statusCode).to.equal(200);
@@ -76,7 +76,7 @@ describe('Health endpoints', function () {
         });
       });
       describe('When the database catches fire', function () {
-        hookCmrEdlHealthCheck({ name: 'cmr', status: 'up' }, true);
+        hookCmrEdlHealthCheck(true, true);
         hookDatabaseFailure();
         hookGetHealth();
         it('returns a 503 status code', function () {
@@ -88,7 +88,7 @@ describe('Health endpoints', function () {
         });
       });
       describe('When multiple dependency errors', function () {
-        hookCmrEdlHealthCheck({ name: 'cmr', status: 'down', message: 'cmr is down' }, false);
+        hookCmrEdlHealthCheck(false, false);
         hookDatabaseFailure();
         hookGetHealth();
         it('returns a 503 status code', function () {
@@ -125,7 +125,7 @@ describe('Health endpoints', function () {
 
   describe('When authenticated as an admin user', function () {
     describe('When the system is healthy', function () {
-      hookCmrEdlHealthCheck({ name: 'cmr', status: 'up' }, true);
+      hookCmrEdlHealthCheck(true, true);
       hookGetAdminHealth({ username: 'adam' });
       it('returns a 200 status code', function () {
         expect(this.res.statusCode).to.equal(200);
@@ -136,7 +136,7 @@ describe('Health endpoints', function () {
       });
     });
     describe('When the database catches fire', function () {
-      hookCmrEdlHealthCheck({ name: 'cmr', status: 'up' }, true);
+      hookCmrEdlHealthCheck(true, true);
       hookDatabaseFailure();
       hookGetAdminHealth({ username: 'adam' });
       it('returns a 503 status code', function () {
@@ -148,7 +148,7 @@ describe('Health endpoints', function () {
       });
     });
     describe('When multiple dependency errors', function () {
-      hookCmrEdlHealthCheck({ name: 'cmr', status: 'down', message: 'cmr is down' }, false);
+      hookCmrEdlHealthCheck(false, false);
       hookDatabaseFailure();
       hookGetAdminHealth({ username: 'adam' });
       it('returns a 503 status code', function () {
