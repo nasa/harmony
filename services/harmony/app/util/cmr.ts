@@ -7,6 +7,7 @@ import fetch, { Response } from 'node-fetch';
 import * as querystring from 'querystring';
 import { CmrError } from './errors';
 import { defaultObjectStore, objectStoreForProtocol } from './object-store';
+import { truncateString } from '@harmony/util/string';
 import env from './env';
 import logger from './log';
 import { UmmSpatial } from './spatial/umm-spatial';
@@ -1095,20 +1096,26 @@ export function filterGranuleLinks(
 /**
  * Returns CMR health information
  *
- * @returns A Promise containing `true` if CMR is up
+ * @returns A Promise with healthy and message indicating the CMR health info
  */
-export async function isCmrHealthy(): Promise<boolean> {
+export async function isCmrHealthy(): Promise<{ healthy: boolean; message: string }> {
   try {
     const response: CmrResponse = await fetch(`${cmrApiConfig.baseURL}/search/health`);
-    response.data = await response.json();
+
     if (response.status === 200) {
-      return true;
+      return { healthy: true, message: '' };
     } else {
-      return false;
+      const contentType = response.headers.get('content-type');
+      const message = contentType?.includes('application/json')
+        ? JSON.stringify(await response.json())
+        : truncateString(await response.text(), 300);
+      logger.error(`CMR is down. ${message}`);
+      return { healthy: false, message: `CMR is down. ${message}` };
     }
   } catch (e) {
-    logger.error('Unable to get CMR health info');
+    const errorMessage = 'Unable to get CMR health info.';
+    logger.error(errorMessage);
     logger.error(e);
-    return false;
+    return { healthy: false, message: errorMessage };
   }
 }
