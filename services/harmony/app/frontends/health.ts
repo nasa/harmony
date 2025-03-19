@@ -72,7 +72,7 @@ async function getGeneralHealth(context: RequestContext): Promise<HealthStatus> 
   } : {
     name: 'cmr',
     status: DOWN,
-    message: `CMR is down. ${cmrMessage}`,
+    message: cmrMessage,
   };
 
   const edlHealthy = await isEdlHealthy(context);
