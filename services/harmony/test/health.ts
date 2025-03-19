@@ -1,14 +1,22 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
 import hookServersStartStop from './helpers/servers';
-import { hookGetHealth, hookGetAdminHealth } from './helpers/health';
+import { hookCmrEdlHealthCheck, hookGetHealth, hookGetAdminHealth } from './helpers/health';
 import { hookDatabaseFailure } from './helpers/db';
 
 const healthyResponse = {
   status: 'up',
   message: 'Harmony is operating normally.',
-  components: [{
+  dependencies: [{
     name: 'db',
+    status: 'up',
+  },
+  {
+    name: 'cmr',
+    status: 'up',
+  },
+  {
+    name: 'edl',
     status: 'up',
   }],
 };
@@ -16,10 +24,38 @@ const healthyResponse = {
 const databaseDownHealthResponse = {
   status: 'down',
   message: 'Harmony is currently down.',
-  components: [{
+  dependencies: [{
     name: 'db',
     status: 'down',
     message: 'Unable to query the database',
+  },
+  {
+    name: 'cmr',
+    status: 'up',
+  },
+  {
+    name: 'edl',
+    status: 'up',
+  }],
+};
+
+const dependenciesDownHealthResponse = {
+  status: 'down',
+  message: 'Harmony is currently down.',
+  dependencies: [{
+    name: 'db',
+    status: 'down',
+    message: 'Unable to query the database',
+  },
+  {
+    name: 'cmr',
+    status: 'down',
+    message: 'cmr is down',
+  },
+  {
+    name: 'edl',
+    status: 'down',
+    message: 'Failed to access EDL home page.',
   }],
 };
 
@@ -29,6 +65,7 @@ describe('Health endpoints', function () {
   describe('When calling /health', function () {
     describe('When not authenticated', function () {
       describe('When the system is healthy', function () {
+        hookCmrEdlHealthCheck({ name: 'cmr', status: 'up' }, true);
         hookGetHealth();
         it('returns a 200 status code', function () {
           expect(this.res.statusCode).to.equal(200);
@@ -39,14 +76,27 @@ describe('Health endpoints', function () {
         });
       });
       describe('When the database catches fire', function () {
+        hookCmrEdlHealthCheck({ name: 'cmr', status: 'up' }, true);
         hookDatabaseFailure();
         hookGetHealth();
         it('returns a 503 status code', function () {
           expect(this.res.statusCode).to.equal(503);
         });
-        it('returns a healthy response', function () {
+        it('returns a down response', function () {
           const body = JSON.parse(this.res.text);
           expect(body).to.eql(databaseDownHealthResponse);
+        });
+      });
+      describe('When multiple dependency errors', function () {
+        hookCmrEdlHealthCheck({ name: 'cmr', status: 'down', message: 'cmr is down' }, false);
+        hookDatabaseFailure();
+        hookGetHealth();
+        it('returns a 503 status code', function () {
+          expect(this.res.statusCode).to.equal(503);
+        });
+        it('returns a down response', function () {
+          const body = JSON.parse(this.res.text);
+          expect(body).to.eql(dependenciesDownHealthResponse);
         });
       });
     });
@@ -75,6 +125,7 @@ describe('Health endpoints', function () {
 
   describe('When authenticated as an admin user', function () {
     describe('When the system is healthy', function () {
+      hookCmrEdlHealthCheck({ name: 'cmr', status: 'up' }, true);
       hookGetAdminHealth({ username: 'adam' });
       it('returns a 200 status code', function () {
         expect(this.res.statusCode).to.equal(200);
@@ -85,14 +136,27 @@ describe('Health endpoints', function () {
       });
     });
     describe('When the database catches fire', function () {
+      hookCmrEdlHealthCheck({ name: 'cmr', status: 'up' }, true);
       hookDatabaseFailure();
       hookGetAdminHealth({ username: 'adam' });
       it('returns a 503 status code', function () {
         expect(this.res.statusCode).to.equal(503);
       });
-      it('returns a healthy response', function () {
+      it('returns a down response', function () {
         const body = JSON.parse(this.res.text);
         expect(body).to.eql(databaseDownHealthResponse);
+      });
+    });
+    describe('When multiple dependency errors', function () {
+      hookCmrEdlHealthCheck({ name: 'cmr', status: 'down', message: 'cmr is down' }, false);
+      hookDatabaseFailure();
+      hookGetAdminHealth({ username: 'adam' });
+      it('returns a 503 status code', function () {
+        expect(this.res.statusCode).to.equal(503);
+      });
+      it('returns a down response', function () {
+        const body = JSON.parse(this.res.text);
+        expect(body).to.eql(dependenciesDownHealthResponse);
       });
     });
   });

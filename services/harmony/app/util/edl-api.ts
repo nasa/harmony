@@ -215,3 +215,22 @@ export async function validateUserIsInCoreGroup(
 
   return true;
 }
+
+/**
+ * Returns true if EDL is up
+ *
+ * @param context - Information related to the user's request
+ * @param username - The EDL username
+ * @returns the groups to which the user belongs
+ */
+export async function isEdlHealthy(context: RequestContext): Promise<boolean> {
+  const { logger } = context;
+  try {
+    const response = await axios.default.get(`${env.oauthHost}/home`);
+    return response.status === 200;
+  } catch (e) {
+    logger.error('Failed to access EDL home page.');
+    logger.error(e);
+    return false;
+  }
+}

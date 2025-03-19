@@ -1,8 +1,11 @@
 import { Response, NextFunction } from 'express';
+import { getCmrHealth } from '../util/cmr';
+import { isEdlHealthy } from '../util/edl-api';
 import HarmonyRequest from '../models/harmony-request';
 import { Job } from '../models/job';
 import logger from '../util/log';
-import db, { Transaction } from '../util/db';
+import RequestContext from '../models/request-context';
+import db from '../util/db';
 
 const UP = 'up';
 const DOWN = 'down';
@@ -12,7 +15,7 @@ const HEALTHY_MESSAGE = 'Harmony is operating normally.';
 const DOWN_MESSAGE = 'Harmony is currently down.';
 const _DEGRADED_MESSAGE = 'Harmony is currently degraded.';
 
-interface ComponentStatus {
+export interface DependencyStatus {
   name: String;
   status: String;
   message?: String;
@@ -21,46 +24,71 @@ interface ComponentStatus {
 interface HealthStatus {
   status: String;
   message?: String;
-  components: ComponentStatus[];
+  dependencies: DependencyStatus[];
 
 }
 
 /**
- * Returns the health information
+ * Returns the db health information
  *
- * @param tx - the database transaction
- * @returns a promise resolving to the health check response
+ * @returns a promise resolving to the DependencyStatus of database
  */
-async function getGeneralHealth(tx: Transaction): Promise<HealthStatus> {
+async function getDbHealth(): Promise<DependencyStatus> {
   let dbHealthy = true;
   try {
-    await Job.getTimeOfMostRecentlyUpdatedJob(tx);
+    await Job.getTimeOfMostRecentlyUpdatedJob(db);
   } catch (e) {
     logger.error(e);
     dbHealthy = false;
   }
 
-  let health;
   if (dbHealthy) {
+    return {
+      name: 'db',
+      status: UP,
+    };
+  } else {
+    return {
+      name: 'db',
+      status: DOWN,
+      message: 'Unable to query the database',
+    };
+  }
+}
+
+/**
+ * Returns the health information
+ *
+ * @param context - the request context
+ * @returns a promise resolving to the health check response
+ */
+async function getGeneralHealth(context: RequestContext): Promise<HealthStatus> {
+  const dbHealth = await getDbHealth();
+
+  const cmrHealth = await getCmrHealth() as DependencyStatus;
+
+  const edlHealthy = await isEdlHealthy(context);
+  const edlHealth = edlHealthy ? {
+    name: 'edl',
+    status: UP,
+  } : {
+    name: 'edl',
+    status: DOWN,
+    message: 'Failed to access EDL home page.',
+  };
+
+  let health;
+  if (dbHealth.status === UP && cmrHealth.status === UP && edlHealthy) {
     health = {
       status: UP,
       message: HEALTHY_MESSAGE,
-      components: [{
-        name: 'db',
-        status: UP,
-      },
-      ],
+      dependencies: [dbHealth, cmrHealth, edlHealth],
     };
   } else {
     health = {
       status: DOWN,
       message: DOWN_MESSAGE,
-      components: [{
-        name: 'db',
-        status: DOWN,
-        message: 'Unable to query the database',
-      },
-      ],
+      dependencies: [dbHealth, cmrHealth, edlHealth],
     };
   }
   return health;
@@ -75,9 +103,9 @@ async function getGeneralHealth(tx: Transaction): Promise<HealthStatus> {
  * @returns Resolves when the request is complete
  */
 export async function getAdminHealth(
-  _req: HarmonyRequest, res: Response, _next: NextFunction,
+  req: HarmonyRequest, res: Response, _next: NextFunction,
 ): Promise<void> {
-  const health = await getGeneralHealth(db);
+  const health = await getGeneralHealth(req.context);
   if (health.status === DOWN) {
     res.statusCode = 503;
   }
@@ -92,9 +120,9 @@ export async function getAdminHealth(
  * @returns Resolves when the request is complete
  */
 export async function getHealth(
-  _req: HarmonyRequest, res: Response, _next: NextFunction,
+  req: HarmonyRequest, res: Response, _next: NextFunction,
 ): Promise<void> {
-  const health = await getGeneralHealth(db);
+  const health = await getGeneralHealth(req.context);
   if (health.status === DOWN) {
     res.statusCode = 503;
   }

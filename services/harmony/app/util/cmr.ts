@@ -1091,3 +1091,33 @@ export function filterGranuleLinks(
   return granule.links.filter((g) => (g.rel.endsWith('/data#') || g.rel.endsWith('/service#'))
     && !g.inherited);
 }
+
+/**
+ * Returns CMR health information
+ *
+ * @returns a promise resolving to the DependencyStatus of CMR
+ */
+export async function getCmrHealth(): Promise<object> {
+  try {
+    const response: CmrResponse = await fetch(`${cmrApiConfig.baseURL}/search/health`);
+    response.data = await response.json();
+    if (response.status === 200) {
+      return {
+        name: 'cmr',
+        status: 'up',
+      };
+    } else {
+      return {
+        name: 'cmr',
+        status: 'down',
+        message: `${JSON.stringify(response.data)}`,
+      };
+    }
+  } catch (error) {
+    return {
+      name: 'cmr',
+      status: 'down',
+      message: 'Unable to get CMR health info',
+    };
+  }
+}
