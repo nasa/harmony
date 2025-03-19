@@ -1,5 +1,5 @@
 import { Response, NextFunction } from 'express';
-import { getCmrHealth } from '../util/cmr';
+import { cmrApiConfig, isCmrHealthy } from '../util/cmr';
 import { isEdlHealthy } from '../util/edl-api';
 import HarmonyRequest from '../models/harmony-request';
 import { Job } from '../models/job';
@@ -65,7 +65,15 @@ async function getDbHealth(): Promise<DependencyStatus> {
 async function getGeneralHealth(context: RequestContext): Promise<HealthStatus> {
   const dbHealth = await getDbHealth();
 
-  const cmrHealth = await getCmrHealth() as DependencyStatus;
+  const cmrHealthy = await isCmrHealthy();
+  const cmrHealth = cmrHealthy ? {
+    name: 'cmr',
+    status: UP,
+  } : {
+    name: 'cmr',
+    status: DOWN,
+    message: `CMR is down. For details see: ${cmrApiConfig.baseURL}/search/health`,
+  };
 
   const edlHealthy = await isEdlHealthy(context);
   const edlHealth = edlHealthy ? {
@@ -78,7 +86,7 @@ async function getGeneralHealth(context: RequestContext): Promise<HealthStatus> 
   };
 
   let health;
-  if (dbHealth.status === UP && cmrHealth.status === UP && edlHealthy) {
+  if (dbHealth.status === UP && cmrHealthy && edlHealthy) {
     health = {
       status: UP,
       message: HEALTHY_MESSAGE,

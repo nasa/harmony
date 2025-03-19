@@ -219,9 +219,8 @@ export async function validateUserIsInCoreGroup(
 /**
  * Returns true if EDL is up
  *
- * @param context - Information related to the user's request
- * @param username - The EDL username
- * @returns the groups to which the user belongs
+ * @param context - request context
+ * @returns A Promise containing `true` if EDL is up
  */
 export async function isEdlHealthy(context: RequestContext): Promise<boolean> {
   const { logger } = context;
