@@ -14,7 +14,7 @@ export function hookCmrEdlHealthCheck(
   let edlStub;
 
   before(function () {
-    cmrStub = sinon.stub(cmr, 'isCmrHealthy').callsFake(async () => cmrStatus);
+    cmrStub = sinon.stub(cmr, 'getCmrHealth').callsFake(async () => cmrStatus);
     edlStub = sinon.stub(edl, 'isEdlHealthy').callsFake(async () => edlStatus);
   });
 

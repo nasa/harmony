@@ -1098,7 +1098,7 @@ export function filterGranuleLinks(
  *
  * @returns A Promise with healthy and message indicating the CMR health info
  */
-export async function isCmrHealthy(): Promise<{ healthy: boolean; message: string }> {
+export async function getCmrHealth(): Promise<{ healthy: boolean; message: string }> {
   try {
     const response: CmrResponse = await fetch(`${cmrApiConfig.baseURL}/search/health`);
 
