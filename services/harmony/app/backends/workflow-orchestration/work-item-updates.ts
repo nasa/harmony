@@ -471,7 +471,8 @@ async function maybeQueueQueryCmrWorkItem(
  * Creates the next work items for the workflow based on the results of the current step and handle
  * any needed batching
  * @param tx - The database transaction
- * @param nextWorkflowStep - the next workflow step in the chain after the current workItem
+ * @param currentWorkflowStep - the current step in the workflow chain
+ * @param nextWorkflowStep - the next workflow step in the chain after the current workflow step
  * @param logger - a Logger instance
  * @param workItem - The current work item
  * @param allWorkItemsForStepComplete - true if all the work items for the current step are complete
@@ -480,7 +481,7 @@ async function maybeQueueQueryCmrWorkItem(
  *
  * @returns true if it created a work item
  */
-async function createNextWorkItems(
+export async function createNextWorkItems(
   tx: Transaction,
   currentWorkflowStep: WorkflowStep,
   nextWorkflowStep: WorkflowStep,

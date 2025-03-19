@@ -1,19 +1,52 @@
 import { expect } from 'chai';
-import { describe, it, beforeEach } from 'mocha';
+import _ from 'lodash';
+import { beforeEach, describe, it } from 'mocha';
 import { stub } from 'sinon';
-import StubService from '../helpers/stub-service';
+
+import DataOperation, { CURRENT_SCHEMA_VERSION } from '../../app/models/data-operation';
+import { buildService, chooseServiceConfig, UnsupportedOperation } from '../../app/models/services';
+import {
+  getMaxSynchronousGranules, ServiceStep, stepUsesMultipleInputCatalogs,
+} from '../../app/models/services/base-service';
+import TurboService from '../../app/models/services/turbo-service';
+import env from '../../app/util/env';
+import { buildOperation } from '../helpers/data-operation';
 import { hookRangesetRequest } from '../helpers/ogc-api-coverages';
 import hookServersStartStop from '../helpers/servers';
-import { getMaxSynchronousGranules } from '../../app/models/services/base-service';
-import DataOperation, { CURRENT_SCHEMA_VERSION } from '../../app/models/data-operation';
-import { chooseServiceConfig, buildService, UnsupportedOperation } from '../../app/models/services';
-import env from '../../app/util/env';
-import TurboService from '../../app/models/services/turbo-service';
-import { buildOperation } from '../helpers/data-operation';
-import _ from 'lodash';
+import StubService from '../helpers/stub-service';
 
 const defaultCollection = 'C123-TEST';
 const defaultContext = { collectionIds: [defaultCollection] };
+
+describe('stepUsesMultipleInputCatalogs', function () {
+  describe('when a service performs concatenation', function () {
+    const step: ServiceStep = { operations: ['concatenate'] };
+    describe('and the request asks for concatenation', function () {
+      const operation = buildOperation('foo');
+      operation.shouldConcatenate = true;
+      it('returns true', function () {
+        expect(stepUsesMultipleInputCatalogs(step, operation)).to.be.true;
+      });
+    });
+    describe('and the request does not ask for concatenation', function () {
+      const operation = buildOperation('foo');
+      operation.shouldConcatenate = false;
+      it('returns false', function () {
+        expect(stepUsesMultipleInputCatalogs(step, operation)).to.be.false;
+      });
+    });
+  });
+
+  describe('when a service does not perform concatenation', function () {
+    const step: ServiceStep = { operations: ['extend'] };
+    it('returns false', function () {
+      const operation = buildOperation('foo');
+      it('returns false', function () {
+        expect(stepUsesMultipleInputCatalogs(step, operation)).to.be.false;
+      });
+    });
+  });
+});
 
 describe('services.chooseServiceConfig and services.buildService', function () {
   describe("when the operation's collection is configured for several services", function () {

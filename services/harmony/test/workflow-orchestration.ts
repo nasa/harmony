@@ -1,22 +1,29 @@
 import { expect } from 'chai';
+import { stub } from 'sinon';
 import { v4 as uuid } from 'uuid';
-import { getWorkItemById, getWorkItemsByJobId, getWorkItemsByJobIdAndStepIndex } from '../app/models/work-item';
-import { getWorkflowStepByJobIdStepIndex, getWorkflowStepsByJobId } from '../app/models/workflow-steps';
+
+import { Job, JobStatus } from '../app/models/job';
+import { populateUserWorkFromWorkItems } from '../app/models/user-work';
+import {
+  getWorkItemById, getWorkItemsByJobId, getWorkItemsByJobIdAndStepIndex,
+} from '../app/models/work-item';
+import { getStacLocation, WorkItemStatus } from '../app/models/work-item-interface';
+import {
+  getWorkflowStepByJobIdStepIndex, getWorkflowStepsByJobId,
+} from '../app/models/workflow-steps';
+import * as aggregationBatch from '../app/util/aggregation-batch';
 import db from '../app/util/db';
 import env from '../app/util/env';
-import { Job, JobStatus } from '../app/models/job';
-import { hookRedirect } from './helpers/hooks';
-import { hookRangesetRequest } from './helpers/ogc-api-coverages';
-import hookServersStartStop from './helpers/servers';
-import { buildWorkItem, getWorkForService, hookGetWorkForService, updateWorkItem, fakeServiceStacOutput } from './helpers/work-items';
-import { buildWorkflowStep } from './helpers/workflow-steps';
-import * as aggregationBatch from '../app/util/aggregation-batch';
-import { buildJob, getFirstJob } from './helpers/jobs';
-import { getStacLocation, WorkItemStatus } from '../app/models/work-item-interface';
 import { truncateAll } from './helpers/db';
-import { stub } from 'sinon';
-import { populateUserWorkFromWorkItems } from '../app/models/user-work';
+import { hookRedirect } from './helpers/hooks';
+import { buildJob, getFirstJob } from './helpers/jobs';
+import { hookRangesetRequest } from './helpers/ogc-api-coverages';
 import { resetQueues } from './helpers/queue';
+import hookServersStartStop from './helpers/servers';
+import {
+  buildWorkItem, fakeServiceStacOutput, getWorkForService, hookGetWorkForService, updateWorkItem,
+} from './helpers/work-items';
+import { buildWorkflowStep } from './helpers/workflow-steps';
 
 /**
  * Create a job and some work steps/items to be used by tests
@@ -691,6 +698,145 @@ describe('Workflow chaining for a collection configured for Swath Projector and 
       const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
 
       expect(workflowSteps[1].serviceID).to.equal('ghcr.io/nasa/harmony-swath-projector:latest');
+    });
+  });
+});
+
+// HARMONY-2037
+describe('Workflow chaining for a collection configured for SAMBAH', function () {
+  let pageStub;
+  let sizeOfObjectStub;
+  before(async function () {
+    await truncateAll();
+    pageStub = stub(env, 'cmrMaxPageSize').get(() => 4);
+    sizeOfObjectStub = stub(aggregationBatch, 'sizeOfObject')
+      .callsFake(async (_) => 7000000000);
+  });
+  after(function () {
+    if (pageStub.restore) {
+      pageStub.restore();
+    }
+    if (sizeOfObjectStub.restore) {
+      sizeOfObjectStub.restore();
+    }
+  });
+
+  const collection = 'C1254854453-LARC_CLOUD';
+  hookServersStartStop();
+  describe('when requesting both extend and concatenate without subsetting for four granules', function () {
+    const sambahQuery = {
+      maxResults: 4,
+      extend: true,
+      concatenate: true,
+    };
+
+    hookRangesetRequest('1.0.0', collection, 'all', { query: sambahQuery });
+    hookRedirect('joe');
+
+    it('generates a workflow with 4 steps', async function () {
+      const job = JSON.parse(this.res.text);
+      const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
+      // we didn't ask for subsetting, so no l2ss
+      expect(workflowSteps.length).to.equal(4);
+    });
+
+    it('starts with the query-cmr task', async function () {
+      const job = JSON.parse(this.res.text);
+      const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
+
+      expect(workflowSteps[0].serviceID).to.equal('harmonyservices/query-cmr:stable');
+    });
+
+    it('then requests batching using batchee', async function () {
+      const job = JSON.parse(this.res.text);
+      const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
+
+      expect(workflowSteps[1].serviceID).to.equal('ghcr.io/nasa/batchee:latest');
+    });
+
+    it('then requests extension using stitchee', async function () {
+      const job = JSON.parse(this.res.text);
+      const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
+
+      expect(workflowSteps[2].serviceID).to.equal('ghcr.io/nasa/stitchee:latest');
+    });
+
+    it('then requests concatenation using concise', async function () {
+      const job = JSON.parse(this.res.text);
+      const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
+
+      expect(workflowSteps[3].serviceID).to.equal('ghcr.io/podaac/concise:sit');
+    });
+
+    describe('when checking for a query-cmr work item', function () {
+      it('finds the item and can complete it', async function () {
+        const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
+        expect(res.status).to.equal(200);
+        const { workItem, maxCmrGranules } = JSON.parse(res.text);
+        expect(maxCmrGranules).to.equal(4);
+        expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:stable');
+        workItem.status = WorkItemStatus.SUCCESSFUL;
+        workItem.results = [
+          getStacLocation(workItem, 'catalog0.json'),
+          getStacLocation(workItem, 'catalog1.json'),
+          getStacLocation(workItem, 'catalog2.json'),
+          getStacLocation(workItem, 'catalog3.json'),
+        ];
+        workItem.outputItemSizes = [1, 2, 3, 4];
+        await fakeServiceStacOutput(workItem.jobID, workItem.id, 4);
+        await updateWorkItem(this.backend, workItem);
+      });
+
+      describe('when checking to see if l2ss is queued', function () {
+        it('does not find l2ss work items', async function () {
+          const res = await getWorkForService(this.backend, 'ghcr.io/podaac/l2ss-py:sit');
+          expect(res.status).to.equal(404);
+        });
+
+        describe('when checking to see if batchee is queued', function () {
+          let res;
+          let workItem;
+          before(async function () {
+            res = await getWorkForService(this.backend, 'ghcr.io/nasa/batchee:latest');
+            // eslint-disable-next-line prefer-destructuring
+            workItem = JSON.parse(res.text).workItem;
+          });
+          it('finds a batchee service work item', async function () {
+            expect(res.status).to.equal(200);
+            expect(workItem.serviceID).to.equal('ghcr.io/nasa/batchee:latest');
+          });
+          it('can complete the work item', async function () {
+            workItem.status = WorkItemStatus.SUCCESSFUL;
+            workItem.results = [
+              getStacLocation(workItem, 'catalog0.json'),
+              getStacLocation(workItem, 'catalog1.json'),
+            ];
+            workItem.outputItemSizes = [1, 2];
+            await fakeServiceStacOutput(workItem.jobID, workItem.id, 2);
+            res = await updateWorkItem(this.backend, workItem);
+            expect(res.status).to.equal(204);
+          });
+
+          describe('when checking to see if stitchee is queued', function () {
+            it('it finds exactly two work items', async function () {
+              for await (const service of ['ghcr.io/nasa/stitchee:latest', 'ghcr.io/nasa/stitchee:latest']) {
+                res = await getWorkForService(this.backend, service);
+                // eslint-disable-next-line prefer-destructuring
+                workItem = JSON.parse(res.text).workItem;
+                workItem.status = WorkItemStatus.SUCCESSFUL;
+                workItem.results = [getStacLocation(workItem, 'catalog.json')];
+                workItem.outputItemSizes = [2];
+                await fakeServiceStacOutput(workItem.jobID, workItem.id);
+                await updateWorkItem(this.backend, workItem);
+              }
+
+              res = await getWorkForService(this.backend, 'ghcr.io/nasa/stitchee:latest');
+              expect(res.status).to.equal(404);
+            });
+
+          });
+        });
+      });
     });
   });
 });

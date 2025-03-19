@@ -148,7 +148,7 @@ const multiCatalogOperations = [
  * @param operation - The operation
  * @returns true if the step uses more than one input catalog, false otherwise
  */
-function stepUsesMultipleInputCatalogs(step: ServiceStep, operation: DataOperation): boolean {
+export function stepUsesMultipleInputCatalogs(step: ServiceStep, operation: DataOperation): boolean {
   // get the operations for this step that support multiple input catalogs
   const multiCatOps = _.intersection(multiCatalogOperations, step.operations);
 
