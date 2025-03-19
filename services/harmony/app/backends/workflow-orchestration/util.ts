@@ -1,8 +1,9 @@
 import { Logger } from 'winston';
-import { Transaction } from '../../util/db';
+
+import { Job } from '../../models/job';
 import WorkItem, { workItemCountForStep } from '../../models/work-item';
 import { WorkItemStatus } from '../../models/work-item-interface';
-import { Job } from '../../models/job';
+import { Transaction } from '../../util/db';
 import env from '../../util/env';
 
 export const QUERY_CMR_SERVICE_REGEX = /harmonyservices\/query-cmr:.*/;

@@ -1,15 +1,23 @@
-import db, { Transaction } from '../../util/db';
 import { Logger } from 'winston';
+
+import {
+  getNextJobIdForUsernameAndService, getNextJobIds, getNextUsernameForWork,
+  incrementRunningAndDecrementReadyCounts, recalculateCounts,
+} from '../../models/user-work';
+import WorkItem, {
+  getNextWorkItem, getNextWorkItems, getWorkItemStatus, updateWorkItemStatuses,
+} from '../../models/work-item';
+import { WorkItemStatus } from '../../models/work-item-interface';
+import WorkflowStep from '../../models/workflow-steps';
 import { Cache } from '../../util/cache/cache';
 import { MemoryCache } from '../../util/cache/memory-cache';
-import WorkflowStep from '../../models/workflow-steps';
-import WorkItem, { getNextWorkItem, getNextWorkItems, getWorkItemStatus, updateWorkItemStatuses } from '../../models/work-item';
+import db, { Transaction } from '../../util/db';
 import env from '../../util/env';
 import logger from '../../util/log';
-import { getNextJobIdForUsernameAndService, getNextJobIds, getNextUsernameForWork, incrementRunningAndDecrementReadyCounts, recalculateCounts } from '../../models/user-work';
-import { getQueueForUrl, getQueueUrlForService, getWorkSchedulerQueue  } from '../../util/queue/queue-factory';
-import { QUERY_CMR_SERVICE_REGEX, calculateQueryCmrLimit, processSchedulerQueue } from './util';
-import { WorkItemStatus } from '../../models/work-item-interface';
+import {
+  getQueueForUrl, getQueueUrlForService, getWorkSchedulerQueue,
+} from '../../util/queue/queue-factory';
+import { calculateQueryCmrLimit, processSchedulerQueue, QUERY_CMR_SERVICE_REGEX } from './util';
 
 export type WorkItemData = {
   workItem: WorkItem,

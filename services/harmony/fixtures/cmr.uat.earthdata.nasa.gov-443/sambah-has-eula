@@ -1,0 +1,30 @@
+GET /search/collections.json?include_tags=harmony.has-eula&concept_id=C1254854453-LARC_CLOUD&page_size=100
+accept: application/json
+accept-encoding: gzip,deflate
+
+HTTP/1.1 200 OK
+content-type: application/json;charset=utf-8
+transfer-encoding: chunked
+connection: keep-alive
+date: Wed, 19 Mar 2025 15:06:28 GMT
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: 1070196d-bd47-40e7-9658-70f159826e2d
+content-sha1: 725955fc9a863683c6a3e7ba0e8d6f973f1b303e
+strict-transport-security: max-age=31536000; includeSubDomains; preload
+cmr-search-after: ["tempo no2 total column","LARC_CLOUD","TEMPO_NO2_L2","v01",1254854453,8]
+cmr-hits: 0
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Search-After, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 10
+x-request-id: 1070196d-bd47-40e7-9658-70f159826e2d
+content-md5: f25fe2571d427f41586a89d3f55e5b03
+vary: Accept-Encoding, User-Agent
+server: ServerTokens ProductOnly
+x-cache: Miss from cloudfront
+via: 1.1 930a139903fb043f0be58fe5e0a67072.cloudfront.net (CloudFront)
+x-amz-cf-pop: SFO53-C1
+x-amz-cf-id: WwAnlBNOid5Y2f0AmNSsroHdfO6PcDxRJV_hFHr2fdJO-_nymcWbTA==
+
+{"feed":{"updated":"2025-03-19T15:06:28.766Z","id":"https://cmr.uat.earthdata.nasa.gov:443/search/collections.json?include_tags=harmony.has-eula&concept_id=C1254854453-LARC_CLOUD&page_size=100","title":"ECHO dataset metadata","entry":[]}}
