@@ -134,25 +134,35 @@ const conditionToOperationField = {
 };
 
 /**
- * Step operations that are aggregating steps
+ * Step operations that can take more than one catalog as input.
+ * Most operations can only take one catalog.
  */
-const aggregatingOperations = [
+const multiCatalogOperations = [
   'concatenate',
-  'extend',
 ];
 
 /**
- * Returns true if the workflow step aggregates output from the previous step
- * (and therefore must wait for all output before executing)
+ * Returns true if the workflow step uses more than one input catalog
+ * (and therefore must wait for all output from the previous step before executing)
  * @param step - the step in a workflow
  * @param operation - The operation
- * @returns true if the step is an aggregating step, false otherwise
+ * @returns true if the step uses more than one input catalog, false otherwise
  */
-function stepHasAggregatedOutput(step: ServiceStep, operation: DataOperation): boolean {
-  return (
-    (operation.shouldConcatenate || operation.shouldExtend) &&
-    _.intersection(aggregatingOperations, step.operations).length > 0
-  );
+export function stepUsesMultipleInputCatalogs(step: ServiceStep, operation: DataOperation): boolean {
+  // get the operations for this step that support multiple input catalogs
+  const multiCatOps = _.intersection(multiCatalogOperations, step.operations);
+
+  // check to see if the user has actually requested any of the multi-catalog operations
+  for (const op of multiCatOps) {
+    const upperCaseOp = op.charAt(0).toUpperCase() + op.slice(1);
+    const should = `should${upperCaseOp}`;
+
+    if (operation[should]) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 /**
@@ -513,7 +523,7 @@ export default abstract class BaseService<ServiceParamType> {
               this.config.data_operation_version,
               step.operations || [],
             ),
-            hasAggregatedOutput: stepHasAggregatedOutput(step, this.operation),
+            hasAggregatedOutput: stepUsesMultipleInputCatalogs(step, this.operation),
             isBatched: !!step.is_batched && this.operation.shouldConcatenate,
             is_sequential: !!step.is_sequential,
             maxBatchInputs: step.max_batch_inputs,

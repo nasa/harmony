@@ -1,0 +1,286 @@
+POST /search/granules.json
+accept: application/json
+content-type: multipart/form-data; boundary=----------------------------012345678901234567890123
+accept-encoding: gzip,deflate
+body: ------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"page_size\"\r\n\r\n4\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"collection_concept_id\"\r\n\r\nC1254854453-LARC_CLOUD\r\n------------------------------012345678901234567890123--\r\n
+
+HTTP/1.1 200 OK
+content-type: application/json;charset=utf-8
+transfer-encoding: chunked
+connection: keep-alive
+date: Wed, 19 Mar 2025 14:02:53 GMT
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: 9f121ff7-7d90-4776-95e7-f320ed3f7bb8
+content-sha1: b9aa4ce30cd4e520dcc2598f3fcbc027e5c2d777
+strict-transport-security: max-age=31536000; includeSubDomains; preload
+cmr-hits: 4
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Search-After, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 16
+x-request-id: 9f121ff7-7d90-4776-95e7-f320ed3f7bb8
+content-md5: 641a8009c5c1f49c9b5ec5f6a69822ef
+server: ServerTokens ProductOnly
+x-cache: Miss from cloudfront
+via: 1.1 3e5d87413ed637f1e8f50b5a62c2fe34.cloudfront.net (CloudFront)
+x-amz-cf-pop: DFW59-P2
+x-amz-cf-id: 7EsCoqRkSk1ssyrz1guZLFtTmypFnIH0DjAFagrrdvuV1CVHL0wETA==
+
+{
+  "feed": {
+    "updated": "2025-03-19T16:01:58.199Z",
+    "id": "https://cmr.uat.earthdata.nasa.gov:443/search/granules.json?collection_concept_id=C1254854453-LARC_CLOUD&page_size=4&page_num=1",
+    "title": "ECHO granule metadata",
+    "entry": [
+      {
+        "producer_granule_id": "TEMPO_NO2_L2_V01_20231206T125918Z_S002G01.nc",
+        "time_start": "2023-12-06T12:59:18.000Z",
+        "updated": "2023-12-06T17:30:20.840Z",
+        "dataset_id": "TEMPO NO2 total column",
+        "data_center": "LARC_CLOUD",
+        "title": "TEMPO_NO2_L2_V01_20231206T125918Z_S002G01.nc",
+        "coordinate_system": "CARTESIAN",
+        "day_night_flag": "UNSPECIFIED",
+        "time_end": "2023-12-06T13:05:58.000Z",
+        "id": "G1261454424-LARC_CLOUD",
+        "original_format": "UMM_JSON",
+        "browse_flag": false,
+        "polygons": [
+          [
+            "60.6479034 -45.6591187 57.2834702 -51.368782 53.2948227 -56.2549057 48.705574 -60.3475342 43.4652023 -63.7656364 37.7587166 -66.4942093 31.4242859 -68.7057953 24.6038361 -70.4153442 17.3670311 -71.6748505 17.4905891 -65.119873 24.3815155 -63.4579697 30.7570019 -61.2544403 36.5233459 -58.503231 41.6966362 -55.1574326 46.2130051 -51.2317276 50.1059036 -46.6961899 53.4143486 -41.5031204 56.1171608 -35.7160339 60.9920197 -41.9177094 60.6783218 -45.5277481 60.6479034 -45.6591187"
+          ]
+        ],
+        "collection_concept_id": "C1254854453-LARC_CLOUD",
+        "online_access_flag": true,
+        "links": [
+          {
+            "rel": "http://esipfed.org/ns/fedsearch/1.1/data#",
+            "title": "Download TEMPO_NO2_L2_V01_20231206T125918Z_S002G01.nc",
+            "hreflang": "en-US",
+            "href": "https://data.asdc.uat.earthdata.nasa.gov/asdc2-uat-protected/TEMPO/TEMPO_NO2_L2_V01/2023.12.06/TEMPO_NO2_L2_V01_20231206T125918Z_S002G01.nc"
+          },
+          {
+            "rel": "http://esipfed.org/ns/fedsearch/1.1/s3#",
+            "title": "This link provides direct download access via S3 to the granule",
+            "hreflang": "en-US",
+            "href": "s3://asdc2-uat-protected/TEMPO/TEMPO_NO2_L2_V01/2023.12.06/TEMPO_NO2_L2_V01_20231206T125918Z_S002G01.nc"
+          },
+          {
+            "rel": "http://esipfed.org/ns/fedsearch/1.1/metadata#",
+            "title": "Download TEMPO_NO2_L2_V01_20231206T125918Z_S002G01.nc.met",
+            "hreflang": "en-US",
+            "href": "https://data.asdc.uat.earthdata.nasa.gov/asdc2-uat-protected/TEMPO/TEMPO_NO2_L2_V01/2023.12.06/TEMPO_NO2_L2_V01_20231206T125918Z_S002G01.nc.met"
+          },
+          {
+            "rel": "http://esipfed.org/ns/fedsearch/1.1/metadata#",
+            "title": "This link provides direct download access via S3 to the granule",
+            "hreflang": "en-US",
+            "href": "s3://asdc2-uat-protected/TEMPO/TEMPO_NO2_L2_V01/2023.12.06/TEMPO_NO2_L2_V01_20231206T125918Z_S002G01.nc.met"
+          },
+          {
+            "rel": "http://esipfed.org/ns/fedsearch/1.1/metadata#",
+            "title": "Download TEMPO_NO2_L2_V01_20231206T125918Z_S002G01.nc.dmrpp",
+            "hreflang": "en-US",
+            "href": "https://data.asdc.uat.earthdata.nasa.gov/asdc2-uat-public/TEMPO/TEMPO_NO2_L2_V01/2023.12.06/TEMPO_NO2_L2_V01_20231206T125918Z_S002G01.nc.dmrpp"
+          },
+          {
+            "rel": "http://esipfed.org/ns/fedsearch/1.1/metadata#",
+            "title": "This link provides direct download access via S3 to the granule",
+            "hreflang": "en-US",
+            "href": "s3://asdc2-uat-public/TEMPO/TEMPO_NO2_L2_V01/2023.12.06/TEMPO_NO2_L2_V01_20231206T125918Z_S002G01.nc.dmrpp"
+          },
+          {
+            "rel": "http://esipfed.org/ns/fedsearch/1.1/metadata#",
+            "title": "api endpoint to retrieve temporary credentials valid for same-region direct s3 access",
+            "hreflang": "en-US",
+            "href": "https://data.asdc.uat.earthdata.nasa.gov/s3credentials"
+          },
+          {
+            "inherited": true,
+            "rel": "http://esipfed.org/ns/fedsearch/1.1/metadata#",
+            "hreflang": "en-US",
+            "href": "http://tempo.si.edu"
+          }
+        ]
+      },
+      {
+        "producer_granule_id": "TEMPO_NO2_L2_V01_20231206T130558Z_S002G02.nc",
+        "time_start": "2023-12-06T13:05:58.000Z",
+        "updated": "2023-12-06T17:30:21.417Z",
+        "dataset_id": "TEMPO NO2 total column",
+        "data_center": "LARC_CLOUD",
+        "title": "TEMPO_NO2_L2_V01_20231206T130558Z_S002G02.nc",
+        "coordinate_system": "CARTESIAN",
+        "day_night_flag": "UNSPECIFIED",
+        "time_end": "2023-12-06T13:12:35.000Z",
+        "id": "G1261454434-LARC_CLOUD",
+        "original_format": "UMM_JSON",
+        "browse_flag": false,
+        "polygons": [
+          [
+            "58.7815056 -63.7472534 50.917057 -69.3371887 41.2888031 -73.3471222 29.8821507 -76.1063766 17.2789078 -77.7819061 17.3669968 -71.6741028 25.0834961 -70.312706 32.223156 -68.4635849 38.6644211 -66.1139984 44.4168777 -63.2198486 49.4133949 -59.7943344 53.7510834 -55.7684174 57.4810181 -51.0801163 60.6493988 -45.6534843 58.800766 -63.6795959 58.7815056 -63.7472534"
+          ]
+        ],
+        "collection_concept_id": "C1254854453-LARC_CLOUD",
+        "online_access_flag": true,
+        "links": [
+          {
+            "rel": "http://esipfed.org/ns/fedsearch/1.1/data#",
+            "title": "Download TEMPO_NO2_L2_V01_20231206T130558Z_S002G02.nc",
+            "hreflang": "en-US",
+            "href": "https://data.asdc.uat.earthdata.nasa.gov/asdc2-uat-protected/TEMPO/TEMPO_NO2_L2_V01/2023.12.06/TEMPO_NO2_L2_V01_20231206T130558Z_S002G02.nc"
+          },
+          {
+            "rel": "http://esipfed.org/ns/fedsearch/1.1/s3#",
+            "title": "This link provides direct download access via S3 to the granule",
+            "hreflang": "en-US",
+            "href": "s3://asdc2-uat-protected/TEMPO/TEMPO_NO2_L2_V01/2023.12.06/TEMPO_NO2_L2_V01_20231206T130558Z_S002G02.nc"
+          },
+          {
+            "rel": "http://esipfed.org/ns/fedsearch/1.1/metadata#",
+            "title": "Download TEMPO_NO2_L2_V01_20231206T130558Z_S002G02.nc.met",
+            "hreflang": "en-US",
+            "href": "https://data.asdc.uat.earthdata.nasa.gov/asdc2-uat-protected/TEMPO/TEMPO_NO2_L2_V01/2023.12.06/TEMPO_NO2_L2_V01_20231206T130558Z_S002G02.nc.met"
+          },
+          {
+            "rel": "http://esipfed.org/ns/fedsearch/1.1/metadata#",
+            "title": "This link provides direct download access via S3 to the granule",
+            "hreflang": "en-US",
+            "href": "s3://asdc2-uat-protected/TEMPO/TEMPO_NO2_L2_V01/2023.12.06/TEMPO_NO2_L2_V01_20231206T130558Z_S002G02.nc.met"
+          },
+          {
+            "rel": "http://esipfed.org/ns/fedsearch/1.1/metadata#",
+            "title": "api endpoint to retrieve temporary credentials valid for same-region direct s3 access",
+            "hreflang": "en-US",
+            "href": "https://data.asdc.uat.earthdata.nasa.gov/s3credentials"
+          },
+          {
+            "inherited": true,
+            "rel": "http://esipfed.org/ns/fedsearch/1.1/metadata#",
+            "hreflang": "en-US",
+            "href": "http://tempo.si.edu"
+          }
+        ]
+      },
+      {
+        "producer_granule_id": "TEMPO_NO2_L2_V01_20231206T131235Z_S002G03.nc",
+        "time_start": "2023-12-06T13:12:35.000Z",
+        "updated": "2023-12-06T17:30:20.678Z",
+        "dataset_id": "TEMPO NO2 total column",
+        "data_center": "LARC_CLOUD",
+        "title": "TEMPO_NO2_L2_V01_20231206T131235Z_S002G03.nc",
+        "coordinate_system": "CARTESIAN",
+        "day_night_flag": "UNSPECIFIED",
+        "time_end": "2023-12-06T13:19:12.000Z",
+        "id": "G1261454418-LARC_CLOUD",
+        "original_format": "UMM_JSON",
+        "browse_flag": false,
+        "polygons": [
+          [
+            "57.9569778 -76.6776962 49.9043045 -79.44384 40.275322 -81.4452133 29.1860218 -82.829834 17.2267838 -83.6870041 17.2861481 -77.8042831 29.5425911 -76.1676025 40.1560478 -73.6959915 48.9825363 -70.3281326 56.2739487 -65.8692093 58.7926216 -63.7893372 57.9769897 -76.6244049 57.9569778 -76.6776962"
+          ]
+        ],
+        "collection_concept_id": "C1254854453-LARC_CLOUD",
+        "online_access_flag": true,
+        "links": [
+          {
+            "rel": "http://esipfed.org/ns/fedsearch/1.1/data#",
+            "title": "Download TEMPO_NO2_L2_V01_20231206T131235Z_S002G03.nc",
+            "hreflang": "en-US",
+            "href": "https://data.asdc.uat.earthdata.nasa.gov/asdc2-uat-protected/TEMPO/TEMPO_NO2_L2_V01/2023.12.06/TEMPO_NO2_L2_V01_20231206T131235Z_S002G03.nc"
+          },
+          {
+            "rel": "http://esipfed.org/ns/fedsearch/1.1/s3#",
+            "title": "This link provides direct download access via S3 to the granule",
+            "hreflang": "en-US",
+            "href": "s3://asdc2-uat-protected/TEMPO/TEMPO_NO2_L2_V01/2023.12.06/TEMPO_NO2_L2_V01_20231206T131235Z_S002G03.nc"
+          },
+          {
+            "rel": "http://esipfed.org/ns/fedsearch/1.1/metadata#",
+            "title": "Download TEMPO_NO2_L2_V01_20231206T131235Z_S002G03.nc.met",
+            "hreflang": "en-US",
+            "href": "https://data.asdc.uat.earthdata.nasa.gov/asdc2-uat-protected/TEMPO/TEMPO_NO2_L2_V01/2023.12.06/TEMPO_NO2_L2_V01_20231206T131235Z_S002G03.nc.met"
+          },
+          {
+            "rel": "http://esipfed.org/ns/fedsearch/1.1/metadata#",
+            "title": "This link provides direct download access via S3 to the granule",
+            "hreflang": "en-US",
+            "href": "s3://asdc2-uat-protected/TEMPO/TEMPO_NO2_L2_V01/2023.12.06/TEMPO_NO2_L2_V01_20231206T131235Z_S002G03.nc.met"
+          },
+          {
+            "rel": "http://esipfed.org/ns/fedsearch/1.1/metadata#",
+            "title": "api endpoint to retrieve temporary credentials valid for same-region direct s3 access",
+            "hreflang": "en-US",
+            "href": "https://data.asdc.uat.earthdata.nasa.gov/s3credentials"
+          },
+          {
+            "inherited": true,
+            "rel": "http://esipfed.org/ns/fedsearch/1.1/metadata#",
+            "hreflang": "en-US",
+            "href": "http://tempo.si.edu"
+          }
+        ]
+      },
+      {
+        "producer_granule_id": "TEMPO_NO2_L2_V01_20231206T131913Z_S002G04.nc",
+        "time_start": "2023-12-06T13:19:13.000Z",
+        "updated": "2023-12-06T17:30:20.772Z",
+        "dataset_id": "TEMPO NO2 total column",
+        "data_center": "LARC_CLOUD",
+        "title": "TEMPO_NO2_L2_V01_20231206T131913Z_S002G04.nc",
+        "coordinate_system": "CARTESIAN",
+        "day_night_flag": "UNSPECIFIED",
+        "time_end": "2023-12-06T13:25:50.000Z",
+        "id": "G1261454421-LARC_CLOUD",
+        "original_format": "UMM_JSON",
+        "browse_flag": false,
+        "polygons": [
+          [
+            "57.6716576 -88.0285797 17.2224884 -89.4594727 17.2268524 -83.7307739 30.4040184 -82.7095947 41.3189545 -81.2725067 50.3649406 -79.3184662 57.8856087 -76.7080078 57.6898575 -87.9846039 57.6716576 -88.0285797"
+          ]
+        ],
+        "collection_concept_id": "C1254854453-LARC_CLOUD",
+        "online_access_flag": true,
+        "links": [
+          {
+            "rel": "http://esipfed.org/ns/fedsearch/1.1/data#",
+            "title": "Download TEMPO_NO2_L2_V01_20231206T131913Z_S002G04.nc",
+            "hreflang": "en-US",
+            "href": "https://data.asdc.uat.earthdata.nasa.gov/asdc2-uat-protected/TEMPO/TEMPO_NO2_L2_V01/2023.12.06/TEMPO_NO2_L2_V01_20231206T131913Z_S002G04.nc"
+          },
+          {
+            "rel": "http://esipfed.org/ns/fedsearch/1.1/s3#",
+            "title": "This link provides direct download access via S3 to the granule",
+            "hreflang": "en-US",
+            "href": "s3://asdc2-uat-protected/TEMPO/TEMPO_NO2_L2_V01/2023.12.06/TEMPO_NO2_L2_V01_20231206T131913Z_S002G04.nc"
+          },
+          {
+            "rel": "http://esipfed.org/ns/fedsearch/1.1/metadata#",
+            "title": "Download TEMPO_NO2_L2_V01_20231206T131913Z_S002G04.nc.met",
+            "hreflang": "en-US",
+            "href": "https://data.asdc.uat.earthdata.nasa.gov/asdc2-uat-protected/TEMPO/TEMPO_NO2_L2_V01/2023.12.06/TEMPO_NO2_L2_V01_20231206T131913Z_S002G04.nc.met"
+          },
+          {
+            "rel": "http://esipfed.org/ns/fedsearch/1.1/metadata#",
+            "title": "This link provides direct download access via S3 to the granule",
+            "hreflang": "en-US",
+            "href": "s3://asdc2-uat-protected/TEMPO/TEMPO_NO2_L2_V01/2023.12.06/TEMPO_NO2_L2_V01_20231206T131913Z_S002G04.nc.met"
+          },
+          {
+            "rel": "http://esipfed.org/ns/fedsearch/1.1/metadata#",
+            "title": "api endpoint to retrieve temporary credentials valid for same-region direct s3 access",
+            "hreflang": "en-US",
+            "href": "https://data.asdc.uat.earthdata.nasa.gov/s3credentials"
+          },
+          {
+            "inherited": true,
+            "rel": "http://esipfed.org/ns/fedsearch/1.1/metadata#",
+            "hreflang": "en-US",
+            "href": "http://tempo.si.edu"
+          }
+        ]
+      }
+    ]
+  }
+}

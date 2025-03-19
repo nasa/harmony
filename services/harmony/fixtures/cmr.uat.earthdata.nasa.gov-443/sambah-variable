@@ -1,0 +1,78 @@
+POST /search/variables.umm_json_v1_8_1
+accept: application/json
+content-type: multipart/form-data; boundary=----------------------------012345678901234567890123
+accept-encoding: gzip,deflate
+body: ------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"concept_id\"\r\n\r\nV1256354892-LARC_CLOUD\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"concept_id\"\r\n\r\nV1256354896-LARC_CLOUD\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"concept_id\"\r\n\r\nV1256354894-LARC_CLOUD\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"page_size\"\r\n\r\n2000\r\n------------------------------012345678901234567890123--\r\n
+
+HTTP/1.1 200 OK
+content-type: application/vnd.nasa.cmr.umm_results+json;version=1.8.1; charset=utf-8
+transfer-encoding: chunked
+connection: keep-alive
+date: Wed, 19 Mar 2025 14:02:52 GMT
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: 9f121ff7-7d90-4776-95e7-f320ed3f7bb8
+content-sha1: ca73be40f97fbdf39be71ed369d770956807b669
+strict-transport-security: max-age=31536000; includeSubDomains; preload
+cmr-search-after: ["/product/vertical_column_troposphere","LARC_CLOUD","/product/vertical_column_troposphere","LARC_CLOUD"]
+cmr-hits: 3
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Search-After, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 32
+x-request-id: 9f121ff7-7d90-4776-95e7-f320ed3f7bb8
+content-md5: 63f806e61a42329890c29a89070fc2ac
+server: ServerTokens ProductOnly
+x-cache: Miss from cloudfront
+via: 1.1 3e5d87413ed637f1e8f50b5a62c2fe34.cloudfront.net (CloudFront)
+x-amz-cf-pop: DFW59-P2
+x-amz-cf-id: la0RdvXaoAo9W1cYW52wpfP55HDSWvlfaXaxgu4W8JeFCajBAPpxwA==
+
+{
+  "hits": 1,
+  "took": 30,
+  "items": [
+    {
+      "meta": {
+        "revision-id": 1,
+        "deleted": false,
+        "format": "application/vnd.nasa.cmr.umm+json",
+        "provider-id": "LARC_CLOUD",
+        "user-id": "ghayescrepps",
+        "associations": {
+          "collections": [
+            "C1254854453-LARC_CLOUD"
+          ]
+        },
+        "native-id": "mmt_variable_8830",
+        "association-details": {
+          "collections": [
+            {
+              "concept-id": "C1254854453-LARC_CLOUD"
+            }
+          ]
+        },
+        "concept-id": "V1256354892-LARC_CLOUD",
+        "revision-date": "2022-12-08T20:48:52.388Z",
+        "concept-type": "variable"
+      },
+      "umm": {
+        "Name": "/product/vertical_column_stratosphere",
+        "LongName": "stratosphere nitrogen dioxide vertical column",
+        "Definition": "stratosphere nitrogen dioxide vertical column",
+        "MetadataSpecification": {
+          "URL": "https://cdn.earthdata.nasa.gov/umm/variable/v1.8.1",
+          "Name": "UMM-Var",
+          "Version": "1.8.1"
+        }
+      },
+      "associations": {
+        "collections": [
+          {
+            "concept-id": "C1254854453-LARC_CLOUD"
+          }
+        ]
+      }
+    }
+  ]
+}

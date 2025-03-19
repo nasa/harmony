@@ -1,0 +1,144 @@
+GET /search/collections.json?concept_id=C1254854453-LARC_CLOUD&page_size=100
+accept: application/json
+accept-encoding: gzip,deflate
+
+HTTP/1.1 200 OK
+content-type: application/json;charset=utf-8
+transfer-encoding: chunked
+connection: keep-alive
+date: Tue, 18 Mar 2025 21:00:26 GMT
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: baa7a1a0-1ddf-419c-99ef-39ea5858382a
+content-sha1: d2f572ffe7c9160b813a440cd63e44d1bcf8d940
+strict-transport-security: max-age=31536000; includeSubDomains; preload
+cmr-search-after: ["tempo no2 total column","LARC_CLOUD","TEMPO_NO2_L2","v01",1254854453,8]
+cmr-hits: 1
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Search-After, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 34
+x-request-id: baa7a1a0-1ddf-419c-99ef-39ea5858382a
+content-md5: 0a8e945548dca9c9f29988eb89d9668d
+vary: Accept-Encoding, User-Agent
+server: ServerTokens ProductOnly
+x-cache: Miss from cloudfront
+via: 1.1 474d7ab63771b4de989eb405a7a9cd14.cloudfront.net (CloudFront)
+x-amz-cf-pop: DFW59-P2
+x-amz-cf-id: dZiLwvjs_U0ClMvTRFe8CkyboCwcH40yKWxqrusxH59WVCTKNX-SwA==
+
+{
+  "feed": {
+    "updated": "2025-03-19T13:59:32.380Z",
+    "id": "https://cmr.uat.earthdata.nasa.gov:443/search/collections.json?concept_id=C1254854453-LARC_CLOUD&page_size=100",
+    "title": "ECHO dataset metadata",
+    "entry": [
+      {
+        "processing_level_id": "2",
+        "cloud_hosted": true,
+        "has_combine": true,
+        "time_start": "2013-07-01T00:00:00.000Z",
+        "version_id": "V01",
+        "updated": "2018-06-18T00:00:00.000Z",
+        "dataset_id": "TEMPO NO2 total column",
+        "entry_id": "TEMPO_NO2_L2_V01",
+        "has_spatial_subsetting": true,
+        "has_transforms": false,
+        "associations": {
+          "variables": [
+            "V1256354892-LARC_CLOUD",
+            "V1256354896-LARC_CLOUD",
+            "V1256354894-LARC_CLOUD"
+          ],
+          "services": [
+            "S1262025641-LARC_CLOUD",
+            "S1234899453-POCLOUD"
+          ]
+        },
+        "has_variables": true,
+        "data_center": "LARC_CLOUD",
+        "short_name": "TEMPO_NO2_L2",
+        "organizations": [
+          "NASA/LARC/SD/ASDC"
+        ],
+        "title": "TEMPO NO2 total column",
+        "coordinate_system": "CARTESIAN",
+        "summary": "Nitrogen dioxide Level 2 files provide trace gas information at TEMPO’s native spatial resolution, ~10 km^2 at the center of the Field of Regard (FOR), for individual granules. Each granule covers the entire North-South TEMPO FOR but only a portion of the East-West FOR. The files are provided in netCDF4 format, and contain information on tropospheric, stratospheric and total nitrogen dioxide vertical columns, ancillary data used in air mass factor and stratospheric/tropospheric separation calculations, and retrieval quality flags. The retrieval uses a three-step approach: (1) spectral fitting of slant columns, (2) air mass factor calculation and derivation of vertical columns, and (3) stratospheric/tropospheric separation. For further details, please refer to the ATBD.",
+        "service_features": {
+          "harmony": {
+            "has_formats": true,
+            "has_variables": true,
+            "has_transforms": false,
+            "has_combine": true,
+            "has_spatial_subsetting": true,
+            "has_temporal_subsetting": true
+          },
+          "opendap": {
+            "has_formats": false,
+            "has_variables": false,
+            "has_transforms": false,
+            "has_combine": false,
+            "has_spatial_subsetting": false,
+            "has_temporal_subsetting": false
+          },
+          "esi": {
+            "has_formats": false,
+            "has_variables": false,
+            "has_transforms": false,
+            "has_combine": false,
+            "has_spatial_subsetting": false,
+            "has_temporal_subsetting": false
+          }
+        },
+        "orbit_parameters": {},
+        "id": "C1254854453-LARC_CLOUD",
+        "has_formats": true,
+        "consortiums": [
+          "GEOSS",
+          "EOSDIS"
+        ],
+        "original_format": "UMM_JSON",
+        "archive_center": "NASA/LARC/SD/ASDC",
+        "has_temporal_subsetting": true,
+        "browse_flag": false,
+        "polygons": [
+          [
+            "15 -163.96979 15 -19.98793 66 -19.98793 66 -163.96979 15 -163.96979"
+          ]
+        ],
+        "platforms": [
+          "IS-40e"
+        ],
+        "association_details": {
+          "variables": [
+            {
+              "concept_id": "V1256354892-LARC_CLOUD"
+            },
+            {
+              "concept_id": "V1256354896-LARC_CLOUD"
+            },
+            {
+              "concept_id": "V1256354894-LARC_CLOUD"
+            }
+          ],
+          "services": [
+            {
+              "concept_id": "S1262025641-LARC_CLOUD"
+            },
+            {
+              "concept_id": "S1234899453-POCLOUD"
+            }
+          ]
+        },
+        "online_access_flag": false,
+        "links": [
+          {
+            "rel": "http://esipfed.org/ns/fedsearch/1.1/metadata#",
+            "hreflang": "en-US",
+            "href": "http://tempo.si.edu"
+          }
+        ]
+      }
+    ]
+  }
+}
