@@ -1,5 +1,5 @@
 # port on which the express server listens
-PORT=5000
+PORT=3000
 # The port on which a worker container listens for work from the manager container
 WORKER_PORT=5001
 HARMONY_SERVICE="harmonyservices/query-cmr:stable"
