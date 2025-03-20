@@ -8,7 +8,7 @@ import * as edl from '../../app/util/edl-api';
  * Hooks to stub CMR and EDL health checks for specific tests.
  */
 export function hookCmrEdlHealthCheck(
-  cmrStatus: { healthy: boolean, message: string },
+  cmrStatus: { healthy: boolean, message?: string },
   edlStatus: boolean): void {
   let cmrStub;
   let edlStub;

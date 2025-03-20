@@ -39,7 +39,7 @@ const databaseDownHealthResponse = {
   }],
 };
 
-const cmrUpStatus = { healthy: true, message: '' };
+const cmrUpStatus = { healthy: true };
 const cmrDownMessage = 'CMR is down. {"indexer":{"ok?":false,"dependencies":{"elastic_search":{"ok?":false},"metadata-db":{"ok?":true,"dependencies":{"oracle":{"ok?":true}}}}}}';
 const cmrDownStatus = { healthy: false, message: cmrDownMessage };
 
