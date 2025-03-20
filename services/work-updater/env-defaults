@@ -1,5 +1,5 @@
 # Port the health check server listens on
-PORT=5000
+PORT=3000
 
 # maximum number of items to pull from the queue at once for the large item queue (to avoid visibility timeouts)
 # if this is set to greater than 10 (the SQS max) then 10 will be used instead
