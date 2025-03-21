@@ -124,6 +124,7 @@ function serviceImageToId(image: string): string {
 
 const conditionToOperationField = {
   concatenate: 'shouldConcatenate',
+  dimensionSubset: 'shouldDimensionSubset',
   extend: 'shouldExtend',
   reformat: 'outputFormat',
   reproject: 'crs',
@@ -154,9 +155,7 @@ export function stepUsesMultipleInputCatalogs(step: ServiceStep, operation: Data
 
   // check to see if the user has actually requested any of the multi-catalog operations
   for (const op of multiCatOps) {
-    const upperCaseOp = op.charAt(0).toUpperCase() + op.slice(1);
-    const should = `should${upperCaseOp}`;
-
+    const should = conditionToOperationField[op];
     if (operation[should]) {
       return true;
     }
@@ -179,7 +178,7 @@ export function stepUsesMultipleInputCatalogs(step: ServiceStep, operation: Data
  *
  * @returns true if the workflow step is required
  */
-function stepRequired(step: ServiceStep, operation: DataOperation): boolean {
+export function stepRequired(step: ServiceStep, operation: DataOperation): boolean {
   let required = true;
   if (step.conditional?.exists?.length > 0) {
     required = false;
