@@ -3,13 +3,14 @@ import _ from 'lodash';
 import { beforeEach, describe, it } from 'mocha';
 import { stub } from 'sinon';
 
-import DataOperation, { CURRENT_SCHEMA_VERSION } from '../../app/models/data-operation';
+import DataOperation, { CURRENT_SCHEMA_VERSION, DataSource } from '../../app/models/data-operation';
 import { buildService, chooseServiceConfig, UnsupportedOperation } from '../../app/models/services';
 import {
-  getMaxSynchronousGranules, ServiceStep, stepUsesMultipleInputCatalogs,
+  getMaxSynchronousGranules, ServiceStep, stepRequired, stepUsesMultipleInputCatalogs,
 } from '../../app/models/services/base-service';
 import TurboService from '../../app/models/services/turbo-service';
 import env from '../../app/util/env';
+import { HarmonyVariable } from '../../app/util/variables';
 import { buildOperation } from '../helpers/data-operation';
 import { hookRangesetRequest } from '../helpers/ogc-api-coverages';
 import hookServersStartStop from '../helpers/servers';
@@ -43,6 +44,238 @@ describe('stepUsesMultipleInputCatalogs', function () {
       const operation = buildOperation('foo');
       it('returns false', function () {
         expect(stepUsesMultipleInputCatalogs(step, operation)).to.be.false;
+      });
+    });
+  });
+});
+
+describe('stepRequired', function () {
+  describe('when the step has conditional dimension subset capability', function () {
+    const step: ServiceStep = {
+      operations: ['dimensionSubset'],
+      conditional: {
+        exists: ['dimensionSubset'],
+      },
+    };
+
+    describe('and the user requests dimension subsetting', function () {
+      const operation = buildOperation('foo');
+      operation.model.subset.dimensions = [{ name: 'foo' }];
+      it('includes the step', function () {
+        expect(stepRequired(step, operation)).to.be.true;
+      });
+    });
+
+    describe('and the user does not request dimension subsetting', function () {
+      const operation = buildOperation('foo');
+      it('does not include the step', function () {
+        expect(stepRequired(step, operation)).to.be.false;
+      });
+    });
+  });
+
+  describe('when the step has conditional variable subset capability', function () {
+    const step: ServiceStep = {
+      operations: ['variableSubset'],
+      conditional: {
+        exists: ['variableSubset'],
+      },
+    };
+
+    describe('and the user requests variable subsetting', function () {
+      const variable: HarmonyVariable = {
+        id: 'foo',
+        name: 'bar',
+        fullPath: 'foobar',
+      };
+      const dataSource: DataSource = {
+        collection: '',
+        shortName: '',
+        versionId: '',
+        coordinateVariables: [],
+        variables: [variable],
+        granules: [],
+      };
+      const operation = buildOperation('foo');
+      operation.sources = [dataSource];
+      it('includes the step', function () {
+        expect(stepRequired(step, operation)).to.be.true;
+      });
+    });
+
+    describe('and the user does not request variable subsetting', function () {
+      const operation = buildOperation('foo');
+      it('does not include the step', function () {
+        expect(stepRequired(step, operation)).to.be.false;
+      });
+    });
+  });
+
+  describe('when the step has conditional temporal subset capability', function () {
+    const step: ServiceStep = {
+      operations: ['temporalSubset'],
+      conditional: {
+        exists: ['temporalSubset'],
+      },
+    };
+
+    describe('and the user requests temporal subsetting', function () {
+      const operation = buildOperation('foo');
+      operation.temporal = { start: '20010101' };
+      it('includes the step', function () {
+        expect(stepRequired(step, operation)).to.be.true;
+      });
+    });
+
+    describe('and the user does not request temporal subsetting', function () {
+      const operation = buildOperation('foo');
+      it('does not include the step', function () {
+        expect(stepRequired(step, operation)).to.be.false;
+      });
+    });
+  });
+
+  describe('when the step has conditional shapefileSubset capability', function () {
+    const step: ServiceStep = {
+      operations: ['shapefileSubset'],
+      conditional: {
+        exists: ['shapefileSubset'],
+      },
+    };
+
+    describe('and the user requests shapefile subsetting', function () {
+      const operation = buildOperation('foo');
+      operation.geojson = 'foo';
+      it('includes the step', function () {
+        expect(stepRequired(step, operation)).to.be.true;
+      });
+    });
+
+    describe('and the user does not request shapefile subsetting', function () {
+      const operation = buildOperation('foo');
+      it('does not include the step', function () {
+        expect(stepRequired(step, operation)).to.be.false;
+      });
+    });
+  });
+
+  describe('when the step has conditional extend capability', function () {
+    const step: ServiceStep = {
+      operations: ['extend'],
+      conditional: {
+        exists: ['extend'],
+      },
+    };
+
+    describe('and the user requests extend', function () {
+      const operation = buildOperation('foo');
+      operation.extendDimensions = ['x'];
+      it('includes the step', function () {
+        expect(stepRequired(step, operation)).to.be.true;
+      });
+    });
+
+    describe('and the user does not request extend', function () {
+      const operation = buildOperation('foo');
+      it('does not include the step', function () {
+        expect(stepRequired(step, operation)).to.be.false;
+      });
+    });
+  });
+
+  describe('when the step has conditional concatenate capability', function () {
+    const step: ServiceStep = {
+      operations: ['concatenate'],
+      conditional: {
+        exists: ['concatenate'],
+      },
+    };
+
+    describe('and the user requests concatenation', function () {
+      const operation = buildOperation('foo');
+      operation.shouldConcatenate = true;
+      it('includes the step', function () {
+        expect(stepRequired(step, operation)).to.be.true;
+      });
+    });
+
+    describe('and the user does not request concatenation', function () {
+      const operation = buildOperation('foo');
+      it('does not include the step', function () {
+        expect(stepRequired(step, operation)).to.be.false;
+      });
+    });
+  });
+
+  // special case
+  describe('when the step has conditional extend and concatenate capability', function () {
+    const step: ServiceStep = {
+      operations: ['extend'],
+      conditional: {
+        exists: ['extend', 'concatenate'],
+      },
+    };
+
+    describe('and the user requests extend', function () {
+      const operation = buildOperation('foo');
+      operation.extendDimensions = ['x'];
+      it('includes the step', function () {
+        expect(stepRequired(step, operation)).to.be.true;
+      });
+    });
+
+    describe('and the user does not request extend', function () {
+      const operation = buildOperation('foo');
+      it('does not include the step', function () {
+        expect(stepRequired(step, operation)).to.be.false;
+      });
+    });
+  });
+
+  describe('when the step has conditional reproject capability', function () {
+    const step: ServiceStep = {
+      operations: ['reproject'],
+      conditional: {
+        exists: ['reproject'],
+      },
+    };
+
+    describe('and the user requests reprojection', function () {
+      const operation = buildOperation('foo');
+      operation.crs = 'EPSG123';
+      it('includes the step', function () {
+        expect(stepRequired(step, operation)).to.be.true;
+      });
+    });
+
+    describe('and the user does not request reprojection', function () {
+      const operation = buildOperation('foo');
+      it('does not include the step', function () {
+        expect(stepRequired(step, operation)).to.be.false;
+      });
+    });
+  });
+
+  describe('when the step has conditional reformat capability', function () {
+    const step: ServiceStep = {
+      operations: ['reformat'],
+      conditional: {
+        format: ['csv'],
+      },
+    };
+
+    describe('and the user requests the output format', function () {
+      const operation = buildOperation('foo');
+      operation.outputFormat = 'csv';
+      it('includes the step', function () {
+        expect(stepRequired(step, operation)).to.be.true;
+      });
+    });
+
+    describe('and the user does not request the output format', function () {
+      const operation = buildOperation('foo');
+      it('does not include the step', function () {
+        expect(stepRequired(step, operation)).to.be.false;
       });
     });
   });
