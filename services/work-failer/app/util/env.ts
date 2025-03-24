@@ -1,7 +1,7 @@
 import { IsInt, Min } from 'class-validator';
 import * as path from 'path';
+
 import { HarmonyEnv } from '@harmony/util/env';
-import _ from 'lodash';
 
 //
 // env module
@@ -27,6 +27,9 @@ class FailerHarmonyEnv extends HarmonyEnv {
   @Min(-1)
   maxWorkItemsOnUpdateQueueFailer: number;
 
+  @IsInt()
+  @Min(1)
+  defaultTimeoutSeconds: number;
 }
 
 const localPath = path.resolve(__dirname, '../../env-defaults');

@@ -1,17 +1,20 @@
-import { describe } from 'mocha';
 import { expect } from 'chai';
+import { describe } from 'mocha';
 import MockDate from 'mockdate';
-import { buildJob } from './helpers/jobs';
+
 import { Job, JobStatus } from '../../harmony/app/models/job';
 import WorkItem, { getWorkItemsByJobId } from '../../harmony/app/models/work-item';
-import { hookTransaction, truncateAll } from './helpers/db';
-import { buildWorkItem } from './helpers/work-items';
-import db from '../../harmony/app/util/db';
-import WorkFailer from '../app/workers/failer';
 import { WorkItemStatus } from '../../harmony/app/models/work-item-interface';
-import env from '../../harmony/app/util/env';
-import { buildWorkflowStep } from './helpers/workflow-steps';
+import db from '../../harmony/app/util/db';
 import { hookGetQueueForType } from '../../harmony/test/helpers/queue';
+import env from '../app/util/env';
+import WorkFailer, {
+  computeWorkItemDurationOutlierThresholdForJobService, getDefaultTimeoutSeconds,
+} from '../app/workers/failer';
+import { hookTransaction, truncateAll } from './helpers/db';
+import { buildJob } from './helpers/jobs';
+import { buildWorkItem } from './helpers/work-items';
+import { buildWorkflowStep } from './helpers/workflow-steps';
 
 const workFailer = new WorkFailer();
 
@@ -20,8 +23,6 @@ const workFailer = new WorkFailer();
 const failDurationMinutes = 11 * 60;
 
 describe('WorkFailer', function () {
-  let retryLimit: number;
-
   // WorkItem initial createAt/updatedAt dates
   // (which should determine which items get picked up
   // by the WorkFailer)
@@ -40,10 +41,6 @@ describe('WorkFailer', function () {
   hookGetQueueForType();
 
   before(async function () {
-    // Set the limit to something small for these tests
-    retryLimit = env.workItemRetryLimit;
-    env.workItemRetryLimit = 3;
-
     // this job has two "old" RUNNING work items
     // (they will have been running for a while by the time the WorkFailer is triggered)
     await twoOldJob.save(this.trx);
@@ -92,14 +89,13 @@ describe('WorkFailer', function () {
   after(async function () {
     await truncateAll();
     MockDate.reset();
-    env.workItemRetryLimit = retryLimit;
   });
 
-  describe('.handleWorkItemUpdates', async function () {
+  describe('.handleWorkItemTimeouts', async function () {
     let oldItems = [];
     it('proccesses work item updates for items that are RUNNING and have not been updated for the specified duration', async function () {
       MockDate.set('1/2/2000'); // some items should now be a day old
-      await workFailer.handleWorkItemUpdates(failDurationMinutes, 1);
+      await workFailer.handleWorkItemTimeouts(failDurationMinutes, 1);
 
       // check that both old items were re-queued
       const twoOldJobItems = (await getWorkItemsByJobId(db, twoOldJob.jobID)).workItems;
@@ -136,11 +132,11 @@ describe('WorkFailer', function () {
       // twoOldJob
       [twoOldJob, 2, '1/2/2000', '1/3/2000', [WorkItemStatus.READY, WorkItemStatus.READY], 2, JobStatus.RUNNING],
       [twoOldJob, 3, '1/3/2000', '1/4/2000', [WorkItemStatus.READY, WorkItemStatus.READY], 2,  JobStatus.RUNNING],
-      [twoOldJob, 3, '1/4/2000', '1/5/2000', [WorkItemStatus.FAILED, WorkItemStatus.CANCELED], 2, JobStatus.FAILED],
+      [twoOldJob, 4, '1/4/2000', '1/5/2000', [WorkItemStatus.FAILED, WorkItemStatus.CANCELED], 2, JobStatus.FAILED],
       // oneOldJob
       [oneOldJob, 2, '1/2/2000', '1/3/2000', [WorkItemStatus.READY, WorkItemStatus.READY], 1, JobStatus.RUNNING],
       [oneOldJob, 3, '1/3/2000', '1/4/2000', [WorkItemStatus.READY, WorkItemStatus.READY], 1, JobStatus.RUNNING],
-      [oneOldJob, 3, '1/4/2000', '1/5/2000', [WorkItemStatus.FAILED, WorkItemStatus.CANCELED], 1, JobStatus.COMPLETE_WITH_ERRORS],
+      [oneOldJob, 4, '1/4/2000', '1/5/2000', [WorkItemStatus.FAILED, WorkItemStatus.CANCELED], 1, JobStatus.COMPLETE_WITH_ERRORS],
     ].forEach(async ([
       job,
       retryCount, // The expected retry count for the work items after the work failer runs
@@ -169,7 +165,7 @@ describe('WorkFailer', function () {
         // have been running for a whole day and should get picked up again by the WorkFailer
         MockDate.set(failerDate);
 
-        await workFailer.handleWorkItemUpdates(failDurationMinutes, 1);
+        await workFailer.handleWorkItemTimeouts(failDurationMinutes, 1);
 
         items = (await getWorkItemsByJobId(db, job.jobID)).workItems;
 
@@ -188,5 +184,105 @@ describe('WorkFailer', function () {
         expect(response.job.status === jobStatus);
       });
     });
+  });
+});
+
+describe('WorkItem computeWorkItemDurationOutlierThresholdForJobService', function () {
+  const jobWithTwoComplete = buildJob({ status: JobStatus.RUNNING });
+  const jobWithOneComplete = buildJob({ status: JobStatus.RUNNING, ignoreErrors: true });
+
+  hookTransaction();
+
+  const { defaultTimeoutSeconds } = env;
+
+  before(async function () {
+    env.defaultTimeoutSeconds = 555;
+    await jobWithTwoComplete.save(this.trx);
+    await buildWorkItem({ jobID: jobWithTwoComplete.jobID, status: WorkItemStatus.SUCCESSFUL,
+      workflowStepIndex: 0, startedAt: new Date(), serviceID: 'subsetter', duration: 100 }).save(this.trx);
+    await buildWorkItem({ jobID: jobWithTwoComplete.jobID, status: WorkItemStatus.SUCCESSFUL,
+      workflowStepIndex: 0, startedAt: new Date(), serviceID: 'subsetter', duration: 200 }).save(this.trx);
+    await buildWorkflowStep({ jobID: jobWithTwoComplete.jobID, stepIndex: 0, serviceID: 'subsetter' }).save(this.trx);
+
+    await jobWithOneComplete.save(this.trx);
+    await buildWorkItem({ jobID: jobWithOneComplete.jobID, status: WorkItemStatus.SUCCESSFUL,
+      workflowStepIndex: 0, startedAt: new Date(), serviceID: 'subsetter' }).save(this.trx);
+    await buildWorkItem({ jobID: jobWithOneComplete.jobID, status: WorkItemStatus.RUNNING,
+      workflowStepIndex: 0, startedAt: new Date(), serviceID: 'subsetter' }).save(this.trx);
+    await buildWorkflowStep({ jobID: jobWithOneComplete.jobID, stepIndex: 0, serviceID: 'subsetter' }).save(this.trx);
+
+    await this.trx.commit();
+  });
+
+  after(function () {
+    env.defaultTimeoutSeconds = defaultTimeoutSeconds;
+  });
+
+  it('returns the default threshold when less than 2 items are successful', async function () {
+    expect(await computeWorkItemDurationOutlierThresholdForJobService(
+      jobWithOneComplete.jobID,
+      'subsetter',
+      0,
+    )).to.equal(555 * 1000);
+  });
+
+  it('returns 2*maxDuration when at least 2 items are successful', async function () {
+    expect(await computeWorkItemDurationOutlierThresholdForJobService(
+      jobWithTwoComplete.jobID,
+      'subsetter',
+      0,
+    )).to.equal(400);
+  });
+});
+
+describe('getDefaultTimeoutSeconds', () => {
+  const { defaultTimeoutSeconds } = env;
+
+  beforeEach(function () {
+    env.defaultTimeoutSeconds = 222;
+  });
+
+  afterEach(function () {
+    env.defaultTimeoutSeconds = defaultTimeoutSeconds;
+  });
+
+  it('returns predefined timeout for known service with group namespace', () => {
+    expect(getDefaultTimeoutSeconds('podaac/concise:0.10.0rc11')).to.equal(900);
+  });
+
+  it('returns predefined timeout for known service without group namespace', () => {
+    expect(getDefaultTimeoutSeconds('concise:1.0.0')).to.equal(900);
+  });
+
+  it('returns predefined timeout for known service without image tag', () => {
+    expect(getDefaultTimeoutSeconds('podaac/concise')).to.equal(900);
+  });
+
+  it('returns predefined timeout for known service without group namespace or image tag', () => {
+    expect(getDefaultTimeoutSeconds('concise')).to.equal(900);
+  });
+
+  it('returns default timeout for partial string match', () => {
+    expect(getDefaultTimeoutSeconds('podaac/conciseness:0.10.0rc11')).to.equal(env.defaultTimeoutSeconds);
+  });
+
+  it('returns default timeout for unknown service', () => {
+    expect(getDefaultTimeoutSeconds('nasa/stitchee:1.6.1')).to.equal(env.defaultTimeoutSeconds);
+  });
+
+  it('returns default timeout for service with no version', () => {
+    expect(getDefaultTimeoutSeconds('unknown-service')).to.equal(env.defaultTimeoutSeconds);
+  });
+
+  it('returns default timeout for empty string', () => {
+    expect(getDefaultTimeoutSeconds('')).to.equal(env.defaultTimeoutSeconds);
+  });
+
+  it('returns default timeout for service with only a namespace', () => {
+    expect(getDefaultTimeoutSeconds('podaac/')).to.equal(env.defaultTimeoutSeconds);
+  });
+
+  it('returns default timeout for malformed service ID', () => {
+    expect(getDefaultTimeoutSeconds('//:')).to.equal(env.defaultTimeoutSeconds);
   });
 });
