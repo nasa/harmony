@@ -810,51 +810,6 @@ export async function getTotalWorkItemSizesForJobID(
   return { originalSize, outputSize };
 }
 
-/**
- * Compute the threshold (in milliseconds) to be used to expire work items for a given job/service
- *
- * @param jobID - the ID of the Job for the step
- * @param serviceID - the serviceID of the step within the workflow
- * @param workflowStepIndex - index of the step within the workflow
- */
-export async function computeWorkItemDurationOutlierThresholdForJobService(
-  jobID: string,
-  serviceID: string,
-  workflowStepIndex: number,
-): Promise<number> {
-  // default to two hours
-  let threshold = 7200000;
-
-  try {
-    // use a simple heuristic of 2 times the longest duration of all the successful work items
-    // for this job/service
-    const completedWorkItemCount = await workItemCountForStep(db, jobID, workflowStepIndex, WorkItemStatus.SUCCESSFUL);
-    if (completedWorkItemCount >= 2) {
-      const result = await db(WorkItem.table)
-        .where({
-          jobID,
-          serviceID,
-          'status': WorkItemStatus.SUCCESSFUL,
-        })
-        .max('duration', { as: 'max' })
-        .first();
-
-      if (result && result.max > 0) {
-        threshold = 2.0 * result.max;
-      } else {
-        logger.debug('Using default threshold');
-      }
-    }
-    logger.debug(`Threshold is ${threshold}`);
-
-  } catch (e) {
-    logger.error(`Failed to get MAX duration for service ${serviceID} of job ${jobID}`);
-  }
-
-  return threshold;
-
-}
-
 // Listen for work items being created and put a message on the scheduler queue asking it to
 // schedule some WorkItems for the service
 eventEmitter.on(WorkItemEvent.CREATED, async (workItem: WorkItem) => {

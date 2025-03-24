@@ -14,3 +14,7 @@ WORK_FAILER_BATCH_SIZE=1000
 # Maximum number of work items allowed on the work item update queue before halting failing work items
 # Set the value to -1 to always fail work items
 MAX_WORK_ITEMS_ON_UPDATE_QUEUE_FAILER=1000
+
+# The default time (in seconds) that work items can run before timing out. Only used in cases where
+# no work items for that step in a job have completed successfully yet.
+DEFAULT_TIMEOUT_SECONDS=300

@@ -1,15 +1,20 @@
 import _ from 'lodash';
+
+import {
+  handleWorkItemUpdateWithJobId,
+} from '../../../harmony/app/backends/workflow-orchestration/work-item-updates';
 import { JobStatus } from '../../../harmony/app/models/job';
-import WorkItem, { computeWorkItemDurationOutlierThresholdForJobService, getWorkItemsByUpdateAgeAndStatus } from '../../../harmony/app/models/work-item';
+import WorkItem, {
+  getWorkItemsByUpdateAgeAndStatus, workItemCountForStep,
+} from '../../../harmony/app/models/work-item';
+import { WorkItemStatus } from '../../../harmony/app/models/work-item-interface';
 import db from '../../../harmony/app/util/db';
 import log from '../../../harmony/app/util/log';
 import { WorkItemQueueType } from '../../../harmony/app/util/queue/queue';
 import { getQueueForType } from '../../../harmony/app/util/queue/queue-factory';
 import sleep from '../../../harmony/app/util/sleep';
 import { Worker } from '../../../harmony/app/workers/worker';
-import { WorkItemStatus } from '../../../harmony/app/models/work-item-interface';
 import env from '../util/env';
-import { handleWorkItemUpdateWithJobId } from '../../../harmony/app/backends/workflow-orchestration/work-item-updates';
 
 /**
  * Construct a message indicating that the given work item has exceeded the given duration
@@ -20,6 +25,79 @@ import { handleWorkItemUpdateWithJobId } from '../../../harmony/app/backends/wor
  */
 function failedMessage(itemId: number, duration: number): string {
   return `Work item ${itemId} has exceeded the ${duration} ms duration threshold.`;
+}
+
+// A mapping for the default timeouts for services since some services such as
+// aggregation services can be expected to take much longer
+const serviceToDefaultTimeoutSeconds = {
+  'concise': 900, // 15 minutes
+};
+
+/**
+ * Retrieves the default timeout threshold for a given service ID.
+ *
+ * The service ID is a docker image tag which may include a namespace
+ * (e.g. podaac/concise:0.10.0rc11). This function extracts the base service name
+ * (e.g. concise) and checks if it has a predefined threshold.
+ *
+ * @param serviceID - the identifier of the service, which may include a namespace and version
+ * @param env - an object containing configuration values, including the default timeout threshold
+ * @returns the default timeout threshold in seconds if the service is recognized,
+ * otherwise env.defaultTimeoutThreshold
+ */
+export function getDefaultTimeoutSeconds(serviceID: string): number {
+  // Pull out the service name from the docker image tag without the group namespace or tag
+  const lastPart = serviceID.includes('/') ? serviceID.split('/').pop() : serviceID;
+  const serviceName = lastPart?.split(':')[0];
+
+  if (serviceName && serviceToDefaultTimeoutSeconds.hasOwnProperty(serviceName)) {
+    return serviceToDefaultTimeoutSeconds[serviceName];
+  } else {
+    return env.defaultTimeoutSeconds;
+  }
+}
+
+/**
+ * Compute the threshold (in milliseconds) to be used to expire work items for a given job/service
+ *
+ * @param jobID - the ID of the Job for the step
+ * @param serviceID - the serviceID of the step within the workflow
+ * @param workflowStepIndex - index of the step within the workflow
+ */
+export async function computeWorkItemDurationOutlierThresholdForJobService(
+  jobID: string,
+  serviceID: string,
+  workflowStepIndex: number,
+): Promise<number> {
+  let threshold = getDefaultTimeoutSeconds(serviceID) * 1000;
+
+  try {
+    // use a simple heuristic of 2 times the longest duration of all the successful work items
+    // for this job/service
+    const completedWorkItemCount = await workItemCountForStep(db, jobID, workflowStepIndex, WorkItemStatus.SUCCESSFUL);
+    if (completedWorkItemCount >= 1) {
+      const result = await db(WorkItem.table)
+        .where({
+          jobID,
+          serviceID,
+          'status': WorkItemStatus.SUCCESSFUL,
+        })
+        .max('duration', { as: 'max' })
+        .first();
+
+      if (result && result.max > 0) {
+        threshold = 2.0 * result.max;
+      } else {
+        log.debug('Using default timeout threshold');
+      }
+    }
+    log.debug(`Timeout threshold for ${jobID} and ${serviceID} is ${threshold}`);
+
+  } catch (e) {
+    log.error(`Failed to get MAX duration for service ${serviceID} of job ${jobID}`);
+  }
+
+  return threshold;
 }
 
 export default class Failer implements Worker {
@@ -79,7 +157,7 @@ export default class Failer implements Worker {
    * there are too many items on the work item update queue. Override to a small value in tests.
    * @returns Resolves when the request is complete
    */
-  async handleWorkItemUpdates(
+  async handleWorkItemTimeouts(
     lastUpdateOlderThanMinutes: number,
     failerDisabledDelay = 20000,
   ): Promise<void> {
@@ -156,7 +234,7 @@ export default class Failer implements Worker {
         await sleep(env.workFailerPeriodSec * 1000);
       }
       try {
-        await this.handleWorkItemUpdates(
+        await this.handleWorkItemTimeouts(
           env.failableWorkAgeMinutes,
         );
       } catch (e) {
