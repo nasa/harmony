@@ -1,69 +1,77 @@
 import { Response, NextFunction } from 'express';
+import { getCmrHealth } from '../util/cmr';
+import { isEdlHealthy } from '../util/edl-api';
 import HarmonyRequest from '../models/harmony-request';
 import { Job } from '../models/job';
 import logger from '../util/log';
-import db, { Transaction } from '../util/db';
+import RequestContext from '../models/request-context';
+import db from '../util/db';
 
-const UP = 'up';
-const DOWN = 'down';
-const _DEGRADED = 'degraded';
+export enum HealthStatus {
+  UP = 'up',
+  DOWN = 'down',
+}
 
 const HEALTHY_MESSAGE = 'Harmony is operating normally.';
 const DOWN_MESSAGE = 'Harmony is currently down.';
-const _DEGRADED_MESSAGE = 'Harmony is currently degraded.';
 
-interface ComponentStatus {
+interface DependencyStatus {
   name: String;
   status: String;
   message?: String;
 }
 
-interface HealthStatus {
+interface HealthInfo {
   status: String;
   message?: String;
-  components: ComponentStatus[];
+  dependencies: DependencyStatus[];
+}
 
+/**
+ * Returns the db health information
+ *
+ * @returns a promise resolving to the DependencyStatus of database
+ */
+async function getDbHealth(): Promise<DependencyStatus> {
+  try {
+    await Job.getTimeOfMostRecentlyUpdatedJob(db);
+    return { name: 'db', status: HealthStatus.UP };
+  } catch (e) {
+    logger.error(e);
+    return { name: 'db', status: HealthStatus.DOWN, message: 'Unable to query the database' };
+  }
 }
 
 /**
  * Returns the health information
  *
- * @param tx - the database transaction
+ * @param context - the request context
  * @returns a promise resolving to the health check response
  */
-async function getGeneralHealth(tx: Transaction): Promise<HealthStatus> {
-  let dbHealthy = true;
-  try {
-    await Job.getTimeOfMostRecentlyUpdatedJob(tx);
-  } catch (e) {
-    logger.error(e);
-    dbHealthy = false;
-  }
+async function getGeneralHealth(context: RequestContext): Promise<HealthInfo> {
+  const [dbHealth, cmrResult, edlHealthy] = await Promise.all([
+    getDbHealth(),
+    getCmrHealth(),
+    isEdlHealthy(context),
+  ]);
 
-  let health;
-  if (dbHealthy) {
-    health = {
-      status: UP,
-      message: HEALTHY_MESSAGE,
-      components: [{
-        name: 'db',
-        status: UP,
-      },
-      ],
-    };
-  } else {
-    health = {
-      status: DOWN,
-      message: DOWN_MESSAGE,
-      components: [{
-        name: 'db',
-        status: DOWN,
-        message: 'Unable to query the database',
-      },
-      ],
-    };
-  }
-  return health;
+  const { healthy: cmrHealthy, message: cmrMessage } = cmrResult;
+
+  const cmrHealth = cmrHealthy
+    ? { name: 'cmr', status: HealthStatus.UP }
+    : { name: 'cmr', status: HealthStatus.DOWN, message: cmrMessage };
+
+  const edlHealth = edlHealthy
+    ? { name: 'edl', status: HealthStatus.UP }
+    : { name: 'edl', status: HealthStatus.DOWN, message: 'Failed to access EDL home page.' };
+
+  const allHealthy = dbHealth.status === HealthStatus.UP && cmrHealthy && edlHealthy;
+
+  return {
+    status: allHealthy ? HealthStatus.UP : HealthStatus.DOWN,
+    message: allHealthy ? HEALTHY_MESSAGE : DOWN_MESSAGE,
+    dependencies: [dbHealth, cmrHealth, edlHealth],
+  };
 }
 
 /**
@@ -75,10 +83,10 @@ async function getGeneralHealth(tx: Transaction): Promise<HealthStatus> {
  * @returns Resolves when the request is complete
  */
 export async function getAdminHealth(
-  _req: HarmonyRequest, res: Response, _next: NextFunction,
+  req: HarmonyRequest, res: Response, _next: NextFunction,
 ): Promise<void> {
-  const health = await getGeneralHealth(db);
-  if (health.status === DOWN) {
+  const health = await getGeneralHealth(req.context);
+  if (health.status === HealthStatus.DOWN) {
     res.statusCode = 503;
   }
   res.send(health);
@@ -92,10 +100,10 @@ export async function getAdminHealth(
  * @returns Resolves when the request is complete
  */
 export async function getHealth(
-  _req: HarmonyRequest, res: Response, _next: NextFunction,
+  req: HarmonyRequest, res: Response, _next: NextFunction,
 ): Promise<void> {
-  const health = await getGeneralHealth(db);
-  if (health.status === DOWN) {
+  const health = await getGeneralHealth(req.context);
+  if (health.status === HealthStatus.DOWN) {
     res.statusCode = 503;
   }
   res.send(health);
