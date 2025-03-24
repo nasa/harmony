@@ -5,7 +5,7 @@ PORT=3000
 WORK_FAILER_PERIOD_SEC=300
 
 # WorkItems that have not been updated for more than this many minutes are
-# updated by the work failer (resulting either in job and work item failure or a retry)
+# eligible to be updated by the work failer (resulting either in job and work item failure or a retry)
 FAILABLE_WORK_AGE_MINUTES=5
 
 # The batch size used by work-failer. Set it to 0 will effectively disable work-failer.
