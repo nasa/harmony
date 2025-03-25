@@ -13,7 +13,7 @@ import { HttpError, NotFoundError, ServerError } from '../../util/errors';
 import logger from '../../util/log';
 import DataOperation from '../data-operation';
 import RequestContext from '../request-context';
-import BaseService, { ServiceConfig } from './base-service';
+import BaseService, { conditionToOperationField, ServiceConfig, ServiceStep } from './base-service';
 import HttpService from './http-service';
 import TurboService from './turbo-service';
 
@@ -91,6 +91,58 @@ export function loadServiceConfigs(cmrEndpoint: string): ServiceConfig<unknown>[
 }
 
 /**
+ * Validate step operations
+ *
+ * @param config - The service configuration to validate
+ * @param stepIndex - The step number
+ */
+export function validateStepOperations(config: ServiceConfig<unknown>, step: ServiceStep): string {
+  if (step.operations) {
+    for (const op of step.operations) {
+      // validate that the `capabilities` section includes the operation and that the operation
+      // is one of the known operations
+      let shouldThrow = false;
+      switch (op) {
+        case 'concatenate':
+          shouldThrow = !config.capabilities?.concatenation;
+          break;
+        case 'dimensionSubset':
+          shouldThrow = !config.capabilities?.subsetting?.dimension;
+          break;
+        case 'extend':
+          shouldThrow = !config.capabilities?.extend;
+          break;
+        case 'reformat':
+          // reformat is checked elsewhere
+          break;
+        case 'reproject':
+          shouldThrow = !config.capabilities?.reprojection;
+          break;
+        case 'shapefileSubset':
+          shouldThrow = !config.capabilities?.subsetting?.shape;
+          break;
+        case 'spatialSubset':
+          shouldThrow = !config.capabilities?.subsetting?.bbox;
+          break;
+        case 'temporalSubset':
+          shouldThrow = !config.capabilities?.subsetting?.temporal;
+          break;
+        case 'variableSubset':
+          shouldThrow = !config.capabilities?.subsetting?.variable;
+          break;
+        default:
+          return `Service ${config.name} step with image ${step.image} has invalid operation '${op}'.`;
+      }
+      if (shouldThrow) {
+        return `Service ${config.name} step with image ${step.image} has operation '${op}' which is not included in capabilities.`;
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
  * Throws an error if the steps configuration is invalid. Logs a warning if configuration will be ignored.
  * @param config - The service configuration to validate
  */
@@ -114,6 +166,33 @@ function validateServiceConfigSteps(config: ServiceConfig<unknown>): void {
 
       throw new TypeError(`Invalid is_sequential ${step.is_sequential}. query-cmr steps must always have sequential = true.`);
     }
+
+    // validate that the operations included in the step are listed in capabilities
+    const errMsg = validateStepOperations(config, step);
+    if (errMsg) {
+      throw new TypeError(errMsg);
+    }
+
+    // all operations except 'reformat' can be used in 'exists' conditions
+    const existsOps = Object.keys(conditionToOperationField).filter(op => op != 'reformat');
+
+    if (step.conditional?.exists) {
+      for (const op of step.conditional.exists) {
+        if (!existsOps.includes(op)) {
+          throw new TypeError(`Service ${config.name} step with image ${step.image} has invalid exists conditional '${op}'.`);
+        }
+      }
+    }
+
+    // validate that the conditional format is actually supported by the service chain
+    if (step.conditional?.format) {
+      for (const fmt of step.conditional.format) {
+        if (!(config.capabilities?.output_formats && config.capabilities.output_formats.includes(fmt))) {
+          throw new TypeError(`Service ${config.name} step with image ${step.image} has format conditional '${fmt}' which is not included in capabilities.`);
+        }
+      }
+    }
+
   }
 }
 

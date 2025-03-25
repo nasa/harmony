@@ -25,6 +25,7 @@ export interface ServiceCapabilities {
   concatenation?: boolean;
   concatenate_by_default?: boolean;
   subsetting?: {
+    dimension?: boolean;
     bbox?: boolean;
     shape?: boolean;
     temporal?: boolean;
@@ -122,7 +123,7 @@ function serviceImageToId(image: string): string {
   return image;
 }
 
-const conditionToOperationField = {
+export const conditionToOperationField = {
   concatenate: 'shouldConcatenate',
   dimensionSubset: 'shouldDimensionSubset',
   extend: 'shouldExtend',
