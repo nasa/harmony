@@ -20,9 +20,9 @@ x-turbo-config: &default-turbo-config
 
 https://cmr.earthdata.nasa.gov:
 
-  - name: with-invalid-exists-condition
+  - name: with-unsupported-step-operation
     description: |
-      testing service configuration with invalid step exists condition
+      testing service configuration with unsupported step operation 'variableSubset'
     data_operation_version: '0.17.0'
     type:
       <<: *default-turbo-config
@@ -36,7 +36,6 @@ https://cmr.earthdata.nasa.gov:
       subsetting:
         temporal: true
         bbox: true
-        variable: true
         shape: true
       output_formats:
         - application/x-netcdf4
@@ -44,8 +43,7 @@ https://cmr.earthdata.nasa.gov:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
       - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
-        conditional:
-          exists: ['reformat']
+        operations: ['variableSubset']
 
 
   - name: podaac/l2-subsetter

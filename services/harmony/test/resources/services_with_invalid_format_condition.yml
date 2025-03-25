@@ -22,7 +22,7 @@ https://cmr.earthdata.nasa.gov:
 
   - name: with-invalid-format-condition
     description: |
-      testing service configuration with invalid step operation
+      testing service configuration with invalid step format condition
     data_operation_version: '0.17.0'
     type:
       <<: *default-turbo-config

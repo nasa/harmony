@@ -25,6 +25,7 @@ export interface ServiceCapabilities {
   concatenation?: boolean;
   concatenate_by_default?: boolean;
   subsetting?: {
+    dimension?: boolean;
     bbox?: boolean;
     shape?: boolean;
     temporal?: boolean;
