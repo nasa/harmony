@@ -122,7 +122,7 @@ function serviceImageToId(image: string): string {
   return image;
 }
 
-const conditionToOperationField = {
+export const conditionToOperationField = {
   concatenate: 'shouldConcatenate',
   dimensionSubset: 'shouldDimensionSubset',
   extend: 'shouldExtend',

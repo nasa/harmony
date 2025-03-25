@@ -13,7 +13,7 @@ import { HttpError, NotFoundError, ServerError } from '../../util/errors';
 import logger from '../../util/log';
 import DataOperation from '../data-operation';
 import RequestContext from '../request-context';
-import BaseService, { ServiceConfig } from './base-service';
+import BaseService, { conditionToOperationField, ServiceConfig } from './base-service';
 import HttpService from './http-service';
 import TurboService from './turbo-service';
 
@@ -113,6 +113,35 @@ function validateServiceConfigSteps(config: ServiceConfig<unknown>): void {
     if (step.image.match(/harmonyservices\/query\-cmr:.*/) && !step.is_sequential) {
 
       throw new TypeError(`Invalid is_sequential ${step.is_sequential}. query-cmr steps must always have sequential = true.`);
+    }
+
+    // validate operations
+    if (step.operations) {
+      for (const op of step.operations) {
+        if (!conditionToOperationField[op]) {
+          throw new TypeError(`Service ${config.name} step with image ${step.image} has invalid operation '${op}'.`);
+        }
+      }
+    }
+
+    // all operations except 'reformat' can be used in 'exists' conditions
+    const existsOps = Object.keys(conditionToOperationField).filter(op => op != 'reformat');
+
+    if (step.conditional?.exists) {
+      for (const op of step.conditional.exists) {
+        if (!existsOps.includes(op)) {
+          throw new TypeError(`Service ${config.name} step with image ${step.image} has invalid exists conditional '${op}'.`);
+        }
+      }
+    }
+
+    // validate that the conditional format is actually supported by the service chain
+    if (step.conditional?.format) {
+      for (const fmt of step.conditional.format) {
+        if (!(config.capabilities.output_formats && config.capabilities.output_formats.includes(fmt))) {
+          throw new TypeError(`Service ${config.name} step with image ${step.image} has format conditional '${fmt}' which is not included in capabilities.`);
+        }
+      }
     }
   }
 }

@@ -105,4 +105,25 @@ describe('Services.yml validation', function () {
       expect(() => configs.forEach(validateServiceConfig)).to.throw(/Invalid is_sequential false. query-cmr steps must always have sequential = true./);
     });
   });
+
+  describe('services.yml with service step with invalid operation is invalid', function () {
+    it('throws an exception', function () {
+      const configs = loadServiceConfigsFromFile(cmrEndpoints.prod, '../../../test/resources/services_with_invalid_step_operations.yml');
+      expect(() => configs.forEach(validateServiceConfig)).to.throw(/Service with-invalid-step-operation step with image .*? has invalid operation 'foo'./);
+    });
+  });
+
+  describe('services.yml with service step with invalid exists conditional is invalid', function () {
+    it('throws an exception', function () {
+      const configs = loadServiceConfigsFromFile(cmrEndpoints.prod, '../../../test/resources/services_with_invalid_exists_condition.yml');
+      expect(() => configs.forEach(validateServiceConfig)).to.throw(/Service with-invalid-exists-condition step with image .*? has invalid exists conditional 'reformat'./);
+    });
+  });
+
+  describe('services.yml with service step with invalid format conditional is invalid', function () {
+    it('throws an exception', function () {
+      const configs = loadServiceConfigsFromFile(cmrEndpoints.prod, '../../../test/resources/services_with_invalid_format_condition.yml');
+      expect(() => configs.forEach(validateServiceConfig)).to.throw(/Service with-invalid-format-condition step with image .*? has format conditional 'image\/png' which is not included in capabilities./);
+    });
+  });
 });
