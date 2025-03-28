@@ -3,7 +3,9 @@ import { stub } from 'sinon';
 import { v4 as uuid } from 'uuid';
 
 import { Job, JobStatus } from '../app/models/job';
-import { populateUserWorkFromWorkItems } from '../app/models/user-work';
+import {
+  getCount, populateUserWorkFromWorkItems, recalculateCounts,
+} from '../app/models/user-work';
 import {
   getWorkItemById, getWorkItemsByJobId, getWorkItemsByJobIdAndStepIndex,
 } from '../app/models/work-item';
@@ -1204,6 +1206,115 @@ describe('When a request spans multiple CMR pages', function () {
           });
         });
       });
+    });
+  });
+});
+
+describe('when a job is paused and a work item completes', function () {
+  const exampleService = 'harmonyservices/service-example:latest';
+  const queryCmrService = 'harmonyservices/query-cmr:latest';
+  let jobId;
+
+  hookServersStartStop();
+
+  before(async function () {
+    await truncateAll();
+    const job = buildJob({ status: JobStatus.PAUSED, numInputGranules: 4 });
+    await job.save(db);
+    jobId = job.jobID;
+
+    await buildWorkflowStep({
+      jobID: jobId,
+      serviceID: queryCmrService,
+      stepIndex: 1,
+      workItemCount: 1,
+    }).save(db);
+
+    await buildWorkflowStep({
+      jobID: jobId,
+      serviceID: exampleService,
+      stepIndex: 2,
+      workItemCount: 4,
+    }).save(db);
+
+    await buildWorkItem({
+      jobID: jobId,
+      serviceID: queryCmrService,
+      status: WorkItemStatus.READY,
+      workflowStepIndex: 1,
+    }).save(db);
+
+    await buildWorkItem({
+      jobID: jobId,
+      serviceID: exampleService,
+      status: WorkItemStatus.READY,
+      workflowStepIndex: 2,
+    }).save(db);
+
+    await buildWorkItem({
+      jobID: jobId,
+      serviceID: exampleService,
+      status: WorkItemStatus.READY,
+      workflowStepIndex: 2,
+    }).save(db);
+
+    await buildWorkItem({
+      jobID: jobId,
+      serviceID: exampleService,
+      status: WorkItemStatus.RUNNING,
+      workflowStepIndex: 2,
+    }).save(db);
+
+    await buildWorkItem({
+      jobID: jobId,
+      serviceID: exampleService,
+      status: WorkItemStatus.RUNNING,
+      workflowStepIndex: 2,
+    }).save(db);
+
+    await populateUserWorkFromWorkItems(db);
+    await recalculateCounts(db, jobId);
+  });
+
+  it('initially has the correct ready and running counts', async function () {
+    const readyCount = await getCount(db, jobId, exampleService, 'ready');
+    const runningCount = await getCount(db, jobId, exampleService, 'running');
+    expect(readyCount).to.equal(2);
+    expect(runningCount).to.equal(2);
+  });
+
+  describe('after completing a work item for the paused job', function () {
+    before(async function () {
+      const res = await getWorkForService(this.backend, exampleService);
+      expect(res.status).to.equal(200);
+      const { workItem } = JSON.parse(res.text);
+      workItem.status = WorkItemStatus.SUCCESSFUL;
+      workItem.results = [getStacLocation(workItem, 'catalog.json')];
+      workItem.outputItemSizes = [1];
+      await fakeServiceStacOutput(workItem.jobID, workItem.id);
+      await updateWorkItem(this.backend, workItem);
+    });
+
+    it('sets the ready_count to 0 for all services associated with the job', async function () {
+      const queryCmrReadyCount = await getCount(db, jobId, queryCmrService, 'ready');
+      const exampleReadyCount = await getCount(db, jobId, exampleService, 'ready');
+      expect(queryCmrReadyCount).to.equal(0);
+      expect(exampleReadyCount).to.equal(0);
+    });
+
+    it('does not change the running count for the example service', async function () {
+      const runningCount = await getCount(db, jobId, exampleService, 'running');
+      expect(runningCount).to.equal(3);
+    });
+
+    it('does not change the running count for the query-cmr service', async function () {
+      const runningCount = await getCount(db, jobId, queryCmrService, 'running');
+      expect(runningCount).to.equal(1);
+    });
+
+    it('keeps the job status as paused', async function () {
+      const { job } = await Job.byJobID(db, jobId);
+      expect(job.status).to.equal(JobStatus.PAUSED);
     });
   });
 });
