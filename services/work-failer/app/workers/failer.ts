@@ -1,7 +1,7 @@
 import _ from 'lodash';
 
 import {
-  handleWorkItemUpdateWithJobId,
+  handleBatchWorkItemUpdatesWithJobId,
 } from '../../../harmony/app/backends/workflow-orchestration/work-item-updates';
 import { JobStatus } from '../../../harmony/app/models/job';
 import WorkItem, {
@@ -203,7 +203,7 @@ export default class Failer implements Worker {
                   hits: null, results: [], totalItemsSize: item.totalItemsSize, errorMessage: message,
                   workflowStepIndex: item.workflowStepIndex,
                 };
-                await handleWorkItemUpdateWithJobId(jobID, workItemUpdate, null, workItemlog);
+                await handleBatchWorkItemUpdatesWithJobId(jobID, [{ update: workItemUpdate }], workItemlog);
               }));
             } catch (e) {
               log.error(`Error attempting to process work item updates for job ${jobID}.`);

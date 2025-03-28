@@ -1,13 +1,14 @@
-import _ from 'lodash';
 import { NextFunction, Response } from 'express';
-import env from '../../util/env';
+import _ from 'lodash';
 import { Logger } from 'winston';
-import HarmonyRequest from '../../models/harmony-request';
-import { WorkItemQueueType } from '../../util/queue/queue';
-import { getQueueForType  } from '../../util/queue/queue-factory';
-import { getWorkFromQueue, getWorkFromDatabase, WorkItemData } from './work-item-polling';
-import WorkItemUpdate from '../../models/work-item-update';
+
 import DataOperation from '../../models/data-operation';
+import HarmonyRequest from '../../models/harmony-request';
+import WorkItemUpdate from '../../models/work-item-update';
+import env from '../../util/env';
+import { WorkItemQueueType } from '../../util/queue/queue';
+import { getQueueForType } from '../../util/queue/queue-factory';
+import { getWorkFromDatabase, getWorkFromQueue, WorkItemData } from './work-item-polling';
 
 const MAX_TRY_COUNT = 1;
 const RETRY_DELAY = 1000 * 120;
@@ -108,7 +109,7 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
   const totalItemsSize = req.body.totalItemsSize ? parseFloat(req.body.totalItemsSize) : 0;
 
   // remove variables as these may be too large to fit on the queue and aren't used for updates
-  if (operation.sources) {
+  if (operation?.sources) {
     for (const source of operation.sources) {
       source.variables = [];
     }

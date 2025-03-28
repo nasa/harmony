@@ -13,11 +13,11 @@ import JobMessage, {
 } from '../../models/job-message';
 import {
   decrementRunningCount, deleteUserWorkForJob, incrementReadyAndDecrementRunningCounts,
-  incrementReadyCount,
+  incrementReadyCount, setReadyCountToZero,
 } from '../../models/user-work';
 import WorkItem, {
-  getJobIdForWorkItem, getWorkItemById, getWorkItemsByJobIdAndStepIndex, maxSortIndexForJobService,
-  updateWorkItemStatus, workItemCountForStep,
+  getWorkItemById, getWorkItemsByJobIdAndStepIndex, maxSortIndexForJobService, updateWorkItemStatus,
+  workItemCountForStep,
 } from '../../models/work-item';
 import { COMPLETED_WORK_ITEM_STATUSES, WorkItemStatus } from '../../models/work-item-interface';
 import WorkItemUpdate from '../../models/work-item-update';
@@ -47,7 +47,7 @@ export type WorkItemPreprocessInfo = {
 
 export type WorkItemUpdateQueueItem = {
   update: WorkItemUpdate,
-  operation: object,
+  operation?: object,
   preprocessResult?: WorkItemPreprocessInfo,
 };
 
@@ -936,6 +936,9 @@ export async function processWorkItems(
           }
         }
       }
+      if (job.status === JobStatus.PAUSED) {
+        await setReadyCountToZero(tx, jobID);
+      }
     });
     const durationMs = new Date().getTime() - transactionStart;
     logger.info('timing.HWIUWJI.transaction.end', { durationMs });
@@ -946,61 +949,60 @@ export async function processWorkItems(
 }
 
 /**
- * Update job status/progress in response to a service provided work item update
+ * Group work item updates by its workflow step and return the grouped work item updates
+ * as a map of workflow step to a list of work item updates on that workflow step.
+ * @param updates - List of work item updates
  *
- * @param jobId - job id
- * @param update - information about the work item update
- * @param operation - the DataOperation for the user's request
- * @param logger - the Logger for the request
+ * @returns a map of workflow step to a list of work item updates on that workflow step.
  */
-export async function handleWorkItemUpdateWithJobId(
-  jobID: string,
-  update: WorkItemUpdate,
-  operation: object,
-  logger: Logger,
-  loadNextWorkflowStep = false): Promise<void> {
-  try {
-    let nextWorkflowStep = undefined;
-    if (loadNextWorkflowStep) {
-      nextWorkflowStep = await (await logAsyncExecutionTime(
-        getWorkflowStepByJobIdStepIndex,
-        'HWIUWJI.getWorkflowStepByJobIdStepIndex',
-        logger))(db, jobID, update.workflowStepIndex + 1);
-    }
-    const preprocessResult = await preprocessWorkItem(update, operation, logger, nextWorkflowStep);
-    const transactionStart = new Date().getTime();
-    await db.transaction(async (tx) => {
-      const { job } = await (await logAsyncExecutionTime(
-        Job.byJobID,
-        'HWIUWJI.Job.byJobID',
-        logger))(tx, jobID, false, false, true);
+function groupByWorkflowStepIndex(
+  updates: WorkItemUpdateQueueItem[]): Record<number, WorkItemUpdateQueueItem[]> {
 
-      await processWorkItem(tx, preprocessResult, job, update, logger, true, undefined);
-      await job.save(tx);
-    });
-    const durationMs = new Date().getTime() - transactionStart;
-    logger.info('timing.HWIUWJI.transaction.end', { durationMs });
-  } catch (e) {
-    logger.error(`Failed to process work item update for work item: ${update.workItemID}`);
-    logger.error(e);
-  }
+  return updates.reduce((result, currentUpdate) => {
+    const { workflowStepIndex } = currentUpdate.update;
+
+    // Initialize an array for the step if it doesn't exist
+    if (!result[workflowStepIndex]) {
+      result[workflowStepIndex] = [];
+    }
+
+    result[workflowStepIndex].push(currentUpdate);
+
+    return result;
+  }, {} as Record<number, WorkItemUpdateQueueItem[]>);
 }
 
 /**
- * Update job status/progress in response to a service provided work item update
- *
- * @param update - information about the work item update
- * @param operation - the DataOperation for the user's request
- * @param logger - the Logger for the request
+ * Updates the batch of work items.
+ * It is assumed that all the work items belong to the same job.
+ * It processes the work item updates in groups by the workflow step.
+ * @param jobID - ID of the job that the work item updates belong to
+ * @param updates - List of work item updates
+ * @param logger - Logger to use
  */
-export async function handleWorkItemUpdate(
-  update: WorkItemUpdate,
-  operation: object,
+export async function handleBatchWorkItemUpdatesWithJobId(
+  jobID: string,
+  updates: WorkItemUpdateQueueItem[],
   logger: Logger): Promise<void> {
-  const { workItemID } = update;
-  const jobID = await (await logAsyncExecutionTime(
-    getJobIdForWorkItem,
-    'getJobIdForWorkItem',
-    logger))(workItemID);
-  await exports.handleWorkItemUpdateWithJobId(jobID, update, operation, logger, true, undefined);
+  const startTime = new Date().getTime();
+  logger.debug(`Processing ${updates.length} work item updates for job ${jobID}`);
+  // group updates by workflow step index to make sure at least one completion check is performed for each step
+  const groups = groupByWorkflowStepIndex(updates);
+  for (const workflowStepIndex of Object.keys(groups)) {
+    const nextWorkflowStep = await (await logAsyncExecutionTime(
+      getWorkflowStepByJobIdStepIndex,
+      'HWIUWJI.getWorkflowStepByJobIdStepIndex',
+      logger))(db, jobID, parseInt(workflowStepIndex) + 1);
+
+    const preprocessedWorkItems: WorkItemUpdateQueueItem[] = await Promise.all(
+      groups[workflowStepIndex].map(async (item: WorkItemUpdateQueueItem) => {
+        const { update, operation } = item;
+        const result = await preprocessWorkItem(update, operation, logger, nextWorkflowStep);
+        item.preprocessResult = result;
+        return item;
+      }));
+    await processWorkItems(jobID, parseInt(workflowStepIndex), preprocessedWorkItems, logger);
+  }
+  const durationMs = new Date().getTime() - startTime;
+  logger.info('timing.HWIUWJI.batch.end', { durationMs });
 }

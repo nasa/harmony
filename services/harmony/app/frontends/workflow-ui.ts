@@ -1,28 +1,32 @@
-import { Response, NextFunction } from 'express';
-import { sanitizeImage, truncateString } from '@harmony/util/string';
-import { getJobIfAllowed } from '../util/job';
-import { Job, JobStatus, JobQuery, TEXT_LIMIT } from '../models/job';
-import { getWorkItemById, queryAll } from '../models/work-item';
-import { ForbiddenError, NotFoundError, RequestValidationError } from '../util/errors';
-import { getPagingParams, getPagingLinks, setPagingHeaders } from '../util/pagination';
-import HarmonyRequest from '../models/harmony-request';
-import db from '../util/db';
-import version from '../util/version';
-import { version as ogcVersion } from '../frontends/ogc-coverages';
-import env from '../util/env';
-import { keysToLowerCase } from '../util/object';
-import { getItemLogsLocation, WorkItemQuery, WorkItemStatus } from '../models/work-item-interface';
-import { getRequestRoot } from '../util/url';
-import { getAllStateChangeLinks, getJobStateChangeLinks } from '../util/links';
-import { objectStoreForProtocol } from '../util/object-store';
-import { Logger } from 'winston';
-import { serviceNames } from '../models/services';
-import { getEdlGroupInformation, isAdminUser } from '../util/edl-api';
+import { NextFunction, Response } from 'express';
 import { ILengthAwarePagination } from 'knex-paginate';
-import { handleWorkItemUpdateWithJobId } from '../backends/workflow-orchestration/work-item-updates';
-import { getLabelsForUser, getRecentLabelsForUser } from '../models/label';
-import { logAsyncExecutionTime } from '../util/log-execution';
 import _ from 'lodash';
+import { Logger } from 'winston';
+
+import { sanitizeImage, truncateString } from '@harmony/util/string';
+
+import {
+  handleBatchWorkItemUpdatesWithJobId,
+} from '../backends/workflow-orchestration/work-item-updates';
+import { version as ogcVersion } from '../frontends/ogc-coverages';
+import HarmonyRequest from '../models/harmony-request';
+import { Job, JobQuery, JobStatus, TEXT_LIMIT } from '../models/job';
+import { getLabelsForUser, getRecentLabelsForUser } from '../models/label';
+import { serviceNames } from '../models/services';
+import { getWorkItemById, queryAll } from '../models/work-item';
+import { getItemLogsLocation, WorkItemQuery, WorkItemStatus } from '../models/work-item-interface';
+import db from '../util/db';
+import { getEdlGroupInformation, isAdminUser } from '../util/edl-api';
+import env from '../util/env';
+import { ForbiddenError, NotFoundError, RequestValidationError } from '../util/errors';
+import { getJobIfAllowed } from '../util/job';
+import { getAllStateChangeLinks, getJobStateChangeLinks } from '../util/links';
+import { logAsyncExecutionTime } from '../util/log-execution';
+import { keysToLowerCase } from '../util/object';
+import { objectStoreForProtocol } from '../util/object-store';
+import { getPagingLinks, getPagingParams, setPagingHeaders } from '../util/pagination';
+import { getRequestRoot } from '../util/url';
+import version from '../util/version';
 
 // Default to retrieving this number of work items per page
 const defaultWorkItemPageSize = 100;
@@ -107,27 +111,27 @@ function parseQuery( /* eslint-disable @typescript-eslint/no-explicit-any */
     tableQuery.allowProviders = !(requestQuery.disallowprovider === 'on');
     tableQuery.allowMessageCategoryValues = !(requestQuery.disallowmessagecategory === 'on');
     const selectedOptions: { field: string, dbValue: string, value: string }[] = JSON.parse(requestQuery.tablefilter);
-    
+
     const validStatusSelections = selectedOptions
       .filter(option => option.field === 'status' && Object.values<string>(statusEnum).includes(option.dbValue));
     const statusValues = validStatusSelections.map(option => option.dbValue);
-    
+
     const validServiceSelections = selectedOptions
       .filter(option => option.field === 'service' && serviceNames.includes(option.dbValue));
     const serviceValues = validServiceSelections.map(option => option.dbValue);
-    
+
     const validUserSelections = selectedOptions
       .filter(option => isAdminAccess && /^user: [A-Za-z0-9\.\_]{4,30}$/.test(option.value));
     const userValues = validUserSelections.map(option => option.value.split('user: ')[1]);
-    
+
     const validLabelSelections = selectedOptions
       .filter(option => /^label: .{1,100}$/.test(option.value));
     const labelValues = validLabelSelections.map(option => option.dbValue || option.value.split('label: ')[1].toLowerCase());
-    
+
     const validProviderSelections = selectedOptions
       .filter(option => /^provider: [A-Za-z0-9_]{1,100}$/.test(option.value));
     const providerValues = validProviderSelections.map(option => option.value.split('provider: ')[1].toLowerCase());
-    
+
     const validMessageCategorySelections = selectedOptions
       .filter(option => /^message category: .{1,100}$/.test(option.value));
     const messageCategoryValues = validMessageCategorySelections.map(option => option.dbValue || option.value.split('message category: ')[1].toLowerCase());
@@ -799,7 +803,7 @@ export async function retry(
       workflowStepIndex: item.workflowStepIndex,
     };
 
-    await handleWorkItemUpdateWithJobId(jobID, workItemUpdate, null, workItemLogger);
+    await handleBatchWorkItemUpdatesWithJobId(jobID, [{ update: workItemUpdate }], workItemLogger);
 
     res.status(200).send({ message: 'The item was successfully requeued.' });
   } catch (e) {

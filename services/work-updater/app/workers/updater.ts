@@ -1,78 +1,16 @@
 import { Logger } from 'winston';
 
 import {
-  handleWorkItemUpdate, preprocessWorkItem, processWorkItems, WorkItemUpdateQueueItem,
+  handleBatchWorkItemUpdatesWithJobId, WorkItemUpdateQueueItem,
 } from '../../../harmony/app/backends/workflow-orchestration/work-item-updates';
 import { getJobStatusForJobID, terminalStates } from '../../../harmony/app/models/job';
 import { getJobIdForWorkItem } from '../../../harmony/app/models/work-item';
-import { getWorkflowStepByJobIdStepIndex } from '../../../harmony/app/models/workflow-steps';
-import db from '../../../harmony/app/util/db';
 import { default as defaultLogger } from '../../../harmony/app/util/log';
-import { logAsyncExecutionTime } from '../../../harmony/app/util/log-execution';
 import { WorkItemQueueType } from '../../../harmony/app/util/queue/queue';
 import { getQueueForType } from '../../../harmony/app/util/queue/queue-factory';
 import sleep from '../../../harmony/app/util/sleep';
 import { Worker } from '../../../harmony/app/workers/worker';
 import env from '../util/env';
-
-/**
- * Group work item updates by its workflow step and return the grouped work item updates
- * as a map of workflow step to a list of work item updates on that workflow step.
- * @param updates - List of work item updates
- *
- * @returns a map of workflow step to a list of work item updates on that workflow step.
- */
-function groupByWorkflowStepIndex(
-  updates: WorkItemUpdateQueueItem[]): Record<number, WorkItemUpdateQueueItem[]> {
-
-  return updates.reduce((result, currentUpdate) => {
-    const { workflowStepIndex } = currentUpdate.update;
-
-    // Initialize an array for the step if it doesn't exist
-    if (!result[workflowStepIndex]) {
-      result[workflowStepIndex] = [];
-    }
-
-    result[workflowStepIndex].push(currentUpdate);
-
-    return result;
-  }, {} as Record<number, WorkItemUpdateQueueItem[]>);
-}
-
-/**
- * Updates the batch of work items.
- * It is assumed that all the work items belong to the same job.
- * It processes the work item updates in groups by the workflow step.
- * @param jobID - ID of the job that the work item updates belong to
- * @param updates - List of work item updates
- * @param logger - Logger to use
- */
-async function handleBatchWorkItemUpdatesWithJobId(
-  jobID: string,
-  updates: WorkItemUpdateQueueItem[],
-  logger: Logger): Promise<void> {
-  const startTime = new Date().getTime();
-  logger.debug(`Processing ${updates.length} work item updates for job ${jobID}`);
-  // group updates by workflow step index to make sure at least one completion check is performed for each step
-  const groups = groupByWorkflowStepIndex(updates);
-  for (const workflowStepIndex of Object.keys(groups)) {
-    const nextWorkflowStep = await (await logAsyncExecutionTime(
-      getWorkflowStepByJobIdStepIndex,
-      'HWIUWJI.getWorkflowStepByJobIdStepIndex',
-      logger))(db, jobID, parseInt(workflowStepIndex) + 1);
-
-    const preprocessedWorkItems: WorkItemUpdateQueueItem[] = await Promise.all(
-      groups[workflowStepIndex].map(async (item: WorkItemUpdateQueueItem) => {
-        const { update, operation } = item;
-        const result = await preprocessWorkItem(update, operation, logger, nextWorkflowStep);
-        item.preprocessResult = result;
-        return item;
-      }));
-    await processWorkItems(jobID, parseInt(workflowStepIndex), preprocessedWorkItems, logger);
-  }
-  const durationMs = new Date().getTime() - startTime;
-  logger.info('timing.HWIUWJI.batch.end', { durationMs });
-}
 
 /**
  * This function processes a batch of work item updates.
@@ -144,9 +82,8 @@ export async function batchProcessQueue(queueType: WorkItemQueueType): Promise<v
     for (const msg of messages) {
       try {
         const updateItem: WorkItemUpdateQueueItem = JSON.parse(msg.body);
-        const { update, operation } = updateItem;
-        defaultLogger.debug(`Processing work item update from queue for work item ${update.workItemID} and status ${update.status}`);
-        await handleWorkItemUpdate(update, operation, defaultLogger);
+        defaultLogger.debug(`Processing work item update from queue for work item ${updateItem.update.workItemID} and status ${updateItem.update.status}`);
+        await exports.handleBatchWorkItemUpdates([updateItem], defaultLogger);
       } catch (e) {
         defaultLogger.error(`Error processing work item update from queue: ${e}`);
       }
@@ -159,11 +96,7 @@ export async function batchProcessQueue(queueType: WorkItemQueueType): Promise<v
       }
     }
   } else {
-    // potentially process all the messages at once. this actually calls `handleBatchWorkItemUpdates`,
-    // which processes each job's updates individually right now. this just leaves the possibility
-    // open for that function to be updated to process all the updates at once in a more efficient
-    // manner. It also allows us to delete all the messages from the queue at once, which is more
-    // efficient than deleting them one at a time.
+    // process all the messages at once
     const updates: WorkItemUpdateQueueItem[] = messages.map((msg) => JSON.parse(msg.body));
     try {
       await exports.handleBatchWorkItemUpdates(updates, defaultLogger);
