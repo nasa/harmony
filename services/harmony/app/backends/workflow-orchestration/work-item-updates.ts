@@ -949,30 +949,6 @@ export async function processWorkItems(
 }
 
 /**
- * Group work item updates by its workflow step and return the grouped work item updates
- * as a map of workflow step to a list of work item updates on that workflow step.
- * @param updates - List of work item updates
- *
- * @returns a map of workflow step to a list of work item updates on that workflow step.
- */
-function groupByWorkflowStepIndex(
-  updates: WorkItemUpdateQueueItem[]): Record<number, WorkItemUpdateQueueItem[]> {
-
-  return updates.reduce((result, currentUpdate) => {
-    const { workflowStepIndex } = currentUpdate.update;
-
-    // Initialize an array for the step if it doesn't exist
-    if (!result[workflowStepIndex]) {
-      result[workflowStepIndex] = [];
-    }
-
-    result[workflowStepIndex].push(currentUpdate);
-
-    return result;
-  }, {} as Record<number, WorkItemUpdateQueueItem[]>);
-}
-
-/**
  * Updates the batch of work items.
  * It is assumed that all the work items belong to the same job.
  * It processes the work item updates in groups by the workflow step.
@@ -987,7 +963,7 @@ export async function handleBatchWorkItemUpdatesWithJobId(
   const startTime = new Date().getTime();
   logger.debug(`Processing ${updates.length} work item updates for job ${jobID}`);
   // group updates by workflow step index to make sure at least one completion check is performed for each step
-  const groups = groupByWorkflowStepIndex(updates);
+  const groups = _.groupBy(updates, (update) => update.update.workflowStepIndex);
   for (const workflowStepIndex of Object.keys(groups)) {
     const nextWorkflowStep = await (await logAsyncExecutionTime(
       getWorkflowStepByJobIdStepIndex,
