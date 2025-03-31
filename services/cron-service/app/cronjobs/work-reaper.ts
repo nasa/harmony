@@ -1,4 +1,5 @@
 import { subMinutes } from 'date-fns';
+
 import { JobStatus, terminalStates } from '../../../harmony/app/models/job';
 import {
   deleteWorkItemsById, getWorkItemIdsByJobUpdateAgeAndStatus,
@@ -12,6 +13,7 @@ import { CronJob } from './cronjob';
 
 /**
  * Find work items that are older than updatedAtCutoff and delete them.
+ * @param ctx - The Cron job context
  * @param updatedAtCutoff - updatedAt cutoff time since the last update
  * @param jobStatus - a list of terminal job statuses
  * @returns Resolves when the request is complete
@@ -53,6 +55,7 @@ async function deleteTerminalWorkItems(ctx: Context, updatedAtCutoff: Date, jobS
 
 /**
  * Find workflow steps that are older than updatedAtCutoff and delete them.
+ * @param ctx - The Cron job context
  * @param updatedAtCutoff - updatedAt cutoff time since the last update
  * @param jobStatus - a list of terminal job statuses
  * @returns Resolves when the request is complete

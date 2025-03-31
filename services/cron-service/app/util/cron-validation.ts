@@ -24,9 +24,6 @@ export function validateCrontab(value: unknown): string {
 
 /**
  * Creates a custom decorator that validates a crontab schedule entry
- *
- * @param validationOptions - options passed to internal validation library
- * @returns
  */
 export function IsCrontab() {
   return function (object: Object, propertyName: string): void {
