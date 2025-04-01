@@ -1,4 +1,7 @@
-import UserWork, { recalculateCount } from '../../../harmony/app/models/user-work';
+import { Job, JobStatus } from '../../../harmony/app/models/job';
+import UserWork, {
+  recalculateCount, setReadyAndRunningCountToZero,
+} from '../../../harmony/app/models/user-work';
 import { Context } from '../util/context';
 import env from '../util/env';
 import { CronJob } from './cronjob';
@@ -73,8 +76,13 @@ export async function updateUserWork(ctx: Context): Promise<void> {
     // reset the counts for the jobs
     for (const jobID of jobIDs) {
       logger.info(`Resetting user-work counts for job ${jobID}`);
-      await recalculateCount(tx, jobID, 'ready');
-      await recalculateCount(tx, jobID, 'running');
+      const { job } = await Job.byJobID(tx, jobID);
+      if (job.status === JobStatus.PAUSED) {
+        await setReadyAndRunningCountToZero(tx, jobID);
+      } else {
+        await recalculateCount(tx, jobID, 'ready');
+        await recalculateCount(tx, jobID, 'running');
+      }
     }
   });
 }

@@ -199,6 +199,18 @@ export async function setReadyCountToZero(tx: Transaction, jobID: string): Promi
 }
 
 /**
+ * Sets the ready and running count to 0 for the given jobID.
+ * @param tx - The database transaction
+ * @param jobID - The job ID
+ */
+export async function setReadyAndRunningCountToZero(tx: Transaction, jobID: string): Promise<void> {
+  await tx(UserWork.table)
+    .where({ job_id: jobID })
+    .update('ready_count', 0)
+    .update('running_count', 0);
+}
+
+/**
  * Populates the user_work table for the given jobID from the work_items table.
  * @param tx - The database transaction
  * @param jobID - The job ID
