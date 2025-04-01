@@ -136,6 +136,7 @@ https://cmr.earthdata.nasa.gov:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
       - image: !Env ${PODAAC_CONCISE_IMAGE}
+        always_wait_for_prior_step: true
         is_batched: true
         operations: ['concatenate']
 
@@ -180,6 +181,7 @@ https://cmr.earthdata.nasa.gov:
         conditional:
           exists: ['spatialSubset', 'variableSubset', 'temporalSubset']
       - image: !Env ${PODAAC_CONCISE_IMAGE}
+        always_wait_for_prior_step: true
         is_batched: true
         operations: ['concatenate']
         conditional:
@@ -430,6 +432,7 @@ https://cmr.earthdata.nasa.gov:
         extra_args:
           cut: false
       - image: !Env ${BATCHEE_IMAGE}
+        always_wait_for_prior_step: true
         operations: ['concatenate']
         conditional:
           exists: ['concatenate', 'extend']
@@ -438,6 +441,7 @@ https://cmr.earthdata.nasa.gov:
         conditional:
           exists: ['concatenate', 'extend']
       - image: !Env ${PODAAC_CONCISE_IMAGE}
+        always_wait_for_prior_step: true
         is_batched: true
         operations: ['concatenate']
         conditional:
@@ -760,6 +764,7 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
       - image: !Env ${PODAAC_CONCISE_IMAGE}
+        always_wait_for_prior_step: true
         is_batched: true
         operations: ['concatenate']
 
@@ -804,6 +809,7 @@ https://cmr.uat.earthdata.nasa.gov:
         conditional:
           exists: ['spatialSubset', 'variableSubset', 'temporalSubset']
       - image: !Env ${PODAAC_CONCISE_IMAGE}
+        always_wait_for_prior_step: true
         is_batched: true
         operations: ['concatenate']
         conditional:
@@ -1123,6 +1129,7 @@ https://cmr.uat.earthdata.nasa.gov:
         extra_args:
           cut: false
       - image: !Env ${BATCHEE_IMAGE}
+        always_wait_for_prior_step: true
         operations: ['concatenate']
         conditional:
           exists: ['concatenate', 'extend']
@@ -1131,6 +1138,7 @@ https://cmr.uat.earthdata.nasa.gov:
         conditional:
           exists: ['concatenate', 'extend']
       - image: !Env ${PODAAC_CONCISE_IMAGE}
+        always_wait_for_prior_step: true
         is_batched: true
         operations: ['concatenate']
         conditional:

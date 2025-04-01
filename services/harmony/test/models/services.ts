@@ -6,7 +6,7 @@ import { stub } from 'sinon';
 import DataOperation, { CURRENT_SCHEMA_VERSION, DataSource } from '../../app/models/data-operation';
 import { buildService, chooseServiceConfig, UnsupportedOperation } from '../../app/models/services';
 import {
-  getMaxSynchronousGranules, ServiceStep, stepRequired, stepUsesMultipleInputCatalogs,
+  getMaxSynchronousGranules, ServiceStep, stepMustWaitForPriorStepCompletion, stepRequired,
 } from '../../app/models/services/base-service';
 import TurboService from '../../app/models/services/turbo-service';
 import env from '../../app/util/env';
@@ -19,31 +19,65 @@ import StubService from '../helpers/stub-service';
 const defaultCollection = 'C123-TEST';
 const defaultContext = { collectionIds: [defaultCollection] };
 
-describe('stepUsesMultipleInputCatalogs', function () {
-  describe('when a service performs concatenation', function () {
-    const step: ServiceStep = { operations: ['concatenate'] };
-    describe('and the request asks for concatenation', function () {
+describe('stepMustWaitForPriorStepCompletion', function () {
+  describe('when always_wait_for_prior_step is true', function () {
+    const step: ServiceStep = { operations: [], always_wait_for_prior_step: true };
+    it('returns true regardless of the supported operations or user request', function () {
       const operation = buildOperation('foo');
-      operation.shouldConcatenate = true;
-      it('returns true', function () {
-        expect(stepUsesMultipleInputCatalogs(step, operation)).to.be.true;
-      });
-    });
-    describe('and the request does not ask for concatenation', function () {
-      const operation = buildOperation('foo');
-      operation.shouldConcatenate = false;
-      it('returns false', function () {
-        expect(stepUsesMultipleInputCatalogs(step, operation)).to.be.false;
-      });
+      expect(stepMustWaitForPriorStepCompletion(step, operation)).to.be.true;
     });
   });
 
-  describe('when a service does not perform concatenation', function () {
-    const step: ServiceStep = { operations: ['extend'] };
-    it('returns false', function () {
-      const operation = buildOperation('foo');
+  describe('when always_wait_for_prior_step is false', function () {
+    describe('when a service performs concatenation', function () {
+      const step: ServiceStep = { operations: ['concatenate'] };
+      describe('and the request asks for concatenation', function () {
+        const operation = buildOperation('foo');
+        operation.shouldConcatenate = true;
+        it('returns true', function () {
+          expect(stepMustWaitForPriorStepCompletion(step, operation)).to.be.true;
+        });
+      });
+      describe('and the request does not ask for concatenation', function () {
+        const operation = buildOperation('foo');
+        operation.shouldConcatenate = false;
+        it('returns false', function () {
+          expect(stepMustWaitForPriorStepCompletion(step, operation)).to.be.false;
+        });
+      });
+    });
+
+    describe('when a service does not perform concatenation', function () {
+      const step: ServiceStep = { operations: ['extend'] };
       it('returns false', function () {
-        expect(stepUsesMultipleInputCatalogs(step, operation)).to.be.false;
+        const operation = buildOperation('foo');
+        expect(stepMustWaitForPriorStepCompletion(step, operation)).to.be.false;
+      });
+    });
+
+    describe('when a service has no operations', function () {
+      const step: ServiceStep = { operations: [] };
+      it('returns false', function () {
+        const operation = buildOperation('foo');
+        expect(stepMustWaitForPriorStepCompletion(step, operation)).to.be.false;
+      });
+    });
+
+    describe('when a service has multiple operations including concatenation', function () {
+      const step: ServiceStep = { operations: ['extend', 'concatenate', 'subset'] };
+      describe('and the request asks for concatenation', function () {
+        const operation = buildOperation('foo');
+        operation.shouldConcatenate = true;
+        it('returns true', function () {
+          expect(stepMustWaitForPriorStepCompletion(step, operation)).to.be.true;
+        });
+      });
+      describe('and the request does not ask for concatenation', function () {
+        const operation = buildOperation('foo');
+        operation.shouldConcatenate = false;
+        it('returns false', function () {
+          expect(stepMustWaitForPriorStepCompletion(step, operation)).to.be.false;
+        });
       });
     });
   });

@@ -114,6 +114,7 @@ CREATE TABLE `workflow_steps` (
   `isBatched` boolean not null default false,
   `is_complete` boolean not null default false,
   `is_sequential` boolean not null default false,
+  `always_wait_for_prior_step` boolean not null default false,
   `maxBatchInputs` integer,
   `maxBatchSizeInBytes` integer,
   `operation` text not null,

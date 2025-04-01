@@ -9,61 +9,44 @@ source ".env"
 set +a
 eval "$env_save"
 
-# run harmony
-echo "Starting Harmony server..."
-pushd services/harmony > /dev/null
-export PORT=3000
-export DEBUG_PORT=9200
-npm run start-dev-fast > logs/server.log 2>&1 &
-popd > /dev/null
+wait_for_port() {
+  local port=$1
+  local retries=20
+  while ! nc -z localhost $port; do
+    sleep 1
+    ((retries--))
+    if [ $retries -eq 0 ]; then
+      echo "Error: Service on port $port failed to start."
+      exit 1
+    fi
+  done
+}
 
-sleep 3
+start_service() {
+  local name=$1
+  local dir=$2
+  local port=$3
+  local debug_port=$4
+  local log_file=$5
 
-# create the work scheduler
-echo "Starting the work scheduler..."
-pushd services/work-scheduler > /dev/null
-export PORT=5006
-export DEBUG_PORT=9206
-npm run start-dev-fast > logs/work-scheduler.log 2>&1 &
-popd > /dev/null
+  echo "Starting $name..."
+  pushd "$dir" > /dev/null
+  export PORT=$port
+  export DEBUG_PORT=$debug_port
+  npm run start-dev-fast > "$log_file" 2>&1 &
+  popd > /dev/null
 
-sleep 3
+  wait_for_port $port
+}
 
-# create the work updaters
+start_service "Harmony server" "services/harmony" 3000 9200 "logs/server.log"
+start_service "Work scheduler" "services/work-scheduler" 5006 9206 "logs/work-scheduler.log"
+
 if [ "$KUBE_CONTEXT" != "colima" ]; then
   export LOCALSTACK_HOST=localhost
 fi
 
-echo "Starting the large job work updater..."
-pushd services/work-updater > /dev/null
-export PORT=5002
-export DEBUG_PORT=9202
-export WORK_ITEM_UPDATE_QUEUE_TYPE=large
-npm run start-dev-fast > logs/work-update-large.log 2>&1 &
-
-sleep 3
-
-echo "Starting the small job work updater..."
-export PORT=5003
-export DEBUG_PORT=9203
-export WORK_ITEM_UPDATE_QUEUE_TYPE=small
-npm run start-dev-fast > logs/work-update-small.log 2>&1 &
-popd > /dev/null
-
-sleep 3
-
-echo "Starting the cron service..."
-pushd services/cron-service > /dev/null
-export PORT=5004
-export DEBUG_PORT=9204
-npm run start-dev-fast > logs/cron-service.log 2>&1 &
-popd > /dev/null
-
-sleep 3
-
-echo "Starting the work failer..."
-pushd services/work-failer > /dev/null
-export PORT=5005
-export DEBUG_PORT=9205
-npm run start-dev-fast > logs/work-failer.log 2>&1 &
-popd > /dev/null
+WORK_ITEM_UPDATE_QUEUE_TYPE=large start_service "Large job work updater" "services/work-updater" 5002 9202 "logs/work-update-large.log"
+WORK_ITEM_UPDATE_QUEUE_TYPE=small start_service "Small job work updater" "services/work-updater" 5003 9203 "logs/work-update-small.log"
+start_service "Cron service" "services/cron-service" 5004 9204 "logs/cron-service.log"
+start_service "Work failer" "services/work-failer" 5005 9205 "logs/work-failer.log"
