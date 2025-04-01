@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/dot-notation */
-import env from '../util/env';
 import _ from 'lodash';
+
 import { Transaction } from '../util/db';
+import env from '../util/env';
 import { Job, JobStatus } from './job';
 import Record from './record';
 import WorkItem, { workItemCountForStep } from './work-item';
@@ -59,6 +60,9 @@ export interface WorkflowStepRecord {
 
   // Relative contribution of this step to the overall job progress calculation
   progress_weight: number;
+
+  // Whether the step needs to wait for all of the work items from the prior step to complete prior to starting
+  always_wait_for_prior_step: boolean;
 }
 
 /**
@@ -111,6 +115,9 @@ export default class WorkflowStep extends Record implements WorkflowStepRecord {
 
   // Relative contribution of this step to the overall job progress calculation
   progress_weight: number;
+
+  // Whether the step needs to wait for all of the work items from the prior step to complete prior to starting
+  always_wait_for_prior_step: boolean;
 
   /**
  * Get the collections that are the sources for the given operation
