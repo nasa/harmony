@@ -48,6 +48,7 @@ export interface ServiceStep {
   operations?: string[];
   max_batch_inputs?: number;
   max_batch_size_in_bytes?: number;
+  always_wait_for_prior_step?: boolean;
   is_batched?: boolean;
   is_sequential?: boolean;
   conditional?: {
@@ -144,13 +145,17 @@ const multiCatalogOperations = [
 ];
 
 /**
- * Returns true if the workflow step uses more than one input catalog
- * (and therefore must wait for all output from the previous step before executing)
+ * Returns true if the workflow step must wait for all output from the previous step before executing
+ * or in the case of batching an entire batch from the prior step is ready
  * @param step - the step in a workflow
  * @param operation - The operation
  * @returns true if the step uses more than one input catalog, false otherwise
  */
-export function stepUsesMultipleInputCatalogs(step: ServiceStep, operation: DataOperation): boolean {
+export function stepMustWaitForPriorStepCompletion(step: ServiceStep, operation: DataOperation): boolean {
+  if (step.always_wait_for_prior_step) {
+    return true;
+  }
+
   // get the operations for this step that support multiple input catalogs
   const multiCatOps = _.intersection(multiCatalogOperations, step.operations);
 
@@ -523,9 +528,10 @@ export default abstract class BaseService<ServiceParamType> {
               this.config.data_operation_version,
               step.operations || [],
             ),
-            hasAggregatedOutput: stepUsesMultipleInputCatalogs(step, this.operation),
+            hasAggregatedOutput: stepMustWaitForPriorStepCompletion(step, this.operation),
             isBatched: !!step.is_batched && this.operation.shouldConcatenate,
             is_sequential: !!step.is_sequential,
+            always_wait_for_prior_step: !!step.always_wait_for_prior_step,
             maxBatchInputs: step.max_batch_inputs,
             maxBatchSizeInBytes: step.max_batch_size_in_bytes,
             progress_weight: progressWeight,

@@ -190,9 +190,8 @@ An example of this is the query-cmr service. Each invocation of the query-cmr se
 For most services `is_sequential: true` is not necessary.
 
 ### Aggregation Steps
-Services that provide aggregation, e.g., concatenation for CONCISE, require that all inputs are
-available when they are run. Harmony infers this from the `operations` field in the associated step.
-Currently the only supported aggregation operation is `concatenate`.
+Services that provide aggregation, e.g., concatenation for CONCISE, require that all inputs are available when they are run. There are cases when a service such as netcdf-to-zarr can concatenate, but based on the user request will instead work on one granule at a time. For aggregation services that should always wait for the prior step inputs set `always_wait_for_prior_step` to true. Otherwise harmony will infer whether to wait based on the `operations` field in the associated step and whether the user requested some type of aggregation.
+The currently supported aggregation operations are `concatenate` and `extend`.
 
 There are limits to the number of files an aggregating service can process as well as the total number
 of bytes of all combined input files. To support larger aggregations Harmony can partition the output
@@ -209,6 +208,7 @@ steps:
   - image: !Env ${QUERY_CMR_IMAGE}
     is_sequential: true
   - image: !Env ${EXAMPLE_AGGREGATING_SERVICE_IMAGE}
+    always_wait_for_prior_step: true
     is_batched: true
     max_batch_inputs: 100
     max_batch_size_in_bytes: 2000000000
