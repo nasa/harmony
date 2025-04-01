@@ -2,6 +2,10 @@
 Any changes to the environment variables will be documented in this file in chronological
 order with the most recent changes first.
 
+# 2025-04-01
+### Changed
+- NET2COG_LIMITS_MEMORY - updated to 2048Mi to accommodate processing of SMAP L4 products.
+
 # 2024-12-04
 ### Added
 - USE_EDL_CLIENT_APP - whether to use an EDL client application to enable admin and deployment endpoints and allow OAuth workflows.
