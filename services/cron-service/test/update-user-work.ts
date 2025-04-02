@@ -16,6 +16,7 @@ describe('UserWorkUpdater', () => {
   let loggerInfoStub: sinon.SinonStub;
   let loggerDebugStub: sinon.SinonStub;
   let loggerErrorStub: sinon.SinonStub;
+  let loggerWarnStub: sinon.SinonStub;
   let recalculateCountsStub: sinon.SinonStub;
   let setReadyAndRunningCountToZeroStub: sinon.SinonStub;
 
@@ -25,6 +26,7 @@ describe('UserWorkUpdater', () => {
     loggerInfoStub = sinon.stub();
     loggerDebugStub = sinon.stub();
     loggerErrorStub = sinon.stub();
+    loggerWarnStub = sinon.stub();
 
     // Set up context with real database
     ctx = {
@@ -32,6 +34,7 @@ describe('UserWorkUpdater', () => {
         info: loggerInfoStub,
         debug: loggerDebugStub,
         error: loggerErrorStub,
+        warn: loggerWarnStub,
       },
       db: db,
     } as unknown as Context;
@@ -99,7 +102,7 @@ describe('UserWorkUpdater', () => {
       expect(recalculateCountsStub.callCount).to.equal(1);
       expect(recalculateCountsStub.firstCall.args[1]).to.equal(job1.jobID);
 
-      expect(loggerInfoStub.calledWith(`Resetting user-work counts for job ${job1.jobID}`)).to.be.true;
+      expect(loggerWarnStub.calledWith(`Recalculating user_work counts for job ${job1.jobID} with status ${job1.status}`)).to.be.true;
     });
 
     it('should find and reset jobs with running_count > 0 and outdated last_worked', async () => {
@@ -121,7 +124,7 @@ describe('UserWorkUpdater', () => {
       expect(recalculateCountsStub.calledWith(sinon.match.any, job1.jobID)).to.be.true;
       expect(recalculateCountsStub.calledWith(sinon.match.any, job1.jobID)).to.be.true;
 
-      expect(loggerInfoStub.calledWith(`Resetting user-work counts for job ${job1.jobID}`)).to.be.true;
+      expect(loggerWarnStub.calledWith(`Recalculating user_work counts for job ${job1.jobID} with status ${job1.status}`)).to.be.true;
     });
 
     it('should not reset jobs with recent last_worked date', async () => {
@@ -135,7 +138,7 @@ describe('UserWorkUpdater', () => {
 
       // Should not have called recalculateCounts for job4
       expect(recalculateCountsStub.neverCalledWith(sinon.match.any, job1.jobID)).to.be.true;
-      expect(loggerInfoStub.neverCalledWith(`Resetting user-work counts for job ${job1.jobID}`)).to.be.true;
+      expect(loggerWarnStub.neverCalledWith(`Recalculating user_work counts for job ${job1.jobID} with status ${job1.status}`)).to.be.true;
     });
 
     it('should handle jobs with zero counts but still check last_worked date', async () => {
@@ -151,7 +154,7 @@ describe('UserWorkUpdater', () => {
 
       // Should not have called recalculateCounts for jobs with zero counts
       expect(recalculateCountsStub.neverCalledWith(sinon.match.any, job1.jobID)).to.be.true;
-      expect(loggerInfoStub.neverCalledWith(`Resetting user-work counts for job ${job1.jobID}`)).to.be.true;
+      expect(loggerWarnStub.neverCalledWith(`Recalculating user_work counts for job ${job1.jobID} with status ${job1.status}`)).to.be.true;
     });
 
     it('should handle multiple rows per job_id but only process each job_id once', async () => {
@@ -173,7 +176,7 @@ describe('UserWorkUpdater', () => {
       expect(recalculateCountsStub.callCount).to.equal(1);
       expect(recalculateCountsStub.calledWith(sinon.match.any, job1.jobID)).to.be.true;
 
-      expect(loggerInfoStub.calledOnceWith(`Resetting user-work counts for job ${job1.jobID}`)).to.be.true;
+      expect(loggerWarnStub.calledOnceWith(`Recalculating user_work counts for job ${job1.jobID} with status ${job1.status}`)).to.be.true;
     });
 
     it('should set set the ready count and the running count for paused jobs to zero', async () => {
@@ -194,7 +197,7 @@ describe('UserWorkUpdater', () => {
       expect(setReadyAndRunningCountToZeroStub.calledWith(sinon.match.any, job1.jobID)).to.be.true;
       expect(recalculateCountsStub.callCount).to.equal(0);
 
-      expect(loggerInfoStub.calledOnceWith(`Resetting user-work counts for job ${job1.jobID}`)).to.be.true;
+      expect(loggerWarnStub.calledOnceWith(`Resetting user_work counts to 0 for job ${job1.jobID} with status ${job1.status}`)).to.be.true;
     });
   });
 });
