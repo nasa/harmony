@@ -54,7 +54,7 @@ export class UserWorkUpdater extends CronJob {
     try {
       await updateUserWork(ctx);
     } catch (e) {
-      logger.error('User work udpater failed to update user-work table');
+      logger.error('User work udpater failed to update user_work table');
       logger.error(e);
     }
   }

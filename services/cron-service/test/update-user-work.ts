@@ -75,7 +75,7 @@ describe('UserWorkUpdater', () => {
 
       } finally {
         expect(loggerErrorStub.called).to.be.true;
-        expect(loggerErrorStub.calledWith('User work udpater failed to update user-work table')).to.be.true;
+        expect(loggerErrorStub.calledWith('User work udpater failed to update user_work table')).to.be.true;
         expect(loggerErrorStub.secondCall.args[0]).to.equal(error);
         trxStub.restore();
       }
