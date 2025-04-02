@@ -19,6 +19,7 @@ class CronServiceHarmonyEnv extends HarmonyEnv {
   @IsInt()
   @Min(1)
   workReaperBatchSize: number;
+  // end work reaper specific vars
 
   @IsInt()
   @Min(1)
@@ -27,8 +28,16 @@ class CronServiceHarmonyEnv extends HarmonyEnv {
   // Restart prometheus
   @IsCrontab()
   restartPrometheusCron: string;
+
+  // user-work update specific vars
+  @IsCrontab()
+  userWorkUpdaterCron: string;
+
+  @IsInt()
+  @Min(1)
+  userWorkExpirationMinutes: number;
+  // end user-work update specific vars
 }
-// end work reaper specific vars
 
 const localPath = path.resolve(__dirname, '../../env-defaults');
 
