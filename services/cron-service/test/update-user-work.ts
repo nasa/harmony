@@ -120,7 +120,7 @@ describe('UserWorkUpdater', () => {
   let loggerInfoStub: sinon.SinonStub;
   let loggerDebugStub: sinon.SinonStub;
   let loggerErrorStub: sinon.SinonStub;
-  let recalculateCountStub: sinon.SinonStub;
+  let recalculateCountsStub: sinon.SinonStub;
   let setReadyAndRunningCountToZeroStub: sinon.SinonStub;
 
   beforeEach(async () => {
@@ -140,8 +140,8 @@ describe('UserWorkUpdater', () => {
       db: db,
     } as unknown as Context;
 
-    // Set up recalculateCount stub
-    recalculateCountStub = sinon.stub(userWork, 'recalculateCount').resolves();
+    // Set up recalculateCounts stub
+    recalculateCountsStub = sinon.stub(userWork, 'recalculateCounts').resolves();
 
     // Set up setReadyAndRunningCountToZero stub
     setReadyAndRunningCountToZeroStub = sinon.stub(userWork, 'setReadyAndRunningCountToZero').resolves();
@@ -152,7 +152,7 @@ describe('UserWorkUpdater', () => {
 
   afterEach(() => {
     setReadyAndRunningCountToZeroStub.reset();
-    recalculateCountStub.reset();
+    recalculateCountsStub.reset();
     sinon.restore();
   });
 
@@ -199,12 +199,9 @@ describe('UserWorkUpdater', () => {
 
       await updateUserWorkMod.updateUserWork(ctx);
 
-      // Should have called recalculateCount for job1 only
-      expect(recalculateCountStub.callCount).to.equal(2); // Once for ready, once for running
-      expect(recalculateCountStub.firstCall.args[1]).to.equal(job1.jobID);
-      expect(recalculateCountStub.firstCall.args[2]).to.equal('ready');
-      expect(recalculateCountStub.secondCall.args[1]).to.equal(job1.jobID);
-      expect(recalculateCountStub.secondCall.args[2]).to.equal('running');
+      // Should have called recalculateCounts for job1 only
+      expect(recalculateCountsStub.callCount).to.equal(1);
+      expect(recalculateCountsStub.firstCall.args[1]).to.equal(job1.jobID);
 
       expect(loggerInfoStub.calledWith(`Resetting user-work counts for job ${job1.jobID}`)).to.be.true;
     });
@@ -223,10 +220,10 @@ describe('UserWorkUpdater', () => {
       await userWork3.save(db);
       await updateUserWorkMod.updateUserWork(ctx);
 
-      // Should have called recalculateCount for job3
-      expect(recalculateCountStub.callCount).to.equal(2);
-      expect(recalculateCountStub.calledWith(sinon.match.any, job1.jobID, 'ready')).to.be.true;
-      expect(recalculateCountStub.calledWith(sinon.match.any, job1.jobID, 'running')).to.be.true;
+      // Should have called recalculateCounts for job3
+      expect(recalculateCountsStub.callCount).to.equal(1);
+      expect(recalculateCountsStub.calledWith(sinon.match.any, job1.jobID)).to.be.true;
+      expect(recalculateCountsStub.calledWith(sinon.match.any, job1.jobID)).to.be.true;
 
       expect(loggerInfoStub.calledWith(`Resetting user-work counts for job ${job1.jobID}`)).to.be.true;
     });
@@ -240,8 +237,8 @@ describe('UserWorkUpdater', () => {
 
       await updateUserWorkMod.updateUserWork(ctx);
 
-      // Should not have called recalculateCount for job4
-      expect(recalculateCountStub.neverCalledWith(sinon.match.any, job1.jobID, sinon.match.any)).to.be.true;
+      // Should not have called recalculateCounts for job4
+      expect(recalculateCountsStub.neverCalledWith(sinon.match.any, job1.jobID)).to.be.true;
       expect(loggerInfoStub.neverCalledWith(`Resetting user-work counts for job ${job1.jobID}`)).to.be.true;
     });
 
@@ -256,8 +253,8 @@ describe('UserWorkUpdater', () => {
 
       await updateUserWorkMod.updateUserWork(ctx);
 
-      // Should not have called recalculateCount for jobs with zero counts
-      expect(recalculateCountStub.neverCalledWith(sinon.match.any, job1.jobID, sinon.match.any)).to.be.true;
+      // Should not have called recalculateCounts for jobs with zero counts
+      expect(recalculateCountsStub.neverCalledWith(sinon.match.any, job1.jobID)).to.be.true;
       expect(loggerInfoStub.neverCalledWith(`Resetting user-work counts for job ${job1.jobID}`)).to.be.true;
     });
 
@@ -276,10 +273,9 @@ describe('UserWorkUpdater', () => {
 
       await updateUserWorkMod.updateUserWork(ctx);
 
-      // Should have called recalculateCount for job6 only once for each status
-      expect(recalculateCountStub.callCount).to.equal(2);
-      expect(recalculateCountStub.calledWith(sinon.match.any, job1.jobID, 'ready')).to.be.true;
-      expect(recalculateCountStub.calledWith(sinon.match.any, job1.jobID, 'running')).to.be.true;
+      // Should have called recalculateCounts for job6 only once for each status
+      expect(recalculateCountsStub.callCount).to.equal(1);
+      expect(recalculateCountsStub.calledWith(sinon.match.any, job1.jobID)).to.be.true;
 
       expect(loggerInfoStub.calledOnceWith(`Resetting user-work counts for job ${job1.jobID}`)).to.be.true;
     });
@@ -297,10 +293,10 @@ describe('UserWorkUpdater', () => {
 
       await updateUserWorkMod.updateUserWork(ctx);
 
-      // Should have called setReadyAndRunningCountToZero once for job6 and recalculateCount not at all
+      // Should have called setReadyAndRunningCountToZero once for job6 and recalculateCounts not at all
       expect(setReadyAndRunningCountToZeroStub.callCount).to.equal(1);
       expect(setReadyAndRunningCountToZeroStub.calledWith(sinon.match.any, job1.jobID)).to.be.true;
-      expect(recalculateCountStub.callCount).to.equal(0);
+      expect(recalculateCountsStub.callCount).to.equal(0);
 
       expect(loggerInfoStub.calledOnceWith(`Resetting user-work counts for job ${job1.jobID}`)).to.be.true;
     });

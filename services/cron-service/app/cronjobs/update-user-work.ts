@@ -1,6 +1,6 @@
 import { Job, JobStatus } from '../../../harmony/app/models/job';
 import UserWork, {
-  recalculateCount, setReadyAndRunningCountToZero,
+  recalculateCounts, setReadyAndRunningCountToZero,
 } from '../../../harmony/app/models/user-work';
 import { Context } from '../util/context';
 import env from '../util/env';
@@ -80,8 +80,7 @@ export async function updateUserWork(ctx: Context): Promise<void> {
       if (job.status === JobStatus.PAUSED) {
         await setReadyAndRunningCountToZero(tx, jobID);
       } else {
-        await recalculateCount(tx, jobID, 'ready');
-        await recalculateCount(tx, jobID, 'running');
+        await recalculateCounts(tx, jobID);
       }
     }
   });
