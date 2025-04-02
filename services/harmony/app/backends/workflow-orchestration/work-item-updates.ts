@@ -27,7 +27,7 @@ import WorkflowStep, {
 import { handleBatching, outputStacItemUrls, resultItemSizes } from '../../util/aggregation-batch';
 import db, { batchSize, Transaction } from '../../util/db';
 import env from '../../util/env';
-import { ServiceError } from '../../util/errors';
+import { ServerError, ServiceError } from '../../util/errors';
 import { completeJob } from '../../util/job';
 import { logAsyncExecutionTime } from '../../util/log-execution';
 import { objectStoreForProtocol } from '../../util/object-store';
@@ -83,8 +83,6 @@ async function addJobLinksForFinishedWorkItem(
     }
   }
 }
-
-
 
 /**
  * Returns the final job status and message for the request based on whether all
@@ -188,7 +186,6 @@ async function getWorkItemUrl(workItem, logger): Promise<string> {
  * @param tx - The database transaction
  * @param job - The job associated with the work item
  * @param workItem - The work item that just finished
- * @param workflowStep - The current workflow step
  * @param status - The status sent with the work item update
  * @param errorMessage - The error message associated with the work item update (if any)
  * @param logger - The logger for the request
@@ -196,7 +193,7 @@ async function getWorkItemUrl(workItem, logger): Promise<string> {
  * @returns whether to continue processing work item updates or end
  */
 async function handleFailedWorkItems(
-  tx: Transaction, job: Job, workItem: WorkItem, workflowStep: WorkflowStep, status: WorkItemStatus,
+  tx: Transaction, job: Job, workItem: WorkItem, status: WorkItemStatus,
   logger: Logger, errorMessage: string,
 ): Promise<boolean> {
   let continueProcessing = true;
@@ -204,7 +201,6 @@ async function handleFailedWorkItems(
     continueProcessing = job.ignoreErrors;
     if (!job.hasTerminalStatus()) {
       let jobMessage;
-
       if (errorMessage) {
         let failedOrWarned = 'failed';
         if (status === WorkItemStatus.WARNING) {
@@ -658,8 +654,10 @@ export async function processWorkItem(
   thisStep: WorkflowStep,
 ): Promise<void> {
   const { jobID } = job;
-  const { status, catalogItems, outputItemSizes } = preprocessResult;
-  const { workItemID, hits, results, scrollID, message, message_category  } = update;
+  let { status } = preprocessResult;
+  const { catalogItems, outputItemSizes } = preprocessResult;
+  let { message } = update;
+  const { workItemID, hits, results, scrollID, message_category  } = update;
   const startTime = new Date().getTime();
   let durationMs;
   let jobSaveStartTime;
@@ -696,6 +694,14 @@ export async function processWorkItem(
       // Unclear what to do with user_work entries, so do nothing for now.
       logger.warn(`WorkItem ${workItemID} was already ${workItem.status}`);
       return;
+    }
+
+    const hasOutput = results?.length > 0;
+    if (status === WorkItemStatus.SUCCESSFUL && !hasOutput) {
+      // To return no output the status needs to be a warning, otherwise we treat it as an error
+      logger.error('The work item update should have contained results, but it did not.');
+      message = 'Service did not return any outputs.';
+      status = WorkItemStatus.FAILED;
     }
 
     // retry failed work-items up to a limit
@@ -791,9 +797,8 @@ export async function processWorkItem(
     }
 
     const continueProcessing = await (await logAsyncExecutionTime(
-      handleFailedWorkItems,
-      'HWIUWJI.handleFailedWorkItems',
-      logger))(tx, job, workItem, thisStep, status, logger, message);
+      handleFailedWorkItems, 'HWIUWJI.handleFailedWorkItems', logger)
+    )(tx, job, workItem, status, logger, message);
     if (continueProcessing) {
       const nextWorkflowStep = await (await logAsyncExecutionTime(
         getWorkflowStepByJobIdStepIndex,
@@ -824,7 +829,7 @@ export async function processWorkItem(
         }
       }
       if (status === WorkItemStatus.SUCCESSFUL) {
-        if (results && results.length > 0) {
+        if (hasOutput) {
           // set the scrollID for the next work item to the one we received from the update
           workItem.scrollID = scrollID;
           await (await logAsyncExecutionTime(
@@ -834,12 +839,8 @@ export async function processWorkItem(
         } else {
           // Failed to create the next work items when there should be work items.
           // Fail the job rather than leaving it orphaned in the running state
-          logger.error('The work item update should have contained results to queue a next work item, but it did not.');
-          const errMessage = 'Harmony internal failure: service did not return any outputs.';
-          await (await logAsyncExecutionTime(
-            completeJob,
-            'HWIUWJI.completeJob',
-            logger))(tx, job, JobStatus.FAILED, logger, errMessage);
+          logger.error('Should never reach this case. If we reach this case it is possible that we are missing output');
+          throw new ServerError('Service did not return any outputs');
         }
       }
 
