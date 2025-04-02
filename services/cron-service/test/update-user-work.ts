@@ -11,110 +11,6 @@ import env from '../app/util/env';
 import { truncateAll } from './helpers/db';
 import { buildJob } from './helpers/jobs';
 
-describe('getTimestampFromInterval', () => {
-  let clock: sinon.SinonFakeTimers;
-  const fixedDate = new Date('2023-04-15T12:00:00Z');
-  const fixedTimestamp = fixedDate.getTime();
-
-  beforeEach(() => {
-    // Use sinon to mock the system clock
-    clock = sinon.useFakeTimers(fixedTimestamp);
-  });
-
-  afterEach(() => {
-    // Restore the clock after each test
-    clock.restore();
-  });
-
-  describe('basic functionality', () => {
-    it('should return the current timestamp when interval is zero', () => {
-      expect(updateUserWorkMod.getTimestampFromInterval('+0 SECONDS')).to.equal(fixedTimestamp);
-      expect(updateUserWorkMod.getTimestampFromInterval('-0 MINUTES')).to.equal(fixedTimestamp);
-    });
-
-    it('should handle positive intervals correctly', () => {
-      const oneSecondLater = fixedTimestamp + 1000;
-      const oneMinuteLater = fixedTimestamp + 60 * 1000;
-      const oneHourLater = fixedTimestamp + 60 * 60 * 1000;
-      const oneDayLater = fixedTimestamp + 24 * 60 * 60 * 1000;
-
-      expect(updateUserWorkMod.getTimestampFromInterval('+1 SECOND')).to.equal(oneSecondLater);
-      expect(updateUserWorkMod.getTimestampFromInterval('+1 MINUTE')).to.equal(oneMinuteLater);
-      expect(updateUserWorkMod.getTimestampFromInterval('+1 HOUR')).to.equal(oneHourLater);
-      expect(updateUserWorkMod.getTimestampFromInterval('+1 DAY')).to.equal(oneDayLater);
-    });
-
-    it('should handle negative intervals correctly', () => {
-      const oneSecondAgo = fixedTimestamp - 1000;
-      const oneMinuteAgo = fixedTimestamp - 60 * 1000;
-      const oneHourAgo = fixedTimestamp - 60 * 60 * 1000;
-      const oneDayAgo = fixedTimestamp - 24 * 60 * 60 * 1000;
-
-      expect(updateUserWorkMod.getTimestampFromInterval('-1 SECOND')).to.equal(oneSecondAgo);
-      expect(updateUserWorkMod.getTimestampFromInterval('-1 MINUTE')).to.equal(oneMinuteAgo);
-      expect(updateUserWorkMod.getTimestampFromInterval('-1 HOUR')).to.equal(oneHourAgo);
-      expect(updateUserWorkMod.getTimestampFromInterval('-1 DAY')).to.equal(oneDayAgo);
-    });
-  });
-
-  describe('unit variations', () => {
-    it('should handle singular and plural units', () => {
-      const tenMinutes = 10 * 60 * 1000;
-
-      expect(updateUserWorkMod.getTimestampFromInterval('+10 MINUTE')).to.equal(fixedTimestamp + tenMinutes);
-      expect(updateUserWorkMod.getTimestampFromInterval('+10 MINUTES')).to.equal(fixedTimestamp + tenMinutes);
-    });
-
-    it('should be case-insensitive for units', () => {
-      const twoHours = 2 * 60 * 60 * 1000;
-
-      expect(updateUserWorkMod.getTimestampFromInterval('+2 HOURS')).to.equal(fixedTimestamp + twoHours);
-      expect(updateUserWorkMod.getTimestampFromInterval('+2 hours')).to.equal(fixedTimestamp + twoHours);
-      expect(updateUserWorkMod.getTimestampFromInterval('+2 Hours')).to.equal(fixedTimestamp + twoHours);
-    });
-  });
-
-  describe('complex intervals', () => {
-    it('should handle larger interval values', () => {
-      const twentyFourHours = 24 * 60 * 60 * 1000;
-      const thirtyDays = 30 * 24 * 60 * 60 * 1000;
-
-      expect(updateUserWorkMod.getTimestampFromInterval('+24 HOURS')).to.equal(fixedTimestamp + twentyFourHours);
-      expect(updateUserWorkMod.getTimestampFromInterval('-30 DAYS')).to.equal(fixedTimestamp - thirtyDays);
-    });
-  });
-
-  describe('error handling', () => {
-    it('should throw error for invalid interval format', () => {
-      const invalidIntervals = [
-        '',                  // Empty string
-        '1 HOUR',            // Missing sign
-        '+ 1 HOUR',          // Space after sign
-        '+1HOUR',            // Missing space between number and unit
-        '+one HOUR',         // Non-numeric value
-        '+1 WEEK',           // Unsupported unit
-        'HOUR 1',            // Wrong order
-        '+1 H',              // Invalid unit abbreviation
-        '1 HOUR AGO',         // Extra words
-      ];
-
-      invalidIntervals.forEach(interval => {
-        expect(() => updateUserWorkMod.getTimestampFromInterval(interval))
-          .to.throw(`Invalid interval [${interval}] format. Must be in format like "+1 HOUR", "-10 MINUTES", "+30 SECONDS"`);
-      });
-    });
-  });
-
-  describe('whitespace handling', () => {
-    it('should handle extra whitespace in the interval string', () => {
-      const fiveMinutes = 5 * 60 * 1000;
-
-      expect(updateUserWorkMod.getTimestampFromInterval('  +5 MINUTES  ')).to.equal(fixedTimestamp + fiveMinutes);
-      expect(updateUserWorkMod.getTimestampFromInterval('+5    MINUTES')).to.equal(fixedTimestamp + fiveMinutes);
-    });
-  });
-});
-
 describe('UserWorkUpdater', () => {
   let ctx: Context;
   let loggerInfoStub: sinon.SinonStub;
@@ -147,7 +43,7 @@ describe('UserWorkUpdater', () => {
     setReadyAndRunningCountToZeroStub = sinon.stub(userWork, 'setReadyAndRunningCountToZero').resolves();
 
     // Set environment variables
-    env.userWorkUpdateAge = '1 hour';
+    env.userWorkExpirationMinutes = 60;
   });
 
   afterEach(() => {

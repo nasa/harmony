@@ -3,7 +3,6 @@ import * as path from 'path';
 
 import { HarmonyEnv } from '../../../../packages/util/env';
 import { IsCrontab } from './cron-validation';
-import { IsTimeInterval } from './time-interval-validation';
 
 //
 // env module
@@ -34,8 +33,9 @@ class CronServiceHarmonyEnv extends HarmonyEnv {
   @IsCrontab()
   userWorkUpdaterCron: string;
 
-  @IsTimeInterval()
-  userWorkUpdateAge: string;
+  @IsInt()
+  @Min(1)
+  userWorkExpirationMinutes: number;
   // end user-work update specific vars
 }
 

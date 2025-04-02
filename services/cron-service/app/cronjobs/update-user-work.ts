@@ -7,50 +7,6 @@ import env from '../util/env';
 import { CronJob } from './cronjob';
 
 /**
- * Converts a time interval string to a Unix timestamp in milliseconds
- * representing the current time plus or minus the specified interval.
- *
- * @param intervalString - A string like '-1 HOUR', '+10 MINUTE', '-15 SECONDS'
- * @returns Unix timestamp in milliseconds
- * @throws Error if the interval string format is invalid
- */
-export function getTimestampFromInterval(intervalString: string): number {
-  // Regular expression to match the format: (+/-)NUMBER UNIT
-  const regex = /^([+-])(\d+)\s+(SECOND|SECONDS|MINUTE|MINUTES|HOUR|HOURS|DAY|DAYS)$/i;
-  const match = intervalString.trim().match(regex);
-
-  if (!match) {
-    throw new Error(
-      `Invalid interval [${intervalString}] format. Must be in format like "+1 HOUR", "-10 MINUTES", "+30 SECONDS"`,
-    );
-  }
-
-  const [, sign, valueStr, unit] = match;
-  const value = parseInt(valueStr, 10);
-  const isNegative = sign === '-';
-
-  // Calculate milliseconds based on the unit
-  let milliseconds = 0;
-  const unitLower = unit.toLowerCase();
-
-  if (unitLower === 'second' || unitLower === 'seconds') {
-    milliseconds = value * 1000;
-  } else if (unitLower === 'minute' || unitLower === 'minutes') {
-    milliseconds = value * 60 * 1000;
-  } else if (unitLower === 'hour' || unitLower === 'hours') {
-    milliseconds = value * 60 * 60 * 1000;
-  } else if (unitLower === 'day' || unitLower === 'days') {
-    milliseconds = value * 24 * 60 * 60 * 1000;
-  }
-
-  // Get current timestamp
-  const currentTimestamp = Date.now();
-
-  // Apply the interval
-  return isNegative ? currentTimestamp - milliseconds : currentTimestamp + milliseconds;
-}
-
-/**
  *
  * @param ctx - The Cron job context
  */
@@ -64,10 +20,10 @@ export async function updateUserWork(ctx: Context): Promise<void> {
         void this.where('ready_count', '>', 0).orWhere('running_count', '>', 0);
       });
     if (env.databaseType === 'sqlite') {
-      const timeStamp = getTimestampFromInterval(`-${env.userWorkUpdateAge}`);
+      const timeStamp = Date.now() - env.userWorkExpirationMinutes * 60 * 1000;
       query = query.andWhere(tx.raw(`last_worked <= ${timeStamp}`));
     } else {
-      query = query.andWhere('last_worked', '<=', tx.raw(`now() - interval '${env.userWorkUpdateAge}'`));
+      query = query.andWhere('last_worked', '<=', tx.raw(`now() - interval '${env.userWorkExpirationMinutes} minutes'`));
     }
 
     const results = await query;
@@ -77,7 +33,7 @@ export async function updateUserWork(ctx: Context): Promise<void> {
     for (const jobID of jobIDs) {
       logger.info(`Resetting user-work counts for job ${jobID}`);
       const { job } = await Job.byJobID(tx, jobID);
-      if (job.status === JobStatus.PAUSED) {
+      if ([JobStatus.PAUSED, JobStatus.CANCELED, JobStatus.SUCCESSFUL, JobStatus.COMPLETE_WITH_ERRORS, JobStatus.FAILED].includes(job.status)) {
         await setReadyAndRunningCountToZero(tx, jobID);
       } else {
         await recalculateCounts(tx, jobID);
