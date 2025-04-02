@@ -17,4 +17,4 @@ RESTART_PROMETHEUS_CRON="*/10 * * * *" # every 10 minutes
 USER_WORK_UPDATER_CRON="*/30 * * * *" # every thirty minutes
 
 # Rows in user-work older than this will cause the user-work for a job to be recalculated
-USER_WORK_EXPIRATION_MINUTES="60"
+USER_WORK_EXPIRATION_MINUTES=60

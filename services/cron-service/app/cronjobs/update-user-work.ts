@@ -31,11 +31,12 @@ export async function updateUserWork(ctx: Context): Promise<void> {
 
     // reset the counts for the jobs
     for (const jobID of jobIDs) {
-      logger.info(`Resetting user-work counts for job ${jobID}`);
       const { job } = await Job.byJobID(tx, jobID);
       if ([JobStatus.PAUSED, JobStatus.CANCELED, JobStatus.SUCCESSFUL, JobStatus.COMPLETE_WITH_ERRORS, JobStatus.FAILED].includes(job.status)) {
+        logger.warn(`Resetting user_work counts to 0 for job ${jobID} with status ${job.status}`);
         await setReadyAndRunningCountToZero(tx, jobID);
       } else {
+        logger.warn(`Recalculating user_work counts for job ${jobID} with status ${job.status}`);
         await recalculateCounts(tx, jobID);
       }
     }
