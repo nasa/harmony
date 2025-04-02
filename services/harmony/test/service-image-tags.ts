@@ -1596,3 +1596,116 @@ describe('Update service deployments state with cookie-secret', async function (
     });
   });
 });
+
+describe('Service self-deployment with cookie-secret', async function () {
+  beforeEach(function () {
+    process.env.COOKIE_SECRET = 'cookie-secret-value';
+  });
+
+  hookServersStartStop({ USE_EDL_CLIENT_APP: true });
+
+  describe('when incorrect cookie-secret header is provided', async function () {
+    before(async function () {
+      this.res = await request(this.frontend)
+        .put('/service-image-tag/harmony-service-example')
+        .set('cookie-secret', 'wrong_secret')
+        .send({ tag: 'foo' });
+    });
+
+    after(function () {
+      delete this.res;
+    });
+
+    it('rejects the request', async function () {
+      expect(this.res.status).to.equal(403);
+    });
+
+    it('returns a meaningful error message', async function () {
+      expect(this.res.text).to.equal('User undefined does not have permission to access this resource');
+    });
+  });
+
+  describe('when correct cookie-secret header is provided', async function () {
+    let execStub;
+    let execDeployScriptStub: sinon.SinonStub;
+    let link = null;
+    let linkDeploymentId = null;
+    let deploymentLogPath = null;
+
+    hookDescribeImage({
+      imageDigest: '',
+      lastUpdated: undefined,
+    });
+
+    before(async function () {
+      // resolve without error meaning script executed OK
+      execStub = sinon.stub(serviceImageTags, 'asyncExec').callsFake(() => Promise.resolve({}));
+
+      // Stub out the exec function to simulate successful execution
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      execDeployScriptStub = sinon.stub(require('child_process'), 'exec');
+      execDeployScriptStub.callsArgWith(2, null, 'Success output', '');
+
+      this.res = await request(this.frontend)
+        .put('/service-image-tag/harmony-service-example')
+        .set('cookie-secret', process.env.COOKIE_SECRET)
+        .send({ tag: 'foo' });
+    });
+
+    after(function () {
+      execStub.restore();
+      execDeployScriptStub.restore();
+      delete this.res;
+    });
+
+    it('returns a status 202', async function () {
+      expect(this.res.status).to.equal(202);
+    });
+
+    it('returns the tag we sent', async function () {
+      expect(this.res.body.tag).to.eql('foo');
+    });
+
+    it('returns statusLink', async function () {
+      link = this.res.body.statusLink;
+      expect(link).to.include('http://127.0.0.1:4000/service-deployment/');
+      linkDeploymentId = getDeploymentIdFromStatusLink(link);
+      expect(linkDeploymentId).to.not.be.null;
+    });
+
+    it('reaches a terminal status without timeout', async function () {
+      const noTimeout = await waitUntilStatusChange(linkDeploymentId);
+      expect(noTimeout).to.be.true;
+    });
+
+    describe('when get the status of successful deployment done with cookie secret', async function () {
+      before(async function () {
+        hookRedirect('buzz');
+        const { pathname } = new URL(link);
+        this.res = await request(this.frontend).get(pathname).use(auth({ username: 'buzz' }));
+      });
+
+      after(function () {
+        delete this.res;
+      });
+
+      it('returns a status 200', async function () {
+        expect(this.res.status).to.equal(200);
+      });
+
+      it('returns the deployment status successful', async function () {
+        const { deploymentId, username, service, tag, regressionTestVersion, status, message } = this.res.body;
+        deploymentLogPath = `/deployment-logs/${deploymentId}`;
+        expect(deploymentId).to.eql(linkDeploymentId);
+        expect(username).to.eql('cookie_secret');
+        expect(service).to.eql('harmony-service-example');
+        expect(tag).to.eql('foo');
+        // regressionTestVersion is set to the default value
+        expect(regressionTestVersion).to.eql('latest');
+        expect(status).to.eql('successful');
+        expect(message).to.include('Deployment successful');
+        expect(message).to.include(`See details at: http://127.0.0.1:4000${deploymentLogPath}`);
+      });
+    });
+  });
+});
