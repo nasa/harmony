@@ -257,6 +257,19 @@ async function validateUserIsInDeployerOrCoreGroup(
 }
 
 /**
+ * Validate that the cookie secret is provided in the request or
+ * the user is in the deployers or the core permissions group
+ * @param req - The request object
+ * @param res  - The response object - will be used to send an error if the validation fails
+ * @returns A Promise containing `true` if cookie secret is present or the user is in either group, `false` otherwise
+ */
+async function validateCookieSecretOrUserIsInDeployerOrCoreGroup(
+  req: HarmonyRequest, res: Response,
+): Promise<boolean> {
+  return hasCookieSecret(req) || await validateUserIsInDeployerOrCoreGroup(req, res);
+}
+
+/**
  * Returns an error message if a tag does not have the correct form.
  * See https://docs.docker.com/engine/reference/commandline/image_tag/
  *
@@ -519,7 +532,7 @@ export async function updateServiceImageTag(
 ): Promise<void> {
 
   const validations = [
-    validateUserIsInDeployerOrCoreGroup,
+    validateCookieSecretOrUserIsInDeployerOrCoreGroup,
     validateServiceDeploymentIsEnabled,
     validateTagPresent,
     validateRequestParams,
@@ -550,7 +563,7 @@ export async function updateServiceImageTag(
 
   const deployment = new ServiceDeployment({
     deployment_id: deploymentId,
-    username: req.user,
+    username: req.user || 'cookie_secret',
     service: service,
     tag: tag,
     regression_test_version: regressionTestVersion,
