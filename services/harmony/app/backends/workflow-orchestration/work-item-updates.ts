@@ -696,7 +696,7 @@ export async function processWorkItem(
       return;
     }
 
-    const hasOutput = results?.length > 0;
+    const hasOutput = results && results.length > 0;
     if (status === WorkItemStatus.SUCCESSFUL && !hasOutput) {
       // To return no output the status needs to be a warning, otherwise we treat it as an error
       logger.error('The work item update should have contained results, but it did not.');
