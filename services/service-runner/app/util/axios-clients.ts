@@ -1,7 +1,8 @@
-import logger from '../../../harmony/app/util/log';
+import Agent from 'agentkeepalive';
 import axios, { AxiosError, AxiosInstance } from 'axios';
 import axiosRetry, { exponentialDelay, isNetworkOrIdempotentRequestError } from 'axios-retry';
-import Agent from 'agentkeepalive';
+
+import logger from '../../../harmony/app/util/log';
 
 /**
  * Default Axios client timeout (also used by keepAliveAgent).
@@ -32,7 +33,7 @@ enum AxiosErrorCode {
  * @param maxDelayMs - sets an upper limit on the calculated delay
  * @returns - delay in ms
  */
-function calculateExponentialDelay(
+export function calculateExponentialDelay(
   retryNumber: number,
   exponentialOffset = 0,
   maxDelayMs = Infinity,
@@ -78,22 +79,22 @@ export function isRetryable(error: AxiosError): boolean {
  * @returns AxiosInstance
  */
 export default function createAxiosClientWithRetry(
-  retries = Infinity,
-  maxDelayMs = Infinity,
-  exponentialOffset = 0,
-  retryCondition = isRetryable,
+  _retries = Infinity,
+  _maxDelayMs = Infinity,
+  _exponentialOffset = 0,
+  _retryCondition = isRetryable,
   timeoutMs = axiosTimeoutMs,
   httpAgent = keepAliveAgent,
 ): AxiosInstance {
-  if (process.env.NODE_ENV === 'test') {
-    retries = 2;
-  }
+  // if (process.env.NODE_ENV === 'test') {
+  //   retries = 2;
+  // }
   const axiosClient = axios.create({ httpAgent, timeout: timeoutMs });
-  axiosRetry(axiosClient, {
-    retryDelay: (retryNumber) =>
-      calculateExponentialDelay(retryNumber, exponentialOffset, maxDelayMs),
-    retryCondition,
-    shouldResetTimeout: true,
-    retries });
+  // axiosRetry(axiosClient, {
+  //   retryDelay: (retryNumber) =>
+  //     calculateExponentialDelay(retryNumber, exponentialOffset, maxDelayMs),
+  //   retryCondition,
+  //   shouldResetTimeout: true,
+  //   retries });
   return axiosClient;
 }

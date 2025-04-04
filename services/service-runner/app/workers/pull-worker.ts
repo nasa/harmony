@@ -10,7 +10,9 @@ import logger from '../../../harmony/app/util/log';
 import sleep from '../../../harmony/app/util/sleep';
 import { Worker } from '../../../harmony/app/workers/worker';
 import { runQueryCmrFromPull, runServiceFromPull } from '../service/service-runner';
-import createAxiosClientWithRetry, { isRetryable } from '../util/axios-clients';
+import createAxiosClientWithRetry, {
+  calculateExponentialDelay, isRetryable,
+} from '../util/axios-clients';
 import env from '../util/env';
 
 /**
@@ -85,31 +87,59 @@ async function _primeService(): Promise<void> {
 /**
  * Requests work items from Harmony
  */
-async function _pullWork(): Promise<{ item?: WorkItemRecord; status?: number; error?: string, maxCmrGranules?: number }> {
-  try {
-    const response = await axiosGetWork
-      .get(workUrl, {
-        params: { serviceID: env.harmonyService, podName: env.myPodName },
-        responseType: 'json',
-        validateStatus(status) {
-          return status === 404 || (status >= 200 && status < 400);
-        },
-      });
+async function _pullWork(): Promise<{ item?: WorkItemRecord; status?: number; error?: string, maxCmrGranules?: number; }> {
+  let retries = 0;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let result: { item?: any, status: number, error?: string, maxCmrGranules?: number; };
+  while (!result && retries < maxGetWorkRetries) {
+    retries += 1;
+    try {
+      const response = await axiosGetWork
+        .get(workUrl, {
+          params: { serviceID: env.harmonyService, podName: env.myPodName },
+          responseType: 'json',
+          validateStatus(status) {
+            return status === 404 || (status >= 200 && status < 400);
+          },
+        });
 
-    // 404s are expected when no work is available
-    if (response.status === 404) {
-      return { status: response.status };
+      // 404s are expected when no work is available
+      if (response.status === 404) {
+        result = { status: response.status };
+      }
+
+      const item = response.data.workItem;
+      result = { item, maxCmrGranules: response.data.maxCmrGranules, status: response.status };
+    } catch (err) {
+      if (!isRetryable(err) || !retryUnlessTerminating(err) || retries >= maxGetWorkRetries) {
+        if (err.response) {
+          result = { status: err.response.status, error: err.response.data };
+        } else {
+          result = { status: 500, error: err.message };
+        }
+      }
     }
 
-    const item = response.data.workItem;
+    if (!result) {
+      const workingFilePath = path.join(env.workingDir, 'WORKING');
+      try {
+        await fs.unlink(workingFilePath);
+      } catch {
+        // log this, but don't let it stop things
+        logger.error('Failed to delete /tmp/WORKING');
+      }
 
-    return { item, maxCmrGranules: response.data.maxCmrGranules, status: response.status };
-  } catch (err) {
-    if (err.response) {
-      return { status: err.response.status, error: err.response.data };
+      const delay = calculateExponentialDelay(retries, exponentialOffset, maxDelayMs);
+      logger.debug(`Sleeping for ${delay} ms`);
+      // TODO this is no good - we want to check to see if the TERMINATING file is written while we are sleeping
+      await sleep(delay);
+
+      // write out the WORKING file to prevent pod termination while working
+      await fs.writeFile(workingFilePath, '1');
     }
-    return { status: 500, error: err.message };
   }
+
+  return result;
 }
 
 /**
