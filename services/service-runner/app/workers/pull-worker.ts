@@ -185,16 +185,19 @@ async function _doWork(
  */
 async function _pullAndDoWork(repeat = true): Promise<void> {
   const workingFilePath = path.join(env.workingDir, 'WORKING');
+  let isTerminating = false;
+
   try {
     // remove any previous work items to prevent the pod from running out of disk space
     const regex = /^(?!WORKING|TERMINATING)(.+)$/;
     await emptyDirectory(env.workingDir, regex);
+
     // write out the WORKING file to prevent pod termination while working
     await fs.writeFile(workingFilePath, '1');
   } catch (e) {
     // We'll continue on even if we have issues cleaning up - it just means the pod may end
     // up being evicted at some point due to running out of ephemeral storage space
-    logger.error(`Error cleaning up working directory ${env.workingDir} and creating WORKING file`);
+    logger.error(`Error cleaning up working directory ${env.workingDir}`);
     logger.error(e);
   }
 
@@ -203,6 +206,7 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
     const terminationFilePath = path.join(env.workingDir, 'TERMINATING');
     try {
       await fs.access(terminationFilePath);
+      isTerminating = true;
       // TERMINATING file exists so PreStop handler is requesting termination
       logger.warn('Received TERMINATION request, no longer processing work');
       try {
@@ -271,7 +275,7 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
       // log this, but don't let it stop things
       logger.error('Failed to delete /tmp/WORKING');
     }
-    if (repeat) {
+    if (repeat && !isTerminating) {
       setTimeout(_pullAndDoWork, pollingInterval);
     }
   }
