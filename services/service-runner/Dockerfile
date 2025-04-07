@@ -1,7 +1,6 @@
-FROM node:22.14.0
+FROM node:22.5.1-alpine
 
-RUN apt-get update
-RUN apt-get install -y vim
+RUN apk add bash vim curl git
 RUN git config --global url."https://".insteadOf ssh://
 
 RUN mkdir -p /service-runner/services/service-runner
