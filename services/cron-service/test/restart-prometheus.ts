@@ -10,7 +10,6 @@ import { Context } from '../app/util/context';
 describe('RestartPrometheus', () => {
   let ctx: Context;
   let loggerStub: {
-    debug: sinon.SinonStub;
     info: sinon.SinonStub;
     warn: sinon.SinonStub;
     error: sinon.SinonStub;
@@ -21,7 +20,6 @@ describe('RestartPrometheus', () => {
 
   beforeEach(() => {
     loggerStub = {
-      debug: sinon.stub(),
       info: sinon.stub(),
       warn: sinon.stub(),
       error: sinon.stub(),
@@ -76,11 +74,11 @@ describe('RestartPrometheus', () => {
       });
     });
 
-    it('should log debug and call restartPrometheusIfBroken', async () => {
+    it('should log starting and call restartPrometheusIfBroken', async () => {
       await RestartPrometheus.run(ctx);
-      expect(loggerStub.debug.calledOnceWith('Running')).to.be.true;
+      expect(loggerStub.info.calledWith('Started restart Prometheus cron job')).to.be.true;
       expect(hpaApiStub.listNamespacedHorizontalPodAutoscaler.calledOnceWith({ namespace: 'harmony' })).to.be.true;
-      expect(loggerStub.info.calledOnceWith('All 1 HPAs are collecting metrics, Prometheus working as expected.')).to.be.true;
+      expect(loggerStub.info.calledWith('All 1 HPAs are collecting metrics, Prometheus working as expected.')).to.be.true;
     });
 
     it('should catch and log any errors', async () => {
@@ -88,7 +86,7 @@ describe('RestartPrometheus', () => {
       hpaApiStub.listNamespacedHorizontalPodAutoscaler.rejects(error);
       await RestartPrometheus.run(ctx);
 
-      expect(loggerStub.debug.calledOnceWith('Running')).to.be.true;
+      expect(loggerStub.info.calledWith('Started restart Prometheus cron job')).to.be.true;
       expect(loggerStub.error.calledWith('Failed to monitor and restart Prometheus')).to.be.true;
       expect(loggerStub.error.calledWith(error)).to.be.true;
     });
