@@ -65,7 +65,7 @@ async function restartPrometheusIfBroken(ctx: Context): Promise<void> {
 export class RestartPrometheus extends CronJob {
   static async run(ctx: Context): Promise<void> {
     const { logger } = ctx;
-    logger.debug('Running');
+    logger.info('Started restart Prometheus cron job');
     try {
       await restartPrometheusIfBroken(ctx);
     } catch (e) {
