@@ -112,10 +112,11 @@ async function _pullWork(): Promise<{ item?: WorkItemRecord; status?: number; er
       // 404s are expected when no work is available
       if (response.status === 404) {
         result = { status: response.status };
+      } else {
+        const item = response.data.workItem;
+        result = { item, maxCmrGranules: response.data.maxCmrGranules, status: response.status };
       }
 
-      const item = response.data.workItem;
-      result = { item, maxCmrGranules: response.data.maxCmrGranules, status: response.status };
     } catch (err) {
       if (!isRetryable(err) || !retryUnlessTerminating(err) || retries > maxGetWorkRetries) {
         if (err.response) {
