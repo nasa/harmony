@@ -1,4 +1,4 @@
-import { AxiosError } from 'axios';
+import axios, { AxiosError } from 'axios';
 import { accessSync, constants, existsSync, promises as fs, rmSync } from 'fs';
 import path from 'path';
 import { exit } from 'process';
@@ -13,7 +13,9 @@ import createAxiosClientWithRetry, {
   calculateExponentialDelay, isRetryable,
 } from '../util/axios-clients';
 import env from '../util/env';
-import sleepCheck from '../util/sleep-check';
+import { sleepCheck } from '../util/sleep-check';
+
+const workingFilePath = path.join(env.workingDir, 'WORKING');
 
 /**
  * Check to see if there is a file in /tmp called TERMINATING, which indicates that k8s is trying
@@ -47,25 +49,15 @@ function retryUnlessTerminating(error: AxiosError): boolean {
 
 // Poll every 500 ms for now. Potentially make this a configuration item.
 const pollingInterval = 500;
-
-// Create axios clients with custom retry settings.
-// calculatedDelayMs ~= (2^(retryNumber + exponentialOffset)) * 100
-// retryNumber = 1, 2, ..., maxRetries
-// e.g. with maxRetries = 10, exponentialOffset = 3, maxDelayMs = 60_000 the delays in ms are roughly:
-// [(2^(1+3))*100=1_600, (2^(2+3))*100=3_200, 6_400, 12_800, 25_600, 51_200, 60_000, 60_000, 60_000, 60_000]
-// (ms = milliseconds. Actual delay will differ by a small random amount of ms that gets added to each delay.)
 const { maxPutWorkRetries } = env;
 const maxGetWorkRetries = Number.MAX_SAFE_INTEGER;
 const maxDelayMs = 60_000; // delay subsequent retries for up to 1 minute
 const exponentialOffset = 3; // offsets the exponent so that initial retries don't happen too soon
-const axiosGetWork = createAxiosClientWithRetry(
-  maxGetWorkRetries, maxDelayMs, exponentialOffset, retryUnlessTerminating,
-);
+// we will handle retries ourself when polling for work so that we can check for termination while sleeping
+const axiosGetWork = axios.create();
+// we don't want to terminate even while sleeping when it comes to retries during work updates, so we
+// can use the built-in axios retry
 const axiosUpdateWork = createAxiosClientWithRetry(maxPutWorkRetries, maxDelayMs, exponentialOffset);
-
-let pullCounter = 0;
-// how many pulls to execute before logging - used to keep log message count reasonable
-const pullLogPeriod = 10;
 
 // this debug statement works around a test failure in Bamboo
 console.log(`NODE_ENV = ${process.env.NODE_ENV}`);
@@ -102,9 +94,12 @@ async function _pullWork(): Promise<{ item?: WorkItemRecord; status?: number; er
   let retries = 0;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let result: { item?: any, status: number, error?: string, maxCmrGranules?: number; };
-  while (!result && retries < maxGetWorkRetries) {
+  while (!result && retries <= maxGetWorkRetries) {
     retries += 1;
     try {
+      // write out the WORKING file to prevent pod termination while working
+      await fs.writeFile(workingFilePath, '1');
+
       const response = await axiosGetWork
         .get(workUrl, {
           params: { serviceID: env.harmonyService, podName: env.myPodName },
@@ -122,7 +117,7 @@ async function _pullWork(): Promise<{ item?: WorkItemRecord; status?: number; er
       const item = response.data.workItem;
       result = { item, maxCmrGranules: response.data.maxCmrGranules, status: response.status };
     } catch (err) {
-      if (!isRetryable(err) || !retryUnlessTerminating(err) || retries >= maxGetWorkRetries) {
+      if (!isRetryable(err) || !retryUnlessTerminating(err) || retries > maxGetWorkRetries) {
         if (err.response) {
           result = { status: err.response.status, error: err.response.data };
         } else {
@@ -132,7 +127,7 @@ async function _pullWork(): Promise<{ item?: WorkItemRecord; status?: number; er
     }
 
     if (!result) {
-      const workingFilePath = path.join(env.workingDir, 'WORKING');
+      // remove the WORKING file while we sleep so the pod can be terminated if need be
       try {
         await fs.unlink(workingFilePath);
       } catch {
@@ -141,11 +136,11 @@ async function _pullWork(): Promise<{ item?: WorkItemRecord; status?: number; er
       }
 
       const delay = calculateExponentialDelay(retries, exponentialOffset, maxDelayMs);
-      logger.debug(`Sleeping for ${delay} ms`);
       await sleepCheck(delay, isTerminating);
-
-      // write out the WORKING file to prevent pod termination while working
-      await fs.writeFile(workingFilePath, '1');
+      if (isTerminating()) {
+        logger.debug('Pod is terminating');
+        exit(0);
+      }
     }
   }
 
@@ -224,15 +219,10 @@ async function _doWork(
  * @param repeat - if true the function will loop forever (added for testing purposes)
  */
 async function _pullAndDoWork(repeat = true): Promise<void> {
-  const workingFilePath = path.join(env.workingDir, 'WORKING');
-
   try {
     // remove any previous work items to prevent the pod from running out of disk space
     const regex = /^(?!WORKING|TERMINATING)(.+)$/;
     await emptyDirectory(env.workingDir, regex);
-
-    // write out the WORKING file to prevent pod termination while working
-    await fs.writeFile(workingFilePath, '1');
   } catch (e) {
     // We'll continue on even if we have issues cleaning up - it just means the pod may end
     // up being evicted at some point due to running out of ephemeral storage space
@@ -244,15 +234,10 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
     // check to see if we are terminating
     if (isTerminating()) {
       logger.warn('Received TERMINATION request, no longer processing work');
-      throw new Error('pod is terminating');
+      exit(0);
     }
 
-    pullCounter += 1;
     logger.debug('Polling for work');
-    if (pullCounter === pullLogPeriod) {
-      pullCounter = 0;
-    }
-
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
     const work = await exportedForTesting._pullWork();
     if (!work.error && work.item) {
@@ -300,7 +285,7 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
       // log this, but don't let it stop things
       logger.error('Failed to delete /tmp/WORKING');
     }
-    if (repeat && !isTerminating) {
+    if (repeat && !isTerminating()) {
       setTimeout(_pullAndDoWork, pollingInterval);
     }
   }
@@ -339,7 +324,7 @@ export default class PullWorker implements Worker {
           exit(1);
         } else {
           // wait 100 ms before trying again
-          await sleep(100);
+          await sleepCheck(100, () => false);
         }
       }
     }

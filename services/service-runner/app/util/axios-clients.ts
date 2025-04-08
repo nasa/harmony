@@ -79,22 +79,22 @@ export function isRetryable(error: AxiosError): boolean {
  * @returns AxiosInstance
  */
 export default function createAxiosClientWithRetry(
-  _retries = Infinity,
-  _maxDelayMs = Infinity,
-  _exponentialOffset = 0,
-  _retryCondition = isRetryable,
+  retries = Infinity,
+  maxDelayMs = Infinity,
+  exponentialOffset = 0,
+  retryCondition = isRetryable,
   timeoutMs = axiosTimeoutMs,
   httpAgent = keepAliveAgent,
 ): AxiosInstance {
-  // if (process.env.NODE_ENV === 'test') {
-  //   retries = 2;
-  // }
+  if (process.env.NODE_ENV === 'test') {
+    retries = 2;
+  }
   const axiosClient = axios.create({ httpAgent, timeout: timeoutMs });
-  // axiosRetry(axiosClient, {
-  //   retryDelay: (retryNumber) =>
-  //     calculateExponentialDelay(retryNumber, exponentialOffset, maxDelayMs),
-  //   retryCondition,
-  //   shouldResetTimeout: true,
-  //   retries });
+  axiosRetry(axiosClient, {
+    retryDelay: (retryNumber) =>
+      calculateExponentialDelay(retryNumber, exponentialOffset, maxDelayMs),
+    retryCondition,
+    shouldResetTimeout: true,
+    retries });
   return axiosClient;
 }

@@ -40,12 +40,12 @@ describe('sleepCheck', () => {
 
     const promise = sleepCheck(5000, checkStub);
 
-    // Advance time by 1 second
-    await clock.tickAsync(1000);
+    // Advance time by 1/2 second
+    await clock.tickAsync(500);
     expect(checkStub.calledOnce).to.be.true;
 
-    // Advance time by another second
-    await clock.tickAsync(1000);
+    // Advance time by another 1/2 second
+    await clock.tickAsync(500);
     expect(checkStub.calledTwice).to.be.true;
 
     // Advance time by another second, which should trigger the third call
@@ -95,8 +95,8 @@ describe('sleepCheck', () => {
     // Advance a tiny bit of time to allow promises to resolve
     await clock.tickAsync(10);
 
-    // Check function should still be called once
-    expect(checkStub.calledOnce).to.be.true;
+    // Check function should not be called
+    expect(checkStub.called).to.be.false;
 
     // Wait for the promise to resolve
     await promise;
