@@ -11,9 +11,10 @@ import { CronJob } from './cronjob';
  * @param ctx - The Cron job context
  */
 export async function updateUserWork(ctx: Context): Promise<void> {
+  const startTime = new Date().getTime();
   const { logger, db } = ctx;
   await db.transaction(async (tx) => {
-    // find jobs in the user-work table that haven't been updated in a while
+    // find jobs in the user_work table that haven't been updated in a while
     let query = tx(UserWork.table)
       .distinct('job_id')
       .where(function () {
@@ -40,21 +41,23 @@ export async function updateUserWork(ctx: Context): Promise<void> {
         await recalculateCounts(tx, jobID);
       }
     }
+    const durationMs = new Date().getTime() - startTime;
+    logger.info(`Finished updating user work counts for ${jobIDs.length} jobs`, { durationMs });
   });
 }
 
 /**
- * Cron job to clean up the user-work table to avoid excess pods staying active
+ * Cron job to clean up the user_work table to avoid excess pods staying active
  */
 export class UserWorkUpdater extends CronJob {
 
   static async run(ctx: Context): Promise<void> {
     const { logger } = ctx;
-    logger.debug('Running');
+    logger.info('Started user work updater cron job');
     try {
       await updateUserWork(ctx);
     } catch (e) {
-      logger.error('User work udpater failed to update user_work table');
+      logger.error('User work updater failed to update user_work table');
       logger.error(e);
     }
   }

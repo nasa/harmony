@@ -12,31 +12,33 @@ import { IsCrontab } from './cron-validation';
 
 class CronServiceHarmonyEnv extends HarmonyEnv {
 
-  // work reaper specific vars
+  // Begin work reaper variables
   @IsCrontab()
   workReaperCron: string;
 
   @IsInt()
   @Min(1)
   workReaperBatchSize: number;
-  // end work reaper specific vars
 
   @IsInt()
   @Min(1)
   reapableWorkAgeMinutes: number;
+  // End work reaper variables
 
-  // Restart prometheus
+
+  // Begin restart prometheus variables
   @IsCrontab()
   restartPrometheusCron: string;
+  // End restart prometheus variables
 
-  // user-work update specific vars
+  // Begin user work update variables
   @IsCrontab()
   userWorkUpdaterCron: string;
 
   @IsInt()
   @Min(1)
   userWorkExpirationMinutes: number;
-  // end user-work update specific vars
+  // End user work update variables
 }
 
 const localPath = path.resolve(__dirname, '../../env-defaults');

@@ -101,7 +101,7 @@ export class WorkReaper extends CronJob {
 
   static async run(ctx: Context): Promise<void> {
     const { logger } = ctx;
-    logger.debug('Running');
+    logger.info('Started work reaper cron job');
     try {
       const updatedAtCutoff = subMinutes(new Date(), env.reapableWorkAgeMinutes);
       await deleteTerminalWorkItems(

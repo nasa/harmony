@@ -14,7 +14,6 @@ import { buildJob } from './helpers/jobs';
 describe('UserWorkUpdater', () => {
   let ctx: Context;
   let loggerInfoStub: sinon.SinonStub;
-  let loggerDebugStub: sinon.SinonStub;
   let loggerErrorStub: sinon.SinonStub;
   let loggerWarnStub: sinon.SinonStub;
   let recalculateCountsStub: sinon.SinonStub;
@@ -24,7 +23,6 @@ describe('UserWorkUpdater', () => {
     await truncateAll();
     // Set up logger stubs
     loggerInfoStub = sinon.stub();
-    loggerDebugStub = sinon.stub();
     loggerErrorStub = sinon.stub();
     loggerWarnStub = sinon.stub();
 
@@ -32,7 +30,6 @@ describe('UserWorkUpdater', () => {
     ctx = {
       logger: {
         info: loggerInfoStub,
-        debug: loggerDebugStub,
         error: loggerErrorStub,
         warn: loggerWarnStub,
       },
@@ -56,10 +53,9 @@ describe('UserWorkUpdater', () => {
   });
 
   describe('UserWorkUpdater.run', () => {
-    it('should call logger.debug and execute updateUserWork', async () => {
+    it('should call logger.info and execute updateUserWork', async () => {
       await updateUserWorkMod.UserWorkUpdater.run(ctx);
-
-      expect(loggerDebugStub.calledOnceWith('Running')).to.be.true;
+      expect(loggerInfoStub.calledWith('Started user work updater cron job')).to.be.true;
     });
 
     let trxStub: SinonStub;
@@ -75,7 +71,7 @@ describe('UserWorkUpdater', () => {
 
       } finally {
         expect(loggerErrorStub.called).to.be.true;
-        expect(loggerErrorStub.calledWith('User work udpater failed to update user_work table')).to.be.true;
+        expect(loggerErrorStub.calledWith('User work updater failed to update user_work table')).to.be.true;
         expect(loggerErrorStub.secondCall.args[0]).to.equal(error);
         trxStub.restore();
       }
