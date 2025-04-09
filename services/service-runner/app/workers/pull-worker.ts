@@ -1,4 +1,4 @@
-import { AxiosError } from 'axios';
+import axios, { AxiosError } from 'axios';
 import { accessSync, constants, existsSync, promises as fs, rmSync } from 'fs';
 import path from 'path';
 import { exit } from 'process';
@@ -7,11 +7,30 @@ import { sanitizeImage } from '@harmony/util/string';
 
 import { WorkItemRecord, WorkItemStatus } from '../../../harmony/app/models/work-item-interface';
 import logger from '../../../harmony/app/util/log';
-import sleep from '../../../harmony/app/util/sleep';
 import { Worker } from '../../../harmony/app/workers/worker';
 import { runQueryCmrFromPull, runServiceFromPull } from '../service/service-runner';
-import createAxiosClientWithRetry, { isRetryable } from '../util/axios-clients';
+import createAxiosClientWithRetry, {
+  calculateExponentialDelay, isRetryable,
+} from '../util/axios-clients';
 import env from '../util/env';
+import { sleepCheck } from '../util/sleep-check';
+
+const workingFilePath = path.join(env.workingDir, 'WORKING');
+
+/**
+ * Check to see if there is a file in /tmp called TERMINATING, which indicates that k8s is trying
+ * to terminate the pod.
+ * @returns true if the `TERMINATING` file exists
+ */
+function isTerminating(): boolean {
+  const terminationFilePath = path.join(env.workingDir, 'TERMINATING');
+  try {
+    accessSync(terminationFilePath, constants.F_OK);
+    return true;
+  } catch (e) { }
+
+  return false;
+}
 
 /**
  * Retries axios connection errors using default retry logic unless the pod is being terminated
@@ -21,38 +40,24 @@ import env from '../util/env';
  * Returns true if the error can be retried and the pod is not being terminated, false otherwise
  */
 function retryUnlessTerminating(error: AxiosError): boolean {
-  const terminationFilePath = path.join(env.workingDir, 'TERMINATING');
-  try {
-    accessSync(terminationFilePath, constants.F_OK);
-    // No exception thrown, so the terminating file exists
+  if (isTerminating()) {
     logger.warn('Pod termination requested, will not retry');
     return false;
-  } catch (e) {
-    return isRetryable(error);
   }
+  return isRetryable(error);
 }
 
 // Poll every 500 ms for now. Potentially make this a configuration item.
 const pollingInterval = 500;
-
-// Create axios clients with custom retry settings.
-// calculatedDelayMs ~= (2^(retryNumber + exponentialOffset)) * 100
-// retryNumber = 1, 2, ..., maxRetries
-// e.g. with maxRetries = 10, exponentialOffset = 3, maxDelayMs = 60_000 the delays in ms are roughly:
-// [(2^(1+3))*100=1_600, (2^(2+3))*100=3_200, 6_400, 12_800, 25_600, 51_200, 60_000, 60_000, 60_000, 60_000]
-// (ms = milliseconds. Actual delay will differ by a small random amount of ms that gets added to each delay.)
 const { maxPutWorkRetries } = env;
 const maxGetWorkRetries = Number.MAX_SAFE_INTEGER;
 const maxDelayMs = 60_000; // delay subsequent retries for up to 1 minute
 const exponentialOffset = 3; // offsets the exponent so that initial retries don't happen too soon
-const axiosGetWork = createAxiosClientWithRetry(
-  maxGetWorkRetries, maxDelayMs, exponentialOffset, retryUnlessTerminating,
-);
+// we will handle retries ourself when polling for work so that we can check for termination while sleeping
+const axiosGetWork = axios.create();
+// we don't want to terminate even while sleeping when it comes to retries during work updates, so we
+// can use the built-in axios retry
 const axiosUpdateWork = createAxiosClientWithRetry(maxPutWorkRetries, maxDelayMs, exponentialOffset);
-
-let pullCounter = 0;
-// how many pulls to execute before logging - used to keep log message count reasonable
-const pullLogPeriod = 10;
 
 // this debug statement works around a test failure in Bamboo
 console.log(`NODE_ENV = ${process.env.NODE_ENV}`);
@@ -85,31 +90,62 @@ async function _primeService(): Promise<void> {
 /**
  * Requests work items from Harmony
  */
-async function _pullWork(): Promise<{ item?: WorkItemRecord; status?: number; error?: string, maxCmrGranules?: number }> {
-  try {
-    const response = await axiosGetWork
-      .get(workUrl, {
-        params: { serviceID: env.harmonyService, podName: env.myPodName },
-        responseType: 'json',
-        validateStatus(status) {
-          return status === 404 || (status >= 200 && status < 400);
-        },
-      });
+async function _pullWork(): Promise<{ item?: WorkItemRecord; status?: number; error?: string, maxCmrGranules?: number; }> {
+  let retries = 0;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let result: { item?: any, status: number, error?: string, maxCmrGranules?: number; };
+  while (!result && retries <= maxGetWorkRetries) {
+    retries += 1;
+    try {
+      // write out the WORKING file to prevent pod termination while working
+      await fs.writeFile(workingFilePath, '1');
 
-    // 404s are expected when no work is available
-    if (response.status === 404) {
-      return { status: response.status };
+      const response = await axiosGetWork
+        .get(workUrl, {
+          params: { serviceID: env.harmonyService, podName: env.myPodName },
+          responseType: 'json',
+          validateStatus(status) {
+            return status === 404 || (status >= 200 && status < 400);
+          },
+        });
+
+      // 404s are expected when no work is available
+      if (response.status === 404) {
+        result = { status: response.status };
+      } else {
+        const item = response.data.workItem;
+        result = { item, maxCmrGranules: response.data.maxCmrGranules, status: response.status };
+      }
+
+    } catch (err) {
+      if (!isRetryable(err) || !retryUnlessTerminating(err) || retries > maxGetWorkRetries) {
+        if (err.response) {
+          result = { status: err.response.status, error: err.response.data };
+        } else {
+          result = { status: 500, error: err.message };
+        }
+      }
     }
 
-    const item = response.data.workItem;
+    if (!result) {
+      // remove the WORKING file while we sleep so the pod can be terminated if need be
+      try {
+        await fs.unlink(workingFilePath);
+      } catch {
+        // log this, but don't let it stop things
+        logger.error('Failed to delete /tmp/WORKING');
+      }
 
-    return { item, maxCmrGranules: response.data.maxCmrGranules, status: response.status };
-  } catch (err) {
-    if (err.response) {
-      return { status: err.response.status, error: err.response.data };
+      const delay = calculateExponentialDelay(retries, exponentialOffset, maxDelayMs);
+      await sleepCheck(delay, isTerminating);
+      if (isTerminating()) {
+        logger.debug('Pod is terminating');
+        exit(0);
+      }
     }
-    return { status: 500, error: err.message };
   }
+
+  return result;
 }
 
 /**
@@ -184,46 +220,25 @@ async function _doWork(
  * @param repeat - if true the function will loop forever (added for testing purposes)
  */
 async function _pullAndDoWork(repeat = true): Promise<void> {
-  const workingFilePath = path.join(env.workingDir, 'WORKING');
   try {
     // remove any previous work items to prevent the pod from running out of disk space
     const regex = /^(?!WORKING|TERMINATING)(.+)$/;
     await emptyDirectory(env.workingDir, regex);
-    // write out the WORKING file to prevent pod termination while working
-    await fs.writeFile(workingFilePath, '1');
   } catch (e) {
     // We'll continue on even if we have issues cleaning up - it just means the pod may end
     // up being evicted at some point due to running out of ephemeral storage space
-    logger.error(`Error cleaning up working directory ${env.workingDir} and creating WORKING file`);
+    logger.error(`Error cleaning up working directory ${env.workingDir}`);
     logger.error(e);
   }
 
   try {
     // check to see if we are terminating
-    const terminationFilePath = path.join(env.workingDir, 'TERMINATING');
-    try {
-      await fs.access(terminationFilePath);
-      // TERMINATING file exists so PreStop handler is requesting termination
+    if (isTerminating()) {
       logger.warn('Received TERMINATION request, no longer processing work');
-      try {
-        // Clean up the TERMINATING file to ensure we do not stay in an infinite loop terminating
-        await fs.unlink(terminationFilePath);
-      } catch (e) {
-        logger.error('Error removing TERMINATING file, will still attempt to quit');
-        logger.error(e);
-      }
-      // removing the WORKING file is done in the `finally` block at the end of this function
-      return;
-    } catch {
-      // expected if file does not exist
+      exit(0);
     }
 
-    pullCounter += 1;
     logger.debug('Polling for work');
-    if (pullCounter === pullLogPeriod) {
-      pullCounter = 0;
-    }
-
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
     const work = await exportedForTesting._pullWork();
     if (!work.error && work.item) {
@@ -259,7 +274,7 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
       // something bad happened
       logger.error(`Full details: ${JSON.stringify(work)}`);
       logger.error(`Unexpected error while pulling work: ${work.error}`);
-      await sleep(3000);
+      await sleepCheck(3000, isTerminating);
     }
   } catch (e) {
     logger.error(e);
@@ -271,7 +286,7 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
       // log this, but don't let it stop things
       logger.error('Failed to delete /tmp/WORKING');
     }
-    if (repeat) {
+    if (repeat && !isTerminating()) {
       setTimeout(_pullAndDoWork, pollingInterval);
     }
   }
@@ -310,7 +325,7 @@ export default class PullWorker implements Worker {
           exit(1);
         } else {
           // wait 100 ms before trying again
-          await sleep(100);
+          await sleepCheck(100, () => false);
         }
       }
     }

@@ -1,16 +1,15 @@
 import { expect } from 'chai';
+import { existsSync, mkdirSync, unlinkSync, writeFileSync } from 'fs';
 import { describe, it } from 'mocha';
 import * as sinon from 'sinon';
-import { SinonStub } from 'sinon';
-import env from '../app/util/env';
+
 import WorkItem from '../../harmony/app/models/work-item';
-import { hookGetWorkRequest } from './helpers/pull-worker';
-import * as pullWorker from '../app/workers/pull-worker';
-import PullWorker from '../app/workers/pull-worker';
-import * as serviceRunner from '../app/service/service-runner';
-import { existsSync, writeFileSync, mkdirSync } from 'fs';
 import { WorkItemRecord } from '../../harmony/app/models/work-item-interface';
 import { buildOperation } from '../../harmony/test/helpers/data-operation';
+import * as serviceRunner from '../app/service/service-runner';
+import env from '../app/util/env';
+import PullWorker, * as pullWorker from '../app/workers/pull-worker';
+import { hookGetWorkRequest } from './helpers/pull-worker';
 
 const {
   _pullWork,
@@ -23,6 +22,13 @@ describe('Pull Worker', async function () {
   before(function () {
     if (!existsSync(env.workingDir)) {
       mkdirSync(env.workingDir);
+    } else {
+      if (existsSync(`${env.workingDir}/TERMINATING`)) {
+        unlinkSync(`${env.workingDir}/TERMINATING`);
+      }
+      if (existsSync(`${env.workingDir}/WORKING`)) {
+        unlinkSync(`${env.workingDir}/WORKING`);
+      }
     }
   });
   describe('on start', async function () {
@@ -50,8 +56,8 @@ describe('Pull Worker', async function () {
   });
 
   describe('on start with primer errors', async function () {
-    let serviceStub: SinonStub;
-    let exitStub: SinonStub;
+    let serviceStub: sinon.SinonStub;
+    let exitStub: sinon.SinonStub;
     const { harmonyService } = env;
 
     beforeEach(async function () {
@@ -189,15 +195,28 @@ describe('Pull Worker', async function () {
     describe('when the pod is terminating', async function () {
       let pullWorkSpy: sinon.SinonSpy;
       let doWorkSpy: sinon.SinonSpy;
-      beforeEach(function () {
+      let exitStub: sinon.SinonStub;
+
+      beforeEach(async function () {
         writeFileSync(`${env.workingDir}/TERMINATING`, '1');
         pullWorkSpy = sinon.spy(pullWorker.exportedForTesting, '_pullWork');
         doWorkSpy = sinon.spy(pullWorker.exportedForTesting, '_doWork');
+        exitStub = sinon.stub(process, 'exit').callsFake(
+          function () {
+            throw new Error('terminating');
+          },
+        );
       });
       afterEach(async function () {
-        // pullWork will remove the TERMINATING file so no need to remove it
         pullWorkSpy.restore();
         doWorkSpy.restore();
+        exitStub.restore();
+        unlinkSync(`${env.workingDir}/TERMINATING`);
+      });
+
+      it('exits the process', async function () {
+        await _pullAndDoWork(false);
+        expect(exitStub.called).to.be.true;
       });
 
       it('does not call pullWork or doWork', async function () {
@@ -208,9 +227,9 @@ describe('Pull Worker', async function () {
     });
 
     describe('when _pullWork runs', async function () {
-      let pullStub: SinonStub;
-      let doWorkStub: SinonStub;
-      let axiosStub: SinonStub;
+      let pullStub: sinon.SinonStub;
+      let doWorkStub: sinon.SinonStub;
+      let axiosStub: sinon.SinonStub;
       const dir = `${env.workingDir}/abc123`;
       const fakeOperation = buildOperation('foo');
       fakeOperation.sources = [
@@ -268,17 +287,11 @@ describe('Pull Worker', async function () {
         await _pullAndDoWork(false);
         expect(existsSync(dir)).to.be.false;
       });
-
-      it('deletes the TERMINATING file if it encounters it', async function () {
-        writeFileSync(`${env.workingDir}/TERMINATING`, '1');
-        await _pullAndDoWork(false);
-        expect(existsSync(`${env.workingDir}/TERMINATING`)).to.be.false;
-      });
     });
 
     describe('when _pullWork throws an exception', async function () {
-      let pullStub: SinonStub;
-      let doWorkStub: SinonStub;
+      let pullStub: sinon.SinonStub;
+      let doWorkStub: sinon.SinonStub;
       beforeEach(function () {
         pullStub = sinon.stub(pullWorker.exportedForTesting, '_pullWork').callsFake(async function () {
           throw new Error('something bad happened');
@@ -304,8 +317,8 @@ describe('Pull Worker', async function () {
     });
 
     describe('when _doWork throws an exception', async function () {
-      let pullStub: SinonStub;
-      let doWorkStub: SinonStub;
+      let pullStub: sinon.SinonStub;
+      let doWorkStub: sinon.SinonStub;
       beforeEach(function () {
         pullStub = sinon.stub(pullWorker.exportedForTesting, '_pullWork').callsFake(async function (): Promise<{ item?: WorkItem; status?: number; error?: string }> {
           return {};
