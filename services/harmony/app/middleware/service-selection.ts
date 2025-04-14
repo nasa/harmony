@@ -1,8 +1,12 @@
 import { NextFunction, Response } from 'express';
-import { ServiceConfig } from '../models/services/base-service';
+
 import HarmonyRequest from '../models/harmony-request';
 import { chooseServiceConfig, getServiceConfigs } from '../models/services';
+import { ServiceConfig } from '../models/services/base-service';
 import { CmrCollection } from '../util/cmr';
+import env from '../util/env';
+import { RequestValidationError } from '../util/errors';
+import { keysToLowerCase } from '../util/object';
 
 /**
  * Add collections to service configs
@@ -52,13 +56,34 @@ export default function chooseService(
     return next();
   }
 
+  const query = keysToLowerCase(req.query);
   let serviceConfig: ServiceConfig<unknown>;
-  const configs = addCollectionsToServicesByAssociation(req.context.collections);
+
   try {
-    serviceConfig = chooseServiceConfig(operation, context, configs);
+    // If the user provided a serviceId choose it using the UMM-S concept ID or name of the chain in services.yml
+    if (query.serviceid) {
+      if (!env.allowServiceSelection) {
+        throw new RequestValidationError('Requesting a service chain using serviceId is disabled in this environment.');
+      }
+
+      const configs = getServiceConfigs();
+      serviceConfig = configs.find(config => config.umm_s === query.serviceid || config.name === query.serviceid);
+
+      if (!serviceConfig) {
+        throw new RequestValidationError('Could not find a service chain that matched the provided serviceId. Ensure the provided serviceId is either a CMR concept ID or the name of the chain in services.yml');
+      }
+
+      // Need to add the collection(s) to the service config or later middleware may run into issus
+      for (const collection of req.context.collectionIds) {
+        serviceConfig.collections.push({ id: collection });
+      }
+    } else {
+      const configs = addCollectionsToServicesByAssociation(req.context.collections);
+      serviceConfig = chooseServiceConfig(operation, context, configs);
+    }
+    context.serviceConfig = serviceConfig;
+    return next();
   } catch (e) {
     return next(e);
   }
-  context.serviceConfig = serviceConfig;
-  return next();
 }

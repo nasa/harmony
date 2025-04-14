@@ -255,6 +255,10 @@ LOCALSTACK_K8S_HOST=localstack
 # Toggle whether the labeling dropdown should be enabled in the workflow ui
 UI_LABELING=true
 
+# Toggle whether users can explicitly choose the service chain to call for
+# their request using the serviceId query parameter
+ALLOW_SERVICE_SELECTION=true
+
 ###########################################################################
 #                             Prometheus Config                           #
 #                                                                         #

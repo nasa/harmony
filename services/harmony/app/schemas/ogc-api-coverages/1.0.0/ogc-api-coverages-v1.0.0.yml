@@ -335,6 +335,7 @@ paths:
         - $ref: "#/components/parameters/height"
         - $ref: "#/components/parameters/format"
         - $ref: "#/components/parameters/forceAsync"
+        - $ref: "#/components/parameters/serviceId"
         - $ref: "#/components/parameters/maxResults"
         - $ref: "#/components/parameters/skipPreview"
         - $ref: "#/components/parameters/ignoreErrors"
@@ -379,6 +380,7 @@ paths:
         - $ref: "#/components/parameters/height"
         - $ref: "#/components/parameters/format"
         - $ref: "#/components/parameters/forceAsync"
+        - $ref: "#/components/parameters/serviceId"
         - $ref: "#/components/parameters/maxResults"
         - $ref: "#/components/parameters/skipPreview"
         - $ref: "#/components/parameters/ignoreErrors"
@@ -902,6 +904,15 @@ components:
       in: query
       description: if "true", override the default API behavior and always treat the request as asynchronous
       required: false
+      schema:
+        type: string
+    serviceId:
+      name: serviceId
+      in: query
+      description: Either the CMR concept ID or the name in services.yml for the UMM-S service chain to invoke. Useful for testing a service chain against a collection not yet configured for use with that service chain.
+      required: false
+      style: form
+      explode: true
       schema:
         type: string
     maxResults:
