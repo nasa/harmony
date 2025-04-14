@@ -1,7 +1,8 @@
 import { IsBoolean, IsInt, IsNotEmpty, IsPositive, Matches, Min } from 'class-validator';
-import { HarmonyEnv, memorySizeRegex } from '@harmony/util/env';
 import _ from 'lodash';
 import * as path from 'path';
+
+import { HarmonyEnv, memorySizeRegex } from '@harmony/util/env';
 
 //
 // harmony env module
@@ -130,6 +131,9 @@ class HarmonyServerEnv extends HarmonyEnv {
   useEdlClientApp: boolean;
 
   edlToken: string;
+
+  @IsBoolean()
+  allowServiceSelection: boolean;
 }
 
 const localPath = path.resolve(__dirname, '../../env-defaults');
