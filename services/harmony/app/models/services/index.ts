@@ -321,7 +321,7 @@ function isCollectionMatch(
  * @param format - Additional context that's not part of the operation, but influences the
  *    choice regarding the service to use
  * @param configs - The configuration to use for finding the operation, with all
- *    variables resolved (default: the contents of config/services.yml)
+ *    variables resolved (default: the contents of services.yml)
  * @returns An object with two properties - service and format for the service and format
  * that should be used to fulfill the given request context
  */
@@ -996,7 +996,7 @@ export function isCollectionSupported(collection: CmrCollection): boolean {
  * @param context - Additional context that's not part of the operation, but influences the
  *     choice regarding the service to use
  * @param configs - The configuration to use for finding the operation, with all variables
- *     resolved (default: the contents of config/services.yml)
+ *     resolved (default: the contents of services.yml)
  * @param filterFns - The list of filter functions to execute to filter matching services
  * @returns the service configuration to use
  */

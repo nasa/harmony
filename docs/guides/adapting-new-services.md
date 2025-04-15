@@ -2,18 +2,24 @@
 
 Please reach out in #harmony-service-providers (EOSDIS Slack) for additional guidance on any adaptation needs, and especially with any feedback that can help us improve.
 
+### Note Regarding services.yml
+Harmony services that are defined in the CMR UAT environment are configured in a file under the `config`
+directory called `services-uat.yml`, while services defined in the CMR production environment are
+configured in a file called `services-prod.yml`. These files are referred to collectively as `services.yml`
+in this document.
+
 ## Quick Start
 Fully setting up a service can be overwhelming for first time service providers. We now provide a script `bin/generate-new-service` to generate
 much of the scaffolding to get services ready for local integration testing with harmony quickly. The scaffolding provides the following:
 
 1. Updates to env-defaults files to add needed environment variables for running the service
-1. Updates to services.yml to fill in a new service definition to call the service
-1. Updates to local environment variables in .env to ensure the service is deployed
-1. Updates to local environment variables in .env to bypass needing to have a UMM-S record ready to go in UAT and collections associated
-1. A new directory at the same level as the harmony repo that contains:
+2. Updates to services-uat.yml to fill in a new service definition to call the service
+3. Updates to local environment variables in .env to ensure the service is deployed
+4. Updates to local environment variables in .env to bypass needing to have a UMM-S record ready to go in UAT and collections associated
+5. A new directory at the same level as the harmony repo that contains:
     1. Dockerfile defining an image that includes some common libraries used by service providers
-    1. A script to build the service image
-    1. Python wrapper code to make use of the harmony-service-library with hooks identified for places to add the custom service code
+    2. A script to build the service image
+    3. Python wrapper code to make use of the harmony-service-library with hooks identified for places to add the custom service code
 
 ### Setting up a new service
 ***Prior to setting up a new service be sure to get harmony fully functional and tested with harmony-service-example by following the Quickstart
@@ -26,7 +32,7 @@ Using the script will help to see the files that need to be changed in order to 
 Once you have finished testing things out be sure to follow the steps outlined in the rest of this document to ensure the service is
 ready to be integrated into other harmony test environments.
 
-Note that the service chain that is generated in services.yml will define a service chain that queries for granules from the CMR and
+Note that the service chain that is generated in services-uat.yml will define a service chain that queries for granules from the CMR and
 then invokes a single service image. If setting up a more complex service chain be sure to modify the entry.
 
 ## Table of Contents<!-- omit in toc -->
@@ -37,7 +43,7 @@ then invokes a single service image. If setting up a more complex service chain 
   - [4. Canceled requests](#4-canceled-requests)
   - [5. Error handling](#5-error-handling)
   - [6. Defining environment variables in env-defaults](#6-defining-environment-variables-in-env-defaults)
-  - [7. Registering services in services.yml](#7-registering-services-in-servicesyml)
+  - [7. Registering services in services-uat.yml](#7-registering-services-in-services-uatyml)
     - [Sequential Steps](#sequential-steps)
     - [Aggregation Steps](#aggregation-steps)
   - [8. Docker Container Images](#8-docker-container-images)
@@ -93,11 +99,11 @@ Be sure to prefix the entries with the name of your service. Set the value for t
   MY_SERVICE_INVOCATION_ARGS='python -m my-service'
   ```
 
-## 7. Registering services in services.yml
+## 7. Registering services in services-uat.yml
 
-Add an entry to [services.yml](../../config/services.yml) under each CMR environment that has umm-s appropriate to the service and send a pull request to the Harmony team, or ask a Harmony team member for assistance. It is important to note that the order that service entries are placed in this file can have an impact on service selection. In cases where multiple services are capable of performing the requested transformations, the service that appears first in the file will handle the request.
+Add an entry to [services-uat.yml](../../config/services-uat.yml) that has umm-s appropriate to the service and send a pull request to the Harmony team, or ask a Harmony team member for assistance. It is important to note that the order that service entries are placed in this file can have an impact on service selection. In cases where multiple services are capable of performing the requested transformations, the service that appears first in the file will handle the request.
 
-The structure of an entry in the [services.yml](../../config/services.yml) file is as follows:
+The structure of an entry in the [services-uat.yml](../../config/services-uat.yml) file is as follows:
 
 ```yaml
 - name: harmony/service-example    # A unique identifier string for the service, conventionally <team>/<service>
@@ -105,7 +111,7 @@ The structure of an entry in the [services.yml](../../config/services.yml) file 
   has_granule_limit: true          # Optional flag indicating whether we will impose granule limits for the request. Default to true.
   default_sync: false              # Optional flag indicating whether we will force the request to run synchronously. Default to false.
   type:                            # Configuration for service invocation
-      <<: *default-turbo-config    # To reduce boilerplate, services.yml includes default configuration suitable for all Docker based services.
+      <<: *default-turbo-config    # To reduce boilerplate, services-uat.yml includes default configuration suitable for all Docker based services.
       params:
         <<: *default-turbo-params  # Always include the default parameters for docker services
         env:
@@ -141,7 +147,7 @@ The structure of an entry in the [services.yml](../../config/services.yml) file 
       - image: !Env ${HARMONY_EXAMPLE_IMAGE}     # The image to use for the second step in the chain
 ```
 
-Each harmony service must have one and only one `umm-s` concept-id configured via the `umm-s` field in services.yml. Collections on which a service works are specified via [creating a UMM-S/UMM-C association](https://cmr.earthdata.nasa.gov/search/site/docs/search/api.html#service-association) in the CMR with the configured umm-s concept.  See [this wiki link](https://wiki.earthdata.nasa.gov/display/HARMONY/UMM-S+Guidance+for+Harmony+Services) and the [Service Configuration](./configuring-harmony-service.ipynb) notebook for further UMM-S guidance with respect to Earthdata Search.
+Each harmony service must have one and only one `umm-s` concept-id configured via the `umm-s` field in services-uat.yml. Collections on which a service works are specified via [creating a UMM-S/UMM-C association](https://cmr.earthdata.nasa.gov/search/site/docs/search/api.html#service-association) in the CMR with the configured umm-s concept.  See [this wiki link](https://wiki.earthdata.nasa.gov/display/HARMONY/UMM-S+Guidance+for+Harmony+Services) and the [Service Configuration](./configuring-harmony-service.ipynb) notebook for further UMM-S guidance with respect to Earthdata Search.
 
 **NOTE:** `collections` field can only have value when `granule_limit` or `variables` need to be configured for specific collections for the service.
 
@@ -219,7 +225,7 @@ There are default limits set by the environment variables `MAX_BATCH_INPUTS` and
 `MAX_BATCH_SIZE_IN_BYTES`. Providers should consult the [env-defaults.ts](../../services/harmony/env-defaults) file to obtain the
 current values of these variables.
 
-The settings in `services.yml` take precedence over these environment variables. If a provider
+The settings in `services-uat.yml` take precedence over these environment variables. If a provider
 wishes to use larger values (particularly for `max_batch_size_in_bytes`) that provider should
 contact the Harmony team first to make sure that the underlying Kubernetes pods have enough
 resources allocated (disk space, memory).
@@ -232,7 +238,7 @@ Harmony will run the Docker image through its entrypoint according to the [Harmo
 
 The `Dockerfile` in the harmony-service-example project serves as a minimal example of how to set up Docker to accept these inputs using the `ENTRYPOINT` declaration.
 
-In addition to the defined command-line parameters, Harmony can provide the Docker container with environment variables as set in [services.yml](../../config/services.yml) by setting `service.type.params.env` key/value pairs. See the existing services.yml for examples.
+In addition to the defined command-line parameters, Harmony can provide the Docker container with environment variables as set in [services-uat.yml](../../config/services-uat.yml) by setting `service.type.params.env` key/value pairs. See the existing services-uat.yml for examples.
 
 ## 9. Recommendations for service implementations
 

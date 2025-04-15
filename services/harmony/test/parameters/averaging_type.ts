@@ -1,14 +1,16 @@
-// Note that there are currently no time or area averaging services in services.yml
+// Note that there are currently no time or area averaging services in any services.yml
 // which is why several of the assertions are using `xit`. Once there are services to
 // support it we should enable the assertions and uncomment out the code to follow
 // the redirects.
 
 import { expect } from 'chai';
+
 import { hookRangesetRequest } from '../helpers/ogc-api-coverages';
+import { hookEdrRequest } from '../helpers/ogc-api-edr';
 import hookServersStartStop from '../helpers/servers';
 import StubService from '../helpers/stub-service';
-import { hookEdrRequest } from '../helpers/ogc-api-edr';
 import { partialApply } from '../helpers/util';
+
 // import { hookRedirect } from '../helpers/hooks';
 
 const collection = 'C1233800302-EEDTEST';

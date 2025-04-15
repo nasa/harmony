@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# reload the k8s environment variable config maps - needs to be run if services.yml changes
+# reload the k8s environment variable config maps - needs to be run if services-uat.yml or services-prod.yml changes
 
 source "packages/util/env-defaults"
 source "services/harmony/env-defaults"

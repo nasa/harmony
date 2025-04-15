@@ -1,12 +1,14 @@
 import { Response } from 'express';
 import { Logger } from 'winston';
+
 import { inEcr, sanitizeImage } from '@harmony/util/string';
-import { defaultContainerRegistry, ECR } from '../util/container-registry';
-import { toISODateTime } from '../util/date';
+
+import HarmonyRequest from '../models/harmony-request';
 import { getServiceConfigs } from '../models/services';
 import { ServiceConfig } from '../models/services/base-service';
-import HarmonyRequest from '../models/harmony-request';
 import { TurboServiceParams } from '../models/services/turbo-service';
+import { defaultContainerRegistry, ECR } from '../util/container-registry';
+import { toISODateTime } from '../util/date';
 
 interface ServiceVersion {
   name: string;

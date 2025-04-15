@@ -65,7 +65,7 @@ MAX_PAGE_SIZE=2000
 
 # Number of granules allowed for a synchronous request. When the request exceeds
 # this number it will be processed asynchronously. If a service provides a
-# value in services.yml for maximum_sync_granules it will override this value.
+# value in services-uat.yml or services-prod.yml for maximum_sync_granules it will override this value.
 MAX_SYNCHRONOUS_GRANULES=1
 
 # The threshold of the number of granules in a request that will trigger auto-pausing with preview

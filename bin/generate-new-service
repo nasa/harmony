@@ -22,8 +22,8 @@ read -p "Service name: " SERVICE_NAME
 SERVICE_NAME_UPPER=$(echo "$SERVICE_NAME" | tr '[:lower:]-' '[:upper:]_')
 
 # Check if the service already exists in the config file
-if grep -q "^\s*- name: $SERVICE_NAME" config/services.yml; then
-  echo "Service with name '$SERVICE_NAME' already exists in config/services.yml. Not modifying."
+if grep -q "^\s*- name: $SERVICE_NAME" config/services-uat.yml; then
+  echo "Service with name '$SERVICE_NAME' already exists in config/services-uat.yml. Not modifying."
 else
   read -p "Organization name (used in docker image name): " ORGANIZATION
   prompt_user "Bbox subsetting"
@@ -47,7 +47,7 @@ else
   env SERVICE_NAME=$SERVICE_NAME ORGANIZATION=$ORGANIZATION envsubst < service-templates/build-service > "$SERVICE_DIR/build-service"
   chmod +x "$SERVICE_DIR/build-service"
 
-  # Update services.yml - put the service at the top of the UAT configuration section so that it is matched first for testing
+  # Update service-uat.yml - put the service at the top of the UAT configuration section so that it is matched first for testing
   awk -v SERVICE_NAME="$SERVICE_NAME" \
     -v ORGANIZATION="$ORGANIZATION" \
     -v CONCATENATION="$CONCATENATION" \
@@ -87,7 +87,7 @@ else
         print "        is_sequential: true";
         print "      - image: !Env ${" SERVICE_NAME_UPPER "_IMAGE}";
     }
-}' config/services.yml > config/services.tmp.yml && mv config/services.tmp.yml config/services.yml
+}' config/services-uat.yml > config/services.tmp.yml && mv config/services.tmp.yml config/services-uat.yml
 
 fi
 
@@ -121,7 +121,7 @@ EOF
   sed -i '' "s/^LOCALLY_DEPLOYED_SERVICES=.*/&,${SERVICE_NAME}/" .env
 fi
 
-echo "Successfully setup project. You can take a look at env-defaults, .env, and config/services.yml to see how your service was set up for use in harmony.
+echo "Successfully setup project. You can take a look at env-defaults, .env, and config/services-uat.yml to see how your service was set up for use in harmony.
 Next steps:
 cd ../harmony-${SERVICE_NAME}
 Modify the ${SERVICE_NAME}.py file to replace the sample code in the process_item method with your service logic.
