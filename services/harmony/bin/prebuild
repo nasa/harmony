@@ -17,9 +17,9 @@ rsync -a --exclude='*.sqlite3' ../../db/ built/services/harmony/db/
 mkdir -p built/bin
 cp -r ../../bin/start-harmony-in-container built/bin/
 
-# Copy the services configuration file
+# Copy the services configuration files
 mkdir -p built/config
-cp ../../config/services.yml built/config/
+cp ../../config/services-*.yml built/config/
 
 # Copy util package, excluding certain directories
 mkdir -p built/packages/util

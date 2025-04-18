@@ -1,13 +1,15 @@
 /**
  * Get a list of all the services for the specified environment from the umm_s field in
  * services.yml and compare each record in services.yml to the UMM-S record in CMR noting
- * any mismatches between the configurations.
+ * any mismatches between the configurations. Note: `services.yml` refers to either `services-uat.yml`
+ * or `services-prod.yml` based on the environment.
  */
 
 import { exit } from 'process';
+
 import { loadServiceConfigs } from '../services/harmony/app/models/services';
-import { CmrUmmService, cmrApiConfig, getServicesByIds } from '../services/harmony/app/util/cmr';
 import { ServiceConfig } from '../services/harmony/app/models/services/base-service';
+import { cmrApiConfig, CmrUmmService, getServicesByIds } from '../services/harmony/app/util/cmr';
 
 /**
  * Validates spatial subsetting configuration matches
@@ -91,7 +93,7 @@ function validateConcatenation(
  * Validates reprojection configuration matches
  *
  * @param ummRecord - The UMM-S record
- * @param harmonyConfig - The service configuration defined in harmony services.yml
+ * @param harmonyConfig - The service configuration defined in harmony services-uat.yml or services-prod.yml
  * @returns validation failure message or '' if validation succeeds
  */
 function validateReprojection(
@@ -116,7 +118,7 @@ export const allValidations = [
 /**
  * Performs all of the validations for the given UMM-S record and harmony service configuration
  * @param ummRecord - The UMM-S record
- * @param harmonyConfig - The service configuration defined in harmony services.yml
+ * @param harmonyConfig - The service configuration defined in harmony services-uat.yml or services-prod.yml
  * @param validationFunctions - the validation functions to perform
  * @returns a list of validation failure messages
  */

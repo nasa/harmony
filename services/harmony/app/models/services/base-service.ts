@@ -244,7 +244,7 @@ export default abstract class BaseService<ServiceParamType> {
 
   /**
    * Creates an instance of BaseService.
-   * @param config - The service configuration from config/services.yml
+   * @param config - The service configuration from services.yml
    * @param operation - The data operation being requested of the service
    */
   constructor(config: ServiceConfig<ServiceParamType>, operation: DataOperation) {
@@ -261,7 +261,7 @@ export default abstract class BaseService<ServiceParamType> {
   }
 
   /**
-   * Returns the capabilities as specified in config/services.yml
+   * Returns the capabilities as specified in services.yml
    *
    * @readonly
    * @returns The service capabilities

@@ -15,7 +15,7 @@ function usage
 {
   echo -e "\033[1mUSAGE\033[0m"
   echo -e "\033[1m$SELF\033[0m [-h|--help] [-s|--services]"
-  echo "  -s|--services     Upate service images in addition to harmony images."
+  echo "  -s|--services     Update service images in addition to harmony images."
   echo "  -h|--help         Print this message."
   echo -e "\033[1mDESCRIPTION\033[0m"
   echo "This script updates the Docker images used internally by Harmony then restarts Harmony."
@@ -43,7 +43,7 @@ esac
 done
 
 if [ "$RELOAD_SERVICES" = true ]; then
-  # read all the image env vars from services.yml
+  # read all the image env vars from both services.yml files
   image_vars=()
   while read -r line; do
     if [[ $line =~ ^.*image:[[:space:]]+!Env[[:space:]]+\$\{(.*)\} ]]; then
@@ -52,7 +52,16 @@ if [ "$RELOAD_SERVICES" = true ]; then
         image_vars+=( "$image_var" )
       fi
     fi
-  done < ./config/services.yml
+  done < ./config/services-uat.yml
+
+  while read -r line; do
+    if [[ $line =~ ^.*image:[[:space:]]+!Env[[:space:]]+\$\{(.*)\} ]]; then
+      image_var=${BASH_REMATCH[1]}
+      if [[ ! " ${image_vars[@]} " =~ " ${image_var} " ]]; then
+        image_vars+=( "$image_var" )
+      fi
+    fi
+  done < ./config/services-prod.yml
 
   referenced_images=()
   for img_var in ${image_vars[@]}; do

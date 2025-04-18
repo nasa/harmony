@@ -68,11 +68,13 @@ We recommend using [harmony-py](https://github.com/nasa/harmony-py) and its exam
 
 ### Configuration of Backend Services
 
-Harmony configures backend services in a file named `services.yml`.
+Harmony configures backend services in files named `services-uat.yml` and `services-prod.yml`.
+These files are for the SIT/UAT/local environments and the Production environment, respectively.
+Throughout this documentation the term `services.yml` will be understood to mean `services-uat.yml` or `services-prod.yml` depending on the environment.
 
 ### Reloading the Services Configuration
 
-If you modify the `services.yml` file, Harmony will need to be restarted to pick up the changes. You can do this with the following command:
+If you modify a `services.yml` file, Harmony will need to be restarted to pick up the changes. You can do this with the following command:
 
 ```bash
 ./bin/reload-services-config

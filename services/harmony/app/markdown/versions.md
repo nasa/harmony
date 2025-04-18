@@ -15,7 +15,7 @@ The returned JSON response is an array of service version information with the f
 
 | field | description                                                                                                                       |
 |-------|-----------------------------------------------------------------------------------------------------------------------------------|
-| name | The name of the backend service chain as defined in [services.yml](https://github.com/nasa/harmony/blob/main/config/services.yml). |
+| name | The name of the backend service chain as defined in [services-uat.yml](https://github.com/nasa/harmony/blob/main/config/services-uat.yml). |
 | images | An array of the images used in the service chain.                                                                                |
 
 Each image has the following fields:

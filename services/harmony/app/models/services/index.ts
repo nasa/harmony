@@ -57,7 +57,7 @@ function updateCollectionsConfig(config: ServiceConfig<unknown>): void {
 /**
  * Loads the services configuration from the given file.
  * @param cmrEndpoint - The CMR endpoint url
- * @param fileName - The path to the services configuation file
+ * @param fileName - The path to the services configuration file
  * @returns the parsed services configuration
  */
 export function loadServiceConfigsFromFile(cmrEndpoint: string, fileName: string): ServiceConfig<unknown>[] {
@@ -69,7 +69,7 @@ export function loadServiceConfigsFromFile(cmrEndpoint: string, fileName: string
     construct: (data): string | number => parseEnvironmentDirective(data),
   });
 
-  // Load the config - either from an env var or failing that from the services.yml file.
+  // Load the config - either from an env var or failing that from the services-<HARMONY_ENV>.yml file.
   // This allows us to use a configmap in k8s instead of reading the file system.
   const buffer = env.servicesYml ? Buffer.from(env.servicesYml, 'base64')
     : fs.readFileSync(path.join(__dirname, fileName));
@@ -87,7 +87,10 @@ export function loadServiceConfigsFromFile(cmrEndpoint: string, fileName: string
  * @returns the parsed services configuration
  */
 export function loadServiceConfigs(cmrEndpoint: string): ServiceConfig<unknown>[] {
-  return loadServiceConfigsFromFile(cmrEndpoint, '../../../../../config/services.yml');
+  if (cmrEndpoint.match(/.*uat.*/)) {
+    return loadServiceConfigsFromFile(cmrEndpoint, '../../../../../config/services-uat.yml');
+  }
+  return loadServiceConfigsFromFile(cmrEndpoint, '../../../../../config/services-prod.yml');
 }
 
 /**
@@ -318,7 +321,7 @@ function isCollectionMatch(
  * @param format - Additional context that's not part of the operation, but influences the
  *    choice regarding the service to use
  * @param configs - The configuration to use for finding the operation, with all
- *    variables resolved (default: the contents of config/services.yml)
+ *    variables resolved (default: the contents of services.yml)
  * @returns An object with two properties - service and format for the service and format
  * that should be used to fulfill the given request context
  */
@@ -993,7 +996,7 @@ export function isCollectionSupported(collection: CmrCollection): boolean {
  * @param context - Additional context that's not part of the operation, but influences the
  *     choice regarding the service to use
  * @param configs - The configuration to use for finding the operation, with all variables
- *     resolved (default: the contents of config/services.yml)
+ *     resolved (default: the contents of services.yml)
  * @param filterFns - The list of filter functions to execute to filter matching services
  * @returns the service configuration to use
  */
