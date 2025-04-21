@@ -95,7 +95,7 @@ fi
 file="services/service-runner/config/service-template.yaml"
 for service in ${LOCALLY_DEPLOYED_SERVICES//,/ }
 do
-  # set up enviornment variables for service
+  # set up environment variables for service
   export SERVICE_NAME=${service}
   var_prefix=`echo $service | tr 'a-z' 'A-Z' | tr '-' '_'`
   declare ${var_prefix}_IMAGE
@@ -119,6 +119,36 @@ do
   declare ${var_prefix}_INVOCATION_ARGS
   varname=${var_prefix}_INVOCATION_ARGS
   export SERVICE_INVOCATION_ARGS=${!varname}
+
+  vars_to_exclude=("${var_prefix}_IMAGE" "${var_prefix}_REQUESTS_CPU" "${var_prefix}_REQUESTS_MEMORY" "${var_prefix}_LIMITS_CPU" "${var_prefix}_LIMITS_MEMORY" "${var_prefix}_WORKING_DIR" "${var_prefix}_INVOCATION_ARGS" "${var_prefix}_SERVICE_QUEUE_URLS")
+
+  # create an env: entry in the service template for env vars specific to this service
+  SERVICE_SPECIFIC_ENV=""
+
+  # Get all environment variables that start with $service prefix
+  matching_vars=$(env | grep "^$var_prefix" || true)
+
+  # Only add the env: section if we have matching variables
+  if [ -n "$matching_vars" ]; then
+    # Process each matching environment variable.
+    while IFS='=' read -r name value; do
+      if [[ ! " ${vars_to_exclude[*]} " =~ [[:space:]]${name}[[:space:]] ]]; then
+        # Escape any double quotes in the value
+        escaped_value=$(echo "$value" | sed 's/"/\\"/g')
+
+        # Append the env entry to the variable
+        SERVICE_SPECIFIC_ENV+=$'\n'"            - name: \"$name\""
+        SERVICE_SPECIFIC_ENV+=$'\n'"              value: \"$escaped_value\""
+      fi
+    done < <(echo "$matching_vars")
+  fi
+
+  if [ -n "$SERVICE_SPECIFIC_ENV" ]; then
+    # Start with the env section header
+    SERVICE_SPECIFIC_ENV="env:${SERVICE_SPECIFIC_ENV}"
+  fi
+
+  export SERVICE_SPECIFIC_ENV
 
   envsubst < $file | kubectl apply -f - -n harmony
 
