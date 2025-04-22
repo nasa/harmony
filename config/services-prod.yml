@@ -215,34 +215,6 @@ https://cmr.earthdata.nasa.gov:
       - image: !Env ${TRAJECTORY_SUBSETTER_IMAGE}
         operations: ['variableSubset', 'spatialSubset', 'shapefileSubset', 'temporalSubset']
 
-  - name: sds/trajectory-smap-l2-geotiff-reformatter
-    description: |
-      A processing service chain for that Harmony Trajectory Subsetter dedicated to performing GeoTIFF reformatting of SMAP L2 Data. The service chain calls the Trajectory Subsetter, then calls the SMAP L2 Gridder to convert the trajectory/swath data to gridded NetCDF4 output, which in turn calls the Net2COG service to reformat the output to cloud-optimized GeoTIFF.
-    data_operation_version: '0.21.0'
-    type:
-      <<: *default-turbo-config
-      params:
-        <<: *default-turbo-params
-        env:
-          <<: *default-turbo-env
-          STAGING_PATH: public/sds/trajectory-subsetter
-    umm_s: S1273345267-EEDTEST
-    capabilities:
-      subsetting:
-        temporal: false
-        bbox: true
-        shape: true
-        variable: true
-      output_formats:
-        - application/x-netcdf4
-        - image/tiff
-    steps:
-      - image: !Env ${QUERY_CMR_IMAGE}
-        is_sequential: true
-      - image: !Env ${TRAJECTORY_SUBSETTER_IMAGE}
-        operations: ['variableSubset', 'spatialSubset', 'shapefileSubset']
-      - image: !Env ${HARMONY_SMAP_L2_GRIDDER_IMAGE}
-
   - name: sds/HOSS-geographic
     description: |
       A service that currently supports L3/L4 geographically gridded collections, offering variable, temporal, named dimension, bounding box spatial and shape file spatial subsetting.
