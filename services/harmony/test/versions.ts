@@ -44,6 +44,7 @@ describe('Versions endpoint', function () {
           'net2cog',
           'nasa/harmony-gdal-adapter',
           'giovanni-averaging-services-adapter',
+          'sds/trajectory-susbetter-smap-l2-regridder',
           'harmony/netcdf-to-zarr',
           'harmony/podaac-l2-subsetter-netcdf-to-zarr',
           'harmony/swath-projector-netcdf-to-zarr',
