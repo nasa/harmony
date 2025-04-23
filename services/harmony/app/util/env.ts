@@ -105,6 +105,10 @@ class HarmonyServerEnv extends HarmonyEnv {
   @Min(1)
   maxDataOperationCacheSize: number;
 
+  @IsInt()
+  @Min(1)
+  tokenCacheTtl: number;
+
   @IsPositive()
   wktPrecision: number;
 

@@ -2,13 +2,14 @@ import { RequestHandler } from 'express';
 
 import HarmonyRequest from '../models/harmony-request';
 import { getUserIdRequest } from '../util/edl-api';
+import env from '../util/env';
 import { MemoryCache } from '../util/cache/memory-cache';
 
 const BEARER_TOKEN_REGEX = new RegExp('^Bearer ([-a-zA-Z0-9._~+/]+)$', 'i');
 
 // In memory cache with 5 min TTL for EDL token to username.
 // The token is valid if it exists in the cache.
-export const tokenCache = new MemoryCache(getUserIdRequest, { ttl: 5 * 60 * 1000 });
+export const tokenCache = new MemoryCache(getUserIdRequest, { ttl: env.tokenCacheTtl });
 
 /**
  * Builds Express.js middleware for authenticating an EDL token and extracting the username.
