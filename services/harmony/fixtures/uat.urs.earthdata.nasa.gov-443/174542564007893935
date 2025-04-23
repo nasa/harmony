@@ -1,0 +1,25 @@
+POST /oauth/tokens/user?client_id=foo&token=my-bearer-token
+accept: application/json, text/plain, */*
+content-type: application/x-www-form-urlencoded
+authorization: Bearer fake_access
+accept-encoding: gzip, compress, deflate, br
+
+HTTP/1.1 403 Forbidden
+server: nginx/1.22.1
+date: Wed, 23 Apr 2025 16:27:24 GMT
+content-type: application/json; charset=utf-8
+transfer-encoding: chunked
+connection: keep-alive
+x-frame-options: SAMEORIGIN
+x-xss-protection: 0
+x-content-type-options: nosniff
+x-permitted-cross-domain-policies: none
+referrer-policy: strict-origin-when-cross-origin
+cache-control: no-store
+pragma: no-cache
+expires: Fri, 01 Jan 1990 00:00:00 GMT
+x-request-id: 2cd71efe-3658-41a1-8d0e-2e00697bb48e
+x-runtime: 0.011115
+strict-transport-security: max-age=31536000
+
+{"error":"invalid_client_id","error_description":"This Client ID is not valid for this token"}

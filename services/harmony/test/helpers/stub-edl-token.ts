@@ -12,16 +12,16 @@ import * as edlAuth from '../../app/middleware/earthdata-login-token-authorizer'
  */
 export function hookEdlTokenAuthentication(username: string): void {
   let clientCredentialsStub;
-  let userIdRequestStub;
+  let tokenCacheStub;
   before(async function () {
     clientCredentialsStub = sinon.stub(edl, 'getClientCredentialsToken')
       .callsFake(async () => 'client-token');
-    userIdRequestStub = sinon.stub(edl, 'getUserIdRequest')
+    tokenCacheStub = sinon.stub(edlAuth.tokenCache, 'fetch')
       .callsFake(async () => username);
   });
   after(async function () {
     if (clientCredentialsStub.restore) clientCredentialsStub.restore();
-    if (userIdRequestStub.restore) userIdRequestStub.restore();
+    if (tokenCacheStub.restore) tokenCacheStub.restore();
   });
 }
 
@@ -31,16 +31,16 @@ export function hookEdlTokenAuthentication(username: string): void {
  */
 export function hookEdlTokenAuthenticationError(): void {
   let clientCredentialsStub;
-  let cachedRequestStub;
+  let tokenCacheStub;
 
   before(async function () {
     const error = new ForbiddenError();
     clientCredentialsStub = sinon.stub(edl, 'getClientCredentialsToken').throws(error);
-    cachedRequestStub = sinon.stub(edlAuth, 'cachedGetUserIdRequest').throws(error);
+    tokenCacheStub = sinon.stub(edlAuth.tokenCache, 'fetch').throws(error);
   });
 
   after(async function () {
     if (clientCredentialsStub.restore) clientCredentialsStub.restore();
-    if (cachedRequestStub.restore) cachedRequestStub.restore();
+    if (tokenCacheStub.restore) tokenCacheStub.restore();
   });
 }

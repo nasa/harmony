@@ -43,12 +43,12 @@ export async function getClientCredentialsToken(logger: Logger): Promise<string>
  * Makes a request to the EDL users endpoint to validate a token and return the user ID
  * associated with that token.
  *
- * @param context - Information related to the user's request
  * @param userToken - The user's token
+ * @param context - Information related to the user's request
  * @returns the username associated with the token
  * @throws ForbiddenError if the token is invalid
  */
-export async function getUserIdRequest(context: RequestContext, userToken: string)
+export async function getUserIdRequest(userToken: string, context: RequestContext)
   : Promise<string> {
   const { logger } = context;
   try {
