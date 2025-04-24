@@ -1,9 +1,32 @@
 import { RequestHandler } from 'express';
+import { LRUCache } from 'lru-cache';
 
 import HarmonyRequest from '../models/harmony-request';
 import { getUserIdRequest } from '../util/edl-api';
+import env from '../util/env';
 
 const BEARER_TOKEN_REGEX = new RegExp('^Bearer ([-a-zA-Z0-9._~+/]+)$', 'i');
+
+/**
+ * Wrapper function of getUserIdRequest to be set to fetchMethod of LRUCache.
+ *
+ * @param token - EDL bearer token
+ * @param _sv - default value parameter of LRUCache fetchMethod, unused here
+ * @param options - options parameter of LRUCache fetchMethod, carries the request context
+ * @returns Promise of user name associated with the EDL token
+ */
+async function fetchUserId(token: string, _sv: string, { context }): Promise<string> {
+  return getUserIdRequest(context, token);
+}
+
+// In memory cache with 5 min TTL for EDL token to username.
+// The token is valid if it exists in the cache.
+export const tokenCache = new LRUCache({
+  maxSize: env.maxDataOperationCacheSize,
+  ttl: env.tokenCacheTtl,
+  sizeCalculation: (value: string): number => value.length,
+  fetchMethod: fetchUserId,
+});
 
 /**
  * Builds Express.js middleware for authenticating an EDL token and extracting the username.
@@ -25,7 +48,7 @@ export default function buildEdlAuthorizer(paths: Array<string | RegExp> = []): 
         const userToken = match[1];
         try {
           // Get the username for the provided token from EDL
-          const username = await getUserIdRequest(req.context, userToken);
+          const username = await tokenCache.fetch(userToken, { context: req.context });
           req.user = username;
           req.accessToken = userToken;
           req.authorized = true;
