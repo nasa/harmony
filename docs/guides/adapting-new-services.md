@@ -90,7 +90,7 @@ HARMONY_SERVICE_EXAMPLE_LIMITS_MEMORY=512Mi
 HARMONY_SERVICE_EXAMPLE_INVOCATION_ARGS='python -m harmony_service_example'
 ```
 
-Be sure to prefix the entries with the name of your service. Set the value for the `INVOCATION_ARGS` environment variable. This should be how you would run your service from the command line. For example, if you had a python module named `my-service` in the working directory, then you would run the service using:
+**Important** Be sure to prefix the entries with the name of your service. Set the value for the `INVOCATION_ARGS` environment variable. This should be how you would run your service from the command line. For example, if you had a python module named `my-service` in the working directory, then you would run the service using:
   ```bash
   python -m my-service
   ```

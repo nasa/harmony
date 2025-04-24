@@ -28,6 +28,7 @@ spec:
               memory: $SERVICE_LIMITS_MEMORY
             requests:
               memory: $SERVICE_REQUESTS_MEMORY
+          $SERVICE_SPECIFIC_ENV
           envFrom:
           - configMapRef:
               name: harmony-env
