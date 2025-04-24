@@ -40,26 +40,23 @@ export class MemoryCache extends Cache {
     const cached = this.data.get(key);
     if (cached !== undefined) return cached;
 
-    // Check for in-progress fetch
-    const existingPromise = this.pending.get(key);
-    if (existingPromise) return existingPromise;
+    if (this.pending.has(key)) {
+      return this.pending.get(key)!;
+    }
 
-    // Initiate fetch and store the promise
-    const fetchPromise = this.fetchMethod(key, context)
-      .then((result) => {
-        if (result !== undefined) {
-          this.data.set(key, result);
-        }
+    const promise = this.fetchMethod(key, context)
+      .then((value) => {
+        this.data.set(key, value);
         this.pending.delete(key);
-        return result;
+        return value;
       })
       .catch((err) => {
         this.pending.delete(key);
         throw err;
       });
 
-    this.pending.set(key, fetchPromise);
-    return fetchPromise;
+    this.pending.set(key, promise);
+    return promise;
   }
 
   async set(key: string, value: string): Promise<void> {
