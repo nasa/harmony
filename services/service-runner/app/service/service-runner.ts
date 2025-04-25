@@ -348,8 +348,10 @@ export async function runServiceFromPull(
 
             try {
               const retryMessage = `${new Date().toISOString()} Start of service execution (retryCount=${workItem.retryCount}, workItemId=${workItem.id})`;
-              const redactedcommandAndArgs = commandAndArgs[0].replace(
-                /"accessToken":"[^"]*"/,
+
+              const fullCommand = commandAndArgs.join(' ');
+              const redactedcommandAndArgs = fullCommand.replace(
+                /"accessToken"\s*:\s*"[^"]*"/g,
                 '"accessToken":"<redacted>"',
               );
 
@@ -357,10 +359,15 @@ export async function runServiceFromPull(
                 `${new Date().toISOString()} ${sidecarMessage}`,
                 `COMMAND: ${redactedcommandAndArgs}`,
                 `POD: ${env.myPodName}`,
-                `STATUS REASON: ${String(status.reason)}`,
-                `STATUS MESSAGE: ${String(status.message)}`,
-                `STATUS CODE: ${String(status.code)}`,
               ];
+
+              if (status.code || status.reason || status.message) {
+                debugInfo.push(
+                  `STATUS REASON: ${String(status.reason)}`,
+                  `STATUS MESSAGE: ${String(status.message)}`,
+                  `STATUS CODE: ${String(status.code)}`,
+                );
+              }
 
               await uploadLogs(workItem, [retryMessage, debugInfo, ...stdOut.logStrArr]);
 
