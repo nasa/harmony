@@ -56,7 +56,6 @@ async function getGeneralHealth(context: RequestContext): Promise<HealthInfo> {
   ]);
 
   const { healthy: cmrHealthy, message: cmrMessage } = cmrResult;
-
   const cmrHealth = cmrHealthy
     ? { name: 'cmr', status: HealthStatus.UP }
     : { name: 'cmr', status: HealthStatus.DOWN, message: cmrMessage };
