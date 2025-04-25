@@ -1,6 +1,5 @@
 import { Response } from 'express';
 import * as fs from 'fs';
-import * as path from 'path';
 import hljs from 'highlight.js';
 import MarkDownIt from 'markdown-it';
 import anchor from 'markdown-it-anchor';
@@ -10,13 +9,15 @@ import inc from 'markdown-it-include';
 import mark from 'markdown-it-mark';
 import replaceLink from 'markdown-it-replace-link';
 import toc from 'markdown-it-toc-done-right';
-import HarmonyRequest from '../../models/harmony-request';
-import { getRequestRoot } from '../../util/url';
-import env from '../../util/env';
-import version from '../../util/version';
+import * as path from 'path';
 import { promisify } from 'util';
-import { generateServicesDocs } from './service-docs-markdown-it-plugin';
+
+import HarmonyRequest from '../../models/harmony-request';
+import env from '../../util/env';
+import { getRequestRoot } from '../../util/url';
+import version from '../../util/version';
 import { interpolate } from './interpolation-markdown-it-plugin';
+import { generateServicesDocs } from './service-docs-markdown-it-plugin';
 
 const readFile = promisify(fs.readFile);
 const readDir = promisify(fs.readdir);
@@ -168,7 +169,6 @@ export async function generateDocumentation(root: string): Promise<string> {
  */
 export default async function docsPage(req: HarmonyRequest, res: Response): Promise<void> {
   const root = getRequestRoot(req);
-  docsHtml = null;
   if (!docsHtml) {
     docsHtml = await generateDocumentation(root);
   }

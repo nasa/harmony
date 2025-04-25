@@ -1,11 +1,12 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
 import request from 'supertest';
-import hookServersStartStop from './helpers/servers';
-import { hookRequest } from './helpers/hooks';
+
 import env from '../app/util/env';
 import version from '../app/util/version';
 import { hookDocumentationPage } from './helpers/documentation-page';
+import { hookRequest } from './helpers/hooks';
+import hookServersStartStop from './helpers/servers';
 
 const TEST_PREVIEW_THRESHOLD = 1234;
 
