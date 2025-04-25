@@ -5,7 +5,7 @@ import { Server } from 'http';
 import log from '../../harmony/app/util/log';
 import router from './routers/router';
 import env from './util/env';
-import { isContainerRunning } from './util/k8s';
+import { waitForContainerToStart } from './util/k8s';
 import PullWorker from './workers/pull-worker';
 
 /**
@@ -20,29 +20,10 @@ export default async function start(_config: Record<string, string>): Promise<Se
   });
 
   // Wait for the worker container to be ready
-  const startTime = Date.now();
-  const timeout = 180_000;
-  const sleepDelay = 3_000;
+  const workerRunning = await waitForContainerToStart('worker');
 
-  log.info('Waiting for the worker container to start up');
-
-  while (true) {
-    const running = await isContainerRunning('worker');
-    if (running) {
-      log.info('Worker container is running.');
-      break;
-    } else {
-      log.info('Worker container not yet running.');
-    }
-
-    const elapsed = Date.now() - startTime;
-    if (elapsed >= timeout) {
-      log.error('Timeout waiting for the worker container to be running.');
-      throw new Error('Worker container did not start in time');
-    }
-
-    log.info(`Worker container not yet running, retrying in ${sleepDelay / 1000} seconds`);
-    await new Promise((resolve) => setTimeout(resolve, sleepDelay));
+  if (!workerRunning) {
+    throw new Error('Worker container did not start up successfully');
   }
 
   // start the puller

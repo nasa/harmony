@@ -1,18 +1,19 @@
+import axios from 'axios';
 /* eslint-disable @typescript-eslint/no-throw-literal */
 import { expect } from 'chai';
-import * as k8s from '@kubernetes/client-node';
+import { readFileSync } from 'fs';
 import { describe, it } from 'mocha';
-import env from '../app/util/env';
+import sinon from 'sinon';
+
+import * as k8s from '@kubernetes/client-node';
+
 import WorkItem from '../../harmony/app/models/work-item';
+import { getItemLogsLocation, WorkItemRecord } from '../../harmony/app/models/work-item-interface';
 import { objectStoreForProtocol } from '../../harmony/app/util/object-store';
-import * as serviceRunner from '../app/service/service-runner';
 import { resolve } from '../../harmony/app/util/url';
 import { createLoggerForTest } from '../../harmony/test/helpers/log';
-import { getItemLogsLocation, WorkItemRecord } from '../../harmony/app/models/work-item-interface';
-import { uploadLogs } from '../app/service/service-runner';
-import sinon from 'sinon';
-import axios from 'axios';
-import { readFileSync } from 'fs';
+import * as serviceRunner from '../app/service/service-runner';
+import env from '../app/util/env';
 
 const { _getErrorInfo: _getErrorInfo, _getStacCatalogs } = serviceRunner.exportedForTesting;
 
@@ -203,7 +204,7 @@ describe('Service Runner', function () {
     });
   });
 
-  describe('uploadLogs', function () {
+  describe('serviceRunner.uploadLogs', function () {
     describe('with text logs', function () {
       const itemRecord0: WorkItemRecord = {
         id: 0, jobID: '123', serviceID: '', sortIndex: 0,
@@ -215,10 +216,10 @@ describe('Service Runner', function () {
       };
       before(async function () {
         // One of the items will have its log file written to twice
-        await uploadLogs(itemRecord0, ['the old logs']);
+        await serviceRunner.uploadLogs(itemRecord0, ['the old logs']);
         itemRecord0.retryCount = 1; // simulate a retry
-        await uploadLogs(itemRecord0, ['the new logs']);
-        await uploadLogs(itemRecord1, ['the only logs']);
+        await serviceRunner.uploadLogs(itemRecord0, ['the new logs']);
+        await serviceRunner.uploadLogs(itemRecord1, ['the only logs']);
       });
       describe('when there is a logs file already associated with the WorkItem', async function () {
         it('appends the new logs to the old ones', async function () {
@@ -226,9 +227,7 @@ describe('Service Runner', function () {
           const s3 = objectStoreForProtocol('s3');
           const logs = await s3.getObjectJson(logsLocation0);
           expect(logs).to.deep.equal([
-            'Start of service execution (retryCount=0, id=0)',
             'the old logs',
-            'Start of service execution (retryCount=1, id=0)',
             'the new logs',
           ]);
         });
@@ -239,7 +238,6 @@ describe('Service Runner', function () {
           const s3 = objectStoreForProtocol('s3');
           const logs = await s3.getObjectJson(logsLocation1);
           expect(logs).to.deep.equal([
-            'Start of service execution (retryCount=0, id=1)',
             'the only logs',
           ]);
         });
@@ -256,11 +254,11 @@ describe('Service Runner', function () {
       };
       before(async function () {
         // One of the items will have its log file written to twice
-        await uploadLogs(itemRecord0, [{ message: 'the old logs' }]);
+        await serviceRunner.uploadLogs(itemRecord0, [{ message: 'the old logs' }]);
         itemRecord0.retryCount = 1; // simulate a retry
-        await uploadLogs(itemRecord0, [{ message: 'the new logs' }]);
+        await serviceRunner.uploadLogs(itemRecord0, [{ message: 'the new logs' }]);
 
-        await uploadLogs(itemRecord1, [{ message: 'the only logs' }]);
+        await serviceRunner.uploadLogs(itemRecord1, [{ message: 'the only logs' }]);
       });
       describe('when there is a logs file already associated with the WorkItem', async function () {
         it('appends the new logs to the old ones', async function () {
@@ -268,9 +266,7 @@ describe('Service Runner', function () {
           const s3 = objectStoreForProtocol('s3');
           const logs = await s3.getObjectJson(logsLocation0);
           expect(logs).to.deep.equal([
-            { message: 'Start of service execution (retryCount=0, id=2)' },
             { message: 'the old logs' },
-            { message: 'Start of service execution (retryCount=1, id=2)' },
             { message: 'the new logs' },
           ]);
         });
@@ -281,7 +277,6 @@ describe('Service Runner', function () {
           const s3 = objectStoreForProtocol('s3');
           const logs = await s3.getObjectJson(logsLocation1);
           expect(logs).to.deep.equal([
-            { message: 'Start of service execution (retryCount=0, id=3)' },
             { message: 'the only logs' },
           ]);
         });

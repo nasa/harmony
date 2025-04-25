@@ -13,6 +13,7 @@ import logger from '../../../harmony/app/util/log';
 import { objectStoreForProtocol } from '../../../harmony/app/util/object-store';
 import { resolve as resolveUrl } from '../../../harmony/app/util/url';
 import env from '../util/env';
+import { waitForContainerToStart } from '../util/k8s';
 
 const kc = new k8s.KubeConfig();
 kc.loadFromDefault();
@@ -28,6 +29,7 @@ export interface ServiceResponse {
   errorCategory?: string;
   hits?: number;
   scrollID?: string;
+  retryable?: boolean;
 }
 
 // how long to let a worker run before giving up
@@ -266,9 +268,10 @@ export async function runServiceFromPull(
     const serviceName = sanitizeImage(env.harmonyService);
     const error = `The ${serviceName} service failed.`;
     const { operation, stacCatalogLocation } = workItem;
+
     // support invocation args specified with newline separator or space separator
     let commandLine = env.invocationArgs.split('\n');
-    if (commandLine.length == 1) {
+    if (commandLine.length === 1) {
       commandLine = env.invocationArgs.split(' ');
     }
 
@@ -290,69 +293,66 @@ export async function runServiceFromPull(
     }
 
     const catalogDir = getStacLocation(workItem);
-    return await new Promise<ServiceResponse>((resolve) => {
-      workItemLogger.debug(`CALLING WORKER for pod ${env.myPodName}`);
-      // create a writable stream to capture stdout from the exec call
-      // using stdout instead of stderr because the service library seems to log ERROR to stdout
-      const stdOut = new LogStream(workItemLogger);
-      // timeout if things take too long
-      const timeout = setTimeout(async () => {
-        resolve({ error: `Worker timed out after ${workerTimeout / 1000.0} seconds` });
-      }, workerTimeout);
 
-      const operationJson = JSON.stringify(operation);
-      let operationCommandLine = '--harmony-input';
-      let operationCommandLineValue = operationJson;
-      // 262144 is the max SQS message size, so any operation + other stuff we add that is
-      // bigger than that is considered BIG and therefore requires special handling. In this case
-      // we use a file to pass the operation to harmony-service-lib instead of a command line
-      // argument.
-      if (operationJson.length > MAX_INLINE_OPERATION_SIZE) {
-        // use a temporary file on the shared volume mount to pass the operation if the operation
-        // is large
-        const operationJsonFile = '/tmp/operation.json';
-        operationCommandLine = '--harmony-input-file';
-        operationCommandLineValue = operationJsonFile;
-        writeFileSync(operationJsonFile, operationJson);
-      }
+    // create a writable stream to capture stdout from the exec call
+    // using stdout instead of stderr because the service library seems to log ERROR to stdout
+    const stdOut = new LogStream(workItemLogger);
+    const operationJson = JSON.stringify(operation);
+    let operationCommandLine = '--harmony-input';
+    let operationCommandLineValue = operationJson;
 
-      const commandAndArgs = [
-        ...commandLine,
-        '--harmony-action',
-        'invoke',
-        operationCommandLine,
-        operationCommandLineValue,
-        '--harmony-sources',
-        stacCatalogLocation,
-        '--harmony-metadata-dir',
-        `${catalogDir}`,
-      ];
+    // 262144 is the max SQS message size, so any operation + other stuff we add that is
+    // bigger than that is considered BIG and therefore requires special handling. In this case
+    // we use a file to pass the operation to harmony-service-lib instead of a command line
+    // argument.
+    if (operationJson.length > MAX_INLINE_OPERATION_SIZE) {
+      const operationJsonFile = '/tmp/operation.json';
+      operationCommandLine = '--harmony-input-file';
+      operationCommandLineValue = operationJsonFile;
+      writeFileSync(operationJsonFile, operationJson);
+    }
 
-      exec.exec(
-        'harmony',
-        env.myPodName,
-        'worker',
-        commandAndArgs,
-        stdOut,
-        process.stderr as stream.Writable,
-        process.stdin as stream.Readable,
-        true,
-        async (status: k8s.V1Status) => {
-          const sidecarMessage = `SIDECAR STATUS: ${JSON.stringify(status, null, 2)}`;
-          workItemLogger.debug(sidecarMessage);
-          try {
-            const retryMessage = `${new Date().toISOString()} Start of service execution (retryCount=${workItem.retryCount}, id=${workItem.id})`;
-            await uploadLogs(workItem, [retryMessage, ...stdOut.logStrArr]);
-            if (status.status === 'Success') {
-              clearTimeout(timeout);
-              workItemLogger.debug('Getting STAC catalogs');
-              const catalogs = await _getStacCatalogs(catalogDir);
-              resolve({ batchCatalogs: catalogs });
-            } else {
+    const commandAndArgs = [
+      ...commandLine,
+      '--harmony-action',
+      'invoke',
+      operationCommandLine,
+      operationCommandLineValue,
+      '--harmony-sources',
+      stacCatalogLocation,
+      '--harmony-metadata-dir',
+      `${catalogDir}`,
+    ];
+
+    let retryCount = 0;
+    const maxRetries = 5;
+
+    while (retryCount < maxRetries) {
+      const result: ServiceResponse = await new Promise<ServiceResponse>((resolve) => {
+        const timeout = setTimeout(() => {
+          resolve({ error: `Worker timed out after ${workerTimeout / 1000.0} seconds` });
+        }, workerTimeout);
+
+        exec.exec(
+          'harmony',
+          env.myPodName,
+          'worker',
+          commandAndArgs,
+          stdOut,
+          process.stderr as stream.Writable,
+          process.stdin as stream.Readable,
+          true,
+          async (status: k8s.V1Status) => {
+            const sidecarMessage = `SIDECAR STATUS: ${JSON.stringify(status, null, 2)}`;
+            workItemLogger.debug(sidecarMessage);
+
+            try {
+              const retryMessage = `${new Date().toISOString()} Start of service execution (retryCount=${workItem.retryCount}, workItemId=${workItem.id})`;
               const redactedcommandAndArgs = commandAndArgs[0].replace(
                 /"accessToken":"[^"]*"/,
                 '"accessToken":"<redacted>"',
               );
+
               const debugInfo = [
                 `${new Date().toISOString()} ${sidecarMessage}`,
                 `COMMAND: ${redactedcommandAndArgs}`,
@@ -361,33 +361,63 @@ export async function runServiceFromPull(
                 `STATUS MESSAGE: ${String(status.message)}`,
                 `STATUS CODE: ${String(status.code)}`,
               ];
-              if (stdOut?.logStrArr?.length) {
-                debugInfo.push(`STDOUT (last 10 lines):\n${stdOut.logStrArr.slice(-10).join('\n')}`);
-              }
-              await uploadLogs(workItem, debugInfo);
+
+              await uploadLogs(workItem, [retryMessage, debugInfo, ...stdOut.logStrArr]);
+
               clearTimeout(timeout);
-              const errorEntries = await _getErrorInfo(status, catalogDir, workItemLogger);
-              const errorMessage = `${serviceName}: ${errorEntries.error}`;
-              const errorLevel = errorEntries.level;
-              const errorCategory = errorEntries.category;
-              if (errorCategory) {
-                resolve({ error: errorMessage, errorLevel, errorCategory });
+
+              if (status.status === 'Success') {
+                workItemLogger.debug('Getting STAC catalogs');
+                const catalogs = await _getStacCatalogs(catalogDir);
+                resolve({ batchCatalogs: catalogs });
+              } else {
+                const errorEntries = await _getErrorInfo(status, catalogDir, workItemLogger);
+                const errorMessage = `${serviceName}: ${errorEntries.error}`;
+                const errorLevel = errorEntries.level;
+                const errorCategory = errorEntries.category;
+
+                if (errorCategory) {
+                  resolve({ error: errorMessage, errorLevel, errorCategory });
+                } else if (status.code === 500) {
+                  // The k8s client hit an error, the worker did not return an error
+                  // In this scenario we want to retry internally rather than immediately fail
+                  workItemLogger.error('K8s hit an internal error, will attempt to retry until retries are exhausted');
+                  resolve({ retryable: true });
+                } else {
+                  resolve({ error: errorMessage, errorLevel });
+                }
               }
-              resolve({ error: errorMessage, errorLevel });
+            } catch (e) {
+              clearTimeout(timeout);
+              workItemLogger.error('Caught exception while executing work:');
+              workItemLogger.error(e);
+              resolve({ error, errorLevel: 'error' });
             }
-          } catch (e) {
-            workItemLogger.error('Unable to upload logs. Caught exception:');
-            workItemLogger.error(e);
-            resolve({ error, errorLevel: 'error' });
-          }
-        },
-      ).catch((e) => {
-        clearTimeout(timeout);
-        workItemLogger.error('Kubernetes client exec caught exception:');
-        workItemLogger.error(e);
-        resolve({ error, errorLevel: 'error' });
+          },
+        ).catch((e) => {
+          clearTimeout(timeout);
+          workItemLogger.error('Kubernetes client exec caught exception:');
+          workItemLogger.error(e);
+          resolve({ error, errorLevel: 'error' });
+        });
       });
-    });
+
+      if ('retryable' in result) {
+        workItemLogger.debug(`Retryable error encountered (attempt ${retryCount + 1} of ${maxRetries})`);
+        await waitForContainerToStart('worker');
+        retryCount += 1;
+      } else {
+        return result;
+      }
+    }
+
+    // All retries were exhausted
+    return {
+      error: 'Unknown internal server error',
+      errorLevel: 'error',
+      errorCategory: 'Internal server error',
+    };
+
   } catch (e) {
     workItemLogger.error('runServiceFromPull caught exception:');
     workItemLogger.error(e);
