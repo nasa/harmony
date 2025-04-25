@@ -404,9 +404,9 @@ export async function runServiceFromPull(
       });
 
       if ('retryable' in result) {
-        workItemLogger.debug(`Retryable error encountered (attempt ${retryCount + 1} of ${maxRetries})`);
-        await waitForContainerToStart('worker');
         retryCount += 1;
+        workItemLogger.debug(`Retryable error encountered (attempt ${retryCount} of ${maxRetries})`);
+        await waitForContainerToStart('worker');
       } else {
         return result;
       }
