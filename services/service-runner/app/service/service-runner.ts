@@ -240,12 +240,6 @@ export async function uploadLogs(
   workItem: WorkItemRecord, logs: (string | object)[],
 ): Promise<object> {
   let newFileContent = logs;
-  // const retryMessage = `${new Date().toISOString()} Start of service execution (retryCount=${workItem.retryCount}, id=${workItem.id})`;
-  // if (logs.length > 0 && (typeof logs[0] === 'string' || logs[0] instanceof String)) {
-  //   newFileContent = [retryMessage, ...logs];
-  // } else {
-  //   newFileContent = [{ message: retryMessage }, ...logs];
-  // }
   const s3 = objectStoreForProtocol('s3');
   const logsLocation = getItemLogsLocation(workItem);
   if (await s3.objectExists(logsLocation)) { // append to existing logs
