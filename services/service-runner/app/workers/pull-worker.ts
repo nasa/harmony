@@ -219,8 +219,8 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
     }
 
     pullCounter += 1;
-    logger.debug('Polling for work');
     if (pullCounter === pullLogPeriod) {
+      logger.debug('Polling for work');
       pullCounter = 0;
     }
 
