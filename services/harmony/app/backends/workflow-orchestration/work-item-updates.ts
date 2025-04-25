@@ -721,7 +721,7 @@ export async function processWorkItem(
         return;
       } else {
         logger.warn(`Retry limit of ${env.workItemRetryLimit} exceeded`);
-        logger.warn(`Updating work item for ${workItemID} to ${status} with message ${message}`);
+        logger.warn(`Updating work item for ${workItemID} to ${status} with message ${message}`, { workFailureMessage: message, serviceId: workItem.serviceID });
       }
     }
 

@@ -1,16 +1,18 @@
-import * as k8s from '@kubernetes/client-node';
-import stream from 'stream';
-import { sanitizeImage } from '@harmony/util/string';
-import env from '../util/env';
-import logger from '../../../harmony/app/util/log';
-import { resolve as resolveUrl } from '../../../harmony/app/util/url';
-import { objectStoreForProtocol } from '../../../harmony/app/util/object-store';
-import {
-  WorkItemRecord, getStacLocation, getItemLogsLocation,
-} from '../../../harmony/app/models/work-item-interface';
 import axios from 'axios';
-import { Logger } from 'winston';
 import { writeFileSync } from 'fs';
+import stream from 'stream';
+import { Logger } from 'winston';
+
+import { sanitizeImage } from '@harmony/util/string';
+import * as k8s from '@kubernetes/client-node';
+
+import {
+  getItemLogsLocation, getStacLocation, WorkItemRecord,
+} from '../../../harmony/app/models/work-item-interface';
+import logger from '../../../harmony/app/util/log';
+import { objectStoreForProtocol } from '../../../harmony/app/util/object-store';
+import { resolve as resolveUrl } from '../../../harmony/app/util/url';
+import env from '../util/env';
 
 const kc = new k8s.KubeConfig();
 kc.loadFromDefault();
@@ -235,13 +237,13 @@ export async function runQueryCmrFromPull(
 export async function uploadLogs(
   workItem: WorkItemRecord, logs: (string | object)[],
 ): Promise<object> {
-  let newFileContent;
-  const retryMessage = `Start of service execution (retryCount=${workItem.retryCount}, id=${workItem.id})`;
-  if (logs.length > 0 && (typeof logs[0] === 'string' || logs[0] instanceof String)) {
-    newFileContent = [retryMessage, ...logs];
-  } else {
-    newFileContent = [{ message: retryMessage }, ...logs];
-  }
+  let newFileContent = logs;
+  // const retryMessage = `${new Date().toISOString()} Start of service execution (retryCount=${workItem.retryCount}, id=${workItem.id})`;
+  // if (logs.length > 0 && (typeof logs[0] === 'string' || logs[0] instanceof String)) {
+  //   newFileContent = [retryMessage, ...logs];
+  // } else {
+  //   newFileContent = [{ message: retryMessage }, ...logs];
+  // }
   const s3 = objectStoreForProtocol('s3');
   const logsLocation = getItemLogsLocation(workItem);
   if (await s3.objectExists(logsLocation)) { // append to existing logs
@@ -314,35 +316,55 @@ export async function runServiceFromPull(
         writeFileSync(operationJsonFile, operationJson);
       }
 
+      const commandAndArgs = [
+        ...commandLine,
+        '--harmony-action',
+        'invoke',
+        operationCommandLine,
+        operationCommandLineValue,
+        '--harmony-sources',
+        stacCatalogLocation,
+        '--harmony-metadata-dir',
+        `${catalogDir}`,
+      ];
+
       exec.exec(
         'harmony',
         env.myPodName,
         'worker',
-        [
-          ...commandLine,
-          '--harmony-action',
-          'invoke',
-          operationCommandLine,
-          operationCommandLineValue,
-          '--harmony-sources',
-          stacCatalogLocation,
-          '--harmony-metadata-dir',
-          `${catalogDir}`,
-        ],
+        commandAndArgs,
         stdOut,
         process.stderr as stream.Writable,
         process.stdin as stream.Readable,
         true,
         async (status: k8s.V1Status) => {
-          workItemLogger.debug(`SIDECAR STATUS: ${JSON.stringify(status, null, 2)}`);
+          const sidecarMessage = `SIDECAR STATUS: ${JSON.stringify(status, null, 2)}`;
+          workItemLogger.debug(sidecarMessage);
           try {
-            await uploadLogs(workItem, stdOut.logStrArr);
+            const retryMessage = `${new Date().toISOString()} Start of service execution (retryCount=${workItem.retryCount}, id=${workItem.id})`;
+            await uploadLogs(workItem, [retryMessage, ...stdOut.logStrArr]);
             if (status.status === 'Success') {
               clearTimeout(timeout);
               workItemLogger.debug('Getting STAC catalogs');
               const catalogs = await _getStacCatalogs(catalogDir);
               resolve({ batchCatalogs: catalogs });
             } else {
+              const redactedcommandAndArgs = commandAndArgs[0].replace(
+                /"accessToken":"[^"]*"/,
+                '"accessToken":"<redacted>"',
+              );
+              const debugInfo = [
+                `${new Date().toISOString()} ${sidecarMessage}`,
+                `COMMAND: ${redactedcommandAndArgs}`,
+                `POD: ${env.myPodName}`,
+                `STATUS REASON: ${String(status.reason)}`,
+                `STATUS MESSAGE: ${String(status.message)}`,
+                `STATUS CODE: ${String(status.code)}`,
+              ];
+              if (stdOut?.logStrArr?.length) {
+                debugInfo.push(`STDOUT (last 10 lines):\n${stdOut.logStrArr.slice(-10).join('\n')}`);
+              }
+              await uploadLogs(workItem, debugInfo);
               clearTimeout(timeout);
               const errorEntries = await _getErrorInfo(status, catalogDir, workItemLogger);
               const errorMessage = `${serviceName}: ${errorEntries.error}`;
