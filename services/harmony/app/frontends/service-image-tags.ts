@@ -563,6 +563,8 @@ export async function updateServiceImageTag(
 
   const deployment = new ServiceDeployment({
     deployment_id: deploymentId,
+    // This will happen when deploying service with cookie_secret
+    // The only formal use case of this is harmony-service-example deployment in Bamboo
     username: req.user || 'cookie_secret',
     service: service,
     tag: tag,

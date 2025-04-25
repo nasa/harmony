@@ -19,11 +19,11 @@ async function fetchUserId(token: string, _sv: string, { context }): Promise<str
   return getUserIdRequest(context, token);
 }
 
-// In memory cache with 5 min TTL for EDL token to username.
-// The token is valid if it exists in the cache.
+// In memory cache for EDL bearer token to username.
+// A token is valid if it exists in the cache.
 export const tokenCache = new LRUCache({
-  maxSize: env.maxDataOperationCacheSize,
   ttl: env.tokenCacheTtl,
+  maxSize: env.maxDataOperationCacheSize,
   sizeCalculation: (value: string): number => value.length,
   fetchMethod: fetchUserId,
 });
