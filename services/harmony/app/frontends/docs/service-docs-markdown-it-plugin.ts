@@ -1,4 +1,5 @@
 import MarkDownIt from 'markdown-it';
+
 import { ServiceCapabilities } from '../../models/services/base-service';
 import { getServiceConfigs } from '../../models/services/index';
 
@@ -133,6 +134,8 @@ function getServiceTable(md: MarkDownIt, serviceCaps: ServiceCapabilities): unkn
   tableTokens.push(new Token('table_header_close', 'td', -1));
 
   // non-subsetting values
+
+  // concatenation
   itemToken = new Token('table_data_open', 'td', 1);
   itemToken.attrPush(['rowspan', '2']);
   tableTokens.push(itemToken);
@@ -146,14 +149,19 @@ function getServiceTable(md: MarkDownIt, serviceCaps: ServiceCapabilities): unkn
   itemToken.children = [];
   tableTokens.push(itemToken);
   tableTokens.push(new Token('table_data_close', 'td', -1));
+
+  // reprojection
   itemToken = new Token('table_data_open', 'td', 1);
   itemToken.attrPush(['rowspan', '2']);
   tableTokens.push(itemToken);
   itemToken = new Token('inline', '', 0);
-  itemToken.content = 'N';
+  const reprojectSetting = serviceCaps.reprojection ? 'Y' : 'N';
+  itemToken.content = reprojectSetting;
   itemToken.type = 'text';
   itemToken.children = [];
   tableTokens.push(itemToken);
+
+  // output formats
   tableTokens.push(new Token('table_data_close', 'td', -1));
   itemToken = new Token('table_data_open', 'td', 1);
   itemToken.attrPush(['rowspan', '2']);
