@@ -11,7 +11,7 @@ const BEARER_TOKEN_REGEX = new RegExp('^Bearer ([-a-zA-Z0-9._~+/]+)$', 'i');
  * Wrapper function of getUserIdRequest to be set to fetchMethod of LRUCache.
  *
  * @param token - EDL bearer token
- * @param _sv - default value parameter of LRUCache fetchMethod, unused here
+ * @param _sv - stale value parameter of LRUCache fetchMethod, unused here
  * @param options - options parameter of LRUCache fetchMethod, carries the request context
  * @returns Promise of user name associated with the EDL token
  */
