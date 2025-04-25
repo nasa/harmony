@@ -1,16 +1,15 @@
 import { expect } from 'chai';
+import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { describe, it } from 'mocha';
 import * as sinon from 'sinon';
-import { SinonStub } from 'sinon';
-import env from '../app/util/env';
+
 import WorkItem from '../../harmony/app/models/work-item';
-import { hookGetWorkRequest } from './helpers/pull-worker';
-import * as pullWorker from '../app/workers/pull-worker';
-import PullWorker from '../app/workers/pull-worker';
-import * as serviceRunner from '../app/service/service-runner';
-import { existsSync, writeFileSync, mkdirSync } from 'fs';
 import { WorkItemRecord } from '../../harmony/app/models/work-item-interface';
 import { buildOperation } from '../../harmony/test/helpers/data-operation';
+import * as serviceRunner from '../app/service/service-runner';
+import env from '../app/util/env';
+import PullWorker, * as pullWorker from '../app/workers/pull-worker';
+import { hookGetWorkRequest } from './helpers/pull-worker';
 
 const {
   _pullWork,
@@ -50,8 +49,8 @@ describe('Pull Worker', async function () {
   });
 
   describe('on start with primer errors', async function () {
-    let serviceStub: SinonStub;
-    let exitStub: SinonStub;
+    let serviceStub: sinon.SinonStub;
+    let exitStub: sinon.SinonStub;
     const { harmonyService } = env;
 
     beforeEach(async function () {
@@ -208,9 +207,9 @@ describe('Pull Worker', async function () {
     });
 
     describe('when _pullWork runs', async function () {
-      let pullStub: SinonStub;
-      let doWorkStub: SinonStub;
-      let axiosStub: SinonStub;
+      let pullStub: sinon.SinonStub;
+      let doWorkStub: sinon.SinonStub;
+      let axiosStub: sinon.SinonStub;
       const dir = `${env.workingDir}/abc123`;
       const fakeOperation = buildOperation('foo');
       fakeOperation.sources = [
@@ -277,8 +276,8 @@ describe('Pull Worker', async function () {
     });
 
     describe('when _pullWork throws an exception', async function () {
-      let pullStub: SinonStub;
-      let doWorkStub: SinonStub;
+      let pullStub: sinon.SinonStub;
+      let doWorkStub: sinon.SinonStub;
       beforeEach(function () {
         pullStub = sinon.stub(pullWorker.exportedForTesting, '_pullWork').callsFake(async function () {
           throw new Error('something bad happened');
@@ -304,8 +303,8 @@ describe('Pull Worker', async function () {
     });
 
     describe('when _doWork throws an exception', async function () {
-      let pullStub: SinonStub;
-      let doWorkStub: SinonStub;
+      let pullStub: sinon.SinonStub;
+      let doWorkStub: sinon.SinonStub;
       beforeEach(function () {
         pullStub = sinon.stub(pullWorker.exportedForTesting, '_pullWork').callsFake(async function (): Promise<{ item?: WorkItem; status?: number; error?: string }> {
           return {};
