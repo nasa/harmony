@@ -51,6 +51,7 @@ export async function getClientCredentialsToken(logger: Logger): Promise<string>
 export async function getUserIdRequest(context: RequestContext, userToken: string)
   : Promise<string> {
   const { logger } = context;
+  logger.debug('Calling EDL to validate bearer token');
   try {
     const clientToken = await getClientCredentialsToken(context.logger);
     const response = await axios.default.post(
@@ -64,7 +65,9 @@ export async function getUserIdRequest(context: RequestContext, userToken: strin
         headers: { authorization: `Bearer ${clientToken}`, 'X-Request-Id': context.id },
       },
     );
-    return response.data.uid;
+    const userId = response.data.uid;
+    logger.debug(`Successfully validated bearer token for user: ${userId}`);
+    return userId;
   } catch (e) {
     logger.error('Failed to validate passed in bearer token.');
     logger.error(e);
