@@ -315,7 +315,7 @@ export async function runServiceFromPull(
       '--harmony-sources',
       stacCatalogLocation,
       '--harmony-metadata-dir',
-      `${catalogDir}`,
+      catalogDir,
     ];
 
     let retryCount = 0;
