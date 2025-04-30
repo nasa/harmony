@@ -124,7 +124,7 @@ export interface EdlUserEulaInfo {
  * @returns A promise which resolves to info about whether the user is an admin, log viewer or service deployer,
  * and has core permissions (e.g. allowing user to access server configuration endpoints)
  */
-export async function _getEdlGroupInformation(context: RequestContext, username: string)
+async function _getEdlGroupInformation(context: RequestContext, username: string)
   : Promise<EdlGroupMembership> {
   const { logger } = context;
   logger.debug(`Get EDL group info for user: ${username}`);
@@ -166,7 +166,7 @@ export async function _getEdlGroupInformation(context: RequestContext, username:
  * @returns A promise which resolves to info about whether the user has accepted a EULA,
  * and if not, where they can go to accept it
  */
-export async function _verifyUserEula(context: RequestContext, username: string, eulaId: string)
+async function _verifyUserEula(context: RequestContext, username: string, eulaId: string)
   : Promise<EdlUserEulaInfo> {
   let statusCode: number;
   let eulaResponse: { msg: string, error: string, accept_eula_url: string };
