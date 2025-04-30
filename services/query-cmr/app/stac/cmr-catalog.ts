@@ -1,11 +1,11 @@
-import path from 'path';
 import _ from 'lodash';
-import StacCatalog from './catalog';
-import StacItem from './item';
+import path from 'path';
+import { Logger } from 'winston';
+
 import { CmrUmmGranule } from '../../../harmony/app/util/cmr';
 import { computeUmmMbr } from '../../../harmony/app/util/spatial/mbr';
-import logger from '../../../harmony/app/util/log';
-import { Logger } from 'winston';
+import StacCatalog from './catalog';
+import StacItem from './item';
 
 /**
  * Creates a GeoJSON geometry given a GeoJSON BBox, accounting for antimeridian
@@ -58,8 +58,14 @@ export default class CmrStacCatalog extends StacCatalog {
    * @param pathPrefix - the prefix to use for href values on the link.  The link href will be
    *   the path prefix followed by the padded index of the granule plus .json
    * @param granuleLogger - The logger to use for logging messages
+   * @param includeOpendapLinks - if true include OPeNDAP links in the catalog
    */
-  addCmrUmmGranules(granules: CmrUmmGranule[], pathPrefix: string, granuleLogger: Logger = logger): void {
+  addCmrUmmGranules(
+    granules: CmrUmmGranule[],
+    pathPrefix: string,
+    granuleLogger: Logger,
+    includeOpendapLinks: boolean,
+  ): void {
     for (let i = 0; i < granules.length; i++) {
       const granule = granules[i];
       const bbox = computeUmmMbr(granule.umm.SpatialExtent?.HorizontalSpatialDomain?.Geometry) || [-180, -90, 180, 90];
@@ -112,7 +118,10 @@ export default class CmrStacCatalog extends StacCatalog {
           roles: ['visual'],
         },
       ]));
-      const assets = _.fromPairs(dataAssets.concat(opendapAssets).concat(browseAssets));
+
+      const assets = includeOpendapLinks ?
+        _.fromPairs(dataAssets.concat(opendapAssets).concat(browseAssets)) :
+        _.fromPairs(dataAssets.concat(browseAssets));
 
       if (Object.keys(assets).length === 0) {
         granuleLogger.warn(`Granule ${granule.meta['concept-id']} had no data links and will be excluded from results`);

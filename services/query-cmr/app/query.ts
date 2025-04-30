@@ -3,7 +3,6 @@ import { Logger } from 'winston';
 
 import DataOperation from '../../harmony/app/models/data-operation';
 import { queryGranulesWithSearchAfter } from '../../harmony/app/util/cmr';
-import defaultLogger from '../../harmony/app/util/log';
 import StacCatalog from './stac/catalog';
 import CmrStacCatalog from './stac/cmr-catalog';
 
@@ -63,6 +62,7 @@ export function getGranuleSizeInBytes(
  * @param maxCmrGranules - The maximum size of the page to request from CMR
  * @param filePrefix - The prefix to give each granule STAC item placed in the directory
  * @param logger - The logger to use for logging messages
+ * @param includeOpendapLinks - if true include OPeNDAP links in the catalog
  * @returns a tuple containing
  * the total size of the granules returned by this call, an array of sizes (in bytes) of each granule,
  * an array of STAC catalogs, a new session/search_after string (formerly scrollID), and the total
@@ -73,7 +73,8 @@ async function querySearchAfter(
   token: string,
   scrollId: string,
   maxCmrGranules: number,
-  logger: Logger = defaultLogger,
+  logger: Logger,
+  includeOpendapLinks: boolean,
 ): Promise<[number, number[], StacCatalog[], string, number]> {
   const filePrefix = './granule';
   let sessionKey, searchAfter;
@@ -106,7 +107,7 @@ async function querySearchAfter(
       rel: 'harmony_source',
       href: `${process.env.CMR_ENDPOINT}/search/concepts/${granule.meta['collection-concept-id']}`,
     });
-    result.addCmrUmmGranules([granule], `${filePrefix}_${granule.meta['concept-id']}_`, logger);
+    result.addCmrUmmGranules([granule], `${filePrefix}_${granule.meta['concept-id']}_`, logger, includeOpendapLinks);
 
     return result;
   });
@@ -134,11 +135,17 @@ export async function queryGranules(
   operation: DataOperation,
   scrollId: string,
   maxCmrGranules: number,
-  logger: Logger = defaultLogger,
+  logger: Logger,
 ): Promise<[number, number[], StacCatalog[], string, number]> {
   const { unencryptedAccessToken } = operation;
+  // Include OPeNDAP links in the response unless the data operation explicitly overrides
+  // by setting extraArgs.includeOpendapLinks to false
+  const includeOpendapLinks = operation.extraArgs?.include_opendap_links !== false;
   const [totalItemsSize, outputItemSizes, catalogs, newScrollId, hits] =
-    await querySearchAfter(operation.requestId, unencryptedAccessToken, scrollId, maxCmrGranules, logger);
+    await querySearchAfter(
+      operation.requestId, unencryptedAccessToken, scrollId, maxCmrGranules, logger,
+      includeOpendapLinks,
+    );
 
   return [totalItemsSize, outputItemSizes, catalogs, newScrollId, hits];
 }
