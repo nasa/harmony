@@ -37,13 +37,16 @@ Optional:
 ## Set up Environment
 
 If you have not yet cloned the Harmony repository, run
+
+```bash
+git clone https://github.com/nasa/harmony.git
 ```
-$ git clone https://github.com/nasa/harmony.git
-```
+
 Ensure `envsubst` is installed on your system.
 
 For Mac, `envsubst` is part of the `homebrew` `gettext` package. Run
-```
+
+```bash
 brew install gettext
 ```
 
@@ -53,45 +56,48 @@ if you are using `homebrew`. The version installed by `pip` is NOT compatible.
 If you are running on an M1 Mac, you will have to run Harmony on Rosetta 2 due to some issues
 with GDAL Node packages. To do this, run this command before following the rest of these instructions.
 
-```
+```bash
 arch -x86_64 zsh
 ```
 
 or
 
-```
+```bash
 arch -x86_64 bash
 ```
 
 Ensure node is available and is the correct version, 22.x.y.
 
-```
-$ node --version
+```bash
+node --version
 v22.5.1
 ```
 
 Ensure npm is available and is version 10 or later.
-```
-$ npm --version
+
+```bash
+npm --version
 9.8.1
 ```
 
 If either are not the correct versions and you are using NVM, install them and ensure your `PATH` is up-to-date by running:
 
-```
-$ nvm install && nvm use
+```bash
+nvm install && nvm use
 ```
 
 The output should include node 22 and npm 10.
-```
+
+```text
 Now using node v22.5.1 (npm v10.8.2)
 ```
 
 Be sure to **verify the version on the final line** to make sure the NVM binary appears first in your `PATH`.
 
 From the harmony project root, install library dependencies:
-```
-$ npm install
+
+```bash
+npm install
 ```
 
 Recommended: Add `./node_modules/.bin` to your `PATH`.  This will allow you to run binaries from installed node modules.  If you choose not to do this, you will need to prefix node module calls with `npx`, e.g. `npx mocha` instead of just `mocha`
@@ -100,8 +106,8 @@ Recommended: Add `./node_modules/.bin` to your `PATH`.  This will allow you to r
 
 Harmony uses environment variables for managing much of its configuration. Most of the variables can be defaulted, and harmony provides those defaults suitable for local development in the `env-defaults` file. In order to set up the remaining variables, run the following from the harmony project root:
 
-```
-$ bin/create-dotenv
+```bash
+bin/create-dotenv
 ```
 
 The script will create a file named `.env` in the root project directory containing only those parameters that cannot be defaulted. Open the file and update the values for any of the variables that are currently blank. Detailed information for the environment variables can be found in the `env-defaults` file.
@@ -110,7 +116,8 @@ Harmony reads both the `env-defaults` and `.env` files at startup to determine t
 
 Specifically, you will need to add the following to your .env file:
 Mac OS X
-```
+
+```text
 LOCALSTACK_HOST=localhost
 WORK_ITEM_UPDATE_QUEUE_URL=http://localhost:4566/queue/work-item-update-queue
 LARGE_WORK_ITEM_UPDATE_QUEUE_URL=http://localhost:4566/queue/large-work-item-update-queue
@@ -121,7 +128,8 @@ LOCAL_DEV=true
 ```
 
 Linux
-```
+
+```text
 LOCALSTACK_HOST=localhost
 WORK_ITEM_UPDATE_QUEUE_URL=http://localhost:4566/queue/work-item-update-queue
 LARGE_WORK_ITEM_UPDATE_QUEUE_URL=http://localhost:4566/queue/large-work-item-update-queue
@@ -144,7 +152,7 @@ This should print out an IP address. Use this in your .env file to specify the `
 
 Harmony and the services can be run using the following:
 
-```
+```bash
 ./bin/bootstrap-harmony
 ./bin/start-dev-services
 ```
@@ -168,12 +176,13 @@ has a specific port and debug port as shown in the following table:
 The services running in kubernetes can be stopped using the following (this will also delete
 the `harmony` namespace):
 
-```
+```bash
 ./bin/stop-harmony-and-services
 ```
 
 The Node.js processes for Harmony and its support services can be stopped using the following:
-```
+
+```bash
 ./bin/stop-dev-services
 ```
 
@@ -181,12 +190,14 @@ The Node.js processes for Harmony and its support services can be stopped using 
 ## Add A Service
 
 Clone the Harmony service example repository into a peer directory of the main Harmony repo
-```
-$ cd ..
-$ git clone https://github.com/nasa/harmony-service-example.git
+
+```bash
+cd ..
+git clone https://github.com/nasa/harmony-service-example.git
 ```
 
 (minikube only) From the harmony-service-example project root, run
+
 ```bash
 eval $(minikube docker-env)
 ```
@@ -213,8 +224,8 @@ If you'd like to build and test a new service for Harmony see [this reference](.
 
 To delete all resources associated with deployed services, postgres and localstack deployment, run:
 
-```
-$ kubectl delete namespaces harmony
+```bash
+kubectl delete namespaces harmony
 ```
 
 `minikube` users can stop Kubernetes by running `minikube stop`.  Docker Desktop users will
@@ -224,8 +235,8 @@ need to close Docker or disable Kubernetes support in the UI.  Note that the lat
 
 To run Harmony locally such that it reloads when files change (recommended during development), run
 
-```
-$ npm run start-dev
+```bash
+npm run start-dev
 ```
 
 In production, we use `$ npm run start` which does the same but does not add the file watching and reloading behavior.
@@ -248,8 +259,8 @@ PNG from the test server.
 
 To run the linter, tests, and coverage checks as the CI environment will, run
 
-```
-$ npm test
+```bash
+npm test
 ```
 
 Harmony uses [eslint](https://eslint.org) as a linter, which can be invoked as `$ npx eslint` (or `$ eslint` if you have set up your `PATH`).  It uses [mocha](https://mochajs.org) for tests, `$ npx mocha`, and [nyc](https://istanbul.js.org) for code coverage, `$ npx nyc mocha`.
@@ -271,11 +282,13 @@ To re-record everything, remove the fixtures directory and run the test suite. T
 ## Building and Publishing the Harmony Docker Image
 
 The Harmony Docker image can be built with the following command:
+
 ```bash
 npm run build
 ```
 
 The image can be deployed to DockerHub using the following commands:
+
 ```bash
 npm run publish
 ```
