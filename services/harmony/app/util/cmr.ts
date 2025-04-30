@@ -670,7 +670,7 @@ async function _cmrPostBody(
  * @param token - Access token for user request
  * @returns The variable search results
  */
-export async function _getAllVariables(
+async function _getAllVariables(
   context: RequestContext, query: CmrQuery, token: string,
 ): Promise<Array<CmrUmmVariable>> {
   logger.debug('Calling CMR to fetch variables');
@@ -706,7 +706,7 @@ export async function _getAllVariables(
  * @param token - Access token for user request
  * @returns The services search results
  */
-export async function _getAllServices(
+async function _getAllServices(
   context: RequestContext, query: CmrQuery, token: string,
 ): Promise<Array<CmrUmmService>> {
   logger.debug('Calling CMR to fetch services');
