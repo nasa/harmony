@@ -52,7 +52,7 @@ export async function getClientCredentialsToken(logger: Logger): Promise<string>
  * @returns the username associated with the token
  * @throws ForbiddenError if the token is invalid
  */
-export async function _getUserIdRequest(context: RequestContext, userToken: string)
+export async function getUserIdRequest(context: RequestContext, userToken: string)
   : Promise<string> {
   const { logger } = context;
   logger.debug('Calling EDL to validate bearer token');
@@ -185,13 +185,12 @@ export async function _verifyUserEula(context: RequestContext, username: string,
 }
 
 // type of EDL query results
-type EdlResults = EdlUserEulaInfo | EdlGroupMembership | string;
+type EdlResults = EdlUserEulaInfo | EdlGroupMembership;
 
 // Enum defining supported types of edl requests
 export enum edlQueryType {
   EULA = 'EULA',
   GROUP = 'GROUP',
-  USERID = 'USERID',
 }
 
 /**
@@ -213,8 +212,6 @@ async function fetchFromEdl(
     return _verifyUserEula(context, username, eulaId);
   } else if (type === edlQueryType.GROUP) {
     return _getEdlGroupInformation(context, key);
-  } else if (type === edlQueryType.USERID) {
-    return _getUserIdRequest(context, key);
   } else {
     throw new Error(`Invalid EDL query type: ${type}`);
   }
@@ -277,22 +274,6 @@ export async function getEdlGroupInformation(context: RequestContext, username: 
   const type = edlQueryType.GROUP;
   const result = await edlCache.fetch(username, { context: { type, context } });
   return result as EdlGroupMembership;
-}
-
-/**
- * Makes a request to the EDL users endpoint to validate a token and return the user ID
- * associated with that token.
- *
- * @param context - Information related to the user's request
- * @param userToken - The user's token
- * @returns the username associated with the token
- * @throws ForbiddenError if the token is invalid
- */
-export async function getUserIdRequest(context: RequestContext, userToken: string)
-  : Promise<string> {
-  const type = edlQueryType.USERID;
-  const result = await edlCache.fetch(userToken, { context: { type, context } });
-  return result as string;
 }
 
 /**
