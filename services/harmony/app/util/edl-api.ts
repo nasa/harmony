@@ -110,6 +110,12 @@ export interface EdlGroupMembership {
   hasCorePermissions: boolean;
 }
 
+export interface EdlUserEulaInfo {
+  statusCode: number;
+  error?: string;
+  acceptEulaUrl?: string;
+}
+
 /**
  * Returns the harmony relevant group information for a user with two keys isAdmin and isLogViewer.
  *
@@ -311,12 +317,6 @@ export async function isAdminUser(req: HarmonyRequest): Promise<boolean> {
   const isAdmin = req.context.isAdminAccess ||
     (await getEdlGroupInformation(req.context, req.user)).isAdmin;
   return isAdmin;
-}
-
-export interface EdlUserEulaInfo {
-  statusCode: number;
-  error?: string;
-  acceptEulaUrl?: string;
 }
 
 /**
