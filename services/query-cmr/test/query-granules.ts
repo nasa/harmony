@@ -1,17 +1,19 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
+import chai, { expect } from 'chai';
+import { Stream } from 'form-data';
 /* eslint-disable node/no-unpublished-require */
 import fs from 'fs';
-import path from 'path';
-import chai, { expect } from 'chai';
 import { describe, it } from 'mocha';
-import * as sinon from 'sinon';
 import * as fetch from 'node-fetch';
-import { Stream } from 'form-data';
-import { queryGranules } from '../app/query';
-import * as cmr from '../../harmony/app/util/cmr';
+import path from 'path';
+import * as sinon from 'sinon';
+
 import DataOperation from '../../harmony/app/models/data-operation';
-import { FileStore } from '../../harmony/app/util/object-store/file-store';
+import * as cmr from '../../harmony/app/util/cmr';
 import { CmrError } from '../../harmony/app/util/errors';
+import logger from '../../harmony/app/util/log';
+import { FileStore } from '../../harmony/app/util/object-store/file-store';
+import { queryGranules } from '../app/query';
 
 chai.use(require('chai-as-promised'));
 
@@ -80,7 +82,7 @@ function hookQueryGranules(maxCmrGranules = 100): void {
     this.downloadStub = sinon.stub(FileStore.prototype, 'getObject').returns(Promise.resolve('{"collection_concept_id": "C001-TEST"}'));
 
     // Actually call it
-    this.result = await queryGranules(operation, 'scrollId', maxCmrGranules);
+    this.result = await queryGranules(operation, 'scrollId', maxCmrGranules, logger);
 
     // Map the call arguments into something we can actually assert against
     this.queryFields = await Promise.all(fetchPost.args.map(fetchPostArgsToFields));
@@ -201,7 +203,7 @@ describe('query#queryGranules', function () {
     hookQueryGranulesWithError();
 
     it('throws an error containing the CMR error message', async function () {
-      await expect(queryGranules(operation, null, 1)).to.be.rejectedWith(CmrError, 'Failed to query CMR');
+      await expect(queryGranules(operation, null, 1, logger)).to.be.rejectedWith(CmrError, 'Failed to query CMR');
     });
 
   });
