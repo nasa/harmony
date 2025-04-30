@@ -45,6 +45,8 @@ https://cmr.earthdata.nasa.gov:
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
+        extra_args:
+          include_opendap_links: false
 
   - name: giovanni-time-series-adapter
     description: |
