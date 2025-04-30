@@ -2,7 +2,6 @@ import { before, after } from 'mocha';
 import * as sinon from 'sinon';
 import { ForbiddenError } from '../../app/util/errors';
 import * as edl from '../../app/util/edl-api';
-import * as edlAuth from '../../app/middleware/earthdata-login-token-authorizer';
 
 /**
  * Adds before / after hooks in mocha to replace calls to EDL token interaction
@@ -12,16 +11,16 @@ import * as edlAuth from '../../app/middleware/earthdata-login-token-authorizer'
  */
 export function hookEdlTokenAuthentication(username: string): void {
   let clientCredentialsStub;
-  let tokenCacheStub;
+  let userIdRequestStub;
   before(async function () {
     clientCredentialsStub = sinon.stub(edl, 'getClientCredentialsToken')
       .callsFake(async () => 'client-token');
-    tokenCacheStub = sinon.stub(edlAuth.tokenCache, 'fetch')
+    userIdRequestStub = sinon.stub(edl, 'getUserIdRequest')
       .callsFake(async () => username);
   });
   after(async function () {
     if (clientCredentialsStub.restore) clientCredentialsStub.restore();
-    if (tokenCacheStub.restore) tokenCacheStub.restore();
+    if (userIdRequestStub.restore) userIdRequestStub.restore();
   });
 }
 
@@ -31,16 +30,14 @@ export function hookEdlTokenAuthentication(username: string): void {
  */
 export function hookEdlTokenAuthenticationError(): void {
   let clientCredentialsStub;
-  let tokenCacheStub;
-
+  let userIdRequestStub;
   before(async function () {
     const error = new ForbiddenError();
     clientCredentialsStub = sinon.stub(edl, 'getClientCredentialsToken').throws(error);
-    tokenCacheStub = sinon.stub(edlAuth.tokenCache, 'fetch').throws(error);
+    userIdRequestStub = sinon.stub(edl, 'getUserIdRequest').throws(error);
   });
-
   after(async function () {
     if (clientCredentialsStub.restore) clientCredentialsStub.restore();
-    if (tokenCacheStub.restore) tokenCacheStub.restore();
+    if (userIdRequestStub.restore) userIdRequestStub.restore();
   });
 }

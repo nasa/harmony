@@ -1,8 +1,10 @@
 /* eslint-disable @typescript-eslint/naming-convention */
+import { createHash } from 'crypto';
 import FormData from 'form-data';
 import * as fs from 'fs';
 import { v4 as uuid } from 'uuid';
 import { get, isArray } from 'lodash';
+import { LRUCache } from 'lru-cache';
 import fetch, { Response } from 'node-fetch';
 import * as querystring from 'querystring';
 import { CmrError } from './errors';
@@ -343,6 +345,9 @@ export interface CmrUmmCollectionsResponse extends CmrResponse {
   };
 }
 
+// type of CMR query results
+type CmrResults = Array<CmrCollection> | Array<CmrUmmCollection> | Array<CmrUmmVariable> | Array<CmrUmmService> | Array<CmrUmmGrid>;
+
 /**
  * Create a token header for the given access token string
  *
@@ -665,9 +670,10 @@ async function _cmrPostBody(
  * @param token - Access token for user request
  * @returns The variable search results
  */
-export async function getAllVariables(
+export async function _getAllVariables(
   context: RequestContext, query: CmrQuery, token: string,
 ): Promise<Array<CmrUmmVariable>> {
+  logger.debug('Calling CMR to fetch variables');
   const variablesResponse = await _cmrPost(context, '/search/variables.umm_json_v1_8_1', query, token) as CmrVariablesResponse;
   const { hits } = variablesResponse.data;
   let variables = variablesResponse.data.items;
@@ -700,9 +706,10 @@ export async function getAllVariables(
  * @param token - Access token for user request
  * @returns The services search results
  */
-export async function getAllServices(
+export async function _getAllServices(
   context: RequestContext, query: CmrQuery, token: string,
 ): Promise<Array<CmrUmmService>> {
+  logger.debug('Calling CMR to fetch services');
   const servicesResponse = await _cmrPost(context, '/search/services.umm_json_v1_5_2', query, token) as CmrServicesResponse;
   const { hits } = servicesResponse.data;
   let services = servicesResponse.data.items;
@@ -727,6 +734,22 @@ export async function getAllServices(
 }
 
 /**
+ * Performs a CMR grids.umm_json search with the given query string
+ *
+ * @param context - Information related to the user's request
+ * @param query - The key/value pairs to search
+ * @param token - Access token for user request
+ * @returns The grid search results
+ */
+async function _queryGrids(
+  context: RequestContext, query: CmrQuery, token: string,
+): Promise<Array<CmrUmmGrid>> {
+  logger.debug('Calling CMR to fetch grids');
+  const gridsResponse = await _cmrGet(context, '/search/grids.umm_json', query, token) as CmrGridsResponse;
+  return gridsResponse.data.items;
+}
+
+/**
  * Performs a CMR collections.json search with the given query string
  *
  * @param context - Information related to the user's request
@@ -734,9 +757,10 @@ export async function getAllServices(
  * @param token - Access token for user request
  * @returns The collection search results
  */
-async function queryCollections(
+async function _queryCollections(
   context: RequestContext, query: CmrQuery, token: string,
 ): Promise<Array<CmrCollection>> {
+  logger.debug('Calling CMR to fetch collections');
   const collectionsResponse = await _cmrGet(context, '/search/collections.json', query, token) as CmrCollectionsResponse;
   return collectionsResponse.data.feed.entry;
 }
@@ -749,15 +773,183 @@ async function queryCollections(
  * @param token - Access token for user request
  * @returns The umm collection search results
  */
-async function queryUmmCollections(
+async function _queryUmmCollections(
   context: RequestContext, query: CmrQuery, token: string,
 ): Promise<Array<CmrUmmCollection>> {
+  logger.debug('Calling CMR to fetch UMM collections');
   const ummResponse = await _cmrGet(context, '/search/collections.umm_json_v1_17_3', query, token) as CmrUmmCollectionsResponse;
   return ummResponse.data.items;
 }
 
 /**
- * Performs a CMR grids.umm_json search with the given query string
+ * Generates a consistent MD5 hash for a given CMR query object and token.
+ *
+ * This function:
+ * - Sorts the keys of the query object to ensure consistent ordering.
+ * - Serializes the sorted query and token into a single JSON string.
+ * - Computes the MD5 hash of that string.
+ *
+ * This guarantees that the same query (regardless of key order)
+ * and the same token will always yield the same hash value.
+ *
+ * @param type - The CMR query type, e.g. 'json', 'umm_json'
+ * @param query - The CMR query object to hash.
+ * @param token - A string token to include in the hash computation.
+ * @returns A hexadecimal MD5 hash string representing the input.
+ */
+export function hashCmrQuery(type: string, query: CmrQuery, token: string): string {
+  // Normalize the query: sort keys to ensure consistent ordering
+  const sortedQuery = Object.keys(query)
+    .sort()
+    .reduce((acc, key) => {
+      acc[key] = query[key];
+      return acc;
+    }, {} as Record<string, unknown>);
+
+  // Create a string representation of the query and token
+  const inputString = JSON.stringify({
+    type,
+    query: sortedQuery,
+    token,
+  });
+
+  // Compute MD5 hash
+  return createHash('md5').update(inputString).digest('hex');
+}
+
+// Enum defining supported types of CMR queries
+export enum cmrQueryType {
+  COLL_JSON = 'coll_json',
+  COLL_UMM = 'coll_umm',
+  VARIABLE = 'variable',
+  SERVICE = 'service',
+  GRID = 'grid',
+}
+
+/**
+ * Wrapper function for CMR concept queries.
+ * Designed to be used as the `fetchMethod` in an LRUCache.
+ *
+ * @param key - The cache key (usually a hash of query parameters)
+ * @param _sv - The "stale value" from LRUCache; unused in this implementation
+ * @param options - Contains `context` used to submit CMR query request
+ * @returns A Promise resolving to a CMRResults object from the appropriate source
+ */
+async function fetchCmrConcepts(
+  key: string,
+  _sv: CmrResults,
+  { context: fetchContext })
+  : Promise<CmrResults> {
+  const { type, context, query, token } = fetchContext;
+  if (type === cmrQueryType.COLL_JSON) {
+    return _queryCollections(context, query, token);
+  } else if (type === cmrQueryType.COLL_UMM) {
+    return _queryUmmCollections(context, query, token);
+  } else if (type === cmrQueryType.VARIABLE) {
+    return _getAllVariables(context, query, token);
+  } else if (type === cmrQueryType.SERVICE) {
+    return _getAllServices(context, query, token);
+  } else if (type === cmrQueryType.GRID) {
+    return _queryGrids(context, query, token);
+  } else {
+    throw new Error(`Invalid CMR query type: ${type}`);
+  }
+}
+
+// In memory cache for md5 of token and CMR query to CMR search result.
+export const cmrCache = new LRUCache<string, CmrResults>({
+  ttl: env.cmrCacheTtl,
+  maxSize: env.cmrCacheSize,
+  sizeCalculation: (concepts, _key): number => {
+    try {
+      // Serialize to JSON and measure byte size
+      const size = Buffer.byteLength(JSON.stringify(concepts), 'utf8');
+      logger.debug(`Cached concepts size: ${size}`);
+      return size;
+    } catch {
+      // Fallback if serialization fails
+      logger.error('Failed to serialize concepts in Cache');
+      return 10000;
+    }
+  },
+  fetchMethod: fetchCmrConcepts,
+});
+
+/**
+ * Retrieve all varaibles with the given query from CMR cache.
+ * Perform the search if cache miss.
+ *
+ * @param context - Information related to the user's request
+ * @param query - The key/value pairs to search
+ * @param token - Access token for user request
+ * @returns The variable search results
+ */
+export async function getAllVariables(
+  context: RequestContext, query: CmrQuery, token: string,
+): Promise<Array<CmrUmmVariable>> {
+  const type = cmrQueryType.VARIABLE;
+  const key = hashCmrQuery(type, query, token);
+  const result = await cmrCache.fetch(key, { context: { type, context, query, token } });
+  return result as Array<CmrUmmVariable>;
+}
+
+/**
+ * Retrieve all services with the given query from CMR cache.
+ * Perform the search if cache miss.
+ *
+ * @param context - Information related to the user's request
+ * @param query - The key/value pairs to search
+ * @param token - Access token for user request
+ * @returns The services search results
+ */
+export async function getAllServices(
+  context: RequestContext, query: CmrQuery, token: string,
+): Promise<Array<CmrUmmService>> {
+  const type = cmrQueryType.SERVICE;
+  const key = hashCmrQuery(type, query, token);
+  const result = await cmrCache.fetch(key, { context: { type, context, query, token } });
+  return result as Array<CmrUmmService>;
+}
+
+/**
+ * Retrieve collections json with the given query from CMR cache.
+ * Perform the search if cache miss.
+ *
+ * @param context - Information related to the user's request
+ * @param query - The key/value pairs to search
+ * @param token - Access token for user request
+ * @returns The collection search results
+ */
+async function queryCollections(
+  context: RequestContext, query: CmrQuery, token: string,
+): Promise<Array<CmrCollection>> {
+  const type = cmrQueryType.COLL_JSON;
+  const key = hashCmrQuery(type, query, token);
+  const result = await cmrCache.fetch(key, { context: { type, context, query, token } });
+  return result as Array<CmrCollection>;
+}
+
+/**
+ * Retrieve collections umm json with the given query from CMR cache.
+ * Perform the search if cache miss.
+ *
+ * @param context - Information related to the user's request
+ * @param query - The key/value pairs to search
+ * @param token - Access token for user request
+ * @returns The umm collection search results
+ */
+async function queryUmmCollections(
+  context: RequestContext, query: CmrQuery, token: string,
+): Promise<Array<CmrUmmCollection>> {
+  const type = cmrQueryType.COLL_UMM;
+  const key = hashCmrQuery(type, query, token);
+  const result = await cmrCache.fetch(key, { context: { type, context, query, token } });
+  return result as Array<CmrUmmCollection>;
+}
+
+/**
+ * Retrieve grids json with the given query from CMR cache.
+ * Perform the search if cache miss.
  *
  * @param context - Information related to the user's request
  * @param query - The key/value pairs to search
@@ -767,8 +959,10 @@ async function queryUmmCollections(
 async function queryGrids(
   context: RequestContext, query: CmrQuery, token: string,
 ): Promise<Array<CmrUmmGrid>> {
-  const gridsResponse = await _cmrGet(context, '/search/grids.umm_json', query, token) as CmrGridsResponse;
-  return gridsResponse.data.items;
+  const type = cmrQueryType.GRID;
+  const key = hashCmrQuery(type, query, token);
+  const result = await cmrCache.fetch(key, { context: { type, context, query, token } });
+  return result as Array<CmrUmmGrid>;
 }
 
 /**
