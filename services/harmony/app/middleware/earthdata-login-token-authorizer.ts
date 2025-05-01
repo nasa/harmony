@@ -23,7 +23,7 @@ async function fetchUserId(token: string, _sv: string, { context }): Promise<str
 // A token is valid if it exists in the cache.
 export const tokenCache = new LRUCache({
   ttl: env.tokenCacheTtl,
-  maxSize: env.maxDataOperationCacheSize,
+  maxSize: env.tokenCacheSize,
   sizeCalculation: (value: string): number => value.length,
   fetchMethod: fetchUserId,
 });
