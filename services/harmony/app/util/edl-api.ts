@@ -117,7 +117,7 @@ export interface EdlUserEulaInfo {
 }
 
 /**
- * Returns the harmony relevant group information for a user with two keys isAdmin and isLogViewer.
+ * Returns the harmony relevant group information for a user
  *
  * @param context - Information related to the user's request
  * @param username - The EDL username
@@ -267,7 +267,7 @@ export async function verifyUserEula(context: RequestContext, username: string, 
 }
 
 /**
- * Retrieve the harmony relevant group information for a user with two keys isAdmin and isLogViewer.
+ * Retrieve the harmony relevant group information for a user
  * Perform the EDL query if cache miss.
  *
  * @param context - Information related to the user's request
