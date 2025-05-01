@@ -64,6 +64,7 @@
     "geojson-antimeridian-cut": "^0.1.0",
     "lodash": "^4.17.21",
     "lodash.camelcase": "^4.3.0",
+    "lru-cache": "^11.0.2",
     "node-fetch": ">=2.7.0 <3.0.0",
     "shpjs": ">=4.0.4 <5.0.0",
     "tmp": "^0.2.1",
