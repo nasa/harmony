@@ -132,24 +132,6 @@ MAX_POST_FILE_PARTS=100
 # Maximum size (in bytes) of the cache for data operations, 512MB
 MAX_DATA_OPERATION_CACHE_SIZE=512000000
 
-# Maximum size (in bytes) of the token cache, 50MB
-TOKEN_CACHE_SIZE=50000000
-
-# Token Cache TTL in milliseconds
-TOKEN_CACHE_TTL=300000
-
-# Maximum size (in bytes) of the cache for EDL searches, 50MB
-EDL_CACHE_SIZE=50000000
-
-# EDL Cache TTL in milliseconds
-EDL_CACHE_TTL=600000
-
-# Maximum size (in bytes) of the cache for CMR searches, 256MB
-CMR_CACHE_SIZE=256000000
-
-# CMR Cache TTL in milliseconds
-CMR_CACHE_TTL=600000
-
 # WKT POINT/LINESTRING to POLYGON conversion side length, 0.0001 is about 11 meters in precision
 WKT_PRECISION=0.0001
 
