@@ -1,39 +1,48 @@
 # Adapting New Services to Harmony<!-- omit in toc -->
 
-Please reach out in #harmony-service-providers (EOSDIS Slack) for additional guidance on any adaptation needs, and especially with any feedback that can help us improve.
+If you're adapting a new service for Harmony, we recommend reaching out in the `#harmony-service-providers` channel on EOSDIS Slack for help and to share any feedback that can improve this process for others.
 
-### Note Regarding services.yml
-Harmony services that are defined in the CMR UAT environment are configured in a file under the `config`
-directory called `services-uat.yml`, while services defined in the CMR production environment are
-configured in a file called `services-prod.yml`. These files are referred to collectively as `services.yml`
-in this document.
+### Note on `services.yml`
+Harmony services are configured differently depending on the environment:
+- Services deployed in the CMR UAT environment are defined in `config/services-uat.yml`.
+- Services deployed in the CMR production environment are defined in `config/services-prod.yml`.
+
+This guide refers to both of these files collectively as `services.yml`.
 
 ## Quick Start
-Fully setting up a service can be overwhelming for first time service providers. We now provide a script `bin/generate-new-service` to generate
-much of the scaffolding to get services ready for local integration testing with harmony quickly. The scaffolding provides the following:
+Setting up a new service can feel daunting at first. To simplify the process, Harmony provides a scaffolding script:
+```bash
+bin/generate-new-service
+```
+This script sets up the essential files and configuration needed to integrate a service into the local Harmony development environment. Specifically, it will:
 
-1. Updates to env-defaults files to add needed environment variables for running the service
-2. Updates to services-uat.yml to fill in a new service definition to call the service
-3. Updates to local environment variables in .env to ensure the service is deployed
-4. Updates to local environment variables in .env to bypass needing to have a UMM-S record ready to go in UAT and collections associated
-5. A new directory at the same level as the harmony repo that contains:
-    1. Dockerfile defining an image that includes some common libraries used by service providers
-    2. A script to build the service image
-    3. Python wrapper code to make use of the harmony-service-library with hooks identified for places to add the custom service code
+1. Add necessary environment variables to the appropriate `env-defaults` files.
+2. Create a new service definition in `services-uat.yml`.
+3. Update your local `.env` file to ensure the new service is included in your development setup.
+4. Add overrides in `.env` to allow testing without requiring a UMM-S record or associated collections in UAT.
+5. Generate a new service directory (at the same level as the Harmony repo) that includes:
+   - A `Dockerfile` with common dependencies for Harmony services
+   - A script to build the service's Docker image
+   - A Python wrapper integrating the `harmony-service-library`, with placeholders for your custom service logic
+
+> **Important:**
+> After running the script, **make sure to add your new service name to the `LOCALLY_DEPLOYED_SERVICES` environment variable in your `.env` file**.
+> This ensures Harmony recognizes and deploys your service during local development.
 
 ### Setting up a new service
 ***Prior to setting up a new service be sure to get harmony fully functional and tested with harmony-service-example by following the Quickstart
 in the main [README](../../README.md). Then come back to this section to set up the new service.***
 
-1. Run `bin/generate-new-service` and fill in values when prompted.
-2. Read the output after the script completes and follow the instructions provided in the terminal to finish setting up the service.
+1. Run `bin/generate-new-service` and respond to the prompts.
+2. Follow the post-script instructions printed to your terminal to complete the setup.
+3. Ensure your service is listed in `LOCALLY_DEPLOYED_SERVICES` in `.env` to enable local deployment.
 
-Using the script will help to see the files that need to be changed in order to test with harmony and many of the defaults will just work.
-Once you have finished testing things out be sure to follow the steps outlined in the rest of this document to ensure the service is
+Using the script will help to highlight the files that need to be changed in order to test with harmony and many of the defaults will just work.
+Once you have finished testing things out, be sure to follow the steps outlined in the rest of this document to ensure the service is
 ready to be integrated into other harmony test environments.
 
-Note that the service chain that is generated in services-uat.yml will define a service chain that queries for granules from the CMR and
-then invokes a single service image. If setting up a more complex service chain be sure to modify the entry.
+Note that the service chain that is generated in `services-uat.yml` will define a service chain that queries for granules from the CMR and
+then invokes a single service image. If your service requires a more complex processing chain, be sure to adjust the configuration accordingly.
 
 ## Table of Contents<!-- omit in toc -->
 - [Requirements for Harmony Services](#requirements-for-harmony-services)
