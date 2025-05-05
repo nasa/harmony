@@ -18,16 +18,12 @@ This script sets up the essential files and configuration needed to integrate a 
 
 1. Add necessary environment variables to the appropriate `env-defaults` files.
 2. Create a new service definition in `services-uat.yml`.
-3. Update your local `.env` file to ensure the new service is included in your development setup.
+3. Update your local `.env` file (e.g. LOCALLY_DEPLOYED_SERVICES) to ensure the new service is included in your development setup.
 4. Add overrides in `.env` to allow testing without requiring a UMM-S record or associated collections in UAT.
 5. Generate a new service directory (at the same level as the Harmony repo) that includes:
    - A `Dockerfile` with common dependencies for Harmony services
    - A script to build the service's Docker image
    - A Python wrapper integrating the `harmony-service-library`, with placeholders for your custom service logic
-
-> **Important:**
-> After running the script, **make sure to add your new service name to the `LOCALLY_DEPLOYED_SERVICES` environment variable in your `.env` file**.
-> This ensures Harmony recognizes and deploys your service during local development.
 
 ### Setting up a new service
 ***Prior to setting up a new service be sure to get harmony fully functional and tested with harmony-service-example by following the Quickstart
