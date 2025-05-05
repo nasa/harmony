@@ -23,6 +23,7 @@ describe('Versions endpoint', function () {
       it('returns a listing of all of the turbo services from services.yml', function () {
         const services = JSON.parse(this.res.text);
         expect(services.map((s) => s.name)).to.eql([
+          'asdc/filtering',
           'harmony/download',
           'ldds/subset-band-name',
           'ldds/geoloco',

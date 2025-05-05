@@ -538,3 +538,9 @@ HARMONY_SMAP_L2_GRIDDER_REQUESTS_MEMORY=128Mi
 HARMONY_SMAP_L2_GRIDDER_LIMITS_MEMORY=8Gi
 HARMONY_SMAP_L2_GRIDDER_INVOCATION_ARGS='python -m harmony_service'
 HARMONY_SMAP_L2_GRIDDER_SERVICE_QUEUE_URLS='["ghcr.io/nasa/harmony-smap-l2-gridder:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/harmony-smap-l2-gridder.fifo"]'
+
+FILTERING_IMAGE=harmony/filtering:latest
+FILTERING_REQUESTS_MEMORY=4Gi
+FILTERING_LIMITS_MEMORY=6Gi
+FILTERING_INVOCATION_ARGS='./docker-entrypoint.sh'
+FILTERING_SERVICE_QUEUE_URLS='["harmony/filtering:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/filtering.fifo"]'
