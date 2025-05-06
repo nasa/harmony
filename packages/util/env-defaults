@@ -128,7 +128,8 @@ PODAAC_NETCDF_CONVERTER_SERVICE_QUEUE_URLS='["podaac/podaac-cloud/podaac-netcdf-
 QUERY_CMR_SERVICE_QUEUE_URLS='["harmonyservices/query-cmr:stable,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/query-cmr.fifo"]'
 BATCHEE_SERVICE_QUEUE_URLS='["ghcr.io/nasa/batchee:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/batchee.fifo"]'
 STITCHEE_SERVICE_QUEUE_URLS='["ghcr.io/nasa/stitchee:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/stitchee.fifo"]'
-FILTERING_SERVICE_QUEUE_URLS='["ghcr.io/srizvi-nasa/harmony-filtering:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/filtering.fifo"]'
+FILTERING_SERVICE_QUEUE_URLS='["harmony/filtering:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/filtering.fifo"]'
+
 
 # The number of seconds to allow a pod to continue processing an active request before terminating a pod
 DEFAULT_POD_GRACE_PERIOD_SECS=14400
