@@ -4,8 +4,8 @@ If you're adapting a new service for Harmony, we recommend reaching out in the `
 
 ### Note on `services.yml`
 Harmony services are configured differently depending on the environment:
-- Services deployed in the CMR UAT environment are defined in `config/services-uat.yml`.
-- Services deployed in the CMR production environment are defined in `config/services-prod.yml`.
+- Services deployed in the Harmony UAT environment are defined in `config/services-uat.yml`.
+- Services deployed in the Harmony production environment are defined in `config/services-prod.yml`.
 
 This guide refers to both of these files collectively as `services.yml`.
 
