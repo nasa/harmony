@@ -1,13 +1,14 @@
-import * as fs from 'fs';
-import * as path from 'path';
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
+import * as fs from 'fs';
 import _ from 'lodash';
-import logger from '../util/log';
+import * as path from 'path';
+
 import { CmrUmmCollection, CmrUmmVariable } from '../util/cmr';
-import { Encrypter, Decrypter } from '../util/crypto';
-import { cmrVarToHarmonyVar, HarmonyVariable } from '../util/variables';
+import { Decrypter, Encrypter } from '../util/crypto';
+import logger from '../util/log';
 import { isValidUri } from '../util/url';
+import { cmrVarToHarmonyVar, HarmonyVariable } from '../util/variables';
 
 export const CURRENT_SCHEMA_VERSION = '0.21.0';
 
@@ -959,7 +960,7 @@ export default class DataOperation {
    *
    * @returns The extra arguments that will be passed to service worker
    */
-  get extraArgs(): object {
+  get extraArgs(): Record<string, unknown> {
     return this.model.extraArgs;
   }
 
@@ -968,7 +969,7 @@ export default class DataOperation {
    *
    * @param extraArgs - The extra arguments that will be passed to service worker
    */
-  set extraArgs(extraArgs: object) {
+  set extraArgs(extraArgs: Record<string, unknown>) {
     this.model.extraArgs = extraArgs;
   }
 
