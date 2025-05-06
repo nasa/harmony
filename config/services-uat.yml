@@ -32,7 +32,7 @@ https://cmr.uat.earthdata.nasa.gov:
           STAGING_PATH: public/harmony/filtering
     umm_s: 'S1273163940-LARC_CLOUD'
     capabilities:
-      concatenation: true
+      concatenation: false
       subsetting:
         bbox: false
         variable: false
