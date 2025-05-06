@@ -30,7 +30,7 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/harmony/filtering
-    umm_s: 'S1273163940-LARC_CLOUD'
+    umm_s: 'S1273529849-LARC_CLOUD'
     capabilities:
       concatenation: false
       subsetting:
