@@ -1037,7 +1037,7 @@ describe('Services by association', function () {
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookRangesetRequest(version, conversionCollection, 'all', { headers, query: granuleQuery });
       it('uses the backend service from the association', function () {
-        expect(this.service.config.name).to.equal('harmony/netcdf-to-zarr');
+        expect(this.service.config.name).to.equal('harmony/service-example');
       });
     });
 

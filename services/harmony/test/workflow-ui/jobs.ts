@@ -50,7 +50,7 @@ const woodySyncJob = buildJob({
   request: 'http://example.com/harmony?request=woody2',
   isAsync: false,
   numInputGranules: 12615,
-  service_name: 'harmony/netcdf-to-zarr',
+  service_name: 'sds/swath-projector',
   provider_id: 'provider_b',
 });
 
@@ -488,9 +488,9 @@ describe('Workflow UI jobs route', function () {
         const serviceExampleTd = mustache.render('<td>{{service}}</td>', { service: 'harmony/service-example' });
         const serviceExampleRegExp = new RegExp(serviceExampleTd, 'g');
         expect((listing.match(serviceExampleRegExp) || []).length).to.equal(2);
-        const netcdfToZarrTd = mustache.render('<td>{{service}}</td>', { service: 'harmony/netcdf-to-zarr' });
-        const netcdfToZarrRegExp = new RegExp(netcdfToZarrTd, 'g');
-        expect((listing.match(netcdfToZarrRegExp) || []).length).to.equal(0);
+        const swathProjectorTd = mustache.render('<td>{{service}}</td>', { service: 'sds/swath-projector' });
+        const swathProjectorRegExp = new RegExp(swathProjectorTd, 'g');
+        expect((listing.match(swathProjectorRegExp) || []).length).to.equal(0);
       });
       it('does not have disallowService HTML checked', function () {
         const listing = this.res.text;
@@ -505,15 +505,15 @@ describe('Workflow UI jobs route', function () {
     describe('who filters by service NOT IN [harmony/service-example]', function () {
       const tableFilter = '[{"value":"service: harmony/service-example","dbValue":"harmony/service-example","field":"service"}]';
       hookWorkflowUIJobs({ username: 'woody', disallowService: 'on', tableFilter });
-      it('returns jobs for harmony/netcdf-to-zarr', function () {
+      it('returns jobs for sds/swath-projector', function () {
         const listing = this.res.text;
         expect((listing.match(/job-table-row/g) || []).length).to.equal(1);
         const serviceExampleTd = mustache.render('<td>{{service}}</td>', { service: 'harmony/service-example' });
         const serviceExampleRegExp = new RegExp(serviceExampleTd, 'g');
         expect((listing.match(serviceExampleRegExp) || []).length).to.equal(0);
-        const netcdfToZarrTd = mustache.render('<td>{{service}}</td>', { service: 'harmony/netcdf-to-zarr' });
-        const netcdfToZarrRegExp = new RegExp(netcdfToZarrTd, 'g');
-        expect((listing.match(netcdfToZarrRegExp) || []).length).to.equal(1);
+        const swathProjectorTd = mustache.render('<td>{{service}}</td>', { service: 'sds/swath-projector' });
+        const swathProjectorRegExp = new RegExp(swathProjectorTd, 'g');
+        expect((listing.match(swathProjectorRegExp) || []).length).to.equal(1);
       });
       it('does have disallowService HTML checked', function () {
         const listing = this.res.text;
@@ -545,15 +545,15 @@ describe('Workflow UI jobs route', function () {
     describe('who filters by a particular combination of filter types', function () {
       const tableFilter = '[{"value":"service: harmony/service-example","dbValue":"harmony/service-example","field":"service"},{"value":"status: failed","dbValue":"failed","field":"status"}]';
       hookWorkflowUIJobs({ username: 'woody', disallowService: 'on', disallowStatus: '', tableFilter });
-      it('returns the harmony/netcdf-to-zarr job', function () {
+      it('returns the sds/swath-projector job', function () {
         const listing = this.res.text;
         expect((listing.match(/job-table-row/g) || []).length).to.equal(1);
         const serviceExampleTd = mustache.render('<td>{{service}}</td>', { service: 'harmony/service-example' });
         const serviceExampleRegExp = new RegExp(serviceExampleTd, 'g');
         expect((listing.match(serviceExampleRegExp) || []).length).to.equal(0);
-        const netcdfToZarrTd = mustache.render('<td>{{service}}</td>', { service: 'harmony/netcdf-to-zarr' });
-        const netcdfToZarrRegExp = new RegExp(netcdfToZarrTd, 'g');
-        expect((listing.match(netcdfToZarrRegExp) || []).length).to.equal(1);
+        const swathProjectorTd = mustache.render('<td>{{service}}</td>', { service: 'sds/swath-projector' });
+        const swathProjectorRegExp = new RegExp(swathProjectorTd, 'g');
+        expect((listing.match(swathProjectorRegExp) || []).length).to.equal(1);
 
         expect(listing).to.contain(`<span class="badge rounded-pill bg-danger">${JobStatus.FAILED.valueOf()}</span>`);
         expect(listing).to.not.contain(`<span class="badge rounded-pill bg-success">${JobStatus.SUCCESSFUL.valueOf()}</span>`);
@@ -734,17 +734,17 @@ describe('Workflow UI jobs route', function () {
       });
 
       describe('who filters by a particular combination of filter types', function () {
-        const tableFilter = '[{"value":"service: harmony/netcdf-to-zarr","dbValue":"harmony/netcdf-to-zarr","field":"service"},{"value":"user: woody","dbValue":"woody","field":"user"},{"value":"provider: provider_b","dbValue":"provider_b","field":"provider"}]';
+        const tableFilter = '[{"value":"service: sds/swath-projector","dbValue":"sds/swath-projector","field":"service"},{"value":"user: woody","dbValue":"woody","field":"user"},{"value":"provider: provider_b","dbValue":"provider_b","field":"provider"}]';
         hookAdminWorkflowUIJobs({ username: 'adam', tableFilter });
-        it('returns the harmony/netcdf-to-zarr job', function () {
+        it('returns the sds/swath-projector job', function () {
           const listing = this.res.text;
           expect((listing.match(/job-table-row/g) || []).length).to.equal(1);
           const serviceExampleTd = mustache.render('<td>{{service}}</td>', { service: 'harmony/service-example' });
           const serviceExampleRegExp = new RegExp(serviceExampleTd, 'g');
           expect((listing.match(serviceExampleRegExp) || []).length).to.equal(0);
-          const netcdfToZarrTd = mustache.render('<td>{{service}}</td>', { service: 'harmony/netcdf-to-zarr' });
-          const netcdfToZarrRegExp = new RegExp(netcdfToZarrTd, 'g');
-          expect((listing.match(netcdfToZarrRegExp) || []).length).to.equal(1);
+          const swathProjectorTd = mustache.render('<td>{{service}}</td>', { service: 'sds/swath-projector' });
+          const swathProjectorRegExp = new RegExp(swathProjectorTd, 'g');
+          expect((listing.match(swathProjectorRegExp) || []).length).to.equal(1);
 
           expect(listing).to.contain(`<span class="badge rounded-pill bg-danger">${JobStatus.FAILED.valueOf()}</span>`);
           expect(listing).to.not.contain(`<span class="badge rounded-pill bg-success">${JobStatus.SUCCESSFUL.valueOf()}</span>`);
@@ -758,7 +758,7 @@ describe('Workflow UI jobs route', function () {
         });
         it('has the appropriate filters selected', function () {
           const listing = this.res.text;
-          expect(listing).to.contain(mustache.render('{{service}}', { service: 'service: harmony/netcdf-to-zarr' }));
+          expect(listing).to.contain(mustache.render('{{service}}', { service: 'service: sds/swath-projector' }));
           expect(listing).to.contain(mustache.render('{{user}}', { user: 'user: woody' }));
           expect(listing).to.contain(mustache.render('{{provider}}', { provider: 'provider: provider_b' }));
         });

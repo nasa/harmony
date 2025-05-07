@@ -322,5 +322,6 @@ Request to this repo:
 * [Adapting new services to Harmony](adapting-new-services.md)
 * [Harmony message schemas](../../services/harmony/app/schemas/data-operation)
 * [EOSS protocol OpenAPI Specification](../../services/harmony/app/schemas/eoss)
-* [Harmony NetCDF to Zarr service repository](https://github.com/nasa/harmony-netcdf-to-zarr)
 * [Harmony GDAL-based example service repository](https://github.com/nasa/harmony-service-example)
+* [Harmony OPeNDAP SubSetter service repository](https://github.com/nasa/harmony-opendap-subsetter)
+* [PODAAC Level 2 Subsetting Service](https://github.com/podaac/l2ss-py)

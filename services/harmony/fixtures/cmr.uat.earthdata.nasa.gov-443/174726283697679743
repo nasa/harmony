@@ -1,0 +1,30 @@
+POST /search/granules.json
+accept: application/json
+content-type: multipart/form-data; boundary=----------------------------012345678901234567890123
+accept-encoding: gzip,deflate
+body: ------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"page_size\"\r\n\r\n100\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"concept_id\"\r\n\r\nG123-BOGUS\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"shapefile\"; filename=\"shapefile\"\r\nContent-Type: application/geo+json\r\n\r\n{\"type\":\"FeatureCollection\",\"features\":[{\"type\":\"Feature\",\"geometry\":{\"type\":\"Polygon\",\"coordinates\":[[[-65.390625,-13.239945],[-29.882813,-50.958427],[17.929688,30.145127],[-65.390625,-13.239945]]]},\"properties\":{}}]}\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"collection_concept_id\"\r\n\r\nC1233800302-EEDTEST\r\n------------------------------012345678901234567890123--\r\n
+
+HTTP/1.1 200 OK
+content-type: application/json;charset=utf-8
+transfer-encoding: chunked
+connection: keep-alive
+date: Wed, 14 May 2025 22:47:17 GMT
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: 6f5a6204-9228-49d5-b0b1-b4be33f5f2d9
+content-sha1: 39e5d19cf95c676b3a688cf0ea87c184f9526724
+strict-transport-security: max-age=31536000; includeSubDomains; preload
+cmr-hits: 0
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Search-After, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 21
+x-request-id: 6f5a6204-9228-49d5-b0b1-b4be33f5f2d9
+content-md5: c14eee695ef95f66ee625078e19c359d
+server: ServerTokens ProductOnly
+x-cache: Miss from cloudfront
+via: 1.1 6ef654a6fd950af1eb6fc4790b972c72.cloudfront.net (CloudFront)
+x-amz-cf-pop: IAD89-P2
+x-amz-cf-id: odtSq9QzKxLbLuL1m2WIRfDIGYqD_LEQal5em86-GAu5SFD5doQTQQ==
+
+{"feed":{"updated":"2025-05-14T22:47:17.014Z","id":"https://cmr.uat.earthdata.nasa.gov:443/search/granules.json","title":"ECHO granule metadata","entry":[]}}

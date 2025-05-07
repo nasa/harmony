@@ -1,0 +1,30 @@
+GET /search/collections.json?include_tags=harmony.has-eula&concept_id=C1234088182-EEDTEST&page_size=100
+accept: application/json
+accept-encoding: gzip,deflate
+
+HTTP/1.1 200 OK
+content-type: application/json;charset=utf-8
+transfer-encoding: chunked
+connection: keep-alive
+date: Wed, 14 May 2025 22:46:43 GMT
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: 0e1d2b3c-ce82-403d-9b9c-137edbc0e8fc
+content-sha1: 3d088a67318cf503cdde5303be03679cfcc0a4f6
+strict-transport-security: max-age=31536000; includeSubDomains; preload
+cmr-search-after: ["harmony example data v2","EEDTEST","harmony_example","2",1234088182,2]
+cmr-hits: 1
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Search-After, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 9
+x-request-id: 0e1d2b3c-ce82-403d-9b9c-137edbc0e8fc
+content-md5: 81128633768df6b215aa7bf485b384ba
+vary: Accept-Encoding, User-Agent
+server: ServerTokens ProductOnly
+x-cache: Miss from cloudfront
+via: 1.1 6ef654a6fd950af1eb6fc4790b972c72.cloudfront.net (CloudFront)
+x-amz-cf-pop: IAD89-P2
+x-amz-cf-id: 1DUSw8gKWtPKzbCLj1z66AmuFfeGk63L6H6pj1Vsp95O2zX_RW6kYg==
+
+{"feed":{"updated":"2025-05-14T22:46:43.403Z","id":"https://cmr.uat.earthdata.nasa.gov:443/search/collections.json?include_tags=harmony.has-eula&concept_id=C1234088182-EEDTEST&page_size=100","title":"ECHO dataset metadata","entry":[{"cloud_hosted":false,"has_combine":true,"time_start":"1970-06-26T00:00:00.000Z","version_id":"2","updated":"2000-01-01T00:00:00.000Z","dataset_id":"Harmony Example Data v2","entry_id":"harmony_example_2","has_spatial_subsetting":true,"has_transforms":true,"associations":{"variables":["V1234088189-EEDTEST","V1234088187-EEDTEST","V1234088190-EEDTEST","V1234088188-EEDTEST"],"services":["S1237980031-EEDTEST","S1257851197-EEDTEST","S1245787332-EEDTEST","S1237974301-EEDTEST"]},"has_variables":true,"data_center":"EEDTEST","short_name":"harmony_example","title":"Harmony Example Data v2","summary":"A collection to use in testing Harmony whose data have the following attributes, useful in testing current    and future Harmony work, ensuring that results come back correctly, and that metadata is preserved.    1. Granule data is very small, under 1MB, often well under 1MB    2. Data follows the outlines of the continents, making visual inspection easy    3. Data follows a consistent gradient, with hue differing slightly by granule in sequential temporal order from       blue/purple (oldest) to red (newest)    4. Files have color interpretation set, allowing for color output, if services preserve it    5. Files have 4 variables / bands    6. Data bands have descriptions set    Differences from v1:    1. Produced via the NetCDF4 API, with deliberate chunking of 16 chunks per variable    2. File custom metadata renamed to HarmonyHexColor, set to the central hex value of the file's gradient, and HarmonyHue, set to the numeric hue (0.0-1.0)    3. Each geographic area is separated to a different month with each sub-file as the same day of that month    4. File names are improved to have a year-month-day format  ","service_features":{"harmony":{"has_formats":true,"has_variables":true,"has_transforms":true,"has_combine":true,"has_spatial_subsetting":true,"has_temporal_subsetting":true},"opendap":{"has_formats":false,"has_variables":false,"has_transforms":false,"has_combine":false,"has_spatial_subsetting":false,"has_temporal_subsetting":false},"esi":{"has_formats":false,"has_variables":false,"has_transforms":false,"has_combine":false,"has_spatial_subsetting":false,"has_temporal_subsetting":false}},"orbit_parameters":{},"id":"C1234088182-EEDTEST","has_formats":true,"original_format":"UMM_JSON","has_temporal_subsetting":true,"browse_flag":false,"platforms":[],"association_details":{"variables":[{"concept_id":"V1234088189-EEDTEST"},{"concept_id":"V1234088187-EEDTEST"},{"concept_id":"V1234088190-EEDTEST"},{"concept_id":"V1234088188-EEDTEST"}],"services":[{"concept_id":"S1237980031-EEDTEST"},{"concept_id":"S1257851197-EEDTEST"},{"concept_id":"S1245787332-EEDTEST"},{"concept_id":"S1237974301-EEDTEST"}]},"online_access_flag":false}]}}

@@ -11,15 +11,14 @@ import { truncateAll } from '../helpers/db';
 import env from '../../app/util/env';
 import { resetQueues } from '../helpers/queue';
 
-const reprojectAndZarrQuery = {
+const reprojectQuery = {
   maxResults: 1,
   outputCrs: 'EPSG:4326',
   interpolation: 'near',
   scaleExtent: '0,2500000.3,1500000,3300000',
   scaleSize: '1.1,2',
-  format: 'application/x-zarr',
   ignoreErrors: true,
-  concatenate: false,
+  forceAsync: true,
 };
 
 describe('Work item failure retries', function () {
@@ -48,7 +47,7 @@ describe('Work item failure retries', function () {
     });
 
     describe('And a work-item fails the first time', async function () {
-      hookRangesetRequest('1.0.0', collection, 'all', { query: { ...reprojectAndZarrQuery, ...{ maxResults: 1 } } });
+      hookRangesetRequest('1.0.0', collection, 'all', { query: { ...reprojectQuery, ...{ maxResults: 1 } } });
       hookRedirect('joe');
       before(async function () {
         const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
@@ -89,7 +88,7 @@ describe('Work item failure retries', function () {
     });
 
     describe('And a work-item fails the first time', async function () {
-      hookRangesetRequest('1.0.0', collection, 'all', { query: { ...reprojectAndZarrQuery, ...{ maxResults: 1 } } });
+      hookRangesetRequest('1.0.0', collection, 'all', { query: { ...reprojectQuery, ...{ maxResults: 1 } } });
       hookRedirect('joe');
       before(async function () {
         const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
@@ -149,7 +148,7 @@ describe('Work item failure retries', function () {
       });
     });
     describe('And a work-item fails the first time', async function () {
-      hookRangesetRequest('1.0.0', collection, 'all', { query: { ...reprojectAndZarrQuery, ...{ maxResults: 1 } } });
+      hookRangesetRequest('1.0.0', collection, 'all', { query: { ...reprojectQuery, ...{ maxResults: 1 } } });
       hookRedirect('joe');
       before(async function () {
         const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
