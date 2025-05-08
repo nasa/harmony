@@ -1,4 +1,5 @@
 import { NextFunction, Response } from 'express';
+
 import HarmonyRequest from '../models/harmony-request';
 import { CmrCollection, CmrUmmVariable } from './cmr';
 import { RequestValidationError } from './errors';
@@ -203,8 +204,7 @@ export function parseVariables(
  * collectionId parameter return the full variables which match.
  *
  * @param eosdisCollections - An array of collections
- * @param collectionIdParam - The OGC collectionId query parameter
- * @param queryVars - A string of comma separated variable names or an array of variable names
+ * @param variableIds - A string of comma separated variable names or an array of variable names
  * - taken from the request object via the `variable` parameter
  * @param shouldValidateUmmVar - True if we should verify the variables exist in the CMR
  * @returns an array of objects with a collectionId and list

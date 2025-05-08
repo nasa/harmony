@@ -1,8 +1,9 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
-import { parseSchemaFile, versions } from '../helpers/data-operation';
+
 import DataOperation, { CURRENT_SCHEMA_VERSION } from '../../app/models/data-operation';
 import { CmrRelatedUrl } from '../../app/util/cmr';
+import { parseSchemaFile, versions } from '../helpers/data-operation';
 
 const validOperation = new DataOperation(parseSchemaFile('valid-operation-input.json'));
 // bbox has one too many numbers
@@ -340,9 +341,68 @@ describe('DataOperation', () => {
       },
     }];
 
+    const visualizations = [{
+      meta: {
+        'associations': {
+          'collections': [
+            'C1200449962-MMT_1',
+          ],
+        },
+        'concept-id': 'VIS1200484625-MMT_1',
+      },
+      umm: {
+        'Name': 'Test123',
+        'Identifier': 'Test123 ID',
+        'VisualizationType': 'tiles',
+        'Specification': {},
+        'Generation': {},
+        'MetadataSpecification': {
+          'URL': 'https://cdn.earthdata.nasa.gov/umm/visualization/v1.1.0',
+          'Name': 'Visualization',
+          'Version': '1.1.0',
+        },
+        'ConceptIds': [
+          {
+            'Type': 'STD',
+            'Value': 'C1200449962-MMT_1',
+          },
+        ],
+      },
+    },
+    {
+      meta: {
+        'associations': {
+          'variables': [
+            'V123-BAR',
+          ],
+        },
+        'concept-id': 'VIS1200484625-MMT_1',
+      },
+      umm: {
+        'Name': 'Test1234',
+        'Identifier': 'Test1234 ID',
+        'VisualizationType': 'tiles',
+        'Specification': {},
+        'Generation': {},
+        'MetadataSpecification': {
+          'URL': 'https://cdn.earthdata.nasa.gov/umm/visualization/v1.1.0',
+          'Name': 'Visualization',
+          'Version': '1.1.0',
+        },
+        'ConceptIds': [
+          {
+            'Type': 'STD',
+            'Value': 'C1200449962-MMT_1',
+          },
+        ],
+      },
+    }];
+
+    const expectedVisualizations = visualizations.map(visualization => visualization.umm);
+
     describe('when adding a source', () => {
       const operation = new DataOperation();
-      operation.addSource(collection, shortName, versionId, variables, coordinateVariables);
+      operation.addSource(collection, shortName, versionId, variables, coordinateVariables, visualizations);
 
       it('sets the collection correctly', () => {
         expect(operation.model.sources[0].collection).to.equal('Foo');
@@ -376,6 +436,10 @@ describe('DataOperation', () => {
 
       it('uses the variable name as the fullPath', () => {
         expect(operation.model.sources[0].variables[0].fullPath).to.equal('the/nested/name');
+      });
+
+      it('sets the visualizations correctly', () => {
+        expect(operation.model.sources[0].visualizations).to.eql(expectedVisualizations);
       });
 
       it('sets the Color Map related URL', () => {

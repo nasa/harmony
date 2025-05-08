@@ -1,3 +1,7 @@
+## [0.22.0] - 2025-04-30
+### Added
+- ummVis - The UMM-Vis records associated with the collection or variables
+
 ## [0.21.0] - 2025-02-18
 ### Added
 - pixelSubset - true/false - true if pixel subset should be performed by the service.

@@ -1,12 +1,17 @@
 import { NextFunction } from 'express';
-import { harmonyCollections } from '../models/services';
-import { getVariablesForCollection, CmrCollection, getCollectionsByIds, getCollectionsByShortName, cmrApiConfig } from '../util/cmr';
-import { ForbiddenError, NotFoundError, ServerError } from '../util/errors';
-import HarmonyRequest from '../models/harmony-request';
+
 import { listToText } from '@harmony/util/string';
-import { EdlUserEulaInfo, verifyUserEula } from '../util/edl-api';
+
+import HarmonyRequest from '../models/harmony-request';
 import RequestContext from '../models/request-context';
+import { harmonyCollections } from '../models/services';
+import {
+  cmrApiConfig, CmrCollection, getCollectionsByIds, getCollectionsByShortName,
+  getVariablesForCollection, getVisualizationsForCollection, getVisualizationsForVariable,
+} from '../util/cmr';
+import { EdlUserEulaInfo, verifyUserEula } from '../util/edl-api';
 import env from '../util/env';
+import { ForbiddenError, NotFoundError, ServerError } from '../util/errors';
 
 // CMR Collection IDs separated by delimiters of single "+" or single whitespace
 // (some clients may translate + to space)
@@ -28,8 +33,33 @@ const EDR_COLLECTION_ROUTE_REGEX = /^\/ogc-api-edr\/.*\/collections\/(.*)\//;
  * @returns Resolves when the loading completes
  */
 async function loadVariablesForCollection(context: RequestContext, collection: CmrCollection, token: string): Promise<void> {
-  const c = collection; // We are mutating collection
-  c.variables = await getVariablesForCollection(context, collection, token);
+  collection.variables = await getVariablesForCollection(context, collection, token);
+}
+
+/**
+ * Loads the visualizations for the given collection from the CMR and sets the collection's
+ * "visualizations" attribute to the result. First checks for visualizations for any associated
+ * variables and uses those. If none are available, load any visualizations directly
+ * associated with this collections.
+ *
+ * @param context - The context for the user's request
+ * @param collection - The collection whose visualizations should be loaded
+ * @param token - Access token for user request
+ * @returns Resolves when the loading completes
+ */
+async function loadVisualizationsForCollection(context: RequestContext, collection: CmrCollection, token: string): Promise<void> {
+  const visPromises = [];
+  if (collection.variables && collection.variables.length > 0) {
+    for (const variable of collection.variables) {
+      visPromises.push(getVisualizationsForVariable(context, variable, token));
+    }
+  }
+  const visualizations = [].concat(await Promise.all(visPromises)).flat();
+  if (visualizations.length > 0) {
+    collection.visualizations = visualizations;
+  } else {
+    collection.visualizations = await getVisualizationsForCollection(context, collection, token);
+  }
 }
 
 /**
@@ -71,7 +101,8 @@ async function verifyEulaAcceptance(collections: CmrCollection[], req: HarmonyRe
  *
  *   req.context.collectionIds: An array of the resolved collection IDs
  *   req.context.collections: An array of the CMR (JSON) collections, each with a "variables" attribute
- *      containing the Collection's UMM-Var variables
+ *      containing the Collection's UMM-Var variables and a "visualizations" attribute
+ *      containing UMM-Vis visualizations associated with the collection or the collection's variables
  *
  * After resolving the above, req.url will be altered to remove the collections as follows:
  *
@@ -126,6 +157,14 @@ async function cmrCollectionReader(req: HarmonyRequest, res, next: NextFunction)
         promises.push(loadVariablesForCollection(req.context, collection, req.accessToken));
       }
       await Promise.all(promises);
+      // must wait for the above promises so that collections have their associated variables
+      // before we look for visualizations
+      promises.length = 0; // clear the array
+      for (const collection of collections) {
+        promises.push(loadVisualizationsForCollection(req.context, collection, req.accessToken));
+      }
+      await Promise.all(promises);
+
     } else {
       // The request used a short name
       const shortNameMatch = req.url.match(COLLECTION_ROUTE_REGEX);
@@ -152,6 +191,7 @@ async function cmrCollectionReader(req: HarmonyRequest, res, next: NextFunction)
           req.context.collections = [pickedCollection];
           req.context.collectionIds = [pickedCollection.id];
           await loadVariablesForCollection(req.context, pickedCollection, req.accessToken);
+          await loadVisualizationsForCollection(req.context, pickedCollection, req.accessToken);
           if (collections.length > 1) {
             const collectionLandingPage = `${cmrApiConfig.baseURL}/concepts/${pickedCollection.id}`;
             req.context.messages.push(`There were ${collections.length} collections that matched the`

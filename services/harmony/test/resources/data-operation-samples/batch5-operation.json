@@ -17,6 +17,44 @@
       "subtype": "LATITUDE",
       "type": "COORDINATE"
     }],
+    "visualizations": [
+      {
+        "Name": "Test223",
+        "Identifier": "Test223 ID",
+        "VisualizationType": "tiles",
+        "Specification": {},
+        "Generation": {},
+        "MetadataSpecification": {
+          "URL": "https: //cdn.earthdata.nasa.gov/umm/visualization/v1.1.0",
+          "Name": "Visualization",
+          "Version": "1.1.0"
+        },
+        "ConceptIds": [
+          {
+            "Type": "STD",
+            "Value": "C1200449962-MMT_1"
+          }
+        ]
+      },
+      {
+        "Name": "Test2234",
+        "Identifier": "Test2234 ID",
+        "VisualizationType": "maps",
+        "Specification": {},
+        "Generation": {},
+        "MetadataSpecification": {
+          "URL": "https: //cdn.earthdata.nasa.gov/umm/visualization/v1.1.0",
+          "Name": "Visualization",
+          "Version": "1.1.0"
+        },
+        "ConceptIds": [
+          {
+            "Type": "STD",
+            "Value": "C1200449962-MMT_1"
+          }
+        ]
+      }
+    ],
     "granules": [{
         "id": "G1233800393-EEDTEST",
         "name": "006_07_00feff_north_america",

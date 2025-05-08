@@ -1,15 +1,17 @@
-import * as fs from 'fs';
-import * as path from 'path';
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
+import * as fs from 'fs';
 import _ from 'lodash';
-import logger from '../util/log';
-import { CmrUmmCollection, CmrUmmVariable } from '../util/cmr';
-import { Encrypter, Decrypter } from '../util/crypto';
-import { cmrVarToHarmonyVar, HarmonyVariable } from '../util/variables';
-import { isValidUri } from '../util/url';
+import * as path from 'path';
 
-export const CURRENT_SCHEMA_VERSION = '0.21.0';
+import { CmrUmmCollection, CmrUmmVariable } from '../util/cmr';
+import { Decrypter, Encrypter } from '../util/crypto';
+import logger from '../util/log';
+import { CmrUmmVisualization } from '../util/umm-vis';
+import { isValidUri } from '../util/url';
+import { cmrVarToHarmonyVar, HarmonyVariable } from '../util/variables';
+
+export const CURRENT_SCHEMA_VERSION = '0.22.0';
 
 /**
  * Synchronously reads and parses the JSON Schema at the given path
@@ -41,6 +43,17 @@ let _schemaVersions: SchemaVersion[];
 function schemaVersions(): SchemaVersion[] {
   if (_schemaVersions) return _schemaVersions;
   _schemaVersions = [
+    {
+      version: '0.22.0',
+      schema: readSchema('0.22.0'),
+      down: (model): unknown => {
+        const revertedModel = _.cloneDeep(model);
+        revertedModel.sources?.forEach((s) => {
+          delete s.visualizations;
+        });
+        return revertedModel;
+      },
+    },
     {
       version: '0.21.0',
       schema: readSchema('0.21.0'),
@@ -278,6 +291,7 @@ export interface DataSource {
   versionId: string;
   coordinateVariables: HarmonyVariable[];
   variables: HarmonyVariable[];
+  visualizations: object[];
   granules: HarmonyGranule[];
 }
 
@@ -471,10 +485,12 @@ export default class DataOperation {
     versionId: string,
     vars: CmrUmmVariable[] = undefined,
     cmrCoordinateVariables: CmrUmmVariable[] = undefined,
+    visuals: CmrUmmVisualization[] = undefined,
   ): void {
     const variables = vars?.map(cmrVarToHarmonyVar);
     const coordinateVariables = cmrCoordinateVariables?.map(cmrVarToHarmonyVar);
-    this.model.sources.push({ collection, shortName, versionId, variables, coordinateVariables });
+    const visualizations = visuals?.map(visual => visual.umm);
+    this.model.sources.push({ collection, shortName, versionId, variables, coordinateVariables, visualizations });
   }
 
   /**
@@ -979,6 +995,24 @@ export default class DataOperation {
     if (this.model.extraArgs) {
       delete this.model.extraArgs;
     }
+  }
+
+  /**
+   * Gets the ummVis
+   *
+   * @returns The array of stringified UMM-Vis objects that will be passed to service worker
+   */
+  get ummVis(): Array<string> {
+    return this.model.ummVis;
+  }
+
+  /**
+   * Sets the ummVis array
+   *
+   * @param ummVis - The array of stringified UMM-Vis objects that will be passed to service worker
+   */
+  set UmmVis(ummVis: Array<string>) {
+    this.model.ummVis = ummVis;
   }
 
   /**

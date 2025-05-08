@@ -22,6 +22,42 @@
         "type": "SCIENCE_VARIABLE",
         "subtype": "SCIENCE_ARRAY"
       }],
+      "visualizations": [{
+        "Name": "Test123",
+        "Identifier": "Test123 ID",
+        "VisualizationType": "tiles",
+        "Specification": {},
+        "Generation": {},
+        "MetadataSpecification": {
+          "URL": "https: //cdn.earthdata.nasa.gov/umm/visualization/v1.1.0",
+          "Name": "Visualization",
+          "Version": "1.1.0"
+          },
+        "ConceptIds": [
+            {
+            "Type": "STD",
+            "Value": "C1200449962-MMT_1"
+            }
+          ]
+        },
+      {
+        "Name": "Test1234",
+        "Identifier": "Test1234 ID",
+        "VisualizationType": "maps",
+        "Specification": {},
+        "Generation": {},
+        "MetadataSpecification": {
+          "URL": "https: //cdn.earthdata.nasa.gov/umm/visualization/v1.1.0",
+          "Name": "Visualization",
+          "Version": "1.1.0"
+        },
+        "ConceptIds": [
+          {
+            "Type": "STD",
+            "Value": "C1200449962-MMT_1"
+          }
+        ]
+      }],
       "coordinateVariables": [{
         "id": "V1233801718-EEDTEST",
         "name": "lat",
@@ -110,5 +146,5 @@
   "extraArgs": {
     "cut": false
   },
-  "version": "0.21.0"
+  "version": "0.22.0"
 }
