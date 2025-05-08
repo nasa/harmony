@@ -220,6 +220,7 @@ describe('Pull Worker', async function () {
           coordinateVariables: [],
           granules: [],
           variables: [{ id: 'foo', name: 'foo', fullPath: '' }, { id: 'bar', name: 'bar', fullPath: '' }],
+          visualizations: [],
         },
       ];
 

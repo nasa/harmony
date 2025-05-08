@@ -1,6 +1,72 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import { CmrRelatedUrl, CmrUmmVariable, getVariablesByIds, getAllVariables, CmrQuery, queryGranuleUsingMultipartForm } from '../../app/util/cmr';
+import { cmrQueryType, hashCmrQuery, CmrRelatedUrl, CmrUmmVariable, getVariablesByIds, getAllVariables, CmrQuery, queryGranuleUsingMultipartForm } from '../../app/util/cmr';
+
+describe('hashCmrQuery', () => {
+  const type = cmrQueryType.COLL_JSON;
+  const token = 'secret-token';
+
+  it('produces consistent hashes for the same query regardless of key order', () => {
+    const queryA = {
+      concept_id: ['C123', 'C456'],
+      page_size: 10,
+    };
+
+    const queryB = {
+      page_size: 10,
+      concept_id: ['C123', 'C456'],
+    };
+
+    const hashA = hashCmrQuery(type, queryA, token);
+    const hashB = hashCmrQuery(type, queryB, token);
+
+    expect(hashA).to.equal(hashB).to.equal('3c12c66959008295d6e8f9810ae0f680');
+  });
+
+  it('produces different hashes for different tokens', () => {
+    const query = { page_size: 10 };
+    const hash1 = hashCmrQuery(type, query, 'token1');
+    const hash2 = hashCmrQuery(type, query, 'token2');
+
+    expect(hash1).not.to.equal(hash2);
+  });
+
+  it('produces different hashes for different query values', () => {
+    const query1 = { page_size: 10 };
+    const query2 = { page_size: 20 };
+
+    const hash1 = hashCmrQuery(type, query1, token);
+    const hash2 = hashCmrQuery(type, query2, token);
+
+    expect(hash1).not.to.equal(hash2);
+  });
+
+  it('produces different hashes for different types', () => {
+    const query = { page_size: 10 };
+
+    const hash1 = hashCmrQuery(cmrQueryType.COLL_JSON, query, token);
+    const hash2 = hashCmrQuery(cmrQueryType.COLL_UMM, query, token);
+
+    expect(hash1).not.to.equal(hash2);
+  });
+
+  it('handles empty query objects consistently', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const query: any = {};
+    const hash1 = hashCmrQuery(type, query, token);
+    const hash2 = hashCmrQuery(type, {}, token);
+
+    expect(hash1).to.equal(hash2);
+  });
+
+  it('handles undefined token consistently', () => {
+    const query = { page_size: 10 };
+    const hash1 = hashCmrQuery(type, query, undefined);
+    const hash2 = hashCmrQuery(type, query, undefined);
+
+    expect(hash1).to.equal(hash2);
+  });
+});
 
 const fakeContext = {
   id: '1234',

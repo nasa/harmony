@@ -975,7 +975,7 @@ export default class DataOperation {
    *
    * @returns The extra arguments that will be passed to service worker
    */
-  get extraArgs(): object {
+  get extraArgs(): Record<string, unknown> {
     return this.model.extraArgs;
   }
 
@@ -984,7 +984,7 @@ export default class DataOperation {
    *
    * @param extraArgs - The extra arguments that will be passed to service worker
    */
-  set extraArgs(extraArgs: object) {
+  set extraArgs(extraArgs: Record<string, unknown>) {
     this.model.extraArgs = extraArgs;
   }
 

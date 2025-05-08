@@ -20,6 +20,31 @@ x-turbo-config: &default-turbo-config
 
 https://cmr.uat.earthdata.nasa.gov:
 
+  - name: asdc/filtering
+    description: Harmony service to filter netCDF based on user specified filtering criteria (spatial, min/max, glamping, and variable).
+    data_operation_version: '0.21.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/harmony/filtering
+    umm_s: 'S1273529849-LARC_CLOUD'
+    capabilities:
+      concatenation: false
+      subsetting:
+        bbox: false
+        variable: false
+        temporal: false
+      output_formats:
+        - application/netcdf4
+      reprojection: false
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
+      - image: !Env ${FILTERING_IMAGE}
+
   - name: harmony/download
     description: Service that performs no processing, it only returns download links for all of the matched granules from the CMR.
     data_operation_version: '0.21.0'
@@ -45,6 +70,8 @@ https://cmr.uat.earthdata.nasa.gov:
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
+        extra_args:
+          include_opendap_links: false
 
   - name: ldds/subset-band-name
     description: |

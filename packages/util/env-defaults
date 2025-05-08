@@ -128,6 +128,8 @@ PODAAC_NETCDF_CONVERTER_SERVICE_QUEUE_URLS='["podaac/podaac-cloud/podaac-netcdf-
 QUERY_CMR_SERVICE_QUEUE_URLS='["harmonyservices/query-cmr:stable,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/query-cmr.fifo"]'
 BATCHEE_SERVICE_QUEUE_URLS='["ghcr.io/nasa/batchee:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/batchee.fifo"]'
 STITCHEE_SERVICE_QUEUE_URLS='["ghcr.io/nasa/stitchee:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/stitchee.fifo"]'
+FILTERING_SERVICE_QUEUE_URLS='["harmony/filtering:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/filtering.fifo"]'
+
 
 # The number of seconds to allow a pod to continue processing an active request before terminating a pod
 DEFAULT_POD_GRACE_PERIOD_SECS=14400
@@ -166,3 +168,21 @@ BACKEND_HOST=harmony
 # MAX_PUT_WORK_RETRIES should be high enough to allow a work item update to succeed
 # even when a deployment is happening (~25 min max currently)
 MAX_PUT_WORK_RETRIES=30
+
+# Maximum size (in bytes) of the token cache, 50MB
+TOKEN_CACHE_SIZE=50000000
+
+# Token Cache TTL in milliseconds
+TOKEN_CACHE_TTL=300000
+
+# Maximum size (in bytes) of the cache for EDL searches, 50MB
+EDL_CACHE_SIZE=50000000
+
+# EDL Cache TTL in milliseconds
+EDL_CACHE_TTL=600000
+
+# Maximum size (in bytes) of the cache for CMR searches, 256MB
+CMR_CACHE_SIZE=256000000
+
+# CMR Cache TTL in milliseconds
+CMR_CACHE_TTL=600000
