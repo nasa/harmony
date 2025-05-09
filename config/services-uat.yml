@@ -704,6 +704,7 @@ https://cmr.uat.earthdata.nasa.gov:
           STAGING_PATH: public/gesdisc/giovanni
     umm_s: S1272947465-GES_DISC
     validate_variables: false
+    external_validation_url: https://api.giovanni.uat.earthdata.nasa.gov/authorizer
     capabilities:
       subsetting:
         bbox: true

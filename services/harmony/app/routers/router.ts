@@ -228,7 +228,6 @@ export default function router({ USE_EDL_CLIENT_APP = 'false' }: RouterConfig): 
   result.use(logged(preServiceConcatenationHandler));
   result.use(logged(chooseService));
   result.use(logged(postServiceConcatenationHandler));
-  result.use(logged(externalValidation));
   result.use(logged(validateAndSetVariables));
   result.use(logged(validateRestrictedVariables));
 
@@ -236,6 +235,7 @@ export default function router({ USE_EDL_CLIENT_APP = 'false' }: RouterConfig): 
   result.use(logged(cmrGranuleLocator));
   result.use(logged(addRequestContextToOperation));
   result.use(logged(extendDefault));
+  result.use(logged(externalValidation));
   result.use(logged(redirectWithoutTrailingSlash));
 
   result.get('/', asyncHandler(landingPage));

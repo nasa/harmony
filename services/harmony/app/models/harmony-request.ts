@@ -1,6 +1,8 @@
-import { Response, NextFunction, Request } from 'express';
-import RequestContext from './request-context';
+import { NextFunction, Request, Response } from 'express';
+
+import env from '../util/env';
 import DataOperation from './data-operation';
+import RequestContext from './request-context';
 
 /**
  * Contains additional information about a request
@@ -35,5 +37,8 @@ export function addRequestContextToOperation(
     operation.message = req.context.messages.join(' ');
   }
   operation.requestStartTime = context.startTime;
+  operation.user = req.user || 'anonymous';
+  operation.client = env.clientId;
+  operation.accessToken = req.accessToken || '';
   return next();
 }

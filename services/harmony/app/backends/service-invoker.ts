@@ -1,11 +1,10 @@
 import { RequestHandler, Response } from 'express';
-import * as services from '../models/services/index';
-import { objectStoreForProtocol } from '../util/object-store';
-import { ServiceError } from '../util/errors';
-import InvocationResult from '../models/services/invocation-result';
-import HarmonyRequest from '../models/harmony-request';
 
-import env from '../util/env';
+import HarmonyRequest from '../models/harmony-request';
+import * as services from '../models/services/index';
+import InvocationResult from '../models/services/invocation-result';
+import { ServiceError } from '../util/errors';
+import { objectStoreForProtocol } from '../util/object-store';
 
 /**
  * Copies the header with the given name from the given request to the given response
@@ -69,10 +68,6 @@ export default async function serviceInvoker(
   req: HarmonyRequest, res: Response,
 ): Promise<RequestHandler> {
   const startTime = new Date().getTime();
-
-  req.operation.user = req.user || 'anonymous';
-  req.operation.client = env.clientId;
-  req.operation.accessToken = req.accessToken || '';
   const service = services.buildService(req.context.serviceConfig, req.operation);
 
   let serviceResult = null;

@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { NextFunction, Response } from 'express';
 
+import { CURRENT_SCHEMA_VERSION } from '../models/data-operation';
 import HarmonyRequest from '../models/harmony-request';
 import { ExternalValidationError } from '../util/errors';
 
@@ -18,11 +19,19 @@ export async function externalValidation(
   if (!url) return next();
 
   req.context.logger.info('timing.external-validation.start');
+  req.context.logger.warn(`CDD Operation is ${JSON.stringify(operation)}`);
+  const operationCopy = operation.clone();
+
+  // Staging location is a required field so need to include it otherwise calling
+  // serialize on the operation will throw an exception
+  operationCopy.stagingLocation = '';
+  req.context.logger.warn(`CDD Serialized operation is ${operationCopy.serialize(CURRENT_SCHEMA_VERSION)}`);
+
   const startTime = new Date().getTime();
   try {
     await axios.post(
       url,
-      operation,
+      operationCopy.serialize(CURRENT_SCHEMA_VERSION),
       {
         headers: {
           'Authorization': `Bearer: ${req.accessToken}`,
