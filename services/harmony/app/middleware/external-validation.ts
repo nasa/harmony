@@ -19,7 +19,6 @@ export async function externalValidation(
   if (!url) return next();
 
   req.context.logger.info('timing.external-validation.start');
-  req.context.logger.warn(`CDD Operation is ${JSON.stringify(operation)}`);
   const operationCopy = operation.clone();
 
   // Staging location is a required field so need to include it otherwise calling
@@ -30,7 +29,6 @@ export async function externalValidation(
   operationCopy.accessToken = '';
   // Validation endpoint may need to know the service chain being used
   operationCopy.extraArgs = { service: req.context.serviceConfig.name };
-  req.context.logger.warn(`CDD Serialized operation is ${operationCopy.serialize(CURRENT_SCHEMA_VERSION)}`);
 
   const startTime = new Date().getTime();
   try {
