@@ -122,7 +122,10 @@ describe('external validation', function () {
       it('sets the Authorization header on the request to the external validator', async function () {
         const nextStub = stub();
         await externalValidation(this.reqWithValidation, this.res, nextStub);
-        expect(options.headers).to.eql({ 'Authorization': `Bearer ${this.reqWithValidation.accessToken}` });
+        expect(options.headers).to.eql({
+          'Authorization': `Bearer ${this.reqWithValidation.accessToken}`,
+          'Content-type': 'application/json',
+        });
       });
 
     });
