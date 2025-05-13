@@ -44,7 +44,7 @@ describe('Versions endpoint', function () {
           'asf/opera-rtc-s1-browse',
           'net2cog',
           'nasa/harmony-gdal-adapter',
-          'giovanni-averaging-services-adapter',
+          'giovanni-averaging-services',
           'sds/trajectory-susbetter-smap-l2-regridder',
           'harmony/netcdf-to-zarr',
           'harmony/podaac-l2-subsetter-netcdf-to-zarr',
