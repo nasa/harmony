@@ -33,6 +33,9 @@ export function getGranuleSizeInBytes(
         granuleSizeInBytes += info.Size * 1024;
         break;
       case 'MB':
+      case 'NA':
+        // Historically ECHO and CMR metadata formats always reported sizes in MB so when
+        // the unit is not explicitly set we assume MB
         granuleSizeInBytes += info.Size * 1024 * 1024;
         break;
       case 'GB':

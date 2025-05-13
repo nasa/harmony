@@ -41,8 +41,8 @@ describe('#getGranuleSizeInBytes', () => {
     expect(getGranuleSizeInBytes(logger, archiveInfo)).to.equal(expectedSize);
   });
 
-  it('should treat an entry with an unknown SizeUnit as 0', () => {
-    expect(getGranuleSizeInBytes(logger, [{ Size: 10, SizeUnit: 'NA' }])).to.equal(0);
+  it('should treat an entry with an unknown SizeUnit as MB', () => {
+    expect(getGranuleSizeInBytes(logger, [{ Size: 10, SizeUnit: 'NA' }])).to.equal(10 * 1024 * 1024);
   });
 
   it('should use SizeInBytes when all fields are present', () => {
