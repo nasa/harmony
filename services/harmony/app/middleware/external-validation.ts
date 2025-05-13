@@ -39,7 +39,8 @@ export async function externalValidation(
       operationCopy.serialize(CURRENT_SCHEMA_VERSION),
       {
         headers: {
-          'Authorization': `Bearer: ${req.accessToken}`,
+          'Authorization': `Bearer ${req.accessToken}`,
+          'Content-type': 'application/json',
         },
       },
     );
