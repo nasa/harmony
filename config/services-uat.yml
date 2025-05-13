@@ -686,7 +686,7 @@ https://cmr.uat.earthdata.nasa.gov:
         is_sequential: true
       - image: !Env ${HARMONY_GDAL_ADAPTER_IMAGE}
 
-  - name: giovanni-averaging-services-adapter
+  - name: giovanni-averaging-services
     description: |
       A service to compute averaging over specified dimensions on Zarr data on a Dask cluster running in Cloud Giovanni. A time-averaged map
       will produce a GEOTIFF and an area-averaged timeseries will produce a CSV.

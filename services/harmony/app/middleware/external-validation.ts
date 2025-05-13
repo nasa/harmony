@@ -25,6 +25,11 @@ export async function externalValidation(
   // Staging location is a required field so need to include it otherwise calling
   // serialize on the operation will throw an exception
   operationCopy.stagingLocation = '';
+  // Access token is passed in the header and no reason to pass the encrypted access token
+  // which the endpoint will not be able to decrypt
+  operationCopy.accessToken = '';
+  // Validation endpoint may need to know the service chain being used
+  operationCopy.extraArgs = { service: req.context.serviceConfig.name };
   req.context.logger.warn(`CDD Serialized operation is ${operationCopy.serialize(CURRENT_SCHEMA_VERSION)}`);
 
   const startTime = new Date().getTime();
