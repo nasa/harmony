@@ -56,12 +56,12 @@ export function createPublicPermalink(
 }
 
 /**
- * Wrapper function of getUserIdRequest to be set to fetchMethod of LRUCache.
+ * Wrapper function of getProviderIdForJobId to be set to fetchMethod of LRUCache.
  *
- * @param token - EDL bearer token
+ * @param jobId - the job identifier
  * @param _sv - stale value parameter of LRUCache fetchMethod, unused here
  * @param options - options parameter of LRUCache fetchMethod, carries the request context
- * @returns Promise of user name associated with the EDL token
+ * @returns resolves to the provider id for the job
  */
 async function fetchProviderId(jobId: string, _sv: string, { context }): Promise<string> {
   context.logger.info(`Fetching provider id for job id ${jobId}`);
