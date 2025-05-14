@@ -702,7 +702,7 @@ describe('Individual job status route', function () {
     });
 
     describe('when a job has provided an S3 URL as a result', function () {
-      const s3Uri = 's3://example-bucket/public/example/path.tif';
+      const s3Uri = 's3://example-bucket/public/example-job-id/work-item-id/path.tif';
       StubService.hook({ params: { status: 'successful' } });
       hookRangesetRequest(version, collection, variableName, { query, username: 'jdoe1' });
       before(async function () {
@@ -726,7 +726,7 @@ describe('Individual job status route', function () {
             const job = new Job(JSON.parse(this.res.text));
             const jobOutputLinks = job.getRelatedLinks('data');
             expect(jobOutputLinks[0].href).to.match(/^s3/);
-            expect(jobOutputLinks[0].href).to.have.string('s3://example-bucket/public/example/path.tif');
+            expect(jobOutputLinks[0].href).to.have.string('s3://example-bucket/public/example-job-id/work-item-id/path.tif');
           });
         });
 
@@ -759,7 +759,7 @@ describe('Individual job status route', function () {
             const job = new Job(JSON.parse(this.res.text));
             const jobOutputLinks = job.getRelatedLinks('data');
             expect(jobOutputLinks[0].href).to.match(/^s3/);
-            expect(jobOutputLinks[0].href).to.have.string('s3://example-bucket/public/example/path.tif');
+            expect(jobOutputLinks[0].href).to.have.string('s3://example-bucket/public/example-job-id/work-item-id/path.tif');
           });
         });
       });
@@ -786,7 +786,7 @@ describe('Individual job status route', function () {
 
     // HARMONY-770 AC 9
     describe('when a job has provided an S3 URL result with application/x-zarr mime type', function () {
-      const s3Uri = 's3://example-bucket/public/example/path.tif';
+      const s3Uri = 's3://example-bucket/public/example-job-id/work-item-id/path.tif';
       StubService.hook({ params: { status: 'successful' } });
       hookRangesetRequest(version, collection, variableName, { username: 'jdoe1' });
       before(async function () {
