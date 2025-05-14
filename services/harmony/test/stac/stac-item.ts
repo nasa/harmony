@@ -1,12 +1,13 @@
 import { expect } from 'chai';
-import { describe, it, before } from 'mocha';
+import { before, describe, it } from 'mocha';
 import { v4 as uuid } from 'uuid';
-import itReturnsTheExpectedStacResponse from '../helpers/stac-item';
+
+import { JobStatus } from '../../app/models/job';
+import { hookTransaction } from '../helpers/db';
 import { buildJob } from '../helpers/jobs';
 import hookServersStartStop from '../helpers/servers';
-import { hookTransaction } from '../helpers/db';
 import { hookStacItem } from '../helpers/stac';
-import { JobStatus } from '../../app/models/job';
+import itReturnsTheExpectedStacResponse from '../helpers/stac-item';
 
 const runningJob = buildJob({
   username: 'joe',
@@ -34,7 +35,7 @@ const completedJob = buildJob({
   progress: 100,
   numInputGranules: 5,
   links: [{
-    href: 's3://example-bucket/public/example/path1.tif',
+    href: 's3://example-bucket/public/example-job-id/work-item-id/path1.tif',
     type: 'image/tiff',
     rel: 'data',
     bbox: [-10, -10, 10, 10],
@@ -44,7 +45,7 @@ const completedJob = buildJob({
     },
   },
   {
-    href: 's3://example-bucket/public/example/path2.tif',
+    href: 's3://example-bucket/public/example-job-id/work-item-id/path2.tif',
     type: 'image/tiff',
     rel: 'data',
     bbox: [-10, -10, 10, 10],
@@ -64,7 +65,7 @@ const completedJobWithDestinationUrl = buildJob({
   progress: 100,
   numInputGranules: 1,
   links: [{
-    href: 's3://example-bucket/public/example/path1.tif',
+    href: 's3://example-bucket/public/example-job-id/work-item-id/path1.tif',
     type: 'image/tiff',
     rel: 'data',
     bbox: [-10, -10, 10, 10],
@@ -74,7 +75,7 @@ const completedJobWithDestinationUrl = buildJob({
     },
   },
   {
-    href: 's3://example-bucket/public/example/path2.tif',
+    href: 's3://example-bucket/public/example-job-id/work-item-id/path2.tif',
     type: 'image/tiff',
     rel: 'data',
     bbox: [-10, -10, 10, 10],

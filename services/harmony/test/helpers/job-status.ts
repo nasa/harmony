@@ -1,8 +1,9 @@
-import { it } from 'mocha';
 import { expect } from 'chai';
+import { it } from 'mocha';
+
 import { Job } from '../../app/models/job';
-import { hookUrl } from './hooks';
 import env from '../../app/util/env';
+import { hookUrl } from './hooks';
 
 /**
  * Provides a parameterized `describe` blocks that tests expected format of data links.
@@ -62,7 +63,7 @@ export function itProvidesAWorkingHttpUrl(user: string): void {
     const job = new Job(JSON.parse(this.res.text));
     const jobOutputLinks = job.getRelatedLinks('data');
     expect(jobOutputLinks[0].href).to.match(/^http/);
-    expect(jobOutputLinks[0].href).to.have.string('/service-results/example-bucket/public/example/path.tif');
+    expect(jobOutputLinks[0].href).to.have.string('/service-results/example-bucket/public/example-job-id/work-item-id/path.tif');
   });
 
   describe('loading the provided Harmony HTTP URL', function () {
@@ -73,7 +74,7 @@ export function itProvidesAWorkingHttpUrl(user: string): void {
 
     it('temporarily redirects to a presigned URL for the data', function () {
       expect(this.res.statusCode).to.equal(307);
-      expect(this.res.headers.location).to.equal('https://example-bucket/public/example/path.tif?A-userid=jdoe1');
+      expect(this.res.headers.location).to.have.string('https://example-bucket/public/example-job-id/work-item-id/path.tif');
     });
   });
 }

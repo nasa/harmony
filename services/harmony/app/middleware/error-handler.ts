@@ -1,15 +1,16 @@
-import mustache from 'mustache';
+import { NextFunction, Response } from 'express';
 import fs from 'fs';
+import mustache from 'mustache';
 import path from 'path';
-import { Response, NextFunction } from 'express';
-import {
-  HttpError, RequestValidationError, buildJsonErrorResponse, getHttpStatusCode,
-  getEndUserErrorMessage, getCodeForError,
-} from '../util/errors';
+
 import HarmonyRequest from '../models/harmony-request';
+import {
+  buildJsonErrorResponse, getCodeForError, getEndUserErrorMessage, getHttpStatusCode, HttpError,
+  RequestValidationError,
+} from '../util/errors';
 
 const errorTemplate = fs.readFileSync(path.join(__dirname, '../views/server-error.mustache.html'), { encoding: 'utf8' });
-const jsonErrorRoutesRegex = /jobs|labels|capabilities|ogc-api-coverages|ogc-api-edr|service-deployment(?:s-state)?|service-image-tag|stac|metrics|health|configuration|workflow-ui\/.*\/(?:links|logs|retry)/;
+const jsonErrorRoutesRegex = /jobs|labels|capabilities|ogc-api-coverages|ogc-api-edr|service-results|service-deployment(?:s-state)?|service-image-tag|stac|metrics|health|configuration|workflow-ui\/.*\/(?:links|logs|retry)/;
 
 /**
  * Returns true if the provided error should be returned as JSON.
