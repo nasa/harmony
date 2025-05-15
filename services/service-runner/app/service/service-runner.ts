@@ -320,7 +320,7 @@ export async function runServiceFromPull(
 
     let retryCount = 0;
     const maxRetries = 5;
-    let retryDelay = 3_000; // time in ms to wait before retrying
+    let retryDelay = 5_000; // time in ms to wait before retrying
     const retryDelayMultiplier = 2.0; // used to increase delay each retry
 
     while (retryCount < maxRetries) {
