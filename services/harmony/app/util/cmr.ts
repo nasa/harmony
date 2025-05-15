@@ -2,19 +2,21 @@
 import { createHash } from 'crypto';
 import FormData from 'form-data';
 import * as fs from 'fs';
-import { v4 as uuid } from 'uuid';
 import { get, isArray } from 'lodash';
 import { LRUCache } from 'lru-cache';
 import fetch, { Response } from 'node-fetch';
 import * as querystring from 'querystring';
-import { CmrError } from './errors';
-import { defaultObjectStore, objectStoreForProtocol } from './object-store';
+import { v4 as uuid } from 'uuid';
+
 import { truncateString } from '@harmony/util/string';
+
+import RequestContext from '../models/request-context';
 import env from './env';
+import { CmrError } from './errors';
 import logger from './log';
+import { defaultObjectStore, objectStoreForProtocol } from './object-store';
 import { UmmSpatial } from './spatial/umm-spatial';
 import { isValidUri } from './url';
-import RequestContext from '../models/request-context';
 
 const { cmrEndpoint, cmrMaxPageSize, clientId, stagingBucket } = env;
 
@@ -745,7 +747,7 @@ async function _queryGrids(
   context: RequestContext, query: CmrQuery, token: string,
 ): Promise<Array<CmrUmmGrid>> {
   logger.debug('Calling CMR to fetch grids');
-  const gridsResponse = await _cmrGet(context, '/search/grids.umm_json', query, token) as CmrGridsResponse;
+  const gridsResponse = await _cmrGet(context, '/search/grids.umm_json_v_0_0_1', query, token) as CmrGridsResponse;
   return gridsResponse.data.items;
 }
 
