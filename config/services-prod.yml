@@ -534,34 +534,6 @@ https://cmr.earthdata.nasa.gov:
         is_sequential: true
       - image: !Env ${HARMONY_GDAL_ADAPTER_IMAGE}
 
-  - name: harmony/netcdf-to-zarr
-    description: |
-      Converts NetCDF4 files to the Zarr format as faithfully as possible, preserving metadata.
-      The service attempts to optimize chunking in both time and space via heuristic algorithm in the output Zarr store.
-    data_operation_version: '0.21.0'
-    type:
-      <<: *default-turbo-config
-      params:
-        <<: *default-turbo-params
-        env:
-          <<: *default-turbo-env
-          STAGING_PATH: public/harmony/netcdf-to-zarr
-    umm_s: S2839491596-XYZ_PROV
-    maximum_sync_granules: 0
-    capabilities:
-      concatenation: true
-      concatenate_by_default: false
-      subsetting:
-        variable: false
-      output_formats:
-        - application/x-zarr
-    steps:
-      - image: !Env ${QUERY_CMR_IMAGE}
-        is_sequential: true
-      - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
-        is_batched: false
-        operations: ['reformat', 'concatenate']
-
   - name: harmony/service-example
     description: |
       Reference service that can be used to perform most operations supported by Harmony.

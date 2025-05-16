@@ -32,7 +32,7 @@ describe('Workflow UI jobs table route', function () {
   let servicesStub: sinon.SinonStub;
   before(async function () {
     MockDate.set('1/30/2000');
-    servicesStub = sinon.stub(services, 'serviceNames').value(['cog-maker', 'netcdf-to-zarr']);
+    servicesStub = sinon.stub(services, 'serviceNames').value(['cog-maker', 'swath-projector']);
     await boJob1.save(this.trx);
     await boJob2.save(this.trx);
     await adamJob1.save(this.trx);

@@ -11,6 +11,10 @@ const notJobOwner = 'jill'; // jill wants to access the results of joe's jobs
 
 const collectionWithEULAFalseAndGuestReadTrue = 'C1233800302-EEDTEST';
 const collectionWithEULATrueAndGuestsReadTrue = 'C1233860183-EEDTEST';
+// All collections in EEDTEST are in the All Collections permission group,
+// which provides read and order permissions to all guest users. This means
+// if a fixture is regenerated for C1233147317-EEDTEST it will need to be
+// manually updated to remove the "read" permission.
 const collectionWithEULAFalseAndGuestReadFalse = 'C1233147317-EEDTEST';
 const collectionWithEULANonexistent = 'C1234088182-EEDTEST';
 

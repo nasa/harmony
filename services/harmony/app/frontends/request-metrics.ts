@@ -14,7 +14,7 @@ import { validateParameterNames } from '../middleware/parameter-validation';
 export const metricsFields = [
   'timeTakenSeconds', 'numInputGranules', 'totalGranuleSizeMb', 'numVariables', 'concatenate',
   'reproject', 'synchronous', 'spatialSubset', 'shapefileSubset', 'chainLength',
-  'harmonyGdalAdapter', 'harmonyServiceExample', 'harmonyNetcdfToZarr', 'swathProjector',
+  'harmonyGdalAdapter', 'harmonyServiceExample', 'swathProjector',
   'hoss', 'sdsMaskfill', 'trajectorySubsetter', 'podaacConcise',
   'podaacL2Subsetter', 'giovanniTimeSeriesAdapter',
 ];
@@ -22,7 +22,6 @@ export const metricsFields = [
 interface RequestMetrics {
   harmonyGdalAdapter: number;
   harmonyServiceExample: number;
-  harmonyNetcdfToZarr: number;
   swathProjector: number;
   hoss: number;
   sdsMaskfill: number;
@@ -55,9 +54,6 @@ function getServiceNameFromID(serviceID: string, logger: Logger): string {
       break;
     case /service-example/.test(serviceID):
       serviceName = 'harmonyServiceExample';
-      break;
-    case /netcdf-to-zarr/.test(serviceID):
-      serviceName = 'harmonyNetcdfToZarr';
       break;
     case /swath-projector/.test(serviceID):
       serviceName = 'swathProjector';
@@ -98,7 +94,6 @@ function getServiceMetricsFromSteps(steps: WorkflowStep[], logger: Logger): Part
   const row = {
     harmonyGdalAdapter: 0,
     harmonyServiceExample: 0,
-    harmonyNetcdfToZarr: 0,
     swathProjector: 0,
     hoss: 0,
     sdsMaskfill: 0,

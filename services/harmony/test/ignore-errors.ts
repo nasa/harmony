@@ -15,14 +15,11 @@ import { resetQueues } from './helpers/queue';
 import hookServersStartStop from './helpers/servers';
 import { fakeServiceStacOutput, getWorkForService, updateWorkItem } from './helpers/work-items';
 
-const reprojectAndZarrQuery = {
+const hossAndMaskfillQuery = {
   maxResults: 1,
-  outputCrs: 'EPSG:4326',
-  interpolation: 'near',
-  scaleExtent: '0,2500000.3,1500000,3300000',
-  scaleSize: '1.1,2',
-  format: 'application/x-zarr',
-  concatenate: false,
+  subset: 'lat(60:65)',
+  format: 'application/x-netcdf4',
+  forceAsync: true,
 };
 
 const l2ssAndConciseQuery = {
@@ -32,7 +29,8 @@ const l2ssAndConciseQuery = {
   ignoreErrors: true,
 };
 
-const collection = 'C1233800302-EEDTEST';
+
+const collection = 'C1260128044-EEDTEST'; // ATL16, requires HOSS and MaskFill to do a bbox subset
 const l2ssCollection = 'C1243729749-EEDTEST';
 
 describe('ignoreErrors', function () {
@@ -54,7 +52,7 @@ describe('ignoreErrors', function () {
 
   describe('when setting ignoreErrors=true', function () {
     describe('when making a request for a single granule and it completes successfully', function () {
-      hookRangesetRequest('1.0.0', collection, 'all', { query: { ...reprojectAndZarrQuery, ...{ maxResults: 1, ignoreErrors: true } } });
+      hookRangesetRequest('1.0.0', collection, 'all', { query: { ...hossAndMaskfillQuery, ...{ maxResults: 1, ignoreErrors: true } } });
       hookRedirect('joe');
 
       before(async function () {
@@ -70,47 +68,47 @@ describe('ignoreErrors', function () {
         await updateWorkItem(this.backend, workItem);
         const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
         expect(currentWorkItems.length).to.equal(2);
-        expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
+        expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(1);
       });
 
       describe('when all of the work items succeed', function () {
-        let firstSwathItem;
-        let zarrItem;
+        let firstHossItem;
+        let maskfillItem;
 
         before(async function () {
-          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
-          firstSwathItem = JSON.parse(res.text).workItem;
-          firstSwathItem.status = WorkItemStatus.SUCCESSFUL;
-          firstSwathItem.results = [
-            getStacLocation(firstSwathItem, 'catalog.json'),
+          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-opendap-subsetter:latest');
+          firstHossItem = JSON.parse(res.text).workItem;
+          firstHossItem.status = WorkItemStatus.SUCCESSFUL;
+          firstHossItem.results = [
+            getStacLocation(firstHossItem, 'catalog.json'),
           ];
-          firstSwathItem.outputItemSizes = [1];
-          await fakeServiceStacOutput(firstSwathItem.jobID, firstSwathItem.id);
-          await updateWorkItem(this.backend, firstSwathItem);
+          firstHossItem.outputItemSizes = [1];
+          await fakeServiceStacOutput(firstHossItem.jobID, firstHossItem.id);
+          await updateWorkItem(this.backend, firstHossItem);
 
-          const res2 = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest');
-          zarrItem = JSON.parse(res2.text).workItem;
-          zarrItem.status = WorkItemStatus.SUCCESSFUL;
-          zarrItem.results = [
-            getStacLocation(zarrItem, 'catalog.json'),
+          const res2 = await getWorkForService(this.backend, 'sds/maskfill-harmony:latest');
+          maskfillItem = JSON.parse(res2.text).workItem;
+          maskfillItem.status = WorkItemStatus.SUCCESSFUL;
+          maskfillItem.results = [
+            getStacLocation(maskfillItem, 'catalog.json'),
           ];
-          await fakeServiceStacOutput(zarrItem.jobID, zarrItem.id);
-          await updateWorkItem(this.backend, zarrItem);
+          await fakeServiceStacOutput(maskfillItem.jobID, maskfillItem.id);
+          await updateWorkItem(this.backend, maskfillItem);
         });
 
         it('marks the job as successful', async function () {
-          const { job } = await Job.byJobID(db, firstSwathItem.jobID);
+          const { job } = await Job.byJobID(db, firstHossItem.jobID);
           expect(job.status).to.equal(JobStatus.SUCCESSFUL);
           expect(job.progress).to.equal(100);
           const currentWorkItems = (await getWorkItemsByJobId(db, job.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(3);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'sds/maskfill-harmony:latest').length).to.equal(1);
         });
 
-        it('does not find any further Swath Projector work', async function () {
-          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
+        it('does not find any further HOSS work', async function () {
+          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-opendap-subsetter:latest');
           expect(res.status).to.equal(404);
         });
 
@@ -118,7 +116,7 @@ describe('ignoreErrors', function () {
     });
 
     describe('when making a request for a single granule and one of its work items fails', function () {
-      hookRangesetRequest('1.0.0', collection, 'all', { query: { ...reprojectAndZarrQuery, ...{ maxResults: 1, ignoreErrors: true } } });
+      hookRangesetRequest('1.0.0', collection, 'all', { query: { ...hossAndMaskfillQuery, ...{ maxResults: 1, ignoreErrors: true } } });
       hookRedirect('joe');
 
       before(async function () {
@@ -134,61 +132,61 @@ describe('ignoreErrors', function () {
         await updateWorkItem(this.backend, workItem);
         const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
         expect(currentWorkItems.length).to.equal(2);
-        expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
+        expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(1);
       });
 
-      describe('when the first Swath Projector work item fails', function () {
+      describe('when the first HOSS work item fails', function () {
         this.timeout(120000);
-        let firstSwathItem;
+        let firstHossItem;
 
         before(async function () {
           let shouldLoop = true;
           // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
           while (shouldLoop) {
-            const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
-            firstSwathItem = JSON.parse(res.text).workItem;
-            firstSwathItem.status = WorkItemStatus.FAILED;
-            firstSwathItem.message = 'Specific failure reason';
-            firstSwathItem.results = [];
+            const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-opendap-subsetter:latest');
+            firstHossItem = JSON.parse(res.text).workItem;
+            firstHossItem.status = WorkItemStatus.FAILED;
+            firstHossItem.message = 'Specific failure reason';
+            firstHossItem.results = [];
 
-            await updateWorkItem(this.backend, firstSwathItem);
+            await updateWorkItem(this.backend, firstHossItem);
 
             // check to see if the work-item has failed completely
-            const workItem = await getWorkItemById(db, firstSwathItem.id);
+            const workItem = await getWorkItemById(db, firstHossItem.id);
             shouldLoop = !(workItem.status === WorkItemStatus.FAILED);
           }
         });
 
         it('fails the job', async function () {
           // work item failure with only one granule should trigger job failure
-          const { job } = await Job.byJobID(db, firstSwathItem.jobID);
+          const { job } = await Job.byJobID(db, firstHossItem.jobID);
           expect(job.status).to.equal(JobStatus.FAILED);
           expect(job.message).to.equal('WorkItem failed: Specific failure reason');
         });
 
         it('correctly sets the work items status', async function () {
-          const currentWorkItems = (await getWorkItemsByJobId(db, firstSwathItem.jobID)).workItems;
+          const currentWorkItems = (await getWorkItemsByJobId(db, firstHossItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(2);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(1);
         });
 
-        it('does not find any further Swath Projector work', async function () {
-          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
+        it('does not find any further HOSS work', async function () {
+          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-opendap-subsetter:latest');
           expect(res.status).to.equal(404);
         });
 
         it('does not allow any further work item updates', async function () {
-          firstSwathItem.status = WorkItemStatus.SUCCESSFUL;
-          await updateWorkItem(this.backend, firstSwathItem);
-          const swathItem = await getWorkItemById(db, firstSwathItem.id);
-          expect(swathItem.status).to.equal(WorkItemStatus.FAILED);
+          firstHossItem.status = WorkItemStatus.SUCCESSFUL;
+          await updateWorkItem(this.backend, firstHossItem);
+          const hossItem = await getWorkItemById(db, firstHossItem.id);
+          expect(hossItem.status).to.equal(WorkItemStatus.FAILED);
         });
       });
     });
 
     describe('when making a request for a single granule and one of its work items warns', function () {
-      hookRangesetRequest('1.0.0', collection, 'all', { query: { ...reprojectAndZarrQuery, ...{ maxResults: 1, ignoreErrors: true } } });
+      hookRangesetRequest('1.0.0', collection, 'all', { query: { ...hossAndMaskfillQuery, ...{ maxResults: 1, ignoreErrors: true } } });
       hookRedirect('joe');
 
       before(async function () {
@@ -204,52 +202,52 @@ describe('ignoreErrors', function () {
         await updateWorkItem(this.backend, workItem);
         const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
         expect(currentWorkItems.length).to.equal(2);
-        expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
+        expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(1);
       });
 
-      describe('when the first Swath Projector work item warns', function () {
+      describe('when the first HOSS work item warns', function () {
         this.timeout(120000);
-        let firstSwathItem;
+        let firstHossItem;
 
         before(async function () {
-          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
-          firstSwathItem = JSON.parse(res.text).workItem;
-          firstSwathItem.status = WorkItemStatus.WARNING;
-          firstSwathItem.message = 'Specific warning reason';
-          firstSwathItem.results = [];
+          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-opendap-subsetter:latest');
+          firstHossItem = JSON.parse(res.text).workItem;
+          firstHossItem.status = WorkItemStatus.WARNING;
+          firstHossItem.message = 'Specific warning reason';
+          firstHossItem.results = [];
 
-          await updateWorkItem(this.backend, firstSwathItem);
+          await updateWorkItem(this.backend, firstHossItem);
         });
 
         it('sets the job as successful', async function () {
-          const { job } = await Job.byJobID(db, firstSwathItem.jobID);
+          const { job } = await Job.byJobID(db, firstHossItem.jobID);
           expect(job.status).to.equal(JobStatus.SUCCESSFUL);
           expect(job.message).to.equal('WorkItem warned: Specific warning reason');
         });
 
         it('correctly sets the work items status', async function () {
-          const currentWorkItems = (await getWorkItemsByJobId(db, firstSwathItem.jobID)).workItems;
+          const currentWorkItems = (await getWorkItemsByJobId(db, firstHossItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(2);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.WARNING && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.WARNING && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(1);
         });
 
-        it('does not find any further Swath Projector work', async function () {
-          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
+        it('does not find any further HOSS  work', async function () {
+          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-opendap-subsetter:latest');
           expect(res.status).to.equal(404);
         });
 
         it('does not allow any further work item updates', async function () {
-          firstSwathItem.status = WorkItemStatus.SUCCESSFUL;
-          await updateWorkItem(this.backend, firstSwathItem);
-          const swathItem = await getWorkItemById(db, firstSwathItem.id);
-          expect(swathItem.status).to.equal(WorkItemStatus.WARNING);
+          firstHossItem.status = WorkItemStatus.SUCCESSFUL;
+          await updateWorkItem(this.backend, firstHossItem);
+          const hossItem = await getWorkItemById(db, firstHossItem.id);
+          expect(hossItem.status).to.equal(WorkItemStatus.WARNING);
         });
       });
     });
 
     describe('when making a request for two granules and both of the granules have one work item fail', function () {
-      hookRangesetRequest('1.0.0', collection, 'all', { query: { ...reprojectAndZarrQuery, ...{ maxResults: 2, ignoreErrors: true } } });
+      hookRangesetRequest('1.0.0', collection, 'all', { query: { ...hossAndMaskfillQuery, ...{ maxResults: 2, ignoreErrors: true } } });
       hookRedirect('joe');
 
       before(async function () {
@@ -266,84 +264,84 @@ describe('ignoreErrors', function () {
         await updateWorkItem(this.backend, workItem);
         const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
 
-        expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(2);
+        expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(2);
       });
 
-      describe('when the first Swath Projector work item fails', function () {
-        let firstSwathItem;
+      describe('when the first HOSS work item fails', function () {
+        let firstHossItem;
 
         before(async function () {
           let shouldLoop = true;
           // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
           while (shouldLoop) {
-            const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
-            firstSwathItem = JSON.parse(res.text).workItem;
-            firstSwathItem.status = WorkItemStatus.FAILED;
-            firstSwathItem.results = [];
+            const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-opendap-subsetter:latest');
+            firstHossItem = JSON.parse(res.text).workItem;
+            firstHossItem.status = WorkItemStatus.FAILED;
+            firstHossItem.results = [];
 
-            await updateWorkItem(this.backend, firstSwathItem);
+            await updateWorkItem(this.backend, firstHossItem);
 
             // check to see if the work-item has failed completely
-            const workItem = await getWorkItemById(db, firstSwathItem.id);
+            const workItem = await getWorkItemById(db, firstHossItem.id);
             shouldLoop = !(workItem.status === WorkItemStatus.FAILED);
           }
         });
 
         it('changes the job status to running_with_errors', async function () {
-          const { job } = await Job.byJobID(db, firstSwathItem.jobID);
+          const { job } = await Job.byJobID(db, firstHossItem.jobID);
           expect(job.status).to.equal(JobStatus.RUNNING_WITH_ERRORS);
           const currentWorkItems = (await getWorkItemsByJobId(db, job.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(3);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(1);
         });
       });
 
-      describe('when the second Swath Projector item succeeds and then its zarr work item fails', function () {
-        let secondSwathItem;
-        let zarrItem;
+      describe('when the second HOSS item succeeds and then its MaskFill work item fails', function () {
+        let secondHossItem;
+        let maskfillItem;
 
         before(async function () {
-          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
-          secondSwathItem = JSON.parse(res.text).workItem;
-          secondSwathItem.status = WorkItemStatus.SUCCESSFUL;
-          secondSwathItem.results = [getStacLocation(secondSwathItem, 'catalog.json')];
-          await fakeServiceStacOutput(secondSwathItem.jobID, secondSwathItem.id);
-          await updateWorkItem(this.backend, secondSwathItem);
+          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-opendap-subsetter:latest');
+          secondHossItem = JSON.parse(res.text).workItem;
+          secondHossItem.status = WorkItemStatus.SUCCESSFUL;
+          secondHossItem.results = [getStacLocation(secondHossItem, 'catalog.json')];
+          await fakeServiceStacOutput(secondHossItem.jobID, secondHossItem.id);
+          await updateWorkItem(this.backend, secondHossItem);
 
           let shouldLoop = true;
           // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
           while (shouldLoop) {
-            const res2 = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest');
-            zarrItem = JSON.parse(res2.text).workItem;
-            zarrItem.status = WorkItemStatus.FAILED;
-            zarrItem.results = [];
-            await updateWorkItem(this.backend, zarrItem);
+            const res2 = await getWorkForService(this.backend, 'sds/maskfill-harmony:latest');
+            maskfillItem = JSON.parse(res2.text).workItem;
+            maskfillItem.status = WorkItemStatus.FAILED;
+            maskfillItem.results = [];
+            await updateWorkItem(this.backend, maskfillItem);
 
             // check to see if the work-item has failed completely
-            const workItem = await getWorkItemById(db, zarrItem.id);
+            const workItem = await getWorkItemById(db, maskfillItem.id);
             shouldLoop = !(workItem.status === WorkItemStatus.FAILED);
           }
         });
 
         it('marks the job as failed', async function () {
           // all work items failing should trigger job failure
-          const { job } = await Job.byJobID(db, secondSwathItem.jobID);
+          const { job } = await Job.byJobID(db, secondHossItem.jobID);
           expect(job.status).to.equal(JobStatus.FAILED);
           expect(job.message).to.equal('The job failed with 2 errors and 0 warnings. See the errors and warnings fields of the job status page for more details.');
           const currentWorkItems = (await getWorkItemsByJobId(db, job.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(4);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'sds/maskfill-harmony:latest').length).to.equal(1);
         });
       });
     });
 
     describe('when making a request for 3 granules and one fails while in progress', function () {
-      hookRangesetRequest('1.0.0', collection, 'all', { query: { ...reprojectAndZarrQuery, ...{ maxResults: 3, ignoreErrors: true } } });
+      hookRangesetRequest('1.0.0', collection, 'all', { query: { ...hossAndMaskfillQuery, ...{ maxResults: 3, ignoreErrors: true } } });
       hookRedirect('joe');
 
       before(async function () {
@@ -361,45 +359,45 @@ describe('ignoreErrors', function () {
         await updateWorkItem(this.backend, workItem);
         const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
         expect(currentWorkItems.length).to.equal(4);
-        expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(3);
+        expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(3);
       });
 
-      describe('when the first Swath Projector work item fails', function () {
-        let firstSwathItem;
+      describe('when the first HOSS work item fails', function () {
+        let firstHossItem;
 
         before(async function () {
           let shouldLoop = true;
           // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
           while (shouldLoop) {
-            const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
-            firstSwathItem = JSON.parse(res.text).workItem;
-            firstSwathItem.status = WorkItemStatus.FAILED;
-            firstSwathItem.results = [];
+            const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-opendap-subsetter:latest');
+            firstHossItem = JSON.parse(res.text).workItem;
+            firstHossItem.status = WorkItemStatus.FAILED;
+            firstHossItem.results = [];
 
-            await updateWorkItem(this.backend, firstSwathItem);
+            await updateWorkItem(this.backend, firstHossItem);
 
             // check to see if the work-item has failed completely
-            const workItem = await getWorkItemById(db, firstSwathItem.id);
+            const workItem = await getWorkItemById(db, firstHossItem.id);
             shouldLoop = !(workItem.status === WorkItemStatus.FAILED);
           }
         });
 
         it('changes the job status to running_with_errors', async function () {
-          const { job } = await Job.byJobID(db, firstSwathItem.jobID);
+          const { job } = await Job.byJobID(db, firstHossItem.jobID);
           expect(job.status).to.equal(JobStatus.RUNNING_WITH_ERRORS);
         });
 
-        it('does not queue a zarr step for the work item that failed', async function () {
-          const currentWorkItems = (await getWorkItemsByJobId(db, firstSwathItem.jobID)).workItems;
+        it('does not queue a MaskFill step for the work item that failed', async function () {
+          const currentWorkItems = (await getWorkItemsByJobId(db, firstHossItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(4);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(2);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(2);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(1);
         });
 
         it('sets the status to COMPLETE_WITH_ERRORS when the other granules complete', async function () {
-          const res1 = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
-          const res2 = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
+          const res1 = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-opendap-subsetter:latest');
+          const res2 = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-opendap-subsetter:latest');
           const workItem1 = JSON.parse(res1.text).workItem;
           const workItem2 = JSON.parse(res2.text).workItem;
 
@@ -413,8 +411,8 @@ describe('ignoreErrors', function () {
           await fakeServiceStacOutput(workItem2.jobID, workItem2.id);
           await updateWorkItem(this.backend, workItem2);
 
-          const res3 = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest');
-          const res4 = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest');
+          const res3 = await getWorkForService(this.backend, 'sds/maskfill-harmony:latest');
+          const res4 = await getWorkForService(this.backend, 'sds/maskfill-harmony:latest');
 
           const workItem3 = JSON.parse(res3.text).workItem;
           const workItem4 = JSON.parse(res4.text).workItem;
@@ -429,13 +427,13 @@ describe('ignoreErrors', function () {
           await fakeServiceStacOutput(workItem4.jobID, workItem4.id);
           await updateWorkItem(this.backend, workItem4);
 
-          const { job } = await Job.byJobID(db, firstSwathItem.jobID);
+          const { job } = await Job.byJobID(db, firstHossItem.jobID);
           expect(job.status).to.equal(JobStatus.COMPLETE_WITH_ERRORS);
           expect(job.progress).to.equal(100);
         });
 
         it('includes the error details in the job status', async function () {
-          const response = await jobStatus(this.frontend, { jobID: firstSwathItem.jobID, username: 'joe' });
+          const response = await jobStatus(this.frontend, { jobID: firstHossItem.jobID, username: 'joe' });
           const job = JSON.parse(response.text);
           const { errors } = job;
           expect(errors.length).to.equal(1);
@@ -446,7 +444,7 @@ describe('ignoreErrors', function () {
     });
 
     describe('when making a request for 4 granules with max allowed errors of 1 and two fail', function () {
-      hookRangesetRequest('1.0.0', collection, 'all', { query: { ...reprojectAndZarrQuery, ...{ maxResults: 4, ignoreErrors: true } } });
+      hookRangesetRequest('1.0.0', collection, 'all', { query: { ...hossAndMaskfillQuery, ...{ maxResults: 4, ignoreErrors: true } } });
       hookRedirect('joe');
 
       let maxErrorsStub;
@@ -469,103 +467,103 @@ describe('ignoreErrors', function () {
         const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
         expect(currentWorkItems.length).to.equal(5);
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
-        expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(4);
+        expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(4);
       });
       after(function () {
         maxErrorsStub.restore();
       });
 
       describe('when the first granule completes successfully', function () {
-        let firstSwathItem;
+        let firstHossItem;
 
         before(async function () {
-          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
+          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-opendap-subsetter:latest');
 
-          firstSwathItem = JSON.parse(res.text).workItem;
-          firstSwathItem.status = WorkItemStatus.SUCCESSFUL;
-          firstSwathItem.results = [getStacLocation(firstSwathItem, 'catalog.json')];
-          await fakeServiceStacOutput(firstSwathItem.jobID, firstSwathItem.id);
-          await updateWorkItem(this.backend, firstSwathItem);
+          firstHossItem = JSON.parse(res.text).workItem;
+          firstHossItem.status = WorkItemStatus.SUCCESSFUL;
+          firstHossItem.results = [getStacLocation(firstHossItem, 'catalog.json')];
+          await fakeServiceStacOutput(firstHossItem.jobID, firstHossItem.id);
+          await updateWorkItem(this.backend, firstHossItem);
 
-          const res2 = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest');
-          const zarrItem = JSON.parse(res2.text).workItem;
-          zarrItem.status = WorkItemStatus.SUCCESSFUL;
-          zarrItem.results = [getStacLocation(zarrItem, 'catalog.json')];
-          await fakeServiceStacOutput(zarrItem.jobID, zarrItem.id);
-          await updateWorkItem(this.backend, zarrItem);
+          const res2 = await getWorkForService(this.backend, 'sds/maskfill-harmony:latest');
+          const maskfillItem = JSON.parse(res2.text).workItem;
+          maskfillItem.status = WorkItemStatus.SUCCESSFUL;
+          maskfillItem.results = [getStacLocation(maskfillItem, 'catalog.json')];
+          await fakeServiceStacOutput(maskfillItem.jobID, maskfillItem.id);
+          await updateWorkItem(this.backend, maskfillItem);
         });
 
         it('leaves the job in the running state', async function () {
-          const { job } = await Job.byJobID(db, firstSwathItem.jobID);
+          const { job } = await Job.byJobID(db, firstHossItem.jobID);
           expect(job.status).to.equal(JobStatus.RUNNING);
         });
       });
 
-      describe('when the second Swath Projector work item fails (first failure)', function () {
-        let secondSwathItem;
+      describe('when the second HOSS work item fails (first failure)', function () {
+        let secondHossItem;
 
         before(async function () {
           let shouldLoop = true;
           // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
           while (shouldLoop) {
-            const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
-            secondSwathItem = JSON.parse(res.text).workItem;
-            secondSwathItem.status = WorkItemStatus.FAILED;
-            secondSwathItem.results = [];
+            const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-opendap-subsetter:latest');
+            secondHossItem = JSON.parse(res.text).workItem;
+            secondHossItem.status = WorkItemStatus.FAILED;
+            secondHossItem.results = [];
 
-            await updateWorkItem(this.backend, secondSwathItem);
+            await updateWorkItem(this.backend, secondHossItem);
 
             // check to see if the work-item has failed completely
-            const workItem = await getWorkItemById(db, secondSwathItem.id);
+            const workItem = await getWorkItemById(db, secondHossItem.id);
             shouldLoop = !(workItem.status === WorkItemStatus.FAILED);
           }
         });
 
         it('changes the job status to running_with_errors', async function () {
-          const { job } = await Job.byJobID(db, secondSwathItem.jobID);
+          const { job } = await Job.byJobID(db, secondHossItem.jobID);
           expect(job.status).to.equal(JobStatus.RUNNING_WITH_ERRORS);
         });
 
-        it('does not queue a zarr step for the work item that failed', async function () {
-          const currentWorkItems = (await getWorkItemsByJobId(db, secondSwathItem.jobID)).workItems;
+        it('does not queue a MaskFill step for the work item that failed', async function () {
+          const currentWorkItems = (await getWorkItemsByJobId(db, secondHossItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(6);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(2);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(2);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'sds/maskfill-harmony:latest').length).to.equal(1);
 
         });
       });
 
-      describe('when the third Swath Projector work item fails resulting in a (second failure) for the job', function () {
-        let thirdSwathItem;
+      describe('when the third HOSS work item fails resulting in a (second failure) for the job', function () {
+        let thirdHossItem;
 
         before(async function () {
           let shouldLoop = true;
           // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
           while (shouldLoop) {
-            const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
-            thirdSwathItem = JSON.parse(res.text).workItem;
-            thirdSwathItem.status = WorkItemStatus.FAILED;
-            thirdSwathItem.results = [];
-            thirdSwathItem.message = 'Did not reach 88 MPH.';
+            const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-opendap-subsetter:latest');
+            thirdHossItem = JSON.parse(res.text).workItem;
+            thirdHossItem.status = WorkItemStatus.FAILED;
+            thirdHossItem.results = [];
+            thirdHossItem.message = 'Did not reach 88 MPH.';
 
-            await updateWorkItem(this.backend, thirdSwathItem);
+            await updateWorkItem(this.backend, thirdHossItem);
 
             // check to see if the work-item has failed completely
-            const workItem = await getWorkItemById(db, thirdSwathItem.id);
+            const workItem = await getWorkItemById(db, thirdHossItem.id);
             shouldLoop = !(workItem.status === WorkItemStatus.FAILED);
           }
         });
 
         it('puts the job in a FAILED state', async function () {
-          const { job } = await Job.byJobID(db, thirdSwathItem.jobID);
+          const { job } = await Job.byJobID(db, thirdHossItem.jobID);
           expect(job.status).to.equal(JobStatus.FAILED);
         });
 
         it('includes the error details in the job status', async function () {
-          const response = await jobStatus(this.frontend, { jobID: thirdSwathItem.jobID, username: 'joe' });
+          const response = await jobStatus(this.frontend, { jobID: thirdHossItem.jobID, username: 'joe' });
           const job = JSON.parse(response.text);
           const { errors } = job;
           expect(errors.length).to.equal(2);
@@ -577,19 +575,19 @@ describe('ignoreErrors', function () {
 
         it('marks any remaining work items as canceled', async function () {
           // job failure should trigger cancellation of any pending work items
-          const currentWorkItems = (await getWorkItemsByJobId(db, thirdSwathItem.jobID)).workItems;
+          const currentWorkItems = (await getWorkItemsByJobId(db, thirdHossItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(6);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.CANCELED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(2);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.CANCELED && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(2);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'sds/maskfill-harmony:latest').length).to.equal(1);
         });
       });
     });
 
     describe('when making a request for 4 granules and query-cmr fails', function () {
-      hookRangesetRequest('1.0.0', collection, 'all', { query: { ...reprojectAndZarrQuery, ...{ maxResults: 4, ignoreErrors: true } } });
+      hookRangesetRequest('1.0.0', collection, 'all', { query: { ...hossAndMaskfillQuery, ...{ maxResults: 4, ignoreErrors: true } } });
       hookRedirect('joe');
 
       before(async function () {
@@ -633,7 +631,7 @@ describe('ignoreErrors', function () {
           pageStub.restore();
         }
       });
-      hookRangesetRequest('1.0.0', collection, 'all', { query: { ...reprojectAndZarrQuery, ...{ maxResults: 5, ignoreErrors: true } } });
+      hookRangesetRequest('1.0.0', collection, 'all', { query: { ...hossAndMaskfillQuery, ...{ maxResults: 5, ignoreErrors: true } } });
       hookRedirect('joe');
 
       describe('when completing the first query-cmr work item', function () {
@@ -655,12 +653,12 @@ describe('ignoreErrors', function () {
           await updateWorkItem(this.backend, workItem);
         });
 
-        it('queues 3 Swath Projector work items and 1 more query-cmr work item', async function () {
+        it('queues 3 HOSS work items and 1 more query-cmr work item', async function () {
           const currentWorkItems = (await getWorkItemsByJobId(db, workItemJobID)).workItems;
           expect(currentWorkItems.length).to.equal(5);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
           expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(3);
+          expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(3);
         });
 
         it('leaves the job in the running state', async function () {
@@ -668,54 +666,54 @@ describe('ignoreErrors', function () {
           expect(job.status).to.equal(JobStatus.RUNNING);
         });
 
-        describe('when the first granule Swath Projector and netcdf-to-zarr work items succeed', async function () {
-          let firstSwathItem;
+        describe('when the first granule HOSS and MaskFill work items succeed', async function () {
+          let firstHossItem;
 
           before(async function () {
-            const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
+            const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-opendap-subsetter:latest');
 
-            firstSwathItem = JSON.parse(res.text).workItem;
-            firstSwathItem.status = WorkItemStatus.SUCCESSFUL;
-            firstSwathItem.results = [getStacLocation(firstSwathItem, 'catalog.json')];
-            await fakeServiceStacOutput(firstSwathItem.jobID, firstSwathItem.id);
-            await updateWorkItem(this.backend, firstSwathItem);
+            firstHossItem = JSON.parse(res.text).workItem;
+            firstHossItem.status = WorkItemStatus.SUCCESSFUL;
+            firstHossItem.results = [getStacLocation(firstHossItem, 'catalog.json')];
+            await fakeServiceStacOutput(firstHossItem.jobID, firstHossItem.id);
+            await updateWorkItem(this.backend, firstHossItem);
 
-            const res2 = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest');
-            const zarrItem = JSON.parse(res2.text).workItem;
-            zarrItem.status = WorkItemStatus.SUCCESSFUL;
-            zarrItem.results = [getStacLocation(zarrItem, 'catalog.json')];
-            await fakeServiceStacOutput(zarrItem.jobID, zarrItem.id);
-            await updateWorkItem(this.backend, zarrItem);
+            const res2 = await getWorkForService(this.backend, 'sds/maskfill-harmony:latest');
+            const maskfillItem = JSON.parse(res2.text).workItem;
+            maskfillItem.status = WorkItemStatus.SUCCESSFUL;
+            maskfillItem.results = [getStacLocation(maskfillItem, 'catalog.json')];
+            await fakeServiceStacOutput(maskfillItem.jobID, maskfillItem.id);
+            await updateWorkItem(this.backend, maskfillItem);
           });
 
           it('leaves the job in the running state', async function () {
-            const { job } = await Job.byJobID(db, firstSwathItem.jobID);
+            const { job } = await Job.byJobID(db, firstHossItem.jobID);
             expect(job.status).to.equal(JobStatus.RUNNING);
           });
         });
       });
 
-      describe('when the next Swath Projector item fails', function () {
-        let secondSwathItem;
+      describe('when the next HOSS item fails', function () {
+        let secondHossItem;
         before(async function () {
           let shouldLoop = true;
           // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
           while (shouldLoop) {
-            const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
-            secondSwathItem = JSON.parse(res.text).workItem;
-            secondSwathItem.status = WorkItemStatus.FAILED;
-            secondSwathItem.results = [];
+            const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-opendap-subsetter:latest');
+            secondHossItem = JSON.parse(res.text).workItem;
+            secondHossItem.status = WorkItemStatus.FAILED;
+            secondHossItem.results = [];
 
-            await updateWorkItem(this.backend, secondSwathItem);
+            await updateWorkItem(this.backend, secondHossItem);
 
             // check to see if the work-item has failed completely
-            const workItem = await getWorkItemById(db, secondSwathItem.id);
+            const workItem = await getWorkItemById(db, secondHossItem.id);
             shouldLoop = !(workItem.status === WorkItemStatus.FAILED);
           }
         });
 
         it('updates the job to the running_with_errors state', async function () {
-          const { job } = await Job.byJobID(db, secondSwathItem.jobID);
+          const { job } = await Job.byJobID(db, secondHossItem.jobID);
           expect(job.status).to.equal(JobStatus.RUNNING_WITH_ERRORS);
         });
       });
@@ -749,10 +747,10 @@ describe('ignoreErrors', function () {
           expect(currentWorkItems.length).to.equal(6);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.CANCELED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.CANCELED && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'sds/maskfill-harmony:latest').length).to.equal(1);
         });
       });
     });
@@ -1303,20 +1301,20 @@ describe('ignoreErrors', function () {
         });
 
         describe('when the first granule completes successfully', function () {
-          let firstSwathItem;
+          let firstL2SSItem;
 
           before(async function () {
             const res = await getWorkForService(this.backend, 'ghcr.io/podaac/l2ss-py:sit');
 
-            firstSwathItem = JSON.parse(res.text).workItem;
-            firstSwathItem.status = WorkItemStatus.SUCCESSFUL;
-            firstSwathItem.results = [getStacLocation(firstSwathItem, 'catalog.json')];
-            await fakeServiceStacOutput(firstSwathItem.jobID, firstSwathItem.id);
-            await updateWorkItem(this.backend, firstSwathItem);
+            firstL2SSItem = JSON.parse(res.text).workItem;
+            firstL2SSItem.status = WorkItemStatus.SUCCESSFUL;
+            firstL2SSItem.results = [getStacLocation(firstL2SSItem, 'catalog.json')];
+            await fakeServiceStacOutput(firstL2SSItem.jobID, firstL2SSItem.id);
+            await updateWorkItem(this.backend, firstL2SSItem);
           });
 
           it('leaves the job in the running state', async function () {
-            const { job } = await Job.byJobID(db, firstSwathItem.jobID);
+            const { job } = await Job.byJobID(db, firstL2SSItem.jobID);
             expect(job.status).to.equal(JobStatus.RUNNING);
           });
         });
@@ -1444,7 +1442,7 @@ describe('ignoreErrors', function () {
 
   describe('when not setting ignoreErrors and using the default behavior', function () {
     describe('when making a request for 3 granules and one fails while in progress', function () {
-      hookRangesetRequest('1.0.0', collection, 'all', { query: { ...reprojectAndZarrQuery, ...{ maxResults: 3 } } });
+      hookRangesetRequest('1.0.0', collection, 'all', { query: { ...hossAndMaskfillQuery, ...{ maxResults: 3 } } });
       hookRedirect('joe');
 
       before(async function () {
@@ -1462,45 +1460,45 @@ describe('ignoreErrors', function () {
         await updateWorkItem(this.backend, workItem);
         const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
         expect(currentWorkItems.length).to.equal(4);
-        expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(3);
+        expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(3);
       });
 
-      describe('when the first Swath Projector work item fails', function () {
-        let firstSwathItem;
+      describe('when the first HOSS work item fails', function () {
+        let firstHossItem;
 
         before(async function () {
           let shouldLoop = true;
           // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
           while (shouldLoop) {
-            const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
-            firstSwathItem = JSON.parse(res.text).workItem;
-            firstSwathItem.status = WorkItemStatus.FAILED;
-            firstSwathItem.results = [];
+            const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-opendap-subsetter:latest');
+            firstHossItem = JSON.parse(res.text).workItem;
+            firstHossItem.status = WorkItemStatus.FAILED;
+            firstHossItem.results = [];
 
-            await updateWorkItem(this.backend, firstSwathItem);
+            await updateWorkItem(this.backend, firstHossItem);
 
             // check to see if the work-item has failed completely
-            const workItem = await getWorkItemById(db, firstSwathItem.id);
+            const workItem = await getWorkItemById(db, firstHossItem.id);
             shouldLoop = !(workItem.status === WorkItemStatus.FAILED);
           }
         });
 
         it('changes the job status to running_with_errors', async function () {
-          const { job } = await Job.byJobID(db, firstSwathItem.jobID);
+          const { job } = await Job.byJobID(db, firstHossItem.jobID);
           expect(job.status).to.equal(JobStatus.RUNNING_WITH_ERRORS);
         });
 
-        it('does not queue a zarr step for the work item that failed', async function () {
-          const currentWorkItems = (await getWorkItemsByJobId(db, firstSwathItem.jobID)).workItems;
+        it('does not queue a MaskFill step for the work item that failed', async function () {
+          const currentWorkItems = (await getWorkItemsByJobId(db, firstHossItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(4);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(2);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(2);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(1);
         });
 
         it('sets the status to COMPLETE_WITH_ERRORS when the other granules complete', async function () {
-          const res1 = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
-          const res2 = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
+          const res1 = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-opendap-subsetter:latest');
+          const res2 = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-opendap-subsetter:latest');
           const workItem1 = JSON.parse(res1.text).workItem;
           const workItem2 = JSON.parse(res2.text).workItem;
 
@@ -1514,8 +1512,8 @@ describe('ignoreErrors', function () {
           await fakeServiceStacOutput(workItem2.jobID, workItem2.id);
           await updateWorkItem(this.backend, workItem2);
 
-          const res3 = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest');
-          const res4 = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest');
+          const res3 = await getWorkForService(this.backend, 'sds/maskfill-harmony:latest');
+          const res4 = await getWorkForService(this.backend, 'sds/maskfill-harmony:latest');
 
           const workItem3 = JSON.parse(res3.text).workItem;
           const workItem4 = JSON.parse(res4.text).workItem;
@@ -1530,13 +1528,13 @@ describe('ignoreErrors', function () {
           await fakeServiceStacOutput(workItem4.jobID, workItem4.id);
           await updateWorkItem(this.backend, workItem4);
 
-          const { job } = await Job.byJobID(db, firstSwathItem.jobID);
+          const { job } = await Job.byJobID(db, firstHossItem.jobID);
           expect(job.status).to.equal(JobStatus.COMPLETE_WITH_ERRORS);
           expect(job.progress).to.equal(100);
         });
 
         it('includes the error details in the job status', async function () {
-          const response = await jobStatus(this.frontend, { jobID: firstSwathItem.jobID, username: 'joe' });
+          const response = await jobStatus(this.frontend, { jobID: firstHossItem.jobID, username: 'joe' });
           const job = JSON.parse(response.text);
           const { errors } = job;
           expect(errors.length).to.equal(1);
@@ -1549,7 +1547,7 @@ describe('ignoreErrors', function () {
 
   describe('when setting ignoreErrors=false', function () {
     describe('when making a request for 3 granules and one fails while in progress', function () {
-      hookRangesetRequest('1.0.0', collection, 'all', { query: { ...reprojectAndZarrQuery, ...{ maxResults: 3, ignoreErrors: false } } });
+      hookRangesetRequest('1.0.0', collection, 'all', { query: { ...hossAndMaskfillQuery, ...{ maxResults: 3, ignoreErrors: false } } });
       hookRedirect('joe');
 
       before(async function () {
@@ -1567,45 +1565,45 @@ describe('ignoreErrors', function () {
         await updateWorkItem(this.backend, workItem);
         const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
         expect(currentWorkItems.length).to.equal(4);
-        expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(3);
+        expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(3);
       });
 
-      describe('when the first Swath Projector work item fails', function () {
-        let firstSwathItem;
+      describe('when the first HOSS work item fails', function () {
+        let firstHossItem;
 
         before(async function () {
           let shouldLoop = true;
           // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
           while (shouldLoop) {
-            const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
-            firstSwathItem = JSON.parse(res.text).workItem;
-            firstSwathItem.status = WorkItemStatus.FAILED;
-            firstSwathItem.results = [];
+            const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-opendap-subsetter:latest');
+            firstHossItem = JSON.parse(res.text).workItem;
+            firstHossItem.status = WorkItemStatus.FAILED;
+            firstHossItem.results = [];
 
-            await updateWorkItem(this.backend, firstSwathItem);
+            await updateWorkItem(this.backend, firstHossItem);
 
             // check to see if the work-item has failed completely
-            const workItem = await getWorkItemById(db, firstSwathItem.id);
+            const workItem = await getWorkItemById(db, firstHossItem.id);
             shouldLoop = !(workItem.status === WorkItemStatus.FAILED);
           }
         });
 
         it('changes the job status to failed', async function () {
-          const { job } = await Job.byJobID(db, firstSwathItem.jobID);
+          const { job } = await Job.byJobID(db, firstHossItem.jobID);
           expect(job.status).to.equal(JobStatus.FAILED);
         });
 
-        it('does not queue a zarr step for the work item that failed', async function () {
-          const currentWorkItems = (await getWorkItemsByJobId(db, firstSwathItem.jobID)).workItems;
+        it('does not queue a MaskFill step for the work item that failed', async function () {
+          const currentWorkItems = (await getWorkItemsByJobId(db, firstHossItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(4);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.CANCELED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(2);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.CANCELED && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(2);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(1);
         });
 
 
         it('includes the error details in the job status', async function () {
-          const response = await jobStatus(this.frontend, { jobID: firstSwathItem.jobID, username: 'joe' });
+          const response = await jobStatus(this.frontend, { jobID: firstHossItem.jobID, username: 'joe' });
           const job = JSON.parse(response.text);
           const { errors } = job;
           expect(errors.length).to.equal(1);

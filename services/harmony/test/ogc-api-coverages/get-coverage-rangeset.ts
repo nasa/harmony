@@ -785,12 +785,13 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
   describe('when requesting output formats', function () {
     const tiff = 'image/tiff';
     const png = 'image/png';
+    const netcdf = 'application/x-netcdf4';
     const anyWildcard = '*/*';
     const imageWildcard = 'image/*';
     const wildcardTiff = '*/tiff';
-    const zarr = 'application/x-zarr';
     const unsupportedFormat = 'text/plain';
     const query = { granuleId };
+    const reprojectionQuery = { granuleId, outputCrs: 'EPSG:4326' };
 
     describe('when providing an accept header for an unsupported format', function () {
       const headers = { accept: unsupportedFormat };
@@ -846,41 +847,43 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     });
 
     describe('when providing an accept header with a parameter', function () {
-      const headers = { accept: `${zarr};q=0.9` };
+      const headers = { accept: `${png};q=0.9` };
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookRangesetRequest(version, collection, 'all', { headers, query });
       it('correctly parses the format from the header', function () {
-        expect(this.service.operation.outputFormat).to.equal(zarr);
+        expect(this.service.operation.outputFormat).to.equal(png);
       });
     });
 
     describe('when providing multiple formats supported by different services', function () {
-      const headers = { accept: `${zarr}, ${tiff}` };
+      const headers = { accept: `${netcdf}, ${tiff}` };
       describe('when requesting variable subsetting which is only supported by one of the services', function () {
+        // service-example supports reprojection and variable subsetting,
+        // swath-projector does not support variable subsetting.
         StubService.hook({ params: { redirect: 'http://example.com' } });
-        hookRangesetRequest(version, collection, variableName, { headers, query });
+        hookRangesetRequest(version, collection, variableName, { headers, query: reprojectionQuery });
         it('uses the backend service that supports variable subsetting', function () {
           expect(this.service.config.name).to.equal('harmony/service-example');
         });
-        it('chooses the tiff format since zarr is not supported by the variable subsetting service', function () {
+        it('chooses the tiff format since netcdf is not supported by the variable subsetting service', function () {
           expect(this.service.operation.outputFormat).to.equal(tiff);
         });
       });
 
       describe('when not requesting variable subsetting so either service could be used', function () {
         StubService.hook({ params: { redirect: 'http://example.com' } });
-        hookRangesetRequest(version, collection, 'all', { headers, query });
+        hookRangesetRequest(version, collection, 'all', { headers, query: reprojectionQuery });
         it('uses the first format in the list', function () {
-          expect(this.service.operation.outputFormat).to.equal(zarr);
+          expect(this.service.operation.outputFormat).to.equal(netcdf);
         });
         it('uses the backend service that supports that output format', function () {
-          expect(this.service.config.name).to.equal('harmony/netcdf-to-zarr');
+          expect(this.service.config.name).to.equal('sds/swath-projector');
         });
       });
     });
 
     describe('when providing multiple formats with the highest priority being unsupported', function () {
-      const headers = { accept: `${unsupportedFormat};q=1.0, ${zarr};q=0.5, ${tiff};q=0.8, ${png};q=0.85` };
+      const headers = { accept: `${unsupportedFormat};q=1.0, ${netcdf};q=0.5, ${tiff};q=0.8, ${png};q=0.85` };
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookRangesetRequest(version, collection, variableName, { headers, query });
       it('uses the highest quality value format that is supported', function () {
@@ -892,7 +895,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     });
 
     describe('when providing multiple formats and not specifying a quality value for one of them', function () {
-      const headers = { accept: `${zarr};q=0.5, ${tiff};q=0.8, ${png}` };
+      const headers = { accept: `${netcdf};q=0.5, ${tiff};q=0.8, ${png}` };
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookRangesetRequest(version, collection, variableName, { headers, query });
       it('treats the unspecified quality value as 1.0', function () {

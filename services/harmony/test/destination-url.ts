@@ -9,15 +9,13 @@ import { hookRangesetRequest } from './helpers/ogc-api-coverages';
 import hookServersStartStop from './helpers/servers';
 import StubService from './helpers/stub-service';
 
-const reprojectAndZarrQuery = {
+const reprojectQuery = {
   maxResults: 1,
   outputCrs: 'EPSG:4326',
   interpolation: 'near',
   scaleExtent: '0,2500000.3,1500000,3300000',
   scaleSize: '1.1,2',
-  format: 'application/x-zarr',
   ignoreErrors: true,
-  concatenate: false,
   destinationUrl: 's3://dummy/p1',
 };
 
@@ -57,7 +55,7 @@ describe('when setting destinationUrl on ogc request', function () {
 
   describe('when making a request with a valid destinationUrl', function () {
     hookGetBucketRegion('us-west-2');
-    hookRangesetRequest('1.0.0', collection, 'all', { query: { ...reprojectAndZarrQuery } });
+    hookRangesetRequest('1.0.0', collection, 'all', { query: { ...reprojectQuery } });
     hookRedirect('anonymous');
     hookTransaction();
 
@@ -86,8 +84,8 @@ describe('when setting destinationUrl on ogc request', function () {
 
   describe('when making a request with a valid mixed case destinationUrl', function () {
     hookGetBucketRegion('us-west-2');
-    reprojectAndZarrQuery.destinationUrl = 's3://dummy/UPPERCASE_PATH/p1';
-    hookRangesetRequest('1.0.0', collection, 'all', { query: { ...reprojectAndZarrQuery } });
+    reprojectQuery.destinationUrl = 's3://dummy/UPPERCASE_PATH/p1';
+    hookRangesetRequest('1.0.0', collection, 'all', { query: { ...reprojectQuery } });
     hookRedirect('anonymous');
     hookTransaction();
 

@@ -10,7 +10,10 @@ describe('when passing the granuleName parameter', function () {
 
   describe('when making a request with a valid granuleName without wildcards', function () {
     const regularQuery = {
-      format: 'application/x-zarr',
+      scaleExtent: '0,2500000.3,1500000,3300000',
+      scaleSize: '1.1,2',
+      height: 500,
+      width: 1000,
       granuleName: '001_08_7f00ff_oceania_east',
     };
 
@@ -31,7 +34,10 @@ describe('when passing the granuleName parameter', function () {
   // works with more than one result
   describe('when making a request with a valid granuleName with wildcards', function () {
     const wildCardQuery = {
-      format: 'application/x-zarr',
+      scaleExtent: '0,2500000.3,1500000,3300000',
+      scaleSize: '1.1,2',
+      height: 500,
+      width: 1000,
       granuleName: '001_*',
     };
 
@@ -50,7 +56,10 @@ describe('when passing the granuleName parameter', function () {
 
   describe('when making a request with multiple valid granuleName values', function () {
     const multiValueQuery = {
-      format: 'application/x-zarr',
+      scaleExtent: '0,2500000.3,1500000,3300000',
+      scaleSize: '1.1,2',
+      height: 500,
+      width: 1000,
       granuleName: ['001_08_7f00ff_oceania_east', '001_03_7f00ff_asia_east'],
     };
 

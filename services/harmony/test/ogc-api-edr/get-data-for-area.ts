@@ -647,10 +647,10 @@ describe('OGC API EDR - getEdrArea', function () {
   describe('when requesting output formats', function () {
     const tiff = 'image/tiff';
     const png = 'image/png';
+    const netcdf = 'application/x-netcdf4';
     const anyWildcard = '*/*';
     const imageWildcard = 'image/*';
     const wildcardTiff = '*/tiff';
-    const zarr = 'application/x-zarr';
     const unsupportedFormat = 'text/plain';
 
     describe('when providing an accept header for an unsupported format', function () {
@@ -711,44 +711,46 @@ describe('OGC API EDR - getEdrArea', function () {
     });
 
     describe('when providing an accept header with a parameter', function () {
-      const headers = { accept: `${zarr};q=0.9` };
+      const headers = { accept: `${netcdf};q=0.9` };
       const query = { coords: bigTriangleWKT, granuleId, 'parameter-name': 'all' };
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookEdrRequest('area', version, collection, { headers, query });
       it('correctly parses the format from the header', function () {
-        expect(this.service.operation.outputFormat).to.equal(zarr);
+        expect(this.service.operation.outputFormat).to.equal(netcdf);
       });
     });
 
     describe('when providing multiple formats supported by different services', function () {
-      const headers = { accept: `${zarr}, ${tiff}` };
+      const headers = { accept: `${netcdf}, ${tiff}` };
       describe('when requesting variable subsetting which is only supported by one of the services', function () {
-        const query = { coords: bigTriangleWKT, granuleId, 'parameter-name': variableName };
+        // service-example supports reprojection and variable subsetting,
+        // swath-projector does not support variable subsetting.
+        const query = { coords: bigTriangleWKT, granuleId, 'parameter-name': variableName, crs: 'EPSG:4326' };
         StubService.hook({ params: { redirect: 'http://example.com' } });
         hookEdrRequest('area', version, collection, { headers, query });
         it('uses the backend service that supports variable subsetting', function () {
           expect(this.service.config.name).to.equal('harmony/service-example');
         });
-        it('chooses the tiff format since zarr is not supported by the variable subsetting service', function () {
+        it('chooses the tiff format since netcdf is not supported by the variable subsetting service', function () {
           expect(this.service.operation.outputFormat).to.equal(tiff);
         });
       });
 
       describe('when not requesting variable subsetting so either service could be used', function () {
-        const query = { coords: bigTriangleWKT, granuleId, 'parameter-name': 'all' };
+        const query = { coords: bigTriangleWKT, granuleId, 'parameter-name': 'all', crs: 'EPSG:4326' };
         StubService.hook({ params: { redirect: 'http://example.com' } });
         hookEdrRequest('area', version, collection, { headers, query });
         it('uses the first format in the list', function () {
-          expect(this.service.operation.outputFormat).to.equal(zarr);
+          expect(this.service.operation.outputFormat).to.equal(netcdf);
         });
         it('uses the backend service that supports that output format', function () {
-          expect(this.service.config.name).to.equal('harmony/netcdf-to-zarr');
+          expect(this.service.config.name).to.equal('sds/swath-projector');
         });
       });
     });
 
     describe('when providing multiple formats with the highest priority being unsupported', function () {
-      const headers = { accept: `${unsupportedFormat};q=1.0, ${zarr};q=0.5, ${tiff};q=0.8, ${png};q=0.85` };
+      const headers = { accept: `${unsupportedFormat};q=1.0, ${netcdf};q=0.5, ${tiff};q=0.8, ${png};q=0.85` };
       const query = { coords: bigTriangleWKT, granuleId, 'parameter-name': variableName };
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookEdrRequest('area', version, collection, { headers, query });
@@ -761,7 +763,7 @@ describe('OGC API EDR - getEdrArea', function () {
     });
 
     describe('when providing multiple formats and not specifying a quality value for one of them', function () {
-      const headers = { accept: `${zarr};q=0.5, ${tiff};q=0.8, ${png}` };
+      const headers = { accept: `${netcdf};q=0.5, ${tiff};q=0.8, ${png}` };
       const query = { coords: bigTriangleWKT, granuleId, 'parameter-name': variableName };
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookEdrRequest('area', version, collection, { headers, query });

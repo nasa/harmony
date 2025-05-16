@@ -1,0 +1,31 @@
+POST /search/variables.umm_json_v1_8_1
+accept: application/json
+content-type: multipart/form-data; boundary=----------------------------012345678901234567890123
+accept-encoding: gzip,deflate
+body: ------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"concept_id\"\r\n\r\nV1234088189-EEDTEST\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"concept_id\"\r\n\r\nV1234088187-EEDTEST\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"concept_id\"\r\n\r\nV1234088190-EEDTEST\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"concept_id\"\r\n\r\nV1234088188-EEDTEST\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"page_size\"\r\n\r\n2000\r\n------------------------------012345678901234567890123--\r\n
+
+HTTP/1.1 200 OK
+content-type: application/vnd.nasa.cmr.umm_results+json;version=1.8.1; charset=utf-8
+transfer-encoding: chunked
+connection: keep-alive
+date: Wed, 14 May 2025 22:46:19 GMT
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: e16851e9-cacb-4072-89ac-70ecacb391f0
+content-sha1: 8533419c2684c4b0b68a50b1b95f0a986c7dbe0a
+strict-transport-security: max-age=31536000; includeSubDomains; preload
+cmr-search-after: ["red_var","EEDTEST","red_var","EEDTEST"]
+cmr-hits: 4
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Search-After, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 35
+x-request-id: e16851e9-cacb-4072-89ac-70ecacb391f0
+content-md5: 09cd7434c8b32e9a7147636f5931d7bf
+server: ServerTokens ProductOnly
+x-cache: Miss from cloudfront
+via: 1.1 92ed8a6103fa735c31caf49b92d4efb6.cloudfront.net (CloudFront)
+x-amz-cf-pop: IAD89-P2
+x-amz-cf-id: an1fJg5JNjFYxZc0lyFr12DV4FxhJVH_Cjl_L6dsErzXJc0iIqEFwg==
+
+{"hits":4,"took":35,"items":[{"meta":{"revision-id":1,"deleted":false,"format":"application/vnd.nasa.cmr.umm+json","provider-id":"EEDTEST","user-id":"pquinn","associations":{"collections":["C1234088182-EEDTEST"]},"native-id":"harmony_example_v2_alpha","association-details":{"collections":[{"concept-id":"C1234088182-EEDTEST"}]},"concept-id":"V1234088190-EEDTEST","revision-date":"2020-03-21T01:02:03.965Z","concept-type":"variable"},"umm":{"VariableType":"SCIENCE_VARIABLE","DataType":"byte","VariableSubType":"OTHER","Offset":0.0,"Scale":1.0,"Sets":[{"Name":"Data Fields","Type":"General","Size":4.0,"Index":1.0}],"Dimensions":[{"Name":"Latitude","Size":1800,"Type":"LATITUDE_DIMENSION"},{"Name":"Longitude","Size":3600,"Type":"LONGITUDE_DIMENSION"}],"Definition":"Alpha channel value","Name":"alpha_var","ValidRanges":[{"Min":0.0,"Max":255.0}],"MetadataSpecification":{"URL":"https://cdn.earthdata.nasa.gov/umm/variable/v1.8.1","Name":"UMM-Var","Version":"1.8.1"},"LongName":"Alpha Channel"},"associations":{"collections":[{"concept-id":"C1234088182-EEDTEST"}]}},{"meta":{"revision-id":1,"deleted":false,"format":"application/vnd.nasa.cmr.umm+json","provider-id":"EEDTEST","user-id":"pquinn","associations":{"collections":["C1234088182-EEDTEST"]},"native-id":"harmony_example_v2_blue","association-details":{"collections":[{"concept-id":"C1234088182-EEDTEST"}]},"concept-id":"V1234088189-EEDTEST","revision-date":"2020-03-21T01:02:03.385Z","concept-type":"variable"},"umm":{"VariableType":"SCIENCE_VARIABLE","DataType":"byte","VariableSubType":"OTHER","Offset":0.0,"Scale":1.0,"Sets":[{"Name":"Data Fields","Type":"General","Size":4.0,"Index":1.0}],"Dimensions":[{"Name":"Latitude","Size":1800,"Type":"LATITUDE_DIMENSION"},{"Name":"Longitude","Size":3600,"Type":"LONGITUDE_DIMENSION"}],"Definition":"Blue channel value","Name":"blue_var","ValidRanges":[{"Min":0.0,"Max":255.0}],"MetadataSpecification":{"URL":"https://cdn.earthdata.nasa.gov/umm/variable/v1.8.1","Name":"UMM-Var","Version":"1.8.1"},"LongName":"Blue Channel"},"associations":{"collections":[{"concept-id":"C1234088182-EEDTEST"}]}},{"meta":{"revision-id":1,"deleted":false,"format":"application/vnd.nasa.cmr.umm+json","provider-id":"EEDTEST","user-id":"pquinn","associations":{"collections":["C1234088182-EEDTEST"]},"native-id":"harmony_example_v2_green","association-details":{"collections":[{"concept-id":"C1234088182-EEDTEST"}]},"concept-id":"V1234088188-EEDTEST","revision-date":"2020-03-21T01:02:03.052Z","concept-type":"variable"},"umm":{"VariableType":"SCIENCE_VARIABLE","DataType":"byte","VariableSubType":"OTHER","Offset":0.0,"Scale":1.0,"Sets":[{"Name":"Data Fields","Type":"General","Size":4.0,"Index":1.0}],"Dimensions":[{"Name":"Latitude","Size":1800,"Type":"LATITUDE_DIMENSION"},{"Name":"Longitude","Size":3600,"Type":"LONGITUDE_DIMENSION"}],"Definition":"Green channel value","Name":"green_var","ValidRanges":[{"Min":0.0,"Max":255.0}],"MetadataSpecification":{"URL":"https://cdn.earthdata.nasa.gov/umm/variable/v1.8.1","Name":"UMM-Var","Version":"1.8.1"},"LongName":"Green Channel"},"associations":{"collections":[{"concept-id":"C1234088182-EEDTEST"}]}},{"meta":{"revision-id":1,"deleted":false,"format":"application/vnd.nasa.cmr.umm+json","provider-id":"EEDTEST","user-id":"pquinn","associations":{"collections":["C1234088182-EEDTEST"]},"native-id":"harmony_example_v2_red","association-details":{"collections":[{"concept-id":"C1234088182-EEDTEST"}]},"concept-id":"V1234088187-EEDTEST","revision-date":"2020-03-21T01:02:02.557Z","concept-type":"variable"},"umm":{"VariableType":"SCIENCE_VARIABLE","DataType":"byte","VariableSubType":"OTHER","Offset":0.0,"Scale":1.0,"Sets":[{"Name":"Data Fields","Type":"General","Size":4.0,"Index":1.0}],"Dimensions":[{"Name":"Latitude","Size":1800,"Type":"LATITUDE_DIMENSION"},{"Name":"Longitude","Size":3600,"Type":"LONGITUDE_DIMENSION"}],"Definition":"Red channel value","Name":"red_var","ValidRanges":[{"Min":0.0,"Max":255.0}],"MetadataSpecification":{"URL":"https://cdn.earthdata.nasa.gov/umm/variable/v1.8.1","Name":"UMM-Var","Version":"1.8.1"},"LongName":"Red Channel"},"associations":{"collections":[{"concept-id":"C1234088182-EEDTEST"}]}}]}

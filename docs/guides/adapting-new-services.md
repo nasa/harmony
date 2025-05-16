@@ -160,23 +160,25 @@ If you intend for Harmony job results that include this collection to be shareab
 
 The last part of this entry defines the workflow for this service consisting of the query-cmr service (CMR_GRANULE_LOCATOR_IMAGE) followed by the docker_example service (DOCKER_EXAMPLE_IMAGE). For single service (excluding query-cmr) workflows, one need only list the steps. For more complicated workflows involving chained services (once again not counting the query-cmr service) one can list the operations each service in the chain provides along with a list of conditions under which the service will be invoked.
 
-The following `steps` entry is for a chain of services including the PODAAC L2 Subsetter followed by the Harmony netcf-to-zarr service:
+The following `steps` entry is for a chain of services including the PODAAC L2 Subsetter followed by the PODAAC Concise service:
 
 ```yaml
 steps:
   - image: !Env ${QUERY_CMR_IMAGE}
     is_sequential: true
   - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
-    operations: ['spatialSubset', 'variableSubset']
+    operations: ['spatialSubset', 'variableSubset', 'temporalSubset']
     conditional:
-      exists: ['spatialSubset', 'variableSubset']
-  - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
-    operations: ['reformat']
+      exists: ['spatialSubset', 'variableSubset', 'temporalSubset']
+  - image: !Env ${PODAAC_CONCISE_IMAGE}
+    always_wait_for_prior_step: true
+    is_batched: true
+    operations: ['concatenate']
     conditional:
-      format: ['application/x-zarr']
+      exists: ['concatenate']
 ```
 
-First we have the query-cmr service (this service is the first in every current workflow). This is followed by the PODAAC L2 Subsetter service, which provides the 'spatialSubset' and 'variableSubset' operations and is only invoked if the user is requesting one or both of those. Finally, we have the Harmony netcdf-to-zarr service which provides the 'reformat' operation and is only invoked if the request asks for 'zarr' output.
+First we have the query-cmr service (this service is the first in every current workflow). This is followed by the PODAAC L2 Subsetter service, which provides the 'spatialSubset', 'variableSubset' and 'temporalSubset' operations and is only invoked if the user is requesting at least one of those operations. Finally, we have the PODAAC Concise service which provides the 'concatenate' operation and is only invoked if the request asks for that operation.
 
 There is also a `conditional` option on `umm-c` `native_format` that compares with the value of the collection UMM-C field: `ArchiveAndDistributionInformationType.FileArchiveInformation.Format` when the sibling FormatType = 'Native'. Here is an example of its usage:
 
@@ -201,7 +203,7 @@ An example of this is the query-cmr service. Each invocation of the query-cmr se
 For most services `is_sequential: true` is not necessary.
 
 ### Aggregation Steps
-Services that provide aggregation, e.g., concatenation for CONCISE, require that all inputs are available when they are run. There are cases when a service such as netcdf-to-zarr can concatenate, but based on the user request will instead work on one granule at a time. For aggregation services that should always wait for the prior step inputs set `always_wait_for_prior_step` to true. Otherwise harmony will infer whether to wait based on the `operations` field in the associated step and whether the user requested some type of aggregation.
+Services that provide aggregation, e.g., concatenation for CONCISE, require that all inputs are available when they are run. There are cases when a service can concatenate, but based on the user request will instead work on one granule at a time. For aggregation services that should always wait for the prior step inputs set `always_wait_for_prior_step` to true. Otherwise harmony will infer whether to wait based on the `operations` field in the associated step and whether the user requested some type of aggregation.
 The currently supported aggregation operations are `concatenate` and `extend`.
 
 There are limits to the number of files an aggregating service can process as well as the total number

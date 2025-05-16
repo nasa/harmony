@@ -1,0 +1,29 @@
+GET /search/collections.json?short_name=YouCallThatAShortName%3F&page_size=100&sort_key=-revisionDate
+accept: application/json
+accept-encoding: gzip,deflate
+
+HTTP/1.1 200 OK
+content-type: application/json;charset=utf-8
+transfer-encoding: chunked
+connection: keep-alive
+date: Wed, 14 May 2025 22:46:20 GMT
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: 2b3c547e-312a-4e99-89b1-15a030147c46
+content-sha1: e947dd31a3f1a5ab369de5b930b02e1c463d7cf1
+strict-transport-security: max-age=31536000; includeSubDomains; preload
+cmr-hits: 0
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Search-After, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 6
+x-request-id: 2b3c547e-312a-4e99-89b1-15a030147c46
+content-md5: 4472d35d919ac19cbe7da48c9b92df9a
+vary: Accept-Encoding, User-Agent
+server: ServerTokens ProductOnly
+x-cache: Miss from cloudfront
+via: 1.1 92ed8a6103fa735c31caf49b92d4efb6.cloudfront.net (CloudFront)
+x-amz-cf-pop: IAD89-P2
+x-amz-cf-id: 8TBVRVXWEnY_M1qOf2mO_5bXvLHVb8SVqC9cG20-EdSXYrdbNukHgA==
+
+{"feed":{"updated":"2025-05-14T22:46:20.722Z","id":"https://cmr.uat.earthdata.nasa.gov:443/search/collections.json?short_name=YouCallThatAShortName%3F&page_size=100&sort_key=-revisionDate","title":"ECHO dataset metadata","entry":[]}}

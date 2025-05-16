@@ -221,7 +221,7 @@ describe('Skipping job preview', function () {
     for (const [httpMethod, skipPreviewEndpointHook] of Object.entries(skipPreviewEndpointHooks)) {
       describe(`Skipping preview using ${httpMethod}`, function () {
         describe('When an end user request results in a job in the previewing state', function () {
-          hookRangesetRequest('1.0.0', 'C1245618475-EEDTEST', 'all', { query: { maxResults: 500, format: 'application/x-zarr' }, username: 'joe' });
+          hookRangesetRequest('1.0.0', 'C1245618475-EEDTEST', 'all', { query: { maxResults: 500, subset: 'lat(45:50)' }, username: 'joe' });
           hookRedirect('joe');
 
           it('puts the job in the previewing state', function () {
