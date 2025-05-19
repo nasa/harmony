@@ -40,6 +40,7 @@ describe('Versions endpoint', function () {
           'sds/harmony-smap-l2-gridder',
           'sds/HOSS-geographic',
           'sds/HOSS-projection-gridded',
+          'sds/HOSS-projection-gridded-annotated',
           'l2-subsetter-batchee-stitchee-concise',
           'asf/opera-rtc-s1-browse',
           'net2cog',
