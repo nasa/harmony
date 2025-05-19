@@ -115,6 +115,14 @@ class HarmonyServerEnv extends HarmonyEnv {
 
   @IsInt()
   @Min(1)
+  providerCacheSize: number;
+
+  @IsInt()
+  @Min(1)
+  providerCacheTtl: number;
+
+  @IsInt()
+  @Min(1)
   edlCacheSize: number;
 
   @IsInt()
