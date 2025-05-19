@@ -2,6 +2,10 @@
 Any changes to the environment variables will be documented in this file in chronological
 order with the most recent changes first.
 
+# 2025-05-19
+### Added
+- Added enviroment defaults for Harmony Metadata Annotator
+
 # 2024-12-04
 ### Added
 - USE_EDL_CLIENT_APP - whether to use an EDL client application to enable admin and deployment endpoints and allow OAuth workflows.
