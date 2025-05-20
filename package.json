@@ -17,6 +17,7 @@
     "postinstall": "if test \"$NODE_ENV\" != \"production\" && test \"$LERNA\" != \"false\" ; then lerna exec --concurrency 1 -- npm install --no-save; fi",
     "build": "lerna exec --scope=harmony -- VERSION=${VERSION:-latest} npm run build",
     "build-m1": "lerna exec --scope=harmony -- VERSION=${VERSION:-latest} npm run build-m1",
+    "build-multi": "lerna exec --scope=harmony -- VERSION=${VERSION:-latest} npm run build-multi",
     "build-sequential": "lerna exec --ignore harmony --concurrency 1 -- VERSION=${VERSION:-latest} npm run build",
     "build-all": "lerna exec --ignore harmony -- VERSION=${VERSION:-latest} npm run build",
     "build-all-m1": "lerna exec --ignore harmony -- VERSION=${VERSION:-latest} npm run build-m1",
