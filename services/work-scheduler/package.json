@@ -15,6 +15,7 @@
     "prebuild-m1": "./bin/prebuild",
     "build": "tsc && docker build --tag harmonyservices/work-scheduler:${VERSION:-latest} .",
     "build-m1": "tsc && docker build --platform linux/amd64 --tag harmonyservices/work-scheduler:${VERSION:-latest} .",
+    "build-multi": "docker buildx build --platform=linux/amd64,linux/arm64 -t harmonyservices/work-scheduler:${VERSION:-latest} --push .",
     "push-image": "./bin/push-image ${VERSION:-latest}",
     "publish": "docker push harmonyservices/work-scheduler:${VERSION:-latest}",
     "better-audit": "better-npm-audit audit"
