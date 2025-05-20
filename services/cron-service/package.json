@@ -13,6 +13,7 @@
     "coverage": "nyc mocha",
     "prebuild": "./bin/prebuild",
     "prebuild-m1": "./bin/prebuild",
+    "prebuild-multi": "./bin/prebuild",
     "build": "tsc --project ./tsconfig.build.json && docker build --tag harmonyservices/cron-service:${VERSION:-latest} .",
     "build-m1": "tsc --project ./tsconfig.build.json && docker build --platform linux/amd64 --tag harmonyservices/cron-service:${VERSION:-latest} .",
     "build-multi": "tsc --project ./tsconfig.build.json && docker buildx build --platform=linux/amd64,linux/arm64 -t harmonyservices/cron-service:${VERSION:-latest} --push .",
