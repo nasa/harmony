@@ -151,6 +151,12 @@ LABELS_FORBID_LIST=this_is_a_forbidden_label
 # The max number of labels to retrieve to populate label filter auto-complete
 LABEL_FILTER_COMPLETION_COUNT=10
 
+# Maximum size (in bytes) of the provider cache, 5MB
+PROVIDER_CACHE_SIZE=5000000
+
+# Provider Cache TTL in milliseconds, 1 hour
+PROVIDER_CACHE_TTL=3600000
+
 #############################################################################
 #                        OAuth 2 (Earthdata Login)                          #
 #                                                                           #
