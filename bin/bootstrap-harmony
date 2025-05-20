@@ -35,32 +35,6 @@ fi
 export LOCAL_DEV
 export KUBE_CONTEXT
 
-# Use the arm64 version of the stable images if on an arm64 machine unless an explicit image has been set
-if [[ $(uname -m) == 'arm64' ]]; then
-  echo "We appear to be running on an arm64 platform"
-  if [[ -z "$HARMONY_IMAGE" ]]; then
-    export HARMONY_IMAGE=harmonyservices/harmony:stable-arm64
-  fi
-  if [[ -z "$SERVICE_RUNNER_IMAGE" ]]; then
-    export SERVICE_RUNNER_IMAGE=harmonyservices/service-runner:stable-arm64
-  fi
-  if [[ -z "$QUERY_CMR_IMAGE" ]]; then
-    export QUERY_CMR_IMAGE=harmonyservices/query-cmr:stable-arm64
-  fi
-  if [[ -z "$WORK_ITEM_SCHEDULER_IMAGE" ]]; then
-    export WORK_ITEM_SCHEDULER_IMAGE=harmonyservices/work-scheduler:stable-arm64
-  fi
-  if [[ -z "$WORK_ITEM_UPDATER_IMAGE" ]]; then
-    export WORK_ITEM_UPDATER_IMAGE=harmonyservices/work-updater:stable-arm64
-  fi
-  if [[ -z "$WORK_FAILER_IMAGE" ]]; then
-    export WORK_FAILER_IMAGE=harmonyservices/work-failer:stable-arm64
-  fi
-  if [[ -z "$CRON_SERVICE_IMAGE" ]]; then
-    export CRON_SERVICE_IMAGE=harmonyservices/cron-service:stable-arm64
-  fi
-fi
-
 # run localstack, postgresql, and harmony in kubernetes
 ./bin/start-all
 
