@@ -11,9 +11,9 @@ import {
 } from '../../../harmony/app/models/work-item-interface';
 import logger from '../../../harmony/app/util/log';
 import { objectStoreForProtocol } from '../../../harmony/app/util/object-store';
+import sleep from '../../../harmony/app/util/sleep';
 import { resolve as resolveUrl } from '../../../harmony/app/util/url';
 import env from '../util/env';
-import { waitForContainerToStart } from '../util/k8s';
 
 const kc = new k8s.KubeConfig();
 kc.loadFromDefault();
@@ -320,6 +320,8 @@ export async function runServiceFromPull(
 
     let retryCount = 0;
     const maxRetries = 5;
+    let retryDelay = 5_000; // time in ms to wait before retrying
+    const retryDelayMultiplier = 2.0; // used to increase delay each retry
 
     while (retryCount < maxRetries) {
       const result: ServiceResponse = await new Promise<ServiceResponse>((resolve) => {
@@ -406,7 +408,8 @@ export async function runServiceFromPull(
       if ('retryable' in result) {
         retryCount += 1;
         workItemLogger.debug(`Retryable error encountered (attempt ${retryCount} of ${maxRetries})`);
-        await waitForContainerToStart('worker');
+        await sleep(retryDelay);
+        retryDelay = retryDelayMultiplier * retryDelay;
       } else {
         return result;
       }
