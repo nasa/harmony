@@ -64,7 +64,7 @@ describe('service-results', function () {
   });
 
   describe('getServiceResult', function () {
-    describe('when given a valid bucket and key', function () {
+    describe('when given a URL containing an output created by harmony with a job ID and work item ID in the URL', function () {
       let providerIdCacheStub;
 
       before(function () {
@@ -114,17 +114,28 @@ describe('service-results', function () {
     });
   });
 
-  describe('when given a bad service-results URL', function () {
-    hookUrl('/service-results/some-bucket/public/some-invalid-path.tif', 'jdoe');
-    it('returns a 404 error', function () {
-      expect(this.res.statusCode).to.equal(404);
+  describe('when given a service-results URL to test data staged in a harmony UAT bucket', function () {
+    hookUrl('/service-results/harmony-uat-eedtest-data/C1233800302-EEDTEST/nc/001_01_7f00ff_africa.nc', 'jdoe');
+
+    it('redirects temporarily to a presigned URL', function () {
+      expect(this.res.statusCode).to.equal(307);
+      expect(this.res.headers.location).to.include('harmony-uat-eedtest-data/C1233800302-EEDTEST/nc/001_01_7f00ff_africa.nc');
     });
 
-    it('includes the correct error message', function () {
-      expect(JSON.parse(this.res.text)).to.eql({
-        code: 'harmony.NotFoundError',
-        description: 'Error: The requested page was not found.',
-      });
+    it('passes the user\'s Earthdata Login username to the signing function for tracking', function () {
+      expect(this.res.headers.location).to.include('A-userid=jdoe');
+    });
+
+    it('does not include an api_request_id field', function () {
+      expect(this.res.headers.location).to.not.include('A-api-request-uuid');
+    });
+
+    it('does not include a provider field', function () {
+      expect(this.res.headers.location).to.not.include('A-provider');
+    });
+
+    it('sets a cache-control header to indicate the redirect should be reused', function () {
+      expect(this.res.headers['cache-control']).to.equal('private, max-age=600');
     });
   });
 });

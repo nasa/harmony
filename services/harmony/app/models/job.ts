@@ -1225,8 +1225,6 @@ export class Job extends DBRecord implements JobRecord {
 
     return result;
   }
-
-
 }
 
 interface JobWithLabels extends Job {
