@@ -35,6 +35,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22.14.x
+          cache: 'npm'
+          cache-dependency-path: subdir/package-lock.json
 
       - name: Log into registry
         run: echo "${{ secrets.DOCKERHUB }}" | docker login -u "${DOCKER_USER}" --password-stdin

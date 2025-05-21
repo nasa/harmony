@@ -1,7 +1,7 @@
 ARG BASE_IMAGE=node:22.14.0
 FROM $BASE_IMAGE
 
-RUN apt-get update && apt-get install -y sqlite3 libsqlite3-dev python3 python3-pip python3-venv libpq-dev build-essential
+RUN apt-get update && apt-get install -y sqlite3 libsqlite3-dev python3 python3-pip python3-venv libpq-dev build-essential libgdal-dev
 
 RUN python3 -m venv /venv
 ENV PATH="/venv/bin:$PATH"
