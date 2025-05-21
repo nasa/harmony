@@ -4,18 +4,24 @@ import { currentApiVersion } from '../app/frontends/capabilities';
 import { hookGetCollectionCapabilities } from './helpers/capabilities';
 import hookServersStartStop from './helpers/servers';
 
+// This is the concept ID of the most recently updated collection with a
+// short name of "harmony_example". There are 3 collections with the same
+// short name, so if either of the other two are updated these tests will no
+// longer pass when regenerating CMR test fixtures.
+const collectionId = 'C1234088182-EEDTEST';
+
 describe('Testing collection capabilities', function () {
   hookServersStartStop();
   describe('requesting JSON format', function () {
     const tests = [{
       description: 'with a valid collectionId configured for harmony',
-      query: { collectionId: 'C1234088182-EEDTEST' },
+      query: { collectionId },
     }, {
       description: 'with a valid shortName configured for harmony',
       query: { shortName: 'harmony_example' },
     }, {
       description: 'with a valid collectionId configured for harmony and latest version',
-      query: { collectionId: 'C1234088182-EEDTEST', version: currentApiVersion },
+      query: { collectionId, version: currentApiVersion },
     }, {
       description: 'with a valid shortName configured for harmony and latest version',
       query: { shortName: 'harmony_example', version: currentApiVersion },
@@ -38,7 +44,7 @@ describe('Testing collection capabilities', function () {
 
         it('sets the conceptId field correctly', function () {
           const capabilities = JSON.parse(this.res.text);
-          expect(capabilities.conceptId).to.equal('C1234088182-EEDTEST');
+          expect(capabilities.conceptId).to.equal(collectionId);
         });
 
         it('sets the shortName field correctly', function () {
@@ -68,7 +74,7 @@ describe('Testing collection capabilities', function () {
 
         it('sets the concatenate field correctly', function () {
           const capabilities = JSON.parse(this.res.text);
-          expect(capabilities.concatenate).to.equal(true);
+          expect(capabilities.concatenate).to.equal(false);
         });
 
         it('sets the reproject field correctly', function () {
@@ -79,7 +85,7 @@ describe('Testing collection capabilities', function () {
         it('sets the outputFormats field correctly', function () {
           const capabilities = JSON.parse(this.res.text);
           const expectedFormats = [
-            'application/x-netcdf4', 'image/tiff', 'application/x-zarr', 'image/png', 'image/gif',
+            'application/x-netcdf4', 'image/tiff', 'image/png', 'image/gif',
           ];
           expect(capabilities.outputFormats).to.eql(expectedFormats);
         });
@@ -90,10 +96,6 @@ describe('Testing collection capabilities', function () {
           const expectedServices = [{
             'name': 'nasa/harmony-gdal-adapter',
             'href': 'https://cmr.uat.earthdata.nasa.gov/search/concepts/S1245787332-EEDTEST',
-          },
-          {
-            'name': 'harmony/netcdf-to-zarr',
-            'href': 'https://cmr.uat.earthdata.nasa.gov/search/concepts/S1237980031-EEDTEST',
           },
           {
             'name': 'harmony/service-example',
@@ -173,7 +175,7 @@ describe('Testing collection capabilities', function () {
     });
 
     describe('specifying both a collectionId and shortName', function () {
-      hookGetCollectionCapabilities({ collectionId: 'C1234088182-EEDTEST', shortName: 'harmony_example' });
+      hookGetCollectionCapabilities({ collectionId, shortName: 'harmony_example' });
       it('returns a 400 status code', function () {
         expect(this.res.status).to.equal(400);
       });
@@ -234,7 +236,7 @@ describe('Testing collection capabilities', function () {
 
         it('sets the concatenate field correctly in the version 1 response', function () {
           const capabilities = JSON.parse(this.res.text);
-          expect(capabilities.concatenate).to.equal(true);
+          expect(capabilities.concatenate).to.equal(false);
         });
 
         it('sets the reproject field correctly in the version 1 response', function () {
@@ -245,7 +247,7 @@ describe('Testing collection capabilities', function () {
         it('sets the outputFormats field correctly in the version 1 response', function () {
           const capabilities = JSON.parse(this.res.text);
           const expectedFormats = [
-            'application/x-netcdf4', 'image/tiff', 'application/x-zarr', 'image/png', 'image/gif',
+            'application/x-netcdf4', 'image/tiff', 'image/png', 'image/gif',
           ];
           expect(capabilities.outputFormats).to.eql(expectedFormats);
         });
@@ -253,7 +255,7 @@ describe('Testing collection capabilities', function () {
         it('includes the correct services in the version 1 response', function () {
           const capabilities = JSON.parse(this.res.text);
           const serviceNames = capabilities.services.map((s) => s.name);
-          const expectedServices = ['nasa/harmony-gdal-adapter', 'harmony/netcdf-to-zarr', 'harmony/service-example'];
+          const expectedServices = ['nasa/harmony-gdal-adapter', 'harmony/service-example'];
           expect(serviceNames).to.eql(expectedServices);
         });
 

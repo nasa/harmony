@@ -69,42 +69,6 @@ class HarmonyUatUser(BaseHarmonyUser):
         }
         self._sync_request(name, collection, variable, params, 2)
 
-    def _netcdf_to_zarr_48_granules(self):
-        name = '48 granules NetCDF-to-Zarr'
-        collection = 'harmony_example_l2'
-        variable = 'all'
-        params = {
-            'format': 'application/x-zarr',
-            'maxResults': '48',
-            'label': 'wl-req-3,workload'
-        }
-        self._async_request(name, collection, variable, params, 3)
-
-    def _chain_swath_projector_europe_to_zarr(self):
-        name = 'Chain Swath Projector to NetCDF-to-Zarr'
-        collection = 'harmony_example_l2'
-        variable = 'all'
-        params = {
-            'maxResults': '1',
-            'outputCrs': '+proj=lcc +lat_1=43 +lat_2=62 +lat_0=30 +lon_0=10 +x_0=0 +y_0=0 +ellps=intl +units=m no_defs',
-            'interpolation': 'near',
-            'scaleExtent': '-7000000,1000000,8000000,8000000',
-            'format': 'application/x-zarr',
-            'label': 'wl-req-4,workload'
-        }
-        self._async_request(name, collection, variable, params, 4)
-
-    def _netcdf_to_zarr_large_granule(self):
-        name = 'NetCDF to Zarr single large granule'
-        collection = 'C1238621141-POCLOUD'
-        variable = 'all'
-        params = {
-            'format': 'application/x-zarr',
-            'maxResults': '1',
-            'label': 'wl-req-5,workload'
-        }
-        self._async_request(name, collection, variable, params, 5)
-
     def _harmony_gdal_adapter(self) -> object:
         name = 'HARMONY GDAL ADAPTER'
         collection = 'C1225776654-ASF'
@@ -160,17 +124,6 @@ class HarmonyUatUser(BaseHarmonyUser):
         }
         self._async_request(name, collection, variable, params, 9)
 
-    def _netcdf_to_zarr_single_granule(self):
-        name='NetCDF to Zarr single granule'
-        collection = 'C1234088182-EEDTEST'
-        variable = 'all'
-        params = {
-            'maxResults': 1,
-            'format': 'application/x-zarr',
-            'label': 'wl-req-10,workload'
-        }
-        self._async_request(name, collection, variable, params, 10)
-
     def _concise_two_granules(self):
         name='Two PODAAC Concise granules'
         collection = 'C1234208438-POCLOUD'
@@ -208,21 +161,6 @@ class HarmonyUatUser(BaseHarmonyUser):
         }
         self._sync_request(name, collection, variable, params, 12)
 
-    def _chain_l2ss_to_zarr(self):
-        name='Chain L2SS to zarr'
-        collection = 'C1234724470-POCLOUD'
-        variable = 'all'
-        params = {
-            'maxResults': 1,
-            'subset': [
-                'lat(-45:45)',
-                'lon(0:180)',
-            ],
-            'format': 'application/x-zarr',
-            'label': 'wl-req-13,workload'
-        }
-        self._async_request(name, collection, variable, params, 13)
-
     ############################################
     # Locust tasks
     ############################################
@@ -240,17 +178,6 @@ class HarmonyUatUser(BaseHarmonyUser):
     @task(50)
     def swath_projector_europe(self):
         self._swath_projector_europe()
-
-    @tag('netcdf-to-zarr', 'async', 'zarr', 'demo')
-    @task(2)
-    def netcdf_to_zarr_48_granules(self):
-        self._netcdf_to_zarr_48_granules()
-
-    # Broken with current netcdf-to-zarr
-    @tag('chain', 'async', 'zarr', 'reproject', 'chain')
-    @task(50)
-    def chain_swath_projector_europe_to_zarr(self):
-        self._chain_swath_projector_europe_to_zarr()
 
     # Unable to download from ASF site in sandbox and SIT now
     @tag('harmony-gdal', 'sync', 'bbox', 'variable', 'temporal', 'hierarchical-variable', 'netcdf4', 'uat-only')
@@ -273,11 +200,6 @@ class HarmonyUatUser(BaseHarmonyUser):
     def podaac_l2ss_async_spatial_temporal_50_granules(self):
         self._podaac_l2ss_async_spatial_temporal_50_granules()
 
-    @tag('netcdf-to-zarr', 'async', 'zarr', 'agu', 'demo')
-    @task(50)
-    def netcdf_to_zarr_single_granule(self):
-        self._netcdf_to_zarr_single_granule()
-
     @tag('async', 'concise', 'demo')
     @task(25)
     def concise_two_granules(self):
@@ -293,24 +215,10 @@ class HarmonyUatUser(BaseHarmonyUser):
     def hoss_spatial_and_variable_subset(self):
         self._hoss_spatial_and_variable_subset()
 
-    @tag('async', 'chain', 'zarr', 'l2ss', 'demo')
-    @task(50)
-    def chain_l2ss_to_zarr(self):
-        self._chain_l2ss_to_zarr()
-
     @tag('ml', 'random')
     @task(50)
     def random_num_granules_service_example(self):
         self._random_num_granules_service_example()
-
-    ## Something broken with this granule
-    # @task(1)
-    #     self._netcdf_to_zarr_large_granule()
-
-    # @tag('netcdf-to-zarr', 'async', 'zarr', 'memory', 'slow')
-    # @task(1)
-    # def netcdf_to_zarr_large_granule(self):
-    #     self._netcdf_to_zarr_large_granule()
 
     ## Shapefile request is currently not working
     # @tag('podaac-ps3', 'shapefile', 'sync', 'temporal', 'netcdf4')

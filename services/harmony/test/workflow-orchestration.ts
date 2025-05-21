@@ -101,19 +101,15 @@ async function testInitialConditions(initialCmrHits: number, initialQueryCmrWork
 }
 
 describe('when a work item callback request does not return the results to construct the next work item(s)', function () {
-  const collection = 'C1233800302-EEDTEST';
+  const collection = 'C1260128044-EEDTEST'; // ATL16, requires HOSS and MaskFill to do a bbox subset
   hookServersStartStop();
-  const reprojectAndZarrQuery = {
+  const hossAndMaskfillQuery = {
     maxResults: 2,
-    outputCrs: 'EPSG:4326',
-    interpolation: 'near',
-    scaleExtent: '0,2500000.3,1500000,3300000',
-    scaleSize: '1.1,2',
-    format: 'application/x-zarr',
-    concatenate: false, // Aggregated workflows are tested below
+    subset: 'lat(80:85)',
+    format: 'application/x-netcdf4',
   };
 
-  hookRangesetRequest('1.0.0', collection, 'all', { query: reprojectAndZarrQuery });
+  hookRangesetRequest('1.0.0', collection, 'all', { query: hossAndMaskfillQuery });
   hookRedirect('joe');
 
   it('generates a workflow with 3 steps', async function () {
@@ -157,7 +153,7 @@ describe('when a work item callback request does not return the results to const
 });
 
 
-describe('Workflow chaining for a collection configured for Swath Projector and netcdf-to-zarr', function () {
+describe('Workflow chaining for collections configured with multi-step chains', function () {
   let pageStub;
   let sizeOfObjectStub;
   before(function () {
@@ -173,20 +169,16 @@ describe('Workflow chaining for a collection configured for Swath Projector and 
       sizeOfObjectStub.restore();
     }
   });
-  const collection = 'C1233800302-EEDTEST';
+  const collection = 'C1260128044-EEDTEST'; // ATL16, requires HOSS and MaskFill to do a bbox subset
   hookServersStartStop();
-  describe('when requesting to both reproject and reformat for two granules', function () {
-    const reprojectAndZarrQuery = {
+  describe('when requesting to spatially subset two projection-gridded granules', function () {
+    const hossAndMaskfillQuery = {
       maxResults: 2,
-      outputCrs: 'EPSG:4326',
-      interpolation: 'near',
-      scaleExtent: '0,2500000.3,1500000,3300000',
-      scaleSize: '1.1,2',
-      format: 'application/x-zarr',
-      concatenate: false, // Aggregated workflows are tested above
+      subset: 'lat(80:85)',
+      format: 'application/x-netcdf4',
     };
 
-    hookRangesetRequest('1.0.0', collection, 'all', { query: reprojectAndZarrQuery });
+    hookRangesetRequest('1.0.0', collection, 'all', { query: hossAndMaskfillQuery });
     hookRedirect('joe');
 
     it('generates a workflow with 3 steps', async function () {
@@ -203,36 +195,36 @@ describe('Workflow chaining for a collection configured for Swath Projector and 
       expect(workflowSteps[0].serviceID).to.equal('harmonyservices/query-cmr:stable');
     });
 
-    it('then requests reprojection using Swath Projector', async function () {
+    it('then requests data from OPeNDAP using HOSS', async function () {
       const job = JSON.parse(this.res.text);
       const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
 
-      expect(workflowSteps[1].serviceID).to.equal('ghcr.io/nasa/harmony-swath-projector:latest');
+      expect(workflowSteps[1].serviceID).to.equal('ghcr.io/nasa/harmony-opendap-subsetter:latest');
     });
 
-    it('then requests reformatting using netcdf-to-zarr', async function () {
+    it('then requests masking using MaskFill', async function () {
       const job = JSON.parse(this.res.text);
       const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
 
-      expect(workflowSteps[2].serviceID).to.equal('ghcr.io/nasa/harmony-netcdf-to-zarr:latest');
+      expect(workflowSteps[2].serviceID).to.equal('sds/maskfill-harmony:latest');
     });
 
     it('returns a human-readable message field indicating the request has been limited to a subset of the granules', function () {
       const job = JSON.parse(this.res.text);
-      expect(job.message).to.equal('CMR query identified 177 granules, but the request has been limited to process only the first 2 granules because you requested 2 maxResults.');
+      expect(job.message).to.equal('CMR query identified 27 granules, but the request has been limited to process only the first 2 granules because you requested 2 maxResults.');
     });
 
     // Verify it only queues a work item for the query-cmr task
-    describe('when checking for a Swath Projector work item', function () {
-      hookGetWorkForService('ghcr.io/nasa/harmony-swath-projector:latest');
+    describe('when checking for a HOSS work item', function () {
+      hookGetWorkForService('ghcr.io/nasa/harmony-opendap-subsetter:latest');
 
       it('does not find a work item', async function () {
         expect(this.res.status).to.equal(404);
       });
     });
 
-    describe('when checking for a netcdf-to-zarr work item', function () {
-      hookGetWorkForService('ghcr.io/nasa/harmony-netcdf-to-zarr:latest');
+    describe('when checking for a MaskFill work item', function () {
+      hookGetWorkForService('sds/maskfill-harmony:latest');
 
       it('does not find a work item', async function () {
         expect(this.res.status).to.equal(404);
@@ -256,9 +248,9 @@ describe('Workflow chaining for a collection configured for Swath Projector and 
         await updateWorkItem(this.backend, workItem);
       });
 
-      describe('when checking to see if Swath Projector work is queued', function () {
-        it('finds a swath-projector service work item and can complete it', async function () {
-          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
+      describe('when checking to see if HOSS work is queued', function () {
+        it('finds a HOSS service work item and can complete it', async function () {
+          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-opendap-subsetter:latest');
           expect(res.status).to.equal(200);
           const { workItem } = JSON.parse(res.text);
           workItem.status = WorkItemStatus.SUCCESSFUL;
@@ -266,34 +258,26 @@ describe('Workflow chaining for a collection configured for Swath Projector and 
           workItem.outputItemSizes = [1];
           await fakeServiceStacOutput(workItem.jobID, workItem.id);
           await updateWorkItem(this.backend, workItem);
-          expect(workItem.serviceID).to.equal('ghcr.io/nasa/harmony-swath-projector:latest');
+          expect(workItem.serviceID).to.equal('ghcr.io/nasa/harmony-opendap-subsetter:latest');
         });
 
-        describe('when checking to see if netcdf-to-zarr work is queued', function () {
+        describe('when checking to see if MaskFill work is queued', function () {
           let res;
           let workItem;
           before(async function () {
-            res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest');
+            res = await getWorkForService(this.backend, 'sds/maskfill-harmony:latest');
             // eslint-disable-next-line prefer-destructuring
             workItem = JSON.parse(res.text).workItem;
           });
-          it('finds a netcdf-to-zarr service work item', async function () {
+          it('finds a MaskFill service work item', async function () {
             expect(res.status).to.equal(200);
-            expect(workItem.serviceID).to.equal('ghcr.io/nasa/harmony-netcdf-to-zarr:latest');
+            expect(workItem.serviceID).to.equal('sds/maskfill-harmony:latest');
           });
-          it('limits the operation on the work-item to reformating', function () {
+          it('limits the operation on the work-item to bbox subsetting', function () {
             const { operation } = workItem;
-            // only 'concatenate' and 'reformat' operations allowed for netcdf-to-zarr, and
-            // 'concatenate' was set to 'false' in the request
-            expect(operation.subset).to.eql({});
+            expect(operation.subset).to.eql({ bbox: [-180, 80, 180, 85] });
             expect(operation.concatenate).to.be.false;
-            expect(operation.format).to.eql({
-              'mime': 'application/x-zarr',
-              'scaleSize': {
-                'x': 1.1,
-                'y': 2,
-              },
-            });
+            expect(operation.format).to.eql({});
           });
           it('can complete the work item', async function () {
             workItem.status = WorkItemStatus.SUCCESSFUL;
@@ -315,7 +299,7 @@ describe('Workflow chaining for a collection configured for Swath Projector and 
 
           describe('when completing all steps for the second granule', function () {
             it('wish I could do this in the describe', async function () {
-              for await (const service of ['ghcr.io/nasa/harmony-swath-projector:latest', 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest']) {
+              for await (const service of ['ghcr.io/nasa/harmony-opendap-subsetter:latest', 'sds/maskfill-harmony:latest']) {
                 res = await getWorkForService(this.backend, service);
                 // eslint-disable-next-line prefer-destructuring
                 workItem = JSON.parse(res.text).workItem;
@@ -342,17 +326,13 @@ describe('Workflow chaining for a collection configured for Swath Projector and 
   });
 
   describe('when a request has service returns nodata warning', function () {
-    const reprojectAndZarrQuery = {
+    const hossAndMaskfillQuery = {
       maxResults: 2,
-      outputCrs: 'EPSG:4326',
-      interpolation: 'near',
-      scaleExtent: '0,2500000.3,1500000,3300000',
-      scaleSize: '1.1,2',
-      format: 'application/x-zarr',
-      concatenate: false, // Aggregated workflows are tested above
+      subset: 'lat(80:85)',
+      format: 'application/x-netcdf4',
     };
 
-    hookRangesetRequest('1.0.0', collection, 'all', { query: reprojectAndZarrQuery });
+    hookRangesetRequest('1.0.0', collection, 'all', { query: hossAndMaskfillQuery });
     hookRedirect('joe');
 
     it('generates a workflow with 3 steps', async function () {
@@ -369,36 +349,36 @@ describe('Workflow chaining for a collection configured for Swath Projector and 
       expect(workflowSteps[0].serviceID).to.equal('harmonyservices/query-cmr:stable');
     });
 
-    it('then requests reprojection using Swath Projector', async function () {
+    it('then requests data from OPeNDAP using HOSS', async function () {
       const job = JSON.parse(this.res.text);
       const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
 
-      expect(workflowSteps[1].serviceID).to.equal('ghcr.io/nasa/harmony-swath-projector:latest');
+      expect(workflowSteps[1].serviceID).to.equal('ghcr.io/nasa/harmony-opendap-subsetter:latest');
     });
 
-    it('then requests reformatting using netcdf-to-zarr', async function () {
+    it('then requests masking using MaskFill', async function () {
       const job = JSON.parse(this.res.text);
       const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
 
-      expect(workflowSteps[2].serviceID).to.equal('ghcr.io/nasa/harmony-netcdf-to-zarr:latest');
+      expect(workflowSteps[2].serviceID).to.equal('sds/maskfill-harmony:latest');
     });
 
     it('returns a human-readable message field indicating the request has been limited to a subset of the granules', function () {
       const job = JSON.parse(this.res.text);
-      expect(job.message).to.equal('CMR query identified 177 granules, but the request has been limited to process only the first 2 granules because you requested 2 maxResults.');
+      expect(job.message).to.equal('CMR query identified 27 granules, but the request has been limited to process only the first 2 granules because you requested 2 maxResults.');
     });
 
     // Verify it only queues a work item for the query-cmr task
-    describe('when checking for a Swath Projector work item', function () {
-      hookGetWorkForService('ghcr.io/nasa/harmony-swath-projector:latest');
+    describe('when checking for a HOSS work item', function () {
+      hookGetWorkForService('ghcr.io/nasa/harmony-opendap-subsetter:latest');
 
       it('does not find a work item', async function () {
         expect(this.res.status).to.equal(404);
       });
     });
 
-    describe('when checking for a netcdf-to-zarr work item', function () {
-      hookGetWorkForService('ghcr.io/nasa/harmony-netcdf-to-zarr:latest');
+    describe('when checking for a MaskFill work item', function () {
+      hookGetWorkForService('sds/maskfill-harmony:latest');
 
       it('does not find a work item', async function () {
         expect(this.res.status).to.equal(404);
@@ -423,25 +403,25 @@ describe('Workflow chaining for a collection configured for Swath Projector and 
       });
 
       describe('when a service returns a nodata warning', function () {
-        let firstSwathItem;
+        let firstHossItem;
 
         before(async function () {
-          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
-          firstSwathItem = JSON.parse(res.text).workItem;
-          firstSwathItem.status = WorkItemStatus.WARNING;
-          firstSwathItem.message = 'The service found nodata to process';
-          firstSwathItem.message_category = 'nodata';
-          firstSwathItem.results = [];
-          await updateWorkItem(this.backend, firstSwathItem);
+          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-opendap-subsetter:latest');
+          firstHossItem = JSON.parse(res.text).workItem;
+          firstHossItem.status = WorkItemStatus.WARNING;
+          firstHossItem.message = 'The service found nodata to process';
+          firstHossItem.message_category = 'nodata';
+          firstHossItem.results = [];
+          await updateWorkItem(this.backend, firstHossItem);
         });
 
-        describe('when checking to see if netcdf-to-zarr work is queued', function () {
+        describe('when checking to see if MaskFill work is queued', function () {
           let res;
           let workItem;
           before(async function () {
-            res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest');
+            res = await getWorkForService(this.backend, 'sds/maskfill-harmony:latest');
           });
-          it('does not find any netcdf-to-zarr service work item', async function () {
+          it('does not find any MaskFill service work item', async function () {
             expect(res.status).to.equal(404);
           });
 
@@ -456,7 +436,7 @@ describe('Workflow chaining for a collection configured for Swath Projector and 
 
           describe('when completing all steps for the second granule', function () {
             it('wish I could do this in the describe', async function () {
-              for await (const service of ['ghcr.io/nasa/harmony-swath-projector:latest', 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest']) {
+              for await (const service of ['ghcr.io/nasa/harmony-opendap-subsetter:latest', 'sds/maskfill-harmony:latest']) {
                 res = await getWorkForService(this.backend, service);
                 // eslint-disable-next-line prefer-destructuring
                 workItem = JSON.parse(res.text).workItem;
@@ -484,17 +464,14 @@ describe('Workflow chaining for a collection configured for Swath Projector and 
   });
 
   describe('when making a request and the job fails while in progress', function () {
-    const reprojectAndZarrQuery = {
+    const hossAndMaskfillQuery = {
       maxResults: 3,
-      outputCrs: 'EPSG:4326',
-      interpolation: 'near',
-      scaleExtent: '0,2500000.3,1500000,3300000',
-      scaleSize: '1.1,2',
-      format: 'application/x-zarr',
-      ignoreErrors: false,
+      subset: 'lat(80:85)',
+      format: 'application/x-netcdf4',
+      ignoreErrors: false, // Without this, the job status becomes running_with_errors
     };
 
-    hookRangesetRequest('1.0.0', collection, 'all', { query: reprojectAndZarrQuery });
+    hookRangesetRequest('1.0.0', collection, 'all', { query: hossAndMaskfillQuery });
     hookRedirect('joe');
 
     before(async function () {
@@ -514,76 +491,73 @@ describe('Workflow chaining for a collection configured for Swath Projector and 
       // multiple work items should be generated for the next step
       const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
       expect(currentWorkItems.length).to.equal(4);
-      expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(3);
+      expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(3);
     });
 
-    describe('when the first swath-projector service work item fails with an error message', function () {
-      let firstSwathItem;
+    describe('when the first HOSS service work item fails with an error message', function () {
+      let firstHossItem;
 
       before(async function () {
         let shouldLoop = true;
         // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
         while (shouldLoop) {
-          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
-          firstSwathItem = JSON.parse(res.text).workItem;
-          firstSwathItem.status = WorkItemStatus.FAILED;
-          firstSwathItem.message = 'That was just a practice try, right?';
-          firstSwathItem.results = [];
-          await updateWorkItem(this.backend, firstSwathItem);
+          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-opendap-subsetter:latest');
+          firstHossItem = JSON.parse(res.text).workItem;
+          firstHossItem.status = WorkItemStatus.FAILED;
+          firstHossItem.message = 'That was just a practice try, right?';
+          firstHossItem.results = [];
+          await updateWorkItem(this.backend, firstHossItem);
 
           // check to see if the work-item has failed completely
-          const workItem = await getWorkItemById(db, firstSwathItem.id);
+          const workItem = await getWorkItemById(db, firstHossItem.id);
           shouldLoop = !(workItem.status === WorkItemStatus.FAILED);
         }
       });
 
       it('fails the job, and all further work items are canceled', async function () {
-      // work item failure should trigger job failure
-        const { job } = await Job.byJobID(db, firstSwathItem.jobID);
+        // work item failure should trigger job failure
+        const { job } = await Job.byJobID(db, firstHossItem.jobID);
         expect(job.status).to.equal(JobStatus.FAILED);
         // job failure should trigger cancellation of any pending work items
         const currentWorkItems = (await getWorkItemsByJobId(db, job.jobID)).workItems;
         expect(currentWorkItems.length).to.equal(4);
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
-        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.CANCELED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(2);
-        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
+        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.CANCELED && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(2);
+        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(1);
       });
 
       it('sets the job failure message to the error message returned by the service', async function () {
-        const { job } = await Job.byJobID(db, firstSwathItem.jobID);
+        const { job } = await Job.byJobID(db, firstHossItem.jobID);
         expect(job.message).to.contain('That was just a practice try, right?');
       });
 
-      it('does not find any further swath-projector work', async function () {
-        const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
+      it('does not find any further HOSS work', async function () {
+        const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-opendap-subsetter:latest');
         expect(res.status).to.equal(404);
       });
 
       it('does not allow any further work item updates', async function () {
-        firstSwathItem.status = WorkItemStatus.SUCCESSFUL;
-        await updateWorkItem(this.backend, firstSwathItem);
+        firstHossItem.status = WorkItemStatus.SUCCESSFUL;
+        await updateWorkItem(this.backend, firstHossItem);
 
-        const currentWorkItems = (await getWorkItemsByJobId(db, firstSwathItem.jobID)).workItems;
+        const currentWorkItems = (await getWorkItemsByJobId(db, firstHossItem.jobID)).workItems;
         expect(currentWorkItems.length).to.equal(4);
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
-        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.CANCELED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(2);
-        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(1);
+        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.CANCELED && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(2);
+        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(1);
       });
     });
   });
 
   describe('when making a request and the job fails while in progress', function () {
-    const reprojectAndZarrQuery = {
+    const hossAndMaskfillQuery = {
       maxResults: 3,
-      outputCrs: 'EPSG:4326',
-      interpolation: 'near',
-      scaleExtent: '0,2500000.3,1500000,3300000',
-      scaleSize: '1.1,2',
-      format: 'application/x-zarr',
+      subset: 'lat(80:85)',
+      format: 'application/x-netcdf4',
       ignoreErrors: false,
     };
 
-    hookRangesetRequest('1.0.0', collection, 'all', { query: reprojectAndZarrQuery });
+    hookRangesetRequest('1.0.0', collection, 'all', { query: hossAndMaskfillQuery });
     hookRedirect('joe');
 
     before(async function () {
@@ -603,47 +577,50 @@ describe('Workflow chaining for a collection configured for Swath Projector and 
       // multiple work items should be generated for the next step
       const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
       expect(currentWorkItems.length).to.equal(4);
-      expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-swath-projector:latest').length).to.equal(3);
+      expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(3);
     });
 
-    describe('when the first swath-projector service work item fails and does not provide an error message', function () {
-      let firstSwathItem;
+    describe('when the first HOSS service work item fails and does not provide an error message', function () {
+      let firstHossItem;
 
       before(async function () {
         let shouldLoop = true;
         // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
         while (shouldLoop) {
-          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
-          firstSwathItem = JSON.parse(res.text).workItem;
-          firstSwathItem.status = WorkItemStatus.FAILED;
-          firstSwathItem.results = [];
-          await updateWorkItem(this.backend, firstSwathItem);
+          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-opendap-subsetter:latest');
+          firstHossItem = JSON.parse(res.text).workItem;
+          firstHossItem.status = WorkItemStatus.FAILED;
+          firstHossItem.results = [];
+          await updateWorkItem(this.backend, firstHossItem);
 
           // check to see if the work-item has failed completely
-          const workItem = await getWorkItemById(db, firstSwathItem.id);
+          const workItem = await getWorkItemById(db, firstHossItem.id);
           shouldLoop = !(workItem.status === WorkItemStatus.FAILED);
         }
       });
 
       it('fails the job', async function () {
-        const { job } = await Job.byJobID(db, firstSwathItem.jobID);
+        const { job } = await Job.byJobID(db, firstHossItem.jobID);
         expect(job.status).to.equal(JobStatus.FAILED);
       });
 
       it('sets the job failure message to a generic failure', async function () {
-        const { job } = await Job.byJobID(db, firstSwathItem.jobID);
+        const { job } = await Job.byJobID(db, firstHossItem.jobID);
         expect(job.message).to.contain('failed with an unknown error');
       });
     });
   });
 
-  describe('when requesting to reformat to zarr, no reprojection', function () {
-    const zarrOnlyQuery = {
+  describe('when requesting to aggregation (Concise), no subsetting', function () {
+    // This test shows the L2SS step is skipped because none of the operations
+    // it requires in a request are specified.
+    const conciseOnlyQuery = {
       maxResults: 2,
-      format: 'application/x-zarr',
+      concatenate: true,
     };
+    const conciseCollection = 'C1243729749-EEDTEST';
 
-    hookRangesetRequest('1.0.0', collection, 'all', { query: zarrOnlyQuery, username: 'joe' });
+    hookRangesetRequest('1.0.0', conciseCollection, 'all', { query: conciseOnlyQuery, username: 'joe' });
     hookRedirect('joe');
 
     it('generates a workflow with 2 steps', async function () {
@@ -660,25 +637,23 @@ describe('Workflow chaining for a collection configured for Swath Projector and 
       expect(workflowSteps[0].serviceID).to.equal('harmonyservices/query-cmr:stable');
     });
 
-    it('then requests reformatting using netcdf-to-zarr', async function () {
+    it('then requests reformatting using Concise', async function () {
       const job = JSON.parse(this.res.text);
       const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
 
-      expect(workflowSteps[1].serviceID).to.equal('ghcr.io/nasa/harmony-netcdf-to-zarr:latest');
+      expect(workflowSteps[1].serviceID).to.equal('ghcr.io/podaac/concise:sit');
     });
   });
 
-  describe('when requesting to reproject, but not reformat', function () {
-    const reprojectOnlyQuery = {
+  describe('when requesting to subset, but not concatenate', function () {
+    const conciseCollection = 'C1243729749-EEDTEST';
+    const subsetOnlyQuery = {
       maxResults: 2,
-      outputCrs: 'EPSG:4326',
-      interpolation: 'near',
-      scaleExtent: '0,2500000.3,1500000,3300000',
-      scaleSize: '1.1,2',
-      format: 'application/x-netcdf4',
+      subset: 'lat(0:10)',
+      concatenate: false,
     };
 
-    hookRangesetRequest('1.0.0', collection, 'all', { query: reprojectOnlyQuery });
+    hookRangesetRequest('1.0.0', conciseCollection, 'all', { query: subsetOnlyQuery });
     hookRedirect('joe');
 
     it('generates a workflow with 2 steps', async function () {
@@ -695,11 +670,11 @@ describe('Workflow chaining for a collection configured for Swath Projector and 
       expect(workflowSteps[0].serviceID).to.equal('harmonyservices/query-cmr:stable');
     });
 
-    it('then requests reprojection using the Swath Projector', async function () {
+    it('then requests subsetting using L2SS', async function () {
       const job = JSON.parse(this.res.text);
       const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
 
-      expect(workflowSteps[1].serviceID).to.equal('ghcr.io/nasa/harmony-swath-projector:latest');
+      expect(workflowSteps[1].serviceID).to.equal('ghcr.io/podaac/l2ss-py:sit');
     });
   });
 });
@@ -845,7 +820,7 @@ describe('Workflow chaining for a collection configured for SAMBAH', function ()
 
 describe('When a request spans multiple CMR pages', function () {
   describe('and contains no aggregating steps', function () {
-    const collection = 'C1233800302-EEDTEST';
+    const collection = 'C1260128044-EEDTEST'; // ATL16, requires HOSS and MaskFill to do a bbox subset
     hookServersStartStop();
     let pageStub;
     let sizeOfObjectStub;
@@ -867,12 +842,8 @@ describe('When a request spans multiple CMR pages', function () {
 
       const multiPageQuery = {
         maxResults: 5,
-        outputCrs: 'EPSG:4326',
-        interpolation: 'near',
-        scaleExtent: '0,2500000.3,1500000,3300000',
-        scaleSize: '1.1,2',
-        format: 'application/x-zarr',
-        concatenate: false,
+        subset: 'lat(80:85)',
+        format: 'application/x-netcdf4',
       };
 
       hookRangesetRequest('1.0.0', collection, 'all', { query: multiPageQuery });
@@ -892,7 +863,7 @@ describe('When a request spans multiple CMR pages', function () {
           workItem.outputItemSizes = [1, 1, 1];
           await fakeServiceStacOutput(workItem.jobID, workItem.id, 3);
           await updateWorkItem(this.backend, workItem);
-          // sanity check that 3 swath-projector items were generated by the first query-cmr task
+          // sanity check that 3 HOSS items were generated by the first query-cmr task
           const queuedCount = (await getWorkItemsByJobIdAndStepIndex(db, workItem.jobID, 2)).workItems.length;
           expect(queuedCount).equals(3);
         });
@@ -909,7 +880,7 @@ describe('When a request spans multiple CMR pages', function () {
           workItem.outputItemSizes = [1, 1];
           await fakeServiceStacOutput(workItem.jobID, workItem.id, 2);
           await updateWorkItem(this.backend, workItem);
-          // sanity check that 2 more swath-projector items were generated by the second query-cmr task
+          // sanity check that 2 more HOSS items were generated by the second query-cmr task
           const queuedCount = (await getWorkItemsByJobIdAndStepIndex(db, workItem.jobID, 2)).workItems.length;
           expect(queuedCount).equals(5);
         });
@@ -920,7 +891,7 @@ describe('When a request spans multiple CMR pages', function () {
         });
 
         it('does not define maxCmrGranules for non-query-cmr items', async function () {
-          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-swath-projector:latest');
+          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-opendap-subsetter:latest');
           const { workItem, maxCmrGranules } = JSON.parse(res.text);
           expect(maxCmrGranules).equals(undefined);
           expect(workItem).to.not.equal(undefined);

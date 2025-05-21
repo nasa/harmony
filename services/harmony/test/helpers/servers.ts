@@ -48,7 +48,7 @@ export default function hookServersStartStop(opts = { USE_EDL_CLIENT_APP: false 
 
     stub(env, 'callbackUrlRoot').get(() => `http://127.0.0.1:${servers.backend.address().port}`);
     const locallyDeployedServices = 'giovanni-time-series-adapter,harmony-service-example,' +
-      'harmony-netcdf-to-zarr,var-subsetter,swath-projector,harmony-gdal-adapter,' +
+      'var-subsetter,swath-projector,harmony-gdal-adapter,' +
       'podaac-concise,sds-maskfill,trajectory-subsetter,podaac-l2-subsetter,harmony-regridder,' +
       'hybig,geoloco,stitchee,batchee,hoss,subset-band-name';
     stub(env, 'locallyDeployedServices').get(() => locallyDeployedServices);
