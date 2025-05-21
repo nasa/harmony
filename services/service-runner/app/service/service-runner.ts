@@ -222,9 +222,6 @@ export async function runQueryCmrFromPull(
       const { totalItemsSize, outputItemSizes } = response.data;
       const newScrollID = response.data.scrollID;
       return { batchCatalogs, totalItemsSize, outputItemSizes, scrollID: newScrollID };
-    } else if (response.status === 400) {
-      // returns granule validation error
-      return { error: response.data, errorLevel: 'error', errorCategory: 'granValidation' };
     }
   } catch (e) {
     workItemLogger.error(e);
