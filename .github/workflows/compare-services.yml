@@ -8,14 +8,17 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v4
         with:
           node-version: '22.14.x'
           cache: 'npm'
-          cache-dependency-path: subdir/package-lock.json
+          cache-dependency-path: |
+            **/package-lock.json
+            packages/*/package-lock.json
+            services/*/package-lock.json
 
       - name: Install dependencies
         run: npm ci
