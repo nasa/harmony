@@ -1151,7 +1151,7 @@ export async function getGridsByName(
  * @param sessionKey - The session key
  * @returns An s3 url containing the session key
  */
-function s3UrlForStoredQueryParams(sessionKey: string): string {
+export function s3UrlForStoredQueryParams(sessionKey: string): string {
   return `s3://${stagingBucket}/SearchParams/${sessionKey}/serializedQuery`;
 }
 

@@ -510,8 +510,10 @@ export default abstract class BaseService<ServiceParamType> {
 
           if (step.extra_args) {
             this.operation.extraArgs = step.extra_args;
-          } else {
-            // clear out extraArgs used by other steps
+          } else if (i > 1) {
+            // clear out extraArgs used by other steps if it is not the first step
+            // It is possible for extraArgs to be used for granule validation if forceAsync=true,
+            // we don't want to remove it for this case.
             this.operation.removeExtraArgs();
           }
 
@@ -519,6 +521,7 @@ export default abstract class BaseService<ServiceParamType> {
           if (QUERY_CMR_SERVICE_REGEX.test(step.image)) {
             progressWeight = 0.1;
           }
+
           workflowSteps.push(new WorkflowStep({
             jobID: this.operation.requestId,
             serviceID: serviceImageToId(step.image),
