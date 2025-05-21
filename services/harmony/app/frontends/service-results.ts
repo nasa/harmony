@@ -6,7 +6,7 @@ import HarmonyRequest from '../models/harmony-request';
 import { Job } from '../models/job';
 import db from '../util/db';
 import env from '../util/env';
-import { NotFoundError, RequestValidationError } from '../util/errors';
+import { NotFoundError } from '../util/errors';
 import { objectStoreForProtocol } from '../util/object-store';
 
 /**
@@ -90,20 +90,24 @@ export async function getServiceResult(
 ): Promise<void> {
   const { bucket, jobId, workItemId, remainingPath } = req.params;
 
-  if (!bucket || !jobId || !workItemId || !remainingPath) {
-    req.context.logger.error('Invalid path to service result');
-    next(new RequestValidationError('Invalid path to service result'));
-  }
-
-  const key = `public/${jobId}/${workItemId}/${remainingPath}`;
+  // Service results for outputs produced by harmony will include a jobId and workItemId in the
+  // path. The test data stored in harmony buckets in the UAT account which we use the
+  // service-results route to access will only have the bucket and key in the URL
+  const key = (!jobId || !workItemId) ? remainingPath : `public/${jobId}/${workItemId}/${remainingPath}`;
   const url = `s3://${bucket}/${key}`;
 
-  const provider = await providerIdCache.fetch(jobId, { context: req.context });
+  const provider = jobId ? await providerIdCache.fetch(jobId, { context: req.context }) : undefined;
 
   const objectStore = objectStoreForProtocol('s3');
   if (objectStore) {
     try {
-      const customParams = { 'A-userid': req.user, 'A-provider': provider?.toUpperCase(), 'A-api-request-uuid': jobId };
+      const customParams = { 'A-userid': req.user };
+      if (jobId) {
+        customParams['A-api-request-uuid'] = jobId;
+      }
+      if (provider) {
+        customParams['A-provider'] = provider.toUpperCase();
+      }
       req.context.logger.info(`Signing ${url} with params ${JSON.stringify(customParams)}`);
       const result = await objectStore.signGetObject(url, customParams);
       // Direct clients to reuse the redirect for 10 minutes before asking for a new one
