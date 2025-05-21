@@ -1,8 +1,10 @@
 import _ from 'lodash';
 import { Logger } from 'winston';
 
+import { GranuleLimitReason, getResultsLimitedMessageImpl } from '../../harmony/app/middleware/cmr-granule-locator';
 import DataOperation from '../../harmony/app/models/data-operation';
 import { queryGranulesWithSearchAfter } from '../../harmony/app/util/cmr';
+import { CmrError, RequestValidationError, ServerError } from '../../harmony/app/util/errors';
 import StacCatalog from './stac/catalog';
 import CmrStacCatalog from './stac/cmr-catalog';
 
@@ -151,4 +153,118 @@ export async function queryGranules(
     );
 
   return [totalItemsSize, outputItemSizes, catalogs, newScrollId, hits];
+}
+
+interface GranValidation {
+  reason?: GranuleLimitReason;
+  hasGranuleLimit?: boolean;
+  serviceName?: string;
+  shapeType?: string;
+  maxResults?: number;
+}
+
+export interface QueryCmrResponse {
+  hits?: number;
+  totalItemsSize?: number;
+  outputItemSizes?: number[];
+  scrollID?: string;
+  error?: string;
+  errorLevel?: 'warning' | 'error';
+  errorCategory?: string;
+  retryable?: boolean;
+}
+
+/**
+ * Perform the initial granule validation, returns the validation errors if failed
+ * or results limited message if successful as the result.
+ * This function is only called when granule validation becomes part of the query-cmr
+ * task (forceAsync=true).
+ * errorCategory: 'granValidation' is used to indicate that the query-cmr result is
+ * the result of granule validation to service-runner and work-updater which will
+ * process the result accordingly.
+ *
+ * @param operation - The harmony data operation which contains the access token
+ * @param scrollId - The session key to store query params in S3
+ * @param maxCmrGranules - The maximum size of the page to request from CMR
+ * @param logger - The logger to use for logging messages
+ * @returns a promise of QueryCmrResponse
+ */
+export async function validateGranules(
+  operation: DataOperation,
+  scrollId: string,
+  maxCmrGranules: number,
+  logger: Logger,
+): Promise<QueryCmrResponse> {
+  let jobHits: number = 0;
+  const jobMessages = [];
+
+  const granValidation = operation.extraArgs?.granValidation as GranValidation | undefined;
+
+  const reason = granValidation?.reason;
+  const hasGranuleLimit = granValidation?.hasGranuleLimit;
+  const serviceName = granValidation?.serviceName;
+  const shapeType = granValidation?.shapeType;
+  const maxResults = granValidation?.maxResults;
+
+  try {
+    const { requestId, sources, unencryptedAccessToken } = operation;
+    logger.info(`Querying granules for ${sources[0].collection}`, { collection: sources[0].collection });
+    const startTime = new Date().getTime();
+
+    const { hits } = await queryGranulesWithSearchAfter(
+      { 'id': requestId },
+      unencryptedAccessToken,
+      maxCmrGranules,
+      {},
+      scrollId,
+    );
+    if (hits === 0) {
+      return {
+        hits: 0,
+        error: 'No matching granules found.',
+        errorLevel: 'error',
+        errorCategory: 'granValidation',
+      };
+    }
+    jobHits = hits;
+    const msTaken = new Date().getTime() - startTime;
+    logger.info('timing.cmr-validate-granule.end', { durationMs: msTaken, hits });
+
+    const limitedMessage = getResultsLimitedMessageImpl(hits, maxResults, maxCmrGranules, reason, serviceName, hasGranuleLimit, sources[0].collection);
+    if (limitedMessage) {
+      jobMessages.push(limitedMessage);
+    }
+  } catch (e) {
+    if (e instanceof RequestValidationError || e instanceof CmrError) {
+      // Avoid giving confusing errors about GeoJSON due to upstream converted files
+      if (e.message.indexOf('GeoJSON') !== -1 && shapeType) {
+        e.message = e.message.replace('GeoJSON', `GeoJSON (converted from the provided ${shapeType})`);
+      }
+      logger.error(e);
+      return {
+        hits: 0,
+        error: e.message,
+        errorLevel: 'error',
+        errorCategory: 'granValidation',
+      };
+    }
+    logger.error(e);
+    throw new ServerError('Failed to query the CMR');
+  }
+
+  // use errorCategory: 'granValidation' to indicate success with the job hits and message
+  if (jobMessages.length > 0) {
+    return {
+      hits: jobHits,
+      error: jobMessages.join(' '),
+      errorLevel: 'warning',
+      errorCategory: 'granValidation',
+    };
+  } else {
+    return {
+      hits: jobHits,
+      errorLevel: 'warning',
+      errorCategory: 'granValidation',
+    };
+  }
 }

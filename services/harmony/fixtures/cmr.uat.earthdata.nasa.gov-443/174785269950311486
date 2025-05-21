@@ -1,0 +1,29 @@
+GET /search/grids.umm_json_v_0_0_1?name=NoSuchGrid&page_size=2000
+accept: application/json
+accept-encoding: gzip,deflate
+
+HTTP/1.1 200 OK
+content-type: application/vnd.nasa.cmr.umm_results+json;version=0.0.1; charset=utf-8
+transfer-encoding: chunked
+connection: keep-alive
+date: Wed, 21 May 2025 18:38:19 GMT
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: cb7a490e-8a22-4466-91a7-e3bf672499fd
+content-sha1: a3f0446627bbc85f29da8e6f6aaaaf1f0c1be5b4
+strict-transport-security: max-age=31536000; includeSubDomains; preload
+cmr-hits: 0
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Search-After, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 6
+x-request-id: cb7a490e-8a22-4466-91a7-e3bf672499fd
+content-md5: 0206ad0cbbe2f364002d4c926fc62c45
+vary: Accept-Encoding, User-Agent
+server: ServerTokens ProductOnly
+x-cache: Miss from cloudfront
+via: 1.1 4ec96ec95935e27af762cd5e1b587fb8.cloudfront.net (CloudFront)
+x-amz-cf-pop: DFW59-P2
+x-amz-cf-id: NeYMatHMn6-H6gDim5Iuio0mrNuH1K9CSavjdG1E48khc2r0nwsH5w==
+
+{"hits":0,"took":6,"items":[]}
