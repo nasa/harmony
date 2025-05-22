@@ -2,6 +2,10 @@
 Any changes to the environment variables will be documented in this file in chronological
 order with the most recent changes first.
 
+# 2025-05-19
+### Added
+- Added environment defaults for Harmony Metadata Annotator
+
 # 2025-05-16
 ### Removed
 
