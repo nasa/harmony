@@ -1032,9 +1032,7 @@ export async function handleBatchWorkItemUpdatesWithJobId(
   // group updates by workflow step index to make sure at least one completion check is performed for each step
   const groups = _.groupBy(updates, (update) => update.update.workflowStepIndex);
   for (const workflowStepIndex of Object.keys(groups)) {
-    if (parseInt(workflowStepIndex) === 1
-      && groups[workflowStepIndex].length === 1
-      && groups[workflowStepIndex][0].update.message_category === 'granValidation') {
+    if (groups[workflowStepIndex][0].update.message_category === 'granValidation') {
       await handleGranuleValidation(jobID, groups[workflowStepIndex][0].update, logger);
     } else {
       const nextWorkflowStep = await (await logAsyncExecutionTime(
