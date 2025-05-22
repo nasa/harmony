@@ -536,6 +536,11 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
     describe('set to "true"', function () {
       const forceAsync = 'true';
+      const expectedExtraArgs = { granValidation: { reason: 3,
+        hasGranuleLimit: undefined,
+        serviceName: 'harmony/service-example',
+        shapeType: undefined,
+        maxResults: 2100 } };
 
       describe('and making a request would otherwise be synchronous', function () {
         hookRangesetRequest(version, collection, variableName,
@@ -544,6 +549,10 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
         it('performs the request asynchronously', function () {
           expect(this.service.operation.isSynchronous).to.equal(false);
         });
+
+        it('sets up extraArgs for granule validation', function () {
+          expect(this.service.operation.extraArgs).to.eql(expectedExtraArgs);
+        });
       });
 
       describe('and making a request would otherwise be asynchronous', function () {
@@ -551,6 +560,10 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
         it('performs the request asynchronously', function () {
           expect(this.service.operation.isSynchronous).to.equal(false);
+        });
+
+        it('sets up extraArgs for granule validation', function () {
+          expect(this.service.operation.extraArgs).to.eql(expectedExtraArgs);
         });
       });
     });
@@ -565,6 +578,10 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
         it('performs the request synchronously', function () {
           expect(this.service.operation.isSynchronous).to.equal(true);
         });
+
+        it('does not set up extraArgs for granule validation', function () {
+          expect(this.service.operation.extraArgs).to.be.undefined;
+        });
       });
 
       describe('and making a request would otherwise be asynchronous', function () {
@@ -572,6 +589,10 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
         it('performs the request asynchronously', function () {
           expect(this.service.operation.isSynchronous).to.equal(false);
+        });
+
+        it('does not set up extraArgs for granule validation', function () {
+          expect(this.service.operation.extraArgs).to.be.undefined;
         });
       });
     });

@@ -509,16 +509,23 @@ export default abstract class BaseService<ServiceParamType> {
           }
 
           if (step.extra_args) {
+            // replace the operation extraArgs with the one defined in step definition
+            // keeping the granValidation if any
+            const granValidation = this.operation.extraArgs?.granValidation;
             this.operation.extraArgs = step.extra_args;
+            if (granValidation) {
+              this.operation.addExtraArgs({ granValidation });
+            }
           } else {
-            // clear out extraArgs used by other steps
-            this.operation.removeExtraArgs();
+            // clear out extraArgs used by other steps except granValidation
+            this.operation.keepExtraArgs(['granValidation']);
           }
 
           let progressWeight = 1.0;
           if (QUERY_CMR_SERVICE_REGEX.test(step.image)) {
             progressWeight = 0.1;
           }
+
           workflowSteps.push(new WorkflowStep({
             jobID: this.operation.requestId,
             serviceID: serviceImageToId(step.image),

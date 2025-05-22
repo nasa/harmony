@@ -434,4 +434,95 @@ describe('DataOperation', () => {
       expect(operation.providerId).to.eq('prova');
     });
   });
+
+  describe('#extraArgs', () => {
+    describe('addExtraArgs', function () {
+      const operation = new DataOperation();
+      beforeEach(function () {
+        operation.model.extraArgs = {};
+      });
+
+      it('adds new keys to undefined extraArgs', function () {
+        delete operation.model.extraArgs;
+        operation.addExtraArgs({ foo: 'bar' });
+        expect(operation.extraArgs).to.deep.equal({ foo: 'bar' });
+      });
+
+      it('adds new keys to empty extraArgs', function () {
+        operation.addExtraArgs({ foo: 'bar' });
+        expect(operation.extraArgs).to.deep.equal({ foo: 'bar' });
+      });
+
+      it('adds undefined to extraArgs is ok', function () {
+        operation.addExtraArgs(undefined);
+        expect(operation.extraArgs).to.deep.equal({ });
+      });
+
+      it('merges new keys with existing extraArgs', function () {
+        operation.model.extraArgs = { existing: 'keep' };
+        operation.addExtraArgs({ newKey: 123 });
+        expect(operation.extraArgs).to.deep.equal({ existing: 'keep', newKey: 123 });
+      });
+
+      it('overwrites existing keys if duplicate', function () {
+        operation.model.extraArgs = { existing: 'keep' };
+        operation.addExtraArgs({ existing: 'replaced' });
+        expect(operation.extraArgs).to.deep.equal({ existing: 'replaced' });
+      });
+
+      it('adds nested structures as new fields', function () {
+        operation.model.extraArgs = { existing: 'keep' };
+        const granValidation = {
+          reason: 1,
+          hasGranuleLimit: true,
+          serviceName: 'test-service',
+          shapeType: 'Polygon',
+          maxResults: 42,
+        };
+        operation.addExtraArgs({ granValidation });
+        expect(operation.extraArgs).to.deep.equal({
+          existing: 'keep',
+          granValidation,
+        });
+      });
+    });
+
+    describe('keepExtraArgs', () => {
+      const operation = new DataOperation();
+      beforeEach(function () {
+        operation.model.extraArgs = { foo: 1, bar: 'test' };
+      });
+
+      it('should delete all fields when keepList is empty', () => {
+        operation.keepExtraArgs();
+        expect(operation.extraArgs).to.be.undefined;
+      });
+
+      it('should keep only specified fields in keepList', () => {
+        operation.keepExtraArgs(['foo']);
+        expect(operation.extraArgs).to.deep.equal({ foo: 1 });
+      });
+
+      it('should remove extraArgs entirely if all fields are removed', () => {
+        operation.keepExtraArgs(['nonexistent']);
+        expect(operation.extraArgs).to.be.undefined;
+      });
+
+      it('should do nothing if extraArgs is undefined', () => {
+        delete operation.model.extraArgs;
+        operation.keepExtraArgs(['foo']);
+        expect(operation.extraArgs).to.be.undefined;
+      });
+
+      it('should keep all fields if all are in keepList', () => {
+        operation.keepExtraArgs(['foo', 'bar']);
+        expect(operation.extraArgs).to.deep.equal({ foo: 1, bar: 'test' });
+      });
+
+      it('should handle keepList with mixed present and absent keys', () => {
+        operation.keepExtraArgs(['foo', 'nonexistent']);
+        expect(operation.extraArgs).to.deep.equal({ foo: 1 });
+      });
+    });
+  });
 });
