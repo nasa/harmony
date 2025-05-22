@@ -4,7 +4,7 @@ order with the most recent changes first.
 
 # 2025-05-19
 ### Added
-- Added enviroment defaults for Harmony Metadata Annotator
+- Added environment defaults for Harmony Metadata Annotator
 
 # 2025-05-16
 ### Removed
