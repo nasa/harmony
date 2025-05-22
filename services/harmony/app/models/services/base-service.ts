@@ -509,12 +509,16 @@ export default abstract class BaseService<ServiceParamType> {
           }
 
           if (step.extra_args) {
+            // replace the operation extraArgs with the one defined in step definition
+            // keeping the granValidation if any
+            const granValidation = this.operation.extraArgs?.granValidation;
             this.operation.extraArgs = step.extra_args;
-          } else if (i > 1) {
-            // clear out extraArgs used by other steps if it is not the first step
-            // It is possible for extraArgs to be used for granule validation if forceAsync=true,
-            // we don't want to remove it for this case.
-            this.operation.removeExtraArgs();
+            if (granValidation) {
+              this.operation.addExtraArgs({ granValidation });
+            }
+          } else {
+            // clear out extraArgs used by other steps except granValidation
+            this.operation.keepExtraArgs(['granValidation']);
           }
 
           let progressWeight = 1.0;
