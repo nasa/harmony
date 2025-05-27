@@ -978,7 +978,7 @@ async function handleGranuleValidation(
         const thisWorkflowStep = await (await logAsyncExecutionTime(
           getWorkflowStepByJobIdStepIndex,
           'HWIUWJI.getWorkflowStepByJobIdStepIndex',
-          logger))(db, jobID, 1);
+          logger))(db, jobID, update.workflowStepIndex);
         const op = JSON.parse(thisWorkflowStep.operation);
         delete op.extraArgs;
         thisWorkflowStep.operation = JSON.stringify(op);

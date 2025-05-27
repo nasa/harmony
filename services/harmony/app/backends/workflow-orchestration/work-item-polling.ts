@@ -225,14 +225,16 @@ export async function getWorkFromQueue(serviceID: string, reqLogger: Logger): Pr
     reqLogger.debug(`Deleted work item with receipt ${queueItem.receipt} from queue ${queueUrl}`);
     const item = JSON.parse(queueItem.body) as WorkItemData;
 
+    const operationKey = `${item.workItem.jobID},${item.workItem.serviceID}`;
+    let operationJson;
     // always fetch for query-cmr service to make sure the update to operation
     // for removing the extraArgs used for granule validation is picked up
-    const operationKey = `${item.workItem.jobID},${item.workItem.serviceID}`;
     if (QUERY_CMR_SERVICE_REGEX.test(item.workItem.serviceID)) {
-      await operationCache.set(operationKey, await operationFetcher(operationKey));
+      operationJson = await operationFetcher(operationKey);
+    } else {
+      operationJson = await operationCache.fetch(operationKey);
     }
 
-    const operationJson = await operationCache.fetch(operationKey);
     if (operationJson) {
       const operation = JSON.parse(operationJson);
       // Make sure that the staging location is unique for every work item in a job
