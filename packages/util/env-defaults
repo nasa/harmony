@@ -128,7 +128,7 @@ QUERY_CMR_SERVICE_QUEUE_URLS='["harmonyservices/query-cmr:stable,http://sqs.us-w
 BATCHEE_SERVICE_QUEUE_URLS='["ghcr.io/nasa/batchee:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/batchee.fifo"]'
 STITCHEE_SERVICE_QUEUE_URLS='["ghcr.io/nasa/stitchee:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/stitchee.fifo"]'
 FILTERING_SERVICE_QUEUE_URLS='["harmony/filtering:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/filtering.fifo"]'
-
+HARMONY_METADATA_ANNOTATOR_SERVICE_QUEUE_URLS='["ghcr.io/nasa/harmony-metadata-annotator:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/harmony-metadata-annotator.fifo"]'
 
 # The number of seconds to allow a pod to continue processing an active request before terminating a pod
 DEFAULT_POD_GRACE_PERIOD_SECS=14400
