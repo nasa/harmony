@@ -562,8 +562,8 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
           expect(this.service.operation.isSynchronous).to.equal(false);
         });
 
-        it('sets up extraArgs for granule validation', function () {
-          expect(this.service.operation.extraArgs).to.eql(expectedExtraArgs);
+        it('does not set up extraArgs for granule validation', function () {
+          expect(this.service.operation.extraArgs).to.be.undefined;
         });
       });
     });
