@@ -426,7 +426,7 @@ async function asyncGranuleLocator(
       cmrQuery.geojson = operation.geojson;
     }
 
-    // Only perform CMR granule query when needed by the first step
+    // Only store query params in S3 when needed by the first step
     if ( req.context.serviceConfig.steps[0].image.match('harmonyservices/query-cmr:.*') ) {
       cmrQuery.collection_concept_id = sources[0].collection;
       // generate a session key and store the query parameters in the staging bucket using the key
@@ -438,12 +438,13 @@ async function asyncGranuleLocator(
       logger.info('timing.storing-query-params-in-s3.end', { durationMs: msTaken });
 
       operation.scrollIDs.push(sessionKey);
+
+      const hasGranuleLimit = req.context.serviceConfig.has_granule_limit;
+      const serviceName = req.context.serviceConfig.name;
+      const shapeType = req.context.shapefile?.typeName;
+      operation.extraArgs = { granValidation: { reason, hasGranuleLimit, serviceName, shapeType, maxResults: operation.maxResults } };
     }
 
-    const hasGranuleLimit = req.context.serviceConfig.has_granule_limit;
-    const serviceName = req.context.serviceConfig.name;
-    const shapeType = req.context.shapefile?.typeName;
-    operation.extraArgs = { granValidation: { reason, hasGranuleLimit, serviceName, shapeType, maxResults: operation.maxResults } };
   } catch (e) {
     logger.error(e);
     next(new ServerError('Failed to store query params in S3'));
@@ -463,7 +464,7 @@ async function asyncGranuleLocator(
 export default async function cmrGranuleLocator(
   req: HarmonyRequest, res: ServerResponse, next: NextFunction,
 ): Promise<void> {
-  if (req.query.forceAsync === 'true') {
+  if (req.query.forceAsync === 'true' && req.operation.granuleIds) {
     await asyncGranuleLocator(req, res, next);
   } else {
     if (req.context?.serviceConfig?.type?.name === 'turbo') {
