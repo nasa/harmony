@@ -2,6 +2,22 @@
 Any changes to the environment variables will be documented in this file in chronological
 order with the most recent changes first.
 
+# 2025-05-19
+### Added
+- Added environment defaults for Harmony Metadata Annotator
+
+# 2025-05-16
+### Removed
+
+- All Harmony NetCDF-to-Zarr related environment variables as part of deprecating that service:
+  - HARMONY_NETCDF_TO_ZARR_IMAGE
+  - HARMONY_NETCDF_TO_ZARR_REQUEST_CPU
+  - HARMONY_NETCDF_TO_ZARR_REQUEST_MEMORY
+  - HARMONY_NETCDF_TO_ZARR_LIMITS_CPU
+  - HARMONY_NETCDF_TO_ZARR_LIMITS_MEMORY
+  - HARMONY_NETCDF_TO_ZARR_INVOCATION_ARGS
+  - HARMONY_NETCDF_TO_ZARR_SERVICE_QUEUE_URLS
+
 # 2024-12-04
 ### Added
 - USE_EDL_CLIENT_APP - whether to use an EDL client application to enable admin and deployment endpoints and allow OAuth workflows.

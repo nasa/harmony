@@ -151,6 +151,12 @@ LABELS_FORBID_LIST=this_is_a_forbidden_label
 # The max number of labels to retrieve to populate label filter auto-complete
 LABEL_FILTER_COMPLETION_COUNT=10
 
+# Maximum size (in bytes) of the provider cache, 5MB
+PROVIDER_CACHE_SIZE=5000000
+
+# Provider Cache TTL in milliseconds, 1 hour
+PROVIDER_CACHE_TTL=3600000
+
 #############################################################################
 #                        OAuth 2 (Earthdata Login)                          #
 #                                                                           #
@@ -403,13 +409,6 @@ HARMONY_SERVICE_EXAMPLE_LIMITS_CPU=128m
 HARMONY_SERVICE_EXAMPLE_LIMITS_MEMORY=512Mi
 HARMONY_SERVICE_EXAMPLE_INVOCATION_ARGS='python -m harmony_service_example'
 
-HARMONY_NETCDF_TO_ZARR_IMAGE=ghcr.io/nasa/harmony-netcdf-to-zarr:latest
-HARMONY_NETCDF_TO_ZARR_REQUESTS_CPU=128m
-HARMONY_NETCDF_TO_ZARR_REQUESTS_MEMORY=128Mi
-HARMONY_NETCDF_TO_ZARR_LIMITS_CPU=128m
-HARMONY_NETCDF_TO_ZARR_LIMITS_MEMORY=512Mi
-HARMONY_NETCDF_TO_ZARR_INVOCATION_ARGS='python -m harmony_netcdf_to_zarr'
-
 HARMONY_REGRIDDER_IMAGE=ghcr.io/nasa/harmony-regridding-service:latest
 HARMONY_REGRIDDER_REQUESTS_CPU=128m
 HARMONY_REGRIDDER_REQUESTS_MEMORY=128Mi
@@ -544,3 +543,8 @@ FILTERING_REQUESTS_MEMORY=4Gi
 FILTERING_LIMITS_MEMORY=6Gi
 FILTERING_INVOCATION_ARGS='./docker-entrypoint.sh'
 FILTERING_SERVICE_QUEUE_URLS='["harmony/filtering:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/filtering.fifo"]'
+
+HARMONY_METADATA_ANNOTATOR_IMAGE=ghcr.io/nasa/harmony-metadata-annotator:latest
+HARMONY_METADATA_ANNOTATOR_REQUESTS_MEMORY=128Mi
+HARMONY_METADATA_ANNOTATOR_LIMITS_MEMORY=8Gi
+HARMONY_METADATA_ANNOTATOR_INVOCATION_ARGS='python -m harmony_service'

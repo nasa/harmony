@@ -7,7 +7,7 @@ import { ServiceConfig } from '../../app/models/services/base-service';
 import { hookServices } from '../helpers/stub-service';
 
 describe('OGC API Coverages - describeCollections', function () {
-  const collection = 'C1225776654-ASF';
+  const collection = 'C1244141250-EEDTEST';
   const version = '1.0.0';
 
   hookServersStartStop();
@@ -19,7 +19,7 @@ describe('OGC API Coverages - describeCollections', function () {
         type: { name: 'turbo' },
         collections: [{
           id: collection,
-          variables: ['V1234599990-ASF', 'V1234600147-ASF'],
+          variables: ['V1244147073-EEDTEST', 'V1244147075-EEDTEST'],
         }],
       },
     ];
@@ -29,7 +29,7 @@ describe('OGC API Coverages - describeCollections', function () {
     it('includes an OGC collection for only the variables in the service config', function () {
       const listing = JSON.parse(this.res.text);
       const variables = listing.collections.map((v) => v.id);
-      expect(variables).to.eql([`${collection}/V1234599990-ASF`, `${collection}/V1234600147-ASF`]);
+      expect(variables).to.eql([`${collection}/V1244147073-EEDTEST`, `${collection}/V1244147075-EEDTEST`]);
     });
   });
 
@@ -42,14 +42,14 @@ describe('OGC API Coverages - describeCollections', function () {
 
     it('includes an OGC collection for every variable in the EOSDIS collection', function () {
       const listing = JSON.parse(this.res.text);
-      expect(listing.collections.length).to.equal(5);
+      expect(listing.collections.length).to.equal(10);
     });
 
     it('includes a link to the OGC coverages landing page', function () {
       const listing = JSON.parse(this.res.text);
       const rootLink = listing.links[0];
       expect(rootLink.title).to.equal('OGC coverages API root for SENTINEL-1_INTERFEROGRAMS v1');
-      expect(rootLink.href).to.contain('C1225776654-ASF/ogc-api-coverages/1.0.0');
+      expect(rootLink.href).to.contain('C1244141250-EEDTEST/ogc-api-coverages/1.0.0');
       expect(rootLink.type).to.equal('application/json');
       expect(rootLink.rel).to.equal('root');
     });
@@ -58,7 +58,7 @@ describe('OGC API Coverages - describeCollections', function () {
       const listing = JSON.parse(this.res.text);
       const selfLink = listing.links[1];
       expect(selfLink.title).to.equal('Collections listing for SENTINEL-1_INTERFEROGRAMS v1');
-      expect(selfLink.href).to.contain('C1225776654-ASF/ogc-api-coverages/1.0.0/collections');
+      expect(selfLink.href).to.contain('C1244141250-EEDTEST/ogc-api-coverages/1.0.0/collections');
       expect(selfLink.type).to.equal('application/json');
       expect(selfLink.rel).to.equal('self');
     });
@@ -67,7 +67,7 @@ describe('OGC API Coverages - describeCollections', function () {
       it('includes an id', function () {
         const listing = JSON.parse(this.res.text);
         const singleCollection = listing.collections[1];
-        expect(singleCollection.id).to.equal('C1225776654-ASF/V1234599990-ASF');
+        expect(singleCollection.id).to.equal('C1244141250-EEDTEST/V1244147073-EEDTEST');
       });
 
       it('includes a title', function () {
@@ -79,7 +79,7 @@ describe('OGC API Coverages - describeCollections', function () {
       it('includes a description', function () {
         const listing = JSON.parse(this.res.text);
         const singleCollection = listing.collections[1];
-        expect(singleCollection.description).to.equal('Amplitude SENTINEL-1_INTERFEROGRAMS v1 (Alaska Satellite Facility)');
+        expect(singleCollection.description).to.equal('Amplitude SENTINEL-1_INTERFEROGRAMS v1 (EEDTEST)');
       });
 
       it('includes links to make a rangeset request for the variable', function () {
@@ -88,7 +88,7 @@ describe('OGC API Coverages - describeCollections', function () {
         const firstLink = singleCollection.links[0];
         expect(singleCollection.links.length).to.equal(1);
         expect(firstLink.title).to.equal('Perform rangeset request for science/grids/data/amplitude');
-        expect(firstLink.href).to.contain('/C1225776654-ASF/ogc-api-coverages/1.0.0/collections/science%2Fgrids%2Fdata%2Famplitude/coverage/rangeset');
+        expect(firstLink.href).to.contain('/C1244141250-EEDTEST/ogc-api-coverages/1.0.0/collections/science%2Fgrids%2Fdata%2Famplitude/coverage/rangeset');
       });
 
       it('includes a spatial extent', function () {
@@ -123,7 +123,7 @@ describe('OGC API Coverages - describeCollections', function () {
         const firstLink = firstCollection.links[0];
         expect(firstCollection.links.length).to.equal(1);
         expect(firstLink.title).to.equal('Perform rangeset request for all');
-        expect(firstLink.href).to.contain('/C1225776654-ASF/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset');
+        expect(firstLink.href).to.contain('/C1244141250-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset');
       });
     });
   });
@@ -180,7 +180,7 @@ describe('OGC API Coverages - describeCollections', function () {
 });
 
 describe('OGC API Coverages - describeCollection', function () {
-  const collection = 'C1225776654-ASF';
+  const collection = 'C1244141250-EEDTEST';
   const version = '1.0.0';
   const variablePath = 'science/grids/data/amplitude';
 
@@ -195,7 +195,7 @@ describe('OGC API Coverages - describeCollection', function () {
 
     it('includes an id', function () {
       const collectionInfo = JSON.parse(this.res.text);
-      expect(collectionInfo.id).to.equal('C1225776654-ASF/V1234599990-ASF');
+      expect(collectionInfo.id).to.equal('C1244141250-EEDTEST/V1244147073-EEDTEST');
     });
 
     it('includes a title', function () {
@@ -205,7 +205,7 @@ describe('OGC API Coverages - describeCollection', function () {
 
     it('includes a description', function () {
       const collectionInfo = JSON.parse(this.res.text);
-      expect(collectionInfo.description).to.equal('Amplitude SENTINEL-1_INTERFEROGRAMS v1 (Alaska Satellite Facility)');
+      expect(collectionInfo.description).to.equal('Amplitude SENTINEL-1_INTERFEROGRAMS v1 (EEDTEST)');
     });
 
     it('includes links to make a rangeset request for the variable', function () {
@@ -213,7 +213,7 @@ describe('OGC API Coverages - describeCollection', function () {
       const firstLink = collectionInfo.links[0];
       expect(collectionInfo.links.length).to.equal(1);
       expect(firstLink.title).to.equal('Perform rangeset request for science/grids/data/amplitude');
-      expect(firstLink.href).to.contain('/C1225776654-ASF/ogc-api-coverages/1.0.0/collections/science%2Fgrids%2Fdata%2Famplitude/coverage/rangeset');
+      expect(firstLink.href).to.contain('/C1244141250-EEDTEST/ogc-api-coverages/1.0.0/collections/science%2Fgrids%2Fdata%2Famplitude/coverage/rangeset');
     });
 
     it('includes a spatial extent', function () {
@@ -239,7 +239,7 @@ describe('OGC API Coverages - describeCollection', function () {
   });
 
   describe('when provided a collection without spatial and an empty temporal end', function () {
-    const collection2 = 'C1233800302-EEDTEST';
+    const collection2 = 'C1233860183-EEDTEST';
     const blueVar = 'blue_var';
 
     hookDescribeCollectionRequest(collection2, version, blueVar);

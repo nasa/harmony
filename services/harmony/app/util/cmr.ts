@@ -795,7 +795,7 @@ async function _queryGrids(
   context: RequestContext, query: CmrQuery, token: string,
 ): Promise<Array<CmrUmmGrid>> {
   logger.debug('Calling CMR to fetch grids');
-  const gridsResponse = await _cmrGet(context, '/search/grids.umm_json', query, token) as CmrGridsResponse;
+  const gridsResponse = await _cmrGet(context, '/search/grids.umm_json_v_0_0_1', query, token) as CmrGridsResponse;
   return gridsResponse.data.items;
 }
 
@@ -1256,7 +1256,7 @@ export async function getGridsByName(
  * @param sessionKey - The session key
  * @returns An s3 url containing the session key
  */
-function s3UrlForStoredQueryParams(sessionKey: string): string {
+export function s3UrlForStoredQueryParams(sessionKey: string): string {
   return `s3://${stagingBucket}/SearchParams/${sessionKey}/serializedQuery`;
 }
 

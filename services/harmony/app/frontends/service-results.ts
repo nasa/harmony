@@ -1,7 +1,13 @@
+import { NextFunction, Response } from 'express';
+import { LRUCache } from 'lru-cache';
 import { URL } from 'url';
-import { NextFunction } from 'express';
-import { objectStoreForProtocol } from '../util/object-store';
+
+import HarmonyRequest from '../models/harmony-request';
+import { Job } from '../models/job';
+import db from '../util/db';
+import env from '../util/env';
 import { NotFoundError } from '../util/errors';
+import { objectStoreForProtocol } from '../util/object-store';
 
 /**
  * Given a URL that is not necessarily public-facing, produces a URL to that data
@@ -50,6 +56,27 @@ export function createPublicPermalink(
 }
 
 /**
+ * Wrapper function of getProviderIdForJobId to be set to fetchMethod of LRUCache.
+ *
+ * @param jobId - the job identifier
+ * @param _sv - stale value parameter of LRUCache fetchMethod, unused here
+ * @param options - options parameter of LRUCache fetchMethod, carries the request context
+ * @returns resolves to the provider id for the job
+ */
+async function fetchProviderId(jobId: string, _sv: string, { context }): Promise<string> {
+  context.logger.info(`Fetching provider id for job id ${jobId}`);
+  return Job.getProviderIdForJobId(db, jobId);
+}
+
+// In memory cache for Job ID to provider Id
+export const providerIdCache = new LRUCache({
+  ttl: env.providerCacheTtl,
+  maxSize: env.providerCacheSize,
+  sizeCalculation: (value: string): number => value.length,
+  fetchMethod: fetchProviderId,
+});
+
+/**
  * Express.js handler that returns redirects to pre-signed URLs
  *
  * @param req - The request sent by the client
@@ -58,15 +85,31 @@ export function createPublicPermalink(
  * @returns Resolves when the request is complete
  * @throws NotFoundError - if the given URL cannot be signed, typically due to permissions
  */
-export async function getServiceResult(req, res, next: NextFunction): Promise<void> {
-  const { bucket, key } = req.params;
+export async function getServiceResult(
+  req: HarmonyRequest, res: Response, next: NextFunction,
+): Promise<void> {
+  const { bucket, jobId, workItemId, remainingPath } = req.params;
+
+  // Service results for outputs produced by harmony will include a jobId and workItemId in the
+  // path. The test data stored in harmony buckets in the UAT account which we use the
+  // service-results route to access will only have the bucket and key in the URL
+  const key = (!jobId || !workItemId) ? remainingPath : `public/${jobId}/${workItemId}/${remainingPath}`;
   const url = `s3://${bucket}/${key}`;
+
+  const provider = jobId ? await providerIdCache.fetch(jobId, { context: req.context }) : undefined;
 
   const objectStore = objectStoreForProtocol('s3');
   if (objectStore) {
     try {
-      req.context.logger.info(`Signing ${url}`);
-      const result = await objectStore.signGetObject(url, { 'A-userid': req.user });
+      const customParams = { 'A-userid': req.user };
+      if (jobId) {
+        customParams['A-api-request-uuid'] = jobId;
+      }
+      if (provider) {
+        customParams['A-provider'] = provider.toUpperCase();
+      }
+      req.context.logger.info(`Signing ${url} with params ${JSON.stringify(customParams)}`);
+      const result = await objectStore.signGetObject(url, customParams);
       // Direct clients to reuse the redirect for 10 minutes before asking for a new one
       res.append('Cache-Control', 'private, max-age=600');
       res.redirect(307, result);

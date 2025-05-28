@@ -224,8 +224,17 @@ export async function getWorkFromQueue(serviceID: string, reqLogger: Logger): Pr
     await queue.deleteMessage(queueItem.receipt);
     reqLogger.debug(`Deleted work item with receipt ${queueItem.receipt} from queue ${queueUrl}`);
     const item = JSON.parse(queueItem.body) as WorkItemData;
-    // get the operation for the step
-    const operationJson = await operationCache.fetch(`${item.workItem.jobID},${item.workItem.serviceID}`);
+
+    const operationKey = `${item.workItem.jobID},${item.workItem.serviceID}`;
+    let operationJson;
+    // always fetch for query-cmr service to make sure the update to operation
+    // for removing the extraArgs used for granule validation is picked up
+    if (QUERY_CMR_SERVICE_REGEX.test(item.workItem.serviceID)) {
+      operationJson = await operationFetcher(operationKey);
+    } else {
+      operationJson = await operationCache.fetch(operationKey);
+    }
+
     if (operationJson) {
       const operation = JSON.parse(operationJson);
       // Make sure that the staging location is unique for every work item in a job
@@ -233,6 +242,7 @@ export async function getWorkFromQueue(serviceID: string, reqLogger: Logger): Pr
       operation.stagingLocation += `${item.workItem.id}/`;
       item.workItem.operation = operation;
     }
+
     // make sure the item wasn't canceled and set the status to running
     try {
       await db.transaction(async (tx) => {

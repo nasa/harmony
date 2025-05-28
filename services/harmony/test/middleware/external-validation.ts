@@ -3,9 +3,10 @@ import { expect } from 'chai';
 import { Response } from 'express';
 import { before, describe, it } from 'mocha';
 import sinon, { SinonStub, spy, stub } from 'sinon';
+import { v4 as uuid } from 'uuid';
 
 import { externalValidation } from '../../app/middleware/external-validation';
-import DataOperation from '../../app/models/data-operation';
+import DataOperation, { CURRENT_SCHEMA_VERSION } from '../../app/models/data-operation';
 import HarmonyRequest from '../../app/models/harmony-request';
 import { getEndUserErrorMessage, getHttpStatusCode } from '../../app/util/errors';
 import logger from '../../app/util/log';
@@ -23,6 +24,7 @@ describe('external validation', function () {
     const shortName = 'harmony_example';
     const versionId = '1';
     const operation = new DataOperation();
+    Object.assign(operation, { user: 'foo', client: 'harmony-test', requestId: uuid() });
     operation.addSource(collectionId, shortName, versionId);
 
     this.reqWithValidation = {
@@ -57,6 +59,12 @@ describe('external validation', function () {
         logger,
       },
     } as HarmonyRequest;
+
+    const expectedOperation = operation.clone();
+    expectedOperation.stagingLocation = '';
+    expectedOperation.accessToken = '';
+    expectedOperation.extraArgs = { service: 'external-valiation-service' };
+    this.expectedOperationJson = expectedOperation.serialize(CURRENT_SCHEMA_VERSION);
 
     this.res = mockResponse();
     this.next = sinon.stub().returns;
@@ -108,13 +116,16 @@ describe('external validation', function () {
       it('sends the operation to the external validator', async function () {
         const nextStub = stub();
         await externalValidation(this.reqWithValidation, this.res, nextStub);
-        expect(body).to.eql(this.reqWithValidation.operation);
+        expect(body).to.eql(this.expectedOperationJson);
       });
 
       it('sets the Authorization header on the request to the external validator', async function () {
         const nextStub = stub();
         await externalValidation(this.reqWithValidation, this.res, nextStub);
-        expect(options.headers).to.eql({ 'Authorization': `Bearer: ${this.reqWithValidation.accessToken}` });
+        expect(options.headers).to.eql({
+          'Authorization': `Bearer ${this.reqWithValidation.accessToken}`,
+          'Content-type': 'application/json',
+        });
       });
 
     });

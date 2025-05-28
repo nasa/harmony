@@ -989,11 +989,36 @@ export default class DataOperation {
   }
 
   /**
-   * Removes extraArgs
+   * Adds new fields to extraArgs, merging with any existing ones.
+   *
+   * @param args - New extra arguments to merge into the existing extraArgs
    */
-  removeExtraArgs(): void {
-    if (this.model.extraArgs) {
-      delete this.model.extraArgs;
+  addExtraArgs(args: Record<string, unknown>): void {
+    this.model.extraArgs = {
+      ...this.model.extraArgs,
+      ...args,
+    };
+  }
+
+
+  /**
+   * Removes extraArgs fields that are not in the keepList,
+   * Keeps only the ones in the keepList.
+   *
+   * @param keepList - The list of fields to keep in extraArgs
+   */
+  keepExtraArgs(keepList: string[] = []): void {
+    const { extraArgs } = this.model;
+    if (extraArgs) {
+      for (const key of Object.keys(extraArgs)) {
+        if (!keepList.includes(key)) {
+          delete extraArgs[key];
+        }
+      }
+
+      if (Object.keys(extraArgs).length === 0) {
+        delete this.model.extraArgs;
+      }
     }
   }
 

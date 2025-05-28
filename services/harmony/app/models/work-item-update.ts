@@ -1,4 +1,5 @@
 import _ from 'lodash';
+
 import { WorkItemStatus } from './work-item-interface';
 
 /**
@@ -37,7 +38,6 @@ export default interface WorkItemUpdate {
 
   // The category of the message from the service
   message_category?: string;
-
 
   // how long the work item took to process
   duration?: number;

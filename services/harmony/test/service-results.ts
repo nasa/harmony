@@ -1,10 +1,11 @@
 import { expect } from 'chai';
-import { stub } from 'sinon';
 import { describe, it } from 'mocha';
-import { createPublicPermalink } from '../app/frontends/service-results';
-import hookServersStartStop from './helpers/servers';
-import { hookUrl } from './helpers/hooks';
+import sinon, { stub } from 'sinon';
+
+import { createPublicPermalink, providerIdCache } from '../app/frontends/service-results';
 import { FileStore } from '../app/util/object-store/file-store';
+import { hookUrl } from './helpers/hooks';
+import hookServersStartStop from './helpers/servers';
 
 describe('service-results', function () {
   hookServersStartStop({ USE_EDL_CLIENT_APP: true });
@@ -63,15 +64,33 @@ describe('service-results', function () {
   });
 
   describe('getServiceResult', function () {
-    describe('when given a valid bucket and key', function () {
-      hookUrl('/service-results/some-bucket/public/some/path.tif', 'jdoe');
-      it("passes the user's Earthdata Login username to the signing function for tracking", function () {
-        expect(this.res.headers.location).to.include('?A-userid=jdoe');
+    describe('when given a URL containing an output created by harmony with a job ID and work item ID in the URL', function () {
+      let providerIdCacheStub;
+
+      before(function () {
+        providerIdCacheStub = sinon.stub(providerIdCache, 'fetch').resolves('eedtest');
+      });
+
+      after(function () {
+        providerIdCacheStub.restore();
+      });
+
+      hookUrl('/service-results/some-bucket/public/some-job-id/some-work-item-id/some-path.tif', 'jdoe');
+      it('passes the user\'s Earthdata Login username to the signing function for tracking', function () {
+        expect(this.res.headers.location).to.include('A-userid=jdoe');
       });
 
       it('redirects temporarily to a presigned URL', function () {
         expect(this.res.statusCode).to.equal(307);
-        expect(this.res.headers.location).to.include('https://some-bucket/public/some/path.tif');
+        expect(this.res.headers.location).to.include('some-bucket/public/some-job-id/some-work-item-id/some-path.tif');
+      });
+
+      it('includes an api_request_id field', function () {
+        expect(this.res.headers.location).to.include('A-api-request-uuid=some-job-id');
+      });
+
+      it('includes a provider field', function () {
+        expect(this.res.headers.location).to.include('A-provider=EEDTEST');
       });
 
       it('sets a cache-control header to indicate the redirect should be reused', function () {
@@ -84,7 +103,7 @@ describe('service-results', function () {
       before(function () {
         stubObject = stub(FileStore.prototype, 'signGetObject').throws();
       });
-      hookUrl('/service-results/some-bucket/public/some/path.tif', 'jdoe');
+      hookUrl('/service-results/some-bucket/public/some-job-id/some-work-item-id/some-path.tif', 'jdoe');
       after(function () {
         stubObject.restore();
       });
@@ -92,6 +111,31 @@ describe('service-results', function () {
       it('returns a 404 response', function () {
         expect(this.res.statusCode).to.equal(404);
       });
+    });
+  });
+
+  describe('when given a service-results URL to test data staged in a harmony UAT bucket', function () {
+    hookUrl('/service-results/harmony-uat-eedtest-data/C1233800302-EEDTEST/nc/001_01_7f00ff_africa.nc', 'jdoe');
+
+    it('redirects temporarily to a presigned URL', function () {
+      expect(this.res.statusCode).to.equal(307);
+      expect(this.res.headers.location).to.include('harmony-uat-eedtest-data/C1233800302-EEDTEST/nc/001_01_7f00ff_africa.nc');
+    });
+
+    it('passes the user\'s Earthdata Login username to the signing function for tracking', function () {
+      expect(this.res.headers.location).to.include('A-userid=jdoe');
+    });
+
+    it('does not include an api_request_id field', function () {
+      expect(this.res.headers.location).to.not.include('A-api-request-uuid');
+    });
+
+    it('does not include a provider field', function () {
+      expect(this.res.headers.location).to.not.include('A-provider');
+    });
+
+    it('sets a cache-control header to indicate the redirect should be reused', function () {
+      expect(this.res.headers['cache-control']).to.equal('private, max-age=600');
     });
   });
 });

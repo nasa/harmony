@@ -82,11 +82,11 @@ describe('When a request contains many variables', async function () {
   });
 
   it('uses the cache to pass the data operation', async function () {
-    // called once for query-cmr and once for the foo service
-    expect(fetchSpy.calledTwice).to.equal(true);
+    // called once for the foo service, not for query-cmr
+    expect(fetchSpy.calledOnce).to.equal(true);
     // uses the job ID and service name for cache key (comma separated)
-    expect(fetchSpy.args[1][0]).to.equal(`${this.jobID},foo`);
-    const operationFromCache = await fetchSpy.returnValues[1];
+    expect(fetchSpy.args[0][0]).to.equal(`${this.jobID},foo`);
+    const operationFromCache = await fetchSpy.returnValues[0];
     expect(operationFromCache).to.equal(validOperationWithManyVariables);
   });
 });

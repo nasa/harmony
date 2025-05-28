@@ -1,0 +1,27 @@
+GET /access-control/permissions?user_type=guest&concept_id=C1243729749-EEDTEST
+accept: application/json
+accept-encoding: gzip,deflate
+
+HTTP/1.1 200 OK
+transfer-encoding: chunked
+connection: keep-alive
+date: Wed, 14 May 2025 22:45:00 GMT
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Took
+cmr-hits: 1
+cmr-took: 148
+cmr-request-id: efab4838-8092-42c6-807b-d536afc960d6
+x-request-id: efab4838-8092-42c6-807b-d536afc960d6
+content-md5: 35e7678949ba9d2f34d6d031c394afaf
+content-sha1: 25d38232ebb58df05d715517deb0ff7b81c44812
+vary: Accept-Encoding, User-Agent
+server: ServerTokens ProductOnly
+x-content-type-options: nosniff
+x-frame-options: SAMEORIGIN
+x-xss-protection: 1; mode=block
+strict-transport-security: max-age=31536000; includeSubDomains; preload
+x-cache: Miss from cloudfront
+via: 1.1 a0fdc0fd69b93d134cd1b726f68c77b4.cloudfront.net (CloudFront)
+x-amz-cf-pop: SFO53-C1
+x-amz-cf-id: 21jufi3UUuDtzjS_6zom4RijJkxQw-9jGieY08AFybTz4l5xHMxPBg==
+
+{"C1243729749-EEDTEST":["read","order"]}

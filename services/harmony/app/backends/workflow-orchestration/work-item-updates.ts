@@ -657,11 +657,12 @@ export async function processWorkItem(
   let { status } = preprocessResult;
   const { catalogItems, outputItemSizes } = preprocessResult;
   let { message } = update;
-  const { workItemID, hits, results, scrollID, message_category  } = update;
+  const { workItemID, hits, results, scrollID, message_category } = update;
   const startTime = new Date().getTime();
   let durationMs;
   let jobSaveStartTime;
   let didCreateWorkItem = false;
+  let serviceId;
 
   logger.info(`Received update for work item ${workItemID} to ${status}`);
 
@@ -678,6 +679,7 @@ export async function processWorkItem(
         'HWIUWJI.getWorkflowStepByJobIdStepIndex',
         logger))(tx, workItem.jobID, workItem.workflowStepIndex);
     }
+    serviceId = workItem.serviceID;
     if (job.hasTerminalStatus() && status !== WorkItemStatus.CANCELED) {
       logger.warn(`Job was already ${job.status}.`);
       const numRowsDeleted = await (await logAsyncExecutionTime(
@@ -721,7 +723,10 @@ export async function processWorkItem(
         return;
       } else {
         logger.warn(`Retry limit of ${env.workItemRetryLimit} exceeded`);
-        logger.warn(`Updating work item for ${workItemID} to ${status} with message ${message}`, { workFailureMessage: message, serviceId: workItem.serviceID });
+        logger.warn(
+          `Updating work item for ${workItemID} to ${status} with message ${message}`,
+          { workFailureMessage: message, serviceId: workItem.serviceID, status },
+        );
       }
     }
 
@@ -893,7 +898,10 @@ export async function processWorkItem(
 
   durationMs = new Date().getTime() - startTime;
   logger.info('timing.HWIUWJI.end', { durationMs });
-  logger.debug(`Finished handling work item update for ${workItemID} and status ${status} in ${durationMs} ms`);
+  logger.info(
+    `Finished handling work item update for work item id ${workItemID} for service ${serviceId} and status ${status} in ${durationMs} ms`,
+    { workItemId: workItemID, status, durationMs, serviceId },
+  );
 }
 
 
@@ -909,7 +917,8 @@ export async function processWorkItems(
   jobID: string,
   workflowStepIndex: number,
   items: WorkItemUpdateQueueItem[],
-  logger: Logger): Promise<void> {
+  logger: Logger,
+): Promise<void> {
   try {
     const transactionStart = new Date().getTime();
 
@@ -950,35 +959,107 @@ export async function processWorkItems(
 }
 
 /**
+ * Process a granule validation work item update
+ *
+ * @param jobId - job id
+ * @param update - the work item update
+ * @param logger - the Logger for the request
+ */
+async function handleGranuleValidation(
+  jobID: string,
+  update: WorkItemUpdate,
+  logger: Logger): Promise<void> {
+  const { workItemID, status, message } = update;
+  try {
+    const transactionStart = new Date().getTime();
+
+    await db.transaction(async (tx) => {
+      const { job } = await (await logAsyncExecutionTime(
+        Job.byJobID,
+        'HWIUWJI.Job.byJobID',
+        logger))(tx, jobID, false, false, true);
+
+      if (status === WorkItemStatus.FAILED) {
+        // update job status and message
+        await completeJob(tx, job, JobStatus.FAILED, logger, message);
+      } else {
+        // update workflowstep operation
+        const thisWorkflowStep = await (await logAsyncExecutionTime(
+          getWorkflowStepByJobIdStepIndex,
+          'HWIUWJI.getWorkflowStepByJobIdStepIndex',
+          logger))(db, jobID, update.workflowStepIndex);
+        const op = JSON.parse(thisWorkflowStep.operation);
+        delete op.extraArgs;
+        thisWorkflowStep.operation = JSON.stringify(op);
+        await thisWorkflowStep.save(tx);
+
+        if (message) {
+          // update job message for running and successful status
+          job.message = message;
+          job.setMessage(message, JobStatus.SUCCESSFUL);
+          await job.save(tx);
+        }
+
+        // mark the work item as ready to be processed without granule validation
+        const workItem = await (await logAsyncExecutionTime(
+          getWorkItemById,
+          'HWIUWJI.getWorkItemById',
+          logger))(tx, workItemID, true);
+
+        logger.info(`Granule validation is successful, continue processing work-item ${workItemID}`);
+        workItem.status = WorkItemStatus.READY;
+        await workItem.save(tx);
+
+        await (await logAsyncExecutionTime(
+          incrementReadyAndDecrementRunningCounts,
+          'HWIUWJI.incrementReadyAndDecrementRunningCounts',
+          logger))(tx, jobID, workItem.serviceID);
+      }
+    });
+    const durationMs = new Date().getTime() - transactionStart;
+    logger.info('timing.HWIUWJI.handleGranValidation.end', { durationMs });
+  } catch (e) {
+    logger.error('Unable to acquire lock on Jobs table');
+    logger.error(e);
+  }
+}
+
+/**
  * Updates the batch of work items.
  * It is assumed that all the work items belong to the same job.
  * It processes the work item updates in groups by the workflow step.
  * @param jobID - ID of the job that the work item updates belong to
  * @param updates - List of work item updates
- * @param logger - Logger to use
+ * @param originalLogger - Logger to use
  */
 export async function handleBatchWorkItemUpdatesWithJobId(
   jobID: string,
   updates: WorkItemUpdateQueueItem[],
-  logger: Logger): Promise<void> {
+  originalLogger: Logger,
+): Promise<void> {
   const startTime = new Date().getTime();
+  const logger = originalLogger.child({ jobId: jobID });
   logger.debug(`Processing ${updates.length} work item updates for job ${jobID}`);
   // group updates by workflow step index to make sure at least one completion check is performed for each step
   const groups = _.groupBy(updates, (update) => update.update.workflowStepIndex);
   for (const workflowStepIndex of Object.keys(groups)) {
-    const nextWorkflowStep = await (await logAsyncExecutionTime(
-      getWorkflowStepByJobIdStepIndex,
-      'HWIUWJI.getWorkflowStepByJobIdStepIndex',
-      logger))(db, jobID, parseInt(workflowStepIndex) + 1);
+    if (groups[workflowStepIndex][0].update.message_category === 'granValidation') {
+      await handleGranuleValidation(jobID, groups[workflowStepIndex][0].update, logger);
+    } else {
+      const nextWorkflowStep = await (await logAsyncExecutionTime(
+        getWorkflowStepByJobIdStepIndex,
+        'HWIUWJI.getWorkflowStepByJobIdStepIndex',
+        logger))(db, jobID, parseInt(workflowStepIndex) + 1);
 
-    const preprocessedWorkItems: WorkItemUpdateQueueItem[] = await Promise.all(
-      groups[workflowStepIndex].map(async (item: WorkItemUpdateQueueItem) => {
-        const { update, operation } = item;
-        const result = await preprocessWorkItem(update, operation, logger, nextWorkflowStep);
-        item.preprocessResult = result;
-        return item;
-      }));
-    await processWorkItems(jobID, parseInt(workflowStepIndex), preprocessedWorkItems, logger);
+      const preprocessedWorkItems: WorkItemUpdateQueueItem[] = await Promise.all(
+        groups[workflowStepIndex].map(async (item: WorkItemUpdateQueueItem) => {
+          const { update, operation } = item;
+          const result = await preprocessWorkItem(update, operation, logger, nextWorkflowStep);
+          item.preprocessResult = result;
+          return item;
+        }));
+      await processWorkItems(jobID, parseInt(workflowStepIndex), preprocessedWorkItems, logger);
+    }
   }
   const durationMs = new Date().getTime() - startTime;
   logger.info('timing.HWIUWJI.batch.end', { durationMs });
