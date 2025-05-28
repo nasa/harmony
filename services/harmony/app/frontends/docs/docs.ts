@@ -32,6 +32,13 @@ const UAT_COLLECTION_ID = 'C1234208438-POCLOUD';
 let docsHtml;
 
 /**
+ * Clear the html cache
+ */
+export const clearCache = (): void => {
+  docsHtml = null;
+};
+
+/**
  * read all the markdown files in the `markdown` directory, count the number of times the
  * `{{tableCounter}}` and `{{exampleCounter}}` placeholders appear, then return an object with the
  * counts.
@@ -77,7 +84,7 @@ function markdownInterpolate(token: string, mappings: { [key: string]: () => str
  * @param root - The root of the URL for the environment.
  * @returns a promise that resolves to a string.
  */
-export async function generateDocumentation(root: string): Promise<string> {
+export const generateDocumentation = async (root: string): Promise<string> => {
   let { tableCount, exampleCount } = await getTableAndExampleCounts();
   let exampleCollectionId = UAT_COLLECTION_ID;
   if (root === PROD_ROOT) {
@@ -159,7 +166,7 @@ export async function generateDocumentation(root: string): Promise<string> {
 
   const markDown = (await readFile(path.join(MARKDOWN_DIR, 'docs.md'))).toString('utf-8');
   return md.render(markDown);
-}
+};
 
 /**
  * Express.js handler that returns the Harmony documentation page content.
@@ -180,6 +187,12 @@ export default async function docsPage(req: HarmonyRequest, res: Response): Prom
     version,
     docsHtml,
   });
+
+  // clear the stored html if `root` is a cloudfront url to work around an issue in production
+  // where `root` is not initially set correctly to `harmony.earthdata.nasa.gov` (HARMONY-2012)
+  if (root.includes('cloudfront')) {
+    clearCache();
+  }
 }
 
 

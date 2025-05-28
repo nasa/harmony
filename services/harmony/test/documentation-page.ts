@@ -1,7 +1,11 @@
 import { expect } from 'chai';
+import { Response } from 'express';
 import { describe, it } from 'mocha';
+import sinon from 'sinon';
 import request from 'supertest';
 
+import * as docs from '../app/frontends/docs/docs';
+import HarmonyRequest from '../app/models/harmony-request';
 import env from '../app/util/env';
 import version from '../app/util/version';
 import { hookDocumentationPage } from './helpers/documentation-page';
@@ -9,6 +13,75 @@ import { hookRequest } from './helpers/hooks';
 import hookServersStartStop from './helpers/servers';
 
 const TEST_PREVIEW_THRESHOLD = 1234;
+
+describe('Documentation generation and caching', function () {
+  let generateDocumentationSpy: sinon.SinonSpy;
+  let clearCacheSpy: sinon.SinonSpy;
+  let mockResponse: Partial<Response>;
+
+  before(function () {
+    // Create spy on the generateDocumentation function
+    generateDocumentationSpy = sinon.spy(docs, 'generateDocumentation');
+    // Create spy on the clearCache function
+    clearCacheSpy = sinon.spy(docs, 'clearCache');
+
+    // Create mock response object
+    mockResponse = {
+      render: sinon.stub(),
+    };
+  });
+
+  after(function () {
+    clearCacheSpy.restore();
+    generateDocumentationSpy.restore();
+    // clear the docs cache so later tests work
+    docs.clearCache();
+  });
+
+  describe('when called with a cloudfront URL', function () {
+    it('should generate documentation and clear the cache', async function () {
+      const req: HarmonyRequest = {
+        get: (_arg) => 'dqzb5lcolc8fj.cloudfront.net',
+      } as HarmonyRequest;
+
+      await docs.default(req, mockResponse as Response);
+      expect(generateDocumentationSpy.called).to.be.true;
+      expect(generateDocumentationSpy.calledOnce).to.be.true;
+      expect(generateDocumentationSpy.calledWith('https://dqzb5lcolc8fj.cloudfront.net')).to.be.true;
+      expect(clearCacheSpy.calledOnce).to.be.true;
+    });
+  });
+
+  describe('when called again with the production URL', function () {
+    it('should generate documentation and not clear the cache again', async function () {
+      const req: HarmonyRequest = {
+        get: (_arg) => 'harmony.earthdata.nasa.gov',
+      } as HarmonyRequest;
+
+      await docs.default(req, mockResponse as Response);
+
+      expect(generateDocumentationSpy.callCount).to.eql(2);
+      expect(generateDocumentationSpy.calledWith('https://harmony.earthdata.nasa.gov')).to.be.true;
+      expect(clearCacheSpy.calledOnce).to.be.true;
+    });
+
+    it('should use cached documentation on subsequent calls', async function () {
+      const req: HarmonyRequest = {
+        get: (_arg) => 'harmony.earthdata.nasa.gov',
+      } as HarmonyRequest;
+
+      // First call
+      await docs.default(req, mockResponse as Response);
+
+      // Second call
+      await docs.default(req, mockResponse as Response);
+
+      // generateDocumentation should not be called again due to caching
+      expect(generateDocumentationSpy.callCount).to.eql(2);
+    });
+  });
+});
+
 
 describe('Documentation page', function () {
   hookServersStartStop();
