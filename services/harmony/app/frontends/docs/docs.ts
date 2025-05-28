@@ -189,7 +189,7 @@ export default async function docsPage(req: HarmonyRequest, res: Response): Prom
   });
 
   // clear the stored html if `root` is a cloudfront url to work around an issue in production
-  // where `root` is not initially set correctly to `harmony.earthdata.nasa.gov` (HARMONY-2012)
+  // where `root` is not initially set correctly to `harmony.earthdata.nasa.gov` (HARMONY-2102)
   if (root.includes('cloudfront')) {
     clearCache();
   }
