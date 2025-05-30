@@ -112,7 +112,7 @@ The structure of an entry in the [services-uat.yml](../../config/services-uat.ym
 
 ```yaml
 - name: harmony/service-example    # A unique identifier string for the service, conventionally <team>/<service>
-  data_operation_version: '0.21.0' # The version of the data-operation messaging schema to use
+  data_operation_version: '0.22.0' # The version of the data-operation messaging schema to use
   has_granule_limit: true          # Optional flag indicating whether we will impose granule limits for the request. Default to true.
   default_sync: false              # Optional flag indicating whether we will force the request to run synchronously. Default to false.
   type:                            # Configuration for service invocation
