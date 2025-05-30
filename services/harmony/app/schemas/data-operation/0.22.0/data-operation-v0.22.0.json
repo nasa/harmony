@@ -244,7 +244,7 @@
           },
           "visualizations": {
             "type": "array",
-            "description": "A list of UMM-Vis records associated with the collection or variables.",
+            "description": "A list of UMM-Vis records associated with the collection.",
             "items": {
               "type": "object"
             }
@@ -333,6 +333,13 @@
             "description": "A list of the variable's related URL objects.",
             "items": {
               "$ref": "#/definitions/RelatedUrl"
+            }
+          },
+          "visualizations": {
+            "type": "array",
+            "description": "A list of UMM-Vis records associated with the variable.",
+            "items": {
+              "type": "object"
             }
           },
           "type": {

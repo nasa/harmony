@@ -50,6 +50,9 @@ function schemaVersions(): SchemaVersion[] {
         const revertedModel = _.cloneDeep(model);
         revertedModel.sources?.forEach((s) => {
           delete s.visualizations;
+          s.variables?.forEach((v) => {
+            delete v.visualizations;
+          });
         });
         return revertedModel;
       },
@@ -478,6 +481,10 @@ export default class DataOperation {
    * @param vars - An array of objects containing variable id and name
    * @param cmrCoordinateVariables - An array of CMR UMM variables that are
    * coordinate variables.
+   * @param collectionVisualizations - An array of CMR UMM visualizations that are associated with the collection
+   * @param variableVisualizations - An array of arrays of CMR UMM visualizations that are associated with the
+   * variables. There should be a one-to-one correspondence between variables in the `vars` parameter
+   * and the visualizations in this list at the corresponding position
    */
   addSource(
     collection: string,
@@ -485,11 +492,17 @@ export default class DataOperation {
     versionId: string,
     vars: CmrUmmVariable[] = undefined,
     cmrCoordinateVariables: CmrUmmVariable[] = undefined,
-    visuals: CmrUmmVisualization[] = undefined,
+    collectionVisualizations: CmrUmmVisualization[] = undefined,
+    variableVisualizations: CmrUmmVisualization[][] = undefined,
   ): void {
     const variables = vars?.map(cmrVarToHarmonyVar);
+    if (variables && variableVisualizations && variables.length == variableVisualizations.length) {
+      for (let index = 0; index < variables.length; index++) {
+        variables[index].visualizations = variableVisualizations[index]?.map(visual => visual.umm);
+      }
+    }
     const coordinateVariables = cmrCoordinateVariables?.map(cmrVarToHarmonyVar);
-    const visualizations = visuals?.map(visual => visual.umm);
+    const visualizations = collectionVisualizations?.map(visual => visual.umm);
     this.model.sources.push({ collection, shortName, versionId, variables, coordinateVariables, visualizations });
   }
 
@@ -1020,24 +1033,6 @@ export default class DataOperation {
         delete this.model.extraArgs;
       }
     }
-  }
-
-  /**
-   * Gets the ummVis
-   *
-   * @returns The array of stringified UMM-Vis objects that will be passed to service worker
-   */
-  get ummVis(): Array<string> {
-    return this.model.ummVis;
-  }
-
-  /**
-   * Sets the ummVis array
-   *
-   * @param ummVis - The array of stringified UMM-Vis objects that will be passed to service worker
-   */
-  set UmmVis(ummVis: Array<string>) {
-    this.model.ummVis = ummVis;
   }
 
   /**

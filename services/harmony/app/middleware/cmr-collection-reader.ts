@@ -7,7 +7,7 @@ import RequestContext from '../models/request-context';
 import { harmonyCollections } from '../models/services';
 import {
   cmrApiConfig, CmrCollection, getCollectionsByIds, getCollectionsByShortName,
-  getVariablesForCollection, getVisualizationsForCollection, getVisualizationsForVariable,
+  getVariablesForCollection, getVisualizationsForCollection,
 } from '../util/cmr';
 import { EdlUserEulaInfo, verifyUserEula } from '../util/edl-api';
 import env from '../util/env';
@@ -48,19 +48,32 @@ async function loadVariablesForCollection(context: RequestContext, collection: C
  * @returns Resolves when the loading completes
  */
 async function loadVisualizationsForCollection(context: RequestContext, collection: CmrCollection, token: string): Promise<void> {
-  const visPromises = [];
-  if (collection.variables && collection.variables.length > 0) {
-    for (const variable of collection.variables) {
-      visPromises.push(getVisualizationsForVariable(context, variable, token));
-    }
-  }
-  const visualizations = [].concat(await Promise.all(visPromises)).flat();
-  if (visualizations.length > 0) {
-    collection.visualizations = visualizations;
-  } else {
-    collection.visualizations = await getVisualizationsForCollection(context, collection, token);
-  }
+  // const visPromises = [];
+  // if (collection.variables && collection.variables.length > 0) {
+  //   for (const variable of collection.variables) {
+  //     visPromises.push(getVisualizationsForVariable(context, variable, token));
+  //   }
+  // }
+  // const visualizations = [].concat(await Promise.all(visPromises)).flat();
+  // if (visualizations.length > 0) {
+  //   collection.visualizations = visualizations;
+  // } else {
+  collection.visualizations = await getVisualizationsForCollection(context, collection, token);
+  // }
 }
+
+// /**
+//  * Loads the visualizations for the given variable from the CMR and sets the variables's
+//  * "visualizations" attribute to the result.
+//  *
+//  * @param context - The context for the user's request
+//  * @param variable - The variable whose visualizations should be loaded
+//  * @param token - Access token for user request
+//  * @returns Resolves when the loading completes
+//  */
+// async function loadVisualizationsForVariable(context: RequestContext, variable: CmrUmmVariable, token: string): Promise<void> {
+//   variable.visualizations = await getVisualizationsForVariable(context, variable, token);
+// }
 
 /**
  * Check that the user has accepted any EULAs that are attached to the collections
@@ -102,7 +115,7 @@ async function verifyEulaAcceptance(collections: CmrCollection[], req: HarmonyRe
  *   req.context.collectionIds: An array of the resolved collection IDs
  *   req.context.collections: An array of the CMR (JSON) collections, each with a "variables" attribute
  *      containing the Collection's UMM-Var variables and a "visualizations" attribute
- *      containing UMM-Vis visualizations associated with the collection or the collection's variables
+ *      containing UMM-Vis visualizations associated with the collection
  *
  * After resolving the above, req.url will be altered to remove the collections as follows:
  *
@@ -157,8 +170,7 @@ async function cmrCollectionReader(req: HarmonyRequest, res, next: NextFunction)
         promises.push(loadVariablesForCollection(req.context, collection, req.accessToken));
       }
       await Promise.all(promises);
-      // must wait for the above promises so that collections have their associated variables
-      // before we look for visualizations
+
       promises.length = 0; // clear the array
       for (const collection of collections) {
         promises.push(loadVisualizationsForCollection(req.context, collection, req.accessToken));

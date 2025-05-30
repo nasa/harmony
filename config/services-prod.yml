@@ -538,7 +538,7 @@ https://cmr.earthdata.nasa.gov:
     description: |
       Reference service that can be used to perform most operations supported by Harmony.
       Useful for testing new API features end-to-end on example data but not meant for production use.
-    data_operation_version: '0.21.0'
+    data_operation_version: '0.22.0'
     type:
       <<: *default-turbo-config
       params:

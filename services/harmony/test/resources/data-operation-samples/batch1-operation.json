@@ -8,7 +8,27 @@
       "name": "blue_var",
       "fullPath": "blue_var",
       "type": "SCIENCE_VARIABLE",
-      "subtype": "OTHER"
+      "subtype": "OTHER",
+      "visualizations": [
+        {
+          "Name": "Test123",
+          "Identifier": "Test123 ID",
+          "VisualizationType": "tiles",
+          "Specification": {},
+          "Generation": {},
+          "MetadataSpecification": {
+            "URL": "https: //cdn.earthdata.nasa.gov/umm/visualization/v1.1.0",
+            "Name": "Visualization",
+            "Version": "1.1.0"
+          },
+          "ConceptIds": [
+            {
+              "Type": "STD",
+              "Value": "C1233800302-EEDTEST"
+            }
+          ]
+        }
+      ]
     }],
     "coordinateVariables": [{
       "fullPath": "lat",
@@ -32,7 +52,7 @@
         "ConceptIds": [
           {
             "Type": "STD",
-            "Value": "C1200449962-MMT_1"
+            "Value": "C1233800302-EEDTEST"
           }
         ]
       },
@@ -50,7 +70,7 @@
         "ConceptIds": [
           {
             "Type": "STD",
-            "Value": "C1200449962-MMT_1"
+            "Value": "C1233800302-EEDTEST"
           }
         ]
       }
@@ -174,5 +194,5 @@
   "extraArgs": {
     "cut": false
   },
-  "version": "0.21.0"
+  "version": "0.22.0"
 }

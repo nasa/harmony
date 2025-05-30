@@ -11,6 +11,26 @@
         "id": "V1233801717-EEDTEST",
         "name": "alpha_var",
         "fullPath": "data/colors/red_var",
+        "visualizations": [
+          {
+            "Name": "Test123",
+            "Identifier": "Test123 ID",
+            "VisualizationType": "tiles",
+            "Specification": {},
+            "Generation": {},
+            "MetadataSpecification": {
+              "URL": "https: //cdn.earthdata.nasa.gov/umm/visualization/v1.1.0",
+              "Name": "Visualization",
+              "Version": "1.1.0"
+            },
+            "ConceptIds": [
+              {
+                "Type": "STD",
+                "Value": "C1233800302-EEDTEST"
+              }
+            ]
+          }
+        ],
         "relatedUrls": [
           {
             "description" : "This URL points to some text data.",
@@ -36,7 +56,7 @@
         "ConceptIds": [
             {
             "Type": "STD",
-            "Value": "C1200449962-MMT_1"
+            "Value": "C1233800302-EEDTEST"
             }
           ]
         },
@@ -54,7 +74,7 @@
         "ConceptIds": [
           {
             "Type": "STD",
-            "Value": "C1200449962-MMT_1"
+            "Value": "C1233800302-EEDTEST"
           }
         ]
       }],

@@ -4,7 +4,7 @@ import HarmonyRequest from '../models/harmony-request';
 
 /**
  * Middleware to add UMM-Vis to the DataOperation for any requested variables (or collections
- * if no of `all` variables are requested). At the point where this middleware is invoked,
+ * if none or `all` variables are requested). At the point where this middleware is invoked,
  * the collections should have already been attached to the request with the UMM-Vis information
  * attached (see `cmrCollectionReader`). This middleware just applies the UMM-Vis information
  * to the appropriate sources.
@@ -23,10 +23,7 @@ export function setUmmVis(
   for (const source of operation.sources) {
     const collectionId = source.collection;
     const collection = req.context.collections.find(coll => coll.id === collectionId);
-    // source.visualizations = collection.visualizations?.map(vis => vis.umm);
-    source.visualizations = collection.visualizations?.map((vis) => {
-      return vis.umm;
-    });
+    source.visualizations = collection.visualizations?.map(vis => vis.umm);
   }
 
   return next();

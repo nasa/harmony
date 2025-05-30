@@ -1,6 +1,7 @@
-## [0.22.0] - 2025-04-30
+## [0.22.0] - 2025-05-29
 ### Added
-- ummVis - The UMM-Vis records associated with the collection or variables
+- DataSource.visualizations - The UMM-Vis records associated with the collection
+- Variable.visualizations - The UMM-Vis records associated with a variable
 
 ## [0.21.0] - 2025-02-18
 ### Added
@@ -16,7 +17,7 @@
 
 ## [0.18.0] - 2023-08-28
 ### Added
-- extendDimensions - The dimensions to extend (added inititally for TEMPO users)
+- extendDimensions - The dimensions to extend (added initially for TEMPO users)
 
 ## [0.17.0] - 2022-07-12
 ### Added

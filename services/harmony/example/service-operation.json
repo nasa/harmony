@@ -23,7 +23,27 @@
             }
           ],
           "type": "SCIENCE_VARIABLE",
-          "subtype": "SCIENCE_ARRAY"
+          "subtype": "SCIENCE_ARRAY",
+          "visualizations": [
+            {
+              "Name": "Test123",
+              "Identifier": "Test123 ID",
+              "VisualizationType": "tiles",
+              "Specification": {},
+              "Generation": {},
+              "MetadataSpecification": {
+                "URL": "https: //cdn.earthdata.nasa.gov/umm/visualization/v1.1.0",
+                "Name": "Visualization",
+                "Version": "1.1.0"
+              },
+              "ConceptIds": [
+                {
+                  "Type": "STD",
+                  "Value": "C1233800302-EEDTEST"
+                }
+              ]
+            }
+          ]
         }],
         "coordinateVariables": [{
           "id": "V1233801718-EEDTEST",
