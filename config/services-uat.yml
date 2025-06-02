@@ -533,43 +533,6 @@ https://cmr.uat.earthdata.nasa.gov:
         conditional:
           exists: ['shapefileSubset', 'spatialSubset']
 
-  - name: sds/HOSS-projection-gridded-annotated
-    description: |
-      A service chain for applying the Harmony Metadata Annotator to HOSS/Maskfill
-      output, producing CF compliant annotated NetCDF4 outputs. This service chain
-      is intended to be used for testing the Metadata Annotator. This chain will 
-      only be used temporarily until the Metadata Annotator is ready to be added
-      to the sds/HOSS-projection-gridded service chain.
-    data_operation_version: '0.21.0'
-    type:
-      <<: *default-turbo-config
-      params:
-        <<: *default-turbo-params
-        env:
-          <<: *default-turbo-env
-          STAGING_PATH: public/sds/HOSS-projection-gridded-annotated
-    umm_s: S1273605600-EEDTEST
-    capabilities:
-      subsetting:
-        temporal: true
-        bbox: true
-        dimension: true
-        shape: true
-        variable: true
-      output_formats:
-        - application/netcdf # Incorrect mime-type, remove when no longer needed
-        - application/x-netcdf4
-    steps:
-      - image: !Env ${QUERY_CMR_IMAGE}
-        is_sequential: true
-      - image: !Env ${HOSS_IMAGE}
-        operations: ['variableSubset', 'spatialSubset', 'dimensionSubset', 'shapefileSubset', 'temporalSubset']
-      - image: !Env ${SDS_MASKFILL_IMAGE}
-        operations: ['shapefileSubset', 'spatialSubset']
-        conditional:
-          exists: ['shapefileSubset', 'spatialSubset']
-      - image: !Env ${HARMONY_METADATA_ANNOTATOR_IMAGE}
-
   - name: sds/HOSS-HRS-GeoTIFF
     description: |
       A service chain for applying the Harmony Metadata Annotator to HOSS/Maskfill
