@@ -537,7 +537,7 @@ https://cmr.uat.earthdata.nasa.gov:
     description: |
       A service chain for applying the Harmony Metadata Annotator to HOSS/Maskfill
       output, producing CF compliant annotated NetCDF4 outputs. This service chain
-      is intended to be used for testing the Metadata Annotator. This chain will 
+      is intended to be used for testing the Metadata Annotator. This chain will
       only be used temporarily until the Metadata Annotator is ready to be added
       to the sds/HOSS-projection-gridded service chain.
     data_operation_version: '0.21.0'
