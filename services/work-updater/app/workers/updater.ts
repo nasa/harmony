@@ -21,7 +21,8 @@ import env from '../util/env';
  */
 export async function handleBatchWorkItemUpdates(
   updates: WorkItemUpdateQueueItem[],
-  logger: Logger): Promise<void> {
+  logger: Logger,
+): Promise<void> {
   logger.debug(`Processing ${updates.length} work item updates`);
   // create a map of jobIDs to updates
   const jobUpdates: Record<string, WorkItemUpdateQueueItem[]> =

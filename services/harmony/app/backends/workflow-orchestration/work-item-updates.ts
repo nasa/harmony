@@ -662,6 +662,7 @@ export async function processWorkItem(
   let durationMs;
   let jobSaveStartTime;
   let didCreateWorkItem = false;
+  let serviceId;
 
   logger.info(`Received update for work item ${workItemID} to ${status}`);
 
@@ -678,6 +679,7 @@ export async function processWorkItem(
         'HWIUWJI.getWorkflowStepByJobIdStepIndex',
         logger))(tx, workItem.jobID, workItem.workflowStepIndex);
     }
+    serviceId = workItem.serviceID;
     if (job.hasTerminalStatus() && status !== WorkItemStatus.CANCELED) {
       logger.warn(`Job was already ${job.status}.`);
       const numRowsDeleted = await (await logAsyncExecutionTime(
@@ -721,7 +723,10 @@ export async function processWorkItem(
         return;
       } else {
         logger.warn(`Retry limit of ${env.workItemRetryLimit} exceeded`);
-        logger.warn(`Updating work item for ${workItemID} to ${status} with message ${message}`, { workFailureMessage: message, serviceId: workItem.serviceID });
+        logger.warn(
+          `Updating work item for ${workItemID} to ${status} with message ${message}`,
+          { workFailureMessage: message, serviceId: workItem.serviceID, status },
+        );
       }
     }
 
@@ -893,7 +898,10 @@ export async function processWorkItem(
 
   durationMs = new Date().getTime() - startTime;
   logger.info('timing.HWIUWJI.end', { durationMs });
-  logger.debug(`Finished handling work item update for ${workItemID} and status ${status} in ${durationMs} ms`);
+  logger.info(
+    `Finished handling work item update for work item id ${workItemID} for service ${serviceId} and status ${status} in ${durationMs} ms`,
+    { workItemId: workItemID, status, durationMs, serviceId },
+  );
 }
 
 
@@ -909,7 +917,8 @@ export async function processWorkItems(
   jobID: string,
   workflowStepIndex: number,
   items: WorkItemUpdateQueueItem[],
-  logger: Logger): Promise<void> {
+  logger: Logger,
+): Promise<void> {
   try {
     const transactionStart = new Date().getTime();
 
@@ -1021,13 +1030,15 @@ async function handleGranuleValidation(
  * It processes the work item updates in groups by the workflow step.
  * @param jobID - ID of the job that the work item updates belong to
  * @param updates - List of work item updates
- * @param logger - Logger to use
+ * @param originalLogger - Logger to use
  */
 export async function handleBatchWorkItemUpdatesWithJobId(
   jobID: string,
   updates: WorkItemUpdateQueueItem[],
-  logger: Logger): Promise<void> {
+  originalLogger: Logger,
+): Promise<void> {
   const startTime = new Date().getTime();
+  const logger = originalLogger.child({ jobId: jobID });
   logger.debug(`Processing ${updates.length} work item updates for job ${jobID}`);
   // group updates by workflow step index to make sure at least one completion check is performed for each step
   const groups = _.groupBy(updates, (update) => update.update.workflowStepIndex);
