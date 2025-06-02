@@ -537,7 +537,7 @@ https://cmr.uat.earthdata.nasa.gov:
     description: |
       A service chain for applying the Harmony Metadata Annotator to HOSS/Maskfill
       output, producing CF compliant annotated NetCDF4 outputs. This service chain
-      is also intended to be used for producing regridded outputs using the harmony-regridder 
+      is also intended to be used for producing regridded outputs using the harmony-regridder
       and  to produce GeoTIFF outputs using net2cog.
     data_operation_version: '0.21.0'
     type:

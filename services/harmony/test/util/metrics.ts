@@ -1,12 +1,13 @@
-import DataOperation from '../../app/models/data-operation';
-import db from '../../app/util/db';
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
+
+import DataOperation from '../../app/models/data-operation';
+import HarmonyRequest from '../../app/models/harmony-request';
+import { JobStatus } from '../../app/models/job';
+import db from '../../app/util/db';
+import { getProductMetric, getRequestMetric, getResponseMetric } from '../../app/util/metrics';
 import { parseSchemaFile } from '../helpers/data-operation';
 import { buildJob } from '../helpers/jobs';
-import { getProductMetric, getRequestMetric, getResponseMetric } from '../../app/util/metrics';
-import { JobStatus } from '../../app/models/job';
-import HarmonyRequest from '../../app/models/harmony-request';
 
 const operation = new DataOperation(parseSchemaFile('valid-operation-input.json'));
 const request = { headers: { 'x-forwarded-for': '1.2.3.4, 5.1.2.3' } } as unknown as HarmonyRequest;
@@ -14,7 +15,7 @@ const request = { headers: { 'x-forwarded-for': '1.2.3.4, 5.1.2.3' } } as unknow
 describe('Metrics construction', function () {
   describe('Getting the request metric', function () {
     describe('when an operation contains all fields', function () {
-      const metric = getRequestMetric(request, operation, 'a neat service');
+      const metric = getRequestMetric(request, operation, 'a neat service', 'S123-PROV1');
 
       it('includes all of the fields in the metric', function () {
         expect(Object.keys(metric)).to.eql([
@@ -34,8 +35,16 @@ describe('Metrics construction', function () {
         expect(metric.user_id).to.equal('test-user');
       });
 
-      it('sets the service information correctly', function () {
+      it('sets the service name correctly', function () {
         expect(metric.parameters.service_name).to.equal('a neat service');
+      });
+
+      it('always sets the service provider to harmony', function () {
+        expect(metric.parameters.service_provider).to.equal('harmony');
+      });
+
+      it('sets the service id correctly', function () {
+        expect(metric.parameters.service_id).to.equal('S123-PROV1');
       });
 
       it('sets the bbox correctly', function () {
@@ -55,7 +64,7 @@ describe('Metrics construction', function () {
       const operationNoBbox = new DataOperation(parseSchemaFile('valid-operation-input.json'));
       operationNoBbox.boundingRectangle = null;
 
-      const metric = getRequestMetric(request, operationNoBbox, 'a neat service');
+      const metric = getRequestMetric(request, operationNoBbox, 'a neat service', 'S123-PROV1');
 
       it('does not include a bbox in the metric', function () {
         expect(Object.keys(metric)).to.eql([
@@ -68,7 +77,7 @@ describe('Metrics construction', function () {
       const operationNoBeginTime = new DataOperation(parseSchemaFile('valid-operation-input.json'));
       operationNoBeginTime.temporal.start = null;
 
-      const metric = getRequestMetric(request, operationNoBeginTime, 'a neat service');
+      const metric = getRequestMetric(request, operationNoBeginTime, 'a neat service', 'S123-PROV1');
 
       it('does not include a rangeBeginDateTime in the metric', function () {
         expect(Object.keys(metric)).to.eql([
@@ -81,7 +90,7 @@ describe('Metrics construction', function () {
       const operationNoEndTime = new DataOperation(parseSchemaFile('valid-operation-input.json'));
       operationNoEndTime.temporal.end = null;
 
-      const metric = getRequestMetric(request, operationNoEndTime, 'a neat service');
+      const metric = getRequestMetric(request, operationNoEndTime, 'a neat service', 'S123-PROV1');
 
       it('does not include a rangeEndDateTime in the metric', function () {
         expect(Object.keys(metric)).to.eql([
@@ -94,10 +103,21 @@ describe('Metrics construction', function () {
       const operationNoEndTime = new DataOperation(parseSchemaFile('valid-operation-input.json'));
       operationNoEndTime.temporal.end = null;
 
-      const metric = getRequestMetric({} as HarmonyRequest, operation, 'a neat service');
+      const metric = getRequestMetric({} as HarmonyRequest, operation, 'a neat service', 'S123-PROV1');
 
       it('includes a blank string for the user_ip', function () {
         expect(metric.user_ip).to.eql('');
+      });
+    });
+
+    describe('when the request does not include a UMM-S concept ID', function () {
+      const operationNoEndTime = new DataOperation(parseSchemaFile('valid-operation-input.json'));
+      operationNoEndTime.temporal.end = null;
+
+      const metric = getRequestMetric({} as HarmonyRequest, operation, 'a neat service', undefined);
+
+      it('does not set a service_id', function () {
+        expect(metric.parameters.service_id).to.be.undefined;
       });
     });
   });
