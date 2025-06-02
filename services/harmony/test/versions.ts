@@ -41,6 +41,7 @@ describe('Versions endpoint', function () {
           'sds/HOSS-geographic',
           'sds/HOSS-projection-gridded',
           'sds/HOSS-projection-gridded-annotated',
+          'sds/HOSS-HRS-GeoTIFF',
           'l2-subsetter-batchee-stitchee-concise',
           'asf/opera-rtc-s1-browse',
           'net2cog',
