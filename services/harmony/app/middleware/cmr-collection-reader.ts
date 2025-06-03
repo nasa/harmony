@@ -7,7 +7,7 @@ import RequestContext from '../models/request-context';
 import { harmonyCollections } from '../models/services';
 import {
   cmrApiConfig, CmrCollection, getCollectionsByIds, getCollectionsByShortName,
-  getVariablesForCollection, getVisualizationsForCollection,
+  getVariablesForCollection,
 } from '../util/cmr';
 import { EdlUserEulaInfo, verifyUserEula } from '../util/edl-api';
 import env from '../util/env';
@@ -35,45 +35,6 @@ const EDR_COLLECTION_ROUTE_REGEX = /^\/ogc-api-edr\/.*\/collections\/(.*)\//;
 async function loadVariablesForCollection(context: RequestContext, collection: CmrCollection, token: string): Promise<void> {
   collection.variables = await getVariablesForCollection(context, collection, token);
 }
-
-/**
- * Loads the visualizations for the given collection from the CMR and sets the collection's
- * "visualizations" attribute to the result. First checks for visualizations for any associated
- * variables and uses those. If none are available, load any visualizations directly
- * associated with this collections.
- *
- * @param context - The context for the user's request
- * @param collection - The collection whose visualizations should be loaded
- * @param token - Access token for user request
- * @returns Resolves when the loading completes
- */
-async function loadVisualizationsForCollection(context: RequestContext, collection: CmrCollection, token: string): Promise<void> {
-  // const visPromises = [];
-  // if (collection.variables && collection.variables.length > 0) {
-  //   for (const variable of collection.variables) {
-  //     visPromises.push(getVisualizationsForVariable(context, variable, token));
-  //   }
-  // }
-  // const visualizations = [].concat(await Promise.all(visPromises)).flat();
-  // if (visualizations.length > 0) {
-  //   collection.visualizations = visualizations;
-  // } else {
-  collection.visualizations = await getVisualizationsForCollection(context, collection, token);
-  // }
-}
-
-// /**
-//  * Loads the visualizations for the given variable from the CMR and sets the variables's
-//  * "visualizations" attribute to the result.
-//  *
-//  * @param context - The context for the user's request
-//  * @param variable - The variable whose visualizations should be loaded
-//  * @param token - Access token for user request
-//  * @returns Resolves when the loading completes
-//  */
-// async function loadVisualizationsForVariable(context: RequestContext, variable: CmrUmmVariable, token: string): Promise<void> {
-//   variable.visualizations = await getVisualizationsForVariable(context, variable, token);
-// }
 
 /**
  * Check that the user has accepted any EULAs that are attached to the collections
@@ -170,13 +131,6 @@ async function cmrCollectionReader(req: HarmonyRequest, res, next: NextFunction)
         promises.push(loadVariablesForCollection(req.context, collection, req.accessToken));
       }
       await Promise.all(promises);
-
-      promises.length = 0; // clear the array
-      for (const collection of collections) {
-        promises.push(loadVisualizationsForCollection(req.context, collection, req.accessToken));
-      }
-      await Promise.all(promises);
-
     } else {
       // The request used a short name
       const shortNameMatch = req.url.match(COLLECTION_ROUTE_REGEX);
@@ -203,7 +157,6 @@ async function cmrCollectionReader(req: HarmonyRequest, res, next: NextFunction)
           req.context.collections = [pickedCollection];
           req.context.collectionIds = [pickedCollection.id];
           await loadVariablesForCollection(req.context, pickedCollection, req.accessToken);
-          await loadVisualizationsForCollection(req.context, pickedCollection, req.accessToken);
           if (collections.length > 1) {
             const collectionLandingPage = `${cmrApiConfig.baseURL}/concepts/${pickedCollection.id}`;
             req.context.messages.push(`There were ${collections.length} collections that matched the`

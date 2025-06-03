@@ -76,6 +76,7 @@ export interface CmrCollection {
     visualizations?: string[];
   };
   variables?: CmrUmmVariable[];
+  variable
   visualizations?: CmrUmmVisualization[];
   tags?: CmrTags;
   eula_identifiers?: string[];
