@@ -60,4 +60,4 @@ jobs:
           [ "${VERSION}" == "harmony-412" ] && VERSION=latest
 
           # build and publish images for all services
-          VERSION="${VERSION}" lerna run build-multi
+          VERSION="${VERSION}" ./node_modules/.bin/lerna run build-multi
