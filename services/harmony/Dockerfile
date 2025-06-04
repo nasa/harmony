@@ -1,4 +1,5 @@
 ARG BASE_IMAGE=node:22.14.0
+ARG TARGETPLATFORM
 FROM $BASE_IMAGE
 
 RUN apt-get update && apt-get install -y sqlite3 libsqlite3-dev python3 python3-pip python3-venv libpq-dev build-essential libgdal-dev
@@ -20,7 +21,22 @@ RUN env NODE_ENV=production npm ci
 COPY --chown=node:node built/services/harmony/package.json built/services/harmony/package-lock.json /harmony/services/harmony/
 WORKDIR /harmony/services/harmony
 RUN env NODE_ENV=production npm ci
-RUN npm install gdal-async ts-node-dev
+
+COPY gdal-async-linux-arm64.tar.gz /harmony/services/harmony/
+
+RUN if [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
+  echo "Installing linux/arm64 gdal-async from file" && \
+  tar -xzf gdal-async-linux-arm64.tar.gz && \
+  npm install ./gdal-async; \
+  fi
+
+RUN if [ "$TARGETPLATFORM" != "linux/arm64" ]; then \
+  echo "Installing gdal-async from npmjs.com" && \
+  npm install gdal-async; \
+  fi
+
+RUN npm install ts-node-dev
+
 
 COPY --chown=node:node built /harmony
 
