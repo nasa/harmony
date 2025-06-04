@@ -993,10 +993,20 @@ async function handleGranuleValidation(
         thisWorkflowStep.operation = JSON.stringify(op);
         await thisWorkflowStep.save(tx);
 
+        let needSave = false;
+        if (update.hits && job.numInputGranules > update.hits) {
+          job.numInputGranules = update.hits;
+          needSave = true;
+        }
+
         if (message) {
           // update job message for running and successful status
           job.message = message;
           job.setMessage(message, JobStatus.SUCCESSFUL);
+          needSave = true;
+        }
+
+        if (needSave) {
           await job.save(tx);
         }
 
