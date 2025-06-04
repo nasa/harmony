@@ -256,6 +256,7 @@ export async function validateGranules(
   if (jobMessages.length > 0) {
     return {
       hits: jobHits,
+      scrollID: scrollId,
       error: jobMessages.join(' '),
       errorLevel: 'warning',
       errorCategory: 'granValidation',
@@ -263,6 +264,7 @@ export async function validateGranules(
   } else {
     return {
       hits: jobHits,
+      scrollID: scrollId,
       errorLevel: 'warning',
       errorCategory: 'granValidation',
     };
