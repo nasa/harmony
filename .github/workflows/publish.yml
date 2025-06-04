@@ -71,4 +71,7 @@ jobs:
           [ "${VERSION}" == "harmony-412" ] && VERSION=latest
 
           # build and publish images for all services
-          VERSION="${VERSION}" ./node_modules/.bin/lerna run build-multi
+          # TODO this is set for harmony only while debugging workflow
+          cd services/harmony
+          VERSION="${VERSION}" npm run build-multi
+          # VERSION="${VERSION}" ./node_modules/.bin/lerna run build-multi
