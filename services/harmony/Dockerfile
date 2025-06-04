@@ -20,7 +20,7 @@ RUN env NODE_ENV=production npm ci
 
 COPY --chown=node:node built/services/harmony/package.json built/services/harmony/package-lock.json /harmony/services/harmony/
 WORKDIR /harmony/services/harmony
-RUN env NODE_ENV=production npm ci
+RUN env NODE_ENV=production npm ci --force --loglevel verbose
 
 COPY gdal-async-linux-arm64.tar.gz /harmony/services/harmony/
 
