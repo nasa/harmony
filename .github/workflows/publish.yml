@@ -26,13 +26,6 @@ jobs:
         with:
           ref: ${{ github.ref }} # checkout the commit for the tag
 
-      # - name: Configure AWS credentials
-      #   uses: aws-actions/configure-aws-credentials@v4
-      #   with:
-      #     aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      #     aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      #     aws-region: us-west-2
-
       - name: Copy prebuilt lib from S3
         run: |
           aws s3 cp s3://harmony-github-workflow-support/libs/gdal-async-linux-arm64.tar.gz ./services/harmony/gdal-async-linux-arm64.tar.gz
@@ -71,7 +64,4 @@ jobs:
           [ "${VERSION}" == "harmony-412" ] && VERSION=latest
 
           # build and publish images for all services
-          # TODO this is set for harmony only while debugging workflow
-          cd services/harmony
-          VERSION="${VERSION}" npm run build-multi
-          # VERSION="${VERSION}" ./node_modules/.bin/lerna run build-multi
+          VERSION="${VERSION}" ./node_modules/.bin/lerna run build-multi
