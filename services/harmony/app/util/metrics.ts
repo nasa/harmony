@@ -17,8 +17,8 @@ export interface BboxMetric {
 
 export interface ParameterMetric {
   service_name: string; // We'll use the name from services.yml
-  service_provider?: string; // We do not track this information
-  service_id?: string; // We do not explicitly link to a single UMM-S, so do not populate
+  service_provider: string; // Hardcode to harmony
+  service_id: string | undefined; // Use the UMM-S concept ID if configured
 }
 
 export interface RequestMetric {
@@ -90,13 +90,15 @@ function constructBboxFromOperation(operation: DataOperation): BboxMetric {
 /**
  * Returns the request metric for a request
  *
+ * @param req - The harmony request
  * @param operation - The data operation
  * @param serviceName - The name of the service chain used for the request
+ * @param serviceId - The UMM-S id for the service
  *
  * @returns the request metric
  */
 export function getRequestMetric(
-  req: HarmonyRequest, operation: DataOperation, serviceName: string,
+  req: HarmonyRequest, operation: DataOperation, serviceName: string, serviceId: string,
 ): RequestMetric {
   const rangeBeginDateTime = operation.temporal?.start;
   const rangeEndDateTime = operation.temporal?.end;
@@ -108,7 +110,7 @@ export function getRequestMetric(
     request_id: operation.requestId,
     user_ip: user_ip || '',
     user_id: operation.user,
-    parameters: { service_name: serviceName },
+    parameters: { service_name: serviceName, service_provider: 'harmony', service_id: serviceId },
   };
 
   const bbox = constructBboxFromOperation(operation);
