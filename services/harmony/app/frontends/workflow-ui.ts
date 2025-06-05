@@ -507,8 +507,8 @@ function workItemRenderingFunctions(job: Job, isAdmin: boolean, isLogViewer: boo
     workflowItemLogsButton(): string {
       if (!isAdmin && !isLogViewer) return '';
       let logsLinks = '';
-      const isComplete = [WorkItemStatus.FAILED, WorkItemStatus.SUCCESSFUL].indexOf(this.status) > -1;
-      const isLogAvailable = (isComplete || this.retryCount > 0) && !this.serviceID.includes('query-cmr');
+      const hasRun = [WorkItemStatus.FAILED, WorkItemStatus.SUCCESSFUL, WorkItemStatus.WARNING].indexOf(this.status) > -1;
+      const isLogAvailable = (hasRun || this.retryCount > 0) && !this.serviceID.includes('query-cmr');
       if (isLogAvailable) {
         const logsUrl = `/logs/${job.jobID}/${this.id}`;
         logsLinks += `<a type="button" target="__blank" class="btn btn-sm btn-outline-primary logs-s3" href="${logsUrl}"` +
