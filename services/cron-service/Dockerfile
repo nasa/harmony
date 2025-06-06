@@ -11,8 +11,6 @@ WORKDIR /cron-service/services/cron-service
 RUN npm ci
 
 COPY env-defaults /cron-service/services/cron-service/
-RUN echo "LS"
-RUN ls 1>&2
 COPY built /cron-service/
 WORKDIR /cron-service
 # This symlink is needed to make module loading work correctly

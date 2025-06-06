@@ -15,7 +15,6 @@ env:
 
 jobs:
   push:
-    # runs-on: ubuntu-latest
     runs-on: codebuild-HarmonyDockerBuildGithubRunner-${{ github.run_id }}-${{ github.run_attempt }}
     permissions:
       packages: write
