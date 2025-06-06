@@ -9,6 +9,7 @@
     "test-bail": "TS_NODE_TRANSPILE_ONLY=true mocha --bail",
     "build": "rimraf built/* && tsc",
     "build-m1": "rimraf built/* && tsc",
+    "build-multi": "rimraf built/* && tsc",
     "lint": "eslint --ext .ts .",
     "coverage": "nyc mocha",
     "better-audit": "better-npm-audit audit"

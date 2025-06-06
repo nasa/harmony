@@ -87,8 +87,9 @@ while read -r line; do
   all_images+=( "$line" )
 done < <(sort <(echo "${referenced_images[*]}") <(echo "${pulled_images[*]}") | uniq -d)
 
-# always reload the harmony image, query-cmr, work-updater, work-scheudler, and service-runner images
-all_images+=( "$HARMONY_IMAGE" "$QUERY_CMR_IMAGE" "$SERVICE_RUNNER_IMAGE" "$WORK_ITEM_UPDATER_IMAGE" "$WORK_ITEM_SCHEDULER_IMAGE" )
+
+# always reload the harmony image, query-cmr, service-runner, and all core service images
+all_images+=( "$HARMONY_IMAGE" "$QUERY_CMR_IMAGE" "$SERVICE_RUNNER_IMAGE" "$WORK_ITEM_UPDATER_IMAGE" "$WORK_ITEM_SCHEDULER_IMAGE" "$WORK_FAILER_IMAGE" "$CRON_SERVICE_IMAGE" )
 
 for image in ${all_images[@]}; do
   echo "${image}"
