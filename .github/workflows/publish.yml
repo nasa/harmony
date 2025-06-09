@@ -2,6 +2,8 @@ name: Publish to DockerHub
 
 on:
   push:
+    tags:
+      - 'v*'
     branches:
       - main
   release:
@@ -13,21 +15,44 @@ env:
 
 jobs:
   push:
-    runs-on: ubuntu-latest
+    runs-on: codebuild-HarmonyDockerBuildGithubRunner-${{ github.run_id }}-${{ github.run_attempt }}
     permissions:
       packages: write
       contents: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }} # checkout the commit for the tag
+
+      - name: Copy prebuilt lib from S3
+        run: |
+          aws s3 cp s3://harmony-github-workflow-support/libs/gdal-async-linux-arm64.tar.gz ./services/harmony/gdal-async-linux-arm64.tar.gz
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 22.14.x
+          cache: 'npm'
+          cache-dependency-path: |
+            **/package-lock.json
+            packages/*/package-lock.json
+            services/*/package-lock.json
+
       - name: Log into registry
         run: echo "${{ secrets.DOCKERHUB }}" | docker login -u "${DOCKER_USER}" --password-stdin
-      - name: Setup Node
+
+      - name: Install npm Packages
         run: |
           npm install
-      - name: Build and publish images
+
+      - name: Build and publish multi-arch images
         run: |
           # For tagged versions, translate e.g. "refs/tags/v1.2.3" -> "1.2.3"
           VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
@@ -38,6 +63,4 @@ jobs:
           [ "${VERSION}" == "harmony-412" ] && VERSION=latest
 
           # build and publish images for all services
-          VERSION="${VERSION}" lerna run build
-          VERSION="${VERSION}" lerna run publish
-
+          VERSION="${VERSION}" ./node_modules/.bin/lerna run build-multi

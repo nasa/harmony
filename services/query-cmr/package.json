@@ -16,6 +16,7 @@
     "prebuild-m1": "./bin/prebuild",
     "build": "tsc --project ./tsconfig.build.json && docker build -t harmonyservices/query-cmr:${VERSION:-latest} .",
     "build-m1": "tsc --project ./tsconfig.build.json && docker build --platform linux/amd64 -t harmonyservices/query-cmr:${VERSION:-latest} .",
+    "build-multi": "./bin/prebuild && tsc --project ./tsconfig.build.json && docker buildx build --platform=linux/amd64,linux/arm64 -t harmonyservices/query-cmr:${VERSION:-latest} --push .",
     "push-image": "./bin/push-image ${VERSION:-latest}",
     "publish": "docker push harmonyservices/query-cmr:${VERSION:-latest}",
     "better-audit": "better-npm-audit audit"
