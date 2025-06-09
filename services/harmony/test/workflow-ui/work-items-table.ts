@@ -572,7 +572,7 @@ describe('Workflow UI work items table route', function () {
 
       describe('when the admin retrieves otherJob\'s work items', function () {
         hookWorkflowUIWorkItems({ username: 'adam', jobID: otherJob.jobID });
-        it('returns metrics logs links for each each work item', function () {
+        it('returns metrics logs links for each work item', function () {
           const listing = this.res.text;
           expect((listing.match(/logs-metrics/g) || []).length).to.equal(5);
         });
@@ -621,6 +621,59 @@ describe('Workflow UI work items table route', function () {
           expect(this.res.statusCode).to.equal(403);
           expect(this.res.text).to.include('You are not permitted to access this resource');
         });
+      });
+    });
+  });
+
+  describe('for warning work item in a job', function () {
+    // a job with a warning work item
+    const warningJob = buildJob({ status: JobStatus.SUCCESSFUL, username: 'bo' });
+    const warningItem = buildWorkItem(
+      { jobID: warningJob.jobID, workflowStepIndex: 2, serviceID: step2ServiceId, status: WorkItemStatus.WARNING },
+    );
+
+    hookTransaction();
+    before(async function () {
+      await warningJob.save(this.trx);
+      const dummyItem = buildWorkItem({ jobID: warningJob.jobID, status: WorkItemStatus.SUCCESSFUL });
+      await dummyItem.save(this.trx);
+      await warningItem.save(this.trx);
+      const warningStep1 = buildWorkflowStep({ jobID: warningJob.jobID, stepIndex: 1 });
+      await warningStep1.save(this.trx);
+      const warningStep2 = buildWorkflowStep({ jobID: warningJob.jobID, stepIndex: 2 });
+      await warningStep2.save(this.trx);
+
+      this.trx.commit();
+      MockDate.reset();
+    });
+
+    describe('when requests the work items table with warning work item', function () {
+      hookWorkflowUIWorkItems({ username: 'adam', jobID: warningJob.jobID });
+
+      it('returns a 200 HTTP response', async function () {
+        expect(this.res.statusCode).to.equal(200);
+      });
+
+      it('does return a column for the work item logs', async function () {
+        const listing = this.res.text;
+        expect(listing).to.contain(mustache.render(logsTableHeader, {}));
+      });
+
+      it('returns link for the warning work item logs (stored in s3)', async function () {
+        const listing = this.res.text;
+        const matches = listing.match(/logs-s3" href="([^"]+")/g);
+        const urls = [];
+        for (const logLine of matches) {
+          const lineMatches = logLine.match(/logs-s3" href="([^"]+)"/);
+          urls.push(lineMatches[1]);
+        }
+        expect((listing.match(/logs-s3/g) || []).length).to.equal(1);
+        expect(urls[0]).to.equal(`/logs/${warningJob.jobID}/${warningItem.id}`);
+      });
+
+      it('returns metrics logs links for all work items', async function () {
+        const listing = this.res.text;
+        expect((listing.match(/logs-metrics/g) || []).length).to.equal(2);
       });
     });
   });
