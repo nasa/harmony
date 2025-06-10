@@ -533,13 +533,12 @@ https://cmr.uat.earthdata.nasa.gov:
         conditional:
           exists: ['shapefileSubset', 'spatialSubset']
 
-  - name: sds/HOSS-projection-gridded-annotated
+  - name: sds/HOSS-HRS-GeoTIFF
     description: |
       A service chain for applying the Harmony Metadata Annotator to HOSS/Maskfill
       output, producing CF compliant annotated NetCDF4 outputs. This service chain
-      is intended to be used for testing the Metadata Annotator. This chain will 
-      only be used temporarily until the Metadata Annotator is ready to be added
-      to the sds/HOSS-projection-gridded service chain.
+      is also intended to be used for producing regridded outputs using the harmony-regridder
+      and  to produce GeoTIFF outputs using net2cog.
     data_operation_version: '0.21.0'
     type:
       <<: *default-turbo-config
@@ -547,8 +546,8 @@ https://cmr.uat.earthdata.nasa.gov:
         <<: *default-turbo-params
         env:
           <<: *default-turbo-env
-          STAGING_PATH: public/sds/HOSS-projection-gridded-annotated
-    umm_s: S1273605600-EEDTEST
+          STAGING_PATH: public/sds/HOSS-HRS-GeoTIFF
+    umm_s: S1273752002-EEDTEST
     capabilities:
       subsetting:
         temporal: true
@@ -556,9 +555,11 @@ https://cmr.uat.earthdata.nasa.gov:
         dimension: true
         shape: true
         variable: true
+      reprojection: true
       output_formats:
         - application/netcdf # Incorrect mime-type, remove when no longer needed
         - application/x-netcdf4
+        - image/tiff
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
@@ -569,6 +570,12 @@ https://cmr.uat.earthdata.nasa.gov:
         conditional:
           exists: ['shapefileSubset', 'spatialSubset']
       - image: !Env ${HARMONY_METADATA_ANNOTATOR_IMAGE}
+      - image: !Env ${HARMONY_REGRIDDER_IMAGE}
+        conditional:
+          exists: ['reproject']
+      - image: !Env ${NET2COG_IMAGE}
+        conditional:
+          format: ['image/tiff']
 
   - name: l2-subsetter-batchee-stitchee-concise
     description: |

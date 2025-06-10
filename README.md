@@ -102,3 +102,5 @@ You can restart all Harmony services including backend services by calling the `
 ### Testing New Services
 
 If you'd like to build and test a new service for Harmony see [this reference](docs/testing-services.md).
+
+TEST

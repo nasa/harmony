@@ -536,11 +536,15 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
     describe('set to "true"', function () {
       const forceAsync = 'true';
-      const expectedExtraArgs = { granValidation: { reason: 3,
-        hasGranuleLimit: undefined,
-        serviceName: 'harmony/service-example',
-        shapeType: undefined,
-        maxResults: 2100 } };
+      const expectedExtraArgs = {
+        granValidation: {
+          reason: 3,
+          hasGranuleLimit: undefined,
+          serviceName: 'harmony/service-example',
+          shapeType: undefined,
+          maxResults: 2100,
+        },
+      };
 
       describe('and making a request would otherwise be synchronous', function () {
         hookRangesetRequest(version, collection, variableName,
@@ -697,6 +701,26 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       it('limits the input granules to the system limit', function () {
         const job = JSON.parse(this.res.text);
         expect(job.numInputGranules).to.equal(3);
+      });
+    });
+
+    describe('when forceAsync=true and there are duplicate and invalid granuleIds', function () {
+      hookRangesetRequest(
+        version,
+        collection,
+        variableName,
+        {
+          username: 'jdoe1',
+          query: {
+            forceAsync: true,
+            granuleId: [granuleId, granuleId, 'G123380-EEDTEST'].join(','),
+          },
+        });
+      hookRedirect('jdoe1');
+
+      it('reports the correct granule count', function () {
+        const job = JSON.parse(this.res.text);
+        expect(job.numInputGranules).to.equal(1);
       });
     });
   });
