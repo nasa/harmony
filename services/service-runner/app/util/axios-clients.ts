@@ -72,9 +72,9 @@ export function isRetryable(error: AxiosError): boolean {
  * @param retries - how many times to retry a request
  * @param maxDelayMs - max delay between retried requests
  * @param exponentialOffset - offsets the exponent in calculateExponentialDelay
+ * @param retryCondition - a function that specifies when to retry a request
  * @param timeoutMs - requests time out after this many milliseconds
  * @param httpAgent - the http agent used by the axios instance
- * @param retryCondition - a function that specifies when to retry a request
  * @returns AxiosInstance
  */
 export default function createAxiosClientWithRetry(
