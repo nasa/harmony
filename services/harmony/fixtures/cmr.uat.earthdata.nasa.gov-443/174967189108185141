@@ -1,0 +1,30 @@
+GET /search/collections.json?concept_id=C1273843214-EEDTEST&page_size=100
+accept: application/json
+accept-encoding: gzip,deflate
+
+HTTP/1.1 200 OK
+content-type: application/json;charset=utf-8
+transfer-encoding: chunked
+connection: keep-alive
+date: Wed, 11 Jun 2025 19:58:11 GMT
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: 55aa782f-d772-45fb-a8ce-12dcd55b8d68
+content-sha1: b2ea7604c4c3515fdf72ba7a7405df9055256e17
+strict-transport-security: max-age=31536000; includeSubDomains; preload
+cmr-search-after: ["harmony_umm_vis_test","EEDTEST","Harmony_umm_vis_Test","2.0",1273843214,1]
+cmr-hits: 1
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Search-After, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 11
+x-request-id: 55aa782f-d772-45fb-a8ce-12dcd55b8d68
+content-md5: b420ca0ca4021878c506df451f2e0994
+vary: Accept-Encoding
+server: ServerTokens ProductOnly
+x-cache: Miss from cloudfront
+via: 1.1 ca38026a6de2ccb3904aed4709dff3d0.cloudfront.net (CloudFront)
+x-amz-cf-pop: SFO53-C1
+x-amz-cf-id: mrtOOnDr4WBDPb8SHZmShtaIMTMtV3MxYJYZvq2DZP9bjWywnQWITA==
+
+{"feed":{"updated":"2025-06-11T19:58:11.010Z","id":"https://cmr.uat.earthdata.nasa.gov:443/search/collections.json?concept_id=C1273843214-EEDTEST&page_size=100","title":"ECHO dataset metadata","entry":[{"processing_level_id":"4","cloud_hosted":true,"boxes":["-60 -180 90 180"],"has_combine":false,"time_start":"1948-01-01T00:00:00.000Z","version_id":"2.0","updated":"2017-12-01T00:00:00.000Z","dataset_id":"Harmony_umm_vis_Test","entry_id":"Harmony_umm_vis_Test_2.0","has_spatial_subsetting":true,"has_transforms":false,"associations":{"variables":["V1273848460-EEDTEST"],"services":["S1257851197-EEDTEST"],"visualizations":["VIS1273843215-EEDTEST","VIS1273843217-EEDTEST"]},"has_variables":true,"data_center":"EEDTEST","short_name":"Harmony_umm_vis_Test","organizations":["NASA/GSFC/SED/ESD/GCDC/GESDISC"],"title":"Harmony_umm_vis_Test","coordinate_system":"CARTESIAN","summary":"Global Land Data Assimilation System Version 2 (hereafter, GLDAS-2) has two components: one forced entirely with the Princeton meteorological forcing data (hereafter, GLDAS-2.0), and the other forced with a combination of model and observation based forcing data sets (hereafter, GLDAS-2.1).This data set, GLDAS-2.0 0.25 degree daily, contains a series of land surface parameters simulated from the Catchment Land Surface Model 3.3, currently covers from 1948 to 2014.The GLDAS-2.0 model simulations were initialized on simulation date January 1, 1948, using soil moisture and other state fields from the LSM climatology for that day of the year. The simulations were forced by the global meteorological forcing data set from Princeton University (Sheffield et al., 2006). Each simulation uses the common GLDAS data sets for land water mask (MOD44W: Carroll et al., 2009) and elevation (GTOPO30) along with the model default land cover and soils datasets. Catchment model uses the Mosaic land cover classification and soils, topographic, and other model-specific parameters were derived in a consistent manner as in the NASA/GMAO&#8217;s GEOS-5 climate modeling system. The MODIS based land surface parameters are used in the current GLDAS-2.0 and GLDAS-2.1 products. For more information, please see the README Document.","time_end":"2014-12-30T23:59:59.999Z","service_features":{"opendap":{"has_formats":false,"has_variables":false,"has_transforms":false,"has_combine":false,"has_spatial_subsetting":false,"has_temporal_subsetting":false},"esi":{"has_formats":false,"has_variables":false,"has_transforms":false,"has_combine":false,"has_spatial_subsetting":false,"has_temporal_subsetting":false},"harmony":{"has_formats":false,"has_variables":false,"has_transforms":false,"has_combine":false,"has_spatial_subsetting":false,"has_temporal_subsetting":false}},"orbit_parameters":{},"id":"C1273843214-EEDTEST","has_formats":false,"original_format":"UMM_JSON","archive_center":"NASA/GSFC/SED/ESD/GCDC/GESDISC","has_temporal_subsetting":false,"browse_flag":true,"platforms":["Catchment-LSM"],"association_details":{"variables":[{"concept_id":"V1273848460-EEDTEST"}],"services":[{"concept_id":"S1257851197-EEDTEST"}],"visualizations":[{"concept_id":"VIS1273843215-EEDTEST"},{"concept_id":"VIS1273843217-EEDTEST"}]},"online_access_flag":true,"links":[{"rel":"http://esipfed.org/ns/fedsearch/1.1/browse#","hreflang":"en-US","href":"https://docserver.gesdisc.eosdis.nasa.gov/public/project/Images/GLDAS_CLSM025_D_2.0.png"},{"rel":"http://esipfed.org/ns/fedsearch/1.1/data#","hreflang":"en-US","href":"https://hydro1.gesdisc.eosdis.nasa.gov/data/GLDAS/GLDAS_CLSM025_D.2.0/"},{"rel":"http://esipfed.org/ns/fedsearch/1.1/data#","hreflang":"en-US","href":"https://search.earthdata.nasa.gov/search?q=GLDAS_CLSM025_D"},{"rel":"http://esipfed.org/ns/fedsearch/1.1/browse#","hreflang":"en-US","href":"https://giovanni.gsfc.nasa.gov/giovanni/#dataKeyword=GLDAS_CLSM025_D"},{"rel":"http://esipfed.org/ns/fedsearch/1.1/service#","hreflang":"en-US","href":"https://hydro1.gesdisc.eosdis.nasa.gov/opendap/hyrax/GLDAS/GLDAS_CLSM025_D.2.0/"},{"rel":"http://esipfed.org/ns/fedsearch/1.1/metadata#","hreflang":"en-US","href":"https://hydro1.gesdisc.eosdis.nasa.gov/dods/GLDAS_CLSM025_D.2.0/"},{"rel":"http://esipfed.org/ns/fedsearch/1.1/documentation#","hreflang":"en-US","href":"https://hydro1.gesdisc.eosdis.nasa.gov/data/GLDAS/GLDAS_CLSM025_D.2.0/doc/README_GLDAS2.pdf"},{"rel":"http://esipfed.org/ns/fedsearch/1.1/metadata#","hreflang":"en-US","href":"https://ldas.gsfc.nasa.gov/gldas/"},{"rel":"http://esipfed.org/ns/fedsearch/1.1/documentation#","hreflang":"en-US","href":"https://disc.gsfc.nasa.gov/information/howto?tags=hydrology"},{"rel":"http://esipfed.org/ns/fedsearch/1.1/documentation#","hreflang":"en-US","href":"https://disc.gsfc.nasa.gov/information/documents/58dd3894cb78134045fbd29f/hydrology-documentation"}]}]}}
