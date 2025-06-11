@@ -14,11 +14,11 @@
 - [x] Update all of the batch<n>-operation.json files in [test/resources/data-operation-samples](../../../test/resources/data-operation-samples)
 - [x] Update [test/resources/data-operation-samples/multiple-collections-operation.json](../../../test/resources/data-operation-samples/multiple-collections-operation.json)
 - [x] Update [example/service-operation.json](../../../example/service-operation.json) to reference the updated schema and have any required fields
-- [ ] Update [harmony-service-lib-py](../../../../../../harmony-service-lib-py/harmony_service_lib/message.py) to parse the new schema
-- [ ] Update [harmony-service-lib-py/tests/example_messages.py](../../../../../../harmony-service-lib-py/tests/example_messages.py) to use the new schema
-- [ ] Update [harmony-service-lib-py/tests/test_message.py](../../../../../../harmony-service-lib-py/tests/test_message.py) to use the new schema version and add / alter any necessary checks
-- [ ] Update [harmony-service-lib-py/example/example_message.json](../../../../../../harmony-service-lib-py/example/example_message.json) to use the new schema
-- [ ] Update [harmony-service-example/example/harmony-operation.json](../../../../../../harmony-service-example/example/harmony-operation.json) to use the new schema
+- [x] Update [harmony-service-lib-py](../../../../../../harmony-service-lib-py/harmony_service_lib/message.py) to parse the new schema
+- [x] Update [harmony-service-lib-py/tests/example_messages.py](../../../../../../harmony-service-lib-py/tests/example_messages.py) to use the new schema
+- [x] Update [harmony-service-lib-py/tests/test_message.py](../../../../../../harmony-service-lib-py/tests/test_message.py) to use the new schema version and add / alter any necessary checks
+- [x] Update [harmony-service-lib-py/example/example_message.json](../../../../../../harmony-service-lib-py/example/example_message.json) to use the new schema
+- [x] Update [harmony-service-example/example/harmony-operation.json](../../../../../../harmony-service-example/example/harmony-operation.json) to use the new schema
 - [ ] Update [config/services-uat.yml](../../../../../config/services-uat.yml) and [config/services-prod.yml](../../../../../config/services-prod.yml) to supply the new library version for any services that will be automatically or manually upgraded with the change
 - [x] Update [docs/adapting-new-services.md](../../../../../docs/guides/adapting-new-services.md) to specify the updated version
 - [ ] Update any Harmony-owned services that need to use the new features or may be incompatible with the change

@@ -29,12 +29,12 @@ export async function setUmmVis(
       const collection = req.context.collections.find(coll => coll.id === collectionId);
       promises.push(getVisualizationsForCollection(req.context, collection, req.accessToken));
     }
-    await Promise.all(promises);
+    const visualizations = await Promise.all(promises);
 
+    let index = 0;
     for (const source of operation.sources) {
-      const collectionId = source.collection;
-      const collection = req.context.collections.find(coll => coll.id === collectionId);
-      source.visualizations = collection.visualizations?.map(vis => vis.umm);
+      source.visualizations = visualizations[index].map(vis => vis.umm);
+      index += 1;
     }
   }
 
