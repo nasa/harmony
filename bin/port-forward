@@ -15,7 +15,7 @@ function start_port_forwarding() {
 
   stop_port_forwarding "$service_name"
 
-  local max_iterations=120
+  local max_iterations=150
   local iteration=0
 
   while [ "$iteration" -lt "$max_iterations" ]; do
