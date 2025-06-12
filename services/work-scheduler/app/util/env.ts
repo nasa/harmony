@@ -15,6 +15,10 @@ class HarmonyWorkSchedulerEnv extends HarmonyEnv {
   @Min(0)
   serviceQueueBatchSizeCoefficient: number;
 
+  @IsNumber()
+  @Min(0)
+  fastServiceQueueBatchSizeCoefficient: number;
+
   @IsNotEmpty()
   workingDir: string;
 
