@@ -533,12 +533,12 @@ https://cmr.uat.earthdata.nasa.gov:
         conditional:
           exists: ['shapefileSubset', 'spatialSubset']
 
-  - name: sds/HOSS-HRS-GeoTIFF
+  - name: sds/HOSS-regridder-reformatter
     description: |
       A service chain for applying the Harmony Metadata Annotator to HOSS/Maskfill
       output, producing CF compliant annotated NetCDF4 outputs. This service chain
       is also intended to be used for producing regridded outputs using the harmony-regridder
-      and  to produce GeoTIFF outputs using net2cog.
+      and to produce GeoTIFF outputs using net2cog.
     data_operation_version: '0.22.0'
     type:
       <<: *default-turbo-config
@@ -546,7 +546,7 @@ https://cmr.uat.earthdata.nasa.gov:
         <<: *default-turbo-params
         env:
           <<: *default-turbo-env
-          STAGING_PATH: public/sds/HOSS-HRS-GeoTIFF
+          STAGING_PATH: public/sds/HOSS-regridder-reformatter
     umm_s: S1273752002-EEDTEST
     capabilities:
       subsetting:
@@ -565,6 +565,8 @@ https://cmr.uat.earthdata.nasa.gov:
         is_sequential: true
       - image: !Env ${HOSS_IMAGE}
         operations: ['variableSubset', 'spatialSubset', 'dimensionSubset', 'shapefileSubset', 'temporalSubset']
+        conditional:
+          exists: ['variableSubset', 'spatialSubset', 'dimensionSubset', 'shapefileSubset', 'temporalSubset']
       - image: !Env ${SDS_MASKFILL_IMAGE}
         operations: ['shapefileSubset', 'spatialSubset']
         conditional:
