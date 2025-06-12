@@ -84,7 +84,7 @@
     "@aws-sdk/url-parser": "^3.374.0",
     "@aws-sdk/util-format-url": "^3.433.0",
     "@harmony/util": "file:../../packages/util",
-    "@kubernetes/client-node": "^0.22.3",
+    "@kubernetes/client-node": "^1.3.0",
     "@linzjs/geojson": "^7.1.0",
     "@mapbox/geojson-rewind": "^0.5.2",
     "@tmcw/togeojson": ">=5.8.1 <6.0.0",
