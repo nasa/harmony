@@ -137,6 +137,14 @@ class HarmonyServerEnv extends HarmonyEnv {
   @Min(1)
   cmrCacheTtl: number;
 
+  @IsInt()
+  @Min(1)
+  jobStatusCacheSize: number;
+
+  @IsInt()
+  @Min(1)
+  jobStatusCacheTtl: number;
+
   @IsPositive()
   wktPrecision: number;
 

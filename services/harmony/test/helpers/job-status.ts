@@ -1,9 +1,28 @@
 import { expect } from 'chai';
 import { it } from 'mocha';
+import sinon from 'sinon';
 
 import { Job } from '../../app/models/job';
 import env from '../../app/util/env';
+import { jobStatusCache } from '../../app/util/job';
 import { hookUrl } from './hooks';
+
+/**
+ * Hooks the job status cache for tests to not use the cache
+ */
+export function hookJobStatusCache(): void {
+  let jobStatusCacheStub;
+  before(() => {
+    jobStatusCacheStub = sinon.stub(jobStatusCache, 'get').returns(undefined);
+  });
+
+  after(function () {
+    if (jobStatusCacheStub.restore) {
+      jobStatusCacheStub.restore();
+    }
+  });
+}
+
 
 /**
  * Provides a parameterized `describe` blocks that tests expected format of data links.
