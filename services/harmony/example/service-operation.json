@@ -1,6 +1,6 @@
 {
-  "$schema": "../app/schemas/data-operation/0.21.0/data-operation-v0.21.0.json",
-  "version": "0.21.0",
+  "$schema": "../app/schemas/data-operation/0.22.0/data-operation-v0.22.0.json",
+  "version": "0.22.0",
   "callback": "http://localhost/some-path",
   "stagingLocation": "s3://example-bucket/public/some-org/some-service/some-uuid/",
   "user": "jdoe",
@@ -23,7 +23,27 @@
             }
           ],
           "type": "SCIENCE_VARIABLE",
-          "subtype": "SCIENCE_ARRAY"
+          "subtype": "SCIENCE_ARRAY",
+          "visualizations": [
+            {
+              "Name": "Test123",
+              "Identifier": "Test123 ID",
+              "VisualizationType": "tiles",
+              "Specification": {},
+              "Generation": {},
+              "MetadataSpecification": {
+                "URL": "https: //cdn.earthdata.nasa.gov/umm/visualization/v1.1.0",
+                "Name": "Visualization",
+                "Version": "1.1.0"
+              },
+              "ConceptIds": [
+                {
+                  "Type": "STD",
+                  "Value": "C1233800302-EEDTEST"
+                }
+              ]
+            }
+          ]
         }],
         "coordinateVariables": [{
           "id": "V1233801718-EEDTEST",
@@ -33,6 +53,80 @@
           "subtype": "LATITUDE"
         }
       ],
+      "visualizations": [{
+        "ConceptIds": [
+          {
+            "Type": "STD",
+            "Value": "C1000000002-EARTHDATA",
+            "DataCenter": "NASA_EO",
+            "ShortName": "BlueMarble_ShadedRelief_Bathymetry",
+            "Title": "Blue Marble: Next Generation with Shaded Relief and Bathymetry",
+            "Version": "2.0"
+          }
+        ],
+        "SpatialExtent": {
+          "GranuleSpatialRepresentation": "GEODETIC",
+          "HorizontalSpatialDomain": {
+            "Geometry": {
+              "CoordinateSystem": "GEODETIC",
+              "BoundingRectangles": [
+                {
+                  "WestBoundingCoordinate": -180,
+                  "NorthBoundingCoordinate": 90,
+                  "EastBoundingCoordinate": 180,
+                  "SouthBoundingCoordinate": -90
+                }
+              ]
+            }
+          }
+        },
+        "VisualizationType": "maps",
+        "Title": "Blue Marble: Next Generation with Shaded Relief and Bathymetry",
+        "ScienceKeywords": [
+          {
+            "Category": "EARTH SCIENCE",
+            "Topic": "SPECTRAL/ENGINEERING",
+            "Term": "VISIBLE WAVELENGTHS",
+            "VariableLevel1": "REFLECTANCE"
+          },
+          {
+            "Category": "EARTH SCIENCE",
+            "Topic": "SOLID EARTH",
+            "Term": "TOPOGRAPHY",
+            "VariableLevel1": "TERRAIN ELEVATION"
+          },
+          {
+            "Category": "EARTH SCIENCE",
+            "Topic": "OCEANS",
+            "Term": "BATHYMETRY/SEAFLOOR TOPOGRAPHY",
+            "VariableLevel1": "BATHYMETRY"
+          }
+        ],
+        "TemporalExtents": [
+          {
+            "SingleDateTimes": [
+              "2004-01-01T00:00:00Z"
+            ]
+          }
+        ],
+        "Specification": {
+          "SpecificationMap1": "Blue Marble Next Generation base layer",
+          "SpecificationMap2": "Combined with shaded relief and bathymetry data"
+        },
+        "Generation": {
+          "GenerationMap1": "Created from MODIS Terra imagery",
+          "GenerationMap2": "Enhanced with ETOPO1 elevation and bathymetry data"
+        },
+        "Description": "The Blue Marble Next Generation is a natural color global imagery product derived from the MODIS instrument on NASA's Terra satellite. This version adds shaded relief and bathymetry for enhanced visual appeal.",
+        "Subtitle": "NASA Earth Observatory",
+        "Name": "BlueMarble_ShadedRelief_Bathymetry",
+        "Identifier": "BlueMarble_ShadedRelief_Bathymetry",
+        "MetadataSpecification": {
+          "URL": "https://cdn.earthdata.nasa.gov/umm/visualization/v1.1.0",
+          "Name": "Visualization",
+          "Version": "1.1.0"
+        }
+      }],
       "granules": [
         {
           "id": "G1233800343-EEDTEST",

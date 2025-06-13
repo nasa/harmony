@@ -1,11 +1,13 @@
-import DataOperation from '../../app/models/data-operation';
 import * as fs from 'fs';
 import * as path from 'path';
 import { v4 as uuid } from 'uuid';
 
+import DataOperation from '../../app/models/data-operation';
+
 export const samplesDir = './test/resources/data-operation-samples';
 
 export const versions = [
+  '0.22.0',
   '0.21.0',
   '0.20.0',
   '0.19.0',

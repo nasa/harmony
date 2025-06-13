@@ -30,10 +30,16 @@ export interface LineType {
 }
 
 export interface UmmSpatial {
+  CoordinateSystem?: string;
   Points?: PointType[];
   BoundingRectangles?: BoundingRectangleType[];
   GPolygons?: GPolygonType[];
   Lines?: LineType[];
+}
+
+export interface VerticalSpatialDomainType {
+  Type: 'Atmosphere Layer' | 'Maximum Altitude' | 'Maximum Depth' | 'Minimum Altitude' | 'Minimum Depth';
+  Value: string;
 }
 
 /**

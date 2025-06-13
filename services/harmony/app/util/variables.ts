@@ -1,13 +1,16 @@
 import { NextFunction, Response } from 'express';
+
 import HarmonyRequest from '../models/harmony-request';
-import { CmrCollection, CmrUmmVariable } from './cmr';
+import { CmrCollection, CmrUmmVariable, getVisualizationsForVariable } from './cmr';
 import { RequestValidationError } from './errors';
 import { parseMultiValueParameter } from './parameter-parsing-helpers';
+import { CmrUmmVisualization } from './umm-vis';
 
 export interface HarmonyVariable {
   id: string;
   name: string;
   fullPath: string;
+  visualizations?: object[];
   relatedUrls?: HarmonyRelatedUrl[];
   type?: string;
   subtype?: string;
@@ -29,6 +32,8 @@ interface VariableInfo {
   versionId: string; // collection version_id
   variables?: CmrUmmVariable[];
   coordinateVariables?: CmrUmmVariable[];
+  // this needs to be preserved so we can add it to the Source later
+  collectionVisualizations?: CmrUmmVisualization[];
 }
 
 /**
@@ -203,8 +208,7 @@ export function parseVariables(
  * collectionId parameter return the full variables which match.
  *
  * @param eosdisCollections - An array of collections
- * @param collectionIdParam - The OGC collectionId query parameter
- * @param queryVars - A string of comma separated variable names or an array of variable names
+ * @param variableIds - A string of comma separated variable names or an array of variable names
  * - taken from the request object via the `variable` parameter
  * @param shouldValidateUmmVar - True if we should verify the variables exist in the CMR
  * @returns an array of objects with a collectionId and list
@@ -229,6 +233,7 @@ export function getVariableInfo(
         variableInfo.push({
           collectionId: collection.id, shortName: collection.short_name,
           versionId: collection.version_id, coordinateVariables,
+          collectionVisualizations: collection.visualizations,
         });
       }
     } else {
@@ -255,6 +260,7 @@ export function getVariableInfo(
         variableInfo.push({
           collectionId: collection.id, shortName: collection.short_name,
           versionId: collection.version_id, variables, coordinateVariables,
+          collectionVisualizations: collection.visualizations,
         });
       }
       if (missingVariables.size > 0) {
@@ -311,15 +317,15 @@ export function getVariablesForCollection(
 }
 
 /**
- * Middleware to match the requested variables with CMR UMM-Var records to get
+ * Middleware to match the requested variables with CMR UMM-Var records that were retrieved to get
  * the required variable information
  * @param req - The client request, containing an operation
  * @param res - The client response
  * @param next - The next function in the middleware chain
  */
-export function validateAndSetVariables(
+export async function validateAndSetVariables(
   req: HarmonyRequest, _res: Response, next: NextFunction,
-): void {
+): Promise<void> {
   const { operation, context } = req;
   if (!operation?.sources) {
     return next();
@@ -332,9 +338,21 @@ export function validateAndSetVariables(
       context.serviceConfig.validate_variables !== false,
     );
 
+
     for (const varInfo of varInfos) {
+      // add in visualizations for the variables
+      const promises = [];
+      if (varInfo.variables) {
+        for (const variable of varInfo.variables) {
+          promises.push(getVisualizationsForVariable(context, variable, req.accessToken));
+        }
+      }
+      const variableVisualizations = await Promise.all(promises);
+
       operation.addSource(varInfo.collectionId, varInfo.shortName, varInfo.versionId,
-        varInfo.variables, varInfo.coordinateVariables);
+        varInfo.variables, varInfo.coordinateVariables, varInfo.collectionVisualizations,
+        variableVisualizations,
+      );
     }
   } catch (e) {
     return next(e);

@@ -1,12 +1,17 @@
 import { NextFunction } from 'express';
-import { harmonyCollections } from '../models/services';
-import { getVariablesForCollection, CmrCollection, getCollectionsByIds, getCollectionsByShortName, cmrApiConfig } from '../util/cmr';
-import { ForbiddenError, NotFoundError, ServerError } from '../util/errors';
-import HarmonyRequest from '../models/harmony-request';
+
 import { listToText } from '@harmony/util/string';
-import { EdlUserEulaInfo, verifyUserEula } from '../util/edl-api';
+
+import HarmonyRequest from '../models/harmony-request';
 import RequestContext from '../models/request-context';
+import { harmonyCollections } from '../models/services';
+import {
+  cmrApiConfig, CmrCollection, getCollectionsByIds, getCollectionsByShortName,
+  getVariablesForCollection,
+} from '../util/cmr';
+import { EdlUserEulaInfo, verifyUserEula } from '../util/edl-api';
 import env from '../util/env';
+import { ForbiddenError, NotFoundError, ServerError } from '../util/errors';
 
 // CMR Collection IDs separated by delimiters of single "+" or single whitespace
 // (some clients may translate + to space)
@@ -28,8 +33,7 @@ const EDR_COLLECTION_ROUTE_REGEX = /^\/ogc-api-edr\/.*\/collections\/(.*)\//;
  * @returns Resolves when the loading completes
  */
 async function loadVariablesForCollection(context: RequestContext, collection: CmrCollection, token: string): Promise<void> {
-  const c = collection; // We are mutating collection
-  c.variables = await getVariablesForCollection(context, collection, token);
+  collection.variables = await getVariablesForCollection(context, collection, token);
 }
 
 /**
@@ -71,7 +75,8 @@ async function verifyEulaAcceptance(collections: CmrCollection[], req: HarmonyRe
  *
  *   req.context.collectionIds: An array of the resolved collection IDs
  *   req.context.collections: An array of the CMR (JSON) collections, each with a "variables" attribute
- *      containing the Collection's UMM-Var variables
+ *      containing the Collection's UMM-Var variables and a "visualizations" attribute
+ *      containing UMM-Vis visualizations associated with the collection
  *
  * After resolving the above, req.url will be altered to remove the collections as follows:
  *

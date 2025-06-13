@@ -1,0 +1,32 @@
+POST /search/variables.umm_json_v1_8_1
+accept: application/json
+content-type: multipart/form-data; boundary=----------------------------012345678901234567890123
+accept-encoding: gzip,deflate
+body: ------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"concept_id\"\r\n\r\nV1273848460-EEDTEST\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"page_size\"\r\n\r\n2000\r\n------------------------------012345678901234567890123--\r\n
+
+HTTP/1.1 200 OK
+content-type: application/vnd.nasa.cmr.umm_results+json;version=1.8.1; charset=utf-8
+transfer-encoding: chunked
+connection: keep-alive
+date: Wed, 11 Jun 2025 19:58:11 GMT
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: 55aa782f-d772-45fb-a8ce-12dcd55b8d68
+content-sha1: 031a8ef13e1a49fad99329673a947223a17166ef
+strict-transport-security: max-age=31536000; includeSubDomains; preload
+cmr-search-after: ["blue_var","EEDTEST","blue_var","EEDTEST"]
+cmr-hits: 1
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Search-After, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 20
+x-request-id: 55aa782f-d772-45fb-a8ce-12dcd55b8d68
+content-md5: 5b90eaa5e5a66ed8e10ec1becb027107
+vary: Accept-Encoding
+server: ServerTokens ProductOnly
+x-cache: Miss from cloudfront
+via: 1.1 ca38026a6de2ccb3904aed4709dff3d0.cloudfront.net (CloudFront)
+x-amz-cf-pop: SFO53-C1
+x-amz-cf-id: S3YZYfJq0owsQhRzPEID6XG4yvS7k0HqiD9MmlUaQmAafkzkePhYyg==
+
+{"hits":1,"took":20,"items":[{"meta":{"revision-id":1,"deleted":false,"format":"application/vnd.nasa.cmr.umm+json","provider-id":"EEDTEST","user-id":"ECHO_SYS","associations":{"collections":["C1273843214-EEDTEST"],"visualizations":["VIS1273843216-EEDTEST","VIS1273843217-EEDTEST"]},"native-id":"harmony_umm_vis_test_1","association-details":{"collections":[{"concept-id":"C1273843214-EEDTEST"}],"visualizations":[{"concept-id":"VIS1273843216-EEDTEST"},{"concept-id":"VIS1273843217-EEDTEST"}]},"concept-id":"V1273848460-EEDTEST","revision-date":"2025-06-10T20:41:23.456Z","concept-type":"variable"},"umm":{"VariableType":"SCIENCE_VARIABLE","DataType":"byte","VariableSubType":"OTHER","Offset":0.0,"Scale":1.0,"Sets":[{"Name":"Data Fields","Type":"General","Size":4.0,"Index":3.0}],"Dimensions":[{"Name":"Latitude","Size":1800.0,"Type":"LATITUDE_DIMENSION"},{"Name":"Longitude","Size":3600.0,"Type":"LONGITUDE_DIMENSION"}],"Definition":"Blue channel value","Name":"blue_var","ValidRanges":[{"Min":0.0,"Max":255.0}],"MetadataSpecification":{"URL":"https://cdn.earthdata.nasa.gov/umm/variable/v1.8.1","Name":"UMM-Var","Version":"1.8.1"},"LongName":"Blue channel"},"associations":{"collections":[{"concept-id":"C1273843214-EEDTEST"}],"visualizations":[{"concept-id":"VIS1273843216-EEDTEST"},{"concept-id":"VIS1273843217-EEDTEST"}]}}]}

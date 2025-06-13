@@ -1,0 +1,32 @@
+POST /search/granules.json
+accept: application/json
+content-type: multipart/form-data; boundary=----------------------------012345678901234567890123
+accept-encoding: gzip,deflate
+body: ------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"page_size\"\r\n\r\n100\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"collection_concept_id\"\r\n\r\nC1273843214-EEDTEST\r\n------------------------------012345678901234567890123--\r\n
+
+HTTP/1.1 200 OK
+content-type: application/json;charset=utf-8
+transfer-encoding: chunked
+connection: keep-alive
+date: Wed, 11 Jun 2025 19:58:13 GMT
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: 982552f0-b308-4f11-9c87-b6429aa85e27
+content-sha1: 5b12440481424b723f5a296c854f89bc55c32385
+strict-transport-security: max-age=31536000; includeSubDomains; preload
+cmr-search-after: ["eedtest",1388584800000,1273848439]
+cmr-hits: 1
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Search-After, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 24
+x-request-id: 982552f0-b308-4f11-9c87-b6429aa85e27
+content-md5: 1d903c0ee7f81af263d3feedd87d28c2
+vary: Accept-Encoding
+server: ServerTokens ProductOnly
+x-cache: Miss from cloudfront
+via: 1.1 bd414f5f75d6893558dff609c5ff1fe6.cloudfront.net (CloudFront)
+x-amz-cf-pop: SFO53-C1
+x-amz-cf-id: OMo8Khta56OBKcENrcd5nap1yXXeXyeolrw_R2JdXMtoMC7wT2S7Pg==
+
+{"feed":{"updated":"2025-06-11T19:58:13.902Z","id":"https://cmr.uat.earthdata.nasa.gov:443/search/granules.json","title":"ECHO granule metadata","entry":[{"producer_granule_id":"001_07_7f00ff_north_america","boxes":["18.91619 -171.7911106 71.3577636 -66.96466"],"time_start":"2014-01-01T14:00:00.000Z","updated":"2014-02-25T21:43:11.000Z","dataset_id":"Harmony_umm_vis_Test","data_center":"EEDTEST","title":"umm_vis_001_07_7f00ff_north_america","coordinate_system":"CARTESIAN","day_night_flag":"BOTH","time_end":"2014-01-01T15:59:59.000Z","id":"G1273848439-EEDTEST","original_format":"UMM_JSON","granule_size":"0.4505453109741211","browse_flag":false,"collection_concept_id":"C1273843214-EEDTEST","online_access_flag":true,"links":[{"rel":"http://esipfed.org/ns/fedsearch/1.1/data#","type":"application/x-netcdf","hreflang":"en-US","href":"https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-eedtest-data/C1233800302-EEDTEST/nc/001_07_7f00ff_north_america.nc"},{"rel":"http://esipfed.org/ns/fedsearch/1.1/data#","type":"image/tiff","hreflang":"en-US","href":"https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-eedtest-data/C1233800302-EEDTEST/tiff/001_07_7f00ff_north_america.tif"},{"inherited":true,"rel":"http://esipfed.org/ns/fedsearch/1.1/data#","hreflang":"en-US","href":"https://hydro1.gesdisc.eosdis.nasa.gov/data/GLDAS/GLDAS_CLSM025_D.2.0/"},{"inherited":true,"rel":"http://esipfed.org/ns/fedsearch/1.1/data#","hreflang":"en-US","href":"https://search.earthdata.nasa.gov/search?q=GLDAS_CLSM025_D"},{"inherited":true,"rel":"http://esipfed.org/ns/fedsearch/1.1/service#","hreflang":"en-US","href":"https://hydro1.gesdisc.eosdis.nasa.gov/opendap/hyrax/GLDAS/GLDAS_CLSM025_D.2.0/"},{"inherited":true,"rel":"http://esipfed.org/ns/fedsearch/1.1/metadata#","hreflang":"en-US","href":"https://hydro1.gesdisc.eosdis.nasa.gov/dods/GLDAS_CLSM025_D.2.0/"},{"inherited":true,"rel":"http://esipfed.org/ns/fedsearch/1.1/documentation#","hreflang":"en-US","href":"https://hydro1.gesdisc.eosdis.nasa.gov/data/GLDAS/GLDAS_CLSM025_D.2.0/doc/README_GLDAS2.pdf"},{"inherited":true,"rel":"http://esipfed.org/ns/fedsearch/1.1/metadata#","hreflang":"en-US","href":"https://ldas.gsfc.nasa.gov/gldas/"},{"inherited":true,"rel":"http://esipfed.org/ns/fedsearch/1.1/documentation#","hreflang":"en-US","href":"https://disc.gsfc.nasa.gov/information/howto?tags=hydrology"},{"inherited":true,"rel":"http://esipfed.org/ns/fedsearch/1.1/documentation#","hreflang":"en-US","href":"https://disc.gsfc.nasa.gov/information/documents/58dd3894cb78134045fbd29f/hydrology-documentation"}]}]}}

@@ -28,6 +28,7 @@ export async function getWork(
   const { serviceID, podName } = req.query;
   reqLogger.silly(`Getting work for service ${serviceID} and pod ${podName}`);
 
+
   let responded = false;
   let workItemData: WorkItemData | null;
 

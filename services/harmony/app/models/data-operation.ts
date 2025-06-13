@@ -7,10 +7,11 @@ import * as path from 'path';
 import { CmrUmmCollection, CmrUmmVariable } from '../util/cmr';
 import { Decrypter, Encrypter } from '../util/crypto';
 import logger from '../util/log';
+import { CmrUmmVisualization } from '../util/umm-vis';
 import { isValidUri } from '../util/url';
 import { cmrVarToHarmonyVar, HarmonyVariable } from '../util/variables';
 
-export const CURRENT_SCHEMA_VERSION = '0.21.0';
+export const CURRENT_SCHEMA_VERSION = '0.22.0';
 
 /**
  * Synchronously reads and parses the JSON Schema at the given path
@@ -42,6 +43,20 @@ let _schemaVersions: SchemaVersion[];
 function schemaVersions(): SchemaVersion[] {
   if (_schemaVersions) return _schemaVersions;
   _schemaVersions = [
+    {
+      version: '0.22.0',
+      schema: readSchema('0.22.0'),
+      down: (model): unknown => {
+        const revertedModel = _.cloneDeep(model);
+        revertedModel.sources?.forEach((s) => {
+          delete s.visualizations;
+          s.variables?.forEach((v) => {
+            delete v.visualizations;
+          });
+        });
+        return revertedModel;
+      },
+    },
     {
       version: '0.21.0',
       schema: readSchema('0.21.0'),
@@ -279,6 +294,7 @@ export interface DataSource {
   versionId: string;
   coordinateVariables: HarmonyVariable[];
   variables: HarmonyVariable[];
+  visualizations: object[];
   granules: HarmonyGranule[];
 }
 
@@ -465,6 +481,10 @@ export default class DataOperation {
    * @param vars - An array of objects containing variable id and name
    * @param cmrCoordinateVariables - An array of CMR UMM variables that are
    * coordinate variables.
+   * @param collectionVisualizations - An array of CMR UMM visualizations that are associated with the collection
+   * @param variableVisualizations - An array of arrays of CMR UMM visualizations that are associated with the
+   * variables. There should be a one-to-one correspondence between variables in the `vars` parameter
+   * and the visualizations in this list at the corresponding position
    */
   addSource(
     collection: string,
@@ -472,10 +492,18 @@ export default class DataOperation {
     versionId: string,
     vars: CmrUmmVariable[] = undefined,
     cmrCoordinateVariables: CmrUmmVariable[] = undefined,
+    collectionVisualizations: CmrUmmVisualization[] = undefined,
+    variableVisualizations: CmrUmmVisualization[][] = undefined,
   ): void {
     const variables = vars?.map(cmrVarToHarmonyVar);
+    if (variables && variableVisualizations && variables.length == variableVisualizations.length) {
+      for (let index = 0; index < variables.length; index++) {
+        variables[index].visualizations = variableVisualizations[index]?.map(visual => visual.umm);
+      }
+    }
     const coordinateVariables = cmrCoordinateVariables?.map(cmrVarToHarmonyVar);
-    this.model.sources.push({ collection, shortName, versionId, variables, coordinateVariables });
+    const visualizations = collectionVisualizations?.map(visual => visual.umm);
+    this.model.sources.push({ collection, shortName, versionId, variables, coordinateVariables, visualizations });
   }
 
   /**

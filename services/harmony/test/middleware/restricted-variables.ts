@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+
 import { hookRangesetRequest } from '../helpers/ogc-api-coverages';
 import hookServersStartStop from '../helpers/servers';
 import { hookServices } from '../helpers/stub-service';
@@ -12,7 +13,7 @@ describe('testing variables configured directly in services.yml', function () {
   const serviceConfigs = [
     {
       name: 'test-variables',
-      data_operation_version: '0.21.0',
+      data_operation_version: '0.22.0',
       type: {
         name: 'turbo',
       },
