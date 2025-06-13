@@ -1,4 +1,4 @@
-import { canTransition, JobEvent, JobStatus, JobForDisplay } from '../models/job';
+import { canTransition, JobEvent, JobForDisplay, JobStatus } from '../models/job';
 import JobLink from '../models/job-link';
 import env from './env';
 

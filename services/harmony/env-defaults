@@ -157,6 +157,12 @@ PROVIDER_CACHE_SIZE=5000000
 # Provider Cache TTL in milliseconds, 1 hour
 PROVIDER_CACHE_TTL=3600000
 
+# Maximum size (in bytes) of the job status cache, 50MB
+JOB_STATUS_CACHE_SIZE=50000000
+
+# Job status cache TTL in milliseconds, 5 seconds
+JOB_STATUS_CACHE_TTL=5000
+
 #############################################################################
 #                        OAuth 2 (Earthdata Login)                          #
 #                                                                           #

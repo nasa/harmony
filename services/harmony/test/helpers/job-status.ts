@@ -1,9 +1,44 @@
 import { expect } from 'chai';
 import { it } from 'mocha';
+import sinon from 'sinon';
 
-import { Job } from '../../app/models/job';
+import { EXPIRATION_DAYS, Job } from '../../app/models/job';
 import env from '../../app/util/env';
+import { jobStatusCache } from '../../app/util/job';
 import { hookUrl } from './hooks';
+
+/**
+ * Hooks the job status cache for tests to not use the cache
+ */
+export function hookJobStatusCache(): void {
+  let jobStatusCacheStub;
+  before(() => {
+    jobStatusCacheStub = sinon.stub(jobStatusCache, 'get').returns(undefined);
+  });
+
+  after(function () {
+    if (jobStatusCacheStub.restore) {
+      jobStatusCacheStub.restore();
+    }
+  });
+}
+
+const timeStampRegex = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z/;
+
+/**
+ * Defines test for presence of dataExpiration field
+ */
+export function itIncludesADataExpirationField(): void {
+  it('provides the date when the data will expire', function () {
+    const job = JSON.parse(this.res.text);
+    expect(job.dataExpiration).to.match(timeStampRegex);
+    const expiration = new Date(job.dataExpiration);
+    const expectedExpiration = new Date(job.createdAt);
+    expectedExpiration.setUTCDate(expectedExpiration.getUTCDate() + EXPIRATION_DAYS);
+    expect(expiration).eql(expectedExpiration);
+  });
+}
+
 
 /**
  * Provides a parameterized `describe` blocks that tests expected format of data links.

@@ -5,7 +5,7 @@ import request from 'supertest';
 import { v4 as uuid } from 'uuid';
 
 import { formatDataSize, sizeChangeMessage } from '../../app/frontends/jobs';
-import { EXPIRATION_DAYS, Job, JobStatus } from '../../app/models/job';
+import { Job, JobStatus } from '../../app/models/job';
 import JobMessage, { JobMessageLevel } from '../../app/models/job-message';
 import { setLabelsForJob } from '../../app/models/label';
 import { WorkItemStatus } from '../../app/models/work-item-interface';
@@ -13,7 +13,7 @@ import env from '../../app/util/env';
 import { hookDatabaseFailure, hookTransaction } from '../helpers/db';
 import { hookRedirect, hookUrl } from '../helpers/hooks';
 import {
-  itProvidesAWorkingHttpUrl, itReturnsUnchangedDataLinksForZarr,
+  itIncludesADataExpirationField, itProvidesAWorkingHttpUrl, itReturnsUnchangedDataLinksForZarr,
 } from '../helpers/job-status';
 import {
   buildJob, hookAdminJobStatus, hookJobStatus, itIncludesRequestUrl, jobsEqual, jobStatus,
@@ -38,8 +38,6 @@ const warningMessage = new JobMessage({
 const warningJob = buildJob({ username: 'joe', status: JobStatus.SUCCESSFUL, message: 'Service could not get data', messages: [warningMessage] });
 const successfulJob = buildJob({ username: 'joe', status: JobStatus.SUCCESSFUL, message: 'Success' });
 
-const timeStampRegex = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z/;
-
 /**
  * Returns true if the given job has a link to a STAC catalog
  * @param job - a serialized job
@@ -57,20 +55,6 @@ function hasSTACLink(job: Record<string, object>): boolean {
     }
   }
   return result;
-}
-
-/**
- * Defines test for presence of dataExpiration field
- */
-function itIncludesADataExpirationField(): void {
-  it('provides the date when the data will expire', function () {
-    const job = JSON.parse(this.res.text);
-    expect(job.dataExpiration).to.match(timeStampRegex);
-    const expiration = new Date(job.dataExpiration);
-    const expectedExpiration = new Date(job.createdAt);
-    expectedExpiration.setUTCDate(expectedExpiration.getUTCDate() + EXPIRATION_DAYS);
-    expect(expiration).eql(expectedExpiration);
-  });
 }
 
 describe('Individual job status route', function () {
