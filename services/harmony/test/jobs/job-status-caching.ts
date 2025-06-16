@@ -58,6 +58,10 @@ describe('jobStatusCaching', function () {
         expect(this.res.statusCode).to.equal(200);
       });
 
+      it('returns application/json as the content type', function () {
+        expect(this.res.get('Content-Type')).to.equal('application/json; charset=utf-8');
+      });
+
       it('includes a "self" relation on the returned job', function () {
         const job = new Job(JSON.parse(this.res.text));
         const selves = job.getRelatedLinks('self');
@@ -112,6 +116,11 @@ describe('jobStatusCaching', function () {
         // due to the way we set pagination links
         expect(selves[0].title).to.equal('The current page');
       });
+
+      it('returns application/json as the content type', function () {
+        expect(this.res.get('Content-Type')).to.equal('application/json; charset=utf-8');
+      });
+
     });
   });
 });
