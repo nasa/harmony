@@ -797,8 +797,6 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${TRAJECTORY_SUBSETTER_IMAGE}
         operations: ['variableSubset', 'spatialSubset', 'shapefileSubset']
       - image: !Env ${HARMONY_SMAP_L2_GRIDDER_IMAGE}
-        conditional:
-          format: ['image/tiff']
       - image: !Env ${NET2COG_IMAGE}
         conditional:
           format: ['image/tiff']
