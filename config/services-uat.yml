@@ -780,7 +780,7 @@ https://cmr.uat.earthdata.nasa.gov:
         <<: *default-turbo-params
         env:
           <<: *default-turbo-env
-          STAGING_PATH: public/sds/trajectory-subsetter
+          STAGING_PATH: public/sds/smap-l2-subsetter-net2cog
     umm_s: S1273345267-EEDTEST
     capabilities:
       subsetting:
