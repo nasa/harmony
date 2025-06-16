@@ -724,6 +724,7 @@ async function _getAllVariables(
 export async function _getAllVisualizations(
   context: RequestContext, query: CmrQuery, token: string,
 ): Promise<Array<CmrUmmVisualization>> {
+  logger.debug('Calling CMR to fetch visualizations');
   const visualizaitonsResponse = await _cmrPost(context, '/search/visualizations.umm_json_v1_1_0', query, token) as CmrUmmVisResponse;
   const { hits } = visualizaitonsResponse.data;
   let visualizations = visualizaitonsResponse.data.items;
