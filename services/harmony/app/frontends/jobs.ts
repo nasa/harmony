@@ -140,7 +140,7 @@ export async function getJobStatus(
       // We only cache it so that it can be retrieved quickly from the first redirect
       // when creating the request.
       jobStatusCache.delete(jobID);
-      res.send(cachedStatus);
+      res.send(JSON.parse(cachedStatus));
       return;
     }
     const { page, limit } = getPagingParams(req, env.defaultResultPageSize);
