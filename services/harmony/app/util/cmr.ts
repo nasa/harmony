@@ -721,7 +721,7 @@ async function _getAllVariables(
  * @param token - Access token for user request
  * @returns The visualization search results
  */
-export async function getAllVisualizations(
+export async function _getAllVisualizations(
   context: RequestContext, query: CmrQuery, token: string,
 ): Promise<Array<CmrUmmVisualization>> {
   const visualizaitonsResponse = await _cmrPost(context, '/search/visualizations.umm_json_v1_1_0', query, token) as CmrUmmVisResponse;
@@ -871,9 +871,10 @@ export function hashCmrQuery(type: string, query: CmrQuery, token: string): stri
 export enum cmrQueryType {
   COLL_JSON = 'coll_json',
   COLL_UMM = 'coll_umm',
-  VARIABLE = 'variable',
-  SERVICE = 'service',
   GRID = 'grid',
+  SERVICE = 'service',
+  VARIABLE = 'variable',
+  VISUALIZATION = 'visualization',
 }
 
 /**
@@ -891,18 +892,22 @@ async function fetchCmrConcepts(
   { context: fetchContext })
   : Promise<CmrResults> {
   const { type, context, query, token } = fetchContext;
-  if (type === cmrQueryType.COLL_JSON) {
-    return _queryCollections(context, query, token);
-  } else if (type === cmrQueryType.COLL_UMM) {
-    return _queryUmmCollections(context, query, token);
-  } else if (type === cmrQueryType.VARIABLE) {
-    return _getAllVariables(context, query, token);
-  } else if (type === cmrQueryType.SERVICE) {
-    return _getAllServices(context, query, token);
-  } else if (type === cmrQueryType.GRID) {
-    return _queryGrids(context, query, token);
-  } else {
-    throw new Error(`Invalid CMR query type: ${type}`);
+
+  switch (type) {
+    case cmrQueryType.COLL_JSON:
+      return _queryCollections(context, query, token);
+    case cmrQueryType.COLL_UMM:
+      return _queryUmmCollections(context, query, token);
+    case cmrQueryType.VARIABLE:
+      return _getAllVariables(context, query, token);
+    case cmrQueryType.SERVICE:
+      return _getAllServices(context, query, token);
+    case cmrQueryType.GRID:
+      return _queryGrids(context, query, token);
+    case cmrQueryType.VISUALIZATION:
+      return _getAllVisualizations(context, query, token);
+    default:
+      throw new Error(`Invalid CMR query type: ${type}`);
   }
 }
 
@@ -926,7 +931,7 @@ export const cmrCache = new LRUCache<string, CmrResults>({
 });
 
 /**
- * Retrieve all varaibles with the given query from CMR cache.
+ * Retrieve all variables with the given query from CMR cache.
  * Perform the search if cache miss.
  *
  * @param context - Information related to the user's request
@@ -941,6 +946,24 @@ export async function getAllVariables(
   const key = hashCmrQuery(type, query, token);
   const result = await cmrCache.fetch(key, { context: { type, context, query, token } });
   return result as Array<CmrUmmVariable>;
+}
+
+/**
+ * Retrieve all visualizations with the given query from CMR cache.
+ * Perform the search if cache miss.
+ *
+ * @param context - Information related to the user's request
+ * @param query - The key/value pairs to search
+ * @param token - Access token for user request
+ * @returns The visualizations search results
+ */
+export async function getAllVisualizations(
+  context: RequestContext, query: CmrQuery, token: string,
+): Promise<Array<CmrUmmVisualization>> {
+  const type = cmrQueryType.VISUALIZATION;
+  const key = hashCmrQuery(type, query, token);
+  const result = await cmrCache.fetch(key, { context: { type, context, query, token } });
+  return result as Array<CmrUmmVisualization>;
 }
 
 /**
