@@ -271,6 +271,9 @@ UI_LABELING=true
 # their request using the serviceId query parameter
 ALLOW_SERVICE_SELECTION=true
 
+# Whether to use clustering to fork one harmony process per available CPU
+USE_CLUSTERING=false
+
 ###########################################################################
 #                             Prometheus Config                           #
 #                                                                         #

@@ -1,27 +1,31 @@
-import express, { Response, NextFunction, RequestHandler } from 'express';
-import mustacheExpress from 'mustache-express';
-import { v4 as uuid } from 'uuid';
+import cluster from 'cluster';
+import express, { NextFunction, RequestHandler, Response } from 'express';
 import expressWinston from 'express-winston';
-import * as path from 'path';
-import favicon from 'serve-favicon';
-import { promisify } from 'util';
+import * as fs from 'fs';
 import * as http from 'http';
 import * as https from 'https';
+import mustacheExpress from 'mustache-express';
+import os from 'os';
+import * as path from 'path';
+import qs from 'qs';
+import favicon from 'serve-favicon';
+import { promisify } from 'util';
+import { v4 as uuid } from 'uuid';
 import { Logger } from 'winston';
+
 import { profanity } from '@2toad/profanity';
-import env from './util/env';
-import errorHandler from './middleware/error-handler';
-import logForRoutes from './middleware/log-for-routes';
-import router, { RouterConfig } from './routers/router';
-import RequestContext from './models/request-context';
-import HarmonyRequest from './models/harmony-request';
-import serviceResponseRouter from './routers/backend-router';
-import { handleOpenApiErrors } from './util/errors';
-import logger from './util/log';
+
 import * as exampleBackend from '../example/http-backend';
 import cmrCollectionReader from './middleware/cmr-collection-reader';
-import * as fs from 'fs';
-import qs from 'qs';
+import errorHandler from './middleware/error-handler';
+import logForRoutes from './middleware/log-for-routes';
+import HarmonyRequest from './models/harmony-request';
+import RequestContext from './models/request-context';
+import serviceResponseRouter from './routers/backend-router';
+import router, { RouterConfig } from './routers/router';
+import env from './util/env';
+import { handleOpenApiErrors } from './util/errors';
+import logger from './util/log';
 
 /**
  * Mutate specific properties of the expressWinston request object
@@ -256,5 +260,28 @@ export async function stop({
 }
 
 if (require.main === module) {
-  start(process.env);
+  if (require.main === module) {
+    if (process.env.USE_CLUSTERING === 'true') {
+      if (cluster.isPrimary) {
+        const numCPUs = os.cpus().length;
+
+        console.log(`Primary process ${process.pid} is running`);
+        console.log(`Forking ${numCPUs} workers...`);
+
+        for (let i = 0; i < numCPUs; i++) {
+          cluster.fork();
+        }
+
+        cluster.on('exit', (worker, code, signal) => {
+          console.error(`Worker ${worker.process.pid} died (${signal || code}). Restarting...`);
+          cluster.fork();
+        });
+      } else {
+        console.log(`Worker ${process.pid} starting...`);
+        start(process.env);
+      }
+    } else {
+      start(process.env);
+    }
+  }
 }
