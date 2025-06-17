@@ -22,7 +22,7 @@ https://cmr.uat.earthdata.nasa.gov:
 
   - name: asdc/imagenator_l2
     description: Chain to create TEMPO L2 imagery for GIBS
-    data_operation_version: '0.21.0'
+    data_operation_version: '0.22.0'
     type:
       <<: *default-turbo-config
       params:
@@ -50,7 +50,7 @@ https://cmr.uat.earthdata.nasa.gov:
 
   - name: asdc/imagenator_l3
     description: Chain to create TEMPO L3 imagery for GIBS
-    data_operation_version: '0.21.0'
+    data_operation_version: '0.22.0'
     type:
       <<: *default-turbo-config
       params:
