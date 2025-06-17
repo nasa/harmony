@@ -1,18 +1,24 @@
 import FormData from 'form-data';
-import { before, after } from 'mocha';
-import { stub, SinonStub } from 'sinon';
-import { hookGetQueueForType, hookGetQueueForUrl, hookGetQueueUrlForService, hookGetWorkSchedulerQueue, hookProcessSchedulerQueue } from './queue';
-import * as cmr from '../../app/util/cmr';
+import { after, before } from 'mocha';
+import replay from 'replay';
+import { SinonStub, stub } from 'sinon';
+
 import RequestContext from '../../app/models/request-context';
+import * as cmr from '../../app/util/cmr';
+import { hookJobStatusCache } from './job-status';
+import {
+  hookGetQueueForType, hookGetQueueForUrl, hookGetQueueUrlForService, hookGetWorkSchedulerQueue,
+  hookProcessSchedulerQueue,
+} from './queue';
 
 hookGetQueueForType();
 hookGetQueueForUrl();
 hookGetWorkSchedulerQueue();
 hookGetQueueUrlForService();
 hookProcessSchedulerQueue();
+hookJobStatusCache();
 
 process.env.REPLAY = process.env.REPLAY || 'record';
-import replay from 'replay';
 // Update replay.headers to avoid recording 'X-Request-Id', but still record other 'X-*' headers
 replay.headers = replay.headers.filter((re) => re.toString() != /^x-/.toString());
 replay.headers.push(/^(?!x-request-id$)x-/);
