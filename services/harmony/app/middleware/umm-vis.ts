@@ -10,7 +10,7 @@ import { getVisualizationsForCollection } from '../util/cmr';
  * @param res - The client response
  * @param next - The next function in the middleware chain
  */
-export async function setUmmVis(
+export async function setUmmVisForCollections(
   req: HarmonyRequest, _res: Response, next: NextFunction,
 ): Promise<void> {
   const { operation } = req;

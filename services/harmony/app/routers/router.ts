@@ -51,7 +51,7 @@ import chooseService from '../middleware/service-selection';
 import shapefileConverter from '../middleware/shapefile-converter';
 // Middleware requires in outside-in order
 import shapefileUpload from '../middleware/shapefile-upload';
-import { setUmmVis } from '../middleware/umm-vis';
+import { setUmmVisForCollections } from '../middleware/umm-vis';
 import HarmonyRequest, { addRequestContextToOperation } from '../models/harmony-request';
 import env from '../util/env';
 import { NotFoundError } from '../util/errors';
@@ -232,7 +232,7 @@ export default function router({ USE_EDL_CLIENT_APP = 'false' }: RouterConfig): 
   result.use(logged(postServiceConcatenationHandler));
   result.use(logged(validateAndSetVariables));
   result.use(logged(validateRestrictedVariables));
-  result.use(logged(setUmmVis));
+  result.use(logged(setUmmVisForCollections));
 
   result.use(logged(cmrUmmCollectionReader));
   result.use(logged(cmrGranuleLocator));

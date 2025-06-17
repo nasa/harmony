@@ -226,7 +226,7 @@ describe('when testing a batched aggregation service', function () {
         });
       });
 
-      //     // Verify that since only 2 items were created from query-cmr it does not yet batch a concise request (need 3)
+      // Verify that since only 2 items were created from query-cmr it does not yet batch a concise request (need 3)
       describe('when checking for a concise work item', function () {
         hookGetWorkForService('ghcr.io/podaac/concise:sit');
         it('does not find a work item', async function () {
