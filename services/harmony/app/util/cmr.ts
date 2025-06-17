@@ -16,6 +16,7 @@ import { CmrError } from './errors';
 import logger from './log';
 import { defaultObjectStore, objectStoreForProtocol } from './object-store';
 import { UmmSpatial } from './spatial/umm-spatial';
+import { CmrUmmVisualization } from './umm-vis';
 import { isValidUri } from './url';
 
 const { cmrEndpoint, cmrMaxPageSize, clientId, stagingBucket } = env;
@@ -72,8 +73,10 @@ export interface CmrCollection {
   associations?: {
     variables?: string[];
     services?: string[];
+    visualizations?: string[];
   };
   variables?: CmrUmmVariable[];
+  visualizations?: CmrUmmVisualization[];
   tags?: CmrTags;
   eula_identifiers?: string[];
 }
@@ -155,6 +158,9 @@ export interface CmrUmmVariable {
   meta: {
     // eslint-disable-next-line @typescript-eslint/naming-convention
     'concept-id': string;
+    associations?: {
+      visualizations?: string[];
+    }
   };
   umm: {
     Name: string;
@@ -323,6 +329,13 @@ export interface CmrGridsResponse extends CmrResponse {
 
 export interface CmrPermissionsResponse extends CmrResponse {
   data: CmrPermissionsMap;
+}
+
+export interface CmrUmmVisResponse extends CmrResponse {
+  data: {
+    items: CmrUmmVisualization[];
+    hits: number;
+  }
 }
 
 export interface CmrUmmCollection {
@@ -700,6 +713,42 @@ async function _getAllVariables(
 }
 
 /**
+ * Performs a CMR visualizations.json search with the given query string. If there are more
+ * than 2000 visualizations, page through the visualization results until all are retrieved.
+ *
+ * @param context - Information related to the user's request
+ * @param query - The key/value pairs to search
+ * @param token - Access token for user request
+ * @returns The visualization search results
+ */
+export async function _getAllVisualizations(
+  context: RequestContext, query: CmrQuery, token: string,
+): Promise<Array<CmrUmmVisualization>> {
+  logger.debug('Calling CMR to fetch visualizations');
+  const visualizaitonsResponse = await _cmrPost(context, '/search/visualizations.umm_json_v1_1_0', query, token) as CmrUmmVisResponse;
+  const { hits } = visualizaitonsResponse.data;
+  let visualizations = visualizaitonsResponse.data.items;
+  let numVisualizationsRetrieved = visualizations.length;
+  let page_num = 1;
+
+  while (numVisualizationsRetrieved < hits) {
+    page_num += 1;
+    logger.debug(`Paging through visualizations = ${page_num}, numVisualizationsRetrieved = ${numVisualizationsRetrieved}, total hits ${hits}`);
+    query.page_num = page_num;
+    const response = await _cmrPost(context, '/search/visualizations.umm_json_v1_1_0', query, token) as CmrUmmVisResponse;
+    const pageOfVisualizations = response.data.items;
+    visualizations = visualizations.concat(pageOfVisualizations);
+    numVisualizationsRetrieved += pageOfVisualizations.length;
+    if (pageOfVisualizations.length == 0) {
+      logger.warn(`Expected ${hits} visualizations, but only retrieved ${numVisualizationsRetrieved} from CMR.`);
+      break;
+    }
+  }
+
+  return visualizations;
+}
+
+/**
  * Performs a CMR services.umm_json search with the given query string. If there are more
  * than 2000 services, page through the service results until all are retrieved.
  *
@@ -823,9 +872,10 @@ export function hashCmrQuery(type: string, query: CmrQuery, token: string): stri
 export enum cmrQueryType {
   COLL_JSON = 'coll_json',
   COLL_UMM = 'coll_umm',
-  VARIABLE = 'variable',
-  SERVICE = 'service',
   GRID = 'grid',
+  SERVICE = 'service',
+  VARIABLE = 'variable',
+  VISUALIZATION = 'visualization',
 }
 
 /**
@@ -843,18 +893,22 @@ async function fetchCmrConcepts(
   { context: fetchContext })
   : Promise<CmrResults> {
   const { type, context, query, token } = fetchContext;
-  if (type === cmrQueryType.COLL_JSON) {
-    return _queryCollections(context, query, token);
-  } else if (type === cmrQueryType.COLL_UMM) {
-    return _queryUmmCollections(context, query, token);
-  } else if (type === cmrQueryType.VARIABLE) {
-    return _getAllVariables(context, query, token);
-  } else if (type === cmrQueryType.SERVICE) {
-    return _getAllServices(context, query, token);
-  } else if (type === cmrQueryType.GRID) {
-    return _queryGrids(context, query, token);
-  } else {
-    throw new Error(`Invalid CMR query type: ${type}`);
+
+  switch (type) {
+    case cmrQueryType.COLL_JSON:
+      return _queryCollections(context, query, token);
+    case cmrQueryType.COLL_UMM:
+      return _queryUmmCollections(context, query, token);
+    case cmrQueryType.VARIABLE:
+      return _getAllVariables(context, query, token);
+    case cmrQueryType.SERVICE:
+      return _getAllServices(context, query, token);
+    case cmrQueryType.GRID:
+      return _queryGrids(context, query, token);
+    case cmrQueryType.VISUALIZATION:
+      return _getAllVisualizations(context, query, token);
+    default:
+      throw new Error(`Invalid CMR query type: ${type}`);
   }
 }
 
@@ -878,7 +932,7 @@ export const cmrCache = new LRUCache<string, CmrResults>({
 });
 
 /**
- * Retrieve all varaibles with the given query from CMR cache.
+ * Retrieve all variables with the given query from CMR cache.
  * Perform the search if cache miss.
  *
  * @param context - Information related to the user's request
@@ -893,6 +947,24 @@ export async function getAllVariables(
   const key = hashCmrQuery(type, query, token);
   const result = await cmrCache.fetch(key, { context: { type, context, query, token } });
   return result as Array<CmrUmmVariable>;
+}
+
+/**
+ * Retrieve all visualizations with the given query from CMR cache.
+ * Perform the search if cache miss.
+ *
+ * @param context - Information related to the user's request
+ * @param query - The key/value pairs to search
+ * @param token - Access token for user request
+ * @returns The visualizations search results
+ */
+export async function getAllVisualizations(
+  context: RequestContext, query: CmrQuery, token: string,
+): Promise<Array<CmrUmmVisualization>> {
+  const type = cmrQueryType.VISUALIZATION;
+  const key = hashCmrQuery(type, query, token);
+  const result = await cmrCache.fetch(key, { context: { type, context, query, token } });
+  return result as Array<CmrUmmVisualization>;
 }
 
 /**
@@ -1093,6 +1165,27 @@ export async function getVariablesByIds(
 }
 
 /**
+ * Queries for and returns the UMM-Vis JSON records for the given concept IDs
+ * @param context - Information related to the user's request
+ * @param ids - The CMR concept IDs for the UMM-Vis records to find
+ * @param token - Access token for user request
+ * @returns
+ */
+export async function getVisualizationsByIds(
+  context: RequestContext,
+  ids: Array<string>,
+  token: string,
+): Promise<Array<CmrUmmVisualization>> {
+  return getAllVisualizations(context,
+    {
+      concept_id: ids,
+      page_size: ACTUAL_CMR_MAX_PAGE_SIZE,
+    },
+    token,
+  );
+}
+
+/**
  * Queries and returns the CMR JSON variables that are associated with the given CMR JSON collection
  *
  * @param context - Information related to the user's request
@@ -1106,6 +1199,42 @@ export async function getVariablesForCollection(
   const varIds = collection.associations && collection.associations.variables;
   if (varIds) {
     return getVariablesByIds(context, varIds, token);
+  }
+  return [];
+}
+
+/**
+ * Queries and returns the CMR UMM_JSON visualizations that are associated with the given collection id
+ *
+ * @param context - Information related to the user's request
+ * @param collectionId - The collection whose visualizations should be returned
+ * @param token - Access token for user request
+ * @returns
+ */
+export async function getVisualizationsForCollection(
+  context: RequestContext, collection: CmrCollection, token: string,
+): Promise<Array<CmrUmmVisualization>> {
+  const visIds = collection.associations && collection.associations.visualizations;
+  if (visIds) {
+    return getVisualizationsByIds(context, visIds, token);
+  }
+  return [];
+}
+
+/**
+ * Queries and returns the CMR UMM_JSON visualizations that are associated with the given variable id
+ *
+ * @param context - Information related to the user's request
+ * @param variableId - The variable whose visualizations should be returned
+ * @param token - Access token for user request
+ * @returns
+ */
+export async function getVisualizationsForVariable(
+  context: RequestContext, variable: CmrUmmVariable, token: string,
+): Promise<Array<CmrUmmVisualization>> {
+  const visIds = variable.meta.associations && variable.meta.associations.visualizations;
+  if (visIds) {
+    return getVisualizationsByIds(context, visIds, token);
   }
   return [];
 }

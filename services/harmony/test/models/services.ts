@@ -128,6 +128,7 @@ describe('stepRequired', function () {
         versionId: '',
         coordinateVariables: [],
         variables: [variable],
+        visualizations: [],
         granules: [],
       };
       const operation = buildOperation('foo');
