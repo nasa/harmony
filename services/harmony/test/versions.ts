@@ -46,7 +46,7 @@ describe('Versions endpoint', function () {
           'net2cog',
           'nasa/harmony-gdal-adapter',
           'giovanni-averaging-service',
-          'sds/trajectory-susbetter-smap-l2-regridder',
+          'sds/smap-l2-subsetter-net2cog',
           'harmony/service-example',
         ]);
       });
