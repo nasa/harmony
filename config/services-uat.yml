@@ -20,6 +20,61 @@ x-turbo-config: &default-turbo-config
 
 https://cmr.uat.earthdata.nasa.gov:
 
+  - name: asdc/imagenator_l2
+    description: Chain to create TEMPO L2 imagery for GIBS
+    data_operation_version: '0.21.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/harmony/imagenator_l2
+    umm_s: S1273539416-LARC_CLOUD
+    capabilities:
+      concatenation: false
+      subsetting:
+        bbox: false
+        variable: true
+        temporal: false
+      output_formats:
+        - image/png
+      reprojection: false
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
+      - image: !Env ${SWATH_PROJECTOR_IMAGE} 
+      - image: !Env ${FILTERING_IMAGE} 
+      - image: !Env ${NET2COG_IMAGE}
+      - image: !Env ${HYBIG_IMAGE} 
+
+  - name: asdc/imagenator_l3
+    description: Chain to create TEMPO L3 imagery for GIBS
+    data_operation_version: '0.21.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/harmony/imagenator_l3
+    umm_s: S1273539421-LARC_CLOUD
+    capabilities:
+      concatenation: false
+      subsetting:
+        bbox: false
+        variable: true
+        temporal: false
+      output_formats:
+        - image/png
+      reprojection: false
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
+      - image: !Env ${FILTERING_IMAGE}       
+      - image: !Env ${NET2COG_IMAGE}
+      - image: !Env ${HYBIG_IMAGE} 
+      
   - name: asdc/filtering
     description: Harmony service to filter netCDF based on user specified filtering criteria (spatial, min/max, glamping, and variable).
     data_operation_version: '0.22.0'
