@@ -361,7 +361,7 @@ export interface CmrUmmCollectionsResponse extends CmrResponse {
 }
 
 // type of CMR query results
-type CmrResults = Array<CmrCollection> | Array<CmrUmmCollection> | Array<CmrUmmVariable> | Array<CmrUmmService> | Array<CmrUmmGrid>;
+type CmrResults = Array<CmrCollection> | Array<CmrUmmCollection> | Array<CmrUmmVariable> | Array<CmrUmmService> | Array<CmrUmmGrid> | CmrPermissionsMap;
 
 /**
  * Create a token header for the given access token string
@@ -833,6 +833,25 @@ async function _queryUmmCollections(
 }
 
 /**
+ * Queries and returns the CMR permissions for each concept specified
+ *
+ * @param context - Information related to the user's request
+ * @param query - The query indicating what concept ids to check
+ * @param token - Access token for user request
+ * or the guest user if this is blank
+ * @returns The CmrPermissionsMap which maps concept id to a permissions array
+ */
+async function _getPermissions(
+  context: RequestContext,
+  query: CmrAclQuery,
+  token: string,
+): Promise<CmrPermissionsMap> {
+  logger.debug('Calling CMR to fetch permissions');
+  const permissionsResponse = await _cmrGet(context, '/access-control/permissions', query, token) as CmrPermissionsResponse;
+  return permissionsResponse.data;
+}
+
+/**
  * Generates a consistent MD5 hash for a given CMR query object and token.
  *
  * This function:
@@ -873,6 +892,7 @@ export enum cmrQueryType {
   COLL_JSON = 'coll_json',
   COLL_UMM = 'coll_umm',
   GRID = 'grid',
+  PERMISSION = 'permission',
   SERVICE = 'service',
   VARIABLE = 'variable',
   VISUALIZATION = 'visualization',
@@ -907,6 +927,8 @@ async function fetchCmrConcepts(
       return _queryGrids(context, query, token);
     case cmrQueryType.VISUALIZATION:
       return _getAllVisualizations(context, query, token);
+    case cmrQueryType.PERMISSION:
+      return _getPermissions(context, query, token);
     default:
       throw new Error(`Invalid CMR query type: ${type}`);
   }
@@ -1380,14 +1402,14 @@ export function queryGranulesForCollection(
 
 /**
  * Queries and returns the CMR permissions for each concept specified
- *
+  *
  * @param context - Information related to the user's request
- * @param ids - Check the user permissions for these concept IDs
- * @param token - Access token for user request
- * @param username - Check the collection permissions for this user,
+  * @param ids - Check the user permissions for these concept IDs
+    * @param token - Access token for user request
+      * @param username - Check the collection permissions for this user,
  * or the guest user if this is blank
- * @returns The CmrPermissionsMap which maps concept id to a permissions array
- */
+  * @returns The CmrPermissionsMap which maps concept id to a permissions array
+    */
 export async function getPermissions(
   context: RequestContext,
   ids: Array<string>,
@@ -1401,8 +1423,10 @@ export async function getPermissions(
   const query: CmrAclQuery = username
     ? { user_id: username, ...baseQuery }
     : { user_type: 'guest', ...baseQuery };
-  const permissionsResponse = await _cmrGet(context, '/access-control/permissions', query, token) as CmrPermissionsResponse;
-  return permissionsResponse.data;
+  const type = cmrQueryType.PERMISSION;
+  const key = hashCmrQuery(type, query, token);
+  const result = await cmrCache.fetch(key, { context: { type, context, query, token } });
+  return result as CmrPermissionsMap;
 }
 
 /**
