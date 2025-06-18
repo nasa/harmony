@@ -40,13 +40,13 @@ start_service() {
 }
 
 start_service "Harmony server" "services/harmony" 3000 9200 "logs/server.log"
-start_service "Work scheduler" "services/work-scheduler" 5006 9206 "logs/work-scheduler.log"
+start_service "Work scheduler" "services/work-scheduler" 5006 9306 "logs/work-scheduler.log"
 
 if [ "$KUBE_CONTEXT" != "colima" ]; then
   export LOCALSTACK_HOST=localhost
 fi
 
-WORK_ITEM_UPDATE_QUEUE_TYPE=large start_service "Large job work updater" "services/work-updater" 5002 9202 "logs/work-update-large.log"
-WORK_ITEM_UPDATE_QUEUE_TYPE=small start_service "Small job work updater" "services/work-updater" 5003 9203 "logs/work-update-small.log"
-start_service "Cron service" "services/cron-service" 5004 9204 "logs/cron-service.log"
-start_service "Work failer" "services/work-failer" 5005 9205 "logs/work-failer.log"
+WORK_ITEM_UPDATE_QUEUE_TYPE=large start_service "Large job work updater" "services/work-updater" 5002 9302 "logs/work-update-large.log"
+WORK_ITEM_UPDATE_QUEUE_TYPE=small start_service "Small job work updater" "services/work-updater" 5003 9303 "logs/work-update-small.log"
+start_service "Cron service" "services/cron-service" 5004 9304 "logs/cron-service.log"
+start_service "Work failer" "services/work-failer" 5005 9305 "logs/work-failer.log"
