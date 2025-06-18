@@ -37,7 +37,6 @@ describe('Versions endpoint', function () {
           'sds/trajectory-subsetter',
           'asdc/imagenator_l2',
           'asdc/imagenator_l3',
-          'asdc/filtering',
           'sds/HyBIG',
           'sds/harmony-smap-l2-gridder',
           'sds/HOSS-geographic',
