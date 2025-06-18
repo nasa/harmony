@@ -23,9 +23,6 @@ describe('Versions endpoint', function () {
       it('returns a listing of all of the turbo services from services.yml', function () {
         const services = JSON.parse(this.res.text);
         expect(services.map((s) => s.name)).to.eql([
-          'asdc/imagenator_l2',
-          'asdc/imagenator_l3',
-          'asdc/filtering',
           'harmony/download',
           'ldds/subset-band-name',
           'ldds/geoloco',
@@ -38,6 +35,9 @@ describe('Versions endpoint', function () {
           'sds/variable-subsetter',
           'sds/maskfill',
           'sds/trajectory-subsetter',
+          'asdc/imagenator_l2',
+          'asdc/imagenator_l3',
+          'asdc/filtering',
           'sds/HyBIG',
           'sds/harmony-smap-l2-gridder',
           'sds/HOSS-geographic',
