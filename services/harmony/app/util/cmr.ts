@@ -892,7 +892,7 @@ export enum cmrQueryType {
   COLL_JSON = 'coll_json',
   COLL_UMM = 'coll_umm',
   GRID = 'grid',
-  PERMISIONS = 'permissions',
+  PERMISSION = 'permission',
   SERVICE = 'service',
   VARIABLE = 'variable',
   VISUALIZATION = 'visualization',
@@ -927,7 +927,7 @@ async function fetchCmrConcepts(
       return _queryGrids(context, query, token);
     case cmrQueryType.VISUALIZATION:
       return _getAllVisualizations(context, query, token);
-    case cmrQueryType.PERMISIONS:
+    case cmrQueryType.PERMISSION:
       return _getPermissions(context, query, token);
     default:
       throw new Error(`Invalid CMR query type: ${type}`);
@@ -1423,7 +1423,7 @@ export async function getPermissions(
   const query: CmrAclQuery = username
     ? { user_id: username, ...baseQuery }
     : { user_type: 'guest', ...baseQuery };
-  const type = cmrQueryType.PERMISIONS;
+  const type = cmrQueryType.PERMISSION;
   const key = hashCmrQuery(type, query, token);
   const result = await cmrCache.fetch(key, { context: { type, context, query, token } });
   return result as CmrPermissionsMap;
