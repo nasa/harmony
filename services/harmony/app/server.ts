@@ -260,28 +260,26 @@ export async function stop({
 }
 
 if (require.main === module) {
-  if (require.main === module) {
-    if (process.env.USE_CLUSTERING === 'true') {
-      if (cluster.isPrimary) {
-        const numCPUs = os.cpus().length;
+  if (process.env.USE_CLUSTERING === 'true') {
+    if (cluster.isPrimary) {
+      const numCPUs = os.cpus().length;
 
-        console.log(`Primary process ${process.pid} is running`);
-        console.log(`Forking ${numCPUs} workers...`);
+      console.log(`Primary process ${process.pid} is running`);
+      console.log(`Forking ${numCPUs} workers...`);
 
-        for (let i = 0; i < numCPUs; i++) {
-          cluster.fork();
-        }
-
-        cluster.on('exit', (worker, code, signal) => {
-          console.error(`Worker ${worker.process.pid} died (${signal || code}). Restarting...`);
-          cluster.fork();
-        });
-      } else {
-        console.log(`Worker ${process.pid} starting...`);
-        start(process.env);
+      for (let i = 0; i < numCPUs; i++) {
+        cluster.fork();
       }
+
+      cluster.on('exit', (worker, code, signal) => {
+        console.error(`Worker ${worker.process.pid} died (${signal || code}). Restarting...`);
+        cluster.fork();
+      });
     } else {
+      console.log(`Worker ${process.pid} starting...`);
       start(process.env);
     }
+  } else {
+    start(process.env);
   }
 }
