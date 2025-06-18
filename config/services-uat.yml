@@ -796,15 +796,13 @@ https://cmr.uat.earthdata.nasa.gov:
     steps:
       - image: !Env ${GIOVANNI_AVERAGING_SERVICES_ADAPTER_IMAGE}
 
-  - name: sds/trajectory-susbetter-smap-l2-regridder
+  - name: sds/smap-l2-subsetter-net2cog
     description: |
-      A service chain for applying the SMAP L2 Regridder to Trajectory Subsetter
-      output, producing NetCDF4 output.
+      A service chain for subsetting SMAP L2 collections with the Trajectory
+      Subsetter and reformatting that output to Cloud-Optimized GeoTIFF (COG).
 
-      The purpose of this chain is to test the intermediate regridding step
-      for the future Trajectory Subsetter Net2COG (GeoTIFF reformatting)
-      service chain. This current chain will eventually be updated to become
-      the Trajectory Subsetter SMAP L2 GeoTIFF Reformatter.
+      In GeoTIFF reformatting the SMAP L2 Gridder is called first to convert
+      the output to NetCDF, which is then plugged into the Net2COG reformatter.
     data_operation_version: '0.22.0'
     type:
       <<: *default-turbo-config
@@ -812,7 +810,7 @@ https://cmr.uat.earthdata.nasa.gov:
         <<: *default-turbo-params
         env:
           <<: *default-turbo-env
-          STAGING_PATH: public/sds/trajectory-subsetter
+          STAGING_PATH: public/sds/smap-l2-subsetter-net2cog
     umm_s: S1273345267-EEDTEST
     capabilities:
       subsetting:
@@ -821,13 +819,20 @@ https://cmr.uat.earthdata.nasa.gov:
         shape: true
         variable: true
       output_formats:
+        - application/x-hdf
         - application/x-netcdf4
+        - image/tiff
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
       - image: !Env ${TRAJECTORY_SUBSETTER_IMAGE}
         operations: ['variableSubset', 'spatialSubset', 'shapefileSubset']
       - image: !Env ${HARMONY_SMAP_L2_GRIDDER_IMAGE}
+        conditional:
+          format: ['image/tiff', 'application/x-netcdf4']
+      - image: !Env ${NET2COG_IMAGE}
+        conditional:
+          format: ['image/tiff']
 
   - name: harmony/service-example
     description: |
