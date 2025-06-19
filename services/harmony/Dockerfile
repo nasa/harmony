@@ -25,7 +25,7 @@ WORKDIR /harmony/services/harmony
 # Use * in the filename below to only do the copy if a matching file exists (it will in the GitHub workflow)
 COPY gdal-async-linux-arm64.*.gz /harmony/services/harmony/
 
-RUN if [ "$TARGETPLATFORM" = "linux/arm64" && -f "gdal-async-linux-arm64.tar.gz" ]; then \
+RUN if [ "$TARGETPLATFORM" = "linux/arm64" ] && [ -f "gdal-async-linux-arm64.tar.gz" ]; then \
   echo "Installing linux/arm64 gdal-async from file" && \
   tar -xzf gdal-async-linux-arm64.tar.gz && \
   npm install ./gdal-async; \
