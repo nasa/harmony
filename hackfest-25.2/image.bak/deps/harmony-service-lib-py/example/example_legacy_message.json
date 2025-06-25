@@ -1,0 +1,60 @@
+{
+  "$schema": "../../harmony/app/schemas/data-operation/0.8.0/data-operation-v0.8.0.json",
+  "version": "0.8.0",
+  "callback": "http://localhost/some-path",
+  "stagingLocation": "s3://example-bucket/public/some-org/some-service/some-uuid/",
+  "user": "jdoe",
+  "isSynchronous": false,
+  "client": "harmony-example",
+  "requestId": "00001111-2222-3333-4444-555566667777",
+  "sources": [
+    {
+      "collection": "C1233800302-EEDTEST",
+      "variables": [
+        {
+          "id": "V0001-EXAMPLE",
+          "name": "ExampleVar",
+          "fullPath": "example/group/path/ExampleVar"
+        }
+      ],
+      "granules": [
+        {
+          "id": "G0001-EXAMPLE",
+          "name": "Example1",
+          "url": "file://example/example_granule_1.txt",
+          "temporal": {
+            "start": "2001-01-01T01:01:01Z",
+            "end": "2002-02-02T02:02:02Z"
+          },
+          "bbox": [-1, -2, 3, 4]
+        },
+        {
+          "id": "G0002-EXAMPLE",
+          "name": "Example2",
+          "url": "file://example/example_granule_2.txt",
+          "temporal": {
+            "start": "2003-03-03T03:03:03Z",
+            "end": "2004-04-04T04:04:04Z"
+          },
+          "bbox": [-5, -6, 7, 8]
+        }
+      ]
+    }
+  ],
+  "format": {
+    "crs": "CRS:84",
+    "isTransparent": true,
+    "mime": "image/tiff",
+    "width": 800,
+    "height": 600,
+    "dpi": 72
+  },
+  "subset": {
+    "bbox": [
+      -91.1,
+      -45.0,
+      91.1,
+      45.0
+    ]
+  }
+}

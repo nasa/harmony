@@ -1,0 +1,53 @@
+{
+  "stac_version": "1.0.0",
+  "id": "3ca8ec5a-6d1e-4a82-8233-313d73769e7c",
+  "type": "Feature",
+  "links": [],
+  "properties": {
+    "start_datetime": "2020-01-01T00:00:00.000Z",
+    "end_datetime": "2020-01-01T01:59:59.000Z"
+  },
+  "bbox": [
+    -180,
+    -90,
+    180,
+    90
+  ],
+  "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [
+          -180,
+          -90
+        ],
+        [
+          -180,
+          90
+        ],
+        [
+          180,
+          90
+        ],
+        [
+          180,
+          -90
+        ],
+        [
+          -180,
+          -90
+        ]
+      ]
+    ]
+  },
+  "assets": {
+    "data": {
+      "href": "example/example_granule_1.txt",
+      "title": "example_granule_1.txt",
+      "type": "text/plain",
+      "roles": [
+        "data"
+      ]
+    }
+  }
+}

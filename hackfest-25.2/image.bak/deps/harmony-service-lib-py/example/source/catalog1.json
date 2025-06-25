@@ -1,0 +1,23 @@
+{
+  "stac_version": "1.0.0",
+  "id": "2bd3924c-c0ee-49b7-b9ac-0d296f4af909",
+  "links": [
+    {
+      "rel": "harmony_source",
+      "href": "https://cmr.uat.earthdata.nasa.gov/search/concepts/C1233800302-EEDTEST"
+    },
+    {
+      "rel": "item",
+      "href": "./granule_0_0000001.json",
+      "type": "application/json",
+      "title": "001_01_7f00ff_africa"
+    },
+    {
+      "href": "./catalog0.json",
+      "rel": "prev",
+      "title": "Previous page",
+      "type": "application/json"
+  }
+  ],
+  "description": "CMR Granules for C1233800302-EEDTEST"
+}

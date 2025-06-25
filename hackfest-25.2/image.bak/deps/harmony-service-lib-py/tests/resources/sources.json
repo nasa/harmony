@@ -1,0 +1,11 @@
+{
+  "sources": [{
+    "collection": "C000-TEST",
+    "granules": [
+      {
+        "id": "G000-TEST",
+        "name": "test.nc"
+      }
+    ]
+  }]
+}

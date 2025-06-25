@@ -1,0 +1,14 @@
+{
+  "stac_version": "1.0.0",
+  "type": "Catalog",
+  "id": "d5addf73-6e95-4ba1-a2a6-528de6d3d22c",
+  "links": [
+    {
+      "rel": "child",
+      "href": "./source_0.json",
+      "type": "application/json",
+      "title": "CMR Granules for C1233800302-EEDTEST"
+    }
+  ],
+  "description": "Granule results for request 1234"
+}

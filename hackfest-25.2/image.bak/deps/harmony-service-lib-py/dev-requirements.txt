@@ -1,0 +1,22 @@
+autopep8 ~= 1.5
+debugpy ~= 1.2
+Faker ~= 8.1.3
+flake8 >= 6.1.0
+freezegun ~= 1.5.1
+ipython ~= 8.10.0
+jedi ~= 0.17.2
+packaging ~= 24.1
+parameterized ~= 0.7
+pytest ~= 7.2.0
+pytest-cov ~=2.11
+pytest-mock ~=3.5
+python-language-server ~= 0.35
+responses ~=0.22.0
+pycodestyle >= 2.9.1
+setuptools == 78.1.1
+
+# Pin safety down to work around the compatibility issue with Python 3.13
+# See: https://github.com/pyupio/safety/issues/620
+# Update safety version when the issue is resolved.
+safety-schemas == 0.0.5
+safety == 3.2.3

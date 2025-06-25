@@ -1,0 +1,37 @@
+# License and classifier list:
+# https://pypi.org/pypi?%3Aaction=list_classifiers
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+authors = [
+    {name = "NASA EOSDIS Harmony Team", email = "christopher.d.durbin@nasa.gov"}
+]
+classifiers = [
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Operating System :: OS Independent",
+]
+description = "A library for Python-based Harmony services to parse incoming message, fetch data, stage data, and call back to Harmony."
+dynamic = ["dependencies", "optional-dependencies", "version"]
+license = { text = "License :: OSI Approved :: Apache Software License" }
+name = "harmony-service-lib"
+readme = "README.md"
+requires-python = ">= 3.9"
+
+[project.scripts]
+harmony-service-lib = "harmony_service_lib.cli.__main__:main"
+
+[project.urls]
+Homepage = "https://github.com/nasa/harmony-service-lib-py"
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+optional-dependencies = {dev = {file = ["dev-requirements.txt"]}}
+# Will read __version__ from harmony_service_lib.__init__.py
+version = {attr = "harmony_service_lib.__version__"}
+
+[tool.setuptools.packages.find]
+exclude = ["contrib", "docs", "tests*"]
