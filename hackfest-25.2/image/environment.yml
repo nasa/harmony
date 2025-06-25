@@ -1,0 +1,11 @@
+channels:
+  - conda-forge
+dependencies:
+  - boto3~=1.35.24
+  - gdal=3.10.0
+  - libgdal=3.10.0
+  - pip~=20.1
+  - python=3.9
+  - libgdal-netcdf=3.10.0
+  - pip:
+    - git+https://github.com/nasa/harmony-service-lib-py.git

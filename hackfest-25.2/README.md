@@ -18,3 +18,7 @@ The `cdk.json` file tells the CDK Toolkit how to execute your app.
 1. potentially faster scaling
 2. potentially cheaper
 3. simpler than EKS
+
+## Downsides to Using Lambdas
+
+1. additional complications to local development
