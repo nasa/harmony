@@ -24,6 +24,24 @@ export type WorkItemData = {
   maxCmrGranules?: number
 };
 
+const SERVICE_EXAMPLE_SERVICE_REGEX = /harmonyservices\/service-example:.*/;
+
+
+/**
+ * Return true if the given serviceID uses lambda for service processing
+ *
+ * @param serviceID - service id
+ * @returns true if the service uses lambda for service processing
+ */
+export function useLambda(
+  serviceID: string,
+): boolean {
+  if (env.useLambda && SERVICE_EXAMPLE_SERVICE_REGEX.test(serviceID)) {
+    return true;
+  } else {
+    return false;
+  }
+}
 
 /**
  * Function to fetch the operation for a work-item when it is not in the cache
@@ -50,7 +68,7 @@ async function operationFetcher(key: string): Promise<string> {
   return result;
 }
 
-const operationCache: Cache = new MemoryCache(operationFetcher);
+export const operationCache: Cache = new MemoryCache(operationFetcher);
 
 
 /**
@@ -213,50 +231,61 @@ export async function getWorkFromQueue(serviceID: string, reqLogger: Logger): Pr
     await processSchedulerQueue(reqLogger);
 
     // long poll for work before giving up
-    reqLogger.silly(`Long polling for work on queue ${queueUrl} for service ${serviceID}`);
-    queueItem = await queue.getMessage();
+    if (!useLambda(serviceID)) {
+      reqLogger.silly(`Long polling for work on queue ${queueUrl} for service ${serviceID}`);
+      queueItem = await queue.getMessage();
+    }
   }
 
   if (queueItem) {
-    reqLogger.debug(`Found work item on queue ${queueUrl}`);
-    // normally we would process this before deleting the message, but we instead are relying on
-    // our retry mechanism to requeue the message if the worker fails
-    await queue.deleteMessage(queueItem.receipt);
-    reqLogger.debug(`Deleted work item with receipt ${queueItem.receipt} from queue ${queueUrl}`);
-    const item = JSON.parse(queueItem.body) as WorkItemData;
-
-    const operationKey = `${item.workItem.jobID},${item.workItem.serviceID}`;
-    let operationJson;
-    // always fetch for query-cmr service to make sure the update to operation
-    // for removing the extraArgs used for granule validation is picked up
-    if (QUERY_CMR_SERVICE_REGEX.test(item.workItem.serviceID)) {
-      operationJson = await operationFetcher(operationKey);
+    if (useLambda(serviceID)) {
+      // put queueItem back on the queue
+      await queue.deleteMessage(queueItem.receipt);
+      reqLogger.debug(`Deleted work item with receipt ${queueItem.receipt} from queue ${queueUrl}`);
+      const item = JSON.parse(queueItem.body) as WorkItemData;
+      reqLogger.info(`Re-sending work item ${item.workItem.id} to queue ${queueUrl}`);
+      await queue.sendMessage(queueItem.body, `${item.workItem.id}`);
     } else {
-      operationJson = await operationCache.fetch(operationKey);
-    }
+      reqLogger.debug(`Found work item on queue ${queueUrl}`);
+      // normally we would process this before deleting the message, but we instead are relying on
+      // our retry mechanism to requeue the message if the worker fails
+      await queue.deleteMessage(queueItem.receipt);
+      reqLogger.debug(`Deleted work item with receipt ${queueItem.receipt} from queue ${queueUrl}`);
+      const item = JSON.parse(queueItem.body) as WorkItemData;
 
-    if (operationJson) {
-      const operation = JSON.parse(operationJson);
-      // Make sure that the staging location is unique for every work item in a job
-      // in case a service for the same job produces an output with the same file name
-      operation.stagingLocation += `${item.workItem.id}/`;
-      item.workItem.operation = operation;
-    }
+      const operationKey = `${item.workItem.jobID},${item.workItem.serviceID}`;
+      let operationJson;
+      // always fetch for query-cmr service to make sure the update to operation
+      // for removing the extraArgs used for granule validation is picked up
+      if (QUERY_CMR_SERVICE_REGEX.test(item.workItem.serviceID)) {
+        operationJson = await operationFetcher(operationKey);
+      } else {
+        operationJson = await operationCache.fetch(operationKey);
+      }
 
-    // make sure the item wasn't canceled and set the status to running
-    try {
-      await db.transaction(async (tx) => {
-        const currentStatus = await getWorkItemStatus(tx, item.workItem.id);
-        if (currentStatus === WorkItemStatus.CANCELED) {
-          reqLogger.debug(`Work item ${item.workItem.id} was canceled, skipping`);
-          return null;
-        } else {
-          await updateWorkItemStatuses(tx, [item.workItem.id], WorkItemStatus.RUNNING);
-        }
-      });
-      return item;
-    } catch (err) {
-      reqLogger.error(`Error updating work item status to running: ${err.message}`);
+      if (operationJson) {
+        const operation = JSON.parse(operationJson);
+        // Make sure that the staging location is unique for every work item in a job
+        // in case a service for the same job produces an output with the same file name
+        operation.stagingLocation += `${item.workItem.id}/`;
+        item.workItem.operation = operation;
+      }
+
+      // make sure the item wasn't canceled and set the status to running
+      try {
+        await db.transaction(async (tx) => {
+          const currentStatus = await getWorkItemStatus(tx, item.workItem.id);
+          if (currentStatus === WorkItemStatus.CANCELED) {
+            reqLogger.debug(`Work item ${item.workItem.id} was canceled, skipping`);
+            return null;
+          } else {
+            await updateWorkItemStatuses(tx, [item.workItem.id], WorkItemStatus.RUNNING);
+          }
+        });
+        return item;
+      } catch (err) {
+        reqLogger.error(`Error updating work item status to running: ${err.message}`);
+      }
     }
   } else {
     reqLogger.silly(`No work found on queue ${queueUrl} for service ${serviceID}`);

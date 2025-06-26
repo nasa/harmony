@@ -223,6 +223,8 @@ export class HarmonyEnv {
 
   useServiceQueues: boolean;
 
+  useLambda: boolean;
+
   @IsUrl(hostRegexWhitelist)
   workItemSchedulerQueueUrl: string;
 

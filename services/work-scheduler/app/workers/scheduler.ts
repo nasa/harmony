@@ -1,15 +1,18 @@
 import * as k8s from '@kubernetes/client-node';
 import { Worker } from '../../../harmony/app/workers/worker';
 import env from '../util/env';
+import db from '../../../harmony/app/util/db';
 import logger from '../../../harmony/app/util/log';
 import { logAsyncExecutionTime } from '../../../harmony/app/util/log-execution';
 import { Logger } from 'winston';
 import { getQueueUrlForService, getQueueForUrl, getWorkSchedulerQueue, getQueueForType } from '../../../harmony/app/util/queue/queue-factory';
 import { QUERY_CMR_SERVICE_REGEX } from '../../../harmony/app/backends/workflow-orchestration/util';
-import { getWorkItemsFromDatabase } from '../../../harmony/app/backends/workflow-orchestration/work-item-polling';
+import { operationCache, getWorkItemsFromDatabase, useLambda } from '../../../harmony/app/backends/workflow-orchestration/work-item-polling';
 import { getPodsCountForPodName, getPodsCountForService } from '../util/k8s';
 import { Queue, ReceivedMessage, WorkItemQueueType } from '../../../harmony/app/util/queue/queue';
 import sleep from '../../../harmony/app/util/sleep';
+import { WorkItemStatus } from '../../../harmony/app/models/work-item-interface';
+import { getWorkItemStatus, updateWorkItemStatuses } from '../../../harmony/app/models/work-item';
 
 const kc = new k8s.KubeConfig();
 kc.loadFromDefault();
@@ -174,7 +177,10 @@ export async function processSchedulerQueue(
         scaleFactor = env.fastServiceQueueBatchSizeCoefficient;
       }
 
-      const workSize = calculateNumItemsToQueue(servicePodCount, schedulerPodCount, messageCount, scaleFactor);
+      let workSize = calculateNumItemsToQueue(servicePodCount, schedulerPodCount, messageCount, scaleFactor);
+      if (useLambda(serviceID)) {
+        workSize = 50;
+      }
       reqLogger.debug(`Work size count is ${workSize} based on service pod count of ${servicePodCount}, message count ${messageCount}, scheduler pod count ${schedulerPodCount} and scaleFactor ${scaleFactor} for queue ${queueUrl}`);
       reqLogger.debug(`Attempting to retrieve ${workSize} work items for queue ${queueUrl}`);
 
@@ -187,6 +193,33 @@ export async function processSchedulerQueue(
           reqLogger))(serviceID, reqLogger, chunk);
 
         for (const workItem of workItems) {
+          if (useLambda(serviceID)) {
+            const operationKey = `${workItem.workItem.jobID},${workItem.workItem.serviceID}`;
+            const operationJson = await operationCache.fetch(operationKey);
+
+            if (operationJson) {
+              const operation = JSON.parse(operationJson);
+              // Make sure that the staging location is unique for every work item in a job
+              // in case a service for the same job produces an output with the same file name
+              operation.stagingLocation += `${workItem.workItem.id}/`;
+              workItem.workItem.operation = operation;
+            }
+
+            // make sure the item wasn't canceled and set the status to running
+            try {
+              await db.transaction(async (tx) => {
+                const currentStatus = await getWorkItemStatus(tx, workItem.workItem.id);
+                if (currentStatus === WorkItemStatus.CANCELED) {
+                  reqLogger.debug(`Work item ${workItem.workItem.id} was canceled, skipping`);
+                  return null;
+                } else {
+                  await updateWorkItemStatuses(tx, [workItem.workItem.id], WorkItemStatus.RUNNING);
+                }
+              });
+            } catch (err) {
+              reqLogger.error(`Error updating work item status to running: ${err.message}`);
+            }
+          }
           const json = JSON.stringify(workItem);
           reqLogger.info(`Sending work item ${workItem.workItem.id} to queue ${queueUrl}`);
           const smStartTime = new Date().getTime();
