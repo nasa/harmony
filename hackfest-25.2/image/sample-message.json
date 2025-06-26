@@ -1,0 +1,71 @@
+{
+  "Records": [
+    {
+      "body": {
+        "workItem": {
+          "id": 2,
+          "jobID": "648c67d3-4a94-4abf-9510-36eb940fa6d5",
+          "createdAt": "2025-06-26T14:52:08.798Z",
+          "retryCount": 0,
+          "updatedAt": "2025-06-26T14:52:08.798Z",
+          "scrollID": null,
+          "serviceID": "harmonyservices/service-example:latest",
+          "status": "ready",
+          "stacCatalogLocation": "s3://local-artifact-bucket/648c67d3-4a94-4abf-9510-36eb940fa6d5/1/outputs/catalog0.json",
+          "totalItemsSize": 0,
+          "workflowStepIndex": 2,
+          "duration": -1,
+          "startedAt": null,
+          "sortIndex": 0,
+          "message_category": null,
+          "operation": {
+            "sources": [
+              {
+                "collection": "C1233800302-EEDTEST",
+                "shortName": "harmony_example",
+                "versionId": "1",
+                "variables": [
+                  {
+                    "id": "V1233801716-EEDTEST",
+                    "name": "blue_var",
+                    "fullPath": "blue_var",
+                    "type": "SCIENCE_VARIABLE",
+                    "subtype": "OTHER",
+                    "visualizations": []
+                  }
+                ],
+                "coordinateVariables": []
+              }
+            ],
+            "format": {
+              "mime": "image/png",
+              "crs": "+proj=utm +zone=21 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs",
+              "srs": {
+                "proj4": "+proj=utm +zone=21 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs",
+                "wkt": "PROJCS[\"SIRGAS 2000 / UTM zone 21N\",GEOGCS[\"SIRGAS 2000\",DATUM[\"Sistema_de_Referencia_Geocentrico_para_las_AmericaS_2000\",SPHEROID[\"GRS 1980\",6378137,298.257222101,AUTHORITY[\"EPSG\",\"7019\"]],AUTHORITY[\"EPSG\",\"6674\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4674\"]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"latitude_of_origin\",0],PARAMETER[\"central_meridian\",-57],PARAMETER[\"scale_factor\",0.9996],PARAMETER[\"false_easting\",500000],PARAMETER[\"false_northing\",0],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AXIS[\"Easting\",EAST],AXIS[\"Northing\",NORTH],AUTHORITY[\"EPSG\",\"31975\"]]",
+                "epsg": "EPSG:31975"
+              }
+            },
+            "subset": {
+              "dimensions": [],
+              "bbox": [
+                -140,
+                20,
+                -50,
+                60
+              ]
+            },
+            "concatenate": false,
+            "requestId": "648c67d3-4a94-4abf-9510-36eb940fa6d5",
+            "user": "yliu10",
+            "client": "harmony-local",
+            "accessToken": "GsTtpGLe9f7W3hdve6FI4A==",
+            "isSynchronous": true,
+            "stagingLocation": "s3://local-staging-bucket/public/648c67d3-4a94-4abf-9510-36eb940fa6d5/2/",
+            "version": "0.22.0"
+          }
+        }
+      }
+    }
+  ]
+}
