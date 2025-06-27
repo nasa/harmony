@@ -1,6 +1,6 @@
-# import numpy as np
 import json
 import argparse
+import requests
 import shutil
 import os
 from urllib.parse import urljoin, urlparse
@@ -47,13 +47,13 @@ class ExampleAdapter(harmony_service_lib.BaseHarmonyAdapter):
             input_filename = download(asset.href, workdir, logger=self.logger, access_token=self.message.accessToken)
 
             # Mark any fields the service processes so later services do not repeat work
-            dpi = self.message.format.process('dpi')
+            # dpi = self.message.format.process('dpi')
             # Variable subsetting
-            variables = source.process('variables')
+            # variables = source.process('variables')
 
             # Do the work here!
-            var_names = [v.name for v in variables]
-            print('Processing item %s, DPI=%d, vars=[%s]' % (item.id, dpi, ', '.join(var_names)))
+            # var_names = [v.name for v in variables]
+            print('Processing item %s', item.id)
             working_filename = os.path.join(workdir, 'tmp.txt')
             shutil.copyfile(input_filename, working_filename)
 
@@ -73,41 +73,6 @@ class ExampleAdapter(harmony_service_lib.BaseHarmonyAdapter):
         finally:
             # Clean up any intermediate resources
             shutil.rmtree(workdir)
-
-#function getStacLocation(item: { id: number, jobID: string }, targetUrl = '', isAggregate = false): string {
-  # const baseUrl = `s3://${env.artifactBucket}/${item.jobID}/${isAggregate ? 'aggregate-' : ''}${item.id}/outputs/`;
-  # return resolve(baseUrl, targetUrl);
-# }
-
-def resolve(from_url: str, to_url: str) -> str:
-    """
-    Resolve a URL relative to a base URL, similar to JavaScript's URL constructor behavior.
-
-    Args:
-        from_url: The base URL
-        to_url: The URL to resolve (can be relative or absolute)
-
-    Returns:
-        The resolved URL as a string
-    """
-    # Use urljoin to resolve the URL
-    resolved_url = urljoin(f"resolve://{from_url}" if not from_url.startswith(('http://', 'https://', 'resolve://')) else from_url, to_url)
-
-    # Parse the resolved URL
-    parsed = urlparse(resolved_url)
-
-    # If the scheme is 'resolve', it means from_url was relative
-    if parsed.scheme == 'resolve':
-        # Return pathname + query + fragment (similar to pathname + search + hash in JS)
-        result = parsed.path
-        if parsed.query:
-            result += '?' + parsed.query
-        if parsed.fragment:
-            result += '#' + parsed.fragment
-        return result
-
-    # Return the full resolved URL
-    return resolved_url
 
 
 def get_stac_location(item: Dict[str, Union[int, str]], target_url: str = '', is_aggregate: bool = False) -> str:
@@ -129,41 +94,18 @@ def get_stac_location(item: Dict[str, Union[int, str]], target_url: str = '', is
     aggregate_prefix = 'aggregate-' if is_aggregate else ''
     base_url = f"s3://{artifact_bucket}/{item['jobID']}/{aggregate_prefix}{item['id']}/outputs/"
 
-    return resolve(base_url, target_url)
+    return base_url
 
 
 def handler(event, context):
-  # arr = np.random.randint(0, 10, (3, 3))
   print(event)
   records = event['Records']
 
-  for record in records:
-    body = record['body']
-    print("BODY:\n")
-    print(body)
-
-  ############
-
   workItem = records[0]['body']['workItem']
 
-  # const { operation, stacCatalogLocation } = workItem
   operation = workItem['operation']
   stac_catalog_location = workItem['stacCatalogLocation']
-
   catalog_dir = get_stac_location(workItem)
-
-  parser = argparse.ArgumentParser(prog='example', description='Run an example service')
-
-  harmony_service_lib.setup_cli(parser)
-
-  args = parser.parse_args()
-
-  harmony_service_lib.run_cli(parser, args, ExampleAdapter)
-
-
-  # const operationJson = JSON.stringify(operation);
-  #   let operationCommandLine = '--harmony-input';
-  #   let operationCommandLineValue = operationJson;
 
   operation_json = json.dumps(operation)
   operation_command_line = '--harmony-input'
@@ -188,21 +130,11 @@ def handler(event, context):
 
   harmony_service_lib.run_cli(parser, args, ExampleAdapter)
 
-  #########
+  # parse result and return
+  workItem['status'] = 'successful'
+  workItem['results'] = [f"{catalog_dir}catalog.json"]
+  # workItem['totalItemsSize'] = totalItemsSize;
+  # workItem['outputItemSizes'] = outputItemSizes;
 
-  # Stage the output file with a conventional filename
-  # output_filename = generate_output_filename(asset.href, ext=None, variable_subset=None,
-  #                                             is_regridded=False, is_subsetted=False)
-  # url = stage(working_filename, output_filename, 'image/png', location=self.message.stagingLocation,
-  #             logger=self.logger)
-
-  # result = item.clone()
-  # result.assets = {}
-
-  # Update the STAC record
-  # result.assets['data'] = Asset(url, title=output_filename, media_type='image/png', roles=['data'])
-
-  # return {
-  #   "statusCode": 200,
-  #   "body": {"message": "Hello, world!", "array": arr.tolist()}
-  #   }
+  response = requests.put(f"{os.environ['CALLBACK_URL_ROOT']}/service/work/{workItem['id']}", json=workItem)
+  response.raise_for_status()

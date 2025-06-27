@@ -240,6 +240,7 @@ export async function getWorkFromQueue(serviceID: string, reqLogger: Logger): Pr
   if (queueItem) {
     if (useLambda(serviceID)) {
       // put queueItem back on the queue
+      console.log(`=============queueItem.body: ${JSON.stringify(queueItem.body)}`);
       await queue.deleteMessage(queueItem.receipt);
       reqLogger.debug(`Deleted work item with receipt ${queueItem.receipt} from queue ${queueUrl}`);
       const item = JSON.parse(queueItem.body) as WorkItemData;
