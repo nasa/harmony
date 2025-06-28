@@ -10,7 +10,7 @@ from pystac import Asset
 import harmony_service_lib
 from harmony_service_lib.util import generate_output_filename, stage, download
 
-os.environ['ENV'] = 'dev'
+# os.environ['ENV'] = 'dev'
 
 class ExampleAdapter(harmony_service_lib.BaseHarmonyAdapter):
     """
@@ -100,8 +100,10 @@ def get_stac_location(item: Dict[str, Union[int, str]], target_url: str = '', is
 def handler(event, context):
   print(event)
   records = event['Records']
-
-  workItem = records[0]['body']['workItem']
+  body_str = records[0]['body']
+  body = json.loads(json.loads(body_str))
+  print("BODY: ", body)
+  workItem = body['workItem']
 
   operation = workItem['operation']
   stac_catalog_location = workItem['stacCatalogLocation']
@@ -136,5 +138,7 @@ def handler(event, context):
   # workItem['totalItemsSize'] = totalItemsSize;
   # workItem['outputItemSizes'] = outputItemSizes;
 
-  response = requests.put(f"{os.environ['CALLBACK_URL_ROOT']}/service/work/{workItem['id']}", json=workItem)
+  print("SENDING WORK-ITEM UPDATE TO HARMONY")
+  response = requests.put(f"{os.environ['CALLBACK_URL_ROOT']}/service/work/{workItem['id']}", json=workItem, verify=False)
+  print("RESPONSE: ", response)
   response.raise_for_status()
