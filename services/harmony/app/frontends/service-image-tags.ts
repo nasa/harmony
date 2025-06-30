@@ -281,7 +281,7 @@ export function checkTag(tag: string): string {
   const tagRegex = /^[a-zA-Z\d][a-zA-Z\d\-.]{0,127}$/;
   if (!tagRegex.test(tag)) {
     const message = 'A tag name may contain lowercase and uppercase characters, digits, ' +
-      'underscores, periods and dashes. A tag name may not start with a period or a dash and ' +
+      'periods and dashes. A tag name may not start with a period or a dash and ' +
       'may contain a maximum of 128 characters.';
     return message;
   }
