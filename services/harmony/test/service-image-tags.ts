@@ -166,7 +166,7 @@ describe('checkTag', function () {
       'latest',
       '1.0',
       'v1.0.1',
-      'version_1.2.3',
+      'version-1.2.3',
       'a'.repeat(128), // Maximum length
     ];
 
@@ -182,6 +182,7 @@ describe('checkTag', function () {
       '.startwithdot',
       '-startwithdash',
       '!invalidchar',
+      'version_1.2.3',
       'a'.repeat(129), // Exceeds maximum length
     ];
 
