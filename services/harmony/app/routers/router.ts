@@ -20,6 +20,7 @@ import landingPage from '../frontends/landing-page';
 import * as ogcCoverageApi from '../frontends/ogc-coverages/index';
 import * as ogcEdrApi from '../frontends/ogc-edr/index';
 import getRequestMetrics from '../frontends/request-metrics';
+import { getRetryStatistics } from '../frontends/retry-stats';
 import {
   getDeploymentLogs, getServiceDeployment, getServiceDeployments, getServiceDeploymentsState,
   getServiceImageTag, getServiceImageTags, setServiceDeploymentsState, updateServiceImageTag,
@@ -294,6 +295,7 @@ export default function router({ USE_EDL_CLIENT_APP = 'false' }: RouterConfig): 
   result.delete('/labels', jsonParser, asyncHandler(deleteJobLabels));
 
   result.get('/admin/request-metrics', asyncHandler(getRequestMetrics));
+  result.get('/admin/retry-stats', asyncHandler(getRetryStatistics));
 
   result.get('/workflow-ui', asyncHandler(getJobs));
   result.get('/workflow-ui/:jobID', asyncHandler(getJob));
