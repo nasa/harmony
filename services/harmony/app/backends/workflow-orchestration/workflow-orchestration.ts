@@ -8,6 +8,7 @@ import WorkItemUpdate from '../../models/work-item-update';
 import env from '../../util/env';
 import { WorkItemQueueType } from '../../util/queue/queue';
 import { getQueueForType } from '../../util/queue/queue-factory';
+import sleep from '../../util/sleep';
 import { getWorkFromDatabase, getWorkFromQueue, WorkItemData } from './work-item-polling';
 
 const MAX_TRY_COUNT = 1;
@@ -27,6 +28,9 @@ export async function getWork(
   const reqLogger = req.context.logger;
   const { serviceID, podName } = req.query;
   reqLogger.silly(`Getting work for service ${serviceID} and pod ${podName}`);
+
+  // TEST CODE
+  await sleep(10000);
 
 
   let responded = false;

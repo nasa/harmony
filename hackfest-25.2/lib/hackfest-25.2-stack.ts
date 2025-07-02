@@ -8,7 +8,7 @@ import { Construct } from 'constructs';
 import * as dotenv from 'dotenv';
 
 // Load environment variables from .env file
-dotenv.config({ path: '../../harmony-ci-cd/.env' });
+dotenv.config({ path: '.env' });
 
 // Get the queue ARN from environment variable
 const queueArn = process.env.SQS_QUEUE_ARN;
@@ -72,8 +72,8 @@ export class Hackfest252Stack extends cdk.Stack {
 
     const dockerFunc = new lambda.DockerImageFunction(this, 'DockerFunc', {
       code: lambda.DockerImageCode.fromImageAsset('./image'),
-      memorySize: 1024,
-      timeout: cdk.Duration.seconds(60),
+      memorySize: 128,
+      timeout: cdk.Duration.seconds(30),
       architecture: lambda.Architecture.ARM_64,
       environment: {
         ENV: process.env.ENV || 'dev',

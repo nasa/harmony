@@ -1,18 +1,24 @@
+import { Logger } from 'winston';
+
 import * as k8s from '@kubernetes/client-node';
-import { Worker } from '../../../harmony/app/workers/worker';
-import env from '../util/env';
+
+import { QUERY_CMR_SERVICE_REGEX } from '../../../harmony/app/backends/workflow-orchestration/util';
+import {
+  getWorkItemsFromDatabase, operationCache, useLambda,
+} from '../../../harmony/app/backends/workflow-orchestration/work-item-polling';
+import { getWorkItemStatus, updateWorkItemStatuses } from '../../../harmony/app/models/work-item';
+import { WorkItemStatus } from '../../../harmony/app/models/work-item-interface';
 import db from '../../../harmony/app/util/db';
 import logger from '../../../harmony/app/util/log';
 import { logAsyncExecutionTime } from '../../../harmony/app/util/log-execution';
-import { Logger } from 'winston';
-import { getQueueUrlForService, getQueueForUrl, getWorkSchedulerQueue, getQueueForType } from '../../../harmony/app/util/queue/queue-factory';
-import { QUERY_CMR_SERVICE_REGEX } from '../../../harmony/app/backends/workflow-orchestration/util';
-import { operationCache, getWorkItemsFromDatabase, useLambda } from '../../../harmony/app/backends/workflow-orchestration/work-item-polling';
-import { getPodsCountForPodName, getPodsCountForService } from '../util/k8s';
 import { Queue, ReceivedMessage, WorkItemQueueType } from '../../../harmony/app/util/queue/queue';
+import {
+  getQueueForType, getQueueForUrl, getQueueUrlForService, getWorkSchedulerQueue,
+} from '../../../harmony/app/util/queue/queue-factory';
 import sleep from '../../../harmony/app/util/sleep';
-import { WorkItemStatus } from '../../../harmony/app/models/work-item-interface';
-import { getWorkItemStatus, updateWorkItemStatuses } from '../../../harmony/app/models/work-item';
+import { Worker } from '../../../harmony/app/workers/worker';
+import env from '../util/env';
+import { getPodsCountForPodName, getPodsCountForService } from '../util/k8s';
 
 const kc = new k8s.KubeConfig();
 kc.loadFromDefault();
