@@ -29,6 +29,7 @@ describe('Versions endpoint', function () {
           'giovanni-time-series-adapter',
           'podaac/l2-subsetter',
           'podaac/concise',
+          'podaac/l2-subsetter-concise',
           'sds/swath-projector',
           'sds/harmony-regridder',
           'sds/variable-subsetter',
