@@ -822,6 +822,7 @@ https://cmr.uat.earthdata.nasa.gov:
         - application/x-hdf
         - application/x-netcdf4
         - image/tiff
+      reprojection: true
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
