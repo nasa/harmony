@@ -38,7 +38,6 @@ describe('Versions endpoint', function () {
           'asdc/imagenator_l2',
           'asdc/imagenator_l3',
           'sds/HyBIG',
-          'sds/harmony-smap-l2-gridder',
           'sds/HOSS-geographic',
           'sds/HOSS-projection-gridded',
           'sds/HOSS-regridder-reformatter',
