@@ -1,11 +1,12 @@
-import { stub, SinonStub } from 'sinon';
-import * as qf from '../../app/util/queue/queue-factory';
-import * as util from '../../app/backends/workflow-orchestration/util';
-import { MemoryQueue } from './memory-queue';
+import { SinonStub, stub } from 'sinon';
 import { Logger } from 'winston';
-import logger from '../../app/util/log';
+
+import * as util from '../../app/backends/workflow-orchestration/util';
 import { getWorkFromDatabase } from '../../app/backends/workflow-orchestration/work-item-polling';
+import logger from '../../app/util/log';
 import { WorkItemQueueType } from '../../app/util/queue/queue';
+import * as qf from '../../app/util/queue/queue-factory';
+import { MemoryQueue } from './memory-queue';
 
 let serviceQueues;
 let typeQueues;
@@ -50,7 +51,9 @@ export function hookProcessSchedulerQueue(): void {
     stub(util, 'processSchedulerQueue').callsFake(processSchedulerQueue);
   });
   after(function () {
-    (util.processSchedulerQueue as SinonStub).restore();
+    if ((util.processSchedulerQueue as SinonStub).restore) {
+      (util.processSchedulerQueue as SinonStub).restore();
+    }
   });
 }
 
@@ -69,7 +72,9 @@ export function hookGetQueueForType(): void {
     });
   });
   after(function () {
-    (qf.getQueueForType as SinonStub).restore();
+    if ((qf.getQueueForType as SinonStub).restore) {
+      (qf.getQueueForType as SinonStub).restore();
+    }
     typeQueues = {};
   });
 }
@@ -88,7 +93,9 @@ export function hookGetQueueForUrl(): void {
     });
   });
   after(function () {
-    (qf.getQueueForUrl as SinonStub).restore();
+    if ((qf.getQueueForType as SinonStub).restore) {
+      (qf.getQueueForType as SinonStub).restore();
+    }
     serviceQueues = {};
   });
 }
@@ -103,7 +110,9 @@ export function hookGetWorkSchedulerQueue(): void {
     stub(qf, 'getWorkSchedulerQueue').callsFake(() => this.schedulerQueue);
   });
   after(function () {
-    (qf.getWorkSchedulerQueue as SinonStub).restore();
+    if ((qf.getWorkSchedulerQueue as SinonStub).restore) {
+      (qf.getWorkSchedulerQueue as SinonStub).restore();
+    }
   });
 }
 
@@ -116,7 +125,9 @@ export function hookGetQueueUrlForService(): void {
     stub(qf, 'getQueueUrlForService').callsFake((service) => `${service}-url`);
   });
   after(function () {
-    (qf.getQueueUrlForService as SinonStub).restore();
+    if ((qf.getQueueUrlForService as SinonStub).restore) {
+      (qf.getQueueUrlForService as SinonStub).restore();
+    }
   });
 }
 
