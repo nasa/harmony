@@ -33,7 +33,7 @@ describe('getRetryStatistics', () => {
   });
 
   afterEach(() => {
-    sinon.restore();
+    getRetryCountsStub.restore();
   });
 
   describe('Basic functionality', () => {
