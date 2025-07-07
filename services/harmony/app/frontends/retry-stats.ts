@@ -39,14 +39,11 @@ export async function getRetryStatistics(
     const rawCounts = await getRetryCounts(db, numMinutes);
 
     const totalWorkItems = Object.values(rawCounts).reduce((sum, v) => sum + v, 0);
-    const retriedWorkItems = Object.entries(rawCounts)
-      .filter(([k]) => Number(k) > 0)
-      .reduce((sum, [, v]) => sum + v, 0);
     const totalRetries = Object.entries(rawCounts)
       .reduce((sum, [k, v]) => sum + (Number(k) * v), 0);
 
-    const percentSuccessful = totalWorkItems === 0 ? 0 : (rawCounts[0] || 0) / totalWorkItems * 100;
-    const percentRetried = totalWorkItems === 0 ? 0 : retriedWorkItems / totalWorkItems * 100;
+    const percentRetried = totalWorkItems === 0 ? 0 : totalRetries / (totalWorkItems + totalRetries) * 100;
+    const percentSuccessful = totalWorkItems === 0 ? 0 : 100.0 - percentRetried;
 
     const countsObj = rawCounts;
     const countsArray = Object.entries(rawCounts)
@@ -58,8 +55,8 @@ export async function getRetryStatistics(
       counts: countsObj,
       totalWorkItems,
       totalRetries,
-      percentSuccessful: `${percentSuccessful.toFixed(1)}%`,
-      percentRetried: `${percentRetried.toFixed(1)}%`,
+      percentSuccessful: `${percentSuccessful.toFixed(2)}%`,
+      percentRetried: `${percentRetried.toFixed(2)}%`,
     };
 
     // Detect if client wants HTML explicitly - by default we will return JSON
