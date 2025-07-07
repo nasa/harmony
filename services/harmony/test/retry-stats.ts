@@ -61,6 +61,7 @@ describe('getRetryStatistics', () => {
         counts: mockRetryData,
         totalWorkItems: 140,    // 100 + 20 + 10 + 5 + 3 + 2
         totalRetries: 77,       // 0*100 + 1*20 + 2*10 + 3*5 + 4*3 + 5*2
+        totalWorkItemExecutions: 217,
         percentSuccessful: '64.52%',
         percentRetried: '35.48%',
       });
@@ -246,8 +247,9 @@ describe('getRetryStatistics', () => {
         ],
         totalWorkItems: 100,
         totalRetries: 25,
-        percentSuccessful: '80.0',  // Note: no % sign for HTML
-        percentRetried: '20.0',
+        totalWorkItemExecutions: 125,
+        percentSuccessful: '80.00%',
+        percentRetried: '20.00%',
       });
     });
 

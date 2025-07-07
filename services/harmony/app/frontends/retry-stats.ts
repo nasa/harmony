@@ -42,7 +42,8 @@ export async function getRetryStatistics(
     const totalRetries = Object.entries(rawCounts)
       .reduce((sum, [k, v]) => sum + (Number(k) * v), 0);
 
-    const percentRetried = totalWorkItems === 0 ? 0 : totalRetries / (totalWorkItems + totalRetries) * 100;
+    const totalWorkItemExecutions = totalWorkItems + totalRetries;
+    const percentRetried = totalWorkItems === 0 ? 0 : totalRetries / totalWorkItemExecutions * 100;
     const percentSuccessful = totalWorkItems === 0 ? 0 : 100.0 - percentRetried;
 
     const countsObj = rawCounts;
@@ -55,6 +56,7 @@ export async function getRetryStatistics(
       counts: countsObj,
       totalWorkItems,
       totalRetries,
+      totalWorkItemExecutions,
       percentSuccessful: `${percentSuccessful.toFixed(2)}%`,
       percentRetried: `${percentRetried.toFixed(2)}%`,
     };
@@ -68,8 +70,9 @@ export async function getRetryStatistics(
         counts: countsArray,
         totalWorkItems,
         totalRetries,
-        percentSuccessful: percentSuccessful.toFixed(1),
-        percentRetried: percentRetried.toFixed(1),
+        totalWorkItemExecutions,
+        percentSuccessful: `${percentSuccessful.toFixed(2)}%`,
+        percentRetried: `${percentRetried.toFixed(2)}%`,
       });
     } else {
       res.json(result);
