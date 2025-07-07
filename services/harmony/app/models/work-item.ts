@@ -831,13 +831,15 @@ export async function getRetryCounts(
     .andWhere('updatedAt', '>=', since)
     .groupBy('retryCount');
 
-  const retryCounts = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  const retryCounts = {};
+
+  for (let i = 0; i <= env.workItemRetryLimit; i++) {
+    retryCounts[i] = 0;
+  }
 
   for (const row of rows) {
     const retryCount = Number(row.retryCount);
-    if (retryCount >= 0 && retryCount <= 5) {
-      retryCounts[retryCount] = Number(row.count);
-    }
+    retryCounts[retryCount] = Number(row.count);
   }
 
   return retryCounts;

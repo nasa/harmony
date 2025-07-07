@@ -61,8 +61,8 @@ describe('getRetryStatistics', () => {
         counts: mockRetryData,
         totalWorkItems: 140,    // 100 + 20 + 10 + 5 + 3 + 2
         totalRetries: 77,       // 0*100 + 1*20 + 2*10 + 3*5 + 4*3 + 5*2
-        percentSuccessful: '71.4%',
-        percentRetried: '28.6%',
+        percentSuccessful: '64.52%',
+        percentRetried: '35.48%',
       });
     });
 
@@ -104,8 +104,8 @@ describe('getRetryStatistics', () => {
       const result = res.json.firstCall.args[0];
       expect(result.totalWorkItems).to.equal(0);
       expect(result.totalRetries).to.equal(0);
-      expect(result.percentSuccessful).to.equal('0.0%');
-      expect(result.percentRetried).to.equal('0.0%');
+      expect(result.percentSuccessful).to.equal('0.00%');
+      expect(result.percentRetried).to.equal('0.00%');
     });
 
     it('should handle only successful items (no retries)', async () => {
@@ -119,11 +119,11 @@ describe('getRetryStatistics', () => {
       const result = res.json.firstCall.args[0];
       expect(result.totalWorkItems).to.equal(50);
       expect(result.totalRetries).to.equal(0);
-      expect(result.percentSuccessful).to.equal('100.0%');
-      expect(result.percentRetried).to.equal('0.0%');
+      expect(result.percentSuccessful).to.equal('100.00%');
+      expect(result.percentRetried).to.equal('0.00%');
     });
 
-    it('should handle only failed items (no successes)', async () => {
+    it('should handle only retried items (no successes on first try)', async () => {
       const mockRetryData = { 0: 0, 1: 10, 2: 5, 3: 3, 4: 2, 5: 1 };
 
       getRetryCountsStub.resolves(mockRetryData);
@@ -134,8 +134,8 @@ describe('getRetryStatistics', () => {
       const result = res.json.firstCall.args[0];
       expect(result.totalWorkItems).to.equal(21);
       expect(result.totalRetries).to.equal(42); // 1*10 + 2*5 + 3*3 + 4*2 + 5*1
-      expect(result.percentSuccessful).to.equal('0.0%');
-      expect(result.percentRetried).to.equal('100.0%');
+      expect(result.percentSuccessful).to.equal('33.33%');
+      expect(result.percentRetried).to.equal('66.67%');
     });
 
     it('should handle missing retry count keys gracefully', async () => {
@@ -149,8 +149,23 @@ describe('getRetryStatistics', () => {
       const result = res.json.firstCall.args[0];
       expect(result.totalWorkItems).to.equal(18);
       expect(result.totalRetries).to.equal(22); // 0*10 + 2*5 + 4*3
-      expect(result.percentSuccessful).to.equal('55.6%');
-      expect(result.percentRetried).to.equal('44.4%');
+      expect(result.percentSuccessful).to.equal('45.00%');
+      expect(result.percentRetried).to.equal('55.00%');
+    });
+
+    it('should handle unexpected retry count keys correctly', async () => {
+      const mockRetryData = { 0: 10, 20: 5 }; // Unexpected 20
+
+      getRetryCountsStub.resolves(mockRetryData);
+      req.accepts.returns('json');
+
+      await getRetryStatistics(req, res, next);
+
+      const result = res.json.firstCall.args[0];
+      expect(result.totalWorkItems).to.equal(15);
+      expect(result.totalRetries).to.equal(100); // 0*10 + 20*5
+      expect(result.percentSuccessful).to.equal('13.04%');
+      expect(result.percentRetried).to.equal('86.96%');
     });
 
     it('should throw a RequestValidationError if numMinutes is not an integer', async () => {
@@ -306,7 +321,7 @@ describe('getRetryStatistics', () => {
 
   describe('Percentage calculations', () => {
     it('should calculate percentages correctly with decimal precision', async () => {
-      const mockRetryData = { 0: 1, 1: 2, 2: 0, 3: 0, 4: 0, 5: 0 };
+      const mockRetryData = { 0: 1, 1: 2 };
 
       getRetryCountsStub.resolves(mockRetryData);
       req.accepts.returns('json');
@@ -314,12 +329,12 @@ describe('getRetryStatistics', () => {
       await getRetryStatistics(req, res, next);
 
       const result = res.json.firstCall.args[0];
-      expect(result.percentSuccessful).to.equal('33.3%'); // 1/3 * 100
-      expect(result.percentRetried).to.equal('66.7%');   // 2/3 * 100
+      expect(result.percentSuccessful).to.equal('60.00%'); // 3 successes and 2 failures retried
+      expect(result.percentRetried).to.equal('40.00%');
     });
 
     it('should handle rounding edge cases', async () => {
-      const mockRetryData = { 0: 1, 1: 1, 2: 1, 3: 0, 4: 0, 5: 0 };
+      const mockRetryData = { 0: 1, 1: 1, 2: 1, 3: 1, 4: 2, 7: 8 };
 
       getRetryCountsStub.resolves(mockRetryData);
       req.accepts.returns('json');
@@ -327,8 +342,8 @@ describe('getRetryStatistics', () => {
       await getRetryStatistics(req, res, next);
 
       const result = res.json.firstCall.args[0];
-      expect(result.percentSuccessful).to.equal('33.3%'); // 1/3 * 100
-      expect(result.percentRetried).to.equal('66.7%'); // 2/3 * 100
+      expect(result.percentSuccessful).to.equal('16.67%'); // 70 retries on 14 work items (14 / 84)
+      expect(result.percentRetried).to.equal('83.33%');
     });
   });
 });
