@@ -3,7 +3,7 @@ import { v4 as uuid } from 'uuid';
 import { Logger } from 'winston';
 
 import {
-  calculateQueryCmrLimit, QUERY_CMR_SERVICE_REGEX,
+  calculateQueryCmrLimit, FOO_SERVICE_REGEX, QUERY_CMR_SERVICE_REGEX,
 } from '../../backends/workflow-orchestration/util';
 import { makeWorkScheduleRequest } from '../../backends/workflow-orchestration/work-item-polling';
 import { Job, JobStatus } from '../../models/job';
@@ -35,6 +35,7 @@ import {
   readCatalogItems, readCatalogsItems, StacCatalog, StacItem, StacItemLink,
 } from '../../util/stac';
 import { resolve } from '../../util/url';
+import { handleGranuleValidation } from './granule-validation';
 
 /**
  * A structure holding the preprocess info of a work item
@@ -440,7 +441,7 @@ async function maybeQueueQueryCmrWorkItem(
   tx: Transaction, currentWorkItem: WorkItem, logger: Logger,
 ): Promise<void> {
   // TODO HARMONY-1659 change this to handle any sequential services
-  if (QUERY_CMR_SERVICE_REGEX.test(currentWorkItem.serviceID)) {
+  if (QUERY_CMR_SERVICE_REGEX.test(currentWorkItem.serviceID) || FOO_SERVICE_REGEX.test(currentWorkItem.serviceID)) {
     if (await calculateQueryCmrLimit(tx, currentWorkItem, logger) > 0) {
       const nextQueryCmrItem = new WorkItem({
         jobID: currentWorkItem.jobID,
@@ -952,82 +953,6 @@ export async function processWorkItems(
     });
     const durationMs = new Date().getTime() - transactionStart;
     logger.info('timing.HWIUWJI.transaction.end', { durationMs });
-  } catch (e) {
-    logger.error('Unable to acquire lock on Jobs table');
-    logger.error(e);
-  }
-}
-
-/**
- * Process a granule validation work item update
- *
- * @param jobId - job id
- * @param update - the work item update
- * @param logger - the Logger for the request
- */
-async function handleGranuleValidation(
-  jobID: string,
-  update: WorkItemUpdate,
-  logger: Logger): Promise<void> {
-  const { workItemID, status, message } = update;
-  try {
-    const transactionStart = new Date().getTime();
-
-    await db.transaction(async (tx) => {
-      const { job } = await (await logAsyncExecutionTime(
-        Job.byJobID,
-        'HWIUWJI.Job.byJobID',
-        logger))(tx, jobID, false, false, true);
-
-      if (status === WorkItemStatus.FAILED) {
-        // update job status and message
-        await completeJob(tx, job, JobStatus.FAILED, logger, message);
-      } else {
-        // update workflowstep operation
-        const thisWorkflowStep = await (await logAsyncExecutionTime(
-          getWorkflowStepByJobIdStepIndex,
-          'HWIUWJI.getWorkflowStepByJobIdStepIndex',
-          logger))(db, jobID, update.workflowStepIndex);
-        const op = JSON.parse(thisWorkflowStep.operation);
-        delete op.extraArgs;
-        thisWorkflowStep.operation = JSON.stringify(op);
-        await thisWorkflowStep.save(tx);
-
-        let needSave = false;
-        if (update.hits && job.numInputGranules > update.hits) {
-          job.numInputGranules = update.hits;
-          needSave = true;
-        }
-
-        if (message) {
-          // update job message for running and successful status
-          job.message = message;
-          job.setMessage(message, JobStatus.SUCCESSFUL);
-          needSave = true;
-        }
-
-        if (needSave) {
-          await job.save(tx);
-        }
-
-        // mark the work item as ready to be processed without granule validation
-        const workItem = await (await logAsyncExecutionTime(
-          getWorkItemById,
-          'HWIUWJI.getWorkItemById',
-          logger))(tx, workItemID, true);
-
-        logger.info(`Granule validation is successful, continue processing work-item ${workItemID}`);
-        workItem.status = WorkItemStatus.READY;
-        await workItem.save(tx);
-
-        await (await logAsyncExecutionTime(
-          incrementReadyAndDecrementRunningCounts,
-          'HWIUWJI.incrementReadyAndDecrementRunningCounts',
-          logger))(tx, jobID, workItem.serviceID);
-      }
-    });
-    const durationMs = new Date().getTime() - transactionStart;
-    logger.info('timing.HWIUWJI.handleGranValidation.end', { durationMs });
   } catch (e) {
     logger.error('Unable to acquire lock on Jobs table');
     logger.error(e);

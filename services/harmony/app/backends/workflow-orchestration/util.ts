@@ -7,6 +7,7 @@ import { Transaction } from '../../util/db';
 import env from '../../util/env';
 
 export const QUERY_CMR_SERVICE_REGEX = /harmonyservices\/query-cmr:.*/;
+export const FOO_SERVICE_REGEX = /harmonyservices\/foo:.*/;
 
 /**
  * Calculate the granule page limit for the current query-cmr work item.
