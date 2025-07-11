@@ -2,15 +2,19 @@ import { NextFunction } from 'express';
 import { ServerResponse } from 'http';
 import _ from 'lodash';
 import { v4 as uuid } from 'uuid';
-import { keysToLowerCase } from '../util/object';
-import { CmrError, RequestValidationError, ServerError } from '../util/errors';
+
 import { HarmonyGranule } from '../models/data-operation';
 import HarmonyRequest from '../models/harmony-request';
-import { computeMbr } from '../util/spatial/mbr';
 import { BoundingBox } from '../util/bounding-box';
+import {
+  CmrCollection, CmrGranule, CmrQuery, filterGranuleLinks, queryGranulesForCollection,
+  queryGranulesWithSearchAfter, s3UrlForStoredQueryParams,
+} from '../util/cmr';
 import env from '../util/env';
+import { CmrError, RequestValidationError, ServerError } from '../util/errors';
+import { keysToLowerCase } from '../util/object';
 import { defaultObjectStore } from '../util/object-store';
-import { CmrCollection, CmrGranule, CmrQuery, filterGranuleLinks, s3UrlForStoredQueryParams, queryGranulesForCollection, queryGranulesWithSearchAfter } from '../util/cmr';
+import { computeMbr } from '../util/spatial/mbr';
 
 /** Reasons why the number of processed granules might be limited to less than what the CMR
  * returns
@@ -442,7 +446,7 @@ async function asyncGranuleLocator(
       const hasGranuleLimit = req.context.serviceConfig.has_granule_limit;
       const serviceName = req.context.serviceConfig.name;
       const shapeType = req.context.shapefile?.typeName;
-      operation.extraArgs = { granValidation: { reason, hasGranuleLimit, serviceName, shapeType, maxResults: operation.maxResults } };
+      operation.addExtraArgs({ granValidation: { reason, hasGranuleLimit, serviceName, shapeType, maxResults: operation.maxResults } }) ;
     }
 
   } catch (e) {
