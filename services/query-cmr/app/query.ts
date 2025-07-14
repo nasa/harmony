@@ -1,7 +1,9 @@
 import _ from 'lodash';
 import { Logger } from 'winston';
 
-import { GranuleLimitReason, getResultsLimitedMessageImpl } from '../../harmony/app/middleware/cmr-granule-locator';
+import {
+  getResultsLimitedMessageImpl, GranuleLimitReason,
+} from '../../harmony/app/middleware/cmr-granule-locator';
 import DataOperation from '../../harmony/app/models/data-operation';
 import { queryGranulesWithSearchAfter } from '../../harmony/app/util/cmr';
 import { CmrError, RequestValidationError, ServerError } from '../../harmony/app/util/errors';
@@ -132,7 +134,7 @@ async function querySearchAfter(
  * `session_key:search_after_string`
  * @param maxCmrGranules - The maximum size of the page to request from CMR
  * @param logger - The logger to use for logging messages
- * @returns a tuple containing
+ * @returns a promise containing a QueryCmrResponse with
  * the total size of the granules returned by this call, an array of STAC catalogs,
  * a new session/search_after string (formerly scrollID), and the total cmr hits.
  */
@@ -141,7 +143,7 @@ export async function queryGranules(
   scrollId: string,
   maxCmrGranules: number,
   logger: Logger,
-): Promise<[number, number[], StacCatalog[], string, number]> {
+): Promise<QueryCmrResponse> {
   const { unencryptedAccessToken } = operation;
   // Include OPeNDAP links in the response unless the data operation explicitly overrides
   // by setting extraArgs.includeOpendapLinks to false
@@ -152,7 +154,7 @@ export async function queryGranules(
       includeOpendapLinks,
     );
 
-  return [totalItemsSize, outputItemSizes, catalogs, newScrollId, hits];
+  return { totalItemsSize, outputItemSizes, stacCatalogs: catalogs, scrollID: newScrollId, hits };
 }
 
 interface GranValidation {
@@ -167,6 +169,7 @@ export interface QueryCmrResponse {
   hits?: number;
   totalItemsSize?: number;
   outputItemSizes?: number[];
+  stacCatalogs?: StacCatalog[];
   scrollID?: string;
   error?: string;
   errorLevel?: 'warning' | 'error';

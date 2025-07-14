@@ -1,12 +1,13 @@
-import { Request, Response, NextFunction, Router } from 'express';
-import logger from '../../../harmony/app/util/log';
-import { resolve } from '../../../harmony/app/util/url';
-import DataOperation from '../../../harmony/app/models/data-operation';
-import { createEncrypter, createDecrypter } from '../../../harmony/app/util/crypto';
-import { QueryCmrResponse, validateGranules, queryGranules } from '../query';
-import { objectStoreForProtocol } from '../../../harmony/app/util/object-store';
-import { ServerError } from '../../../harmony/app/util/errors';
+import { NextFunction, Request, Response, Router } from 'express';
 import { Logger } from 'winston';
+
+import DataOperation from '../../../harmony/app/models/data-operation';
+import { createDecrypter, createEncrypter } from '../../../harmony/app/util/crypto';
+import { ServerError } from '../../../harmony/app/util/errors';
+import logger from '../../../harmony/app/util/log';
+import { objectStoreForProtocol } from '../../../harmony/app/util/object-store';
+import { resolve } from '../../../harmony/app/util/url';
+import { QueryCmrResponse, queryGranules, validateGranules } from '../query';
 
 const encrypter = createEncrypter(process.env.SHARED_SECRET_KEY);
 const decrypter = createDecrypter(process.env.SHARED_SECRET_KEY);
@@ -43,12 +44,13 @@ export async function doWork(workReq: QueryCmrRequest, workLogger: Logger = logg
   const timingLogger = appLogger.child({ requestId: operation.requestId });
   timingLogger.info('timing.query-cmr.start');
   const queryCmrStartTime = new Date().getTime();
-  const [totalItemsSize, outputItemSizes, catalogs, newScrollId, hits] = await queryGranules(operation, scrollId, maxCmrGranules, workLogger);
+  const { totalItemsSize, outputItemSizes, stacCatalogs, scrollID: newScrollId, hits } =
+    await queryGranules(operation, scrollId, maxCmrGranules, workLogger);
   const granuleSearchTime = new Date().getTime();
   timingLogger.info('timing.query-cmr.query-granules-search', { durationMs: granuleSearchTime - queryCmrStartTime });
 
   const catalogFilenames = [];
-  const promises = catalogs.map(async (catalog, i) => {
+  const promises = stacCatalogs.map(async (catalog, i) => {
     const relativeFilename = `catalog${i}.json`;
     const catalogUrl = resolve(outputDir, relativeFilename);
     catalogFilenames.push(relativeFilename);
