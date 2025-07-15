@@ -33,46 +33,45 @@ export async function doWork(workReq: QueryCmrRequest, workLogger: Logger = logg
   const startTime = new Date().getTime();
   const operation = new DataOperation(workReq.harmonyInput, encrypter, decrypter);
   const { outputDir, maxCmrGranules, scrollId } = workReq;
-
-  // perform granule validation if there is granValidation in operation.extraArgs
-  if (operation.extraArgs?.granValidation) {
-    const validateResult = await validateGranules(operation, scrollId, maxCmrGranules, workLogger);
-    return validateResult;
-  }
-
   const appLogger = workLogger.child({ application: 'query-cmr' });
   const timingLogger = appLogger.child({ requestId: operation.requestId });
   timingLogger.info('timing.query-cmr.start');
   const queryCmrStartTime = new Date().getTime();
-  const { totalItemsSize, outputItemSizes, stacCatalogs, scrollID: newScrollId, hits } =
+
+  const queryResults =
     await queryGranules(operation, scrollId, maxCmrGranules, workLogger);
+
   const granuleSearchTime = new Date().getTime();
   timingLogger.info('timing.query-cmr.query-granules-search', { durationMs: granuleSearchTime - queryCmrStartTime });
 
   const catalogFilenames = [];
-  const promises = stacCatalogs.map(async (catalog, i) => {
-    const relativeFilename = `catalog${i}.json`;
-    const catalogUrl = resolve(outputDir, relativeFilename);
-    catalogFilenames.push(relativeFilename);
-    await catalog.write(catalogUrl, true);
-  });
+  if (queryResults.stacCatalogs) {
+    const promises = queryResults.stacCatalogs.map(async (catalog, i) => {
+      const relativeFilename = `catalog${i}.json`;
+      const catalogUrl = resolve(outputDir, relativeFilename);
+      catalogFilenames.push(relativeFilename);
+      await catalog.write(catalogUrl, true);
+    });
 
-  const catalogListUrl = resolve(outputDir, 'batch-catalogs.json');
-  const catalogCountUrl = resolve(outputDir, 'batch-count.txt');
+    const catalogListUrl = resolve(outputDir, 'batch-catalogs.json');
+    const catalogCountUrl = resolve(outputDir, 'batch-count.txt');
 
-  await Promise.all(promises);
-  const catalogWriteTime = new Date().getTime();
-  timingLogger.info('timing.query-cmr.catalog-promises-write', { durationMs: catalogWriteTime - granuleSearchTime });
+    await Promise.all(promises);
+    const catalogWriteTime = new Date().getTime();
+    timingLogger.info('timing.query-cmr.catalog-promises-write', { durationMs: catalogWriteTime - granuleSearchTime });
 
-  const s3 = objectStoreForProtocol('s3');
-  await s3.upload(JSON.stringify(catalogFilenames), catalogListUrl, null, 'application/json');
-  await s3.upload(catalogFilenames.length.toString(), catalogCountUrl, null, 'text/plain');
+    const s3 = objectStoreForProtocol('s3');
+    await s3.upload(JSON.stringify(catalogFilenames), catalogListUrl, null, 'application/json');
+    await s3.upload(catalogFilenames.length.toString(), catalogCountUrl, null, 'text/plain');
 
-  const catalogSummaryTime = new Date().getTime();
-  timingLogger.info('timing.query-cmr.catalog-summary-write', { durationMs: catalogSummaryTime - catalogWriteTime });
-  timingLogger.info('timing.query-cmr.end', { durationMs: catalogSummaryTime - startTime });
+    const catalogSummaryTime = new Date().getTime();
+    timingLogger.info('timing.query-cmr.catalog-summary-write', { durationMs: catalogSummaryTime - catalogWriteTime });
 
-  return { hits, totalItemsSize, outputItemSizes, scrollID: newScrollId };
+
+  }
+  timingLogger.info('timing.query-cmr.end', { durationMs: new Date().getTime() - startTime });
+
+  return queryResults;
 }
 
 /**
