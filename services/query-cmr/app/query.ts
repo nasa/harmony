@@ -7,6 +7,8 @@ import {
 import DataOperation from '../../harmony/app/models/data-operation';
 import { queryGranulesWithSearchAfter } from '../../harmony/app/util/cmr';
 import { CmrError, RequestValidationError, ServerError } from '../../harmony/app/util/errors';
+// Trick let test stubs work by using indirect function calls
+import * as thisModule from './query';
 import StacCatalog from './stac/catalog';
 import CmrStacCatalog from './stac/cmr-catalog';
 
@@ -75,7 +77,7 @@ export function getGranuleSizeInBytes(
  * an array of STAC catalogs, a new session/search_after string (formerly scrollID), and the total
  * cmr hits.
  */
-async function querySearchAfter(
+export async function querySearchAfter(
   requestId: string,
   token: string,
   scrollId: string,
@@ -136,7 +138,8 @@ async function querySearchAfter(
  * @param logger - The logger to use for logging messages
  * @returns a promise containing a QueryCmrResponse with
  * the total size of the granules returned by this call, an array of STAC catalogs,
- * a new session/search_after string (formerly scrollID), and the total cmr hits.
+ * a new session/search_after string (formerly scrollID), the total cmr hits,
+ * and possibly validation data.
  */
 export async function queryGranules(
   operation: DataOperation,
@@ -144,17 +147,97 @@ export async function queryGranules(
   maxCmrGranules: number,
   logger: Logger,
 ): Promise<QueryCmrResponse> {
-  const { unencryptedAccessToken } = operation;
-  // Include OPeNDAP links in the response unless the data operation explicitly overrides
-  // by setting extraArgs.includeOpendapLinks to false
-  const includeOpendapLinks = operation.extraArgs?.include_opendap_links !== false;
-  const [totalItemsSize, outputItemSizes, catalogs, newScrollId, hits] =
-    await querySearchAfter(
-      operation.requestId, unencryptedAccessToken, scrollId, maxCmrGranules, logger,
-      includeOpendapLinks,
-    );
+  let result = {};
+  const jobMessages = [];
+  let totalItemsSize: number;
+  let outputItemSizes: number[];
+  let catalogs: StacCatalog[];
+  let newScrollId: string;
+  let hits = 0;
 
-  return { totalItemsSize, outputItemSizes, stacCatalogs: catalogs, scrollID: newScrollId, hits };
+  const granValidation = operation.extraArgs?.granValidation as GranValidation | undefined;
+
+  const reason = granValidation?.reason;
+  const hasGranuleLimit = granValidation?.hasGranuleLimit;
+  const serviceName = granValidation?.serviceName;
+  const shapeType = granValidation?.shapeType;
+  const maxResults = granValidation?.maxResults;
+
+  const { requestId, sources, unencryptedAccessToken } = operation;
+  logger.info(`Querying granules for ${sources[0].collection}`, { collection: sources[0].collection });
+  const startTime = new Date().getTime();
+
+  try {
+    // Include OPeNDAP links in the response unless the data operation explicitly overrides
+    // by setting extraArgs.includeOpendapLinks to false
+    const includeOpendapLinks = operation.extraArgs?.include_opendap_links !== false;
+    [totalItemsSize, outputItemSizes, catalogs, newScrollId, hits] =
+      await thisModule.querySearchAfter(
+        requestId, unencryptedAccessToken, scrollId, maxCmrGranules, logger, includeOpendapLinks,
+      );
+  } catch (e) {
+    if (e instanceof RequestValidationError || e instanceof CmrError) {
+      if (granValidation) {
+        // Avoid giving confusing errors about GeoJSON due to upstream converted files
+        if (e.message.indexOf('GeoJSON') !== -1 && shapeType) {
+          e.message = e.message.replace('GeoJSON', `GeoJSON (converted from the provided ${shapeType})`);
+        }
+        return {
+          hits,
+          error: e.message,
+          errorLevel: 'error',
+          errorCategory: 'granValidation',
+        };
+      } else {
+        throw (e);
+      }
+    } else {
+      throw new ServerError('Failed to query the CMR');
+    }
+    logger.error(e);
+  }
+
+  if (granValidation) {
+    if (hits === 0) {
+      return {
+        hits,
+        error: 'No matching granules found.',
+        errorLevel: 'error',
+        errorCategory: 'granValidation',
+      };
+    }
+
+    const msTaken = new Date().getTime() - startTime;
+    logger.info('timing.cmr-validate-granule.end', { durationMs: msTaken, hits });
+
+    const limitedMessage = getResultsLimitedMessageImpl(hits, maxResults, maxCmrGranules, reason, serviceName, hasGranuleLimit, sources[0].collection);
+    if (limitedMessage) {
+      jobMessages.push(limitedMessage);
+    }
+
+    // use errorCategory: 'granValidation' to indicate success with the job hits and message
+    if (jobMessages.length > 0) {
+      result = {
+        hits,
+        scrollID: scrollId,
+        error: jobMessages.join(' '),
+        errorLevel: 'warning',
+        errorCategory: 'granValidation',
+      };
+    } else {
+      result = {
+        hits,
+        scrollID: scrollId,
+        errorLevel: 'warning',
+        errorCategory: 'granValidation',
+      };
+    }
+  }
+
+
+  result = { ...result, ...{ totalItemsSize, outputItemSizes, stacCatalogs: catalogs, scrollID: newScrollId, hits } };
+
+  return result;
 }
 
 interface GranValidation {
@@ -221,6 +304,14 @@ export async function validateGranules(
       {},
       scrollId,
     );
+    // const [totalItemsSize, outputItemSizes, catalogs, newScrollId, hits] = await querySearchAfter(
+    //   requestId,
+    //   unencryptedAccessToken,
+    //   scrollId,
+    //   maxCmrGranules,
+    //   logger,
+    //   true,
+    // );
     if (hits === 0) {
       return {
         hits: 0,
