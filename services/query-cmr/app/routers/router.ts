@@ -7,7 +7,7 @@ import { ServerError } from '../../../harmony/app/util/errors';
 import logger from '../../../harmony/app/util/log';
 import { objectStoreForProtocol } from '../../../harmony/app/util/object-store';
 import { resolve } from '../../../harmony/app/util/url';
-import { QueryCmrResponse, queryGranules, validateGranules } from '../query';
+import { QueryCmrResponse, queryGranules } from '../query';
 
 const encrypter = createEncrypter(process.env.SHARED_SECRET_KEY);
 const decrypter = createDecrypter(process.env.SHARED_SECRET_KEY);
