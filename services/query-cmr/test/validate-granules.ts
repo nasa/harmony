@@ -3,7 +3,6 @@ import { afterEach, beforeEach, describe, it } from 'mocha';
 import sinon from 'sinon';
 
 import DataOperation from '../../harmony/app/models/data-operation';
-import * as cmr from '../../harmony/app/util/cmr';
 import { CmrError, RequestValidationError, ServerError } from '../../harmony/app/util/errors';
 import logger from '../../harmony/app/util/log';
 import * as query from '../app/query';
