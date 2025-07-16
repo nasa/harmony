@@ -972,7 +972,7 @@ async function handleGranuleValidation(
   jobID: string,
   update: WorkItemUpdate,
   logger: Logger): Promise<void> {
-  const { workItemID, status, message } = update;
+  const { status, message } = update;
   try {
     const transactionStart = new Date().getTime();
 
@@ -1014,19 +1014,19 @@ async function handleGranuleValidation(
         }
 
         // mark the work item as ready to be processed without granule validation
-        const workItem = await (await logAsyncExecutionTime(
-          getWorkItemById,
-          'HWIUWJI.getWorkItemById',
-          logger))(tx, workItemID, true);
+        // const workItem = await (await logAsyncExecutionTime(
+        //   getWorkItemById,
+        //   'HWIUWJI.getWorkItemById',
+        //   logger))(tx, workItemID, true);
 
-        logger.info(`Granule validation is successful, continue processing work-item ${workItemID}`);
-        workItem.status = WorkItemStatus.READY;
-        await workItem.save(tx);
+        // logger.info(`Granule validation is successful, continue processing work-item ${workItemID}`);
+        // workItem.status = WorkItemStatus.READY;
+        // await workItem.save(tx);
 
-        await (await logAsyncExecutionTime(
-          incrementReadyAndDecrementRunningCounts,
-          'HWIUWJI.incrementReadyAndDecrementRunningCounts',
-          logger))(tx, jobID, workItem.serviceID);
+        // await (await logAsyncExecutionTime(
+        //   incrementReadyAndDecrementRunningCounts,
+        //   'HWIUWJI.incrementReadyAndDecrementRunningCounts',
+        //   logger))(tx, jobID, workItem.serviceID);
       }
     });
     const durationMs = new Date().getTime() - transactionStart;
@@ -1058,21 +1058,21 @@ export async function handleBatchWorkItemUpdatesWithJobId(
   for (const workflowStepIndex of Object.keys(groups)) {
     if (groups[workflowStepIndex][0].update.message_category === 'granValidation') {
       await handleGranuleValidation(jobID, groups[workflowStepIndex][0].update, logger);
-    } else {
-      const nextWorkflowStep = await (await logAsyncExecutionTime(
-        getWorkflowStepByJobIdStepIndex,
-        'HWIUWJI.getWorkflowStepByJobIdStepIndex',
-        logger))(db, jobID, parseInt(workflowStepIndex) + 1);
+    } //else {
+    const nextWorkflowStep = await (await logAsyncExecutionTime(
+      getWorkflowStepByJobIdStepIndex,
+      'HWIUWJI.getWorkflowStepByJobIdStepIndex',
+      logger))(db, jobID, parseInt(workflowStepIndex) + 1);
 
-      const preprocessedWorkItems: WorkItemUpdateQueueItem[] = await Promise.all(
-        groups[workflowStepIndex].map(async (item: WorkItemUpdateQueueItem) => {
-          const { update, operation } = item;
-          const result = await preprocessWorkItem(update, operation, logger, nextWorkflowStep);
-          item.preprocessResult = result;
-          return item;
-        }));
-      await processWorkItems(jobID, parseInt(workflowStepIndex), preprocessedWorkItems, logger);
-    }
+    const preprocessedWorkItems: WorkItemUpdateQueueItem[] = await Promise.all(
+      groups[workflowStepIndex].map(async (item: WorkItemUpdateQueueItem) => {
+        const { update, operation } = item;
+        const result = await preprocessWorkItem(update, operation, logger, nextWorkflowStep);
+        item.preprocessResult = result;
+        return item;
+      }));
+    await processWorkItems(jobID, parseInt(workflowStepIndex), preprocessedWorkItems, logger);
+    //}
   }
   const durationMs = new Date().getTime() - startTime;
   logger.info('timing.HWIUWJI.batch.end', { durationMs });

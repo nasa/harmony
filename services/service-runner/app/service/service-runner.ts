@@ -213,15 +213,12 @@ export async function runQueryCmrFromPull(
       },
     );
     if (response.status < 300) {
-      const { errorCategory } = response.data;
-      if (errorCategory === 'granValidation') {
-        return response.data;
-      }
+      const result = response.data;
 
       const batchCatalogs = await _getStacCatalogs(catalogDir);
-      const { totalItemsSize, outputItemSizes } = response.data;
-      const newScrollID = response.data.scrollID;
-      return { batchCatalogs, totalItemsSize, outputItemSizes, scrollID: newScrollID };
+      result.batchCatalogs = batchCatalogs;
+
+      return result;
     }
   } catch (e) {
     workItemLogger.error(e);
