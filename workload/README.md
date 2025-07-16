@@ -36,7 +36,7 @@ $ HTTPS_PROXY=socks5h://localhost:8080 locust
 Note that you will also need to provide the EDC certificate in order to successfully connect to the load balancer
 in the sandbox environment. Save the EDC SSL certificate to a file locally and then run:
 ```
-REQUESTS_CA_BUNDLE=<local PEM file> BEARER_TOKEN=$UAT_BEARER HTTPS_PROXY=socks5h://localhost:8080 locust --exclude-tags uat
+REQUESTS_CA_BUNDLE=<local PEM file> WORKLOAD_BEARER_TOKEN=$UAT_BEARER HTTPS_PROXY=socks5h://localhost:8080 locust --exclude-tags uat
 ```
 
 #### Testing synchronous requests in sandbox

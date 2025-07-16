@@ -211,12 +211,12 @@ class HarmonyUatUser(BaseHarmonyUser):
         self._concise_50_granules()
 
     @tag('async', 'hoss', 'demo')
-    @task(50)
+    @task(2)
     def hoss_spatial_and_variable_subset(self):
         self._hoss_spatial_and_variable_subset()
 
     @tag('ml', 'random')
-    @task(50)
+    @task(2)
     def random_num_granules_service_example(self):
         self._random_num_granules_service_example()
 
