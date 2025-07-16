@@ -231,6 +231,7 @@ export async function populateUserWorkForJobId(tx: Transaction, jobID: string): 
   + 'LEFT JOIN work_items i on "ws"."jobID" = "i"."jobID" AND "i"."jobID" = "j"."jobID" '
   + 'WHERE j.status not in (\'successful\', \'complete_with_errors\', \'failed\', \'canceled\') '
   + `AND "j"."jobID" = '${jobID}' `
+  + 'AND ws.is_complete IS NOT TRUE '
   + 'GROUP BY "j"."updatedAt", "ws"."serviceID", "ws"."jobID", j.username, "j"."isAsync" '
   + 'ORDER BY "j"."updatedAt" asc';
   await tx.raw(sql);

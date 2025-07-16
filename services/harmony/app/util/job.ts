@@ -6,9 +6,7 @@ import DataOperation, { CURRENT_SCHEMA_VERSION } from '../models/data-operation'
 import { getRelatedLinks, Job, JobForDisplay, JobStatus, terminalStates } from '../models/job';
 import JobLink from '../models/job-link';
 import JobMessage, { JobMessageLevel } from '../models/job-message';
-import {
-  deleteUserWorkForJob, recalculateReadyCount, setReadyCountToZero,
-} from '../models/user-work';
+import { deleteUserWorkForJob, recalculateCounts } from '../models/user-work';
 import { getTotalWorkItemSizesForJobID, updateWorkItemStatusesByJobId } from '../models/work-item';
 import { WorkItemStatus } from '../models/work-item-interface';
 import { getWorkflowStepByJobIdStepIndex, getWorkflowStepsByJobId } from '../models/workflow-steps';
@@ -287,7 +285,7 @@ export async function pauseAndSaveJob(
     const job = await lookupJob(tx, jobID, username);
     job.pause();
     await job.save(tx);
-    await setReadyCountToZero(tx, jobID);
+    await deleteUserWorkForJob(tx, jobID);
   });
 }
 
@@ -325,7 +323,7 @@ async function updateTokenAndChangeState(
     }
     jobStatusFn(job);
     await job.save(tx);
-    await recalculateReadyCount(tx, jobID);
+    await recalculateCounts(tx, jobID);
   });
 }
 
