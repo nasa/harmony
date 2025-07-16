@@ -1012,21 +1012,6 @@ async function handleGranuleValidation(
         if (needSave) {
           await job.save(tx);
         }
-
-        // mark the work item as ready to be processed without granule validation
-        // const workItem = await (await logAsyncExecutionTime(
-        //   getWorkItemById,
-        //   'HWIUWJI.getWorkItemById',
-        //   logger))(tx, workItemID, true);
-
-        // logger.info(`Granule validation is successful, continue processing work-item ${workItemID}`);
-        // workItem.status = WorkItemStatus.READY;
-        // await workItem.save(tx);
-
-        // await (await logAsyncExecutionTime(
-        //   incrementReadyAndDecrementRunningCounts,
-        //   'HWIUWJI.incrementReadyAndDecrementRunningCounts',
-        //   logger))(tx, jobID, workItem.serviceID);
       }
     });
     const durationMs = new Date().getTime() - transactionStart;
@@ -1058,7 +1043,7 @@ export async function handleBatchWorkItemUpdatesWithJobId(
   for (const workflowStepIndex of Object.keys(groups)) {
     if (groups[workflowStepIndex][0].update.message_category === 'granValidation') {
       await handleGranuleValidation(jobID, groups[workflowStepIndex][0].update, logger);
-    } //else {
+    }
     const nextWorkflowStep = await (await logAsyncExecutionTime(
       getWorkflowStepByJobIdStepIndex,
       'HWIUWJI.getWorkflowStepByJobIdStepIndex',
@@ -1072,7 +1057,6 @@ export async function handleBatchWorkItemUpdatesWithJobId(
         return item;
       }));
     await processWorkItems(jobID, parseInt(workflowStepIndex), preprocessedWorkItems, logger);
-    //}
   }
   const durationMs = new Date().getTime() - startTime;
   logger.info('timing.HWIUWJI.batch.end', { durationMs });
