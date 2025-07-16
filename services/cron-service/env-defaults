@@ -14,7 +14,8 @@ WORK_REAPER_BATCH_SIZE=2000
 RESTART_PROMETHEUS_CRON="*/10 * * * *" # every 10 minutes
 
 # The cron schedule for the user work updater
-USER_WORK_UPDATER_CRON="*/30 * * * *" # every thirty minutes
+USER_WORK_UPDATER_CRON="*/3 * * * *" # every 3 minutes
 
-# Rows in user_work older than this will cause the ready and running counts for a job to be recalculated
-USER_WORK_EXPIRATION_MINUTES=60
+# Rows in user_work with no work completed within this time interval this will cause the
+# ready and running counts for a job to be recalculated
+USER_WORK_EXPIRATION_MINUTES=3

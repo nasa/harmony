@@ -12,8 +12,8 @@ import JobMessage, {
   getErrorMessagesForJob, getMessageCountForJob, getWarningMessagesForJob, JobMessageLevel,
 } from '../../models/job-message';
 import {
-  decrementRunningCount, deleteUserWorkForJob, incrementReadyAndDecrementRunningCounts,
-  incrementReadyCount, setReadyCountToZero,
+  decrementRunningCount, deleteUserWorkForJob, deleteUserWorkForJobAndService,
+  incrementReadyAndDecrementRunningCounts, incrementReadyCount, setReadyCountToZero,
 } from '../../models/user-work';
 import WorkItem, {
   getWorkItemById, getWorkItemsByJobIdAndStepIndex, maxSortIndexForJobService, updateWorkItemStatus,
@@ -799,6 +799,9 @@ export async function processWorkItem(
 
     if (checkCompletion) {
       allWorkItemsForStepComplete = await updateIsComplete(tx, jobID, job.numInputGranules, thisStep);
+      if (allWorkItemsForStepComplete) {
+        await deleteUserWorkForJobAndService(tx, jobID, serviceId);
+      }
     }
 
     const continueProcessing = await (await logAsyncExecutionTime(
