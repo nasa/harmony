@@ -144,8 +144,8 @@ describe('UserWorkUpdater', () => {
 
       const job2 = buildJob({});
       await job2.save(db);
-      const userWork5_2 = createUserWorkRecord({ job_id: job2.jobID, ready_count: 0, running_count: 0, last_worked: new Date() });
-      await userWork5_2.save(db);
+      const userWork5Job2 = createUserWorkRecord({ job_id: job2.jobID, ready_count: 0, running_count: 0, last_worked: new Date() });
+      await userWork5Job2.save(db);
 
       await updateUserWorkMod.updateUserWork(ctx);
 
