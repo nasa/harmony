@@ -1,12 +1,12 @@
 import fs, { promises } from 'fs';
 import path from 'path';
-import { stub, spy, SinonStub } from 'sinon';
+import { SinonStub, spy, stub } from 'sinon';
 
 import * as query from '../../app/query';
 import { doWork, QueryCmrRequest } from '../../app/routers/router';
 
 /**
- * Stubs the queryGranulesScrolling method and calls doWork with the given args, unlinking
+ * Stubs the queryGranules method and calls doWork with the given args, unlinking
  * the written output file.  Does not delete any created directories
  *
  * @returns The URL prefix for use in matching responses

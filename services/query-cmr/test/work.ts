@@ -1,10 +1,11 @@
-import { QueryCmrRequest } from './../app/routers/router';
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
-import { hookDoWork } from './helpers/work';
-import CmrStacCatalog from '../app/stac/cmr-catalog';
-import { resolve } from '../../harmony/app/util/url';
+
 import { defaultObjectStore } from '../../harmony/app/util/object-store';
+import { resolve } from '../../harmony/app/util/url';
+import { QueryCmrRequest } from '../app/routers/router';
+import CmrStacCatalog from '../app/stac/cmr-catalog';
+import { hookDoWork } from './helpers/work';
 
 describe('doWork', function () {
   describe('main', function () {
@@ -16,7 +17,11 @@ describe('doWork', function () {
       };
       hookDoWork(
         workRequest,
-        [totalItemsSize, [1], [new CmrStacCatalog({ description: 'done' })]],
+        {
+          totalItemsSize,
+          outputItemSizes: [1],
+          stacCatalogs: [new CmrStacCatalog({ description: 'done' })],
+        },
       );
 
       it('outputs the result data to catalog.json in the directory', async function () {
