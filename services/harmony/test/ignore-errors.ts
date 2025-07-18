@@ -37,15 +37,20 @@ describe('ignoreErrors', function () {
   hookServersStartStop();
 
   let sizeOfObjectStub;
+  let maxPercentErrorsStub;
+
   before(async function () {
     sizeOfObjectStub = stub(aggregationBatch, 'sizeOfObject')
       .callsFake(async (_) => 1);
+    // disable max percent error while testing max errors
+    maxPercentErrorsStub = stub(env, 'maxPercentErrorsForJob').get(() => 100);
     await truncateAll();
     resetQueues();
   });
 
   after(async function () {
     sizeOfObjectStub.restore();
+    maxPercentErrorsStub.restore();
     resetQueues();
     await truncateAll();
   });
@@ -471,6 +476,152 @@ describe('ignoreErrors', function () {
       });
       after(function () {
         maxErrorsStub.restore();
+      });
+
+      describe('when the first granule completes successfully', function () {
+        let firstHossItem;
+
+        before(async function () {
+          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-opendap-subsetter:latest');
+
+          firstHossItem = JSON.parse(res.text).workItem;
+          firstHossItem.status = WorkItemStatus.SUCCESSFUL;
+          firstHossItem.results = [getStacLocation(firstHossItem, 'catalog.json')];
+          await fakeServiceStacOutput(firstHossItem.jobID, firstHossItem.id);
+          await updateWorkItem(this.backend, firstHossItem);
+
+          const res2 = await getWorkForService(this.backend, 'sds/maskfill-harmony:latest');
+          const maskfillItem = JSON.parse(res2.text).workItem;
+          maskfillItem.status = WorkItemStatus.SUCCESSFUL;
+          maskfillItem.results = [getStacLocation(maskfillItem, 'catalog.json')];
+          await fakeServiceStacOutput(maskfillItem.jobID, maskfillItem.id);
+          await updateWorkItem(this.backend, maskfillItem);
+        });
+
+        it('leaves the job in the running state', async function () {
+          const { job } = await Job.byJobID(db, firstHossItem.jobID);
+          expect(job.status).to.equal(JobStatus.RUNNING);
+        });
+      });
+
+      describe('when the second HOSS work item fails (first failure)', function () {
+        let secondHossItem;
+
+        before(async function () {
+          let shouldLoop = true;
+          // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
+          while (shouldLoop) {
+            const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-opendap-subsetter:latest');
+            secondHossItem = JSON.parse(res.text).workItem;
+            secondHossItem.status = WorkItemStatus.FAILED;
+            secondHossItem.results = [];
+
+            await updateWorkItem(this.backend, secondHossItem);
+
+            // check to see if the work-item has failed completely
+            const workItem = await getWorkItemById(db, secondHossItem.id);
+            shouldLoop = !(workItem.status === WorkItemStatus.FAILED);
+          }
+        });
+
+        it('changes the job status to running_with_errors', async function () {
+          const { job } = await Job.byJobID(db, secondHossItem.jobID);
+          expect(job.status).to.equal(JobStatus.RUNNING_WITH_ERRORS);
+        });
+
+        it('does not queue a MaskFill step for the work item that failed', async function () {
+          const currentWorkItems = (await getWorkItemsByJobId(db, secondHossItem.jobID)).workItems;
+          expect(currentWorkItems.length).to.equal(6);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(2);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'sds/maskfill-harmony:latest').length).to.equal(1);
+
+        });
+      });
+
+      describe('when the third HOSS work item fails resulting in a (second failure) for the job', function () {
+        let thirdHossItem;
+
+        before(async function () {
+          let shouldLoop = true;
+          // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
+          while (shouldLoop) {
+            const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-opendap-subsetter:latest');
+            thirdHossItem = JSON.parse(res.text).workItem;
+            thirdHossItem.status = WorkItemStatus.FAILED;
+            thirdHossItem.results = [];
+            thirdHossItem.message = 'Did not reach 88 MPH.';
+
+            await updateWorkItem(this.backend, thirdHossItem);
+
+            // check to see if the work-item has failed completely
+            const workItem = await getWorkItemById(db, thirdHossItem.id);
+            shouldLoop = !(workItem.status === WorkItemStatus.FAILED);
+          }
+        });
+
+        it('puts the job in a FAILED state', async function () {
+          const { job } = await Job.byJobID(db, thirdHossItem.jobID);
+          expect(job.status).to.equal(JobStatus.FAILED);
+        });
+
+        it('includes the error details in the job status', async function () {
+          const response = await jobStatus(this.frontend, { jobID: thirdHossItem.jobID, username: 'joe' });
+          const job = JSON.parse(response.text);
+          const { errors } = job;
+          expect(errors.length).to.equal(2);
+          expect(errors[0].url).to.equal('https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/001_00_8f00ff_global.nc');
+          expect(errors[0].message).to.include('failed with an unknown error');
+          expect(errors[1].url).to.equal('https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/001_00_8f00ff_global.nc');
+          expect(errors[1].message).to.include('Did not reach 88 MPH');
+        });
+
+        it('marks any remaining work items as canceled', async function () {
+          // job failure should trigger cancellation of any pending work items
+          const currentWorkItems = (await getWorkItemsByJobId(db, thirdHossItem.jobID)).workItems;
+          expect(currentWorkItems.length).to.equal(6);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.CANCELED && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(2);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'sds/maskfill-harmony:latest').length).to.equal(1);
+        });
+      });
+    });
+
+    describe('when making a request for 4 granules with max percent errors of 30 and two fail', function () {
+      hookRangesetRequest('1.0.0', collection, 'all', { query: { ...hossAndMaskfillQuery, ...{ maxResults: 4, ignoreErrors: true } } });
+      hookRedirect('joe');
+
+
+      before(async function () {
+        maxPercentErrorsStub.restore();
+        maxPercentErrorsStub = stub(env, 'maxPercentErrorsForJob').get(() => 30);
+        const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
+        const { workItem, maxCmrGranules } = JSON.parse(res.text);
+        expect(maxCmrGranules).to.equal(4);
+        workItem.status = WorkItemStatus.SUCCESSFUL;
+        workItem.results = [
+          getStacLocation(workItem, 'catalog0.json'),
+          getStacLocation(workItem, 'catalog1.json'),
+          getStacLocation(workItem, 'catalog2.json'),
+          getStacLocation(workItem, 'catalog3.json'),
+        ];
+        workItem.outputItemSizes = [1, 2, 3, 4];
+        await fakeServiceStacOutput(workItem.jobID, workItem.id, 4);
+        await updateWorkItem(this.backend, workItem);
+
+        const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
+        expect(currentWorkItems.length).to.equal(5);
+        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
+        expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(4);
+      });
+      after(function () {
+        maxPercentErrorsStub.restore();
+        // disable max percent error while testing max errors
+        maxPercentErrorsStub = stub(env, 'maxPercentErrorsForJob').get(() => 100);
       });
 
       describe('when the first granule completes successfully', function () {

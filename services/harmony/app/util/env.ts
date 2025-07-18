@@ -53,6 +53,10 @@ class HarmonyServerEnv extends HarmonyEnv {
 
   @IsInt()
   @Min(0)
+  maxPercentErrorsForJob: number;
+
+  @IsInt()
+  @Min(0)
   previewThreshold: number;
 
   @IsNotEmpty()

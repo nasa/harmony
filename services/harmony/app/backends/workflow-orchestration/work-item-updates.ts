@@ -243,6 +243,10 @@ async function handleFailedWorkItems(
             jobMessage = `Maximum allowed errors ${env.maxErrorsForJob} exceeded. See the errors fields for more details`;
             logger.warn(jobMessage);
             continueProcessing = false;
+          } else if (100.0 * errorCount / job.numInputGranules > env.maxPercentErrorsForJob) {
+            jobMessage = `${env.maxPercentErrorsForJob} percent maximum errors exceeded. See the errors fields for more details`;
+            logger.warn(jobMessage);
+            continueProcessing = false;
           }
         }
 
