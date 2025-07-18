@@ -216,7 +216,7 @@ export async function runQueryCmrFromPull(
       const result = response.data;
 
       const batchCatalogs = await _getStacCatalogs(catalogDir);
-      result.batchCatalogs = batchCatalogs;
+      result.batchCatalogs = batchCatalogs && batchCatalogs.length > 0 ? batchCatalogs : undefined;
 
       return result;
     }
