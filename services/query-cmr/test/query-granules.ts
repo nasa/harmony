@@ -53,7 +53,7 @@ async function formDataToString(formdata: CombinedStream): Promise<string> {
 async function fetchPostArgsToFields(
   [_a, _b, formdata],
 ): Promise<any> { // eslint-disable-line @typescript-eslint/no-explicit-any
-  const data = (await formDataToString(formdata)).replace(/----+[0-9]+-*\r\n/g, '');
+  const data = (await formDataToString(formdata)).replace(/-+[a-f0-9]+-*\r\n/g, '');
   const result = {};
   const fields = data.split(/Content-Disposition: form-data; name=/g).slice(1);
   for (const field of fields) {
