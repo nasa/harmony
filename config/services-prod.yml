@@ -291,6 +291,32 @@ https://cmr.earthdata.nasa.gov:
         conditional:
           exists: ['shapefileSubset', 'spatialSubset']
 
+  - name: sds/swath-projector
+    description: |
+      Takes NetCDF-4 input files and projects input swath variables to an output grid.
+      Target CRS, output grid dimensions, extents and/or resolutions can be specified in the Harmony request.
+    data_operation_version: '0.22.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/sds/swath-projector
+    umm_s: S3436698182-XYZ_PROV
+    capabilities:
+      subsetting:
+        bbox: false
+        variable: false
+      output_formats:
+        - application/netcdf # Incorrect mime-type, remove when no longer needed
+        - application/x-netcdf4
+      reprojection: true
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
+      - image: !Env ${SWATH_PROJECTOR_IMAGE}
+
   - name: ldds/subset-band-name
     description: |
       Subset by Band and Name service capable of subsetting HDF4/HDF-EOS2 SDS variables by name and band.
