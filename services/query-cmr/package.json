@@ -60,7 +60,7 @@
     "class-validator": "^0.14.0",
     "dotenv": "^16.4.7",
     "express": "^4.17.1",
-    "form-data": "^4.0.0",
+    "form-data": "^4.0.4",
     "geo-split": "^0.1.2",
     "geojson-antimeridian-cut": "^0.1.0",
     "lodash": "^4.17.21",
