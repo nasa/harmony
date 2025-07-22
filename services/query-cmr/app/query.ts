@@ -225,10 +225,8 @@ export async function queryGranules(
         errorCategory: 'granValidation',
       };
     } else {
+      // need this to indicate that a validation was performed
       result = {
-        hits,
-        scrollID: scrollId,
-        errorLevel: 'warning',
         errorCategory: 'granValidation',
       };
     }

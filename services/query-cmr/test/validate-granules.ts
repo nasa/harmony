@@ -80,7 +80,7 @@ describe('validateGranules', function () {
 
     const result = await query.queryGranules(operationWithValidation, scrollId, maxCmrGranules, logger);
     expect(result.hits).to.equal(1);
-    expect(result.errorLevel).to.equal('warning');
+    expect(result.errorLevel).to.be.undefined;
     expect(result.errorCategory).to.equal('granValidation');
     expect(result.error).to.be.undefined;
   });

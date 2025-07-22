@@ -972,7 +972,7 @@ async function handleGranuleValidation(
   jobID: string,
   update: WorkItemUpdate,
   logger: Logger): Promise<void> {
-  const { status, message } = update;
+  const { status, message, workItemID } = update;
   try {
     const transactionStart = new Date().getTime();
 
@@ -983,6 +983,17 @@ async function handleGranuleValidation(
         logger))(tx, jobID, false, false, true);
 
       if (status === WorkItemStatus.FAILED) {
+        const workItem = await (await logAsyncExecutionTime(
+          getWorkItemById,
+          'HWIUWJI.getWorkItemById',
+          logger))(tx, workItemID, true);
+
+        logger.info(`Granule validation failed, failing work-item ${workItemID}`);
+        workItem.status = WorkItemStatus.FAILED;
+        workItem.message = update.message;
+        workItem.message_category = update.message_category;
+        await workItem.save(tx);
+
         // update job status and message
         await completeJob(tx, job, JobStatus.FAILED, logger, message);
       } else {
