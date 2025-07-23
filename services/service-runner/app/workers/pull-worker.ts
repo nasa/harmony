@@ -151,6 +151,11 @@ async function _doWork(
   if (serviceResponse.scrollID) {
     newWorkItem.scrollID = serviceResponse.scrollID;
     newWorkItem.hits = serviceResponse.hits;
+  } else {
+    newWorkItem.status = WorkItemStatus.FAILED;
+    newWorkItem.message = 'service failed';
+    newWorkItem.message_category = 'error';
+    return newWorkItem;
   }
   if (serviceResponse.batchCatalogs) {
     newWorkItem.status = WorkItemStatus.SUCCESSFUL;

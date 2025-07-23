@@ -52,7 +52,7 @@ describe('ignoreErrors', function () {
     sizeOfObjectStub.restore();
     maxPercentErrorsStub.restore();
     resetQueues();
-    await truncateAll();
+    // await truncateAll();
   });
 
   describe('when setting ignoreErrors=true', function () {
@@ -591,14 +591,15 @@ describe('ignoreErrors', function () {
       });
     });
 
-    describe('when making a request for 4 granules with max percent errors of 30 and two fail', function () {
+    describe('when the number of work item failures in a request exceeds the percentage limit and the total worked worked-items exceeds the threshold to check the failure percentage', function () {
       hookRangesetRequest('1.0.0', collection, 'all', { query: { ...hossAndMaskfillQuery, ...{ maxResults: 4, ignoreErrors: true } } });
       hookRedirect('joe');
-
+      let minCompletedGranulesToCheckStub;
 
       before(async function () {
         maxPercentErrorsStub.restore();
-        maxPercentErrorsStub = stub(env, 'maxPercentErrorsForJob').get(() => 30);
+        maxPercentErrorsStub = stub(env, 'maxPercentErrorsForJob').get(() => 40);
+        minCompletedGranulesToCheckStub = stub(env, 'minCompletedWorkItemsToCheckFailurePercentage').get(() => 2);
         const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
         const { workItem, maxCmrGranules } = JSON.parse(res.text);
         expect(maxCmrGranules).to.equal(4);
@@ -619,6 +620,7 @@ describe('ignoreErrors', function () {
         expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(4);
       });
       after(function () {
+        minCompletedGranulesToCheckStub.restore();
         maxPercentErrorsStub.restore();
         // disable max percent error while testing max errors
         maxPercentErrorsStub = stub(env, 'maxPercentErrorsForJob').get(() => 100);
@@ -650,7 +652,7 @@ describe('ignoreErrors', function () {
         });
       });
 
-      describe('when the second HOSS work item fails (first failure)', function () {
+      describe('when the second HOSS work item fails (first failure) foo', function () {
         let secondHossItem;
 
         before(async function () {
@@ -687,7 +689,7 @@ describe('ignoreErrors', function () {
         });
       });
 
-      describe('when the third HOSS work item fails resulting in a (second failure) for the job', function () {
+      describe('when the third HOSS work item fails resulting in a second failure for the job', function () {
         let thirdHossItem;
 
         before(async function () {
