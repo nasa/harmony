@@ -375,6 +375,62 @@ https://cmr.earthdata.nasa.gov:
           exists: [ 'variableSubset', 'dimensionSubset' ]
       - image: !Env ${GEOLOCO_IMAGE}
 
+  - name: asdc/imagenator_l2
+    description: Chain to create TEMPO L2 imagery for GIBS
+    data_operation_version: '0.22.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/harmony/imagenator_l2
+    umm_s: SD3611093087-LARC_CLOUD
+    capabilities:
+      concatenation: false
+      subsetting:
+        bbox: false
+        variable: true
+        temporal: false
+      output_formats:
+        - image/png
+      reprojection: false
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
+      - image: !Env ${SWATH_PROJECTOR_IMAGE}
+      - image: !Env ${FILTERING_IMAGE}
+      - image: !Env ${NET2COG_IMAGE}
+      - image: !Env ${HYBIG_IMAGE}
+
+  - name: asdc/imagenator_l3
+    description: Chain to create TEMPO L3 imagery for GIBS
+    data_operation_version: '0.22.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/harmony/imagenator_l3
+    umm_s: SD3611100450-LARC_CLOUD
+    capabilities:
+      concatenation: false
+      subsetting:
+        bbox: false
+        variable: true
+        temporal: false
+      output_formats:
+        - image/png
+      reprojection: false
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
+      - image: !Env ${FILTERING_IMAGE}
+      - image: !Env ${NET2COG_IMAGE}
+      - image: !Env ${HYBIG_IMAGE}
+
+
   - name: sds/HyBIG
     description: |
       The Harmony Browse Image Generator (HyBIG) supports the conversion of
