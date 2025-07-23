@@ -708,7 +708,13 @@ export async function processWorkItem(
 
     // retry failed work-items up to a limit
     if (status === WorkItemStatus.FAILED) {
-      if (workItem.retryCount < env.workItemRetryLimit) {
+      if (message_category === 'noretry') {
+        logger.warn('This error is not retriable.');
+        logger.warn(
+          `Updating work item for ${workItemID} to ${status} with message ${message}`,
+          { workFailureMessage: message, serviceId: workItem.serviceID, status },
+        );
+      } else if (workItem.retryCount < env.workItemRetryLimit) {
         logger.info(`Retrying failed work-item ${workItemID}`);
         workItem.retryCount += 1;
         workItem.status = WorkItemStatus.READY;
