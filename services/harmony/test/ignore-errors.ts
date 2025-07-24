@@ -591,7 +591,7 @@ describe('ignoreErrors', function () {
       });
     });
 
-    describe('when the number of work item failures in a request exceeds the percentage limit and the total worked worked-items exceeds the threshold to check the failure percentage', function () {
+    describe('when the number of work-item failures in a request exceeds the percentage limit and the total worked worked-items exceeds the threshold to check the failure percentage', function () {
       hookRangesetRequest('1.0.0', collection, 'all', { query: { ...hossAndMaskfillQuery, ...{ maxResults: 4, ignoreErrors: true } } });
       hookRedirect('joe');
       let minCompletedGranulesToCheckStub;
