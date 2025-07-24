@@ -76,7 +76,7 @@ MAX_ERRORS_FOR_JOB=2000
 
 # The minimum number of work-items that must be in the successful or failed state before we start
 # testing for job failure based on failure percentage
-MIN_COMPLETED_WORK_ITEMS_TO_CHECK_FAILURE_PERCENTAGE=10
+MIN_DONE_ITEMS_FOR_FAIL_CHECK=10
 
 # The maximum percentage of failed work-items to allow for a job before considering it failed
 MAX_PERCENT_ERRORS_FOR_JOB=75

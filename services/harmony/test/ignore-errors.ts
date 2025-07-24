@@ -598,8 +598,8 @@ describe('ignoreErrors', function () {
 
       before(async function () {
         maxPercentErrorsStub.restore();
-        maxPercentErrorsStub = stub(env, 'maxPercentErrorsForJob').get(() => 40);
-        minCompletedGranulesToCheckStub = stub(env, 'minCompletedWorkItemsToCheckFailurePercentage').get(() => 2);
+        maxPercentErrorsStub = stub(env, 'maxPercentErrorsForJob').get(() => 60);
+        minCompletedGranulesToCheckStub = stub(env, 'minDoneItemsForFailCheck').get(() => 2);
         const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
         const { workItem, maxCmrGranules } = JSON.parse(res.text);
         expect(maxCmrGranules).to.equal(4);

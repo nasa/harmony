@@ -707,22 +707,23 @@ export async function workItemCountForJobID(
 }
 
 /**
- *  Returns the number of existing work items for a specific job id with the given status.
+ * Returns the number of work items for a specific job id with the given status and workflow
+ * step index.
  *  Excludes work-items for the first step (usually query-cmr)
  * @param tx - the transaction to use for querying
  * @param jobID - the ID of the job that created this work item
  * @param status - the work item status to filter by
  */
-export async function workItemCountWithStatusForJobID(
+export async function countOfWorkItemsByStepAndJobID(
   tx: Transaction,
   jobID: string,
+  workflowStepIndex: number,
   status: string,
 ): Promise<number> {
   const count = await tx(WorkItem.table)
     .select()
     .count('id')
-    .whereNot({ workflowStepIndex: 1 })
-    .andWhere({ jobID, status });
+    .where({ jobID, workflowStepIndex, status });
 
   let workItemCount;
   if (db.client.config.client === 'pg') {

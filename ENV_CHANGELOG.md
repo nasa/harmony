@@ -2,6 +2,11 @@
 Any changes to the environment variables will be documented in this file in chronological
 order with the most recent changes first.
 
+# 2025-07-24
+### Added
+- MAX_PERCENT_ERRORS_FOR_JOB - the maximum percentage of failures for a service before failing a job
+- MIN_DONE_ITEMS_FOR_FAIL_CHECK - the minimum number of complete work-items for a service before the failure percentage is checked
+
 # 2025-05-19
 ### Added
 - Added environment defaults for Harmony Metadata Annotator

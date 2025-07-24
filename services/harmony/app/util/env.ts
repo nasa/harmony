@@ -53,7 +53,7 @@ class HarmonyServerEnv extends HarmonyEnv {
 
   @IsInt()
   @Min(1)
-  minCompletedWorkItemsToCheckFailurePercentage: number;
+  minDoneItemsForFailCheck: number;
 
   @IsInt()
   @Min(0)
