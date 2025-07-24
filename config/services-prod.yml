@@ -385,7 +385,7 @@ https://cmr.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/harmony/imagenator_l2
-    umm_s: SD3611093087-LARC_CLOUD
+    umm_s: S3616918926-LARC_CLOUD
     capabilities:
       concatenation: false
       subsetting:
@@ -413,7 +413,7 @@ https://cmr.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/harmony/imagenator_l3
-    umm_s: SD3611100450-LARC_CLOUD
+    umm_s: S3616918458-LARC_CLOUD
     capabilities:
       concatenation: false
       subsetting:
