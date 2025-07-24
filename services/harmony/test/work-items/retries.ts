@@ -87,7 +87,7 @@ describe('Work item failure retries', function () {
       });
     });
 
-    describe('And a work-item fails the first time', async function () {
+    describe('And a work-item fails two times', async function () {
       hookRangesetRequest('1.0.0', collection, 'all', { query: { ...reprojectQuery, ...{ maxResults: 1 } } });
       hookRedirect('joe');
       before(async function () {
@@ -147,7 +147,8 @@ describe('Work item failure retries', function () {
         });
       });
     });
-    describe('And a work-item fails the first time', async function () {
+
+    describe('And a work-item fails three times', async function () {
       hookRangesetRequest('1.0.0', collection, 'all', { query: { ...reprojectQuery, ...{ maxResults: 1 } } });
       hookRedirect('joe');
       before(async function () {
@@ -207,6 +208,33 @@ describe('Work item failure retries', function () {
         it('changes the work-item status to failed', async function () {
           expect(this.workItem.status).to.equal(WorkItemStatus.FAILED);
         });
+      });
+    });
+
+    describe('And a work-item fails with no retry error', async function () {
+      hookRangesetRequest('1.0.0', collection, 'all', { query: { ...reprojectQuery, ...{ maxResults: 1 } } });
+      hookRedirect('joe');
+      before(async function () {
+        const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
+        const { workItem } = JSON.parse(res.text);
+
+        workItem.status = WorkItemStatus.FAILED;
+        workItem.message = 'The service returns noretry error';
+        workItem.message_category = 'noretry';
+        workItem.results = [];
+
+        await updateWorkItem(this.backend, workItem);
+
+        this.workItem = await getWorkItemById(db, workItem.id);
+      });
+
+      it('Changes the work-item status to failed immediately without retries', async function () {
+        expect(this.workItem.status).to.equal(WorkItemStatus.FAILED);
+        expect(this.workItem.retryCount).to.equal(0);
+      });
+      it('changes the work-item status to failed', async function () {
+        const { job } = await Job.byJobID(db, this.workItem.jobID);
+        expect(job.status).to.equal(JobStatus.FAILED);
       });
     });
   });
