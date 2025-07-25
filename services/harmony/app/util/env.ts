@@ -52,6 +52,14 @@ class HarmonyServerEnv extends HarmonyEnv {
   maxErrorsForJob: number;
 
   @IsInt()
+  @Min(1)
+  minDoneItemsForFailCheck: number;
+
+  @IsInt()
+  @Min(0)
+  maxPercentErrorsForJob: number;
+
+  @IsInt()
   @Min(0)
   previewThreshold: number;
 

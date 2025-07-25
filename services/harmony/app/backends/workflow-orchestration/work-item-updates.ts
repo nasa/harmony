@@ -16,8 +16,8 @@ import {
   incrementReadyAndDecrementRunningCounts, incrementReadyCount, setReadyCountToZero,
 } from '../../models/user-work';
 import WorkItem, {
-  getWorkItemById, getWorkItemsByJobIdAndStepIndex, maxSortIndexForJobService, updateWorkItemStatus,
-  workItemCountForStep,
+  countOfWorkItemsByStepAndJobID, getWorkItemById, getWorkItemsByJobIdAndStepIndex,
+  maxSortIndexForJobService, updateWorkItemStatus, workItemCountForStep,
 } from '../../models/work-item';
 import { COMPLETED_WORK_ITEM_STATUSES, WorkItemStatus } from '../../models/work-item-interface';
 import WorkItemUpdate from '../../models/work-item-update';
@@ -243,6 +243,25 @@ async function handleFailedWorkItems(
             jobMessage = `Maximum allowed errors ${env.maxErrorsForJob} exceeded. See the errors fields for more details`;
             logger.warn(jobMessage);
             continueProcessing = false;
+          } else {
+            const successCount = await countOfWorkItemsByStepAndJobID(
+              tx,
+              job.jobID,
+              workItem.workflowStepIndex,
+              WorkItemStatus.SUCCESSFUL);
+            const failedCount = await countOfWorkItemsByStepAndJobID(
+              tx,
+              job.jobID,
+              workItem.workflowStepIndex,
+              WorkItemStatus.FAILED);
+
+            if (successCount + failedCount >= env.minDoneItemsForFailCheck &&
+              100.0 * failedCount / (successCount + failedCount) > env.maxPercentErrorsForJob
+            ) {
+              jobMessage = `${env.maxPercentErrorsForJob} percent maximum errors exceeded. See the errors fields for more details`;
+              logger.warn(jobMessage);
+              continueProcessing = false;
+            }
           }
         }
 
