@@ -85,6 +85,46 @@ async function addJobLinksForFinishedWorkItem(
 }
 
 /**
+ * foo
+ */
+async function foo(workItem: WorkItem, update: WorkItemUpdate, outputItemSizes: number[], status: WorkItemStatus, thisStep: WorkflowStep, tx: Transaction, logger: Logger, workItemID: number, message_category: string, jobID: string): Promise<void> {
+  const harmonyDuration = Date.now() - workItem.startedAt.valueOf();
+  let duration = harmonyDuration;
+  if (update.duration) {
+    duration = Math.max(duration, update.duration);
+  }
+
+  let { totalItemsSize } = update;
+
+  if (!totalItemsSize && outputItemSizes?.length > 0) {
+    totalItemsSize = sum(outputItemSizes) / 1024 / 1024;
+  }
+
+  if (COMPLETED_WORK_ITEM_STATUSES.includes(status)) {
+    thisStep.completed_work_item_count += 1;
+    await thisStep.save(tx);
+  }
+
+  await (await logAsyncExecutionTime(
+    updateWorkItemStatus,
+    'HWIUWJI.updateWorkItemStatus',
+    logger))(
+    tx,
+    workItemID,
+    status,
+    message_category,
+    duration,
+    totalItemsSize,
+    outputItemSizes);
+  await (await logAsyncExecutionTime(
+    decrementRunningCount,
+    'HWIUWJI.decrementRunningCount',
+    logger))(tx, jobID, workItem.serviceID);
+
+  logger.info(`Updated work item. Duration (ms) was: ${duration}`);
+}
+
+/**
  * Returns the final job status and message for the request based on whether all
  * items were successful, some were successful and some failed, or all items failed.
  * This function is not reached in all job completion failure cases
@@ -737,40 +777,7 @@ export async function processWorkItem(
     // the whole thing was quicker (since our startTime has changed). So in that case we want to
     // use the time reported by the service pod. Any updates from retries that happen later  will
     // be ignored since the work item is already in a 'successful' state.
-    const harmonyDuration = Date.now() - workItem.startedAt.valueOf();
-    let duration = harmonyDuration;
-    if (update.duration) {
-      duration = Math.max(duration, update.duration);
-    }
-
-    let { totalItemsSize } = update;
-
-    if (!totalItemsSize && outputItemSizes?.length > 0) {
-      totalItemsSize = sum(outputItemSizes) / 1024 / 1024;
-    }
-
-    if (COMPLETED_WORK_ITEM_STATUSES.includes(status)) {
-      thisStep.completed_work_item_count += 1;
-      await thisStep.save(tx);
-    }
-
-    await (await logAsyncExecutionTime(
-      updateWorkItemStatus,
-      'HWIUWJI.updateWorkItemStatus',
-      logger))(
-      tx,
-      workItemID,
-      status,
-      message_category,
-      duration,
-      totalItemsSize,
-      outputItemSizes);
-    await (await logAsyncExecutionTime(
-      decrementRunningCount,
-      'HWIUWJI.decrementRunningCount',
-      logger))(tx, jobID, workItem.serviceID);
-
-    logger.info(`Updated work item. Duration (ms) was: ${duration}`);
+    await foo(workItem, update, outputItemSizes, status, thisStep, tx, logger, workItemID, message_category, jobID);
 
     workItem.status = status;
     workItem.message_category = message_category;
@@ -903,7 +910,6 @@ export async function processWorkItem(
     { workItemId: workItemID, status, durationMs, serviceId },
   );
 }
-
 
 /**
  * Process a list of work item updates for a given job
