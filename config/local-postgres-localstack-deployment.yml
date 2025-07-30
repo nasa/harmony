@@ -16,7 +16,7 @@ spec:
           name: localstack-start
       env:
         - name: LOCALSTACK_SERVICES
-          value: "lambda,s3,sqs,sts"
+          value: "lambda,s3,sqs,sts,cloudwatch"
         - name: LOCALSTACK_DEBUG
           value: "1"
   volumes:
