@@ -5,7 +5,7 @@ import { Context } from '../util/context';
 import env from '../util/env';
 import { CronJob } from './cronjob';
 
-interface MetricData {
+export interface MetricData {
   metricName: string;
   namespace: string;
   value: number;
@@ -25,12 +25,21 @@ interface WorkItemsQueryResult {
   count: string; // Knex returns count as string, we'll convert to number
 }
 
+export interface CloudWatchClientConfig {
+  region: string;
+  endpoint?: string;
+  credentials?: {
+    accessKeyId: string;
+    secretAccessKey: string;
+  }
+}
+
 /**
  * Get a CloudWatch client config for either localstack or a real environment.
  * @returns a configuration appropriate for the working environment
  */
-function getCloudWatchClientConfg(): object {
-  let config = {};
+export function getCloudWatchClientConfig(): CloudWatchClientConfig {
+  let config: CloudWatchClientConfig;
 
   if (process.env.USE_LOCALSTACK === 'true') {
     const { localstackHost } = env;
@@ -75,7 +84,8 @@ export async function getFailedWorkItemPercentageByServiceWithTimeWindow(
 
     // get all the services - need to do this here as some of the services may not have recent
     // work-items, but we still want to report metrics for them
-    const allServices = await db('work_items')
+    const allServices = await db
+      .from('work_items')
       .distinct('serviceID');
 
     // normalize service names by removing tags from service IDs
@@ -86,11 +96,12 @@ export async function getFailedWorkItemPercentageByServiceWithTimeWindow(
       serviceCounts[service] = [0, 0];
     }
 
-    const queryResults = await db('work_items')
+    const queryResults = await db
+      .from('work_items')
       .select('serviceID', 'status')
       .count('* as count')
       .whereIn('status', [WorkItemStatus.FAILED, WorkItemStatus.SUCCESSFUL, WorkItemStatus.WARNING])
-      .where('updatedAt', '>=', timeAgo.toISOString())
+      .where('updatedAt', '>=', timeAgo)
       .groupBy('serviceID', 'status')
       .orderBy(['serviceID', 'status']) as WorkItemsQueryResult[];
 
@@ -126,7 +137,7 @@ export async function getFailedWorkItemPercentageByServiceWithTimeWindow(
     return results;
 
   } catch (error) {
-    logger.error('Error querying failed for work items:', error);
+    logger.error('Error querying for work-item failure statistics', error);
     throw error;
   }
 }
@@ -176,28 +187,33 @@ export class PublishServiceFailureMetrics extends CronJob {
     const { logger } = ctx;
     logger.info('Failure metrics publisher started.');
 
-    const serviceFailurePercentages = await getFailedWorkItemPercentageByServiceWithTimeWindow(ctx, env.failureMetricsLookBackMinutes);
-    const namespace = `harmony-services-${env.clientId}`;
-    logger.info(`Publishing ${serviceFailurePercentages.length} metrics to namespace ${namespace}`);
+    try {
+      const serviceFailurePercentages = await getFailedWorkItemPercentageByServiceWithTimeWindow(ctx, env.failureMetricsLookBackMinutes);
+      const namespace = `harmony-services-${env.clientId}`;
+      logger.info(`Publishing ${serviceFailurePercentages.length} metrics to namespace ${namespace}`);
 
-    // Initialize the CloudWatch client
-    const config = getCloudWatchClientConfg();
-    const client = new CloudWatchClient(config);
+      // Initialize the CloudWatch client
+      const config = getCloudWatchClientConfig();
+      const client = new CloudWatchClient(config);
 
-    for (const serviceFailure of serviceFailurePercentages) {
-      const data: MetricData = {
-        metricName: 'harmony-service-percent-failures',
-        namespace: namespace,
-        value: serviceFailure.percent,
-        dimensions: {
-          'service': serviceFailure.service,
-        },
-        timestamp: new Date(),
-      };
+      for (const serviceFailure of serviceFailurePercentages) {
+        const data: MetricData = {
+          metricName: 'harmony-service-percent-failures',
+          namespace: namespace,
+          value: serviceFailure.percent,
+          dimensions: {
+            'service': serviceFailure.service,
+          },
+          timestamp: new Date(),
+        };
 
-      await publishMetric(ctx, client, data);
+        await publishMetric(ctx, client, data);
+      }
+
+      logger.info('Failure metrics publication completed.');
+    } catch (error) {
+      logger.error('Failed to compute and publish all service failure metrics');
+      logger.error(error);
     }
-
-    logger.info('Failure metrics publication completed.');
   }
 }
