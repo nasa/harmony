@@ -171,7 +171,7 @@ export async function publishMetric(ctx: Context, client: CloudWatchClient, metr
 /**
  * Publish service failure metrics to CloudWatch
  */
-export class PublisServiceFailureMetrics extends CronJob {
+export class PublishServiceFailureMetrics extends CronJob {
   static async run(ctx: Context): Promise<void> {
     const { logger } = ctx;
     logger.info('Failure metrics publisher started.');

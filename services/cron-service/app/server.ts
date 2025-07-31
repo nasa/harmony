@@ -3,7 +3,7 @@ import express from 'express';
 
 import db from '../../harmony/app/util/db';
 import log from '../../harmony/app/util/log';
-import { PublisServiceFailureMetrics } from './cronjobs/publish-failure-metrics';
+import { PublishServiceFailureMetrics } from './cronjobs/publish-failure-metrics';
 import { RestartPrometheus } from './cronjobs/restart-prometheus';
 import { UserWorkUpdater } from './cronjobs/update-user-work';
 import { WorkReaper } from './cronjobs/work-reaper';
@@ -22,7 +22,7 @@ export default function start(): void {
     [env.workReaperCron, WorkReaper],
     [env.restartPrometheusCron, RestartPrometheus],
     [env.userWorkUpdaterCron, UserWorkUpdater],
-    [env.publishServiceFailureMetricsCron, PublisServiceFailureMetrics],
+    [env.publishServiceFailureMetricsCron, PublishServiceFailureMetrics],
   ];
 
   for (const [cronSpec, jobClass] of cronEntries) {
