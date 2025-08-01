@@ -2,6 +2,11 @@
 Any changes to the environment variables will be documented in this file in chronological
 order with the most recent changes first.
 
+# 2025-07-30
+### Added
+- PUBLISH_SERVICE_FAILURE_METRICS_CRON - cron schedule for the job that writes cloudwatch metrics for service failures
+- FAILURE_METRICS_LOOK_BACK_MINUTES - how far back to go when computing cloudwatch metrics for service failures
+
 # 2025-07-24
 ### Added
 - MAX_PERCENT_ERRORS_FOR_JOB - the maximum percentage of failures for a service before failing a job

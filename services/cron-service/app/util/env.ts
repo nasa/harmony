@@ -39,6 +39,15 @@ class CronServiceHarmonyEnv extends HarmonyEnv {
   @Min(1)
   userWorkExpirationMinutes: number;
   // End user work update variables
+
+  // Begin publish service failure metrics variables
+  @IsCrontab()
+  publishServiceFailureMetricsCron: string;
+
+  @IsInt()
+  @Min(1)
+  failureMetricsLookBackMinutes: number;
+  // End publish service failure metrics variables
 }
 
 const localPath = path.resolve(__dirname, '../../env-defaults');

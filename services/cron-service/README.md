@@ -35,6 +35,13 @@ There are two steps for adding new jobs:
    array containing the environment variable from step 2 and the class that you
    implemented in step 1. See the entry for the `WorkReaper` class for an example.
 
+### Disabling Specific Cron Jobs
+
+If you don't want to run a particular cron job, e.g., the one that computes CloudWatch service
+failure metrics, you can disable it by setting the environment variable for its cron schedule
+to something that will never be scheduled, like the 30th of February:
+`0 0 30 2 *`
+
 ## Pushing the Docker Image to ECR
 
 If you want to do sandbox deployments with your custom cron service image then you need to
