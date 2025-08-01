@@ -7,10 +7,7 @@ import {
 
 import { WorkItemStatus } from '../../harmony/app/models/work-item-interface';
 import db from '../../harmony/app/util/db';
-import {
-  getCloudWatchClientConfig, getFailedWorkItemPercentageByServiceWithTimeWindow, MetricData,
-  publishMetric, PublishServiceFailureMetrics,
-} from '../app/cronjobs/publish-failure-metrics';
+import * as pfm from '../app/cronjobs/publish-failure-metrics';
 import { Context } from '../app/util/context';
 import env from '../app/util/env';
 import { hookTransaction, truncateAll } from './helpers/db';
@@ -45,31 +42,80 @@ describe('PublishFailureMetrics', () => {
   });
 
   describe('PublishServiceFailureMetrics.run', () => {
-    it('should call logger.info and execute updateUserWork', async () => {
-      await PublishServiceFailureMetrics.run(ctx);
+    const metricName = 'harmony-service-percent-failures';
+    const service = 'harmonyservices/query-cmr';
+    const percentFailure = 75;
+    const dimensions = { service };
+    const timestamp = new Date();
+
+    let getConfigStub: SinonStub;
+    let getMetricsStub: SinonStub;
+    let publishStub: SinonStub;
+    let clientIdStub: SinonStub;
+
+    beforeEach(() => {
+      getConfigStub = sinon.stub(pfm, 'getCloudWatchClientConfig');
+      getMetricsStub = sinon.stub(pfm, 'getFailedWorkItemPercentageByServiceWithTimeWindow');
+      publishStub = sinon.stub(pfm, 'publishMetric');
+      clientIdStub = sinon.stub(env, 'clientId').get(() => 'harmony-test');
+    });
+
+    afterEach(() => {
+      getConfigStub.restore();
+      getMetricsStub.restore();
+      publishStub.restore();
+      clientIdStub.restore();
+    });
+
+
+    it('should call logger.info', async () => {
+      await pfm.PublishServiceFailureMetrics.run(ctx);
       expect(loggerInfoStub.calledWith('Failure metrics publisher started.')).to.be.true;
     });
 
-    let dbStub: SinonStub;
     const error = new Error('Database error');
 
     it('should log errors when getting metrics fails', async () => {
       loggerErrorStub.reset();
-      dbStub = sinon.stub(db, 'from').rejects(error);
+      getMetricsStub.rejects(error);
 
       try {
 
-        await PublishServiceFailureMetrics.run(ctx);
+        await pfm.PublishServiceFailureMetrics.run(ctx);
 
       } finally {
         expect(loggerErrorStub.called).to.be.true;
         expect(loggerErrorStub.calledWith('Failed to compute and publish all service failure metrics')).to.be.true;
-        expect(loggerErrorStub.firstCall.args[0]).to.equal('Error querying for work-item failure statistics');
-        // Cleanup
-        dbStub.restore();
       }
     });
 
+    it('should use a metrics namespace that includes the environment', async () => {
+      getMetricsStub.resolves([{ service, percent: percentFailure }]);
+      await pfm.PublishServiceFailureMetrics.run(ctx);
+      const firstCallArgs = publishStub.getCall(0);
+      expect(firstCallArgs.args[2].namespace).to.equal('harmony-services-harmony-test');
+    });
+
+    it('should use a proper metric name', async () => {
+      getMetricsStub.resolves([{ service, percent: percentFailure }]);
+      await pfm.PublishServiceFailureMetrics.run(ctx);
+      const firstCallArgs = publishStub.getCall(0);
+      expect(firstCallArgs.args[2].metricName).to.equal('harmony-service-percent-failures');
+    });
+
+    it('should set the metric value', async () => {
+      getMetricsStub.resolves([{ service, percent: percentFailure }]);
+      await pfm.PublishServiceFailureMetrics.run(ctx);
+      const firstCallArgs = publishStub.getCall(0);
+      expect(firstCallArgs.args[2].value).to.equal(percentFailure);
+    });
+
+    it('should provide the service name in the dimensions', async () => {
+      getMetricsStub.resolves([{ service, percent: percentFailure }]);
+      await pfm.PublishServiceFailureMetrics.run(ctx);
+      const firstCallArgs = publishStub.getCall(0);
+      expect(firstCallArgs.args[2].dimensions.service).to.equal(service);
+    });
   });
 
   describe('getCloudWatchClientConfig', function () {
@@ -85,7 +131,7 @@ describe('PublishFailureMetrics', () => {
       const localstackHost = 'localhost';
       process.env.USE_LOCALSTACK = 'true';
       const localstackHostStub = sinon.stub(env, 'localstackHost').get(() => localstackHost);
-      const config = getCloudWatchClientConfig();
+      const config = pfm.getCloudWatchClientConfig();
       expect(config.endpoint).to.equal(`http://${localstackHost}:4572`);
       expect(config.credentials.accessKeyId).to.equal('localstack');
       expect(config.credentials.secretAccessKey).to.equal('localstack');
@@ -94,13 +140,13 @@ describe('PublishFailureMetrics', () => {
 
     it('does not uses localstack when asked not to', function () {
       process.env.USE_LOCALSTACK = 'false';
-      const config = getCloudWatchClientConfig();
+      const config = pfm.getCloudWatchClientConfig();
       expect(config.endpoint).to.be.undefined;
       expect(config.credentials).to.be.undefined;
     });
 
     it('sets the region for the environment', function () {
-      const config = getCloudWatchClientConfig();
+      const config = pfm.getCloudWatchClientConfig();
       expect(config.region).to.equal(env.awsDefaultRegion);
     });
   });
@@ -126,14 +172,14 @@ describe('PublishFailureMetrics', () => {
     });
 
     it('computes the percentage of failures for each service', async () => {
-      const metrics = await getFailedWorkItemPercentageByServiceWithTimeWindow(ctx);
+      const metrics = await pfm.getFailedWorkItemPercentageByServiceWithTimeWindow(ctx);
       expect(metrics[0].service).to.equal('harmony-services/query-cmr');
       expect(metrics[0].percent).to.equal(50);
     });
   });
 
   describe('publishMetric', () => {
-    const config = getCloudWatchClientConfig();
+    const config = pfm.getCloudWatchClientConfig();
     const client = new CloudWatchClient(config);
     let sendStub: sinon.SinonStub;
     before(() => {
@@ -149,7 +195,7 @@ describe('PublishFailureMetrics', () => {
       const service = 'harmonyservices/query-cmr';
       const now = new Date();
       const value = 50;
-      const metricData: MetricData = {
+      const metricData: pfm.MetricData = {
         metricName,
         namespace,
         value: value,
@@ -171,7 +217,7 @@ describe('PublishFailureMetrics', () => {
         ],
       };
       const expectedCommand = new PutMetricDataCommand(params);
-      await publishMetric(ctx, client, metricData);
+      await pfm.publishMetric(ctx, client, metricData);
       expect(sendStub.calledWith(expectedCommand));
     });
   });

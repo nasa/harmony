@@ -188,12 +188,12 @@ export class PublishServiceFailureMetrics extends CronJob {
     logger.info('Failure metrics publisher started.');
 
     try {
-      const serviceFailurePercentages = await getFailedWorkItemPercentageByServiceWithTimeWindow(ctx, env.failureMetricsLookBackMinutes);
+      const serviceFailurePercentages = await module.exports.getFailedWorkItemPercentageByServiceWithTimeWindow(ctx, env.failureMetricsLookBackMinutes);
       const namespace = `harmony-services-${env.clientId}`;
       logger.info(`Publishing ${serviceFailurePercentages.length} metrics to namespace ${namespace}`);
 
       // Initialize the CloudWatch client
-      const config = getCloudWatchClientConfig();
+      const config = module.exports.getCloudWatchClientConfig();
       const client = new CloudWatchClient(config);
 
       for (const serviceFailure of serviceFailurePercentages) {
@@ -207,7 +207,7 @@ export class PublishServiceFailureMetrics extends CronJob {
           timestamp: new Date(),
         };
 
-        await publishMetric(ctx, client, data);
+        await module.exports.publishMetric(ctx, client, data);
       }
 
       logger.info('Failure metrics publication completed.');
