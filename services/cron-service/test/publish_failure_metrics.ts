@@ -42,11 +42,8 @@ describe('PublishFailureMetrics', () => {
   });
 
   describe('PublishServiceFailureMetrics.run', () => {
-    const metricName = 'harmony-service-percent-failures';
     const service = 'harmonyservices/query-cmr';
     const percentFailure = 75;
-    const dimensions = { service };
-    const timestamp = new Date();
 
     let getConfigStub: SinonStub;
     let getMetricsStub: SinonStub;
