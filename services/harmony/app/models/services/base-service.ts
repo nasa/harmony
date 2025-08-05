@@ -9,9 +9,10 @@ import { makeWorkScheduleRequest } from '../../backends/workflow-orchestration/w
 import db from '../../util/db';
 import env from '../../util/env';
 import { RequestValidationError, ServerError } from '../../util/errors';
+import { getJobForDisplay, jobStatusCache } from '../../util/job';
 import { getRequestMetric } from '../../util/metrics';
 import { defaultObjectStore } from '../../util/object-store';
-import { getRequestUrl } from '../../util/url';
+import { getRequestRoot, getRequestUrl } from '../../util/url';
 import DataOperation from '../data-operation';
 import HarmonyRequest from '../harmony-request';
 import { Job, JobStatus, statesToDefaultMessages } from '../job';
@@ -297,7 +298,6 @@ export default abstract class BaseService<ServiceParamType> {
   async invoke(req: HarmonyRequest, logger?: Logger): Promise<InvocationResult> {
     this.logger = logger;
     logger.info('Invoking service for operation', { operation: this.operation });
-    // TODO handle the skipPreview parameter here when implementing HARMONY-1129
     const job = this._createJob(getRequestUrl(req));
     const labels = req.body.label;
     job.labels = labels || [];
@@ -315,6 +315,10 @@ export default abstract class BaseService<ServiceParamType> {
             // If running produces a result, use that rather than waiting for a callback
             resolve(result);
           } else if (isAsync) {
+            // Cache the job status so that if the redirect is served on this same instance
+            // it can return quickly without any database queries needed
+            const jobStatusResult = getJobForDisplay(job, getRequestRoot(req));
+            jobStatusCache.set(jobID, JSON.stringify(jobStatusResult));
             resolve({ redirect: `/jobs/${jobID}`, headers: {} });
           } else {
             this._waitForSyncResponse(logger, jobID).then(resolve).catch(reject);

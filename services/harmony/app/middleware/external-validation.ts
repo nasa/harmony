@@ -28,7 +28,7 @@ export async function externalValidation(
   // which the endpoint will not be able to decrypt
   operationCopy.accessToken = '';
   // Validation endpoint may need to know the service chain being used
-  operationCopy.extraArgs = { service: req.context.serviceConfig.name };
+  operationCopy.addExtraArgs({ service: req.context.serviceConfig.name });
 
   const startTime = new Date().getTime();
   try {

@@ -5,6 +5,7 @@ import logger from '../../../harmony/app/util/log';
 import { logAsyncExecutionTime } from '../../../harmony/app/util/log-execution';
 import { Logger } from 'winston';
 import { getQueueUrlForService, getQueueForUrl, getWorkSchedulerQueue, getQueueForType } from '../../../harmony/app/util/queue/queue-factory';
+import { QUERY_CMR_SERVICE_REGEX } from '../../../harmony/app/backends/workflow-orchestration/util';
 import { getWorkItemsFromDatabase } from '../../../harmony/app/backends/workflow-orchestration/work-item-polling';
 import { getPodsCountForPodName, getPodsCountForService } from '../util/k8s';
 import { Queue, ReceivedMessage, WorkItemQueueType } from '../../../harmony/app/util/queue/queue';
@@ -167,9 +168,15 @@ export async function processSchedulerQueue(
       reqLogger.debug(`Message count took ${messageCountTime}ms`, { durationMs: messageCountTime });
       reqLogger.debug(`Pod count took ${podCountTime}ms`, { durationMs: podCountTime });
 
-      const workSize = calculateNumItemsToQueue(servicePodCount, schedulerPodCount, messageCount, env.serviceQueueBatchSizeCoefficient);
+      let scaleFactor = env.serviceQueueBatchSizeCoefficient;
+      // Use a different scale factor for fast services (now only query-cmr)
+      if (QUERY_CMR_SERVICE_REGEX.test(serviceID)) {
+        scaleFactor = env.fastServiceQueueBatchSizeCoefficient;
+      }
+
+      const workSize = calculateNumItemsToQueue(servicePodCount, schedulerPodCount, messageCount, scaleFactor);
+      reqLogger.debug(`Work size count is ${workSize} based on service pod count of ${servicePodCount}, message count ${messageCount}, scheduler pod count ${schedulerPodCount} and scaleFactor ${scaleFactor} for queue ${queueUrl}`);
       reqLogger.debug(`Attempting to retrieve ${workSize} work items for queue ${queueUrl}`);
-      reqLogger.debug(`Work size count is ${workSize} based on service pod count of ${servicePodCount}, message count ${messageCount}, and scheduler pod count ${schedulerPodCount} for queue ${queueUrl}`);
 
       let queuedCount = 0;
       const batchStartTime = new Date().getTime();

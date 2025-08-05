@@ -23,7 +23,6 @@ describe('Versions endpoint', function () {
       it('returns a listing of all of the turbo services from services.yml', function () {
         const services = JSON.parse(this.res.text);
         expect(services.map((s) => s.name)).to.eql([
-          'asdc/filtering',
           'harmony/download',
           'ldds/subset-band-name',
           'ldds/geoloco',
@@ -36,17 +35,18 @@ describe('Versions endpoint', function () {
           'sds/variable-subsetter',
           'sds/maskfill',
           'sds/trajectory-subsetter',
+          'asdc/imagenator_l2',
+          'asdc/imagenator_l3',
           'sds/HyBIG',
-          'sds/harmony-smap-l2-gridder',
           'sds/HOSS-geographic',
           'sds/HOSS-projection-gridded',
-          'sds/HOSS-HRS-GeoTIFF',
+          'sds/HOSS-regridder-reformatter',
           'l2-subsetter-batchee-stitchee-concise',
           'asf/opera-rtc-s1-browse',
           'net2cog',
           'nasa/harmony-gdal-adapter',
           'giovanni-averaging-service',
-          'sds/trajectory-susbetter-smap-l2-regridder',
+          'sds/smap-l2-subsetter-net2cog',
           'harmony/service-example',
         ]);
       });

@@ -53,7 +53,7 @@ async function formDataToString(formdata: CombinedStream): Promise<string> {
 async function fetchPostArgsToFields(
   [_a, _b, formdata],
 ): Promise<any> { // eslint-disable-line @typescript-eslint/no-explicit-any
-  const data = (await formDataToString(formdata)).replace(/----+[0-9]+-*\r\n/g, '');
+  const data = (await formDataToString(formdata)).replace(/-+[a-f0-9]+-*\r\n/g, '');
   const result = {};
   const fields = data.split(/Content-Disposition: form-data; name=/g).slice(1);
   for (const field of fields) {
@@ -129,15 +129,15 @@ describe('query#queryGranules', function () {
     hookQueryGranules();
 
     it('returns the combined granules sizes', function () {
-      expect(this.result[0]).to.be.greaterThan(0);
+      expect(this.result.totalItemsSize).to.be.greaterThan(0);
     });
 
     it('returns the size for each granule', function () {
-      expect(this.result[1]).to.eql([1436745, 311623, 311623]);
+      expect(this.result.outputItemSizes).to.eql([1436745, 311623, 311623]);
     });
 
     it('returns a STAC catalog for each granule, each with a single item link and STAC item', function () {
-      expect(this.result[2][0].links).to.eql([{
+      expect(this.result.stacCatalogs[0].links).to.eql([{
         href: 'https://cmr.uat.earthdata.nasa.gov/search/concepts/C1233800302-EEDTEST',
         rel: 'harmony_source',
       }, {
@@ -146,7 +146,7 @@ describe('query#queryGranules', function () {
         title: '001_00_7f00ff_global',
         type: 'application/json',
       }]);
-      expect(this.result[2][1].links).to.eql([{
+      expect(this.result.stacCatalogs[1].links).to.eql([{
         href: 'https://cmr.uat.earthdata.nasa.gov/search/concepts/C1233800302-EEDTEST',
         rel: 'harmony_source',
       }, {
@@ -155,7 +155,7 @@ describe('query#queryGranules', function () {
         title: '001_01_7f00ff_africa',
         type: 'application/json',
       }]);
-      expect(this.result[2][2].links).to.eql([{
+      expect(this.result.stacCatalogs[2].links).to.eql([{
         href: 'https://cmr.uat.earthdata.nasa.gov/search/concepts/C1233800302-EEDTEST',
         rel: 'harmony_source',
       }, {
@@ -164,13 +164,13 @@ describe('query#queryGranules', function () {
         title: '001_01_7f00ff_africa_poly',
         type: 'application/json',
       }]);
-      expect(this.result[1].length).to.equal(3);
+      expect(this.result.stacCatalogs.length).to.equal(3);
 
-      for (const catalog of this.result[2]) {
+      for (const catalog of this.result.stacCatalogs) {
         expect(catalog.links.filter((l) => l.rel === 'item').length).to.equal(1);
       }
 
-      for (const catalog of this.result[2]) {
+      for (const catalog of this.result.stacCatalogs) {
         expect(catalog.children.length).to.equal(1);
       }
     });
@@ -195,7 +195,7 @@ describe('query#queryGranules', function () {
     hookQueryGranules(3000);
 
     it('the STAC output is not limited', function () {
-      expect(this.result[1].length).to.equal(3);
+      expect(this.result.stacCatalogs.length).to.equal(3);
     });
   });
 

@@ -21,7 +21,6 @@ The returned JSON response is a map of canonical service names to tags:
   "hybig": "latest",
   "harmony-service-example": "latest",
   "harmony-regridder": "latest",
-  "harmony-smap-l2-gridder": "latest",
   "swath-projector": "latest",
   "hoss": "latest",
   "sds-maskfill": "latest",
@@ -94,7 +93,7 @@ Only one service deployment can be run at any given time. If your request is rej
 Harmony validates that the image and tag are reachable - an error will be returned if not.
 
 **Important** from the [Docker documentation](https://docs.docker.com/engine/reference/commandline/image_tag/):
->A tag name may contain lowercase and uppercase characters, digits, underscores, periods and dashes. A tag name may not start with a period or a dash and may contain a maximum of 128 characters.
+>A tag name may contain lowercase and uppercase characters, digits, periods and dashes. A tag name may not start with a period or a dash and may contain a maximum of 128 characters.
 
 ## Get backend service image tag update status
 

@@ -20,6 +20,7 @@ import landingPage from '../frontends/landing-page';
 import * as ogcCoverageApi from '../frontends/ogc-coverages/index';
 import * as ogcEdrApi from '../frontends/ogc-edr/index';
 import getRequestMetrics from '../frontends/request-metrics';
+import { getRetryStatistics } from '../frontends/retry-stats';
 import {
   getDeploymentLogs, getServiceDeployment, getServiceDeployments, getServiceDeploymentsState,
   getServiceImageTag, getServiceImageTags, setServiceDeploymentsState, updateServiceImageTag,
@@ -51,6 +52,7 @@ import chooseService from '../middleware/service-selection';
 import shapefileConverter from '../middleware/shapefile-converter';
 // Middleware requires in outside-in order
 import shapefileUpload from '../middleware/shapefile-upload';
+import { setUmmVisForCollections } from '../middleware/umm-vis';
 import HarmonyRequest, { addRequestContextToOperation } from '../models/harmony-request';
 import env from '../util/env';
 import { NotFoundError } from '../util/errors';
@@ -231,6 +233,7 @@ export default function router({ USE_EDL_CLIENT_APP = 'false' }: RouterConfig): 
   result.use(logged(postServiceConcatenationHandler));
   result.use(logged(validateAndSetVariables));
   result.use(logged(validateRestrictedVariables));
+  result.use(logged(setUmmVisForCollections));
 
   result.use(logged(cmrUmmCollectionReader));
   result.use(logged(cmrGranuleLocator));
@@ -292,6 +295,7 @@ export default function router({ USE_EDL_CLIENT_APP = 'false' }: RouterConfig): 
   result.delete('/labels', jsonParser, asyncHandler(deleteJobLabels));
 
   result.get('/admin/request-metrics', asyncHandler(getRequestMetrics));
+  result.get('/admin/retry-stats', asyncHandler(getRetryStatistics));
 
   result.get('/workflow-ui', asyncHandler(getJobs));
   result.get('/workflow-ui/:jobID', asyncHandler(getJob));

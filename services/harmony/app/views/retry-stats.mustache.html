@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="../../../css/eui.min.css" />
+  <link rel="stylesheet" href="../../../css/default.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" />
+  <link href="https://cdn.jsdelivr.net/npm/@yaireo/tagify@4.16.4/dist/tagify.css" rel="stylesheet" type="text/css" />
+  <link rel="stylesheet" href="../../../css/workflow-ui/default.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify@4.16.4"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify@4.16.4/dist/tagify.polyfills.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+          integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"
+          defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+          crossorigin="anonymous" defer></script>
+  <script language="javascript" id="_fed_an_ua_tag"
+          src="https://dap.digitalgov.gov/Universal-Federated-Analytics-Min.js?agency=NASA&subagency=GSFC&dclink=true"
+          defer></script>
+  <title>Retry Statistics</title>
+</head>
+<body class="d-flex flex-column h-100">
+  {{> banner}}
+
+  <div class="container-lg pt-5 flex-grow-1">
+    <h1 class="display-4 text-center">Retry Statistics (Last {{numMinutes}} minutes)</h1>
+
+    <table class="table table-striped mt-4">
+      <thead>
+        <tr>
+          <th>Retry Count</th>
+          <th>Number of Work Items</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#counts}}
+        <tr>
+          <td>{{retryCount}}</td>
+          <td>{{count}}</td>
+        </tr>
+        {{/counts}}
+      </tbody>
+    </table>
+
+    <div class="mt-4">
+      <p><strong>Total Work Items:</strong> {{totalWorkItems}}</p>
+      <p><strong>Total Retries:</strong> {{totalRetries}}</p>
+      <p><strong>Total Work Item Executions:</strong> {{totalWorkItemExecutions}}</p>
+      <p><strong>Percent of Successful Work Item Executions:</strong> {{percentSuccessful}}</p>
+      <p><strong>Percent of Work Item Executions Retried:</strong> {{percentRetried}}</p>
+    </div>
+  </div>
+
+  <footer class="mt-auto">
+    {{> footer}}
+  </footer>
+</body>
+</html>

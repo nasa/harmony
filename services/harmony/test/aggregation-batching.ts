@@ -1,22 +1,25 @@
-import { it } from 'mocha';
+import { expect } from 'chai';
 import permutations from 'just-permutations';
+import { it } from 'mocha';
 import { stub } from 'sinon';
+
+import WorkItem from '../app/models/work-item';
 import { getStacLocation, WorkItemStatus } from '../app/models/work-item-interface';
+import { getWorkflowStepsByJobId } from '../app/models/workflow-steps';
+import * as aggregationBatch from '../app/util/aggregation-batch';
 import db from '../app/util/db';
 import env from '../app/util/env';
-import hookServersStartStop from './helpers/servers';
-import { fakeServiceStacOutput, getWorkForService, hookGetWorkForService, updateWorkItem } from './helpers/work-items';
-import * as aggregationBatch from '../app/util/aggregation-batch';
-import { hookRangesetRequest } from './helpers/ogc-api-coverages';
-import { hookRedirect } from './helpers/hooks';
-import { expect } from 'chai';
-import { getWorkflowStepsByJobId } from '../app/models/workflow-steps';
-import WorkItem from '../app/models/work-item';
 import { objectStoreForProtocol } from '../app/util/object-store';
-import { truncateAll } from './helpers/db';
-import { hookServices } from './helpers/stub-service';
 import { StacCatalog } from '../app/util/stac';
+import { truncateAll } from './helpers/db';
+import { hookRedirect } from './helpers/hooks';
 import { getFirstJob } from './helpers/jobs';
+import { hookRangesetRequest } from './helpers/ogc-api-coverages';
+import hookServersStartStop from './helpers/servers';
+import { hookServices } from './helpers/stub-service';
+import {
+  fakeServiceStacOutput, getWorkForService, hookGetWorkForService, updateWorkItem,
+} from './helpers/work-items';
 
 /**
  * Create a work item update for a query-cmr get work response
@@ -1259,10 +1262,10 @@ describe('when testing a batched aggregation service', function () {
                 await updateWorkItem(this.backend, workItem);
               }
               const conciseWorkRequestResponse1 =
-                await getWorkForService(this.backend, 'ghcr.io/podaac/concise:sit');
+                    await getWorkForService(this.backend, 'ghcr.io/podaac/concise:sit');
               const conciseWorkItem1 = JSON.parse(conciseWorkRequestResponse1.text).workItem;
               const conciseWorkRequestResponse2 =
-                await getWorkForService(this.backend, 'ghcr.io/podaac/concise:sit');
+                    await getWorkForService(this.backend, 'ghcr.io/podaac/concise:sit');
               const conciseWorkItem2 = JSON.parse(conciseWorkRequestResponse2.text).workItem;
               const batch1 = await getBatchItemsForWorkItem(conciseWorkItem1);
               expect(new Set(batch1)).to.eql(new Set(expectedBatches[0]));

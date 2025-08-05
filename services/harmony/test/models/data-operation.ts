@@ -1,8 +1,9 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
-import { parseSchemaFile, versions } from '../helpers/data-operation';
+
 import DataOperation, { CURRENT_SCHEMA_VERSION } from '../../app/models/data-operation';
 import { CmrRelatedUrl } from '../../app/util/cmr';
+import { parseSchemaFile, versions } from '../helpers/data-operation';
 
 const validOperation = new DataOperation(parseSchemaFile('valid-operation-input.json'));
 // bbox has one too many numbers
@@ -289,9 +290,12 @@ describe('DataOperation', () => {
   });
 
   describe('#addSource', () => {
-    const collection = 'Foo';
-    const shortName = 'harmony_example';
+    const collectionWithVis = 'Foo';
+    const collectionWithNoVis = 'Bongo';
+    const shortName = 'foo_example';
+    const noVisShortName = 'bongo_example';
     const versionId = '1';
+    const noVisVersionId = '2';
     const relatedUrls = [
       {
         Description: 'This related URL points to a color map',
@@ -319,12 +323,33 @@ describe('DataOperation', () => {
         Format: 'ASCII',
       } as CmrRelatedUrl,
     ];
-    const variables = [{
+
+    const noVisVariables = [{
       meta: { 'concept-id': 'V123-BAR' },
       umm: {
         Name: 'the/nested/name',
         LongName: 'A long name',
         RelatedURLs: relatedUrls,
+        VariableType: 'SCIENCE_VARIABLE',
+        VariableSubType: 'SCIENCE_VECTOR',
+      },
+    }];
+
+    const someVisVariables = [{
+      meta: { 'concept-id': 'V123-BONGO' },
+      umm: {
+        Name: 'the/nested/name',
+        LongName: 'A long name',
+        RelatedURLs: relatedUrls,
+        VariableType: 'SCIENCE_VARIABLE',
+        VariableSubType: 'SCIENCE_VECTOR',
+      },
+    },
+    {
+      meta: { 'concept-id': 'V124-BONGO' },
+      umm: {
+        Name: 'the/nested/bongo',
+        LongName: 'A long name',
         VariableType: 'SCIENCE_VARIABLE',
         VariableSubType: 'SCIENCE_VECTOR',
       },
@@ -340,20 +365,114 @@ describe('DataOperation', () => {
       },
     }];
 
-    describe('when adding a source', () => {
+    const collectionVisualizations = [{
+      meta: {
+        'associations': {
+          'collections': [
+            'C1200449962-MMT_1',
+          ],
+        },
+        'concept-id': 'VIS1200484625-MMT_1',
+      },
+      umm: {
+        'Name': 'Test123',
+        'Identifier': 'Test123 ID',
+        'VisualizationType': 'tiles',
+        'Specification': {},
+        'Generation': {},
+        'MetadataSpecification': {
+          'URL': 'https://cdn.earthdata.nasa.gov/umm/visualization/v1.1.0',
+          'Name': 'Visualization',
+          'Version': '1.1.0',
+        },
+        'ConceptIds': [
+          {
+            'Type': 'STD',
+            'Value': 'C1200449962-MMT_1',
+          },
+        ],
+      },
+    },
+    {
+      meta: {
+        'associations': {
+          'collections': [
+            'C1200449962-MMT_1',
+          ],
+        },
+        'concept-id': 'VIS1200484620-MMT_1',
+      },
+      umm: {
+        'Name': 'Test1234',
+        'Identifier': 'Test1234 ID',
+        'VisualizationType': 'tiles',
+        'Specification': {},
+        'Generation': {},
+        'MetadataSpecification': {
+          'URL': 'https://cdn.earthdata.nasa.gov/umm/visualization/v1.1.0',
+          'Name': 'Visualization',
+          'Version': '1.1.0',
+        },
+        'ConceptIds': [
+          {
+            'Type': 'STD',
+            'Value': 'C1200449962-MMT_1',
+          },
+        ],
+      },
+    }];
+
+    const expectedCollectionVisualizations = collectionVisualizations.map(visualization => visualization.umm);
+
+    const variableVisualizations = [{
+      meta: {
+        'associations': {
+          'variables': [
+            'V123-BONGO',
+          ],
+        },
+        'concept-id': 'VIS1200484625-MMT_1',
+      },
+      umm: {
+        'Name': 'Test1234',
+        'Identifier': 'Test1234 ID',
+        'VisualizationType': 'tiles',
+        'Specification': {},
+        'Generation': {},
+        'MetadataSpecification': {
+          'URL': 'https://cdn.earthdata.nasa.gov/umm/visualization/v1.1.0',
+          'Name': 'Visualization',
+          'Version': '1.1.0',
+        },
+        'ConceptIds': [
+          {
+            'Type': 'STD',
+            'Value': 'C1200449962-MMT_1',
+          },
+        ],
+      },
+    }];
+
+    const expectedVariableVisualizations = variableVisualizations.map(visualization => visualization.umm);
+
+    describe('when adding sources', () => {
       const operation = new DataOperation();
-      operation.addSource(collection, shortName, versionId, variables, coordinateVariables);
+      operation.addSource(collectionWithVis, shortName, versionId, noVisVariables, coordinateVariables, collectionVisualizations);
+      operation.addSource(collectionWithNoVis, noVisShortName, noVisVersionId, someVisVariables, [], [], [[], variableVisualizations]);
 
       it('sets the collection correctly', () => {
         expect(operation.model.sources[0].collection).to.equal('Foo');
+        expect(operation.model.sources[1].collection).to.equal('Bongo');
       });
 
       it('sets the short name correctly', () => {
-        expect(operation.model.sources[0].shortName).to.equal('harmony_example');
+        expect(operation.model.sources[0].shortName).to.equal('foo_example');
+        expect(operation.model.sources[1].shortName).to.equal('bongo_example');
       });
 
       it('sets the version id correctly', () => {
         expect(operation.model.sources[0].versionId).to.equal('1');
+        expect(operation.model.sources[1].versionId).to.equal('2');
       });
 
       it('sets the coordinate variables correctly', () => {
@@ -364,18 +483,38 @@ describe('DataOperation', () => {
           type: 'COORDINATE',
           subtype: 'LATITUDE',
         }]);
+
+        expect(operation.model.sources[1].coordinateVariables).to.eql([]);
       });
 
       it('uses the variable concept ID as the id', () => {
         expect(operation.model.sources[0].variables[0].id).to.equal('V123-BAR');
+        expect(operation.model.sources[1].variables[0].id).to.equal('V123-BONGO');
       });
 
       it('uses the variable name as the name', () => {
         expect(operation.model.sources[0].variables[0].name).to.equal('the/nested/name');
+        expect(operation.model.sources[1].variables[1].name).to.equal('the/nested/bongo');
       });
 
       it('uses the variable name as the fullPath', () => {
         expect(operation.model.sources[0].variables[0].fullPath).to.equal('the/nested/name');
+        expect(operation.model.sources[1].variables[1].fullPath).to.equal('the/nested/bongo');
+      });
+
+      it('sets the visualizations correctly', () => {
+        // first source collection has visualization
+        expect(operation.model.sources[0].visualizations).to.eql(expectedCollectionVisualizations);
+        // second source collection does not
+        expect(operation.model.sources[1].visualizations).to.eql([]);
+        // first source variable has no visualizations
+        expect(operation.model.sources[0].variables[0].visualizations).to.eql(undefined);
+        // second source collection has no visualizations
+        expect(operation.model.sources[1].visualizations).to.eql([]);
+        // first variable in second source has no visualizations
+        expect(operation.model.sources[1].variables[0].visualizations).to.eql([]);
+        // second variable does
+        expect(operation.model.sources[1].variables[1].visualizations).to.eql(expectedVariableVisualizations);
       });
 
       it('sets the Color Map related URL', () => {

@@ -1,12 +1,7 @@
 {
-  "1097682": {
+  "1105444": {
     "active": true,
-    "notes": "Will fix in HARMONY-1650",
-    "expiry": "2025-08-01"
-  },
-  "1096727": {
-    "active": true,
-    "notes": "Will fix in HARMONY-1729",
+    "notes": "Will fix in HARMONY-2117",
     "expiry": "2025-08-01"
   }
 }

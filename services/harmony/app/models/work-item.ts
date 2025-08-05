@@ -707,6 +707,34 @@ export async function workItemCountForJobID(
 }
 
 /**
+ * Returns the number of work items for a specific job id with the given status and workflow
+ * step index.
+ *  Excludes work-items for the first step (usually query-cmr)
+ * @param tx - the transaction to use for querying
+ * @param jobID - the ID of the job that created this work item
+ * @param status - the work item status to filter by
+ */
+export async function countOfWorkItemsByStepAndJobID(
+  tx: Transaction,
+  jobID: string,
+  workflowStepIndex: number,
+  status: string,
+): Promise<number> {
+  const count = await tx(WorkItem.table)
+    .select()
+    .count('id')
+    .where({ jobID, workflowStepIndex, status });
+
+  let workItemCount;
+  if (db.client.config.client === 'pg') {
+    workItemCount = Number(count[0].count);
+  } else {
+    workItemCount = Number(count[0]['count(`id`)']);
+  }
+  return workItemCount;
+}
+
+/**
  *  Returns the number of work items that can be actively worked for the given service ID
  * @param tx - the transaction to use for querying
  * @param jobID - the ID of the job that created this work item
@@ -810,6 +838,41 @@ export async function getTotalWorkItemSizesForJobID(
   return { originalSize, outputSize };
 }
 
+/**
+ * Retrieve the retry counts for all work items in the past numMinutes minutes
+ * Only includes work items with status 'successful'
+ * Always returns retry counts from 0 to 5 inclusive
+ * @param tx - the transaction to use for querying
+ * @param numMinutes - the number of minutes in the past to check retry counts
+ * @returns a map from retry count (0–5) to number of work items with that retry count
+ */
+export async function getRetryCounts(
+  tx: Transaction,
+  numMinutes: number,
+): Promise<{ [key: number]: number }> {
+  const since = subMinutes(new Date(), numMinutes);
+
+  const rows = await tx(WorkItem.table)
+    .select('retryCount')
+    .count('id as count')
+    .where('status', WorkItemStatus.SUCCESSFUL)
+    .andWhere('updatedAt', '>=', since)
+    .groupBy('retryCount');
+
+  const retryCounts = {};
+
+  for (let i = 0; i <= env.workItemRetryLimit; i++) {
+    retryCounts[i] = 0;
+  }
+
+  for (const row of rows) {
+    const retryCount = Number(row.retryCount);
+    retryCounts[retryCount] = Number(row.count);
+  }
+
+  return retryCounts;
+}
+
 // Listen for work items being created and put a message on the scheduler queue asking it to
 // schedule some WorkItems for the service
 eventEmitter.on(WorkItemEvent.CREATED, async (workItem: WorkItem) => {
@@ -820,4 +883,3 @@ eventEmitter.on(WorkItemEvent.CREATED, async (workItem: WorkItem) => {
     await queue.sendMessage(serviceID);
   }
 });
-

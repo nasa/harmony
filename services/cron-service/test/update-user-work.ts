@@ -17,11 +17,11 @@ describe('UserWorkUpdater', () => {
   let loggerErrorStub: sinon.SinonStub;
   let loggerWarnStub: sinon.SinonStub;
   let recalculateCountsStub: sinon.SinonStub;
-  let setReadyAndRunningCountToZeroStub: sinon.SinonStub;
+  let deleteUserWorkForJobStub: sinon.SinonStub;
 
   beforeEach(async () => {
     await truncateAll();
-    // Set up logger stubs
+
     loggerInfoStub = sinon.stub();
     loggerErrorStub = sinon.stub();
     loggerWarnStub = sinon.stub();
@@ -36,18 +36,14 @@ describe('UserWorkUpdater', () => {
       db: db,
     } as unknown as Context;
 
-    // Set up recalculateCounts stub
     recalculateCountsStub = sinon.stub(userWork, 'recalculateCounts').resolves();
+    deleteUserWorkForJobStub = sinon.stub(userWork, 'deleteUserWorkForJob').resolves();
 
-    // Set up setReadyAndRunningCountToZero stub
-    setReadyAndRunningCountToZeroStub = sinon.stub(userWork, 'setReadyAndRunningCountToZero').resolves();
-
-    // Set environment variables
     env.userWorkExpirationMinutes = 60;
   });
 
   afterEach(() => {
-    setReadyAndRunningCountToZeroStub.reset();
+    deleteUserWorkForJobStub.reset();
     recalculateCountsStub.reset();
     sinon.restore();
   });
@@ -138,7 +134,7 @@ describe('UserWorkUpdater', () => {
     });
 
     it('should handle jobs with zero counts but still check last_worked date', async () => {
-      // Insert test data - job with zero counts but old last_worked date
+      // Insert test data - job with zero counts and old last_worked date
       const pastDate = new Date();
       pastDate.setHours(pastDate.getHours() - 2);
       const job1 = buildJob({});
@@ -146,11 +142,21 @@ describe('UserWorkUpdater', () => {
       const userWork5 = createUserWorkRecord({ job_id: job1.jobID, ready_count: 0, running_count: 0, last_worked: pastDate });
       await userWork5.save(db);
 
+      const job2 = buildJob({});
+      await job2.save(db);
+      const userWork5Job2 = createUserWorkRecord({ job_id: job2.jobID, ready_count: 0, running_count: 0, last_worked: new Date() });
+      await userWork5Job2.save(db);
+
       await updateUserWorkMod.updateUserWork(ctx);
 
-      // Should not have called recalculateCounts for jobs with zero counts
-      expect(recalculateCountsStub.neverCalledWith(sinon.match.any, job1.jobID)).to.be.true;
-      expect(loggerWarnStub.neverCalledWith(`Recalculating user_work counts for job ${job1.jobID} with status ${job1.status}`)).to.be.true;
+      // Should call recalculateCounts for older job1
+      expect(recalculateCountsStub.callCount).to.equal(1);
+      expect(recalculateCountsStub.calledWith(sinon.match.any, job1.jobID)).to.be.true;
+      expect(loggerWarnStub.calledOnceWith(`Recalculating user_work counts for job ${job1.jobID} with status ${job1.status}`)).to.be.true;
+
+      // Should not call recalculateCounts for recently worked on job2
+      expect(recalculateCountsStub.neverCalledWith(sinon.match.any, job2.jobID)).to.be.true;
+      expect(loggerWarnStub.neverCalledWith(`Recalculating user_work counts for job ${job2.jobID} with status ${job2.status}`)).to.be.true;
     });
 
     it('should handle multiple rows per job_id but only process each job_id once', async () => {
@@ -175,7 +181,7 @@ describe('UserWorkUpdater', () => {
       expect(loggerWarnStub.calledOnceWith(`Recalculating user_work counts for job ${job1.jobID} with status ${job1.status}`)).to.be.true;
     });
 
-    it('should set set the ready count and the running count for paused jobs to zero', async () => {
+    it('should delete user work rows for paused jobs', async () => {
       const pastDate = new Date();
       pastDate.setHours(pastDate.getHours() - 2);
 
@@ -189,11 +195,11 @@ describe('UserWorkUpdater', () => {
       await updateUserWorkMod.updateUserWork(ctx);
 
       // Should have called setReadyAndRunningCountToZero once for job6 and recalculateCounts not at all
-      expect(setReadyAndRunningCountToZeroStub.callCount).to.equal(1);
-      expect(setReadyAndRunningCountToZeroStub.calledWith(sinon.match.any, job1.jobID)).to.be.true;
+      expect(deleteUserWorkForJobStub.callCount).to.equal(1);
+      expect(deleteUserWorkForJobStub.calledWith(sinon.match.any, job1.jobID)).to.be.true;
       expect(recalculateCountsStub.callCount).to.equal(0);
 
-      expect(loggerWarnStub.calledOnceWith(`Resetting user_work counts to 0 for job ${job1.jobID} with status ${job1.status}`)).to.be.true;
+      expect(loggerWarnStub.calledOnceWith(`Removing user_work rows for job ${job1.jobID} with status ${job1.status}`)).to.be.true;
     });
   });
 });

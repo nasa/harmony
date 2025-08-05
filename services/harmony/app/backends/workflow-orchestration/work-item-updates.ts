@@ -12,12 +12,12 @@ import JobMessage, {
   getErrorMessagesForJob, getMessageCountForJob, getWarningMessagesForJob, JobMessageLevel,
 } from '../../models/job-message';
 import {
-  decrementRunningCount, deleteUserWorkForJob, incrementReadyAndDecrementRunningCounts,
-  incrementReadyCount, setReadyCountToZero,
+  decrementRunningCount, deleteUserWorkForJob, deleteUserWorkForJobAndService,
+  incrementReadyAndDecrementRunningCounts, incrementReadyCount, setReadyCountToZero,
 } from '../../models/user-work';
 import WorkItem, {
-  getWorkItemById, getWorkItemsByJobIdAndStepIndex, maxSortIndexForJobService, updateWorkItemStatus,
-  workItemCountForStep,
+  countOfWorkItemsByStepAndJobID, getWorkItemById, getWorkItemsByJobIdAndStepIndex,
+  maxSortIndexForJobService, updateWorkItemStatus, workItemCountForStep,
 } from '../../models/work-item';
 import { COMPLETED_WORK_ITEM_STATUSES, WorkItemStatus } from '../../models/work-item-interface';
 import WorkItemUpdate from '../../models/work-item-update';
@@ -243,6 +243,25 @@ async function handleFailedWorkItems(
             jobMessage = `Maximum allowed errors ${env.maxErrorsForJob} exceeded. See the errors fields for more details`;
             logger.warn(jobMessage);
             continueProcessing = false;
+          } else {
+            const successCount = await countOfWorkItemsByStepAndJobID(
+              tx,
+              job.jobID,
+              workItem.workflowStepIndex,
+              WorkItemStatus.SUCCESSFUL);
+            const failedCount = await countOfWorkItemsByStepAndJobID(
+              tx,
+              job.jobID,
+              workItem.workflowStepIndex,
+              WorkItemStatus.FAILED);
+
+            if (successCount + failedCount >= env.minDoneItemsForFailCheck &&
+              100.0 * failedCount / (successCount + failedCount) > env.maxPercentErrorsForJob
+            ) {
+              jobMessage = `${env.maxPercentErrorsForJob} percent maximum errors exceeded. See the errors fields for more details`;
+              logger.warn(jobMessage);
+              continueProcessing = false;
+            }
           }
         }
 
@@ -708,7 +727,13 @@ export async function processWorkItem(
 
     // retry failed work-items up to a limit
     if (status === WorkItemStatus.FAILED) {
-      if (workItem.retryCount < env.workItemRetryLimit) {
+      if (message_category === 'noretry') {
+        logger.warn('This error is not retriable.');
+        logger.warn(
+          `Updating work item for ${workItemID} to ${status} with message ${message}`,
+          { workFailureMessage: message, serviceId: workItem.serviceID, status },
+        );
+      } else if (workItem.retryCount < env.workItemRetryLimit) {
         logger.info(`Retrying failed work-item ${workItemID}`);
         workItem.retryCount += 1;
         workItem.status = WorkItemStatus.READY;
@@ -799,6 +824,9 @@ export async function processWorkItem(
 
     if (checkCompletion) {
       allWorkItemsForStepComplete = await updateIsComplete(tx, jobID, job.numInputGranules, thisStep);
+      if (allWorkItemsForStepComplete) {
+        await deleteUserWorkForJobAndService(tx, jobID, serviceId);
+      }
     }
 
     const continueProcessing = await (await logAsyncExecutionTime(
@@ -969,7 +997,7 @@ async function handleGranuleValidation(
   jobID: string,
   update: WorkItemUpdate,
   logger: Logger): Promise<void> {
-  const { workItemID, status, message } = update;
+  const { status, message, workItemID } = update;
   try {
     const transactionStart = new Date().getTime();
 
@@ -980,6 +1008,17 @@ async function handleGranuleValidation(
         logger))(tx, jobID, false, false, true);
 
       if (status === WorkItemStatus.FAILED) {
+        const workItem = await (await logAsyncExecutionTime(
+          getWorkItemById,
+          'HWIUWJI.getWorkItemById',
+          logger))(tx, workItemID, true);
+
+        logger.info(`Granule validation failed, failing work-item ${workItemID}`);
+        workItem.status = WorkItemStatus.FAILED;
+        workItem.message = update.message;
+        workItem.message_category = update.message_category;
+        await workItem.save(tx);
+
         // update job status and message
         await completeJob(tx, job, JobStatus.FAILED, logger, message);
       } else {
@@ -989,7 +1028,7 @@ async function handleGranuleValidation(
           'HWIUWJI.getWorkflowStepByJobIdStepIndex',
           logger))(db, jobID, update.workflowStepIndex);
         const op = JSON.parse(thisWorkflowStep.operation);
-        delete op.extraArgs;
+        op.extraArgs.granValidation = undefined;
         thisWorkflowStep.operation = JSON.stringify(op);
         await thisWorkflowStep.save(tx);
 
@@ -1009,21 +1048,6 @@ async function handleGranuleValidation(
         if (needSave) {
           await job.save(tx);
         }
-
-        // mark the work item as ready to be processed without granule validation
-        const workItem = await (await logAsyncExecutionTime(
-          getWorkItemById,
-          'HWIUWJI.getWorkItemById',
-          logger))(tx, workItemID, true);
-
-        logger.info(`Granule validation is successful, continue processing work-item ${workItemID}`);
-        workItem.status = WorkItemStatus.READY;
-        await workItem.save(tx);
-
-        await (await logAsyncExecutionTime(
-          incrementReadyAndDecrementRunningCounts,
-          'HWIUWJI.incrementReadyAndDecrementRunningCounts',
-          logger))(tx, jobID, workItem.serviceID);
       }
     });
     const durationMs = new Date().getTime() - transactionStart;
@@ -1055,21 +1079,20 @@ export async function handleBatchWorkItemUpdatesWithJobId(
   for (const workflowStepIndex of Object.keys(groups)) {
     if (groups[workflowStepIndex][0].update.message_category === 'granValidation') {
       await handleGranuleValidation(jobID, groups[workflowStepIndex][0].update, logger);
-    } else {
-      const nextWorkflowStep = await (await logAsyncExecutionTime(
-        getWorkflowStepByJobIdStepIndex,
-        'HWIUWJI.getWorkflowStepByJobIdStepIndex',
-        logger))(db, jobID, parseInt(workflowStepIndex) + 1);
-
-      const preprocessedWorkItems: WorkItemUpdateQueueItem[] = await Promise.all(
-        groups[workflowStepIndex].map(async (item: WorkItemUpdateQueueItem) => {
-          const { update, operation } = item;
-          const result = await preprocessWorkItem(update, operation, logger, nextWorkflowStep);
-          item.preprocessResult = result;
-          return item;
-        }));
-      await processWorkItems(jobID, parseInt(workflowStepIndex), preprocessedWorkItems, logger);
     }
+    const nextWorkflowStep = await (await logAsyncExecutionTime(
+      getWorkflowStepByJobIdStepIndex,
+      'HWIUWJI.getWorkflowStepByJobIdStepIndex',
+      logger))(db, jobID, parseInt(workflowStepIndex) + 1);
+
+    const preprocessedWorkItems: WorkItemUpdateQueueItem[] = await Promise.all(
+      groups[workflowStepIndex].map(async (item: WorkItemUpdateQueueItem) => {
+        const { update, operation } = item;
+        const result = await preprocessWorkItem(update, operation, logger, nextWorkflowStep);
+        item.preprocessResult = result;
+        return item;
+      }));
+    await processWorkItems(jobID, parseInt(workflowStepIndex), preprocessedWorkItems, logger);
   }
   const durationMs = new Date().getTime() - startTime;
   logger.info('timing.HWIUWJI.batch.end', { durationMs });

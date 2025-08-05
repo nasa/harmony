@@ -74,6 +74,13 @@ PREVIEW_THRESHOLD=100
 # The maximum number of errors to allow for a job before considering it failed
 MAX_ERRORS_FOR_JOB=2000
 
+# The minimum number of work-items that must be in the successful or failed state before we start
+# testing for job failure based on failure percentage
+MIN_DONE_ITEMS_FOR_FAIL_CHECK=10
+
+# The maximum percentage of failed work-items to allow for a job before considering it failed
+MAX_PERCENT_ERRORS_FOR_JOB=75
+
 # max JSON payload that can be sent to the harmony back end via express. Should take the form of '100mb', etc.
 MAX_HARMONY_BACK_END_JSON_SIZE=400mb
 
@@ -156,6 +163,12 @@ PROVIDER_CACHE_SIZE=5000000
 
 # Provider Cache TTL in milliseconds, 1 hour
 PROVIDER_CACHE_TTL=3600000
+
+# Maximum size (in bytes) of the job status cache, 50MB
+JOB_STATUS_CACHE_SIZE=50000000
+
+# Job status cache TTL in milliseconds, 5 seconds
+JOB_STATUS_CACHE_TTL=5000
 
 #############################################################################
 #                        OAuth 2 (Earthdata Login)                          #
@@ -264,6 +277,9 @@ UI_LABELING=true
 # Toggle whether users can explicitly choose the service chain to call for
 # their request using the serviceId query parameter
 ALLOW_SERVICE_SELECTION=true
+
+# Whether to use clustering to fork one harmony process per available CPU
+USE_CLUSTERING=false
 
 ###########################################################################
 #                             Prometheus Config                           #

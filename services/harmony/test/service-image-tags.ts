@@ -44,7 +44,7 @@ const errorMsg404 = 'Service foo does not exist.\nThe existing services and thei
 
 const userErrorMsg = 'User joe does not have permission to access this resource';
 
-const tagContentErrorMsg = 'A tag name may contain lowercase and uppercase characters, digits, underscores, periods and dashes. A tag name may not start with a period or a dash and may contain a maximum of 128 characters.';
+const tagContentErrorMsg = 'A tag name may contain lowercase and uppercase characters, digits, periods and dashes. A tag name may not start with a period or a dash and may contain a maximum of 128 characters.';
 
 /**
  * Get deployment id from the given status link
@@ -166,7 +166,7 @@ describe('checkTag', function () {
       'latest',
       '1.0',
       'v1.0.1',
-      'version_1.2.3',
+      'version-1.2.3',
       'a'.repeat(128), // Maximum length
     ];
 
@@ -182,14 +182,13 @@ describe('checkTag', function () {
       '.startwithdot',
       '-startwithdash',
       '!invalidchar',
+      'version_1.2.3',
       'a'.repeat(129), // Exceeds maximum length
     ];
 
-    const errorMessage = 'A tag name may contain lowercase and uppercase characters, digits, underscores, periods and dashes. A tag name may not start with a period or a dash and may contain a maximum of 128 characters.';
-
     invalidTags.forEach(tag => {
       const result = checkTag(tag);
-      expect(result).to.equal(errorMessage);
+      expect(result).to.equal(tagContentErrorMsg);
     });
   });
 });

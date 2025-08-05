@@ -1,16 +1,144 @@
+import _ from 'lodash';
+import { LRUCache } from 'lru-cache';
 import { Logger } from 'winston';
-import db, { Transaction } from './db';
-import { Job, JobStatus, terminalStates } from '../models/job';
-import env from './env';
+
+import DataOperation, { CURRENT_SCHEMA_VERSION } from '../models/data-operation';
+import { getRelatedLinks, Job, JobForDisplay, JobStatus, terminalStates } from '../models/job';
+import JobLink from '../models/job-link';
+import JobMessage, { JobMessageLevel } from '../models/job-message';
+import { deleteUserWorkForJob, recalculateCounts } from '../models/user-work';
 import { getTotalWorkItemSizesForJobID, updateWorkItemStatusesByJobId } from '../models/work-item';
-import { ConflictError, ForbiddenError, NotFoundError, RequestValidationError } from './errors';
-import isUUID from './uuid';
 import { WorkItemStatus } from '../models/work-item-interface';
 import { getWorkflowStepByJobIdStepIndex, getWorkflowStepsByJobId } from '../models/workflow-steps';
-import DataOperation, { CURRENT_SCHEMA_VERSION } from '../models/data-operation';
 import { createDecrypter, createEncrypter } from './crypto';
+import db, { Transaction } from './db';
+import env from './env';
+import { ConflictError, ForbiddenError, NotFoundError, RequestValidationError } from './errors';
+import {
+  getCloudAccessJsonLink, getCloudAccessShLink, getJobStateChangeLinks, getStacCatalogLink,
+  getStatusLink,
+} from './links';
 import { getProductMetric, getResponseMetric } from './metrics';
-import { deleteUserWorkForJob, recalculateReadyCount, setReadyCountToZero } from '../models/user-work';
+import { needsStacLink } from './stac';
+import isUUID from './uuid';
+
+// In memory cache for Job ID to job. This is used to speed up the initial request which redirects
+// to the status page. We already have all the job information at the time so we can avoid that
+// extra lookup to the database if the same instance serves the redirect as the one that created the
+// request. We don't want stale job status to ever be returned so make sure the TTL is extremely short,
+// ideally only a few seconds.
+export const jobStatusCache = new LRUCache({
+  ttl: env.jobStatusCacheTtl,
+  maxSize: env.jobStatusCacheSize,
+  sizeCalculation: (value: string): number => value.length,
+});
+
+/**
+ * Returns true if the job contains S3 direct access links
+ *
+ * @param job - the serialized job
+ * @returns true if job contains S3 direct access links and false otherwise
+ */
+function containsS3DirectAccessLink(job: JobForDisplay): boolean {
+  const dataLinks = getRelatedLinks('data', job.links);
+  return dataLinks.some((l) => l.href.match(/^s3:\/\/.*$/));
+}
+
+/**
+ * Determines the message that should be displayed to an end user based on
+ * the links within the job
+ * @param job - the serialized job
+ * @param urlRoot - the root URL to be used when constructing links
+ */
+function getMessageForDisplay(job: JobForDisplay, urlRoot: string): string {
+  let { message } = job;
+  if (containsS3DirectAccessLink(job)) {
+    if (!message.endsWith('.')) {
+      message += '.';
+    }
+    message += ' Contains results in AWS S3. Access from AWS '
+      + `${env.awsDefaultRegion} with keys from ${urlRoot}/cloud-access.sh`;
+  }
+  return message;
+}
+
+
+/**
+ * Analyze the links in the job to determine what links should be returned to
+ * the end user. If any of the output links point to an S3 location add
+ * links documenting how to obtain in region S3 access.
+ *
+ * @param job - the serialized job
+ * @param urlRoot - the root URL to be used when constructing links
+ * @param statusLinkRel - the type of relation (self|item) for the status link
+ * @param destinationUrl - the destinationUrl of the job
+ * @returns a list of job links
+ */
+function getLinksForDisplay(job: JobForDisplay, urlRoot: string, statusLinkRel: string, destinationUrl: string): JobLink[] {
+  let { links } = job;
+  const dataLinks = getRelatedLinks('data', job.links);
+  if (containsS3DirectAccessLink(job)) {
+    if (!destinationUrl) {
+      links.unshift(new JobLink(getCloudAccessJsonLink(urlRoot)));
+      links.unshift(new JobLink(getCloudAccessShLink(urlRoot)));
+    }
+  } else {
+    // Remove the S3 bucket and prefix link
+    links = links.filter((link) => link.rel !== 's3-access');
+  }
+  if ([JobStatus.SUCCESSFUL, JobStatus.COMPLETE_WITH_ERRORS].includes(job.status) && needsStacLink(dataLinks)) {
+    links.unshift(new JobLink(getStacCatalogLink(urlRoot, job.jobID)));
+  }
+  // add cancel, pause, resume, etc. links if applicable
+  links.unshift(...getJobStateChangeLinks(job, urlRoot));
+  // add a 'self' or 'item' link if it does not already exist
+  // 'item' is for use in jobs listings, 'self' for job status
+  if (links.filter((link) => link.rel === 'self').length === 0) {
+    links.push(new JobLink(getStatusLink(urlRoot, job.jobID, statusLinkRel)));
+  }
+
+  return links;
+}
+
+/**
+ * Returns a job formatted for display to an end user.
+ *
+ * @param job - the serialized job
+ * @param urlRoot - the root URL to be used when constructing links
+ * @param linkType - the type to use for data links (http|https|s3|none)
+ * @param messages - a list of messages for the job
+ * @returns the job for display
+ */
+export function getJobForDisplay(job: Job, urlRoot: string, linkType?: string, messages?: JobMessage[]): JobForDisplay {
+  const serializedJob = job.serialize(urlRoot, linkType);
+  const statusLinkRel = linkType === 'none' ? 'item' : 'self';
+  serializedJob.links = getLinksForDisplay(serializedJob, urlRoot, statusLinkRel, job.destination_url);
+  if (!job.destination_url) {
+    serializedJob.message = getMessageForDisplay(serializedJob, urlRoot);
+  }
+
+  const errors = [];
+  const warnings = [];
+  if (messages) {
+    for (const message of messages) {
+      if (message.level === JobMessageLevel.ERROR) {
+        errors.push(message);
+      } else {
+        warnings.push(message);
+      }
+    }
+  }
+
+  if (errors.length > 0) {
+    serializedJob.errors =  errors.map((e) => _.pick(e, ['url', 'message'])) as JobMessage[];
+  }
+
+  if (warnings.length > 0) {
+    serializedJob.warnings = warnings.map((e) => _.pick(e, ['url', 'message'])) as JobMessage[];
+  }
+
+  return serializedJob;
+}
 
 /**
  * Helper function to pull back the provided job ID (optionally by username).
@@ -157,7 +285,7 @@ export async function pauseAndSaveJob(
     const job = await lookupJob(tx, jobID, username);
     job.pause();
     await job.save(tx);
-    await setReadyCountToZero(tx, jobID);
+    await deleteUserWorkForJob(tx, jobID);
   });
 }
 
@@ -195,7 +323,7 @@ async function updateTokenAndChangeState(
     }
     jobStatusFn(job);
     await job.save(tx);
-    await recalculateReadyCount(tx, jobID);
+    await recalculateCounts(tx, jobID);
   });
 }
 
@@ -278,4 +406,3 @@ export async function getJobIfAllowed(
     throw new ForbiddenError();
   }
 }
-

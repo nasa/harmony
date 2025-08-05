@@ -1,6 +1,6 @@
 import { Job, JobStatus } from '../../../harmony/app/models/job';
 import UserWork, {
-  recalculateCounts, setReadyAndRunningCountToZero,
+  deleteUserWorkForJob, recalculateCounts,
 } from '../../../harmony/app/models/user-work';
 import { Context } from '../util/context';
 import env from '../util/env';
@@ -15,11 +15,7 @@ export async function updateUserWork(ctx: Context): Promise<void> {
   const { logger, db } = ctx;
   await db.transaction(async (tx) => {
     // find jobs in the user_work table that haven't been updated in a while
-    let query = tx(UserWork.table)
-      .distinct('job_id')
-      .where(function () {
-        void this.where('ready_count', '>', 0).orWhere('running_count', '>', 0);
-      });
+    let query = tx(UserWork.table).distinct('job_id');
     if (env.databaseType === 'sqlite') {
       const timeStamp = Date.now() - env.userWorkExpirationMinutes * 60 * 1000;
       query = query.andWhere(tx.raw(`last_worked <= ${timeStamp}`));
@@ -34,8 +30,8 @@ export async function updateUserWork(ctx: Context): Promise<void> {
     for (const jobID of jobIDs) {
       const { job } = await Job.byJobID(tx, jobID);
       if ([JobStatus.PAUSED, JobStatus.CANCELED, JobStatus.SUCCESSFUL, JobStatus.COMPLETE_WITH_ERRORS, JobStatus.FAILED].includes(job.status)) {
-        logger.warn(`Resetting user_work counts to 0 for job ${jobID} with status ${job.status}`);
-        await setReadyAndRunningCountToZero(tx, jobID);
+        logger.warn(`Removing user_work rows for job ${jobID} with status ${job.status}`);
+        await deleteUserWorkForJob(tx, jobID);
       } else {
         logger.warn(`Recalculating user_work counts for job ${jobID} with status ${job.status}`);
         await recalculateCounts(tx, jobID);
@@ -47,7 +43,8 @@ export async function updateUserWork(ctx: Context): Promise<void> {
 }
 
 /**
- * Cron job to clean up the user_work table to avoid excess pods staying active
+ * Cron job to clean up the user_work table to ensure work is scheduled while also
+ * preventing excess pods from staying active
  */
 export class UserWorkUpdater extends CronJob {
 

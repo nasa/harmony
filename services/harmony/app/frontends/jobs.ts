@@ -3,128 +3,21 @@ import _ from 'lodash';
 import { Logger } from 'winston';
 
 import HarmonyRequest from '../models/harmony-request';
-import { getRelatedLinks, Job, JobForDisplay, JobQuery, JobStatus } from '../models/job';
+import { Job, JobForDisplay, JobQuery } from '../models/job';
 import JobLink from '../models/job-link';
-import JobMessage, { getMessagesForJob, JobMessageLevel } from '../models/job-message';
+import JobMessage, { getMessagesForJob } from '../models/job-message';
 import db from '../util/db';
 import { isAdminUser } from '../util/edl-api';
 import env from '../util/env';
 import { NotFoundError, RequestValidationError, ServerError } from '../util/errors';
 import {
-  cancelAndSaveJob, pauseAndSaveJob, resumeAndSaveJob, skipPreviewAndSaveJob, validateJobId,
+  cancelAndSaveJob, getJobForDisplay, jobStatusCache, pauseAndSaveJob, resumeAndSaveJob,
+  skipPreviewAndSaveJob, validateJobId,
 } from '../util/job';
-import {
-  getCloudAccessJsonLink, getCloudAccessShLink, getJobStateChangeLinks, getStacCatalogLink,
-  getStatusLink, Link,
-} from '../util/links';
+import { Link } from '../util/links';
 import { keysToLowerCase } from '../util/object';
 import { getPagingLinks, getPagingParams, setPagingHeaders } from '../util/pagination';
-import { needsStacLink } from '../util/stac';
 import { getRequestRoot } from '../util/url';
-
-/**
- * Returns true if the job contains S3 direct access links
- *
- * @param job - the serialized job
- * @returns true if job contains S3 direct access links and false otherwise
- */
-function containsS3DirectAccessLink(job: JobForDisplay): boolean {
-  const dataLinks = getRelatedLinks('data', job.links);
-  return dataLinks.some((l) => l.href.match(/^s3:\/\/.*$/));
-}
-
-/**
- * Analyze the links in the job to determine what links should be returned to
- * the end user. If any of the output links point to an S3 location add
- * links documenting how to obtain in region S3 access.
- *
- * @param job - the serialized job
- * @param urlRoot - the root URL to be used when constructing links
- * @param statusLinkRel - the type of relation (self|item) for the status link
- * @param destinationUrl - the destinationUrl of the job
- * @returns a list of job links
- */
-function getLinksForDisplay(job: JobForDisplay, urlRoot: string, statusLinkRel: string, destinationUrl: string): JobLink[] {
-  let { links } = job;
-  const dataLinks = getRelatedLinks('data', job.links);
-  if (containsS3DirectAccessLink(job)) {
-    if (!destinationUrl) {
-      links.unshift(new JobLink(getCloudAccessJsonLink(urlRoot)));
-      links.unshift(new JobLink(getCloudAccessShLink(urlRoot)));
-    }
-  } else {
-    // Remove the S3 bucket and prefix link
-    links = links.filter((link) => link.rel !== 's3-access');
-  }
-  if ([JobStatus.SUCCESSFUL, JobStatus.COMPLETE_WITH_ERRORS].includes(job.status) && needsStacLink(dataLinks)) {
-    links.unshift(new JobLink(getStacCatalogLink(urlRoot, job.jobID)));
-  }
-  // add cancel, pause, resume, etc. links if applicable
-  links.unshift(...getJobStateChangeLinks(job, urlRoot));
-  // add a 'self' or 'item' link if it does not already exist
-  // 'item' is for use in jobs listings, 'self' for job status
-  if (links.filter((link) => link.rel === 'self').length === 0) {
-    links.unshift(new JobLink(getStatusLink(urlRoot, job.jobID, statusLinkRel)));
-  }
-
-  return links;
-}
-
-/**
- * Determines the message that should be displayed to an end user based on
- * the links within the job
- * @param job - the serialized job
- * @param urlRoot - the root URL to be used when constructing links
- */
-function getMessageForDisplay(job: JobForDisplay, urlRoot: string): string {
-  let { message } = job;
-  if (containsS3DirectAccessLink(job)) {
-    if (!message.endsWith('.')) {
-      message += '.';
-    }
-    message += ' Contains results in AWS S3. Access from AWS '
-      + `${env.awsDefaultRegion} with keys from ${urlRoot}/cloud-access.sh`;
-  }
-  return message;
-}
-
-/**
- * Returns a job formatted for display to an end user.
- *
- * @param job - the serialized job
- * @param urlRoot - the root URL to be used when constructing links
- * @param linkType - the type to use for data links (http|https|s3|none)
- * @param messages - a list of messages for the job
- * @returns the job for display
- */
-function getJobForDisplay(job: Job, urlRoot: string, linkType?: string, messages?: JobMessage[]): JobForDisplay {
-  const serializedJob = job.serialize(urlRoot, linkType);
-  const statusLinkRel = linkType === 'none' ? 'item' : 'self';
-  serializedJob.links = getLinksForDisplay(serializedJob, urlRoot, statusLinkRel, job.destination_url);
-  if (!job.destination_url) {
-    serializedJob.message = getMessageForDisplay(serializedJob, urlRoot);
-  }
-
-  const errors = [];
-  const warnings = [];
-  for (const message of messages) {
-    if (message.level === JobMessageLevel.ERROR) {
-      errors.push(message);
-    } else {
-      warnings.push(message);
-    }
-  }
-
-  if (errors.length > 0) {
-    serializedJob.errors =  errors.map((e) => _.pick(e, ['url', 'message'])) as JobMessage[];
-  }
-
-  if (warnings.length > 0) {
-    serializedJob.warnings = warnings.map((e) => _.pick(e, ['url', 'message'])) as JobMessage[];
-  }
-
-  return serializedJob;
-}
 
 export interface JobListing {
   count: number;
@@ -240,6 +133,16 @@ export async function getJobStatus(
   req.context.logger.info(`Get job status for job ${jobID} and user ${req.user}`);
   try {
     validateJobId(jobID);
+    const cachedStatus = jobStatusCache.get(jobID);
+    if (cachedStatus) {
+      req.context.logger.debug(`Using cached job status for ${jobID}`);
+      // Make sure the next time job status is requested we get it from the database.
+      // We only cache it so that it can be retrieved quickly from the first redirect
+      // when creating the request.
+      jobStatusCache.delete(jobID);
+      res.send(JSON.parse(cachedStatus));
+      return;
+    }
     const { page, limit } = getPagingParams(req, env.defaultResultPageSize);
     const { job, pagination } = await Job.byJobID(db, jobID, true, true, false, page, limit);
     if (!job) {
