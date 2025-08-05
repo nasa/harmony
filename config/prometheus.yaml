@@ -66,7 +66,7 @@ data:
         for: $PROMETHEUS_PENDING_POD_NOT_HEALTHY_WAIT_FOR
         labels:
           environment: $CLIENT_ID
-          duration: $PROMETHEUS_POD_NOT_HEALTHY_DURATION
+          duration: $PROMETHEUS_PENDING_POD_NOT_HEALTHY_DURATION
         annotations:
           summary: "AlertManager has detected pod(s) in a non-ready phase (Pending)."
       - alert: KubernetesNodeNotReady
