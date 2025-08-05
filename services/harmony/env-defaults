@@ -303,7 +303,7 @@ PROMETHEUS_PENDING_POD_NOT_HEALTHY_DURATION=15m
 # how long the specified alert must be firing before being sent to the Alert Manager
 PROMETHEUS_POD_NOT_HEALTHY_WAIT_FOR=5m
 PROMETHEUS_NODE_NOT_READY_WAIT_FOR=10m
-ROMETHEUS_PENDING_POD_NOT_HEALTHY_WAIT_FOR=45m
+PROMETHEUS_PENDING_POD_NOT_HEALTHY_WAIT_FOR=45m
 
 # Alert manager variables (irrelevant to local development).
 # To see/test whether alerts are firing locally, kubectl port-forward {prometheus-pod} 9090:9090 -n monitoring
