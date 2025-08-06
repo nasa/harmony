@@ -170,7 +170,7 @@ describe('PublishFailureMetrics', () => {
 
     it('computes the percentage of failures for each service', async () => {
       const metrics = await pfm.getFailedWorkItemPercentageByServiceWithTimeWindow(ctx);
-      expect(metrics[0].service).to.equal('harmony-services/query-cmr');
+      expect(metrics[0].service).to.equal('query-cmr');
       expect(metrics[0].percent).to.equal(50);
     });
   });

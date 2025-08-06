@@ -3,6 +3,7 @@ import { CloudWatchClient, PutMetricDataCommand, StandardUnit } from '@aws-sdk/c
 import { WorkItemStatus } from '../../../harmony/app/models/work-item-interface';
 import { Context } from '../util/context';
 import env from '../util/env';
+import { serviceIDToCanonicalServiceName } from '../util/services';
 import { CronJob } from './cronjob';
 
 export interface MetricData {
@@ -90,9 +91,7 @@ export async function getFailedWorkItemPercentageByServiceWithTimeWindow(
 
     // normalize service names by removing tags from service IDs
     for (const { serviceID } of allServices) {
-      // remove the tag from the serviceID
-      const match = serviceID.match(/^(.+):/);
-      const service = match ? match[1] : serviceID;
+      const service = await serviceIDToCanonicalServiceName(serviceID);
       serviceCounts[service] = [0, 0];
     }
 
@@ -108,10 +107,11 @@ export async function getFailedWorkItemPercentageByServiceWithTimeWindow(
     // normalize service names by removing tags from service IDs and combine counts to normalized
     // service name
     for (const { serviceID, status, count } of queryResults) {
-      // remove the tag from the serviceID
-      const match = serviceID.match(/^(.+):/);
-      const service = match ? match[1] : serviceID;
+      // use the canonical name for the service
+      const service = await serviceIDToCanonicalServiceName(serviceID);
       const numCount = parseInt(count, 10);
+      logger.info(`Service ${service} ${status} count: ${numCount}`);
+
       if (status === WorkItemStatus.FAILED) {
         serviceCounts[service][0] += numCount;
       } else {
