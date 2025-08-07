@@ -75,7 +75,7 @@
     "pg": "^8.7.3",
     "shpjs": ">=4.0.4 <5.0.0",
     "supertest": "^7.0.0",
-    "tmp": "^0.2.1",
+    "tmp": "^0.2.4",
     "tmp-promise": "^3.0.3",
     "tweetnacl": "^1.0.3",
     "tweetnacl-util": "^0.15.1",

@@ -56,7 +56,7 @@
     "lodash.camelcase": "^4.3.0",
     "node-fetch": "^3.2.10",
     "python-shell": "^5.0.0",
-    "tmp": "^0.2.1",
+    "tmp": "^0.2.4",
     "winston": "^3.10.0"
   },
   "devDependencies": {
