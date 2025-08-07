@@ -47,7 +47,7 @@ export function getCloudWatchClientConfig(): CloudWatchClientConfig {
 
     config = {
       region: env.awsDefaultRegion,
-      endpoint: `http://${localstackHost}:4572`,
+      endpoint: `http://${localstackHost}:4566`,
       credentials: {
         accessKeyId: 'localstack',
         secretAccessKey: 'localstack',
@@ -80,7 +80,6 @@ export async function getFailedWorkItemPercentageByServiceWithTimeWindow(
     const now = new Date();
     const timeAgo = new Date(now.getTime() - minutesBack * 60 * 1000);
 
-    // const serviceCounts = new Map<string, number[]>();
     const serviceCounts = {};
 
     // get all the services - need to do this here as some of the services may not have recent
