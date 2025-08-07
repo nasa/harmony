@@ -129,7 +129,7 @@ describe('PublishFailureMetrics', () => {
       process.env.USE_LOCALSTACK = 'true';
       const localstackHostStub = sinon.stub(env, 'localstackHost').get(() => localstackHost);
       const config = pfm.getCloudWatchClientConfig();
-      expect(config.endpoint).to.equal(`http://${localstackHost}:4572`);
+      expect(config.endpoint).to.equal(`http://${localstackHost}:4566`);
       expect(config.credentials.accessKeyId).to.equal('localstack');
       expect(config.credentials.secretAccessKey).to.equal('localstack');
       localstackHostStub.restore();
