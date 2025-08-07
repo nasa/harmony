@@ -8,9 +8,9 @@ let serviceIDToCanonicalNameMap;
  * service names
  * @returns a Map of service IDs to canonical service names
  */
-async function pasrseHarmonyEnvDefaults(): Promise<Map<String, String>> {
+async function pasrseHarmonyEnvDefaults(): Promise<Map<string, string>> {
   if (!serviceIDToCanonicalNameMap) {
-    serviceIDToCanonicalNameMap = new Map<String, String>();
+    serviceIDToCanonicalNameMap = new Map<string, string>();
     // Get the directory where this TypeScript file is located
     const currentDir = path.dirname(__filename);
 
@@ -18,7 +18,7 @@ async function pasrseHarmonyEnvDefaults(): Promise<Map<String, String>> {
     const data = await fs.promises.readFile(filePath, 'utf8');
     const lines = data.split('\n');
 
-    const result = new Map<String, String>();
+    const result = new Map<string, string>();
 
     lines.forEach((line, _) => {
       const match = line.match(/^(.+)_IMAGE=(?:[^\/]+\/)*([^:]+)(?::.+)?$/);
