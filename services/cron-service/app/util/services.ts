@@ -8,7 +8,7 @@ let serviceIDToCanonicalNameMap;
  * service names
  * @returns a Map of service IDs to canonical service names
  */
-async function pasrseHarmonyEnvDefaults(): Promise<Map<string, string>> {
+async function parseHarmonyEnvDefaults(): Promise<Map<string, string>> {
   if (!serviceIDToCanonicalNameMap) {
     serviceIDToCanonicalNameMap = new Map<string, string>();
     // Get the directory where this TypeScript file is located
@@ -18,20 +18,16 @@ async function pasrseHarmonyEnvDefaults(): Promise<Map<string, string>> {
     const data = await fs.promises.readFile(filePath, 'utf8');
     const lines = data.split('\n');
 
-    const result = new Map<string, string>();
-
     lines.forEach((line, _) => {
       const match = line.match(/^(.+)_IMAGE=(?:[^\/]+\/)*([^:]+)(?::.+)?$/);
       if (match) {
         const upcaseName = match[1];
         const serviceID = match[2];
         const canonicalName = upcaseName.toLowerCase().replace(/_/g, '-');
-        result[serviceID] = canonicalName;
         serviceIDToCanonicalNameMap[serviceID] = canonicalName;
       }
     });
   }
-
 
   return serviceIDToCanonicalNameMap;
 }
@@ -46,5 +42,5 @@ export async function serviceIDToCanonicalServiceName(serviceID: string): Promis
   const withoutTag = serviceID.split(':')[0];
   const match = withoutTag.match(/^.+\/(.+)/);
   const service = match ? match[1] : withoutTag;
-  return (await pasrseHarmonyEnvDefaults())[service];
+  return (await parseHarmonyEnvDefaults())[service];
 }

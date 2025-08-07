@@ -209,7 +209,7 @@ describe('PublishFailureMetrics', () => {
             Value: value,
             Unit: 'Percent',
             Timestamp: now,
-            Dimensions: [{ Name: service, Value: value.toString() }],
+            Dimensions: [{ Name: 'service', Value: service }],
           },
         ],
       };
