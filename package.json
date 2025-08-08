@@ -84,6 +84,7 @@
   },
   "overrides": {
     "cross-spawn": "7.0.5",
-    "@octokit/plugin-paginate-rest": "^9.2.2"
+    "@octokit/plugin-paginate-rest": "^9.2.2",
+    "tmp": "0.2.4"
   }
 }
