@@ -153,7 +153,7 @@
     "source-map-support": "^0.5.19",
     "sqlite3": "^5.1.7",
     "swagger-ui-express": "^5.0.1",
-    "tmp": "^0.2.1",
+    "tmp": "^0.2.4",
     "tmp-promise": "^3.0.3",
     "ts-node": "^10.7.0",
     "tsconfig-paths": "^4.0.0",
