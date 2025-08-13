@@ -89,8 +89,11 @@ export async function getFailedWorkItemPercentageByServiceWithTimeWindow(
       .distinct('serviceID');
 
     // normalize service names by removing tags from service IDs
-    for (const { serviceID } of allServices) {
-      const service = await serviceIDToCanonicalServiceName(serviceID);
+    const serviceNamePromises = allServices.map(({ serviceID }) =>
+      serviceIDToCanonicalServiceName(serviceID).then(service => ({ serviceID, service })),
+    );
+    const serviceNames = await Promise.all(serviceNamePromises);
+    for (const { service } of serviceNames) {
       serviceCounts[service] = [0, 0];
     }
 
