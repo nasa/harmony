@@ -19,3 +19,11 @@ USER_WORK_UPDATER_CRON="*/3 * * * *" # every 3 minutes
 # Rows in user_work with no work completed within this time interval this will cause the
 # ready and running counts for a job to be recalculated
 USER_WORK_EXPIRATION_MINUTES=3
+
+# The cron schedule for publishing service failure metrics to CloudWatch
+PUBLISH_SERVICE_FAILURE_METRICS_CRON="0,30 * * * *" # every half hour
+
+# How far to go back from the current time when computing service failure percentages.
+# This should correspond to how often the computation runs based on
+# PUBLISH_SERVICE_FAILURE_METRICS_CRON
+FAILURE_METRICS_LOOK_BACK_MINUTES=30
