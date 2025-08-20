@@ -1397,12 +1397,14 @@ describe('when testing a batched aggregation service', function () {
     let batchSizeStub;
     let pageStub;
 
-    before(function () {
+    before(async function () {
       pageStub = stub(env, 'cmrMaxPageSize').get(() => 2);
       batchSizeStub = stub(env, 'maxBatchInputs').get(() => 2);
       sizeOfObjectStub = stub(aggregationBatch, 'sizeOfObject')
         .callsFake(async (_) => 1);
+      await truncateAll();
     });
+
     after(function () {
       if (pageStub.restore) {
         pageStub.restore();
@@ -1484,13 +1486,14 @@ describe('when testing a batched aggregation service', function () {
     let pageStub;
     let retryLimit;
 
-    before(function () {
+    before(async function () {
       pageStub = stub(env, 'cmrMaxPageSize').get(() => 2);
       batchSizeStub = stub(env, 'maxBatchInputs').get(() => 2);
       sizeOfObjectStub = stub(aggregationBatch, 'sizeOfObject')
         .callsFake(async (_) => 1);
       retryLimit = env.workItemRetryLimit;
       env.workItemRetryLimit = 0;
+      await truncateAll();
     });
 
     after(function () {
@@ -1512,10 +1515,6 @@ describe('when testing a batched aggregation service', function () {
       concatenate: true,
       maxResults: 2,
     };
-
-    before(async function () {
-      await truncateAll();
-    });
 
     hookRangesetRequest('1.0.0', l2ssCollection, 'all', { query: l2ssConciseQuery, username: 'joe' });
     hookRedirect('joe');
@@ -1575,13 +1574,14 @@ describe('when testing a batched aggregation service', function () {
     let pageStub;
     let retryLimit;
 
-    before(function () {
+    before(async function () {
       pageStub = stub(env, 'cmrMaxPageSize').get(() => 2);
       batchSizeStub = stub(env, 'maxBatchInputs').get(() => 2);
       sizeOfObjectStub = stub(aggregationBatch, 'sizeOfObject')
         .callsFake(async (_) => 1);
       retryLimit = env.workItemRetryLimit;
       env.workItemRetryLimit = 0;
+      await truncateAll();
     });
 
     after(function () {
@@ -1603,10 +1603,6 @@ describe('when testing a batched aggregation service', function () {
       concatenate: true,
       maxResults: 2,
     };
-
-    before(async function () {
-      await truncateAll();
-    });
 
     hookRangesetRequest('1.0.0', l2ssCollection, 'all', { query: l2ssConciseQuery, username: 'joe' });
     hookRedirect('joe');
