@@ -1391,4 +1391,269 @@ describe('when testing a batched aggregation service', function () {
       });
     });
   });
+
+  describe('with one successful and one no data warning in a service chain', function () {
+    let sizeOfObjectStub;
+    let batchSizeStub;
+    let pageStub;
+
+    before(function () {
+      pageStub = stub(env, 'cmrMaxPageSize').get(() => 2);
+      batchSizeStub = stub(env, 'maxBatchInputs').get(() => 2);
+      sizeOfObjectStub = stub(aggregationBatch, 'sizeOfObject')
+        .callsFake(async (_) => 1);
+    });
+    after(function () {
+      if (pageStub.restore) {
+        pageStub.restore();
+      }
+      if (batchSizeStub.restore) {
+        batchSizeStub.restore();
+      }
+      if (sizeOfObjectStub.restore) {
+        sizeOfObjectStub.restore();
+      }
+    });
+
+    const l2ssCollection = 'C1234208438-POCLOUD';
+    const l2ssConciseQuery = {
+      subset: 'lat(0:90)',
+      concatenate: true,
+      maxResults: 2,
+    };
+
+    before(async function () {
+      await truncateAll();
+    });
+
+    hookRangesetRequest('1.0.0', l2ssCollection, 'all', { query: l2ssConciseQuery, username: 'joe' });
+    hookRedirect('joe');
+
+    describe('when handling multiple l2ss-py items with WARNING and SUCCESSFUL statuses', function () {
+      describe('when first checking for a query-cmr work item', function () {
+        it('finds the item and can complete it with 2 outputs', async function () {
+          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
+          expect(res.status).to.equal(200);
+          const { workItem, maxCmrGranules } = JSON.parse(res.text);
+          expect(maxCmrGranules).to.equal(2);
+          expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:stable');
+          workItem.status = WorkItemStatus.SUCCESSFUL;
+          workItem.results = [
+            getStacLocation(workItem, 'catalog0.json'),
+            getStacLocation(workItem, 'catalog1.json'),
+          ];
+          workItem.outputItemSizes = [2, 1];
+          await fakeServiceStacOutput(workItem.jobID, workItem.id, 2, 1);
+          await updateWorkItem(this.backend, workItem);
+        });
+
+        it('still creates a concise item as long as one is successful', async function () {
+          // First l2ss-py item with WARNING status
+          let res = await getWorkForService(this.backend, 'ghcr.io/podaac/l2ss-py:sit');
+          expect(res.status).to.equal(200);
+          let { workItem } = JSON.parse(res.text);
+          workItem.status = WorkItemStatus.WARNING;
+          workItem.message = 'No data found';
+          workItem.message_category = 'nodata';
+          await updateWorkItem(this.backend, workItem);
+
+          // Second l2ss-py item with SUCCESSFUL status
+          res = await getWorkForService(this.backend, 'ghcr.io/podaac/l2ss-py:sit');
+          expect(res.status).to.equal(200);
+          // eslint-disable-next-line prefer-destructuring
+          workItem = JSON.parse(res.text).workItem;
+          workItem.status = WorkItemStatus.SUCCESSFUL;
+          workItem.results = [getStacLocation(workItem, 'catalog.json')];
+          workItem.outputItemSizes = [1];
+          await fakeServiceStacOutput(workItem.jobID, workItem.id, 1, 1);
+          await updateWorkItem(this.backend, workItem);
+
+          // Verify concise work item is queued
+          res = await getWorkForService(this.backend, 'ghcr.io/podaac/concise:sit');
+          expect(res.status).to.equal(200);
+          const conciseWorkItem = JSON.parse(res.text).workItem;
+          expect(conciseWorkItem.serviceID).to.equal('ghcr.io/podaac/concise:sit');
+        });
+      });
+    });
+  });
+
+  describe('with one successful and one failed in a service chain', function () {
+    let sizeOfObjectStub;
+    let batchSizeStub;
+    let pageStub;
+    let retryLimit;
+
+    before(function () {
+      pageStub = stub(env, 'cmrMaxPageSize').get(() => 2);
+      batchSizeStub = stub(env, 'maxBatchInputs').get(() => 2);
+      sizeOfObjectStub = stub(aggregationBatch, 'sizeOfObject')
+        .callsFake(async (_) => 1);
+      retryLimit = env.workItemRetryLimit;
+      env.workItemRetryLimit = 0;
+    });
+
+    after(function () {
+      if (pageStub.restore) {
+        pageStub.restore();
+      }
+      if (batchSizeStub.restore) {
+        batchSizeStub.restore();
+      }
+      if (sizeOfObjectStub.restore) {
+        sizeOfObjectStub.restore();
+      }
+      env.workItemRetryLimit = retryLimit;
+    });
+
+    const l2ssCollection = 'C1234208438-POCLOUD';
+    const l2ssConciseQuery = {
+      subset: 'lat(0:90)',
+      concatenate: true,
+      maxResults: 2,
+    };
+
+    before(async function () {
+      await truncateAll();
+    });
+
+    hookRangesetRequest('1.0.0', l2ssCollection, 'all', { query: l2ssConciseQuery, username: 'joe' });
+    hookRedirect('joe');
+
+    describe('when handling multiple l2ss-py items with FAILED and SUCCESSFUL statuses', function () {
+      describe('when first checking for a query-cmr work item', function () {
+        it('finds the item and can complete it with 2 outputs', async function () {
+          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
+          expect(res.status).to.equal(200);
+          const { workItem, maxCmrGranules } = JSON.parse(res.text);
+          expect(maxCmrGranules).to.equal(2);
+          expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:stable');
+          workItem.status = WorkItemStatus.SUCCESSFUL;
+          workItem.results = [
+            getStacLocation(workItem, 'catalog0.json'),
+            getStacLocation(workItem, 'catalog1.json'),
+          ];
+          workItem.outputItemSizes = [2, 1];
+          await fakeServiceStacOutput(workItem.jobID, workItem.id, 2, 1);
+          await updateWorkItem(this.backend, workItem);
+        });
+
+        it('still creates a concise item as long as one is successful', async function () {
+          // First l2ss-py item with FAILED status
+          let res = await getWorkForService(this.backend, 'ghcr.io/podaac/l2ss-py:sit');
+          expect(res.status).to.equal(200);
+          let { workItem } = JSON.parse(res.text);
+          workItem.status = WorkItemStatus.FAILED;
+          workItem.message = 'Ran into an error';
+          workItem.message_category = 'error';
+          await updateWorkItem(this.backend, workItem);
+
+          // Second l2ss-py item with SUCCESSFUL status
+          res = await getWorkForService(this.backend, 'ghcr.io/podaac/l2ss-py:sit');
+          expect(res.status).to.equal(200);
+          // eslint-disable-next-line prefer-destructuring
+          workItem = JSON.parse(res.text).workItem;
+          workItem.status = WorkItemStatus.SUCCESSFUL;
+          workItem.results = [getStacLocation(workItem, 'catalog.json')];
+          workItem.outputItemSizes = [1];
+          await fakeServiceStacOutput(workItem.jobID, workItem.id, 1, 1);
+          await updateWorkItem(this.backend, workItem);
+
+          // Verify concise work item is queued
+          res = await getWorkForService(this.backend, 'ghcr.io/podaac/concise:sit');
+          expect(res.status).to.equal(200);
+          const conciseWorkItem = JSON.parse(res.text).workItem;
+          expect(conciseWorkItem.serviceID).to.equal('ghcr.io/podaac/concise:sit');
+        });
+      });
+    });
+  });
+
+  describe('with one no data warning and one failed in a service chain', function () {
+    let sizeOfObjectStub;
+    let batchSizeStub;
+    let pageStub;
+    let retryLimit;
+
+    before(function () {
+      pageStub = stub(env, 'cmrMaxPageSize').get(() => 2);
+      batchSizeStub = stub(env, 'maxBatchInputs').get(() => 2);
+      sizeOfObjectStub = stub(aggregationBatch, 'sizeOfObject')
+        .callsFake(async (_) => 1);
+      retryLimit = env.workItemRetryLimit;
+      env.workItemRetryLimit = 0;
+    });
+
+    after(function () {
+      if (pageStub.restore) {
+        pageStub.restore();
+      }
+      if (batchSizeStub.restore) {
+        batchSizeStub.restore();
+      }
+      if (sizeOfObjectStub.restore) {
+        sizeOfObjectStub.restore();
+      }
+      env.workItemRetryLimit = retryLimit;
+    });
+
+    const l2ssCollection = 'C1234208438-POCLOUD';
+    const l2ssConciseQuery = {
+      subset: 'lat(0:90)',
+      concatenate: true,
+      maxResults: 2,
+    };
+
+    before(async function () {
+      await truncateAll();
+    });
+
+    hookRangesetRequest('1.0.0', l2ssCollection, 'all', { query: l2ssConciseQuery, username: 'joe' });
+    hookRedirect('joe');
+
+    describe('when handling multiple l2ss-py items with FAILED and WARNING no data statuses', function () {
+      describe('when first checking for a query-cmr work item', function () {
+        it('finds the item and can complete it with 2 outputs', async function () {
+          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
+          expect(res.status).to.equal(200);
+          const { workItem, maxCmrGranules } = JSON.parse(res.text);
+          expect(maxCmrGranules).to.equal(2);
+          expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:stable');
+          workItem.status = WorkItemStatus.SUCCESSFUL;
+          workItem.results = [
+            getStacLocation(workItem, 'catalog0.json'),
+            getStacLocation(workItem, 'catalog1.json'),
+          ];
+          workItem.outputItemSizes = [2, 1];
+          await fakeServiceStacOutput(workItem.jobID, workItem.id, 2, 1);
+          await updateWorkItem(this.backend, workItem);
+        });
+
+        it('does not create a concise item when there are no successful work items', async function () {
+          // First l2ss-py item with FAILED status
+          let res = await getWorkForService(this.backend, 'ghcr.io/podaac/l2ss-py:sit');
+          expect(res.status).to.equal(200);
+          let { workItem } = JSON.parse(res.text);
+          workItem.status = WorkItemStatus.FAILED;
+          workItem.message = 'Failure';
+          workItem.message_category = 'error';
+          await updateWorkItem(this.backend, workItem);
+
+          // Second l2ss-py item with WARNING nodata status
+          res = await getWorkForService(this.backend, 'ghcr.io/podaac/l2ss-py:sit');
+          expect(res.status).to.equal(200);
+          // eslint-disable-next-line prefer-destructuring
+          workItem = JSON.parse(res.text).workItem;
+          workItem.status = WorkItemStatus.WARNING;
+          workItem.message = 'No data found';
+          workItem.message_category = 'nodata';
+          await updateWorkItem(this.backend, workItem);
+
+          // Verify concise work item is not queued
+          res = await getWorkForService(this.backend, 'ghcr.io/podaac/concise:sit');
+          expect(res.status).to.equal(404);
+        });
+      });
+    });
+  });
 });
