@@ -525,7 +525,7 @@ export async function createNextWorkItems(
         sortIndex = workItem.sortIndex;
       }
       let outputItemUrls = [];
-      if (workItem.status !== WorkItemStatus.FAILED) {
+      if (workItem.status !== WorkItemStatus.FAILED && workItem.message_category !== 'nodata') {
         outputItemUrls = await outputStacItemUrls(results);
       }
       didCreateWorkItem = await handleBatching(
