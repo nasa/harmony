@@ -65,10 +65,7 @@ https://cmr.earthdata.nasa.gov:
           <<: *default-turbo-env
           STAGING_PATH: public/gesdisc/giovanni
     umm_s: S2739607260-GES_DISC
-    collections:
-      - id: C1276812830-GES_DISC
-        variables:
-        - V3171509330-GES_DISC
+    validate_variables: false
     capabilities:
       subsetting:
         temporal: true
