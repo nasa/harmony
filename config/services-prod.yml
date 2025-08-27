@@ -288,6 +288,52 @@ https://cmr.earthdata.nasa.gov:
         conditional:
           exists: ['shapefileSubset', 'spatialSubset']
 
+  - name: sds/HOSS-regridder-reformatter
+    description: |
+      A service chain for applying the Harmony Metadata Annotator to HOSS/Maskfill
+      output, producing CF compliant annotated NetCDF4 outputs. This service chain
+      is also intended to be used for producing regridded outputs using the harmony-regridder
+      and to produce GeoTIFF outputs using net2cog.
+    data_operation_version: '0.22.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/sds/HOSS-regridder-reformatter
+    umm_s: S3671941188-XYZ_PROV
+    capabilities:
+      subsetting:
+        temporal: true
+        bbox: true
+        dimension: true
+        shape: true
+        variable: true
+      reprojection: true
+      output_formats:
+        - application/netcdf # Incorrect mime-type, remove when no longer needed
+        - application/x-netcdf4
+        - image/tiff
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
+      - image: !Env ${HOSS_IMAGE}
+        operations: ['variableSubset', 'spatialSubset', 'dimensionSubset', 'shapefileSubset', 'temporalSubset']
+        conditional:
+          exists: ['variableSubset', 'spatialSubset', 'dimensionSubset', 'shapefileSubset', 'temporalSubset']
+      - image: !Env ${SDS_MASKFILL_IMAGE}
+        operations: ['shapefileSubset', 'spatialSubset']
+        conditional:
+          exists: ['shapefileSubset', 'spatialSubset']
+      - image: !Env ${HARMONY_METADATA_ANNOTATOR_IMAGE}
+      - image: !Env ${HARMONY_REGRIDDER_IMAGE}
+        conditional:
+          exists: ['reproject']
+      - image: !Env ${NET2COG_IMAGE}
+        conditional:
+          format: ['image/tiff']
+
   - name: sds/swath-projector
     description: |
       Takes NetCDF-4 input files and projects input swath variables to an output grid.
@@ -612,6 +658,45 @@ https://cmr.earthdata.nasa.gov:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
       - image: !Env ${HARMONY_GDAL_ADAPTER_IMAGE}
+
+  - name: sds/smap-l2-subsetter-net2cog
+    description: |
+      A service chain for subsetting SMAP L2 collections with the Trajectory
+      Subsetter and reformatting that output to Cloud-Optimized GeoTIFF (COG).
+
+      In GeoTIFF reformatting the SMAP L2 Gridder is called first to convert
+      the output to NetCDF, which is then plugged into the Net2COG reformatter.
+    data_operation_version: '0.22.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/sds/smap-l2-subsetter-net2cog
+    umm_s: S3671933145-XYZ_PROV
+    capabilities:
+      subsetting:
+        temporal: false
+        bbox: true
+        shape: true
+        variable: true
+      output_formats:
+        - application/x-hdf
+        - application/x-netcdf4
+        - image/tiff
+      reprojection: true
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
+      - image: !Env ${TRAJECTORY_SUBSETTER_IMAGE}
+        operations: ['variableSubset', 'spatialSubset', 'shapefileSubset']
+      - image: !Env ${HARMONY_SMAP_L2_GRIDDER_IMAGE}
+        conditional:
+          format: ['image/tiff', 'application/x-netcdf4']
+      - image: !Env ${NET2COG_IMAGE}
+        conditional:
+          format: ['image/tiff']
 
   - name: harmony/service-example
     description: |
