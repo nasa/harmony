@@ -418,6 +418,74 @@ https://cmr.earthdata.nasa.gov:
           exists: [ 'variableSubset', 'dimensionSubset' ]
       - image: !Env ${GEOLOCO_IMAGE}
 
+  - name: l2-subsetter-batchee-stitchee-concise
+    description: |
+      ### Subsetter And Multi-dimensional Batched Aggregation in Harmony (SAMBAH)
+      Chained Service of the L2-subsetter, Batchee, STITCHEE, and CONCISE services.
+      Additional documentation [here](https://stitchee.readthedocs.io/en/latest/sambah_readme/).
+      #### L2 swath subsetter (L2-subsetter)
+      * Works with trajectory (1D) and along track/across track data.
+      * Works with netCDF and HDF5 input files.
+      * Supports variable subsetting.
+      * Supports temporal subsetting.
+      * Supports shape subsetting
+      * Works with hierarchical groups.
+      * Outputs netCDF4.
+      #### Batchee
+      * Service groups together filenames so that further operations (such as concatenation) can be performed separately on each group of files.
+      #### STITCH by Extending a dimEnsion (Stitchee)
+      * Service concatenates a group of netCDF data files along an existing dimension.
+      #### CONCatenation SErvice (CONCISE)
+      * Service capable of "concatenating" multiple netCDF files into a single netCDF file.
+      The resulting file has an extra dimension with size equal to the number of input files, where each slice in that dimension corresponds to the data from one of the input files.
+
+    data_operation_version: '0.22.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/asdc-trade/l2-subsetter-batchee-stitchee-concise
+    umm_s: S2940253910-LARC_CLOUD
+    capabilities:
+      concatenation: true
+      concatenate_by_default: false
+      extend: true
+      default_extend_dimensions: ['mirror_step']
+      subsetting:
+        bbox: true
+        variable: true
+        temporal: true
+        shape: true
+      output_formats:
+        - application/netcdf4
+      reprojection: false
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
+      - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
+        operations: ['spatialSubset', 'shapefileSubset', 'variableSubset', 'temporalSubset']
+        conditional:
+          exists: ['spatialSubset', 'shapefileSubset', 'variableSubset', 'temporalSubset']
+        extra_args:
+          cut: false
+      - image: !Env ${BATCHEE_IMAGE}
+        always_wait_for_prior_step: true
+        operations: ['concatenate']
+        conditional:
+          exists: ['concatenate', 'extend']
+      - image: !Env ${STITCHEE_IMAGE}
+        operations: ['extend']
+        conditional:
+          exists: ['concatenate', 'extend']
+      - image: !Env ${PODAAC_CONCISE_IMAGE}
+        always_wait_for_prior_step: true
+        is_batched: true
+        operations: ['concatenate']
+        conditional:
+          exists: ['concatenate']
+
   - name: asdc/imagenator_l2
     description: Chain to create TEMPO L2 imagery for GIBS
     data_operation_version: '0.22.0'
@@ -505,74 +573,6 @@ https://cmr.earthdata.nasa.gov:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
       - image: !Env ${HYBIG_IMAGE}
-
-  - name: l2-subsetter-batchee-stitchee-concise
-    description: |
-      ### Subsetter And Multi-dimensional Batched Aggregation in Harmony (SAMBAH)
-      Chained Service of the L2-subsetter, Batchee, STITCHEE, and CONCISE services.
-      Additional documentation [here](https://stitchee.readthedocs.io/en/latest/sambah_readme/).
-      #### L2 swath subsetter (L2-subsetter)
-      * Works with trajectory (1D) and along track/across track data.
-      * Works with netCDF and HDF5 input files.
-      * Supports variable subsetting.
-      * Supports temporal subsetting.
-      * Supports shape subsetting
-      * Works with hierarchical groups.
-      * Outputs netCDF4.
-      #### Batchee
-      * Service groups together filenames so that further operations (such as concatenation) can be performed separately on each group of files.
-      #### STITCH by Extending a dimEnsion (Stitchee)
-      * Service concatenates a group of netCDF data files along an existing dimension.
-      #### CONCatenation SErvice (CONCISE)
-      * Service capable of "concatenating" multiple netCDF files into a single netCDF file.
-      The resulting file has an extra dimension with size equal to the number of input files, where each slice in that dimension corresponds to the data from one of the input files.
-
-    data_operation_version: '0.22.0'
-    type:
-      <<: *default-turbo-config
-      params:
-        <<: *default-turbo-params
-        env:
-          <<: *default-turbo-env
-          STAGING_PATH: public/asdc-trade/l2-subsetter-batchee-stitchee-concise
-    umm_s: S2940253910-LARC_CLOUD
-    capabilities:
-      concatenation: true
-      concatenate_by_default: false
-      extend: true
-      default_extend_dimensions: ['mirror_step']
-      subsetting:
-        bbox: true
-        variable: true
-        temporal: true
-        shape: true
-      output_formats:
-        - application/netcdf4
-      reprojection: false
-    steps:
-      - image: !Env ${QUERY_CMR_IMAGE}
-        is_sequential: true
-      - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
-        operations: ['spatialSubset', 'shapefileSubset', 'variableSubset', 'temporalSubset']
-        conditional:
-          exists: ['spatialSubset', 'shapefileSubset', 'variableSubset', 'temporalSubset']
-        extra_args:
-          cut: false
-      - image: !Env ${BATCHEE_IMAGE}
-        always_wait_for_prior_step: true
-        operations: ['concatenate']
-        conditional:
-          exists: ['concatenate', 'extend']
-      - image: !Env ${STITCHEE_IMAGE}
-        operations: ['extend']
-        conditional:
-          exists: ['concatenate', 'extend']
-      - image: !Env ${PODAAC_CONCISE_IMAGE}
-        always_wait_for_prior_step: true
-        is_batched: true
-        operations: ['concatenate']
-        conditional:
-          exists: ['concatenate']
 
   # Reformatting services below. Any other transformation service should be added above.
   - name: net2cog
