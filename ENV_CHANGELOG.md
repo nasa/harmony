@@ -2,6 +2,13 @@
 Any changes to the environment variables will be documented in this file in chronological
 order with the most recent changes first.
 
+## 2025-10-14
+### Changed
+- `SDS_MASKFILL_...` environment variables have been updated to `MASKFILL_...`
+  names, and the values have been updated to point to Docker images hosted in
+  the GitHub Container Registry, following the open-source migration of the
+  MaskFill service.
+
 ## 2025-09-18
 ### Changed
 - NET2COG_LIMITS_MEMORY - Increased to 8Gi to accommodate large MODIS v.7 granules.

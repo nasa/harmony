@@ -15,7 +15,7 @@ export const metricsFields = [
   'timeTakenSeconds', 'numInputGranules', 'totalGranuleSizeMb', 'numVariables', 'concatenate',
   'reproject', 'synchronous', 'spatialSubset', 'shapefileSubset', 'chainLength',
   'harmonyGdalAdapter', 'harmonyServiceExample', 'swathProjector',
-  'hoss', 'sdsMaskfill', 'trajectorySubsetter', 'podaacConcise',
+  'hoss', 'maskfill', 'trajectorySubsetter', 'podaacConcise',
   'podaacL2Subsetter', 'giovanniTimeSeriesAdapter',
 ];
 
@@ -24,7 +24,7 @@ interface RequestMetrics {
   harmonyServiceExample: number;
   swathProjector: number;
   hoss: number;
-  sdsMaskfill: number;
+  maskfill: number;
   trajectorySubsetter: number;
   podaacConcise: number;
   podaacL2Subsetter: number;
@@ -61,8 +61,8 @@ function getServiceNameFromID(serviceID: string, logger: Logger): string {
     case /hoss/.test(serviceID):
       serviceName = 'hoss';
       break;
-    case /maskfill-harmony/.test(serviceID):
-      serviceName = 'sdsMaskfill';
+    case /harmony-maskfill/.test(serviceID):
+      serviceName = 'maskfill';
       break;
     case /trajectory-subsetter/.test(serviceID):
       serviceName = 'trajectorySubsetter';
@@ -96,7 +96,7 @@ function getServiceMetricsFromSteps(steps: WorkflowStep[], logger: Logger): Part
     harmonyServiceExample: 0,
     swathProjector: 0,
     hoss: 0,
-    sdsMaskfill: 0,
+    maskfill: 0,
     trajectorySubsetter: 0,
     podaacConcise: 0,
     podaacL2Subsetter: 0,
