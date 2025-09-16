@@ -23,7 +23,7 @@ The returned JSON response is a map of canonical service names to tags:
   "harmony-regridder": "latest",
   "swath-projector": "latest",
   "hoss": "latest",
-  "sds-maskfill": "latest",
+  "maskfill": "latest",
   "trajectory-subsetter": "latest",
   "podaac-concise": "sit",
   "podaac-l2-subsetter": "sit",

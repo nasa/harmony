@@ -246,7 +246,7 @@ https://cmr.earthdata.nasa.gov:
         is_sequential: true
       - image: !Env ${HOSS_IMAGE}
         operations: ['variableSubset', 'spatialSubset', 'dimensionSubset', 'shapefileSubset', 'temporalSubset']
-      - image: !Env ${SDS_MASKFILL_IMAGE}
+      - image: !Env ${MASKFILL_IMAGE}
         operations: ['shapefileSubset']
         conditional:
           exists: ['shapefileSubset']
@@ -283,7 +283,7 @@ https://cmr.earthdata.nasa.gov:
         is_sequential: true
       - image: !Env ${HOSS_IMAGE}
         operations: ['variableSubset', 'spatialSubset', 'dimensionSubset', 'shapefileSubset', 'temporalSubset']
-      - image: !Env ${SDS_MASKFILL_IMAGE}
+      - image: !Env ${MASKFILL_IMAGE}
         operations: ['shapefileSubset', 'spatialSubset']
         conditional:
           exists: ['shapefileSubset', 'spatialSubset']
@@ -322,7 +322,7 @@ https://cmr.earthdata.nasa.gov:
         operations: ['variableSubset', 'spatialSubset', 'dimensionSubset', 'shapefileSubset', 'temporalSubset']
         conditional:
           exists: ['variableSubset', 'spatialSubset', 'dimensionSubset', 'shapefileSubset', 'temporalSubset']
-      - image: !Env ${SDS_MASKFILL_IMAGE}
+      - image: !Env ${MASKFILL_IMAGE}
         operations: ['shapefileSubset', 'spatialSubset']
         conditional:
           exists: ['shapefileSubset', 'spatialSubset']

@@ -49,7 +49,7 @@ export default function hookServersStartStop(opts = { USE_EDL_CLIENT_APP: false 
     stub(env, 'callbackUrlRoot').get(() => `http://127.0.0.1:${servers.backend.address().port}`);
     const locallyDeployedServices = 'giovanni-time-series-adapter,harmony-service-example,' +
       'var-subsetter,swath-projector,harmony-gdal-adapter,' +
-      'podaac-concise,sds-maskfill,trajectory-subsetter,podaac-l2-subsetter,harmony-regridder,' +
+      'podaac-concise,maskfill,trajectory-subsetter,podaac-l2-subsetter,harmony-regridder,' +
       'hybig,geoloco,stitchee,batchee,hoss,subset-band-name';
     stub(env, 'locallyDeployedServices').get(() => locallyDeployedServices);
     process.env.OAUTH_REDIRECT_URI = `http://127.0.0.1:${servers.frontend.address().port}/oauth2/redirect`;

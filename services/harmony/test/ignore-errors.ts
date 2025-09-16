@@ -91,7 +91,7 @@ describe('ignoreErrors', function () {
           await fakeServiceStacOutput(firstHossItem.jobID, firstHossItem.id);
           await updateWorkItem(this.backend, firstHossItem);
 
-          const res2 = await getWorkForService(this.backend, 'sds/maskfill-harmony:latest');
+          const res2 = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-maskfill:latest');
           maskfillItem = JSON.parse(res2.text).workItem;
           maskfillItem.status = WorkItemStatus.SUCCESSFUL;
           maskfillItem.results = [
@@ -109,7 +109,7 @@ describe('ignoreErrors', function () {
           expect(currentWorkItems.length).to.equal(3);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'sds/maskfill-harmony:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-maskfill:latest').length).to.equal(1);
         });
 
         it('does not find any further HOSS work', async function () {
@@ -318,7 +318,7 @@ describe('ignoreErrors', function () {
           let shouldLoop = true;
           // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
           while (shouldLoop) {
-            const res2 = await getWorkForService(this.backend, 'sds/maskfill-harmony:latest');
+            const res2 = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-maskfill:latest');
             maskfillItem = JSON.parse(res2.text).workItem;
             maskfillItem.status = WorkItemStatus.FAILED;
             maskfillItem.results = [];
@@ -340,7 +340,7 @@ describe('ignoreErrors', function () {
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:stable').length).to.equal(1);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(1);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'sds/maskfill-harmony:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-maskfill:latest').length).to.equal(1);
         });
       });
     });
@@ -416,8 +416,8 @@ describe('ignoreErrors', function () {
           await fakeServiceStacOutput(workItem2.jobID, workItem2.id);
           await updateWorkItem(this.backend, workItem2);
 
-          const res3 = await getWorkForService(this.backend, 'sds/maskfill-harmony:latest');
-          const res4 = await getWorkForService(this.backend, 'sds/maskfill-harmony:latest');
+          const res3 = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-maskfill:latest');
+          const res4 = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-maskfill:latest');
 
           const workItem3 = JSON.parse(res3.text).workItem;
           const workItem4 = JSON.parse(res4.text).workItem;
@@ -490,7 +490,7 @@ describe('ignoreErrors', function () {
           await fakeServiceStacOutput(firstHossItem.jobID, firstHossItem.id);
           await updateWorkItem(this.backend, firstHossItem);
 
-          const res2 = await getWorkForService(this.backend, 'sds/maskfill-harmony:latest');
+          const res2 = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-maskfill:latest');
           const maskfillItem = JSON.parse(res2.text).workItem;
           maskfillItem.status = WorkItemStatus.SUCCESSFUL;
           maskfillItem.results = [getStacLocation(maskfillItem, 'catalog.json')];
@@ -536,7 +536,7 @@ describe('ignoreErrors', function () {
           expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(2);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(1);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'sds/maskfill-harmony:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-maskfill:latest').length).to.equal(1);
 
         });
       });
@@ -586,7 +586,7 @@ describe('ignoreErrors', function () {
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.CANCELED && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(1);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(2);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'sds/maskfill-harmony:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-maskfill:latest').length).to.equal(1);
         });
       });
     });
@@ -638,7 +638,7 @@ describe('ignoreErrors', function () {
           await fakeServiceStacOutput(firstHossItem.jobID, firstHossItem.id);
           await updateWorkItem(this.backend, firstHossItem);
 
-          const res2 = await getWorkForService(this.backend, 'sds/maskfill-harmony:latest');
+          const res2 = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-maskfill:latest');
           const maskfillItem = JSON.parse(res2.text).workItem;
           maskfillItem.status = WorkItemStatus.SUCCESSFUL;
           maskfillItem.results = [getStacLocation(maskfillItem, 'catalog.json')];
@@ -684,7 +684,7 @@ describe('ignoreErrors', function () {
           expect(currentWorkItems.filter((item) => [WorkItemStatus.READY, WorkItemStatus.QUEUED].includes(item.status) && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(2);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(1);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'sds/maskfill-harmony:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-maskfill:latest').length).to.equal(1);
 
         });
       });
@@ -734,7 +734,7 @@ describe('ignoreErrors', function () {
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.CANCELED && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(1);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(2);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'sds/maskfill-harmony:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-maskfill:latest').length).to.equal(1);
         });
       });
     });
@@ -831,7 +831,7 @@ describe('ignoreErrors', function () {
             await fakeServiceStacOutput(firstHossItem.jobID, firstHossItem.id);
             await updateWorkItem(this.backend, firstHossItem);
 
-            const res2 = await getWorkForService(this.backend, 'sds/maskfill-harmony:latest');
+            const res2 = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-maskfill:latest');
             const maskfillItem = JSON.parse(res2.text).workItem;
             maskfillItem.status = WorkItemStatus.SUCCESSFUL;
             maskfillItem.results = [getStacLocation(maskfillItem, 'catalog.json')];
@@ -903,7 +903,7 @@ describe('ignoreErrors', function () {
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(1);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(1);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.CANCELED && item.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'sds/maskfill-harmony:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-maskfill:latest').length).to.equal(1);
         });
       });
     });
@@ -1665,8 +1665,8 @@ describe('ignoreErrors', function () {
           await fakeServiceStacOutput(workItem2.jobID, workItem2.id);
           await updateWorkItem(this.backend, workItem2);
 
-          const res3 = await getWorkForService(this.backend, 'sds/maskfill-harmony:latest');
-          const res4 = await getWorkForService(this.backend, 'sds/maskfill-harmony:latest');
+          const res3 = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-maskfill:latest');
+          const res4 = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-maskfill:latest');
 
           const workItem3 = JSON.parse(res3.text).workItem;
           const workItem4 = JSON.parse(res4.text).workItem;

@@ -206,7 +206,7 @@ describe('Workflow chaining for collections configured with multi-step chains', 
       const job = JSON.parse(this.res.text);
       const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
 
-      expect(workflowSteps[2].serviceID).to.equal('sds/maskfill-harmony:latest');
+      expect(workflowSteps[2].serviceID).to.equal('ghcr.io/nasa/harmony-maskfill:latest');
     });
 
     it('returns a human-readable message field indicating the request has been limited to a subset of the granules', function () {
@@ -224,7 +224,7 @@ describe('Workflow chaining for collections configured with multi-step chains', 
     });
 
     describe('when checking for a MaskFill work item', function () {
-      hookGetWorkForService('sds/maskfill-harmony:latest');
+      hookGetWorkForService('ghcr.io/nasa/harmony-maskfill:latest');
 
       it('does not find a work item', async function () {
         expect(this.res.status).to.equal(404);
@@ -265,13 +265,13 @@ describe('Workflow chaining for collections configured with multi-step chains', 
           let res;
           let workItem;
           before(async function () {
-            res = await getWorkForService(this.backend, 'sds/maskfill-harmony:latest');
+            res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-maskfill:latest');
             // eslint-disable-next-line prefer-destructuring
             workItem = JSON.parse(res.text).workItem;
           });
           it('finds a MaskFill service work item', async function () {
             expect(res.status).to.equal(200);
-            expect(workItem.serviceID).to.equal('sds/maskfill-harmony:latest');
+            expect(workItem.serviceID).to.equal('ghcr.io/nasa/harmony-maskfill:latest');
           });
           it('limits the operation on the work-item to bbox subsetting', function () {
             const { operation } = workItem;
@@ -299,7 +299,7 @@ describe('Workflow chaining for collections configured with multi-step chains', 
 
           describe('when completing all steps for the second granule', function () {
             it('wish I could do this in the describe', async function () {
-              for await (const service of ['ghcr.io/nasa/harmony-opendap-subsetter:latest', 'sds/maskfill-harmony:latest']) {
+              for await (const service of ['ghcr.io/nasa/harmony-opendap-subsetter:latest', 'ghcr.io/nasa/harmony-maskfill:latest']) {
                 res = await getWorkForService(this.backend, service);
                 // eslint-disable-next-line prefer-destructuring
                 workItem = JSON.parse(res.text).workItem;
@@ -360,7 +360,7 @@ describe('Workflow chaining for collections configured with multi-step chains', 
       const job = JSON.parse(this.res.text);
       const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
 
-      expect(workflowSteps[2].serviceID).to.equal('sds/maskfill-harmony:latest');
+      expect(workflowSteps[2].serviceID).to.equal('ghcr.io/nasa/harmony-maskfill:latest');
     });
 
     it('returns a human-readable message field indicating the request has been limited to a subset of the granules', function () {
@@ -378,7 +378,7 @@ describe('Workflow chaining for collections configured with multi-step chains', 
     });
 
     describe('when checking for a MaskFill work item', function () {
-      hookGetWorkForService('sds/maskfill-harmony:latest');
+      hookGetWorkForService('ghcr.io/nasa/harmony-maskfill:latest');
 
       it('does not find a work item', async function () {
         expect(this.res.status).to.equal(404);
@@ -419,7 +419,7 @@ describe('Workflow chaining for collections configured with multi-step chains', 
           let res;
           let workItem;
           before(async function () {
-            res = await getWorkForService(this.backend, 'sds/maskfill-harmony:latest');
+            res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-maskfill:latest');
           });
           it('does not find any MaskFill service work item', async function () {
             expect(res.status).to.equal(404);
@@ -436,7 +436,7 @@ describe('Workflow chaining for collections configured with multi-step chains', 
 
           describe('when completing all steps for the second granule', function () {
             it('wish I could do this in the describe', async function () {
-              for await (const service of ['ghcr.io/nasa/harmony-opendap-subsetter:latest', 'sds/maskfill-harmony:latest']) {
+              for await (const service of ['ghcr.io/nasa/harmony-opendap-subsetter:latest', 'ghcr.io/nasa/harmony-maskfill:latest']) {
                 res = await getWorkForService(this.backend, service);
                 // eslint-disable-next-line prefer-destructuring
                 workItem = JSON.parse(res.text).workItem;

@@ -33,7 +33,6 @@ describe('Versions endpoint', function () {
           'sds/swath-projector',
           'sds/harmony-regridder',
           'sds/variable-subsetter',
-          'sds/maskfill',
           'sds/trajectory-subsetter',
           'asdc/imagenator_l2',
           'asdc/imagenator_l3',

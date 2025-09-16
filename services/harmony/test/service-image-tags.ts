@@ -29,10 +29,10 @@ const serviceImages = {
   'harmony-service-example': 'latest',
   'hoss': 'latest',
   'hybig': 'latest',
+  'maskfill': 'latest',
   'podaac-concise': 'sit',
   'podaac-l2-subsetter': 'sit',
   'query-cmr': 'stable',
-  'sds-maskfill': 'latest',
   'stitchee': 'latest',
   'subset-band-name': 'latest',
   'swath-projector': 'latest',
@@ -228,7 +228,7 @@ describe('ecrImageNameToComponents', function () {
 describe('Service image endpoint', async function () {
   let envStub;
   beforeEach(function () {
-    envStub = stub(env, 'locallyDeployedServices').get(() => 'harmony-service-example,var-subsetter,swath-projector,harmony-gdal-adapter,podaac-concise,sds-maskfill,trajectory-subsetter,podaac-l2-subsetter,harmony-regridder,hybig,geoloco');
+    envStub = stub(env, 'locallyDeployedServices').get(() => 'harmony-service-example,var-subsetter,swath-projector,harmony-gdal-adapter,podaac-concise,maskfill,trajectory-subsetter,podaac-l2-subsetter,harmony-regridder,hybig,geoloco');
   });
 
   afterEach(function () {
