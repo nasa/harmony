@@ -2,6 +2,10 @@
 Any changes to the environment variables will be documented in this file in chronological
 order with the most recent changes first.
 
+## 2025-09-18
+### Changed
+- NET2COG_LIMITS_MEMORY - Increased to 8Gi to accommodate large MODIS v.7 granules.
+
 # 2025-07-30
 ### Added
 - PUBLISH_SERVICE_FAILURE_METRICS_CRON - cron schedule for the job that writes cloudwatch metrics for service failures
