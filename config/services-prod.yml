@@ -600,6 +600,40 @@ https://cmr.earthdata.nasa.gov:
         is_sequential: true
       - image: !Env ${NET2COG_IMAGE}
 
+  - name: giovanni-averaging-service
+    description: |
+      A service to compute averaging over specified dimensions on Zarr data on a Dask cluster running in Cloud Giovanni. A time-averaged map
+      will produce a GEOTIFF and an area-averaged timeseries will produce a CSV.
+    data_operation_version: '0.20.0'
+    has_granule_limit: false
+    # Replace the next two lines to default to synchronous once bearer tokens are supported by Giovanni
+    # default_sync: true
+    maximum_sync_granules: -1
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/gesdisc/giovanni
+    umm_s: S3385907677-GES_DISC
+    validate_variables: false
+    external_validation_url: https://api.giovanni.earthdata.nasa.gov/authorizer
+    capabilities:
+      subsetting:
+        bbox: true
+        temporal: true
+        variable: true
+        multiple_variable: false
+      averaging:
+        time: true
+        area: true
+      output_formats:
+        - text/csv
+        - image/tiff
+    steps:
+      - image: !Env ${GIOVANNI_AVERAGING_SERVICES_ADAPTER_IMAGE}
+
   - name: asf/opera-rtc-s1-browse
     description: Service that generates GIBS-compliant browse imagery for the OPERA_L2_RTC-S1 collection
     data_operation_version: '0.22.0'
