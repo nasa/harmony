@@ -725,8 +725,8 @@ https://cmr.uat.earthdata.nasa.gov:
         variable: true
         multiple_variable: true
       output_formats:
-        - application/x-netcdf4
         - image/tiff
+        - application/x-netcdf4
       reprojection: true
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}

@@ -85,7 +85,7 @@ describe('Testing collection capabilities', function () {
         it('sets the outputFormats field correctly', function () {
           const capabilities = JSON.parse(this.res.text);
           const expectedFormats = [
-            'application/x-netcdf4', 'image/tiff', 'image/png', 'image/gif',
+            'image/tiff', 'application/x-netcdf4', 'image/png', 'image/gif',
           ];
           expect(capabilities.outputFormats).to.eql(expectedFormats);
         });
@@ -247,7 +247,7 @@ describe('Testing collection capabilities', function () {
         it('sets the outputFormats field correctly in the version 1 response', function () {
           const capabilities = JSON.parse(this.res.text);
           const expectedFormats = [
-            'application/x-netcdf4', 'image/tiff', 'image/png', 'image/gif',
+            'image/tiff', 'application/x-netcdf4', 'image/png', 'image/gif',
           ];
           expect(capabilities.outputFormats).to.eql(expectedFormats);
         });
