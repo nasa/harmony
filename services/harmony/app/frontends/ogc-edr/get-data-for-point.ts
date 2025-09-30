@@ -100,7 +100,11 @@ export function convertWktToPolygon(wkt: string, sideLength: number = env.wktPre
 }
 
 /**
- * Parses and validates WKT POINT parameter.
+ * Parses and validates the WKT POINT parameter string.
+ *
+ * @param wkt - The WKT POINT string to convert.
+ *
+ * @returns the parsed point in the form of [ Longitude, Latitude ]
  */
 function parseWktPoint(wkt: string): [number, number] {
   validateWkt(wkt);
@@ -114,10 +118,6 @@ function parseWktPoint(wkt: string): [number, number] {
 
   return [x, y];
 }
-
-/**
- * Parses and validates WKT MULTIPOINT parameter.
- */
 
 /**
  * Express middleware that responds to OGC API - EDR Position GET requests.
