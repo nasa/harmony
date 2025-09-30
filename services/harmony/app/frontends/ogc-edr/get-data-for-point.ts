@@ -108,7 +108,7 @@ export function convertWktToPolygon(wkt: string, sideLength: number = env.wktPre
  */
 function parseWktPoint(wkt: string): [number, number] {
   validateWkt(wkt);
-  const match = wkt.match(/POINT\s*\(\s*([-\d.]+)\s+([-\d.]+)\s*\)/);
+  const match = wkt.match(/POINT\s*\(\s*(-?\d+\.?\d*)\s+(-?\d+\.?\d*)\s*\)/);
   if (!match) {
     throw new RequestValidationError(`query parameter "coords" invalid WKT POINT format: ${wkt}`);
   }
@@ -116,6 +116,9 @@ function parseWktPoint(wkt: string): [number, number] {
   const x = parseFloat(match[1]);
   const y = parseFloat(match[2]);
 
+  if (isNaN(x) || isNaN(y)) {
+    throw new RequestValidationError(`query parameter "coords" invalid coordinate values in POINT: ${wkt}`);
+  }
   return [x, y];
 }
 
@@ -137,26 +140,26 @@ export function getDataForPoint(
   const query = keysToLowerCase(req.query);
   const { operation } = req;
 
-  try {
-    if (query.coords) {
-      if (query.coords.startsWith('POINT')) {
-        const point = parseWktPoint(query.coords);
-        operation.spatialPoint = point;
-      } else {
+  if (query.coords) {
+    if (query.coords.startsWith('POINT')) {
+      const point = parseWktPoint(query.coords);
+      operation.spatialPoint = point;
+    } else {
+      try {
         const polygon = convertWktToPolygon(query.coords);
 
         const geoJson = parseWkt(polygon);
         if (geoJson) {
           operation.geojson = JSON.stringify(geoJson);
         }
+      } catch (e) {
+        if (e instanceof ParameterParseError) {
+          // Turn parsing exceptions into 400 errors pinpointing the source parameter
+          throw new RequestValidationError(`POINT/MULTIPOINT converted POLYGON/MULTIPOLYGON is invalid ${e.message}`);
+        }
+        throw e;
       }
     }
-  } catch (e) {
-    if (e instanceof ParameterParseError) {
-      // Turn parsing exceptions into 400 errors pinpointing the source parameter
-      throw new RequestValidationError(`POINT/MULTIPOINT converted POLYGON/MULTIPOLYGON is invalid ${e.message}`);
-    }
-    throw e;
   }
   next();
 }
