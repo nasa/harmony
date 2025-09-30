@@ -1,14 +1,23 @@
-import { keysToLowerCase } from '../../util/object';
-import { ParameterParseError, mergeParameters, parseWkt, validateWkt } from '../../util/parameter-parsing-helpers';
-import { Response, NextFunction } from 'express';
+import { NextFunction, Response } from 'express';
+
 import HarmonyRequest from '../../models/harmony-request';
 import env from '../../util/env';
 import { RequestValidationError } from '../../util/errors';
+import { keysToLowerCase } from '../../util/object';
+import {
+  mergeParameters, ParameterParseError, parseWkt, validateWkt,
+} from '../../util/parameter-parsing-helpers';
 import { getDataCommon } from './get-data-common';
 
 /**
  * Converts a WKT POINT string to a WKT POLYGON string.
  * The polygon is a square centered around the point.
+ *
+ * Note this function is currently not being used because for HARMONY-2184 we're
+ * changing to handle a single point the same way we handle parsing and passing
+ * points to backend services as the coverages API. We may want to handle point
+ * with a radius using this method in the future which is why we are keeping the
+ * function.
  *
  * @param wktPoint - The WKT POINT string to convert.
  * @param sideLength - The length of the side of the square polygon.
@@ -91,6 +100,26 @@ export function convertWktToPolygon(wkt: string, sideLength: number = env.wktPre
 }
 
 /**
+ * Parses and validates WKT POINT parameter.
+ */
+function parseWktPoint(wkt: string): [number, number] {
+  validateWkt(wkt);
+  const match = wkt.match(/POINT\s*\(\s*([-\d.]+)\s+([-\d.]+)\s*\)/);
+  if (!match) {
+    throw new RequestValidationError(`query parameter "coords" invalid WKT POINT format: ${wkt}`);
+  }
+
+  const x = parseFloat(match[1]);
+  const y = parseFloat(match[2]);
+
+  return [x, y];
+}
+
+/**
+ * Parses and validates WKT MULTIPOINT parameter.
+ */
+
+/**
  * Express middleware that responds to OGC API - EDR Position GET requests.
  * Responds with the actual EDR data.
  *
@@ -100,7 +129,7 @@ export function convertWktToPolygon(wkt: string, sideLength: number = env.wktPre
  */
 export function getDataForPoint(
   req: HarmonyRequest,
-  res: Response,
+  _res: Response,
   next: NextFunction,
 ): void {
 
@@ -108,22 +137,27 @@ export function getDataForPoint(
   const query = keysToLowerCase(req.query);
   const { operation } = req;
 
-  if (query.coords) {
-    const polygon = convertWktToPolygon(query.coords);
-    try {
-      const geoJson = parseWkt(polygon);
-      if (geoJson) {
-        operation.geojson = JSON.stringify(geoJson);
-      }
-    } catch (e) {
-      if (e instanceof ParameterParseError) {
-        // Turn parsing exceptions into 400 errors pinpointing the source parameter
-        throw new RequestValidationError(`POINT/MULTIPOINT converted POLYGON/MULTIPOLYGON is invalid ${e.message}`);
-      }
-      throw e;
-    }
-  }
+  try {
+    if (query.coords) {
+      if (query.coords.startsWith('POINT')) {
+        const point = parseWktPoint(query.coords);
+        operation.spatialPoint = point;
+      } else {
+        const polygon = convertWktToPolygon(query.coords);
 
+        const geoJson = parseWkt(polygon);
+        if (geoJson) {
+          operation.geojson = JSON.stringify(geoJson);
+        }
+      }
+    }
+  } catch (e) {
+    if (e instanceof ParameterParseError) {
+      // Turn parsing exceptions into 400 errors pinpointing the source parameter
+      throw new RequestValidationError(`POINT/MULTIPOINT converted POLYGON/MULTIPOLYGON is invalid ${e.message}`);
+    }
+    throw e;
+  }
   next();
 }
 

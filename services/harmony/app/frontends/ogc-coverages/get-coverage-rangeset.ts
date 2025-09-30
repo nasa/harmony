@@ -1,19 +1,23 @@
 import { NextFunction, Response } from 'express';
+
 import DataOperation from '../../models/data-operation';
 import HarmonyRequest from '../../models/harmony-request';
 import wrap from '../../util/array';
-import {
-  validateBooleanParameters, handleAveragingType, handleCrs, handleExtend, handleFormat,
-  handleGranuleIds, handleGranuleNames, handleHeight, handleScaleExtent, handleScaleSize,
-  handleWidth, handleForceAsync, handleIgnoreErrors, handlePixelSubset,
-} from '../../util/parameter-parsers';
 import { createDecrypter, createEncrypter } from '../../util/crypto';
 import env from '../../util/env';
 import { RequestValidationError } from '../../util/errors';
 import { keysToLowerCase } from '../../util/object';
+import {
+  handleAveragingType, handleCrs, handleExtend, handleForceAsync, handleFormat, handleGranuleIds,
+  handleGranuleNames, handleHeight, handleIgnoreErrors, handlePixelSubset, handleScaleExtent,
+  handleScaleSize, handleWidth, validateBooleanParameters,
+} from '../../util/parameter-parsers';
 import { ParameterParseError } from '../../util/parameter-parsing-helpers';
 import { parseVariables } from '../../util/variables';
-import { parsePointParam, parseSubsetParams, subsetParamsToBbox, subsetParamsToTemporal } from './util/subset-parameter-parsing';
+import {
+  parsePointParam, parseSubsetParams, subsetParamsToBbox, subsetParamsToTemporal,
+} from './util/subset-parameter-parsing';
+
 /**
  * Express middleware that responds to OGC API - Coverages coverage
  * rangeset requests. Responds with the actual coverage data.

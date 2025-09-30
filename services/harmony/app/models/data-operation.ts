@@ -682,9 +682,11 @@ export default class DataOperation {
    * Sets the spatial point to be used for spatial subsetting, an array of 2 coordinates:
    *   [ Longitude, Latitude ]
    *
+   * Note: Can only be a single point, does not handle multiple points.
+   *
    * @param point - The spatial point in form of [ Longitude, Latitude ]
    */
-  set spatialPoint(point: Array<number>) {
+  set spatialPoint(point: [number, number]) {
     this.model.subset.point = point;
   }
 
@@ -694,7 +696,7 @@ export default class DataOperation {
    *
    * @returns The spatial point in form of [ Longitude, Latitude ]
    */
-  get spatialPoint(): Array<number> {
+  get spatialPoint(): [number, number] {
     return this.model.subset.point;
   }
 

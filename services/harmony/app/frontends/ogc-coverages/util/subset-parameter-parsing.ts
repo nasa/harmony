@@ -147,10 +147,13 @@ function _getDimensionName(value: string): string {
 }
 
 /**
- * Parses the provided point parameters and ensures they are valid, throwing an error message
- * if not
+ * Parses the provided point parameter and ensures it is valid, throwing an error message
+ * if not.
  *
- * @param values - An array of all the specified point parameters from the request
+ * Note that this can only handle a single point - multiple points are not supported.
+ *
+ * @param values - An array of values passed in for the point - anything other than two values
+ * is unsupported.
  * @param dimConfig - A mapping of dimension names to min, max, and data type values,
  *   see `dimensionConfig` (the default value) in this file.  Usually should not be specified,
  *   except for testing.
@@ -160,7 +163,7 @@ function _getDimensionName(value: string): string {
 export function parsePointParam(
   values: number[],
   dimConfig: DimensionConfig = dimensionConfig,
-): number[] {
+): [number, number] {
   let results;
   let coordinate, coordinates;
   if (values !== undefined) {
