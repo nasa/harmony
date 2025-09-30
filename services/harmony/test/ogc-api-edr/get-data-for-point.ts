@@ -1,17 +1,18 @@
 import { expect } from 'chai';
-import { describe, it } from 'mocha';
 import _ from 'lodash';
-import isUUID from '../../app/util/uuid';
-import { itRedirectsToJobStatusUrl } from '../helpers/jobs';
-import { hookPostEdrRequest, hookEdrRequest, edrRequest } from '../helpers/ogc-api-edr';
-import hookServersStartStop from '../helpers/servers';
-import StubService, { hookServices } from '../helpers/stub-service';
+import { describe, it } from 'mocha';
+import { stub } from 'sinon';
+
 import { convertWktToPolygon } from '../../app/frontends/ogc-edr/get-data-for-point';
 import { ServiceConfig } from '../../app/models/services/base-service';
-import { hookRedirect } from '../helpers/hooks';
-import { stub } from 'sinon';
 import env from '../../app/util/env';
+import isUUID from '../../app/util/uuid';
 import { hookDatabaseFailure } from '../helpers/db';
+import { hookRedirect } from '../helpers/hooks';
+import { itRedirectsToJobStatusUrl } from '../helpers/jobs';
+import { edrRequest, hookEdrRequest, hookPostEdrRequest } from '../helpers/ogc-api-edr';
+import hookServersStartStop from '../helpers/servers';
+import StubService, { hookServices } from '../helpers/stub-service';
 
 describe('convertWktToPolygon', () => {
   const sideLength = 1;
@@ -69,6 +70,7 @@ describe('convertWktToPolygon', () => {
 });
 
 const pointWKT = 'POINT (-40 10)';
+const multipointWKT = 'MULTIPOINT ((30 10), (40 40), (20 20), (10 30))';
 
 describe('OGC API EDR - getEdrPosition', function () {
   const collection = 'C1233800302-EEDTEST';
@@ -156,8 +158,12 @@ describe('OGC API EDR - getEdrPosition', function () {
             expect(isUUID(this.service.operation.requestId)).to.equal(true);
           });
 
-          it('includes a shapefile in the service operation', function () {
-            expect(this.service.operation.model.subset.shape).to.eql('{"type":"FeatureCollection","features":[{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-40.00005,9.99995],[-39.99995,9.99995],[-39.99995,10.00005],[-40.00005,10.00005],[-40.00005,9.99995]]]},"properties":{}}]}');
+          it('does not include a shapefile in the service operation', function () {
+            expect(this.service.operation.model.subset.shape).to.be.undefined;
+          });
+
+          it('includes a point in the service operation', function () {
+            expect(this.service.operation.spatialPoint).to.eql([-40, 10]);
           });
 
           // TODO: Add dimension subsetting test once collection supports it
@@ -983,7 +989,7 @@ describe('OGC API EDR - getEdrPosition', function () {
         this.frontend,
         version,
         collection,
-        { query: { coords: pointWKT, granuleId } },
+        { query: { coords: multipointWKT, granuleId } },
       );
       expect(res.status).to.equal(422);
       expect(res.body).to.eql({
@@ -1054,7 +1060,7 @@ describe('OGC API EDR - getEdrPosition with a collection not configured for serv
   hookServersStartStop();
 
   describe('when requesting position subset', function () {
-    const query = { coords: pointWKT, 'parameter-name': 'all' };
+    const query = { coords: multipointWKT, 'parameter-name': 'all' };
     hookEdrRequest('position', version, collection, { username: 'joe', query });
 
     it('returns a 422 error response', function () {
