@@ -225,13 +225,8 @@ export async function processSchedulerQueue(
     const messageCountTime = messageCountEnd.getTime() - messageCountStart.getTime();
     reqLogger.debug(`Message count took ${messageCountTime}ms`, { durationMs: messageCountTime });
 
-    // TODO - Cache both of these counts for up to 2 minutes
     const servicePodCount = await servicePodCountCache.fetch(serviceID, { context: { logger: reqLogger } });
     const schedulerPodCount = await schedulerPodCountCache.fetch(SCHEDULER_POD_NAME, { context: { logger: reqLogger } });
-    // const podCountEnd = new Date();
-
-    // const podCountTime = podCountEnd.getTime() - messageCountEnd.getTime();
-    // reqLogger.debug(`Pod count took ${podCountTime}ms`, { durationMs: podCountTime });
 
     let scaleFactor = env.serviceQueueBatchSizeCoefficient;
     // Use a different scale factor for fast services (now only query-cmr)
