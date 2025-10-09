@@ -21,3 +21,6 @@ WORK_ITEM_SCHEDULER_BATCH_SIZE=50
 # Maximum number of work items allowed on the work item update queue before halting scheduling
 # Set the value to -1 to always schedule work
 MAX_WORK_ITEMS_ON_UPDATE_QUEUE=1200
+# CACHE TTL in milliseconds for caching the number of service and scheduler pods to avoid
+# excessive lookups - 90 seconds
+POD_COUNT_CACHE_TTL=90000

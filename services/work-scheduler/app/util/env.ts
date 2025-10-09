@@ -1,7 +1,8 @@
 import { IsInt, IsNotEmpty, IsNumber, Min } from 'class-validator';
-import { HarmonyEnv } from '@harmony/util/env';
 import _ from 'lodash';
 import path from 'path';
+
+import { HarmonyEnv } from '@harmony/util/env';
 
 //
 // env module
@@ -37,6 +38,10 @@ class HarmonyWorkSchedulerEnv extends HarmonyEnv {
   @IsInt()
   @Min(-1)
   maxWorkItemsOnUpdateQueue: number;
+
+  @IsInt()
+  @Min(1)
+  podCountCacheTtl: number;
 }
 
 const localPath = path.resolve(__dirname, '../../env-defaults');
