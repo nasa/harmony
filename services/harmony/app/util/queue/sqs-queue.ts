@@ -107,8 +107,8 @@ export class SqsQueue extends Queue {
           new DeleteMessageBatchCommand({
             QueueUrl: this.queueUrl,
             Entries: entries,
-          })
-        )
+          }),
+        ),
       );
     }
 
