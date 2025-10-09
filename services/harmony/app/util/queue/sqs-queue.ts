@@ -1,8 +1,8 @@
 import {
-  SQSClient, ReceiveMessageCommand, SendMessageCommand, DeleteMessageCommand,
-  DeleteMessageBatchCommand, SQSClientConfig, SendMessageCommandInput, PurgeQueueCommand,
-  GetQueueAttributesCommand,
+  DeleteMessageBatchCommand, DeleteMessageCommand, GetQueueAttributesCommand, PurgeQueueCommand,
+  ReceiveMessageCommand, SendMessageCommand, SendMessageCommandInput, SQSClient, SQSClientConfig,
 } from '@aws-sdk/client-sqs';
+
 import env from '../env';
 import { Queue, ReceivedMessage } from './queue';
 
@@ -91,16 +91,30 @@ export class SqsQueue extends Queue {
   }
 
   async deleteMessages(receipts: string[]): Promise<void> {
-    const entries = receipts.map((receipt, index) => ({
-      Id: index.toString(),
-      ReceiptHandle: receipt,
-    }));
-    const command = new DeleteMessageBatchCommand({
-      QueueUrl: this.queueUrl,
-      Entries: entries,
-    });
-    await this.sqs.send(command);
+    // SQS only allows deleting up to 10 at a time so we need to batch the deletes
+    const MAX_BATCH_SIZE = 10;
+    const promises = [];
+
+    for (let i = 0; i < receipts.length; i += MAX_BATCH_SIZE) {
+      const batch = receipts.slice(i, i + MAX_BATCH_SIZE);
+      const entries = batch.map((receipt, index) => ({
+        Id: index.toString(),
+        ReceiptHandle: receipt,
+      }));
+
+      promises.push(
+        this.sqs.send(
+          new DeleteMessageBatchCommand({
+            QueueUrl: this.queueUrl,
+            Entries: entries,
+          })
+        )
+      );
+    }
+
+    await Promise.all(promises);
   }
+
 
   async purge(): Promise<void> {
     await this.sqs.send(new PurgeQueueCommand({ QueueUrl: this.queueUrl }));
