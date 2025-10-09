@@ -57,16 +57,14 @@ async function schedulerPodCountFetcher(podName: string, _sv, { context: fetchCo
   return timed(podName);
 }
 
-const TWO_MINUTES_MS = 2 * 60 * 1000;
-
 const servicePodCountCache = new LRUCache<string, number>({
-  ttl: TWO_MINUTES_MS,
+  ttl: env.podCountCacheTtl,
   max: 1000,
   fetchMethod: servicePodCountFetcher,
 });
 
 const schedulerPodCountCache = new LRUCache<string, number>({
-  ttl: TWO_MINUTES_MS,
+  ttl: env.podCountCacheTtl,
   max: 1000,
   fetchMethod: schedulerPodCountFetcher,
 });
