@@ -140,9 +140,6 @@ export function calculateNumItemsToQueue(
   servicePodCount: number, schedulerPodCount: number, queuedCount: number, scaleFactor: number,
   numMessagesReceived: number,
 ): number {
-  // If we received a large number of messages that means each pod is starved for work and there's
-  // nothing it was able to pick up on the queue. In that scenario we should queue a large number
-  // of messages
   // If there are hardly any messages on the queue we want to try to figure out if there are
   // many pods asking for work meaning we've starved the queue. If there are then we want to queue
   // a large number of messages.
