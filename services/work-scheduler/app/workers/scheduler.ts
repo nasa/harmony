@@ -35,7 +35,7 @@ const SCHEDULER_POD_NAME = 'harmony-work-scheduler';
 async function servicePodCountFetcher(serviceID: string, _sv, { context: fetchContext }): Promise<number> {
   const timed = await logAsyncExecutionTime(
     getPodsCountForService,
-    'PSQ.getPodsCountForService',
+    `PSQ.getPodsCountForService ${serviceID}`,
     fetchContext.logger,
   );
   return timed(serviceID);
@@ -51,7 +51,7 @@ async function servicePodCountFetcher(serviceID: string, _sv, { context: fetchCo
 async function schedulerPodCountFetcher(podName: string, _sv, { context: fetchContext }): Promise<number> {
   const timed = await logAsyncExecutionTime(
     getPodsCountForPodName,
-    'PSQ.getSchedulerPodsCount',
+    `PSQ.getSchedulerPodsCount ${podName}`,
     fetchContext.logger,
   );
   return timed(podName);
