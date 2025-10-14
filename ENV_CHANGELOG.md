@@ -7,7 +7,8 @@ order with the most recent changes first.
 - `SDS_MASKFILL_...` environment variables have been updated to `MASKFILL_...`
   names, and the values have been updated to point to Docker images hosted in
   the GitHub Container Registry, following the open-source migration of the
-  MaskFill service.
+  MaskFill service. The service name has also been updated from "sds/maskfill"
+  to "maskfill".
 
 ## 2025-09-18
 ### Changed
