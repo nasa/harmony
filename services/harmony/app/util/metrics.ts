@@ -1,6 +1,6 @@
 // Returns metrics formatted such that they are similar across projects. Do not
 // modify anything in here unless all of the projects are making a change.
-// See https://wiki.earthdata.nasa.gov/display/METS/Data+Schema+Collaboration+Space
+// See https://wiki.earthdata.nasa.gov/spaces/GMETS/pages/248026243/Transformation+Train+Schema
 
 import DataOperation from '../models/data-operation';
 import HarmonyRequest from '../models/harmony-request';
@@ -29,6 +29,7 @@ export interface RequestMetric {
   rangeBeginDateTime?: string;
   rangeEndDateTime?: string;
   bbox?: BboxMetric;
+  shape?: boolean;
   parameters: ParameterMetric;
 }
 
@@ -111,6 +112,7 @@ export function getRequestMetric(
     user_ip: user_ip || '',
     user_id: operation.user,
     parameters: { service_name: serviceName, service_provider: 'harmony', service_id: serviceId },
+    shape: operation.geojson ? true : false,
   };
 
   const bbox = constructBboxFromOperation(operation);

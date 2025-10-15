@@ -19,7 +19,7 @@ describe('Metrics construction', function () {
 
       it('includes all of the fields in the metric', function () {
         expect(Object.keys(metric)).to.eql([
-          'request_id', 'user_ip', 'user_id', 'parameters', 'bbox', 'rangeBeginDateTime', 'rangeEndDateTime',
+          'request_id', 'user_ip', 'user_id', 'parameters', 'shape', 'bbox', 'rangeBeginDateTime', 'rangeEndDateTime',
         ]);
       });
 
@@ -58,6 +58,10 @@ describe('Metrics construction', function () {
       it('sets the rangeEndDateTime correctly', function () {
         expect(metric.rangeEndDateTime).to.equal('2020-02-20T15:00:00.000Z');
       });
+
+      it('sets the shape boolean correctly', function () {
+        expect(metric.shape).to.be.true;
+      });
     });
 
     describe('when the operation does not include bbox subsetting', function () {
@@ -68,7 +72,7 @@ describe('Metrics construction', function () {
 
       it('does not include a bbox in the metric', function () {
         expect(Object.keys(metric)).to.eql([
-          'request_id', 'user_ip', 'user_id', 'parameters', 'rangeBeginDateTime', 'rangeEndDateTime',
+          'request_id', 'user_ip', 'user_id', 'parameters', 'shape', 'rangeBeginDateTime', 'rangeEndDateTime',
         ]);
       });
     });
@@ -81,7 +85,7 @@ describe('Metrics construction', function () {
 
       it('does not include a rangeBeginDateTime in the metric', function () {
         expect(Object.keys(metric)).to.eql([
-          'request_id', 'user_ip', 'user_id', 'parameters', 'bbox', 'rangeEndDateTime',
+          'request_id', 'user_ip', 'user_id', 'parameters', 'shape', 'bbox', 'rangeEndDateTime',
         ]);
       });
     });
@@ -94,16 +98,27 @@ describe('Metrics construction', function () {
 
       it('does not include a rangeEndDateTime in the metric', function () {
         expect(Object.keys(metric)).to.eql([
-          'request_id', 'user_ip', 'user_id', 'parameters', 'bbox', 'rangeBeginDateTime',
+          'request_id', 'user_ip', 'user_id', 'parameters', 'shape', 'bbox', 'rangeBeginDateTime',
         ]);
       });
     });
 
-    describe('when the request does not include an IP address', function () {
-      const operationNoEndTime = new DataOperation(parseSchemaFile('valid-operation-input.json'));
-      operationNoEndTime.temporal.end = null;
+    describe('when the operation does not include a shapefile', function () {
+      const operationNoShape = new DataOperation(parseSchemaFile('valid-operation-input.json'));
+      operationNoShape.geojson = null;
 
-      const metric = getRequestMetric({} as HarmonyRequest, operation, 'a neat service', 'S123-PROV1');
+      const metric = getRequestMetric(request, operationNoShape, 'a neat service', 'S123-PROV1');
+
+      it('indicates no shape in the metric', function () {
+        expect(metric.shape).to.be.false;
+      });
+    });
+
+    describe('when the request does not include an IP address', function () {
+      const operationNoIpAddress = new DataOperation(parseSchemaFile('valid-operation-input.json'));
+      operationNoIpAddress.temporal.end = null;
+
+      const metric = getRequestMetric({} as HarmonyRequest, operationNoIpAddress, 'a neat service', 'S123-PROV1');
 
       it('includes a blank string for the user_ip', function () {
         expect(metric.user_ip).to.eql('');
@@ -111,9 +126,6 @@ describe('Metrics construction', function () {
     });
 
     describe('when the request does not include a UMM-S concept ID', function () {
-      const operationNoEndTime = new DataOperation(parseSchemaFile('valid-operation-input.json'));
-      operationNoEndTime.temporal.end = null;
-
       const metric = getRequestMetric({} as HarmonyRequest, operation, 'a neat service', undefined);
 
       it('does not set a service_id', function () {
