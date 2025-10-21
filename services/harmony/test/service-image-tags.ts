@@ -248,12 +248,9 @@ describe('Service image endpoint', async function () {
         delete this.res;
       });
 
-      it('rejects the request', async function () {
-        expect(this.res.status).to.equal(403);
-      });
-
-      it('returns a meaningful error message', async function () {
-        expect(this.res.text).to.equal(userErrorMsg);
+      it('returns a map of images in alphabetical order', async function () {
+        expect(this.res.status).to.equal(200);
+        expect(this.res.body).to.eql(serviceImages);
       });
     });
 
@@ -303,12 +300,12 @@ describe('Service image endpoint', async function () {
           delete this.res;
         });
 
-        it('rejects the request', async function () {
-          expect(this.res.status).to.equal(403);
+        it('returns a status 404', async function () {
+          expect(this.res.status).to.equal(404);
         });
 
         it('returns a meaningful error message', async function () {
-          expect(this.res.text).to.equal(userErrorMsg);
+          expect(this.res.text).to.equal(errorMsg404);
         });
 
       });
@@ -323,12 +320,14 @@ describe('Service image endpoint', async function () {
           delete this.res;
         });
 
-        it('rejects the request', async function () {
-          expect(this.res.status).to.equal(403);
+        it('returns a status 200', async function () {
+          expect(this.res.status).to.equal(200);
         });
 
-        it('returns a meaningful error message', async function () {
-          expect(this.res.text).to.equal(userErrorMsg);
+        it('returns the service image information', async function () {
+          expect(this.res.body).to.eql({
+            'tag': 'latest',
+          });
         });
 
       });

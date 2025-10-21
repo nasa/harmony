@@ -1,9 +1,8 @@
 # Managing Service Image Tags (Versions)
 
-Using the `/service-image-tag` endpoint, service providers can manage the versions of their services deployed to an environment.
+The `/service-image-tag` endpoint allows service providers to manage the versions of their services deployed to a specific environment.
 
->**Note** a user must be a member of either the EDL `Harmony Service Deployers`
-group or the EDL `Harmony Admin` group to access this endpoint.
+All users can view the current service image tag. However, only users who are members of the `EDL Harmony Service Deployers` group or the `EDL Harmony Admin` group have permission to update the service image tag.
 
 ## Get backend service tag (version) information for all services
 

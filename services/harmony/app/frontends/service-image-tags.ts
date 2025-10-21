@@ -410,8 +410,6 @@ async function validateDeploymentState(
 export async function getServiceImageTags(
   req: HarmonyRequest, res: Response, _next: NextFunction,
 ): Promise<void> {
-  if (! await validateUserIsInDeployerOrCoreGroup(req, res)) return;
-
   const imageMap = getImageTagMap();
 
   const sortedImageMap = Object.keys(imageMap).sort().reduce((acc, key) => ({
@@ -433,7 +431,6 @@ export async function getServiceImageTag(
   req: HarmonyRequest, res: Response, _next: NextFunction,
 ): Promise<void> {
   const validations = [
-    validateUserIsInDeployerOrCoreGroup,
     validateServiceExists,
   ];
 
