@@ -2,6 +2,10 @@
 Any changes to the environment variables will be documented in this file in chronological
 order with the most recent changes first.
 
+## 2025-10-23
+### Changed
+- OPERA_RTC_S1_BROWSE_LIMITS_MEMORY - Increased to 2Gi to fix out-of-memory issues.
+
 ## 2025-10-14
 ### Changed
 - `SDS_MASKFILL_...` environment variables have been updated to `MASKFILL_...`
