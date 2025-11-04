@@ -136,6 +136,11 @@ do
         # Escape any double quotes in the value
         escaped_value=$(echo "$value" | sed 's/"/\\"/g')
 
+        # Log level is a special case
+        if [[ "$name" == "${var_prefix}_LOG_LEVEL" ]]; then
+          name="SERVICE_LOG_LEVEL"
+        fi
+
         # Append the env entry to the variable
         SERVICE_SPECIFIC_ENV+=$'\n'"            - name: \"$name\""
         SERVICE_SPECIFIC_ENV+=$'\n'"              value: \"$escaped_value\""
