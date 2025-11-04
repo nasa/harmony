@@ -16,7 +16,7 @@ LOCALLY_DEPLOYED_SERVICES=my-service
 
 If you want to change the log level for your service while testing, you can add an entry to your
 `.env` file like this
-```
+```bash
 <SERVICE_NAME>_LOG_LEVEL=<LOG_LEVEL>
 ```
 Where `<SERVICE_NAME>` is the name of your service, e.g., `HARMONY_SERVICE_EXAMPLE`.
