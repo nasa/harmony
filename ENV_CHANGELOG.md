@@ -2,6 +2,14 @@
 Any changes to the environment variables will be documented in this file in chronological
 order with the most recent changes first.
 
+## 2025-10-28
+### Changed
+- `TRAJECTORY_SUBSETTER_IMAGE` environment variable has been updated to point to
+  Docker images hosted in the GitHub Container Registry, following the
+  open-source migration of the Trajectory Subsetter service.
+- `TRAJECTORY_SUBSETTER_SERVICE_QUEUE_URLS` environment variable has also been
+  updated to account for migration to GitHub Container Registry hosted images.
+
 ## 2025-10-23
 ### Changed
 - OPERA_RTC_S1_BROWSE_LIMITS_MEMORY - Increased to 2Gi to fix out-of-memory issues.
