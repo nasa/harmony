@@ -20,7 +20,8 @@
     "build-multi": "./bin/prebuild && docker buildx build --platform=linux/amd64,linux/arm64 -t harmonyservices/harmony:${VERSION:-latest} --progress=plain --push .",
     "run-notebooks-image": "source .env && docker run -i -t --platform linux/amd64 --init -p 8888:8888 --env NB_EDL_USERNAME=\"${NB_EDL_USERNAME}\" --env NB_EDL_PASSWORD=\"${NB_EDL_PASSWORD}\" harmonyservices/notebooks:${VERSION:-latest}",
     "publish": "docker push harmonyservices/harmony:${VERSION:-latest}",
-    "compare-services": "SKIP_ENV_VALIDATION=true ts-node scripts/service-comparison.ts"
+    "compare-services": "SKIP_ENV_VALIDATION=true ts-node scripts/service-comparison.ts",
+    "better-audit": "better-npm-audit audit"
   },
   "keywords": [
     "NASA",
