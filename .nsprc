@@ -1,1 +1,7 @@
-{}
+{
+  "1109802": {
+    "active": true,
+    "notes": "Will fix in HARMONY-2219",
+    "expiry": "2026-02-01"
+  }
+}
