@@ -77,7 +77,7 @@ Ensure npm is available and is version 10 or later.
 
 ```bash
 npm --version
-9.8.1
+10.8.2
 ```
 
 If either are not the correct versions and you are using NVM, install them and ensure your `PATH` is up-to-date by running:
