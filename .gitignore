@@ -8,7 +8,6 @@ temp
 .DS_Store
 .nyc_output
 coverage
-logs
 test-results.xml
 
 .env*
