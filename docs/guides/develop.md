@@ -25,13 +25,13 @@ Required:
 * [Earthdata Login application in UAT](../edl-application.md)
 * [envsubst](https://pypi.org/project/envsubst) - Used to substitute environment variable placeholders inside configuration files.
 * [openssl](https://www.openssl.org/) Read [this installation guide](https://github.com/openssl/openssl/blob/master/NOTES-WINDOWS.md) if you're a Windows user and openssl is not installed on your machine already.
+* [awscli-local](https://github.com/localstack/awscli-local) - CLI helpers for interacting with localstack
 
 Highly Recommended:
 * An Amazon Web Services account - Used for testing Harmony against object stores and running Harmony in AWS
 * An editor with syntax awareness of TypeScript.  If you do not have this or any preference, consider [Visual Studio Code](https://code.visualstudio.com)
 
 Optional:
-* [awscli-local](https://github.com/localstack/awscli-local) - CLI helpers for interacting with localstack
 * [Python](https://www.python.org) version 3.11 - Useful for locally running and testing harmony-docker and other backend services
 
 ## Set up Environment
@@ -77,7 +77,7 @@ Ensure npm is available and is version 10 or later.
 
 ```bash
 npm --version
-9.8.1
+10.8.2
 ```
 
 If either are not the correct versions and you are using NVM, install them and ensure your `PATH` is up-to-date by running:
