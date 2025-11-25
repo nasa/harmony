@@ -48,6 +48,19 @@ class CronServiceHarmonyEnv extends HarmonyEnv {
   @Min(1)
   failureMetricsLookBackMinutes: number;
   // End publish service failure metrics variables
+
+  // Begin memory usage collector variables
+  @IsCrontab()
+  memoryUsageCollectorCron: string;
+
+  @IsInt()
+  @Min(1)
+  memoryUsageCollectorLookBackMinutes: number;
+
+  memoryUsageBucket: string;
+
+  harmonyEnvironment: string;
+  // End memory usage collector variables
 }
 
 const localPath = path.resolve(__dirname, '../../env-defaults');

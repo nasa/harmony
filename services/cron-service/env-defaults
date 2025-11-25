@@ -27,3 +27,18 @@ PUBLISH_SERVICE_FAILURE_METRICS_CRON="0,30 * * * *" # every half hour
 # This should correspond to how often the computation runs based on
 # PUBLISH_SERVICE_FAILURE_METRICS_CRON
 FAILURE_METRICS_LOOK_BACK_MINUTES=30
+
+# The cron schedule for publishing service failure metrics to CloudWatch
+MEMORY_USAGE_COLLECTOR_CRON="0 * * * *" # run once an hour
+
+# How far to go back from the current time when looking for max memory usage for services.
+# This should correspond to how often the computation runs based on
+# MEMORY_USAGE_COLLECTOR_CRON
+MEMORY_USAGE_COLLECTOR_LOOK_BACK_MINUTES=60
+
+# The bucket where memory usage metrics are stored
+MEMORY_USAGE_BUCKET=memory-usage-bucket
+
+# The harmony environment (e.g. sit, uat, prod)
+HARMONY_ENVIRONMENT=local
+
