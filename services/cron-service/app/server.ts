@@ -3,6 +3,7 @@ import express from 'express';
 
 import db from '../../harmony/app/util/db';
 import log from '../../harmony/app/util/log';
+import { MemoryUsageCollector } from './cronjobs/memory-usage-collector';
 import { PublishServiceFailureMetrics } from './cronjobs/publish-failure-metrics';
 import { RestartPrometheus } from './cronjobs/restart-prometheus';
 import { UserWorkUpdater } from './cronjobs/update-user-work';
@@ -23,6 +24,7 @@ export default function start(): void {
     [env.restartPrometheusCron, RestartPrometheus],
     [env.userWorkUpdaterCron, UserWorkUpdater],
     [env.publishServiceFailureMetricsCron, PublishServiceFailureMetrics],
+    [env.memoryUsageCollectorCron, MemoryUsageCollector],
   ];
 
   for (const [cronSpec, jobClass] of cronEntries) {
