@@ -77,6 +77,32 @@ export const providerIdCache = new LRUCache({
 });
 
 /**
+ * Wrapper function of getCollectionIdForJobId to be set to fetchMethod of LRUCache.
+ *
+ * @param jobId - the job identifier
+ * @param _sv - stale value parameter of LRUCache fetchMethod, unused here
+ * @param options - options parameter of LRUCache fetchMethod, carries the request context
+ * @returns resolves to the provider id for the job
+ */
+async function fetchCollectionId(
+  jobId: string,
+  _sv: string,
+  { context },
+): Promise<string> {
+  context.logger.info(`Fetching collection id for job id ${jobId}`);
+  return Job.getCollectionIdForJobId(db, jobId);
+}
+
+// In memory cache for Job ID to provider Id
+export const collectionIdCache = new LRUCache({
+  ttl: env.providerCacheTtl,
+  maxSize: env.providerCacheSize,
+  sizeCalculation: (value: string): number => value.length,
+  fetchMethod: fetchCollectionId,
+});
+
+
+/**
  * Express.js handler that returns redirects to pre-signed URLs
  *
  * @param req - The request sent by the client
@@ -97,6 +123,7 @@ export async function getServiceResult(
   const url = `s3://${bucket}/${key}`;
 
   const provider = jobId ? await providerIdCache.fetch(jobId, { context: req.context }) : undefined;
+  const collection = jobId ? await collectionIdCache.fetch(jobId, { context: req.context }) : undefined;
 
   const objectStore = objectStoreForProtocol('s3');
   if (objectStore) {
@@ -107,6 +134,9 @@ export async function getServiceResult(
       }
       if (provider) {
         customParams['A-provider'] = provider.toUpperCase();
+      }
+      if (collection) {
+	customParams['A-collection'] = collection
       }
       req.context.logger.info(`Signing ${url} with params ${JSON.stringify(customParams)}`);
       const result = await objectStore.signGetObject(url, customParams);
