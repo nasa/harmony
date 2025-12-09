@@ -93,7 +93,10 @@ async function getMemoryUsageByService(ctx: Context, kc: k8s.KubeConfig, service
     logger.warn(`No datapoints returned for service ${serviceName}`);
   }
 
-  logger.debug(`CloudWatch for ${serviceName}: avg=${avgPercent} max=${maxPercent}`);
+  logger.debug(
+    `Memory usage percentages from CloudWatch metrics for ${serviceName}: ` +
+    `avg=${(avgPercent * 100).toFixed(2)}% max=${(maxPercent * 100).toFixed(2)}%`,
+  );
 
   const appsApi = kc.makeApiClient(k8s.AppsV1Api);
 
@@ -104,20 +107,25 @@ async function getMemoryUsageByService(ctx: Context, kc: k8s.KubeConfig, service
 
   const containers = deployment.spec?.template?.spec?.containers ?? [];
 
-  // Extract memory limits strings (e.g. "512Mi", "1Gi")
-  const memoryLimitStrs: string[] = containers
-    .map(c => c.resources?.limits?.memory)
-    .filter((m): m is string => Boolean(m));
-
-  // Convert memory limits to bytes
   let totalLimitBytes = 0;
-  for (const mem of memoryLimitStrs) {
+
+  for (const c of containers) {
+    const mem = c.resources?.limits?.memory;
+    if (!mem) {
+      logger.debug(
+        `Container ${c.name} has no memory limit configured in ${serviceName}`,
+      );
+      continue;
+    }
+
     let bytes = 0;
+
     const miMatch = mem.match(/^(\d+)(?:Mi)$/);
     const giMatch = mem.match(/^(\d+)(?:Gi)$/);
     const kiMatch = mem.match(/^(\d+)(?:Ki)$/);
     const plainNumMatch = mem.match(/^(\d+)$/);
 
+    // Convert memory limits to bytes
     if (miMatch) {
       bytes = Number(miMatch[1]) * 1024 * 1024;
     } else if (giMatch) {
@@ -125,14 +133,18 @@ async function getMemoryUsageByService(ctx: Context, kc: k8s.KubeConfig, service
     } else if (kiMatch) {
       bytes = Number(kiMatch[1]) * 1024;
     } else if (plainNumMatch) {
-      // treat as bytes if no unit present
       bytes = Number(plainNumMatch[1]);
     } else {
-      logger.warn(`Unknown memory limit format "${mem}" for ${serviceName}, treating as 0`);
-      bytes = 0;
+      logger.warn(
+        `Unknown memory limit format "${mem}" for container ${c.name} in ${serviceName}, treating as 0`,
+      );
+      continue;
     }
 
-    logger.debug(`Parsed memory limit ${mem} => ${bytes} bytes for ${serviceName}`);
+    logger.debug(
+      `Parsed memory limit ${mem} => ${bytes} bytes for container ${c.name} in ${serviceName}`,
+    );
+
     totalLimitBytes += bytes;
   }
 
