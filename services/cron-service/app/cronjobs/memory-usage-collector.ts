@@ -48,6 +48,7 @@ interface ServiceMemoryUsage {
 
 /**
  * Gets memory usage by service.
+ *
  * @param ctx - The Cron job context
  * @param kc - The k8s configuration
  * @param serviceName - The name of the service
@@ -163,7 +164,9 @@ async function getMemoryUsageByService(ctx: Context, kc: k8s.KubeConfig, service
  * @param memoryUsage - The memory usage with each key being the service name and value the memory
  *        usage for that service
  */
-async function saveMemoryUsageToS3(ctx: Context, memoryUsage: Record<string, ServiceMemoryUsage>): Promise<void> {
+async function saveMemoryUsageToS3(
+  ctx: Context, memoryUsage: Record<string, ServiceMemoryUsage>,
+): Promise<void> {
   const { logger } = ctx;
   const bucket = env.memoryUsageBucket;
 
@@ -197,7 +200,9 @@ async function saveMemoryUsageToS3(ctx: Context, memoryUsage: Record<string, Ser
 }
 
 /**
- * Gets memory usage by service.
+ * Main function that gets called each time the cron kicks off. It collects the
+ * memory usage metrics and then saves them to S3.
+ *
  * @param ctx - The Cron job context
  * @throws error if there is an issue communicating with the Kubernetes API
  * @returns Resolves when the request completes
