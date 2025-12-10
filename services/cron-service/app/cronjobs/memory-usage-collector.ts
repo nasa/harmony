@@ -8,7 +8,7 @@ import env from '../util/env';
 import { CronJob } from './cronjob';
 
 const NAMESPACE = 'harmony';
-const METRIC_NAME = 'pod_memory_utilization';
+const METRIC_NAME = 'pod_memory_working_set';
 const METRIC_NAMESPACE = 'ContainerInsights';
 // The cloudwatch insights observability plugin seems to have a period of 5 minutes
 const METRIC_PERIOD = 300;
@@ -82,20 +82,20 @@ async function getMemoryUsageByService(ctx: Context, kc: k8s.KubeConfig, service
   const resp = await cw.send(cmd);
   const datapoints = resp.Datapoints ?? [];
 
-  let avgPercent = 0;
-  let maxPercent = 0;
+  let avgBytes = 0;
+  let maxBytes = 0;
 
   if (datapoints.length > 0) {
     const sumAvg = datapoints.reduce((acc, dp) => acc + (dp.Average ?? 0), 0);
-    avgPercent = sumAvg / datapoints.length;
-    maxPercent = datapoints.reduce((m, dp) => Math.max(m, dp.Maximum ?? 0), 0);
+    avgBytes = sumAvg / datapoints.length;
+    maxBytes = datapoints.reduce((m, dp) => Math.max(m, dp.Maximum ?? 0), 0);
   } else {
     logger.warn(`No datapoints returned for service ${serviceName}`);
   }
 
   logger.debug(
-    `Memory usage percentages from CloudWatch metrics for ${serviceName}: ` +
-    `avg=${(avgPercent * 100).toFixed(2)}% max=${(maxPercent * 100).toFixed(2)}%`,
+    `Memory usage in MB from CloudWatch metrics for ${serviceName}: ` +
+    `avg=${avgBytes / 1024 / 1024} max=${maxBytes / 1024 / 1024}`,
   );
 
   const appsApi = kc.makeApiClient(k8s.AppsV1Api);
@@ -148,15 +148,16 @@ async function getMemoryUsageByService(ctx: Context, kc: k8s.KubeConfig, service
     totalLimitBytes += bytes;
   }
 
-  const usageBytes = maxPercent * totalLimitBytes;
-  const usageGB = usageBytes / 1024 / 1024 / 1024;
+  const avgPercent = 100 * avgBytes / totalLimitBytes;
+  const maxPercent = 100 * maxBytes / totalLimitBytes;
+  const maxUsageGB = maxBytes / 1024 / 1024 / 1024;
 
   return {
     service: serviceName,
     avgPercent,
     maxPercent,
     totalLimitBytes,
-    usageGB: Number(usageGB.toFixed(2)),
+    usageGB: Number(maxUsageGB.toFixed(2)),
   };
 }
 
