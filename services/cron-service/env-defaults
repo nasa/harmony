@@ -28,7 +28,7 @@ PUBLISH_SERVICE_FAILURE_METRICS_CRON="0,30 * * * *" # every half hour
 # PUBLISH_SERVICE_FAILURE_METRICS_CRON
 FAILURE_METRICS_LOOK_BACK_MINUTES=30
 
-# The cron schedule for publishing service failure metrics to CloudWatch
+# The cron schedule for collecting memory usage metrics for backend services
 MEMORY_USAGE_COLLECTOR_CRON="0 * * * *" # run once an hour
 
 # How far to go back from the current time when looking for max memory usage for services.
