@@ -40,6 +40,7 @@ describe('Versions endpoint', function () {
           'sds/HOSS-geographic',
           'sds/HOSS-projection-gridded',
           'sds/HOSS-regridder-reformatter',
+          'sds/hoss-url-l3',
           'l2-subsetter-batchee-stitchee-concise',
           'asf/opera-rtc-s1-browse',
           'net2cog',

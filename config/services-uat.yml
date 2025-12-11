@@ -318,11 +318,14 @@ https://cmr.uat.earthdata.nasa.gov:
       output_formats:
         - application/netcdf # Incorrect mime-type, remove when no longer needed
         - application/x-netcdf4
+        - application/x-netcdf4; profile="opendap_url"
+        - application/x-netcdf4;profile="opendap_url"
+        - application/x-netcdf4;profile=opendap_url
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
       - image: !Env ${HOSS_IMAGE}
-        operations: ['variableSubset']
+        operations: ['variableSubset','reformat']
 
   - name: sds/trajectory-subsetter
     description: |
@@ -558,6 +561,35 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${NET2COG_IMAGE}
         conditional:
           format: ['image/tiff']
+
+  - name: sds/hoss-url-l3
+    description: |
+      A service chain for returning the OPeNDAP request URL in a L3 HOSS
+      request instead of the subset granule.
+    data_operation_version: '0.22.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/sds/hoss-url-l3
+    umm_s: S1276836870-EEDTEST
+    capabilities:
+      subsetting:
+        bbox: true
+        variable: true
+      output_formats:
+        - application/netcdf # Incorrect mime-type, remove when no longer needed
+        - application/x-netcdf4
+        - application/x-netcdf4; profile="opendap_url"
+        - application/x-netcdf4;profile="opendap_url"
+        - application/x-netcdf4;profile=opendap_url
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
+      - image: !Env ${HOSS_IMAGE}
+        operations: ['variableSubset', 'spatialSubset', 'reformat']
 
   - name: l2-subsetter-batchee-stitchee-concise
     description: |
