@@ -93,7 +93,7 @@ async function fetchCollectionId(
   return Job.getCollectionIdForJobId(db, jobId);
 }
 
-// In memory cache for Job ID to provider Id
+// In memory cache for Job ID to Collection Id
 export const collectionIdCache = new LRUCache({
   ttl: env.providerCacheTtl,
   maxSize: env.providerCacheSize,
