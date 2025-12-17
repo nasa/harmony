@@ -1,6 +1,6 @@
 locust ~= 2.2.3
 pysocks ~= 1.7.1
-pandas ~= 1.1.4
+pandas ~=2.3.3
 plotly-express ~= 0.4.1
 jupyter ~= 1.0.0
 pygments ~= 2.7.4
