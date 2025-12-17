@@ -702,11 +702,11 @@ export class Job extends DBRecord implements JobRecord {
   }
 
   /**
-   * Returns the provider id for the given jobID
+   * Returns the Collection Id for the given jobID
    *
    * @param tx - the database transaction to use for querying
    * @param jobID - the jobID for the job that should be retrieved
-   * @returns the provider id for the job
+   * @returns the Collection id for the job
    */
   static async getCollectionIdForJobId(
     tx: Transaction,
