@@ -116,7 +116,6 @@ export async function getServiceResult(
       if (results?.collectionIds) {
         customParams['A-collection-concept-ids'] = results.collectionIds.toUpperCase();
       }
-      req.context.logger.info('Signing with Alternative method');
       req.context.logger.info(`Signing ${url} with params ${JSON.stringify(customParams)}`);
       const result = await objectStore.signGetObject(url, customParams);
       // Direct clients to reuse the redirect for 10 minutes before asking for a new one
