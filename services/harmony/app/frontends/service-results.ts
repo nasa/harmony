@@ -71,7 +71,7 @@ export async function fetchProviderAndCollection(
 }
 
 // In memory cache for Job ID to provider and collection Ids
-export const providerAndCollectionMetadataCache = new LRUCache({
+export const providerAndCollectionIdCache = new LRUCache({
   ttl: env.providerCacheTtl,
   maxSize: env.providerCacheSize,
   sizeCalculation: (value: { providerId: string; collectionIds: string }): number => {
@@ -100,7 +100,7 @@ export async function getServiceResult(
   const key = (!jobId || !workItemId) ? remainingPath : `public/${jobId}/${workItemId}/${remainingPath}`;
   const url = `s3://${bucket}/${key}`;
 
-  const meta = jobId ? await providerAndCollectionMetadataCache.fetch(jobId, { context: req.context }) : undefined;
+  const results = jobId ? await providerAndCollectionIdCache.fetch(jobId, { context: req.context }) : undefined;
 
   const objectStore = objectStoreForProtocol('s3');
   if (objectStore) {
@@ -109,12 +109,12 @@ export async function getServiceResult(
       if (jobId) {
         customParams['A-api-request-uuid'] = jobId;
       }
-      if (meta?.providerId) {
-        customParams['A-provider'] = meta.providerId.toUpperCase();
+      if (results?.providerId) {
+        customParams['A-provider'] = results.providerId.toUpperCase();
       }
 
-      if (meta?.collectionIds) {
-        customParams['A-collection-concept-ids'] = meta.collectionIds.toUpperCase();
+      if (results?.collectionIds) {
+        customParams['A-collection-concept-ids'] = results.collectionIds.toUpperCase();
       }
       req.context.logger.info('Signing with Alternative method');
       req.context.logger.info(`Signing ${url} with params ${JSON.stringify(customParams)}`);
