@@ -69,7 +69,7 @@ describe('service-results', function () {
 
       before(function () {
         providerCollectionIdCacheStub = sinon.stub(providerCollectionIdCache, 'fetch').resolves(
-	  { providerId: 'eedtest', collectionIds: 'collection1,collection2' },
+          { providerId: 'eedtest', collectionIds: 'collection1,collection2' },
         );
       });
 
