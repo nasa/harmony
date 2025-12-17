@@ -702,6 +702,32 @@ export class Job extends DBRecord implements JobRecord {
   }
 
   /**
+  * Returns the provider and collection id for the given jobID
+  *
+  * @param tx - the database transaction to use for querying
+  * @param jobID - the jobID for the job that should be retrieved
+  * @returns object with both the provider id and the collectionIds for the job
+  */
+  static async getProviderAndCollectionForJobId(
+    tx: Transaction,
+    jobID: string,
+  ): Promise<{ providerId: string; collectionIds: string }> {
+    const results = await tx(Job.table)
+      .select('provider_id', 'collectionIds')
+      .where({ jobID })
+      .first();
+
+    const collectionIds = typeof results?.collectionIds === 'string'
+      ? JSON.parse(results.collectionIds).join(',')
+      : results?.collectionIds;
+
+    return {
+      providerId: results?.provider_id,
+      collectionIds,
+    };
+  }
+
+  /**
    * Returns the job matching the given username and job ID, or null if
    * no such job exists.
    *
