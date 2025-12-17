@@ -63,7 +63,9 @@ export function createPublicPermalink(
  * @param options - options parameter of LRUCache fetchMethod, carries the request context
  * @returns resolves to an object containing provider and collection ids for the job
  */
-async function fetchProviderAndCollection(jobId: string, _sv, { context }) {
+export async function fetchProviderAndCollection(
+  jobId: string, _sv, { context },
+): Promise<{ providerId: string; collectionIds: string }> {
   context.logger.info(`Fetching provider and collection for job id ${jobId}`);
   return Job.getProviderAndCollectionForJobId(db, jobId);
 }
