@@ -80,7 +80,8 @@ describe('service-results', function () {
       hookUrl('/service-results/some-bucket/public/some-job-id/some-work-item-id/some-path.tif', 'jdoe');
       it('passes the user\'s Earthdata Login username to the signing function for tracking', function () {
         expect(this.res.headers.location).to.include('A-userid=jdoe');
-        expect(this.res.headers.location).to.include('A-collection-concept-id=collection1,collection2');
+        expect(this.res.headers.location).to.include('A-provider=EEDTEST');
+        expect(this.res.headers.location).to.include('A-collection-concept-ids=COLLECTION1%2CCOLLECTION2');
       });
 
       it('redirects temporarily to a presigned URL', function () {
