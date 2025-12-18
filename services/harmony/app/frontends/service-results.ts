@@ -82,7 +82,7 @@ export const providerIdCache = new LRUCache({
  * @param jobId - the job identifier
  * @param _sv - stale value parameter of LRUCache fetchMethod, unused here
  * @param options - options parameter of LRUCache fetchMethod, carries the request context
- * @returns resolves to the provider id for the job
+ * @returns resolves to the collection ids for the job
  */
 async function fetchCollectionId(
   jobId: string,
@@ -95,8 +95,8 @@ async function fetchCollectionId(
 
 // In memory cache for Job ID to Collection Id
 export const collectionIdCache = new LRUCache({
-  ttl: env.providerCacheTtl,
-  maxSize: env.providerCacheSize,
+  ttl: env.collectionCacheTtl,
+  maxSize: env.collectionCacheSize,
   sizeCalculation: (value: string): number => value.length,
   fetchMethod: fetchCollectionId,
 });
