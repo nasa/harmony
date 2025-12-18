@@ -74,7 +74,7 @@ describe('service-results', function () {
 
       after(function () {
         providerIdCacheStub.restore();
-	collectionIdCacheStub.restore();
+        collectionIdCacheStub.restore();
       });
 
       hookUrl('/service-results/some-bucket/public/some-job-id/some-work-item-id/some-path.tif', 'jdoe');
