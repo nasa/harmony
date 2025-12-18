@@ -701,13 +701,14 @@ export class Job extends DBRecord implements JobRecord {
     const results = await tx(Job.table)
       .select('provider_id', 'collectionIds')
       .where({ jobID })
-      .first();
 
-    const collectionIds = JSON.parse(results?.collectionIds || '[]').join(',');
+    const collection_ids = typeof results[0]?.collectionIds === "string"
+      ? JSON.parse(results[0].collectionIds).join(",")
+      : results[0]?.collectionIds;
 
     return {
-      providerId: results?.provider_id,
-      collectionIds,
+      providerId: results[0]?.provider_id,
+      collectionIds: collection_ids,
     };
   }
 
