@@ -64,7 +64,7 @@ the example harmony service you can test it with the following (requires a [.net
 curl -Ln -bj "http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?granuleId=G1233800343-EEDTEST&format=image/tiff" -o file.tif
 ```
 
-We  recommend using [harmony-py](https://github.com/nasa/harmony-py) and its example notebook when working with Harmony.
+We recommend using [harmony-py](https://github.com/nasa/harmony-py) and its example notebook when working with Harmony.
 
 ### Configuration of Backend Services
 
