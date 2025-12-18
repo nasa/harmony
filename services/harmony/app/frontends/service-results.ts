@@ -136,7 +136,7 @@ export async function getServiceResult(
         customParams['A-provider'] = provider.toUpperCase();
       }
       if (collection) {
-	customParams['A-collection'] = collection
+        customParams['A-collection-concept-ids'] = collection;
       }
       req.context.logger.info(`Signing ${url} with params ${JSON.stringify(customParams)}`);
       const result = await objectStore.signGetObject(url, customParams);
