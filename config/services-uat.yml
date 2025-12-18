@@ -321,6 +321,7 @@ https://cmr.uat.earthdata.nasa.gov:
         - application/x-netcdf4; profile="opendap_url"
         - application/x-netcdf4;profile="opendap_url"
         - application/x-netcdf4;profile=opendap_url
+        - application/x-netcdf4; profile=opendap_url
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
@@ -580,11 +581,10 @@ https://cmr.uat.earthdata.nasa.gov:
         bbox: true
         variable: true
       output_formats:
-        - application/netcdf # Incorrect mime-type, remove when no longer needed
-        - application/x-netcdf4
         - application/x-netcdf4; profile="opendap_url"
         - application/x-netcdf4;profile="opendap_url"
         - application/x-netcdf4;profile=opendap_url
+        - application/x-netcdf4; profile=opendap_url
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
