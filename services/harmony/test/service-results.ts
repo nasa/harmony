@@ -102,6 +102,27 @@ describe('service-results', function () {
       });
     });
 
+    describe('when the job has no collection IDs', function () {
+      let providerIdCacheStub, collectionIdCacheStub;
+
+      before(function () {
+        providerIdCacheStub = sinon.stub(providerIdCache, 'fetch').resolves('eedtest');
+        collectionIdCacheStub = sinon.stub(collectionIdCache, 'fetch').resolves(undefined);
+      });
+
+      after(function () {
+        providerIdCacheStub.restore();
+        collectionIdCacheStub.restore();
+      });
+
+      hookUrl('/service-results/some-bucket/public/some-job-id/some-work-item-id/some-path.tif', 'jdoe');
+
+      it('does not include the A-collection-concept-ids header', function () {
+        expect(this.res.headers.location).to.not.include('A-collection-concept-ids');
+        expect(this.res.headers.location).to.include('A-provider=EEDTEST');
+      });
+    });
+
     describe('when given a valid bucket and key that cannot be signed', function () {
       let stubObject;
       before(function () {
