@@ -123,7 +123,7 @@ export async function getServiceResult(
   const url = `s3://${bucket}/${key}`;
 
   const provider = jobId ? await providerIdCache.fetch(jobId, { context: req.context }) : undefined;
-  const collection = jobId ? await collectionIdCache.fetch(jobId, { context: req.context }) : undefined;
+  const collectionIds = jobId ? await collectionIdCache.fetch(jobId, { context: req.context }) : undefined;
 
   const objectStore = objectStoreForProtocol('s3');
   if (objectStore) {
@@ -135,8 +135,8 @@ export async function getServiceResult(
       if (provider) {
         customParams['A-provider'] = provider.toUpperCase();
       }
-      if (collection) {
-        customParams['A-collection-concept-ids'] = collection;
+      if (collectionIds) {
+        customParams['A-collection-concept-ids'] = collectionIds.toUpperCase();
       }
       req.context.logger.info(`Signing ${url} with params ${JSON.stringify(customParams)}`);
       const result = await objectStore.signGetObject(url, customParams);
