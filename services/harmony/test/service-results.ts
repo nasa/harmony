@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { describe, it } from 'mocha';
 import sinon, { stub } from 'sinon';
 
-import { createPublicPermalink, providerAndCollectionIdCache } from '../app/frontends/service-results';
+import { createPublicPermalink, providerCollectionCache } from '../app/frontends/service-results';
 import { FileStore } from '../app/util/object-store/file-store';
 import { hookUrl } from './helpers/hooks';
 import hookServersStartStop from './helpers/servers';
@@ -68,7 +68,7 @@ describe('service-results', function () {
       let providerCollectionIdCacheStub;
 
       before(function () {
-        providerCollectionIdCacheStub = sinon.stub(providerAndCollectionIdCache, 'fetch').resolves(
+        providerCollectionIdCacheStub = sinon.stub(providerCollectionCache, 'fetch').resolves(
           { providerId: 'eedtest', collectionIds: 'collection1,collection2' },
         );
       });

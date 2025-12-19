@@ -686,29 +686,28 @@ export class Job extends DBRecord implements JobRecord {
     return results[0].numInputGranules;
   }
 
-
   /**
-  * Returns the provider and collection id for the given jobID
-  *
-  * @param tx - the database transaction to use for querying
-  * @param jobID - the jobID for the job that should be retrieved
-  * @returns object with both the provider id and the collectionIds for the job
-  */
+   * Returns both the provider id and collection ids for the given jobID
+   *
+   * @param tx - the database transaction to use for querying
+   * @param jobID - the jobID for the job that should be retrieved
+   * @returns object containing the provider id and collection ids for the job
+   */
   static async getProviderAndCollectionForJobId(
     tx: Transaction,
     jobID: string,
   ): Promise<{ providerId: string; collectionIds: string }> {
     const results = await tx(Job.table)
       .select('provider_id', 'collectionIds')
-      .where({ jobID })
+      .where({ jobID });
 
-    const collection_ids = typeof results[0]?.collectionIds === "string"
-      ? JSON.parse(results[0].collectionIds).join(",")
-      : results[0]?.collectionIds;
+    const collectionIds = typeof results[0]?.collectionIds === 'string'
+      ? JSON.parse(results[0].collectionIds).join(',')
+      : undefined;
 
     return {
       providerId: results[0]?.provider_id,
-      collectionIds: collection_ids,
+      collectionIds,
     };
   }
 

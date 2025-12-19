@@ -70,13 +70,12 @@ export async function fetchProviderAndCollection(
   return Job.getProviderAndCollectionForJobId(db, jobId);
 }
 
-// In memory cache for Job ID to provider and collection Ids
-export const providerAndCollectionIdCache = new LRUCache({
-  ttl: env.providerCacheTtl,
-  maxSize: env.providerCacheSize,
-  sizeCalculation: (value: { providerId: string; collectionIds: string }): number => {
-    return value.providerId.length + value.collectionIds.length;
-  },
+// In memory cache for Job ID to metadata (provider Id and collection Ids)
+export const providerCollectionCache = new LRUCache({
+  ttl: env.providerCollectionCacheTtl,
+  maxSize: env.providerCollectionCacheSize,
+  sizeCalculation: (value: { providerId: string; collectionIds: string }): number =>
+    Math.max(1, (value.providerId?.length || 0) + (value.collectionIds?.length || 0)),
   fetchMethod: fetchProviderAndCollection,
 });
 
@@ -100,21 +99,29 @@ export async function getServiceResult(
   const key = (!jobId || !workItemId) ? remainingPath : `public/${jobId}/${workItemId}/${remainingPath}`;
   const url = `s3://${bucket}/${key}`;
 
-  const results = jobId ? await providerAndCollectionIdCache.fetch(jobId, { context: req.context }) : undefined;
+  let provider: string;
+  let collectionIds: string;
+
+  if (jobId) {
+    const metadata = await providerCollectionCache.fetch(jobId, { context: req.context });
+    provider = metadata?.providerId;
+    collectionIds = metadata?.collectionIds;
+  }
 
   const objectStore = objectStoreForProtocol('s3');
+
   if (objectStore) {
     try {
       const customParams = { 'A-userid': req.user };
       if (jobId) {
         customParams['A-api-request-uuid'] = jobId;
       }
-      if (results?.providerId) {
-        customParams['A-provider'] = results.providerId.toUpperCase();
+      if (provider) {
+        customParams['A-provider'] = provider.toUpperCase();
       }
 
-      if (results?.collectionIds) {
-        customParams['A-collection-concept-ids'] = results.collectionIds.toUpperCase();
+      if (collectionIds) {
+        customParams['A-collection-concept-ids'] = collectionIds.toUpperCase();
       }
       req.context.logger.info(`Signing ${url} with params ${JSON.stringify(customParams)}`);
       const result = await objectStore.signGetObject(url, customParams);
