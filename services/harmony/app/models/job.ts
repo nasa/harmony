@@ -713,10 +713,9 @@ export class Job extends DBRecord implements JobRecord {
     jobID: string,
   ): Promise<string> {
     const results = await tx(Job.table).select('collectionIds').where({ jobID });
-    const collection_ids =
-      typeof results[0]?.collectionIds === 'string'
-        ? JSON.parse(results[0]?.collectionIds).join(',')
-        : undefined
+    const collection_ids =  typeof results[0]?.collectionIds === 'string'
+      ? JSON.parse(results[0]?.collectionIds).join(',')
+      : undefined;
     return collection_ids;
   }
 
