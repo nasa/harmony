@@ -716,7 +716,7 @@ export class Job extends DBRecord implements JobRecord {
     const collection_ids =
       typeof results[0]?.collectionIds === 'string'
         ? JSON.parse(results[0]?.collectionIds).join(',')
-        : results[0]?.collectionIds;
+        : undefined
     return collection_ids;
   }
 
