@@ -1,7 +1,7 @@
 # Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
 version: v1.25.0
 language-settings:
-  python: '3.10'
+  python: '3.11'
 ignore:
   SNYK-JS-SEMVER-3247795:
     - '*':
