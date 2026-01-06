@@ -56,24 +56,27 @@ export function createPublicPermalink(
 }
 
 /**
- * Wrapper function of getProviderIdForJobId to be set to fetchMethod of LRUCache.
+ * Wrapper function of getProviderAndCollectionForJobId to be set to fetchMethod of LRUCache.
  *
  * @param jobId - the job identifier
  * @param _sv - stale value parameter of LRUCache fetchMethod, unused here
  * @param options - options parameter of LRUCache fetchMethod, carries the request context
- * @returns resolves to the provider id for the job
+ * @returns resolves to an object containing provider and collection ids for the job
  */
-async function fetchProviderId(jobId: string, _sv: string, { context }): Promise<string> {
-  context.logger.info(`Fetching provider id for job id ${jobId}`);
-  return Job.getProviderIdForJobId(db, jobId);
+export async function fetchProviderAndCollection(
+  jobId: string, _sv, { context },
+): Promise<{ providerId: string; collectionIds: string }> {
+  context.logger.info(`Fetching provider and collection for job id ${jobId}`);
+  return Job.getProviderAndCollectionForJobId(db, jobId);
 }
 
-// In memory cache for Job ID to provider Id
-export const providerIdCache = new LRUCache({
-  ttl: env.providerCacheTtl,
-  maxSize: env.providerCacheSize,
-  sizeCalculation: (value: string): number => value.length,
-  fetchMethod: fetchProviderId,
+// In memory cache for Job ID to metadata (provider Id and collection Ids)
+export const providerCollectionCache = new LRUCache({
+  ttl: env.providerCollectionCacheTtl,
+  maxSize: env.providerCollectionCacheSize,
+  sizeCalculation: (value: { providerId: string; collectionIds: string }): number =>
+    Math.max(1, (value.providerId?.length || 0) + (value.collectionIds?.length || 0)),
+  fetchMethod: fetchProviderAndCollection,
 });
 
 /**
@@ -96,9 +99,17 @@ export async function getServiceResult(
   const key = (!jobId || !workItemId) ? remainingPath : `public/${jobId}/${workItemId}/${remainingPath}`;
   const url = `s3://${bucket}/${key}`;
 
-  const provider = jobId ? await providerIdCache.fetch(jobId, { context: req.context }) : undefined;
+  let provider: string;
+  let collectionIds: string;
+
+  if (jobId) {
+    const metadata = await providerCollectionCache.fetch(jobId, { context: req.context });
+    provider = metadata?.providerId;
+    collectionIds = metadata?.collectionIds;
+  }
 
   const objectStore = objectStoreForProtocol('s3');
+
   if (objectStore) {
     try {
       const customParams = { 'A-userid': req.user };
@@ -107,6 +118,10 @@ export async function getServiceResult(
       }
       if (provider) {
         customParams['A-provider'] = provider.toUpperCase();
+      }
+
+      if (collectionIds) {
+        customParams['A-collection-concept-ids'] = collectionIds.toUpperCase();
       }
       req.context.logger.info(`Signing ${url} with params ${JSON.stringify(customParams)}`);
       const result = await objectStore.signGetObject(url, customParams);

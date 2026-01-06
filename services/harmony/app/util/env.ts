@@ -123,11 +123,11 @@ class HarmonyServerEnv extends HarmonyEnv {
 
   @IsInt()
   @Min(1)
-  providerCacheSize: number;
+  providerCollectionCacheSize: number;
 
   @IsInt()
   @Min(1)
-  providerCacheTtl: number;
+  providerCollectionCacheTtl: number;
 
   @IsInt()
   @Min(1)
