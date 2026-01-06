@@ -17,7 +17,7 @@ import numpy as np
 import geopandas as gpd
 import contextily as ctx
 
-from satstac import Catalog
+from pystac import Catalog
 
 import requests
 from cachecontrol import CacheController, CacheControlAdapter
@@ -141,7 +141,7 @@ def show(response, varList=[], color_index=None, immediate=True, flip=True):
     is_default_rgba = False
     if (len(varList) == 0):
       rgba_var_list = []
-      # don't look for an exact match (e.g. == 'red_var') 
+      # don't look for an exact match (e.g. == 'red_var')
       # so that we can find subsetted rgba vars as well, which have longer var names
       for rgba_key in ['red', 'green', 'blue', 'alpha']:
         var_iterator = (data_key for data_key in data.keys() if rgba_key in data_key)
@@ -151,7 +151,7 @@ def show(response, varList=[], color_index=None, immediate=True, flip=True):
       else:
         is_default_rgba = True
         varList = rgba_var_list
-    
+
     #Plot the variables requested
     for var in varList:
       if var in data and len(data[var].shape) > 0:
@@ -380,9 +380,9 @@ def check_stac(response):
         stac_url = response.json()['links'][i]['href']
 
   assert(stac_url)
-  cat = Catalog.open(stac_url)
+  cat = Catalog.from_file(stac_url)
 
-  for i in cat.items():
+  for i in cat.get_all_items():
     assert(i.id)
     assert(i.datetime)
     assert(i.bbox)
