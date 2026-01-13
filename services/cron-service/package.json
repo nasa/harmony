@@ -38,7 +38,8 @@
     "shpjs": "Version 5 requires ESM",
     "xstate": "Version 5 has breaking changes the state machine API",
     "@aws-sdk/client-s3": "Downgraded this library to a known working version due to performance issues in sandbox testing.",
-    "@aws-sdk/client-sqs": "Downgraded this library to a known working version due to performance issues in sandbox testing."
+    "@aws-sdk/client-sqs": "Downgraded this library to a known working version due to performance issues in sandbox testing.",
+    "@aws-sdk/client-cloudwatch": "Downgraded this library to match s3 and sqs due to compatibility issues with smithy when upgrading"
   },
   "dependencies": {
     "@2toad/profanity": "^3.0.1",
