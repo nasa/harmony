@@ -48,7 +48,7 @@ https://cmr.uat.earthdata.nasa.gov:
         extra_args:
           include_opendap_links: false
 
-  - name: asdc-casper
+  - name: asdc/casper
     description: Service that converts a NetCDF file to one or more CSV files. 
     data_operation_version: '0.22.0'
     type:
