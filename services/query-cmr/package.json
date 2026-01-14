@@ -38,7 +38,8 @@
     "eslint": "The eslint-config-airbnb-typescript project is no longer maintained and limits eslint < 9.",
     "node-fetch": "Version 3 requires ESM and has other breaking changes - see https://github.com/node-fetch/node-fetch/blob/main/docs/v3-UPGRADE-GUIDE.md",
     "shpjs": "Version 5 requires ESM",
-    "@aws-sdk/client-s3": "Downgraded this library to a known working version due to a problem when more than 900 granules were requested the task would fail."
+    "@aws-sdk/client-s3": "Downgraded this library to a known working version due to a problem when more than 900 granules were requested the task would fail.",
+    "@aws-sdk/util-format-url": "Downgraded because it causes open-telemetry issues with two different versions of smithy running which result in OOM crashes with large numbers of granules."
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.437.0",
@@ -47,7 +48,7 @@
     "@aws-sdk/protocol-http": "^3.374.0",
     "@aws-sdk/s3-request-presigner": "^3.437.0",
     "@aws-sdk/url-parser": "^3.374.0",
-    "@aws-sdk/util-format-url": "^3.709.0",
+    "@aws-sdk/util-format-url": "3.433.0",
     "@harmony/util": "file:../../packages/util",
     "@linzjs/geojson": "^7.1.0",
     "@mapbox/geojson-rewind": "^0.5.2",
