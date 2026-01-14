@@ -606,8 +606,8 @@ https://cmr.uat.earthdata.nasa.gov:
       The resulting file has an extra dimension with size equal to the number of input files, where each slice in that dimension corresponds to the data from one of the input files.
       ### ASDC CASPER service
       Service that converts a NetCDF file to one or more CSV files by grouping variables by the 
-      dimensional schema and outputing each dimensional schema in a separate CSV file.
-      Outputs csv
+      dimensional schema and outputting each dimensional schema in a separate CSV file.
+      Outputs CSV
     data_operation_version: '0.22.0'
     type:
       <<: *default-turbo-config
