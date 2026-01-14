@@ -48,16 +48,16 @@ https://cmr.uat.earthdata.nasa.gov:
         extra_args:
           include_opendap_links: false
 
-  - name: asdc/casper
-    description: Service that converts and NetCDF file to one or more CVS files. 
-    data_operation_version: '0.18.0'
+  - name: asdc-casper
+    description: Service that converts a NetCDF file to one or more CSV files. 
+    data_operation_version: '0.22.0'
     type:
       <<: *default-turbo-config
       params:
         <<: *default-turbo-params
         env:
           <<: *default-turbo-env
-          STAGING_PATH: public/harmony/asdc/casper
+          STAGING_PATH: public/harmony/asdc-casper
     umm_s: S1277378538-LARC_CLOUD
     capabilities:
       concatenation: false
@@ -68,10 +68,13 @@ https://cmr.uat.earthdata.nasa.gov:
       reprojection: false
       conversion: true
       output_formats:
-        - application/zip
+        - text/csv
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
+      - image: !Env ${CASPER_IMAGE}
+        conditional:
+          format: ['text/csv']
 
   - name: ldds/subset-band-name
     description: |
@@ -221,36 +224,6 @@ https://cmr.uat.earthdata.nasa.gov:
         always_wait_for_prior_step: true
         is_batched: true
         operations: ['concatenate']
-
-  - name: l2-subsetter-casper
-    description: Service that converts and NetCDF file to one or more CVS files.
-    data_operation_version: '0.22.0'
-    type:
-      <<: *default-turbo-config
-      params:
-        <<: *default-turbo-params
-        env:
-          <<: *default-turbo-env
-          STAGING_PATH: public/asdc-trade/l2-subsetter-casper
-    umm_s: S1277379924-LARC_CLOUD
-    capabilities:
-      subsetting:
-        temporal: true
-        bbox: true
-        variable: true
-      output_formats:
-        - text/csv
-    steps:
-      - image: !Env ${QUERY_CMR_IMAGE}
-        is_sequential: true
-      - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
-        operations: ['spatialSubset', 'variableSubset', 'temporalSubset']
-        conditional:
-          exists: ['spatialSubset', 'variableSubset', 'temporalSubset']
-      - image: !Env ${CASPER_IMAGE}
-        always_wait_for_prior_step: true
-        conditional:
-          format: ['text/csv']
   
   - name: podaac/l2-subsetter-concise
     description: |
@@ -298,44 +271,6 @@ https://cmr.uat.earthdata.nasa.gov:
         operations: ['concatenate']
         conditional:
           exists: ['concatenate']
-
-  - name: l2-subsetter-concise-casper
-    description: Service that converts and NetCDF file to one or more CVS files.
-    data_operation_version: '0.22.0'
-    type:
-      <<: *default-turbo-config
-      params:
-        <<: *default-turbo-params
-        env:
-          <<: *default-turbo-env
-          STAGING_PATH: public/asdc-trade/l2-subsetter-concise-casper
-    umm_s: S1277379324-LARC_CLOUD
-    capabilities:
-      concatenation: true
-      concatenate_by_default: true
-      subsetting:
-        temporal: true
-        bbox: true
-        variable: true
-      output_formats:
-        - text/csv
-    steps:
-      - image: !Env ${QUERY_CMR_IMAGE}
-        is_sequential: true
-      - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
-        operations: ['spatialSubset', 'variableSubset', 'temporalSubset']
-        conditional:
-          exists: ['spatialSubset', 'variableSubset', 'temporalSubset']
-      - image: !Env ${PODAAC_CONCISE_IMAGE}
-        always_wait_for_prior_step: true
-        is_batched: true
-        operations: ['concatenate']
-        conditional:
-          exists: ['concatenate']
-      - image: !Env ${CASPER_IMAGE}
-        always_wait_for_prior_step: true
-        conditional:
-          format: ['text/csv']
 
   - name: sds/swath-projector
     description: |
@@ -568,40 +503,6 @@ https://cmr.uat.earthdata.nasa.gov:
         operations: ['shapefileSubset']
         conditional:
           exists: ['shapefileSubset']
-
-  - name: HOSS-casper
-    description: HOSS-casper
-    data_operation_version: '0.22.0'
-    type:
-      <<: *default-turbo-config
-      params:
-        <<: *default-turbo-params
-        env:
-          <<: *default-turbo-env
-          STAGING_PATH: public/asdc-trade/HOSS-casper
-    umm_s: S1277379416-LARC_CLOUD
-    capabilities:
-      subsetting:
-        temporal: true
-        bbox: true
-        dimension: true
-        shape: true
-        variable: true
-      output_formats:
-        - text/csv
-    steps:
-      - image: !Env ${QUERY_CMR_IMAGE}
-        is_sequential: true
-      - image: !Env ${HOSS_IMAGE}
-        operations: ['variableSubset', 'spatialSubset', 'dimensionSubset', 'shapefileSubset', 'temporalSubset']
-      - image: !Env ${MASKFILL_IMAGE}
-        operations: ['shapefileSubset']
-        conditional:
-          exists: ['shapefileSubset']
-      - image: !Env ${CASPER_IMAGE}
-        always_wait_for_prior_step: true
-        conditional:
-          format: ['text/csv']
   
   - name: sds/HOSS-projection-gridded
     description: |
@@ -690,6 +591,7 @@ https://cmr.uat.earthdata.nasa.gov:
     description: |
       ### Subsetter And Multi-dimensional Batched Aggregation in Harmony (SAMBAH)
       Chained Service of the L2-subsetter, Batchee, STITCHEE, and CONCISE services.
+       Chain includes CASPER if output format 'text/csv' requested.
       Additional documentation [here](https://stitchee.readthedocs.io/en/latest/sambah_readme/).
       #### L2 swath subsetter (L2-subsetter)
       * Works with trajectory (1D) and along track/across track data.
@@ -707,6 +609,10 @@ https://cmr.uat.earthdata.nasa.gov:
       * Service capable of "concatenating" multiple netCDF files into a single netCDF file.
       The resulting file has an extra dimension with size equal to the number of input files, where each slice in that dimension corresponds to the data from one of the input files.
       The resulting file has an extra dimension with size equal to the number of input files, where each slice in that dimension corresponds to the data from one of the input files.
+      ### ASDC CASPER service
+      Service that converts a NetCDF file to one or more CSV files by grouping variables by the 
+      dimensional schema and outputing each dimensional schema in a separate CSV file.
+      Outputs csv
     data_operation_version: '0.22.0'
     type:
       <<: *default-turbo-config
@@ -728,54 +634,6 @@ https://cmr.uat.earthdata.nasa.gov:
         shape: true
       output_formats:
         - application/netcdf4
-      reprojection: false
-    steps:
-      - image: !Env ${QUERY_CMR_IMAGE}
-        is_sequential: true
-      - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
-        operations: ['spatialSubset', 'shapefileSubset', 'variableSubset', 'temporalSubset']
-        conditional:
-          exists: ['spatialSubset', 'shapefileSubset', 'variableSubset', 'temporalSubset']
-        extra_args:
-          cut: false
-      - image: !Env ${BATCHEE_IMAGE}
-        always_wait_for_prior_step: true
-        operations: ['concatenate']
-        conditional:
-          exists: ['concatenate', 'extend']
-      - image: !Env ${STITCHEE_IMAGE}
-        operations: ['extend']
-        conditional:
-          exists: ['concatenate', 'extend']
-      - image: !Env ${PODAAC_CONCISE_IMAGE}
-        always_wait_for_prior_step: true
-        is_batched: true
-        operations: ['concatenate']
-        conditional:
-          exists: ['concatenate']
-
-  - name: sambah-casper
-    description: sambah-casper
-    data_operation_version: '0.22.0'
-    type:
-      <<: *default-turbo-config
-      params:
-        <<: *default-turbo-params
-        env:
-          <<: *default-turbo-env
-          STAGING_PATH: public/asdc-trade/l2-subsetter-batchee-stitchee-concise-casper
-    umm_s: S1277379240-LARC_CLOUD
-    capabilities:
-      concatenation: true
-      concatenate_by_default: false
-      extend: true
-      default_extend_dimensions: ['mirror_step']
-      subsetting:
-        bbox: true
-        variable: true
-        temporal: true
-        shape: true
-      output_formats:
         - text/csv
       reprojection: false
     steps:
@@ -803,10 +661,9 @@ https://cmr.uat.earthdata.nasa.gov:
         conditional:
           exists: ['concatenate']
       - image: !Env ${CASPER_IMAGE}
-        always_wait_for_prior_step: true
         conditional:
           format: ['text/csv']
-  
+ 
   # Reformatting services below. Any other transformation service should be added above.
   - name: asf/opera-rtc-s1-browse
     description: Service that generates GIBS-compliant browse imagery for the OPERA_L2_RTC-S1 collection
