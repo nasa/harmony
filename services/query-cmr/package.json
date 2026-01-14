@@ -42,13 +42,9 @@
     "@aws-sdk/util-format-url": "Downgraded because it causes open-telemetry issues with two different versions of smithy running which result in OOM crashes with large numbers of granules."
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "3.437.0",
-    "@aws-sdk/credential-provider-imds": "^3.374.0",
-    "@aws-sdk/hash-node": "^3.374.0",
-    "@aws-sdk/protocol-http": "^3.374.0",
-    "@aws-sdk/s3-request-presigner": "^3.437.0",
-    "@aws-sdk/url-parser": "^3.374.0",
-    "@aws-sdk/util-format-url": "3.433.0",
+    "@aws-sdk/client-s3": "^3.968.0",
+    "@aws-sdk/credential-provider-node": "^3.968.0",
+    "@aws-sdk/s3-request-presigner": "^3.968.0",
     "@harmony/util": "file:../../packages/util",
     "@linzjs/geojson": "^7.1.0",
     "@mapbox/geojson-rewind": "^0.5.2",
@@ -114,7 +110,6 @@
     "typescript": "^5.1.6"
   },
   "overrides": {
-    "aws-sdk": "2.1692.0",
     "braces": "^3.0.3",
     "cross-spawn": "7.0.5",
     "fast-xml-parser": "4.4.1"
