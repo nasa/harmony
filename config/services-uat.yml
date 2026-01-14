@@ -60,13 +60,10 @@ https://cmr.uat.earthdata.nasa.gov:
           STAGING_PATH: public/harmony/asdc-casper
     umm_s: S1277378538-LARC_CLOUD
     capabilities:
-      concatenation: false
       subsetting:
         bbox: false
         variable: false
         temporal: false
-      reprojection: false
-      conversion: true
       output_formats:
         - text/csv
     steps:
