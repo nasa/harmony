@@ -70,8 +70,6 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
       - image: !Env ${CASPER_IMAGE}
-        conditional:
-          format: ['text/csv']
 
   - name: ldds/subset-band-name
     description: |
@@ -221,7 +219,7 @@ https://cmr.uat.earthdata.nasa.gov:
         always_wait_for_prior_step: true
         is_batched: true
         operations: ['concatenate']
-  
+
   - name: podaac/l2-subsetter-concise
     description: |
       ### Chained Service of the PODAAC L2 swath subsetter and PODAAC concise services.
@@ -500,7 +498,7 @@ https://cmr.uat.earthdata.nasa.gov:
         operations: ['shapefileSubset']
         conditional:
           exists: ['shapefileSubset']
-  
+
   - name: sds/HOSS-projection-gridded
     description: |
       A service that currently supports L3/L4 projection-gridded collections, offering variable, temporal, named dimension, bounding box spatial and shape file spatial subsetting.
