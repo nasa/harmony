@@ -24,7 +24,7 @@ describe('Versions endpoint', function () {
         const services = JSON.parse(this.res.text);
         expect(services.map((s) => s.name)).to.eql([
           'harmony/download',
-          'asdc-casper',
+          'asdc/casper',
           'ldds/subset-band-name',
           'ldds/geoloco',
           'giovanni-time-series-adapter',
