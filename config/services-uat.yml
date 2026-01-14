@@ -57,7 +57,7 @@ https://cmr.uat.earthdata.nasa.gov:
         <<: *default-turbo-params
         env:
           <<: *default-turbo-env
-          STAGING_PATH: public/harmony/asdc-casper
+          STAGING_PATH: public/harmony/asdc/casper
     umm_s: S1277378538-LARC_CLOUD
     capabilities:
       subsetting:
