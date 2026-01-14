@@ -113,8 +113,9 @@
     "typescript": "^5.1.6"
   },
   "overrides": {
+    "aws-sdk": "2.1692.0",
     "braces": "^3.0.3",
-    "fast-xml-parser": "4.4.1",
-    "cross-spawn": "7.0.5"
+    "cross-spawn": "7.0.5",
+    "fast-xml-parser": "4.4.1"
   }
 }
