@@ -98,7 +98,7 @@ export class S3ObjectStore implements ObjectStore {
     }
     const object = {
       Bucket: url.hostname,
-      Key: url.pathname.substr(1).replaceAll('%20', ' '),
+      Key: url.pathname.substr(1).replaceAll('%20', ' '), // Nuke leading "/" and convert %20 to spaces
       QueryParameters: params,
     };
 
@@ -107,6 +107,8 @@ export class S3ObjectStore implements ObjectStore {
     const signedUrl = await getSignedUrl(this.s3, command, { expiresIn: 3600 });
 
     let finalUrl = signedUrl;
+    // Needed as a work-around to allow access from outside the kubernetes cluster
+    // for local development
     if (env.useLocalstack) {
       finalUrl = finalUrl.replace('localstack', 'localhost');
     }
@@ -130,6 +132,16 @@ export class S3ObjectStore implements ObjectStore {
     return response.Body.transformToString();
   }
 
+  /**
+   * Get an object from S3 returning a string containing the contents
+   *
+   * @param paramsOrUrl - a map of parameters (Bucket, Key) indicating the object to
+   *   be retrieved or the object URL
+   * @param callback - an optional callback function
+   * @returns An object with a `promise` function that can be called to obtain a
+   *   promise containing the retrieved object
+   * @throws TypeError - if an invalid URL is supplied
+   */
   async _getObjectStream(paramsOrUrl: string | BucketParams): Promise<object> {
     const params = this._paramsOrUrlToParams(paramsOrUrl);
     const command = new GetObjectCommand(params);
@@ -210,8 +222,7 @@ export class S3ObjectStore implements ObjectStore {
     try {
       await this.headObject(paramsOrUrl);
       return true;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (err: any) {
+    } catch (err) {
       if (err.$metadata?.httpStatusCode === 404) {
         return false;
       }
@@ -302,6 +313,8 @@ export class S3ObjectStore implements ObjectStore {
         throw new TypeError('Content length must be provided when a stream is supplied');
       }
       params.ContentLength = contentLength;
+      // Getting non-zero-byte files streaming a req to S3 is wonky
+      // https://stackoverflow.com/a/54153557
       srcStream = new stream.Readable();
       (body as NodeJS.ReadableStream).on('data', (chunk) => srcStream.push(chunk));
       (body as NodeJS.ReadableStream).on('end', () => srcStream.push(null));
@@ -312,7 +325,7 @@ export class S3ObjectStore implements ObjectStore {
 
     if (contentType) {
       params.Metadata = params.Metadata || {};
-      params.Metadata['Content-Type'] = contentType;
+      params.Metadata['Content-Type'] = contentType; // Helps tests
       params.ContentType = contentType;
     }
 
