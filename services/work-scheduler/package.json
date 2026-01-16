@@ -32,20 +32,14 @@
     "@types/chai": "Chai dependency is locked",
     "@types/chai-as-promised": "chai-as-promised dependency is locked",
     "eslint": "The eslint-config-airbnb-typescript project is no longer maintained and limits eslint < 9.",
-    "node-fetch": "Version 3 requires ESM and has other breaking changes - see https://github.com/node-fetch/node-fetch/blob/main/docs/v3-UPGRADE-GUIDE.md",
-    "@aws-sdk/client-s3": "Downgraded this library to a known working version due to performance issues in sandbox testing.",
-    "@aws-sdk/client-sqs": "Downgraded this library to a known working version due to performance issues in sandbox testing."
+    "node-fetch": "Version 3 requires ESM and has other breaking changes - see https://github.com/node-fetch/node-fetch/blob/main/docs/v3-UPGRADE-GUIDE.md"
   },
   "dependencies": {
     "@2toad/profanity": "^3.0.1",
-    "@aws-sdk/client-s3": "3.437.0",
-    "@aws-sdk/client-sqs": "3.437.0",
-    "@aws-sdk/credential-provider-imds": "^3.374.0",
-    "@aws-sdk/hash-node": "^3.374.0",
-    "@aws-sdk/protocol-http": "^3.374.0",
-    "@aws-sdk/s3-request-presigner": "^3.437.0",
-    "@aws-sdk/url-parser": "^3.374.0",
-    "@aws-sdk/util-format-url": "^3.433.0",
+    "@aws-sdk/client-s3": "^3.968.0",
+    "@aws-sdk/client-sqs": "^3.968.0",
+    "@aws-sdk/credential-provider-node": "^3.968.0",
+    "@aws-sdk/s3-request-presigner": "^3.968.0",
     "@harmony/util": "file:../../packages/util",
     "@kubernetes/client-node": "^0.22.3",
     "@types/node-fetch": "^2.5.12",
@@ -66,6 +60,7 @@
     "pg": "^8.7.3",
     "pg-native": "^3.0.1",
     "tmp": "^0.2.4",
+    "uuid": "^13.0.0",
     "winston": "^3.10.0",
     "xstate": "^5.19.0"
   },

@@ -1,25 +1,20 @@
-import { getSignedUrl, S3RequestPresigner, S3RequestPresignerOptions } from '@aws-sdk/s3-request-presigner';
-import { HttpRequest } from '@aws-sdk/protocol-http';
-import { parseUrl } from '@aws-sdk/url-parser';
-import { Hash } from '@aws-sdk/hash-node';
-import { formatUrl } from '@aws-sdk/util-format-url';
-
-import { CopyObjectCommand, GetBucketLocationCommand, GetObjectCommand,
-  HeadObjectCommand, ListObjectsV2Command, PutObjectCommand,
-  PutObjectCommandInput, PutObjectCommandOutput, S3Client, S3ClientConfig,
-  MetadataDirective,
-} from '@aws-sdk/client-s3';
-
-import { fromInstanceMetadata } from '@aws-sdk/credential-provider-imds';
-
-import env from '../../util/env';
-const { awsDefaultRegion } = env;
-
 import * as fs from 'fs';
+import * as stream from 'stream';
 import tmp from 'tmp';
 import * as util from 'util';
-import * as stream from 'stream';
+
+import {
+  CopyObjectCommand, GetBucketLocationCommand, GetObjectCommand, HeadObjectCommand,
+  ListObjectsV2Command, MetadataDirective, PutObjectCommand, PutObjectCommandInput,
+  PutObjectCommandOutput, S3Client, S3ClientConfig,
+} from '@aws-sdk/client-s3';
+import { defaultProvider } from '@aws-sdk/credential-provider-node';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+
+import env from '../../util/env';
 import { HeadObjectResponse, MulterFile, ObjectStore } from './object-store';
+
+const { awsDefaultRegion } = env;
 
 const pipeline = util.promisify(stream.pipeline);
 const createTmpFileName = util.promisify(tmp.tmpName);
@@ -49,7 +44,7 @@ export class S3ObjectStore implements ObjectStore {
   }
 
   _getS3Config(overrides?: object): object {
-    let config = {};
+    let config: S3ClientConfig = {};
     if (process.env.USE_LOCALSTACK === 'true') {
       const { localstackHost } = env;
 
@@ -75,7 +70,7 @@ export class S3ObjectStore implements ObjectStore {
       config = {
         apiVersion: '2006-03-01',
         region: awsDefaultRegion,
-        credentials: fromInstanceMetadata(),
+        credentials: defaultProvider(),
         ...overrides,
       };
     }
@@ -97,12 +92,6 @@ export class S3ObjectStore implements ObjectStore {
    * @throws TypeError - if the URL is not a recognized protocol or cannot be parsed
    */
   async signGetObject(objectUrl: string, params: { [key: string]: string }): Promise<string> {
-    const config = this._getS3Config() as S3RequestPresignerOptions;
-    const presigner = new S3RequestPresigner({
-      sha256: Hash.bind(null, 'sha256'), // In Node.js
-      ...config,
-    });
-
     const url = new URL(objectUrl);
     if (url.protocol.toLowerCase() !== 's3:') {
       throw new TypeError(`Invalid S3 URL: ${objectUrl}`);
@@ -113,17 +102,11 @@ export class S3ObjectStore implements ObjectStore {
       QueryParameters: params,
     };
 
-    // Verifies that the object exists, or throws NotFound
     await this.s3.send(new HeadObjectCommand(object));
-    const req = new GetObjectCommand(object);
-    const signedUrl = await getSignedUrl(this.s3, req, { expiresIn: 3600 });
-    const baseUrl = signedUrl.substring(0, signedUrl.indexOf('?'));
-    const urlToSign = parseUrl(baseUrl);
-    urlToSign.query = params;
-    const urlNew = await presigner.presign(new HttpRequest(urlToSign), { expiresIn: 3600 });
+    const command = new GetObjectCommand(object);
+    const signedUrl = await getSignedUrl(this.s3, command, { expiresIn: 3600 });
 
-
-    let finalUrl = formatUrl(urlNew);
+    let finalUrl = signedUrl;
     // Needed as a work-around to allow access from outside the kubernetes cluster
     // for local development
     if (env.useLocalstack) {
@@ -142,15 +125,11 @@ export class S3ObjectStore implements ObjectStore {
    *   promise containing the retrieved object
    * @throws TypeError - if an invalid URL is supplied
    */
-  async getObject(
-    paramsOrUrl: string | BucketParams,
-  ): Promise<string> {
+  async getObject(paramsOrUrl: string | BucketParams): Promise<string> {
     const params = this._paramsOrUrlToParams(paramsOrUrl);
     const command = new GetObjectCommand(params);
-
     const response = await this.s3.send(command);
-    const objectAsString = await response.Body.transformToString();
-    return objectAsString;
+    return response.Body.transformToString();
   }
 
   /**
@@ -163,16 +142,12 @@ export class S3ObjectStore implements ObjectStore {
    *   promise containing the retrieved object
    * @throws TypeError - if an invalid URL is supplied
    */
-  async _getObjectStream(
-    paramsOrUrl: string | BucketParams,
-  ): Promise<object> {
+  async _getObjectStream(paramsOrUrl: string | BucketParams): Promise<object> {
     const params = this._paramsOrUrlToParams(paramsOrUrl);
     const command = new GetObjectCommand(params);
-
     const response = await this.s3.send(command);
     return response.Body;
   }
-
 
   /**
    * Get the parsed JSON object for the JSON file at the given s3 location.
@@ -180,9 +155,7 @@ export class S3ObjectStore implements ObjectStore {
    *   be retrieved or the object URL
    * @returns an object, parsed from JSON
    */
-  async getObjectJson(
-    paramsOrUrl: string | BucketParams,
-  ): Promise<object> {
+  async getObjectJson(paramsOrUrl: string | BucketParams): Promise<object> {
     const contents = await this.getObject(paramsOrUrl);
     return JSON.parse(contents);
   }
@@ -267,15 +240,14 @@ export class S3ObjectStore implements ObjectStore {
    * @throws TypeError - if an invalid URL is supplied
    */
   _paramsOrUrlToParams(paramsOrUrl: string | BucketParams): BucketParams {
-    const params = paramsOrUrl;
-    if (typeof params === 'string') {
-      const match = params.match(new RegExp('s3://([^/]+)/(.*)'));
+    if (typeof paramsOrUrl === 'string') {
+      const match = paramsOrUrl.match(new RegExp('s3://([^/]+)/(.*)'));
       if (!match) {
-        throw new TypeError(`getObject string does not seem to be an S3 URL: ${params}`);
+        throw new TypeError(`getObject string does not seem to be an S3 URL: ${paramsOrUrl}`);
       }
       return { Bucket: match[1], Key: match[2] };
     }
-    return params;
+    return paramsOrUrl;
   }
 
   /**
@@ -314,7 +286,6 @@ export class S3ObjectStore implements ObjectStore {
     return this.getUrlString({ bucket: params.Bucket, key: params.Key });
   }
 
-
   /**
    * Stream upload an object to S3
    *
@@ -333,7 +304,6 @@ export class S3ObjectStore implements ObjectStore {
     contentType: string = null,
   ): Promise<PutObjectCommandOutput> {
     const params = this._paramsOrUrlToParams(paramsOrUrl) as PutObjectCommandInput;
-
     const body = stringOrStream;
     const isStream = typeof body !== 'string';
 
@@ -346,12 +316,8 @@ export class S3ObjectStore implements ObjectStore {
       // Getting non-zero-byte files streaming a req to S3 is wonky
       // https://stackoverflow.com/a/54153557
       srcStream = new stream.Readable();
-      (body as NodeJS.ReadableStream).on('data', (chunk) => {
-        srcStream.push(chunk);
-      });
-      (body as NodeJS.ReadableStream).on('end', () => {
-        srcStream.push(null);
-      });
+      (body as NodeJS.ReadableStream).on('data', (chunk) => srcStream.push(chunk));
+      (body as NodeJS.ReadableStream).on('end', () => srcStream.push(null));
       params.Body = srcStream;
     } else {
       params.Body = body;
@@ -364,9 +330,7 @@ export class S3ObjectStore implements ObjectStore {
     }
 
     const putObjectCommand = new PutObjectCommand(params);
-    const response = await this.s3.send(putObjectCommand);
-
-    return response;
+    return this.s3.send(putObjectCommand);
   }
 
   /**
@@ -402,7 +366,7 @@ export class S3ObjectStore implements ObjectStore {
    */
   async changeOwnership(paramsOrUrl: string | BucketParams): Promise<void> {
     const params = this._paramsOrUrlToParams(paramsOrUrl);
-    const headCommand = new HeadObjectCommand(this._paramsOrUrlToParams(paramsOrUrl));
+    const headCommand = new HeadObjectCommand(params);
     const existingObject = await this.s3.send(headCommand);
 
     // When replacing the metadata, both the Metadata and ContentType fields are overwritten

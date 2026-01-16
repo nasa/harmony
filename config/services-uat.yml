@@ -570,11 +570,11 @@ https://cmr.uat.earthdata.nasa.gov:
         operations: ['variableSubset', 'spatialSubset', 'dimensionSubset', 'shapefileSubset', 'temporalSubset']
         conditional:
           exists: ['variableSubset', 'spatialSubset', 'dimensionSubset', 'shapefileSubset', 'temporalSubset']
+      - image: !Env ${HARMONY_METADATA_ANNOTATOR_IMAGE}
       - image: !Env ${MASKFILL_IMAGE}
         operations: ['shapefileSubset', 'spatialSubset']
         conditional:
           exists: ['shapefileSubset', 'spatialSubset']
-      - image: !Env ${HARMONY_METADATA_ANNOTATOR_IMAGE}
       - image: !Env ${HARMONY_REGRIDDER_IMAGE}
         conditional:
           exists: ['reproject']

@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { describe, it } from 'mocha';
 import sinon, { stub } from 'sinon';
 
-import { createPublicPermalink, providerIdCache } from '../app/frontends/service-results';
+import { createPublicPermalink, providerCollectionCache } from '../app/frontends/service-results';
 import { FileStore } from '../app/util/object-store/file-store';
 import { hookUrl } from './helpers/hooks';
 import hookServersStartStop from './helpers/servers';
@@ -65,19 +65,23 @@ describe('service-results', function () {
 
   describe('getServiceResult', function () {
     describe('when given a URL containing an output created by harmony with a job ID and work item ID in the URL', function () {
-      let providerIdCacheStub;
+      let providerCollectionIdCacheStub;
 
       before(function () {
-        providerIdCacheStub = sinon.stub(providerIdCache, 'fetch').resolves('eedtest');
+        providerCollectionIdCacheStub = sinon.stub(providerCollectionCache, 'fetch').resolves(
+          { providerId: 'eedtest', collectionIds: 'collection1,collection2' },
+        );
       });
 
       after(function () {
-        providerIdCacheStub.restore();
+        providerCollectionIdCacheStub.restore();
       });
 
       hookUrl('/service-results/some-bucket/public/some-job-id/some-work-item-id/some-path.tif', 'jdoe');
       it('passes the user\'s Earthdata Login username to the signing function for tracking', function () {
         expect(this.res.headers.location).to.include('A-userid=jdoe');
+        expect(this.res.headers.location).to.include('A-provider=EEDTEST');
+        expect(this.res.headers.location).to.include('A-collection-concept-ids=COLLECTION1%2CCOLLECTION2');
       });
 
       it('redirects temporarily to a presigned URL', function () {
