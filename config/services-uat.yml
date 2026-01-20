@@ -49,7 +49,7 @@ https://cmr.uat.earthdata.nasa.gov:
           include_opendap_links: false
 
   - name: asdc/casper
-    description: Service that converts a NetCDF file to one or more CSV files. 
+    description: Service that converts a NetCDF file to one or more CSV files.
     data_operation_version: '0.22.0'
     type:
       <<: *default-turbo-config
@@ -605,7 +605,7 @@ https://cmr.uat.earthdata.nasa.gov:
       The resulting file has an extra dimension with size equal to the number of input files, where each slice in that dimension corresponds to the data from one of the input files.
       The resulting file has an extra dimension with size equal to the number of input files, where each slice in that dimension corresponds to the data from one of the input files.
       ### ASDC CASPER service
-      Service that converts a NetCDF file to one or more CSV files by grouping variables by the 
+      Service that converts a NetCDF file to one or more CSV files by grouping variables by the
       dimensional schema and outputting each dimensional schema in a separate CSV file.
       Outputs CSV
     data_operation_version: '0.22.0'
@@ -655,10 +655,11 @@ https://cmr.uat.earthdata.nasa.gov:
         operations: ['concatenate']
         conditional:
           exists: ['concatenate']
+          format: ['application/netcdf4']
       - image: !Env ${CASPER_IMAGE}
         conditional:
           format: ['text/csv']
- 
+
   # Reformatting services below. Any other transformation service should be added above.
   - name: asf/opera-rtc-s1-browse
     description: Service that generates GIBS-compliant browse imagery for the OPERA_L2_RTC-S1 collection
