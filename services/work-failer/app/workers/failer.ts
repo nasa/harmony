@@ -30,6 +30,7 @@ function failedMessage(itemId: number, duration: number): string {
 // A mapping for the default timeouts for services since some services such as
 // aggregation services can be expected to take much longer
 const serviceToDefaultTimeoutSeconds = {
+  'casper': 900, // 15 minutes
   'concise': 900, // 15 minutes
 };
 
