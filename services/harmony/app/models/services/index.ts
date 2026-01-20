@@ -190,7 +190,7 @@ function validateServiceConfigSteps(config: ServiceConfig<unknown>): void {
     // validate that the conditional format is actually supported by the service chain
     if (step.conditional?.format) {
       for (const fmt of step.conditional.format) {
-        if (!(config.capabilities?.output_formats && config.capabilities.output_formats.includes(fmt))) {
+        if (fmt !== '' && !(config.capabilities?.output_formats && config.capabilities.output_formats.includes(fmt))) {
           throw new TypeError(`Service ${config.name} step with image ${step.image} has format conditional '${fmt}' which is not included in capabilities.`);
         }
       }

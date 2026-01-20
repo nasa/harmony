@@ -197,7 +197,8 @@ export function stepRequired(step: ServiceStep, operation: DataOperation): boole
   }
   if (required && step.conditional?.format) {
     required = false;
-    if (step.conditional.format.includes(operation.outputFormat)) {
+    const outputFormat = operation.outputFormat || '';
+    if (step.conditional.format.includes(outputFormat)) {
       required = true;
     }
   }
