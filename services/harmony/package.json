@@ -73,14 +73,20 @@
   "dependencies": {
     "@2toad/profanity": "^3.0.1",
     "@aws-sdk/client-ecr": "^3.968.0",
-    "@aws-sdk/client-s3": "^3.968.0",
+    "@aws-sdk/client-s3": "^3.972.0",
     "@aws-sdk/client-sqs": "^3.968.0",
     "@aws-sdk/client-sts": "^3.968.0",
     "@aws-sdk/credential-provider-node": "^3.968.0",
-    "@aws-sdk/s3-request-presigner": "^3.968.0",
+    "@aws-sdk/s3-request-presigner": "^3.972.0",
+    "@aws-sdk/util-format-url": "^3.972.0",
     "@harmony/util": "file:../../packages/util",
     "@linzjs/geojson": "^7.1.0",
     "@mapbox/geojson-rewind": "^0.5.2",
+    "@smithy/hash-node": "^4.2.8",
+    "@smithy/protocol-http": "^5.3.8",
+    "@smithy/signature-v4": "^5.3.8",
+    "@smithy/url-parser": "^4.2.8",
+    "@smithy/util-uri-escape": "^4.2.0",
     "@tmcw/togeojson": ">=5.8.1 <6.0.0",
     "@turf/circle": "^7.2.0",
     "@turf/helpers": "^7.2.0",
@@ -216,12 +222,14 @@
     "ts-node-dev": "^2.0.0"
   },
   "overrides": {
-    "trim-newlines": "4.0.1",
-    "fast-json-patch": "3.1.1",
-    "semver": "^7.6.2",
     "braces": "^3.0.3",
+    "cross-spawn": "7.0.5",
+    "diff": "^5.1.0",
+    "fast-json-patch": "3.1.1",
     "fast-xml-parser": "4.4.1",
     "jsonpath-plus": "^10.0.7",
-    "cross-spawn": "7.0.5"
+    "semver": "^7.6.2",
+    "tar": "^7.5.4",
+    "trim-newlines": "4.0.1"
   }
 }

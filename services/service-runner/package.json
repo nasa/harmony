@@ -35,11 +35,14 @@
     "@aws-sdk/client-s3": "Downgraded this library to a known working version due to performance issues."
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.968.0",
+    "@aws-sdk/client-s3": "^3.972.0",
     "@aws-sdk/credential-provider-node": "^3.968.0",
-    "@aws-sdk/s3-request-presigner": "^3.968.0",
+    "@aws-sdk/s3-request-presigner": "^3.972.0",
     "@harmony/util": "file:../../packages/util",
     "@kubernetes/client-node": "^0.22.3",
+    "@smithy/protocol-http": "^5.3.8",
+    "@smithy/signature-v4": "^5.3.8",
+    "@smithy/util-uri-escape": "^4.2.0",
     "agentkeepalive": "^4.1.4",
     "aws-sdk": "^2.1482.0",
     "axios": "^1.7.4",
@@ -87,6 +90,7 @@
     "form-data": "4.0.4",
     "jsonpath-plus": "^10.0.7",
     "qs": "^6.14.1",
+    "tar": "^7.5.4",
     "tough-cookie": "^4.1.3"
   }
 }
