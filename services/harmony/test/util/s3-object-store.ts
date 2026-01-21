@@ -8,11 +8,17 @@ import { S3RequestPresigner } from '@aws-sdk/s3-request-presigner';
 import { S3ObjectStore } from '../../app/util/object-store/s3-object-store';
 
 describe('signGetObject', () => {
+  let sandbox: sinon.SinonSandbox;
   let s3Client: sinon.SinonStubbedInstance<S3Client>;
   let instance: S3ObjectStore;
   let sendStub: sinon.SinonStub;
+  let capturedQuery: any;
 
   beforeEach(() => {
+    // Create a fresh sandbox for every test
+    sandbox = sinon.createSandbox();
+
+    // Setup S3 client
     s3Client = new S3Client({
       region: 'us-east-1',
       credentials: {
@@ -21,18 +27,35 @@ describe('signGetObject', () => {
       },
     }) as any;
 
-    sendStub = sinon.stub(s3Client, 'send');
+    // Stub send() using sandbox
+    sendStub = sandbox.stub(s3Client, 'send');
     (s3Client as any).send = sendStub;
 
+    // Default HeadObjectCommand success
+    sendStub.withArgs(sinon.match.instanceOf(HeadObjectCommand)).resolves({});
+
+    // Stub S3RequestPresigner.prototype.presign using sandbox
+    capturedQuery = undefined;
+    sandbox
+      .stub(S3RequestPresigner.prototype, 'presign')
+      .callsFake(async (request: any) => {
+        capturedQuery = request.query;
+        return {
+          protocol: 'https:',
+          hostname: 'test-bucket.s3.amazonaws.com',
+          path: '/file.txt',
+          query: request.query,
+        } as any;
+      });
+
+    // Setup instance
     instance = new S3ObjectStore();
     instance.s3 = s3Client as any;
-
-    // Stub HeadObjectCommand to succeed
-    sendStub.withArgs(sinon.match.instanceOf(HeadObjectCommand)).resolves({});
   });
 
   afterEach(() => {
-    sinon.restore();
+    // Restore everything stubbed in this sandbox
+    sandbox.restore();
   });
 
   it('should throw TypeError for non-s3 URLs', async () => {
@@ -54,12 +77,6 @@ describe('signGetObject', () => {
       'A-collection-concept-ids': 'C123,C456',
     };
 
-    let capturedQuery: any;
-    sinon.stub(S3RequestPresigner.prototype, 'presign').callsFake(async (request: any) => {
-      capturedQuery = request.query;
-      return { protocol: 'https:', hostname: 'test-bucket.s3.amazonaws.com', path: '/file.txt', query: request.query } as any;
-    });
-
     const result = await instance.signGetObject('s3://test-bucket/file.txt', customParams);
 
     expect(capturedQuery).to.deep.equal(customParams);
@@ -68,6 +85,7 @@ describe('signGetObject', () => {
 
   it('should handle HeadObject errors', async () => {
     sendStub.withArgs(sinon.match.instanceOf(HeadObjectCommand)).rejects(new Error('NoSuchKey'));
+
     try {
       await instance.signGetObject('s3://test-bucket/missing.txt', {});
       expect.fail('Should throw');
