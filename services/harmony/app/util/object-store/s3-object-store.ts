@@ -9,7 +9,11 @@ import {
   PutObjectCommandOutput, S3Client, S3ClientConfig,
 } from '@aws-sdk/client-s3';
 import { defaultProvider } from '@aws-sdk/credential-provider-node';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { getSignedUrl, S3RequestPresigner } from '@aws-sdk/s3-request-presigner';
+import { formatUrl } from '@aws-sdk/util-format-url';
+import { Hash } from '@smithy/hash-node';
+import { HttpRequest } from '@smithy/protocol-http';
+import { parseUrl } from '@smithy/url-parser';
 
 import env from '../../util/env';
 import { HeadObjectResponse, MulterFile, ObjectStore } from './object-store';
@@ -84,7 +88,7 @@ export class S3ObjectStore implements ObjectStore {
 
   /**
    * Returns an HTTPS URL that can be used to perform a GET on the given object
-   * store URL
+   * store URL with custom query parameters included in the signature
    *
    * @param objectUrl - the URL of the object to sign
    * @param params - an optional mapping of parameter key/values to put in the URL
@@ -96,22 +100,41 @@ export class S3ObjectStore implements ObjectStore {
     if (url.protocol.toLowerCase() !== 's3:') {
       throw new TypeError(`Invalid S3 URL: ${objectUrl}`);
     }
-    const object = {
-      Bucket: url.hostname,
-      Key: url.pathname.substr(1).replaceAll('%20', ' '), // Nuke leading "/" and convert %20 to spaces
-      QueryParameters: params,
-    };
 
-    await this.s3.send(new HeadObjectCommand(object));
-    const command = new GetObjectCommand(object);
+    const bucket = url.hostname;
+    const key = url.pathname.substring(1).replaceAll('%20', ' '); // Remove leading "/"
+
+    // Verify object exists
+    await this.s3.send(new HeadObjectCommand({ Bucket: bucket, Key: key }));
+
+    // Get the base URL without signing it
+    const command = new GetObjectCommand({ Bucket: bucket, Key: key });
     const signedUrl = await getSignedUrl(this.s3, command, { expiresIn: 3600 });
+    const baseUrl = signedUrl.substring(0, signedUrl.indexOf('?'));
 
-    let finalUrl = signedUrl;
+    // Parse the base URL and add custom query parameters
+    const urlToSign = parseUrl(baseUrl);
+    urlToSign.query = params;
+
+    // Create presigner and sign the URL with custom params included
+    const presigner = new S3RequestPresigner({
+      ...this.s3.config,
+      sha256: Hash.bind(null, 'sha256'),
+    });
+
+    const presignedUrl = await presigner.presign(
+      new HttpRequest(urlToSign),
+      { expiresIn: 3600 },
+    );
+
+    let finalUrl = formatUrl(presignedUrl);
+
     // Needed as a work-around to allow access from outside the kubernetes cluster
     // for local development
     if (env.useLocalstack) {
       finalUrl = finalUrl.replace('localstack', 'localhost');
     }
+
     return finalUrl;
   }
 

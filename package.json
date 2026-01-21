@@ -83,8 +83,9 @@
     "ts-node-dev": "^2.0.0"
   },
   "overrides": {
-    "cross-spawn": "7.0.5",
     "@octokit/plugin-paginate-rest": "^9.2.2",
+    "cross-spawn": "7.0.5",
+    "tar": "^7.5.4",
     "tmp": "0.2.4"
   }
 }
