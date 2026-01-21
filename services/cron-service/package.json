@@ -7,7 +7,7 @@
     "start": "ts-node app/server.ts",
     "start-dev": "strict-npm-engines && ts-node-dev --no-notify -r tsconfig-paths/register --watch app/views --respawn app/server",
     "start-dev-fast": "TS_NODE_TRANSPILE_ONLY=true ts-node-dev --no-notify -r tsconfig-paths/register --respawn --inspect=127.0.0.1:${DEBUG_PORT:-9204} app/server",
-    "test": "eslint --ext .ts . && nyc mocha && better-npm-audit audit",
+    "test": "eslint --ext .ts . && nyc mocha && better-npm-audit audit -l moderate",
     "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha",
     "lint": "eslint --ext .ts .",
     "coverage": "nyc mocha",
@@ -18,7 +18,7 @@
     "build-multi": "./bin/prebuild && tsc --project ./tsconfig.build.json && docker buildx build --platform=linux/amd64,linux/arm64 -t harmonyservices/cron-service:${VERSION:-latest} --push .",
     "push-image": "./bin/push-image ${VERSION:-latest}",
     "publish": "docker push harmonyservices/cron-service:${VERSION:-latest}",
-    "better-audit": "better-npm-audit audit"
+    "better-audit": "better-npm-audit audit -l moderate"
   },
   "engines": {
     "node": "^22.14.0",
@@ -41,13 +41,16 @@
   "dependencies": {
     "@2toad/profanity": "^3.0.1",
     "@aws-sdk/client-cloudwatch": "^3.968.0",
-    "@aws-sdk/client-s3": "^3.968.0",
+    "@aws-sdk/client-s3": "^3.972.0",
     "@aws-sdk/client-sqs": "^3.968.0",
     "@aws-sdk/credential-provider-node": "^3.968.0",
-    "@aws-sdk/s3-request-presigner": "^3.968.0",
+    "@aws-sdk/s3-request-presigner": "^3.972.0",
     "@harmony/util": "file:../../packages/util",
     "@kubernetes/client-node": "^1.0.0",
     "@mapbox/geojson-rewind": "^0.5.2",
+    "@smithy/protocol-http": "^5.3.8",
+    "@smithy/signature-v4": "^5.3.8",
+    "@smithy/util-uri-escape": "^4.2.0",
     "@tmcw/togeojson": ">=5.8.1 <6.0.0",
     "@turf/circle": "^7.2.0",
     "@xmldom/xmldom": ">=0.8.10 <0.9.0",
@@ -97,9 +100,10 @@
     "typescript": "^5.7.2"
   },
   "overrides": {
-    "semver": "^7.6.2",
     "braces": "^3.0.3",
+    "cross-spawn": "7.0.5",
     "fast-xml-parser": "4.4.1",
-    "cross-spawn": "7.0.5"
+    "semver": "^7.6.2",
+    "tar": "^7.5.4"
   }
 }

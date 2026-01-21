@@ -1,16 +1,15 @@
+import { Application, Response, Router } from 'express';
 import { initialize } from 'express-openapi';
 import * as fs from 'fs';
-import * as path from 'path';
-import { Application, Response, Router } from 'express';
 import * as yaml from 'js-yaml';
+import * as path from 'path';
+
+import HarmonyRequest from '../../models/harmony-request';
+import { describeCollection, describeCollections } from './describe-collections';
+import getCoverageRangeset from './get-coverage-rangeset';
 import getLandingPage from './get-landing-page';
 import getRequirementsClasses from './get-requirements-classes';
-
-import getCoverageRangeset from './get-coverage-rangeset';
 import postCoverageRangeset from './post-coverage-rangeset';
-
-import { describeCollection, describeCollections } from './describe-collections';
-import HarmonyRequest from '../../models/harmony-request';
 
 interface OgcSchemaHttpMethod {
   parameters: {

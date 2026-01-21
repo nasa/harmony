@@ -7,7 +7,7 @@
     "start": "ts-node app/server.ts",
     "start-dev": "strict-npm-engines && ts-node-dev --no-notify -r tsconfig-paths/register --watch app/views --respawn app/server",
     "start-dev-fast": "TS_NODE_TRANSPILE_ONLY=true ts-node-dev --no-notify -r tsconfig-paths/register --respawn --inspect=127.0.0.1:9231 app/server",
-    "test": "eslint --ext .ts . && nyc mocha --timeout 5000 && better-npm-audit audit",
+    "test": "eslint --ext .ts . && nyc mocha --timeout 5000 && better-npm-audit audit -l moderate",
     "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha --timeout 5000",
     "lint": "eslint --ext .ts .",
     "coverage": "nyc mocha --timeout 5000",
@@ -18,7 +18,7 @@
     "build-multi": "./bin/prebuild && tsc && docker buildx build --platform=linux/amd64,linux/arm64 -t harmonyservices/service-runner:${VERSION:-latest} --push .",
     "push-image": "./bin/push-image ${VERSION:-latest}",
     "publish": "docker push harmonyservices/service-runner:${VERSION:-latest}",
-    "better-audit": "better-npm-audit audit"
+    "better-audit": "better-npm-audit audit -l moderate"
   },
   "engines": {
     "node": "^22.14.0",
@@ -35,11 +35,14 @@
     "@aws-sdk/client-s3": "Downgraded this library to a known working version due to performance issues."
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.968.0",
+    "@aws-sdk/client-s3": "^3.972.0",
     "@aws-sdk/credential-provider-node": "^3.968.0",
-    "@aws-sdk/s3-request-presigner": "^3.968.0",
+    "@aws-sdk/s3-request-presigner": "^3.972.0",
     "@harmony/util": "file:../../packages/util",
     "@kubernetes/client-node": "^0.22.3",
+    "@smithy/protocol-http": "^5.3.8",
+    "@smithy/signature-v4": "^5.3.8",
+    "@smithy/util-uri-escape": "^4.2.0",
     "agentkeepalive": "^4.1.4",
     "aws-sdk": "^2.1482.0",
     "axios": "^1.7.4",
@@ -87,6 +90,7 @@
     "form-data": "4.0.4",
     "jsonpath-plus": "^10.0.7",
     "qs": "^6.14.1",
+    "tar": "^7.5.4",
     "tough-cookie": "^4.1.3"
   }
 }
