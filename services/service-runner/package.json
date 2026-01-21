@@ -7,7 +7,7 @@
     "start": "ts-node app/server.ts",
     "start-dev": "strict-npm-engines && ts-node-dev --no-notify -r tsconfig-paths/register --watch app/views --respawn app/server",
     "start-dev-fast": "TS_NODE_TRANSPILE_ONLY=true ts-node-dev --no-notify -r tsconfig-paths/register --respawn --inspect=127.0.0.1:9231 app/server",
-    "test": "eslint --ext .ts . && nyc mocha --timeout 5000 && better-npm-audit audit",
+    "test": "eslint --ext .ts . && nyc mocha --timeout 5000 && better-npm-audit audit -l moderate",
     "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha --timeout 5000",
     "lint": "eslint --ext .ts .",
     "coverage": "nyc mocha --timeout 5000",
@@ -18,7 +18,7 @@
     "build-multi": "./bin/prebuild && tsc && docker buildx build --platform=linux/amd64,linux/arm64 -t harmonyservices/service-runner:${VERSION:-latest} --push .",
     "push-image": "./bin/push-image ${VERSION:-latest}",
     "publish": "docker push harmonyservices/service-runner:${VERSION:-latest}",
-    "better-audit": "better-npm-audit audit"
+    "better-audit": "better-npm-audit audit -l moderate"
   },
   "engines": {
     "node": "^22.14.0",

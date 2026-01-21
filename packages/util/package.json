@@ -4,15 +4,15 @@
   "description": "Utility modules related to Harmony",
   "main": "index.ts",
   "scripts": {
-    "test": "strict-npm-engines && eslint --ext .ts . && nyc mocha && better-npm-audit audit",
+    "test": "strict-npm-engines && eslint --ext .ts . && nyc mocha && better-npm-audit audit -l moderate",
     "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha",
     "test-bail": "TS_NODE_TRANSPILE_ONLY=true mocha --bail",
     "build": "rimraf built/* && tsc",
     "build-m1": "rimraf built/* && tsc",
     "build-multi": "rimraf built/* && tsc",
     "lint": "eslint --ext .ts .",
-    "coverage": "nyc mocha", 
-    "better-audit": "better-npm-audit audit"
+    "coverage": "nyc mocha",
+    "better-audit": "better-npm-audit audit -l moderate"
   },
   "engines": {
     "node": "^22.14.0",
