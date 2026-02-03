@@ -226,7 +226,7 @@
     "cross-spawn": "7.0.5",
     "diff": "^5.1.0",
     "fast-json-patch": "3.1.1",
-    "fast-xml-parser": "4.4.1",
+    "fast-xml-parser": "5.3.4",
     "jsonpath-plus": "^10.0.7",
     "semver": "^7.6.2",
     "tar": "^7.5.7",
