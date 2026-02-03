@@ -16,8 +16,8 @@ Required:
     If you encounter issues running `kubectl` commands, first make sure you are running the version bunedled with Docker Desktop.
   * Run Kubernetes in Docker Desktop by selecting Preferences -> Kubernetes -> Enable Kubernetes
 * Linux / Generic:
-  * Install [minikube](https://kubernetes.io/docs/tasks/tools/install-kubectl/), a single-node Kubernetes cluster useful for local development
-  * Install [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/), a command line interface to Kubernetes.
+  * Install [minikube](https://kubernetes.io/docs/tasks/tools/#minikube), a single-node Kubernetes cluster useful for local linux development.
+  * Install [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl), a command line interface to Kubernetes.
 * [Docker compose](https://docs.docker.com/compose/) version 1.20.0 or greater; preferably the latest version, which is v1.26 or greater.
 * The [AWS CLI](https://aws.amazon.com/cli/) - Used to interact with both localstack and real AWS accounts
 * [SQLite3 commandline](https://sqlite.org/index.html) - Used to create the local development and test databases. Install using your OS package manager, or [download precompiled binaries from SQLite](https://www.sqlite.org/download.html)
@@ -32,7 +32,7 @@ Highly Recommended:
 * An editor with syntax awareness of TypeScript.  If you do not have this or any preference, consider [Visual Studio Code](https://code.visualstudio.com)
 
 Optional:
-* [Python](https://www.python.org) version 3.11 - Useful for locally running and testing harmony-docker and other backend services
+* [Python](https://www.python.org) version 3.13 - Useful for locally running and testing harmony-docker and other backend services
 
 ## Set up Environment
 
@@ -52,32 +52,19 @@ brew install gettext
 
 if you are using `homebrew`. The version installed by `pip` is NOT compatible.
 
-#### *** NOTE FOR M1 MACS ***
-If you are running on an M1 Mac, you will have to run Harmony on Rosetta 2 due to some issues
-with GDAL Node packages. To do this, run this command before following the rest of these instructions.
 
-```bash
-arch -x86_64 zsh
-```
-
-or
-
-```bash
-arch -x86_64 bash
-```
-
-Ensure node is available and is the correct version, 22.x.y.
+Ensure node is available and is the correct version, 22.x.y. (Or whatever is in the .nvmrc file)
 
 ```bash
 node --version
-v22.5.1
+v22.14.0
 ```
 
 Ensure npm is available and is version 10 or later.
 
 ```bash
 npm --version
-10.8.2
+10.9.2
 ```
 
 If either are not the correct versions and you are using NVM, install them and ensure your `PATH` is up-to-date by running:
@@ -89,7 +76,7 @@ nvm install && nvm use
 The output should include node 22 and npm 10.
 
 ```text
-Now using node v22.5.1 (npm v10.8.2)
+Now using node v22.14.0 (npm v10.9.2)
 ```
 
 Be sure to **verify the version on the final line** to make sure the NVM binary appears first in your `PATH`.
@@ -99,6 +86,7 @@ From the harmony project root, install library dependencies:
 ```bash
 npm install
 ```
+*Tip*: if you get `gyp ERR!` you might be working with a very old version (v8.4.1) to build sqlite and you will need to pip install `setuptools` into your python environment before continuing.
 
 Recommended: Add `./node_modules/.bin` to your `PATH`.  This will allow you to run binaries from installed node modules.  If you choose not to do this, you will need to prefix node module calls with `npx`, e.g. `npx mocha` instead of just `mocha`
 
@@ -115,30 +103,31 @@ The script will create a file named `.env` in the root project directory contain
 Harmony reads both the `env-defaults` and `.env` files at startup to determine the configuration. To override any default values, set the desired value in the `.env` file. There is no need to duplicate parameters in the `.env` file if using the default value.
 
 Specifically, you will need to add the following to your .env file:
-Mac OS X
+
 
 ```text
 LOCALSTACK_HOST=localhost
-WORK_ITEM_UPDATE_QUEUE_URL=http://localhost:4566/queue/work-item-update-queue
-LARGE_WORK_ITEM_UPDATE_QUEUE_URL=http://localhost:4566/queue/large-work-item-update-queue
+LOCAL_DEV=true
+QUERY_CMR_IMAGE=harmonyservices/query-cmr:latest
+QUERY_CMR_SERVICE_QUEUE_URLS='["harmonyservices/query-cmr:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/query-cmr.fifo"]'
+SERVICE_RUNNER_IMAGE=harmonyservices/service-runner:latest
+```
+
+Mac OS X specific env:
+
+```text
 BACKEND_HOST=host.docker.internal
 CALLBACK_URL_ROOT=http://host.docker.internal:3001
-LOCAL_DEV=true
-
 ```
 
-Linux
+Linux:
 
 ```text
-LOCALSTACK_HOST=localhost
-WORK_ITEM_UPDATE_QUEUE_URL=http://localhost:4566/queue/work-item-update-queue
-LARGE_WORK_ITEM_UPDATE_QUEUE_URL=http://localhost:4566/queue/large-work-item-update-queue
 BACKEND_HOST=localhost
 CALLBACK_URL_ROOT=http://localhost:3001
-LOCAL_DEV=true
 ```
 
-### (minikube only) Configuring the callback URL for backend services
+### (minikube [linux] only) Configuring the callback URL for backend services
 
 You can skip this step if you are using the default docker driver for minikube and set CALLBACK_URL_ROOT as described in the example dotenv file. If you are using a different driver such as virtualbox you may need to execute the following command to get the IP address minikube has bridged to localhost:
 
