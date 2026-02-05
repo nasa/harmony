@@ -13,7 +13,7 @@ data:
       group_by: [alertname]
       group_wait: 5m
       group_interval: 10m
-      repeat_interval: 2h
+      repeat_interval: 168h
       routes:
     receivers:
       - name: 'default'
