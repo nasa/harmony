@@ -182,6 +182,7 @@ https://cmr.uat.earthdata.nasa.gov:
         bbox: true
         variable: true
         shape: true
+        dimension: true
       output_formats:
         - application/netcdf # Incorrect mime-type, remove when no longer needed
         - application/x-netcdf4
@@ -257,9 +258,9 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
       - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
-        operations: ['spatialSubset', 'variableSubset', 'temporalSubset']
+        operations: ['spatialSubset', 'shapefileSubset', 'variableSubset', 'temporalSubset', 'dimensionSubset']
         conditional:
-          exists: ['spatialSubset', 'variableSubset', 'temporalSubset']
+          exists: ['spatialSubset', 'shapefileSubset', 'variableSubset', 'temporalSubset', 'dimensionSubset']
       - image: !Env ${PODAAC_CONCISE_IMAGE}
         always_wait_for_prior_step: true
         is_batched: true
@@ -635,9 +636,9 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
       - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
-        operations: ['spatialSubset', 'shapefileSubset', 'variableSubset', 'temporalSubset']
+        operations: ['spatialSubset', 'shapefileSubset', 'variableSubset', 'temporalSubset', 'dimensionSubset']
         conditional:
-          exists: ['spatialSubset', 'shapefileSubset', 'variableSubset', 'temporalSubset']
+          exists: ['spatialSubset', 'shapefileSubset', 'variableSubset', 'temporalSubset', 'dimensionSubset']
         extra_args:
           cut: false
       - image: !Env ${BATCHEE_IMAGE}
