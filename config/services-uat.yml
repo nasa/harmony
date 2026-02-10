@@ -251,6 +251,8 @@ https://cmr.uat.earthdata.nasa.gov:
         temporal: true
         bbox: true
         variable: true
+        shape: true
+        dimension: true
       output_formats:
         - application/netcdf # Incorrect mime-type, remove when no longer needed
         - application/x-netcdf4
@@ -628,6 +630,7 @@ https://cmr.uat.earthdata.nasa.gov:
         variable: true
         temporal: true
         shape: true
+        dimension: true
       output_formats:
         - application/netcdf4
         - text/csv
