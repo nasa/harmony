@@ -567,8 +567,8 @@ HARMONY_METADATA_ANNOTATOR_REQUESTS_MEMORY=128Mi
 HARMONY_METADATA_ANNOTATOR_LIMITS_MEMORY=8Gi
 HARMONY_METADATA_ANNOTATOR_INVOCATION_ARGS='python -m harmony_service'
 
-CASPER_IMAGE=ghcr.io/kecunning/casper:latest
+CASPER_IMAGE=ghcr.io/nasa/harmony-casper:latest
 CASPER_REQUESTS_MEMORY=1Gi
 CASPER_LIMITS_MEMORY=5Gi
 CASPER_INVOCATION_ARGS='./docker-entrypoint.sh'
-CASPER_SERVICE_QUEUE_URLS='["ghcr.io/kecunning/casper:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/casper.fifo"]'
+CASPER_SERVICE_QUEUE_URLS='["ghcr.io/nasa/harmony-casper:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/casper.fifo"]'
