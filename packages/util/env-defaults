@@ -84,7 +84,7 @@ DATABASE_TYPE=postgres
 # ignored, using a sqlite3 file instead
 DATABASE_URL=postgresql://postgres:password@localhost:5432/postgres
 
-# Whether to use encryption when commuicating with the database.
+# Whether to use encryption when communicating with the database.
 DB_USE_SSL=false
 
 # Whether or not to use queues for retrieving work-items when handling polling for work
