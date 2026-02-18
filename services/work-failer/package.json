@@ -109,7 +109,7 @@
   "overrides": {
     "semver": "^7.6.2",
     "braces": "^3.0.3",
-    "fast-xml-parser": "5.3.4",
+    "fast-xml-parser": "^5.3.6",
     "cross-spawn": "7.0.5"
   }
 }
