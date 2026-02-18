@@ -6,7 +6,6 @@ const sqliteConfig = {
   client: 'sqlite3',
   connection: {
     filename: path.resolve('db', 'test.sqlite3'),
-    // filename: path.resolve(__dirname, 'test.sqlite3'),
   },
   useNullAsDefault: true,
   migrations,
@@ -14,7 +13,10 @@ const sqliteConfig = {
 
 const pgConfig = {
   client: 'pg',
-  connection: process.env.DATABASE_URL,
+  connection: {
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.DB_USE_SSL === 'true' ? { rejectUnauthorized: false } : false,
+  },
   pool: {
     min: 0,
     max: 100,
