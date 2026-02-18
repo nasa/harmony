@@ -18,5 +18,10 @@
     "active": true,
     "notes": "Will fix in HARMONY-2261",
     "expiry": "2026-06-01"
+  },
+  "1113249":  {
+    "active": true,
+    "notes": "Will fix in HARMONY-2263",
+    "expiry": "2026-06-01"
   }
 }
