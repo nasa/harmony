@@ -2,6 +2,10 @@
 Any changes to the environment variables will be documented in this file in chronological
 order with the most recent changes first.
 
+## 2026-02-18
+### Added
+- DB_USE_SSL - controls whether communcation between harmony applications and Postgres is encrypted.
+
 ## 2025-10-28
 ### Changed
 - `TRAJECTORY_SUBSETTER_IMAGE` environment variable has been updated to point to
