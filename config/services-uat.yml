@@ -702,10 +702,7 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/asf/nisar-py
-    umm_s: TODO
-    collections:
-      - id: C1273831195-ASF
-        granule_limit: 10
+    umm_s: S1280080161-ASF
     maximum_sync_granules: 0
     capabilities:
       concatenation: false
