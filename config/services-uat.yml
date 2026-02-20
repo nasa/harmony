@@ -692,6 +692,36 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${OPERA_RTC_S1_BROWSE_IMAGE}
       - image: !Env ${HYBIG_IMAGE}
 
+  - name: asf/nisar-py
+    description: Service that generates GIBS-compliant browse imagery for the NISAR_L2_GCOV_BETA_V1 collection
+    data_operation_version: '0.22.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/asf/nisar-py
+    umm_s: S1280080161-ASF
+    maximum_sync_granules: 0
+    capabilities:
+      concatenation: false
+      subsetting:
+        bbox: false
+        variable: false
+        temporal: false
+      output_formats:
+        - image/png
+        - image/tiff
+      reprojection: true
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
+      - image: !Env ${NISAR_PY_IMAGE}
+      - image: !Env ${HYBIG_IMAGE}
+        conditional:
+          format: ['image/png']
+
   - name: net2cog
     description: |
       Converts NetCDF files to COG. Includes extension for running in NASA Harmony. https://github.com/podaac/net2cog
