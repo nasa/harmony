@@ -63,7 +63,7 @@ describe('util/errors', function () {
     describe('without a custom message', function () {
       const error = new ForbiddenError();
       it('uses the default forbidden message', function () {
-        expect(getEndUserErrorMessage(error)).to.equal('You are not authorized to access the requested resource');
+        expect(getEndUserErrorMessage(error)).to.equal('You do not have permission to access the requested resource');
       });
       it('returns a 403 HTTP status code', function () {
         expect(getHttpStatusCode(error)).to.equal(403);

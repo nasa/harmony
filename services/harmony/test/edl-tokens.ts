@@ -43,7 +43,7 @@ describe('Earthdata login bearer token passing', function () {
         const response = JSON.parse(this.res.text);
         expect(response).to.eql({
           code: 'harmony.ForbiddenError',
-          description: 'Error: You are not authorized to access the requested resource',
+          description: 'Error: You do not have permission to access the requested resource',
         });
       });
     });

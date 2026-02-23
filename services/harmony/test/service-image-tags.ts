@@ -445,7 +445,7 @@ describe('Service image endpoint', async function () {
         delete this.res;
       });
 
-      it('rejects the request', async function () {
+      it('rejects the request as forbidden', async function () {
         expect(this.res.status).to.equal(403);
       });
 

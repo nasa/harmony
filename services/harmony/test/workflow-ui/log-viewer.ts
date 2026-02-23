@@ -83,7 +83,7 @@ describe('Workflow UI directly accessing log files', function () {
         expect(this.res.statusCode).to.equal(403);
       });
       it('returns a message indicating authorization issue', function () {
-        expect(this.res.text).to.include('You are not authorized to access the requested resource');
+        expect(this.res.text).to.include('You do not have permission to access the requested resource');
       });
     });
 
