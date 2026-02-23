@@ -117,7 +117,7 @@
     "express-winston": "^4.1.0",
     "fastq": "^1.11.0",
     "form-data": "^4.0.4",
-    "gdal-async": "^3.12.1",
+    "gdal-async": "^3.12.2",
     "geo-split": "^0.1.2",
     "geojson-antimeridian-cut": "^0.1.0",
     "highlight.js": "^11.7.0",
@@ -224,12 +224,12 @@
   "overrides": {
     "braces": "^3.0.3",
     "cross-spawn": "7.0.5",
-    "diff": "^5.1.0",
+    "diff": "^5.2.2",
     "fast-json-patch": "3.1.1",
-    "fast-xml-parser": "5.3.4",
+    "fast-xml-parser": "^5.3.6",
     "jsonpath-plus": "^10.0.7",
     "semver": "^7.6.2",
-    "tar": "^7.5.7",
+    "tar": "^7.5.8",
     "trim-newlines": "4.0.1"
   }
 }

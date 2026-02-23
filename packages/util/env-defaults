@@ -84,6 +84,9 @@ DATABASE_TYPE=postgres
 # ignored, using a sqlite3 file instead
 DATABASE_URL=postgresql://postgres:password@localhost:5432/postgres
 
+# Whether to use encryption when communicating with the database.
+DB_USE_SSL=false
+
 # Whether or not to use queues for retrieving work-items when handling polling for work
 USE_SERVICE_QUEUES=true
 
@@ -129,8 +132,8 @@ BATCHEE_SERVICE_QUEUE_URLS='["ghcr.io/nasa/batchee:latest,http://sqs.us-west-2.l
 STITCHEE_SERVICE_QUEUE_URLS='["ghcr.io/nasa/stitchee:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/stitchee.fifo"]'
 FILTERING_SERVICE_QUEUE_URLS='["harmony/filtering:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/filtering.fifo"]'
 HARMONY_METADATA_ANNOTATOR_SERVICE_QUEUE_URLS='["ghcr.io/nasa/harmony-metadata-annotator:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/harmony-metadata-annotator.fifo"]'
-CASPER_SERVICE_QUEUE_URLS='["ghcr.io/kecunning/casper:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/casper.fifo"]'
 NISAR_PY_SERVICE_QUEUE_URLS='["ghcr.io/asfhyp3/nisar-py:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/nisar-py.fifo"]'
+CASPER_SERVICE_QUEUE_URLS='["ghcr.io/nasa/harmony-casper:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/casper.fifo"]'
 
 # The number of seconds to allow a pod to continue processing an active request before terminating a pod
 DEFAULT_POD_GRACE_PERIOD_SECS=14400
