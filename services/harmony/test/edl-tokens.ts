@@ -35,15 +35,15 @@ describe('Earthdata login bearer token passing', function () {
       hookEdlTokenAuthenticationError();
       hookRangesetRequest(version, collection, variableName, { headers: authHeader });
 
-      it('Returns a 403 HTTP status code', function () {
-        expect(this.res.statusCode).to.equal(403);
+      it('Returns a 401 HTTP status code', function () {
+        expect(this.res.statusCode).to.equal(401);
       });
 
       it('Returns an error message indicating the user is not authorized', function () {
         const response = JSON.parse(this.res.text);
         expect(response).to.eql({
-          code: 'harmony.ForbiddenError',
-          description: 'Error: You do not have permission to access the requested resource',
+          code: 'harmony.UnauthorizedError',
+          description: 'Error: You are not authorized to access the requested resource',
         });
       });
     });
