@@ -29,7 +29,7 @@ export class ForbiddenError extends HttpError {
 }
 
 export class UnauthorizedError extends HttpError {
-  constructor(message = 'new You are not authorized to access the requested resource') {
+  constructor(message = 'You are not authorized to access the requested resource') {
     super(401, message);
   }
 }

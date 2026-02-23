@@ -7,7 +7,7 @@ import { Logger } from 'winston';
 
 import { hasCookieSecret } from './cookie-secret';
 import env from './env';
-import { ForbiddenError } from './errors';
+import { UnauthorizedError } from './errors';
 import theLogger from './log';
 import { oauthOptions } from '../middleware/earthdata-login-oauth-authorizer';
 import HarmonyRequest from '../models/harmony-request';
@@ -39,7 +39,7 @@ export async function getClientCredentialsToken(logger: Logger): Promise<string>
   } catch (e) {
     logger.error('Failed to get client credentials for harmony user.');
     logger.error(e);
-    throw new ForbiddenError();
+    throw new UnauthorizedError();
   }
 }
 
@@ -50,7 +50,7 @@ export async function getClientCredentialsToken(logger: Logger): Promise<string>
  * @param context - Information related to the user's request
  * @param userToken - The user's token
  * @returns the username associated with the token
- * @throws ForbiddenError if the token is invalid
+ * @throws UnauthorizedError if the token is invalid
  */
 export async function getUserIdRequest(context: RequestContext, userToken: string)
   : Promise<string> {
@@ -75,7 +75,7 @@ export async function getUserIdRequest(context: RequestContext, userToken: strin
   } catch (e) {
     logger.error('Failed to validate passed in bearer token.');
     logger.error(e);
-    throw new ForbiddenError();
+    throw new UnauthorizedError();
   }
 }
 

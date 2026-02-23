@@ -4,7 +4,7 @@ import { RequestHandler, NextFunction } from 'express';
 import { cookieOptions, setCookiesForEdl } from '../util/cookies';
 import { listToText } from '@harmony/util/string';
 import { hasCookieSecret } from '../util/cookie-secret';
-import { ForbiddenError, RequestValidationError } from '../util/errors';
+import { RequestValidationError, UnauthorizedError } from '../util/errors';
 import HarmonyRequest from '../models/harmony-request';
 import env from '../util/env';
 
@@ -185,7 +185,7 @@ export default function buildEdlAuthorizer(paths: Array<string | RegExp> = []): 
       if (!token && req.headers.cookie && req.headers.cookie.indexOf('token=') !== -1) {
         // Handle the case where a token comes in but it's not signed or not signed correctly
         res.clearCookie('token', cookieOptions);
-        if (requiresAuth) throw new ForbiddenError();
+        if (requiresAuth) throw new UnauthorizedError();
       }
 
       if (req.path === '/oauth2/redirect') {
@@ -206,7 +206,7 @@ export default function buildEdlAuthorizer(paths: Array<string | RegExp> = []): 
       req.context.logger.error(e.stack);
       if (e.message.startsWith('Response Error')) { // URS Error
         res.clearCookie('token', cookieOptions);
-        next(new ForbiddenError());
+        next(new UnauthorizedError());
         return;
       }
       next(e);

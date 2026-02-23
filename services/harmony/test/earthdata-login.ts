@@ -67,7 +67,7 @@ describe('Earthdata Login', function () {
         this.res = await wmsRequest(this.frontend).use(auth({ secret: 'BadSecret' }));
       });
 
-      itRespondsWithError(403, 'You do not have permission to access the requested resource');
+      itRespondsWithError(401, 'You are not authorized to access the requested resource');
 
       it('clears the invalid token', function () {
         expect(this.res.headers['set-cookie'][0]).to.match(blankToken);

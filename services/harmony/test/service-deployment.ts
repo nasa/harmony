@@ -7,8 +7,6 @@ import hookServersStartStop from './helpers/servers';
 import request from 'supertest';
 import MockDate from 'mockdate';
 
-const userErrorMsg = 'User joe does not have permission to access this resource';
-
 describe('List service deployments endpoint', async function () {
   const failedFooDeployment = new ServiceDeployment({ deployment_id: 'abc', service: 'foo-service',
     username: 'bob', tag: '1', regression_test_version: 'latest', status: ServiceDeploymentStatus.FAILED, message: 'Failed service deployment' });
@@ -93,7 +91,7 @@ describe('List service deployments endpoint', async function () {
     });
 
     it('returns a meaningful error message', async function () {
-      expect(this.res.text).to.equal(userErrorMsg);
+      expect(this.res.text).to.equal('User joe does not have permission to access this resource');
     });
   });
 
