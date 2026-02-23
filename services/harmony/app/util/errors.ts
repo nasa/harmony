@@ -35,7 +35,7 @@ export class UnauthorizedError extends HttpError {
 }
 
 export class ExternalValidationError extends HttpError {
-  constructor(message = 'External validation failed', code = 403) {
+  constructor(message = 'External validation failed', code = 401) {
     super(code, message);
   }
 }
