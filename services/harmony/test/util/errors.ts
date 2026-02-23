@@ -3,6 +3,7 @@ import { expect } from 'chai';
 import {
   HttpError, buildJsonErrorResponse, getHttpStatusCode, getEndUserErrorMessage, getCodeForError,
   NotFoundError, ForbiddenError, ServerError, RequestValidationError, ConflictError,
+  UnauthorizedError,
 } from '../../app/util/errors';
 
 describe('util/errors', function () {
@@ -59,7 +60,6 @@ describe('util/errors', function () {
         expect(getCodeForError(error)).to.equal('harmony.ForbiddenError');
       });
     });
-
     describe('without a custom message', function () {
       const error = new ForbiddenError();
       it('uses the default forbidden message', function () {
@@ -70,6 +70,34 @@ describe('util/errors', function () {
       });
       it('returns an appropriate type for the code', function () {
         expect(getCodeForError(error)).to.equal('harmony.ForbiddenError');
+      });
+    });
+  });
+
+  describe('when a Unauthorized Error is thrown', function () {
+    describe('with a custom message', function () {
+      const error = new UnauthorizedError('You cannot do that!');
+      it('uses the custom message', function () {
+        expect(getEndUserErrorMessage(error)).to.equal('You cannot do that!');
+      });
+      it('returns a 401 HTTP status code', function () {
+        expect(getHttpStatusCode(error)).to.equal(401);
+      });
+      it('returns an appropriate type for the code', function () {
+        expect(getCodeForError(error)).to.equal('harmony.UnauthorizedError');
+      });
+    });
+
+    describe('without a custom message', function () {
+      const error = new UnauthorizedError();
+      it('uses the default forbidden message', function () {
+        expect(getEndUserErrorMessage(error)).to.equal('You are not authorized to access the requested resource');
+      });
+      it('returns a 403 HTTP status code', function () {
+        expect(getHttpStatusCode(error)).to.equal(401);
+      });
+      it('returns an appropriate type for the code', function () {
+        expect(getCodeForError(error)).to.equal('harmony.UnauthorizedError');
       });
     });
   });
