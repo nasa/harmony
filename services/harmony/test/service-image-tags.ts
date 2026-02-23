@@ -1288,7 +1288,7 @@ describe('Service self-deployment successful', async function () {
       });
     });
 
-    describe('when get the service deployment log with unauthorized user', async function () {
+    describe('when get the service deployment log with unprivileged user', async function () {
       before(async function () {
         hookRedirect('coraline');
         this.res = await request(this.frontend).get(deploymentLogPath).use(auth({ username: 'joe' }));
@@ -1452,7 +1452,7 @@ describe('Service self-deployment failure', async function () {
       });
     });
 
-    describe('when get the service deployment log with unauthorized user', async function () {
+    describe('when get the service deployment log with unprivileged user', async function () {
       before(async function () {
         hookRedirect('coraline');
         this.res = await request(this.frontend).get(deploymentLogPath).use(auth({ username: 'joe' }));
