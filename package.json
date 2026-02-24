@@ -4,7 +4,8 @@
   "description": "Data services frontend",
   "main": "index.js",
   "scripts": {
-    "test": "better-npm-audit audit -l moderate && lerna run test --load-env-files=false",
+    "audit-deps": "better-npm-audit audit -l moderate -p",
+    "test": "npm run audit-deps && lerna run test --load-env-files=false",
     "test-fast": "lerna run test-fast --load-env-files=false",
     "test-bail": "lerna run test-bail --load-env-files=false",
     "coverage": "lerna run coverage --load-env-files=false",
@@ -26,8 +27,8 @@
     "run-notebooks-image": "source .env && docker run -i -t --platform linux/amd64 --init -p 8888:8888 --env NB_EDL_USERNAME=\"${NB_EDL_USERNAME}\" --env NB_EDL_PASSWORD=\"${NB_EDL_PASSWORD}\" harmonyservices/notebooks:${VERSION:-latest}",
     "publish": "lerna exec --scope=harmony -- VERSION=${VERSION:-latest} npm run publish ",
     "compare-services": "SKIP_ENV_VALIDATION=true ts-node scripts/service-comparison.ts",
-    "better-audit": "better-npm-audit audit -l moderate && lerna run better-audit",
-    "better-audit-output": "better-npm-audit audit -l moderate && lerna run better-audit --parallel --stream"
+    "better-audit": "npm run audit-deps && lerna run better-audit",
+    "better-audit-output": "npm run audit-deps && lerna run better-audit --parallel --stream"
   },
   "keywords": [
     "NASA",
