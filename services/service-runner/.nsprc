@@ -3,9 +3,5 @@
     "active": true,
     "notes": "Will fix in HARMONY-1729",
     "expiry": "2026-06-01"
-  },
-  "GHSA-2g4f-4pwh-qvx6": {
-    "active": true,
-    "notes": "Dev dependency in packages/util"
   }
 }
