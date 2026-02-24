@@ -74,7 +74,7 @@ describe('util/errors', function () {
     });
   });
 
-  describe('when a Unauthorized Error is thrown', function () {
+  describe('when an Unauthorized Error is thrown', function () {
     describe('with a custom message', function () {
       const error = new UnauthorizedError('You cannot do that!');
       it('uses the custom message', function () {
@@ -89,10 +89,10 @@ describe('util/errors', function () {
     });
     describe('without a custom message', function () {
       const error = new UnauthorizedError();
-      it('uses the default forbidden message', function () {
+      it('uses the default unauthorized message', function () {
         expect(getEndUserErrorMessage(error)).to.equal('You are not authorized to access the requested resource');
       });
-      it('returns a 403 HTTP status code', function () {
+      it('returns a 401 HTTP status code', function () {
         expect(getHttpStatusCode(error)).to.equal(401);
       });
       it('returns an appropriate type for the code', function () {
