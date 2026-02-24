@@ -1,17 +1,7 @@
 {
-  "1096727": {
+  "GHSA-p8p7-x288-28g6": {
     "active": true,
     "notes": "Will fix in HARMONY-1729",
-    "expiry": "2026-06-01"
-  },
-  "1113429": {
-    "active": true,
-    "notes": "Will fix in HARMONY-2261",
-    "expiry": "2026-06-01"
-  },
-  "1113371": {
-    "active": true,
-    "notes": "Will fix in HARMONY-2248",
     "expiry": "2026-06-01"
   }
 }
