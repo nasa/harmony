@@ -23,8 +23,14 @@ export class NotFoundError extends HttpError {
 }
 
 export class ForbiddenError extends HttpError {
-  constructor(message = 'You are not authorized to access the requested resource') {
+  constructor(message = 'You do not have permission to access the requested resource') {
     super(403, message);
+  }
+}
+
+export class UnauthorizedError extends HttpError {
+  constructor(message = 'You are not authorized to access the requested resource') {
+    super(401, message);
   }
 }
 

@@ -445,7 +445,7 @@ describe('Service image endpoint', async function () {
         delete this.res;
       });
 
-      it('rejects the request', async function () {
+      it('rejects the request as forbidden', async function () {
         expect(this.res.status).to.equal(403);
       });
 
@@ -1288,7 +1288,7 @@ describe('Service self-deployment successful', async function () {
       });
     });
 
-    describe('when get the service deployment log with unauthorized user', async function () {
+    describe('when get the service deployment log with unprivileged user', async function () {
       before(async function () {
         hookRedirect('coraline');
         this.res = await request(this.frontend).get(deploymentLogPath).use(auth({ username: 'joe' }));
@@ -1452,7 +1452,7 @@ describe('Service self-deployment failure', async function () {
       });
     });
 
-    describe('when get the service deployment log with unauthorized user', async function () {
+    describe('when get the service deployment log with unprivileged user', async function () {
       before(async function () {
         hookRedirect('coraline');
         this.res = await request(this.frontend).get(deploymentLogPath).use(auth({ username: 'joe' }));

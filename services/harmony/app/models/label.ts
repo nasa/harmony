@@ -43,7 +43,7 @@ export function normalizeLabel(label: string): string {
  * @param trx - the transaction to use for querying
  * @param jobIds - the UUIDs associated with the jobs
  * @param _isAdmin - currently unused - left here to allow admin access in the future
- * @throws `ForbiddenError` if the user does not own the job.
+ * @throws `NotFoundError` if the user does not own the job.
  */
 export async function verifyUserAccessToUpdateLabels(
   trx: Transaction,

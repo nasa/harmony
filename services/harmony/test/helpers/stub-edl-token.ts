@@ -1,6 +1,6 @@
 import { before, after } from 'mocha';
 import * as sinon from 'sinon';
-import { ForbiddenError } from '../../app/util/errors';
+import { UnauthorizedError } from '../../app/util/errors';
 import * as edl from '../../app/util/edl-api';
 import * as edlAuth from '../../app/middleware/earthdata-login-token-authorizer';
 
@@ -34,7 +34,7 @@ export function hookEdlTokenAuthenticationError(): void {
   let tokenCacheStub;
 
   before(async function () {
-    const error = new ForbiddenError();
+    const error = new UnauthorizedError();
     clientCredentialsStub = sinon.stub(edl, 'getClientCredentialsToken').throws(error);
     tokenCacheStub = sinon.stub(edlAuth.tokenCache, 'fetch').throws(error);
   });
