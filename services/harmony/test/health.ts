@@ -120,7 +120,7 @@ describe('Health endpoints', function () {
       it('returns a 403', function () {
         expect(this.res.statusCode).to.equal(403);
       });
-      it('returns a JSON message indicating not authorized', function () {
+      it('returns a JSON message indicating lack of perimssions', function () {
         const response = JSON.parse(this.res.text);
         expect(response).to.eql({ code: 'harmony.ForbiddenError', description: 'Error: You are not permitted to access this resource' });
       });

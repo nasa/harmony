@@ -87,7 +87,6 @@ describe('util/errors', function () {
         expect(getCodeForError(error)).to.equal('harmony.UnauthorizedError');
       });
     });
-
     describe('without a custom message', function () {
       const error = new UnauthorizedError();
       it('uses the default forbidden message', function () {
