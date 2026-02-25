@@ -1,1 +1,6 @@
-{}
+{
+  "GHSA-2g4f-4pwh-qvx6": {
+    "active": true,
+    "notes": "Dev dependency in packages/util"
+  }
+}
