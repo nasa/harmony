@@ -43,6 +43,7 @@ describe('Versions endpoint', function () {
           'sds/HOSS-regridder-reformatter',
           'l2-subsetter-batchee-stitchee-concise',
           'asf/opera-rtc-s1-browse',
+          'asf/nisar-py',
           'net2cog',
           'nasa/harmony-gdal-adapter',
           'giovanni-averaging-service',
