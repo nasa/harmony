@@ -7,7 +7,7 @@
     "start": "ts-node app/server.ts",
     "start-dev": "strict-npm-engines && ts-node-dev --no-notify -r tsconfig-paths/register --watch app/views --respawn app/server",
     "start-dev-fast": "TS_NODE_TRANSPILE_ONLY=true ts-node-dev --no-notify -r tsconfig-paths/register --respawn --inspect=127.0.0.1:${DEBUG_PORT:-9205} app/server",
-    "test": "eslint --ext .ts . && nyc mocha && better-npm-audit audit -l moderate",
+    "test": "eslint --ext .ts . && nyc mocha && npm run better-audit",
     "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha",
     "lint": "eslint --ext .ts .",
     "coverage": "nyc mocha",
@@ -18,7 +18,7 @@
     "build-multi": "./bin/prebuild && tsc --project ./tsconfig.build.json && docker buildx build --platform=linux/amd64,linux/arm64 -t harmonyservices/work-failer:${VERSION:-latest} --push .",
     "push-image": "./bin/push-image ${VERSION:-latest}",
     "publish": "docker push harmonyservices/work-failer:${VERSION:-latest}",
-    "better-audit": "better-npm-audit audit -l moderate"
+    "better-audit": "better-npm-audit audit -l moderate -p"
   },
   "engines": {
     "node": "^22.14.0",
