@@ -337,6 +337,32 @@ https://cmr.earthdata.nasa.gov:
         conditional:
           format: ['image/tiff']
 
+  - name: sds/hoss-opendap-url
+    description: |
+      A service chain for returning the OPeNDAP request URL in a HOSS
+      request instead of the subset granule. This is currently only used
+      by L3 GES DISC collections.
+    data_operation_version: '0.22.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/sds/hoss-opendap-url
+    umm_s: S1276836870-EEDTEST
+    capabilities:
+      subsetting:
+        bbox: true
+        variable: true
+      output_formats:
+        - application/x-netcdf4;profile=opendap_url
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
+      - image: !Env ${HOSS_IMAGE}
+        operations: ['variableSubset', 'spatialSubset', 'reformat']
+
   - name: sds/swath-projector
     description: |
       Takes NetCDF-4 input files and projects input swath variables to an output grid.
