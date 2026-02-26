@@ -1,4 +1,8 @@
 {
+  "GHSA-2g4f-4pwh-qvx6": {
+    "active": true,
+    "notes": "Dev dependency in packages/util"
+  },
   "GHSA-p8p7-x288-28g6": {
     "active": true,
     "notes": "Will fix in HARMONY-1729",
