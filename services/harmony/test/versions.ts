@@ -41,6 +41,7 @@ describe('Versions endpoint', function () {
           'sds/HOSS-geographic',
           'sds/HOSS-projection-gridded',
           'sds/HOSS-regridder-reformatter',
+          'sds/hoss-opendap-url',
           'l2-subsetter-batchee-stitchee-concise',
           'asf/opera-rtc-s1-browse',
           'asf/nisar-py',

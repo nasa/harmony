@@ -149,5 +149,11 @@ describe('util/content-negotiation', function () {
         expect(isMimeTypeAccepted('application/shapefile+zip', 'application/shapefile+zip')).to.be.true;
       });
     });
+
+    describe('when header contains a semicolon', function () {
+      it('returns true when there is an exact match', function () {
+        expect(isMimeTypeAccepted('application/x-netcdf4; profile=opendap_url', 'application/x-netcdf4; profile=opendap_url')).to.be.true;
+      });
+    });
   });
 });
