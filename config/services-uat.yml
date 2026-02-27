@@ -344,11 +344,12 @@ https://cmr.uat.earthdata.nasa.gov:
       output_formats:
         - application/netcdf # Incorrect mime-type, remove when no longer needed
         - application/x-netcdf4
+        - application/x-netcdf4;profile=opendap_url
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
       - image: !Env ${HOSS_IMAGE}
-        operations: ['variableSubset']
+        operations: ['variableSubset','reformat']
 
   - name: sds/trajectory-subsetter
     description: |
@@ -585,6 +586,32 @@ https://cmr.uat.earthdata.nasa.gov:
         conditional:
           format: ['image/tiff']
 
+  - name: sds/hoss-opendap-url
+    description: |
+      A service chain for returning the OPeNDAP request URL in a HOSS
+      request instead of the subset granule. This is currently only used
+      by L3 GES DISC collections.
+    data_operation_version: '0.22.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/sds/hoss-opendap-url
+    umm_s: S1276836870-EEDTEST
+    capabilities:
+      subsetting:
+        bbox: true
+        variable: true
+      output_formats:
+        - application/x-netcdf4;profile=opendap_url
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
+      - image: !Env ${HOSS_IMAGE}
+        operations: ['variableSubset', 'spatialSubset', 'reformat']
+
   - name: l2-subsetter-batchee-stitchee-concise
     description: |
       ### Subsetter And Multi-dimensional Batched Aggregation in Harmony (SAMBAH)
@@ -740,7 +767,6 @@ https://cmr.uat.earthdata.nasa.gov:
       output_formats:
         # According to https://github.com/opengeospatial/CloudOptimizedGeoTIFF/issues/1 "image/tiff; application=geotiff; profile=cloud-optimized" is the media type that should be used for COG.
         # pystac agrees https://pystac.readthedocs.io/en/stable/api/media_type.html
-        # Harmony only matches on the part before the first semi-colon
         - image/tiff
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
