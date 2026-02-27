@@ -703,7 +703,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
     beforeEach(function () {
       this.config = [
         {
-          name: 'Variable_Only_OPeNDAP_Subsetter',
+          name: 'variable-only-opendap-subsetter',
           type: { name: 'turbo' },
           capabilities: {
             subsetting: { variable: true },
@@ -730,7 +730,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
       it('returns the service configured for variable subsetting', function () {
         const serviceConfig = chooseServiceConfig(operation, defaultContext, this.config);
-        expect(serviceConfig.name).to.equal('Variable_Only_OPeNDAP_Subsetter');
+        expect(serviceConfig.name).to.equal('variable-only-opendap-subsetter');
       });
 
       it('uses the correct service class when building the service', function () {
