@@ -189,6 +189,35 @@ https://cmr.earthdata.nasa.gov:
         conditional:
           exists: ['concatenate']
 
+  - name: variable-only-opendap-subsetter
+    description: |
+      This variable-only-opendap-subsetter (VOSS) provides only variable subsetting.
+      Accesses NetCDF-4 files and retrieves the requested list of variables,
+      plus all those that are required to support meaningful downstream
+      operations upon those data (e.g. associated coordinate variables).
+    data_operation_version: '0.22.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/variable-only-opendap-subsetter
+    umm_s: S4055478380-XYZ_PROV
+    capabilities:
+      subsetting:
+        bbox: false
+        shape: false
+        variable: true
+      output_formats:
+        - application/netcdf # Incorrect mime-type, remove when no longer needed
+        - application/x-netcdf4
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
+      - image: !Env ${HOSS_IMAGE}
+        operations: ['variableSubset']
+
   - name: sds/trajectory-subsetter
     description: |
       A service that supports L2 segmented trajectory (**not swath**) data.
@@ -224,7 +253,7 @@ https://cmr.earthdata.nasa.gov:
       Accesses NetCDF-4 files hosted in Hyrax cloud service (OPeNDAP), and retrieves the requested list of variables,
       plus all those that are required to support meaningful downstream operations upon those data (e.g. associated coordinate variables).
 
-      This service is currently operated from the same Docker image as the sds/variable-subsetter service.
+      This service is currently operated from the same HOSS Docker image as the variable-only-opendap-subsetter service.
     data_operation_version: '0.22.0'
     type:
       <<: *default-turbo-config
@@ -261,7 +290,7 @@ https://cmr.earthdata.nasa.gov:
       Accesses NetCDF-4 files hosted in Hyrax cloud service (OPeNDAP), and retrieves the requested list of variables,
       plus all those that are required to support meaningful downstream operations upon those data (e.g. associated coordinate variables).
 
-      This service is currently operated from the same Docker image as the sds/variable-subsetter service.
+      This service is currently operated from the same Docker image as the variable-only-opendap-subsetter service.
     data_operation_version: '0.22.0'
     type:
       <<: *default-turbo-config
