@@ -350,7 +350,7 @@ https://cmr.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/sds/hoss-opendap-url
-    umm_s: S1276836870-EEDTEST
+    umm_s: S4057306097-XYZ_PROV
     capabilities:
       subsetting:
         bbox: true
