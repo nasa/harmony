@@ -322,11 +322,12 @@ https://cmr.uat.earthdata.nasa.gov:
         is_sequential: true
       - image: !Env ${HARMONY_REGRIDDER_IMAGE}
 
-  - name: sds/variable-subsetter
+  - name: Variable_Only_OPeNDAP_Subsetter
     description: |
-      The Variable Subsetter provides _only_ variable subsetting.
-      Accesses NetCDF-4 files hosted in Hyrax cloud service (OPeNDAP), and retrieves the requested list of variables,
-      plus all those that are required to support meaningful downstream operations upon those data (e.g. associated coordinate variables).
+      This Variable Subsetter (VOSS) provides only variable subsetting.
+      Accesses NetCDF-4 files and retrieves the requested list of variables,
+      plus all those that are required to support meaningful downstream
+      operations upon those data (e.g. associated coordinate variables).
     data_operation_version: '0.22.0'
     type:
       <<: *default-turbo-config
