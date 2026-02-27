@@ -202,7 +202,7 @@ https://cmr.earthdata.nasa.gov:
         <<: *default-turbo-params
         env:
           <<: *default-turbo-env
-          STAGING_PATH: public/sds/variable-subsetter
+          STAGING_PATH: public/variable-subsetter
     umm_s: S4055478380-XYZ_PROV
     capabilities:
       subsetting:
@@ -253,7 +253,7 @@ https://cmr.earthdata.nasa.gov:
       Accesses NetCDF-4 files hosted in Hyrax cloud service (OPeNDAP), and retrieves the requested list of variables,
       plus all those that are required to support meaningful downstream operations upon those data (e.g. associated coordinate variables).
 
-      This service is currently operated from the same Docker image as the sds/variable-subsetter service.
+      This service is currently operated from the same Docker image as the Variable_Only_OPeNDAP_Subsetter service.
     data_operation_version: '0.22.0'
     type:
       <<: *default-turbo-config
@@ -290,7 +290,7 @@ https://cmr.earthdata.nasa.gov:
       Accesses NetCDF-4 files hosted in Hyrax cloud service (OPeNDAP), and retrieves the requested list of variables,
       plus all those that are required to support meaningful downstream operations upon those data (e.g. associated coordinate variables).
 
-      This service is currently operated from the same Docker image as the sds/variable-subsetter service.
+      This service is currently operated from the same Docker image as the Variable_Only_OPeNDAP_Subsetter service.
     data_operation_version: '0.22.0'
     type:
       <<: *default-turbo-config
