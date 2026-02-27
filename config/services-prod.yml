@@ -189,6 +189,35 @@ https://cmr.earthdata.nasa.gov:
         conditional:
           exists: ['concatenate']
 
+  - name: Variable_Only_OPeNDAP_Subsetter
+    description: |
+      This Variable Subsetter (VOSS) provides only variable subsetting.
+      Accesses NetCDF-4 files and retrieves the requested list of variables,
+      plus all those that are required to support meaningful downstream
+      operations upon those data (e.g. associated coordinate variables).
+    data_operation_version: '0.22.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/sds/variable-subsetter
+    umm_s: S4055478380-XYZ_PROV
+    capabilities:
+      subsetting:
+        bbox: false
+        shape: false
+        variable: true
+      output_formats:
+        - application/netcdf # Incorrect mime-type, remove when no longer needed
+        - application/x-netcdf4
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
+      - image: !Env ${HOSS_IMAGE}
+        operations: ['variableSubset']
+
   - name: sds/trajectory-subsetter
     description: |
       A service that supports L2 segmented trajectory (**not swath**) data.
