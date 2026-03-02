@@ -730,7 +730,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
       it('returns the service configured for variable subsetting', function () {
         const serviceConfig = chooseServiceConfig(operation, defaultContext, this.config);
-        expect(serviceConfig.name).to.equal('variable-only-opendap-subsetter');
+        expect(serviceConfig.name).to.equal('variable-subsetter');
       });
 
       it('uses the correct service class when building the service', function () {
