@@ -154,6 +154,9 @@ describe('util/content-negotiation', function () {
       it('returns true when there is an exact match', function () {
         expect(isMimeTypeAccepted('application/x-netcdf4; profile=opendap_url', 'application/x-netcdf4; profile=opendap_url')).to.be.true;
       });
+      it('returns false when content after semicolon is not stripped off', function () {
+        expect(isMimeTypeAccepted('application/x-netcdf4', 'application/x-netcdf4;profile=opendap_url')).to.be.false;
+      });
     });
   });
 });
