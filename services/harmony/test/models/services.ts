@@ -703,7 +703,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
     beforeEach(function () {
       this.config = [
         {
-          name: 'variable-only-opendap-subsetter',
+          name: 'variable-subsetter',
           type: { name: 'turbo' },
           capabilities: {
             subsetting: { variable: true },
