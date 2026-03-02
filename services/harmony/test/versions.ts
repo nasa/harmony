@@ -33,7 +33,7 @@ describe('Versions endpoint', function () {
           'podaac/l2-subsetter-concise',
           'sds/swath-projector',
           'sds/harmony-regridder',
-          'sds/variable-subsetter',
+          'variable-only-opendap-subsetter',
           'sds/trajectory-subsetter',
           'asdc/imagenator_l2',
           'asdc/imagenator_l3',

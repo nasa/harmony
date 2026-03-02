@@ -13655,7 +13655,7 @@ https://cmr.uat.earthdata.nasa.gov:
         - application/x-netcdf4
       reprojection: true
 
-  - name: sds/variable-subsetter
+  - name: variable-only-opendap-subsetter
     data_operation_version: &#39;0.9.0&#39;
     type:
       &lt;&lt;: *default-turbo-config
@@ -13666,7 +13666,7 @@ https://cmr.uat.earthdata.nasa.gov:
         image_pull_policy: !Env ${VAR_SUBSETTER_IMAGE_PULL_POLICY}
         env:
           &lt;&lt;: *default-turbo-env
-          STAGING_PATH: public/sds/variable-subsetter
+          STAGING_PATH: public/variable-only-opendap-subsetter
     collections:
       - C1234714691-EEDTEST  # ATL03
       - C1234714698-EEDTEST  # ATL08
