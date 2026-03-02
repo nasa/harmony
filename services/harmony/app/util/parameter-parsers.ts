@@ -156,7 +156,10 @@ export function handleFormat(
   format: string,
   req: HarmonyRequest): void {
   if (format) {
-    operation.outputFormat = format;
+    operation.outputFormat = format
+      .replaceAll(' ', '')
+      .replaceAll('"', '')
+      .replaceAll('\'', '');
   } else if (req.headers.accept) {
     const acceptedMimeTypes = parseAcceptHeader(req.headers.accept);
     req.context.requestedMimeTypes = acceptedMimeTypes

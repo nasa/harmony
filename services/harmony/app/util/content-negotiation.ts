@@ -47,7 +47,6 @@ export function isMimeTypeAccepted(mimeType: string, acceptHeader: string): bool
     return true;
   }
   const headerValue = acceptHeader
-    .split(';')[0]
     .replace('*', '.*')
     .replace('+', '\\+')
     .replace('/', '\\/');
