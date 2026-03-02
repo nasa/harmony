@@ -1,4 +1,9 @@
 {
+  "GHSA-5c6j-r48x-rmvq": {
+    "active": true,
+    "notes": "Will fix in HARMONY-2280",
+    "expiry": "2026-06-01"
+  },
   "GHSA-p8p7-x288-28g6": {
     "active": true,
     "notes": "Will fix in HARMONY-1729",
