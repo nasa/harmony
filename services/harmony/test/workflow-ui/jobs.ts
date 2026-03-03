@@ -607,6 +607,20 @@ describe('Workflow UI jobs route', function () {
             '{{#labels}} <span class="badge bg-label" title="{{.}}">{{.}}</span>{{/labels}}',
             { labels: ['label-1', 'label-2'] }));
         });
+        describe('When navigating to the admin/workflow-ui with no parameters', function () {
+          hookAdminWorkflowUIJobs({ username: 'adam', limit: 100 });
+          it('returns a 302 redirect', function () {
+            expect(this.res.statusCode).to.equal(302);
+          });
+
+          it('redirects to the admin workflow with the default filters pre-selected', function () {
+            const { location } = this.res.headers;
+            expect(location).to.include('/admin/workflow-ui');
+            const decoded = decodeURIComponent(location);
+            expect(decoded).to.include('"dbValue":"accepted"');
+            expect(decoded).to.include('"dbValue":"running"');
+          });
+        });
       });
 
       describe('when the admin filters the jobs by user IN [woody]', function () {
