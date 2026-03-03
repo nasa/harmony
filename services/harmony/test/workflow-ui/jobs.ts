@@ -584,7 +584,7 @@ describe('Workflow UI jobs route', function () {
           });
         });
 
-        hookAdminWorkflowUIJobs({ username: 'adam', limit: 100 });
+        hookAdminWorkflowUIJobs({ username: 'adam', limit: 100, tablefilter: '' });
         it('returns jobs for all users', async function () {
           const listing = this.res.text;
           [woodyJob1.request, woodyJob2.request, woodySyncJob.request, buzzJob1.request]
