@@ -349,11 +349,22 @@ export async function getJobs(
 ): Promise<void> {
   try {
     const isAdminRoute = req.context.isAdminAccess;
+    const requestQuery = keysToLowerCase(req.query);
+
+    if (isAdminRoute && requestQuery.tablefilter == undefined) {
+      // Apply a default filter when first loading the admin workflow-ui
+      const defaultFilter = JSON.stringify([
+        { value: 'status: accepted', dbValue: 'accepted', field: 'status' },
+        { value: 'status: running', dbValue: 'running', field: 'status' },
+      ]);
+      res.redirect(302, `${req.path}?tableFilter=${encodeURIComponent(defaultFilter)}`);
+    }
+
     const providerIds = (await Job.getProviderIdsSnapshot(db, req.context.logger))
       .map((providerId) => providerId.toUpperCase());
     const recentLabels = await (await logAsyncExecutionTime(getRecentLabelsForUser, 'HWIUWJI.getRecentLabelsForUser', req.context.logger))(db, req.user, env.labelFilterCompletionCount, isAdminRoute);
     const labels = env.uiLabeling ? await getLabelsForUser(db, req.user) : [];
-    const requestQuery = keysToLowerCase(req.query);
+
     const fromDateTime = requestQuery.fromdatetime;
     const toDateTime = requestQuery.todatetime;
     const dateKind = requestQuery.datekind || 'createdAt';
