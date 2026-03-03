@@ -358,6 +358,7 @@ export async function getJobs(
         { value: 'status: running', dbValue: 'running', field: 'status' },
       ]);
       res.redirect(302, `${req.path}?tableFilter=${encodeURIComponent(defaultFilter)}`);
+      return;
     }
 
     const providerIds = (await Job.getProviderIdsSnapshot(db, req.context.logger))
