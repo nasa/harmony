@@ -584,7 +584,7 @@ describe('Workflow UI jobs route', function () {
           });
         });
 
-        hookAdminWorkflowUIJobs({ username: 'adam', limit: 100 });
+        hookAdminWorkflowUIJobs({ username: 'adam', limit: 100, tablefilter: '' });
         it('returns jobs for all users', async function () {
           const listing = this.res.text;
           [woodyJob1.request, woodyJob2.request, woodySyncJob.request, buzzJob1.request]
@@ -606,6 +606,22 @@ describe('Workflow UI jobs route', function () {
           expect(listing).to.contain(mustache.render(
             '{{#labels}} <span class="badge bg-label" title="{{.}}">{{.}}</span>{{/labels}}',
             { labels: ['label-1', 'label-2'] }));
+        });
+        describe('When navigating to the admin/workflow-ui with no parameters', function () {
+          hookAdminWorkflowUIJobs({ username: 'adam', limit: 100 });
+          it('returns a 302 redirect', function () {
+            expect(this.res.statusCode).to.equal(302);
+          });
+
+          it('redirects to the admin workflow with the default filters pre-selected', function () {
+            const { location } = this.res.headers;
+            expect(location).to.include('/admin/workflow-ui');
+            const decoded = decodeURIComponent(location);
+            expect(decoded).to.include('"dbValue":"accepted"');
+            expect(decoded).to.include('"dbValue":"running"');
+            expect(decoded).to.include('"dbValue":"running_with_errors"');
+            expect(decoded).not.to.include('"dbValue":"successful"');
+          });
         });
       });
 
