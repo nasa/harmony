@@ -619,6 +619,8 @@ describe('Workflow UI jobs route', function () {
             const decoded = decodeURIComponent(location);
             expect(decoded).to.include('"dbValue":"accepted"');
             expect(decoded).to.include('"dbValue":"running"');
+            expect(decoded).to.include('"dbValue":"running_with_errors"');
+            expect(decoded).not.to.include('"dbValue":"successful"');
           });
         });
       });

@@ -356,6 +356,7 @@ export async function getJobs(
       const defaultFilter = JSON.stringify([
         { value: 'status: accepted', dbValue: 'accepted', field: 'status' },
         { value: 'status: running', dbValue: 'running', field: 'status' },
+        { value: 'status: running with errors', dbValue: 'running_with_errors', field: 'status' },
       ]);
       res.redirect(302, `${req.path}?tableFilter=${encodeURIComponent(defaultFilter)}`);
       return;
