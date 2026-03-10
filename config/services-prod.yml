@@ -48,6 +48,29 @@ https://cmr.earthdata.nasa.gov:
         extra_args:
           include_opendap_links: false
 
+  - name: asdc/casper
+    description: Service that converts a NetCDF file to one or more CSV files.
+    data_operation_version: '0.22.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/harmony/asdc/casper
+    umm_s: S4066071449-LARC_CLOUD
+    capabilities:
+      subsetting:
+        bbox: false
+        variable: false
+        temporal: false
+      output_formats:
+        - text/csv
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
+      - image: !Env ${CASPER_IMAGE}
+
   - name: giovanni-time-series-adapter
     description: |
       A service to compose the Giovanni URL for a time series and invoke Giovanni service to produce output file to visualize, analyze,
@@ -480,6 +503,7 @@ https://cmr.earthdata.nasa.gov:
     description: |
       ### Subsetter And Multi-dimensional Batched Aggregation in Harmony (SAMBAH)
       Chained Service of the L2-subsetter, Batchee, STITCHEE, and CONCISE services.
+      Chain includes CASPER if output format 'text/csv' requested.
       Additional documentation [here](https://stitchee.readthedocs.io/en/latest/sambah_readme/).
       #### L2 swath subsetter (L2-subsetter)
       * Works with trajectory (1D) and along track/across track data.
@@ -496,6 +520,10 @@ https://cmr.earthdata.nasa.gov:
       #### CONCatenation SErvice (CONCISE)
       * Service capable of "concatenating" multiple netCDF files into a single netCDF file.
       The resulting file has an extra dimension with size equal to the number of input files, where each slice in that dimension corresponds to the data from one of the input files.
+      ### ASDC CASPER service
+      Service that converts a NetCDF file to one or more CSV files by grouping variables by the
+      dimensional schema and outputting each dimensional schema in a separate CSV file.
+      Outputs CSV
 
     data_operation_version: '0.22.0'
     type:
@@ -519,6 +547,7 @@ https://cmr.earthdata.nasa.gov:
         dimension: true
       output_formats:
         - application/netcdf4
+        - text/csv
       reprojection: false
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
@@ -544,6 +573,10 @@ https://cmr.earthdata.nasa.gov:
         operations: ['concatenate']
         conditional:
           exists: ['concatenate']
+          format: ['application/netcdf4', ''] # No format specified use concise
+      - image: !Env ${CASPER_IMAGE}
+        conditional:
+          format: ['text/csv']
 
   - name: asdc/imagenator_l2
     description: Chain to create TEMPO L2 imagery for GIBS
