@@ -4,39 +4,9 @@
     "notes": "Will fix in HARMONY-2280",
     "expiry": "2026-06-01"
   },
-  "GHSA-r6q2-hw4h-h46w": {
-    "active": true,
-    "notes": "gdal-async - Will fix in HARMONY-2237",
-    "expiry": "2026-06-01"
-  },
-  "GHSA-8qq5-rm4j-mr97": {
-    "active": true,
-    "notes": "gdal-async - Will fix in HARMONY-2237",
-    "expiry": "2026-06-01"
-  },
-  "GHSA-34x7-hfp2-rc4v": {
-    "active": true,
-    "notes": "gdal-async - Will fix in HARMONY-2237",
-    "expiry": "2026-06-01"
-  },
-  "GHSA-9ppj-qmqm-q256": {
-    "active": true,
-    "notes": "gdal-async Will fix in HARMONY-2237",
-    "expiry": "2026-06-01"
-  },
   "GHSA-2g4f-4pwh-qvx6": {
     "active": true,
     "notes": "Will fix in HARMONY-2261",
-    "expiry": "2026-06-01"
-  },
-  "GHSA-83g3-92jg-28cx": {
-    "active": true,
-    "notes": "gdal-async - Will fix in HARMONY-2237",
-    "expiry": "2026-06-01"
-  },
-  "GHSA-qffp-2rhf-9h96": {
-    "active": true,
-    "notes": "gdal-async - Will fix in HARMONY-2237",
     "expiry": "2026-06-01"
   }
 }

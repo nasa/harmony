@@ -1,9 +1,11 @@
 import * as _ from 'lodash';
 import * as winston from 'winston';
+
+import { Conjunction, listToText } from '@harmony/util/string';
+
 import env from './env';
 import { RequestValidationError } from './errors';
 import redact from './log-redactor';
-import { Conjunction, listToText } from '@harmony/util/string';
 
 const envNameFormat = winston.format((info) => ({ ...info, env_name: env.clientId }));
 
@@ -17,7 +19,7 @@ const redactor = winston.format((info) => {
 
 /**
  * Creates a logger that logs messages in JSON format.
- *@param transports - the transports to write to
+ * @param transports - the transports to write to
  *
  * @returns The JSON Winston logger
  */
