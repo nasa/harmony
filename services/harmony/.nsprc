@@ -19,6 +19,11 @@
     "notes": "gdal-async - Will fix in HARMONY-2237",
     "expiry": "2026-06-01"
   },
+  "GHSA-9ppj-qmqm-q256": {
+    "active": true,
+    "notes": "gdal-async Will fix in HARMONY-2237",
+    "expiry": "2026-06-01"
+  },
   "GHSA-2g4f-4pwh-qvx6": {
     "active": true,
     "notes": "Will fix in HARMONY-2261",
