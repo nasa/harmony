@@ -98,6 +98,8 @@ const WELL_KNOWN_NAMES: Record<string, string> = {
   WGS84: '4326',
   'WGS 84': '4326',
   WGS_84: '4326',
+  CRS84: '4326',
+  'CRS:84':'4326',
   NAD83: '4269',
   NAD27: '4267',
   WGS72: '4322',
@@ -195,15 +197,9 @@ export function fromUserInput(input: string): SpatialRefResult {
     }
   }
 
-  // 2. CRS:84  →  EPSG:4326
-  if (/^crs:84$/i.test(s)) {
-    const entry = lookupEpsg('4326')!;
-    return { proj4String: entry.proj4String, wkt: entry.wkt, epsg: 'EPSG:4326' };
-  }
-
-  // 3. EPSG:NNNN  /  EPSGA:NNNN
+  // 2. EPSG:NNNN  /  EPSGA:NNNN
   {
-    const m = /^epsg[a]?:(\d+)$/i.exec(s);
+    const m = /^epsg[a]?[ ]?:[ ]?(\d+)$/i.exec(s);
     if (m) {
       const code = m[1];
       const entry = lookupEpsg(code);

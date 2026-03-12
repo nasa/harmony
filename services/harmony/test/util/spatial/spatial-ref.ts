@@ -5,7 +5,7 @@ import { fromUserInput } from '../../../app/util/spatial/spatial-ref';
 describe('fromUserInput CRS parsing', () => {
   describe('EPSG codes', () => {
     describe('EPSG:4326', () => {
-      const result = fromUserInput('EPSG:4326');
+      const result = fromUserInput('EPSG : 4326');
       it('recognizes the EPSG code', () => {
         assert.strictEqual(result.epsg, 'EPSG:4326');
       });
@@ -218,6 +218,23 @@ describe('fromUserInput CRS parsing', () => {
         assert.ok(result.wkt.includes('AUTHORITY["EPSG","32632"]'));
       });
     });
+
+    describe('WKT2 BASEGEOGCRS with ID', () => {
+      const wkt = 'PROJCRS["NAD83(NSRS2007) / Idaho Central",BASEGEOGCRS["NAD83(NSRS2007)",DATUM["NAD83 (National Spatial Reference System 2007)",ELLIPSOID["GRS 1980",6378137,298.257222101,LENGTHUNIT["metre",1]]],PRIMEM["Greenwich",0,ANGLEUNIT["degree",0.0174532925199433]],ID["EPSG",4759]],CONVERSION["SPCS83 Idaho Central zone (meter)",METHOD["Transverse Mercator",ID["EPSG",9807]],PARAMETER["Latitude of natural origin",41.6666666666667,ANGLEUNIT["degree",0.0174532925199433],ID["EPSG",8801]],PARAMETER["Longitude of natural origin",-114,ANGLEUNIT["degree",0.0174532925199433],ID["EPSG",8802]],PARAMETER["Scale factor at natural origin",0.999947368,SCALEUNIT["unity",1],ID["EPSG",8805]],PARAMETER["False easting",500000,LENGTHUNIT["metre",1],ID["EPSG",8806]],PARAMETER["False northing",0,LENGTHUNIT["metre",1],ID["EPSG",8807]]],CS[Cartesian,2],AXIS["easting (X)",east,ORDER[1],LENGTHUNIT["metre",1]],AXIS["northing (Y)",north,ORDER[2],LENGTHUNIT["metre",1]],USAGE[BBOX[41.99,-115.3,45.7,-112.67]],ID["EPSG",3522]]';
+      const result = fromUserInput(wkt);
+      it('extracts EPSG:3522 from the ID tag', () => {
+        assert.strictEqual(result.epsg, 'EPSG:3522');
+      });
+      it('includes +proj=tmerc and +ellps=GRS80 in the proj4 string', () => {
+        assert.ok(result.proj4String.includes('+proj=tmerc'));
+        assert.ok(result.proj4String.includes('+ellps=GRS80'));
+      });
+      it('WKT contains projection transverse mercator and EPSG authority', () => {
+        assert.ok(result.wkt.includes('PROJECTION["Transverse_Mercator"]'));
+        assert.ok(result.wkt.includes('AUTHORITY["EPSG","3522"]'));
+      });
+    });
+
   });
 
   describe('invalid input', () => {
