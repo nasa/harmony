@@ -216,7 +216,7 @@ export function fromUserInput(input: string): SpatialRefResult {
     }
   }
 
-  // 4. OGC URN  urn:ogc:def:crs:EPSG::NNNN
+  // 3. OGC URN  urn:ogc:def:crs:EPSG::NNNN
   {
     const m = /urn:ogc:def:crs:EPSG::(\d+)/i.exec(s);
     if (m) {
@@ -229,9 +229,9 @@ export function fromUserInput(input: string): SpatialRefResult {
     }
   }
 
-  // 5. opengis.net PURL  http(s)://www.opengis.net/def/crs/EPSG/0/NNNN
+  // 4. opengis.net PURL  http(s)://www.opengis.net/def/crs/EPSG/0/NNNN
   {
-    const m = /www\.opengis\.net\/def\/crs\/EPSG\/0\/(\d+)$/i.exec(s);
+    const m = /www\.opengis\.net\/def\/crs\/EPSG\/[^/]+\/(\d+)$/i.exec(s);
     if (m) {
       const code = m[1];
       const entry = lookupEpsg(code);
@@ -242,13 +242,18 @@ export function fromUserInput(input: string): SpatialRefResult {
     }
   }
 
-  // 6. proj4 string  (+proj=…)
+  // 5. proj4 string  (+proj=…)
   if (s.startsWith('+')) {
     // Validate by letting proj4 parse it (throws on invalid input)
     const uid = `_crs_${Math.random().toString(36).slice(2)}`;
-    proj4.defs(uid, s);
-    const def = proj4.defs(uid) as { projStr?: string } | undefined;
-    if (!def) throw new Error(`proj4 could not parse: ${s}`);
+    let def: { projStr?: string } | undefined;
+    try {
+      proj4.defs(uid, s);
+      def = proj4.defs(uid) as { projStr?: string } | undefined;
+      if (!def) throw new Error(`proj4 could not parse: ${s}`);
+    } finally {
+      delete proj4.defs[uid];
+    }
 
     const proj4String: string = cleanProj4(def.projStr ?? s);
 
@@ -266,7 +271,7 @@ export function fromUserInput(input: string): SpatialRefResult {
     return { proj4String, wkt: null, epsg: '' };
   }
 
-  // 7. OGC WKT 1 or WKT 2  (starts with a keyword like GEOGCS, PROJCS, GEOGCRS, …)
+  // 6. OGC WKT 1 or WKT 2  (starts with a keyword like GEOGCS, PROJCS, GEOGCRS, …)
   if (/^[A-Z_]+CS\s*\[|^GEOGCRS\s*\[|^PROJCRS\s*\[|^COMPOUNDCRS\s*\[|^BOUNDCRS\s*\[/i.test(s)) {
     // Try to extract the EPSG code from the AUTHORITY / ID tag first
     const code = extractEpsgFromWkt(s);
@@ -283,6 +288,8 @@ export function fromUserInput(input: string): SpatialRefResult {
       proj4.defs(uid, s);
     } catch {
       throw new Error(`Could not parse WKT: ${s.slice(0, 80)}…`);
+    } finally {
+      delete proj4.defs[uid];
     }
     const def = proj4.defs(uid) as { projStr?: string } | undefined;
     if (!def) throw new Error(`proj4 could not parse WKT: ${s.slice(0, 80)}…`);
