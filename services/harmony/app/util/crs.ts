@@ -19,7 +19,7 @@ export default function parseCRS(
     const spatialRef = fromUserInput(queryCRS_);
     const srs: SRS = {
       proj4: spatialRef.proj4String,
-      wkt: spatialRef.wkt,
+      wkt: spatialRef.wkt ?? '',
       epsg: spatialRef.epsg,
     };
     return [spatialRef.proj4String, srs];
