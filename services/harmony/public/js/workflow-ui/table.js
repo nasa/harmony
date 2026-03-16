@@ -11,7 +11,7 @@ function formatDates(selector) {
     (element) => {
       const time = parseInt(element.getAttribute('data-time'), 10);
       const formattedDate = (new Date(time)).toLocaleString();
-      // eslint-disable-next-line no-param-reassign
+       
       element.textContent = formattedDate;
     },
   );

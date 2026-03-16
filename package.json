@@ -64,16 +64,18 @@
   "author": "NASA EOSDIS Harmony team",
   "license": "Apache-2.0",
   "devDependencies": {
+    "@stylistic/eslint-plugin": "^2.0.0",
     "@types/chai": "^5.0.1",
     "@types/mocha": "^10.0.7",
     "better-npm-audit": "^3.7.3",
     "chai": "^5.1.1",
     "copyfiles": "^2.4.1",
-    "eslint-config-airbnb-typescript": "^18.0.0",
-    "eslint-plugin-import": "^2.29.1",
+    "eslint": "^9.0.0",
+    "eslint-plugin-import-x": "^4.0.0",
     "eslint-plugin-jsdoc": "^50.0.0",
-    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-n": "^17.0.0",
     "eslint-plugin-tsdoc": "^0.4.0",
+    "globals": "^15.0.0",
     "knex": "^3.1.0",
     "lerna": "^9.0.3",
     "mocha": "^11.0.1",
@@ -81,7 +83,9 @@
     "mocha-multi": "^1.1.7",
     "pg": "^8.12.0",
     "ts-node": "^10.9.2",
-    "ts-node-dev": "^2.0.0"
+    "ts-node-dev": "^2.0.0",
+    "tsconfig-paths": "^4.0.0",
+    "typescript-eslint": "^8.0.0"
   },
   "overrides": {
     "@octokit/plugin-paginate-rest": "^9.2.2",

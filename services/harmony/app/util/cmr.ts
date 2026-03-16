@@ -156,7 +156,7 @@ export interface CmrUmmGranuleHits {
 
 export interface CmrUmmVariable {
   meta: {
-    // eslint-disable-next-line @typescript-eslint/naming-convention
+
     'concept-id': string;
     associations?: {
       visualizations?: string[];
@@ -211,7 +211,7 @@ export interface UmmServiceOptions {
 
 export interface CmrUmmService {
   meta: {
-    // eslint-disable-next-line @typescript-eslint/naming-convention
+
     'concept-id': string;
   };
   umm: {
@@ -222,7 +222,7 @@ export interface CmrUmmService {
 
 export interface CmrUmmGrid {
   meta: {
-    // eslint-disable-next-line @typescript-eslint/naming-convention
+
     'concept-id': string;
   };
   umm: {
@@ -340,7 +340,7 @@ export interface CmrUmmVisResponse extends CmrResponse {
 
 export interface CmrUmmCollection {
   meta: {
-    // eslint-disable-next-line @typescript-eslint/naming-convention
+
     'concept-id': string;
   };
   umm: {

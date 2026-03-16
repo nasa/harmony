@@ -2,7 +2,7 @@
 
 import { NextFunction } from 'express';
 import { promises as fs } from 'fs';
-// eslint-disable-next-line node/no-missing-import
+ 
 import { Feature, MultiPoint, MultiPolygon, Point, Polygon } from 'geojson';
 import splitGeoJson from 'geojson-antimeridian-cut';
 import { cloneDeep, get, isEqual } from 'lodash';
@@ -198,7 +198,7 @@ function setPrecision(num: number, decimals: number = COORDINATE_PRECISION): num
  * @returns - the object with the normalized longitudes
  */
 export function normalizeGeoJsonCoords(geojson: any): any {
-  // eslint-disable-next-line require-jsdoc
+  // eslint-disable-next-line jsdoc/require-jsdoc
   function normalizeCoordinates(coordinates: any): any {
     if (Array.isArray(coordinates[0])) {
       return coordinates.map(normalizeCoordinates);
@@ -209,7 +209,7 @@ export function normalizeGeoJsonCoords(geojson: any): any {
     }
   }
 
-  // eslint-disable-next-line require-jsdoc
+  // eslint-disable-next-line jsdoc/require-jsdoc
   function normalizeGeometry(geometry: any): any {
     if (geometry.type === 'Point') {
       geometry.coordinates = normalizeCoordinates(geometry.coordinates);
@@ -225,7 +225,7 @@ export function normalizeGeoJsonCoords(geojson: any): any {
     return geometry;
   }
 
-  // eslint-disable-next-line require-jsdoc
+  // eslint-disable-next-line jsdoc/require-jsdoc
   function normalizeFeature(feature: any): any {
     if (feature.type === 'Feature') {
       feature.geometry = normalizeGeometry(feature.geometry);
@@ -248,12 +248,9 @@ export function normalizeGeoJson(geoJson: object): object {
   let newGeoJson = normalizeGeoJsonCoords(geoJson);
   newGeoJson = convertPointsToPolygons(newGeoJson);
 
-  // eslint-disable-next-line @typescript-eslint/dot-notation
   for (const index in newGeoJson['features']) {
-    // eslint-disable-next-line @typescript-eslint/dot-notation
     const feature = newGeoJson['features'][index];
     const normalizedGeoJson = splitGeoJson(feature);
-    // eslint-disable-next-line @typescript-eslint/dot-notation
     newGeoJson['features'][index] = normalizedGeoJson;
   }
 

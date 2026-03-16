@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/naming-convention */
+ 
 import { CloudWatchClient, GetMetricStatisticsCommand } from '@aws-sdk/client-cloudwatch';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import * as k8s from '@kubernetes/client-node';

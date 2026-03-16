@@ -4,13 +4,13 @@
   "description": "Utility modules related to Harmony",
   "main": "index.ts",
   "scripts": {
-    "test": "strict-npm-engines && eslint --ext .ts . && nyc mocha && npm run better-audit",
+    "test": "strict-npm-engines && eslint . && nyc mocha && npm run better-audit",
     "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha",
     "test-bail": "TS_NODE_TRANSPILE_ONLY=true mocha --bail",
     "build": "rimraf built/* && tsc",
     "build-m1": "rimraf built/* && tsc",
     "build-multi": "rimraf built/* && tsc",
-    "lint": "eslint --ext .ts .",
+    "lint": "eslint .",
     "coverage": "nyc mocha",
     "better-audit": "better-npm-audit audit -l moderate -p"
   },
@@ -49,8 +49,7 @@
   "license": "Apache-2.0",
   "lockedDependenciesComments": {
     "chai": "Version 5 requires ESM which breaks running mocha. It's not clear what changes need to be made to fix it.",
-    "@types/chai": "Chai dependency is locked",
-    "eslint": "The eslint-config-airbnb-typescript project is no longer maintained and limits eslint < 9."
+    "@types/chai": "Chai dependency is locked"
   },
   "dependencies": {
     "class-validator": "^0.14.0",
@@ -63,13 +62,6 @@
     "@types/chai": ">=4.2.22 <5.0.0",
     "@types/node": "^22.13.10",
     "chai": ">=4.3.7 <5.0.0",
-    "eslint": ">=8.43.0 <9.0.0",
-    "eslint-config-airbnb-base": "^15.0.0",
-    "eslint-config-airbnb-typescript": "^18.0.0",
-    "eslint-plugin-import": "^2.27.5",
-    "eslint-plugin-jsdoc": "^50.6.0",
-    "eslint-plugin-node": "^11.1.0",
-    "eslint-plugin-tsdoc": "^0.4.0",
     "mocha": "^11.0.1",
     "nyc": "^17.1.0",
     "rimraf": "^6.0.1",

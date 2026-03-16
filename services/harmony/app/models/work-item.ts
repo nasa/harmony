@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/dot-notation */
 import { subMinutes } from 'date-fns';
 import { ILengthAwarePagination } from 'knex-paginate';
 import _ from 'lodash';
@@ -654,7 +653,6 @@ export async function workItemCountForStep(
 ): Promise<number> {
   // Record<string, unknown> clashes with imported database Record class
   // so we use '{}' causing a linter error
-  // eslint-disable-next-line @typescript-eslint/ban-types
   const whereClause: {} = {
     jobID, workflowStepIndex: stepIndex,
   };

@@ -1,6 +1,6 @@
 import { Application } from 'express';
 
-/* eslint-disable max-classes-per-file */ // This file creates multiple tag classes
+// This file creates multiple tag classes
 export class HttpError extends Error {
   statusCode: number;
 

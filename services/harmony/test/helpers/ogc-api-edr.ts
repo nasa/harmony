@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/dot-notation */
 import { parse } from 'cookie';
 import { Application } from 'express';
 import { after, before } from 'mocha';

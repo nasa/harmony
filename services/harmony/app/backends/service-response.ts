@@ -31,7 +31,7 @@ export interface CallbackQuery {
  * @param bbox - A bounding box
  */
 export function validateBbox(bbox: number[]): void {
-  // eslint-disable-next-line no-restricted-globals
+   
   if (bbox.length !== 4 || bbox.some(isNaN)) {
     throw new TypeError('Unrecognized bounding box format.  Must be 4 comma-separated floats as West,South,East,North');
   }
@@ -42,7 +42,7 @@ export function validateBbox(bbox: number[]): void {
  * @param temporal - An array containing two RFC-3339 strings (start and end datetime)
  */
 export function validateTemporal(temporal: number[]): void {
-  // eslint-disable-next-line no-restricted-globals
+   
   if (temporal.length !== 2 || temporal.some(isNaN)) {
     throw new TypeError('Unrecognized temporal format.  Must be 2 RFC-3339 dates with optional fractional seconds as Start,End');
   }
@@ -63,7 +63,7 @@ export function updateJobFields(
   logger: Logger,
   job: Job,
   query: CallbackQuery,
-): void { /* eslint-disable no-param-reassign */
+): void {  
   const { error, item, status, redirect, progress } = query;
   try {
     if (item) {

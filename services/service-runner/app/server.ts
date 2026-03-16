@@ -1,4 +1,3 @@
-/* eslint-disable no-process-exit */
 import express from 'express';
 import { Server } from 'http';
 

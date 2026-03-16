@@ -1,5 +1,5 @@
 import axios from 'axios';
-/* eslint-disable @typescript-eslint/no-throw-literal */
+ 
 import { expect } from 'chai';
 import { readFileSync } from 'fs';
 import { describe, it } from 'mocha';

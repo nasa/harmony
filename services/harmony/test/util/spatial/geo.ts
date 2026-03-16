@@ -14,7 +14,7 @@ function makeLatLng(latLng: [number, number]): LatLng {
 }
 
 describe('geo#calculateArea', () => {
-  // eslint-disable-next-line max-len
+   
   const lls = (latlngs: [number, number][]): LatLng[] => Array.from(latlngs).map((ll: [number, number]) => makeLatLng(ll));
 
   it('returns 0 for strings of fewer than 3 lat lngs', () => {

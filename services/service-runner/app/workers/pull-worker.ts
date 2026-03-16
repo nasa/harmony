@@ -216,7 +216,6 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
 
     logger.debug('Polling for work');
 
-    // eslint-disable-next-line @typescript-eslint/no-use-before-define
     const work = await exportedForTesting._pullWork();
     if (!work.error && work.item) {
       const startTime = Date.now();
