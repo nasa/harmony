@@ -42,9 +42,43 @@ export default tseslint.config(
       'n/no-unsupported-features/es-syntax': 'off',
       'n/no-missing-import': 'off', // TypeScript handles import resolution
 
-      // --- @stylistic (replaces @typescript-eslint/indent and airbnb formatting) ---
+      // --- @stylistic (replaces airbnb formatting rules) ---
       '@stylistic/indent': ['error', 2, { ignoredNodes: ['PropertyDefinition'], SwitchCase: 1 }],
+      '@stylistic/semi': ['error', 'always'],
+      '@stylistic/quotes': ['error', 'single', { avoidEscape: true }],
+      '@stylistic/comma-dangle': ['error', {
+        arrays: 'always-multiline',
+        objects: 'always-multiline',
+        imports: 'always-multiline',
+        exports: 'always-multiline',
+        functions: 'always-multiline',
+        enums: 'always-multiline',
+        generics: 'always-multiline',
+        tuples: 'always-multiline',
+      }],
+      '@stylistic/comma-spacing': ['error', { before: false, after: true }],
+      '@stylistic/comma-style': ['error', 'last'],
+      '@stylistic/object-curly-spacing': ['error', 'always'],
+      '@stylistic/space-before-blocks': 'error',
+      '@stylistic/space-before-function-paren': ['error', { anonymous: 'always', named: 'never', asyncArrow: 'always' }],
+      '@stylistic/space-infix-ops': 'error',
+      '@stylistic/keyword-spacing': ['error', { before: true, after: true }],
+      '@stylistic/brace-style': ['error', '1tbs', { allowSingleLine: true }],
+      '@stylistic/arrow-spacing': ['error', { before: true, after: true }],
       '@stylistic/object-curly-newline': 'off',
+
+      // --- @stylistic rules with pre-existing violations ---
+      // These match the airbnb config but were not being enforced.
+      // Enable and run `eslint --fix` in a follow-up PR.
+      '@stylistic/arrow-parens': 'off',           // 104 violations — airbnb uses 'as-needed'
+      '@stylistic/eol-last': 'off',               // 93 violations — missing final newline
+      '@stylistic/no-multiple-empty-lines': 'off', // 80 violations — extra blank lines
+      '@stylistic/no-multi-spaces': 'off',         // 26 violations — alignment spaces
+      '@stylistic/space-in-parens': 'off',         // 18 violations
+      '@stylistic/no-trailing-spaces': 'off',      // 10 violations
+      '@stylistic/array-bracket-spacing': 'off',   // 10 violations
+      '@stylistic/key-spacing': 'off',             // 5 violations
+      '@stylistic/block-spacing': 'off',           // 2 violations
 
       // --- Custom rules carried forward from root .eslintrc.yml ---
       'no-restricted-syntax': ['error', 'LabeledStatement', 'WithStatement'],
