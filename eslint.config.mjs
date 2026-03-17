@@ -7,6 +7,14 @@ import pluginTsdoc from 'eslint-plugin-tsdoc';
 import stylistic from '@stylistic/eslint-plugin';
 
 export default tseslint.config(
+  // 0. Match ESLint 8 behavior: don't warn on unused disable directives
+  //    (ESLint 9 defaults to 'warn'; ESLint 8 defaulted to 'off')
+  {
+    linterOptions: {
+      reportUnusedDisableDirectives: 'off',
+    },
+  },
+
   // 1. Global ignores (replaces .eslintignore)
   {
     ignores: ['**/node_modules/**', '**/dist/**', '**/built/**', '**/coverage/**', 'db/**'],
@@ -34,6 +42,7 @@ export default tseslint.config(
     },
     settings: {
       'import-x/resolver': {
+        typescript: true,
         node: { extensions: ['.js', '.jsx', '.ts', '.tsx'] },
       },
     },
@@ -104,13 +113,20 @@ export default tseslint.config(
         { selector: 'objectLiteralProperty', format: [] },
       ],
 
-      // --- New typescript-eslint v8 rules - disabled for migration parity ---
+      // --- typescript-eslint v8 ---
+      // ban-types was 'off' in old config; these are its v8 replacements, kept off
       '@typescript-eslint/no-unsafe-function-type': 'off',
       '@typescript-eslint/no-wrapper-object-types': 'off',
+      // no-empty-interface was not active on main; its v8 replacement kept off
       '@typescript-eslint/no-empty-object-type': 'off',
-      '@typescript-eslint/no-require-imports': 'off',
 
-      // --- Airbnb best-practice rules (manually carried) ---
+      // --- typescript-eslint rules from airbnb-typescript/base (verified via --print-config) ---
+      '@typescript-eslint/dot-notation': ['error', { allowKeywords: true }],
+      '@typescript-eslint/no-loop-func': 'error',
+      '@typescript-eslint/no-use-before-define': ['error', { functions: true, classes: true, variables: true }],
+      '@typescript-eslint/only-throw-error': 'error',
+
+      // --- Airbnb best-practice rules ---
       'no-eval': 'error',
       'no-implied-eval': 'error',
       'prefer-const': 'error',
@@ -118,6 +134,8 @@ export default tseslint.config(
 
       // --- Import rules ---
       'import-x/no-extraneous-dependencies': ['error', { devDependencies: false }],
+      'import-x/namespace': 'error',
+      'import-x/no-named-as-default-member': 'off',
     },
   },
 
@@ -204,6 +222,12 @@ export default tseslint.config(
       '@stylistic/object-curly-newline': 'off',
       'no-plusplus': 'off',
       'prefer-destructuring': ['error', { array: false, object: true }, { enforceForRenamedProperties: false }],
+      // Rules referenced by disable comments in public JS files
+      'no-param-reassign': 'error',
+      'no-alert': 'error',
+      'no-restricted-globals': 'error',
+      'no-continue': 'error',
+      'no-new': 'error',
     },
   },
 );

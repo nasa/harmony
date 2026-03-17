@@ -2,6 +2,7 @@
 
 import { NextFunction } from 'express';
 import { promises as fs } from 'fs';
+// eslint-disable-next-line n/no-missing-import
 import { Feature, MultiPoint, MultiPolygon, Point, Polygon } from 'geojson';
 import splitGeoJson from 'geojson-antimeridian-cut';
 import { cloneDeep, get, isEqual } from 'lodash';
@@ -247,9 +248,12 @@ export function normalizeGeoJson(geoJson: object): object {
   let newGeoJson = normalizeGeoJsonCoords(geoJson);
   newGeoJson = convertPointsToPolygons(newGeoJson);
 
+  // eslint-disable-next-line @typescript-eslint/dot-notation
   for (const index in newGeoJson['features']) {
+    // eslint-disable-next-line @typescript-eslint/dot-notation
     const feature = newGeoJson['features'][index];
     const normalizedGeoJson = splitGeoJson(feature);
+    // eslint-disable-next-line @typescript-eslint/dot-notation
     newGeoJson['features'][index] = normalizedGeoJson;
   }
 

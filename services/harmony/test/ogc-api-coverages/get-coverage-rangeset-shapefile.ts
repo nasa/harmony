@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { expect } from 'chai';
+/* eslint-disable max-len */
 import { parse } from 'cookie';
 import { Application } from 'express';
 import * as fs from 'fs';

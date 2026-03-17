@@ -60,7 +60,9 @@ import { parseGridMiddleware } from '../util/grids';
 import log from '../util/log';
 import { validateAndSetVariables } from '../util/variables';
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 import cmrCollectionReader = require('../middleware/cmr-collection-reader');
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 import cmrUmmCollectionReader = require('../middleware/cmr-umm-collection-reader');
 export interface RouterConfig {
   PORT?: string | number; // The port to run the frontend server on

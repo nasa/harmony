@@ -1,3 +1,4 @@
+/* eslint-disable no-loop-func */
 import { expect } from 'chai';
 import _ from 'lodash';
 import { stub } from 'sinon';
@@ -149,3 +150,4 @@ describe('Auto-pausing jobs', function () {
     });
   });
 });
+

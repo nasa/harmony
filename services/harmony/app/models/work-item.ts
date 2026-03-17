@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/dot-notation */
 import { subMinutes } from 'date-fns';
 import { ILengthAwarePagination } from 'knex-paginate';
 import _ from 'lodash';
