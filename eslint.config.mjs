@@ -9,6 +9,7 @@ import stylistic from '@stylistic/eslint-plugin';
 export default tseslint.config(
   // 0. Match ESLint 8 behavior: don't warn on unused disable directives
   //    (ESLint 9 defaults to 'warn'; ESLint 8 defaulted to 'off')
+  //    TODO: Change to 'warn' in a follow-up PR and remove stale disable comments
   {
     linterOptions: {
       reportUnusedDisableDirectives: 'off',
@@ -43,13 +44,26 @@ export default tseslint.config(
     settings: {
       'import-x/resolver': {
         typescript: true,
-        node: { extensions: ['.js', '.jsx', '.ts', '.tsx'] },
       },
     },
     rules: {
-      // --- eslint-plugin-n (replaces node/) ---
-      'n/no-unsupported-features/es-syntax': 'off',
+      // --- eslint-plugin-n (replaces plugin:node/recommended) ---
+      'n/hashbang': 'error',
+      'n/no-deprecated-api': 'error',
+      'n/no-exports-assign': 'error',
+      'n/no-extraneous-import': 'error',
+      'n/no-extraneous-require': 'error',
       'n/no-missing-import': 'off', // TypeScript handles import resolution
+      'n/no-missing-require': 'error',
+      'n/no-process-exit': 'off', // redundant with core no-process-exit; avoids needing to update disable comments
+      'n/no-unpublished-bin': 'error',
+      'n/no-unpublished-import': 'off',
+      'n/no-unpublished-require': 'error',
+      'n/no-unsupported-features/es-builtins': 'error',
+      'n/no-unsupported-features/es-syntax': 'off',
+      'n/no-unsupported-features/node-builtins': 'error',
+      'n/process-exit-as-throw': 'error',
+      'no-process-exit': 'error',
 
       // --- @stylistic (replaces airbnb formatting rules) ---
       '@stylistic/indent': ['error', 2, { ignoredNodes: ['PropertyDefinition'], SwitchCase: 1 }],
@@ -74,6 +88,9 @@ export default tseslint.config(
       '@stylistic/keyword-spacing': ['error', { before: true, after: true }],
       '@stylistic/brace-style': ['error', '1tbs', { allowSingleLine: true }],
       '@stylistic/arrow-spacing': ['error', { before: true, after: true }],
+      '@stylistic/func-call-spacing': ['error', 'never'],
+      '@stylistic/lines-between-class-members': ['error', 'always', { exceptAfterSingleLine: false, exceptAfterOverload: true }],
+      '@stylistic/no-extra-semi': 'error',
       '@stylistic/object-curly-newline': 'off',
 
       // --- @stylistic rules with pre-existing violations ---
@@ -121,10 +138,18 @@ export default tseslint.config(
       '@typescript-eslint/no-empty-object-type': 'off',
 
       // --- typescript-eslint rules from airbnb-typescript/base (verified via --print-config) ---
+      '@typescript-eslint/default-param-last': 'error',
       '@typescript-eslint/dot-notation': ['error', { allowKeywords: true }],
+      '@typescript-eslint/no-dupe-class-members': 'error',
+      '@typescript-eslint/no-empty-function': ['error', { allow: ['arrowFunctions', 'functions', 'methods'] }],
       '@typescript-eslint/no-loop-func': 'error',
+      '@typescript-eslint/no-loss-of-precision': 'error',
+      '@typescript-eslint/no-redeclare': 'error',
+      '@typescript-eslint/no-shadow': 'error',
       '@typescript-eslint/no-use-before-define': ['error', { functions: true, classes: true, variables: true }],
+      '@typescript-eslint/no-useless-constructor': 'error',
       '@typescript-eslint/only-throw-error': 'error',
+      '@typescript-eslint/return-await': ['error', 'in-try-catch'],
 
       // --- Airbnb best-practice rules ---
       'no-eval': 'error',
@@ -132,10 +157,17 @@ export default tseslint.config(
       'prefer-const': 'error',
       'no-var': 'error',
 
-      // --- Import rules ---
-      'import-x/no-extraneous-dependencies': ['error', { devDependencies: false }],
+      // --- Import rules (replaces plugin:import/errors + warnings + typescript) ---
+      'import-x/default': 'error',
+      'import-x/export': 'error',
+      'import-x/extensions': ['error', 'ignorePackages', { js: 'never', mjs: 'never', jsx: 'never', ts: 'never', tsx: 'never' }],
+      'import-x/named': 'off',
       'import-x/namespace': 'error',
+      'import-x/no-duplicates': 'warn',
+      'import-x/no-extraneous-dependencies': ['error', { devDependencies: false }],
+      'import-x/no-named-as-default': 'warn',
       'import-x/no-named-as-default-member': 'off',
+      'import-x/no-unresolved': 'off',
     },
   },
 
@@ -194,6 +226,10 @@ export default tseslint.config(
   },
 
   // 7. Harmony public/ browser JS
+  //    NOTE: These files were never linted on main — the old lint command used
+  //    `eslint --ext .ts .` which only targeted TypeScript files. The full
+  //    airbnb-base ruleset was configured but never ran against these JS files.
+  //    Only rules referenced by existing eslint-disable comments are included here.
   {
     files: ['services/harmony/public/**/*.js'],
     languageOptions: {
