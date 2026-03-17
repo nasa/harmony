@@ -154,6 +154,7 @@
     "shpjs": ">=4.0.4 <5.0.0",
     "simple-oauth2": "^5.1.0",
     "source-map-support": "^0.5.19",
+    "sqlite": "^5.1.1",
     "sqlite3": "^6.0.1",
     "swagger-ui-express": "^5.0.1",
     "tmp": "^0.2.4",
