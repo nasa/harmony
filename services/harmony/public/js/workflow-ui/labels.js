@@ -169,7 +169,6 @@ function filterLabelsList() {
   }
   for (const labelItem of labelItems) {
     if (labelItem.classList.contains('label-promoted')) { // skip, stays hidden
-       
       continue;
     }
     const labelName = labelItem.firstChild.getAttribute('data-value').toLowerCase().trim();

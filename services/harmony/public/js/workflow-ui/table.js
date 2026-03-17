@@ -11,7 +11,6 @@ function formatDates(selector) {
     (element) => {
       const time = parseInt(element.getAttribute('data-time'), 10);
       const formattedDate = (new Date(time)).toLocaleString();
-       
       element.textContent = formattedDate;
     },
   );

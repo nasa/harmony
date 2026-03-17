@@ -1,7 +1,5 @@
- 
 import chai, { expect } from 'chai';
 import { Stream } from 'form-data';
- 
 import fs from 'fs';
 import { describe, it } from 'mocha';
 import * as fetch from 'node-fetch';

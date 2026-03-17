@@ -101,7 +101,6 @@ Promise<number[]> {
     for (const catalogUrl of update.results) {
       const catalogItems = await readCatalogItems(catalogUrl);
       const links = getCatalogLinks(catalogItems);
-       
       const sizes = await Promise.all(links.map(async (link) => {
         const serviceProvidedSize = update.outputItemSizes?.[index];
         index += 1;

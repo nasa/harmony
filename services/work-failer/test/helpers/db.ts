@@ -8,7 +8,6 @@ import db from '../../../harmony/app/util/db';
 
 export const tables = ['jobs', 'work_items', 'workflow_steps', 'job_links', 'user_work', 'job_messages', 'batches', 'batch_items'];
 
- 
 const exec = util.promisify(require('child_process').exec);
 
 /**

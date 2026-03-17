@@ -2,7 +2,6 @@
 
 import { NextFunction } from 'express';
 import { promises as fs } from 'fs';
- 
 import { Feature, MultiPoint, MultiPolygon, Point, Polygon } from 'geojson';
 import splitGeoJson from 'geojson-antimeridian-cut';
 import { cloneDeep, get, isEqual } from 'lodash';

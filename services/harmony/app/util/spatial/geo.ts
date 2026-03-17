@@ -1,4 +1,3 @@
- 
 import * as _ from 'lodash';
 import Arc from './arc';
 import { Coordinate, LatLng } from './coordinate';
@@ -423,7 +422,6 @@ export function dividePolygon(latLngs: LatLng[][]): SplitPoly {
     latLngs.slice(1).forEach((hole) => {
       holes.push(makeCounterClockwise(convertLatLngs(hole)));
     });
-     
     newLatLngs = latLngs[0];
   }
 

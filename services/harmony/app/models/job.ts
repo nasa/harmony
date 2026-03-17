@@ -845,7 +845,6 @@ export class Job extends DBRecord implements JobRecord {
    * @param link - Adds a link to the list of links for the object.
    */
   addLink(link: JobLink): void {
-     
     link.jobID = this.jobID;
     this.links.push(link);
   }

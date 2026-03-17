@@ -1,5 +1,4 @@
 // Import has to happen after the knexfile, so disable that rule
- 
 import knexfile from '../../../../db/knexfile';
 import { knex, Knex } from 'knex';
 import { attachPaginate } from 'knex-paginate';

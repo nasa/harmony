@@ -1,4 +1,3 @@
- 
 /**
  * Converts a Date object into an ISO String representation (truncates milliseconds)
  *

@@ -15,7 +15,6 @@ import ServiceDeployment, { setStatusMessage, getDeploymentById, getDeployments,
 import { keysToLowerCase } from '../util/object';
 import { objectStoreForProtocol } from '../util/object-store';
 
- 
 export const asyncExec = util.promisify(require('child_process').exec);
 
 /**

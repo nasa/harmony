@@ -210,7 +210,6 @@ export interface UmmServiceOptions {
 
 export interface CmrUmmService {
   meta: {
-
     'concept-id': string;
   };
   umm: {
