@@ -156,7 +156,6 @@ export interface CmrUmmGranuleHits {
 
 export interface CmrUmmVariable {
   meta: {
-
     'concept-id': string;
     associations?: {
       visualizations?: string[];
@@ -222,7 +221,6 @@ export interface CmrUmmService {
 
 export interface CmrUmmGrid {
   meta: {
-
     'concept-id': string;
   };
   umm: {
@@ -340,7 +338,6 @@ export interface CmrUmmVisResponse extends CmrResponse {
 
 export interface CmrUmmCollection {
   meta: {
-
     'concept-id': string;
   };
   umm: {

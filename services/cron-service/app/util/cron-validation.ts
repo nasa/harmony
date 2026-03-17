@@ -10,7 +10,7 @@ import logger from '../../../harmony/app/util/log';
  * @returns an error message if validation fails, null otherwise
  */
 export function validateCrontab(value: unknown): string {
-  if (typeof value !== 'string') {
+  if (typeof value != 'string') {
     return 'crontab entries must be strings';
   }
   try {
@@ -26,7 +26,7 @@ export function validateCrontab(value: unknown): string {
  * Creates a custom decorator that validates a crontab schedule entry
  */
 export function IsCrontab() {
-  return function (object: object, propertyName: string): void {
+  return function (object: Object, propertyName: string): void {
     registerDecorator({
       name: 'isCrontab',
       target: object.constructor,
