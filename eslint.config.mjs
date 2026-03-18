@@ -66,16 +66,7 @@ export default tseslint.config(
       '@stylistic/indent': ['error', 2, { ignoredNodes: ['PropertyDefinition'], SwitchCase: 1 }],
       '@stylistic/semi': ['error', 'always'],
       '@stylistic/quotes': ['error', 'single', { avoidEscape: true }],
-      '@stylistic/comma-dangle': ['error', {
-        arrays: 'always-multiline',
-        objects: 'always-multiline',
-        imports: 'always-multiline',
-        exports: 'always-multiline',
-        functions: 'always-multiline',
-        enums: 'always-multiline',
-        generics: 'always-multiline',
-        tuples: 'always-multiline',
-      }],
+      '@stylistic/comma-dangle': ['error', 'always-multiline'],
       '@stylistic/comma-spacing': ['error', { before: false, after: true }],
       '@stylistic/comma-style': ['error', 'last'],
       '@stylistic/object-curly-spacing': ['error', 'always'],
@@ -171,11 +162,9 @@ export default tseslint.config(
     rules: {
       'prefer-arrow-callback': 'off',
       'func-names': 'off',
-      'no-unused-expressions': 'off',
       'n/no-unpublished-import': 'off',
       '@stylistic/indent': ['error', 2, { ignoredNodes: ['PropertyDefinition'] }],
-      '@typescript-eslint/no-unused-expressions': 'off',
-      'import-x/no-extraneous-dependencies': ['error', { devDependencies: true }],
+      '@typescript-eslint/no-unused-expressions': 'error',
     },
   },
 
@@ -185,9 +174,7 @@ export default tseslint.config(
     rules: {
       'prefer-arrow-callback': 'off',
       'func-names': 'off',
-      'no-unused-expressions': 'off',
       'n/no-unpublished-import': 'off',
-      'import-x/no-extraneous-dependencies': ['error', { devDependencies: true }],
     },
   },
 
@@ -201,13 +188,6 @@ export default tseslint.config(
       '@typescript-eslint/no-unused-expressions': 'off',
       'prefer-arrow-callback': 'off',
       'func-names': 'off',
-    },
-  },
-
-  // 6. Harmony test-specific (extra relaxations)
-  {
-    files: ['services/harmony/test/**/*.ts'],
-    rules: {
       '@typescript-eslint/no-loop-func': 'off',
     },
   },
