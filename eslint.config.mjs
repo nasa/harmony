@@ -143,6 +143,9 @@ export default tseslint.config(
       'import-x/no-named-as-default': 'warn',
       'import-x/no-named-as-default-member': 'off',
       'import-x/no-unresolved': 'off',
+
+      // -- hoisted -- from below
+      'prefer-arrow-callback': 'off',
     },
   },
 
@@ -160,7 +163,6 @@ export default tseslint.config(
       'services/work-updater/**/*.ts',
     ],
     rules: {
-      'prefer-arrow-callback': 'off',
       'func-names': 'off',
       'n/no-unpublished-import': 'off',
       '@stylistic/indent': ['error', 2, { ignoredNodes: ['PropertyDefinition'] }],
@@ -172,7 +174,6 @@ export default tseslint.config(
   {
     files: ['services/harmony/**/*.ts'],
     rules: {
-      'prefer-arrow-callback': 'off',
       'func-names': 'off',
       'n/no-unpublished-import': 'off',
     },
@@ -186,7 +187,6 @@ export default tseslint.config(
       'n/no-unpublished-require': 'off',
       'n/no-unpublished-import': 'off',
       '@typescript-eslint/no-unused-expressions': 'off',
-      'prefer-arrow-callback': 'off',
       'func-names': 'off',
       '@typescript-eslint/no-loop-func': 'off',
     },
