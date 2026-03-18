@@ -1,4 +1,3 @@
-/* eslint-disable import/no-named-as-default-member */
 import { expect } from 'chai';
 import { describe, it, before } from 'mocha';
 import { buildWorkItem } from '../helpers/work-items';

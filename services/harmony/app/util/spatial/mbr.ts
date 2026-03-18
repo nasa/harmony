@@ -131,7 +131,6 @@ function mergeMbrs(mbrs: BoundingBox[]): BoundingBox {
       maxLng = circularMax(maxLng, lng1);
     } else {
       // If the ranges are disjoint
-      // eslint-disable-next-line no-lonely-if
       if (lng0Distance < lng1Distance) {
         // Both points are on the same side
         if (lng0Distance < 0) {
@@ -141,7 +140,6 @@ function mergeMbrs(mbrs: BoundingBox[]): BoundingBox {
         }
       } else {
         // The maximum point and minimum point are on opposite sides of the interval
-        // eslint-disable-next-line no-lonely-if
         if (Math.abs(lng0Distance - 360) < Math.abs(lng1Distance + 360)) {
           // It's closer to extend to the minimum
           minLng = lng0;

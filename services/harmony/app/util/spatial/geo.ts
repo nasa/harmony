@@ -1,4 +1,3 @@
-/* eslint-disable no-bitwise */
 import * as _ from 'lodash';
 import Arc from './arc';
 import { Coordinate, LatLng } from './coordinate';
