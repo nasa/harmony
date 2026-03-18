@@ -422,7 +422,6 @@ export function dividePolygon(latLngs: LatLng[][]): SplitPoly {
     latLngs.slice(1).forEach((hole) => {
       holes.push(makeCounterClockwise(convertLatLngs(hole)));
     });
-    // eslint-disable-next-line prefer-destructuring
     newLatLngs = latLngs[0];
   }
 
