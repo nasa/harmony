@@ -172,6 +172,9 @@ export default tseslint.config(
   },
 
   // 3. All services override (mocha patterns + dev deps)
+  //    NOTE: Harmony's old .eslintrc.yml was missing the indent and no-unused-expressions
+  //    overrides that all other services had — possibly a copy-paste oversight in the
+  //    original config. Kept separate here to match the old behavior exactly.
   {
     files: [
       'services/service-runner/**/*.ts',
