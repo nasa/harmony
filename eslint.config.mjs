@@ -143,7 +143,6 @@ export default tseslint.config(
       '@typescript-eslint/no-dupe-class-members': 'error',
       '@typescript-eslint/no-empty-function': ['error', { allow: ['arrowFunctions', 'functions', 'methods'] }],
       '@typescript-eslint/no-loop-func': 'error',
-      '@typescript-eslint/no-loss-of-precision': 'error',
       '@typescript-eslint/no-redeclare': 'error',
       '@typescript-eslint/no-shadow': 'error',
       '@typescript-eslint/no-use-before-define': ['error', { functions: true, classes: true, variables: true }],
