@@ -151,25 +151,7 @@ export default tseslint.config(
     },
   },
 
-  // 3. All services override (mocha patterns + dev deps)
-  //    NOTE: Harmony's old .eslintrc.yml was missing the indent and no-unused-expressions
-  //    overrides that all other services had — possibly a copy-paste oversight in the
-  //    original config. Kept separate here to match the old behavior exactly.
-  {
-    files: [
-      'services/service-runner/**/*.ts',
-      'services/work-scheduler/**/*.ts',
-      'services/cron-service/**/*.ts',
-      'services/work-failer/**/*.ts',
-      'services/query-cmr/**/*.ts',
-      'services/work-updater/**/*.ts',
-    ],
-    rules: {
-      '@stylistic/indent': ['error', 2, { ignoredNodes: ['PropertyDefinition'] }],
-    },
-  },
-
-  // 5. Test file overrides
+  // 3. Test file overrides
   {
     files: ['services/**/test/**/*.ts', 'packages/**/test/**/*.ts'],
     rules: {
@@ -179,7 +161,7 @@ export default tseslint.config(
     },
   },
 
-  // 7. Harmony public/ browser JS
+  // 4. Harmony public/ browser JS
   //    NOTE: These files were never linted on main — the old lint command used
   //    `eslint --ext .ts .` which only targeted TypeScript files. The full
   //    airbnb-base ruleset was configured but never ran against these JS files.
