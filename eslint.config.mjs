@@ -58,7 +58,7 @@ export default tseslint.config(
       'n/no-unpublished-import': 'off',
       'n/no-unpublished-require': 'error',
       'n/no-unsupported-features/es-builtins': 'error',
-      'n/no-unsupported-features/es-syntax': 'off',
+      'n/no-unsupported-features/es-syntax': 'error', // enabled and everything still passed.
       'n/no-unsupported-features/node-builtins': 'error',
       'n/process-exit-as-throw': 'error',
 
@@ -79,9 +79,7 @@ export default tseslint.config(
       '@stylistic/func-call-spacing': ['error', 'never'],
       '@stylistic/lines-between-class-members': ['error', 'always', { exceptAfterSingleLine: false, exceptAfterOverload: true }],
       '@stylistic/no-extra-semi': 'error',
-      '@stylistic/object-curly-newline': 'off',
-
-
+      '@stylistic/object-curly-newline': 'off', // recommend turning on and fixing the 16 errors
       // --- Custom rules carried forward from root .eslintrc.yml ---
       'no-restricted-syntax': ['error', 'LabeledStatement', 'WithStatement'],
       'class-methods-use-this': 'off',
