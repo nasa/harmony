@@ -10,7 +10,7 @@ export default tseslint.config(
   // Warn on unused eslint-disable directives so they don't accumulate again
   {
     linterOptions: {
-      reportUnusedDisableDirectives: 'warn',
+      reportUnusedDisableDirectives: 'error',
     },
   },
 
@@ -21,7 +21,7 @@ export default tseslint.config(
 
   // 2. Base TypeScript config (replaces root .eslintrc.yml)
   {
-    files: ['**/*.ts', '**/*.tsx'],
+    files: ['**/*.ts'],
     extends: [
       tseslint.configs.recommended,
     ],
@@ -144,7 +144,7 @@ export default tseslint.config(
       // --- Import rules (replaces plugin:import/errors + warnings + typescript) ---
       'import-x/default': 'error',
       'import-x/export': 'error',
-      'import-x/extensions': ['error', 'ignorePackages', { js: 'never', mjs: 'never', jsx: 'never', ts: 'never', tsx: 'never' }],
+      'import-x/extensions': ['error', 'ignorePackages', { js: 'never', mjs: 'never', ts: 'never' }],
       'import-x/named': 'off',
       'import-x/namespace': 'error',
       'import-x/no-duplicates': 'warn',
