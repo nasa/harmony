@@ -404,9 +404,7 @@ describe('OGC API EDR - getEdrTrajectory', function () {
       queryParams: object, message: string, code = 'openapi.ValidationError',
     ): void {
       it(`returns an HTTP 400 "Bad Request" error with explanatory message ${message}`, async function () {
-        // eslint-disable-next-line @typescript-eslint/dot-notation
         if (queryParams['parameter-name'] === undefined) {
-          // eslint-disable-next-line @typescript-eslint/dot-notation
           queryParams['parameter-name'] = 'all';
         }
         const res = await edrRequest(

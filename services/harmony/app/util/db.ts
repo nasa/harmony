@@ -1,5 +1,4 @@
 // Import has to happen after the knexfile, so disable that rule
-// eslint-disable-next-line import-x/order
 import knexfile from '../../../../db/knexfile';
 import { knex, Knex } from 'knex';
 import { attachPaginate } from 'knex-paginate';

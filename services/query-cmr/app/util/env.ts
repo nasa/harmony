@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-empty-interface */
 import { HarmonyEnv } from '@harmony/util/env';
 import _ from 'lodash';
 

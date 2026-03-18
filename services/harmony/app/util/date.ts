@@ -1,4 +1,3 @@
-/* eslint-disable import-x/prefer-default-export */
 /**
  * Converts a Date object into an ISO String representation (truncates milliseconds)
  *

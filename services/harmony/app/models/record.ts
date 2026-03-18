@@ -1,4 +1,3 @@
-/* eslint-disable no-param-reassign */
 import _ from 'lodash';
 import logger from '../util/log';
 import db, { Transaction } from '../util/db';
