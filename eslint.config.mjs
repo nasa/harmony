@@ -147,6 +147,7 @@ export default tseslint.config(
       // -- hoisted -- from below
       'prefer-arrow-callback': 'off',
       'func-names': 'off',
+      '@typescript-eslint/no-unused-expressions': 'error',
     },
   },
 
@@ -165,7 +166,6 @@ export default tseslint.config(
     ],
     rules: {
       '@stylistic/indent': ['error', 2, { ignoredNodes: ['PropertyDefinition'] }],
-      '@typescript-eslint/no-unused-expressions': 'error',
     },
   },
 
@@ -175,8 +175,7 @@ export default tseslint.config(
     rules: {
       'import-x/no-extraneous-dependencies': ['error', { devDependencies: true }],
       'n/no-unpublished-require': 'off', // "chai-as-promised" is not published
-      '@typescript-eslint/no-unused-expressions': 'off',
-      '@typescript-eslint/no-loop-func': 'off',
+      '@typescript-eslint/no-unused-expressions': 'off', // Needed for "expect().to.be.false"
     },
   },
 
