@@ -1013,7 +1013,7 @@ function filterServiceConfigs(
   }
   const outputFormat = selectFormat(operation, context, matches);
   if (outputFormat) {
-    operation.outputFormat = outputFormat; // eslint-disable-line no-param-reassign
+    operation.outputFormat = outputFormat;
     matches = selectServicesForFormat(outputFormat, matches);
   }
   const serviceConfig = matches[0];

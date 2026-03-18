@@ -25,7 +25,6 @@ process.env.MAX_BATCH_SIZE_IN_BYTES = '10000';
 
 process.env.PORT = '4000';
 
-// eslint-disable-next-line import/first
 import env from '../../app/util/env'; // Must set required env before loading the env file
 
 env.nodeEnv = 'test';

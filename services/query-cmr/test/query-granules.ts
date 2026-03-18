@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import chai, { expect } from 'chai';
 import { Stream } from 'form-data';
-/* eslint-disable node/no-unpublished-require */
 import fs from 'fs';
 import { describe, it } from 'mocha';
 import * as fetch from 'node-fetch';

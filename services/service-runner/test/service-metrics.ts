@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
-/* eslint-disable  node/no-unpublished-require */
 import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
 import chai, { expect } from 'chai';

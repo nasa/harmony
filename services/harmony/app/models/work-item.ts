@@ -654,7 +654,6 @@ export async function workItemCountForStep(
 ): Promise<number> {
   // Record<string, unknown> clashes with imported database Record class
   // so we use '{}' causing a linter error
-  // eslint-disable-next-line @typescript-eslint/ban-types
   const whereClause: {} = {
     jobID, workflowStepIndex: stepIndex,
   };
