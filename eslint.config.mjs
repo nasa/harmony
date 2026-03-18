@@ -164,17 +164,8 @@ export default tseslint.config(
       'services/work-updater/**/*.ts',
     ],
     rules: {
-      'n/no-unpublished-import': 'off',
       '@stylistic/indent': ['error', 2, { ignoredNodes: ['PropertyDefinition'] }],
       '@typescript-eslint/no-unused-expressions': 'error',
-    },
-  },
-
-  // 4. Harmony service override
-  {
-    files: ['services/harmony/**/*.ts'],
-    rules: {
-      'n/no-unpublished-import': 'off',
     },
   },
 
@@ -183,8 +174,7 @@ export default tseslint.config(
     files: ['services/**/test/**/*.ts', 'packages/**/test/**/*.ts'],
     rules: {
       'import-x/no-extraneous-dependencies': ['error', { devDependencies: true }],
-      'n/no-unpublished-require': 'off',
-      'n/no-unpublished-import': 'off',
+      'n/no-unpublished-require': 'off', // "chai-as-promised" is not published
       '@typescript-eslint/no-unused-expressions': 'off',
       '@typescript-eslint/no-loop-func': 'off',
     },
