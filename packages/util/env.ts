@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/dot-notation */
 import _ from 'lodash';
 import * as dotenv from 'dotenv';
 import * as fs from 'fs';

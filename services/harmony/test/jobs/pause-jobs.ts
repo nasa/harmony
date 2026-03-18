@@ -1,4 +1,3 @@
-/* eslint-disable no-loop-func */
 import { expect } from 'chai';
 import { v4 as uuid } from 'uuid';
 import _ from 'lodash';
