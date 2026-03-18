@@ -53,7 +53,7 @@ export default tseslint.config(
       'n/no-extraneous-require': 'error',
       'n/no-missing-import': 'off', // TypeScript handles import resolution
       'n/no-missing-require': 'error',
-      'n/no-process-exit': 'off', // redundant with core no-process-exit; avoids needing to update disable comments
+      'n/no-process-exit': 'error',
       'n/no-unpublished-bin': 'error',
       'n/no-unpublished-import': 'off',
       'n/no-unpublished-require': 'error',
@@ -61,7 +61,6 @@ export default tseslint.config(
       'n/no-unsupported-features/es-syntax': 'off',
       'n/no-unsupported-features/node-builtins': 'error',
       'n/process-exit-as-throw': 'error',
-      'no-process-exit': 'error',
 
       // --- @stylistic (replaces airbnb formatting rules) ---
       '@stylistic/indent': ['error', 2, { ignoredNodes: ['PropertyDefinition'], SwitchCase: 1 }],
