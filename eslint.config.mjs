@@ -7,12 +7,10 @@ import pluginTsdoc from 'eslint-plugin-tsdoc';
 import stylistic from '@stylistic/eslint-plugin';
 
 export default tseslint.config(
-  // 0. Match ESLint 8 behavior: don't warn on unused disable directives
-  //    (ESLint 9 defaults to 'warn'; ESLint 8 defaulted to 'off')
-  //    TODO: Change to 'warn' in a follow-up PR and remove stale disable comments
+  // Warn on unused eslint-disable directives so they don't accumulate again
   {
     linterOptions: {
-      reportUnusedDisableDirectives: 'off',
+      reportUnusedDisableDirectives: 'warn',
     },
   },
 
@@ -93,18 +91,6 @@ export default tseslint.config(
       '@stylistic/no-extra-semi': 'error',
       '@stylistic/object-curly-newline': 'off',
 
-      // --- @stylistic rules with pre-existing violations ---
-      // These match the airbnb config but were not being enforced.
-      // Enable and run `eslint --fix` in a follow-up PR.
-      '@stylistic/arrow-parens': 'off',           // 104 violations — airbnb uses 'as-needed'
-      '@stylistic/eol-last': 'off',               // 93 violations — missing final newline
-      '@stylistic/no-multiple-empty-lines': 'off', // 80 violations — extra blank lines
-      '@stylistic/no-multi-spaces': 'off',         // 26 violations — alignment spaces
-      '@stylistic/space-in-parens': 'off',         // 18 violations
-      '@stylistic/no-trailing-spaces': 'off',      // 10 violations
-      '@stylistic/array-bracket-spacing': 'off',   // 10 violations
-      '@stylistic/key-spacing': 'off',             // 5 violations
-      '@stylistic/block-spacing': 'off',           // 2 violations
 
       // --- Custom rules carried forward from root .eslintrc.yml ---
       'no-restricted-syntax': ['error', 'LabeledStatement', 'WithStatement'],
