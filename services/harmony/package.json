@@ -4,7 +4,7 @@
   "description": "Data services frontend",
   "main": "index.js",
   "scripts": {
-    "test": "strict-npm-engines && eslint . && nyc mocha && npm run better-audit",
+    "test": "strict-npm-engines && npm run lint && nyc mocha && npm run better-audit",
     "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha",
     "test-bail": "TS_NODE_TRANSPILE_ONLY=true mocha --bail",
     "coverage": "nyc mocha --load-env-files=false --bail 2>&1 | tee coverage-test.log",

@@ -4,7 +4,7 @@
   "description": "Utility modules related to Harmony",
   "main": "index.ts",
   "scripts": {
-    "test": "strict-npm-engines && eslint . && nyc mocha && npm run better-audit",
+    "test": "strict-npm-engines && npm run lint && nyc mocha && npm run better-audit",
     "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha",
     "test-bail": "TS_NODE_TRANSPILE_ONLY=true mocha --bail",
     "build": "rimraf built/* && tsc",
