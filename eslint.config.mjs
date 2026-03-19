@@ -80,19 +80,14 @@ export default tseslint.config(
       '@stylistic/lines-between-class-members': ['error', 'always', { exceptAfterSingleLine: false, exceptAfterOverload: true }],
       '@stylistic/no-extra-semi': 'error',
       '@stylistic/object-curly-newline': 'off', // recommend turning on and fixing the few errors
-      // --- Custom rules carried forward from root .eslintrc.yml ---
+
+      // --- Custom rules from root .eslintrc.yml ---
       'no-restricted-syntax': ['error', 'LabeledStatement', 'WithStatement'],
-      'class-methods-use-this': 'off',
-      'no-underscore-dangle': 'off',
       '@typescript-eslint/no-floating-promises': ['error'],
-      'jsdoc/require-jsdoc': 'warn',
-      'tsdoc/syntax': ['error'],
-      'no-await-in-loop': 'off',
-      'no-plusplus': 'off',
-      'prefer-destructuring': ['error', { array: false, object: true }, { enforceForRenamedProperties: false }],
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/explicit-function-return-type': 'error',
       '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^_', argsIgnorePattern: '^_', caughtErrors: 'none' }],
+      '@typescript-eslint/no-unused-expressions': 'error',
       '@typescript-eslint/naming-convention': [
         'error',
         {
@@ -103,15 +98,11 @@ export default tseslint.config(
         },
         { selector: 'objectLiteralProperty', format: [] },
       ],
+      'prefer-destructuring': ['error', { array: false, object: true }, { enforceForRenamedProperties: false }],
+      'jsdoc/require-jsdoc': 'warn',
+      'tsdoc/syntax': ['error'],
 
-      // --- typescript-eslint v8 ---
-      // ban-types was 'off' in old config; these are its v8 replacements, kept off
-      '@typescript-eslint/no-unsafe-function-type': 'off',
-      '@typescript-eslint/no-wrapper-object-types': 'off',
-      // no-empty-interface was not active on main; its v8 replacement kept off
-      '@typescript-eslint/no-empty-object-type': 'off',
-
-      // --- typescript-eslint rules from airbnb-typescript/base (verified via --print-config) ---
+      // --- typescript-eslint rules from airbnb-typescript/base ---
       '@typescript-eslint/default-param-last': 'error',
       '@typescript-eslint/dot-notation': ['error', { allowKeywords: true }],
       '@typescript-eslint/no-dupe-class-members': 'error',
@@ -123,29 +114,32 @@ export default tseslint.config(
       '@typescript-eslint/no-useless-constructor': 'error',
       '@typescript-eslint/only-throw-error': 'error',
       '@typescript-eslint/return-await': ['error', 'in-try-catch'],
-
-      // --- Airbnb best-practice rules ---
       'no-eval': 'error',
       'no-implied-eval': 'error',
-      'prefer-const': 'error',
-      'no-var': 'error',
 
       // --- Import rules (replaces plugin:import/errors + warnings + typescript) ---
       'import-x/default': 'error',
       'import-x/export': 'error',
       'import-x/extensions': ['error', 'ignorePackages', { js: 'never', mjs: 'never', ts: 'never' }],
-      'import-x/named': 'off',
       'import-x/namespace': 'error',
       'import-x/no-duplicates': 'warn',
       'import-x/no-extraneous-dependencies': ['error', { devDependencies: false }],
       'import-x/no-named-as-default': 'warn',
-      'import-x/no-named-as-default-member': 'off',
-      'import-x/no-unresolved': 'off',
 
-      // -- merged from multiple places.
-      'prefer-arrow-callback': 'off', // Recommend enabling and fixing the few violations.
+      // --- Rules turned off (intentional) ---
+      'class-methods-use-this': 'off',
+      'no-underscore-dangle': 'off',
+      'no-await-in-loop': 'off',
+      'no-plusplus': 'off',
+      'prefer-arrow-callback': 'off', // recommend enabling and fixing the few violations
       'func-names': 'off',
-      '@typescript-eslint/no-unused-expressions': 'error',
+      'import-x/named': 'off', // TypeScript handles this
+      'import-x/no-named-as-default-member': 'off', // false positives with TS
+      'import-x/no-unresolved': 'off', // TypeScript handles import resolution
+      // ban-types was 'off' in old config; these are its v8 replacements, kept off
+      '@typescript-eslint/no-unsafe-function-type': 'off',
+      '@typescript-eslint/no-wrapper-object-types': 'off',
+      '@typescript-eslint/no-empty-object-type': 'off',
     },
   },
 
@@ -156,7 +150,7 @@ export default tseslint.config(
       'import-x/no-extraneous-dependencies': ['error', { devDependencies: true }],
       'n/no-unpublished-require': 'off', // "chai-as-promised" is not published
       '@typescript-eslint/no-unused-expressions': 'off', // Needed for "expect().to.be.false"
-      'prefer-arrow-callback': 'off', // for "mocha describe('', function ()"
+      'prefer-arrow-callback': 'off', // for mocha describe('', function())
     },
   },
 
@@ -183,7 +177,7 @@ export default tseslint.config(
       'import-x': pluginImportX,
     },
     rules: {
-      'import-x/extensions': [2, { js: 'always' }],
+      'import-x/extensions': ['error', { js: 'always' }],
       '@stylistic/indent': 'off',
       'no-restricted-syntax': ['error', 'LabeledStatement', 'WithStatement'],
       'class-methods-use-this': 'off',
