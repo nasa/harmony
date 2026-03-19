@@ -612,7 +612,7 @@ describe('Service image endpoint', async function () {
         execStub = sinon.stub(serviceImageTags, 'asyncExec').callsFake(() => Promise.resolve({}));
 
         // Stub out the exec function to simulate successful execution
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         execDeployScriptStub = sinon.stub(require('child_process'), 'exec');
         execDeployScriptStub.callsArgWith(2, null, 'Success output', '');
 
@@ -685,7 +685,7 @@ describe('Service image endpoint', async function () {
         execStub = sinon.stub(serviceImageTags, 'asyncExec').callsFake(() => Promise.resolve({}));
 
         // Stub out the exec function to simulate successful execution
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         execDeployScriptStub = sinon.stub(require('child_process'), 'exec');
         execDeployScriptStub.callsArgWith(2, null, 'Success output', '');
 
@@ -1074,7 +1074,7 @@ describe('Service image endpoint', async function () {
             execStub = sinon.stub(serviceImageTags, 'asyncExec').callsFake(() => Promise.resolve({}));
 
             // Stub out the exec function to simulate successful execution
-            // eslint-disable-next-line @typescript-eslint/no-var-requires
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
             execDeployScriptStub = sinon.stub(require('child_process'), 'exec');
             execDeployScriptStub.callsArgWith(2, null, 'Success output', '');
 
@@ -1205,7 +1205,7 @@ describe('Service self-deployment successful', async function () {
       execStub = sinon.stub(serviceImageTags, 'asyncExec').callsFake(() => Promise.resolve({}));
 
       // Stub out the exec function to simulate successful execution
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       execDeployScriptStub = sinon.stub(require('child_process'), 'exec');
       execDeployScriptStub.callsArgWith(2, null, 'Success output', '');
 
@@ -1367,7 +1367,7 @@ describe('Service self-deployment failure', async function () {
       execStub = sinon.stub(serviceImageTags, 'asyncExec').callsFake(() => Promise.resolve({}));
 
       // Stub out the exec function to simulate failed execution
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       execDeployScriptStub = sinon.stub(require('child_process'), 'exec');
       execDeployScriptStub.callsArgWith(2, new Error(errorMessage), 'Failure output', '');
 
@@ -1639,7 +1639,7 @@ describe('Service self-deployment with cookie-secret', async function () {
       execStub = sinon.stub(serviceImageTags, 'asyncExec').callsFake(() => Promise.resolve({}));
 
       // Stub out the exec function to simulate successful execution
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       execDeployScriptStub = sinon.stub(require('child_process'), 'exec');
       execDeployScriptStub.callsArgWith(2, null, 'Success output', '');
 

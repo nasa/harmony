@@ -1,4 +1,3 @@
-/* eslint-disable import/namespace */
 import { before, after } from 'mocha';
 import { stub } from 'sinon';
 import * as cmr from '../../app/util/cmr';

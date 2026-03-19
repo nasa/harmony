@@ -8,7 +8,6 @@ import { makePartialWorkflowStepRecord, rawSaveWorkflowStep } from './helpers/wo
 import { JobRecord } from '../app/models/job';
 import { WorkItemRecord } from '../app/models/work-item-interface';
 import db from '../app/util/db';
-// eslint-disable-next-line node/no-missing-import
 import { parse } from 'csv-parse/sync';
 import { metricsFields } from '../app/frontends/request-metrics';
 import { truncateAll } from './helpers/db';

@@ -35,26 +35,26 @@ export function getGranuleSizeInBytes(
       granuleSizeInBytes += info.SizeInBytes;
     } else if (typeof info.Size === 'number' && info.SizeUnit) {
       switch (info.SizeUnit) {
-      case 'KB':
-        granuleSizeInBytes += info.Size * 1024;
-        break;
-      case 'MB':
-      case 'NA':
+        case 'KB':
+          granuleSizeInBytes += info.Size * 1024;
+          break;
+        case 'MB':
+        case 'NA':
         // Historically ECHO and CMR metadata formats always reported sizes in MB so when
         // the unit is not explicitly set we assume MB
-        granuleSizeInBytes += info.Size * 1024 * 1024;
-        break;
-      case 'GB':
-        granuleSizeInBytes += info.Size * 1024 * 1024 * 1024;
-        break;
-      case 'TB':
-        granuleSizeInBytes += info.Size * 1024 * 1024 * 1024 * 1024;
-        break;
-      case 'PB':
-        granuleSizeInBytes += info.Size * 1024 * 1024 * 1024 * 1024 * 1024;
-        break;
-      default:
-        logger.warn(`Unknown SizeUnit: ${info.SizeUnit}`);
+          granuleSizeInBytes += info.Size * 1024 * 1024;
+          break;
+        case 'GB':
+          granuleSizeInBytes += info.Size * 1024 * 1024 * 1024;
+          break;
+        case 'TB':
+          granuleSizeInBytes += info.Size * 1024 * 1024 * 1024 * 1024;
+          break;
+        case 'PB':
+          granuleSizeInBytes += info.Size * 1024 * 1024 * 1024 * 1024 * 1024;
+          break;
+        default:
+          logger.warn(`Unknown SizeUnit: ${info.SizeUnit}`);
       }
     }
   }

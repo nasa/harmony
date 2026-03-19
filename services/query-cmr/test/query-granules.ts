@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
+/* eslint-disable @typescript-eslint/no-require-imports */
 import chai, { expect } from 'chai';
 import { Stream } from 'form-data';
 import fs from 'fs';

@@ -1,4 +1,3 @@
-/* eslint-disable no-param-reassign */
 import { formatDates, initCopyHandler, trimForDisplay } from '../table.js';
 import PubSub from '../../pub-sub.js';
 

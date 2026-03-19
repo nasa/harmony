@@ -5,7 +5,7 @@ import { MemoryCache } from '../../app/util/cache/memory-cache';
 
 describe('MemoryCache', function () {
   describe('fetch', async function () {
-    // eslint-disable-next-line require-jsdoc
+    // eslint-disable-next-line jsdoc/require-jsdoc
     async function fakeFetchMethod(_key: string): Promise<string> {
       return 'bar';
     }

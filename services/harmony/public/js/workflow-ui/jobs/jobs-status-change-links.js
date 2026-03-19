@@ -46,7 +46,7 @@ class JobsStatusChangeLinks extends StatusChangeLinks {
     const jobIDs = jobsTable.getJobIds();
     const actionableJobIDs = this.getActionableJobIDs(jobIDs, link);
     const postfix = actionableJobIDs.length > 1 ? 's' : '';
-    // eslint-disable-next-line no-alert, no-restricted-globals
+    // eslint-disable-next-line no-alert
     if (!confirm(`Are you sure you want to ${(link.textContent || link.innerText).trim()} ${actionableJobIDs.length} job${postfix}?`)) {
       return;
     }
