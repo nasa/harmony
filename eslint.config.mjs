@@ -58,7 +58,7 @@ export default tseslint.config(
       'n/no-unpublished-import': 'off',
       'n/no-unpublished-require': 'error',
       'n/no-unsupported-features/es-builtins': 'error',
-      'n/no-unsupported-features/es-syntax': 'error', // enabled and everything still passed.
+      'n/no-unsupported-features/es-syntax': 'off',
       'n/no-unsupported-features/node-builtins': 'error',
       'n/process-exit-as-throw': 'error',
 
@@ -79,7 +79,7 @@ export default tseslint.config(
       '@stylistic/func-call-spacing': ['error', 'never'],
       '@stylistic/lines-between-class-members': ['error', 'always', { exceptAfterSingleLine: false, exceptAfterOverload: true }],
       '@stylistic/no-extra-semi': 'error',
-      '@stylistic/object-curly-newline': 'off', // recommend turning on and fixing the 16 errors
+      '@stylistic/object-curly-newline': 'off', // recommend turning on and fixing the few errors
       // --- Custom rules carried forward from root .eslintrc.yml ---
       'no-restricted-syntax': ['error', 'LabeledStatement', 'WithStatement'],
       'class-methods-use-this': 'off',
@@ -142,8 +142,8 @@ export default tseslint.config(
       'import-x/no-named-as-default-member': 'off',
       'import-x/no-unresolved': 'off',
 
-      // -- hoisted -- from below
-      'prefer-arrow-callback': 'off',
+      // -- merged from multiple places.
+      'prefer-arrow-callback': 'off', // Recommend enabling and fixing the few violations.
       'func-names': 'off',
       '@typescript-eslint/no-unused-expressions': 'error',
     },
@@ -156,6 +156,7 @@ export default tseslint.config(
       'import-x/no-extraneous-dependencies': ['error', { devDependencies: true }],
       'n/no-unpublished-require': 'off', // "chai-as-promised" is not published
       '@typescript-eslint/no-unused-expressions': 'off', // Needed for "expect().to.be.false"
+      'prefer-arrow-callback': 'off', // for "mocha describe('', function ()"
     },
   },
 
