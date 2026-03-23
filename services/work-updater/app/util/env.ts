@@ -31,7 +31,7 @@ class UpdaterHarmonyEnv extends HarmonyEnv {
    */
   specialConfig(env: Record<string, string>): Partial<UpdaterHarmonyEnv> {
     return {
-      workItemUpdateQueueType : env.WORK_ITEM_UPDATE_QUEUE_TYPE === 'large' ?
+      workItemUpdateQueueType: env.WORK_ITEM_UPDATE_QUEUE_TYPE === 'large' ?
         WorkItemQueueType.LARGE_ITEM_UPDATE : WorkItemQueueType.SMALL_ITEM_UPDATE,
     };
   }

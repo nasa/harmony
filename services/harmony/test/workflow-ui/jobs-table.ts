@@ -87,7 +87,7 @@ describe('Workflow UI jobs table route', function () {
       dateKind, tzOffsetMinutes, fromDateTime, toDateTime } });
     it('includes the date filters on the paging links', function () {
       const renderedDateQuery = mustache.render('{{query}}', {
-        query : `dateKind=${dateKind}` +
+        query: `dateKind=${dateKind}` +
           `&tzOffsetMinutes=${tzOffsetMinutes}` +
           `&fromDateTime=${encodeURIComponent(fromDateTime)}` +
           `&toDateTime=${encodeURIComponent(toDateTime)}`,
