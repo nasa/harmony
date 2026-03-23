@@ -75,6 +75,7 @@ export default tseslint.config(
       '@stylistic/space-before-function-paren': ['error', { anonymous: 'always', named: 'never', asyncArrow: 'always' }],
       '@stylistic/space-infix-ops': 'error',
       '@stylistic/keyword-spacing': ['error', { before: true, after: true }],
+      '@stylistic/no-trailing-spaces': 'error',
       '@stylistic/brace-style': ['error', '1tbs', { allowSingleLine: true }],
       '@stylistic/arrow-spacing': ['error', { before: true, after: true }],
       '@stylistic/func-call-spacing': ['error', 'never'],

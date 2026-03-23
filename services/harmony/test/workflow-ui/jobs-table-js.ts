@@ -10,7 +10,7 @@ beforeEach(async () => {
   global.document = dom.window.document;
 });
 
-describe('jobs-table.js', () => { 
+describe('jobs-table.js', () => {
   describe('handleSuccessResponse', () => {
     it('resets the jobs counter display to reflect the new set of selected rows', () => {
       const tableHtml = fs.readFileSync(path.resolve(__dirname, 'jobs-table.html'), 'utf-8');

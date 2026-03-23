@@ -4,8 +4,8 @@ import { createJsonLogger, createTextLogger } from '../../app/util/log';
 
 /**
  * Create a logger for unit testing.
- * 
- * @returns an object containing the logger 
+ *
+ * @returns an object containing the logger
  * and getTestLogs function for obtaining the log messages
  */
 export function createLoggerForTest(logJson = true): {
@@ -21,6 +21,6 @@ export function createLoggerForTest(logJson = true): {
   };
   const streamTransport = new winston.transports.Stream({ stream, level: 'debug' });
   const testLogger = logJson ? createJsonLogger([streamTransport]) : createTextLogger([streamTransport]);
-  
+
   return { getTestLogs, testLogger };
 }

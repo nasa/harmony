@@ -85,8 +85,8 @@ function parseIntegerParam(
  * @throws {@link RequestValidationError} If invalid paging parameters are provided
  */
 export function getPagingParams(
-  req: Request, 
-  defaultPageSize: number, 
+  req: Request,
+  defaultPageSize: number,
   minPageSize = 0,
   useMaxPageSizeWhenExceeded = false,
   useMinPageSizeWhenExceeded = false): PagingParams {
