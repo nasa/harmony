@@ -39,9 +39,9 @@ export default function start(): void {
         timezone: 'America/New_York',
         protect: true, // don't restart jobs that are still running
       },
-      async function () {
+      (async () => {
         jobClass.run(ctx);
-      }, // function run on cron tick
+      }), // function run on cron tick
     );
   }
 

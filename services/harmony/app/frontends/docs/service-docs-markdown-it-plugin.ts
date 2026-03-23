@@ -239,7 +239,7 @@ function getServiceTable(md: MarkDownIt, serviceCaps: ServiceCapabilities): unkn
  * @returns A function that takes a markdown instance and an options object.
  */
 export function generateServicesDocs(md: MarkDownIt, _options: Record<string, unknown>): void {
-  md.core.ruler.push('build-service-table', function (state) {
+  md.core.ruler.push('build-service-table', (state) => {
 
     const { tokens } = state;
     if (!tokens) return;

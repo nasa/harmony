@@ -49,7 +49,7 @@ export default function redact(
   info: TransformableInfo,
 ): TransformableInfo {
   let infoClone = redactObject(info, info, [], undefined);
-  Object.keys(info).forEach(function (key) {
+  Object.keys(info).forEach((key) => {
     if (typeof info[key] === 'object') {
       infoClone = redactObject(info[key], info, [key], infoClone);
     }

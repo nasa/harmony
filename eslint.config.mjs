@@ -131,7 +131,7 @@ export default tseslint.config(
       'no-underscore-dangle': 'off',
       'no-await-in-loop': 'off',
       'no-plusplus': 'off',
-      'prefer-arrow-callback': 'off', // recommend enabling and fixing the few violations
+      'prefer-arrow-callback': 'error',
       'func-names': 'off',
       'import-x/named': 'off', // TypeScript handles this
       'import-x/no-named-as-default-member': 'off', // false positives with TS

@@ -109,7 +109,7 @@ export const generateDocumentation = async (root: string): Promise<string> => {
     },
   )
     // interpolate some values into the inline tags
-    .use(inline, 'root_replace', 'text', function (tokens, idx) {
+    .use(inline, 'root_replace', 'text', (tokens, idx) => {
       tokens[idx].content = markdownInterpolate(tokens[idx].content, {
         root: () => root,
         exampleCounter: () => `${exampleCount--}`,

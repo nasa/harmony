@@ -8,7 +8,7 @@ import MarkDownIt from 'markdown-it';
  * @returns A function that takes a MarkDownIt instance and an options object.
  */
 export function interpolate(md: MarkDownIt, options: Record<string, () => string>): void {
-  md.core.ruler.push('interpolate-strings', function (state) {
+  md.core.ruler.push('interpolate-strings', (state) => {
 
     const { tokens } = state;
     if (!tokens) return;

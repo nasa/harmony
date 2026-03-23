@@ -15,7 +15,7 @@ import PullWorker from './workers/pull-worker';
  */
 export default async function start(_config: Record<string, string>): Promise<Server> {
   // trap SIGTERM so we can shut down gracefully via the PreStop hook
-  process.on('SIGTERM', function () {
+  process.on('SIGTERM', () => {
     process.exit(0);
   });
 
