@@ -7,6 +7,9 @@
 # enable no-multi-spaces
 cae668d6c494a7f494447720eae02ad845e84246
 
+# reverts above for no-multi-spaces comments only
+b51323358ee798268c724e6b726c02ee69f45900
+
 # enable space-in-parens
 5aeed55c859811421aea22048de7bc103939fa72
 
