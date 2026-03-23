@@ -69,6 +69,7 @@ export default tseslint.config(
       '@stylistic/comma-dangle': ['error', 'always-multiline'],
       '@stylistic/comma-spacing': ['error', { before: false, after: true }],
       '@stylistic/comma-style': ['error', 'last'],
+      '@stylistic/eol-last': ['error', 'always'],
       '@stylistic/object-curly-spacing': ['error', 'always'],
       '@stylistic/space-before-blocks': 'error',
       '@stylistic/space-before-function-paren': ['error', { anonymous: 'always', named: 'never', asyncArrow: 'always' }],
@@ -79,7 +80,7 @@ export default tseslint.config(
       '@stylistic/func-call-spacing': ['error', 'never'],
       '@stylistic/lines-between-class-members': ['error', 'always', { exceptAfterSingleLine: false, exceptAfterOverload: true }],
       '@stylistic/no-extra-semi': 'error',
-      '@stylistic/object-curly-newline': 'off', // recommend turning on and fixing the few errors
+      '@stylistic/object-curly-newline': 'off', // Leave off and use your best judgement.
 
       // --- Custom rules from root .eslintrc.yml ---
       'no-restricted-syntax': ['error', 'LabeledStatement', 'WithStatement'],
