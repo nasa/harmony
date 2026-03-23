@@ -74,6 +74,7 @@ export default tseslint.config(
       '@stylistic/object-curly-spacing': ['error', 'always'],
       '@stylistic/space-before-blocks': 'error',
       '@stylistic/space-before-function-paren': ['error', { anonymous: 'always', named: 'never', asyncArrow: 'always' }],
+      '@stylistic/space-in-parens': ['error', 'never'],
       '@stylistic/space-infix-ops': 'error',
       '@stylistic/key-spacing': 'error',
       '@stylistic/keyword-spacing': ['error', { before: true, after: true }],

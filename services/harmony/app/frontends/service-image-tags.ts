@@ -450,7 +450,7 @@ export async function getServiceImageTag(
  *
  * @param deploymentId - The id of service deployment
  */
-function getLogLocation(deploymentId: string ): string {
+function getLogLocation(deploymentId: string): string {
   return `s3://${env.artifactBucket}/${deploymentId}/log.json`;
 }
 

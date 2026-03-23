@@ -179,7 +179,7 @@ describe('external validation', function () {
     describe('when the external validation endpoint is unreachable', async function () {
       let postStub;
       before(function () {
-        postStub = stub(axios, 'post').throws({ code: 'ECONNREFUSED' } );
+        postStub = stub(axios, 'post').throws({ code: 'ECONNREFUSED' });
       });
 
       after(function () {

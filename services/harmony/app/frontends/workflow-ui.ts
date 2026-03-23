@@ -77,7 +77,7 @@ interface TableQuery {
  * @param maxFilters - set a limit on the number of user requested filters
  * @returns object containing filter values
  */
-function parseQuery( /* eslint-disable @typescript-eslint/no-explicit-any */
+function parseQuery(/* eslint-disable @typescript-eslint/no-explicit-any */
   requestQuery: Record<string, any>,
   statusEnum: any,
   isAdminAccess = false,

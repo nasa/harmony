@@ -6,7 +6,7 @@ import { createUserWorkRecord } from '../helpers/user-work';
 
 describe('user_work table', async function () {
   describe('when creating a row and setting the ready and running counts to positive values', async function () {
-    const userWork = createUserWorkRecord( { ready_count: 9, running_count: 5 });
+    const userWork = createUserWorkRecord({ ready_count: 9, running_count: 5 });
     before(async function () {
       await userWork.save(db);
     });
@@ -67,7 +67,7 @@ describe('user_work table', async function () {
   });
 
   describe('when the ready count is a positive value, and the running count is 0', function () {
-    const userWork = createUserWorkRecord( { ready_count: 9, running_count: 0 });
+    const userWork = createUserWorkRecord({ ready_count: 9, running_count: 0 });
     before(async function () {
       await userWork.save(db);
     });
@@ -124,7 +124,7 @@ describe('user_work table', async function () {
   });
 
   describe('when the ready count is 0, and the running count is a positive value', async function () {
-    const userWork = createUserWorkRecord( { ready_count: 0, running_count: 4 });
+    const userWork = createUserWorkRecord({ ready_count: 0, running_count: 4 });
     before(async function () {
       await userWork.save(db);
     });

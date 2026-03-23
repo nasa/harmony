@@ -15,7 +15,7 @@ import { TransformableInfo } from 'logform';
  * @param infoClone - A clone of 'info' or undefined if no sensitive values have been found.
  * @returns - A clone of 'info' or undefined if no sensitive values have been found.
  */
-function redactObject(  /* eslint-disable @typescript-eslint/no-explicit-any */
+function redactObject(/* eslint-disable @typescript-eslint/no-explicit-any */
   obj: any,
   info: TransformableInfo,
   infoPath: string[],
