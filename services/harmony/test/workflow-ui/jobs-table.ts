@@ -12,7 +12,6 @@ import * as mustache from 'mustache';
 import { setLabelsForJob } from '../../app/models/label';
 
 
-
 // main objects used in the tests
 const boJob1 = buildJob({ status: JobStatus.RUNNING, username: 'bo', provider_id: 'provider_a' });
 const boJob2 = buildJob({ status: JobStatus.SUCCESSFUL, username: 'bo', service_name: 'cog-maker', provider_id: 'provider_b' });
