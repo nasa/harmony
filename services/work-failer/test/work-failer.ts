@@ -143,7 +143,7 @@ describe('WorkFailer', function () {
       runningDate, // The mock date that will be used for when the items started RUNNING again
       failerDate, // The mock date that the work failer will run
       workItemStatuses, // The item statuses that we expect after the work failer runs
-      numItemUpdates, // The number of work items that we expect to be processed on each invocation of the work failer
+      numItemUpdates,  // The number of work items that we expect to be processed on each invocation of the work failer
       jobStatus, // The job status that we expect to see after the work failer runs
     ]:
     [Job, number, string, string, WorkItemStatus[], number, JobStatus]) => {

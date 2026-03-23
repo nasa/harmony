@@ -76,7 +76,7 @@ export default tseslint.config(
       '@stylistic/space-before-blocks': 'error',
       '@stylistic/space-before-function-paren': ['error', { anonymous: 'always', named: 'never', asyncArrow: 'always' }],
       '@stylistic/space-in-parens': ['error', 'never'],
-      '@stylistic/no-multi-spaces': 'error',
+      '@stylistic/no-multi-spaces': ['error', {'ignoreEOLComments': true}],
       '@stylistic/no-multiple-empty-lines': 'error',
       '@stylistic/space-infix-ops': 'error',
       '@stylistic/key-spacing': 'error',

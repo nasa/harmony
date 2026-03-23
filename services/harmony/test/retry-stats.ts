@@ -59,8 +59,8 @@ describe('getRetryStatistics', () => {
       expect(result).to.deep.equal({
         numMinutes: 60,
         counts: mockRetryData,
-        totalWorkItems: 140, // 100 + 20 + 10 + 5 + 3 + 2
-        totalRetries: 77, // 0*100 + 1*20 + 2*10 + 3*5 + 4*3 + 5*2
+        totalWorkItems: 140,    // 100 + 20 + 10 + 5 + 3 + 2
+        totalRetries: 77,       // 0*100 + 1*20 + 2*10 + 3*5 + 4*3 + 5*2
         totalWorkItemExecutions: 217,
         percentSuccessful: '64.52%',
         percentRetried: '35.48%',
