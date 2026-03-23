@@ -157,7 +157,7 @@ function _getErrorMessageOfStatus(status: k8s.V1Status, msg = 'Unknown error'): 
  */
 async function _getErrorInfo(
   status: k8s.V1Status, catalogDir: string, workItemLogger: Logger = logger,
-): Promise<{ error: string; level: 'error' | 'warning';  category?: string }> {
+): Promise<{ error: string; level: 'error' | 'warning'; category?: string }> {
   // expect JSON logs entries
   try {
     const s3 = objectStoreForProtocol('s3');

@@ -164,8 +164,8 @@ export function calculateNumItemsToQueue(
 }
 
 type QueueItem = {
-  body: string;        // serviceID
-  receipt: string;     // SQS receiptHandle
+  body: string; // serviceID
+  receipt: string; // SQS receiptHandle
 };
 
 /**

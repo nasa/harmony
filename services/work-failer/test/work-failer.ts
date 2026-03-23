@@ -131,7 +131,7 @@ describe('WorkFailer', function () {
     [
       // twoOldJob
       [twoOldJob, 2, '1/2/2000', '1/3/2000', [WorkItemStatus.READY, WorkItemStatus.READY], 2, JobStatus.RUNNING],
-      [twoOldJob, 3, '1/3/2000', '1/4/2000', [WorkItemStatus.READY, WorkItemStatus.READY], 2,  JobStatus.RUNNING],
+      [twoOldJob, 3, '1/3/2000', '1/4/2000', [WorkItemStatus.READY, WorkItemStatus.READY], 2, JobStatus.RUNNING],
       [twoOldJob, 4, '1/4/2000', '1/5/2000', [WorkItemStatus.FAILED, WorkItemStatus.CANCELED], 2, JobStatus.FAILED],
       // oneOldJob
       [oneOldJob, 2, '1/2/2000', '1/3/2000', [WorkItemStatus.READY, WorkItemStatus.READY], 1, JobStatus.RUNNING],
@@ -143,7 +143,7 @@ describe('WorkFailer', function () {
       runningDate, // The mock date that will be used for when the items started RUNNING again
       failerDate, // The mock date that the work failer will run
       workItemStatuses, // The item statuses that we expect after the work failer runs
-      numItemUpdates,  // The number of work items that we expect to be processed on each invocation of the work failer
+      numItemUpdates, // The number of work items that we expect to be processed on each invocation of the work failer
       jobStatus, // The job status that we expect to see after the work failer runs
     ]:
     [Job, number, string, string, WorkItemStatus[], number, JobStatus]) => {

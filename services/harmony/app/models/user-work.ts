@@ -65,7 +65,7 @@ export async function getNextUsernameForWork(tx: Transaction, serviceID: string)
   const subquery = tx(UserWork.table)
     .distinct('username')
     .where('service_id', '=', serviceID)
-    .where('ready_count',  '>',  0);
+    .where('ready_count', '>', 0);
 
   const results = await tx(UserWork.table)
     .select('username')

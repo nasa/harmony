@@ -722,7 +722,7 @@ export async function getDeploymentLogs(
 
   const { deploymentId } = req.params;
   try {
-    const logs =  await objectStoreForProtocol('s3')
+    const logs = await objectStoreForProtocol('s3')
       .getObjectJson(getLogLocation(deploymentId));
     res.json(logs);
   } catch (e) {

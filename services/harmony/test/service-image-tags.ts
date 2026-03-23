@@ -479,7 +479,7 @@ describe('Service image endpoint', async function () {
       before(async function () {
         hookRedirect('buzz');
         this.res = await request(this.frontend).put('/service-image-tag/hoss').use(auth({ username: 'buzz' })).send(
-          { tag: 'latest', unsupportedOne: 'foo',  unsupportedTwo: 'foo' });
+          { tag: 'latest', unsupportedOne: 'foo', unsupportedTwo: 'foo' });
       });
 
       after(function () {

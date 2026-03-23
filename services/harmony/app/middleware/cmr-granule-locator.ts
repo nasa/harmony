@@ -21,10 +21,10 @@ import { computeMbr } from '../util/spatial/mbr';
  */
 export enum GranuleLimitReason {
   Collection, // limited by the collection configuration
-  Service,    // limited by the service chain configuration
+  Service, // limited by the service chain configuration
   MaxResults, // limited by the maxResults query parameter
-  System,     // limited by the system environment
-  None,       // not limited
+  System, // limited by the system environment
+  None, // not limited
 }
 
 /**

@@ -130,7 +130,7 @@ export function getJobForDisplay(job: Job, urlRoot: string, linkType?: string, m
   }
 
   if (errors.length > 0) {
-    serializedJob.errors =  errors.map((e) => _.pick(e, ['url', 'message'])) as JobMessage[];
+    serializedJob.errors = errors.map((e) => _.pick(e, ['url', 'message'])) as JobMessage[];
   }
 
   if (warnings.length > 0) {
@@ -149,7 +149,7 @@ export function getJobForDisplay(job: Job, urlRoot: string, linkType?: string, m
  * @throws {@link NotFoundError} if the job does not exist or the job does not
  * belong to the user.
  */
-async function lookupJob(tx: Transaction, jobID: string, username: string): Promise<Job>  {
+async function lookupJob(tx: Transaction, jobID: string, username: string): Promise<Job> {
   const { job } = username ?
     await Job.byUsernameAndJobID(tx, username, jobID) :
     await Job.byJobID(tx, jobID);

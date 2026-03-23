@@ -143,7 +143,7 @@ describe('Work Backends', function () {
     });
 
     describe('when ready_count > 0 for a service, but there are no ready work items (user_work record is out of sync)', function () {
-      before(async  function () {
+      before(async function () {
         await incrementReadyCount(db, 'ABCD', 'theDoneService');
         const count = await getCount(db, 'ABCD', 'theDoneService', 'ready');
         expect(count).eq(1);

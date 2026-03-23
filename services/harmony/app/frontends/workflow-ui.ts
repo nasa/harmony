@@ -231,7 +231,7 @@ function jobRenderingFunctions(logger: Logger, requestQuery: Record<string, any>
       }
     },
     jobLabels(): string {
-      return  JSON.stringify(this.labels || []);
+      return JSON.stringify(this.labels || []);
     },
     jobLabelsDisplay(): string {
       return this.labels.map((label) => {
@@ -779,7 +779,7 @@ export async function getWorkItemLogs(
     if (!isAdminOrLogViewer) {
       throw new ForbiddenError();
     }
-    const logs =  await objectStoreForProtocol('s3')
+    const logs = await objectStoreForProtocol('s3')
       .getObjectJson(getItemLogsLocation({ id: parseInt(id), jobID }));
     res.json(logs);
   } catch (e) {

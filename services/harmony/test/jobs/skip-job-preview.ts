@@ -230,7 +230,7 @@ describe('Skipping job preview', function () {
           });
 
           describe('when skipping the preview it sets the job to the running status', async function () {
-            before(async function  () {
+            before(async function () {
               const job = JSON.parse(this.res.text);
               await skipPreview(this.frontend, { jobID: job.jobID, username: 'joe' } as Job).use(auth({ username: 'joe' }));
               const jobStatusResponse = await jobStatus(this.frontend, { jobID: job.jobID, username: 'joe' } as Job).use(auth({ username: 'joe' }));
