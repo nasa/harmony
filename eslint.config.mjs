@@ -63,6 +63,7 @@ export default tseslint.config(
       'n/process-exit-as-throw': 'error',
 
       // --- @stylistic (replaces airbnb formatting rules) ---
+      '@stylistic/array-bracket-spacing': ['error', 'never'],
       '@stylistic/indent': ['error', 2, { ignoredNodes: ['PropertyDefinition'], SwitchCase: 1 }],
       '@stylistic/semi': ['error', 'always'],
       '@stylistic/quotes': ['error', 'single', { avoidEscape: true }],

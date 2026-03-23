@@ -253,7 +253,7 @@ function jobRenderingFunctions(logger: Logger, requestQuery: Record<string, any>
     },
     sortGranulesLinks(): string {
       // return links that lets the user apply or unapply an asc or desc sort
-      const [ asc, desc ] = [ 'asc', 'desc' ].map((sortValue) => {
+      const [asc, desc] = ['asc', 'desc'].map((sortValue) => {
         const isSorted = requestQuery.sortgranules === sortValue;
         const colorClass = isSorted ? 'link-dark' : '';
         const title = `${isSorted ? 'un' : ''}apply ${sortValue === 'asc' ? 'ascending' : 'descending'} sort`;

@@ -140,7 +140,7 @@ export function getLinkRelevantJobEvents(job: JobForDisplay): Set<JobEvent> {
     // This may be a valid transition for other states, but we
     // are only interested in it when the job is currently previewing.
     // e.g. skipping preview is valid for a paused job but doesn't make sense to a user
-    transitions.push([ JobEvent.SKIP_PREVIEW, JobStatus.RUNNING ]);
+    transitions.push([JobEvent.SKIP_PREVIEW, JobStatus.RUNNING]);
   }
   const validEvents = new Set<JobEvent>();
   for (const [event, newStatus] of transitions) {

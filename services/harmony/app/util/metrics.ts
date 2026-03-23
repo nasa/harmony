@@ -82,7 +82,7 @@ export interface ResponseMetric {
 function constructBboxFromOperation(operation: DataOperation): BboxMetric {
   const bbox = operation.boundingRectangle;
   if (bbox) {
-    const [ west, south, east, north ] = bbox;
+    const [west, south, east, north] = bbox;
     return { west, south, east, north };
   }
   return null;

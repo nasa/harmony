@@ -1305,10 +1305,10 @@ describe('createWorkflowSteps', function () {
       },
       'umm': {
         'ArchiveAndDistributionInformation': {
-          'FileArchiveInformation': [ {
+          'FileArchiveInformation': [{
             'Format': 'netCDF-4',
             'FormatType': 'Native',
-          } ],
+          }],
         },
       },
     }];
