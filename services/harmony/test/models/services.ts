@@ -952,7 +952,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
     describe('requesting service with two variable subsetting and both matches', function () {
       const operation = new DataOperation();
-      operation.addSource(collectionId, shortName, versionId,  [{ meta: { 'concept-id': variableId1 }, umm: { Name: 'the-var-1' } },
+      operation.addSource(collectionId, shortName, versionId, [{ meta: { 'concept-id': variableId1 }, umm: { Name: 'the-var-1' } },
         { meta: { 'concept-id': variableId2 }, umm: { Name: 'the-var-2' } }]);
       operation.outputFormat = 'text/csv';
 
@@ -1305,10 +1305,10 @@ describe('createWorkflowSteps', function () {
       },
       'umm': {
         'ArchiveAndDistributionInformation': {
-          'FileArchiveInformation': [ {
+          'FileArchiveInformation': [{
             'Format': 'netCDF-4',
             'FormatType': 'Native',
-          } ],
+          }],
         },
       },
     }];

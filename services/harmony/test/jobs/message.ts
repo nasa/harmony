@@ -268,7 +268,7 @@ describe('job constructor message handling', function () {
       before(function () {
         const jobID = uuid().toString();
         job = new Job({
-          message: JSON.stringify({ 'failed':'something bad happened..' }),
+          message: JSON.stringify({ 'failed': 'something bad happened..' }),
           status: JobStatus.FAILED,
           jobID,
           requestId: jobID,
@@ -287,7 +287,7 @@ describe('job constructor message handling', function () {
       before(function () {
         const jobID = uuid().toString();
         job = new Job({
-          message: JSON.stringify({ 'failed':'something bad happened..' }),
+          message: JSON.stringify({ 'failed': 'something bad happened..' }),
           status: JobStatus.RUNNING,
           jobID,
           requestId: jobID,

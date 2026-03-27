@@ -35,7 +35,7 @@ describe('jobStatusCaching', function () {
   let redirect;
 
   describe('when making an async request', function () {
-    hookRangesetRequest('1.0.0', collection, 'all', { query } );
+    hookRangesetRequest('1.0.0', collection, 'all', { query });
     it('caches the job status page', function () {
       redirect = this.res.headers.location;
       jobId = redirect.split('/')[2];

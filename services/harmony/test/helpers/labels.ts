@@ -9,7 +9,7 @@ import { auth } from './auth';
  * @param labels - the labels to add to the jobs
  */
 export function addJobsLabels(app, jobIds: string[], labels: string[], username: string): Test {
-  return request(app).put('/labels').use(auth({ username })).send({ jobID: jobIds, label: labels  });
+  return request(app).put('/labels').use(auth({ username })).send({ jobID: jobIds, label: labels });
 }
 
 /**

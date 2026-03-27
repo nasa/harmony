@@ -57,7 +57,7 @@ function calculateExponentialDelay(
  */
 export function isRetryable(error: AxiosError): boolean {
   if (isNetworkOrIdempotentRequestError(error) ||
-    [AxiosErrorCode.ECONNABORTED.valueOf(), AxiosErrorCode.ECONNRESET.valueOf()].includes(error.code) ) {
+    [AxiosErrorCode.ECONNABORTED.valueOf(), AxiosErrorCode.ECONNRESET.valueOf()].includes(error.code)) {
     logger.warn('Axios retry condition has been met.',
       { 'axios-retry': error?.config['axios-retry'], 'message': error.message, 'code': error.code });
     return true;

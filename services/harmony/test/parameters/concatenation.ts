@@ -139,7 +139,7 @@ describe('testing concatenation', function () {
     const conciseImage = 'ghcr.io/podaac/concise:sit';
 
     describe('When passing the concatenate parameter and spatial subsetting', function () {
-      hookServersStartStop( { USE_EDL_CLIENT_APP: true });
+      hookServersStartStop({ USE_EDL_CLIENT_APP: true });
       const query = {
         concatenate: true,
         subset: 'lat(0:90)',

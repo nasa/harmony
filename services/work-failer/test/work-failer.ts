@@ -131,7 +131,7 @@ describe('WorkFailer', function () {
     [
       // twoOldJob
       [twoOldJob, 2, '1/2/2000', '1/3/2000', [WorkItemStatus.READY, WorkItemStatus.READY], 2, JobStatus.RUNNING],
-      [twoOldJob, 3, '1/3/2000', '1/4/2000', [WorkItemStatus.READY, WorkItemStatus.READY], 2,  JobStatus.RUNNING],
+      [twoOldJob, 3, '1/3/2000', '1/4/2000', [WorkItemStatus.READY, WorkItemStatus.READY], 2, JobStatus.RUNNING],
       [twoOldJob, 4, '1/4/2000', '1/5/2000', [WorkItemStatus.FAILED, WorkItemStatus.CANCELED], 2, JobStatus.FAILED],
       // oneOldJob
       [oneOldJob, 2, '1/2/2000', '1/3/2000', [WorkItemStatus.READY, WorkItemStatus.READY], 1, JobStatus.RUNNING],
@@ -153,7 +153,7 @@ describe('WorkFailer', function () {
         let items = (await getWorkItemsByJobId(db, job.jobID)).workItems;
 
         for (const item of items) {
-          if (!oldItems.map(i => {return i.id;}).includes(item.id)) {
+          if (!oldItems.map(i => { return i.id; }).includes(item.id)) {
             // only simulating for the "old" items as specified in the before hook
             continue;
           }

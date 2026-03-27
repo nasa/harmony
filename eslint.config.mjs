@@ -63,23 +63,31 @@ export default tseslint.config(
       'n/process-exit-as-throw': 'error',
 
       // --- @stylistic (replaces airbnb formatting rules) ---
+      '@stylistic/array-bracket-spacing': ['error', 'never'],
+      '@stylistic/block-spacing': ['error', 'always'],
       '@stylistic/indent': ['error', 2, { ignoredNodes: ['PropertyDefinition'], SwitchCase: 1 }],
       '@stylistic/semi': ['error', 'always'],
       '@stylistic/quotes': ['error', 'single', { avoidEscape: true }],
       '@stylistic/comma-dangle': ['error', 'always-multiline'],
       '@stylistic/comma-spacing': ['error', { before: false, after: true }],
       '@stylistic/comma-style': ['error', 'last'],
+      '@stylistic/eol-last': ['error', 'always'],
       '@stylistic/object-curly-spacing': ['error', 'always'],
       '@stylistic/space-before-blocks': 'error',
       '@stylistic/space-before-function-paren': ['error', { anonymous: 'always', named: 'never', asyncArrow: 'always' }],
+      '@stylistic/space-in-parens': ['error', 'never'],
+      '@stylistic/no-multi-spaces': ['error', {'ignoreEOLComments': true}],
+      '@stylistic/no-multiple-empty-lines': 'error',
       '@stylistic/space-infix-ops': 'error',
+      '@stylistic/key-spacing': 'error',
       '@stylistic/keyword-spacing': ['error', { before: true, after: true }],
+      '@stylistic/no-trailing-spaces': 'error',
       '@stylistic/brace-style': ['error', '1tbs', { allowSingleLine: true }],
       '@stylistic/arrow-spacing': ['error', { before: true, after: true }],
       '@stylistic/func-call-spacing': ['error', 'never'],
       '@stylistic/lines-between-class-members': ['error', 'always', { exceptAfterSingleLine: false, exceptAfterOverload: true }],
       '@stylistic/no-extra-semi': 'error',
-      '@stylistic/object-curly-newline': 'off', // recommend turning on and fixing the few errors
+      '@stylistic/object-curly-newline': 'off', // Leave off and use your best judgement.
 
       // --- Custom rules from root .eslintrc.yml ---
       'no-restricted-syntax': ['error', 'LabeledStatement', 'WithStatement'],
@@ -131,7 +139,7 @@ export default tseslint.config(
       'no-underscore-dangle': 'off',
       'no-await-in-loop': 'off',
       'no-plusplus': 'off',
-      'prefer-arrow-callback': 'off', // recommend enabling and fixing the few violations
+      'prefer-arrow-callback': 'error',
       'func-names': 'off',
       'import-x/named': 'off', // TypeScript handles this
       'import-x/no-named-as-default-member': 'off', // false positives with TS

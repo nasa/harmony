@@ -1,0 +1,29 @@
+# enable block-spacing
+1ec8c72f82c8e6940ad6c6119d4cfba41477dd58
+
+# enable no-multiple-empty-lines
+80cee1f4baa3bc4f526c05223cf6ab10b0cb4c9f
+
+# enable no-multi-spaces
+cae668d6c494a7f494447720eae02ad845e84246
+
+# reverts above for no-multi-spaces comments only
+b51323358ee798268c724e6b726c02ee69f45900
+
+# enable space-in-parens
+5aeed55c859811421aea22048de7bc103939fa72
+
+# enable key-spacing
+e4917ab4c8ebe8d35117c64fe9991fcf09772dd4
+
+# enable array-bracket-spacing
+fed4c462a97bf50f4542d11c875f37013457fd61
+
+# enable no-trailing-spaces
+8cf924224e94d4fb2eaf3cb7e7ba507252b7def1
+
+# enable eol-last
+9f49388a473af3b8da046c4844825220af824734
+
+# enable prefer-arrow-callback
+284770134846da51e8d22d7dd7dc711fe34ebed7

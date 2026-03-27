@@ -77,7 +77,7 @@ interface TableQuery {
  * @param maxFilters - set a limit on the number of user requested filters
  * @returns object containing filter values
  */
-function parseQuery( /* eslint-disable @typescript-eslint/no-explicit-any */
+function parseQuery(/* eslint-disable @typescript-eslint/no-explicit-any */
   requestQuery: Record<string, any>,
   statusEnum: any,
   isAdminAccess = false,
@@ -231,7 +231,7 @@ function jobRenderingFunctions(logger: Logger, requestQuery: Record<string, any>
       }
     },
     jobLabels(): string {
-      return  JSON.stringify(this.labels || []);
+      return JSON.stringify(this.labels || []);
     },
     jobLabelsDisplay(): string {
       return this.labels.map((label) => {
@@ -253,7 +253,7 @@ function jobRenderingFunctions(logger: Logger, requestQuery: Record<string, any>
     },
     sortGranulesLinks(): string {
       // return links that lets the user apply or unapply an asc or desc sort
-      const [ asc, desc ] = [ 'asc', 'desc' ].map((sortValue) => {
+      const [asc, desc] = ['asc', 'desc'].map((sortValue) => {
         const isSorted = requestQuery.sortgranules === sortValue;
         const colorClass = isSorted ? 'link-dark' : '';
         const title = `${isSorted ? 'un' : ''}apply ${sortValue === 'asc' ? 'ascending' : 'descending'} sort`;
@@ -779,7 +779,7 @@ export async function getWorkItemLogs(
     if (!isAdminOrLogViewer) {
       throw new ForbiddenError();
     }
-    const logs =  await objectStoreForProtocol('s3')
+    const logs = await objectStoreForProtocol('s3')
       .getObjectJson(getItemLogsLocation({ id: parseInt(id), jobID }));
     res.json(logs);
   } catch (e) {

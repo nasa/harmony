@@ -9,7 +9,7 @@ beforeEach(async () => {
   global.document = dom.window.document;
 });
 
-describe('labels.js', () => { 
+describe('labels.js', () => {
   describe('handleLabelsResponse', () => {
     it('inserts a new label when insertNew is true', async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -119,7 +119,7 @@ describe('labels.js', () => {
       expect(greenLi.style.display).to.equal('none');
       expect(yellowLi.style.display).to.equal('none');
       expect(document.getElementById('labels-li').style.display).to.equal('');
-      
+
       (document.querySelector('#label-search') as HTMLInputElement).value = '';
       Labels.filterLabelsList();
       expect(blueLi.style.display).to.not.equal('none');

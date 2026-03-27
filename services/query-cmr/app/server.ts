@@ -39,7 +39,7 @@ function errorHandler(
  */
 export default function start(_config: Record<string, string>): Server {
   // trap SIGTERM so we can shut down gracefully via the PreStop hook
-  process.on('SIGTERM', function () {
+  process.on('SIGTERM', () => {
     // eslint-disable-next-line n/no-process-exit
     process.exit(0);
   });

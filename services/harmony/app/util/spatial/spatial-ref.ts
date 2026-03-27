@@ -99,7 +99,7 @@ const WELL_KNOWN_NAMES: Record<string, string> = {
   'WGS 84': '4326',
   WGS_84: '4326',
   CRS84: '4326',
-  'CRS:84':'4326',
+  'CRS:84': '4326',
   NAD83: '4269',
   NAD27: '4267',
   WGS72: '4322',

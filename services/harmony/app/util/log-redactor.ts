@@ -15,7 +15,7 @@ import { TransformableInfo } from 'logform';
  * @param infoClone - A clone of 'info' or undefined if no sensitive values have been found.
  * @returns - A clone of 'info' or undefined if no sensitive values have been found.
  */
-function redactObject(  /* eslint-disable @typescript-eslint/no-explicit-any */
+function redactObject(/* eslint-disable @typescript-eslint/no-explicit-any */
   obj: any,
   info: TransformableInfo,
   infoPath: string[],
@@ -49,7 +49,7 @@ export default function redact(
   info: TransformableInfo,
 ): TransformableInfo {
   let infoClone = redactObject(info, info, [], undefined);
-  Object.keys(info).forEach(function (key) {
+  Object.keys(info).forEach((key) => {
     if (typeof info[key] === 'object') {
       infoClone = redactObject(info[key], info, [key], infoClone);
     }

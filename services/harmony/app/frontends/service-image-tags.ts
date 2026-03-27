@@ -450,7 +450,7 @@ export async function getServiceImageTag(
  *
  * @param deploymentId - The id of service deployment
  */
-function getLogLocation(deploymentId: string ): string {
+function getLogLocation(deploymentId: string): string {
   return `s3://${env.artifactBucket}/${deploymentId}/log.json`;
 }
 
@@ -722,7 +722,7 @@ export async function getDeploymentLogs(
 
   const { deploymentId } = req.params;
   try {
-    const logs =  await objectStoreForProtocol('s3')
+    const logs = await objectStoreForProtocol('s3')
       .getObjectJson(getLogLocation(deploymentId));
     res.json(logs);
   } catch (e) {

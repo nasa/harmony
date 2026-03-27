@@ -230,7 +230,7 @@ async function cmrGranuleLocatorTurbo(
       }
 
       // Only perform CMR granule query when needed by the first step
-      if ( req.context.serviceConfig.steps[0].image.match('harmonyservices/query-cmr:.*') ) {
+      if (req.context.serviceConfig.steps[0].image.match('harmonyservices/query-cmr:.*')) {
         cmrQuery.collection_concept_id = source.collection;
         const { hits, sessionKey } = await queryGranulesWithSearchAfter(
           req.context,
@@ -431,7 +431,7 @@ async function asyncGranuleLocator(
     }
 
     // Only store query params in S3 when needed by the first step
-    if ( req.context.serviceConfig.steps[0].image.match('harmonyservices/query-cmr:.*') ) {
+    if (req.context.serviceConfig.steps[0].image.match('harmonyservices/query-cmr:.*')) {
       cmrQuery.collection_concept_id = sources[0].collection;
       // generate a session key and store the query parameters in the staging bucket using the key
       const sessionKey = uuid();

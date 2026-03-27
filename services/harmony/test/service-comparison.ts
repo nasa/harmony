@@ -120,7 +120,7 @@ describe('service-comparison.ts', function () {
           Name: 'harmony subsetter',
           ServiceOptions: {
             Aggregation: {
-              
+
             },
           },
         },

@@ -77,7 +77,7 @@ const job = buildJob(jobProps as unknown);
  * @param url - The location of the schema file
  * @returns a promise containing an object for the JSON schema
  */
-async function loadSchema(url: string): Promise<Object>  {
+async function loadSchema(url: string): Promise<Object> {
   const res = await axios.get(url);
   if (res.status >= 400) throw new Error('Error loading JSON schema: ' + res.status);
   return res.data;
