@@ -4,9 +4,9 @@
     "notes": "Will fix in HARMONY-2280",
     "expiry": "2026-06-01"
   },
-  "GHSA-2g4f-4pwh-qvx6": {
+  "GHSA-qj8w-gfj5-8c6v": {
     "active": true,
-    "notes": "Will fix in HARMONY-2261",
+    "notes": "Will fix in HARMONY-2315",
     "expiry": "2026-06-01"
   }
 }
