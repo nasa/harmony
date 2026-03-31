@@ -45,6 +45,7 @@ import extendDefault from '../middleware/extend';
 import { externalValidation } from '../middleware/external-validation';
 import handleJobIDParameter from '../middleware/job-id';
 import handleLabelParameter from '../middleware/label';
+import optionsHandler from '../middleware/options';
 import parameterValidation from '../middleware/parameter-validation';
 import { admin, core } from '../middleware/permission-groups';
 import validateRestrictedVariables from '../middleware/restricted-variables';
@@ -194,6 +195,10 @@ export default function router({ USE_EDL_CLIENT_APP = 'false' }: RouterConfig): 
   // Handle multipart/form-data (used for shapefiles). Files will be uploaded to
   // a bucket.
   result.post(collectionPrefix('(ogc-api-coverages)'), asyncHandler(shapefileUpload()));
+
+  // CORS preflight requests should not use authorization so make sure to include prior
+  // to authorization middleware
+  result.options('*', optionsHandler);
 
   if (`${USE_EDL_CLIENT_APP}` !== 'false') {
     result.use(logged(earthdataLoginTokenAuthorizer(authorizedRoutes)));

@@ -1,12 +1,14 @@
 import axios from 'axios';
-import { AuthorizationCode, Token, ModuleOptions } from 'simple-oauth2';
-import { RequestHandler, NextFunction } from 'express';
-import { cookieOptions, setCookiesForEdl } from '../util/cookies';
+import { NextFunction, RequestHandler } from 'express';
+import { AuthorizationCode, ModuleOptions, Token } from 'simple-oauth2';
+
 import { listToText } from '@harmony/util/string';
-import { hasCookieSecret } from '../util/cookie-secret';
-import { RequestValidationError, UnauthorizedError } from '../util/errors';
+
 import HarmonyRequest from '../models/harmony-request';
+import { hasCookieSecret } from '../util/cookie-secret';
+import { cookieOptions, setCookiesForEdl } from '../util/cookies';
 import env from '../util/env';
+import { RequestValidationError, UnauthorizedError } from '../util/errors';
 
 if (process.env.USE_EDL_CLIENT_APP === 'true') {
   const vars = ['OAUTH_CLIENT_ID', 'OAUTH_UID', 'OAUTH_PASSWORD', 'OAUTH_REDIRECT_URI', 'OAUTH_HOST'];
@@ -178,6 +180,7 @@ export default function buildEdlAuthorizer(paths: Array<string | RegExp> = []): 
     const requiresAuth = paths.some((p) => req.path.match(p)) &&
       !req.authorized &&
       req.method.toUpperCase() != 'PUT' && // we don't support PUT requests with the redirect
+      req.method.toUpperCase() !== 'OPTIONS' && // CORS preflight checks should not use auth
       !(req.path.toLowerCase().startsWith('/service-deployments-state') && hasCookieSecret(req));
     let handler;
 
