@@ -22,9 +22,8 @@ const optionsHandler: RequestHandler = (req: HarmonyRequest, res: Response, _nex
     'Content-Encoding',
     'Content-Disposition',
   ].join(', '));
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Max-Age', '86400');
-  res.sendStatus(204);
+  res.status(204).end();
 };
 
 export default optionsHandler;
