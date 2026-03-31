@@ -9,7 +9,7 @@ import HarmonyRequest from '../models/harmony-request';
  * @param res - The client response
  * @param next - The next function in the middleware chain
  */
-const optionsHandler: RequestHandler = (req: HarmonyRequest, res: Response, _next: NextFunction) => {
+export const optionsHandler: RequestHandler = (req: HarmonyRequest, res: Response, _next: NextFunction) => {
   res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', [
@@ -26,4 +26,14 @@ const optionsHandler: RequestHandler = (req: HarmonyRequest, res: Response, _nex
   res.status(204).end();
 };
 
-export default optionsHandler;
+/**
+ * Express.js middleware that adds CORS headers to all responses
+ *
+ * @param req - The client request
+ * @param res - The client response
+ * @param next - The next function in the middleware chain
+ */
+export const corsHandler: RequestHandler = (req: HarmonyRequest, res: Response, next: NextFunction) => {
+  res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
+  next();
+};

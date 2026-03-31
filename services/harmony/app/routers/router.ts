@@ -38,6 +38,7 @@ import cmrGranuleLocator from '../middleware/cmr-granule-locator';
 import {
   postServiceConcatenationHandler, preServiceConcatenationHandler,
 } from '../middleware/concatenation';
+import { corsHandler, optionsHandler } from '../middleware/cors';
 import earthdataLoginOauthAuthorizer from '../middleware/earthdata-login-oauth-authorizer';
 import earthdataLoginSkipped from '../middleware/earthdata-login-skipped';
 import earthdataLoginTokenAuthorizer from '../middleware/earthdata-login-token-authorizer';
@@ -45,7 +46,6 @@ import extendDefault from '../middleware/extend';
 import { externalValidation } from '../middleware/external-validation';
 import handleJobIDParameter from '../middleware/job-id';
 import handleLabelParameter from '../middleware/label';
-import optionsHandler from '../middleware/options';
 import parameterValidation from '../middleware/parameter-validation';
 import { admin, core } from '../middleware/permission-groups';
 import validateRestrictedVariables from '../middleware/restricted-variables';
@@ -199,6 +199,7 @@ export default function router({ USE_EDL_CLIENT_APP = 'false' }: RouterConfig): 
   // CORS preflight requests should not use authorization so make sure to include prior
   // to authorization middleware
   result.options('*', optionsHandler);
+  result.use(corsHandler);
 
   if (`${USE_EDL_CLIENT_APP}` !== 'false') {
     result.use(logged(earthdataLoginTokenAuthorizer(authorizedRoutes)));
