@@ -38,6 +38,7 @@ import cmrGranuleLocator from '../middleware/cmr-granule-locator';
 import {
   postServiceConcatenationHandler, preServiceConcatenationHandler,
 } from '../middleware/concatenation';
+import { corsHandler, optionsHandler } from '../middleware/cors';
 import earthdataLoginOauthAuthorizer from '../middleware/earthdata-login-oauth-authorizer';
 import earthdataLoginSkipped from '../middleware/earthdata-login-skipped';
 import earthdataLoginTokenAuthorizer from '../middleware/earthdata-login-token-authorizer';
@@ -194,6 +195,11 @@ export default function router({ USE_EDL_CLIENT_APP = 'false' }: RouterConfig): 
   // Handle multipart/form-data (used for shapefiles). Files will be uploaded to
   // a bucket.
   result.post(collectionPrefix('(ogc-api-coverages)'), asyncHandler(shapefileUpload()));
+
+  // CORS preflight requests should not use authorization so make sure to include prior
+  // to authorization middleware
+  result.options('*', optionsHandler);
+  result.use(corsHandler);
 
   if (`${USE_EDL_CLIENT_APP}` !== 'false') {
     result.use(logged(earthdataLoginTokenAuthorizer(authorizedRoutes)));

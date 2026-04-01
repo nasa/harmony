@@ -38,7 +38,9 @@ export const tokenCache = new LRUCache({
  */
 export default function buildEdlAuthorizer(paths: Array<string | RegExp> = []): RequestHandler {
   return async function edlTokenAuthorizer(req: HarmonyRequest, res, next): Promise<void> {
-    const requiresAuth = paths.some((p) => req.path.match(p));
+    const requiresAuth = paths.some((p) => req.path.match(p)) &&
+      req.method.toUpperCase() !== 'OPTIONS'; // CORS preflight checks should not use auth
+
     if (!requiresAuth) return next();
 
     const authHeader = req.headers.authorization;
