@@ -590,8 +590,7 @@ https://cmr.uat.earthdata.nasa.gov:
   - name: sds/hoss-opendap-url
     description: |
       A service chain for returning the OPeNDAP request URL in a HOSS
-      request instead of the subset granule. This is currently only used
-      by L3 GES DISC collections.
+      request instead of the subset granule.
     data_operation_version: '0.22.0'
     type:
       <<: *default-turbo-config

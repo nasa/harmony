@@ -235,6 +235,7 @@ https://cmr.earthdata.nasa.gov:
       output_formats:
         - application/netcdf # Incorrect mime-type, remove when no longer needed
         - application/x-netcdf4
+        - application/x-netcdf4;profile=opendap_url
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
@@ -392,8 +393,7 @@ https://cmr.earthdata.nasa.gov:
   - name: sds/hoss-opendap-url
     description: |
       A service chain for returning the OPeNDAP request URL in a HOSS
-      request instead of the subset granule. This is currently only used
-      by L3 GES DISC collections.
+      request instead of the subset granule.
     data_operation_version: '0.22.0'
     type:
       <<: *default-turbo-config
