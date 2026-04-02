@@ -13,7 +13,8 @@ exports.up = async function(knex) {
   );
 
   if (rows.length === 0) {
-    await knex.raw(`CREATE ROLE harmony_read_only WITH LOGIN PASSWORD '${password}'`);
+    const escapedPassword = password.replace(/'/g, "''");
+    await knex.raw(`CREATE ROLE harmony_read_only WITH LOGIN PASSWORD '${escapedPassword}'`);
   }
 
   await knex.raw(`GRANT USAGE ON SCHEMA public TO harmony_read_only`);
