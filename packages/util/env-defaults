@@ -84,6 +84,9 @@ DATABASE_TYPE=postgres
 # ignored, using a sqlite3 file instead
 DATABASE_URL=postgresql://postgres:password@localhost:5432/postgres
 
+# Password for read only database access
+DATABASE_READONLY_PASSWORD=changeme
+
 # Whether to use encryption when communicating with the database.
 DB_USE_SSL=false
 
