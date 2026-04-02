@@ -35,7 +35,7 @@ exports.down = async function(knex) {
     return;
   }
 
-  await knex.raw(`ALTER DEFAULT PRIVILEGES FOR ROLE harmony IN SCHEMA public REVOKE SELECT ON TABLES FROM harmony_read_only`);
+  await knex.raw(`ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE SELECT ON TABLES FROM harmony_read_only`);
   await knex.raw(`REVOKE SELECT ON ALL TABLES IN SCHEMA public FROM harmony_read_only`);
   await knex.raw(`REVOKE USAGE ON SCHEMA public FROM harmony_read_only`);
   await knex.raw(`DROP ROLE IF EXISTS harmony_read_only`);
