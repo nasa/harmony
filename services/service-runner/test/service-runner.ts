@@ -79,8 +79,12 @@ describe('Service Runner', function () {
       });
       describe('when the error status code is 137', async function () {
         it('returns "OOM error"', async function () {
-          const errorMessage = (await _getErrorInfo(oomStatus, workItemWithoutErrorJson)).error;
+          const errorInfo = await _getErrorInfo(oomStatus, workItemWithoutErrorJson);
+          const errorMessage = errorInfo.error;
+          const { level, category } = errorInfo;
           expect(errorMessage).equal('Service failed due to running out of memory');
+          expect(level).equal('error');
+          expect(category).equal('noretry');
         });
       });
     });

@@ -135,13 +135,23 @@ async function _getStacCatalogs(dir: string): Promise<string[]> {
  * @param msg - A default error message
  * @returns An error message for the status
  */
-function _getErrorMessageOfStatus(status: k8s.V1Status, msg = 'Unknown error'): string {
+function _getErrorMessageAndCategoryOfStatus(
+  status: k8s.V1Status,
+  msg = 'Unknown error',
+): { error: string; category?: string } {
   const exitCode = status.details?.causes?.find(i => i.reason === 'ExitCode');
   let errorMsg = null;
+  let category = null;
+
   if (exitCode?.message === OOM_EXIT_CODE) {
     errorMsg = 'Service failed due to running out of memory';
+    category = 'noretry';
   }
-  return (errorMsg ? errorMsg : msg);
+
+  return {
+    error: errorMsg ? errorMsg : msg,
+    category: category,
+  };
 }
 
 /**
@@ -173,13 +183,16 @@ async function _getErrorInfo(
       }
       return { error, level };
     }
-    const error = _getErrorMessageOfStatus(status);
-    return { error, level: 'error' };
+    const { error, category } = _getErrorMessageAndCategoryOfStatus(status);
+    return { error, level: 'error', category };
   } catch (e) {
     workItemLogger.error(`Caught exception: ${e}`);
     workItemLogger.error(`Unable to parse out error from catalog location: ${catalogDir}`);
-    const error = _getErrorMessageOfStatus(status, 'Service terminated without error message');
-    return { error, level: 'error' };
+    const { error, category } = _getErrorMessageAndCategoryOfStatus(
+      status,
+      'Service terminated without error message',
+    );
+    return { error, level: 'error', category };
   }
 }
 
@@ -381,6 +394,10 @@ export async function runServiceFromPull(
                 const errorLevel = errorEntries.level;
                 const errorCategory = errorEntries.category;
 
+                workItemLogger.debug(`Vu runServiceFromPull:errorMessage2: ${errorMessage}`);
+                workItemLogger.debug(`Vu runServiceFromPull:errorLevel2: ${errorLevel}`);
+                workItemLogger.debug(`Vu runServiceFromPull:errorCategory2: ${errorCategory}`);
+                workItemLogger.debug(`Vu runServiceFromPull:status.code2: ${status.code}`);
                 if (errorCategory) {
                   resolve({ error: errorMessage, errorLevel, errorCategory });
                 } else if (status.code === 500) {
