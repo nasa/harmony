@@ -394,10 +394,6 @@ export async function runServiceFromPull(
                 const errorLevel = errorEntries.level;
                 const errorCategory = errorEntries.category;
 
-                workItemLogger.debug(`Vu runServiceFromPull:errorMessage2: ${errorMessage}`);
-                workItemLogger.debug(`Vu runServiceFromPull:errorLevel2: ${errorLevel}`);
-                workItemLogger.debug(`Vu runServiceFromPull:errorCategory2: ${errorCategory}`);
-                workItemLogger.debug(`Vu runServiceFromPull:status.code2: ${status.code}`);
                 if (errorCategory) {
                   resolve({ error: errorMessage, errorLevel, errorCategory });
                 } else if (status.code === 500) {
