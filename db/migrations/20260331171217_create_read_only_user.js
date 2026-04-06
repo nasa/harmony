@@ -1,11 +1,8 @@
 exports.up = async function(knex) {
-  if (knex.client.config.client !== 'pg') {
-    return;
-  }
 
   const password = process.env.DATABASE_READONLY_PASSWORD;
   if (!password) {
-    return;
+    throw new Error('Unable to create harmony_read_only user: DATABASE_READONLY_PASSWORD variable is not set');
   }
 
   const { rows } = await knex.raw(
@@ -23,9 +20,6 @@ exports.up = async function(knex) {
 };
 
 exports.down = async function(knex) {
-  if (knex.client.config.client !== 'pg') {
-    return;
-  }
 
   const { rows } = await knex.raw(
     `SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = 'harmony_read_only'`
