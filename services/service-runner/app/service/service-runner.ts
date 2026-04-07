@@ -133,7 +133,7 @@ async function _getStacCatalogs(dir: string): Promise<string[]> {
  *
  * @param status - A kubernetes V1Status
  * @param msg - A default error message
- * @returns An error message for the status
+ * @returns An error message for the status and possibly an error category
  */
 function _getErrorMessageAndCategoryOfStatus(
   status: k8s.V1Status,
