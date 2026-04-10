@@ -42,134 +42,170 @@ describe('getDashboard', () => {
     sandbox.restore();
   });
 
-  it('returns all services sorted alphabetically with version', async () => {
-    getCountsByServiceStub.resolves({
-      'ghcr.io/podaac/l2ss-py:3.1.0rc4': { queued: 110000 },
+  describe('version validation', () => {
+    it('succeeds when a valid version (1-alpha) is provided', async () => {
+      req.query.version = '1-alpha';
+      getCountsByServiceStub.resolves({});
+
+      await getDashboard(req, res, next);
+
+      expect(next.called).to.be.false;
+      expect(res.json.calledOnce).to.be.true;
     });
 
-    await getDashboard(req, res, next);
+    it('is case-insensitive when validating the version parameter', async () => {
+      req.query.version = '1-ALPHA';
+      getCountsByServiceStub.resolves({});
 
-    expect(res.json.calledOnce).to.be.true;
-    const result = res.json.firstCall.args[0];
+      await getDashboard(req, res, next);
 
-    expect(result.version).to.equal('1-alpha');
-    expect(Object.keys(result.services)).to.deep.equal([
-      'harmony-service-example',
-      'podaac/l2ss-py',
-      'query-cmr',
-    ]);
-  });
-
-  it('maps image names to service names and sums queued counts', async () => {
-    getCountsByServiceStub.resolves({
-      'ghcr.io/podaac/l2ss-py:3.1.0rc4': { queued: 110000 },
+      expect(next.called).to.be.false;
+      expect(res.json.calledOnce).to.be.true;
     });
 
-    await getDashboard(req, res, next);
+    it('calls next with an error when an unsupported version is provided', async () => {
+      req.query.version = '2.0-beta';
+      getCountsByServiceStub.resolves({});
 
-    const { services } = res.json.firstCall.args[0];
-    expect(services['podaac/l2ss-py'].queued).to.equal(110000);
+      await getDashboard(req, res, next);
+
+      expect(next.calledOnce).to.be.true;
+      const error = next.firstCall.args[0];
+      expect(error.message).to.include('Invalid API version');
+      expect(res.json.called).to.be.false;
+    });
   });
 
-  it('fills in zero queued for services not present in DB results', async () => {
-    getCountsByServiceStub.resolves({});
+  describe('data mapping and response', () => {
+    it('returns all services sorted alphabetically with version', async () => {
+      getCountsByServiceStub.resolves({
+        'ghcr.io/podaac/l2ss-py:3.1.0rc4': { queued: 110000 },
+      });
 
-    await getDashboard(req, res, next);
+      await getDashboard(req, res, next);
 
-    const { services } = res.json.firstCall.args[0];
-    expect(services['harmony-service-example'].queued).to.equal(0);
-    expect(services['query-cmr'].queued).to.equal(0);
-    expect(services['podaac/l2ss-py'].queued).to.equal(0);
-  });
+      expect(res.json.calledOnce).to.be.true;
+      const result = res.json.firstCall.args[0];
 
-  it('includes all services from imageToServiceMap even when DB is empty', async () => {
-    getCountsByServiceStub.resolves({});
-
-    await getDashboard(req, res, next);
-
-    const { services } = res.json.firstCall.args[0];
-    expect(Object.keys(services)).to.have.members([
-      'harmony-service-example',
-      'podaac/l2ss-py',
-      'query-cmr',
-    ]);
-  });
-
-  it('aggregates queued counts when multiple images map to the same service', async () => {
-    imageMapStub.returns({
-      'ghcr.io/podaac/l2ss-py:3.1.0rc4': 'podaac/l2ss-py',
-      'ghcr.io/podaac/l2ss-py:3.0.0': 'podaac/l2ss-py',
-      'ghcr.io/harmony/query-cmr:latest': 'query-cmr',
+      expect(result.version).to.equal('1-alpha');
+      expect(Object.keys(result.services)).to.deep.equal([
+        'harmony-service-example',
+        'podaac/l2ss-py',
+        'query-cmr',
+      ]);
     });
 
-    getCountsByServiceStub.resolves({
-      'ghcr.io/podaac/l2ss-py:3.1.0rc4': { queued: 60000 },
-      'ghcr.io/podaac/l2ss-py:3.0.0': { queued: 50000 },
+    it('maps image names to service names and sums queued counts', async () => {
+      getCountsByServiceStub.resolves({
+        'ghcr.io/podaac/l2ss-py:3.1.0rc4': { queued: 110000 },
+      });
+
+      await getDashboard(req, res, next);
+
+      const { services } = res.json.firstCall.args[0];
+      expect(services['podaac/l2ss-py'].queued).to.equal(110000);
     });
 
-    await getDashboard(req, res, next);
+    it('fills in zero queued for services not present in DB results', async () => {
+      getCountsByServiceStub.resolves({});
 
-    const { services } = res.json.firstCall.args[0];
-    expect(services['podaac/l2ss-py'].queued).to.equal(110000);
-  });
+      await getDashboard(req, res, next);
 
-  it('includes unknown images from DB that are not in imageToServiceMap', async () => {
-    imageMapStub.returns({
-      'ghcr.io/harmony/query-cmr:latest': 'query-cmr',
+      const { services } = res.json.firstCall.args[0];
+      expect(services['harmony-service-example'].queued).to.equal(0);
+      expect(services['query-cmr'].queued).to.equal(0);
+      expect(services['podaac/l2ss-py'].queued).to.equal(0);
     });
 
-    getCountsByServiceStub.resolves({
-      'ghcr.io/some-old-image:deprecated': { queued: 5 },
+    it('includes all services from imageToServiceMap even when DB is empty', async () => {
+      getCountsByServiceStub.resolves({});
+
+      await getDashboard(req, res, next);
+
+      const { services } = res.json.firstCall.args[0];
+      expect(Object.keys(services)).to.have.members([
+        'harmony-service-example',
+        'podaac/l2ss-py',
+        'query-cmr',
+      ]);
     });
 
-    await getDashboard(req, res, next);
+    it('aggregates queued counts when multiple images map to the same service', async () => {
+      imageMapStub.returns({
+        'ghcr.io/podaac/l2ss-py:3.1.0rc4': 'podaac/l2ss-py',
+        'ghcr.io/podaac/l2ss-py:3.0.0': 'podaac/l2ss-py',
+        'ghcr.io/harmony/query-cmr:latest': 'query-cmr',
+      });
 
-    const { services } = res.json.firstCall.args[0];
-    expect(services['some-old-image']).to.deep.equal({ queued: 5 });
-  });
+      getCountsByServiceStub.resolves({
+        'ghcr.io/podaac/l2ss-py:3.1.0rc4': { queued: 60000 },
+        'ghcr.io/podaac/l2ss-py:3.0.0': { queued: 50000 },
+      });
 
-  it('responds with JSON when client accepts JSON', async () => {
-    req.accepts.returns('json');
-    getCountsByServiceStub.resolves({});
+      await getDashboard(req, res, next);
 
-    await getDashboard(req, res, next);
+      const { services } = res.json.firstCall.args[0];
+      expect(services['podaac/l2ss-py'].queued).to.equal(110000);
+    });
 
-    expect(res.json.calledOnce).to.be.true;
-  });
+    it('includes unknown images from DB that are not in imageToServiceMap', async () => {
+      imageMapStub.returns({
+        'ghcr.io/harmony/query-cmr:latest': 'query-cmr',
+      });
 
-  it('still responds with JSON when client requests HTML (until HTML is implemented)', async () => {
-    req.accepts.returns('html');
-    getCountsByServiceStub.resolves({});
+      getCountsByServiceStub.resolves({
+        'ghcr.io/some-old-image:deprecated': { queued: 5 },
+      });
 
-    await getDashboard(req, res, next);
+      await getDashboard(req, res, next);
 
-    expect(res.json.calledOnce).to.be.true;
-  });
+      const { services } = res.json.firstCall.args[0];
+      expect(services['some-old-image']).to.deep.equal({ queued: 5 });
+    });
 
-  it('logs the requesting user', async () => {
-    getCountsByServiceStub.resolves({});
+    it('responds with JSON when client accepts JSON', async () => {
+      req.accepts.returns('json');
+      getCountsByServiceStub.resolves({});
 
-    await getDashboard(req, res, next);
+      await getDashboard(req, res, next);
 
-    expect(req.context.logger.info.calledOnce).to.be.true;
-    expect(req.context.logger.info.firstCall.args[0]).to.include('test-user');
-  });
+      expect(res.json.calledOnce).to.be.true;
+    });
 
-  it('calls next(err) when getCountsByService rejects', async () => {
-    const error = new Error('DB connection failed');
-    getCountsByServiceStub.rejects(error);
+    it('still responds with JSON when client requests HTML (until HTML is implemented)', async () => {
+      req.accepts.returns('html');
+      getCountsByServiceStub.resolves({});
 
-    await getDashboard(req, res, next);
+      await getDashboard(req, res, next);
 
-    expect(next.calledOnce).to.be.true;
-    expect(next.firstCall.args[0]).to.equal(error);
-  });
+      expect(res.json.calledOnce).to.be.true;
+    });
 
-  it('does not call res.json when an error occurs', async () => {
-    getCountsByServiceStub.rejects(new Error('oops'));
+    it('logs the requesting user', async () => {
+      getCountsByServiceStub.resolves({});
 
-    await getDashboard(req, res, next);
+      await getDashboard(req, res, next);
 
-    expect(res.json.called).to.be.false;
+      expect(req.context.logger.info.calledOnce).to.be.true;
+      expect(req.context.logger.info.firstCall.args[0]).to.include('test-user');
+    });
+
+    it('calls next(err) when getCountsByService rejects', async () => {
+      const error = new Error('DB connection failed');
+      getCountsByServiceStub.rejects(error);
+
+      await getDashboard(req, res, next);
+
+      expect(next.calledOnce).to.be.true;
+      expect(next.firstCall.args[0]).to.equal(error);
+    });
+
+    it('does not call res.json when an error occurs', async () => {
+      getCountsByServiceStub.rejects(new Error('oops'));
+
+      await getDashboard(req, res, next);
+
+      expect(res.json.called).to.be.false;
+    });
   });
 });
