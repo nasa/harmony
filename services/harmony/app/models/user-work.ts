@@ -395,13 +395,6 @@ export async function getCountsByService(
     .groupBy('service_id')
     .orderBy('queued', 'desc');
 
-  console.log(JSON.stringify(Object.fromEntries(
-    results.map(r => [
-      r.service_id,
-      { queued: Number(r.queued) },
-    ]),
-  )));
-
   return Object.fromEntries(
     results.map(r => [
       r.service_id,
