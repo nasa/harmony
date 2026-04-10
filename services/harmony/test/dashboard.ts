@@ -32,9 +32,9 @@ describe('getDashboard', () => {
     getCountsByServiceStub = sandbox.stub(userWork, 'getCountsByService');
 
     imageMapStub = sandbox.stub(serviceImages, 'getImageToServiceMap').returns({
-      'ghcr.io/podaac/l2ss-py:3.1.0rc4': 'podaac/l2ss-py',
-      'ghcr.io/harmony/query-cmr:latest': 'query-cmr',
-      'ghcr.io/harmony/harmony-service-example:latest': 'harmony-service-example',
+      'podaac/l2ss-py': 'podaac-l2-subsetter',
+      'harmony/query-cmr': 'query-cmr',
+      'harmony/harmony-service-example': 'harmony-service-example',
     });
   });
 
@@ -90,7 +90,7 @@ describe('getDashboard', () => {
       expect(result.version).to.equal('1-alpha');
       expect(Object.keys(result.services)).to.deep.equal([
         'harmony-service-example',
-        'podaac/l2ss-py',
+        'podaac-l2-subsetter',
         'query-cmr',
       ]);
     });
@@ -103,7 +103,7 @@ describe('getDashboard', () => {
       await getDashboard(req, res, next);
 
       const { services } = res.json.firstCall.args[0];
-      expect(services['podaac/l2ss-py'].queued).to.equal(110000);
+      expect(services['podaac-l2-subsetter'].queued).to.equal(110000);
     });
 
     it('fills in zero queued for services not present in DB results', async () => {
@@ -114,7 +114,7 @@ describe('getDashboard', () => {
       const { services } = res.json.firstCall.args[0];
       expect(services['harmony-service-example'].queued).to.equal(0);
       expect(services['query-cmr'].queued).to.equal(0);
-      expect(services['podaac/l2ss-py'].queued).to.equal(0);
+      expect(services['podaac-l2-subsetter'].queued).to.equal(0);
     });
 
     it('includes all services from imageToServiceMap even when DB is empty', async () => {
@@ -125,7 +125,7 @@ describe('getDashboard', () => {
       const { services } = res.json.firstCall.args[0];
       expect(Object.keys(services)).to.have.members([
         'harmony-service-example',
-        'podaac/l2ss-py',
+        'podaac-l2-subsetter',
         'query-cmr',
       ]);
     });
