@@ -9,6 +9,7 @@ import serviceInvoker from '../backends/service-invoker';
 import { getCollectionCapabilitiesJson } from '../frontends/capabilities';
 import { cloudAccessJson, cloudAccessSh } from '../frontends/cloud-access';
 import { setLogLevel } from '../frontends/configuration';
+import { getDashboard } from '../frontends/dashboard';
 import docsPage from '../frontends/docs/docs';
 import { getAdminHealth, getHealth } from '../frontends/health';
 import {
@@ -304,6 +305,7 @@ export default function router({ USE_EDL_CLIENT_APP = 'false' }: RouterConfig): 
 
   result.get('/admin/request-metrics', asyncHandler(getRequestMetrics));
   result.get('/admin/retry-stats', asyncHandler(getRetryStatistics));
+  result.get('/admin/dashboard', asyncHandler(getDashboard));
 
   result.get('/workflow-ui', asyncHandler(getJobs));
   result.get('/workflow-ui/:jobID', asyncHandler(getJob));
