@@ -378,3 +378,34 @@ export async function populateUserWorkFromWorkItems(tx: Transaction): Promise<vo
     + 'ORDER BY "j"."updatedAt" asc';
   await tx.raw(sql);
 }
+
+/**
+ * Get the aggregated number of work items in the system grouped by service
+ * @param tx - The database transaction
+ * @returns the number of work items in the system grouped by service
+ */
+export async function getCountsByService(
+  tx: Transaction,
+): Promise<{ [service: string]: { queued: number } }> {
+  const results = await tx(UserWork.table)
+    .select(
+      'service_id',
+      tx.raw('SUM(ready_count) + SUM(running_count) AS queued'),
+    )
+    .groupBy('service_id')
+    .orderBy('queued', 'desc');
+
+  console.log(JSON.stringify(Object.fromEntries(
+    results.map(r => [
+      r.service_id,
+      { queued: Number(r.queued) },
+    ]),
+  )));
+
+  return Object.fromEntries(
+    results.map(r => [
+      r.service_id,
+      { queued: Number(r.queued) },
+    ]),
+  );
+}

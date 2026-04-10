@@ -1,0 +1,111 @@
+import { NextFunction, Response } from 'express';
+
+import { listToText } from '@harmony/util/string';
+
+import HarmonyRequest from '../models/harmony-request';
+import { getCountsByService } from '../models/user-work';
+import db from '../util/db';
+import { RequestValidationError } from '../util/errors';
+import { keysToLowerCase } from '../util/object';
+import { getImageToServiceMap, getServiceName } from '../util/service-images';
+
+export const currentApiVersion = '1-alpha';
+const supportedApiVersions = ['1-alpha'];
+
+/**
+ * Throws an error if the version is not supported
+ * @param version - the version of the dashboard response
+ * @throws RequestValidationError if the version is not supported
+ */
+function validateVersion(version): void {
+  const normalizedVersion = version.toLowerCase();
+
+  const isSupported = supportedApiVersions.some(
+    v => v.toLowerCase() === normalizedVersion,
+  );
+
+  if (!isSupported) {
+    const message = `Invalid API version. Supported versions are: ${listToText(supportedApiVersions)}`;
+    throw new RequestValidationError(message);
+  }
+}
+
+/**
+ * Express.js handler that returns the harmony dashboard responding with JSON by default
+ * or HTML if requested.
+ */
+export async function getDashboard(
+  req: HarmonyRequest, res: Response, next: NextFunction,
+): Promise<void> {
+  const query = keysToLowerCase(req.query);
+  const version = query?.version;
+  const versionText = version ? version : 'unspecified';
+
+  try {
+    if (version !== undefined) {
+      validateVersion(version);
+    }
+
+    req.context.logger.info(`Dashboard requested by user ${req.user}, version: ${versionText}`);
+    const serviceWorkCounts = await getCountsByService(db);
+    const imageToServiceMap = getImageToServiceMap();
+
+    // Convert the image name returned from the database with the service name
+    const normalizedDb: Record<string, { queued: number }> = {};
+
+    for (const [image, value] of Object.entries(serviceWorkCounts)) {
+      const service = getServiceName(imageToServiceMap, image);
+
+      if (!normalizedDb[service]) {
+        normalizedDb[service] = { queued: 0 };
+      }
+
+      normalizedDb[service].queued += value.queued;
+    }
+
+    // Build full service set from imageToServiceMap (VALUES are service names)
+    // Include all deployed services in the response - not just the ones with active requests
+    const allServices = new Set(Object.values(imageToServiceMap));
+    const merged: Record<string, { queued: number }> = {};
+
+    for (const service of allServices) {
+      merged[service] = {
+        queued: normalizedDb[service]?.queued ?? 0,
+      };
+    }
+
+    // Add any unknown services returned from DB (could be from old images)
+    for (const [service, value] of Object.entries(normalizedDb)) {
+      if (!(service in merged)) {
+        merged[service] = value;
+      }
+    }
+
+    const sortedServicesMap = Object.keys(merged).sort().reduce((acc, key) => ({
+      ...acc,
+      [key]: merged[key],
+    }), {});
+
+    const result = {
+      services: sortedServicesMap,
+      version: '1-alpha',
+    };
+
+    // Detect if client wants HTML explicitly - by default we will return JSON
+    const acceptsHtml = req.accepts(['json', 'html']) === 'html';
+
+    if (acceptsHtml) {
+      // TODO HTML endpoint
+      // res.render('dashboard', {
+      //   ...
+      // });
+      res.json(result);
+    } else {
+      res.json(result);
+    }
+
+  } catch (e) {
+    // req.context.logger.error(e);
+    next(e);
+  }
+}
