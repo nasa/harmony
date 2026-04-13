@@ -88,14 +88,14 @@ export async function getDashboard(
 
     const result = {
       services: sortedServicesMap,
-      version: '1-alpha',
+      version: version?.toLowerCase() || currentApiVersion,
     };
 
     // Detect if client wants HTML explicitly - by default we will return JSON
     const acceptsHtml = req.accepts(['json', 'html']) === 'html';
 
     if (acceptsHtml) {
-      // TODO HTML endpoint
+      // TODO HARMONY-2304 HTML endpoint
       // res.render('dashboard', {
       //   ...
       // });
@@ -105,7 +105,6 @@ export async function getDashboard(
     }
 
   } catch (e) {
-    // req.context.logger.error(e);
     next(e);
   }
 }

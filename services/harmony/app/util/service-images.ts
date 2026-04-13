@@ -25,7 +25,10 @@ function envVarToServiceName(envVar: string): string {
 
 /**
  * Create a map of the base Docker image name to the name of the service
- * for all services deployed to the environment
+ * for all services deployed to the environment.
+ *
+ * Note this function is only exported for use in tests - external callers
+ * should be calling getImageToServiceMap
 */
 export function _getImageToServiceMap(
   environment: NodeJS.ProcessEnv,
