@@ -109,7 +109,7 @@ describe('axiosRedactor', function () {
 
     const logs = getTestLogs();
     expect(logs).to.include('"url":"http://unreachable.com"');
-    expect(logs).to.not.have.property('responseData');
+    expect(logs).to.not.include('"responseData"');
   });
 });
 
