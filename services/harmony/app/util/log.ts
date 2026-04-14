@@ -5,7 +5,7 @@ import { Conjunction, listToText } from '@harmony/util/string';
 
 import env from './env';
 import { RequestValidationError } from './errors';
-import redact from './log-redactor';
+import redact, { axiosRedactor } from './log-redactor';
 
 const envNameFormat = winston.format((info) => ({ ...info, env_name: env.clientId }));
 
@@ -26,8 +26,10 @@ const redactor = winston.format((info) => {
 export function createJsonLogger(transports: winston.transport[]): winston.Logger {
   const jsonLogger = winston.createLogger({
     format: winston.format.combine(
+      winston.format.errors({ stack: true }),
       winston.format.timestamp(),
       envNameFormat(),
+      axiosRedactor(),
       redactor(),
       winston.format.json(),
     ),
