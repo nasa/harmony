@@ -1,10 +1,12 @@
-import DataOperation from '../models/data-operation';
-import HarmonyRequest from '../models/harmony-request';
-import TurboService from '../models/services/turbo-service';
-import HttpService from '../models/services/http-service';
+import { AxiosError } from 'axios';
 import * as _ from 'lodash';
 import { TransformableInfo } from 'logform';
+import winston from 'winston';
 
+import DataOperation from '../models/data-operation';
+import HarmonyRequest from '../models/harmony-request';
+import HttpService from '../models/services/http-service';
+import TurboService from '../models/services/turbo-service';
 
 /**
  * Redact sensitive values from an object if they exist.
@@ -36,6 +38,34 @@ function redactObject(/* eslint-disable @typescript-eslint/no-explicit-any */
   }
   return infoClone;
 }
+
+/**
+ * Strips the massive Axios request, config, and response objects and
+ * removes sensitive info
+ */
+export const axiosRedactor = winston.format((info) => {
+  if (info.isAxiosError || info.name === 'AxiosError') {
+    const error = info as unknown as AxiosError;
+
+    if (error.config) {
+      info.axiosConfig = {
+        url: error.config.url,
+        method: error.config.method,
+        timeout: error.config.timeout,
+      };
+    }
+
+    if (error.response) {
+      info.responseData = error.response.data;
+    }
+
+    delete info.request;
+    delete info.config;
+    delete info.response;
+  }
+
+  return info;
+});
 
 /**
  * Redact sensitive key values from an object. The object passed
