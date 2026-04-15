@@ -8,6 +8,7 @@ import db from '../util/db';
 import { RequestValidationError } from '../util/errors';
 import { keysToLowerCase } from '../util/object';
 import { getImageToServiceMap, getServiceName } from '../util/service-images';
+import harmonyVersion from '../util/version';
 
 export const currentApiVersion = '1-alpha';
 const supportedApiVersions = ['1-alpha'];
@@ -95,11 +96,21 @@ export async function getDashboard(
     const acceptsHtml = req.accepts(['json', 'html']) === 'html';
 
     if (acceptsHtml) {
-      // TODO HARMONY-2304 HTML endpoint
-      // res.render('dashboard', {
-      //   ...
-      // });
-      res.json(result);
+      // Transform the object { "service": { "queued": 0 } }
+      // into an array [{ "name": "service", "queued": 0 }]
+      const servicesArray = Object.entries(result.services).map(([name, details]) => ({
+        name,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        queued: (details as any).queued,
+      }));
+
+      // Sort by queued count descending for the default page load
+      servicesArray.sort((a, b) => b.queued - a.queued);
+
+      res.render('dashboard', {
+        version: harmonyVersion,
+        services: servicesArray,
+      });
     } else {
       res.json(result);
     }

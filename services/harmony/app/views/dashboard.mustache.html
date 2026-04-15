@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="/css/eui.min.css" />
+  <link rel="stylesheet" href="/css/default.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" />
+  <link href="https://cdn.jsdelivr.net/npm/@yaireo/tagify@4.16.4/dist/tagify.css" rel="stylesheet" type="text/css" />
+  <link rel="stylesheet" href="/css/workflow-ui/default.css" />
+
+  <style>
+    th.sortable { cursor: pointer; position: relative; white-space: nowrap; }
+    th.sortable:hover { background-color: rgba(0,0,0,0.05); }
+    .sort-icon { font-size: 0.8rem; margin-left: 5px; color: #adb5bd; }
+    th.sorted-asc .sort-icon::before { content: "\F145"; color: #000; } /* bi-sort-up */
+    th.sorted-desc .sort-icon::before { content: "\F128"; color: #000; } /* bi-sort-down */
+  </style>
+
+  <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify@4.16.4"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify@4.16.4/dist/tagify.polyfills.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+          integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"
+          defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+          crossorigin="anonymous" defer></script>
+  <script language="javascript" id="_fed_an_ua_tag"
+          src="https://dap.digitalgov.gov/Universal-Federated-Analytics-Min.js?agency=NASA&subagency=GSFC&dclink=true"
+          defer></script>
+  <title>Service Dashboard</title>
+</head>
+<body class="d-flex flex-column h-100">
+  {{> banner}}
+
+  <div class="container-lg pt-5 flex-grow-1">
+    <h1 class="display-4 text-center">Service Dashboard</h1>
+
+    <div class="table-responsive mt-4">
+      <table class="table table-striped" id="servicesTable">
+        <thead>
+          <tr>
+            <th class="sortable" onclick="sortTable(0)">
+              Service Name <i class="bi bi-arrow-down-up sort-icon"></i>
+            </th>
+            <th class="sortable sorted-desc" onclick="sortTable(1)">
+              Queued Requests <i class="bi bi-arrow-down-up sort-icon"></i>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#services}}
+          <tr>
+            <td class="font-monospace">{{name}}</td>
+            <td><strong>{{queued}}</strong></td>
+          </tr>
+          {{/services}}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <footer class="mt-auto">
+    {{> footer}}
+  </footer>
+
+  <script>
+    /**
+     * Client-side sorting for the dashboard table
+     * @param {number} n - Column index
+     */
+    function sortTable(n) {
+      const table = document.getElementById("servicesTable");
+      const headers = table.querySelectorAll("th");
+      let rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
+
+      switching = true;
+      dir = "asc";
+
+      // If the header already has 'asc', toggle to 'desc'
+      if (headers[n].classList.contains("sorted-asc")) {
+        dir = "desc";
+      }
+
+      while (switching) {
+        switching = false;
+        rows = table.rows;
+        for (i = 1; i < (rows.length - 1); i++) {
+          shouldSwitch = false;
+          x = rows[i].getElementsByTagName("TD")[n];
+          y = rows[i + 1].getElementsByTagName("TD")[n];
+
+          let xVal = x.innerText.toLowerCase();
+          let yVal = y.innerText.toLowerCase();
+
+          // Numerical comparison for the 'Queued' column
+          if (n === 1) {
+            xVal = parseInt(xVal) || 0;
+            yVal = parseInt(yVal) || 0;
+          }
+
+          if (dir === "asc") {
+            if (xVal > yVal) { shouldSwitch = true; break; }
+          } else if (dir === "desc") {
+            if (xVal < yVal) { shouldSwitch = true; break; }
+          }
+        }
+        if (shouldSwitch) {
+          rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+          switching = true;
+          switchcount++;
+        }
+      }
+
+      // Update UI classes for icons
+      headers.forEach(h => h.classList.remove("sorted-asc", "sorted-desc"));
+      headers[n].classList.add(dir === "asc" ? "sorted-asc" : "sorted-desc");
+    }
+  </script>
+</body>
+</html>
