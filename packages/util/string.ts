@@ -130,3 +130,16 @@ export function sanitizeImage(image: string): string {
 export function inEcr(image: string): boolean {
   return /.*amazonaws.com\//.test(image);
 }
+
+/**
+ * Convert camelCase to Spaced Title Case
+ *
+ * @param value - the string to convert
+ * @returns the value in Spaced Title Case
+ */
+export function camelCaseToSpacedTitleCase(value: string): string {
+  return value
+    .replace(/([A-Z])/g, ' $1') // Insert space before capital letters
+    .replace(/^./, (str) => str.toUpperCase()) // Capitalize the first letter
+    .trim();
+}
