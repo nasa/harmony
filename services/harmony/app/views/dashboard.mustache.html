@@ -9,23 +9,6 @@
   <link href="https://cdn.jsdelivr.net/npm/@yaireo/tagify@4.16.4/dist/tagify.css" rel="stylesheet" type="text/css" />
   <link rel="stylesheet" href="/css/workflow-ui/default.css" />
 
-  <style>
-    th.sortable { cursor: pointer; position: relative; white-space: nowrap; }
-    th.sortable:hover { background-color: rgba(0,0,0,0.05); }
-    .sort-icon { font-size: 0.8rem; margin-left: 5px; color: #adb5bd; }
-    th.sorted-asc .sort-icon::before { content: "\F145"; color: #000; } /* bi-sort-up */
-    th.sorted-desc .sort-icon::before { content: "\F128"; color: #000; } /* bi-sort-down */
-    .metric-card {
-      background: #f8f9fa;
-      border-top: 3px solid #0071bc; /* NASA Blue */
-      text-align: center;
-      padding: 15px;
-      border-radius: 4px;
-    }
-    .metric-value { font-size: 1.5rem; font-weight: bold; display: block; }
-    .metric-label { font-size: 0.85rem; text-transform: uppercase; color: #666; }
-  </style>
-
   <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify@4.16.4"></script>
   <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify@4.16.4/dist/tagify.polyfills.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
@@ -37,7 +20,7 @@
   <script language="javascript" id="_fed_an_ua_tag"
           src="https://dap.digitalgov.gov/Universal-Federated-Analytics-Min.js?agency=NASA&subagency=GSFC&dclink=true"
           defer></script>
-  <title>Service Dashboard</title>
+  <title>Harmony Dashboard</title>
 </head>
 <body class="d-flex flex-column h-100">
   {{> banner}}
@@ -92,6 +75,44 @@
     {{> footer}}
   </footer>
 
+  <script>
+    /**
+     * Handles table sorting for the Services list
+     * @param {number} n - Column index (0 for name, 1 for count)
+     */
+    function sortTable(n) {
+      const table = document.getElementById("servicesTable");
+      const tbody = table.querySelector("tbody");
+      const rows = Array.from(tbody.rows);
+      const header = table.querySelectorAll("th")[n];
+      const isAscending = header.classList.contains("sorted-asc");
+
+      const direction = isAscending ? -1 : 1;
+
+      const sortedRows = rows.sort((a, b) => {
+        let x = a.cells[n].innerText.trim();
+        let y = b.cells[n].innerText.trim();
+
+        // If sorting the 'Queued' column, treat as numbers
+        if (n === 1) {
+          return (parseInt(x) - parseInt(y)) * direction;
+        }
+
+        // Otherwise, treat as strings
+        return x.toLowerCase().localeCompare(y.toLowerCase()) * direction;
+      });
+
+      // Clear existing rows and append sorted ones
+      while (tbody.firstChild) {
+        tbody.removeChild(tbody.firstChild);
+      }
+      tbody.append(...sortedRows);
+
+      table.querySelectorAll("th").forEach(th => {
+        th.classList.remove("sorted-asc", "sorted-desc");
+      });
+      header.classList.add(isAscending ? "sorted-desc" : "sorted-asc");
+    }
+  </script>
   </body>
-</html>
 </html>
