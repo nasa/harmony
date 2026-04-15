@@ -4,6 +4,8 @@ import sinon from 'sinon';
 
 import { getDashboard } from '../app/frontends/dashboard';
 import * as userWork from '../app/models/user-work';
+import { WorkItemQueueType } from '../app/util/queue/queue';
+import * as qf from '../app/util/queue/queue-factory';
 import * as serviceImages from '../app/util/service-images';
 
 describe('getDashboard', () => {
@@ -36,6 +38,14 @@ describe('getDashboard', () => {
       'harmony/query-cmr': 'query-cmr',
       'harmony/harmony-service-example': 'harmony-service-example',
     });
+
+    const schedulerQueue = qf.getWorkSchedulerQueue();
+    const smallUpdateQueue = qf.getQueueForType(WorkItemQueueType.SMALL_ITEM_UPDATE);
+    const largeUpdateQueue = qf.getQueueForType(WorkItemQueueType.LARGE_ITEM_UPDATE);
+
+    sandbox.stub(schedulerQueue, 'getApproximateNumberOfMessages').resolves(10);
+    sandbox.stub(smallUpdateQueue, 'getApproximateNumberOfMessages').resolves(20);
+    sandbox.stub(largeUpdateQueue, 'getApproximateNumberOfMessages').resolves(30);
   });
 
   afterEach(() => {
@@ -172,13 +182,14 @@ describe('getDashboard', () => {
       expect(res.json.calledOnce).to.be.true;
     });
 
-    it('still responds with JSON when client requests HTML (until HTML is implemented)', async () => {
+    it('responds with HTML when client requests HTML', async () => {
       req.accepts.returns('html');
       getCountsByServiceStub.resolves({});
 
       await getDashboard(req, res, next);
 
-      expect(res.json.calledOnce).to.be.true;
+      expect(res.render.calledOnce).to.be.true;
+      expect(res.json.called).to.be.false;
     });
 
     it('logs the requesting user', async () => {
@@ -206,6 +217,63 @@ describe('getDashboard', () => {
       await getDashboard(req, res, next);
 
       expect(res.json.called).to.be.false;
+    });
+  });
+
+  describe('system queue metrics', () => {
+    it('includes the correct queue counts in the response', async () => {
+      getCountsByServiceStub.resolves({});
+      await getDashboard(req, res, next);
+
+      const result = res.json.firstCall.args[0];
+      expect(result.queues.workItemScheduler).to.equal(10);
+      expect(result.queues.smallWorkItemUpdates).to.equal(20);
+    });
+  });
+
+  describe('HTML response', () => {
+    beforeEach(() => {
+      req.accepts.returns('html');
+      getCountsByServiceStub.resolves({});
+    });
+
+    it('calls res.render with "dashboard" when HTML is requested', async () => {
+      await getDashboard(req, res, next);
+
+      expect(res.render.calledOnce).to.be.true;
+      expect(res.render.firstCall.args[0]).to.equal('dashboard');
+    });
+
+    it('transforms service metrics into an array sorted by queued count (descending)', async () => {
+      getCountsByServiceStub.resolves({
+        'low-service': { queued: 5 },
+        'high-service': { queued: 100 },
+      });
+      // Mock mapping so we don't rely on real image logic
+      imageMapStub.returns({ 'low-service': 'low-service', 'high-service': 'high-service' });
+
+      await getDashboard(req, res, next);
+
+      const data = res.render.firstCall.args[1];
+      expect(data.services).to.be.an('array');
+      expect(data.services[0].name).to.equal('high-service');
+      expect(data.services[0].queued).to.equal(100);
+    });
+
+    it('transforms camelCase queue names into Title Case for the UI', async () => {
+      await getDashboard(req, res, next);
+
+      const data = res.render.firstCall.args[1];
+      const smallUpdateQueue = data.queues.find(q => q.name === 'Small Work Item Updates');
+      expect(smallUpdateQueue).to.exist;
+      expect(smallUpdateQueue.count).to.be.a('number');
+    });
+
+    it('includes the harmony version in the rendered view', async () => {
+      await getDashboard(req, res, next);
+
+      const data = res.render.firstCall.args[1];
+      expect(data.version).to.exist;
     });
   });
 });
