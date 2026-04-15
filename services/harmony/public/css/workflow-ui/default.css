@@ -2,11 +2,13 @@
     --tag-inset-shadow-size: 2em;
 }
 
-.helpful-th, .helpful-span {
+.helpful-th,
+.helpful-span {
     cursor: help;
 }
 
-#workflow-items-table-container, #jobs-table-container {
+#workflow-items-table-container,
+#jobs-table-container {
     overflow-y: scroll;
     max-height: 80vh;
 }
@@ -21,24 +23,24 @@
 }
 
 .bi-copy {
-    color:rgb(232, 181, 0)!important;
+    color: rgb(232, 181, 0) !important;
     cursor: pointer;
 }
 
 .bi-copy:hover {
-    color: #212529!important;
+    color: #212529 !important;
 }
 
 .job-url-th {
     font-size: .95em;
     background: linear-gradient(to top, rgb(252, 251, 251), white);
-    border-top-color:white;
+    border-top-color: white;
     padding-bottom: .3rem !important;
 }
 
 .job-url-text {
     font-size: .9em;
-    font-family: SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+    font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     font-weight: normal;
     max-width: 100%;
     word-break: break-all;
@@ -56,7 +58,7 @@
     margin-bottom: 0;
 }
 
-#label-nav-item > * {
+#label-nav-item>* {
     z-index: 1021;
 }
 
@@ -84,6 +86,53 @@
     word-wrap: break-word;
 }
 
-.toast, .toast-container {
+.toast,
+.toast-container {
     z-index: 1021;
+}
+
+th.sortable {
+    cursor: pointer;
+    position: relative;
+    white-space: nowrap;
+}
+
+th.sortable:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.sort-icon {
+    font-size: 0.8rem;
+    margin-left: 5px;
+    color: #adb5bd;
+}
+
+th.sorted-asc .sort-icon::before {
+    content: "\F145";
+    color: #000;
+}
+
+th.sorted-desc .sort-icon::before {
+    content: "\F128";
+    color: #000;
+}
+
+.metric-card {
+    background: #f8f9fa;
+    border-top: 3px solid #0071bc;
+    text-align: center;
+    padding: 15px;
+    border-radius: 4px;
+}
+
+.metric-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    display: block;
+}
+
+.metric-label {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    color: #666;
 }
