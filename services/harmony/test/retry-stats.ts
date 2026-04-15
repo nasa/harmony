@@ -250,6 +250,7 @@ describe('getRetryStatistics', () => {
         totalWorkItemExecutions: 125,
         percentSuccessful: '80.00%',
         percentRetried: '20.00%',
+        version: '0.0.0',
       });
     });
 
