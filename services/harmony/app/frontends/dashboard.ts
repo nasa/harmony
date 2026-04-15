@@ -1,12 +1,14 @@
 import { NextFunction, Response } from 'express';
 
-import { listToText } from '@harmony/util/string';
+import { camelCaseToSpacedTitleCase, listToText } from '@harmony/util/string';
 
 import HarmonyRequest from '../models/harmony-request';
 import { getCountsByService } from '../models/user-work';
 import db from '../util/db';
 import { RequestValidationError } from '../util/errors';
 import { keysToLowerCase } from '../util/object';
+import { WorkItemQueueType } from '../util/queue/queue';
+import { getQueueForType, getWorkSchedulerQueue } from '../util/queue/queue-factory';
 import { getImageToServiceMap, getServiceName } from '../util/service-images';
 import harmonyVersion from '../util/version';
 
@@ -87,8 +89,23 @@ export async function getDashboard(
       [key]: merged[key],
     }), {});
 
+    const smallUpdateQueue = getQueueForType(WorkItemQueueType.SMALL_ITEM_UPDATE);
+    const largeUpdateQueue = getQueueForType(WorkItemQueueType.LARGE_ITEM_UPDATE);
+    const schedulerQueue = getWorkSchedulerQueue();
+
+    const smallUpdateQueueCount = await smallUpdateQueue.getApproximateNumberOfMessages();
+    const largeUpdateQueueCount = await largeUpdateQueue.getApproximateNumberOfMessages();
+    const schedulerQueueCount = await schedulerQueue.getApproximateNumberOfMessages();
+
+    const queues = {
+      'smallWorkItemUpdates': smallUpdateQueueCount,
+      'largeWorkItemUpdates': largeUpdateQueueCount,
+      'workItemScheduler': schedulerQueueCount,
+    };
+
     const result = {
       services: sortedServicesMap,
+      queues,
       version: version?.toLowerCase() || currentApiVersion,
     };
 
@@ -104,12 +121,18 @@ export async function getDashboard(
         queued: (details as any).queued,
       }));
 
+      const queuesArray = Object.entries(result.queues).map(([name, queuedCount]) => ({
+        name: camelCaseToSpacedTitleCase(name),
+        count: queuedCount,
+      }));
+
       // Sort by queued count descending for the default page load
       servicesArray.sort((a, b) => b.queued - a.queued);
 
       res.render('dashboard', {
         version: harmonyVersion,
         services: servicesArray,
+        queues: queuesArray,
       });
     } else {
       res.json(result);

@@ -15,6 +15,15 @@
     .sort-icon { font-size: 0.8rem; margin-left: 5px; color: #adb5bd; }
     th.sorted-asc .sort-icon::before { content: "\F145"; color: #000; } /* bi-sort-up */
     th.sorted-desc .sort-icon::before { content: "\F128"; color: #000; } /* bi-sort-down */
+    .metric-card {
+      background: #f8f9fa;
+      border-top: 3px solid #0071bc; /* NASA Blue */
+      text-align: center;
+      padding: 15px;
+      border-radius: 4px;
+    }
+    .metric-value { font-size: 1.5rem; font-weight: bold; display: block; }
+    .metric-label { font-size: 0.85rem; text-transform: uppercase; color: #666; }
   </style>
 
   <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify@4.16.4"></script>
@@ -34,29 +43,48 @@
   {{> banner}}
 
   <div class="container-lg pt-5 flex-grow-1">
-    <h1 class="display-4 text-center">Service Dashboard</h1>
+    <h1 class="display-4 text-center">Harmony Dashboard</h1>
 
-    <div class="table-responsive mt-4">
-      <table class="table table-striped" id="servicesTable">
-        <thead>
-          <tr>
-            <th class="sortable" onclick="sortTable(0)">
-              Service Name <i class="bi bi-arrow-down-up sort-icon"></i>
-            </th>
-            <th class="sortable sorted-desc" onclick="sortTable(1)">
-              Queued Requests <i class="bi bi-arrow-down-up sort-icon"></i>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {{#services}}
-          <tr>
-            <td class="font-monospace">{{name}}</td>
-            <td><strong>{{queued}}</strong></td>
-          </tr>
-          {{/services}}
-        </tbody>
-      </table>
+    <div class="row mt-5 mb-4">
+      <div class="col-12">
+        <h2 class="h4 mb-3"><i class="bi bi-cpu"></i> System Queues</h2>
+      </div>
+      {{#queues}}
+      <div class="col-md-4 mb-3">
+        <div class="metric-card shadow-sm">
+          <span class="metric-value font-monospace">{{count}}</span>
+          <span class="metric-label">{{name}}</span>
+        </div>
+      </div>
+      {{/queues}}
+    </div>
+
+    <div class="row">
+      <div class="col-12">
+        <h2 class="h4 mb-3"><i class="bi bi-gear-wide-connected"></i> Services</h2>
+        <div class="table-responsive">
+          <table class="table table-striped" id="servicesTable">
+            <thead>
+              <tr>
+                <th class="sortable" onclick="sortTable(0)">
+                  Service Name <i class="bi bi-arrow-down-up sort-icon"></i>
+                </th>
+                <th class="sortable sorted-desc" onclick="sortTable(1)">
+                  Queued Requests <i class="bi bi-arrow-down-up sort-icon"></i>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {{#services}}
+              <tr>
+                <td class="font-monospace">{{name}}</td>
+                <td><strong>{{queued}}</strong></td>
+              </tr>
+              {{/services}}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -64,58 +92,6 @@
     {{> footer}}
   </footer>
 
-  <script>
-    /**
-     * Client-side sorting for the dashboard table
-     * @param {number} n - Column index
-     */
-    function sortTable(n) {
-      const table = document.getElementById("servicesTable");
-      const headers = table.querySelectorAll("th");
-      let rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
-
-      switching = true;
-      dir = "asc";
-
-      // If the header already has 'asc', toggle to 'desc'
-      if (headers[n].classList.contains("sorted-asc")) {
-        dir = "desc";
-      }
-
-      while (switching) {
-        switching = false;
-        rows = table.rows;
-        for (i = 1; i < (rows.length - 1); i++) {
-          shouldSwitch = false;
-          x = rows[i].getElementsByTagName("TD")[n];
-          y = rows[i + 1].getElementsByTagName("TD")[n];
-
-          let xVal = x.innerText.toLowerCase();
-          let yVal = y.innerText.toLowerCase();
-
-          // Numerical comparison for the 'Queued' column
-          if (n === 1) {
-            xVal = parseInt(xVal) || 0;
-            yVal = parseInt(yVal) || 0;
-          }
-
-          if (dir === "asc") {
-            if (xVal > yVal) { shouldSwitch = true; break; }
-          } else if (dir === "desc") {
-            if (xVal < yVal) { shouldSwitch = true; break; }
-          }
-        }
-        if (shouldSwitch) {
-          rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
-          switching = true;
-          switchcount++;
-        }
-      }
-
-      // Update UI classes for icons
-      headers.forEach(h => h.classList.remove("sorted-asc", "sorted-desc"));
-      headers[n].classList.add(dir === "asc" ? "sorted-asc" : "sorted-desc");
-    }
-  </script>
-</body>
+  </body>
+</html>
 </html>
