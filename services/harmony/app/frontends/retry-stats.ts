@@ -5,6 +5,7 @@ import { getRetryCounts } from '../models/work-item';
 import db from '../util/db';
 import { RequestValidationError } from '../util/errors';
 import { keysToLowerCase } from '../util/object';
+import version from '../util/version';
 
 const DEFAULT_MINUTES = 60;
 
@@ -73,6 +74,7 @@ export async function getRetryStatistics(
         totalWorkItemExecutions,
         percentSuccessful: `${percentSuccessful.toFixed(2)}%`,
         percentRetried: `${percentRetried.toFixed(2)}%`,
+        version,
       });
     } else {
       res.json(result);
