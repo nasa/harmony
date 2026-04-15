@@ -18,6 +18,7 @@ const supportedApiVersions = ['1-alpha'];
 
 /**
  * Throws an error if the version is not supported
+ *
  * @param version - the version of the dashboard response
  * @throws RequestValidationError if the version is not supported
  */
@@ -47,6 +48,7 @@ interface DashboardQueues {
 /**
  * Fetches and merges service work counts from the database, mapping image names
  * to service names and ensuring all known services are included.
+ *
  * @param dbConn - The database connection object
  * @returns A record of service names and their associated queued work counts
  */
@@ -85,7 +87,8 @@ async function getServiceMetrics(dbConn: Knex): Promise<Record<string, ServiceMe
 
 /**
  * Fetches approximate message counts for internal system queues.
- * * @returns A record containing counts for small updates, large updates, and the scheduler
+ *
+ * @returns A record containing counts for small updates, large updates, and the scheduler
  */
 async function getSystemQueueMetrics(): Promise<DashboardQueues> {
   const smallUpdateQueue = getQueueForType(WorkItemQueueType.SMALL_ITEM_UPDATE);
@@ -108,10 +111,12 @@ async function getSystemQueueMetrics(): Promise<DashboardQueues> {
 /**
  * Transforms raw metrics into the format expected by the Mustache template
  * and renders the HTML response.
- * * @param res - The Express response object
+ *
+ * @param res - The Express response object
  * @param services - The map of service names to their queued counts
  * @param queues - The map of system queue names to their message counts
- * @param version - The version string to display on the dashboard
+ * @param version - The version string to display on the dashboard in the footer
+ *        (harmony version not the dashboard API version)
  */
 function renderDashboardHtml(
   res: Response,
@@ -142,7 +147,8 @@ function renderDashboardHtml(
 /**
  * Express.js handler that returns the harmony dashboard responding with JSON by default
  * or HTML if requested.
- * * @param req - The Harmony request object
+ *
+ * @param req - The Harmony request object
  * @param res - The Express response object
  * @param next - The Express next function
  * @throws RequestValidationError if the version is not supported
@@ -169,14 +175,14 @@ export async function getDashboard(
     const result = {
       services: serviceMetrics,
       queues: queueMetrics,
-      version: harmonyVersion,
+      version: version || currentApiVersion,
     };
 
     // Default to JSON unless caller explicitly requests html
     const acceptsHtml = req.accepts(['json', 'html']) === 'html';
 
     if (acceptsHtml) {
-      renderDashboardHtml(res, result.services, result.queues, result.version);
+      renderDashboardHtml(res, result.services, result.queues, harmonyVersion);
     } else {
       res.json(result);
     }

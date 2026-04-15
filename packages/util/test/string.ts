@@ -1,6 +1,10 @@
-import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import { listToText, truncateString, Conjunction, isBoolean, isInteger, inEcr, parseBoolean, sanitizeImage } from '../string';
+import { describe, it } from 'mocha';
+
+import {
+  camelCaseToSpacedTitleCase, Conjunction, inEcr, isBoolean, isInteger, listToText, parseBoolean,
+  sanitizeImage, truncateString,
+} from '../string';
 
 describe('util/string', function () {
   describe('#listToText', function () {
@@ -149,6 +153,24 @@ describe('util/string', function () {
     });
     it('strips private earthdata location from image url', function () {
       expect(sanitizeImage('private.earthdata.nasa.gov/the-image-name')).to.equal('the-image-name');
+    });
+  });
+
+  describe('#camelCaseToSpacedTitleCase', function () {
+    it('handles multiple camelCaseWords', function () {
+      expect(camelCaseToSpacedTitleCase('camelCaseMultipleWords')).to.equal('Camel Case Multiple Words');
+    });
+    it('does not change dash case except to capitalize the first letter', function () {
+      expect(camelCaseToSpacedTitleCase('dash_case_test')).to.equal('Dash_case_test');
+    });
+    it('capitalizes a single word', function () {
+      expect(camelCaseToSpacedTitleCase('word')).to.equal('Word');
+    });
+    it('handles words already in the expected format', function () {
+      expect(camelCaseToSpacedTitleCase('Spaced Title Case Already')).to.equal('Spaced Title Case Already');
+    });
+    it('strips leading and trailing spaces', function () {
+      expect(camelCaseToSpacedTitleCase('   camelCaseMultipleWords   ')).to.equal('Camel Case Multiple Words');
     });
   });
 });
