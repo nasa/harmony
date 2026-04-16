@@ -275,5 +275,50 @@ describe('getDashboard', () => {
       const data = res.render.firstCall.args[1];
       expect(data.version).to.exist;
     });
+
+    it('sets isFailed to true when a queue count is -1 (error state)', async () => {
+      const schedulerQueue = qf.getWorkSchedulerQueue();
+      (schedulerQueue.getApproximateNumberOfMessages as sinon.SinonStub).resolves(-1);
+
+      await getDashboard(req, res, next);
+
+      const data = res.render.firstCall.args[1];
+      const schedulerData = data.queues.find((q: any) => q.name === 'Work Item Scheduler');
+
+      expect(schedulerData.isFailed).to.be.true;
+      expect(schedulerData.count).to.equal(-1);
+    });
+
+    it('sets isFailed to false when a queue count is valid', async () => {
+      await getDashboard(req, res, next);
+
+      const data = res.render.firstCall.args[1];
+      const smallUpdateData = data.queues.find((q: any) => q.name === 'Small Work Item Updates');
+
+      expect(smallUpdateData.isFailed).to.be.false;
+      expect(smallUpdateData.count).to.equal(20);
+    });
+
+    it('sorts the services array by queued count descending for the initial view', async () => {
+      getCountsByServiceStub.resolves({
+        'service-a': { queued: 19 },
+        'service-b': { queued: 1000 },
+        'service-c': { queued: 500 },
+      });
+      imageMapStub.returns({
+        'service-a': 'service-a',
+        'service-b': 'service-b',
+        'service-c': 'service-c',
+      });
+
+      await getDashboard(req, res, next);
+
+      const { services } = res.render.firstCall.args[1];
+
+      // Verify order: 1000 -> 500 -> 19
+      expect(services[0].name).to.equal('service-b');
+      expect(services[1].name).to.equal('service-c');
+      expect(services[2].name).to.equal('service-a');
+    });
   });
 });

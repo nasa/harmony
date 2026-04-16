@@ -35,7 +35,15 @@
       {{#queues}}
       <div class="col-md-4 mb-3">
         <div class="metric-card shadow-sm">
-          <span class="metric-value font-monospace">{{count}}</span>
+          <span class="metric-value font-monospace">
+            {{#isFailed}}
+              <small class="fs-6 text-muted">failed to retrieve</small>
+            {{/isFailed}}
+
+            {{^isFailed}}
+              {{count}}
+            {{/isFailed}}
+          </span>
           <span class="metric-label">{{name}}</span>
         </div>
       </div>
@@ -49,11 +57,15 @@
           <table class="table table-striped" id="servicesTable">
             <thead>
               <tr>
-                <th class="sortable" onclick="sortTable(0)">
-                  Service Name <i class="bi bi-arrow-down-up sort-icon"></i>
+                <th scope="col" class="sortable" aria-sort="none">
+                  <button type="button" class="btn-sort" onclick="sortTable(0, this)">
+                    Service Name <i class="bi bi-arrow-down-up sort-icon"></i>
+                  </button>
                 </th>
-                <th class="sortable sorted-desc" onclick="sortTable(1)">
-                  Queued Requests <i class="bi bi-arrow-down-up sort-icon"></i>
+                <th scope="col" class="sortable" aria-sort="descending">
+                  <button type="button" class="btn-sort" onclick="sortTable(1, this)">
+                    Queued Requests <i class="bi bi-arrow-down-up sort-icon"></i>
+                  </button>
                 </th>
               </tr>
             </thead>
