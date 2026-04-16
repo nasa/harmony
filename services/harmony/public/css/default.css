@@ -13,3 +13,21 @@ a .badge-dark {
     z-index: 999;
     position: fixed;
 }
+
+.btn-sort {
+  background: none;
+  border: none;
+  font: inherit;
+  color: inherit;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  width: 100%; /* Ensures the whole header area is clickable */
+  text-align: left;
+}
+
+.btn-sort:focus {
+  outline: 2px solid #0056b3; /* Provide a clear focus state for keyboard users */
+  outline-offset: 2px;
+}

@@ -95,16 +95,16 @@ async function getSystemQueueMetrics(): Promise<DashboardQueues> {
   const largeUpdateQueue = getQueueForType(WorkItemQueueType.LARGE_ITEM_UPDATE);
   const schedulerQueue = getWorkSchedulerQueue();
 
-  const [small, large, scheduler] = await Promise.all([
+  const [small, large, scheduler] = await Promise.allSettled([
     smallUpdateQueue.getApproximateNumberOfMessages(),
     largeUpdateQueue.getApproximateNumberOfMessages(),
     schedulerQueue.getApproximateNumberOfMessages(),
   ]);
 
   return {
-    smallWorkItemUpdates: small,
-    largeWorkItemUpdates: large,
-    workItemScheduler: scheduler,
+    smallWorkItemUpdates: small.status === 'fulfilled' ? small.value : -1,
+    largeWorkItemUpdates: large.status === 'fulfilled' ? large.value : -1,
+    workItemScheduler: scheduler.status === 'fulfilled' ? scheduler.value : -1,
   };
 }
 
@@ -132,6 +132,7 @@ function renderDashboardHtml(
   const queuesArray = Object.entries(queues).map(([name, count]) => ({
     name: camelCaseToSpacedTitleCase(name),
     count,
+    isFailed: count === -1,
   }));
 
   // Sort by queued count descending for the primary dashboard view
