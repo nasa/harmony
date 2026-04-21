@@ -1023,20 +1023,19 @@ describe('Services by association', function () {
   const conversionCollection = 'C1233800302-EEDTEST';
   const reprojectCollection = 'C1234088182-EEDTEST';
   const tiff = 'image/tiff';
-  const zarr = 'application/x-zarr';
-  const granuleId = 'G1233800352-EEDTEST';
-  const granuleQuery = { granuleId };
+  const netcdf = 'application/x-netcdf4';
+  const formatQuery = { format: 'image/tiff' };
   const reprojectQuery = { outputCrs: 'EPSG:4326' };
   const version = '1.0.0';
 
   hookServersStartStop();
 
   describe('when choosing a service', function () {
-    const headers = { accept: `${zarr}, ${tiff}` };
+    const headers = { accept: `${netcdf}, ${tiff}` };
 
     describe('when a matching service is provided through a UMM-S association', function () {
       StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookRangesetRequest(version, conversionCollection, 'all', { headers, query: granuleQuery });
+      hookRangesetRequest(version, conversionCollection, 'all', { headers, query: formatQuery });
       it('uses the backend service from the association', function () {
         expect(this.service.config.name).to.equal('harmony/service-example');
       });
@@ -1046,7 +1045,7 @@ describe('Services by association', function () {
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookRangesetRequest(version, reprojectCollection, 'all', { headers, query: reprojectQuery });
       it('it uses the first matching service', function () {
-        expect(this.service.config.name).to.equal('nasa/harmony-gdal-adapter');
+        expect(this.service.config.name).to.equal('sds/swath-projector');
       });
     });
   });

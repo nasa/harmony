@@ -198,7 +198,7 @@ export interface UmmServiceOptions {
 
   SupportedOutputProjections?: {
     ProjectionName?: string;
-    ProjectionOutputAuthority?: string;
+    ProjectionAuthority?: string;
   }[];
 
   Aggregation?: {
