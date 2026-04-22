@@ -739,15 +739,12 @@ https://cmr.uat.earthdata.nasa.gov:
         temporal: false
       output_formats:
         - image/png
-        - image/tiff
       reprojection: true
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
       - image: !Env ${NISAR_PY_IMAGE}
       - image: !Env ${HYBIG_IMAGE}
-        conditional:
-          format: ['image/png']
 
   - name: net2cog
     description: |
