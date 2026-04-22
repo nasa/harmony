@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import _ from 'lodash';
 
-import { currentApiVersion } from '../app/frontends/capabilities';
+import { stableApiVersion } from '../app/frontends/capabilities';
 import { hookGetCollectionCapabilities } from './helpers/capabilities';
 import hookServersStartStop from './helpers/servers';
 
@@ -21,11 +21,11 @@ describe('Testing collection capabilities', function () {
       description: 'with a valid shortName configured for harmony',
       query: { shortName: 'harmony_example' },
     }, {
-      description: 'with a valid collectionId configured for harmony and latest version',
-      query: { collectionId, version: currentApiVersion },
+      description: 'with a valid collectionId configured for harmony and stable version',
+      query: { collectionId, version: stableApiVersion },
     }, {
-      description: 'with a valid shortName configured for harmony and latest version',
-      query: { shortName: 'harmony_example', version: currentApiVersion },
+      description: 'with a valid shortName configured for harmony and stable version',
+      query: { shortName: 'harmony_example', version: stableApiVersion },
     }];
     for (const test of tests) {
       describe(test.description, function () {
@@ -37,8 +37,8 @@ describe('Testing collection capabilities', function () {
         it('includes all of the expected fields in the response according to the default version', function () {
           const expectedFields = [
             'conceptId', 'shortName', 'variableSubset', 'bboxSubset', 'shapeSubset',
-            'temporalSubset', 'concatenate', 'reproject', 'outputFormats', 'supportedProjections',
-            'services', 'variables', 'capabilitiesVersion',
+            'temporalSubset', 'concatenate', 'reproject', 'outputFormats', 'services',
+            'variables', 'capabilitiesVersion',
           ];
           const capabilities = JSON.parse(this.res.text);
           expect(Object.keys(capabilities)).to.eql(expectedFields);
@@ -92,14 +92,6 @@ describe('Testing collection capabilities', function () {
           expect(capabilities.outputFormats).to.eql(expectedFormats);
         });
 
-        it('sets the supportedProjections field correctly', function () {
-          const capabilities = JSON.parse(this.res.text);
-          const expectedProjections = [
-            'EPSG:4326',
-          ];
-          expect(capabilities.supportedProjections).to.eql(expectedProjections);
-        });
-
         it('includes the correct services', function () {
           const capabilities = JSON.parse(this.res.text);
           const services_name_href = capabilities.services.map((s) => _.pick(s, ['name', 'href']));
@@ -112,16 +104,6 @@ describe('Testing collection capabilities', function () {
             'href': 'https://cmr.uat.earthdata.nasa.gov/search/concepts/S1257851197-EEDTEST',
           }];
           expect(services_name_href).to.eql(expectedServices);
-        });
-
-        it('includes the supported reprojections within the services', function () {
-          const capabilities = JSON.parse(this.res.text);
-          const { supported_projections } = capabilities.services[0].capabilities;
-          const expectedProjections = [{
-            'name': 'Geographic',
-            'authority': 'EPSG:4326',
-          }];
-          expect(supported_projections).to.eql(expectedProjections);
         });
 
         it('sets the variables field correctly', function () {
@@ -147,7 +129,7 @@ describe('Testing collection capabilities', function () {
 
         it('includes the correct capabilitiesVersion', function () {
           const capabilities = JSON.parse(this.res.text);
-          expect(capabilities.capabilitiesVersion).to.equal(currentApiVersion);
+          expect(capabilities.capabilitiesVersion).to.equal(stableApiVersion);
         });
       });
     }
@@ -393,6 +375,145 @@ describe('Testing collection capabilities', function () {
         it('includes the correct capabilitiesVersion', function () {
           const capabilities = JSON.parse(this.res.text);
           expect(capabilities.capabilitiesVersion).to.equal('2');
+        });
+      });
+
+      describe('specifying version 3', function () {
+        hookGetCollectionCapabilities({ collectionId: 'C1234088182-EEDTEST', version: 3 });
+        it('returns a 200 success status code', function () {
+          expect(this.res.status).to.equal(200);
+        });
+
+        it('includes all of the expected fields in the response according to version 3', function () {
+          const expectedFields = [
+            'conceptId', 'shortName', 'summary', 'services', 'variables', 'capabilitiesVersion',
+          ];
+          const capabilities = JSON.parse(this.res.text);
+          expect(Object.keys(capabilities)).to.eql(expectedFields);
+        });
+
+        it('sets the conceptId field correctly', function () {
+          const capabilities = JSON.parse(this.res.text);
+          expect(capabilities.conceptId).to.equal(collectionId);
+        });
+
+        it('sets the shortName field correctly', function () {
+          const capabilities = JSON.parse(this.res.text);
+          expect(capabilities.shortName).to.equal('harmony_example');
+        });
+
+        it('sets the summary.subsetting field correctly', function () {
+          const capabilities = JSON.parse(this.res.text);
+          const actualSubsetting = capabilities.summary.subsetting;
+
+          expect(actualSubsetting.bbox).to.be.true;
+          expect(actualSubsetting.dimension).to.be.false;
+          expect(actualSubsetting.shape).to.be.false;
+          expect(actualSubsetting.temporal).to.be.false;
+          expect(actualSubsetting.variable).to.be.true;
+        });
+
+        it('sets the summary.concatenation field correctly', function () {
+          const capabilities = JSON.parse(this.res.text);
+          expect(capabilities.summary.concatenation).to.equal(false);
+        });
+
+        it('sets the summary.reprojection field correctly', function () {
+          const capabilities = JSON.parse(this.res.text);
+          const actualReprojection = capabilities.summary.reprojection;
+
+          const expectedProjections = [{
+            name: 'Geographic',
+            crs: 'EPSG:4326',
+          }];
+
+          const expectedInterpolationMethods = ['Bilinear Interpolation', 'Nearest Neighbor'];
+
+          expect(actualReprojection.supported).to.be.true;
+          expect(actualReprojection.supportedProjections).to.eql(expectedProjections);
+          expect(actualReprojection.interpolationMethods).to.eql(expectedInterpolationMethods);
+
+        });
+
+        it('sets the summary.outputFormats field correctly', function () {
+          const capabilities = JSON.parse(this.res.text);
+          const expectedFormats = [
+            'application/netcdf', 'application/x-netcdf4', 'image/tiff', 'image/png', 'image/gif',
+          ];
+          expect(capabilities.summary.outputFormats).to.eql(expectedFormats);
+        });
+
+        it('includes the correct services', function () {
+          const capabilities = JSON.parse(this.res.text);
+          const services_name_href = capabilities.services.map((s) => _.pick(s, ['name', 'href']));
+          const expectedServices = [{
+            'name': 'sds/swath-projector',
+            'href': 'https://cmr.uat.earthdata.nasa.gov/search/concepts/S1237974711-EEDTEST',
+          },
+          {
+            'name': 'harmony/service-example',
+            'href': 'https://cmr.uat.earthdata.nasa.gov/search/concepts/S1257851197-EEDTEST',
+          }];
+          expect(services_name_href).to.eql(expectedServices);
+        });
+
+        it('includes the supported reprojections within the services', function () {
+          const capabilities = JSON.parse(this.res.text);
+          const { supportedProjections } = capabilities.services[0].capabilities.reprojection;
+          const expectedProjections = [{
+            'name': 'Geographic',
+            'crs': 'EPSG:4326',
+          }];
+          expect(supportedProjections).to.eql(expectedProjections);
+        });
+
+        it('includes the interpolation methods within the services', function () {
+          const capabilities = JSON.parse(this.res.text);
+          const { interpolationMethods } = capabilities.services[0].capabilities.reprojection;
+          const expectedInterpolationMethods = ['Bilinear Interpolation', 'Nearest Neighbor'];
+
+          expect(interpolationMethods).to.eql(expectedInterpolationMethods);
+        });
+
+        it('sets the variables field correctly', function () {
+          const capabilities = JSON.parse(this.res.text);
+          const expectedVariables = [{
+            'name': 'alpha_var',
+            'href': 'https://cmr.uat.earthdata.nasa.gov/search/concepts/V1234088190-EEDTEST',
+          },
+          {
+            'name': 'blue_var',
+            'href': 'https://cmr.uat.earthdata.nasa.gov/search/concepts/V1234088189-EEDTEST',
+          },
+          {
+            'name': 'green_var',
+            'href': 'https://cmr.uat.earthdata.nasa.gov/search/concepts/V1234088188-EEDTEST',
+          },
+          {
+            'name': 'red_var',
+            'href': 'https://cmr.uat.earthdata.nasa.gov/search/concepts/V1234088187-EEDTEST',
+          }];
+          expect(capabilities.variables).to.eql(expectedVariables);
+        });
+
+        it('includes the correct capabilitiesVersion', function () {
+          const capabilities = JSON.parse(this.res.text);
+          expect(capabilities.capabilitiesVersion).to.equal('3-alpha');
+        });
+      });
+
+      describe('specifying version 3-alpha', function () {
+        hookGetCollectionCapabilities({ collectionId: 'C1234088182-EEDTEST', version: '3-alpha' });
+        it('returns a 200 success status code', function () {
+          expect(this.res.status).to.equal(200);
+        });
+
+        it('includes all of the expected fields in the response according to version 3', function () {
+          const expectedFields = [
+            'conceptId', 'shortName', 'summary', 'services', 'variables', 'capabilitiesVersion',
+          ];
+          const capabilities = JSON.parse(this.res.text);
+          expect(Object.keys(capabilities)).to.eql(expectedFields);
         });
       });
 

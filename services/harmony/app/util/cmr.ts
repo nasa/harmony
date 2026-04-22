@@ -206,6 +206,8 @@ export interface UmmServiceOptions {
       ConcatenateDefault?: boolean;
     }
   }
+
+  InterpolationTypes?: string[];
 }
 
 export interface CmrUmmService {

@@ -15,11 +15,11 @@ import {
 import { NotFoundError, RequestValidationError } from '../util/errors';
 import { keysToLowerCase } from '../util/object';
 
-export const currentApiVersion = '3-alpha';
+export const stableApiVersion = '2';
 const supportedApiVersions = ['1', '2', '3-alpha'];
 
 interface Projection {
-  authority: string;
+  crs: string;
   name: string;
 }
 interface ServiceV2 {
@@ -28,9 +28,6 @@ interface ServiceV2 {
   capabilities: ServiceCapabilities;
 }
 
-interface ServiceCapabilitiesV3 extends ServiceCapabilities {
-  supported_projections: Projection[];
-}
 interface ServiceV3 {
   name: string;
   href: string;
@@ -72,19 +69,33 @@ interface CollectionCapabilitiesV2 {
   capabilitiesVersion: string;
 }
 
+interface ServiceCapabilitiesV3 {
+  subsetting: {
+    bbox: boolean;
+    dimension: boolean;
+    shape: boolean;
+    temporal: boolean;
+    variable: boolean;
+  },
+  reprojection: {
+    supported: boolean;
+    supportedProjections: Projection[],
+    interpolationMethods: string[],
+  },
+  averaging: {
+    time: boolean;
+    area: boolean;
+  }
+  concatenation: boolean;
+  outputFormats: string[];
+}
+
 interface CollectionCapabilitiesV3 {
   conceptId: string;
   shortName: string;
-  variableSubset: boolean;
-  bboxSubset: boolean;
-  shapeSubset: boolean;
-  temporalSubset: boolean;
-  concatenate: boolean;
-  reproject: boolean;
-  outputFormats: string[];
-  services: ServiceV2[];
+  summary: ServiceCapabilitiesV3;
+  services: ServiceV3[];
   variables: VariableV2[];
-  supportedProjections: string[];
   capabilitiesVersion: string;
 }
 
@@ -162,6 +173,46 @@ function createUmmRecordsMap(ummRecords: CmrUmmService[]): { [key: string]: CmrU
 }
 
 /**
+ * Returns the collection capabilities format from the provided harmony services.yml
+ * capabilities configuration for a service chain.
+ *
+ * @param harmonyConfigCapabilities - the capabilities section of the harmony services.yml
+ * configuration for a service
+ * @param supportedProjections - a list of supported projections for the service chain
+ * @param interpolationMethods - a list of supported interpolation methods for resampling
+ * peformed as part of reprojection.
+ *
+ * @returns the capabilities in the format for the collection capabilities endpoint
+ */
+function convertServicesYamlConfigToCapabilities(
+  harmonyConfigCapabilities: ServiceCapabilities,
+  supportedProjections: Projection[],
+  interpolationMethods: string[],
+): ServiceCapabilitiesV3 {
+  const capabilities = {
+    subsetting: {
+      bbox: harmonyConfigCapabilities.subsetting.bbox || false,
+      dimension: harmonyConfigCapabilities.subsetting.dimension || false,
+      shape: harmonyConfigCapabilities.subsetting.shape || false,
+      temporal: harmonyConfigCapabilities.subsetting.temporal || false,
+      variable: harmonyConfigCapabilities.subsetting.variable || false,
+    },
+    reprojection: {
+      supported: harmonyConfigCapabilities.reprojection || false,
+      supportedProjections,
+      interpolationMethods,
+    },
+    averaging: {
+      time: harmonyConfigCapabilities.averaging?.time || false,
+      area: harmonyConfigCapabilities.averaging?.area || false,
+    },
+    concatenation: harmonyConfigCapabilities.concatenation,
+    outputFormats: harmonyConfigCapabilities.output_formats,
+  };
+  return capabilities;
+}
+
+/**
  * Returns the service representation in capabilities version 3 format including
  * supported reprojections from the UMM-S record. Harmony services that support
  * reprojection must include the ProjectionAuthority field in order to be included
@@ -183,6 +234,7 @@ async function getServicesV3(
     const ummRecordsMap = createUmmRecordsMap(ummRecords);
     for (const harmonyConfig of serviceConfigs) {
       const supportedProjections = [];
+      let interpolationMethods = [];
       let href;
       if (harmonyConfig.umm_s) {
         href = `${process.env.CMR_ENDPOINT}/search/concepts/${harmonyConfig.umm_s}`;
@@ -194,14 +246,16 @@ async function getServicesV3(
           // in a harmony request as the outputCRS parameter.
           if (ProjectionAuthority) {
             supportedProjections.push({
-              name: ProjectionName, authority: ProjectionAuthority,
+              name: ProjectionName, crs: ProjectionAuthority,
             });
           }
         }
+        interpolationMethods = ummRecord.umm.ServiceOptions?.InterpolationTypes || [];
       }
 
-      const serviceCapabilities: ServiceCapabilitiesV3 = harmonyConfig.capabilities as ServiceCapabilitiesV3;
-      serviceCapabilities.supported_projections = supportedProjections;
+      const serviceCapabilities = convertServicesYamlConfigToCapabilities(
+        harmonyConfig.capabilities, supportedProjections, interpolationMethods,
+      );
 
       v3Services.push({
         name: harmonyConfig.name,
@@ -232,17 +286,34 @@ function getVariableV2(variable: CmrUmmVariable): VariableV2 {
  * @param services - a list of all of the services in ServiceV3 format
  * @returns the supported output projections in capabilities version 3 format
  */
-function getProjections(services: ServiceV3[]): Set<string> {
+function getProjections(services: ServiceV3[]): Set<Projection> {
 
-  const projections = new Set<string>();
+  const projections = new Set<Projection>();
   for (const service of services) {
-    for (const projection of service.capabilities.supported_projections) {
-      const { authority } = projection;
-      projections.add(authority);
+    for (const projection of service.capabilities.reprojection.supportedProjections) {
+      projections.add(projection);
     }
   }
 
   return projections;
+}
+
+/**
+ * Returns the supported output projections from all services.
+ *
+ * @param services - a list of all of the services in ServiceV3 format
+ * @returns the supported output projections in capabilities version 3 format
+ */
+function getInterpolationMethods(services: ServiceV3[]): Set<string> {
+
+  const interpolationMethods = new Set<string>();
+  for (const service of services) {
+    for (const interpolationMethod of service.capabilities.reprojection.interpolationMethods) {
+      interpolationMethods.add(interpolationMethod);
+    }
+  }
+
+  return interpolationMethods;
 }
 
 
@@ -338,21 +409,44 @@ async function getCollectionCapabilitiesV3(
   const bboxSubset = matchingServices.some((s) => s.capabilities.subsetting.bbox === true);
   const shapeSubset = matchingServices.some((s) => s.capabilities.subsetting.shape === true);
   const temporalSubset = matchingServices.some((s) => s.capabilities.subsetting.temporal === true);
-  const concatenate = matchingServices.some((s) => s.capabilities.concatenation === true);
-  const reproject = matchingServices.some((s) => s.capabilities.reprojection === true);
+  const dimensionSubset = matchingServices.some((s) => s.capabilities.subsetting.dimension === true);
+  const concatenationSupported = matchingServices.some((s) => s.capabilities.concatenation === true);
+  const reprojectionSupported = matchingServices.some((s) => s.capabilities.reprojection === true);
+  const timeAveraging = matchingServices.some((s) => s.capabilities.averaging?.time === true);
+  const areaAveraging = matchingServices.some((s) => s.capabilities.averaging?.area === true);
   const outputFormats = new Set(matchingServices.flatMap((s) => s.capabilities.output_formats));
   const conceptId = collection.id;
   const shortName = collection.short_name;
   const services = await getServicesV3(context, matchingServices);
   const projections = getProjections(services);
+  const interpolationMethods = getInterpolationMethods(services);
+
+  const summary = {
+    subsetting: {
+      bbox: bboxSubset,
+      dimension: dimensionSubset,
+      shape: shapeSubset,
+      temporal: temporalSubset,
+      variable: variableSubset,
+    },
+    reprojection: {
+      supported: reprojectionSupported,
+      supportedProjections: Array.from(projections),
+      interpolationMethods: Array.from(interpolationMethods),
+    },
+    averaging: {
+      time: timeAveraging,
+      area: areaAveraging,
+    },
+    concatenation: concatenationSupported,
+    outputFormats: Array.from(outputFormats),
+  };
 
   const capabilities = {
-    conceptId, shortName, variableSubset, bboxSubset, shapeSubset, temporalSubset,
-    concatenate, reproject,
-    outputFormats: Array.from(outputFormats),
-    supportedProjections: Array.from(projections),
+    conceptId, shortName, summary,
     services, variables, capabilitiesVersion,
   };
+
   return capabilities;
 }
 
@@ -390,7 +484,7 @@ function chooseCapabilitiesFunction(version: string)
 async function getCollectionCapabilities(
   context: RequestContext,
   collection: CmrCollection,
-  version = currentApiVersion,
+  version = stableApiVersion,
 ) : Promise<CollectionCapabilities> {
   const capabilitiesFn = chooseCapabilitiesFunction(version);
   return capabilitiesFn(context, collection);
