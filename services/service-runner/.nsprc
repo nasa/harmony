@@ -1,17 +1,16 @@
 {
-  "GHSA-5c6j-r48x-rmvq": {
-    "active": true,
-    "notes": "Will fix in HARMONY-2280",
-    "expiry": "2026-06-01"
-  },
   "GHSA-p8p7-x288-28g6": {
     "active": true,
     "notes": "Will fix in HARMONY-1729",
     "expiry": "2026-06-01"
   },
-  "GHSA-qj8w-gfj5-8c6v": {
+  "GHSA-w5hq-g745-h8pq": {
     "active": true,
-    "notes": "Will fix in HARMONY-2315",
-    "expiry": "2026-06-01"
+    "notes": "uuid through dev dependency nyc in packages/util"
+  },
+  "GHSA-gh4j-gqv2-49f6": {
+    "active": true,
+    "notes": "Will fix in HARMONY-2334",
+    "expiry": "2026-08-01"
   }
 }
