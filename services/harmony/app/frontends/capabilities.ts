@@ -468,7 +468,7 @@ async function getCollectionCapabilitiesV3(
  * @throws RequestValidationError if the version is invalid
  */
 function chooseCapabilitiesFunction(version: string)
-  : ((context, string) => Promise<CollectionCapabilities>) {
+  : ((context: RequestContext, collection: CmrCollection) => Promise<CollectionCapabilities>) {
   if (version === '1') {
     return getCollectionCapabilitiesV1;
   } else if (version === '2') {
