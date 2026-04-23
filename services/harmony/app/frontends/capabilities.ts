@@ -206,7 +206,7 @@ function convertServicesYamlConfigToCapabilities(
       time: harmonyConfigCapabilities.averaging?.time || false,
       area: harmonyConfigCapabilities.averaging?.area || false,
     },
-    concatenation: harmonyConfigCapabilities.concatenation,
+    concatenation: harmonyConfigCapabilities.concatenation || false,
     outputFormats: harmonyConfigCapabilities.output_formats,
   };
   return capabilities;
@@ -229,16 +229,22 @@ async function getServicesV3(
     config.umm_s ? [config.umm_s] : [],
   );
   const v3Services: ServiceV3[] = [];
+  let ummRecordsMap = {};
   if (ummConceptIds.length > 0) {
     const ummRecords = await getServicesByIds(context, ummConceptIds, null);
-    const ummRecordsMap = createUmmRecordsMap(ummRecords);
-    for (const harmonyConfig of serviceConfigs) {
-      const supportedProjections = [];
-      let interpolationMethods = [];
-      let href;
-      if (harmonyConfig.umm_s) {
-        href = `${process.env.CMR_ENDPOINT}/search/concepts/${harmonyConfig.umm_s}`;
-        const ummRecord = ummRecordsMap[harmonyConfig.umm_s];
+    ummRecordsMap = createUmmRecordsMap(ummRecords);
+  }
+
+  for (const harmonyConfig of serviceConfigs) {
+    const supportedProjections = [];
+    let interpolationMethods = [];
+    let href;
+    if (harmonyConfig.umm_s) {
+      href = `${process.env.CMR_ENDPOINT}/search/concepts/${harmonyConfig.umm_s}`;
+      const ummRecord = ummRecordsMap[harmonyConfig.umm_s];
+      if (!ummRecord) {
+        context.logger.warn(`${harmonyConfig.umm_s} service record was not returned by the CMR`);
+      } else {
         const projections = ummRecord.umm.ServiceOptions?.SupportedOutputProjections;
         for (const projection of projections) {
           const { ProjectionName, ProjectionAuthority } = projection;
@@ -252,17 +258,17 @@ async function getServicesV3(
         }
         interpolationMethods = ummRecord.umm.ServiceOptions?.InterpolationTypes || [];
       }
-
-      const serviceCapabilities = convertServicesYamlConfigToCapabilities(
-        harmonyConfig.capabilities, supportedProjections, interpolationMethods,
-      );
-
-      v3Services.push({
-        name: harmonyConfig.name,
-        href,
-        capabilities: serviceCapabilities,
-      });
     }
+
+    const serviceCapabilities = convertServicesYamlConfigToCapabilities(
+      harmonyConfig.capabilities, supportedProjections, interpolationMethods,
+    );
+
+    v3Services.push({
+      name: harmonyConfig.name,
+      href,
+      capabilities: serviceCapabilities,
+    });
   }
 
   return v3Services;
@@ -281,21 +287,23 @@ function getVariableV2(variable: CmrUmmVariable): VariableV2 {
 }
 
 /**
- * Returns the supported output projections from all services.
+ * Returns the supported output projections from all services. Note that it's possible
+ * different services could have different names for the same crs field. In that case
+ * we just choose the first name.
  *
  * @param services - a list of all of the services in ServiceV3 format
  * @returns the supported output projections in capabilities version 3 format
  */
-function getProjections(services: ServiceV3[]): Set<Projection> {
-
-  const projections = new Set<Projection>();
+function getProjections(services: ServiceV3[]): Projection[] {
+  const byCrs = new Map<string, Projection>();
   for (const service of services) {
     for (const projection of service.capabilities.reprojection.supportedProjections) {
-      projections.add(projection);
+      if (!byCrs.has(projection.crs)) {
+        byCrs.set(projection.crs, projection);
+      }
     }
   }
-
-  return projections;
+  return Array.from(byCrs.values());
 }
 
 /**
@@ -431,7 +439,7 @@ async function getCollectionCapabilitiesV3(
     },
     reprojection: {
       supported: reprojectionSupported,
-      supportedProjections: Array.from(projections),
+      supportedProjections: projections,
       interpolationMethods: Array.from(interpolationMethods),
     },
     averaging: {
