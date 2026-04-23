@@ -156,6 +156,26 @@ export async function deleteUserWorkForJobAndService(
 }
 
 /**
+ * Deletes a row for the given job and service ID from the user_work
+ * table when running_count and ready_count are 0.
+ *
+ * @param tx - The database transaction
+ * @param jobID - The job ID
+ * @param serviceID - The ID of the service
+ * @returns the number of rows deleted (1)
+ */
+export async function deleteUserWorkForCompletedJobAndService(
+  tx: Transaction, jobID: string, serviceID: string,
+): Promise<number> {
+  const numDeleted = await tx(UserWork.table)
+    .where({ job_id: jobID, service_id: serviceID })
+    .andWhere('running_count', '=', 0)
+    .andWhere('ready_count', '=', 0)
+    .del();
+  return numDeleted;
+}
+
+/**
  * Adds one to the ready_count for the given jobID and serviceID.
  * @param tx - The database transaction
  * @param jobID - The job ID

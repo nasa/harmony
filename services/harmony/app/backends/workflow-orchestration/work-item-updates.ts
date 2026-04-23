@@ -12,7 +12,7 @@ import JobMessage, {
   getErrorMessagesForJob, getMessageCountForJob, getWarningMessagesForJob, JobMessageLevel,
 } from '../../models/job-message';
 import {
-  decrementRunningCount, deleteUserWorkForJob, deleteUserWorkForJobAndService,
+  decrementRunningCount, deleteUserWorkForJob, deleteUserWorkForCompletedJobAndService, deleteUserWorkForJobAndService,
   incrementReadyAndDecrementRunningCounts, incrementReadyCount, setReadyCountToZero,
 } from '../../models/user-work';
 import WorkItem, {
@@ -650,6 +650,28 @@ export async function preprocessWorkItem(
 }
 
 /**
+ * Delete user work that is unreachable from the current step forward.
+ * traverses the user_work table and deletes any row for the jobID where there
+ * is no work running or queued.
+ *
+ * @param tx - database transaction with lock on the related job in the jobs table
+ * @param jobID - Job of the work to clean
+ * @param stepIndex - starting index to look for stranded user work items.
+ */
+export async function deleteStrandedUserWork(
+  tx: Transaction, jobID: string, stepIndex: number,
+): Promise<void> {
+  const serviceIds = (await tx(WorkflowStep.table)
+    .where({ jobID })
+    .andWhere('stepIndex', '>=', stepIndex))
+    .map((row) => row.serviceID);
+
+  for (const serviceId of serviceIds) {
+    await deleteUserWorkForCompletedJobAndService(tx, jobID, serviceId);
+  }
+}
+
+/**
  * Process the work item update using the preprocessed result info and the work item info.
  * Various other parameters are passed in to optimize the processing of a batch of work items.
  * A database lock on the work item related job needs to be acquired before calling this function.
@@ -888,7 +910,19 @@ export async function processWorkItem(
       }
 
       if (allWorkItemsForStepComplete) {
-        if (!didCreateWorkItem && (!nextWorkflowStep || nextWorkflowStep.workItemCount < 1)) {
+        const endedUngracefully = (!didCreateWorkItem && nextWorkflowStep);
+        if (endedUngracefully) {
+          // We're here because We didn't create a new workitem. but there are
+          // next steps to take. We completed, but might (always?) have status
+          // = "failed"
+          // check if the next workflows are complete.
+          await deleteStrandedUserWork(tx, nextWorkflowStep.jobID, nextWorkflowStep.stepIndex);
+        }
+
+        if (
+          !didCreateWorkItem && (!nextWorkflowStep || nextWorkflowStep.workItemCount < 1)
+            || endedUngracefully
+        ) {
           // If all granules are finished mark the job as finished
           const { finalStatus, finalMessage } = await getFinalStatusAndMessageForJob(tx, job);
           await (await logAsyncExecutionTime(
