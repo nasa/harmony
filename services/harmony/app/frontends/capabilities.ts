@@ -245,7 +245,7 @@ async function getServicesV3(
       if (!ummRecord) {
         context.logger.warn(`${harmonyConfig.umm_s} service record was not returned by the CMR`);
       } else {
-        const projections = ummRecord.umm.ServiceOptions?.SupportedOutputProjections;
+        const projections = ummRecord.umm.ServiceOptions?.SupportedOutputProjections || [];
         for (const projection of projections) {
           const { ProjectionName, ProjectionAuthority } = projection;
           // Only return projections with a ProjectionAuthority which should be passed
