@@ -219,7 +219,7 @@ function convertServicesYamlConfigToCapabilities(
  * as supported output projections.
  *
  * @param variable - the services config object
- * @returns the service representation in capabilities version 2 format
+ * @returns the service representation in capabilities version 3 format
  */
 async function getServicesV3(
   context: RequestContext,
