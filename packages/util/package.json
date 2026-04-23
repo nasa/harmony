@@ -62,7 +62,7 @@
     "@types/chai": ">=4.2.22 <5.0.0",
     "@types/node": "^22.13.10",
     "chai": ">=4.3.7 <5.0.0",
-    "mocha": "^11.7.5",
+    "mocha": "^11.0.1",
     "nyc": "^17.1.0",
     "rimraf": "^6.0.1",
     "strict-npm-engines": "^0.0.1",
@@ -76,7 +76,6 @@
     "cross-spawn": "7.0.5",
     "diff": "^8.0.3",
     "serialize-javascript": "^7.0.5",
-    "tmp": "0.2.4",
-    "uuid": "^14.0.0"
+    "tmp": "0.2.4"
   }
 }
