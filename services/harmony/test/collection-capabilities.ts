@@ -475,6 +475,31 @@ describe('Testing collection capabilities', function () {
           expect(interpolationMethods).to.eql(expectedInterpolationMethods);
         });
 
+        it('includes the complete v3 capability schema for every service', function () {
+          const capabilities = JSON.parse(this.res.text);
+
+          for (const service of capabilities.services) {
+            expect(Object.keys(service.capabilities)).to.include.members([
+              'subsetting',
+              'concatenation',
+              'reprojection',
+              'averaging',
+              'outputFormats',
+            ]);
+            expect(Object.keys(service.capabilities.subsetting)).to.include.members([
+              'bbox',
+              'dimension',
+              'shape',
+              'temporal',
+              'variable',
+            ]);
+            expect(Object.keys(service.capabilities.averaging)).to.include.members([
+              'time',
+              'area',
+            ]);
+          }
+        });
+
         it('sets the variables field correctly', function () {
           const capabilities = JSON.parse(this.res.text);
           const expectedVariables = [{
@@ -514,6 +539,11 @@ describe('Testing collection capabilities', function () {
           ];
           const capabilities = JSON.parse(this.res.text);
           expect(Object.keys(capabilities)).to.eql(expectedFields);
+        });
+
+        it('includes the correct capabilitiesVersion', function () {
+          const capabilities = JSON.parse(this.res.text);
+          expect(capabilities.capabilitiesVersion).to.equal('3-alpha');
         });
       });
 
