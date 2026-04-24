@@ -1,11 +1,11 @@
 import { expect } from 'chai';
-import UserWork, {
+import {
   decrementRunningCount, getCount, incrementReadyAndDecrementRunningCounts,
   incrementRunningAndDecrementReadyCounts, deleteUserWorkForCompletedJobAndServices,
 } from '../../app/models/user-work';
 import db from '../../app/util/db';
 import { truncateAll } from '../helpers/db';
-import { createUserWorkRecord } from '../helpers/user-work';
+import { rowExists, createUserWorkRecord } from '../helpers/user-work';
 
 describe('user_work table', async function () {
   describe('when creating a row and setting the ready and running counts to positive values', async function () {
@@ -174,11 +174,6 @@ describe('user_work table', async function () {
     const jobId = 'JobID-uuid';
     const serviceId = 'harmony/service-image:1.0.0';
     const serviceId2 = 'harmony/service-image:2.0.0';
-
-    async function rowExists(job_id: string, service_id: string): Promise<boolean> {
-      const row = await db(UserWork.table).where({ job_id, service_id }).first();
-      return row !== undefined;
-    }
 
     afterEach(async function () { await truncateAll(); });
 
