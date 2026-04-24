@@ -14,7 +14,7 @@ import JobMessage, {
 import {
   decrementRunningCount, deleteUserWorkForJob, deleteUserWorkForCompletedJobAndServices, deleteUserWorkForJobAndService,
   incrementReadyAndDecrementRunningCounts, incrementReadyCount, setReadyCountToZero,
-  anyRemainingUserWorkForJobAndService,
+  isUserWorkForJobAndServiceComplete,
 } from '../../models/user-work';
 import WorkItem, {
   countOfWorkItemsByStepAndJobID, getWorkItemById, getWorkItemsByJobIdAndStepIndex,
@@ -672,7 +672,7 @@ export async function deleteStrandedUserWork(
   await deleteUserWorkForCompletedJobAndServices(tx, jobID, serviceIds);
 
   for (const serviceId of serviceIds) {
-    if (await anyRemainingUserWorkForJobAndService(tx, jobID, serviceId)) {
+    if (!(await isUserWorkForJobAndServiceComplete(tx, jobID, serviceId))) {
       return false;
     }
   }

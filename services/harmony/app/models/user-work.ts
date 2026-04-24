@@ -182,9 +182,9 @@ export async function deleteUserWorkForCompletedJobAndServices(
  * @param jobID - The job ID
  * @param serviceID - The ID of the service
  *
- * @returns true if there are any rows with running or ready counts
+ * @returns true if there are no rows with running or ready counts
  */
-export async function anyRemainingUserWorkForJobAndService(
+export async function isUserWorkForJobAndServiceComplete(
   tx: Transaction, jobID: string, serviceID: string,
 ): Promise<boolean> {
   const any = await tx(UserWork.table)
@@ -193,7 +193,7 @@ export async function anyRemainingUserWorkForJobAndService(
         this.where('running_count', '!=', 0).orWhere('ready_count', '!=', 0);
       })
     .first();
-  return any != undefined;
+  return any == undefined;
 }
 
 /**
