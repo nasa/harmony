@@ -764,8 +764,6 @@ export async function processWorkItem(
           { workFailureMessage: message, serviceId: workItem.serviceID, status },
         );
       } else if (workItem.retryCount < env.workItemRetryLimit) {
-        logger.info('Sleeping for 7 seconds for bug testing.');
-        await new Promise((res) => setTimeout(res, 7000));
         logger.info(`Retrying failed work-item ${workItemID}`);
         workItem.retryCount += 1;
         workItem.status = WorkItemStatus.READY;
