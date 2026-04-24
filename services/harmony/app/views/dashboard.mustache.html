@@ -58,7 +58,7 @@
             <thead>
               <tr>
                 <th scope="col" class="sortable" aria-sort="none">
-                  <button type="button" class="btn-sort" onclick="sortTable(0, this)">
+                  <button type="button" class="btn-sort" onclick="sortTable(0)">
                     Service Name <i class="bi bi-arrow-down-up sort-icon"></i>
                   </button>
                 </th>
@@ -114,7 +114,6 @@
         return x.toLowerCase().localeCompare(y.toLowerCase()) * direction;
       });
 
-      // Clear existing rows and append sorted ones
       while (tbody.firstChild) {
         tbody.removeChild(tbody.firstChild);
       }
@@ -122,8 +121,16 @@
 
       table.querySelectorAll("th").forEach(th => {
         th.classList.remove("sorted-asc", "sorted-desc");
+        th.removeAttribute("aria-sort");
+        th.querySelector(".sort-icon").className = "bi bi-arrow-down-up sort-icon";
       });
-      header.classList.add(isAscending ? "sorted-desc" : "sorted-asc");
+
+      const nowAscending = !isAscending;
+      header.classList.add(nowAscending ? "sorted-asc" : "sorted-desc");
+      header.setAttribute("aria-sort", nowAscending ? "ascending" : "descending");
+      header.querySelector(".sort-icon").className = nowAscending
+        ? "bi bi-sort-up sort-icon"
+        : "bi bi-sort-down sort-icon";
     }
   </script>
   </body>
