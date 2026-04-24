@@ -1003,10 +1003,8 @@ describe('Individual job status route', function () {
       });
 
       describe('when multiple collections share the same short name', function () {
-        const temporalQuery = { subset: ['time("1998-01-01T00:00:00Z":"2021-01-01T00:00:00Z")'] };
-
         StubService.hook({ params: { status: 'successful' } });
-        hookRangesetRequest(version, 'harmony_example', variableName, { username: 'jdoe3', query: temporalQuery });
+        hookRangesetRequest(version, 'harmony_example', variableName, { username: 'jdoe3' });
         hookRedirect('jdoe3');
 
         it('returns a warning message about the multiple matching collections', function () {

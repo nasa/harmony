@@ -198,7 +198,7 @@ export interface UmmServiceOptions {
 
   SupportedOutputProjections?: {
     ProjectionName?: string;
-    ProjectionOutputAuthority?: string;
+    ProjectionAuthority?: string;
   }[];
 
   Aggregation?: {
@@ -206,6 +206,8 @@ export interface UmmServiceOptions {
       ConcatenateDefault?: boolean;
     }
   }
+
+  InterpolationTypes?: string[];
 }
 
 export interface CmrUmmService {

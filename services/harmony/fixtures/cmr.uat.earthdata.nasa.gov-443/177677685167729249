@@ -8,23 +8,24 @@ HTTP/1.1 200 OK
 content-type: application/json;charset=utf-8
 transfer-encoding: chunked
 connection: keep-alive
-date: Wed, 14 May 2025 22:48:17 GMT
+date: Tue, 21 Apr 2026 13:07:31 GMT
+server: ServerTokens ProductOnly
+vary: Accept-Encoding
 x-frame-options: SAMEORIGIN
 access-control-allow-origin: *
 x-xss-protection: 1; mode=block
-cmr-request-id: ade6ffc0-0335-405a-ab35-244c5fc5ee06
-content-sha1: 9cfb46e501cfcbfa62126954790e0b8525a21a18
+cmr-request-id: c1715683-c465-482f-a410-e1ace67f4013
+content-sha1: ebf84ca21b9acf60a05df29c2a8f031b9a888a86
 strict-transport-security: max-age=31536000; includeSubDomains; preload
 cmr-hits: 0
 access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Search-After, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
 x-content-type-options: nosniff
-cmr-took: 16
-x-request-id: ade6ffc0-0335-405a-ab35-244c5fc5ee06
-content-md5: e9afd160731a173276ee79f149082cd1
-server: ServerTokens ProductOnly
+cmr-took: 2
+x-request-id: c1715683-c465-482f-a410-e1ace67f4013
+content-md5: da6338460ec3fddb9fc4c24d58cdc43c
 x-cache: Miss from cloudfront
-via: 1.1 7a887c7cb9fe4a7abca02d85e8b196e8.cloudfront.net (CloudFront)
-x-amz-cf-pop: IAD89-P2
-x-amz-cf-id: rTT2_9HFdPYGUF7OM32gW4zUD7GDGh5tvDLBp4SCd22Hd0e4UpzvGA==
+via: 1.1 aca99b28083d8a34e20c40dbd89ecfce.cloudfront.net (CloudFront)
+x-amz-cf-pop: SFO53-P2
+x-amz-cf-id: j3a4qm-hrvozxmGKs5N5AOhUbylPG9-LpqxNlxoQhaoH0qzK1HlaWw==
 
-{"feed":{"updated":"2025-05-14T22:48:17.147Z","id":"https://cmr.uat.earthdata.nasa.gov:443/search/granules.json","title":"ECHO granule metadata","entry":[]}}
+{"feed":{"updated":"2026-04-21T13:07:31.506Z","id":"https://cmr.uat.earthdata.nasa.gov:443/search/granules.json","title":"ECHO granule metadata","entry":[]}}
