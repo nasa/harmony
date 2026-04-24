@@ -164,15 +164,36 @@ export async function deleteUserWorkForJobAndService(
  * @param serviceID - The ID of the service
  * @returns the number of rows deleted (1)
  */
-export async function deleteUserWorkForCompletedJobAndService(
-  tx: Transaction, jobID: string, serviceID: string,
+export async function deleteUserWorkForCompletedJobAndServices(
+  tx: Transaction, jobID: string, serviceIds: string[],
 ): Promise<number> {
   const numDeleted = await tx(UserWork.table)
-    .where({ job_id: jobID, service_id: serviceID })
-    .andWhere('running_count', '=', 0)
-    .andWhere('ready_count', '=', 0)
+    .where({ job_id: jobID})
+    .whereIn('service_id', serviceIds)
+    .where({running_count: 0, ready_count: 0})
     .del();
   return numDeleted;
+}
+
+/**
+ * Detects if this Jobs service has any running or ready items
+ *
+ * @param tx - The database transaction
+ * @param jobID - The job ID
+ * @param serviceID - The ID of the service
+ *
+ * @returns true if there are any rows with running or ready counts
+ */
+export async function anyRemainingUserWorkForJobAndService(
+  tx: Transaction, jobID: string, serviceID: string,
+): Promise<boolean> {
+  const any = await tx(UserWork.table)
+    .where({ job_id: jobID, service_id: serviceID })
+      .where(function () {
+        this.where('running_count', '!=', 0).orWhere('ready_count', '!=', 0);
+      })
+    .first();
+  return any != undefined;
 }
 
 /**

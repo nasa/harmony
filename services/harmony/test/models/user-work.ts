@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import UserWork, {
   decrementRunningCount, getCount, incrementReadyAndDecrementRunningCounts,
-  incrementRunningAndDecrementReadyCounts, deleteUserWorkForCompletedJobAndService,
+  incrementRunningAndDecrementReadyCounts, deleteUserWorkForCompletedJobAndServices,
 } from '../../app/models/user-work';
 import db from '../../app/util/db';
 import { truncateAll } from '../helpers/db';
@@ -170,13 +170,11 @@ describe('user_work table', async function () {
     });
   });
 
-  describe('calling the deleteUserWorkForCompletedJobAndService', function () {
+  describe('calling deleteUserWorkForCompletedJobAndServices', function () {
     const jobId = 'JobID-uuid';
     const serviceId = 'harmony/service-image:1.0.0';
+    const serviceId2 = 'harmony/service-image:2.0.0';
 
-    /**
-     * Helper to inspect the user_work table.
-     */
     async function rowExists(job_id: string, service_id: string): Promise<boolean> {
       const row = await db(UserWork.table).where({ job_id, service_id }).first();
       return row !== undefined;
@@ -184,12 +182,12 @@ describe('user_work table', async function () {
 
     afterEach(async function () { await truncateAll(); });
 
-    it('deletes the row and returns 1 when ready_count and running_count are both 0', async function () {
+    it('deletes matching rows and returns 1 when ready_count and running_count are both 0', async function () {
       await createUserWorkRecord({
         job_id: jobId, service_id: serviceId, ready_count: 0, running_count: 0,
       }).save(db);
 
-      const numDeleted = await deleteUserWorkForCompletedJobAndService(db, jobId, serviceId);
+      const numDeleted = await deleteUserWorkForCompletedJobAndServices(db, jobId, [serviceId]);
 
       expect(numDeleted).to.equal(1);
       expect(await rowExists(jobId, serviceId)).to.equal(false);
@@ -200,7 +198,7 @@ describe('user_work table', async function () {
         job_id: jobId, service_id: serviceId, ready_count: 3, running_count: 0,
       }).save(db);
 
-      const numDeleted = await deleteUserWorkForCompletedJobAndService(db, jobId, serviceId);
+      const numDeleted = await deleteUserWorkForCompletedJobAndServices(db, jobId, [serviceId]);
 
       expect(numDeleted).to.equal(0);
       expect(await rowExists(jobId, serviceId)).to.equal(true);
@@ -211,14 +209,14 @@ describe('user_work table', async function () {
         job_id: jobId, service_id: serviceId, ready_count: 0, running_count: 2,
       }).save(db);
 
-      const numDeleted = await deleteUserWorkForCompletedJobAndService(db, jobId, serviceId);
+      const numDeleted = await deleteUserWorkForCompletedJobAndServices(db, jobId, [serviceId]);
 
       expect(numDeleted).to.equal(0);
       expect(await rowExists(jobId, serviceId)).to.equal(true);
     });
 
     it('returns 0 when no matching row exists', async function () {
-      const numDeleted = await deleteUserWorkForCompletedJobAndService(db, 'missing-job', 'missing-svc');
+      const numDeleted = await deleteUserWorkForCompletedJobAndServices(db, 'missing-job', ['missing-svc']);
       expect(numDeleted).to.equal(0);
     });
 
@@ -230,11 +228,41 @@ describe('user_work table', async function () {
         job_id: jobId, service_id: serviceId, ready_count: 0, running_count: 0,
       }).save(db);
 
-      const numDeleted = await deleteUserWorkForCompletedJobAndService(db, jobId, serviceId);
+      const numDeleted = await deleteUserWorkForCompletedJobAndServices(db, jobId, [serviceId]);
 
       expect(numDeleted).to.equal(1);
       expect(await rowExists(jobId, serviceId)).to.equal(false);
       expect(await rowExists('other-jobs-uuid', serviceId)).to.equal(true);
+    });
+
+    it('deletes multiple service rows for the same job when all have zero counts', async function () {
+      await createUserWorkRecord({
+        job_id: jobId, service_id: serviceId, ready_count: 0, running_count: 0,
+      }).save(db);
+      await createUserWorkRecord({
+        job_id: jobId, service_id: serviceId2, ready_count: 0, running_count: 0,
+      }).save(db);
+
+      const numDeleted = await deleteUserWorkForCompletedJobAndServices(db, jobId, [serviceId, serviceId2]);
+
+      expect(numDeleted).to.equal(2);
+      expect(await rowExists(jobId, serviceId)).to.equal(false);
+      expect(await rowExists(jobId, serviceId2)).to.equal(false);
+    });
+
+    it('only deletes completed rows when serviceIds list contains mixed-state services', async function () {
+      await createUserWorkRecord({
+        job_id: jobId, service_id: serviceId, ready_count: 0, running_count: 0,
+      }).save(db);
+      await createUserWorkRecord({
+        job_id: jobId, service_id: serviceId2, ready_count: 1, running_count: 0,
+      }).save(db);
+
+      const numDeleted = await deleteUserWorkForCompletedJobAndServices(db, jobId, [serviceId, serviceId2]);
+
+      expect(numDeleted).to.equal(1);
+      expect(await rowExists(jobId, serviceId)).to.equal(false);
+      expect(await rowExists(jobId, serviceId2)).to.equal(true);
     });
 
   });

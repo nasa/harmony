@@ -12,8 +12,9 @@ import JobMessage, {
   getErrorMessagesForJob, getMessageCountForJob, getWarningMessagesForJob, JobMessageLevel,
 } from '../../models/job-message';
 import {
-  decrementRunningCount, deleteUserWorkForJob, deleteUserWorkForCompletedJobAndService, deleteUserWorkForJobAndService,
+  decrementRunningCount, deleteUserWorkForJob, deleteUserWorkForCompletedJobAndServices, deleteUserWorkForJobAndService,
   incrementReadyAndDecrementRunningCounts, incrementReadyCount, setReadyCountToZero,
+  anyRemainingUserWorkForJobAndService,
 } from '../../models/user-work';
 import WorkItem, {
   countOfWorkItemsByStepAndJobID, getWorkItemById, getWorkItemsByJobIdAndStepIndex,
@@ -657,18 +658,25 @@ export async function preprocessWorkItem(
  * @param tx - database transaction with lock on the related job in the jobs table
  * @param jobID - Job of the work to clean
  * @param stepIndex - starting index to look for stranded user work items.
+ *
+ * @returns whether any steps in this job still had running or ready work.
  */
 export async function deleteStrandedUserWork(
   tx: Transaction, jobID: string, stepIndex: number,
-): Promise<void> {
+): Promise<boolean> {
   const serviceIds = (await tx(WorkflowStep.table)
     .where({ jobID })
     .andWhere('stepIndex', '>=', stepIndex))
     .map((row) => row.serviceID);
 
+  await deleteUserWorkForCompletedJobAndServices(tx, jobID, serviceIds);
+
   for (const serviceId of serviceIds) {
-    await deleteUserWorkForCompletedJobAndService(tx, jobID, serviceId);
+    if (await anyRemainingUserWorkForJobAndService(tx, jobID, serviceId)) {
+      return false;
+    }
   }
+  return true;
 }
 
 /**
@@ -756,6 +764,8 @@ export async function processWorkItem(
           { workFailureMessage: message, serviceId: workItem.serviceID, status },
         );
       } else if (workItem.retryCount < env.workItemRetryLimit) {
+        logger.info('Sleeping for 7 seconds for bug testing.');
+        await new Promise((res) => setTimeout(res, 7000));
         logger.info(`Retrying failed work-item ${workItemID}`);
         workItem.retryCount += 1;
         workItem.status = WorkItemStatus.READY;
@@ -911,17 +921,19 @@ export async function processWorkItem(
 
       if (allWorkItemsForStepComplete) {
         const endedUngracefully = (!didCreateWorkItem && nextWorkflowStep);
+        let userWorkCompleteForJob = false;
         if (endedUngracefully) {
           // We're here because We didn't create a new workitem. but there are
-          // next steps to take. We completed, but might (always?) have status
-          // = "failed"
-          // check if the next workflows are complete.
-          await deleteStrandedUserWork(tx, nextWorkflowStep.jobID, nextWorkflowStep.stepIndex);
+          // next steps to take. A failed granule may have been retried while
+          // another completed, preventing the work from ever getting marked as
+          // done.
+          userWorkCompleteForJob = await deleteStrandedUserWork(tx, nextWorkflowStep.jobID, nextWorkflowStep.stepIndex);
+          // I need more than this. for completing the job, because I end up in
+          // here more than just "ungraceful endings""
         }
-
         if (
           !didCreateWorkItem && (!nextWorkflowStep || nextWorkflowStep.workItemCount < 1)
-            || endedUngracefully
+            || userWorkCompleteForJob
         ) {
           // If all granules are finished mark the job as finished
           const { finalStatus, finalMessage } = await getFinalStatusAndMessageForJob(tx, job);

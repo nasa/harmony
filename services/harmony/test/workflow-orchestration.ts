@@ -1289,3 +1289,117 @@ describe('when a job is paused and a work item completes', function () {
     });
   });
 });
+
+describe.skip('when a downstream step completes before an upstream retrying item permanently fails', function () {
+  // Regression test for jobs stuck in running_with_errors forever.
+  // Race condition: HOSS granule B retries while MaskFill granule A completes.
+  // When MaskFill's updateIsComplete runs, the prevStepComplete guard blocks it because
+  // HOSS still has a non-terminal item. When HOSS granule B later permanently fails,
+  // nothing re-evaluates MaskFill — is_complete stays false and the job never completes.
+  hookServersStartStop();
+
+  before(async function () {
+    await truncateAll();
+    resetQueues();
+  });
+
+  after(async function () {
+    resetQueues();
+    await truncateAll();
+  });
+
+  const hossAndMaskfillQuery = {
+    maxResults: 2,
+    subset: 'lat(60:65)',
+    format: 'application/x-netcdf4',
+    forceAsync: true,
+    ignoreErrors: true,
+  };
+  const atl16Collection = 'C1260128044-EEDTEST';
+
+  hookRangesetRequest('1.0.0', atl16Collection, 'all', { query: hossAndMaskfillQuery });
+  hookRedirect('joe');
+
+  let jobID;
+
+  before(async function () {
+    const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
+    const { workItem, maxCmrGranules } = JSON.parse(res.text);
+    expect(maxCmrGranules).to.equal(2);
+    ({ jobID } = workItem);
+    workItem.status = WorkItemStatus.SUCCESSFUL;
+    workItem.results = [
+      getStacLocation(workItem, 'catalog0.json'),
+      getStacLocation(workItem, 'catalog1.json'),
+    ];
+    workItem.outputItemSizes = [1, 1];
+    await fakeServiceStacOutput(workItem.jobID, workItem.id, 2);
+    await updateWorkItem(this.backend, workItem);
+  });
+
+  before(async function () {
+    // Complete HOSS granule A successfully — creates a MaskFill item
+    const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-opendap-subsetter:latest');
+    const { workItem } = JSON.parse(res.text);
+    workItem.status = WorkItemStatus.SUCCESSFUL;
+    workItem.results = [getStacLocation(workItem, 'catalog.json')];
+    workItem.outputItemSizes = [1];
+    await fakeServiceStacOutput(workItem.jobID, workItem.id);
+    await updateWorkItem(this.backend, workItem);
+
+    // Fail HOSS granule B once — it retries, does NOT permanently fail yet
+    const res2 = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-opendap-subsetter:latest');
+    const badItem = JSON.parse(res2.text).workItem;
+    badItem.status = WorkItemStatus.FAILED;
+    badItem.results = [];
+    await updateWorkItem(this.backend, badItem);
+    const saved = await getWorkItemById(db, badItem.id);
+    expect(saved.status).to.not.equal(WorkItemStatus.FAILED, 'item should be retrying, not permanently failed yet');
+  });
+
+  before(async function () {
+    // Complete MaskFill granule A while HOSS granule B is still retrying.
+    // updateIsComplete for MaskFill (step 3) is blocked by prevStepComplete guard
+    // because HOSS (step 2) still has a non-terminal item — is_complete stays false.
+    const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-maskfill:latest');
+    const { workItem } = JSON.parse(res.text);
+    workItem.status = WorkItemStatus.SUCCESSFUL;
+    workItem.results = [getStacLocation(workItem, 'catalog.json')];
+    workItem.outputItemSizes = [1];
+    await fakeServiceStacOutput(workItem.jobID, workItem.id);
+    await updateWorkItem(this.backend, workItem);
+  });
+
+  before(async function () {
+    // Exhaust retries on HOSS granule B — permanent failure.
+    // HOSS (step 2) is now complete. The cascade should mark MaskFill (step 3)
+    // complete and transition the job to complete_with_errors.
+    let shouldLoop = true;
+    while (shouldLoop) {
+      const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-opendap-subsetter:latest');
+      const { workItem } = JSON.parse(res.text);
+      workItem.status = WorkItemStatus.FAILED;
+      workItem.results = [];
+      await updateWorkItem(this.backend, workItem);
+      const saved = await getWorkItemById(db, workItem.id);
+      shouldLoop = saved.status !== WorkItemStatus.FAILED;
+    }
+  });
+
+  it('marks the MaskFill step as complete', async function () {
+    const steps = await getWorkflowStepsByJobId(db, jobID);
+    expect(steps[2].is_complete).to.equal(true);
+  });
+
+  it('transitions the job to complete_with_errors instead of staying in running_with_errors', async function () {
+    const { job } = await Job.byJobID(db, jobID);
+    expect(job.status).to.equal(JobStatus.COMPLETE_WITH_ERRORS);
+    expect(job.progress).to.equal(100);
+  });
+
+  it('has output links for the successful granule', async function () {
+    const { job } = await Job.byJobID(db, jobID);
+    const dataLinks = job.links.filter((l) => l.rel === 'data');
+    expect(dataLinks.length).to.equal(1);
+  });
+});
