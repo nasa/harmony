@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import {
   decrementRunningCount, getCount, incrementReadyAndDecrementRunningCounts,
   incrementRunningAndDecrementReadyCounts, deleteUserWorkForCompletedJobAndServices,
+  isUserWorkForJobAndServiceComplete,
 } from '../../app/models/user-work';
 import db from '../../app/util/db';
 import { truncateAll } from '../helpers/db';
@@ -170,10 +171,11 @@ describe('user_work table', async function () {
     });
   });
 
-  describe('calling deleteUserWorkForCompletedJobAndServices', function () {
+  describe('when calling deleteUserWorkForCompletedJobAndServices', function () {
     const jobId = 'JobID-uuid';
     const serviceId = 'harmony/service-image:1.0.0';
     const serviceId2 = 'harmony/service-image:2.0.0';
+    const serviceIds = [serviceId, serviceId2];
 
     afterEach(async function () { await truncateAll(); });
 
@@ -182,7 +184,7 @@ describe('user_work table', async function () {
         job_id: jobId, service_id: serviceId, ready_count: 0, running_count: 0,
       }).save(db);
 
-      const numDeleted = await deleteUserWorkForCompletedJobAndServices(db, jobId, [serviceId]);
+      const numDeleted = await deleteUserWorkForCompletedJobAndServices(db, jobId, serviceIds);
 
       expect(numDeleted).to.equal(1);
       expect(await rowExists(jobId, serviceId)).to.equal(false);
@@ -193,7 +195,7 @@ describe('user_work table', async function () {
         job_id: jobId, service_id: serviceId, ready_count: 3, running_count: 0,
       }).save(db);
 
-      const numDeleted = await deleteUserWorkForCompletedJobAndServices(db, jobId, [serviceId]);
+      const numDeleted = await deleteUserWorkForCompletedJobAndServices(db, jobId, serviceIds);
 
       expect(numDeleted).to.equal(0);
       expect(await rowExists(jobId, serviceId)).to.equal(true);
@@ -204,14 +206,16 @@ describe('user_work table', async function () {
         job_id: jobId, service_id: serviceId, ready_count: 0, running_count: 2,
       }).save(db);
 
-      const numDeleted = await deleteUserWorkForCompletedJobAndServices(db, jobId, [serviceId]);
+      const numDeleted = await deleteUserWorkForCompletedJobAndServices(db, jobId, serviceIds);
 
       expect(numDeleted).to.equal(0);
       expect(await rowExists(jobId, serviceId)).to.equal(true);
     });
 
     it('returns 0 when no matching row exists', async function () {
-      const numDeleted = await deleteUserWorkForCompletedJobAndServices(db, 'missing-job', ['missing-svc']);
+      const numDeleted = await deleteUserWorkForCompletedJobAndServices(
+        db, 'missing-job-uuid', ['missing-svc-id'],
+      );
       expect(numDeleted).to.equal(0);
     });
 
@@ -260,5 +264,65 @@ describe('user_work table', async function () {
       expect(await rowExists(jobId, serviceId2)).to.equal(true);
     });
 
+  });
+
+  describe('when calling isUserWorkForJobAndServiceComplete', function () {
+    const jobId = 'complete-job-uuid';
+    const serviceId = 'harmony/service-image:1.0.0';
+
+    afterEach(async function () { await truncateAll(); });
+
+    it('returns true when both ready_count and running_count are 0', async function () {
+      await createUserWorkRecord({
+        job_id: jobId, service_id: serviceId, ready_count: 0, running_count: 0,
+      }).save(db);
+
+      const result = await isUserWorkForJobAndServiceComplete(db, jobId, serviceId);
+      expect(result).to.equal(true);
+    });
+
+    it('returns false when ready_count > 0', async function () {
+      await createUserWorkRecord({
+        job_id: jobId, service_id: serviceId, ready_count: 3, running_count: 0,
+      }).save(db);
+
+      const result = await isUserWorkForJobAndServiceComplete(db, jobId, serviceId);
+      expect(result).to.equal(false);
+    });
+
+    it('returns false when running_count > 0', async function () {
+      await createUserWorkRecord({
+        job_id: jobId, service_id: serviceId, ready_count: 0, running_count: 2,
+      }).save(db);
+
+      const result = await isUserWorkForJobAndServiceComplete(db, jobId, serviceId);
+      expect(result).to.equal(false);
+    });
+
+    it('returns false when both ready_count and running_count > 0', async function () {
+      await createUserWorkRecord({
+        job_id: jobId, service_id: serviceId, ready_count: 1, running_count: 1,
+      }).save(db);
+
+      const result = await isUserWorkForJobAndServiceComplete(db, jobId, serviceId);
+      expect(result).to.equal(false);
+    });
+
+    it('returns true when no row exists for the job and service', async function () {
+      const result = await isUserWorkForJobAndServiceComplete(db, 'missing-job-uuid', 'missing-svc');
+      expect(result).to.equal(true);
+    });
+
+    it('does not consider rows for other services on the same job', async function () {
+      await createUserWorkRecord({
+        job_id: jobId, service_id: 'harmony/other-service:1.0.0', ready_count: 5, running_count: 0,
+      }).save(db);
+      await createUserWorkRecord({
+        job_id: jobId, service_id: serviceId, ready_count: 0, running_count: 0,
+      }).save(db);
+
+      const result = await isUserWorkForJobAndServiceComplete(db, jobId, serviceId);
+      expect(result).to.equal(true);
+    });
   });
 });

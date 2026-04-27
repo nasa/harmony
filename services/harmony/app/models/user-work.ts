@@ -176,7 +176,7 @@ export async function deleteUserWorkForCompletedJobAndServices(
 }
 
 /**
- * Detects if this Jobs service has any running or ready items
+ * Detects if this JobId and service has any running or ready items
  *
  * @param tx - The database transaction
  * @param jobID - The job ID

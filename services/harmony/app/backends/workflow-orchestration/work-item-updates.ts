@@ -659,7 +659,8 @@ export async function preprocessWorkItem(
  * @param jobID - Job of the work to clean
  * @param stepIndex - starting index to look for stranded user work items.
  *
- * @returns whether any steps in this job still had running or ready work.
+ * @returns True if User Work is comlete for this job e.g. any steps in this
+ *          job still had running or ready work .
  */
 export async function deleteStrandedUserWork(
   tx: Transaction, jobID: string, stepIndex: number,
@@ -925,9 +926,9 @@ export async function processWorkItem(
           // next steps to take. A failed granule may have been retried while
           // another completed, preventing the work from ever getting marked as
           // done.
-          userWorkCompleteForJob = await deleteStrandedUserWork(tx, nextWorkflowStep.jobID, nextWorkflowStep.stepIndex);
-          // I need more than this. for completing the job, because I end up in
-          // here more than just "ungraceful endings""
+          userWorkCompleteForJob = await deleteStrandedUserWork(
+            tx, nextWorkflowStep.jobID, nextWorkflowStep.stepIndex
+          );
         }
         if (
           !didCreateWorkItem && (!nextWorkflowStep || nextWorkflowStep.workItemCount < 1)
