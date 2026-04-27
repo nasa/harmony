@@ -1290,20 +1290,25 @@ describe('when a job is paused and a work item completes', function () {
   });
 });
 
-describe.skip('when a downstream step completes before an upstream retrying item permanently fails', function () {
-  // Regression test for jobs stuck in running_with_errors forever.
+describe('when a downstream step completes before an upstream retrying item permanently fails', function () {
+  // Test for jobs stuck in running_with_errors forever.
   // Race condition: HOSS granule B retries while MaskFill granule A completes.
   // When MaskFill's updateIsComplete runs, the prevStepComplete guard blocks it because
   // HOSS still has a non-terminal item. When HOSS granule B later permanently fails,
   // nothing re-evaluates MaskFill — is_complete stays false and the job never completes.
   hookServersStartStop();
 
+  let retryLimit;
+
   before(async function () {
     await truncateAll();
     resetQueues();
+    retryLimit = env.workItemRetryLimit;
+    env.workItemRetryLimit = 1;
   });
 
   after(async function () {
+    env.workItemRetryLimit = retryLimit;
     resetQueues();
     await truncateAll();
   });
@@ -1315,91 +1320,120 @@ describe.skip('when a downstream step completes before an upstream retrying item
     forceAsync: true,
     ignoreErrors: true,
   };
-  const atl16Collection = 'C1260128044-EEDTEST';
 
-  hookRangesetRequest('1.0.0', atl16Collection, 'all', { query: hossAndMaskfillQuery });
+  const collection = 'C1260128044-EEDTEST';  // ATL16: uses HOSS and MaskFill
+
+  hookRangesetRequest('1.0.0', collection, 'all', { query: hossAndMaskfillQuery });
   hookRedirect('joe');
 
   let jobID;
 
-  before(async function () {
-    const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
-    const { workItem, maxCmrGranules } = JSON.parse(res.text);
-    expect(maxCmrGranules).to.equal(2);
-    ({ jobID } = workItem);
-    workItem.status = WorkItemStatus.SUCCESSFUL;
-    workItem.results = [
-      getStacLocation(workItem, 'catalog0.json'),
-      getStacLocation(workItem, 'catalog1.json'),
-    ];
-    workItem.outputItemSizes = [1, 1];
-    await fakeServiceStacOutput(workItem.jobID, workItem.id, 2);
-    await updateWorkItem(this.backend, workItem);
-  });
-
-  before(async function () {
-    // Complete HOSS granule A successfully — creates a MaskFill item
-    const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-opendap-subsetter:latest');
-    const { workItem } = JSON.parse(res.text);
-    workItem.status = WorkItemStatus.SUCCESSFUL;
-    workItem.results = [getStacLocation(workItem, 'catalog.json')];
-    workItem.outputItemSizes = [1];
-    await fakeServiceStacOutput(workItem.jobID, workItem.id);
-    await updateWorkItem(this.backend, workItem);
-
-    // Fail HOSS granule B once — it retries, does NOT permanently fail yet
-    const res2 = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-opendap-subsetter:latest');
-    const badItem = JSON.parse(res2.text).workItem;
-    badItem.status = WorkItemStatus.FAILED;
-    badItem.results = [];
-    await updateWorkItem(this.backend, badItem);
-    const saved = await getWorkItemById(db, badItem.id);
-    expect(saved.status).to.not.equal(WorkItemStatus.FAILED, 'item should be retrying, not permanently failed yet');
-  });
-
-  before(async function () {
-    // Complete MaskFill granule A while HOSS granule B is still retrying.
-    // updateIsComplete for MaskFill (step 3) is blocked by prevStepComplete guard
-    // because HOSS (step 2) still has a non-terminal item — is_complete stays false.
-    const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-maskfill:latest');
-    const { workItem } = JSON.parse(res.text);
-    workItem.status = WorkItemStatus.SUCCESSFUL;
-    workItem.results = [getStacLocation(workItem, 'catalog.json')];
-    workItem.outputItemSizes = [1];
-    await fakeServiceStacOutput(workItem.jobID, workItem.id);
-    await updateWorkItem(this.backend, workItem);
-  });
-
-  before(async function () {
-    // Exhaust retries on HOSS granule B — permanent failure.
-    // HOSS (step 2) is now complete. The cascade should mark MaskFill (step 3)
-    // complete and transition the job to complete_with_errors.
-    let shouldLoop = true;
-    while (shouldLoop) {
-      const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-opendap-subsetter:latest');
-      const { workItem } = JSON.parse(res.text);
-      workItem.status = WorkItemStatus.FAILED;
-      workItem.results = [];
+  describe('after the query-cmr step completes', function () {
+    before(async function () {
+      const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:stable');
+      const { workItem, maxCmrGranules } = JSON.parse(res.text);
+      expect(maxCmrGranules).to.equal(2);
+      ({ jobID } = workItem);
+      workItem.status = WorkItemStatus.SUCCESSFUL;
+      workItem.results = [
+        getStacLocation(workItem, 'catalog0.json'),
+        getStacLocation(workItem, 'catalog1.json'),
+      ];
+      workItem.outputItemSizes = [1, 1];
+      await fakeServiceStacOutput(workItem.jobID, workItem.id, 2);
       await updateWorkItem(this.backend, workItem);
-      const saved = await getWorkItemById(db, workItem.id);
-      shouldLoop = saved.status !== WorkItemStatus.FAILED;
-    }
-  });
+    });
 
-  it('marks the MaskFill step as complete', async function () {
-    const steps = await getWorkflowStepsByJobId(db, jobID);
-    expect(steps[2].is_complete).to.equal(true);
-  });
+    describe('and HOSS A completes while HOSS B is retrying', function () {
+      before(async function () {
+        // Complete HOSS A successfully — creates MaskFill A
+        const aRes = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-opendap-subsetter:latest');
+        const a = JSON.parse(aRes.text).workItem;
+        a.status = WorkItemStatus.SUCCESSFUL;
+        a.results = [getStacLocation(a, 'catalog.json')];
+        a.outputItemSizes = [1];
+        await fakeServiceStacOutput(a.jobID, a.id);
+        await updateWorkItem(this.backend, a);
 
-  it('transitions the job to complete_with_errors instead of staying in running_with_errors', async function () {
-    const { job } = await Job.byJobID(db, jobID);
-    expect(job.status).to.equal(JobStatus.COMPLETE_WITH_ERRORS);
-    expect(job.progress).to.equal(100);
-  });
+        // Fail HOSS B once — it retries, does NOT permanently fail yet
+        const bRes = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-opendap-subsetter:latest');
+        const b = JSON.parse(bRes.text).workItem;
+        b.status = WorkItemStatus.FAILED;
+        b.results = [];
+        await updateWorkItem(this.backend, b);
+        const saved = await getWorkItemById(db, b.id);
+        expect(saved.status).to.equal(WorkItemStatus.READY);
+      });
 
-  it('has output links for the successful granule', async function () {
-    const { job } = await Job.byJobID(db, jobID);
-    const dataLinks = job.links.filter((l) => l.rel === 'data');
-    expect(dataLinks.length).to.equal(1);
+      describe('and MaskFill A completes before HOSS B has finished retrying', function () {
+        before(async function () {
+          // updateIsComplete for MaskFill (step 3) is blocked by the prevStepComplete guard
+          // because HOSS (step 2) still has a non-terminal item — is_complete stays false.
+          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-maskfill:latest');
+          const item = JSON.parse(res.text).workItem;
+          item.status = WorkItemStatus.SUCCESSFUL;
+          item.results = [getStacLocation(item, 'catalog.json')];
+          item.outputItemSizes = [1];
+          await fakeServiceStacOutput(item.jobID, item.id, 1, 1);
+          await updateWorkItem(this.backend, item);
+        });
+
+        it('leaves the MaskFill step incomplete (the bug condition)', async function () {
+          const steps = await getWorkflowStepsByJobId(db, jobID);
+          expect(steps[1].is_complete).to.equal(0);  // HOSS — B still retrying
+          expect(steps[2].is_complete).to.equal(0);  // MaskFill — prevStepComplete blocked it
+        });
+
+        it('has not yet finalized the job', async function () {
+          const { job } = await Job.byJobID(db, jobID);
+          expect(job.status).to.equal(JobStatus.RUNNING);
+        });
+
+
+        describe('and HOSS B then exhausts its retries', function () {
+          before(async function () {
+            // HOSS (step 2) is now complete. The fix should detect that all
+            // user_work for the remainder of the chain is idle and finalize the job.
+            let shouldLoop = true;
+            while (shouldLoop) {
+              const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-opendap-subsetter:latest');
+              const item = JSON.parse(res.text).workItem;
+              item.status = WorkItemStatus.FAILED;
+              item.results = [];
+              await updateWorkItem(this.backend, item);
+              const saved = await getWorkItemById(db, item.id);
+              shouldLoop = saved.status !== WorkItemStatus.FAILED;
+            }
+          });
+
+          it('transitions the job to complete_with_errors instead of staying in running_with_errors', async function () {
+            const { job } = await Job.byJobID(db, jobID);
+            expect(job.status).to.equal(JobStatus.COMPLETE_WITH_ERRORS);
+            expect(job.progress).to.equal(100);
+          });
+
+          it('cleans up user_work for the job', async function () {
+            const rows = await db('user_work').where({ job_id: jobID });
+            expect(rows.length).to.equal(0);
+          });
+
+          it('produced output only for the successful granule', async function () {
+            const { workItems } = await getWorkItemsByJobId(db, jobID);
+
+            const hoss = workItems.filter(w => w.serviceID === 'ghcr.io/nasa/harmony-opendap-subsetter:latest');
+            const maskfill = workItems.filter(w => w.serviceID === 'ghcr.io/nasa/harmony-maskfill:latest');
+
+            expect(hoss.filter(w => w.status === WorkItemStatus.SUCCESSFUL).length).to.equal(1);
+            expect(hoss.filter(w => w.status === WorkItemStatus.FAILED).length).to.equal(1);
+            expect(maskfill.length).to.equal(1);
+            expect(maskfill[0].status).to.equal(WorkItemStatus.SUCCESSFUL);
+
+            const job = await getFirstJob(db);
+            const dataLinks = job.links.filter(l => l.rel === 'data');
+            expect(dataLinks.length).to.equal(1);
+          });
+        });
+      });
+    });
   });
 });
