@@ -52,8 +52,8 @@ export function createUserWorkRecord(fields: Partial<UserWork> = {}): UserWork {
 }
 
 /**
- * Returns true if the user_work record table exists in the table .
-*/
+ * Returns true if a user_work row exists for the given job_id and service_id
+ */
 export async function rowExists(job_id: string, service_id: string): Promise<boolean> {
   const row = await db(UserWork.table).where({ job_id, service_id }).first();
   return row !== undefined;

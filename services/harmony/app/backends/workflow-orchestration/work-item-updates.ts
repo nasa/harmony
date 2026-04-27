@@ -655,12 +655,13 @@ export async function preprocessWorkItem(
  * traverses the user_work table and deletes any row for the jobID where there
  * is no work running or queued.
  *
- * @param tx - database transaction with lock on the related job in the jobs table
+ * @param tx - database transaction
  * @param jobID - Job of the work to clean
  * @param stepIndex - starting index to look for stranded user work items.
  *
- * @returns True if User Work is comlete for this job e.g. any steps in this
- *          job still had running or ready work .
+ * @returns true if no service at or beyond stepIndex still has running or
+ *          ready work (i.e., the job's user_work for the remaining chain is
+ *          fully complete); false otherwise.
  */
 export async function deleteStrandedUserWork(
   tx: Transaction, jobID: string, stepIndex: number,
@@ -677,6 +678,7 @@ export async function deleteStrandedUserWork(
       return false;
     }
   }
+  // All user work completed
   return true;
 }
 

@@ -156,13 +156,13 @@ export async function deleteUserWorkForJobAndService(
 }
 
 /**
- * Deletes a row for the given job and service ID from the user_work
- * table when running_count and ready_count are 0.
+ * Deletes rows for the given job and any of the supplied service IDs from
+ * the user_work table where both running_count and ready_count are 0.
  *
  * @param tx - The database transaction
  * @param jobID - The job ID
- * @param serviceID - The ID of the service
- * @returns the number of rows deleted (1)
+ * @param serviceIs - list of serviceIds to consider for deletion.
+ * @returns the number of rows deleted
  */
 export async function deleteUserWorkForCompletedJobAndServices(
   tx: Transaction, jobID: string, serviceIds: string[],
