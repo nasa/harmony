@@ -100,7 +100,7 @@
   "overrides": {
     "braces": "^3.0.3",
     "cross-spawn": "7.0.5",
-    "fast-xml-parser": "^5.3.6",
+    "fast-xml-parser": "5.5.12",
     "semver": "^7.6.2",
     "tar": "^7.5.8"
   }
