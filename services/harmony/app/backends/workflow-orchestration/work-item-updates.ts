@@ -927,7 +927,7 @@ export async function processWorkItem(
           // another completed, preventing the work from ever getting marked as
           // done.
           userWorkCompleteForJob = await deleteStrandedUserWork(
-            tx, nextWorkflowStep.jobID, nextWorkflowStep.stepIndex
+            tx, nextWorkflowStep.jobID, nextWorkflowStep.stepIndex,
           );
         }
         if (
