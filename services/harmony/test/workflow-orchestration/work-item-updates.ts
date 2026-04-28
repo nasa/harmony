@@ -36,18 +36,14 @@ describe('Finalize via the checkRemainingStepsForCompletion function', function 
       // The first HOSS work item already finished and its downstream maskfill
       // work item ran to completion. A second HOSS work item is still running,
       // which is why the HOSS step has not been marked complete.
-      const now = new Date();
       await rawSaveWorkItem(db, {
         jobID, serviceID: hossService, workflowStepIndex: 2, status: WorkItemStatus.SUCCESSFUL,
-        createdAt: now, updatedAt: now,
       });
       await rawSaveWorkItem(db, {
         jobID, serviceID: maskFillService, workflowStepIndex: 3, status: WorkItemStatus.SUCCESSFUL,
-        createdAt: now, updatedAt: now,
       });
       secondHoss = await rawSaveWorkItem(db, {
         jobID, serviceID: hossService, workflowStepIndex: 2, status: WorkItemStatus.RUNNING,
-        createdAt: now, updatedAt: now,
       });
 
       // user_work rows for both services so we can verify the function deletes
@@ -123,14 +119,11 @@ describe('Finalize via the checkRemainingStepsForCompletion function', function 
         jobID, serviceID: maskFillService, stepIndex: 3, is_complete: false,
       });
 
-      const now = new Date();
       await rawSaveWorkItem(db, {
         jobID, serviceID: hossService, workflowStepIndex: 2, status: WorkItemStatus.RUNNING,
-        createdAt: now, updatedAt: now,
       });
       await rawSaveWorkItem(db, {
         jobID, serviceID: maskFillService, workflowStepIndex: 3, status: WorkItemStatus.SUCCESSFUL,
-        createdAt: now, updatedAt: now,
       });
 
       // user_work rows for both services so we can detect whether the loop
@@ -188,18 +181,14 @@ describe('Finalize via the checkRemainingStepsForCompletion function', function 
       });
 
 
-      const now = new Date();
       await rawSaveWorkItem(db, {
         jobID, serviceID: hossService, workflowStepIndex: 2, status: WorkItemStatus.SUCCESSFUL,
-        createdAt: now, updatedAt: now,
       });
       await rawSaveWorkItem(db, {
         jobID, serviceID: maskFillService, workflowStepIndex: 3, status: WorkItemStatus.SUCCESSFUL,
-        createdAt: now, updatedAt: now,
       });
       await rawSaveWorkItem(db, {
         jobID, serviceID: net2cogService, workflowStepIndex: 4, status: WorkItemStatus.RUNNING,
-        createdAt: now, updatedAt: now,
       });
 
       // user_work rows for all three services so we can detect how far the loop
