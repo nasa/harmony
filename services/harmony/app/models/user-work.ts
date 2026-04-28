@@ -156,47 +156,6 @@ export async function deleteUserWorkForJobAndService(
 }
 
 /**
- * Deletes rows for the given job and any of the supplied service IDs from
- * the user_work table where both running_count and ready_count are 0.
- *
- * @param tx - The database transaction
- * @param jobID - The job ID
- * @param serviceIs - list of serviceIds to consider for deletion.
- * @returns the number of rows deleted
- */
-export async function deleteUserWorkForCompletedJobAndServices(
-  tx: Transaction, jobID: string, serviceIds: string[],
-): Promise<number> {
-  const numDeleted = await tx(UserWork.table)
-    .where({ job_id: jobID })
-    .whereIn('service_id', serviceIds)
-    .where({ running_count: 0, ready_count: 0 })
-    .del();
-  return numDeleted;
-}
-
-/**
- * Detects if this JobId and service has any running or ready items
- *
- * @param tx - The database transaction
- * @param jobID - The job ID
- * @param serviceID - The ID of the service
- *
- * @returns true if there are no rows with running or ready counts
- */
-export async function isUserWorkForJobAndServiceComplete(
-  tx: Transaction, jobID: string, serviceID: string,
-): Promise<boolean> {
-  const any = await tx(UserWork.table)
-    .where({ job_id: jobID, service_id: serviceID })
-    .where(function () {
-      this.where('running_count', '!=', 0).orWhere('ready_count', '!=', 0);
-    })
-    .first();
-  return any == undefined;
-}
-
-/**
  * Adds one to the ready_count for the given jobID and serviceID.
  * @param tx - The database transaction
  * @param jobID - The job ID

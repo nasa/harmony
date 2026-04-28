@@ -12,9 +12,8 @@ import JobMessage, {
   getErrorMessagesForJob, getMessageCountForJob, getWarningMessagesForJob, JobMessageLevel,
 } from '../../models/job-message';
 import {
-  decrementRunningCount, deleteUserWorkForJob, deleteUserWorkForCompletedJobAndServices, deleteUserWorkForJobAndService,
+  decrementRunningCount, deleteUserWorkForJob, deleteUserWorkForJobAndService,
   incrementReadyAndDecrementRunningCounts, incrementReadyCount, setReadyCountToZero,
-  isUserWorkForJobAndServiceComplete,
 } from '../../models/user-work';
 import WorkItem, {
   countOfWorkItemsByStepAndJobID, getWorkItemById, getWorkItemsByJobIdAndStepIndex,
