@@ -1291,11 +1291,12 @@ describe('when a job is paused and a work item completes', function () {
 });
 
 describe('when a downstream step completes before an upstream retrying item permanently fails', function () {
-  // Test for jobs stuck in running_with_errors forever.
+  // Test for jobs that became stuck in running_with_errors forever.
   // Race condition: HOSS granule B retries while MaskFill granule A completes.
   // When MaskFill's updateIsComplete runs, the prevStepComplete guard blocks it because
-  // HOSS still has a non-terminal item. When HOSS granule B later permanently fails,
-  // nothing re-evaluates MaskFill — is_complete stays false and the job never completes.
+  // HOSS still has a non-terminal item.
+  // Before when HOSS granule B later permanently fails nothing re-evaluated
+  // MaskFill — is_complete stays false and the job never completed.
   hookServersStartStop();
 
   let retryLimit;
@@ -1380,7 +1381,7 @@ describe('when a downstream step completes before an upstream retrying item perm
 
         it('leaves the MaskFill step incomplete (the bug condition)', async function () {
           const steps = await getWorkflowStepsByJobId(db, jobID);
-          expect(steps[1].is_complete).to.equal(0);  // HOSS — B still retrying
+          expect(steps[1].is_complete).to.equal(0);  // HOSS — B still non terminal
           expect(steps[2].is_complete).to.equal(0);  // MaskFill — prevStepComplete blocked it
         });
 
@@ -1392,8 +1393,6 @@ describe('when a downstream step completes before an upstream retrying item perm
 
         describe('and HOSS B then exhausts its retries', function () {
           before(async function () {
-            // HOSS (step 2) is now complete. The fix should detect that all
-            // user_work for the remainder of the chain is idle and finalize the job.
             let shouldLoop = true;
             while (shouldLoop) {
               const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-opendap-subsetter:latest');
@@ -1404,6 +1403,7 @@ describe('when a downstream step completes before an upstream retrying item perm
               const saved = await getWorkItemById(db, item.id);
               shouldLoop = saved.status !== WorkItemStatus.FAILED;
             }
+            // HOSS (step 2) is now complete.
           });
 
           it('transitions the job to complete_with_errors instead of staying in running_with_errors', async function () {
