@@ -651,34 +651,37 @@ export async function preprocessWorkItem(
 }
 
 /**
- * Delete user work that is unreachable from the current step forward.
- * traverses the user_work table and deletes any row for the jobID where there
- * is no work running or queued.
+ * Checks to see if subsequent worksteps had finished before a previous
+ * workstep. The updateIsComplete function can prevent downstream steps from
+ * being completed when they all finish before an upstream job can. e.g. when
+ * HOSS is retrying but a successful granule has completed it's entire workflow.
  *
  * @param tx - database transaction
  * @param jobID - Job of the work to clean
- * @param stepIndex - starting index to look for stranded user work items.
+ * @param step - Workflow Step to begin looking for completed work.
  *
- * @returns true if no service at or beyond stepIndex still has running or
- *          ready work (i.e., the job's user_work for the remaining chain is
- *          fully complete); false otherwise.
+ * @returns true if all subsequent steps have completed false otherwise
  */
-export async function deleteStrandedUserWork(
-  tx: Transaction, jobID: string, stepIndex: number,
+export async function checkRemainingStepsForCompletion(
+  tx: Transaction, jobID: string, step: WorkflowStep
 ): Promise<boolean> {
-  const serviceIds = (await tx(WorkflowStep.table)
+
+  const candidateSteps = (await tx(WorkflowStep.table)
     .where({ jobID })
-    .andWhere('stepIndex', '>=', stepIndex))
-    .map((row) => row.serviceID);
+    .andWhere('stepIndex', '>=', step.stepIndex))
+    .map((row) =>({serviceID: row.serviceID, stepIndex: row.stepIndex}) );
 
-  await deleteUserWorkForCompletedJobAndServices(tx, jobID, serviceIds);
-
-  for (const serviceId of serviceIds) {
-    if (!(await isUserWorkForJobAndServiceComplete(tx, jobID, serviceId))) {
+  // This is never a sequential call (querycmr) so we don't need a value
+  const numInputGranules = 0
+  for (const candidate of candidateSteps) {
+    step = await getWorkflowStepByJobIdStepIndex(tx, jobID, candidate.stepIndex)
+    const stepComplete = await updateIsComplete(tx, jobID, numInputGranules, step);
+    if (!stepComplete) {
       return false;
     }
+    await deleteUserWorkForJobAndService(tx, jobID, candidate.serviceID);
   }
-  // All user work completed
+  // All user work completed for job
   return true;
 }
 
@@ -924,16 +927,17 @@ export async function processWorkItem(
         const endedUngracefully = (!didCreateWorkItem && nextWorkflowStep);
         let userWorkCompleteForJob = false;
         if (endedUngracefully) {
-          // We're here because We didn't create a new workitem. but there are
+          // We're here because we didn't create a new WorkItem, but there are
           // next steps to take. A failed granule may have been retried while
-          // another completed, preventing the work from ever getting marked as
-          // done.
-          userWorkCompleteForJob = await deleteStrandedUserWork(
-            tx, nextWorkflowStep.jobID, nextWorkflowStep.stepIndex,
+          // another chain completed, preventing the work downstream in that
+          // chain from ever getting marked as done.
+          userWorkCompleteForJob = await checkRemainingStepsForCompletion(
+            tx, jobID, nextWorkflowStep,
           );
+          logger.info(`>>> checkRemainingStepsForCompletion -> ${userWorkCompleteForJob}: ${jobID}`)
         }
         if (
-          !didCreateWorkItem && (!nextWorkflowStep || nextWorkflowStep.workItemCount < 1)
+          (!didCreateWorkItem && (!nextWorkflowStep || nextWorkflowStep.workItemCount < 1))
             || userWorkCompleteForJob
         ) {
           // If all granules are finished mark the job as finished
