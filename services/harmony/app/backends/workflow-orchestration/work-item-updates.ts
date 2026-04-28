@@ -663,18 +663,18 @@ export async function preprocessWorkItem(
  * @returns true if all subsequent steps have completed false otherwise
  */
 export async function checkRemainingStepsForCompletion(
-  tx: Transaction, jobID: string, step: WorkflowStep
+  tx: Transaction, jobID: string, step: WorkflowStep,
 ): Promise<boolean> {
 
   const candidateSteps = (await tx(WorkflowStep.table)
     .where({ jobID })
     .andWhere('stepIndex', '>=', step.stepIndex))
-    .map((row) =>({serviceID: row.serviceID, stepIndex: row.stepIndex}) );
+    .map((row) => ({ serviceID: row.serviceID, stepIndex: row.stepIndex }));
 
   // This is never a sequential call (querycmr) so we don't need a value
-  const numInputGranules = 0
+  const numInputGranules = 0;
   for (const candidate of candidateSteps) {
-    step = await getWorkflowStepByJobIdStepIndex(tx, jobID, candidate.stepIndex)
+    step = await getWorkflowStepByJobIdStepIndex(tx, jobID, candidate.stepIndex);
     const stepComplete = await updateIsComplete(tx, jobID, numInputGranules, step);
     if (!stepComplete) {
       return false;
@@ -934,7 +934,6 @@ export async function processWorkItem(
           userWorkCompleteForJob = await checkRemainingStepsForCompletion(
             tx, jobID, nextWorkflowStep,
           );
-          logger.info(`>>> checkRemainingStepsForCompletion -> ${userWorkCompleteForJob}: ${jobID}`)
         }
         if (
           (!didCreateWorkItem && (!nextWorkflowStep || nextWorkflowStep.workItemCount < 1))
