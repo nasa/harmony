@@ -21,7 +21,7 @@ describe('Finalize via the checkRemainingStepsForCompletion function', function 
     let secondHoss: WorkItem;
 
     before(async function () {
-      // Upstream step is already complete; hoss and the downstream maskfill
+      // Upstream step is already complete; HOSS and the downstream maskfill
       // step are not yet marked complete.
       await rawSaveWorkflowStep(db, {
         jobID, serviceID: queryCmrService, stepIndex: 1, is_complete: true,
@@ -33,9 +33,9 @@ describe('Finalize via the checkRemainingStepsForCompletion function', function 
         jobID, serviceID: maskFillService, stepIndex: 3, is_complete: false,
       });
 
-      // The first hoss work item already finished and its downstream maskfill
-      // work item ran to completion. A second hoss work item is still running,
-      // which is why the hoss step has not been marked complete.
+      // The first HOSS work item already finished and its downstream maskfill
+      // work item ran to completion. A second HOSS work item is still running,
+      // which is why the HOSS step has not been marked complete.
       const now = new Date();
       await rawSaveWorkItem(db, {
         jobID, serviceID: hossService, workflowStepIndex: 2, status: WorkItemStatus.SUCCESSFUL,
@@ -111,7 +111,7 @@ describe('Finalize via the checkRemainingStepsForCompletion function', function 
     let result: boolean;
 
     before(async function () {
-      // query-cmr is done; hoss has one in-flight work item; maskfill exists
+      // query-cmr is done; HOSS has one in-flight work item; maskfill exists
       // downstream with a SUCCESSFUL item from a sibling chain.
       await rawSaveWorkflowStep(db, {
         jobID, serviceID: queryCmrService, stepIndex: 1, is_complete: true,
@@ -134,8 +134,8 @@ describe('Finalize via the checkRemainingStepsForCompletion function', function 
       });
 
       // user_work rows for both services so we can detect whether the loop
-      // advanced past hoss (deleteUserWorkForJobAndService is the per-iteration
-      // side effect that fires *after* the completeness check passes).
+      // advanced past HOSS (deleteUserWorkForJobAndService is the per-iteration
+      // side effect that fires after the completeness check passes).
       await createUserWorkRecord({ job_id: jobID, service_id: hossService }).save(db);
       await createUserWorkRecord({ job_id: jobID, service_id: maskFillService }).save(db);
 
@@ -172,8 +172,8 @@ describe('Finalize via the checkRemainingStepsForCompletion function', function 
     const net2cogService = 'harmony/net2cog-step:4.0.0';
 
     before(async function () {
-      // query-cmr is done; hoss has one in-flight work item; maskfill exists
-      // downstream with a SUCCESSFUL item from a sibling chain.
+      // query-cmr, HOSS, and maskfill are done; net2cog is the last step and still
+      // has an in-flight work item.
       await rawSaveWorkflowStep(db, {
         jobID, serviceID: queryCmrService, stepIndex: 1, is_complete: true,
       });
@@ -202,10 +202,8 @@ describe('Finalize via the checkRemainingStepsForCompletion function', function 
         createdAt: now, updatedAt: now,
       });
 
-
-      // user_work rows for both services so we can detect whether the loop
-      // advanced past hoss (deleteUserWorkForJobAndService is the per-iteration
-      // side effect that fires *after* the completeness check passes).
+      // user_work rows for all three services so we can detect how far the loop
+      // advanced before short-circuiting at net2cog.
       await createUserWorkRecord({ job_id: jobID, service_id: hossService }).save(db);
       await createUserWorkRecord({ job_id: jobID, service_id: maskFillService }).save(db);
       await createUserWorkRecord({ job_id: jobID, service_id: net2cogService }).save(db);
@@ -222,17 +220,17 @@ describe('Finalize via the checkRemainingStepsForCompletion function', function 
       expect(result).to.equal(false);
     });
 
-    it('does marks the HOSS step complete', async function () {
+    it('marks the HOSS step complete', async function () {
       const step = await getWorkflowStepByJobIdStepIndex(db, jobID, 2);
       expect(step.is_complete).to.equal(1);
     });
 
-    it('does marks the downstream maskfill step complete', async function () {
+    it('marks the downstream maskfill step complete', async function () {
       const step = await getWorkflowStepByJobIdStepIndex(db, jobID, 3);
       expect(step.is_complete).to.equal(1);
     });
 
-    it('does not marks the downstream net2cog step complete', async function () {
+    it('does not mark the downstream net2cog step complete', async function () {
       const step = await getWorkflowStepByJobIdStepIndex(db, jobID, 4);
       expect(step.is_complete).to.equal(0);
     });
