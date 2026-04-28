@@ -64,11 +64,11 @@ describe('Finalize via the checkRemainingStepsForCompletion function', function 
       expect(maskFillStep.is_complete).to.equal(0);
     });
 
-    describe('when the second HOSS step finishes.', function () {
+    describe('when the second HOSS step fails.', function () {
       let result: boolean;
 
       before(async function () {
-        secondHoss.status = WorkItemStatus.SUCCESSFUL;
+        secondHoss.status = WorkItemStatus.FAILED;
         await secondHoss.save(db);
 
         const hossStep = await getWorkflowStepByJobIdStepIndex(db, jobID, 2);

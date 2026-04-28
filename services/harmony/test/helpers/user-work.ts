@@ -50,11 +50,3 @@ export function createUserWorkRecord(fields: Partial<UserWork> = {}): UserWork {
     job_id, service_id, username, ready_count, running_count, is_async, last_worked,
   });
 }
-
-/**
- * Returns true if a user_work row exists for the given job_id and service_id
- */
-export async function rowExists(job_id: string, service_id: string): Promise<boolean> {
-  const row = await db(UserWork.table).where({ job_id, service_id }).first();
-  return row !== undefined;
-}
