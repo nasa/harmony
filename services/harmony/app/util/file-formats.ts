@@ -1,3 +1,6 @@
+// The mapping needs to include every mime-type we support as an output format in
+// services.yml and the mapping to name needs to match the correct name in the
+// enumeration for supported file formats in UMM-S
 export const harmonyMimeTypeToName = {
   'application/netcdf': 'NETCDF-4',
   'application/x-hdf': 'HDF-EOS2',

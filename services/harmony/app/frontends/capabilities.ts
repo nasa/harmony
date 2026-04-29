@@ -13,6 +13,7 @@ import {
   getServicesByIds, getVariablesForCollection,
 } from '../util/cmr';
 import { NotFoundError, RequestValidationError } from '../util/errors';
+import { harmonyMimeTypeToName } from '../util/file-formats';
 import { keysToLowerCase } from '../util/object';
 
 export const stableApiVersion = '2';
@@ -22,6 +23,12 @@ interface Projection {
   crs: string;
   name: string;
 }
+
+interface OutputFormat {
+  name: string;
+  mimeType: string;
+}
+
 interface ServiceV2 {
   name: string;
   href: string;
@@ -87,7 +94,7 @@ interface ServiceCapabilitiesV3 {
     area: boolean;
   }
   concatenation: boolean;
-  outputFormats: string[];
+  outputFormats: OutputFormat[];
 }
 
 interface CollectionCapabilitiesV3 {
@@ -189,6 +196,14 @@ function convertServicesYamlConfigToCapabilities(
   supportedProjections: Projection[],
   interpolationMethods: string[],
 ): ServiceCapabilitiesV3 {
+  const outputFormats = [];
+  for (const mimeType of harmonyConfigCapabilities.output_formats) {
+    const outputFormat = {
+      name: harmonyMimeTypeToName[mimeType] || 'unknown',
+      mimeType,
+    };
+    outputFormats.push(outputFormat);
+  }
   const capabilities = {
     subsetting: {
       bbox: harmonyConfigCapabilities.subsetting.bbox || false,
@@ -207,7 +222,7 @@ function convertServicesYamlConfigToCapabilities(
       area: harmonyConfigCapabilities.averaging?.area || false,
     },
     concatenation: harmonyConfigCapabilities.concatenation || false,
-    outputFormats: harmonyConfigCapabilities.output_formats,
+    outputFormats: outputFormats,
   };
   return capabilities;
 }
@@ -287,6 +302,24 @@ function getVariableV2(variable: CmrUmmVariable): VariableV2 {
 }
 
 /**
+ * Returns the supported output formats from all services.
+ *
+ * @param services - a list of all of the services in ServiceV3 format
+ * @returns the supported output formats in capabilities version 3 format
+ */
+function getOutputFormats(services: ServiceV3[]): OutputFormat[] {
+  const byMimeType = new Map<string, OutputFormat>();
+  for (const service of services) {
+    for (const outputFormat of service.capabilities.outputFormats) {
+      if (!byMimeType.has(outputFormat.mimeType)) {
+        byMimeType.set(outputFormat.mimeType, outputFormat);
+      }
+    }
+  }
+  return Array.from(byMimeType.values()).sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/**
  * Returns the supported output projections from all services. Note that it's possible
  * different services could have different names for the same crs field. In that case
  * we just choose the first name.
@@ -303,14 +336,14 @@ function getProjections(services: ServiceV3[]): Projection[] {
       }
     }
   }
-  return Array.from(byCrs.values());
+  return Array.from(byCrs.values()).sort((a, b) => a.name.localeCompare(b.name));
 }
 
 /**
- * Returns the supported output projections from all services.
+ * Returns the supported interpolation methods from all services.
  *
  * @param services - a list of all of the services in ServiceV3 format
- * @returns the supported output projections in capabilities version 3 format
+ * @returns the supported interpolation methods in capabilities version 3 format
  */
 function getInterpolationMethods(services: ServiceV3[]): Set<string> {
 
@@ -422,10 +455,10 @@ async function getCollectionCapabilitiesV3(
   const reprojectionSupported = matchingServices.some((s) => s.capabilities.reprojection === true);
   const timeAveraging = matchingServices.some((s) => s.capabilities.averaging?.time === true);
   const areaAveraging = matchingServices.some((s) => s.capabilities.averaging?.area === true);
-  const outputFormats = new Set(matchingServices.flatMap((s) => s.capabilities.output_formats));
   const conceptId = collection.id;
   const shortName = collection.short_name;
   const services = await getServicesV3(context, matchingServices);
+  const outputFormats = getOutputFormats(services);
   const projections = getProjections(services);
   const interpolationMethods = getInterpolationMethods(services);
 

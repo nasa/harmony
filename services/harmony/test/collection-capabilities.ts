@@ -438,7 +438,22 @@ describe('Testing collection capabilities', function () {
         it('sets the summary.outputFormats field correctly', function () {
           const capabilities = JSON.parse(this.res.text);
           const expectedFormats = [
-            'application/netcdf', 'image/tiff', 'image/png', 'image/gif',
+            {
+              'mimeType': 'image/tiff',
+              'name': 'GEOTIFF',
+            },
+            {
+              'mimeType': 'image/gif',
+              'name': 'GIF',
+            },
+            {
+              'mimeType': 'application/netcdf',
+              'name': 'NETCDF-4',
+            },
+            {
+              'mimeType': 'image/png',
+              'name': 'PNG',
+            },
           ];
           expect(capabilities.summary.outputFormats).to.eql(expectedFormats);
         });
