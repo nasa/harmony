@@ -1,16 +1,17 @@
 import { expect } from 'chai';
-import { describe, it } from 'mocha';
 import _ from 'lodash';
+import { describe, it } from 'mocha';
+import { stub } from 'sinon';
+
+import { ServiceConfig } from '../../app/models/services/base-service';
+import env from '../../app/util/env';
 import isUUID from '../../app/util/uuid';
+import { hookDatabaseFailure } from '../helpers/db';
+import { hookRedirect } from '../helpers/hooks';
 import { itRedirectsToJobStatusUrl } from '../helpers/jobs';
-import { hookPostEdrRequest, hookEdrRequest, edrRequest } from '../helpers/ogc-api-edr';
+import { edrRequest, hookEdrRequest, hookPostEdrRequest } from '../helpers/ogc-api-edr';
 import hookServersStartStop from '../helpers/servers';
 import StubService, { hookServices } from '../helpers/stub-service';
-import { ServiceConfig } from '../../app/models/services/base-service';
-import { hookRedirect } from '../helpers/hooks';
-import { stub } from 'sinon';
-import env from '../../app/util/env';
-import { hookDatabaseFailure } from '../helpers/db';
 
 describe('OGC API EDR - getEdrCube', function () {
   const collection = 'C1233800302-EEDTEST';
@@ -668,7 +669,7 @@ describe('OGC API EDR - getEdrCube', function () {
   describe('when requesting output formats', function () {
     const tiff = 'image/tiff';
     const png = 'image/png';
-    const netcdf = 'application/x-netcdf4';
+    const netcdf = 'application/netcdf';
     const anyWildcard = '*/*';
     const imageWildcard = 'image/*';
     const wildcardTiff = '*/tiff';

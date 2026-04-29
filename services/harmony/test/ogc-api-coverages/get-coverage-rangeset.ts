@@ -1,16 +1,19 @@
 import { expect } from 'chai';
-import { describe, it } from 'mocha';
 import _ from 'lodash';
+import { describe, it } from 'mocha';
 import { stub } from 'sinon';
+
+import { ServiceConfig } from '../../app/models/services/base-service';
+import env from '../../app/util/env';
 import isUUID from '../../app/util/uuid';
+import { hookDatabaseFailure } from '../helpers/db';
+import { hookRedirect } from '../helpers/hooks';
 import { itRedirectsToJobStatusUrl } from '../helpers/jobs';
-import { hookPostRangesetRequest, hookRangesetRequest, rangesetRequest } from '../helpers/ogc-api-coverages';
+import {
+  hookPostRangesetRequest, hookRangesetRequest, rangesetRequest,
+} from '../helpers/ogc-api-coverages';
 import hookServersStartStop from '../helpers/servers';
 import StubService, { hookServices } from '../helpers/stub-service';
-import { ServiceConfig } from '../../app/models/services/base-service';
-import { hookRedirect } from '../helpers/hooks';
-import env from '../../app/util/env';
-import { hookDatabaseFailure } from '../helpers/db';
 
 describe('OGC API Coverages - getCoverageRangeset', function () {
   const collection = 'C1233800302-EEDTEST';
@@ -830,7 +833,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
   describe('when requesting output formats', function () {
     const tiff = 'image/tiff';
     const png = 'image/png';
-    const netcdf = 'application/x-netcdf4';
+    const netcdf = 'application/netcdf';
     const anyWildcard = '*/*';
     const imageWildcard = 'image/*';
     const wildcardTiff = '*/tiff';

@@ -40,8 +40,7 @@ https://cmr.uat.earthdata.nasa.gov:
       concatenation: false
       all_collections: true
       output_formats:
-        - application/netcdf # Incorrect mime-type, remove when no longer needed
-        - application/x-netcdf4
+        - application/netcdf
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
@@ -184,8 +183,7 @@ https://cmr.uat.earthdata.nasa.gov:
         shape: true
         dimension: true
       output_formats:
-        - application/netcdf # Incorrect mime-type, remove when no longer needed
-        - application/x-netcdf4
+        - application/netcdf
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
@@ -211,8 +209,7 @@ https://cmr.uat.earthdata.nasa.gov:
         bbox: false
         variable: false
       output_formats:
-        - application/netcdf # Incorrect mime-type, remove when no longer needed
-        - application/x-netcdf4
+        - application/netcdf
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
@@ -254,8 +251,7 @@ https://cmr.uat.earthdata.nasa.gov:
         shape: true
         dimension: true
       output_formats:
-        - application/netcdf # Incorrect mime-type, remove when no longer needed
-        - application/x-netcdf4
+        - application/netcdf
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
@@ -288,8 +284,7 @@ https://cmr.uat.earthdata.nasa.gov:
         bbox: false
         variable: false
       output_formats:
-        - application/netcdf # Incorrect mime-type, remove when no longer needed
-        - application/x-netcdf4
+        - application/netcdf
       reprojection: true
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
@@ -314,8 +309,7 @@ https://cmr.uat.earthdata.nasa.gov:
         shape: false
         variable: false
       output_formats:
-        - application/netcdf # Incorrect mime-type, remove when no longer needed
-        - application/x-netcdf4
+        - application/netcdf
       reprojection: true
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
@@ -343,8 +337,7 @@ https://cmr.uat.earthdata.nasa.gov:
         shape: false
         variable: true
       output_formats:
-        - application/netcdf # Incorrect mime-type, remove when no longer needed
-        - application/x-netcdf4
+        - application/netcdf
         - application/x-netcdf4;profile=opendap_url
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
@@ -492,8 +485,7 @@ https://cmr.uat.earthdata.nasa.gov:
         shape: true
         variable: true
       output_formats:
-        - application/netcdf # Incorrect mime-type, remove when no longer needed
-        - application/x-netcdf4
+        - application/netcdf
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
@@ -529,8 +521,7 @@ https://cmr.uat.earthdata.nasa.gov:
         shape: true
         variable: true
       output_formats:
-        - application/netcdf # Incorrect mime-type, remove when no longer needed
-        - application/x-netcdf4
+        - application/netcdf
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
@@ -565,8 +556,7 @@ https://cmr.uat.earthdata.nasa.gov:
         variable: true
       reprojection: true
       output_formats:
-        - application/netcdf # Incorrect mime-type, remove when no longer needed
-        - application/x-netcdf4
+        - application/netcdf
         - image/tiff
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
@@ -659,7 +649,7 @@ https://cmr.uat.earthdata.nasa.gov:
         shape: true
         dimension: true
       output_formats:
-        - application/netcdf4
+        - application/netcdf
         - text/csv
       reprojection: false
     steps:
@@ -686,7 +676,7 @@ https://cmr.uat.earthdata.nasa.gov:
         operations: ['concatenate']
         conditional:
           exists: ['concatenate']
-          format: ['application/netcdf4', ''] # No format specified use concise
+          format: ['application/netcdf', ''] # NetCDF or no format specified use concise
       - image: !Env ${CASPER_IMAGE}
         conditional:
           format: ['text/csv']
@@ -795,7 +785,7 @@ https://cmr.uat.earthdata.nasa.gov:
         multiple_variable: true
       output_formats:
         - image/tiff
-        - application/x-netcdf4
+        - application/netcdf
       reprojection: true
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
@@ -860,7 +850,7 @@ https://cmr.uat.earthdata.nasa.gov:
         variable: true
       output_formats:
         - application/x-hdf
-        - application/x-netcdf4
+        - application/netcdf
         - image/tiff
       reprojection: true
     steps:
@@ -870,7 +860,7 @@ https://cmr.uat.earthdata.nasa.gov:
         operations: ['variableSubset', 'spatialSubset', 'shapefileSubset']
       - image: !Env ${HARMONY_SMAP_L2_GRIDDER_IMAGE}
         conditional:
-          format: ['image/tiff', 'application/x-netcdf4']
+          format: ['image/tiff', 'application/netcdf']
       - image: !Env ${NET2COG_IMAGE}
         conditional:
           format: ['image/tiff']

@@ -369,7 +369,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
           type: { name: 'turbo' },
           collections: [{ id: collectionId }],
           capabilities: {
-            output_formats: ['image/tiff', 'application/x-netcdf4'],
+            output_formats: ['image/tiff', 'application/netcdf'],
             subsetting: {
               shape: true,
             },
@@ -380,7 +380,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
           type: { name: 'turbo' },
           collections: [{ id: collectionId }],
           capabilities: {
-            output_formats: ['application/x-netcdf4'],
+            output_formats: ['application/netcdf'],
             subsetting: {
               temporal: true,
             },
@@ -391,7 +391,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
           type: { name: 'turbo' },
           collections: [{ id: collectionId }],
           capabilities: {
-            output_formats: ['application/x-netcdf4'],
+            output_formats: ['application/netcdf'],
             concatenation: true,
             subsetting: {
               temporal: false,
@@ -404,7 +404,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
           collections: [{ id: collectionId }],
           capabilities: {
             extend: true,
-            output_formats: ['application/x-netcdf4'],
+            output_formats: ['application/netcdf'],
             concatenation: true,
             subsetting: {
               temporal: false,
@@ -419,7 +419,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
             averaging: {
               time: true,
             },
-            output_formats: ['application/x-netcdf4'],
+            output_formats: ['application/netcdf'],
           },
         },
         {
@@ -430,7 +430,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
             averaging: {
               area: true,
             },
-            output_formats: ['application/x-netcdf4'],
+            output_formats: ['application/netcdf'],
           },
         },
       ];
@@ -528,7 +528,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
     describe('and the request needs both spatial subsetting and netcdf output, but no service supports that combination', function () {
       beforeEach(function () {
         this.operation.boundingRectangle = [0, 0, 10, 10];
-        this.operation.outputFormat = 'application/x-netcdf4';
+        this.operation.outputFormat = 'application/netcdf';
       });
 
       it('chooses the service that supports netcdf output, but not spatial subsetting', function () {
@@ -545,7 +545,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
     describe('and the request needs temporal subsetting and netcdf-4 format', function () {
       beforeEach(function () {
         this.operation.temporal = ['2022-01-05T01:00:00Z', '2023-01-05T01:00:00Z'];
-        this.operation.outputFormat = 'application/x-netcdf4';
+        this.operation.outputFormat = 'application/netcdf';
       });
 
       it('chooses the service that supports temporal subsetting and netcdf-4 format', function () {
@@ -625,25 +625,25 @@ describe('services.chooseServiceConfig and services.buildService', function () {
     describe('and the request needs both reprojection and netcdf output, but no service supports that combination', function () {
       beforeEach(function () {
         this.operation.crs = 'EPSG:4326';
-        this.operation.outputFormat = 'application/x-netcdf4';
+        this.operation.outputFormat = 'application/netcdf';
       });
 
       it('throws an exception', function () {
         expect(() => chooseServiceConfig(this.operation, defaultContext, this.config))
-          .to.throw(UnsupportedOperation, 'reprojection and reformatting to application/x-netcdf4 on C123-TEST is unsupported');
+          .to.throw(UnsupportedOperation, 'reprojection and reformatting to application/netcdf on C123-TEST is unsupported');
       });
     });
 
     describe('and the request needs spatial subsetting, reprojection, and netcdf output, but no service supports that combination', function () {
       beforeEach(function () {
         this.operation.crs = 'EPSG:4326';
-        this.operation.outputFormat = 'application/x-netcdf4';
+        this.operation.outputFormat = 'application/netcdf';
         this.operation.boundingRectangle = [0, 0, 10, 10];
       });
 
       it('throws an exception', function () {
         expect(() => chooseServiceConfig(this.operation, defaultContext, this.config))
-          .to.throw(UnsupportedOperation, 'reprojection and reformatting to application/x-netcdf4 on C123-TEST is unsupported');
+          .to.throw(UnsupportedOperation, 'reprojection and reformatting to application/netcdf on C123-TEST is unsupported');
       });
     });
 
@@ -651,7 +651,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       beforeEach(function () {
         this.operation.temporal = ['2022-01-05T01:00:00Z', '2023-01-05T01:00:00Z'];
         this.operation.boundingRectangle = [0, 0, 10, 10];
-        this.operation.outputFormat = 'application/x-netcdf4';
+        this.operation.outputFormat = 'application/netcdf';
         this.operation.model.concatenate = true;
       });
 
@@ -1023,7 +1023,7 @@ describe('Services by association', function () {
   const conversionCollection = 'C1233800302-EEDTEST';
   const reprojectCollection = 'C1234088182-EEDTEST';
   const tiff = 'image/tiff';
-  const netcdf = 'application/x-netcdf4';
+  const netcdf = 'application/netcdf';
   const formatQuery = { format: 'image/tiff' };
   const reprojectQuery = { outputCrs: 'EPSG:4326' };
   const version = '1.0.0';
@@ -1069,7 +1069,7 @@ describe('createWorkflowSteps', function () {
     data_operation_version: CURRENT_SCHEMA_VERSION,
     type: { name: 'turbo' },
     capabilities: {
-      output_formats: ['image/tiff', 'application/x-netcdf4'],
+      output_formats: ['image/tiff', 'application/netcdf'],
       subsetting: {
         shape: true,
         variable: true,

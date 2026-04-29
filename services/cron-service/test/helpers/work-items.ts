@@ -1,15 +1,20 @@
 import { Application } from 'express';
+import _ from 'lodash';
 import { afterEach, beforeEach } from 'mocha';
 import request, { Test } from 'supertest';
-import _ from 'lodash';
-import WorkItem from '../../../harmony/app/models/work-item';
-import db, { Transaction } from '../../../harmony/app/util/db';
-import { truncateAll } from './db';
-import { hookBackendRequest } from '../../../harmony/test/helpers/hooks';
-import { buildWorkflowStep, hookWorkflowStepCreation, hookWorkflowStepCreationEach } from './workflow-steps';
+
 import { RecordConstructor } from '../../../harmony/app/models/record';
+import WorkItem from '../../../harmony/app/models/work-item';
+import {
+  getStacLocation, WorkItemRecord, WorkItemStatus,
+} from '../../../harmony/app/models/work-item-interface';
+import db, { Transaction } from '../../../harmony/app/util/db';
 import { objectStoreForProtocol } from '../../../harmony/app/util/object-store';
-import { WorkItemStatus, WorkItemRecord, getStacLocation } from '../../../harmony/app/models/work-item-interface';
+import { hookBackendRequest } from '../../../harmony/test/helpers/hooks';
+import { truncateAll } from './db';
+import {
+  buildWorkflowStep, hookWorkflowStepCreation, hookWorkflowStepCreationEach,
+} from './workflow-steps';
 
 export const exampleWorkItemProps = {
   jobID: '1',
@@ -238,7 +243,7 @@ export async function fakeServiceStacOutput(
       'data': {
         'href': 'https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/001_00_8f00ff_global.nc',
         'title': '001_00_8f00ff_global.nc',
-        'type': 'application/x-netcdf4',
+        'type': 'application/netcdf',
         'roles': [
           'data',
         ],

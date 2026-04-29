@@ -106,7 +106,7 @@ describe('when a work item callback request does not return the results to const
   const hossAndMaskfillQuery = {
     maxResults: 2,
     subset: 'lat(80:85)',
-    format: 'application/x-netcdf4',
+    format: 'application/netcdf',
   };
 
   hookRangesetRequest('1.0.0', collection, 'all', { query: hossAndMaskfillQuery });
@@ -175,7 +175,7 @@ describe('Workflow chaining for collections configured with multi-step chains', 
     const hossAndMaskfillQuery = {
       maxResults: 2,
       subset: 'lat(80:85)',
-      format: 'application/x-netcdf4',
+      format: 'application/netcdf',
     };
 
     hookRangesetRequest('1.0.0', collection, 'all', { query: hossAndMaskfillQuery });
@@ -329,7 +329,7 @@ describe('Workflow chaining for collections configured with multi-step chains', 
     const hossAndMaskfillQuery = {
       maxResults: 2,
       subset: 'lat(80:85)',
-      format: 'application/x-netcdf4',
+      format: 'application/netcdf',
     };
 
     hookRangesetRequest('1.0.0', collection, 'all', { query: hossAndMaskfillQuery });
@@ -467,7 +467,7 @@ describe('Workflow chaining for collections configured with multi-step chains', 
     const hossAndMaskfillQuery = {
       maxResults: 3,
       subset: 'lat(80:85)',
-      format: 'application/x-netcdf4',
+      format: 'application/netcdf',
       ignoreErrors: false, // Without this, the job status becomes running_with_errors
     };
 
@@ -553,7 +553,7 @@ describe('Workflow chaining for collections configured with multi-step chains', 
     const hossAndMaskfillQuery = {
       maxResults: 3,
       subset: 'lat(80:85)',
-      format: 'application/x-netcdf4',
+      format: 'application/netcdf',
       ignoreErrors: false,
     };
 
@@ -843,7 +843,7 @@ describe('When a request spans multiple CMR pages', function () {
       const multiPageQuery = {
         maxResults: 5,
         subset: 'lat(80:85)',
-        format: 'application/x-netcdf4',
+        format: 'application/netcdf',
       };
 
       hookRangesetRequest('1.0.0', collection, 'all', { query: multiPageQuery });
