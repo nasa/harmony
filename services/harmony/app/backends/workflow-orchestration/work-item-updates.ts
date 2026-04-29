@@ -650,6 +650,42 @@ export async function preprocessWorkItem(
 }
 
 /**
+ * Checks to see if subsequent worksteps had finished before a previous
+ * workstep. The updateIsComplete function can prevent downstream steps from
+ * being completed when they all finish before an upstream job can. e.g. when
+ * HOSS is retrying but a successful granule has completed it's entire workflow.
+ *
+ * @param tx - database transaction
+ * @param jobID - Job of the work to clean
+ * @param step - Workflow Step to begin looking for completed work.
+ *
+ * @returns true if all subsequent steps have completed false otherwise
+ */
+export async function checkRemainingStepsForCompletion(
+  tx: Transaction, jobID: string, step: WorkflowStep,
+): Promise<boolean> {
+
+  const candidateSteps = (await tx(WorkflowStep.table)
+    .where({ jobID })
+    .andWhere('stepIndex', '>=', step.stepIndex)
+    .orderBy('stepIndex', 'asc'))
+    .map((row) => ({ serviceID: row.serviceID, stepIndex: row.stepIndex }));
+
+  // This is never a sequential call (querycmr) so we don't need a value
+  const numInputGranules = 0;
+  for (const candidate of candidateSteps) {
+    step = await getWorkflowStepByJobIdStepIndex(tx, jobID, candidate.stepIndex);
+    const stepComplete = await updateIsComplete(tx, jobID, numInputGranules, step);
+    if (!stepComplete) {
+      return false;
+    }
+    await deleteUserWorkForJobAndService(tx, jobID, candidate.serviceID);
+  }
+  // All user work completed for job
+  return true;
+}
+
+/**
  * Process the work item update using the preprocessed result info and the work item info.
  * Various other parameters are passed in to optimize the processing of a batch of work items.
  * A database lock on the work item related job needs to be acquired before calling this function.
@@ -888,7 +924,21 @@ export async function processWorkItem(
       }
 
       if (allWorkItemsForStepComplete) {
-        if (!didCreateWorkItem && (!nextWorkflowStep || nextWorkflowStep.workItemCount < 1)) {
+        const endedUngracefully = (!didCreateWorkItem && nextWorkflowStep);
+        let userWorkCompleteForJob = false;
+        if (endedUngracefully) {
+          // We're here because we didn't create a new WorkItem, but there are
+          // next steps to take. A failed granule may have been retried while
+          // another chain completed, preventing the work downstream in that
+          // chain from ever getting marked as done.
+          userWorkCompleteForJob = await checkRemainingStepsForCompletion(
+            tx, jobID, nextWorkflowStep,
+          );
+        }
+        if (
+          (!didCreateWorkItem && (!nextWorkflowStep || nextWorkflowStep.workItemCount < 1))
+            || userWorkCompleteForJob
+        ) {
           // If all granules are finished mark the job as finished
           const { finalStatus, finalMessage } = await getFinalStatusAndMessageForJob(tx, job);
           await (await logAsyncExecutionTime(

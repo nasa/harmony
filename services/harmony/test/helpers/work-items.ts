@@ -57,6 +57,8 @@ export function buildWorkItem(fields: Partial<WorkItemRecord> = {}): WorkItem {
  */
 export async function rawSaveWorkItem(tx: Transaction, fields: Partial<WorkItemRecord> = {}): Promise<WorkItem> {
   const workItem = buildWorkItem(fields);
+  workItem.createdAt = workItem.createdAt || new Date();
+  workItem.updatedAt = workItem.updatedAt || workItem.createdAt;
   let stmt = tx((workItem.constructor as RecordConstructor).table)
     .insert(workItem);
   if (db.client.config.client === 'pg') {
