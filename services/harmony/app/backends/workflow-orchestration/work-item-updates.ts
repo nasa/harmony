@@ -667,7 +667,8 @@ export async function checkRemainingStepsForCompletion(
 
   const candidateSteps = (await tx(WorkflowStep.table)
     .where({ jobID })
-    .andWhere('stepIndex', '>=', step.stepIndex))
+    .andWhere('stepIndex', '>=', step.stepIndex)
+    .orderBy('stepIndex', 'asc'))
     .map((row) => ({ serviceID: row.serviceID, stepIndex: row.stepIndex }));
 
   // This is never a sequential call (querycmr) so we don't need a value
