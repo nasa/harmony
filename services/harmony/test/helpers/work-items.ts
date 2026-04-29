@@ -243,7 +243,7 @@ export async function fakeServiceStacOutput(
       'data': {
         'href': 'https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/001_00_8f00ff_global.nc',
         'title': '001_00_8f00ff_global.nc',
-        'type': 'application/x-netcdf4',
+        'type': 'application/netcdf',
         'roles': [
           'data',
         ],

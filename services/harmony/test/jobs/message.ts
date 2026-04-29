@@ -1,14 +1,14 @@
-import { describe, it } from 'mocha';
-import { Job, JobStatus, statesToDefaultMessages } from '../../app/models/job';
-import { hookTransaction } from '../helpers/db';
 import { assert, expect } from 'chai';
-import { baseResultsLimitedMessage } from '../../app/middleware/cmr-granule-locator';
-import { TestTurboService } from '../helpers/turbo-service';
-import env from '../../app/util/env';
+import { describe, it } from 'mocha';
 import { stub } from 'sinon';
-import { buildOperation } from '../helpers/data-operation';
 import { v4 as uuid } from 'uuid';
 
+import { baseResultsLimitedMessage } from '../../app/middleware/cmr-granule-locator';
+import { Job, JobStatus, statesToDefaultMessages } from '../../app/models/job';
+import env from '../../app/util/env';
+import { buildOperation } from '../helpers/data-operation';
+import { hookTransaction } from '../helpers/db';
+import { TestTurboService } from '../helpers/turbo-service';
 
 /**
  * A service config to use when building the TestTurboServices.
@@ -18,7 +18,7 @@ const config = {
   type: { name: 'turbo' },
   collections: [{ id: 'collection' }],
   capabilities: {
-    output_formats: ['image/tiff', 'application/x-netcdf4'],
+    output_formats: ['image/tiff', 'application/netcdf'],
     subsetting: {
     },
   },

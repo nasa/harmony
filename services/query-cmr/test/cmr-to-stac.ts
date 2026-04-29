@@ -22,13 +22,13 @@ const cmrUmmGranules = [{
       URL: './g0_0.nc4',
       Type: 'GET DATA',
       Description: 'Data 0',
-      MimeType: 'application/x-netcdf4',
+      MimeType: 'application/netcdf',
     },
     {
       URL: './g0_1.nc4',
       Type: 'GET DATA',
       Description: 'Data 1',
-      MimeType: 'application/x-netcdf4',
+      MimeType: 'application/netcdf',
     },
     {
       URL: './g0_3.json',
@@ -40,13 +40,13 @@ const cmrUmmGranules = [{
       URL: './g0_4.nc4',
       Type: 'USE SERVICE API',
       Description: 'OPeNDAP Data 4',
-      MimeType: 'application/x-netcdf4',
+      MimeType: 'application/netcdf',
     },
     {
       URL: './g0_5.nc4',
       Type: 'USE SERVICE API',
       Description: 'OPeNDAP Data 5',
-      MimeType: 'application/x-netcdf4',
+      MimeType: 'application/netcdf',
     },
     {
       URL: 'https://gesdisc.nasa.gov/opendap/Aqua_AIRS_Level3/AIR222P5.006/2002/AIRS.2222.09.01.L3.RetQuant_IR005.v6.0.9.0.G111160515.hdf',
@@ -135,7 +135,7 @@ describe('addCmrUmmGranules to catalog', function () {
           href: './g0_0.nc4',
           title: 'g0_0.nc4',
           description: 'Data 0',
-          type: 'application/x-netcdf4',
+          type: 'application/netcdf',
           roles: ['data'],
         });
       });
@@ -145,7 +145,7 @@ describe('addCmrUmmGranules to catalog', function () {
           href: './g0_1.nc4',
           title: 'g0_1.nc4',
           description: 'Data 1',
-          type: 'application/x-netcdf4',
+          type: 'application/netcdf',
           roles: ['data'],
         });
       });
@@ -155,14 +155,14 @@ describe('addCmrUmmGranules to catalog', function () {
           href: './g0_4.nc4',
           title: 'g0_4.nc4',
           description: 'OPeNDAP Data 4',
-          type: 'application/x-netcdf4',
+          type: 'application/netcdf',
           roles: ['data', 'opendap'],
         });
         expect(assets.opendap1).to.eql({
           href: './g0_5.nc4',
           title: 'g0_5.nc4',
           description: 'OPeNDAP Data 5',
-          type: 'application/x-netcdf4',
+          type: 'application/netcdf',
           roles: ['data', 'opendap'],
         });
         expect(assets.opendap2).to.eql({
@@ -246,7 +246,7 @@ describe('addCmrUmmGranules to catalog', function () {
           href: './g0_0.nc4',
           title: 'g0_0.nc4',
           description: 'Data 0',
-          type: 'application/x-netcdf4',
+          type: 'application/netcdf',
           roles: ['data'],
         });
       });
@@ -256,7 +256,7 @@ describe('addCmrUmmGranules to catalog', function () {
           href: './g0_1.nc4',
           title: 'g0_1.nc4',
           description: 'Data 1',
-          type: 'application/x-netcdf4',
+          type: 'application/netcdf',
           roles: ['data'],
         });
       });

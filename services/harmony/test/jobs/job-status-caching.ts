@@ -12,7 +12,7 @@ const collection = 'C1260128044-EEDTEST';
 const query = {
   maxResults: 1,
   subset: 'lat(60:65)',
-  format: 'application/x-netcdf4',
+  format: 'application/netcdf',
   forceAsync: true,
   label: ['000', 'bar', 'foo', 'z-label'],
 };

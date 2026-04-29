@@ -87,7 +87,7 @@ describe('Testing collection capabilities', function () {
         it('sets the outputFormats field correctly', function () {
           const capabilities = JSON.parse(this.res.text);
           const expectedFormats = [
-            'application/netcdf', 'application/x-netcdf4', 'image/tiff', 'image/png', 'image/gif',
+            'application/netcdf', 'image/tiff', 'image/png', 'image/gif',
           ];
           expect(capabilities.outputFormats).to.eql(expectedFormats);
         });
@@ -249,7 +249,7 @@ describe('Testing collection capabilities', function () {
         it('sets the outputFormats field correctly in the version 1 response', function () {
           const capabilities = JSON.parse(this.res.text);
           const expectedFormats = [
-            'application/netcdf', 'application/x-netcdf4', 'image/tiff', 'image/png', 'image/gif',
+            'application/netcdf', 'image/tiff', 'image/png', 'image/gif',
           ];
           expect(capabilities.outputFormats).to.eql(expectedFormats);
         });
@@ -332,7 +332,7 @@ describe('Testing collection capabilities', function () {
         it('sets the outputFormats field correctly', function () {
           const capabilities = JSON.parse(this.res.text);
           const expectedFormats = [
-            'application/netcdf', 'application/x-netcdf4', 'image/tiff', 'image/png', 'image/gif',
+            'application/netcdf', 'image/tiff', 'image/png', 'image/gif',
           ];
           expect(capabilities.outputFormats).to.eql(expectedFormats);
         });
@@ -438,7 +438,7 @@ describe('Testing collection capabilities', function () {
         it('sets the summary.outputFormats field correctly', function () {
           const capabilities = JSON.parse(this.res.text);
           const expectedFormats = [
-            'application/netcdf', 'application/x-netcdf4', 'image/tiff', 'image/png', 'image/gif',
+            'application/netcdf', 'image/tiff', 'image/png', 'image/gif',
           ];
           expect(capabilities.summary.outputFormats).to.eql(expectedFormats);
         });

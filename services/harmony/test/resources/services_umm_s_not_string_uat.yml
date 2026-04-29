@@ -40,7 +40,7 @@ https://cmr.uat.earthdata.nasa.gov:
         variable: true
         shape: true
       output_formats:
-        - application/x-netcdf4
+        - application/netcdf
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
@@ -72,7 +72,7 @@ https://cmr.uat.earthdata.nasa.gov:
         shape: true
       output_formats:
         - application/netcdf # Incorrect mime-type, remove when no longer needed
-        - application/x-netcdf4
+        - application/netcdf
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true

@@ -18,7 +18,7 @@ import { fakeServiceStacOutput, getWorkForService, updateWorkItem } from './help
 const hossAndMaskfillQuery = {
   maxResults: 1,
   subset: 'lat(60:65)',
-  format: 'application/x-netcdf4',
+  format: 'application/netcdf',
   forceAsync: true,
 };
 

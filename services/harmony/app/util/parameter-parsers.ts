@@ -2,13 +2,17 @@
  * Functions to handle query parameters
  */
 
+import { parseBoolean } from '@harmony/util/string';
+
 import DataOperation from '../models/data-operation';
-import parseCRS from './crs';
-import { ParameterParseError, parseMultiValueParameter, parseNumber } from './parameter-parsing-helpers';
 import HarmonyRequest from '../models/harmony-request';
 import { parseAcceptHeader } from './content-negotiation';
+import parseCRS from './crs';
 import { RequestValidationError } from './errors';
-import { parseBoolean } from '@harmony/util/string';
+import { harmonyMimeTypeToName, mimeTypeAliases } from './file-formats';
+import {
+  ParameterParseError, parseMultiValueParameter, parseNumber,
+} from './parameter-parsing-helpers';
 
 /**
  * Helper function to convert parameter parsing errors into 400 errors for an end
@@ -144,11 +148,22 @@ export function handleScaleSize(
   }
 }
 
+const harmonyNameToMimeType = Object.fromEntries(
+  Object.entries(harmonyMimeTypeToName).map(([k, v]) => [v.toLowerCase(), k]),
+);
+
 /**
- * Set the output format for the request.
+ * Set the output format for the request. Attempts to normalize the format
+ * for matching by doing the following:
+ * 1. Removing quote characters from profile information
+ * 2. Ignoring spaces
+ * 3. Treating case insensitive by setting everything to lowercase
+ * 4. Mapping known aliases to a single mime-type
+ * 5. Converting accepted names from UMM-S for formats into the appropriate
+ * mime-type.
  *
  * @param operation - the DataOperation for the request
- * @param query - the query for the request
+ * @param format - the format string provided in the query
  * @param req - The request
  */
 export function handleFormat(
@@ -156,10 +171,14 @@ export function handleFormat(
   format: string,
   req: HarmonyRequest): void {
   if (format) {
-    operation.outputFormat = format
+    let sanitizedFormat = format
       .replaceAll(' ', '')
       .replaceAll('"', '')
-      .replaceAll('\'', '');
+      .replaceAll('\'', '')
+      .toLowerCase();
+
+    sanitizedFormat = mimeTypeAliases[sanitizedFormat] ?? sanitizedFormat;
+    operation.outputFormat = harmonyNameToMimeType[sanitizedFormat] ?? sanitizedFormat;
   } else if (req.headers.accept) {
     const acceptedMimeTypes = parseAcceptHeader(req.headers.accept);
     req.context.requestedMimeTypes = acceptedMimeTypes
