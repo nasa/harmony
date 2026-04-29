@@ -759,7 +759,7 @@ async function _getAllServices(
   context: RequestContext, query: CmrQuery, token: string,
 ): Promise<Array<CmrUmmService>> {
   logger.debug('Calling CMR to fetch services');
-  const servicesResponse = await _cmrPost(context, '/search/services.umm_json_v1_5_2', query, token) as CmrServicesResponse;
+  const servicesResponse = await _cmrPost(context, '/search/services.umm_json_v1_5_4', query, token) as CmrServicesResponse;
   const { hits } = servicesResponse.data;
   let services = servicesResponse.data.items;
   let numServicesRetrieved = services.length;
@@ -769,7 +769,7 @@ async function _getAllServices(
     page_num += 1;
     logger.debug(`Paging through services = ${page_num}, numServicesRetrieved = ${numServicesRetrieved}, total hits ${hits}`);
     query.page_num = page_num;
-    const response = await _cmrPost(context, '/search/services.umm_json_v1_5_2', query, token) as CmrServicesResponse;
+    const response = await _cmrPost(context, '/search/services.umm_json_v1_5_4', query, token) as CmrServicesResponse;
     const pageOfServices = response.data.items;
     services = services.concat(pageOfServices);
     numServicesRetrieved += pageOfServices.length;
