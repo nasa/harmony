@@ -148,8 +148,11 @@ export function handleScaleSize(
   }
 }
 
+// Allow the format to be a name from UMM-S and convert it to a mime-type.
+// When comparing input from the format query parameter use all lowercase
+// and no spaces to perform the lookup in a consistent way.
 const harmonyNameToMimeType = Object.fromEntries(
-  Object.entries(harmonyMimeTypeToName).map(([k, v]) => [v.toLowerCase(), k]),
+  Object.entries(harmonyMimeTypeToName).map(([k, v]) => [v.toLowerCase().replaceAll(' ', ''), k]),
 );
 
 /**
