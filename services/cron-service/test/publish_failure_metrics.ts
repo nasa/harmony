@@ -1,17 +1,17 @@
-import { expect } from 'chai';
-import sinon, { SinonStub } from 'sinon';
-
 import {
   CloudWatchClient, PutMetricDataCommand, PutMetricDataCommandInput,
 } from '@aws-sdk/client-cloudwatch';
+import { expect } from 'chai';
+import sinon, { SinonStub } from 'sinon';
 
+
+import { hookTransaction, truncateAll } from './helpers/db';
+import { buildWorkItem } from './helpers/work-items';
 import { WorkItemStatus } from '../../harmony/app/models/work-item-interface';
 import db from '../../harmony/app/util/db';
 import * as pfm from '../app/cronjobs/publish-failure-metrics';
 import { Context } from '../app/util/context';
 import env from '../app/util/env';
-import { hookTransaction, truncateAll } from './helpers/db';
-import { buildWorkItem } from './helpers/work-items';
 
 describe('PublishFailureMetrics', () => {
   let ctx: Context;

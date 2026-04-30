@@ -1,8 +1,9 @@
-import { RequestValidationError } from './errors';
-import HarmonyRequest from '../models/harmony-request';
-import { normalizeGeoJson } from '../middleware/shapefile-converter';
-import wellknown from 'wellknown';
 import _ from 'lodash';
+import wellknown from 'wellknown';
+
+import { RequestValidationError } from './errors';
+import { normalizeGeoJson } from '../middleware/shapefile-converter';
+import HarmonyRequest from '../models/harmony-request';
 
 /**
  * Tag class for denoting errors during parsing

@@ -1,10 +1,11 @@
-import { describe, it, beforeEach } from 'mocha';
 import { expect } from 'chai';
+import { describe, it, beforeEach } from 'mocha';
 import { v4 as uuid } from 'uuid';
-import { buildJob } from '../helpers/jobs';
+
 import { Job, JobRecord, JobStatus } from '../../app/models/job';
 import JobLink from '../../app/models/job-link';
 import { hookTransactionEach } from '../helpers/db';
+import { buildJob } from '../helpers/jobs';
 
 const exampleProps = {
   username: 'joe',

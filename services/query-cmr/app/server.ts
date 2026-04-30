@@ -1,9 +1,11 @@
-import express, { Request, Response, NextFunction } from 'express';
 import { Server } from 'http';
+
+import express, { Request, Response, NextFunction } from 'express';
+
+import router from './routers/router';
 import env from './util/env';
 import { buildJsonErrorResponse, getCodeForError, getEndUserErrorMessage, getHttpStatusCode, HttpError } from '../../harmony/app/util/errors';
 import log from '../../harmony/app/util/log';
-import router from './routers/router';
 
 /**
  * Express.js middleware catching errors that escape service protocol handling and sending them

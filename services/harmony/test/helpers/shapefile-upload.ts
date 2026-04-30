@@ -5,10 +5,11 @@
  */
 import { RequestHandler } from 'express';
 import multer from 'multer';
-import * as tmp from 'tmp';
-import env from '../../app/util/env';
 import { stub } from 'sinon';
+import * as tmp from 'tmp';
+
 import * as shapefileUpload from '../../app/middleware/shapefile-upload';
+import env from '../../app/util/env';
 
 /**
   * Override shapefile upload middleware code which uses S3 and multer

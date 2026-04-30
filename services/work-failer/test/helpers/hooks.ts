@@ -1,6 +1,7 @@
-import { before } from 'mocha';
 import { use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
+import { before } from 'mocha';
+
 import { configureLogToFile } from '../../../harmony/app/util/log';
 
 use(chaiAsPromised);

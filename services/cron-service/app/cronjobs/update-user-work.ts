@@ -1,10 +1,10 @@
+import { CronJob } from './cronjob';
 import { Job, JobStatus } from '../../../harmony/app/models/job';
 import UserWork, {
   deleteUserWorkForJob, recalculateCounts,
 } from '../../../harmony/app/models/user-work';
 import { Context } from '../util/context';
 import env from '../util/env';
-import { CronJob } from './cronjob';
 
 /**
  *

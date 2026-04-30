@@ -1,22 +1,24 @@
-import { NextFunction } from 'express';
 import * as fs from 'fs';
-import * as mustache from 'mustache';
 import * as path from 'path';
 import { promisify } from 'util';
+
+import { NextFunction } from 'express';
+import * as mustache from 'mustache';
+
+
 import { validateParameterNames } from '../middleware/parameter-validation';
 import DataOperation from '../models/data-operation';
 import * as services from '../models/services';
 import parseCRS from '../util/crs';
 import { createDecrypter, createEncrypter } from '../util/crypto';
+import env from '../util/env';
 import { NotFoundError, RequestValidationError } from '../util/errors';
+import logger from '../util/log';
 import { keysToLowerCase } from '../util/object';
+import { handleGranuleNames } from '../util/parameter-parsers';
 import { ParameterParseError, parseMultiValueParameter } from '../util/parameter-parsing-helpers';
 import * as urlUtil from '../util/url';
-
-import { handleGranuleNames } from '../util/parameter-parsers';
-import env from '../util/env';
 import { getVariablesForCollection } from '../util/variables';
-import logger from '../util/log';
 
 const readFile = promisify(fs.readFile);
 

@@ -1,9 +1,11 @@
+import { IncomingHttpHeaders } from 'http';
+import * as url from 'url';
+
 import { expect } from 'chai';
 import { parse } from 'cookie';
-import { IncomingHttpHeaders } from 'http';
 import { after, before, describe, it } from 'mocha';
 import request, { Test } from 'supertest';
-import * as url from 'url';
+
 
 import { auth } from './auth';
 

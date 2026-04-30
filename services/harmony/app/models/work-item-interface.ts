@@ -1,6 +1,6 @@
 import DataOperation from './data-operation';
-import { resolve } from '../util/url';
 import env from '../util/env';
+import { resolve } from '../util/url';
 
 export enum WorkItemStatus {
   READY = 'ready',

@@ -1,13 +1,14 @@
 import { expect } from 'chai';
 import { describe, it, before } from 'mocha';
+
+import { SerializableCatalog } from '../../app/frontends/stac-catalog';
 import { Job, JobStatus } from '../../app/models/job';
 import JobLink from '../../app/models/job-link';
-import { SerializableCatalog } from '../../app/frontends/stac-catalog';
-import hookServersStartStop from '../helpers/servers';
-import { buildJob, itIncludesPagingRelations, areStacJobLinksEqual } from '../helpers/jobs';
-import { hookStacCatalog } from '../helpers/stac';
 import db from '../../app/util/db';
 import env from '../../app/util/env';
+import { buildJob, itIncludesPagingRelations, areStacJobLinksEqual } from '../helpers/jobs';
+import hookServersStartStop from '../helpers/servers';
+import { hookStacCatalog } from '../helpers/stac';
 
 describe('STAC - pagination', function () {
   hookServersStartStop({ USE_EDL_CLIENT_APP: true });

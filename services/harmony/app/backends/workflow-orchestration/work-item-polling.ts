@@ -1,5 +1,6 @@
 import { Logger } from 'winston';
 
+import { calculateQueryCmrLimit, processSchedulerQueue, QUERY_CMR_SERVICE_REGEX } from './util';
 import {
   getNextJobIdForUsernameAndService, getNextJobIds, getNextUsernameForWork,
   incrementRunningAndDecrementReadyCounts, recalculateCounts,
@@ -17,7 +18,6 @@ import logger from '../../util/log';
 import {
   getQueueForUrl, getQueueUrlForService, getWorkSchedulerQueue,
 } from '../../util/queue/queue-factory';
-import { calculateQueryCmrLimit, processSchedulerQueue, QUERY_CMR_SERVICE_REGEX } from './util';
 
 export type WorkItemData = {
   workItem: WorkItem,

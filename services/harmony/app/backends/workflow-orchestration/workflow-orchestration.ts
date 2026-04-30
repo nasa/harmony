@@ -2,13 +2,13 @@ import { NextFunction, Response } from 'express';
 import _ from 'lodash';
 import { Logger } from 'winston';
 
+import { getWorkFromDatabase, getWorkFromQueue, WorkItemData } from './work-item-polling';
 import DataOperation from '../../models/data-operation';
 import HarmonyRequest from '../../models/harmony-request';
 import WorkItemUpdate from '../../models/work-item-update';
 import env from '../../util/env';
 import { WorkItemQueueType } from '../../util/queue/queue';
 import { getQueueForType } from '../../util/queue/queue-factory';
-import { getWorkFromDatabase, getWorkFromQueue, WorkItemData } from './work-item-polling';
 
 const MAX_TRY_COUNT = 1;
 const RETRY_DELAY = 1000 * 120;

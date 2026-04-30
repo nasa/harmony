@@ -1,7 +1,7 @@
-import { before } from 'mocha';
 
 import { use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
+import { before } from 'mocha';
 
 import { cmrApiConfig } from '../../../harmony/app/util/cmr';
 import { configureLogToFile } from '../../../harmony/app/util/log';

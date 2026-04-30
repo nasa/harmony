@@ -1,6 +1,7 @@
 import _ from 'lodash';
-import { Transaction } from '../util/db';
+
 import Record from './record';
+import { Transaction } from '../util/db';
 
 // The fields to save to the database
 const serializedFields = [

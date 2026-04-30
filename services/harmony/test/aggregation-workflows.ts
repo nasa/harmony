@@ -1,13 +1,6 @@
 import { expect } from 'chai';
 import { stub } from 'sinon';
 
-import { JobStatus } from '../app/models/job';
-import { populateUserWorkFromWorkItems } from '../app/models/user-work';
-import { getStacLocation, WorkItemRecord, WorkItemStatus } from '../app/models/work-item-interface';
-import * as aggregationBatch from '../app/util/aggregation-batch';
-import db from '../app/util/db';
-import env from '../app/util/env';
-import { defaultObjectStore } from '../app/util/object-store';
 import { truncateAll } from './helpers/db';
 import { buildJob, getFirstJob } from './helpers/jobs';
 import { resetQueues } from './helpers/queue';
@@ -16,6 +9,13 @@ import {
   buildWorkItem, fakeServiceStacOutput, getWorkForService, updateWorkItem,
 } from './helpers/work-items';
 import { buildWorkflowStep } from './helpers/workflow-steps';
+import { JobStatus } from '../app/models/job';
+import { populateUserWorkFromWorkItems } from '../app/models/user-work';
+import { getStacLocation, WorkItemRecord, WorkItemStatus } from '../app/models/work-item-interface';
+import * as aggregationBatch from '../app/util/aggregation-batch';
+import db from '../app/util/db';
+import env from '../app/util/env';
+import { defaultObjectStore } from '../app/util/object-store';
 
 describe('When a workflow contains an aggregating step', async function () {
 /**

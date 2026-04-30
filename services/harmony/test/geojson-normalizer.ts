@@ -1,6 +1,7 @@
-import { expect } from 'chai';
 import * as fs from 'fs';
 import path from 'path';
+
+import { expect } from 'chai';
 
 import {
   convertPointsToPolygons, normalizeGeoJson, normalizeGeoJsonCoords, numberOfSidesForPointCircle,

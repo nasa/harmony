@@ -1,4 +1,5 @@
 import { NextFunction } from 'express';
+
 import HarmonyRequest from '../models/harmony-request';
 
 /**

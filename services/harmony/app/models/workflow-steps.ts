@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/dot-notation */
 import _ from 'lodash';
 
-import { Transaction } from '../util/db';
-import env from '../util/env';
 import { Job, JobStatus } from './job';
 import Record from './record';
 import WorkItem, { workItemCountForStep } from './work-item';
 import { COMPLETED_WORK_ITEM_STATUSES } from './work-item-interface';
+import { Transaction } from '../util/db';
+import env from '../util/env';
 
 // The fields to save to the database
 const serializedFields = [

@@ -1,6 +1,7 @@
-import { describe, it } from 'mocha';
 import { expect } from 'chai';
+import { describe, it } from 'mocha';
 import { spy } from 'sinon';
+
 import { MemoryCache } from '../../app/util/cache/memory-cache';
 
 describe('MemoryCache', function () {

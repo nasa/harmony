@@ -1,7 +1,8 @@
 import { Response, NextFunction } from 'express';
+
 import HarmonyRequest from '../models/harmony-request';
-import { ForbiddenError } from '../util/errors';
 import { getEdlGroupInformation } from '../util/edl-api';
+import { ForbiddenError } from '../util/errors';
 
 /**
  * Middleware to enforce ACLs on admin interfaces.  If the user is part

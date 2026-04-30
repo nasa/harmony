@@ -1,10 +1,11 @@
 import { NextFunction, Response } from 'express';
+
+import { getDataCommon } from './get-data-common';
+import { parseBbox } from './util/helper';
 import HarmonyRequest from '../../models/harmony-request';
+import { RequestValidationError } from '../../util/errors';
 import { keysToLowerCase } from '../../util/object';
 import { mergeParameters, ParameterParseError } from '../../util/parameter-parsing-helpers';
-import { parseBbox } from './util/helper';
-import { getDataCommon } from './get-data-common';
-import { RequestValidationError } from '../../util/errors';
 
 /**
  * Express middleware that responds to OGC API - EDR cube requests.

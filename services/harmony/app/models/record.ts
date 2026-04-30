@@ -1,7 +1,8 @@
 import _ from 'lodash';
-import logger from '../util/log';
+
 import db, { Transaction } from '../util/db';
 import { ServerError } from '../util/errors';
+import logger from '../util/log';
 
 export interface RecordConstructor extends Function {
   table: string;

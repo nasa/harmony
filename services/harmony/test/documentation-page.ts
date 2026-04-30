@@ -4,13 +4,13 @@ import { describe, it } from 'mocha';
 import sinon from 'sinon';
 import request from 'supertest';
 
+import { hookDocumentationPage } from './helpers/documentation-page';
+import { hookRequest } from './helpers/hooks';
+import hookServersStartStop from './helpers/servers';
 import * as docs from '../app/frontends/docs/docs';
 import HarmonyRequest from '../app/models/harmony-request';
 import env from '../app/util/env';
 import version from '../app/util/version';
-import { hookDocumentationPage } from './helpers/documentation-page';
-import { hookRequest } from './helpers/hooks';
-import hookServersStartStop from './helpers/servers';
 
 const TEST_PREVIEW_THRESHOLD = 1234;
 

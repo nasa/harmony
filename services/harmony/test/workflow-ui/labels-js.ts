@@ -1,6 +1,8 @@
-import { JSDOM } from 'jsdom';
-import { expect } from 'chai';
 import path from 'path';
+
+import { expect } from 'chai';
+import { JSDOM } from 'jsdom';
+
 import Labels from '../../public/js/workflow-ui/labels';
 
 beforeEach(async () => {

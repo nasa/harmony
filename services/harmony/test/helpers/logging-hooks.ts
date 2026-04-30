@@ -1,5 +1,4 @@
 import { before } from 'mocha';
-
 import * as winston from 'winston';
 
 import logger from '../../app/util/log';

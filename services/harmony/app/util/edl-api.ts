@@ -1,5 +1,6 @@
-import * as axios from 'axios';
 import { createHash } from 'crypto';
+
+import * as axios from 'axios';
 import { Response } from 'express';
 import { LRUCache } from 'lru-cache';
 import { ClientCredentials, AccessToken } from 'simple-oauth2';

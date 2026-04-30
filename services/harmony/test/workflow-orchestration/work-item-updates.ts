@@ -1,7 +1,8 @@
 import { expect } from 'chai';
+
 import { checkRemainingStepsForCompletion } from '../../app/backends/workflow-orchestration/work-item-updates';
-import { WorkItemStatus } from '../../app/models/work-item-interface';
 import WorkItem from '../../app/models/work-item';
+import { WorkItemStatus } from '../../app/models/work-item-interface';
 import { getWorkflowStepByJobIdStepIndex } from '../../app/models/workflow-steps';
 import db from '../../app/util/db';
 import { truncateAll } from '../helpers/db';

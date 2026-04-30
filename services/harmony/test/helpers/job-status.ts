@@ -2,10 +2,10 @@ import { expect } from 'chai';
 import { it } from 'mocha';
 import sinon from 'sinon';
 
+import { hookUrl } from './hooks';
 import { EXPIRATION_DAYS, Job } from '../../app/models/job';
 import env from '../../app/util/env';
 import { jobStatusCache } from '../../app/util/job';
-import { hookUrl } from './hooks';
 
 /**
  * Hooks the job status cache for tests to not use the cache

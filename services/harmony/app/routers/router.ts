@@ -1,8 +1,9 @@
+import process from 'process';
+
 import cookieParser from 'cookie-parser';
 import express, { json, RequestHandler } from 'express';
 import asyncHandler from 'express-async-handler';
 import * as yaml from 'js-yaml';
-import process from 'process';
 import swaggerUi from 'swagger-ui-express';
 
 import serviceInvoker from '../backends/service-invoker';
@@ -35,7 +36,9 @@ import {
   getJob, getJobLinks, getJobs, getJobsTable, getWorkItemLogs, getWorkItemsTable,
   getWorkItemTableRow, redirectWithoutTrailingSlash, retry,
 } from '../frontends/workflow-ui';
+import cmrCollectionReader from '../middleware/cmr-collection-reader';
 import cmrGranuleLocator from '../middleware/cmr-granule-locator';
+import cmrUmmCollectionReader from '../middleware/cmr-umm-collection-reader';
 import {
   postServiceConcatenationHandler, preServiceConcatenationHandler,
 } from '../middleware/concatenation';
@@ -52,7 +55,6 @@ import { admin, core } from '../middleware/permission-groups';
 import validateRestrictedVariables from '../middleware/restricted-variables';
 import chooseService from '../middleware/service-selection';
 import shapefileConverter from '../middleware/shapefile-converter';
-// Middleware requires in outside-in order
 import shapefileUpload from '../middleware/shapefile-upload';
 import { setUmmVisForCollections } from '../middleware/umm-vis';
 import HarmonyRequest, { addRequestContextToOperation } from '../models/harmony-request';
@@ -62,10 +64,6 @@ import { parseGridMiddleware } from '../util/grids';
 import log from '../util/log';
 import { validateAndSetVariables } from '../util/variables';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-import cmrCollectionReader = require('../middleware/cmr-collection-reader');
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-import cmrUmmCollectionReader = require('../middleware/cmr-umm-collection-reader');
 export interface RouterConfig {
   PORT?: string | number; // The port to run the frontend server on
   BACKEND_PORT?: string | number; // The port to run the backend server on

@@ -1,11 +1,11 @@
 import { Credentials } from '@aws-sdk/client-sts';
 import { Response, NextFunction } from 'express';
-import SecureTokenService from '../util/sts';
-import { ServerError } from '../util/errors';
+
 import HarmonyRequest from '../models/harmony-request';
 import RequestContext from '../models/request-context';
-
 import env from '../util/env';
+import { ServerError } from '../util/errors';
+import SecureTokenService from '../util/sts';
 
 const { sameRegionAccessRole, awsDefaultRegion } = env;
 

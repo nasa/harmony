@@ -1,10 +1,10 @@
-import { stub, match, SinonStub } from 'sinon';
 import axios from 'axios';
 import { serialize } from 'cookie';
 import { sign } from 'cookie-signature';
-import { Client } from 'simple-oauth2/lib/client';
-import { Plugin, SuperAgentRequest } from 'superagent';
 import { Token } from 'simple-oauth2';
+import { Client } from 'simple-oauth2/lib/client';
+import { stub, match, SinonStub } from 'sinon';
+import { Plugin, SuperAgentRequest } from 'superagent';
 
 /**
  * Stubs Earthdata Login HTTP calls exactly matching the given URL and parameters, returning the

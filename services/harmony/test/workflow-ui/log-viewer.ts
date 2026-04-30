@@ -1,15 +1,16 @@
 import { expect } from 'chai';
 import { describe, it, before } from 'mocha';
-import { buildWorkItem } from '../helpers/work-items';
-import { buildWorkflowStep } from '../helpers/workflow-steps';
+import sinon from 'sinon';
+
 import { JobStatus } from '../../app/models/job';
-import hookServersStartStop from '../helpers/servers';
+import { WorkItemStatus } from '../../app/models/work-item-interface';
+import { FileStore } from '../../app/util/object-store/file-store';
 import { hookTransaction, truncateAll } from '../helpers/db';
 import { buildJob } from '../helpers/jobs';
+import hookServersStartStop from '../helpers/servers';
+import { buildWorkItem } from '../helpers/work-items';
+import { buildWorkflowStep } from '../helpers/workflow-steps';
 import { hookWorkflowUILogs, workflowUILogs } from '../helpers/workflow-ui';
-import { WorkItemStatus } from '../../app/models/work-item-interface';
-import sinon from 'sinon';
-import { FileStore } from '../../app/util/object-store/file-store';
 
 // main objects used in the tests
 const targetJob = buildJob({ status: JobStatus.FAILED, username: 'bo' });

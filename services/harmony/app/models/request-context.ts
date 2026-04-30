@@ -1,4 +1,5 @@
 import { Logger } from 'winston';
+
 import { ServiceConfig } from './services/base-service';
 import { CmrCollection } from '../util/cmr';
 

@@ -1,9 +1,12 @@
-import request from 'supertest';
 import { readFileSync } from 'fs';
+
+import { AssumeRoleCommandOutput } from '@aws-sdk/client-sts';
 import { stub } from 'sinon';
+import request from 'supertest';
+
 import { hookRequest } from './hooks';
 import sts from '../../app/util/sts';
-import { AssumeRoleCommandOutput } from '@aws-sdk/client-sts';
+
 
 /**
  * Makes a cloud-access JSON request

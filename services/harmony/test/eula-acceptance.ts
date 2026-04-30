@@ -1,6 +1,7 @@
 import { expect } from 'chai';
-import { describe, it } from 'mocha';
 import _ from 'lodash';
+import { describe, it } from 'mocha';
+
 import { hookRangesetRequest } from './helpers/ogc-api-coverages';
 import hookServersStartStop from './helpers/servers';
 

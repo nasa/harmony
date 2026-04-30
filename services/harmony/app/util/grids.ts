@@ -1,10 +1,12 @@
 import { ServerResponse } from 'http';
+
 import { NextFunction } from 'express';
-import HarmonyRequest from '../models/harmony-request';
+
 import { getGridsByName } from './cmr';
 import parseCRS from './crs';
 import { RequestValidationError } from './errors';
 import { keysToLowerCase } from './object';
+import HarmonyRequest from '../models/harmony-request';
 
 /**
  * Throws an error if the grid name parameter is included along with regridding parameters.

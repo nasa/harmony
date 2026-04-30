@@ -1,11 +1,11 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
 
+import { hookDoWork } from './helpers/work';
 import { defaultObjectStore } from '../../harmony/app/util/object-store';
 import { resolve } from '../../harmony/app/util/url';
 import { QueryCmrRequest } from '../app/routers/router';
 import CmrStacCatalog from '../app/stac/cmr-catalog';
-import { hookDoWork } from './helpers/work';
 
 describe('doWork', function () {
   describe('main', function () {

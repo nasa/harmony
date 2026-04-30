@@ -4,8 +4,6 @@
 
 import { parseBoolean } from '@harmony/util/string';
 
-import DataOperation from '../models/data-operation';
-import HarmonyRequest from '../models/harmony-request';
 import { parseAcceptHeader } from './content-negotiation';
 import parseCRS from './crs';
 import { RequestValidationError } from './errors';
@@ -13,6 +11,8 @@ import { harmonyMimeTypeToName, mimeTypeAliases } from './file-formats';
 import {
   ParameterParseError, parseMultiValueParameter, parseNumber,
 } from './parameter-parsing-helpers';
+import DataOperation from '../models/data-operation';
+import HarmonyRequest from '../models/harmony-request';
 
 /**
  * Helper function to convert parameter parsing errors into 400 errors for an end

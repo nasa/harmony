@@ -1,6 +1,9 @@
 import _ from 'lodash';
 import { Logger } from 'winston';
 
+import * as thisModule from './query';
+import StacCatalog from './stac/catalog';
+import CmrStacCatalog from './stac/cmr-catalog';
 import {
   getResultsLimitedMessageImpl, GranuleLimitReason,
 } from '../../harmony/app/middleware/cmr-granule-locator';
@@ -8,9 +11,6 @@ import DataOperation from '../../harmony/app/models/data-operation';
 import { queryGranulesWithSearchAfter } from '../../harmony/app/util/cmr';
 import { CmrError, RequestValidationError, ServerError } from '../../harmony/app/util/errors';
 // Trick let test stubs work by using indirect function calls
-import * as thisModule from './query';
-import StacCatalog from './stac/catalog';
-import CmrStacCatalog from './stac/cmr-catalog';
 
 export interface DataSource {
   collection: string;

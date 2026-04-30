@@ -1,11 +1,13 @@
 import { expect } from 'chai';
-import ServiceDeployment, { ServiceDeploymentStatus } from '../app/models/service-deployment';
+import MockDate from 'mockdate';
+import request from 'supertest';
+
 import { auth } from './helpers/auth';
 import { hookTransaction } from './helpers/db';
 import { hookRedirect } from './helpers/hooks';
 import hookServersStartStop from './helpers/servers';
-import request from 'supertest';
-import MockDate from 'mockdate';
+import ServiceDeployment, { ServiceDeploymentStatus } from '../app/models/service-deployment';
+
 
 describe('List service deployments endpoint', async function () {
   const failedFooDeployment = new ServiceDeployment({ deployment_id: 'abc', service: 'foo-service',

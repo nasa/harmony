@@ -1,6 +1,8 @@
+import url from 'url';
+
 import { afterEach, beforeEach } from 'mocha';
 import request from 'supertest';
-import url from 'url';
+
 import { Job } from '../../app/models/job';
 import db from '../../app/util/db';
 import { getNextCallback } from '../../example/http-backend';

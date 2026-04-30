@@ -1,10 +1,12 @@
 /* eslint-disable @typescript-eslint/dot-notation */
+import { IncomingHttpHeaders } from 'http';
+
 import { parse } from 'cookie';
 import { Application } from 'express';
 import { after, before } from 'mocha';
 import request, { Test } from 'supertest';
+
 import { auth } from './auth';
-import { IncomingHttpHeaders } from 'http';
 
 export const defaultCollection = 'C1233800302-EEDTEST';
 export const defaultGranuleId = 'G1233800352-EEDTEST';

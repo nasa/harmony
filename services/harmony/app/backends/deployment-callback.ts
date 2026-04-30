@@ -1,8 +1,9 @@
 import { Response } from 'express';
+import _ from 'lodash';
+
 import HarmonyRequest from '../models/harmony-request';
 import * as services from '../models/services/index';
 import env from '../util/env';
-import _ from 'lodash';
 
 /**
  * Express.js handler that handls deployment callback message for deploying a service.

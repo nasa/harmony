@@ -1,6 +1,6 @@
+import { expect } from 'chai';
 import { describe, it, before, after } from 'mocha';
 import request from 'supertest';
-import { expect } from 'chai';
 
 /**
  * Adds `it` statements that assert that the given error has occurred on the

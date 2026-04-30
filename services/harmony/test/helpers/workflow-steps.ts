@@ -1,11 +1,12 @@
-import { afterEach, beforeEach } from 'mocha';
 import _ from 'lodash';
-import WorkflowStep, { WorkflowStepRecord } from '../../app/models/workflow-steps';
-import db, { Transaction } from '../../app/util/db';
-import { truncateAll } from './db';
+import { afterEach, beforeEach } from 'mocha';
+
 import { parseSchemaFile } from './data-operation';
+import { truncateAll } from './db';
 import DataOperation, { CURRENT_SCHEMA_VERSION } from '../../app/models/data-operation';
 import { RecordConstructor } from '../../app/models/record';
+import WorkflowStep, { WorkflowStepRecord } from '../../app/models/workflow-steps';
+import db, { Transaction } from '../../app/util/db';
 
 const baseOperation = new DataOperation(parseSchemaFile('valid-operation-input.json'));
 export const validOperation = baseOperation.serialize(CURRENT_SCHEMA_VERSION);

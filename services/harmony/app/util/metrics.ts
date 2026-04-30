@@ -2,10 +2,10 @@
 // modify anything in here unless all of the projects are making a change.
 // See https://wiki.earthdata.nasa.gov/spaces/GMETS/pages/248026243/Transformation+Train+Schema
 
+import { isFailureStatus } from './job';
 import DataOperation from '../models/data-operation';
 import HarmonyRequest from '../models/harmony-request';
 import { Job } from '../models/job';
-import { isFailureStatus } from './job';
 
 export interface BboxMetric {
   north: number;

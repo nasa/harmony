@@ -1,5 +1,6 @@
 import fs, { promises } from 'fs';
 import path from 'path';
+
 import { SinonStub, spy, stub } from 'sinon';
 
 import * as query from '../../app/query';

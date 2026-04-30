@@ -1,10 +1,11 @@
-import { keysToLowerCase } from '../../util/object';
-import { ParameterParseError, mergeParameters, parseWkt, validateWkt } from '../../util/parameter-parsing-helpers';
 import { Response, NextFunction } from 'express';
+
+import { getDataCommon } from './get-data-common';
 import HarmonyRequest from '../../models/harmony-request';
 import env from '../../util/env';
 import { RequestValidationError } from '../../util/errors';
-import { getDataCommon } from './get-data-common';
+import { keysToLowerCase } from '../../util/object';
+import { ParameterParseError, mergeParameters, parseWkt, validateWkt } from '../../util/parameter-parsing-helpers';
 
 type Point = { x: number, y: number };
 

@@ -1,5 +1,6 @@
-import { describe, it } from 'mocha';
 import { expect } from 'chai';
+import { describe, it } from 'mocha';
+
 import { Spatial, computeMbr, computeUmmMbr } from '../../../app/util/spatial/mbr';
 import { PointType, LineType, BoundingRectangleType, GPolygonType } from '../../../app/util/spatial/umm-spatial';
 

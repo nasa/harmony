@@ -1,6 +1,8 @@
 import { expect } from 'chai';
 import _ from 'lodash';
-import hookServersStartStop from '../helpers/servers';
+
+import { JobStatus, Job } from '../../app/models/job';
+import db from '../../app/util/db';
 import { hookTransaction } from '../helpers/db';
 import {
   buildJob,
@@ -9,8 +11,7 @@ import {
   hookResumeJobs,
   hookSkipPreviewJobs,
 } from '../helpers/jobs';
-import db from '../../app/util/db';
-import { JobStatus, Job } from '../../app/models/job';
+import hookServersStartStop from '../helpers/servers';
 
 
 describe('jobs/cancel, jobs/resume, jobs/skip-preview, jobs/resume', function () {

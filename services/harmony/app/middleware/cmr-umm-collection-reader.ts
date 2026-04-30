@@ -1,6 +1,7 @@
 import { NextFunction } from 'express';
-import { getUmmCollectionsByIds } from '../util/cmr';
+
 import HarmonyRequest from '../models/harmony-request';
+import { getUmmCollectionsByIds } from '../util/cmr';
 
 /**
  * Express.js middleware that reads the UMM JSON format of the collections and load them into operation
@@ -23,4 +24,4 @@ async function cmrUmmCollectionReader(req: HarmonyRequest, res, next: NextFuncti
   }
 }
 
-export = cmrUmmCollectionReader;
+export default cmrUmmCollectionReader;

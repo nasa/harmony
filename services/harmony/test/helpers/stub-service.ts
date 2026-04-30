@@ -3,10 +3,11 @@ import { before, after, beforeEach, afterEach } from 'mocha';
 import { stub, SinonStub } from 'sinon';
 import request from 'superagent';
 import { Logger } from 'winston';
+
 import { CallbackQuery } from '../../app/backends/service-response';
+import DataOperation from '../../app/models/data-operation';
 import BaseService, { ServiceConfig } from '../../app/models/services/base-service';
 import * as services from '../../app/models/services/index';
-import DataOperation from '../../app/models/data-operation';
 import InvocationResult from '../../app/models/services/invocation-result';
 import WorkflowStep from '../../app/models/workflow-steps';
 

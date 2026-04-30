@@ -1,6 +1,6 @@
-import JobLink from '../models/job-link';
 import { objectStoreForProtocol } from './object-store';
 import { resolve } from './url';
+import JobLink from '../models/job-link';
 
 /**
  * A link within a STAC item or catalog

@@ -1,5 +1,6 @@
-import { describe, it } from 'mocha';
 import { expect } from 'chai';
+import { describe, it } from 'mocha';
+
 import { LatLng } from '../../../app/util/spatial/coordinate';
 import { calculateArea, getShape } from '../../../app/util/spatial/geo';
 

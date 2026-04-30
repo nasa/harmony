@@ -4,6 +4,10 @@ import axios from 'axios';
 import { v4 as uuid } from 'uuid';
 import { Logger } from 'winston';
 
+import { createDecrypter, createEncrypter } from './crypto';
+import env from './env';
+import { objectStoreForProtocol } from './object-store';
+import { getCatalogItemUrls, getCatalogLinks, readCatalogItems } from './stac';
 import { makeWorkScheduleRequest } from '../backends/workflow-orchestration/work-item-polling';
 import { Batch, withHighestBatchIDForJobService } from '../models/batch';
 import BatchItem, {
@@ -17,10 +21,6 @@ import { WorkItemStatus } from '../models/work-item-interface';
 import WorkItemUpdate from '../models/work-item-update';
 import WorkflowStep from '../models/workflow-steps';
 import { Transaction } from '../util/db';
-import { createDecrypter, createEncrypter } from './crypto';
-import env from './env';
-import { objectStoreForProtocol } from './object-store';
-import { getCatalogItemUrls, getCatalogLinks, readCatalogItems } from './stac';
 
 /**
  * Get the size in bytes of the object at the given url

@@ -2,11 +2,12 @@
  * This file adds an implementation of the ObjectStore protocol for saving files to a local
  * file system as opposed to S3. It is currently used to replace S3 interactions in tests.
  */
-import { HeadObjectResponse, MulterFile, ObjectStore } from './object-store';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as stream from 'stream';
 import * as util from 'util';
+
+import { HeadObjectResponse, MulterFile, ObjectStore } from './object-store';
 
 
 const pipeline = util.promisify(stream.pipeline);

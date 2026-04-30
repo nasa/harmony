@@ -1,4 +1,5 @@
 import { pick } from 'lodash';
+
 import JobLink from '../models/job-link';
 
 export interface SerializableCatalog {

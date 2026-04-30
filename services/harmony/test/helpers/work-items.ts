@@ -3,6 +3,11 @@ import _ from 'lodash';
 import { afterEach, beforeEach } from 'mocha';
 import request, { Test } from 'supertest';
 
+import { truncateAll } from './db';
+import { hookBackendRequest } from './hooks';
+import {
+  buildWorkflowStep, hookWorkflowStepCreation, hookWorkflowStepCreationEach,
+} from './workflow-steps';
 import { RecordConstructor } from '../../app/models/record';
 import WorkItem from '../../app/models/work-item';
 import {
@@ -10,11 +15,6 @@ import {
 } from '../../app/models/work-item-interface';
 import db, { Transaction } from '../../app/util/db';
 import { objectStoreForProtocol } from '../../app/util/object-store';
-import { truncateAll } from './db';
-import { hookBackendRequest } from './hooks';
-import {
-  buildWorkflowStep, hookWorkflowStepCreation, hookWorkflowStepCreationEach,
-} from './workflow-steps';
 
 export const exampleWorkItemProps = {
   jobID: '1',

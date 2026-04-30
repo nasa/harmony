@@ -1,6 +1,7 @@
 import { STSClient, AssumeRoleCommand, AssumeRoleCommandOutput, STSClientConfig,
   AssumeRoleCommandInput, GetCallerIdentityCommandOutput, GetCallerIdentityCommand,
 } from '@aws-sdk/client-sts';
+
 import env from './env';
 
 const { awsDefaultRegion } = env;

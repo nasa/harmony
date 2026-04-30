@@ -1,7 +1,8 @@
-import * as tmp from 'tmp';
-import { FileStore } from '../../app/util/object-store/file-store';
-import * as objectStore from '../../app/util/object-store';
 import { stub } from 'sinon';
+import * as tmp from 'tmp';
+
+import * as objectStore from '../../app/util/object-store';
+import { FileStore } from '../../app/util/object-store/file-store';
 
 /**
  * Causes calls to aws.S3 to return a mock S3 object that stores to a temp dir on the

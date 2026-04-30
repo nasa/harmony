@@ -2,6 +2,16 @@ import { expect } from 'chai';
 import { stub } from 'sinon';
 import { v4 as uuid } from 'uuid';
 
+import { truncateAll } from './helpers/db';
+import { hookRedirect } from './helpers/hooks';
+import { buildJob, getFirstJob } from './helpers/jobs';
+import { hookRangesetRequest } from './helpers/ogc-api-coverages';
+import { resetQueues } from './helpers/queue';
+import hookServersStartStop from './helpers/servers';
+import {
+  buildWorkItem, fakeServiceStacOutput, getWorkForService, hookGetWorkForService, updateWorkItem,
+} from './helpers/work-items';
+import { buildWorkflowStep } from './helpers/workflow-steps';
 import { Job, JobStatus } from '../app/models/job';
 import {
   getCount, populateUserWorkFromWorkItems, recalculateCounts,
@@ -16,16 +26,6 @@ import {
 import * as aggregationBatch from '../app/util/aggregation-batch';
 import db from '../app/util/db';
 import env from '../app/util/env';
-import { truncateAll } from './helpers/db';
-import { hookRedirect } from './helpers/hooks';
-import { buildJob, getFirstJob } from './helpers/jobs';
-import { hookRangesetRequest } from './helpers/ogc-api-coverages';
-import { resetQueues } from './helpers/queue';
-import hookServersStartStop from './helpers/servers';
-import {
-  buildWorkItem, fakeServiceStacOutput, getWorkForService, hookGetWorkForService, updateWorkItem,
-} from './helpers/work-items';
-import { buildWorkflowStep } from './helpers/workflow-steps';
 
 /**
  * Create a job and some work steps/items to be used by tests

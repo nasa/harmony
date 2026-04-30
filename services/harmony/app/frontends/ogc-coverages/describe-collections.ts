@@ -1,11 +1,12 @@
 import { Response } from 'express';
-import { CmrCollection, CmrUmmVariable } from '../../util/cmr';
+
 import HarmonyRequest from '../../models/harmony-request';
+import { getServiceConfigs } from '../../models/services';
+import { CmrCollection, CmrUmmVariable } from '../../util/cmr';
 import { RequestValidationError } from '../../util/errors';
 import { keysToLowerCase } from '../../util/object';
 import { getSanitizedRequestUrl } from '../../util/url';
 import { parseVariables, fullPath, getVariableInfo } from '../../util/variables';
-import { getServiceConfigs } from '../../models/services';
 
 const WGS84 = 'http://www.opengis.net/def/crs/OGC/1.3/CRS84';
 const gregorian = 'http://www.opengis.net/def/uom/ISO-8601/0/Gregorian';

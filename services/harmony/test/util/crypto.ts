@@ -1,5 +1,6 @@
-import { describe, it } from 'mocha';
 import { expect } from 'chai';
+import { describe, it } from 'mocha';
+
 import { createEncrypter, createDecrypter } from '../../app/util/crypto';
 
 describe('util/crypto', function () {

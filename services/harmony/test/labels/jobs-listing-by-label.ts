@@ -1,8 +1,9 @@
 import { expect } from 'chai';
+
+import db from '../../app/util/db';
 import { buildJob, hookAdminJobListing, hookJobListing } from '../helpers/jobs';
 import { addJobsLabels } from '../helpers/labels';
 import hookServersStartStop from '../helpers/servers';
-import db from '../../app/util/db';
 
 describe('Get jobs listing by label', function () {
   hookServersStartStop({ USE_EDL_CLIENT_APP: true });

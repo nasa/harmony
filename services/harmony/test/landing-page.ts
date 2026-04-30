@@ -1,7 +1,8 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
-import hookServersStartStop from './helpers/servers';
+
 import { hookLandingPage } from './helpers/landing-page';
+import hookServersStartStop from './helpers/servers';
 import env from '../app/util/env';
 import version from '../app/util/version';
 

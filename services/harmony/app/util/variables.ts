@@ -1,10 +1,10 @@
 import { NextFunction, Response } from 'express';
 
-import HarmonyRequest from '../models/harmony-request';
 import { CmrCollection, CmrUmmVariable, getVisualizationsForVariable } from './cmr';
 import { RequestValidationError } from './errors';
 import { parseMultiValueParameter } from './parameter-parsing-helpers';
 import { CmrUmmVisualization } from './umm-vis';
+import HarmonyRequest from '../models/harmony-request';
 
 export interface HarmonyVariable {
   id: string;

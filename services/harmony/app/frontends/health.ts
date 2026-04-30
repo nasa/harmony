@@ -1,11 +1,12 @@
 import { Response, NextFunction } from 'express';
-import { getCmrHealth } from '../util/cmr';
-import { isEdlHealthy } from '../util/edl-api';
+
 import HarmonyRequest from '../models/harmony-request';
 import { Job } from '../models/job';
-import logger from '../util/log';
 import RequestContext from '../models/request-context';
+import { getCmrHealth } from '../util/cmr';
 import db from '../util/db';
+import { isEdlHealthy } from '../util/edl-api';
+import logger from '../util/log';
 
 export enum HealthStatus {
   UP = 'up',
