@@ -251,14 +251,14 @@ describe('handleFormat', function () {
 
     describe('unknown formats', function () {
       it('passes through unrecognized mime types as-is (lowercased)', function () {
-        handleFormat(operation, 'application/x-unknown', req);
+        handleFormat(operation, 'application/X-UNKNOWN', req);
         expect(operation.outputFormat).to.equal('application/x-unknown');
       });
+    });
 
-      it('does not set req.context.requestedMimeTypes', function () {
-        handleFormat(operation, 'image/png', req);
-        expect(req.context.requestedMimeTypes).to.be.undefined;
-      });
+    it('does not set req.context.requestedMimeTypes', function () {
+      handleFormat(operation, 'image/png', req);
+      expect(req.context.requestedMimeTypes).to.be.undefined;
     });
   });
 
