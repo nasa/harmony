@@ -133,21 +133,6 @@ export default tseslint.config(
       'import-x/no-duplicates': 'warn',
       'import-x/no-extraneous-dependencies': ['error', { devDependencies: false }],
       'import-x/no-named-as-default': 'warn',
-
-      // --- Rules turned off (intentional) ---
-      'class-methods-use-this': 'off',
-      'no-underscore-dangle': 'off',
-      'no-await-in-loop': 'off',
-      'no-plusplus': 'off',
-      'prefer-arrow-callback': 'error',
-      'func-names': 'off',
-      'import-x/named': 'off', // TypeScript handles this
-      'import-x/no-named-as-default-member': 'off', // false positives with TS
-      'import-x/no-unresolved': 'off', // TypeScript handles import resolution
-      // ban-types was 'off' in old config; these are its v8 replacements, kept off
-      '@typescript-eslint/no-unsafe-function-type': 'off',
-      '@typescript-eslint/no-wrapper-object-types': 'off',
-      '@typescript-eslint/no-empty-object-type': 'off',
       'import-x/order': ['error', {
         groups: [
           'builtin',
@@ -168,6 +153,21 @@ export default tseslint.config(
           caseInsensitive: true,
         },
       }],
+
+      // --- Rules turned off (intentional) ---
+      'class-methods-use-this': 'off',
+      'no-underscore-dangle': 'off',
+      'no-await-in-loop': 'off',
+      'no-plusplus': 'off',
+      'prefer-arrow-callback': 'error',
+      'func-names': 'off',
+      'import-x/named': 'off', // TypeScript handles this
+      'import-x/no-named-as-default-member': 'off', // false positives with TS
+      'import-x/no-unresolved': 'off', // TypeScript handles import resolution
+      // ban-types was 'off' in old config; these are its v8 replacements, kept off
+      '@typescript-eslint/no-unsafe-function-type': 'off',
+      '@typescript-eslint/no-wrapper-object-types': 'off',
+      '@typescript-eslint/no-empty-object-type': 'off',
     },
   },
 
