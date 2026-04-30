@@ -1,19 +1,19 @@
 import cluster from 'cluster';
-import express, { NextFunction, RequestHandler, Response } from 'express';
-import expressWinston from 'express-winston';
 import * as fs from 'fs';
 import * as http from 'http';
 import * as https from 'https';
-import mustacheExpress from 'mustache-express';
 import os from 'os';
 import * as path from 'path';
-import qs from 'qs';
-import favicon from 'serve-favicon';
 import { promisify } from 'util';
-import { v4 as uuid } from 'uuid';
-import { Logger } from 'winston';
 
 import { profanity } from '@2toad/profanity';
+import express, { NextFunction, RequestHandler, Response } from 'express';
+import expressWinston from 'express-winston';
+import mustacheExpress from 'mustache-express';
+import qs from 'qs';
+import favicon from 'serve-favicon';
+import { v4 as uuid } from 'uuid';
+import { Logger } from 'winston';
 
 import * as exampleBackend from '../example/http-backend';
 import cmrCollectionReader from './middleware/cmr-collection-reader';

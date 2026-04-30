@@ -1,9 +1,10 @@
 
-import { describe, it } from 'mocha';
 import { expect } from 'chai';
+import { describe, it } from 'mocha';
+
+import { hookRangesetRequest } from '../helpers/ogc-api-coverages';
 import hookServersStartStop from '../helpers/servers';
 import StubService from '../helpers/stub-service';
-import { hookRangesetRequest } from '../helpers/ogc-api-coverages';
 
 const query = {
   maxResults: 1,

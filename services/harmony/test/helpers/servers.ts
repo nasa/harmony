@@ -1,9 +1,9 @@
 import { after, before } from 'mocha';
 import { stub } from 'sinon';
 
+import { stubEdlRequest, token, unstubEdlRequest } from './auth';
 import * as harmony from '../../app/server';
 import env from '../../app/util/env';
-import { stubEdlRequest, token, unstubEdlRequest } from './auth';
 
 process.env.EXAMPLE_SERVICES = 'true';
 

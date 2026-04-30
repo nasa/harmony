@@ -1,15 +1,16 @@
 import { expect } from 'chai';
 import { describe, it, before } from 'mocha';
-import { JobStatus } from '../../app/models/job';
-import hookServersStartStop from '../helpers/servers';
-import { hookTransaction } from '../helpers/db';
-import { buildJob } from '../helpers/jobs';
-import { hookAdminWorkflowUIJobRows, hookWorkflowUIJobRows } from '../helpers/workflow-ui';
-import * as sinon from 'sinon';
-import * as services from '../../app/models/services';
 import MockDate from 'mockdate';
 import * as mustache from 'mustache';
+import * as sinon from 'sinon';
+
+import { JobStatus } from '../../app/models/job';
 import { setLabelsForJob } from '../../app/models/label';
+import * as services from '../../app/models/services';
+import { hookTransaction } from '../helpers/db';
+import { buildJob } from '../helpers/jobs';
+import hookServersStartStop from '../helpers/servers';
+import { hookAdminWorkflowUIJobRows, hookWorkflowUIJobRows } from '../helpers/workflow-ui';
 
 
 // main objects used in the tests

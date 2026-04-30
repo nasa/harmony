@@ -2,9 +2,9 @@ import { CloudWatchClient, GetMetricStatisticsCommand } from '@aws-sdk/client-cl
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import * as k8s from '@kubernetes/client-node';
 
+import { CronJob } from './cronjob';
 import { Context } from '../util/context';
 import env from '../util/env';
-import { CronJob } from './cronjob';
 
 const NAMESPACE = 'harmony';
 const METRIC_NAME = 'pod_memory_working_set';

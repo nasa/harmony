@@ -1,8 +1,9 @@
-import { IsInt, Min } from 'class-validator';
 import * as path from 'path';
 
-import { HarmonyEnv } from '../../../../packages/util/env';
+import { IsInt, Min } from 'class-validator';
+
 import { IsCrontab } from './cron-validation';
+import { HarmonyEnv } from '../../../../packages/util/env';
 
 //
 // env module

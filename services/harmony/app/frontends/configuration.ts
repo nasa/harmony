@@ -1,8 +1,9 @@
 import { Response, NextFunction } from 'express';
-import { configureLogLevel } from '../util/log';
+
 import HarmonyRequest from '../models/harmony-request';
-import { keysToLowerCase } from '../util/object';
 import { RequestValidationError } from '../util/errors';
+import { configureLogLevel } from '../util/log';
+import { keysToLowerCase } from '../util/object';
 
 /**
  * Admin interface for configuring Harmony.

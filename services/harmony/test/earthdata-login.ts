@@ -1,12 +1,12 @@
+import axios from 'axios';
 import { expect } from 'chai';
 import { describe, it, beforeEach, afterEach } from 'mocha';
-import request from 'supertest';
-import axios from 'axios';
 import { SinonStub, match } from 'sinon';
+import request from 'supertest';
 
-import hookServersStartStop from './helpers/servers';
 import { auth, authRedirect, token, stubEdlRequest, stubEdlError, unstubEdlRequest } from './helpers/auth';
 import { itRespondsWithError } from './helpers/errors';
+import hookServersStartStop from './helpers/servers';
 import StubService from './helpers/stub-service';
 import { wmsRequest } from './helpers/wms';
 

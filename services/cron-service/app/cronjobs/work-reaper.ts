@@ -1,5 +1,6 @@
 import { subMinutes } from 'date-fns';
 
+import { CronJob } from './cronjob';
 import { JobStatus, terminalStates } from '../../../harmony/app/models/job';
 import {
   deleteWorkItemsById, getWorkItemIdsByJobUpdateAgeAndStatus,
@@ -9,7 +10,6 @@ import {
 } from '../../../harmony/app/models/workflow-steps';
 import { Context } from '../util/context';
 import env from '../util/env';
-import { CronJob } from './cronjob';
 
 /**
  * Find work items that are older than updatedAtCutoff and delete them.

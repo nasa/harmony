@@ -3,6 +3,10 @@ import _ from 'lodash';
 import { afterEach, beforeEach } from 'mocha';
 import request, { Test } from 'supertest';
 
+import { truncateAll } from './db';
+import {
+  buildWorkflowStep, hookWorkflowStepCreation, hookWorkflowStepCreationEach,
+} from './workflow-steps';
 import { RecordConstructor } from '../../../harmony/app/models/record';
 import WorkItem from '../../../harmony/app/models/work-item';
 import {
@@ -11,10 +15,6 @@ import {
 import db, { Transaction } from '../../../harmony/app/util/db';
 import { objectStoreForProtocol } from '../../../harmony/app/util/object-store';
 import { hookBackendRequest } from '../../../harmony/test/helpers/hooks';
-import { truncateAll } from './db';
-import {
-  buildWorkflowStep, hookWorkflowStepCreation, hookWorkflowStepCreationEach,
-} from './workflow-steps';
 
 export const exampleWorkItemProps = {
   jobID: '1',

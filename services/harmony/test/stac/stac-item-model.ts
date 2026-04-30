@@ -2,10 +2,12 @@ import Ajv, { ValidateFunction } from 'ajv';
 import addFormats from 'ajv-formats';
 import apply from 'ajv-formats-draft2019';
 import axios from 'axios';
-import { describe, it } from 'mocha';
 import { expect } from 'chai';
+import { describe, it } from 'mocha';
+
 import create, { HarmonyItem } from '../../app/frontends/stac-item';
 import { buildJob } from '../helpers/jobs';
+import * as schema from '../resources/stac-schema/1.0.0/item.json';
 
 // Prop for testing
 const jobProps = {
@@ -82,8 +84,6 @@ async function loadSchema(url: string): Promise<Object> {
   if (res.status >= 400) throw new Error('Error loading JSON schema: ' + res.status);
   return res.data;
 }
-
-import * as schema from '../resources/stac-schema/1.0.0/item.json';
 
 /**
  *  Create a validator for STAC schema files

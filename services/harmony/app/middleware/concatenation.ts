@@ -1,8 +1,9 @@
 import { NextFunction, Response } from 'express';
-import { ParameterParseError, parseBoolean } from '../util/parameter-parsing-helpers';
+
 import HarmonyRequest from '../models/harmony-request';
 import { RequestValidationError } from '../util/errors';
 import { keysToLowerCase } from '../util/object';
+import { ParameterParseError, parseBoolean } from '../util/parameter-parsing-helpers';
 
 /**
  * Middleware to determine whether the request should concatenate results. Called prior

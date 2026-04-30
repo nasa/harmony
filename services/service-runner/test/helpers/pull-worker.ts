@@ -1,6 +1,7 @@
-import { exportedForTesting } from '../../app/workers/pull-worker';
 import MockAdapter from 'axios-mock-adapter';
+
 import WorkItem from '../../../harmony/app/models/work-item';
+import { exportedForTesting } from '../../app/workers/pull-worker';
 
 /**
  * Hooks get work request. The mock axios object will respond an unlimitted number of times

@@ -1,7 +1,8 @@
 import { Response, NextFunction } from 'express';
-import { mergeParameters } from '../../util/parameter-parsing-helpers';
+
 import getCoverageRangeset from './get-coverage-rangeset';
 import HarmonyRequest from '../../models/harmony-request';
+import { mergeParameters } from '../../util/parameter-parsing-helpers';
 
 /**
  * Express middleware that responds to OGC API - Coverages coverage

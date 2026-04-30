@@ -1,11 +1,11 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
 
-import hookServersStartStop from './helpers/servers';
-import StubService from './helpers/stub-service';
-import { hookRangesetRequest } from './helpers/ogc-api-coverages';
-import { hookEdlTokenAuthentication, hookEdlTokenAuthenticationError } from './helpers/stub-edl-token';
 import { hookLandingPage } from './helpers/landing-page';
+import { hookRangesetRequest } from './helpers/ogc-api-coverages';
+import hookServersStartStop from './helpers/servers';
+import { hookEdlTokenAuthentication, hookEdlTokenAuthenticationError } from './helpers/stub-edl-token';
+import StubService from './helpers/stub-service';
 
 describe('Earthdata login bearer token passing', function () {
   const collection = 'C1233800302-EEDTEST';

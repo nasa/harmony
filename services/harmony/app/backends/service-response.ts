@@ -1,11 +1,12 @@
 import { Response, Request } from 'express';
 import _ from 'lodash';
 import { Logger } from 'winston';
-import JobLink from '../models/job-link';
-import log from '../util/log';
-import { ServerError, RequestValidationError } from '../util/errors';
-import db from '../util/db';
+
 import { Job, JobStatus } from '../models/job';
+import JobLink from '../models/job-link';
+import db from '../util/db';
+import { ServerError, RequestValidationError } from '../util/errors';
+import log from '../util/log';
 import { objectStoreForProtocol } from '../util/object-store';
 
 export interface CallbackQueryItem {

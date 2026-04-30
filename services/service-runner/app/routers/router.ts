@@ -1,4 +1,5 @@
 import express, { NextFunction } from 'express';
+
 import { generateMetricsForPrometheus } from '../service/service-metrics';
 
 /**

@@ -1,7 +1,7 @@
 import * as k8s from '@kubernetes/client-node';
 
-import { Context } from '../util/context';
 import { CronJob } from './cronjob';
+import { Context } from '../util/context';
 
 /**
  * Checks if HPAs are functioning as expected and if not functioning kills

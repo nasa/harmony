@@ -1,9 +1,10 @@
-import { describe, it } from 'mocha';
 import { expect } from 'chai';
+import { describe, it } from 'mocha';
+
 import create, { SerializableCatalog } from '../../app/frontends/stac-catalog';
 import { JobStatus } from '../../app/models/job';
-import { buildJob } from '../helpers/jobs';
 import { linksWithStacData } from '../../app/util/stac';
+import { buildJob } from '../helpers/jobs';
 
 // Prop for testing
 const jobProps = {

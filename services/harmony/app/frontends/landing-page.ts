@@ -1,7 +1,8 @@
 import { Response } from 'express';
+
 import HarmonyRequest from '../models/harmony-request';
-import { getRequestRoot } from '../util/url';
 import env from '../util/env';
+import { getRequestRoot } from '../util/url';
 import version from '../util/version';
 
 /**

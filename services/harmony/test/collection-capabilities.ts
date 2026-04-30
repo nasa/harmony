@@ -1,9 +1,9 @@
 import { expect } from 'chai';
 import _ from 'lodash';
 
-import { stableApiVersion } from '../app/frontends/capabilities';
 import { hookGetCollectionCapabilities } from './helpers/capabilities';
 import hookServersStartStop from './helpers/servers';
+import { stableApiVersion } from '../app/frontends/capabilities';
 
 // This is the concept ID of the most recently updated collection with a
 // short name of "harmony_example". There are 3 collections with the same

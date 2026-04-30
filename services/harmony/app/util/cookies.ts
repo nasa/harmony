@@ -7,12 +7,14 @@
  * containing the cookie name, value, and options.
  */
 
+import { randomBytes } from 'crypto';
+
 import { Response } from 'express';
+import { get } from 'lodash';
+
 import { mergeParameters } from './parameter-parsing-helpers';
 import * as urlUtil from './url';
 import HarmonyRequest from '../models/harmony-request';
-import { get } from 'lodash';
-import { randomBytes } from 'crypto';
 
 export const cookieOptions = { signed: true, sameSite: 'lax' as const };
 

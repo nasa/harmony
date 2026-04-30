@@ -1,7 +1,8 @@
 import { Response, NextFunction } from 'express';
+
 import HarmonyRequest from '../models/harmony-request';
-import { parseMultiValueParameter } from '../util/parameter-parsing-helpers';
 import { keysToLowerCase } from '../util/object';
+import { parseMultiValueParameter } from '../util/parameter-parsing-helpers';
 
 /**
  * Express.js middleware to convert jobId parameter to an array (if needed) and add

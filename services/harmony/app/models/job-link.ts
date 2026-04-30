@@ -1,8 +1,9 @@
 import { ILengthAwarePagination } from 'knex-paginate'; // For types only
 import _ from 'lodash';
+
+import Record from './record';
 import db, { Transaction } from '../util/db';
 import { removeEmptyProperties } from '../util/object';
-import Record from './record';
 
 /**
  * Fields that both JobLink and JobLinkRecords have in common

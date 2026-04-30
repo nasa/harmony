@@ -1,13 +1,15 @@
-import { expect } from 'chai';
 import { profanity } from '@2toad/profanity';
+import { expect } from 'chai';
+import { stub } from 'sinon';
+
+import { getRecentLabelsForUser } from '../../app/models/label';
+import db from '../../app/util/db';
+import env from '../../app/util/env';
 import { hookTransaction, truncateAll } from '../helpers/db';
 import { buildJob, getFirstJob } from '../helpers/jobs';
 import { addJobsLabels, deleteJobsLabels } from '../helpers/labels';
 import hookServersStartStop from '../helpers/servers';
-import db from '../../app/util/db';
-import env from '../../app/util/env';
-import { stub } from 'sinon';
-import { getRecentLabelsForUser } from '../../app/models/label';
+
 
 describe('Get Labels', function () {
   const joeJob = buildJob({ username: 'joe' });

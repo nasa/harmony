@@ -1,7 +1,9 @@
 import { expect } from 'chai';
 import _ from 'lodash';
-import hookServersStartStop from '../helpers/servers';
+
+import { JobStatus, Job } from '../../app/models/job';
 import { hookTransaction } from '../helpers/db';
+import { hookRedirect } from '../helpers/hooks';
 import {
   jobsEqual,
   cancelJob,
@@ -14,8 +16,7 @@ import {
   hookAdminCancelJobWithGET,
   buildJob,
 } from '../helpers/jobs';
-import { hookRedirect } from '../helpers/hooks';
-import { JobStatus, Job } from '../../app/models/job';
+import hookServersStartStop from '../helpers/servers';
 
 describe('Canceling a job - user endpoint', function () {
   const cancelEndpointHooks = {

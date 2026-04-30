@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { describe } from 'mocha';
-
 import request from 'supertest';
+
 import { describeErrorCondition } from './helpers/errors';
 import hookServersStartStop from './helpers/servers';
 

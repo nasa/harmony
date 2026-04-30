@@ -1,4 +1,5 @@
 import { stub, SinonStub } from 'sinon';
+
 import { ECR, ImageDetails } from '../../app/util/container-registry';
 
 /**

@@ -1,8 +1,15 @@
 import { expect } from 'chai';
-import { v4 as uuid } from 'uuid';
 import _ from 'lodash';
-import hookServersStartStop from '../helpers/servers';
+import { v4 as uuid } from 'uuid';
+
+import DataOperation from '../../app/models/data-operation';
+import { JobRecord, JobStatus, Job } from '../../app/models/job';
+import { getWorkflowStepsByJobId } from '../../app/models/workflow-steps';
+import { createDecrypter, createEncrypter } from '../../app/util/crypto';
+import db from '../../app/util/db';
+import env from '../../app/util/env';
 import { hookTransaction } from '../helpers/db';
+import { hookRedirect } from '../helpers/hooks';
 import {
   jobsEqual,
   resumeJob,
@@ -20,13 +27,7 @@ import {
   hookAdminPauseJobWithGET,
   hookAdminPauseJob,
 } from '../helpers/jobs';
-import { hookRedirect } from '../helpers/hooks';
-import { JobRecord, JobStatus, Job } from '../../app/models/job';
-import { getWorkflowStepsByJobId } from '../../app/models/workflow-steps';
-import db from '../../app/util/db';
-import { createDecrypter, createEncrypter } from '../../app/util/crypto';
-import env from '../../app/util/env';
-import DataOperation from '../../app/models/data-operation';
+import hookServersStartStop from '../helpers/servers';
 import { buildWorkflowStep } from '../helpers/workflow-steps';
 
 const normalUsername = 'joe';

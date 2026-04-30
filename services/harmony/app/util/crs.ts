@@ -1,5 +1,5 @@
-import { SRS } from '../models/data-operation';
 import { RequestValidationError } from './errors';
+import { SRS } from '../models/data-operation';
 import { fromUserInput } from './spatial/spatial-ref';
 
 /**

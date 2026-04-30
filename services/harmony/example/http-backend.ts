@@ -21,11 +21,13 @@
  * for `handleHarmonyMessage` below for details.
  */
 
+import * as http from 'http';
+import { promisify } from 'util';
+
 import axios from 'axios';
 import express from 'express';
-import * as http from 'http';
 import * as winston from 'winston';
-import { promisify } from 'util';
+
 
 interface BackendRequest extends express.Request {
   rawBody?: string;

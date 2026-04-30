@@ -1,6 +1,6 @@
+import env from './env';
 import { canTransition, JobEvent, JobForDisplay, JobStatus } from '../models/job';
 import JobLink from '../models/job-link';
-import env from './env';
 
 const { awsDefaultRegion } = env;
 

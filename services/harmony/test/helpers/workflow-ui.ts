@@ -1,5 +1,6 @@
-import request, { Test } from 'supertest';
 import _ from 'lodash';
+import request, { Test } from 'supertest';
+
 import { hookRequest } from './hooks';
 
 /**

@@ -1,8 +1,9 @@
 import { expect } from 'chai';
 import { describe, it, beforeEach } from 'mocha';
-import HarmonyRequest from '../../app/models/harmony-request';
-import DataOperation from '../../app/models/data-operation';
+
 import { setExtendDimensionsDefault } from '../../app/middleware/extend';
+import DataOperation from '../../app/models/data-operation';
+import HarmonyRequest from '../../app/models/harmony-request';
 
 describe('extend service default value', function () {
   beforeEach(function () {

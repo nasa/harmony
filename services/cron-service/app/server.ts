@@ -1,8 +1,6 @@
 import { Cron } from 'croner';
 import express from 'express';
 
-import db from '../../harmony/app/util/db';
-import log from '../../harmony/app/util/log';
 import { MemoryUsageCollector } from './cronjobs/memory-usage-collector';
 import { PublishServiceFailureMetrics } from './cronjobs/publish-failure-metrics';
 import { RestartPrometheus } from './cronjobs/restart-prometheus';
@@ -11,6 +9,8 @@ import { WorkReaper } from './cronjobs/work-reaper';
 import router from './routers/router';
 import { Context } from './util/context';
 import env from './util/env';
+import db from '../../harmony/app/util/db';
+import log from '../../harmony/app/util/log';
 
 /**
  * Start the application

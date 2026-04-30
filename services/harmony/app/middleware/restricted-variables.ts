@@ -1,9 +1,11 @@
 import { NextFunction, Response } from 'express';
-import HarmonyRequest from '../models/harmony-request';
-import { RequestValidationError } from '../util/errors';
-import DataOperation, { DataSource } from '../models/data-operation';
-import { ServiceCollection, ServiceConfig } from '../models/services/base-service';
 import { partial } from 'lodash';
+
+import DataOperation, { DataSource } from '../models/data-operation';
+import HarmonyRequest from '../models/harmony-request';
+import { ServiceCollection, ServiceConfig } from '../models/services/base-service';
+import { RequestValidationError } from '../util/errors';
+
 
 /**
  * Determines whether or not a given ServiceCollection supports a given DataSource, i.e.,

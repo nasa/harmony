@@ -1,5 +1,8 @@
 import { NextFunction, Response } from 'express';
 
+import {
+  parsePointParam, parseSubsetParams, subsetParamsToBbox, subsetParamsToTemporal,
+} from './util/subset-parameter-parsing';
 import DataOperation from '../../models/data-operation';
 import HarmonyRequest from '../../models/harmony-request';
 import wrap from '../../util/array';
@@ -14,9 +17,6 @@ import {
 } from '../../util/parameter-parsers';
 import { ParameterParseError } from '../../util/parameter-parsing-helpers';
 import { parseVariables } from '../../util/variables';
-import {
-  parsePointParam, parseSubsetParams, subsetParamsToBbox, subsetParamsToTemporal,
-} from './util/subset-parameter-parsing';
 
 /**
  * Express middleware that responds to OGC API - Coverages coverage

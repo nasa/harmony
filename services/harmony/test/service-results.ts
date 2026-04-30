@@ -2,10 +2,10 @@ import { expect } from 'chai';
 import { describe, it } from 'mocha';
 import sinon, { stub } from 'sinon';
 
-import { createPublicPermalink, providerCollectionCache } from '../app/frontends/service-results';
-import { FileStore } from '../app/util/object-store/file-store';
 import { hookUrl } from './helpers/hooks';
 import hookServersStartStop from './helpers/servers';
+import { createPublicPermalink, providerCollectionCache } from '../app/frontends/service-results';
+import { FileStore } from '../app/util/object-store/file-store';
 
 describe('service-results', function () {
   hookServersStartStop({ USE_EDL_CLIENT_APP: true });

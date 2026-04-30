@@ -76,7 +76,7 @@ export default tseslint.config(
       '@stylistic/space-before-blocks': 'error',
       '@stylistic/space-before-function-paren': ['error', { anonymous: 'always', named: 'never', asyncArrow: 'always' }],
       '@stylistic/space-in-parens': ['error', 'never'],
-      '@stylistic/no-multi-spaces': ['error', {'ignoreEOLComments': true}],
+      '@stylistic/no-multi-spaces': ['error', { 'ignoreEOLComments': true }],
       '@stylistic/no-multiple-empty-lines': 'error',
       '@stylistic/space-infix-ops': 'error',
       '@stylistic/key-spacing': 'error',
@@ -148,6 +148,26 @@ export default tseslint.config(
       '@typescript-eslint/no-unsafe-function-type': 'off',
       '@typescript-eslint/no-wrapper-object-types': 'off',
       '@typescript-eslint/no-empty-object-type': 'off',
+      'import-x/order': ['error', {
+        groups: [
+          'builtin',
+          'external',
+          ['internal', 'parent', 'sibling', 'index'],
+        ],
+        pathGroups: [
+          {
+            pattern: '@harmony/**',
+            group: 'internal',
+            position: 'before',
+          },
+        ],
+        pathGroupsExcludedImportTypes: ['builtin'],
+        'newlines-between': 'always',
+        alphabetize: {
+          order: 'asc',
+          caseInsensitive: true,
+        },
+      }],
     },
   },
 

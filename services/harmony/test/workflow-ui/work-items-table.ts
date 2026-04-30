@@ -1,19 +1,20 @@
-import * as mustache from 'mustache';
 import { expect } from 'chai';
 import { describe, it, before } from 'mocha';
+import MockDate from 'mockdate';
+import * as mustache from 'mustache';
 import { v4 as uuid } from 'uuid';
-import { buildWorkItem } from '../helpers/work-items';
-import { buildWorkflowStep } from '../helpers/workflow-steps';
+
 import { JobStatus } from '../../app/models/job';
-import hookServersStartStop from '../helpers/servers';
+import { setLabelsForJob } from '../../app/models/label';
+import { getWorkItemById } from '../../app/models/work-item';
+import { WorkItemStatus } from '../../app/models/work-item-interface';
+import db from '../../app/util/db';
 import { hookTransaction, truncateAll } from '../helpers/db';
 import { buildJob } from '../helpers/jobs';
+import hookServersStartStop from '../helpers/servers';
+import { buildWorkItem } from '../helpers/work-items';
+import { buildWorkflowStep } from '../helpers/workflow-steps';
 import { hookWorkflowUIWorkItems, hookAdminWorkflowUIWorkItems, workflowUIWorkItems } from '../helpers/workflow-ui';
-import { WorkItemStatus } from '../../app/models/work-item-interface';
-import { getWorkItemById } from '../../app/models/work-item';
-import db from '../../app/util/db';
-import MockDate from 'mockdate';
-import { setLabelsForJob } from '../../app/models/label';
 
 // main objects used in the tests
 const targetJob = buildJob({ status: JobStatus.FAILED, username: 'bo' });

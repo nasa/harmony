@@ -4,6 +4,8 @@ import { it } from 'mocha';
 import request, { Test } from 'supertest';
 import { v4 as uuid } from 'uuid';
 
+import { truncateAll } from './db';
+import { hookRequest } from './hooks';
 import { JobListing } from '../../app/frontends/jobs';
 import {
   getRelatedLinks, Job, JobForDisplay, JobQuery, JobRecord, jobRecordFields, JobStatus,
@@ -11,8 +13,6 @@ import {
 import JobLink from '../../app/models/job-link';
 import { RecordConstructor } from '../../app/models/record';
 import db, { Transaction } from '../../app/util/db';
-import { truncateAll } from './db';
-import { hookRequest } from './hooks';
 
 export const adminUsername = 'adam';
 

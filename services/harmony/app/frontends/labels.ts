@@ -1,6 +1,7 @@
 // functions to support labels routes
 
 import { Response, NextFunction } from 'express';
+
 import HarmonyRequest from '../models/harmony-request';
 import { addLabelsToJobs, deleteLabelsFromJobs } from '../models/label';
 import db from '../util/db';

@@ -1,11 +1,12 @@
 import { expect } from 'chai';
 import { describe, it, before } from 'mocha';
+
 import { Job, JobStatus } from '../../app/models/job';
+import { setLabelsForJob } from '../../app/models/label';
 import env from '../../app/util/env';
-import hookServersStartStop from '../helpers/servers';
 import { hookTransaction, hookDatabaseFailure, truncateAll } from '../helpers/db';
 import { containsJob, jobListing, hookJobListing, createIndexedJobs, itIncludesPagingRelations, hookAdminJobListing, buildJob } from '../helpers/jobs';
-import { setLabelsForJob } from '../../app/models/label';
+import hookServersStartStop from '../helpers/servers';
 
 // Example jobs to use in tests
 const woodyJob1 = buildJob({

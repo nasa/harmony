@@ -1,6 +1,7 @@
 import * as http from 'http';
 import * as https from 'https';
 import * as URL from 'url';
+
 import { Job } from '../job';
 import BaseService from './base-service';
 import InvocationResult from './invocation-result';

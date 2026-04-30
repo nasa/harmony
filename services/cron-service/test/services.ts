@@ -1,6 +1,7 @@
+import path from 'path';
+
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
-import path from 'path';
 
 import { serviceIDToCanonicalServiceName } from '../app/util/services';
 

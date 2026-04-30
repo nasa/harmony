@@ -1,5 +1,6 @@
 import { before, after } from 'mocha';
 import request from 'supertest';
+
 import { auth } from './auth';
 
 /**

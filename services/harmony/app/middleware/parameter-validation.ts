@@ -1,15 +1,17 @@
 import { NextFunction, Response } from 'express';
-import HarmonyRequest from '../models/harmony-request';
-import { RequestValidationError } from '../util/errors';
+
 import { Conjunction, listToText } from '@harmony/util/string';
-import { keysToLowerCase } from '../util/object';
-import { defaultObjectStore } from '../util/object-store';
+
 import { coverageRangesetGetParams, coverageRangesetPostParams } from '../frontends/ogc-coverages/index';
 import { getEdrParameters } from '../frontends/ogc-edr/index';
-import env from '../util/env';
-import { getRequestRoot } from '../util/url';
-import { validateNoConflictingGridParameters } from '../util/grids';
+import HarmonyRequest from '../models/harmony-request';
 import { checkLabel } from '../models/label';
+import env from '../util/env';
+import { RequestValidationError } from '../util/errors';
+import { validateNoConflictingGridParameters } from '../util/grids';
+import { keysToLowerCase } from '../util/object';
+import { defaultObjectStore } from '../util/object-store';
+import { getRequestRoot } from '../util/url';
 
 const { awsDefaultRegion } = env;
 

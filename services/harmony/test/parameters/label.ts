@@ -1,12 +1,13 @@
 
-import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import db from '../../app/util/db';
-import hookServersStartStop from '../helpers/servers';
-import { hookRangesetRequest } from '../helpers/ogc-api-coverages';
-import { hookRedirect } from '../helpers/hooks';
+import { describe, it } from 'mocha';
+
 import { Job } from '../../app/models/job';
+import db from '../../app/util/db';
+import { hookRedirect } from '../helpers/hooks';
+import { hookRangesetRequest } from '../helpers/ogc-api-coverages';
 import { hookEdrRequest } from '../helpers/ogc-api-edr';
+import hookServersStartStop from '../helpers/servers';
 import { generateRandomString } from '../helpers/string';
 
 const collection = 'C1233800302-EEDTEST';

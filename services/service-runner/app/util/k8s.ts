@@ -1,7 +1,7 @@
 import * as k8s from '@kubernetes/client-node';
 
-import log from '../../../harmony/app/util/log';
 import env from './env';
+import log from '../../../harmony/app/util/log';
 
 const kc = new k8s.KubeConfig();
 kc.loadFromDefault();

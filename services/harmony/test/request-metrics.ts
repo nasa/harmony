@@ -1,16 +1,17 @@
 import { expect } from 'chai';
+import { parse } from 'csv-parse/sync';
 import { describe, it } from 'mocha';
-import hookServersStartStop from './helpers/servers';
-import { hookGetRequestMetrics } from './helpers/request-metrics';
+
+import { truncateAll } from './helpers/db';
 import { makePartialJobRecord, rawSaveJob } from './helpers/jobs';
+import { hookGetRequestMetrics } from './helpers/request-metrics';
+import hookServersStartStop from './helpers/servers';
 import { makePartialWorkItemRecord, rawSaveWorkItem } from './helpers/work-items';
 import { makePartialWorkflowStepRecord, rawSaveWorkflowStep } from './helpers/workflow-steps';
+import { metricsFields } from '../app/frontends/request-metrics';
 import { JobRecord } from '../app/models/job';
 import { WorkItemRecord } from '../app/models/work-item-interface';
 import db from '../app/util/db';
-import { parse } from 'csv-parse/sync';
-import { metricsFields } from '../app/frontends/request-metrics';
-import { truncateAll } from './helpers/db';
 
 const jobData = [
   // jobID, username, status, isAsync, updatedAt

@@ -1,8 +1,10 @@
+import * as fs from 'fs';
+import * as path from 'path';
+
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
-import * as fs from 'fs';
 import _ from 'lodash';
-import * as path from 'path';
+
 
 import { CmrUmmCollection, CmrUmmVariable } from '../util/cmr';
 import { Decrypter, Encrypter } from '../util/crypto';

@@ -1,6 +1,8 @@
 import { strict as assert } from 'assert';
-import { v4 as uuid } from 'uuid';
+
 import _ from 'lodash';
+import { v4 as uuid } from 'uuid';
+
 import StacItem from './item';
 import { StacCatalog, StacLink } from './types';
 import { objectStoreForProtocol } from '../../../harmony/app/util/object-store';

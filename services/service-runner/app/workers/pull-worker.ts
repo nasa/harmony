@@ -1,7 +1,8 @@
-import { AxiosError } from 'axios';
 import { accessSync, constants, existsSync, promises as fs, rmSync } from 'fs';
 import path from 'path';
 import { exit } from 'process';
+
+import { AxiosError } from 'axios';
 
 import { sanitizeImage } from '@harmony/util/string';
 

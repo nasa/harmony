@@ -1,5 +1,6 @@
 import sinon from 'sinon';
 import request from 'supertest';
+
 import { hookRequest } from './hooks';
 import * as cmr from '../../app/util/cmr';
 import * as edl from '../../app/util/edl-api';

@@ -1,8 +1,9 @@
-import { describe, it } from 'mocha';
 import { expect } from 'chai';
+import { describe, it } from 'mocha';
+
+import { describeErrorCondition } from '../helpers/errors';
 import hookServersStartStop from '../helpers/servers';
 import { hookGetCapabilities } from '../helpers/wms';
-import { describeErrorCondition } from '../helpers/errors';
 
 describe('WMS GetCapabilities', function () {
   hookServersStartStop();

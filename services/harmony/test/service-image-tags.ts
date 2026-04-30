@@ -1,17 +1,17 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
+import { stub } from 'sinon';
 import request from 'supertest';
 
-import hookServersStartStop from './helpers/servers';
-import { hookRedirect } from './helpers/hooks';
 import { auth } from './helpers/auth';
+import hookDescribeImage from './helpers/container-registry';
+import { hookRedirect } from './helpers/hooks';
+import hookServersStartStop from './helpers/servers';
 import * as serviceImageTags from '../app/frontends/service-image-tags';
 import { checkServiceExists, checkTag, getImageTagMap, ecrImageNameToComponents, enableServiceDeployment } from '../app/frontends/service-image-tags';
-import hookDescribeImage from './helpers/container-registry';
 import { getDeploymentById } from '../app/models/service-deployment';
 import db from '../app/util/db';
 import env from '../app/util/env';
-import { stub } from 'sinon';
 
 //
 // Tests for the service-image endpoint

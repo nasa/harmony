@@ -1,15 +1,16 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
-import { JobStatus } from '../app/models/job';
-import { populateUserWorkFromWorkItems } from '../app/models/user-work';
-import { WorkItemStatus } from '../app/models/work-item-interface';
-import db from '../app/util/db';
+
 import { truncateAll } from './helpers/db';
 import { buildJob } from './helpers/jobs';
 import hookServersStartStop from './helpers/servers';
 import { hookServiceMetrics } from './helpers/service-metrics';
 import { buildWorkItem } from './helpers/work-items';
 import { buildWorkflowStep } from './helpers/workflow-steps';
+import { JobStatus } from '../app/models/job';
+import { populateUserWorkFromWorkItems } from '../app/models/user-work';
+import { WorkItemStatus } from '../app/models/work-item-interface';
+import db from '../app/util/db';
 
 /**
  * Creates a job with the given status and work items for that job

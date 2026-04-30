@@ -1,6 +1,6 @@
-import db, { Transaction } from '../util/db';
 import Record from './record';
 import WorkItem from './work-item';
+import db, { Transaction } from '../util/db';
 
 /**
  *

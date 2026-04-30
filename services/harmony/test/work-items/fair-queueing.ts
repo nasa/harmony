@@ -1,14 +1,15 @@
-import { describe, it } from 'mocha';
 import { expect } from 'chai';
+import { describe, it } from 'mocha';
+
 import { JobRecord } from '../../app/models/job';
-import { WorkItemRecord } from '../../app/models/work-item-interface';
-import hookServersStartStop from '../helpers/servers';
-import db from '../../app/util/db';
-import { getWorkForService, makePartialWorkItemRecord, rawSaveWorkItem } from '../helpers/work-items';
-import { makePartialJobRecord, rawSaveJob } from '../helpers/jobs';
-import { makePartialWorkflowStepRecord, rawSaveWorkflowStep } from '../helpers/workflow-steps';
-import { truncateAll } from '../helpers/db';
 import { populateUserWorkFromWorkItems } from '../../app/models/user-work';
+import { WorkItemRecord } from '../../app/models/work-item-interface';
+import db from '../../app/util/db';
+import { truncateAll } from '../helpers/db';
+import { makePartialJobRecord, rawSaveJob } from '../helpers/jobs';
+import hookServersStartStop from '../helpers/servers';
+import { getWorkForService, makePartialWorkItemRecord, rawSaveWorkItem } from '../helpers/work-items';
+import { makePartialWorkflowStepRecord, rawSaveWorkflowStep } from '../helpers/workflow-steps';
 
 const jobData = [
   // jobID, username, status, isAsync, updatedAt

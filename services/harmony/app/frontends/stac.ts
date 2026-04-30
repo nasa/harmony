@@ -1,15 +1,16 @@
 import { ILengthAwarePagination } from 'knex-paginate';
-import { Job, JobForDisplay, JobStatus } from '../models/job';
-import { keysToLowerCase } from '../util/object';
-import isUUID from '../util/uuid';
-import { getRequestRoot } from '../util/url';
-import { ConflictError, NotFoundError, RequestValidationError } from '../util/errors';
-import { getPagingLinks, getPagingParams, PagingParams } from '../util/pagination';
-import JobLink, { getLinksForJob } from '../models/job-link';
-import stacItemCreate from './stac-item';
+
 import stacCatalogCreate from './stac-catalog';
+import stacItemCreate from './stac-item';
+import { Job, JobForDisplay, JobStatus } from '../models/job';
+import JobLink, { getLinksForJob } from '../models/job-link';
 import db from '../util/db';
 import env from '../util/env';
+import { ConflictError, NotFoundError, RequestValidationError } from '../util/errors';
+import { keysToLowerCase } from '../util/object';
+import { getPagingLinks, getPagingParams, PagingParams } from '../util/pagination';
+import { getRequestRoot } from '../util/url';
+import isUUID from '../util/uuid';
 
 /**
  * Generic handler for STAC requests

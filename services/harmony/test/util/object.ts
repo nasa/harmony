@@ -1,5 +1,6 @@
-import { describe, it } from 'mocha';
 import { expect } from 'chai';
+import { describe, it } from 'mocha';
+
 import { keysToLowerCase } from '../../app/util/object';
 
 describe('util/object', function () {

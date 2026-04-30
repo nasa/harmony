@@ -1,9 +1,10 @@
-import { keysToLowerCase } from '../../util/object';
-import { ParameterParseError, mergeParameters, parseWkt } from '../../util/parameter-parsing-helpers';
 import { Response, NextFunction } from 'express';
+
+import { getDataCommon } from './get-data-common';
 import HarmonyRequest from '../../models/harmony-request';
 import { RequestValidationError } from '../../util/errors';
-import { getDataCommon } from './get-data-common';
+import { keysToLowerCase } from '../../util/object';
+import { ParameterParseError, mergeParameters, parseWkt } from '../../util/parameter-parsing-helpers';
 
 /**
  * Express middleware that responds to OGC API - EDR Area GET requests.

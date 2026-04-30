@@ -1,9 +1,10 @@
 // Ensure we're immediately using the right DB
 
+import util from 'util';
+
 import { before, after, beforeEach, afterEach } from 'mocha';
 import { stub } from 'sinon';
 
-import util from 'util';
 import db from '../../../harmony/app/util/db';
 
 export const tables = ['jobs', 'work_items', 'workflow_steps', 'job_links', 'user_work', 'job_messages', 'batches', 'batch_items'];

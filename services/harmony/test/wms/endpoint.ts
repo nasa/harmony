@@ -1,5 +1,6 @@
-import { describe, it } from 'mocha';
 import { expect } from 'chai';
+import { describe, it } from 'mocha';
+
 import hookServersStartStop from '../helpers/servers';
 import { wmsRequest } from '../helpers/wms';
 

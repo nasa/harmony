@@ -1,15 +1,17 @@
 import { Response, NextFunction } from 'express';
+import { Parser } from 'json2csv';
+import _ from 'lodash';
 import { Logger } from 'winston';
+
+import { validateParameterNames } from '../middleware/parameter-validation';
 import HarmonyRequest from '../models/harmony-request';
 import { Job, JobStatus } from '../models/job';
+import { getTotalWorkItemSizesForJobID } from '../models/work-item';
 import WorkflowStep, { getWorkflowStepsByJobId } from '../models/workflow-steps';
 import db from '../util/db';
 import env from '../util/env';
 import { getPagingParams } from '../util/pagination';
-import { Parser } from 'json2csv';
-import { getTotalWorkItemSizesForJobID } from '../models/work-item';
-import _ from 'lodash';
-import { validateParameterNames } from '../middleware/parameter-validation';
+
 
 export const metricsFields = [
   'timeTakenSeconds', 'numInputGranules', 'totalGranuleSizeMb', 'numVariables', 'concatenate',
