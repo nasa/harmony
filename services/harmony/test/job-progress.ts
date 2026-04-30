@@ -1,10 +1,11 @@
 import { expect } from 'chai';
-import db from '../app/util/db';
-import { Job } from '../app/models/job';
+
 import { hookRangesetRequest } from './helpers/ogc-api-coverages';
 import hookServersStartStop from './helpers/servers';
 import { getWorkForService, updateWorkItem, fakeServiceStacOutput } from './helpers/work-items';
+import { Job } from '../app/models/job';
 import { getStacLocation, WorkItemStatus } from '../app/models/work-item-interface';
+import db from '../app/util/db';
 
 describe('Testing job progress', function () {
   const collection = 'C1234208438-POCLOUD';

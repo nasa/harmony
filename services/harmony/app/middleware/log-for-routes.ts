@@ -1,5 +1,6 @@
-import HarmonyRequest from '../models/harmony-request';
 import { Response, NextFunction, RequestHandler } from 'express';
+
+import HarmonyRequest from '../models/harmony-request';
 
 /**
  * Log a string using middleware.

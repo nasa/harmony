@@ -1,8 +1,11 @@
-import { JSDOM } from 'jsdom';
-import { expect } from 'chai';
-import path from 'path';
-import JobsTable from '../../public/js/workflow-ui/jobs/jobs-table';
 import * as fs from 'fs';
+import path from 'path';
+
+import { expect } from 'chai';
+import { JSDOM } from 'jsdom';
+
+import JobsTable from '../../public/js/workflow-ui/jobs/jobs-table';
+
 
 beforeEach(async () => {
   const dom = await JSDOM.fromFile(path.resolve(__dirname, 'jobs.html'), { url: 'http://localhost' });

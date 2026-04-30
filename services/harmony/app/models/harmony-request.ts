@@ -1,8 +1,8 @@
 import { NextFunction, Request, Response } from 'express';
 
-import env from '../util/env';
 import DataOperation from './data-operation';
 import RequestContext from './request-context';
+import env from '../util/env';
 
 /**
  * Contains additional information about a request

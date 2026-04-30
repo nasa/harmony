@@ -1,5 +1,6 @@
-import { describe, it } from 'mocha';
 import { expect } from 'chai';
+import { describe, it } from 'mocha';
+
 import {
   HttpError, buildJsonErrorResponse, getHttpStatusCode, getEndUserErrorMessage, getCodeForError,
   NotFoundError, ForbiddenError, ServerError, RequestValidationError, ConflictError,

@@ -1,6 +1,5 @@
 import * as fs from 'fs';
 import * as stream from 'stream';
-import tmp from 'tmp';
 import * as util from 'util';
 
 import {
@@ -14,9 +13,10 @@ import { formatUrl } from '@aws-sdk/util-format-url';
 import { Hash } from '@smithy/hash-node';
 import { HttpRequest } from '@smithy/protocol-http';
 import { parseUrl } from '@smithy/url-parser';
+import tmp from 'tmp';
 
-import env from '../../util/env';
 import { HeadObjectResponse, MulterFile, ObjectStore } from './object-store';
+import env from '../../util/env';
 
 const { awsDefaultRegion } = env;
 

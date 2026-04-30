@@ -1,11 +1,12 @@
 import { expect } from 'chai';
 import { describe, it, before } from 'mocha';
+
 import { Job } from '../../app/models/job';
 import JobLink from '../../app/models/job-link';
-import hookServersStartStop from '../helpers/servers';
-import { hookJobStatus, buildJob, areJobLinksEqual, itIncludesPagingRelations } from '../helpers/jobs';
 import db from '../../app/util/db';
 import env from '../../app/util/env';
+import { hookJobStatus, buildJob, areJobLinksEqual, itIncludesPagingRelations } from '../helpers/jobs';
+import hookServersStartStop from '../helpers/servers';
 
 describe('Individual job status route - pagination', function () {
   hookServersStartStop({ USE_EDL_CLIENT_APP: true });

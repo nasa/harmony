@@ -1,6 +1,8 @@
 import { expect } from 'chai';
 import sinon, { SinonStub } from 'sinon';
 
+import { truncateAll } from './helpers/db';
+import { buildJob } from './helpers/jobs';
 import { JobStatus } from '../../harmony/app/models/job';
 import * as userWork from '../../harmony/app/models/user-work';
 import db from '../../harmony/app/util/db';
@@ -8,8 +10,6 @@ import { createUserWorkRecord } from '../../harmony/test/helpers/user-work';
 import * as updateUserWorkMod from '../app/cronjobs/update-user-work';
 import { Context } from '../app/util/context';
 import env from '../app/util/env';
-import { truncateAll } from './helpers/db';
-import { buildJob } from './helpers/jobs';
 
 describe('UserWorkUpdater', () => {
   let ctx: Context;

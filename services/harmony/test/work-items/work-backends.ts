@@ -1,23 +1,24 @@
-import { WorkItemStatus, getStacLocation, WorkItemRecord } from './../../app/models/work-item-interface';
-import { Job, JobRecord, JobStatus, terminalStates } from './../../app/models/job';
+import { expect } from 'chai';
 import { describe, it } from 'mocha';
+import MockDate from 'mockdate';
 import * as sinon from 'sinon';
 import { SinonStub } from 'sinon';
-import MockDate from 'mockdate';
-import { expect } from 'chai';
 import { v4 as uuid } from 'uuid';
+
+import { getCount, incrementReadyCount } from '../../app/models/user-work';
 import WorkItem, { getWorkItemById } from '../../app/models/work-item';
 import { WorkflowStepRecord } from '../../app/models/workflow-steps';
-import hookServersStartStop from '../helpers/servers';
-import db from '../../app/util/db';
 import * as aggregationBatch from '../../app/util/aggregation-batch';
+import db from '../../app/util/db';
+import { resumeAndSaveJob } from '../../app/util/job';
 import * as stac from '../../app/util/stac';
 import { hookJobCreation } from '../helpers/jobs';
+import hookServersStartStop from '../helpers/servers';
+import { hookPopulateUserWorkFromWorkItems } from '../helpers/user-work';
 import { hookGetWorkForService, hookWorkItemCreation, hookWorkItemUpdate, hookWorkflowStepAndItemCreation, getWorkForService, fakeServiceStacOutput, updateWorkItem } from '../helpers/work-items';
 import { hookWorkflowStepCreation, validOperation } from '../helpers/workflow-steps';
-import { hookPopulateUserWorkFromWorkItems } from '../helpers/user-work';
-import { resumeAndSaveJob } from '../../app/util/job';
-import { getCount, incrementReadyCount } from '../../app/models/user-work';
+import { Job, JobRecord, JobStatus, terminalStates } from './../../app/models/job';
+import { WorkItemStatus, getStacLocation, WorkItemRecord } from './../../app/models/work-item-interface';
 
 const oldDate = '1/1/2000'; // "old" work items will get created on this date
 

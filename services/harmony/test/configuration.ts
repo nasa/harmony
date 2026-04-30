@@ -1,7 +1,8 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
-import hookServersStartStop from './helpers/servers';
+
 import { hookConfigureLogLevel } from './helpers/configuration';
+import hookServersStartStop from './helpers/servers';
 
 
 describe('/core/configuration', function () {

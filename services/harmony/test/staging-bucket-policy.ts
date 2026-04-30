@@ -1,7 +1,8 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
-import request from 'supertest';
 import { stub, SinonStub } from 'sinon';
+import request from 'supertest';
+
 import { hookRequest } from './helpers/hooks';
 import hookServersStartStop from './helpers/servers';
 import sts from '../app/util/sts';

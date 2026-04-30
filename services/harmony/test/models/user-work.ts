@@ -1,5 +1,9 @@
 import { expect } from 'chai';
-import { decrementRunningCount, getCount, incrementReadyAndDecrementRunningCounts, incrementRunningAndDecrementReadyCounts } from '../../app/models/user-work';
+
+import {
+  decrementRunningCount, getCount, incrementReadyAndDecrementRunningCounts,
+  incrementRunningAndDecrementReadyCounts,
+} from '../../app/models/user-work';
 import db from '../../app/util/db';
 import { truncateAll } from '../helpers/db';
 import { createUserWorkRecord } from '../helpers/user-work';

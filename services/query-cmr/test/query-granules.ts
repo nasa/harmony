@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
+import fs from 'fs';
+import path from 'path';
+
 import chai, { expect } from 'chai';
 import { Stream } from 'form-data';
-import fs from 'fs';
 import { describe, it } from 'mocha';
 import * as fetch from 'node-fetch';
-import path from 'path';
 import * as sinon from 'sinon';
 
 import DataOperation from '../../harmony/app/models/data-operation';

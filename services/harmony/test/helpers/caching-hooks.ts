@@ -3,13 +3,13 @@ import { after, before } from 'mocha';
 import replay from 'replay';
 import { SinonStub, stub } from 'sinon';
 
-import RequestContext from '../../app/models/request-context';
-import * as cmr from '../../app/util/cmr';
 import { hookJobStatusCache } from './job-status';
 import {
   hookGetQueueForType, hookGetQueueForUrl, hookGetQueueUrlForService, hookGetWorkSchedulerQueue,
   hookProcessSchedulerQueue,
 } from './queue';
+import RequestContext from '../../app/models/request-context';
+import * as cmr from '../../app/util/cmr';
 
 hookGetQueueForType();
 hookGetQueueForUrl();

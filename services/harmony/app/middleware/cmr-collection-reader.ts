@@ -114,15 +114,15 @@ async function cmrCollectionReader(req: HarmonyRequest, res, next: NextFunction)
       // Could not find a requested collection
       if (collections.length === 0) {
         const message = `${collectionIdStr} must be a collection short name or CMR collection`
-        + ' identifier, but we could not find a matching collection. Please make sure the collection'
-        + ' is correct and that you have access to it.';
+          + ' identifier, but we could not find a matching collection. Please make sure the collection'
+          + ' is correct and that you have access to it.';
         throw new NotFoundError(message);
       } else if (collections.length !== collectionIds.length) {
         const foundIds = collections.map((c) => c.id);
         const missingIds = collectionIds.filter((c) => !foundIds.includes(c));
         const s = missingIds.length > 1 ? 's' : '';
         const message = `The collection${s} ${listToText(missingIds)} could not be found. Please make`
-        + ' sure the collection identifiers are correct and that you have access to each collection.';
+          + ' sure the collection identifiers are correct and that you have access to each collection.';
         throw new NotFoundError(message);
       }
 
@@ -160,10 +160,10 @@ async function cmrCollectionReader(req: HarmonyRequest, res, next: NextFunction)
           if (collections.length > 1) {
             const collectionLandingPage = `${cmrApiConfig.baseURL}/concepts/${pickedCollection.id}`;
             req.context.messages.push(`There were ${collections.length} collections that matched the`
-            + ` provided short name ${shortName}. See ${collectionLandingPage} for details on the`
-            + ' selected collection. The version ID for the selected collection is '
-            + `${pickedCollection.version_id}. To use a different collection submit a new request`
-            + ' specifying the desired CMR concept ID instead of the collection short name.');
+              + ` provided short name ${shortName}. See ${collectionLandingPage} for details on the`
+              + ' selected collection. The version ID for the selected collection is '
+              + `${pickedCollection.version_id}. To use a different collection submit a new request`
+              + ' specifying the desired CMR concept ID instead of the collection short name.');
           }
         } else {
           const message = `${shortName} must be a collection short name or CMR collection identifier,`
@@ -183,4 +183,4 @@ async function cmrCollectionReader(req: HarmonyRequest, res, next: NextFunction)
 
 cmrCollectionReader.collectionRegex = COLLECTION_ROUTE_REGEX;
 
-export = cmrCollectionReader;
+export default cmrCollectionReader;

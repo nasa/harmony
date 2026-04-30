@@ -1,6 +1,7 @@
+import * as path from 'path';
+
 import { IsBoolean, IsInt, IsNotEmpty, IsPositive, Matches, Min } from 'class-validator';
 import _ from 'lodash';
-import * as path from 'path';
 
 import { HarmonyEnv, memorySizeRegex } from '@harmony/util/env';
 

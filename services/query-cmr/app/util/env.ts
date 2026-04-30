@@ -1,5 +1,6 @@
-import { HarmonyEnv } from '@harmony/util/env';
 import _ from 'lodash';
+
+import { HarmonyEnv } from '@harmony/util/env';
 
 //
 // env module

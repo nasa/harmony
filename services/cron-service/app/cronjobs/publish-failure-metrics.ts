@@ -1,10 +1,10 @@
 import { CloudWatchClient, PutMetricDataCommand, StandardUnit } from '@aws-sdk/client-cloudwatch';
 
+import { CronJob } from './cronjob';
 import { WorkItemStatus } from '../../../harmony/app/models/work-item-interface';
 import { Context } from '../util/context';
 import env from '../util/env';
 import { serviceIDToCanonicalServiceName } from '../util/services';
-import { CronJob } from './cronjob';
 
 export interface MetricData {
   metricName: string;

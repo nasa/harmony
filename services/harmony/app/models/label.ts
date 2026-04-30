@@ -1,6 +1,7 @@
 import { profanity, CensorType } from '@2toad/profanity';
-import { Transaction } from '../util/db';
+
 import { Job } from './job';
+import { Transaction } from '../util/db';
 import { NotFoundError, RequestValidationError } from '../util/errors';
 import isUUID from '../util/uuid';
 

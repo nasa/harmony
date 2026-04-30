@@ -1,10 +1,11 @@
 
-import { describe, it } from 'mocha';
-import { expect } from 'chai';
 import { profanity } from '@2toad/profanity';
-import { buildJob, getFirstJob } from '../helpers/jobs';
-import { hookTransactionEach } from '../helpers/db';
+import { expect } from 'chai';
+import { describe, it } from 'mocha';
+
 import { checkLabel, normalizeLabel, setLabelsForJob } from '../../app/models/label';
+import { hookTransactionEach } from '../helpers/db';
+import { buildJob, getFirstJob } from '../helpers/jobs';
 
 // unit tests for `checkLabel`
 describe('checkLabel', function () {

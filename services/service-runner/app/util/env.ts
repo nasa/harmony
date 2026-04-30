@@ -1,7 +1,10 @@
-import { IsInt, IsNotEmpty, Max, Min, ValidateIf } from 'class-validator';
 import * as path from 'path';
-import { HarmonyEnv } from '@harmony/util/env';
+
+import { IsInt, IsNotEmpty, Max, Min, ValidateIf } from 'class-validator';
 import _ from 'lodash';
+
+import { HarmonyEnv } from '@harmony/util/env';
+
 
 //
 // env module

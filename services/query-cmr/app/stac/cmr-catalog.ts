@@ -1,11 +1,12 @@
-import _ from 'lodash';
 import path from 'path';
+
+import _ from 'lodash';
 import { Logger } from 'winston';
 
-import { CmrUmmGranule } from '../../../harmony/app/util/cmr';
-import { computeUmmMbr } from '../../../harmony/app/util/spatial/mbr';
 import StacCatalog from './catalog';
 import StacItem from './item';
+import { CmrUmmGranule } from '../../../harmony/app/util/cmr';
+import { computeUmmMbr } from '../../../harmony/app/util/spatial/mbr';
 
 /**
  * Creates a GeoJSON geometry given a GeoJSON BBox, accounting for antimeridian

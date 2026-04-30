@@ -1,9 +1,11 @@
-import _ from 'lodash';
-import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as winston from 'winston';
+
 import { IsInt, IsNotEmpty, IsNumber, IsUrl, Matches, Max, Min, ValidateIf, ValidationError, validateSync } from 'class-validator';
+import * as dotenv from 'dotenv';
+import _ from 'lodash';
+import * as winston from 'winston';
+
 import { isBoolean, isFloat, isInteger, parseBoolean } from './string';
 
 const logger = winston.createLogger({

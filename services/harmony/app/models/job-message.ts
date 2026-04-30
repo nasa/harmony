@@ -1,6 +1,7 @@
 import { truncateString } from '@harmony/util/string';
-import db, { Transaction } from '../util/db';
+
 import Record from './record';
+import db, { Transaction } from '../util/db';
 
 export enum JobMessageLevel {
   ERROR = 'error',

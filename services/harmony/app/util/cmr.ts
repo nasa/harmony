@@ -1,20 +1,21 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import { createHash } from 'crypto';
-import FormData from 'form-data';
 import * as fs from 'fs';
+import * as querystring from 'querystring';
+
+import FormData from 'form-data';
 import { get, isArray } from 'lodash';
 import { LRUCache } from 'lru-cache';
 import fetch, { Response } from 'node-fetch';
-import * as querystring from 'querystring';
 import { v4 as uuid } from 'uuid';
 
 import { truncateString } from '@harmony/util/string';
 
-import RequestContext from '../models/request-context';
 import env from './env';
 import { CmrError } from './errors';
 import logger from './log';
 import { defaultObjectStore, objectStoreForProtocol } from './object-store';
+import RequestContext from '../models/request-context';
 import { UmmSpatial } from './spatial/umm-spatial';
 import { CmrUmmVisualization } from './umm-vis';
 import { isValidUri } from './url';
@@ -759,7 +760,7 @@ async function _getAllServices(
   context: RequestContext, query: CmrQuery, token: string,
 ): Promise<Array<CmrUmmService>> {
   logger.debug('Calling CMR to fetch services');
-  const servicesResponse = await _cmrPost(context, '/search/services.umm_json_v1_5_2', query, token) as CmrServicesResponse;
+  const servicesResponse = await _cmrPost(context, '/search/services.umm_json_v1_5_4', query, token) as CmrServicesResponse;
   const { hits } = servicesResponse.data;
   let services = servicesResponse.data.items;
   let numServicesRetrieved = services.length;
@@ -769,7 +770,7 @@ async function _getAllServices(
     page_num += 1;
     logger.debug(`Paging through services = ${page_num}, numServicesRetrieved = ${numServicesRetrieved}, total hits ${hits}`);
     query.page_num = page_num;
-    const response = await _cmrPost(context, '/search/services.umm_json_v1_5_2', query, token) as CmrServicesResponse;
+    const response = await _cmrPost(context, '/search/services.umm_json_v1_5_4', query, token) as CmrServicesResponse;
     const pageOfServices = response.data.items;
     services = services.concat(pageOfServices);
     numServicesRetrieved += pageOfServices.length;

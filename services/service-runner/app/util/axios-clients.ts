@@ -1,7 +1,8 @@
-import logger from '../../../harmony/app/util/log';
+import Agent from 'agentkeepalive';
 import axios, { AxiosError, AxiosInstance } from 'axios';
 import axiosRetry, { exponentialDelay, isNetworkOrIdempotentRequestError } from 'axios-retry';
-import Agent from 'agentkeepalive';
+
+import logger from '../../../harmony/app/util/log';
 
 /**
  * Default Axios client timeout (also used by keepAliveAgent).

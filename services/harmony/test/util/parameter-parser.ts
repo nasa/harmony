@@ -1,9 +1,12 @@
-import { describe, it } from 'mocha';
 import { expect } from 'chai';
+import { describe, it } from 'mocha';
 
 import DataOperation from '../../app/models/data-operation';
-import { validateBooleanField, handleForceAsync, handleIgnoreErrors, handlePixelSubset } from '../../app/util/parameter-parsers';
+import HarmonyRequest from '../../app/models/harmony-request';
 import { RequestValidationError } from '../../app/util/errors';
+import {
+  handleForceAsync, handleFormat, handleIgnoreErrors, handlePixelSubset, validateBooleanField,
+} from '../../app/util/parameter-parsers';
 import { buildOperation } from '../helpers/data-operation';
 
 describe('validateBooleanField', () => {
@@ -137,6 +140,164 @@ describe('handlePixelSubset', () => {
   it('should set pixelSubset to false when query.pixelsubset is mixed case "FaLsE"', () => {
     handlePixelSubset(operation, { pixelsubset: 'FaLsE' });
     expect(operation.pixelSubset).to.be.false;
+  });
+});
+
+describe('handleFormat', function () {
+  let operation: DataOperation;
+  let req: HarmonyRequest;
+
+  beforeEach(function () {
+    operation = buildOperation(undefined);
+    req = { headers: {}, context: {} } as HarmonyRequest;
+  });
+
+  describe('when a format string is provided', function () {
+    describe('sanitization', function () {
+      it('strips spaces', function () {
+        handleFormat(operation, 'application/netcdf; profile=opendap_url', req);
+        expect(operation.outputFormat).to.equal('application/netcdf;profile=opendap_url');
+      });
+
+      it('strips double quotes', function () {
+        handleFormat(operation, 'application/netcdf;profile="opendap_url"', req);
+        expect(operation.outputFormat).to.equal('application/netcdf;profile=opendap_url');
+      });
+
+      it('strips single quotes', function () {
+        handleFormat(operation, "application/netcdf;profile='opendap_url'", req);
+        expect(operation.outputFormat).to.equal('application/netcdf;profile=opendap_url');
+      });
+
+      it('lowercases the format', function () {
+        handleFormat(operation, 'IMAGE/PNG', req);
+        expect(operation.outputFormat).to.equal('image/png');
+      });
+
+      it('handles quotes in profile parameters', function () {
+        handleFormat(operation, 'application/x-netcdf4;profile="opendap_url"', req);
+        expect(operation.outputFormat).to.equal('application/x-netcdf4;profile=opendap_url');
+      });
+    });
+
+    describe('mime type aliases', function () {
+      it('maps application/x-netcdf to application/netcdf', function () {
+        handleFormat(operation, 'application/x-netcdf', req);
+        expect(operation.outputFormat).to.equal('application/netcdf');
+      });
+
+      it('maps application/x-netcdf4 to application/netcdf', function () {
+        handleFormat(operation, 'application/x-netcdf4', req);
+        expect(operation.outputFormat).to.equal('application/netcdf');
+      });
+
+      it('maps application/netcdf4 to application/netcdf', function () {
+        handleFormat(operation, 'application/netcdf4', req);
+        expect(operation.outputFormat).to.equal('application/netcdf');
+      });
+
+      it('applies alias mapping case insensitively', function () {
+        handleFormat(operation, 'APPLICATION/X-NETCDF4', req);
+        expect(operation.outputFormat).to.equal('application/netcdf');
+      });
+    });
+
+    describe('harmony UMM-S name mapping', function () {
+      it('maps NETCDF-4 to application/netcdf', function () {
+        handleFormat(operation, 'NETCDF-4', req);
+        expect(operation.outputFormat).to.equal('application/netcdf');
+      });
+
+      it('maps HDF-EOS2 to application/x-hdf', function () {
+        handleFormat(operation, 'HDF-EOS2', req);
+        expect(operation.outputFormat).to.equal('application/x-hdf');
+      });
+
+      it('maps ZARR to application/x-zarr', function () {
+        handleFormat(operation, 'ZARR', req);
+        expect(operation.outputFormat).to.equal('application/x-zarr');
+      });
+
+      it('maps GIF to image/gif', function () {
+        handleFormat(operation, 'GIF', req);
+        expect(operation.outputFormat).to.equal('image/gif');
+      });
+
+      it('maps JPEG to image/jpeg', function () {
+        handleFormat(operation, 'JPEG', req);
+        expect(operation.outputFormat).to.equal('image/jpeg');
+      });
+
+      it('maps PNG to image/png', function () {
+        handleFormat(operation, 'PNG', req);
+        expect(operation.outputFormat).to.equal('image/png');
+      });
+
+      it('maps GEOTIFF to image/tiff', function () {
+        handleFormat(operation, 'GEOTIFF', req);
+        expect(operation.outputFormat).to.equal('image/tiff');
+      });
+
+      it('maps CSV to text/csv', function () {
+        handleFormat(operation, 'CSV', req);
+        expect(operation.outputFormat).to.equal('text/csv');
+      });
+
+      it('maps NETCDF-4 (OPeNDAP URL) to application/x-netcdf4;profile=opendap_url', function () {
+        handleFormat(operation, 'NETCDF-4 (OPeNDAP URL)', req);
+        expect(operation.outputFormat).to.equal('application/x-netcdf4;profile=opendap_url');
+      });
+    });
+
+    describe('unknown formats', function () {
+      it('passes through unrecognized mime types as-is (lowercased)', function () {
+        handleFormat(operation, 'application/X-UNKNOWN', req);
+        expect(operation.outputFormat).to.equal('application/x-unknown');
+      });
+    });
+
+    it('does not set req.context.requestedMimeTypes', function () {
+      handleFormat(operation, 'image/png', req);
+      expect(req.context.requestedMimeTypes).to.be.undefined;
+    });
+  });
+
+  describe('when no format string is provided', function () {
+    it('does not set operation.outputFormat', function () {
+      handleFormat(operation, null, req);
+      expect(operation.outputFormat).to.be.undefined;
+    });
+
+    describe('when an Accept header is present', function () {
+      it('does not set operation.outputFormat', function () {
+        handleFormat(operation, null, req);
+        expect(operation.outputFormat).to.be.undefined;
+      });
+
+      it('sets requestedMimeTypes from the accept header', function () {
+        req.headers.accept = 'image/png, text/csv';
+        handleFormat(operation, null, req);
+        expect(req.context.requestedMimeTypes).to.deep.equal(['image/png', 'text/csv']);
+      });
+
+      it('filters out empty mime types', function () {
+        req.headers.accept = 'image/png, ';
+        handleFormat(operation, null, req);
+        expect(req.context.requestedMimeTypes).to.not.include('');
+      });
+    });
+
+    describe('when no Accept header is present', function () {
+      it('does not set requestedMimeTypes', function () {
+        handleFormat(operation, null, req);
+        expect(req.context.requestedMimeTypes).to.be.undefined;
+      });
+
+      it('does not set operation.outputFormat', function () {
+        handleFormat(operation, null, req);
+        expect(operation.outputFormat).to.be.undefined;
+      });
+    });
   });
 });
 

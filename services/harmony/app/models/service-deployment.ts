@@ -1,6 +1,7 @@
+import { truncateString } from '@harmony/util/string';
+
 import { Transaction } from './../util/db';
 import Record from './record';
-import { truncateString } from '@harmony/util/string';
 
 export enum ServiceDeploymentStatus {
   RUNNING = 'running',

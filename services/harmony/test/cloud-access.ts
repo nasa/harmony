@@ -1,7 +1,8 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
-import hookServersStartStop from './helpers/servers';
+
 import { hookCloudAccessJson, hookCloudAccessSh, hookStubAssumeRole, sampleCloudAccessShResponse } from './helpers/cloud-access';
+import hookServersStartStop from './helpers/servers';
 
 describe('Cloud access', function () {
   hookServersStartStop({ USE_EDL_CLIENT_APP: true });

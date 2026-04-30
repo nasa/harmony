@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { expect } from 'chai';
-import sinon from 'sinon';
 
 import { CloudWatchClient } from '@aws-sdk/client-cloudwatch';
 import { S3Client } from '@aws-sdk/client-s3';
 import * as k8s from '@kubernetes/client-node';
+import { expect } from 'chai';
+import sinon from 'sinon';
 
 import { MemoryUsageCollector } from '../app/cronjobs/memory-usage-collector';
 import env from '../app/util/env';

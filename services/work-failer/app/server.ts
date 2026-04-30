@@ -1,9 +1,11 @@
-import express from 'express';
-import env from './util/env';
-import log from '../../harmony/app/util/log';
-import router from './routers/router';
 import { Server } from 'http';
+
+import express from 'express';
+
+import router from './routers/router';
+import env from './util/env';
 import Failer from './workers/failer';
+import log from '../../harmony/app/util/log';
 
 /**
  * Start the application

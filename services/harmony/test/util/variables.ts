@@ -1,7 +1,8 @@
-import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import { validateVariables } from '../../app/util/variables';
+import { describe, it } from 'mocha';
+
 import { RequestValidationError } from '../../app/util/errors';
+import { validateVariables } from '../../app/util/variables';
 
 describe('validateVariables', function () {
   it('should throw error if "all" is specified alongside other variables', function () {

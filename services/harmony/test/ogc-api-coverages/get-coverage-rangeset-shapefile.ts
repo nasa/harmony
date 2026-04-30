@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import * as fs from 'fs';
+
 import { expect } from 'chai';
 import { parse } from 'cookie';
 import { Application } from 'express';
-import * as fs from 'fs';
 import { describe, it } from 'mocha';
 import * as fetch from 'node-fetch';
 import { Response, Test } from 'supertest';

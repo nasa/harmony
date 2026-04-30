@@ -1,6 +1,7 @@
-import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import { parseAcceptHeader, isMimeTypeAccepted } from '../../app/util/content-negotiation';
+import { describe, it } from 'mocha';
+
+import { isMimeTypeAccepted, parseAcceptHeader } from '../../app/util/content-negotiation';
 
 describe('util/content-negotiation', function () {
   describe('parseAcceptHeader', function () {
@@ -155,7 +156,7 @@ describe('util/content-negotiation', function () {
         expect(isMimeTypeAccepted('application/x-netcdf4; profile=opendap_url', 'application/x-netcdf4; profile=opendap_url')).to.be.true;
       });
       it('returns false when content after semicolon is not stripped off', function () {
-        expect(isMimeTypeAccepted('application/x-netcdf4', 'application/x-netcdf4;profile=opendap_url')).to.be.false;
+        expect(isMimeTypeAccepted('application/netcdf', 'application/x-netcdf4;profile=opendap_url')).to.be.false;
       });
     });
   });

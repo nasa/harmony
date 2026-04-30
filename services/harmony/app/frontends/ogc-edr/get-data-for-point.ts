@@ -1,5 +1,6 @@
 import { NextFunction, Response } from 'express';
 
+import { getDataCommon } from './get-data-common';
 import HarmonyRequest from '../../models/harmony-request';
 import env from '../../util/env';
 import { RequestValidationError } from '../../util/errors';
@@ -7,7 +8,6 @@ import { keysToLowerCase } from '../../util/object';
 import {
   mergeParameters, ParameterParseError, parseWkt, validateWkt,
 } from '../../util/parameter-parsing-helpers';
-import { getDataCommon } from './get-data-common';
 
 /**
  * Converts a WKT POINT string to a WKT POLYGON string.

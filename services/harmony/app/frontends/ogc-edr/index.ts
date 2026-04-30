@@ -1,17 +1,18 @@
-import { initialize } from 'express-openapi';
 import * as fs from 'fs';
 import * as path from 'path';
-import express, { Application, Response, Router } from 'express';
-import * as yaml from 'js-yaml';
-import getLandingPage from '../ogc-coverages/get-landing-page';
-import getRequirementsClasses from '../ogc-coverages/get-requirements-classes';
 
-import { getDataForCube, postDataForCube } from './get-data-for-cube';
+import express, { Application, Response, Router } from 'express';
+import { initialize } from 'express-openapi';
+import * as yaml from 'js-yaml';
+
+
 import { getDataForArea, postDataForArea } from './get-data-for-area';
+import { getDataForCube, postDataForCube } from './get-data-for-cube';
 import { getDataForPoint, postDataForPoint } from './get-data-for-point';
 import { getDataForTrajectory, postDataForTrajectory } from './get-data-for-trajectory';
-
 import HarmonyRequest from '../../models/harmony-request';
+import getLandingPage from '../ogc-coverages/get-landing-page';
+import getRequirementsClasses from '../ogc-coverages/get-requirements-classes';
 
 interface OgcSchemaHttpMethod {
   parameters: {

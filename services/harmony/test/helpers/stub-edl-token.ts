@@ -1,8 +1,9 @@
 import { before, after } from 'mocha';
 import * as sinon from 'sinon';
-import { UnauthorizedError } from '../../app/util/errors';
-import * as edl from '../../app/util/edl-api';
+
 import * as edlAuth from '../../app/middleware/earthdata-login-token-authorizer';
+import * as edl from '../../app/util/edl-api';
+import { UnauthorizedError } from '../../app/util/errors';
 
 /**
  * Adds before / after hooks in mocha to replace calls to EDL token interaction

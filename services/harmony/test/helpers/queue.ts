@@ -1,12 +1,12 @@
 import { SinonStub, stub } from 'sinon';
 import { Logger } from 'winston';
 
+import { MemoryQueue } from './memory-queue';
 import * as util from '../../app/backends/workflow-orchestration/util';
 import { getWorkFromDatabase } from '../../app/backends/workflow-orchestration/work-item-polling';
 import logger from '../../app/util/log';
 import { WorkItemQueueType } from '../../app/util/queue/queue';
 import * as qf from '../../app/util/queue/queue-factory';
-import { MemoryQueue } from './memory-queue';
 
 let serviceQueues;
 let typeQueues;

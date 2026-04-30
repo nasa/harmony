@@ -1,5 +1,7 @@
-import * as winston from 'winston';
 import { Writable } from 'stream';
+
+import * as winston from 'winston';
+
 import { createJsonLogger, createTextLogger } from '../../app/util/log';
 
 /**

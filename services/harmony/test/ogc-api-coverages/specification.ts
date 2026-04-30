@@ -1,7 +1,8 @@
-import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import hookServersStartStop from '../helpers/servers';
+import { describe, it } from 'mocha';
+
 import { hookLandingPage, describeRelation } from '../helpers/ogc-api-coverages';
+import hookServersStartStop from '../helpers/servers';
 
 const version = '1.0.0';
 const collection = 'C1233800302-EEDTEST';

@@ -1,6 +1,7 @@
+import path from 'path';
+
 import { IsInt, IsNotEmpty, IsNumber, Min } from 'class-validator';
 import _ from 'lodash';
-import path from 'path';
 
 import { HarmonyEnv } from '@harmony/util/env';
 

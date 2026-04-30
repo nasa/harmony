@@ -1,12 +1,13 @@
 /* eslint-disable n/no-process-exit */
-import express from 'express';
 import { Server } from 'http';
 
-import log from '../../harmony/app/util/log';
+import express from 'express';
+
 import router from './routers/router';
 import env from './util/env';
 import { waitForContainerToStart } from './util/k8s';
 import PullWorker from './workers/pull-worker';
+import log from '../../harmony/app/util/log';
 
 /**
  *

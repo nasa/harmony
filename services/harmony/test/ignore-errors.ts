@@ -1,12 +1,6 @@
 import { expect } from 'chai';
 import { stub } from 'sinon';
 
-import { Job, JobStatus } from '../app/models/job';
-import WorkItem, { getWorkItemById, getWorkItemsByJobId } from '../app/models/work-item';
-import { getStacLocation, WorkItemStatus } from '../app/models/work-item-interface';
-import * as aggregationBatch from '../app/util/aggregation-batch';
-import db from '../app/util/db';
-import env from '../app/util/env';
 import { truncateAll } from './helpers/db';
 import { hookRedirect } from './helpers/hooks';
 import { jobStatus } from './helpers/jobs';
@@ -14,11 +8,17 @@ import { hookRangesetRequest } from './helpers/ogc-api-coverages';
 import { resetQueues } from './helpers/queue';
 import hookServersStartStop from './helpers/servers';
 import { fakeServiceStacOutput, getWorkForService, updateWorkItem } from './helpers/work-items';
+import { Job, JobStatus } from '../app/models/job';
+import WorkItem, { getWorkItemById, getWorkItemsByJobId } from '../app/models/work-item';
+import { getStacLocation, WorkItemStatus } from '../app/models/work-item-interface';
+import * as aggregationBatch from '../app/util/aggregation-batch';
+import db from '../app/util/db';
+import env from '../app/util/env';
 
 const hossAndMaskfillQuery = {
   maxResults: 1,
   subset: 'lat(60:65)',
-  format: 'application/x-netcdf4',
+  format: 'application/netcdf',
   forceAsync: true,
 };
 

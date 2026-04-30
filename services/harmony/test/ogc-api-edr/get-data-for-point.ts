@@ -704,7 +704,7 @@ describe('OGC API EDR - getEdrPosition', function () {
   describe('when requesting output formats', function () {
     const tiff = 'image/tiff';
     const png = 'image/png';
-    const netcdf = 'application/x-netcdf4';
+    const netcdf = 'application/netcdf';
     const anyWildcard = '*/*';
     const imageWildcard = 'image/*';
     const wildcardTiff = '*/tiff';

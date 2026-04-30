@@ -1,7 +1,8 @@
 import * as fs from 'fs';
+import * as path from 'path';
+
 import * as yaml from 'js-yaml';
 import _, { get as getIn } from 'lodash';
-import * as path from 'path';
 
 import { Conjunction, isInteger, listToText } from '@harmony/util/string';
 

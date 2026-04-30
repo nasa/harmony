@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { HeadObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { S3RequestPresigner } from '@aws-sdk/s3-request-presigner';
 import { expect } from 'chai';
 import sinon from 'sinon';
 
-import { HeadObjectCommand, S3Client } from '@aws-sdk/client-s3';
-import { S3RequestPresigner } from '@aws-sdk/s3-request-presigner';
 
 import { S3ObjectStore } from '../../app/util/object-store/s3-object-store';
 

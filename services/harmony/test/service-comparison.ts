@@ -1,7 +1,8 @@
-import { ServiceConfig } from '../app/models/services/base-service';
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
+
 import { allValidations } from '../../../scripts/service-comparison';
+import { ServiceConfig } from '../app/models/services/base-service';
 
 
 describe('service-comparison.ts', function () {

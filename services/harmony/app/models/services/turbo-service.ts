@@ -1,5 +1,6 @@
 import _ from 'lodash';
 import { Logger } from 'winston';
+
 import BaseService from './base-service';
 import InvocationResult from './invocation-result';
 

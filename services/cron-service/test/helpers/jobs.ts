@@ -1,15 +1,16 @@
-import request, { Test } from 'supertest';
-import { it } from 'mocha';
 import { expect } from 'chai';
-import { v4 as uuid } from 'uuid';
 import _ from 'lodash';
-import JobLink from '../../../harmony/app/models/job-link';
-import { Job, JobStatus, JobRecord, jobRecordFields, JobForDisplay, getRelatedLinks } from '../../../harmony/app/models/job';
+import { it } from 'mocha';
+import request, { Test } from 'supertest';
+import { v4 as uuid } from 'uuid';
+
+import { truncateAll } from './db';
 import { JobListing } from '../../../harmony/app/frontends/jobs';
+import { Job, JobStatus, JobRecord, jobRecordFields, JobForDisplay, getRelatedLinks } from '../../../harmony/app/models/job';
+import JobLink from '../../../harmony/app/models/job-link';
+import { RecordConstructor } from '../../../harmony/app/models/record';
 import db, { Transaction } from '../../../harmony/app/util/db';
 import { hookRequest } from '../../../harmony/test/helpers/hooks';
-import { truncateAll } from './db';
-import { RecordConstructor } from '../../../harmony/app/models/record';
 
 export const adminUsername = 'adam';
 

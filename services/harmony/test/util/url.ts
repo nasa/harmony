@@ -1,5 +1,6 @@
-import { describe, it } from 'mocha';
 import { expect } from 'chai';
+import { describe, it } from 'mocha';
+
 import { getRequestUrl, getSanitizedRequestUrl, getRequestRoot, isValidUri } from '../../app/util/url';
 
 /**

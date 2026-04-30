@@ -1,9 +1,10 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
+
 import { generateExtent } from '../../app/frontends/ogc-coverages/describe-collections';
+import { ServiceConfig } from '../../app/models/services/base-service';
 import { hookDescribeCollectionRequest, hookDescribeCollectionsRequest } from '../helpers/ogc-api-coverages';
 import hookServersStartStop from '../helpers/servers';
-import { ServiceConfig } from '../../app/models/services/base-service';
 import { hookServices } from '../helpers/stub-service';
 
 describe('OGC API Coverages - describeCollections', function () {

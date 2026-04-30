@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import * as k8s from '@kubernetes/client-node';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 
-import * as k8s from '@kubernetes/client-node';
 
 import { RestartPrometheus } from '../app/cronjobs/restart-prometheus';
 import { Context } from '../app/util/context';

@@ -1,10 +1,11 @@
 import { afterEach, beforeEach } from 'mocha';
-import WorkflowStep, { WorkflowStepRecord } from '../../../harmony/app/models/workflow-steps';
-import db, { Transaction } from '../../../harmony/app/util/db';
+
 import { truncateAll } from './db';
-import { parseSchemaFile } from '../../../harmony/test/helpers/data-operation';
 import DataOperation, { CURRENT_SCHEMA_VERSION } from '../../../harmony/app/models/data-operation';
 import { RecordConstructor } from '../../../harmony/app/models/record';
+import WorkflowStep, { WorkflowStepRecord } from '../../../harmony/app/models/workflow-steps';
+import db, { Transaction } from '../../../harmony/app/util/db';
+import { parseSchemaFile } from '../../../harmony/test/helpers/data-operation';
 
 export const validOperation = new DataOperation(parseSchemaFile('valid-operation-input.json')).serialize(CURRENT_SCHEMA_VERSION);
 

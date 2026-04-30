@@ -1,15 +1,16 @@
-import { expect } from 'chai';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
+
+import { expect } from 'chai';
 import { describe, it } from 'mocha';
 import * as sinon from 'sinon';
 
+import { hookGetWorkRequest } from './helpers/pull-worker';
 import WorkItem from '../../harmony/app/models/work-item';
 import { WorkItemRecord } from '../../harmony/app/models/work-item-interface';
 import { buildOperation } from '../../harmony/test/helpers/data-operation';
 import * as serviceRunner from '../app/service/service-runner';
 import env from '../app/util/env';
 import PullWorker, * as pullWorker from '../app/workers/pull-worker';
-import { hookGetWorkRequest } from './helpers/pull-worker';
 
 const {
   _pullWork,

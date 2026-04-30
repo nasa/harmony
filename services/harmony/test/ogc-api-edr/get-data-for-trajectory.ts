@@ -1,14 +1,15 @@
 import { expect } from 'chai';
-import { describe, it } from 'mocha';
 import _ from 'lodash';
+import { describe, it } from 'mocha';
+
+import { convertWktLineToPolygon } from '../../app/frontends/ogc-edr/get-data-for-trajectory';
+import env from '../../app/util/env';
+import { validateWkt } from '../../app/util/parameter-parsing-helpers';
 import isUUID from '../../app/util/uuid';
 import { itRedirectsToJobStatusUrl } from '../helpers/jobs';
 import { hookPostEdrRequest, hookEdrRequest, edrRequest } from '../helpers/ogc-api-edr';
 import hookServersStartStop from '../helpers/servers';
 import StubService from '../helpers/stub-service';
-import { convertWktLineToPolygon } from '../../app/frontends/ogc-edr/get-data-for-trajectory';
-import { validateWkt } from '../../app/util/parameter-parsing-helpers';
-import env from '../../app/util/env';
 
 describe('convertWktLineToPolygon', () => {
   const sideLength = 1;

@@ -1,7 +1,7 @@
-import { before } from 'mocha';
-import { stub } from 'sinon';
 import { use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
+import { before } from 'mocha';
+import { stub } from 'sinon';
 
 process.env.NODE_ENV = 'test';
 process.env.DATABASE_TYPE = 'sqlite';

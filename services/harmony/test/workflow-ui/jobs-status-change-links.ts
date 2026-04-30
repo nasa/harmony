@@ -1,8 +1,10 @@
-import { expect } from 'chai';
-import { describe, it, before } from 'mocha';
-import JobsStatusChangeLinks from '../../public/js/workflow-ui/jobs/jobs-status-change-links';
-import { JSDOM } from 'jsdom';
 import path from 'path';
+
+import { expect } from 'chai';
+import { JSDOM } from 'jsdom';
+import { describe, it, before } from 'mocha';
+
+import JobsStatusChangeLinks from '../../public/js/workflow-ui/jobs/jobs-status-change-links';
 
 
 describe('JobsStatusChangeLinks', function () {

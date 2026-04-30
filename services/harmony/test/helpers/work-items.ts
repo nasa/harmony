@@ -3,6 +3,11 @@ import _ from 'lodash';
 import { afterEach, beforeEach } from 'mocha';
 import request, { Test } from 'supertest';
 
+import { truncateAll } from './db';
+import { hookBackendRequest } from './hooks';
+import {
+  buildWorkflowStep, hookWorkflowStepCreation, hookWorkflowStepCreationEach,
+} from './workflow-steps';
 import { RecordConstructor } from '../../app/models/record';
 import WorkItem from '../../app/models/work-item';
 import {
@@ -10,11 +15,6 @@ import {
 } from '../../app/models/work-item-interface';
 import db, { Transaction } from '../../app/util/db';
 import { objectStoreForProtocol } from '../../app/util/object-store';
-import { truncateAll } from './db';
-import { hookBackendRequest } from './hooks';
-import {
-  buildWorkflowStep, hookWorkflowStepCreation, hookWorkflowStepCreationEach,
-} from './workflow-steps';
 
 export const exampleWorkItemProps = {
   jobID: '1',
@@ -57,6 +57,8 @@ export function buildWorkItem(fields: Partial<WorkItemRecord> = {}): WorkItem {
  */
 export async function rawSaveWorkItem(tx: Transaction, fields: Partial<WorkItemRecord> = {}): Promise<WorkItem> {
   const workItem = buildWorkItem(fields);
+  workItem.createdAt = workItem.createdAt || new Date();
+  workItem.updatedAt = workItem.updatedAt || workItem.createdAt;
   let stmt = tx((workItem.constructor as RecordConstructor).table)
     .insert(workItem);
   if (db.client.config.client === 'pg') {
@@ -243,7 +245,7 @@ export async function fakeServiceStacOutput(
       'data': {
         'href': 'https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/001_00_8f00ff_global.nc',
         'title': '001_00_8f00ff_global.nc',
-        'type': 'application/x-netcdf4',
+        'type': 'application/netcdf',
         'roles': [
           'data',
         ],

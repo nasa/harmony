@@ -2,14 +2,6 @@ import _ from 'lodash';
 import { LRUCache } from 'lru-cache';
 import { Logger } from 'winston';
 
-import DataOperation, { CURRENT_SCHEMA_VERSION } from '../models/data-operation';
-import { getRelatedLinks, Job, JobForDisplay, JobStatus, terminalStates } from '../models/job';
-import JobLink from '../models/job-link';
-import JobMessage, { JobMessageLevel } from '../models/job-message';
-import { deleteUserWorkForJob, recalculateCounts } from '../models/user-work';
-import { getTotalWorkItemSizesForJobID, updateWorkItemStatusesByJobId } from '../models/work-item';
-import { WorkItemStatus } from '../models/work-item-interface';
-import { getWorkflowStepByJobIdStepIndex, getWorkflowStepsByJobId } from '../models/workflow-steps';
 import { createDecrypter, createEncrypter } from './crypto';
 import db, { Transaction } from './db';
 import env from './env';
@@ -21,6 +13,14 @@ import {
 import { getProductMetric, getResponseMetric } from './metrics';
 import { needsStacLink } from './stac';
 import isUUID from './uuid';
+import DataOperation, { CURRENT_SCHEMA_VERSION } from '../models/data-operation';
+import { getRelatedLinks, Job, JobForDisplay, JobStatus, terminalStates } from '../models/job';
+import JobLink from '../models/job-link';
+import JobMessage, { JobMessageLevel } from '../models/job-message';
+import { deleteUserWorkForJob, recalculateCounts } from '../models/user-work';
+import { getTotalWorkItemSizesForJobID, updateWorkItemStatusesByJobId } from '../models/work-item';
+import { WorkItemStatus } from '../models/work-item-interface';
+import { getWorkflowStepByJobIdStepIndex, getWorkflowStepsByJobId } from '../models/workflow-steps';
 
 // In memory cache for Job ID to job. This is used to speed up the initial request which redirects
 // to the status page. We already have all the job information at the time so we can avoid that

@@ -1,8 +1,8 @@
+import * as k8s from '@kubernetes/client-node';
 import _ from 'lodash';
 import { LRUCache } from 'lru-cache';
 import { Logger } from 'winston';
 
-import * as k8s from '@kubernetes/client-node';
 
 import { QUERY_CMR_SERVICE_REGEX } from '../../../harmony/app/backends/workflow-orchestration/util';
 import {

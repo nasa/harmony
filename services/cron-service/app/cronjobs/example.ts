@@ -1,5 +1,5 @@
-import { Context } from '../util/context';
 import { CronJob } from './cronjob';
+import { Context } from '../util/context';
 
 /**
  * Example class for cron service

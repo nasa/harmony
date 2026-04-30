@@ -1,6 +1,7 @@
+import { URL } from 'url';
+
 import { NextFunction, Response } from 'express';
 import { LRUCache } from 'lru-cache';
-import { URL } from 'url';
 
 import HarmonyRequest from '../models/harmony-request';
 import { Job } from '../models/job';

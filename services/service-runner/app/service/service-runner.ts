@@ -1,10 +1,12 @@
-import axios from 'axios';
 import { writeFileSync } from 'fs';
 import stream from 'stream';
+
+import * as k8s from '@kubernetes/client-node';
+import axios from 'axios';
 import { Logger } from 'winston';
 
 import { sanitizeImage } from '@harmony/util/string';
-import * as k8s from '@kubernetes/client-node';
+
 
 import {
   getItemLogsLocation, getStacLocation, WorkItemRecord,

@@ -1,14 +1,15 @@
-import { describe, it } from 'mocha';
 import { expect } from 'chai';
 import { subMinutes } from 'date-fns';
+import { describe, it } from 'mocha';
 import MockDate from 'mockdate';
+
+import { hookTransaction, truncateAll } from './helpers/db';
 import { buildJob } from './helpers/jobs';
+import { buildWorkItem } from './helpers/work-items';
 import { buildWorkflowStep } from './helpers/workflow-steps';
-import { deleteWorkflowStepsById, getWorkflowStepIdsByJobUpdateAgeAndStatus } from '../../harmony/app/models/workflow-steps';
 import { JobStatus } from '../../harmony/app/models/job';
 import { deleteWorkItemsById, getWorkItemIdsByJobUpdateAgeAndStatus } from '../../harmony/app/models/work-item';
-import { hookTransaction, truncateAll } from './helpers/db';
-import { buildWorkItem } from './helpers/work-items';
+import { deleteWorkflowStepsById, getWorkflowStepIdsByJobUpdateAgeAndStatus } from '../../harmony/app/models/workflow-steps';
 
 describe('WorkReaper-related functions', function () {
   const newDate = '1/1/2000';

@@ -1,12 +1,13 @@
-import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import hookServersStartStop from './helpers/servers';
-import { validGetMapQuery, wmsRequest } from './helpers/wms';
+import _ from 'lodash';
+import { describe, it } from 'mocha';
+
 import { hookFunction } from './helpers/hooks';
 import { hookRangesetRequest } from './helpers/ogc-api-coverages';
+import hookServersStartStop from './helpers/servers';
 import hookCmr from './helpers/stub-cmr';
-import _ from 'lodash';
 import StubService from './helpers/stub-service';
+import { validGetMapQuery, wmsRequest } from './helpers/wms';
 
 /**
  * Define common test cases for HTTP backends that don't vary by access protocol.

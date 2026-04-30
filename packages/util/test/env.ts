@@ -1,14 +1,15 @@
-import { describe, it } from 'mocha';
-import { expect } from 'chai';
-import * as tmp from 'tmp-promise';
 import { promises as fs } from 'fs';
+
+import { expect } from 'chai';
+import { IsInt } from 'class-validator';
+import { describe, it } from 'mocha';
+import * as tmp from 'tmp-promise';
 
 // do this before the import since the env module clones process.env on import
 const prevProcessEnv = process.env;
 process.env.CLIENT_ID = 'client-007';
 process.env.AWS_DEFAULT_REGION = 'us-east-3';
 import { HarmonyEnv, getValidationErrors } from '../env';
-import { IsInt } from 'class-validator';
 
 describe('HarmonyEnv', function () {
 

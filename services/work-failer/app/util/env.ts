@@ -1,5 +1,6 @@
-import { IsInt, Min } from 'class-validator';
 import * as path from 'path';
+
+import { IsInt, Min } from 'class-validator';
 
 import { HarmonyEnv } from '@harmony/util/env';
 

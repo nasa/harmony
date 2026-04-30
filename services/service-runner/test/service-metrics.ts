@@ -3,8 +3,9 @@ import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
 import chai, { expect } from 'chai';
 import { describe, it } from 'mocha';
-import env from '../app/util/env';
+
 import { exportedForTesting } from '../app/service/service-metrics';
+import env from '../app/util/env';
 
 chai.use(require('chai-as-promised'));
 

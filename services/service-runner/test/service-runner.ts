@@ -1,11 +1,11 @@
+import { readFileSync } from 'fs';
+
+import * as k8s from '@kubernetes/client-node';
 import axios from 'axios';
 /* eslint-disable @typescript-eslint/only-throw-error */
 import { expect } from 'chai';
-import { readFileSync } from 'fs';
 import { describe, it } from 'mocha';
 import sinon from 'sinon';
-
-import * as k8s from '@kubernetes/client-node';
 
 import WorkItem from '../../harmony/app/models/work-item';
 import { getItemLogsLocation, WorkItemRecord } from '../../harmony/app/models/work-item-interface';

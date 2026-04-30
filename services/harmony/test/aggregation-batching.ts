@@ -3,14 +3,6 @@ import permutations from 'just-permutations';
 import { it } from 'mocha';
 import { stub } from 'sinon';
 
-import WorkItem from '../app/models/work-item';
-import { getStacLocation, WorkItemStatus } from '../app/models/work-item-interface';
-import { getWorkflowStepsByJobId } from '../app/models/workflow-steps';
-import * as aggregationBatch from '../app/util/aggregation-batch';
-import db from '../app/util/db';
-import env from '../app/util/env';
-import { objectStoreForProtocol } from '../app/util/object-store';
-import { StacCatalog } from '../app/util/stac';
 import { truncateAll } from './helpers/db';
 import { hookRedirect } from './helpers/hooks';
 import { getFirstJob } from './helpers/jobs';
@@ -20,6 +12,14 @@ import { hookServices } from './helpers/stub-service';
 import {
   fakeServiceStacOutput, getWorkForService, hookGetWorkForService, updateWorkItem,
 } from './helpers/work-items';
+import WorkItem from '../app/models/work-item';
+import { getStacLocation, WorkItemStatus } from '../app/models/work-item-interface';
+import { getWorkflowStepsByJobId } from '../app/models/workflow-steps';
+import * as aggregationBatch from '../app/util/aggregation-batch';
+import db from '../app/util/db';
+import env from '../app/util/env';
+import { objectStoreForProtocol } from '../app/util/object-store';
+import { StacCatalog } from '../app/util/stac';
 
 /**
  * Create a work item update for a query-cmr get work response
