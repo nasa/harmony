@@ -155,6 +155,16 @@ export interface CmrUmmGranuleHits {
   searchAfter?: string;
 }
 
+interface ScienceKeyword {
+  Category: string;
+  Topic: string;
+  Term: string;
+  VariableLevel1?: string;
+  VariableLevel2?: string;
+  VariableLevel3?: string;
+  DetailedVariable?: string;
+}
+
 export interface CmrUmmVariable {
   meta: {
     'concept-id': string;
@@ -168,6 +178,7 @@ export interface CmrUmmVariable {
     RelatedURLs?: CmrRelatedUrl[];
     VariableType?: string;
     VariableSubType?: string;
+    ScienceKeywords?: ScienceKeyword[];
   };
 }
 
@@ -688,7 +699,7 @@ async function _getAllVariables(
   context: RequestContext, query: CmrQuery, token: string,
 ): Promise<Array<CmrUmmVariable>> {
   logger.debug('Calling CMR to fetch variables');
-  const variablesResponse = await _cmrPost(context, '/search/variables.umm_json_v1_8_1', query, token) as CmrVariablesResponse;
+  const variablesResponse = await _cmrPost(context, '/search/variables.umm_json_v1_9_0', query, token) as CmrVariablesResponse;
   const { hits } = variablesResponse.data;
   let variables = variablesResponse.data.items;
   let numVariablesRetrieved = variables.length;
@@ -698,7 +709,7 @@ async function _getAllVariables(
     page_num += 1;
     logger.debug(`Paging through variables = ${page_num}, numVariablesRetrieved = ${numVariablesRetrieved}, total hits ${hits}`);
     query.page_num = page_num;
-    const response = await _cmrPost(context, '/search/variables.umm_json_v1_8_1', query, token) as CmrVariablesResponse;
+    const response = await _cmrPost(context, '/search/variables.umm_json_v1_9_0', query, token) as CmrVariablesResponse;
     const pageOfVariables = response.data.items;
     variables = variables.concat(pageOfVariables);
     numVariablesRetrieved += pageOfVariables.length;

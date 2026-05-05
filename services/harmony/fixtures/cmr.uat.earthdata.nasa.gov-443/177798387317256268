@@ -1,30 +1,31 @@
-POST /search/variables.umm_json_v1_8_1
+POST /search/variables.umm_json_v1_9_0
 accept: application/json
 content-type: multipart/form-data; boundary=----------------------------012345678901234567890123
 accept-encoding: gzip,deflate
 body: ------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"concept_id\"\r\n\r\nV1229850953-POCUMULUS\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"page_size\"\r\n\r\n2000\r\n------------------------------012345678901234567890123--\r\n
 
 HTTP/1.1 200 OK
-content-type: application/vnd.nasa.cmr.umm_results+json;version=1.8.1; charset=utf-8
+content-type: application/vnd.nasa.cmr.umm_results+json;version=1.9.0; charset=utf-8
 transfer-encoding: chunked
 connection: keep-alive
-date: Wed, 14 May 2025 22:46:29 GMT
+date: Tue, 05 May 2026 12:24:33 GMT
+server: ServerTokens ProductOnly
+vary: Accept-Encoding
 x-frame-options: SAMEORIGIN
 access-control-allow-origin: *
 x-xss-protection: 1; mode=block
-cmr-request-id: 4202fd86-f8f0-4bcb-adb7-85396fc8a49b
-content-sha1: 27b21b97066b8d55ddc4a1c2b4b2c46fa6bd11cc
+cmr-request-id: 5e9b0b09-5f4c-4b31-9c45-38a9904e926b
+content-sha1: 228842c1e0d4d6241c39c02fe87f83bea09bc725
 strict-transport-security: max-age=31536000; includeSubDomains; preload
 cmr-hits: 0
 access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Search-After, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
 x-content-type-options: nosniff
 cmr-took: 4
-x-request-id: 4202fd86-f8f0-4bcb-adb7-85396fc8a49b
-content-md5: 2d079c31563ab41a7e58068145f60046
-server: ServerTokens ProductOnly
+x-request-id: 5e9b0b09-5f4c-4b31-9c45-38a9904e926b
+content-md5: e5ed3354740e11cd3931bc1a9f901bc5
 x-cache: Miss from cloudfront
-via: 1.1 92ed8a6103fa735c31caf49b92d4efb6.cloudfront.net (CloudFront)
-x-amz-cf-pop: IAD89-P2
-x-amz-cf-id: bQJdGQ0niQYqSpqC9MBj7CWJPO1lZr7QTtzhFr-9_4m-g6jV-jSZCg==
+via: 1.1 95afc38869a0201290a3ac42c291dc74.cloudfront.net (CloudFront)
+x-amz-cf-pop: DFW59-P2
+x-amz-cf-id: GWcRuFMBaIlqx2Ll84VTg0HodkuKsusoR63Jjc9_lbtEmeG5Z5xdSg==
 
-{"hits":0,"took":4,"items":[]}
+{"hits":0,"took":3,"items":[]}
