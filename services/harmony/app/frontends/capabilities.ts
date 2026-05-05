@@ -46,6 +46,21 @@ interface VariableV2 {
   href: string;
 }
 
+interface ScienceKeyword {
+  Category: string;
+  Topic: string;
+  Term: string;
+  VariableLevel1: string;
+  VariableLevel2: string;
+  VariableLevel3: string;
+  DetailedVariable: string;
+}
+interface VariableV3 {
+  name: string;
+  href: string;
+  scienceKeywords: ScienceKeyword[];
+}
+
 interface CollectionCapabilitiesV1 {
   conceptId: string;
   shortName: string;
@@ -302,6 +317,33 @@ function getVariableV2(variable: CmrUmmVariable): VariableV2 {
 }
 
 /**
+ * Returns the variable representation in capabilities version 3 format.
+ *
+ * @param variable - the CMR umm-var object
+ * @returns the variable representation in capabilities version 3 format
+ */
+function getVariableV3(variable: CmrUmmVariable): VariableV3 {
+  const name = variable.umm.Name;
+  const href = `${process.env.CMR_ENDPOINT}/search/concepts/${variable.meta['concept-id']}`;
+  const scienceKeywords = [];
+  if (variable.umm.ScienceKeywords) {
+    for (const scienceKeyword of variable.umm.ScienceKeywords) {
+      scienceKeywords.push({
+        category: scienceKeyword.Category,
+        topic: scienceKeyword.Topic,
+        term: scienceKeyword.Term,
+        variableLevel1: scienceKeyword.VariableLevel1,
+        variableLevel2: scienceKeyword.VariableLevel2,
+        variableLevel3: scienceKeyword.VariableLevel3,
+        detailedVariable: scienceKeyword.DetailedVariable,
+      });
+    }
+  }
+
+  return { name, href, scienceKeywords };
+}
+
+/**
  * Returns the supported output formats from all services.
  *
  * @param services - a list of all of the services in ServiceV3 format
@@ -369,7 +411,7 @@ function getInterpolationMethods(services: ServiceV3[]): Set<string> {
 async function getCollectionCapabilitiesV1(
   _context: RequestContext,
   collection: CmrCollection,
-) : Promise<CollectionCapabilitiesV1> {
+): Promise<CollectionCapabilitiesV1> {
   const capabilitiesVersion = '1';
   const allServiceConfigs = addCollectionsToServicesByAssociation([collection]);
   const matchingServices = allServiceConfigs.filter((config) =>
@@ -404,7 +446,7 @@ async function getCollectionCapabilitiesV1(
 async function getCollectionCapabilitiesV2(
   _context: RequestContext,
   collection: CmrCollection,
-) : Promise<CollectionCapabilitiesV2> {
+): Promise<CollectionCapabilitiesV2> {
   const capabilitiesVersion = '2';
   const allServiceConfigs = addCollectionsToServicesByAssociation([collection]);
   const matchingServices = allServiceConfigs.filter((config) =>
@@ -444,7 +486,7 @@ async function getCollectionCapabilitiesV3(
   const allServiceConfigs = addCollectionsToServicesByAssociation([collection]);
   const matchingServices = allServiceConfigs.filter((config) =>
     config.collections.map((c) => c.id).includes(collection.id));
-  const variables = collection.variables.map((v) => getVariableV2(v));
+  const variables = collection.variables.map((v) => getVariableV3(v));
   const variableSubset = variables.length > 0
     && matchingServices.some((s) => s.capabilities.subsetting.variable === true);
   const bboxSubset = matchingServices.some((s) => s.capabilities.subsetting.bbox === true);
@@ -526,7 +568,7 @@ async function getCollectionCapabilities(
   context: RequestContext,
   collection: CmrCollection,
   version = stableApiVersion,
-) : Promise<CollectionCapabilities> {
+): Promise<CollectionCapabilities> {
   const capabilitiesFn = chooseCapabilitiesFunction(version);
   return capabilitiesFn(context, collection);
 }
