@@ -50,10 +50,10 @@ interface ScienceKeyword {
   Category: string;
   Topic: string;
   Term: string;
-  VariableLevel1: string;
-  VariableLevel2: string;
-  VariableLevel3: string;
-  DetailedVariable: string;
+  VariableLevel1?: string;
+  VariableLevel2?: string;
+  VariableLevel3?: string;
+  DetailedVariable?: string;
 }
 interface VariableV3 {
   name: string;
@@ -117,7 +117,7 @@ interface CollectionCapabilitiesV3 {
   shortName: string;
   summary: ServiceCapabilitiesV3;
   services: ServiceV3[];
-  variables: VariableV2[];
+  variables: VariableV3[];
   capabilitiesVersion: string;
 }
 
