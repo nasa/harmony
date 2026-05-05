@@ -520,18 +520,22 @@ describe('Testing collection capabilities', function () {
           const expectedVariables = [{
             'name': 'alpha_var',
             'href': 'https://cmr.uat.earthdata.nasa.gov/search/concepts/V1234088190-EEDTEST',
+            'scienceKeywords': [],
           },
           {
             'name': 'blue_var',
             'href': 'https://cmr.uat.earthdata.nasa.gov/search/concepts/V1234088189-EEDTEST',
+            'scienceKeywords': [],
           },
           {
             'name': 'green_var',
             'href': 'https://cmr.uat.earthdata.nasa.gov/search/concepts/V1234088188-EEDTEST',
+            'scienceKeywords': [],
           },
           {
             'name': 'red_var',
             'href': 'https://cmr.uat.earthdata.nasa.gov/search/concepts/V1234088187-EEDTEST',
+            'scienceKeywords': [],
           }];
           expect(capabilities.variables).to.eql(expectedVariables);
         });
@@ -540,7 +544,81 @@ describe('Testing collection capabilities', function () {
           const capabilities = JSON.parse(this.res.text);
           expect(capabilities.capabilitiesVersion).to.equal('3-alpha');
         });
+
+        describe('for a collection with scienceKeywords in the variables', function () {
+          hookGetCollectionCapabilities({ collectionId: 'C1238538022-EEDTEST', version: '3' });
+          it('returns a 200 success status code', function () {
+            expect(this.res.status).to.equal(200);
+          });
+
+          it('includes the science keywords in the variables field', function () {
+            const capabilities = JSON.parse(this.res.text);
+            // Just look at the first two variables returned to make sure the science keywords are
+            // set correctly
+            const expectedVariables = [{
+              'name': '/ancillary_data/atlas_sdp_gps_epoch',
+              'href': 'https://cmr.uat.earthdata.nasa.gov/search/concepts/V1238628268-EEDTEST',
+              'scienceKeywords': [
+                {
+                  'category': 'EARTH SCIENCE',
+                  'topic': 'BIOSPHERE',
+                  'term': 'ECOLOGICAL DYNAMICS',
+                  'variableLevel1': 'ECOSYSTEM FUNCTIONS',
+                  'variableLevel2': 'SECONDARY PRODUCTION',
+                },
+                {
+                  'category': 'EARTH SCIENCE',
+                  'topic': 'LAND SURFACE',
+                  'term': 'GEOMORPHIC LANDFORMS/PROCESSES',
+                  'variableLevel1': 'COASTAL LANDFORMS',
+                  'variableLevel2': 'DELTAS',
+                },
+                {
+                  'category': 'EARTH SCIENCE',
+                  'topic': 'LAND SURFACE',
+                  'term': 'GEOMORPHIC LANDFORMS/PROCESSES',
+                  'variableLevel1': 'FLUVIAL LANDFORMS',
+                  'variableLevel2': 'DELTAS',
+                },
+                {
+                  'category': 'EARTH SCIENCE',
+                  'topic': 'OCEANS',
+                  'term': 'COASTAL PROCESSES',
+                  'variableLevel1': 'DELTAS',
+                },
+                {
+                  'category': 'EARTH SCIENCE',
+                  'topic': 'SOLID EARTH',
+                  'term': 'GEOMORPHIC LANDFORMS/PROCESSES',
+                  'variableLevel1': 'COASTAL LANDFORMS',
+                  'variableLevel2': 'DELTAS',
+                },
+                {
+                  'category': 'EARTH SCIENCE',
+                  'topic': 'SOLID EARTH',
+                  'term': 'GEOMORPHIC LANDFORMS/PROCESSES',
+                  'variableLevel1': 'FLUVIAL LANDFORMS',
+                  'variableLevel2': 'DELTAS',
+                },
+              ],
+            }, {
+              'name': '/ancillary_data/control',
+              'href': 'https://cmr.uat.earthdata.nasa.gov/search/concepts/V1238628280-EEDTEST',
+              'scienceKeywords': [
+                {
+                  'category': 'EARTH SCIENCE',
+                  'topic': 'ATMOSPHERE',
+                  'term': 'CLOUDS',
+                  'variableLevel1': 'TROPOSPHERIC/HIGH-LEVEL CLOUDS (OBSERVED/ANALYZED)',
+                  'variableLevel2': 'CONTRAILS',
+                },
+              ],
+            }];
+            expect(capabilities.variables.slice(0, 2)).to.eql(expectedVariables);
+          });
+        });
       });
+
 
       describe('specifying version 3-alpha', function () {
         hookGetCollectionCapabilities({ collectionId: 'C1234088182-EEDTEST', version: '3-alpha' });
