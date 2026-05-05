@@ -1,0 +1,32 @@
+POST /search/variables.umm_json_v1_9_0
+accept: application/json
+content-type: multipart/form-data; boundary=----------------------------012345678901234567890123
+accept-encoding: gzip,deflate
+body: ------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"concept_id\"\r\n\r\nV1256354892-LARC_CLOUD\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"concept_id\"\r\n\r\nV1256354896-LARC_CLOUD\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"concept_id\"\r\n\r\nV1256354894-LARC_CLOUD\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"page_size\"\r\n\r\n2000\r\n------------------------------012345678901234567890123--\r\n
+
+HTTP/1.1 200 OK
+content-type: application/vnd.nasa.cmr.umm_results+json;version=1.9.0; charset=utf-8
+transfer-encoding: chunked
+connection: keep-alive
+date: Tue, 05 May 2026 12:25:57 GMT
+server: ServerTokens ProductOnly
+vary: Accept-Encoding
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: 5fb81227-e5c3-47df-8860-9a955c776aaf
+content-sha1: 46b0e283d4a15174e3bc2144cbc24de03da23bd2
+strict-transport-security: max-age=31536000; includeSubDomains; preload
+cmr-search-after: ["/product/vertical_column_troposphere","LARC_CLOUD","/product/vertical_column_troposphere","LARC_CLOUD"]
+cmr-hits: 3
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Search-After, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 29
+x-request-id: 5fb81227-e5c3-47df-8860-9a955c776aaf
+content-md5: c8defdf10c3586bf6d3fe4cf57b97b97
+x-cache: Miss from cloudfront
+via: 1.1 4ec96ec95935e27af762cd5e1b587fb8.cloudfront.net (CloudFront)
+x-amz-cf-pop: DFW59-P2
+x-amz-cf-id: H49GYmKRk7xf7QNbSz7ziTXobirIzbPTUJaobXVRpXsvJXU6_wg4ww==
+
+{"hits":3,"took":28,"items":[{"meta":{"revision-id":1,"deleted":false,"format":"application/vnd.nasa.cmr.umm+json","provider-id":"LARC_CLOUD","user-id":"ghayescrepps","associations":{"collections":["C1254854453-LARC_CLOUD"]},"native-id":"mmt_variable_8830","association-details":{"collections":[{"concept-id":"C1254854453-LARC_CLOUD"}]},"concept-id":"V1256354892-LARC_CLOUD","revision-date":"2022-12-08T20:48:52.388Z","concept-type":"variable"},"umm":{"Name":"/product/vertical_column_stratosphere","LongName":"stratosphere nitrogen dioxide vertical column","Definition":"stratosphere nitrogen dioxide vertical column","MetadataSpecification":{"URL":"https://cdn.earthdata.nasa.gov/umm/variable/v1.9.0","Name":"UMM-Var","Version":"1.9.0"}},"associations":{"collections":[{"concept-id":"C1254854453-LARC_CLOUD"}]}},{"meta":{"revision-id":1,"deleted":false,"format":"application/vnd.nasa.cmr.umm+json","provider-id":"LARC_CLOUD","user-id":"ghayescrepps","associations":{"collections":["C1254854453-LARC_CLOUD"]},"native-id":"mmt_variable_8831","association-details":{"collections":[{"concept-id":"C1254854453-LARC_CLOUD"}]},"concept-id":"V1256354896-LARC_CLOUD","revision-date":"2022-12-08T20:52:53.784Z","concept-type":"variable"},"umm":{"Definition":"nitrogen dioxide vertical column determined from fitted slant column and total AMF calculated from surface to top of atmosphere","MetadataSpecification":{"URL":"https://cdn.earthdata.nasa.gov/umm/variable/v1.9.0","Name":"UMM-Var","Version":"1.9.0"},"Name":"/product/vertical_column_total","LongName":"nitrogen dioxide vertical column"},"associations":{"collections":[{"concept-id":"C1254854453-LARC_CLOUD"}]}},{"meta":{"revision-id":1,"deleted":false,"format":"application/vnd.nasa.cmr.umm+json","provider-id":"LARC_CLOUD","user-id":"ghayescrepps","associations":{"collections":["C1254854453-LARC_CLOUD"]},"native-id":"mmt_variable_8832","association-details":{"collections":[{"concept-id":"C1254854453-LARC_CLOUD"}]},"concept-id":"V1256354894-LARC_CLOUD","revision-date":"2022-12-08T20:52:27.132Z","concept-type":"variable"},"umm":{"Name":"/product/vertical_column_troposphere","LongName":"troposphere nitrogen dioxide vertical column","Definition":"troposphere nitrogen dioxide vertical column","MetadataSpecification":{"URL":"https://cdn.earthdata.nasa.gov/umm/variable/v1.9.0","Name":"UMM-Var","Version":"1.9.0"}},"associations":{"collections":[{"concept-id":"C1254854453-LARC_CLOUD"}]}}]}
