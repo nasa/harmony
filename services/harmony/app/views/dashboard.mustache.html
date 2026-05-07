@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" class="h-100">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -12,16 +13,17 @@
   <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify@4.16.4"></script>
   <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify@4.16.4/dist/tagify.polyfills.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
-          integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"
-          defer></script>
+    integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"
+    defer></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
-          integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
-          crossorigin="anonymous" defer></script>
+    integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"
+    defer></script>
   <script language="javascript" id="_fed_an_ua_tag"
-          src="https://dap.digitalgov.gov/Universal-Federated-Analytics-Min.js?agency=NASA&subagency=GSFC&dclink=true"
-          defer></script>
+    src="https://dap.digitalgov.gov/Universal-Federated-Analytics-Min.js?agency=NASA&subagency=GSFC&dclink=true"
+    defer></script>
   <title>Harmony Dashboard</title>
 </head>
+
 <body class="d-flex flex-column h-100">
   {{> banner}}
 
@@ -37,11 +39,11 @@
         <div class="metric-card shadow-sm">
           <span class="metric-value font-monospace">
             {{#isFailed}}
-              <small class="fs-6 text-muted">failed to retrieve</small>
+            <small class="fs-6 text-muted">failed to retrieve</small>
             {{/isFailed}}
 
             {{^isFailed}}
-              {{count}}
+            {{count}}
             {{/isFailed}}
           </span>
           <span class="metric-label">{{name}}</span>
@@ -54,17 +56,67 @@
       <div class="col-12">
         <h2 class="h4 mb-3"><i class="bi bi-gear-wide-connected"></i> Services</h2>
         <div class="table-responsive">
-          <table class="table table-striped" id="servicesTable">
+          <table class="table table-striped" id="servicesTable" data-last5-start="{{timeRanges.last5Minutes.start}}"
+            data-last5-end="{{timeRanges.last5Minutes.end}}" data-last60-start="{{timeRanges.last60Minutes.start}}"
+            data-last60-end="{{timeRanges.last60Minutes.end}}">
             <thead>
               <tr>
-                <th scope="col" class="sortable" aria-sort="none">
+                <th scope="col" rowspan="2" class="sortable align-middle" aria-sort="none">
                   <button type="button" class="btn-sort" onclick="sortTable(0)">
                     Service Name <i class="bi bi-arrow-down-up sort-icon"></i>
                   </button>
                 </th>
-                <th scope="col" class="sortable sorted-desc" aria-sort="descending">
+                <th scope="col" rowspan="2" class="sortable align-middle sorted-desc" aria-sort="descending">
                   <button type="button" class="btn-sort" onclick="sortTable(1)">
-                    Queued Requests <i class="bi bi-sort-down sort-icon"></i>
+                    Queued <i class="bi bi-sort-down sort-icon"></i>
+                  </button>
+                </th>
+                <th scope="col" colspan="4" class="text-center border-start">
+                  Last 5 Minutes <span class="text-muted fw-normal" id="last5Range"></span>
+                </th>
+                <th scope="col" colspan="4" class="text-center border-start">
+                  Last 60 Minutes <span class="text-muted fw-normal" id="last60Range"></span>
+                </th>
+              </tr>
+              <tr>
+                <th scope="col" class="sortable border-start" aria-sort="none">
+                  <button type="button" class="btn-sort" onclick="sortTable(2)">
+                    Successful <i class="bi bi-arrow-down-up sort-icon"></i>
+                  </button>
+                </th>
+                <th scope="col" class="sortable" aria-sort="none">
+                  <button type="button" class="btn-sort" onclick="sortTable(3)">
+                    Failed <i class="bi bi-arrow-down-up sort-icon"></i>
+                  </button>
+                </th>
+                <th scope="col" class="sortable" aria-sort="none">
+                  <button type="button" class="btn-sort" onclick="sortTable(4)">
+                    Canceled <i class="bi bi-arrow-down-up sort-icon"></i>
+                  </button>
+                </th>
+                <th scope="col" class="sortable" aria-sort="none">
+                  <button type="button" class="btn-sort" onclick="sortTable(5)">
+                    Warning <i class="bi bi-arrow-down-up sort-icon"></i>
+                  </button>
+                </th>
+                <th scope="col" class="sortable border-start" aria-sort="none">
+                  <button type="button" class="btn-sort" onclick="sortTable(6)">
+                    Successful <i class="bi bi-arrow-down-up sort-icon"></i>
+                  </button>
+                </th>
+                <th scope="col" class="sortable" aria-sort="none">
+                  <button type="button" class="btn-sort" onclick="sortTable(7)">
+                    Failed <i class="bi bi-arrow-down-up sort-icon"></i>
+                  </button>
+                </th>
+                <th scope="col" class="sortable" aria-sort="none">
+                  <button type="button" class="btn-sort" onclick="sortTable(8)">
+                    Canceled <i class="bi bi-arrow-down-up sort-icon"></i>
+                  </button>
+                </th>
+                <th scope="col" class="sortable" aria-sort="none">
+                  <button type="button" class="btn-sort" onclick="sortTable(9)">
+                    Warning <i class="bi bi-arrow-down-up sort-icon"></i>
                   </button>
                 </th>
               </tr>
@@ -74,6 +126,14 @@
               <tr>
                 <td class="font-monospace">{{name}}</td>
                 <td><strong>{{queued}}</strong></td>
+                <td class="border-start">{{last5Minutes.successful}}</td>
+                <td>{{last5Minutes.failed}}</td>
+                <td>{{last5Minutes.canceled}}</td>
+                <td>{{last5Minutes.warning}}</td>
+                <td class="border-start">{{last60Minutes.successful}}</td>
+                <td>{{last60Minutes.failed}}</td>
+                <td>{{last60Minutes.canceled}}</td>
+                <td>{{last60Minutes.warning}}</td>
               </tr>
               {{/services}}
             </tbody>
@@ -88,29 +148,66 @@
   </footer>
 
   <script>
+    // Column 0 is the service name (string); all other columns are numeric.
+    const NUMERIC_COLUMNS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+
     /**
-     * Handles table sorting for the Services list
-     * @param {number} n - Column index (0 for name, 1 for count)
+     * Formats an ISO timestamp as a local-time HH:MM string (no seconds, no date).
+     * @param {string} isoString
+     * @returns {string}
+     */
+    function formatLocalTime(isoString) {
+      const d = new Date(isoString);
+      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+    }
+
+    (function populateTimeRanges() {
+      const table = document.getElementById('servicesTable');
+      const last5 = `(${formatLocalTime(table.dataset.last5Start)} - ${formatLocalTime(table.dataset.last5End)})`;
+      const last60 = `(${formatLocalTime(table.dataset.last60Start)} - ${formatLocalTime(table.dataset.last60End)})`;
+      document.getElementById('last5Range').textContent = last5;
+      document.getElementById('last60Range').textContent = last60;
+    })();
+
+    /**
+     * Handles table sorting for the Services list. String columns sort ascending
+     * on first click; numeric columns sort descending on first click. Subsequent
+     * clicks toggle the direction.
+     * @param {number} n - Column index
      */
     function sortTable(n) {
       const table = document.getElementById("servicesTable");
       const tbody = table.querySelector("tbody");
       const rows = Array.from(tbody.rows);
-      const header = table.querySelectorAll("th")[n];
-      const isAscending = header.classList.contains("sorted-asc");
+      const headers = table.querySelectorAll("th.sortable");
+      const header = Array.from(headers).find(
+        h => h.querySelector(`button[onclick="sortTable(${n})"]`)
+      );
 
-      const direction = isAscending ? -1 : 1;
+      const isNumeric = NUMERIC_COLUMNS.has(n);
+      const isAscending = header.classList.contains("sorted-asc");
+      const isDescending = header.classList.contains("sorted-desc");
+      const isCurrentlySorted = isAscending || isDescending;
+
+      // Determine the new sort direction:
+      // - If already sorted, flip it.
+      // - If unsorted, default to ascending for strings, descending for numbers.
+      let nowAscending;
+      if (isCurrentlySorted) {
+        nowAscending = !isAscending;
+      } else {
+        nowAscending = !isNumeric;
+      }
+      const direction = nowAscending ? 1 : -1;
 
       const sortedRows = rows.sort((a, b) => {
         let x = a.cells[n].innerText.trim();
         let y = b.cells[n].innerText.trim();
 
-        // If sorting the 'Queued' column, treat as numbers
-        if (n === 1) {
-          return (parseInt(x) - parseInt(y)) * direction;
+        if (isNumeric) {
+          return (parseInt(x, 10) - parseInt(y, 10)) * direction;
         }
 
-        // Otherwise, treat as strings
         return x.toLowerCase().localeCompare(y.toLowerCase()) * direction;
       });
 
@@ -119,13 +216,15 @@
       }
       tbody.append(...sortedRows);
 
-      table.querySelectorAll("th").forEach(th => {
+      headers.forEach(th => {
         th.classList.remove("sorted-asc", "sorted-desc");
         th.removeAttribute("aria-sort");
-        th.querySelector(".sort-icon").className = "bi bi-arrow-down-up sort-icon";
+        const icon = th.querySelector(".sort-icon");
+        if (icon) {
+          icon.className = "bi bi-arrow-down-up sort-icon";
+        }
       });
 
-      const nowAscending = !isAscending;
       header.classList.add(nowAscending ? "sorted-asc" : "sorted-desc");
       header.setAttribute("aria-sort", nowAscending ? "ascending" : "descending");
       header.querySelector(".sort-icon").className = nowAscending
@@ -133,5 +232,6 @@
         : "bi bi-sort-down sort-icon";
     }
   </script>
-  </body>
+</body>
+
 </html>
