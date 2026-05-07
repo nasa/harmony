@@ -40,19 +40,6 @@ export async function upsertWorkItemStats(trx: Transaction): Promise<number> {
     .whereIn('status', ['failed', 'canceled', 'warning', 'successful'])
     .groupBy('minute', 'service_id', 'status');
 
-  // if (rows.length > 0) {
-  //   const insertRows = rows.map((row) => ({
-  //     minute: row.minute,
-  //     service_id: row.service_id,
-  //     status: row.status,
-  //     count: Number(row.count),
-  //   }));
-
-  //   await trx('work_items_stats')
-  //     .insert(insertRows)
-  //     .onConflict(['minute', 'service_id', 'status'])
-  //     .merge(['count']);
-  // }
   let written = 0;
 
   if (rows.length > 0) {
@@ -79,54 +66,68 @@ export async function upsertWorkItemStats(trx: Transaction): Promise<number> {
   return written;
 }
 
-// export async function upsertWorkItemStats(
-//   trx: Transaction,
-// ): Promise<void> {
-//   const [{ now }] = await trx.raw('SELECT NOW() as now');
-//   const [{ last_run_at }] = await trx('run_watermarks')
-//     .where({ name: 'work_item_stats_update' })
-//     .select('last_run_at');
+export interface WorkItemsStatsSummary {
+  start: Date;
+  end: Date;
+  rows: { service_id: string; status: string; count: number }[];
+}
 
-//   const earliest_minute = trx.raw(
-//     'date_trunc(\'minute\', ?)',
-//     [last_run_at],
-//   );
+/**
+ * Returns a summary of work item counts grouped by service and status
+ * for the last numMinutes full minutes.
+ *
+ * @param trx - the database transaction
+ * @param numMinutes - the number of full minutes to look back
+ * @param includePartialCurrentMinute - if true, includes the in-progress current minute
+ *        in addition to the numMinutes full minutes; if false (default), only the
+ *        numMinutes full minutes prior to the current minute are returned
+ */
+export async function getWorkItemsStatsSummary(
+  trx: Transaction,
+  numMinutes: number,
+  includePartialCurrentMinute = false,
+): Promise<WorkItemsStatsSummary> {
+  const now = await getCurrentTime(trx);
+  const isPg = trx.client.config.client === 'pg';
 
-//   const rows = await trx('work_items')
-//     .select(
-//       trx.raw('date_trunc(\'minute\', "updatedAt") as minute'),
-//       'serviceID as service_id',
-//       'status',
-//     )
-//     .count('* as count')
-//     .where('updatedAt', '>=', earliest_minute)
-//     .whereIn('status', [
-//       'failed',
-//       'canceled',
-//       'warning',
-//       'successful',
-//     ])
-//     .groupByRaw('1,2,3');
+  // Compute the window boundaries in JS using the DB-provided `now` so the
+  // returned range exactly matches what the query used.
+  const currentMinute = new Date(now);
+  currentMinute.setUTCSeconds(0, 0);
 
-//   if (rows.length > 0) {
-//     const insertRows = rows.map((row) => ({
-//       minute: row.minute,
-//       service_id: row.service_id,
-//       status: row.status,
-//       count: Number(row.count),
-//     }));
+  const since = new Date(currentMinute);
+  since.setUTCMinutes(since.getUTCMinutes() - numMinutes);
 
-//     await trx('work_items_stats')
-//       .insert(insertRows)
-//       .onConflict(['minute', 'service_id', 'status'])
-//       .merge({
-//         count: trx.raw('EXCLUDED.count'),
-//       });
-//   }
+  const until = includePartialCurrentMinute
+    ? new Date(currentMinute.getTime() + 60_000)
+    : currentMinute;
 
-//   await trx('run_watermarks')
-//     .where({ name: 'work_item_stats_update' })
-//     .update({
-//       last_run_at: now,
-//     });
-// }
+  const startOfWindowSql = isPg
+    ? trx.raw(`date_trunc('minute', ?::timestamptz - INTERVAL '${numMinutes} minutes')`, [now])
+    : trx.raw(`STRFTIME('%Y-%m-%d %H:%M:00', DATETIME(?, '-${numMinutes} minutes'))`, [now]);
+
+  const query = trx('work_items_stats')
+    .select('service_id', 'status')
+    .sum('count as count')
+    .where('minute', '>=', startOfWindowSql)
+    .groupBy('service_id', 'status');
+
+  if (!includePartialCurrentMinute) {
+    const endOfWindowSql = isPg
+      ? trx.raw('date_trunc(\'minute\', ?::timestamptz)', [now])
+      : trx.raw('STRFTIME(\'%Y-%m-%d %H:%M:00\', ?)', [now]);
+    query.andWhere('minute', '<', endOfWindowSql);
+  }
+
+  const rows = await query;
+
+  return {
+    start: since,
+    end: until,
+    rows: rows.map((row) => ({
+      service_id: row.service_id,
+      status: row.status,
+      count: Number(row.count),
+    })),
+  };
+}
