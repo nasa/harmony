@@ -54,6 +54,80 @@
 
     <div class="row">
       <div class="col-12">
+        <div class="row mt-4 mb-3">
+          <div class="col-12">
+            <h2 class="h4 mb-3">System Summary</h2>
+            <div class="card shadow-sm">
+              <div class="card-body">
+                <div class="row text-center">
+                  <div class="col-md-2 border-end">
+                    <div class="text-muted small text-uppercase">Queued</div>
+                    <div class="display-6 font-monospace">{{summary.queued}}</div>
+                  </div>
+                  <div class="col-md-5 border-end">
+                    <div class="text-muted small text-uppercase mb-2">
+                      Last 5 Minutes <span class="fw-normal" id="summaryLast5Range"></span>
+                    </div>
+                    <div class="row">
+                      <div class="col">
+                        <div class="small text-muted">Successful</div>
+                        <div class="font-monospace fs-5 {{summary.last5.successfulClass}}">{{summary.last5.successful}}
+                        </div>
+                      </div>
+                      <div class="col">
+                        <div class="small text-muted">Failed</div>
+                        <div class="font-monospace fs-5 {{summary.last5.failedClass}}">{{summary.last5.failed}}</div>
+                      </div>
+                      <div class="col">
+                        <div class="small text-muted">Canceled</div>
+                        <div class="font-monospace fs-5 {{summary.last5.canceledClass}}">{{summary.last5.canceled}}
+                        </div>
+                      </div>
+                      <div class="col">
+                        <div class="small text-muted">Warning</div>
+                        <div class="font-monospace fs-5 {{summary.last5.warningClass}}">{{summary.last5.warning}}</div>
+                      </div>
+                      <div class="col">
+                        <div class="small text-muted">Success %</div>
+                        <div class="font-monospace fs-5 {{summary.rate5Class}}">{{summary.rate5}}</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-5">
+                    <div class="text-muted small text-uppercase mb-2">
+                      Last 60 Minutes <span class="fw-normal" id="summaryLast60Range"></span>
+                    </div>
+                    <div class="row">
+                      <div class="col">
+                        <div class="small text-muted">Successful</div>
+                        <div class="font-monospace fs-5 {{summary.last60.successfulClass}}">
+                          {{summary.last60.successful}}</div>
+                      </div>
+                      <div class="col">
+                        <div class="small text-muted">Failed</div>
+                        <div class="font-monospace fs-5 {{summary.last60.failedClass}}">{{summary.last60.failed}}</div>
+                      </div>
+                      <div class="col">
+                        <div class="small text-muted">Canceled</div>
+                        <div class="font-monospace fs-5 {{summary.last60.canceledClass}}">{{summary.last60.canceled}}
+                        </div>
+                      </div>
+                      <div class="col">
+                        <div class="small text-muted">Warning</div>
+                        <div class="font-monospace fs-5 {{summary.last60.warningClass}}">{{summary.last60.warning}}
+                        </div>
+                      </div>
+                      <div class="col">
+                        <div class="small text-muted">Success %</div>
+                        <div class="font-monospace fs-5 {{summary.rate60Class}}">{{summary.rate60}}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
         <h2 class="h4 mb-3"><i class="bi bi-gear-wide-connected"></i> Services</h2>
         <div class="table-responsive">
           <table class="table table-striped" id="servicesTable" data-last5-start="{{timeRanges.last5Minutes.start}}"
@@ -71,10 +145,10 @@
                     Queued <i class="bi bi-sort-down sort-icon"></i>
                   </button>
                 </th>
-                <th scope="col" colspan="4" class="text-center border-start">
+                <th scope="col" colspan="5" class="text-center border-start">
                   Last 5 Minutes <span class="text-muted fw-normal" id="last5Range"></span>
                 </th>
-                <th scope="col" colspan="4" class="text-center border-start">
+                <th scope="col" colspan="5" class="text-center border-start">
                   Last 60 Minutes <span class="text-muted fw-normal" id="last60Range"></span>
                 </th>
               </tr>
@@ -99,41 +173,57 @@
                     Warning <i class="bi bi-arrow-down-up sort-icon"></i>
                   </button>
                 </th>
-                <th scope="col" class="sortable border-start" aria-sort="none">
+                <th scope="col" class="sortable" aria-sort="none">
                   <button type="button" class="btn-sort" onclick="sortTable(6)">
+                    Success % <i class="bi bi-arrow-down-up sort-icon"></i>
+                  </button>
+                </th>
+                <th scope="col" class="sortable border-start" aria-sort="none">
+                  <button type="button" class="btn-sort" onclick="sortTable(7)">
                     Successful <i class="bi bi-arrow-down-up sort-icon"></i>
                   </button>
                 </th>
                 <th scope="col" class="sortable" aria-sort="none">
-                  <button type="button" class="btn-sort" onclick="sortTable(7)">
+                  <button type="button" class="btn-sort" onclick="sortTable(8)">
                     Failed <i class="bi bi-arrow-down-up sort-icon"></i>
                   </button>
                 </th>
                 <th scope="col" class="sortable" aria-sort="none">
-                  <button type="button" class="btn-sort" onclick="sortTable(8)">
+                  <button type="button" class="btn-sort" onclick="sortTable(9)">
                     Canceled <i class="bi bi-arrow-down-up sort-icon"></i>
                   </button>
                 </th>
                 <th scope="col" class="sortable" aria-sort="none">
-                  <button type="button" class="btn-sort" onclick="sortTable(9)">
+                  <button type="button" class="btn-sort" onclick="sortTable(10)">
                     Warning <i class="bi bi-arrow-down-up sort-icon"></i>
+                  </button>
+                </th>
+                <th scope="col" class="sortable" aria-sort="none">
+                  <button type="button" class="btn-sort" onclick="sortTable(11)">
+                    Success % <i class="bi bi-arrow-down-up sort-icon"></i>
                   </button>
                 </th>
               </tr>
             </thead>
             <tbody>
               {{#services}}
-              <tr>
+              <tr class="{{#isIdle}}idle{{/isIdle}}">
                 <td class="font-monospace">{{name}}</td>
-                <td><strong>{{queued}}</strong></td>
-                <td class="border-start">{{last5Minutes.successful}}</td>
-                <td>{{last5Minutes.failed}}</td>
-                <td>{{last5Minutes.canceled}}</td>
-                <td>{{last5Minutes.warning}}</td>
-                <td class="border-start">{{last60Minutes.successful}}</td>
-                <td>{{last60Minutes.failed}}</td>
-                <td>{{last60Minutes.canceled}}</td>
-                <td>{{last60Minutes.warning}}</td>
+                <td class="numeric"><strong>{{queued}}</strong></td>
+                <td class="numeric border-start {{last5.successfulClass}}">{{last5.successful}}</td>
+                <td class="numeric {{last5.failedClass}}">{{last5.failed}}</td>
+                <td class="numeric {{last5.canceledClass}}">{{last5.canceled}}</td>
+                <td class="numeric {{last5.warningClass}}">{{last5.warning}}</td>
+                <td class="numeric {{rate5Class}}">
+                  {{rate5}}
+                  {{#trendIsDown}}<span class="trend-up">↓</span>{{/trendIsDown}}
+                  {{#trendIsUp}}<span class="trend-down">↑</span>{{/trendIsUp}}
+                </td>
+                <td class="numeric border-start {{last60.successfulClass}}">{{last60.successful}}</td>
+                <td class="numeric {{last60.failedClass}}">{{last60.failed}}</td>
+                <td class="numeric {{last60.canceledClass}}">{{last60.canceled}}</td>
+                <td class="numeric {{last60.warningClass}}">{{last60.warning}}</td>
+                <td class="numeric {{rate60Class}}">{{rate60}}</td>
               </tr>
               {{/services}}
             </tbody>
@@ -149,7 +239,9 @@
 
   <script>
     // Column 0 is the service name (string); all other columns are numeric.
-    const NUMERIC_COLUMNS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    // Columns 6 and 11 are percentage strings ("99.5%" or "—") — sorted numerically.
+    const NUMERIC_COLUMNS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+    const PERCENT_COLUMNS = new Set([6, 11]);
 
     /**
      * Formats an ISO timestamp as a local-time HH:MM string (no seconds, no date).
@@ -167,7 +259,20 @@
       const last60 = `(${formatLocalTime(table.dataset.last60Start)} - ${formatLocalTime(table.dataset.last60End)})`;
       document.getElementById('last5Range').textContent = last5;
       document.getElementById('last60Range').textContent = last60;
+      document.getElementById('summaryLast5Range').textContent = last5;
+      document.getElementById('summaryLast60Range').textContent = last60;
     })();
+
+    /**
+     * Parses a percentage cell ("99.5%" or "—") to a sortable number.
+     * Missing values sort below all real percentages in descending order.
+     * @param {string} text
+     * @returns {number}
+     */
+    function parsePercentCell(text) {
+      if (text === '—' || text === '') return -1;
+      return parseFloat(text);
+    }
 
     /**
      * Handles table sorting for the Services list. String columns sort ascending
@@ -185,13 +290,11 @@
       );
 
       const isNumeric = NUMERIC_COLUMNS.has(n);
+      const isPercent = PERCENT_COLUMNS.has(n);
       const isAscending = header.classList.contains("sorted-asc");
       const isDescending = header.classList.contains("sorted-desc");
       const isCurrentlySorted = isAscending || isDescending;
 
-      // Determine the new sort direction:
-      // - If already sorted, flip it.
-      // - If unsorted, default to ascending for strings, descending for numbers.
       let nowAscending;
       if (isCurrentlySorted) {
         nowAscending = !isAscending;
@@ -204,6 +307,9 @@
         let x = a.cells[n].innerText.trim();
         let y = b.cells[n].innerText.trim();
 
+        if (isPercent) {
+          return (parsePercentCell(x) - parsePercentCell(y)) * direction;
+        }
         if (isNumeric) {
           return (parseInt(x, 10) - parseInt(y, 10)) * direction;
         }

@@ -1,17 +1,17 @@
 footer a {
-    color: #92bfec;
+  color: #92bfec;
 }
 
 a .badge-dark {
-    text-decoration: none;
-    color: #fff;
+  text-decoration: none;
+  color: #fff;
 }
 
 .toast-container {
-    top:0;
-    right: 0;
-    z-index: 999;
-    position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 999;
+  position: fixed;
 }
 
 .btn-sort {
@@ -23,11 +23,111 @@ a .badge-dark {
   cursor: pointer;
   display: flex;
   align-items: center;
-  width: 100%; /* Ensures the whole header area is clickable */
+  width: 100%;
+  /* Ensures the whole header area is clickable */
   text-align: left;
 }
 
 .btn-sort:focus {
-  outline: 2px solid #0056b3; /* Provide a clear focus state for keyboard users */
+  outline: 2px solid #0056b3;
+  /* Provide a clear focus state for keyboard users */
   outline-offset: 2px;
 }
+
+/* Status-tinted cells. Apply only when count > 0 so zeros stay neutral. */
+.count-successful {
+  color: #1a7f37;
+}
+
+.count-failed {
+  color: #cf222e;
+  font-weight: 600;
+}
+
+.count-canceled {
+  color: #6e7781;
+}
+
+.count-warning {
+  color: #9a6700;
+  font-weight: 600;
+}
+
+.count-zero {
+  color: #c0c0c0;
+}
+
+/* Right-align all numeric columns. */
+#servicesTable td.numeric,
+#servicesTable th.numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Muted style for fully idle service rows. */
+#servicesTable tr.idle td {
+  color: #adb5bd;
+}
+
+#servicesTable tr.idle td.font-monospace {
+  color: #6c757d;
+}
+
+/* Success rate column gets a small color band. */
+.rate-good {
+  color: #1a7f37;
+}
+
+.rate-warn {
+  color: #9a6700;
+}
+
+.rate-bad {
+  color: #cf222e;
+  font-weight: 600;
+}
+
+.rate-na {
+  color: #adb5bd;
+}
+
+#servicesTable thead th {
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 1;
+}
+
+.trend-up {
+  color: #cf222e;
+}
+
+.trend-down {
+  color: #1a7f37;
+}
+
+.trend-flat {
+  color: #adb5bd;
+}
+
+/* Stronger separator between time-window groups */
+#servicesTable td.border-start,
+#servicesTable th.border-start {
+  border-left: 2px solid #495057 !important;
+}
+
+.card-body .col-md-5.border-end,
+.card-body .col-md-2.border-end {
+  border-right: 2px solid #495057 !important;
+}
+
+#servicesTable thead th.border-start,
+#servicesTable tbody td.border-start {
+  border-left: 1px solid #dee2e6 !important;
+}
+
+/* #servicesTable {
+  border: 1px solid #dee2e6;
+  border-radius: 0.375rem;
+  overflow: hidden;
+} */

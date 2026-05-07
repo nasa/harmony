@@ -202,7 +202,7 @@ async function getSystemQueueMetrics(): Promise<DashboardQueues> {
  * @param res - The Express response object
  * @param services - The map of service names to their metrics
  * @param queues - The map of system queue names to their message counts
- * @param timeRanges - The map of time range names to their since/until boundaries
+ * @param timeRanges - The map of time range names to their start/end boundaries
  * @param version - The version string to display on the dashboard in the footer
  *        (harmony version not the dashboard API version)
  */
@@ -213,12 +213,80 @@ function renderDashboardHtml(
   timeRanges: Record<string, TimeRange>,
   version: string,
 ): void {
-  const servicesArray = Object.entries(services).map(([name, details]) => ({
-    name,
-    queued: details.queued,
-    last5Minutes: details.recent.last5Minutes,
-    last60Minutes: details.recent.last60Minutes,
-  }));
+  const countClass = (count: number, status: TrackedStatus): string => {
+    if (count === 0) return 'count-zero';
+    return `count-${status}`;
+  };
+
+  const computeRate = (c: StatusCounts): number | null => {
+    const denom = c.successful + c.failed + c.warning;
+    if (denom === 0) return null;
+    return c.successful / denom;
+  };
+
+  const rateClass = (r: number | null): string => {
+    if (r === null) return 'rate-na';
+    if (r >= 0.99) return 'rate-good';
+    if (r >= 0.95) return 'rate-warn';
+    return 'rate-bad';
+  };
+
+  const formatRate = (r: number | null): string =>
+    r === null ? '—' : `${(r * 100).toFixed(1)}%`;
+
+  const totalCounts = (c: StatusCounts): number =>
+    c.successful + c.failed + c.canceled + c.warning;
+
+  const servicesArray = Object.entries(services).map(([name, details]) => {
+    const rate5 = computeRate(details.recent.last5Minutes);
+    const rate60 = computeRate(details.recent.last60Minutes);
+
+    // Trend: compare 5-min rate to 60-min rate. A drop in success rate
+    // from the 60-min baseline is a "things got worse" signal.
+    let trendIsUp = false;
+    let trendIsDown = false;
+    if (rate5 !== null && rate60 !== null) {
+      const delta = rate5 - rate60;
+      if (delta < -0.02) trendIsDown = true;       // 5-min worse than 60-min
+      else if (delta > 0.02) trendIsUp = true;     // 5-min better than 60-min
+    }
+
+    const isIdle = details.queued === 0
+      && totalCounts(details.recent.last5Minutes) === 0
+      && totalCounts(details.recent.last60Minutes) === 0;
+
+    return {
+      name,
+      queued: details.queued,
+      last5: {
+        successful: details.recent.last5Minutes.successful,
+        failed: details.recent.last5Minutes.failed,
+        canceled: details.recent.last5Minutes.canceled,
+        warning: details.recent.last5Minutes.warning,
+        successfulClass: countClass(details.recent.last5Minutes.successful, 'successful'),
+        failedClass: countClass(details.recent.last5Minutes.failed, 'failed'),
+        canceledClass: countClass(details.recent.last5Minutes.canceled, 'canceled'),
+        warningClass: countClass(details.recent.last5Minutes.warning, 'warning'),
+      },
+      last60: {
+        successful: details.recent.last60Minutes.successful,
+        failed: details.recent.last60Minutes.failed,
+        canceled: details.recent.last60Minutes.canceled,
+        warning: details.recent.last60Minutes.warning,
+        successfulClass: countClass(details.recent.last60Minutes.successful, 'successful'),
+        failedClass: countClass(details.recent.last60Minutes.failed, 'failed'),
+        canceledClass: countClass(details.recent.last60Minutes.canceled, 'canceled'),
+        warningClass: countClass(details.recent.last60Minutes.warning, 'warning'),
+      },
+      rate5: formatRate(rate5),
+      rate5Class: rateClass(rate5),
+      rate60: formatRate(rate60),
+      rate60Class: rateClass(rate60),
+      trendIsUp,
+      trendIsDown,
+      isIdle,
+    };
+  });
 
   const queuesArray = Object.entries(queues).map(([name, count]) => ({
     name: camelCaseToSpacedTitleCase(name),
@@ -229,11 +297,60 @@ function renderDashboardHtml(
   // Sort by queued count descending for the primary dashboard view
   servicesArray.sort((a, b) => b.queued - a.queued);
 
+  const totals = servicesArray.reduce((acc, s) => {
+    acc.queued += s.queued;
+    acc.last5.successful += s.last5.successful;
+    acc.last5.failed += s.last5.failed;
+    acc.last5.canceled += s.last5.canceled;
+    acc.last5.warning += s.last5.warning;
+    acc.last60.successful += s.last60.successful;
+    acc.last60.failed += s.last60.failed;
+    acc.last60.canceled += s.last60.canceled;
+    acc.last60.warning += s.last60.warning;
+    return acc;
+  }, {
+    queued: 0,
+    last5: { successful: 0, failed: 0, canceled: 0, warning: 0 },
+    last60: { successful: 0, failed: 0, canceled: 0, warning: 0 },
+  });
+
+  const totalsRate5 = computeRate(totals.last5);
+  const totalsRate60 = computeRate(totals.last60);
+
+  const summary = {
+    queued: totals.queued,
+    last5: {
+      successful: totals.last5.successful,
+      failed: totals.last5.failed,
+      canceled: totals.last5.canceled,
+      warning: totals.last5.warning,
+      successfulClass: countClass(totals.last5.successful, 'successful'),
+      failedClass: countClass(totals.last5.failed, 'failed'),
+      canceledClass: countClass(totals.last5.canceled, 'canceled'),
+      warningClass: countClass(totals.last5.warning, 'warning'),
+    },
+    last60: {
+      successful: totals.last60.successful,
+      failed: totals.last60.failed,
+      canceled: totals.last60.canceled,
+      warning: totals.last60.warning,
+      successfulClass: countClass(totals.last60.successful, 'successful'),
+      failedClass: countClass(totals.last60.failed, 'failed'),
+      canceledClass: countClass(totals.last60.canceled, 'canceled'),
+      warningClass: countClass(totals.last60.warning, 'warning'),
+    },
+    rate5: formatRate(totalsRate5),
+    rate5Class: rateClass(totalsRate5),
+    rate60: formatRate(totalsRate60),
+    rate60Class: rateClass(totalsRate60),
+  };
+
   res.render('dashboard', {
     version,
     services: servicesArray,
     queues: queuesArray,
     timeRanges,
+    summary,
   });
 }
 
