@@ -185,6 +185,22 @@ CREATE TABLE `service_deployments` (
   `updatedAt` datetime not null
 );
 
+CREATE TABLE `work_items_stats` (
+  `minute` datetime not null,
+  `service_id` varchar(255) not null,
+  `status` varchar(255) not null,
+  `count` integer not null,
+  PRIMARY KEY (`minute`, `service_id`, `status`)
+);
+
+CREATE TABLE `run_watermarks` (
+  `id` integer not null primary key autoincrement,
+  `name` varchar(255) not null,
+  `last_run_at` datetime not null
+);
+
+INSERT INTO run_watermarks (name, last_run_at) VALUES ('work_item_stats_update', CURRENT_TIMESTAMP);
+
 -- Note this is not a full list of the indices, we rely on the database migrations to create
 -- all the indexes in Postgres
 CREATE INDEX jobs_jobID_idx ON jobs(jobID);
@@ -206,3 +222,5 @@ CREATE INDEX workflow_steps_serviceID_idx ON workflow_steps(serviceID);
 CREATE INDEX batch_jobID_service_ID_batchID ON batches(jobID, serviceID, batchID);
 CREATE INDEX batch_items_jobID_service_ID_batchID ON batch_items(jobID, serviceID, batchID);
 CREATE INDEX service_deployments_deployment_id_idx ON service_deployments(deployment_id);
+CREATE INDEX work_items_updated_at_status_service_idx ON work_items(updatedAt, status, serviceID);
+CREATE INDEX work_items_stats_service_status_minute_idx ON work_items_stats(service_id, status, minute);

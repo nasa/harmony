@@ -5,6 +5,7 @@ import { MemoryUsageCollector } from './cronjobs/memory-usage-collector';
 import { PublishServiceFailureMetrics } from './cronjobs/publish-failure-metrics';
 import { RestartPrometheus } from './cronjobs/restart-prometheus';
 import { UserWorkUpdater } from './cronjobs/update-user-work';
+import { WorkItemsStatsCron } from './cronjobs/update-work-items-stats';
 import { WorkReaper } from './cronjobs/work-reaper';
 import router from './routers/router';
 import { Context } from './util/context';
@@ -25,6 +26,7 @@ export default function start(): void {
     [env.userWorkUpdaterCron, UserWorkUpdater],
     [env.publishServiceFailureMetricsCron, PublishServiceFailureMetrics],
     [env.memoryUsageCollectorCron, MemoryUsageCollector],
+    [env.workItemsStatsCron, WorkItemsStatsCron],
   ];
 
   for (const [cronSpec, jobClass] of cronEntries) {
