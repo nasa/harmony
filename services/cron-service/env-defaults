@@ -39,6 +39,9 @@ MEMORY_USAGE_COLLECTOR_LOOK_BACK_MINUTES=60
 # The bucket where memory usage metrics are stored
 MEMORY_USAGE_BUCKET=memory-usage-bucket
 
+# The cron schedule for the work items stats cron
+WORK_ITEMS_STATS_CRON="* * * * *" # every minute
+
 # The harmony environment (e.g. sit, uat, prod)
 HARMONY_ENVIRONMENT=local
 

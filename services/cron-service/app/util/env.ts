@@ -62,6 +62,11 @@ class CronServiceHarmonyEnv extends HarmonyEnv {
 
   harmonyEnvironment: string;
   // End memory usage collector variables
+
+  // Begin work items stats updater variables
+  @IsCrontab()
+  workItemsStatsCron: string;
+  // End work items stats updater variables
 }
 
 const localPath = path.resolve(__dirname, '../../env-defaults');

@@ -26,4 +26,37 @@ try {
   }
 }
 
+/**
+ * Account for Postgres and sqlite differences in getting the current time
+ *
+ * @param db - the database connection
+ *
+ * @returns the current time
+ */
+export async function getCurrentTime(db: Transaction): Promise<Date> {
+  if (db.client.config.client === 'pg') {
+    const result = await db.raw<{ rows: { now: Date }[] }>('SELECT NOW() as now');
+    return result.rows[0].now;
+  }
+
+  const result = await db.raw("SELECT STRFTIME('%Y-%m-%dT%H:%M:%fZ', 'NOW') as now");
+  return new Date(result[0].now);
+}
+
+/**
+ * Account for Postgres and sqlite differences in date truncation
+ *
+ * @param db - the database connection
+ * @param column - the column name to truncate on
+ *
+ * @returns the date represented in the column truncated to the nearest minute
+ */
+export function truncateMinuteSql(db: Transaction, column: string): string {
+  if (db.client.config.client === 'pg') {
+    return `date_trunc('minute', ${column})`;
+  }
+
+  return `strftime('%Y-%m-%d %H:%M:00', ${column})`;
+}
+
 export default database;
