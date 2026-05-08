@@ -25,9 +25,7 @@ export async function upsertWorkItemStats(trx: Transaction): Promise<number> {
   // Capture one additional minute just in case some work item updates have
   // an updatedAt set a few seconds prior to a transaction finishes and
   // and would otherwise be missed.
-  const minuteExprWatermark = trx.client.config.client === 'pg'
-    ? truncateMinuteSql(trx, "?::timestamptz - INTERVAL '1 minute'")
-    : truncateMinuteSql(trx, "DATETIME(?, '-1 minute')");
+  const cutoff = new Date(new Date(watermark.last_run_at).getTime() - 60_000);
 
   const rows = await trx('work_items')
     .select(
@@ -36,7 +34,7 @@ export async function upsertWorkItemStats(trx: Transaction): Promise<number> {
       'status',
     )
     .count('* as count')
-    .where('updatedAt', '>=', trx.raw(minuteExprWatermark, [watermark.last_run_at]))
+    .where('updatedAt', '>=', cutoff)
     .whereIn('status', ['failed', 'canceled', 'warning', 'successful'])
     .groupBy('minute', 'service_id', 'status');
 
@@ -44,7 +42,7 @@ export async function upsertWorkItemStats(trx: Transaction): Promise<number> {
 
   if (rows.length > 0) {
     const insertRows = rows.map((row) => ({
-      minute: row.minute,
+      minute: typeof row.minute === 'string' ? new Date(row.minute + 'Z') : row.minute,
       service_id: row.service_id,
       status: row.status,
       count: Number(row.count),
@@ -104,7 +102,7 @@ export async function getWorkItemsStatsSummary(
 
   const startOfWindowSql = isPg
     ? trx.raw(`date_trunc('minute', ?::timestamptz - INTERVAL '${numMinutes} minutes')`, [now])
-    : trx.raw(`STRFTIME('%Y-%m-%d %H:%M:00', DATETIME(?, '-${numMinutes} minutes'))`, [now]);
+    : trx.raw('CAST(? AS INTEGER)', [since.getTime()]);
 
   const query = trx('work_items_stats')
     .select('service_id', 'status')
@@ -115,7 +113,7 @@ export async function getWorkItemsStatsSummary(
   if (!includePartialCurrentMinute) {
     const endOfWindowSql = isPg
       ? trx.raw('date_trunc(\'minute\', ?::timestamptz)', [now])
-      : trx.raw('STRFTIME(\'%Y-%m-%d %H:%M:00\', ?)', [now]);
+      : trx.raw('CAST(? AS INTEGER)', [currentMinute.getTime()]);
     query.andWhere('minute', '<', endOfWindowSql);
   }
 
