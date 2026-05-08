@@ -7,10 +7,12 @@ import { stub } from 'sinon';
 
 import db from '../../../harmony/app/util/db';
 
+// service_deployment is not cleared because tests rely on the existence of the row
+// showing the service deployment state is set to enabled
 export const tables = [
   'jobs', 'work_items', 'workflow_steps', 'job_links', 'user_work', 'job_messages', 'batches',
   'batch_items', 'raw_labels', 'jobs_raw_labels', 'users_labels', 'work_items_stats',
-  'service_deployment', 'service_deployments', 'run_watermarks',
+  'service_deployments', 'run_watermarks',
 ];
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
