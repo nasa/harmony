@@ -56,7 +56,12 @@ export function truncateMinuteSql(db: Transaction, column: string): string {
     return `date_trunc('minute', ${column})`;
   }
 
-  return `strftime('%Y-%m-%d %H:%M:00', ${column})`;
+  // SQLite: handle both ISO strings AND integer ms-epoch (how Knex stores Date columns).
+  // CASE picks the right interpretation based on the value's type.
+  return 'strftime(\'%Y-%m-%d %H:%M:00\', ' +
+    `CASE WHEN typeof(${column}) = 'integer' ` +
+    `THEN datetime(${column} / 1000, 'unixepoch') ` +
+    `ELSE ${column} END)`;
 }
 
 export default database;
