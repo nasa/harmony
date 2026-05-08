@@ -110,12 +110,6 @@ a .badge-dark {
   color: #adb5bd;
 }
 
-/* Stronger separator between time-window groups */
-#servicesTable td.border-start,
-#servicesTable th.border-start {
-  border-left: 2px solid #495057 !important;
-}
-
 .card-body .col-md-5.border-end,
 .card-body .col-md-2.border-end {
   border-right: 2px solid #495057 !important;
@@ -125,9 +119,3 @@ a .badge-dark {
 #servicesTable tbody td.border-start {
   border-left: 1px solid #dee2e6 !important;
 }
-
-/* #servicesTable {
-  border: 1px solid #dee2e6;
-  border-radius: 0.375rem;
-  overflow: hidden;
-} */

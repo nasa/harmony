@@ -324,7 +324,7 @@
 
       headers.forEach(th => {
         th.classList.remove("sorted-asc", "sorted-desc");
-        th.removeAttribute("aria-sort");
+        th.setAttribute("aria-sort", "none");
         const icon = th.querySelector(".sort-icon");
         if (icon) {
           icon.className = "bi bi-arrow-down-up sort-icon";

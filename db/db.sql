@@ -195,7 +195,7 @@ CREATE TABLE `work_items_stats` (
 
 CREATE TABLE `run_watermarks` (
   `id` integer not null primary key autoincrement,
-  `name` varchar(255) not null,
+  `name` varchar(255) not null UNIQUE,
   `last_run_at` datetime not null
 );
 
