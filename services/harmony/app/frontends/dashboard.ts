@@ -44,6 +44,45 @@ interface DashboardQueues {
 }
 
 /**
+ * Returns a fresh StatusCounts object with all tracked statuses initialized to 0.
+ */
+function emptyStatusCounts(): StatusCounts {
+  return TRACKED_STATUSES.reduce((acc, status) => {
+    acc[status] = 0;
+    return acc;
+  }, {} as StatusCounts);
+}
+
+/**
+ * Returns combined metric information summing across all services in the system
+ *
+ * @param services - the services metrics
+ * @returns a summary of the service information combined across all services
+ */
+function getSystemTotals(
+  services: Record<string, ServiceMetric>,
+): ServiceMetric {
+  const totals: ServiceMetric = {
+    queued: 0,
+    recent: {
+      last5Minutes: emptyStatusCounts(),
+      last60Minutes: emptyStatusCounts(),
+    },
+  };
+
+  for (const service of Object.values(services)) {
+    totals.queued += service.queued;
+
+    for (const status of TRACKED_STATUSES) {
+      totals.recent.last5Minutes[status] += service.recent.last5Minutes[status];
+      totals.recent.last60Minutes[status] += service.recent.last60Minutes[status];
+    }
+  }
+
+  return totals;
+}
+
+/**
  * Throws an error if the version is not supported
  *
  * @param version - the version of the dashboard response
@@ -60,16 +99,6 @@ function validateVersion(version): void {
     const message = `Invalid API version. Supported versions are: ${listToText(supportedApiVersions)}`;
     throw new RequestValidationError(message);
   }
-}
-
-/**
- * Returns a fresh StatusCounts object with all tracked statuses initialized to 0.
- */
-function emptyStatusCounts(): StatusCounts {
-  return TRACKED_STATUSES.reduce((acc, status) => {
-    acc[status] = 0;
-    return acc;
-  }, {} as StatusCounts);
 }
 
 /**
@@ -196,6 +225,87 @@ async function getSystemQueueMetrics(): Promise<DashboardQueues> {
 }
 
 /**
+ * Returns the CSS class used to style a count cell for a given status.
+ *
+ * @param count - The numeric count for the status
+ * @param status - The tracked status type
+ * @returns CSS class name for the count cell
+ */
+function countClass(count: number, status: TrackedStatus): string {
+  if (count === 0) {
+    return 'count-zero';
+  }
+
+  return `count-${status}`;
+}
+
+/**
+ * Computes a success rate from a set of status counts.
+ * Warnings are included in the denominator while canceled items are excluded.
+ *
+ * @param counts - The status counts to evaluate
+ * @returns Success rate between 0 and 1, or null if no applicable items exist
+ */
+function computeRate(counts: StatusCounts): number | null {
+  const denominator = counts.successful + counts.failed + counts.warning;
+
+  if (denominator === 0) {
+    return null;
+  }
+
+  return counts.successful / denominator;
+}
+
+/**
+ * Returns the CSS class used to style a success rate value.
+ *
+ * @param rate - The computed success rate or null if unavailable
+ * @returns CSS class name for the rate display
+ */
+function rateClass(rate: number | null): string {
+  if (rate === null) {
+    return 'rate-na';
+  }
+
+  if (rate >= 0.99) {
+    return 'rate-good';
+  }
+
+  if (rate >= 0.95) {
+    return 'rate-warn';
+  }
+
+  return 'rate-bad';
+}
+
+/**
+ * Formats a success rate for display in the dashboard.
+ *
+ * @param rate - The computed success rate or null if unavailable
+ * @returns Formatted percentage string or em dash if unavailable
+ */
+function formatRate(rate: number | null): string {
+  if (rate === null) {
+    return '—';
+  }
+
+  return `${(rate * 100).toFixed(1)}%`;
+}
+
+/**
+ * Computes the total number of tracked work items across all statuses.
+ *
+ * @param counts - The status counts to total
+ * @returns Sum of all tracked statuses
+ */
+function totalCounts(counts: StatusCounts): number {
+  return counts.successful
+    + counts.failed
+    + counts.canceled
+    + counts.warning;
+}
+
+/**
  * Transforms raw metrics into the format expected by the Mustache template
  * and renders the HTML response.
  *
@@ -203,6 +313,7 @@ async function getSystemQueueMetrics(): Promise<DashboardQueues> {
  * @param services - The map of service names to their metrics
  * @param queues - The map of system queue names to their message counts
  * @param timeRanges - The map of time range names to their start/end boundaries
+ * @param totals - The aggregated metrics combined across all of the services
  * @param version - The version string to display on the dashboard in the footer
  *        (harmony version not the dashboard API version)
  */
@@ -211,32 +322,9 @@ function renderDashboardHtml(
   services: Record<string, ServiceMetric>,
   queues: DashboardQueues,
   timeRanges: Record<string, TimeRange>,
+  totals: ServiceMetric,
   version: string,
 ): void {
-  const countClass = (count: number, status: TrackedStatus): string => {
-    if (count === 0) return 'count-zero';
-    return `count-${status}`;
-  };
-
-  const computeRate = (c: StatusCounts): number | null => {
-    const denom = c.successful + c.failed + c.warning;
-    if (denom === 0) return null;
-    return c.successful / denom;
-  };
-
-  const rateClass = (r: number | null): string => {
-    if (r === null) return 'rate-na';
-    if (r >= 0.99) return 'rate-good';
-    if (r >= 0.95) return 'rate-warn';
-    return 'rate-bad';
-  };
-
-  const formatRate = (r: number | null): string =>
-    r === null ? '—' : `${(r * 100).toFixed(1)}%`;
-
-  const totalCounts = (c: StatusCounts): number =>
-    c.successful + c.failed + c.canceled + c.warning;
-
   const servicesArray = Object.entries(services).map(([name, details]) => {
     const rate5 = computeRate(details.recent.last5Minutes);
     const rate60 = computeRate(details.recent.last60Minutes);
@@ -297,47 +385,30 @@ function renderDashboardHtml(
   // Sort by queued count descending for the primary dashboard view
   servicesArray.sort((a, b) => b.queued - a.queued);
 
-  const totals = servicesArray.reduce((acc, s) => {
-    acc.queued += s.queued;
-    acc.last5.successful += s.last5.successful;
-    acc.last5.failed += s.last5.failed;
-    acc.last5.canceled += s.last5.canceled;
-    acc.last5.warning += s.last5.warning;
-    acc.last60.successful += s.last60.successful;
-    acc.last60.failed += s.last60.failed;
-    acc.last60.canceled += s.last60.canceled;
-    acc.last60.warning += s.last60.warning;
-    return acc;
-  }, {
-    queued: 0,
-    last5: { successful: 0, failed: 0, canceled: 0, warning: 0 },
-    last60: { successful: 0, failed: 0, canceled: 0, warning: 0 },
-  });
-
-  const totalsRate5 = computeRate(totals.last5);
-  const totalsRate60 = computeRate(totals.last60);
+  const totalsRate5 = computeRate(totals.recent.last5Minutes);
+  const totalsRate60 = computeRate(totals.recent.last60Minutes);
 
   const summary = {
     queued: totals.queued,
     last5: {
-      successful: totals.last5.successful,
-      failed: totals.last5.failed,
-      canceled: totals.last5.canceled,
-      warning: totals.last5.warning,
-      successfulClass: countClass(totals.last5.successful, 'successful'),
-      failedClass: countClass(totals.last5.failed, 'failed'),
-      canceledClass: countClass(totals.last5.canceled, 'canceled'),
-      warningClass: countClass(totals.last5.warning, 'warning'),
+      successful: totals.recent.last5Minutes.successful,
+      failed: totals.recent.last5Minutes.failed,
+      canceled: totals.recent.last5Minutes.canceled,
+      warning: totals.recent.last5Minutes.warning,
+      successfulClass: countClass(totals.recent.last5Minutes.successful, 'successful'),
+      failedClass: countClass(totals.recent.last5Minutes.failed, 'failed'),
+      canceledClass: countClass(totals.recent.last5Minutes.canceled, 'canceled'),
+      warningClass: countClass(totals.recent.last5Minutes.warning, 'warning'),
     },
     last60: {
-      successful: totals.last60.successful,
-      failed: totals.last60.failed,
-      canceled: totals.last60.canceled,
-      warning: totals.last60.warning,
-      successfulClass: countClass(totals.last60.successful, 'successful'),
-      failedClass: countClass(totals.last60.failed, 'failed'),
-      canceledClass: countClass(totals.last60.canceled, 'canceled'),
-      warningClass: countClass(totals.last60.warning, 'warning'),
+      successful: totals.recent.last60Minutes.successful,
+      failed: totals.recent.last60Minutes.failed,
+      canceled: totals.recent.last60Minutes.canceled,
+      warning: totals.recent.last60Minutes.warning,
+      successfulClass: countClass(totals.recent.last60Minutes.successful, 'successful'),
+      failedClass: countClass(totals.recent.last60Minutes.failed, 'failed'),
+      canceledClass: countClass(totals.recent.last60Minutes.canceled, 'canceled'),
+      warningClass: countClass(totals.recent.last60Minutes.warning, 'warning'),
     },
     rate5: formatRate(totalsRate5),
     rate5Class: rateClass(totalsRate5),
@@ -382,10 +453,13 @@ export async function getDashboard(
       getSystemQueueMetrics(),
     ]);
 
+    const totals = getSystemTotals(services);
+
     const result = {
       timeRanges,
-      services,
       queues: queueMetrics,
+      totals,
+      services,
       version: version || currentApiVersion,
     };
 
@@ -393,7 +467,7 @@ export async function getDashboard(
     const acceptsHtml = req.accepts(['json', 'html']) === 'html';
 
     if (acceptsHtml) {
-      renderDashboardHtml(res, result.services, result.queues, result.timeRanges, harmonyVersion);
+      renderDashboardHtml(res, result.services, result.queues, result.timeRanges, result.totals, harmonyVersion);
     } else {
       res.json(result);
     }
