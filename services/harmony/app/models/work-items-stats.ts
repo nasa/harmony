@@ -64,10 +64,16 @@ export async function upsertWorkItemStats(trx: Transaction): Promise<number> {
   return written;
 }
 
+export interface WorkItemsStatsRow {
+  service_id: string;
+  status: string;
+  count: number;
+}
+
 export interface WorkItemsStatsSummary {
   start: Date;
   end: Date;
-  rows: { service_id: string; status: string; count: number }[];
+  rows: WorkItemsStatsRow[];
 }
 
 /**
