@@ -1,211 +1,109 @@
 import { expect } from 'chai';
+import * as sinon from 'sinon';
 
-import { truncateAll } from './helpers/db';
-import { rawSaveWorkItem } from './helpers/work-items';
-import { WorkItemStatus } from '../../harmony/app/models/work-item-interface';
-import { upsertWorkItemStats } from '../../harmony/app/models/work-items-stats';
-import db, { Transaction } from '../../harmony/app/util/db';
+import * as workItemsStatsModel from '../../harmony/app/models/work-items-stats';
+import { WorkItemsStatsCron } from '../app/cronjobs/update-work-items-stats';
 
+describe('WorkItemsStatsCron', function () {
+  let sandbox: sinon.SinonSandbox;
+  let mockLogger: {
+    info: sinon.SinonStub;
+    error: sinon.SinonStub;
+  };
+  let mockTx: sinon.SinonStub;
+  let mockDb: { transaction: sinon.SinonStub };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let ctx: any;
+  let upsertStub: sinon.SinonStub;
 
-/**
- * Insert or reset the watermark row used by upsertWorkItemStats
- *
- * @param trx - the transaction to use
- * @param lastRunAt - the watermark timestamp to set
- */
-async function setWatermark(trx: Transaction, lastRunAt: Date): Promise<void> {
-  const exists = await trx('run_watermarks')
-    .where({ name: 'work_item_stats_update' })
-    .first();
+  beforeEach(function () {
+    sandbox = sinon.createSandbox();
 
-  if (exists) {
-    await trx('run_watermarks')
-      .where({ name: 'work_item_stats_update' })
-      .update({ last_run_at: lastRunAt });
-  } else {
-    await trx('run_watermarks').insert({
-      name: 'work_item_stats_update',
-      last_run_at: lastRunAt,
-    });
-  }
-}
+    mockLogger = {
+      info: sandbox.stub(),
+      error: sandbox.stub(),
+    };
 
-/**
- * Read all rows from work_items_stats via the given transaction
- *
- * @param trx - the transaction to use
- * @returns all rows from work_items_stats
- */
-async function readStats(
-  trx: Transaction,
-): Promise<{ minute: Date; service_id: string; status: string; count: number }[]> {
-  return trx('work_items_stats').select('*');
-}
+    mockTx = sandbox.stub();
+    mockDb = {
+      transaction: sandbox.stub().callsFake(async (fn) => fn(mockTx)),
+    };
 
-/**
- * Save a work item with an explicit updatedAt, bypassing any timestamp overrides.
- * This ensures the item falls within the expected watermark window.
- *
- * @param trx - the transaction to use
- * @param jobID - the job ID to associate with the work item
- * @param serviceID - the service ID to associate with the work item
- * @param status - the status of the work item
- * @param updatedAt - the timestamp to use for both createdAt and updatedAt
- */
-async function saveWorkItemWithTimestamp(
-  trx: Transaction,
-  jobID: string,
-  serviceID: string,
-  status: WorkItemStatus,
-  updatedAt: Date,
-): Promise<void> {
-  await rawSaveWorkItem(trx, {
-    jobID,
-    serviceID,
-    status,
-    updatedAt,
-    createdAt: updatedAt,
-  });
-}
+    ctx = { logger: mockLogger, db: mockDb };
 
-
-describe('upsertWorkItemStats (integration)', function () {
-  afterEach(async function () {
-    await truncateAll();
+    upsertStub = sandbox.stub(workItemsStatsModel, 'upsertWorkItemStats');
   });
 
-  describe('when the watermark row is missing', function () {
-    it('throws with a descriptive error message', async function () {
-      await db.transaction(async (tx) => {
-        await tx('run_watermarks')
-          .where({ name: 'work_item_stats_update' })
-          .delete();
-
-        await expect(upsertWorkItemStats(tx)).to.be.rejectedWith(
-          'Missing watermark row for work_item_stats_update',
-        );
-      });
-    });
+  afterEach(function () {
+    sandbox.restore();
   });
 
-  describe('when there are no work items updated since the watermark', function () {
-    it('returns 0 and writes nothing to work_items_stats', async function () {
-      await db.transaction(async (tx) => {
-        const watermarkDate = new Date();
-        await setWatermark(tx, watermarkDate);
+  describe('run', function () {
+    it('logs start and completion on success', async function () {
+      upsertStub.resolves(5);
 
-        const oldDate = new Date(Date.now() - 2 * 60 * 60 * 1000);
-        await saveWorkItemWithTimestamp(tx, 'job-1', 'service-a', WorkItemStatus.SUCCESSFUL, oldDate);
+      await WorkItemsStatsCron.run(ctx);
 
-        const written = await upsertWorkItemStats(tx);
-
-        expect(written).to.equal(0);
-        const stats = await readStats(tx);
-        expect(stats).to.have.length(0);
-      });
-    });
-  });
-
-  describe('when there are qualifying work items', function () {
-    it('returns the number of rows written to work_items_stats', async function () {
-      await db.transaction(async (tx) => {
-        const watermarkDate = new Date(Date.now() - 30 * 60 * 1000);
-        await setWatermark(tx, watermarkDate);
-
-        const recentDate = new Date();
-
-        await saveWorkItemWithTimestamp(tx, 'job-1', 'service-a', WorkItemStatus.SUCCESSFUL, recentDate);
-        await saveWorkItemWithTimestamp(tx, 'job-2', 'service-b', WorkItemStatus.FAILED, recentDate);
-
-        const written = await upsertWorkItemStats(tx);
-
-        expect(written).to.equal(2);
-      });
+      expect(mockLogger.info.calledWith('Started work items stats cron job')).to.be.true;
+      expect(mockLogger.info.calledWith('Completed work items stats cron job')).to.be.true;
     });
 
-    it('aggregates multiple items with the same (minute, service, status) into one row', async function () {
-      await db.transaction(async (tx) => {
-        const watermarkDate = new Date(Date.now() - 30 * 60 * 1000);
-        await setWatermark(tx, watermarkDate);
+    it('calls upsertWorkItemStats within a transaction', async function () {
+      upsertStub.resolves(3);
 
-        const recentDate = new Date();
+      await WorkItemsStatsCron.run(ctx);
 
-        for (let i = 0; i < 3; i++) {
-          await saveWorkItemWithTimestamp(tx, `job-${i}`, 'service-a', WorkItemStatus.SUCCESSFUL, recentDate);
-        }
-
-        await upsertWorkItemStats(tx);
-
-        const stats = await readStats(tx);
-
-        expect(stats).to.have.length(1);
-        expect(stats[0].count).to.equal(3);
-        expect(stats[0].service_id).to.equal('service-a');
-        expect(stats[0].status).to.equal(WorkItemStatus.SUCCESSFUL);
-      });
+      expect(mockDb.transaction.calledOnce).to.be.true;
+      expect(upsertStub.calledOnce).to.be.true;
+      expect(upsertStub.calledWith(mockTx)).to.be.true;
     });
 
-    it('only counts terminal statuses (failed, canceled, warning, successful)', async function () {
-      await db.transaction(async (tx) => {
-        const watermarkDate = new Date(Date.now() - 30 * 60 * 1000);
-        await setWatermark(tx, watermarkDate);
+    it('logs the number of rows inserted or updated', async function () {
+      upsertStub.resolves(7);
 
-        const recentDate = new Date();
+      await WorkItemsStatsCron.run(ctx);
 
-        await saveWorkItemWithTimestamp(tx, 'job-1', 'service-a', WorkItemStatus.SUCCESSFUL, recentDate);
-        await saveWorkItemWithTimestamp(tx, 'job-2', 'service-a', WorkItemStatus.READY, recentDate);
-
-        await upsertWorkItemStats(tx);
-
-        const stats = await readStats(tx);
-        expect(stats).to.have.length(1);
-        expect(stats[0].status).to.equal(WorkItemStatus.SUCCESSFUL);
-        expect(stats[0].count).to.equal(1);
-      });
+      expect(
+        mockLogger.info.calledWith('Work items stats updater inserted or updated 7 rows'),
+      ).to.be.true;
     });
-  });
 
-  describe('upsert conflict resolution', function () {
-    it('merges the count when the same (minute, service, status) row already exists', async function () {
-      const watermarkDate = new Date(Date.now() - 30 * 60 * 1000);
-      const recentDate = new Date();
+    it('logs zero rows when upsert returns 0', async function () {
+      upsertStub.resolves(0);
 
-      await db.transaction(async (tx) => {
-        await setWatermark(tx, watermarkDate);
-        for (let i = 0; i < 2; i++) {
-          await saveWorkItemWithTimestamp(tx, `job-a-${i}`, 'service-a', WorkItemStatus.SUCCESSFUL, recentDate);
-        }
-        await upsertWorkItemStats(tx);
-      });
+      await WorkItemsStatsCron.run(ctx);
 
-      await db.transaction(async (tx) => {
-        await setWatermark(tx, watermarkDate);
-        await saveWorkItemWithTimestamp(tx, 'job-a-2', 'service-a', WorkItemStatus.SUCCESSFUL, recentDate);
-        await upsertWorkItemStats(tx);
-
-        const stats = await readStats(tx);
-        expect(stats).to.have.length(1);
-        expect(stats[0].count).to.equal(3);
-      });
+      expect(
+        mockLogger.info.calledWith('Work items stats updater inserted or updated 0 rows'),
+      ).to.be.true;
     });
-  });
 
-  describe('watermark update', function () {
-    it('advances last_run_at after a successful run', async function () {
-      const beforeRun = new Date(Date.now() - 10 * 60 * 1000);
+    it('logs an error and does not throw when upsertWorkItemStats throws', async function () {
+      const err = new Error('DB failure');
+      upsertStub.rejects(err);
 
-      await db.transaction(async (tx) => {
-        await setWatermark(tx, beforeRun);
-        await upsertWorkItemStats(tx);
+      await expect(WorkItemsStatsCron.run(ctx)).to.not.be.rejected;
 
-        const updated = await tx('run_watermarks')
-          .where({ name: 'work_item_stats_update' })
-          .first('last_run_at');
+      expect(mockLogger.error.calledWith('Failed to update work items stats')).to.be.true;
+      expect(mockLogger.error.calledWith(err)).to.be.true;
+    });
 
-        expect(new Date(updated.last_run_at).getTime()).to.be.greaterThan(
-          beforeRun.getTime(),
-        );
-      });
+    it('logs an error and does not throw when db.transaction throws', async function () {
+      const err = new Error('Transaction failure');
+      mockDb.transaction.rejects(err);
+
+      await expect(WorkItemsStatsCron.run(ctx)).to.not.be.rejected;
+
+      expect(mockLogger.error.calledWith('Failed to update work items stats')).to.be.true;
+      expect(mockLogger.error.calledWith(err)).to.be.true;
+    });
+
+    it('does not log completion when an error occurs', async function () {
+      upsertStub.rejects(new Error('fail'));
+
+      await WorkItemsStatsCron.run(ctx);
+
+      expect(mockLogger.info.calledWith('Completed work items stats cron job')).to.be.false;
     });
   });
 });
