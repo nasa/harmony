@@ -23,8 +23,8 @@ function makeEmptyStatsSummary(minutesAgo: number): { rows: never[]; start: Date
  */
 function makeStatsSummaryWithRows(
   minutesAgo: number,
-  rows: { service_id: string; status: string; count: number }[],
-): { rows: { service_id: string; status: string; count: number }[]; start: Date; end: Date } {
+  rows: workItemsStats.WorkItemsStatsRow[],
+): workItemsStats.WorkItemsStatsSummary {
   const end = new Date('2024-01-01T12:00:00.000Z');
   const start = new Date(end.getTime() - minutesAgo * 60 * 1000);
   return { rows, start, end };
