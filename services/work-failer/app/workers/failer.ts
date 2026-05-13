@@ -8,6 +8,7 @@ import WorkItem, {
   getWorkItemsByUpdateAgeAndStatus, workItemCountForStep,
 } from '../../../harmony/app/models/work-item';
 import { WorkItemStatus } from '../../../harmony/app/models/work-item-interface';
+import { getWorkflowStepByJobIdStepIndex } from '../../../harmony/app/models/workflow-steps';
 import db from '../../../harmony/app/util/db';
 import log from '../../../harmony/app/util/log';
 import { WorkItemQueueType } from '../../../harmony/app/util/queue/queue';
@@ -27,35 +28,67 @@ function failedMessage(itemId: number, duration: number): string {
   return `Work item ${itemId} has exceeded the ${duration} ms duration threshold.`;
 }
 
-// A mapping for the default timeouts for services since some services such as
-// aggregation services can be expected to take much longer
-const serviceToDefaultTimeoutSeconds = {
-  'casper': 900, // 15 minutes
-  'concise': 900, // 15 minutes
+// Service timeout overrides. A service may declare a service `default` (used
+// when no collection override matches) and/or `collections` (per Collection
+// concept ID overrides).
+type ServiceTimeout = {
+  default?: number;
+  collections?: Record<string, number>;
+};
+
+const serviceToDefaultTimeoutSeconds: Record<string, ServiceTimeout> = {
+  'casper': { 'default': 15 * 60 },
+  'concise': { 'default': 15 * 60 },
+  'net2cog': {
+    'collections': {
+      'C3622214170-ASF': 60 * 60, // NISAR_L2_GCOV_BETA_V1 - PROD
+      'C2854338529-ASF': 60 * 60, // NISAR_L2_GCOV_PROVISIONAL_V1 - PROD
+      'C3622241360-ASF': 60 * 60, // NISAR_L2_GCOV_V1 - PROD
+      'C1273831195-ASF': 60 * 60, // NISAR_L2_GCOV_BETA_V1 — UAT
+      'C1273428591-ASF': 60 * 60, // NISAR_L2_GCOV_PROVISIONAL_V1 - UAT
+      'C1273428593-ASF': 60 * 60, // NISAR_L2_GCOV_V1 - UAT
+    },
+  },
 };
 
 /**
- * Retrieves the default timeout threshold for a given service ID.
+ * Extract the base service name from a docker image tag, stripping any namespace prefix
+ * and version tag (e.g. `podaac/concise:0.10.0rc11` becomes `concise`).
+ */
+function extractServiceName(serviceID: string): string | undefined {
+  const lastPart = serviceID.includes('/') ? serviceID.split('/').pop() : serviceID;
+  return lastPart?.split(':')[0] || undefined;
+}
+
+/**
+ * Retrieves the default timeout threshold for a given service ID, optionally narrowed
+ * by collection concept IDs.
  *
- * The service ID is a docker image tag which may include a namespace
- * (e.g. podaac/concise:0.10.0rc11). This function extracts the base service name
- * (e.g. concise) and checks if it has a predefined threshold.
+ * Lookup precedence:
+ *   1. per-collection override
+ *   2. service-level default
+ *   3. harmony default env.defaultTimeoutSeconds.
  *
  * @param serviceID - the identifier of the service, which may include a namespace and version
- * @param env - an object containing configuration values, including the default timeout threshold
- * @returns the default timeout threshold in seconds if the service is recognized,
- * otherwise env.defaultTimeoutThreshold
+ * @param collectionIds - CMR concept IDs to check per-collection overrides
+ * @returns the default timeout threshold in seconds
  */
-export function getDefaultTimeoutSeconds(serviceID: string): number {
-  // Pull out the service name from the docker image tag without the group namespace or tag
-  const lastPart = serviceID.includes('/') ? serviceID.split('/').pop() : serviceID;
-  const serviceName = lastPart?.split(':')[0];
+export function getDefaultTimeoutSeconds(serviceID: string, collectionIds: string[] = []): number {
+  const serviceName = extractServiceName(serviceID);
+  if (!serviceName) return env.defaultTimeoutSeconds;
 
-  if (serviceName && serviceToDefaultTimeoutSeconds.hasOwnProperty(serviceName)) {
-    return serviceToDefaultTimeoutSeconds[serviceName];
-  } else {
-    return env.defaultTimeoutSeconds;
+  const serviceTimeoutEntry = serviceToDefaultTimeoutSeconds[serviceName];
+  if (!serviceTimeoutEntry) return env.defaultTimeoutSeconds;
+
+  if (serviceTimeoutEntry.collections) {
+    for (const collectionId of collectionIds) {
+      if (serviceTimeoutEntry.collections[collectionId] !== undefined) {
+        return serviceTimeoutEntry.collections[collectionId];
+      }
+    }
   }
+
+  return serviceTimeoutEntry.default ?? env.defaultTimeoutSeconds;
 }
 
 /**
@@ -70,7 +103,21 @@ export async function computeWorkItemDurationOutlierThresholdForJobService(
   serviceID: string,
   workflowStepIndex: number,
 ): Promise<number> {
-  let threshold = getDefaultTimeoutSeconds(serviceID) * 1000;
+  let collectionIds: string[] = [];
+  const serviceName = extractServiceName(serviceID);
+  const entry = serviceName ? serviceToDefaultTimeoutSeconds[serviceName] : undefined;
+  if (entry?.collections) {
+    try {
+      const step = await getWorkflowStepByJobIdStepIndex(db, jobID, workflowStepIndex);
+      if (step) {
+        collectionIds = step.collectionsForOperation();
+      }
+    } catch (e) {
+      log.warning(`Failed to load workflow step ${jobID}/${workflowStepIndex} for collection timeout lookup`);
+    }
+  }
+
+  let threshold = getDefaultTimeoutSeconds(serviceID, collectionIds) * 1000;
 
   try {
     // use a simple heuristic of 2 times the longest duration of all the successful work items

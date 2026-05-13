@@ -1,0 +1,7 @@
+# Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
+version: v1.25.0
+ignore:
+  SNYK-JS-UUID-16133035:
+    - '*':
+        reason: 'Vulnerable uuid is pulled in transitively via @kubernetes/client-node@0.22.3 -> request -> uuid. Will fix in HARMONY-2343.'
+        expires: 2026-06-13T00:00:00.000Z
