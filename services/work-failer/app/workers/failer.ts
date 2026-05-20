@@ -36,17 +36,19 @@ type ServiceTimeout = {
   collections?: Record<string, number>;
 };
 
+const NISAR_TIMEOUT_MINUTES: number = 35;
+
 const serviceToDefaultTimeoutSeconds: Record<string, ServiceTimeout> = {
-  'casper': { 'default': 15 * 60 },
-  'concise': { 'default': 15 * 60 },
-  'net2cog': {
-    'collections': {
-      'C3622214170-ASF': 60 * 60, // NISAR_L2_GCOV_BETA_V1 - PROD
-      'C2854338529-ASF': 60 * 60, // NISAR_L2_GCOV_PROVISIONAL_V1 - PROD
-      'C3622241360-ASF': 60 * 60, // NISAR_L2_GCOV_V1 - PROD
-      'C1273831195-ASF': 60 * 60, // NISAR_L2_GCOV_BETA_V1 — UAT
-      'C1273428591-ASF': 60 * 60, // NISAR_L2_GCOV_PROVISIONAL_V1 - UAT
-      'C1273428593-ASF': 60 * 60, // NISAR_L2_GCOV_V1 - UAT
+  casper: { default: 15 * 60 },
+  concise: { default: 15 * 60 },
+  net2cog: {
+    collections: {
+      'C3622214170-ASF': NISAR_TIMEOUT_MINUTES * 60, // NISAR_L2_GCOV_BETA_V1 - PROD
+      'C2854338529-ASF': NISAR_TIMEOUT_MINUTES * 60, // NISAR_L2_GCOV_PROVISIONAL_V1 - PROD
+      'C3622241360-ASF': NISAR_TIMEOUT_MINUTES * 60, // NISAR_L2_GCOV_V1 - PROD
+      'C1273831195-ASF': NISAR_TIMEOUT_MINUTES * 60, // NISAR_L2_GCOV_BETA_V1 — UAT
+      'C1273428591-ASF': NISAR_TIMEOUT_MINUTES * 60, // NISAR_L2_GCOV_PROVISIONAL_V1 - UAT
+      'C1273428593-ASF': NISAR_TIMEOUT_MINUTES * 60, // NISAR_L2_GCOV_V1 - UAT
     },
   },
 };
