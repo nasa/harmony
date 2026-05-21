@@ -127,6 +127,7 @@ export async function getWorkItemsFromDatabase(
       });
     }
   } catch (err) {
+    reqLogger.error(err);
     reqLogger.error(`Error getting works from database: ${err.message}`);
   }
   return workItems;
