@@ -121,7 +121,7 @@ export async function getNextJobIds(
   + 'SELECT R.job_id, R.last_worked, R.username, R.is_async, ROW_NUMBER() OVER (ORDER BY R.user_row_num, R.last_worked ASC) AS overall_row_num '
   + `FROM RankedJobs R) Interleaved WHERE overall_row_num <= ${batchSize} ORDER BY is_async, overall_row_num`;
   const results = await tx.raw(sql);
-  return results.rows.map((r) => r.job_id) || [];
+  return results.rows?.map((r) => r.job_id) || [];
 }
 
 /**
