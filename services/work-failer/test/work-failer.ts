@@ -259,7 +259,7 @@ describe('WorkItem computeWorkItemDurationOutlierThresholdForJobService', functi
       net2cogOverrideJob.jobID,
       'asfdataservices/net2cog:1.0.0',
       0,
-    )).to.equal(3600 * 1000);
+    )).to.equal(35 * 60 * 1000);
   });
 
   it('falls back to env.defaultTimeoutSeconds when the service has no service-wide default and no collection match', async function () {
@@ -331,11 +331,11 @@ describe('getDefaultTimeoutSeconds', () => {
   });
 
   it('returns the per-collection override when a matching collection is supplied', () => {
-    expect(getDefaultTimeoutSeconds('asfdataservices/net2cog:1.0.0', ['C1273831195-ASF'])).to.equal(3600);
+    expect(getDefaultTimeoutSeconds('asfdataservices/net2cog:1.0.0', ['C1273831195-ASF'])).to.equal(2100);
   });
 
   it('returns the first matching collection override when multiple collections are supplied', () => {
-    expect(getDefaultTimeoutSeconds('net2cog', ['C9999999999-NOPE', 'C1273831195-ASF'])).to.equal(3600);
+    expect(getDefaultTimeoutSeconds('net2cog', ['C9999999999-NOPE', 'C1273831195-ASF'])).to.equal(2100);
   });
 
   it('falls through to env default when collections are supplied but none match', () => {
