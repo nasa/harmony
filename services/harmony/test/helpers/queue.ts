@@ -3,7 +3,7 @@ import { Logger } from 'winston';
 
 import { MemoryQueue } from './memory-queue';
 import * as util from '../../app/backends/workflow-orchestration/util';
-import { getWorkFromDatabase } from '../../app/backends/workflow-orchestration/work-item-polling';
+import { getWorkItemsFromDatabase } from '../../app/backends/workflow-orchestration/work-item-polling';
 import logger from '../../app/util/log';
 import { WorkItemQueueType } from '../../app/util/queue/queue';
 import * as qf from '../../app/util/queue/queue-factory';
@@ -28,7 +28,7 @@ async function processSchedulerQueue(reqLogger: Logger): Promise<void> {
     const queueUrl = qf.getQueueUrlForService(serviceID);
     const queue = qf.getQueueForUrl(queueUrl);
     if (queue) {
-      const workItemData = await getWorkFromDatabase(serviceID, reqLogger);
+      const workItemData = await getWorkItemsFromDatabase(serviceID, reqLogger, 1);
       if (workItemData) {
         reqLogger.debug(`Sending work item data to queue ${queueUrl}`);
         // must include groupId for FIFO queues, but we don't care about it so just use 'w'
