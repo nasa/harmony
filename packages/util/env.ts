@@ -222,8 +222,6 @@ export class HarmonyEnv {
 
   useLocalstack: boolean;
 
-  useServiceQueues: boolean;
-
   @IsUrl(hostRegexWhitelist)
   workItemSchedulerQueueUrl: string;
 

@@ -90,9 +90,6 @@ DATABASE_READONLY_PASSWORD=changeme
 # Whether to use encryption when communicating with the database.
 DB_USE_SSL=false
 
-# Whether or not to use queues for retrieving work-items when handling polling for work
-USE_SERVICE_QUEUES=true
-
 # SQS queue used to request scheduling of work items for a service
 WORK_ITEM_SCHEDULER_QUEUE_URL=http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/work-item-scheduler-queue
 
