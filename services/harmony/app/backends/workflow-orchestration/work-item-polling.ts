@@ -2,18 +2,16 @@ import { Logger } from 'winston';
 
 import { calculateQueryCmrLimit, processSchedulerQueue, QUERY_CMR_SERVICE_REGEX } from './util';
 import {
-  getNextJobIdForUsernameAndService, getNextJobIds, getNextUsernameForWork,
-  incrementRunningAndDecrementReadyCounts, recalculateCounts,
+  getNextJobIds, incrementRunningAndDecrementReadyCounts, recalculateCounts,
 } from '../../models/user-work';
 import WorkItem, {
-  getNextWorkItem, getNextWorkItems, getWorkItemStatus, updateWorkItemStatuses,
+  getNextWorkItems, getWorkItemStatus, updateWorkItemStatuses,
 } from '../../models/work-item';
 import { WorkItemStatus } from '../../models/work-item-interface';
 import WorkflowStep from '../../models/workflow-steps';
 import { Cache } from '../../util/cache/cache';
 import { MemoryCache } from '../../util/cache/memory-cache';
 import db, { Transaction } from '../../util/db';
-import env from '../../util/env';
 import logger from '../../util/log';
 import {
   getQueueForUrl, getQueueUrlForService, getWorkSchedulerQueue,
@@ -51,48 +49,6 @@ async function operationFetcher(key: string): Promise<string> {
 }
 
 const operationCache: Cache = new MemoryCache(operationFetcher);
-
-
-/**
- * Get a work item from the database for the given service ID.
- *
- * @param serviceID - the id of the service to get work for
- * @param reqLogger - a logger instance
- * @returns A work item from the database for the given service ID
- */
-export async function getWorkFromDatabase(serviceID: string, reqLogger: Logger): Promise<WorkItemData | null> {
-  let result: WorkItemData | null = null;
-  try {
-    await db.transaction(async (tx) => {
-      const username = await getNextUsernameForWork(tx, serviceID as string);
-      if (username) {
-        const jobID = await getNextJobIdForUsernameAndService(tx, serviceID as string, username);
-        if (jobID) {
-          const workItem = await getNextWorkItem(tx, serviceID as string, jobID);
-          if (workItem) {
-            await incrementRunningAndDecrementReadyCounts(tx, jobID, serviceID as string);
-
-            if (workItem && QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)) {
-              const childLogger = reqLogger.child({ workItemId: workItem.id });
-              const maxCmrGranules = await calculateQueryCmrLimit(tx, workItem, childLogger);
-              reqLogger.debug(`Found work item ${workItem.id} for service ${serviceID} with max CMR granules ${maxCmrGranules}`);
-              result = { workItem, maxCmrGranules };
-            } else {
-              result = { workItem };
-            }
-          } else {
-            reqLogger.warn(`user_work is out of sync for user ${username} and job ${jobID}, could not find ready work item`);
-            reqLogger.warn(`recalculating ready and running counts for job ${jobID}`);
-            await recalculateCounts(tx, jobID);
-          }
-        }
-      }
-    });
-  } catch (err) {
-    reqLogger.error(`Error getting work from database: ${err.message}`);
-  }
-  return result;
-}
 
 /**
  * Return a randomly shuffled list of the given list.
@@ -138,7 +94,7 @@ export async function getWorkItemsFromDatabase(
     let workSize;
 
     // Define the inner function outside of the loop
-    const processJob = async (tx: Transaction, jobId: string) : Promise<void> => {
+    const processJob = async (tx: Transaction, jobId: string): Promise<void> => {
       // the work size is readjusted based on work items retrieved from the previous job
       workSize = (remainingNumOfJobs > 0) ? Math.ceil(remainingBatchSize / remainingNumOfJobs) : 1;
       const nextWorkItems = await getNextWorkItems(tx, serviceID as string, jobId, workSize);
@@ -182,11 +138,8 @@ export async function getWorkItemsFromDatabase(
  * @param serviceID - The service ID for which to request work
  */
 export async function makeWorkScheduleRequest(serviceID: string): Promise<void> {
-  // only do this if we are using service queues
-  if (env.useServiceQueues) {
-    const schedulerQueue = getWorkSchedulerQueue();
-    await schedulerQueue.sendMessage(serviceID);
-  }
+  const schedulerQueue = getWorkSchedulerQueue();
+  await schedulerQueue.sendMessage(serviceID);
 }
 
 /**

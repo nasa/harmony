@@ -26,14 +26,12 @@ fi
 if [ ! "$LOCAL_DEV" = true ]; then
 
   # create the work scheduler
-  if [ "$USE_SERVICE_QUEUES" = true ]; then
-    file="services/work-scheduler/config/service-template.yaml"
-    if [ ! -f "$file" ]; then
-      echo "work scheduler template was not found."
-      exit 1
-    fi
-    envsubst < $file | kubectl apply -f - -n harmony
+  file="services/work-scheduler/config/service-template.yaml"
+  if [ ! -f "$file" ]; then
+    echo "work scheduler template was not found."
+    exit 1
   fi
+  envsubst < $file | kubectl apply -f - -n harmony
 
   # create the work updaters
   file="services/work-updater/config/service-template-large.yaml"
@@ -80,15 +78,13 @@ envsubst < $file | kubectl apply -f - -n harmony
 
 harmony_pod=$(kubectl get pods -n harmony -l app=harmony | grep -v NAME | awk '{print $1;}')
 # create the service queue
-if [ "$USE_SERVICE_QUEUES" == "true" ]; then
-  if [ "$harmony_pod" == "" ]; then
-    # Not running harmony in a box
-    awslocal sqs create-queue --queue-name "query-cmr.fifo" --attributes FifoQueue=true,ContentBasedDeduplication=true --region us-west-2
-  else
-    # Running harmony in a box
-    echo "Creating query-cmr queue using harmony container"
-    kubectl -n harmony exec -it $harmony_pod -- awslocal sqs create-queue --queue-name "query-cmr.fifo" --attributes FifoQueue=true,ContentBasedDeduplication=true --region us-west-2
-  fi
+if [ "$harmony_pod" == "" ]; then
+  # Not running harmony in a box
+  awslocal sqs create-queue --queue-name "query-cmr.fifo" --attributes FifoQueue=true,ContentBasedDeduplication=true --region us-west-2
+else
+  # Running harmony in a box
+  echo "Creating query-cmr queue using harmony container"
+  kubectl -n harmony exec -it $harmony_pod -- awslocal sqs create-queue --queue-name "query-cmr.fifo" --attributes FifoQueue=true,ContentBasedDeduplication=true --region us-west-2
 fi
 
 # create the other services
@@ -158,14 +154,12 @@ do
   envsubst < $file | kubectl apply -f - -n harmony
 
   # create the service queue
-  if [ "$USE_SERVICE_QUEUES" == "true" ]; then
-    if [ "$harmony_pod" == "" ]; then
-      # Not running harmony in a box
-      awslocal sqs create-queue --queue-name "${SERVICE_NAME}.fifo" --attributes FifoQueue=true,ContentBasedDeduplication=true --region us-west-2
-    else
-      # Running harmony in a box
-      echo "Creating ${SERVICE_NAME} queue using harmony container"
-      kubectl -n harmony exec -it $harmony_pod -- awslocal sqs create-queue --queue-name "${SERVICE_NAME}.fifo" --attributes FifoQueue=true,ContentBasedDeduplication=true --region us-west-2
-    fi
+  if [ "$harmony_pod" == "" ]; then
+    # Not running harmony in a box
+    awslocal sqs create-queue --queue-name "${SERVICE_NAME}.fifo" --attributes FifoQueue=true,ContentBasedDeduplication=true --region us-west-2
+  else
+    # Running harmony in a box
+    echo "Creating ${SERVICE_NAME} queue using harmony container"
+    kubectl -n harmony exec -it $harmony_pod -- awslocal sqs create-queue --queue-name "${SERVICE_NAME}.fifo" --attributes FifoQueue=true,ContentBasedDeduplication=true --region us-west-2
   fi
 done

@@ -192,10 +192,7 @@ export async function getNextWorkItem(
         // in case a service for the same job produces an output with the same file name
         workItemData.operation.stagingLocation += `${workItemData.id}/`;
         const startedAt = new Date();
-        let status = WorkItemStatus.RUNNING;
-        if (env.useServiceQueues) {
-          status = WorkItemStatus.QUEUED;
-        }
+        const status = WorkItemStatus.QUEUED;
         await tx(WorkItem.table)
           .update({
             status,
@@ -248,10 +245,7 @@ export async function getNextWorkItems(
 
     if (workItemData?.length > 0) {
       const startedAt = new Date();
-      let status = WorkItemStatus.RUNNING;
-      if (env.useServiceQueues) {
-        status = WorkItemStatus.QUEUED;
-      }
+      const status = WorkItemStatus.QUEUED;
       await tx(WorkItem.table)
         .update({
           status,
@@ -874,10 +868,8 @@ export async function getRetryCounts(
 // Listen for work items being created and put a message on the scheduler queue asking it to
 // schedule some WorkItems for the service
 eventEmitter.on(WorkItemEvent.CREATED, async (workItem: WorkItem) => {
-  if (env.useServiceQueues) {
-    const { serviceID } = workItem;
-    logger.debug(`Work item created for service ${serviceID}, putting message on scheduler queue`);
-    const queue = getWorkSchedulerQueue();
-    await queue.sendMessage(serviceID);
-  }
+  const { serviceID } = workItem;
+  logger.debug(`Work item created for service ${serviceID}, putting message on scheduler queue`);
+  const queue = getWorkSchedulerQueue();
+  await queue.sendMessage(serviceID);
 });

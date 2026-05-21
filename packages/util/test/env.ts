@@ -36,10 +36,6 @@ describe('HarmonyEnv', function () {
       expect(getValidationErrors(this.validEnv).length).to.eql(0);
     });
 
-    it('sets special values (values that are set manually) using env-defaults', function () {
-      expect(this.validEnv.useServiceQueues).to.eql(true);
-    });
-
     it('sets non-special values using env-defaults', function () {
       expect(this.validEnv.localstackHost).to.eql('localstack');
     });

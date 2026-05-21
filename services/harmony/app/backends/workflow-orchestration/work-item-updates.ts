@@ -937,7 +937,7 @@ export async function processWorkItem(
         }
         if (
           (!didCreateWorkItem && (!nextWorkflowStep || nextWorkflowStep.workItemCount < 1))
-            || userWorkCompleteForJob
+          || userWorkCompleteForJob
         ) {
           // If all granules are finished mark the job as finished
           const { finalStatus, finalMessage } = await getFinalStatusAndMessageForJob(tx, job);

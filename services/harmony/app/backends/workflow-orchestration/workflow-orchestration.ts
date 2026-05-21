@@ -2,11 +2,10 @@ import { NextFunction, Response } from 'express';
 import _ from 'lodash';
 import { Logger } from 'winston';
 
-import { getWorkFromDatabase, getWorkFromQueue, WorkItemData } from './work-item-polling';
+import { getWorkFromQueue } from './work-item-polling';
 import DataOperation from '../../models/data-operation';
 import HarmonyRequest from '../../models/harmony-request';
 import WorkItemUpdate from '../../models/work-item-update';
-import env from '../../util/env';
 import { WorkItemQueueType } from '../../util/queue/queue';
 import { getQueueForType } from '../../util/queue/queue-factory';
 
@@ -30,13 +29,9 @@ export async function getWork(
 
 
   let responded = false;
-  let workItemData: WorkItemData | null;
 
-  if (env.useServiceQueues) {
-    workItemData = await getWorkFromQueue(serviceID as string, reqLogger);
-  } else {
-    workItemData = await getWorkFromDatabase(serviceID as string, reqLogger);
-  }
+  const workItemData = await getWorkFromQueue(serviceID as string, reqLogger);
+
 
   if (workItemData) {
     const { workItem, maxCmrGranules } = workItemData;
