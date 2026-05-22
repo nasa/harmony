@@ -1,14 +1,14 @@
-FROM node:22.14.0
+FROM node:22-alpine3.22
 
-RUN apt-get update
-RUN apt-get install -y vim git python3 postgresql-client make gcc g++ libc-dev libpq-dev
+RUN apk update && apk upgrade --no-cache
+RUN apk add --no-cache vim git python3 postgresql-client make gcc g++ libc-dev postgresql-dev ca-certificates
 RUN git config --global url."https://".insteadOf ssh://
 
 RUN mkdir -p /work-updater/services/work-updater
 
 COPY package.json package-lock.json /work-updater/services/work-updater/
 WORKDIR /work-updater/services/work-updater
-RUN npm ci
+RUN npm ci --omit=dev
 
 COPY env-defaults /work-updater/services/work-updater/
 COPY built /work-updater/

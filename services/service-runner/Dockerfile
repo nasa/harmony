@@ -1,6 +1,7 @@
-FROM node:22.5.1-alpine
+FROM node:22-alpine3.22
 
-RUN apk add bash vim curl git
+RUN apk upgrade --no-cache
+RUN apk add bash vim curl git ca-certificates
 RUN git config --global url."https://".insteadOf ssh://
 
 RUN mkdir -p /service-runner/services/service-runner
@@ -8,7 +9,7 @@ RUN mkdir -p /tmp/metadata
 
 COPY package.json package-lock.json /service-runner/services/service-runner/
 WORKDIR /service-runner/services/service-runner
-RUN npm ci
+RUN npm ci --omit=dev
 
 COPY env-defaults /service-runner/services/service-runner/
 COPY built /service-runner/
