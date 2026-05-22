@@ -1,7 +1,7 @@
-FROM node:22.14.0
+FROM node:22-alpine3.22
 
-RUN apt-get update
-RUN apt-get install -y vim
+RUN apk update && apk upgrade --no-cache
+RUN apk add --no-cache vim git
 RUN git config --global url."https://".insteadOf ssh://
 
 RUN mkdir -p /query-cmr/services/query-cmr
@@ -9,7 +9,7 @@ RUN mkdir -p /tmp/metadata
 
 COPY package.json package-lock.json /query-cmr/services/query-cmr/
 WORKDIR /query-cmr/services/query-cmr
-RUN npm ci
+RUN npm ci --omit=dev
 
 COPY built /query-cmr/
 WORKDIR /query-cmr
