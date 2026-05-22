@@ -178,6 +178,7 @@ export interface CmrUmmVariable {
     RelatedURLs?: CmrRelatedUrl[];
     VariableType?: string;
     VariableSubType?: string;
+    Units?: string;
     ScienceKeywords?: ScienceKeyword[];
   };
 }

@@ -57,7 +57,9 @@ interface ScienceKeyword {
 }
 interface VariableV3 {
   name: string;
+  longName: string;
   href: string;
+  units: string;
   scienceKeywords: ScienceKeyword[];
 }
 
@@ -324,7 +326,9 @@ function getVariableV2(variable: CmrUmmVariable): VariableV2 {
  */
 function getVariableV3(variable: CmrUmmVariable): VariableV3 {
   const name = variable.umm.Name;
+  const longName = variable.umm.LongName;
   const href = `${process.env.CMR_ENDPOINT}/search/concepts/${variable.meta['concept-id']}`;
+  const units = variable.umm.Units;
   const scienceKeywords = [];
   if (variable.umm.ScienceKeywords) {
     for (const scienceKeyword of variable.umm.ScienceKeywords) {
@@ -340,7 +344,7 @@ function getVariableV3(variable: CmrUmmVariable): VariableV3 {
     }
   }
 
-  return { name, href, scienceKeywords };
+  return { name, longName, href, units, scienceKeywords };
 }
 
 /**
