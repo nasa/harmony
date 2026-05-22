@@ -519,21 +519,25 @@ describe('Testing collection capabilities', function () {
           const capabilities = JSON.parse(this.res.text);
           const expectedVariables = [{
             'name': 'alpha_var',
+            'longName': 'Alpha Channel',
             'href': 'https://cmr.uat.earthdata.nasa.gov/search/concepts/V1234088190-EEDTEST',
             'scienceKeywords': [],
           },
           {
             'name': 'blue_var',
+            'longName': 'Blue Channel',
             'href': 'https://cmr.uat.earthdata.nasa.gov/search/concepts/V1234088189-EEDTEST',
             'scienceKeywords': [],
           },
           {
             'name': 'green_var',
+            'longName': 'Green Channel',
             'href': 'https://cmr.uat.earthdata.nasa.gov/search/concepts/V1234088188-EEDTEST',
             'scienceKeywords': [],
           },
           {
             'name': 'red_var',
+            'longName': 'Red Channel',
             'href': 'https://cmr.uat.earthdata.nasa.gov/search/concepts/V1234088187-EEDTEST',
             'scienceKeywords': [],
           }];
@@ -545,7 +549,7 @@ describe('Testing collection capabilities', function () {
           expect(capabilities.capabilitiesVersion).to.equal('3-alpha');
         });
 
-        describe('for a collection with scienceKeywords in the variables', function () {
+        describe('for a collection with scienceKeywords and units in the variables', function () {
           hookGetCollectionCapabilities({ collectionId: 'C1238538022-EEDTEST', version: '3' });
           it('returns a 200 success status code', function () {
             expect(this.res.status).to.equal(200);
@@ -557,7 +561,9 @@ describe('Testing collection capabilities', function () {
             // set correctly
             const expectedVariables = [{
               'name': '/ancillary_data/atlas_sdp_gps_epoch',
+              'longName': 'ATLAS Epoch Offset',
               'href': 'https://cmr.uat.earthdata.nasa.gov/search/concepts/V1238628268-EEDTEST',
+              'units': 'seconds since 1980-01-06T00:00:00.000000Z',
               'scienceKeywords': [
                 {
                   'category': 'EARTH SCIENCE',
@@ -603,7 +609,9 @@ describe('Testing collection capabilities', function () {
               ],
             }, {
               'name': '/ancillary_data/control',
+              'longName': 'Control File',
               'href': 'https://cmr.uat.earthdata.nasa.gov/search/concepts/V1238628280-EEDTEST',
+              'units': '1',
               'scienceKeywords': [
                 {
                   'category': 'EARTH SCIENCE',
