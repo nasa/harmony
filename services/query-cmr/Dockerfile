@@ -1,8 +1,6 @@
 FROM node:22-alpine3.22
 
 RUN apk update && apk upgrade --no-cache
-RUN apk add --no-cache vim git
-RUN git config --global url."https://".insteadOf ssh://
 
 RUN mkdir -p /query-cmr/services/query-cmr
 RUN mkdir -p /tmp/metadata

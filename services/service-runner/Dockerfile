@@ -1,8 +1,7 @@
 FROM node:22-alpine3.22
 
 RUN apk upgrade --no-cache
-RUN apk add bash vim curl git ca-certificates
-RUN git config --global url."https://".insteadOf ssh://
+RUN apk add bash ca-certificates
 
 RUN mkdir -p /service-runner/services/service-runner
 RUN mkdir -p /tmp/metadata
