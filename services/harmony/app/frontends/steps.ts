@@ -36,6 +36,7 @@ interface StepWorkItem {
   retryCount: number;
   inputFiles: string[] | null;
   outputFiles: string[] | null;
+  warning?: string;
 }
 
 interface JobStep {
@@ -259,16 +260,16 @@ function buildWorkItem(
   const { catalogHrefs, wiOutputCatalogs } = resolved;
   const outputCatalogs = wiOutputCatalogs.get(wi.id);
   let outputFiles: string[] | null;
+  let truncationWarning: string | undefined = undefined;
   if (outputCatalogs === undefined) {
     outputFiles = null;
   } else {
     outputFiles = outputCatalogs.urls.flatMap((url) => catalogHrefs.get(url) ?? []);
     if (outputCatalogs.omittedCount > 0) {
-      outputFiles.push(
-        `Not all files resolved, there are ${outputCatalogs.omittedCount} more files not shown.`,
-      );
+      truncationWarning = `Not all stac catalogs resolved, there are ${outputCatalogs.omittedCount} unshown catalogs.`;
     }
   }
+
   return {
     id: wi.id,
     status: wi.status,
@@ -277,6 +278,7 @@ function buildWorkItem(
       ? (catalogHrefs.get(wi.stacCatalogLocation) ?? null)
       : null,
     outputFiles,
+    ...(truncationWarning !== undefined && { warning: truncationWarning }),
   };
 }
 

@@ -420,15 +420,12 @@ describe('GET /jobs/:jobID/steps', function () {
   describe('When batch-catalogs.json exceeds MAX_BATCH_CATALOGS', function () {
     hookJobSteps({ jobID: truncatedJob.jobID, username: 'joe' });
 
-    it('appends a truncation sentinel to outputFiles naming the omitted count', function () {
+    it('includes a truncation warning when outputFiles in incomplete', function () {
       expect(this.res.statusCode).to.equal(200);
       const body = JSON.parse(this.res.text);
-      const { outputFiles } = body.steps[0].workItems[0];
+      const { outputFiles, warning } = body.steps[0].workItems[0];
       expect(outputFiles).to.be.an('array');
-      // Last element [also the only element] is the sentinel; 100 staged - 5 cap = 95 omitted.
-      expect(outputFiles[outputFiles.length - 1]).to.equal(
-        'Not all files resolved, there are 95 more files not shown.',
-      );
+      expect(warning).to.equal('Not all stac catalogs resolved, there are 95 unshown catalogs.');
     });
   });
 
@@ -438,8 +435,9 @@ describe('GET /jobs/:jobID/steps', function () {
     it('displays a generic asset and passes the destination-bucket href through', function () {
       expect(this.res.statusCode).to.equal(200);
       const body = JSON.parse(this.res.text);
-      const { outputFiles } = body.steps[0].workItems[0];
+      const { outputFiles, warning } = body.steps[0].workItems[0];
       expect(outputFiles).to.deep.equal(['s3://user-bucket/out/granule_reformatted.tif']);
+      expect(warning).not.to.exist;
     });
 
     it('summarizes both statuses present in the step', function () {

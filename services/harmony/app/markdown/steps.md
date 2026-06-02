@@ -68,6 +68,8 @@ Each entry in a step's `workItems` list describes a single work item:
 | retryCount  | The number of times the work item has been retried                                                                                                                                        |
 | inputFiles  | A list of links to the input files for the work item, or `null` if the work item has no STAC input (e.g. the first query-cmr step).                                                       |
 | outputFiles | A list of links to the output files produced by the work item, or `null` if it produced no output. Files that cannot be turned into a public link are shown as `<private file location>`. |
+| warning     | Warning message displayed if the outputFiles array is incomplete                                                                                                                          |
+
 ---
 **Table {{tableCounter}}** - Harmony work item fields
 
