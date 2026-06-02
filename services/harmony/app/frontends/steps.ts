@@ -1,0 +1,396 @@
+import { NextFunction, Response } from 'express';
+
+import { sanitizeImage } from '@harmony/util/string';
+
+import { createPublicPermalink } from './service-results';
+import HarmonyRequest from '../models/harmony-request';
+import WorkItem, {
+  queryAll as queryWorkItems, workItemStatusCountsForJob,
+} from '../models/work-item';
+import {
+  COMPLETED_WORK_ITEM_STATUSES, getStacLocation, WorkItemQuery, WorkItemStatus,
+} from '../models/work-item-interface';
+import WorkflowStep, { getWorkflowStepsByJobId } from '../models/workflow-steps';
+import db from '../util/db';
+import { isAdminUser } from '../util/edl-api';
+import { RequestValidationError } from '../util/errors';
+import { getJobIfAllowed } from '../util/job';
+import { defaultObjectStore } from '../util/object-store';
+import { readCatalogItems, StacItem } from '../util/stac';
+import { getRequestRoot } from '../util/url';
+
+export const DEFAULT_PER_PAGE = 50;
+const MAX_BATCH_CATALOGS = 100;
+const VALID_STATUSES = Object.values(WorkItemStatus);
+
+
+interface StepsQueryParams {
+  step?: number;
+  status?: WorkItemStatus;
+  workItem?: number;
+}
+
+interface StepWorkItem {
+  id: number;
+  status: WorkItemStatus;
+  retryCount: number;
+  inputFiles: string[] | null;
+  outputFiles: string[] | null;
+}
+
+interface JobStep {
+  serviceID: string;
+  stepIndex: number;
+  workItemCount: number;
+  statuses: Partial<Record<WorkItemStatus, number>>;
+  workItems: StepWorkItem[];
+  paging?: StepPaging;
+}
+
+interface StepPaging {
+  message: string;
+}
+
+/**
+ * Parse the query parameters used to filter and shape the steps response.
+ *
+ * @param query - the raw request query string parameters
+ * @returns the validated and normalized steps query
+ * @throws RequestValidationError - if any parameter is not a valid value
+ */
+function parseQuery(query: Record<string, unknown>): StepsQueryParams {
+  const out: StepsQueryParams = {};
+
+  if (query.step !== undefined) {
+    const n = Number(query.step);
+    if (!Number.isInteger(n) || n < 1) {
+      throw new RequestValidationError('step must be a positive integer');
+    }
+    out.step = n;
+  }
+
+  if (query.status !== undefined) {
+    const s = String(query.status) as WorkItemStatus;
+    if (!VALID_STATUSES.includes(s)) {
+      throw new RequestValidationError(`status must be one of: ${VALID_STATUSES.join(', ')}`);
+    }
+    out.status = s;
+  }
+
+  if (query.workItem !== undefined) {
+    const n = Number(query.workItem);
+    if (!Number.isInteger(n) || n < 1) {
+      throw new RequestValidationError('workItem must be a positive integer');
+    }
+    out.workItem = n;
+  }
+
+  return out;
+}
+
+/**
+ * Collect every asset href from a list of STAC items.
+ *
+ * @param items - the STAC items whose asset hrefs should be collected
+ * @returns every asset href found across the items
+ */
+function getAllAssetHrefs(items: StacItem[]): string[] {
+  const hrefs: string[] = [];
+  for (const item of items) {
+    for (const name in item.assets ?? {}) {
+      const { href } = item.assets[name];
+      if (href) hrefs.push(href);
+    }
+  }
+  return hrefs;
+}
+
+/**
+ * Read a STAC catalog and return every asset href it references.
+ *
+ * @param catalogUrl - the location of the STAC catalog to read
+ * @returns the asset hrefs from the catalog, or an empty array if the catalog
+ *   cannot be read (e.g. the service failed before producing it, or the
+ *   catalog has no assets)
+ */
+async function resolveDataHrefs(catalogUrl: string): Promise<string[]> {
+  try {
+    const items = await readCatalogItems(catalogUrl);
+    return getAllAssetHrefs(items);
+  } catch {
+    return [];
+  }
+}
+
+// Placeholder used in inputFiles / outputFiles when a STAC asset href cannot
+// be turned into a public/valid link.
+const PRIVATE_FILE_PLACEHOLDER = '<private file location>';
+
+/**
+ * Convert a raw STAC asset href into the public-facing form.
+ * S3 URLs under `.../public/` become `<frontendRoot>/service-results/...`
+ * HTTPS URLs pass through.
+ * User provided S3:// urls are returned for allowed locations.
+ *
+ * @param href - the raw STAC asset href to convert
+ * @param frontendRoot - The root URL to use when producing Harmony permalinks
+ * @param destinationBucket - the job's destinationUrl bucket name, or undefined
+ *     if the job has no destinationUrl
+ * @returns the Harmony permalink result for a signable href; the raw href if it is in
+ *   the job's destination bucket; otherwise the PRIVATE_FILE_PLACEHOLDER sentinel
+ */
+export function safePublicLink(href: string, frontendRoot: string, destinationBucket: string | undefined): string {
+  try {
+    return createPublicPermalink(href, frontendRoot);
+  } catch {
+    if (destinationBucket && href.startsWith(`s3://${destinationBucket}/`)) {
+      return href;
+    }
+    return PRIVATE_FILE_PLACEHOLDER;
+  }
+}
+
+// Per-WI output catalog list, plus how many additional catalog files (if any)
+// were dropped to keep the S3 fan-out bounded.
+interface WiOutputCatalogs {
+  urls: string[];
+  omittedCount: number;
+}
+
+interface ResolvedCatalogs {
+  // Map of local catalog.json location -> Array of public links to file.
+  catalogHrefs: Map<string, string[]>;
+  // Map of work item id to its output catalog.json list (plus the omitted count).
+  wiOutputCatalogs: Map<number, WiOutputCatalogs>;
+}
+
+/**
+ * Read query-cmr's `batch-catalogs.json` and return absolute
+ * URLs to each. Caps the returned URLs at MAX_BATCH_CATALOGS to bound the
+ * downstream S3 reads; reports any extras as omittedCount.
+ *
+ * Only meaningful for query-cmr WIs; regular services write a top-level
+ * `catalog.json` instead of `batch-catalogs.json`.
+ *
+ * @param outputDir - the WI's outputs directory URL
+ * @returns the (capped) catalog URLs and the count of additional catalog
+ *   files that were not included
+ */
+async function readBatchCatalogs(outputDir: string): Promise<WiOutputCatalogs> {
+  try {
+    const filenames = await defaultObjectStore().getObjectJson(
+      `${outputDir}batch-catalogs.json`,
+    ) as string[];
+    const capped = filenames.slice(0, MAX_BATCH_CATALOGS);
+    return {
+      urls: capped.map((f) => `${outputDir}${f}`),
+      omittedCount: Math.max(0, filenames.length - MAX_BATCH_CATALOGS),
+    };
+  } catch {
+    return { urls: [], omittedCount: 0 };
+  }
+}
+
+/**
+ * For every completed work item, determine its output catalog file URLs, then
+ * resolve each unique catalog URL (inputs + outputs) to public-facing data
+ * hrefs.
+ *
+ * @param workItems - the page of work items whose catalogs should be resolved
+ * @param frontendRoot - the root URL to use when producing Harmony permalinks
+ * @returns the per-catalog to  hrefs map and per-WI output to catalog list (see
+ *   ResolvedCatalogs)
+ */
+async function resolveAllCatalogs(
+  workItems: WorkItem[],
+  frontendRoot: string,
+  destinationBucket: string = undefined,
+): Promise<ResolvedCatalogs> {
+  const completed_workitems = workItems.filter((wi) => COMPLETED_WORK_ITEM_STATUSES.includes(wi.status));
+
+  // Determine each completed WI's *output* catalog file URLs.
+  //   - query-cmr WIs (wi.scrollID is set) write multiple catalogN.json files
+  //     indexed by batch-catalogs.json
+  //   - All other services write a single top-level catalog.json (does it?)
+  const wiOutputCatalogs = new Map<number, WiOutputCatalogs>();
+  await Promise.all(completed_workitems.map(async (wi) => {
+    if (wi.scrollID) {
+      const outputDir = getStacLocation({ id: wi.id, jobID: wi.jobID });
+      wiOutputCatalogs.set(wi.id, await readBatchCatalogs(outputDir));
+    } else {
+      wiOutputCatalogs.set(wi.id, {
+        urls: [getStacLocation({ id: wi.id, jobID: wi.jobID }, 'catalog.json')],
+        omittedCount: 0,
+      });
+    }
+  }));
+
+  // Collect every unique catalog file URL: each completed WI's
+  // input (stacCatalogLocation) plus every output catalog file.
+  const allCatalogUrls = new Set<string>();
+  for (const wi of completed_workitems) {
+    if (wi.stacCatalogLocation) allCatalogUrls.add(wi.stacCatalogLocation);
+    for (const url of wiOutputCatalogs.get(wi.id)?.urls ?? []) allCatalogUrls.add(url);
+  }
+
+  const catalogHrefs = new Map<string, string[]>();
+  await Promise.all(Array.from(allCatalogUrls).map(async (url) => {
+    const rawHrefs = await resolveDataHrefs(url);
+    catalogHrefs.set(url, rawHrefs.map((h) => safePublicLink(h, frontendRoot, destinationBucket)));
+  }));
+
+  return { catalogHrefs, wiOutputCatalogs };
+}
+
+/**
+ * Build the work item portion of the response. inputFiles / outputFiles are
+ * populated from the precomputed `resolved` maps; a WI absent from
+ * `wiOutputCatalogs` displays `outputFiles: null`. WIs that never have a STAC
+ * input (e.g.  query-cmr step 1) always report `inputFiles: null`.
+ *
+ * @param wi - the work item to serialize
+ * @param resolved - the catalog hrefs map + per-WI output catalog list
+ * @returns the work item shaped for the steps response
+ */
+function buildWorkItem(
+  wi: WorkItem,
+  resolved: ResolvedCatalogs,
+): StepWorkItem {
+  const { catalogHrefs, wiOutputCatalogs } = resolved;
+  const outputCatalogs = wiOutputCatalogs.get(wi.id);
+  let outputFiles: string[] | null;
+  if (outputCatalogs === undefined) {
+    outputFiles = null;
+  } else {
+    outputFiles = outputCatalogs.urls.flatMap((url) => catalogHrefs.get(url) ?? []);
+    if (outputCatalogs.omittedCount > 0) {
+      outputFiles.push(
+        `Not all files resolved, there are ${outputCatalogs.omittedCount} more files not shown (HARMONY-2352)`,
+      );
+    }
+  }
+  return {
+    id: wi.id,
+    status: wi.status,
+    retryCount: wi.retryCount,
+    inputFiles: wi.stacCatalogLocation
+      ? (catalogHrefs.get(wi.stacCatalogLocation) ?? null)
+      : null,
+    outputFiles,
+  };
+}
+
+
+// A workflow step paired with its bounded page of work items and the total
+// number of work items that matched (used to decide whether to page).
+interface StepWorkItems {
+  step: WorkflowStep;
+  workItems: WorkItem[];
+  total: number;
+}
+
+/**
+ * Build the full step list from each step's already-bounded page of work items.
+ * A step whose total matching work item count exceeds DEFAULT_PER_PAGE gets a
+ * placeholder `paging` block. When a status/workItem filter is active, steps
+ * with no matching work items are omitted.
+ *
+ * @param stepResults - each workflow step with its bounded work items and total
+ * @param resolved - resolved-catalog data from resolveAllCatalogs
+ * @param statusCounts - per-step, per-status work item counts for the whole job
+ * @param q - the parsed steps query, used to honor the status/workItem filters
+ * @returns the steps with their work items, status summary, and any paging note
+ */
+function buildSteps(
+  stepResults: StepWorkItems[],
+  resolved: ResolvedCatalogs,
+  statusCounts: Map<number, Partial<Record<WorkItemStatus, number>>>,
+  q: StepsQueryParams,
+): JobStep[] {
+  const result: JobStep[] = [];
+  const filtering = q.status !== undefined || q.workItem !== undefined;
+  for (const { step, workItems, total } of stepResults) {
+    // Don't show steps without workitems.
+    if (filtering && workItems.length === 0) continue;
+
+    const jobStep: JobStep = {
+      serviceID: sanitizeImage(step.serviceID),
+      stepIndex: step.stepIndex,
+      workItemCount: step.workItemCount,
+      statuses: statusCounts.get(step.stepIndex) ?? {},
+      workItems: workItems.map((wi) => buildWorkItem(wi, resolved)),
+    };
+    // workItems is capped at DEFAULT_PER_PAGE per step; flag steps with more.
+    if (total > DEFAULT_PER_PAGE) {
+      jobStep.paging = { message: 'Paging of results available with HARMONY-2354' };
+    }
+
+    result.push(jobStep);
+  }
+
+  return result;
+}
+
+/**
+ * Express.js handler for GET /jobs/:jobID/steps. Returns a JSON document
+ * describing the job, its workflow steps, and the inputs/outputs of those
+ * steps.
+ *
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
+ * @param next - The next function in the call chain
+ * @returns Resolves when the request is complete
+ */
+export async function getJobSteps(
+  req: HarmonyRequest, res: Response, next: NextFunction,
+): Promise<void> {
+  const { jobID } = req.params;
+  try {
+    const q = parseQuery(req.query as Record<string, unknown>);
+
+    const isAdmin = await isAdminUser(req);
+    const job = await getJobIfAllowed(jobID, req.user, isAdmin, req.accessToken, true);
+    const destinationBucket = job.destination_url?.substring(5).split('/')[0];
+
+    const steps = await getWorkflowStepsByJobId(db, jobID);
+    const statusCounts = await workItemStatusCountsForJob(db, jobID);
+
+    const selectedSteps = q.step !== undefined
+      ? steps.filter((s) => s.stepIndex === q.step)
+      : steps;
+
+    // Bound each step's work items independently at DEFAULT_PER_PAGE. Per-step
+    // paging links are coming in HARMONY-2354.
+    const stepResults: StepWorkItems[] = await Promise.all(selectedSteps.map(async (step) => {
+      const where: WorkItemQuery['where'] = { jobID, workflowStepIndex: step.stepIndex };
+      if (q.status !== undefined) where.status = q.status;
+      if (q.workItem !== undefined) where.id = q.workItem;
+      const { workItems, pagination } = await queryWorkItems(
+        db, { where, orderBy: { field: 'id', value: 'asc' } }, 1, DEFAULT_PER_PAGE,
+      );
+      return { step, workItems, total: pagination.total };
+    }));
+
+    const frontendRoot = getRequestRoot(req);
+    const allWorkItems = stepResults.flatMap((r) => r.workItems);
+    const resolvedCatalogs = await resolveAllCatalogs(allWorkItems, frontendRoot, destinationBucket);
+    const jobSteps = buildSteps(stepResults, resolvedCatalogs, statusCounts, q);
+
+    const responseBody = {
+      jobID: job.jobID,
+      serviceName: job.service_name,
+      status: job.status,
+      progress: job.progress,
+      message: job.message,
+      username: job.username,
+      numInputGranules: job.numInputGranules,
+      request: job.request,
+      steps: jobSteps,
+    };
+
+    res.json(responseBody);
+  } catch (e) {
+    req.context.logger.error(e);
+    next(e);
+  }
+}

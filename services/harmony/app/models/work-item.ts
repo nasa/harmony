@@ -727,6 +727,35 @@ export async function countOfWorkItemsByStepAndJobID(
 }
 
 /**
+ * Returns the per-status work item counts for each workflow step of a job, as a
+ * map of step index to  \{ statuses: count \}. Only statuses with at least one work
+ * item appear. The counts reflect the entire step.
+ *
+ * @param tx - the transaction to use for querying
+ * @param jobID - the ID of the job whose work items should be counted
+ * @returns a map of workflowStepIndex to a partial map of status: count
+ */
+export async function workItemStatusCountsForJob(
+  tx: Transaction,
+  jobID: string,
+): Promise<Map<number, { [K in WorkItemStatus]?: number }>> {
+  const rows = await tx(WorkItem.table)
+    .select('workflowStepIndex', 'status')
+    .count('id as count')
+    .where({ jobID })
+    .groupBy('workflowStepIndex', 'status');
+
+  const result = new Map<number, { [K in WorkItemStatus]?: number }>();
+  for (const row of rows) {
+    const stepIndex = Number(row.workflowStepIndex);
+    const counts = result.get(stepIndex) ?? {};
+    counts[row.status as WorkItemStatus] = Number(row.count);
+    result.set(stepIndex, counts);
+  }
+  return result;
+}
+
+/**
  *  Returns the number of work items that can be actively worked for the given service ID
  * @param tx - the transaction to use for querying
  * @param jobID - the ID of the job that created this work item

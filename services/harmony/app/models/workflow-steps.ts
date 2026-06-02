@@ -9,7 +9,7 @@ import { Transaction } from '../util/db';
 import env from '../util/env';
 
 // The fields to save to the database
-const serializedFields = [
+export const serializedFields = [
   'id', 'jobID', 'serviceID', 'stepIndex',
   'workItemCount', 'operation', 'createdAt', 'updatedAt',
   'hasAggregatedOutput', 'isBatched', 'is_sequential', 'is_complete', 'maxBatchInputs',

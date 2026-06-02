@@ -86,6 +86,7 @@ export interface WorkItemQuery {
     id?: number;
     jobID?: string;
     status?: string;
+    workflowStepIndex?: number;
     createdAt?: number;
     updatedAt?: number;
   };

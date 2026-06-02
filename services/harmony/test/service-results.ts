@@ -1,11 +1,15 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
 import sinon, { stub } from 'sinon';
+import { v4 as uuid } from 'uuid';
 
 import { hookUrl } from './helpers/hooks';
 import hookServersStartStop from './helpers/servers';
 import { createPublicPermalink, providerCollectionCache } from '../app/frontends/service-results';
 import { FileStore } from '../app/util/object-store/file-store';
+
+const someJobID = uuid();
+const someWorkItemID = '12345';
 
 describe('service-results', function () {
   hookServersStartStop({ USE_EDL_CLIENT_APP: true });
@@ -77,7 +81,7 @@ describe('service-results', function () {
         providerCollectionIdCacheStub.restore();
       });
 
-      hookUrl('/service-results/some-bucket/public/some-job-id/some-work-item-id/some-path.tif', 'jdoe');
+      hookUrl(`/service-results/some-bucket/public/${someJobID}/${someWorkItemID}/some-path.tif`, 'jdoe');
       it('passes the user\'s Earthdata Login username to the signing function for tracking', function () {
         expect(this.res.headers.location).to.include('A-userid=jdoe');
         expect(this.res.headers.location).to.include('A-provider=EEDTEST');
@@ -86,11 +90,11 @@ describe('service-results', function () {
 
       it('redirects temporarily to a presigned URL', function () {
         expect(this.res.statusCode).to.equal(307);
-        expect(this.res.headers.location).to.include('some-bucket/public/some-job-id/some-work-item-id/some-path.tif');
+        expect(this.res.headers.location).to.include(`some-bucket/public/${someJobID}/${someWorkItemID}/some-path.tif`);
       });
 
       it('includes an api_request_id field', function () {
-        expect(this.res.headers.location).to.include('A-api-request-uuid=some-job-id');
+        expect(this.res.headers.location).to.include(`A-api-request-uuid=${someJobID}`);
       });
 
       it('includes a provider field', function () {
@@ -107,7 +111,7 @@ describe('service-results', function () {
       before(function () {
         stubObject = stub(FileStore.prototype, 'signGetObject').throws();
       });
-      hookUrl('/service-results/some-bucket/public/some-job-id/some-work-item-id/some-path.tif', 'jdoe');
+      hookUrl(`/service-results/some-bucket/public/${someJobID}/${someWorkItemID}/some-path.tif`, 'jdoe');
       after(function () {
         stubObject.restore();
       });
