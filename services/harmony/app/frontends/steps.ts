@@ -166,30 +166,57 @@ interface ResolvedCatalogs {
 }
 
 /**
- * Read query-cmr's `batch-catalogs.json` and return absolute
- * URLs to each. Caps the returned URLs at MAX_BATCH_CATALOGS to bound the
- * downstream S3 reads; reports any extras as omittedCount.
+ * Sorting function to return the catalogs in the order they are presumed to be
+ * generated.
  *
- * Only meaningful for query-cmr WIs; regular services write a top-level
- * `catalog.json` instead of `batch-catalogs.json`.
+ * @param filename - a `catalog.json` / `catalogN.json` basename
+ * @returns the numeric index, or -1 if the filename has none
+ */
+function catalogIndex(filename: string): number {
+  const m = filename.match(/catalog(\d+)\.json$/);
+  return m ? Number(m[1]) : -1;
+}
+
+/**
+ * Determine a completed work item's output catalog file URLs, mirroring
+ * service-runner's `_getStacCatalogs` discovery so that every catalog a service
+ * writes is found:
+ *   - if the work item wrote a `batch-catalogs.json` (query-cmr, and aggregating
+ *     services such as batchee/stitchee), use the catalogN.json files it lists;
+ *   - otherwise list the `catalog*.json` files in the outputs directory, which
+ *     covers both the common single `catalog.json` and services that might write
+ *     several `catalogN.json` files without an index.
+ * The result is capped at MAX_BATCH_CATALOGS to bound the downstream S3 reads;
+ * any extras are reported as omittedCount.
  *
  * @param outputDir - the WI's outputs directory URL
  * @returns the (capped) catalog URLs and the count of additional catalog
  *   files that were not included
  */
-async function readBatchCatalogs(outputDir: string): Promise<WiOutputCatalogs> {
-  try {
-    const filenames = await defaultObjectStore().getObjectJson(
-      `${outputDir}batch-catalogs.json`,
-    ) as string[];
-    const capped = filenames.slice(0, MAX_BATCH_CATALOGS);
-    return {
-      urls: capped.map((f) => `${outputDir}${f}`),
-      omittedCount: Math.max(0, filenames.length - MAX_BATCH_CATALOGS),
-    };
-  } catch {
-    return { urls: [], omittedCount: 0 };
+async function readOutputCatalogs(outputDir: string): Promise<WiOutputCatalogs> {
+  const store = defaultObjectStore();
+  const batchCatalogsUrl = `${outputDir}batch-catalogs.json`;
+
+  let filenames: string[];
+  if (await store.objectExists(batchCatalogsUrl)) {
+    try {
+      filenames = await store.getObjectJson(batchCatalogsUrl) as string[];
+    } catch {
+      return { urls: [], omittedCount: 0 };
+    }
+  } else {
+    const keys = await store.listObjectKeys(outputDir);
+    filenames = keys
+      .map((k) => k.split('/').pop())
+      .filter((f) => /^catalog\d*\.json$/.test(f))
+      .sort((a, b) => catalogIndex(a) - catalogIndex(b));
   }
+
+  const capped = filenames.slice(0, MAX_BATCH_CATALOGS);
+  return {
+    urls: capped.map((f) => `${outputDir}${f}`),
+    omittedCount: Math.max(0, filenames.length - MAX_BATCH_CATALOGS),
+  };
 }
 
 /**
@@ -209,21 +236,11 @@ async function resolveAllCatalogs(
 ): Promise<ResolvedCatalogs> {
   const completed_workitems = workItems.filter((wi) => COMPLETED_WORK_ITEM_STATUSES.includes(wi.status));
 
-  // Determine each completed WI's *output* catalog file URLs.
-  //   - query-cmr WIs (wi.scrollID is set) write multiple catalogN.json files
-  //     indexed by batch-catalogs.json
-  //   - All other services write a single top-level catalog.json (does it?)
+  // Determine each completed WI's *output* catalog file URLs
   const wiOutputCatalogs = new Map<number, WiOutputCatalogs>();
   await Promise.all(completed_workitems.map(async (wi) => {
-    if (wi.scrollID) {
-      const outputDir = getStacLocation({ id: wi.id, jobID: wi.jobID });
-      wiOutputCatalogs.set(wi.id, await readBatchCatalogs(outputDir));
-    } else {
-      wiOutputCatalogs.set(wi.id, {
-        urls: [getStacLocation({ id: wi.id, jobID: wi.jobID }, 'catalog.json')],
-        omittedCount: 0,
-      });
-    }
+    const outputDir = getStacLocation({ id: wi.id, jobID: wi.jobID });
+    wiOutputCatalogs.set(wi.id, await readOutputCatalogs(outputDir));
   }));
 
   // Collect every unique catalog file URL: each completed WI's
