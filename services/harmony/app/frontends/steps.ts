@@ -20,7 +20,7 @@ import { readCatalogItems, StacItem } from '../util/stac';
 import { getRequestRoot } from '../util/url';
 
 export const DEFAULT_PER_PAGE = 50;
-const MAX_BATCH_CATALOGS = 100;
+const MAX_BATCH_CATALOGS = 5;
 const VALID_STATUSES = Object.values(WorkItemStatus);
 
 
@@ -265,7 +265,7 @@ function buildWorkItem(
     outputFiles = outputCatalogs.urls.flatMap((url) => catalogHrefs.get(url) ?? []);
     if (outputCatalogs.omittedCount > 0) {
       outputFiles.push(
-        `Not all files resolved, there are ${outputCatalogs.omittedCount} more files not shown (HARMONY-2352)`,
+        `Not all files resolved, there are ${outputCatalogs.omittedCount} more files not shown.`,
       );
     }
   }
@@ -322,7 +322,7 @@ function buildSteps(
     };
     // workItems is capped at DEFAULT_PER_PAGE per step; flag steps with more.
     if (total > DEFAULT_PER_PAGE) {
-      jobStep.paging = { message: 'Paging of results available with HARMONY-2354' };
+      jobStep.paging = { message: 'results paging not implemented' };
     }
 
     result.push(jobStep);
@@ -360,7 +360,7 @@ export async function getJobSteps(
       : steps;
 
     // Bound each step's work items independently at DEFAULT_PER_PAGE. Per-step
-    // paging links are coming in HARMONY-2354.
+    // paging links are coming
     const stepResults: StepWorkItems[] = await Promise.all(selectedSteps.map(async (step) => {
       const where: WorkItemQuery['where'] = { jobID, workflowStepIndex: step.stepIndex };
       if (q.status !== undefined) where.status = q.status;

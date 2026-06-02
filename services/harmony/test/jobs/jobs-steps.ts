@@ -143,7 +143,7 @@ describe('GET /jobs/:jobID/steps', function () {
     await runningWi.save(this.trx);
 
     // A third job whose query-cmr WI has 105 catalog files listed in
-    // batch-catalogs.json — 5 over MAX_BATCH_CATALOGS (100). (The catalog
+    // batch-catalogs.json — 5 over MAX_BATCH_CATALOGS (5). (The catalog
     // files themselves are not staged.)
     await truncatedJob.save(this.trx);
     const truncatedStep = buildWorkflowStep({
@@ -162,7 +162,7 @@ describe('GET /jobs/:jobID/steps', function () {
       scrollID: 'fake-scroll-key',
     });
     await truncatedWi.save(this.trx);
-    const overCapCatalogList = Array.from({ length: 105 }, (_, i) => `catalog${i}.json`);
+    const overCapCatalogList = Array.from({ length: 100 }, (_, i) => `catalog${i}.json`);
     const batchUrl = getStacLocation(
       { id: truncatedWi.id, jobID: truncatedJob.jobID },
       'batch-catalogs.json',
@@ -425,9 +425,9 @@ describe('GET /jobs/:jobID/steps', function () {
       const body = JSON.parse(this.res.text);
       const { outputFiles } = body.steps[0].workItems[0];
       expect(outputFiles).to.be.an('array');
-      // Last element [also the only element] is the sentinel; 105 staged - 100 cap = 5 omitted.
+      // Last element [also the only element] is the sentinel; 100 staged - 5 cap = 95 omitted.
       expect(outputFiles[outputFiles.length - 1]).to.equal(
-        'Not all files resolved, there are 5 more files not shown (HARMONY-2352)',
+        'Not all files resolved, there are 95 more files not shown.',
       );
     });
   });
@@ -471,7 +471,7 @@ describe('GET /jobs/:jobID/steps', function () {
       // 51 work items exist, but the step is bounded to the per-page limit.
       expect(step.workItems).to.have.lengthOf(DEFAULT_PER_PAGE);
       expect(step.paging).to.deep.equal({
-        message: 'Paging of results available with HARMONY-2354',
+        message: 'results paging not implemented',
       });
       // The status summary for whole step.
       expect(step.statuses).to.deep.equal({ ready: 51 });
