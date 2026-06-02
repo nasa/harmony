@@ -1,14 +1,13 @@
-FROM node:22.14.0
+FROM node:22-alpine3.22
 
-RUN apt-get update
-RUN apt-get install -y vim git python3 postgresql-client make gcc g++ libc-dev libpq-dev
-RUN git config --global url."https://".insteadOf ssh://
+RUN apk update && apk upgrade --no-cache
+RUN apk add --no-cache python3 postgresql-client make gcc g++ libc-dev postgresql-dev ca-certificates
 
 RUN mkdir -p /cron-service/services/cron-service
 
 COPY package.json package-lock.json /cron-service/services/cron-service/
 WORKDIR /cron-service/services/cron-service
-RUN npm ci
+RUN npm ci --omit=dev
 
 COPY env-defaults /cron-service/services/cron-service/
 COPY built /cron-service/

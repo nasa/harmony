@@ -1,14 +1,13 @@
-FROM node:22.14.0
+FROM node:22-alpine3.22
 
-RUN apt-get update
-RUN apt-get install -y vim git python3 postgresql-client make gcc g++ libc-dev libpq-dev
-RUN git config --global url."https://".insteadOf ssh://
+RUN apk update && apk upgrade --no-cache
+RUN apk add --no-cache python3 postgresql-client make gcc g++ libc-dev postgresql-dev ca-certificates
 
 RUN mkdir -p /work-scheduler/services/work-scheduler
 
 COPY package.json package-lock.json /work-scheduler/services/work-scheduler/
 WORKDIR /work-scheduler/services/work-scheduler
-RUN npm ci
+RUN npm ci --omit=dev
 
 COPY env-defaults /work-scheduler/services/work-scheduler/
 COPY built /work-scheduler/
