@@ -425,7 +425,8 @@ describe('GET /jobs/:jobID/steps', function () {
       const body = JSON.parse(this.res.text);
       const { outputFiles, warning } = body.steps[0].workItems[0];
       expect(outputFiles).to.be.an('array');
-      expect(warning).to.equal('Not all stac catalogs resolved, there are 95 unshown catalogs.');
+      expect(warning).to.equal('Not all output files are included. Only the outputs from the first ' +
+        '5 STAC catalogs were resolved, there are 95 catalogs that were not resolved.');
     });
   });
 
@@ -469,7 +470,7 @@ describe('GET /jobs/:jobID/steps', function () {
       // 51 work items exist, but the step is bounded to the per-page limit.
       expect(step.workItems).to.have.lengthOf(DEFAULT_PER_PAGE);
       expect(step.paging).to.deep.equal({
-        message: 'results paging not implemented',
+        message: 'WorkItem results paging not implemented: 50 work items shown out of 51.',
       });
       // The status summary for whole step.
       expect(step.statuses).to.deep.equal({ ready: 51 });

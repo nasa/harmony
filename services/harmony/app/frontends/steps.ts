@@ -283,7 +283,8 @@ function buildWorkItem(
   } else {
     outputFiles = outputCatalogs.urls.flatMap((url) => catalogHrefs.get(url) ?? []);
     if (outputCatalogs.omittedCount > 0) {
-      truncationWarning = `Not all stac catalogs resolved, there are ${outputCatalogs.omittedCount} unshown catalogs.`;
+      truncationWarning = `Not all output files are included. Only the outputs from the first ` +
+        `${outputCatalogs.urls.length} STAC catalogs were resolved, there are ${outputCatalogs.omittedCount} catalogs that were not resolved.`;
     }
   }
 
@@ -341,7 +342,7 @@ function buildSteps(
     };
     // workItems is capped at DEFAULT_PER_PAGE per step; flag steps with more.
     if (total > DEFAULT_PER_PAGE) {
-      jobStep.paging = { message: 'results paging not implemented' };
+      jobStep.paging = { message: `WorkItem results paging not implemented: ${workItems.length} work items shown out of ${total}.` };
     }
 
     result.push(jobStep);
