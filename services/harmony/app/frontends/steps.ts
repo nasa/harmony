@@ -283,7 +283,7 @@ function buildWorkItem(
   } else {
     outputFiles = outputCatalogs.urls.flatMap((url) => catalogHrefs.get(url) ?? []);
     if (outputCatalogs.omittedCount > 0) {
-      truncationWarning = `Not all output files are included. Only the outputs from the first ` +
+      truncationWarning = 'Not all output files are included. Only the outputs from the first ' +
         `${outputCatalogs.urls.length} STAC catalogs were resolved, there are ${outputCatalogs.omittedCount} catalogs that were not resolved.`;
     }
   }
