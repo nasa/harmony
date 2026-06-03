@@ -59,9 +59,14 @@ The returned JSON response list the details of the given job:
 | updatedAt        | Timestamp when the job was last updated in Harmony                                             |
 | dataExpiration   | Timestamp when the result data of the job will be cleaned up from Harmony                      |
 | links            | A list of JSON objects with links to STAC catalog and result data of the job                   |
+| labels           | An array of labels used when making the request                                                |
+| steps            | A link to the steps endpoint for this job-id                                                   |
+| serviceName      | the name of the service chain that was invoked by the request                                  |
 | request          | The original request url of the job                                                            |
 | numInputGranules | number of input granules in the job                                                            |
 | jobID            | ID of the job in Harmony                                                                       |
+| errors           | an array of error object that occured. Only shown when at least one error occurs.              |
+
 ---
 **Table {{tableCounter}}** - Harmony job response fields
 

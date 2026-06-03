@@ -113,6 +113,10 @@ export class JobForDisplay {
 
   labels: string[];
 
+  serviceName?: string;
+
+  steps?: string;
+
   request: string;
 
   numInputGranules: number;
@@ -1189,6 +1193,8 @@ export class Job extends DBRecord implements JobRecord {
       dataExpiration: this.getDataExpiration(),
       links: this.links,
       labels: this.labels,
+      steps: this.getStepsUrl(urlRoot),
+      serviceName: this.service_name,
       request: this.request,
       numInputGranules: this.numInputGranules,
       jobID: this.jobID,
@@ -1233,6 +1239,16 @@ export class Job extends DBRecord implements JobRecord {
     }
 
     return result;
+  }
+
+  /**
+   * Return the link to the steps endpoint.
+   *
+   * @param urlRoot - The harmony root URL
+   * @returns link to steps endpoint.
+   */
+  getStepsUrl(urlRoot: string): string | undefined {
+    return urlRoot ? `${urlRoot}/jobs/${this.jobID}/steps` : undefined;
   }
 }
 

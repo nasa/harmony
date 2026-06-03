@@ -14,6 +14,8 @@
 
 !!!include(jobs.md)!!!
 
+!!!include(steps.md)!!!
+
 !!!include(labels.md)!!!
 
 !!!include(stac.md)!!!

@@ -30,6 +30,7 @@ import {
 import { getServiceResult } from '../frontends/service-results';
 import { getStacCatalog, getStacItem } from '../frontends/stac';
 import { getStagingBucketPolicy } from '../frontends/staging-bucket-policy';
+import { getJobSteps } from '../frontends/steps';
 import getVersions from '../frontends/versions';
 import wmsFrontend from '../frontends/wms';
 import {
@@ -217,7 +218,7 @@ export default function router({ USE_EDL_CLIENT_APP = 'false' }: RouterConfig): 
   }
 
   // Routes and middleware not dealing with service requests
-  result.get('/service-results/:bucket/public/:jobId/:workItemId/:remainingPath(*)', asyncHandler(getServiceResult));
+  result.get('/service-results/:bucket/public/:jobId([0-9a-fA-F-]{36})/:workItemId/:remainingPath(*)', asyncHandler(getServiceResult));
   result.get('/service-results/:bucket/:remainingPath(*)', asyncHandler(getServiceResult));
 
   // Routes and middleware for handling service requests
@@ -266,8 +267,10 @@ export default function router({ USE_EDL_CLIENT_APP = 'false' }: RouterConfig): 
 
   result.get('/jobs', asyncHandler(getJobsListing));
   result.get('/jobs/:jobID', asyncHandler(getJobStatus));
+  result.get('/jobs/:jobID/steps', asyncHandler(getJobSteps));
   result.get('/admin/jobs', asyncHandler(getJobsListing));
   result.get('/admin/jobs/:jobID', asyncHandler(getJobStatus));
+  result.get('/admin/jobs/:jobID/steps', asyncHandler(getJobSteps));
 
   result.post('/jobs/:jobID/cancel', asyncHandler(cancelJob));
   result.post('/admin/jobs/:jobID/cancel', asyncHandler(cancelJob));
