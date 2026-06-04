@@ -18,4 +18,10 @@ export abstract class Queue {
   abstract deleteMessage(receipt: string): Promise<void>;
   abstract deleteMessages(receipts: string[]): Promise<void>;
   abstract purge(): Promise<void>;
+  abstract changeMessageVisibility(
+    receipt: string, visibilityTimeoutSeconds: number
+  ): Promise<void>;
+  abstract changeMessageVisibilities(
+    receipts: string[], visibilityTimeoutSeconds: number
+  ): Promise<void>;
 }

@@ -74,4 +74,17 @@ export class MemoryQueue extends Queue {
   async purge(): Promise<void> {
     this.messages = [];
   }
+
+  async changeMessageVisibility(
+    _receipt: string, _visibilityTimeoutSeconds: number,
+  ): Promise<void> {
+    // Memory queue ignores visibility timeout
+  }
+
+  async changeMessageVisibilities(
+    _receipts: string[], _visibilityTimeoutSeconds: number,
+  ): Promise<void> {
+    // Memory queue ignores visibility timeout
+  }
+
 }
