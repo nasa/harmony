@@ -1,10 +1,14 @@
 import {
+  ChangeMessageVisibilityBatchCommand,
+  ChangeMessageVisibilityCommand,
   DeleteMessageBatchCommand, DeleteMessageCommand, GetQueueAttributesCommand, PurgeQueueCommand,
   ReceiveMessageCommand, SendMessageCommand, SendMessageCommandInput, SQSClient, SQSClientConfig,
 } from '@aws-sdk/client-sqs';
 
 import env from '../env';
 import { Queue, ReceivedMessage } from './queue';
+
+const MAX_BATCH_SIZE = 10;
 
 export class SqsQueue extends Queue {
   queueUrl: string;
@@ -91,10 +95,9 @@ export class SqsQueue extends Queue {
   }
 
   async deleteMessages(receipts: string[]): Promise<void> {
-    // SQS only allows deleting up to 10 at a time so we need to batch the deletes
-    const MAX_BATCH_SIZE = 10;
     const promises = [];
 
+    // SQS only allows deleting up to 10 at a time so we need to batch the deletes
     for (let i = 0; i < receipts.length; i += MAX_BATCH_SIZE) {
       const batch = receipts.slice(i, i + MAX_BATCH_SIZE);
       const entries = batch.map((receipt, index) => ({
@@ -107,6 +110,45 @@ export class SqsQueue extends Queue {
           new DeleteMessageBatchCommand({
             QueueUrl: this.queueUrl,
             Entries: entries,
+          }),
+        ),
+      );
+    }
+
+    await Promise.all(promises);
+  }
+
+  async changeMessageVisibility(
+    receipt: string,
+    visibilityTimeoutSeconds: number,
+  ): Promise<void> {
+    const command = new ChangeMessageVisibilityCommand({
+      QueueUrl: this.queueUrl,
+      ReceiptHandle: receipt,
+      VisibilityTimeout: visibilityTimeoutSeconds,
+    });
+
+    await this.sqs.send(command);
+  }
+
+  async changeMessageVisibilities(
+    receipts: string[],
+    visibilityTimeoutSeconds: number,
+  ): Promise<void> {
+    const promises = [];
+
+    for (let i = 0; i < receipts.length; i += MAX_BATCH_SIZE) {
+      const batch = receipts.slice(i, i + MAX_BATCH_SIZE);
+
+      promises.push(
+        this.sqs.send(
+          new ChangeMessageVisibilityBatchCommand({
+            QueueUrl: this.queueUrl,
+            Entries: batch.map((receipt, index) => ({
+              Id: index.toString(),
+              ReceiptHandle: receipt,
+              VisibilityTimeout: visibilityTimeoutSeconds,
+            })),
           }),
         ),
       );

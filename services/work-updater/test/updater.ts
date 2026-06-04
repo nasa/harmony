@@ -7,7 +7,7 @@ import * as jobModel from '../../harmony/app/models/job';
 import * as wi from '../../harmony/app/models/work-item';
 import { WorkItemStatus } from '../../harmony/app/models/work-item-interface';
 import logger from '../../harmony/app/util/log';
-import { WorkItemQueueType } from '../../harmony/app/util/queue/queue';
+import { Queue, WorkItemQueueType } from '../../harmony/app/util/queue/queue';
 import * as queueFactory from '../../harmony/app/util/queue/queue-factory';
 import { MemoryQueue } from '../../harmony/test/helpers/memory-queue';
 import * as updater from '../app/workers/updater';
@@ -127,6 +127,158 @@ describe('Updater Worker', function () {
       await updater.handleBatchWorkItemUpdates(updates, logger);
 
       expect(handleBatchWorkItemUpdatesWithJobIdStub.callCount).to.equal(0);
+    });
+  });
+
+  describe('startVisibilityHeartbeat', function () {
+    let clock: sinon.SinonFakeTimers;
+
+    beforeEach(function () {
+      clock = sinon.useFakeTimers();
+    });
+
+    afterEach(function () {
+      clock.restore();
+    });
+
+    it('should not extend visibility before the initial delay', async function () {
+      const queue = {
+        changeMessageVisibilities: sinon.stub().resolves(),
+      } as unknown as Queue;
+
+      const stop = updater.startVisibilityHeartbeat(
+        queue,
+        ['receipt1'],
+        15,
+        30,
+        60,
+      );
+
+      await clock.tickAsync(14999);
+
+      expect(
+        (queue.changeMessageVisibilities as sinon.SinonStub).called,
+      ).to.be.false;
+
+      stop();
+    });
+
+    it('should extend visibility after the initial delay', async function () {
+      const queue = {
+        changeMessageVisibilities: sinon.stub().resolves(),
+      } as unknown as Queue;
+
+      const stop = updater.startVisibilityHeartbeat(
+        queue,
+        ['receipt1', 'receipt2'],
+        15,
+        30,
+        60,
+      );
+
+      await clock.tickAsync(15000);
+
+      const stub = queue.changeMessageVisibilities as sinon.SinonStub;
+
+      expect(stub.calledOnce).to.be.true;
+      expect(stub.firstCall.args).to.deep.equal([
+        ['receipt1', 'receipt2'],
+        60,
+      ]);
+
+      stop();
+    });
+
+    it('should continue extending visibility at the refresh interval', async function () {
+      const queue = {
+        changeMessageVisibilities: sinon.stub().resolves(),
+      } as unknown as Queue;
+
+      const stop = updater.startVisibilityHeartbeat(
+        queue,
+        ['receipt1'],
+        15,
+        30,
+        60,
+      );
+
+      const stub = queue.changeMessageVisibilities as sinon.SinonStub;
+
+      await clock.tickAsync(15000);
+      expect(stub.callCount).to.equal(1);
+
+      await clock.tickAsync(30000);
+      expect(stub.callCount).to.equal(2);
+
+      await clock.tickAsync(30000);
+      expect(stub.callCount).to.equal(3);
+
+      stop();
+    });
+
+    it('should stop extending visibility after cleanup', async function () {
+      const queue = {
+        changeMessageVisibilities: sinon.stub().resolves(),
+      } as unknown as Queue;
+
+      const stop = updater.startVisibilityHeartbeat(
+        queue,
+        ['receipt1'],
+        15,
+        30,
+        60,
+      );
+
+      const stub = queue.changeMessageVisibilities as sinon.SinonStub;
+
+      await clock.tickAsync(15000);
+      expect(stub.callCount).to.equal(1);
+
+      stop();
+
+      await clock.tickAsync(120000);
+
+      expect(stub.callCount).to.equal(1);
+    });
+
+    it('should extend visibility while processing a long running batch', async function () {
+      const queue = new MemoryQueue();
+
+      const visibilityStub = sinon.stub(queue, 'changeMessageVisibilities').resolves();
+
+      getQueueForTypeStub.callsFake(function () {
+        return queue;
+      });
+
+      await queue.sendMessage(
+        JSON.stringify({
+          update: {
+            workItemID: 1,
+            status: WorkItemStatus.RUNNING,
+          },
+        }),
+        '',
+        false,
+      );
+
+      handleBatchWorkItemUpdatesSpy.restore();
+
+      const processingStub = sinon.stub(updater, 'handleBatchWorkItemUpdates')
+        .callsFake(async () => {
+          await clock.tickAsync(20000);
+        });
+
+      const processingPromise = updater.batchProcessQueue(
+        WorkItemQueueType.SMALL_ITEM_UPDATE,
+      );
+
+      await clock.tickAsync(15000);
+
+      expect(visibilityStub.calledOnce).to.be.true;
+
+      await processingPromise;
+
+      processingStub.restore();
     });
   });
 });
