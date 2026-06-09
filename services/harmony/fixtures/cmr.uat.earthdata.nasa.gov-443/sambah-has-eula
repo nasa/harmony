@@ -1,4 +1,4 @@
-GET /search/collections.json?include_tags=harmony.has-eula&concept_id=C1254854453-LARC_CLOUD&page_size=100
+GET /search/collections.json?include_tags=harmony.has-eula&concept_id=C1254854453-LARC_CLOUD&page_size=100&include_non_operational=true
 accept: application/json
 accept-encoding: gzip,deflate
 

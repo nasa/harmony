@@ -1,7 +1,9 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
+import sinon from 'sinon';
 
-import { cmrQueryType, hashCmrQuery, CmrRelatedUrl, CmrUmmVariable, getVariablesByIds, getAllVariables, CmrQuery, queryGranuleUsingMultipartForm } from '../../app/util/cmr';
+import { cmrQueryType, hashCmrQuery, CmrRelatedUrl, CmrUmmVariable, getVariablesByIds, getAllVariables, CmrQuery, queryGranuleUsingMultipartForm, CmrResponse } from '../../app/util/cmr';
+import * as cmr from '../../app/util/cmr';
 
 describe('hashCmrQuery', () => {
   const type = cmrQueryType.COLL_JSON;
@@ -184,6 +186,62 @@ describe('util/cmr', function () {
       };
       const results = await queryGranuleUsingMultipartForm(fakeContext, query, '');
       expect(results.hits).to.equal(1);
+    });
+  });
+
+  describe('non-operational collections are included in all collection searches', function () {
+    let cmrGetBaseStub;
+
+    beforeEach(function () {
+      cmrGetBaseStub = sinon.stub(cmr, 'cmrGetBase').resolves({
+        status: 200,
+        data: {
+          feed: {
+            entry: [],
+          },
+          items: [],
+        },
+      } as unknown as CmrResponse);
+    });
+
+    afterEach(function () {
+      cmrGetBaseStub.restore();
+    });
+
+    it('adds include_non_operational=true to collection queries', async function () {
+      await cmr.getCollectionsByIds(fakeContext, ['C123'], '');
+
+      expect(cmrGetBaseStub.calledOnce).to.equal(true);
+
+      const [, , query] = cmrGetBaseStub.firstCall.args;
+
+      expect(query).to.include({
+        include_non_operational: true,
+      });
+    });
+
+    it('adds include_non_operational=true to UMM collection queries', async function () {
+      await cmr.getUmmCollectionsByIds(fakeContext, ['C123'], '');
+
+      expect(cmrGetBaseStub.calledOnce).to.equal(true);
+
+      const [, , query] = cmrGetBaseStub.firstCall.args;
+
+      expect(query).to.include({
+        include_non_operational: true,
+      });
+    });
+
+    it('adds include_non_operational=true to short-name collection queries', async function () {
+      await cmr.getCollectionsByShortName(fakeContext, 'MOD09A1', '');
+
+      expect(cmrGetBaseStub.calledOnce).to.equal(true);
+
+      const [, , query] = cmrGetBaseStub.firstCall.args;
+
+      expect(query).to.include({
+        include_non_operational: true,
+      });
     });
   });
 
