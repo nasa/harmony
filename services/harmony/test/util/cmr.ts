@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
+import sinon from 'sinon';
 
 import { cmrQueryType, hashCmrQuery, CmrRelatedUrl, CmrUmmVariable, getVariablesByIds, getAllVariables, CmrQuery, queryGranuleUsingMultipartForm, CmrResponse } from '../../app/util/cmr';
-import sinon from 'sinon';
 import * as cmr from '../../app/util/cmr';
 
 describe('hashCmrQuery', () => {
@@ -203,7 +203,7 @@ describe('util/cmr', function () {
         },
       } as unknown as CmrResponse);
     });
-  
+
     afterEach(function () {
       cmrGetBaseStub.restore();
     });
