@@ -79,7 +79,7 @@ const pagedJob = buildJob({
 });
 
 // Job whose single step holds one more work item than MAX_STEP_PAGE_SIZE, so a
-// limit above the max defaults to MAX_STEP_PAGE_SIZE
+// limit above the max defaults to MAX_STEP_PAGE_SIZE (1000)
 const BIG_STEP_WORKITEMS = 1001;
 const bigStepJob = buildJob({
   username: 'joe',
@@ -88,7 +88,7 @@ const bigStepJob = buildJob({
   request: 'https://harmony.example/big-step',
 });
 
-// Job with two steps each holding more than DEFAULT_PER_PAGE work items, to
+// Job with two steps each holding more than DEFAULT_PER_PAGE (50) work items, to
 // exercise that each step pages independently via its own step<idx>Page param.
 const twoPagedJob = buildJob({
   username: 'joe',
@@ -254,7 +254,7 @@ describe('GET /jobs/:jobID/steps', function () {
     }));
     await WorkItem.insertBatch(this.trx, pagedWorkItems);
 
-    // A job whose single step holds one more than MAX_STEP_PAGE_SIZE READY work
+    // A job whose single step holds one more than MAX_STEP_PAGE_SIZE (1000) READY work
     // items, used to show a limit above the MAX_STEP_PAGE_SIZE defaults to MAX_STEP_PAGE_SIZE.
     await bigStepJob.save(this.trx);
     const bigStep = buildWorkflowStep({
@@ -540,7 +540,7 @@ describe('GET /jobs/:jobID/steps', function () {
       expect(this.res.statusCode).to.equal(200);
       const body = JSON.parse(this.res.text);
       const step = body.steps[0];
-      // 51 work items exist, but the page is bounded to the per-page limit.
+      // 51 work items exist, but the page is bounded to the default per-page limit.
       expect(step.workItems).to.have.lengthOf(50);
       expect(step.paging.currentPage).to.equal(1);
       expect(step.paging.lastPage).to.equal(2);
@@ -583,12 +583,10 @@ describe('GET /jobs/:jobID/steps', function () {
   describe('When ?limit= exceeds the maximum page size', function () {
     hookJobSteps({ jobID: bigStepJob.jobID, username: 'joe', query: { limit: 99999 } });
 
-    it('clamps the limit to MAX_STEP_PAGE_SIZE and pages the remainder', function () {
+    it('defaults limit to MAX_STEP_PAGE_SIZE and pages', function () {
       expect(this.res.statusCode).to.equal(200);
       const body = JSON.parse(this.res.text);
       const step = body.steps[0];
-      // The limit clamps to the max, so page 1 holds MAX_STEP_PAGE_SIZE items and
-      // the one extra work item spills onto a second page.
       expect(step.workItems).to.have.lengthOf(1000);
       expect(step.paging.currentPage).to.equal(1);
       expect(step.paging.lastPage).to.equal(2);
@@ -644,7 +642,7 @@ describe('GET /jobs/:jobID/steps', function () {
       expect(step1.paging.currentPage).to.equal(2);
       expect(step2.workItems).to.have.lengthOf(50);
       expect(step2.paging.currentPage).to.equal(1);
-      // Step 2's next link preserves step 1's page; step 1's prev preserves step 2's.
+      // Step 2's next link preserves step 1's page
       expect(step2.paging.links.find((l) => l.rel === 'next').href).to.include('step1Page=2');
       expect(step2.paging.links.find((l) => l.rel === 'next').href).to.include('step2Page=2');
       expect(step1.paging.links.find((l) => l.rel === 'prev').href).to.include('step1Page=1');
