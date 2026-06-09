@@ -40,7 +40,7 @@ function buildIntegerParseError(min: number, max: number, paramName: string): Re
  * @returns The numeric value of the parameter
  * @throws {@link RequestValidationError} If the passed value is not a positive integer
  */
-function parseIntegerParam(
+export function parseIntegerParam(
   req: Request,
   paramName: string,
   defaultValue: number,
@@ -106,6 +106,7 @@ export function getPagingParams(
  * @param page - the page number for the link
  * @param rel - the name of the link relation
  * @param relName - the name of the link relation
+ * @param pageParamName - the query parameter the link should set the page on
  * @returns the generated link
  */
 function getPagingLink(
@@ -114,12 +115,13 @@ function getPagingLink(
   page: number,
   rel: string,
   relName: string = rel,
+  pageParamName = 'page',
 ): Link {
   const { lastPage, perPage } = pagination;
   const suffix = (lastPage <= 1 && page === 1) || perPage === 0 ? '' : ` (${page} of ${lastPage})`;
   return {
     title: `The ${relName} page${suffix}`,
-    href: getRequestUrl(req, true, { page, limit: perPage }),
+    href: getRequestUrl(req, true, { [pageParamName]: page, limit: perPage }),
     rel,
     type: 'application/json',
   };
@@ -131,17 +133,19 @@ function getPagingLink(
  * @param pagination - the pagination information as returned by, e.g. knex-paginate
  * @param includeExtraneous - include first and last links even when first and last are the
  * previous and next pages respectively
+ * @param pageParamName - the query parameter the links should set the page on
  * @returns the links to paginate
  */
-export function getPagingLinks(req: Request, pagination: ILengthAwarePagination, includeExtraneous = false): Link[] {
+export function getPagingLinks(
+  req: Request, pagination: ILengthAwarePagination, includeExtraneous = false, pageParamName = 'page',
+): Link[] {
   const result = [];
   const { currentPage, lastPage, perPage } = pagination;
-  // const { currentPage, lastPage, perPage } = pagination as unknown as { lastPage: number; perPage; number; currentPage: number; total: number; };
-  if (perPage > 0 && currentPage > (includeExtraneous ? 1 : 2)) result.push(getPagingLink(req, pagination, 1, 'first'));
-  if (perPage > 0 && currentPage > 1) result.push(getPagingLink(req, pagination, currentPage - 1, 'prev', 'previous'));
-  result.push(getPagingLink(req, pagination, currentPage, 'self', 'current'));
-  if (perPage > 0 && currentPage < lastPage) result.push(getPagingLink(req, pagination, currentPage + 1, 'next'));
-  if (perPage > 0 && currentPage < (includeExtraneous ? lastPage : lastPage - 1)) result.push(getPagingLink(req, pagination, lastPage, 'last'));
+  if (perPage > 0 && currentPage > (includeExtraneous ? 1 : 2)) result.push(getPagingLink(req, pagination, 1, 'first', 'first', pageParamName));
+  if (perPage > 0 && currentPage > 1) result.push(getPagingLink(req, pagination, currentPage - 1, 'prev', 'previous', pageParamName));
+  result.push(getPagingLink(req, pagination, currentPage, 'self', 'current', pageParamName));
+  if (perPage > 0 && currentPage < lastPage) result.push(getPagingLink(req, pagination, currentPage + 1, 'next', 'next', pageParamName));
+  if (perPage > 0 && currentPage < (includeExtraneous ? lastPage : lastPage - 1)) result.push(getPagingLink(req, pagination, lastPage, 'last', 'last', pageParamName));
   return result;
 }
 
