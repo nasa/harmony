@@ -548,6 +548,40 @@ describe('GET /jobs/:jobID/steps', function () {
     });
   });
 
+  describe('Requesting a page past the last page without filtering', function () {
+    hookJobSteps({ jobID: pagedJob.jobID, username: 'joe', query: { step1Page: 4 } });
+
+    it('still emits a paging block with a way back even with no items on the page', function () {
+      expect(this.res.statusCode).to.equal(200);
+      const body = JSON.parse(this.res.text);
+      const step = body.steps[0];
+      expect(step.workItems).to.have.lengthOf(0);
+      expect(step.paging.currentPage).to.equal(4);
+      expect(step.paging.lastPage).to.equal(2);
+      expect(step.paging.total).to.equal(51);
+      expect(step.paging.links.find((l) => l.rel === 'first').href).to.include('step1Page=1');
+      expect(step.paging.links.find((l) => l.rel === 'next')).to.be.undefined;
+    });
+  });
+
+  describe('When a status filter and page query go beyond last page', function () {
+    hookJobSteps({
+      jobID: destBucketJob.jobID, username: 'joe', query: { status: 'successful', step1Page: 4 },
+    });
+
+    it('keeps the step and emits an paging block with first page', function () {
+      expect(this.res.statusCode).to.equal(200);
+      const body = JSON.parse(this.res.text);
+      expect(body.steps).to.have.lengthOf(1);
+      const step = body.steps[0];
+      expect(step.workItems).to.have.lengthOf(0);
+      expect(step.paging.currentPage).to.equal(4);
+      expect(step.paging.lastPage).to.equal(1);
+      expect(step.paging.total).to.equal(1);
+      expect(step.paging.links.find((l) => l.rel === 'first').href).to.include('step1Page=1');
+    });
+  });
+
   describe('For a job with two independently pageable steps', function () {
     hookJobSteps({ jobID: twoPagedJob.jobID, username: 'joe', query: { step1Page: 2 } });
 

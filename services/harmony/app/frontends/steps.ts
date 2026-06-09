@@ -340,8 +340,8 @@ function buildSteps(
   const result: JobStep[] = [];
   const filtering = q.status !== undefined || q.workItem !== undefined;
   for (const { step, workItems, pagination } of stepResults) {
-    // Don't show steps without workitems.
-    if (filtering && workItems.length === 0) continue;
+    // Drop steps with no matching work items at all
+    if (filtering && pagination.total === 0) continue;
 
     const jobStep: JobStep = {
       serviceID: sanitizeImage(step.serviceID),
@@ -350,11 +350,12 @@ function buildSteps(
       statuses: statusCounts.get(step.stepIndex) ?? {},
       workItems: workItems.map((wi) => buildWorkItem(wi, resolved)),
     };
-    if (pagination.lastPage > 1) {
+    const { currentPage, lastPage, total } = pagination;
+    if (lastPage > 1 || currentPage > Math.max(lastPage, 1)) {
       jobStep.paging = {
-        currentPage: pagination.currentPage,
-        lastPage: pagination.lastPage,
-        total: pagination.total,
+        currentPage,
+        lastPage,
+        total,
         links: getPagingLinks(req, pagination, true, `step${step.stepIndex}Page`),
       };
     }
