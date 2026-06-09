@@ -2,7 +2,6 @@ import { expect } from 'chai';
 import { before, describe, it } from 'mocha';
 import request, { Test } from 'supertest';
 
-import { DEFAULT_PER_PAGE } from '../../app/frontends/steps';
 import { JobStatus } from '../../app/models/job';
 import WorkItem from '../../app/models/work-item';
 import { getStacLocation, WorkItemStatus } from '../../app/models/work-item-interface';
@@ -77,6 +76,16 @@ const pagedJob = buildJob({
   status: JobStatus.RUNNING,
   service_name: 'harmony-best-service',
   request: 'https://harmony.example/paged',
+});
+
+// Job whose single step holds one more work item than MAX_STEP_PAGE_SIZE, so a
+// limit above the max defaults to MAX_STEP_PAGE_SIZE
+const BIG_STEP_WORKITEMS = 1001;
+const bigStepJob = buildJob({
+  username: 'joe',
+  status: JobStatus.RUNNING,
+  service_name: 'harmony-best-service',
+  request: 'https://harmony.example/big-step',
 });
 
 // Job with two steps each holding more than DEFAULT_PER_PAGE work items, to
@@ -244,6 +253,27 @@ describe('GET /jobs/:jobID/steps', function () {
       status: WorkItemStatus.READY,
     }));
     await WorkItem.insertBatch(this.trx, pagedWorkItems);
+
+    // A job whose single step holds one more than MAX_STEP_PAGE_SIZE READY work
+    // items, used to show a limit above the MAX_STEP_PAGE_SIZE defaults to MAX_STEP_PAGE_SIZE.
+    await bigStepJob.save(this.trx);
+    const bigStep = buildWorkflowStep({
+      jobID: bigStepJob.jobID,
+      stepIndex: 1,
+      serviceID: 'nasa/harmony-opendap-subsetter:1.2.4',
+      workItemCount: BIG_STEP_WORKITEMS,
+      operation: validOperation,
+    });
+    await bigStep.save(this.trx);
+    const bigStepWorkItems = Array.from({ length: BIG_STEP_WORKITEMS }, () => buildWorkItem({
+      jobID: bigStepJob.jobID,
+      workflowStepIndex: 1,
+      serviceID: 'nasa/harmony-opendap-subsetter:1.2.4',
+      status: WorkItemStatus.READY,
+    }));
+    for (let i = 0; i < bigStepWorkItems.length; i += 500) {
+      await WorkItem.insertBatch(this.trx, bigStepWorkItems.slice(i, i + 500));
+    }
 
     // A job with two steps (1 and 2), each holding 51 READY work items, used to
     // verify the two steps page independently of each other.
@@ -511,7 +541,7 @@ describe('GET /jobs/:jobID/steps', function () {
       const body = JSON.parse(this.res.text);
       const step = body.steps[0];
       // 51 work items exist, but the page is bounded to the per-page limit.
-      expect(step.workItems).to.have.lengthOf(DEFAULT_PER_PAGE);
+      expect(step.workItems).to.have.lengthOf(50);
       expect(step.paging.currentPage).to.equal(1);
       expect(step.paging.lastPage).to.equal(2);
       expect(step.paging.total).to.equal(51);
@@ -551,14 +581,19 @@ describe('GET /jobs/:jobID/steps', function () {
   });
 
   describe('When ?limit= exceeds the maximum page size', function () {
-    hookJobSteps({ jobID: pagedJob.jobID, username: 'joe', query: { limit: 99999 } });
+    hookJobSteps({ jobID: bigStepJob.jobID, username: 'joe', query: { limit: 99999 } });
 
-    it('clamps the limit instead of erroring (all 51 fit on one page)', function () {
+    it('clamps the limit to MAX_STEP_PAGE_SIZE and pages the remainder', function () {
       expect(this.res.statusCode).to.equal(200);
       const body = JSON.parse(this.res.text);
       const step = body.steps[0];
-      expect(step.workItems).to.have.lengthOf(51);
-      expect(step).to.not.have.property('paging');
+      // The limit clamps to the max, so page 1 holds MAX_STEP_PAGE_SIZE items and
+      // the one extra work item spills onto a second page.
+      expect(step.workItems).to.have.lengthOf(1000);
+      expect(step.paging.currentPage).to.equal(1);
+      expect(step.paging.lastPage).to.equal(2);
+      expect(step.paging.total).to.equal(1001);
+      expect(step.paging.links.find((l) => l.rel === 'next').href).to.include('step1Page=2');
     });
   });
 
@@ -607,7 +642,7 @@ describe('GET /jobs/:jobID/steps', function () {
       // Step 1 advanced to page 2 (1 item), step 2 stayed on page 1 (50 items).
       expect(step1.workItems).to.have.lengthOf(1);
       expect(step1.paging.currentPage).to.equal(2);
-      expect(step2.workItems).to.have.lengthOf(DEFAULT_PER_PAGE);
+      expect(step2.workItems).to.have.lengthOf(50);
       expect(step2.paging.currentPage).to.equal(1);
       // Step 2's next link preserves step 1's page; step 1's prev preserves step 2's.
       expect(step2.paging.links.find((l) => l.rel === 'next').href).to.include('step1Page=2');

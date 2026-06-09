@@ -22,7 +22,7 @@ import { getPagingLinks, parseIntegerParam } from '../util/pagination';
 import { readCatalogItems, StacItem } from '../util/stac';
 import { getRequestRoot } from '../util/url';
 
-export const DEFAULT_PER_PAGE = 50;
+const DEFAULT_PER_PAGE = 50;
 const MAX_STEP_PAGE_SIZE = 1000;
 const MAX_BATCH_CATALOGS = 5;
 const VALID_STATUSES = Object.values(WorkItemStatus);
@@ -308,8 +308,7 @@ function buildWorkItem(
 }
 
 
-// A workflow step paired with its requested page of work items and that page's
-// pagination info (used to build the step's paging links).
+// A workflow step, its page of work items and the pagination info.
 interface StepWorkItems {
   step: WorkflowStep;
   workItems: WorkItem[];
@@ -340,7 +339,7 @@ function buildSteps(
   const result: JobStep[] = [];
   const filtering = q.status !== undefined || q.workItem !== undefined;
   for (const { step, workItems, pagination } of stepResults) {
-    // Drop steps with no matching work items at all
+    // Don't show steps having no matching work items.
     if (filtering && pagination.total === 0) continue;
 
     const jobStep: JobStep = {
@@ -394,8 +393,8 @@ export async function getJobSteps(
       ? steps.filter((s) => s.stepIndex === q.step)
       : steps;
 
-    // One shared page size across steps; each step is paged independently via
-    // its own step<stepIndex>Page parameter.
+    // Bound every page result by 'limit' and page each step independently
+    // via step<stepIndex>Page parameter.
     const limit = parseIntegerParam(req, 'limit', DEFAULT_PER_PAGE, 1, MAX_STEP_PAGE_SIZE, true, true);
     const stepResults: StepWorkItems[] = await Promise.all(selectedSteps.map(async (step) => {
       const where: WorkItemQuery['where'] = { jobID, workflowStepIndex: step.stepIndex };
