@@ -321,7 +321,7 @@ interface StepWorkItems {
  * A step with more than one page of matching work items gets a `paging` block
  * whose links page that step via its own `step<stepIndex>Page` query parameter.
  * When a status/workItem filter is active, steps with no matching work items are
- * omitted.
+ * omitted unless they are missing because the page is invalid page.
  *
  * @param req - the Express request, used to build per-step paging links
  * @param stepResults - each workflow step with its page of work items and pagination

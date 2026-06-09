@@ -248,22 +248,36 @@ describe('GET /jobs/:jobID/steps', function () {
     // A job with two steps (1 and 2), each holding 51 READY work items, used to
     // verify the two steps page independently of each other.
     await twoPagedJob.save(this.trx);
-    for (const stepIndex of [1, 2]) {
-      const step = buildWorkflowStep({
-        jobID: twoPagedJob.jobID,
-        stepIndex,
-        serviceID: 'nasa/harmony-opendap-subsetter:1.2.4',
-        workItemCount: 51,
-        operation: validOperation,
-      });
-      await step.save(this.trx);
-      await WorkItem.insertBatch(this.trx, Array.from({ length: 51 }, () => buildWorkItem({
-        jobID: twoPagedJob.jobID,
-        workflowStepIndex: stepIndex,
-        serviceID: 'nasa/harmony-opendap-subsetter:1.2.4',
-        status: WorkItemStatus.READY,
-      })));
-    }
+
+    const step2a = buildWorkflowStep({
+      jobID: twoPagedJob.jobID,
+      stepIndex: 1,
+      serviceID: 'nasa/harmony-opendap-subsetter:1.2.4',
+      workItemCount: 51,
+      operation: validOperation,
+    });
+    await step2a.save(this.trx);
+    await WorkItem.insertBatch(this.trx, Array.from({ length: 51 }, () => buildWorkItem({
+      jobID: twoPagedJob.jobID,
+      workflowStepIndex: 1,
+      serviceID: 'nasa/harmony-opendap-subsetter:1.2.4',
+      status: WorkItemStatus.READY,
+    })));
+    const step2b = buildWorkflowStep({
+      jobID: twoPagedJob.jobID,
+      stepIndex: 2,
+      serviceID: 'sds/harmony-metadata-annotator:latest',
+      workItemCount: 51,
+      operation: validOperation,
+    });
+    await step2b.save(this.trx);
+    await WorkItem.insertBatch(this.trx, Array.from({ length: 51 }, () => buildWorkItem({
+      jobID: twoPagedJob.jobID,
+      workflowStepIndex: 2,
+      serviceID: 'sds/harmony-metadata-annotator:latest',
+      status: WorkItemStatus.READY,
+    })));
+
 
     await this.trx.commit();
   });
