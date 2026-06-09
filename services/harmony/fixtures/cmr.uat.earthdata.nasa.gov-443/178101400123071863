@@ -1,0 +1,29 @@
+GET /search/collections.json?concept_id=C0000-EEDTEST&page_size=100&include_non_operational=true
+accept: application/json
+accept-encoding: gzip,deflate
+
+HTTP/1.1 200 OK
+content-type: application/json;charset=utf-8
+content-length: 228
+connection: keep-alive
+date: Tue, 09 Jun 2026 14:06:41 GMT
+server: ServerTokens ProductOnly
+vary: Accept-Encoding
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: 19632ea9-ee42-42de-9ba8-5f4199e49299
+content-sha1: 0b8e28d3402c8a5546ffe9f59245f0274e33fce3
+strict-transport-security: max-age=31536000; includeSubDomains; preload
+cmr-hits: 0
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Search-After, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 8
+x-request-id: 19632ea9-ee42-42de-9ba8-5f4199e49299
+content-md5: 6f458800be68d01acb6edd1d80842762
+x-cache: Miss from cloudfront
+via: 1.1 6ee3eecd683392286f206a7ea6e9ac0c.cloudfront.net (CloudFront)
+x-amz-cf-pop: SFO53-P2
+x-amz-cf-id: Rk1v2-dwZxbA8A3-cNoJFs071t2U-nedVPHgylRf3ZyJw86o_MnBSg==
+
+{"feed":{"updated":"2026-06-09T14:06:41.166Z","id":"https://cmr.uat.earthdata.nasa.gov:443/search/collections.json?concept_id=C0000-EEDTEST&page_size=100&include_non_operational=true","title":"ECHO dataset metadata","entry":[]}}

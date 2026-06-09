@@ -1,4 +1,4 @@
-GET /search/collections.json?concept_id=C20240409-EEDTEST&page_size=100
+GET /search/collections.json?concept_id=C20240409-EEDTEST&page_size=100&include_non_operational=true
 accept: application/json
 accept-encoding: gzip,deflate
 

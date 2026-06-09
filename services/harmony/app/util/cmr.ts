@@ -284,6 +284,7 @@ export interface CmrQuery
   readable_granule_name?: string | string[];
   scroll?: string;
   temporal?: string;
+  include_non_operational?: boolean;
 }
 
 export interface CmrAclQuery extends CmrQuery {
@@ -459,7 +460,7 @@ export async function cmrGetBase(
 async function _cmrGet(
   context: RequestContext, path: string, query: CmrQuery, token: string,
 ): Promise<CmrResponse> {
-  const response = await cmrGetBase(context, path, query, token);
+  const response = await module.exports.cmrGetBase(context, path, query, token);
   _handleCmrErrors(response);
   return response;
 }
@@ -823,6 +824,7 @@ async function _queryCollections(
   context: RequestContext, query: CmrQuery, token: string,
 ): Promise<Array<CmrCollection>> {
   logger.debug('Calling CMR to fetch collections');
+  query.include_non_operational = true;
   const collectionsResponse = await _cmrGet(context, '/search/collections.json', query, token) as CmrCollectionsResponse;
   return collectionsResponse.data.feed.entry;
 }
@@ -839,6 +841,7 @@ async function _queryUmmCollections(
   context: RequestContext, query: CmrQuery, token: string,
 ): Promise<Array<CmrUmmCollection>> {
   logger.debug('Calling CMR to fetch UMM collections');
+  query.include_non_operational = true;
   const ummResponse = await _cmrGet(context, '/search/collections.umm_json_v1_17_3', query, token) as CmrUmmCollectionsResponse;
   return ummResponse.data.items;
 }
