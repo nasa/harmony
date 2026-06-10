@@ -1,4 +1,5 @@
 import { NextFunction, Response } from 'express';
+import { ILengthAwarePagination } from 'knex-paginate';
 
 import { sanitizeImage } from '@harmony/util/string';
 
@@ -15,11 +16,15 @@ import db from '../util/db';
 import { isAdminUser } from '../util/edl-api';
 import { RequestValidationError } from '../util/errors';
 import { getJobIfAllowed } from '../util/job';
+import { Link } from '../util/links';
+import { keysToLowerCase } from '../util/object';
 import { defaultObjectStore } from '../util/object-store';
+import { getPagingLinks, parseIntegerParam } from '../util/pagination';
 import { readCatalogItems, StacItem } from '../util/stac';
 import { getRequestRoot } from '../util/url';
 
-export const DEFAULT_PER_PAGE = 50;
+const DEFAULT_PER_PAGE = 50;
+const MAX_STEP_PAGE_SIZE = 1000;
 const MAX_BATCH_CATALOGS = 5;
 const VALID_STATUSES = Object.values(WorkItemStatus);
 
@@ -49,7 +54,10 @@ interface JobStep {
 }
 
 interface StepPaging {
-  message: string;
+  currentPage: number;
+  lastPage: number;
+  total: number;
+  links: Link[];
 }
 
 /**
@@ -78,8 +86,8 @@ function parseQuery(query: Record<string, unknown>): StepsQueryParams {
     out.status = s;
   }
 
-  if (query.workItem !== undefined) {
-    const n = Number(query.workItem);
+  if (query.workitem !== undefined) {
+    const n = Number(query.workitem);
     if (!Number.isInteger(n) || n < 1) {
       throw new RequestValidationError('workItem must be a positive integer');
     }
@@ -301,27 +309,29 @@ function buildWorkItem(
 }
 
 
-// A workflow step paired with its bounded page of work items and the total
-// number of work items that matched (used to decide whether to page).
+// A workflow step, its page of work items and the pagination info.
 interface StepWorkItems {
   step: WorkflowStep;
   workItems: WorkItem[];
-  total: number;
+  pagination: ILengthAwarePagination;
 }
 
 /**
- * Build the full step list from each step's already-bounded page of work items.
- * A step whose total matching work item count exceeds DEFAULT_PER_PAGE gets a
- * placeholder `paging` block. When a status/workItem filter is active, steps
- * with no matching work items are omitted.
+ * Build the full step list from each step's requested page of work items.
+ * A step with more than one page of matching work items gets a `paging` block
+ * whose links page that step via its own `step<stepIndex>Page` query parameter.
+ * When a status/workItem filter is active, steps with no matching work items are
+ * omitted.
  *
- * @param stepResults - each workflow step with its bounded work items and total
+ * @param req - the Express request, used to build per-step paging links
+ * @param stepResults - each workflow step with its page of work items and pagination
  * @param resolved - resolved-catalog data from resolveAllCatalogs
  * @param statusCounts - per-step, per-status work item counts for the whole job
  * @param q - the parsed steps query, used to honor the status/workItem filters
- * @returns the steps with their work items, status summary, and any paging note
+ * @returns the steps with their work items, status summary, and any paging links
  */
 function buildSteps(
+  req: HarmonyRequest,
   stepResults: StepWorkItems[],
   resolved: ResolvedCatalogs,
   statusCounts: Map<number, Partial<Record<WorkItemStatus, number>>>,
@@ -329,9 +339,9 @@ function buildSteps(
 ): JobStep[] {
   const result: JobStep[] = [];
   const filtering = q.status !== undefined || q.workItem !== undefined;
-  for (const { step, workItems, total } of stepResults) {
-    // Don't show steps without workitems.
-    if (filtering && workItems.length === 0) continue;
+  for (const { step, workItems, pagination } of stepResults) {
+    // Don't show steps having no matching work items.
+    if (filtering && pagination.total === 0) continue;
 
     const jobStep: JobStep = {
       serviceID: sanitizeImage(step.serviceID),
@@ -340,9 +350,14 @@ function buildSteps(
       statuses: statusCounts.get(step.stepIndex) ?? {},
       workItems: workItems.map((wi) => buildWorkItem(wi, resolved)),
     };
-    // workItems is capped at DEFAULT_PER_PAGE per step; flag steps with more.
-    if (total > DEFAULT_PER_PAGE) {
-      jobStep.paging = { message: `WorkItem results paging not implemented: ${workItems.length} work items shown out of ${total}.` };
+    const { currentPage, lastPage, total } = pagination;
+    if (lastPage > 1) {
+      jobStep.paging = {
+        currentPage,
+        lastPage,
+        total,
+        links: getPagingLinks(req, pagination, true, `step${step.stepIndex}page`),
+      };
     }
 
     result.push(jobStep);
@@ -366,6 +381,7 @@ export async function getJobSteps(
 ): Promise<void> {
   const { jobID } = req.params;
   try {
+    req.query = keysToLowerCase(req.query);
     const q = parseQuery(req.query as Record<string, unknown>);
 
     const isAdmin = await isAdminUser(req);
@@ -379,22 +395,27 @@ export async function getJobSteps(
       ? steps.filter((s) => s.stepIndex === q.step)
       : steps;
 
-    // Bound each step's work items independently at DEFAULT_PER_PAGE. Per-step
-    // paging links are coming
+    // Bound every page result by 'limit' and page each step independently
+    // via step<stepIndex>Page parameter.
+    const limit = parseIntegerParam(req, 'limit', DEFAULT_PER_PAGE, 1, MAX_STEP_PAGE_SIZE, true, true);
     const stepResults: StepWorkItems[] = await Promise.all(selectedSteps.map(async (step) => {
       const where: WorkItemQuery['where'] = { jobID, workflowStepIndex: step.stepIndex };
       if (q.status !== undefined) where.status = q.status;
       if (q.workItem !== undefined) where.id = q.workItem;
-      const { workItems, pagination } = await queryWorkItems(
-        db, { where, orderBy: { field: 'id', value: 'asc' } }, 1, DEFAULT_PER_PAGE,
-      );
-      return { step, workItems, total: pagination.total };
+      const page = parseIntegerParam(req, `step${step.stepIndex}page`, 1, 1);
+      const query = { where, orderBy: { field: 'id', value: 'asc' } };
+      let { workItems, pagination } = await queryWorkItems(db, query, page, limit);
+      // reload last page for this step if we're off the end.
+      if (pagination.lastPage >= 1 && page > pagination.lastPage) {
+        ({ workItems, pagination } = await queryWorkItems(db, query, pagination.lastPage, limit));
+      }
+      return { step, workItems, pagination };
     }));
 
     const frontendRoot = getRequestRoot(req);
     const allWorkItems = stepResults.flatMap((r) => r.workItems);
     const resolvedCatalogs = await resolveAllCatalogs(allWorkItems, frontendRoot, destinationBucket);
-    const jobSteps = buildSteps(stepResults, resolvedCatalogs, statusCounts, q);
+    const jobSteps = buildSteps(req, stepResults, resolvedCatalogs, statusCounts, q);
 
     const responseBody = {
       jobID: job.jobID,

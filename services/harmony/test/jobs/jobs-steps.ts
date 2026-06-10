@@ -2,7 +2,6 @@ import { expect } from 'chai';
 import { before, describe, it } from 'mocha';
 import request, { Test } from 'supertest';
 
-import { DEFAULT_PER_PAGE } from '../../app/frontends/steps';
 import { JobStatus } from '../../app/models/job';
 import WorkItem from '../../app/models/work-item';
 import { getStacLocation, WorkItemStatus } from '../../app/models/work-item-interface';
@@ -71,12 +70,31 @@ const destBucketJob = buildJob({
 });
 
 // Job whose single step has more work items than DEFAULT_PER_PAGE (50), to
-// exercise the per-step bound and the placeholder paging block.
+// exercise per-step paging and the paging links block.
 const pagedJob = buildJob({
   username: 'joe',
   status: JobStatus.RUNNING,
   service_name: 'harmony-best-service',
   request: 'https://harmony.example/paged',
+});
+
+// Job whose single step holds one more work item than MAX_STEP_PAGE_SIZE, so a
+// limit above the max defaults to MAX_STEP_PAGE_SIZE (1000)
+const BIG_STEP_WORKITEMS = 1001;
+const bigStepJob = buildJob({
+  username: 'joe',
+  status: JobStatus.RUNNING,
+  service_name: 'harmony-best-service',
+  request: 'https://harmony.example/big-step',
+});
+
+// Job with two steps each holding more than DEFAULT_PER_PAGE (50) work items, to
+// exercise that each step pages independently via its own step<idx>Page param.
+const twoPagedJob = buildJob({
+  username: 'joe',
+  status: JobStatus.RUNNING,
+  service_name: 'harmony-best-service',
+  request: 'https://harmony.example/two-paged',
 });
 
 describe('GET /jobs/:jobID/steps', function () {
@@ -235,6 +253,61 @@ describe('GET /jobs/:jobID/steps', function () {
       status: WorkItemStatus.READY,
     }));
     await WorkItem.insertBatch(this.trx, pagedWorkItems);
+
+    // A job whose single step holds one more than MAX_STEP_PAGE_SIZE (1000) READY work
+    // items, used to show a limit above the MAX_STEP_PAGE_SIZE defaults to MAX_STEP_PAGE_SIZE.
+    await bigStepJob.save(this.trx);
+    const bigStep = buildWorkflowStep({
+      jobID: bigStepJob.jobID,
+      stepIndex: 1,
+      serviceID: 'nasa/harmony-opendap-subsetter:1.2.4',
+      workItemCount: BIG_STEP_WORKITEMS,
+      operation: validOperation,
+    });
+    await bigStep.save(this.trx);
+    const bigStepWorkItems = Array.from({ length: BIG_STEP_WORKITEMS }, () => buildWorkItem({
+      jobID: bigStepJob.jobID,
+      workflowStepIndex: 1,
+      serviceID: 'nasa/harmony-opendap-subsetter:1.2.4',
+      status: WorkItemStatus.READY,
+    }));
+    for (let i = 0; i < bigStepWorkItems.length; i += 500) {
+      await WorkItem.insertBatch(this.trx, bigStepWorkItems.slice(i, i + 500));
+    }
+
+    // A job with two steps (1 and 2), each holding 51 READY work items, used to
+    // verify the two steps page independently of each other.
+    await twoPagedJob.save(this.trx);
+
+    const step2a = buildWorkflowStep({
+      jobID: twoPagedJob.jobID,
+      stepIndex: 1,
+      serviceID: 'nasa/harmony-opendap-subsetter:1.2.4',
+      workItemCount: 51,
+      operation: validOperation,
+    });
+    await step2a.save(this.trx);
+    await WorkItem.insertBatch(this.trx, Array.from({ length: 51 }, () => buildWorkItem({
+      jobID: twoPagedJob.jobID,
+      workflowStepIndex: 1,
+      serviceID: 'nasa/harmony-opendap-subsetter:1.2.4',
+      status: WorkItemStatus.READY,
+    })));
+    const step2b = buildWorkflowStep({
+      jobID: twoPagedJob.jobID,
+      stepIndex: 2,
+      serviceID: 'sds/harmony-metadata-annotator:latest',
+      workItemCount: 51,
+      operation: validOperation,
+    });
+    await step2b.save(this.trx);
+    await WorkItem.insertBatch(this.trx, Array.from({ length: 51 }, () => buildWorkItem({
+      jobID: twoPagedJob.jobID,
+      workflowStepIndex: 2,
+      serviceID: 'sds/harmony-metadata-annotator:latest',
+      status: WorkItemStatus.READY,
+    })));
+
 
     await this.trx.commit();
   });
@@ -463,17 +536,131 @@ describe('GET /jobs/:jobID/steps', function () {
   describe('For a step with more work items than the per-step limit', function () {
     hookJobSteps({ jobID: pagedJob.jobID, username: 'joe' });
 
-    it('caps the work items at DEFAULT_PER_PAGE and adds a paging note', function () {
+    it('caps the work items at DEFAULT_PER_PAGE and adds a paging block with links', function () {
       expect(this.res.statusCode).to.equal(200);
       const body = JSON.parse(this.res.text);
       const step = body.steps[0];
-      // 51 work items exist, but the step is bounded to the per-page limit.
-      expect(step.workItems).to.have.lengthOf(DEFAULT_PER_PAGE);
-      expect(step.paging).to.deep.equal({
-        message: 'WorkItem results paging not implemented: 50 work items shown out of 51.',
-      });
+      // 51 work items exist, but the page is bounded to the default per-page limit.
+      expect(step.workItems).to.have.lengthOf(50);
+      expect(step.paging.currentPage).to.equal(1);
+      expect(step.paging.lastPage).to.equal(2);
+      expect(step.paging.total).to.equal(51);
+      const next = step.paging.links.find((l) => l.rel === 'next');
+      expect(next.href).to.include('step1page=2');
+      // First page has no prev link.
+      expect(step.paging.links.find((l) => l.rel === 'prev')).to.be.undefined;
       // The status summary for whole step.
       expect(step.statuses).to.deep.equal({ ready: 51 });
+    });
+  });
+
+  describe('Requesting the last page of a step with ?step<idx>Page=', function () {
+    hookJobSteps({ jobID: pagedJob.jobID, username: 'joe', query: { step1Page: 2 } });
+
+    it('returns the remaining work items with prev/first links and no next', function () {
+      expect(this.res.statusCode).to.equal(200);
+      const body = JSON.parse(this.res.text);
+      const step = body.steps[0];
+      expect(step.workItems).to.have.lengthOf(1);
+      expect(step.paging.currentPage).to.equal(2);
+      expect(step.paging.links.find((l) => l.rel === 'prev').href).to.include('step1page=1');
+      expect(step.paging.links.find((l) => l.rel === 'next')).to.be.undefined;
+    });
+  });
+
+  describe('Setting the shared page size with ?limit=', function () {
+    hookJobSteps({ jobID: pagedJob.jobID, username: 'joe', query: { limit: 25 } });
+
+    it('uses the limit as the per-step page size', function () {
+      expect(this.res.statusCode).to.equal(200);
+      const body = JSON.parse(this.res.text);
+      const step = body.steps[0];
+      expect(step.workItems).to.have.lengthOf(25);
+      expect(step.paging.lastPage).to.equal(3); // ceil(51 / 25)
+    });
+  });
+
+  describe('When ?limit= exceeds the maximum page size', function () {
+    hookJobSteps({ jobID: bigStepJob.jobID, username: 'joe', query: { limit: 99999 } });
+
+    it('defaults limit to MAX_STEP_PAGE_SIZE and pages', function () {
+      expect(this.res.statusCode).to.equal(200);
+      const body = JSON.parse(this.res.text);
+      const step = body.steps[0];
+      expect(step.workItems).to.have.lengthOf(1000);
+      expect(step.paging.currentPage).to.equal(1);
+      expect(step.paging.lastPage).to.equal(2);
+      expect(step.paging.total).to.equal(1001);
+      expect(step.paging.links.find((l) => l.rel === 'next').href).to.include('step1page=2');
+    });
+  });
+
+  describe('Requesting a page past the last page without filtering', function () {
+    hookJobSteps({ jobID: pagedJob.jobID, username: 'joe', query: { step1Page: 4 } });
+
+    it('returns the last page of work items instead of an empty page', function () {
+      expect(this.res.statusCode).to.equal(200);
+      const body = JSON.parse(this.res.text);
+      const step = body.steps[0];
+      // 51 items over a 50-item page: page 4 is limited to the last page (2)
+      // with one item.
+      expect(step.workItems).to.have.lengthOf(1);
+      expect(step.paging.currentPage).to.equal(2);
+      expect(step.paging.lastPage).to.equal(2);
+      expect(step.paging.total).to.equal(51);
+      expect(step.paging.links.find((l) => l.rel === 'prev').href).to.include('step1page=1');
+      expect(step.paging.links.find((l) => l.rel === 'next')).to.be.undefined;
+    });
+  });
+
+  describe('When a status filter and page query go beyond the last page', function () {
+    hookJobSteps({
+      jobID: destBucketJob.jobID, username: 'joe', query: { status: 'successful', step1Page: 4 },
+    });
+
+    it('keeps the step and returns the last page of matching work items', function () {
+      expect(this.res.statusCode).to.equal(200);
+      const body = JSON.parse(this.res.text);
+      expect(body.steps).to.have.lengthOf(1);
+      const step = body.steps[0];
+      // The single matching item fits on one page, so there is no paging block.
+      expect(step.workItems).to.have.lengthOf(1);
+      expect(step.paging).to.be.undefined;
+    });
+  });
+
+  describe('For a job with two independently pageable steps', function () {
+    hookJobSteps({ jobID: twoPagedJob.jobID, username: 'joe', query: { step1Page: 2 } });
+
+    it('pages the requested step without affecting the other', function () {
+      expect(this.res.statusCode).to.equal(200);
+      const body = JSON.parse(this.res.text);
+      const step1 = body.steps.find((s) => s.stepIndex === 1);
+      const step2 = body.steps.find((s) => s.stepIndex === 2);
+      // Step 1 advanced to page 2 (1 item), step 2 stayed on page 1 (50 items).
+      expect(step1.workItems).to.have.lengthOf(1);
+      expect(step1.paging.currentPage).to.equal(2);
+      expect(step2.workItems).to.have.lengthOf(50);
+      expect(step2.paging.currentPage).to.equal(1);
+      // Step 2's next link preserves step 1's page
+      expect(step2.paging.links.find((l) => l.rel === 'next').href).to.include('step1page=2');
+      expect(step2.paging.links.find((l) => l.rel === 'next').href).to.include('step2page=2');
+      expect(step1.paging.links.find((l) => l.rel === 'prev').href).to.include('step1page=1');
+    });
+  });
+
+  describe('Query parameter names are case-insensitive', function () {
+    hookJobSteps({ jobID: pagedJob.jobID, username: 'joe', query: { LIMIT: 25, STEP1PAGE: 2 } });
+
+    it('parses upper-cased parameter names the same as lower-cased ones', function () {
+      expect(this.res.statusCode).to.equal(200);
+      const body = JSON.parse(this.res.text);
+      const step = body.steps[0];
+      // ?LIMIT=25&STEP1PAGE=2 -> page 2 of 25-item pages over 51 items (26 left).
+      expect(step.workItems).to.have.lengthOf(25);
+      expect(step.paging.currentPage).to.equal(2);
+      expect(step.paging.lastPage).to.equal(3);
+      expect(step.paging.links.find((l) => l.rel === 'prev').href).to.include('step1page=1');
     });
   });
 
@@ -482,6 +669,36 @@ describe('GET /jobs/:jobID/steps', function () {
       hookJobSteps({ jobID: joeJob.jobID, username: 'joe', query: { status: 'bogus' } });
       it('returns 400', function () {
         expect(this.res.statusCode).to.equal(400);
+      });
+    });
+
+    describe('?step1Page=0', function () {
+      hookJobSteps({ jobID: pagedJob.jobID, username: 'joe', query: { step1Page: 0 } });
+      it('returns 400', function () {
+        expect(this.res.statusCode).to.equal(400);
+      });
+
+      it('returns a JSON error response', function () {
+        const response = JSON.parse(this.res.text);
+        expect(response).to.eql({
+          code: 'harmony.RequestValidationError',
+          description: 'Error: Parameter "step1page" is invalid. Must be an integer greater than or equal to 1.',
+        });
+      });
+    });
+
+    describe('an unrecognized parameter name', function () {
+      hookJobSteps({ jobID: joeJob.jobID, username: 'joe', query: { staus: 'failed' } });
+      it('returns 400', function () {
+        expect(this.res.statusCode).to.equal(400);
+      });
+
+      it('returns a JSON error listing the invalid parameter', function () {
+        const response = JSON.parse(this.res.text);
+        expect(response).to.eql({
+          code: 'harmony.RequestValidationError',
+          description: 'Error: Invalid parameter(s): staus. Allowed parameters are: step, status, workItem, and limit.',
+        });
       });
     });
 

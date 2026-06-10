@@ -13,14 +13,18 @@ As with the jobs API, there are two sets of steps API endpoints with the same su
 ```
 **Example {{exampleCounter}}** - Getting the steps for a job
 
-Returns the workflow steps for the given job, along with the work items processed by each step. By default, up to 50 work items are returned per step; steps with more work items than that include a `paging` note in the response.
+Returns the workflow steps for the given job, along with the work items processed by each step. Each step's work items are paged independently: by default up to 50 are shown per step (configurable with `limit`), and each step is navigated with its own `step<stepIndex>Page` parameter. A step with more than one page of work items includes a `paging` object with links to the other pages.
 
 ##### <a name="steps-query-parameters"></a> Query Parameters
-| parameter | description                                                                                                                                                                                  |
-|-----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| step      | Limit the response to the step with this stepIndex (a positive integer).                                                                                                                     |
-| status    | Filter the work items shown to those with this status. One of `ready`, `queued`, `running`, `successful`, `failed`, `canceled`, or `warning`. Steps with no matching work items are omitted. |
-| workItem  | Limit the work items shown to the one with this ID (a positive integer).                                                                                                                     |
+Parameter names are case-insensitive (e.g. `step2Page`, `Step2Page`, and `STEP2PAGE` are equivalent).
+
+| parameter           | description                                                                                                                                                                                  |
+|---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| step                | Limit the response to the step with this stepIndex (a positive integer).                                                                                                                     |
+| status              | Filter the work items shown to those with this status. One of `ready`, `queued`, `running`, `successful`, `failed`, `canceled`, or `warning`. Steps with no matching work items are omitted. |
+| workItem            | Limit the work items shown to the one with this ID (a positive integer).                                                                                                                     |
+| limit               | The number of work items to show per page for each step. Defaults to 50, maximum 1000.
+| step\<stepIndex\>Page | The page of work items to show for the step with the given stepIndex, e.g. `step2Page=3`. A positive integer that defaults to 1; a page beyond the last page returns the last page. Each step pages independently, so multiple may be supplied. |
 
 ---
 **Table {{tableCounter}}** - Harmony steps endpoint parameters
@@ -53,10 +57,23 @@ Each entry in the `steps` list describes a single workflow step -- one service i
 | workItemCount | The total number of work items in this step                                                                                                |
 | statuses      | A map of work item status to the number of work items in that status for the whole step. Only statuses with at least one work item appear. |
 | workItems     | A list of JSON objects describing the work items for this step. For details, see [work item fields](#step-work-item-response).             |
-| paging        | Present only when the step has more work items than can be shown on a single page.                                                         |
+| paging        | Present when the step has more than one page of work items. For details, see [paging fields](#step-paging-response). |
 
 ---
 **Table {{tableCounter}}** - Harmony step fields
+
+###### <a name="step-paging-response"></a> Paging fields
+The `paging` object lets you navigate a step's work items one page at a time:
+
+| field       | description                                                                                                                                                                                                |
+|-------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| currentPage | The page of work items currently shown for this step.                                                                                                                                                     |
+| lastPage    | The index of the last available page.                                                                                                                                                                     |
+| total       | The total number of work items for this step, after any `status` or `workItem` filter.                                                                                                                    |
+| links       | Navigation links, each with `rel` (one of `first`, `prev`, `self`, `next`, `last`), `href`, `title`, and `type`. Links that do not apply (e.g. `next` on the last page) are omitted.                       |
+
+---
+**Table {{tableCounter}}** - Harmony step paging fields
 
 ###### <a name="step-work-item-response"></a> Work item fields
 Each entry in a step's `workItems` list describes a single work item:
