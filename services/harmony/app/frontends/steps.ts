@@ -321,7 +321,7 @@ interface StepWorkItems {
  * A step with more than one page of matching work items gets a `paging` block
  * whose links page that step via its own `step<stepIndex>Page` query parameter.
  * When a status/workItem filter is active, steps with no matching work items are
- * omitted unless they are missing because the page is invalid page.
+ * omitted.
  *
  * @param req - the Express request, used to build per-step paging links
  * @param stepResults - each workflow step with its page of work items and pagination
@@ -331,7 +331,7 @@ interface StepWorkItems {
  * @returns the steps with their work items, status summary, and any paging links
  */
 function buildSteps(
-  req: Request,
+  req: HarmonyRequest,
   stepResults: StepWorkItems[],
   resolved: ResolvedCatalogs,
   statusCounts: Map<number, Partial<Record<WorkItemStatus, number>>>,
@@ -351,7 +351,7 @@ function buildSteps(
       workItems: workItems.map((wi) => buildWorkItem(wi, resolved)),
     };
     const { currentPage, lastPage, total } = pagination;
-    if (lastPage > 1 || currentPage > Math.max(lastPage, 1)) {
+    if (lastPage > 1) {
       jobStep.paging = {
         currentPage,
         lastPage,
@@ -403,9 +403,12 @@ export async function getJobSteps(
       if (q.status !== undefined) where.status = q.status;
       if (q.workItem !== undefined) where.id = q.workItem;
       const page = parseIntegerParam(req, `step${step.stepIndex}page`, 1, 1, null, false, true);
-      const { workItems, pagination } = await queryWorkItems(
-        db, { where, orderBy: { field: 'id', value: 'asc' } }, page, limit,
-      );
+      const query = { where, orderBy: { field: 'id', value: 'asc' } };
+      let { workItems, pagination } = await queryWorkItems(db, query, page, limit);
+      // reload last page for this step if we're off the end.
+      if (pagination.lastPage >= 1 && page > pagination.lastPage) {
+        ({ workItems, pagination } = await queryWorkItems(db, query, pagination.lastPage, limit));
+      }
       return { step, workItems, pagination };
     }));
 

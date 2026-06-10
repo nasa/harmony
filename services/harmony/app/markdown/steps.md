@@ -24,7 +24,7 @@ Parameter names are case-insensitive (e.g. `step2Page`, `Step2Page`, and `STEP2P
 | status              | Filter the work items shown to those with this status. One of `ready`, `queued`, `running`, `successful`, `failed`, `canceled`, or `warning`. Steps with no matching work items are omitted. |
 | workItem            | Limit the work items shown to the one with this ID (a positive integer).                                                                                                                     |
 | limit               | The number of work items to show per page for each step. Defaults to 50, maximum 1000.
-| step\<stepIndex\>Page | The page of work items to show for the step with the given stepIndex, e.g. `step2Page=3`. A positive integer that defaults to 1. Each step pages independently, so multiple may be supplied. |
+| step\<stepIndex\>Page | The page of work items to show for the step with the given stepIndex, e.g. `step2Page=3`. A positive integer that defaults to 1; a page beyond the last page returns the last page. Each step pages independently, so multiple may be supplied. |
 
 ---
 **Table {{tableCounter}}** - Harmony steps endpoint parameters

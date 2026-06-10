@@ -598,34 +598,34 @@ describe('GET /jobs/:jobID/steps', function () {
   describe('Requesting a page past the last page without filtering', function () {
     hookJobSteps({ jobID: pagedJob.jobID, username: 'joe', query: { step1Page: 4 } });
 
-    it('still emits a paging block with a way back even with no items on the page', function () {
+    it('returns the last page of work items instead of an empty page', function () {
       expect(this.res.statusCode).to.equal(200);
       const body = JSON.parse(this.res.text);
       const step = body.steps[0];
-      expect(step.workItems).to.have.lengthOf(0);
-      expect(step.paging.currentPage).to.equal(4);
+      // 51 items over a 50-item page: page 4 is limited to the last page (2)
+      // with one item.
+      expect(step.workItems).to.have.lengthOf(1);
+      expect(step.paging.currentPage).to.equal(2);
       expect(step.paging.lastPage).to.equal(2);
       expect(step.paging.total).to.equal(51);
-      expect(step.paging.links.find((l) => l.rel === 'first').href).to.include('step1page=1');
+      expect(step.paging.links.find((l) => l.rel === 'prev').href).to.include('step1page=1');
       expect(step.paging.links.find((l) => l.rel === 'next')).to.be.undefined;
     });
   });
 
-  describe('When a status filter and page query go beyond last page', function () {
+  describe('When a status filter and page query go beyond the last page', function () {
     hookJobSteps({
       jobID: destBucketJob.jobID, username: 'joe', query: { status: 'successful', step1Page: 4 },
     });
 
-    it('keeps the step and emits an paging block with first page', function () {
+    it('keeps the step and returns the last page of matching work items', function () {
       expect(this.res.statusCode).to.equal(200);
       const body = JSON.parse(this.res.text);
       expect(body.steps).to.have.lengthOf(1);
       const step = body.steps[0];
-      expect(step.workItems).to.have.lengthOf(0);
-      expect(step.paging.currentPage).to.equal(4);
-      expect(step.paging.lastPage).to.equal(1);
-      expect(step.paging.total).to.equal(1);
-      expect(step.paging.links.find((l) => l.rel === 'first').href).to.include('step1page=1');
+      // The single matching item fits on one page, so there is no paging block.
+      expect(step.workItems).to.have.lengthOf(1);
+      expect(step.paging).to.be.undefined;
     });
   });
 
