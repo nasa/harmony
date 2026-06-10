@@ -193,7 +193,7 @@ describe('Individual job status route - pagination', function () {
         const dataLinks = JSON.parse(this.res.text).links.filter((link) => link.rel === 'data');
         expect(dataLinks.length).to.equal(0);
       });
-      itIncludesPagingRelations(5, `jobs/${jobID}`, { first: 1, prev: 5, self: 6, next: null, last: null });
+      itIncludesPagingRelations(5, `jobs/${jobID}`, { first: 1, prev: null, self: 6, next: null, last: 5 });
     });
 
     describe('on a page that is both first and last (the only page)', function () {

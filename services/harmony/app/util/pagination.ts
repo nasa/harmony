@@ -141,6 +141,13 @@ export function getPagingLinks(
 ): Link[] {
   const result = [];
   const { currentPage, lastPage, perPage } = pagination;
+  if (perPage > 0 && currentPage > lastPage && lastPage >= 1) {
+    // this request was for a page beyond the last, just give them a first and last link.
+    if (lastPage > 1) result.push(getPagingLink(req, pagination, 1, 'first', 'first', pageParamName));
+    result.push(getPagingLink(req, pagination, currentPage, 'self', 'current', pageParamName));
+    result.push(getPagingLink(req, pagination, lastPage, 'last', 'last', pageParamName));
+    return result;
+  }
   if (perPage > 0 && currentPage > (includeExtraneous ? 1 : 2)) result.push(getPagingLink(req, pagination, 1, 'first', 'first', pageParamName));
   if (perPage > 0 && currentPage > 1) result.push(getPagingLink(req, pagination, currentPage - 1, 'prev', 'previous', pageParamName));
   result.push(getPagingLink(req, pagination, currentPage, 'self', 'current', pageParamName));
