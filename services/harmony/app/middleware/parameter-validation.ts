@@ -21,6 +21,7 @@ const { awsDefaultRegion } = env;
 
 const RANGESET_ROUTE_REGEX = /^\/.*\/ogc-api-coverages\/.*\/collections\/.*\/coverage\/rangeset/;
 const EDR_ROUTE_REGEX = /^\/ogc-api-edr\/.*\/collections\/.*\/(cube|area|position|trajectory)/;
+const STEPS_ROUTE_REGEX = /^\/(admin\/)?jobs\/[^/]+\/steps/;
 
 /**
  * The accepted values for the `linkType` parameter for job status requests
@@ -225,6 +226,24 @@ function validateEdrParameterNames(req: HarmonyRequest): void {
   validateParameterNames(requestedParams, getEdrParameters(action));
 }
 
+
+/**
+ * Validate that the steps endpoint query parameter names are allowed. The
+ * per-step `step<stepIndex>Page` paging parameters are accepted alongside the
+ * fixed steps parameters.
+ *
+ * @param req - The client request
+ * @throws RequestValidationError - if disallowed parameters are detected
+ */
+export function validateStepsParameterNames(req: HarmonyRequest): void {
+  const stepsAllowedParams = ['step', 'status', 'workItem', 'limit'];
+  const stepPageParamRegex = /^step\d+page$/;
+
+  const requestedParams = Object.keys(req.query)
+    .filter((param) => !stepPageParamRegex.test(param.toLowerCase()));
+  validateParameterNames(requestedParams, stepsAllowedParams);
+}
+
 /**
  * Express.js middleware to validate parameters. This must be installed after the error handler
  * middleware.
@@ -246,6 +265,9 @@ export default async function parameterValidation(
     }
     if (req.url.match(EDR_ROUTE_REGEX)) {
       validateEdrParameterNames(req);
+    }
+    if (req.url.match(STEPS_ROUTE_REGEX)) {
+      validateStepsParameterNames(req);
     }
     validateLabelParameter(req);
   } catch (e) {

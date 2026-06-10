@@ -1,4 +1,4 @@
-import { NextFunction, Request, Response } from 'express';
+import { NextFunction, Response } from 'express';
 import { ILengthAwarePagination } from 'knex-paginate';
 
 import { sanitizeImage } from '@harmony/util/string';
@@ -402,7 +402,7 @@ export async function getJobSteps(
       const where: WorkItemQuery['where'] = { jobID, workflowStepIndex: step.stepIndex };
       if (q.status !== undefined) where.status = q.status;
       if (q.workItem !== undefined) where.id = q.workItem;
-      const page = parseIntegerParam(req, `step${step.stepIndex}page`, 1, 1, null, false, true);
+      const page = parseIntegerParam(req, `step${step.stepIndex}page`, 1, 1);
       const query = { where, orderBy: { field: 'id', value: 'asc' } };
       let { workItems, pagination } = await queryWorkItems(db, query, page, limit);
       // reload last page for this step if we're off the end.

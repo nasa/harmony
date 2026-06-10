@@ -672,5 +672,35 @@ describe('GET /jobs/:jobID/steps', function () {
       });
     });
 
+    describe('?step1Page=0', function () {
+      hookJobSteps({ jobID: pagedJob.jobID, username: 'joe', query: { step1Page: 0 } });
+      it('returns 400', function () {
+        expect(this.res.statusCode).to.equal(400);
+      });
+
+      it('returns a JSON error response', function () {
+        const response = JSON.parse(this.res.text);
+        expect(response).to.eql({
+          code: 'harmony.RequestValidationError',
+          description: 'Error: Parameter "step1page" is invalid. Must be an integer greater than or equal to 1.',
+        });
+      });
+    });
+
+    describe('an unrecognized parameter name', function () {
+      hookJobSteps({ jobID: joeJob.jobID, username: 'joe', query: { staus: 'failed' } });
+      it('returns 400', function () {
+        expect(this.res.statusCode).to.equal(400);
+      });
+
+      it('returns a JSON error listing the invalid parameter', function () {
+        const response = JSON.parse(this.res.text);
+        expect(response).to.eql({
+          code: 'harmony.RequestValidationError',
+          description: 'Error: Invalid parameter(s): staus. Allowed parameters are: step, status, workItem, and limit.',
+        });
+      });
+    });
+
   });
 });
