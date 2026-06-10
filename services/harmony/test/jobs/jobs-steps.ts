@@ -546,7 +546,7 @@ describe('GET /jobs/:jobID/steps', function () {
       expect(step.paging.lastPage).to.equal(2);
       expect(step.paging.total).to.equal(51);
       const next = step.paging.links.find((l) => l.rel === 'next');
-      expect(next.href).to.include('step1Page=2');
+      expect(next.href).to.include('step1page=2');
       // First page has no prev link.
       expect(step.paging.links.find((l) => l.rel === 'prev')).to.be.undefined;
       // The status summary for whole step.
@@ -563,7 +563,7 @@ describe('GET /jobs/:jobID/steps', function () {
       const step = body.steps[0];
       expect(step.workItems).to.have.lengthOf(1);
       expect(step.paging.currentPage).to.equal(2);
-      expect(step.paging.links.find((l) => l.rel === 'prev').href).to.include('step1Page=1');
+      expect(step.paging.links.find((l) => l.rel === 'prev').href).to.include('step1page=1');
       expect(step.paging.links.find((l) => l.rel === 'next')).to.be.undefined;
     });
   });
@@ -591,7 +591,7 @@ describe('GET /jobs/:jobID/steps', function () {
       expect(step.paging.currentPage).to.equal(1);
       expect(step.paging.lastPage).to.equal(2);
       expect(step.paging.total).to.equal(1001);
-      expect(step.paging.links.find((l) => l.rel === 'next').href).to.include('step1Page=2');
+      expect(step.paging.links.find((l) => l.rel === 'next').href).to.include('step1page=2');
     });
   });
 
@@ -606,7 +606,7 @@ describe('GET /jobs/:jobID/steps', function () {
       expect(step.paging.currentPage).to.equal(4);
       expect(step.paging.lastPage).to.equal(2);
       expect(step.paging.total).to.equal(51);
-      expect(step.paging.links.find((l) => l.rel === 'first').href).to.include('step1Page=1');
+      expect(step.paging.links.find((l) => l.rel === 'first').href).to.include('step1page=1');
       expect(step.paging.links.find((l) => l.rel === 'next')).to.be.undefined;
     });
   });
@@ -625,7 +625,7 @@ describe('GET /jobs/:jobID/steps', function () {
       expect(step.paging.currentPage).to.equal(4);
       expect(step.paging.lastPage).to.equal(1);
       expect(step.paging.total).to.equal(1);
-      expect(step.paging.links.find((l) => l.rel === 'first').href).to.include('step1Page=1');
+      expect(step.paging.links.find((l) => l.rel === 'first').href).to.include('step1page=1');
     });
   });
 
@@ -643,9 +643,24 @@ describe('GET /jobs/:jobID/steps', function () {
       expect(step2.workItems).to.have.lengthOf(50);
       expect(step2.paging.currentPage).to.equal(1);
       // Step 2's next link preserves step 1's page
-      expect(step2.paging.links.find((l) => l.rel === 'next').href).to.include('step1Page=2');
-      expect(step2.paging.links.find((l) => l.rel === 'next').href).to.include('step2Page=2');
-      expect(step1.paging.links.find((l) => l.rel === 'prev').href).to.include('step1Page=1');
+      expect(step2.paging.links.find((l) => l.rel === 'next').href).to.include('step1page=2');
+      expect(step2.paging.links.find((l) => l.rel === 'next').href).to.include('step2page=2');
+      expect(step1.paging.links.find((l) => l.rel === 'prev').href).to.include('step1page=1');
+    });
+  });
+
+  describe('Query parameter names are case-insensitive', function () {
+    hookJobSteps({ jobID: pagedJob.jobID, username: 'joe', query: { LIMIT: 25, STEP1PAGE: 2 } });
+
+    it('parses upper-cased parameter names the same as lower-cased ones', function () {
+      expect(this.res.statusCode).to.equal(200);
+      const body = JSON.parse(this.res.text);
+      const step = body.steps[0];
+      // ?LIMIT=25&STEP1PAGE=2 -> page 2 of 25-item pages over 51 items (26 left).
+      expect(step.workItems).to.have.lengthOf(25);
+      expect(step.paging.currentPage).to.equal(2);
+      expect(step.paging.lastPage).to.equal(3);
+      expect(step.paging.links.find((l) => l.rel === 'prev').href).to.include('step1page=1');
     });
   });
 

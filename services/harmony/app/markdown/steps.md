@@ -16,6 +16,8 @@ As with the jobs API, there are two sets of steps API endpoints with the same su
 Returns the workflow steps for the given job, along with the work items processed by each step. Each step's work items are paged independently: by default up to 50 are shown per step (configurable with `limit`), and each step is navigated with its own `step<stepIndex>Page` parameter. A step with more than one page of work items includes a `paging` object with links to the other pages.
 
 ##### <a name="steps-query-parameters"></a> Query Parameters
+Parameter names are case-insensitive (e.g. `step2Page`, `Step2Page`, and `STEP2PAGE` are equivalent).
+
 | parameter           | description                                                                                                                                                                                  |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | step                | Limit the response to the step with this stepIndex (a positive integer).                                                                                                                     |

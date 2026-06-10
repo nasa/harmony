@@ -17,6 +17,7 @@ import { isAdminUser } from '../util/edl-api';
 import { RequestValidationError } from '../util/errors';
 import { getJobIfAllowed } from '../util/job';
 import { Link } from '../util/links';
+import { keysToLowerCase } from '../util/object';
 import { defaultObjectStore } from '../util/object-store';
 import { getPagingLinks, parseIntegerParam } from '../util/pagination';
 import { readCatalogItems, StacItem } from '../util/stac';
@@ -85,8 +86,8 @@ function parseQuery(query: Record<string, unknown>): StepsQueryParams {
     out.status = s;
   }
 
-  if (query.workItem !== undefined) {
-    const n = Number(query.workItem);
+  if (query.workitem !== undefined) {
+    const n = Number(query.workitem);
     if (!Number.isInteger(n) || n < 1) {
       throw new RequestValidationError('workItem must be a positive integer');
     }
@@ -355,7 +356,7 @@ function buildSteps(
         currentPage,
         lastPage,
         total,
-        links: getPagingLinks(req, pagination, true, `step${step.stepIndex}Page`),
+        links: getPagingLinks(req, pagination, true, `step${step.stepIndex}page`),
       };
     }
 
@@ -380,6 +381,7 @@ export async function getJobSteps(
 ): Promise<void> {
   const { jobID } = req.params;
   try {
+    req.query = keysToLowerCase(req.query);
     const q = parseQuery(req.query as Record<string, unknown>);
 
     const isAdmin = await isAdminUser(req);
@@ -400,7 +402,7 @@ export async function getJobSteps(
       const where: WorkItemQuery['where'] = { jobID, workflowStepIndex: step.stepIndex };
       if (q.status !== undefined) where.status = q.status;
       if (q.workItem !== undefined) where.id = q.workItem;
-      const page = parseIntegerParam(req, `step${step.stepIndex}Page`, 1, 1, null, false, true);
+      const page = parseIntegerParam(req, `step${step.stepIndex}page`, 1, 1, null, false, true);
       const { workItems, pagination } = await queryWorkItems(
         db, { where, orderBy: { field: 'id', value: 'asc' } }, page, limit,
       );
