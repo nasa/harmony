@@ -91,6 +91,7 @@ export interface WorkItemQuery {
     updatedAt?: number;
   };
   whereIn?: {
+    id?: { in: boolean, values: number[] };
     status?: { in: boolean, values: string[] };
     message_category?: { in: boolean, values: string[] };
   };

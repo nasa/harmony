@@ -33,6 +33,7 @@ function adminJobSteps(app, { jobID, query }: { jobID: string; query?: object })
 const hookJobSteps = hookRequest.bind(this, jobSteps);
 const hookAdminJobSteps = hookRequest.bind(this, adminJobSteps);
 
+let wi1Id: number;
 let wi2Id: number;
 
 const joeJob = buildJob({
@@ -120,6 +121,7 @@ describe('GET /jobs/:jobID/steps', function () {
       scrollID: 'fake-scroll-key',
     });
     await wi1.save(this.trx);
+    wi1Id = wi1.id;
 
     // Step 2: subsetter with a failed work item that has an input catalog from step 1
     const step2 = buildWorkflowStep({
@@ -395,6 +397,29 @@ describe('GET /jobs/:jobID/steps', function () {
     });
   });
 
+  describe('Filtering with ?step=1,2 multiple step params', function () {
+    hookJobSteps({ jobID: joeJob.jobID, username: 'joe', query: { step: '1,2' } });
+    it('returns each requested step', function () {
+      expect(this.res.statusCode).to.equal(200);
+      const body = JSON.parse(this.res.text);
+      expect(body.steps.map((s) => s.stepIndex)).to.deep.equal([1, 2]);
+    });
+  });
+
+  describe('Filtering with ?status=failed,successful multiple status params', function () {
+    hookJobSteps({ jobID: joeJob.jobID, username: 'joe', query: { status: 'failed,successful' } });
+    it('keeps work items in any of the requested statuses', function () {
+      expect(this.res.statusCode).to.equal(200);
+      const body = JSON.parse(this.res.text);
+      expect(body.steps).to.have.lengthOf(2);
+      for (const step of body.steps) {
+        for (const wi of step.workItems) {
+          expect(wi.status).to.be.oneOf(['failed', 'successful']);
+        }
+      }
+    });
+  });
+
   describe('Filtering with ?status=failed', function () {
     hookJobSteps({ jobID: joeJob.jobID, username: 'joe', query: { status: 'failed' } });
     it('keeps only work items in that status', function () {
@@ -487,6 +512,24 @@ describe('GET /jobs/:jobID/steps', function () {
       expect(body.steps[0].stepIndex).to.equal(2);
       expect(body.steps[0].workItems).to.have.lengthOf(1);
       expect(body.steps[0].workItems[0].id).to.equal(wi2Id);
+    });
+  });
+
+  describe('Filtering with ?workItem=<id1>,<id2> multiple workitem params', function () {
+    before(async function () {
+      this.res = await jobSteps(
+        this.frontend,
+        { jobID: joeJob.jobID, query: { workItem: `${wi1Id},${wi2Id}` } },
+      ).use(auth({ username: 'joe' }));
+    });
+    after(function () { delete this.res; });
+
+    it('returns each requested work item in its parent step', function () {
+      expect(this.res.statusCode).to.equal(200);
+      const body = JSON.parse(this.res.text);
+      expect(body.steps).to.have.lengthOf(2);
+      const ids = body.steps.flatMap((s) => s.workItems.map((wi) => wi.id));
+      expect(ids).to.have.members([wi1Id, wi2Id]);
     });
   });
 
@@ -667,6 +710,27 @@ describe('GET /jobs/:jobID/steps', function () {
   describe('Validation errors', function () {
     describe('?status=bogus', function () {
       hookJobSteps({ jobID: joeJob.jobID, username: 'joe', query: { status: 'bogus' } });
+      it('returns 400', function () {
+        expect(this.res.statusCode).to.equal(400);
+      });
+    });
+
+    describe('?status=failed,bogus (one invalid value in a list)', function () {
+      hookJobSteps({ jobID: joeJob.jobID, username: 'joe', query: { status: 'failed,bogus' } });
+      it('returns 400', function () {
+        expect(this.res.statusCode).to.equal(400);
+      });
+    });
+
+    describe('?step=1,abc (one non-integer value in a list)', function () {
+      hookJobSteps({ jobID: joeJob.jobID, username: 'joe', query: { step: '1,abc' } });
+      it('returns 400', function () {
+        expect(this.res.statusCode).to.equal(400);
+      });
+    });
+
+    describe('?workItem=1,-2 (one non-positive value in a list)', function () {
+      hookJobSteps({ jobID: joeJob.jobID, username: 'joe', query: { workItem: '1,-2' } });
       it('returns 400', function () {
         expect(this.res.statusCode).to.equal(400);
       });
