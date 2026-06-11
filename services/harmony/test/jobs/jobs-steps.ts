@@ -406,6 +406,21 @@ describe('GET /jobs/:jobID/steps', function () {
     });
   });
 
+  describe('?step=1&step=2 (repeated param) matches ?step=1,2', function () {
+    before(async function () {
+      this.repeated = await jobSteps(this.frontend,
+        { jobID: joeJob.jobID, query: { step: [1, 2] } }).use(auth({ username: 'joe' }));
+      this.comma = await jobSteps(this.frontend,
+        { jobID: joeJob.jobID, query: { step: '1,2' } }).use(auth({ username: 'joe' }));
+    });
+    after(function () { delete this.repeated; delete this.comma; });
+
+    it('produces the same steps', function () {
+      expect(this.repeated.statusCode).to.equal(200);
+      expect(this.repeated.text).to.equal(this.comma.text);
+    });
+  });
+
   describe('Filtering with ?status=failed,successful multiple status params', function () {
     hookJobSteps({ jobID: joeJob.jobID, username: 'joe', query: { status: 'failed,successful' } });
     it('keeps work items in any of the requested statuses', function () {
