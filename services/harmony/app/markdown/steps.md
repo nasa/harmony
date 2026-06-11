@@ -20,9 +20,9 @@ Parameter names are case-insensitive (e.g. `step2Page`, `Step2Page`, and `STEP2P
 
 | parameter           | description                                                                                                                                                                                  |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| step                | Limit the response to the step with this stepIndex (a positive integer).                                                                                                                     |
-| status              | Filter the work items shown to those with this status. One of `ready`, `queued`, `running`, `successful`, `failed`, `canceled`, or `warning`. Steps with no matching work items are omitted. |
-| workItem            | Limit the work items shown to the one with this ID (a positive integer).                                                                                                                     |
+| step                | Limit the response to one or more steps by stepIndex, comma-separated (e.g. `step=1,2`). Each a positive integer.                                                                             |
+| status              | Filter the work items shown to one or more statuses, comma-separated (e.g. `status=failed,warning`). Each one of `ready`, `queued`, `running`, `successful`, `failed`, `canceled`, or `warning`. Steps with no matching work items are omitted. |
+| workItem            | Limit the work items shown to one or more IDs, comma-separated (e.g. `workItem=123,124`). Each a positive integer.                                                                            |
 | limit               | The number of work items to show per page for each step. Defaults to 50, maximum 1000.
 | step\<stepIndex\>Page | The page of work items to show for the step with the given stepIndex, e.g. `step2Page=3`. A positive integer that defaults to 1; a page beyond the last page returns the last page. Each step pages independently, so multiple may be supplied. |
 

@@ -20,6 +20,7 @@ import { Link } from '../util/links';
 import { keysToLowerCase } from '../util/object';
 import { defaultObjectStore } from '../util/object-store';
 import { getPagingLinks, parseIntegerParam } from '../util/pagination';
+import { parseMultiValueParameter } from '../util/parameter-parsing-helpers';
 import { readCatalogItems, StacItem } from '../util/stac';
 import { getRequestRoot } from '../util/url';
 
@@ -30,9 +31,9 @@ const VALID_STATUSES = Object.values(WorkItemStatus);
 
 
 interface StepsQueryParams {
-  step?: number;
-  status?: WorkItemStatus;
-  workItem?: number;
+  steps?: number[];
+  statuses?: WorkItemStatus[];
+  workItems?: number[];
 }
 
 interface StepWorkItem {
@@ -71,27 +72,36 @@ function parseQuery(query: Record<string, unknown>): StepsQueryParams {
   const out: StepsQueryParams = {};
 
   if (query.step !== undefined) {
-    const n = Number(query.step);
-    if (!Number.isInteger(n) || n < 1) {
-      throw new RequestValidationError('step must be a positive integer');
-    }
-    out.step = n;
+    const queryStepsArray = parseMultiValueParameter(query.step as string | string[]);
+    out.steps = queryStepsArray.map((v) => {
+      const n = Number(v);
+      if (!Number.isInteger(n) || n < 1) {
+        throw new RequestValidationError('step must be a positive integer');
+      }
+      return n;
+    });
   }
 
   if (query.status !== undefined) {
-    const s = String(query.status) as WorkItemStatus;
-    if (!VALID_STATUSES.includes(s)) {
-      throw new RequestValidationError(`status must be one of: ${VALID_STATUSES.join(', ')}`);
-    }
-    out.status = s;
+    const queryStatusArray = parseMultiValueParameter(query.status as string | string[]);
+    out.statuses = queryStatusArray.map((v) => {
+      const s = v as WorkItemStatus;
+      if (!VALID_STATUSES.includes(s)) {
+        throw new RequestValidationError(`status must be one of: ${VALID_STATUSES.join(', ')}`);
+      }
+      return s;
+    });
   }
 
   if (query.workitem !== undefined) {
-    const n = Number(query.workitem);
-    if (!Number.isInteger(n) || n < 1) {
-      throw new RequestValidationError('workItem must be a positive integer');
-    }
-    out.workItem = n;
+    const queryWorkItemArray = parseMultiValueParameter(query.workitem as string | string[]);
+    out.workItems = queryWorkItemArray.map((v) => {
+      const n = Number(v);
+      if (!Number.isInteger(n) || n < 1) {
+        throw new RequestValidationError('workItem must be a positive integer');
+      }
+      return n;
+    });
   }
 
   return out;
@@ -338,7 +348,7 @@ function buildSteps(
   q: StepsQueryParams,
 ): JobStep[] {
   const result: JobStep[] = [];
-  const filtering = q.status !== undefined || q.workItem !== undefined;
+  const filtering = q.statuses !== undefined || q.workItems !== undefined;
   for (const { step, workItems, pagination } of stepResults) {
     // Don't show steps having no matching work items.
     if (filtering && pagination.total === 0) continue;
@@ -391,8 +401,8 @@ export async function getJobSteps(
     const steps = await getWorkflowStepsByJobId(db, jobID);
     const statusCounts = await workItemStatusCountsForJob(db, jobID);
 
-    const selectedSteps = q.step !== undefined
-      ? steps.filter((s) => s.stepIndex === q.step)
+    const selectedSteps = q.steps !== undefined
+      ? steps.filter((s) => q.steps.includes(s.stepIndex))
       : steps;
 
     // Bound every page result by 'limit' and page each step independently
@@ -400,10 +410,13 @@ export async function getJobSteps(
     const limit = parseIntegerParam(req, 'limit', DEFAULT_PER_PAGE, 1, MAX_STEP_PAGE_SIZE, true, true);
     const stepResults: StepWorkItems[] = await Promise.all(selectedSteps.map(async (step) => {
       const where: WorkItemQuery['where'] = { jobID, workflowStepIndex: step.stepIndex };
-      if (q.status !== undefined) where.status = q.status;
-      if (q.workItem !== undefined) where.id = q.workItem;
+      const whereIn: WorkItemQuery['whereIn'] = {};
+      if (q.statuses !== undefined) whereIn.status = { in: true, values: q.statuses };
+      if (q.workItems !== undefined) whereIn.id = { in: true, values: q.workItems };
       const page = parseIntegerParam(req, `step${step.stepIndex}page`, 1, 1);
-      const query = { where, orderBy: { field: 'id', value: 'asc' } };
+      const query: WorkItemQuery = {
+        where, whereIn, orderBy: { field: 'id', value: 'asc' },
+      };
       let { workItems, pagination } = await queryWorkItems(db, query, page, limit);
       // reload last page for this step if we're off the end.
       if (pagination.lastPage >= 1 && page > pagination.lastPage) {
