@@ -129,7 +129,7 @@
     "lodash": "^4.17.21",
     "logform": "^2.4.0",
     "lru-cache": "^11.0.2",
-    "markdown-it": "^14.1.0",
+    "markdown-it": "^14.2.0",
     "markdown-it-anchor": "^9.2.0",
     "markdown-it-copy": "^1.2.0",
     "markdown-it-for-inline": "^2.0.1",
