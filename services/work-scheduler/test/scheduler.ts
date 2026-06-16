@@ -351,58 +351,6 @@ describe('Scheduler Worker', async function () {
       });
     });
   });
-
-  // describe('getWorkItemsFromDatabase - ready_count desync handling', function () {
-  //   let setReadyCountToZeroSpy: sinon.SinonSpy;
-
-  //   const jobRecords = [
-  //     makePartialJobRecord(['job1', 'Alice', 'accepted', true, 12345]),
-  //   ];
-
-  //   const workflowStepRecords = [
-  //     makePartialWorkflowStepRecord(['job1', 'foo', '[]']),
-  //   ];
-
-  //   const workItemRecords = [
-  //     makePartialWorkItemRecord(['job1', 'foo', 'ready', 12345]),
-  //   ];
-
-  //   before(truncateAll);
-  //   after(truncateAll);
-  //   before(async function () {
-
-  //     await Promise.all(jobRecords.map(r => rawSaveJob(db, r as any)));
-  //     await Promise.all(workflowStepRecords.map(r => rawSaveWorkflowStep(db, r as any)));
-  //     await Promise.all(workItemRecords.map(r => rawSaveWorkItem(db, r as any)));
-
-  //     await populateUserWorkFromWorkItems(db);
-
-  //     // sanity check: user_work exists and thinks work is available
-  //     const uw = await db('user_work').where({ job_id: 'job1' }).first();
-  //     expect(uw.ready_count).to.be.greaterThan(0);
-  //   });
-
-  //   beforeEach(function () {
-  //     setReadyCountToZeroSpy = sinon.spy(userWorkModel, 'setReadyCountToZero');
-  //   });
-
-  //   afterEach(function () {
-  //     setReadyCountToZeroSpy.restore();
-  //   });
-
-  //   it('sets ready_count to 0 when user_work is out of sync with actual work availability', async function () {
-  //     const result = await workItemPolling.getWorkItemsFromDatabase(
-  //       'foo',
-  //       logger,
-  //       10,
-  //     );
-
-  //     expect(result).to.deep.equal([]);
-
-  //     expect(setReadyCountToZeroSpy.calledOnce).to.equal(true);
-  //     expect(setReadyCountToZeroSpy.firstCall.args[1]).to.equal('job1');
-  //   });
-  // });
 });
 
 describe('getWorkItemsFromDatabase', function () {
