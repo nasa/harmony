@@ -1,9 +1,6 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-// packages/util/test/helpers/db.ts
-
-// Ensure we're immediately using the right DB
 import path from 'path';
 import util from 'util';
 
