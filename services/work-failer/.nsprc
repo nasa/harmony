@@ -1,8 +1,4 @@
 {
-  "GHSA-w5hq-g745-h8pq": {
-    "active": true,
-    "notes": "uuid through dev dependency nyc in packages/util"
-  },
   "GHSA-gh4j-gqv2-49f6": {
     "active": true,
     "notes": "Will fix in HARMONY-2334",

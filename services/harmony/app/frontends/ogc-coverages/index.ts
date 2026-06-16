@@ -33,6 +33,8 @@ const openApiRoot = path.join(__dirname, '..', '..', 'schemas', 'ogc-api-coverag
 const openApiPath = path.join(openApiRoot, `ogc-api-coverages-v${version}.yml`);
 export const openApiContent = fs.readFileSync(openApiPath, 'utf-8');
 const ogcSchemaCoverages = yaml.load(openApiContent, { schema: yaml.DEFAULT_SCHEMA }) as OgcSchemaCoverages;
+type OpenApiDoc = NonNullable<Parameters<typeof initialize>[0]['apiDoc']>;
+const openApiDoc = yaml.load(openApiContent, { schema: yaml.DEFAULT_SCHEMA }) as OpenApiDoc;
 export const coverageRangesetGetParams = ogcSchemaCoverages
   .paths['/collections/{collectionId}/coverage/rangeset'].get.parameters
   .map(param => param.$ref.split('/').pop());
@@ -71,7 +73,7 @@ function getSpecification(req: HarmonyRequest, res: Response): void {
 export function addOpenApiRoutes(app: Router): void {
   initialize({
     app: app as Application,
-    apiDoc: openApiContent,
+    apiDoc: openApiDoc,
     validateApiDoc: true,
     /* Note: the default way to expose an OpenAPI endpoint is to have express handle paths
      * based on a supplied directory structure. Instead we are using the operations property

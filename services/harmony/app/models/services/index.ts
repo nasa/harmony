@@ -75,7 +75,7 @@ export function loadServiceConfigsFromFile(cmrEndpoint: string, fileName: string
   const buffer = env.servicesYml ? Buffer.from(env.servicesYml, 'base64')
     : fs.readFileSync(path.join(__dirname, fileName));
   const schema = yaml.DEFAULT_SCHEMA.extend([EnvType]);
-  const envConfigs = yaml.load(buffer.toString(), { schema });
+  const envConfigs = yaml.load(buffer.toString(), { schema: schema as never });
   const configs = envConfigs[cmrEndpoint]
     .filter((config) => config.enabled !== false && config.enabled !== 'false');
   configs.forEach(sc => updateCollectionsConfig(sc));
