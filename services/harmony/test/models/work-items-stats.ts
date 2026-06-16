@@ -1,9 +1,9 @@
 import { expect } from 'chai';
 
+import { truncateAll } from '../../../../packages/util/test/helpers/db';
 import { WorkItemStatus } from '../../../harmony/app/models/work-item-interface';
 import { getWorkItemsStatsSummary, upsertWorkItemStats } from '../../../harmony/app/models/work-items-stats';
 import db, { Transaction } from '../../../harmony/app/util/db';
-import { truncateAll } from '../helpers/db';
 import {
   rawSaveWorkItem,
   makePartialWorkItemRecord,

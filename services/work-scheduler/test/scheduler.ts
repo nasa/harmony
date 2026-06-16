@@ -4,7 +4,10 @@ import * as sinon from 'sinon';
 import { Logger } from 'winston';
 
 import * as workItemPolling from '../../harmony/app/backends/workflow-orchestration/work-item-polling';
+import * as userWorkModel from '../../harmony/app/models/user-work';
 import WorkItem from '../../harmony/app/models/work-item';
+import * as workItemModel from '../../harmony/app/models/work-item';
+import db from '../../harmony/app/util/db';
 import logger from '../../harmony/app/util/log';
 import * as queueFactory from '../../harmony/app/util/queue/queue-factory';
 import { MemoryQueue } from '../../harmony/test/helpers/memory-queue';
@@ -349,6 +352,149 @@ describe('Scheduler Worker', async function () {
         // min(95, 200) = 95
         expect(actual).to.equal(95);
       });
+    });
+  });
+
+  // describe('getWorkItemsFromDatabase - ready_count desync handling', function () {
+  //   let setReadyCountToZeroSpy: sinon.SinonSpy;
+
+  //   const jobRecords = [
+  //     makePartialJobRecord(['job1', 'Alice', 'accepted', true, 12345]),
+  //   ];
+
+  //   const workflowStepRecords = [
+  //     makePartialWorkflowStepRecord(['job1', 'foo', '[]']),
+  //   ];
+
+  //   const workItemRecords = [
+  //     makePartialWorkItemRecord(['job1', 'foo', 'ready', 12345]),
+  //   ];
+
+  //   before(truncateAll);
+  //   after(truncateAll);
+  //   before(async function () {
+
+  //     await Promise.all(jobRecords.map(r => rawSaveJob(db, r as any)));
+  //     await Promise.all(workflowStepRecords.map(r => rawSaveWorkflowStep(db, r as any)));
+  //     await Promise.all(workItemRecords.map(r => rawSaveWorkItem(db, r as any)));
+
+  //     await populateUserWorkFromWorkItems(db);
+
+  //     // sanity check: user_work exists and thinks work is available
+  //     const uw = await db('user_work').where({ job_id: 'job1' }).first();
+  //     expect(uw.ready_count).to.be.greaterThan(0);
+  //   });
+
+  //   beforeEach(function () {
+  //     setReadyCountToZeroSpy = sinon.spy(userWorkModel, 'setReadyCountToZero');
+  //   });
+
+  //   afterEach(function () {
+  //     setReadyCountToZeroSpy.restore();
+  //   });
+
+  //   it('sets ready_count to 0 when user_work is out of sync with actual work availability', async function () {
+  //     const result = await workItemPolling.getWorkItemsFromDatabase(
+  //       'foo',
+  //       logger,
+  //       10,
+  //     );
+
+  //     expect(result).to.deep.equal([]);
+
+  //     expect(setReadyCountToZeroSpy.calledOnce).to.equal(true);
+  //     expect(setReadyCountToZeroSpy.firstCall.args[1]).to.equal('job1');
+  //   });
+  // });
+});
+
+describe('getWorkItemsFromDatabase', function () {
+  const serviceID = 'foo:latest';
+  const batchSize = 10;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const fakeTx = {} as any;
+  const sandbox = sinon.createSandbox();
+
+  let getNextJobIdsStub: sinon.SinonStub;
+  let getNextWorkItemsStub: sinon.SinonStub;
+  let setReadyCountToZeroStub: sinon.SinonStub;
+  let incrementRunningStub: sinon.SinonStub;
+
+  beforeEach(function () {
+    sandbox.stub(db, 'transaction').callsFake(async (cb) => cb(fakeTx));
+    getNextJobIdsStub = sandbox.stub(userWorkModel, 'getNextJobIds');
+    getNextWorkItemsStub = sandbox.stub(workItemModel, 'getNextWorkItems');
+    setReadyCountToZeroStub = sandbox.stub(userWorkModel, 'setReadyCountToZero').resolves();
+    incrementRunningStub = sandbox.stub(userWorkModel, 'incrementRunningAndDecrementReadyCounts').resolves();
+  });
+
+  afterEach(function () {
+    sandbox.restore();
+  });
+
+  describe('when user_work reports a ready job but no ready work items exist', function () {
+    let result;
+    beforeEach(async function () {
+      getNextJobIdsStub.resolves(['job-1']);
+      getNextWorkItemsStub.resolves([]); // out of sync -> else branch
+      result = await workItemPolling.getWorkItemsFromDatabase(serviceID, logger, batchSize);
+    });
+
+    it('calls setReadyCountToZero exactly once', function () {
+      expect(setReadyCountToZeroStub.calledOnce).to.be.true;
+    });
+
+    it('passes the stale jobID and serviceID to setReadyCountToZero', function () {
+      const [, jobIdArg, serviceIdArg] = setReadyCountToZeroStub.firstCall.args;
+      expect(jobIdArg).to.equal('job-1');
+      expect(serviceIdArg).to.equal(serviceID);
+    });
+
+    it('does not increment running / decrement ready counts', function () {
+      expect(incrementRunningStub.called).to.be.false;
+    });
+
+    it('returns no work items', function () {
+      expect(result).to.deep.equal([]);
+    });
+  });
+
+  describe('when ready work items exist', function () {
+    beforeEach(async function () {
+      getNextJobIdsStub.resolves(['job-1']);
+      getNextWorkItemsStub.resolves([new WorkItem({ id: 1, jobID: 'job-1', serviceID })]);
+      await workItemPolling.getWorkItemsFromDatabase(serviceID, logger, batchSize);
+    });
+
+    it('does not call setReadyCountToZero', function () {
+      expect(setReadyCountToZeroStub.called).to.be.false;
+    });
+
+    it('increments running and decrements ready counts instead', function () {
+      expect(incrementRunningStub.calledOnce).to.be.true;
+    });
+  });
+
+  describe('with multiple jobs where only one is out of sync', function () {
+    beforeEach(async function () {
+      getNextJobIdsStub.resolves(['job-ok', 'job-stale']);
+      getNextWorkItemsStub
+        .withArgs(fakeTx, serviceID, 'job-ok', sinon.match.number)
+        .resolves([new WorkItem({ id: 1, jobID: 'job-ok', serviceID })]);
+      getNextWorkItemsStub
+        .withArgs(fakeTx, serviceID, 'job-stale', sinon.match.number)
+        .resolves([]);
+      await workItemPolling.getWorkItemsFromDatabase(serviceID, logger, batchSize);
+    });
+
+    it('zeroes the ready count only for the stale job', function () {
+      expect(setReadyCountToZeroStub.calledOnce).to.be.true;
+      expect(setReadyCountToZeroStub.firstCall.args[1]).to.equal('job-stale');
+    });
+
+    it('increments counts only for the job with ready work', function () {
+      expect(incrementRunningStub.calledOnce).to.be.true;
+      expect(incrementRunningStub.firstCall.args[1]).to.equal('job-ok');
     });
   });
 });

@@ -3,7 +3,6 @@ import permutations from 'just-permutations';
 import { it } from 'mocha';
 import { stub } from 'sinon';
 
-import { truncateAll } from './helpers/db';
 import { hookRedirect } from './helpers/hooks';
 import { getFirstJob } from './helpers/jobs';
 import { hookRangesetRequest } from './helpers/ogc-api-coverages';
@@ -12,6 +11,7 @@ import { hookServices } from './helpers/stub-service';
 import {
   fakeServiceStacOutput, getWorkForService, hookGetWorkForService, updateWorkItem,
 } from './helpers/work-items';
+import { truncateAll } from '../../../packages/util/test/helpers/db';
 import WorkItem from '../app/models/work-item';
 import { getStacLocation, WorkItemStatus } from '../app/models/work-item-interface';
 import { getWorkflowStepsByJobId } from '../app/models/workflow-steps';

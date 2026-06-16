@@ -1,11 +1,11 @@
 import { expect } from 'chai';
 
+import { truncateAll } from '../../../../packages/util/test/helpers/db';
 import {
   decrementRunningCount, getCount, incrementReadyAndDecrementRunningCounts,
   incrementRunningAndDecrementReadyCounts,
 } from '../../app/models/user-work';
 import db from '../../app/util/db';
-import { truncateAll } from '../helpers/db';
 import { createUserWorkRecord } from '../helpers/user-work';
 
 describe('user_work table', async function () {

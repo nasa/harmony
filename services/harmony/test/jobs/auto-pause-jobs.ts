@@ -2,10 +2,10 @@ import { expect } from 'chai';
 import _ from 'lodash';
 import { stub } from 'sinon';
 
+import { truncateAll } from '../../../../packages/util/test/helpers/db';
 import { WorkItemStatus, getStacLocation } from '../../app/models/work-item-interface';
 import * as aggregationBatch from '../../app/util/aggregation-batch';
 import env from '../../app/util/env';
-import { truncateAll } from '../helpers/db';
 import { hookRedirect } from '../helpers/hooks';
 import { hookRangesetRequest } from '../helpers/ogc-api-coverages';
 import hookServersStartStop from '../helpers/servers';

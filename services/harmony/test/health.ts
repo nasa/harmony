@@ -1,9 +1,9 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
 
-import { hookDatabaseFailure } from './helpers/db';
 import { hookCmrEdlHealthCheck, hookGetHealth, hookGetAdminHealth } from './helpers/health';
 import hookServersStartStop from './helpers/servers';
+import { hookDatabaseFailure } from '../../../packages/util/test/helpers/db';
 
 const healthyResponse = {
   status: 'up',

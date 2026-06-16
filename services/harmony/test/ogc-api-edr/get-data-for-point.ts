@@ -3,11 +3,11 @@ import _ from 'lodash';
 import { describe, it } from 'mocha';
 import { stub } from 'sinon';
 
+import { hookDatabaseFailure } from '../../../../packages/util/test/helpers/db';
 import { convertWktToPolygon } from '../../app/frontends/ogc-edr/get-data-for-point';
 import { ServiceConfig } from '../../app/models/services/base-service';
 import env from '../../app/util/env';
 import isUUID from '../../app/util/uuid';
-import { hookDatabaseFailure } from '../helpers/db';
 import { hookRedirect } from '../helpers/hooks';
 import { itRedirectsToJobStatusUrl } from '../helpers/jobs';
 import { edrRequest, hookEdrRequest, hookPostEdrRequest } from '../helpers/ogc-api-edr';

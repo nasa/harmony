@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import { stub } from 'sinon';
 
-import { truncateAll } from './helpers/db';
 import { buildJob, getFirstJob } from './helpers/jobs';
 import { resetQueues } from './helpers/queue';
 import hookServersStartStop from './helpers/servers';
@@ -9,6 +8,7 @@ import {
   buildWorkItem, fakeServiceStacOutput, getWorkForService, updateWorkItem,
 } from './helpers/work-items';
 import { buildWorkflowStep } from './helpers/workflow-steps';
+import { truncateAll } from '../../../packages/util/test/helpers/db';
 import { JobStatus } from '../app/models/job';
 import { populateUserWorkFromWorkItems } from '../app/models/user-work';
 import { getStacLocation, WorkItemRecord, WorkItemStatus } from '../app/models/work-item-interface';

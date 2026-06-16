@@ -5,11 +5,11 @@ import * as mustache from 'mustache';
 import request from 'supertest';
 
 import { renderNavLink } from './helpers';
+import { hookTransaction, truncateAll } from '../../../../packages/util/test/helpers/db';
 import { JobStatus } from '../../app/models/job';
 import { setLabelsForJob } from '../../app/models/label';
 import env from '../../app/util/env';
 import { auth } from '../helpers/auth';
-import { hookTransaction, truncateAll } from '../helpers/db';
 import { buildJob } from '../helpers/jobs';
 import hookServersStartStop from '../helpers/servers';
 import { workflowUIJobs, hookWorkflowUIJobs, hookAdminWorkflowUIJobs } from '../helpers/workflow-ui';

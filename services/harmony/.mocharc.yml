@@ -2,7 +2,7 @@ reporter: mocha-multi
 reporterOptions: 'spec=-,mocha-junit-reporter=-'
 file: # Files that get loaded before suite execution.  Helpful when running a single file.
   - test/helpers/env.ts
-  - test/helpers/db.ts
+  - ../../packages/util/test/helpers/db.ts
   - test/helpers/logging-hooks.ts
   - test/helpers/caching-hooks.ts
   - test/helpers/cmr.ts

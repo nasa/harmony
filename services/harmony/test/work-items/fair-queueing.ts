@@ -1,11 +1,11 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
 
+import { truncateAll } from '../../../../packages/util/test/helpers/db';
 import { JobRecord } from '../../app/models/job';
 import { populateUserWorkFromWorkItems } from '../../app/models/user-work';
 import { WorkItemRecord } from '../../app/models/work-item-interface';
 import db from '../../app/util/db';
-import { truncateAll } from '../helpers/db';
 import { makePartialJobRecord, rawSaveJob } from '../helpers/jobs';
 import hookServersStartStop from '../helpers/servers';
 import { getWorkForService, makePartialWorkItemRecord, rawSaveWorkItem } from '../helpers/work-items';

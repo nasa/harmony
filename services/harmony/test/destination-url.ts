@@ -1,12 +1,12 @@
 import { expect } from 'chai';
 import { Context } from 'mocha';
 
-import { hookTransaction } from './helpers/db';
 import { hookRedirect } from './helpers/hooks';
 import { hookGetBucketRegion, hookUpload } from './helpers/object-store';
 import { hookRangesetRequest } from './helpers/ogc-api-coverages';
 import hookServersStartStop from './helpers/servers';
 import StubService from './helpers/stub-service';
+import { hookTransaction } from '../../../packages/util/test/helpers/db';
 import { Job } from '../app/models/job';
 import { defaultObjectStore } from '../app/util/object-store';
 

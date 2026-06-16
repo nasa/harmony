@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 import sinon, { SinonStub } from 'sinon';
 
-import { truncateAll } from './helpers/db';
 import { buildJob } from './helpers/jobs';
+import { truncateAll } from '../../../packages/util/test/helpers/db';
 import { JobStatus } from '../../harmony/app/models/job';
 import * as userWork from '../../harmony/app/models/user-work';
 import db from '../../harmony/app/util/db';

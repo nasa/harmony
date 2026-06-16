@@ -4,7 +4,7 @@ import { it } from 'mocha';
 import request, { Test } from 'supertest';
 import { v4 as uuid } from 'uuid';
 
-import { truncateAll } from './db';
+import { truncateAll } from '../../../../packages/util/test/helpers/db';
 import { JobListing } from '../../../harmony/app/frontends/jobs';
 import { Job, JobStatus, JobRecord, jobRecordFields, JobForDisplay, getRelatedLinks } from '../../../harmony/app/models/job';
 import JobLink from '../../../harmony/app/models/job-link';

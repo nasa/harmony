@@ -2,7 +2,6 @@ import { expect } from 'chai';
 import { stub } from 'sinon';
 import { v4 as uuid } from 'uuid';
 
-import { truncateAll } from './helpers/db';
 import { hookRedirect } from './helpers/hooks';
 import { buildJob, getFirstJob } from './helpers/jobs';
 import { hookRangesetRequest } from './helpers/ogc-api-coverages';
@@ -12,6 +11,7 @@ import {
   buildWorkItem, fakeServiceStacOutput, getWorkForService, hookGetWorkForService, updateWorkItem,
 } from './helpers/work-items';
 import { buildWorkflowStep } from './helpers/workflow-steps';
+import { truncateAll } from '../../../packages/util/test/helpers/db';
 import { Job, JobStatus } from '../app/models/job';
 import {
   getCount, populateUserWorkFromWorkItems, recalculateCounts,

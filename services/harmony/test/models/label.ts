@@ -3,8 +3,8 @@ import { profanity } from '@2toad/profanity';
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
 
+import { hookTransactionEach } from '../../../../packages/util/test/helpers/db';
 import { checkLabel, normalizeLabel, setLabelsForJob } from '../../app/models/label';
-import { hookTransactionEach } from '../helpers/db';
 import { buildJob, getFirstJob } from '../helpers/jobs';
 
 // unit tests for `checkLabel`

@@ -1,11 +1,11 @@
 import { expect } from 'chai';
 
+import { truncateAll } from '../../../../packages/util/test/helpers/db';
 import { Job, JobStatus } from '../../app/models/job';
 import { getWorkItemById } from '../../app/models/work-item';
 import { getStacLocation, WorkItemStatus } from '../../app/models/work-item-interface';
 import db from '../../app/util/db';
 import env from '../../app/util/env';
-import { truncateAll } from '../helpers/db';
 import { hookRedirect } from '../helpers/hooks';
 import { hookRangesetRequest } from '../helpers/ogc-api-coverages';
 import { resetQueues } from '../helpers/queue';

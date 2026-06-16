@@ -5,8 +5,8 @@ import { expect } from 'chai';
 import sinon, { SinonStub } from 'sinon';
 
 
-import { hookTransaction, truncateAll } from './helpers/db';
 import { buildWorkItem } from './helpers/work-items';
+import { hookTransaction, truncateAll } from '../../../packages/util/test/helpers/db';
 import { WorkItemStatus } from '../../harmony/app/models/work-item-interface';
 import db from '../../harmony/app/util/db';
 import * as pfm from '../app/cronjobs/publish-failure-metrics';

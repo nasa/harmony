@@ -2,11 +2,11 @@ import { expect } from 'chai';
 import _ from 'lodash';
 import { spy } from 'sinon';
 
-import { truncateAll } from './helpers/db';
 import { buildJob } from './helpers/jobs';
 import hookServersStartStop from './helpers/servers';
 import { buildWorkItem, fakeServiceStacOutput, getWorkForService, updateWorkItem } from './helpers/work-items';
 import { buildWorkflowStep, validOperationWithManyVariables } from './helpers/workflow-steps';
+import { truncateAll } from '../../../packages/util/test/helpers/db';
 import { populateUserWorkFromWorkItems } from '../app/models/user-work';
 import { getStacLocation, WorkItemStatus } from '../app/models/work-item-interface';
 import { MemoryCache } from '../app/util/cache/memory-cache';

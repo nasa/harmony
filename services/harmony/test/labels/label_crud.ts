@@ -2,10 +2,10 @@ import { profanity } from '@2toad/profanity';
 import { expect } from 'chai';
 import { stub } from 'sinon';
 
+import { hookTransaction, truncateAll } from '../../../../packages/util/test/helpers/db';
 import { getRecentLabelsForUser } from '../../app/models/label';
 import db from '../../app/util/db';
 import env from '../../app/util/env';
-import { hookTransaction, truncateAll } from '../helpers/db';
 import { buildJob, getFirstJob } from '../helpers/jobs';
 import { addJobsLabels, deleteJobsLabels } from '../helpers/labels';
 import hookServersStartStop from '../helpers/servers';

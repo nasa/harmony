@@ -2,10 +2,10 @@ import { expect } from 'chai';
 import { describe } from 'mocha';
 import MockDate from 'mockdate';
 
-import { hookTransaction, truncateAll } from './helpers/db';
 import { buildJob } from './helpers/jobs';
 import { buildWorkItem } from './helpers/work-items';
 import { buildWorkflowStep } from './helpers/workflow-steps';
+import { hookTransaction, truncateAll } from '../../../packages/util/test/helpers/db';
 import { Job, JobStatus } from '../../harmony/app/models/job';
 import WorkItem, { getWorkItemsByJobId } from '../../harmony/app/models/work-item';
 import { WorkItemStatus } from '../../harmony/app/models/work-item-interface';

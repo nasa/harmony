@@ -2,7 +2,7 @@ import _ from 'lodash';
 import { afterEach, beforeEach } from 'mocha';
 
 import { parseSchemaFile } from './data-operation';
-import { truncateAll } from './db';
+import { truncateAll } from '../../../../packages/util/test/helpers/db';
 import DataOperation, { CURRENT_SCHEMA_VERSION } from '../../app/models/data-operation';
 import { RecordConstructor } from '../../app/models/record';
 import WorkflowStep, { WorkflowStepRecord } from '../../app/models/workflow-steps';

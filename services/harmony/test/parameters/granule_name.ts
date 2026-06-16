@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 
-import { hookTransaction } from '../helpers/db';
+import { hookTransaction } from '../../../../packages/util/test/helpers/db';
 import { hookRedirect } from '../helpers/hooks';
 import { hookRangesetRequest } from '../helpers/ogc-api-coverages';
 import hookServersStartStop from '../helpers/servers';

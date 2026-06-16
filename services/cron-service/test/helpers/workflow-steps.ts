@@ -1,6 +1,6 @@
 import { afterEach, beforeEach } from 'mocha';
 
-import { truncateAll } from './db';
+import { truncateAll } from '../../../../packages/util/test/helpers/db';
 import DataOperation, { CURRENT_SCHEMA_VERSION } from '../../../harmony/app/models/data-operation';
 import { RecordConstructor } from '../../../harmony/app/models/record';
 import WorkflowStep, { WorkflowStepRecord } from '../../../harmony/app/models/workflow-steps';

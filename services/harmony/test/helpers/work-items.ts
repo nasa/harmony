@@ -3,11 +3,11 @@ import _ from 'lodash';
 import { afterEach, beforeEach } from 'mocha';
 import request, { Test } from 'supertest';
 
-import { truncateAll } from './db';
 import { hookBackendRequest } from './hooks';
 import {
   buildWorkflowStep, hookWorkflowStepCreation, hookWorkflowStepCreationEach,
 } from './workflow-steps';
+import { truncateAll } from '../../../../packages/util/test/helpers/db';
 import { RecordConstructor } from '../../app/models/record';
 import WorkItem from '../../app/models/work-item';
 import {

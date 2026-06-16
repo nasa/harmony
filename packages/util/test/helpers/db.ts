@@ -1,11 +1,33 @@
-// Ensure we're immediately using the right DB
+/* eslint-disable @typescript-eslint/no-require-imports */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
+// packages/util/test/helpers/db.ts
+
+// Ensure we're immediately using the right DB
+import path from 'path';
 import util from 'util';
 
-import { before, after, beforeEach, afterEach } from 'mocha';
 import { stub } from 'sinon';
 
-import db from '../../../harmony/app/util/db';
+
+const exec = util.promisify(require('child_process').exec);
+
+// Safely resolve the calling app's local db utility.
+// If it doesn't exist (e.g., when running tests inside packages/util), we fall back to a mock.
+let db: any;
+let hasDb = false;
+
+try {
+  const dbPath = require.resolve(path.join(process.cwd(), '../../services/harmony/app/util/db'));
+  db = require(dbPath).default || require(dbPath);
+  hasDb = true;
+} catch (e) {
+  // Fallback mock so utility tests don't crash on file evaluation
+  db = (): { truncate: () => Promise<void> } => ({ truncate: async (): Promise<void> => {} });
+  db.transaction = async (): Promise<{ rollback: () => Promise<void> }> => ({
+    rollback: async (): Promise<void> => {},
+  });
+}
 
 // service_deployment is not cleared because tests rely on the existence of the row
 // showing the service deployment state is set to enabled
@@ -15,15 +37,13 @@ export const tables = [
   'service_deployments', 'run_watermarks',
 ];
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const exec = util.promisify(require('child_process').exec);
-
 /**
  * Truncates all database tables
  *
  * @returns A promise that resolves to nothing on completion
  */
 export async function truncateAll(): Promise<void> {
+  if (!hasDb) return;
   await Promise.all(tables.map((t) => db(t).truncate()));
 }
 
@@ -37,8 +57,17 @@ async function recreateDatabase(): Promise<void> {
   return exec(createDatabaseCommand);
 }
 
+// Declare global mocha methods if needed for TS compiler visibility,
+// though ts-node/register usually handles this globally via mocha types.
+declare const before: any;
+declare const after: any;
+declare const beforeEach: any;
+declare const afterEach: any;
+
 before(async function () {
-  await recreateDatabase();
+  if (hasDb) {
+    await recreateDatabase();
+  }
 });
 
 /**
@@ -48,6 +77,7 @@ before(async function () {
  *
  */
 export function hookTransaction(): void {
+  if (!hasDb) return;
   let transactionSet = false;
   before(async function () {
     transactionSet = !this.trx;
@@ -69,6 +99,7 @@ export function hookTransaction(): void {
  *
  */
 export function hookTransactionEach(): void {
+  if (!hasDb) return;
   let transactionSet = false;
   beforeEach(async function () {
     transactionSet = !this.trx;
@@ -84,16 +115,27 @@ export function hookTransactionEach(): void {
 }
 
 /**
- * Before/after hooks to have calls to create a database transaction throw an exception for
+ * Before/after hooks to have calls to interact with the database throw an exception for
  * just that test.
  *
  */
 export function hookDatabaseFailure(): void {
-  let txStub;
-  before(function () {
-    txStub = stub(db, 'transaction').throws();
+  if (!hasDb) return;
+  const originalMethods = {};
+  before(function (this: any) {
+    Object.keys(db).forEach(method => {
+      if (typeof db[method as keyof typeof db] === 'function') {
+        originalMethods[method] = db[method as keyof typeof db];
+        stub(db, method as keyof typeof db).throws(new Error('DB call failed'));
+      }
+    });
   });
+
   after(function () {
-    txStub.restore();
+    Object.keys(originalMethods).forEach(method => {
+      if (db[method as keyof typeof db] && typeof db[method as keyof typeof db].restore === 'function') {
+        db[method as keyof typeof db].restore();
+      }
+    });
   });
 }

@@ -4,11 +4,11 @@ import { HTTPError } from 'superagent';
 import request from 'supertest';
 
 import { hookCallbackEach, hookHttpBackendEach, loadJobForCallback } from './helpers/callbacks';
-import { truncateAll } from './helpers/db';
 import { getFirstJob, hookJobCreationEach } from './helpers/jobs';
 import { rangesetRequest } from './helpers/ogc-api-coverages';
 import hookServersStartStop from './helpers/servers';
 import { validGetMapQuery, wmsRequest } from './helpers/wms';
+import { truncateAll } from '../../../packages/util/test/helpers/db';
 import { Job, JobStatus } from '../app/models/job';
 import JobLink from '../app/models/job-link';
 import db from '../app/util/db';

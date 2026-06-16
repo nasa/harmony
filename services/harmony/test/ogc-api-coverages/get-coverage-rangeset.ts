@@ -3,10 +3,10 @@ import _ from 'lodash';
 import { describe, it } from 'mocha';
 import { stub } from 'sinon';
 
+import { hookDatabaseFailure } from '../../../../packages/util/test/helpers/db';
 import { ServiceConfig } from '../../app/models/services/base-service';
 import env from '../../app/util/env';
 import isUUID from '../../app/util/uuid';
-import { hookDatabaseFailure } from '../helpers/db';
 import { hookRedirect } from '../helpers/hooks';
 import { itRedirectsToJobStatusUrl } from '../helpers/jobs';
 import {

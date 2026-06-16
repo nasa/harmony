@@ -3,9 +3,9 @@
 The files in this directory are to support performance and load testing against Harmony. The
 testing is performed using [locust.io](https://locust.io/).
 
-## Installation
+## Pre-requisites
 ```
-$ pip install -r requirements.txt
+brew install cairo pkg-config
 ```
 
 ## Required environment variables
@@ -15,12 +15,12 @@ an EDL bearer token for your user in the appropriate environment for your run (e
 ## Running
 To start a new performance test execute the following:
 ```
-$ locust
+$ uv run locust
 ```
 
 You can also limit the test cases run based on tags. For example to only run synchronous requests:
 ```
-$ locust --tags sync
+$ uv run locust --tags sync
 ```
 
 For a full listing of capabilities see the [locust documentation](https://docs.locust.io/en/stable/index.html).
@@ -29,14 +29,14 @@ For a full listing of capabilities see the [locust documentation](https://docs.l
 You can use a socks proxy to execute a run against a sandbox environment which does not have direct access. For
 example if you open a tunnel to port 8080 you can then run the following to allow access to sandbox resources:
 ```
-$ HTTPS_PROXY=socks5h://localhost:8080 locust
+$ HTTPS_PROXY=socks5h://localhost:8080 uv run locust
 ```
 
 ### Sandbox SSL certificates
 Note that you will also need to provide the EDC certificate in order to successfully connect to the load balancer
 in the sandbox environment. Save the EDC SSL certificate to a file locally and then run:
 ```
-REQUESTS_CA_BUNDLE=<local PEM file> WORKLOAD_BEARER_TOKEN=$UAT_BEARER HTTPS_PROXY=socks5h://localhost:8080 locust --exclude-tags uat
+REQUESTS_CA_BUNDLE=<local PEM file> WORKLOAD_BEARER_TOKEN=$UAT_BEARER HTTPS_PROXY=socks5h://localhost:8080 uv run locust --exclude-tags uat
 ```
 
 #### Testing synchronous requests in sandbox
@@ -53,7 +53,7 @@ you want to end the test.
 By default requests will be run against CMR UAT collections. In order to run against production collections
 use the production locustfile.
 ```
-$ locust -f locustfile-prod.py
+$ uv run locust -f locustfile-prod.py
 ```
 
 ## Generating performance charts

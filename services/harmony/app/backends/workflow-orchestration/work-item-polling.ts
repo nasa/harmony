@@ -2,7 +2,7 @@ import { Logger } from 'winston';
 
 import { calculateQueryCmrLimit, processSchedulerQueue, QUERY_CMR_SERVICE_REGEX } from './util';
 import {
-  getNextJobIds, incrementRunningAndDecrementReadyCounts, recalculateCounts,
+  getNextJobIds, incrementRunningAndDecrementReadyCounts, setReadyCountToZero,
 } from '../../models/user-work';
 import WorkItem, {
   getNextWorkItems, getWorkItemStatus, updateWorkItemStatuses,
@@ -11,7 +11,7 @@ import { WorkItemStatus } from '../../models/work-item-interface';
 import WorkflowStep from '../../models/workflow-steps';
 import { Cache } from '../../util/cache/cache';
 import { MemoryCache } from '../../util/cache/memory-cache';
-import db, { Transaction } from '../../util/db';
+import db from '../../util/db';
 import logger from '../../util/log';
 import {
   getQueueForUrl, getQueueUrlForService, getWorkSchedulerQueue,
@@ -84,52 +84,53 @@ function shuffleArray<T>(array: T[]): T[] {
 export async function getWorkItemsFromDatabase(
   serviceID: string,
   reqLogger: Logger,
-  batchSize: number): Promise<WorkItemData[]> {
+  batchSize: number,
+): Promise<WorkItemData[]> {
   const workItems: WorkItemData[] = [];
   try {
-    const jobIds = await getNextJobIds(db, serviceID as string, batchSize);
-    const shuffledJobIds = shuffleArray(jobIds);
-    let remainingNumOfJobs = jobIds.length;
-    let remainingBatchSize = batchSize;
-    let workSize;
+    await db.transaction(async (tx) => {
+      const jobIds = await getNextJobIds(tx, serviceID, batchSize);
+      const shuffledJobIds = shuffleArray(jobIds);
 
-    // Define the inner function outside of the loop
-    const processJob = async (tx: Transaction, jobId: string): Promise<void> => {
-      // the work size is readjusted based on work items retrieved from the previous job
-      workSize = (remainingNumOfJobs > 0) ? Math.ceil(remainingBatchSize / remainingNumOfJobs) : 1;
-      const nextWorkItems = await getNextWorkItems(tx, serviceID as string, jobId, workSize);
-      if (nextWorkItems?.length > 0) {
-        for (const workItem of nextWorkItems) {
-          if (workItem && QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)) {
-            const childLogger = reqLogger.child({ workItemId: workItem.id });
-            const maxCmrGranules = await calculateQueryCmrLimit(tx, workItem, childLogger);
-            reqLogger.debug(`Found work item ${workItem.id} for service ${serviceID} with max CMR granules ${maxCmrGranules}`);
-            workItems.push({ workItem, maxCmrGranules });
-          } else {
-            workItems.push({ workItem });
+      let remainingNumOfJobs = jobIds.length;
+      let remainingBatchSize = batchSize;
+
+      for (const jobId of shuffledJobIds) {
+        const workSize =
+          remainingNumOfJobs > 0
+            ? Math.ceil(remainingBatchSize / remainingNumOfJobs)
+            : 1;
+
+        const nextWorkItems = await getNextWorkItems(tx, serviceID, jobId, workSize);
+
+        if (nextWorkItems?.length > 0) {
+          for (const workItem of nextWorkItems) {
+            if (workItem && QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)) {
+              const childLogger = reqLogger.child({ workItemId: workItem.id });
+              const maxCmrGranules = await calculateQueryCmrLimit(tx, workItem, childLogger);
+              reqLogger.debug(`Found work item ${workItem.id} for service ${serviceID} with max CMR granules ${maxCmrGranules}`);
+
+              workItems.push({ workItem, maxCmrGranules });
+            } else {
+              workItems.push({ workItem });
+            }
           }
+
+          await incrementRunningAndDecrementReadyCounts(tx, jobId, serviceID, nextWorkItems.length);
+        } else {
+          reqLogger.warn(`user_work is out of sync for job ${jobId}, could not find ready work item`);
+          await setReadyCountToZero(tx, jobId, serviceID);
         }
-        await incrementRunningAndDecrementReadyCounts(tx, jobId, serviceID as string, nextWorkItems.length);
-      } else {
-        reqLogger.warn(`user_work is out of sync for job ${jobId}, could not find ready work item`);
-        reqLogger.warn(`recalculating ready and running counts for job ${jobId}`);
-        await recalculateCounts(tx, jobId);
+
+        remainingNumOfJobs -= 1;
+        remainingBatchSize -= nextWorkItems?.length ?? 0;
       }
-
-      // Readjust the counts for calculating the next work size
-      remainingNumOfJobs -= 1;
-      remainingBatchSize -= nextWorkItems ? nextWorkItems.length : 0;
-    };
-
-    for (const jobId of shuffledJobIds) {
-      await db.transaction(async (tx) => {
-        await processJob(tx, jobId);
-      });
-    }
+    });
   } catch (err) {
     reqLogger.error(err);
     reqLogger.error(`Error getting works from database: ${err.message}`);
   }
+
   return workItems;
 }
 

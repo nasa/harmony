@@ -112,15 +112,48 @@ export async function getNextJobIdForUsernameAndService(tx: Transaction, service
 export async function getNextJobIds(
   tx: Transaction,
   serviceID: string,
-  batchSize: number)
-  : Promise<string[]> {
-  const sql = 'WITH RankedJobs AS ( '
-  + 'SELECT job_id, last_worked, username, is_async, ROW_NUMBER() OVER (PARTITION BY username ORDER BY last_worked ASC) AS user_row_num '
-  + `FROM user_work WHERE service_id = '${serviceID}' and ready_count > 0`
-  + ') SELECT job_id FROM ( '
-  + 'SELECT R.job_id, R.last_worked, R.username, R.is_async, ROW_NUMBER() OVER (ORDER BY R.user_row_num, R.last_worked ASC) AS overall_row_num '
-  + `FROM RankedJobs R) Interleaved WHERE overall_row_num <= ${batchSize} ORDER BY is_async, overall_row_num`;
-  const results = await tx.raw(sql);
+  batchSize: number,
+): Promise<string[]> {
+  const sql = `
+    WITH RankedJobs AS (
+      SELECT
+        job_id,
+        last_worked,
+        username,
+        is_async,
+        ROW_NUMBER() OVER (
+          PARTITION BY username
+          ORDER BY last_worked ASC
+        ) AS user_row_num
+      FROM user_work
+      WHERE service_id = ?
+        AND ready_count > 0
+    ),
+    Interleaved AS (
+      SELECT
+        R.job_id,
+        R.is_async,
+        ROW_NUMBER() OVER (
+          ORDER BY R.user_row_num, R.last_worked ASC
+        ) AS overall_row_num
+      FROM RankedJobs R
+    )
+    SELECT uw.job_id
+    FROM user_work uw
+    JOIN Interleaved i
+      ON i.job_id = uw.job_id
+    WHERE uw.service_id = ?
+      AND i.overall_row_num <= ?
+    ORDER BY i.is_async, i.overall_row_num
+    FOR UPDATE OF uw SKIP LOCKED
+  `;
+
+  const results = await tx.raw(sql, [
+    serviceID,
+    serviceID,
+    batchSize,
+  ]);
+
   return results.rows?.map((r) => r.job_id) || [];
 }
 
@@ -189,13 +222,25 @@ export async function getCount(
 
 /**
  * Sets the ready_count to 0 for the given jobID.
+ * Optionally restricts the update to a specific serviceID.
+ *
  * @param tx - The database transaction
  * @param jobID - The job ID
+ * @param serviceID - Optional service ID
  */
-export async function setReadyCountToZero(tx: Transaction, jobID: string): Promise<void> {
-  await tx(UserWork.table)
-    .where({ job_id: jobID })
-    .update('ready_count', 0);
+export async function setReadyCountToZero(
+  tx: Transaction,
+  jobID: string,
+  serviceID = '',
+): Promise<void> {
+  const query = tx(UserWork.table)
+    .where({ job_id: jobID });
+
+  if (serviceID) {
+    query.andWhere({ service_id: serviceID });
+  }
+
+  await query.update('ready_count', 0);
 }
 
 /**

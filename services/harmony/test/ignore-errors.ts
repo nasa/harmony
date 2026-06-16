@@ -1,13 +1,13 @@
 import { expect } from 'chai';
 import { stub } from 'sinon';
 
-import { truncateAll } from './helpers/db';
 import { hookRedirect } from './helpers/hooks';
 import { jobStatus } from './helpers/jobs';
 import { hookRangesetRequest } from './helpers/ogc-api-coverages';
 import { resetQueues } from './helpers/queue';
 import hookServersStartStop from './helpers/servers';
 import { fakeServiceStacOutput, getWorkForService, updateWorkItem } from './helpers/work-items';
+import { truncateAll } from '../../../packages/util/test/helpers/db';
 import { Job, JobStatus } from '../app/models/job';
 import WorkItem, { getWorkItemById, getWorkItemsByJobId } from '../app/models/work-item';
 import { getStacLocation, WorkItemStatus } from '../app/models/work-item-interface';

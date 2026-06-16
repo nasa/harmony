@@ -1,11 +1,11 @@
 import { expect } from 'chai';
 
+import { truncateAll } from '../../../../packages/util/test/helpers/db';
 import { checkRemainingStepsForCompletion } from '../../app/backends/workflow-orchestration/work-item-updates';
 import WorkItem from '../../app/models/work-item';
 import { WorkItemStatus } from '../../app/models/work-item-interface';
 import { getWorkflowStepByJobIdStepIndex } from '../../app/models/workflow-steps';
 import db from '../../app/util/db';
-import { truncateAll } from '../helpers/db';
 import { createUserWorkRecord, rowExists } from '../helpers/user-work';
 import { rawSaveWorkItem } from '../helpers/work-items';
 import { rawSaveWorkflowStep } from '../helpers/workflow-steps';

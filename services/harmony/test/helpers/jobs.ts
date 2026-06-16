@@ -4,8 +4,8 @@ import { it } from 'mocha';
 import request, { Test } from 'supertest';
 import { v4 as uuid } from 'uuid';
 
-import { truncateAll } from './db';
 import { hookRequest } from './hooks';
+import { truncateAll } from '../../../../packages/util/test/helpers/db';
 import { JobListing } from '../../app/frontends/jobs';
 import {
   getRelatedLinks, Job, JobForDisplay, JobQuery, JobRecord, jobRecordFields, JobStatus,
