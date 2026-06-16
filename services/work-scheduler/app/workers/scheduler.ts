@@ -133,12 +133,10 @@ function sizeToBatches(
  * @param schedulerPodCount - number of work scheduler pods running
  * @param queuedCount - current number of messages on the service queue
  * @param scaleFactor - percent of the number of messages we want
- * @param numMessagesReceived - the number of messages the work scheduler received for this service
  * @returns the number of work items to request to queue
  */
 export function calculateNumItemsToQueue(
   servicePodCount: number, schedulerPodCount: number, queuedCount: number, scaleFactor: number,
-  numMessagesReceived: number,
 ): number {
   // If there are hardly any messages on the queue we want to try to figure out if there are
   // many pods asking for work meaning we've starved the queue. If there are then we want to queue
@@ -146,9 +144,8 @@ export function calculateNumItemsToQueue(
   if (queuedCount <= 0.1 * servicePodCount) {
     const fullQueueCount = servicePodCount - queuedCount;
 
-    // Queue enough work to match the number of messages received without queueing more than the
-    // number of available service pods. Always return at least 1 item to be queued.
-    return Math.max(1, Math.min(fullQueueCount, numMessagesReceived));
+    // Queue enough work to fill the capacity of the service pods, but scaled by the scale factor
+    return Math.max(1, Math.floor(fullQueueCount * scaleFactor));
   }
 
   const minOneSchedulerPodCount = Math.max(1, schedulerPodCount);
@@ -234,7 +231,7 @@ export async function processSchedulerQueue(
       scaleFactor = env.fastServiceQueueBatchSizeCoefficient;
     }
 
-    const workSize = calculateNumItemsToQueue(servicePodCount, schedulerPodCount, messageCount, scaleFactor, numMessagesReceived);
+    const workSize = calculateNumItemsToQueue(servicePodCount, schedulerPodCount, messageCount, scaleFactor);
     reqLogger.debug(`Work size count is ${workSize} based on service pod count of ${servicePodCount}, message count ${messageCount}, scheduler pod count ${schedulerPodCount}, numMessagesReceived ${numMessagesReceived}, and scaleFactor ${scaleFactor} for queue ${queueUrl}`);
     reqLogger.debug(`Attempting to retrieve ${workSize} work items for queue ${queueUrl}`);
 
