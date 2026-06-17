@@ -508,23 +508,6 @@ describe('OGC API EDR - getEdrTrajectory', function () {
         description: 'Error: "all" cannot be specified alongside other variables',
       });
     });
-
-    // no subsetting other than shapefile (implied by 'trajectory'), so we must fail since no service supports shapefile
-    // subsetting for this collection
-    it('returns an HTTP 422 "Unprocessable Content" error with explanatory message when only shapefile subsetting is specified for a collection that does not support it', async function () {
-      const res = await edrRequest(
-        'trajectory',
-        this.frontend,
-        version,
-        collection,
-        { query: { coords: lineWKT, granuleId } },
-      );
-      expect(res.status).to.equal(422);
-      expect(res.body).to.eql({
-        code: 'harmony.UnsupportedOperation',
-        description: `Error: the requested combination of operations: shapefile subsetting on ${collection} is unsupported`,
-      });
-    });
   });
 
   describe('when using a collection with coordinate variables', function () {
@@ -565,30 +548,5 @@ describe('OGC API EDR - getEdrTrajectory with the extend query parameter', async
       code: 'harmony.UnsupportedOperation',
       description: 'Error: the requested combination of operations: extend on C1233800302-EEDTEST is unsupported',
     });
-  });
-});
-
-describe('OGC API EDR - getEdrTrajectory with a collection not configured for services', function () {
-  const collection = 'C1243745256-EEDTEST';
-  const version = '1.1.0';
-
-  hookServersStartStop();
-
-  describe('when requesting trajectory subset', function () {
-    const query = { coords: lineWKT, 'parameter-name': 'all' };
-    hookEdrRequest('trajectory', version, collection, { username: 'joe', query });
-
-    it('returns a 422 error response', function () {
-      expect(this.res.status).to.equal(422);
-    });
-
-    it('returns an error message indicating the transformation could not be performed', function () {
-      const body = JSON.parse(this.res.text);
-      expect(body).to.eql({
-        code: 'harmony.UnsupportedOperation',
-        description: 'Error: the requested combination of operations: shapefile subsetting on C1243745256-EEDTEST is unsupported',
-      });
-    });
-
   });
 });

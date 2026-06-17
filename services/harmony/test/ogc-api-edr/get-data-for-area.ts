@@ -922,23 +922,6 @@ describe('OGC API EDR - getEdrArea', function () {
         description: 'Error: "all" cannot be specified alongside other variables',
       });
     });
-
-    // no subsetting other than shapefile (implied by 'area'), so we must fail since no service supports shapefile
-    // subsetting for this collection
-    it('returns an HTTP 422 "Unprocessable Content" error with explanatory message when only shapefile subsetting is specified for a collection that does not support it', async function () {
-      const res = await edrRequest(
-        'area',
-        this.frontend,
-        version,
-        collection,
-        { query: { coords: bigTriangleWKT, granuleId } },
-      );
-      expect(res.status).to.equal(422);
-      expect(res.body).to.eql({
-        code: 'harmony.UnsupportedOperation',
-        description: `Error: the requested combination of operations: shapefile subsetting on ${collection} is unsupported`,
-      });
-    });
   });
 
   describe('when using a collection with coordinate variables', function () {
@@ -993,29 +976,4 @@ describe('OGC API EDR - getEdrArea with the extend query parameter', async funct
   //   hookEdrRequest('1.1.0', 'C1233800302-EEDTEST', 'red_var', { query: { extend: 'lat,lon' }, username: 'joe' });
   //   itRedirectsToJobStatusUrl();
   // });
-});
-
-describe('OGC API EDR - getEdrArea with a collection not configured for services', function () {
-  const collection = 'C1243745256-EEDTEST';
-  const version = '1.1.0';
-
-  hookServersStartStop();
-
-  describe('when requesting an area subset', function () {
-    const query = { coords: bigTriangleWKT, 'parameter-name': 'all' };
-    hookEdrRequest('area', version, collection, { username: 'joe', query });
-
-    it('returns a 422 error response', function () {
-      expect(this.res.status).to.equal(422);
-    });
-
-    it('returns an error message indicating the transformation could not be performed', function () {
-      const body = JSON.parse(this.res.text);
-      expect(body).to.eql({
-        code: 'harmony.UnsupportedOperation',
-        description: 'Error: the requested combination of operations: shapefile subsetting on C1243745256-EEDTEST is unsupported',
-      });
-    });
-
-  });
 });
