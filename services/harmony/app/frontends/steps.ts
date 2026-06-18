@@ -28,12 +28,17 @@ import { getRequestRoot } from '../util/url';
 const DEFAULT_WORKITEMS_PER_PAGE = 50;
 const MAX_WORKITEMS_PER_PAGE = 1000;
 
-// Default and max `wiLimit`: the number of a workitem's input items / output catalogs
-// resolved per page. This confusingly will not always result in
-// DEFAULT_WI_LIMIT items in the output. For input catalogs we are reading
-// items inside a single catalog, a single item file with perhaps many
-// items. and for output catalogs, we're reading 1 batch catalog and all of
-// its files.
+// Default and max `wiLimit`: the number of a workitem's input items / output
+// catalogs resolved per page. For input catalogs we are reading the items
+// inside a single catalog file, that in the case of aggregation catalogs can
+// contain many items.  For output catalogs, we're
+// reading 1 batch catalog, containing the list of all its catalogs.
+
+// Note: the resolved files may not be exactly the number set by `wiLimit`,
+// A catalog that contains both a data and opendap asset will provide
+// two both urls to the resolved url list.
+
+
 const DEFAULT_WI_LIMIT = 50;
 const MAX_WI_LIMIT = 100;
 
@@ -53,11 +58,10 @@ interface StepWorkItem {
   id: number;
   status: WorkItemStatus;
   retryCount: number;
-  // Overview mode: links back to the steps endpoint that resolve this workItem's
-  // input / output files
+  // Links back to this steps endpoint that resolve input / output files
   inputFilesUrl?: string | null;
   outputFilesUrl?: string | null;
-  // Resolve mode: the requested page of input or output files.
+  // The requested page of input or output files.
   inputFiles?: string[] | null;
   inputFilesPaging?: StepPaging;
   outputFiles?: string[] | null;

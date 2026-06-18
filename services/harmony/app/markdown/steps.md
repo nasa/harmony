@@ -15,11 +15,11 @@ As with the jobs API, there are two sets of steps API endpoints with the same su
 
 Returns the workflow steps for the given job, along with the work items processed by each step. Each step's work items are paged independently: by default up to 50 are shown per step (configurable with `limit`), and each step is navigated with its own `step<stepIndex>Page` parameter. A step with more than one page of work items includes a `paging` object with links to the other pages.
 
-A work item can reference or produce a very large number of files - for example a query-cmr step that fans out to thousands of granules, or an aggregating step whose single input catalog lists many items. To keep the endpoint responsive, it does **not** read any files from storage. Instead, each work item has `inputFilesUrl` and `outputFilesUrl` links (see [work item fields](#step-work-item-response)). The files themselves are resolved, and paged, only on demand by following those links — see [Resolving a work item's files](#steps-resolve-files).
+A work item can reference or produce a very large number of files - for example a query-cmr step that fans out to thousands of granules, or an aggregating step whose single input catalog lists many items. To keep the endpoint responsive, it does **not** read any files from storage. Instead, each work item has `inputFilesUrl` and `outputFilesUrl` links (see [work item fields](#step-work-item-response)). The files themselves are resolved, and paged, only on demand by following those links - see [Resolving a work item's files](#steps-resolve-files).
 
 #### <a name="steps-resolve-files"></a> Resolving a work item's files
 
-The default steps response is link-only and reads no stac catalogs thing from storage. To see a single work item's actual input or output files, follow its `inputFilesUrl` / `outputFilesUrl`, which make a request to the steps endpoint scoped to that one work item and sets the resolvedFiles parameter to either input or output as chosen:
+To see a work item's actual input or output files, you need to follow its `inputFilesUrl` / `outputFilesUrl`, which is designed to make a request back to the steps endpoint scoped to that one work item and sets the resolvedFiles parameter to the chosen input or output value:
 
 ```
 
@@ -44,11 +44,11 @@ Parameter names are case-insensitive (e.g. `step2Page`, `Step2Page`, and `STEP2P
 | status              | Filter the work items shown to one or more statuses, comma-separated (e.g. `status=failed,warning`). Each one of `ready`, `queued`, `running`, `successful`, `failed`, `canceled`, or `warning`. Steps with no matching work items are omitted. |
 | workItem            | Limit the work items shown to one or more IDs, comma-separated (e.g. `workItem=123,124`). Each a positive integer.                                                                            |
 | limit               | The number of work items to show per page for each step. Defaults to 50, maximum 1000.
-| resolveFiles        | Resolve a single work item's files inline instead of returning `inputFilesUrl` / `outputFilesUrl` links. One of `input` or `output`. Requires exactly one `workItem`; otherwise the request is rejected. See [Resolving a work item's files](#steps-resolve-files). |
+| resolveFiles        | Resolves work item's files inline instead of returning `inputFilesUrl` / `outputFilesUrl` links. One of `input` or `output`. Requires exactly one `workItem`; otherwise the request is rejected. See [Resolving a work item's files](#steps-resolve-files). |
 | wiLimit             | The page size used when resolving files: the number of input STAC items (for `resolveFiles=input`) or output STAC catalogs (for `resolveFiles=output`) read per page. Defaults to 50, maximum 100. |
 | step\<stepIndex\>Page | The page of work items to show for the step with the given stepIndex, e.g. `step2Page=3`. A positive integer that defaults to 1; a page beyond the last page returns the last page. Each step pages independently, so multiple may be supplied. |
-| workItem\<id\>OutputPage | The page of **output** files to show for the work item with the given id when `resolveFiles=output`, e.g. `workItem123OutputPage=2`. Output files are paged by STAC catalog (`wiLimit` per page). A positive integer that defaults to 1; a page beyond the last page returns the last page. |
-| workItem\<id\>InputPage | The page of **input** files to show for the work item with the given id when `resolveFiles=input`, e.g. `workItem123InputPage=2`. Input files are paged by STAC item (`wiLimit` per page). A positive integer that defaults to 1; a page beyond the last page returns the last page. |
+| workItem\<id\>OutputPage | The page of output files to show for the work item with the given id when `resolveFiles=output`, e.g. `workItem123OutputPage=2`. Output files are paged by STAC catalog (`wiLimit` per page). A positive integer that defaults to 1; a page beyond the last page returns the last page. |
+| workItem\<id\>InputPage | The page of input files to show for the work item with the given id when `resolveFiles=input`, e.g. `workItem123InputPage=2`. Input files are paged by STAC item (`wiLimit` per page). A positive integer that defaults to 1; a page beyond the last page returns the last page. |
 
 ---
 **Table {{tableCounter}}** - Harmony steps endpoint parameters
@@ -107,12 +107,12 @@ Each entry in a step's `workItems` list describes a single work item. The defaul
 | id          | ID of the work item in Harmony                                                                                                                                                            |
 | status      | Status of the work item                                                                                                                                                                   |
 | retryCount  | The number of times the work item has been retried                                                                                                                                        |
-| inputFilesUrl  | (default response) A link that resolves this work item's input files, or `null` if the work item has no STAC input (e.g. the first query-cmr step). Follow it (equivalently, pass `workItem=<id>&resolveFiles=input`) to get the files. |
-| outputFilesUrl | (default response) A link that resolves this work item's output files, or `null` if the work item has not yet completed. Follow it (equivalently, pass `workItem=<id>&resolveFiles=output`) to get the files. |
-| inputFiles  | (resolve mode, `resolveFiles=input`) A list of links to the input files for the current input-file page. Files that cannot be turned into a public link are shown as `<private file location>`. |
-| inputFilesPaging | (resolve mode) Present when the work item has more than one page of input files. Navigate the pages with the `workItem<id>InputPage` parameter. Same shape as a step's `paging` object — see [paging fields](#step-paging-response) (here `total` is the work item's number of input STAC items). |
-| outputFiles | (resolve mode, `resolveFiles=output`) A list of links to the output files for the current output-file page, or empty if it produced no output. Files that cannot be turned into a public link are shown as `<private file location>`. |
-| outputFilesPaging | (resolve mode) Present when the work item has more than one page of output files. Navigate the pages with the `workItem<id>OutputPage` parameter. Same shape as a step's `paging` object — see [paging fields](#step-paging-response) (here `total` is the work item's number of output STAC catalogs). |
+| inputFilesUrl  | A link that resolves this work item's input files. Follow it (equivalently, pass `workItem=<id>&resolveFiles=input`) to get the files. |
+| outputFilesUrl | A link that resolves this work item's output files, or `null` if the work item has not yet completed. Follow it (equivalently, pass `workItem=<id>&resolveFiles=output`) to get the files. |
+| inputFiles  | A list of links to the input files for the current input-file page. Files unable be turned into a public link are shown as `<private file location>`. |
+| inputFilesPaging | Present when needed. Navigate the pages with the `workItem<id>InputPage` parameter. Same shape as a step's `paging` object — see [paging fields](#step-paging-response) (here `total` is the work item's number of input STAC items). |
+| outputFiles | A list of links to the output files for the current output-file page, or empty if it produced no output. Files unable be turned into a public link are shown as `<private file location>`. |
+| outputFilesPaging | Present when needed. Navigate the pages with the `workItem<id>OutputPage` parameter. Same shape as a step's `paging` object — see [paging fields](#step-paging-response) (here `total` is the work item's number of output STAC catalogs). |
 
 ---
 **Table {{tableCounter}}** - Harmony work item fields
