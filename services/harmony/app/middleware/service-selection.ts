@@ -81,6 +81,10 @@ export default function chooseService(
       const configs = addCollectionsToServicesByAssociation(req.context.collections);
       serviceConfig = chooseServiceConfig(operation, context, configs);
     }
+    if (serviceConfig.message) {
+      context.messages = context.messages || [];
+      context.messages.push(serviceConfig.message);
+    }
     context.serviceConfig = serviceConfig;
     return next();
   } catch (e) {

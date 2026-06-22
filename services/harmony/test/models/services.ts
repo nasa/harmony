@@ -818,9 +818,10 @@ describe('services.chooseServiceConfig and services.buildService', function () {
         this.operation.boundingRectangle = [0, 0, 10, 10];
       });
 
-      it('throws an exception', function () {
-        expect(() => chooseServiceConfig(this.operation, defaultContext, this.config))
-          .to.throw(UnsupportedOperation, 'the requested combination of operations: spatial subsetting on C123-TEST is unsupported');
+      it('returns a service with a best-effort message', function () {
+        const serviceConfig = chooseServiceConfig(this.operation, defaultContext, this.config);
+        expect(serviceConfig.name).to.equal('a-service');
+        expect(serviceConfig.message).to.equal('Data in output files may extend outside the spatial and temporal bounds you requested.');
       });
     });
 
@@ -829,9 +830,10 @@ describe('services.chooseServiceConfig and services.buildService', function () {
         this.operation.geojson = 'some pretend geojson';
       });
 
-      it('throws an exception', function () {
-        expect(() => chooseServiceConfig(this.operation, defaultContext, this.config))
-          .to.throw(UnsupportedOperation, 'shapefile subsetting on C123-TEST is unsupported');
+      it('returns a service with a best-effort message', function () {
+        const serviceConfig = chooseServiceConfig(this.operation, defaultContext, this.config);
+        expect(serviceConfig.name).to.equal('a-service');
+        expect(serviceConfig.message).to.equal('Data in output files may extend outside the spatial and temporal bounds you requested.');
       });
     });
   });

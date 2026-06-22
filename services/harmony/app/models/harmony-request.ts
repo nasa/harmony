@@ -34,7 +34,10 @@ export function addRequestContextToOperation(
 
   operation.requestId = context.id;
   if (req.context.messages.length > 0) {
-    operation.message = req.context.messages.join(' ');
+    const contextMessage = req.context.messages.join(' ');
+    operation.message = operation.message
+      ? `${operation.message} ${contextMessage}`
+      : contextMessage;
   }
   operation.requestStartTime = context.startTime;
   operation.user = req.user || 'anonymous';

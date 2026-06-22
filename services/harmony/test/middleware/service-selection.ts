@@ -5,6 +5,7 @@ import sinon from 'sinon';
 import chooseService from '../../app/middleware/service-selection';
 import DataOperation from '../../app/models/data-operation';
 import HarmonyRequest from '../../app/models/harmony-request';
+import RequestContext from '../../app/models/request-context';
 import * as serviceUtils from '../../app/models/services';
 import env from '../../app/util/env';
 
@@ -19,7 +20,7 @@ describe('chooseService middleware', () => {
     req = {
       query: {},
       operation: { sources: [] } as unknown as DataOperation,
-      context: { collections: [], collectionIds: [] },
+      context: { collections: [], collectionIds: [], messages: [] },
     };
     res = {};
     nextFunction = sinon.spy();
@@ -82,5 +83,32 @@ describe('chooseService middleware', () => {
     expect(req.context.serviceConfig.collections).to.have.lengthOf(2);
     expect(req.context.serviceConfig.collections[0].id).to.equal('collection1');
     expect(req.context.serviceConfig.collections[1].id).to.equal('collection2');
+  });
+
+  it('should add the service message to context messages when using automatic service selection', () => {
+    req.query = {};
+    req.operation = new DataOperation();
+    req.operation.addSource('C123-TEST', 'harmony_example', '1');
+    req.context = new RequestContext('request-1');
+    req.context.collections = [];
+    req.context.collectionIds = ['C123-TEST'];
+
+    const mockServiceConfig = {
+      name: 'best-effort-service',
+      collections: [{ id: 'C123-TEST' }],
+      message: 'Data in output files may extend outside the spatial and temporal bounds you requested.',
+    };
+
+    getServiceConfigsStub.returns([mockServiceConfig as never]);
+    const chooseConfigStub = sinon.stub(serviceUtils, 'chooseServiceConfig').returns(mockServiceConfig as never);
+
+    chooseService(req as HarmonyRequest, res as Response, nextFunction as NextFunction);
+
+    expect(req.context.messages).to.deep.equal([
+      'Data in output files may extend outside the spatial and temporal bounds you requested.',
+    ]);
+    expect(nextFunction.calledOnce).to.be.true;
+
+    chooseConfigStub.restore();
   });
 });
