@@ -38,7 +38,6 @@ const MAX_WORKITEMS_PER_PAGE = 1000;
 // A catalog that contains both a data and opendap asset will provide
 // two both urls to the resolved url list.
 
-
 const DEFAULT_WI_LIMIT = 50;
 const MAX_WI_LIMIT = 100;
 
@@ -406,7 +405,7 @@ async function resolveOutputFiles(
  * inline.
  *
  * @param req - the Express request
- * @param workItems - the workItems to resolve (a single item)
+ * @param workItems - the workItems to resolve
  * @param kind - resolve input or output files
  * @param frontendRoot - the root URL to use when producing Harmony permalinks
  * @param destinationBucket - the job's destinationUrl bucket name, or undefined
@@ -581,8 +580,8 @@ export async function getJobSteps(
 
     let resolved: ResolvedFiles | undefined;
     if (q.resolveFiles !== undefined) {
-      if (q.workItems === undefined || q.workItems.length !== 1) {
-        throw new RequestValidationError('resolveFiles requires exactly one workItem');
+      if (q.workItems === undefined || q.workItems.length < 1) {
+        throw new RequestValidationError('resolveFiles requires one or more workItems');
       }
       resolved = await resolveWorkItemFiles(req, allWorkItems, q.resolveFiles, frontendRoot, destinationBucket);
     }

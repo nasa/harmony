@@ -1019,11 +1019,11 @@ describe('GET /jobs/:jobID/steps', function () {
         expect(this.res.statusCode).to.equal(400);
       });
 
-      it('explains that exactly one workItem is required', function () {
+      it('explains that one or more workItems are required', function () {
         const response = JSON.parse(this.res.text);
         expect(response).to.eql({
           code: 'harmony.RequestValidationError',
-          description: 'Error: resolveFiles requires exactly one workItem',
+          description: 'Error: resolveFiles requires one or more workItems',
         });
       });
     });
@@ -1036,8 +1036,18 @@ describe('GET /jobs/:jobID/steps', function () {
       });
       after(function () { delete this.res; });
 
-      it('returns 400', function () {
-        expect(this.res.statusCode).to.equal(400);
+      it('returns 200', function () {
+        expect(this.res.statusCode).to.equal(200);
+      });
+
+      it('resolves files inline for each requested work item', function () {
+        const body = JSON.parse(this.res.text);
+        const workItems = body.steps.flatMap((s) => s.workItems);
+        expect(workItems.map((wi) => wi.id)).to.have.members([wi1Id, wi2Id]);
+        for (const wi of workItems) {
+          expect(wi).to.not.have.property('inputFilesUrl');
+          expect(wi.inputFiles).to.be.an('array');
+        }
       });
     });
 
