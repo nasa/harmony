@@ -346,7 +346,8 @@ async function resolvePagedFiles(
     const hrefs = await readPage(sourceUrls.slice(start, start + perPage));
     const files = hrefs.map((h) => safePublicLink(h, frontendRoot, destinationBucket));
     return { files, paging: buildFilesPaging(req, pagination, pageParam) };
-  } catch {
+  } catch (e) {
+    req.context.logger.warn(`Failed to resolve paged files for ${pageParam}`, { error: e.message });
     return { files: [] };
   }
 }

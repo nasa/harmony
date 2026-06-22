@@ -6,7 +6,7 @@ As with the jobs API, there are two sets of steps API endpoints with the same su
 
 #### Getting the steps for a job
 
-```
+```http
 
 {{root}}/jobs/<job-id>/steps
 
@@ -19,9 +19,9 @@ A work item can reference or produce a very large number of files - for example 
 
 #### <a name="steps-resolve-files"></a> Resolving a work item's files
 
-To see a work item's actual input or output files, you need to follow its `inputFilesUrl` / `outputFilesUrl`, which is designed to make a request back to the steps endpoint scoped to that one work item and sets the resolvedFiles parameter to the chosen input or output value:
+To see a work item's actual input or output files, you need to follow its `inputFilesUrl` / `outputFilesUrl`, which is designed to make a request back to the steps endpoint scoped to that one work item and sets the `resolveFiles` parameter to the chosen input or output value:
 
-```
+```http
 
 {{root}}/jobs/<job-id>/steps?workItem=<id>&resolveFiles=output
 
