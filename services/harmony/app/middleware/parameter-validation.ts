@@ -229,18 +229,21 @@ function validateEdrParameterNames(req: HarmonyRequest): void {
 
 /**
  * Validate that the steps endpoint query parameter names are allowed. The
- * per-step `step<stepIndex>Page` paging parameters are accepted alongside the
- * fixed steps parameters.
+ * per-step `step<stepIndex>Page` and per-work-item `workItem<id>InputPage` /
+ * `workItem<id>OutputPage` paging parameters are accepted alongside the fixed
+ * steps parameters.
  *
  * @param req - The client request
  * @throws RequestValidationError - if disallowed parameters are detected
  */
 export function validateStepsParameterNames(req: HarmonyRequest): void {
-  const stepsAllowedParams = ['step', 'status', 'workItem', 'limit'];
+  const stepsAllowedParams = ['step', 'status', 'workItem', 'limit', 'wiLimit', 'resolveFiles'];
   const stepPageParamRegex = /^step\d+page$/;
+  const workItemPageParamRegex = /^workitem\d+(input|output)page$/;
 
   const requestedParams = Object.keys(req.query)
-    .filter((param) => !stepPageParamRegex.test(param.toLowerCase()));
+    .filter((param) => !stepPageParamRegex.test(param.toLowerCase()))
+    .filter((param) => !workItemPageParamRegex.test(param.toLowerCase()));
   validateParameterNames(requestedParams, stepsAllowedParams);
 }
 

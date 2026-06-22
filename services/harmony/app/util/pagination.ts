@@ -107,6 +107,7 @@ export function getPagingParams(
  * @param rel - the name of the link relation
  * @param relName - the name of the link relation
  * @param pageParamName - the query parameter the link should set the page on
+ * @param pageParamLimit - the query parameter the link should set the page limit on
  * @returns the generated link
  */
 function getPagingLink(
@@ -116,12 +117,13 @@ function getPagingLink(
   rel: string,
   relName: string = rel,
   pageParamName = 'page',
+  pageParamLimit = 'limit',
 ): Link {
   const { lastPage, perPage } = pagination;
   const suffix = (lastPage <= 1 && page === 1) || perPage === 0 ? '' : ` (${page} of ${lastPage})`;
   return {
     title: `The ${relName} page${suffix}`,
-    href: getRequestUrl(req, true, { [pageParamName]: page, limit: perPage }),
+    href: getRequestUrl(req, true, { [pageParamName]: page, [pageParamLimit]: perPage }),
     rel,
     type: 'application/json',
   };
@@ -137,22 +139,25 @@ function getPagingLink(
  * @returns the links to paginate
  */
 export function getPagingLinks(
-  req: Request, pagination: ILengthAwarePagination, includeExtraneous = false, pageParamName = 'page',
+  req: Request, pagination: ILengthAwarePagination,
+  includeExtraneous = false,
+  pageParamName = 'page',
+  pageParamLimit = 'limit',
 ): Link[] {
   const result = [];
   const { currentPage, lastPage, perPage } = pagination;
   if (perPage > 0 && currentPage > lastPage && lastPage >= 1) {
     // this request was for a page beyond the last, just give them a first and last link.
-    if (lastPage > 1) result.push(getPagingLink(req, pagination, 1, 'first', 'first', pageParamName));
-    result.push(getPagingLink(req, pagination, currentPage, 'self', 'current', pageParamName));
-    result.push(getPagingLink(req, pagination, lastPage, 'last', 'last', pageParamName));
+    if (lastPage > 1) result.push(getPagingLink(req, pagination, 1, 'first', 'first', pageParamName, pageParamLimit));
+    result.push(getPagingLink(req, pagination, currentPage, 'self', 'current', pageParamName, pageParamLimit));
+    result.push(getPagingLink(req, pagination, lastPage, 'last', 'last', pageParamName, pageParamLimit));
     return result;
   }
-  if (perPage > 0 && currentPage > (includeExtraneous ? 1 : 2)) result.push(getPagingLink(req, pagination, 1, 'first', 'first', pageParamName));
-  if (perPage > 0 && currentPage > 1) result.push(getPagingLink(req, pagination, currentPage - 1, 'prev', 'previous', pageParamName));
-  result.push(getPagingLink(req, pagination, currentPage, 'self', 'current', pageParamName));
-  if (perPage > 0 && currentPage < lastPage) result.push(getPagingLink(req, pagination, currentPage + 1, 'next', 'next', pageParamName));
-  if (perPage > 0 && currentPage < (includeExtraneous ? lastPage : lastPage - 1)) result.push(getPagingLink(req, pagination, lastPage, 'last', 'last', pageParamName));
+  if (perPage > 0 && currentPage > (includeExtraneous ? 1 : 2)) result.push(getPagingLink(req, pagination, 1, 'first', 'first', pageParamName, pageParamLimit));
+  if (perPage > 0 && currentPage > 1) result.push(getPagingLink(req, pagination, currentPage - 1, 'prev', 'previous', pageParamName, pageParamLimit));
+  result.push(getPagingLink(req, pagination, currentPage, 'self', 'current', pageParamName, pageParamLimit));
+  if (perPage > 0 && currentPage < lastPage) result.push(getPagingLink(req, pagination, currentPage + 1, 'next', 'next', pageParamName, pageParamLimit));
+  if (perPage > 0 && currentPage < (includeExtraneous ? lastPage : lastPage - 1)) result.push(getPagingLink(req, pagination, lastPage, 'last', 'last', pageParamName, pageParamLimit));
   return result;
 }
 
