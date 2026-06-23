@@ -143,7 +143,7 @@ DEFAULT_POD_GRACE_PERIOD_SECS=14400
 CMR_MAX_PAGE_SIZE=2000
 
 # True if compressed CMR responses are allowed, in some environments compressed responses fail
-CMR_ALLOW_COMPRESSION=true
+CMR_ALLOW_COMPRESSION=false
 
 # Prefix before "harmonyservices/task-name" for built-in tasks like query-cmr, e.g. an ECR location
 # If not blank, it should end in a slash if there is a slash before "harmony"
