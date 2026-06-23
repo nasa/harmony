@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-import { IsInt, IsNotEmpty, IsNumber, IsUrl, Matches, Max, Min, ValidateIf, ValidationError, validateSync } from 'class-validator';
+import { IsBoolean, IsInt, IsNotEmpty, IsNumber, IsUrl, Matches, Max, Min, ValidateIf, ValidationError, validateSync } from 'class-validator';
 import * as dotenv from 'dotenv';
 import _ from 'lodash';
 import * as winston from 'winston';
@@ -166,6 +166,7 @@ export class HarmonyEnv {
   @Min(1)
   cmrMaxPageSize: number;
 
+  @IsBoolean()
   cmrAllowCompression: boolean;
 
   @IsNotEmpty()
