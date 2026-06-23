@@ -18,6 +18,7 @@ process.env.PREVIEW_THRESHOLD = '500';
 
 // prevent tests from using a different page size and creating many fixtures
 process.env.CMR_MAX_PAGE_SIZE = '100';
+process.env.CMR_ALLOW_COMPRESSION = 'true';
 
 // use reasonable aggregation batch sizes for tests
 process.env.MAX_BATCH_INPUTS = '3';

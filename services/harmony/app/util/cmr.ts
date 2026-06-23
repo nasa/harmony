@@ -441,6 +441,7 @@ export async function cmrGetBase(
     {
       method: 'GET',
       headers,
+      compress: env.cmrAllowCompression,
     });
   response.data = await response.json();
   return response;
@@ -488,6 +489,7 @@ export async function fetchPost(
     method: 'POST',
     body: formData,
     headers: fullHeaders,
+    compress: env.cmrAllowCompression,
   });
   response.data = await response.json();
 
@@ -682,6 +684,7 @@ async function _cmrPostBody(
     method: 'POST',
     body: JSON.stringify(body),
     headers,
+    compress: env.cmrAllowCompression,
   });
   _handleCmrErrors(response);
 
@@ -1463,7 +1466,10 @@ export function filterGranuleLinks(
  */
 export async function getCmrHealth(): Promise<{ healthy: boolean; message?: string }> {
   try {
-    const response: CmrResponse = await fetch(`${cmrApiConfig.baseURL}/search/health`);
+    const response: CmrResponse = await fetch(
+      `${cmrApiConfig.baseURL}/search/health`,
+      { compress: env.cmrAllowCompression },
+    );
 
     if (response.status === 200) {
       return { healthy: true };
