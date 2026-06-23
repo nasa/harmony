@@ -28,7 +28,7 @@ To see a work item's actual input or output files, you need to follow its `input
 ```
 **Example {{exampleCounter}}** - Resolving a work item's output files
 
-When `resolveFiles` is supplied and exactly one `workItem` is given, the work item is returned with the requested kind of files resolved inline:
+When `resolveFiles` is supplied and one or more `workItem`s are given, each work item is returned with the requested kind of files resolved inline:
 
 - `resolveFiles=input` populates `inputFiles` (and `inputFilesPaging`), reading a page of the work item's input STAC catalog items.
 - `resolveFiles=output` populates `outputFiles` (and `outputFilesPaging`), reading a page of the work item's output STAC catalogs.
@@ -44,7 +44,7 @@ Parameter names are case-insensitive (e.g. `step2Page`, `Step2Page`, and `STEP2P
 | status              | Filter the work items shown to one or more statuses, comma-separated (e.g. `status=failed,warning`). Each one of `ready`, `queued`, `running`, `successful`, `failed`, `canceled`, or `warning`. Steps with no matching work items are omitted. |
 | workItem            | Limit the work items shown to one or more IDs, comma-separated (e.g. `workItem=123,124`). Each a positive integer.                                                                            |
 | limit               | The number of work items to show per page for each step. Defaults to 50, maximum 1000.
-| resolveFiles        | Resolves work item's files inline instead of returning `inputFilesUrl` / `outputFilesUrl` links. One of `input` or `output`. Requires exactly one `workItem`; otherwise the request is rejected. See [Resolving a work item's files](#steps-resolve-files). |
+| resolveFiles        | Resolves work item's files inline instead of returning `inputFilesUrl` / `outputFilesUrl` links. One of `input` or `output`. Requires one or more `workItem`s; otherwise the request is rejected. See [Resolving a work item's files](#steps-resolve-files). |
 | wiLimit             | The page size used when resolving files: the number of input STAC items (for `resolveFiles=input`) or output STAC catalogs (for `resolveFiles=output`) read per page. Defaults to 50, maximum 100. |
 | step\<stepIndex\>Page | The page of work items to show for the step with the given stepIndex, e.g. `step2Page=3`. A positive integer that defaults to 1; a page beyond the last page returns the last page. Each step pages independently, so multiple may be supplied. |
 | workItem\<id\>OutputPage | The page of output files to show for the work item with the given id when `resolveFiles=output`, e.g. `workItem123OutputPage=2`. Output files are paged by STAC catalog (`wiLimit` per page). A positive integer that defaults to 1; a page beyond the last page returns the last page. |
