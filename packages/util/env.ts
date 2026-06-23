@@ -166,6 +166,8 @@ export class HarmonyEnv {
   @Min(1)
   cmrMaxPageSize: number;
 
+  cmrAllowCompression: boolean;
+
   @IsNotEmpty()
   databaseType: string;
 
