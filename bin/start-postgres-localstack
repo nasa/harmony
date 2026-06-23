@@ -89,8 +89,8 @@ STAGING_BUCKET=${STAGING_BUCKET:-local-staging-bucket}
 ARTIFACT_BUCKET=${ARTIFACT_BUCKET:-local-artifact-bucket}
 UPLOAD_BUCKET=${UPLOAD_BUCKET:-local-upload-bucket}
 
-# Creates queue and buckets in localstack
-localstack_startup_script="
+# Creates queue and buckets in ministack
+ministack_startup_script="
 import boto3
 s3 = boto3.client('s3', endpoint_url='http://localhost:4566', region_name='us-west-2')
 s3.create_bucket(Bucket='${STAGING_BUCKET}', CreateBucketConfiguration={'LocationConstraint': 'us-west-2'})
@@ -109,7 +109,7 @@ kubectl -n harmony delete rolebinding default-admin 2>/dev/null || true
 kubectl -n harmony create rolebinding default-admin --clusterrole=admin --serviceaccount=harmony:default
 
 kubectl -n harmony delete configmap localstack-config 2>/dev/null || true
-kubectl -n harmony create configmap localstack-config --from-literal=startup.py="${localstack_startup_script}"
+kubectl -n harmony create configmap localstack-config --from-literal=startup.py="${ministack_startup_script}"
 
 . ./bin/create-k8s-config-maps-and-secrets
 
@@ -126,5 +126,5 @@ bin/port-forward start postgres ${POSTGRES_PORT}:5432
 DATABASE_TYPE=postgres DATABASE_URL="postgresql://postgres:password@localhost:${POSTGRES_PORT}/postgres" npx knex --cwd db migrate:latest || true
 
 echo ''
-echo 'Localstack has started at http://localhost:4566/'
+echo 'Ministack has started at http://localhost:4566/'
 echo "Postgres has started at localhost:${POSTGRES_PORT}"
