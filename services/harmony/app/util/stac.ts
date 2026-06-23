@@ -103,21 +103,36 @@ export async function getCatalogItemUrls(catalogUrl: string): Promise<string[]> 
 }
 
 /**
- * Reads the content of the catalog and returns the catalog items
- * @param catalogUrl - the catalog s3 url
+ * Reads the given STAC item URLs (each resolved relative to the catalog) and
+ * returns the items.
+ *
+ * @param catalogUrl - the catalog s3 url the item URLs are relative to
+ * @param itemUrls - the item URLs to read
+ * @returns the items at the given URLs
  */
-export async function readCatalogItems(catalogUrl: string): Promise<StacItem[]> {
+export async function readItemsAtUrls(
+  catalogUrl: string, itemUrls: string[],
+): Promise<StacItem[]> {
   const s3 = objectStoreForProtocol('s3');
-  const childLinks = await getCatalogItemUrls(catalogUrl);
 
   const items: StacItem[] = [];
-  for (const link of childLinks) {
+  for (const link of itemUrls) {
     const itemUrl = resolve(catalogUrl, link); // link has a relative path "./itemFile.json"
     const item = await s3.getObjectJson(itemUrl) as StacItem;
     items.push(item);
   }
 
   return items;
+}
+
+/**
+ * Reads the content of the catalog and returns all of its catalog items.
+ * @param catalogUrl - the catalog s3 url
+ */
+export async function readCatalogItems(catalogUrl: string): Promise<StacItem[]> {
+  const childLinks = await getCatalogItemUrls(catalogUrl);
+
+  return readItemsAtUrls(catalogUrl, childLinks);
 }
 
 /**

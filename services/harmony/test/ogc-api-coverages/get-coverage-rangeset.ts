@@ -965,6 +965,49 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     });
   });
 
+  describe('when a request has spatial and temporal subsets but the selected service cannot subset either', function () {
+    const serviceConfigs: ServiceConfig<unknown>[] = [
+      {
+        name: 'no-subsetting-service',
+        collections: [{ id: collection }],
+        type: {
+          name: 'turbo',
+        },
+        steps: [{
+          image: 'harmonyservices/query-cmr:fake-test',
+          is_sequential: true,
+        }],
+        capabilities: {
+          subsetting: {
+            variable: true,
+          },
+        },
+      },
+    ];
+
+    hookServices(serviceConfigs);
+    StubService.hook({ params: { redirect: 'http://example.com' } });
+
+    hookRangesetRequest(version, collection, variableName, {
+      username: 'jdoe1',
+      query: {
+        subset: ['lat(-90:90)', 'lon(-180:180)', 'time("1900-01-01T00:00:00.000Z":"2100-01-01T00:00:00Z")'],
+        maxResults: 1,
+        forceAsync: true,
+      },
+    });
+
+    describe('retrieving its job status', function () {
+      hookRedirect('jdoe1');
+
+      it('includes both the best-effort warning and the results-limited warning', function () {
+        const job = JSON.parse(this.res.text);
+        expect(job.message).to.include('Data in output files may extend outside the spatial and temporal bounds you requested.');
+        expect(job.message).to.match(/CMR query identified \d+ granules, but the request has been limited to process only the first 1 granules because you requested 1 maxResults\.$/);
+      });
+    });
+  });
+
   describe('when requesting no data transformations', function () {
     StubService.hook({ params: { redirect: 'http://example.com' } });
     hookRangesetRequest(version, collection, 'all');

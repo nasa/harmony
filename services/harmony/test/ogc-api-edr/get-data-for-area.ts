@@ -14,6 +14,18 @@ import hookServersStartStop from '../helpers/servers';
 import StubService, { hookServices } from '../helpers/stub-service';
 
 const bigTriangleWKT = 'POLYGON ((-65.390625 -13.239945, -29.882813 -50.958427, 17.929688 30.145127, -65.390625 -13.239945))';
+const bestEffortMessage = 'Data in output files may extend outside the spatial and temporal bounds you requested.';
+
+/**
+ * Assert that a job message includes the standard best-effort prefix followed by
+ * a granule-limiting detail message.
+ *
+ * @param actual - The actual job message
+ * @param detailPattern - A regex fragment for the message detail that follows the prefix
+ */
+function expectBestEffortGranuleLimitMessage(actual: string, detailPattern: string): void {
+  expect(actual).to.match(new RegExp(`^${_.escapeRegExp(bestEffortMessage)} ${detailPattern}$`));
+}
 
 describe('OGC API EDR - getEdrArea', function () {
   const collection = 'C1233800302-EEDTEST';
@@ -474,7 +486,7 @@ describe('OGC API EDR - getEdrArea', function () {
         hookRedirect('jdoe1');
         it('returns a human-readable message field indicating the request has been limited to a subset of the granules determined by the collection configuration', function () {
           const job = JSON.parse(this.res.text);
-          expect(job.message).to.match(/^CMR query identified \d+ granules, but the request has been limited to process only the first 4 granules because the service nexus-service is limited to 4\.$/);
+          expectBestEffortGranuleLimitMessage(job.message, 'CMR query identified \\d+ granules, but the request has been limited to process only the first 4 granules because the service nexus-service is limited to 4\\.');
         });
 
         it('returns up to the granule limit configured for the collection', function () {
@@ -492,7 +504,7 @@ describe('OGC API EDR - getEdrArea', function () {
         hookRedirect('jdoe1');
         it('returns a human-readable message field indicating the request has been limited to a subset of the granules determined by the collection configuration', function () {
           const job = JSON.parse(this.res.text);
-          expect(job.message).to.match(/^CMR query identified \d+ granules, but the request has been limited to process only the first 4 granules because the service nexus-service is limited to 4\.$/);
+          expectBestEffortGranuleLimitMessage(job.message, 'CMR query identified \\d+ granules, but the request has been limited to process only the first 4 granules because the service nexus-service is limited to 4\\.');
         });
 
         it('returns up to the granule limit configured for the collection', function () {
@@ -510,7 +522,7 @@ describe('OGC API EDR - getEdrArea', function () {
         hookRedirect('jdoe1');
         it('returns a human-readable message field indicating the request has been limited to a subset of the granules determined by maxResults', function () {
           const job = JSON.parse(this.res.text);
-          expect(job.message).to.match(/^CMR query identified \d+ granules, but the request has been limited to process only the first 2 granules because you requested 2 maxResults\.$/);
+          expectBestEffortGranuleLimitMessage(job.message, 'CMR query identified \\d+ granules, but the request has been limited to process only the first 2 granules because you requested 2 maxResults\\.');
         });
 
         it('returns up to maxGraunules', function () {
@@ -533,7 +545,7 @@ describe('OGC API EDR - getEdrArea', function () {
 
       it('returns a warning message about maxResults limiting the number of results', function () {
         const job = JSON.parse(this.res.text);
-        expect(job.message).to.match(/^CMR query identified \d+ granules, but the request has been limited to process only the first 3 granules because of system constraints\.$/);
+        expectBestEffortGranuleLimitMessage(job.message, 'CMR query identified \\d+ granules, but the request has been limited to process only the first 3 granules because of system constraints\\.');
       });
 
       it('limits the input granules to the system limit', function () {
@@ -576,7 +588,7 @@ describe('OGC API EDR - getEdrArea', function () {
         hookRedirect('jdoe1');
         it('returns a human-readable message field indicating the request has been limited to a subset of the granules determined by the collection configuration', function () {
           const job = JSON.parse(this.res.text);
-          expect(job.message).to.match(/^CMR query identified \d+ granules, but the request has been limited to process only the first 5 granules because collection C1233800302-EEDTEST is limited to 5 for the nexus-service service\.$/);
+          expectBestEffortGranuleLimitMessage(job.message, 'CMR query identified \\d+ granules, but the request has been limited to process only the first 5 granules because collection C1233800302-EEDTEST is limited to 5 for the nexus-service service\\.');
         });
 
         it('returns up to the granule limit configured for the collection', function () {
@@ -594,7 +606,7 @@ describe('OGC API EDR - getEdrArea', function () {
         hookRedirect('jdoe1');
         it('returns a human-readable message field indicating the request has been limited to a subset of the granules determined by the collection configuration', function () {
           const job = JSON.parse(this.res.text);
-          expect(job.message).to.match(/^CMR query identified \d+ granules, but the request has been limited to process only the first 5 granules because collection C1233800302-EEDTEST is limited to 5 for the nexus-service service\.$/);
+          expectBestEffortGranuleLimitMessage(job.message, 'CMR query identified \\d+ granules, but the request has been limited to process only the first 5 granules because collection C1233800302-EEDTEST is limited to 5 for the nexus-service service\\.');
         });
 
         it('returns up to the granule limit configured for the collection', function () {
@@ -612,7 +624,7 @@ describe('OGC API EDR - getEdrArea', function () {
         hookRedirect('jdoe1');
         it('returns a human-readable message field indicating the request has been limited to a subset of the granules determined by maxResults', function () {
           const job = JSON.parse(this.res.text);
-          expect(job.message).to.match(/^CMR query identified \d+ granules, but the request has been limited to process only the first 2 granules because you requested 2 maxResults\.$/);
+          expectBestEffortGranuleLimitMessage(job.message, 'CMR query identified \\d+ granules, but the request has been limited to process only the first 2 granules because you requested 2 maxResults\\.');
         });
 
         it('returns up to maxGraunules', function () {
@@ -635,7 +647,7 @@ describe('OGC API EDR - getEdrArea', function () {
 
       it('returns a warning message about maxResults limiting the number of results', function () {
         const job = JSON.parse(this.res.text);
-        expect(job.message).to.match(/^CMR query identified \d+ granules, but the request has been limited to process only the first 3 granules because of system constraints\.$/);
+        expectBestEffortGranuleLimitMessage(job.message, 'CMR query identified \\d+ granules, but the request has been limited to process only the first 3 granules because of system constraints\\.');
       });
 
       it('limits the input granules to the system limit', function () {
@@ -922,23 +934,6 @@ describe('OGC API EDR - getEdrArea', function () {
         description: 'Error: "all" cannot be specified alongside other variables',
       });
     });
-
-    // no subsetting other than shapefile (implied by 'area'), so we must fail since no service supports shapefile
-    // subsetting for this collection
-    it('returns an HTTP 422 "Unprocessable Content" error with explanatory message when only shapefile subsetting is specified for a collection that does not support it', async function () {
-      const res = await edrRequest(
-        'area',
-        this.frontend,
-        version,
-        collection,
-        { query: { coords: bigTriangleWKT, granuleId } },
-      );
-      expect(res.status).to.equal(422);
-      expect(res.body).to.eql({
-        code: 'harmony.UnsupportedOperation',
-        description: `Error: the requested combination of operations: shapefile subsetting on ${collection} is unsupported`,
-      });
-    });
   });
 
   describe('when using a collection with coordinate variables', function () {
@@ -993,29 +988,4 @@ describe('OGC API EDR - getEdrArea with the extend query parameter', async funct
   //   hookEdrRequest('1.1.0', 'C1233800302-EEDTEST', 'red_var', { query: { extend: 'lat,lon' }, username: 'joe' });
   //   itRedirectsToJobStatusUrl();
   // });
-});
-
-describe('OGC API EDR - getEdrArea with a collection not configured for services', function () {
-  const collection = 'C1243745256-EEDTEST';
-  const version = '1.1.0';
-
-  hookServersStartStop();
-
-  describe('when requesting an area subset', function () {
-    const query = { coords: bigTriangleWKT, 'parameter-name': 'all' };
-    hookEdrRequest('area', version, collection, { username: 'joe', query });
-
-    it('returns a 422 error response', function () {
-      expect(this.res.status).to.equal(422);
-    });
-
-    it('returns an error message indicating the transformation could not be performed', function () {
-      const body = JSON.parse(this.res.text);
-      expect(body).to.eql({
-        code: 'harmony.UnsupportedOperation',
-        description: 'Error: the requested combination of operations: shapefile subsetting on C1243745256-EEDTEST is unsupported',
-      });
-    });
-
-  });
 });

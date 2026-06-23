@@ -1035,7 +1035,6 @@ function filterServiceConfigs(
  */
 function requiresStrictCapabilitiesMatching(
   operation: DataOperation,
-  context: RequestContext,
 ): boolean {
   const wantsSpatialSubsetting = requiresSpatialSubsetting(operation)
     || requiresShapefileSubsetting(operation);
@@ -1047,25 +1046,6 @@ function requiresStrictCapabilitiesMatching(
     return true;
   }
 
-  if (wantsSpatialSubsetting && wantsTemporalSubsetting) {
-    // Request wants both optional operations so do not make matching strict
-    return false;
-  }
-
-  if (
-    // Request is only asking for one of temporal or spatial subsetting and
-    // is not asking for any other operation, so force making matching strict
-    !requiresVariableSubsetting(context)
-    && !requiresReprojection(operation)
-    && !requiresReformatting(operation, context)
-    && !requiresConcatenation(operation)
-    && !requiresDimensionSubsetting(operation)
-    && !requiresExtend(operation)
-  ) {
-    return true;
-  }
-
-  // Any other scenario
   return false;
 }
 
@@ -1088,7 +1068,7 @@ export function chooseServiceConfig(
     serviceConfig = filterServiceConfigs(operation, context, configs, allFilterFns);
   } catch (e) {
     if (e instanceof UnsupportedOperation) {
-      if (!requiresStrictCapabilitiesMatching(operation, context)) {
+      if (!requiresStrictCapabilitiesMatching(operation)) {
         // if we couldn't find a matching service, make a best effort to find a service that
         // can do part of what the operation requested
         serviceConfig = filterServiceConfigs(operation, context, configs, requiredFilterFns);
