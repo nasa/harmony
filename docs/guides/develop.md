@@ -19,13 +19,13 @@ Required:
   * Install [minikube](https://kubernetes.io/docs/tasks/tools/#minikube), a single-node Kubernetes cluster useful for local linux development.
   * Install [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl), a command line interface to Kubernetes.
 * [Docker compose](https://docs.docker.com/compose/) version 1.20.0 or greater; preferably the latest version, which is v1.26 or greater.
-* The [AWS CLI](https://aws.amazon.com/cli/) - Used to interact with both localstack and real AWS accounts
+* The [AWS CLI](https://aws.amazon.com/cli/) - Used to interact with both ministack and real AWS accounts
 * [SQLite3 commandline](https://sqlite.org/index.html) - Used to create the local development and test databases. Install using your OS package manager, or [download precompiled binaries from SQLite](https://www.sqlite.org/download.html)
 * PostgreSQL (required by the pg-native library) - `brew install postgresql` on OSX
 * [Earthdata Login application in UAT](../edl-application.md)
 * [envsubst](https://pypi.org/project/envsubst) - Used to substitute environment variable placeholders inside configuration files.
 * [openssl](https://www.openssl.org/) Read [this installation guide](https://github.com/openssl/openssl/blob/master/NOTES-WINDOWS.md) if you're a Windows user and openssl is not installed on your machine already.
-* [awscli-local](https://github.com/localstack/awscli-local) - CLI helpers for interacting with localstack
+* [awscli-local](https://github.com/localstack/awscli-local) - CLI helpers for interacting with localstack (or ministack).
 
 Highly Recommended:
 * An Amazon Web Services account - Used for testing Harmony against object stores and running Harmony in AWS
@@ -149,7 +149,7 @@ Harmony and the services can be run using the following:
 NOTE: You must set `LOCAL_DEV=true` before running these to prevent `bootstrap-harmony` from
 starting harmony and its support services in kubernetes.
 
-The provider services along with postgresql and localstack will now be running in kubernetes,
+The provider services along with postgresql and ministack will now be running in kubernetes,
 while Harmony and its support services will be running as local Node.js processes. Each process
 has a specific port and debug port as shown in the following table:
 
@@ -211,7 +211,7 @@ If you'd like to build and test a new service for Harmony see [this reference](.
 
 ### Deleting services and stopping Kubernetes
 
-To delete all resources associated with deployed services, postgres and localstack deployment, run:
+To delete all resources associated with deployed services, postgres and localstack/ministack deployment, run:
 
 ```bash
 kubectl delete namespaces harmony
