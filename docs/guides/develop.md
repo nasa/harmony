@@ -57,14 +57,14 @@ Ensure node is available and is the correct version, 22.x.y. (Or whatever is in 
 
 ```bash
 node --version
-v22.14.0
+v22.23.0
 ```
 
 Ensure npm is available and is version 10 or later.
 
 ```bash
 npm --version
-10.9.2
+10.9.8
 ```
 
 If either are not the correct versions and you are using NVM, install them and ensure your `PATH` is up-to-date by running:
