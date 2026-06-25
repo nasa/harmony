@@ -123,8 +123,12 @@ function parseQuery(query: Record<string, unknown>): StepsQueryParams {
   }
 
   if (query.resolvefiles !== undefined) {
+    const values = parseMultiValueParameter(query.resolvefiles as string | string[]);
+    if (values.length !== 1) {
+      throw new RequestValidationError('resolveFiles must be true or false');
+    }
     try {
-      out.resolveFiles = parseBoolean(query.resolvefiles as string);
+      out.resolveFiles = parseBoolean(values[0]);
     } catch (e) {
       if (e instanceof ParameterParseError) {
         throw new RequestValidationError('resolveFiles must be true or false');
