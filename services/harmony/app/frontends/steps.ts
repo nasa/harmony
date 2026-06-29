@@ -38,8 +38,8 @@ const MAX_WORKITEMS_PER_PAGE = 1000;
 // A catalog that contains both a data and opendap asset will provide
 // two both urls to the resolved url list.
 
-const DEFAULT_WI_LIMIT = 50;
-const MAX_WI_LIMIT = 100;
+const DEFAULT_WORKITEM_LIMIT = 50;
+const MAX_WORKITEM_LIMIT = 100;
 
 const VALID_STATUSES = Object.values(WorkItemStatus);
 
@@ -208,19 +208,19 @@ export function safePublicLink(href: string, frontendRoot: string, destinationBu
 }
 
 // A single workItem's resolved page of files plus its paging if needed
-interface WiResolvedFiles {
+interface WorkItemResolvedFiles {
   files: string[];
   paging?: StepPaging;
 }
 
 // A single workItem's resolved page of input and output files
-interface WiAccessFiles {
-  input: WiResolvedFiles;
-  output: WiResolvedFiles;
+interface WorkItemAccessFiles {
+  input: WorkItemResolvedFiles;
+  output: WorkItemResolvedFiles;
 }
 
 // Map of workItem id -> resolved page of files
-type ResolvedFiles = Map<number, WiAccessFiles>;
+type ResolvedFiles = Map<number, WorkItemAccessFiles>;
 
 /**
  * Build the link, back to this same steps endpoint, that resolves a single work
@@ -277,7 +277,7 @@ function catalogIndex(filename: string): number {
  *     several `catalogN.json` files without an index.
  * The full ordered list is returned.
  *
- * @param outputDir - the WI's outputs directory URL
+ * @param outputDir - the WorkItems's outputs directory URL
  * @returns the ordered output catalog URLs
  */
 async function getAllOutputCatalogFilenames(outputDir: string): Promise<string[]> {
@@ -343,8 +343,8 @@ async function resolvePagedFiles(
   readPage: (pageSourceUrls: string[]) => Promise<string[]>,
   frontendRoot: string,
   destinationBucket: string | undefined,
-): Promise<WiResolvedFiles> {
-  const perPage = parseIntegerParam(req, 'wilimit', DEFAULT_WI_LIMIT, 1, MAX_WI_LIMIT, true, true);
+): Promise<WorkItemResolvedFiles> {
+  const perPage = parseIntegerParam(req, 'wilimit', DEFAULT_WORKITEM_LIMIT, 1, MAX_WORKITEM_LIMIT, true, true);
   const requestedPage = parseIntegerParam(req, pageParam, 1, 1);
   try {
     const sourceUrls = await loadSourceUrls();
@@ -373,7 +373,7 @@ async function resolvePagedFiles(
  */
 async function resolveInputFiles(
   req: HarmonyRequest, wi: WorkItem, frontendRoot: string, destinationBucket: string | undefined,
-): Promise<WiResolvedFiles> {
+): Promise<WorkItemResolvedFiles> {
   if (!wi.stacCatalogLocation) return { files: [] };
   return resolvePagedFiles(
     req, `workitem${wi.id}inputpage`,
@@ -397,7 +397,7 @@ async function resolveInputFiles(
  */
 async function resolveOutputFiles(
   req: HarmonyRequest, wi: WorkItem, frontendRoot: string, destinationBucket: string | undefined,
-): Promise<WiResolvedFiles> {
+): Promise<WorkItemResolvedFiles> {
   if (!COMPLETED_WORK_ITEM_STATUSES.includes(wi.status)) return { files: [] };
   const outputDir = getStacLocation({ id: wi.id, jobID: wi.jobID });
   return resolvePagedFiles(
@@ -495,7 +495,7 @@ interface StepWorkItems {
  * @param stepResults - each workflow step with its page of workItems and pagination
  * @param statusCounts - per-step, per-status workItem counts for the whole job
  * @param q - the parsed steps query, used to honor the status/workItem filters
- * @param resolved - per-WI resolved files map (resolve mode only)
+ * @param resolved - per-WorkItem resolved files map (resolve mode only)
  * @returns the steps with their workItems, status summary, and any paging links
  */
 function buildSteps(
