@@ -2,6 +2,10 @@
 Any changes to the environment variables will be documented in this file in chronological
 order with the most recent changes first.
 
+## 2026-07-07
+### Changed
+- HARMONY\_REGRIDDER\_LIMITS\_MEMORY - Increased to 16Gi to prevent out-of-memory errors.
+
 ## 2026-02-18
 ### Added
 - DB_USE_SSL - controls whether communication between harmony applications and Postgres is encrypted.
