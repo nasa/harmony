@@ -1,10 +1,10 @@
-import RequestContext from 'app/models/request-context';
 import { expect } from 'chai';
 import _ from 'lodash';
 import { beforeEach, describe, it } from 'mocha';
 import { stub } from 'sinon';
 
 import DataOperation, { CURRENT_SCHEMA_VERSION, DataSource } from '../../app/models/data-operation';
+import RequestContext from '../../app/models/request-context';
 import { buildService, chooseServiceConfig, UnsupportedOperation } from '../../app/models/services';
 import {
   getMaxSynchronousGranules, ServiceStep, stepMustWaitForPriorStepCompletion, stepRequired,
