@@ -20,10 +20,34 @@ x-turbo-config: &default-turbo-config
 
 https://cmr.earthdata.nasa.gov:
 
+  - name: with-unsupported-config
+    description: |
+      used to test unsupported configuration by modifying the config in the tests
+    data_operation_version: '0.22.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/somewhere
+    umm_s: S23456789-EXAMPLE
+    capabilities:
+      subsetting:
+        temporal: true
+        bbox: true
+        shape: true
+      output_formats:
+        - application/netcdf
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
+      - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
+
   - name: with-unsupported-step-operation
     description: |
       testing service configuration with unsupported step operation 'variableSubset'
-    data_operation_version: '0.17.0'
+    data_operation_version: '0.22.0'
     type:
       <<: *default-turbo-config
       params:
@@ -45,7 +69,6 @@ https://cmr.earthdata.nasa.gov:
       - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
         operations: ['variableSubset']
 
-
   - name: podaac/l2-subsetter
     description: |
       Implementation of the L2 swath subsetter based on python, xarray and netcdf4.
@@ -55,7 +78,7 @@ https://cmr.earthdata.nasa.gov:
       * Variable subsetting supported
       * works with hierarchical groups
       Outputs netcdf4.
-    data_operation_version: '0.17.0'
+    data_operation_version: '0.22.0'
     type:
       <<: *default-turbo-config
       params:

@@ -23,7 +23,7 @@ https://cmr.earthdata.nasa.gov:
   - name: with-invalid-step-operation
     description: |
       testing service configuration with invalid step operation
-    data_operation_version: '0.17.0'
+    data_operation_version: '0.22.0'
     type:
       <<: *default-turbo-config
       params:
@@ -56,7 +56,7 @@ https://cmr.earthdata.nasa.gov:
       * Variable subsetting supported
       * works with hierarchical groups
       Outputs netcdf4.
-    data_operation_version: '0.17.0'
+    data_operation_version: '0.22.0'
     type:
       <<: *default-turbo-config
       params:

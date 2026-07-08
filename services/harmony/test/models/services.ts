@@ -1,3 +1,4 @@
+import RequestContext from 'app/models/request-context';
 import { expect } from 'chai';
 import _ from 'lodash';
 import { beforeEach, describe, it } from 'mocha';
@@ -17,7 +18,8 @@ import hookServersStartStop from '../helpers/servers';
 import StubService from '../helpers/stub-service';
 
 const defaultCollection = 'C123-TEST';
-const defaultContext = { collectionIds: [defaultCollection] };
+const defaultContext = new RequestContext('default');
+defaultContext.collectionIds = [defaultCollection];
 
 describe('stepMustWaitForPriorStepCompletion', function () {
   describe('when always_wait_for_prior_step is true', function () {
@@ -419,8 +421,15 @@ describe('services.chooseServiceConfig and services.buildService', function () {
             averaging: {
               time: true,
             },
+            subsetting: {
+              variable: true,
+            },
             output_formats: ['application/netcdf'],
           },
+          requirements: [
+            { exists: ['timeAverage'] },
+            { exists: ['variableSubset'] },
+          ],
         },
         {
           name: 'area-averaging-service',
@@ -514,13 +523,26 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       });
     });
 
-    describe('and the request needs time averaging', function () {
+    describe('and the request needs time averaging, but does not request variable subsetting which is required', function () {
+      beforeEach(function () {
+        this.operation.average = 'time';
+      });
+
+      it('throws an exception', function () {
+        expect(() => chooseServiceConfig(this.operation, defaultContext, this.config))
+          .to.throw(UnsupportedOperation, 'the requested combination of operations: time averaging on C123-TEST is unsupported. The following services may have matched if additional operations were requested: time-averaging-service requires variableSubset.');
+      });
+    });
+
+    describe('and the request needs time averaging, and does provide a variable to subset', function () {
+      const context = structuredClone(defaultContext) as RequestContext;
+      context.requestedVariables = ['var1'];
       beforeEach(function () {
         this.operation.average = 'time';
       });
 
       it('chooses the service that supports time averaging', function () {
-        const serviceConfig = chooseServiceConfig(this.operation, defaultContext, this.config);
+        const serviceConfig = chooseServiceConfig(this.operation, context, this.config);
         expect(serviceConfig.name).to.equal('time-averaging-service');
       });
     });

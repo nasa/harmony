@@ -201,6 +201,31 @@ function validateServiceConfigSteps(config: ServiceConfig<unknown>): void {
 }
 
 /**
+ * Throws an error if the steps configuration is invalid. Logs a warning if configuration will be ignored.
+ * @param config - The service configuration to validate
+ */
+function validateServiceConfigRequirementsField(config: ServiceConfig<unknown>): void {
+  const requirements = config.requirements || [];
+  for (const requirement of requirements) {
+    // HARMONY-2350 will add support for format requirements, but for now we only support exists requirements.
+    const validKeys = ['exists'];
+    for (const key of Object.keys(requirement)) {
+      if (!validKeys.includes(key)) {
+        throw new TypeError(`Service ${config.name} has invalid requirement key '${key}'. Valid keys are: ${validKeys.join(', ')}`);
+      }
+
+      if (requirement.exists) {
+        for (const op of requirement.exists) {
+          if (!(op in conditionToOperationField)) {
+            throw new TypeError(`Service ${config.name} has invalid exists requirement '${op}'.`);
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
  * Throws an error if the configuration is invalid. Logs a warning if configuration will be ignored.
  * @param config - The service configuration to validate
  */
@@ -224,6 +249,7 @@ export function validateServiceConfig(config: ServiceConfig<unknown>): void {
   }
 
   validateServiceConfigSteps(config);
+  validateServiceConfigRequirementsField(config);
 }
 
 /**
@@ -528,7 +554,7 @@ function supportsDimensionSubsetting(configs: ServiceConfig<unknown>[]): Service
  * @returns true if the provided operation requires time averaging and false otherwise
  */
 function requiresTimeAveraging(operation: DataOperation): boolean {
-  return operation.average === 'time';
+  return operation.shouldTimeAverage;
 }
 
 /**
@@ -546,7 +572,7 @@ function supportsTimeAveraging(configs: ServiceConfig<unknown>[]): ServiceConfig
  * @returns true if the provided operation requires area averaging and false otherwise
  */
 function requiresAreaAveraging(operation: DataOperation): boolean {
-  return operation.average === 'area';
+  return operation.shouldAreaAverage;
 }
 
 /**
@@ -556,6 +582,53 @@ function requiresAreaAveraging(operation: DataOperation): boolean {
  */
 function supportsAreaAveraging(configs: ServiceConfig<unknown>[]): ServiceConfig<unknown>[] {
   return configs.filter((config) => getIn(config, 'capabilities.averaging.area', false));
+}
+
+/**
+ * Rules out services by looking at the requirements field in the configuration
+ * and removing services that have a required field in the operation that is not present.
+ * For example, if a service has a requirement of exists: "variableSubset" and the operation
+ * does not have a variable subset, then that service will be ruled out. Returns all
+ * services not ruled out by the requirements check.
+ *
+ * @param operation - The operation to perform.
+ * @param context - Additional context that's not part of the operation, but influences the
+ *     choice regarding the service to use
+ * @param configs - The potential matching service configurations
+ * @returns Any configurations that pass the operation requirements check
+ */
+function hasAllRequiredOperations(
+  operation: DataOperation, context: RequestContext, configs: ServiceConfig<unknown>[],
+): ServiceConfig<unknown>[] {
+  logger.warn(JSON.stringify(operation));
+  return configs.filter((config) =>
+    (config.requirements ?? []).every((requirement) => {
+      if (requirement.exists) {
+        const matched = requirement.exists.some(
+          (condition) => {
+            // Variables are not part of the operation prior to service selection, so we need
+            // to check the request context for them.
+            if (condition === 'variableSubset') {
+              return context.requestedVariables?.length > 0;
+            }
+            return operation[conditionToOperationField[condition]];
+          },
+        );
+        if (!matched) {
+          const reason = `requires ${listToText(requirement.exists, Conjunction.OR)}`;
+          logger.silly(`Service ${config.name} eliminated because ${reason}`);
+          context.eliminatedServices.push({
+            service: config.name,
+            reason,
+          });
+        }
+        return matched;
+      }
+
+      // Empty requirement types are treated as satisfied.
+      return true;
+    }),
+  );
 }
 
 export class UnsupportedOperation extends HttpError {
@@ -572,6 +645,10 @@ export class UnsupportedOperation extends HttpError {
     if (requestedOperations.length > 0) {
       message = `the requested combination of operations: ${listToText(requestedOperations)}`
         + ` on ${listToText(collections)} is unsupported`;
+    }
+    if (context.eliminatedServices?.length > 0) {
+      message += '. The following services may have matched if additional operations were requested: '
+        + `${context.eliminatedServices.map((s) => `${s.service} ${s.reason}`).join(', ')}.`;
     }
     super(422, message);
     this.operation = operation;
@@ -926,6 +1003,31 @@ function filterAreaAveragingMatches(
   return services;
 }
 
+/**
+ * Returns any services that are not ruled out because required operations for the
+ * service were not requested by the user.
+ * @param operation - The operation to perform.
+ * @param context - Additional context that's not part of the operation, but influences the
+ *     choice regarding the service to use
+ * @param configs - All service configurations that have matched up to this call
+ * @param requestedOperations - Operations that have been considered in filtering out services up to
+ *     this call
+ * @returns Any service configurations that could still support the request
+ */
+function filterServiceRequirementMatches(
+  operation: DataOperation,
+  context: RequestContext,
+  configs: ServiceConfig<unknown>[],
+  requestedOperations: string[],
+): ServiceConfig<unknown>[] {
+  const services = hasAllRequiredOperations(operation, context, configs);
+
+  if (services.length === 0) {
+    throw new UnsupportedOperation(operation, context, requestedOperations);
+  }
+  return services;
+}
+
 type FilterFunction = (
   // The operation to perform
   operation: DataOperation,
@@ -954,6 +1056,7 @@ const allFilterFns = [
   filterAreaAveragingMatches,
   filterTimeAveragingMatches,
   filterShapefileSubsettingMatches,
+  filterServiceRequirementMatches,
   // This filter must be last because it chooses a format based on the accepted MimeTypes and
   // the remaining services that could support the operation. If it ran earlier we could
   // potentially eliminate services that a different accepted MimeType would have allowed. We
@@ -973,6 +1076,7 @@ const requiredFilterFns = [
   filterExtendMatches,
   filterAreaAveragingMatches,
   filterTimeAveragingMatches,
+  filterServiceRequirementMatches,
   // See caveat above in allFilterFns about why this filter must be applied last
   filterOutputFormatMatches,
 ];
@@ -1065,12 +1169,14 @@ export function chooseServiceConfig(
 ): ServiceConfig<unknown> {
   let serviceConfig;
   try {
+    context.eliminatedServices = [];
     serviceConfig = filterServiceConfigs(operation, context, configs, allFilterFns);
   } catch (e) {
     if (e instanceof UnsupportedOperation) {
       if (!requiresStrictCapabilitiesMatching(operation)) {
         // if we couldn't find a matching service, make a best effort to find a service that
         // can do part of what the operation requested
+        context.eliminatedServices = [];
         serviceConfig = filterServiceConfigs(operation, context, configs, requiredFilterFns);
         serviceConfig = _.cloneDeep(serviceConfig);
         serviceConfig.message = bestEffortMessage;

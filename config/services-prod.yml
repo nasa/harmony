@@ -95,6 +95,10 @@ https://cmr.earthdata.nasa.gov:
         multiple_variable: false
       output_formats:
         - text/csv
+    requirements:
+      - exists: ['temporalSubset']
+      - exists: ['variableSubset']
+      - exists: ['pointSubset']
     steps:
       - image: !Env ${GIOVANNI_TIME_SERIES_ADAPTER_IMAGE}
         operations: ['variableSubset', 'temporalSubset']
@@ -629,7 +633,7 @@ https://cmr.earthdata.nasa.gov:
       JPEG outputs. This includes, where necessary, conversion to a GIBS
       supported Coordinate Reference System (CRS). Other projections can be
       requested, but will not be compatible with GIBS.
-    data_operation_version: '0.18.0'
+    data_operation_version: '0.22.0'
     type:
       <<: *default-turbo-config
       params:
@@ -683,7 +687,7 @@ https://cmr.earthdata.nasa.gov:
     description: |
       A service to compute averaging over specified dimensions on Zarr data on a Dask cluster running in Cloud Giovanni. A time-averaged map
       will produce a GEOTIFF and an area-averaged timeseries will produce a CSV.
-    data_operation_version: '0.20.0'
+    data_operation_version: '0.22.0'
     has_granule_limit: false
     # Replace the next two lines to default to synchronous once bearer tokens are supported by Giovanni
     # default_sync: true
@@ -710,6 +714,11 @@ https://cmr.earthdata.nasa.gov:
       output_formats:
         - text/csv
         - image/tiff
+    requirements:
+      - exists: ['timeAverage', 'areaAverage']
+      - exists: ['variableSubset']
+      - exists: ['temporalSubset']
+      - exists: ['spatialSubset']
     steps:
       - image: !Env ${GIOVANNI_AVERAGING_SERVICES_ADAPTER_IMAGE}
 

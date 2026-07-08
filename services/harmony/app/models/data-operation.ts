@@ -387,6 +387,15 @@ export default class DataOperation {
   }
 
   /**
+   * Returns true if the operation is requesting point subsetting
+   *
+   * @returns true if the operation requests point subsetting
+   */
+  get shouldPointSubset(): boolean {
+    return !!this.model.subset?.point;
+  }
+
+  /**
    * Returns true if the operation is requesting shapefile subsetting
    *
    * @returns true if the operation requests shapefile subsetting
@@ -430,6 +439,24 @@ export default class DataOperation {
    */
   get shouldReproject(): boolean {
     return !!this.crs;
+  }
+
+  /**
+   * Returns true if the operation is requesting time averaging
+   *
+   * @returns true if the operation requests time averaging
+   */
+  get shouldTimeAverage(): boolean {
+    return this.model.average && this.model.average == 'time';
+  }
+
+  /**
+   * Returns true if the operation is requesting area averaging
+   *
+   * @returns true if the operation requests area averaging
+   */
+  get shouldAreaAverage(): boolean {
+    return this.model.average && this.model.average == 'area';
   }
 
   /**
