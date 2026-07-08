@@ -600,7 +600,6 @@ function supportsAreaAveraging(configs: ServiceConfig<unknown>[]): ServiceConfig
 function hasAllRequiredOperations(
   operation: DataOperation, context: RequestContext, configs: ServiceConfig<unknown>[],
 ): ServiceConfig<unknown>[] {
-  logger.warn(JSON.stringify(operation));
   return configs.filter((config) =>
     (config.requirements ?? []).every((requirement) => {
       if (requirement.exists) {

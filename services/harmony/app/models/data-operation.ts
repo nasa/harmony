@@ -447,7 +447,7 @@ export default class DataOperation {
    * @returns true if the operation requests time averaging
    */
   get shouldTimeAverage(): boolean {
-    return this.model.average && this.model.average == 'time';
+    return !!(this.model.average && this.model.average === 'time');
   }
 
   /**
@@ -456,7 +456,7 @@ export default class DataOperation {
    * @returns true if the operation requests area averaging
    */
   get shouldAreaAverage(): boolean {
-    return this.model.average && this.model.average == 'area';
+    return !!(this.model.average && this.model.average === 'area');
   }
 
   /**
