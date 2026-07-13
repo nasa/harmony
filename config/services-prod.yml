@@ -585,7 +585,8 @@ https://cmr.earthdata.nasa.gov:
         temporal: false
       output_formats:
         - image/png
-      reprojection: false
+        - image/jpeg
+      reprojection: true
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
@@ -613,7 +614,8 @@ https://cmr.earthdata.nasa.gov:
         temporal: false
       output_formats:
         - image/png
-      reprojection: false
+        -image/jpeg
+      reprojection: true
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
