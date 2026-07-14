@@ -673,7 +673,7 @@ https://cmr.uat.earthdata.nasa.gov:
         operations: ['concatenate']
         conditional:
           exists: ['concatenate']
-          format: ['application/netcdf', ''] # NetCDF or no format specified use concise
+          format: ['application/netcdf'] # NetCDF or no format specified use concise
       - image: !Env ${CASPER_IMAGE}
         conditional:
           format: ['text/csv']
@@ -756,6 +756,28 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
       - image: !Env ${NET2COG_IMAGE}
+
+  - name: harmony-flow
+    description: |
+      NASA Harmony API Service for creating vector flow textures for use in particle flow visualizations. https://github.com/jackiryan/harmony-flow-py
+    data_operation_version: '0.22.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/harmony/harmony-flow-py
+    umm_s: S1282986471-EEDTEST
+    capabilities:
+      subsetting:
+        variable: true
+      output_formats:
+        - image/png
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
+      - image: !Env ${HARMONY_FLOW_IMAGE}
 
   - name: nasa/harmony-gdal-adapter
     description: |
