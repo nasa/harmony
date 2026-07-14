@@ -149,8 +149,8 @@ async function getServiceMetrics(dbConn: Knex): Promise<ServiceMetricsResult> {
 
   const [serviceWorkCounts, last5MinutesSummary, last60MinutesSummary] = await Promise.all([
     getCountsByService(dbConn),
-    dbConn.transaction((trx) => getWorkItemsStatsSummary(trx, 5)),
-    dbConn.transaction((trx) => getWorkItemsStatsSummary(trx, 60)),
+    dbConn.transaction((trx) => getWorkItemsStatsSummary(trx, { lastMinutes: 5 })),
+    dbConn.transaction((trx) => getWorkItemsStatsSummary(trx, { lastMinutes: 60 })),
   ]);
 
   const last5ByService = aggregateStatsByService(last5MinutesSummary.rows, imageToServiceMap);

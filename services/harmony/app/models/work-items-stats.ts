@@ -1,3 +1,5 @@
+import { Knex } from 'knex';
+
 import { getCurrentTime, Transaction, truncateMinuteSql } from '../util/db';
 
 /**
@@ -76,58 +78,103 @@ export interface WorkItemsStatsSummary {
   rows: WorkItemsStatsRow[];
 }
 
+//
+const MS_PER_MINUTE = 60_000;
+
+interface WorkItemsStatsSummaryOptions {
+  /** Inclusive lower bound. Mutually exclusive with `lastMinutes`. */
+  start?: Date;
+  /** Exclusive upper bound. Defaults to the current database time. */
+  end?: Date;
+  /** Look back this many full minutes from `end` (or from the current minute). */
+  lastMinutes?: number;
+}
+
+/** Returns a copy of `d` truncated to the start of its minute (UTC). */
+function truncateToMinute(d: Date): Date {
+  const truncated = new Date(d.getTime());
+  truncated.setUTCSeconds(0, 0);
+  return truncated;
+}
+
 /**
  * Returns a summary of work item counts grouped by service and status
- * for the last numMinutes full minutes.
+ * for the requested time range.
+ *
+ * The range can be specified as:
+ *   - `{}`                        - all available data up to the current database time
+ *   - `{ start }`                 - everything from `start` onward
+ *   - `{ end }`                   - everything before `end`
+ *   - `{ start, end }`            - an explicit half-open range [start, end)
+ *   - `{ lastMinutes }`           - the most recent N *complete* minutes, i.e. the
+ *                                   half-open range [currentMinute - N, currentMinute).
+ *                                   The in-progress current minute is excluded.
+ *   - `{ lastMinutes, end }`      - the N complete minutes preceding `end`
+ *
+ * `start` and `lastMinutes` are mutually exclusive.
  *
  * @param trx - the database transaction
- * @param numMinutes - the number of full minutes to look back
- * @param includePartialCurrentMinute - if true, includes the in-progress current minute
- *        in addition to the numMinutes full minutes; if false (default), only the
- *        numMinutes full minutes prior to the current minute are returned
+ * @param options - the time range to summarize
+ * @throws TypeError if both `start` and `lastMinutes` are given, if `lastMinutes`
+ *         is not a positive integer, or if the resulting range is empty
  */
 export async function getWorkItemsStatsSummary(
   trx: Transaction,
-  numMinutes: number,
-  includePartialCurrentMinute = false,
+  options: WorkItemsStatsSummaryOptions = {},
 ): Promise<WorkItemsStatsSummary> {
+  const { start, end, lastMinutes } = options;
+
+  if (start && lastMinutes !== undefined) {
+    throw new TypeError('getWorkItemsStatsSummary: `start` and `lastMinutes` are mutually exclusive');
+  }
+  if (lastMinutes !== undefined && (!Number.isInteger(lastMinutes) || lastMinutes <= 0)) {
+    throw new TypeError('getWorkItemsStatsSummary: `lastMinutes` must be a positive integer');
+  }
+
   const now = await getCurrentTime(trx);
   const isPg = trx.client.config.client === 'pg';
 
-  // Compute the window boundaries in JS using the DB-provided `now` so the
-  // returned range exactly matches what the query used.
-  const currentMinute = new Date(now);
-  currentMinute.setUTCSeconds(0, 0);
+  // Resolve the half-open window [effectiveStart, effectiveEnd). A null start
+  // means "unbounded below" - no lower bound is applied to the query.
+  let effectiveStart: Date | null;
+  let effectiveEnd: Date;
 
-  const since = new Date(currentMinute);
-  since.setUTCMinutes(since.getUTCMinutes() - numMinutes);
+  if (lastMinutes !== undefined) {
+    // Anchor to a minute boundary so we return whole minutes only.
+    effectiveEnd = truncateToMinute(end ?? now);
+    effectiveStart = new Date(effectiveEnd.getTime() - lastMinutes * MS_PER_MINUTE);
+  } else {
+    effectiveEnd = end ? new Date(end.getTime()) : now;
+    effectiveStart = start ? new Date(start.getTime()) : null;
+  }
 
-  const until = includePartialCurrentMinute
-    ? new Date(currentMinute.getTime() + 60_000)
-    : currentMinute;
+  if (effectiveStart && effectiveStart.getTime() >= effectiveEnd.getTime()) {
+    throw new TypeError('getWorkItemsStatsSummary: `start` must be before `end`');
+  }
 
-  const startOfWindowSql = isPg
-    ? trx.raw(`date_trunc('minute', ?::timestamptz - INTERVAL '${numMinutes} minutes')`, [now])
-    : trx.raw('CAST(? AS INTEGER)', [since.getTime()]);
+  // The `minute` column is a timestamptz in Postgres and epoch millis in SQLite.
+  const minuteBound = (d: Date): Knex.Raw =>
+    (isPg
+      ? trx.raw('?::timestamptz', [d])
+      : trx.raw('CAST(? AS INTEGER)', [d.getTime()]));
 
   const query = trx('work_items_stats')
     .select('service_id', 'status')
-    .sum('count as count')
-    .where('minute', '>=', startOfWindowSql)
-    .groupBy('service_id', 'status');
+    .sum('count as count');
 
-  if (!includePartialCurrentMinute) {
-    const endOfWindowSql = isPg
-      ? trx.raw('date_trunc(\'minute\', ?::timestamptz)', [now])
-      : trx.raw('CAST(? AS INTEGER)', [currentMinute.getTime()]);
-    query.andWhere('minute', '<', endOfWindowSql);
+  if (effectiveStart) {
+    query.where('minute', '>=', minuteBound(effectiveStart));
   }
+
+  query
+    .andWhere('minute', '<', minuteBound(effectiveEnd))
+    .groupBy('service_id', 'status');
 
   const rows = await query;
 
   return {
-    start: since,
-    end: until,
+    start: effectiveStart ?? new Date(0),
+    end: effectiveEnd,
     rows: rows.map((row) => ({
       service_id: row.service_id,
       status: row.status,

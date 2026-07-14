@@ -58,8 +58,8 @@ describe('getDashboard', () => {
 
     getWorkItemsStatsSummaryStub = sandbox.stub(workItemsStats, 'getWorkItemsStatsSummary');
     // Default: return empty stats for any minute window
-    getWorkItemsStatsSummaryStub.callsFake((_trx: any, minutes: number) =>
-      Promise.resolve(makeEmptyStatsSummary(minutes)),
+    getWorkItemsStatsSummaryStub.callsFake((_trx: any, options: { lastMinutes: number }) =>
+      Promise.resolve(makeEmptyStatsSummary(options.lastMinutes)),
     );
 
     imageMapStub = sandbox.stub(serviceImages, 'getImageToServiceMap').returns({
@@ -291,14 +291,14 @@ describe('getDashboard', () => {
       imageMapStub.returns({ 'podaac/l2ss-py': 'podaac-l2-subsetter' });
       getCountsByServiceStub.resolves({});
 
-      getWorkItemsStatsSummaryStub.callsFake((_trx: any, minutes: number) => {
-        if (minutes === 5) {
+      getWorkItemsStatsSummaryStub.callsFake((_trx: any, options: { lastMinutes: number }) => {
+        if (options.lastMinutes === 5) {
           return Promise.resolve(makeStatsSummaryWithRows(5, [
             { service_id: 'podaac/l2ss-py', status: 'successful', count: 42 },
             { service_id: 'podaac/l2ss-py', status: 'failed', count: 3 },
           ]));
         }
-        return Promise.resolve(makeEmptyStatsSummary(minutes));
+        return Promise.resolve(makeEmptyStatsSummary(options.lastMinutes));
       });
 
       await getDashboard(req, res, next);
@@ -314,14 +314,14 @@ describe('getDashboard', () => {
       imageMapStub.returns({ 'podaac/l2ss-py': 'podaac-l2-subsetter' });
       getCountsByServiceStub.resolves({});
 
-      getWorkItemsStatsSummaryStub.callsFake((_trx: any, minutes: number) => {
-        if (minutes === 60) {
+      getWorkItemsStatsSummaryStub.callsFake((_trx: any, options: { lastMinutes: number }) => {
+        if (options.lastMinutes === 60) {
           return Promise.resolve(makeStatsSummaryWithRows(60, [
             { service_id: 'podaac/l2ss-py', status: 'successful', count: 500 },
             { service_id: 'podaac/l2ss-py', status: 'warning', count: 10 },
           ]));
         }
-        return Promise.resolve(makeEmptyStatsSummary(minutes));
+        return Promise.resolve(makeEmptyStatsSummary(options.lastMinutes));
       });
 
       await getDashboard(req, res, next);
@@ -339,14 +339,14 @@ describe('getDashboard', () => {
       });
       getCountsByServiceStub.resolves({});
 
-      getWorkItemsStatsSummaryStub.callsFake((_trx: any, minutes: number) => {
-        if (minutes === 5) {
+      getWorkItemsStatsSummaryStub.callsFake((_trx: any, options: { lastMinutes: number }) => {
+        if (options.lastMinutes === 5) {
           return Promise.resolve(makeStatsSummaryWithRows(5, [
             { service_id: 'image-a', status: 'successful', count: 10 },
             { service_id: 'image-b', status: 'successful', count: 20 },
           ]));
         }
-        return Promise.resolve(makeEmptyStatsSummary(minutes));
+        return Promise.resolve(makeEmptyStatsSummary(options.lastMinutes));
       });
 
       await getDashboard(req, res, next);
@@ -359,14 +359,14 @@ describe('getDashboard', () => {
       imageMapStub.returns({ 'some-image': 'some-service' });
       getCountsByServiceStub.resolves({});
 
-      getWorkItemsStatsSummaryStub.callsFake((_trx: any, minutes: number) => {
-        if (minutes === 5) {
+      getWorkItemsStatsSummaryStub.callsFake((_trx: any, options: { lastMinutes: number }) => {
+        if (options.lastMinutes === 5) {
           return Promise.resolve(makeStatsSummaryWithRows(5, [
             { service_id: 'some-image', status: 'running', count: 99 },
             { service_id: 'some-image', status: 'successful', count: 5 },
           ]));
         }
-        return Promise.resolve(makeEmptyStatsSummary(minutes));
+        return Promise.resolve(makeEmptyStatsSummary(options.lastMinutes));
       });
 
       await getDashboard(req, res, next);
@@ -412,8 +412,8 @@ describe('getDashboard', () => {
       const fixedStart5 = new Date('2024-06-15T08:25:00.000Z');
       const fixedStart60 = new Date('2024-06-15T07:30:00.000Z');
 
-      getWorkItemsStatsSummaryStub.callsFake((_trx: any, minutes: number) => {
-        if (minutes === 5) return Promise.resolve({ rows: [], start: fixedStart5, end: fixedEnd });
+      getWorkItemsStatsSummaryStub.callsFake((_trx: any, options: { lastMinutes: number }) => {
+        if (options.lastMinutes === 5) return Promise.resolve({ rows: [], start: fixedStart5, end: fixedEnd });
         return Promise.resolve({ rows: [], start: fixedStart60, end: fixedEnd });
       });
 
@@ -463,15 +463,15 @@ describe('getDashboard', () => {
       });
       getCountsByServiceStub.resolves({});
 
-      getWorkItemsStatsSummaryStub.callsFake((_trx: any, minutes: number) => {
-        if (minutes === 5) {
+      getWorkItemsStatsSummaryStub.callsFake((_trx: any, options: { lastMinutes: number }) => {
+        if (options.lastMinutes === 5) {
           return Promise.resolve(makeStatsSummaryWithRows(5, [
             { service_id: 'image-a', status: 'successful', count: 10 },
             { service_id: 'image-b', status: 'successful', count: 20 },
             { service_id: 'image-b', status: 'failed', count: 5 },
           ]));
         }
-        return Promise.resolve(makeEmptyStatsSummary(minutes));
+        return Promise.resolve(makeEmptyStatsSummary(options.lastMinutes));
       });
 
       await getDashboard(req, res, next);
@@ -641,8 +641,8 @@ describe('getDashboard', () => {
       imageMapStub.returns({ 'some-image': 'some-service' });
       getCountsByServiceStub.resolves({});
 
-      getWorkItemsStatsSummaryStub.callsFake((_trx: any, minutes: number) => {
-        if (minutes === 5) {
+      getWorkItemsStatsSummaryStub.callsFake((_trx: any, options: { lastMinutes: number }) => {
+        if (options.lastMinutes === 5) {
           return Promise.resolve(makeStatsSummaryWithRows(5, [
             { service_id: 'some-image', status: 'successful', count: 80 },
             { service_id: 'some-image', status: 'failed', count: 20 }, // 80% success
@@ -667,8 +667,8 @@ describe('getDashboard', () => {
       imageMapStub.returns({ 'some-image': 'some-service' });
       getCountsByServiceStub.resolves({});
 
-      getWorkItemsStatsSummaryStub.callsFake((_trx: any, minutes: number) => {
-        if (minutes === 5) {
+      getWorkItemsStatsSummaryStub.callsFake((_trx: any, options: { lastMinutes: number }) => {
+        if (options.lastMinutes === 5) {
           // 5-min: 99% success
           return Promise.resolve(makeStatsSummaryWithRows(5, [
             { service_id: 'some-image', status: 'successful', count: 99 },

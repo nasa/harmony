@@ -221,7 +221,7 @@ describe('getWorkItemsStatsSummary (integration)', function () {
   describe('when there are no stats rows', function () {
     it('returns empty rows with correct start/end range', async function () {
       await db.transaction(async (tx) => {
-        const summary = await getWorkItemsStatsSummary(tx, 5);
+        const summary = await getWorkItemsStatsSummary(tx, { lastMinutes: 5 });
 
         expect(summary.rows).to.have.length(0);
         expect(summary.end.getTime() - summary.start.getTime()).to.equal(5 * 60 * 1000);
@@ -247,7 +247,7 @@ describe('getWorkItemsStatsSummary (integration)', function () {
         );
         await upsertWorkItemStats(tx);
 
-        const summary = await getWorkItemsStatsSummary(tx, 5);
+        const summary = await getWorkItemsStatsSummary(tx, { lastMinutes: 5 });
 
         expect(summary.rows).to.have.length(2);
 
@@ -275,56 +275,9 @@ describe('getWorkItemsStatsSummary (integration)', function () {
           count: 10,
         });
 
-        const summary = await getWorkItemsStatsSummary(tx, 5);
+        const summary = await getWorkItemsStatsSummary(tx, { lastMinutes: 5 });
 
         expect(summary.rows).to.have.length(0);
-      });
-    });
-  });
-
-  describe('includePartialCurrentMinute', function () {
-    it('excludes the current in-progress minute by default', async function () {
-      await db.transaction(async (tx) => {
-        const watermarkDate = new Date(Date.now() - 10 * 60 * 1000);
-        await setWatermark(tx, watermarkDate);
-
-        const recentDate = new Date();
-        await rawSaveWorkItem(tx,
-          makePartialWorkItemRecord(['job-1', 'service-a', WorkItemStatus.SUCCESSFUL, recentDate]),
-        );
-        await upsertWorkItemStats(tx);
-
-        // Without includePartialCurrentMinute, the current minute is excluded
-        const summary = await getWorkItemsStatsSummary(tx, 5, false);
-
-        expect(summary.rows).to.have.length(0);
-      });
-    });
-
-    it('includes the current in-progress minute when flag is true', async function () {
-      await db.transaction(async (tx) => {
-        const watermarkDate = new Date(Date.now() - 10 * 60 * 1000);
-        await setWatermark(tx, watermarkDate);
-
-        const recentDate = new Date();
-        await rawSaveWorkItem(tx,
-          makePartialWorkItemRecord(['job-1', 'service-a', WorkItemStatus.SUCCESSFUL, recentDate]),
-        );
-        await upsertWorkItemStats(tx);
-
-        const summary = await getWorkItemsStatsSummary(tx, 5, true);
-
-        expect(summary.rows).to.have.length(1);
-        expect(summary.rows[0].service_id).to.equal('service-a');
-        expect(summary.rows[0].count).to.equal(1);
-      });
-    });
-
-    it('sets end to the start of the next minute when includePartialCurrentMinute is true', async function () {
-      await db.transaction(async (tx) => {
-        const summary = await getWorkItemsStatsSummary(tx, 5, true);
-
-        expect(summary.end.getTime() - summary.start.getTime()).to.equal(6 * 60 * 1000);
       });
     });
   });
