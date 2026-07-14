@@ -420,7 +420,7 @@ describe('when testing a batched aggregation service', function () {
       const serviceConfigs = [
         {
           name: 'podaac/concise',
-          data_operation_version: '0.17.0',
+          data_operation_version: '0.22.0',
           type: {
             name: 'turbo',
           },
@@ -930,7 +930,7 @@ describe('when testing a batched aggregation service', function () {
       const serviceConfigs = [
         {
           name: 'podaac/concise',
-          data_operation_version: '0.17.0',
+          data_operation_version: '0.22.0',
           type: {
             name: 'turbo',
           },

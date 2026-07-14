@@ -23,7 +23,7 @@ https://cmr.uat.earthdata.nasa.gov:
   - name: with-collections
     description: |
       testing service configuration with collections field not for variables or granule_limit
-    data_operation_version: '0.17.0'
+    data_operation_version: '0.22.0'
     type:
       <<: *default-turbo-config
       params:
@@ -56,7 +56,7 @@ https://cmr.uat.earthdata.nasa.gov:
       * Variable subsetting supported
       * works with hierarchical groups
       Outputs netcdf4.
-    data_operation_version: '0.17.0'
+    data_operation_version: '0.22.0'
     type:
       <<: *default-turbo-config
       params:

@@ -44,6 +44,8 @@ export default class RequestContext {
 
   collections?: CmrCollection[];
 
+  eliminatedServices?: Array<{ service: string; reason: string }>;
+
   /**
    * Creates an instance of RequestContext.
    *
@@ -53,6 +55,7 @@ export default class RequestContext {
     this.id = id;
     this.isAdminAccess = false;
     this.messages = [];
+    this.eliminatedServices = [];
     this.startTime = new Date();
   }
 }

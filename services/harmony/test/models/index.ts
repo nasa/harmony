@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import chai, { expect } from 'chai';
 import _ from 'lodash';
 
@@ -14,16 +15,18 @@ const cmrEndpoints = {
   'prod': 'https://cmr.earthdata.nasa.gov',
 };
 
+const testServicesYmlFile = '../../../test/resources/services_with_unsupported_config.yml';
+
 describe('validateStepOperations', function () {
 
   describe('when the step config conatins the concatenate operation', function () {
-    const configs = loadServiceConfigsFromFile(cmrEndpoints.prod, '../../../test/resources/services_with_unsupported_step_operation.yml');
+    const configs = loadServiceConfigsFromFile(cmrEndpoints.prod, testServicesYmlFile);
     const testConfig = configs[0];
     testConfig.steps[1].operations = ['concatenate'];
     describe('and the capabilites do not', function () {
       testConfig.capabilities = {};
       it('returns an error message', function () {
-        expect(validateStepOperations(testConfig, testConfig.steps[1])).to.equal('Service with-unsupported-step-operation step with image ghcr.io/podaac/l2ss-py:sit has operation \'concatenate\' which is not included in capabilities.');
+        expect(validateStepOperations(testConfig, testConfig.steps[1])).to.equal('Service with-unsupported-config step with image ghcr.io/podaac/l2ss-py:sit has operation \'concatenate\' which is not included in capabilities.');
       });
     });
     describe('and the capabilites do as well', function () {
@@ -35,13 +38,13 @@ describe('validateStepOperations', function () {
   });
 
   describe('when the step config conatins the dimensionSubset operation', function () {
-    const configs = loadServiceConfigsFromFile(cmrEndpoints.prod, '../../../test/resources/services_with_unsupported_step_operation.yml');
+    const configs = loadServiceConfigsFromFile(cmrEndpoints.prod, testServicesYmlFile);
     const testConfig = configs[0];
     testConfig.steps[1].operations = ['dimensionSubset'];
     describe('and the capabilites do not', function () {
       testConfig.capabilities = {};
       it('returns an error message', function () {
-        expect(validateStepOperations(testConfig, testConfig.steps[1])).to.equal('Service with-unsupported-step-operation step with image ghcr.io/podaac/l2ss-py:sit has operation \'dimensionSubset\' which is not included in capabilities.');
+        expect(validateStepOperations(testConfig, testConfig.steps[1])).to.equal('Service with-unsupported-config step with image ghcr.io/podaac/l2ss-py:sit has operation \'dimensionSubset\' which is not included in capabilities.');
       });
     });
     describe('and the capabilites do as well', function () {
@@ -53,13 +56,13 @@ describe('validateStepOperations', function () {
   });
 
   describe('when the step config conatins the extend operation', function () {
-    const configs = loadServiceConfigsFromFile(cmrEndpoints.prod, '../../../test/resources/services_with_unsupported_step_operation.yml');
+    const configs = loadServiceConfigsFromFile(cmrEndpoints.prod, testServicesYmlFile);
     const testConfig = configs[0];
     testConfig.steps[1].operations = ['extend'];
     describe('and the capabilites do not', function () {
       testConfig.capabilities = {};
       it('returns an error message', function () {
-        expect(validateStepOperations(testConfig, testConfig.steps[1])).to.equal('Service with-unsupported-step-operation step with image ghcr.io/podaac/l2ss-py:sit has operation \'extend\' which is not included in capabilities.');
+        expect(validateStepOperations(testConfig, testConfig.steps[1])).to.equal('Service with-unsupported-config step with image ghcr.io/podaac/l2ss-py:sit has operation \'extend\' which is not included in capabilities.');
       });
     });
     describe('and the capabilites do as well', function () {
@@ -71,13 +74,13 @@ describe('validateStepOperations', function () {
   });
 
   describe('when the step config conatins the reproject operation', function () {
-    const configs = loadServiceConfigsFromFile(cmrEndpoints.prod, '../../../test/resources/services_with_unsupported_step_operation.yml');
+    const configs = loadServiceConfigsFromFile(cmrEndpoints.prod, testServicesYmlFile);
     const testConfig = configs[0];
     testConfig.steps[1].operations = ['reproject'];
     describe('and the capabilites do not', function () {
       testConfig.capabilities = {};
       it('returns an error message', function () {
-        expect(validateStepOperations(testConfig, testConfig.steps[1])).to.equal('Service with-unsupported-step-operation step with image ghcr.io/podaac/l2ss-py:sit has operation \'reproject\' which is not included in capabilities.');
+        expect(validateStepOperations(testConfig, testConfig.steps[1])).to.equal('Service with-unsupported-config step with image ghcr.io/podaac/l2ss-py:sit has operation \'reproject\' which is not included in capabilities.');
       });
     });
     describe('and the capabilites do as well', function () {
@@ -89,13 +92,13 @@ describe('validateStepOperations', function () {
   });
 
   describe('when the step config conatins the shapefileSubset operation', function () {
-    const configs = loadServiceConfigsFromFile(cmrEndpoints.prod, '../../../test/resources/services_with_unsupported_step_operation.yml');
+    const configs = loadServiceConfigsFromFile(cmrEndpoints.prod, testServicesYmlFile);
     const testConfig = configs[0];
     testConfig.steps[1].operations = ['shapefileSubset'];
     describe('and the capabilites do not', function () {
       testConfig.capabilities = {};
       it('returns an error message', function () {
-        expect(validateStepOperations(testConfig, testConfig.steps[1])).to.equal('Service with-unsupported-step-operation step with image ghcr.io/podaac/l2ss-py:sit has operation \'shapefileSubset\' which is not included in capabilities.');
+        expect(validateStepOperations(testConfig, testConfig.steps[1])).to.equal('Service with-unsupported-config step with image ghcr.io/podaac/l2ss-py:sit has operation \'shapefileSubset\' which is not included in capabilities.');
       });
     });
     describe('and the capabilites do as well', function () {
@@ -107,13 +110,13 @@ describe('validateStepOperations', function () {
   });
 
   describe('when the step config conatins the spatialSubset operation', function () {
-    const configs = loadServiceConfigsFromFile(cmrEndpoints.prod, '../../../test/resources/services_with_unsupported_step_operation.yml');
+    const configs = loadServiceConfigsFromFile(cmrEndpoints.prod, testServicesYmlFile);
     const testConfig = configs[0];
     testConfig.steps[1].operations = ['spatialSubset'];
     describe('and the capabilites do not', function () {
       testConfig.capabilities = {};
       it('returns an error message', function () {
-        expect(validateStepOperations(testConfig, testConfig.steps[1])).to.equal('Service with-unsupported-step-operation step with image ghcr.io/podaac/l2ss-py:sit has operation \'spatialSubset\' which is not included in capabilities.');
+        expect(validateStepOperations(testConfig, testConfig.steps[1])).to.equal('Service with-unsupported-config step with image ghcr.io/podaac/l2ss-py:sit has operation \'spatialSubset\' which is not included in capabilities.');
       });
     });
     describe('and the capabilites do as well', function () {
@@ -125,13 +128,13 @@ describe('validateStepOperations', function () {
   });
 
   describe('when the step config conatins the temporalSubset operation', function () {
-    const configs = loadServiceConfigsFromFile(cmrEndpoints.prod, '../../../test/resources/services_with_unsupported_step_operation.yml');
+    const configs = loadServiceConfigsFromFile(cmrEndpoints.prod, testServicesYmlFile);
     const testConfig = configs[0];
     testConfig.steps[1].operations = ['temporalSubset'];
     describe('and the capabilites do not', function () {
       testConfig.capabilities = {};
       it('returns an error message', function () {
-        expect(validateStepOperations(testConfig, testConfig.steps[1])).to.equal('Service with-unsupported-step-operation step with image ghcr.io/podaac/l2ss-py:sit has operation \'temporalSubset\' which is not included in capabilities.');
+        expect(validateStepOperations(testConfig, testConfig.steps[1])).to.equal('Service with-unsupported-config step with image ghcr.io/podaac/l2ss-py:sit has operation \'temporalSubset\' which is not included in capabilities.');
       });
     });
     describe('and the capabilites do as well', function () {
@@ -143,13 +146,13 @@ describe('validateStepOperations', function () {
   });
 
   describe('when the step config conatins the variableSubset operation', function () {
-    const configs = loadServiceConfigsFromFile(cmrEndpoints.prod, '../../../test/resources/services_with_unsupported_step_operation.yml');
+    const configs = loadServiceConfigsFromFile(cmrEndpoints.prod, testServicesYmlFile);
     const testConfig = configs[0];
     testConfig.steps[1].operations = ['variableSubset'];
     describe('and the capabilites do not', function () {
       testConfig.capabilities = {};
       it('returns an error message', function () {
-        expect(validateStepOperations(testConfig, testConfig.steps[1])).to.equal('Service with-unsupported-step-operation step with image ghcr.io/podaac/l2ss-py:sit has operation \'variableSubset\' which is not included in capabilities.');
+        expect(validateStepOperations(testConfig, testConfig.steps[1])).to.equal('Service with-unsupported-config step with image ghcr.io/podaac/l2ss-py:sit has operation \'variableSubset\' which is not included in capabilities.');
       });
     });
     describe('and the capabilites do as well', function () {
@@ -158,6 +161,89 @@ describe('validateStepOperations', function () {
         expect(validateStepOperations(testConfig, testConfig.steps[1])).to.be.null;
       });
     });
+  });
+});
+
+describe('services.yml exists requirement validation', function () {
+  const validExists = [
+    'areaAverage',
+    'concatenate',
+    'dimensionSubset',
+    'extend',
+    'pointSubset',
+    'reformat',
+    'reproject',
+    'shapefileSubset',
+    'spatialSubset',
+    'temporalSubset',
+    'timeAverage',
+    'variableSubset',
+  ] as const;
+
+  validExists.forEach((exists) => {
+    it(`accepts '${exists}' as an exists requirement`, function () {
+      const configs = loadServiceConfigsFromFile(cmrEndpoints.prod, testServicesYmlFile);
+      const config = configs[0];
+
+      config.requirements = [
+        { exists: [exists] },
+      ];
+
+      expect(() => validateServiceConfig(config)).to.not.throw();
+    });
+  });
+
+  [
+    'shouldConcatenate',
+    'shouldDimensionSubset',
+    'shouldExtend',
+    'outputFormat',
+    'crs',
+    'shouldShapefileSubset',
+    'shouldSpatialSubset',
+    'shoudPointSubset',
+    'shouldTemporalSubset',
+    'shouldVariableSubset',
+    'notValidOperation',
+  ].forEach((exists) => {
+    it(`rejects '${exists}' as an exists requirement`, function () {
+      const configs = loadServiceConfigsFromFile(cmrEndpoints.prod, testServicesYmlFile);
+      const config = configs[0];
+
+      config.requirements = [
+        { exists: [exists as any] },
+      ];
+
+      expect(() => validateServiceConfig(config))
+        .to.throw(`invalid exists requirement '${exists}'`);
+    });
+  });
+
+  it('rejects an exists requirement containing both a valid and invalid operation', function () {
+    const configs = loadServiceConfigsFromFile(cmrEndpoints.prod, testServicesYmlFile);
+    const config = configs[0];
+
+    config.requirements = [
+      {
+        exists: ['variableSubset', 'notValidOperation' as any],
+      },
+    ];
+
+    expect(() => validateServiceConfig(config))
+      .to.throw("invalid exists requirement 'notValidOperation'");
+  });
+
+  it('accepts multiple valid exists operations in a single requirement', function () {
+    const configs = loadServiceConfigsFromFile(cmrEndpoints.prod, testServicesYmlFile);
+    const config = configs[0];
+
+    config.requirements = [
+      {
+        exists: ['variableSubset', 'temporalSubset', 'spatialSubset'],
+      },
+    ];
+
+    expect(() => validateServiceConfig(config)).to.not.throw();
   });
 });
 
@@ -280,7 +366,7 @@ describe('Services.yml validation', function () {
 
   describe('services.yml with service step with unsupported step operation is invalid', function () {
     it('throws an exception', function () {
-      const configs = loadServiceConfigsFromFile(cmrEndpoints.prod, '../../../test/resources/services_with_unsupported_step_operation.yml');
+      const configs = loadServiceConfigsFromFile(cmrEndpoints.prod, testServicesYmlFile);
       expect(() => configs.forEach(validateServiceConfig)).to.throw(/Service with-unsupported-step-operation step with image .*? has operation 'variableSubset' which is not included in capabilities./);
     });
   });

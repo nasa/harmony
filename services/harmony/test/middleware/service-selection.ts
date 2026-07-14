@@ -34,6 +34,7 @@ describe('chooseService middleware', () => {
   });
 
   it('should call next() if operation.sources is not defined', () => {
+    req.operation = { sources: undefined } as unknown as DataOperation;
     chooseService(req as HarmonyRequest, res as Response, nextFunction as NextFunction);
     expect(nextFunction.calledOnce).to.be.true;
     expect(nextFunction.firstCall.args).to.have.lengthOf(0);
