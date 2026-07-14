@@ -618,7 +618,7 @@ https://cmr.earthdata.nasa.gov:
         temporal: false
       output_formats:
         - image/png
-        -image/jpeg
+        - image/jpeg
       reprojection: true
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
