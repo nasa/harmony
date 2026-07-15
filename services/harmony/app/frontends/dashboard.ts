@@ -257,7 +257,7 @@ function parseTimeWindows(
       : parsePositiveInteger(lastMinutesText, `${prefix}lastMinutes`);
 
     windows.push({
-      label,
+      label: label || `window${i}`,
       start,
       end,
       lastMinutes,

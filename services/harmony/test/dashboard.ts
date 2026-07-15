@@ -120,6 +120,137 @@ describe('getDashboard', () => {
   });
 
   // ---------------------------------------------------------------------------
+  // Time window validation
+  // ---------------------------------------------------------------------------
+
+  describe('time window validation', () => {
+    beforeEach(() => {
+      getCountsByServiceStub.resolves({});
+      req.query = {};
+    });
+
+    it('accepts a window specified with lastMinutes', async () => {
+      req.query['window1.lastMinutes'] = '60';
+
+      await getDashboard(req, res, next);
+
+      expect(next.called).to.be.false;
+      expect(res.json.calledOnce).to.be.true;
+    });
+
+    it('accepts a window specified with start and end', async () => {
+      req.query['window1.start'] = '2026-07-13T00:00:00Z';
+      req.query['window1.end'] = '2026-07-14T00:00:00Z';
+
+      getWorkItemsStatsSummaryStub.resolves({
+        rows: [],
+        start: new Date('2026-07-13T00:00:00Z'),
+        end: new Date('2026-07-14T00:00:00Z'),
+      });
+
+      await getDashboard(req, res, next);
+
+      expect(next.called).to.be.false;
+      expect(res.json.calledOnce).to.be.true;
+    });
+
+    it('rejects an invalid start timestamp', async () => {
+      req.query['window1.start'] = 'not-a-date';
+
+      await getDashboard(req, res, next);
+
+      expect(next.calledOnce).to.be.true;
+      expect(next.firstCall.args[0].message)
+        .to.equal('window1.start must be a valid ISO-8601 timestamp.');
+    });
+
+    it('rejects an invalid end timestamp', async () => {
+      req.query['window1.start'] = '2026-07-13T00:00:00Z';
+      req.query['window1.end'] = 'not-a-date';
+
+      await getDashboard(req, res, next);
+
+      expect(next.calledOnce).to.be.true;
+      expect(next.firstCall.args[0].message)
+        .to.equal('window1.end must be a valid ISO-8601 timestamp.');
+    });
+
+    it('rejects a non-numeric lastMinutes value', async () => {
+      req.query['window1.lastMinutes'] = 'abc';
+
+      await getDashboard(req, res, next);
+
+      expect(next.calledOnce).to.be.true;
+      expect(next.firstCall.args[0].message)
+        .to.equal('window1.lastMinutes must be a positive integer.');
+    });
+
+    it('rejects a zero lastMinutes value', async () => {
+      req.query['window1.lastMinutes'] = '0';
+
+      await getDashboard(req, res, next);
+
+      expect(next.calledOnce).to.be.true;
+      expect(next.firstCall.args[0].message)
+        .to.equal('window1.lastMinutes must be greater than zero.');
+    });
+
+    it('rejects start together with lastMinutes', async () => {
+      req.query['window1.start'] = '2026-07-13T00:00:00Z';
+      req.query['window1.lastMinutes'] = '60';
+
+      await getDashboard(req, res, next);
+
+      expect(next.calledOnce).to.be.true;
+      expect(next.firstCall.args[0].message)
+        .to.equal('window1: start and lastMinutes are mutually exclusive.');
+    });
+
+    it('rejects a window with neither start nor lastMinutes', async () => {
+      req.query['window1.label'] = 'A Window';
+      req.query['window1.end'] = '2026-07-14T00:00:00Z';
+      await getDashboard(req, res, next);
+
+      expect(next.calledOnce).to.be.true;
+      expect(next.firstCall.args[0].message)
+        .to.equal('window1: either start or lastMinutes must be provided.');
+    });
+
+    it('rejects start that is after end', async () => {
+      req.query['window1.start'] = '2026-07-14T00:00:00Z';
+      req.query['window1.end'] = '2026-07-13T00:00:00Z';
+
+      await getDashboard(req, res, next);
+
+      expect(next.calledOnce).to.be.true;
+      expect(next.firstCall.args[0].message)
+        .to.equal('window1: start must be earlier than end.');
+    });
+
+    it('rejects an empty label', async () => {
+      req.query['window1.label'] = '   ';
+      req.query['window1.lastMinutes'] = '60';
+
+      await getDashboard(req, res, next);
+
+      expect(next.calledOnce).to.be.true;
+      expect(next.firstCall.args[0].message)
+        .to.equal('window1: label may not be empty.');
+    });
+
+    it('validates the second window independently', async () => {
+      req.query['window1.lastMinutes'] = '60';
+      req.query['window2.start'] = 'not-a-date';
+
+      await getDashboard(req, res, next);
+
+      expect(next.calledOnce).to.be.true;
+      expect(next.firstCall.args[0].message)
+        .to.equal('window2.start must be a valid ISO-8601 timestamp.');
+    });
+  });
+
+  // ---------------------------------------------------------------------------
   // Data mapping and JSON response
   // ---------------------------------------------------------------------------
 
