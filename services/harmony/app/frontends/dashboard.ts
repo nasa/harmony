@@ -5,7 +5,7 @@ import { camelCaseToSpacedTitleCase, listToText } from '@harmony/util/string';
 
 import HarmonyRequest from '../models/harmony-request';
 import { getCountsByService } from '../models/user-work';
-import { getWorkItemsStatsSummary } from '../models/work-items-stats';
+import { getWorkItemsStatsSummary, WorkItemsStatsTimeWindow } from '../models/work-items-stats';
 import db from '../util/db';
 import { RequestValidationError } from '../util/errors';
 import { keysToLowerCase } from '../util/object';
@@ -22,14 +22,14 @@ type TrackedStatus = typeof TRACKED_STATUSES[number];
 
 type StatusCounts = Record<TrackedStatus, number>;
 
-interface RecentMetrics {
-  last5Minutes: StatusCounts;
-  last60Minutes: StatusCounts;
-}
-
 interface ServiceMetric {
   queued: number;
-  recent: RecentMetrics;
+  windows: Record<string, StatusCounts>;
+}
+
+interface ServiceMetricsResult {
+  services: Record<string, ServiceMetric>;
+  timeRanges: Record<string, TimeRange>;
 }
 
 interface TimeRange {
@@ -64,18 +64,18 @@ function getSystemTotals(
 ): ServiceMetric {
   const totals: ServiceMetric = {
     queued: 0,
-    recent: {
-      last5Minutes: emptyStatusCounts(),
-      last60Minutes: emptyStatusCounts(),
-    },
+    windows: {},
   };
 
   for (const service of Object.values(services)) {
     totals.queued += service.queued;
 
-    for (const status of TRACKED_STATUSES) {
-      totals.recent.last5Minutes[status] += service.recent.last5Minutes[status];
-      totals.recent.last60Minutes[status] += service.recent.last60Minutes[status];
+    for (const [label, counts] of Object.entries(service.windows)) {
+      totals.windows[label] ??= emptyStatusCounts();
+
+      for (const status of TRACKED_STATUSES) {
+        totals.windows[label][status] += counts[status];
+      }
     }
   }
 
@@ -99,6 +99,172 @@ function validateVersion(version): void {
     const message = `Invalid API version. Supported versions are: ${listToText(supportedApiVersions)}`;
     throw new RequestValidationError(message);
   }
+}
+
+/**
+ * Throws an error if the requested time windows are invalid.
+ *
+ * @param windows - the requested dashboard time windows
+ * @throws RequestValidationError if any window is invalid
+ */
+function validateTimeWindows(
+  windows: WorkItemsStatsTimeWindow[],
+): void {
+  windows.forEach((window, index) => {
+    const windowName = `window${index + 1}`;
+
+    const hasStart = window.start !== undefined;
+    const hasEnd = window.end !== undefined;
+    const hasLastMinutes = window.lastMinutes !== undefined;
+
+    if (hasStart && hasLastMinutes) {
+      throw new RequestValidationError(
+        `${windowName}: start and lastMinutes are mutually exclusive.`,
+      );
+    }
+
+    if (!hasStart && !hasLastMinutes) {
+      throw new RequestValidationError(
+        `${windowName}: either start or lastMinutes must be provided.`,
+      );
+    }
+
+    if (hasStart && Number.isNaN(window.start.getTime())) {
+      throw new RequestValidationError(
+        `${windowName}: start is not a valid ISO-8601 date.`,
+      );
+    }
+
+    if (hasEnd && Number.isNaN(window.end.getTime())) {
+      throw new RequestValidationError(
+        `${windowName}: end is not a valid ISO-8601 date.`,
+      );
+    }
+
+    if (
+      hasLastMinutes
+      && (!Number.isInteger(window.lastMinutes)
+        || window.lastMinutes <= 0)
+    ) {
+      throw new RequestValidationError(
+        `${windowName}: lastMinutes must be a positive integer.`,
+      );
+    }
+
+    if (
+      hasStart
+      && hasEnd
+      && window.start >= window.end
+    ) {
+      throw new RequestValidationError(
+        `${windowName}: start must be earlier than end.`,
+      );
+    }
+
+    if (
+      window.label !== undefined
+      && window.label.trim().length === 0
+    ) {
+      throw new RequestValidationError(
+        `${windowName}: label may not be empty.`,
+      );
+    }
+  });
+}
+
+/**
+ * Parses a string into an ISO-8601 date.
+ *
+ * @param value - the string to parse
+ * @param name - the name of the parameter being parsed
+ * @returns the parsed date
+ */
+function parseIsoDate(
+  value: string,
+  name: string,
+): Date {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    throw new RequestValidationError(
+      `${name} must be a valid ISO-8601 timestamp.`,
+    );
+  }
+
+  return date;
+}
+
+/**
+ * Parses a string into a positive integer.
+ *
+ * @param value - the string to parse
+ * @param name - the name of the parameter being parsed
+ * @returns the parsed integer
+ */
+function parsePositiveInteger(
+  value: string,
+  name: string,
+): number {
+  if (!/^\d+$/.test(value)) {
+    throw new RequestValidationError(
+      `${name} must be a positive integer.`,
+    );
+  }
+
+  const parsed = Number(value);
+
+  if (parsed <= 0) {
+    throw new RequestValidationError(
+      `${name} must be greater than zero.`,
+    );
+  }
+
+  return parsed;
+}
+
+/**
+ * Parses and validates time window parameters from the query string.
+ * @param query - The query string parameters from the request
+ * @returns An array of WorkItemsStatsTimeWindow objects representing the requested time windows
+ */
+function parseTimeWindows(
+  query: Record<string, unknown>,
+): WorkItemsStatsTimeWindow[] {
+  const windows: WorkItemsStatsTimeWindow[] = [];
+
+  for (const i of [1, 2]) {
+    const prefix = `window${i}.`;
+
+    const label = query[`${prefix}label`] as string | undefined;
+    const startText = query[`${prefix}start`] as string | undefined;
+    const endText = query[`${prefix}end`] as string | undefined;
+    const lastMinutesText = query[`${prefix}lastminutes`] as string | undefined;
+
+    if (!label && !startText && !endText && !lastMinutesText) {
+      continue;
+    }
+
+    const start = startText === undefined
+      ? undefined
+      : parseIsoDate(startText, `${prefix}start`);
+
+    const end = endText === undefined
+      ? undefined
+      : parseIsoDate(endText, `${prefix}end`);
+
+    const lastMinutes = lastMinutesText === undefined
+      ? undefined
+      : parsePositiveInteger(lastMinutesText, `${prefix}lastMinutes`);
+
+    windows.push({
+      label,
+      start,
+      end,
+      lastMinutes,
+    });
+  }
+
+  return windows;
 }
 
 /**
@@ -130,74 +296,94 @@ function aggregateStatsByService(
   return result;
 }
 
-interface ServiceMetricsResult {
-  services: Record<string, ServiceMetric>;
-  timeRanges: Record<string, TimeRange>;
-}
-
 /**
  * Fetches and merges service work counts from the database, mapping image names
  * to service names and ensuring all known services are included. Includes recent
- * completion stats over the last 5 and 60 full minutes (excluding the in-progress
- * current minute), along with the time ranges those windows correspond to.
+ * completion stats for the requested time windows (or the default last 5 and
+ * last 60 full minutes if none are provided), along with the time ranges those
+ * windows correspond to.
  *
  * @param dbConn - The database connection object
- * @returns Service metrics and the time ranges used for the recent stats windows
+ * @param timeWindows - Time windows to retrieve statistics for. Defaults to the
+ *   last 5 and last 60 full minutes if omitted or empty.
+ * @returns Service metrics and the time ranges used for the requested windows
  */
-async function getServiceMetrics(dbConn: Knex): Promise<ServiceMetricsResult> {
+async function getServiceMetrics(
+  dbConn: Knex,
+  timeWindows: WorkItemsStatsTimeWindow[] = [],
+): Promise<ServiceMetricsResult> {
   const imageToServiceMap = getImageToServiceMap();
 
-  const [serviceWorkCounts, last5MinutesSummary, last60MinutesSummary] = await Promise.all([
+  const windows = timeWindows.length > 0
+    ? timeWindows
+    : [
+      { label: 'last5Minutes', lastMinutes: 5 },
+      { label: 'last60Minutes', lastMinutes: 60 },
+    ];
+
+  const [serviceWorkCounts, ...summaries] = await Promise.all([
     getCountsByService(dbConn),
-    dbConn.transaction((trx) => getWorkItemsStatsSummary(trx, { lastMinutes: 5 })),
-    dbConn.transaction((trx) => getWorkItemsStatsSummary(trx, { lastMinutes: 60 })),
+    ...windows.map((window) =>
+      dbConn.transaction((trx) => getWorkItemsStatsSummary(trx, window)),
+    ),
   ]);
 
-  const last5ByService = aggregateStatsByService(last5MinutesSummary.rows, imageToServiceMap);
-  const last60ByService = aggregateStatsByService(last60MinutesSummary.rows, imageToServiceMap);
+  const recentByWindow = summaries.map((summary) =>
+    aggregateStatsByService(summary.rows, imageToServiceMap),
+  );
 
   const queuedByService: Record<string, number> = {};
   for (const [image, value] of Object.entries(serviceWorkCounts)) {
     const service = getServiceName(imageToServiceMap, image);
-    queuedByService[service] = (queuedByService[service] ?? 0)
-      + (value as { queued: number }).queued;
+    queuedByService[service] =
+      (queuedByService[service] ?? 0) + (value as { queued: number }).queued;
   }
 
   const allServices = new Set<string>([
     ...Object.values(imageToServiceMap),
     ...Object.keys(queuedByService),
-    ...Object.keys(last5ByService),
-    ...Object.keys(last60ByService),
+    ...recentByWindow.flatMap((stats) => Object.keys(stats)),
   ]);
 
   const merged: Record<string, ServiceMetric> = {};
+
   for (const service of allServices) {
+    const serviceWindows: Record<string, StatusCounts> = {};
+
+    windows.forEach((window, index) => {
+      serviceWindows[window.label] =
+        recentByWindow[index][service] ?? emptyStatusCounts();
+    });
+
     merged[service] = {
       queued: queuedByService[service] ?? 0,
-      recent: {
-        last5Minutes: last5ByService[service] ?? emptyStatusCounts(),
-        last60Minutes: last60ByService[service] ?? emptyStatusCounts(),
-      },
+      windows: serviceWindows,
     };
   }
 
-  const sortedServices = Object.keys(merged).sort().reduce((acc, key) => ({
-    ...acc,
-    [key]: merged[key],
-  }), {} as Record<string, ServiceMetric>);
+  const sortedServices = Object.keys(merged)
+    .sort()
+    .reduce(
+      (acc, key) => ({
+        ...acc,
+        [key]: merged[key],
+      }),
+      {} as Record<string, ServiceMetric>,
+    );
+
+  const timeRanges = Object.fromEntries(
+    summaries.map((summary, index) => [
+      windows[index].label,
+      {
+        start: summary.start.toISOString(),
+        end: summary.end.toISOString(),
+      },
+    ]),
+  );
 
   return {
     services: sortedServices,
-    timeRanges: {
-      last5Minutes: {
-        start: last5MinutesSummary.start.toISOString(),
-        end: last5MinutesSummary.end.toISOString(),
-      },
-      last60Minutes: {
-        start: last60MinutesSummary.start.toISOString(),
-        end: last60MinutesSummary.end.toISOString(),
-      },
-    },
+    timeRanges,
   };
 }
 
@@ -305,6 +491,98 @@ function totalCounts(counts: StatusCounts): number {
     + counts.warning;
 }
 
+interface DashboardWindowView {
+  label: string;
+  displayName: string;
+  startTime: string;
+  endTime: string;
+
+  successful: number;
+  failed: number;
+  canceled: number;
+  warning: number;
+
+  successfulClass: string;
+  failedClass: string;
+  canceledClass: string;
+  warningClass: string;
+
+  rate: string;
+  rateClass: string;
+
+  trendIsUp?: boolean;
+  trendIsDown?: boolean;
+
+  columnStart: number;
+}
+
+/**
+ * Formats an ISO timestamp as a local-time HH:MM string.
+ *
+ * @param isoString - ISO timestamp
+ * @param options - Intl.DateTimeFormatOptions to control formatting
+ * @returns formatted local time
+ */
+function formatLocalTime(
+  isoString: string,
+  options: Intl.DateTimeFormatOptions,
+): string {
+  return new Intl.DateTimeFormat([], options).format(new Date(isoString));
+}
+
+/**
+ * Returns Intl.DateTimeFormatOptions appropriate for the given time range.
+ *
+ * @param startIso - The start of the time range (ISO string)
+ * @param endIso - The end of the time range (ISO string)
+ * @returns Intl.DateTimeFormatOptions for formatting the time range
+ */
+function getTimeRangeFormatOptions(
+  startIso: string,
+  endIso: string,
+): Intl.DateTimeFormatOptions {
+  const start = new Date(startIso);
+  const end = new Date(endIso);
+  const now = new Date();
+
+  const sameDay = start.getFullYear() === now.getFullYear()
+    && start.getMonth() === now.getMonth()
+    && start.getDate() === now.getDate()
+    && end.getFullYear() === now.getFullYear()
+    && end.getMonth() === now.getMonth()
+    && end.getDate() === now.getDate();
+
+  if (sameDay) {
+    return {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    };
+  }
+
+  const sameYear = start.getFullYear() === now.getFullYear()
+    && end.getFullYear() === now.getFullYear();
+
+  if (sameYear) {
+    return {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    };
+  }
+
+  return {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  };
+}
+
 /**
  * Transforms raw metrics into the format expected by the Mustache template
  * and renders the HTML response.
@@ -325,51 +603,75 @@ function renderDashboardHtml(
   totals: ServiceMetric,
   version: string,
 ): void {
-  const servicesArray = Object.entries(services).map(([name, details]) => {
-    const rate5 = computeRate(details.recent.last5Minutes);
-    const rate60 = computeRate(details.recent.last60Minutes);
+  const buildWindowView = (
+    label: string,
+    counts: StatusCounts,
+    windowIndex: number,
+  ): DashboardWindowView => {
+    const rate = computeRate(counts);
+    const range = timeRanges[label];
+    const options = getTimeRangeFormatOptions(range.start, range.end);
 
-    // Trend: compare 5-min rate to 60-min rate. A drop in success rate
-    // from the 60-min baseline is a "things got worse" signal.
+    return {
+      label,
+      displayName: camelCaseToSpacedTitleCase(label),
+      startTime: range ? formatLocalTime(range.start, options) : '',
+      endTime: range ? formatLocalTime(range.end, options) : '',
+
+      successful: counts.successful,
+      failed: counts.failed,
+      canceled: counts.canceled,
+      warning: counts.warning,
+
+      successfulClass: countClass(counts.successful, 'successful'),
+      failedClass: countClass(counts.failed, 'failed'),
+      canceledClass: countClass(counts.canceled, 'canceled'),
+      warningClass: countClass(counts.warning, 'warning'),
+
+      rate: formatRate(rate),
+      rateClass: rateClass(rate),
+      columnStart: 2 + (windowIndex * 5),
+    };
+  };
+
+  const buildWindows = (
+    windows: Record<string, StatusCounts>,
+  ): DashboardWindowView[] => Object.entries(windows).map(
+    ([label, counts], index): DashboardWindowView =>
+      buildWindowView(label, counts, index),
+  );
+
+  const servicesArray = Object.entries(services).map(([name, details]) => {
+    const windows = buildWindows(details.windows);
+
     let trendIsUp = false;
     let trendIsDown = false;
-    if (rate5 !== null && rate60 !== null) {
-      const delta = rate5 - rate60;
-      if (delta < -0.02) trendIsDown = true;       // 5-min worse than 60-min
-      else if (delta > 0.02) trendIsUp = true;     // 5-min better than 60-min
+
+    const windowEntries = Object.entries(details.windows);
+
+    if (windowEntries.length >= 2) {
+      const currentRate = computeRate(windowEntries[0][1]);
+      const baselineRate = computeRate(windowEntries[1][1]);
+
+      if (currentRate !== null && baselineRate !== null) {
+        const delta = currentRate - baselineRate;
+
+        if (delta < -0.02) {
+          trendIsDown = true;
+        } else if (delta > 0.02) {
+          trendIsUp = true;
+        }
+      }
     }
 
     const isIdle = details.queued === 0
-      && totalCounts(details.recent.last5Minutes) === 0
-      && totalCounts(details.recent.last60Minutes) === 0;
+      && Object.values(details.windows)
+        .every((counts) => totalCounts(counts) === 0);
 
     return {
       name,
       queued: details.queued,
-      last5: {
-        successful: details.recent.last5Minutes.successful,
-        failed: details.recent.last5Minutes.failed,
-        canceled: details.recent.last5Minutes.canceled,
-        warning: details.recent.last5Minutes.warning,
-        successfulClass: countClass(details.recent.last5Minutes.successful, 'successful'),
-        failedClass: countClass(details.recent.last5Minutes.failed, 'failed'),
-        canceledClass: countClass(details.recent.last5Minutes.canceled, 'canceled'),
-        warningClass: countClass(details.recent.last5Minutes.warning, 'warning'),
-      },
-      last60: {
-        successful: details.recent.last60Minutes.successful,
-        failed: details.recent.last60Minutes.failed,
-        canceled: details.recent.last60Minutes.canceled,
-        warning: details.recent.last60Minutes.warning,
-        successfulClass: countClass(details.recent.last60Minutes.successful, 'successful'),
-        failedClass: countClass(details.recent.last60Minutes.failed, 'failed'),
-        canceledClass: countClass(details.recent.last60Minutes.canceled, 'canceled'),
-        warningClass: countClass(details.recent.last60Minutes.warning, 'warning'),
-      },
-      rate5: formatRate(rate5),
-      rate5Class: rateClass(rate5),
-      rate60: formatRate(rate60),
-      rate60Class: rateClass(rate60),
+      windows,
       trendIsUp,
       trendIsDown,
       isIdle,
@@ -385,35 +687,10 @@ function renderDashboardHtml(
   // Sort by queued count descending for the primary dashboard view
   servicesArray.sort((a, b) => b.queued - a.queued);
 
-  const totalsRate5 = computeRate(totals.recent.last5Minutes);
-  const totalsRate60 = computeRate(totals.recent.last60Minutes);
-
+  const windows = buildWindows(totals.windows);
   const summary = {
     queued: totals.queued,
-    last5: {
-      successful: totals.recent.last5Minutes.successful,
-      failed: totals.recent.last5Minutes.failed,
-      canceled: totals.recent.last5Minutes.canceled,
-      warning: totals.recent.last5Minutes.warning,
-      successfulClass: countClass(totals.recent.last5Minutes.successful, 'successful'),
-      failedClass: countClass(totals.recent.last5Minutes.failed, 'failed'),
-      canceledClass: countClass(totals.recent.last5Minutes.canceled, 'canceled'),
-      warningClass: countClass(totals.recent.last5Minutes.warning, 'warning'),
-    },
-    last60: {
-      successful: totals.recent.last60Minutes.successful,
-      failed: totals.recent.last60Minutes.failed,
-      canceled: totals.recent.last60Minutes.canceled,
-      warning: totals.recent.last60Minutes.warning,
-      successfulClass: countClass(totals.recent.last60Minutes.successful, 'successful'),
-      failedClass: countClass(totals.recent.last60Minutes.failed, 'failed'),
-      canceledClass: countClass(totals.recent.last60Minutes.canceled, 'canceled'),
-      warningClass: countClass(totals.recent.last60Minutes.warning, 'warning'),
-    },
-    rate5: formatRate(totalsRate5),
-    rate5Class: rateClass(totalsRate5),
-    rate60: formatRate(totalsRate60),
-    rate60Class: rateClass(totalsRate60),
+    windows,
   };
 
   res.render('dashboard', {
@@ -422,6 +699,8 @@ function renderDashboardHtml(
     queues: queuesArray,
     timeRanges,
     summary,
+    windows,
+    windowCount: windows.length,
   });
 }
 
@@ -438,18 +717,24 @@ export async function getDashboard(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
   const query = keysToLowerCase(req.query);
-  const version = (query?.version as string);
-  const versionText = version ? version : 'unspecified';
+  const version = query.version as string | undefined;
+  const versionText = version ?? 'unspecified';
 
   try {
     if (version !== undefined) {
       validateVersion(version);
     }
 
-    req.context.logger.info(`Dashboard requested by user ${req.user}, version: ${versionText}`);
+    const windows = parseTimeWindows(query);
+
+    validateTimeWindows(windows);
+
+    req.context.logger.info(
+      `Dashboard requested by user ${req.user}, version: ${versionText}, windows requested: ${JSON.stringify(windows)}`,
+    );
 
     const [{ services, timeRanges }, queueMetrics] = await Promise.all([
-      getServiceMetrics(db),
+      getServiceMetrics(db, windows),
       getSystemQueueMetrics(),
     ]);
 
@@ -460,7 +745,7 @@ export async function getDashboard(
       queues: queueMetrics,
       totals,
       services,
-      version: version || currentApiVersion,
+      version: version ?? currentApiVersion,
     };
 
     // Default to JSON unless caller explicitly requests html
@@ -471,7 +756,6 @@ export async function getDashboard(
     } else {
       res.json(result);
     }
-
   } catch (e) {
     next(e);
   }

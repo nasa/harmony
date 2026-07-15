@@ -139,8 +139,8 @@ export function inEcr(image: string): boolean {
  */
 export function camelCaseToSpacedTitleCase(value: string): string {
   return value
-    .replace(/([A-Z])/g, ' $1')   // Insert space before all capital letters
-    .replace(/\s+/g, ' ')         // Collapse multiple spaces into one
-    .trim()                       // Remove leading space (from the first capital) and any trailing space
+    .replace(/([A-Z]|\d+)/g, ' $1')   // Insert space before all capital letters and numbers
+    .replace(/\s+/g, ' ')             // Collapse multiple spaces into one
+    .trim()                           // Remove leading space (from the first capital) and any trailing space
     .replace(/^./, (str) => str.toUpperCase()); // Capitalize the first letter
 }

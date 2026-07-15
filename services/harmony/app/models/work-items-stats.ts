@@ -81,7 +81,9 @@ export interface WorkItemsStatsSummary {
 //
 const MS_PER_MINUTE = 60_000;
 
-interface WorkItemsStatsSummaryOptions {
+export interface WorkItemsStatsTimeWindow {
+  /** The friendly human readable label to display. */
+  label?: string;
   /** Inclusive lower bound. Mutually exclusive with `lastMinutes`. */
   start?: Date;
   /** Exclusive upper bound. Defaults to the current database time. */
@@ -120,7 +122,7 @@ function truncateToMinute(d: Date): Date {
  */
 export async function getWorkItemsStatsSummary(
   trx: Transaction,
-  options: WorkItemsStatsSummaryOptions = {},
+  options: WorkItemsStatsTimeWindow = {},
 ): Promise<WorkItemsStatsSummary> {
   const { start, end, lastMinutes } = options;
 

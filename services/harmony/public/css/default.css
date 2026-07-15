@@ -110,8 +110,9 @@ a .badge-dark {
   color: #adb5bd;
 }
 
-.card-body .col-md-5.border-end,
-.card-body .col-md-2.border-end {
+.card-body .col-md.border-end,
+.card-body .col-md-2.border-end,
+.card-body .col-md-5.border-end {
   border-right: 2px solid #495057 !important;
 }
 
