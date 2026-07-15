@@ -208,7 +208,7 @@ describe('getDashboard', () => {
 
       const { services } = res.json.firstCall.args[0];
       expect(services['some-old-image'].queued).to.equal(5);
-      expect(services['some-old-image'].recent).to.exist;
+      expect(services['some-old-image'].windows).to.exist;
     });
 
     it('responds with JSON when client accepts JSON', async () => {
@@ -270,9 +270,9 @@ describe('getDashboard', () => {
 
       const { services } = res.json.firstCall.args[0];
       for (const service of Object.values(services) as any[]) {
-        expect(service.recent).to.exist;
-        expect(service.recent.last5Minutes).to.include.keys('successful', 'failed', 'canceled', 'warning');
-        expect(service.recent.last60Minutes).to.include.keys('successful', 'failed', 'canceled', 'warning');
+        expect(service.windows).to.exist;
+        expect(service.windows.last5Minutes).to.include.keys('successful', 'failed', 'canceled', 'warning');
+        expect(service.windows.last60Minutes).to.include.keys('successful', 'failed', 'canceled', 'warning');
       }
     });
 
@@ -283,8 +283,8 @@ describe('getDashboard', () => {
 
       const { services } = res.json.firstCall.args[0];
       const service = services['query-cmr'];
-      expect(service.recent.last5Minutes).to.deep.equal({ successful: 0, failed: 0, canceled: 0, warning: 0 });
-      expect(service.recent.last60Minutes).to.deep.equal({ successful: 0, failed: 0, canceled: 0, warning: 0 });
+      expect(service.windows.last5Minutes).to.deep.equal({ successful: 0, failed: 0, canceled: 0, warning: 0 });
+      expect(service.windows.last60Minutes).to.deep.equal({ successful: 0, failed: 0, canceled: 0, warning: 0 });
     });
 
     it('populates last5Minutes counts from the stats summary for the correct service', async () => {
@@ -304,10 +304,10 @@ describe('getDashboard', () => {
       await getDashboard(req, res, next);
 
       const { services } = res.json.firstCall.args[0];
-      expect(services['podaac-l2-subsetter'].recent.last5Minutes.successful).to.equal(42);
-      expect(services['podaac-l2-subsetter'].recent.last5Minutes.failed).to.equal(3);
-      expect(services['podaac-l2-subsetter'].recent.last5Minutes.canceled).to.equal(0);
-      expect(services['podaac-l2-subsetter'].recent.last5Minutes.warning).to.equal(0);
+      expect(services['podaac-l2-subsetter'].windows.last5Minutes.successful).to.equal(42);
+      expect(services['podaac-l2-subsetter'].windows.last5Minutes.failed).to.equal(3);
+      expect(services['podaac-l2-subsetter'].windows.last5Minutes.canceled).to.equal(0);
+      expect(services['podaac-l2-subsetter'].windows.last5Minutes.warning).to.equal(0);
     });
 
     it('populates last60Minutes counts independently from the 5-minute window', async () => {
@@ -327,9 +327,9 @@ describe('getDashboard', () => {
       await getDashboard(req, res, next);
 
       const { services } = res.json.firstCall.args[0];
-      expect(services['podaac-l2-subsetter'].recent.last60Minutes.successful).to.equal(500);
-      expect(services['podaac-l2-subsetter'].recent.last60Minutes.warning).to.equal(10);
-      expect(services['podaac-l2-subsetter'].recent.last60Minutes.failed).to.equal(0);
+      expect(services['podaac-l2-subsetter'].windows.last60Minutes.successful).to.equal(500);
+      expect(services['podaac-l2-subsetter'].windows.last60Minutes.warning).to.equal(10);
+      expect(services['podaac-l2-subsetter'].windows.last60Minutes.failed).to.equal(0);
     });
 
     it('aggregates recent counts when multiple rows share the same service and status', async () => {
@@ -352,7 +352,7 @@ describe('getDashboard', () => {
       await getDashboard(req, res, next);
 
       const { services } = res.json.firstCall.args[0];
-      expect(services['shared-service'].recent.last5Minutes.successful).to.equal(30);
+      expect(services['shared-service'].windows.last5Minutes.successful).to.equal(30);
     });
 
     it('ignores rows with untracked statuses in the stats summary', async () => {
@@ -373,8 +373,8 @@ describe('getDashboard', () => {
 
       const { services } = res.json.firstCall.args[0];
       // 'running' is not a tracked status — only 'successful' should appear
-      expect(services['some-service'].recent.last5Minutes.successful).to.equal(5);
-      expect((services['some-service'].recent.last5Minutes as any).running).to.be.undefined;
+      expect(services['some-service'].windows.last5Minutes.successful).to.equal(5);
+      expect((services['some-service'].windows.last5Minutes as any).running).to.be.undefined;
     });
   });
 
@@ -477,8 +477,8 @@ describe('getDashboard', () => {
       await getDashboard(req, res, next);
 
       const { totals } = res.json.firstCall.args[0];
-      expect(totals.recent.last5Minutes.successful).to.equal(30);
-      expect(totals.recent.last5Minutes.failed).to.equal(5);
+      expect(totals.windows.last5Minutes.successful).to.equal(30);
+      expect(totals.windows.last5Minutes.failed).to.equal(5);
     });
 
     it('totals.queued is zero when no services have queued items', async () => {
@@ -611,15 +611,30 @@ describe('getDashboard', () => {
 
       const data = res.render.firstCall.args[1];
       expect(data.summary).to.exist;
-      expect(data.summary).to.include.keys('queued', 'last5', 'last60', 'rate5', 'rate60');
+      expect(data.summary).to.include.keys('queued', 'windows');
     });
 
-    it('includes formatted last5 and last60 counts on the summary', async () => {
+    it('includes formatted counts on each summary window', async () => {
       await getDashboard(req, res, next);
 
       const { summary } = res.render.firstCall.args[1];
-      expect(summary.last5).to.include.keys('successful', 'failed', 'canceled', 'warning');
-      expect(summary.last60).to.include.keys('successful', 'failed', 'canceled', 'warning');
+
+      expect(summary.windows).to.have.length(2);
+
+      for (const window of summary.windows) {
+        expect(window).to.include.keys(
+          'successful',
+          'failed',
+          'canceled',
+          'warning',
+          'successfulClass',
+          'failedClass',
+          'canceledClass',
+          'warningClass',
+          'rate',
+          'rateClass',
+        );
+      }
     });
 
     it('attaches CSS class strings for counts and rates to each service row', async () => {
@@ -630,11 +645,16 @@ describe('getDashboard', () => {
 
       const data = res.render.firstCall.args[1];
       const service = data.services.find((s: any) => s.name === 'service-a');
-      expect(service.last5.successfulClass).to.be.a('string');
-      expect(service.last5.failedClass).to.be.a('string');
-      expect(service.last60.successfulClass).to.be.a('string');
-      expect(service.rate5Class).to.be.a('string');
-      expect(service.rate60Class).to.be.a('string');
+
+      expect(service.windows).to.have.length(2);
+
+      for (const window of service.windows) {
+        expect(window.successfulClass).to.be.a('string');
+        expect(window.failedClass).to.be.a('string');
+        expect(window.canceledClass).to.be.a('string');
+        expect(window.warningClass).to.be.a('string');
+        expect(window.rateClass).to.be.a('string');
+      }
     });
 
     it('sets trendIsDown when 5-minute success rate is more than 2pp below the 60-minute rate', async () => {
