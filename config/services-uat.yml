@@ -673,7 +673,7 @@ https://cmr.uat.earthdata.nasa.gov:
         operations: ['concatenate']
         conditional:
           exists: ['concatenate']
-          format: ['application/netcdf'] # NetCDF or no format specified use concise
+          format: ['application/netcdf', ''] # NetCDF or no format specified use concise
       - image: !Env ${CASPER_IMAGE}
         conditional:
           format: ['text/csv']
