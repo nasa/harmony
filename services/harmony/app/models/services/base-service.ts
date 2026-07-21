@@ -22,6 +22,31 @@ import { WorkItemStatus } from '../work-item-interface';
 import WorkflowStep from '../workflow-steps';
 import InvocationResult from './invocation-result';
 
+export const conditionToOperationField = {
+  areaAverage: 'shouldAreaAverage',
+  concatenate: 'shouldConcatenate',
+  dimensionSubset: 'shouldDimensionSubset',
+  extend: 'shouldExtend',
+  pointSubset: 'shouldPointSubset',
+  reformat: 'outputFormat',
+  reproject: 'crs',
+  shapefileSubset: 'shouldShapefileSubset',
+  spatialSubset: 'shouldSpatialSubset',
+  temporalSubset: 'shouldTemporalSubset',
+  timeAverage: 'shouldTimeAverage',
+  variableSubset: 'shouldVariableSubset',
+};
+
+export type RequirementExists = keyof typeof conditionToOperationField;
+
+/**
+ * Step operations that can take more than one catalog as input.
+ * Most operations can only take one catalog.
+ */
+const multiCatalogOperations = [
+  'concatenate',
+];
+
 export interface ServiceCapabilities {
   concatenation?: boolean;
   concatenate_by_default?: boolean;
@@ -71,6 +96,11 @@ export interface ServiceCollection {
   variables?: string[];
 }
 
+export interface ServiceRequirements {
+  exists?: RequirementExists[];
+  format?: string[];
+}
+
 export interface ServiceConfig<ServiceParamType> {
   name?: string;
   description?: string;
@@ -85,6 +115,7 @@ export interface ServiceConfig<ServiceParamType> {
   umm_s?: string;
   collections?: ServiceCollection[];
   capabilities?: ServiceCapabilities;
+  requirements?: ServiceRequirements[];
   concurrency?: number;
   message?: string;
   maximum_sync_granules?: number;
@@ -124,26 +155,6 @@ export function functionalSerializeOperation(
 function serviceImageToId(image: string): string {
   return image;
 }
-
-export const conditionToOperationField = {
-  concatenate: 'shouldConcatenate',
-  dimensionSubset: 'shouldDimensionSubset',
-  extend: 'shouldExtend',
-  reformat: 'outputFormat',
-  reproject: 'crs',
-  shapefileSubset: 'shouldShapefileSubset',
-  spatialSubset: 'shouldSpatialSubset',
-  temporalSubset: 'shouldTemporalSubset',
-  variableSubset: 'shouldVariableSubset',
-};
-
-/**
- * Step operations that can take more than one catalog as input.
- * Most operations can only take one catalog.
- */
-const multiCatalogOperations = [
-  'concatenate',
-];
 
 /**
  * Returns true if the workflow step must wait for all output from the previous step before executing

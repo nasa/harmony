@@ -64,7 +64,7 @@ else
         print "  - name: " SERVICE_NAME;
         print "    description: |";
         print "      TODO - fill in description";
-        print "    data_operation_version: '\''0.18.0'\''";
+        print "    data_operation_version: '\''0.22.0'\''";
         print "    type:";
         print "      <<: *default-turbo-config";
         print "      params:";
