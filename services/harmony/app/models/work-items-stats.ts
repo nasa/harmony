@@ -84,6 +84,8 @@ const MS_PER_MINUTE = 60_000;
 export interface WorkItemsStatsTimeWindow {
   /** The friendly human readable label to display. */
   label?: string;
+  /** The index of the window in the list of time windows. */
+  index?: number;
   /** Inclusive lower bound. Mutually exclusive with `lastMinutes`. */
   start?: Date;
   /** Exclusive upper bound. Defaults to the current database time. */

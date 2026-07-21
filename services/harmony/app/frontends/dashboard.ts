@@ -110,34 +110,51 @@ function validateVersion(version): void {
 function validateTimeWindows(
   windows: WorkItemsStatsTimeWindow[],
 ): void {
-  windows.forEach((window, index) => {
-    const windowName = `window${index + 1}`;
+  const seenLabels = new Set<string>();
+  windows.forEach((window) => {
+    const windowName = window.label;
+    if (seenLabels.has(windowName)) {
+      throw new RequestValidationError(
+        `${windowName}: duplicate window label; window1 and window2 must use different labels.`,
+      );
+    }
+    seenLabels.add(windowName);
 
     const hasStart = window.start !== undefined;
     const hasEnd = window.end !== undefined;
     const hasLastMinutes = window.lastMinutes !== undefined;
+    const windowParameter = `window${window.index}`;
+
+    if (
+      window.label !== undefined
+      && window.label.trim().length === 0
+    ) {
+      throw new RequestValidationError(
+        `${windowParameter}: label may not be empty.`,
+      );
+    }
 
     if (hasStart && hasLastMinutes) {
       throw new RequestValidationError(
-        `${windowName}: start and lastMinutes are mutually exclusive.`,
+        `${windowParameter}: start and lastMinutes are mutually exclusive.`,
       );
     }
 
     if (!hasStart && !hasLastMinutes) {
       throw new RequestValidationError(
-        `${windowName}: either start or lastMinutes must be provided.`,
+        `${windowParameter}: either start or lastMinutes must be provided.`,
       );
     }
 
     if (hasStart && Number.isNaN(window.start.getTime())) {
       throw new RequestValidationError(
-        `${windowName}: start is not a valid ISO-8601 date.`,
+        `${windowParameter}: start is not a valid ISO-8601 date.`,
       );
     }
 
     if (hasEnd && Number.isNaN(window.end.getTime())) {
       throw new RequestValidationError(
-        `${windowName}: end is not a valid ISO-8601 date.`,
+        `${windowParameter}: end is not a valid ISO-8601 date.`,
       );
     }
 
@@ -147,7 +164,7 @@ function validateTimeWindows(
         || window.lastMinutes <= 0)
     ) {
       throw new RequestValidationError(
-        `${windowName}: lastMinutes must be a positive integer.`,
+        `${windowParameter}: lastMinutes must be a positive integer.`,
       );
     }
 
@@ -157,16 +174,7 @@ function validateTimeWindows(
       && window.start >= window.end
     ) {
       throw new RequestValidationError(
-        `${windowName}: start must be earlier than end.`,
-      );
-    }
-
-    if (
-      window.label !== undefined
-      && window.label.trim().length === 0
-    ) {
-      throw new RequestValidationError(
-        `${windowName}: label may not be empty.`,
+        `${windowParameter}: start must be earlier than end.`,
       );
     }
   });
@@ -204,6 +212,7 @@ function parseIsoDate(
 function parsePositiveInteger(
   value: string,
   name: string,
+  max: number,
 ): number {
   if (!/^\d+$/.test(value)) {
     throw new RequestValidationError(
@@ -218,9 +227,15 @@ function parsePositiveInteger(
       `${name} must be greater than zero.`,
     );
   }
-
+  if (max !== undefined && parsed > max) {
+    throw new RequestValidationError(
+      `${name} must be less than or equal to ${max}.`,
+    );
+  }
   return parsed;
 }
+
+const THIRTY_YEARS_IN_MINUTES = 30 * 365 * 24 * 60;
 
 /**
  * Parses and validates time window parameters from the query string.
@@ -254,10 +269,11 @@ function parseTimeWindows(
 
     const lastMinutes = lastMinutesText === undefined
       ? undefined
-      : parsePositiveInteger(lastMinutesText, `${prefix}lastMinutes`);
+      : parsePositiveInteger(lastMinutesText, `${prefix}lastMinutes`, THIRTY_YEARS_IN_MINUTES);
 
     windows.push({
       label: label || `window${i}`,
+      index: i,
       start,
       end,
       lastMinutes,
@@ -610,7 +626,9 @@ function renderDashboardHtml(
   ): DashboardWindowView => {
     const rate = computeRate(counts);
     const range = timeRanges[label];
-    const options = getTimeRangeFormatOptions(range.start, range.end);
+    const options = range
+      ? getTimeRangeFormatOptions(range.start, range.end)
+      : undefined;
 
     return {
       label,

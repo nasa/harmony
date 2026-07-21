@@ -195,6 +195,16 @@ describe('getDashboard', () => {
         .to.equal('window1.lastMinutes must be greater than zero.');
     });
 
+    it('rejects a lastMinutes value that is too large', async () => {
+      req.query['window1.lastMinutes'] = '15768001'; // 30 years + 1 minute
+
+      await getDashboard(req, res, next);
+
+      expect(next.calledOnce).to.be.true;
+      expect(next.firstCall.args[0].message)
+        .to.equal('window1.lastMinutes must be less than or equal to 15768000.');
+    });
+
     it('rejects start together with lastMinutes', async () => {
       req.query['window1.start'] = '2026-07-13T00:00:00Z';
       req.query['window1.lastMinutes'] = '60';
