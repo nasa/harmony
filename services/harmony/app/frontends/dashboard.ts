@@ -125,15 +125,6 @@ function validateTimeWindows(
     const hasLastMinutes = window.lastMinutes !== undefined;
     const windowParameter = `window${window.index}`;
 
-    if (
-      window.label !== undefined
-      && window.label.trim().length === 0
-    ) {
-      throw new RequestValidationError(
-        `${windowParameter}: label may not be empty.`,
-      );
-    }
-
     if (hasStart && hasLastMinutes) {
       throw new RequestValidationError(
         `${windowParameter}: start and lastMinutes are mutually exclusive.`,
@@ -146,33 +137,7 @@ function validateTimeWindows(
       );
     }
 
-    if (hasStart && Number.isNaN(window.start.getTime())) {
-      throw new RequestValidationError(
-        `${windowParameter}: start is not a valid ISO-8601 date.`,
-      );
-    }
-
-    if (hasEnd && Number.isNaN(window.end.getTime())) {
-      throw new RequestValidationError(
-        `${windowParameter}: end is not a valid ISO-8601 date.`,
-      );
-    }
-
-    if (
-      hasLastMinutes
-      && (!Number.isInteger(window.lastMinutes)
-        || window.lastMinutes <= 0)
-    ) {
-      throw new RequestValidationError(
-        `${windowParameter}: lastMinutes must be a positive integer.`,
-      );
-    }
-
-    if (
-      hasStart
-      && hasEnd
-      && window.start >= window.end
-    ) {
+    if (hasStart && hasEnd && window.start >= window.end) {
       throw new RequestValidationError(
         `${windowParameter}: start must be earlier than end.`,
       );
@@ -254,6 +219,12 @@ function parseTimeWindows(
     const startText = query[`${prefix}start`] as string | undefined;
     const endText = query[`${prefix}end`] as string | undefined;
     const lastMinutesText = query[`${prefix}lastminutes`] as string | undefined;
+
+    if (label !== undefined && label.trim().length === 0) {
+      throw new RequestValidationError(
+        `window${i}: label may not be empty.`,
+      );
+    }
 
     if (!label && !startText && !endText && !lastMinutesText) {
       continue;
