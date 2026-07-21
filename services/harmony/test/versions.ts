@@ -46,6 +46,7 @@ describe('Versions endpoint', function () {
           'asf/opera-rtc-s1-browse',
           'asf/nisar-py',
           'net2cog',
+          'harmony-flow',
           'nasa/harmony-gdal-adapter',
           'giovanni-averaging-service',
           'sds/smap-l2-subsetter-net2cog',
