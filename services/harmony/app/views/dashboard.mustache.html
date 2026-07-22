@@ -465,16 +465,60 @@
       }
     }
 
+    /**
+     * Chooses Intl format options for a range, matching the old server-side logic:
+     * same-day → time only; same-year → month/day + time; otherwise + year.
+     * Evaluated against the viewer's local clock (the timezone fix).
+     */
+    function formatTimeRangeOptions(start, end) {
+      const now = new Date();
+
+      const sameDay = start.getFullYear() === now.getFullYear()
+        && start.getMonth() === now.getMonth()
+        && start.getDate() === now.getDate()
+        && end.getFullYear() === now.getFullYear()
+        && end.getMonth() === now.getMonth()
+        && end.getDate() === now.getDate();
+
+      if (sameDay) {
+        return { hour: '2-digit', minute: '2-digit', hour12: true };
+      }
+
+      const sameYear = start.getFullYear() === now.getFullYear()
+        && end.getFullYear() === now.getFullYear();
+
+      if (sameYear) {
+        return { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true };
+      }
+
+      return { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true };
+    }
+
+    /**
+     * Reformats each window's start/end <time> pair into the viewer's local zone,
+     * using shared options derived from the pair (mirrors the old server behavior).
+     */
     function renderLocalTimes() {
-      const fmt = new Intl.DateTimeFormat(undefined, {
-        month: 'short', day: 'numeric',
-        hour: 'numeric', minute: '2-digit',
-      });
+      // Group the two <time> elements by their shared parent <span>, so each
+      // window's start and end are formatted with the same options.
+      const groups = new Map();
       document.querySelectorAll('time.local-time').forEach((el) => {
-        const iso = el.textContent.trim();
-        if (!iso) return;
-        const d = new Date(iso);
-        if (!Number.isNaN(d.getTime())) el.textContent = fmt.format(d);
+        const parent = el.parentNode;
+        if (!groups.has(parent)) groups.set(parent, []);
+        groups.get(parent).push(el);
+      });
+
+      groups.forEach((els) => {
+        const [startEl, endEl] = els;
+        if (!startEl || !endEl) return;
+
+        const start = new Date(startEl.textContent.trim());
+        const end = new Date(endEl.textContent.trim());
+        if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return;
+
+        const fmt = new Intl.DateTimeFormat([], formatTimeRangeOptions(start, end));
+        startEl.textContent = fmt.format(start);
+        endEl.textContent = fmt.format(end);
       });
     }
 
