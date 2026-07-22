@@ -30,6 +30,104 @@
     <h1 class="display-4 text-center">
       Harmony Dashboard
     </h1>
+    <div class="row mt-4">
+      <div class="col-12">
+        <div class="card shadow-sm">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-clock-history"></i> Time Windows</span>
+            <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse"
+              data-bs-target="#timeWindowBody" aria-expanded="true" aria-controls="timeWindowBody">
+              Show / hide
+            </button>
+          </div>
+          <div class="collapse show" id="timeWindowBody">
+            <div class="card-body">
+              <form id="timeWindowForm">
+                <div class="row g-4">
+                  <!-- Window 1 -->
+                  <div class="col-md-6">
+                    <fieldset id="window1Fieldset">
+                      <div class="mb-3">
+                        <label class="form-label" for="window1.label">Label</label>
+                        <input type="text" class="form-control" id="window1.label" value="Last 5 Minutes">
+                      </div>
+                      <div class="mb-3">
+                        <div class="btn-group" role="group" aria-label="Window 1 mode">
+                          <input type="radio" class="btn-check" name="window1Mode" id="window1ModeRelative"
+                            value="relative" checked>
+                          <label class="btn btn-outline-primary btn-sm" for="window1ModeRelative">Last N minutes</label>
+                          <input type="radio" class="btn-check" name="window1Mode" id="window1ModeAbsolute"
+                            value="absolute">
+                          <label class="btn btn-outline-primary btn-sm" for="window1ModeAbsolute">Custom range</label>
+                        </div>
+                      </div>
+                      <div class="mb-3 window1-relative">
+                        <label class="form-label" for="window1.lastminutes">Last minutes</label>
+                        <input type="number" min="1" class="form-control" id="window1.lastminutes" value="5">
+                      </div>
+                      <div class="window1-absolute d-none">
+                        <div class="mb-3">
+                          <label class="form-label" for="window1.start">Start</label>
+                          <input type="datetime-local" class="form-control" id="window1.start">
+                        </div>
+                        <div class="mb-3">
+                          <label class="form-label" for="window1.end">End</label>
+                          <input type="datetime-local" class="form-control" id="window1.end">
+                        </div>
+                      </div>
+                    </fieldset>
+                  </div>
+                  <!-- Window 2 -->
+                  <div class="col-md-6">
+                    <div class="form-check mb-2">
+                      <input class="form-check-input" type="checkbox" id="window2Enabled" checked>
+                      <label class="form-check-label" for="window2Enabled">Show a second window</label>
+                    </div>
+                    <fieldset id="window2Fieldset">
+                      <div class="mb-3">
+                        <label class="form-label" for="window2.label">Label</label>
+                        <input type="text" class="form-control" id="window2.label" value="Last 60 Minutes">
+                      </div>
+                      <div class="mb-3">
+                        <div class="btn-group" role="group" aria-label="Window 2 mode">
+                          <input type="radio" class="btn-check" name="window2Mode" id="window2ModeRelative"
+                            value="relative" checked>
+                          <label class="btn btn-outline-primary btn-sm" for="window2ModeRelative">Last N minutes</label>
+                          <input type="radio" class="btn-check" name="window2Mode" id="window2ModeAbsolute"
+                            value="absolute">
+                          <label class="btn btn-outline-primary btn-sm" for="window2ModeAbsolute">Custom range</label>
+                        </div>
+                      </div>
+                      <div class="mb-3 window2-relative">
+                        <label class="form-label" for="window2.lastminutes">Last minutes</label>
+                        <input type="number" min="1" class="form-control" id="window2.lastminutes" value="60">
+                      </div>
+                      <div class="window2-absolute d-none">
+                        <div class="mb-3">
+                          <label class="form-label" for="window2.start">Start</label>
+                          <input type="datetime-local" class="form-control" id="window2.start">
+                        </div>
+                        <div class="mb-3">
+                          <label class="form-label" for="window2.end">End</label>
+                          <input type="datetime-local" class="form-control" id="window2.end">
+                        </div>
+                      </div>
+                    </fieldset>
+                  </div>
+                </div>
+                <div class="d-flex gap-2 mt-3 flex-wrap">
+                  <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-arrow-repeat"></i> Apply
+                  </button>
+                  <span id="formMessage" class="align-self-center small text-muted" role="status"
+                    aria-live="polite"></span>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
     <div class="row mt-5 mb-4">
       <div class="col-12">
         <h2 class="h4 mb-3">
@@ -366,6 +464,161 @@
           : "bi bi-sort-down sort-icon";
       }
     }
+  </script>
+  <script>
+    (function () {
+      const windowIndices = [1, 2];
+      const form = document.getElementById('timeWindowForm');
+      if (!form) return;
+
+      const messageEl = document.getElementById('formMessage');
+      const window2Enabled = document.getElementById('window2Enabled');
+      const el = (id) => document.getElementById(id);
+      const pad = (n) => String(n).padStart(2, '0');
+
+      // ISO instant -> value for <input type="datetime-local"> in the viewer's local time
+      function isoToLocalInput(iso) {
+        const d = new Date(iso);
+        if (Number.isNaN(d.getTime())) return '';
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+          + `T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      }
+
+      // datetime-local value (local, no tz) -> UTC ISO 8601 string for the query
+      function localInputToIso(value) {
+        if (!value) return '';
+        const d = new Date(value);
+        return Number.isNaN(d.getTime()) ? '' : d.toISOString();
+      }
+
+      const getMode = (i) => {
+        const checked = form.querySelector(`input[name="window${i}Mode"]:checked`);
+        return checked ? checked.value : 'relative';
+      };
+
+      function syncModeVisibility(i) {
+        const relative = getMode(i) === 'relative';
+        document.querySelector(`.window${i}-relative`)?.classList.toggle('d-none', !relative);
+        document.querySelector(`.window${i}-absolute`)?.classList.toggle('d-none', relative);
+      }
+
+      function setMode(i, mode) {
+        const radio = el(`window${i}Mode${mode === 'absolute' ? 'Absolute' : 'Relative'}`);
+        if (radio) radio.checked = true;
+        syncModeVisibility(i);
+      }
+
+      const isWindowEnabled = (i) => i === 1 || window2Enabled.checked;
+
+      function syncWindow2Enabled() {
+        el('window2Fieldset').disabled = !window2Enabled.checked;
+      }
+
+      let messageTimer;
+      function showMessage(text, isError) {
+        if (!messageEl) return;
+        messageEl.textContent = text;
+        messageEl.classList.toggle('text-danger', !!isError);
+        messageEl.classList.toggle('text-muted', !isError);
+        clearTimeout(messageTimer);
+        if (text) messageTimer = setTimeout(() => { messageEl.textContent = ''; }, 5000);
+      }
+
+      function validate() {
+        for (const i of windowIndices) {
+          if (!isWindowEnabled(i)) continue;
+          if (getMode(i) === 'relative') {
+            const minutes = Number(el(`window${i}.lastminutes`).value);
+            if (!Number.isFinite(minutes) || minutes < 1) {
+              return `Window ${i}: enter a positive number of minutes.`;
+            }
+          } else {
+            const start = el(`window${i}.start`).value;
+            const end = el(`window${i}.end`).value;
+            if (!start || !end) return `Window ${i}: choose both a start and end time.`;
+            if (new Date(start) >= new Date(end)) return `Window ${i}: start must be before end.`;
+          }
+        }
+        return '';
+      }
+
+      function buildParams() {
+        const params = new URLSearchParams();
+        windowIndices.forEach((i) => {
+          if (!isWindowEnabled(i)) return;
+          const prefix = `window${i}.`;
+          const label = el(`${prefix}label`).value.trim();
+          if (label) params.set(`${prefix}label`, label);
+
+          if (getMode(i) === 'relative') {
+            const minutes = el(`${prefix}lastminutes`).value.trim();
+            if (minutes) params.set(`${prefix}lastminutes`, minutes);
+          } else {
+            const start = localInputToIso(el(`${prefix}start`).value);
+            const end = localInputToIso(el(`${prefix}end`).value);
+            if (start) params.set(`${prefix}start`, start);
+            if (end) params.set(`${prefix}end`, end);
+          }
+        });
+        return params;
+      }
+
+      const buildUrl = () => {
+        const qs = buildParams().toString();
+        return window.location.origin + window.location.pathname + (qs ? `?${qs}` : '');
+      };
+
+      function populateFromUrl() {
+        const params = new URLSearchParams(window.location.search);
+        const anyWindowParam = [...params.keys()].some((k) => /^window[12]\./.test(k));
+
+        windowIndices.forEach((i) => {
+          const prefix = `window${i}.`;
+          const label = params.get(`${prefix}label`);
+          const lastMinutes = params.get(`${prefix}lastminutes`);
+          const start = params.get(`${prefix}start`);
+          const end = params.get(`${prefix}end`);
+          const present = label !== null || lastMinutes !== null || start !== null || end !== null;
+
+          if (i === 2) {
+            // URL describes window 2 -> on. Only window 1 in the URL -> off.
+            // Empty URL -> keep the default (on), mirroring the server's two-window default.
+            if (present) window2Enabled.checked = true;
+            else if (anyWindowParam) window2Enabled.checked = false;
+          }
+
+          if (!present) return;
+          if (label !== null) el(`${prefix}label`).value = label;
+
+          if (start !== null || end !== null) {
+            setMode(i, 'absolute');
+            if (start !== null) el(`${prefix}start`).value = isoToLocalInput(start);
+            if (end !== null) el(`${prefix}end`).value = isoToLocalInput(end);
+          } else if (lastMinutes !== null) {
+            setMode(i, 'relative');
+            el(`${prefix}lastminutes`).value = lastMinutes;
+          }
+        });
+      }
+
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const error = validate();
+        if (error) { showMessage(error, true); return; }
+        const qs = buildParams().toString();
+        window.location.assign(window.location.pathname + (qs ? `?${qs}` : ''));
+      });
+
+      windowIndices.forEach((i) => {
+        form.querySelectorAll(`input[name="window${i}Mode"]`)
+          .forEach((radio) => radio.addEventListener('change', () => syncModeVisibility(i)));
+      });
+      window2Enabled.addEventListener('change', syncWindow2Enabled);
+
+      populateFromUrl();
+      windowIndices.forEach(syncModeVisibility);
+      syncWindow2Enabled();
+    })();
   </script>
 </body>
 

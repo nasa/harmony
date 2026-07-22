@@ -2,12 +2,13 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
 
-import { getDashboard } from '../app/frontends/dashboard';
+import { getDashboard, THIRTY_YEARS_IN_MINUTES } from '../app/frontends/dashboard';
 import * as userWork from '../app/models/user-work';
 import * as workItemsStats from '../app/models/work-items-stats';
 import { WorkItemQueueType } from '../app/util/queue/queue';
 import * as qf from '../app/util/queue/queue-factory';
 import * as serviceImages from '../app/util/service-images';
+import { RequestValidationError } from 'app/util/errors';
 
 /**
  * Returns a fake getWorkItemsStatsSummary result with empty rows and fixed time boundaries.
@@ -871,6 +872,152 @@ describe('getDashboard', () => {
       const data = res.render.firstCall.args[1];
       const service = data.services.find((s: any) => s.name === 'busy-service');
       expect(service.isIdle).to.be.false;
+    });
+    describe('trend edge cases', () => {
+      beforeEach(() => {
+        getCountsByServiceStub.resolves({});
+        imageMapStub.returns({ 'some-image': 'some-service' });
+      });
+
+      it('sets neither trend flag when the rate delta is within two percent', async () => {
+        getWorkItemsStatsSummaryStub.callsFake((_trx: any, options: { lastMinutes: number }) => {
+          if (options.lastMinutes === 5) {
+            // 5-min: 95%
+            return Promise.resolve(makeStatsSummaryWithRows(5, [
+              { service_id: 'some-image', status: 'successful', count: 95 },
+              { service_id: 'some-image', status: 'failed', count: 5 },
+            ]));
+          }
+          // 60-min: 96% so trending down by 1 percent
+          return Promise.resolve(makeStatsSummaryWithRows(60, [
+            { service_id: 'some-image', status: 'successful', count: 960 },
+            { service_id: 'some-image', status: 'failed', count: 40 },
+          ]));
+        });
+
+        await getDashboard(req, res, next);
+
+        const service = res.render.firstCall.args[1].services.find((s: any) => s.name === 'some-service');
+        expect(service.trendIsUp).to.be.false;
+        expect(service.trendIsDown).to.be.false;
+      });
+
+      it('sets no trend flags when a service has fewer than two windows', async () => {
+        req.query = { 'window1.label': 'Last 5 Minutes', 'window1.lastminutes': '5' };
+        getWorkItemsStatsSummaryStub.resolves(makeStatsSummaryWithRows(5, [
+          { service_id: 'some-image', status: 'successful', count: 50 },
+          { service_id: 'some-image', status: 'failed', count: 50 },
+        ]));
+
+        await getDashboard(req, res, next);
+
+        const service = res.render.firstCall.args[1].services.find((s: any) => s.name === 'some-service');
+        expect(service.windows).to.have.length(1);
+        expect(service.trendIsUp).to.be.false;
+        expect(service.trendIsDown).to.be.false;
+      });
+
+      it('sets no trend flags when either window has no activity', async () => {
+        getWorkItemsStatsSummaryStub.callsFake((_trx: any, options: { lastMinutes: number }) => {
+          if (options.lastMinutes === 5) return Promise.resolve(makeStatsSummaryWithRows(5, []));
+          return Promise.resolve(makeStatsSummaryWithRows(60, [
+            { service_id: 'some-image', status: 'successful', count: 900 },
+            { service_id: 'some-image', status: 'failed', count: 100 },
+          ]));
+        });
+
+        await getDashboard(req, res, next);
+
+        const service = res.render.firstCall.args[1].services.find((s: any) => s.name === 'some-service');
+        expect(service.trendIsUp).to.be.false;
+        expect(service.trendIsDown).to.be.false;
+      });
+    });
+
+    describe('time window query parsing', () => {
+      beforeEach(() => {
+        req.accepts.returns('html');
+        getCountsByServiceStub.resolves({});
+      });
+
+      it('defaults to a 5-minute and a 60-minute window when no query params are given', async () => {
+        req.query = {};
+        await getDashboard(req, res, next);
+
+        const data = res.render.firstCall.args[1];
+        expect(data.windowCount).to.equal(2);
+        expect(data.summary.windows).to.have.length(2);
+        expect(data.timeRanges).to.include.keys('last5Minutes', 'last60Minutes');
+      });
+
+      it('renders a single window when only window1 is provided', async () => {
+        req.query = { 'window1.label': 'Recent', 'window1.lastminutes': '10' };
+        await getDashboard(req, res, next);
+
+        const data = res.render.firstCall.args[1];
+        expect(data.windowCount).to.equal(1);
+        expect(data.summary.windows).to.have.length(1);
+      });
+
+      it('uses a custom label from the query, passed through the display transform', async () => {
+        req.query = { 'window1.label': 'peakHours', 'window1.lastminutes': '15' };
+        await getDashboard(req, res, next);
+
+        const [firstWindow] = res.render.firstCall.args[1].summary.windows;
+        expect(firstWindow.displayName).to.equal('Peak Hours');
+      });
+
+      it('accepts an explicit start/end range for a window', async () => {
+        getWorkItemsStatsSummaryStub.resolves(
+          makeStatsSummaryWithRows(0, [
+            { service_id: 'some-image', status: 'successful', count: 1 },
+          ]),
+        );
+        req.query = {
+          'window1.label': 'Custom',
+          'window1.start': '2026-01-01T00:00:00.000Z',
+          'window1.end': '2026-01-01T01:00:00.000Z',
+        };
+
+        await getDashboard(req, res, next);
+
+        expect(next.called).to.be.false;
+        const [firstWindow] = res.render.firstCall.args[1].summary.windows;
+        expect(firstWindow.startTime).to.be.a('string').and.not.equal('');
+        expect(firstWindow.endTime).to.be.a('string').and.not.equal('');
+      });
+
+      it('rejects a whitespace-only label with a RequestValidationError', async () => {
+        req.query = { 'window1.label': '   ', 'window1.lastminutes': '5' };
+        await getDashboard(req, res, next);
+
+        expect(next.calledOnce).to.be.true;
+        expect(next.firstCall.args[0]).to.be.instanceOf(RequestValidationError);
+      });
+
+      it('rejects a non-positive lastMinutes value', async () => {
+        req.query = { 'window1.lastminutes': '0' };
+        await getDashboard(req, res, next);
+
+        expect(next.calledOnce).to.be.true;
+        expect(next.firstCall.args[0]).to.be.instanceOf(RequestValidationError);
+      });
+
+      it('rejects a lastMinutes value above the allowed maximum', async () => {
+        req.query = { 'window1.lastminutes': String(THIRTY_YEARS_IN_MINUTES + 1) };
+        await getDashboard(req, res, next);
+
+        expect(next.calledOnce).to.be.true;
+        expect(next.firstCall.args[0]).to.be.instanceOf(RequestValidationError);
+      });
+
+      it('rejects an unparseable ISO start date', async () => {
+        req.query = { 'window1.start': 'not-a-date' };
+        await getDashboard(req, res, next);
+
+        expect(next.calledOnce).to.be.true;
+        expect(next.firstCall.args[0]).to.be.instanceOf(RequestValidationError);
+      });
     });
   });
 });

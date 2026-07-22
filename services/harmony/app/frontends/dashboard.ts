@@ -200,7 +200,7 @@ function parsePositiveInteger(
   return parsed;
 }
 
-const THIRTY_YEARS_IN_MINUTES = 30 * 365 * 24 * 60;
+export const THIRTY_YEARS_IN_MINUTES = 30 * 365 * 24 * 60;
 
 /**
  * Parses and validates time window parameters from the query string.
