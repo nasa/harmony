@@ -504,73 +504,6 @@ interface DashboardWindowView {
 }
 
 /**
- * Formats an ISO timestamp as a local-time HH:MM string.
- *
- * @param isoString - ISO timestamp
- * @param options - Intl.DateTimeFormatOptions to control formatting
- * @returns formatted local time
- */
-function formatLocalTime(
-  isoString: string,
-  options: Intl.DateTimeFormatOptions,
-): string {
-  return new Intl.DateTimeFormat([], options).format(new Date(isoString));
-}
-
-/**
- * Returns Intl.DateTimeFormatOptions appropriate for the given time range.
- *
- * @param startIso - The start of the time range (ISO string)
- * @param endIso - The end of the time range (ISO string)
- * @returns Intl.DateTimeFormatOptions for formatting the time range
- */
-function getTimeRangeFormatOptions(
-  startIso: string,
-  endIso: string,
-): Intl.DateTimeFormatOptions {
-  const start = new Date(startIso);
-  const end = new Date(endIso);
-  const now = new Date();
-
-  const sameDay = start.getFullYear() === now.getFullYear()
-    && start.getMonth() === now.getMonth()
-    && start.getDate() === now.getDate()
-    && end.getFullYear() === now.getFullYear()
-    && end.getMonth() === now.getMonth()
-    && end.getDate() === now.getDate();
-
-  if (sameDay) {
-    return {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true,
-    };
-  }
-
-  const sameYear = start.getFullYear() === now.getFullYear()
-    && end.getFullYear() === now.getFullYear();
-
-  if (sameYear) {
-    return {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true,
-    };
-  }
-
-  return {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true,
-  };
-}
-
-/**
  * Transforms raw metrics into the format expected by the Mustache template
  * and renders the HTML response.
  *
@@ -597,15 +530,12 @@ function renderDashboardHtml(
   ): DashboardWindowView => {
     const rate = computeRate(counts);
     const range = timeRanges[label];
-    const options = range
-      ? getTimeRangeFormatOptions(range.start, range.end)
-      : undefined;
 
     return {
       label,
       displayName: camelCaseToSpacedTitleCase(label),
-      startTime: range ? formatLocalTime(range.start, options) : '',
-      endTime: range ? formatLocalTime(range.end, options) : '',
+      startTime: range ? new Date(range.start).toISOString() : '',
+      endTime: range ? new Date(range.end).toISOString() : '',
 
       successful: counts.successful,
       failed: counts.failed,

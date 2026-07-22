@@ -175,7 +175,7 @@
                     <div class="text-muted small text-uppercase mb-2">
                       {{displayName}}
                       <span class="fw-normal">
-                        ({{startTime}} - {{endTime}})
+                        (<time class="local-time">{{startTime}}</time> - <time class="local-time">{{endTime}}</time>)
                       </span>
                     </div>
                     <div class="row">
@@ -242,7 +242,7 @@
                 <th scope="col" colspan="5" class="text-center border-start">
                   {{displayName}}
                   <span class="text-muted fw-normal">
-                    ({{startTime}} - {{endTime}})
+                    (<time class="local-time">{{startTime}}</time> - <time class="local-time">{{endTime}}</time>)
                   </span>
                 </th>
                 {{/windows}}
@@ -464,6 +464,21 @@
           : "bi bi-sort-down sort-icon";
       }
     }
+
+    function renderLocalTimes() {
+      const fmt = new Intl.DateTimeFormat(undefined, {
+        month: 'short', day: 'numeric',
+        hour: 'numeric', minute: '2-digit',
+      });
+      document.querySelectorAll('time.local-time').forEach((el) => {
+        const iso = el.textContent.trim();
+        if (!iso) return;
+        const d = new Date(iso);
+        if (!Number.isNaN(d.getTime())) el.textContent = fmt.format(d);
+      });
+    }
+
+    renderLocalTimes();
   </script>
   <script>
     (function () {
