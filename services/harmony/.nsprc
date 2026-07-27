@@ -1,1 +1,7 @@
-{}
+{
+  "GHSA-mh99-v99m-4gvg": {
+    "active": true,
+    "notes": "Will fix in HARMONY-2117",
+    "expiry": "2026-11-01"
+  }
+}
