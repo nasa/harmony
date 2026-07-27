@@ -221,6 +221,7 @@
   },
   "overrides": {
     "braces": "^3.0.3",
+    "brace-expansion": "5.0.8",
     "cross-spawn": "7.0.5",
     "diff": "^5.2.2",
     "fast-json-patch": "3.1.1",
@@ -233,7 +234,7 @@
     "jsonpath-plus": "^10.0.7",
     "linkify-it": "^5.0.2",
     "semver": "^7.6.2",
-    "tar": "^7.5.19",
+    "tar": "^7.5.21",
     "trim-newlines": "4.0.1",
     "ws": "^8.21.0"
   }
