@@ -219,6 +219,7 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${PODAAC_CONCISE_IMAGE}
         always_wait_for_prior_step: true
         is_batched: true
+        max_batch_size_in_bytes: 3000000000
         operations: ['concatenate']
 
   - name: podaac/l2-subsetter-concise
@@ -265,6 +266,7 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${PODAAC_CONCISE_IMAGE}
         always_wait_for_prior_step: true
         is_batched: true
+        max_batch_size_in_bytes: 3000000000
         operations: ['concatenate']
         conditional:
           exists: ['concatenate']
