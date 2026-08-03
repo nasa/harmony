@@ -91,7 +91,6 @@
     "@turf/circle": "^7.2.0",
     "@turf/helpers": "^7.2.0",
     "@types/cookie-signature": "^1.0.3",
-    "@types/js-yaml": "^4.0.4",
     "@types/multer": "^2.0.0",
     "@types/multer-s3": "^3.0.3",
     "@types/mustache": "^4.1.2",
