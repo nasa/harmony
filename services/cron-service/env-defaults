@@ -45,3 +45,6 @@ WORK_ITEMS_STATS_CRON="* * * * *" # every minute
 # The harmony environment (e.g. sit, uat, prod)
 HARMONY_ENVIRONMENT=local
 
+# The analytics schedule
+ANALYTICS_CRON="* * * * *" # every minute
+

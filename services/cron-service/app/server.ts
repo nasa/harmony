@@ -7,16 +7,22 @@ import { RestartPrometheus } from './cronjobs/restart-prometheus';
 import { UserWorkUpdater } from './cronjobs/update-user-work';
 import { WorkItemsStatsCron } from './cronjobs/update-work-items-stats';
 import { WorkReaper } from './cronjobs/work-reaper';
+import {
+	AnalyticsCron
+} from './cronjobs/update-analytics';
 import router from './routers/router';
 import { Context } from './util/context';
 import env from './util/env';
 import db from '../../harmony/app/util/db';
 import log from '../../harmony/app/util/log';
+import { acquireDuckDbConnection } from '../app/util/db/iceberg-connection'
+	 
+
 
 /**
  * Start the application
  */
-export default function start(): void {
+export default async function start(): Promise<void> {
 
   // add cron entries here
   // see https://www.npmjs.com/package/croner#pattern for allowable crontab strings
@@ -27,13 +33,18 @@ export default function start(): void {
     [env.publishServiceFailureMetricsCron, PublishServiceFailureMetrics],
     [env.memoryUsageCollectorCron, MemoryUsageCollector],
     [env.workItemsStatsCron, WorkItemsStatsCron],
+	[env.analyticsCron, AnalyticsCron]
   ];
+
+  // const duckDbConn = await acquireDuckDbConnection();  
+  let duckDbConn;
 
   for (const [cronSpec, jobClass] of cronEntries) {
     const logger = log.child({ 'cron_job': jobClass.name });
     const ctx: Context = {
       logger,
       db,
+	  duckDbConn,
     };
     new Cron(
       cronSpec, // when to run
