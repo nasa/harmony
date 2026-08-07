@@ -107,31 +107,31 @@ async function getLatestIcebergTableUpdateTime(ctx: Context, table: String): Pro
 /**
  *
  */
-async function initDbConnection(conn: DuckDBConnection) {
-  const sql = `
-	INSTALL aws;
-    INSTALL httpfs;
-    INSTALL iceberg;
-    LOAD aws;
-    LOAD httpfs;
-    SET TimeZone = 'UTC';
-
-	CREATE SECRET ministack_s3 (
-      TYPE s3,
-      KEY_ID 'ministack_fake_key',
-      SECRET 'ministack_fake_secret',
-      REGION 'us-east-1',
-      ENDPOINT 'localhost:4566', -- Adjust to your MiniStack container port if different
-      USE_SSL false
-    );
-	ATTACH 'arn:aws:s3tables:us-west-2:000000000000:bucket/icebeg-tables'
-    AS catalog (
-      TYPE iceberg,
-      ENDPOINT 'http://localhost:4566/iceberg',
-      AUTHORIZATION_TYPE 'none'
-    );`;
-  await conn.run(sql);
-}
+// async function initDbConnection(conn: DuckDBConnection) {
+  // const sql = `
+	// INSTALL aws;
+    // INSTALL httpfs;
+    // INSTALL iceberg;
+    // LOAD aws;
+    // LOAD httpfs;
+    // SET TimeZone = 'UTC';
+// 
+	// CREATE SECRET ministack_s3 (
+      // TYPE s3,
+      // KEY_ID 'ministack_fake_key',
+      // SECRET 'ministack_fake_secret',
+      // REGION 'us-east-1',
+      // ENDPOINT 'localhost:4566', -- Adjust to your MiniStack container port if different
+      // USE_SSL false
+    // );
+	// ATTACH 'arn:aws:s3tables:us-west-2:000000000000:bucket/icebeg-tables'
+    // AS catalog (
+      // TYPE iceberg,
+      // ENDPOINT 'http://localhost:4566/iceberg',
+      // AUTHORIZATION_TYPE 'none'
+    // );`;
+  // await conn.run(sql);
+// }
 
 
 
@@ -145,16 +145,16 @@ export class AnalyticsCron extends CronJob {
     try {
       // ctx.duckDbConn = await acquireDuckDbConnection();
       process.env.AWS_ACCOUNT_ID = '000000000000';
-      const instance = await DuckDBInstance.fromCache(':memory:');
-      ctx.duckDbConn = await instance.connect();
-      await initDbConnection(ctx.duckDbConn);
+      // const instance = await DuckDBInstance.fromCache(':memory:');
+      // ctx.duckDbConn = await instance.connect();
+      // await initDbConnection(ctx.duckDbConn);
       await updateAnalytics(ctx);
       logger.info('Completed analytics cron job');
     } catch (e) {
       logger.error('Failed to update analytics');
       logger.error(e);
     } finally {
-      await releaseDuckDbConnection(ctx.duckDbConn);
+      // await releaseDuckDbConnection(ctx.duckDbConn);
     }
   }
 }

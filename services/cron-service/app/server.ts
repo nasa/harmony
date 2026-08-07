@@ -1,5 +1,7 @@
 import { Cron } from 'croner';
 import express from 'express';
+import { DuckDBInstance, DuckDBConnection } from '@duckdb/node-api';
+import * as duckdb from '@duckdb/node-api';
 
 import { MemoryUsageCollector } from './cronjobs/memory-usage-collector';
 import { PublishServiceFailureMetrics } from './cronjobs/publish-failure-metrics';
@@ -7,6 +9,7 @@ import { RestartPrometheus } from './cronjobs/restart-prometheus';
 import { UserWorkUpdater } from './cronjobs/update-user-work';
 import { WorkItemsStatsCron } from './cronjobs/update-work-items-stats';
 import { WorkReaper } from './cronjobs/work-reaper';
+import { initDbConnection } from './util/db/iceberg-connection';
 import {
 	AnalyticsCron
 } from './cronjobs/update-analytics';
@@ -37,7 +40,10 @@ export default async function start(): Promise<void> {
   ];
 
   // const duckDbConn = await acquireDuckDbConnection();  
-  let duckDbConn;
+  const instance = await DuckDBInstance.fromCache(':memory:');
+  const duckDbConn = await instance.connect();
+  await initDbConnection(duckDbConn);
+
 
   for (const [cronSpec, jobClass] of cronEntries) {
     const logger = log.child({ 'cron_job': jobClass.name });
