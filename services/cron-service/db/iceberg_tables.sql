@@ -4,8 +4,8 @@ CREATE table catalog.iceberg.jobs (
 	username text,
 	status text,
 	progress integer,
-	created_at timestamp,
-	updated_dat timestamp,
+	created_at timestamptz,
+	updated_at timestamptz,
 	request text,
 	is_async boolean,
 	batches_completed integer,
@@ -17,7 +17,7 @@ CREATE table catalog.iceberg.jobs (
 	destination_url text,
 	service_name text,
 	provider_id text,
-	original_datea_size double,
+	original_data_size double,
 	output_data_size double);
 
 CREATE table catalog.iceberg.job_links (
@@ -27,11 +27,11 @@ CREATE table catalog.iceberg.job_links (
 	type text,
 	title text,
 	rel text,
-	temporal_start timestamp,
-	temporal_end timestamp,
+	temporal_start timestamptz,
+	temporal_end timestamptz,
 	bbox string,
-	created_at timestamp,
-	updated_at timestamp
+	created_at timestamptz,
+	updated_at timestamptz
 );
 
 CREATE table catalog.iceberg.work_items (
@@ -42,12 +42,12 @@ CREATE table catalog.iceberg.work_items (
 	service_id text,
 	status text,
 	stac_catalog_location text,
-	created_at timestamp,
-	updated_at timestamp,
+	created_at timestamptz,
+	updated_at timestamptz,
 	total_items_size double,
 	retry_count integer,
 	duration float,
-	started_at timestamp,
+	started_at timestamptz,
 	sort_index integer,
 	output_item_sizes_json text,
 	message_category text
@@ -60,8 +60,8 @@ CREATE table catalog.iceberg.workflow_steps (
 	step_index integer,
 	work_item_count integer,
 	operation text,
-	created_at timestamp,
-	updated_at timestamp,
+	created_at timestamptz,
+	updated_at timestamptz,
 	has_aggregated_output boolean,
 	max_batch_inputs integer,
 	max_batch_size_in_bytes integer,
