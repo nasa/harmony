@@ -27,12 +27,12 @@ export default async function start(): Promise<void> {
   // add cron entries here
   // see https://www.npmjs.com/package/croner#pattern for allowable crontab strings
   const cronEntries: [string, { run(ctx: Context): void; name: string; }][] = [
-    [env.workReaperCron, WorkReaper],
-    [env.restartPrometheusCron, RestartPrometheus],
-    [env.userWorkUpdaterCron, UserWorkUpdater],
-    [env.publishServiceFailureMetricsCron, PublishServiceFailureMetrics],
-    [env.memoryUsageCollectorCron, MemoryUsageCollector],
-    [env.workItemsStatsCron, WorkItemsStatsCron],
+    // [env.workReaperCron, WorkReaper],
+    // [env.restartPrometheusCron, RestartPrometheus],
+    // [env.userWorkUpdaterCron, UserWorkUpdater],
+    // [env.publishServiceFailureMetricsCron, PublishServiceFailureMetrics],
+    // [env.memoryUsageCollectorCron, MemoryUsageCollector],
+    // [env.workItemsStatsCron, WorkItemsStatsCron],
 	[env.analyticsCron, AnalyticsCron]
   ];
 
