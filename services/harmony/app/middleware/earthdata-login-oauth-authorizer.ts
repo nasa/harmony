@@ -78,15 +78,23 @@ async function handleCodeValidation(oauth2: AuthorizationCode, req, res, _next):
  * @param _next - The next function in the middleware chain
  */
 async function handleLogout(oauth2: AuthorizationCode, req, res, _next): Promise<void> {
-  const { redirect } = req.query;
-
   const { token } = req.signedCookies;
+
   if (token) {
     const oauthToken = oauth2.createToken(token);
     await oauthToken.revokeAll();
-    res.clearCookie('token', cookieOptions);
   }
-  res.redirect(307, redirect || '/');
+
+  res.clearCookie('token');
+  res.clearCookie('redirect');
+
+  const edlLogoutUrl = new URL('/logout', oauthOptions.auth.tokenHost);
+  edlLogoutUrl.searchParams.set(
+    'post_logout_redirect_uri',
+    new URL('/', process.env.OAUTH_REDIRECT_URI).origin,
+  );
+
+  res.redirect(303, edlLogoutUrl.toString());
 }
 
 /**
