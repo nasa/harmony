@@ -5,3 +5,6 @@ export abstract class CronJob {
     throw new Error('Method not implemented! Use derived class');
   }
 }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type CronJobClass = (new (...args: any[]) => CronJob) & typeof CronJob;
