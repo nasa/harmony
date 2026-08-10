@@ -82,19 +82,24 @@ async function handleLogout(oauth2: AuthorizationCode, req, res, _next): Promise
 
   if (token) {
     const oauthToken = oauth2.createToken(token);
-    await oauthToken.revokeAll();
+    try {
+      await oauthToken.revokeAll();
+    } catch (e) {
+      req.context.logger.error('Failed to revoke token during logout.');
+      req.context.logger.error(e.stack);
+    }
   }
 
   res.clearCookie('token');
   res.clearCookie('redirect');
 
-  const edlLogoutUrl = new URL('/logout', oauthOptions.auth.tokenHost);
-  edlLogoutUrl.searchParams.set(
+  const logoutUrl = new URL('/logout', oauthOptions.auth.tokenHost);
+  logoutUrl.searchParams.set(
     'post_logout_redirect_uri',
     new URL('/', process.env.OAUTH_REDIRECT_URI).origin,
   );
 
-  res.redirect(303, edlLogoutUrl.toString());
+  res.redirect(303, logoutUrl.toString());
 }
 
 /**
