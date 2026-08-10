@@ -562,7 +562,7 @@ describe('Earthdata Login', function () {
 
   describe('When an EDL oauth endpoint fails', function () {
     before(async function () {
-      this.req = request(this.frontend).get('/oauth2/logout').use(auth({ username: fakeUsername }));
+      this.req = request(this.frontend).get('/oauth2/redirect').use(auth({ username: fakeUsername }));
       this.revokeStub = stubEdlError(
         '/oauth/revoke',
         undefined,
