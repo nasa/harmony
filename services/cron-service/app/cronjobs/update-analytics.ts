@@ -1,6 +1,6 @@
 import { DuckDBInstance, DuckDBConnection } from '@duckdb/node-api';
 import * as duckdb from '@duckdb/node-api';
-import { writeFileSync } from 'fs';
+import { unlinkSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { tableFromJSON } from "apache-arrow";
@@ -20,20 +20,16 @@ const { logger, db } = ctx;
 const result = new Array<Map<string, any>>();
   
 try {
-  await db.transaction(async (tx) => {
-    const query = tx(table)
-      .select()
-      .whereRaw(`"updatedAt" > (?::timestamptz - INTERVAL '1 minutes')`, [latestUpdatedAt])
-      .orderBy("updatedAt", "asc")
-      .limit(batchSize);
-        
-    const res = await query;
+  const res = await db(table)
+    .select()
+    .whereRaw(`"updatedAt" > (?::timestamptz - INTERVAL '1 minutes')`, [latestUpdatedAt])
+    .orderBy("updatedAt", "asc")
+    .limit(batchSize);
       
-    for (let row of res) {
-      row = snakeCaseKeys(row);
-      result.push(row);
-    } 
-  });
+  for (let row of res) {
+    row = snakeCaseKeys(row);
+    result.push(row);
+  } 
 } catch (err) {
   logger.error(err);
 }
@@ -55,12 +51,16 @@ async function updateAnalytics(ctx: Context): Promise<void> {
     const latestUpdateTime = await getLatestIcebergTableUpdateTime(ctx, table);
     logger.debug(`=============> Table ${table} latest update time is ${latestUpdateTime.toISOString()}`);
     const rows = await getPostgresRows(ctx, table, latestUpdateTime.toISOString());
+    logger.debug('ROWS==========');
+    logger.debug(rows);
     if (rows && rows.length > 0) {
 	     const tempDir = tmpdir();
 	    
 	     const uniqueFilename = `temp-data-${Date.now()}-${Math.random().toString(36).substring(2, 9)}.json`;
 	     const tempFilePath = join(tempDir, uniqueFilename);
 	     logger.debug(`TEMP_FILE_PATH = ${tempFilePath}`);
+	     try {
+	      
 	         const jsonString = JSON.stringify(rows, null, 2);
 	         writeFileSync(tempFilePath, jsonString, 'utf8');
 	         const query = `MERGE INTO catalog.iceberg.${table} AS target
@@ -73,7 +73,18 @@ async function updateAnalytics(ctx: Context): Promise<void> {
 	         			   WHEN NOT MATCHED THEN
 	         			     INSERT BY NAME;`
 	         await duckDbConn.run(query);
+	         logger.debug(`Wrote new rows to ${table}`);
      
+     	} catch (err) {
+     	  logger.error(err); 
+     	} finally {
+     	  // Ensure temporary file is cleaned up even if duckDbConn throws
+     	  try {
+     	    unlinkSync(tempFilePath);
+     	  } catch (e) {
+     	    logger.warn(`Failed to cleanup temp file: ${tempFilePath}`);
+     	  }
+     	}
     }
   }
 }
