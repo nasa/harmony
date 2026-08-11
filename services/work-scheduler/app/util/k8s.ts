@@ -7,21 +7,28 @@ import { k8sApi } from '../workers/scheduler';
  * @param namespace - The namespace in which to look for pods
  * @returns The number of pods running for the service
  * @throws An error if the Kubernetes API call fails
- **/
+ */
 export async function getPodsCountForService(serviceId: string, namespace = 'harmony'): Promise<number> {
   const startTime = Date.now();
+
   // Get all pods in the namespace
-  const allPodsResponse = await k8sApi.listNamespacedPod(namespace);
+  const allPodsResponse = await k8sApi.listNamespacedPod({
+    namespace,
+  });
+
   const endTime = Date.now();
+
   logger.debug(`getPodsCountForService: Got all pods in ${endTime - startTime}ms`);
+
   // Count the ones that have a container with the service ID as the image
-  const pods = allPodsResponse.body.items.filter((pod) => {
+  const pods = allPodsResponse.items.filter((pod) => {
     return pod.spec.containers.some((container) => {
       return container.image === serviceId;
     });
   });
 
   const runningPods = pods.filter((pod) => pod.status.phase === 'Running');
+
   return runningPods.length;
 }
 
@@ -30,13 +37,17 @@ export async function getPodsCountForService(serviceId: string, namespace = 'har
  * @param podName - The pod name for which to get the number of pods
  * @param namespace - The namespace in which to look for pods
  * @returns The number of pods running for the service
- **/
+ */
 export async function getPodsCountForPodName(podName: string, namespace = 'harmony'): Promise<number> {
   try {
     const labelSelector = `name=${podName}`;
 
-    const res = await k8sApi.listNamespacedPod(namespace, undefined, undefined, undefined, undefined, labelSelector);
-    const pods = res.body.items;
+    const res = await k8sApi.listNamespacedPod({
+      namespace,
+      labelSelector,
+    });
+
+    const pods = res.items;
     const runningPods = pods.filter(pod => pod.status.phase === 'Running');
 
     return runningPods.length;
