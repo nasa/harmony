@@ -71,6 +71,8 @@ class CronServiceHarmonyEnv extends HarmonyEnv {
   // Begin analytics variables
   @IsCrontab()
   analyticsCron: string;
+  
+  s3TableBucketArn: string;
   // End analytics variables
 }
 
