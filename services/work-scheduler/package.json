@@ -40,7 +40,7 @@
     "@aws-sdk/credential-provider-node": "^3.968.0",
     "@aws-sdk/s3-request-presigner": "^3.972.0",
     "@harmony/util": "file:../../packages/util",
-    "@kubernetes/client-node": "^0.22.3",
+    "@kubernetes/client-node": "^1.4.0",
     "@smithy/protocol-http": "^5.3.8",
     "@smithy/signature-v4": "^5.3.8",
     "@smithy/util-uri-escape": "^4.2.0",
