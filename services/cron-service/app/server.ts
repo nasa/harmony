@@ -1,5 +1,3 @@
-import { DuckDBInstance } from '@duckdb/node-api';
-import * as duckdb from '@duckdb/node-api';
 import { Cron } from 'croner';
 import express from 'express';
 
@@ -15,7 +13,6 @@ import { WorkItemsStatsCron } from './cronjobs/update-work-items-stats';
 import { WorkReaper } from './cronjobs/work-reaper';
 import router from './routers/router';
 import { Context } from './util/context';
-import { initDbConnection, acquireDuckDbConnection } from './util/db/iceberg-connection';
 import env from './util/env';
 import db from '../../harmony/app/util/db';
 import log from '../../harmony/app/util/log';
@@ -29,12 +26,12 @@ export default async function start(): Promise<void> {
   // add cron entries here
   // see https://www.npmjs.com/package/croner#pattern for allowable crontab strings
   const cronEntries: [string, CronJobClass][] = [
-    // [env.workReaperCron, WorkReaper],
-    // [env.restartPrometheusCron, RestartPrometheus],
-    // [env.userWorkUpdaterCron, UserWorkUpdater],
-    // [env.publishServiceFailureMetricsCron, PublishServiceFailureMetrics],
-    // [env.memoryUsageCollectorCron, MemoryUsageCollector],
-    // [env.workItemsStatsCron, WorkItemsStatsCron],
+    [env.workReaperCron, WorkReaper],
+    [env.restartPrometheusCron, RestartPrometheus],
+    [env.userWorkUpdaterCron, UserWorkUpdater],
+    [env.publishServiceFailureMetricsCron, PublishServiceFailureMetrics],
+    [env.memoryUsageCollectorCron, MemoryUsageCollector],
+    [env.workItemsStatsCron, WorkItemsStatsCron],
     [env.analyticsCron, AnalyticsCron],
   ];
 
