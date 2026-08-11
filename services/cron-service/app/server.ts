@@ -1,4 +1,4 @@
-import { DuckDBInstance, DuckDBConnection } from '@duckdb/node-api';
+import { DuckDBInstance } from '@duckdb/node-api';
 import * as duckdb from '@duckdb/node-api';
 import { Cron } from 'croner';
 import express from 'express';
@@ -39,16 +39,12 @@ export default async function start(): Promise<void> {
   ];
 
   // const duckDbConn = await acquireDuckDbConnection();
-  const instance = await DuckDBInstance.fromCache(':memory:');
-  const duckDbConn = await instance.connect();
-  await initDbConnection(duckDbConn);
 
   for (const [cronSpec, jobClass] of cronEntries) {
     const logger = log.child({ 'cron_job': jobClass.name });
     const ctx: Context = {
       logger,
       db,
-      duckDbConn,
     };
     new Cron(
       cronSpec, // when to run
