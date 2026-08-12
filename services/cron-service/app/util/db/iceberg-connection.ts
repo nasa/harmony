@@ -1,4 +1,5 @@
 import { DuckDBConnection } from '@duckdb/node-api';
+
 import env from '../../util/env';
 
 const ministackSql = `
@@ -23,7 +24,7 @@ ATTACH 'arn:aws:s3tables:us-west-2:000000000000:bucket/icebeg-tables'
      ENDPOINT 'http://localhost:4566/iceberg',
      AUTHORIZATION_TYPE 'none'
    );`;
-   
+
 const awsSql = `
 INSTALL aws;
    INSTALL httpfs;
@@ -46,6 +47,6 @@ export async function initDbConnection(conn: DuckDBConnection): Promise<void> {
   let sql = awsSql;
   if (env.useLocalstack) {
     sql = ministackSql;
-  } 
-  await conn.run(ministackSql);
+  }
+  await conn.run(sql);
 }
