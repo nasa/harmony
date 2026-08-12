@@ -146,6 +146,11 @@ The structure of an entry in the [services-uat.yml](../../config/services-uat.ym
     reprojection: true            # The service supports reprojection
   validate_variables: true        # Whether to validate the requested variables exist in the CMR. Defaults to true.
   external_validation_url: http://example.com # Optional endpoint to be called to validate the user making a request
+  requirements:                   # Optional request parameters combination that must exist for the service to be invoked
+    - exists: ['timeAverage', 'areaAverage']
+    - exists: ['variableSubset']
+    - exists: ['temporalSubset']
+    - exists: ['spatialSubset']
   steps:
       - image: !Env ${QUERY_CMR_IMAGE} # The image to use for the first step in the chain
         is_sequential: true       # Required for query-cmr
@@ -157,6 +162,30 @@ Each harmony service must have one and only one `umm-s` concept-id configured vi
 **NOTE:** `collections` field can only have value when `granule_limit` or `variables` need to be configured for specific collections for the service.
 
 If you intend for Harmony job results that include this collection to be shareable, make sure that guests have `read` permission on the collection (via [CMR ACLs endpoints](https://cmr.earthdata.nasa.gov/access-control/site/docs/access-control/api.html)), and if no EULAs are present that the `harmony.has-eula` tag is associated with the collection and set to `false` via the CMR `/search/tags/harmony.has-eula/associations` endpoint. Example request body: `[{"concept_id": "C1233860183-EEDTEST", "data": false}]`. All collections used in the Harmony job must meet these two requirements in order for the job to be shareable.
+
+
+### Requirements
+
+Services may include an optional `requirements` list that controls when the service will be invoked based on the operations present in the incoming request. Requirements can only be placed at the service level, not on individual `steps`.
+
+- The `requirements` value is a YAML list of requirement objects. Top-level list entries are combined with logical AND (every entry must be satisfied).
+- A requirement object of the form `exists: [op1, op2, ...]` is satisfied if any one of the listed operations is present in the request (logical OR within that list).
+
+- Currently the only supported requirements key is `exists`.
+
+For example, the following `requirements` block:
+
+```yaml
+requirements:
+  - exists: ['timeAverage', 'areaAverage']
+  - exists: ['variableSubset']
+  - exists: ['temporalSubset']
+  - exists: ['spatialSubset']
+```
+
+means the service will only be invoked when the request includes at least one of `timeAverage` or `areaAverage`, and also includes `variableSubset`, `temporalSubset`, and `spatialSubset`.
+
+### steps
 
 The last part of this entry defines the workflow for this service consisting of the query-cmr service (CMR_GRANULE_LOCATOR_IMAGE) followed by the docker_example service (DOCKER_EXAMPLE_IMAGE). For single service (excluding query-cmr) workflows, one need only list the steps. For more complicated workflows involving chained services (once again not counting the query-cmr service) one can list the operations each service in the chain provides along with a list of conditions under which the service will be invoked.
 
@@ -195,14 +224,14 @@ steps:
 
 Here we have the query-cmr service (this service is the first in every current workflow). This is followed by the optional NetCDF to COG service, which will only be invoked when the collection's UMM-C native format is one of the values that are defined (case insensitive) in the steps configuration (i.e. `[netcdf-4]`). Finally, we have the HyBIG service that converts the GeoTIFF inputs from the previous step to Global Imagery Browse Services (GIBS) compatible PNG or JPEG outputs. See [10. Service chaining](#10-service-chaining) for more info.
 
-### Sequential Steps
+#### Sequential Steps
 Most steps will produce all of the pieces of work (known as work-items) for a service immediately when the step begins. This allows all of the work-items to be worked in parallel. It is possible, however, for new work-items for the same service to be produced as the step is being worked. In this case, the work-items must be worked sequentially. Steps that must be worked sequentially should include `is_sequential: true` in their definition.
 
 An example of this is the query-cmr service. Each invocation of the query-cmr service can only return up to 2000 granules (due to the CMR page size limit), so, if the job has more granules than that, query-cmr is invoked multiple times. This must be done sequentially due to the way the CMR uses a scroll ID for paging.
 
 For most services `is_sequential: true` is not necessary.
 
-### Aggregation Steps
+#### Aggregation Steps
 Services that provide aggregation, e.g., concatenation for CONCISE, require that all inputs are available when they are run. There are cases when a service can concatenate, but based on the user request will instead work on one granule at a time. For aggregation services that should always wait for the prior step inputs set `always_wait_for_prior_step` to true. Otherwise harmony will infer whether to wait based on the `operations` field in the associated step and whether the user requested some type of aggregation.
 The currently supported aggregation operations are `concatenate` and `extend`.
 
