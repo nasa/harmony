@@ -413,14 +413,15 @@ function countClass(count: number, status: TrackedStatus): string {
 }
 
 /**
- * Computes a success rate from a set of status counts.
- * Warnings are included in the denominator while canceled items are excluded.
+ * Computes a success rate from a set of status counts. Only successful and failed
+ * items are considered; warned and canceled items are excluded from the
+ * denominator so that neither counts against the rate.
  *
  * @param counts - The status counts to evaluate
  * @returns Success rate between 0 and 1, or null if no applicable items exist
  */
 function computeRate(counts: StatusCounts): number | null {
-  const denominator = counts.successful + counts.failed + counts.warning;
+  const denominator = counts.successful + counts.failed;
 
   if (denominator === 0) {
     return null;
@@ -449,6 +450,17 @@ function rateClass(rate: number | null): string {
   }
 
   return 'rate-bad';
+}
+
+/**
+ * Formats a count for display in the HTML dashboard, grouping thousands with
+ * commas. Only used for the HTML view - the JSON response returns raw numbers.
+ *
+ * @param count - The count to format
+ * @returns The count as a string with thousands separators
+ */
+function formatCount(count: number): string {
+  return count.toLocaleString('en-US');
 }
 
 /**
@@ -484,10 +496,10 @@ interface DashboardWindowView {
   startTime: string;
   endTime: string;
 
-  successful: number;
-  failed: number;
-  canceled: number;
-  warning: number;
+  successful: string;
+  failed: string;
+  canceled: string;
+  warning: string;
 
   successfulClass: string;
   failedClass: string;
@@ -537,10 +549,10 @@ function renderDashboardHtml(
       startTime: range ? new Date(range.start).toISOString() : '',
       endTime: range ? new Date(range.end).toISOString() : '',
 
-      successful: counts.successful,
-      failed: counts.failed,
-      canceled: counts.canceled,
-      warning: counts.warning,
+      successful: formatCount(counts.successful),
+      failed: formatCount(counts.failed),
+      canceled: formatCount(counts.canceled),
+      warning: formatCount(counts.warning),
 
       successfulClass: countClass(counts.successful, 'successful'),
       failedClass: countClass(counts.failed, 'failed'),
@@ -589,7 +601,9 @@ function renderDashboardHtml(
 
     return {
       name,
-      queued: details.queued,
+      // queued for display has thousands separators, queuedCount is a raw number for sorting
+      queuedCount: details.queued,
+      queued: formatCount(details.queued),
       windows,
       trendIsUp,
       trendIsDown,
@@ -599,16 +613,16 @@ function renderDashboardHtml(
 
   const queuesArray = Object.entries(queues).map(([name, count]) => ({
     name: camelCaseToSpacedTitleCase(name),
-    count,
+    count: formatCount(count),
     isFailed: count === -1,
   }));
 
   // Sort by queued count descending for the primary dashboard view
-  servicesArray.sort((a, b) => b.queued - a.queued);
+  servicesArray.sort((a, b) => b.queuedCount - a.queuedCount);
 
   const windows = buildWindows(totals.windows);
   const summary = {
-    queued: totals.queued,
+    queued: formatCount(totals.queued),
     windows,
   };
 

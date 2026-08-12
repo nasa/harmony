@@ -98,12 +98,13 @@ a .badge-dark {
   z-index: 1;
 }
 
+/* An improving success rate is good news (green); a declining one is bad (red). */
 .trend-up {
-  color: #cf222e;
+  color: #1a7f37;
 }
 
 .trend-down {
-  color: #1a7f37;
+  color: #cf222e;
 }
 
 .trend-flat {

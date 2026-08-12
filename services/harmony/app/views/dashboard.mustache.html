@@ -338,6 +338,17 @@
     }
 
     /**
+     * Parses a numeric cell ("1,234") to a sortable number, ignoring the
+     * thousands separators added for display.
+     *
+     * @param {string} text
+     * @returns {number}
+     */
+    function parseNumericCell(text) {
+      return parseInt(text.replace(/,/g, ''), 10);
+    }
+
+    /**
      * Returns the sortable column types based on the dynamic window count.
      *
      * @returns {{numericColumns: Set<number>, percentColumns: Set<number>}}
@@ -413,8 +424,8 @@
 
         if (isNumeric) {
           return (
-            parseInt(x, 10) -
-            parseInt(y, 10)
+            parseNumericCell(x) -
+            parseNumericCell(y)
           ) * direction;
         }
 
