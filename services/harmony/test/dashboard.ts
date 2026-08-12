@@ -677,7 +677,7 @@ describe('getDashboard', () => {
       const data = res.render.firstCall.args[1];
       expect(data.services).to.be.an('array');
       expect(data.services[0].name).to.equal('high-service');
-      expect(data.services[0].queued).to.equal(100);
+      expect(data.services[0].queued).to.equal('100');
     });
 
     it('transforms camelCase queue names into Title Case for the UI', async () => {
@@ -686,7 +686,7 @@ describe('getDashboard', () => {
       const data = res.render.firstCall.args[1];
       const smallUpdateQueue = data.queues.find(q => q.name === 'Small Work Item Updates');
       expect(smallUpdateQueue).to.exist;
-      expect(smallUpdateQueue.count).to.be.a('number');
+      expect(smallUpdateQueue.count).to.equal('20');
     });
 
     it('includes the harmony version in the rendered view', async () => {
@@ -706,7 +706,7 @@ describe('getDashboard', () => {
       const schedulerData = data.queues.find((q: any) => q.name === 'Work Item Scheduler');
 
       expect(schedulerData.isFailed).to.be.true;
-      expect(schedulerData.count).to.equal(-1);
+      expect(schedulerData.count).to.equal('-1');
     });
 
     it('sets isFailed to false when a queue count is valid', async () => {
@@ -716,7 +716,7 @@ describe('getDashboard', () => {
       const smallUpdateData = data.queues.find((q: any) => q.name === 'Small Work Item Updates');
 
       expect(smallUpdateData.isFailed).to.be.false;
-      expect(smallUpdateData.count).to.equal(20);
+      expect(smallUpdateData.count).to.equal('20');
     });
 
     it('sorts the services array by queued count descending for the initial view', async () => {
@@ -797,6 +797,170 @@ describe('getDashboard', () => {
         expect(window.warningClass).to.be.a('string');
         expect(window.rateClass).to.be.a('string');
       }
+    });
+
+    describe('success percentage', () => {
+      beforeEach(() => {
+        imageMapStub.returns({ 'some-image': 'some-service' });
+        getCountsByServiceStub.resolves({});
+      });
+
+      /**
+       * Stubs the 5-minute window with the given rows and returns the rendered
+       * success rate string for the first window of 'some-service'.
+       */
+      async function rateForRows(rows: workItemsStats.WorkItemsStatsRow[]): Promise<string> {
+        getWorkItemsStatsSummaryStub.callsFake((_trx: any, options: { lastMinutes: number }) => {
+          if (options.lastMinutes === 5) {
+            return Promise.resolve(makeStatsSummaryWithRows(5, rows));
+          }
+          return Promise.resolve(makeEmptyStatsSummary(options.lastMinutes));
+        });
+
+        await getDashboard(req, res, next);
+
+        const service = res.render.firstCall.args[1].services
+          .find((s: any) => s.name === 'some-service');
+        return service.windows[0].rate;
+      }
+
+      it('does not count warnings against the success percentage', async () => {
+        const rate = await rateForRows([
+          { service_id: 'some-image', status: 'successful', count: 90 },
+          { service_id: 'some-image', status: 'warning', count: 10 },
+        ]);
+
+        // Warnings are excluded from the denominator, so 90/90 is 100%
+        expect(rate).to.equal('100.0%');
+      });
+
+      it('excludes warnings from the denominator when failures are present', async () => {
+        const rate = await rateForRows([
+          { service_id: 'some-image', status: 'successful', count: 90 },
+          { service_id: 'some-image', status: 'failed', count: 10 },
+          { service_id: 'some-image', status: 'warning', count: 100 },
+        ]);
+
+        // 90 / (90 + 10), the 100 warnings are ignored entirely
+        expect(rate).to.equal('90.0%');
+      });
+
+      it('excludes canceled items from the success percentage', async () => {
+        const rate = await rateForRows([
+          { service_id: 'some-image', status: 'successful', count: 50 },
+          { service_id: 'some-image', status: 'canceled', count: 50 },
+        ]);
+
+        expect(rate).to.equal('100.0%');
+      });
+
+      it('reports no rate when a window has only warnings and cancellations', async () => {
+        const rate = await rateForRows([
+          { service_id: 'some-image', status: 'warning', count: 5 },
+          { service_id: 'some-image', status: 'canceled', count: 5 },
+        ]);
+
+        expect(rate).to.equal('—');
+      });
+
+      it('marks a rate of 100% with the good rate class', async () => {
+        getWorkItemsStatsSummaryStub.callsFake((_trx: any, options: { lastMinutes: number }) => {
+          if (options.lastMinutes === 5) {
+            return Promise.resolve(makeStatsSummaryWithRows(5, [
+              { service_id: 'some-image', status: 'successful', count: 10 },
+              { service_id: 'some-image', status: 'warning', count: 10 },
+            ]));
+          }
+          return Promise.resolve(makeEmptyStatsSummary(options.lastMinutes));
+        });
+
+        await getDashboard(req, res, next);
+
+        const service = res.render.firstCall.args[1].services
+          .find((s: any) => s.name === 'some-service');
+        expect(service.windows[0].rateClass).to.equal('rate-good');
+      });
+    });
+
+    describe('number formatting', () => {
+      it('formats large counts with commas for the HTML view', async () => {
+        imageMapStub.returns({ 'some-image': 'some-service' });
+        getCountsByServiceStub.resolves({ 'some-image': { queued: 1234567 } });
+
+        getWorkItemsStatsSummaryStub.callsFake((_trx: any, options: { lastMinutes: number }) => {
+          if (options.lastMinutes === 5) {
+            return Promise.resolve(makeStatsSummaryWithRows(5, [
+              { service_id: 'some-image', status: 'successful', count: 1000 },
+              { service_id: 'some-image', status: 'failed', count: 25000 },
+              { service_id: 'some-image', status: 'canceled', count: 100000 },
+              { service_id: 'some-image', status: 'warning', count: 9999 },
+            ]));
+          }
+          return Promise.resolve(makeEmptyStatsSummary(options.lastMinutes));
+        });
+
+        await getDashboard(req, res, next);
+
+        const service = res.render.firstCall.args[1].services
+          .find((s: any) => s.name === 'some-service');
+
+        expect(service.queued).to.equal('1,234,567');
+        expect(service.windows[0].successful).to.equal('1,000');
+        expect(service.windows[0].failed).to.equal('25,000');
+        expect(service.windows[0].canceled).to.equal('100,000');
+        expect(service.windows[0].warning).to.equal('9,999');
+      });
+
+      it('does not add separators to counts below one thousand', async () => {
+        imageMapStub.returns({ 'some-image': 'some-service' });
+        getCountsByServiceStub.resolves({ 'some-image': { queued: 999 } });
+
+        await getDashboard(req, res, next);
+
+        const service = res.render.firstCall.args[1].services
+          .find((s: any) => s.name === 'some-service');
+        expect(service.queued).to.equal('999');
+        expect(service.windows[0].successful).to.equal('0');
+      });
+
+      it('formats the system summary and queue counts with commas', async () => {
+        imageMapStub.returns({ 'some-image': 'some-service' });
+        getCountsByServiceStub.resolves({ 'some-image': { queued: 2500000 } });
+
+        const smallUpdateQueue = qf.getQueueForType(WorkItemQueueType.SMALL_ITEM_UPDATE);
+        (smallUpdateQueue.getApproximateNumberOfMessages as sinon.SinonStub).resolves(45000);
+
+        await getDashboard(req, res, next);
+
+        const data = res.render.firstCall.args[1];
+        expect(data.summary.queued).to.equal('2,500,000');
+
+        const queue = data.queues.find((q: any) => q.name === 'Small Work Item Updates');
+        expect(queue.count).to.equal('45,000');
+      });
+
+      it('returns raw numbers rather than formatted strings in the JSON response', async () => {
+        req.accepts.returns('json');
+        imageMapStub.returns({ 'some-image': 'some-service' });
+        getCountsByServiceStub.resolves({ 'some-image': { queued: 1234567 } });
+
+        getWorkItemsStatsSummaryStub.callsFake((_trx: any, options: { lastMinutes: number }) => {
+          if (options.lastMinutes === 5) {
+            return Promise.resolve(makeStatsSummaryWithRows(5, [
+              { service_id: 'some-image', status: 'successful', count: 250000 },
+            ]));
+          }
+          return Promise.resolve(makeEmptyStatsSummary(options.lastMinutes));
+        });
+
+        await getDashboard(req, res, next);
+
+        const result = res.json.firstCall.args[0];
+        expect(result.services['some-service'].queued).to.equal(1234567);
+        expect(result.services['some-service'].windows.last5Minutes.successful).to.equal(250000);
+        expect(result.totals.queued).to.equal(1234567);
+        expect(result.queues.smallWorkItemUpdates).to.be.a('number');
+      });
     });
 
     it('sets trendIsDown when 5-minute success rate is more than 2pp below the 60-minute rate', async () => {
