@@ -67,5 +67,5 @@ export default async function start(): Promise<void> {
 }
 
 if (require.main === module) {
-  start();
+  void start();
 }
