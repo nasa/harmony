@@ -10,6 +10,7 @@ import { DOMParser } from '@xmldom/xmldom';
 import { NextFunction } from 'express';
 import { Feature, MultiPoint, MultiPolygon, Point, Polygon } from 'geojson';
 import splitGeoJson from 'geojson-antimeridian-cut';
+import { valid } from 'geojson-validation';
 import { cloneDeep, get, isEqual } from 'lodash';
 import * as shpjs from 'shpjs';
 import * as tmp from 'tmp-promise';
@@ -271,6 +272,7 @@ export function normalizeGeoJson(geoJson: object): object {
  * Handle any weird cases like splitting geometry that crosses the antimeridian
  * @param url - the url of the geojson file
  * @param isLocal - whether the url is a downloaded file (true) or needs to be downloaded (false)
+ * @throws RequestValidationError - if the geojson file is not valid
  * @returns the link to the geojson file
  */
 async function normalizeGeoJsonFile(url: string, isLocal: boolean): Promise<string> {
@@ -282,6 +284,11 @@ async function normalizeGeoJsonFile(url: string, isLocal: boolean): Promise<stri
   } else {
     originalGeoJson = (await fs.readFile(localFile)).toJSON();
   }
+
+  if (!valid(originalGeoJson)) {
+    throw new RequestValidationError('Shapefile is not or cannot be converted to valid geojson');
+  }
+
   const normalizedGeoJson = normalizeGeoJson(originalGeoJson);
 
   let resultUrl = url;
