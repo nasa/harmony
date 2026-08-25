@@ -5,10 +5,10 @@ import sinon from 'sinon';
 import { getDashboard, THIRTY_YEARS_IN_MINUTES } from '../app/frontends/dashboard';
 import * as userWork from '../app/models/user-work';
 import * as workItemsStats from '../app/models/work-items-stats';
+import { RequestValidationError } from '../app/util/errors';
 import { WorkItemQueueType } from '../app/util/queue/queue';
 import * as qf from '../app/util/queue/queue-factory';
 import * as serviceImages from '../app/util/service-images';
-import { RequestValidationError } from 'app/util/errors';
 
 /**
  * Returns a fake getWorkItemsStatsSummary result with empty rows and fixed time boundaries.
@@ -87,18 +87,8 @@ describe('getDashboard', () => {
   // ---------------------------------------------------------------------------
 
   describe('version validation', () => {
-    it('succeeds when a valid version (1-alpha) is provided', async () => {
-      req.query.version = '1-alpha';
-      getCountsByServiceStub.resolves({});
-
-      await getDashboard(req, res, next);
-
-      expect(next.called).to.be.false;
-      expect(res.json.calledOnce).to.be.true;
-    });
-
-    it('is case-insensitive when validating the version parameter', async () => {
-      req.query.version = '1-ALPHA';
+    it('succeeds when a valid version 1 is provided', async () => {
+      req.query.version = '1';
       getCountsByServiceStub.resolves({});
 
       await getDashboard(req, res, next);
@@ -276,7 +266,7 @@ describe('getDashboard', () => {
       expect(res.json.calledOnce).to.be.true;
       const result = res.json.firstCall.args[0];
 
-      expect(result.version).to.equal('1-alpha');
+      expect(result.version).to.equal('1');
       expect(Object.keys(result.services)).to.deep.equal([
         'harmony-service-example',
         'podaac-l2-subsetter',
