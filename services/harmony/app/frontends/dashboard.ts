@@ -14,8 +14,8 @@ import { getQueueForType, getWorkSchedulerQueue } from '../util/queue/queue-fact
 import { getImageToServiceMap, getServiceName } from '../util/service-images';
 import harmonyVersion from '../util/version';
 
-export const currentApiVersion = '1-alpha';
-const supportedApiVersions = ['1-alpha'];
+export const currentApiVersion = '1';
+const supportedApiVersions = ['1'];
 
 const TRACKED_STATUSES = ['successful', 'failed', 'canceled', 'warning'] as const;
 type TrackedStatus = typeof TRACKED_STATUSES[number];
