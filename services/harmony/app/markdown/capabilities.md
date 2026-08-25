@@ -13,10 +13,10 @@ Either `collectionId` or `shortName` must be provided.
 **Table {{tableCounter}}** - Harmony capabilities endpoint parameters
 
 ##### <a name="response"></a> Response
-The returned JSON response will have the configured capabilities in Harmony for the given collection in terms of supported features (e.g. variable subsetting, bounding box subsetting, concatenation, reprojection, etc.), the output formats, the list of Harmony services that are applicable for the collection, the list of variables that are associated with the collection and the version of the capabilites result format.
+The returned JSON response will have the configured capabilities in Harmony for the given collection in terms of supported features (e.g. variable subsetting, bounding box subsetting, concatenation, reprojection, etc.), the output formats, the list of Harmony services that are applicable for the collection, the list of variables that are associated with the collection and the version of the capabilities result format.
 
 ###### <a name="response-v2"></a> Version 2
-See below for the root level fields in the capabilites response and their descriptions
+See below for the root level fields in the capabilities response and their descriptions
 
 | field               | description                                                                                               |
 |---------------------|-----------------------------------------------------------------------------------------------------------|
@@ -35,7 +35,7 @@ See below for the root level fields in the capabilites response and their descri
 **Table {{tableCounter}}** - Harmony capabilities endpoint response version 2 fields
 
 ###### <a name="response-v3"></a> Version 3
-See below for the root level fields in the capabilites response and their descriptions for version 3 which is the current stable version:
+See below for the root level fields in the capabilities response and their descriptions for version 3 which is the current stable version:
 
 | field               | description                                                                                               |
 |---------------------|-----------------------------------------------------------------------------------------------------------|

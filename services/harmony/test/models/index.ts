@@ -23,13 +23,13 @@ describe('validateStepOperations', function () {
     const configs = loadServiceConfigsFromFile(cmrEndpoints.prod, testServicesYmlFile);
     const testConfig = configs[0];
     testConfig.steps[1].operations = ['concatenate'];
-    describe('and the capabilites do not', function () {
+    describe('and the capabilities do not', function () {
       testConfig.capabilities = {};
       it('returns an error message', function () {
         expect(validateStepOperations(testConfig, testConfig.steps[1])).to.equal('Service with-unsupported-config step with image ghcr.io/podaac/l2ss-py:sit has operation \'concatenate\' which is not included in capabilities.');
       });
     });
-    describe('and the capabilites do as well', function () {
+    describe('and the capabilities do as well', function () {
       it('does not return an error message', function () {
         testConfig.capabilities.concatenation = true;
         expect(validateStepOperations(testConfig, testConfig.steps[1])).to.be.null;
@@ -41,13 +41,13 @@ describe('validateStepOperations', function () {
     const configs = loadServiceConfigsFromFile(cmrEndpoints.prod, testServicesYmlFile);
     const testConfig = configs[0];
     testConfig.steps[1].operations = ['dimensionSubset'];
-    describe('and the capabilites do not', function () {
+    describe('and the capabilities do not', function () {
       testConfig.capabilities = {};
       it('returns an error message', function () {
         expect(validateStepOperations(testConfig, testConfig.steps[1])).to.equal('Service with-unsupported-config step with image ghcr.io/podaac/l2ss-py:sit has operation \'dimensionSubset\' which is not included in capabilities.');
       });
     });
-    describe('and the capabilites do as well', function () {
+    describe('and the capabilities do as well', function () {
       it('does not return an error message', function () {
         testConfig.capabilities.subsetting = { dimension: true };
         expect(validateStepOperations(testConfig, testConfig.steps[1])).to.be.null;
@@ -59,13 +59,13 @@ describe('validateStepOperations', function () {
     const configs = loadServiceConfigsFromFile(cmrEndpoints.prod, testServicesYmlFile);
     const testConfig = configs[0];
     testConfig.steps[1].operations = ['extend'];
-    describe('and the capabilites do not', function () {
+    describe('and the capabilities do not', function () {
       testConfig.capabilities = {};
       it('returns an error message', function () {
         expect(validateStepOperations(testConfig, testConfig.steps[1])).to.equal('Service with-unsupported-config step with image ghcr.io/podaac/l2ss-py:sit has operation \'extend\' which is not included in capabilities.');
       });
     });
-    describe('and the capabilites do as well', function () {
+    describe('and the capabilities do as well', function () {
       it('does not return an error message', function () {
         testConfig.capabilities.extend = true;
         expect(validateStepOperations(testConfig, testConfig.steps[1])).to.be.null;
@@ -77,13 +77,13 @@ describe('validateStepOperations', function () {
     const configs = loadServiceConfigsFromFile(cmrEndpoints.prod, testServicesYmlFile);
     const testConfig = configs[0];
     testConfig.steps[1].operations = ['reproject'];
-    describe('and the capabilites do not', function () {
+    describe('and the capabilities do not', function () {
       testConfig.capabilities = {};
       it('returns an error message', function () {
         expect(validateStepOperations(testConfig, testConfig.steps[1])).to.equal('Service with-unsupported-config step with image ghcr.io/podaac/l2ss-py:sit has operation \'reproject\' which is not included in capabilities.');
       });
     });
-    describe('and the capabilites do as well', function () {
+    describe('and the capabilities do as well', function () {
       it('does not return an error message', function () {
         testConfig.capabilities.reprojection = true;
         expect(validateStepOperations(testConfig, testConfig.steps[1])).to.be.null;
@@ -95,13 +95,13 @@ describe('validateStepOperations', function () {
     const configs = loadServiceConfigsFromFile(cmrEndpoints.prod, testServicesYmlFile);
     const testConfig = configs[0];
     testConfig.steps[1].operations = ['shapefileSubset'];
-    describe('and the capabilites do not', function () {
+    describe('and the capabilities do not', function () {
       testConfig.capabilities = {};
       it('returns an error message', function () {
         expect(validateStepOperations(testConfig, testConfig.steps[1])).to.equal('Service with-unsupported-config step with image ghcr.io/podaac/l2ss-py:sit has operation \'shapefileSubset\' which is not included in capabilities.');
       });
     });
-    describe('and the capabilites do as well', function () {
+    describe('and the capabilities do as well', function () {
       it('does not return an error message', function () {
         testConfig.capabilities.subsetting = { shape: true };
         expect(validateStepOperations(testConfig, testConfig.steps[1])).to.be.null;
@@ -113,13 +113,13 @@ describe('validateStepOperations', function () {
     const configs = loadServiceConfigsFromFile(cmrEndpoints.prod, testServicesYmlFile);
     const testConfig = configs[0];
     testConfig.steps[1].operations = ['spatialSubset'];
-    describe('and the capabilites do not', function () {
+    describe('and the capabilities do not', function () {
       testConfig.capabilities = {};
       it('returns an error message', function () {
         expect(validateStepOperations(testConfig, testConfig.steps[1])).to.equal('Service with-unsupported-config step with image ghcr.io/podaac/l2ss-py:sit has operation \'spatialSubset\' which is not included in capabilities.');
       });
     });
-    describe('and the capabilites do as well', function () {
+    describe('and the capabilities do as well', function () {
       it('does not return an error message', function () {
         testConfig.capabilities.subsetting = { bbox: true };
         expect(validateStepOperations(testConfig, testConfig.steps[1])).to.be.null;
@@ -131,13 +131,13 @@ describe('validateStepOperations', function () {
     const configs = loadServiceConfigsFromFile(cmrEndpoints.prod, testServicesYmlFile);
     const testConfig = configs[0];
     testConfig.steps[1].operations = ['temporalSubset'];
-    describe('and the capabilites do not', function () {
+    describe('and the capabilities do not', function () {
       testConfig.capabilities = {};
       it('returns an error message', function () {
         expect(validateStepOperations(testConfig, testConfig.steps[1])).to.equal('Service with-unsupported-config step with image ghcr.io/podaac/l2ss-py:sit has operation \'temporalSubset\' which is not included in capabilities.');
       });
     });
-    describe('and the capabilites do as well', function () {
+    describe('and the capabilities do as well', function () {
       it('does not return an error message', function () {
         testConfig.capabilities.subsetting = { temporal: true };
         expect(validateStepOperations(testConfig, testConfig.steps[1])).to.be.null;
@@ -149,13 +149,13 @@ describe('validateStepOperations', function () {
     const configs = loadServiceConfigsFromFile(cmrEndpoints.prod, testServicesYmlFile);
     const testConfig = configs[0];
     testConfig.steps[1].operations = ['variableSubset'];
-    describe('and the capabilites do not', function () {
+    describe('and the capabilities do not', function () {
       testConfig.capabilities = {};
       it('returns an error message', function () {
         expect(validateStepOperations(testConfig, testConfig.steps[1])).to.equal('Service with-unsupported-config step with image ghcr.io/podaac/l2ss-py:sit has operation \'variableSubset\' which is not included in capabilities.');
       });
     });
-    describe('and the capabilites do as well', function () {
+    describe('and the capabilities do as well', function () {
       it('does not return an error message', function () {
         testConfig.capabilities.subsetting = { variable: true };
         expect(validateStepOperations(testConfig, testConfig.steps[1])).to.be.null;
