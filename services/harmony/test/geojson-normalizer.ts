@@ -603,6 +603,7 @@ describe('normalizeGeoJson feature property safety validation', function () {
    * @returns a FeatureCollection geojson object
    */
   function makeGeoJson(properties: object, id?: string): object {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const feature: any = { type: 'Feature', geometry, properties };
     if (id !== undefined) feature.id = id;
     return { type: 'FeatureCollection', features: [feature] };
