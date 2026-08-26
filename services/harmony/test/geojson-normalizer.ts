@@ -6,6 +6,7 @@ import { expect } from 'chai';
 import {
   convertPointsToPolygons, normalizeGeoJson, normalizeGeoJsonCoords, numberOfSidesForPointCircle,
 } from '../app/middleware/shapefile-converter';
+import { RequestValidationError } from '../app/util/errors';
 
 // Simple geojson that should not change when normalized
 const simpleGeoJson = {
@@ -584,4 +585,79 @@ describe('normalizeGeoJson', function () {
     normalizedGeoJson = normalizeGeoJson(normalizedGeoJson);
     expect(normalizedGeoJson).to.eql(expectedNormalization);
   });
+});
+
+describe('normalizeGeoJson feature property safety validation', function () {
+  // A minimal, valid polygon used to isolate the property-safety checks from coordinate
+  // normalization behavior, which is covered above.
+  const geometry = {
+    type: 'Polygon',
+    coordinates: [[[-50, 60], [-50, 61], [-49, 61], [-49, 60], [-50, 60]]],
+  };
+
+  /**
+   * Build a single-feature FeatureCollection with the given properties (and optional id) for
+   * exercising the property-safety validator via normalizeGeoJson.
+   * @param properties - the properties object to attach to the feature
+   * @param id - an optional feature id
+   * @returns a FeatureCollection geojson object
+   */
+  function makeGeoJson(properties: object, id?: string): object {
+    const feature: any = { type: 'Feature', geometry, properties };
+    if (id !== undefined) feature.id = id;
+    return { type: 'FeatureCollection', features: [feature] };
+  }
+
+  it('allows a plain ASCII property value', function () {
+    expect(() => normalizeGeoJson(makeGeoJson({ name: 'Watershed Region A-12' }))).to.not.throw();
+  });
+
+  it('allows Unicode letters in a property value', function () {
+    expect(() => normalizeGeoJson(makeGeoJson({ name: 'São Paulo Reserve (北京)' }))).to.not.throw();
+  });
+
+  it('allows numeric, boolean, and null property values', function () {
+    expect(() => normalizeGeoJson(makeGeoJson({ count: 5, active: true, note: null }))).to.not.throw();
+  });
+
+  it('does not check property keys, only values', function () {
+    expect(() => normalizeGeoJson(makeGeoJson({ 'weird; key <name>': 'safe value' }))).to.not.throw();
+  });
+
+  it('checks values nested inside arrays in properties', function () {
+    expect(() => normalizeGeoJson(makeGeoJson({ tags: ['ok', 'bad; value'] })))
+      .to.throw(RequestValidationError, /properties\.tags\[1\]/);
+  });
+
+  it('checks values nested inside objects in properties', function () {
+    expect(() => normalizeGeoJson(makeGeoJson({ meta: { note: 'bad`value' } })))
+      .to.throw(RequestValidationError, /properties\.meta\.note/);
+  });
+
+  it('checks a string feature id', function () {
+    expect(() => normalizeGeoJson(makeGeoJson({}, 'bad\'id'))).to.throw(RequestValidationError, /^Shapefile contains an unsupported character in id\./);
+  });
+
+  const disallowedValues = [
+    ['single quote', 'x\''],
+    ['double quote', 'x"'],
+    ['backtick', 'x`'],
+    ['semicolon', 'x;'],
+    ['pipe', 'x|'],
+    ['ampersand', 'x&'],
+    ['dollar sign', 'x$'],
+    ['backslash', 'x\\'],
+    ['angle brackets', 'x<y>'],
+    ['curly braces', 'x{y}'],
+    ['square brackets', 'x[y]'],
+    ['raw newline', 'x\ny'],
+    ['raw tab', 'x\ty'],
+  ];
+
+  for (const [description, value] of disallowedValues) {
+    it(`rejects a property value containing a ${description}`, function () {
+      expect(() => normalizeGeoJson(makeGeoJson({ name: value })))
+        .to.throw(RequestValidationError, /^Shapefile contains an unsupported character in properties\.name\./);
+    });
+  }
 });

