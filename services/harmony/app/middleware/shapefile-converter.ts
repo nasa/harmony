@@ -10,6 +10,7 @@ import { DOMParser } from '@xmldom/xmldom';
 import { NextFunction } from 'express';
 import { Feature, MultiPoint, MultiPolygon, Point, Polygon } from 'geojson';
 import splitGeoJson from 'geojson-antimeridian-cut';
+import { valid } from 'geojson-validation';
 import { cloneDeep, get, isEqual } from 'lodash';
 import * as shpjs from 'shpjs';
 import * as tmp from 'tmp-promise';
@@ -239,13 +240,62 @@ export function normalizeGeoJsonCoords(geojson: any): any {
   return normalizeFeature(cloneDeep(geojson));
 }
 
+// This list of valid geojson property characters is used to sanitize geojson before sending
+// it to the CMR or backend services
+const SAFE_PROPERTY_VALUE_RE = /^[\p{L}\p{N} .,\-_()/:@%]*$/u;
+
+/**
+ * Throws if `value`, or anything nested inside it, is a string containing a character outside
+ * the allowlist used for feature property values.
+ * @param value - a property value (or a nested array/object member of one)
+ * @param path - human-readable path to `value`, used in the error message
+ * @throws RequestValidationError - if an unsafe character is found
+ */
+function assertSafePropertyValue(value: unknown, path: string): void {
+  if (typeof value === 'string') {
+    if (!SAFE_PROPERTY_VALUE_RE.test(value)) {
+      throw new RequestValidationError(
+        `Shapefile contains an unsupported character in ${path}. Feature property values may `
+        + 'only contain letters, numbers, spaces, and the following punctuation: . , - _ ( ) / : @ %');
+    }
+  } else if (Array.isArray(value)) {
+    value.forEach((v, i) => assertSafePropertyValue(v, `${path}[${i}]`));
+  } else if (value !== null && typeof value === 'object') {
+    for (const [key, v] of Object.entries(value)) {
+      assertSafePropertyValue(v, `${path}.${key}`);
+    }
+  }
+}
+
+/**
+ * Rejects a GeoJSON Feature or FeatureCollection whose feature `properties` (or a string
+ * `id`) contain characters outside the safe allowlist. Property keys are not checked, only
+ * values, since keys come from the source file's own schema/column names, not free-text content.
+ * @param geoJson - the object representing the geojson
+ * @throws RequestValidationError - if an unsafe property value is found
+ */
+function assertSafeFeatureProperties(geoJson: any): void {
+  const features = geoJson?.type === 'FeatureCollection' ? geoJson.features : [geoJson];
+  for (const feature of features ?? []) {
+    if (feature?.properties) assertSafePropertyValue(feature.properties, 'properties');
+    if (typeof feature?.id === 'string') assertSafePropertyValue(feature.id, 'id');
+  }
+}
+
 /**
  * Change longitudes of a geojson file to be in the [-180, 180] range and split at antimeridian
  * if needed. Will also change coordinate order to counter-clockwise if needed.
  * @param geoJson - An object representing the json for a geojson file
+ * @throws RequestValidationError - if the geojson file is not valid
  * @returns An object with the normalized geojson
  */
 export function normalizeGeoJson(geoJson: object): object {
+
+  if (!valid(geoJson)) {
+    throw new RequestValidationError('Shapefile is not or cannot be converted to valid geojson');
+  }
+  assertSafeFeatureProperties(geoJson);
+
   let newGeoJson = normalizeGeoJsonCoords(geoJson);
   newGeoJson = convertPointsToPolygons(newGeoJson);
 
@@ -271,6 +321,7 @@ export function normalizeGeoJson(geoJson: object): object {
  * Handle any weird cases like splitting geometry that crosses the antimeridian
  * @param url - the url of the geojson file
  * @param isLocal - whether the url is a downloaded file (true) or needs to be downloaded (false)
+ * @throws RequestValidationError - if the geojson file is not valid
  * @returns the link to the geojson file
  */
 async function normalizeGeoJsonFile(url: string, isLocal: boolean): Promise<string> {
@@ -280,8 +331,9 @@ async function normalizeGeoJsonFile(url: string, isLocal: boolean): Promise<stri
   if (!isLocal) {
     originalGeoJson = await store.getObjectJson(url);
   } else {
-    originalGeoJson = (await fs.readFile(localFile)).toJSON();
+    originalGeoJson = JSON.parse(await fs.readFile(localFile, 'utf8'));
   }
+
   const normalizedGeoJson = normalizeGeoJson(originalGeoJson);
 
   let resultUrl = url;
@@ -329,7 +381,11 @@ export default async function shapefileConverter(req, res, next: NextFunction): 
       let convertedFile;
       try {
         convertedFile = await converter.geoJsonConverter(originalFile, req.context.logger);
-        operation.geojson = await store.uploadFile(convertedFile, `${url}.geojson`);
+        const rawGeoJson = JSON.parse(await fs.readFile(convertedFile, 'utf8'));
+        const normalizedGeoJson = normalizeGeoJson(rawGeoJson);
+        const geoJsonUrl = `${url}.geojson`;
+        await store.upload(JSON.stringify(normalizedGeoJson), geoJsonUrl);
+        operation.geojson = geoJsonUrl;
       } finally {
         if (convertedFile) {
           await fs.unlink(convertedFile);
