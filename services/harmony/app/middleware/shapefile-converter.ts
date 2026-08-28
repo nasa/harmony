@@ -240,12 +240,8 @@ export function normalizeGeoJsonCoords(geojson: any): any {
   return normalizeFeature(cloneDeep(geojson));
 }
 
-// Feature property values may only contain letters (any script), numbers, spaces, and this
-// small set of punctuation. This is an allowlist rather than a denylist of "known-bad" shell
-// metacharacters: backend services (external to this repo) read the uploaded GeoJSON and have
-// been observed interpolating property values into shell command lines, so we cannot rely on
-// knowing every dangerous pattern in advance. Ordinary attribute values (place names, IDs, etc.)
-// are expected to fit this set; anything that doesn't is rejected rather than passed through.
+// This list of valid geojson property characters is used to sanitize geojson before sending
+// it to the CMR or backend services
 const SAFE_PROPERTY_VALUE_RE = /^[\p{L}\p{N} .,\-_()/:@%]*$/u;
 
 /**
