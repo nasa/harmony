@@ -1,10 +1,15 @@
-// Import has to happen after the knexfile, so disable that rule
 import { knex, Knex } from 'knex';
 import { attachPaginate } from 'knex-paginate';
+import { types as pgTypes } from 'pg';
 
 import env from './env';
 import logger from './log';
 import knexfile from '../../../../db/knexfile';
+
+// node-pg returns int8/bigint as a string to avoid precision loss. Harmony's bigint
+// columns (workflow_steps.maxBatchSizeInBytes) stay well inside Number.MAX_SAFE_INTEGER,
+// so parse them as numbers.
+pgTypes.setTypeParser(pgTypes.builtins.INT8, (val) => parseInt(val, 10));
 
 /**
  * Batch size -- to avoid overly large SQL statements.

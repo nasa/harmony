@@ -262,6 +262,36 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
       });
     });
 
+    describe('and a malicious GeoJSON shapefile', function () {
+      const shapeForm = { ...form, shapefile: { path: './test/resources/malicious.geojson', mimetype: 'application/geo+json' } };
+      hookPostRangesetRequest(version, collection, variableName, shapeForm);
+
+      it('returns a shapefile conversion error', function () {
+        expect(this.res.status).to.equal(400);
+        expect(JSON.parse(this.res.text)).to.eql({
+          code: 'harmony.RequestValidationError',
+          description: 'Error: Shapefile contains an unsupported character in properties.name. '
+            + 'Feature property values may only contain letters, numbers, spaces, and the following '
+            + 'punctuation: . , - _ ( ) / : @ %',
+        });
+      });
+    });
+
+    describe('and a malicious KML shapefile', function () {
+      const shapeForm = { ...form, shapefile: { path: './test/resources/malicious.kml', mimetype: 'application/vnd.google-earth.kml+xml' } };
+      hookPostRangesetRequest(version, collection, variableName, shapeForm);
+
+      it('returns a shapefile conversion error', function () {
+        expect(this.res.status).to.equal(400);
+        expect(JSON.parse(this.res.text)).to.eql({
+          code: 'harmony.RequestValidationError',
+          description: 'Error: Shapefile contains an unsupported character in properties.name. '
+            + 'Feature property values may only contain letters, numbers, spaces, and the following '
+            + 'punctuation: . , - _ ( ) / : @ %',
+        });
+      });
+    });
+
     describe('and an unrecognized shapefile type', function () {
       const shapeForm = { ...form, shapefile: { path: './test/resources/corrupt_file.kml', mimetype: 'text/plain' } };
       hookPostRangesetRequest(version, collection, variableName, shapeForm);

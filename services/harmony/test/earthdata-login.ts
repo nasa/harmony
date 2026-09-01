@@ -14,6 +14,9 @@ const blankToken = /^token=s%3A\./; // The start of a signed empty token cookie
 const nonBlankToken = /^token=s%3A[^.]/; // The start of a signed non-empty token cookie
 const blankRedirect = /^redirect=s%3A\./; // The start of a signed empty redirect cookie
 const nonBlankRedirect = /^redirect=s%3A[^.]/; // The start of a signed non-empty redirect cookie
+
+// The start of a signed empty token cookie with an expiry date
+const noTokenWithExpiryDate = /^token=; Path=\/; Expires=Thu, 01 Jan 1970 00:00:00 GMT/;
 const fakeUsername = 'testy_mctestface';
 
 describe('Earthdata Login', function () {
@@ -295,18 +298,26 @@ describe('Earthdata Login', function () {
     });
 
     describe('When the client supplies a token', function () {
-      describe('and a "redirect" parameter has been set', function () {
+      describe('and a "redirect" query parameter has been set', function () {
         beforeEach(async function () {
-          this.res = await this.req.query({ redirect: '/tohere' }).use(auth({ username: fakeUsername }));
+          this.res = await this.req
+            .query({ redirect: '/tohere' })
+            .use(auth({ username: fakeUsername }));
         });
 
         it('removes the token', function () {
-          expect(this.res.headers['set-cookie'][0]).to.match(blankToken);
+          expect(this.res.headers['set-cookie'][0]).to.match(noTokenWithExpiryDate,
+          );
         });
 
-        it('redirects to the endpoint supplied in the "redirect" parameter', function () {
-          expect(this.res.statusCode).to.equal(307);
-          expect(this.res.headers.location).to.equal('/tohere');
+        it('ignores the "redirect" query parameter and redirects to EDL logout', function () {
+          expect(this.res.statusCode).to.equal(303);
+
+          const location = new URL(this.res.headers.location);
+          expect(location.pathname).to.equal('/logout');
+          expect(location.searchParams.get('post_logout_redirect_uri')).to.equal(
+            new URL('/', process.env.OAUTH_REDIRECT_URI).origin,
+          );
         });
 
         it('makes a call to revoke the access and refresh tokens', function () {
@@ -320,33 +331,105 @@ describe('Earthdata Login', function () {
         });
 
         it('removes the token', function () {
-          expect(this.res.headers['set-cookie'][0]).to.match(blankToken);
+          expect(this.res.headers['set-cookie'][0]).to.match(noTokenWithExpiryDate);
         });
 
-        it('redirects to the site root', function () {
-          expect(this.res.statusCode).to.equal(307);
-          expect(this.res.headers.location).to.equal('/');
+        it('redirects to EDL logout', function () {
+          expect(this.res.statusCode).to.equal(303);
+
+          const location = new URL(this.res.headers.location);
+          expect(location.pathname).to.equal('/logout');
+          expect(location.searchParams.get('post_logout_redirect_uri')).to.equal(
+            new URL('/', process.env.OAUTH_REDIRECT_URI).origin,
+          );
         });
 
         it('makes a call to revoke the access and refresh tokens', function () {
           expect(this.revokeStub.called);
         });
       });
-    });
 
-    describe('When the client does not supply a token', function () {
-      describe('and a "redirect" parameter has been set', function () {
+      describe('and a "redirect" cookie has been set', function () {
         beforeEach(async function () {
-          this.res = await this.req.query({ redirect: '/tohere' });
+          this.res = await this.req
+            .query({ redirect: '/tohere' })
+            .use(auth({ username: fakeUsername, extraCookies: { redirect: '/pending' } }));
         });
 
-        it('redirects to the endpoint supplied in the "redirect" parameter', function () {
-          expect(this.res.statusCode).to.equal(307);
-          expect(this.res.headers.location).to.equal('/tohere');
+        it('removes the redirect cookie', function () {
+          const cookies = this.res.headers['set-cookie'];
+          expect(cookies.some((cookie) =>
+            /^redirect=; Path=\/; Expires=Thu, 01 Jan 1970 00:00:00 GMT/.test(cookie),
+          )).to.equal(true);
+        });
+
+        it('removes the token', function () {
+          expect(this.res.headers['set-cookie'][0]).to.match(noTokenWithExpiryDate,
+          );
+        });
+
+        it('ignores the "redirect" query parameter and redirects to EDL logout', function () {
+          expect(this.res.statusCode).to.equal(303);
+
+          const location = new URL(this.res.headers.location);
+          expect(location.pathname).to.equal('/logout');
+          expect(location.searchParams.get('post_logout_redirect_uri')).to.equal(
+            new URL('/', process.env.OAUTH_REDIRECT_URI).origin,
+          );
         });
 
         it('makes a call to revoke the access and refresh tokens', function () {
           expect(this.revokeStub.called);
+        });
+      });
+
+      describe('and token revocation fails', function () {
+        beforeEach(async function () {
+          this.revokeStub.rejects(new Error('Revocation failed'));
+
+          this.res = await this.req.use(auth({ username: fakeUsername }));
+        });
+
+        it('clears the token cookie', function () {
+          expect(this.res.headers['set-cookie'][0]).to.match(noTokenWithExpiryDate);
+        });
+
+        it('clears the redirect cookie', function () {
+          expect(this.res.headers['set-cookie'][1]).to.match(
+            /^redirect=; Path=\/; Expires=Thu, 01 Jan 1970 00:00:00 GMT/,
+          );
+        });
+
+        it('redirects to EDL logout', function () {
+          expect(this.res.statusCode).to.equal(303);
+
+          const location = new URL(this.res.headers.location);
+          expect(location.pathname).to.equal('/logout');
+          expect(location.searchParams.get('post_logout_redirect_uri')).to.equal(
+            new URL('/', process.env.OAUTH_REDIRECT_URI).origin,
+          );
+        });
+      });
+    });
+
+    describe('When the client does not supply a token', function () {
+      describe('and a "redirect" query parameter has been set', function () {
+        beforeEach(async function () {
+          this.res = await this.req.query({ redirect: '/tohere' });
+        });
+
+        it('ignores the "redirect" query parameter and redirects to EDL logout', function () {
+          expect(this.res.statusCode).to.equal(303);
+
+          const location = new URL(this.res.headers.location);
+          expect(location.pathname).to.equal('/logout');
+          expect(location.searchParams.get('post_logout_redirect_uri')).to.equal(
+            new URL('/', process.env.OAUTH_REDIRECT_URI).origin,
+          );
+        });
+
+        it('does not make a call to revoke the access and refresh tokens', function () {
+          expect(this.revokeStub.called).to.equal(false);
         });
       });
 
@@ -355,13 +438,18 @@ describe('Earthdata Login', function () {
           this.res = await this.req;
         });
 
-        it('redirects to the site root', function () {
-          expect(this.res.statusCode).to.equal(307);
-          expect(this.res.headers.location).to.equal('/');
+        it('redirects to EDL logout', function () {
+          expect(this.res.statusCode).to.equal(303);
+
+          const location = new URL(this.res.headers.location);
+          expect(location.pathname).to.equal('/logout');
+          expect(location.searchParams.get('post_logout_redirect_uri')).to.equal(
+            new URL('/', process.env.OAUTH_REDIRECT_URI).origin,
+          );
         });
 
-        it('makes a call to revoke the access and refresh tokens', function () {
-          expect(this.revokeStub.called);
+        it('does not make a call to revoke the access and refresh tokens', function () {
+          expect(this.revokeStub.called).to.equal(false);
         });
       });
     });
@@ -474,7 +562,7 @@ describe('Earthdata Login', function () {
 
   describe('When an EDL oauth endpoint fails', function () {
     before(async function () {
-      this.req = request(this.frontend).get('/oauth2/logout').use(auth({ username: fakeUsername }));
+      this.req = request(this.frontend).get('/oauth2/redirect').use(auth({ username: fakeUsername }));
       this.revokeStub = stubEdlError(
         '/oauth/revoke',
         undefined,

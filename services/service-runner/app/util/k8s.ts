@@ -17,8 +17,12 @@ export async function isContainerRunning(containerName: string): Promise<boolean
   const podName = env.myPodName;
   const namespace = 'harmony';
 
-  const pod = await k8sApi.readNamespacedPod(podName, namespace);
-  const container = pod.body.status?.containerStatuses?.find(
+  const pod = await k8sApi.readNamespacedPod({
+    name: podName,
+    namespace,
+  });
+
+  const container = pod.status?.containerStatuses?.find(
     (status) => status.name === containerName,
   );
 

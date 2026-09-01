@@ -16,8 +16,8 @@ import { NotFoundError, RequestValidationError } from '../util/errors';
 import { harmonyMimeTypeToName } from '../util/file-formats';
 import { keysToLowerCase } from '../util/object';
 
-export const stableApiVersion = '2';
-const supportedApiVersions = ['1', '2', '3-alpha'];
+export const stableApiVersion = '3';
+const supportedApiVersions = ['1', '2', '3'];
 
 interface Projection {
   crs: string;
@@ -486,7 +486,7 @@ async function getCollectionCapabilitiesV3(
   context: RequestContext,
   collection: CmrCollection,
 ): Promise<CollectionCapabilitiesV3> {
-  const capabilitiesVersion = '3-alpha';
+  const capabilitiesVersion = '3';
   const allServiceConfigs = addCollectionsToServicesByAssociation([collection]);
   const matchingServices = allServiceConfigs.filter((config) =>
     config.collections.map((c) => c.id).includes(collection.id));
@@ -552,7 +552,7 @@ function chooseCapabilitiesFunction(version: string)
     return getCollectionCapabilitiesV1;
   } else if (version === '2') {
     return getCollectionCapabilitiesV2;
-  } else if (version === '3' || version === '3-alpha') {
+  } else if (version === '3') {
     return getCollectionCapabilitiesV3;
   }
 

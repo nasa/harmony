@@ -13,7 +13,7 @@ export const serializedFields = [
   'id', 'jobID', 'serviceID', 'stepIndex',
   'workItemCount', 'operation', 'createdAt', 'updatedAt',
   'hasAggregatedOutput', 'isBatched', 'is_sequential', 'is_complete', 'maxBatchInputs',
-  'maxBatchSizeInBytes', 'completed_work_item_count', 'progress_weight',
+  'maxBatchSizeInBytes', 'completed_work_item_count', 'progress_weight', 'always_wait_for_prior_step',
 ];
 
 export interface WorkflowStepRecord {
