@@ -1,0 +1,375 @@
+#!/usr/bin/env bash
+
+set -e
+
+BUCKET_NAME="harmony-analytics"
+NAMESPACE="iceberg"
+
+ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
+
+BUCKET_ARN="arn:aws:s3tables:${AWS_REGION}:${ACCOUNT_ID}:bucket/${BUCKET_NAME}"
+
+if ERROR_MSG=$(aws s3tables get-table-bucket --table-bucket-arn "$BUCKET_ARN" 2>&1 >/dev/null); then
+    echo "S3 Table Bucket already exists, skipping creation."
+    exit 0
+fi
+
+if [[ ! "$ERROR_MSG" =~ "NotFoundException" && ! "$ERROR_MSG" =~ "ResourceNotFoundException" ]]; then
+    echo "Error checking S3 Table bucket status:" >&2
+    echo "$ERROR_MSG" >&2
+    exit 1
+fi
+
+echo "🚀 Starting S3 Tables provisioning..."
+
+#  Create the S3 Table Bucket
+echo "Creating S3 Table Bucket: $BUCKET_NAME..."
+aws s3tables create-table-bucket \
+    --name "$BUCKET_NAME"
+    
+echo "BUCKET_ARN: $BUCKET_ARN"
+    
+# Set the bucket config to clean up orphan files using the default settings (unreferenced for 3 days and waiting for deletion for 10 days)
+echo "Enabling orphan file clean up"
+aws s3tables put-table-bucket-maintenance-configuration --table-bucket-arn $BUCKET_ARN --type icebergUnreferencedFileRemoval \
+--value 'status=enabled,settings={icebergUnreferencedFileRemoval={unreferencedDays=3,nonCurrentDays=10}}'
+
+echo "✅ Table Bucket created: $BUCKET_ARN"
+
+# 2. Create the Namespace
+echo "Creating Namespace: $NAMESPACE..."
+aws s3tables create-namespace \
+    --table-bucket-arn "$BUCKET_ARN" \
+    --namespace "$NAMESPACE"
+
+
+declare -A TABLE_SCHEMAS
+
+TABLE_SCHEMAS["batch_items"]=$(cat <<'EOF'
+{
+  "iceberg": {
+    "schema": {
+      "fields": [
+        {"name": "id", "type": "long"},
+        {"name": "job_id", "type": "string"},
+        {"name": "service_id", "type": "string"},
+        {"name": "batch_id", "type": "int"},
+        {"name": "stac_item_url", "type": "string"},
+        {"name": "item_size", "type": "long"},
+        {"name": "sort_index", "type": "int"},
+        {"name": "created_at", "type": "timestamptz"},
+        {"name": "updated_at", "type": "timestamptz"}
+      ]
+    }
+  }
+}
+EOF
+)
+
+TABLE_SCHEMAS["batches"]=$(cat <<'EOF'
+{
+  "iceberg": {
+    "schema": {
+      "fields": [
+        {"name": "id", "type": "long"},
+        {"name": "job_id", "type": "string"},
+        {"name": "service_id", "type": "string"},
+        {"name": "batch_id", "type": "int"},
+        {"name": "created_at", "type": "timestamptz"},
+        {"name": "updated_at", "type": "timestamptz"}
+      ]
+    }
+  }
+}
+EOF
+)
+
+TABLE_SCHEMAS["job_links"]=$(cat <<'EOF'
+{
+  "iceberg": {
+    "schema": {
+      "fields": [
+        {"id": 1, "name": "id", "type": "long"},
+        {"id": 2, "name": "job_id", "type": "string"},
+        {"id": 3, "name": "href", "type": "string"},
+        {"id": 4, "name": "type", "type": "string"},
+        {"id": 5, "name": "title", "type": "string"},
+        {"id": 6, "name": "rel", "type": "string"},
+        {"id": 7, "name": "temporal_start", "type": "timestamptz"},
+        {"id": 8, "name": "temporal_end", "type": "timestamptz"},
+        {"id": 9, "name": "bbox", "type": "string"},
+        {"id": 10, "name": "created_at", "type": "timestamptz"},
+        {"id": 11, "name": "updated_at", "type": "timestamptz"}
+      ]
+    },
+    "partitionSpec": {
+      "fields": [
+        {
+          "sourceId": 11,
+          "transform": "week",
+          "name": "updated_at_week"
+        }
+      ]
+    }
+  }
+}
+EOF
+)
+
+TABLE_SCHEMAS["job_messages"]=$(cat <<'EOF'
+{
+  "iceberg": {
+    "schema": {
+      "fields": [
+        {"id": 1, "name": "id", "type": "long"},
+        {"id": 2, "name": "job_id", "type": "string"},
+        {"id": 3, "name": "url", "type": "string"},
+        {"id": 4, "name": "message", "type": "string"},
+        {"id": 5, "name": "created_at", "type": "timestamptz"},
+        {"id": 6, "name": "updated_at", "type": "timestamptz"},
+        {"id": 7, "name": "level", "type": "string"},
+        {"id": 8, "name": "message_category", "type": "string"}
+      ]
+    },
+    "partitionSpec": {
+      "fields": [
+        {
+          "sourceId": 6,
+          "transform": "week",
+          "name": "updated_at_week"
+        }
+      ]
+    }
+  }
+}
+EOF
+)
+
+TABLE_SCHEMAS["jobs"]=$(cat <<'EOF'
+{
+  "iceberg": {
+    "schema": {
+      "fields": [
+        {"id": 1, "name": "id", "type": "long"},
+        {"id": 2, "name": "request_id", "type": "string"},
+        {"id": 3, "name": "username", "type": "string"},
+        {"id": 4, "name": "status", "type": "string"},
+        {"id": 5, "name": "progress", "type": "int"},
+        {"id": 6, "name": "created_at", "type": "timestamptz"},
+        {"id": 7, "name": "updated_at", "type": "timestamptz"},
+        {"id": 8, "name": "request", "type": "string"},
+        {"id": 9, "name": "is_async", "type": "boolean"},
+        {"id": 10, "name": "batches_completed", "type": "int"},
+        {"id": 11, "name": "num_input_granues", "type": "int"},
+        {"id": 12, "name": "message", "type": "string"},
+        {"id": 13, "name": "job_id", "type": "string"},
+        {"id": 14, "name": "collection_ids", "type": "string"},
+        {"id": 15, "name": "ignore_errors", "type": "boolean"},
+        {"id": 16, "name": "destination_url", "type": "string"},
+        {"id": 17, "name": "service_name", "type": "string"},
+        {"id": 18, "name": "provider_id", "type": "string"},
+        {"id": 19, "name": "original_data_size", "type": "double"},
+        {"id": 20, "name": "output_data_size", "type": "double"}
+      ]
+    },
+    "partitionSpec": {
+      "fields": [
+        {
+          "sourceId": 7,
+          "transform": "week",
+          "name": "updated_at_week"
+        }
+      ]
+    }
+  }
+}
+EOF
+)
+
+TABLE_SCHEMAS["jobs_raw_labels"]=$(cat <<'EOF'
+{
+  "iceberg": {
+    "schema": {
+      "fields": [
+        {"id": 1, "name": "id", "type": "long"},
+        {"id": 2, "name": "job_id", "type": "string"},
+        {"id": 3, "name": "label_id", "type": "long"},
+        {"id": 4, "name": "created_at", "type": "timestamptz"},
+        {"id": 5, "name": "updated_at", "type": "timestamptz"}
+      ]
+    },
+    "partitionSpec": {
+      "fields": [
+        {
+          "sourceId": 5,
+          "transform": "week",
+          "name": "updated_at_week"
+        }
+      ]
+    }
+  }
+}
+EOF
+)
+
+TABLE_SCHEMAS["raw_labels"]=$(cat <<'EOF'
+{
+  "iceberg": {
+    "schema": {
+      "fields": [
+        {"name": "id", "type": "long"},
+        {"name": "value", "type": "string"},
+        {"name": "created_at", "type": "timestamptz"},
+        {"name": "updated_at", "type": "timestamptz"}
+      ]
+    }
+  }
+}
+EOF
+)
+
+TABLE_SCHEMAS["service_deployments"]=$(cat <<'EOF'
+{
+  "iceberg": {
+    "schema": {
+      "fields": [
+        {"name": "id", "type": "long"},
+        {"name": "deployment_id", "type": "string"},
+        {"name": "username", "type": "string"},
+        {"name": "service", "type": "string"},
+        {"name": "tag", "type": "string"},
+        {"name": "status", "type": "string"},
+        {"name": "message", "type": "string"},
+        {"name": "created_at", "type": "timestamptz"},
+        {"name": "updated_at", "type": "timestamptz"},
+        {"name": "regression_test_version", "type": "string"}
+      ]
+    }
+  }
+}
+EOF
+)
+
+TABLE_SCHEMAS["users_labels"]=$(cat <<'EOF'
+{
+  "iceberg": {
+    "schema": {
+      "fields": [
+        {"name": "id", "type": "long"},
+        {"name": "username", "type": "string"},
+        {"name": "value", "type": "string"},
+        {"name": "created_at", "type": "timestamptz"},
+        {"name": "updated_at", "type": "timestamptz"}
+      ]
+    }
+  }
+}
+EOF
+)
+
+TABLE_SCHEMAS["work_items"]=$(cat <<'EOF'
+{
+  "iceberg": {
+    "schema": {
+      "fields": [
+        {"id": 1, "name": "id", "type": "long"},
+        {"id": 2, "name": "workflow_step_index", "type": "int"},
+        {"id": 3, "name": "scroll_id", "type": "string"},
+        {"id": 4, "name": "service_id", "type": "string"},
+        {"id": 5, "name": "status", "type": "string"},
+        {"id": 6, "name": "stac_catalog_location", "type": "string"},
+        {"id": 7, "name": "created_at", "type": "timestamptz"},
+        {"id": 8, "name": "updated_at", "type": "timestamptz"},
+        {"id": 9, "name": "total_item_size", "type": "double"},
+        {"id": 10, "name": "retry_count", "type": "int"},
+        {"id": 11, "name": "duration", "type": "float"},
+        {"id": 12, "name": "started_at", "type": "timestamptz"},
+        {"id": 13, "name": "sort_index", "type": "int"},
+        {"id": 14, "name": "output_item_sizes_json", "type": "string"},
+        {"id": 15, "name": "message_category", "type": "string"}
+      ]
+    },
+    "partitionSpec": {
+      "fields": [
+        {
+          "sourceId": 8,
+          "transform": "week",
+          "name": "updated_at_week"
+        }
+      ]
+    }
+  }
+}
+EOF
+)
+
+TABLE_SCHEMAS["work_items_stats"]=$(cat <<'EOF'
+{
+  "iceberg": {
+    "schema": {
+      "fields": [
+        {"name": "minute", "type": "timestamptz"},
+        {"name": "service_id", "type": "string"},
+        {"name": "status", "type": "string"},
+        {"name": "count", "type": "long"}
+      ]
+    }
+  }
+}
+EOF
+)
+
+TABLE_SCHEMAS["workflow_steps"]=$(cat <<'EOF'
+{
+  "iceberg": {
+    "schema": {
+      "fields": [
+        {"id": 1, "name": "id", "type": "long"},
+        {"id": 2, "name": "job_id", "type": "string"},
+        {"id": 3, "name": "service_id", "type": "string"},
+        {"id": 4, "name": "step_index", "type": "int"},
+        {"id": 5, "name": "work_item_count", "type": "int"},
+        {"id": 6, "name": "operation", "type": "string"},
+        {"id": 7, "name": "created_at", "type": "timestamptz"},
+        {"id": 8, "name": "updated_at", "type": "timestamptz"},
+        {"id": 9, "name": "has_aggregated_output", "type": "boolean"},
+        {"id": 10, "name": "max_batch_inputs", "type": "long"},
+        {"id": 11, "name": "ytesmaxBatchSizeInBytes", "type": "long"},
+        {"id": 12, "name": "is_batched", "type": "boolean"},
+        {"id": 13, "name": "is_complete", "type": "boolean"},
+        {"id": 14, "name": "is_sequential", "type": "boolean"},
+        {"id": 15, "name": "completed_work_item_count", "type": "int"},
+        {"id": 16, "name": "progress_weight", "type": "float"},
+        {"id": 17, "name": "always_wait_for_prior_step", "type": "boolean"}
+      ]
+    },
+    "partitionSpec": {
+      "fields": [
+        {
+          "sourceId": 8,
+          "transform": "week",
+          "name": "updated_at_week"
+        }
+      ]
+    }
+  }
+}
+EOF
+)
+
+# Iterate and Create Tables
+for TABLE_NAME in "${!TABLE_SCHEMAS[@]}"; do
+  SCHEMA_JSON="${TABLE_SCHEMAS[$TABLE_NAME]}"
+
+  echo "Creating table: ${TABLE_NAME}..."
+
+  aws s3tables create-table \
+    --table-bucket-arn "$BUCKET_ARN" \
+    --namespace "$NAMESPACE" \
+    --name "$TABLE_NAME" \
+    --format "ICEBERG" \
+    --metadata "$SCHEMA_JSON"
+
+  echo "Table '${TABLE_NAME}' created successfully."
+  echo "----------------------------------------"
+done
