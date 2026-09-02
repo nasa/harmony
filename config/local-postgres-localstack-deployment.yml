@@ -8,7 +8,7 @@ metadata:
 spec:
   containers:
     - name: ministack
-      image: ministackorg/ministack:full
+      image: ministackorg/ministack:1.5.5-full
       ports:
         - containerPort: 4566
       volumeMounts:

@@ -5,12 +5,14 @@ set -e
 BUCKET_NAME="harmony-analytics"
 NAMESPACE="iceberg"
 
-ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
+AWS_REGION="${AWS_REGION:-$AWS_DEFAULT_REGION}"
+
+ACCOUNT_ID=$(aws "$AWS_ENDPOINT_FLAG" sts get-caller-identity --query "Account" --output text)
 
 BUCKET_ARN="arn:aws:s3tables:${AWS_REGION}:${ACCOUNT_ID}:bucket/${BUCKET_NAME}"
 
-if ERROR_MSG=$(aws s3tables get-table-bucket --table-bucket-arn "$BUCKET_ARN" 2>&1 >/dev/null); then
-    echo "S3 Table Bucket already exists, skipping creation."
+if ERROR_MSG=$(aws "$AWS_ENDPOINT_FLAG" s3tables get-table-bucket --table-bucket-arn "$BUCKET_ARN" 2>&1 >/dev/null); then
+    echo "S3 Table Bucket [${BUCKET_NAME}] already exists, skipping creation."
     exit 0
 fi
 
@@ -24,21 +26,24 @@ echo "🚀 Starting S3 Tables provisioning..."
 
 #  Create the S3 Table Bucket
 echo "Creating S3 Table Bucket: $BUCKET_NAME..."
-aws s3tables create-table-bucket \
+aws "$AWS_ENDPOINT_FLAG" s3tables create-table-bucket \
     --name "$BUCKET_NAME"
     
 echo "BUCKET_ARN: $BUCKET_ARN"
-    
-# Set the bucket config to clean up orphan files using the default settings (unreferenced for 3 days and waiting for deletion for 10 days)
-echo "Enabling orphan file clean up"
-aws s3tables put-table-bucket-maintenance-configuration --table-bucket-arn $BUCKET_ARN --type icebergUnreferencedFileRemoval \
---value 'status=enabled,settings={icebergUnreferencedFileRemoval={unreferencedDays=3,nonCurrentDays=10}}'
+ 
+# orphan file cleanup is not available in ministack, apparently, so don't try to set it there   
+if [[ ! -v AWS_ENDPOINT_FLAG ]]; then
+  # Set the bucket config to clean up orphan files using the default settings (unreferenced for 3 days and waiting for deletion for 10 days)
+  echo "Enabling orphan file clean up"
+  aws s3tables put-table-bucket-maintenance-configuration --table-bucket-arn $BUCKET_ARN --type icebergUnreferencedFileRemoval \
+  --value 'status=enabled,settings={icebergUnreferencedFileRemoval={unreferencedDays=3,nonCurrentDays=10}}'
+fi
 
 echo "✅ Table Bucket created: $BUCKET_ARN"
 
 # 2. Create the Namespace
 echo "Creating Namespace: $NAMESPACE..."
-aws s3tables create-namespace \
+aws "$AWS_ENDPOINT_FLAG" s3tables create-namespace \
     --table-bucket-arn "$BUCKET_ARN" \
     --namespace "$NAMESPACE"
 
@@ -160,7 +165,7 @@ TABLE_SCHEMAS["jobs"]=$(cat <<'EOF'
         {"id": 8, "name": "request", "type": "string"},
         {"id": 9, "name": "is_async", "type": "boolean"},
         {"id": 10, "name": "batches_completed", "type": "int"},
-        {"id": 11, "name": "num_input_granues", "type": "int"},
+        {"id": 11, "name": "num_input_granules", "type": "int"},
         {"id": 12, "name": "message", "type": "string"},
         {"id": 13, "name": "job_id", "type": "string"},
         {"id": 14, "name": "collection_ids", "type": "string"},
@@ -273,45 +278,30 @@ TABLE_SCHEMAS["work_items"]=$(cat <<'EOF'
     "schema": {
       "fields": [
         {"id": 1, "name": "id", "type": "long"},
-        {"id": 2, "name": "workflow_step_index", "type": "int"},
-        {"id": 3, "name": "scroll_id", "type": "string"},
-        {"id": 4, "name": "service_id", "type": "string"},
-        {"id": 5, "name": "status", "type": "string"},
-        {"id": 6, "name": "stac_catalog_location", "type": "string"},
-        {"id": 7, "name": "created_at", "type": "timestamptz"},
-        {"id": 8, "name": "updated_at", "type": "timestamptz"},
-        {"id": 9, "name": "total_item_size", "type": "double"},
-        {"id": 10, "name": "retry_count", "type": "int"},
-        {"id": 11, "name": "duration", "type": "float"},
-        {"id": 12, "name": "started_at", "type": "timestamptz"},
-        {"id": 13, "name": "sort_index", "type": "int"},
-        {"id": 14, "name": "output_item_sizes_json", "type": "string"},
-        {"id": 15, "name": "message_category", "type": "string"}
+        {"id": 2, "name": "job_id", "type": "string"},
+        {"id": 3, "name": "workflow_step_index", "type": "int"},
+        {"id": 4, "name": "scroll_id", "type": "string"},
+        {"id": 5, "name": "service_id", "type": "string"},
+        {"id": 6, "name": "status", "type": "string"},
+        {"id": 7, "name": "stac_catalog_location", "type": "string"},
+        {"id": 8, "name": "created_at", "type": "timestamptz"},
+        {"id": 9, "name": "updated_at", "type": "timestamptz"},
+        {"id": 10, "name": "total_items_size", "type": "double"},
+        {"id": 11, "name": "retry_count", "type": "int"},
+        {"id": 12, "name": "duration", "type": "float"},
+        {"id": 13, "name": "started_at", "type": "timestamptz"},
+        {"id": 14, "name": "sort_index", "type": "int"},
+        {"id": 15, "name": "output_item_sizes_json", "type": "string"},
+        {"id": 16, "name": "message_category", "type": "string"}
       ]
     },
     "partitionSpec": {
       "fields": [
         {
-          "sourceId": 8,
+          "sourceId": 9,
           "transform": "week",
           "name": "updated_at_week"
         }
-      ]
-    }
-  }
-}
-EOF
-)
-
-TABLE_SCHEMAS["work_items_stats"]=$(cat <<'EOF'
-{
-  "iceberg": {
-    "schema": {
-      "fields": [
-        {"name": "minute", "type": "timestamptz"},
-        {"name": "service_id", "type": "string"},
-        {"name": "status", "type": "string"},
-        {"name": "count", "type": "long"}
       ]
     }
   }
@@ -334,7 +324,7 @@ TABLE_SCHEMAS["workflow_steps"]=$(cat <<'EOF'
         {"id": 8, "name": "updated_at", "type": "timestamptz"},
         {"id": 9, "name": "has_aggregated_output", "type": "boolean"},
         {"id": 10, "name": "max_batch_inputs", "type": "long"},
-        {"id": 11, "name": "ytesmaxBatchSizeInBytes", "type": "long"},
+        {"id": 11, "name": "max_batch_size_in_bytes", "type": "long"},
         {"id": 12, "name": "is_batched", "type": "boolean"},
         {"id": 13, "name": "is_complete", "type": "boolean"},
         {"id": 14, "name": "is_sequential", "type": "boolean"},
@@ -363,7 +353,7 @@ for TABLE_NAME in "${!TABLE_SCHEMAS[@]}"; do
 
   echo "Creating table: ${TABLE_NAME}..."
 
-  aws s3tables create-table \
+  aws "$AWS_ENDPOINT_FLAG" s3tables create-table \
     --table-bucket-arn "$BUCKET_ARN" \
     --namespace "$NAMESPACE" \
     --name "$TABLE_NAME" \

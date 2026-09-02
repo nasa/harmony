@@ -11,19 +11,24 @@ INSTALL aws;
    SET TimeZone = 'UTC';
 
 CREATE SECRET ministack_s3 (
-     TYPE s3,
-     KEY_ID 'ministack_fake_key',
-     SECRET 'ministack_fake_secret',
-     REGION 'us-east-1',
-     ENDPOINT 'localhost:4566', -- Adjust to your MiniStack container port if different
-     USE_SSL false
-   );
-ATTACH 'arn:aws:s3tables:us-west-2:000000000000:bucket/icebeg-tables'
-   AS catalog (
-     TYPE iceberg,
-     ENDPOINT 'http://localhost:4566/iceberg',
-     AUTHORIZATION_TYPE 'none'
-   );`;
+    TYPE s3,
+    KEY_ID 'ministack_fake_key',
+    SECRET 'ministack_fake_secret',
+    REGION 'us-west-2',
+    ENDPOINT 'localstack:4566',
+    URL_STYLE 'path',
+    USE_SSL false
+);
+ATTACH 'arn:aws:s3tables:us-west-2:000000000000:bucket/harmony-analytics'
+  AS catalog (
+    TYPE iceberg,
+    ENDPOINT 'http://localstack:4566/iceberg',
+    AUTHORIZATION_TYPE 'sigv4',
+    SECRET ministack_s3,
+    SIGV4_SERVICE 's3tables',
+    SIGV4_REGION 'us-west-2',
+    ACCESS_DELEGATION_MODE 'none'
+  );`
 
 const awsSql = `
 INSTALL aws;

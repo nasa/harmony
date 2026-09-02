@@ -35,8 +35,13 @@ fi
 export LOCAL_DEV
 export KUBE_CONTEXT
 
+
 # run localstack, postgresql, and harmony in kubernetes
 ./bin/start-all
+
+# create the Iceberg tables
+export AWS_ENDPOINT_FLAG="--endpoint-url=http://localhost:4566" # Used to talk to ministack
+./bin/create-iceberg-tables
 
 # deploy the services
 echo ""

@@ -8,6 +8,7 @@ import snakeCaseKeys from 'snakecase-keys';
 import { CronJob } from './cronjob';
 import { Context } from '../util/context';
 import { initDbConnection } from '../util/db/iceberg-connection';
+import { tableRowTransforms } from '../util/iceberg-row-transforms';
 
 
 /**
@@ -30,12 +31,12 @@ type PgRow = Record<string, any>;
  *
  * @param ctx - The Cron job context
  * @param table - The name of the table to read
- * @param latestUpdatedAt - Most recent updatedAt written to Iceberg
+ * @param latestUpdateTime- Most recent updatedAt written to Iceberg
  * @param cursor - The last row seen from a previous batch, or null to start from the beginning
  * @param batchSize - Maximum number of rows to process
  * @returns A Promise containing an array of maps representing the rows retrieved from Postgres
  */
-async function getPostgresRows(ctx: Context, table: string, latestUpdatedAt: string, cursor: RowCursor | null, batchSize: number = 1000): Promise<Array<PgRow>> {
+async function getPostgresRows(ctx: Context, table: string, latestUpdateTime: string, cursor: RowCursor | null, batchSize: number = 1000): Promise<Array<PgRow>> {
   const { logger, db } = ctx;
   const result = new Array<PgRow>();
 
@@ -49,13 +50,16 @@ async function getPostgresRows(ctx: Context, table: string, latestUpdatedAt: str
     if (cursor) {
       query.whereRaw('("updatedAt", id) > (?::timestamptz, ?)', [cursor.updatedAt, cursor.id]);
     } else {
-      query.whereRaw('"updatedAt" >= (?::timestamptz - INTERVAL \'1 minutes\')', [latestUpdatedAt]);
+      query.whereRaw('"updatedAt" >= (?::timestamptz - INTERVAL \'1 minutes\')', [latestUpdateTime]);
     }
 
     const res = await query;
 
     for (let row of res) {
       row = snakeCaseKeys(row);
+      if (tableRowTransforms[table]) {
+        tableRowTransforms[table](row);
+      }
       result.push(row);
     }
   } catch (err) {
@@ -145,7 +149,7 @@ async function mergeRowsIntoIceberg(ctx: Context, duckDbConn: DuckDBConnection, 
  */
 async function updateAnalytics(ctx: Context): Promise<void> {
   const { logger } = ctx;
-  const tables = ['jobs', 'job_links', 'work_items', 'workflow_steps'];
+  const tables = ['batch_items', 'batches', 'job_links', 'job_messages', 'jobs', 'jobs_raw_labels', 'raw_labels', 'service_deployments', 'users_labels', 'work_items', 'workflow_steps'];
   const batchSize = 1000;
 
   try {
