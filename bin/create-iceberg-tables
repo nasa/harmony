@@ -2,7 +2,7 @@
 
 set -e
 
-BUCKET_NAME="harmony-analytics"
+BUCKET_NAME="${ICEBERG_BUCKET}:-"harmony-analytics"}
 NAMESPACE="iceberg"
 
 AWS_REGION="${AWS_REGION:-$AWS_DEFAULT_REGION}"
