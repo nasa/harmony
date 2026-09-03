@@ -9,5 +9,5 @@ export const tableRowTransforms = {
     delete operation.accessToken;
     // eslint-disable-next-line @typescript-eslint/dot-notation
     row['operation'] = JSON.stringify(operation);
-  }
+  },
 };
