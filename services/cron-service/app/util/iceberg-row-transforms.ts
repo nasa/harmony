@@ -6,7 +6,7 @@ export const tableRowTransforms = {
     // eslint-disable-next-line @typescript-eslint/dot-notation
     const operationStr = row['operation'];
     const operation = JSON.parse(operationStr);
-    delete operation.access_token;
+    delete operation.accessToken;
     // eslint-disable-next-line @typescript-eslint/dot-notation
     row['operation'] = JSON.stringify(operation);
   }
