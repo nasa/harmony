@@ -14,8 +14,8 @@ import { getDashboard } from '../frontends/dashboard';
 import docsPage from '../frontends/docs/docs';
 import { getAdminHealth, getHealth } from '../frontends/health';
 import {
-  cancelJob, cancelJobs, getJobsListing, getJobStatus, pauseJob, pauseJobs, resumeJob, resumeJobs,
-  skipJobPreview, skipJobsPreview,
+  cancelJob, cancelJobs, getJobsListing, getJobStatus, getJobStatuses, pauseJob, pauseJobs,
+  resumeJob, resumeJobs, skipJobPreview, skipJobsPreview,
 } from '../frontends/jobs';
 import { addJobLabels, deleteJobLabels } from '../frontends/labels';
 import landingPage from '../frontends/landing-page';
@@ -299,6 +299,7 @@ export default function router({ USE_EDL_CLIENT_APP = 'false' }: RouterConfig): 
   result.post('/jobs/resume', jsonParser, asyncHandler(resumeJobs));
   result.post('/jobs/skip-preview', jsonParser, asyncHandler(skipJobsPreview));
   result.post('/jobs/pause', jsonParser, asyncHandler(pauseJobs));
+  result.post('/jobs/status', jsonParser, asyncHandler(getJobStatuses));
 
   // job labels
   result.put('/labels', jsonParser, asyncHandler(addJobLabels));

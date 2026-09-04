@@ -2,6 +2,11 @@
 Any changes to the environment variables will be documented in this file in chronological
 order with the most recent changes first.
 
+## 2026-09-04
+### Added
+- MAX_BULK_JOB_STATUS_IDS - controls the maximum number of job IDs that can be requested at once
+  from the bulk job status endpoint (`POST /jobs/status`).
+
 ## 2026-07-07
 ### Changed
 - HARMONY\_REGRIDDER\_LIMITS\_MEMORY - Increased to 16Gi to prevent out-of-memory errors.

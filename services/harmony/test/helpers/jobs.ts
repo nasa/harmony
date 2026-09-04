@@ -415,6 +415,16 @@ export function cancelJobs(app, { jobIDs } : { jobIDs: string[] }): Test {
   return request(app).post('/jobs/cancel').send({ jobIDs });
 }
 
+/**
+ * Submits a bulk job status request
+ *
+ * @param app - The express application (typically this.frontend)
+ * @param jobIDs - The job ids
+ */
+export function bulkJobStatus(app, { jobIDs } : { jobIDs: string[] }): Test {
+  return request(app).post('/jobs/status').send({ jobIDs });
+}
+
 export const hookJobListing = hookRequest.bind(this, jobListing);
 export const hookAdminJobListing = hookRequest.bind(this, adminJobListing);
 export const hookJobStatus = hookRequest.bind(this, jobStatus);
@@ -441,6 +451,7 @@ export const hookSkipPreviewJobs = hookRequest.bind(this, skipPreviewJobs);
 export const hookPauseJobs = hookRequest.bind(this, pauseJobs);
 export const hookResumeJobs = hookRequest.bind(this, resumeJobs);
 export const hookCancelJobs = hookRequest.bind(this, cancelJobs);
+export const hookBulkJobStatus = hookRequest.bind(this, bulkJobStatus);
 
 /**
  * Given a string returns a new string with all characters escaped such that the string
