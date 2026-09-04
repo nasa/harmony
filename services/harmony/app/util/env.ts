@@ -86,6 +86,10 @@ class HarmonyServerEnv extends HarmonyEnv {
 
   @IsInt()
   @Min(1)
+  maxBulkJobStatusIds: number;
+
+  @IsInt()
+  @Min(1)
   maxBatchSizeInBytes: number;
 
   @IsInt()

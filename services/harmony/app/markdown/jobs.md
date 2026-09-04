@@ -71,6 +71,46 @@ The returned JSON response list the details of the given job:
 **Table {{tableCounter}}** - Harmony job response fields
 
 
+#### <a name="bulk-job-status"></a> Getting status for multiple jobs at once
+
+Clients that need to poll many jobs at once, for example after submitting a large batch of
+requests, can use the bulk status endpoint instead of making one request per job. It accepts up
+to **{{maxBulkJobStatusIds}}** job IDs in a single call and returns only the `status` and
+`progress` for each job - not the full [job status response](#job-response) (no `links`,
+`errors`, `message`, etc.).
+
+```
+
+{{root}}/jobs/status
+
+```
+**Example {{exampleCounter}}** - Getting status for multiple jobs at once
+
+This is a `POST` request with a JSON body containing the list of job IDs to check:
+
+```json
+{
+  "jobIDs": ["<job-id-1>", "<job-id-2>", "<job-id-3>"]
+}
+```
+
+##### <a name="bulk-job-status-response"></a> Response
+The returned JSON response lists the status and progress for each job that could be found, along
+with any requested job IDs that could not be found:
+
+| field          | description                                                                                                                     |
+|----------------|----------------------------------------------------------------------------------------------------------------------------------|
+| jobStatuses    | A list of JSON objects, each with `jobID`, `status`, and `progress` for a job that was found.                                   |
+| notFoundJobIDs | A list of job IDs from the request that could not be found. |
+
+---
+**Table {{tableCounter}}** - Harmony bulk job status response fields
+
+A request for more than **{{maxBulkJobStatusIds}}** job IDs, an empty or missing `jobIDs` list, or
+a `jobIDs` list containing an ID that is not a valid job ID will result in an error response and
+no job statuses being returned.
+
+
 #### Pausing a job
 
 User can pause a job with the following API call. The returned response is the same as the [job status response](#job-response) with the job status as `paused`.

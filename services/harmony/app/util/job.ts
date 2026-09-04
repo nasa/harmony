@@ -265,6 +265,26 @@ export function validateJobId(jobID: string): void {
 }
 
 /**
+ * Throws RequestValidationError if jobIDs is not a non-empty array of UUIDs no longer than
+ * `env.maxBulkJobStatusIds`.
+ * @param jobIDs - the jobIDs to validate
+ */
+export function validateBulkJobIDs(jobIDs: unknown): void {
+  if (!Array.isArray(jobIDs) || jobIDs.length === 0) {
+    throw new RequestValidationError('\'jobIDs\' must be a non-empty array of job IDs.');
+  }
+  if (jobIDs.length > env.maxBulkJobStatusIds) {
+    throw new RequestValidationError(
+      `Cannot request status for more than ${env.maxBulkJobStatusIds} jobs at once. Received ${jobIDs.length}.`);
+  }
+  const invalidIds = jobIDs.filter((id) => !isUUID(id));
+  if (invalidIds.length > 0) {
+    throw new RequestValidationError(
+      `Invalid format for Job ID(s): ${invalidIds.join(', ')}. Job IDs must be UUIDs.`);
+  }
+}
+
+/**
  * Pause a job and then save it.
  *
  * @param jobID - the id of job (requestId in the db)

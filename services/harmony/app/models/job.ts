@@ -133,6 +133,16 @@ export class JobForDisplay {
 
 }
 
+/**
+ * A slim status summary for a job, returned by the bulk job status endpoint. Intentionally
+ * excludes links, errors/warnings, and messages.
+ */
+export interface JobStatusSummary {
+  jobID: string;
+  status: JobStatus;
+  progress: number;
+}
+
 export interface JobQuery {
   where?: {
     id?: number;
@@ -673,6 +683,26 @@ export class Job extends DBRecord implements JobRecord {
   ): Promise<{ job: Job; pagination: ILengthAwarePagination }> {
     const constraints = { where: { jobID } };
     return Job.queryForSingleJob(tx, constraints, includeLinks, includeLabels, lock, currentPage, perPage);
+  }
+
+  /**
+   * Returns just the jobID, status, and progress for the given job IDs, scoped to `username`
+   * unless it is undefined (admin request). Skips the pagination, links, and labels that
+   * `queryAll`/`queryForSingleJob` load, since callers only need a slim status summary.
+   *
+   * @param tx - the transaction to use for querying
+   * @param jobIDs - the job IDs to look up
+   * @param username - if provided, only jobs owned by this user are returned
+   * @returns a status summary for each job ID that was found
+   */
+  static async statusesByJobIDs(
+    tx: Transaction, jobIDs: string[], username?: string,
+  ): Promise<JobStatusSummary[]> {
+    const query = tx(Job.table).select('jobID', 'status', 'progress').whereIn('jobID', jobIDs);
+    if (username) {
+      void query.where({ username });
+    }
+    return query;
   }
 
   /**

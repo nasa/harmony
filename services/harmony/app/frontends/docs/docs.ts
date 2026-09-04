@@ -117,6 +117,7 @@ export const generateDocumentation = async (root: string): Promise<string> => {
         exampleCounter: () => `${exampleCount--}`,
         tableCounter: () => `${tableCount--}`,
         previewThreshold: () => `${env.previewThreshold}`,
+        maxBulkJobStatusIds: () => `${env.maxBulkJobStatusIds}`,
       });
     })
     // interpolate values in non-inline tags
