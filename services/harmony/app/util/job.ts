@@ -277,7 +277,7 @@ export function validateBulkJobIDs(jobIDs: unknown): void {
     throw new RequestValidationError(
       `Cannot request status for more than ${env.maxBulkJobStatusIds} jobs at once. Received ${jobIDs.length}.`);
   }
-  const invalidIds = jobIDs.filter((id) => !isUUID(id));
+  const invalidIds = jobIDs.filter((id) => typeof id !== 'string' || !isUUID(id));
   if (invalidIds.length > 0) {
     throw new RequestValidationError(
       `Invalid format for Job ID(s): ${invalidIds.join(', ')}. Job IDs must be UUIDs.`);

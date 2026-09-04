@@ -75,7 +75,7 @@ The returned JSON response list the details of the given job:
 
 Clients that need to poll many jobs at once, for example after submitting a large batch of
 requests, can use the bulk status endpoint instead of making one request per job. It accepts up
-to **{{maxBulkJobStatusIds}}** job IDs in a single call and returns only the `status` and
+to **{{maxBulkJobStatusIds}}** job IDs in a single call and returns only the `jobID`, `status`, and
 `progress` for each job - not the full [job status response](#job-response) (no `links`,
 `errors`, `message`, etc.).
 
