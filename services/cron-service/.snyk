@@ -1,0 +1,7 @@
+# Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
+version: v1.25.0
+ignore:
+  SNYK-JS-XMLDOMXMLDOM-19498551:
+    - '*':
+        reason: '@xmldom/xmldom is locked below 0.9.0 because that version causes issues with the shapefile conversion middleware (see lockedDependenciesComments in services/harmony/package.json). HARMONY-2437.'
+        expires: 2027-03-04T00:00:00.000Z
