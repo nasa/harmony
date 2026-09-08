@@ -277,13 +277,18 @@ describe('AnalyticsCron', function () {
       expect(ctx.logger.info.calledWith('Completed analytics cron job')).to.be.true;
     });
 
-    it('logs an error when reading a table current Iceberg update time fails', async function () {
+    it('logs an error when reading a table current Iceberg update time fails, and still processes the remaining tables', async function () {
       const readError = new Error('Iceberg read failed');
+      // ALL_TABLES[0] is 'batch_items' - fail only its Iceberg cutoff read.
       duckDbConn.runAndReadAll.onFirstCall().rejects(readError);
 
       await AnalyticsCron.run(ctx);
 
       expect(ctx.logger.error.calledWith(readError)).to.be.true;
+      // A failure processing one table must not abort the whole run - every table is
+      // still queried against Postgres, including the ones after the failing one.
+      const queriedTables = dbStub.getCalls().map((c) => c.args[0]);
+      expect(queriedTables).to.deep.equal(ALL_TABLES);
       // updateAnalytics() never rejects (it catches and logs internally), so run() always
       // reaches its own completion log regardless of what happened while processing tables.
       expect(ctx.logger.info.calledWith('Completed analytics cron job')).to.be.true;

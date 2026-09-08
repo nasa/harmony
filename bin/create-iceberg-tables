@@ -5,7 +5,15 @@ set -e
 BUCKET_NAME="${ICEBERG_BUCKET:-harmony-analytics}"
 NAMESPACE="iceberg"
 
-AWS_REGION="${AWS_REGION:-$AWS_DEFAULT_REGION}"
+# Matches the AWS_DEFAULT_REGION default in packages/util/env-defaults, so provisioning
+# and the cron service's ministack connection agree on a region even when neither
+# AWS_REGION nor AWS_DEFAULT_REGION is set in the environment.
+AWS_REGION="${AWS_REGION:-${AWS_DEFAULT_REGION:-us-west-2}}"
+
+if [ -z "$AWS_REGION" ]; then
+  echo "Error: could not determine an AWS region (set AWS_REGION or AWS_DEFAULT_REGION)." >&2
+  exit 1
+fi
 
 # An empty/unset AWS_ENDPOINT_FLAG must not be passed to aws at all - a quoted
 # empty string is still an argument, and aws mistakes it for the command name.
@@ -18,29 +26,27 @@ ACCOUNT_ID=$(aws "${AWS_FLAGS[@]}" sts get-caller-identity --query "Account" --o
 
 BUCKET_ARN="arn:aws:s3tables:${AWS_REGION}:${ACCOUNT_ID}:bucket/${BUCKET_NAME}"
 
+echo "🚀 Starting S3 Tables provisioning..." >&2
+
 if ERROR_MSG=$(aws "${AWS_FLAGS[@]}" s3tables get-table-bucket --table-bucket-arn "$BUCKET_ARN" 2>&1 >/dev/null); then
     echo "S3 Table Bucket [${BUCKET_NAME}] already exists, skipping creation." >&2
-    echo "$BUCKET_ARN"
-    exit 0
-fi
-
-if [[ ! "$ERROR_MSG" =~ "NotFoundException" && ! "$ERROR_MSG" =~ "ResourceNotFoundException" ]]; then
+elif [[ "$ERROR_MSG" =~ "NotFoundException" || "$ERROR_MSG" =~ "ResourceNotFoundException" ]]; then
+    #  Create the S3 Table Bucket
+    echo "Creating S3 Table Bucket: $BUCKET_NAME..." >&2
+    aws "${AWS_FLAGS[@]}" s3tables create-table-bucket \
+        --name "$BUCKET_NAME" >/dev/null
+    echo "BUCKET_ARN: $BUCKET_ARN" >&2
+    echo "✅ Table Bucket created: $BUCKET_ARN" >&2
+else
     echo "Error checking S3 Table bucket status:" >&2
     echo "$ERROR_MSG" >&2
     exit 1
 fi
 
-echo "🚀 Starting S3 Tables provisioning..." >&2
-
-#  Create the S3 Table Bucket
-echo "Creating S3 Table Bucket: $BUCKET_NAME..." >&2
-aws "${AWS_FLAGS[@]}" s3tables create-table-bucket \
-    --name "$BUCKET_NAME" >/dev/null
-
-echo "BUCKET_ARN: $BUCKET_ARN" >&2
-
 # orphan file cleanup is not available in ministack, apparently, so don't try to set it there
-# (bash 3 has no -v test operator, so check for unset via the ${VAR+x} idiom instead)
+# (bash 3 has no -v test operator, so check for unset via the ${VAR+x} idiom instead). This
+# is a "put" of the whole config, so it's safe (and idempotent) to run on every invocation,
+# not just when the bucket was newly created.
 if [ -z "${AWS_ENDPOINT_FLAG+x}" ]; then
   # Set the bucket config to clean up orphan files using the default settings (unreferenced for 3 days and waiting for deletion for 10 days)
   echo "Enabling orphan file clean up" >&2
@@ -48,13 +54,20 @@ if [ -z "${AWS_ENDPOINT_FLAG+x}" ]; then
   --value 'status=enabled,settings={icebergUnreferencedFileRemoval={unreferencedDays=3,nonCurrentDays=10}}' >/dev/null
 fi
 
-echo "✅ Table Bucket created: $BUCKET_ARN" >&2
-
-# 2. Create the Namespace
+# 2. Create the Namespace (tolerate it already existing, so reruns after a partial
+# failure converge instead of aborting).
 echo "Creating Namespace: $NAMESPACE..." >&2
-aws "${AWS_FLAGS[@]}" s3tables create-namespace \
+if ERROR_MSG=$(aws "${AWS_FLAGS[@]}" s3tables create-namespace \
     --table-bucket-arn "$BUCKET_ARN" \
-    --namespace "$NAMESPACE" >/dev/null
+    --namespace "$NAMESPACE" 2>&1 >/dev/null); then
+    :
+elif [[ "$ERROR_MSG" =~ "ConflictException" || "$ERROR_MSG" =~ "already exists" ]]; then
+    echo "Namespace [${NAMESPACE}] already exists, continuing." >&2
+else
+    echo "Error creating namespace:" >&2
+    echo "$ERROR_MSG" >&2
+    exit 1
+fi
 
 # Bash 3 has no associative arrays (declare -A is a bash 4+ feature), so table
 # names and their schema JSON are kept in two parallel indexed arrays instead.
@@ -369,14 +382,21 @@ while [ "$INDEX" -lt "${#TABLE_NAMES[@]}" ]; do
 
   echo "Creating table: ${TABLE_NAME}..." >&2
 
-  aws "${AWS_FLAGS[@]}" s3tables create-table \
+  if ERROR_MSG=$(aws "${AWS_FLAGS[@]}" s3tables create-table \
     --table-bucket-arn "$BUCKET_ARN" \
     --namespace "$NAMESPACE" \
     --name "$TABLE_NAME" \
     --format "ICEBERG" \
-    --metadata "$SCHEMA_JSON" >/dev/null
+    --metadata "$SCHEMA_JSON" 2>&1 >/dev/null); then
+    echo "Table '${TABLE_NAME}' created successfully." >&2
+  elif [[ "$ERROR_MSG" =~ "ConflictException" || "$ERROR_MSG" =~ "already exists" ]]; then
+    echo "Table '${TABLE_NAME}' already exists, skipping." >&2
+  else
+    echo "Error creating table '${TABLE_NAME}':" >&2
+    echo "$ERROR_MSG" >&2
+    exit 1
+  fi
 
-  echo "Table '${TABLE_NAME}' created successfully." >&2
   echo "----------------------------------------" >&2
 
   INDEX=$((INDEX + 1))

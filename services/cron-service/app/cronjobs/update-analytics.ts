@@ -8,6 +8,7 @@ import snakeCaseKeys from 'snakecase-keys';
 import { CronJob } from './cronjob';
 import { Context } from '../util/context';
 import { initDbConnection } from '../util/db/iceberg-connection';
+import env from '../util/env';
 import { tableRowTransforms } from '../util/iceberg-row-transforms';
 
 
@@ -78,6 +79,9 @@ async function getPostgresRows(ctx: Context, table: string, latestUpdateTime: st
  */
 async function getLatestIcebergTableUpdateTime(ctx: Context, duckDbConn: DuckDBConnection, table: String): Promise<Date> {
   const { logger } = ctx;
+  const oldDate = new Date();
+  oldDate.setFullYear(1, 1, 1);
+
   try {
     const reader = await duckDbConn.runAndReadAll(`
 			SELECT max(updated_at) FROM catalog.iceberg.${table};
@@ -86,15 +90,13 @@ async function getLatestIcebergTableUpdateTime(ctx: Context, duckDbConn: DuckDBC
     if (rows && rows[0] && rows[0]['max(updated_at)']) {
       const updatedAt = rows[0]['max(updated_at)'].toString();
       return new Date(updatedAt);
-
     }
 
-    const oldDate = new Date();
-    oldDate.setFullYear(1, 1, 1);
     return oldDate;
 
   } catch (error) {
     logger.error(error);
+    return oldDate;
   }
 }
 
@@ -158,25 +160,31 @@ async function updateAnalytics(ctx: Context): Promise<void> {
     await initDbConnection(duckDbConn);
 
     for (const table of tables) {
-      const latestUpdateTime = await getLatestIcebergTableUpdateTime(ctx, duckDbConn, table);
-      logger.debug(`=============> Table ${table} latest update time is ${latestUpdateTime.toISOString()}`);
+      try {
+        const latestUpdateTime = await getLatestIcebergTableUpdateTime(ctx, duckDbConn, table);
+        logger.debug(`=============> Table ${table} latest update time is ${latestUpdateTime.toISOString()}`);
 
-      let cursor: RowCursor | null = null;
-      let totalRows = 0;
-      let rows: Array<PgRow>;
+        let cursor: RowCursor | null = null;
+        let totalRows = 0;
+        let rows: Array<PgRow>;
 
-      do {
-        rows = await getPostgresRows(ctx, table, latestUpdateTime.toISOString(), cursor, batchSize);
-        if (rows.length > 0) {
-          await mergeRowsIntoIceberg(ctx, duckDbConn, table, rows);
-          totalRows += rows.length;
+        do {
+          rows = await getPostgresRows(ctx, table, latestUpdateTime.toISOString(), cursor, batchSize);
+          if (rows.length > 0) {
+            await mergeRowsIntoIceberg(ctx, duckDbConn, table, rows);
+            totalRows += rows.length;
 
-          const lastRow = rows[rows.length - 1];
-          cursor = { updatedAt: lastRow.updated_at, id: lastRow.id };
-        }
-      } while (rows.length === batchSize);
+            const lastRow = rows[rows.length - 1];
+            cursor = { updatedAt: lastRow.updated_at, id: lastRow.id };
+          }
+        } while (rows.length === batchSize);
 
-      logger.debug(`Wrote a total of ${totalRows} rows to ${table}`);
+        logger.debug(`Wrote a total of ${totalRows} rows to ${table}`);
+      } catch (err) {
+        // A failure processing one table (e.g. reading its Iceberg cutoff) must not abort
+        // the rest - continue on to the remaining tables.
+        logger.error(err);
+      }
     }
   } catch (err) {
     logger.error(err);
@@ -191,7 +199,9 @@ export class AnalyticsCron extends CronJob {
     const { logger } = ctx;
     logger.info('Started analytics cron job');
     try {
-      process.env.AWS_ACCOUNT_ID = '000000000000';
+      if (env.useLocalstack) {
+        process.env.AWS_ACCOUNT_ID = '000000000000';
+      }
       await updateAnalytics(ctx);
       logger.info('Completed analytics cron job');
     } catch (e) {

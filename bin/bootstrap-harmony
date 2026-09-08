@@ -42,7 +42,10 @@ export KUBE_CONTEXT
 # create the Iceberg tables
 export AWS_ENDPOINT_FLAG="--endpoint-url=http://localhost:4566" # Used to talk to ministack
 export AWS_REGION
-./bin/create-iceberg-tables
+# Capture the provisioned bucket's ARN so the cron service's ministack connection attaches
+# to the same bucket/region deploy-services just created, instead of a hardcoded value.
+export S3_TABLE_BUCKET_ARN
+S3_TABLE_BUCKET_ARN=$(./bin/create-iceberg-tables)
 
 # deploy the services
 echo ""

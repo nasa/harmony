@@ -1,6 +1,6 @@
 import * as path from 'path';
 
-import { IsInt, Min } from 'class-validator';
+import { IsInt, IsNotEmpty, Min, ValidateIf } from 'class-validator';
 
 import { IsCrontab } from './cron-validation';
 import { HarmonyEnv } from '../../../../packages/util/env';
@@ -72,6 +72,8 @@ class CronServiceHarmonyEnv extends HarmonyEnv {
   @IsCrontab()
   analyticsCron: string;
 
+  @ValidateIf(obj => obj.useLocalstack === false)
+  @IsNotEmpty()
   s3TableBucketArn: string;
   // End analytics variables
 }
