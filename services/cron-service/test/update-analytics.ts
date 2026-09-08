@@ -38,7 +38,11 @@ function makeQueryBuilder(rows: Record<string, any>[] | Error): any {
  * interop settings, which Sinon refuses to wrap).
  */
 function tempFilePathFromMergeQuery(query: string): string {
-  return query.match(/read_json_auto\('([^']+)'\)/)[1];
+  const match = query.match(/read_json_auto\('([^']+)'\)/);
+  if (!match) {
+    throw new Error(`Could not find a temp file path in query: ${query}`);
+  }
+  return match[1];
 }
 
 describe('AnalyticsCron', function () {
@@ -126,7 +130,7 @@ describe('AnalyticsCron', function () {
 
       await AnalyticsCron.run(ctx);
 
-      const jobsCall = dbStub.getCalls().find((c) => c.args[0] === 'jobs');
+      const jobsCall = dbStub.getCalls().find((c) => c.args[0] === 'jobs')!;
       const cutoff = jobsCall.returnValue.whereRaw.firstCall.args[1][0];
       expect(new Date(cutoff).getUTCFullYear()).to.be.lessThan(1900);
     });
@@ -141,7 +145,7 @@ describe('AnalyticsCron', function () {
     it('queries with an interval-based cutoff (no cursor) on the first batch for a table', async function () {
       await AnalyticsCron.run(ctx);
 
-      const jobsCall = dbStub.getCalls().find((c) => c.args[0] === 'jobs');
+      const jobsCall = dbStub.getCalls().find((c) => c.args[0] === 'jobs')!;
       expect(jobsCall.returnValue.orderBy.firstCall.args).to.deep.equal(['updatedAt', 'asc']);
       expect(jobsCall.returnValue.orderBy.secondCall.args).to.deep.equal(['id', 'asc']);
       expect(jobsCall.returnValue.limit.calledWith(1000)).to.be.true;
@@ -195,7 +199,7 @@ describe('AnalyticsCron', function () {
     });
 
     it('cleans up the temp file used to merge rows into Iceberg', async function () {
-      let tempFilePath: string;
+      let tempFilePath!: string;
       duckDbConn.run.callsFake(async (query: string) => {
         tempFilePath = tempFilePathFromMergeQuery(query);
       });
@@ -250,7 +254,7 @@ describe('AnalyticsCron', function () {
 
     it('logs an error and still cleans up the temp file when the Iceberg merge fails', async function () {
       const mergeError = new Error('DuckDB merge failed');
-      let tempFilePath: string;
+      let tempFilePath!: string;
       duckDbConn.run.callsFake(async (query: string) => {
         tempFilePath = tempFilePathFromMergeQuery(query);
         throw mergeError;
