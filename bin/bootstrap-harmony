@@ -41,6 +41,7 @@ export KUBE_CONTEXT
 
 # create the Iceberg tables
 export AWS_ENDPOINT_FLAG="--endpoint-url=http://localhost:4566" # Used to talk to ministack
+export AWS_REGION
 ./bin/create-iceberg-tables
 
 # deploy the services
