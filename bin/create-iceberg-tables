@@ -1,18 +1,26 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 set -e
 
-BUCKET_NAME="${ICEBERG_BUCKET}:-"harmony-analytics"}
+BUCKET_NAME="${ICEBERG_BUCKET:-harmony-analytics}"
 NAMESPACE="iceberg"
 
 AWS_REGION="${AWS_REGION:-$AWS_DEFAULT_REGION}"
 
-ACCOUNT_ID=$(aws "$AWS_ENDPOINT_FLAG" sts get-caller-identity --query "Account" --output text)
+# An empty/unset AWS_ENDPOINT_FLAG must not be passed to aws at all - a quoted
+# empty string is still an argument, and aws mistakes it for the command name.
+AWS_FLAGS=()
+if [ -n "$AWS_ENDPOINT_FLAG" ]; then
+  AWS_FLAGS=("$AWS_ENDPOINT_FLAG")
+fi
+
+ACCOUNT_ID=$(aws "${AWS_FLAGS[@]}" sts get-caller-identity --query "Account" --output text)
 
 BUCKET_ARN="arn:aws:s3tables:${AWS_REGION}:${ACCOUNT_ID}:bucket/${BUCKET_NAME}"
 
-if ERROR_MSG=$(aws "$AWS_ENDPOINT_FLAG" s3tables get-table-bucket --table-bucket-arn "$BUCKET_ARN" 2>&1 >/dev/null); then
-    echo "S3 Table Bucket [${BUCKET_NAME}] already exists, skipping creation."
+if ERROR_MSG=$(aws "${AWS_FLAGS[@]}" s3tables get-table-bucket --table-bucket-arn "$BUCKET_ARN" 2>&1 >/dev/null); then
+    echo "S3 Table Bucket [${BUCKET_NAME}] already exists, skipping creation." >&2
+    echo "$BUCKET_ARN"
     exit 0
 fi
 
@@ -22,35 +30,50 @@ if [[ ! "$ERROR_MSG" =~ "NotFoundException" && ! "$ERROR_MSG" =~ "ResourceNotFou
     exit 1
 fi
 
-echo "🚀 Starting S3 Tables provisioning..."
+echo "🚀 Starting S3 Tables provisioning..." >&2
 
 #  Create the S3 Table Bucket
-echo "Creating S3 Table Bucket: $BUCKET_NAME..."
-aws "$AWS_ENDPOINT_FLAG" s3tables create-table-bucket \
-    --name "$BUCKET_NAME"
-    
-echo "BUCKET_ARN: $BUCKET_ARN"
- 
-# orphan file cleanup is not available in ministack, apparently, so don't try to set it there   
-if [[ ! -v AWS_ENDPOINT_FLAG ]]; then
+echo "Creating S3 Table Bucket: $BUCKET_NAME..." >&2
+aws "${AWS_FLAGS[@]}" s3tables create-table-bucket \
+    --name "$BUCKET_NAME" >/dev/null
+
+echo "BUCKET_ARN: $BUCKET_ARN" >&2
+
+# orphan file cleanup is not available in ministack, apparently, so don't try to set it there
+# (bash 3 has no -v test operator, so check for unset via the ${VAR+x} idiom instead)
+if [ -z "${AWS_ENDPOINT_FLAG+x}" ]; then
   # Set the bucket config to clean up orphan files using the default settings (unreferenced for 3 days and waiting for deletion for 10 days)
-  echo "Enabling orphan file clean up"
-  aws s3tables put-table-bucket-maintenance-configuration --table-bucket-arn $BUCKET_ARN --type icebergUnreferencedFileRemoval \
-  --value 'status=enabled,settings={icebergUnreferencedFileRemoval={unreferencedDays=3,nonCurrentDays=10}}'
+  echo "Enabling orphan file clean up" >&2
+  aws "${AWS_FLAGS[@]}" s3tables put-table-bucket-maintenance-configuration --table-bucket-arn "$BUCKET_ARN" --type icebergUnreferencedFileRemoval \
+  --value 'status=enabled,settings={icebergUnreferencedFileRemoval={unreferencedDays=3,nonCurrentDays=10}}' >/dev/null
 fi
 
-echo "✅ Table Bucket created: $BUCKET_ARN"
+echo "✅ Table Bucket created: $BUCKET_ARN" >&2
 
 # 2. Create the Namespace
-echo "Creating Namespace: $NAMESPACE..."
-aws "$AWS_ENDPOINT_FLAG" s3tables create-namespace \
+echo "Creating Namespace: $NAMESPACE..." >&2
+aws "${AWS_FLAGS[@]}" s3tables create-namespace \
     --table-bucket-arn "$BUCKET_ARN" \
-    --namespace "$NAMESPACE"
+    --namespace "$NAMESPACE" >/dev/null
 
+# Bash 3 has no associative arrays (declare -A is a bash 4+ feature), so table
+# names and their schema JSON are kept in two parallel indexed arrays instead.
+TABLE_NAMES=(
+  "batch_items"
+  "batches"
+  "job_links"
+  "job_messages"
+  "jobs"
+  "jobs_raw_labels"
+  "raw_labels"
+  "service_deployments"
+  "users_labels"
+  "work_items"
+  "workflow_steps"
+)
 
-declare -A TABLE_SCHEMAS
-
-TABLE_SCHEMAS["batch_items"]=$(cat <<'EOF'
+TABLE_SCHEMAS=(
+"$(cat <<'EOF'
 {
   "iceberg": {
     "schema": {
@@ -69,9 +92,8 @@ TABLE_SCHEMAS["batch_items"]=$(cat <<'EOF'
   }
 }
 EOF
-)
-
-TABLE_SCHEMAS["batches"]=$(cat <<'EOF'
+)"
+"$(cat <<'EOF'
 {
   "iceberg": {
     "schema": {
@@ -87,9 +109,8 @@ TABLE_SCHEMAS["batches"]=$(cat <<'EOF'
   }
 }
 EOF
-)
-
-TABLE_SCHEMAS["job_links"]=$(cat <<'EOF'
+)"
+"$(cat <<'EOF'
 {
   "iceberg": {
     "schema": {
@@ -111,17 +132,16 @@ TABLE_SCHEMAS["job_links"]=$(cat <<'EOF'
       "fields": [
         {
           "sourceId": 11,
-          "transform": "week",
-          "name": "updated_at_week"
+          "transform": "month",
+          "name": "updated_at_month"
         }
       ]
     }
   }
 }
 EOF
-)
-
-TABLE_SCHEMAS["job_messages"]=$(cat <<'EOF'
+)"
+"$(cat <<'EOF'
 {
   "iceberg": {
     "schema": {
@@ -140,17 +160,16 @@ TABLE_SCHEMAS["job_messages"]=$(cat <<'EOF'
       "fields": [
         {
           "sourceId": 6,
-          "transform": "week",
-          "name": "updated_at_week"
+          "transform": "month",
+          "name": "updated_at_month"
         }
       ]
     }
   }
 }
 EOF
-)
-
-TABLE_SCHEMAS["jobs"]=$(cat <<'EOF'
+)"
+"$(cat <<'EOF'
 {
   "iceberg": {
     "schema": {
@@ -181,17 +200,16 @@ TABLE_SCHEMAS["jobs"]=$(cat <<'EOF'
       "fields": [
         {
           "sourceId": 7,
-          "transform": "week",
-          "name": "updated_at_week"
+          "transform": "month",
+          "name": "updated_at_month"
         }
       ]
     }
   }
 }
 EOF
-)
-
-TABLE_SCHEMAS["jobs_raw_labels"]=$(cat <<'EOF'
+)"
+"$(cat <<'EOF'
 {
   "iceberg": {
     "schema": {
@@ -207,17 +225,16 @@ TABLE_SCHEMAS["jobs_raw_labels"]=$(cat <<'EOF'
       "fields": [
         {
           "sourceId": 5,
-          "transform": "week",
-          "name": "updated_at_week"
+          "transform": "month",
+          "name": "updated_at_month"
         }
       ]
     }
   }
 }
 EOF
-)
-
-TABLE_SCHEMAS["raw_labels"]=$(cat <<'EOF'
+)"
+"$(cat <<'EOF'
 {
   "iceberg": {
     "schema": {
@@ -231,9 +248,8 @@ TABLE_SCHEMAS["raw_labels"]=$(cat <<'EOF'
   }
 }
 EOF
-)
-
-TABLE_SCHEMAS["service_deployments"]=$(cat <<'EOF'
+)"
+"$(cat <<'EOF'
 {
   "iceberg": {
     "schema": {
@@ -253,9 +269,8 @@ TABLE_SCHEMAS["service_deployments"]=$(cat <<'EOF'
   }
 }
 EOF
-)
-
-TABLE_SCHEMAS["users_labels"]=$(cat <<'EOF'
+)"
+"$(cat <<'EOF'
 {
   "iceberg": {
     "schema": {
@@ -270,9 +285,8 @@ TABLE_SCHEMAS["users_labels"]=$(cat <<'EOF'
   }
 }
 EOF
-)
-
-TABLE_SCHEMAS["work_items"]=$(cat <<'EOF'
+)"
+"$(cat <<'EOF'
 {
   "iceberg": {
     "schema": {
@@ -299,17 +313,16 @@ TABLE_SCHEMAS["work_items"]=$(cat <<'EOF'
       "fields": [
         {
           "sourceId": 9,
-          "transform": "week",
-          "name": "updated_at_week"
+          "transform": "month",
+          "name": "updated_at_month"
         }
       ]
     }
   }
 }
 EOF
-)
-
-TABLE_SCHEMAS["workflow_steps"]=$(cat <<'EOF'
+)"
+"$(cat <<'EOF'
 {
   "iceberg": {
     "schema": {
@@ -337,29 +350,37 @@ TABLE_SCHEMAS["workflow_steps"]=$(cat <<'EOF'
       "fields": [
         {
           "sourceId": 8,
-          "transform": "week",
-          "name": "updated_at_week"
+          "transform": "month",
+          "name": "updated_at_month"
         }
       ]
     }
   }
 }
 EOF
+)"
 )
 
 # Iterate and Create Tables
-for TABLE_NAME in "${!TABLE_SCHEMAS[@]}"; do
-  SCHEMA_JSON="${TABLE_SCHEMAS[$TABLE_NAME]}"
+INDEX=0
+while [ "$INDEX" -lt "${#TABLE_NAMES[@]}" ]; do
+  TABLE_NAME="${TABLE_NAMES[$INDEX]}"
+  SCHEMA_JSON="${TABLE_SCHEMAS[$INDEX]}"
 
-  echo "Creating table: ${TABLE_NAME}..."
+  echo "Creating table: ${TABLE_NAME}..." >&2
 
-  aws "$AWS_ENDPOINT_FLAG" s3tables create-table \
+  aws "${AWS_FLAGS[@]}" s3tables create-table \
     --table-bucket-arn "$BUCKET_ARN" \
     --namespace "$NAMESPACE" \
     --name "$TABLE_NAME" \
     --format "ICEBERG" \
-    --metadata "$SCHEMA_JSON"
+    --metadata "$SCHEMA_JSON" >/dev/null
 
-  echo "Table '${TABLE_NAME}' created successfully."
-  echo "----------------------------------------"
+  echo "Table '${TABLE_NAME}' created successfully." >&2
+  echo "----------------------------------------" >&2
+
+  INDEX=$((INDEX + 1))
 done
+
+# Sole stdout output: callers capture this via `arn=$(./bin/create-iceberg-tables)`.
+echo "$BUCKET_ARN"
