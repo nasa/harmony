@@ -3,7 +3,7 @@ import _ from 'lodash';
 import { Logger } from 'winston';
 
 import HarmonyRequest from '../models/harmony-request';
-import { Job, JobForDisplay, JobQuery } from '../models/job';
+import { Job, JobForDisplay, JobQuery, JobStatusSummary } from '../models/job';
 import JobLink from '../models/job-link';
 import JobMessage, { getMessagesForJob } from '../models/job-message';
 import db from '../util/db';
@@ -12,7 +12,7 @@ import env from '../util/env';
 import { NotFoundError, RequestValidationError, ServerError } from '../util/errors';
 import {
   cancelAndSaveJob, getJobForDisplay, jobStatusCache, pauseAndSaveJob, resumeAndSaveJob,
-  skipPreviewAndSaveJob, validateJobId,
+  skipPreviewAndSaveJob, validateBulkJobIDs, validateJobId,
 } from '../util/job';
 import { Link } from '../util/links';
 import { keysToLowerCase } from '../util/object';
@@ -166,6 +166,45 @@ export async function getJobStatus(
         sizeChangeMessage({ originalSize: job.original_data_size, outputSize: job.output_data_size });
     }
     res.send(jobForDisplay);
+  } catch (e) {
+    req.context.logger.error(e);
+    next(e);
+  }
+}
+
+export interface JobStatusesResponse {
+  jobStatuses: JobStatusSummary[];
+  notFoundJobIDs: string[];
+}
+
+/**
+ * Express.js handler that returns status and progress for up to
+ * `env.maxBulkJobStatusIds` jobs at once `(POST /jobs/status)`. This is a slim
+ * response containing only `jobID`, `status`, and `progress` for each job - no links,
+ * messages, or errors/warnings - intended for clients polling many jobs at once.
+ *
+ * Job IDs that don't exist, or that exist but aren't owned by the requesting user (and
+ * the user isn't an admin), are returned in `notFoundJobIDs` rather than failing the request.
+ *
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
+ * @param next - The next function in the call chain
+ * @returns Resolves when the request is complete
+ */
+export async function getJobStatuses(
+  req: HarmonyRequest, res: Response, next: NextFunction,
+): Promise<void> {
+  try {
+    const { jobIDs } = req.body;
+    validateBulkJobIDs(jobIDs);
+    req.context.logger.info(`Get bulk job status for ${jobIDs.length} jobs for user ${req.user}`);
+    const isAdmin = await isAdminUser(req);
+    const username = isAdmin ? undefined : req.user;
+    const jobStatuses = await Job.statusesByJobIDs(db, jobIDs, username);
+    const foundJobIDs = new Set(jobStatuses.map((j) => j.jobID));
+    const notFoundJobIDs = jobIDs.filter((jobID: string) => !foundJobIDs.has(jobID));
+    const response: JobStatusesResponse = { jobStatuses, notFoundJobIDs };
+    res.json(response);
   } catch (e) {
     req.context.logger.error(e);
     next(e);
