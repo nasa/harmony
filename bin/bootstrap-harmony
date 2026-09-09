@@ -41,6 +41,8 @@ export KUBE_CONTEXT
 
 # create the Iceberg tables
 export AWS_ENDPOINT_FLAG="--endpoint-url=http://localhost:4566" # Used to talk to ministack
+export AWS_ACCESS_KEY_ID=fake     # needed for ministack
+export AWS_SECRET_ACCESS_KEY=fake #  needed for ministack
 export AWS_REGION
 # Capture the provisioned bucket's ARN so the cron service's ministack connection attaches
 # to the same bucket/region deploy-services just created, instead of a hardcoded value.
