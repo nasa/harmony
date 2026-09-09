@@ -35,8 +35,6 @@ export default async function start(): Promise<void> {
     [env.analyticsCron, AnalyticsCron],
   ];
 
-  // const duckDbConn = await acquireDuckDbConnection();
-
   for (const [cronSpec, jobClass] of cronEntries) {
     const logger = log.child({ 'cron_job': jobClass.name });
     const ctx: Context = {

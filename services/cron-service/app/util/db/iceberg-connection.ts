@@ -4,11 +4,13 @@ import env from '../../util/env';
 
 const ministackSql = `
 INSTALL aws;
-   INSTALL httpfs;
-   INSTALL iceberg;
-   LOAD aws;
-   LOAD httpfs;
-   SET TimeZone = 'UTC';
+NSTALL httpfs;
+INSTALL iceberg;
+LOAD aws;
+LOAD httpfs;
+SET TimeZone = 'UTC';
+SET memory_limit='8GB';
+SET threads=8;
 
 CREATE OR REPLACE SECRET ministack_s3 (
     TYPE s3,
@@ -37,6 +39,8 @@ INSTALL aws;
    LOAD aws;
    LOAD httpfs;
    SET TimeZone = 'UTC';
+   SET memory_limit='2GB';
+   SET threads=2;
 
 CREATE OR REPLACE SECRET (TYPE s3, PROVIDER credential_chain);
 ATTACH IF NOT EXISTS '${env.s3TableBucketArn}' AS catalog (

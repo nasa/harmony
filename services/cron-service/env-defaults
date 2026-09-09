@@ -46,9 +46,8 @@ WORK_ITEMS_STATS_CRON="* * * * *" # every minute
 HARMONY_ENVIRONMENT=local
 
 # The analytics schedule
-ANALYTICS_CRON="0 0 * * *" # once a day at midnight
+ANALYTICS_CRON="0 */2 * * *" # every two hours
 
 # The ARN of the S3 Table bucket used to store Iceberg analytics tables, used both for the
 # real AWS connection and (via bin/create-iceberg-tables against ministack) the local one.
 S3_TABLE_BUCKET_ARN=
-

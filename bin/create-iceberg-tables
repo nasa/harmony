@@ -2,7 +2,12 @@
 
 set -e
 
-BUCKET_NAME="${ICEBERG_BUCKET:-harmony-analytics}"
+BUCKET_NAME="harmony-analytics"
+
+if [[ -n "$HARMONY_ENVIRONMENT" ]]; then
+  BUCKET_NAME="${HARMONY_ENVIRONMENT}-${BUCKET_NAME}"
+fi
+
 NAMESPACE="iceberg"
 
 # Matches the AWS_DEFAULT_REGION default in packages/util/env-defaults, so provisioning

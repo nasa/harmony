@@ -12,6 +12,10 @@ import env from '../util/env';
 import { tableRowTransforms } from '../util/iceberg-row-transforms';
 
 
+export const ALL_TABLES = ['batch_items', 'batches', 'job_links', 'job_messages', 'jobs',
+  'jobs_raw_labels', 'raw_labels', 'service_deployments', 'users_labels', 'work_items',
+  'workflow_steps'];
+
 /**
  * A cursor identifying the last row seen from a previous batch, used to page
  * through results in `updatedAt`/`id` order without skipping or repeating rows.
@@ -37,7 +41,8 @@ type PgRow = Record<string, any>;
  * @param batchSize - Maximum number of rows to process
  * @returns A Promise containing an array of maps representing the rows retrieved from Postgres
  */
-async function getPostgresRows(ctx: Context, table: string, latestUpdateTime: string, cursor: RowCursor | null, batchSize: number = 1000): Promise<Array<PgRow>> {
+async function getPostgresRows(ctx: Context, table: string, latestUpdateTime: string,
+  cursor: RowCursor | null, batchSize: number = 1000): Promise<Array<PgRow>> {
   const { logger, db } = ctx;
   const result = new Array<PgRow>();
 
@@ -51,7 +56,8 @@ async function getPostgresRows(ctx: Context, table: string, latestUpdateTime: st
     if (cursor) {
       query.whereRaw('("updatedAt", id) > (?::timestamptz, ?)', [cursor.updatedAt, cursor.id]);
     } else {
-      query.whereRaw('"updatedAt" >= (?::timestamptz - INTERVAL \'1 minutes\')', [latestUpdateTime]);
+      query.whereRaw('"updatedAt" >= (?::timestamptz - INTERVAL \'1 minutes\')',
+        [latestUpdateTime]);
     }
 
     const res = await query;
@@ -77,7 +83,8 @@ async function getPostgresRows(ctx: Context, table: string, latestUpdateTime: st
  * @param table - The name of the table to process
  * @returns A Promise containing the latest updateTime for the Iceberg table
  */
-async function getLatestIcebergTableUpdateTime(ctx: Context, duckDbConn: DuckDBConnection, table: String): Promise<Date> {
+async function getLatestIcebergTableUpdateTime(ctx: Context, duckDbConn: DuckDBConnection,
+  table: String): Promise<Date> {
   const { logger } = ctx;
   const oldDate = new Date();
   oldDate.setFullYear(1, 1, 1);
@@ -109,10 +116,12 @@ async function getLatestIcebergTableUpdateTime(ctx: Context, duckDbConn: DuckDBC
  * @param rows - The rows to merge in
  * @returns a Promise that resolves when the merge completes
  */
-async function mergeRowsIntoIceberg(ctx: Context, duckDbConn: DuckDBConnection, table: string, rows: Array<PgRow>): Promise<void> {
+async function mergeRowsIntoIceberg(ctx: Context, duckDbConn: DuckDBConnection, table: string,
+  rows: Array<PgRow>): Promise<void> {
   const { logger } = ctx;
   const tempDir = tmpdir();
-  const uniqueFilename = `temp-data-${Date.now()}-${Math.random().toString(36).substring(2, 9)}.json`;
+  const uniqueFilename = `temp-data-${Date.now()}-${Math.random().toString(36)
+    .substring(2, 9)}.json`;
   const tempFilePath = join(tempDir, uniqueFilename);
 
   try {
@@ -151,7 +160,6 @@ async function mergeRowsIntoIceberg(ctx: Context, duckDbConn: DuckDBConnection, 
  */
 async function updateAnalytics(ctx: Context): Promise<void> {
   const { logger } = ctx;
-  const tables = ['batch_items', 'batches', 'job_links', 'job_messages', 'jobs', 'jobs_raw_labels', 'raw_labels', 'service_deployments', 'users_labels', 'work_items', 'workflow_steps'];
   const batchSize = 1000;
 
   try {
@@ -159,7 +167,7 @@ async function updateAnalytics(ctx: Context): Promise<void> {
     const duckDbConn = await duckDbInstance.connect();
     await initDbConnection(duckDbConn);
 
-    for (const table of tables) {
+    for (const table of ALL_TABLES) {
       try {
         const latestUpdateTime = await getLatestIcebergTableUpdateTime(ctx, duckDbConn, table);
         logger.debug(`=============> Table ${table} latest update time is ${latestUpdateTime.toISOString()}`);
@@ -169,7 +177,8 @@ async function updateAnalytics(ctx: Context): Promise<void> {
         let rows: Array<PgRow>;
 
         do {
-          rows = await getPostgresRows(ctx, table, latestUpdateTime.toISOString(), cursor, batchSize);
+          rows = await getPostgresRows(ctx, table, latestUpdateTime.toISOString(), cursor,
+            batchSize);
           if (rows.length > 0) {
             await mergeRowsIntoIceberg(ctx, duckDbConn, table, rows);
             totalRows += rows.length;
