@@ -4,7 +4,7 @@ import env from '../../util/env';
 
 const ministackSql = `
 INSTALL aws;
-NSTALL httpfs;
+INSTALL httpfs;
 INSTALL iceberg;
 LOAD aws;
 LOAD httpfs;
