@@ -9,8 +9,8 @@ INSTALL iceberg;
 LOAD aws;
 LOAD httpfs;
 SET TimeZone = 'UTC';
-SET memory_limit='8GB';
-SET threads=8;
+SET memory_limit='2GB';
+SET threads=2;
 
 CREATE OR REPLACE SECRET ministack_s3 (
     TYPE s3,
