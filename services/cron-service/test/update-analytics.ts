@@ -40,7 +40,7 @@ function tempFilePathFromMergeQuery(query: string): string {
   return match[1];
 }
 
-describe('AnalyticsCron', function() {
+describe('AnalyticsCron', function () {
   let sandbox: sinon.SinonSandbox;
   let ctx: any;
   let dbStub: sinon.SinonStub;
@@ -50,7 +50,7 @@ describe('AnalyticsCron', function() {
   let initDbConnectionStub: sinon.SinonStub;
   let originalBatchSize: number;
 
-  beforeEach(function() {
+  beforeEach(function () {
     sandbox = sinon.createSandbox();
     originalBatchSize = env.analyticsUpdateBatchSize;
     env.analyticsUpdateBatchSize = 1000;
@@ -82,27 +82,27 @@ describe('AnalyticsCron', function() {
     initDbConnectionStub = sandbox.stub(icebergConnection, 'initDbConnection').resolves();
   });
 
-  afterEach(function() {
+  afterEach(function () {
     sandbox.restore();
     env.analyticsUpdateBatchSize = originalBatchSize;
     delete process.env.AWS_ACCOUNT_ID;
   });
 
-  describe('run', function() {
-    it('logs start and completion on success', async function() {
+  describe('run', function () {
+    it('logs start and completion on success', async function () {
       await AnalyticsCron.run(ctx);
 
       expect(ctx.logger.info.calledWith('Started analytics cron job')).to.be.true;
       expect(ctx.logger.info.calledWith('Completed analytics cron job')).to.be.true;
     });
 
-    it('sets AWS_ACCOUNT_ID for the DuckDB credential chain', async function() {
+    it('sets AWS_ACCOUNT_ID for the DuckDB credential chain', async function () {
       await AnalyticsCron.run(ctx);
 
       expect(process.env.AWS_ACCOUNT_ID).to.equal('000000000000');
     });
 
-    it('creates a fresh in-memory DuckDB connection and initializes it via initDbConnection', async function() {
+    it('creates a fresh in-memory DuckDB connection and initializes it via initDbConnection', async function () {
       await AnalyticsCron.run(ctx);
 
       expect(fromCacheStub.calledWith(':memory:')).to.be.true;
@@ -110,21 +110,21 @@ describe('AnalyticsCron', function() {
       expect(initDbConnectionStub.calledOnceWith(duckDbConn)).to.be.true;
     });
 
-    it('queries Postgres for every configured analytics table, in order', async function() {
+    it('queries Postgres for every configured analytics table, in order', async function () {
       await AnalyticsCron.run(ctx);
 
       const queriedTables = dbStub.getCalls().map((c) => c.args[0]);
       expect(queriedTables).to.deep.equal(ALL_TABLES);
     });
 
-    it('reads the latest Iceberg updated_at for each table before querying Postgres', async function() {
+    it('reads the latest Iceberg updated_at for each table before querying Postgres', async function () {
       await AnalyticsCron.run(ctx);
 
       expect(duckDbConn.runAndReadAll.callCount).to.equal(ALL_TABLES.length);
       expect(duckDbConn.runAndReadAll.firstCall.args[0]).to.match(/catalog\.iceberg\.batch_items/);
     });
 
-    it('falls back to an old cutoff date when the Iceberg table has no rows yet', async function() {
+    it('falls back to an old cutoff date when the Iceberg table has no rows yet', async function () {
       duckDbConn.runAndReadAll.resolves({ getRowObjectsJson: () => [] });
 
       await AnalyticsCron.run(ctx);
@@ -134,14 +134,14 @@ describe('AnalyticsCron', function() {
       expect(new Date(cutoff).getUTCFullYear()).to.be.lessThan(1900);
     });
 
-    it('does not merge anything into Iceberg for a table with no new Postgres rows', async function() {
+    it('does not merge anything into Iceberg for a table with no new Postgres rows', async function () {
       await AnalyticsCron.run(ctx);
 
       expect(duckDbConn.run.called).to.be.false;
       expect(ctx.logger.info.calledWith('Wrote a total of 0 rows to jobs')).to.be.true;
     });
 
-    it('queries with an interval-based cutoff (no cursor) on the first batch for a table', async function() {
+    it('queries with an interval-based cutoff (no cursor) on the first batch for a table', async function () {
       await AnalyticsCron.run(ctx);
 
       const jobsCall = dbStub.getCalls().find((c) => c.args[0] === 'jobs')!;
@@ -151,7 +151,7 @@ describe('AnalyticsCron', function() {
       expect(jobsCall.returnValue.whereRaw.firstCall.args[0]).to.match(/INTERVAL/);
     });
 
-    it('merges a single batch of rows into Iceberg and logs the row count', async function() {
+    it('merges a single batch of rows into Iceberg and logs the row count', async function () {
       dbStub.withArgs('jobs').returns(makeQueryBuilder([
         { id: 1, updatedAt: new Date('2024-01-01T00:00:00Z') },
         { id: 2, updatedAt: new Date('2024-01-02T00:00:00Z') },
@@ -164,7 +164,7 @@ describe('AnalyticsCron', function() {
       expect(ctx.logger.info.calledWith('Wrote a total of 2 rows to jobs')).to.be.true;
     });
 
-    it('writes snake_cased rows to the temp file merged into DuckDB', async function() {
+    it('writes snake_cased rows to the temp file merged into DuckDB', async function () {
       let written: any;
       duckDbConn.run.callsFake(async (query: string) => {
         written = JSON.parse(fs.readFileSync(tempFilePathFromMergeQuery(query), 'utf8'));
@@ -179,7 +179,7 @@ describe('AnalyticsCron', function() {
       expect(written).to.deep.equal([{ id: 1, updated_at: '2024-01-01T00:00:00.000Z', request_id: 'req-1' }]);
     });
 
-    it('strips the access token from workflow_steps rows before merging into Iceberg', async function() {
+    it('strips the access token from workflow_steps rows before merging into Iceberg', async function () {
       const operation = JSON.stringify({ accessToken: 'super-secret', other: 'value' });
       let written: any;
       duckDbConn.run.callsFake(async (query: string) => {
@@ -197,7 +197,7 @@ describe('AnalyticsCron', function() {
       expect(writtenOperation).to.deep.equal({ other: 'value' });
     });
 
-    it('cleans up the temp file used to merge rows into Iceberg', async function() {
+    it('cleans up the temp file used to merge rows into Iceberg', async function () {
       let tempFilePath!: string;
       duckDbConn.run.callsFake(async (query: string) => {
         tempFilePath = tempFilePathFromMergeQuery(query);
@@ -213,7 +213,7 @@ describe('AnalyticsCron', function() {
       expect(fs.existsSync(tempFilePath)).to.be.false;
     });
 
-    it('pages through multiple batches using the last row as a cursor, until a short batch ends it', async function() {
+    it('pages through multiple batches using the last row as a cursor, until a short batch ends it', async function () {
       const batchSize = 1000;
       const firstBatch = Array.from({ length: batchSize }, (_, i) => ({
         id: i + 1,
@@ -239,7 +239,7 @@ describe('AnalyticsCron', function() {
       expect(secondCallBuilder.whereRaw.firstCall.args[1][1]).to.equal(batchSize);
     });
 
-    it('logs an error and continues (as zero rows) when a Postgres query fails for a table', async function() {
+    it('logs an error and continues (as zero rows) when a Postgres query fails for a table', async function () {
       const pgError = new Error('Postgres connection lost');
       dbStub.withArgs('jobs').returns(makeQueryBuilder(pgError));
 
@@ -251,7 +251,7 @@ describe('AnalyticsCron', function() {
       expect(ctx.logger.info.calledWith('Completed analytics cron job')).to.be.true;
     });
 
-    it('logs an error and still cleans up the temp file when the Iceberg merge fails', async function() {
+    it('logs an error and still cleans up the temp file when the Iceberg merge fails', async function () {
       const mergeError = new Error('DuckDB merge failed');
       let tempFilePath!: string;
       duckDbConn.run.callsFake(async (query: string) => {
@@ -271,7 +271,7 @@ describe('AnalyticsCron', function() {
       expect(ctx.logger.info.calledWith('Completed analytics cron job')).to.be.true;
     });
 
-    it('completes without throwing even if establishing the DuckDB connection fails', async function() {
+    it('completes without throwing even if establishing the DuckDB connection fails', async function () {
       fromCacheStub.rejects(new Error('DuckDB unavailable'));
 
       await AnalyticsCron.run(ctx);
@@ -280,7 +280,7 @@ describe('AnalyticsCron', function() {
       expect(ctx.logger.info.calledWith('Completed analytics cron job')).to.be.true;
     });
 
-    it('logs an error when reading a table current Iceberg update time fails, and still processes the remaining tables', async function() {
+    it('logs an error when reading a table current Iceberg update time fails, and still processes the remaining tables', async function () {
       const readError = new Error('Iceberg read failed');
       // ALL_TABLES[0] is 'batch_items' - fail only its Iceberg cutoff read.
       duckDbConn.runAndReadAll.onFirstCall().rejects(readError);
