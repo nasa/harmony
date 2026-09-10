@@ -46,7 +46,7 @@ WORK_ITEMS_STATS_CRON="* * * * *" # every minute
 HARMONY_ENVIRONMENT=local
 
 # The analytics schedule
-ANALYTICS_CRON="0 */2 * * *" # every two hours
+ANALYTICS_CRON="0 */8 * * *" # every eight hours
 
 # the max number of rows to process at once for the analytics updates
 ANALYTICS_UPDATE_BATCH_SIZE=100000
