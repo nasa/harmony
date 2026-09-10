@@ -5,7 +5,7 @@ set -e
 BUCKET_NAME="harmony-analytics"
 
 if [[ -n "$HARMONY_ENVIRONMENT" ]]; then
-  BUCKET_NAME="${HARMONY_ENVIRONMENT}-${BUCKET_NAME}"
+  BUCKET_NAME="harmony-${HARMONY_ENVIRONMENT}-analytics"
 fi
 
 NAMESPACE="iceberg"

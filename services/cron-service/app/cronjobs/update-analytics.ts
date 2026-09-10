@@ -118,6 +118,7 @@ async function getLatestIcebergTableUpdateTime(ctx: Context, duckDbConn: DuckDBC
  */
 async function mergeRowsIntoIceberg(ctx: Context, duckDbConn: DuckDBConnection, table: string,
   rows: Array<PgRow>): Promise<void> {
+  const startTime = new Date().getTime();
   const { logger } = ctx;
   const tempDir = tmpdir();
   const uniqueFilename = `temp-data-${Date.now()}-${Math.random().toString(36)
@@ -137,7 +138,8 @@ async function mergeRowsIntoIceberg(ctx: Context, duckDbConn: DuckDBConnection, 
 	         			   WHEN NOT MATCHED THEN
 	         			     INSERT BY NAME;`;
     await duckDbConn.run(query);
-    logger.debug(`Wrote ${rows.length} rows to ${table}`);
+    const durationMs = new Date().getTime() - startTime;
+    logger.debug(`Wrote ${rows.length} rows to ${table}`, { durationMs });
   } catch (err) {
     logger.error(err);
   } finally {
@@ -159,8 +161,9 @@ async function mergeRowsIntoIceberg(ctx: Context, duckDbConn: DuckDBConnection, 
  * @returns a Promise that resolves when the request completes
  */
 async function updateAnalytics(ctx: Context): Promise<void> {
+  const startTime = new Date().getTime();
   const { logger } = ctx;
-  const batchSize = 1000;
+  const batchSize = env.analyticsUpdateBatchSize;
 
   try {
     const duckDbInstance = await DuckDBInstance.fromCache(':memory:');
@@ -188,7 +191,8 @@ async function updateAnalytics(ctx: Context): Promise<void> {
           }
         } while (rows.length === batchSize);
 
-        logger.debug(`Wrote a total of ${totalRows} rows to ${table}`);
+        const durationMs = new Date().getTime() - startTime;
+        logger.info(`Wrote a total of ${totalRows} rows to ${table}`, { durationMs });
       } catch (err) {
         // A failure processing one table (e.g. reading its Iceberg cutoff) must not abort
         // the rest - continue on to the remaining tables.
@@ -205,6 +209,7 @@ async function updateAnalytics(ctx: Context): Promise<void> {
  */
 export class AnalyticsCron extends CronJob {
   static async run(ctx: Context): Promise<void> {
+    const startTime = new Date().getTime();
     const { logger } = ctx;
     logger.info('Started analytics cron job');
     try {
@@ -212,7 +217,8 @@ export class AnalyticsCron extends CronJob {
         process.env.AWS_ACCOUNT_ID = '000000000000';
       }
       await updateAnalytics(ctx);
-      logger.info('Completed analytics cron job');
+      const durationMs = new Date().getTime() - startTime;
+      logger.info('Completed analytics cron job', { durationMs });
     } catch (e) {
       logger.error('Failed to update analytics');
       logger.error(e);

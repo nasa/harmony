@@ -72,6 +72,16 @@ class CronServiceHarmonyEnv extends HarmonyEnv {
   @IsCrontab()
   analyticsCron: string;
 
+  @IsInt()
+  @Min(1)
+  analyticsUpdateBatchSize: number;
+
+  analyticsUpdateMemoryLimit: string;
+
+  @IsInt()
+  @Min(1)
+  analyticsUpdateThreads: number;
+
   @ValidateIf(obj => obj.useLocalstack === false)
   @IsNotEmpty()
   s3TableBucketArn: string;
