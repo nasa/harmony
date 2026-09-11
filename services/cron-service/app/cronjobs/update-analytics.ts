@@ -161,7 +161,6 @@ async function mergeRowsIntoIceberg(ctx: Context, duckDbConn: DuckDBConnection, 
  * @returns a Promise that resolves when the request completes
  */
 async function updateAnalytics(ctx: Context): Promise<void> {
-  const startTime = new Date().getTime();
   const { logger } = ctx;
   const batchSize = env.analyticsUpdateBatchSize;
 
@@ -171,6 +170,7 @@ async function updateAnalytics(ctx: Context): Promise<void> {
     await initDbConnection(duckDbConn);
 
     for (const table of ALL_TABLES) {
+      const startTime = new Date().getTime();
       try {
         const latestUpdateTime = await getLatestIcebergTableUpdateTime(ctx, duckDbConn, table);
         logger.debug(`=============> Table ${table} latest update time is ${latestUpdateTime.toISOString()}`);
