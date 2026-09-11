@@ -381,6 +381,14 @@ export async function getJobs(
     const nextPage = pageLinks.find((l) => l.rel === 'next');
     const previousPage = pageLinks.find((l) => l.rel === 'prev');
     const currentPage = pageLinks.find((l) => l.rel === 'self');
+    const jobsLink = currentPage?.href ? (() : string => {
+      try {
+        const parsedUrl = new URL(currentPage.href);
+        return `${parsedUrl.pathname}${parsedUrl.search}`;
+      } catch {
+        return currentPage.href;
+      }
+    })() : req.originalUrl;
     const paginationDisplay = getPaginationDisplay(pagination);
     const selectAllBox = jobs.length > 0 && (!isAdminRoute || jobs.some((j) => !j.hasTerminalStatus())) ?
       '<input id="select-jobs" type="checkbox" title="select/deselect all jobs" autocomplete="off">' : '';
@@ -406,7 +414,7 @@ export async function getJobs(
       fromDateTime,
       jobLinkQuery: `?fromDateTime=${encodeURIComponent(fromDateTime || '')}&toDateTime=${encodeURIComponent(toDateTime || '')}` +
         `&dateKind=${dateKind}&tzOffsetMinutes=${requestQuery.tzoffsetminutes || ''}` +
-        `&jobsLink=${encodeURIComponent(currentPage.href)}`,
+        `&jobsLink=${encodeURIComponent(jobsLink)}`,
       updatedAtChecked: dateKind == 'updatedAt' ? 'checked' : '',
       createdAtChecked: dateKind != 'updatedAt' ? 'checked' : '',
       selectedFilters: originalValues,

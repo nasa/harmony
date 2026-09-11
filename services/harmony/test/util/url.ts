@@ -15,11 +15,16 @@ function createRequest(
   hostname: string,
   path = '/example/path',
   params: object = { param1: 'foo', param2: 2 },
+  extraHeaders: Record<string, string> = {},
 ): object {
+  const headers = {
+    host: hostname,
+    ...extraHeaders,
+  };
   return {
     originalUrl: `${path}?${params}`,
     query: params,
-    get(): string { return hostname; },
+    get(headerName: string): string { return headers[headerName.toLowerCase()]; },
   };
 }
 
@@ -43,6 +48,47 @@ describe('util/url', function () {
       const request = createRequest('harmony.earthdata.nasa.gov');
       it('returns the correct URL starting with https', function () {
         expect(getRequestUrl(request)).to.equal('https://harmony.earthdata.nasa.gov/example/path?param1=foo&param2=2');
+      });
+    });
+
+    describe('using forwarded proto/host/port', function () {
+      const request = createRequest('localhost', '/example/path', { param1: 'foo', param2: 2 }, {
+        'x-forwarded-proto': 'https',
+        'x-forwarded-host': 'localhost',
+        'x-forwarded-port': '8443',
+      });
+      it('returns the forwarded external URL', function () {
+        expect(getRequestUrl(request)).to.equal('https://localhost:8443/example/path?param1=foo&param2=2');
+      });
+    });
+
+    describe('when forwarded headers contain multiple values', function () {
+      const request = createRequest('localhost:8080', '/example/path', { param1: 'foo', param2: 2 }, {
+        'x-forwarded-proto': 'https,http',
+        'x-forwarded-host': 'localhost,internal-host:8080',
+        'x-forwarded-port': '8443,8080',
+      });
+      it('uses the first forwarded value', function () {
+        expect(getRequestUrl(request)).to.equal('https://localhost:8443/example/path?param1=foo&param2=2');
+      });
+    });
+
+    describe('when forwarded proto is invalid', function () {
+      const request = createRequest('harmony.earthdata.nasa.gov', '/example/path', { param1: 'foo', param2: 2 }, {
+        'x-forwarded-proto': 'bogus-proto',
+      });
+      it('falls back to inferred protocol', function () {
+        expect(getRequestUrl(request)).to.equal('https://harmony.earthdata.nasa.gov/example/path?param1=foo&param2=2');
+      });
+    });
+
+    describe('when direct host has port but forwarded host does not', function () {
+      const request = createRequest('localhost:8443', '/example/path', { param1: 'foo', param2: 2 }, {
+        'x-forwarded-proto': 'https',
+        'x-forwarded-host': 'localhost',
+      });
+      it('keeps the direct host port', function () {
+        expect(getRequestUrl(request)).to.equal('https://localhost:8443/example/path?param1=foo&param2=2');
       });
     });
 
@@ -117,6 +163,17 @@ describe('util/url', function () {
       const request = createRequest('127.0.0.1:5555');
       it('returns the correct root starting with http', function () {
         expect(getRequestRoot(request)).to.equal('http://127.0.0.1:5555');
+      });
+    });
+
+    describe('using forwarded proto/host/port', function () {
+      const request = createRequest('localhost', '/example/path', { param1: 'foo', param2: 2 }, {
+        'x-forwarded-proto': 'https',
+        'x-forwarded-host': 'localhost',
+        'x-forwarded-port': '8443',
+      });
+      it('returns the forwarded external root', function () {
+        expect(getRequestRoot(request)).to.equal('https://localhost:8443');
       });
     });
   });
