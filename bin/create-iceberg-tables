@@ -1,0 +1,411 @@
+#!/bin/bash
+
+set -e
+
+BUCKET_NAME="harmony-analytics"
+
+if [[ -n "$HARMONY_ENVIRONMENT" ]]; then
+  BUCKET_NAME="harmony-${HARMONY_ENVIRONMENT}-analytics"
+fi
+
+NAMESPACE="iceberg"
+
+# Matches the AWS_DEFAULT_REGION default in packages/util/env-defaults, so provisioning
+# and the cron service's ministack connection agree on a region even when neither
+# AWS_REGION nor AWS_DEFAULT_REGION is set in the environment.
+AWS_REGION="${AWS_REGION:-${AWS_DEFAULT_REGION:-us-west-2}}"
+
+if [ -z "$AWS_REGION" ]; then
+  echo "Error: could not determine an AWS region (set AWS_REGION or AWS_DEFAULT_REGION)." >&2
+  exit 1
+fi
+
+# An empty/unset AWS_ENDPOINT_FLAG must not be passed to aws at all - a quoted
+# empty string is still an argument, and aws mistakes it for the command name.
+AWS_FLAGS=()
+if [ -n "$AWS_ENDPOINT_FLAG" ]; then
+  AWS_FLAGS=("$AWS_ENDPOINT_FLAG")
+fi
+
+ACCOUNT_ID=$(aws "${AWS_FLAGS[@]}" sts get-caller-identity --query "Account" --output text)
+
+BUCKET_ARN="arn:aws:s3tables:${AWS_REGION}:${ACCOUNT_ID}:bucket/${BUCKET_NAME}"
+
+echo "🚀 Starting S3 Tables provisioning..." >&2
+
+if ERROR_MSG=$(aws "${AWS_FLAGS[@]}" s3tables get-table-bucket --table-bucket-arn "$BUCKET_ARN" 2>&1 >/dev/null); then
+    echo "S3 Table Bucket [${BUCKET_NAME}] already exists, skipping creation." >&2
+elif [[ "$ERROR_MSG" =~ "NotFoundException" || "$ERROR_MSG" =~ "ResourceNotFoundException" ]]; then
+    #  Create the S3 Table Bucket
+    echo "Creating S3 Table Bucket: $BUCKET_NAME..." >&2
+    aws "${AWS_FLAGS[@]}" s3tables create-table-bucket \
+        --name "$BUCKET_NAME" >/dev/null
+    echo "BUCKET_ARN: $BUCKET_ARN" >&2
+    echo "✅ Table Bucket created: $BUCKET_ARN" >&2
+else
+    echo "Error checking S3 Table bucket status:" >&2
+    echo "$ERROR_MSG" >&2
+    exit 1
+fi
+
+# orphan file cleanup is not available in ministack, apparently, so don't try to set it there
+# (bash 3 has no -v test operator, so check for unset via the ${VAR+x} idiom instead). This
+# is a "put" of the whole config, so it's safe (and idempotent) to run on every invocation,
+# not just when the bucket was newly created.
+if [ -z "${AWS_ENDPOINT_FLAG+x}" ]; then
+  # Set the bucket config to clean up orphan files using the default settings (unreferenced for 3 days and waiting for deletion for 10 days)
+  echo "Enabling orphan file clean up" >&2
+  aws "${AWS_FLAGS[@]}" s3tables put-table-bucket-maintenance-configuration --table-bucket-arn "$BUCKET_ARN" --type icebergUnreferencedFileRemoval \
+  --value 'status=enabled,settings={icebergUnreferencedFileRemoval={unreferencedDays=3,nonCurrentDays=10}}' >/dev/null
+fi
+
+# 2. Create the Namespace (tolerate it already existing, so reruns after a partial
+# failure converge instead of aborting).
+echo "Creating Namespace: $NAMESPACE..." >&2
+if ERROR_MSG=$(aws "${AWS_FLAGS[@]}" s3tables create-namespace \
+    --table-bucket-arn "$BUCKET_ARN" \
+    --namespace "$NAMESPACE" 2>&1 >/dev/null); then
+    :
+elif [[ "$ERROR_MSG" =~ "ConflictException" || "$ERROR_MSG" =~ "already exists" ]]; then
+    echo "Namespace [${NAMESPACE}] already exists, continuing." >&2
+else
+    echo "Error creating namespace:" >&2
+    echo "$ERROR_MSG" >&2
+    exit 1
+fi
+
+# Bash 3 has no associative arrays (declare -A is a bash 4+ feature), so table
+# names and their schema JSON are kept in two parallel indexed arrays instead.
+TABLE_NAMES=(
+  "batch_items"
+  "batches"
+  "job_links"
+  "job_messages"
+  "jobs"
+  "jobs_raw_labels"
+  "raw_labels"
+  "service_deployments"
+  "users_labels"
+  "work_items"
+  "workflow_steps"
+)
+
+TABLE_SCHEMAS=(
+"$(cat <<'EOF'
+{
+  "iceberg": {
+    "schema": {
+      "fields": [
+        {"name": "id", "type": "long"},
+        {"name": "job_id", "type": "string"},
+        {"name": "service_id", "type": "string"},
+        {"name": "batch_id", "type": "int"},
+        {"name": "stac_item_url", "type": "string"},
+        {"name": "item_size", "type": "long"},
+        {"name": "sort_index", "type": "int"},
+        {"name": "created_at", "type": "timestamptz"},
+        {"name": "updated_at", "type": "timestamptz"}
+      ]
+    }
+  }
+}
+EOF
+)"
+"$(cat <<'EOF'
+{
+  "iceberg": {
+    "schema": {
+      "fields": [
+        {"name": "id", "type": "long"},
+        {"name": "job_id", "type": "string"},
+        {"name": "service_id", "type": "string"},
+        {"name": "batch_id", "type": "int"},
+        {"name": "created_at", "type": "timestamptz"},
+        {"name": "updated_at", "type": "timestamptz"}
+      ]
+    }
+  }
+}
+EOF
+)"
+"$(cat <<'EOF'
+{
+  "iceberg": {
+    "schema": {
+      "fields": [
+        {"id": 1, "name": "id", "type": "long"},
+        {"id": 2, "name": "job_id", "type": "string"},
+        {"id": 3, "name": "href", "type": "string"},
+        {"id": 4, "name": "type", "type": "string"},
+        {"id": 5, "name": "title", "type": "string"},
+        {"id": 6, "name": "rel", "type": "string"},
+        {"id": 7, "name": "temporal_start", "type": "timestamptz"},
+        {"id": 8, "name": "temporal_end", "type": "timestamptz"},
+        {"id": 9, "name": "bbox", "type": "string"},
+        {"id": 10, "name": "created_at", "type": "timestamptz"},
+        {"id": 11, "name": "updated_at", "type": "timestamptz"}
+      ]
+    },
+    "partitionSpec": {
+      "fields": [
+        {
+          "sourceId": 11,
+          "transform": "month",
+          "name": "updated_at_month"
+        }
+      ]
+    }
+  }
+}
+EOF
+)"
+"$(cat <<'EOF'
+{
+  "iceberg": {
+    "schema": {
+      "fields": [
+        {"id": 1, "name": "id", "type": "long"},
+        {"id": 2, "name": "job_id", "type": "string"},
+        {"id": 3, "name": "url", "type": "string"},
+        {"id": 4, "name": "message", "type": "string"},
+        {"id": 5, "name": "created_at", "type": "timestamptz"},
+        {"id": 6, "name": "updated_at", "type": "timestamptz"},
+        {"id": 7, "name": "level", "type": "string"},
+        {"id": 8, "name": "message_category", "type": "string"}
+      ]
+    },
+    "partitionSpec": {
+      "fields": [
+        {
+          "sourceId": 6,
+          "transform": "month",
+          "name": "updated_at_month"
+        }
+      ]
+    }
+  }
+}
+EOF
+)"
+"$(cat <<'EOF'
+{
+  "iceberg": {
+    "schema": {
+      "fields": [
+        {"id": 1, "name": "id", "type": "long"},
+        {"id": 2, "name": "request_id", "type": "string"},
+        {"id": 3, "name": "username", "type": "string"},
+        {"id": 4, "name": "status", "type": "string"},
+        {"id": 5, "name": "progress", "type": "int"},
+        {"id": 6, "name": "created_at", "type": "timestamptz"},
+        {"id": 7, "name": "updated_at", "type": "timestamptz"},
+        {"id": 8, "name": "request", "type": "string"},
+        {"id": 9, "name": "is_async", "type": "boolean"},
+        {"id": 10, "name": "batches_completed", "type": "int"},
+        {"id": 11, "name": "num_input_granules", "type": "int"},
+        {"id": 12, "name": "message", "type": "string"},
+        {"id": 13, "name": "job_id", "type": "string"},
+        {"id": 14, "name": "collection_ids", "type": "string"},
+        {"id": 15, "name": "ignore_errors", "type": "boolean"},
+        {"id": 16, "name": "destination_url", "type": "string"},
+        {"id": 17, "name": "service_name", "type": "string"},
+        {"id": 18, "name": "provider_id", "type": "string"},
+        {"id": 19, "name": "original_data_size", "type": "double"},
+        {"id": 20, "name": "output_data_size", "type": "double"}
+      ]
+    },
+    "partitionSpec": {
+      "fields": [
+        {
+          "sourceId": 7,
+          "transform": "month",
+          "name": "updated_at_month"
+        }
+      ]
+    }
+  }
+}
+EOF
+)"
+"$(cat <<'EOF'
+{
+  "iceberg": {
+    "schema": {
+      "fields": [
+        {"id": 1, "name": "id", "type": "long"},
+        {"id": 2, "name": "job_id", "type": "string"},
+        {"id": 3, "name": "label_id", "type": "long"},
+        {"id": 4, "name": "created_at", "type": "timestamptz"},
+        {"id": 5, "name": "updated_at", "type": "timestamptz"}
+      ]
+    },
+    "partitionSpec": {
+      "fields": [
+        {
+          "sourceId": 5,
+          "transform": "month",
+          "name": "updated_at_month"
+        }
+      ]
+    }
+  }
+}
+EOF
+)"
+"$(cat <<'EOF'
+{
+  "iceberg": {
+    "schema": {
+      "fields": [
+        {"name": "id", "type": "long"},
+        {"name": "value", "type": "string"},
+        {"name": "created_at", "type": "timestamptz"},
+        {"name": "updated_at", "type": "timestamptz"}
+      ]
+    }
+  }
+}
+EOF
+)"
+"$(cat <<'EOF'
+{
+  "iceberg": {
+    "schema": {
+      "fields": [
+        {"name": "id", "type": "long"},
+        {"name": "deployment_id", "type": "string"},
+        {"name": "username", "type": "string"},
+        {"name": "service", "type": "string"},
+        {"name": "tag", "type": "string"},
+        {"name": "status", "type": "string"},
+        {"name": "message", "type": "string"},
+        {"name": "created_at", "type": "timestamptz"},
+        {"name": "updated_at", "type": "timestamptz"},
+        {"name": "regression_test_version", "type": "string"}
+      ]
+    }
+  }
+}
+EOF
+)"
+"$(cat <<'EOF'
+{
+  "iceberg": {
+    "schema": {
+      "fields": [
+        {"name": "id", "type": "long"},
+        {"name": "username", "type": "string"},
+        {"name": "value", "type": "string"},
+        {"name": "created_at", "type": "timestamptz"},
+        {"name": "updated_at", "type": "timestamptz"}
+      ]
+    }
+  }
+}
+EOF
+)"
+"$(cat <<'EOF'
+{
+  "iceberg": {
+    "schema": {
+      "fields": [
+        {"id": 1, "name": "id", "type": "long"},
+        {"id": 2, "name": "job_id", "type": "string"},
+        {"id": 3, "name": "workflow_step_index", "type": "int"},
+        {"id": 4, "name": "scroll_id", "type": "string"},
+        {"id": 5, "name": "service_id", "type": "string"},
+        {"id": 6, "name": "status", "type": "string"},
+        {"id": 7, "name": "stac_catalog_location", "type": "string"},
+        {"id": 8, "name": "created_at", "type": "timestamptz"},
+        {"id": 9, "name": "updated_at", "type": "timestamptz"},
+        {"id": 10, "name": "total_items_size", "type": "double"},
+        {"id": 11, "name": "retry_count", "type": "int"},
+        {"id": 12, "name": "duration", "type": "float"},
+        {"id": 13, "name": "started_at", "type": "timestamptz"},
+        {"id": 14, "name": "sort_index", "type": "int"},
+        {"id": 15, "name": "output_item_sizes_json", "type": "string"},
+        {"id": 16, "name": "message_category", "type": "string"}
+      ]
+    },
+    "partitionSpec": {
+      "fields": [
+        {
+          "sourceId": 9,
+          "transform": "month",
+          "name": "updated_at_month"
+        }
+      ]
+    }
+  }
+}
+EOF
+)"
+"$(cat <<'EOF'
+{
+  "iceberg": {
+    "schema": {
+      "fields": [
+        {"id": 1, "name": "id", "type": "long"},
+        {"id": 2, "name": "job_id", "type": "string"},
+        {"id": 3, "name": "service_id", "type": "string"},
+        {"id": 4, "name": "step_index", "type": "int"},
+        {"id": 5, "name": "work_item_count", "type": "int"},
+        {"id": 6, "name": "operation", "type": "string"},
+        {"id": 7, "name": "created_at", "type": "timestamptz"},
+        {"id": 8, "name": "updated_at", "type": "timestamptz"},
+        {"id": 9, "name": "has_aggregated_output", "type": "boolean"},
+        {"id": 10, "name": "max_batch_inputs", "type": "long"},
+        {"id": 11, "name": "max_batch_size_in_bytes", "type": "long"},
+        {"id": 12, "name": "is_batched", "type": "boolean"},
+        {"id": 13, "name": "is_complete", "type": "boolean"},
+        {"id": 14, "name": "is_sequential", "type": "boolean"},
+        {"id": 15, "name": "completed_work_item_count", "type": "int"},
+        {"id": 16, "name": "progress_weight", "type": "float"},
+        {"id": 17, "name": "always_wait_for_prior_step", "type": "boolean"}
+      ]
+    },
+    "partitionSpec": {
+      "fields": [
+        {
+          "sourceId": 8,
+          "transform": "month",
+          "name": "updated_at_month"
+        }
+      ]
+    }
+  }
+}
+EOF
+)"
+)
+
+# Iterate and Create Tables
+INDEX=0
+while [ "$INDEX" -lt "${#TABLE_NAMES[@]}" ]; do
+  TABLE_NAME="${TABLE_NAMES[$INDEX]}"
+  SCHEMA_JSON="${TABLE_SCHEMAS[$INDEX]}"
+
+  echo "Creating table: ${TABLE_NAME}..." >&2
+
+  if ERROR_MSG=$(aws "${AWS_FLAGS[@]}" s3tables create-table \
+    --table-bucket-arn "$BUCKET_ARN" \
+    --namespace "$NAMESPACE" \
+    --name "$TABLE_NAME" \
+    --format "ICEBERG" \
+    --metadata "$SCHEMA_JSON" 2>&1 >/dev/null); then
+    echo "Table '${TABLE_NAME}' created successfully." >&2
+  elif [[ "$ERROR_MSG" =~ "ConflictException" || "$ERROR_MSG" =~ "already exists" ]]; then
+    echo "Table '${TABLE_NAME}' already exists, skipping." >&2
+  else
+    echo "Error creating table '${TABLE_NAME}':" >&2
+    echo "$ERROR_MSG" >&2
+    exit 1
+  fi
+
+  echo "----------------------------------------" >&2
+
+  INDEX=$((INDEX + 1))
+done
+
+# Sole stdout output: callers capture this via `arn=$(./bin/create-iceberg-tables)`.
+echo "$BUCKET_ARN"

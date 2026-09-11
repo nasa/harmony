@@ -45,3 +45,18 @@ WORK_ITEMS_STATS_CRON="* * * * *" # every minute
 # The harmony environment (e.g. sit, uat, prod)
 HARMONY_ENVIRONMENT=local
 
+# The analytics schedule
+ANALYTICS_CRON="0 */8 * * *" # every eight hours
+
+# the max number of rows to process at once for the analytics updates
+ANALYTICS_UPDATE_BATCH_SIZE=100000
+
+# the memory limit for duckdb
+ANALYTICS_UPDATE_MEMORY_LIMIT="2GB"
+
+# the number of threads used by duckdb
+ANALYTICS_UPDATE_THREADS=2
+
+# The ARN of the S3 Table bucket used to store Iceberg analytics tables, used both for the
+# real AWS connection and (via bin/create-iceberg-tables against ministack) the local one.
+S3_TABLE_BUCKET_ARN=

@@ -35,8 +35,22 @@ fi
 export LOCAL_DEV
 export KUBE_CONTEXT
 
+
 # run localstack, postgresql, and harmony in kubernetes
 ./bin/start-all
+
+# create the Iceberg tables
+export AWS_ENDPOINT_FLAG="--endpoint-url=http://localhost:4566" # Used to talk to ministack
+export AWS_ACCESS_KEY_ID=fake     # needed for ministack
+export AWS_SECRET_ACCESS_KEY=fake #  needed for ministack
+export AWS_REGION
+# Capture the provisioned bucket's ARN so the cron service's duckdb connection attaches
+# to the same bucket/region deploy-services just created, instead of a hardcoded value.
+export S3_TABLE_BUCKET_ARN
+if ! S3_TABLE_BUCKET_ARN=$(./bin/create-iceberg-tables); then
+  echo "Error: failed to provision Iceberg tables." >&2
+  exit 1
+fi
 
 # deploy the services
 echo ""

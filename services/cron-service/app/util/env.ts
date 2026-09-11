@@ -1,6 +1,6 @@
 import * as path from 'path';
 
-import { IsInt, Min } from 'class-validator';
+import { IsInt, IsNotEmpty, Min, ValidateIf } from 'class-validator';
 
 import { IsCrontab } from './cron-validation';
 import { HarmonyEnv } from '../../../../packages/util/env';
@@ -67,6 +67,25 @@ class CronServiceHarmonyEnv extends HarmonyEnv {
   @IsCrontab()
   workItemsStatsCron: string;
   // End work items stats updater variables
+
+  // Begin analytics variables
+  @IsCrontab()
+  analyticsCron: string;
+
+  @IsInt()
+  @Min(1)
+  analyticsUpdateBatchSize: number;
+
+  analyticsUpdateMemoryLimit: string;
+
+  @IsInt()
+  @Min(1)
+  analyticsUpdateThreads: number;
+
+  @ValidateIf(obj => obj.useLocalstack === false)
+  @IsNotEmpty()
+  s3TableBucketArn: string;
+  // End analytics variables
 }
 
 const localPath = path.resolve(__dirname, '../../env-defaults');

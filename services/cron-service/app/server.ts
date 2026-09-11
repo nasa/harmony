@@ -1,9 +1,13 @@
 import { Cron } from 'croner';
 import express from 'express';
 
+import { CronJobClass } from './cronjobs/cronjob';
 import { MemoryUsageCollector } from './cronjobs/memory-usage-collector';
 import { PublishServiceFailureMetrics } from './cronjobs/publish-failure-metrics';
 import { RestartPrometheus } from './cronjobs/restart-prometheus';
+import {
+  AnalyticsCron,
+} from './cronjobs/update-analytics';
 import { UserWorkUpdater } from './cronjobs/update-user-work';
 import { WorkItemsStatsCron } from './cronjobs/update-work-items-stats';
 import { WorkReaper } from './cronjobs/work-reaper';
@@ -13,20 +17,22 @@ import env from './util/env';
 import db from '../../harmony/app/util/db';
 import log from '../../harmony/app/util/log';
 
+
 /**
  * Start the application
  */
-export default function start(): void {
+export default async function start(): Promise<void> {
 
   // add cron entries here
   // see https://www.npmjs.com/package/croner#pattern for allowable crontab strings
-  const cronEntries: [string, { run(ctx: Context): void; name: string; }][] = [
+  const cronEntries: [string, CronJobClass][] = [
     [env.workReaperCron, WorkReaper],
     [env.restartPrometheusCron, RestartPrometheus],
     [env.userWorkUpdaterCron, UserWorkUpdater],
     [env.publishServiceFailureMetricsCron, PublishServiceFailureMetrics],
     [env.memoryUsageCollectorCron, MemoryUsageCollector],
     [env.workItemsStatsCron, WorkItemsStatsCron],
+    [env.analyticsCron, AnalyticsCron],
   ];
 
   for (const [cronSpec, jobClass] of cronEntries) {
@@ -41,9 +47,9 @@ export default function start(): void {
         timezone: 'America/New_York',
         protect: true, // don't restart jobs that are still running
       },
-      (async () => {
-        jobClass.run(ctx);
-      }), // function run on cron tick
+      async () => {
+        await jobClass.run(ctx);
+      }, // function run on cron tick
     );
   }
 
@@ -59,5 +65,5 @@ export default function start(): void {
 }
 
 if (require.main === module) {
-  start();
+  void start();
 }
