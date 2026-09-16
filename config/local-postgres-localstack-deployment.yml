@@ -15,6 +15,13 @@ spec:
         - mountPath: /etc/localstack/init/ready.d
           name: localstack-start
       env:
+        # AWS creds need to be set so pre-signed URLs will work
+        - name: AWS_ACCESS_KEY_ID
+          value: "localstack"
+        - name: AWS_SECRET_ACCESS_KEY
+          value: "localstack"
+        - name: AWS_DEFAULT_REGION
+          value: "us-west-2"
         - name: LOCALSTACK_SERVICES
           value: "lambda,s3,sqs,sts,cloudwatch"
         - name: LOCALSTACK_DEBUG
