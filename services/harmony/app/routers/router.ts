@@ -156,7 +156,6 @@ function collectionPrefix(path: string): RegExp {
 const authorizedRoutes = [
   cmrCollectionReader.collectionRegex,
   '/admin*',
-  '/capabilities*',
   '/cloud-access*',
   '/configuration*',
   '/jobs*',
@@ -168,6 +167,14 @@ const authorizedRoutes = [
   '/service-deployment*',
   '/ogc-api-edr/.*/collections/*',
   '/labels',
+];
+
+// Routes that never require authentication, but should still use a token from an
+// Authorization header or an existing EDL session if one is provided, so that the CMR query
+// they perform can see non-public metadata the user has access to. Unlike `authorizedRoutes`,
+// requests to these routes are never redirected to the Earthdata Login OAuth workflow.
+const optionalAuthRoutes = [
+  '/capabilities*',
 ];
 
 /**
@@ -203,7 +210,7 @@ export default function router({ USE_EDL_CLIENT_APP = 'false' }: RouterConfig): 
   result.use(corsHandler);
 
   if (`${USE_EDL_CLIENT_APP}` !== 'false') {
-    result.use(logged(earthdataLoginTokenAuthorizer(authorizedRoutes)));
+    result.use(logged(earthdataLoginTokenAuthorizer(authorizedRoutes, optionalAuthRoutes)));
     result.use(logged(earthdataLoginOauthAuthorizer(authorizedRoutes)));
   } else {
     result.use(logged(earthdataLoginSkipped));
