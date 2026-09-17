@@ -30,6 +30,17 @@ const PROD_ROOT = 'https://harmony.earthdata.nasa.gov/';
 const PROD_COLLECTION_ID = 'C1940472420-POCLOUD';
 const UAT_COLLECTION_ID = 'C1234208438-POCLOUD';
 
+/**
+ * Returns the example CMR collection ID to use as the default for OpenAPI/Swagger
+ * documentation, chosen based on whether Harmony is configured against the UAT or the
+ * production CMR.
+ *
+ * @returns the example collection ID for the current environment
+ */
+export function getDefaultCollectionId(): string {
+  return env.cmrEndpoint.includes('uat') ? UAT_COLLECTION_ID : PROD_COLLECTION_ID;
+}
+
 // cached generated documentation html
 let docsHtml;
 

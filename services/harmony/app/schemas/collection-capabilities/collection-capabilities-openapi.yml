@@ -1,0 +1,453 @@
+openapi: 3.0.1
+info:
+  title: Harmony Collection Capabilities API
+  description:
+    "Harmony API for retrieving the transformation capabilities (supported subsetting,
+    reprojection, concatenation, output formats, applicable services, and variables) that
+    Harmony has configured for a given CMR collection. The full JSON schema for each
+    supported response version is available under /schemas/collection-capabilities."
+  version: 1.0.0
+servers:
+  - url: /
+    description: Harmony server
+tags:
+  - name: Capabilities
+    description: Information about the Harmony transformation capabilities available for a collection.
+paths:
+  /capabilities:
+    get:
+      tags:
+        - Capabilities
+      summary: Get Harmony capabilities for the provided collection
+      description:
+        Returns information related to what Harmony operations are supported for a given
+        collection. The collection can be identified by either its CMR concept ID or its
+        short name.
+      operationId: getCollectionCapabilities
+      parameters:
+        - name: collectionId
+          in: query
+          description:
+            The CMR concept ID of the collection to retrieve capabilities for. Either
+            collectionId or shortName must be provided, but not both.
+          required: false
+          schema:
+            type: string
+          example: no-default-cmr-collection
+        - name: shortName
+          in: query
+          description:
+            The CMR short name of the collection to retrieve capabilities for. Either
+            collectionId or shortName must be provided, but not both.
+          required: false
+          schema:
+            type: string
+        - name: version
+          in: query
+          description: The version of the collection capabilities response format to return.
+          required: false
+          schema:
+            type: string
+            enum: ["1", "2", "3"]
+            default: "3"
+      responses:
+        "200":
+          description: The Harmony capabilities configured for the collection.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/collectionCapabilitiesV1"
+                  - $ref: "#/components/schemas/collectionCapabilitiesV2"
+                  - $ref: "#/components/schemas/collectionCapabilitiesV3"
+        default:
+          $ref: "#/components/responses/default"
+components:
+  responses:
+    default:
+      description: An error occurred.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/exception"
+  schemas:
+    exception:
+      required:
+        - code
+      type: object
+      properties:
+        code:
+          type: string
+        description:
+          type: string
+    serviceCapabilitiesV1V2:
+      description: The capabilities configured for the service in the Harmony services configuration.
+      type: object
+      properties:
+        concatenation:
+          type: boolean
+        concatenate_by_default:
+          type: boolean
+        subsetting:
+          type: object
+          properties:
+            dimension:
+              type: boolean
+            bbox:
+              type: boolean
+            shape:
+              type: boolean
+            temporal:
+              type: boolean
+            variable:
+              type: boolean
+            multiple_variable:
+              type: boolean
+        averaging:
+          type: object
+          properties:
+            time:
+              type: boolean
+            area:
+              type: boolean
+        output_formats:
+          type: array
+          items:
+            type: string
+        reprojection:
+          type: boolean
+        extend:
+          type: boolean
+        default_extend_dimensions:
+          type: array
+          items:
+            type: string
+        all_collections:
+          type: boolean
+    serviceV1:
+      type: object
+      required:
+        - name
+        - capabilities
+      properties:
+        name:
+          type: string
+          description: The name of the Harmony service.
+        capabilities:
+          $ref: "#/components/schemas/serviceCapabilitiesV1V2"
+    serviceV2:
+      type: object
+      required:
+        - name
+        - href
+        - capabilities
+      properties:
+        name:
+          type: string
+          description: The name of the Harmony service.
+        href:
+          type: string
+          description: A URL reference to the UMM-S record for the service in the CMR.
+        capabilities:
+          $ref: "#/components/schemas/serviceCapabilitiesV1V2"
+    variableV2:
+      type: object
+      required:
+        - name
+        - href
+      properties:
+        name:
+          type: string
+          description: The name of the variable.
+        href:
+          type: string
+          description: A URL reference to the UMM-Var record for the variable in the CMR.
+    collectionCapabilitiesV1:
+      type: object
+      description: Version 1 of the collection capabilities response format.
+      required:
+        - conceptId
+        - shortName
+        - variableSubset
+        - bboxSubset
+        - shapeSubset
+        - temporalSubset
+        - concatenate
+        - reproject
+        - outputFormats
+        - services
+        - variables
+        - capabilitiesVersion
+      properties:
+        conceptId:
+          type: string
+          description: The CMR concept ID of the collection.
+        shortName:
+          type: string
+          description: The CMR short name of the collection.
+        variableSubset:
+          type: boolean
+          description: True if variable subsetting is supported by any of the Harmony services for the collection.
+        bboxSubset:
+          type: boolean
+          description: True if bounding box subsetting is supported by any of the Harmony services for the collection.
+        shapeSubset:
+          type: boolean
+          description: True if shape subsetting is supported by any of the Harmony services for the collection.
+        temporalSubset:
+          type: boolean
+          description: True if temporal subsetting is supported by any of the Harmony services for the collection.
+        concatenate:
+          type: boolean
+          description: True if concatenation is supported by any of the Harmony services for the collection.
+        reproject:
+          type: boolean
+          description: True if reprojection is supported by any of the Harmony services for the collection.
+        outputFormats:
+          type: array
+          description: The output format MIME types supported by any of the Harmony services for the collection.
+          items:
+            type: string
+        services:
+          type: array
+          description: The Harmony services applicable to the collection.
+          items:
+            $ref: "#/components/schemas/serviceV1"
+        variables:
+          type: array
+          description: The names of the variables associated with the collection.
+          items:
+            type: string
+        capabilitiesVersion:
+          type: string
+          description: The version identifier for the capabilities response format.
+          enum: ["1"]
+    collectionCapabilitiesV2:
+      type: object
+      description: Version 2 of the collection capabilities response format.
+      required:
+        - conceptId
+        - shortName
+        - variableSubset
+        - bboxSubset
+        - shapeSubset
+        - temporalSubset
+        - concatenate
+        - reproject
+        - outputFormats
+        - services
+        - variables
+        - capabilitiesVersion
+      properties:
+        conceptId:
+          type: string
+          description: The CMR concept ID of the collection.
+        shortName:
+          type: string
+          description: The CMR short name of the collection.
+        variableSubset:
+          type: boolean
+          description: True if variable subsetting is supported by any of the Harmony services for the collection.
+        bboxSubset:
+          type: boolean
+          description: True if bounding box subsetting is supported by any of the Harmony services for the collection.
+        shapeSubset:
+          type: boolean
+          description: True if shape subsetting is supported by any of the Harmony services for the collection.
+        temporalSubset:
+          type: boolean
+          description: True if temporal subsetting is supported by any of the Harmony services for the collection.
+        concatenate:
+          type: boolean
+          description: True if concatenation is supported by any of the Harmony services for the collection.
+        reproject:
+          type: boolean
+          description: True if reprojection is supported by any of the Harmony services for the collection.
+        outputFormats:
+          type: array
+          description: The output format MIME types supported by any of the Harmony services for the collection.
+          items:
+            type: string
+        services:
+          type: array
+          description: The Harmony services applicable to the collection.
+          items:
+            $ref: "#/components/schemas/serviceV2"
+        variables:
+          type: array
+          description: The variables associated with the collection.
+          items:
+            $ref: "#/components/schemas/variableV2"
+        capabilitiesVersion:
+          type: string
+          description: The version identifier for the capabilities response format.
+          enum: ["2"]
+    projectionV3:
+      type: object
+      required:
+        - crs
+      properties:
+        name:
+          type: string
+          description: The name of the supported output projection.
+        crs:
+          type: string
+          description: The coordinate reference system identifier (e.g. an EPSG code) that can be passed as the outputCRS parameter.
+    outputFormatV3:
+      type: object
+      required:
+        - name
+        - mimeType
+      properties:
+        name:
+          type: string
+          description: The display name of the output format.
+        mimeType:
+          type: string
+          description: The MIME type of the output format.
+    serviceCapabilitiesV3:
+      type: object
+      required:
+        - subsetting
+        - reprojection
+        - averaging
+        - concatenation
+        - outputFormats
+      properties:
+        subsetting:
+          type: object
+          required: [bbox, dimension, shape, temporal, variable]
+          properties:
+            bbox:
+              type: boolean
+            dimension:
+              type: boolean
+            shape:
+              type: boolean
+            temporal:
+              type: boolean
+            variable:
+              type: boolean
+        reprojection:
+          type: object
+          required: [supported, supportedProjections, interpolationMethods]
+          properties:
+            supported:
+              type: boolean
+            supportedProjections:
+              type: array
+              items:
+                $ref: "#/components/schemas/projectionV3"
+            interpolationMethods:
+              type: array
+              items:
+                type: string
+        averaging:
+          type: object
+          required: [time, area]
+          properties:
+            time:
+              type: boolean
+            area:
+              type: boolean
+        concatenation:
+          type: boolean
+        outputFormats:
+          type: array
+          items:
+            $ref: "#/components/schemas/outputFormatV3"
+    serviceV3:
+      type: object
+      required:
+        - name
+        - capabilities
+      properties:
+        name:
+          type: string
+          description: The name of the Harmony service.
+        href:
+          type: string
+          description: A URL reference to the UMM-S record for the service in the CMR, present only when the service is associated with one.
+        capabilities:
+          $ref: "#/components/schemas/serviceCapabilitiesV3"
+    scienceKeywordV3:
+      type: object
+      required: [category, topic, term]
+      properties:
+        category:
+          type: string
+        topic:
+          type: string
+        term:
+          type: string
+        variableLevel1:
+          type: string
+        variableLevel2:
+          type: string
+        variableLevel3:
+          type: string
+        detailedVariable:
+          type: string
+    variableV3:
+      type: object
+      required:
+        - name
+        - longName
+        - href
+        - scienceKeywords
+      properties:
+        name:
+          type: string
+          description: The name of the variable.
+        longName:
+          type: string
+          description: The long name of the variable.
+        href:
+          type: string
+          description: A URL reference to the UMM-Var record for the variable in the CMR.
+        units:
+          type: string
+          description: The units of the variable, present only when the CMR UMM-Var record specifies them.
+        scienceKeywords:
+          type: array
+          description: The science keywords associated with the variable.
+          items:
+            $ref: "#/components/schemas/scienceKeywordV3"
+    collectionCapabilitiesV3:
+      type: object
+      description: Version 3 of the collection capabilities response format.
+      required:
+        - conceptId
+        - shortName
+        - summary
+        - services
+        - variables
+        - capabilitiesVersion
+      properties:
+        conceptId:
+          type: string
+          description: The CMR concept ID of the collection.
+        shortName:
+          type: string
+          description: The CMR short name of the collection.
+        summary:
+          description:
+            A summary of the Harmony capabilities available for the collection across all
+            applicable services. Some capabilities cannot be used together; see the
+            services field to determine the capabilities supported by individual services
+            and valid capability combinations.
+          $ref: "#/components/schemas/serviceCapabilitiesV3"
+        services:
+          type: array
+          description: The Harmony services applicable to the collection.
+          items:
+            $ref: "#/components/schemas/serviceV3"
+        variables:
+          type: array
+          description: The variables associated with the collection.
+          items:
+            $ref: "#/components/schemas/variableV3"
+        capabilitiesVersion:
+          type: string
+          description: The version identifier for the capabilities response format.
+          enum: ["3"]
