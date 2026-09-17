@@ -17,14 +17,14 @@ CREATE OR REPLACE SECRET ministack_s3 (
     KEY_ID 'ministack_fake_key',
     SECRET 'ministack_fake_secret',
     REGION '${env.awsDefaultRegion}',
-    ENDPOINT 'localstack:4566',
+    ENDPOINT '${env.localstackHost}:4566',
     URL_STYLE 'path',
     USE_SSL false
 );
 ATTACH IF NOT EXISTS '${env.s3TableBucketArn}'
   AS catalog (
     TYPE iceberg,
-    ENDPOINT 'http://localstack:4566/iceberg',
+    ENDPOINT 'http://${env.localstackHost}:4566/iceberg',
     AUTHORIZATION_TYPE 'sigv4',
     SECRET ministack_s3,
     SIGV4_SERVICE 's3tables',

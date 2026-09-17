@@ -116,6 +116,16 @@ export class S3ObjectStore implements ObjectStore {
     const urlToSign = parseUrl(baseUrl);
     urlToSign.query = params;
 
+    // Sign against the host the URL will actually be requested on. Access from
+    // outside the kubernetes cluster for local development uses "localhost"
+    // rather than the in-cluster "localstack" hostname, so rewrite it here,
+    // before signing, rather than in the final URL text after signing - SigV4
+    // signs the Host header, so rewriting it post-signature leaves a signature
+    // that no longer matches the request's actual Host.
+    if (env.useLocalstack) {
+      urlToSign.hostname = 'localhost';
+    }
+
     // Create presigner and sign the URL with custom params included
     const presigner = new S3RequestPresigner({
       ...this.s3.config,
@@ -127,15 +137,7 @@ export class S3ObjectStore implements ObjectStore {
       { expiresIn: 3600 },
     );
 
-    let finalUrl = formatUrl(presignedUrl);
-
-    // Needed as a work-around to allow access from outside the kubernetes cluster
-    // for local development
-    if (env.useLocalstack) {
-      finalUrl = finalUrl.replace('localstack', 'localhost');
-    }
-
-    return finalUrl;
+    return formatUrl(presignedUrl);
   }
 
   /**
