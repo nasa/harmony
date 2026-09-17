@@ -7,6 +7,7 @@ import request from 'supertest';
 import { hookDocumentationPage } from './helpers/documentation-page';
 import { hookRequest } from './helpers/hooks';
 import hookServersStartStop from './helpers/servers';
+import { supportedApiVersions } from '../app/frontends/capabilities';
 import * as docs from '../app/frontends/docs/docs';
 import HarmonyRequest from '../app/models/harmony-request';
 import env from '../app/util/env';
@@ -165,6 +166,14 @@ describe('Documentation page', function () {
 
     it('provides a section on the capabilities endpoints', function () {
       expect(this.res.text).to.include('<h3 id="get-harmony-capabilities-for-the-provided-collection"');
+    });
+
+    it('links to the JSON Schema for each supported collection capabilities API version', function () {
+      for (const apiVersion of supportedApiVersions) {
+        expect(this.res.text).to.match(new RegExp(
+          `<a href="[^"]*/schemas/collection-capabilities/v${apiVersion}/collection-capabilities-v${apiVersion}\\.json">Version ${apiVersion}</a>`,
+        ));
+      }
     });
 
     it('provides a section on the jobs API and the workflow-UI', function () {

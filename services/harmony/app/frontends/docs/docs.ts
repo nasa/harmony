@@ -14,6 +14,7 @@ import replaceLink from 'markdown-it-replace-link';
 import toc from 'markdown-it-toc-done-right';
 
 
+import { generateCapabilitiesSchemaLinks } from './capabilities-schema-links-markdown-it-plugin';
 import { interpolate } from './interpolation-markdown-it-plugin';
 import { generateServicesDocs } from './service-docs-markdown-it-plugin';
 import HarmonyRequest from '../../models/harmony-request';
@@ -173,6 +174,8 @@ export const generateDocumentation = async (root: string): Promise<string> => {
     })
     // Create the documentation for the services
     .use(generateServicesDocs, {})
+    // Create the list of links to the collection capabilities JSON Schemas
+    .use(generateCapabilitiesSchemaLinks, { root })
     // Add support for importing markdown fragments into other markdown files
     .use(inc, {
       root: 'app/markdown/',

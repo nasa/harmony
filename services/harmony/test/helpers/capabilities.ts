@@ -6,6 +6,7 @@ import addFormats from 'ajv-formats';
 import request, { Test } from 'supertest';
 
 import { hookRequest } from './hooks';
+import { supportedApiVersions } from '../../app/frontends/capabilities';
 
 /**
  * Submits a request to the collection capabilities endpoint
@@ -18,10 +19,6 @@ export function getCollectionCapabilities(app, query = {}): Test {
 }
 
 export const hookGetCollectionCapabilities = hookRequest.bind(this, getCollectionCapabilities);
-
-// The supported `version` query parameter / `capabilitiesVersion` response field values, each
-// with its own schema directory (app/schemas/collection-capabilities/v<apiVersion>)
-const supportedApiVersions = ['1', '2', '3'];
 
 let _validator: Ajv2020;
 // Maps the capabilities API version to the schema's $id, populated as schemas are registered

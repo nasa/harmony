@@ -17,7 +17,7 @@ import { harmonyMimeTypeToName } from '../util/file-formats';
 import { keysToLowerCase } from '../util/object';
 
 export const stableApiVersion = '3';
-const supportedApiVersions = ['1', '2', '3'];
+export const supportedApiVersions = ['1', '2', '3'];
 
 interface Projection {
   crs: string;
