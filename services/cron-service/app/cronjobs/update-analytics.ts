@@ -76,6 +76,30 @@ async function getPostgresRows(ctx: Context, table: string, latestUpdateTime: st
 }
 
 /**
+ * Parse a datetime string for a UTC time into a Date
+ * @param {string} dateString - the string to parse
+ * @returns {Date}
+ */
+function parseUtcTimestamp(dateString: string): Date {
+  let formatted = dateString.trim().replace(' ', 'T');
+
+  // Handle "+00" or explicit offset at the end
+  if (formatted.endsWith('+00')) {
+    formatted = formatted.slice(0, -3) + 'Z';
+  } else if (!formatted.endsWith('Z')) {
+    formatted += 'Z';
+  }
+
+  const date = new Date(formatted);
+
+  if (isNaN(date.getTime())) {
+    throw new Error(`Invalid date string: ${dateString}`);
+  }
+
+  return date;
+}
+
+/**
  *  Get the latest updateTime for the given Iceberg table
  *
  * @param ctx - The Cron job context
@@ -96,7 +120,7 @@ async function getLatestIcebergTableUpdateTime(ctx: Context, duckDbConn: DuckDBC
     const rows = reader.getRowObjectsJson();
     if (rows && rows[0] && rows[0]['max(updated_at)']) {
       const updatedAt = rows[0]['max(updated_at)'].toString();
-      return new Date(updatedAt);
+      return parseUtcTimestamp(updatedAt);
     }
 
     return oldDate;
