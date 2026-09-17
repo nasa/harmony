@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import _ from 'lodash';
 
-import { hookGetCollectionCapabilities } from './helpers/capabilities';
+import { hookGetCollectionCapabilities, validateCapabilitiesSchema } from './helpers/capabilities';
 import hookServersStartStop from './helpers/servers';
 import { stableApiVersion } from '../app/frontends/capabilities';
 
@@ -184,6 +184,11 @@ function itBehaveLikeVersion3Capabilities(): void {
     const capabilities = JSON.parse(this.res.text);
     expect(capabilities.capabilitiesVersion).to.equal('3');
   });
+
+  it('conforms to the version 3 collection capabilities JSON schema', function () {
+    const capabilities = JSON.parse(this.res.text);
+    expect(() => validateCapabilitiesSchema('3', capabilities)).to.not.throw();
+  });
 }
 
 describe('Testing collection capabilities', function () {
@@ -346,6 +351,11 @@ describe('Testing collection capabilities', function () {
           const capabilities = JSON.parse(this.res.text);
           expect(capabilities.capabilitiesVersion).to.equal('1');
         });
+
+        it('conforms to the version 1 collection capabilities JSON schema', function () {
+          const capabilities = JSON.parse(this.res.text);
+          expect(() => validateCapabilitiesSchema('1', capabilities)).to.not.throw();
+        });
       });
 
       describe('specifying version 2', function () {
@@ -450,6 +460,11 @@ describe('Testing collection capabilities', function () {
         it('includes the correct capabilitiesVersion', function () {
           const capabilities = JSON.parse(this.res.text);
           expect(capabilities.capabilitiesVersion).to.equal('2');
+        });
+
+        it('conforms to the version 2 collection capabilities JSON schema', function () {
+          const capabilities = JSON.parse(this.res.text);
+          expect(() => validateCapabilitiesSchema('2', capabilities)).to.not.throw();
         });
       });
 

@@ -9,6 +9,8 @@ All of the public endpoints for Harmony users other than the OGC Coverages, EDR,
 | /cloud-access          | [Generates AWS credentials for accessing processed data in S3](#cloud-access-details)                                                   |
 | /docs                  | These documentation pages                                                                                                               |
 | /docs/api              | The Swagger documentation for the OGC Coverages API                                                                                     |
+| /docs/edr-api          | The Swagger documentation for the OGC EDR API                                                                                           |
+| /docs/capabilities-api | The Swagger documentation for the collection capabilities API                                                                           |
 | /jobs                  | [The jobs API for getting job status, pausing/continuing/canceling jobs](#jobs-details)                                                 |
 | /jobs/status           | [Getting status for multiple jobs at once](#bulk-job-status)                                                                            |
 | /jobs/\<JobID\>/steps  | [The introspection service for understanding a jobs steps and intermediate results](#jobs-steps)                                        |

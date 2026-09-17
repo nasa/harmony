@@ -1,3 +1,4 @@
+import * as fs from 'fs';
 import process from 'process';
 
 import cookieParser from 'cookie-parser';
@@ -11,7 +12,7 @@ import { getCollectionCapabilitiesJson } from '../frontends/capabilities';
 import { cloudAccessJson, cloudAccessSh } from '../frontends/cloud-access';
 import { setLogLevel } from '../frontends/configuration';
 import { getDashboard } from '../frontends/dashboard';
-import docsPage from '../frontends/docs/docs';
+import docsPage, { getDefaultCollectionId } from '../frontends/docs/docs';
 import { getAdminHealth, getHealth } from '../frontends/health';
 import {
   cancelJob, cancelJobs, getJobsListing, getJobStatus, getJobStatuses, pauseJob, pauseJobs,
@@ -254,10 +255,19 @@ export default function router({ USE_EDL_CLIENT_APP = 'false' }: RouterConfig): 
   result.get('/versions', asyncHandler(getVersions));
   result.get('/docs', asyncHandler(docsPage));
 
-  const coverageApiDoc = yaml.load(ogcCoverageApi.openApiContent);
-  const edrApiDoc = yaml.load(ogcEdrApi.openApiContent);
+  const defaultCollectionId = getDefaultCollectionId();
+  const coverageApiDoc = yaml.load(
+    ogcCoverageApi.openApiContent.replace('no-default-cmr-collection', defaultCollectionId));
+  const edrApiDoc = yaml.load(
+    ogcEdrApi.openApiContent.replace('no-default-cmr-collection', defaultCollectionId));
   result.use('/docs/api', swaggerUi.serveFiles(coverageApiDoc), swaggerUi.setup(coverageApiDoc, { customJs: '/js/docs/analytics-tag.js' }));
   result.use('/docs/edr-api', swaggerUi.serveFiles(edrApiDoc), swaggerUi.setup(edrApiDoc, { customJs: '/js/docs/analytics-tag.js' }));
+
+  const capabilitiesApiPath = 'app/schemas/collection-capabilities/collection-capabilities-openapi.yml';
+  const capabilitiesApiContent = fs.readFileSync(capabilitiesApiPath, 'utf-8');
+  const capabilitiesApiDoc = yaml.load(
+    capabilitiesApiContent.replace('no-default-cmr-collection', defaultCollectionId));
+  result.use('/docs/capabilities-api', swaggerUi.serveFiles(capabilitiesApiDoc), swaggerUi.setup(capabilitiesApiDoc, { customJs: '/js/docs/analytics-tag.js' }));
 
   result.get(collectionPrefix('wms'), asyncHandler(service(serviceInvoker)));
   result.get(/^.*?\/ogc-api-coverages\/.*?\/collections\/.*?\/coverage\/rangeset\/?$/, asyncHandler(service(serviceInvoker)));

@@ -2,6 +2,13 @@
 
 Returns information related to what Harmony operations are supported for a given collection in JSON format. The collection can be identified by either collection concept id or short name.
 
+An [OpenAPI/Swagger]({{root}}/docs/capabilities-api) description of the endpoint is available.
+
+A JSON Schema definition is available for each of the versions as well.
+* [Version 3]({{root}}/schemas/collection-capabilities/v3/collection-capabilities-v3.json)
+* [Version 2]({{root}}/schemas/collection-capabilities/v2/collection-capabilities-v2.json)
+* [Version 1]({{root}}/schemas/collection-capabilities/v1/collection-capabilities-v1.json)
+
 ##### <a name="query-parameters"></a> Query Parameters
 Either `collectionId` or `shortName` must be provided.
 | parameter    | description |

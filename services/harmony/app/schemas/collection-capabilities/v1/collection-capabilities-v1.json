@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://harmony.earthdata.nasa.gov/schemas/collection-capabilities/v1/collection-capabilities-v1.json",
+  "title": "Harmony Collection Capabilities (version 1)",
+  "description": "Describes the Harmony transformation capabilities available for a given CMR collection, in version 1 of the collection capabilities JSON format.",
+  "type": "object",
+  "properties": {
+    "conceptId": {
+      "description": "The CMR concept ID of the collection.",
+      "type": "string"
+    },
+    "shortName": {
+      "description": "The CMR short name of the collection.",
+      "type": "string"
+    },
+    "variableSubset": {
+      "description": "True if variable subsetting is supported by any of the Harmony services for the collection.",
+      "type": "boolean"
+    },
+    "bboxSubset": {
+      "description": "True if bounding box subsetting is supported by any of the Harmony services for the collection.",
+      "type": "boolean"
+    },
+    "shapeSubset": {
+      "description": "True if shape subsetting is supported by any of the Harmony services for the collection.",
+      "type": "boolean"
+    },
+    "temporalSubset": {
+      "description": "True if temporal subsetting is supported by any of the Harmony services for the collection.",
+      "type": "boolean"
+    },
+    "concatenate": {
+      "description": "True if concatenation is supported by any of the Harmony services for the collection.",
+      "type": "boolean"
+    },
+    "reproject": {
+      "description": "True if reprojection is supported by any of the Harmony services for the collection.",
+      "type": "boolean"
+    },
+    "outputFormats": {
+      "description": "The output format MIME types supported by any of the Harmony services for the collection.",
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "services": {
+      "description": "The Harmony services applicable to the collection.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/service" }
+    },
+    "variables": {
+      "description": "The names of the variables associated with the collection.",
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "capabilitiesVersion": {
+      "description": "The version identifier for the capabilities response format.",
+      "type": "string",
+      "const": "1"
+    }
+  },
+  "required": [
+    "conceptId", "shortName", "variableSubset", "bboxSubset", "shapeSubset", "temporalSubset",
+    "concatenate", "reproject", "outputFormats", "services", "variables", "capabilitiesVersion"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "service": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "description": "The name of the Harmony service.",
+          "type": "string"
+        },
+        "capabilities": { "$ref": "#/$defs/serviceCapabilities" }
+      },
+      "required": [ "name", "capabilities" ],
+      "additionalProperties": false
+    },
+    "serviceCapabilities": {
+      "description": "The capabilities configured for the service in the Harmony services configuration.",
+      "type": "object",
+      "properties": {
+        "concatenation": { "type": "boolean" },
+        "concatenate_by_default": { "type": "boolean" },
+        "subsetting": {
+          "type": "object",
+          "properties": {
+            "dimension": { "type": "boolean" },
+            "bbox": { "type": "boolean" },
+            "shape": { "type": "boolean" },
+            "temporal": { "type": "boolean" },
+            "variable": { "type": "boolean" },
+            "multiple_variable": { "type": "boolean" }
+          },
+          "additionalProperties": false
+        },
+        "averaging": {
+          "type": "object",
+          "properties": {
+            "time": { "type": "boolean" },
+            "area": { "type": "boolean" }
+          },
+          "additionalProperties": false
+        },
+        "output_formats": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "reprojection": { "type": "boolean" },
+        "extend": { "type": "boolean" },
+        "default_extend_dimensions": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "all_collections": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

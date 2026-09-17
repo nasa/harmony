@@ -191,6 +191,36 @@ describe('Documentation page', function () {
         expect(this.res.statusCode).to.equal(200);
         expect(this.res.text).to.include('Swagger UI');
       });
+
+      it('does not include the no-default-cmr-collection placeholder', function () {
+        expect(this.res.text).to.not.include('no-default-cmr-collection');
+      });
+    });
+
+    describe('opening the EDR API documentation link', function () {
+      hookRequest((app) => request(app).get('/docs/edr-api/'));
+
+      it('provides a swagger UI representation of the EDR API', function () {
+        expect(this.res.statusCode).to.equal(200);
+        expect(this.res.text).to.include('Swagger UI');
+      });
+
+      it('does not include the no-default-cmr-collection placeholder', function () {
+        expect(this.res.text).to.not.include('no-default-cmr-collection');
+      });
+    });
+
+    describe('opening the collection capabilities API documentation link', function () {
+      hookRequest((app) => request(app).get('/docs/capabilities-api/'));
+
+      it('provides a swagger UI representation of the collection capabilities API', function () {
+        expect(this.res.statusCode).to.equal(200);
+        expect(this.res.text).to.include('Swagger UI');
+      });
+
+      it('does not include the no-default-cmr-collection placeholder', function () {
+        expect(this.res.text).to.not.include('no-default-cmr-collection');
+      });
     });
   });
 });
