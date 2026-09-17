@@ -30,18 +30,27 @@ export const tokenCache = new LRUCache({
 
 /**
  * Builds Express.js middleware for authenticating an EDL token and extracting the username.
- * Only used for routes that require authentication. If no token is passed in then the
- * middleware does nothing and forces the user through the oauth workflow.
+ * Used for routes that require authentication as well as routes for which authentication is
+ * optional. If no token is passed in for a route that requires authentication then the
+ * middleware does nothing, leaving it to `earthdataLoginOauthAuthorizer` to force the user
+ * through the oauth workflow. For a route where authentication is merely optional, a bearer
+ * token is honored if provided, but its absence never triggers the oauth workflow.
  *
  * @param paths - Paths that require authentication
+ * @param optionalAuthPaths - Paths for which authentication is optional but a bearer token,
+ * if provided, should still be honored
  * @returns Express.js middleware for doing EDL token authentication
  */
-export default function buildEdlAuthorizer(paths: Array<string | RegExp> = []): RequestHandler {
+export default function buildEdlAuthorizer(
+  paths: Array<string | RegExp> = [],
+  optionalAuthPaths: Array<string | RegExp> = [],
+): RequestHandler {
   return async function edlTokenAuthorizer(req: HarmonyRequest, res, next): Promise<void> {
-    const requiresAuth = paths.some((p) => req.path.match(p)) &&
-      req.method.toUpperCase() !== 'OPTIONS'; // CORS preflight checks should not use auth
+    const isCorsPreflight = req.method.toUpperCase() === 'OPTIONS'; // should not use auth
+    const requiresAuth = !isCorsPreflight && paths.some((p) => req.path.match(p));
+    const allowsOptionalAuth = !isCorsPreflight && optionalAuthPaths.some((p) => req.path.match(p));
 
-    if (!requiresAuth) return next();
+    if (!requiresAuth && !allowsOptionalAuth) return next();
 
     const authHeader = req.headers.authorization;
     if (authHeader) {
