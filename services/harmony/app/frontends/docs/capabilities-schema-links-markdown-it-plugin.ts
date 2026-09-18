@@ -17,12 +17,21 @@ export function generateCapabilitiesSchemaLinks(md: MarkDownIt, options: { root:
     const { length } = tokens;
     const { Token } = md.core.State.prototype;
 
-    const items = [...supportedApiVersions].reverse().map((apiVersion) => {
+    const listTokens = [];
+    listTokens.push(new Token('bullet_list_open', 'ul', 1));
+    for (const apiVersion of [...supportedApiVersions].reverse()) {
       const url = `${options.root}/schemas/collection-capabilities/v${apiVersion}/collection-capabilities-v${apiVersion}.json`;
-      return `<li><a href="${url}">Version ${apiVersion}</a></li>`;
-    }).join('\n');
-    const listToken = new Token('html_block', '', 0);
-    listToken.content = `<ul>\n${items}\n</ul>\n`;
+      listTokens.push(new Token('list_item_open', 'li', 1));
+      const linkOpenToken = new Token('link_open', 'a', 1);
+      linkOpenToken.attrPush(['href', url]);
+      listTokens.push(linkOpenToken);
+      const textToken = new Token('text', '', 0);
+      textToken.content = `Version ${apiVersion}`;
+      listTokens.push(textToken);
+      listTokens.push(new Token('link_close', 'a', -1));
+      listTokens.push(new Token('list_item_close', 'li', -1));
+    }
+    listTokens.push(new Token('bullet_list_close', 'ul', -1));
 
     let markToken = null;
     for (let i = 0; i < length; i++) {
@@ -35,7 +44,7 @@ export function generateCapabilitiesSchemaLinks(md: MarkDownIt, options: { root:
     }
 
     if (markToken) {
-      tokens.splice(markToken[0], markToken[1], listToken);
+      tokens.splice(markToken[0], markToken[1], ...listTokens);
     }
   });
 }
