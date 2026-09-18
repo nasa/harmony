@@ -5,7 +5,7 @@ import { DuckDBInstance } from '@duckdb/node-api';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 
-import { AnalyticsCron, ALL_TABLES } from '../app/cronjobs/update-analytics';
+import { AnalyticsCron, ALL_TABLES, parseUtcTimestamp } from '../app/cronjobs/update-analytics';
 import * as icebergConnection from '../app/util/db/iceberg-connection';
 import env from '../app/util/env';
 
@@ -39,6 +39,38 @@ function tempFilePathFromMergeQuery(query: string): string {
   }
   return match[1];
 }
+
+describe('parseUtcTimestamp', () => {
+  it('should correctly parse standard UTC timestamp without offset', () => {
+    const input = '2026-09-17 20:44:08.237';
+    const result = parseUtcTimestamp(input);
+
+    expect(result).to.be.an.instanceOf(Date);
+    expect(result.toISOString()).to.equal('2026-09-17T20:44:08.237Z');
+  });
+
+  it('should correctly parse UTC timestamp with +00 offset', () => {
+    const input = '2026-09-17 20:50:10.179+00';
+    const result = parseUtcTimestamp(input);
+
+    expect(result).to.be.an.instanceOf(Date);
+    expect(result.toISOString()).to.equal('2026-09-17T20:50:10.179Z');
+  });
+
+  it('should handle leading or trailing whitespace', () => {
+    const input = '  2026-09-17 20:44:08.237  ';
+    const result = parseUtcTimestamp(input);
+
+    expect(result.toISOString()).to.equal('2026-09-17T20:44:08.237Z');
+  });
+
+  it('should throw an error for invalid date strings', () => {
+    const invalidInput = 'not-a-valid-date';
+
+    expect(() => parseUtcTimestamp(invalidInput))
+      .to.throw(Error, 'Invalid date string: not-a-valid-date');
+  });
+});
 
 describe('AnalyticsCron', function () {
   let sandbox: sinon.SinonSandbox;
