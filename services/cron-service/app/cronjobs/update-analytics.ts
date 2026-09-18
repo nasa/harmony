@@ -77,8 +77,8 @@ async function getPostgresRows(ctx: Context, table: string, latestUpdateTime: st
 
 /**
  * Parse a datetime string for a UTC time into a Date
- * @param {string} dateString - the string to parse
- * @returns {Date}
+ * @param dateString - the string to parse
+ * @returns the Date object for the UTC timestamp
  */
 function parseUtcTimestamp(dateString: string): Date {
   let formatted = dateString.trim().replace(' ', 'T');
