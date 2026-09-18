@@ -87,7 +87,13 @@ function parseUtcTimestamp(dateString: string): Date {
   if (formatted.endsWith('+00')) {
     formatted = formatted.slice(0, -3) + 'Z';
   } else if (!formatted.endsWith('Z')) {
-    formatted += 'Z';
+    const offset = formatted.match(/([+-])(\d{2})(?::?(\d{2}))?$/);
+    if (offset && formatted.includes('T')) {
+      formatted = formatted.slice(0, -offset[0].length)
+        + `${offset[1]}${offset[2]}:${offset[3] ?? '00'}`;
+    } else {
+      formatted += 'Z';
+    }
   }
 
   const date = new Date(formatted);
