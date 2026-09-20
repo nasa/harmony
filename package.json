@@ -74,14 +74,9 @@
     "eslint-import-resolver-typescript": "^3.0.0",
     "eslint-plugin-import-x": "^4.0.0",
     "eslint-plugin-jsdoc": "^50.0.0",
-<<<<<<< Updated upstream
     "eslint-plugin-n": "^17.0.0",
     "eslint-plugin-tsdoc": "^0.4.0",
     "globals": "^15.0.0",
-=======
-    "eslint-plugin-node": "^11.1.0",
-    "eslint-plugin-tsdoc": "^0.5.2",
->>>>>>> Stashed changes
     "knex": "^3.1.0",
     "lerna": "^9.0.3",
     "mocha": "^11.0.1",
