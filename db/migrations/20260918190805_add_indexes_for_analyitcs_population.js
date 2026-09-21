@@ -62,7 +62,7 @@ exports.up = function (knex) {
 exports.down = function (knex) {
   return knex.schema
     .table('batch_items', function (table) {
-      table.index(['updatedAt', 'id']);
+      table.dropIndex(['updatedAt', 'id']);
     })
 
     .then(() =>
