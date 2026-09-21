@@ -3,7 +3,7 @@
 // enumeration for supported file formats in UMM-S
 export const harmonyMimeTypeToName = {
   'application/netcdf': 'NETCDF-4',
-  'application/x-hdf': 'HDF-EOS2',
+  'application/x-hdf': 'HDF',
   'application/x-netcdf4;profile=opendap_url': 'NETCDF-4 (OPeNDAP URL)',
   'application/x-zarr': 'ZARR',
   'image/gif': 'GIF',
