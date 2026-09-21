@@ -5,21 +5,22 @@ const TABLES = [
 
 const indexName = (table) => `${table}_updatedat_id_index`;
 
-// Disable the migration-wide transaction so each index gets its own transaction
 exports.config = { transaction: false };
 
 exports.up = async function (knex) {
   for (const table of TABLES) {
-    await knex.transaction(async (trx) => {
-      await trx.raw('CREATE INDEX IF NOT EXISTS ?? ON ?? ("updatedAt", "id")', [indexName(table), table]);
-    });
+    await knex.raw(
+      'CREATE INDEX CONCURRENTLY IF NOT EXISTS ?? ON ?? ("updatedAt", "id")',
+      [indexName(table), table]
+    );
   }
 };
 
 exports.down = async function (knex) {
   for (const table of TABLES) {
-    await knex.transaction(async (trx) => {
-      await trx.raw('DROP INDEX IF EXISTS ??', [indexName(table)]);
-    });
+    await knex.raw(
+      'DROP INDEX IF EXISTS ??', // Updated order
+      [indexName(table)]
+    );
   }
 };
