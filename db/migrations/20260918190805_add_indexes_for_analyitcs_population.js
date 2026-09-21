@@ -1,121 +1,25 @@
-exports.up = function (knex) {
-  return knex.schema
-    .table('batch_items', function (table) {
-      table.index(['updatedAt', 'id']);
-    })
+const TABLES = [
+  'batch_items', 'batches', 'job_links', 'job_messages', 'jobs_raw_labels',
+  'raw_labels', 'service_deployments', 'users_labels', 'work_items', 'workflow_steps',
+];
 
-    .then(() =>
-      knex.schema.table('batches', function (table) {
-        table.index(['updatedAt', 'id']);
-      })
-    )
+const indexName = (table) => `${table}_updatedat_id_index`;
 
-    .then(() =>
-      knex.schema.table('job_links', function (table) {
-        table.index(['updatedAt', 'id']);
-      })
-    )
+// Disable the migration-wide transaction so each index gets its own transaction
+exports.config = { transaction: false };
 
-    .then(() =>
-      knex.schema.table('job_messages', function (table) {
-        table.index(['updatedAt', 'id']);
-      })
-    )
-
-    .then(() =>
-      knex.schema.table('jobs_raw_labels', function (table) {
-        table.index(['updatedAt', 'id']);
-      })
-    )
-
-    .then(() =>
-      knex.schema.table('raw_labels', function (table) {
-        table.index(['updatedAt', 'id']);
-      })
-    )
-
-    .then(() =>
-      knex.schema.table('service_deployments', function (table) {
-        table.index(['updatedAt', 'id']);
-      })
-    )
-
-    .then(() =>
-      knex.schema.table('users_labels', function (table) {
-        table.index(['updatedAt', 'id']);
-      })
-    )
-
-    .then(() =>
-      knex.schema.table('work_items', function (table) {
-        table.index(['updatedAt', 'id']);
-      })
-    )
-
-    .then(() =>
-      knex.schema.table('workflow_steps', function (table) {
-        table.index(['updatedAt', 'id']);
-      })
-    );
+exports.up = async function (knex) {
+  for (const table of TABLES) {
+    await knex.transaction(async (trx) => {
+      await trx.raw('CREATE INDEX IF NOT EXISTS ?? ON ?? ("updatedAt", "id")', [indexName(table), table]);
+    });
+  }
 };
 
-exports.down = function (knex) {
-  return knex.schema
-    .table('batch_items', function (table) {
-      table.dropIndex(['updatedAt', 'id']);
-    })
-
-    .then(() =>
-      knex.schema.table('batches', function (table) {
-        table.dropIndex(['updatedAt', 'id']);
-      })
-    )
-
-    .then(() =>
-      knex.schema.table('job_links', function (table) {
-        table.dropIndex(['updatedAt', 'id']);
-      })
-    )
-
-    .then(() =>
-      knex.schema.table('job_messages', function (table) {
-        table.dropIndex(['updatedAt', 'id']);
-      })
-    )
-
-    .then(() =>
-      knex.schema.table('jobs_raw_labels', function (table) {
-        table.dropIndex(['updatedAt', 'id']);
-      })
-    )
-
-    .then(() =>
-      knex.schema.table('raw_labels', function (table) {
-        table.dropIndex(['updatedAt', 'id']);
-      })
-    )
-
-    .then(() =>
-      knex.schema.table('service_deployments', function (table) {
-        table.dropIndex(['updatedAt', 'id']);
-      })
-    )
-
-    .then(() =>
-      knex.schema.table('users_labels', function (table) {
-        table.dropIndex(['updatedAt', 'id']);
-      })
-    )
-
-    .then(() =>
-      knex.schema.table('work_items', function (table) {
-        table.dropIndex(['updatedAt', 'id']);
-      })
-    )
-
-    .then(() =>
-      knex.schema.table('workflow_steps', function (table) {
-        table.dropIndex(['updatedAt', 'id']);
-      })
-    );
+exports.down = async function (knex) {
+  for (const table of TABLES) {
+    await knex.transaction(async (trx) => {
+      await trx.raw('DROP INDEX IF EXISTS ??', [indexName(table)]);
+    });
+  }
 };
