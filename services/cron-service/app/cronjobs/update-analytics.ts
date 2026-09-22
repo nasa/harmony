@@ -169,7 +169,7 @@ async function mergeRowsIntoIceberg(ctx: Context, duckDbConn: DuckDBConnection, 
 	         			     INSERT BY NAME;`;
     await duckDbConn.run(query);
     const durationMs = new Date().getTime() - startTime;
-    logger.debug(`Wrote ${rows.length} rows to ${table}`, { durationMs });
+    logger.info(`Wrote ${rows.length} rows to ${table}`, { durationMs });
   } catch (err) {
     logger.error(err);
   } finally {
@@ -203,7 +203,7 @@ async function updateAnalytics(ctx: Context): Promise<void> {
       const startTime = new Date().getTime();
       try {
         const latestUpdateTime = await getLatestIcebergTableUpdateTime(ctx, duckDbConn, table);
-        logger.debug(`=============> Table ${table} latest update time is ${latestUpdateTime.toISOString()}`);
+        logger.info(`=============> Table ${table} latest update time is ${latestUpdateTime.toISOString()}`);
 
         let cursor: RowCursor | null = null;
         let totalRows = 0;
