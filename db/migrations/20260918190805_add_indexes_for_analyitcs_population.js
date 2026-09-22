@@ -19,7 +19,7 @@ exports.up = async function (knex) {
 exports.down = async function (knex) {
   for (const table of TABLES) {
     await knex.raw(
-      'DROP INDEX IF EXISTS ??', // Updated order
+      'DROP INDEX IF EXISTS ??',
       [indexName(table)]
     );
   }
