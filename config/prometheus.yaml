@@ -84,6 +84,13 @@ data:
           severity: warning
         annotations:
           summary: "Container on the pod has restarted multiple times in the last 5 minutes."
+      - alert: KubernetesCrashLoopBackOff
+        expr: sum by (namespace, pod, container) (kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff"}) > 0
+        for: $PROMETHEUS_POD_NOT_HEALTHY_WAIT_FOR
+        labels:
+          severity: critical
+        annotations:
+          summary: "Container is in CrashLoopBackOff."
   prometheus.yml: |
     global:
       scrape_interval:     15s
