@@ -208,8 +208,8 @@ describe('handleFormat', function () {
         expect(operation.outputFormat).to.equal('application/netcdf');
       });
 
-      it('maps HDF-EOS2 to application/x-hdf', function () {
-        handleFormat(operation, 'HDF-EOS2', req);
+      it('maps HDF to application/x-hdf', function () {
+        handleFormat(operation, 'HDF', req);
         expect(operation.outputFormat).to.equal('application/x-hdf');
       });
 
