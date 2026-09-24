@@ -33,97 +33,52 @@ function crossesAntimeridian(box: BoundingBox): boolean {
 }
 
 /**
- * Join two bounding boxes to create a single box that is the minimal bounding box
- * encompassing the two.
- * Note: this was translated from the CMR Clojure version
+ * Find a minimal bounding box around every input rectangle.
  *
- * @param box1 - A box in `[W,S,E,N]` format
- * @param box2 - A box in `[W,S,E,N]` format
- * @returns A box in `[W,S,E,N]` format
+ * Preserve longitude intervals until they have all been merged. The complement
+ * of their largest uncovered gap is the shortest containing arc on the globe.
+ * Combining envelopes pairwise can prematurely fill the gap needed by a later box.
+ *
+ * @param boxes - Boxes in `[W,S,E,N]` format
+ * @returns A containing box with minimal longitudinal width
  */
-function joinBoundingBoxes(box1: BoundingBox, box2: BoundingBox): BoundingBox {
-  // longitude range union
-  let w;
-  let e;
-  if (crossesAntimeridian(box1) && crossesAntimeridian(box2)) {
-    // both cross the antimeridian
-    w = min(box1[0], box2[0]);
-    e = max(box1[2], box2[2]);
-    if (w <= e) {
-      // if the result covers the whole world then we'll set it to that.
-      w = -180.0;
-      e = 180.0;
-    }
-  } else if (crossesAntimeridian(box1) || crossesAntimeridian(box2)) {
-    // one crosses the antimeridian
-    let b1;
-    let b2;
-    if (crossesAntimeridian(box2)) {
-      b1 = box2;
-      b2 = box1;
+function joinBoundingBoxes(boxes: BoundingBox[]): BoundingBox {
+  const intervals: [number, number][] = [];
+  let south = boxes[0][1];
+  let north = boxes[0][3];
+  for (const box of boxes) {
+    south = min(south, box[1]);
+    north = max(north, box[3]);
+    if (crossesAntimeridian(box)) {
+      intervals.push([-180, box[2]], [box[0], 180]);
     } else {
-      b1 = box1;
-      b2 = box2;
+      intervals.push([box[0], box[2]]);
     }
-    const w1 = b1[0];
-    const w2 = b2[0];
-    const e1 = b1[2];
-    const e2 = b2[2];
-    // We could expand b1 to the east or to the west. Pick the shorter of the two.
-    const westDist = w1 - w2;
-    const eastDist = e1 - e2;
-    if (westDist <= 0 || eastDist >= 0) {
-      w = w1;
-      e = e1;
-    } else if (eastDist < westDist) {
-      w = w1;
-      e = e2;
+  }
+  intervals.sort((a, b) => a[0] - b[0]);
+  const merged: [number, number][] = [];
+  for (const [start, end] of intervals) {
+    const previous = merged[merged.length - 1];
+    if (!previous || start > previous[1]) {
+      merged.push([start, end]);
     } else {
-      w = w2;
-      e = e1;
-    }
-
-    if (w <= e) {
-      // if the result covers the whole world then we'll set it to that.
-      w = -180.0;
-      e = 180.0;
-    }
-  } else {
-    // neither cross the AM
-    let b1;
-    let b2;
-    if (box1[0] > box2[0]) {
-      b1 = box2;
-      b2 = box1;
-    } else {
-      b1 = box1;
-      b2 = box2;
-    }
-    const w1 = b1[0];
-    const w2 = b2[0];
-    const e1 = b1[2];
-    const e2 = b2[2];
-
-    w = min(w1, w2);
-    e = max(e1, e2);
-
-    // Check if it's shorter to cross the AM
-    const dist = e - w;
-    const altWest = w2;
-    const altEast = e1;
-    const altDist = (180.0 - altWest) + (altEast + 180.0);
-
-    if (altDist < dist) {
-      w = altWest;
-      e = altEast;
+      previous[1] = max(previous[1], end);
     }
   }
 
-  // latitude range union
-  const n = max(box1[3], box2[3]);
-  const s = min(box1[1], box2[1]);
-
-  return [w, s, e, n];
+  // Prefer a non-crossing box when gaps have equal widths.
+  let west = merged[0][0];
+  let east = merged[merged.length - 1][1];
+  let largestGap = west + 360 - east;
+  for (let index = 1; index < merged.length; index++) {
+    const gap = merged[index][0] - merged[index - 1][1];
+    if (gap > largestGap) {
+      largestGap = gap;
+      west = merged[index][0];
+      east = merged[index - 1][1];
+    }
+  }
+  return [west, south, east, north];
 }
 
 /**
@@ -140,7 +95,7 @@ export default function boxStringsToBox(boxStrings: string[]): BoundingBox {
   if (boxes.length === 1) return boxes[0];
 
   // find a single minimal bounding box that contains all the boxes
-  return boxes.reduce((mbr, nextBox) => joinBoundingBoxes(mbr, nextBox));
+  return joinBoundingBoxes(boxes);
 }
 
 /**
@@ -167,5 +122,5 @@ export function boundingRectanglesToBox(brs: BoundingRectangleType[]): BoundingB
   if (boxes.length === 1) return boxes[0];
 
   // find a single minimal bounding box that contains all the boxes
-  return boxes.reduce((mbr, nextBox) => joinBoundingBoxes(mbr, nextBox));
+  return joinBoundingBoxes(boxes);
 }
