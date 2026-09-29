@@ -37,13 +37,13 @@ git clone https://github.com/nasa/harmony.git
   pushd harmony && ./bin/create-dotenv && popd
   ```
    Edit the `.env` file if you want to add any image tags for a custom service (see the `env-defaults` file). You can skip this step for now if you just want to use the default service tags.
-   If you are on Minikube on Linux, you must set the set the following values in the .env file:
+   If you are using Minikube on Linux, you must set the set the following values in the .env file:
    ```
     CALLBACK_URL_ROOT=http://harmony:3001
     BACKEND_HOST=harmony
    ```
 
-4. (optional) Tell Harmony to use `krelay` for port forwarding. You must have installed `krelay` using the link above. This is only advised if you are having issues with the standard port forwarding. One advantage to `krelay` over the standard port forwarding is that with `krelay` the port forwarding will survive pod restarts. **This is highly reccomended when using Linux with Minikube.**
+4. (optional) Tell Harmony to use `krelay` for port forwarding. You must have installed `krelay` using the link above. This is only advised if you are having issues with the standard port forwarding. One advantage to `krelay` over the standard port forwarding is that with `krelay` the port forwarding will survive pod restarts. 
 ```bash
 export USE_KRELAY=true
 ```
