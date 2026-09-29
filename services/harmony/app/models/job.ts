@@ -375,6 +375,25 @@ export async function getJobStatusForJobID(jobID: string): Promise<JobStatus> {
 }
 
 /**
+ * Returns the job ID of an identical request by the same user, if any.
+ * @param username - the EDL username of the user making the request
+ * @param request - the request url
+ * @returns a Promise containing the job ID
+ */
+export async function getIDForDuplicateJob(username: string, request: string): Promise<string> {
+  const request_checksum = request;
+  const queryResults = await db('jobs')
+    .select('jobID')
+    .where({ username, request_checksum });
+  let result: string = null;
+  if (queryResults && queryResults.length > 0) {
+    result = queryResults[0].jobID;
+  }
+
+  return result;
+}
+
+/**
  * Sets the fields on the where clauses (see JobQuery) to be prefixed with a table name to avoid
  * ambiguities when joining with other tables
  * @param table - the table name to prefix to the field name
@@ -660,7 +679,7 @@ export class Job extends DBRecord implements JobRecord {
    * @returns a list of all of the user's jobs
    */
   static forUser(tx: Transaction, username: string, currentPage = 0, perPage = 10):
-  Promise<{ data: Job[]; pagination: ILengthAwarePagination }> {
+    Promise<{ data: Job[]; pagination: ILengthAwarePagination }> {
     return Job.queryAll(tx, { where: { username } }, currentPage, perPage);
   }
 
@@ -1102,7 +1121,7 @@ export class Job extends DBRecord implements JobRecord {
     const permissionsMap: CmrPermissionsMap = await getPermissions({ 'id': this.requestId }, this.collectionIds, accessToken);
     return this.collectionIds.some((collectionId) => (
       !permissionsMap[collectionId]
-        || !(permissionsMap[collectionId].indexOf(CmrPermission.Read) > -1)));
+      || !(permissionsMap[collectionId].indexOf(CmrPermission.Read) > -1)));
   }
 
   /**
