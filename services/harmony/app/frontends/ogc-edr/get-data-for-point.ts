@@ -8,6 +8,7 @@ import { keysToLowerCase } from '../../util/object';
 import {
   mergeParameters, ParameterParseError, parseWkt, validateWkt,
 } from '../../util/parameter-parsing-helpers';
+import { hashGeoJson } from '../../util/request-checksum';
 
 /**
  * Converts a WKT POINT string to a WKT POLYGON string.
@@ -151,6 +152,7 @@ export function getDataForPoint(
         const geoJson = parseWkt(polygon);
         if (geoJson) {
           operation.geojson = JSON.stringify(geoJson);
+          req.context.spatialHash = hashGeoJson(geoJson);
         }
       } catch (e) {
         if (e instanceof ParameterParseError) {

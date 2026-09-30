@@ -23,6 +23,7 @@ import { cookieOptions } from '../util/cookies';
 import env from '../util/env';
 import { HttpError, RequestValidationError, ServerError } from '../util/errors';
 import { defaultObjectStore } from '../util/object-store';
+import { hashGeoJson } from '../util/request-checksum';
 
 const APPROXIMATE_METERS_PER_DEGREE = 111139.0;
 const COORDINATE_PRECISION = 6; // in decimal places
@@ -322,9 +323,11 @@ export function normalizeGeoJson(geoJson: object): object {
  * @param url - the url of the geojson file
  * @param isLocal - whether the url is a downloaded file (true) or needs to be downloaded (false)
  * @throws RequestValidationError - if the geojson file is not valid
- * @returns the link to the geojson file
+ * @returns the link to the geojson file and a checksum of its normalized contents
  */
-async function normalizeGeoJsonFile(url: string, isLocal: boolean): Promise<string> {
+async function normalizeGeoJsonFile(
+  url: string, isLocal: boolean,
+): Promise<{ url: string, hash: string }> {
   const store = defaultObjectStore();
   let originalGeoJson: object;
   const localFile = url;
@@ -343,7 +346,7 @@ async function normalizeGeoJsonFile(url: string, isLocal: boolean): Promise<stri
     await store.upload(JSON.stringify(normalizedGeoJson), resultUrl);
   }
 
-  return resultUrl;
+  return { url: resultUrl, hash: hashGeoJson(normalizedGeoJson) };
 }
 
 /**
@@ -386,13 +389,16 @@ export default async function shapefileConverter(req, res, next: NextFunction): 
         const geoJsonUrl = `${url}.geojson`;
         await store.upload(JSON.stringify(normalizedGeoJson), geoJsonUrl);
         operation.geojson = geoJsonUrl;
+        req.context.spatialHash = hashGeoJson(normalizedGeoJson);
       } finally {
         if (convertedFile) {
           await fs.unlink(convertedFile);
         }
       }
     } else {
-      operation.geojson = await normalizeGeoJsonFile(url, false);
+      const normalized = await normalizeGeoJsonFile(url, false);
+      operation.geojson = normalized.url;
+      req.context.spatialHash = normalized.hash;
     }
   } catch (e) {
     if (e instanceof HttpError) {
