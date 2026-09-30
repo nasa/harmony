@@ -18,6 +18,13 @@ export default class RequestContext {
 
   shapefile?: ShapefileObject;
 
+  /**
+   * Checksum of the normalized GeoJSON for any shape supplied with the request, whether as an
+   * uploaded shapefile, GeoJSON, or KML file or as WKT. Set once the shape has been normalized,
+   * and folded into the request checksum used to identify duplicate requests.
+   */
+  spatialHash?: string;
+
   frontend?: string;
 
   /**
