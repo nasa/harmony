@@ -717,7 +717,7 @@ export class Job extends DBRecord implements JobRecord {
    * @returns a list of all of the user's jobs
    */
   static forUser(tx: Transaction, username: string, currentPage = 0, perPage = 10):
-    Promise<{ data: Job[]; pagination: ILengthAwarePagination }> {
+  Promise<{ data: Job[]; pagination: ILengthAwarePagination }> {
     return Job.queryAll(tx, { where: { username } }, currentPage, perPage);
   }
 
