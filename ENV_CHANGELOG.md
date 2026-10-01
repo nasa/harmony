@@ -2,6 +2,10 @@
 Any changes to the environment variables will be documented in this file in chronological
 order with the most recent changes first.
 
+## 2026-10-01
+### Changed
+- HYBIG_LIMITS_MEMORY - Increased to 12Gi to handle large polar-projected granules in NISAR collections.
+
 ## 2026-09-04
 ### Added
 - MAX_BULK_JOB_STATUS_IDS - controls the maximum number of job IDs that can be requested at once
