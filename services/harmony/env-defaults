@@ -71,6 +71,15 @@ MAX_SYNCHRONOUS_GRANULES=1
 # The threshold of the number of granules in a request that will trigger auto-pausing with preview
 PREVIEW_THRESHOLD=100
 
+# Requests with more than this many input granules are checked for an identical earlier request by
+# the same user. When one is found the existing job is returned instead of starting a new one.
+DEDUPE_THRESHOLD=100
+
+# How many days after it was created a completed job may still be returned for a duplicate request.
+# Jobs that are still running, previewing, or paused are returned regardless of age. Capped at 7
+# days so that a returned job's output is still available for download.
+DEDUPE_MAX_AGE_DAYS=1
+
 # The maximum number of errors to allow for a job before considering it failed
 MAX_ERRORS_FOR_JOB=2000
 

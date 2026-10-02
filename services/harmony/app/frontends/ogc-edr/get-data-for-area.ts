@@ -5,6 +5,7 @@ import HarmonyRequest from '../../models/harmony-request';
 import { RequestValidationError } from '../../util/errors';
 import { keysToLowerCase } from '../../util/object';
 import { ParameterParseError, mergeParameters, parseWkt } from '../../util/parameter-parsing-helpers';
+import { hashGeoJson } from '../../util/request-checksum';
 
 /**
  * Express middleware that responds to OGC API - EDR Area GET requests.
@@ -29,6 +30,7 @@ export function getDataForArea(
       const geoJson = parseWkt(query.coords);
       if (geoJson) {
         operation.geojson = JSON.stringify(geoJson);
+        req.context.spatialHash = hashGeoJson(geoJson);
       }
     } catch (e) {
       if (e instanceof ParameterParseError) {

@@ -12,10 +12,11 @@ import { RequestValidationError, ServerError } from '../../util/errors';
 import { getJobForDisplay, jobStatusCache } from '../../util/job';
 import { getRequestMetric } from '../../util/metrics';
 import { defaultObjectStore } from '../../util/object-store';
+import { computeRequestChecksum } from '../../util/request-checksum';
 import { getRequestRoot, getRequestUrl } from '../../util/url';
 import DataOperation from '../data-operation';
 import HarmonyRequest from '../harmony-request';
-import { Job, JobStatus, statesToDefaultMessages } from '../job';
+import { getIDForDuplicateJob, Job, JobStatus, statesToDefaultMessages } from '../job';
 import UserWork from '../user-work';
 import WorkItem from '../work-item';
 import { WorkItemStatus } from '../work-item-interface';
@@ -310,7 +311,26 @@ export default abstract class BaseService<ServiceParamType> {
   async invoke(req: HarmonyRequest, logger?: Logger): Promise<InvocationResult> {
     this.logger = logger;
     logger.info('Invoking service for operation', { operation: this.operation });
+
+    const requestChecksum = computeRequestChecksum(req);
+    if (this._canReuseExistingJob()) {
+      const duplicateJobID = await getIDForDuplicateJob(
+        this.operation.user, requestChecksum, this.numInputGranules);
+      if (duplicateJobID) {
+        logger.info(
+          `Reusing existing job ${duplicateJobID} for duplicate request instead of starting a new one`,
+          {
+            duplicateJobID,
+            requestChecksum,
+            numInputGranules: this.numInputGranules,
+            duplicateRequest: true,
+          });
+        return { redirect: `/jobs/${duplicateJobID}`, headers: {} };
+      }
+    }
+
     const job = this._createJob(getRequestUrl(req));
+    job.request_checksum = requestChecksum;
     const labels = req.body.label;
     job.labels = labels || [];
 
@@ -390,6 +410,17 @@ export default abstract class BaseService<ServiceParamType> {
    * @param _logger - the logger associated with the request
    */
   protected abstract _run(_logger: Logger): Promise<InvocationResult>;
+
+  /**
+   * Returns whether this request may be served by an existing identical job rather than starting
+   * a new one. Synchronous requests are excluded because their caller expects data back rather
+   * than a redirect to a job.
+   *
+   * @returns true if an existing job may be reused for this request
+   */
+  protected _canReuseExistingJob(): boolean {
+    return !this.isSynchronous && this.numInputGranules > env.dedupeThreshold;
+  }
 
   /**
    * Creates a new job object for this service's operation

@@ -233,11 +233,18 @@
     "fast-uri": "3.1.8",
     "fast-xml-parser": "5.5.12",
     "form-data": "^4.0.6",
+    "ip-address": "10.7.2",
     "ip-address": "10.7.1",
     "joi": "^18.2.9",
     "js-yaml": "^4.3.0",
     "jsonpath-plus": "^10.0.7",
     "linkify-it": "^5.0.2",
+    "minimatch@^3.0.0": {
+      "brace-expansion": "^1.1.21"
+    },
+    "minimatch@^9.0.0": {
+      "brace-expansion": "^2.1.7"
+    },
     "semver": "^7.6.2",
     "tar": "^7.5.21",
     "trim-newlines": "4.0.1",
