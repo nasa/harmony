@@ -312,7 +312,7 @@ export default abstract class BaseService<ServiceParamType> {
     this.logger = logger;
     logger.info('Invoking service for operation', { operation: this.operation });
 
-    const requestChecksum = computeRequestChecksum(req);
+    const requestChecksum = computeRequestChecksum(req, this.operation.outputFormat);
     if (this._canReuseExistingJob()) {
       const duplicateJobID = await getIDForDuplicateJob(
         this.operation.user, requestChecksum, this.numInputGranules);

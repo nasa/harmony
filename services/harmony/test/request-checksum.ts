@@ -110,6 +110,32 @@ describe('request checksums', function () {
     });
   });
 
+  describe('output format', function () {
+    it('distinguishes requests resolved to different formats via content negotiation (e.g. a different Accept header), even though the query is otherwise identical, so they are not deduplicated against each other', function () {
+      const a = computeRequestChecksum(request(rangesetPath, { maxResults: '200' }), 'image/tiff');
+      const b = computeRequestChecksum(request(rangesetPath, { maxResults: '200' }), 'application/x-netcdf4');
+      expect(a).to.not.equal(b);
+    });
+
+    it('matches when the resolved output format is the same, so a changed Accept header that negotiates to the same format can still be deduplicated', function () {
+      const a = computeRequestChecksum(request(rangesetPath, { maxResults: '200' }), 'image/tiff');
+      const b = computeRequestChecksum(request(rangesetPath, { maxResults: '200' }), 'image/tiff');
+      expect(a).to.equal(b);
+    });
+
+    it('distinguishes a request whose format was resolved from one where no format was resolved at all', function () {
+      const a = computeRequestChecksum(request(rangesetPath, { maxResults: '200' }));
+      const b = computeRequestChecksum(request(rangesetPath, { maxResults: '200' }), 'image/tiff');
+      expect(a).to.not.equal(b);
+    });
+
+    it('is unaffected by an empty resolved format, matching the checksum computed with no format argument at all', function () {
+      const a = computeRequestChecksum(request(rangesetPath, { maxResults: '200' }));
+      const b = computeRequestChecksum(request(rangesetPath, { maxResults: '200' }), '');
+      expect(a).to.equal(b);
+    });
+  });
+
   describe('hashGeoJson', function () {
     it('ignores the order keys were assigned in', function () {
       const a = hashGeoJson({ type: 'Polygon', coordinates: [[[0, 0], [1, 0], [1, 1], [0, 0]]] });

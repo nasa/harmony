@@ -76,13 +76,17 @@ function canonicalParams(query: object, hasSpatialHash: boolean): string[] {
  * job the first created.
  *
  * The checksum covers the request path and its parameters, plus the shape of any shapefile,
- * GeoJSON, KML, or WKT the request supplied. It deliberately excludes the protocol and host, the
- * order and letter case of parameter names, and parameters listed in `excludedParams`.
+ * GeoJSON, KML, or WKT the request supplied, plus the resolved output format when known. It
+ * deliberately excludes the protocol and host, the order and letter case of parameter names, and
+ * parameters listed in `excludedParams`.
  *
  * @param req - the request to compute a checksum for
+ * @param outputFormat - the mime type the service resolved to produce, including when that
+ *   resolution came from content negotiation rather than an explicit `format` parameter, so that
+ *   requests differing only in negotiated format do not share a checksum
  * @returns a versioned hex checksum of the request
  */
-export function computeRequestChecksum(req: HarmonyRequest): string {
+export function computeRequestChecksum(req: HarmonyRequest, outputFormat?: string): string {
   const spatialHash = req.context?.spatialHash;
   const path = req.originalUrl.split('?')[0].replace(/\/+$/, '');
   const parts = [
@@ -91,6 +95,9 @@ export function computeRequestChecksum(req: HarmonyRequest): string {
   ];
   if (spatialHash) {
     parts.push(`shape=${spatialHash}`);
+  }
+  if (outputFormat) {
+    parts.push(`format=${outputFormat}`);
   }
   const digest = crypto.createHash('sha256').update(parts.join('\n')).digest('hex');
   return `${CHECKSUM_VERSION}:${digest}`;
