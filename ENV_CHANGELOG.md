@@ -6,6 +6,13 @@ order with the most recent changes first.
 ### Changed
 - HYBIG_LIMITS_MEMORY - Increased to 12Gi to handle large polar-projected granules in NISAR collections.
 
+## 2026-09-29
+### Added
+- DEDUPE_THRESHOLD - requests with more than this many input granules are checked for an identical
+  earlier request by the same user, and return that job instead of starting a new one.
+- DEDUPE_MAX_AGE_DAYS - how many days after creation a completed job may still be returned for a
+  duplicate request. Capped at 7 so a returned job's output is still available.
+
 ## 2026-09-04
 ### Added
 - MAX_BULK_JOB_STATUS_IDS - controls the maximum number of job IDs that can be requested at once
