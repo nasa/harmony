@@ -417,7 +417,7 @@ HYBIG_IMAGE=ghcr.io/nasa/harmony-browse-image-generator:latest
 HYBIG_REQUESTS_CPU=128m
 HYBIG_REQUESTS_MEMORY=128Mi
 HYBIG_LIMITS_CPU=128m
-HYBIG_LIMITS_MEMORY=8Gi
+HYBIG_LIMITS_MEMORY=12Gi
 HYBIG_INVOCATION_ARGS='python -m harmony_service'
 
 HARMONY_SERVICE_EXAMPLE_IMAGE=harmonyservices/service-example:latest
