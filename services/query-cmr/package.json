@@ -70,7 +70,7 @@
     "tmp-promise": "^3.0.3",
     "tweetnacl": "^1.0.3",
     "tweetnacl-util": "^0.15.1",
-    "uuid": "^11.1.1",
+    "uuid": "^11.0.3",
     "wellknown": "^0.5.0",
     "winston": "^3.10.0",
     "yargs": "^17.7.2"
@@ -110,18 +110,9 @@
   "overrides": {
     "braces": "^3.0.3",
     "cross-spawn": "7.0.5",
-    "fast-uri": "3.1.8",
     "form-data": "^4.0.6",
     "js-yaml": "^4.3.0",
     "fast-xml-parser": "^5.3.6",
-    "minimatch@^3.0.0": {
-      "brace-expansion": "^1.1.21"
-    },
-    "minimatch@^9.0.0": {
-      "brace-expansion": "^2.1.7"
-    },
-    "qs": "^6.16.0",
-    "serialize-javascript": "^7.0.5",
-    "uuid": "^11.1.1"
+    "qs": "^6.16.0"
   }
 }

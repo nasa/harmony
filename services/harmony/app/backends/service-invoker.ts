@@ -55,8 +55,8 @@ async function translateServiceResult(serviceResult, user, res): Promise<void> {
 }
 
 /**
- * Express.js handler that starts a job to process the request. Responds to the client with
- * a redirect to the job status page, or the result if the request is synchronous.
+ * Express.js handler that calls backend services, registering a URL for the backend
+ * to POST to when complete.  Responds to the client once the backend responds.
  *
  * @param req - The request sent by the client
  * @param res - The response to send to the client

@@ -218,17 +218,6 @@ describe('Skipping job preview', function () {
       GET: hookSkipPreviewWithGET,
     };
 
-    // The POST and GET loop iterations below issue the identical request for the same user,
-    // each expecting to create its own fresh job. Disable deduplication so they don't collide.
-    let originalDedupeThreshold: number;
-    before(function () {
-      originalDedupeThreshold = env.dedupeThreshold;
-      env.dedupeThreshold = Number.MAX_SAFE_INTEGER;
-    });
-    after(function () {
-      env.dedupeThreshold = originalDedupeThreshold;
-    });
-
     for (const [httpMethod, skipPreviewEndpointHook] of Object.entries(skipPreviewEndpointHooks)) {
       describe(`Skipping preview using ${httpMethod}`, function () {
         describe('When an end user request results in a job in the previewing state', function () {

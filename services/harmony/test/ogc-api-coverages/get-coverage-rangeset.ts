@@ -1017,18 +1017,6 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
   });
 
   describe('when the database catches fire during an asynchronous request', function () {
-    // This collection's granule count exceeds the dedupe threshold, which would otherwise cause
-    // the dedupe lookup itself to throw against the failing database. Disable deduplication so
-    // this test exercises the job-creation database failure path it's named for.
-    let originalDedupeThreshold: number;
-    before(function () {
-      originalDedupeThreshold = env.dedupeThreshold;
-      env.dedupeThreshold = Number.MAX_SAFE_INTEGER;
-    });
-    after(function () {
-      env.dedupeThreshold = originalDedupeThreshold;
-    });
-
     hookDatabaseFailure();
     StubService.hook({ params: { redirect: 'http://example.com' } });
     hookRangesetRequest(version, collection, variableName, {});

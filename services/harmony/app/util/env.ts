@@ -1,6 +1,6 @@
 import * as path from 'path';
 
-import { IsBoolean, IsInt, IsNotEmpty, IsPositive, Matches, Max, Min } from 'class-validator';
+import { IsBoolean, IsInt, IsNotEmpty, IsPositive, Matches, Min } from 'class-validator';
 import _ from 'lodash';
 
 import { HarmonyEnv, memorySizeRegex } from '@harmony/util/env';
@@ -63,15 +63,6 @@ class HarmonyServerEnv extends HarmonyEnv {
   @IsInt()
   @Min(0)
   previewThreshold: number;
-
-  @IsInt()
-  @Min(0)
-  dedupeThreshold: number;
-
-  @IsInt()
-  @Min(1)
-  @Max(7)
-  dedupeMaxAgeDays: number;
 
   @IsNotEmpty()
   uploadBucket: string;

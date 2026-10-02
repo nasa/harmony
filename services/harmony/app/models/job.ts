@@ -35,7 +35,7 @@ let providerIdsSnapshot: string[];
 export const jobRecordFields = [
   'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'request',
   'numInputGranules', 'jobID', 'requestId', 'batchesCompleted', 'isAsync', 'ignoreErrors', 'destination_url',
-  'service_name', 'provider_id', 'original_data_size', 'output_data_size', 'request_checksum',
+  'service_name', 'provider_id', 'original_data_size', 'output_data_size',
 ];
 
 const stagingBucketTitle = `Results in AWS S3. Access from AWS ${awsDefaultRegion} with keys from /cloud-access.sh`;
@@ -87,7 +87,6 @@ export interface JobRecord {
   service_name?: string,
   original_data_size?: number;
   output_data_size?: number;
-  request_checksum?: string;
 }
 
 /**
@@ -375,60 +374,6 @@ export async function getJobStatusForJobID(jobID: string): Promise<JobStatus> {
   )?.status;
 }
 
-// Jobs in these statuses are still working toward a result, so a duplicate request can join them
-// no matter how long ago they were created
-export const dedupeInFlightStatuses = [
-  JobStatus.ACCEPTED,
-  JobStatus.RUNNING,
-  JobStatus.RUNNING_WITH_ERRORS,
-  JobStatus.PREVIEWING,
-  JobStatus.PAUSED,
-];
-
-// Jobs in these statuses have output that a duplicate request can be sent to, but only while that
-// output is recent enough to still be downloadable. Failed and canceled jobs are deliberately
-// absent: a user repeating one of those is retrying, and should get a new job.
-export const dedupeCompletedStatuses = [
-  JobStatus.SUCCESSFUL,
-  JobStatus.COMPLETE_WITH_ERRORS,
-];
-
-/**
- * Returns the job ID of an identical request by the same user that a duplicate request can be
- * served by, if there is one. Prefers the most recently created match.
- *
- * The granule count must match as well as the checksum. The same request can cover a different
- * number of granules than it did earlier, because CMR gains granules over time, and the earlier
- * job's output would then be missing data the request now asks for.
- *
- * @param username - the EDL username of the user making the request
- * @param requestChecksum - the checksum of the request, from `computeRequestChecksum`
- * @param numInputGranules - the number of granules the request covers
- * @returns a Promise containing the job ID, or null if there is no such job
- */
-export async function getIDForDuplicateJob(
-  username: string, requestChecksum: string, numInputGranules: number,
-): Promise<string> {
-  if (!requestChecksum) return null;
-  const oldestAllowed = new Date(Date.now() - env.dedupeMaxAgeDays * 24 * 60 * 60 * 1000);
-  const result = await db('jobs')
-    .select('jobID')
-    .where({ username, request_checksum: requestChecksum, numInputGranules })
-    .where((builder) => {
-      builder
-        .whereIn('status', dedupeInFlightStatuses)
-        .orWhere((completed) => {
-          completed
-            .whereIn('status', dedupeCompletedStatuses)
-            .where('createdAt', '>=', oldestAllowed);
-        });
-    })
-    .orderBy('createdAt', 'desc')
-    .first();
-
-  return result?.jobID || null;
-}
-
 /**
  * Sets the fields on the where clauses (see JobQuery) to be prefixed with a table name to avoid
  * ambiguities when joining with other tables
@@ -545,8 +490,6 @@ export class Job extends DBRecord implements JobRecord {
   original_data_size?: number;
 
   output_data_size?: number;
-
-  request_checksum?: string;
 
   /**
    * Get the job message for the current status.
@@ -1159,7 +1102,7 @@ export class Job extends DBRecord implements JobRecord {
     const permissionsMap: CmrPermissionsMap = await getPermissions({ 'id': this.requestId }, this.collectionIds, accessToken);
     return this.collectionIds.some((collectionId) => (
       !permissionsMap[collectionId]
-      || !(permissionsMap[collectionId].indexOf(CmrPermission.Read) > -1)));
+        || !(permissionsMap[collectionId].indexOf(CmrPermission.Read) > -1)));
   }
 
   /**

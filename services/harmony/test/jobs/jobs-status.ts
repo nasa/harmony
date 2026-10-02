@@ -543,17 +543,6 @@ describe('Individual job status route', function () {
     const version = '1.0.0';
     const query = { format: 'image/tiff' }; // Ensure the http example backend service is called
 
-    // Several sub-tests below issue the identical request for the same user, each expecting
-    // to create its own fresh job. Disable deduplication so they don't collide with each other.
-    let originalDedupeThreshold: number;
-    before(function () {
-      originalDedupeThreshold = env.dedupeThreshold;
-      env.dedupeThreshold = Number.MAX_SAFE_INTEGER;
-    });
-    after(function () {
-      env.dedupeThreshold = originalDedupeThreshold;
-    });
-
     describe('when the job has started but not completed', function () {
       hookRangesetRequest(version, collection, variableName, { query, username: 'jdoe1' });
 

@@ -6,7 +6,6 @@ import env from '../../util/env';
 import { RequestValidationError } from '../../util/errors';
 import { keysToLowerCase } from '../../util/object';
 import { ParameterParseError, mergeParameters, parseWkt, validateWkt } from '../../util/parameter-parsing-helpers';
-import { hashGeoJson } from '../../util/request-checksum';
 
 type Point = { x: number, y: number };
 
@@ -197,7 +196,6 @@ export function getDataForTrajectory(
       const geoJson = parseWkt(polygon);
       if (geoJson) {
         operation.geojson = JSON.stringify(geoJson);
-        req.context.spatialHash = hashGeoJson(geoJson);
       }
     } catch (e) {
       if (e instanceof ParameterParseError) {

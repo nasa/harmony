@@ -20,8 +20,7 @@ CREATE TABLE `jobs` (
   `service_name` varchar(255),
   `provider_id` varchar(255),
   `original_data_size` double precision,
-  `output_data_size` double precision,
-  `request_checksum` varchar(255)
+  `output_data_size` double precision
 );
 
 CREATE TABLE `job_links` (

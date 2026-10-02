@@ -12,7 +12,6 @@ import { truncateAll } from '../../../packages/util/test/helpers/db';
 import { Job, JobStatus } from '../app/models/job';
 import JobLink from '../app/models/job-link';
 import db from '../app/util/db';
-import env from '../app/util/env';
 import { defaultObjectStore, objectStoreForProtocol } from '../app/util/object-store';
 
 describe('Backend Callbacks', function () {
@@ -324,19 +323,6 @@ describe('Backend Callbacks', function () {
 
   describe('for asynchronous requests', function () {
     const query = { format: 'image/tiff' };
-
-    // The outer and inner hookHttpBackendEach calls below (and other sub-describes under this
-    // one) issue the identical request for the same (anonymous) user, each expecting to create
-    // its own fresh job. Disable deduplication so they don't collide with each other.
-    let originalDedupeThreshold: number;
-    before(function () {
-      originalDedupeThreshold = env.dedupeThreshold;
-      env.dedupeThreshold = Number.MAX_SAFE_INTEGER;
-    });
-    after(function () {
-      env.dedupeThreshold = originalDedupeThreshold;
-    });
-
     hookHttpBackendEach(function () { return rangesetRequest(this.frontend, '1.0.0', collection, 'all', { query }); });
 
     describe('when a POST body item is received', function () {
