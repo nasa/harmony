@@ -2,6 +2,7 @@ import { exec } from 'child_process';
 import * as path from 'path';
 import util from 'util';
 
+import * as k8s from '@kubernetes/client-node';
 import { Response, NextFunction } from 'express';
 import { v4 as uuid } from 'uuid';
 
@@ -458,8 +459,188 @@ function getLogLocation(deploymentId: string): string {
   return `s3://${env.artifactBucket}/${deploymentId}/log.json`;
 }
 
+const DEPLOY_JOB_NAMESPACE = 'harmony';
+const DEPLOY_JOB_POLL_INTERVAL_MS = 5_000;
+const DEPLOY_JOB_POLL_TIMEOUT_MS = 20 * 60 * 1000;
+
 /**
- *  Execute the deploy service script asynchronously
+ * Save the service deployment log to S3 and update the service_deployment table with the
+ * outcome. Shared by both the EC2 `exec()` path and the EKS `runDeployJob` path.
+ *
+ * @param req - The request object
+ * @param deploymentId - The deployment id
+ * @param succeeded - Whether the deploy script/job completed successfully
+ * @param lines - The lines of log output produced by the deploy script/job
+ */
+async function handleDeployScriptResult(
+  req: HarmonyRequest,
+  deploymentId: string,
+  succeeded: boolean,
+  lines: string[],
+): Promise<void> {
+  const s3 = objectStoreForProtocol('s3');
+  const logLocation = getLogLocation(deploymentId);
+  await s3.upload(JSON.stringify(lines), logLocation);
+
+  const urlRoot = getRequestRoot(req);
+  const logUrl = `${urlRoot}/deployment-logs/${deploymentId}`;
+  if (!succeeded) {
+    lines.forEach(line => {
+      req.context.logger.info(`Failed script output: ${line}`);
+    });
+    await db.transaction(async (tx) => {
+      await setStatusMessage(tx,
+        deploymentId,
+        'failed',
+        `Failed service deployment for deploymentId: ${deploymentId}. See details at: ${logUrl}`);
+    });
+  } else {
+    lines.forEach(line => {
+      req.context.logger.info(`Script output: ${line}`);
+    });
+    // only re-enable the service deployment on successful deployment
+    await enableServiceDeployment(`Re-enable service deployment after successful deployment: ${deploymentId}`);
+    await db.transaction(async (tx) => {
+      await setStatusMessage(tx,
+        deploymentId,
+        'successful',
+        `Deployment successful. See details at: ${logUrl}`);
+    });
+  }
+}
+
+/**
+ * Construct the Kubernetes API clients used to launch and monitor the deploy Job.
+ * Lazily constructed (not at module load) so the EC2 `exec()` path is unaffected
+ * when there is no kubeconfig available.
+ *
+ * @returns the batch and core v1 API clients
+ */
+export function getK8sClients(): { batchApi: k8s.BatchV1Api, coreApi: k8s.CoreV1Api } {
+  const kc = new k8s.KubeConfig();
+  kc.loadFromDefault();
+  return {
+    batchApi: kc.makeApiClient(k8s.BatchV1Api),
+    coreApi: kc.makeApiClient(k8s.CoreV1Api),
+  };
+}
+
+/**
+ * Build the manifest for the Kubernetes Job that runs the deploy script in the
+ * `harmony-ci-cd-deployer` image.
+ *
+ * @param service - The name of the service to deploy
+ * @param tag - The service image tag to deploy
+ * @param regressionTestVersion - The regression test version to run the regression test with
+ * @param deploymentId - The deployment id
+ * @returns the Job manifest
+ */
+export function buildDeployerJobManifest(
+  service: string,
+  tag: string,
+  regressionTestVersion: string,
+  deploymentId: string,
+): k8s.V1Job {
+  return {
+    metadata: {
+      name: `deploy-${service}-${deploymentId.slice(0, 8)}`,
+      namespace: DEPLOY_JOB_NAMESPACE,
+    },
+    spec: {
+      backoffLimit: 0,
+      ttlSecondsAfterFinished: 3600,
+      template: {
+        spec: {
+          restartPolicy: 'Never',
+          serviceAccountName: 'harmony-deployer',
+          containers: [
+            {
+              name: 'deployer',
+              image: env.cicdDeployerImage,
+              args: [service, tag, regressionTestVersion],
+              envFrom: [
+                { configMapRef: { name: 'harmony-env' } },
+                { configMapRef: { name: 'queue-urls-env' } },
+                { secretRef: { name: 'harmony-secrets' } },
+              ],
+              resources: {
+                requests: { cpu: '250m', memory: '512Mi' },
+                limits: { cpu: '1', memory: '1Gi' },
+              },
+            },
+          ],
+        },
+      },
+    },
+  };
+}
+
+/**
+ * Poll a deploy Job until it succeeds or fails, or until the timeout is reached.
+ *
+ * @param batchApi - The Kubernetes batch v1 API client
+ * @param jobName - The name of the Job to poll
+ * @returns a Promise resolving to 'succeeded' or 'failed'
+ */
+async function pollJobStatus(
+  batchApi: k8s.BatchV1Api,
+  jobName: string,
+): Promise<'succeeded' | 'failed'> {
+  const startTime = Date.now();
+  while (Date.now() - startTime < DEPLOY_JOB_POLL_TIMEOUT_MS) {
+    const job = await batchApi.readNamespacedJob({ name: jobName, namespace: DEPLOY_JOB_NAMESPACE });
+    if (job.status?.succeeded) return 'succeeded';
+    if (job.status?.failed) return 'failed';
+    await new Promise((resolve) => setTimeout(resolve, DEPLOY_JOB_POLL_INTERVAL_MS));
+  }
+  throw new Error(`Timed out waiting for job ${jobName} to complete`);
+}
+
+/**
+ * Run the deploy script by launching a Kubernetes Job from the `harmony-ci-cd-deployer`
+ * image, used when the Harmony frontend is running in EKS (`CICD_DEPLOYER_IMAGE` is set).
+ *
+ * @param req - The request object
+ * @param service - The name of the service to deploy
+ * @param tag - The service image tag to deploy
+ * @param deploymentId - The deployment id
+ * @param regressionTestVersion - The regression test version to run the regression test with
+ */
+export async function runDeployJob(
+  req: HarmonyRequest,
+  service: string,
+  tag: string,
+  deploymentId: string,
+  regressionTestVersion: string,
+): Promise<void> {
+  let succeeded = false;
+  let lines: string[] = [];
+  try {
+    const { batchApi, coreApi } = module.exports.getK8sClients();
+    const job = buildDeployerJobManifest(service, tag, regressionTestVersion, deploymentId);
+    await batchApi.createNamespacedJob({ namespace: DEPLOY_JOB_NAMESPACE, body: job });
+    const status = await pollJobStatus(batchApi, job.metadata.name);
+    succeeded = status === 'succeeded';
+    const pods = await coreApi.listNamespacedPod({
+      namespace: DEPLOY_JOB_NAMESPACE,
+      labelSelector: `job-name=${job.metadata.name}`,
+    });
+    const podName = pods.items[0]?.metadata?.name;
+    const log = podName
+      ? await coreApi.readNamespacedPodLog({ name: podName, namespace: DEPLOY_JOB_NAMESPACE })
+      : '';
+    lines = log.split('\n');
+  } catch (e) {
+    req.context.logger.error(`Error running deploy job: ${e.message}`);
+    lines = [`Error running deploy job: ${e.message}`];
+  }
+  await handleDeployScriptResult(req, deploymentId, succeeded, lines);
+}
+
+/**
+ *  Execute the deploy service script asynchronously, either by launching a Kubernetes Job
+ *  from the `harmony-ci-cd-deployer` image (when running in EKS) or by exec-ing a sibling
+ *  `harmony-ci-cd` checkout (when running on EC2).
  *
  * @param req - The request object
  * @param service  - The name of the service to deploy
@@ -474,6 +655,11 @@ export async function execDeployScript(
   deploymentId: string,
   regressionTestVersion: string,
 ): Promise<void> {
+  if (env.cicdDeployerImage) {
+    await module.exports.runDeployJob(req, service, tag, deploymentId, regressionTestVersion);
+    return;
+  }
+
   const currentPath = __dirname;
   const cicdDir = path.join(currentPath, '../../../../../harmony-ci-cd');
 
@@ -487,37 +673,10 @@ export async function execDeployScript(
 
   exec(command, options, async (error, stdout, _stderr) => {
     const lines = stdout.split('\n');
-    // save the service deployment log to S3
-    const s3 = objectStoreForProtocol('s3');
-    const logLocation = getLogLocation(deploymentId);
-    await s3.upload(JSON.stringify(lines), logLocation);
-
-    const urlRoot = getRequestRoot(req);
-    const logUrl = `${urlRoot}/deployment-logs/${deploymentId}`;
     if (error) {
       req.context.logger.error(`Error executing script: ${error.message}`);
-      lines.forEach(line => {
-        req.context.logger.info(`Failed script output: ${line}`);
-      });
-      await db.transaction(async (tx) => {
-        await setStatusMessage(tx,
-          deploymentId,
-          'failed',
-          `Failed service deployment for deploymentId: ${deploymentId}. See details at: ${logUrl}`);
-      });
-    } else {
-      lines.forEach(line => {
-        req.context.logger.info(`Script output: ${line}`);
-      });
-      // only re-enable the service deployment on successful deployment
-      await enableServiceDeployment(`Re-enable service deployment after successful deployment: ${deploymentId}`);
-      await db.transaction(async (tx) => {
-        await setStatusMessage(tx,
-          deploymentId,
-          'successful',
-          `Deployment successful. See details at: ${logUrl}`);
-      });
     }
+    await handleDeployScriptResult(req, deploymentId, !error, lines);
   });
 }
 

@@ -80,6 +80,7 @@
     "@aws-sdk/s3-request-presigner": "^3.972.0",
     "@aws-sdk/util-format-url": "^3.972.0",
     "@harmony/util": "file:../../packages/util",
+    "@kubernetes/client-node": "^1.4.0",
     "@linzjs/geojson": "^7.1.0",
     "@mapbox/geojson-rewind": "^0.5.2",
     "@smithy/hash-node": "^4.2.8",
