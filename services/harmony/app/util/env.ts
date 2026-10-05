@@ -178,6 +178,8 @@ class HarmonyServerEnv extends HarmonyEnv {
 
   locallyDeployedServices: string;
 
+  cicdDeployerImage: string;
+
   labelsAllowList: string;
 
   labelsForbidList: string;
