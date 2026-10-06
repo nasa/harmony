@@ -260,6 +260,24 @@ LOCALLY_DEPLOYED_SERVICES=harmony-service-example
 # when the Harmony frontend itself is running in EKS (tf_deploy_frontend_to_eks=true).
 CICD_DEPLOYER_IMAGE=
 
+# The name of the Harmony deployment environment, e.g. sit, uat, prod. Not used by the Harmony
+# app itself, but must be a recognized env-defaults name so bin/create-k8s-config-maps-and-secrets
+# includes it in the harmony-env ConfigMap - bin/deploy-service (running inside the deployer Job
+# when tf_deploy_frontend_to_eks=true) requires it to be set.
+HARMONY_ENVIRONMENT=
+
+# Not used by the Harmony app itself, but must be a recognized env-defaults name so
+# bin/create-k8s-config-maps-and-secrets includes it in the harmony-env ConfigMap -
+# bin/deploy-service (running inside the deployer Job) checks this directly to decide how to
+# notify instances of a completed service deployment.
+tf_deploy_frontend_to_eks=
+
+# Not used by the Harmony app itself, but must be a recognized env-defaults name so
+# bin/create-k8s-config-maps-and-secrets includes it in the harmony-env ConfigMap -
+# bin/deploy-service (running inside the deployer Job) forwards any tf_* env var into
+# terraform's main.auto.tfvars, so this needs to reach the Job's environment.
+tf_deletion_protection=
+
 # Local development: Use the following to set the Kubernetes context used by start scripts
 # minikube users should set it to "minikube"
 KUBE_CONTEXT=docker-desktop

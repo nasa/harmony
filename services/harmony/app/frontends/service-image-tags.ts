@@ -548,7 +548,7 @@ export function buildDeployerJobManifest(
     },
     spec: {
       backoffLimit: 0,
-      ttlSecondsAfterFinished: 3600,
+      ttlSecondsAfterFinished: 60,
       template: {
         spec: {
           restartPolicy: 'Never',
