@@ -303,7 +303,7 @@ describe('buildDeployerJobManifest', function () {
     expect(job.metadata.name).to.equal(`deploy-harmony-service-example-${deploymentId.slice(0, 8)}`);
     expect(job.metadata.namespace).to.equal('harmony');
     expect(job.spec.backoffLimit).to.equal(0);
-    expect(job.spec.ttlSecondsAfterFinished).to.equal(3600);
+    expect(job.spec.ttlSecondsAfterFinished).to.equal(60);
 
     const podSpec = job.spec.template.spec;
     expect(podSpec.restartPolicy).to.equal('Never');
