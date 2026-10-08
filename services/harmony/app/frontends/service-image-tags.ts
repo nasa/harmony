@@ -462,6 +462,9 @@ function getLogLocation(deploymentId: string): string {
 const DEPLOY_JOB_NAMESPACE = 'harmony';
 const DEPLOY_JOB_POLL_INTERVAL_MS = 5_000;
 const DEPLOY_JOB_POLL_TIMEOUT_MS = 20 * 60 * 1000;
+// Kubernetes Job names (and the `job-name` label applied to their pods) must be valid
+// DNS-1123 labels, which are limited to 63 characters.
+const K8S_NAME_MAX_LENGTH = 63;
 
 /**
  * Save the service deployment log to S3 and update the service_deployment table with the
@@ -480,7 +483,11 @@ async function handleDeployScriptResult(
 ): Promise<void> {
   const s3 = objectStoreForProtocol('s3');
   const logLocation = getLogLocation(deploymentId);
-  await s3.upload(JSON.stringify(lines), logLocation);
+  try {
+    await s3.upload(JSON.stringify(lines), logLocation);
+  } catch (e) {
+    req.context.logger.error(`Failed to upload deployment log to ${logLocation}: ${e.message}`);
+  }
 
   const urlRoot = getRequestRoot(req);
   const logUrl = `${urlRoot}/deployment-logs/${deploymentId}`;
@@ -541,9 +548,13 @@ export function buildDeployerJobManifest(
   regressionTestVersion: string,
   deploymentId: string,
 ): k8s.V1Job {
+  const prefix = 'deploy-';
+  const suffix = `-${deploymentId.slice(0, 8)}`;
+  const maxServiceLength = K8S_NAME_MAX_LENGTH - prefix.length - suffix.length;
+  const truncatedService = service.slice(0, maxServiceLength).replace(/-+$/, '');
   return {
     metadata: {
-      name: `deploy-${service}-${deploymentId.slice(0, 8)}`,
+      name: `${prefix}${truncatedService}${suffix}`,
       namespace: DEPLOY_JOB_NAMESPACE,
     },
     spec: {
@@ -615,15 +626,28 @@ export async function runDeployJob(
 ): Promise<void> {
   let succeeded = false;
   let lines: string[] = [];
+  let batchApi: k8s.BatchV1Api;
+  let jobName: string;
+  // `jobCreated` is true once the Job has been successfully submitted to the cluster.
+  // `jobStatusKnown` becomes true once `pollJobStatus` has returned a terminal status for it.
+  // If we throw after creation but before a terminal status is known (e.g. a poll timeout),
+  // the Job may still be running on the cluster.
+  let jobCreated = false;
+  let jobStatusKnown = false;
   try {
-    const { batchApi, coreApi } = module.exports.getK8sClients();
+    const clients = module.exports.getK8sClients();
+    ({ batchApi } = clients);
+    const { coreApi } = clients;
     const job = buildDeployerJobManifest(service, tag, regressionTestVersion, deploymentId);
+    jobName = job.metadata.name;
     await batchApi.createNamespacedJob({ namespace: DEPLOY_JOB_NAMESPACE, body: job });
-    const status = await pollJobStatus(batchApi, job.metadata.name);
+    jobCreated = true;
+    const status = await pollJobStatus(batchApi, jobName);
+    jobStatusKnown = true;
     succeeded = status === 'succeeded';
     const pods = await coreApi.listNamespacedPod({
       namespace: DEPLOY_JOB_NAMESPACE,
-      labelSelector: `job-name=${job.metadata.name}`,
+      labelSelector: `job-name=${jobName}`,
     });
     const podName = pods.items[0]?.metadata?.name;
     const log = podName
@@ -633,6 +657,21 @@ export async function runDeployJob(
   } catch (e) {
     req.context.logger.error(`Error running deploy job: ${e.message}`);
     lines = [`Error running deploy job: ${e.message}`];
+    // The Job may still be running, e.g. if we gave up polling after a timeout. Delete it
+    // so it cannot keep running and deploy the service after we have already recorded failure.
+    // Skip this if the Job already reached a terminal status (a later step, such as reading
+    // the pod log, failed) or if it was never successfully created.
+    if (jobCreated && !jobStatusKnown) {
+      try {
+        await batchApi.deleteNamespacedJob({
+          name: jobName,
+          namespace: DEPLOY_JOB_NAMESPACE,
+          propagationPolicy: 'Background',
+        });
+      } catch (deleteError) {
+        req.context.logger.error(`Error deleting deploy job ${jobName}: ${deleteError.message}`);
+      }
+    }
   }
   await handleDeployScriptResult(req, deploymentId, succeeded, lines);
 }
