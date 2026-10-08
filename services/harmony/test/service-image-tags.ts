@@ -135,6 +135,7 @@ function fakeDeployRequest(): HarmonyRequest {
 function fakeK8sClients(overrides: {
   createNamespacedJob?: sinon.SinonStub,
   readNamespacedJob?: sinon.SinonStub,
+  deleteNamespacedJob?: sinon.SinonStub,
   listNamespacedPod?: sinon.SinonStub,
   readNamespacedPodLog?: sinon.SinonStub,
 } = {}): { batchApi: k8s.BatchV1Api, coreApi: k8s.CoreV1Api } {
@@ -142,6 +143,7 @@ function fakeK8sClients(overrides: {
     batchApi: {
       createNamespacedJob: overrides.createNamespacedJob || sinon.stub().resolves({}),
       readNamespacedJob: overrides.readNamespacedJob || sinon.stub().resolves({ status: { succeeded: 1 } }),
+      deleteNamespacedJob: overrides.deleteNamespacedJob || sinon.stub().resolves({}),
     },
     coreApi: {
       listNamespacedPod: overrides.listNamespacedPod ||
@@ -1766,13 +1768,16 @@ describe('runDeployJob', function () {
 
   describe('when creating the Job fails (e.g. RBAC denial)', function () {
     let deploymentId: string;
+    let deleteNamespacedJobStub: sinon.SinonStub;
 
     beforeEach(async function () {
       deploymentId = uuid();
       await createRunningDeployment(deploymentId);
 
+      deleteNamespacedJobStub = sinon.stub().resolves({});
       getK8sClientsStub = sinon.stub(serviceImageTags, 'getK8sClients').returns(fakeK8sClients({
         createNamespacedJob: sinon.stub().rejects(new Error('jobs.batch is forbidden: User cannot create resource')),
+        deleteNamespacedJob: deleteNamespacedJobStub,
       }));
 
       await serviceImageTags.runDeployJob(
@@ -1786,18 +1791,25 @@ describe('runDeployJob', function () {
       });
       expect(deployment.status).to.equal('failed');
     });
+
+    it('does not attempt to delete a Job that was never created', function () {
+      expect(deleteNamespacedJobStub.called).to.be.false;
+    });
   });
 
   describe('when the Job polling times out', function () {
     let deploymentId: string;
     let clock: sinon.SinonFakeTimers;
+    let deleteNamespacedJobStub: sinon.SinonStub;
 
     beforeEach(async function () {
       deploymentId = uuid();
       await createRunningDeployment(deploymentId);
 
+      deleteNamespacedJobStub = sinon.stub().resolves({});
       getK8sClientsStub = sinon.stub(serviceImageTags, 'getK8sClients').returns(fakeK8sClients({
         readNamespacedJob: sinon.stub().resolves({ status: {} }),
+        deleteNamespacedJob: deleteNamespacedJobStub,
       }));
     });
 
@@ -1825,6 +1837,20 @@ describe('runDeployJob', function () {
       const logs = await objectStoreForProtocol('s3')
         .getObjectJson(`s3://${env.artifactBucket}/${deploymentId}/log.json`) as string[];
       expect(logs.some((line) => line.includes('Timed out waiting for job'))).to.be.true;
+    });
+
+    it('deletes the still-running Job so it cannot deploy the service after the fact', async function () {
+      clock = sinon.useFakeTimers();
+      const runPromise = serviceImageTags.runDeployJob(
+        fakeDeployRequest(), 'harmony-service-example', 'foo', deploymentId, 'latest');
+      await clock.tickAsync(21 * 60 * 1000);
+      await runPromise;
+
+      expect(deleteNamespacedJobStub.calledOnce).to.be.true;
+      const call = deleteNamespacedJobStub.getCall(0).args[0];
+      expect(call.namespace).to.equal('harmony');
+      expect(call.propagationPolicy).to.equal('Background');
+      expect(call.name).to.match(/^deploy-harmony-service-example-/);
     });
   });
 });
