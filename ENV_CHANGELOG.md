@@ -2,6 +2,10 @@
 Any changes to the environment variables will be documented in this file in chronological
 order with the most recent changes first.
 
+## 2026-10-20
+### Added
+- `VARIABLE_FAN_OUT` default variables added to support image and queues.
+
 ## 2026-10-15
 ### Added
 - ANALYTICS_UPDATE_PAGE_SIZE - the number of rows read from Postgres at a time while building each batch
