@@ -1599,7 +1599,7 @@ describe('Service self-deployment failure', async function () {
 describe('execDeployScript dispatcher', async function () {
   hookServersStartStop({ USE_EDL_CLIENT_APP: true });
 
-  describe('when cicdDeployerImage is not set (EC2 path)', function () {
+  describe('when tfDeployFrontendToEks is not set (EC2 path)', function () {
     let envCicdStub;
     let runDeployJobStub: sinon.SinonStub;
     let execStub;
@@ -1612,7 +1612,7 @@ describe('execDeployScript dispatcher', async function () {
     });
 
     before(async function () {
-      envCicdStub = stub(env, 'cicdDeployerImage').get(() => undefined);
+      envCicdStub = stub(env, 'tfDeployFrontendToEks').get(() => false);
       runDeployJobStub = sinon.stub(serviceImageTags, 'runDeployJob');
       execStub = sinon.stub(serviceImageTags, 'asyncExec').callsFake(() => Promise.resolve({}));
 

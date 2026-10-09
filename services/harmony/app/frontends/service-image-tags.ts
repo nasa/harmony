@@ -694,7 +694,7 @@ export async function execDeployScript(
   deploymentId: string,
   regressionTestVersion: string,
 ): Promise<void> {
-  if (env.cicdDeployerImage) {
+  if (env.tfDeployFrontendToEks) {
     await module.exports.runDeployJob(req, service, tag, deploymentId, regressionTestVersion);
     return;
   }

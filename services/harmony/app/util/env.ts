@@ -180,6 +180,9 @@ class HarmonyServerEnv extends HarmonyEnv {
 
   cicdDeployerImage: string;
 
+  @IsBoolean()
+  tfDeployFrontendToEks: boolean;
+
   labelsAllowList: string;
 
   labelsForbidList: string;
