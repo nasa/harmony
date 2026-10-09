@@ -1,0 +1,32 @@
+#!/bin/bash
+#
+# Builds, logs in, and pushes a service's docker image to ECR.
+# Usage: push-image <image> [tag]
+
+set -ex
+
+image=$1
+tag=${2:-latest}
+
+if [ -z "${image}" ]; then
+  echo "Usage: $(basename "$0") <image> [tag]" >&2
+  exit 1
+fi
+
+region=${AWS_DEFAULT_REGION-"us-west-2"}
+
+account=$(aws sts get-caller-identity --output text --query 'Account')
+# Need to remove \r returned on all aws commands run from Bamboo
+account=${account//$'\r'/}
+
+# Disable xtrace so the password is never written to logs or stored in a variable/argument
+set +x
+aws ecr get-login-password --region "${region}" | tr -d '\r' | docker login --username AWS --password-stdin ${account}.dkr.ecr.${region}.amazonaws.com
+set -x
+
+docker tag ${image}:${tag} ${account}.dkr.ecr.${region}.amazonaws.com/${image}:${tag}
+
+# Create ECR repo if it doesn't exist
+aws ecr describe-repositories --repository-names ${image} --region "${region}" || aws ecr create-repository --repository-name ${image} --region "${region}"
+
+docker push ${account}.dkr.ecr.${region}.amazonaws.com/${image}:${tag}
