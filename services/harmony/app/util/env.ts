@@ -178,6 +178,15 @@ class HarmonyServerEnv extends HarmonyEnv {
 
   locallyDeployedServices: string;
 
+  cicdDeployerImage: string;
+
+  harmonyEnvironment: string;
+
+  deletionProtection: boolean;
+
+  @IsBoolean()
+  tfDeployFrontendToEks: boolean;
+
   labelsAllowList: string;
 
   labelsForbidList: string;

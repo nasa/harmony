@@ -5,4 +5,4 @@
 set -e
 
 repo_root="$(cd "$(dirname "$0")/../../.." && pwd)"
-exec "${repo_root}/bin/push-image" harmonyservices/cron-service "$@"
+exec "${repo_root}/bin/push-image" harmonyservices/harmony "$@"

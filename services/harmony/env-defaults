@@ -255,6 +255,12 @@ LOG_STDOUT=false
 # the service will fail to start.
 LOCALLY_DEPLOYED_SERVICES=harmony-service-example
 
+# True when the Harmony frontend itself is running in EKS. In that case, service deployments
+# (PUT /service-image-tag/<service>) are performed by launching a Kubernetes Job instead of
+# exec-ing a sibling harmony-ci-cd checkout. bin/deploy-service (running inside the deployer
+# Job) checks this directly to decide how to notify instances of a completed service deployment.
+tf_deploy_frontend_to_eks=false
+
 # Local development: Use the following to set the Kubernetes context used by start scripts
 # minikube users should set it to "minikube"
 KUBE_CONTEXT=docker-desktop
