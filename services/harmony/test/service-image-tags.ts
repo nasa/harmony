@@ -286,15 +286,15 @@ describe('ecrImageNameToComponents', function () {
 });
 
 describe('buildDeployerJobManifest', function () {
-  let envCicdStub;
+  let originalCicdDeployerImage;
 
   beforeEach(function () {
-    envCicdStub = stub(env, 'cicdDeployerImage').get(
-      () => '123456789012.dkr.ecr.us-west-2.amazonaws.com/harmonyservices/harmony-ci-cd-deployer:latest');
+    originalCicdDeployerImage = env.cicdDeployerImage;
+    env.cicdDeployerImage = '123456789012.dkr.ecr.us-west-2.amazonaws.com/harmonyservices/harmony-ci-cd-deployer:latest';
   });
 
   afterEach(function () {
-    envCicdStub.restore();
+    env.cicdDeployerImage = originalCicdDeployerImage;
   });
 
   it('builds a Job manifest with the expected shape', function () {
@@ -1655,16 +1655,16 @@ describe('execDeployScript dispatcher', async function () {
 });
 
 describe('runDeployJob', function () {
-  let envCicdStub;
+  let originalCicdDeployerImage;
   let getK8sClientsStub: sinon.SinonStub;
 
   beforeEach(function () {
-    envCicdStub = stub(env, 'cicdDeployerImage').get(
-      () => '123456789012.dkr.ecr.us-west-2.amazonaws.com/harmonyservices/harmony-ci-cd-deployer:latest');
+    originalCicdDeployerImage = env.cicdDeployerImage;
+    env.cicdDeployerImage = '123456789012.dkr.ecr.us-west-2.amazonaws.com/harmonyservices/harmony-ci-cd-deployer:latest';
   });
 
   afterEach(async function () {
-    envCicdStub.restore();
+    env.cicdDeployerImage = originalCicdDeployerImage;
     if (getK8sClientsStub) {
       getK8sClientsStub.restore();
       getK8sClientsStub = undefined;
