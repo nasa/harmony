@@ -1,6 +1,6 @@
 import * as path from 'path';
 
-import { IsBoolean, IsInt, IsNotEmpty, IsPositive, Matches, Max, Min } from 'class-validator';
+import { IsBoolean, IsInt, IsNotEmpty, IsNumber, IsPositive, Matches, Max, Min } from 'class-validator';
 import _ from 'lodash';
 
 import { HarmonyEnv, memorySizeRegex } from '@harmony/util/env';
@@ -203,6 +203,15 @@ class HarmonyServerEnv extends HarmonyEnv {
 
   @IsBoolean()
   allowServiceSelection: boolean;
+
+  @IsInt()
+  @Min(0)
+  slowWorkThresholdMs: number;
+
+  @IsNumber()
+  @Min(0)
+  @Max(1)
+  fastLaneReserveFraction: number;
 }
 
 const localPath = path.resolve(__dirname, '../../env-defaults');

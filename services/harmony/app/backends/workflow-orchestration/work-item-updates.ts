@@ -14,6 +14,7 @@ import JobMessage, {
 import {
   decrementRunningCount, deleteUserWorkForJob, deleteUserWorkForJobAndService,
   incrementReadyAndDecrementRunningCounts, incrementReadyCount, setReadyCountToZero,
+  updateAverageDurationForService,
 } from '../../models/user-work';
 import WorkItem, {
   countOfWorkItemsByStepAndJobID, getWorkItemById, getWorkItemsByJobIdAndStepIndex,
@@ -813,6 +814,7 @@ export async function processWorkItem(
     if (COMPLETED_WORK_ITEM_STATUSES.includes(status)) {
       thisStep.completed_work_item_count += 1;
       await thisStep.save(tx);
+      await updateAverageDurationForService(tx, jobID, workItem.serviceID, duration);
     }
 
     await (await logAsyncExecutionTime(

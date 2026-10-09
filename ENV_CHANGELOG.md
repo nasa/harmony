@@ -14,6 +14,13 @@ order with the most recent changes first.
   its actual memory use runs higher, and it shares the container's memory with Node - it must stay well
   under CRON_SERVICE_LIMITS_MEMORY to avoid the container being OOM killed.
 
+## 2026-10-09
+### Added
+- SLOW_WORK_THRESHOLD_MS - average work item duration (in ms), per job and service, above which a
+  job and service's work items are classified as "slow" for fair queueing's fast lane reserve.
+- FAST_LANE_RESERVE_FRACTION - fraction of a service's running pod count held back for "fast" work
+  only once the service's in-flight work reaches that threshold. See `docs/fair-queueing.md`.
+
 ## 2026-10-01
 ### Changed
 - HYBIG_LIMITS_MEMORY - Increased to 12Gi to handle large polar-projected granules in NISAR collections.

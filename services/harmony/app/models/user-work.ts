@@ -1,6 +1,13 @@
+import { Knex } from 'knex';
+
 import Record from './record';
 import WorkItem from './work-item';
 import db, { Transaction } from '../util/db';
+import env from '../util/env';
+
+// Expected runtime (in ms) assumed for in-progress work with no measured average_duration yet,
+// used only for ranking users by total expected runtime
+const DEFAULT_EXPECTED_DURATION_MS = 60 * 60 * 1000;
 
 /**
  *
@@ -30,6 +37,13 @@ export default class UserWork extends Record {
 
   // the time the job was last worked
   last_worked: Date;
+
+  // the mean duration (in ms) of completed work items for this job and service, or null until
+  // the first work item for this job and service has completed
+  average_duration: number;
+
+  // the number of completed work items factored into average_duration so far
+  completed_count: number;
 }
 
 /**
@@ -51,29 +65,78 @@ export async function getQueuedOrRunningCountForService(tx: Transaction, service
 }
 
 /**
- * Gets the next username that should have a work item worked for the given service ID
- * SELECT username, SUM("u"."running_count") as s from user_work u WHERE username in
- * (SELECT DISTINCT username FROM user_work u WHERE "u"."service_id" = 'SERVICE' AND "u"."ready_count" \> 0)
- * GROUP BY username order by s, max(last_worked) asc LIMIT 1;
-
+ * Returns true if the service's reserved fast lane capacity has been reached, i.e. the number
+ * of work items currently running for the service is at or above
+ * `ceil(servicePodCount * (1 - env.fastLaneReserveFraction))`. While true, only work items
+ * classified as "fast" should be scheduled, so that short work keeps flowing even while slow
+ * work saturates the rest of the service.
  * @param tx - The database transaction
  * @param serviceID - The ID of the service
+ * @param servicePodCount - The number of pods currently running for the service (its capacity)
+ * @returns true if only fast work should be scheduled for the service
+ */
+async function isFastLaneOnly(
+  tx: Transaction, serviceID: string, servicePodCount: number,
+): Promise<boolean> {
+  const fastLaneThresholdCount = Math.ceil(servicePodCount * (1 - env.fastLaneReserveFraction));
+  const row = await tx(UserWork.table)
+    .where('service_id', serviceID)
+    .sum({ inUseCount: 'running_count' })
+    .first();
+  const inUseCount = Number(row?.inUseCount) || 0;
+  return inUseCount >= fastLaneThresholdCount;
+}
+
+/**
+ * Restricts a user_work query to rows classified as "fast": those with a measured
+ * average_duration at or below the slow work threshold, or that have never had a work item
+ * dispatched for this job and service (so Harmony can measure a new job's duration without
+ * letting it fill the reserved fast lane capacity).
+ * @param query - A knex query builder for the user_work table to restrict in place
+ */
+function restrictToFastWork(query: Knex.QueryBuilder): void {
+  query.andWhere(function (this: Knex.QueryBuilder) {
+    this.where('average_duration', '<=', env.slowWorkThresholdMs)
+      .orWhere(function (this: Knex.QueryBuilder) {
+        this.whereNull('average_duration')
+          .andWhere('running_count', 0)
+          .andWhere('completed_count', 0);
+      });
+  });
+}
+
+/**
+ * Gets the next username that should have a work item worked for the given service ID.
+ * Ranks eligible users by the expected runtime of their in-progress work (running_count times
+ * average_duration, or a default duration when unmeasured) across all services, breaking ties
+ * by the user who least recently had work performed. When the service's fast lane reserve
+ * capacity has been reached, only users with ready "fast" work for the service are eligible.
+ * @param tx - The database transaction
+ * @param serviceID - The ID of the service
+ * @param servicePodCount - The number of pods currently running for the service (its capacity)
  * @returns The username that should have a work item worked next
  */
-export async function getNextUsernameForWork(tx: Transaction, serviceID: string)
-  : Promise<string> {
+export async function getNextUsernameForWork(
+  tx: Transaction, serviceID: string, servicePodCount: number,
+): Promise<string> {
+  const fastLaneOnly = await isFastLaneOnly(tx, serviceID, servicePodCount);
+
   const subquery = tx(UserWork.table)
     .distinct('username')
     .where('service_id', '=', serviceID)
     .where('ready_count', '>', 0);
 
+  if (fastLaneOnly) {
+    restrictToFastWork(subquery);
+  }
+
   const results = await tx(UserWork.table)
     .select('username')
     .max('last_worked as lw')
-    .sum('running_count as rc')
+    .select(tx.raw('SUM(running_count * COALESCE(average_duration, ?)) as expected_runtime', [DEFAULT_EXPECTED_DURATION_MS]))
     .whereIn('username', subquery)
     .groupBy('username')
-    .orderBy('rc', 'asc')
+    .orderBy('expected_runtime', 'asc')
     .orderBy('lw', 'asc')
     .first();
 
@@ -81,62 +144,106 @@ export async function getNextUsernameForWork(tx: Transaction, serviceID: string)
 }
 
 /**
- * Gets the next job to work on for the given username and service ID.
- * select job_id from user_work where username = <username> and ready_count \> 0 order by last_worked asc limit 1
+ * Gets the next job to work on for the given username and service ID. When the service's fast
+ * lane reserve capacity has been reached, only jobs with ready "fast" work for the service are
+ * considered.
  * @param tx - The database transaction
  * @param serviceID - The ID of the service
  * @param username - The username to choose a job to work on
+ * @param servicePodCount - The number of pods currently running for the service (its capacity)
  * @returns The job ID that should have a work item worked next for the service
  */
-export async function getNextJobIdForUsernameAndService(tx: Transaction, serviceID: string, username: string)
-  : Promise<string> {
-  const results = await tx(UserWork.table)
+export async function getNextJobIdForUsernameAndService(
+  tx: Transaction, serviceID: string, username: string, servicePodCount: number,
+): Promise<string> {
+  const fastLaneOnly = await isFastLaneOnly(tx, serviceID, servicePodCount);
+
+  const query = tx(UserWork.table)
     .select('job_id')
     .where({ username, service_id: serviceID })
-    .where('ready_count', '>', 0)
+    .where('ready_count', '>', 0);
+
+  if (fastLaneOnly) {
+    restrictToFastWork(query);
+  }
+
+  const results = await query
     .orderBy('is_async', 'asc')
     .orderBy('last_worked', 'asc')
     .first();
 
-  return results.job_id;
+  return results?.job_id;
 }
 
 /**
  * Returns the jobIds with the oldest last_worked value and ready count greater than 0 and interleaved by username.
- * This query enforces the fair queueing by returning the job ids in the order of fair queueing priority.
+ * This query enforces the fair queueing by returning the job ids in the order of fair queueing priority:
+ * users are grouped into interleaving "rounds" (one job per user per round, oldest-worked job first within
+ * each user), and rounds/users are ordered by each user's expected runtime of in-progress work (across all
+ * services) rather than by recency alone. When the service's fast lane reserve capacity has been reached,
+ * only jobs classified as "fast" for the service are considered - see isFastLaneOnly/restrictToFastWork.
  * @param tx - The database transaction
  * @param serviceID - The service ID
  * @param batchSize - The batch size
+ * @param servicePodCount - The number of pods currently running for the service (its capacity)
  * @returns The list of job ids in fair queuring priority
  */
 export async function getNextJobIds(
   tx: Transaction,
   serviceID: string,
   batchSize: number,
+  servicePodCount: number,
 ): Promise<string[]> {
+  const fastLaneThresholdCount = Math.ceil(servicePodCount * (1 - env.fastLaneReserveFraction));
+
   const sql = `
-    WITH RankedJobs AS (
-      SELECT
-        job_id,
-        last_worked,
-        username,
-        is_async,
-        ROW_NUMBER() OVER (
-          PARTITION BY username
-          ORDER BY last_worked ASC
-        ) AS user_row_num
+    WITH ServiceCapacity AS (
+      SELECT COALESCE(SUM(running_count), 0) AS in_use_count
       FROM user_work
       WHERE service_id = ?
-        AND ready_count > 0
+    ),
+    Eligible AS (
+      SELECT uw.job_id, uw.last_worked, uw.username, uw.is_async
+      FROM user_work uw
+      CROSS JOIN ServiceCapacity sc
+      WHERE uw.service_id = ?
+        AND uw.ready_count > 0
+        AND (
+          sc.in_use_count < ?
+          OR (uw.average_duration IS NOT NULL AND uw.average_duration <= ?)
+          OR (uw.average_duration IS NULL AND uw.running_count = 0 AND uw.completed_count = 0)
+        )
+    ),
+    UserRank AS (
+      SELECT
+        username,
+        SUM(running_count * COALESCE(average_duration, ?)) AS expected_runtime,
+        MAX(last_worked) AS most_recent_worked
+      FROM user_work
+      WHERE username IN (SELECT DISTINCT username FROM Eligible)
+      GROUP BY username
+    ),
+    RankedJobs AS (
+      SELECT
+        e.job_id,
+        e.last_worked,
+        e.username,
+        e.is_async,
+        ROW_NUMBER() OVER (
+          PARTITION BY e.username
+          ORDER BY e.last_worked ASC
+        ) AS user_row_num
+      FROM Eligible e
     ),
     Interleaved AS (
       SELECT
         R.job_id,
         R.is_async,
         ROW_NUMBER() OVER (
-          ORDER BY R.user_row_num, R.last_worked ASC
+          ORDER BY R.user_row_num ASC, ur.expected_runtime ASC, ur.most_recent_worked ASC, R.last_worked ASC
         ) AS overall_row_num
       FROM RankedJobs R
+      JOIN UserRank ur ON ur.username = R.username
     )
     SELECT uw.job_id
     FROM user_work uw
@@ -150,6 +257,10 @@ export async function getNextJobIds(
 
   const results = await tx.raw(sql, [
     serviceID,
+    serviceID,
+    fastLaneThresholdCount,
+    env.slowWorkThresholdMs,
+    DEFAULT_EXPECTED_DURATION_MS,
     serviceID,
     batchSize,
   ]);
@@ -386,6 +497,30 @@ export async function decrementRunningCount(
     .where({ job_id: jobID, service_id: serviceID })
     .update({
       running_count: tx.raw('CASE WHEN running_count > 0 THEN running_count - 1 ELSE 0 END'),
+    });
+}
+
+/**
+ * Updates the cumulative mean duration (in ms) of completed work items for the given job and
+ * service, incorporating the just-completed work item's duration. This is on the hot work item
+ * update path, so it's done as a single UPDATE (using the row's pre-update values in the SET
+ * expression) rather than a SELECT followed by an UPDATE, to avoid an extra database round trip.
+ * @param tx - The database transaction
+ * @param jobID - The job ID
+ * @param serviceID - The ID of the service
+ * @param durationMs - The duration (in ms) of the just-completed work item
+ */
+export async function updateAverageDurationForService(
+  tx: Transaction, jobID: string, serviceID: string, durationMs: number,
+): Promise<void> {
+  await tx(UserWork.table)
+    .where({ job_id: jobID, service_id: serviceID })
+    .update({
+      average_duration: tx.raw(
+        'ROUND((COALESCE(average_duration, 0) * completed_count + ?) * 1.0 / (completed_count + 1))',
+        [durationMs],
+      ),
+      completed_count: tx.raw('completed_count + 1'),
     });
 }
 

@@ -3,10 +3,11 @@ import { describe, it } from 'mocha';
 
 import { truncateAll } from '../../../../packages/util/test/helpers/db';
 import { JobRecord } from '../../app/models/job';
-import { populateUserWorkFromWorkItems } from '../../app/models/user-work';
+import UserWork, { populateUserWorkFromWorkItems } from '../../app/models/user-work';
 import { WorkItemRecord } from '../../app/models/work-item-interface';
 import db from '../../app/util/db';
 import { makePartialJobRecord, rawSaveJob } from '../helpers/jobs';
+import { setTestServicePodCount } from '../helpers/queue';
 import hookServersStartStop from '../helpers/servers';
 import { getWorkForService, makePartialWorkItemRecord, rawSaveWorkItem } from '../helpers/work-items';
 import { makePartialWorkflowStepRecord, rawSaveWorkflowStep } from '../helpers/workflow-steps';
@@ -162,6 +163,85 @@ describe('Fair Queueing', function () {
     });
     it('returns a 404 status when no work is available', function () {
       expect(results[5].status).to.equal(404);
+    });
+  });
+
+  describe('When the fast lane reserve capacity has been reached for a service', async function () {
+    // SlowUser's two running work items saturate the (simulated) 2-pod capacity for 'foo', so
+    // only "fast" work - a measured fast job, and a never-before-attempted job that gets a
+    // chance to be measured - should be eligible. A job already measured as slow should not.
+    const jobData2 = [
+      // jobID, username, status, isAsync, updatedAt
+      ['slowJob', 'SlowUser', 'running', true, 10000],
+      ['fastJob', 'FastUser', 'accepted', true, 10001],
+      ['newJob', 'NewUser', 'accepted', true, 10002],
+      ['knownSlowJob', 'KnownSlowUser', 'accepted', true, 10003],
+    ];
+
+    const workflowStepData2 = [
+      ['slowJob', 'foo', '[]'],
+      ['fastJob', 'foo', '[]'],
+      ['newJob', 'foo', '[]'],
+      ['knownSlowJob', 'foo', '[]'],
+    ];
+
+    const workItemData2 = [
+      // jobID, serviceID, status, updatedAt
+      ['slowJob', 'foo', 'running', 10000],
+      ['slowJob', 'foo', 'running', 10000],
+      ['fastJob', 'foo', 'ready', 10001],
+      ['newJob', 'foo', 'ready', 10002],
+      ['knownSlowJob', 'foo', 'ready', 10003],
+    ];
+
+    const jobRecords = jobData2.map(makePartialJobRecord);
+    const workflowStepRecords = workflowStepData2.map(makePartialWorkflowStepRecord);
+    const workItemRecords = workItemData2.map(makePartialWorkItemRecord);
+
+    before(truncateAll);
+    after(truncateAll);
+    after(() => setTestServicePodCount());
+    const results = [];
+    before(async function () {
+      await Promise.all(jobRecords.map(async (rec: Partial<JobRecord>) => {
+        await rawSaveJob(db, rec);
+      }));
+      await Promise.all(workflowStepRecords.map(async (rec: Partial<JobRecord>) => {
+        await rawSaveWorkflowStep(db, rec);
+      }));
+      await Promise.all(workItemRecords.map(async (rec: WorkItemRecord) => {
+        await rawSaveWorkItem(db, rec);
+      }));
+
+      await populateUserWorkFromWorkItems(db);
+
+      // mark slowJob and knownSlowJob as already measured to be slower than the threshold;
+      // fastJob is measured as fast; newJob is left unmeasured (average_duration null,
+      // completed_count 0) to exercise the "give new work a chance to be measured" exception
+      await db(UserWork.table).where({ job_id: 'slowJob' }).update({ average_duration: 700000, completed_count: 1 });
+      await db(UserWork.table).where({ job_id: 'knownSlowJob' }).update({ average_duration: 700000, completed_count: 1 });
+      await db(UserWork.table).where({ job_id: 'fastJob' }).update({ average_duration: 1000, completed_count: 1 });
+
+      // simulate a 2-pod capacity for the 'foo' service so that SlowUser's 2 running items
+      // saturate it and trigger the fast lane reserve
+      setTestServicePodCount(2);
+
+      for (let count = 0; count < 3; count++) {
+        const result = await getWorkForService(this.backend, 'foo');
+        results.push(result);
+      }
+    });
+
+    it('returns the measured fast job before the never-before-attempted job', function () {
+      expect(results[0].body.workItem.jobID).to.equal('fastJob');
+    });
+
+    it('returns the never-before-attempted job next, giving it a chance to be measured', function () {
+      expect(results[1].body.workItem.jobID).to.equal('newJob');
+    });
+
+    it('does not return the job already measured as slow, even though it still has ready work', function () {
+      expect(results[2].status).to.equal(404);
     });
   });
 });

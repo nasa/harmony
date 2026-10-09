@@ -159,6 +159,8 @@ CREATE TABLE `user_work` (
   `job_id` char(36) not null,
   `is_async` boolean,
   `last_worked` datetime not null,
+  `average_duration` integer,
+  `completed_count` integer not null default 0,
   `createdAt` datetime not null,
   `updatedAt` datetime not null,
   FOREIGN KEY(job_id) REFERENCES jobs(jobID),
