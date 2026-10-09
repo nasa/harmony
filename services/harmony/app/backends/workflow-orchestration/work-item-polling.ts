@@ -79,17 +79,20 @@ function shuffleArray<T>(array: T[]): T[] {
  * @param serviceID - the id of the service to get work for
  * @param reqLogger - a logger instance
  * @param batchSize - the maximum number of work items to return
+ * @param servicePodCount - the number of pods currently running for the service (its capacity),
+ * used to determine when the fast lane reserve capacity has been reached
  * @returns work items from the database for the given service ID
  */
 export async function getWorkItemsFromDatabase(
   serviceID: string,
   reqLogger: Logger,
   batchSize: number,
+  servicePodCount: number,
 ): Promise<WorkItemData[]> {
   const workItems: WorkItemData[] = [];
   try {
     await db.transaction(async (tx) => {
-      const jobIds = await getNextJobIds(tx, serviceID, batchSize);
+      const jobIds = await getNextJobIds(tx, serviceID, batchSize, servicePodCount);
       const shuffledJobIds = shuffleArray(jobIds);
 
       let remainingNumOfJobs = jobIds.length;

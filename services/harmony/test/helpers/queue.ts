@@ -14,6 +14,22 @@ import * as qf from '../../app/util/queue/queue-factory';
 let serviceQueues;
 let typeQueues;
 
+// The service pod count ("capacity") to use when exercising fair queueing in tests, since there
+// is no real k8s cluster to query. Defaults high enough that the fast lane reserve never
+// triggers unless a test explicitly lowers it with setTestServicePodCount.
+let testServicePodCount = 1000;
+
+/**
+ * Sets the service pod count ("capacity") used by getWorkFromDatabase in tests, so tests can
+ * exercise the fast lane reserve behavior. Resets to the default (effectively unlimited) when
+ * called with no argument.
+ *
+ * @param servicePodCount - the service pod count to simulate
+ */
+export function setTestServicePodCount(servicePodCount = 1000): void {
+  testServicePodCount = servicePodCount;
+}
+
 /**
  * Get a work item from the database for the given service ID.
  *
@@ -25,9 +41,9 @@ export async function getWorkFromDatabase(serviceID: string, reqLogger: Logger):
   let result: WorkItemData | null = null;
   try {
     await db.transaction(async (tx) => {
-      const username = await getNextUsernameForWork(tx, serviceID as string);
+      const username = await getNextUsernameForWork(tx, serviceID as string, testServicePodCount);
       if (username) {
-        const jobID = await getNextJobIdForUsernameAndService(tx, serviceID as string, username);
+        const jobID = await getNextJobIdForUsernameAndService(tx, serviceID as string, username, testServicePodCount);
         if (jobID) {
           const workItem = await getNextWorkItem(tx, serviceID as string, jobID);
           if (workItem) {

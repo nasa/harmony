@@ -356,6 +356,7 @@ describe('Scheduler Worker', async function () {
 describe('getWorkItemsFromDatabase', function () {
   const serviceID = 'foo:latest';
   const batchSize = 10;
+  const servicePodCount = 5;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const fakeTx = {} as any;
   const sandbox = sinon.createSandbox();
@@ -382,7 +383,7 @@ describe('getWorkItemsFromDatabase', function () {
     beforeEach(async function () {
       getNextJobIdsStub.resolves(['job-1']);
       getNextWorkItemsStub.resolves([]); // out of sync -> else branch
-      result = await workItemPolling.getWorkItemsFromDatabase(serviceID, logger, batchSize);
+      result = await workItemPolling.getWorkItemsFromDatabase(serviceID, logger, batchSize, servicePodCount);
     });
 
     it('calls setReadyCountToZero exactly once', function () {
@@ -408,7 +409,7 @@ describe('getWorkItemsFromDatabase', function () {
     beforeEach(async function () {
       getNextJobIdsStub.resolves(['job-1']);
       getNextWorkItemsStub.resolves([new WorkItem({ id: 1, jobID: 'job-1', serviceID })]);
-      await workItemPolling.getWorkItemsFromDatabase(serviceID, logger, batchSize);
+      await workItemPolling.getWorkItemsFromDatabase(serviceID, logger, batchSize, servicePodCount);
     });
 
     it('does not call setReadyCountToZero', function () {
@@ -429,7 +430,7 @@ describe('getWorkItemsFromDatabase', function () {
       getNextWorkItemsStub
         .withArgs(fakeTx, serviceID, 'job-stale', sinon.match.number)
         .resolves([]);
-      await workItemPolling.getWorkItemsFromDatabase(serviceID, logger, batchSize);
+      await workItemPolling.getWorkItemsFromDatabase(serviceID, logger, batchSize, servicePodCount);
     });
 
     it('zeroes the ready count only for the stale job', function () {
