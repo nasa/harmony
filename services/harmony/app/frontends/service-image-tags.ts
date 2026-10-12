@@ -571,7 +571,6 @@ export function buildDeployerJobManifest(
               args: [service, tag, regressionTestVersion],
               env: [
                 { name: 'HARMONY_ENVIRONMENT', value: env.harmonyEnvironment },
-                { name: 'tf_deletion_protection', value: String(env.deletionProtection) },
               ],
               envFrom: [
                 { configMapRef: { name: 'harmony-env' } },
