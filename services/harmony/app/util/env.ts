@@ -182,8 +182,6 @@ class HarmonyServerEnv extends HarmonyEnv {
 
   harmonyEnvironment: string;
 
-  deletionProtection: boolean;
-
   @IsBoolean()
   tfDeployFrontendToEks: boolean;
 
