@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Builds, logs in, and pushes a service's docker image to ECR.
+# Logs in and pushes a service's already-built docker image to ECR.
 # Usage: push-image <image> [tag]
 
 set -ex
