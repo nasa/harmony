@@ -424,12 +424,12 @@ WORK_FAILER_LIMITS_MEMORY=512Mi
 WORK_FAILER_IMAGE=harmonyservices/work-failer:stable
 
 # backend services
-HARMONY_GDAL_ADAPTER_IMAGE=ghcr.io/nasa/harmony-gdal-adapter:latest
+HARMONY_GDAL_ADAPTER_IMAGE=ghcr.io/asfhyp3/harmony-gdal:latest
 HARMONY_GDAL_ADAPTER_REQUESTS_CPU=128m
 HARMONY_GDAL_ADAPTER_REQUESTS_MEMORY=128Mi
 HARMONY_GDAL_ADAPTER_LIMITS_CPU=128m
-HARMONY_GDAL_ADAPTER_LIMITS_MEMORY=8Gi
-HARMONY_GDAL_ADAPTER_INVOCATION_ARGS='python -m gdal_subsetter'
+HARMONY_GDAL_ADAPTER_LIMITS_MEMORY=10Gi
+HARMONY_GDAL_ADAPTER_INVOCATION_ARGS='/usr/local/bin/_entrypoint.sh python -m harmony_gdal_adapter.harmony_service'
 
 HYBIG_IMAGE=ghcr.io/nasa/harmony-browse-image-generator:latest
 HYBIG_REQUESTS_CPU=128m
