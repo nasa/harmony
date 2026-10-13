@@ -1,19 +1,30 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { CloudWatchClient } from '@aws-sdk/client-cloudwatch';
 import { S3Client } from '@aws-sdk/client-s3';
 import * as k8s from '@kubernetes/client-node';
+import axios from 'axios';
 import { expect } from 'chai';
 import sinon from 'sinon';
 
 import { MemoryUsageCollector } from '../app/cronjobs/memory-usage-collector';
 import env from '../app/util/env';
 
+/**
+ * Builds a Prometheus instant query response
+ * @param value - The single value returned by the query, or undefined for no data
+ * @returns the mocked axios response
+ */
+function promResponse(value?: number): any {
+  const result = value === undefined ? [] : [{ metric: {}, value: [1710513000, String(value)] }];
+  return { data: { status: 'success', data: { resultType: 'vector', result } } };
+}
+
 describe('MemoryUsageCollector', () => {
   let sandbox: sinon.SinonSandbox;
   let ctx: any;
   let autoscalingApiStub: any;
   let appsApiStub: any;
+  let axiosGetStub: sinon.SinonStub;
 
   beforeEach(() => {
     sandbox = sinon.createSandbox();
@@ -46,11 +57,12 @@ describe('MemoryUsageCollector', () => {
       return null;
     });
 
-    sandbox.stub(CloudWatchClient.prototype, 'send' as any);
+    axiosGetStub = sandbox.stub(axios, 'get');
     sandbox.stub(S3Client.prototype, 'send' as any);
 
     sandbox.stub(env, 'harmonyEnvironment').value('test');
     sandbox.stub(env, 'memoryUsageBucket').value('test-bucket');
+    sandbox.stub(env, 'memoryUsagePrometheusUrl').value('http://prometheus:9090');
     sandbox.stub(env, 'memoryUsageCollectorLookBackMinutes').value(60);
     process.env.AWS_DEFAULT_REGION = 'us-west-2';
   });
@@ -110,16 +122,14 @@ describe('MemoryUsageCollector', () => {
       autoscalingApiStub.listNamespacedHorizontalPodAutoscaler.resolves(mockHPAs);
     });
 
-    it('should calculate average and maximum memory usage from CloudWatch', async () => {
-      const mockDatapoints = [
-        { Average: 50, Maximum: 60, Timestamp: new Date() },
-        { Average: 55, Maximum: 65, Timestamp: new Date() },
-        { Average: 45, Maximum: 55, Timestamp: new Date() },
-      ];
-
-      (CloudWatchClient.prototype.send as any).resolves({
-        Datapoints: mockDatapoints,
-      });
+    it('should calculate average and maximum memory usage from cAdvisor metrics', async () => {
+      const mib = 1024 * 1024;
+      axiosGetStub
+        .withArgs(sinon.match.any, sinon.match.hasNested('params.query', sinon.match(/container_memory_max_usage_bytes/)))
+        .resolves(promResponse(256 * mib));
+      axiosGetStub
+        .withArgs(sinon.match.any, sinon.match.hasNested('params.query', sinon.match(/container_memory_working_set_bytes/)))
+        .resolves(promResponse(128 * mib));
 
       const mockDeployment = {
         spec: {
@@ -138,12 +148,22 @@ describe('MemoryUsageCollector', () => {
 
       await MemoryUsageCollector.run(ctx);
 
-      sinon.assert.calledOnce(CloudWatchClient.prototype.send as sinon.SinonStub);
+      sinon.assert.calledTwice(axiosGetStub);
+      expect(axiosGetStub.firstCall.args[0]).to.equal('http://prometheus:9090/api/v1/query');
+      const queries = axiosGetStub.getCalls().map(c => c.args[1].params.query);
+      for (const query of queries) {
+        expect(query).to.include('namespace="harmony",pod=~"test-service-[a-z0-9]+-[a-z0-9]+"');
+        expect(query).to.include('[60m:1m]');
+      }
       expect(appsApiStub.readNamespacedDeployment.calledOnce).to.be.true;
+
+      const payload = JSON.parse((S3Client.prototype.send as any).getCall(0).args[0].input.Body);
+      expect(payload['test-service']['Maximum Utilization (%)']).to.equal(50);
+      expect(payload['test-service']['Average Utilization (%)']).to.equal(25);
     });
 
-    it('should handle no datapoints returned from CloudWatch', async () => {
-      (CloudWatchClient.prototype.send as any).resolves({ Datapoints: [] });
+    it('should handle no datapoints returned from Prometheus', async () => {
+      axiosGetStub.resolves(promResponse());
 
       const mockDeployment = {
         spec: {
@@ -166,9 +186,7 @@ describe('MemoryUsageCollector', () => {
     });
 
     it('should correctly parse different memory limit formats', async () => {
-      (CloudWatchClient.prototype.send as any).resolves({
-        Datapoints: [{ Average: 50, Maximum: 60 }],
-      });
+      axiosGetStub.resolves(promResponse(50));
 
       const testCases = [
         { memory: '512Mi', expectedBytes: 512 * 1024 * 1024 },
@@ -204,9 +222,7 @@ describe('MemoryUsageCollector', () => {
     });
 
     it('should handle unknown memory limit formats', async () => {
-      (CloudWatchClient.prototype.send as any).resolves({
-        Datapoints: [{ Average: 50, Maximum: 60 }],
-      });
+      axiosGetStub.resolves(promResponse(50));
 
       const mockDeployment = {
         spec: {
@@ -231,9 +247,7 @@ describe('MemoryUsageCollector', () => {
     });
 
     it('should sum memory limits from multiple containers', async () => {
-      (CloudWatchClient.prototype.send as any).resolves({
-        Datapoints: [{ Average: 50, Maximum: 60 }],
-      });
+      axiosGetStub.resolves(promResponse(50));
 
       const mockDeployment = {
         spec: {
@@ -265,9 +279,7 @@ describe('MemoryUsageCollector', () => {
       };
       autoscalingApiStub.listNamespacedHorizontalPodAutoscaler.resolves(mockHPAs);
 
-      (CloudWatchClient.prototype.send as any).resolves({
-        Datapoints: [{ Average: 50, Maximum: 60 }],
-      });
+      axiosGetStub.resolves(promResponse(50));
 
       const mockDeployment = {
         spec: {
@@ -307,9 +319,7 @@ describe('MemoryUsageCollector', () => {
       };
       autoscalingApiStub.listNamespacedHorizontalPodAutoscaler.resolves(mockHPAs);
 
-      (CloudWatchClient.prototype.send as any).resolves({
-        Datapoints: [{ Average: 50, Maximum: 60 }],
-      });
+      axiosGetStub.resolves(promResponse(50));
 
       const mockDeployment = {
         spec: {
@@ -349,9 +359,7 @@ describe('MemoryUsageCollector', () => {
 
       autoscalingApiStub.listNamespacedHorizontalPodAutoscaler.resolves(mockHPAs);
 
-      (CloudWatchClient.prototype.send as any).resolves({
-        Datapoints: [{ Average: 50, Maximum: 60 }],
-      });
+      axiosGetStub.resolves(promResponse(50));
 
       const mockDeployment = {
         spec: {
@@ -384,17 +392,31 @@ describe('MemoryUsageCollector', () => {
       expect(ctx.logger.error.calledWith(sinon.match.instanceOf(Error))).to.be.true;
     });
 
-    it('should handle CloudWatch API errors gracefully', async () => {
+    it('should handle Prometheus API errors gracefully', async () => {
       const mockHPAs = {
         items: [{ metadata: { name: 'test-service' } }],
       };
 
       autoscalingApiStub.listNamespacedHorizontalPodAutoscaler.resolves(mockHPAs);
-      (CloudWatchClient.prototype.send as any).rejects(new Error('CloudWatch API error'));
+      axiosGetStub.rejects(new Error('Prometheus API error'));
 
       await MemoryUsageCollector.run(ctx);
 
       expect(ctx.logger.error.called).to.be.true;
+    });
+
+    it('should log error when the Prometheus query is unsuccessful', async () => {
+      const mockHPAs = {
+        items: [{ metadata: { name: 'test-service' } }],
+      };
+
+      autoscalingApiStub.listNamespacedHorizontalPodAutoscaler.resolves(mockHPAs);
+      axiosGetStub.resolves({ data: { status: 'error', error: 'bad query' } });
+
+      await MemoryUsageCollector.run(ctx);
+
+      expect(ctx.logger.error.calledWith(sinon.match.has('message', 'Prometheus query failed: bad query'))).to.be.true;
+      expect((S3Client.prototype.send as any).called).to.be.false;
     });
 
     it('should handle S3 API errors gracefully', async () => {
@@ -404,9 +426,7 @@ describe('MemoryUsageCollector', () => {
 
       autoscalingApiStub.listNamespacedHorizontalPodAutoscaler.resolves(mockHPAs);
 
-      (CloudWatchClient.prototype.send as any).resolves({
-        Datapoints: [{ Average: 50, Maximum: 60 }],
-      });
+      axiosGetStub.resolves(promResponse(50));
 
       const mockDeployment = {
         spec: {

@@ -1,16 +1,17 @@
-import { CloudWatchClient, GetMetricStatisticsCommand } from '@aws-sdk/client-cloudwatch';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import * as k8s from '@kubernetes/client-node';
+import axios from 'axios';
 
 import { CronJob } from './cronjob';
 import { Context } from '../util/context';
 import env from '../util/env';
 
 const NAMESPACE = 'harmony';
-const METRIC_NAME = 'pod_memory_working_set';
-const METRIC_NAMESPACE = 'ContainerInsights';
-// The cloudwatch insights observability plugin seems to have a period of 5 minutes
-const METRIC_PERIOD = 300;
+// cAdvisor metrics scraped by Prometheus (see config/prometheus.yaml)
+const MAX_USAGE_METRIC = 'container_memory_max_usage_bytes';
+const WORKING_SET_METRIC = 'container_memory_working_set_bytes';
+// Resolution of the PromQL subqueries used to evaluate usage over the look back window
+const QUERY_STEP = '1m';
 
 
 /**
@@ -37,6 +38,24 @@ async function getListOfBackendServices(ctx: Context, kc: k8s.KubeConfig): Promi
   return services;
 }
 
+/**
+ * Runs an instant PromQL query against the Prometheus server that scrapes cAdvisor.
+ *
+ * @param query - The PromQL query, which must evaluate to at most a single value
+ * @throws error if there is an issue communicating with Prometheus or the query fails
+ * @returns A promise that resolves to the value, or undefined if the query returned no data
+ */
+async function queryPrometheus(query: string): Promise<number | undefined> {
+  const resp = await axios.get(`${env.memoryUsagePrometheusUrl}/api/v1/query`, {
+    params: { query },
+  });
+  if (resp.data?.status !== 'success') {
+    throw new Error(`Prometheus query failed: ${resp.data?.error ?? 'unknown error'}`);
+  }
+  const value = resp.data.data?.result?.[0]?.value?.[1];
+  return value === undefined ? undefined : Number(value);
+}
+
 interface ServiceMemoryUsage {
   service: string;
   avgPercent: number;
@@ -58,42 +77,26 @@ interface ServiceMemoryUsage {
  */
 async function getMemoryUsageByService(ctx: Context, kc: k8s.KubeConfig, serviceName: string, numMinutes: number): Promise<ServiceMemoryUsage> {
   const { logger } = ctx;
+  // Pods are named <deployment>-<replicaset hash>-<suffix>. Usage is summed across the
+  // containers in each pod so that it is comparable to the summed container limits below.
+  const selector = `namespace="${NAMESPACE}",pod=~"${serviceName}-[a-z0-9]+-[a-z0-9]+",container!=""`;
+  const lookBack = `${numMinutes}m`;
+  const maxQuery = `max(max_over_time(sum by (pod) (${MAX_USAGE_METRIC}{${selector}})[${lookBack}:${QUERY_STEP}]))`;
+  const avgQuery = `avg(avg_over_time(sum by (pod) (${WORKING_SET_METRIC}{${selector}})[${lookBack}:${QUERY_STEP}]))`;
 
-  const endTime = new Date();
-  const startTime = new Date(endTime.getTime() - numMinutes * 60 * 1000);
+  const [maxResult, avgResult] = await Promise.all([
+    queryPrometheus(maxQuery),
+    queryPrometheus(avgQuery),
+  ]);
 
-  const cw = new CloudWatchClient({ region: process.env.AWS_DEFAULT_REGION });
-
-  const cmd = new GetMetricStatisticsCommand({
-    Namespace: METRIC_NAMESPACE,
-    MetricName: METRIC_NAME,
-    Dimensions: [
-      { Name: 'ClusterName', Value: `harmony-${env.harmonyEnvironment}-cluster` },
-      { Name: 'Namespace', Value: NAMESPACE },
-      { Name: 'PodName', Value: serviceName },
-    ],
-    Statistics: ['Average', 'Maximum'],
-    StartTime: startTime,
-    EndTime: endTime,
-    Period: METRIC_PERIOD,
-  });
-
-  const resp = await cw.send(cmd);
-  const datapoints = resp.Datapoints ?? [];
-
-  let avgBytes = 0;
-  let maxBytes = 0;
-
-  if (datapoints.length > 0) {
-    const sumAvg = datapoints.reduce((acc, dp) => acc + (dp.Average ?? 0), 0);
-    avgBytes = sumAvg / datapoints.length;
-    maxBytes = datapoints.reduce((m, dp) => Math.max(m, dp.Maximum ?? 0), 0);
-  } else {
+  if (maxResult === undefined || avgResult === undefined) {
     logger.warn(`No datapoints returned for service ${serviceName}`);
   }
+  const maxBytes = maxResult ?? 0;
+  const avgBytes = avgResult ?? 0;
 
   logger.debug(
-    `Memory usage in MB from CloudWatch metrics for ${serviceName}: ` +
+    `Memory usage in MB from cAdvisor metrics for ${serviceName}: ` +
     `avg=${avgBytes / 1024 / 1024} max=${maxBytes / 1024 / 1024}`,
   );
 
