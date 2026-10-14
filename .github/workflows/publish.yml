@@ -11,7 +11,7 @@ on:
        - published
 
 env:
-  DOCKER_USER: bilts
+  DOCKER_USER: ${{ vars.DOCKER_USER }}
 
 jobs:
   push:
