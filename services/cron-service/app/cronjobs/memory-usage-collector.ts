@@ -21,7 +21,8 @@ const QUERY_STEP = '1m';
  * @throws error if there is an issue communicating with the Kubernetes API
  * @returns A promise that resolves to the list of backend services
  */
-async function getListOfBackendServices(ctx: Context, kc: k8s.KubeConfig): Promise<string[]> {
+
+async function getListOfBackendServices(ctx: Context, kc: k8s.KubeConfig): Promise<{ serviceName: string, deploymentName: string }[]> {
   const { logger } = ctx;
   const hpaApi = kc.makeApiClient(k8s.AutoscalingV2Api);
   const hpaList = (await hpaApi.listNamespacedHorizontalPodAutoscaler({ namespace: NAMESPACE })).items;
@@ -31,12 +32,16 @@ async function getListOfBackendServices(ctx: Context, kc: k8s.KubeConfig): Promi
   }
 
   const services = hpaList
-    .map(hpa => hpa.metadata?.name)
-    .filter((name): name is string => Boolean(name));
+    .map(hpa => ({
+      serviceName: hpa.metadata?.name!,
+      deploymentName: hpa.spec?.scaleTargetRef?.name!
+    }))
+    .filter(s => Boolean(s.serviceName) && Boolean(s.deploymentName));
 
-  logger.info(`Found HPA services: ${services.join(', ')}`);
+  logger.info(`Found HPA services: ${services.map(s => s.serviceName).join(', ')}`);
   return services;
 }
+
 
 /**
  * Runs an instant PromQL query against the Prometheus server that scrapes cAdvisor.
@@ -75,11 +80,19 @@ interface ServiceMemoryUsage {
  * @throws error if there is an issue communicating with the Kubernetes API
  * @returns A promise that resolves to the list of backend services
  */
-async function getMemoryUsageByService(ctx: Context, kc: k8s.KubeConfig, serviceName: string, numMinutes: number): Promise<ServiceMemoryUsage> {
+async function getMemoryUsageByService(
+  ctx: Context,
+  kc: k8s.KubeConfig,
+  serviceName: string,
+  deploymentName: string,
+  numMinutes: number,
+): Promise<ServiceMemoryUsage> {
+
   const { logger } = ctx;
-  // Pods are named <deployment>-<replicaset hash>-<suffix>. Usage is summed across the
-  // containers in each pod so that it is comparable to the summed container limits below.
-  const selector = `namespace="${NAMESPACE}",pod=~"${serviceName}-[a-z0-9]+-[a-z0-9]+",container!=""`;
+
+  // Corrected selector: match pods by deploymentName, not serviceName
+  const selector = `namespace="${NAMESPACE}",pod=~"^${deploymentName}-[a-z0-9]+-[a-z0-9]+$",container!=""`;
+
   const lookBack = `${numMinutes}m`;
   const maxQuery = `max(max_over_time(sum by (pod) (${MAX_USAGE_METRIC}{${selector}})[${lookBack}:${QUERY_STEP}]))`;
   const avgQuery = `avg(avg_over_time(sum by (pod) (${WORKING_SET_METRIC}{${selector}})[${lookBack}:${QUERY_STEP}]))`;
@@ -90,68 +103,54 @@ async function getMemoryUsageByService(ctx: Context, kc: k8s.KubeConfig, service
   ]);
 
   if (maxResult === undefined || avgResult === undefined) {
-    logger.warn(`No datapoints returned for service ${serviceName}`);
+    logger.warn(`No datapoints returned for service ${serviceName} using deployment prefix ${deploymentName}`);
   }
+
   const maxBytes = maxResult ?? 0;
   const avgBytes = avgResult ?? 0;
 
   logger.debug(
-    `Memory usage in MB from cAdvisor metrics for ${serviceName}: ` +
-    `avg=${avgBytes / 1024 / 1024} max=${maxBytes / 1024 / 1024}`,
+    `Memory usage in MB for ${serviceName}: avg=${avgBytes / 1024 / 1024} max=${maxBytes / 1024 / 1024}`
   );
 
   const appsApi = kc.makeApiClient(k8s.AppsV1Api);
-
   const deployment: k8s.V1Deployment = await appsApi.readNamespacedDeployment({
-    name: serviceName,
+    name: deploymentName,
     namespace: NAMESPACE,
   });
 
   const containers = deployment.spec?.template?.spec?.containers ?? [];
-
   let totalLimitBytes = 0;
 
   for (const c of containers) {
     const mem = c.resources?.limits?.memory;
     if (!mem) {
-      logger.debug(
-        `Container ${c.name} has no memory limit configured in ${serviceName}`,
-      );
+      logger.debug(`Container ${c.name} has no memory limit in ${deploymentName}`);
       continue;
     }
 
     let bytes = 0;
 
-    const miMatch = mem.match(/^(\d+)(?:Mi)$/);
-    const giMatch = mem.match(/^(\d+)(?:Gi)$/);
-    const kiMatch = mem.match(/^(\d+)(?:Ki)$/);
+    const miMatch = mem.match(/^(\d+)Mi$/);
+    const giMatch = mem.match(/^(\d+)Gi$/);
+    const kiMatch = mem.match(/^(\d+)Ki$/);
     const plainNumMatch = mem.match(/^(\d+)$/);
 
-    // Convert memory limits to bytes
-    if (miMatch) {
-      bytes = Number(miMatch[1]) * 1024 * 1024;
-    } else if (giMatch) {
-      bytes = Number(giMatch[1]) * 1024 * 1024 * 1024;
-    } else if (kiMatch) {
-      bytes = Number(kiMatch[1]) * 1024;
-    } else if (plainNumMatch) {
-      bytes = Number(plainNumMatch[1]);
-    } else {
-      logger.warn(
-        `Unknown memory limit format "${mem}" for container ${c.name} in ${serviceName}, treating as 0`,
-      );
+    if (miMatch) bytes = Number(miMatch[1]) * 1024 * 1024;
+    else if (giMatch) bytes = Number(giMatch[1]) * 1024 * 1024 * 1024;
+    else if (kiMatch) bytes = Number(kiMatch[1]) * 1024;
+    else if (plainNumMatch) bytes = Number(plainNumMatch[1]);
+    else {
+      logger.warn(`Unknown memory limit "${mem}" in ${deploymentName}`);
       continue;
     }
-
-    logger.debug(
-      `Parsed memory limit ${mem} => ${bytes} bytes for container ${c.name} in ${serviceName}`,
-    );
 
     totalLimitBytes += bytes;
   }
 
-  const avgPercent = 100 * avgBytes / totalLimitBytes;
-  const maxPercent = 100 * maxBytes / totalLimitBytes;
+  const avgPercent = totalLimitBytes ? (100 * avgBytes / totalLimitBytes) : 0;
+  const maxPercent = totalLimitBytes ? (100 * maxBytes / totalLimitBytes) : 0;
+
   const maxUsageGB = maxBytes / 1024 / 1024 / 1024;
 
   return {
@@ -191,7 +190,7 @@ async function saveMemoryUsageToS3(
   const ts = `${now.getUTCFullYear()}-${pad(now.getUTCMonth() + 1)}-${pad(now.getUTCDate())}-${pad(now.getUTCHours())}${pad(now.getUTCMinutes())}`;
 
   const key = `memory-metrics/${env.harmonyEnvironment}/${ts}.json`;
-  const payload = {};
+  const payload: Record<string, Record<string, number>> = {};
 
   for (const [service, usage] of Object.entries(memoryUsage)) {
     payload[service] = {
@@ -225,12 +224,22 @@ async function saveMemoryUsageToS3(
 async function runMemoryUsageCollector(ctx: Context): Promise<void> {
   const kc = new k8s.KubeConfig();
   kc.loadFromDefault();
+
+  // Now returns: [{ serviceName, deploymentName }]
   const services = await getListOfBackendServices(ctx, kc);
+
   const memoryUsageByService: Record<string, ServiceMemoryUsage> = {};
 
-  for (const service of services) {
-    const memoryUsage = await getMemoryUsageByService(ctx, kc, service, env.memoryUsageCollectorLookBackMinutes);
-    memoryUsageByService[service] = memoryUsage;
+  for (const { serviceName, deploymentName } of services) {
+    const memoryUsage = await getMemoryUsageByService(
+      ctx,
+      kc,
+      serviceName,
+      deploymentName,
+      env.memoryUsageCollectorLookBackMinutes
+    );
+
+    memoryUsageByService[serviceName] = memoryUsage;
   }
 
   await saveMemoryUsageToS3(ctx, memoryUsageByService);
