@@ -96,6 +96,107 @@ async function getPostgresRows(ctx: Context, table: string, latestUpdateTime: st
   return { rows: result, cursor: lastRowCursor };
 }
 
+// Iceberg types (as DuckDB names them) to use for each Postgres `information_schema.columns`
+// `data_type` when adding a new Postgres column to an Iceberg table. Iceberg has no 16-bit
+// integer, and every timestamp is stored as a timestamptz to match the existing tables (see
+// bin/create-iceberg-tables) and the UTC ISO strings rows are serialized with.
+const PG_TO_ICEBERG_TYPES: Record<string, string> = {
+  'smallint': 'INTEGER',
+  'integer': 'INTEGER',
+  'bigint': 'BIGINT',
+  'real': 'FLOAT',
+  'double precision': 'DOUBLE',
+  'numeric': 'DOUBLE',
+  'boolean': 'BOOLEAN',
+  'date': 'DATE',
+  'timestamp with time zone': 'TIMESTAMPTZ',
+  'timestamp without time zone': 'TIMESTAMPTZ',
+  'text': 'VARCHAR',
+  'character varying': 'VARCHAR',
+  'character': 'VARCHAR',
+  'uuid': 'VARCHAR',
+  'USER-DEFINED': 'VARCHAR', // enums
+  'json': 'VARCHAR',
+  'jsonb': 'VARCHAR',
+};
+
+/**
+ * Get the Iceberg column type to use for a Postgres column type
+ *
+ * @param pgDataType - The column's `data_type` from Postgres `information_schema.columns`
+ * @returns The DuckDB name of the Iceberg type, or null if there is no known mapping
+ */
+export function pgTypeToIcebergType(pgDataType: string): string | null {
+  return PG_TO_ICEBERG_TYPES[pgDataType] ?? null;
+}
+
+/**
+ * Get the Iceberg column name for a Postgres column, using the same snake_casing that is
+ * applied to each row before it is written (see getPostgresRows)
+ *
+ * @param pgColumnName - The Postgres column name, e.g. 'jobID'
+ * @returns The Iceberg column name, e.g. 'job_id'
+ */
+function toIcebergColumnName(pgColumnName: string): string {
+  return Object.keys(snakeCaseKeys({ [pgColumnName]: null }))[0];
+}
+
+/**
+ * Quote a column name for use as an identifier in a DuckDB query
+ *
+ * @param name - The column name
+ * @returns The quoted identifier
+ */
+function quoteIdentifier(name: string): string {
+  return `"${name.replace(/"/g, '""')}"`;
+}
+
+/**
+ * Add any columns that exist on the Postgres table but not on the corresponding Iceberg
+ * table to the Iceberg table, so that new Postgres columns (from a migration) get written
+ * instead of failing the merge.
+ *
+ * Columns removed from Postgres are deliberately NOT dropped from Iceberg: dropping an
+ * Iceberg column hides that column's history for every existing row, and can't be undone by
+ * adding the column back (it would get a new field id). mergeRowsIntoIceberg only writes the
+ * columns Postgres still has, so the old column just stops being populated for new rows.
+ *
+ * @param ctx - The Cron job context
+ * @param duckDbConn - A connection to the Iceberg database
+ * @param table - The name of the table to sync
+ * @returns a Promise that resolves when any missing columns have been added
+ * @throws error if either schema can't be read or a column can't be added
+ */
+async function addMissingIcebergColumns(ctx: Context, duckDbConn: DuckDBConnection,
+  table: string): Promise<void> {
+  const { logger, db } = ctx;
+
+  const pgColumns: Array<{ column_name: string, data_type: string }> = await db('information_schema.columns')
+    .select('column_name', 'data_type')
+    .where('table_name', table)
+    .whereRaw('table_schema = current_schema()');
+  if (pgColumns.length === 0) {
+    logger.warn(`Could not read Postgres columns for ${table}, skipping Iceberg schema update`);
+    return;
+  }
+
+  const reader = await duckDbConn.runAndReadAll(`DESCRIBE catalog.iceberg.${table};`);
+  const icebergColumns = new Set(reader.getRowObjectsJson().map((row) => String(row.column_name)));
+
+  for (const { column_name: pgName, data_type: pgType } of pgColumns) {
+    const name = toIcebergColumnName(pgName);
+    if (icebergColumns.has(name)) continue;
+
+    let type = pgTypeToIcebergType(pgType);
+    if (!type) {
+      logger.warn(`No Iceberg type mapping for Postgres type ${pgType} of ${table}.${pgName}, using VARCHAR`);
+      type = 'VARCHAR';
+    }
+    await duckDbConn.run(`ALTER TABLE catalog.iceberg.${table} ADD COLUMN ${quoteIdentifier(name)} ${type};`);
+    logger.info(`Added column ${name} (${type}) to Iceberg table ${table}`);
+  }
+}
+
 /**
  * Parse a datetime string for a UTC time into a Date
  * @param dateString - the string to parse
@@ -179,6 +280,13 @@ async function mergeRowsIntoIceberg(ctx: Context, duckDbConn: DuckDBConnection, 
   try {
     const jsonString = JSON.stringify(rows, null, 2);
     writeFileSync(tempFilePath, jsonString, 'utf8');
+    // Name the columns explicitly rather than using UPDATE SET * / INSERT BY NAME, so only the
+    // columns Postgres currently has are written. The Iceberg table can also have columns that
+    // have since been dropped from Postgres (see addMissingIcebergColumns) - these are left
+    // as-is on updated rows, and NULL on inserted ones.
+    const columns = [...new Set(rows.flatMap((row) => Object.keys(row)))].map(quoteIdentifier);
+    const updates = columns.filter((c) => c !== '"id"').map((c) => `${c} = upserts.${c}`);
+    const insertValues = columns.map((c) => `upserts.${c}`);
     // sample_size = -1 forces DuckDB to infer each column's type from every record in
     // the batch instead of its default ~20480-row sample. With the large batch sizes
     // this job uses, sampling can miss a column whose true shape only shows up later in
@@ -192,9 +300,9 @@ async function mergeRowsIntoIceberg(ctx: Context, duckDbConn: DuckDBConnection, 
 	         			   ) as upserts
 	         			   ON target.id = upserts.id
 	         			   WHEN MATCHED THEN
-	         			     UPDATE SET *
+	         			     UPDATE SET ${updates.join(', ')}
 	         			   WHEN NOT MATCHED THEN
-	         			     INSERT BY NAME;`;
+	         			     INSERT (${columns.join(', ')}) VALUES (${insertValues.join(', ')});`;
     await duckDbConn.run(query);
     const durationMs = new Date().getTime() - startTime;
     logger.info(`Wrote ${rows.length} rows to ${table}`, { durationMs });
@@ -234,6 +342,9 @@ async function updateAnalytics(ctx: Context): Promise<void> {
     for (const table of ALL_TABLES) {
       const startTime = new Date().getTime();
       try {
+        // Throws if the schema can't be updated, skipping this table until the next run rather
+        // than attempting merges that would fail on the missing columns
+        await addMissingIcebergColumns(ctx, duckDbConn, table);
         const latestUpdateTime = await getLatestIcebergTableUpdateTime(ctx, duckDbConn, table);
         logger.info(`=============> Table ${table} latest update time is ${latestUpdateTime.toISOString()}`);
 
