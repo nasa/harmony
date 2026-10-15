@@ -318,7 +318,9 @@ describe('buildDeployerJobManifest', function () {
     expect(container.envFrom).to.eql([
       { configMapRef: { name: 'harmony-env' } },
       { configMapRef: { name: 'queue-urls-env' } },
+      { configMapRef: { name: 'deployer-env' } },
       { secretRef: { name: 'harmony-secrets' } },
+      { secretRef: { name: 'deployer-secrets' } },
     ]);
   });
 });
