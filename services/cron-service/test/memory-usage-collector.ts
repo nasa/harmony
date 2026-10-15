@@ -152,7 +152,7 @@ describe('MemoryUsageCollector', () => {
       expect(axiosGetStub.firstCall.args[0]).to.equal('http://prometheus:9090/api/v1/query');
       const queries = axiosGetStub.getCalls().map(c => c.args[1].params.query);
       for (const query of queries) {
-        expect(query).to.include('namespace="harmony",pod=~"test-service-[a-z0-9]+-[a-z0-9]+"');
+        expect(query).to.include('namespace="harmony",pod=~"^test-service-[a-z0-9]+-[a-z0-9]+$"');
         expect(query).to.include('[60m:1m]');
       }
       expect(appsApiStub.readNamespacedDeployment.calledOnce).to.be.true;

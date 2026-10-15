@@ -33,10 +33,11 @@ async function getListOfBackendServices(ctx: Context, kc: k8s.KubeConfig): Promi
 
   const services = hpaList
     .map(hpa => ({
-      serviceName: hpa.metadata?.name!,
-      deploymentName: hpa.spec?.scaleTargetRef?.name!
+      serviceName: hpa.metadata?.name,
+      deploymentName: hpa.spec?.scaleTargetRef?.name,
     }))
-    .filter(s => Boolean(s.serviceName) && Boolean(s.deploymentName));
+    .filter((s): s is { serviceName: string, deploymentName: string } =>
+      Boolean(s.serviceName) && Boolean(s.deploymentName));
 
   logger.info(`Found HPA services: ${services.map(s => s.serviceName).join(', ')}`);
   return services;
@@ -110,7 +111,7 @@ async function getMemoryUsageByService(
   const avgBytes = avgResult ?? 0;
 
   logger.debug(
-    `Memory usage in MB for ${serviceName}: avg=${avgBytes / 1024 / 1024} max=${maxBytes / 1024 / 1024}`
+    `Memory usage in MB for ${serviceName}: avg=${avgBytes / 1024 / 1024} max=${maxBytes / 1024 / 1024}`,
   );
 
   const appsApi = kc.makeApiClient(k8s.AppsV1Api);
@@ -236,7 +237,7 @@ async function runMemoryUsageCollector(ctx: Context): Promise<void> {
       kc,
       serviceName,
       deploymentName,
-      env.memoryUsageCollectorLookBackMinutes
+      env.memoryUsageCollectorLookBackMinutes,
     );
 
     memoryUsageByService[serviceName] = memoryUsage;
