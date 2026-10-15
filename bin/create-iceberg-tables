@@ -211,7 +211,8 @@ EOF
         {"id": 17, "name": "service_name", "type": "string"},
         {"id": 18, "name": "provider_id", "type": "string"},
         {"id": 19, "name": "original_data_size", "type": "double"},
-        {"id": 20, "name": "output_data_size", "type": "double"}
+        {"id": 20, "name": "output_data_size", "type": "double"},
+        {"id": 21, "name": "request_checksum", "type": "string"}
       ]
     },
     "partitionSpec": {
