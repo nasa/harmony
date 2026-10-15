@@ -21,12 +21,27 @@ export const ALL_TABLES = ['batch_items', 'batches', 'job_links', 'job_messages'
  * through results in `updatedAt`/`id` order without skipping or repeating rows.
  */
 interface RowCursor {
-  updatedAt: Date;
+  // The row's "updatedAt" as Postgres text (e.g. '2026-10-15 12:00:00.123456+00'), not a
+  // JS Date. Postgres timestamps have microsecond precision but a Date only has
+  // milliseconds, and a truncated cursor sorts *before* the row it came from - so the
+  // next query would return that row, and every other row in the same millisecond, again.
+  // If a full batch shares one sub-millisecond timestamp (e.g. from a single bulk UPDATE),
+  // the same batch would be returned forever.
+  updatedAt: string;
   id: number;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type PgRow = Record<string, any>;
+
+/**
+ * A batch of rows read from Postgres, along with the cursor for its last row.
+ */
+interface PostgresBatch {
+  rows: Array<PgRow>;
+  // The cursor for the last row in `rows`, or null if `rows` is empty
+  cursor: RowCursor | null;
+}
 
 /**
  * Read a single batch of rows from Postgres with an `updatedAt` at or after a given
@@ -39,16 +54,20 @@ type PgRow = Record<string, any>;
  * @param latestUpdateTime- Most recent updatedAt written to Iceberg
  * @param cursor - The last row seen from a previous batch, or null to start from the beginning
  * @param batchSize - Maximum number of rows to process
- * @returns A Promise containing an array of maps representing the rows retrieved from Postgres
+ * @returns A Promise containing the rows retrieved from Postgres (as maps) and the cursor
+ * for the last of them
  */
 async function getPostgresRows(ctx: Context, table: string, latestUpdateTime: string,
-  cursor: RowCursor | null, batchSize: number = 1000): Promise<Array<PgRow>> {
+  cursor: RowCursor | null, batchSize: number = 1000): Promise<PostgresBatch> {
   const { logger, db } = ctx;
   const result = new Array<PgRow>();
+  let lastRowCursor: RowCursor | null = null;
 
   try {
     const query = db(table)
-      .select()
+      // "cursorUpdatedAt" is only used to build the cursor (see RowCursor) and is removed
+      // from each row below, so it never gets written to Iceberg
+      .select('*', db.raw('"updatedAt"::text AS "cursorUpdatedAt"'))
       .orderBy('updatedAt', 'asc')
       .orderBy('id', 'asc')
       .limit(batchSize);
@@ -56,23 +75,25 @@ async function getPostgresRows(ctx: Context, table: string, latestUpdateTime: st
     if (cursor) {
       query.whereRaw('("updatedAt", id) > (?::timestamptz, ?)', [cursor.updatedAt, cursor.id]);
     } else {
-      query.whereRaw('"updatedAt" >= (?::timestamptz - INTERVAL \'1 minutes\')',
+      query.whereRaw('"updatedAt" >= (?::timestamptz - INTERVAL \'2 minutes\')',
         [latestUpdateTime]);
     }
 
     const res = await query;
 
-    for (let row of res) {
-      row = snakeCaseKeys(row);
+    for (const pgRow of res) {
+      const { cursorUpdatedAt, ...fields } = pgRow;
+      const row = snakeCaseKeys(fields);
       if (tableRowTransforms[table]) {
         tableRowTransforms[table](row);
       }
       result.push(row);
+      lastRowCursor = { updatedAt: cursorUpdatedAt, id: pgRow.id };
     }
   } catch (err) {
     logger.error(err);
   }
-  return result;
+  return { rows: result, cursor: lastRowCursor };
 }
 
 /**
@@ -158,9 +179,16 @@ async function mergeRowsIntoIceberg(ctx: Context, duckDbConn: DuckDBConnection, 
   try {
     const jsonString = JSON.stringify(rows, null, 2);
     writeFileSync(tempFilePath, jsonString, 'utf8');
+    // sample_size = -1 forces DuckDB to infer each column's type from every record in
+    // the batch instead of its default ~20480-row sample. With the large batch sizes
+    // this job uses, sampling can miss a column whose true shape only shows up later in
+    // the file (e.g. a free-form scrollID that happens to look numeric in the sampled
+    // rows), causing DuckDB to infer the wrong type and then throw a conversion error
+    // (e.g. "Could not convert string ... to INT128") on a row outside the sample -
+    // aborting the write for the *entire* batch, not just that row.
     const query = `MERGE INTO catalog.iceberg.${table} AS target
 	         			   USING (
-	         			     SELECT * FROM read_json_auto('${tempFilePath}')
+	         			     SELECT * FROM read_json_auto('${tempFilePath}', sample_size = -1)
 	         			   ) as upserts
 	         			   ON target.id = upserts.id
 	         			   WHEN MATCHED THEN
@@ -170,10 +198,14 @@ async function mergeRowsIntoIceberg(ctx: Context, duckDbConn: DuckDBConnection, 
     await duckDbConn.run(query);
     const durationMs = new Date().getTime() - startTime;
     logger.info(`Wrote ${rows.length} rows to ${table}`, { durationMs });
-  } catch (err) {
-    logger.error(err);
   } finally {
-    // Ensure temporary file is cleaned up even if duckDbConn throws
+    // Ensure temporary file is cleaned up even if duckDbConn throws. Deliberately no
+    // catch around the write itself: a failed merge must propagate to the caller so it
+    // does NOT advance its paging cursor past this batch (see the do/while loop in
+    // updateAnalytics below). If it were swallowed here, a later batch for the same
+    // table could still succeed and push the Iceberg table's max(updated_at) past this
+    // batch's rows - and since the next cron run resumes from that max(updated_at),
+    // this batch's rows would never be looked at again.
     try {
       unlinkSync(tempFilePath);
     } catch (e) {
@@ -208,16 +240,22 @@ async function updateAnalytics(ctx: Context): Promise<void> {
         let cursor: RowCursor | null = null;
         let totalRows = 0;
         let rows: Array<PgRow>;
+        let lastRowCursor: RowCursor | null;
 
         do {
-          rows = await getPostgresRows(ctx, table, latestUpdateTime.toISOString(), cursor,
-            batchSize);
+          ({ rows, cursor: lastRowCursor } = await getPostgresRows(ctx, table,
+            latestUpdateTime.toISOString(), cursor, batchSize));
           if (rows.length > 0) {
+            // mergeRowsIntoIceberg throws on failure. Advancing the cursor only happens
+            // below this line, so a failed batch stops pagination for this table (via
+            // the catch below) without being marked as done. That keeps the invariant
+            // that this table's max(updated_at) in Iceberg always reflects a contiguous
+            // run of successfully-written rows, which is what lets the next cron tick's
+            // getLatestIcebergTableUpdateTime()-based cutoff correctly retry this batch
+            // instead of skipping past it forever.
             await mergeRowsIntoIceberg(ctx, duckDbConn, table, rows);
             totalRows += rows.length;
-
-            const lastRow = rows[rows.length - 1];
-            cursor = { updatedAt: lastRow.updated_at, id: lastRow.id };
+            cursor = lastRowCursor;
           }
         } while (rows.length === batchSize);
 

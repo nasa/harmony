@@ -33,7 +33,7 @@ function makeQueryBuilder(rows: Record<string, any>[] | Error): any {
  * interop settings, which Sinon refuses to wrap).
  */
 function tempFilePathFromMergeQuery(query: string): string {
-  const match = query.match(/read_json_auto\('([^']+)'\)/);
+  const match = query.match(/read_json_auto\('([^']+)'/);
   if (!match) {
     throw new Error(`Could not find a temp file path in query: ${query}`);
   }
@@ -99,6 +99,9 @@ describe('AnalyticsCron', function () {
     // By default every table's Postgres query returns no rows, so each table
     // finishes in a single (empty) batch and nothing gets merged into Iceberg.
     dbStub = sandbox.stub().callsFake(() => makeQueryBuilder([]));
+    // getPostgresRows() selects a raw "cursorUpdatedAt" column; return the SQL as-is so
+    // tests can check what was selected
+    (dbStub as any).raw = sandbox.stub().callsFake((sql: string) => sql);
     ctx.db = dbStub;
 
     duckDbConn = {
@@ -183,6 +186,33 @@ describe('AnalyticsCron', function () {
       expect(jobsCall.returnValue.whereRaw.firstCall.args[0]).to.match(/INTERVAL/);
     });
 
+    it('selects updatedAt as full-precision text for building the paging cursor', async function () {
+      await AnalyticsCron.run(ctx);
+
+      const jobsCall = dbStub.getCalls().find((c) => c.args[0] === 'jobs')!;
+      expect(jobsCall.returnValue.select.firstCall.args)
+        .to.deep.equal(['*', '"updatedAt"::text AS "cursorUpdatedAt"']);
+    });
+
+    it('does not write the cursor-only cursorUpdatedAt column to Iceberg', async function () {
+      let written: any;
+      duckDbConn.run.callsFake(async (query: string) => {
+        written = JSON.parse(fs.readFileSync(tempFilePathFromMergeQuery(query), 'utf8'));
+      });
+
+      dbStub.withArgs('jobs').returns(makeQueryBuilder([
+        {
+          id: 1,
+          updatedAt: new Date('2024-01-01T00:00:00Z'),
+          cursorUpdatedAt: '2024-01-01 00:00:00.000123+00',
+        },
+      ]));
+
+      await AnalyticsCron.run(ctx);
+
+      expect(written).to.deep.equal([{ id: 1, updated_at: '2024-01-01T00:00:00.000Z' }]);
+    });
+
     it('merges a single batch of rows into Iceberg and logs the row count', async function () {
       dbStub.withArgs('jobs').returns(makeQueryBuilder([
         { id: 1, updatedAt: new Date('2024-01-01T00:00:00Z') },
@@ -247,11 +277,20 @@ describe('AnalyticsCron', function () {
 
     it('pages through multiple batches using the last row as a cursor, until a short batch ends it', async function () {
       const batchSize = 1000;
+      // Every row in the first batch shares one sub-millisecond timestamp, as a single bulk
+      // UPDATE would produce. A JS Date would truncate it to ...00.123, which sorts before
+      // these rows, so paging from it would return this same batch forever.
+      const sharedUpdatedAt = '2024-01-01 00:00:00.123456+00';
       const firstBatch = Array.from({ length: batchSize }, (_, i) => ({
         id: i + 1,
-        updatedAt: new Date(2024, 0, 1),
+        updatedAt: new Date('2024-01-01T00:00:00.123Z'),
+        cursorUpdatedAt: sharedUpdatedAt,
       }));
-      const secondBatch = [{ id: batchSize + 1, updatedAt: new Date(2024, 0, 2) }];
+      const secondBatch = [{
+        id: batchSize + 1,
+        updatedAt: new Date('2024-01-02T00:00:00Z'),
+        cursorUpdatedAt: '2024-01-02 00:00:00+00',
+      }];
 
       let call = 0;
       dbStub.withArgs('jobs').callsFake(() => {
@@ -268,7 +307,7 @@ describe('AnalyticsCron', function () {
       // The second batch's query should page forward using the last row of the first batch.
       const secondCallBuilder = dbStub.withArgs('jobs').secondCall.returnValue;
       expect(secondCallBuilder.whereRaw.firstCall.args[0]).to.match(/\("updatedAt", id\) > /);
-      expect(secondCallBuilder.whereRaw.firstCall.args[1][1]).to.equal(batchSize);
+      expect(secondCallBuilder.whereRaw.firstCall.args[1]).to.deep.equal([sharedUpdatedAt, batchSize]);
     });
 
     it('logs an error and continues (as zero rows) when a Postgres query fails for a table', async function () {
@@ -301,6 +340,35 @@ describe('AnalyticsCron', function () {
       expect(tempFilePath).to.be.a('string');
       expect(fs.existsSync(tempFilePath)).to.be.false;
       expect(ctx.logger.info.calledWith('Completed analytics cron job')).to.be.true;
+    });
+
+    it('stops paging a table after a failed merge instead of advancing past the bad batch', async function () {
+      const batchSize = 1000;
+      const firstBatch = Array.from({ length: batchSize }, (_, i) => ({
+        id: i + 1,
+        updatedAt: new Date(2024, 0, 1),
+      }));
+      const secondBatch = [{ id: batchSize + 1, updatedAt: new Date(2024, 0, 2) }];
+
+      let call = 0;
+      dbStub.withArgs('jobs').callsFake(() => {
+        call += 1;
+        return makeQueryBuilder(call === 1 ? firstBatch : secondBatch);
+      });
+      duckDbConn.run.withArgs(sinon.match(/catalog\.iceberg\.jobs/)).rejects(new Error('DuckDB merge failed'));
+
+      await AnalyticsCron.run(ctx);
+
+      // Only the first (failing) batch should ever be fetched - the do/while loop must
+      // not advance its cursor past a batch that failed to merge and go on to fetch and
+      // merge the next one, which would leave this batch's rows permanently un-synced
+      // (see the comment above the do/while loop in updateAnalytics).
+      expect(dbStub.withArgs('jobs').callCount).to.equal(1);
+      expect(duckDbConn.run.callCount).to.equal(1);
+      // Since the batch failed, "Wrote a total of ... rows to jobs" (logged after the
+      // do/while loop completes normally) must never be reached for this table.
+      // (anchored so it doesn't also match the log line for the jobs_raw_labels table)
+      expect(ctx.logger.info.calledWithMatch(/^Wrote a total of .* rows to jobs$/)).to.be.false;
     });
 
     it('completes without throwing even if establishing the DuckDB connection fails', async function () {
