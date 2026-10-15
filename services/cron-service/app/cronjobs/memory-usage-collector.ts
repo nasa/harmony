@@ -7,6 +7,7 @@ import { Context } from '../util/context';
 import env from '../util/env';
 
 const NAMESPACE = 'harmony';
+const CONTAINERS = ['worker', 'manager'];
 // cAdvisor metrics scraped by Prometheus (see config/prometheus.yaml)
 const MAX_USAGE_METRIC = 'container_memory_max_usage_bytes';
 const WORKING_SET_METRIC = 'container_memory_working_set_bytes';
@@ -21,7 +22,6 @@ const QUERY_STEP = '1m';
  * @throws error if there is an issue communicating with the Kubernetes API
  * @returns A promise that resolves to the list of backend services
  */
-
 async function getListOfBackendServices(ctx: Context, kc: k8s.KubeConfig): Promise<{ serviceName: string, deploymentName: string }[]> {
   const { logger } = ctx;
   const hpaApi = kc.makeApiClient(k8s.AutoscalingV2Api);
@@ -76,6 +76,8 @@ interface ServiceMemoryUsage {
  * @param ctx - The Cron job context
  * @param kc - The k8s configuration
  * @param serviceName - The name of the service
+ * @param deploymentName - The deployment the HPA scales
+ * @param containerName - The container in the pod to measure (worker or manager)
  * @param numMinutes - The number of minutes in the past to pull the memory usage from
  *        e.g. 60 means get metrics for the past 60 minutes to now.
  * @throws error if there is an issue communicating with the Kubernetes API
@@ -86,13 +88,14 @@ async function getMemoryUsageByService(
   kc: k8s.KubeConfig,
   serviceName: string,
   deploymentName: string,
+  containerName: string,
   numMinutes: number,
 ): Promise<ServiceMemoryUsage> {
 
   const { logger } = ctx;
 
-  // Corrected selector: match pods by deploymentName, not serviceName
-  const selector = `namespace="${NAMESPACE}",pod=~"^${deploymentName}-[a-z0-9]+-[a-z0-9]+$",container!=""`;
+
+  const selector = `namespace="${NAMESPACE}",pod=~"^${deploymentName}-[a-z0-9]+-[a-z0-9]+$",container="${containerName}"`;
 
   const lookBack = `${numMinutes}m`;
   const maxQuery = `max(max_over_time(sum by (pod) (${MAX_USAGE_METRIC}{${selector}})[${lookBack}:${QUERY_STEP}]))`;
@@ -104,14 +107,14 @@ async function getMemoryUsageByService(
   ]);
 
   if (maxResult === undefined || avgResult === undefined) {
-    logger.warn(`No datapoints returned for service ${serviceName} using deployment prefix ${deploymentName}`);
+    logger.warn(`No datapoints returned for service ${serviceName} container ${containerName} using deployment prefix ${deploymentName}`);
   }
 
   const maxBytes = maxResult ?? 0;
   const avgBytes = avgResult ?? 0;
 
   logger.debug(
-    `Memory usage in MB for ${serviceName}: avg=${avgBytes / 1024 / 1024} max=${maxBytes / 1024 / 1024}`,
+    `Memory usage in MB for ${serviceName} (${containerName}): avg=${avgBytes / 1024 / 1024} max=${maxBytes / 1024 / 1024}`,
   );
 
   const appsApi = kc.makeApiClient(k8s.AppsV1Api);
@@ -120,7 +123,8 @@ async function getMemoryUsageByService(
     namespace: NAMESPACE,
   });
 
-  const containers = deployment.spec?.template?.spec?.containers ?? [];
+  const containers = (deployment.spec?.template?.spec?.containers ?? [])
+    .filter(c => c.name === containerName);
   let totalLimitBytes = 0;
 
   for (const c of containers) {
@@ -226,21 +230,21 @@ async function runMemoryUsageCollector(ctx: Context): Promise<void> {
   const kc = new k8s.KubeConfig();
   kc.loadFromDefault();
 
-  // Now returns: [{ serviceName, deploymentName }]
   const services = await getListOfBackendServices(ctx, kc);
 
   const memoryUsageByService: Record<string, ServiceMemoryUsage> = {};
 
   for (const { serviceName, deploymentName } of services) {
-    const memoryUsage = await getMemoryUsageByService(
-      ctx,
-      kc,
-      serviceName,
-      deploymentName,
-      env.memoryUsageCollectorLookBackMinutes,
-    );
-
-    memoryUsageByService[serviceName] = memoryUsage;
+    for (const containerName of CONTAINERS) {
+      memoryUsageByService[`${serviceName} (${containerName})`] = await getMemoryUsageByService(
+        ctx,
+        kc,
+        serviceName,
+        deploymentName,
+        containerName,
+        env.memoryUsageCollectorLookBackMinutes,
+      );
+    }
   }
 
   await saveMemoryUsageToS3(ctx, memoryUsageByService);
