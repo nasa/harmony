@@ -5,7 +5,9 @@ import { DuckDBInstance } from '@duckdb/node-api';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 
-import { AnalyticsCron, ALL_TABLES, parseUtcTimestamp } from '../app/cronjobs/update-analytics';
+import {
+  AnalyticsCron, ALL_TABLES, parseUtcTimestamp, pgTypeToIcebergType,
+} from '../app/cronjobs/update-analytics';
 import * as icebergConnection from '../app/util/db/iceberg-connection';
 import env from '../app/util/env';
 
@@ -22,7 +24,37 @@ function makeQueryBuilder(rows: Record<string, any>[] | Error): any {
   promise.orderBy = sinon.stub().returns(promise);
   promise.limit = sinon.stub().returns(promise);
   promise.whereRaw = sinon.stub().returns(promise);
+  promise.where = sinon.stub().returns(promise);
   return promise;
+}
+
+/**
+ * Build a fake Knex-style query builder for addMissingIcebergColumns()'s
+ * `information_schema.columns` query. Unlike makeQueryBuilder, what it resolves to depends
+ * on the `where('table_name', ...)` it's given, so it's only evaluated when awaited.
+ */
+function makeColumnsQueryBuilder(
+  columnsByTable: Record<string, Array<{ column_name: string, data_type: string }>>,
+): any {
+  let tableName: string;
+  const builder: any = {};
+  builder.select = sinon.stub().returns(builder);
+  builder.whereRaw = sinon.stub().returns(builder);
+  builder.where = sinon.stub().callsFake((column: string, value: string) => {
+    if (column === 'table_name') tableName = value;
+    return builder;
+  });
+  builder.then = (resolve: any, reject: any): Promise<any> =>
+    Promise.resolve(columnsByTable[tableName] ?? []).then(resolve, reject);
+  return builder;
+}
+
+/**
+ * Get the names of the Postgres data tables queried, leaving out the
+ * `information_schema.columns` queries used to sync the Iceberg schema
+ */
+function queriedDataTables(dbStub: sinon.SinonStub): string[] {
+  return dbStub.getCalls().map((c) => c.args[0]).filter((t) => t !== 'information_schema.columns');
 }
 
 /**
@@ -69,6 +101,26 @@ describe('parseUtcTimestamp', () => {
 
     expect(() => parseUtcTimestamp(invalidInput))
       .to.throw(Error, 'Invalid date string: not-a-valid-date');
+  });
+});
+
+describe('pgTypeToIcebergType', () => {
+  it('maps Postgres column types to Iceberg types', () => {
+    expect(pgTypeToIcebergType('integer')).to.equal('INTEGER');
+    expect(pgTypeToIcebergType('bigint')).to.equal('BIGINT');
+    expect(pgTypeToIcebergType('double precision')).to.equal('DOUBLE');
+    expect(pgTypeToIcebergType('boolean')).to.equal('BOOLEAN');
+    expect(pgTypeToIcebergType('character varying')).to.equal('VARCHAR');
+    expect(pgTypeToIcebergType('USER-DEFINED')).to.equal('VARCHAR');
+  });
+
+  it('maps every Postgres timestamp type to a timestamptz', () => {
+    expect(pgTypeToIcebergType('timestamp with time zone')).to.equal('TIMESTAMPTZ');
+    expect(pgTypeToIcebergType('timestamp without time zone')).to.equal('TIMESTAMPTZ');
+  });
+
+  it('returns null for an unmapped type', () => {
+    expect(pgTypeToIcebergType('ARRAY')).to.be.null;
   });
 });
 
@@ -148,8 +200,7 @@ describe('AnalyticsCron', function () {
     it('queries Postgres for every configured analytics table, in order', async function () {
       await AnalyticsCron.run(ctx);
 
-      const queriedTables = dbStub.getCalls().map((c) => c.args[0]);
-      expect(queriedTables).to.deep.equal(ALL_TABLES);
+      expect(queriedDataTables(dbStub)).to.deep.equal(ALL_TABLES);
     });
 
     it('reads the latest Iceberg updated_at for each table before querying Postgres', async function () {
@@ -371,6 +422,103 @@ describe('AnalyticsCron', function () {
       expect(ctx.logger.info.calledWithMatch(/^Wrote a total of .* rows to jobs$/)).to.be.false;
     });
 
+    describe('when the Postgres schema has changed', function () {
+      beforeEach(function () {
+        // Postgres jobs has a new requestChecksum column (and has dropped an old_column that
+        // Iceberg still has)
+        dbStub.withArgs('information_schema.columns').callsFake(() => makeColumnsQueryBuilder({
+          jobs: [
+            { column_name: 'id', data_type: 'integer' },
+            { column_name: 'requestId', data_type: 'character' },
+            { column_name: 'updatedAt', data_type: 'timestamp with time zone' },
+            { column_name: 'requestChecksum', data_type: 'character varying' },
+          ],
+        }));
+        duckDbConn.runAndReadAll.withArgs(sinon.match(/DESCRIBE catalog\.iceberg\.jobs/)).resolves({
+          getRowObjectsJson: () => [
+            { column_name: 'id', column_type: 'BIGINT' },
+            { column_name: 'request_id', column_type: 'VARCHAR' },
+            { column_name: 'updated_at', column_type: 'TIMESTAMP WITH TIME ZONE' },
+            { column_name: 'old_column', column_type: 'VARCHAR' },
+          ],
+        });
+        dbStub.withArgs('jobs').returns(makeQueryBuilder([
+          { id: 1, requestId: 'req-1', updatedAt: new Date('2024-01-01T00:00:00Z'), requestChecksum: 'abc' },
+        ]));
+      });
+
+      it('adds the new snake_cased column to Iceberg before merging rows', async function () {
+        await AnalyticsCron.run(ctx);
+
+        expect(duckDbConn.run.callCount).to.equal(2);
+        expect(duckDbConn.run.firstCall.args[0])
+          .to.equal('ALTER TABLE catalog.iceberg.jobs ADD COLUMN "request_checksum" VARCHAR;');
+        expect(duckDbConn.run.secondCall.args[0]).to.match(/MERGE INTO catalog\.iceberg\.jobs/);
+        expect(ctx.logger.info.calledWith('Added column request_checksum (VARCHAR) to Iceberg table jobs')).to.be.true;
+      });
+
+      it('only looks up the Postgres columns of the table being synced', async function () {
+        await AnalyticsCron.run(ctx);
+
+        const columnsQuery = dbStub.withArgs('information_schema.columns').getCalls()
+          .find((c) => c.returnValue.where.calledWith('table_name', 'jobs'))!;
+        expect(columnsQuery.returnValue.whereRaw.calledWith('table_schema = current_schema()')).to.be.true;
+      });
+
+      it('does not drop the Iceberg column that was removed from Postgres', async function () {
+        await AnalyticsCron.run(ctx);
+
+        const queries = duckDbConn.run.getCalls().map((c) => c.args[0]);
+        expect(queries.some((q: string) => /DROP/i.test(q))).to.be.false;
+      });
+
+      it('merges only the columns Postgres has, leaving the removed column untouched', async function () {
+        await AnalyticsCron.run(ctx);
+
+        const mergeQuery = duckDbConn.run.secondCall.args[0];
+        expect(mergeQuery).to.contain(
+          'UPDATE SET "request_id" = upserts."request_id", "updated_at" = upserts."updated_at", '
+          + '"request_checksum" = upserts."request_checksum"',
+        );
+        expect(mergeQuery).to.contain(
+          'INSERT ("id", "request_id", "updated_at", "request_checksum") '
+          + 'VALUES (upserts."id", upserts."request_id", upserts."updated_at", upserts."request_checksum")',
+        );
+        expect(mergeQuery).not.to.contain('old_column');
+      });
+
+      it('adds a column with an unmapped Postgres type as VARCHAR and logs a warning', async function () {
+        dbStub.withArgs('information_schema.columns').callsFake(() => makeColumnsQueryBuilder({
+          jobs: [{ column_name: 'tags', data_type: 'ARRAY' }],
+        }));
+
+        await AnalyticsCron.run(ctx);
+
+        expect(duckDbConn.run.firstCall.args[0])
+          .to.equal('ALTER TABLE catalog.iceberg.jobs ADD COLUMN "tags" VARCHAR;');
+        expect(ctx.logger.warn.calledWithMatch(/No Iceberg type mapping for Postgres type ARRAY/)).to.be.true;
+      });
+
+      it('skips the table without merging when a column cannot be added, and still processes the remaining tables', async function () {
+        const alterError = new Error('ALTER failed');
+        duckDbConn.run.withArgs(sinon.match(/ALTER TABLE/)).rejects(alterError);
+
+        await AnalyticsCron.run(ctx);
+
+        expect(ctx.logger.error.calledWith(alterError)).to.be.true;
+        expect(dbStub.withArgs('jobs').called).to.be.false;
+        expect(duckDbConn.run.callCount).to.equal(1);
+        expect(queriedDataTables(dbStub)).to.deep.equal(ALL_TABLES.filter((t) => t !== 'jobs'));
+      });
+    });
+
+    it('does not touch the Iceberg schema when the Postgres columns cannot be read', async function () {
+      await AnalyticsCron.run(ctx);
+
+      expect(duckDbConn.runAndReadAll.calledWithMatch(/DESCRIBE/)).to.be.false;
+      expect(ctx.logger.warn.calledWith('Could not read Postgres columns for jobs, skipping Iceberg schema update')).to.be.true;
+    });
+
     it('completes without throwing even if establishing the DuckDB connection fails', async function () {
       fromCacheStub.rejects(new Error('DuckDB unavailable'));
 
@@ -390,8 +538,7 @@ describe('AnalyticsCron', function () {
       expect(ctx.logger.error.calledWith(readError)).to.be.true;
       // A failure processing one table must not abort the whole run - every table is
       // still queried against Postgres, including the ones after the failing one.
-      const queriedTables = dbStub.getCalls().map((c) => c.args[0]);
-      expect(queriedTables).to.deep.equal(ALL_TABLES);
+      expect(queriedDataTables(dbStub)).to.deep.equal(ALL_TABLES);
       // updateAnalytics() never rejects (it catches and logs internally), so run() always
       // reaches its own completion log regardless of what happened while processing tables.
       expect(ctx.logger.info.calledWith('Completed analytics cron job')).to.be.true;
