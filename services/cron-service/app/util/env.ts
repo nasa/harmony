@@ -79,6 +79,10 @@ class CronServiceHarmonyEnv extends HarmonyEnv {
   @Min(1)
   analyticsUpdateBatchSize: number;
 
+  @IsInt()
+  @Min(1)
+  analyticsUpdatePageSize: number;
+
   analyticsUpdateMemoryLimit: string;
 
   @IsInt()
