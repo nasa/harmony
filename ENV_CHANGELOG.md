@@ -2,6 +2,11 @@
 Any changes to the environment variables will be documented in this file in chronological
 order with the most recent changes first.
 
+## 2026-10-15
+### Added
+- ANALYTICS_UPDATE_PAGE_SIZE - the number of rows read from Postgres at a time while building each batch
+  during Iceberg propagation
+
 ## 2026-10-01
 ### Changed
 - HYBIG_LIMITS_MEMORY - Increased to 12Gi to handle large polar-projected granules in NISAR collections.
