@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as fs from 'fs';
+import { tmpdir } from 'os';
 
 import { DuckDBInstance } from '@duckdb/node-api';
 import { expect } from 'chai';
@@ -58,7 +59,7 @@ function queriedDataTables(dbStub: sinon.SinonStub): string[] {
 }
 
 /**
- * mergeRowsIntoIceberg() writes its batch to a local temp JSON file and references it in the
+ * mergeRowsIntoIceberg() writes its batch to a local temp NDJSON file and references it in the
  * MERGE query it hands to DuckDB via `read_json_auto('<path>')`. Pull that path back out of
  * the query so tests can inspect what was actually written, without needing to spy on `fs`
  * itself (its named exports are non-configurable getters under this project's TS/Node
@@ -70,6 +71,21 @@ function tempFilePathFromMergeQuery(query: string): string {
     throw new Error(`Could not find a temp file path in query: ${query}`);
   }
   return match[1];
+}
+
+/**
+ * Read back the rows mergeRowsIntoIceberg() wrote to its newline-delimited JSON temp file
+ */
+function readNdjsonFile(filePath: string): any[] {
+  return fs.readFileSync(filePath, 'utf8').split('\n').filter((line) => line !== '')
+    .map((line) => JSON.parse(line));
+}
+
+/**
+ * List the temp files mergeRowsIntoIceberg() has left behind in the OS temp directory
+ */
+function leftoverTempFiles(): string[] {
+  return fs.readdirSync(tmpdir()).filter((name) => name.startsWith('temp-data-'));
 }
 
 describe('parseUtcTimestamp', () => {
@@ -133,11 +149,15 @@ describe('AnalyticsCron', function () {
   let fromCacheStub: sinon.SinonStub;
   let initDbConnectionStub: sinon.SinonStub;
   let originalBatchSize: number;
+  let originalPageSize: number;
 
   beforeEach(function () {
     sandbox = sinon.createSandbox();
     originalBatchSize = env.analyticsUpdateBatchSize;
+    originalPageSize = env.analyticsUpdatePageSize;
     env.analyticsUpdateBatchSize = 1000;
+    // Larger than the batch size, so each batch is read in a single page unless a test says otherwise
+    env.analyticsUpdatePageSize = 5000;
 
     ctx = {
       logger: {
@@ -172,6 +192,7 @@ describe('AnalyticsCron', function () {
   afterEach(function () {
     sandbox.restore();
     env.analyticsUpdateBatchSize = originalBatchSize;
+    env.analyticsUpdatePageSize = originalPageSize;
     delete process.env.AWS_ACCOUNT_ID;
   });
 
@@ -224,7 +245,7 @@ describe('AnalyticsCron', function () {
       await AnalyticsCron.run(ctx);
 
       expect(duckDbConn.run.called).to.be.false;
-      expect(ctx.logger.info.calledWith('Wrote a total of 0 rows to jobs')).to.be.true;
+      expect(ctx.logger.info.calledWith('Analytics Cron Wrote a total of 0 rows to jobs')).to.be.true;
     });
 
     it('queries with an interval-based cutoff (no cursor) on the first batch for a table', async function () {
@@ -248,7 +269,7 @@ describe('AnalyticsCron', function () {
     it('does not write the cursor-only cursorUpdatedAt column to Iceberg', async function () {
       let written: any;
       duckDbConn.run.callsFake(async (query: string) => {
-        written = JSON.parse(fs.readFileSync(tempFilePathFromMergeQuery(query), 'utf8'));
+        written = readNdjsonFile(tempFilePathFromMergeQuery(query));
       });
 
       dbStub.withArgs('jobs').returns(makeQueryBuilder([
@@ -274,13 +295,13 @@ describe('AnalyticsCron', function () {
 
       expect(duckDbConn.run.calledOnce).to.be.true;
       expect(duckDbConn.run.firstCall.args[0]).to.match(/MERGE INTO catalog\.iceberg\.jobs/);
-      expect(ctx.logger.info.calledWith('Wrote a total of 2 rows to jobs')).to.be.true;
+      expect(ctx.logger.info.calledWith('Analytics Cron Wrote a total of 2 rows to jobs')).to.be.true;
     });
 
     it('writes snake_cased rows to the temp file merged into DuckDB', async function () {
       let written: any;
       duckDbConn.run.callsFake(async (query: string) => {
-        written = JSON.parse(fs.readFileSync(tempFilePathFromMergeQuery(query), 'utf8'));
+        written = readNdjsonFile(tempFilePathFromMergeQuery(query));
       });
 
       dbStub.withArgs('jobs').returns(makeQueryBuilder([
@@ -292,11 +313,56 @@ describe('AnalyticsCron', function () {
       expect(written).to.deep.equal([{ id: 1, updated_at: '2024-01-01T00:00:00.000Z', request_id: 'req-1' }]);
     });
 
+    it('writes the temp file as newline-delimited JSON, one row per line, and reads it as such', async function () {
+      let query!: string;
+      let contents!: string;
+      duckDbConn.run.callsFake(async (q: string) => {
+        query = q;
+        contents = fs.readFileSync(tempFilePathFromMergeQuery(q), 'utf8');
+      });
+
+      dbStub.withArgs('jobs').returns(makeQueryBuilder([
+        { id: 1, updatedAt: new Date('2024-01-01T00:00:00Z'), message: 'line one\nline two' },
+        { id: 2, updatedAt: new Date('2024-01-02T00:00:00Z'), message: 'second' },
+      ]));
+
+      await AnalyticsCron.run(ctx);
+
+      expect(query).to.match(/read_json_auto\('[^']+', format = 'newline_delimited', sample_size = -1\)/);
+      // Newlines inside values are escaped by JSON.stringify, so they can't split a row
+      expect(contents).to.equal(
+        '{"id":1,"updated_at":"2024-01-01T00:00:00.000Z","message":"line one\\nline two"}\n'
+        + '{"id":2,"updated_at":"2024-01-02T00:00:00.000Z","message":"second"}\n',
+      );
+    });
+
+    it('does not merge, cleans up the temp file, and stops paging a table when writing the temp file fails', async function () {
+      const tempFilesBefore = leftoverTempFiles();
+      // A full batch, so paging would go on to fetch another one if this batch were treated as done
+      const firstBatch = Array.from({ length: 1000 }, (_, i) => ({
+        id: i + 1,
+        updatedAt: new Date('2024-01-01T00:00:00Z'),
+        cursorUpdatedAt: '2024-01-01 00:00:00+00',
+      }));
+      // JSON.stringify throws on a BigInt, failing the write partway through the batch
+      (firstBatch[500] as any).bad = BigInt(1);
+      dbStub.withArgs('jobs').callsFake(() => makeQueryBuilder(firstBatch));
+
+      await AnalyticsCron.run(ctx);
+
+      expect(ctx.logger.error.calledWithMatch(sinon.match.instanceOf(TypeError))).to.be.true;
+      expect(duckDbConn.run.calledWithMatch(/catalog\.iceberg\.jobs /)).to.be.false;
+      expect(dbStub.withArgs('jobs').callCount).to.equal(1);
+      expect(ctx.logger.info.calledWithMatch(/^Analytics Cron Wrote a total of .* rows to jobs$/)).to.be.false;
+      expect(leftoverTempFiles()).to.deep.equal(tempFilesBefore);
+      expect(ctx.logger.info.calledWith('Completed analytics cron job')).to.be.true;
+    });
+
     it('strips the access token from workflow_steps rows before merging into Iceberg', async function () {
       const operation = JSON.stringify({ accessToken: 'super-secret', other: 'value' });
       let written: any;
       duckDbConn.run.callsFake(async (query: string) => {
-        written = JSON.parse(fs.readFileSync(tempFilePathFromMergeQuery(query), 'utf8'));
+        written = readNdjsonFile(tempFilePathFromMergeQuery(query));
       });
 
       dbStub.withArgs('workflow_steps').returns(makeQueryBuilder([
@@ -353,12 +419,43 @@ describe('AnalyticsCron', function () {
 
       expect(dbStub.withArgs('jobs').callCount).to.equal(2);
       expect(duckDbConn.run.callCount).to.equal(2);
-      expect(ctx.logger.info.calledWith('Wrote a total of 1001 rows to jobs')).to.be.true;
+      expect(ctx.logger.info.calledWith('Analytics Cron Wrote a total of 1001 rows to jobs')).to.be.true;
 
       // The second batch's query should page forward using the last row of the first batch.
       const secondCallBuilder = dbStub.withArgs('jobs').secondCall.returnValue;
       expect(secondCallBuilder.whereRaw.firstCall.args[0]).to.match(/\("updatedAt", id\) > /);
       expect(secondCallBuilder.whereRaw.firstCall.args[1]).to.deep.equal([sharedUpdatedAt, batchSize]);
+    });
+
+    it('reads each batch from Postgres a page at a time, and merges the pages as a single batch', async function () {
+      env.analyticsUpdateBatchSize = 3;
+      env.analyticsUpdatePageSize = 2;
+      const pages = [
+        [
+          { id: 1, updatedAt: new Date('2024-01-01T00:00:00Z'), cursorUpdatedAt: '2024-01-01 00:00:00+00' },
+          { id: 2, updatedAt: new Date('2024-01-02T00:00:00Z'), cursorUpdatedAt: '2024-01-02 00:00:00+00' },
+        ],
+        // The remainder of the first batch - only 1 row is asked for, to stop at the batch size
+        [{ id: 3, updatedAt: new Date('2024-01-03T00:00:00Z'), cursorUpdatedAt: '2024-01-03 00:00:00+00' }],
+        // A short page, ending the second batch and paging for the table
+        [{ id: 4, updatedAt: new Date('2024-01-04T00:00:00Z'), cursorUpdatedAt: '2024-01-04 00:00:00+00' }],
+      ];
+      let call = 0;
+      dbStub.withArgs('jobs').callsFake(() => makeQueryBuilder(pages[call++] ?? []));
+      const merged: any[][] = [];
+      duckDbConn.run.callsFake(async (query: string) => {
+        merged.push(readNdjsonFile(tempFilePathFromMergeQuery(query)).map((row) => row.id));
+      });
+
+      await AnalyticsCron.run(ctx);
+
+      expect(merged).to.deep.equal([[1, 2, 3], [4]]);
+      const jobsCalls = dbStub.withArgs('jobs').getCalls();
+      expect(jobsCalls.map((c) => c.returnValue.limit.firstCall.args[0])).to.deep.equal([2, 1, 2]);
+      // Each page continues from the last row of the page before it, across batches too
+      expect(jobsCalls[1].returnValue.whereRaw.firstCall.args[1]).to.deep.equal(['2024-01-02 00:00:00+00', 2]);
+      expect(jobsCalls[2].returnValue.whereRaw.firstCall.args[1]).to.deep.equal(['2024-01-03 00:00:00+00', 3]);
+      expect(ctx.logger.info.calledWith('Analytics Cron Wrote a total of 4 rows to jobs')).to.be.true;
     });
 
     it('logs an error and continues (as zero rows) when a Postgres query fails for a table', async function () {
@@ -416,10 +513,10 @@ describe('AnalyticsCron', function () {
       // (see the comment above the do/while loop in updateAnalytics).
       expect(dbStub.withArgs('jobs').callCount).to.equal(1);
       expect(duckDbConn.run.callCount).to.equal(1);
-      // Since the batch failed, "Wrote a total of ... rows to jobs" (logged after the
-      // do/while loop completes normally) must never be reached for this table.
+      // Since the batch failed, "Analytics Cron Wrote a total of ... rows to jobs" (logged
+      // after the do/while loop completes normally) must never be reached for this table.
       // (anchored so it doesn't also match the log line for the jobs_raw_labels table)
-      expect(ctx.logger.info.calledWithMatch(/^Wrote a total of .* rows to jobs$/)).to.be.false;
+      expect(ctx.logger.info.calledWithMatch(/^Analytics Cron Wrote a total of .* rows to jobs$/)).to.be.false;
     });
 
     describe('when the Postgres schema has changed', function () {

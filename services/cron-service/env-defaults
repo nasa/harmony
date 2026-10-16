@@ -51,11 +51,20 @@ HARMONY_ENVIRONMENT=local
 # The analytics schedule
 ANALYTICS_CRON="0 */8 * * *" # every eight hours
 
-# the max number of rows to process at once for the analytics updates
-ANALYTICS_UPDATE_BATCH_SIZE=100000
+# the max number of rows to process at once for the analytics updates. Each batch is merged into
+# Iceberg by duckdb in a single MERGE, and duckdb's memory use for that MERGE grows with the batch
+# size - and well beyond ANALYTICS_UPDATE_MEMORY_LIMIT, since much of it isn't counted against
+# that limit. 100000-row batches of jobs got the cron service OOM killed with a 3Gi memory limit.
+ANALYTICS_UPDATE_BATCH_SIZE=25000
 
-# the memory limit for duckdb
-ANALYTICS_UPDATE_MEMORY_LIMIT="2GB"
+# the number of rows read from postgres at a time while building each batch above - only this
+# many rows are held in memory at once, so this, not the batch size, bounds node's memory use
+ANALYTICS_UPDATE_PAGE_SIZE=5000
+
+# the memory limit for duckdb. This only limits duckdb's buffer manager, so duckdb's actual
+# memory use runs higher, and it shares the container's memory with node - keep it well under
+# the cron service's memory limit (CRON_SERVICE_LIMITS_MEMORY) or the container gets OOM killed
+ANALYTICS_UPDATE_MEMORY_LIMIT="1GB"
 
 # the number of threads used by duckdb
 ANALYTICS_UPDATE_THREADS=2
