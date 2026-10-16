@@ -1,0 +1,7 @@
+# Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
+version: v1.25.0
+ignore:
+  SNYK-JS-URIJS-19963963:
+    - '*':
+        reason: 'Infinite loop in uri-js@4.4.1 pulled in transitively via ajv-formats-draft2019@1.6.1. No upgrade or patch available upstream. HARMONY-2471.'
+        expires: 2027-04-15T00:00:00.000Z
