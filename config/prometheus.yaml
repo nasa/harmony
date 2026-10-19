@@ -137,6 +137,28 @@ data:
       - job_name: 'kube-state-metrics'
         static_configs:
         - targets: ['kube-state-metrics:8080']
+      # Scrapes the cAdvisor endpoint built into each node's kubelet (proxied through the API
+      # server) for container memory metrics used by the cron-service memory usage collector
+      - job_name: 'kubernetes-cadvisor'
+        scrape_interval: 30s
+        scheme: https
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        kubernetes_sd_configs:
+        - role: node
+        relabel_configs:
+        - target_label: __address__
+          replacement: kubernetes.default.svc:443
+        - source_labels: [__meta_kubernetes_node_name]
+          regex: (.+)
+          target_label: __metrics_path__
+          replacement: /api/v1/nodes/$1/proxy/metrics/cadvisor
+        # cAdvisor exposes a very large number of series, so only keep what we need
+        metric_relabel_configs:
+        - source_labels: [__name__, namespace]
+          regex: (container_memory_max_usage_bytes|container_memory_working_set_bytes);harmony
+          action: keep
 
 ---
 apiVersion: apps/v1

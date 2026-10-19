@@ -36,6 +36,9 @@ MEMORY_USAGE_COLLECTOR_CRON="0 * * * *" # run once an hour
 # MEMORY_USAGE_COLLECTOR_CRON
 MEMORY_USAGE_COLLECTOR_LOOK_BACK_MINUTES=60
 
+# The Prometheus server that scrapes cAdvisor container memory metrics
+MEMORY_USAGE_PROMETHEUS_URL=http://prometheus.monitoring:9090
+
 # The bucket where memory usage metrics are stored
 MEMORY_USAGE_BUCKET=memory-usage-bucket
 
