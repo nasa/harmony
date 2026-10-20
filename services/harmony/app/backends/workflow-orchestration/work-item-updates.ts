@@ -698,6 +698,12 @@ export async function checkRemainingStepsForCompletion(
  * @param logger - the Logger for the request
  * @param checkCompletion - true if needs to check if the whole job has completed
  * @param thisStep - the current workflow step the work item is being processed in
+ * @param nextWorkflowStep - the workflow step after thisStep, or null if thisStep is the last
+ * step in the chain. Fetched once by the caller (inside the same transaction, which holds the
+ * lock on the job row) and threaded through to every item in the batch, rather than each item
+ * re-fetching the same row. Safe to share and mutate across items: createNextWorkItems /
+ * handleBatching already mutate and save this exact object in place, so later items in the
+ * batch see the same up-to-date state a fresh fetch would have shown them.
  */
 export async function processWorkItem(
   tx: Transaction,
@@ -707,6 +713,7 @@ export async function processWorkItem(
   logger: Logger,
   checkCompletion,
   thisStep: WorkflowStep,
+  nextWorkflowStep: WorkflowStep,
 ): Promise<void> {
   const { jobID } = job;
   let { status } = preprocessResult;
@@ -870,11 +877,6 @@ export async function processWorkItem(
       handleFailedWorkItems, 'HWIUWJI.handleFailedWorkItems', logger)
     )(tx, job, workItem, status, logger, message);
     if (continueProcessing) {
-      const nextWorkflowStep = await (await logAsyncExecutionTime(
-        getWorkflowStepByJobIdStepIndex,
-        'HWIUWJI.getWorkflowStepByJobIdStepIndex',
-        logger))(tx, workItem.jobID, workItem.workflowStepIndex + 1);
-
       if (nextWorkflowStep && (![WorkItemStatus.FAILED, WorkItemStatus.WARNING].includes(status)
         || nextWorkflowStep?.hasAggregatedOutput)) {
         didCreateWorkItem = await (await logAsyncExecutionTime(
@@ -963,12 +965,6 @@ export async function processWorkItem(
         }
 
       }
-
-      jobSaveStartTime = new Date().getTime();
-      await job.save(tx);
-      durationMs = new Date().getTime() - jobSaveStartTime;
-      logger.info('timing.HWIUWJI.job.save.end', { durationMs });
-
     }
   } catch (e) {
     logger.error(`Work item update failed for work item ${workItemID} and status ${status}`);
@@ -976,10 +972,10 @@ export async function processWorkItem(
   }
 
   durationMs = new Date().getTime() - startTime;
-  logger.info('timing.HWIUWJI.end', { durationMs });
+  logger.info('timing.HWIUWJI.end', { durationMs, jobId: jobID });
   logger.info(
     `Finished handling work item update for work item id ${workItemID} for service ${serviceId} and status ${status} in ${durationMs} ms`,
-    { workItemId: workItemID, status, durationMs, serviceId },
+    { workItemId: workItemID, jobId: jobID, status, durationMs, serviceId },
   );
 }
 
@@ -998,8 +994,10 @@ export async function processWorkItems(
   items: WorkItemUpdateQueueItem[],
   logger: Logger,
 ): Promise<void> {
+  const itemBatchSize = items.length;
   try {
     const transactionStart = new Date().getTime();
+    logger.info('timing.HWIUWJI.transaction.start', { jobId: jobID, workflowStepIndex, itemBatchSize });
 
     await db.transaction(async (tx) => {
       const { job } = await (await logAsyncExecutionTime(
@@ -1012,16 +1010,26 @@ export async function processWorkItems(
       } else {
         const thisStep: WorkflowStep = await (await logAsyncExecutionTime(
           getWorkflowStepByJobIdStepIndex,
-          'HWIUWJI.getWorkflowStepByJobIdStepIndex',
+          'HWIUWJI.getWorkflowStepByJobIdStepIndex.thisStep',
           logger))(tx, jobID, workflowStepIndex);
+
+        // Fetched once (inside this transaction, which holds the lock on the job row) and
+        // threaded through to every item in the batch, instead of each item re-fetching the
+        // same row. Safe to share and mutate across items: createNextWorkItems/handleBatching
+        // already mutate and save this exact object in place, so later items in the batch see
+        // the same up-to-date state a fresh fetch would have shown them.
+        const nextWorkflowStep: WorkflowStep = await (await logAsyncExecutionTime(
+          getWorkflowStepByJobIdStepIndex,
+          'HWIUWJI.getWorkflowStepByJobIdStepIndex.nextStep',
+          logger))(tx, jobID, workflowStepIndex + 1);
 
         const lastIndex = items.length - 1;
         for (let index = 0; index < items.length; index++) {
           const { preprocessResult, update } = items[index];
           if (index < lastIndex) {
-            await processWorkItem(tx, preprocessResult, job, update, logger, false, thisStep);
+            await processWorkItem(tx, preprocessResult, job, update, logger, false, thisStep, nextWorkflowStep);
           } else {
-            await processWorkItem(tx, preprocessResult, job, update, logger, true, thisStep);
+            await processWorkItem(tx, preprocessResult, job, update, logger, true, thisStep, nextWorkflowStep);
           }
         }
       }
@@ -1030,7 +1038,17 @@ export async function processWorkItems(
       }
     });
     const durationMs = new Date().getTime() - transactionStart;
-    logger.info('timing.HWIUWJI.transaction.end', { durationMs });
+    // itemBatchSize and msPerItem are the key numbers to watch when comparing throughput for a
+    // hot job before/after a change to this function: msPerItem should drop (or hold steady)
+    // even as itemBatchSize grows, since per-item round trips are what the job-row lock
+    // serializes on.
+    logger.info('timing.HWIUWJI.transaction.end', {
+      jobId: jobID,
+      workflowStepIndex,
+      itemBatchSize,
+      durationMs,
+      msPerItem: itemBatchSize > 0 ? Math.round(durationMs / itemBatchSize) : durationMs,
+    });
   } catch (e) {
     logger.error('Unable to acquire lock on Jobs table');
     logger.error(e);
