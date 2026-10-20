@@ -7,20 +7,21 @@ import { expect } from 'chai';
 import * as sinon from 'sinon';
 
 import {
-  AnalyticsCron, ALL_TABLES, parseUtcTimestamp, pgTypeToIcebergType,
+  AnalyticsCron, ALL_TABLES, parseUtcTimestamp, pgTypeToIcebergType, SLOW_PHASE_WARNING_MS,
 } from '../app/cronjobs/update-analytics';
 import * as icebergConnection from '../app/util/db/iceberg-connection';
 import env from '../app/util/env';
 
 /**
  * Build a fake Knex-style query builder: a Promise (that resolves to `rows`, or rejects if
- * `rows` is an Error) decorated with chainable, no-op stand-ins for the query methods
- * getPostgresRows() calls (select/orderBy/limit/whereRaw). Using a real Promise means
- * `await` on it behaves exactly like the real query builder would, with no ministack or
- * real database involved.
+ * `rows` is an Error, or settles with `rows` if it is itself a Promise) decorated with
+ * chainable, no-op stand-ins for the query methods getPostgresRows() calls
+ * (select/orderBy/limit/whereRaw). Using a real Promise means `await` on it behaves exactly
+ * like the real query builder would, with no ministack or real database involved.
  */
-function makeQueryBuilder(rows: Record<string, any>[] | Error): any {
-  const promise: any = rows instanceof Error ? Promise.reject(rows) : Promise.resolve(rows);
+function makeQueryBuilder(rows: Record<string, any>[] | Error | Promise<Record<string, any>[]>): any {
+  const promise: any = rows instanceof Error ? Promise.reject(rows) : rows instanceof Promise
+    ? rows.then((r) => r) : Promise.resolve(rows);
   promise.select = sinon.stub().returns(promise);
   promise.orderBy = sinon.stub().returns(promise);
   promise.limit = sinon.stub().returns(promise);
@@ -297,6 +298,75 @@ describe('AnalyticsCron', function () {
       expect(duckDbConn.run.calledOnce).to.be.true;
       expect(duckDbConn.run.firstCall.args[0]).to.match(/MERGE INTO catalog\.iceberg\.jobs/);
       expect(ctx.logger.info.calledWith('Analytics Cron Wrote a total of 2 rows to jobs')).to.be.true;
+    });
+
+    describe('when timing each phase of a batch', function () {
+      let clock: sinon.SinonFakeTimers;
+
+      beforeEach(function () {
+        // Only fake the clock and timers - the batch is still really written to a temp file
+        clock = sandbox.useFakeTimers({ toFake: ['Date', 'setTimeout', 'clearTimeout'] });
+        dbStub.withArgs('jobs').returns(makeQueryBuilder([
+          { id: 1, updatedAt: new Date('2024-01-01T00:00:00Z') },
+        ]));
+      });
+
+      it('logs how long reading the batch from Postgres and merging it into Iceberg each took', async function () {
+        duckDbConn.run.withArgs(sinon.match(/MERGE INTO/)).callsFake(() => clock.tickAsync(2000));
+
+        await AnalyticsCron.run(ctx);
+
+        expect(ctx.logger.info.calledWith('Wrote 1 rows to jobs', sinon.match({
+          durationMs: 2000, pgReadMs: 0, mergeMs: 2000,
+        }))).to.be.true;
+        expect(ctx.logger.warn.calledWithMatch(/still running/)).to.be.false;
+      });
+
+      it('warns while a merge into Iceberg is still running after the slow phase threshold', async function () {
+        let warnedDuringMerge = false;
+        duckDbConn.run.withArgs(sinon.match(/MERGE INTO/)).callsFake(async () => {
+          await clock.tickAsync(SLOW_PHASE_WARNING_MS);
+          warnedDuringMerge = ctx.logger.warn.calledWith(
+            'Merging 1 rows into Iceberg table jobs is still running after 5 minutes');
+        });
+
+        await AnalyticsCron.run(ctx);
+
+        expect(warnedDuringMerge).to.be.true;
+        expect(ctx.logger.info.calledWith('Wrote 1 rows to jobs', sinon.match({
+          mergeMs: SLOW_PHASE_WARNING_MS,
+        }))).to.be.true;
+      });
+
+      it('warns while a Postgres read is still running after the slow phase threshold', async function () {
+        let readStarted!: () => void;
+        const started = new Promise<void>((resolve) => { readStarted = resolve; });
+        let resolveRows!: (rows: Record<string, any>[]) => void;
+        const rows = new Promise<Record<string, any>[]>((resolve) => { resolveRows = resolve; });
+        dbStub.withArgs('jobs').callsFake(() => {
+          readStarted();
+          return makeQueryBuilder(rows);
+        });
+
+        const run = AnalyticsCron.run(ctx);
+        await started;
+        await clock.tickAsync(SLOW_PHASE_WARNING_MS);
+
+        expect(ctx.logger.warn.calledWith(
+          'Reading the next batch of jobs from Postgres is still running after 5 minutes')).to.be.true;
+        resolveRows([{ id: 1, updatedAt: new Date('2024-01-01T00:00:00Z') }]);
+        await run;
+        expect(ctx.logger.info.calledWith('Wrote 1 rows to jobs', sinon.match({
+          pgReadMs: SLOW_PHASE_WARNING_MS,
+        }))).to.be.true;
+      });
+
+      it('stops the slow phase warning once the phase completes', async function () {
+        await AnalyticsCron.run(ctx);
+        await clock.tickAsync(SLOW_PHASE_WARNING_MS);
+
+        expect(ctx.logger.warn.calledWithMatch(/still running/)).to.be.false;
+      });
     });
 
     it('writes snake_cased rows to the temp file merged into DuckDB', async function () {
