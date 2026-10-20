@@ -434,6 +434,37 @@ async function getDuckDbMemoryUsage(duckDbConn: DuckDBConnection): Promise<numbe
   }
 }
 
+// How long either phase of a batch (reading it from Postgres, or merging it into Iceberg) can
+// run before a warning is logged. A batch normally takes seconds, so a phase still running after
+// this long has stalled - e.g. a Postgres page query waiting on a lock held by an uncommitted
+// ALTER TABLE. The warning is logged while the phase is still running, so a stall shows up in the
+// logs as it happens rather than only once (and if) the batch completes.
+export const SLOW_PHASE_WARNING_MS = 5 * 60 * 1000;
+
+/**
+ * Run one phase of a batch, timing it and logging a warning if it is still running after
+ * SLOW_PHASE_WARNING_MS
+ *
+ * @param ctx - The Cron job context
+ * @param description - What the phase is doing, for the warning
+ * @param phase - The phase to run
+ * @returns a Promise containing the phase's result and how long it took
+ * @throws error if the phase throws
+ */
+async function timePhase<T>(ctx: Context, description: string, phase: () => Promise<T>,
+): Promise<{ result: T, durationMs: number }> {
+  const startTime = new Date().getTime();
+  const warningTimer = setTimeout(() => {
+    ctx.logger.warn(`${description} is still running after ${SLOW_PHASE_WARNING_MS / 60000} minutes`);
+  }, SLOW_PHASE_WARNING_MS);
+  try {
+    const result = await phase();
+    return { result, durationMs: new Date().getTime() - startTime };
+  } finally {
+    clearTimeout(warningTimer);
+  }
+}
+
 /**
  * Merge the next batch of Postgres rows into the corresponding Iceberg table.
  *
@@ -457,8 +488,11 @@ async function mergeNextBatchIntoIceberg(ctx: Context, duckDbConn: DuckDBConnect
   const tempFilePath = join(tempDir, uniqueFilename);
 
   try {
-    const batch = await writePostgresBatchToFile(ctx, table, latestUpdateTime, cursor,
-      batchSize, tempFilePath);
+    // pgReadMs also includes appending each page to the temp file, but that's local disk - a
+    // slow read is Postgres
+    const { result: batch, durationMs: pgReadMs } = await timePhase(ctx,
+      `Reading the next batch of ${table} from Postgres`,
+      () => writePostgresBatchToFile(ctx, table, latestUpdateTime, cursor, batchSize, tempFilePath));
     if (batch.rowCount === 0) {
       return batch;
     }
@@ -485,7 +519,8 @@ async function mergeNextBatchIntoIceberg(ctx: Context, duckDbConn: DuckDBConnect
 	         			     UPDATE SET ${updates.join(', ')}
 	         			   WHEN NOT MATCHED THEN
 	         			     INSERT (${columns.join(', ')}) VALUES (${insertValues.join(', ')});`;
-    await duckDbConn.run(query);
+    const { durationMs: mergeMs } = await timePhase(ctx,
+      `Merging ${batch.rowCount} rows into Iceberg table ${table}`, () => duckDbConn.run(query));
     const durationMs = new Date().getTime() - startTime;
     // RSS includes DuckDB's (native) memory and heapUsed is Node's alone, so logging both
     // shows which of the two is growing if the container comes close to its memory limit.
@@ -494,7 +529,7 @@ async function mergeNextBatchIntoIceberg(ctx: Context, duckDbConn: DuckDBConnect
     const { rss, heapUsed } = process.memoryUsage();
     const duckDbBytes = await getDuckDbMemoryUsage(duckDbConn);
     logger.info(`Wrote ${batch.rowCount} rows to ${table}`, {
-      durationMs, rssMb: Math.round(rss / 2 ** 20), heapUsedMb: Math.round(heapUsed / 2 ** 20),
+      durationMs, pgReadMs, mergeMs, rssMb: Math.round(rss / 2 ** 20), heapUsedMb: Math.round(heapUsed / 2 ** 20),
       duckDbMb: duckDbBytes === null ? null : Math.round(duckDbBytes / 2 ** 20),
     });
     return batch;

@@ -7,6 +7,13 @@ order with the most recent changes first.
 - ANALYTICS_UPDATE_PAGE_SIZE - the number of rows read from Postgres at a time while building each batch
   during Iceberg propagation
 
+### Changed
+- ANALYTICS_UPDATE_BATCH_SIZE - Reduced from 100000 to 25000. DuckDB's memory use for each batch's
+  MERGE grows with the batch size, and 100000-row batches got the cron service OOM killed.
+- ANALYTICS_UPDATE_MEMORY_LIMIT - Reduced from 2GB to 1GB. This only limits DuckDB's buffer manager, so
+  its actual memory use runs higher, and it shares the container's memory with Node - it must stay well
+  under CRON_SERVICE_LIMITS_MEMORY to avoid the container being OOM killed.
+
 ## 2026-10-01
 ### Changed
 - HYBIG_LIMITS_MEMORY - Increased to 12Gi to handle large polar-projected granules in NISAR collections.
