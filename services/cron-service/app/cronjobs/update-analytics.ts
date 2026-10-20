@@ -166,9 +166,53 @@ function quoteIdentifier(name: string): string {
 }
 
 /**
+ * Quote a string for use as a string literal in a DuckDB query
+ *
+ * @param value - The string
+ * @returns The quoted literal
+ */
+function quoteLiteral(value: string): string {
+  return `'${value.replace(/'/g, "''")}'`;
+}
+
+/**
+ * Get the value Postgres gives the rows that already existed when a column was added to a
+ * table with a default. Postgres stores this "missing value" with the column instead of
+ * rewriting every row, and returns it for any row written before the column was added.
+ *
+ * This is the default as evaluated when the column was added, which isn't necessarily the
+ * column's current default (`information_schema.columns.column_default`, an expression rather
+ * than a value): a column added without a default and given one later has no missing value,
+ * since its existing rows are NULL. A column with a volatile default (e.g. clock_timestamp())
+ * has none either, since Postgres rewrites the table to give each row its own value, and the
+ * missing value is cleared if the table is later rewritten for any other reason (e.g.
+ * VACUUM FULL).
+ *
+ * @param ctx - The Cron job context
+ * @param table - The name of the Postgres table
+ * @returns a Promise containing a map from Postgres column name to that column's missing
+ * value, as the text Postgres outputs for it
+ * @throws error if the values can't be read
+ */
+async function getPostgresMissingValues(ctx: Context, table: string): Promise<Map<string, string>> {
+  const { db } = ctx;
+  // attmissingval is an array (of the column's type) holding the single missing value - going
+  // through text[] gets that value as text, whatever the column's type
+  const rows: Array<{ attname: string, missing_value: string | null }> = await db('pg_attribute')
+    .select('attname', db.raw('(attmissingval::text::text[])[1] AS missing_value'))
+    .whereRaw('attrelid = ?::regclass', [table])
+    .where('atthasmissing', true)
+    .where('attisdropped', false);
+  return new Map(rows.filter((row) => row.missing_value !== null)
+    .map((row) => [row.attname, row.missing_value]));
+}
+
+/**
  * Add any columns that exist on the Postgres table but not on the corresponding Iceberg
  * table to the Iceberg table, so that new Postgres columns (from a migration) get written
- * instead of failing the merge.
+ * instead of failing the merge. If Postgres gave its existing rows a value for the new column
+ * (see getPostgresMissingValues), the column is added with that value as its default where
+ * the Iceberg table supports it, so the rows already in Iceberg read that value too.
  *
  * Columns removed from Postgres are deliberately NOT dropped from Iceberg: dropping an
  * Iceberg column hides that column's history for every existing row, and can't be undone by
@@ -197,16 +241,43 @@ async function addMissingIcebergColumns(ctx: Context, duckDbConn: DuckDBConnecti
   const reader = await duckDbConn.runAndReadAll(`DESCRIBE catalog.iceberg.${table};`);
   const icebergColumns = new Set(reader.getRowObjectsJson().map((row) => String(row.column_name)));
 
-  for (const { column_name: pgName, data_type: pgType } of pgColumns) {
-    const name = toIcebergColumnName(pgName);
-    if (icebergColumns.has(name)) continue;
+  const newColumns = pgColumns.filter((c) => !icebergColumns.has(toIcebergColumnName(c.column_name)));
+  if (newColumns.length === 0) {
+    return;
+  }
+  // Read before adding any columns, so that if it fails the columns are added (with their
+  // defaults) on a later run instead
+  const missingValues = await getPostgresMissingValues(ctx, table);
 
+  for (const { column_name: pgName, data_type: pgType } of newColumns) {
+    const name = toIcebergColumnName(pgName);
     let type = pgTypeToIcebergType(pgType);
     if (!type) {
       logger.warn(`No Iceberg type mapping for Postgres type ${pgType} of ${table}.${pgName}, using VARCHAR`);
       type = 'VARCHAR';
     }
-    await duckDbConn.run(`ALTER TABLE catalog.iceberg.${table} ADD COLUMN ${quoteIdentifier(name)} ${type};`);
+    const addColumn = `ALTER TABLE catalog.iceberg.${table} ADD COLUMN ${quoteIdentifier(name)} ${type}`;
+
+    // Give the column the value Postgres gave its existing rows as its default, so the rows
+    // already in Iceberg read that value instead of NULL. This only changes the table metadata
+    // (the column's initial-default) rather than rewriting the existing rows, but that is an
+    // Iceberg v3 feature, so fall back to adding the column without a default if it fails.
+    // Rows that have changed in Postgres since the column was added get their actual value from
+    // the merge that follows, which always writes every column, so the default is never used
+    // for the rows it writes.
+    const missingValue = missingValues.get(pgName);
+    if (missingValue !== undefined) {
+      try {
+        await duckDbConn.run(`${addColumn} DEFAULT CAST(${quoteLiteral(missingValue)} AS ${type});`);
+        logger.info(`Added column ${name} (${type}, default ${missingValue}) to Iceberg table ${table}`);
+        continue;
+      } catch (err) {
+        logger.warn(`Could not add column ${name} to Iceberg table ${table} with default ${missingValue}, `
+          + 'adding it without one, leaving the existing rows NULL');
+        logger.warn(err);
+      }
+    }
+    await duckDbConn.run(`${addColumn};`);
     logger.info(`Added column ${name} (${type}) to Iceberg table ${table}`);
   }
 }
