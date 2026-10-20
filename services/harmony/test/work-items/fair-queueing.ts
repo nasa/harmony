@@ -167,9 +167,10 @@ describe('Fair Queueing', function () {
   });
 
   describe('When the fast lane reserve capacity has been reached for a service', async function () {
-    // SlowUser's two running work items saturate the (simulated) 2-pod capacity for 'foo', so
-    // only "fast" work - a measured fast job, and a never-before-attempted job that gets a
-    // chance to be measured - should be eligible. A job already measured as slow should not.
+    // SlowUser's two running slow work items exceed the slow work capacity (1) of the simulated
+    // 2-pod 'foo' service, so only "fast" work - a measured fast job, and a never-before-attempted
+    // job that gets a chance to be measured - should be eligible. A job already measured as slow
+    // should not.
     const jobData2 = [
       // jobID, username, status, isAsync, updatedAt
       ['slowJob', 'SlowUser', 'running', true, 10000],
@@ -242,6 +243,90 @@ describe('Fair Queueing', function () {
 
     it('does not return the job already measured as slow, even though it still has ready work', function () {
       expect(results[2].status).to.equal(404);
+    });
+  });
+
+  /**
+   * Saves jobs, workflow steps, and work items for a 10-pod 'foo' service where BusyFastUser
+   * has `fastRunning` fast work items running, BusySlowUser has `slowRunning` slow work items
+   * running, and IdleSlowUser and IdleFastUser each have one job with a ready work item.
+   *
+   * @param fastRunning - the number of running work items for the fast job
+   * @param slowRunning - the number of running work items for the slow job
+   */
+  async function saveBusyServiceData(fastRunning: number, slowRunning: number): Promise<void> {
+    const jobs = [
+      ['busyFastJob', 'BusyFastUser', 'running', true, 20000],
+      ['busySlowJob', 'BusySlowUser', 'running', true, 20001],
+      ['idleSlowJob', 'IdleSlowUser', 'running', true, 20002],
+      ['idleFastJob', 'IdleFastUser', 'running', true, 20003],
+    ];
+    const items = [
+      ...Array.from({ length: fastRunning }, () => ['busyFastJob', 'foo', 'running', 20000]),
+      ...Array.from({ length: slowRunning }, () => ['busySlowJob', 'foo', 'running', 20001]),
+      ['idleSlowJob', 'foo', 'ready', 20002],
+      ['idleFastJob', 'foo', 'ready', 20003],
+    ];
+    await Promise.all(jobs.map(makePartialJobRecord).map(async (rec: Partial<JobRecord>) => {
+      await rawSaveJob(db, rec);
+    }));
+    await Promise.all(jobs.map(([jobID]) => [jobID, 'foo', '[]']).map(makePartialWorkflowStepRecord)
+      .map(async (rec: Partial<JobRecord>) => {
+        await rawSaveWorkflowStep(db, rec);
+      }));
+    await Promise.all(items.map(makePartialWorkItemRecord).map(async (rec: WorkItemRecord) => {
+      await rawSaveWorkItem(db, rec);
+    }));
+    await populateUserWorkFromWorkItems(db);
+
+    await db(UserWork.table).whereIn('job_id', ['busyFastJob', 'idleFastJob']).update({ average_duration: 1000, completed_count: 1 });
+    await db(UserWork.table).whereIn('job_id', ['busySlowJob', 'idleSlowJob']).update({ average_duration: 700000, completed_count: 1 });
+
+    // 10 pods with the default 30% fast lane reserve gives a slow work capacity of 7
+    setTestServicePodCount(10);
+  }
+
+  describe('When a service is busy mostly with fast work and slow work is under its capacity', async function () {
+    // 10 of 10 pods are busy, but only 2 with slow work - well under the slow work capacity of 7
+    before(truncateAll);
+    after(truncateAll);
+    after(() => setTestServicePodCount());
+    const results = [];
+    before(async function () {
+      await saveBusyServiceData(8, 2);
+      for (let count = 0; count < 2; count++) {
+        results.push(await getWorkForService(this.backend, 'foo'));
+      }
+    });
+
+    it('returns the slow job first, prioritized by the normal fair queueing rules', function () {
+      expect(results[0].body.workItem.jobID).to.equal('idleSlowJob');
+    });
+
+    it('returns the fast job next', function () {
+      expect(results[1].body.workItem.jobID).to.equal('idleFastJob');
+    });
+  });
+
+  describe('When running slow work has reached the slow work capacity for a service', async function () {
+    // 7 of 10 pods are busy with slow work, reaching the slow work capacity of 7
+    before(truncateAll);
+    after(truncateAll);
+    after(() => setTestServicePodCount());
+    const results = [];
+    before(async function () {
+      await saveBusyServiceData(0, 7);
+      for (let count = 0; count < 2; count++) {
+        results.push(await getWorkForService(this.backend, 'foo'));
+      }
+    });
+
+    it('returns the fast job', function () {
+      expect(results[0].body.workItem.jobID).to.equal('idleFastJob');
+    });
+
+    it('does not return the slow job, even though it would otherwise be prioritized first', function () {
+      expect(results[1].status).to.equal(404);
     });
   });
 });

@@ -64,26 +64,30 @@ items run far longer than usual (e.g. a very large or complex granule). Left unc
 of users with slow-running work can consume all of a service's pods, starving every other user of
 fast-completing work even though those other users would otherwise barely compete for capacity.
 
-To prevent this, Harmony reserves a fraction of each service's capacity (its current running pod
-count) for "fast" work only:
+To prevent this, Harmony caps how much of each service's capacity (its current running pod count)
+slow work may occupy at once, reserving the rest for "fast" work:
 
 * A `(job_id, service_id)` pair - tracked by its row in `user_work` - is classified as **slow** once
   its measured `average_duration` exceeds `SLOW_WORK_THRESHOLD_MS`. It's classified as **fast** if
   its `average_duration` is at or below that threshold, or if no work item for that job and service
   has completed yet (so a new job's duration can be measured without being treated as slow by
   default).
-* `FAST_LANE_RESERVE_FRACTION` (default `0.1`, i.e. 10%) is the fraction of a service's running pod
-  count that is held back for fast work only.
-* When scheduling work for a service, Harmony sums the `running_count` across all of that service's
-  `user_work` rows to get the number of work items currently in flight. If that count is below
-  `ceil(servicePodCount × (1 - FAST_LANE_RESERVE_FRACTION))`, all ready work is eligible as usual. If
-  it's at or above that threshold, only work classified as fast is eligible - rows already measured
-  as slow are skipped even though they have ready work, until capacity frees up below the threshold
-  again.
-* A user or job never-before-measured for a service is still eligible while the reserve is in
-  effect, as long as it has no other work currently running for that job and service - this is what
-  lets Harmony measure a new job's duration rather than permanently assuming the worst about it.
+* `FAST_LANE_RESERVE_FRACTION` (default `0.3`, i.e. 30%) is the fraction of a service's running pod
+  count reserved for fast work. The remaining share is the **slow work capacity**:
+  `max(1, floor(servicePodCount × (1 - FAST_LANE_RESERVE_FRACTION)))` - 7 slots with 10 pods.
+* When scheduling work for a service, Harmony sums the `running_count` of only that service's
+  `user_work` rows that are actively slow to get the number of slow work items currently in flight.
+  Fast and not-yet-measured work never counts against the slow work capacity.
+* While slow work in flight is below the slow work capacity, slow jobs are eligible and are
+  prioritized by exactly the same rules as all other jobs (user expected runtime, sync before
+  async, least recently worked). Each scheduling pass hands out at most the remaining slow work
+  slots to slow jobs, so a single batch cannot overshoot the capacity.
+* Once slow work in flight reaches the slow work capacity, rows measured as slow are skipped even
+  though they have ready work, until slow work items complete and free up slots.
+* A user or job never-before-measured for a service is still eligible while slow work is blocked,
+  as long as it has no other work currently running for that job and service - this is what lets
+  Harmony measure a new job's duration rather than permanently assuming the worst about it.
 
-This means a service saturated with slow work still makes forward progress on fast work, while slow
-work is never starved outright - it simply yields the reserved fraction of capacity to fast work
-when the service is busy.
+This means slow work is only held back when it is already using a large share of the service, so a
+service busy with slow work still makes forward progress on fast work, while slow work is never
+starved outright.

@@ -80,7 +80,7 @@ function shuffleArray<T>(array: T[]): T[] {
  * @param reqLogger - a logger instance
  * @param batchSize - the maximum number of work items to return
  * @param servicePodCount - the number of pods currently running for the service (its capacity),
- * used to determine when the fast lane reserve capacity has been reached
+ * used to limit how many work items for slow jobs may be running at once
  * @returns work items from the database for the given service ID
  */
 export async function getWorkItemsFromDatabase(
@@ -92,19 +92,32 @@ export async function getWorkItemsFromDatabase(
   const workItems: WorkItemData[] = [];
   try {
     await db.transaction(async (tx) => {
-      const jobIds = await getNextJobIds(tx, serviceID, batchSize, servicePodCount);
-      const shuffledJobIds = shuffleArray(jobIds);
+      const { jobs, availableSlowWorkSlots } = await getNextJobIds(tx, serviceID, batchSize, servicePodCount);
+      let remainingSlowWorkSlots = availableSlowWorkSlots;
+      const shuffledJobs = shuffleArray(jobs);
 
-      let remainingNumOfJobs = jobIds.length;
+      let remainingNumOfJobs = jobs.length;
       let remainingBatchSize = batchSize;
 
-      for (const jobId of shuffledJobIds) {
-        const workSize =
+      for (const { jobId, isSlow } of shuffledJobs) {
+        let workSize =
           remainingNumOfJobs > 0
             ? Math.ceil(remainingBatchSize / remainingNumOfJobs)
             : 1;
 
+        // slow jobs share whatever is left of the service's slow work capacity
+        if (isSlow) {
+          workSize = Math.min(workSize, remainingSlowWorkSlots);
+          if (workSize <= 0) {
+            remainingNumOfJobs -= 1;
+            continue;
+          }
+        }
+
         const nextWorkItems = await getNextWorkItems(tx, serviceID, jobId, workSize);
+        if (isSlow) {
+          remainingSlowWorkSlots -= nextWorkItems?.length ?? 0;
+        }
 
         if (nextWorkItems?.length > 0) {
           for (const workItem of nextWorkItems) {

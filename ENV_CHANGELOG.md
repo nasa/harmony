@@ -18,8 +18,9 @@ order with the most recent changes first.
 ### Added
 - SLOW_WORK_THRESHOLD_MS - average work item duration (in ms), per job and service, above which a
   job and service's work items are classified as "slow" for fair queueing's fast lane reserve.
-- FAST_LANE_RESERVE_FRACTION - fraction of a service's running pod count held back for "fast" work
-  only once the service's in-flight work reaches that threshold. See `docs/fair-queueing.md`.
+- FAST_LANE_RESERVE_FRACTION - fraction of a service's running pod count reserved for "fast" work
+  (default 0.3). Slow work is only blocked once running slow work items occupy the remaining
+  capacity. See `docs/fair-queueing.md`.
 
 ## 2026-10-01
 ### Changed

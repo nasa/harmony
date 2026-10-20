@@ -14,7 +14,6 @@ import JobMessage, {
 import {
   decrementRunningCount, deleteUserWorkForJob, deleteUserWorkForJobAndService,
   incrementReadyAndDecrementRunningCounts, incrementReadyCount, setReadyCountToZero,
-  updateAverageDurationForService,
 } from '../../models/user-work';
 import WorkItem, {
   countOfWorkItemsByStepAndJobID, getWorkItemById, getWorkItemsByJobIdAndStepIndex,
@@ -811,10 +810,10 @@ export async function processWorkItem(
       totalItemsSize = sum(outputItemSizes) / 1024 / 1024;
     }
 
-    if (COMPLETED_WORK_ITEM_STATUSES.includes(status)) {
+    const isCompleted = COMPLETED_WORK_ITEM_STATUSES.includes(status);
+    if (isCompleted) {
       thisStep.completed_work_item_count += 1;
       await thisStep.save(tx);
-      await updateAverageDurationForService(tx, jobID, workItem.serviceID, duration);
     }
 
     await (await logAsyncExecutionTime(
@@ -831,7 +830,7 @@ export async function processWorkItem(
     await (await logAsyncExecutionTime(
       decrementRunningCount,
       'HWIUWJI.decrementRunningCount',
-      logger))(tx, jobID, workItem.serviceID);
+      logger))(tx, jobID, workItem.serviceID, isCompleted ? duration : undefined);
 
     logger.info(`Updated work item. Duration (ms) was: ${duration}`);
 
