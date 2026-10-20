@@ -1,20 +1,4 @@
 {
-  "GHSA-vfj7-8cjw-p6xm": {
-    "active": true,
-    "notes": "braces through dev dependency ts-node-dev in packages/util; no fixed version available"
-  },
-  "GHSA-5c6j-r48x-rmvq": {
-    "active": true,
-    "notes": "serialize-javascript through dev dependency mocha in packages/util"
-  },
-  "GHSA-qj8w-gfj5-8c6v": {
-    "active": true,
-    "notes": "serialize-javascript through dev dependency mocha in packages/util"
-  },
-  "GHSA-hp3w-g68c-fv3c": {
-    "active": true,
-    "notes": "sprintf-js through dev dependency nyc in packages/util"
-  },
   "GHSA-w5hq-g745-h8pq": {
     "active": true,
     "notes": "uuid through dev dependency nyc in packages/util"
