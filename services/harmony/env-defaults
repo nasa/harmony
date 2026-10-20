@@ -119,10 +119,10 @@ WORK_ITEM_RETRY_LIMIT=5
 # job and service are classified as "slow" for fair queueing purposes
 SLOW_WORK_THRESHOLD_MS=600000
 
-# The fraction of a service's capacity (currently running pods) that is held back for fast work
-# items only once reached, so that short work items keep flowing even while slow work saturates
-# the rest of the service
-FAST_LANE_RESERVE_FRACTION=0.1
+# The fraction of a service's capacity (currently running pods) reserved for fast work items.
+# Slow work items are only blocked once running slow work occupies the rest of the capacity, so
+# short work items keep flowing even while slow work is busy
+FAST_LANE_RESERVE_FRACTION=0.3
 
 # The maximum number of input granules in each invocation of a service
 MAX_BATCH_INPUTS=1000000000000

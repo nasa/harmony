@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import { truncateAll } from '../../../../packages/util/test/helpers/db';
 import UserWork, {
   decrementRunningCount, getCount, incrementReadyAndDecrementRunningCounts,
-  incrementRunningAndDecrementReadyCounts, updateAverageDurationForService,
+  incrementRunningAndDecrementReadyCounts,
 } from '../../app/models/user-work';
 import db from '../../app/util/db';
 import { createUserWorkRecord } from '../helpers/user-work';
@@ -171,14 +171,14 @@ describe('user_work table', async function () {
     });
   });
 
-  describe('when calling updateAverageDurationForService', async function () {
+  describe('when calling decrementRunningCount with a completed work item duration', async function () {
     after(truncateAll);
 
     describe('on a row with no prior average', async function () {
-      const userWork = createUserWorkRecord({ job_id: 'avg1', service_id: 'bar' });
+      const userWork = createUserWorkRecord({ job_id: 'avg1', service_id: 'bar', running_count: 2 });
       before(async function () {
         await userWork.save(db);
-        await updateAverageDurationForService(db, userWork.job_id, userWork.service_id, 1000);
+        await decrementRunningCount(db, userWork.job_id, userWork.service_id, 1000);
       });
 
       it('sets the average_duration to the duration of the first completed work item', async function () {
@@ -190,15 +190,20 @@ describe('user_work table', async function () {
         const row = await db(UserWork.table).where({ job_id: userWork.job_id, service_id: userWork.service_id }).first();
         expect(row.completed_count).to.equal(1);
       });
+
+      it('subtracts one from the running_count in the same update', async function () {
+        const row = await db(UserWork.table).where({ job_id: userWork.job_id, service_id: userWork.service_id }).first();
+        expect(row.running_count).to.equal(1);
+      });
     });
 
     describe('on a row with a prior average', async function () {
       const userWork = createUserWorkRecord({
-        job_id: 'avg2', service_id: 'bar', average_duration: 1000, completed_count: 1,
+        job_id: 'avg2', service_id: 'bar', running_count: 2, average_duration: 1000, completed_count: 1,
       });
       before(async function () {
         await userWork.save(db);
-        await updateAverageDurationForService(db, userWork.job_id, userWork.service_id, 3000);
+        await decrementRunningCount(db, userWork.job_id, userWork.service_id, 3000);
       });
 
       it('updates average_duration to the cumulative mean of all completed durations', async function () {
@@ -209,6 +214,22 @@ describe('user_work table', async function () {
       it('increments completed_count', async function () {
         const row = await db(UserWork.table).where({ job_id: userWork.job_id, service_id: userWork.service_id }).first();
         expect(row.completed_count).to.equal(2);
+      });
+    });
+
+    describe('without a duration', async function () {
+      const userWork = createUserWorkRecord({
+        job_id: 'avg3', service_id: 'bar', running_count: 2, average_duration: 1000, completed_count: 1,
+      });
+      before(async function () {
+        await userWork.save(db);
+        await decrementRunningCount(db, userWork.job_id, userWork.service_id);
+      });
+
+      it('leaves average_duration and completed_count unchanged', async function () {
+        const row = await db(UserWork.table).where({ job_id: userWork.job_id, service_id: userWork.service_id }).first();
+        expect(row.average_duration).to.equal(1000);
+        expect(row.completed_count).to.equal(1);
       });
     });
   });

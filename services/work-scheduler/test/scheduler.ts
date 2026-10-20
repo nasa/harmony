@@ -381,7 +381,7 @@ describe('getWorkItemsFromDatabase', function () {
   describe('when user_work reports a ready job but no ready work items exist', function () {
     let result;
     beforeEach(async function () {
-      getNextJobIdsStub.resolves(['job-1']);
+      getNextJobIdsStub.resolves({ jobs: [{ jobId: 'job-1', isSlow: false }], availableSlowWorkSlots: batchSize });
       getNextWorkItemsStub.resolves([]); // out of sync -> else branch
       result = await workItemPolling.getWorkItemsFromDatabase(serviceID, logger, batchSize, servicePodCount);
     });
@@ -407,7 +407,7 @@ describe('getWorkItemsFromDatabase', function () {
 
   describe('when ready work items exist', function () {
     beforeEach(async function () {
-      getNextJobIdsStub.resolves(['job-1']);
+      getNextJobIdsStub.resolves({ jobs: [{ jobId: 'job-1', isSlow: false }], availableSlowWorkSlots: batchSize });
       getNextWorkItemsStub.resolves([new WorkItem({ id: 1, jobID: 'job-1', serviceID })]);
       await workItemPolling.getWorkItemsFromDatabase(serviceID, logger, batchSize, servicePodCount);
     });
@@ -423,7 +423,10 @@ describe('getWorkItemsFromDatabase', function () {
 
   describe('with multiple jobs where only one is out of sync', function () {
     beforeEach(async function () {
-      getNextJobIdsStub.resolves(['job-ok', 'job-stale']);
+      getNextJobIdsStub.resolves({
+        jobs: [{ jobId: 'job-ok', isSlow: false }, { jobId: 'job-stale', isSlow: false }],
+        availableSlowWorkSlots: batchSize,
+      });
       getNextWorkItemsStub
         .withArgs(fakeTx, serviceID, 'job-ok', sinon.match.number)
         .resolves([new WorkItem({ id: 1, jobID: 'job-ok', serviceID })]);
@@ -441,6 +444,55 @@ describe('getWorkItemsFromDatabase', function () {
     it('increments counts only for the job with ready work', function () {
       expect(incrementRunningStub.calledOnce).to.be.true;
       expect(incrementRunningStub.firstCall.args[1]).to.equal('job-ok');
+    });
+  });
+
+  describe('when only some slow work slots are available', function () {
+    beforeEach(async function () {
+      getNextJobIdsStub.resolves({ jobs: [{ jobId: 'job-slow', isSlow: true }], availableSlowWorkSlots: 2 });
+      getNextWorkItemsStub.callsFake(async (_tx, _sid, jobID, workSize): Promise<WorkItem[]> => (
+        Array.from({ length: workSize }, (_v, i) => new WorkItem({ id: i, jobID, serviceID }))
+      ));
+      await workItemPolling.getWorkItemsFromDatabase(serviceID, logger, batchSize, servicePodCount);
+    });
+
+    it('passes the service pod count to getNextJobIds', function () {
+      expect(getNextJobIdsStub.firstCall.args[3]).to.equal(servicePodCount);
+    });
+
+    it('limits the work items requested for the slow job to the available slow work slots', function () {
+      expect(getNextWorkItemsStub.calledOnce).to.be.true;
+      expect(getNextWorkItemsStub.firstCall.args[3]).to.equal(2);
+    });
+  });
+
+  describe('when slow work slots run out partway through a batch', function () {
+    beforeEach(async function () {
+      getNextJobIdsStub.resolves({
+        jobs: [
+          { jobId: 'job-slow-1', isSlow: true },
+          { jobId: 'job-slow-2', isSlow: true },
+          { jobId: 'job-fast', isSlow: false },
+        ],
+        availableSlowWorkSlots: 1,
+      });
+      getNextWorkItemsStub.callsFake(async (_tx, _sid, jobID, workSize): Promise<WorkItem[]> => (
+        Array.from({ length: workSize }, (_v, i) => new WorkItem({ id: i, jobID, serviceID }))
+      ));
+      await workItemPolling.getWorkItemsFromDatabase(serviceID, logger, batchSize, servicePodCount);
+    });
+
+    it('hands out only one slow work item in total across the slow jobs', function () {
+      const slowItemCount = getNextWorkItemsStub.getCalls()
+        .filter((c) => c.args[2].startsWith('job-slow'))
+        .reduce((total, c) => total + c.args[3], 0);
+      expect(slowItemCount).to.equal(1);
+    });
+
+    it('still hands out work for the fast job', function () {
+      const fastCalls = getNextWorkItemsStub.getCalls().filter((c) => c.args[2] === 'job-fast');
+      expect(fastCalls.length).to.equal(1);
+      expect(fastCalls[0].args[3]).to.be.greaterThan(0);
     });
   });
 });
