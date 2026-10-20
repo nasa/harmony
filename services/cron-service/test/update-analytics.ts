@@ -52,10 +52,11 @@ function makeColumnsQueryBuilder(
 
 /**
  * Get the names of the Postgres data tables queried, leaving out the
- * `information_schema.columns` queries used to sync the Iceberg schema
+ * `information_schema.columns` and `pg_attribute` queries used to sync the Iceberg schema
  */
 function queriedDataTables(dbStub: sinon.SinonStub): string[] {
-  return dbStub.getCalls().map((c) => c.args[0]).filter((t) => t !== 'information_schema.columns');
+  return dbStub.getCalls().map((c) => c.args[0])
+    .filter((t) => t !== 'information_schema.columns' && t !== 'pg_attribute');
 }
 
 /**
@@ -552,6 +553,64 @@ describe('AnalyticsCron', function () {
           .to.equal('ALTER TABLE catalog.iceberg.jobs ADD COLUMN "request_checksum" VARCHAR;');
         expect(duckDbConn.run.secondCall.args[0]).to.match(/MERGE INTO catalog\.iceberg\.jobs/);
         expect(ctx.logger.info.calledWith('Added column request_checksum (VARCHAR) to Iceberg table jobs')).to.be.true;
+      });
+
+      it('adds the new column without a default when Postgres has no missing value for it', async function () {
+        await AnalyticsCron.run(ctx);
+
+        const queries = duckDbConn.run.getCalls().map((c) => c.args[0]);
+        expect(queries.some((q: string) => /DEFAULT|^UPDATE/.test(q))).to.be.false;
+      });
+
+      it('reads the missing values of the table being synced', async function () {
+        await AnalyticsCron.run(ctx);
+
+        const missingValuesQuery = dbStub.withArgs('pg_attribute').firstCall.returnValue;
+        expect(missingValuesQuery.whereRaw.calledWith('attrelid = ?::regclass', ['jobs'])).to.be.true;
+        expect(missingValuesQuery.where.calledWith('atthasmissing', true)).to.be.true;
+      });
+
+      it('adds the new column with the value Postgres gave its existing rows as its default, without rewriting any rows', async function () {
+        dbStub.withArgs('pg_attribute').returns(makeQueryBuilder([
+          { attname: 'requestChecksum', missing_value: 'it\'s unknown' },
+          { attname: 'id', missing_value: null },
+        ]));
+
+        await AnalyticsCron.run(ctx);
+
+        expect(duckDbConn.run.callCount).to.equal(2);
+        expect(duckDbConn.run.firstCall.args[0]).to.equal('ALTER TABLE catalog.iceberg.jobs ADD COLUMN '
+          + '"request_checksum" VARCHAR DEFAULT CAST(\'it\'\'s unknown\' AS VARCHAR);');
+        expect(duckDbConn.run.secondCall.args[0]).to.match(/MERGE INTO catalog\.iceberg\.jobs/);
+        expect(ctx.logger.info.calledWith(
+          'Added column request_checksum (VARCHAR, default it\'s unknown) to Iceberg table jobs')).to.be.true;
+      });
+
+      it('adds the new column without a default, and still merges rows, when the Iceberg table does not support the default', async function () {
+        dbStub.withArgs('pg_attribute').returns(makeQueryBuilder([
+          { attname: 'requestChecksum', missing_value: 'unknown' },
+        ]));
+        const defaultError = new Error('initial-default requires format version 3');
+        duckDbConn.run.withArgs(sinon.match(/DEFAULT/)).rejects(defaultError);
+
+        await AnalyticsCron.run(ctx);
+
+        expect(ctx.logger.warn.calledWith(defaultError)).to.be.true;
+        expect(duckDbConn.run.callCount).to.equal(3);
+        expect(duckDbConn.run.secondCall.args[0])
+          .to.equal('ALTER TABLE catalog.iceberg.jobs ADD COLUMN "request_checksum" VARCHAR;');
+        expect(duckDbConn.run.thirdCall.args[0]).to.match(/MERGE INTO catalog\.iceberg\.jobs/);
+      });
+
+      it('skips the table without adding any columns when the missing values cannot be read', async function () {
+        const pgError = new Error('pg_attribute read failed');
+        dbStub.withArgs('pg_attribute').callsFake(() => makeQueryBuilder(pgError));
+
+        await AnalyticsCron.run(ctx);
+
+        expect(ctx.logger.error.calledWith(pgError)).to.be.true;
+        expect(duckDbConn.run.called).to.be.false;
+        expect(dbStub.withArgs('jobs').called).to.be.false;
       });
 
       it('only looks up the Postgres columns of the table being synced', async function () {
