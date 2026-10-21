@@ -33,12 +33,12 @@ const SCHEDULER_POD_NAME = 'harmony-work-scheduler';
  * @returns the pod count
  */
 async function servicePodCountFetcher(serviceID: string, _sv, { context: fetchContext }): Promise<number> {
-  const timed = await logAsyncExecutionTime(
+  return logAsyncExecutionTime(
     getPodsCountForService,
     `PSQ.getPodsCountForService ${serviceID}`,
     fetchContext.logger,
+    serviceID,
   );
-  return timed(serviceID);
 }
 
 /**
@@ -49,12 +49,12 @@ async function servicePodCountFetcher(serviceID: string, _sv, { context: fetchCo
  * @returns the pod count
  */
 async function schedulerPodCountFetcher(podName: string, _sv, { context: fetchContext }): Promise<number> {
-  const timed = await logAsyncExecutionTime(
+  return logAsyncExecutionTime(
     getPodsCountForPodName,
     `PSQ.getSchedulerPodsCount ${podName}`,
     fetchContext.logger,
+    podName,
   );
-  return timed(podName);
 }
 
 const servicePodCountCache = new LRUCache<string, number>({
@@ -182,10 +182,10 @@ export async function processSchedulerQueue(
   const startTime = new Date().getTime();
   let durationMs;
   const schedulerQueue = getWorkSchedulerQueue();
-  const queueItems = await (await logAsyncExecutionTime(
+  const queueItems = await logAsyncExecutionTime(
     drainQueue,
     'PSQ.drainQueue',
-    reqLogger))(schedulerQueue, reqLogger);
+    reqLogger, schedulerQueue, reqLogger);
 
   reqLogger.debug(`Found ${queueItems.length} items in the scheduler queue`);
 
@@ -238,10 +238,10 @@ export async function processSchedulerQueue(
     let queuedCount = 0;
     const batchStartTime = new Date().getTime();
     for (const chunk of sizeToBatches(workSize, env.workItemSchedulerBatchSize)) {
-      const workItems = await (await logAsyncExecutionTime(
+      const workItems = await logAsyncExecutionTime(
         getWorkItemsFromDatabase,
         'PSQ.getWorkItemsFromDatabase',
-        reqLogger))(serviceID, reqLogger, chunk, servicePodCount);
+        reqLogger, serviceID, reqLogger, chunk, servicePodCount);
 
       for (const workItem of workItems) {
         const json = JSON.stringify(workItem);
