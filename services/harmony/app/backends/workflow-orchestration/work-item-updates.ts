@@ -721,8 +721,6 @@ export async function processWorkItem(
   let { message } = update;
   const { workItemID, hits, results, scrollID, message_category } = update;
   const startTime = new Date().getTime();
-  let durationMs;
-  let jobSaveStartTime;
   let didCreateWorkItem = false;
   let serviceId;
 
@@ -731,23 +729,14 @@ export async function processWorkItem(
   try {
     // lock the work item so we can update it - need to do this after locking jobs table above
     // to avoid deadlocks
-    const workItem = await logAsyncExecutionTime(
-      getWorkItemById,
-      'HWIUWJI.getWorkItemById',
-      logger, tx, workItemID, true);
+    const workItem = await getWorkItemById(tx, workItemID, true);
     if (!thisStep) {
-      thisStep = await logAsyncExecutionTime(
-        getWorkflowStepByJobIdStepIndex,
-        'HWIUWJI.getWorkflowStepByJobIdStepIndex',
-        logger, tx, workItem.jobID, workItem.workflowStepIndex);
+      thisStep = await getWorkflowStepByJobIdStepIndex(tx, workItem.jobID, workItem.workflowStepIndex);
     }
     serviceId = workItem.serviceID;
     if (job.hasTerminalStatus() && status !== WorkItemStatus.CANCELED) {
       logger.warn(`Job was already ${job.status}.`);
-      const numRowsDeleted = await logAsyncExecutionTime(
-        deleteUserWorkForJob,
-        'HWIUWJI.deleteUserWorkForJob',
-        logger, tx, jobID);
+      const numRowsDeleted = await deleteUserWorkForJob(tx, jobID);
       logger.warn(`Removed ${numRowsDeleted} from user_work table for job ${jobID}.`);
       // Note work item will stay in the running state, but the reaper will clean it up
       return;
@@ -780,14 +769,8 @@ export async function processWorkItem(
         logger.info(`Retrying failed work-item ${workItemID}`);
         workItem.retryCount += 1;
         workItem.status = WorkItemStatus.READY;
-        const workitemSaveStartTime = new Date().getTime();
         await workItem.save(tx);
-        durationMs = new Date().getTime() - workitemSaveStartTime;
-        logger.info('timing.HWIUWJI.workItem.save.end', { durationMs });
-        await logAsyncExecutionTime(
-          incrementReadyAndDecrementRunningCounts,
-          'HWIUWJI.incrementReadyAndDecrementRunningCounts',
-          logger, tx, jobID, workItem.serviceID);
+        await incrementReadyAndDecrementRunningCounts(tx, jobID, workItem.serviceID);
         return;
       } else {
         logger.warn(`Retry limit of ${env.workItemRetryLimit} exceeded`);
@@ -823,10 +806,7 @@ export async function processWorkItem(
       await thisStep.save(tx);
     }
 
-    await logAsyncExecutionTime(
-      updateWorkItemStatus,
-      'HWIUWJI.updateWorkItemStatus',
-      logger,
+    await updateWorkItemStatus(
       tx,
       workItemID,
       status,
@@ -834,10 +814,7 @@ export async function processWorkItem(
       duration,
       totalItemsSize,
       outputItemSizes);
-    await logAsyncExecutionTime(
-      decrementRunningCount,
-      'HWIUWJI.decrementRunningCount',
-      logger, tx, jobID, workItem.serviceID, isCompleted ? duration : undefined);
+    await decrementRunningCount(tx, jobID, workItem.serviceID, isCompleted ? duration : undefined);
 
     logger.info(`Updated work item. Duration (ms) was: ${duration}`);
 
@@ -851,16 +828,8 @@ export async function processWorkItem(
     // that there are fewer items and to know when no more query-cmr jobs should be created.
     if (hits && job.numInputGranules > hits) {
       job.numInputGranules = hits;
-
-      jobSaveStartTime = new Date().getTime();
       await job.save(tx);
-      durationMs = new Date().getTime() - jobSaveStartTime;
-      logger.info('timing.HWIUWJI.job.save.end', { durationMs });
-
-      await logAsyncExecutionTime(
-        updateCmrWorkItemCount,
-        'HWIUWJI.updateCmrWorkItemCount',
-        logger, tx, job);
+      await updateCmrWorkItemCount(tx, job);
     }
 
     await job.updateProgress(tx);
@@ -873,9 +842,7 @@ export async function processWorkItem(
       }
     }
 
-    const continueProcessing = await logAsyncExecutionTime(
-      handleFailedWorkItems, 'HWIUWJI.handleFailedWorkItems', logger,
-      tx, job, workItem, status, logger, message);
+    const continueProcessing = await handleFailedWorkItems(tx, job, workItem, status, logger, message);
     if (continueProcessing) {
       if (nextWorkflowStep && (![WorkItemStatus.FAILED, WorkItemStatus.WARNING].includes(status)
         || nextWorkflowStep?.hasAggregatedOutput)) {
@@ -904,10 +871,7 @@ export async function processWorkItem(
         if (hasOutput) {
           // set the scrollID for the next work item to the one we received from the update
           workItem.scrollID = scrollID;
-          await logAsyncExecutionTime(
-            maybeQueueQueryCmrWorkItem,
-            'HWIUWJI.maybeQueueQueryCmrWorkItem',
-            logger, tx, workItem, logger);
+          await maybeQueueQueryCmrWorkItem(tx, workItem, logger);
         } else {
           // Failed to create the next work items when there should be work items.
           // Fail the job rather than leaving it orphaned in the running state
@@ -919,10 +883,7 @@ export async function processWorkItem(
       if (!nextWorkflowStep) {
         // Finished with the chain for this granule
         if (status == WorkItemStatus.SUCCESSFUL) {
-          await logAsyncExecutionTime(
-            addJobLinksForFinishedWorkItem,
-            'HWIUWJI.addJobLinksForFinishedWorkItem',
-            logger, tx, job.jobID, catalogItems);
+          await addJobLinksForFinishedWorkItem(tx, job.jobID, catalogItems);
         }
       }
 
@@ -953,15 +914,9 @@ export async function processWorkItem(
 
         if (!nextWorkflowStep && job.status === JobStatus.PREVIEWING) {
           // Special case to pause the job as soon as any single granule completes when in the previewing state
-          jobSaveStartTime = new Date().getTime();
           await job.pauseAndSave(tx);
-          durationMs = new Date().getTime() - jobSaveStartTime;
-          logger.info('timing.HWIUWJI.job.pauseAndSave.end', { durationMs });
         } else {
-          jobSaveStartTime = new Date().getTime();
           await job.save(tx);
-          durationMs = new Date().getTime() - jobSaveStartTime;
-          logger.info('timing.HWIUWJI.job.save.end', { durationMs });
         }
 
       }
@@ -971,7 +926,7 @@ export async function processWorkItem(
     logger.error(e);
   }
 
-  durationMs = new Date().getTime() - startTime;
+  const durationMs = new Date().getTime() - startTime;
   logger.info('timing.HWIUWJI.end', { durationMs, jobId: jobID });
   logger.info(
     `Finished handling work item update for work item id ${workItemID} for service ${serviceId} and status ${status} in ${durationMs} ms`,
@@ -1000,28 +955,19 @@ export async function processWorkItems(
     logger.info('timing.HWIUWJI.transaction.start', { jobId: jobID, workflowStepIndex, itemBatchSize });
 
     await db.transaction(async (tx) => {
-      const { job } = await logAsyncExecutionTime(
-        Job.byJobID,
-        'HWIUWJI.Job.byJobID',
-        logger, tx, jobID, false, false, true);
+      const { job } = await Job.byJobID(tx, jobID, false, false, true);
 
       if (job.hasTerminalStatus()) {
         logger.warn(`Ignoring work item updates for job ${jobID} in terminal state ${job.status}.`);
       } else {
-        const thisStep: WorkflowStep = await logAsyncExecutionTime(
-          getWorkflowStepByJobIdStepIndex,
-          'HWIUWJI.getWorkflowStepByJobIdStepIndex.thisStep',
-          logger, tx, jobID, workflowStepIndex);
+        const thisStep: WorkflowStep = await getWorkflowStepByJobIdStepIndex(tx, jobID, workflowStepIndex);
 
         // Fetched once (inside this transaction, which holds the lock on the job row) and
         // threaded through to every item in the batch, instead of each item re-fetching the
         // same row. Safe to share and mutate across items: createNextWorkItems/handleBatching
         // already mutate and save this exact object in place, so later items in the batch see
         // the same up-to-date state a fresh fetch would have shown them.
-        const nextWorkflowStep: WorkflowStep = await logAsyncExecutionTime(
-          getWorkflowStepByJobIdStepIndex,
-          'HWIUWJI.getWorkflowStepByJobIdStepIndex.nextStep',
-          logger, tx, jobID, workflowStepIndex + 1);
+        const nextWorkflowStep: WorkflowStep = await getWorkflowStepByJobIdStepIndex(tx, jobID, workflowStepIndex + 1);
 
         const lastIndex = items.length - 1;
         for (let index = 0; index < items.length; index++) {
@@ -1071,16 +1017,10 @@ async function handleGranuleValidation(
     const transactionStart = new Date().getTime();
 
     await db.transaction(async (tx) => {
-      const { job } = await logAsyncExecutionTime(
-        Job.byJobID,
-        'HWIUWJI.Job.byJobID',
-        logger, tx, jobID, false, false, true);
+      const { job } = await Job.byJobID(tx, jobID, false, false, true);
 
       if (status === WorkItemStatus.FAILED) {
-        const workItem = await logAsyncExecutionTime(
-          getWorkItemById,
-          'HWIUWJI.getWorkItemById',
-          logger, tx, workItemID, true);
+        const workItem = await getWorkItemById(tx, workItemID, true);
 
         logger.info(`Granule validation failed, failing work-item ${workItemID}`);
         workItem.status = WorkItemStatus.FAILED;
@@ -1092,10 +1032,7 @@ async function handleGranuleValidation(
         await completeJob(tx, job, JobStatus.FAILED, logger, message);
       } else {
         // update workflowstep operation
-        const thisWorkflowStep = await logAsyncExecutionTime(
-          getWorkflowStepByJobIdStepIndex,
-          'HWIUWJI.getWorkflowStepByJobIdStepIndex',
-          logger, db, jobID, update.workflowStepIndex);
+        const thisWorkflowStep = await getWorkflowStepByJobIdStepIndex(db, jobID, update.workflowStepIndex);
         const op = JSON.parse(thisWorkflowStep.operation);
         op.extraArgs.granValidation = undefined;
         thisWorkflowStep.operation = JSON.stringify(op);
@@ -1149,10 +1086,7 @@ export async function handleBatchWorkItemUpdatesWithJobId(
     if (groups[workflowStepIndex][0].update.message_category === 'granValidation') {
       await handleGranuleValidation(jobID, groups[workflowStepIndex][0].update, logger);
     }
-    const nextWorkflowStep = await logAsyncExecutionTime(
-      getWorkflowStepByJobIdStepIndex,
-      'HWIUWJI.getWorkflowStepByJobIdStepIndex',
-      logger, db, jobID, parseInt(workflowStepIndex) + 1);
+    const nextWorkflowStep = await getWorkflowStepByJobIdStepIndex(db, jobID, parseInt(workflowStepIndex) + 1);
 
     const preprocessedWorkItems: WorkItemUpdateQueueItem[] = await Promise.all(
       groups[workflowStepIndex].map(async (item: WorkItemUpdateQueueItem) => {

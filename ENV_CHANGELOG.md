@@ -2,6 +2,14 @@
 Any changes to the environment variables will be documented in this file in chronological
 order with the most recent changes first.
 
+## 2026-10-21
+### Added
+- SLOW_WORK_THRESHOLD_MS - average work item duration (in ms), per job and service, above which a
+  job and service's work items are classified as "slow" for fair queueing's fast lane reserve.
+- FAST_LANE_RESERVE_FRACTION - fraction of a service's running pod count reserved for "fast" work
+  (default 0.3). Slow work is only blocked once running slow work items occupy the remaining
+  capacity. See `docs/fair-queueing.md`.
+
 ## 2026-10-15
 ### Added
 - ANALYTICS_UPDATE_PAGE_SIZE - the number of rows read from Postgres at a time while building each batch
@@ -13,14 +21,6 @@ order with the most recent changes first.
 - ANALYTICS_UPDATE_MEMORY_LIMIT - Reduced from 2GB to 1GB. This only limits DuckDB's buffer manager, so
   its actual memory use runs higher, and it shares the container's memory with Node - it must stay well
   under CRON_SERVICE_LIMITS_MEMORY to avoid the container being OOM killed.
-
-## 2026-10-09
-### Added
-- SLOW_WORK_THRESHOLD_MS - average work item duration (in ms), per job and service, above which a
-  job and service's work items are classified as "slow" for fair queueing's fast lane reserve.
-- FAST_LANE_RESERVE_FRACTION - fraction of a service's running pod count reserved for "fast" work
-  (default 0.3). Slow work is only blocked once running slow work items occupy the remaining
-  capacity. See `docs/fair-queueing.md`.
 
 ## 2026-10-01
 ### Changed

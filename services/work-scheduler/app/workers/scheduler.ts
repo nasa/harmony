@@ -241,7 +241,8 @@ export async function processSchedulerQueue(
       const workItems = await logAsyncExecutionTime(
         getWorkItemsFromDatabase,
         'PSQ.getWorkItemsFromDatabase',
-        reqLogger, serviceID, reqLogger, chunk, servicePodCount);
+        reqLogger, serviceID, reqLogger, chunk, servicePodCount,
+        env.slowWorkThresholdMs, env.fastLaneReserveFraction);
 
       for (const workItem of workItems) {
         const json = JSON.stringify(workItem);

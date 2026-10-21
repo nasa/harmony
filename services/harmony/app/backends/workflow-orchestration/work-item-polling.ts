@@ -81,6 +81,8 @@ function shuffleArray<T>(array: T[]): T[] {
  * @param batchSize - the maximum number of work items to return
  * @param servicePodCount - the number of pods currently running for the service (its capacity),
  * used to limit how many work items for slow jobs may be running at once
+ * @param slowWorkThresholdMs - average work item duration (in ms) above which a job/service is slow
+ * @param fastLaneReserveFraction - the fraction of the service's capacity reserved for fast work
  * @returns work items from the database for the given service ID
  */
 export async function getWorkItemsFromDatabase(
@@ -88,11 +90,14 @@ export async function getWorkItemsFromDatabase(
   reqLogger: Logger,
   batchSize: number,
   servicePodCount: number,
+  slowWorkThresholdMs: number,
+  fastLaneReserveFraction: number,
 ): Promise<WorkItemData[]> {
   const workItems: WorkItemData[] = [];
   try {
     await db.transaction(async (tx) => {
-      const { jobs, availableSlowWorkSlots } = await getNextJobIds(tx, serviceID, batchSize, servicePodCount);
+      const { jobs, availableSlowWorkSlots } = await getNextJobIds(
+        tx, serviceID, batchSize, servicePodCount, reqLogger, slowWorkThresholdMs, fastLaneReserveFraction);
       let remainingSlowWorkSlots = availableSlowWorkSlots;
       const shuffledJobs = shuffleArray(jobs);
 

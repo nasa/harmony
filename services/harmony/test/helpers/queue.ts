@@ -19,6 +19,12 @@ let typeQueues;
 // triggers unless a test explicitly lowers it with setTestServicePodCount.
 let testServicePodCount = 1000;
 
+// These test-only simulation functions stand in for the real work-scheduler (which has no pod
+// running in unit tests), so there's no env to read these from - mirror the production defaults
+// (services/work-scheduler/env-defaults) directly.
+const testSlowWorkThresholdMs = 600_000;
+const testFastLaneReserveFraction = 0.3;
+
 /**
  * Sets the service pod count ("capacity") used by getWorkFromDatabase in tests, so tests can
  * exercise the fast lane reserve behavior. Resets to the default (effectively unlimited) when
@@ -41,9 +47,12 @@ export async function getWorkFromDatabase(serviceID: string, reqLogger: Logger):
   let result: WorkItemData | null = null;
   try {
     await db.transaction(async (tx) => {
-      const username = await getNextUsernameForWork(tx, serviceID as string, testServicePodCount);
+      const username = await getNextUsernameForWork(
+        tx, serviceID as string, testServicePodCount, testSlowWorkThresholdMs, testFastLaneReserveFraction);
       if (username) {
-        const jobID = await getNextJobIdForUsernameAndService(tx, serviceID as string, username, testServicePodCount);
+        const jobID = await getNextJobIdForUsernameAndService(
+          tx, serviceID as string, username, testServicePodCount,
+          testSlowWorkThresholdMs, testFastLaneReserveFraction);
         if (jobID) {
           const workItem = await getNextWorkItem(tx, serviceID as string, jobID);
           if (workItem) {
