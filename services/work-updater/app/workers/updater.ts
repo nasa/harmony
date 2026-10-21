@@ -42,12 +42,16 @@ export async function handleBatchWorkItemUpdates(
         return accValue;
       }
     }, {});
-  // process each job's updates
-  for (const jobID in jobUpdates) {
-    const jobStatus = await getJobStatusForJobID(jobID);
-    if (terminalStates.includes(jobStatus)) {
-      logger.warn(`Ignoring work item updates for job ${jobID} in terminal state ${jobStatus}.`);
-    } else {
+  // process each job's updates - different jobs never share a row lock (each job's transaction
+  // locks only its own jobID), so it's safe to process them concurrently rather than blocking
+  // every other job in the batch behind one slow job (e.g. a slow S3 catalog read).
+  await Promise.allSettled(Object.keys(jobUpdates).map(async (jobID): Promise<void> => {
+    try {
+      const jobStatus = await getJobStatusForJobID(jobID);
+      if (terminalStates.includes(jobStatus)) {
+        logger.warn(`Ignoring work item updates for job ${jobID} in terminal state ${jobStatus}.`);
+        return;
+      }
       const startTime = Date.now();
       const jobBatchSize = jobUpdates[jobID].length;
       await handleBatchWorkItemUpdatesWithJobId(jobID, jobUpdates[jobID], logger);
@@ -61,8 +65,10 @@ export async function handleBatchWorkItemUpdates(
         durationMs,
         msPerItem: Math.round(durationMs / jobBatchSize),
       });
+    } catch (e) {
+      logger.error(`Error processing work item updates for job ${jobID}: ${e}`);
     }
-  }
+  }));
 }
 
 /**
