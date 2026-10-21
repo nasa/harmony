@@ -44,7 +44,7 @@ describe('Logout links', function () {
     before(async function () {
       await Promise.all(tables.map((t) => this.trx(t).truncate()));
       await job.save(this.trx);
-      this.trx.commit();
+      await this.trx.commit();
     });
 
     after(async function () {
