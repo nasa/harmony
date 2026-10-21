@@ -1,9 +1,9 @@
 import { Knex } from 'knex';
+import { Logger } from 'winston';
 
 import Record from './record';
 import WorkItem from './work-item';
 import db, { Transaction } from '../util/db';
-import env from '../util/env';
 
 // Expected runtime (in ms) assumed for in-progress work with no measured average_duration yet,
 // used only for ranking users by total expected runtime
@@ -72,14 +72,15 @@ export async function getQueuedOrRunningCountForService(tx: Transaction, service
 /**
  * Returns the maximum number of work items for a service that may be running at once for jobs
  * classified as "slow", i.e. the share of the service's capacity not held back by
- * `env.fastLaneReserveFraction`. Always at least 1 so slow work can make progress on a service
+ * `fastLaneReserveFraction`. Always at least 1 so slow work can make progress on a service
  * with very few pods.
  * @param servicePodCount - The number of pods currently running for the service (its capacity)
+ * @param fastLaneReserveFraction - The fraction of the service's capacity reserved for fast work
  * @returns the maximum number of slow work items that may be running for the service
  */
-export function getSlowWorkCapacity(servicePodCount: number): number {
+export function getSlowWorkCapacity(servicePodCount: number, fastLaneReserveFraction: number): number {
   // the small epsilon guards against floating point products like 48.99999999999999
-  return Math.max(1, Math.floor(servicePodCount * (1 - env.fastLaneReserveFraction) + 1e-9));
+  return Math.max(1, Math.floor(servicePodCount * (1 - fastLaneReserveFraction) + 1e-9));
 }
 
 /**
@@ -87,22 +88,25 @@ export function getSlowWorkCapacity(servicePodCount: number): number {
  * capacity (see getSlowWorkCapacity), in which case only work classified as "fast" should be
  * scheduled, so that short work keeps flowing even while slow work occupies most of the service.
  * Only work items running for jobs actively classified as slow (measured average_duration above
- * env.slowWorkThresholdMs) count against that capacity - fast and not-yet-measured work does not.
+ * slowWorkThresholdMs) count against that capacity - fast and not-yet-measured work does not.
  * @param tx - The database transaction
  * @param serviceID - The ID of the service
  * @param servicePodCount - The number of pods currently running for the service (its capacity)
+ * @param slowWorkThresholdMs - Average work item duration (in ms) above which a job/service is slow
+ * @param fastLaneReserveFraction - The fraction of the service's capacity reserved for fast work
  * @returns true if only fast work should be scheduled for the service
  */
 async function isFastLaneOnly(
   tx: Transaction, serviceID: string, servicePodCount: number,
+  slowWorkThresholdMs: number, fastLaneReserveFraction: number,
 ): Promise<boolean> {
   const row = await tx(UserWork.table)
     .where('service_id', serviceID)
-    .where('average_duration', '>', env.slowWorkThresholdMs)
+    .where('average_duration', '>', slowWorkThresholdMs)
     .sum({ slowRunningCount: 'running_count' })
     .first();
   const slowRunningCount = Number(row?.slowRunningCount) || 0;
-  return slowRunningCount >= getSlowWorkCapacity(servicePodCount);
+  return slowRunningCount >= getSlowWorkCapacity(servicePodCount, fastLaneReserveFraction);
 }
 
 /**
@@ -111,10 +115,11 @@ async function isFastLaneOnly(
  * no work item currently running or completed for this job and service (so Harmony can measure
  * a new job's duration without letting unmeasured work flood the service).
  * @param query - A knex query builder for the user_work table to restrict in place
+ * @param slowWorkThresholdMs - Average work item duration (in ms) above which a job/service is slow
  */
-function restrictToFastWork(query: Knex.QueryBuilder): void {
+function restrictToFastWork(query: Knex.QueryBuilder, slowWorkThresholdMs: number): void {
   query.andWhere(function (this: Knex.QueryBuilder) {
-    this.where('average_duration', '<=', env.slowWorkThresholdMs)
+    this.where('average_duration', '<=', slowWorkThresholdMs)
       .orWhere(function (this: Knex.QueryBuilder) {
         this.whereNull('average_duration')
           .andWhere('running_count', 0)
@@ -132,12 +137,16 @@ function restrictToFastWork(query: Knex.QueryBuilder): void {
  * @param tx - The database transaction
  * @param serviceID - The ID of the service
  * @param servicePodCount - The number of pods currently running for the service (its capacity)
+ * @param slowWorkThresholdMs - Average work item duration (in ms) above which a job/service is slow
+ * @param fastLaneReserveFraction - The fraction of the service's capacity reserved for fast work
  * @returns The username that should have a work item worked next
  */
 export async function getNextUsernameForWork(
   tx: Transaction, serviceID: string, servicePodCount: number,
+  slowWorkThresholdMs: number, fastLaneReserveFraction: number,
 ): Promise<string> {
-  const fastLaneOnly = await isFastLaneOnly(tx, serviceID, servicePodCount);
+  const fastLaneOnly = await isFastLaneOnly(
+    tx, serviceID, servicePodCount, slowWorkThresholdMs, fastLaneReserveFraction);
 
   const subquery = tx(UserWork.table)
     .distinct('username')
@@ -145,7 +154,7 @@ export async function getNextUsernameForWork(
     .where('ready_count', '>', 0);
 
   if (fastLaneOnly) {
-    restrictToFastWork(subquery);
+    restrictToFastWork(subquery, slowWorkThresholdMs);
   }
 
   const results = await tx(UserWork.table)
@@ -169,12 +178,16 @@ export async function getNextUsernameForWork(
  * @param serviceID - The ID of the service
  * @param username - The username to choose a job to work on
  * @param servicePodCount - The number of pods currently running for the service (its capacity)
+ * @param slowWorkThresholdMs - Average work item duration (in ms) above which a job/service is slow
+ * @param fastLaneReserveFraction - The fraction of the service's capacity reserved for fast work
  * @returns The job ID that should have a work item worked next for the service
  */
 export async function getNextJobIdForUsernameAndService(
   tx: Transaction, serviceID: string, username: string, servicePodCount: number,
+  slowWorkThresholdMs: number, fastLaneReserveFraction: number,
 ): Promise<string> {
-  const fastLaneOnly = await isFastLaneOnly(tx, serviceID, servicePodCount);
+  const fastLaneOnly = await isFastLaneOnly(
+    tx, serviceID, servicePodCount, slowWorkThresholdMs, fastLaneReserveFraction);
 
   const query = tx(UserWork.table)
     .select('job_id')
@@ -182,7 +195,7 @@ export async function getNextJobIdForUsernameAndService(
     .where('ready_count', '>', 0);
 
   if (fastLaneOnly) {
-    restrictToFastWork(query);
+    restrictToFastWork(query, slowWorkThresholdMs);
   }
 
   const results = await query
@@ -223,6 +236,9 @@ export interface NextJobs {
  * @param serviceID - The service ID
  * @param batchSize - The batch size
  * @param servicePodCount - The number of pods currently running for the service (its capacity)
+ * @param logger - the Logger for the request
+ * @param slowWorkThresholdMs - Average work item duration (in ms) above which a job/service is slow
+ * @param fastLaneReserveFraction - The fraction of the service's capacity reserved for fast work
  * @returns The list of jobs in fair queuing priority and the number of available slow work slots
  */
 export async function getNextJobIds(
@@ -230,8 +246,11 @@ export async function getNextJobIds(
   serviceID: string,
   batchSize: number,
   servicePodCount: number,
+  logger: Logger,
+  slowWorkThresholdMs: number,
+  fastLaneReserveFraction: number,
 ): Promise<NextJobs> {
-  const slowWorkCapacity = getSlowWorkCapacity(servicePodCount);
+  const slowWorkCapacity = getSlowWorkCapacity(servicePodCount, fastLaneReserveFraction);
 
   const sql = `
     WITH SlowInUse AS (
@@ -301,24 +320,40 @@ export async function getNextJobIds(
     FOR UPDATE OF uw SKIP LOCKED
   `;
 
-  const results = await tx.raw(sql, [
-    serviceID,
-    env.slowWorkThresholdMs,
-    env.slowWorkThresholdMs,
-    serviceID,
-    slowWorkCapacity,
-    env.slowWorkThresholdMs,
-    DEFAULT_EXPECTED_DURATION_MS,
-    serviceID,
-    batchSize,
+  const [results, slowInUseResults] = await Promise.all([
+    tx.raw(sql, [
+      serviceID,
+      slowWorkThresholdMs,
+      slowWorkThresholdMs,
+      serviceID,
+      slowWorkCapacity,
+      slowWorkThresholdMs,
+      DEFAULT_EXPECTED_DURATION_MS,
+      serviceID,
+      batchSize,
+    ]),
+    // the main query above only reports slow_running_count on rows it actually returns, so an
+    // empty result (no ready jobs at all, vs. every ready job being slow and filtered out) can't
+    // be told apart from it alone - get the true count directly instead of guessing.
+    tx(UserWork.table)
+      .where('service_id', serviceID)
+      .where('average_duration', '>', slowWorkThresholdMs)
+      .sum({ slowRunningCount: 'running_count' })
+      .first(),
   ]);
 
   const rows = results.rows || [];
-  // every row carries the same service-wide count; with no rows there are no jobs to limit
-  const slowRunningCount = rows.length > 0 ? Number(rows[0].slow_running_count) : slowWorkCapacity;
+  const slowRunningCount = Number(slowInUseResults?.slowRunningCount) || 0;
+  const availableSlowWorkSlots = Math.max(0, slowWorkCapacity - slowRunningCount);
+
+  if (availableSlowWorkSlots <= 0 && slowRunningCount > 0) {
+    logger.info(`Fast lane only for service ${serviceID}: ${slowRunningCount}/${slowWorkCapacity} ` +
+      `slow-work capacity in use (${servicePodCount} pods), excluding slow jobs from this scheduling round.`);
+  }
+
   return {
     jobs: rows.map((r) => ({ jobId: r.job_id, isSlow: Number(r.is_slow) === 1 })),
-    availableSlowWorkSlots: Math.max(0, slowWorkCapacity - slowRunningCount),
+    availableSlowWorkSlots,
   };
 }
 
