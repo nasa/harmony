@@ -52,6 +52,7 @@ import extendDefault from '../middleware/extend';
 import { externalValidation } from '../middleware/external-validation';
 import handleJobIDParameter from '../middleware/job-id';
 import handleLabelParameter from '../middleware/label';
+import logoutLink from '../middleware/logout-link';
 import parameterValidation from '../middleware/parameter-validation';
 import { admin, core } from '../middleware/permission-groups';
 import validateRestrictedVariables from '../middleware/restricted-variables';
@@ -153,6 +154,20 @@ function collectionPrefix(path: string): RegExp {
   return result;
 }
 
+/**
+ * Returns an Express.js handler that serves the Swagger UI page for an OpenAPI document,
+ * including a logout link on the page when `res.locals.showLogoutLink` is set
+ *
+ * @param apiDoc - The OpenAPI document to render
+ * @returns The handler serving the Swagger UI page
+ */
+function swaggerUiPage(apiDoc: unknown): RequestHandler {
+  const analyticsJs = '/js/docs/analytics-tag.js';
+  const page = swaggerUi.setup(apiDoc, { customJs: analyticsJs });
+  const pageWithLogout = swaggerUi.setup(apiDoc, { customJs: [analyticsJs, '/js/docs/logout-link.js'] });
+  return (req, res, next): void => (res.locals.showLogoutLink ? pageWithLogout : page)(req, res, next);
+}
+
 const authorizedRoutes = [
   cmrCollectionReader.collectionRegex,
   '/admin*',
@@ -212,6 +227,8 @@ export default function router({ USE_EDL_CLIENT_APP = 'false' }: RouterConfig): 
   if (`${USE_EDL_CLIENT_APP}` !== 'false') {
     result.use(logged(earthdataLoginTokenAuthorizer(authorizedRoutes, optionalAuthRoutes)));
     result.use(logged(earthdataLoginOauthAuthorizer(authorizedRoutes)));
+    // Only offered when using the EDL client app, since that is what handles /oauth2/logout
+    result.use(logoutLink);
   } else {
     result.use(logged(earthdataLoginSkipped));
   }
@@ -267,14 +284,14 @@ export default function router({ USE_EDL_CLIENT_APP = 'false' }: RouterConfig): 
     ogcCoverageApi.openApiContent.replace('no-default-cmr-collection', defaultCollectionId));
   const edrApiDoc = yaml.load(
     ogcEdrApi.openApiContent.replace('no-default-cmr-collection', defaultCollectionId));
-  result.use('/docs/api', swaggerUi.serveFiles(coverageApiDoc), swaggerUi.setup(coverageApiDoc, { customJs: '/js/docs/analytics-tag.js' }));
-  result.use('/docs/edr-api', swaggerUi.serveFiles(edrApiDoc), swaggerUi.setup(edrApiDoc, { customJs: '/js/docs/analytics-tag.js' }));
+  result.use('/docs/api', swaggerUi.serveFiles(coverageApiDoc), swaggerUiPage(coverageApiDoc));
+  result.use('/docs/edr-api', swaggerUi.serveFiles(edrApiDoc), swaggerUiPage(edrApiDoc));
 
   const capabilitiesApiPath = 'app/schemas/collection-capabilities/collection-capabilities-openapi.yml';
   const capabilitiesApiContent = fs.readFileSync(capabilitiesApiPath, 'utf-8');
   const capabilitiesApiDoc = yaml.load(
     capabilitiesApiContent.replace('no-default-cmr-collection', defaultCollectionId));
-  result.use('/docs/capabilities-api', swaggerUi.serveFiles(capabilitiesApiDoc), swaggerUi.setup(capabilitiesApiDoc, { customJs: '/js/docs/analytics-tag.js' }));
+  result.use('/docs/capabilities-api', swaggerUi.serveFiles(capabilitiesApiDoc), swaggerUiPage(capabilitiesApiDoc));
 
   result.get(collectionPrefix('wms'), asyncHandler(service(serviceInvoker)));
   result.get(/^.*?\/ogc-api-coverages\/.*?\/collections\/.*?\/coverage\/rangeset\/?$/, asyncHandler(service(serviceInvoker)));
