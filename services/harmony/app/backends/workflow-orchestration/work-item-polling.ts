@@ -160,9 +160,13 @@ export async function getWorkItemsFromDatabase(
  * Reverts work items that were pulled out of the `ready` state (and counted as `running` in
  * `user_work`) but failed to actually be sent to their service's SQS queue, so they aren't
  * orphaned as `queued` forever - invisible to any pod's poll and permanently occupying a
- * `running_count` slot - until `work-failer`'s timeout eventually notices them.
+ * `running_count` slot - until `work-failer`'s timeout eventually notices them. Only items still
+ * in the `queued` state are reverted (and counted), since a concurrent cancellation could have
+ * already moved an item out of `queued` - unconditionally reverting it would resurrect a
+ * canceled item and make it eligible for scheduling again.
  * @param workItems - the work items to revert back to `ready`
  * @param reqLogger - the logger to use
+ * @throws if the revert fails, so the caller doesn't treat these items as handled
  */
 export async function revertQueuedWorkItemsToReady(
   workItems: WorkItemData[],
@@ -171,14 +175,20 @@ export async function revertQueuedWorkItemsToReady(
   if (workItems.length < 1) return;
   try {
     await db.transaction(async (tx) => {
-      await updateWorkItemStatuses(tx, workItems.map(({ workItem }) => workItem.id), WorkItemStatus.READY);
-      for (const { workItem } of workItems) {
-        await incrementReadyAndDecrementRunningCounts(tx, workItem.jobID, workItem.serviceID);
+      const stillQueued = await tx(WorkItem.table)
+        .select('id', 'jobID', 'serviceID')
+        .where('status', WorkItemStatus.QUEUED)
+        .whereIn('id', workItems.map(({ workItem }) => workItem.id));
+      if (stillQueued.length < 1) return;
+      await updateWorkItemStatuses(tx, stillQueued.map((item) => item.id), WorkItemStatus.READY);
+      for (const item of stillQueued) {
+        await incrementReadyAndDecrementRunningCounts(tx, item.jobID, item.serviceID);
       }
     });
   } catch (err) {
     reqLogger.error(`Error reverting work items ${workItems.map(({ workItem }) => workItem.id)} back to ready after failing to queue them: ${err.message}`);
     reqLogger.error(err);
+    throw err;
   }
 }
 
