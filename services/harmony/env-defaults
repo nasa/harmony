@@ -609,3 +609,5 @@ VARIABLE_FAN_OUT_REQUESTS_MEMORY=128Mi
 VARIABLE_FAN_OUT_LIMITS_MEMORY=1Gi
 VARIABLE_FAN_OUT_INVOCATION_ARGS='python -m variable_fan_out'
 VARIABLE_FAN_OUT_SERVICE_QUEUE_URLS='["ghcr.io/nasa/variable-fan-out:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/variable-fan-out.fifo"]'
+# Most local developers don't need the fan out; set to false in .env to match deployed behavior
+VARIABLE_FAN_OUT_DISABLED=true
