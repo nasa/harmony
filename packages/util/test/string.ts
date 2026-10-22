@@ -118,6 +118,12 @@ describe('util/string', function () {
     it('returns false for foo', function () {
       expect(isBoolean('foo')).to.be.false;
     });
+    it('returns false for a string that only starts with true', function () {
+      expect(isBoolean('truecolor')).to.be.false;
+    });
+    it('returns false for a string that only ends with false', function () {
+      expect(isBoolean('isfalse')).to.be.false;
+    });
   });
 
   describe('#parseBoolean', function () {
