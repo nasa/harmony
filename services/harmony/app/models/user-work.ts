@@ -83,129 +83,6 @@ export function getSlowWorkCapacity(servicePodCount: number, fastLaneReserveFrac
   return Math.max(1, Math.floor(servicePodCount * (1 - fastLaneReserveFraction) + 1e-9));
 }
 
-/**
- * Returns true if slow work for the service is already using its full share of the service's
- * capacity (see getSlowWorkCapacity), in which case only work classified as "fast" should be
- * scheduled, so that short work keeps flowing even while slow work occupies most of the service.
- * Only work items running for jobs actively classified as slow (measured average_duration above
- * slowWorkThresholdMs) count against that capacity - fast and not-yet-measured work does not.
- * @param tx - The database transaction
- * @param serviceID - The ID of the service
- * @param servicePodCount - The number of pods currently running for the service (its capacity)
- * @param slowWorkThresholdMs - Average work item duration (in ms) above which a job/service is slow
- * @param fastLaneReserveFraction - The fraction of the service's capacity reserved for fast work
- * @returns true if only fast work should be scheduled for the service
- */
-async function isFastLaneOnly(
-  tx: Transaction, serviceID: string, servicePodCount: number,
-  slowWorkThresholdMs: number, fastLaneReserveFraction: number,
-): Promise<boolean> {
-  const row = await tx(UserWork.table)
-    .where('service_id', serviceID)
-    .where('average_duration', '>', slowWorkThresholdMs)
-    .sum({ slowRunningCount: 'running_count' })
-    .first();
-  const slowRunningCount = Number(row?.slowRunningCount) || 0;
-  return slowRunningCount >= getSlowWorkCapacity(servicePodCount, fastLaneReserveFraction);
-}
-
-/**
- * Restricts a user_work query to rows not classified as "slow": those with a measured
- * average_duration at or below the slow work threshold, or that have no measured duration and
- * no work item currently running or completed for this job and service (so Harmony can measure
- * a new job's duration without letting unmeasured work flood the service).
- * @param query - A knex query builder for the user_work table to restrict in place
- * @param slowWorkThresholdMs - Average work item duration (in ms) above which a job/service is slow
- */
-function restrictToFastWork(query: Knex.QueryBuilder, slowWorkThresholdMs: number): void {
-  query.andWhere(function (this: Knex.QueryBuilder) {
-    this.where('average_duration', '<=', slowWorkThresholdMs)
-      .orWhere(function (this: Knex.QueryBuilder) {
-        this.whereNull('average_duration')
-          .andWhere('running_count', 0)
-          .andWhere('completed_count', 0);
-      });
-  });
-}
-
-/**
- * Gets the next username that should have a work item worked for the given service ID.
- * Ranks eligible users by the expected runtime of their in-progress work (running_count times
- * average_duration, or a default duration when unmeasured) across all services, breaking ties
- * by the user who least recently had work performed. When the service's fast lane reserve
- * capacity has been reached, only users with ready "fast" work for the service are eligible.
- * @param tx - The database transaction
- * @param serviceID - The ID of the service
- * @param servicePodCount - The number of pods currently running for the service (its capacity)
- * @param slowWorkThresholdMs - Average work item duration (in ms) above which a job/service is slow
- * @param fastLaneReserveFraction - The fraction of the service's capacity reserved for fast work
- * @returns The username that should have a work item worked next
- */
-export async function getNextUsernameForWork(
-  tx: Transaction, serviceID: string, servicePodCount: number,
-  slowWorkThresholdMs: number, fastLaneReserveFraction: number,
-): Promise<string> {
-  const fastLaneOnly = await isFastLaneOnly(
-    tx, serviceID, servicePodCount, slowWorkThresholdMs, fastLaneReserveFraction);
-
-  const subquery = tx(UserWork.table)
-    .distinct('username')
-    .where('service_id', '=', serviceID)
-    .where('ready_count', '>', 0);
-
-  if (fastLaneOnly) {
-    restrictToFastWork(subquery, slowWorkThresholdMs);
-  }
-
-  const results = await tx(UserWork.table)
-    .select('username')
-    .max('last_worked as lw')
-    .select(tx.raw(`SUM(${EXPECTED_RUNTIME_SQL}) as expected_runtime`, [DEFAULT_EXPECTED_DURATION_MS]))
-    .whereIn('username', subquery)
-    .groupBy('username')
-    .orderBy('expected_runtime', 'asc')
-    .orderBy('lw', 'asc')
-    .first();
-
-  return results?.username;
-}
-
-/**
- * Gets the next job to work on for the given username and service ID. When the service's fast
- * lane reserve capacity has been reached, only jobs with ready "fast" work for the service are
- * considered.
- * @param tx - The database transaction
- * @param serviceID - The ID of the service
- * @param username - The username to choose a job to work on
- * @param servicePodCount - The number of pods currently running for the service (its capacity)
- * @param slowWorkThresholdMs - Average work item duration (in ms) above which a job/service is slow
- * @param fastLaneReserveFraction - The fraction of the service's capacity reserved for fast work
- * @returns The job ID that should have a work item worked next for the service
- */
-export async function getNextJobIdForUsernameAndService(
-  tx: Transaction, serviceID: string, username: string, servicePodCount: number,
-  slowWorkThresholdMs: number, fastLaneReserveFraction: number,
-): Promise<string> {
-  const fastLaneOnly = await isFastLaneOnly(
-    tx, serviceID, servicePodCount, slowWorkThresholdMs, fastLaneReserveFraction);
-
-  const query = tx(UserWork.table)
-    .select('job_id')
-    .where({ username, service_id: serviceID })
-    .where('ready_count', '>', 0);
-
-  if (fastLaneOnly) {
-    restrictToFastWork(query, slowWorkThresholdMs);
-  }
-
-  const results = await query
-    .orderBy('is_async', 'asc')
-    .orderBy('last_worked', 'asc')
-    .first();
-
-  return results?.job_id;
-}
-
 // A job returned by getNextJobIds, flagged with whether it is classified as slow for the service
 export interface NextJob {
   jobId: string;
@@ -223,15 +100,17 @@ export interface NextJobs {
 /**
  * Returns the jobIds with the oldest last_worked value and ready count greater than 0 and interleaved by username.
  * This query enforces the fair queueing by returning the job ids in the order of fair queueing priority:
- * users are grouped into interleaving "rounds" (one job per user per round, oldest-worked job first within
- * each user), and rounds/users are ordered by each user's expected runtime of in-progress work (across all
- * services) rather than by recency alone.
+ * users are grouped into interleaving "rounds" (one job per user per round - a user's synchronous jobs rank
+ * ahead of their asynchronous ones, then oldest-worked job first, within each user), and rounds/users are
+ * ordered by each user's expected runtime of in-progress work (across all services) rather than by recency
+ * alone.
  *
  * Slow jobs are ranked by the same rules as every other job. Work items running for jobs actively classified
  * as slow count against the service's slow work capacity (see getSlowWorkCapacity); once that capacity is
- * used up, slow jobs are excluded entirely (same criteria as restrictToFastWork). The remaining slow work
- * capacity is computed in the same query and returned so that callers can avoid handing out more slow work
- * items than are available.
+ * used up, slow jobs are excluded entirely from the Eligible CTE below (a measured average_duration at or
+ * below slowWorkThresholdMs, or no measured duration with nothing currently running or completed, still
+ * counts as fast). The remaining slow work capacity is computed in the same query and returned so that
+ * callers can avoid handing out more slow work items than are available.
  * @param tx - The database transaction
  * @param serviceID - The service ID
  * @param batchSize - The batch size
@@ -251,6 +130,9 @@ export async function getNextJobIds(
   fastLaneReserveFraction: number,
 ): Promise<NextJobs> {
   const slowWorkCapacity = getSlowWorkCapacity(servicePodCount, fastLaneReserveFraction);
+  // sqlite (test-only) doesn't support SKIP LOCKED; it's only needed for real concurrent
+  // scheduler pods, which only run against postgres.
+  const lockClause = db.client.config.client === 'pg' ? 'FOR UPDATE OF uw SKIP LOCKED' : '';
 
   const sql = `
     WITH SlowInUse AS (
@@ -290,18 +172,16 @@ export async function getNextJobIds(
         e.job_id,
         e.last_worked,
         e.username,
-        e.is_async,
         e.is_slow,
         ROW_NUMBER() OVER (
           PARTITION BY e.username
-          ORDER BY e.last_worked ASC
+          ORDER BY e.is_async ASC, e.last_worked ASC, e.job_id ASC
         ) AS user_row_num
       FROM Eligible e
     ),
     Interleaved AS (
       SELECT
         R.job_id,
-        R.is_async,
         R.is_slow,
         ROW_NUMBER() OVER (
           ORDER BY R.user_row_num ASC, ur.expected_runtime ASC, ur.most_recent_worked ASC, R.last_worked ASC
@@ -316,8 +196,8 @@ export async function getNextJobIds(
     CROSS JOIN SlowInUse s
     WHERE uw.service_id = ?
       AND i.overall_row_num <= ?
-    ORDER BY i.is_async, i.overall_row_num
-    FOR UPDATE OF uw SKIP LOCKED
+    ORDER BY i.overall_row_num
+    ${lockClause}
   `;
 
   const [results, slowInUseResults] = await Promise.all([
@@ -342,7 +222,8 @@ export async function getNextJobIds(
       .first(),
   ]);
 
-  const rows = results.rows || [];
+  // pg's tx.raw() returns { rows: [...] }; sqlite's (test-only) returns the row array directly.
+  const rows = db.client.config.client === 'pg' ? (results.rows || []) : results;
   const slowRunningCount = Number(slowInUseResults?.slowRunningCount) || 0;
   const availableSlowWorkSlots = Math.max(0, slowWorkCapacity - slowRunningCount);
 

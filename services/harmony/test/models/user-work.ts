@@ -2,11 +2,41 @@ import { expect } from 'chai';
 
 import { truncateAll } from '../../../../packages/util/test/helpers/db';
 import UserWork, {
-  decrementRunningCount, getCount, incrementReadyAndDecrementRunningCounts,
+  decrementRunningCount, getCount, getNextJobIds, incrementReadyAndDecrementRunningCounts,
   incrementRunningAndDecrementReadyCounts,
 } from '../../app/models/user-work';
 import db from '../../app/util/db';
+import logger from '../../app/util/log';
 import { createUserWorkRecord } from '../helpers/user-work';
+
+describe('getNextJobIds', function () {
+  const serviceID = 'sync-priority-service';
+
+  afterEach(async function () {
+    await truncateAll();
+  });
+
+  describe('when the same user has one synchronous and one older asynchronous job ready', function () {
+    beforeEach(async function () {
+      // async job, worked least recently (would win on last_worked alone)
+      await createUserWorkRecord({
+        job_id: 'asyncJob', service_id: serviceID, username: 'sameUser',
+        ready_count: 1, is_async: true, last_worked: new Date(1000),
+      }).save(db);
+      // sync job, worked more recently, but should still rank first for this user
+      await createUserWorkRecord({
+        job_id: 'syncJob', service_id: serviceID, username: 'sameUser',
+        ready_count: 1, is_async: false, last_worked: new Date(2000),
+      }).save(db);
+    });
+
+    it('ranks the synchronous job ahead of the older asynchronous job', async function () {
+      const { jobs } = await db.transaction((tx) => getNextJobIds(
+        tx, serviceID, 10, 1000, logger, 600_000, 0.3));
+      expect(jobs.map((j) => j.jobId)).to.eql(['syncJob', 'asyncJob']);
+    });
+  });
+});
 
 describe('user_work table', async function () {
   describe('when creating a row and setting the ready and running counts to positive values', async function () {

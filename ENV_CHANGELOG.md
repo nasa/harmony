@@ -2,6 +2,15 @@
 Any changes to the environment variables will be documented in this file in chronological
 order with the most recent changes first.
 
+## 2026-10-22
+### Changed
+- QUEUE_LONG_POLLING_WAIT_TIME_SEC - lowered default from 20 to 3. A FIFO queue's internal
+  partitioning (used here because each work item is sent with its own unique MessageGroupId) means
+  an open long poll can miss a message that becomes visible on a different partition mid-wait,
+  forcing a wait of up to the full timeout before the next poll picks it up. Lowering the wait
+  shrinks that worst case, at the cost of more frequent ReceiveMessage calls while a queue is
+  starved - still well under SQS FIFO's 300 req/sec per-queue cap at observed pod counts.
+
 ## 2026-10-21
 ### Added
 - SLOW_WORK_THRESHOLD_MS - average work item duration (in ms), per job and service, above which a
