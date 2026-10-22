@@ -3,10 +3,7 @@ import { Logger } from 'winston';
 
 import { MemoryQueue } from './memory-queue';
 import * as util from '../../app/backends/workflow-orchestration/util';
-import { WorkItemData } from '../../app/backends/workflow-orchestration/work-item-polling';
-import { getNextJobIdForUsernameAndService, getNextUsernameForWork, incrementRunningAndDecrementReadyCounts, recalculateCounts } from '../../app/models/user-work';
-import { getNextWorkItem } from '../../app/models/work-item';
-import db from '../../app/util/db';
+import { getWorkItemsFromDatabase, WorkItemData } from '../../app/backends/workflow-orchestration/work-item-polling';
 import logger from '../../app/util/log';
 import { WorkItemQueueType } from '../../app/util/queue/queue';
 import * as qf from '../../app/util/queue/queue-factory';
@@ -37,47 +34,18 @@ export function setTestServicePodCount(servicePodCount = 1000): void {
 }
 
 /**
- * Get a work item from the database for the given service ID.
+ * Get a work item from the database for the given service ID, using the real production
+ * selection algorithm (getWorkItemsFromDatabase) with a batch size of 1, so tests exercise
+ * exactly the same fair-queueing logic as the real work-scheduler.
  *
  * @param serviceID - the id of the service to get work for
  * @param reqLogger - a logger instance
  * @returns A work item from the database for the given service ID
  */
 export async function getWorkFromDatabase(serviceID: string, reqLogger: Logger): Promise<WorkItemData | null> {
-  let result: WorkItemData | null = null;
-  try {
-    await db.transaction(async (tx) => {
-      const username = await getNextUsernameForWork(
-        tx, serviceID as string, testServicePodCount, testSlowWorkThresholdMs, testFastLaneReserveFraction);
-      if (username) {
-        const jobID = await getNextJobIdForUsernameAndService(
-          tx, serviceID as string, username, testServicePodCount,
-          testSlowWorkThresholdMs, testFastLaneReserveFraction);
-        if (jobID) {
-          const workItem = await getNextWorkItem(tx, serviceID as string, jobID);
-          if (workItem) {
-            await incrementRunningAndDecrementReadyCounts(tx, jobID, serviceID as string);
-
-            if (workItem && util.QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)) {
-              const childLogger = reqLogger.child({ workItemId: workItem.id });
-              const maxCmrGranules = await util.calculateQueryCmrLimit(tx, workItem, childLogger);
-              reqLogger.debug(`Found work item ${workItem.id} for service ${serviceID} with max CMR granules ${maxCmrGranules}`);
-              result = { workItem, maxCmrGranules };
-            } else {
-              result = { workItem };
-            }
-          } else {
-            reqLogger.warn(`user_work is out of sync for user ${username} and job ${jobID}, could not find ready work item`);
-            reqLogger.warn(`recalculating ready and running counts for job ${jobID}`);
-            await recalculateCounts(tx, jobID);
-          }
-        }
-      }
-    });
-  } catch (err) {
-    reqLogger.error(`Error getting work from database: ${err.message}`);
-  }
-  return result;
+  const workItems = await getWorkItemsFromDatabase(
+    serviceID, reqLogger, 1, testServicePodCount, testSlowWorkThresholdMs, testFastLaneReserveFraction);
+  return workItems[0] ?? null;
 }
 
 /**

@@ -30,32 +30,46 @@ requesting work. More generally, it answers the question, "of the users needing 
 performed by a given service, which user should go next?".
 
 ## The Algorithm
-The steps to perform fair queueing in harmony can be summarized as follows:
+The real scheduling path batches work across many jobs and users at once, rather than picking one
+user then one job at a time.
 
-When a worker requests a work item for a given service
+When the work-scheduler needs to fill a service's queue (`services/work-scheduler/app/workers/scheduler.ts`),
+it works out how many items to request and asks for them in batches of at most
+`WORK_ITEM_SCHEDULER_BATCH_SIZE`. For each batch:
 
-1. Identify all the users actively requesting work to be done on the service, subject to the
-   [fast lane reserve](#the-fast-lane-reserve) below
-2. From the list of identified users, determine which user has the least _expected runtime_ of
-   work currently in progress, where expected runtime for a user is the sum, across all of that
-   user's `(job, service)` rows in `user_work` for every service, of `running_count × average_duration`
-   (using a default duration for rows whose `average_duration` hasn't been measured yet)
-3. If multiple users have the same expected runtime, choose the user which had work performed (for
-   any service) least recently
-4. From that user's list of jobs (only those invoking the service, and subject to the fast lane
-   reserve), sort the rows in the user_work table by the `is_async` column to favor synchronous
-   jobs, then sort by the `last_worked` column to identify the job that has been worked least
-   recently - return a work item for that job for the given service with the work item having the
-   lowest ID
-5. Update the `last_worked` column for that row in the user work table to indicate work being done
-   for that user and job at the current point in time
-6. When the work item completes, update the `average_duration` and `completed_count` columns for
-   that row with a cumulative mean incorporating the completed work item's duration
+1. `getNextJobIds` (`user-work.ts`) identifies all jobs with ready work for the service, subject to
+   the [fast lane reserve](#the-fast-lane-reserve) below, and groups them by user
+2. For each user, it computes that user's _expected runtime_ of work currently in progress: the
+   sum, across all of that user's `(job, service)` rows in `user_work` for every service, of
+   `running_count × average_duration` (using a default duration for rows whose `average_duration`
+   hasn't been measured yet)
+3. Each user's own jobs are ranked with their synchronous jobs ahead of their asynchronous ones,
+   then least-to-most-recently-worked; all users' jobs are then interleaved into rounds: round 1 is
+   every user's top-ranked job, round 2 is every user's next job, and so on. Within a round, the
+   user with the least expected runtime goes first; ties go to whoever was served longest ago
+4. The top `batchSize` jobs by that interleaved order are selected and locked with
+   `FOR UPDATE ... SKIP LOCKED`, so multiple scheduler pods can't hand out the same work
+5. `getWorkItemsFromDatabase` (`work-item-polling.ts`) shuffles the selected jobs (so that any jobs
+   left over when the batch doesn't divide evenly aren't always the same ones at the end of the
+   list), then gives each job `ceil(remaining batch ÷ remaining jobs)` work items, picking the
+   lowest-ID ready items for that job. This shuffle only affects how the batch's items are split
+   across the jobs already selected in step 4 - it has no bearing on which jobs made it into the
+   batch, or their priority order within it
+6. Each returned row's `last_worked` column is updated to indicate work being done for that user
+   and job at the current point in time
 
-All of the above are done inside a database transaction with locking to prevent a
-work item from being issued more than once.
+Steps 1-6 happen inside a single database transaction per batch.
 
-Note that this implicitly satisfies the first requirement as there will only be one user identified in step 1. Note also that this satisfies the second requirement including prioritizing synchronous calls.
+Separately, when a work item later completes, `decrementRunningCount` updates the `average_duration`
+and `completed_count` columns for that row with a cumulative mean incorporating the completed work
+item's duration - this happens in the work-updater's own transaction, not the scheduling batch above.
+
+This satisfies the first requirement in [Introduction](#introduction): if one user is alone in the
+system, every round is that user's job, so they get the whole batch. It also satisfies the second:
+round-robin interleaving means no single user can fill a batch, the user with the least work in
+flight goes first within a round, and a user's synchronous jobs are always ranked ahead of their
+asynchronous ones. Note that synchronous-job priority is scoped to each user's own jobs - it
+doesn't let one user's synchronous job jump ahead of another user's earlier round.
 
 ## The Fast Lane Reserve
 
@@ -79,9 +93,9 @@ slow work may occupy at once, reserving the rest for "fast" work:
   `user_work` rows that are actively slow to get the number of slow work items currently in flight.
   Fast and not-yet-measured work never counts against the slow work capacity.
 * While slow work in flight is below the slow work capacity, slow jobs are eligible and are
-  prioritized by exactly the same rules as all other jobs (user expected runtime, sync before
-  async, least recently worked). Each scheduling pass hands out at most the remaining slow work
-  slots to slow jobs, so a single batch cannot overshoot the capacity.
+  ranked by exactly the same rules as all other jobs, including synchronous-job priority. Each
+  scheduling pass hands out at most the remaining slow work slots to slow jobs, so a single batch
+  cannot overshoot the capacity.
 * Once slow work in flight reaches the slow work capacity, rows measured as slow are skipped even
   though they have ready work, until slow work items complete and free up slots.
 * A user or job never-before-measured for a service is still eligible while slow work is blocked,
