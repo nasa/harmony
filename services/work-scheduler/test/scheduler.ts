@@ -250,6 +250,48 @@ describe('Scheduler Worker', async function () {
           expect(revertedIds).to.deep.equal([2, 3]);
         });
       });
+
+      describe('and sending a work item fails, then reverting those items also fails', async function () {
+        let revertQueuedWorkItemsToReadyStub: sinon.SinonStub;
+        const workItems = [1, 2, 3].map((id) => ({ workItem: new WorkItem({ id, jobID: `job-${id}`, serviceID: service }) })) as workItemPolling.WorkItemData[];
+        let thrownError: Error;
+
+        beforeEach(async function () {
+          await schedulerQueue.purge();
+          await schedulerQueue.sendMessage(service);
+          serviceQueues = {};
+          serviceQueues[service] = new MemoryQueue();
+          getWorkItemsFromDatabaseStub.callsFake(async function () {
+            return workItems;
+          });
+          sinon.stub(serviceQueues[service], 'sendMessage').rejects(new Error('SQS is unavailable'));
+          revertQueuedWorkItemsToReadyStub = sinon.stub(workItemPolling, 'revertQueuedWorkItemsToReady')
+            .rejects(new Error('database is unavailable'));
+          try {
+            await processSchedulerQueue(logger);
+          } catch (e) {
+            thrownError = e;
+          }
+        });
+        afterEach(async function () {
+          await schedulerQueue.purge();
+          serviceQueues = {};
+          revertQueuedWorkItemsToReadyStub.restore();
+          getWorkItemsFromDatabaseStub.callsFake(async function () {
+            return [{ workItem: new WorkItem({ id: 1 }) }] as workItemPolling.WorkItemData[];
+          });
+        });
+
+        it('propagates the failure instead of silently continuing', async function () {
+          expect(thrownError?.message).to.equal('database is unavailable');
+        });
+
+        it('does not delete the scheduling request, so it can be retried', async function () {
+          // the message was already pulled off (invisible) by drainQueue, so check the
+          // underlying store rather than getApproximateNumberOfMessages (visible-only)
+          expect(schedulerQueue.messages.length).to.equal(1);
+        });
+      });
     });
   });
 
