@@ -134,6 +134,18 @@ export async function getNextJobIds(
   // scheduler pods, which only run against postgres.
   const lockClause = db.client.config.client === 'pg' ? 'FOR UPDATE OF uw SKIP LOCKED' : '';
 
+  if (db.client.config.client === 'pg') {
+    // Serializes reading-then-acting-on the service's slow work capacity across concurrent
+    // scheduler pods. FOR UPDATE below only locks the specific user_work rows selected into this
+    // batch - it doesn't protect the SlowInUse aggregate read, so two pods could otherwise both
+    // see capacity available and jointly admit more slow work than the fast lane reserve allows.
+    // pg_advisory_xact_lock blocks (doesn't error) if another transaction already holds this
+    // service's lock, and is released automatically on commit/rollback of this transaction - by
+    // which point this transaction's running_count updates for any admitted slow work are
+    // committed and visible, so the next transaction to acquire the lock sees an up-to-date count.
+    await tx.raw('SELECT pg_advisory_xact_lock(hashtextextended(?, 0))', [serviceID]);
+  }
+
   const sql = `
     WITH SlowInUse AS (
       SELECT COALESCE(SUM(running_count), 0) AS slow_running_count
