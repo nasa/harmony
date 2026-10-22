@@ -209,6 +209,47 @@ describe('Scheduler Worker', async function () {
           expect(numMessages).to.equal(1);
         });
       });
+
+      describe('and sending a work item to its queue fails', async function () {
+        let revertQueuedWorkItemsToReadyStub: sinon.SinonStub;
+        const workItems = [1, 2, 3].map((id) => ({ workItem: new WorkItem({ id, jobID: `job-${id}`, serviceID: service }) })) as workItemPolling.WorkItemData[];
+
+        beforeEach(async function () {
+          await schedulerQueue.purge();
+          await schedulerQueue.sendMessage(service);
+          serviceQueues = {};
+          serviceQueues[service] = new MemoryQueue();
+          getWorkItemsFromDatabaseStub.callsFake(async function () {
+            return workItems;
+          });
+          const realSendMessage = serviceQueues[service].sendMessage.bind(serviceQueues[service]);
+          sinon.stub(serviceQueues[service], 'sendMessage')
+            .onFirstCall().callsFake(realSendMessage)
+            .onSecondCall().rejects(new Error('SQS is unavailable'));
+          revertQueuedWorkItemsToReadyStub = sinon.stub(workItemPolling, 'revertQueuedWorkItemsToReady').resolves();
+          await processSchedulerQueue(logger);
+        });
+        afterEach(async function () {
+          await schedulerQueue.purge();
+          serviceQueues = {};
+          revertQueuedWorkItemsToReadyStub.restore();
+          getWorkItemsFromDatabaseStub.callsFake(async function () {
+            return [{ workItem: new WorkItem({ id: 1 }) }] as workItemPolling.WorkItemData[];
+          });
+        });
+
+        it('only queues the work items sent before the failure', async function () {
+          const numMessages = await serviceQueues[service].getApproximateNumberOfMessages();
+          expect(numMessages).to.equal(1);
+        });
+
+        it('reverts the failed item and the remaining unsent items', async function () {
+          expect(revertQueuedWorkItemsToReadyStub.calledOnce).to.be.true;
+          const revertedIds = revertQueuedWorkItemsToReadyStub.firstCall.args[0]
+            .map(({ workItem }) => workItem.id);
+          expect(revertedIds).to.deep.equal([2, 3]);
+        });
+      });
     });
   });
 
