@@ -1,0 +1,28 @@
+# Story 2: a small synchronous request arrives while another user has a big async job running.
+name: 02-small-sync
+description: >-
+  Alice has a big async job (600 granules, ~2 minute work items) using the whole 20 pod service.
+  Ten minutes in, Bob sends a synchronous request for 4 granules (1 minute each). How long does
+  Bob wait?
+seed: 2
+maxDuration: 1d
+env:
+  QUEUE_LONG_POLLING_WAIT_TIME_SEC: 3
+services:
+  - name: svc
+    pods: 20
+jobs:
+  - name: alice-big
+    user: alice
+    granules: 600
+    steps:
+      - service: svc
+        duration: { dist: lognormal, median: 2m, sigma: 0.3 }
+  - name: bob-sync
+    user: bob
+    async: false
+    submitAt: 10m
+    granules: 4
+    steps:
+      - service: svc
+        duration: 1m

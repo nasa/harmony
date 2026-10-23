@@ -10,6 +10,7 @@
 - [Duration Based Fair Queueing (Experimental)](#duration-based-fair-queueing-experimental)
   - [Ranking Users by Expected Runtime](#ranking-users-by-expected-runtime)
   - [The Fast Lane Reserve](#the-fast-lane-reserve)
+- [Fair Queueing Policies and the Simulator](#fair-queueing-policies-and-the-simulator)
 
 ## Introduction
 Harmony supports two goals with regard to processing work for users. These are referred to
@@ -56,7 +57,8 @@ it works out how many items to request and asks for them in batches of at most
    longest ago for the service
 4. The top `batchSize` jobs by that interleaved order are selected and locked with
    `FOR UPDATE ... SKIP LOCKED`, so multiple scheduler pods can't hand out the same work
-5. `getWorkItemsFromDatabase` (`work-item-polling.ts`) shuffles the selected jobs (so that any jobs
+5. `baselinePolicy` (`fair-queueing-policy.ts`, called from `getWorkItemsFromDatabase` in
+   `work-item-polling.ts`) shuffles the selected jobs (so that any jobs
    left over when the batch doesn't divide evenly aren't always the same ones at the end of the
    list), then gives each job `ceil(remaining batch ÷ remaining jobs)` work items, picking the
    lowest-ID ready items for that job. This shuffle only affects how the batch's items are split
@@ -171,3 +173,21 @@ slow work may occupy at once, reserving the rest for "fast" work:
 This means slow work is only held back when it is already using a large share of the service, so a
 service busy with slow work still makes forward progress on fast work, while slow work is never
 starved outright.
+
+## Fair Queueing Policies and the Simulator
+
+The scheduling decision - which jobs get work items, and how many, each time the work-scheduler
+fills a service's queue - is made by a _fair queueing policy_ (see
+`services/harmony/app/backends/workflow-orchestration/fair-queueing-policy.ts`). A policy picks
+jobs and calls a `takeWorkItems` callback for each, which hands out the work items and keeps
+`user_work` in sync, so a policy can't leave the bookkeeping inconsistent. A policy can also keep
+its own state by implementing `onWorkItemCompleted`, which is called in the work item update
+transaction whenever a work item completes. Deployed environments always use `baselinePolicy`,
+the current algorithm (slot based, or duration based when `ENABLE_DURATION_BASED_FAIR_QUEUEING` is
+true - the policy receives the duration based settings in its scheduling context).
+
+Alternative policies can be tried out with the fair queueing simulator in
+`tools/fair-queueing-sim`, which runs Harmony's real scheduling and work item update code against
+simulated services and a virtual clock, so hours of activity - including services whose work
+items take hours - can be simulated in seconds and policies compared side by side. See
+`tools/fair-queueing-sim/README.md`.

@@ -2,6 +2,7 @@ import _, { ceil, range, sum } from 'lodash';
 import { v4 as uuid } from 'uuid';
 import { Logger } from 'winston';
 
+import { getFairQueueingPolicy } from '../../backends/workflow-orchestration/fair-queueing-policy';
 import {
   calculateQueryCmrLimit, QUERY_CMR_SERVICE_REGEX,
 } from '../../backends/workflow-orchestration/util';
@@ -829,6 +830,14 @@ export async function processWorkItem(
     if (numUserWorkRowsUpdated === 0 && completedDuration && job.status === JobStatus.PAUSED) {
       await addCompletionToUserWorkHistory(
         tx, jobID, workItem.serviceID, job.username, job.isAsync, completedDuration);
+    }
+
+    const fairQueueingPolicy = getFairQueueingPolicy();
+    if (fairQueueingPolicy.onWorkItemCompleted && COMPLETED_WORK_ITEM_STATUSES.includes(status)) {
+      await fairQueueingPolicy.onWorkItemCompleted(tx, {
+        jobID, serviceID: workItem.serviceID, workItemID, status, durationMs: duration,
+        serviceDurationMs: update.duration,
+      });
     }
 
     logger.info(`Updated work item. Duration (ms) was: ${duration}`);

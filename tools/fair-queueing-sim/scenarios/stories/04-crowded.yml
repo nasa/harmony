@@ -1,0 +1,24 @@
+# Story 4: more users than a scheduling pass has room for.
+name: 04-crowded
+description: >-
+  Eight users compete for a 20 pod service, whose scheduling passes only hand out a handful of
+  work items at a time. Carol's work items take 30 seconds and Dan's take 8 minutes; the others
+  take about 2 minutes. Bob also has a big async job, and sends a 4 granule synchronous request
+  fifteen minutes in.
+seed: 4
+maxDuration: 2d
+env:
+  QUEUE_LONG_POLLING_WAIT_TIME_SEC: 3
+services:
+  - name: svc
+    pods: 20
+jobs:
+  - { name: bob-big, user: bob, granules: 300, steps: [{ service: svc, duration: { dist: lognormal, median: 2m, sigma: 0.3 } }] }
+  - { name: carol-1, user: carol, granules: 150, steps: [{ service: svc, duration: { dist: lognormal, median: 30s, sigma: 0.3 } }] }
+  - { name: dan-1, user: dan, granules: 150, steps: [{ service: svc, duration: { dist: lognormal, median: 8m, sigma: 0.3 } }] }
+  - { name: ed-1, user: ed, granules: 150, steps: [{ service: svc, duration: { dist: lognormal, median: 2m, sigma: 0.3 } }] }
+  - { name: fay-1, user: fay, granules: 150, steps: [{ service: svc, duration: { dist: lognormal, median: 2m, sigma: 0.3 } }] }
+  - { name: gus-1, user: gus, granules: 150, steps: [{ service: svc, duration: { dist: lognormal, median: 2m, sigma: 0.3 } }] }
+  - { name: hal-1, user: hal, granules: 150, steps: [{ service: svc, duration: { dist: lognormal, median: 2m, sigma: 0.3 } }] }
+  - { name: ivy-1, user: ivy, granules: 150, steps: [{ service: svc, duration: { dist: lognormal, median: 2m, sigma: 0.3 } }] }
+  - { name: bob-sync, user: bob, async: false, submitAt: 15m, granules: 4, steps: [{ service: svc, duration: 1m }] }
