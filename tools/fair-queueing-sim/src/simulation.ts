@@ -12,6 +12,7 @@ import db from '../../../services/harmony/app/util/db';
 import env from '../../../services/harmony/app/util/env';
 import logger from '../../../services/harmony/app/util/log';
 import { WorkItemQueueType } from '../../../services/harmony/app/util/queue/queue';
+import schedulerEnv from '../../../services/work-scheduler/app/util/env';
 import { processSchedulerQueue } from '../../../services/work-scheduler/app/workers/scheduler';
 import { batchProcessQueue } from '../../../services/work-updater/app/workers/updater';
 
@@ -141,7 +142,7 @@ export async function simulate(options: SimulationOptions): Promise<RunResult> {
     },
   });
   await harness.install();
-  const sampler: PolicySampler = activatePolicy(options.policy);
+  const sampler: PolicySampler = await activatePolicy(options.policy);
 
   const workload = new Workload(scenario);
   for (const job of scenario.jobs) {
@@ -327,8 +328,14 @@ export async function simulate(options: SimulationOptions): Promise<RunResult> {
     workItems,
     decisions,
     samples,
+    // the effective values of the Harmony settings that most affect scheduling, plus any others
+    // the scenario or command line overrode
     env: {
       QUEUE_LONG_POLLING_WAIT_TIME_SEC: env.queueLongPollingWaitTimeSec,
+      SERVICE_QUEUE_BATCH_SIZE_COEFFICIENT: schedulerEnv.serviceQueueBatchSizeCoefficient,
+      WORK_ITEM_SCHEDULER_BATCH_SIZE: schedulerEnv.workItemSchedulerBatchSize,
+      MAX_WORK_ITEMS_ON_UPDATE_QUEUE: schedulerEnv.maxWorkItemsOnUpdateQueue,
+      WORK_ITEM_RETRY_LIMIT: env.workItemRetryLimit,
       ...Object.fromEntries(Object.entries(scenario.env)),
     },
   };

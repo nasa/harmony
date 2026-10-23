@@ -3,6 +3,11 @@ name: 07-slow-alone
 description: >-
   Frank is the only user, with 100 work items that each take 30 minutes on a 20 pod service.
   Does he get the whole service?
+goodOutcome: >-
+  Frank gets as much of the service as the policy allows. Under the fast lane policies that is 70%
+  of the pods, and the reserved 30% staying idle is by design (so fast work arriving later never
+  finds every pod taken) - it isn't a defect. This story shows what the reserve costs when no fast
+  work arrives.
 seed: 7
 maxDuration: 2d
 env:

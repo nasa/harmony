@@ -1,3 +1,4 @@
+import type { Provenance } from './provenance';
 import { RunResult, Sample } from './simulation';
 
 export interface JobSummary {
@@ -66,6 +67,10 @@ export interface Summary {
   sync: { jobs: number; meanMakespanMs: number | null; maxMakespanMs: number | null };
   overall: { meanSlowdown: number | null; maxSlowdown: number | null; meanWaitMs: number | null };
   env: Record<string, string | number>;
+  // what a good result looks like for the scenario
+  goodOutcome: string;
+  // what produced the run (added by the CLI)
+  provenance?: Provenance;
 }
 
 /**
@@ -304,5 +309,6 @@ export function summarize(result: RunResult): Summary {
       meanWaitMs: mean(allWaits),
     },
     env: result.env,
+    goodOutcome: scenario.goodOutcome,
   };
 }

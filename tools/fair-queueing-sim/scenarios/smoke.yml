@@ -1,6 +1,8 @@
 # A tiny scenario for checking that the simulator works end to end.
 name: smoke
 description: Two users, one service with 4 pods, a short async job and a small sync request.
+goodOutcome: >-
+  All jobs finish. This scenario only checks that the simulator works end to end.
 seed: 1
 maxDuration: 2h
 services:

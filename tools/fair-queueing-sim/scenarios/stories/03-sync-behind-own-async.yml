@@ -3,6 +3,10 @@ name: 03-sync-behind-own-async
 description: >-
   Alice and Bob each have a big async job on a 20 pod service. Ten minutes in, Bob also sends a
   synchronous request for 4 granules. Does Bob's own async backlog hold up his sync request?
+goodOutcome: >-
+  Bob's sync request finishes quickly even though Bob's own big async job is queued too - it
+  shouldn't wait behind his async work. Alice and Bob each get about half the service (fair share
+  near 1.00).
 seed: 3
 maxDuration: 1d
 env:

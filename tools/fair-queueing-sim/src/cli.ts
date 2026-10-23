@@ -1,10 +1,10 @@
-import { spawn } from 'child_process';
 import * as fs from 'fs';
-import * as os from 'os';
 import * as path from 'path';
 
+import { RunTask, runTasks, SIM_ROOT, writeComparison } from './batch';
 import { configureDatabaseFile, configureEnvironment, installVirtualClock } from './bootstrap';
-import { POLICY_NAMES } from './policies/names';
+import { NATIVE_POLICY, POLICY_NAMES } from './policies/catalog';
+import { provenanceFor } from './provenance';
 import { loadScenario, ResolvedScenario } from './scenario';
 
 const USAGE = `Usage:
@@ -12,14 +12,22 @@ const USAGE = `Usage:
                      [--set KEY=VALUE ...] [--log-level <level>] [--quiet]
   npm run sim -- compare <scenario.yml> [<scenario.yml> ...] [--policies <a,b,...>] [--out <dir>]
                      [--seed <n>] [--set KEY=VALUE ...] [--parallel <n>]
+  npm run sim -- findings <scenario.yml> [<scenario.yml> ...] [--policies <a,b,...>] [--out <dir>]
+                     [--seeds <n,n,...>] [--references <REF=POLICY[@file;file],...>]
+                     [--set KEY=VALUE ...] [--parallel <n>]
   npm run sim -- policies
 
   run      simulate one scenario under one fair queueing policy (default: the scenario's policy,
            or "baseline") and write a report plus raw data to the output directory
-           (default: output/<scenario>/<policy>)
+           (default: output/<scenario>/<policy>). --policy native installs no policy and runs
+           whatever scheduling code the checked out Harmony has built in
   compare  run each scenario under each policy (default: all policies), each in its own
            process, and write comparison.md and comparison.html to the output directory
            (default: output)
+  findings run the comparison plus everything needed to back up conclusions about it (other
+           seeds, each policy feature switched off in turn, validation checks) and write
+           findings.md to the output directory (default: output/findings), keeping any
+           conclusions already written there
   policies list the available policies
 
   --seed <n>      use this seed instead of the scenario's, e.g. to check whether a difference
@@ -27,8 +35,6 @@ const USAGE = `Usage:
   --set KEY=VALUE overrides an environment variable from the scenario, e.g.
                   --set QUEUE_LONG_POLLING_WAIT_TIME_SEC=3
 `;
-
-const SIM_ROOT = path.resolve(__dirname, '..');
 
 interface Args {
   command: string;
@@ -94,7 +100,7 @@ async function runCommand(args: Args): Promise<void> {
   if (args.files.length !== 1) throw new Error('run takes exactly one scenario file');
   const scenario = scenarioWithOverrides(args.files[0], args);
   const policy = args.options.policy || scenario.policy;
-  if (!POLICY_NAMES.includes(policy)) {
+  if (!POLICY_NAMES.includes(policy) && policy !== NATIVE_POLICY) {
     throw new Error(`Unknown policy "${policy}" - available policies: ${POLICY_NAMES.join(', ')}`);
   }
   const runDir = path.resolve(args.options.out || path.join(SIM_ROOT, 'output', scenario.name, policy));
@@ -102,6 +108,8 @@ async function runCommand(args: Args): Promise<void> {
   const log = (message: string): void => {
     if (!args.quiet) console.log(message);
   };
+  // before the virtual clock replaces Date
+  const provenance = provenanceFor(args.files[0], scenario.seed, policy, scenario.env);
 
   // order matters - see bootstrap.ts
   configureEnvironment(scenario);
@@ -116,34 +124,12 @@ async function runCommand(args: Args): Promise<void> {
     scenario, policy, runDir, clock, logLevel: args.options['log-level'] || 'warn', progress: log,
   });
   const summary = summarize(result);
+  summary.provenance = provenance;
   writeRunOutputs(runDir, result, summary);
   log(`Done: ${summary.completed ? 'all jobs finished' : 'time limit reached'} after ` +
     `${(summary.endMs / 3_600_000).toFixed(2)} simulated hours in ${(summary.wallMs / 1000).toFixed(1)}s ` +
     `(${Math.round(summary.speedup)}x real time)`);
   log(`Report: ${path.join(runDir, 'report.md')}`);
-}
-
-/**
- * Runs one simulation in a child process.
- *
- * @param file - the scenario file
- * @param policy - the policy
- * @param runDir - the output directory for the run
- * @param args - the parsed arguments (for --seed and --set)
- * @returns resolves when the child exits successfully
- */
-function runChild(file: string, policy: string, runDir: string, args: Args): Promise<void> {
-  const childArgs = [
-    '-r', require.resolve('ts-node/register/transpile-only'), __filename,
-    'run', file, '--policy', policy, '--out', runDir, '--quiet',
-    ...(args.options.seed !== undefined ? ['--seed', args.options.seed] : []),
-    ...Object.entries(args.sets).flatMap(([k, v]) => ['--set', `${k}=${v}`]),
-  ];
-  return new Promise((resolve, reject) => {
-    const child = spawn(process.execPath, childArgs, { stdio: ['ignore', 'inherit', 'inherit'], cwd: SIM_ROOT });
-    child.on('error', reject);
-    child.on('exit', (code) => (code === 0 ? resolve() : reject(new Error(`${path.basename(file)} / ${policy} exited with ${code}`))));
-  });
 }
 
 /**
@@ -159,55 +145,43 @@ async function compareCommand(args: Args): Promise<void> {
   }
   const outDir = path.resolve(args.options.out || path.join(SIM_ROOT, 'output'));
   const scenarios = args.files.map((file) => ({ file: path.resolve(file), scenario: scenarioWithOverrides(file, args) }));
-  const tasks = scenarios.flatMap(({ file, scenario }) => policies.map((policy) => ({
-    file, scenario, policy, runDir: path.join(outDir, scenario.name, policy),
+  const tasks: RunTask[] = scenarios.flatMap(({ file, scenario }) => policies.map((policy) => ({
+    file, scenarioName: scenario.name, policy, runDir: path.join(outDir, scenario.name, policy),
+    seed: args.options.seed, sets: args.sets,
   })));
 
-  const parallel = Math.max(1, parseInt(args.options.parallel || String(Math.max(1, os.cpus().length - 1)), 10));
-  console.log(`Running ${tasks.length} simulations, ${parallel} at a time`);
-  const queue = [...tasks];
-  const failures: string[] = [];
-  await Promise.all(Array.from({ length: Math.min(parallel, tasks.length) }, async () => {
-    while (queue.length > 0) {
-      const task = queue.shift();
-      const start = Date.now();
-      try {
-        await runChild(task.file, task.policy, task.runDir, args);
-        console.log(`  ${task.scenario.name} / ${task.policy}: ${((Date.now() - start) / 1000).toFixed(1)}s`);
-      } catch (e) {
-        failures.push(e.message);
-        console.error(`  ${task.scenario.name} / ${task.policy}: FAILED (${e.message})`);
-      }
-    }
-  }));
-
-  const { renderComparison } = await import('./report');
-  const { renderComparisonHtml } = await import('./report-html');
-  const sections = [
-    '# Fair queueing policy comparison', '',
-    `Policies: ${policies.map((p) => `\`${p}\``).join(', ')}`, '',
-  ];
-  const htmlScenarios = [];
-  for (const { scenario } of scenarios) {
-    const runDirs = policies
-      .map((policy) => path.join(outDir, scenario.name, policy))
-      .filter((dir) => fs.existsSync(path.join(dir, 'summary.json')));
-    if (runDirs.length === 0) continue;
-    const runs = runDirs.map((dir) => ({
-      summary: JSON.parse(fs.readFileSync(path.join(dir, 'summary.json'), 'utf8')),
-      samples: fs.readFileSync(path.join(dir, 'samples.ndjson'), 'utf8')
-        .split('\n').filter((line) => line).map((line) => JSON.parse(line)),
-    }));
-    sections.push(renderComparison(runs.map((r) => r.summary)));
-    htmlScenarios.push(runs);
-  }
-  const comparisonFile = path.join(outDir, 'comparison.md');
-  fs.writeFileSync(comparisonFile, sections.join('\n'));
-  const htmlFile = path.join(outDir, 'comparison.html');
-  fs.writeFileSync(htmlFile, renderComparisonHtml(htmlScenarios));
-  console.log(`Comparison: ${comparisonFile}`);
-  console.log(`            ${htmlFile}`);
+  const failures = await runTasks(tasks, args.options.parallel ? parseInt(args.options.parallel, 10) : undefined);
+  const { md, html } = await writeComparison(outDir, scenarios.map((s) => s.scenario.name), policies);
+  console.log(`Comparison: ${md}`);
+  console.log(`            ${html}`);
   if (failures.length) throw new Error(`${failures.length} simulation(s) failed`);
+}
+
+/**
+ * Runs everything behind findings.md and writes it.
+ *
+ * @param args - the parsed arguments
+ */
+async function findingsCommand(args: Args): Promise<void> {
+  if (args.files.length === 0) throw new Error('findings needs at least one scenario file');
+  const policies = args.options.policies ? args.options.policies.split(',') : POLICY_NAMES;
+  for (const policy of policies) {
+    if (!POLICY_NAMES.includes(policy)) throw new Error(`Unknown policy "${policy}"`);
+  }
+  const list = (value: string): string[] => (value ? value.split(',').map((v) => v.trim()).filter((v) => v) : []);
+  // the command as it can be pasted into a shell to regenerate the findings
+  const quote = (arg: string): string => (/^[\w./=,:@+-]+$/.test(arg) ? arg : `'${arg.replace(/'/g, '\'\\\'\'')}'`);
+  const { runFindings } = await import('./findings');
+  await runFindings({
+    files: args.files,
+    policies,
+    outDir: path.resolve(args.options.out || path.join(SIM_ROOT, 'output', 'findings')),
+    seeds: list(args.options.seeds),
+    references: list(args.options.references),
+    sets: args.sets,
+    parallel: args.options.parallel ? parseInt(args.options.parallel, 10) : undefined,
+    command: `npm run sim -- ${process.argv.slice(2).map(quote).join(' ')}`,
+  });
 }
 
 /**
@@ -221,6 +195,9 @@ async function main(): Promise<void> {
       break;
     case 'compare':
       await compareCommand(args);
+      break;
+    case 'findings':
+      await findingsCommand(args);
       break;
     case 'policies':
       console.log(POLICY_NAMES.join('\n'));

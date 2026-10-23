@@ -2,6 +2,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import { Summary } from './metrics';
+import { POLICY_CATALOG } from './policies/catalog';
+import { describeCode } from './provenance';
 import { formatDuration } from './scenario';
 import { RunResult } from './simulation';
 
@@ -42,6 +44,77 @@ function table(header: string[], rows: string[][]): string {
   return lines.join('\n');
 }
 
+export const README_PATH = 'tools/fair-queueing-sim/README.md';
+
+// short definitions of the metrics, repeated in every report so it can be read on its own
+export const GLOSSARY: [string, string][] = [
+  ['makespan', 'time from a job\'s submission to its completion'],
+  ['slowdown', 'makespan divided by a lower bound on how long the job would take with the cluster to itself; 1.0 is as fast as possible'],
+  ['wait', 'time from a work item being ready to a pod starting it'],
+  ['fair share', 'while a user competed with others for a service: the pods running their work divided by their max-min fair share of the pods; 1.00 is exactly fair, below 1 short-changed, above 1 more than their share. Measured in pods, not work done, so users with very short work items can look short-changed while being served well'],
+  ['contended fairness', 'Jain\'s index of the per-user fair share ratios, averaged over the times two or more users wanted the service; 1.0 = everyone had exactly their share'],
+  ['utilization', 'pod time spent running work divided by pods x simulated time'],
+  ['idle while work ready', 'pod-hours spent idle while the service had work ready or queued - either a policy deliberately holding work back (e.g. a reserve) or pods being left unused'],
+  ['policy rows', 'values recorded by the policy, as max / time-weighted mean - e.g. slowRunning (slow work items in flight), slowCapacity (the most slow work allowed), fastLaneOnly (1 while slow work is capped), slowJobs ((job, service)s classified slow), unmeasuredRunning (work items running for jobs not yet measured)'],
+];
+
+/**
+ * Renders the glossary as Markdown.
+ *
+ * @returns the glossary
+ */
+export function renderGlossary(): string {
+  return [
+    `Definitions (full details, and how to dig further, in ${README_PATH}):`, '',
+    ...GLOSSARY.map(([term, definition]) => `- **${term}** - ${definition}`), '',
+    'Differences of a few percent between policies, or a few seconds on short jobs, can be noise - ' +
+    'rerun with a few --seed values before relying on them.',
+  ].join('\n');
+}
+
+/**
+ * Describes what produced a run: code, seed, policy settings and overrides.
+ *
+ * @param s - the run's summary
+ * @returns a one line description
+ */
+export function describeRun(s: Summary): string {
+  const p = s.provenance;
+  if (!p) return 'unknown (no provenance recorded)';
+  const settings = Object.entries(p.policySettings || {}).map(([k, v]) => `${k}=${v}`);
+  const overrides = Object.entries(p.envOverrides || {}).map(([k, v]) => `${k}=${v}`);
+  return `code ${describeCode(p)}; seed ${p.seed}` +
+    (settings.length ? `; policy settings ${settings.join(', ')}` : '') +
+    (overrides.length ? `; overrides ${overrides.join(', ')}` : '');
+}
+
+/**
+ * Lists the ways in which the runs of a comparison weren't made from the same code, seed and
+ * overrides, so the comparison isn't like for like.
+ *
+ * @param summaries - the runs being compared
+ * @returns a description of each difference (empty if the runs are comparable)
+ */
+export function comparabilityWarnings(summaries: Summary[]): string[] {
+  const warnings: string[] = [];
+  const distinct = (f: (s: Summary) => unknown): number => new Set(summaries.map((s) => JSON.stringify(f(s)))).size;
+  if (summaries.some((s) => !s.provenance)) warnings.push('some runs have no provenance recorded');
+  if (distinct((s) => [s.provenance?.commit, s.provenance?.changesHash]) > 1) warnings.push('the runs used different code');
+  if (distinct((s) => s.provenance?.seed) > 1) warnings.push('the runs used different seeds');
+  if (distinct((s) => s.provenance?.envOverrides) > 1) warnings.push('the runs used different environment overrides');
+  return warnings;
+}
+
+/**
+ * The design notes of the given policies, from the policy catalog.
+ *
+ * @param policies - policy names
+ * @returns the notes, deduplicated
+ */
+export function designNotes(policies: string[]): string[] {
+  return [...new Set(policies.flatMap((p) => POLICY_CATALOG[p]?.designNotes || []))];
+}
+
 /**
  * Renders the Markdown report for a single run.
  *
@@ -52,6 +125,9 @@ export function renderRunReport(s: Summary): string {
   const out: string[] = [];
   out.push(`# ${s.scenario} - policy \`${s.policy}\``, '');
   if (s.description) out.push(s.description.trim(), '');
+  if (s.goodOutcome) out.push(`**What a good result looks like:** ${s.goodOutcome.trim()}`, '');
+  out.push(`Produced by: ${describeRun(s)}.`, '');
+  for (const note of designNotes([s.policy])) out.push(`**Design note:** ${note}`, '');
   out.push(
     `Simulated ${formatDuration(s.endMs)} in ${formatDuration(s.wallMs)} of wall time ` +
     `(${Math.round(s.speedup)}x real time, ${s.eventsRun} events, ${s.passes} scheduling passes).` +
@@ -105,6 +181,7 @@ export function renderRunReport(s: Summary): string {
       j.status,
     ]),
   ), '');
+  out.push('## How to read this report', '', renderGlossary(), '');
   return out.join('\n');
 }
 
@@ -195,6 +272,21 @@ export function comparisonTables(summaries: Summary[]): { tables: ComparisonTabl
 }
 
 /**
+ * Renders the top of comparison.md: the policies, their design notes and the glossary.
+ *
+ * @param policies - the policies compared
+ * @returns the header
+ */
+export function renderComparisonHeader(policies: string[]): string {
+  const out = ['# Fair queueing policy comparison', '', 'Policies:', ''];
+  for (const p of policies) out.push(`- \`${p}\` - ${POLICY_CATALOG[p]?.description ?? ''}`);
+  out.push('');
+  for (const note of designNotes(policies)) out.push(`**Design note:** ${note}`, '');
+  out.push(renderGlossary(), '');
+  return out.join('\n');
+}
+
+/**
  * Renders a Markdown comparison of runs of the same scenario under different policies.
  *
  * @param summaries - one summary per policy, all for the same scenario
@@ -204,6 +296,16 @@ export function renderComparison(summaries: Summary[]): string {
   const [first] = summaries;
   const out: string[] = [`## ${first.scenario}`, ''];
   if (first.description) out.push(first.description.trim(), '');
+  if (first.goodOutcome) out.push(`**What a good result looks like:** ${first.goodOutcome.trim()}`, '');
+  const warnings = comparabilityWarnings(summaries);
+  if (warnings.length) {
+    out.push(`**Not a like for like comparison:** ${warnings.join('; ')}.`, '');
+    for (const s of summaries) out.push(`- \`${s.policy}\`: ${describeRun(s)}`);
+    out.push('');
+  } else {
+    out.push(`Produced by: code ${describeCode(first.provenance)}; seed ${first.provenance?.seed}. ` +
+      'Policy settings are in each run\'s summary.json.', '');
+  }
   const { tables, note } = comparisonTables(summaries);
   for (const t of tables) {
     out.push(`${t.caption}:`, '', table(t.header.map((h, i) => (i >= t.header.length - summaries.length ? `\`${h}\`` : h)), t.rows), '');

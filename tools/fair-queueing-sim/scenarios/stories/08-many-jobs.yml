@@ -3,6 +3,9 @@ name: 08-many-jobs
 description: >-
   Ivan has four jobs and Judy has one, each of 150 two-minute work items, on a 20 pod service.
   Is the service shared between the users or between the jobs?
+goodOutcome: >-
+  Ivan and Judy each get about half the service while both have work (fair share near 1.00 for
+  both), rather than Ivan getting four times Judy's share because he submitted four jobs.
 seed: 8
 maxDuration: 2d
 env:

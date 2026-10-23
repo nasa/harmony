@@ -9,6 +9,11 @@
 // - a "fast lane reserve": work for a (job, service) whose mean work item duration is above
 //   SLOW_WORK_THRESHOLD_MS may only occupy (1 - FAST_LANE_RESERVE_FRACTION) of the service's pods
 //
+// The reserve is deliberate and holds even when no other work is waiting: Harmony has seen slow
+// jobs take every pod of a service and leave newly arriving fast jobs unworked, so a share of the
+// pods is always kept back for fast work. Pods the reserve leaves idle when only slow work exists
+// are the accepted cost of that guarantee, not a bug to fix.
+//
 // The SQL and the batch splitting loop are copied from user-work.ts / work-item-polling.ts on
 // that branch with as few changes as possible. The one structural difference is that the
 // branch folded the duration bookkeeping into decrementRunningCount's UPDATE, whereas here it is

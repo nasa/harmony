@@ -5,6 +5,10 @@ description: >-
   Over six hours, several users submit async jobs at random intervals to a two step chain
   (a 30 pod subsetter followed by a 10 pod reformatter), one user occasionally submits slow
   jobs, and a steady stream of small synchronous requests arrives.
+goodOutcome: >-
+  Small synchronous requests (viewer) stay fast, users with small jobs (student, analyst) aren't
+  stuck behind the large pipeline jobs, the occasional slow modeler jobs don't take over the
+  subsetter, and overall slowdown is low.
 seed: 42
 maxDuration: 2d
 env:

@@ -4,6 +4,11 @@ description: >-
   Frank submits a job of 60 work items that each take 30 minutes. Five minutes later Gina and
   Hank each submit jobs of 300 one-minute work items. Does slow work take over the service, and
   does fast work keep flowing?
+goodOutcome: >-
+  Gina's and Hank's fast work starts promptly and keeps making progress while Frank's slow work
+  runs: fast jobs' waits and slowdowns well below baseline, and Frank never holding more than the
+  slow work capacity (70% of the pods) once his work is known to be slow. Frank finishing later is
+  the expected price, as are pods held in reserve after the fast work is done.
 seed: 6
 maxDuration: 2d
 env:
