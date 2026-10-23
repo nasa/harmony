@@ -72,21 +72,12 @@ jobs:
             echo "VERSION '${VERSION}' is not a semantic version; skipping stable tag."
             exit 0
           fi
-
-          if ! command -v jq &> /dev/null; then
-            if command -v apt-get &> /dev/null; then
-              sudo apt-get update -y && sudo apt-get install -y jq
-            elif command -v yum &> /dev/null; then
-              sudo yum install -y jq
-            else
-              echo "jq is required but not installed, and no supported package manager was found to install it" >&2
-              exit 1
-            fi
-          fi
+          echo "VERSION '${VERSION}' is a semantic version; tagging all core service images as 'stable'."
 
           for service in harmony query-cmr service-runner work-failer cron-service work-scheduler work-updater; do
             image="harmonyservices/${service}"
             source_ref="docker.io/${image}:${VERSION}"
+            echo "Tagging ${source_ref} as stable..."
 
             # Build the tag from only the real platform manifests, excluding attestation
             # manifests (Platform: unknown/unknown) -- imagetools create mishandles OCI
@@ -103,4 +94,5 @@ jobs:
             fi
 
             docker buildx imagetools create "${platform_refs[@]}" --tag "docker.io/${image}:stable"
+            echo "Tagged docker.io/${image}:stable -> ${source_ref}"
           done
