@@ -132,6 +132,35 @@ describe('Scheduler Worker', async function () {
         expect(numMessages).to.equal(1);
       });
 
+      it('uses slot based fair queueing by default', async function () {
+        expect(getWorkItemsFromDatabaseStub.lastCall.args[3]).to.be.undefined;
+      });
+
+      describe('and duration based fair queueing is enabled', async function () {
+        let enableDurationBasedStub;
+        beforeEach(async function () {
+          await schedulerQueue.purge();
+          await schedulerQueue.sendMessage(service);
+          serviceQueues = {};
+          serviceQueues[service] = new MemoryQueue();
+          enableDurationBasedStub = sinon.stub(env, 'enableDurationBasedFairQueueing').get(() => true);
+          await processSchedulerQueue(logger);
+        });
+        afterEach(async function () {
+          await schedulerQueue.purge();
+          serviceQueues = {};
+          enableDurationBasedStub.restore();
+        });
+
+        it('passes the duration based fair queueing options to getWorkItemsFromDatabase', async function () {
+          expect(getWorkItemsFromDatabaseStub.lastCall.args[3]).to.eql({
+            servicePodCount: 1,
+            slowWorkThresholdMs: env.slowWorkThresholdMs,
+            fastLaneReserveFraction: env.fastLaneReserveFraction,
+          });
+        });
+      });
+
       describe('and the work item queue has few items on it', async function () {
         let maxWorkItemsStub;
         beforeEach(async function () {
@@ -439,9 +468,7 @@ describe('Scheduler Worker', async function () {
 describe('getWorkItemsFromDatabase', function () {
   const serviceID = 'foo:latest';
   const batchSize = 10;
-  const servicePodCount = 5;
-  const slowWorkThresholdMs = 600_000;
-  const fastLaneReserveFraction = 0.3;
+  const durationBasedOptions = { servicePodCount: 5, slowWorkThresholdMs: 600_000, fastLaneReserveFraction: 0.3 };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const fakeTx = {} as any;
   const sandbox = sinon.createSandbox();
@@ -468,7 +495,7 @@ describe('getWorkItemsFromDatabase', function () {
     beforeEach(async function () {
       getNextJobIdsStub.resolves({ jobs: [{ jobId: 'job-1', isSlow: false }], availableSlowWorkSlots: batchSize });
       getNextWorkItemsStub.resolves([]); // out of sync -> else branch
-      result = await workItemPolling.getWorkItemsFromDatabase(serviceID, logger, batchSize, servicePodCount, slowWorkThresholdMs, fastLaneReserveFraction);
+      result = await workItemPolling.getWorkItemsFromDatabase(serviceID, logger, batchSize);
     });
 
     it('calls setReadyCountToZero exactly once', function () {
@@ -494,7 +521,7 @@ describe('getWorkItemsFromDatabase', function () {
     beforeEach(async function () {
       getNextJobIdsStub.resolves({ jobs: [{ jobId: 'job-1', isSlow: false }], availableSlowWorkSlots: batchSize });
       getNextWorkItemsStub.resolves([new WorkItem({ id: 1, jobID: 'job-1', serviceID })]);
-      await workItemPolling.getWorkItemsFromDatabase(serviceID, logger, batchSize, servicePodCount, slowWorkThresholdMs, fastLaneReserveFraction);
+      await workItemPolling.getWorkItemsFromDatabase(serviceID, logger, batchSize);
     });
 
     it('does not call setReadyCountToZero', function () {
@@ -518,7 +545,7 @@ describe('getWorkItemsFromDatabase', function () {
       getNextWorkItemsStub
         .withArgs(fakeTx, serviceID, 'job-stale', sinon.match.number)
         .resolves([]);
-      await workItemPolling.getWorkItemsFromDatabase(serviceID, logger, batchSize, servicePodCount, slowWorkThresholdMs, fastLaneReserveFraction);
+      await workItemPolling.getWorkItemsFromDatabase(serviceID, logger, batchSize);
     });
 
     it('zeroes the ready count only for the stale job', function () {
@@ -538,11 +565,11 @@ describe('getWorkItemsFromDatabase', function () {
       getNextWorkItemsStub.callsFake(async (_tx, _sid, jobID, workSize): Promise<WorkItem[]> => (
         Array.from({ length: workSize }, (_v, i) => new WorkItem({ id: i, jobID, serviceID }))
       ));
-      await workItemPolling.getWorkItemsFromDatabase(serviceID, logger, batchSize, servicePodCount, slowWorkThresholdMs, fastLaneReserveFraction);
+      await workItemPolling.getWorkItemsFromDatabase(serviceID, logger, batchSize, durationBasedOptions);
     });
 
-    it('passes the service pod count to getNextJobIds', function () {
-      expect(getNextJobIdsStub.firstCall.args[3]).to.equal(servicePodCount);
+    it('passes the duration based fair queueing options to getNextJobIds', function () {
+      expect(getNextJobIdsStub.firstCall.args[4]).to.equal(durationBasedOptions);
     });
 
     it('limits the work items requested for the slow job to the available slow work slots', function () {
@@ -564,7 +591,7 @@ describe('getWorkItemsFromDatabase', function () {
       getNextWorkItemsStub.callsFake(async (_tx, _sid, jobID, workSize): Promise<WorkItem[]> => (
         Array.from({ length: workSize }, (_v, i) => new WorkItem({ id: i, jobID, serviceID }))
       ));
-      await workItemPolling.getWorkItemsFromDatabase(serviceID, logger, batchSize, servicePodCount, slowWorkThresholdMs, fastLaneReserveFraction);
+      await workItemPolling.getWorkItemsFromDatabase(serviceID, logger, batchSize, durationBasedOptions);
     });
 
     it('hands out only one slow work item in total across the slow jobs', function () {
