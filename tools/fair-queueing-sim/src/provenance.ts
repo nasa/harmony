@@ -52,7 +52,14 @@ export interface Provenance extends GitState {
  */
 function git(...args: string[]): string | null {
   try {
-    return execFileSync('git', args, { cwd: REPO_ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+    return execFileSync('git', args, {
+      cwd: REPO_ROOT,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+      // don't take optional locks (e.g. git diff refreshing the index), so runs never block a
+      // developer's own git commands with "index.lock: File exists"
+      env: { ...process.env, GIT_OPTIONAL_LOCKS: '0' },
+    });
   } catch {
     return null;
   }
