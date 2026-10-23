@@ -60,7 +60,39 @@ jobs:
 
           # For the main branch, use "latest" as the version
           [ "${VERSION}" == "main" ] && VERSION=latest
-          [ "${VERSION}" == "harmony-412" ] && VERSION=latest
 
           # build and publish images for all services
           VERSION="${VERSION}" ./node_modules/.bin/lerna run build-multi
+
+          echo "VERSION=${VERSION}" >> "${GITHUB_ENV}"
+
+      - name: Tag stable images
+        run: |
+          if [[ ! "${VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "VERSION '${VERSION}' is not a semantic version; skipping stable tag."
+            exit 0
+          fi
+          echo "VERSION '${VERSION}' is a semantic version; tagging all core service images as 'stable'."
+
+          for service in harmony query-cmr service-runner work-failer cron-service work-scheduler work-updater; do
+            image="harmonyservices/${service}"
+            source_ref="docker.io/${image}:${VERSION}"
+            echo "Tagging ${source_ref} as stable..."
+
+            # Build the tag from only the real platform manifests, excluding attestation
+            # manifests (Platform: unknown/unknown) -- imagetools create mishandles OCI
+            # indexes containing attestations and can collapse them to a single platform
+            platform_refs=()
+            while IFS= read -r digest; do
+                platform_refs+=("${source_ref}@${digest}")
+            done < <(docker buildx imagetools inspect "$source_ref" --raw \
+                | jq -r 'if has("manifests") then .manifests[] | select(.platform.architecture != "unknown") | .digest else empty end')
+
+            # Single-platform images have no manifest list to filter -- tag the source ref as-is
+            if [ "${#platform_refs[@]}" -eq 0 ]; then
+                platform_refs=("${source_ref}")
+            fi
+
+            docker buildx imagetools create "${platform_refs[@]}" --tag "docker.io/${image}:stable"
+            echo "Tagged docker.io/${image}:stable -> ${source_ref}"
+          done
