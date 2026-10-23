@@ -4,6 +4,11 @@ description: >-
   Six users each have a 200 granule job (~2 minute work items) on a 20 pod service. Twenty
   minutes in, Erin submits a small job of 50 one-minute work items. How quickly does a newcomer
   get going?
+goodOutcome: >-
+  Erin's small job gets going promptly (low wait and slowdown for erin-1) without starving anyone,
+  and the six existing users share the service evenly. Even sharing and a low mean slowdown pull
+  against each other here (equal sharing makes equal jobs all finish late together), so decide
+  which matters.
 seed: 5
 maxDuration: 2d
 env:

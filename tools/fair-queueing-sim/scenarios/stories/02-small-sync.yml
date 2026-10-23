@@ -4,6 +4,9 @@ description: >-
   Alice has a big async job (600 granules, ~2 minute work items) using the whole 20 pod service.
   Ten minutes in, Bob sends a synchronous request for 4 granules (1 minute each). How long does
   Bob wait?
+goodOutcome: >-
+  Bob's 4 granule sync request finishes close to its 1 minute minimum (a low sync makespan)
+  without noticeably delaying Alice's job.
 seed: 2
 maxDuration: 1d
 env:

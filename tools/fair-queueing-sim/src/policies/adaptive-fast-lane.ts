@@ -1,7 +1,11 @@
 //
 // The fast-lane-reserve policy (harmony-2413) with fixes for the problems the simulator found
 // with it. The reserve itself is unchanged - slow work may never use more than
-// (1 - FAST_LANE_RESERVE_FRACTION) of a service's pods - but:
+// (1 - FAST_LANE_RESERVE_FRACTION) of a service's pods, even when nothing else is waiting. That
+// is by design (Harmony has seen slow jobs take every pod and leave arriving fast jobs unworked),
+// so pods the reserve leaves idle are an accepted cost, not something for this policy to fix.
+// Because fix 1 below stops slow work getting past the cap before it is measured, the reserve
+// holds from the start, so expect more such idle time than with fast-lane-reserve. The fixes:
 //
 // 1. Unmeasured work is limited. A (job, service) with no completed work item yet may only have
 //    ADAPTIVE_FAST_LANE_UNMEASURED_LIMIT work items running, so a new job whose work items turn

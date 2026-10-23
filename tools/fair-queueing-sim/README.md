@@ -13,6 +13,7 @@ can be compared on exactly the same workload.
 - [Policies](#policies)
 - [Output files](#output-files)
 - [Interpreting the results](#interpreting-the-results)
+- [Writing up findings](#writing-up-findings)
 - [How it works](#how-it-works)
 - [Limitations](#limitations)
 
@@ -56,12 +57,13 @@ You can ignore `EBADENGINE` warnings about the Node version.
 
 ## Running simulations
 
-There are three commands:
+There are four commands:
 
 ```fish
-npm run sim -- run <scenario.yml> [options]                    # one scenario, one policy
-npm run sim -- compare <scenario.yml> [<scenario.yml> ...] [options]  # every scenario x every policy
-npm run sim -- policies                                         # list the available policies
+npm run sim -- run <scenario.yml> [options]                     # one scenario, one policy
+npm run sim -- compare <scenario.yml> [<scenario.yml> ...] [options]   # every scenario x every policy
+npm run sim -- findings <scenario.yml> [<scenario.yml> ...] [options]  # a comparison plus the evidence behind it - see Writing up findings
+npm run sim -- policies                                          # list the available policies
 ```
 
 ### `run`
@@ -75,6 +77,9 @@ npm run sim -- run scenarios/stories/06-slow-vs-fast.yml --policy fast-lane-rese
 ```
 
 The policy is, in order of precedence: `--policy`, the scenario's `policy:` field, `baseline`.
+The special policy `native` installs no policy at all and runs whatever scheduling code the
+checked out Harmony has built in - that's how the simulator is checked against branches that
+don't have the policy seam (see [Writing up findings](#writing-up-findings)).
 
 ### `compare`
 
@@ -95,11 +100,13 @@ apart (e.g. one directory per seed or per setting you're trying).
 | Option | Applies to | Meaning |
 |---|---|---|
 | `--policy <name>` | `run` | the policy to simulate |
-| `--policies <a,b,...>` | `compare` | the policies to compare (default: all of them) |
+| `--policies <a,b,...>` | `compare`, `findings` | the policies to compare (default: all of them) |
+| `--seeds <n,n,...>` | `findings` | also run the comparison with each of these seeds, to show which differences hold up |
+| `--references <REF=POLICY,...>` | `findings` | check that POLICY makes exactly the same decisions as git ref REF's own code - see [Writing up findings](#writing-up-findings) |
 | `--out <dir>` | both | output directory (`run`: the run's own directory; `compare`: the root for all runs and the comparison) |
 | `--seed <n>` | both | use this seed instead of the scenario's own - see [noise](#is-a-difference-real-or-noise) |
 | `--set KEY=VALUE` | both | set an environment variable for Harmony, the work-scheduler, the work-updater and the policies; may be repeated; overrides the scenario's `env:` |
-| `--parallel <n>` | `compare` | how many simulations to run at once (default: CPU count - 1) |
+| `--parallel <n>` | `compare`, `findings` | how many simulations to run at once (default: CPU count - 1) |
 | `--log-level <level>` | `run` | level for Harmony's own log, written to `harmony.log` (default `warn`) |
 | `--quiet` | `run` | no progress output |
 
@@ -150,7 +157,9 @@ To make your own, copy one and edit it.
 
 ```yaml
 name: slow-vs-fast              # used for the output directory
-description: Free text shown in the reports.
+description: Free text shown in the reports - what the scenario tests.
+goodOutcome: >-                 # what a good result looks like, shown in the reports to guide interpretation
+  Fast work keeps flowing while slow work runs; slow work never holds more than 70% of the pods.
 seed: 6                         # every random draw derives from this (default 1)
 maxDuration: 2d                 # stop here even if jobs are still running (default 7d)
 policy: baseline                # default policy for `run` (optional)
@@ -261,6 +270,16 @@ Deployed Harmony always uses `baselinePolicy`. The simulator swaps in the policy
 
 Run `npm run sim -- policies` for the current list.
 
+### Design intent: the fast lane reserve leaves pods idle on purpose
+
+Both fast lane policies keep `FAST_LANE_RESERVE_FRACTION` of each service's pods away from slow
+work **even when nothing else is waiting**. This is deliberate: Harmony has seen slow jobs take
+every pod of a service and leave newly arriving fast jobs unworked, and the reserve guarantees
+that can't happen. So when only slow work exists (story 07, and the end of stories 06 and 09),
+"idle while work ready" goes up and slow jobs take longer - that's the cost of the guarantee, not
+a bug, and policy changes shouldn't "fix" it by letting slow work use the reserve. The policies'
+design notes say this in every report.
+
 ### Policy settings
 
 Policies read their settings from environment variables, so set them in a scenario's `env:` or
@@ -322,14 +341,33 @@ npm run sim -- compare scenarios/stories/*.yml --policies adaptive-fast-lane --o
    that wants randomness should use `Math.random`, which the simulator seeds so runs stay
    reproducible.
 
-2. **Register it.** Add it to the `POLICIES` map in `src/policies/index.ts`, and its name to
-   `POLICY_NAMES` in `src/policies/names.ts` (the CLI reads that list without loading Harmony).
-   Optionally add a sampler to `POLICIES` too - a function returning numbers to record in every
-   sample (e.g. how much slow work is running); they appear as extra rows in the reports. See
-   `sampleFastLaneReserve` in `fast-lane-reserve.ts` for an example.
+2. **Register it.** Add it to the map in `loadPolicies` in `src/policies/index.ts`, and describe
+   it in `POLICY_CATALOG` in `src/policies/catalog.ts` (which the CLI and reports read without
+   loading Harmony):
+
+   ```ts
+   'my-policy': {
+     description: 'One or two sentences on what the policy does - shown in every report.',
+     designNotes: ['Anything a reader must know to interpret its results, e.g. deliberate trade-offs.'],
+     settings: [
+       { env: 'MY_POLICY_LIMIT', default: '5', description: 'what the setting does' },
+     ],
+     // optional, for findings.md: one variant per feature, with that feature switched off
+     variants: [
+       { name: 'no-limit', description: 'the limit off', set: { MY_POLICY_LIMIT: '0' } },
+     ],
+     // optional, for findings.md: settings under which it must behave exactly like another policy
+     equivalentTo: { policy: 'baseline', set: { MY_POLICY_LIMIT: '0' }, description: 'with no limit it is baseline' },
+   },
+   ```
+
+   Optionally give it a sampler in `loadPolicies` too - a function returning numbers to record in
+   every sample (e.g. how much slow work is running); they appear as extra rows in the reports.
+   See `sampleFastLaneReserve` in `fast-lane-reserve.ts` for an example.
 
 3. **Settings.** Read them from `process.env` when the policy runs (as `fast-lane-reserve` does),
-   with sensible defaults, and document them in the table above.
+   with the same defaults as in the catalog, and add them to the table above. The catalog's list
+   is what gets recorded as the run's policy settings, so keep it complete.
 
 4. **Schema changes.** If the policy needs new columns or tables, add a real migration to
    `db/migrations/` and the same change to `db/db.sql` (the simulator builds its database from
@@ -338,8 +376,9 @@ npm run sim -- compare scenarios/stories/*.yml --policies adaptive-fast-lane --o
 5. **Try it.** `npm run sim -- compare scenarios/stories/*.yml --policies baseline,my-policy`
 
 6. **Check it.** If your policy is meant to behave exactly like another one under some settings
-   (e.g. a variant with a feature switched off), check that the decision logs are identical - see
-   [Checking that a change doesn't alter behavior](#checking-that-a-change-doesnt-alter-behavior).
+   (e.g. a variant with a feature switched off), declare it with `equivalentTo` and run
+   `findings`, which checks the decision logs are identical - see
+   [Writing up findings](#writing-up-findings).
 
 Moving a policy into Harmony for real means moving its file next to `fair-queueing-policy.ts`,
 making it the default (or selectable) there, and testing it like any other production change.
@@ -351,7 +390,7 @@ Each run writes these to `output/<scenario>/<policy>/` (or its `--out` directory
 | File | Contents |
 |---|---|
 | `report.md` | the run's summary: per service, per user and per job metrics |
-| `summary.json` | the same, as JSON (what `compare` builds its reports from) |
+| `summary.json` | the same, as JSON (what `compare` builds its reports from), plus the run's **provenance**: git commit and branch, whether the files that can affect results had uncommitted changes (which files, and a hash of the changes), the seed, the scenario file, every policy setting including defaults, environment overrides, Node version and when it ran |
 | `decisions.ndjson` | the **decision log** - one line per scheduling batch: time, service, batch size, and the `[job, items requested, items received]` the policy took, in order |
 | `runs.ndjson` | every work item attempt: work item, job, user, service, step, pod, start and end time, status |
 | `samples.ndjson` | the state of each service every `sampleInterval`: ready work and running work (per `user_work`) per user, pods busy per user, queue length, and any policy specific values |
@@ -376,8 +415,15 @@ jq -c 'select(.t % 600000 < 30000) | {min: (.t / 60000 | floor), busy: .services
 
 ### The comparison report
 
-`comparison.html` has one section per scenario:
+Every report starts with the policies' descriptions and design notes, and ends (or, in the HTML,
+has a "How to read this report" panel) with a glossary of the metrics, so it can be read on its own.
+`comparison.html` then has one section per scenario:
 
+- **What a good result looks like** - the scenario's `goodOutcome`: judge the policies against
+  this, not against each other alone.
+- **Produced by** - the code (commit, plus a hash of any uncommitted changes) and seed. If the runs
+  being compared weren't made from the same code, seed and overrides, the section says **Not a
+  like for like comparison** and lists what each run used.
 - **Charts** - one per service and policy, side by side on the same time axis. Each colored band
   is the number of pods running that user's work; the top of the chart is the service's pod
   count, so white space below the top is idle pods. Hover over a chart (or focus it and use the
@@ -401,7 +447,7 @@ jq -c 'select(.t % 600000 < 30000) | {min: (.t / 60000 | floor), busy: .services
 | **fair share** (per user) | while the user was competing with at least one other user for a service: the pods running their work divided by their *max-min fair share* of the pods. The fair share is an equal split of the pods, except that users who want fewer than that get what they want and the rest is split among the others | 1.00 is exactly fair; below 1 the user was short-changed; above 1 they got more than their share |
 | **contended fairness** (per service) | Jain's fairness index of those per-user ratios, averaged over the samples where two or more users wanted the service | 1.0 means every competing user had exactly their share |
 | **utilization** | pod time spent running work divided by pods x simulated time | higher, but it also drops simply because the service runs out of work near the end |
-| **idle while work ready** | pod-hours spent idle while the service had work ready or queued | ~0; anything substantial means the policy (or the scheduler) is leaving pods unused |
+| **idle while work ready** | pod-hours spent idle while the service had work ready or queued | ~0 for policies without a reserve; anything substantial there means pods are being left unused. For the fast lane policies, idle time while only slow work is waiting is the reserve doing its job (see [design intent](#design-intent-the-fast-lane-reserve-leaves-pods-idle-on-purpose)) |
 | **policy rows** (e.g. `slowRunning`, `fastLaneOnly`) | values the policy's sampler recorded: maximum and time-weighted mean | depends on the policy - e.g. `slowRunning` above `slowCapacity` means slow work got past the cap, and `fastLaneOnly` 0.5 means slow work was capped half the time |
 
 ### Reading them together
@@ -418,7 +464,10 @@ jq -c 'select(.t % 600000 < 30000) | {min: (.t / 60000 | floor), busy: .services
   holds few pods at any moment even when they're being served well, so they can look
   short-changed (`carol` in story 04).
 - **Idle while work ready points at policies holding work back** - deliberately (a reserve) or
-  not. It's the first thing to check when a policy's makespans are worse than expected.
+  not. It's the first thing to check when a policy's makespans are worse than expected. If it's
+  the fast lane reserve with only slow work waiting, that's intended.
+- **Judge against the scenario's goal.** Each scenario says what a good result looks like; a
+  policy that "wins" on a metric the scenario doesn't care about hasn't necessarily done better.
 - **Find out why.** When a result is surprising, look at that run's `samples.ndjson` around the
   time it happened (who had pods, who had work ready), then `decisions.ndjson` (what the policy
   chose).
@@ -429,7 +478,14 @@ Runs are deterministic: the same scenario, policy and seed always produce identi
 work item durations are drawn per work item, so they're the same under every policy. But the
 order in which the scheduler happens to pick jobs still differs between policies, so small
 differences - a few percent, or a few seconds on a short job - can be noise. Before relying on a
-difference, re-run with a few seeds and check it holds up:
+difference, re-run with a few seeds and check it holds up - `findings --seeds` does this and
+summarizes how often each policy came out best:
+
+```fish
+npm run sim -- findings scenarios/stories/*.yml --seeds 101,102,103
+```
+
+or by hand:
 
 ```fish
 for seed in 1 2 3 4 5
@@ -439,9 +495,12 @@ end
 
 ### Getting Claude Code to interpret the results
 
-Claude Code can read every output file, so it can do this analysis for you. Point it at the
-comparison and ask for what you want to know, for example:
+Claude Code can read every output file, so it can do this analysis for you. The reports carry
+what it needs to interpret them correctly - each scenario's goal, the policies' design notes, the
+metric definitions and the provenance - and this README has the rest, so point it at a report and
+ask for what you want to know, for example:
 
+- *"Read tools/fair-queueing-sim/output/findings/findings.md and write its Conclusions section."*
 - *"Read tools/fair-queueing-sim/output/comparison.md and summarize, scenario by scenario, which
   policy did better and why. Explain the metrics in plain terms."*
 - *"In story 06, why do gina and hank finish at about the same time under both policies? Use
@@ -474,8 +533,54 @@ for d in /tmp/before/*/baseline
 end
 ```
 
-This is how the policy seam (identical to Harmony's code before it) and the `fast-lane-reserve`
-port (identical to the `harmony-2413` branch) were checked.
+To check a policy against another branch's *own* code (e.g. a port), use `findings --references`
+(below), which does the equivalent of this against a checkout of that branch.
+
+## Writing up findings
+
+When a comparison is worth sharing or acting on, `findings` produces a write-up with the evidence
+behind it:
+
+```fish
+npm run sim -- findings scenarios/stories/*.yml --seeds 101,102,103 \
+    --references 'harmony-2413=fast-lane-reserve,main=baseline@services/harmony/app/models/user-work.ts'
+```
+
+It runs (several at a time; the command above takes 20-30 minutes):
+
+1. **The comparison** - every scenario under every policy (`--policies` to choose), into
+   `output/findings/main/` with the usual `comparison.md` / `comparison.html`.
+2. **Other seeds** (`--seeds`) - the same comparison with each seed, into `output/findings/seeds/`.
+3. **Each feature switched off in turn** - for every policy whose catalog entry lists `variants`,
+   into `output/findings/variants/`.
+4. **Validation checks**, into `output/findings/checks/`:
+   - **determinism** - the first policy run twice gives identical logs;
+   - **equivalences** - for every policy whose catalog entry has `equivalentTo`, that it makes
+     exactly the same decisions as the other policy under the stated settings (e.g.
+     `adaptive-fast-lane` with all five fixes off = `fast-lane-reserve`);
+   - **references** (`--references REF=POLICY`) - that POLICY here makes exactly the same decisions
+     as the scheduling code built into git ref REF. The simulator extracts REF's code into a
+     temporary directory and runs it with the `native` policy. `@file;file` copies those files
+     from your checkout over REF's first, for code REF can't run under the simulator - `main`
+     before this branch can't run its scheduling SQL on sqlite, hence the `user-work.ts` overlay
+     above (it only adds the sqlite-compatible lock clause). Once that's on `main`, the overlay
+     isn't needed.
+
+and then writes `output/findings/findings.md` with: what produced it (command, commit,
+uncommitted changes), the policies and their design notes, each scenario's goal, the
+**Conclusions**, the results, robustness across seeds (mean, range and how often each policy was
+best, per metric), what each feature contributes, and the validation results.
+
+**Conclusions** are the one part a person (or Claude Code) writes - ask Claude Code to *"read
+tools/fair-queueing-sim/output/findings/findings.md and write its Conclusions section"*.
+Everything else is regenerated each time `findings` runs, but the Conclusions are kept. They're
+stamped (in a comment) with the code they were written for; if `findings` is rerun on different
+code, it flags them for review at the top of the section. After reviewing, update the stamp as the
+flag says.
+
+`output/` is ignored by git, so to share findings, copy `findings.md` (and `main/comparison.html`
+for the charts) somewhere permanent. They record the commit they came from, so anyone can check
+out that commit and rerun the command to reproduce them.
 
 ## How it works
 
@@ -501,7 +606,9 @@ The stubs are in `src/harness.ts`, job creation in `src/workload.ts`, the actors
 `src/actors.ts`, the event loop in `src/engine.ts` and `src/simulation.ts`, the metrics in
 `src/metrics.ts` and the reports in `src/report.ts` and `src/report-html.ts`. `src/bootstrap.ts`
 does the setup that has to happen before any Harmony module loads (environment, database file,
-virtual clock).
+virtual clock). `src/batch.ts` runs many simulations at once, `src/findings.ts` is the `findings`
+command, `src/provenance.ts` records what produced each run, and `src/policies/` has the policies
+(`catalog.ts` describes them; `index.ts` loads them).
 
 ## Limitations
 

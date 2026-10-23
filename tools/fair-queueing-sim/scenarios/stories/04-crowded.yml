@@ -5,6 +5,11 @@ description: >-
   work items at a time. Carol's work items take 30 seconds and Dan's take 8 minutes; the others
   take about 2 minutes. Bob also has a big async job, and sends a 4 granule synchronous request
   fifteen minutes in.
+goodOutcome: >-
+  Every user gets close to their fair share of pods however long their work items take (fair share
+  near 1.00 for everyone, contended fairness near 1.0), and Bob's sync request finishes quickly.
+  Users with very short work items (Carol) can show a low fair share even when served well,
+  because fair share is measured in pods.
 seed: 4
 maxDuration: 2d
 env:

@@ -93,6 +93,8 @@ export interface InfrastructureSpec {
 export interface Scenario {
   name: string;
   description?: string;
+  // what a good result looks like for this scenario, shown in the reports to guide interpretation
+  goodOutcome?: string;
   seed?: number;
   // stop the simulation at this virtual time even if jobs are still running
   maxDuration?: Duration;
@@ -137,6 +139,7 @@ export interface ResolvedJob {
 export interface ResolvedScenario {
   name: string;
   description: string;
+  goodOutcome: string;
   seed: number;
   maxDurationMs: number;
   policy: string;
@@ -373,6 +376,7 @@ export function resolveScenario(scenario: Scenario): ResolvedScenario {
   return {
     name: scenario.name,
     description: scenario.description || '',
+    goodOutcome: scenario.goodOutcome || '',
     seed,
     maxDurationMs,
     policy: scenario.policy || 'baseline',

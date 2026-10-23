@@ -5,6 +5,10 @@ description: >-
   20 minutes. Lee keeps submitting jobs of 100 one-minute work items every 15 minutes. How long
   does it take the scheduler to notice Kim's work has become slow, and what happens to Lee in the
   meantime?
+goodOutcome: >-
+  Once Kim's work items become slow (from item 1,000) the scheduler recognizes them as slow within
+  a few completions and limits them, so Lee's steady stream of fast jobs keeps flowing - low
+  slowdowns for Lee's jobs throughout. Pods held in reserve once Kim is limited are expected.
 seed: 9
 maxDuration: 2d
 env:

@@ -4,6 +4,9 @@ description: >-
   Alice is the only user, with one async job of 600 granules whose work items take about two
   minutes each, on a service with 20 pods. She should get the whole service (goal 1 of fair
   queueing).
+goodOutcome: >-
+  Alice uses every pod: utilization close to 100%, slowdown close to 1.0 and almost no idle time.
+  All policies should do equally well.
 seed: 1
 maxDuration: 1d
 env:
