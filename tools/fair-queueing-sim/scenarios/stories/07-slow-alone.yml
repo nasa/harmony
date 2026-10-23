@@ -1,0 +1,14 @@
+# Story 7: a user with only slow work has the service to themselves.
+name: 07-slow-alone
+description: >-
+  Frank is the only user, with 100 work items that each take 30 minutes on a 20 pod service.
+  Does he get the whole service?
+seed: 7
+maxDuration: 2d
+env:
+  QUEUE_LONG_POLLING_WAIT_TIME_SEC: 3
+services:
+  - name: svc
+    pods: 20
+jobs:
+  - { name: frank-slow, user: frank, granules: 100, steps: [{ service: svc, duration: { dist: lognormal, median: 30m, sigma: 0.2 } }] }

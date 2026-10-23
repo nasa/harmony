@@ -6,6 +6,7 @@
 - [Introduction](#introduction)
 - [Background](#background)
 - [The Algorithm](#the-algorithm)
+- [Fair Queueing Policies and the Simulator](#fair-queueing-policies-and-the-simulator)
 
 ## Introduction
 Harmony supports two goals with regard to processing work for users. These are referred to
@@ -43,3 +44,20 @@ All of the above are done inside a database transaction with locking to prevent 
 work item from being issued more than once.
 
 Note that this implicitly satisfies the first requirement as there will only be one user identified in step 1. Note also that this satisfies the second requirement including prioritizing synchronous calls.
+
+## Fair Queueing Policies and the Simulator
+
+The scheduling decision - which jobs get work items, and how many, each time the work-scheduler
+fills a service's queue - is made by a _fair queueing policy_ (see
+`services/harmony/app/backends/workflow-orchestration/fair-queueing-policy.ts`). A policy picks
+jobs and calls a `takeWorkItems` callback for each, which hands out the work items and keeps
+`user_work` in sync, so a policy can't leave the bookkeeping inconsistent. A policy can also keep
+its own state by implementing `onWorkItemCompleted`, which is called in the work item update
+transaction whenever a work item completes. Deployed environments always use `baselinePolicy`,
+the current algorithm.
+
+Alternative policies can be tried out with the fair queueing simulator in
+`tools/fair-queueing-sim`, which runs Harmony's real scheduling and work item update code against
+simulated services and a virtual clock, so hours of activity - including services whose work
+items take hours - can be simulated in seconds and policies compared side by side. See
+`tools/fair-queueing-sim/README.md`.

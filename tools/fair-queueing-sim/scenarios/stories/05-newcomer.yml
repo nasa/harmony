@@ -1,0 +1,21 @@
+# Story 5: a new user arrives while the service is crowded.
+name: 05-newcomer
+description: >-
+  Six users each have a 200 granule job (~2 minute work items) on a 20 pod service. Twenty
+  minutes in, Erin submits a small job of 50 one-minute work items. How quickly does a newcomer
+  get going?
+seed: 5
+maxDuration: 2d
+env:
+  QUEUE_LONG_POLLING_WAIT_TIME_SEC: 3
+services:
+  - name: svc
+    pods: 20
+jobs:
+  - { name: u1-1, user: u1, granules: 200, steps: [{ service: svc, duration: { dist: lognormal, median: 2m, sigma: 0.3 } }] }
+  - { name: u2-1, user: u2, granules: 200, steps: [{ service: svc, duration: { dist: lognormal, median: 2m, sigma: 0.3 } }] }
+  - { name: u3-1, user: u3, granules: 200, steps: [{ service: svc, duration: { dist: lognormal, median: 2m, sigma: 0.3 } }] }
+  - { name: u4-1, user: u4, granules: 200, steps: [{ service: svc, duration: { dist: lognormal, median: 2m, sigma: 0.3 } }] }
+  - { name: u5-1, user: u5, granules: 200, steps: [{ service: svc, duration: { dist: lognormal, median: 2m, sigma: 0.3 } }] }
+  - { name: u6-1, user: u6, granules: 200, steps: [{ service: svc, duration: { dist: lognormal, median: 2m, sigma: 0.3 } }] }
+  - { name: erin-1, user: erin, submitAt: 20m, granules: 50, steps: [{ service: svc, duration: 1m }] }

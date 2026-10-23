@@ -114,6 +114,10 @@ export async function getNextJobIds(
   serviceID: string,
   batchSize: number,
 ): Promise<string[]> {
+  // sqlite (test-only) doesn't support SKIP LOCKED; it's only needed for real concurrent
+  // scheduler pods, which only run against postgres.
+  const lockClause = db.client.config.client === 'pg' ? 'FOR UPDATE OF uw SKIP LOCKED' : '';
+
   const sql = `
     WITH RankedJobs AS (
       SELECT
@@ -145,7 +149,7 @@ export async function getNextJobIds(
     WHERE uw.service_id = ?
       AND i.overall_row_num <= ?
     ORDER BY i.is_async, i.overall_row_num
-    FOR UPDATE OF uw SKIP LOCKED
+    ${lockClause}
   `;
 
   const results = await tx.raw(sql, [
@@ -154,7 +158,9 @@ export async function getNextJobIds(
     batchSize,
   ]);
 
-  return results.rows?.map((r) => r.job_id) || [];
+  // pg's tx.raw() returns { rows: [...] }; sqlite's (test-only) returns the row array directly.
+  const rows = db.client.config.client === 'pg' ? (results.rows || []) : results;
+  return rows.map((r) => r.job_id);
 }
 
 /**

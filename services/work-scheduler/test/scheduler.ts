@@ -3,6 +3,9 @@ import { describe, it } from 'mocha';
 import * as sinon from 'sinon';
 import { Logger } from 'winston';
 
+import {
+  baselinePolicy, FairQueueingPolicy, setFairQueueingPolicy,
+} from '../../harmony/app/backends/workflow-orchestration/fair-queueing-policy';
 import * as workItemPolling from '../../harmony/app/backends/workflow-orchestration/work-item-polling';
 import * as userWorkModel from '../../harmony/app/models/user-work';
 import WorkItem from '../../harmony/app/models/work-item';
@@ -440,6 +443,55 @@ describe('getWorkItemsFromDatabase', function () {
     it('increments counts only for the job with ready work', function () {
       expect(incrementRunningStub.calledOnce).to.be.true;
       expect(incrementRunningStub.firstCall.args[1]).to.equal('job-ok');
+    });
+  });
+
+  describe('with a different fair queueing policy active', function () {
+    let result: workItemPolling.WorkItemData[];
+    let contexts;
+    let taken: number[];
+
+    beforeEach(async function () {
+      contexts = [];
+      taken = [];
+      const policy: FairQueueingPolicy = {
+        name: 'test',
+        async scheduleWork(_tx, _serviceID, _batchSize, context, takeWorkItems): Promise<void> {
+          contexts.push(context);
+          taken.push(await takeWorkItems('job-b', 2));
+        },
+      };
+      setFairQueueingPolicy(policy);
+      getNextWorkItemsStub.resolves([
+        new WorkItem({ id: 1, jobID: 'job-b', serviceID }),
+        new WorkItem({ id: 2, jobID: 'job-b', serviceID }),
+      ]);
+      result = await workItemPolling.getWorkItemsFromDatabase(serviceID, logger, batchSize, 7);
+    });
+
+    afterEach(function () {
+      setFairQueueingPolicy(baselinePolicy);
+    });
+
+    it('lets the policy choose which job to take work items from', function () {
+      expect(getNextJobIdsStub.called).to.be.false;
+      expect(getNextWorkItemsStub.calledOnceWith(fakeTx, serviceID, 'job-b', 2)).to.be.true;
+    });
+
+    it('passes the service pod count to the policy', function () {
+      expect(contexts[0].servicePodCount).to.equal(7);
+    });
+
+    it('tells the policy how many work items it got', function () {
+      expect(taken).to.deep.equal([2]);
+    });
+
+    it('does the user_work bookkeeping for the policy', function () {
+      expect(incrementRunningStub.calledOnceWith(fakeTx, 'job-b', serviceID, 2)).to.be.true;
+    });
+
+    it('returns the work items the policy took', function () {
+      expect(result.map((w) => w.workItem.id)).to.deep.equal([1, 2]);
     });
   });
 });

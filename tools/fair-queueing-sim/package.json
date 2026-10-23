@@ -1,0 +1,31 @@
+{
+  "name": "fair-queueing-sim",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Discrete-event simulator for Harmony fair queueing that runs the real scheduling and work item update code against a virtual clock",
+  "scripts": {
+    "sim": "TS_NODE_TRANSPILE_ONLY=true ts-node src/cli.ts",
+    "typecheck": "tsc --noEmit -p .",
+    "lint": "../../node_modules/.bin/eslint src"
+  },
+  "engines": {
+    "node": "^22.23.0",
+    "npm": ">=10"
+  },
+  "author": "NASA EOSDIS Harmony team",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@sinonjs/fake-timers": "^13.0.5",
+    "js-yaml": "^4.3.2",
+    "sinon": "^19.0.2",
+    "sqlite3": "^5.1.7",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.2"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^22.13.10",
+    "@types/sinon": "^17.0.3",
+    "@types/sinonjs__fake-timers": "^8.1.5"
+  }
+}

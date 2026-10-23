@@ -1,0 +1,23 @@
+# A tiny scenario for checking that the simulator works end to end.
+name: smoke
+description: Two users, one service with 4 pods, a short async job and a small sync request.
+seed: 1
+maxDuration: 2h
+services:
+  - name: svc
+    pods: 4
+jobs:
+  - name: alice-1
+    user: alice
+    granules: 20
+    steps:
+      - service: svc
+        duration: { dist: uniform, min: 30s, max: 90s }
+  - name: bob-sync
+    user: bob
+    async: false
+    submitAt: 2m
+    granules: 2
+    steps:
+      - service: svc
+        duration: 20s

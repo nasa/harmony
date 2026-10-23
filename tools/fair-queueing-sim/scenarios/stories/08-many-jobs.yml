@@ -1,0 +1,18 @@
+# Story 8: one user with several jobs, another with one.
+name: 08-many-jobs
+description: >-
+  Ivan has four jobs and Judy has one, each of 150 two-minute work items, on a 20 pod service.
+  Is the service shared between the users or between the jobs?
+seed: 8
+maxDuration: 2d
+env:
+  QUEUE_LONG_POLLING_WAIT_TIME_SEC: 3
+services:
+  - name: svc
+    pods: 20
+jobs:
+  - { name: ivan-1, user: ivan, granules: 150, steps: [{ service: svc, duration: { dist: lognormal, median: 2m, sigma: 0.3 } }] }
+  - { name: ivan-2, user: ivan, granules: 150, steps: [{ service: svc, duration: { dist: lognormal, median: 2m, sigma: 0.3 } }] }
+  - { name: ivan-3, user: ivan, granules: 150, steps: [{ service: svc, duration: { dist: lognormal, median: 2m, sigma: 0.3 } }] }
+  - { name: ivan-4, user: ivan, granules: 150, steps: [{ service: svc, duration: { dist: lognormal, median: 2m, sigma: 0.3 } }] }
+  - { name: judy-1, user: judy, granules: 150, steps: [{ service: svc, duration: { dist: lognormal, median: 2m, sigma: 0.3 } }] }

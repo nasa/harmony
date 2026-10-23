@@ -1,0 +1,33 @@
+# Story 9: a job whose work items get much slower part way through.
+name: 09-slowdown-drift
+description: >-
+  Kim's job has 1,200 work items: the first 1,000 take about a minute, the remaining 200 take about
+  20 minutes. Lee keeps submitting jobs of 100 one-minute work items every 15 minutes. How long
+  does it take the scheduler to notice Kim's work has become slow, and what happens to Lee in the
+  meantime?
+seed: 9
+maxDuration: 2d
+env:
+  QUEUE_LONG_POLLING_WAIT_TIME_SEC: 3
+services:
+  - name: svc
+    pods: 20
+jobs:
+  - name: kim-drift
+    user: kim
+    granules: 1200
+    steps:
+      - service: svc
+        duration: { dist: lognormal, median: 1m, sigma: 0.3 }
+        phases:
+          - { fromItem: 1000, duration: { dist: lognormal, median: 20m, sigma: 0.2 } }
+generators:
+  - name: lee
+    user: lee
+    every: 15m
+    until: 5h
+    job:
+      granules: 100
+      steps:
+        - service: svc
+          duration: { dist: lognormal, median: 1m, sigma: 0.3 }

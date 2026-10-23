@@ -1,0 +1,17 @@
+# Story 6: slow work competes with fast work on the same service.
+name: 06-slow-vs-fast
+description: >-
+  Frank submits a job of 60 work items that each take 30 minutes. Five minutes later Gina and
+  Hank each submit jobs of 300 one-minute work items. Does slow work take over the service, and
+  does fast work keep flowing?
+seed: 6
+maxDuration: 2d
+env:
+  QUEUE_LONG_POLLING_WAIT_TIME_SEC: 3
+services:
+  - name: svc
+    pods: 20
+jobs:
+  - { name: frank-slow, user: frank, granules: 60, steps: [{ service: svc, duration: { dist: lognormal, median: 30m, sigma: 0.2 } }] }
+  - { name: gina-fast, user: gina, submitAt: 5m, granules: 300, steps: [{ service: svc, duration: { dist: lognormal, median: 1m, sigma: 0.3 } }] }
+  - { name: hank-fast, user: hank, submitAt: 5m, granules: 300, steps: [{ service: svc, duration: { dist: lognormal, median: 1m, sigma: 0.3 } }] }

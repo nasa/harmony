@@ -1,8 +1,9 @@
 import { Logger } from 'winston';
 
+import { getFairQueueingPolicy } from './fair-queueing-policy';
 import { calculateQueryCmrLimit, processSchedulerQueue, QUERY_CMR_SERVICE_REGEX } from './util';
 import {
-  getNextJobIds, incrementRunningAndDecrementReadyCounts, setReadyCountToZero,
+  incrementRunningAndDecrementReadyCounts, setReadyCountToZero,
 } from '../../models/user-work';
 import WorkItem, {
   getNextWorkItems, getWorkItemStatus, updateWorkItemStatuses,
@@ -51,56 +52,25 @@ async function operationFetcher(key: string): Promise<string> {
 const operationCache: Cache = new MemoryCache(operationFetcher);
 
 /**
- * Return a randomly shuffled list of the given list.
- * This is an implementation of the Fisher-Yates shuffle algorithm.
- *
- * Because the way we readjust the size of work items to retrieve for processing,
- * only the jobs at the back of the list can take advantage of the free slots left by
- * jobs in front. To avoid the situation where a fixed job list with small jobs
- * at the end preventing us from utilizing the full batch size, we randomly shuffle
- * the jobs in the list before looping through them.
- * This shuffle combined with multiple schedulers running in Harmony makes
- * available work items be retrieved for processing more promptly.
- *
- * @param array - the given list to shuffle
- * @returns The randomly shuffled list of the original list
- */
-function shuffleArray<T>(array: T[]): T[] {
-  for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
-  }
-  return array;
-}
-
-/**
- * Get work items from the database for the given service ID.
+ * Get work items from the database for the given service ID. Which jobs the work items come
+ * from is decided by the active fair queueing policy (see fair-queueing-policy.ts).
  *
  * @param serviceID - the id of the service to get work for
  * @param reqLogger - a logger instance
  * @param batchSize - the maximum number of work items to return
+ * @param servicePodCount - the number of pods currently running the service, if known
  * @returns work items from the database for the given service ID
  */
 export async function getWorkItemsFromDatabase(
   serviceID: string,
   reqLogger: Logger,
   batchSize: number,
+  servicePodCount?: number,
 ): Promise<WorkItemData[]> {
   const workItems: WorkItemData[] = [];
   try {
     await db.transaction(async (tx) => {
-      const jobIds = await getNextJobIds(tx, serviceID, batchSize);
-      const shuffledJobIds = shuffleArray(jobIds);
-
-      let remainingNumOfJobs = jobIds.length;
-      let remainingBatchSize = batchSize;
-
-      for (const jobId of shuffledJobIds) {
-        const workSize =
-          remainingNumOfJobs > 0
-            ? Math.ceil(remainingBatchSize / remainingNumOfJobs)
-            : 1;
-
+      const takeWorkItems = async (jobId: string, workSize: number): Promise<number> => {
         const nextWorkItems = await getNextWorkItems(tx, serviceID, jobId, workSize);
 
         if (nextWorkItems?.length > 0) {
@@ -122,9 +92,11 @@ export async function getWorkItemsFromDatabase(
           await setReadyCountToZero(tx, jobId, serviceID);
         }
 
-        remainingNumOfJobs -= 1;
-        remainingBatchSize -= nextWorkItems?.length ?? 0;
-      }
+        return nextWorkItems?.length ?? 0;
+      };
+
+      await getFairQueueingPolicy().scheduleWork(
+        tx, serviceID, batchSize, { logger: reqLogger, servicePodCount }, takeWorkItems);
     });
   } catch (err) {
     reqLogger.error(err);

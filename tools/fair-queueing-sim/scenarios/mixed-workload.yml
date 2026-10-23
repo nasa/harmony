@@ -1,0 +1,74 @@
+# A busier, more realistic mix: steady arrivals from several users across two chained services,
+# occasional slow jobs, and frequent small synchronous requests.
+name: mixed-workload
+description: >-
+  Over six hours, several users submit async jobs at random intervals to a two step chain
+  (a 30 pod subsetter followed by a 10 pod reformatter), one user occasionally submits slow
+  jobs, and a steady stream of small synchronous requests arrives.
+seed: 42
+maxDuration: 2d
+env:
+  QUEUE_LONG_POLLING_WAIT_TIME_SEC: 3
+services:
+  - name: subsetter
+    pods: 30
+  - name: reformatter
+    pods: 10
+generators:
+  - name: analyst
+    user: analyst
+    every: { dist: exponential, mean: 20m }
+    until: 6h
+    job:
+      granules: { min: 20, max: 200 }
+      steps:
+        - service: subsetter
+          duration: { dist: lognormal, median: 90s, sigma: 0.4 }
+        - service: reformatter
+          duration: { dist: lognormal, median: 20s, sigma: 0.3 }
+  - name: pipeline
+    user: pipeline
+    every: { dist: exponential, mean: 30m }
+    until: 6h
+    job:
+      granules: { min: 300, max: 600 }
+      steps:
+        - service: subsetter
+          duration: { dist: lognormal, median: 2m, sigma: 0.3 }
+        - service: reformatter
+          duration: { dist: lognormal, median: 20s, sigma: 0.3 }
+  - name: modeler
+    user: modeler
+    start: 30m
+    every: { dist: exponential, mean: 90m }
+    until: 6h
+    job:
+      granules: { min: 10, max: 40 }
+      steps:
+        - service: subsetter
+          duration:
+            dist: mix
+            options:
+              - { weight: 3, duration: { dist: lognormal, median: 25m, sigma: 0.3 } }
+              - { weight: 1, duration: { dist: lognormal, median: 3m, sigma: 0.3 } }
+  - name: student
+    user: student
+    every: { dist: exponential, mean: 45m }
+    until: 6h
+    job:
+      granules: { min: 5, max: 60 }
+      steps:
+        - service: subsetter
+          duration: { dist: lognormal, median: 60s, sigma: 0.4 }
+  - name: viewer
+    user: viewer
+    every: { dist: exponential, mean: 4m }
+    until: 6h
+    job:
+      async: false
+      granules: 1
+      steps:
+        - service: subsetter
+          duration: { dist: lognormal, median: 20s, sigma: 0.3 }
+        - service: reformatter
+          duration: { dist: lognormal, median: 10s, sigma: 0.3 }
