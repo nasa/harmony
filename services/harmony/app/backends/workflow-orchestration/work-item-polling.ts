@@ -2,7 +2,7 @@ import { Logger } from 'winston';
 
 import { calculateQueryCmrLimit, processSchedulerQueue, QUERY_CMR_SERVICE_REGEX } from './util';
 import {
-  getNextJobIds, incrementReadyAndDecrementRunningCounts, incrementRunningAndDecrementReadyCounts,
+  DurationBasedFairQueueingOptions, getNextJobIds, incrementReadyAndDecrementRunningCounts, incrementRunningAndDecrementReadyCounts,
   setReadyCountToZero,
 } from '../../models/user-work';
 import WorkItem, {
@@ -80,25 +80,22 @@ function shuffleArray<T>(array: T[]): T[] {
  * @param serviceID - the id of the service to get work for
  * @param reqLogger - a logger instance
  * @param batchSize - the maximum number of work items to return
- * @param servicePodCount - the number of pods currently running for the service (its capacity),
- * used to limit how many work items for slow jobs may be running at once
- * @param slowWorkThresholdMs - average work item duration (in ms) above which a job/service is slow
- * @param fastLaneReserveFraction - the fraction of the service's capacity reserved for fast work
+ * @param durationBasedOptions - settings for duration based fair queueing (including the service
+ * pod count used to limit how many work items for slow jobs may be running at once), or undefined
+ * to use slot based fair queueing
  * @returns work items from the database for the given service ID
  */
 export async function getWorkItemsFromDatabase(
   serviceID: string,
   reqLogger: Logger,
   batchSize: number,
-  servicePodCount: number,
-  slowWorkThresholdMs: number,
-  fastLaneReserveFraction: number,
+  durationBasedOptions?: DurationBasedFairQueueingOptions,
 ): Promise<WorkItemData[]> {
   const workItems: WorkItemData[] = [];
   try {
     await db.transaction(async (tx) => {
       const { jobs, availableSlowWorkSlots } = await getNextJobIds(
-        tx, serviceID, batchSize, servicePodCount, reqLogger, slowWorkThresholdMs, fastLaneReserveFraction);
+        tx, serviceID, batchSize, reqLogger, durationBasedOptions);
       let remainingSlowWorkSlots = availableSlowWorkSlots;
       const shuffledJobs = shuffleArray(jobs);
 

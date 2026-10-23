@@ -7,7 +7,7 @@ import UserWork, { populateUserWorkFromWorkItems } from '../../app/models/user-w
 import { WorkItemRecord } from '../../app/models/work-item-interface';
 import db from '../../app/util/db';
 import { makePartialJobRecord, rawSaveJob } from '../helpers/jobs';
-import { setTestServicePodCount } from '../helpers/queue';
+import { setTestDurationBasedFairQueueing } from '../helpers/queue';
 import hookServersStartStop from '../helpers/servers';
 import { getWorkForService, makePartialWorkItemRecord, rawSaveWorkItem } from '../helpers/work-items';
 import { makePartialWorkflowStepRecord, rawSaveWorkflowStep } from '../helpers/workflow-steps';
@@ -114,7 +114,10 @@ describe('Fair Queueing', function () {
   });
 
   describe('When work is requested for a service and there are work items currently running', async function () {
-    // At the start of this test Joe has 3 items running, Bob has one item running, and Bill has zero.
+    // populateUserWorkFromWorkItems counts a job's running items against the job's workflow step
+    // service, so at the start of this test for the 'foo' service Joe has one item running
+    // (joeOldest), Bob has one item running (bobSync), and Bill has zero. Joe's other two running
+    // items are counted against joeNewest's 'bar' service and are ignored when scheduling 'foo'.
     const additionalRunningWorkItemData = [
       // jobID, serviceID, status, updatedAt
       ['joeNewest', 'foo', 'running', 12345],
@@ -154,19 +157,19 @@ describe('Fair Queueing', function () {
       expect(results[0].body.workItem.jobID).to.equal('billOldest');
     });
     it('returns the work item for the user with the least recently worked job when two users have the same number of jobs running', async function () {
-      expect(results[1].body.workItem.jobID).to.equal('bobSync');
+      expect(results[1].body.workItem.jobID).to.equal('joeOldest');
     });
 
     it('returns the rest of the work items in fair queueing order', function () {
       const jobIds = results.slice(2, 5).map((result) => result.body.workItem?.jobID);
-      expect(jobIds).to.eql(['billMiddle', 'bobOldest', 'joeOldest']);
+      expect(jobIds).to.eql(['bobSync', 'billMiddle', 'bobOldest']);
     });
     it('returns a 404 status when no work is available', function () {
       expect(results[5].status).to.equal(404);
     });
   });
 
-  describe('When the fast lane reserve capacity has been reached for a service', async function () {
+  describe('When the fast lane reserve capacity has been reached for a service and duration based fair queueing is enabled', async function () {
     // SlowUser's two running slow work items exceed the slow work capacity (1) of the simulated
     // 2-pod 'foo' service, so only "fast" work - a measured fast job, and a never-before-attempted
     // job that gets a chance to be measured - should be eligible. A job already measured as slow
@@ -201,7 +204,7 @@ describe('Fair Queueing', function () {
 
     before(truncateAll);
     after(truncateAll);
-    after(() => setTestServicePodCount());
+    after(() => setTestDurationBasedFairQueueing());
     const results = [];
     before(async function () {
       await Promise.all(jobRecords.map(async (rec: Partial<JobRecord>) => {
@@ -225,7 +228,7 @@ describe('Fair Queueing', function () {
 
       // simulate a 2-pod capacity for the 'foo' service so that SlowUser's 2 running items
       // saturate it and trigger the fast lane reserve
-      setTestServicePodCount(2);
+      setTestDurationBasedFairQueueing(2);
 
       for (let count = 0; count < 3; count++) {
         const result = await getWorkForService(this.backend, 'foo');
@@ -281,19 +284,18 @@ describe('Fair Queueing', function () {
 
     await db(UserWork.table).whereIn('job_id', ['busyFastJob', 'idleFastJob']).update({ average_duration: 1000, completed_count: 1 });
     await db(UserWork.table).whereIn('job_id', ['busySlowJob', 'idleSlowJob']).update({ average_duration: 700000, completed_count: 1 });
-
-    // 10 pods with the default 30% fast lane reserve gives a slow work capacity of 7
-    setTestServicePodCount(10);
   }
 
-  describe('When a service is busy mostly with fast work and slow work is under its capacity', async function () {
+  describe('When a service is busy mostly with fast work, slow work is under its capacity, and duration based fair queueing is enabled', async function () {
     // 10 of 10 pods are busy, but only 2 with slow work - well under the slow work capacity of 7
     before(truncateAll);
     after(truncateAll);
-    after(() => setTestServicePodCount());
+    after(() => setTestDurationBasedFairQueueing());
     const results = [];
     before(async function () {
       await saveBusyServiceData(8, 2);
+      // 10 pods with the default 30% fast lane reserve gives a slow work capacity of 7
+      setTestDurationBasedFairQueueing(10);
       for (let count = 0; count < 2; count++) {
         results.push(await getWorkForService(this.backend, 'foo'));
       }
@@ -308,14 +310,16 @@ describe('Fair Queueing', function () {
     });
   });
 
-  describe('When running slow work has reached the slow work capacity for a service', async function () {
+  describe('When running slow work has reached the slow work capacity for a service and duration based fair queueing is enabled', async function () {
     // 7 of 10 pods are busy with slow work, reaching the slow work capacity of 7
     before(truncateAll);
     after(truncateAll);
-    after(() => setTestServicePodCount());
+    after(() => setTestDurationBasedFairQueueing());
     const results = [];
     before(async function () {
       await saveBusyServiceData(0, 7);
+      // 10 pods with the default 30% fast lane reserve gives a slow work capacity of 7
+      setTestDurationBasedFairQueueing(10);
       for (let count = 0; count < 2; count++) {
         results.push(await getWorkForService(this.backend, 'foo'));
       }
@@ -327,6 +331,98 @@ describe('Fair Queueing', function () {
 
     it('does not return the slow job, even though it would otherwise be prioritized first', function () {
       expect(results[1].status).to.equal(404);
+    });
+  });
+
+  describe('When running slow work would reach the slow work capacity for a service and slot based fair queueing is used', async function () {
+    // the same data as above, but without the fast lane reserve, slow work is never held back
+    before(truncateAll);
+    after(truncateAll);
+    const results = [];
+    before(async function () {
+      await saveBusyServiceData(0, 7);
+      for (let count = 0; count < 3; count++) {
+        results.push(await getWorkForService(this.backend, 'foo'));
+      }
+    });
+
+    it('returns the slow job first, prioritized by the normal fair queueing rules', function () {
+      expect(results[0].body.workItem.jobID).to.equal('idleSlowJob');
+    });
+
+    it('returns the fast job next', function () {
+      expect(results[1].body.workItem.jobID).to.equal('idleFastJob');
+    });
+
+    it('returns a 404 status when no work is available', function () {
+      expect(results[2].status).to.equal(404);
+    });
+  });
+
+  /**
+   * Saves jobs, workflow steps, and work items for a 'foo' service where FewSlotsUser has one
+   * slow work item running and ManySlotsUser has three fast work items running, and each has one
+   * more ready work item.
+   */
+  async function saveSlotsVsDurationData(): Promise<void> {
+    const jobs = [
+      ['fewSlotsJob', 'FewSlotsUser', 'running', true, 30000],
+      ['manySlotsJob', 'ManySlotsUser', 'running', true, 30001],
+    ];
+    const items = [
+      ['fewSlotsJob', 'foo', 'running', 30000],
+      ['fewSlotsJob', 'foo', 'ready', 30000],
+      ...Array.from({ length: 3 }, () => ['manySlotsJob', 'foo', 'running', 30001]),
+      ['manySlotsJob', 'foo', 'ready', 30001],
+    ];
+    await Promise.all(jobs.map(makePartialJobRecord).map(async (rec: Partial<JobRecord>) => {
+      await rawSaveJob(db, rec);
+    }));
+    await Promise.all(jobs.map(([jobID]) => [jobID, 'foo', '[]']).map(makePartialWorkflowStepRecord)
+      .map(async (rec: Partial<JobRecord>) => {
+        await rawSaveWorkflowStep(db, rec);
+      }));
+    await Promise.all(items.map(makePartialWorkItemRecord).map(async (rec: WorkItemRecord) => {
+      await rawSaveWorkItem(db, rec);
+    }));
+    await populateUserWorkFromWorkItems(db);
+
+    await db(UserWork.table).where({ job_id: 'fewSlotsJob' }).update({ average_duration: 700000, completed_count: 1 });
+    await db(UserWork.table).where({ job_id: 'manySlotsJob' }).update({ average_duration: 1000, completed_count: 1 });
+  }
+
+  describe('When one user has fewer, slower work items running than another and slot based fair queueing is used', async function () {
+    before(truncateAll);
+    after(truncateAll);
+    const results = [];
+    before(async function () {
+      await saveSlotsVsDurationData();
+      for (let count = 0; count < 2; count++) {
+        results.push(await getWorkForService(this.backend, 'foo'));
+      }
+    });
+
+    it('returns work for the user with the fewest running work items first, ignoring durations', function () {
+      expect(results.map((r) => r.body.workItem.jobID)).to.eql(['fewSlotsJob', 'manySlotsJob']);
+    });
+  });
+
+  describe('When one user has fewer, slower work items running than another and duration based fair queueing is enabled', async function () {
+    before(truncateAll);
+    after(truncateAll);
+    after(() => setTestDurationBasedFairQueueing());
+    const results = [];
+    before(async function () {
+      await saveSlotsVsDurationData();
+      // enough pods that the fast lane reserve is never reached
+      setTestDurationBasedFairQueueing(1000);
+      for (let count = 0; count < 2; count++) {
+        results.push(await getWorkForService(this.backend, 'foo'));
+      }
+    });
+
+    it('returns work for the user with the least expected runtime of running work first', function () {
+      expect(results.map((r) => r.body.workItem.jobID)).to.eql(['manySlotsJob', 'fewSlotsJob']);
     });
   });
 });

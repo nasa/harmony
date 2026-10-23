@@ -30,10 +30,63 @@ describe('getNextJobIds', function () {
       }).save(db);
     });
 
-    it('ranks the synchronous job ahead of the older asynchronous job', async function () {
-      const { jobs } = await db.transaction((tx) => getNextJobIds(
-        tx, serviceID, 10, 1000, logger, 600_000, 0.3));
+    it('ranks the synchronous job ahead of the older asynchronous job with slot based fair queueing', async function () {
+      const { jobs } = await db.transaction((tx) => getNextJobIds(tx, serviceID, 10, logger));
       expect(jobs.map((j) => j.jobId)).to.eql(['syncJob', 'asyncJob']);
+    });
+
+    it('ranks the synchronous job ahead of the older asynchronous job with duration based fair queueing', async function () {
+      const { jobs } = await db.transaction((tx) => getNextJobIds(
+        tx, serviceID, 10, logger,
+        { servicePodCount: 1000, slowWorkThresholdMs: 600_000, fastLaneReserveFraction: 0.3 }));
+      expect(jobs.map((j) => j.jobId)).to.eql(['syncJob', 'asyncJob']);
+    });
+  });
+
+  describe('when a user has many work items running for another service', function () {
+    beforeEach(async function () {
+      // busyElsewhereUser has the most running work (and expected runtime) overall, but none for
+      // this service
+      await createUserWorkRecord({
+        job_id: 'otherServiceJob', service_id: 'other-service', username: 'busyElsewhereUser',
+        running_count: 10, average_duration: 1000, completed_count: 1, last_worked: new Date(1000),
+      }).save(db);
+      await createUserWorkRecord({
+        job_id: 'busyElsewhereJob', service_id: serviceID, username: 'busyElsewhereUser',
+        ready_count: 1, average_duration: 1000, completed_count: 1, last_worked: new Date(2000),
+      }).save(db);
+      // busyHereUser has less running work overall, but some for this service, and was worked
+      // less recently, so would win any tie
+      await createUserWorkRecord({
+        job_id: 'busyHereJob', service_id: serviceID, username: 'busyHereUser',
+        ready_count: 1, running_count: 1, average_duration: 1000, completed_count: 1, last_worked: new Date(500),
+      }).save(db);
+    });
+
+    it('only counts the running work items for the service being scheduled with slot based fair queueing', async function () {
+      const { jobs } = await db.transaction((tx) => getNextJobIds(tx, serviceID, 10, logger));
+      expect(jobs.map((j) => j.jobId)).to.eql(['busyElsewhereJob', 'busyHereJob']);
+    });
+
+    it('only counts the expected runtime for the service being scheduled with duration based fair queueing', async function () {
+      const { jobs } = await db.transaction((tx) => getNextJobIds(
+        tx, serviceID, 10, logger,
+        { servicePodCount: 1000, slowWorkThresholdMs: 600_000, fastLaneReserveFraction: 0.3 }));
+      expect(jobs.map((j) => j.jobId)).to.eql(['busyElsewhereJob', 'busyHereJob']);
+    });
+  });
+
+  describe('when using slot based fair queueing and a job is measured as slow', function () {
+    beforeEach(async function () {
+      await createUserWorkRecord({
+        job_id: 'slowJob', service_id: serviceID, username: 'slowUser',
+        ready_count: 1, running_count: 5, average_duration: 700_000, completed_count: 1,
+      }).save(db);
+    });
+
+    it('does not classify the job as slow or limit the slow work slots', async function () {
+      const result = await db.transaction((tx) => getNextJobIds(tx, serviceID, 10, logger));
+      expect(result).to.eql({ jobs: [{ jobId: 'slowJob', isSlow: false }], availableSlowWorkSlots: Infinity });
     });
   });
 });

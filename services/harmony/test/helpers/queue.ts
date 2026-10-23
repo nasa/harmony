@@ -4,6 +4,7 @@ import { Logger } from 'winston';
 import { MemoryQueue } from './memory-queue';
 import * as util from '../../app/backends/workflow-orchestration/util';
 import { getWorkItemsFromDatabase, WorkItemData } from '../../app/backends/workflow-orchestration/work-item-polling';
+import { DurationBasedFairQueueingOptions } from '../../app/models/user-work';
 import logger from '../../app/util/log';
 import { WorkItemQueueType } from '../../app/util/queue/queue';
 import * as qf from '../../app/util/queue/queue-factory';
@@ -11,26 +12,27 @@ import * as qf from '../../app/util/queue/queue-factory';
 let serviceQueues;
 let typeQueues;
 
-// The service pod count ("capacity") to use when exercising fair queueing in tests, since there
-// is no real k8s cluster to query. Defaults high enough that the fast lane reserve never
-// triggers unless a test explicitly lowers it with setTestServicePodCount.
-let testServicePodCount = 1000;
-
-// These test-only simulation functions stand in for the real work-scheduler (which has no pod
-// running in unit tests), so there's no env to read these from - mirror the production defaults
-// (services/work-scheduler/env-defaults) directly.
-const testSlowWorkThresholdMs = 600_000;
-const testFastLaneReserveFraction = 0.3;
+// The duration based fair queueing settings used by getWorkFromDatabase, or undefined to use
+// slot based fair queueing (the work-scheduler's default, ENABLE_DURATION_BASED_FAIR_QUEUEING=false).
+let testDurationBasedOptions: DurationBasedFairQueueingOptions | undefined;
 
 /**
- * Sets the service pod count ("capacity") used by getWorkFromDatabase in tests, so tests can
- * exercise the fast lane reserve behavior. Resets to the default (effectively unlimited) when
- * called with no argument.
+ * Enables duration based fair queueing for getWorkFromDatabase in tests, simulating the given
+ * service pod count ("capacity") since there is no real k8s cluster to query, so tests can
+ * exercise the fast lane reserve behavior. Reverts to slot based fair queueing when called with
+ * no argument.
  *
- * @param servicePodCount - the service pod count to simulate
+ * These test-only simulation functions stand in for the real work-scheduler (which has no pod
+ * running in unit tests), so there's no env to read the other settings from - mirror the
+ * production defaults (services/work-scheduler/env-defaults) directly.
+ *
+ * @param servicePodCount - the service pod count to simulate, or undefined to use slot based
+ * fair queueing
  */
-export function setTestServicePodCount(servicePodCount = 1000): void {
-  testServicePodCount = servicePodCount;
+export function setTestDurationBasedFairQueueing(servicePodCount?: number): void {
+  testDurationBasedOptions = servicePodCount === undefined
+    ? undefined
+    : { servicePodCount, slowWorkThresholdMs: 600_000, fastLaneReserveFraction: 0.3 };
 }
 
 /**
@@ -43,8 +45,7 @@ export function setTestServicePodCount(servicePodCount = 1000): void {
  * @returns A work item from the database for the given service ID
  */
 export async function getWorkFromDatabase(serviceID: string, reqLogger: Logger): Promise<WorkItemData | null> {
-  const workItems = await getWorkItemsFromDatabase(
-    serviceID, reqLogger, 1, testServicePodCount, testSlowWorkThresholdMs, testFastLaneReserveFraction);
+  const workItems = await getWorkItemsFromDatabase(serviceID, reqLogger, 1, testDurationBasedOptions);
   return workItems[0] ?? null;
 }
 

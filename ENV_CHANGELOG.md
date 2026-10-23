@@ -2,6 +2,14 @@
 Any changes to the environment variables will be documented in this file in chronological
 order with the most recent changes first.
 
+## 2026-10-23
+### Added
+- ENABLE_DURATION_BASED_FAIR_QUEUEING - work-scheduler feature toggle (default false). When false,
+  fair queueing is slot based (users ranked by number of running work items, no fast lane reserve)
+  and SLOW_WORK_THRESHOLD_MS and FAST_LANE_RESERVE_FRACTION are ignored. When true, users are ranked
+  by the expected runtime of their running work and the fast lane reserve is enforced. See
+  `docs/fair-queueing.md`.
+
 ## 2026-10-22
 ### Changed
 - QUEUE_LONG_POLLING_WAIT_TIME_SEC - lowered default from 20 to 3. A FIFO queue's internal
@@ -15,9 +23,10 @@ order with the most recent changes first.
 ### Added
 - SLOW_WORK_THRESHOLD_MS - average work item duration (in ms), per job and service, above which a
   job and service's work items are classified as "slow" for fair queueing's fast lane reserve.
+  Only used when ENABLE_DURATION_BASED_FAIR_QUEUEING is true.
 - FAST_LANE_RESERVE_FRACTION - fraction of a service's running pod count reserved for "fast" work
   (default 0.3). Slow work is only blocked once running slow work items occupy the remaining
-  capacity. See `docs/fair-queueing.md`.
+  capacity. Only used when ENABLE_DURATION_BASED_FAIR_QUEUEING is true. See `docs/fair-queueing.md`.
 
 ## 2026-10-15
 ### Added

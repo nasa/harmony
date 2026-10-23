@@ -235,6 +235,15 @@ export async function processSchedulerQueue(
     reqLogger.debug(`Work size count is ${workSize} based on service pod count of ${servicePodCount}, message count ${messageCount}, scheduler pod count ${schedulerPodCount}, numMessagesReceived ${numMessagesReceived}, and scaleFactor ${scaleFactor} for queue ${queueUrl}`);
     reqLogger.debug(`Attempting to retrieve ${workSize} work items for queue ${queueUrl}`);
 
+    // undefined selects slot based fair queueing
+    const durationBasedOptions = env.enableDurationBasedFairQueueing
+      ? {
+        servicePodCount,
+        slowWorkThresholdMs: env.slowWorkThresholdMs,
+        fastLaneReserveFraction: env.fastLaneReserveFraction,
+      }
+      : undefined;
+
     let queuedCount = 0;
     let sendFailed = false;
     const batchStartTime = new Date().getTime();
@@ -243,8 +252,7 @@ export async function processSchedulerQueue(
       const workItems = await logAsyncExecutionTime(
         getWorkItemsFromDatabase,
         'PSQ.getWorkItemsFromDatabase',
-        reqLogger, serviceID, reqLogger, chunk, servicePodCount,
-        env.slowWorkThresholdMs, env.fastLaneReserveFraction);
+        reqLogger, serviceID, reqLogger, chunk, durationBasedOptions);
 
       for (const [index, workItem] of workItems.entries()) {
         const json = JSON.stringify(workItem);
