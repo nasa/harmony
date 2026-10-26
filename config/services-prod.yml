@@ -246,11 +246,9 @@ https://cmr.earthdata.nasa.gov:
   - name: nasa/harmony-gdal-adapter
     description: |
       Service translating Harmony operations to GDAL commands.
-      Supports spatial bounding box, temporal, variable, and shapefile, reprojection,
-      and output to NetCDF4 or COG.
-      Operates on input file types supported by GDAL (most EOSDIS data).
-      Most operations assume L3 data, though it is likely that some work on L2.
-    data_operation_version: '0.22.0'
+      Supports spatial bounding box, variable, reprojection,
+      and output to GeoTIFF.
+    data_operation_version: "0.22.0"
     type:
       <<: *default-turbo-config
       params:
@@ -261,14 +259,11 @@ https://cmr.earthdata.nasa.gov:
     umm_s: S4389714698-ASF
     capabilities:
       subsetting:
-        temporal: true
-        shape: true
         bbox: true
         variable: true
         multiple_variable: true
       output_formats:
         - image/tiff
-        - application/netcdf
       reprojection: true
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
