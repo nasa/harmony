@@ -128,6 +128,23 @@ describe('Updater Worker', function () {
 
       expect(handleBatchWorkItemUpdatesWithJobIdStub.callCount).to.equal(0);
     });
+
+    it('should still process other jobs when one job fails', async function () {
+      const updates = [
+        { update: { workItemID: 1, status: WorkItemStatus.SUCCESSFUL } },
+        { update: { workItemID: 2, status: WorkItemStatus.FAILED } },
+        { update: { workItemID: 3, status: WorkItemStatus.RUNNING } },
+      ];
+      getJobStatusForJobIDStub.resolves(jobModel.JobStatus.RUNNING);
+      handleBatchWorkItemUpdatesWithJobIdStub.withArgs('job1').rejects(new Error('boom'));
+      handleBatchWorkItemUpdatesWithJobIdStub.withArgs('job2').resolves();
+
+      await updater.handleBatchWorkItemUpdates(updates, logger);
+
+      expect(handleBatchWorkItemUpdatesWithJobIdStub.callCount).to.equal(2);
+      expect(handleBatchWorkItemUpdatesWithJobIdStub.calledWith('job1')).to.be.true;
+      expect(handleBatchWorkItemUpdatesWithJobIdStub.calledWith('job2')).to.be.true;
+    });
   });
 
   describe('startVisibilityHeartbeat', function () {

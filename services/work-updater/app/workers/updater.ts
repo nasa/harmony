@@ -42,19 +42,33 @@ export async function handleBatchWorkItemUpdates(
         return accValue;
       }
     }, {});
-  // process each job's updates
-  for (const jobID in jobUpdates) {
-    const jobStatus = await getJobStatusForJobID(jobID);
-    if (terminalStates.includes(jobStatus)) {
-      logger.warn(`Ignoring work item updates for job ${jobID} in terminal state ${jobStatus}.`);
-    } else {
+  // process each job's updates - different jobs never share a row lock (each job's transaction
+  // locks only its own jobID), so it's safe to process them concurrently rather than blocking
+  // every other job in the batch behind one slow job (e.g. a slow S3 catalog read).
+  await Promise.allSettled(Object.keys(jobUpdates).map(async (jobID): Promise<void> => {
+    try {
+      const jobStatus = await getJobStatusForJobID(jobID);
+      if (terminalStates.includes(jobStatus)) {
+        logger.warn(`Ignoring work item updates for job ${jobID} in terminal state ${jobStatus}.`);
+        return;
+      }
       const startTime = Date.now();
-      logger.debug(`Processing ${jobUpdates[jobID].length} work item updates for job ${jobID}`);
+      const jobBatchSize = jobUpdates[jobID].length;
       await handleBatchWorkItemUpdatesWithJobId(jobID, jobUpdates[jobID], logger);
-      const endTime = Date.now();
-      logger.debug(`Processing ${jobUpdates[jobID].length} work item updates for job ${jobID} took ${endTime - startTime} ms`);
+      const durationMs = Date.now() - startTime;
+      // jobBatchSize is how many of the messages drained in this poll cycle were for this one
+      // job - the key number for spotting a hot job: if it stays at 1 even when the queue is
+      // deep, updates for that job are arriving/draining one at a time rather than batching.
+      logger.info('timing.updater.handleBatchWorkItemUpdatesWithJobId.end', {
+        jobId: jobID,
+        jobBatchSize,
+        durationMs,
+        msPerItem: Math.round(durationMs / jobBatchSize),
+      });
+    } catch (e) {
+      logger.error(`Error processing work item updates for job ${jobID}: ${e}`);
     }
-  }
+  }));
 }
 
 /**
@@ -173,7 +187,18 @@ export async function batchProcessQueue(queueType: WorkItemQueueType): Promise<v
   }
 
   const endTime = Date.now();
-  defaultLogger.debug(`Processed ${messages.length} work item updates from queue in ${endTime - startTime} ms`);
+  const durationMs = endTime - startTime;
+  // messagesDrained and msPerMessage are the numbers to watch per poll cycle. For the
+  // LARGE_ITEM_UPDATE queue, each message is still processed one at a time (see the loop above)
+  // regardless of how many were drained together, so msPerMessage there reflects per-message
+  // overhead rather than any batching benefit - compare against SMALL_ITEM_UPDATE's
+  // msPerMessage, where handleBatchWorkItemUpdates does batch same-job messages together.
+  defaultLogger.info('timing.updater.batchProcessQueue.end', {
+    queueType,
+    messagesDrained: messages.length,
+    durationMs,
+    msPerMessage: Math.round(durationMs / messages.length),
+  });
 }
 
 

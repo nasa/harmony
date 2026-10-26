@@ -2,7 +2,8 @@ import { Logger } from 'winston';
 
 import { calculateQueryCmrLimit, processSchedulerQueue, QUERY_CMR_SERVICE_REGEX } from './util';
 import {
-  getNextJobIds, incrementRunningAndDecrementReadyCounts, setReadyCountToZero,
+  DurationBasedFairQueueingOptions, getNextJobIds, incrementReadyAndDecrementRunningCounts, incrementRunningAndDecrementReadyCounts,
+  setReadyCountToZero,
 } from '../../models/user-work';
 import WorkItem, {
   getNextWorkItems, getWorkItemStatus, updateWorkItemStatuses,
@@ -79,29 +80,47 @@ function shuffleArray<T>(array: T[]): T[] {
  * @param serviceID - the id of the service to get work for
  * @param reqLogger - a logger instance
  * @param batchSize - the maximum number of work items to return
+ * @param durationBasedOptions - settings for duration based fair queueing (including the service
+ * pod count used to limit how many work items for slow jobs may be running at once), or undefined
+ * to use slot based fair queueing
  * @returns work items from the database for the given service ID
  */
 export async function getWorkItemsFromDatabase(
   serviceID: string,
   reqLogger: Logger,
   batchSize: number,
+  durationBasedOptions?: DurationBasedFairQueueingOptions,
 ): Promise<WorkItemData[]> {
   const workItems: WorkItemData[] = [];
   try {
     await db.transaction(async (tx) => {
-      const jobIds = await getNextJobIds(tx, serviceID, batchSize);
-      const shuffledJobIds = shuffleArray(jobIds);
+      const { jobs, availableSlowWorkSlots } = await getNextJobIds(
+        tx, serviceID, batchSize, reqLogger, durationBasedOptions);
+      let remainingSlowWorkSlots = availableSlowWorkSlots;
+      const shuffledJobs = shuffleArray(jobs);
 
-      let remainingNumOfJobs = jobIds.length;
+      let remainingNumOfJobs = jobs.length;
       let remainingBatchSize = batchSize;
 
-      for (const jobId of shuffledJobIds) {
-        const workSize =
+      for (const { jobId, isSlow } of shuffledJobs) {
+        let workSize =
           remainingNumOfJobs > 0
             ? Math.ceil(remainingBatchSize / remainingNumOfJobs)
             : 1;
 
+        // slow jobs share whatever is left of the service's slow work capacity
+        if (isSlow) {
+          workSize = Math.min(workSize, remainingSlowWorkSlots);
+          if (workSize <= 0) {
+            remainingNumOfJobs -= 1;
+            continue;
+          }
+        }
+
         const nextWorkItems = await getNextWorkItems(tx, serviceID, jobId, workSize);
+        if (isSlow) {
+          remainingSlowWorkSlots -= nextWorkItems?.length ?? 0;
+        }
 
         if (nextWorkItems?.length > 0) {
           for (const workItem of nextWorkItems) {
@@ -132,6 +151,42 @@ export async function getWorkItemsFromDatabase(
   }
 
   return workItems;
+}
+
+/**
+ * Reverts work items that were pulled out of the `ready` state (and counted as `running` in
+ * `user_work`) but failed to actually be sent to their service's SQS queue, so they aren't
+ * orphaned as `queued` forever - invisible to any pod's poll and permanently occupying a
+ * `running_count` slot - until `work-failer`'s timeout eventually notices them. Only items still
+ * in the `queued` state are reverted (and counted), since a concurrent cancellation could have
+ * already moved an item out of `queued` - unconditionally reverting it would resurrect a
+ * canceled item and make it eligible for scheduling again.
+ * @param workItems - the work items to revert back to `ready`
+ * @param reqLogger - the logger to use
+ * @throws if the revert fails, so the caller doesn't treat these items as handled
+ */
+export async function revertQueuedWorkItemsToReady(
+  workItems: WorkItemData[],
+  reqLogger: Logger,
+): Promise<void> {
+  if (workItems.length < 1) return;
+  try {
+    await db.transaction(async (tx) => {
+      const stillQueued = await tx(WorkItem.table)
+        .select('id', 'jobID', 'serviceID')
+        .where('status', WorkItemStatus.QUEUED)
+        .whereIn('id', workItems.map(({ workItem }) => workItem.id));
+      if (stillQueued.length < 1) return;
+      await updateWorkItemStatuses(tx, stillQueued.map((item) => item.id), WorkItemStatus.READY);
+      for (const item of stillQueued) {
+        await incrementReadyAndDecrementRunningCounts(tx, item.jobID, item.serviceID);
+      }
+    });
+  } catch (err) {
+    reqLogger.error(`Error reverting work items ${workItems.map(({ workItem }) => workItem.id)} back to ready after failing to queue them: ${err.message}`);
+    reqLogger.error(err);
+    throw err;
+  }
 }
 
 /**

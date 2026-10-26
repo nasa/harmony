@@ -90,6 +90,13 @@ TABLE_NAMES=(
   "workflow_steps"
 )
 
+# Every table is created as Iceberg format v3 ("format-version" in its properties), which is
+# what lets a column added later have an initial-default: the value rows written before the
+# column existed read for it. The cron service's analytics job adds new Postgres columns with
+# the value Postgres gave its existing rows as the default (see addMissingIcebergColumns in
+# services/cron-service/app/cronjobs/update-analytics.ts), which on a v2 table would leave
+# those rows NULL instead. This only applies to newly created tables - existing ones are
+# skipped below and keep whatever format version they were created with.
 TABLE_SCHEMAS=(
 "$(cat <<'EOF'
 {
@@ -106,7 +113,8 @@ TABLE_SCHEMAS=(
         {"name": "created_at", "type": "timestamptz"},
         {"name": "updated_at", "type": "timestamptz"}
       ]
-    }
+    },
+    "properties": {"format-version": "3"}
   }
 }
 EOF
@@ -123,7 +131,8 @@ EOF
         {"name": "created_at", "type": "timestamptz"},
         {"name": "updated_at", "type": "timestamptz"}
       ]
-    }
+    },
+    "properties": {"format-version": "3"}
   }
 }
 EOF
@@ -154,7 +163,8 @@ EOF
           "name": "updated_at_month"
         }
       ]
-    }
+    },
+    "properties": {"format-version": "3"}
   }
 }
 EOF
@@ -182,7 +192,8 @@ EOF
           "name": "updated_at_month"
         }
       ]
-    }
+    },
+    "properties": {"format-version": "3"}
   }
 }
 EOF
@@ -211,7 +222,8 @@ EOF
         {"id": 17, "name": "service_name", "type": "string"},
         {"id": 18, "name": "provider_id", "type": "string"},
         {"id": 19, "name": "original_data_size", "type": "double"},
-        {"id": 20, "name": "output_data_size", "type": "double"}
+        {"id": 20, "name": "output_data_size", "type": "double"},
+        {"id": 21, "name": "request_checksum", "type": "string"}
       ]
     },
     "partitionSpec": {
@@ -222,7 +234,8 @@ EOF
           "name": "updated_at_month"
         }
       ]
-    }
+    },
+    "properties": {"format-version": "3"}
   }
 }
 EOF
@@ -247,7 +260,8 @@ EOF
           "name": "updated_at_month"
         }
       ]
-    }
+    },
+    "properties": {"format-version": "3"}
   }
 }
 EOF
@@ -262,7 +276,8 @@ EOF
         {"name": "created_at", "type": "timestamptz"},
         {"name": "updated_at", "type": "timestamptz"}
       ]
-    }
+    },
+    "properties": {"format-version": "3"}
   }
 }
 EOF
@@ -283,7 +298,8 @@ EOF
         {"name": "updated_at", "type": "timestamptz"},
         {"name": "regression_test_version", "type": "string"}
       ]
-    }
+    },
+    "properties": {"format-version": "3"}
   }
 }
 EOF
@@ -299,7 +315,8 @@ EOF
         {"name": "created_at", "type": "timestamptz"},
         {"name": "updated_at", "type": "timestamptz"}
       ]
-    }
+    },
+    "properties": {"format-version": "3"}
   }
 }
 EOF
@@ -335,7 +352,8 @@ EOF
           "name": "updated_at_month"
         }
       ]
-    }
+    },
+    "properties": {"format-version": "3"}
   }
 }
 EOF
@@ -372,7 +390,8 @@ EOF
           "name": "updated_at_month"
         }
       ]
-    }
+    },
+    "properties": {"format-version": "3"}
   }
 }
 EOF

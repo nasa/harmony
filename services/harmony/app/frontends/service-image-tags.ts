@@ -575,7 +575,9 @@ export function buildDeployerJobManifest(
               envFrom: [
                 { configMapRef: { name: 'harmony-env' } },
                 { configMapRef: { name: 'queue-urls-env' } },
+                { configMapRef: { name: 'deployer-env' } },
                 { secretRef: { name: 'harmony-secrets' } },
+                { secretRef: { name: 'deployer-secrets' } },
               ],
               resources: {
                 requests: { cpu: '250m', memory: '512Mi' },

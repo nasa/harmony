@@ -2,6 +2,44 @@
 Any changes to the environment variables will be documented in this file in chronological
 order with the most recent changes first.
 
+## 2026-10-23
+### Added
+- ENABLE_DURATION_BASED_FAIR_QUEUEING - work-scheduler feature toggle (default false). When false,
+  fair queueing is slot based (users ranked by number of running work items, no fast lane reserve)
+  and SLOW_WORK_THRESHOLD_MS and FAST_LANE_RESERVE_FRACTION are ignored. When true, users are ranked
+  by the expected runtime of their running work and the fast lane reserve is enforced. See
+  `docs/fair-queueing.md`.
+
+## 2026-10-22
+### Changed
+- QUEUE_LONG_POLLING_WAIT_TIME_SEC - lowered default from 20 to 3. A FIFO queue's internal
+  partitioning (used here because each work item is sent with its own unique MessageGroupId) means
+  an open long poll can miss a message that becomes visible on a different partition mid-wait,
+  forcing a wait of up to the full timeout before the next poll picks it up. Lowering the wait
+  shrinks that worst case, at the cost of more frequent ReceiveMessage calls while a queue is
+  starved - still well under SQS FIFO's 300 req/sec per-queue cap at observed pod counts.
+
+## 2026-10-21
+### Added
+- SLOW_WORK_THRESHOLD_MS - average work item duration (in ms), per job and service, above which a
+  job and service's work items are classified as "slow" for fair queueing's fast lane reserve.
+  Only used when ENABLE_DURATION_BASED_FAIR_QUEUEING is true.
+- FAST_LANE_RESERVE_FRACTION - fraction of a service's running pod count reserved for "fast" work
+  (default 0.3). Slow work is only blocked once running slow work items occupy the remaining
+  capacity. Only used when ENABLE_DURATION_BASED_FAIR_QUEUEING is true. See `docs/fair-queueing.md`.
+
+## 2026-10-15
+### Added
+- ANALYTICS_UPDATE_PAGE_SIZE - the number of rows read from Postgres at a time while building each batch
+  during Iceberg propagation
+
+### Changed
+- ANALYTICS_UPDATE_BATCH_SIZE - Reduced from 100000 to 25000. DuckDB's memory use for each batch's
+  MERGE grows with the batch size, and 100000-row batches got the cron service OOM killed.
+- ANALYTICS_UPDATE_MEMORY_LIMIT - Reduced from 2GB to 1GB. This only limits DuckDB's buffer manager, so
+  its actual memory use runs higher, and it shares the container's memory with Node - it must stay well
+  under CRON_SERVICE_LIMITS_MEMORY to avoid the container being OOM killed.
+
 ## 2026-10-01
 ### Changed
 - HYBIG_LIMITS_MEMORY - Increased to 12Gi to handle large polar-projected granules in NISAR collections.

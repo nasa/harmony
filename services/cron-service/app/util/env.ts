@@ -58,6 +58,9 @@ class CronServiceHarmonyEnv extends HarmonyEnv {
   @Min(1)
   memoryUsageCollectorLookBackMinutes: number;
 
+  @IsNotEmpty()
+  memoryUsagePrometheusUrl: string;
+
   memoryUsageBucket: string;
 
   harmonyEnvironment: string;
@@ -75,6 +78,10 @@ class CronServiceHarmonyEnv extends HarmonyEnv {
   @IsInt()
   @Min(1)
   analyticsUpdateBatchSize: number;
+
+  @IsInt()
+  @Min(1)
+  analyticsUpdatePageSize: number;
 
   analyticsUpdateMemoryLimit: string;
 
