@@ -1,6 +1,18 @@
+import { Knex } from 'knex';
+import { Logger } from 'winston';
+
 import Record from './record';
 import WorkItem from './work-item';
 import db, { Transaction } from '../util/db';
+
+// Expected runtime (in ms) assumed for in-progress work with no measured average_duration yet,
+// used only for ranking users by total expected runtime in duration based fair queueing
+const DEFAULT_EXPECTED_DURATION_MS = 60 * 60 * 1000;
+
+// Expected runtime (in ms) of a user_work row's running work items, with one binding for the
+// default duration. Cast to BIGINT before multiplying - with integer columns postgres overflows
+// 32 bits once running_count * duration passes ~2.1 billion (e.g. 597 unmeasured running items).
+const EXPECTED_RUNTIME_SQL = 'CAST(running_count AS BIGINT) * COALESCE(average_duration, ?)';
 
 /**
  *
@@ -30,6 +42,13 @@ export default class UserWork extends Record {
 
   // the time the job was last worked
   last_worked: Date;
+
+  // the mean duration (in ms) of completed work items for this job and service, or null until
+  // the first work item for this job and service has completed
+  average_duration: number;
+
+  // the number of completed work items factored into average_duration so far
+  completed_count: number;
 }
 
 /**
@@ -51,79 +70,134 @@ export async function getQueuedOrRunningCountForService(tx: Transaction, service
 }
 
 /**
- * Gets the next username that should have a work item worked for the given service ID
- * SELECT username, SUM("u"."running_count") as s from user_work u WHERE username in
- * (SELECT DISTINCT username FROM user_work u WHERE "u"."service_id" = 'SERVICE' AND "u"."ready_count" \> 0)
- * GROUP BY username order by s, max(last_worked) asc LIMIT 1;
-
- * @param tx - The database transaction
- * @param serviceID - The ID of the service
- * @returns The username that should have a work item worked next
+ * Returns the maximum number of work items for a service that may be running at once for jobs
+ * classified as "slow", i.e. the share of the service's capacity not held back by
+ * `fastLaneReserveFraction`. Always at least 1 so slow work can make progress on a service
+ * with very few pods.
+ * @param servicePodCount - The number of pods currently running for the service (its capacity)
+ * @param fastLaneReserveFraction - The fraction of the service's capacity reserved for fast work
+ * @returns the maximum number of slow work items that may be running for the service
  */
-export async function getNextUsernameForWork(tx: Transaction, serviceID: string)
-  : Promise<string> {
-  const subquery = tx(UserWork.table)
-    .distinct('username')
-    .where('service_id', '=', serviceID)
-    .where('ready_count', '>', 0);
+export function getSlowWorkCapacity(servicePodCount: number, fastLaneReserveFraction: number): number {
+  // the small epsilon guards against floating point products like 48.99999999999999
+  return Math.max(1, Math.floor(servicePodCount * (1 - fastLaneReserveFraction) + 1e-9));
+}
 
-  const results = await tx(UserWork.table)
-    .select('username')
-    .max('last_worked as lw')
-    .sum('running_count as rc')
-    .whereIn('username', subquery)
-    .groupBy('username')
-    .orderBy('rc', 'asc')
-    .orderBy('lw', 'asc')
-    .first();
+// A job returned by getNextJobIds, flagged with whether it is classified as slow for the service
+export interface NextJob {
+  jobId: string;
+  isSlow: boolean;
+}
 
-  return results?.username;
+// The result of getNextJobIds
+export interface NextJobs {
+  // the jobs to work, in fair queueing priority order
+  jobs: NextJob[];
+  // the number of slow work items that may be scheduled for the service in this batch, never less
+  // than 0. Infinity when slot based fair queueing is in use, since no jobs are classified as slow.
+  availableSlowWorkSlots: number;
+}
+
+// Configuration for duration based fair queueing (see docs/fair-queueing.md). When this is not
+// supplied to getNextJobIds, slot based fair queueing is used instead.
+export interface DurationBasedFairQueueingOptions {
+  // the number of pods currently running for the service (its capacity)
+  servicePodCount: number;
+  // average work item duration (in ms) above which a job/service is slow
+  slowWorkThresholdMs: number;
+  // the fraction of the service's capacity reserved for fast work
+  fastLaneReserveFraction: number;
+}
+
+// sqlite (test-only) doesn't support SKIP LOCKED; it's only needed for real concurrent
+// scheduler pods, which only run against postgres.
+const nextJobIdsLockClause = (): string => (db.client.config.client === 'pg' ? 'FOR UPDATE OF uw SKIP LOCKED' : '');
+
+// The fair queueing queries only ever group/partition on username (never order by it), so on
+// postgres it's compared with the "C" collation - byte-wise equality is identical to the database's
+// default deterministic collation, but much cheaper to sort than a locale-aware collation like
+// en_US.UTF-8. sqlite (test-only) doesn't have a "C" collation, but already compares byte-wise.
+const usernameColumn = (): string => (db.client.config.client === 'pg' ? 'username COLLATE "C"' : 'username');
+
+// Counts of a service's slow work (work for jobs whose average_duration is above the slow work
+// threshold), used to enforce the fast lane reserve
+interface SlowWorkCounts {
+  // the number of running work items for slow jobs
+  slowRunningCount: number;
+  // the number of slow jobs with ready work items
+  slowReadyCount: number;
 }
 
 /**
- * Gets the next job to work on for the given username and service ID.
- * select job_id from user_work where username = <username> and ready_count \> 0 order by last_worked asc limit 1
+ * Gets the counts of running and ready slow work for a service in a single scan of its rows.
  * @param tx - The database transaction
- * @param serviceID - The ID of the service
- * @param username - The username to choose a job to work on
- * @returns The job ID that should have a work item worked next for the service
+ * @param serviceID - The service ID
+ * @param slowWorkThresholdMs - Average work item duration (in ms) above which a job/service is slow
+ * @returns the slow work counts for the service
  */
-export async function getNextJobIdForUsernameAndService(tx: Transaction, serviceID: string, username: string)
-  : Promise<string> {
-  const results = await tx(UserWork.table)
-    .select('job_id')
-    .where({ username, service_id: serviceID })
-    .where('ready_count', '>', 0)
-    .orderBy('is_async', 'asc')
-    .orderBy('last_worked', 'asc')
-    .first();
-
-  return results.job_id;
+async function getSlowWorkCounts(
+  tx: Transaction,
+  serviceID: string,
+  slowWorkThresholdMs: number,
+): Promise<SlowWorkCounts> {
+  const results = await tx.raw(`
+    SELECT
+      SUM(CASE WHEN average_duration > ? THEN running_count ELSE 0 END) AS slow_running_count,
+      COUNT(CASE WHEN average_duration > ? AND ready_count > 0 THEN 1 END) AS slow_ready_count
+    FROM user_work
+    WHERE service_id = ?
+  `, [slowWorkThresholdMs, slowWorkThresholdMs, serviceID]);
+  // pg's tx.raw() returns { rows: [...] }; sqlite's (test-only) returns the row array directly.
+  const result = db.client.config.client === 'pg' ? results.rows?.[0] : results[0];
+  return {
+    slowRunningCount: Number(result?.slow_running_count) || 0,
+    slowReadyCount: Number(result?.slow_ready_count) || 0,
+  };
 }
 
 /**
  * Returns the jobIds with the oldest last_worked value and ready count greater than 0 and interleaved by username.
- * This query enforces the fair queueing by returning the job ids in the order of fair queueing priority.
+ * This query enforces the fair queueing by returning the job ids in the order of fair queueing priority:
+ * users are grouped into interleaving "rounds" (one job per user per round - a user's synchronous jobs rank
+ * ahead of their asynchronous ones, then oldest-worked job first, within each user), and rounds/users are
+ * ordered by each user's number of running work items (slots in use) for this service, with ties going to the
+ * user worked least recently for this service. Only this service's user_work rows are read.
+ *
+ * Performance notes (this runs for every scheduling batch, so it needs to stay fast):
+ * - UserRank uses GROUP BY rather than a window function so postgres can hash aggregate instead of sorting
+ *   every row for the service.
+ * - Interleaved applies the batch size LIMIT itself, so the planner knows only batchSize rows reach the final
+ *   locking join and uses index lookups instead of rescanning every user_work row for the service.
+ * - username is compared with the "C" collation on postgres (see usernameColumn).
  * @param tx - The database transaction
  * @param serviceID - The service ID
  * @param batchSize - The batch size
- * @returns The list of job ids in fair queuring priority
+ * @returns The list of jobs in fair queuing priority
  */
-export async function getNextJobIds(
+async function getNextJobIdsSlotBased(
   tx: Transaction,
   serviceID: string,
   batchSize: number,
-): Promise<string[]> {
+): Promise<NextJobs> {
+  const username = usernameColumn();
   const sql = `
-    WITH RankedJobs AS (
+    WITH UserRank AS (
+      SELECT
+        ${username} AS username,
+        SUM(running_count) AS slots_in_use,
+        MAX(last_worked) AS most_recent_worked
+      FROM user_work
+      WHERE service_id = ?
+      GROUP BY 1
+    ),
+    RankedJobs AS (
       SELECT
         job_id,
         last_worked,
-        username,
-        is_async,
+        ${username} AS username,
         ROW_NUMBER() OVER (
-          PARTITION BY username
-          ORDER BY last_worked ASC
+          PARTITION BY ${username}
+          ORDER BY is_async ASC, last_worked ASC, job_id ASC
         ) AS user_row_num
       FROM user_work
       WHERE service_id = ?
@@ -132,29 +206,203 @@ export async function getNextJobIds(
     Interleaved AS (
       SELECT
         R.job_id,
-        R.is_async,
         ROW_NUMBER() OVER (
-          ORDER BY R.user_row_num, R.last_worked ASC
+          ORDER BY R.user_row_num ASC, ur.slots_in_use ASC, ur.most_recent_worked ASC, R.last_worked ASC
         ) AS overall_row_num
       FROM RankedJobs R
+      JOIN UserRank ur ON ur.username = R.username
+      ORDER BY overall_row_num
+      LIMIT ?
     )
     SELECT uw.job_id
     FROM user_work uw
     JOIN Interleaved i
       ON i.job_id = uw.job_id
     WHERE uw.service_id = ?
-      AND i.overall_row_num <= ?
-    ORDER BY i.is_async, i.overall_row_num
-    FOR UPDATE OF uw SKIP LOCKED
+    ORDER BY i.overall_row_num
+    ${nextJobIdsLockClause()}
+  `;
+
+  const results = await tx.raw(sql, [serviceID, serviceID, batchSize, serviceID]);
+
+  // pg's tx.raw() returns { rows: [...] }; sqlite's (test-only) returns the row array directly.
+  const rows = db.client.config.client === 'pg' ? (results.rows || []) : results;
+
+  return {
+    jobs: rows.map((r) => ({ jobId: r.job_id, isSlow: false })),
+    availableSlowWorkSlots: Infinity,
+  };
+}
+
+/**
+ * Returns the jobIds with the oldest last_worked value and ready count greater than 0 and interleaved by username.
+ * This query enforces the fair queueing by returning the job ids in the order of fair queueing priority:
+ * users are grouped into interleaving "rounds" (one job per user per round - a user's synchronous jobs rank
+ * ahead of their asynchronous ones, then oldest-worked job first, within each user), and rounds/users are
+ * ordered by each user's expected runtime of in-progress work for this service, with ties going to the user
+ * worked least recently for this service.
+ *
+ * Slow jobs are ranked by the same rules as every other job. Work items running for jobs actively classified
+ * as slow count against the service's slow work capacity (see getSlowWorkCapacity); once that capacity is
+ * used up, slow jobs are excluded entirely from the Eligible CTE below (a measured average_duration at or
+ * below slowWorkThresholdMs, or no measured duration with nothing currently running or completed, still
+ * counts as fast). The remaining slow work capacity is computed in the same query and returned so that
+ * callers can avoid handing out more slow work items than are available.
+ * @param tx - The database transaction
+ * @param serviceID - The service ID
+ * @param batchSize - The batch size
+ * @param logger - the Logger for the request
+ * @param options - The duration based fair queueing settings
+ * @returns The list of jobs in fair queuing priority and the number of available slow work slots
+ */
+async function getNextJobIdsDurationBased(
+  tx: Transaction,
+  serviceID: string,
+  batchSize: number,
+  logger: Logger,
+  options: DurationBasedFairQueueingOptions,
+): Promise<NextJobs> {
+  const { servicePodCount, slowWorkThresholdMs, fastLaneReserveFraction } = options;
+  const slowWorkCapacity = getSlowWorkCapacity(servicePodCount, fastLaneReserveFraction);
+
+  const slowWorkCounts = await getSlowWorkCounts(tx, serviceID, slowWorkThresholdMs);
+  const { slowReadyCount } = slowWorkCounts;
+  let { slowRunningCount } = slowWorkCounts;
+  // Slow work can only be handed out in this batch if some is ready and there is capacity for it
+  const mayScheduleSlowWork = slowReadyCount > 0 && slowRunningCount < slowWorkCapacity;
+
+  if (mayScheduleSlowWork && db.client.config.client === 'pg') {
+    // Serializes reading-then-acting-on the service's slow work capacity across concurrent
+    // scheduler pods. FOR UPDATE below only locks the specific user_work rows selected into this
+    // batch - it doesn't protect the slow running count aggregate read, so two pods could otherwise
+    // both see capacity available and jointly admit more slow work than the fast lane reserve
+    // allows. pg_advisory_xact_lock blocks (doesn't error) if another transaction already holds
+    // this service's lock, and is released automatically on commit/rollback of this transaction -
+    // by which point this transaction's running_count updates for any admitted slow work are
+    // committed and visible, so the next transaction to acquire the lock sees an up-to-date count.
+    //
+    // The lock is only taken when slow work might actually be handed out. Batches that can't
+    // schedule any slow work (none ready, or no capacity) never change the slow running count, so
+    // they skip the lock and don't wait on other scheduler pods. Those batches return 0 available
+    // slow work slots, so even if a job becomes slow after the check above, none of its work items
+    // are handed out without the lock.
+    await tx.raw('SELECT pg_advisory_xact_lock(hashtextextended(?, 0))', [serviceID]);
+    // re-read now that the lock is held, since another pod may have admitted slow work meanwhile
+    ({ slowRunningCount } = await getSlowWorkCounts(tx, serviceID, slowWorkThresholdMs));
+  }
+
+  const hasSlowWorkCapacity = slowRunningCount < slowWorkCapacity;
+  const availableSlowWorkSlots = mayScheduleSlowWork ? Math.max(0, slowWorkCapacity - slowRunningCount) : 0;
+
+  // See getNextJobIdsSlotBased for the reasoning behind the LIMIT inside Interleaved and the
+  // username collation.
+  const sql = `
+    WITH Eligible AS (
+      SELECT
+        job_id,
+        last_worked,
+        ${usernameColumn()} AS username,
+        is_async,
+        CASE WHEN average_duration > ? THEN 1 ELSE 0 END AS is_slow
+      FROM user_work
+      WHERE service_id = ?
+        AND ready_count > 0
+        AND (
+          ? = 1
+          OR (average_duration IS NOT NULL AND average_duration <= ?)
+          OR (average_duration IS NULL AND running_count = 0 AND completed_count = 0)
+        )
+    ),
+    UserRank AS (
+      SELECT
+        ${usernameColumn()} AS username,
+        SUM(${EXPECTED_RUNTIME_SQL}) AS expected_runtime,
+        MAX(last_worked) AS most_recent_worked
+      FROM user_work
+      WHERE service_id = ?
+      GROUP BY 1
+    ),
+    RankedJobs AS (
+      SELECT
+        e.job_id,
+        e.last_worked,
+        e.username,
+        e.is_slow,
+        ROW_NUMBER() OVER (
+          PARTITION BY e.username
+          ORDER BY e.is_async ASC, e.last_worked ASC, e.job_id ASC
+        ) AS user_row_num
+      FROM Eligible e
+    ),
+    Interleaved AS (
+      SELECT
+        R.job_id,
+        R.is_slow,
+        ROW_NUMBER() OVER (
+          ORDER BY R.user_row_num ASC, ur.expected_runtime ASC, ur.most_recent_worked ASC, R.last_worked ASC
+        ) AS overall_row_num
+      FROM RankedJobs R
+      JOIN UserRank ur ON ur.username = R.username
+      ORDER BY overall_row_num
+      LIMIT ?
+    )
+    SELECT uw.job_id, i.is_slow
+    FROM user_work uw
+    JOIN Interleaved i
+      ON i.job_id = uw.job_id
+    WHERE uw.service_id = ?
+    ORDER BY i.overall_row_num
+    ${nextJobIdsLockClause()}
   `;
 
   const results = await tx.raw(sql, [
+    slowWorkThresholdMs,
     serviceID,
+    hasSlowWorkCapacity ? 1 : 0,
+    slowWorkThresholdMs,
+    DEFAULT_EXPECTED_DURATION_MS,
     serviceID,
     batchSize,
+    serviceID,
   ]);
 
-  return results.rows?.map((r) => r.job_id) || [];
+  // pg's tx.raw() returns { rows: [...] }; sqlite's (test-only) returns the row array directly.
+  const rows = db.client.config.client === 'pg' ? (results.rows || []) : results;
+
+  if (slowReadyCount > 0 && !hasSlowWorkCapacity) {
+    logger.info(`Fast lane only for service ${serviceID}: ${slowRunningCount}/${slowWorkCapacity} ` +
+      `slow-work capacity in use (${servicePodCount} pods), excluding slow jobs from this scheduling round.`);
+  }
+
+  return {
+    jobs: rows.map((r) => ({ jobId: r.job_id, isSlow: Number(r.is_slow) === 1 })),
+    availableSlowWorkSlots,
+  };
+}
+
+/**
+ * Returns the jobIds to work next for a service, in fair queueing priority order. Uses slot based
+ * fair queueing unless duration based options are supplied, in which case duration based fair
+ * queueing (with the fast lane reserve) is used.
+ * @param tx - The database transaction
+ * @param serviceID - The service ID
+ * @param batchSize - The batch size
+ * @param logger - the Logger for the request
+ * @param durationBasedOptions - Settings for duration based fair queueing, or undefined to use
+ * slot based fair queueing
+ * @returns The list of jobs in fair queuing priority and the number of available slow work slots
+ */
+export async function getNextJobIds(
+  tx: Transaction,
+  serviceID: string,
+  batchSize: number,
+  logger: Logger,
+  durationBasedOptions?: DurationBasedFairQueueingOptions,
+): Promise<NextJobs> {
+  if (durationBasedOptions) {
+    return getNextJobIdsDurationBased(tx, serviceID, batchSize, logger, durationBasedOptions);
+  }
+  return getNextJobIdsSlotBased(tx, serviceID, batchSize);
 }
 
 /**
@@ -374,19 +622,34 @@ export async function incrementReadyAndDecrementRunningCounts(
 }
 
 /**
- * Decrements the running_count by one for the given jobID and serviceID.
+ * Decrements the running_count by one for the given jobID and serviceID. When the duration of a
+ * just-completed work item is provided, also folds it into the cumulative mean average_duration
+ * (in ms) and increments completed_count. This is on the hot work item update path, so it's all
+ * done in a single UPDATE (using the row's pre-update values in the SET expressions) to avoid
+ * extra database round trips and repeated row locking.
  * @param tx - The database transaction
  * @param jobID - The job ID
  * @param serviceID - The ID of the service
+ * @param completedDurationMs - The duration (in ms) of the just-completed work item, if any
  */
 export async function decrementRunningCount(
-  tx: Transaction, jobID: string, serviceID: string,
+  tx: Transaction, jobID: string, serviceID: string, completedDurationMs?: number,
 ): Promise<void> {
+  const updates: { [column: string]: Knex.Raw } = {
+    running_count: tx.raw('CASE WHEN running_count > 0 THEN running_count - 1 ELSE 0 END'),
+  };
+  if (completedDurationMs !== undefined && completedDurationMs !== null) {
+    // Cast to BIGINT before multiplying - with integer columns postgres overflows 32 bits once
+    // average_duration * completed_count passes ~2.1 billion (e.g. 36,000 completions at 60s)
+    updates.average_duration = tx.raw(
+      'ROUND((CAST(COALESCE(average_duration, 0) AS BIGINT) * completed_count + ?) * 1.0 / (completed_count + 1))',
+      [Math.round(completedDurationMs)],
+    );
+    updates.completed_count = tx.raw('completed_count + 1');
+  }
   await tx(UserWork.table)
     .where({ job_id: jobID, service_id: serviceID })
-    .update({
-      running_count: tx.raw('CASE WHEN running_count > 0 THEN running_count - 1 ELSE 0 END'),
-    });
+    .update(updates);
 }
 
 /**

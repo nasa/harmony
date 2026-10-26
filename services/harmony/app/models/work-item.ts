@@ -149,69 +149,6 @@ export default class WorkItem extends Record implements WorkItemRecord {
 const tableFields = serializedFields.map((field) => `w.${field}`);
 
 /**
- * Returns the next work item to process for a service and job ID
- * @param tx - the transaction to use for querying
- * @param serviceID - the service ID looking for the next item to work
- * @param jobID - the jobID for the next item to work
- *
- * @returns A promise with the work item to process or null if none
- */
-export async function getNextWorkItem(
-  tx: Transaction,
-  serviceID: string,
-  jobID: string,
-): Promise<WorkItem> {
-  let workItemData;
-  try {
-    const workflowStepData = await tx(WorkflowStep.table)
-      .select(['operation'])
-      .where('jobID', '=', jobID)
-      .andWhere({ serviceID })
-      .first();
-
-    if (workflowStepData?.operation) {
-      const { operation } = workflowStepData;
-      let workItemDataQuery = tx(`${WorkItem.table} as w`)
-        .forUpdate()
-        .select(tableFields)
-        .where('w.jobID', '=', jobID)
-        .where('w.status', '=', 'ready')
-        .where('w.serviceID', '=', serviceID)
-        .orderBy('w.id', 'asc')
-        .first();
-
-      if (db.client.config.client === 'pg') {
-        workItemDataQuery = workItemDataQuery.skipLocked();
-      }
-
-      workItemData = await workItemDataQuery;
-
-      if (workItemData) {
-        workItemData.operation = JSON.parse(operation);
-        // Make sure that the staging location is unique for every work item in a job
-        // in case a service for the same job produces an output with the same file name
-        workItemData.operation.stagingLocation += `${workItemData.id}/`;
-        const startedAt = new Date();
-        const status = WorkItemStatus.QUEUED;
-        await tx(WorkItem.table)
-          .update({
-            status,
-            updatedAt: startedAt,
-            startedAt,
-          })
-          .where({ id: workItemData.id });
-      }
-    }
-  } catch (e) {
-    logger.error(`Error getting next work item for service [${serviceID}] and job [${jobID}]`);
-    logger.error(e);
-    throw e;
-  }
-
-  return workItemData && new WorkItem(workItemData);
-}
-
-/**
  * Returns the next work items to process for a service and job ID
  * @param tx - the transaction to use for querying
  * @param serviceID - the service ID looking for the next item to work

@@ -1,6 +1,6 @@
 import path from 'path';
 
-import { IsInt, IsNotEmpty, IsNumber, Min } from 'class-validator';
+import { IsBoolean, IsInt, IsNotEmpty, IsNumber, Max, Min } from 'class-validator';
 import _ from 'lodash';
 
 import { HarmonyEnv } from '@harmony/util/env';
@@ -43,6 +43,18 @@ class HarmonyWorkSchedulerEnv extends HarmonyEnv {
   @IsInt()
   @Min(1)
   podCountCacheTtl: number;
+
+  @IsBoolean()
+  enableDurationBasedFairQueueing: boolean;
+
+  @IsInt()
+  @Min(0)
+  slowWorkThresholdMs: number;
+
+  @IsNumber()
+  @Min(0)
+  @Max(1)
+  fastLaneReserveFraction: number;
 }
 
 const localPath = path.resolve(__dirname, '../../env-defaults');

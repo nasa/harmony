@@ -6,7 +6,7 @@ import { Logger } from 'winston';
 
 import { QUERY_CMR_SERVICE_REGEX } from '../../../harmony/app/backends/workflow-orchestration/util';
 import {
-  getWorkItemsFromDatabase,
+  getWorkItemsFromDatabase, revertQueuedWorkItemsToReady,
 } from '../../../harmony/app/backends/workflow-orchestration/work-item-polling';
 import logger from '../../../harmony/app/util/log';
 import { logAsyncExecutionTime } from '../../../harmony/app/util/log-execution';
@@ -33,12 +33,12 @@ const SCHEDULER_POD_NAME = 'harmony-work-scheduler';
  * @returns the pod count
  */
 async function servicePodCountFetcher(serviceID: string, _sv, { context: fetchContext }): Promise<number> {
-  const timed = await logAsyncExecutionTime(
+  return logAsyncExecutionTime(
     getPodsCountForService,
     `PSQ.getPodsCountForService ${serviceID}`,
     fetchContext.logger,
+    serviceID,
   );
-  return timed(serviceID);
 }
 
 /**
@@ -49,12 +49,12 @@ async function servicePodCountFetcher(serviceID: string, _sv, { context: fetchCo
  * @returns the pod count
  */
 async function schedulerPodCountFetcher(podName: string, _sv, { context: fetchContext }): Promise<number> {
-  const timed = await logAsyncExecutionTime(
+  return logAsyncExecutionTime(
     getPodsCountForPodName,
     `PSQ.getSchedulerPodsCount ${podName}`,
     fetchContext.logger,
+    podName,
   );
-  return timed(podName);
 }
 
 const servicePodCountCache = new LRUCache<string, number>({
@@ -182,10 +182,10 @@ export async function processSchedulerQueue(
   const startTime = new Date().getTime();
   let durationMs;
   const schedulerQueue = getWorkSchedulerQueue();
-  const queueItems = await (await logAsyncExecutionTime(
+  const queueItems = await logAsyncExecutionTime(
     drainQueue,
     'PSQ.drainQueue',
-    reqLogger))(schedulerQueue, reqLogger);
+    reqLogger, schedulerQueue, reqLogger);
 
   reqLogger.debug(`Found ${queueItems.length} items in the scheduler queue`);
 
@@ -235,19 +235,44 @@ export async function processSchedulerQueue(
     reqLogger.debug(`Work size count is ${workSize} based on service pod count of ${servicePodCount}, message count ${messageCount}, scheduler pod count ${schedulerPodCount}, numMessagesReceived ${numMessagesReceived}, and scaleFactor ${scaleFactor} for queue ${queueUrl}`);
     reqLogger.debug(`Attempting to retrieve ${workSize} work items for queue ${queueUrl}`);
 
+    // undefined selects slot based fair queueing
+    const durationBasedOptions = env.enableDurationBasedFairQueueing
+      ? {
+        servicePodCount,
+        slowWorkThresholdMs: env.slowWorkThresholdMs,
+        fastLaneReserveFraction: env.fastLaneReserveFraction,
+      }
+      : undefined;
+
     let queuedCount = 0;
+    let sendFailed = false;
     const batchStartTime = new Date().getTime();
     for (const chunk of sizeToBatches(workSize, env.workItemSchedulerBatchSize)) {
-      const workItems = await (await logAsyncExecutionTime(
+      if (sendFailed) break;
+      const workItems = await logAsyncExecutionTime(
         getWorkItemsFromDatabase,
         'PSQ.getWorkItemsFromDatabase',
-        reqLogger))(serviceID, reqLogger, chunk);
+        reqLogger, serviceID, reqLogger, chunk, durationBasedOptions);
 
-      for (const workItem of workItems) {
+      for (const [index, workItem] of workItems.entries()) {
         const json = JSON.stringify(workItem);
         reqLogger.info(`Sending work item ${workItem.workItem.id} to queue ${queueUrl}`);
         const smStartTime = new Date().getTime();
-        await queue.sendMessage(json, `${workItem.workItem.id}`);
+        try {
+          await queue.sendMessage(json, `${workItem.workItem.id}`);
+        } catch (e) {
+          // The DB already committed these as `queued` and counted them as `running` in
+          // `user_work` (getWorkItemsFromDatabase). If the SQS send fails they'd otherwise be
+          // orphaned - never delivered, invisible to any pod, and permanently holding a
+          // `running_count` slot until work-failer's timeout eventually notices them. Revert
+          // this item and the rest of the chunk we haven't attempted yet back to `ready` and
+          // stop trying to queue more for this service this pass.
+          reqLogger.error(`Failed to send work item ${workItem.workItem.id} to queue ${queueUrl}`);
+          reqLogger.error(e);
+          await revertQueuedWorkItemsToReady(workItems.slice(index), reqLogger);
+          sendFailed = true;
+          break;
+        }
         durationMs = new Date().getTime() - smStartTime;
         logger.debug('timing.PSQ.queue.sendMessage.end', { durationMs });
         queuedCount++;

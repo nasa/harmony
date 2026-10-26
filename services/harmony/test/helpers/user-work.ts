@@ -38,7 +38,11 @@ export async function setCounts(
  * @returns UserWork record
  */
 export function createUserWorkRecord(fields: Partial<UserWork> = {}): UserWork {
-  let { job_id, service_id, username, ready_count, running_count, is_async, last_worked } = fields;
+  const { average_duration } = fields;
+  let {
+    job_id, service_id, username, ready_count, running_count, is_async, last_worked,
+    completed_count,
+  } = fields;
   job_id = job_id || 'foo';
   service_id = service_id || 'bar';
   username = username || 'joe';
@@ -46,8 +50,10 @@ export function createUserWorkRecord(fields: Partial<UserWork> = {}): UserWork {
   running_count = running_count || 0;
   is_async = is_async || false;
   last_worked = last_worked || new Date();
+  completed_count = completed_count || 0;
   return new UserWork({
     job_id, service_id, username, ready_count, running_count, is_async, last_worked,
+    average_duration, completed_count,
   });
 }
 

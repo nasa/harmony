@@ -132,6 +132,35 @@ describe('Scheduler Worker', async function () {
         expect(numMessages).to.equal(1);
       });
 
+      it('uses slot based fair queueing by default', async function () {
+        expect(getWorkItemsFromDatabaseStub.lastCall.args[3]).to.be.undefined;
+      });
+
+      describe('and duration based fair queueing is enabled', async function () {
+        let enableDurationBasedStub;
+        beforeEach(async function () {
+          await schedulerQueue.purge();
+          await schedulerQueue.sendMessage(service);
+          serviceQueues = {};
+          serviceQueues[service] = new MemoryQueue();
+          enableDurationBasedStub = sinon.stub(env, 'enableDurationBasedFairQueueing').get(() => true);
+          await processSchedulerQueue(logger);
+        });
+        afterEach(async function () {
+          await schedulerQueue.purge();
+          serviceQueues = {};
+          enableDurationBasedStub.restore();
+        });
+
+        it('passes the duration based fair queueing options to getWorkItemsFromDatabase', async function () {
+          expect(getWorkItemsFromDatabaseStub.lastCall.args[3]).to.eql({
+            servicePodCount: 1,
+            slowWorkThresholdMs: env.slowWorkThresholdMs,
+            fastLaneReserveFraction: env.fastLaneReserveFraction,
+          });
+        });
+      });
+
       describe('and the work item queue has few items on it', async function () {
         let maxWorkItemsStub;
         beforeEach(async function () {
@@ -207,6 +236,89 @@ describe('Scheduler Worker', async function () {
         it('continues to schedule work', async function () {
           const numMessages = await serviceQueues[service].getApproximateNumberOfMessages();
           expect(numMessages).to.equal(1);
+        });
+      });
+
+      describe('and sending a work item to its queue fails', async function () {
+        let revertQueuedWorkItemsToReadyStub: sinon.SinonStub;
+        const workItems = [1, 2, 3].map((id) => ({ workItem: new WorkItem({ id, jobID: `job-${id}`, serviceID: service }) })) as workItemPolling.WorkItemData[];
+
+        beforeEach(async function () {
+          await schedulerQueue.purge();
+          await schedulerQueue.sendMessage(service);
+          serviceQueues = {};
+          serviceQueues[service] = new MemoryQueue();
+          getWorkItemsFromDatabaseStub.callsFake(async function () {
+            return workItems;
+          });
+          const realSendMessage = serviceQueues[service].sendMessage.bind(serviceQueues[service]);
+          sinon.stub(serviceQueues[service], 'sendMessage')
+            .onFirstCall().callsFake(realSendMessage)
+            .onSecondCall().rejects(new Error('SQS is unavailable'));
+          revertQueuedWorkItemsToReadyStub = sinon.stub(workItemPolling, 'revertQueuedWorkItemsToReady').resolves();
+          await processSchedulerQueue(logger);
+        });
+        afterEach(async function () {
+          await schedulerQueue.purge();
+          serviceQueues = {};
+          revertQueuedWorkItemsToReadyStub.restore();
+          getWorkItemsFromDatabaseStub.callsFake(async function () {
+            return [{ workItem: new WorkItem({ id: 1 }) }] as workItemPolling.WorkItemData[];
+          });
+        });
+
+        it('only queues the work items sent before the failure', async function () {
+          const numMessages = await serviceQueues[service].getApproximateNumberOfMessages();
+          expect(numMessages).to.equal(1);
+        });
+
+        it('reverts the failed item and the remaining unsent items', async function () {
+          expect(revertQueuedWorkItemsToReadyStub.calledOnce).to.be.true;
+          const revertedIds = revertQueuedWorkItemsToReadyStub.firstCall.args[0]
+            .map(({ workItem }) => workItem.id);
+          expect(revertedIds).to.deep.equal([2, 3]);
+        });
+      });
+
+      describe('and sending a work item fails, then reverting those items also fails', async function () {
+        let revertQueuedWorkItemsToReadyStub: sinon.SinonStub;
+        const workItems = [1, 2, 3].map((id) => ({ workItem: new WorkItem({ id, jobID: `job-${id}`, serviceID: service }) })) as workItemPolling.WorkItemData[];
+        let thrownError: Error;
+
+        beforeEach(async function () {
+          await schedulerQueue.purge();
+          await schedulerQueue.sendMessage(service);
+          serviceQueues = {};
+          serviceQueues[service] = new MemoryQueue();
+          getWorkItemsFromDatabaseStub.callsFake(async function () {
+            return workItems;
+          });
+          sinon.stub(serviceQueues[service], 'sendMessage').rejects(new Error('SQS is unavailable'));
+          revertQueuedWorkItemsToReadyStub = sinon.stub(workItemPolling, 'revertQueuedWorkItemsToReady')
+            .rejects(new Error('database is unavailable'));
+          try {
+            await processSchedulerQueue(logger);
+          } catch (e) {
+            thrownError = e;
+          }
+        });
+        afterEach(async function () {
+          await schedulerQueue.purge();
+          serviceQueues = {};
+          revertQueuedWorkItemsToReadyStub.restore();
+          getWorkItemsFromDatabaseStub.callsFake(async function () {
+            return [{ workItem: new WorkItem({ id: 1 }) }] as workItemPolling.WorkItemData[];
+          });
+        });
+
+        it('propagates the failure instead of silently continuing', async function () {
+          expect(thrownError?.message).to.equal('database is unavailable');
+        });
+
+        it('does not delete the scheduling request, so it can be retried', async function () {
+          // the message was already pulled off (invisible) by drainQueue, so check the
+          // underlying store rather than getApproximateNumberOfMessages (visible-only)
+          expect(schedulerQueue.messages.length).to.equal(1);
         });
       });
     });
@@ -356,6 +468,7 @@ describe('Scheduler Worker', async function () {
 describe('getWorkItemsFromDatabase', function () {
   const serviceID = 'foo:latest';
   const batchSize = 10;
+  const durationBasedOptions = { servicePodCount: 5, slowWorkThresholdMs: 600_000, fastLaneReserveFraction: 0.3 };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const fakeTx = {} as any;
   const sandbox = sinon.createSandbox();
@@ -380,7 +493,7 @@ describe('getWorkItemsFromDatabase', function () {
   describe('when user_work reports a ready job but no ready work items exist', function () {
     let result;
     beforeEach(async function () {
-      getNextJobIdsStub.resolves(['job-1']);
+      getNextJobIdsStub.resolves({ jobs: [{ jobId: 'job-1', isSlow: false }], availableSlowWorkSlots: batchSize });
       getNextWorkItemsStub.resolves([]); // out of sync -> else branch
       result = await workItemPolling.getWorkItemsFromDatabase(serviceID, logger, batchSize);
     });
@@ -406,7 +519,7 @@ describe('getWorkItemsFromDatabase', function () {
 
   describe('when ready work items exist', function () {
     beforeEach(async function () {
-      getNextJobIdsStub.resolves(['job-1']);
+      getNextJobIdsStub.resolves({ jobs: [{ jobId: 'job-1', isSlow: false }], availableSlowWorkSlots: batchSize });
       getNextWorkItemsStub.resolves([new WorkItem({ id: 1, jobID: 'job-1', serviceID })]);
       await workItemPolling.getWorkItemsFromDatabase(serviceID, logger, batchSize);
     });
@@ -422,7 +535,10 @@ describe('getWorkItemsFromDatabase', function () {
 
   describe('with multiple jobs where only one is out of sync', function () {
     beforeEach(async function () {
-      getNextJobIdsStub.resolves(['job-ok', 'job-stale']);
+      getNextJobIdsStub.resolves({
+        jobs: [{ jobId: 'job-ok', isSlow: false }, { jobId: 'job-stale', isSlow: false }],
+        availableSlowWorkSlots: batchSize,
+      });
       getNextWorkItemsStub
         .withArgs(fakeTx, serviceID, 'job-ok', sinon.match.number)
         .resolves([new WorkItem({ id: 1, jobID: 'job-ok', serviceID })]);
@@ -440,6 +556,55 @@ describe('getWorkItemsFromDatabase', function () {
     it('increments counts only for the job with ready work', function () {
       expect(incrementRunningStub.calledOnce).to.be.true;
       expect(incrementRunningStub.firstCall.args[1]).to.equal('job-ok');
+    });
+  });
+
+  describe('when only some slow work slots are available', function () {
+    beforeEach(async function () {
+      getNextJobIdsStub.resolves({ jobs: [{ jobId: 'job-slow', isSlow: true }], availableSlowWorkSlots: 2 });
+      getNextWorkItemsStub.callsFake(async (_tx, _sid, jobID, workSize): Promise<WorkItem[]> => (
+        Array.from({ length: workSize }, (_v, i) => new WorkItem({ id: i, jobID, serviceID }))
+      ));
+      await workItemPolling.getWorkItemsFromDatabase(serviceID, logger, batchSize, durationBasedOptions);
+    });
+
+    it('passes the duration based fair queueing options to getNextJobIds', function () {
+      expect(getNextJobIdsStub.firstCall.args[4]).to.equal(durationBasedOptions);
+    });
+
+    it('limits the work items requested for the slow job to the available slow work slots', function () {
+      expect(getNextWorkItemsStub.calledOnce).to.be.true;
+      expect(getNextWorkItemsStub.firstCall.args[3]).to.equal(2);
+    });
+  });
+
+  describe('when slow work slots run out partway through a batch', function () {
+    beforeEach(async function () {
+      getNextJobIdsStub.resolves({
+        jobs: [
+          { jobId: 'job-slow-1', isSlow: true },
+          { jobId: 'job-slow-2', isSlow: true },
+          { jobId: 'job-fast', isSlow: false },
+        ],
+        availableSlowWorkSlots: 1,
+      });
+      getNextWorkItemsStub.callsFake(async (_tx, _sid, jobID, workSize): Promise<WorkItem[]> => (
+        Array.from({ length: workSize }, (_v, i) => new WorkItem({ id: i, jobID, serviceID }))
+      ));
+      await workItemPolling.getWorkItemsFromDatabase(serviceID, logger, batchSize, durationBasedOptions);
+    });
+
+    it('hands out only one slow work item in total across the slow jobs', function () {
+      const slowItemCount = getNextWorkItemsStub.getCalls()
+        .filter((c) => c.args[2].startsWith('job-slow'))
+        .reduce((total, c) => total + c.args[3], 0);
+      expect(slowItemCount).to.equal(1);
+    });
+
+    it('still hands out work for the fast job', function () {
+      const fastCalls = getNextWorkItemsStub.getCalls().filter((c) => c.args[2] === 'job-fast');
+      expect(fastCalls.length).to.equal(1);
+      expect(fastCalls[0].args[3]).to.be.greaterThan(0);
     });
   });
 });
