@@ -582,6 +582,9 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${HARMONY_REGRIDDER_IMAGE}
         conditional:
           exists: ['reproject']
+      - image: !Env ${VARIABLE_FAN_OUT_IMAGE}
+        conditional:
+          format: ['image/tiff']
       - image: !Env ${NET2COG_IMAGE}
         conditional:
           format: ['image/tiff']
@@ -892,6 +895,8 @@ https://cmr.uat.earthdata.nasa.gov:
         conditional:
           format: ['image/tiff', 'application/netcdf']
       - image: !Env ${VARIABLE_FAN_OUT_IMAGE}
+        conditional:
+          format: ['image/tiff']
       - image: !Env ${NET2COG_IMAGE}
         conditional:
           format: ['image/tiff']
