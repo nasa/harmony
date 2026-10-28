@@ -8,8 +8,8 @@ import { createUserWorkRecord } from './helpers/user-work';
 import { rawSaveWorkItem } from './helpers/work-items';
 import { truncateAll } from '../../../packages/util/test/helpers/db';
 import {
-  clearDashboardCache, CURRENT_DASHBOARD_API_VERSION, getDashboardRunningJobs, getDashboardServiceDetails, getDashboardSummary,
-  getDashboardUserDetails, getDashboardUsers,
+  clearDashboardCache, CURRENT_DASHBOARD_API_VERSION, getDashboardJobsByWorkItemStatus, getDashboardRunningJobs,
+  getDashboardServiceDetails, getDashboardSummary, getDashboardUserDetails, getDashboardUsers,
 } from '../app/frontends/dashboard-api';
 import { JobStatus } from '../app/models/job';
 import { WorkItemStatus } from '../app/models/work-item-interface';
@@ -72,12 +72,12 @@ describe('dashboard API', function () {
 
     await saveJob('alice-job', { username: 'alice' });
     await saveJob('bob-job', { username: 'bob' });
-    const item = (jobID: string, serviceID: string, status: WorkItemStatus, duration: number, minutesAgo: number): Promise<unknown> =>
-      rawSaveWorkItem(db, { jobID, serviceID, status, duration, workflowStepIndex: 1, updatedAt: recently(minutesAgo), message_category: status === WorkItemStatus.FAILED ? 'timeout' : undefined });
+    const item = (jobID: string, serviceID: string, status: WorkItemStatus, duration: number, minutesAgo: number, retryCount = 0): Promise<unknown> =>
+      rawSaveWorkItem(db, { jobID, serviceID, status, duration, retryCount, workflowStepIndex: 1, updatedAt: recently(minutesAgo), message_category: status === WorkItemStatus.FAILED ? 'timeout' : undefined });
     // two image versions of the subsetter
     await item('alice-job', 'ghcr.io/nasa/subsetter:1.0', WorkItemStatus.SUCCESSFUL, 2000, 30);
-    await item('alice-job', 'ghcr.io/nasa/subsetter:1.1', WorkItemStatus.SUCCESSFUL, 4000, 20);
-    await item('bob-job', 'ghcr.io/nasa/subsetter:1.1', WorkItemStatus.FAILED, 600, 10);
+    await item('alice-job', 'ghcr.io/nasa/subsetter:1.1', WorkItemStatus.SUCCESSFUL, 4000, 20, 2);
+    await item('bob-job', 'ghcr.io/nasa/subsetter:1.1', WorkItemStatus.FAILED, 600, 10, 3);
     await item('bob-job', 'ghcr.io/nasa/reformatter:2', WorkItemStatus.SUCCESSFUL, 1000, 10);
     // the previous 24 hours, for comparison
     await item('alice-job', 'ghcr.io/nasa/subsetter:1.0', WorkItemStatus.SUCCESSFUL, 1000, 25 * 60);
@@ -121,6 +121,19 @@ describe('dashboard API', function () {
       expect(body.totals.maxDurationMs).to.equal(4000);
       expect(body.totals.p95DurationMs).to.be.a('number');
       expect(body.previousTotals.total).to.equal(1);
+    });
+
+    it('counts all retries, and separately the retries of work items that went on to succeed', function () {
+      expect(body.totals.retries).to.equal(5);
+      expect(body.totals.successfulRetries).to.equal(2);
+      // 3 successful work items took 3 + 2 attempts
+      expect(body.totals.successfulRetryRate).to.equal(2 / 5);
+      expect(body.previousTotals.successfulRetries).to.equal(0);
+    });
+
+    it('has no retry rate without successful work items', async function () {
+      const { body: details } = await call(getDashboardUserDetails, {}, { name: 'carol' });
+      expect(details.totals.successfulRetryRate).to.be.null;
     });
 
     it('has a time series covering the range', function () {
@@ -214,6 +227,77 @@ describe('dashboard API', function () {
 
     it('rejects an invalid limit', async function () {
       const { error } = await call(getDashboardUsers, { limit: '0' });
+      expect(error).to.be.instanceOf(RequestValidationError);
+    });
+
+    it('filters the users by part of their username, ignoring case, before limiting them', async function () {
+      const { body } = await call(getDashboardUsers, { filter: 'O', limit: '1' });
+      expect(body.users.map((u: any) => u.username)).to.eql(['bob']);
+      expect(body.totalUsers).to.equal(2);
+    });
+
+    it('returns no users when none match the filter', async function () {
+      const { body } = await call(getDashboardUsers, { filter: 'dave' });
+      expect(body.users).to.eql([]);
+      expect(body.totalUsers).to.equal(0);
+    });
+  });
+
+  describe('jobs by work item status', function () {
+    it('lists the jobs with work items that reached the status, with the most first', async function () {
+      const { body } = await call(getDashboardJobsByWorkItemStatus, { status: 'successful' });
+      expect(body.jobs.map((j: any) => [j.jobID, j.username, j.jobStatus, j.workItemCount])).to.eql([
+        ['alice-job', 'alice', 'running', 2], ['bob-job', 'bob', 'running', 1],
+      ]);
+      expect(body.hasMore).to.be.false;
+    });
+
+    it('links to the job\'s work items with that status in the workflow UI', async function () {
+      const { body } = await call(getDashboardJobsByWorkItemStatus, { status: 'failed' });
+      expect(body.jobs.map((j: any) => j.jobID)).to.eql(['bob-job']);
+      const link = decodeURIComponent(body.jobs[0].link);
+      expect(link).to.match(/^\/admin\/workflow-ui\/bob-job\?tableFilter=/);
+      expect(link).to.include('"dbValue":"failed"');
+    });
+
+    it('only includes the work items of every image of a service', async function () {
+      const { body } = await call(getDashboardJobsByWorkItemStatus, { status: 'successful', service: 'subsetter' });
+      expect(body.jobs.map((j: any) => [j.jobID, j.workItemCount])).to.eql([['alice-job', 2]]);
+      const { body: none } = await call(getDashboardJobsByWorkItemStatus, { status: 'failed', service: 'reformatter' });
+      expect(none.jobs).to.eql([]);
+    });
+
+    it('only includes a user\'s jobs', async function () {
+      const { body } = await call(getDashboardJobsByWorkItemStatus, { status: 'successful', user: 'bob' });
+      expect(body.jobs.map((j: any) => j.jobID)).to.eql(['bob-job']);
+    });
+
+    it('only includes work items that reached the status in the range', async function () {
+      const { body } = await call(getDashboardJobsByWorkItemStatus, { status: 'successful', range: '1h', service: 'subsetter' });
+      expect(body.jobs.map((j: any) => j.workItemCount)).to.eql([2]);
+      const { body: previous } = await call(getDashboardJobsByWorkItemStatus, {
+        status: 'successful', start: recently(26 * 60).toISOString(), end: recently(24 * 60).toISOString(),
+      });
+      expect(previous.jobs.map((j: any) => [j.jobID, j.workItemCount])).to.eql([['alice-job', 1]]);
+    });
+
+    it('says when there are more jobs than the limit', async function () {
+      const { body } = await call(getDashboardJobsByWorkItemStatus, { status: 'successful', limit: '1' });
+      expect(body.jobs).to.have.length(1);
+      expect(body.hasMore).to.be.true;
+    });
+
+    it('requires a valid status', async function () {
+      for (const query of [{}, { status: 'running' }]) {
+        const { error } = await call(getDashboardJobsByWorkItemStatus, query);
+        expect(error).to.be.instanceOf(RequestValidationError);
+      }
+    });
+
+    it('is versioned', async function () {
+      const { body } = await call(getDashboardJobsByWorkItemStatus, { status: 'failed' });
+      expect(body.version).to.equal(CURRENT_DASHBOARD_API_VERSION);
+      const { error } = await call(getDashboardJobsByWorkItemStatus, { status: 'failed', version: '2' });
       expect(error).to.be.instanceOf(RequestValidationError);
     });
   });

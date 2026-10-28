@@ -57,6 +57,10 @@ const state = {
   serviceSort: { key: 'queued', dir: 'desc' },
   userSort: { key: 'computeMs', dir: 'desc' },
   serviceFilter: '',
+  userFilter: '',
+  userFilterTimer: null,
+  usersController: null,
+  statusJobsController: null,
   hideIdle: true,
 };
 
@@ -76,6 +80,17 @@ function rangeParams() {
     params.set('start', state.range.start.toISOString());
     params.set('end', state.range.end.toISOString());
   }
+  return params;
+}
+
+/**
+ * Gets the query parameters for the users table: the selected time range and the user filter
+ * @returns {URLSearchParams} the parameters
+ */
+function usersParams() {
+  const params = rangeParams();
+  const filter = state.userFilter.trim();
+  if (filter) params.set('filter', filter);
   return params;
 }
 
@@ -126,7 +141,7 @@ async function refresh() {
   try {
     const [summary, users] = await Promise.all([
       fetchJson('/summary', params, controller.signal),
-      fetchJson('/users', params, controller.signal),
+      fetchJson('/users', usersParams(), controller.signal),
     ]);
     state.summary = summary;
     state.users = users;
@@ -176,6 +191,25 @@ async function loadUserDetails(username, signal) {
     }
   } catch (e) {
     if (e.name !== 'AbortError') renderDetailError(`user-detail-${cssId(username)}`, e.message);
+  }
+}
+
+/**
+ * Reloads the users table, e.g. after the user filter changes. The filter is applied by the API, so
+ * it finds users beyond the top ones by compute time.
+ */
+async function loadUsers() {
+  state.usersController?.abort();
+  const controller = new AbortController();
+  state.usersController = controller;
+  try {
+    state.users = await fetchJson('/users', usersParams(), controller.signal);
+    renderUsers();
+  } catch (e) {
+    if (e.name !== 'AbortError') {
+      document.getElementById('usersTable').replaceChildren(
+        h('p', { className: 'text-danger small', textContent: `Could not load users: ${e.message}` }));
+    }
   }
 }
 
@@ -254,8 +288,9 @@ function delta(current, previous, { good, mode = 'percent' }) {
  * Builds a stat tile
  * @param {object} tile - the tile contents
  * @param {string} tile.label - the label
+ * @param {string} [tile.info] - an explanation of the value, shown on hovering over the label
  * @param {string} tile.value - the formatted value
- * @param {string} [tile.detail] - a secondary line
+ * @param {string|(string|Node)[]} [tile.detail] - a secondary line
  * @param {HTMLElement|null} [tile.delta] - the delta indicator
  * @param {string} [tile.comparison] - what the delta compares with
  * @param {SVGElement} [tile.trend] - a sparkline
@@ -263,9 +298,12 @@ function delta(current, previous, { good, mode = 'percent' }) {
  */
 function statTile(tile) {
   return h('div', { className: 'kpi' },
-    h('div', { className: 'kpi-label', textContent: tile.label }),
+    h('div', { className: 'kpi-label', title: tile.info },
+      tile.label,
+      tile.info ? h('i', { className: 'bi bi-info-circle kpi-info', 'aria-hidden': 'true' }) : null,
+      tile.info ? h('span', { className: 'visually-hidden', textContent: `: ${tile.info}` }) : null),
     h('div', { className: 'kpi-value', textContent: tile.value }),
-    tile.detail ? h('div', { className: 'kpi-detail', textContent: tile.detail }) : null,
+    tile.detail ? h('div', { className: 'kpi-detail' }, tile.detail) : null,
     tile.delta ? h('div', { className: 'kpi-delta-row', title: `Compared with the ${tile.comparison}` }, tile.delta,
       h('span', { className: 'visually-hidden', textContent: ` compared with the ${tile.comparison}` })) : null,
     tile.trend ? h('div', { className: 'kpi-trend' }, tile.trend) : null);
@@ -295,6 +333,97 @@ function successRateCell(rate) {
     h('i', { className: `bi ${icon} status-icon status-${level}`, 'aria-hidden': 'true' }),
     formatPercent(rate),
     h('span', { className: 'visually-hidden', textContent: ` (${label})` }));
+}
+
+/**
+ * Builds a work item count that, when selected, opens a dialog listing the jobs with work items
+ * that reached the status in the range (for the given service and/or user). A zero count is plain
+ * text, as there is nothing to list.
+ * @param {number} count - the number of work items
+ * @param {string} status - the work item status
+ * @param {{service?: string, user?: string}} [scope] - the service and/or user the count is for
+ * @returns {HTMLElement|string} the count
+ */
+function statusCount(count, status, scope = {}) {
+  const text = formatCount(count);
+  if (!count) return text;
+  return h('button', {
+    type: 'button',
+    className: 'btn-status-jobs',
+    title: `Show the jobs with ${status} work items`,
+    'aria-haspopup': 'dialog',
+    onClick: (event) => {
+      // the count may be in an expandable row, which would otherwise toggle
+      event.stopPropagation();
+      openStatusJobs(status, scope);
+    },
+  }, text, h('span', { className: 'visually-hidden', textContent: ` ${status} work items, show their jobs` }));
+}
+
+/**
+ * Builds the legend of a work items by status chart, where selecting a status opens a dialog
+ * listing the jobs with work items that reached that status in the range
+ * @param {{service?: string, user?: string}} [scope] - the service and/or user the chart is for
+ * @returns {HTMLElement} the legend
+ */
+function statusLegend(scope = {}) {
+  return h('ul', { className: 'viz-legend', 'aria-label': 'Legend' },
+    STATUS_SERIES.map((ser) => h('li', {},
+      h('button', {
+        type: 'button',
+        className: 'btn-legend',
+        title: `Show the jobs with ${ser.key} work items`,
+        'aria-haspopup': 'dialog',
+        onClick: () => openStatusJobs(ser.key, scope),
+      },
+      h('span', { className: 'viz-key-rect', style: `background:${ser.color}` }),
+      ser.label))));
+}
+
+/**
+ * Opens the dialog listing the jobs with the most work items that reached a status in the
+ * selected range, optionally only for a service and/or user
+ * @param {string} status - the work item status
+ * @param {{service?: string, user?: string}} scope - the service and/or user
+ */
+async function openStatusJobs(status, scope) {
+  const dialog = document.getElementById('statusJobsDialog');
+  const label = STATUS_SERIES.find((ser) => ser.key === status)?.label ?? status;
+  const range = state.summary?.range;
+  document.getElementById('statusJobsTitle').textContent = `Jobs with ${label.toLowerCase()} work items`;
+  document.getElementById('statusJobsScope').textContent = [
+    scope.service ? `Service ${scope.service}` : null,
+    scope.user ? `User ${scope.user}` : null,
+    range ? formatRange(new Date(range.start), new Date(range.end)) : null,
+  ].filter(Boolean).join(' · ');
+  const body = document.getElementById('statusJobsBody');
+  body.replaceChildren(h('p', { className: 'text-muted small mb-0', textContent: 'Loading…' }));
+  if (!dialog.open) dialog.showModal();
+
+  state.statusJobsController?.abort();
+  const controller = new AbortController();
+  state.statusJobsController = controller;
+  const params = rangeParams();
+  params.set('status', status);
+  if (scope.service) params.set('service', scope.service);
+  if (scope.user) params.set('user', scope.user);
+  try {
+    const data = await fetchJson('/jobs/by-work-item-status', params, controller.signal);
+    body.replaceChildren(
+      table(['Job', 'User', 'Job status', `${label} work items`, `Last ${label.toLowerCase()}`],
+        data.jobs.map((j) => [
+          h('a', { href: j.link, target: '_blank', rel: 'noopener', className: 'font-monospace small', title: `${j.jobID} - opens the job's ${status} work items in a new tab`, textContent: j.jobID }),
+          j.username, j.jobStatus.replace(/_/g, ' '), formatCount(j.workItemCount),
+          formatDateTime(new Date(j.lastUpdated))]),
+        { caption: `Jobs with ${status} work items`, numeric: [3] }),
+      h('p', { className: 'viz-subtitle mb-0' },
+        data.hasMore ? `Showing the ${data.jobs.length} jobs with the most ${status} work items. ` : '',
+        'Work items of finished jobs are deleted after a while, so jobs from early in a long range may be missing.'));
+  } catch (e) {
+    if (e.name !== 'AbortError') {
+      body.replaceChildren(h('p', { className: 'text-danger small mb-0', textContent: `Could not load the jobs: ${e.message}` }));
+    }
+  }
 }
 
 /**
@@ -333,13 +462,14 @@ function bucketTitle(range, t) {
  * @param {HTMLElement} container - the card element
  * @param {object} data - an API response with range and series
  * @param {string} title - the card title
+ * @param {{service?: string, user?: string}} [scope] - the service and/or user the data is for
  */
-function renderCompletionsCard(container, data, title) {
+function renderCompletionsCard(container, data, title, scope = {}) {
   const { series, range } = data;
   chartCard(container, {
     title,
-    subtitle: `Per ${describeBucket(range.bucketMs)}`,
-    legend: legend(STATUS_SERIES, 'bar'),
+    subtitle: `Per ${describeBucket(range.bucketMs)} · select a status to see its jobs`,
+    legend: statusLegend(scope),
     renderChart: (el) => columnChart(el, {
       count: series.length,
       series: STATUS_SERIES,
@@ -428,7 +558,7 @@ function renderHistogramCard(container, histogram, title) {
  */
 function sortableHeader(column, sort, onSort) {
   if (column.sortable === false) {
-    return h('th', { scope: 'col', className: column.numeric ? 'numeric' : undefined, textContent: column.label });
+    return h('th', { scope: 'col', className: column.numeric ? 'numeric' : undefined, title: column.title, textContent: column.label });
   }
   const active = sort.key === column.key;
   let icon = 'bi-arrow-down-up';
@@ -436,6 +566,7 @@ function sortableHeader(column, sort, onSort) {
   return h('th', {
     scope: 'col',
     className: column.numeric ? 'numeric' : undefined,
+    title: column.title,
     'aria-sort': active ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none',
   }, h('button', { type: 'button', className: 'btn-sort', onClick: () => onSort(column.key) },
     column.label, h('i', { className: `bi ${icon} sort-icon`, 'aria-hidden': 'true' })));
@@ -569,7 +700,8 @@ function renderKpis() {
     statTile({
       label: 'Work items completed',
       value: formatCompact(totals.total),
-      detail: `${formatCount(totals.counts.failed)} failed · ${formatCount(totals.counts.canceled)} canceled`,
+      detail: [statusCount(totals.counts.failed, 'failed'), ' failed · ',
+        statusCount(totals.counts.canceled, 'canceled'), ' canceled'],
       delta: delta(totals.total, previousTotals.total, { good: 'none' }),
       comparison,
       trend: spark(series.map((p) => p.successful + p.failed + p.canceled + p.warning), 'Trend of work items completed'),
@@ -611,13 +743,43 @@ function renderKpis() {
         + (live.oldestReadyWaitMs === null ? '' : ` · longest wait ${formatDuration(live.oldestReadyWaitMs)}`),
     }),
     statTile({
-      label: 'Retries',
-      value: formatCompact(totals.retries),
-      detail: `Compute time ${formatComputeTime(totals.computeMs)}`,
-      delta: delta(totals.retries, previousTotals.retries, { good: 'down' }),
+      label: 'Retries before success',
+      info: 'Retry attempts made by work items that went on to succeed, and the share of those work items\' '
+        + 'attempts that were retries. Retries of work items that ultimately failed are not included.',
+      value: formatCompact(totals.successfulRetries),
+      detail: [
+        `${formatPercent(totals.successfulRetryRate)} of successful work items' attempts`,
+        retryStatsLink(summary.range),
+      ],
+      delta: delta(totals.successfulRetries, previousTotals.successfulRetries, { good: 'down' }),
       comparison,
     }),
+    statTile({
+      label: 'Compute time',
+      info: 'The summed duration of every work item completed in the range, excluding canceled work items',
+      value: formatComputeTime(totals.computeMs),
+      detail: 'Summed work item durations',
+      delta: delta(totals.computeMs, previousTotals.computeMs, { good: 'none' }),
+      comparison,
+      trend: spark(series.map((p) => p.computeMs), 'Trend of the compute time'),
+    }),
   );
+}
+
+/**
+ * Builds a link to the retry statistics page (/admin/retry-stats), which breaks down the successful
+ * work items by how many retries they needed. That page covers the last N minutes, so there is
+ * only a link for the preset ranges, which end now.
+ * @param {object} range - the range from the API
+ * @returns {HTMLElement|null} the link, or null for a custom range
+ */
+function retryStatsLink(range) {
+  if (!state.range.preset) return null;
+  const minutes = Math.round(spanOf(range) / 60000);
+  return h('a', {
+    className: 'd-block', href: `/admin/retry-stats?numMinutes=${minutes}`, target: '_blank', rel: 'noopener',
+    textContent: 'Breakdown by retry count',
+  });
 }
 
 /**
@@ -657,7 +819,7 @@ const SERVICE_COLUMNS = [
   { key: 'running', label: 'Running', numeric: true, sortValue: (r) => r.live.running, render: (r) => formatCount(r.live.running) },
   { key: 'wait', label: 'Longest wait', numeric: true, sortValue: (r) => r.live.oldestReadyWaitMs ?? -1, render: (r) => formatDuration(r.live.oldestReadyWaitMs) },
   { key: 'total', label: 'Completed', numeric: true, sortValue: (r) => r.total, render: (r) => formatCount(r.total) },
-  { key: 'failed', label: 'Failed', numeric: true, sortValue: (r) => r.counts.failed, render: (r) => formatCount(r.counts.failed) },
+  { key: 'failed', label: 'Failed', numeric: true, sortValue: (r) => r.counts.failed, render: (r) => statusCount(r.counts.failed, 'failed', { service: r.name }) },
   { key: 'successRate', label: 'Success', numeric: true, sortValue: (r) => r.successRate ?? -1, render: (r) => successRateCell(r.successRate) },
   {
     key: 'successDelta',
@@ -727,7 +889,7 @@ function renderServiceDetails(name) {
     h('p', { className: 'detail-summary' },
       `${formatCount(totals.total)} completed · ${formatPercent(totals.successRate)} success · `
       + `avg ${formatDuration(totals.avgDurationMs)} · p95 ${formatDuration(totals.p95DurationMs)} · `
-      + `${formatCount(totals.retries)} retries · ${formatSize(totals.itemsSizeMb)} output · `
+      + `${formatCount(totals.retries)} retry attempts · ${formatSize(totals.itemsSizeMb)} output · `
       + `compute ${formatComputeTime(totals.computeMs)} · now ${formatCount(live.ready)} ready, ${formatCount(live.running)} running`),
     h('div', { className: 'row g-3' },
       h('div', { className: 'col-xl-6' }, completions),
@@ -748,10 +910,10 @@ function renderServiceDetails(name) {
         h('h4', { className: 'detail-heading', textContent: 'Users' }),
         table(['User', 'Compute time', 'Completed', 'Failed', 'Success', 'Avg', 'Ready', 'Running'],
           details.users.map((u) => [u.username, formatComputeTime(u.computeMs), formatCount(u.total),
-            formatCount(u.counts.failed), successRateCell(u.successRate), formatDuration(u.avgDurationMs),
+            statusCount(u.counts.failed, 'failed', { service: name, user: u.username }), successRateCell(u.successRate), formatDuration(u.avgDurationMs),
             formatCount(u.live.ready), formatCount(u.live.running)]),
           { caption: `${name} users`, numeric: [1, 2, 3, 4, 5, 6, 7] }))));
-  renderCompletionsCard(completions, details, 'Work items completed');
+  renderCompletionsCard(completions, details, 'Work items completed', { service: name });
   renderDurationCard(durations, details, 'Work item duration');
   renderHistogramCard(histogram, details.histogram, 'Duration distribution');
 }
@@ -824,9 +986,16 @@ const USER_COLUMNS = [
   { key: 'username', label: 'User', sortValue: (r) => r.username, render: (r) => r.username },
   { key: 'computeMs', label: 'Compute time', numeric: true, sortValue: (r) => r.computeMs, render: (r) => formatComputeTime(r.computeMs) },
   { key: 'total', label: 'Work items', numeric: true, sortValue: (r) => r.total, render: (r) => formatCount(r.total) },
-  { key: 'failed', label: 'Failed', numeric: true, sortValue: (r) => r.counts.failed, render: (r) => formatCount(r.counts.failed) },
+  { key: 'failed', label: 'Failed', numeric: true, sortValue: (r) => r.counts.failed, render: (r) => statusCount(r.counts.failed, 'failed', { user: r.username }) },
   { key: 'successRate', label: 'Success', numeric: true, sortValue: (r) => r.successRate ?? -1, render: (r) => successRateCell(r.successRate) },
-  { key: 'retries', label: 'Retries', numeric: true, sortValue: (r) => r.retries, render: (r) => formatCount(r.retries) },
+  {
+    key: 'retries',
+    label: 'Retries',
+    title: 'Retry attempts by the user\'s work items, including work items that ultimately failed',
+    numeric: true,
+    sortValue: (r) => r.retries,
+    render: (r) => formatCount(r.retries),
+  },
   { key: 'jobs', label: 'Jobs', numeric: true, sortValue: (r) => r.jobs.total, render: (r) => formatCount(r.jobs.total) },
   { key: 'sync', label: 'Avg sync job', numeric: true, sortValue: (r) => r.jobs.sync.avgDurationMs ?? -1, render: (r) => formatDuration(r.jobs.sync.avgDurationMs) },
   { key: 'async', label: 'Avg async job', numeric: true, sortValue: (r) => r.jobs.async.avgDurationMs ?? -1, render: (r) => formatDuration(r.jobs.async.avgDurationMs) },
@@ -839,9 +1008,10 @@ const USER_COLUMNS = [
  */
 function renderUsers() {
   const { users, totalUsers } = state.users;
+  const matching = state.userFilter.trim() ? ' matching the filter' : '';
   document.getElementById('usersCount').textContent = totalUsers > users.length
-    ? `Top ${users.length} of ${formatCount(totalUsers)} users by compute time`
-    : `${formatCount(totalUsers)} user${totalUsers === 1 ? '' : 's'}`;
+    ? `Top ${users.length} of ${formatCount(totalUsers)} users${matching} by compute time`
+    : `${formatCount(totalUsers)} user${totalUsers === 1 ? '' : 's'}${matching}`;
   document.getElementById('usersTable').replaceChildren(expandableTable({
     columns: USER_COLUMNS,
     rows: sortRows(users, USER_COLUMNS, state.userSort),
@@ -893,10 +1063,11 @@ function renderUserDetails(username) {
         table(['Service', 'Compute time', 'Completed', 'Failed', 'Success', 'Avg', 'Ready', 'Running'],
           details.services.map((svc) => [
             h('span', { className: 'font-monospace small', textContent: svc.name }), formatComputeTime(svc.computeMs),
-            formatCount(svc.total), formatCount(svc.counts.failed), successRateCell(svc.successRate),
+            formatCount(svc.total), statusCount(svc.counts.failed, 'failed', { service: svc.name, user: username }),
+            successRateCell(svc.successRate),
             formatDuration(svc.avgDurationMs), formatCount(svc.live.ready), formatCount(svc.live.running)]),
           { caption: `${username} by service`, numeric: [1, 2, 3, 4, 5, 6, 7] }))));
-  renderCompletionsCard(completions, details, 'Work items completed');
+  renderCompletionsCard(completions, details, 'Work items completed', { user: username });
 }
 
 /**
@@ -1051,12 +1222,28 @@ function initControls() {
     state.serviceFilter = event.target.value;
     if (state.summary) renderServices();
   });
+  document.getElementById('userFilter').addEventListener('input', (event) => {
+    state.userFilter = event.target.value;
+    // wait for a pause in typing before asking the API
+    clearTimeout(state.userFilterTimer);
+    state.userFilterTimer = setTimeout(() => {
+      if (state.users) loadUsers();
+    }, 300);
+  });
   const hideIdle = document.getElementById('hideIdle');
   hideIdle.checked = state.hideIdle;
   hideIdle.addEventListener('change', () => {
     state.hideIdle = hideIdle.checked;
     if (state.summary) renderServices();
   });
+
+  const statusJobsDialog = document.getElementById('statusJobsDialog');
+  document.getElementById('statusJobsClose').addEventListener('click', () => statusJobsDialog.close());
+  // a click on the backdrop (outside the dialog's content) closes it
+  statusJobsDialog.addEventListener('click', (event) => {
+    if (event.target === statusJobsDialog) statusJobsDialog.close();
+  });
+  statusJobsDialog.addEventListener('close', () => state.statusJobsController?.abort());
 
   const runningJobsButton = document.getElementById('showRunningJobs');
   runningJobsButton.addEventListener('click', () => {
