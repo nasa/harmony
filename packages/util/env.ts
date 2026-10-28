@@ -230,6 +230,11 @@ export class HarmonyEnv {
   @Min(0)
   userWorkDurationSeedLookbackDays: number;
 
+  // Shared because the cron service prunes the dashboard stats tables and harmony reads them
+  @IsInt()
+  @Min(1)
+  workItemsStatsMinuteRetentionDays: number;
+
   @IsUrl(hostRegexWhitelist)
   workItemSchedulerQueueUrl: string;
 

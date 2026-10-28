@@ -12,6 +12,10 @@ import { getCollectionCapabilitiesJson } from '../frontends/capabilities';
 import { cloudAccessJson, cloudAccessSh } from '../frontends/cloud-access';
 import { setLogLevel } from '../frontends/configuration';
 import { getDashboard } from '../frontends/dashboard';
+import {
+  getDashboardRunningJobs, getDashboardServiceDetails, getDashboardSummary, getDashboardUserDetails,
+  getDashboardUsers,
+} from '../frontends/dashboard-api';
 import docsPage, { getDefaultCollectionId } from '../frontends/docs/docs';
 import { getAdminHealth, getHealth } from '../frontends/health';
 import {
@@ -342,6 +346,12 @@ export default function router({ USE_EDL_CLIENT_APP = 'false' }: RouterConfig): 
   result.get('/admin/request-metrics', asyncHandler(getRequestMetrics));
   result.get('/admin/retry-stats', asyncHandler(getRetryStatistics));
   result.get('/admin/dashboard', asyncHandler(getDashboard));
+  result.get('/admin/dashboard/api/summary', asyncHandler(getDashboardSummary));
+  // service names that aren't configured are their image, which can contain slashes
+  result.get('/admin/dashboard/api/services/:name(*)', asyncHandler(getDashboardServiceDetails));
+  result.get('/admin/dashboard/api/users', asyncHandler(getDashboardUsers));
+  result.get('/admin/dashboard/api/users/:name', asyncHandler(getDashboardUserDetails));
+  result.get('/admin/dashboard/api/jobs/running', asyncHandler(getDashboardRunningJobs));
 
   result.get('/workflow-ui', asyncHandler(getJobs));
   result.get('/workflow-ui/:jobID', asyncHandler(getJob));

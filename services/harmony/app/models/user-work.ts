@@ -780,3 +780,63 @@ export async function getCountsByService(
     ]),
   );
 }
+
+// The work queued or running right now for a group of user_work rows
+export interface LiveWork {
+  ready: number;
+  running: number;
+  // the earliest last_worked of the rows that have ready work, i.e. how long the longest waiting
+  // ready work has gone without being scheduled (approximately - a row's last_worked starts out as
+  // its job's updatedAt, not when the work became ready), or null if nothing is ready
+  oldestReadyLastWorked: Date | null;
+}
+
+// A LiveWork for a service, user, or both
+export interface LiveWorkRow extends LiveWork {
+  service_id?: string;
+  username?: string;
+}
+
+/**
+ * Gets the work queued or running right now, grouped by service and/or user. This reads only the
+ * user_work table, which only has rows for active work, so it stays cheap regardless of history.
+ *
+ * @param tx - The database transaction
+ * @param groupBy - The columns to group by
+ * @param filters - Optional constraints on the rows included
+ * @returns the live work for each group
+ */
+export async function getLiveWork(
+  tx: Transaction,
+  groupBy: ('service_id' | 'username')[],
+  filters: { serviceIDs?: string[], username?: string } = {},
+): Promise<LiveWorkRow[]> {
+  const query = tx(UserWork.table)
+    .select(
+      ...groupBy,
+      tx.raw('SUM(ready_count) AS ready'),
+      tx.raw('SUM(running_count) AS running'),
+      tx.raw('MIN(CASE WHEN ready_count > 0 THEN last_worked END) AS oldest_ready_last_worked'),
+    )
+    .groupBy(groupBy);
+  if (filters.serviceIDs) {
+    query.whereIn('service_id', filters.serviceIDs);
+  }
+  if (filters.username !== undefined) {
+    query.where('username', filters.username);
+  }
+  const rows = await query;
+  return rows.map((r) => {
+    const oldest = r.oldest_ready_last_worked;
+    const row: LiveWorkRow = {
+      ready: Number(r.ready ?? 0),
+      running: Number(r.running ?? 0),
+      // sqlite (test-only) returns ms since the epoch
+      oldestReadyLastWorked: oldest === null || oldest === undefined ? null : new Date(oldest),
+    };
+    for (const column of groupBy) {
+      row[column] = r[column];
+    }
+    return row;
+  });
+}
