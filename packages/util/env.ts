@@ -235,6 +235,12 @@ export class HarmonyEnv {
   @Min(1)
   workItemsStatsMinuteRetentionDays: number;
 
+  // Shared because the cron service's work reaper deletes old work items and the dashboard warns
+  // when a range reaches back before then
+  @IsInt()
+  @Min(1)
+  reapableWorkAgeMinutes: number;
+
   @IsUrl(hostRegexWhitelist)
   workItemSchedulerQueueUrl: string;
 

@@ -7,6 +7,7 @@ import HarmonyRequest from '../models/harmony-request';
 import { getCountsByService } from '../models/user-work';
 import { getWorkItemsStatsSummary, WorkItemsStatsTimeWindow } from '../models/work-items-stats';
 import db from '../util/db';
+import env from '../util/env';
 import { RequestValidationError } from '../util/errors';
 import { keysToLowerCase } from '../util/object';
 import { WorkItemQueueType } from '../util/queue/queue';
@@ -311,7 +312,8 @@ async function getServiceMetrics(
   const [serviceWorkCounts, ...summaries] = await Promise.all([
     getCountsByService(dbConn),
     ...windows.map((window) =>
-      dbConn.transaction((trx) => getWorkItemsStatsSummary(trx, window)),
+      dbConn.transaction((trx) =>
+        getWorkItemsStatsSummary(trx, window, env.workItemsStatsMinuteRetentionDays)),
     ),
   ]);
 

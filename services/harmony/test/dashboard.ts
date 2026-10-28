@@ -5,10 +5,13 @@ import sinon from 'sinon';
 import { getDashboard, THIRTY_YEARS_IN_MINUTES } from '../app/frontends/dashboard';
 import * as userWork from '../app/models/user-work';
 import * as workItemsStats from '../app/models/work-items-stats';
+import env from '../app/util/env';
 import { RequestValidationError } from '../app/util/errors';
 import { WorkItemQueueType } from '../app/util/queue/queue';
 import * as qf from '../app/util/queue/queue-factory';
 import * as serviceImages from '../app/util/service-images';
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 /**
  * Returns a fake getWorkItemsStatsSummary result with empty rows and fixed time boundaries.
@@ -130,19 +133,25 @@ describe('getDashboard', () => {
     });
 
     it('accepts a window specified with start and end', async () => {
-      req.query['window1.start'] = '2026-07-13T00:00:00Z';
-      req.query['window1.end'] = '2026-07-14T00:00:00Z';
+      const start = new Date(Date.now() - 2 * MS_PER_DAY);
+      const end = new Date(Date.now() - MS_PER_DAY);
+      req.query['window1.start'] = start.toISOString();
+      req.query['window1.end'] = end.toISOString();
 
-      getWorkItemsStatsSummaryStub.resolves({
-        rows: [],
-        start: new Date('2026-07-13T00:00:00Z'),
-        end: new Date('2026-07-14T00:00:00Z'),
-      });
+      getWorkItemsStatsSummaryStub.resolves({ rows: [], start, end });
 
       await getDashboard(req, res, next);
 
       expect(next.called).to.be.false;
       expect(res.json.calledOnce).to.be.true;
+    });
+
+    it('passes the per-minute stats retention period to getWorkItemsStatsSummary', async () => {
+      req.query['window1.lastMinutes'] = '60';
+
+      await getDashboard(req, res, next);
+
+      expect(getWorkItemsStatsSummaryStub.firstCall.args[2]).to.equal(env.workItemsStatsMinuteRetentionDays);
     });
 
     it('rejects an invalid start timestamp', async () => {

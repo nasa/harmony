@@ -114,11 +114,14 @@ function barPath(x, yTop, width, yBottom, rounded) {
     + `H${x + width - r}Q${x + width},${yTop} ${x + width},${yTop + r}V${yBottom}Z`;
 }
 
-// Every chart element re-renders when its width changes
+// Every chart element re-renders when its width changes. A chart removed from the page (e.g. by
+// re-rendering whatever contains it) stops being observed, so the observer doesn't retain it.
 const resizeObserver = new ResizeObserver((entries) => {
   for (const entry of entries) {
     const el = entry.target;
-    if (el._render && Math.abs(entry.contentRect.width - (el._renderedWidth ?? 0)) > 1) el._render();
+    if (!el.isConnected) {
+      resizeObserver.unobserve(el);
+    } else if (el._render && Math.abs(entry.contentRect.width - (el._renderedWidth ?? 0)) > 1) el._render();
   }
 });
 
@@ -487,6 +490,7 @@ export function chartCard(container, options) {
     showTable ? null : options.legend,
     body,
   ];
+  for (const old of container.querySelectorAll('.viz-chart')) resizeObserver.unobserve(old);
   container.replaceChildren(...children.filter(Boolean));
   if (showTable) {
     body.append(options.renderTable());

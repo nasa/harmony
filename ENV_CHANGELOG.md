@@ -2,11 +2,18 @@
 Any changes to the environment variables will be documented in this file in chronological
 order with the most recent changes first.
 
+## 2026-10-28
+### Changed
+- REAPABLE_WORK_AGE_MINUTES - moved from `services/cron-service/env-defaults` to the shared
+  `packages/util/env-defaults` (default unchanged, 20160), because the admin dashboard (harmony)
+  now uses it to warn when the jobs listed by work item status may be missing reaped work items.
+
 ## 2026-10-27
 ### Added
 - WORK_ITEMS_STATS_MINUTE_RETENTION_DAYS - (shared, `packages/util/env-defaults`) how many days of
   per-minute rows the admin dashboard stats tables keep (default 14). The cron service deletes older
-  ones, and the dashboard reads the hourly rollups for ranges starting earlier than this.
+  ones, and the dashboard reads the hourly rollups for ranges starting earlier than this. The
+  legacy `GET /admin/dashboard` JSON response does the same for its windows.
 - WORK_ITEMS_STATS_HOURLY_RETENTION_DAYS - cron service: how many days of hourly rollup rows the
   admin dashboard stats tables keep (default 400).
 - WORK_ITEMS_STATS_PRUNE_HOURS_PER_RUN - cron service: the maximum number of hours of expired rows

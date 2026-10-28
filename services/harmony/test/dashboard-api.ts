@@ -22,6 +22,7 @@ import * as qf from '../app/util/queue/queue-factory';
 import * as serviceImages from '../app/util/service-images';
 
 const MINUTE = 60_000;
+const ECR_SUBSETTER = '123456789012.dkr.ecr.us-west-2.amazonaws.com/nasa/subsetter:1.0';
 
 /**
  * Calls a dashboard API handler
@@ -74,13 +75,13 @@ describe('dashboard API', function () {
     await saveJob('bob-job', { username: 'bob' });
     const item = (jobID: string, serviceID: string, status: WorkItemStatus, duration: number, minutesAgo: number, retryCount = 0): Promise<unknown> =>
       rawSaveWorkItem(db, { jobID, serviceID, status, duration, retryCount, workflowStepIndex: 1, updatedAt: recently(minutesAgo), message_category: status === WorkItemStatus.FAILED ? 'timeout' : undefined });
-    // two image versions of the subsetter
-    await item('alice-job', 'ghcr.io/nasa/subsetter:1.0', WorkItemStatus.SUCCESSFUL, 2000, 30);
+    // two image versions of the subsetter, one from ECR
+    await item('alice-job', ECR_SUBSETTER, WorkItemStatus.SUCCESSFUL, 2000, 30);
     await item('alice-job', 'ghcr.io/nasa/subsetter:1.1', WorkItemStatus.SUCCESSFUL, 4000, 20, 2);
     await item('bob-job', 'ghcr.io/nasa/subsetter:1.1', WorkItemStatus.FAILED, 600, 10, 3);
     await item('bob-job', 'ghcr.io/nasa/reformatter:2', WorkItemStatus.SUCCESSFUL, 1000, 10);
     // the previous 24 hours, for comparison
-    await item('alice-job', 'ghcr.io/nasa/subsetter:1.0', WorkItemStatus.SUCCESSFUL, 1000, 25 * 60);
+    await item('alice-job', ECR_SUBSETTER, WorkItemStatus.SUCCESSFUL, 1000, 25 * 60);
     // finished jobs
     await saveJob('sync-done', { username: 'alice', status: JobStatus.SUCCESSFUL, isAsync: false, createdAt: recently(41), updatedAt: recently(40) });
     await saveJob('async-done', { username: 'bob', status: JobStatus.FAILED, isAsync: true, createdAt: recently(100), updatedAt: recently(40) });
@@ -208,9 +209,9 @@ describe('dashboard API', function () {
       expect(body.live).to.include({ ready: 5, running: 2 });
     });
 
-    it('breaks the stats down by image', function () {
+    it('breaks the stats down by image, without exposing the registry (e.g. the ECR account)', function () {
       expect(body.images.map((i: any) => [i.image, i.total]).sort()).to.eql([
-        ['ghcr.io/nasa/subsetter:1.0', 1], ['ghcr.io/nasa/subsetter:1.1', 2],
+        ['nasa/subsetter:1.0', 1], ['nasa/subsetter:1.1', 2],
       ]);
     });
 
@@ -366,6 +367,16 @@ describe('dashboard API', function () {
         status: 'successful', start: recently(26 * 60).toISOString(), end: recently(24 * 60).toISOString(),
       });
       expect(previous.jobs.map((j: any) => [j.jobID, j.workItemCount])).to.eql([['alice-job', 1]]);
+    });
+
+    it('only warns that work items may have been deleted when the range starts before the work reaper cutoff', async function () {
+      const { body } = await call(getDashboardJobsByWorkItemStatus, { status: 'successful', range: '7d' });
+      expect(body.workItemsReapedBefore).to.be.null;
+
+      const { body: older } = await call(getDashboardJobsByWorkItemStatus, { status: 'successful', range: '30d' });
+      const reapedBefore = new Date(older.workItemsReapedBefore).getTime();
+      const expected = Date.now() - env.reapableWorkAgeMinutes * 60_000;
+      expect(Math.abs(reapedBefore - expected)).to.be.lessThan(60_000);
     });
 
     it('says when there are more jobs than the limit', async function () {
