@@ -56,6 +56,15 @@ MEMORY_USAGE_BUCKET=memory-usage-bucket
 # The cron schedule for the work items stats cron
 WORK_ITEMS_STATS_CRON="* * * * *" # every minute
 
+# Hourly rows of the dashboard stats tables older than this many days are deleted. (Per-minute
+# rows are kept for WORK_ITEMS_STATS_MINUTE_RETENTION_DAYS, in packages/util/env-defaults.)
+WORK_ITEMS_STATS_HOURLY_RETENTION_DAYS=400
+
+# The maximum number of hours of expired rows deleted from each dashboard stats table per run of
+# the work items stats cron, one hour per statement - this spreads deleting a large backlog of
+# expired rows across many runs instead of holding one huge delete
+WORK_ITEMS_STATS_PRUNE_HOURS_PER_RUN=6
+
 # The harmony environment (e.g. sit, uat, prod)
 HARMONY_ENVIRONMENT=local
 

@@ -82,6 +82,14 @@ class CronServiceHarmonyEnv extends HarmonyEnv {
   // Begin work items stats updater variables
   @IsCrontab()
   workItemsStatsCron: string;
+
+  @IsInt()
+  @Min(1)
+  workItemsStatsHourlyRetentionDays: number;
+
+  @IsInt()
+  @Min(1)
+  workItemsStatsPruneHoursPerRun: number;
   // End work items stats updater variables
 
   // Begin analytics variables

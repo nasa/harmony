@@ -31,7 +31,9 @@ try {
 export const tables = [
   'jobs', 'work_items', 'workflow_steps', 'job_links', 'user_work', 'job_messages', 'batches',
   'batch_items', 'raw_labels', 'jobs_raw_labels', 'users_labels', 'work_items_stats',
-  'service_deployments', 'run_watermarks', 'user_work_history',
+  'service_deployments', 'run_watermarks', 'user_work_history', 'work_items_stats_hourly',
+  'user_work_items_stats', 'user_work_items_stats_hourly', 'work_items_failure_stats',
+  'work_items_failure_stats_hourly', 'job_stats', 'job_stats_hourly',
 ];
 
 /**

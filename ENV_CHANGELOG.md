@@ -4,6 +4,18 @@ order with the most recent changes first.
 
 ## 2026-10-27
 ### Added
+- WORK_ITEMS_STATS_MINUTE_RETENTION_DAYS - (shared, `packages/util/env-defaults`) how many days of
+  per-minute rows the admin dashboard stats tables keep (default 14). The cron service deletes older
+  ones, and the dashboard reads the hourly rollups for ranges starting earlier than this.
+- WORK_ITEMS_STATS_HOURLY_RETENTION_DAYS - cron service: how many days of hourly rollup rows the
+  admin dashboard stats tables keep (default 400).
+- WORK_ITEMS_STATS_PRUNE_HOURS_PER_RUN - cron service: the maximum number of hours of expired rows
+  deleted from each dashboard stats table per run of the work items stats cron, one hour per
+  statement (default 6), so a large backlog is deleted gradually.
+- DASHBOARD_CACHE_TTL_MS - harmony: how long admin dashboard API responses are cached in memory
+  (default 30000). 0 disables the cache.
+- DASHBOARD_QUERY_TIMEOUT_MS - harmony: the Postgres statement timeout for admin dashboard API
+  queries (default 15000).
 - USER_WORK_DURATION_SEED_LOOKBACK_DAYS - (shared, `packages/util/env-defaults`) how many days of a
   user's `user_work_history` to average when seeding the `average_duration` of a new or resumed
   job's `user_work` rows for a service, so duration based fair queueing can classify the job before

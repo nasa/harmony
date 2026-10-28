@@ -205,3 +205,9 @@ CMR_CACHE_TTL=600000
 # are averaged. Has no effect on slot based fair queueing, which doesn't use average_duration.
 # Should not exceed USER_WORK_HISTORY_RETENTION_DAYS in the cron service. 0 disables seeding.
 USER_WORK_DURATION_SEED_LOOKBACK_DAYS=7
+
+# Per-minute rows of the admin dashboard stats tables older than this many days are deleted by the
+# cron service (hourly rollups are kept for much longer - see WORK_ITEMS_STATS_HOURLY_RETENTION_DAYS
+# in the cron service). The dashboard reads the hourly rollups instead for time ranges that start
+# before this. Shared because both the cron service and harmony (the dashboard) use it.
+WORK_ITEMS_STATS_MINUTE_RETENTION_DAYS=14

@@ -191,6 +191,35 @@ describe('upsertWorkItemStats (integration)', function () {
         expect(stats[0].count).to.equal(3);
       });
     });
+
+    it('keeps the full count for a minute when the watermark is partway through the following minute', async function () {
+      await db.transaction(async (tx) => {
+        // the start of a minute a few minutes ago, so nothing below is in the current minute
+        const minuteStart = Math.floor((Date.now() - 5 * 60 * 1000) / 60_000) * 60_000;
+        const previousMinuteStart = minuteStart - 60_000;
+
+        // two items in the previous minute, one 10s into it and one 40s into it
+        for (const [jobID, secondsIntoMinute] of [['job-early', 10], ['job-late', 40]]) {
+          await rawSaveWorkItem(tx, makePartialWorkItemRecord([
+            jobID, 'service-a', WorkItemStatus.SUCCESSFUL,
+            new Date(previousMinuteStart + Number(secondsIntoMinute) * 1000),
+          ]));
+        }
+
+        // the first run counts both items
+        await setWatermark(tx, new Date(previousMinuteStart - 10 * 60 * 1000));
+        await upsertWorkItemStats(tx);
+
+        // the next run's watermark is 30s into the following minute, so it re-aggregates from
+        // 30s into the previous minute - after the early item - which must not drop that item
+        await setWatermark(tx, new Date(minuteStart + 30 * 1000));
+        await upsertWorkItemStats(tx);
+
+        const stats = await readStats(tx);
+        expect(stats).to.have.length(1);
+        expect(stats[0].count).to.equal(2);
+      });
+    });
   });
 
   describe('watermark update', function () {
