@@ -1,11 +1,13 @@
 import { NextFunction, Response } from 'express';
 import { LRUCache } from 'lru-cache';
 
+import { sanitizeImage } from '@harmony/util/string';
+
 import { DashboardQueues, getSystemQueueMetrics } from './dashboard';
 import {
   bucketCount, estimatePercentile, getFailureCategories, getJobsWithWorkItemStatus, getJobTotals,
   getLongestRunningJobs, getServiceIdsInRange, getServiceSeries, getServiceTotals, getStatsLastUpdated, getStatusSeries,
-  getUserSeries, getUserTotals, JobTotals, MAX_SPARKLINE_BUCKETS, previousRange, resolveRange,
+  getUserSeries, getUserTotals, JobTotals, MAX_SPARKLINE_BUCKETS, MS_PER_MINUTE, previousRange, resolveRange,
   StatsRange, withMaxBuckets, WorkItemMetrics,
 } from '../models/dashboard-stats';
 import HarmonyRequest from '../models/harmony-request';
@@ -577,7 +579,7 @@ function workflowUiLinkForUser(username: string): string {
 async function buildSummary(query: Record<string, unknown>): Promise<object> {
   const now = new Date();
   const range = parseRange(query, now);
-  const previous = previousRange(range);
+  const previous = previousRange(range, now, env.workItemsStatsMinuteRetentionDays);
   const sparkRange = withMaxBuckets(range, MAX_SPARKLINE_BUCKETS);
 
   const [data, queues] = await Promise.all([
@@ -666,7 +668,7 @@ async function buildSummary(query: Record<string, unknown>): Promise<object> {
 async function buildServiceDetails(serviceName: string, query: Record<string, unknown>): Promise<object> {
   const now = new Date();
   const range = parseRange(query, now);
-  const previous = previousRange(range);
+  const previous = previousRange(range, now, env.workItemsStatsMinuteRetentionDays);
   const imageToServiceMap = getImageToServiceMap();
   const isService = (id: string): boolean => getServiceName(imageToServiceMap, id) === serviceName;
 
@@ -694,7 +696,8 @@ async function buildServiceDetails(serviceName: string, query: Record<string, un
     };
   });
 
-  const images = [...groupBy(data.totals, (r) => r.service_id).entries()].map(([image, rows]) => ({
+  // the images are sanitized (as in the workflow UI) so they don't expose the ECR account
+  const images = [...groupBy(data.totals, (r) => sanitizeImage(r.service_id)).entries()].map(([image, rows]) => ({
     image, ...summarizeWorkItems(rows, range, now),
   })).sort((a, b) => b.total - a.total);
 
@@ -1014,9 +1017,14 @@ async function buildJobsWithWorkItemStatus(query: Record<string, unknown>): Prom
     return getJobsWithWorkItemStatus(trx, range, status, limit + 1, { serviceIDs, username: user });
   });
 
+  // The work reaper deletes the work items of finished jobs after REAPABLE_WORK_AGE_MINUTES, so a
+  // range starting before then may be missing jobs
+  const reapedBefore = new Date(now.getTime() - env.reapableWorkAgeMinutes * MS_PER_MINUTE);
+
   return {
     generatedAt: now.toISOString(),
     range: rangeJson(range),
+    workItemsReapedBefore: range.start < reapedBefore ? reapedBefore.toISOString() : null,
     status,
     service: service ?? null,
     user: user ?? null,

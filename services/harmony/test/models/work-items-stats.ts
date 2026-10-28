@@ -310,4 +310,62 @@ describe('getWorkItemsStatsSummary (integration)', function () {
       });
     });
   });
+
+  describe('when the window starts before the per-minute retention period', function () {
+    const MS_PER_HOUR = 60 * 60 * 1000;
+    const MS_PER_DAY = 24 * MS_PER_HOUR;
+
+    /**
+     * Inserts an hourly row and a per-minute row (with different counts) for service-a
+     *
+     * @param tx - the transaction to use
+     * @param hour - the hour of the hourly row
+     * @param minute - the minute of the per-minute row
+     */
+    async function insertRows(tx: Transaction, hour: Date, minute: Date): Promise<void> {
+      await tx('work_items_stats_hourly').insert({
+        hour, service_id: 'service-a', status: WorkItemStatus.SUCCESSFUL, count: 100,
+      });
+      await tx('work_items_stats').insert({
+        minute, service_id: 'service-a', status: WorkItemStatus.SUCCESSFUL, count: 7,
+      });
+    }
+
+    it('reads the hourly rollups, widened to whole hours', async function () {
+      await db.transaction(async (tx) => {
+        const start = new Date(Math.floor((Date.now() - 30 * MS_PER_DAY) / MS_PER_HOUR) * MS_PER_HOUR + 20 * 60 * 1000);
+        const end = new Date(start.getTime() + 2 * MS_PER_HOUR);
+        await insertRows(tx, new Date(start.getTime() - 20 * 60 * 1000), start);
+
+        const summary = await getWorkItemsStatsSummary(tx, { start, end }, 14);
+
+        expect(summary.rows).to.have.length(1);
+        expect(summary.rows[0].count).to.equal(100);
+        expect(summary.start.getTime()).to.equal(start.getTime() - 20 * 60 * 1000);
+        expect(summary.end.getTime()).to.equal(end.getTime() + 40 * 60 * 1000);
+      });
+    });
+
+    it('reads the hourly rollups for a lastMinutes window reaching back that far', async function () {
+      await db.transaction(async (tx) => {
+        const hour = new Date(Math.floor((Date.now() - 20 * MS_PER_DAY) / MS_PER_HOUR) * MS_PER_HOUR);
+        await insertRows(tx, hour, hour);
+
+        const summary = await getWorkItemsStatsSummary(tx, { lastMinutes: 30 * 24 * 60 }, 14);
+
+        expect(summary.rows[0].count).to.equal(100);
+      });
+    });
+
+    it('still reads the per-minute stats for windows within the retention period', async function () {
+      await db.transaction(async (tx) => {
+        const minute = new Date(Math.floor((Date.now() - MS_PER_DAY) / 60_000) * 60_000);
+        await insertRows(tx, new Date(Math.floor(minute.getTime() / MS_PER_HOUR) * MS_PER_HOUR), minute);
+
+        const summary = await getWorkItemsStatsSummary(tx, { lastMinutes: 2 * 24 * 60 }, 14);
+
+        expect(summary.rows[0].count).to.equal(7);
+      });
+    });
+  });
 });

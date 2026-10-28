@@ -20,11 +20,7 @@ class CronServiceHarmonyEnv extends HarmonyEnv {
   @IsInt()
   @Min(1)
   workReaperBatchSize: number;
-
-  @IsInt()
-  @Min(1)
-  reapableWorkAgeMinutes: number;
-  // End work reaper variables
+  // End work reaper variables (REAPABLE_WORK_AGE_MINUTES is shared, in packages/util)
 
 
   // Begin restart prometheus variables

@@ -23,9 +23,9 @@ if ! command -v "helm" &> /dev/null; then
     exit 1;
 fi
 
-helm repo add "stable" "https://charts.helm.sh/stable" --force-update
+#helm repo add "stable" "https://charts.helm.sh/stable" --force-update
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo update
+#helm repo update
 
 # Deploy prometheus adapter
 PROMETHEUS_NAMESPACE=monitoring

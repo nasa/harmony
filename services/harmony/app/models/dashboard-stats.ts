@@ -132,14 +132,31 @@ export function resolveRange(
 }
 
 /**
- * Gets the range of the same length immediately before a range, for period over period comparison
+ * Gets the range of the same length immediately before a range, for period over period comparison.
+ * If the range is read from the per-minute stats but its previous range starts before the per-minute
+ * retention period (whose older rows have been deleted), the previous range is read from the hourly
+ * rollups instead, widened to whole hours as resolveRange does.
  *
  * @param range - the range
+ * @param now - the current time
+ * @param minuteRetentionDays - how many days of per-minute stats are kept
  * @returns the previous range
  */
-export function previousRange(range: StatsRange): StatsRange {
+export function previousRange(range: StatsRange, now: Date, minuteRetentionDays: number): StatsRange {
   const spanMs = range.end.getTime() - range.start.getTime();
-  return { ...range, start: new Date(range.start.getTime() - spanMs), end: range.start };
+  const start = range.start.getTime() - spanMs;
+  const minuteDataStart = now.getTime() - minuteRetentionDays * MS_PER_DAY;
+  if (range.granularity === 'hour' || start >= minuteDataStart) {
+    return { ...range, start: new Date(start), end: range.start };
+  }
+  const hourlyStart = truncateToHour(new Date(start)).getTime();
+  const hourlyEnd = Math.ceil(range.start.getTime() / MS_PER_HOUR) * MS_PER_HOUR;
+  return {
+    start: new Date(hourlyStart),
+    end: new Date(hourlyEnd),
+    granularity: 'hour',
+    bucketMs: chooseBucketMs(hourlyEnd - hourlyStart, 'hour', MAX_SERIES_BUCKETS),
+  };
 }
 
 /**

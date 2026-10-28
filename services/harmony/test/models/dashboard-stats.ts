@@ -85,10 +85,37 @@ describe('resolveRange', function () {
 describe('previousRange', function () {
   it('is the range of the same length immediately before', function () {
     const range = resolveRange({ preset: '1h' }, NOW, 14);
-    const previous = previousRange(range);
+    const previous = previousRange(range, NOW, 14);
     expect(previous.end).to.eql(range.start);
     expect(previous.start.toISOString()).to.equal('2026-10-27T13:42:00.000Z');
+    expect(previous.granularity).to.equal('minute');
     expect(previous.bucketMs).to.equal(range.bucketMs);
+  });
+
+  it('stays hourly for an hourly range', function () {
+    const range = resolveRange({ preset: '30d' }, NOW, 14);
+    const previous = previousRange(range, NOW, 14);
+    expect(previous.granularity).to.equal('hour');
+    expect(previous.end).to.eql(range.start);
+    expect(previous.end.getTime() - previous.start.getTime()).to.equal(30 * MS_PER_DAY);
+  });
+
+  describe('for a per-minute range whose previous range starts before the per-minute retention period', function () {
+    const range = resolveRange({
+      start: new Date('2026-10-13T20:20:00.000Z'), end: new Date('2026-10-14T08:20:00.000Z'),
+    }, NOW, 14);
+    const previous = previousRange(range, NOW, 14);
+
+    it('reads the hourly rollups', function () {
+      expect(range.granularity).to.equal('minute');
+      expect(previous.granularity).to.equal('hour');
+    });
+
+    it('is widened to whole hours', function () {
+      expect(previous.start.toISOString()).to.equal('2026-10-13T08:00:00.000Z');
+      expect(previous.end.toISOString()).to.equal('2026-10-13T21:00:00.000Z');
+      expect(previous.bucketMs % MS_PER_HOUR).to.equal(0);
+    });
   });
 });
 

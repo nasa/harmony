@@ -480,16 +480,25 @@ async function openStatusJobs(status, scope) {
   if (scope.user) params.set('user', scope.user);
   try {
     const data = await fetchJson('/jobs/by-work-item-status', params, controller.signal);
-    body.replaceChildren(
+    body.replaceChildren(...[
       table(['Job', 'User', 'Job status', `${label} work items`, `Last ${label.toLowerCase()}`],
         data.jobs.map((j) => [
           h('a', { href: j.link, target: '_blank', rel: 'noopener', className: 'font-monospace small', title: `${j.jobID} - opens the job's ${status} work items in a new tab`, textContent: j.jobID }),
           j.username, j.jobStatus.replace(/_/g, ' '), formatCount(j.workItemCount),
           formatDateTime(new Date(j.lastUpdated))]),
         { caption: `Jobs with ${status} work items`, numeric: [3] }),
-      h('p', { className: 'viz-subtitle mb-0' },
-        data.hasMore ? `Showing the ${data.jobs.length} jobs with the most ${status} work items. ` : '',
-        'Work items of finished jobs are deleted after a while, so jobs from early in a long range may be missing.'));
+      data.hasMore
+        ? h('p', { className: 'viz-subtitle mb-0', textContent: `Showing the ${data.jobs.length} jobs with the most ${status} work items.` })
+        : null,
+      data.workItemsReapedBefore
+        ? h('p', {
+          className: 'alert alert-warning small mt-2 mb-0',
+          role: 'note',
+          textContent: `This range starts before ${formatDateTime(new Date(data.workItemsReapedBefore))}. The work items of jobs `
+            + 'that finished before then have been deleted, so those jobs may be missing or have lower counts.',
+        })
+        : null,
+    ].filter(Boolean));
   } catch (e) {
     if (e.name !== 'AbortError') {
       body.replaceChildren(h('p', { className: 'text-danger small mb-0', textContent: `Could not load the jobs: ${e.message}` }));

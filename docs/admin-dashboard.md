@@ -48,8 +48,8 @@ of the completed work items (excluding canceled ones).
 each service and each service's users, and each user and each user's services. The backlog is the
 work not started yet - the ready work items.
 
-* The backlog's compute time is computed from `user_work` with the same per job and service duration
-  duration based fair queueing uses (`EFFECTIVE_DURATION_SQL` in
+* The backlog's compute time is computed from `user_work` with the same per-job-and-service duration
+  that duration-based fair queueing uses (`EFFECTIVE_DURATION_SQL` in
   `services/harmony/app/models/user-work.ts`): the job's measured average duration for the service,
   or the average of its failures if nothing has succeeded yet, or the duration seeded from the user's
   recent jobs for the service (`USER_WORK_DURATION_SEED_LOOKBACK_DAYS`), or else
@@ -75,13 +75,14 @@ a JSON API (`services/harmony/app/frontends/dashboard-api.ts`):
 | `GET /admin/dashboard/api/services/{name}` | a service's totals, time series, histogram, stats by image (version), failure message categories, and users |
 | `GET /admin/dashboard/api/users?limit=&filter=&service=&sort=&dir=` | the users with work in the range, with their job stats and live work, ranked by `sort` (a users table column - `username`, `computeMs`, `total`, `failed`, `successRate`, `retries`, `jobs`, `sync`, `async`, `ready`, `backlogCompute`, `backlogClear`, or `running` - default `computeMs` - compute time, the summed work item durations) in `dir` order (default `desc`), then limited to `limit` (default 25, at most 500). `filter` keeps only users whose username contains it (ignoring case), and `service` only users with work for that service, with their work item stats and live work for only that service (their job stats are still for all their jobs) |
 | `GET /admin/dashboard/api/users/{username}` | a user's stats by service, time series, job stats, and live work |
-| `GET /admin/dashboard/api/jobs/by-work-item-status?status=&service=&user=&limit=` | the jobs with the most work items that reached `status` (`successful`, `failed`, `canceled`, or `warning`) in the range, optionally only for a service and/or user, each with a link to its work items with that status in the workflow UI |
+| `GET /admin/dashboard/api/jobs/by-work-item-status?status=&service=&user=&limit=` | the jobs with the most work items that reached `status` (`successful`, `failed`, `canceled`, or `warning`) in the range, optionally only for a service and/or user, each with a link to its work items with that status in the workflow UI. Read from `work_items`, whose rows for finished jobs the work reaper deletes after `REAPABLE_WORK_AGE_MINUTES` (14 days), so when the range starts before then `workItemsReapedBefore` gives that cutoff (and the dashboard shows a warning) - otherwise it's `null` |
 | `GET /admin/dashboard/api/jobs/running?limit=` | the oldest unfinished jobs, and how many haven't been updated in an hour |
 
 Every endpoint but the last takes either `range` (`1h`, `6h`, `24h` - the default, `7d`, `30d`, or
 `90d`) or a custom `start` and `end` (ISO-8601). Ranges of up to a day starting within the
 per-minute retention period are read from the per-minute tables, and longer ones from the hourly
-rollups. Responses are cached in memory for `DASHBOARD_CACHE_TTL_MS`, and each request's queries
+rollups. The same goes for the previous period a range is compared with, so it can be read from the
+hourly rollups (widened to whole hours) even when the range itself isn't. Responses are cached in memory for `DASHBOARD_CACHE_TTL_MS`, and each request's queries
 run in a read only transaction with a `DASHBOARD_QUERY_TIMEOUT_MS` statement timeout.
 
 Like `GET /admin/dashboard`, the API is versioned: every endpoint accepts a `version` query
@@ -92,4 +93,6 @@ request a version explicitly so they keep getting the same response format. A ne
 need one.
 
 The original `GET /admin/dashboard` JSON response (with `window1`/`window2` parameters) is
-unchanged, and has its own version (also `1`).
+unchanged, and has its own version (also `1`). Like the API, a window starting more than
+`WORK_ITEMS_STATS_MINUTE_RETENTION_DAYS` ago is read from the hourly rollups (`work_items_stats_hourly`)
+instead, widened to whole hours - its `timeRanges` entry gives the range actually summarized.

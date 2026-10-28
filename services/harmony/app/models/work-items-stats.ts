@@ -436,14 +436,21 @@ export interface WorkItemsStatsTimeWindow {
  *
  * `start` and `lastMinutes` are mutually exclusive.
  *
+ * Ranges that start before the per-minute retention period (or have no start) are read from the
+ * hourly rollups instead, since the older per-minute rows have been deleted, with the range
+ * widened to whole hours - the returned `start` and `end` are the range actually summarized.
+ *
  * @param trx - the database transaction
  * @param options - the time range to summarize
+ * @param minuteRetentionDays - how many days of per-minute stats are kept. If omitted, the
+ *        per-minute stats are always read.
  * @throws TypeError if both `start` and `lastMinutes` are given, if `lastMinutes`
  *         is not a positive integer, or if the resulting range is empty
  */
 export async function getWorkItemsStatsSummary(
   trx: Transaction,
   options: WorkItemsStatsTimeWindow = {},
+  minuteRetentionDays?: number,
 ): Promise<WorkItemsStatsSummary> {
   const { start, end, lastMinutes } = options;
 
@@ -475,22 +482,33 @@ export async function getWorkItemsStatsSummary(
     throw new TypeError('getWorkItemsStatsSummary: `start` must be before `end`');
   }
 
-  // The `minute` column is a timestamptz in Postgres and epoch millis in SQLite.
-  const minuteBound = (d: Date): Knex.Raw =>
+  const useHourly = minuteRetentionDays !== undefined && (!effectiveStart
+    || effectiveStart.getTime() < now.getTime() - minuteRetentionDays * 24 * MS_PER_HOUR);
+  if (useHourly) {
+    if (effectiveStart) {
+      effectiveStart = truncateToHour(effectiveStart);
+    }
+    effectiveEnd = new Date(Math.ceil(effectiveEnd.getTime() / MS_PER_HOUR) * MS_PER_HOUR);
+  }
+  const table = useHourly ? SERVICE_STATS.hourlyTable : SERVICE_STATS.minuteTable;
+  const timeColumn = useHourly ? 'hour' : 'minute';
+
+  // The time column is a timestamptz in Postgres and epoch millis in SQLite.
+  const timeBound = (d: Date): Knex.Raw =>
     (isPg
       ? trx.raw('?::timestamptz', [d])
       : trx.raw('CAST(? AS INTEGER)', [d.getTime()]));
 
-  const query = trx('work_items_stats')
+  const query = trx(table)
     .select('service_id', 'status')
     .sum('count as count');
 
   if (effectiveStart) {
-    query.where('minute', '>=', minuteBound(effectiveStart));
+    query.where(timeColumn, '>=', timeBound(effectiveStart));
   }
 
   query
-    .andWhere('minute', '<', minuteBound(effectiveEnd))
+    .andWhere(timeColumn, '<', timeBound(effectiveEnd))
     .groupBy('service_id', 'status');
 
   const rows = await query;

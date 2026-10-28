@@ -211,3 +211,8 @@ USER_WORK_DURATION_SEED_LOOKBACK_DAYS=7
 # in the cron service). The dashboard reads the hourly rollups instead for time ranges that start
 # before this. Shared because both the cron service and harmony (the dashboard) use it.
 WORK_ITEMS_STATS_MINUTE_RETENTION_DAYS=14
+
+# WorkItems and WorkflowSteps (in a terminal state) older than this many minutes are checked by the
+# work reaper in the cron service. Shared because the admin dashboard (harmony) warns that work items
+# from before this may be missing from the jobs it lists by work item status.
+REAPABLE_WORK_AGE_MINUTES=20160

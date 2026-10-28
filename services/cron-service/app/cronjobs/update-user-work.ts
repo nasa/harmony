@@ -13,7 +13,7 @@ import env from '../util/env';
 export async function updateUserWork(ctx: Context): Promise<void> {
   const startTime = new Date().getTime();
   const { logger, db } = ctx;
-  await db.transaction(async (tx) => {
+  const jobIDs: string[] = await db.transaction(async (tx) => {
     // find jobs in the user_work table that haven't been updated in a while
     let query = tx(UserWork.table).distinct('job_id');
     if (env.databaseType === 'sqlite') {
@@ -24,10 +24,13 @@ export async function updateUserWork(ctx: Context): Promise<void> {
     }
 
     const results = await query;
-    const jobIDs = results.map((r) => r.job_id);
+    return results.map((r) => r.job_id);
+  });
 
-    // reset the counts for the jobs
-    for (const jobID of jobIDs) {
+  // reset the counts for the jobs, each in its own transaction so each job's lock is only held
+  // while that job is processed, rather than until every job has been
+  for (const jobID of jobIDs) {
+    await db.transaction(async (tx) => {
       // Lock the job first, as pause/resume and the work item updaters do. Otherwise a resume
       // could recount this job's rows while they're being deleted here, leaving a running job
       // with no user_work rows (and its totals not restored from user_work_history).
@@ -39,10 +42,10 @@ export async function updateUserWork(ctx: Context): Promise<void> {
         logger.warn(`Recalculating user_work counts for job ${jobID} with status ${job.status}`);
         await recalculateCounts(tx, jobID, env.userWorkDurationSeedLookbackDays);
       }
-    }
-    const durationMs = new Date().getTime() - startTime;
-    logger.info(`Finished updating user work counts for ${jobIDs.length} jobs`, { durationMs });
-  });
+    });
+  }
+  const durationMs = new Date().getTime() - startTime;
+  logger.info(`Finished updating user work counts for ${jobIDs.length} jobs`, { durationMs });
 }
 
 /**
