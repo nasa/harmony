@@ -3,8 +3,8 @@ import { LRUCache } from 'lru-cache';
 
 import { DashboardQueues, getSystemQueueMetrics } from './dashboard';
 import {
-  bucketCount, estimatePercentile, getFailureCategories, getJobTotals, getLongestRunningJobs,
-  getServiceIdsInRange, getServiceSeries, getServiceTotals, getStatsLastUpdated, getStatusSeries,
+  bucketCount, estimatePercentile, getFailureCategories, getJobsWithWorkItemStatus, getJobTotals,
+  getLongestRunningJobs, getServiceIdsInRange, getServiceSeries, getServiceTotals, getStatsLastUpdated, getStatusSeries,
   getUserSeries, getUserTotals, JobTotals, MAX_SPARKLINE_BUCKETS, previousRange, resolveRange,
   StatsRange, withMaxBuckets, WorkItemMetrics,
 } from '../models/dashboard-stats';
@@ -38,6 +38,8 @@ const MAX_DETAIL_USERS = 25;
 const MAX_FAILURE_CATEGORIES = 15;
 const DEFAULT_RUNNING_JOBS_LIMIT = 10;
 const MAX_RUNNING_JOBS_LIMIT = 100;
+const DEFAULT_STATUS_JOBS_LIMIT = 25;
+const MAX_STATUS_JOBS_LIMIT = 100;
 // running jobs that haven't been updated for this long are counted as stalled
 const STALLED_JOB_MS = 60 * 60 * 1000;
 
@@ -55,7 +57,12 @@ interface WorkItemSummary {
   maxDurationMs: number | null;
   // the summed duration of every work item with a duration - a proxy for the compute time used
   computeMs: number;
+  // retry attempts by every work item, including failed ones that used up their retries
   retries: number;
+  // retry attempts by work items that went on to succeed, and the share of those work items'
+  // attempts that were retries - the same measures as /admin/retry-stats
+  successfulRetries: number;
+  successfulRetryRate: number | null;
   itemsSizeMb: number;
 }
 
@@ -271,6 +278,7 @@ interface AccumulatedMetrics {
   sumDuration: number;
   maxDuration: number;
   retries: number;
+  successfulRetries: number;
   itemsSize: number;
   // the combined duration histogram, if the rows have them
   buckets?: number[];
@@ -284,7 +292,8 @@ interface AccumulatedMetrics {
  */
 function accumulateMetrics(rows: (WorkItemMetrics & { status: string })[]): AccumulatedMetrics {
   const result: AccumulatedMetrics = {
-    counts: emptyCounts(), durationCount: 0, sumDuration: 0, maxDuration: 0, retries: 0, itemsSize: 0,
+    counts: emptyCounts(), durationCount: 0, sumDuration: 0, maxDuration: 0, retries: 0,
+    successfulRetries: 0, itemsSize: 0,
   };
   for (const row of rows) {
     if ((STATUSES as readonly string[]).includes(row.status)) {
@@ -294,6 +303,9 @@ function accumulateMetrics(rows: (WorkItemMetrics & { status: string })[]): Accu
     result.sumDuration += row.sum_duration_ms;
     result.maxDuration = Math.max(result.maxDuration, row.max_duration_ms);
     result.retries += row.retry_count;
+    if (row.status === 'successful') {
+      result.successfulRetries += row.retry_count;
+    }
     result.itemsSize += row.sum_items_size;
     if (row.buckets) {
       result.buckets ??= row.buckets.map(() => 0);
@@ -327,6 +339,10 @@ function summarizeWorkItems(
     maxDurationMs: m.durationCount > 0 ? m.maxDuration : null,
     computeMs: m.sumDuration,
     retries: m.retries,
+    successfulRetries: m.successfulRetries,
+    // each successful work item was attempted once plus once per retry
+    successfulRetryRate: m.counts.successful > 0
+      ? m.successfulRetries / (m.counts.successful + m.successfulRetries) : null,
     itemsSizeMb: m.itemsSize,
   };
   if (m.buckets) {
@@ -652,8 +668,28 @@ async function buildServiceDetails(serviceName: string, query: Record<string, un
 }
 
 /**
+ * Parses an optional name query parameter (a service or user)
+ *
+ * @param value - the parameter value
+ * @param name - the parameter name
+ * @returns the value, or undefined if it wasn't given or is empty
+ * @throws RequestValidationError if the value is too long
+ */
+function parseName(value: unknown, name: string): string | undefined {
+  if (value === undefined || value === '') {
+    return undefined;
+  }
+  const result = String(value);
+  if (result.length > 255) {
+    throw new RequestValidationError(`${name} must be at most 255 characters.`);
+  }
+  return result;
+}
+
+/**
  * Gets the users with the most work in a range, ranked by compute time (the summed duration of
- * their work items), with their finished job stats and live work.
+ * their work items), with their finished job stats and live work. The filter query parameter
+ * limits the users to those whose username contains it (ignoring case), before the limit applies.
  *
  * @param query - the query parameters, with lower cased keys
  * @returns the users
@@ -662,6 +698,7 @@ async function buildUsers(query: Record<string, unknown>): Promise<object> {
   const now = new Date();
   const range = parseRange(query, now);
   const limit = parseLimit(query.limit, DEFAULT_USER_LIMIT, MAX_USER_LIMIT);
+  const filter = parseName(query.filter, 'filter')?.toLowerCase();
 
   const data = await readOnly(async (trx) => ({
     totals: await getUserTotals(trx, range, false),
@@ -673,7 +710,7 @@ async function buildUsers(query: Record<string, unknown>): Promise<object> {
   const jobsByUser = groupBy(data.jobs, (r) => r.username);
   const liveByUser = groupBy(data.live, (r) => r.username);
   const usernames = new Set([...totalsByUser.keys(), ...jobsByUser.keys(), ...liveByUser.keys()]);
-  const users = [...usernames].map((username) => ({
+  const users = [...usernames].filter((username) => !filter || username.toLowerCase().includes(filter)).map((username) => ({
     username,
     ...summarizeWorkItems(totalsByUser.get(username) ?? [], range, now),
     jobs: summarizeJobs(jobsByUser.get(username) ?? []),
@@ -767,6 +804,69 @@ async function buildRunningJobs(query: Record<string, unknown>): Promise<object>
 }
 
 /**
+ * Gets a link to the admin workflow UI page of a job, with its work items filtered to a status
+ *
+ * @param jobID - the job
+ * @param status - the work item status
+ * @returns the link
+ */
+function workflowUiLinkForJobWorkItems(jobID: string, status: string): string {
+  const filter = JSON.stringify([{ value: `status: ${status}`, dbValue: status, field: 'status' }]);
+  return `/admin/workflow-ui/${jobID}?tableFilter=${encodeURIComponent(filter)}`;
+}
+
+/**
+ * Gets the jobs with the most work items that reached a status in a range, optionally only for a
+ * service and/or user - what the dashboard shows when a work item status count is selected.
+ *
+ * @param query - the query parameters, with lower cased keys: status (required), service, user,
+ * limit, and the range parameters
+ * @returns the jobs
+ */
+async function buildJobsWithWorkItemStatus(query: Record<string, unknown>): Promise<object> {
+  const now = new Date();
+  const range = parseRange(query, now);
+  const limit = parseLimit(query.limit, DEFAULT_STATUS_JOBS_LIMIT, MAX_STATUS_JOBS_LIMIT);
+  const status = String(query.status ?? '');
+  if (!(STATUSES as readonly string[]).includes(status)) {
+    throw new RequestValidationError(`status must be one of ${STATUSES.join(', ')}.`);
+  }
+  const service = parseName(query.service, 'service');
+  const user = parseName(query.user, 'user');
+
+  const jobs = await readOnly(async (trx) => {
+    let serviceIDs: string[] | undefined;
+    if (service !== undefined) {
+      const imageToServiceMap = getImageToServiceMap();
+      serviceIDs = (await getServiceIdsInRange(trx, range))
+        .filter((id) => getServiceName(imageToServiceMap, id) === service);
+      if (serviceIDs.length === 0) {
+        return [];
+      }
+    }
+    // one more than the limit, to tell whether there are more
+    return getJobsWithWorkItemStatus(trx, range, status, limit + 1, { serviceIDs, username: user });
+  });
+
+  return {
+    generatedAt: now.toISOString(),
+    range: rangeJson(range),
+    status,
+    service: service ?? null,
+    user: user ?? null,
+    hasMore: jobs.length > limit,
+    jobs: jobs.slice(0, limit).map((j) => ({
+      jobID: j.jobID,
+      username: j.username,
+      jobStatus: j.status,
+      workItemCount: j.count,
+      lastUpdated: j.lastUpdated.toISOString(),
+      link: workflowUiLinkForJobWorkItems(j.jobID, status),
+    })),
+  };
+}
+
+/**
  * Creates an express handler that responds with a (cached) dashboard API response, in the
  * requested version of its format (with the version in the response)
  *
@@ -803,3 +903,5 @@ export const getDashboardUsers = dashboardApiHandler('users', (_, query) => buil
 export const getDashboardUserDetails = dashboardApiHandler(
   'users', (name, query) => buildUserDetails(name, query));
 export const getDashboardRunningJobs = dashboardApiHandler('running-jobs', (_, query) => buildRunningJobs(query));
+export const getDashboardJobsByWorkItemStatus = dashboardApiHandler(
+  'work-item-status-jobs', (_, query) => buildJobsWithWorkItemStatus(query));

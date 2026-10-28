@@ -30,8 +30,17 @@ The same job then deletes expired rows - per-minute rows after `WORK_ITEMS_STATS
 outside of the aggregation transaction.
 
 Live state ("queued now", ready and running work, and the longest wait for ready work) comes from
-the small `user_work` table, and the system queue sizes from SQS. The list of the longest running
-jobs is the only query of `jobs`, reads only unfinished jobs, and only runs when an admin asks for it.
+the small `user_work` table, and the system queue sizes from SQS. Only two queries read the hot
+tables, and both only run when an admin asks for them: the list of the longest running jobs (which
+reads only unfinished jobs), and the list of the jobs with work items that reached a status, shown
+when a status count or status legend entry is selected. The latter reads `work_items` through its
+`("updatedAt", status, "serviceID")` index, is bounded by the statement timeout, and can't find
+work items the work reaper has already deleted.
+
+"Retries before success" counts the retry attempts of work items that went on to succeed, and the
+share of those work items' attempts that were retries - the same measures as `/admin/retry-stats`,
+which the dashboard links to for a breakdown by retry count. "Compute time" is the summed duration
+of the completed work items (excluding canceled ones).
 
 ## The API
 
@@ -42,8 +51,9 @@ a JSON API (`services/harmony/app/frontends/dashboard-api.ts`):
 |---|---|
 | `GET /admin/dashboard/api/summary` | system totals with the previous period for comparison, a time series, the duration histogram, every service's stats and live work, finished job stats, queue sizes, and how long ago the stats were updated |
 | `GET /admin/dashboard/api/services/{name}` | a service's totals, time series, histogram, stats by image (version), failure message categories, and users |
-| `GET /admin/dashboard/api/users?limit=` | the users with the most compute time (summed work item durations), with their job stats and live work |
+| `GET /admin/dashboard/api/users?limit=&filter=` | the users with the most compute time (summed work item durations), with their job stats and live work - optionally only users whose username contains `filter` (ignoring case) |
 | `GET /admin/dashboard/api/users/{username}` | a user's stats by service, time series, job stats, and live work |
+| `GET /admin/dashboard/api/jobs/by-work-item-status?status=&service=&user=&limit=` | the jobs with the most work items that reached `status` (`successful`, `failed`, `canceled`, or `warning`) in the range, optionally only for a service and/or user, each with a link to its work items with that status in the workflow UI |
 | `GET /admin/dashboard/api/jobs/running?limit=` | the oldest unfinished jobs, and how many haven't been updated in an hour |
 
 Every endpoint but the last takes either `range` (`1h`, `6h`, `24h` - the default, `7d`, `30d`, or

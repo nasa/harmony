@@ -9,7 +9,8 @@ import { epochMsSql, Transaction } from '../util/db';
 import { RequestValidationError } from '../util/errors';
 
 // Queries for the admin dashboard. Everything here reads the aggregate stats tables populated by
-// the cron service (see work-items-stats.ts) or the small user_work table, never work_items.
+// the cron service (see work-items-stats.ts) or the small user_work table - except the queries that
+// are only run when an admin asks for them (getLongestRunningJobs and getJobsWithWorkItemStatus).
 
 export const MS_PER_MINUTE = 60_000;
 export const MS_PER_HOUR = 60 * MS_PER_MINUTE;
@@ -548,6 +549,62 @@ export async function getLongestRunningJobs(
     runningCount: Number(counts?.running ?? 0),
     stalledCount: Number(counts?.stalled ?? 0),
   };
+}
+
+// A job with work items that reached a status in a range
+export interface JobWithWorkItemStatus {
+  jobID: string;
+  username: string;
+  // the job's own status
+  status: string;
+  // the number of the job's work items that reached the status in the range
+  count: number;
+  // the last time one of them did
+  lastUpdated: Date;
+}
+
+/**
+ * Gets the jobs with the most work items that reached a (terminal) status in a range. Unlike the
+ * other dashboard queries this reads work_items - using its ("updatedAt", status, "serviceID")
+ * index - so it's only run when an admin asks for it, and is bounded by the dashboard's statement
+ * timeout. Work items of finished jobs are deleted by the work reaper after a while, so jobs from
+ * the start of a long range may be missing.
+ *
+ * @param trx - the transaction
+ * @param range - the range
+ * @param status - the work item status
+ * @param limit - the maximum number of jobs to return
+ * @param filters - optional constraints on the work items' services and jobs' users
+ * @returns the jobs, with the most matching work items first
+ */
+export async function getJobsWithWorkItemStatus(
+  trx: Transaction, range: StatsRange, status: string, limit: number, filters: StatsFilters = {},
+): Promise<JobWithWorkItemStatus[]> {
+  const query = trx('work_items as wi')
+    .join('jobs as j', 'j.jobID', 'wi.jobID')
+    .select(
+      'wi.jobID as jobID', 'j.username as username', 'j.status as status',
+      trx.raw('COUNT(*) AS count'), trx.raw('MAX("wi"."updatedAt") AS last_updated'))
+    .where('wi.updatedAt', '>=', range.start)
+    .andWhere('wi.updatedAt', '<', range.end)
+    .andWhere('wi.status', status)
+    .groupBy('wi.jobID', 'j.username', 'j.status')
+    .orderByRaw('COUNT(*) DESC, MAX("wi"."updatedAt") DESC')
+    .limit(limit);
+  if (filters.serviceIDs) {
+    query.whereIn('wi.serviceID', filters.serviceIDs);
+  }
+  if (filters.username !== undefined) {
+    query.where('j.username', filters.username);
+  }
+  const rows = await query;
+  return rows.map((r) => ({
+    jobID: r.jobID,
+    username: r.username,
+    status: r.status,
+    count: Number(r.count),
+    lastUpdated: toDate(r.last_updated),
+  }));
 }
 
 /**

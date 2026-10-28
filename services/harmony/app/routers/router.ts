@@ -13,8 +13,8 @@ import { cloudAccessJson, cloudAccessSh } from '../frontends/cloud-access';
 import { setLogLevel } from '../frontends/configuration';
 import { getDashboard } from '../frontends/dashboard';
 import {
-  getDashboardRunningJobs, getDashboardServiceDetails, getDashboardSummary, getDashboardUserDetails,
-  getDashboardUsers,
+  getDashboardJobsByWorkItemStatus, getDashboardRunningJobs, getDashboardServiceDetails, getDashboardSummary,
+  getDashboardUserDetails, getDashboardUsers,
 } from '../frontends/dashboard-api';
 import docsPage, { getDefaultCollectionId } from '../frontends/docs/docs';
 import { getAdminHealth, getHealth } from '../frontends/health';
@@ -352,6 +352,7 @@ export default function router({ USE_EDL_CLIENT_APP = 'false' }: RouterConfig): 
   result.get('/admin/dashboard/api/users', asyncHandler(getDashboardUsers));
   result.get('/admin/dashboard/api/users/:name', asyncHandler(getDashboardUserDetails));
   result.get('/admin/dashboard/api/jobs/running', asyncHandler(getDashboardRunningJobs));
+  result.get('/admin/dashboard/api/jobs/by-work-item-status', asyncHandler(getDashboardJobsByWorkItemStatus));
 
   result.get('/workflow-ui', asyncHandler(getJobs));
   result.get('/workflow-ui/:jobID', asyncHandler(getJob));

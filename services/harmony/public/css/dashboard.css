@@ -34,6 +34,24 @@
   border: 0 !important;
 }
 
+/* Nor does it have these Bootstrap 5 utilities - without ms-auto the auto refresh controls weren't
+   pushed to the right of the filter row */
+.dashboard .ms-auto {
+  margin-left: auto !important;
+}
+
+.dashboard .gap-2 {
+  gap: 0.5rem !important;
+}
+
+.dashboard .gap-3 {
+  gap: 1rem !important;
+}
+
+.dashboard .fw-semibold {
+  font-weight: 600 !important;
+}
+
 .custom-range[hidden] {
   display: none !important;
 }
@@ -57,7 +75,8 @@
   width: auto;
 }
 
-#serviceFilter {
+#serviceFilter,
+#userFilter {
   width: 220px;
 }
 
@@ -70,7 +89,7 @@
 /* KPI row of stat tiles */
 .kpi-row {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 0.75rem;
 }
 
@@ -87,6 +106,16 @@
 .kpi-label {
   color: var(--viz-text-secondary);
   font-size: 0.85rem;
+}
+
+.kpi-label[title] {
+  cursor: help;
+}
+
+.kpi-info {
+  margin-left: 0.3rem;
+  font-size: 0.75rem;
+  color: var(--viz-text-muted);
 }
 
 .kpi-value {
@@ -342,6 +371,50 @@
   vertical-align: bottom;
 }
 
+.dashboard-table td {
+  vertical-align: middle;
+}
+
+/* The sort buttons are styled as plain header text, so the labels line up with their columns */
+.btn-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  white-space: nowrap;
+}
+
+/* In right aligned (numeric) columns the sort icon goes before the label, so the label's right edge
+   lines up with the numbers */
+th.numeric .btn-sort {
+  flex-direction: row-reverse;
+}
+
+.btn-sort:focus-visible {
+  outline: 2px solid var(--viz-series-1);
+  outline-offset: 2px;
+}
+
+.sort-icon {
+  font-size: 0.75em;
+  color: var(--viz-text-muted);
+}
+
+th[aria-sort="ascending"] .sort-icon,
+th[aria-sort="descending"] .sort-icon {
+  color: var(--viz-text-primary);
+}
+
+/* The first column's cells start with a disclosure button, so its header is indented to match */
+.dashboard-table th:first-child {
+  padding-left: calc(0.25rem + var(--disclosure-width));
+}
+
 .dashboard-table tr.expandable {
   cursor: pointer;
 }
@@ -359,10 +432,16 @@
   padding: 1rem;
 }
 
+.dashboard-table {
+  --disclosure-width: 1.25rem;
+}
+
 .btn-disclosure {
   background: none;
   border: none;
-  padding: 0 0.35rem 0 0;
+  padding: 0;
+  width: var(--disclosure-width);
+  text-align: left;
   color: var(--viz-text-secondary);
 }
 
@@ -379,4 +458,61 @@
   font-size: 0.9rem;
   font-weight: 600;
   margin: 0.25rem 0 0.4rem;
+}
+
+/* Work item status counts and legend entries that open the jobs dialog */
+.btn-status-jobs,
+.btn-legend {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.btn-status-jobs {
+  color: var(--viz-series-1);
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.btn-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.btn-legend:hover {
+  color: var(--viz-text-primary);
+  text-decoration: underline;
+}
+
+.btn-status-jobs:focus-visible,
+.btn-legend:focus-visible {
+  outline: 2px solid var(--viz-series-1);
+  outline-offset: 2px;
+}
+
+/* The jobs dialog. Its padding is on the inner element, so a click on the dialog element itself is
+   a click on the backdrop. */
+.status-jobs-dialog {
+  width: min(900px, 95vw);
+  max-height: 85vh;
+  padding: 0;
+  border: 1px solid var(--viz-border);
+  border-radius: 8px;
+  background: var(--viz-surface);
+  color: var(--viz-text-primary);
+  box-shadow: 0 8px 24px rgba(11, 11, 11, 0.2);
+}
+
+.status-jobs-dialog::backdrop {
+  background: rgba(11, 11, 11, 0.35);
+}
+
+.status-jobs-content {
+  padding: 1rem 1.25rem;
 }
