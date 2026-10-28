@@ -41,6 +41,19 @@ class CronServiceHarmonyEnv extends HarmonyEnv {
   userWorkExpirationMinutes: number;
   // End user work update variables
 
+  // Begin user work history reaper variables
+  @IsCrontab()
+  userWorkHistoryReaperCron: string;
+
+  @IsInt()
+  @Min(1)
+  userWorkHistoryRetentionDays: number;
+
+  @IsInt()
+  @Min(1)
+  userWorkHistoryReaperBatchSize: number;
+  // End user work history reaper variables
+
   // Begin publish service failure metrics variables
   @IsCrontab()
   publishServiceFailureMetricsCron: string;

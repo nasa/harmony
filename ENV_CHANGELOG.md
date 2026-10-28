@@ -2,6 +2,21 @@
 Any changes to the environment variables will be documented in this file in chronological
 order with the most recent changes first.
 
+## 2026-10-27
+### Added
+- USER_WORK_DURATION_SEED_LOOKBACK_DAYS - (shared, `packages/util/env-defaults`) how many days of a
+  user's `user_work_history` to average when seeding the `average_duration` of a new or resumed
+  job's `user_work` rows for a service, so duration based fair queueing can classify the job before
+  any of its own work items complete (default 7, 0 disables seeding). Only the user's 100 most
+  recent jobs for the service are averaged. Has no effect on slot based fair queueing.
+- USER_WORK_HISTORY_REAPER_CRON - cron service schedule for deleting old `user_work_history` rows
+  (default hourly).
+- USER_WORK_HISTORY_RETENTION_DAYS - `user_work_history` rows for finished jobs last written more
+  than this many days ago are deleted from Postgres (default 30). They remain in Iceberg. Should be
+  at least USER_WORK_DURATION_SEED_LOOKBACK_DAYS.
+- USER_WORK_HISTORY_REAPER_BATCH_SIZE - the maximum number of `user_work_history` rows the reaper
+  deletes per statement (default 5000).
+
 ## 2026-10-23
 ### Added
 - ENABLE_DURATION_BASED_FAIR_QUEUEING - work-scheduler feature toggle (default false). When false,

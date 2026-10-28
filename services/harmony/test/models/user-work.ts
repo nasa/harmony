@@ -2,12 +2,12 @@ import { expect } from 'chai';
 
 import { truncateAll } from '../../../../packages/util/test/helpers/db';
 import UserWork, {
-  decrementRunningCount, getCount, getNextJobIds, incrementReadyAndDecrementRunningCounts,
+  decrementRunningCount, getNextJobIds, incrementReadyAndDecrementRunningCounts,
   incrementRunningAndDecrementReadyCounts,
 } from '../../app/models/user-work';
 import db from '../../app/util/db';
 import logger from '../../app/util/log';
-import { createUserWorkRecord } from '../helpers/user-work';
+import { createUserWorkRecord, getCount } from '../helpers/user-work';
 
 describe('getNextJobIds', function () {
   const serviceID = 'sync-priority-service';
@@ -87,6 +87,107 @@ describe('getNextJobIds', function () {
     it('does not classify the job as slow or limit the slow work slots', async function () {
       const result = await db.transaction((tx) => getNextJobIds(tx, serviceID, 10, logger));
       expect(result).to.eql({ jobs: [{ jobId: 'slowJob', isSlow: false }], availableSlowWorkSlots: Infinity });
+    });
+  });
+
+  describe('when using duration based fair queueing with jobs that have failed work items', function () {
+    // 10 pods with 30% reserved for fast work leaves capacity for 7 slow work items
+    const options = { servicePodCount: 10, slowWorkThresholdMs: 600_000, fastLaneReserveFraction: 0.3 };
+
+    describe('and a job with no successes whose work items fail slowly', function () {
+      beforeEach(async function () {
+        await createUserWorkRecord({
+          job_id: 'failingSlowJob', service_id: serviceID, username: 'failingUser', ready_count: 1,
+          failed_count: 2, failed_sum_duration_ms: 1_400_000,
+        }).save(db);
+      });
+
+      it('classifies the job as slow by its average failure time', async function () {
+        const result = await db.transaction((tx) => getNextJobIds(tx, serviceID, 10, logger, options));
+        expect(result).to.eql({ jobs: [{ jobId: 'failingSlowJob', isSlow: true }], availableSlowWorkSlots: 7 });
+      });
+
+      describe('when the slow work capacity is already used up', function () {
+        beforeEach(async function () {
+          await createUserWorkRecord({
+            job_id: 'slowJob', service_id: serviceID, username: 'slowUser', running_count: 7,
+            average_duration: 700_000, completed_count: 1,
+          }).save(db);
+          await createUserWorkRecord({
+            job_id: 'fastJob', service_id: serviceID, username: 'fastUser', ready_count: 1,
+            average_duration: 1000, completed_count: 1,
+          }).save(db);
+        });
+
+        it('excludes the job rather than treating it as unmeasured', async function () {
+          const result = await db.transaction((tx) => getNextJobIds(tx, serviceID, 10, logger, options));
+          expect(result).to.eql({ jobs: [{ jobId: 'fastJob', isSlow: false }], availableSlowWorkSlots: 0 });
+        });
+      });
+    });
+
+    describe('and a job with no successes whose work items are running and fail slowly', function () {
+      beforeEach(async function () {
+        await createUserWorkRecord({
+          job_id: 'failingSlowJob', service_id: serviceID, username: 'failingUser', running_count: 7,
+          failed_count: 1, failed_sum_duration_ms: 700_000,
+        }).save(db);
+        await createUserWorkRecord({
+          job_id: 'slowJob', service_id: serviceID, username: 'slowUser', ready_count: 1,
+          average_duration: 700_000, completed_count: 1,
+        }).save(db);
+      });
+
+      it('counts its running work items against the slow work capacity', async function () {
+        const result = await db.transaction((tx) => getNextJobIds(tx, serviceID, 10, logger, options));
+        expect(result).to.eql({ jobs: [], availableSlowWorkSlots: 0 });
+      });
+    });
+
+    describe('and a job with no successes whose work items fail quickly', function () {
+      beforeEach(async function () {
+        await createUserWorkRecord({
+          job_id: 'failingFastJob', service_id: serviceID, username: 'failingUser', ready_count: 1,
+          running_count: 3, failed_count: 2, failed_sum_duration_ms: 2000,
+        }).save(db);
+        await createUserWorkRecord({
+          job_id: 'slowJob', service_id: serviceID, username: 'slowUser', running_count: 7,
+          average_duration: 700_000, completed_count: 1,
+        }).save(db);
+      });
+
+      it('classifies the job as fast, so it is still scheduled while slow work is blocked', async function () {
+        const result = await db.transaction((tx) => getNextJobIds(tx, serviceID, 10, logger, options));
+        expect(result.jobs).to.eql([{ jobId: 'failingFastJob', isSlow: false }]);
+      });
+    });
+
+    describe('and a job with fast successes and slow failures', function () {
+      beforeEach(async function () {
+        await createUserWorkRecord({
+          job_id: 'mixedJob', service_id: serviceID, username: 'mixedUser', ready_count: 1,
+          average_duration: 1000, completed_count: 1, failed_count: 5, failed_sum_duration_ms: 4_500_000,
+        }).save(db);
+      });
+
+      it('classifies the job by its successful work items only', async function () {
+        const result = await db.transaction((tx) => getNextJobIds(tx, serviceID, 10, logger, options));
+        expect(result.jobs).to.eql([{ jobId: 'mixedJob', isSlow: false }]);
+      });
+    });
+
+    describe('and a job with no successes, a slow seeded duration, and fast failures', function () {
+      beforeEach(async function () {
+        await createUserWorkRecord({
+          job_id: 'seededJob', service_id: serviceID, username: 'seededUser', ready_count: 1,
+          average_duration: 900_000, failed_count: 1, failed_sum_duration_ms: 1000,
+        }).save(db);
+      });
+
+      it('classifies the job by its own failures rather than the seed', async function () {
+        const result = await db.transaction((tx) => getNextJobIds(tx, serviceID, 10, logger, options));
+        expect(result.jobs).to.eql([{ jobId: 'seededJob', isSlow: false }]);
+      });
     });
   });
 });
@@ -261,7 +362,7 @@ describe('user_work table', async function () {
       const userWork = createUserWorkRecord({ job_id: 'avg1', service_id: 'bar', running_count: 2 });
       before(async function () {
         await userWork.save(db);
-        await decrementRunningCount(db, userWork.job_id, userWork.service_id, 1000);
+        await decrementRunningCount(db, userWork.job_id, userWork.service_id, { durationMs: 1000, failed: false });
       });
 
       it('sets the average_duration to the duration of the first completed work item', async function () {
@@ -286,7 +387,7 @@ describe('user_work table', async function () {
       });
       before(async function () {
         await userWork.save(db);
-        await decrementRunningCount(db, userWork.job_id, userWork.service_id, 3000);
+        await decrementRunningCount(db, userWork.job_id, userWork.service_id, { durationMs: 3000, failed: false });
       });
 
       it('updates average_duration to the cumulative mean of all completed durations', async function () {

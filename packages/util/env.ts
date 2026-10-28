@@ -225,6 +225,11 @@ export class HarmonyEnv {
 
   useLocalstack: boolean;
 
+  // Shared because user_work rows are created and repopulated by both harmony and the cron service
+  @IsInt()
+  @Min(0)
+  userWorkDurationSeedLookbackDays: number;
+
   @IsUrl(hostRegexWhitelist)
   workItemSchedulerQueueUrl: string;
 

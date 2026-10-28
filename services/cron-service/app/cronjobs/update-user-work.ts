@@ -28,13 +28,16 @@ export async function updateUserWork(ctx: Context): Promise<void> {
 
     // reset the counts for the jobs
     for (const jobID of jobIDs) {
-      const { job } = await Job.byJobID(tx, jobID);
+      // Lock the job first, as pause/resume and the work item updaters do. Otherwise a resume
+      // could recount this job's rows while they're being deleted here, leaving a running job
+      // with no user_work rows (and its totals not restored from user_work_history).
+      const { job } = await Job.byJobID(tx, jobID, false, false, true);
       if ([JobStatus.PAUSED, JobStatus.CANCELED, JobStatus.SUCCESSFUL, JobStatus.COMPLETE_WITH_ERRORS, JobStatus.FAILED].includes(job.status)) {
         logger.warn(`Removing user_work rows for job ${jobID} with status ${job.status}`);
         await deleteUserWorkForJob(tx, jobID);
       } else {
         logger.warn(`Recalculating user_work counts for job ${jobID} with status ${job.status}`);
-        await recalculateCounts(tx, jobID);
+        await recalculateCounts(tx, jobID, env.userWorkDurationSeedLookbackDays);
       }
     }
     const durationMs = new Date().getTime() - startTime;
