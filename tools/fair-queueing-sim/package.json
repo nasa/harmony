@@ -27,5 +27,9 @@
     "@types/node": "^22.13.10",
     "@types/sinon": "^17.0.3",
     "@types/sinonjs__fake-timers": "^8.1.5"
+  },
+  "overrides": {
+    "diff": "^5.2.2",
+    "tar": "^7.5.21"
   }
 }
