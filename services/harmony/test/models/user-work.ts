@@ -2,8 +2,8 @@ import { expect } from 'chai';
 
 import { truncateAll } from '../../../../packages/util/test/helpers/db';
 import UserWork, {
-  decrementRunningCount, getNextJobIds, incrementReadyAndDecrementRunningCounts,
-  incrementRunningAndDecrementReadyCounts,
+  decrementRunningCount, DEFAULT_EXPECTED_DURATION_MS, getLiveWork, getNextJobIds,
+  incrementReadyAndDecrementRunningCounts, incrementRunningAndDecrementReadyCounts,
 } from '../../app/models/user-work';
 import db from '../../app/util/db';
 import logger from '../../app/util/log';
@@ -416,5 +416,45 @@ describe('user_work table', async function () {
         expect(row.completed_count).to.equal(1);
       });
     });
+  });
+});
+
+describe('getLiveWork estimated compute time of ready work', function () {
+  const serviceID = 'estimate-service';
+
+  before(async function () {
+    await truncateAll();
+    const rows: Partial<UserWork>[] = [
+      // measured: 3 x 1 s
+      { job_id: 'measured', username: 'alice', ready_count: 3, average_duration: 1000, completed_count: 2 },
+      // no successes yet, only failures averaging 10 s: 2 x 10 s
+      { job_id: 'failing', username: 'alice', ready_count: 2, failed_count: 2, failed_sum_duration_ms: 20000 },
+      // seeded from the user's history (no completions of its own yet): 4 x 0.5 s
+      { job_id: 'seeded', username: 'bob', ready_count: 4, average_duration: 500, completed_count: 0 },
+      // nothing to estimate from: the default
+      { job_id: 'unmeasured', username: 'bob', ready_count: 1 },
+      // running only - no ready work to estimate
+      { job_id: 'running', username: 'carol', running_count: 5 },
+    ];
+    for (const row of rows) {
+      await createUserWorkRecord({ service_id: serviceID, ...row }).save(db);
+    }
+  });
+
+  after(async function () {
+    await truncateAll();
+  });
+
+  it('estimates each job\'s ready work items with its own duration for the service, or the default', async function () {
+    const [service] = await getLiveWork(db, ['service_id']);
+    expect(service.readyEstimateMs).to.equal(3000 + 20000 + 2000 + DEFAULT_EXPECTED_DURATION_MS);
+    expect(service.readyDefaultEstimateCount).to.equal(1);
+  });
+
+  it('estimates by user', async function () {
+    const byUser = Object.fromEntries((await getLiveWork(db, ['username'])).map((r) => [r.username, r]));
+    expect(byUser.alice).to.include({ readyEstimateMs: 23000, readyDefaultEstimateCount: 0 });
+    expect(byUser.bob).to.include({ readyEstimateMs: 2000 + DEFAULT_EXPECTED_DURATION_MS, readyDefaultEstimateCount: 1 });
+    expect(byUser.carol).to.include({ readyEstimateMs: 0, readyDefaultEstimateCount: 0 });
   });
 });

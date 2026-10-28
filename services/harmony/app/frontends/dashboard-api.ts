@@ -9,7 +9,7 @@ import {
   StatsRange, withMaxBuckets, WorkItemMetrics,
 } from '../models/dashboard-stats';
 import HarmonyRequest from '../models/harmony-request';
-import { getLiveWork, LiveWork, LiveWorkRow } from '../models/user-work';
+import { DEFAULT_EXPECTED_DURATION_MS, getLiveWork, LiveWork, LiveWorkRow } from '../models/user-work';
 import { DURATION_BUCKET_UPPER_BOUNDS_MS } from '../models/work-items-stats';
 import db, { Transaction } from '../util/db';
 import env from '../util/env';
@@ -28,6 +28,9 @@ export const CURRENT_DASHBOARD_API_VERSION = '1';
 const SUPPORTED_DASHBOARD_API_VERSIONS = ['1'];
 
 const DEFAULT_RANGE = '24h';
+// The current throughput, used to estimate how long backlogs take to clear, is measured over the
+// complete minutes of stats in this window
+const THROUGHPUT_WINDOW_MS = 15 * 60_000;
 const STATUSES = ['successful', 'failed', 'canceled', 'warning'] as const;
 type Status = typeof STATUSES[number];
 type StatusCounts = Record<Status, number>;
@@ -71,6 +74,16 @@ interface LiveWorkSummary {
   ready: number;
   running: number;
   oldestReadyWaitMs: number | null;
+  // The backlog is the work not started yet (the ready work items). Its estimated compute time, and
+  // how many of its work items had no duration to estimate from (see LiveWork in user-work.ts).
+  backlogComputeEstimateMs: number;
+  backlogDefaultEstimateCount: number;
+  // the compute throughput over the last THROUGHPUT_WINDOW_MS: the summed duration of the work items
+  // completed then, per ms - i.e. the average number of work items in progress at once
+  recentComputeRate: number;
+  // the estimated wall clock time to clear the backlog at the recent compute throughput: 0 with no
+  // backlog, and null with a backlog but no recent throughput to estimate from
+  backlogClearEstimateMs: number | null;
 }
 
 // A finished job summary for a range
@@ -396,25 +409,69 @@ function summarizeJobs(rows: JobTotals[]): JobSummary {
 }
 
 /**
- * Combines live work rows
+ * Gets the range the current throughput is measured over: the THROUGHPUT_WINDOW_MS of per-minute
+ * stats ending a minute before the start of the current minute - the most recent minute may not
+ * have been fully aggregated by the cron service yet.
+ *
+ * @param now - the current time
+ * @returns the range
+ */
+function throughputRange(now: Date): StatsRange {
+  const end = Math.floor(now.getTime() / 60_000) * 60_000 - 60_000;
+  return {
+    start: new Date(end - THROUGHPUT_WINDOW_MS), end: new Date(end), granularity: 'minute', bucketMs: THROUGHPUT_WINDOW_MS,
+  };
+}
+
+/**
+ * Sums the compute time (work item durations) of stats rows
+ *
+ * @param rows - the rows
+ * @returns the summed duration in ms
+ */
+function computeOf(rows: WorkItemMetrics[] | undefined): number {
+  return (rows ?? []).reduce((sum, r) => sum + r.sum_duration_ms, 0);
+}
+
+/**
+ * Combines live work rows, and estimates how long their backlog takes to clear
  *
  * @param rows - the rows
  * @param now - the current time
+ * @param recentComputeMs - the compute time of the work items completed in the throughput window
+ * for the same grouping (service, user, both, or everything) as the rows
  * @returns the combined live work
  */
-function summarizeLiveWork(rows: LiveWork[], now: Date): LiveWorkSummary {
+function summarizeLiveWork(rows: LiveWork[], now: Date, recentComputeMs: number): LiveWorkSummary {
   let ready = 0;
   let running = 0;
   let oldest: number | null = null;
+  let backlogComputeEstimateMs = 0;
+  let backlogDefaultEstimateCount = 0;
   for (const row of rows) {
     ready += row.ready;
     running += row.running;
+    backlogComputeEstimateMs += row.readyEstimateMs;
+    backlogDefaultEstimateCount += row.readyDefaultEstimateCount;
     if (row.oldestReadyLastWorked) {
       const t = row.oldestReadyLastWorked.getTime();
       oldest = oldest === null ? t : Math.min(oldest, t);
     }
   }
-  return { ready, running, oldestReadyWaitMs: oldest === null ? null : Math.max(0, now.getTime() - oldest) };
+  const recentComputeRate = recentComputeMs / THROUGHPUT_WINDOW_MS;
+  let backlogClearEstimateMs: number | null = 0;
+  if (backlogComputeEstimateMs > 0) {
+    backlogClearEstimateMs = recentComputeRate > 0 ? Math.round(backlogComputeEstimateMs / recentComputeRate) : null;
+  }
+  return {
+    ready,
+    running,
+    oldestReadyWaitMs: oldest === null ? null : Math.max(0, now.getTime() - oldest),
+    backlogComputeEstimateMs,
+    backlogDefaultEstimateCount,
+    recentComputeRate,
+    backlogClearEstimateMs,
+  };
 }
 
 /**
@@ -532,6 +589,7 @@ async function buildSummary(query: Record<string, unknown>): Promise<object> {
       jobs: await getJobTotals(trx, range, false),
       previousJobs: await getJobTotals(trx, previous, false),
       live: await getLiveWork(trx, ['service_id']),
+      recent: await getServiceTotals(trx, throughputRange(now)),
       lastUpdated: await getStatsLastUpdated(trx),
     })),
     getSystemQueueMetrics() as Promise<DashboardQueues>,
@@ -542,6 +600,7 @@ async function buildSummary(query: Record<string, unknown>): Promise<object> {
   const previousByService = groupByServiceName(data.previousTotals, imageToServiceMap);
   const sparksByService = groupByServiceName(data.sparks, imageToServiceMap);
   const liveByService = groupByServiceName(data.live, imageToServiceMap);
+  const recentByService = groupByServiceName(data.recent, imageToServiceMap);
   const sparkBuckets = bucketCount(sparkRange);
 
   const names = new Set<string>([
@@ -549,7 +608,7 @@ async function buildSummary(query: Record<string, unknown>): Promise<object> {
   ]);
   const services = [...names].map((name) => {
     const summary = summarizeWorkItems(totalsByService.get(name) ?? [], range, now);
-    const live = summarizeLiveWork(liveByService.get(name) ?? [], now);
+    const live = summarizeLiveWork(liveByService.get(name) ?? [], now, computeOf(recentByService.get(name)));
     const spark = Array.from({ length: sparkBuckets }, () => 0);
     const sparkFailed = Array.from({ length: sparkBuckets }, () => 0);
     for (const row of sparksByService.get(name) ?? []) {
@@ -581,7 +640,11 @@ async function buildSummary(query: Record<string, unknown>): Promise<object> {
     sparkBucketMs: sparkRange.bucketMs,
     totals: summarizeWorkItems(data.totals, range, now),
     previousTotals: summarizeWorkItems(data.previousTotals, previous, now),
-    live: summarizeLiveWork(data.live, now),
+    live: summarizeLiveWork(data.live, now, computeOf(data.recent)),
+    // the duration assumed for backlog work items with no duration to estimate from
+    defaultBacklogEstimateMs: DEFAULT_EXPECTED_DURATION_MS,
+    // the window the recent throughput (to estimate how long backlogs take to clear) is measured over
+    throughputWindowMs: THROUGHPUT_WINDOW_MS,
     series: buildStatusSeries(data.series, range),
     histogram: buildHistogram(data.totals),
     services,
@@ -615,11 +678,14 @@ async function buildServiceDetails(serviceName: string, query: Record<string, un
       ...liveRows.map((r) => r.service_id),
     ])];
     if (ids.length === 0) {
-      return { liveRows, totals: [], previousTotals: [], series: [], failures: [], users: [] };
+      return {
+        liveRows, totals: [], previousTotals: [], series: [], failures: [], users: [], recentUsers: [],
+      };
     }
     const filters = { serviceIDs: ids };
     return {
       liveRows,
+      recentUsers: await getUserTotals(trx, throughputRange(now), false, filters),
       totals: await getServiceTotals(trx, range, filters),
       previousTotals: await getServiceTotals(trx, previous, filters),
       series: await getStatusSeries(trx, range, filters),
@@ -643,11 +709,12 @@ async function buildServiceDetails(serviceName: string, query: Record<string, un
 
   const liveByUser = groupBy(data.liveRows as LiveWorkRow[], (r) => r.username);
   const usersByName = groupBy(data.users, (r) => r.username);
+  const recentByUser = groupBy(data.recentUsers, (r) => r.username);
   const usernames = new Set([...usersByName.keys(), ...liveByUser.keys()]);
   const users = [...usernames].map((username) => ({
     username,
     ...summarizeWorkItems(usersByName.get(username) ?? [], range, now),
-    live: summarizeLiveWork(liveByUser.get(username) ?? [], now),
+    live: summarizeLiveWork(liveByUser.get(username) ?? [], now, computeOf(recentByUser.get(username))),
   })).sort((a, b) => b.computeMs - a.computeMs || b.total - a.total || b.live.ready - a.live.ready)
     .slice(0, MAX_DETAIL_USERS);
 
@@ -658,7 +725,8 @@ async function buildServiceDetails(serviceName: string, query: Record<string, un
     previousRange: rangeJson(previous),
     totals: summarizeWorkItems(data.totals, range, now),
     previousTotals: summarizeWorkItems(data.previousTotals, previous, now),
-    live: summarizeLiveWork(data.liveRows, now),
+    // the user level stats of a service add up to its service level stats
+    live: summarizeLiveWork(data.liveRows, now, computeOf(data.recentUsers)),
     series: buildStatusSeries(data.series, range),
     histogram: buildHistogram(data.totals),
     images,
@@ -686,10 +754,81 @@ function parseName(value: unknown, name: string): string | undefined {
   return result;
 }
 
+// A row of the users table
+interface UserRow extends WorkItemSummary {
+  username: string;
+  jobs: JobSummary;
+  live: LiveWorkSummary;
+}
+
+// The columns the users table can be sorted by (the dashboard's column keys), each getting the
+// value to sort by. Missing values (e.g. no success rate) sort as -1, i.e. last when descending.
+const USER_SORTS: Record<string, (u: UserRow) => number | string> = {
+  username: (u) => u.username,
+  computeMs: (u) => u.computeMs,
+  total: (u) => u.total,
+  failed: (u) => u.counts.failed,
+  successRate: (u) => u.successRate ?? -1,
+  retries: (u) => u.retries,
+  jobs: (u) => u.jobs.total,
+  sync: (u) => u.jobs.sync.avgDurationMs ?? -1,
+  async: (u) => u.jobs.async.avgDurationMs ?? -1,
+  ready: (u) => u.live.ready,
+  backlogCompute: (u) => u.live.backlogComputeEstimateMs,
+  // a backlog that can't be estimated (no recent throughput) sorts as the longest
+  backlogClear: (u) => u.live.backlogClearEstimateMs ?? Number.MAX_SAFE_INTEGER,
+  running: (u) => u.live.running,
+};
+const DEFAULT_USER_SORT = 'computeMs';
+
 /**
- * Gets the users with the most work in a range, ranked by compute time (the summed duration of
- * their work items), with their finished job stats and live work. The filter query parameter
- * limits the users to those whose username contains it (ignoring case), before the limit applies.
+ * Parses the sort query parameters of the users table
+ *
+ * @param sort - the sort parameter: a key of USER_SORTS (default computeMs)
+ * @param dir - the dir parameter: asc or desc (default desc)
+ * @returns the sort
+ * @throws RequestValidationError if either parameter is invalid
+ */
+function parseUserSort(sort: unknown, dir: unknown): { key: string, dir: 'asc' | 'desc' } {
+  const key = sort === undefined ? DEFAULT_USER_SORT : String(sort);
+  if (!Object.prototype.hasOwnProperty.call(USER_SORTS, key)) {
+    throw new RequestValidationError(`sort must be one of ${Object.keys(USER_SORTS).join(', ')}.`);
+  }
+  const direction = dir === undefined ? 'desc' : String(dir).toLowerCase();
+  if (direction !== 'asc' && direction !== 'desc') {
+    throw new RequestValidationError('dir must be asc or desc.');
+  }
+  return { key, dir: direction };
+}
+
+/**
+ * Compares users table rows for a sort. Ties are broken by compute time, then work items, then
+ * live work (all descending), then username.
+ *
+ * @param sort - the sort
+ * @returns the comparator
+ */
+function compareUsers(sort: { key: string, dir: 'asc' | 'desc' }): (a: UserRow, b: UserRow) => number {
+  const valueOf = USER_SORTS[sort.key];
+  const sign = sort.dir === 'asc' ? 1 : -1;
+  return (a, b): number => {
+    const x = valueOf(a);
+    const y = valueOf(b);
+    const primary = typeof x === 'string' ? x.localeCompare(y as string) : x - (y as number);
+    return sign * primary || b.computeMs - a.computeMs || b.total - a.total
+      || (b.live.ready + b.live.running) - (a.live.ready + a.live.running) || a.username.localeCompare(b.username);
+  };
+}
+
+/**
+ * Gets the users with work in a range, sorted (by default by compute time - the summed duration of
+ * their work items - descending), with their finished job stats and live work. Every user is
+ * ranked and only the first limit are returned, so the sort picks which users are returned.
+ *
+ * Optional query parameters narrow the users: filter to those whose username contains it
+ * (ignoring case), and service to those with work items or live work for that service. With a
+ * service, the work item stats and live work are only those for the service, but the job stats
+ * are still all of the user's jobs - finished job stats aren't kept by service.
  *
  * @param query - the query parameters, with lower cased keys
  * @returns the users
@@ -699,28 +838,53 @@ async function buildUsers(query: Record<string, unknown>): Promise<object> {
   const range = parseRange(query, now);
   const limit = parseLimit(query.limit, DEFAULT_USER_LIMIT, MAX_USER_LIMIT);
   const filter = parseName(query.filter, 'filter')?.toLowerCase();
+  const service = parseName(query.service, 'service');
+  const sort = parseUserSort(query.sort, query.dir);
 
-  const data = await readOnly(async (trx) => ({
-    totals: await getUserTotals(trx, range, false),
-    jobs: await getJobTotals(trx, range, true),
-    live: await getLiveWork(trx, ['username']),
-  }));
+  const data = await readOnly(async (trx) => {
+    let serviceIDs: string[] | undefined;
+    if (service !== undefined) {
+      const imageToServiceMap = getImageToServiceMap();
+      const isService = (id: string): boolean => getServiceName(imageToServiceMap, id) === service;
+      serviceIDs = [...new Set([
+        ...(await getServiceIdsInRange(trx, range)).filter(isService),
+        ...(await getLiveWork(trx, ['service_id'])).map((r) => r.service_id).filter(isService),
+      ])];
+      if (serviceIDs.length === 0) {
+        return { totals: [], jobs: [], live: [], recent: [] };
+      }
+    }
+    return {
+      totals: await getUserTotals(trx, range, false, { serviceIDs }),
+      recent: await getUserTotals(trx, throughputRange(now), false, { serviceIDs }),
+      jobs: await getJobTotals(trx, range, true),
+      live: await getLiveWork(trx, ['username'], { serviceIDs }),
+    };
+  });
 
   const totalsByUser = groupBy(data.totals, (r) => r.username);
   const jobsByUser = groupBy(data.jobs, (r) => r.username);
   const liveByUser = groupBy(data.live, (r) => r.username);
-  const usernames = new Set([...totalsByUser.keys(), ...jobsByUser.keys(), ...liveByUser.keys()]);
-  const users = [...usernames].filter((username) => !filter || username.toLowerCase().includes(filter)).map((username) => ({
-    username,
-    ...summarizeWorkItems(totalsByUser.get(username) ?? [], range, now),
-    jobs: summarizeJobs(jobsByUser.get(username) ?? []),
-    live: summarizeLiveWork(liveByUser.get(username) ?? [], now),
-  })).sort((a, b) => b.computeMs - a.computeMs || b.total - a.total
-    || (b.live.ready + b.live.running) - (a.live.ready + a.live.running) || a.username.localeCompare(b.username));
+  const recentByUser = groupBy(data.recent, (r) => r.username);
+  // with a service, only users who used it - not every user with a finished job
+  const usernames = new Set([
+    ...totalsByUser.keys(), ...liveByUser.keys(), ...(service === undefined ? jobsByUser.keys() : []),
+  ]);
+  const users: UserRow[] = [...usernames]
+    .filter((username) => !filter || username.toLowerCase().includes(filter))
+    .map((username) => ({
+      username,
+      ...summarizeWorkItems(totalsByUser.get(username) ?? [], range, now),
+      jobs: summarizeJobs(jobsByUser.get(username) ?? []),
+      live: summarizeLiveWork(liveByUser.get(username) ?? [], now, computeOf(recentByUser.get(username))),
+    }))
+    .sort(compareUsers(sort));
 
   return {
     generatedAt: now.toISOString(),
     range: rangeJson(range),
+    service: service ?? null,
+    sort,
     totalUsers: users.length,
     users: users.slice(0, limit),
   };
@@ -744,16 +908,18 @@ async function buildUserDetails(username: string, query: Record<string, unknown>
     series: await getUserSeries(trx, range, username),
     jobs: await getJobTotals(trx, range, true, filters),
     live: await getLiveWork(trx, ['service_id'], filters),
+    recent: await getUserTotals(trx, throughputRange(now), true, filters),
   }));
 
   const imageToServiceMap = getImageToServiceMap();
   const totalsByService = groupByServiceName(data.totals, imageToServiceMap);
   const liveByService = groupByServiceName(data.live, imageToServiceMap);
+  const recentByService = groupByServiceName(data.recent, imageToServiceMap);
   const names = new Set([...totalsByService.keys(), ...liveByService.keys()]);
   const services = [...names].map((name) => ({
     name,
     ...summarizeWorkItems(totalsByService.get(name) ?? [], range, now),
-    live: summarizeLiveWork(liveByService.get(name) ?? [], now),
+    live: summarizeLiveWork(liveByService.get(name) ?? [], now, computeOf(recentByService.get(name))),
   })).sort((a, b) => b.computeMs - a.computeMs || b.total - a.total);
 
   return {
@@ -764,7 +930,7 @@ async function buildUserDetails(username: string, query: Record<string, unknown>
     series: buildStatusSeries(data.series, range),
     services,
     jobs: summarizeJobs(data.jobs),
-    live: summarizeLiveWork(data.live, now),
+    live: summarizeLiveWork(data.live, now, computeOf(data.recent)),
     jobsLink: workflowUiLinkForUser(username),
   };
 }

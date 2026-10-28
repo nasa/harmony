@@ -156,6 +156,27 @@ describe('dashboard API', function () {
       expect(subsetter.spark.reduce((a: number, b: number) => a + b, 0)).to.equal(3);
     });
 
+    it('estimates the compute time of the backlog, with the default for unmeasured work', function () {
+      // none of the live work has a measured duration: 5 + 1 ready work items at the default
+      expect(body.live).to.include({
+        backlogComputeEstimateMs: 6 * body.defaultBacklogEstimateMs, backlogDefaultEstimateCount: 6,
+      });
+      const subsetter = body.services.find((s: any) => s.name === 'subsetter');
+      expect(subsetter.live.backlogComputeEstimateMs).to.equal(5 * body.defaultBacklogEstimateMs);
+    });
+
+    it('estimates the time to clear each backlog from its own recent throughput', function () {
+      // completed in the throughput window (15 minutes, ending a minute before the current one):
+      // subsetter 4000 + 600 ms (20 and 10 minutes ago - only the latter) and reformatter 1000 ms
+      const window = body.throughputWindowMs;
+      const subsetter = body.services.find((s: any) => s.name === 'subsetter');
+      expect(subsetter.live.recentComputeRate).to.equal(600 / window);
+      expect(subsetter.live.backlogClearEstimateMs).to.equal(Math.round((5 * body.defaultBacklogEstimateMs) / (600 / window)));
+      const reformatter = body.services.find((s: any) => s.name === 'reformatter');
+      expect(reformatter.live.backlogClearEstimateMs).to.equal(Math.round(body.defaultBacklogEstimateMs / (1000 / window)));
+      expect(body.live.recentComputeRate).to.equal(1600 / window);
+    });
+
     it('lists the services with the most queued work first', function () {
       expect(body.services.map((s: any) => s.name)).to.eql(['subsetter', 'reformatter']);
     });
@@ -234,6 +255,72 @@ describe('dashboard API', function () {
       const { body } = await call(getDashboardUsers, { filter: 'O', limit: '1' });
       expect(body.users.map((u: any) => u.username)).to.eql(['bob']);
       expect(body.totalUsers).to.equal(2);
+    });
+
+    it('only includes the users of a service, with only their work for it', async function () {
+      const { body } = await call(getDashboardUsers, { service: 'subsetter' });
+      expect(body.users.map((u: any) => [u.username, u.computeMs, u.live.ready])).to.eql([
+        ['alice', 6000, 5], ['bob', 600, 0],
+      ]);
+      expect(body.service).to.equal('subsetter');
+    });
+
+    it('includes users with only live work for a service, but not users with only finished jobs', async function () {
+      const { body } = await call(getDashboardUsers, { service: 'reformatter' });
+      expect(body.users.map((u: any) => [u.username, u.computeMs, u.live.ready])).to.eql([
+        ['bob', 1000, 0], ['carol', 0, 1],
+      ]);
+    });
+
+    it('returns no users for a service with no work', async function () {
+      const { body } = await call(getDashboardUsers, { service: 'nothing' });
+      expect(body.users).to.eql([]);
+      expect(body.totalUsers).to.equal(0);
+    });
+
+    it('sorts every user before limiting them, so the sort picks the users returned', async function () {
+      const { body } = await call(getDashboardUsers, { sort: 'failed', limit: '1' });
+      expect(body.users.map((u: any) => u.username)).to.eql(['bob']);
+      expect(body.sort).to.eql({ key: 'failed', dir: 'desc' });
+      const { body: ascending } = await call(getDashboardUsers, { sort: 'username', dir: 'asc' });
+      expect(ascending.users.map((u: any) => u.username)).to.eql(['alice', 'bob', 'carol']);
+    });
+
+    it('sorts by the estimated compute time of the backlog', async function () {
+      const { body } = await call(getDashboardUsers, { sort: 'backlogCompute' });
+      expect(body.users.map((u: any) => u.username)).to.eql(['alice', 'carol', 'bob']);
+    });
+
+    it('can\'t estimate the time to clear a backlog without recent throughput', async function () {
+      const { body } = await call(getDashboardUsers);
+      const byName = Object.fromEntries(body.users.map((u: any) => [u.username, u.live]));
+      // alice completed nothing in the throughput window, so her backlog can't be estimated
+      expect(byName.alice).to.include({ recentComputeRate: 0, backlogClearEstimateMs: null });
+      // bob has no backlog
+      expect(byName.bob.backlogClearEstimateMs).to.equal(0);
+      // and an unestimatable backlog sorts as the longest
+      const { body: sorted } = await call(getDashboardUsers, { sort: 'backlogClear' });
+      expect(sorted.users[0].username).to.be.oneOf(['alice', 'carol']);
+    });
+
+    it('estimates a user\'s time to clear their backlog for a service from their throughput for it', async function () {
+      const { body } = await call(getDashboardServiceDetails, {}, { name: 'reformatter' });
+      const carol = body.users.find((u: any) => u.username === 'carol');
+      // carol completed nothing, even though bob completed reformatter work
+      expect(carol.live.backlogClearEstimateMs).to.be.null;
+      expect(body.live.recentComputeRate).to.equal(1000 / (15 * MINUTE));
+    });
+
+    it('defaults to sorting by compute time, descending', async function () {
+      const { body } = await call(getDashboardUsers);
+      expect(body.sort).to.eql({ key: 'computeMs', dir: 'desc' });
+    });
+
+    it('rejects an invalid sort', async function () {
+      for (const query of [{ sort: 'constructor' }, { sort: 'total', dir: 'sideways' }]) {
+        const { error } = await call(getDashboardUsers, query);
+        expect(error).to.be.instanceOf(RequestValidationError);
+      }
     });
 
     it('returns no users when none match the filter', async function () {

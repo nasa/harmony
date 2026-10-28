@@ -29,7 +29,9 @@ The same job then deletes expired rows - per-minute rows after `WORK_ITEMS_STATS
 `WORK_ITEMS_STATS_PRUNE_HOURS_PER_RUN` hours of rows per table per run, one hour per statement,
 outside of the aggregation transaction.
 
-Live state ("queued now", ready and running work, and the longest wait for ready work) comes from
+Live state ("queued now", ready and running work, and the longest wait for new work to be performed
+for a job - how long the job that has waited longest has gone without any of its ready work items
+being started, not how long any work item has been ready) comes from
 the small `user_work` table, and the system queue sizes from SQS. Only two queries read the hot
 tables, and both only run when an admin asks for them: the list of the longest running jobs (which
 reads only unfinished jobs), and the list of the jobs with work items that reached a status, shown
@@ -42,6 +44,26 @@ share of those work items' attempts that were retries - the same measures as `/a
 which the dashboard links to for a breakdown by retry count. "Compute time" is the summed duration
 of the completed work items (excluding canceled ones).
 
+"Est. backlog compute" and "Est. time to clear" are shown for the whole system (in "Right now"),
+each service and each service's users, and each user and each user's services. The backlog is the
+work not started yet - the ready work items.
+
+* The backlog's compute time is computed from `user_work` with the same per job and service duration
+  duration based fair queueing uses (`EFFECTIVE_DURATION_SQL` in
+  `services/harmony/app/models/user-work.ts`): the job's measured average duration for the service,
+  or the average of its failures if nothing has succeeded yet, or the duration seeded from the user's
+  recent jobs for the service (`USER_WORK_DURATION_SEED_LOOKBACK_DAYS`), or else
+  `DEFAULT_EXPECTED_DURATION_MS` (1 hour) - the dashboard marks estimates that include such work
+  items with an asterisk.
+* The time to clear is the backlog's compute time divided by the recent compute throughput of the
+  same service, user, or user and service: the summed duration of the work items completed in the
+  last 15 minutes of complete per-minute stats, per unit of time (i.e. the average number of work
+  items in progress at once). With a backlog but nothing completed recently it can't be estimated,
+  and is shown as "no throughput". It assumes the throughput stays the same - e.g. a user's share
+  of a service changes as other users' work comes and goes.
+* Only work items that exist count, so the work of a job's later steps (created as earlier steps
+  finish) isn't included.
+
 ## The API
 
 The page is a client side app (`services/harmony/public/js/dashboard/`) that loads everything from
@@ -51,7 +73,7 @@ a JSON API (`services/harmony/app/frontends/dashboard-api.ts`):
 |---|---|
 | `GET /admin/dashboard/api/summary` | system totals with the previous period for comparison, a time series, the duration histogram, every service's stats and live work, finished job stats, queue sizes, and how long ago the stats were updated |
 | `GET /admin/dashboard/api/services/{name}` | a service's totals, time series, histogram, stats by image (version), failure message categories, and users |
-| `GET /admin/dashboard/api/users?limit=&filter=` | the users with the most compute time (summed work item durations), with their job stats and live work - optionally only users whose username contains `filter` (ignoring case) |
+| `GET /admin/dashboard/api/users?limit=&filter=&service=&sort=&dir=` | the users with work in the range, with their job stats and live work, ranked by `sort` (a users table column - `username`, `computeMs`, `total`, `failed`, `successRate`, `retries`, `jobs`, `sync`, `async`, `ready`, `backlogCompute`, `backlogClear`, or `running` - default `computeMs` - compute time, the summed work item durations) in `dir` order (default `desc`), then limited to `limit` (default 25, at most 500). `filter` keeps only users whose username contains it (ignoring case), and `service` only users with work for that service, with their work item stats and live work for only that service (their job stats are still for all their jobs) |
 | `GET /admin/dashboard/api/users/{username}` | a user's stats by service, time series, job stats, and live work |
 | `GET /admin/dashboard/api/jobs/by-work-item-status?status=&service=&user=&limit=` | the jobs with the most work items that reached `status` (`successful`, `failed`, `canceled`, or `warning`) in the range, optionally only for a service and/or user, each with a link to its work items with that status in the workflow UI |
 | `GET /admin/dashboard/api/jobs/running?limit=` | the oldest unfinished jobs, and how many haven't been updated in an hour |
