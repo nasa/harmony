@@ -197,3 +197,11 @@ CMR_CACHE_SIZE=256000000
 
 # CMR Cache TTL in milliseconds
 CMR_CACHE_TTL=600000
+
+# How many days of a user's user_work_history to average when seeding the average_duration of a
+# new job's (or a resumed job's) user_work rows for a service, so that duration based fair queueing
+# (ENABLE_DURATION_BASED_FAIR_QUEUEING in the work-scheduler) can classify the job as slow or fast
+# before any of its own work items complete. Only the user's 100 most recent jobs for the service
+# are averaged. Has no effect on slot based fair queueing, which doesn't use average_duration.
+# Should not exceed USER_WORK_HISTORY_RETENTION_DAYS in the cron service. 0 disables seeding.
+USER_WORK_DURATION_SEED_LOOKBACK_DAYS=7

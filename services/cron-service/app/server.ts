@@ -10,6 +10,7 @@ import {
 } from './cronjobs/update-analytics';
 import { UserWorkUpdater } from './cronjobs/update-user-work';
 import { WorkItemsStatsCron } from './cronjobs/update-work-items-stats';
+import { UserWorkHistoryReaper } from './cronjobs/user-work-history-reaper';
 import { WorkReaper } from './cronjobs/work-reaper';
 import router from './routers/router';
 import { Context } from './util/context';
@@ -33,6 +34,7 @@ export default async function start(): Promise<void> {
     [env.memoryUsageCollectorCron, MemoryUsageCollector],
     [env.workItemsStatsCron, WorkItemsStatsCron],
     [env.analyticsCron, AnalyticsCron],
+    [env.userWorkHistoryReaperCron, UserWorkHistoryReaper],
   ];
 
   for (const [cronSpec, jobClass] of cronEntries) {

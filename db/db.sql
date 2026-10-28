@@ -161,9 +161,28 @@ CREATE TABLE `user_work` (
   `last_worked` datetime not null,
   `average_duration` integer,
   `completed_count` integer not null default 0,
+  `failed_count` integer not null default 0,
+  `failed_sum_duration_ms` bigint not null default 0,
   `createdAt` datetime not null,
   `updatedAt` datetime not null,
   FOREIGN KEY(job_id) REFERENCES jobs(jobID),
+  UNIQUE(job_id, service_id)
+);
+
+CREATE TABLE `user_work_history` (
+  `id` integer not null primary key autoincrement,
+  `job_id` char(36) not null,
+  `service_id` varchar(255) not null,
+  `username` varchar(255) not null,
+  `is_async` boolean,
+  `completed_count` integer not null default 0,
+  `sum_duration_ms` bigint not null default 0,
+  `failed_count` integer not null default 0,
+  `failed_sum_duration_ms` bigint not null default 0,
+  `first_worked_at` datetime,
+  `retired_at` datetime not null,
+  `createdAt` datetime not null,
+  `updatedAt` datetime not null,
   UNIQUE(job_id, service_id)
 );
 
@@ -227,3 +246,5 @@ CREATE INDEX batch_items_jobID_service_ID_batchID ON batch_items(jobID, serviceI
 CREATE INDEX service_deployments_deployment_id_idx ON service_deployments(deployment_id);
 CREATE INDEX work_items_updated_at_status_service_idx ON work_items(updatedAt, status, serviceID);
 CREATE INDEX work_items_stats_service_status_minute_idx ON work_items_stats(service_id, status, minute);
+CREATE INDEX user_work_history_username_service_id_retired_at_idx ON user_work_history(username, service_id, retired_at);
+CREATE INDEX user_work_history_retired_at_idx ON user_work_history(retired_at);

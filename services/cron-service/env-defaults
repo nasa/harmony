@@ -20,6 +20,17 @@ USER_WORK_UPDATER_CRON="*/3 * * * *" # every 3 minutes
 # ready and running counts for a job to be recalculated
 USER_WORK_EXPIRATION_MINUTES=3
 
+# The cron schedule for deleting old rows from the user_work_history table
+USER_WORK_HISTORY_REAPER_CRON="23 * * * *" # every hour
+
+# user_work_history rows for finished jobs that were last written more than this many days ago are
+# deleted (they remain in Iceberg). Rows for jobs that aren't finished are never deleted. Should be
+# at least USER_WORK_DURATION_SEED_LOOKBACK_DAYS, which seeds new jobs' durations from this table.
+USER_WORK_HISTORY_RETENTION_DAYS=30
+
+# The maximum number of user_work_history rows deleted per statement by the reaper
+USER_WORK_HISTORY_REAPER_BATCH_SIZE=5000
+
 # The cron schedule for publishing service failure metrics to CloudWatch
 PUBLISH_SERVICE_FAILURE_METRICS_CRON="0,30 * * * *" # every half hour
 
