@@ -83,7 +83,8 @@
         </div>
       </div>
       <p class="small text-muted mb-2">Select a service to see its trends, duration distribution, versions, failure
-        categories, and users. Select a failed count to see the jobs with those failed work items.</p>
+        categories, and users. Select a failed count to see the jobs with those failed work items. The estimated
+        backlog compute and time to clear are for the work not started yet.</p>
       <div id="servicesTable"></div>
     </section>
 
@@ -101,11 +102,17 @@
         <div class="d-flex flex-wrap align-items-center gap-3 mb-2">
           <label class="visually-hidden" for="userFilter">Filter users</label>
           <input type="search" id="userFilter" class="form-control form-control-sm" placeholder="Filter users">
+          <label class="visually-hidden" for="userService">Only users of a service</label>
+          <select id="userService" class="form-select form-select-sm w-auto">
+            <option value="">All services</option>
+          </select>
           <span id="usersCount" class="small text-muted"></span>
         </div>
       </div>
-      <p class="small text-muted mb-2">Compute time is the summed duration of a user's work items. Select a user to see
-        their usage by service and over time, or a failed count to see the jobs with those failed work items.</p>
+      <p class="small text-muted mb-2">Compute time is the summed duration of a user's work items. Every user in the
+        range is ranked by the sorted column, and the top ones are shown. Choose a service to rank only its users by
+        their work for it. Select a user to see their usage by service and over time, or a failed count to see the
+        jobs with those failed work items.</p>
       <div id="usersTable"></div>
     </section>
 

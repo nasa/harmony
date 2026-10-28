@@ -12,7 +12,9 @@ import db, { Transaction } from '../util/db';
 
 // Expected runtime (in ms) assumed for in-progress work with no measured duration yet, used only
 // for ranking users by total expected runtime in duration based fair queueing
-const DEFAULT_EXPECTED_DURATION_MS = 60 * 60 * 1000;
+// Also the estimate of each ready work item's duration for the admin dashboard's estimated compute
+// time of ready work.
+export const DEFAULT_EXPECTED_DURATION_MS = 60 * 60 * 1000;
 
 // The duration (in ms) duration based fair queueing uses to classify (slow or fast) and rank a
 // user_work row's work. Normally this is average_duration, the mean duration of the job and
@@ -785,10 +787,18 @@ export async function getCountsByService(
 export interface LiveWork {
   ready: number;
   running: number;
-  // the earliest last_worked of the rows that have ready work, i.e. how long the longest waiting
-  // ready work has gone without being scheduled (approximately - a row's last_worked starts out as
-  // its job's updatedAt, not when the work became ready), or null if nothing is ready
+  // the earliest last_worked of the rows that have ready work, i.e. when the job (and service) that
+  // has waited longest last had one of its work items started - not how long any work item has been
+  // ready. A row's last_worked is reset whenever one of its work items is started, and starts out as
+  // the job's creation (or, if the row was repopulated, its updatedAt). Null if nothing is ready.
   oldestReadyLastWorked: Date | null;
+  // the estimated compute time (in ms) of the ready work items: each user_work row's ready_count
+  // times the duration duration based fair queueing uses for the row (see EFFECTIVE_DURATION_SQL -
+  // its measured average, its failures' average, or one seeded from the user's history for the
+  // service), or DEFAULT_EXPECTED_DURATION_MS for rows with none
+  readyEstimateMs: number;
+  // how many of the ready work items were estimated with DEFAULT_EXPECTED_DURATION_MS
+  readyDefaultEstimateCount: number;
 }
 
 // A LiveWork for a service, user, or both
@@ -817,6 +827,10 @@ export async function getLiveWork(
       tx.raw('SUM(ready_count) AS ready'),
       tx.raw('SUM(running_count) AS running'),
       tx.raw('MIN(CASE WHEN ready_count > 0 THEN last_worked END) AS oldest_ready_last_worked'),
+      // cast before multiplying, as postgres would overflow 32 bit integers (see EXPECTED_RUNTIME_SQL)
+      tx.raw(`SUM(CAST(ready_count AS BIGINT) * COALESCE(${EFFECTIVE_DURATION_SQL}, ?)) AS ready_estimate_ms`,
+        [DEFAULT_EXPECTED_DURATION_MS]),
+      tx.raw(`SUM(CASE WHEN ${EFFECTIVE_DURATION_SQL} IS NULL THEN ready_count ELSE 0 END) AS ready_default_estimate_count`),
     )
     .groupBy(groupBy);
   if (filters.serviceIDs) {
@@ -833,6 +847,8 @@ export async function getLiveWork(
       running: Number(r.running ?? 0),
       // sqlite (test-only) returns ms since the epoch
       oldestReadyLastWorked: oldest === null || oldest === undefined ? null : new Date(oldest),
+      readyEstimateMs: Number(r.ready_estimate_ms ?? 0),
+      readyDefaultEstimateCount: Number(r.ready_default_estimate_count ?? 0),
     };
     for (const column of groupBy) {
       row[column] = r[column];

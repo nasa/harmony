@@ -59,6 +59,7 @@ const state = {
   serviceFilter: '',
   userFilter: '',
   userFilterTimer: null,
+  userService: '',
   usersController: null,
   statusJobsController: null,
   hideIdle: true,
@@ -84,13 +85,17 @@ function rangeParams() {
 }
 
 /**
- * Gets the query parameters for the users table: the selected time range and the user filter
+ * Gets the query parameters for the users table: the selected time range, filters, and sort. The
+ * API sorts every user and returns the first ones, so the sort decides which users are shown.
  * @returns {URLSearchParams} the parameters
  */
 function usersParams() {
   const params = rangeParams();
   const filter = state.userFilter.trim();
   if (filter) params.set('filter', filter);
+  if (state.userService) params.set('service', state.userService);
+  params.set('sort', state.userSort.key);
+  params.set('dir', state.userSort.dir);
   return params;
 }
 
@@ -307,6 +312,72 @@ function statTile(tile) {
     tile.delta ? h('div', { className: 'kpi-delta-row', title: `Compared with the ${tile.comparison}` }, tile.delta,
       h('span', { className: 'visually-hidden', textContent: ` compared with the ${tile.comparison}` })) : null,
     tile.trend ? h('div', { className: 'kpi-trend' }, tile.trend) : null);
+}
+
+/**
+ * Describes how backlog work items with no duration history are estimated, e.g. "1 h each"
+ * @returns {string} the description
+ */
+function defaultEstimateText() {
+  const ms = state.summary?.defaultBacklogEstimateMs;
+  return ms ? `${formatDuration(ms)} each` : 'a default duration each';
+}
+
+/**
+ * Describes the window the recent throughput is measured over, e.g. "last 15 minutes"
+ * @returns {string} the description
+ */
+function throughputWindowText() {
+  const ms = state.summary?.throughputWindowMs;
+  return ms ? `last ${describeSpan(ms)}` : 'last few minutes';
+}
+
+/**
+ * Builds the estimated compute time of a backlog - the work not started yet (ready work items).
+ * Each job's work items are estimated with the duration fair queueing uses for the job and service:
+ * its measured average (or its failures' average), else one seeded from the user's recent jobs for
+ * the service, else a default. An asterisk marks estimates that include work items estimated with
+ * the default.
+ * @param {object} live - live work from the API
+ * @returns {HTMLElement} the estimate
+ */
+function backlogCompute(live) {
+  const defaults = live.backlogDefaultEstimateCount;
+  const title = defaults > 0
+    ? `${formatCount(defaults)} of the ${formatCount(live.ready)} work items not started yet have no duration `
+      + `history, so are estimated at ${defaultEstimateText()}`
+    : `The estimated compute time of the ${formatCount(live.ready)} work items not started yet`;
+  return h('span', { title },
+    formatComputeTime(live.backlogComputeEstimateMs),
+    defaults > 0 ? h('span', { className: 'estimate-default', 'aria-hidden': 'true', textContent: '*' }) : null,
+    defaults > 0 ? h('span', { className: 'visually-hidden', textContent: ` (${title})` }) : null);
+}
+
+/**
+ * Builds the estimated wall clock time to clear a backlog at the recent compute throughput
+ * @param {object} live - live work from the API
+ * @returns {HTMLElement} the estimate
+ */
+function backlogClear(live) {
+  if (live.backlogClearEstimateMs === null) {
+    const title = `Nothing completed in the ${throughputWindowText()}, so there is no throughput to estimate from`;
+    return h('span', { className: 'text-muted', title },
+      'no throughput', h('span', { className: 'visually-hidden', textContent: ` (${title})` }));
+  }
+  if (live.backlogComputeEstimateMs === 0) return h('span', { textContent: '0' });
+  const title = `At the throughput of the ${throughputWindowText()}: on average `
+    + `${formatRate(live.recentComputeRate)} work items in progress at once`;
+  return h('span', { title }, formatDuration(live.backlogClearEstimateMs));
+}
+
+/**
+ * Formats the estimated time to clear a backlog as text
+ * @param {object} live - live work from the API
+ * @returns {string} the estimate
+ */
+function backlogClearText(live) {
+  if (live.backlogClearEstimateMs === null) return 'no recent throughput';
+  return live.backlogComputeEstimateMs === 0 ? '0' : formatDuration(live.backlogClearEstimateMs);
 }
 
 /**
@@ -740,7 +811,7 @@ function renderKpis() {
       label: 'Queued now',
       value: formatCompact(live.ready + live.running),
       detail: `${formatCount(live.ready)} ready · ${formatCount(live.running)} running`
-        + (live.oldestReadyWaitMs === null ? '' : ` · longest wait ${formatDuration(live.oldestReadyWaitMs)}`),
+        + (live.oldestReadyWaitMs === null ? '' : ` · longest wait for new work for a job ${formatDuration(live.oldestReadyWaitMs)}`),
     }),
     statTile({
       label: 'Retries before success',
@@ -799,12 +870,13 @@ function renderCharts() {
         h('p', { className: 'viz-subtitle', textContent: 'Live work and system queue sizes' }))),
     h('dl', { className: 'now-list' },
       h('dt', { textContent: 'Ready work items' }), h('dd', { textContent: formatCount(live.ready) }),
+      h('dt', { textContent: 'Est. backlog compute' }), h('dd', {}, backlogCompute(live)),
+      h('dt', { textContent: 'Est. time to clear the backlog' }), h('dd', {}, backlogClear(live)),
       h('dt', { textContent: 'Running work items' }), h('dd', { textContent: formatCount(live.running) }),
-      h('dt', { textContent: 'Longest wait for ready work' }), h('dd', { textContent: formatDuration(live.oldestReadyWaitMs) }),
+      h('dt', { textContent: 'Longest wait for new work to be performed for a job' }), h('dd', { textContent: formatDuration(live.oldestReadyWaitMs) }),
       h('dt', { textContent: 'Small work item update queue' }), h('dd', { textContent: queueValue(queues.smallWorkItemUpdates) }),
       h('dt', { textContent: 'Large work item update queue' }), h('dd', { textContent: queueValue(queues.largeWorkItemUpdates) }),
-      h('dt', { textContent: 'Work item scheduler queue' }), h('dd', { textContent: queueValue(queues.workItemScheduler) })),
-    h('p', { className: 'viz-subtitle mb-0', textContent: 'The longest wait is how long the oldest ready work has gone without being scheduled (approximate).' }));
+      h('dt', { textContent: 'Work item scheduler queue' }), h('dd', { textContent: queueValue(queues.workItemScheduler) })));
 }
 
 const SERVICE_COLUMNS = [
@@ -816,8 +888,10 @@ const SERVICE_COLUMNS = [
     sortValue: (r) => r.live.ready + r.live.running,
     render: (r) => h('span', { title: `${formatCount(r.live.ready)} ready, ${formatCount(r.live.running)} running`, textContent: formatCount(r.live.ready + r.live.running) }),
   },
+  { key: 'backlogCompute', label: 'Est. backlog compute', title: 'The estimated compute time of the service\'s work items not started yet', numeric: true, sortValue: (r) => r.live.backlogComputeEstimateMs, render: (r) => backlogCompute(r.live) },
+  { key: 'backlogClear', label: 'Est. time to clear', title: 'The estimated time to clear the service\'s backlog at its recent throughput', numeric: true, sortValue: (r) => r.live.backlogClearEstimateMs ?? Number.MAX_SAFE_INTEGER, render: (r) => backlogClear(r.live) },
   { key: 'running', label: 'Running', numeric: true, sortValue: (r) => r.live.running, render: (r) => formatCount(r.live.running) },
-  { key: 'wait', label: 'Longest wait', numeric: true, sortValue: (r) => r.live.oldestReadyWaitMs ?? -1, render: (r) => formatDuration(r.live.oldestReadyWaitMs) },
+  { key: 'wait', label: 'Longest wait', title: 'Longest wait for new work to be performed for a job', numeric: true, sortValue: (r) => r.live.oldestReadyWaitMs ?? -1, render: (r) => formatDuration(r.live.oldestReadyWaitMs) },
   { key: 'total', label: 'Completed', numeric: true, sortValue: (r) => r.total, render: (r) => formatCount(r.total) },
   { key: 'failed', label: 'Failed', numeric: true, sortValue: (r) => r.counts.failed, render: (r) => statusCount(r.counts.failed, 'failed', { service: r.name }) },
   { key: 'successRate', label: 'Success', numeric: true, sortValue: (r) => r.successRate ?? -1, render: (r) => successRateCell(r.successRate) },
@@ -890,7 +964,9 @@ function renderServiceDetails(name) {
       `${formatCount(totals.total)} completed · ${formatPercent(totals.successRate)} success · `
       + `avg ${formatDuration(totals.avgDurationMs)} · p95 ${formatDuration(totals.p95DurationMs)} · `
       + `${formatCount(totals.retries)} retry attempts · ${formatSize(totals.itemsSizeMb)} output · `
-      + `compute ${formatComputeTime(totals.computeMs)} · now ${formatCount(live.ready)} ready, ${formatCount(live.running)} running`),
+      + `compute ${formatComputeTime(totals.computeMs)} · now ${formatCount(live.ready)} ready `
+      + `(est. ${formatComputeTime(live.backlogComputeEstimateMs)} compute, ${backlogClearText(live)} to clear), `
+      + `${formatCount(live.running)} running`),
     h('div', { className: 'row g-3' },
       h('div', { className: 'col-xl-6' }, completions),
       h('div', { className: 'col-xl-6' }, durations),
@@ -908,11 +984,11 @@ function renderServiceDetails(name) {
           { caption: `${name} failures by category`, numeric: [2] })),
       h('div', { className: 'col-12' },
         h('h4', { className: 'detail-heading', textContent: 'Users' }),
-        table(['User', 'Compute time', 'Completed', 'Failed', 'Success', 'Avg', 'Ready', 'Running'],
+        table(['User', 'Compute time', 'Completed', 'Failed', 'Success', 'Avg', 'Ready', 'Est. backlog compute', 'Est. time to clear', 'Running'],
           details.users.map((u) => [u.username, formatComputeTime(u.computeMs), formatCount(u.total),
             statusCount(u.counts.failed, 'failed', { service: name, user: u.username }), successRateCell(u.successRate), formatDuration(u.avgDurationMs),
-            formatCount(u.live.ready), formatCount(u.live.running)]),
-          { caption: `${name} users`, numeric: [1, 2, 3, 4, 5, 6, 7] }))));
+            formatCount(u.live.ready), backlogCompute(u.live), backlogClear(u.live), formatCount(u.live.running)]),
+          { caption: `${name} users`, numeric: [1, 2, 3, 4, 5, 6, 7, 8, 9] }))));
   renderCompletionsCard(completions, details, 'Work items completed', { service: name });
   renderDurationCard(durations, details, 'Work item duration');
   renderHistogramCard(histogram, details.histogram, 'Duration distribution');
@@ -954,11 +1030,6 @@ function renderJobs() {
       delta: delta(jobs.async.avgDurationMs, previousJobs.async.avgDurationMs, { good: 'down' }),
       comparison,
     }),
-    statTile({
-      label: 'Granules processed',
-      value: formatCompact(jobs.granules),
-      detail: `${formatSize(jobs.inputSizeMb)} in · ${formatSize(jobs.outputSizeMb)} out`,
-    }),
   );
 }
 
@@ -982,43 +1053,82 @@ function renderRunningJobs() {
       { caption: 'Longest running jobs', numeric: [3, 4, 6, 7] }));
 }
 
+// The users table's columns - sorted by the API, see USER_SORTS in dashboard-api.ts
 const USER_COLUMNS = [
-  { key: 'username', label: 'User', sortValue: (r) => r.username, render: (r) => r.username },
-  { key: 'computeMs', label: 'Compute time', numeric: true, sortValue: (r) => r.computeMs, render: (r) => formatComputeTime(r.computeMs) },
-  { key: 'total', label: 'Work items', numeric: true, sortValue: (r) => r.total, render: (r) => formatCount(r.total) },
-  { key: 'failed', label: 'Failed', numeric: true, sortValue: (r) => r.counts.failed, render: (r) => statusCount(r.counts.failed, 'failed', { user: r.username }) },
-  { key: 'successRate', label: 'Success', numeric: true, sortValue: (r) => r.successRate ?? -1, render: (r) => successRateCell(r.successRate) },
+  { key: 'username', label: 'User', render: (r) => r.username },
+  { key: 'computeMs', label: 'Compute time', numeric: true, render: (r) => formatComputeTime(r.computeMs) },
+  { key: 'total', label: 'Work items', numeric: true, render: (r) => formatCount(r.total) },
+  {
+    key: 'failed',
+    label: 'Failed',
+    numeric: true,
+    render: (r) => statusCount(r.counts.failed, 'failed', { user: r.username, service: state.userService || undefined }),
+  },
+  { key: 'successRate', label: 'Success', numeric: true, render: (r) => successRateCell(r.successRate) },
   {
     key: 'retries',
     label: 'Retries',
     title: 'Retry attempts by the user\'s work items, including work items that ultimately failed',
     numeric: true,
-    sortValue: (r) => r.retries,
     render: (r) => formatCount(r.retries),
   },
-  { key: 'jobs', label: 'Jobs', numeric: true, sortValue: (r) => r.jobs.total, render: (r) => formatCount(r.jobs.total) },
-  { key: 'sync', label: 'Avg sync job', numeric: true, sortValue: (r) => r.jobs.sync.avgDurationMs ?? -1, render: (r) => formatDuration(r.jobs.sync.avgDurationMs) },
-  { key: 'async', label: 'Avg async job', numeric: true, sortValue: (r) => r.jobs.async.avgDurationMs ?? -1, render: (r) => formatDuration(r.jobs.async.avgDurationMs) },
-  { key: 'ready', label: 'Ready', numeric: true, sortValue: (r) => r.live.ready, render: (r) => formatCount(r.live.ready) },
-  { key: 'running', label: 'Running', numeric: true, sortValue: (r) => r.live.running, render: (r) => formatCount(r.live.running) },
+  { key: 'jobs', label: 'Jobs', numeric: true, render: (r) => formatCount(r.jobs.total) },
+  { key: 'sync', label: 'Avg sync job', numeric: true, render: (r) => formatDuration(r.jobs.sync.avgDurationMs) },
+  { key: 'async', label: 'Avg async job', numeric: true, render: (r) => formatDuration(r.jobs.async.avgDurationMs) },
+  { key: 'ready', label: 'Ready', numeric: true, render: (r) => formatCount(r.live.ready) },
+  { key: 'backlogCompute', label: 'Est. backlog compute', title: 'The estimated compute time of the user\'s work items not started yet', numeric: true, render: (r) => backlogCompute(r.live) },
+  { key: 'backlogClear', label: 'Est. time to clear', title: 'The estimated time to clear the user\'s backlog at their recent throughput', numeric: true, render: (r) => backlogClear(r.live) },
+  { key: 'running', label: 'Running', numeric: true, render: (r) => formatCount(r.live.running) },
 ];
 
+// The users table's job columns, which are hidden when the table is filtered to a service, as
+// finished job stats aren't kept by service
+const USER_JOB_COLUMN_KEYS = ['jobs', 'sync', 'async'];
+
 /**
- * Renders the users table
+ * Gets the users table's columns for the current service filter
+ * @returns {object[]} the columns
+ */
+function userColumns() {
+  return state.userService ? USER_COLUMNS.filter((c) => !USER_JOB_COLUMN_KEYS.includes(c.key)) : USER_COLUMNS;
+}
+
+/**
+ * Updates the users table's service filter options from the services in the summary, keeping the
+ * selected service
+ */
+function renderUserServiceOptions() {
+  const select = document.getElementById('userService');
+  const names = new Set(state.summary.services.map((svc) => svc.name));
+  if (state.userService) names.add(state.userService);
+  select.replaceChildren(
+    h('option', { value: '', textContent: 'All services' }),
+    ...[...names].sort((a, b) => a.localeCompare(b)).map((name) => h('option', { value: name, textContent: name })));
+  select.value = state.userService;
+}
+
+/**
+ * Renders the users table. The rows are already sorted (and limited) by the API.
  */
 function renderUsers() {
   const { users, totalUsers } = state.users;
-  const matching = state.userFilter.trim() ? ' matching the filter' : '';
+  const columns = userColumns();
+  const sortLabel = (columns.find((c) => c.key === state.userSort.key)?.label ?? 'compute time').toLowerCase();
+  const scope = [
+    state.userService ? ` of ${state.userService}` : '',
+    state.userFilter.trim() ? ' matching the filter' : '',
+  ].join('');
   document.getElementById('usersCount').textContent = totalUsers > users.length
-    ? `Top ${users.length} of ${formatCount(totalUsers)} users${matching} by compute time`
-    : `${formatCount(totalUsers)} user${totalUsers === 1 ? '' : 's'}${matching}`;
+    ? `Top ${users.length} of ${formatCount(totalUsers)} users${scope} by ${sortLabel}`
+      + (state.userSort.dir === 'asc' ? ' (ascending)' : '')
+    : `${formatCount(totalUsers)} user${totalUsers === 1 ? '' : 's'}${scope}`;
   document.getElementById('usersTable').replaceChildren(expandableTable({
-    columns: USER_COLUMNS,
-    rows: sortRows(users, USER_COLUMNS, state.userSort),
+    columns,
+    rows: users,
     sort: state.userSort,
     onSort: (key) => {
-      updateSort(state.userSort, USER_COLUMNS.find((c) => c.key === key));
-      renderUsers();
+      updateSort(state.userSort, columns.find((c) => c.key === key));
+      loadUsers();
     },
     keyOf: (r) => r.username,
     detailId: (r) => `user-detail-${cssId(r.username)}`,
@@ -1053,20 +1163,22 @@ function renderUserDetails(username) {
       `${formatCount(totals.total)} work items · compute ${formatComputeTime(totals.computeMs)} · `
       + `${formatPercent(totals.successRate)} success · ${formatCount(jobs.total)} jobs finished `
       + `(${formatCount(jobs.counts.failed)} failed) · avg sync job ${formatDuration(jobs.sync.avgDurationMs)} · `
-      + `avg async job ${formatDuration(jobs.async.avgDurationMs)} · now ${formatCount(live.ready)} ready, `
+      + `avg async job ${formatDuration(jobs.async.avgDurationMs)} · now ${formatCount(live.ready)} ready `
+      + `(est. ${formatComputeTime(live.backlogComputeEstimateMs)} compute, ${backlogClearText(live)} to clear), `
       + `${formatCount(live.running)} running · `,
       h('a', { href: details.jobsLink, textContent: 'View jobs in the workflow UI' })),
     h('div', { className: 'row g-3' },
       h('div', { className: 'col-xl-6' }, completions),
       h('div', { className: 'col-xl-6' },
         h('h4', { className: 'detail-heading', textContent: 'By service' }),
-        table(['Service', 'Compute time', 'Completed', 'Failed', 'Success', 'Avg', 'Ready', 'Running'],
+        table(['Service', 'Compute time', 'Completed', 'Failed', 'Success', 'Avg', 'Ready', 'Est. backlog compute', 'Est. time to clear', 'Running'],
           details.services.map((svc) => [
             h('span', { className: 'font-monospace small', textContent: svc.name }), formatComputeTime(svc.computeMs),
             formatCount(svc.total), statusCount(svc.counts.failed, 'failed', { service: svc.name, user: username }),
             successRateCell(svc.successRate),
-            formatDuration(svc.avgDurationMs), formatCount(svc.live.ready), formatCount(svc.live.running)]),
-          { caption: `${username} by service`, numeric: [1, 2, 3, 4, 5, 6, 7] }))));
+            formatDuration(svc.avgDurationMs), formatCount(svc.live.ready), backlogCompute(svc.live),
+            backlogClear(svc.live), formatCount(svc.live.running)]),
+          { caption: `${username} by service`, numeric: [1, 2, 3, 4, 5, 6, 7, 8, 9] }))));
   renderCompletionsCard(completions, details, 'Work items completed', { user: username });
 }
 
@@ -1080,6 +1192,7 @@ function renderAll() {
   renderServices();
   renderJobs();
   renderRunningJobs();
+  renderUserServiceOptions();
   renderUsers();
 }
 
@@ -1229,6 +1342,14 @@ function initControls() {
     state.userFilterTimer = setTimeout(() => {
       if (state.users) loadUsers();
     }, 300);
+  });
+  document.getElementById('userService').addEventListener('change', (event) => {
+    state.userService = event.target.value;
+    // the job columns are hidden with a service, so they can't stay the sort
+    if (state.userService && USER_JOB_COLUMN_KEYS.includes(state.userSort.key)) {
+      state.userSort = { key: 'computeMs', dir: 'desc' };
+    }
+    if (state.users) loadUsers();
   });
   const hideIdle = document.getElementById('hideIdle');
   hideIdle.checked = state.hideIdle;

@@ -516,3 +516,13 @@ th[aria-sort="descending"] .sort-icon {
 .status-jobs-content {
   padding: 1rem 1.25rem;
 }
+
+/* Marks ready work estimates that include work items estimated with the default duration */
+/* takes no width, so marked and unmarked numbers stay aligned in right aligned columns */
+.estimate-default {
+  display: inline-block;
+  width: 0;
+  overflow: visible;
+  padding-left: 0.1rem;
+  color: var(--viz-text-muted);
+}
