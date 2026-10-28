@@ -56,7 +56,10 @@ exports.up = async function up(knex) {
 };
 
 exports.down = async function down(knex) {
-  await knex.schema.dropTableIfExists('user_work_history');
+  await knex.schema.alterTable('user_work', (t) => {
+    t.dropColumn('failed_count');
+    t.dropColumn('failed_sum_duration_ms');
+  });
   await knex.raw(`
     ALTER TABLE user_work RESET (
       autovacuum_vacuum_scale_factor,
@@ -65,8 +68,5 @@ exports.down = async function down(knex) {
       fillfactor
     )
   `);
-  await knex.schema.alterTable('user_work', (t) => {
-    t.dropColumn('failed_count');
-    t.dropColumn('failed_sum_duration_ms');
-  });
+  await knex.schema.dropTableIfExists('user_work_history');
 };
