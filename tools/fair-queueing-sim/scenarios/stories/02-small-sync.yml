@@ -2,10 +2,11 @@
 name: 02-small-sync
 description: >-
   Alice has a big async job (600 granules, ~2 minute work items) using the whole 20 pod service.
-  Ten minutes in, Bob sends a synchronous request for 4 granules (1 minute each). How long does
-  Bob wait?
+  Ten minutes in, Bob sends a synchronous request for 1 granule (1 minute), the production default
+  size (MAX_SYNCHRONOUS_GRANULES=1).
+  How long does Bob wait?
 goodOutcome: >-
-  Bob's 4 granule sync request finishes close to its 1 minute minimum (a low sync makespan)
+  Bob's sync request finishes close to its 1 minute minimum (a low sync makespan)
   without noticeably delaying Alice's job.
 # the metrics that express goodOutcome, highlighted by `npm run sim -- bench`
 benchmarks:
@@ -31,7 +32,7 @@ jobs:
     user: bob
     async: false
     submitAt: 10m
-    granules: 4
+    granules: 1
     steps:
       - service: svc
         duration: 1m

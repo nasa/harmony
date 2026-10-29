@@ -56,6 +56,7 @@ const ADAPTIVE_OFF: Record<string, string> = {
   ADAPTIVE_FAST_LANE_UNMEASURED_ESTIMATE: 'fixed',
   ADAPTIVE_FAST_LANE_SPLIT_BY_USER: 'false',
   ADAPTIVE_FAST_LANE_USE_SERVICE_DURATION: 'false',
+  ADAPTIVE_FAST_LANE_SLOW_FAIR_SHARE: 'false',
 };
 
 export const POLICY_CATALOG: Record<string, PolicyInfo> = {
@@ -72,9 +73,9 @@ export const POLICY_CATALOG: Record<string, PolicyInfo> = {
     settings: FAST_LANE_SETTINGS,
   },
   'adaptive-fast-lane': {
-    description: 'fast-lane-reserve, with the same reserve, plus five fixes: a limit on running work for ' +
+    description: 'fast-lane-reserve, with the same reserve, plus six fixes: a limit on running work for ' +
       'unmeasured jobs, a moving average of recent durations, a service-level estimate for unmeasured work, ' +
-      'per-user batch splitting, and pod-reported durations.',
+      'per-user batch splitting, pod-reported durations, and slow work held to its fair share while fast work waits.',
     designNotes: [FAST_LANE_DESIGN_NOTE],
     settings: [
       ...FAST_LANE_SETTINGS,
@@ -82,6 +83,12 @@ export const POLICY_CATALOG: Record<string, PolicyInfo> = {
         env: 'ADAPTIVE_FAST_LANE_UNMEASURED_LIMIT',
         default: '2',
         description: 'most work items that may run for a (job, service) before its first one completes (0 = no limit)',
+      },
+      {
+        env: 'ADAPTIVE_FAST_LANE_UNMEASURED_MODE',
+        default: 'limit',
+        description: "'limit' = the unmeasured limit always applies; 'capacity' = only while another user has work " +
+          'waiting and the job is bigger than the reserve, otherwise unmeasured work may use the slow work capacity',
       },
       {
         env: 'ADAPTIVE_FAST_LANE_EWMA_ALPHA',
@@ -108,6 +115,11 @@ export const POLICY_CATALOG: Record<string, PolicyInfo> = {
         default: 'true',
         description: "use the duration the service pod reports (false = Harmony's, which includes queue wait)",
       },
+      {
+        env: 'ADAPTIVE_FAST_LANE_SLOW_FAIR_SHARE',
+        default: 'true',
+        description: "while other users' fast work is ready, hold a user's slow work to their fair share of the pods",
+      },
     ],
     variants: [
       { name: 'no-unmeasured-limit', description: 'fix 1 (unmeasured work limit) off', set: { ADAPTIVE_FAST_LANE_UNMEASURED_LIMIT: '0' } },
@@ -115,11 +127,12 @@ export const POLICY_CATALOG: Record<string, PolicyInfo> = {
       { name: 'no-service-estimate', description: 'fix 3 (service estimate for unmeasured work) off', set: { ADAPTIVE_FAST_LANE_UNMEASURED_ESTIMATE: 'fixed' } },
       { name: 'no-split-by-user', description: 'fix 4 (per-user batch split) off', set: { ADAPTIVE_FAST_LANE_SPLIT_BY_USER: 'false' } },
       { name: 'no-service-duration', description: 'fix 5 (pod-reported durations) off', set: { ADAPTIVE_FAST_LANE_USE_SERVICE_DURATION: 'false' } },
+      { name: 'no-slow-fair-share', description: 'fix 6 (slow work held to fair share) off', set: { ADAPTIVE_FAST_LANE_SLOW_FAIR_SHARE: 'false' } },
     ],
     equivalentTo: {
       policy: 'fast-lane-reserve',
       set: ADAPTIVE_OFF,
-      description: 'with all five fixes switched off, adaptive-fast-lane must make exactly the same decisions as fast-lane-reserve',
+      description: 'with all six fixes switched off, adaptive-fast-lane must make exactly the same decisions as fast-lane-reserve',
     },
   },
 };

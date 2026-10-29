@@ -3,7 +3,7 @@ name: 04-crowded
 description: >-
   Eight users compete for a 20 pod service, whose scheduling passes only hand out a handful of
   work items at a time. Carol's work items take 30 seconds and Dan's take 8 minutes; the others
-  take about 2 minutes. Bob also has a big async job, and sends a 4 granule synchronous request
+  take about 2 minutes. Bob also has a big async job, and sends a 1 granule synchronous request
   fifteen minutes in.
 goodOutcome: >-
   Every user gets close to their fair share of pods however long their work items take (fair share
@@ -32,4 +32,4 @@ jobs:
   - { name: gus-1, user: gus, granules: 150, steps: [{ service: svc, duration: { dist: lognormal, median: 2m, sigma: 0.3 } }] }
   - { name: hal-1, user: hal, granules: 150, steps: [{ service: svc, duration: { dist: lognormal, median: 2m, sigma: 0.3 } }] }
   - { name: ivy-1, user: ivy, granules: 150, steps: [{ service: svc, duration: { dist: lognormal, median: 2m, sigma: 0.3 } }] }
-  - { name: bob-sync, user: bob, async: false, submitAt: 15m, granules: 4, steps: [{ service: svc, duration: 1m }] }
+  - { name: bob-sync, user: bob, async: false, submitAt: 15m, granules: 1, steps: [{ service: svc, duration: 1m }] }

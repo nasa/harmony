@@ -319,12 +319,24 @@ function settingsProblems(record: BenchRecord, state: PolicyState): string[] {
   if (stableJson(record.set) !== stableJson(state.set)) {
     return [`it was recorded with settings ${describeSet(record.set)}, these runs use ${describeSet(state.set)}`];
   }
-  // with the same overrides, different policy settings mean the policy's defaults have changed
-  if (stableJson(record.policySettings) !== stableJson(state.policySettings)) {
-    return [`its default settings have changed since it was recorded (${describeSet(record.policySettings)}, ` +
-      `now ${describeSet(state.policySettings)})`];
-  }
   return [];
+}
+
+/**
+ * Describes how a policy's settings differ from a record's when the overrides are the same,
+ * i.e. how the policy's settings or their defaults have changed - a change to the policy, like
+ * a change to its code.
+ *
+ * @param record - the record
+ * @param state - the current state for its policy
+ * @returns the description, or null if they're the same
+ */
+function settingsChanges(record: BenchRecord, state: PolicyState): string | null {
+  const keys = [...new Set([...Object.keys(record.policySettings), ...Object.keys(state.policySettings)])].sort();
+  const changes = keys
+    .filter((k) => record.policySettings[k] !== state.policySettings[k])
+    .map((k) => `${k} ${record.policySettings[k] ?? '(new)'} -> ${state.policySettings[k] ?? '(removed)'}`);
+  return changes.length ? changes.join(', ') : null;
 }
 
 /**
@@ -697,6 +709,8 @@ export async function runBench(options: BenchOptions): Promise<void> {
       stale = `Harmony's scheduling code or the simulator has changed since its results were recorded on ${describeCode(baselineRecord.code)}`;
     } else if (settingsProblems(baselineRecord, states[REFERENCE_POLICY]).length) {
       stale = settingsProblems(baselineRecord, states[REFERENCE_POLICY]).join('; ');
+    } else if (settingsChanges(baselineRecord, states[REFERENCE_POLICY])) {
+      stale = `its settings have changed since its results were recorded (${settingsChanges(baselineRecord, states[REFERENCE_POLICY])})`;
     }
     for (const s of scenarios) {
       const recorded = stale === null ? recordedValues(baselineRecord, s, seeds) : stale;
@@ -751,12 +765,17 @@ export async function runBench(options: BenchOptions): Promise<void> {
       continue;
     }
     const codeChanged = !record.code.codeHash || record.code.codeHash !== states[policy].codeHash;
+    const changedSettings = settingsChanges(record, states[policy]);
+    const changes = [
+      ...(codeChanged ? ['the code that affects its results'] : []),
+      ...(changedSettings ? [`its settings (${changedSettings})`] : []),
+    ];
     own[policy] = {
       values: Object.fromEntries(scenarios.map((s) => [s.scenario.name, recordedValues(record, s, seeds)])),
       note: `compared with its results recorded on ${describeCode(record.code)}, ${record.code.recordedAt.slice(0, 10)}` +
-        (codeChanged
-          ? `. The code that affects its results has changed since, so this shows the effect of those changes - ${reRecord} saves the new results`
-          : '. The code that affects its results is unchanged, so any difference means the runs weren\'t reproducible'),
+        (changes.length
+          ? `. Since then ${changes.join(' and ')} changed, so this shows the effect of those changes - ${reRecord} saves the new results`
+          : '. Neither the code that affects its results nor its settings have changed, so any difference means the runs weren\'t reproducible'),
     };
   }
 

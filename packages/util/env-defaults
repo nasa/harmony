@@ -59,8 +59,8 @@ LOG_LEVEL=debug
 DEFAULT_RESULT_PAGE_SIZE=2000
 
 # The maximum allowed granules in any request synchronous or asynchronous. If a service
-# attempts to configure a value greater than this limit for either maximum_async_granules
-# or maximum_async_granules we will override the configuration to limit to this value.
+# attempts to configure a value greater than this limit for maximum_sync_granules
+# we will override the configuration to limit to this value.
 MAX_GRANULE_LIMIT=10000000
 
 # max JSON payload that can be sent to query-cmr via express. Should take the form of '100mb', etc.

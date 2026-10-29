@@ -156,7 +156,7 @@ slow work is running), which appear as extra rows in the reports - see `sampleFa
 |---|---|
 | `baseline` | Harmony's current algorithm (`baselinePolicy` in `fair-queueing-policy.ts`). Picks up to `batchSize` jobs interleaved round robin by user, oldest-worked first; shuffles them; splits the batch evenly per job. No knowledge of work item durations. |
 | `fast-lane-reserve` | The algorithm from the `harmony-2413` branch (`src/policies/fast-lane-reserve.ts`, a faithful port - it produces byte-for-byte the same decision log as that branch's own code). Users are ranked within each round by the expected runtime of their in-progress work (running items x the job's mean work item duration), a user's sync jobs go before their async ones, and work for a (job, service) whose mean duration is above `SLOW_WORK_THRESHOLD_MS` may only occupy `1 - FAST_LANE_RESERVE_FRACTION` of the service's pods, reserving the rest for fast work. |
-| `adaptive-fast-lane` | `fast-lane-reserve`, with the same reserve, plus five fixes (`src/policies/adaptive-fast-lane.ts`): (1) a (job, service) with no completed work item yet may only have a few work items running, so slow work can't fill the service before it's been measured; (2) durations are a moving average weighted towards recent work items, so a job that slows down is reclassified quickly; (3) when ranking users, unmeasured work counts as the service's current mean duration instead of a flat hour; (4) each batch is split evenly between users first, then between each user's jobs; (5) durations are the ones service pods report, so they don't include time spent waiting on the queue. Each fix has a switch (below); with all of them off it makes exactly the same decisions as `fast-lane-reserve`. |
+| `adaptive-fast-lane` | `fast-lane-reserve`, with the same reserve, plus six fixes (`src/policies/adaptive-fast-lane.ts`): (1) a (job, service) with no completed work item yet may only have a few work items running, so slow work can't fill the service before it's been measured; (2) durations are a moving average weighted towards recent work items, so a job that slows down is reclassified quickly; (3) when ranking users, unmeasured work counts as the service's current mean duration instead of a flat hour; (4) each batch is split evenly between users first, then between each user's jobs; (5) durations are the ones service pods report, so they don't include time spent waiting on the queue; (6) while another user has fast work ready, a user's slow work only gets new work items while that user has fewer than their max-min fair share of the pods running - nothing running is interrupted, and with no fast work waiting slow work can use up to the cap as before. Each fix has a switch (below); with all of them off it makes exactly the same decisions as `fast-lane-reserve`. |
 
 ### The fast lane reserve leaves pods idle on purpose
 
@@ -166,7 +166,9 @@ every pod of a service and leave newly arriving fast jobs unworked, and the rese
 that can't happen. So when only slow work exists (story 07, and the end of stories 06 and 09),
 "idle while work ready" goes up and slow jobs take longer - that's the cost of the guarantee, not
 a bug, and policy changes shouldn't "fix" it by letting slow work use the reserve. The policies'
-design notes say this in every report.
+design notes say this in every report. Policies that serve fast work faster show more of this
+idle time, not less: with fix 6, `adaptive-fast-lane` clears story 09's fast jobs between
+arrivals, so there are more stretches where only slow work is waiting.
 
 ### Policy settings
 
@@ -178,11 +180,13 @@ with `--set`:
 | `SLOW_WORK_THRESHOLD_MS` | `600000` (10 min) | both fast lane policies | a (job, service) whose mean work item duration is above this is "slow" |
 | `FAST_LANE_RESERVE_FRACTION` | `0.3` | both fast lane policies | fraction of a service's pods slow work may not use |
 | `ADAPTIVE_FAST_LANE_UNMEASURED_LIMIT` | `2` | `adaptive-fast-lane` | fix 1: most work items that may run for a (job, service) before its first work item completes; `0` = no limit |
+| `ADAPTIVE_FAST_LANE_UNMEASURED_MODE` | `limit` | `adaptive-fast-lane` | fix 1: `limit` = the limit always applies; `capacity` = it only applies while another user has work waiting and the job is bigger than the reserve, otherwise unmeasured work may use the slow work capacity (shared with work known to be slow). `capacity` saves start-up time when a job is alone (07 -9%, 01, 10 -22%) but costs fast work arriving just after slow work (06 +48% slowdown for the fast users) |
 | `ADAPTIVE_FAST_LANE_EWMA_ALPHA` | `0.2` | `adaptive-fast-lane` | fix 2: weight of the newest work item in the moving average (higher reacts faster, but also to noise); `0` = mean over the job's lifetime |
 | `ADAPTIVE_FAST_LANE_UNMEASURED_ESTIMATE` | `service` | `adaptive-fast-lane` | fix 3: `service` = unmeasured work counts as the service's mean measured duration over other jobs; `fixed` = it counts as `ADAPTIVE_FAST_LANE_UNMEASURED_DEFAULT_MS` |
 | `ADAPTIVE_FAST_LANE_UNMEASURED_DEFAULT_MS` | `3600000` (1 h) | `adaptive-fast-lane` | fix 3: expected duration of unmeasured work when the service has no measured work to go on |
 | `ADAPTIVE_FAST_LANE_SPLIT_BY_USER` | `true` | `adaptive-fast-lane` | fix 4: `false` = split each batch evenly per job, not per user |
 | `ADAPTIVE_FAST_LANE_USE_SERVICE_DURATION` | `true` | `adaptive-fast-lane` | fix 5: `false` = use Harmony's duration (measured from when the item was queued) |
+| `ADAPTIVE_FAST_LANE_SLOW_FAIR_SHARE` | `true` | `adaptive-fast-lane` | fix 6: `false` = slow work may use up to the slow work capacity even while other users' fast work is waiting |
 
 `--set` applies to every policy in a `compare`, so to compare two settings of the same policy,
 run it twice with different `--out` directories (or use `bench`, which compares each run with the
@@ -400,7 +404,7 @@ It runs (several at a time; the command above takes 20-30 minutes):
    - **determinism** - the first policy run twice gives identical logs;
    - **equivalences** - for every policy whose catalog entry has `equivalentTo`, that it makes
      exactly the same decisions as the other policy under the stated settings (e.g.
-     `adaptive-fast-lane` with all five fixes off = `fast-lane-reserve`);
+     `adaptive-fast-lane` with all six fixes off = `fast-lane-reserve`);
    - **references** (`--references REF=POLICY`) - that POLICY here makes exactly the same decisions
      as the scheduling code built into git ref REF. The simulator extracts REF's code into a
      temporary directory and runs it with the `native` policy. `@file;file` copies those files

@@ -255,7 +255,7 @@ The stories are the benchmark suite. To make a scenario, copy one; the format is
 |---|---|
 | `baseline` | Harmony's current algorithm: jobs interleaved round robin by user, oldest-worked first, with each batch split evenly per job |
 | `fast-lane-reserve` | the harmony-2413 algorithm: users ranked by the expected runtime of their running work, sync before async, and a fast lane reserve |
-| `adaptive-fast-lane` | `fast-lane-reserve` plus five fixes, each with a switch: a limit on unmeasured work, a moving average of durations, a service-level estimate for unmeasured work, per-user batch splitting, and pod-reported durations |
+| `adaptive-fast-lane` | `fast-lane-reserve` plus six fixes, each with a switch: a limit on unmeasured work, a moving average of durations, a service-level estimate for unmeasured work, per-user batch splitting, pod-reported durations, and slow work held to its fair share while fast work waits |
 
 **The fast lane reserve leaves pods idle on purpose.** Slow work may never use more than
 `1 - FAST_LANE_RESERVE_FRACTION` of a service's pods, even when nothing else is waiting, because
