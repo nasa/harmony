@@ -425,6 +425,7 @@ https://cmr.uat.earthdata.nasa.gov:
         bbox: false
         variable: true
         temporal: false
+        dimension: true
       output_formats:
         - image/png
         - image/jpeg
@@ -432,6 +433,10 @@ https://cmr.uat.earthdata.nasa.gov:
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
+      - image: !Env ${HOSS_IMAGE}
+        operations: ['dimensionSubset']
+        conditional:
+          exists: ['dimensionSubset']
       - image: !Env ${FILTERING_IMAGE}
       - image: !Env ${VARIABLE_FAN_OUT_IMAGE}
       - image: !Env ${NET2COG_IMAGE}
