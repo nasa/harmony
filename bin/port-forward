@@ -4,28 +4,27 @@
 # to be used directly in normal circumstances.
 
 # Wait until the local port of each port pair (e.g. 5432 for 5432:5432) accepts connections, giving
-# up if the port forwarding process exits or after max_wait_seconds
+# up if the port forwarding process exits or after max_wait_seconds (shared across all the ports)
 function wait_for_local_ports() {
   local pid="$1"
   local service_name="$2"
   shift 2
   local port_pairs=("$@")
   local max_wait_seconds=60
+  local start_seconds=$SECONDS
 
   local port_pair
   for port_pair in "${port_pairs[@]}"; do
     local local_port="${port_pair%%:*}"
-    local attempts=0
     until (exec 3<>"/dev/tcp/127.0.0.1/${local_port}") 2>/dev/null; do
       if ! kill -0 "$pid" 2>/dev/null; then
         echo "WARNING: Port forwarding for ${service_name} exited, see logs/port-forward-${service_name}.log"
         return
       fi
-      if [ "$attempts" -ge $((max_wait_seconds * 2)) ]; then
+      if [ $((SECONDS - start_seconds)) -ge "$max_wait_seconds" ]; then
         echo "WARNING: Timed out waiting for port ${local_port} for ${service_name}. Port forwarding may not work."
         return
       fi
-      attempts=$((attempts + 1))
       sleep 0.5
     done
   done
