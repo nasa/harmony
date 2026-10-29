@@ -578,7 +578,7 @@ function renderHeader(ctx: ReportContext): string {
       'are seed by seed: runs with the same seed have the same work item durations, so ' +
       '**better (or worse) in every seed** is a real difference, while a mixed count is within ' +
       'noise. **Protected metrics** are the ones each scenario names as expressing its goal ' +
-      '(its `benchmarks:` list). Metric definitions are in the README.',
+      '(its `benchmarks:` list). Metric definitions are in tools/fair-queueing-sim/REFERENCE.md.',
   ];
   return lines.join('\n');
 }

@@ -44,7 +44,8 @@ function table(header: string[], rows: string[][]): string {
   return lines.join('\n');
 }
 
-export const README_PATH = 'tools/fair-queueing-sim/README.md';
+// where the metrics and reports are explained in full
+export const REFERENCE_PATH = 'tools/fair-queueing-sim/REFERENCE.md';
 
 // short definitions of the metrics, repeated in every report so it can be read on its own
 export const GLOSSARY: [string, string][] = [
@@ -65,7 +66,7 @@ export const GLOSSARY: [string, string][] = [
  */
 export function renderGlossary(): string {
   return [
-    `Definitions (full details, and how to dig further, in ${README_PATH}):`, '',
+    `Definitions (full details, and how to dig further, in ${REFERENCE_PATH}):`, '',
     ...GLOSSARY.map(([term, definition]) => `- **${term}** - ${definition}`), '',
     'Differences of a few percent between policies, or a few seconds on short jobs, can be noise - ' +
     'rerun with a few --seed values before relying on them.',
