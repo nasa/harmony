@@ -7,6 +7,12 @@ description: >-
 goodOutcome: >-
   Alice uses every pod: utilization close to 100%, slowdown close to 1.0 and almost no idle time.
   All policies should do equally well.
+# the metrics that express goodOutcome, highlighted by `npm run sim -- bench`
+benchmarks:
+  - metric: utilization
+    note: Alice should use every pod
+  - metric: job.alice-big.slowdown
+    note: close to 1.0 when she has the service to herself
 seed: 1
 maxDuration: 1d
 env:

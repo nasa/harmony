@@ -14,6 +14,7 @@ can be compared on exactly the same workload.
 - [Output files](#output-files)
 - [Interpreting the results](#interpreting-the-results)
 - [Writing up findings](#writing-up-findings)
+- [Benchmarks: tracking a policy against baseline](#benchmarks-tracking-a-policy-against-baseline)
 - [How it works](#how-it-works)
 - [Limitations](#limitations)
 
@@ -100,13 +101,16 @@ apart (e.g. one directory per seed or per setting you're trying).
 | Option | Applies to | Meaning |
 |---|---|---|
 | `--policy <name>` | `run` | the policy to simulate |
-| `--policies <a,b,...>` | `compare`, `findings` | the policies to compare (default: all of them) |
-| `--seeds <n,n,...>` | `findings` | also run the comparison with each of these seeds, to show which differences hold up |
+| `--policies <a,b,...>` | `compare`, `findings`, `bench` | the policies to compare (default: all of them; `bench`: the suite's) |
+| `--seeds <n,n,...>` | `findings`, `bench` | `findings`: also run the comparison with each of these seeds, to show which differences hold up; `bench`: use these seeds instead of the suite's |
 | `--references <REF=POLICY,...>` | `findings` | check that POLICY makes exactly the same decisions as git ref REF's own code - see [Writing up findings](#writing-up-findings) |
-| `--out <dir>` | both | output directory (`run`: the run's own directory; `compare`: the root for all runs and the comparison) |
-| `--seed <n>` | both | use this seed instead of the scenario's own - see [noise](#is-a-difference-real-or-noise) |
-| `--set KEY=VALUE` | both | set an environment variable for Harmony, the work-scheduler, the work-updater and the policies; may be repeated; overrides the scenario's `env:` |
-| `--parallel <n>` | `compare`, `findings` | how many simulations to run at once (default: CPU count - 1) |
+| `--record` | `bench` | save the results to `benchmarks/results/<policy>.json` - see [Benchmarks](#benchmarks-tracking-a-policy-against-baseline) |
+| `--label <name>` | `bench` | also save the results to `benchmarks/experiments/<date>-<name>/` |
+| `--suite <file>` | `bench` | the benchmark suite (default `benchmarks/suite.yml`) |
+| `--out <dir>` | all | output directory (`run`: the run's own directory; others: the root for all runs and the report) |
+| `--seed <n>` | `run`, `compare` | use this seed instead of the scenario's own - see [noise](#is-a-difference-real-or-noise) |
+| `--set KEY=VALUE` | all | set an environment variable for Harmony, the work-scheduler, the work-updater and the policies; may be repeated; overrides the scenario's `env:` |
+| `--parallel <n>` | `compare`, `findings`, `bench` | how many simulations to run at once (default: CPU count - 1) |
 | `--log-level <level>` | `run` | level for Harmony's own log, written to `harmony.log` (default `warn`) |
 | `--quiet` | `run` | no progress output |
 
@@ -160,6 +164,10 @@ name: slow-vs-fast              # used for the output directory
 description: Free text shown in the reports - what the scenario tests.
 goodOutcome: >-                 # what a good result looks like, shown in the reports to guide interpretation
   Fast work keeps flowing while slow work runs; slow work never holds more than 70% of the pods.
+benchmarks:                     # optional: the metrics that express goodOutcome ("protected metrics"), for `bench`
+  - metric: job.gina-fast.slowdown   # see Benchmarks for the metric names
+    note: fast work keeps flowing while slow work runs   # shown in the report
+    # better: lower             # only if this scenario's better direction isn't the metric's usual one
 seed: 6                         # every random draw derives from this (default 1)
 maxDuration: 2d                 # stop here even if jobs are still running (default 7d)
 policy: baseline                # default policy for `run` (optional)
@@ -581,6 +589,93 @@ flag says.
 `output/` is ignored by git, so to share findings, copy `findings.md` (and `main/comparison.html`
 for the charts) somewhere permanent. They record the commit they came from, so anyone can check
 out that commit and rerun the command to reproduce them.
+
+## Benchmarks: tracking a policy against baseline
+
+While you develop a policy, `bench` shows how it compares with `baseline` (Harmony's current
+algorithm) and with its own previous version, without rerunning `baseline` every time:
+
+```fish
+npm run sim -- bench --policies my-policy                  # the whole suite
+npm run sim -- bench scenarios/stories/06-slow-vs-fast.yml --policies my-policy --seeds 101   # quicker, while iterating
+npm run sim -- bench --policies my-policy --set MY_POLICY_LIMIT=4                           # trying a setting
+```
+
+It writes `output/bench/bench.md`, and prints its first table: every scenario's protected
+metrics, for `baseline` and each policy, with
+
+- **vs baseline** - the difference from `baseline`, compared seed by seed. Runs with the same
+  seed have the same work item durations, so **better (or worse) in 5/5 seeds** is a real
+  difference, while a mixed count means it's within noise;
+- **vs recorded** - the difference from the policy's own recorded results, i.e. what your
+  changes since then did.
+
+Values are the mean over the seeds, with the range in brackets. Each scenario's section then
+has its other metrics, and every job's and user's metrics (collapsed).
+
+### What gets recorded, and where
+
+Everything lives in `benchmarks/` and is committed:
+
+| File | Contents |
+|---|---|
+| `suite.yml` | the benchmark suite: the scenarios, the seeds (101-105), any settings, and the **tracked** policies - `baseline` and the candidates |
+| `results/<policy>.json` | a policy's recorded results: every metric for every scenario and seed, plus what produced them (commit, a hash of the code that affects results, settings, Node version, platform) |
+| `experiments/<date>-<label>/<policy>.json` | the same, saved by `--label`, as a log of what each version of a policy achieved |
+
+`npm run sim -- bench --record` runs the whole suite for the tracked policies (or `--policies`)
+and writes their `results/` files. Commit them with the code that produced them: the history of
+`results/baseline.json` is then the history of production fair queueing, and a policy's file
+shows in a diff exactly which metrics a change moved. `--record` always uses the whole suite
+with its own seeds and settings, so it can't be combined with scenario files, `--seeds` or
+`--set`.
+
+A new policy needs no recording, and nothing has to know about it, until it's a real candidate;
+then add it to `policies:` in `suite.yml` and record it. Use `--label` for versions you might
+want to come back to (`bench --policies my-policy --label limit-4`): the experiment file names
+the commit, so you can see which version did best and check it out again.
+
+### When baseline is rerun
+
+Runs are deterministic, so `baseline`'s recorded results stay valid until something that could
+change them changes. Until then `bench` doesn't rerun it; after that it runs it afresh, and the
+report says why and how to record it again. It's rerun when:
+
+- **the code that affects results has changed**: Harmony's scheduling code, the work-updater,
+  `db/`, `packages/util`, or the simulator itself - everything in `RESULT_PATHS` in
+  `provenance.ts`. Other policies' files, the policy registry (`policies/catalog.ts`,
+  `policies/index.ts`) and the files that only present results (`bench.ts`, `findings.ts`,
+  `report.ts`, `report-html.ts`) are left out, so working on your policy never makes
+  `baseline`'s record stale. A policy's own code is `src/policies/<name>.ts` plus whatever it
+  imports from `src/policies/`, so **name a policy's file after the policy**;
+- **a scenario has changed** - its description, `goodOutcome`, `benchmarks:`, `seed` and
+  `policy` don't count;
+- **a seed isn't in the record** (e.g. `--seeds 999`);
+- **a `--set` could affect it**. Settings only other policies read (in their catalog entry, and
+  not in any of Harmony's `env-defaults`), such as `ADAPTIVE_FAST_LANE_UNMEASURED_LIMIT`, don't;
+  settings Harmony reads, such as `SLOW_WORK_THRESHOLD_MS`, do.
+
+A policy's own record is compared with whenever its scenarios, seeds and settings match - its
+code having changed is the point - and the report says whether its code has changed since.
+
+### Metric names
+
+These are what `benchmarks:` in a scenario names (they're defined in `bench-metrics.ts`):
+
+| Metric | Better | Meaning |
+|---|---|---|
+| `overall.meanSlowdown`, `overall.maxSlowdown` | lower | mean / max slowdown over all jobs |
+| `sync.meanMakespan`, `sync.maxMakespan` | lower | makespan of the synchronous requests |
+| `fairness` | higher | contended fairness (mean over services) |
+| `utilization` | higher | pod utilization (mean over services) |
+| `idlePodHours` | lower | pod-hours idle while work was ready |
+| `simulatedTime` | lower | time until every job finished |
+| `job.<job>.makespan`, `job.<job>.slowdown`, `job.<job>.meanWait` | lower | one job's makespan, slowdown, and mean wait for a pod |
+| `user.<user>.fairShare` | higher | one user's fair share while competing (give `better: lower` for a user who should get *less*) |
+| `user.<user>.meanSlowdown`, `user.<user>.maxSlowdown` | lower | one user's mean / max job slowdown |
+
+Pick the metrics that say whether the scenario's `goodOutcome` was achieved. Keep a scenario's
+accepted costs out of them, or say so in the `note` (as 07-slow-alone does).
 
 ## How it works
 

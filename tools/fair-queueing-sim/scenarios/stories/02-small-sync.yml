@@ -7,6 +7,12 @@ description: >-
 goodOutcome: >-
   Bob's 4 granule sync request finishes close to its 1 minute minimum (a low sync makespan)
   without noticeably delaying Alice's job.
+# the metrics that express goodOutcome, highlighted by `npm run sim -- bench`
+benchmarks:
+  - metric: job.bob-sync.makespan
+    note: should finish close to its 1 minute minimum
+  - metric: job.alice-big.makespan
+    note: without noticeably delaying Alice's job
 seed: 2
 maxDuration: 1d
 env:

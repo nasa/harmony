@@ -7,6 +7,12 @@ goodOutcome: >-
   Bob's sync request finishes quickly even though Bob's own big async job is queued too - it
   shouldn't wait behind his async work. Alice and Bob each get about half the service (fair share
   near 1.00).
+# the metrics that express goodOutcome, highlighted by `npm run sim -- bench`
+benchmarks:
+  - metric: job.bob-sync.makespan
+    note: shouldn't wait behind Bob's own async work
+  - metric: fairness
+    note: Alice and Bob each get about half the service
 seed: 3
 maxDuration: 1d
 env:

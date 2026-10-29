@@ -8,6 +8,10 @@ goodOutcome: >-
   of the pods, and the reserved 30% staying idle is by design (so fast work arriving later never
   finds every pod taken) - it isn't a defect. This story shows what the reserve costs when no fast
   work arrives.
+# the metrics that express goodOutcome, highlighted by `npm run sim -- bench`
+benchmarks:
+  - metric: job.frank-slow.makespan
+    note: the fast lane reserve leaves 30% of the pods idle here by design, so fast lane policies are expected to be slower than baseline
 seed: 7
 maxDuration: 2d
 env:

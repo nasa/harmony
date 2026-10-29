@@ -9,6 +9,12 @@ goodOutcome: >-
   Once Kim's work items become slow (from item 1,000) the scheduler recognizes them as slow within
   a few completions and limits them, so Lee's steady stream of fast jobs keeps flowing - low
   slowdowns for Lee's jobs throughout. Pods held in reserve once Kim is limited are expected.
+# the metrics that express goodOutcome, highlighted by `npm run sim -- bench`
+benchmarks:
+  - metric: user.lee.meanSlowdown
+    note: Lee's fast jobs keep flowing once Kim's work turns slow
+  - metric: user.lee.maxSlowdown
+    note: none of Lee's jobs gets stuck behind Kim's slow work
 seed: 9
 maxDuration: 2d
 env:

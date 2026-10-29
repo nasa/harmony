@@ -15,6 +15,9 @@ const USAGE = `Usage:
   npm run sim -- findings <scenario.yml> [<scenario.yml> ...] [--policies <a,b,...>] [--out <dir>]
                      [--seeds <n,n,...>] [--references <REF=POLICY[@file;file],...>]
                      [--set KEY=VALUE ...] [--parallel <n>]
+  npm run sim -- bench [<scenario.yml> ...] [--policies <a,b,...>] [--seeds <n,n,...>]
+                     [--record] [--label <name>] [--suite <suite.yml>] [--out <dir>]
+                     [--set KEY=VALUE ...] [--parallel <n>]
   npm run sim -- policies
 
   run      simulate one scenario under one fair queueing policy (default: the scenario's policy,
@@ -28,6 +31,11 @@ const USAGE = `Usage:
            seeds, each policy feature switched off in turn, validation checks) and write
            findings.md to the output directory (default: output/findings), keeping any
            conclusions already written there
+  bench    run the benchmark suite (benchmarks/suite.yml, or just the given scenarios) for the
+           given policies (default: the suite's) and write bench.md to the output directory
+           (default: output/bench), comparing each policy with baseline's recorded results and
+           with its own. --record saves the results to benchmarks/results/<policy>.json;
+           --label saves them to benchmarks/experiments/<date>-<label>/
   policies list the available policies
 
   --seed <n>      use this seed instead of the scenario's, e.g. to check whether a difference
@@ -42,6 +50,7 @@ interface Args {
   options: Record<string, string>;
   sets: Record<string, string>;
   quiet: boolean;
+  record: boolean;
 }
 
 /**
@@ -52,11 +61,13 @@ interface Args {
  * @throws Error - for unknown or incomplete options
  */
 function parseArgs(argv: string[]): Args {
-  const args: Args = { command: argv[0], files: [], options: {}, sets: {}, quiet: false };
+  const args: Args = { command: argv[0], files: [], options: {}, sets: {}, quiet: false, record: false };
   for (let i = 1; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === '--quiet') {
       args.quiet = true;
+    } else if (arg === '--record') {
+      args.record = true;
     } else if (arg === '--set') {
       const [key, ...rest] = (argv[++i] || '').split('=');
       if (!key || rest.length === 0) throw new Error('--set needs KEY=VALUE');
@@ -158,6 +169,16 @@ async function compareCommand(args: Args): Promise<void> {
 }
 
 /**
+ * The command being run, as it can be pasted into a shell to run it again.
+ *
+ * @returns the command line
+ */
+function commandLine(): string {
+  const quote = (arg: string): string => (/^[\w./=,:@+-]+$/.test(arg) ? arg : `'${arg.replace(/'/g, '\'\\\'\'')}'`);
+  return `npm run sim -- ${process.argv.slice(2).map(quote).join(' ')}`;
+}
+
+/**
  * Runs everything behind findings.md and writes it.
  *
  * @param args - the parsed arguments
@@ -169,8 +190,6 @@ async function findingsCommand(args: Args): Promise<void> {
     if (!POLICY_NAMES.includes(policy)) throw new Error(`Unknown policy "${policy}"`);
   }
   const list = (value: string): string[] => (value ? value.split(',').map((v) => v.trim()).filter((v) => v) : []);
-  // the command as it can be pasted into a shell to regenerate the findings
-  const quote = (arg: string): string => (/^[\w./=,:@+-]+$/.test(arg) ? arg : `'${arg.replace(/'/g, '\'\\\'\'')}'`);
   const { runFindings } = await import('./findings');
   await runFindings({
     files: args.files,
@@ -180,7 +199,34 @@ async function findingsCommand(args: Args): Promise<void> {
     references: list(args.options.references),
     sets: args.sets,
     parallel: args.options.parallel ? parseInt(args.options.parallel, 10) : undefined,
-    command: `npm run sim -- ${process.argv.slice(2).map(quote).join(' ')}`,
+    command: commandLine(),
+  });
+}
+
+/**
+ * Runs the benchmark suite and compares the results with the recorded ones.
+ *
+ * @param args - the parsed arguments
+ * @throws Error - if --seeds isn't a list of integers
+ */
+async function benchCommand(args: Args): Promise<void> {
+  let seeds: number[];
+  if (args.options.seeds !== undefined) {
+    seeds = args.options.seeds.split(',').map((s) => Number(s.trim()));
+    if (!seeds.every(Number.isInteger)) throw new Error('--seeds needs a list of integers');
+  }
+  const { DEFAULT_SUITE, runBench } = await import('./bench');
+  await runBench({
+    suiteFile: path.resolve(args.options.suite || DEFAULT_SUITE),
+    files: args.files,
+    policies: args.options.policies ? args.options.policies.split(',').map((p) => p.trim()) : undefined,
+    seeds,
+    sets: args.sets,
+    record: args.record,
+    label: args.options.label,
+    outDir: path.resolve(args.options.out || path.join(SIM_ROOT, 'output', 'bench')),
+    parallel: args.options.parallel ? parseInt(args.options.parallel, 10) : undefined,
+    command: commandLine(),
   });
 }
 
@@ -198,6 +244,9 @@ async function main(): Promise<void> {
       break;
     case 'findings':
       await findingsCommand(args);
+      break;
+    case 'bench':
+      await benchCommand(args);
       break;
     case 'policies':
       console.log(POLICY_NAMES.join('\n'));

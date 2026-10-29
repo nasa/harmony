@@ -1,0 +1,18 @@
+# The benchmark suite: what `npm run sim -- bench` runs. Results recorded with
+# `npm run sim -- bench --record` go to results/<policy>.json and are committed with the code
+# that produced them, so every policy can be compared with baseline (Harmony's current
+# algorithm) without rerunning it. Changing anything here makes the recorded results stale.
+
+# scenario files, relative to this file ("*" wildcards allowed in file names)
+scenarios:
+  - ../scenarios/stories/*.yml
+
+# every scenario is run once per seed; comparisons are seed by seed
+seeds: [101, 102, 103, 104, 105]
+
+# the policies whose results are recorded in results/ - baseline is always recorded, as every
+# other policy is compared with it. Add a policy here once it's a real candidate.
+policies: [baseline, adaptive-fast-lane]
+
+# environment overrides for every run, as with --set
+set: {}

@@ -90,11 +90,22 @@ export interface InfrastructureSpec {
   sampleInterval?: Duration;
 }
 
+export interface BenchmarkMetricSpec {
+  // the metric key, e.g. "job.bob-sync.makespan" - see bench-metrics.ts
+  metric: string;
+  // which direction is better, when it isn't the metric's usual one
+  better?: 'lower' | 'higher';
+  // why the metric matters for this scenario
+  note?: string;
+}
+
 export interface Scenario {
   name: string;
   description?: string;
   // what a good result looks like for this scenario, shown in the reports to guide interpretation
   goodOutcome?: string;
+  // the metrics that express goodOutcome, highlighted by the bench command ("protected metrics")
+  benchmarks?: BenchmarkMetricSpec[];
   seed?: number;
   // stop the simulation at this virtual time even if jobs are still running
   maxDuration?: Duration;
@@ -140,6 +151,7 @@ export interface ResolvedScenario {
   name: string;
   description: string;
   goodOutcome: string;
+  benchmarks: BenchmarkMetricSpec[];
   seed: number;
   maxDurationMs: number;
   policy: string;
@@ -373,10 +385,20 @@ export function resolveScenario(scenario: Scenario): ResolvedScenario {
     env[k] = String(v);
   }
 
+  for (const b of scenario.benchmarks || []) {
+    if (!b?.metric) {
+      throw new Error(`Every entry in benchmarks needs a metric: ${JSON.stringify(b)}`);
+    }
+    if (b.better !== undefined && b.better !== 'lower' && b.better !== 'higher') {
+      throw new Error(`benchmarks entry ${b.metric}: better must be "lower" or "higher"`);
+    }
+  }
+
   return {
     name: scenario.name,
     description: scenario.description || '',
     goodOutcome: scenario.goodOutcome || '',
+    benchmarks: scenario.benchmarks || [],
     seed,
     maxDurationMs,
     policy: scenario.policy || 'baseline',

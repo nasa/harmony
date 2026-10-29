@@ -10,6 +10,12 @@ goodOutcome: >-
   near 1.00 for everyone, contended fairness near 1.0), and Bob's sync request finishes quickly.
   Users with very short work items (Carol) can show a low fair share even when served well,
   because fair share is measured in pods.
+# the metrics that express goodOutcome, highlighted by `npm run sim -- bench`
+benchmarks:
+  - metric: fairness
+    note: every user close to their fair share, however long their work items take
+  - metric: job.bob-sync.makespan
+    note: Bob's sync request finishes quickly
 seed: 4
 maxDuration: 2d
 env:

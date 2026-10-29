@@ -6,6 +6,12 @@ description: >-
 goodOutcome: >-
   Ivan and Judy each get about half the service while both have work (fair share near 1.00 for
   both), rather than Ivan getting four times Judy's share because he submitted four jobs.
+# the metrics that express goodOutcome, highlighted by `npm run sim -- bench`
+benchmarks:
+  - metric: user.judy.fairShare
+    note: Judy gets about half the service, not a fifth, though Ivan has four jobs
+  - metric: fairness
+    note: shared between the users, not the jobs
 seed: 8
 maxDuration: 2d
 env:
