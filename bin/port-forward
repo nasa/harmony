@@ -3,6 +3,34 @@
 # for error messages in setting up port forwards. This script is called from others, not expected
 # to be used directly in normal circumstances.
 
+# Wait until the local port of each port pair (e.g. 5432 for 5432:5432) accepts connections, giving
+# up if the port forwarding process exits or after max_wait_seconds
+function wait_for_local_ports() {
+  local pid="$1"
+  local service_name="$2"
+  shift 2
+  local port_pairs=("$@")
+  local max_wait_seconds=60
+
+  local port_pair
+  for port_pair in "${port_pairs[@]}"; do
+    local local_port="${port_pair%%:*}"
+    local attempts=0
+    until (exec 3<>"/dev/tcp/127.0.0.1/${local_port}") 2>/dev/null; do
+      if ! kill -0 "$pid" 2>/dev/null; then
+        echo "WARNING: Port forwarding for ${service_name} exited, see logs/port-forward-${service_name}.log"
+        return
+      fi
+      if [ "$attempts" -ge $((max_wait_seconds * 2)) ]; then
+        echo "WARNING: Timed out waiting for port ${local_port} for ${service_name}. Port forwarding may not work."
+        return
+      fi
+      attempts=$((attempts + 1))
+      sleep 0.5
+    done
+  done
+}
+
 function start_port_forwarding() {
   local service_name="$1"
   shift 1
@@ -52,8 +80,9 @@ function start_port_forwarding() {
   if [ "$USE_KRELAY" == "true" ]; then
     echo "Using krelay to set up port forwarding for $service_name"
     nohup kubectl relay "service/${service_name}" "${args[@]}" -n harmony > "logs/port-forward-${service_name}.log" 2>&1 &
-    # krelay does not have a good way to indicate that it is ready, so we have to resort to this for right now
-    sleep 3
+    # krelay only starts listening on the local ports once its krelay-server pod is running, which
+    # can take several seconds (start-all deletes those pods), so wait until the ports accept connections
+    wait_for_local_ports "$!" "$service_name" "${port_pairs[@]}"
   else
     nohup kubectl -n harmony port-forward "service/${service_name}" "${args[@]}" > "logs/port-forward-${service_name}.log" 2>&1 &
   fi
