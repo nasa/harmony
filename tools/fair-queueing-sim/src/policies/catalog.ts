@@ -57,6 +57,7 @@ const ADAPTIVE_OFF: Record<string, string> = {
   ADAPTIVE_FAST_LANE_SPLIT_BY_USER: 'false',
   ADAPTIVE_FAST_LANE_USE_SERVICE_DURATION: 'false',
   ADAPTIVE_FAST_LANE_SLOW_FAIR_SHARE: 'false',
+  ADAPTIVE_FAST_LANE_RUNNING_EVIDENCE: 'false',
 };
 
 export const POLICY_CATALOG: Record<string, PolicyInfo> = {
@@ -73,9 +74,10 @@ export const POLICY_CATALOG: Record<string, PolicyInfo> = {
     settings: FAST_LANE_SETTINGS,
   },
   'adaptive-fast-lane': {
-    description: 'fast-lane-reserve, with the same reserve, plus six fixes: a limit on running work for ' +
+    description: 'fast-lane-reserve, with the same reserve, plus seven fixes: a limit on running work for ' +
       'unmeasured jobs, a moving average of recent durations, a service-level estimate for unmeasured work, ' +
-      'per-user batch splitting, pod-reported durations, and slow work held to its fair share while fast work waits.',
+      'per-user batch splitting, pod-reported durations, slow work held to its fair share while fast work waits, ' +
+      'and work treated as slow once a work item has been running longer than the threshold.',
     designNotes: [FAST_LANE_DESIGN_NOTE],
     settings: [
       ...FAST_LANE_SETTINGS,
@@ -85,10 +87,10 @@ export const POLICY_CATALOG: Record<string, PolicyInfo> = {
         description: 'most work items that may run for a (job, service) before its first one completes (0 = no limit)',
       },
       {
-        env: 'ADAPTIVE_FAST_LANE_UNMEASURED_MODE',
-        default: 'limit',
-        description: "'limit' = the unmeasured limit always applies; 'capacity' = only while another user has work " +
-          'waiting and the job is bigger than the reserve, otherwise unmeasured work may use the slow work capacity',
+        env: 'ADAPTIVE_FAST_LANE_UNMEASURED_FRACTION',
+        default: '0.5',
+        description: 'beyond the unmeasured limit, all unmeasured work on the service together may run up to this fraction ' +
+          'of the slow work capacity, sharing it with slow work so the reserve stays free (0 = just the limit)',
       },
       {
         env: 'ADAPTIVE_FAST_LANE_EWMA_ALPHA',
@@ -120,19 +122,26 @@ export const POLICY_CATALOG: Record<string, PolicyInfo> = {
         default: 'true',
         description: "while other users' fast work is ready, hold a user's slow work to their fair share of the pods",
       },
+      {
+        env: 'ADAPTIVE_FAST_LANE_RUNNING_EVIDENCE',
+        default: 'true',
+        description: 'treat a (job, service) as slow while one of its work items has been running longer than the threshold',
+      },
     ],
     variants: [
       { name: 'no-unmeasured-limit', description: 'fix 1 (unmeasured work limit) off', set: { ADAPTIVE_FAST_LANE_UNMEASURED_LIMIT: '0' } },
+      { name: 'no-unmeasured-fraction', description: 'fix 1 without the shared fraction (just the limit)', set: { ADAPTIVE_FAST_LANE_UNMEASURED_FRACTION: '0' } },
       { name: 'no-moving-average', description: 'fix 2 (moving average) off', set: { ADAPTIVE_FAST_LANE_EWMA_ALPHA: '0' } },
       { name: 'no-service-estimate', description: 'fix 3 (service estimate for unmeasured work) off', set: { ADAPTIVE_FAST_LANE_UNMEASURED_ESTIMATE: 'fixed' } },
       { name: 'no-split-by-user', description: 'fix 4 (per-user batch split) off', set: { ADAPTIVE_FAST_LANE_SPLIT_BY_USER: 'false' } },
       { name: 'no-service-duration', description: 'fix 5 (pod-reported durations) off', set: { ADAPTIVE_FAST_LANE_USE_SERVICE_DURATION: 'false' } },
       { name: 'no-slow-fair-share', description: 'fix 6 (slow work held to fair share) off', set: { ADAPTIVE_FAST_LANE_SLOW_FAIR_SHARE: 'false' } },
+      { name: 'no-running-evidence', description: 'fix 7 (long-running work is slow) off', set: { ADAPTIVE_FAST_LANE_RUNNING_EVIDENCE: 'false' } },
     ],
     equivalentTo: {
       policy: 'fast-lane-reserve',
       set: ADAPTIVE_OFF,
-      description: 'with all six fixes switched off, adaptive-fast-lane must make exactly the same decisions as fast-lane-reserve',
+      description: 'with all seven fixes switched off, adaptive-fast-lane must make exactly the same decisions as fast-lane-reserve',
     },
   },
 };

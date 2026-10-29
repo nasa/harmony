@@ -1,15 +1,15 @@
 {
   "policy": "baseline",
   "code": {
-    "commit": "512e3e28eed42a36e54b6ae47f9cd2bd5e6979b4",
+    "commit": "d618872ef176cefb37d55973d7f256c3f3e4cf87",
     "branch": "harmony-2414",
     "dirty": true,
-    "changedFiles": ["packages/util/env-defaults"],
-    "changesHash": "9fc2765240b6",
+    "changedFiles": ["tools/fair-queueing-sim/src/bench.ts", "tools/fair-queueing-sim/src/policies/adaptive-fast-lane.ts", "tools/fair-queueing-sim/src/policies/catalog.ts", "tools/fair-queueing-sim/src/report.ts"],
+    "changesHash": "b94bfe51ff16",
     "codeHash": "161377973ec4479e",
     "node": "v24.21.0",
     "platform": "linux-arm64",
-    "recordedAt": "2026-10-29T19:07:22.479Z"
+    "recordedAt": "2026-10-29T22:08:33.048Z"
   },
   "seeds": [101, 102, 103, 104, 105],
   "set": {},
@@ -405,6 +405,38 @@
         "user.bob.fairShare": [0.5, 0.6667, 0.5714, 0.6154, 0.4444],
         "user.bob.meanSlowdown": [1.7269, 1.4015, 1.571, 1.5478, 2.6753],
         "user.bob.maxSlowdown": [1.7269, 1.4015, 1.571, 1.5478, 2.6753]
+      }
+    },
+    "11-new-slow-pair": {
+      "file": "scenarios/stories/11-new-slow-pair.yml",
+      "hash": "cdf659442f4a95ec",
+      "metrics": {
+        "overall.meanSlowdown": [5.5752, 5.6734, 5.6849, 5.5946, 5.5118],
+        "overall.maxSlowdown": [12.428, 12.76, 12.6547, 12.4182, 12.1123],
+        "sync.meanMakespan": [null, null, null, null, null],
+        "sync.maxMakespan": [null, null, null, null, null],
+        "fairness": [0.7261, 0.7022, 0.723, 0.7259, 0.7296],
+        "utilization": [98.257, 98.0198, 94.3101, 98.7614, 97.3638],
+        "idlePodHours": [0.25, 0.2167, 0.2, 0.225, 0.225],
+        "simulatedTime": [12318539, 12571578, 12691415, 11976718, 12074466],
+        "job.frank-slow.makespan": [11639895, 12571578, 12691415, 11791252, 12074466],
+        "job.frank-slow.slowdown": [2.1532, 2.253, 2.2957, 2.2312, 2.2133],
+        "job.frank-slow.meanWait": [4587877, 5434262, 4762342, 4310350, 4644789],
+        "job.mia-slow.makespan": [12318539, 11637710, 11616683, 11976718, 11828470],
+        "job.mia-slow.slowdown": [2.1446, 2.0072, 2.1042, 2.1345, 2.2097],
+        "job.mia-slow.meanWait": [4924271, 4106252, 4679063, 4728364, 4486389],
+        "job.gina-fast.makespan": [11853922, 12053833, 11647439, 11581353, 11480626],
+        "job.gina-fast.slowdown": [12.428, 12.76, 12.6547, 12.4182, 12.1123],
+        "job.gina-fast.meanWait": [10255768, 10551555, 10057178, 9974422, 9940641],
+        "user.frank.fairShare": [1.413, 1.3152, 1.3853, 1.4324, 1.407],
+        "user.frank.meanSlowdown": [2.1532, 2.253, 2.2957, 2.2312, 2.2133],
+        "user.frank.maxSlowdown": [2.1532, 2.253, 2.2957, 2.2312, 2.2133],
+        "user.mia.fairShare": [1.4158, 1.6001, 1.4537, 1.4093, 1.4212],
+        "user.mia.meanSlowdown": [2.1446, 2.0072, 2.1042, 2.1345, 2.2097],
+        "user.mia.maxSlowdown": [2.1446, 2.0072, 2.1042, 2.1345, 2.2097],
+        "user.gina.fairShare": [0.2237, 0.2118, 0.2194, 0.2228, 0.2282],
+        "user.gina.meanSlowdown": [12.428, 12.76, 12.6547, 12.4182, 12.1123],
+        "user.gina.maxSlowdown": [12.428, 12.76, 12.6547, 12.4182, 12.1123]
       }
     }
   }

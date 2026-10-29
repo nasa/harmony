@@ -128,6 +128,8 @@ interface ReportContext {
   baselineReasons: Record<string, string>;
   fresh: Record<string, ScenarioValues>;
   own: Record<string, OwnComparison>;
+  // runs that failed, which are missing from the comparisons, e.g. "04-crowded seed 101 / baseline"
+  failedRuns: string[];
 }
 
 interface Column {
@@ -581,6 +583,10 @@ function renderHeader(ctx: ReportContext): string {
     `- **Scenarios**: ${scenarioSource}; **seeds**: ${ctx.seeds.join(', ')}; **settings**: ${describeSet(ctx.set)}`,
     `- **\`baseline\`**: ${ctx.baselineNote}`,
     ...ctx.policies.map((p) => `- **\`${p}\` vs recorded**: ${ctx.own[p].note}`),
+    ...(ctx.failedRuns.length
+      ? [`- **${ctx.failedRuns.length} run(s) failed**, so these seeds are missing from their scenario's ` +
+        `values and comparisons: ${ctx.failedRuns.join(', ')}`]
+      : []),
     '',
     'Policies:',
     '',
@@ -636,6 +642,8 @@ function renderScenario(ctx: ReportContext, s: BenchScenario): string {
   } else if (ctx.baselineReasons[name]) {
     lines.push(`\`baseline\` was run afresh for this scenario: ${ctx.baselineReasons[name]}.`, '');
   }
+  const failed = ctx.failedRuns.filter((r) => r.startsWith(`${name} seed `));
+  if (failed.length) lines.push(`**Failed runs, missing from the values below:** ${failed.join(', ')}.`, '');
   for (const p of ctx.policies) {
     if (typeof ctx.fresh[p][name] === 'string') lines.push(`No \`${p}\` values: ${ctx.fresh[p][name]}.`, '');
     const own = ctx.own[p].values?.[name];
@@ -779,8 +787,11 @@ export async function runBench(options: BenchOptions): Promise<void> {
     };
   }
 
+  const failedRuns = tasks
+    .filter((t) => !fs.existsSync(path.join(t.runDir, 'summary.json')))
+    .map((t) => `${t.scenarioName} / ${t.policy}`);
   const ctx: ReportContext = {
-    options, suite, policies, seeds, set, scenarios, reference, baselineNote, baselineReasons, fresh, own,
+    options, suite, policies, seeds, set, scenarios, reference, baselineNote, baselineReasons, fresh, own, failedRuns,
   };
   fs.mkdirSync(options.outDir, { recursive: true });
   const reportFile = path.join(options.outDir, 'bench.md');
@@ -788,6 +799,7 @@ export async function runBench(options: BenchOptions): Promise<void> {
   console.log(`\n${renderProtected(ctx)}\n`);
   console.log(`baseline: ${baselineNote}`);
   for (const policy of policies) console.log(`${policy} vs recorded: ${own[policy].note}`);
+  if (failedRuns.length) console.log(`\nFAILED, so missing from the comparisons: ${failedRuns.join(', ')}`);
   console.log(`\nReport: ${reportFile}`);
 
   if (failures.length) throw new Error(`${failures.length} simulation(s) failed${options.record || options.label ? ', so nothing was recorded' : ''}`);

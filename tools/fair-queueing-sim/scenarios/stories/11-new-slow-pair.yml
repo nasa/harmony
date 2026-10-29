@@ -1,0 +1,29 @@
+# Story 11: two users start new slow jobs at the same time, and fast work arrives shortly after.
+name: 11-new-slow-pair
+description: >-
+  Frank and Mia each submit a job of 60 work items that take about 30 minutes, at the same time,
+  on a 20 pod service. Nobody knows yet that their work is slow. Five minutes later Gina submits
+  300 one-minute work items. Do the two new jobs soak up the service before they're known to be
+  slow, and does Gina's fast work get going?
+goodOutcome: >-
+  Gina's fast work starts promptly and keeps flowing while Frank's and Mia's slow work runs: a
+  low slowdown for gina-fast, with the reserve free for her when she arrives. Once Frank's and
+  Mia's work is known to be slow, the three users share the service fairly. Frank and Mia
+  finishing later is the expected price.
+# the metrics that express goodOutcome, highlighted by `npm run sim -- bench`
+benchmarks:
+  - metric: job.gina-fast.slowdown
+    note: fast work arriving after two new slow jobs still gets going
+  - metric: fairness
+    note: the three users share the service once the slow work is known
+seed: 11
+maxDuration: 2d
+env:
+  QUEUE_LONG_POLLING_WAIT_TIME_SEC: 3
+services:
+  - name: svc
+    pods: 20
+jobs:
+  - { name: frank-slow, user: frank, granules: 60, steps: [{ service: svc, duration: { dist: lognormal, median: 30m, sigma: 0.2 } }] }
+  - { name: mia-slow, user: mia, granules: 60, steps: [{ service: svc, duration: { dist: lognormal, median: 30m, sigma: 0.2 } }] }
+  - { name: gina-fast, user: gina, submitAt: 5m, granules: 300, steps: [{ service: svc, duration: { dist: lognormal, median: 1m, sigma: 0.3 } }] }

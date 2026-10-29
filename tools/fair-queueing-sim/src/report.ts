@@ -56,7 +56,7 @@ export const GLOSSARY: [string, string][] = [
   ['contended fairness', 'Jain\'s index of the per-user fair share ratios, averaged over the times two or more users wanted the service; 1.0 = everyone had exactly their share'],
   ['utilization', 'pod time spent running work divided by pods x simulated time'],
   ['idle while work ready', 'pod-hours spent idle while the service had work ready or queued - either a policy deliberately holding work back (e.g. a reserve) or pods being left unused'],
-  ['policy rows', 'values recorded by the policy, as max / time-weighted mean - e.g. slowRunning (slow work items in flight), slowCapacity (the most slow work allowed), fastLaneOnly (1 while slow work is capped), slowJobs ((job, service)s classified slow), unmeasuredRunning (work items running for jobs not yet measured)'],
+  ['policy rows', 'values recorded by the policy, as max / time-weighted mean - e.g. slowRunning (slow work items in flight), slowCapacity (the most slow work allowed), fastLaneOnly (1 while slow work is capped), slowJobs ((job, service)s classified slow by measured duration), unmeasuredRunning (work items running for jobs not yet measured), longRunningJobs ((job, service)s treated as slow only because a work item has been running longer than the threshold)'],
 ];
 
 /**

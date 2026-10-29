@@ -246,6 +246,8 @@ ship a policy:
 | `scenarios/stories/07-slow-alone.yml` | a user with only slow work has the service to themselves |
 | `scenarios/stories/08-many-jobs.yml` | one user with four jobs vs one user with one job |
 | `scenarios/stories/09-slowdown-drift.yml` | a job whose work items suddenly get 20x slower part way through |
+| `scenarios/stories/10-multi-granule-sync.yml` | a stress case: a 4 granule sync request (production sync requests are 1 granule) |
+| `scenarios/stories/11-new-slow-pair.yml` | two users start new slow jobs together, and fast work arrives five minutes later |
 | `scenarios/mixed-workload.yml` | six hours of random arrivals from five users across a two step chain (several minutes) |
 
 The stories are the benchmark suite. To make a scenario, copy one; the format is in
@@ -255,7 +257,7 @@ The stories are the benchmark suite. To make a scenario, copy one; the format is
 |---|---|
 | `baseline` | Harmony's current algorithm: jobs interleaved round robin by user, oldest-worked first, with each batch split evenly per job |
 | `fast-lane-reserve` | the harmony-2413 algorithm: users ranked by the expected runtime of their running work, sync before async, and a fast lane reserve |
-| `adaptive-fast-lane` | `fast-lane-reserve` plus six fixes, each with a switch: a limit on unmeasured work, a moving average of durations, a service-level estimate for unmeasured work, per-user batch splitting, pod-reported durations, and slow work held to its fair share while fast work waits |
+| `adaptive-fast-lane` | `fast-lane-reserve` plus seven fixes, each with a switch: a limit on unmeasured work, a moving average of durations, a service-level estimate for unmeasured work, per-user batch splitting, pod-reported durations, slow work held to its fair share while fast work waits, and work treated as slow once a work item has run longer than the threshold |
 
 **The fast lane reserve leaves pods idle on purpose.** Slow work may never use more than
 `1 - FAST_LANE_RESERVE_FRACTION` of a service's pods, even when nothing else is waiting, because

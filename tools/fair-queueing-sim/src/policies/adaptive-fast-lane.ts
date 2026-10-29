@@ -9,11 +9,12 @@
 //
 // 1. Unmeasured work is limited. A (job, service) with no completed work item yet may only have
 //    ADAPTIVE_FAST_LANE_UNMEASURED_LIMIT work items running, so a new job whose work items turn
-//    out to be slow can't fill the service before anyone knows it's slow. In 'capacity' mode
-//    (ADAPTIVE_FAST_LANE_UNMEASURED_MODE) the limit only applies while another user has work
-//    waiting for the service, and not to jobs no bigger than the reserve: otherwise unmeasured
-//    work may use the slow work capacity (shared with the work known to be slow), since the
-//    reserve already keeps pods for fast work that arrives later.
+//    out to be slow can't fill the service before anyone knows it's slow. Beyond that limit,
+//    all unmeasured work on the service together may run up to
+//    ADAPTIVE_FAST_LANE_UNMEASURED_FRACTION of the slow work capacity, while the capacity has
+//    room: unmeasured work might turn out to be slow, so it shares the capacity with the work
+//    known to be slow and never takes the reserve, and sharing the allowance stops a few new
+//    jobs from taking every slow slot between them.
 // 2. Durations track recent work. The measured duration is an exponentially weighted moving
 //    average (weight ADAPTIVE_FAST_LANE_EWMA_ALPHA on the newest work item) rather than the
 //    mean over the job's lifetime, so a job whose work items get slower part way through is
@@ -34,8 +35,16 @@
 //    share only the reserve. Nothing running is interrupted - the slow user drops to their
 //    share as their work items finish - and when no fast work is waiting, slow work can use up
 //    to the capacity as before.
+// 7. Long-running work is slow before it finishes. A work item that has been running longer
+//    than the threshold will take longer than the threshold, so its (job, service) is treated
+//    as slow from then on - without waiting for a work item to complete. This caps the cost
+//    of fix 1's limit at the threshold rather than the first work item's duration, and
+//    notices a job that has slowed down (story 09) sooner than the moving average does. It
+//    only ever shows that work is slow: showing it's fast still takes completed work items.
+//    The current attempt's start time is used, so queue time and failed attempts don't count;
+//    a stuck work item looks slow until the work-failer times it out.
 //
-// Each fix can be switched off (see settings() below); with all six off the policy makes
+// Each fix can be switched off (see settings() below); with all seven off the policy makes
 // exactly the same decisions as fast-lane-reserve. Uses the same average_duration and
 // completed_count columns on user_work as fast-lane-reserve.
 //
@@ -50,9 +59,10 @@ interface Settings {
   fastLaneReserveFraction: number;
   // max running work items for an unmeasured (job, service); 0 = no limit (fast-lane-reserve)
   unmeasuredLimit: number;
-  // 'limit' = the unmeasured limit always applies; 'capacity' = an unmeasured job that's small,
-  // or that no other user is competing with, may also use the slow work capacity
-  unmeasuredMode: 'limit' | 'capacity';
+  // all unmeasured work on the service together may run up to this fraction of the slow work
+  // capacity, sharing the capacity with slow work (each (job, service) can always run
+  // unmeasuredLimit); 0 = just unmeasuredLimit
+  unmeasuredFraction: number;
   // weight of the newest work item in the moving average; 0 = lifetime mean (fast-lane-reserve)
   ewmaAlpha: number;
   // true = unmeasured work counts as the service's mean measured duration when ranking users
@@ -63,6 +73,9 @@ interface Settings {
   useServiceDuration: boolean;
   // true = slow work is held to its user's fair share while other users' fast work waits
   slowFairShare: boolean;
+  // true = a (job, service) is also slow while one of its work items has been running longer
+  // than the threshold
+  runningEvidence: boolean;
 }
 
 /**
@@ -88,14 +101,67 @@ function settings(): Settings {
     slowWorkThresholdMs: Number(env.SLOW_WORK_THRESHOLD_MS ?? 600_000),
     fastLaneReserveFraction: Number(env.FAST_LANE_RESERVE_FRACTION ?? 0.3),
     unmeasuredLimit: Number(env.ADAPTIVE_FAST_LANE_UNMEASURED_LIMIT ?? 2),
-    unmeasuredMode: env.ADAPTIVE_FAST_LANE_UNMEASURED_MODE === 'capacity' ? 'capacity' : 'limit',
+    unmeasuredFraction: Number(env.ADAPTIVE_FAST_LANE_UNMEASURED_FRACTION ?? 0.5),
     ewmaAlpha: Number(env.ADAPTIVE_FAST_LANE_EWMA_ALPHA ?? 0.2),
     serviceEstimate: (env.ADAPTIVE_FAST_LANE_UNMEASURED_ESTIMATE ?? 'service') === 'service',
     unmeasuredDefaultMs: Number(env.ADAPTIVE_FAST_LANE_UNMEASURED_DEFAULT_MS ?? 3_600_000),
     splitByUser: envBoolean('ADAPTIVE_FAST_LANE_SPLIT_BY_USER', true),
     useServiceDuration: envBoolean('ADAPTIVE_FAST_LANE_USE_SERVICE_DURATION', true),
     slowFairShare: envBoolean('ADAPTIVE_FAST_LANE_SLOW_FAIR_SHARE', true),
+    runningEvidence: envBoolean('ADAPTIVE_FAST_LANE_RUNNING_EVIDENCE', true),
   };
+}
+
+// The CTEs that classify each (job, service) of the service as slow or not, shared by every
+// query that needs to know what's slow so they all agree: slow if its measured duration is
+// over the threshold or (fix 7) one of its work items has been running for longer than the
+// threshold in its current attempt. A running item's startedAt is when a pod took it off the
+// queue, and is reset by a retry, so time spent queued or in failed attempts doesn't count.
+// Uses the bindings from classificationBindings.
+const CLASSIFIED_CTES = `
+    LongRunning AS (
+      SELECT DISTINCT "jobID" AS job_id
+      FROM work_items
+      WHERE :runningEvidence = 1
+        AND "serviceID" = :serviceID
+        AND status = 'running'
+        AND "startedAt" < :longRunningSince
+    ),
+    Classified AS (
+      SELECT
+        uw.*,
+        CASE WHEN uw.average_duration > :threshold OR uw.job_id IN (SELECT job_id FROM LongRunning)
+          THEN 1 ELSE 0 END AS slow
+      FROM user_work uw
+      WHERE uw.service_id = :serviceID
+    )`;
+
+/**
+ * The bindings CLASSIFIED_CTES uses.
+ *
+ * @param serviceID - The service ID
+ * @param s - the policy settings
+ * @returns the bindings
+ */
+function classificationBindings(serviceID: string, s: Settings): Record<string, string | number | Date> {
+  return {
+    serviceID,
+    threshold: s.slowWorkThresholdMs,
+    runningEvidence: s.runningEvidence ? 1 : 0,
+    longRunningSince: new Date(Date.now() - s.slowWorkThresholdMs),
+  };
+}
+
+/**
+ * Returns the rows of a raw query's result.
+ *
+ * @param results - the result of tx.raw()
+ * @returns the rows
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function rawRows(results: any): any[] {
+  // pg's tx.raw() returns { rows: [...] }; sqlite's (test-only) returns the row array directly.
+  return db.client.config.client === 'pg' ? (results.rows || []) : results;
 }
 
 /**
@@ -157,16 +223,17 @@ function maxMinFairShares(demands: Record<string, number>, capacity: number): Re
 async function slowWorkLimits(
   tx: Transaction, serviceID: string, podCount: number, s: Settings,
 ): Promise<Record<string, number>> {
-  // unmeasured work counts as fast, as it does when classifying jobs
-  const rows = await tx(UserWork.table)
-    .where('service_id', serviceID)
-    .groupBy('username')
-    .select('username')
-    .sum({ running: 'running_count', ready: 'ready_count' })
-    .select(tx.raw(
-      'SUM(CASE WHEN average_duration IS NULL OR average_duration <= ? THEN ready_count ELSE 0 END) AS fast_ready',
-      [s.slowWorkThresholdMs],
-    ));
+  // unmeasured work counts as fast unless it's been running too long, as when classifying jobs
+  const rows = rawRows(await tx.raw(`
+    WITH ${CLASSIFIED_CTES}
+    SELECT
+      username,
+      SUM(running_count) AS running,
+      SUM(ready_count) AS ready,
+      SUM(CASE WHEN slow = 0 THEN ready_count ELSE 0 END) AS fast_ready
+    FROM Classified
+    GROUP BY username
+  `, classificationBindings(serviceID, s)));
   const loads = rows.map((r) => ({
     user: r.username as string,
     running: Number(r.running) || 0,
@@ -183,14 +250,25 @@ async function slowWorkLimits(
   return limits;
 }
 
+/**
+ * How many work items all unmeasured work on the service may run together beyond each (job,
+ * service)'s unmeasured limit: the unmeasured fraction of the slow work capacity, or the limit
+ * if that's more.
+ *
+ * @param s - the policy settings
+ * @param slowWorkCapacity - the most slow work items that may run on the service
+ * @returns the allowance
+ */
+function unmeasuredAllowance(s: Settings, slowWorkCapacity: number): number {
+  return Math.max(s.unmeasuredLimit, Math.floor(s.unmeasuredFraction * slowWorkCapacity));
+}
+
 interface NextJob {
   jobId: string;
   username: string;
   isSlow: boolean;
   // running work items if the (job, service) hasn't been measured yet, otherwise null
   unmeasuredRunning: number | null;
-  // 'capacity' mode: the unmeasured job may also use the slow work capacity
-  unmeasuredFree: boolean;
 }
 
 /**
@@ -203,25 +281,23 @@ interface NextJob {
  * @param serviceID - The service ID
  * @param batchSize - The batch size
  * @param slowWorkCapacity - the most slow work items that may run on the service
- * @param smallJobItems - in 'capacity' mode, unmeasured jobs with at most this many work items
- * ready or running may use the slow work capacity even when other users are competing
  * @param s - the policy settings
  * @returns the jobs, the number of slow work items currently running, and the number of
  * unmeasured work items currently running
  */
 async function getNextJobs(
-  tx: Transaction, serviceID: string, batchSize: number, slowWorkCapacity: number, smallJobItems: number, s: Settings,
+  tx: Transaction, serviceID: string, batchSize: number, slowWorkCapacity: number, s: Settings,
 ): Promise<{ jobs: NextJob[]; slowRunningCount: number; unmeasuredRunningCount: number }> {
   // sqlite (test-only) doesn't support SKIP LOCKED; it's only needed for real concurrent
   // scheduler pods, which only run against postgres.
   const lockClause = db.client.config.client === 'pg' ? 'FOR UPDATE OF uw SKIP LOCKED' : '';
 
   const sql = `
-    WITH SlowInUse AS (
+    WITH ${CLASSIFIED_CTES},
+    SlowInUse AS (
       SELECT COALESCE(SUM(running_count), 0) AS slow_running_count
-      FROM user_work
-      WHERE service_id = :serviceID
-        AND average_duration > :threshold
+      FROM Classified
+      WHERE slow = 1
     ),
     ServiceEstimate AS (
       SELECT service_id, AVG(average_duration) AS estimate
@@ -231,9 +307,8 @@ async function getNextJobs(
     ),
     UnmeasuredInUse AS (
       SELECT COALESCE(SUM(running_count), 0) AS unmeasured_running_count
-      FROM user_work
-      WHERE service_id = :serviceID
-        AND average_duration IS NULL
+      FROM Classified
+      WHERE average_duration IS NULL AND slow = 0
     ),
     Eligible AS (
       SELECT
@@ -241,31 +316,21 @@ async function getNextJobs(
         uw.last_worked,
         uw.username,
         uw.is_async,
-        CASE WHEN uw.average_duration > :threshold THEN 1 ELSE 0 END AS is_slow,
-        CASE WHEN uw.average_duration IS NULL THEN uw.running_count ELSE NULL END AS unmeasured_running,
-        CASE WHEN uw.average_duration IS NULL AND :capacityMode = 1 AND :unmeasuredLimit > 0
-          AND (uw.ready_count + uw.running_count <= :smallJobItems
-            OR NOT EXISTS (
-              SELECT 1 FROM user_work o
-              WHERE o.service_id = :serviceID AND o.ready_count > 0 AND o.username <> uw.username))
-          THEN 1 ELSE 0 END AS unmeasured_free
-      FROM user_work uw
+        uw.slow AS is_slow,
+        CASE WHEN uw.average_duration IS NULL AND uw.slow = 0 THEN uw.running_count ELSE NULL END AS unmeasured_running
+      FROM Classified uw
       CROSS JOIN SlowInUse s
       CROSS JOIN UnmeasuredInUse m
-      WHERE uw.service_id = :serviceID
-        AND uw.ready_count > 0
+      WHERE uw.ready_count > 0
         AND (
-          (uw.average_duration IS NOT NULL
-            AND (s.slow_running_count < :capacity OR uw.average_duration <= :threshold))
-          OR (uw.average_duration IS NULL AND :unmeasuredLimit > 0
+          (uw.slow = 1 AND s.slow_running_count < :capacity)
+          OR (uw.slow = 0 AND uw.average_duration IS NOT NULL)
+          OR (uw.slow = 0 AND uw.average_duration IS NULL AND :unmeasuredLimit > 0
             AND uw.running_count < :unmeasuredLimit)
-          OR (uw.average_duration IS NULL AND :capacityMode = 1 AND :unmeasuredLimit > 0
-            AND s.slow_running_count + m.unmeasured_running_count < :capacity
-            AND (uw.ready_count + uw.running_count <= :smallJobItems
-              OR NOT EXISTS (
-                SELECT 1 FROM user_work o
-                WHERE o.service_id = :serviceID AND o.ready_count > 0 AND o.username <> uw.username)))
-          OR (uw.average_duration IS NULL AND :unmeasuredLimit <= 0
+          OR (uw.slow = 0 AND uw.average_duration IS NULL AND :unmeasuredLimit > 0
+            AND m.unmeasured_running_count < :unmeasuredAllowance
+            AND s.slow_running_count + m.unmeasured_running_count < :capacity)
+          OR (uw.slow = 0 AND uw.average_duration IS NULL AND :unmeasuredLimit <= 0
             AND (s.slow_running_count < :capacity OR (uw.running_count = 0 AND uw.completed_count = 0)))
         )
     ),
@@ -289,7 +354,6 @@ async function getNextJobs(
         e.username,
         e.is_slow,
         e.unmeasured_running,
-        e.unmeasured_free,
         ROW_NUMBER() OVER (
           PARTITION BY e.username
           ORDER BY e.is_async ASC, e.last_worked ASC, e.job_id ASC
@@ -302,14 +366,13 @@ async function getNextJobs(
         R.username,
         R.is_slow,
         R.unmeasured_running,
-        R.unmeasured_free,
         ROW_NUMBER() OVER (
           ORDER BY R.user_row_num ASC, ur.expected_runtime ASC, ur.most_recent_worked ASC, R.last_worked ASC
         ) AS overall_row_num
       FROM RankedJobs R
       JOIN UserRank ur ON ur.username = R.username
     )
-    SELECT uw.job_id, i.username, i.is_slow, i.unmeasured_running, i.unmeasured_free
+    SELECT uw.job_id, i.username, i.is_slow, i.unmeasured_running
     FROM user_work uw
     JOIN Interleaved i
       ON i.job_id = uw.job_id
@@ -319,32 +382,24 @@ async function getNextJobs(
     ${lockClause}
   `;
 
-  const [results, slowRow, unmeasuredRow] = await Promise.all([
+  const bindings = classificationBindings(serviceID, s);
+  const [results, slowResults, unmeasuredResults] = await Promise.all([
     tx.raw(sql, {
-      serviceID,
-      threshold: s.slowWorkThresholdMs,
+      ...bindings,
       capacity: slowWorkCapacity,
       unmeasuredLimit: s.unmeasuredLimit,
-      capacityMode: s.unmeasuredMode === 'capacity' ? 1 : 0,
-      smallJobItems,
+      unmeasuredAllowance: unmeasuredAllowance(s, slowWorkCapacity),
       serviceEstimate: s.serviceEstimate ? 1 : 0,
       unmeasuredDefault: s.unmeasuredDefaultMs,
       batchSize,
     }),
-    tx(UserWork.table)
-      .where('service_id', serviceID)
-      .where('average_duration', '>', s.slowWorkThresholdMs)
-      .sum({ slowRunningCount: 'running_count' })
-      .first(),
-    tx(UserWork.table)
-      .where('service_id', serviceID)
-      .whereNull('average_duration')
-      .sum({ unmeasuredRunningCount: 'running_count' })
-      .first(),
+    tx.raw(`WITH ${CLASSIFIED_CTES} SELECT SUM(running_count) AS n FROM Classified WHERE slow = 1`, bindings),
+    tx.raw(`WITH ${CLASSIFIED_CTES} SELECT SUM(running_count) AS n FROM Classified WHERE average_duration IS NULL AND slow = 0`, bindings),
   ]);
+  const slowRow = { slowRunningCount: rawRows(slowResults)[0]?.n };
+  const unmeasuredRow = { unmeasuredRunningCount: rawRows(unmeasuredResults)[0]?.n };
 
-  // pg's tx.raw() returns { rows: [...] }; sqlite's (test-only) returns the row array directly.
-  const rows = db.client.config.client === 'pg' ? (results.rows || []) : results;
+  const rows = rawRows(results);
   return {
     jobs: rows.map((r) => ({
       jobId: r.job_id,
@@ -352,7 +407,6 @@ async function getNextJobs(
       isSlow: Number(r.is_slow) === 1,
       unmeasuredRunning: r.unmeasured_running === null || r.unmeasured_running === undefined
         ? null : Number(r.unmeasured_running),
-      unmeasuredFree: Number(r.unmeasured_free) === 1,
     })),
     slowRunningCount: Number(slowRow?.slowRunningCount) || 0,
     unmeasuredRunningCount: Number(unmeasuredRow?.unmeasuredRunningCount) || 0,
@@ -366,14 +420,14 @@ export const adaptiveFastLanePolicy: FairQueueingPolicy = {
     const s = settings();
     const podCount = context.servicePodCount ?? 0;
     const slowWorkCapacity = getSlowWorkCapacity(podCount, s.fastLaneReserveFraction);
-    // a job no bigger than the reserve can't take more than a reserve's worth of pods
-    const smallJobItems = Math.max(0, podCount - slowWorkCapacity);
     const { jobs, slowRunningCount, unmeasuredRunningCount } = await getNextJobs(
-      tx, serviceID, batchSize, slowWorkCapacity, smallJobItems, s);
+      tx, serviceID, batchSize, slowWorkCapacity, s);
     let remainingSlowWorkSlots = Math.max(0, slowWorkCapacity - slowRunningCount);
-    // in 'capacity' mode, unmeasured work might turn out to be slow, so it shares the slow work
-    // capacity with the work known to be slow
+    // unmeasured work beyond the unmeasured limit might turn out to be slow, so it shares the
+    // slow work capacity with the work known to be slow
     let remainingUnmeasuredSlots = Math.max(0, slowWorkCapacity - slowRunningCount - unmeasuredRunningCount);
+    // what's left of the allowance for all unmeasured work together
+    let remainingSharedAllowance = unmeasuredAllowance(s, slowWorkCapacity) - unmeasuredRunningCount;
     const slowLimits = s.slowFairShare && podCount > 0 && jobs.some((j) => j.isSlow)
       ? await slowWorkLimits(tx, serviceID, podCount, s)
       : {};
@@ -385,11 +439,15 @@ export const adaptiveFastLanePolicy: FairQueueingPolicy = {
       if (job.isSlow) size = Math.min(size, remainingSlowWorkSlots, slowLimits[job.username] ?? Infinity);
       if (s.unmeasuredLimit > 0 && job.unmeasuredRunning !== null) {
         const limit = s.unmeasuredLimit - job.unmeasuredRunning;
-        size = Math.min(size, job.unmeasuredFree ? Math.max(limit, remainingUnmeasuredSlots) : limit);
+        // beyond the limit, what's left of the shared allowance while the slow work capacity has room
+        size = Math.min(size, Math.max(limit, Math.min(remainingSharedAllowance, remainingUnmeasuredSlots)));
       }
       if (size <= 0) return 0;
       const numTaken = await takeWorkItems(job.jobId, size);
-      if (job.unmeasuredRunning !== null) remainingUnmeasuredSlots -= numTaken;
+      if (job.unmeasuredRunning !== null) {
+        remainingUnmeasuredSlots -= numTaken;
+        remainingSharedAllowance -= numTaken;
+      }
       if (job.isSlow) remainingSlowWorkSlots -= numTaken;
       // the user's fast work counts towards their share too
       if (slowLimits[job.username] !== undefined) slowLimits[job.username] -= numTaken;
@@ -450,7 +508,9 @@ export const adaptiveFastLanePolicy: FairQueueingPolicy = {
 };
 
 /**
- * Records the fast lane state plus how many unmeasured work items are running.
+ * Records the fast lane state plus how many unmeasured work items are running and (fix 7) how
+ * many (job, service)s are slow only because of a long-running work item. The fast lane state's
+ * slowJobs counts only those slow by measured duration.
  *
  * @param tx - a database connection
  * @param serviceID - the service ID
@@ -460,11 +520,17 @@ export const adaptiveFastLanePolicy: FairQueueingPolicy = {
 export async function sampleAdaptiveFastLane(
   tx: Transaction, serviceID: string, servicePodCount: number,
 ): Promise<Record<string, number>> {
+  const s = settings();
   const values = await sampleFastLaneReserve(tx, serviceID, servicePodCount);
   const row = await tx(UserWork.table)
     .where('service_id', serviceID)
     .whereNull('average_duration')
     .sum({ n: 'running_count' })
     .first();
-  return { ...values, unmeasuredRunning: Number(row?.n) || 0 };
+  const longRunning = rawRows(await tx.raw(`
+    WITH ${CLASSIFIED_CTES}
+    SELECT COUNT(*) AS n FROM Classified
+    WHERE slow = 1 AND (average_duration IS NULL OR average_duration <= :threshold)
+  `, classificationBindings(serviceID, s)));
+  return { ...values, unmeasuredRunning: Number(row?.n) || 0, longRunningJobs: Number(longRunning[0]?.n) || 0 };
 }
