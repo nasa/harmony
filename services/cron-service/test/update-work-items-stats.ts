@@ -3,6 +3,7 @@ import * as sinon from 'sinon';
 
 import * as workItemsStatsModel from '../../harmony/app/models/work-items-stats';
 import { WorkItemsStatsCron } from '../app/cronjobs/update-work-items-stats';
+import env from '../app/util/env';
 
 describe('WorkItemsStatsCron', function () {
   let sandbox: sinon.SinonSandbox;
@@ -15,6 +16,7 @@ describe('WorkItemsStatsCron', function () {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let ctx: any;
   let upsertStub: sinon.SinonStub;
+  let pruneStub: sinon.SinonStub;
 
   beforeEach(function () {
     sandbox = sinon.createSandbox();
@@ -32,6 +34,7 @@ describe('WorkItemsStatsCron', function () {
     ctx = { logger: mockLogger, db: mockDb };
 
     upsertStub = sandbox.stub(workItemsStatsModel, 'upsertWorkItemStats');
+    pruneStub = sandbox.stub(workItemsStatsModel, 'pruneWorkItemStats').resolves({});
   });
 
   afterEach(function () {
@@ -95,6 +98,38 @@ describe('WorkItemsStatsCron', function () {
       await expect(WorkItemsStatsCron.run(ctx)).to.not.be.rejected;
 
       expect(mockLogger.error.calledWith('Failed to update work items stats')).to.be.true;
+      expect(mockLogger.error.calledWith(err)).to.be.true;
+    });
+
+    it('prunes expired rows outside of the transaction, using the configured retention', async function () {
+      upsertStub.resolves(1);
+
+      await WorkItemsStatsCron.run(ctx);
+
+      expect(pruneStub.calledOnce).to.be.true;
+      expect(pruneStub.calledAfter(upsertStub)).to.be.true;
+      expect(pruneStub.firstCall.args).to.eql([
+        mockDb, env.workItemsStatsMinuteRetentionDays, env.workItemsStatsHourlyRetentionDays,
+        env.workItemsStatsPruneHoursPerRun,
+      ]);
+    });
+
+    it('logs the number of expired rows deleted', async function () {
+      upsertStub.resolves(1);
+      pruneStub.resolves({ work_items_stats: 3, job_stats: 2 });
+
+      await WorkItemsStatsCron.run(ctx);
+
+      expect(mockLogger.info.calledWith('Work items stats updater deleted 5 expired rows')).to.be.true;
+    });
+
+    it('logs an error and does not throw when pruning fails', async function () {
+      upsertStub.resolves(1);
+      const err = new Error('prune failure');
+      pruneStub.rejects(err);
+
+      await expect(WorkItemsStatsCron.run(ctx)).to.not.be.rejected;
+
       expect(mockLogger.error.calledWith(err)).to.be.true;
     });
 

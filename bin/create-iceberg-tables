@@ -88,6 +88,7 @@ TABLE_NAMES=(
   "users_labels"
   "work_items"
   "workflow_steps"
+  "user_work_history"
 )
 
 # Every table is created as Iceberg format v3 ("format-version" in its properties), which is
@@ -389,6 +390,31 @@ EOF
           "transform": "month",
           "name": "updated_at_month"
         }
+      ]
+    },
+    "properties": {"format-version": "3"}
+  }
+}
+EOF
+)"
+"$(cat <<'EOF'
+{
+  "iceberg": {
+    "schema": {
+      "fields": [
+        {"name": "id", "type": "long"},
+        {"name": "job_id", "type": "string"},
+        {"name": "service_id", "type": "string"},
+        {"name": "username", "type": "string"},
+        {"name": "is_async", "type": "boolean"},
+        {"name": "completed_count", "type": "int"},
+        {"name": "sum_duration_ms", "type": "long"},
+        {"name": "failed_count", "type": "int"},
+        {"name": "failed_sum_duration_ms", "type": "long"},
+        {"name": "first_worked_at", "type": "timestamptz"},
+        {"name": "retired_at", "type": "timestamptz"},
+        {"name": "created_at", "type": "timestamptz"},
+        {"name": "updated_at", "type": "timestamptz"}
       ]
     },
     "properties": {"format-version": "3"}

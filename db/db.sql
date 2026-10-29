@@ -161,9 +161,28 @@ CREATE TABLE `user_work` (
   `last_worked` datetime not null,
   `average_duration` integer,
   `completed_count` integer not null default 0,
+  `failed_count` integer not null default 0,
+  `failed_sum_duration_ms` bigint not null default 0,
   `createdAt` datetime not null,
   `updatedAt` datetime not null,
   FOREIGN KEY(job_id) REFERENCES jobs(jobID),
+  UNIQUE(job_id, service_id)
+);
+
+CREATE TABLE `user_work_history` (
+  `id` integer not null primary key autoincrement,
+  `job_id` char(36) not null,
+  `service_id` varchar(255) not null,
+  `username` varchar(255) not null,
+  `is_async` boolean,
+  `completed_count` integer not null default 0,
+  `sum_duration_ms` bigint not null default 0,
+  `failed_count` integer not null default 0,
+  `failed_sum_duration_ms` bigint not null default 0,
+  `first_worked_at` datetime,
+  `retired_at` datetime not null,
+  `createdAt` datetime not null,
+  `updatedAt` datetime not null,
   UNIQUE(job_id, service_id)
 );
 
@@ -193,7 +212,115 @@ CREATE TABLE `work_items_stats` (
   `service_id` varchar(255) not null,
   `status` varchar(255) not null,
   `count` integer not null,
+  `duration_count` bigint not null default 0,
+  `sum_duration_ms` bigint not null default 0,
+  `max_duration_ms` bigint not null default 0,
+  `retry_count` bigint not null default 0,
+  `sum_items_size` double precision not null default 0,
+  `duration_bucket_0` bigint not null default 0,
+  `duration_bucket_1` bigint not null default 0,
+  `duration_bucket_2` bigint not null default 0,
+  `duration_bucket_3` bigint not null default 0,
+  `duration_bucket_4` bigint not null default 0,
+  `duration_bucket_5` bigint not null default 0,
+  `duration_bucket_6` bigint not null default 0,
+  `duration_bucket_7` bigint not null default 0,
   PRIMARY KEY (`minute`, `service_id`, `status`)
+);
+
+CREATE TABLE `work_items_stats_hourly` (
+  `hour` datetime not null,
+  `service_id` varchar(255) not null,
+  `status` varchar(255) not null,
+  `count` integer not null,
+  `duration_count` bigint not null default 0,
+  `sum_duration_ms` bigint not null default 0,
+  `max_duration_ms` bigint not null default 0,
+  `retry_count` bigint not null default 0,
+  `sum_items_size` double precision not null default 0,
+  `duration_bucket_0` bigint not null default 0,
+  `duration_bucket_1` bigint not null default 0,
+  `duration_bucket_2` bigint not null default 0,
+  `duration_bucket_3` bigint not null default 0,
+  `duration_bucket_4` bigint not null default 0,
+  `duration_bucket_5` bigint not null default 0,
+  `duration_bucket_6` bigint not null default 0,
+  `duration_bucket_7` bigint not null default 0,
+  PRIMARY KEY (`hour`, `service_id`, `status`)
+);
+
+CREATE TABLE `user_work_items_stats` (
+  `minute` datetime not null,
+  `username` varchar(255) not null,
+  `service_id` varchar(255) not null,
+  `status` varchar(255) not null,
+  `count` integer not null,
+  `duration_count` bigint not null default 0,
+  `sum_duration_ms` bigint not null default 0,
+  `max_duration_ms` bigint not null default 0,
+  `retry_count` bigint not null default 0,
+  `sum_items_size` double precision not null default 0,
+  PRIMARY KEY (`minute`, `username`, `service_id`, `status`)
+);
+
+CREATE TABLE `user_work_items_stats_hourly` (
+  `hour` datetime not null,
+  `username` varchar(255) not null,
+  `service_id` varchar(255) not null,
+  `status` varchar(255) not null,
+  `count` integer not null,
+  `duration_count` bigint not null default 0,
+  `sum_duration_ms` bigint not null default 0,
+  `max_duration_ms` bigint not null default 0,
+  `retry_count` bigint not null default 0,
+  `sum_items_size` double precision not null default 0,
+  PRIMARY KEY (`hour`, `username`, `service_id`, `status`)
+);
+
+CREATE TABLE `work_items_failure_stats` (
+  `minute` datetime not null,
+  `service_id` varchar(255) not null,
+  `status` varchar(255) not null,
+  `message_category` varchar(255) not null,
+  `count` integer not null,
+  PRIMARY KEY (`minute`, `service_id`, `status`, `message_category`)
+);
+
+CREATE TABLE `work_items_failure_stats_hourly` (
+  `hour` datetime not null,
+  `service_id` varchar(255) not null,
+  `status` varchar(255) not null,
+  `message_category` varchar(255) not null,
+  `count` integer not null,
+  PRIMARY KEY (`hour`, `service_id`, `status`, `message_category`)
+);
+
+CREATE TABLE `job_stats` (
+  `minute` datetime not null,
+  `username` varchar(255) not null,
+  `is_async` boolean not null,
+  `status` varchar(255) not null,
+  `count` integer not null,
+  `sum_duration_ms` bigint not null default 0,
+  `max_duration_ms` bigint not null default 0,
+  `sum_granules` bigint not null default 0,
+  `sum_input_size` double precision not null default 0,
+  `sum_output_size` double precision not null default 0,
+  PRIMARY KEY (`minute`, `username`, `is_async`, `status`)
+);
+
+CREATE TABLE `job_stats_hourly` (
+  `hour` datetime not null,
+  `username` varchar(255) not null,
+  `is_async` boolean not null,
+  `status` varchar(255) not null,
+  `count` integer not null,
+  `sum_duration_ms` bigint not null default 0,
+  `max_duration_ms` bigint not null default 0,
+  `sum_granules` bigint not null default 0,
+  `sum_input_size` double precision not null default 0,
+  `sum_output_size` double precision not null default 0,
+  PRIMARY KEY (`hour`, `username`, `is_async`, `status`)
 );
 
 CREATE TABLE `run_watermarks` (
@@ -227,3 +354,14 @@ CREATE INDEX batch_items_jobID_service_ID_batchID ON batch_items(jobID, serviceI
 CREATE INDEX service_deployments_deployment_id_idx ON service_deployments(deployment_id);
 CREATE INDEX work_items_updated_at_status_service_idx ON work_items(updatedAt, status, serviceID);
 CREATE INDEX work_items_stats_service_status_minute_idx ON work_items_stats(service_id, status, minute);
+CREATE INDEX work_items_stats_hourly_service_hour_idx ON work_items_stats_hourly(service_id, hour);
+CREATE INDEX user_work_items_stats_username_minute_idx ON user_work_items_stats(username, minute);
+CREATE INDEX user_work_items_stats_service_minute_idx ON user_work_items_stats(service_id, minute);
+CREATE INDEX user_work_items_stats_hourly_username_hour_idx ON user_work_items_stats_hourly(username, hour);
+CREATE INDEX user_work_items_stats_hourly_service_hour_idx ON user_work_items_stats_hourly(service_id, hour);
+CREATE INDEX work_items_failure_stats_service_minute_idx ON work_items_failure_stats(service_id, minute);
+CREATE INDEX work_items_failure_stats_hourly_service_hour_idx ON work_items_failure_stats_hourly(service_id, hour);
+CREATE INDEX job_stats_username_minute_idx ON job_stats(username, minute);
+CREATE INDEX job_stats_hourly_username_hour_idx ON job_stats_hourly(username, hour);
+CREATE INDEX user_work_history_username_service_id_retired_at_idx ON user_work_history(username, service_id, retired_at);
+CREATE INDEX user_work_history_retired_at_idx ON user_work_history(retired_at);

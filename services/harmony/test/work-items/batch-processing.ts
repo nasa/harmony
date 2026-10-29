@@ -6,13 +6,13 @@ import {
   WorkItemUpdateQueueItem, processWorkItems,
 } from '../../app/backends/workflow-orchestration/work-item-updates';
 import { Job, JobStatus } from '../../app/models/job';
-import { populateUserWorkFromWorkItems } from '../../app/models/user-work';
 import { getWorkItemsByJobIdAndStepIndex } from '../../app/models/work-item';
 import { WorkItemStatus } from '../../app/models/work-item-interface';
 import { getWorkflowStepByJobIdStepIndex } from '../../app/models/workflow-steps';
 import db from '../../app/util/db';
 import logger from '../../app/util/log';
 import { rawSaveJob } from '../helpers/jobs';
+import { populateUserWorkFromWorkItems } from '../helpers/user-work';
 import { rawSaveWorkItem } from '../helpers/work-items';
 import { rawSaveWorkflowStep } from '../helpers/workflow-steps';
 

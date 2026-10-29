@@ -13,8 +13,10 @@ import JobMessage, {
 } from '../../models/job-message';
 import {
   decrementRunningCount, deleteUserWorkForJob, deleteUserWorkForJobAndService,
-  incrementReadyAndDecrementRunningCounts, incrementReadyCount, setReadyCountToZero,
+  getCompletedWorkItemDuration, incrementReadyAndDecrementRunningCounts, incrementReadyCount,
+  setReadyCountToZero,
 } from '../../models/user-work';
+import { addCompletionToUserWorkHistory } from '../../models/user-work-history';
 import WorkItem, {
   countOfWorkItemsByStepAndJobID, getWorkItemById, getWorkItemsByJobIdAndStepIndex,
   maxSortIndexForJobService, updateWorkItemStatus, workItemCountForStep,
@@ -814,7 +816,20 @@ export async function processWorkItem(
       duration,
       totalItemsSize,
       outputItemSizes);
-    await decrementRunningCount(tx, jobID, workItem.serviceID, isCompleted ? duration : undefined);
+    // Only successful/warning durations go into average_duration and failed ones are tracked
+    // separately - canceled work items never have their duration recorded
+    const completedDuration = getCompletedWorkItemDuration(status, duration);
+    const numUserWorkRowsUpdated = await decrementRunningCount(
+      tx, jobID, workItem.serviceID, completedDuration);
+    // Pausing a job deletes its user_work rows (moving their totals to user_work_history), but work
+    // items that were already running keep running - so record their durations in the history
+    // directly, which is restored to the job's user_work rows when it is resumed. This is limited to
+    // paused jobs: terminal jobs are handled before reaching here, and a missing row for any other
+    // reason shouldn't have durations added.
+    if (numUserWorkRowsUpdated === 0 && completedDuration && job.status === JobStatus.PAUSED) {
+      await addCompletionToUserWorkHistory(
+        tx, jobID, workItem.serviceID, job.username, job.isAsync, completedDuration);
+    }
 
     logger.info(`Updated work item. Duration (ms) was: ${duration}`);
 

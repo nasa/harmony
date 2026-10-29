@@ -4,10 +4,10 @@ import { spy } from 'sinon';
 
 import { buildJob } from './helpers/jobs';
 import hookServersStartStop from './helpers/servers';
+import { populateUserWorkFromWorkItems } from './helpers/user-work';
 import { buildWorkItem, fakeServiceStacOutput, getWorkForService, updateWorkItem } from './helpers/work-items';
 import { buildWorkflowStep, validOperationWithManyVariables } from './helpers/workflow-steps';
 import { truncateAll } from '../../../packages/util/test/helpers/db';
-import { populateUserWorkFromWorkItems } from '../app/models/user-work';
 import { getStacLocation, WorkItemStatus } from '../app/models/work-item-interface';
 import { MemoryCache } from '../app/util/cache/memory-cache';
 import db from '../app/util/db';

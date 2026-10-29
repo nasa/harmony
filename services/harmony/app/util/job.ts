@@ -146,13 +146,14 @@ export function getJobForDisplay(job: Job, urlRoot: string, linkType?: string, m
  * @param tx - the transaction use to perform the queries
  * @param jobID - the id of job
  * @param username - the name of the user requesting the pause - null if the admin
+ * @param lock - if true the job row is selected for update (locked)
  * @throws {@link NotFoundError} if the job does not exist or the job does not
  * belong to the user.
  */
-async function lookupJob(tx: Transaction, jobID: string, username: string): Promise<Job> {
+async function lookupJob(tx: Transaction, jobID: string, username: string, lock = false): Promise<Job> {
   const { job } = username ?
-    await Job.byUsernameAndJobID(tx, username, jobID) :
-    await Job.byJobID(tx, jobID);
+    await Job.byUsernameAndJobID(tx, username, jobID, false, false, lock) :
+    await Job.byJobID(tx, jobID, false, false, lock);
 
   if (!job) {
     throw new NotFoundError(`Unable to find job ${jobID}`);
@@ -302,7 +303,9 @@ export async function pauseAndSaveJob(
   _token?: string,
 ): Promise<void> {
   await db.transaction(async (tx) => {
-    const job = await lookupJob(tx, jobID, username);
+    // Lock the job first, the same as the work item updaters do, so moving the job's user_work
+    // totals to user_work_history is serialized with any work item updates for the job
+    const job = await lookupJob(tx, jobID, username, true);
     job.pause();
     await job.save(tx);
     await deleteUserWorkForJob(tx, jobID);
@@ -328,7 +331,10 @@ async function updateTokenAndChangeState(
   const encrypter = createEncrypter(env.sharedSecretKey);
   const decrypter = createDecrypter(env.sharedSecretKey);
   await db.transaction(async (tx) => {
-    const job = await lookupJob(tx, jobID, username);
+    // Lock the job first, the same as the work item updaters do, so restoring the job's totals
+    // from user_work_history to its user_work rows is serialized with work item updates for the
+    // job - a work item completing while the job is paused adds its duration to user_work_history
+    const job = await lookupJob(tx, jobID, username, true);
     if (username && token) {
       // update access token
       const workflowSteps = await getWorkflowStepsByJobId(tx, jobID);
@@ -343,7 +349,7 @@ async function updateTokenAndChangeState(
     }
     jobStatusFn(job);
     await job.save(tx);
-    await recalculateCounts(tx, jobID);
+    await recalculateCounts(tx, jobID, env.userWorkDurationSeedLookbackDays);
   });
 }
 

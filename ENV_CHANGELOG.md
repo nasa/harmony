@@ -2,6 +2,39 @@
 Any changes to the environment variables will be documented in this file in chronological
 order with the most recent changes first.
 
+## 2026-10-28
+### Changed
+- REAPABLE_WORK_AGE_MINUTES - moved from `services/cron-service/env-defaults` to the shared
+  `packages/util/env-defaults` (default unchanged, 20160), because the admin dashboard (harmony)
+  now uses it to warn when the jobs listed by work item status may be missing reaped work items.
+
+## 2026-10-27
+### Added
+- WORK_ITEMS_STATS_MINUTE_RETENTION_DAYS - (shared, `packages/util/env-defaults`) how many days of
+  per-minute rows the admin dashboard stats tables keep (default 14). The cron service deletes older
+  ones, and the dashboard reads the hourly rollups for ranges starting earlier than this. The
+  legacy `GET /admin/dashboard` JSON response does the same for its windows.
+- WORK_ITEMS_STATS_HOURLY_RETENTION_DAYS - cron service: how many days of hourly rollup rows the
+  admin dashboard stats tables keep (default 400).
+- WORK_ITEMS_STATS_PRUNE_HOURS_PER_RUN - cron service: the maximum number of hours of expired rows
+  deleted from each dashboard stats table per run of the work items stats cron, one hour per
+  statement (default 6), so a large backlog is deleted gradually.
+- DASHBOARD_CACHE_TTL_MS - harmony: how long admin dashboard API responses are cached in memory
+  (default 30000). 0 disables the cache.
+- DASHBOARD_QUERY_TIMEOUT_MS - harmony: the Postgres statement timeout for admin dashboard API
+  queries (default 15000).
+- USER_WORK_DURATION_SEED_LOOKBACK_DAYS - (shared, `packages/util/env-defaults`) how many days of a
+  user's `user_work_history` to average when seeding the `average_duration` of a new or resumed
+  job's `user_work` rows for a service, so duration based fair queueing can classify the job before
+  any of its own work items complete (default 7, 0 disables seeding). Only the user's 100 most
+  recent jobs for the service are averaged. Has no effect on slot based fair queueing.
+- USER_WORK_HISTORY_REAPER_CRON - cron service schedule for deleting old `user_work_history` rows
+  (default hourly).
+- USER_WORK_HISTORY_RETENTION_DAYS - `user_work_history` rows for finished jobs last written more
+  than this many days ago are deleted from Postgres (default 30). They remain in Iceberg. Should be
+  at least USER_WORK_DURATION_SEED_LOOKBACK_DAYS.
+- USER_WORK_HISTORY_REAPER_BATCH_SIZE - the maximum number of `user_work_history` rows the reaper
+  deletes per statement (default 5000).
 
 ## 2026-10-26
 ### Added
