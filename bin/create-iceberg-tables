@@ -424,31 +424,61 @@ EOF
 )"
 )
 
-# Iterate and Create Tables
-INDEX=0
-while [ "$INDEX" -lt "${#TABLE_NAMES[@]}" ]; do
-  TABLE_NAME="${TABLE_NAMES[$INDEX]}"
-  SCHEMA_JSON="${TABLE_SCHEMAS[$INDEX]}"
+create_table() {
+  local table_name="$1"
+  local schema_json="$2"
+  local error_msg
 
-  echo "Creating table: ${TABLE_NAME}..." >&2
+  echo "Creating table: ${table_name}..."
 
-  if ERROR_MSG=$(aws "${AWS_FLAGS[@]}" s3tables create-table \
+  if error_msg=$(aws "${AWS_FLAGS[@]}" s3tables create-table \
     --table-bucket-arn "$BUCKET_ARN" \
     --namespace "$NAMESPACE" \
-    --name "$TABLE_NAME" \
+    --name "$table_name" \
     --format "ICEBERG" \
-    --metadata "$SCHEMA_JSON" 2>&1 >/dev/null); then
-    echo "Table '${TABLE_NAME}' created successfully." >&2
-  elif [[ "$ERROR_MSG" =~ "ConflictException" || "$ERROR_MSG" =~ "already exists" ]]; then
-    echo "Table '${TABLE_NAME}' already exists, skipping." >&2
+    --metadata "$schema_json" 2>&1 >/dev/null); then
+    echo "Table '${table_name}' created successfully."
+  elif [[ "$error_msg" =~ "ConflictException" || "$error_msg" =~ "already exists" ]]; then
+    echo "Table '${table_name}' already exists, skipping."
   else
-    echo "Error creating table '${TABLE_NAME}':" >&2
-    echo "$ERROR_MSG" >&2
-    exit 1
+    echo "Error creating table '${table_name}':"
+    echo "$error_msg"
+    return 1
   fi
 
-  echo "----------------------------------------" >&2
+  echo "----------------------------------------"
+}
 
+# Create the tables in parallel, since each aws call is slow. Each table's output is captured
+# and then printed in table order, as if they had been created one at a time.
+LOG_DIR=$(mktemp -d)
+trap 'rm -rf "$LOG_DIR"' EXIT
+
+PIDS=()
+INDEX=0
+while [ "$INDEX" -lt "${#TABLE_NAMES[@]}" ]; do
+  create_table "${TABLE_NAMES[$INDEX]}" "${TABLE_SCHEMAS[$INDEX]}" > "${LOG_DIR}/${INDEX}.log" 2>&1 &
+  PIDS+=($!)
+  INDEX=$((INDEX + 1))
+done
+
+STATUSES=()
+INDEX=0
+while [ "$INDEX" -lt "${#PIDS[@]}" ]; do
+  if wait "${PIDS[$INDEX]}"; then
+    STATUSES+=(0)
+  else
+    STATUSES+=(1)
+  fi
+  INDEX=$((INDEX + 1))
+done
+
+INDEX=0
+while [ "$INDEX" -lt "${#TABLE_NAMES[@]}" ]; do
+  cat "${LOG_DIR}/${INDEX}.log" >&2
+  if [ "${STATUSES[$INDEX]}" -ne 0 ]; then
+    exit 1
+  fi
   INDEX=$((INDEX + 1))
 done
 
