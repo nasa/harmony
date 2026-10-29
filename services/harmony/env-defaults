@@ -182,6 +182,15 @@ JOB_STATUS_CACHE_SIZE=50000000
 # Job status cache TTL in milliseconds, 5 seconds
 JOB_STATUS_CACHE_TTL=5000
 
+# How long (in milliseconds) admin dashboard API responses are cached in memory, so that admins
+# viewing (and auto-refreshing) the dashboard don't multiply its database queries. The dashboard
+# stats are updated once a minute by the cron service, so there is little point going below 15s.
+DASHBOARD_CACHE_TTL_MS=30000
+
+# The Postgres statement timeout (in milliseconds) for each admin dashboard API query, so a slow
+# dashboard query can never tie up the database
+DASHBOARD_QUERY_TIMEOUT_MS=15000
+
 #############################################################################
 #                        OAuth 2 (Earthdata Login)                          #
 #                                                                           #

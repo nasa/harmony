@@ -5,10 +5,13 @@ import sinon from 'sinon';
 import { getDashboard, THIRTY_YEARS_IN_MINUTES } from '../app/frontends/dashboard';
 import * as userWork from '../app/models/user-work';
 import * as workItemsStats from '../app/models/work-items-stats';
+import env from '../app/util/env';
 import { RequestValidationError } from '../app/util/errors';
 import { WorkItemQueueType } from '../app/util/queue/queue';
 import * as qf from '../app/util/queue/queue-factory';
 import * as serviceImages from '../app/util/service-images';
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 /**
  * Returns a fake getWorkItemsStatsSummary result with empty rows and fixed time boundaries.
@@ -130,19 +133,25 @@ describe('getDashboard', () => {
     });
 
     it('accepts a window specified with start and end', async () => {
-      req.query['window1.start'] = '2026-07-13T00:00:00Z';
-      req.query['window1.end'] = '2026-07-14T00:00:00Z';
+      const start = new Date(Date.now() - 2 * MS_PER_DAY);
+      const end = new Date(Date.now() - MS_PER_DAY);
+      req.query['window1.start'] = start.toISOString();
+      req.query['window1.end'] = end.toISOString();
 
-      getWorkItemsStatsSummaryStub.resolves({
-        rows: [],
-        start: new Date('2026-07-13T00:00:00Z'),
-        end: new Date('2026-07-14T00:00:00Z'),
-      });
+      getWorkItemsStatsSummaryStub.resolves({ rows: [], start, end });
 
       await getDashboard(req, res, next);
 
       expect(next.called).to.be.false;
       expect(res.json.calledOnce).to.be.true;
+    });
+
+    it('passes the per-minute stats retention period to getWorkItemsStatsSummary', async () => {
+      req.query['window1.lastMinutes'] = '60';
+
+      await getDashboard(req, res, next);
+
+      expect(getWorkItemsStatsSummaryStub.firstCall.args[2]).to.equal(env.workItemsStatsMinuteRetentionDays);
     });
 
     it('rejects an invalid start timestamp', async () => {
@@ -639,539 +648,85 @@ describe('getDashboard', () => {
   });
 
   // ---------------------------------------------------------------------------
-  // HTML response
+  // Time window query validation
+  // ---------------------------------------------------------------------------
+
+  describe('time window query validation', () => {
+    beforeEach(() => {
+      getCountsByServiceStub.resolves({});
+    });
+
+    it('rejects a whitespace-only label with a RequestValidationError', async () => {
+      req.query = { 'window1.label': '   ', 'window1.lastminutes': '5' };
+      await getDashboard(req, res, next);
+
+      expect(next.calledOnce).to.be.true;
+      expect(next.firstCall.args[0]).to.be.instanceOf(RequestValidationError);
+    });
+    it('rejects a non-positive lastMinutes value', async () => {
+      req.query = { 'window1.lastminutes': '0' };
+      await getDashboard(req, res, next);
+
+      expect(next.calledOnce).to.be.true;
+      expect(next.firstCall.args[0]).to.be.instanceOf(RequestValidationError);
+    });
+    it('rejects a lastMinutes value above the allowed maximum', async () => {
+      req.query = { 'window1.lastminutes': String(THIRTY_YEARS_IN_MINUTES + 1) };
+      await getDashboard(req, res, next);
+
+      expect(next.calledOnce).to.be.true;
+      expect(next.firstCall.args[0]).to.be.instanceOf(RequestValidationError);
+    });
+    it('rejects an unparseable ISO start date', async () => {
+      req.query = { 'window1.start': 'not-a-date' };
+      await getDashboard(req, res, next);
+
+      expect(next.calledOnce).to.be.true;
+      expect(next.firstCall.args[0]).to.be.instanceOf(RequestValidationError);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // HTML response - only a shell, which loads its data from the dashboard API
   // ---------------------------------------------------------------------------
 
   describe('HTML response', () => {
     beforeEach(() => {
       req.accepts.returns('html');
-      getCountsByServiceStub.resolves({});
     });
 
-    it('calls res.render with "dashboard" when HTML is requested', async () => {
+    it('renders the dashboard page with the harmony version', async () => {
       await getDashboard(req, res, next);
 
+      expect(next.called).to.be.false;
       expect(res.render.calledOnce).to.be.true;
       expect(res.render.firstCall.args[0]).to.equal('dashboard');
+      expect(res.render.firstCall.args[1]).to.have.keys('version');
+      expect(res.json.called).to.be.false;
     });
 
-    it('transforms service metrics into an array sorted by queued count (descending)', async () => {
-      getCountsByServiceStub.resolves({
-        'low-service': { queued: 5 },
-        'high-service': { queued: 100 },
-      });
-      imageMapStub.returns({ 'low-service': 'low-service', 'high-service': 'high-service' });
+    it('does not query any stats, since the page loads them from the dashboard API', async () => {
+      await getDashboard(req, res, next);
+
+      expect(getCountsByServiceStub.called).to.be.false;
+      expect(getWorkItemsStatsSummaryStub.called).to.be.false;
+    });
+
+    it('logs the requesting user', async () => {
+      await getDashboard(req, res, next);
+
+      expect(req.context.logger.info.calledOnce).to.be.true;
+      expect(req.context.logger.info.firstCall.args[0]).to.include('test-user');
+    });
+
+    it('still rejects an unsupported version', async () => {
+      req.query.version = '2.0-beta';
 
       await getDashboard(req, res, next);
 
-      const data = res.render.firstCall.args[1];
-      expect(data.services).to.be.an('array');
-      expect(data.services[0].name).to.equal('high-service');
-      expect(data.services[0].queued).to.equal('100');
-    });
-
-    it('transforms camelCase queue names into Title Case for the UI', async () => {
-      await getDashboard(req, res, next);
-
-      const data = res.render.firstCall.args[1];
-      const smallUpdateQueue = data.queues.find(q => q.name === 'Small Work Item Updates');
-      expect(smallUpdateQueue).to.exist;
-      expect(smallUpdateQueue.count).to.equal('20');
-    });
-
-    it('includes the harmony version in the rendered view', async () => {
-      await getDashboard(req, res, next);
-
-      const data = res.render.firstCall.args[1];
-      expect(data.version).to.exist;
-    });
-
-    it('sets isFailed to true when a queue count is -1 (error state)', async () => {
-      const schedulerQueue = qf.getWorkSchedulerQueue();
-      (schedulerQueue.getApproximateNumberOfMessages as sinon.SinonStub).resolves(-1);
-
-      await getDashboard(req, res, next);
-
-      const data = res.render.firstCall.args[1];
-      const schedulerData = data.queues.find((q: any) => q.name === 'Work Item Scheduler');
-
-      expect(schedulerData.isFailed).to.be.true;
-      expect(schedulerData.count).to.equal('-1');
-    });
-
-    it('sets isFailed to false when a queue count is valid', async () => {
-      await getDashboard(req, res, next);
-
-      const data = res.render.firstCall.args[1];
-      const smallUpdateData = data.queues.find((q: any) => q.name === 'Small Work Item Updates');
-
-      expect(smallUpdateData.isFailed).to.be.false;
-      expect(smallUpdateData.count).to.equal('20');
-    });
-
-    it('sorts the services array by queued count descending for the initial view', async () => {
-      getCountsByServiceStub.resolves({
-        'service-a': { queued: 19 },
-        'service-b': { queued: 1000 },
-        'service-c': { queued: 500 },
-      });
-      imageMapStub.returns({
-        'service-a': 'service-a',
-        'service-b': 'service-b',
-        'service-c': 'service-c',
-      });
-
-      await getDashboard(req, res, next);
-
-      const { services } = res.render.firstCall.args[1];
-      expect(services[0].name).to.equal('service-b');
-      expect(services[1].name).to.equal('service-c');
-      expect(services[2].name).to.equal('service-a');
-    });
-
-    it('passes timeRanges to the rendered template', async () => {
-      await getDashboard(req, res, next);
-
-      const data = res.render.firstCall.args[1];
-      expect(data.timeRanges).to.exist;
-      expect(data.timeRanges.last5Minutes).to.include.keys('start', 'end');
-      expect(data.timeRanges.last60Minutes).to.include.keys('start', 'end');
-    });
-
-    it('includes a summary object aggregating totals for the template', async () => {
-      await getDashboard(req, res, next);
-
-      const data = res.render.firstCall.args[1];
-      expect(data.summary).to.exist;
-      expect(data.summary).to.include.keys('queued', 'windows');
-    });
-
-    it('includes formatted counts on each summary window', async () => {
-      await getDashboard(req, res, next);
-
-      const { summary } = res.render.firstCall.args[1];
-
-      expect(summary.windows).to.have.length(2);
-
-      for (const window of summary.windows) {
-        expect(window).to.include.keys(
-          'successful',
-          'failed',
-          'canceled',
-          'warning',
-          'successfulClass',
-          'failedClass',
-          'canceledClass',
-          'warningClass',
-          'rate',
-          'rateClass',
-        );
-      }
-    });
-
-    it('attaches CSS class strings for counts and rates to each service row', async () => {
-      imageMapStub.returns({ 'service-a': 'service-a' });
-      getCountsByServiceStub.resolves({ 'service-a': { queued: 1 } });
-
-      await getDashboard(req, res, next);
-
-      const data = res.render.firstCall.args[1];
-      const service = data.services.find((s: any) => s.name === 'service-a');
-
-      expect(service.windows).to.have.length(2);
-
-      for (const window of service.windows) {
-        expect(window.successfulClass).to.be.a('string');
-        expect(window.failedClass).to.be.a('string');
-        expect(window.canceledClass).to.be.a('string');
-        expect(window.warningClass).to.be.a('string');
-        expect(window.rateClass).to.be.a('string');
-      }
-    });
-
-    describe('success percentage', () => {
-      beforeEach(() => {
-        imageMapStub.returns({ 'some-image': 'some-service' });
-        getCountsByServiceStub.resolves({});
-      });
-
-      /**
-       * Stubs the 5-minute window with the given rows and returns the rendered
-       * success rate string for the first window of 'some-service'.
-       */
-      async function rateForRows(rows: workItemsStats.WorkItemsStatsRow[]): Promise<string> {
-        getWorkItemsStatsSummaryStub.callsFake((_trx: any, options: { lastMinutes: number }) => {
-          if (options.lastMinutes === 5) {
-            return Promise.resolve(makeStatsSummaryWithRows(5, rows));
-          }
-          return Promise.resolve(makeEmptyStatsSummary(options.lastMinutes));
-        });
-
-        await getDashboard(req, res, next);
-
-        const service = res.render.firstCall.args[1].services
-          .find((s: any) => s.name === 'some-service');
-        return service.windows[0].rate;
-      }
-
-      it('does not count warnings against the success percentage', async () => {
-        const rate = await rateForRows([
-          { service_id: 'some-image', status: 'successful', count: 90 },
-          { service_id: 'some-image', status: 'warning', count: 10 },
-        ]);
-
-        // Warnings are excluded from the denominator, so 90/90 is 100%
-        expect(rate).to.equal('100.0%');
-      });
-
-      it('excludes warnings from the denominator when failures are present', async () => {
-        const rate = await rateForRows([
-          { service_id: 'some-image', status: 'successful', count: 90 },
-          { service_id: 'some-image', status: 'failed', count: 10 },
-          { service_id: 'some-image', status: 'warning', count: 100 },
-        ]);
-
-        // 90 / (90 + 10), the 100 warnings are ignored entirely
-        expect(rate).to.equal('90.0%');
-      });
-
-      it('excludes canceled items from the success percentage', async () => {
-        const rate = await rateForRows([
-          { service_id: 'some-image', status: 'successful', count: 50 },
-          { service_id: 'some-image', status: 'canceled', count: 50 },
-        ]);
-
-        expect(rate).to.equal('100.0%');
-      });
-
-      it('reports no rate when a window has only warnings and cancellations', async () => {
-        const rate = await rateForRows([
-          { service_id: 'some-image', status: 'warning', count: 5 },
-          { service_id: 'some-image', status: 'canceled', count: 5 },
-        ]);
-
-        expect(rate).to.equal('—');
-      });
-
-      it('marks a rate of 100% with the good rate class', async () => {
-        getWorkItemsStatsSummaryStub.callsFake((_trx: any, options: { lastMinutes: number }) => {
-          if (options.lastMinutes === 5) {
-            return Promise.resolve(makeStatsSummaryWithRows(5, [
-              { service_id: 'some-image', status: 'successful', count: 10 },
-              { service_id: 'some-image', status: 'warning', count: 10 },
-            ]));
-          }
-          return Promise.resolve(makeEmptyStatsSummary(options.lastMinutes));
-        });
-
-        await getDashboard(req, res, next);
-
-        const service = res.render.firstCall.args[1].services
-          .find((s: any) => s.name === 'some-service');
-        expect(service.windows[0].rateClass).to.equal('rate-good');
-      });
-    });
-
-    describe('number formatting', () => {
-      it('formats large counts with commas for the HTML view', async () => {
-        imageMapStub.returns({ 'some-image': 'some-service' });
-        getCountsByServiceStub.resolves({ 'some-image': { queued: 1234567 } });
-
-        getWorkItemsStatsSummaryStub.callsFake((_trx: any, options: { lastMinutes: number }) => {
-          if (options.lastMinutes === 5) {
-            return Promise.resolve(makeStatsSummaryWithRows(5, [
-              { service_id: 'some-image', status: 'successful', count: 1000 },
-              { service_id: 'some-image', status: 'failed', count: 25000 },
-              { service_id: 'some-image', status: 'canceled', count: 100000 },
-              { service_id: 'some-image', status: 'warning', count: 9999 },
-            ]));
-          }
-          return Promise.resolve(makeEmptyStatsSummary(options.lastMinutes));
-        });
-
-        await getDashboard(req, res, next);
-
-        const service = res.render.firstCall.args[1].services
-          .find((s: any) => s.name === 'some-service');
-
-        expect(service.queued).to.equal('1,234,567');
-        expect(service.windows[0].successful).to.equal('1,000');
-        expect(service.windows[0].failed).to.equal('25,000');
-        expect(service.windows[0].canceled).to.equal('100,000');
-        expect(service.windows[0].warning).to.equal('9,999');
-      });
-
-      it('does not add separators to counts below one thousand', async () => {
-        imageMapStub.returns({ 'some-image': 'some-service' });
-        getCountsByServiceStub.resolves({ 'some-image': { queued: 999 } });
-
-        await getDashboard(req, res, next);
-
-        const service = res.render.firstCall.args[1].services
-          .find((s: any) => s.name === 'some-service');
-        expect(service.queued).to.equal('999');
-        expect(service.windows[0].successful).to.equal('0');
-      });
-
-      it('formats the system summary and queue counts with commas', async () => {
-        imageMapStub.returns({ 'some-image': 'some-service' });
-        getCountsByServiceStub.resolves({ 'some-image': { queued: 2500000 } });
-
-        const smallUpdateQueue = qf.getQueueForType(WorkItemQueueType.SMALL_ITEM_UPDATE);
-        (smallUpdateQueue.getApproximateNumberOfMessages as sinon.SinonStub).resolves(45000);
-
-        await getDashboard(req, res, next);
-
-        const data = res.render.firstCall.args[1];
-        expect(data.summary.queued).to.equal('2,500,000');
-
-        const queue = data.queues.find((q: any) => q.name === 'Small Work Item Updates');
-        expect(queue.count).to.equal('45,000');
-      });
-
-      it('returns raw numbers rather than formatted strings in the JSON response', async () => {
-        req.accepts.returns('json');
-        imageMapStub.returns({ 'some-image': 'some-service' });
-        getCountsByServiceStub.resolves({ 'some-image': { queued: 1234567 } });
-
-        getWorkItemsStatsSummaryStub.callsFake((_trx: any, options: { lastMinutes: number }) => {
-          if (options.lastMinutes === 5) {
-            return Promise.resolve(makeStatsSummaryWithRows(5, [
-              { service_id: 'some-image', status: 'successful', count: 250000 },
-            ]));
-          }
-          return Promise.resolve(makeEmptyStatsSummary(options.lastMinutes));
-        });
-
-        await getDashboard(req, res, next);
-
-        const result = res.json.firstCall.args[0];
-        expect(result.services['some-service'].queued).to.equal(1234567);
-        expect(result.services['some-service'].windows.last5Minutes.successful).to.equal(250000);
-        expect(result.totals.queued).to.equal(1234567);
-        expect(result.queues.smallWorkItemUpdates).to.be.a('number');
-      });
-    });
-
-    it('sets trendIsDown when 5-minute success rate is more than 2pp below the 60-minute rate', async () => {
-      imageMapStub.returns({ 'some-image': 'some-service' });
-      getCountsByServiceStub.resolves({});
-
-      getWorkItemsStatsSummaryStub.callsFake((_trx: any, options: { lastMinutes: number }) => {
-        if (options.lastMinutes === 5) {
-          return Promise.resolve(makeStatsSummaryWithRows(5, [
-            { service_id: 'some-image', status: 'successful', count: 80 },
-            { service_id: 'some-image', status: 'failed', count: 20 }, // 80% success
-          ]));
-        }
-        // 60-min: 98% success
-        return Promise.resolve(makeStatsSummaryWithRows(60, [
-          { service_id: 'some-image', status: 'successful', count: 980 },
-          { service_id: 'some-image', status: 'failed', count: 20 },
-        ]));
-      });
-
-      await getDashboard(req, res, next);
-
-      const data = res.render.firstCall.args[1];
-      const service = data.services.find((s: any) => s.name === 'some-service');
-      expect(service.trendIsDown).to.be.true;
-      expect(service.trendIsUp).to.be.false;
-    });
-
-    it('sets trendIsUp when 5-minute success rate is more than 2pp above the 60-minute rate', async () => {
-      imageMapStub.returns({ 'some-image': 'some-service' });
-      getCountsByServiceStub.resolves({});
-
-      getWorkItemsStatsSummaryStub.callsFake((_trx: any, options: { lastMinutes: number }) => {
-        if (options.lastMinutes === 5) {
-          // 5-min: 99% success
-          return Promise.resolve(makeStatsSummaryWithRows(5, [
-            { service_id: 'some-image', status: 'successful', count: 99 },
-            { service_id: 'some-image', status: 'failed', count: 1 },
-          ]));
-        }
-        // 60-min: 90% success
-        return Promise.resolve(makeStatsSummaryWithRows(60, [
-          { service_id: 'some-image', status: 'successful', count: 900 },
-          { service_id: 'some-image', status: 'failed', count: 100 },
-        ]));
-      });
-
-      await getDashboard(req, res, next);
-
-      const data = res.render.firstCall.args[1];
-      const service = data.services.find((s: any) => s.name === 'some-service');
-      expect(service.trendIsUp).to.be.true;
-      expect(service.trendIsDown).to.be.false;
-    });
-
-    it('marks a service as idle when it has no queued items and no recent activity', async () => {
-      imageMapStub.returns({ 'idle-image': 'idle-service' });
-      getCountsByServiceStub.resolves({});
-
-      await getDashboard(req, res, next);
-
-      const data = res.render.firstCall.args[1];
-      const service = data.services.find((s: any) => s.name === 'idle-service');
-      expect(service.isIdle).to.be.true;
-    });
-
-    it('does not mark a service as idle when it has queued items', async () => {
-      imageMapStub.returns({ 'busy-image': 'busy-service' });
-      getCountsByServiceStub.resolves({ 'busy-image': { queued: 1 } });
-
-      await getDashboard(req, res, next);
-
-      const data = res.render.firstCall.args[1];
-      const service = data.services.find((s: any) => s.name === 'busy-service');
-      expect(service.isIdle).to.be.false;
-    });
-    describe('trend edge cases', () => {
-      beforeEach(() => {
-        getCountsByServiceStub.resolves({});
-        imageMapStub.returns({ 'some-image': 'some-service' });
-      });
-
-      it('sets neither trend flag when the rate delta is within two percent', async () => {
-        getWorkItemsStatsSummaryStub.callsFake((_trx: any, options: { lastMinutes: number }) => {
-          if (options.lastMinutes === 5) {
-            // 5-min: 95%
-            return Promise.resolve(makeStatsSummaryWithRows(5, [
-              { service_id: 'some-image', status: 'successful', count: 95 },
-              { service_id: 'some-image', status: 'failed', count: 5 },
-            ]));
-          }
-          // 60-min: 96% so trending down by 1 percent
-          return Promise.resolve(makeStatsSummaryWithRows(60, [
-            { service_id: 'some-image', status: 'successful', count: 960 },
-            { service_id: 'some-image', status: 'failed', count: 40 },
-          ]));
-        });
-
-        await getDashboard(req, res, next);
-
-        const service = res.render.firstCall.args[1].services.find((s: any) => s.name === 'some-service');
-        expect(service.trendIsUp).to.be.false;
-        expect(service.trendIsDown).to.be.false;
-      });
-
-      it('sets no trend flags when a service has fewer than two windows', async () => {
-        req.query = { 'window1.label': 'Last 5 Minutes', 'window1.lastminutes': '5' };
-        getWorkItemsStatsSummaryStub.resolves(makeStatsSummaryWithRows(5, [
-          { service_id: 'some-image', status: 'successful', count: 50 },
-          { service_id: 'some-image', status: 'failed', count: 50 },
-        ]));
-
-        await getDashboard(req, res, next);
-
-        const service = res.render.firstCall.args[1].services.find((s: any) => s.name === 'some-service');
-        expect(service.windows).to.have.length(1);
-        expect(service.trendIsUp).to.be.false;
-        expect(service.trendIsDown).to.be.false;
-      });
-
-      it('sets no trend flags when either window has no activity', async () => {
-        getWorkItemsStatsSummaryStub.callsFake((_trx: any, options: { lastMinutes: number }) => {
-          if (options.lastMinutes === 5) return Promise.resolve(makeStatsSummaryWithRows(5, []));
-          return Promise.resolve(makeStatsSummaryWithRows(60, [
-            { service_id: 'some-image', status: 'successful', count: 900 },
-            { service_id: 'some-image', status: 'failed', count: 100 },
-          ]));
-        });
-
-        await getDashboard(req, res, next);
-
-        const service = res.render.firstCall.args[1].services.find((s: any) => s.name === 'some-service');
-        expect(service.trendIsUp).to.be.false;
-        expect(service.trendIsDown).to.be.false;
-      });
-    });
-
-    describe('time window query parsing', () => {
-      beforeEach(() => {
-        req.accepts.returns('html');
-        getCountsByServiceStub.resolves({});
-      });
-
-      it('defaults to a 5-minute and a 60-minute window when no query params are given', async () => {
-        req.query = {};
-        await getDashboard(req, res, next);
-
-        const data = res.render.firstCall.args[1];
-        expect(data.windowCount).to.equal(2);
-        expect(data.summary.windows).to.have.length(2);
-        expect(data.timeRanges).to.include.keys('last5Minutes', 'last60Minutes');
-      });
-
-      it('renders a single window when only window1 is provided', async () => {
-        req.query = { 'window1.label': 'Recent', 'window1.lastminutes': '10' };
-        await getDashboard(req, res, next);
-
-        const data = res.render.firstCall.args[1];
-        expect(data.windowCount).to.equal(1);
-        expect(data.summary.windows).to.have.length(1);
-      });
-
-      it('uses a custom label from the query, passed through the display transform', async () => {
-        req.query = { 'window1.label': 'peakHours', 'window1.lastminutes': '15' };
-        await getDashboard(req, res, next);
-
-        const [firstWindow] = res.render.firstCall.args[1].summary.windows;
-        expect(firstWindow.displayName).to.equal('Peak Hours');
-      });
-
-      it('accepts an explicit start/end range for a window', async () => {
-        getWorkItemsStatsSummaryStub.resolves(
-          makeStatsSummaryWithRows(0, [
-            { service_id: 'some-image', status: 'successful', count: 1 },
-          ]),
-        );
-        req.query = {
-          'window1.label': 'Custom',
-          'window1.start': '2026-01-01T00:00:00.000Z',
-          'window1.end': '2026-01-01T01:00:00.000Z',
-        };
-
-        await getDashboard(req, res, next);
-
-        expect(next.called).to.be.false;
-        const [firstWindow] = res.render.firstCall.args[1].summary.windows;
-        expect(firstWindow.startTime).to.be.a('string').and.not.equal('');
-        expect(firstWindow.endTime).to.be.a('string').and.not.equal('');
-      });
-
-      it('rejects a whitespace-only label with a RequestValidationError', async () => {
-        req.query = { 'window1.label': '   ', 'window1.lastminutes': '5' };
-        await getDashboard(req, res, next);
-
-        expect(next.calledOnce).to.be.true;
-        expect(next.firstCall.args[0]).to.be.instanceOf(RequestValidationError);
-      });
-
-      it('rejects a non-positive lastMinutes value', async () => {
-        req.query = { 'window1.lastminutes': '0' };
-        await getDashboard(req, res, next);
-
-        expect(next.calledOnce).to.be.true;
-        expect(next.firstCall.args[0]).to.be.instanceOf(RequestValidationError);
-      });
-
-      it('rejects a lastMinutes value above the allowed maximum', async () => {
-        req.query = { 'window1.lastminutes': String(THIRTY_YEARS_IN_MINUTES + 1) };
-        await getDashboard(req, res, next);
-
-        expect(next.calledOnce).to.be.true;
-        expect(next.firstCall.args[0]).to.be.instanceOf(RequestValidationError);
-      });
-
-      it('rejects an unparseable ISO start date', async () => {
-        req.query = { 'window1.start': 'not-a-date' };
-        await getDashboard(req, res, next);
-
-        expect(next.calledOnce).to.be.true;
-        expect(next.firstCall.args[0]).to.be.instanceOf(RequestValidationError);
-      });
+      expect(next.calledOnce).to.be.true;
+      expect(next.firstCall.args[0].message).to.include('Invalid API version');
+      expect(res.render.called).to.be.false;
     });
   });
 });

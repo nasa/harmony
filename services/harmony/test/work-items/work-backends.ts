@@ -5,7 +5,7 @@ import * as sinon from 'sinon';
 import { SinonStub } from 'sinon';
 import { v4 as uuid } from 'uuid';
 
-import { getCount, incrementReadyCount } from '../../app/models/user-work';
+import { incrementReadyCount } from '../../app/models/user-work';
 import WorkItem, { getWorkItemById } from '../../app/models/work-item';
 import { WorkflowStepRecord } from '../../app/models/workflow-steps';
 import * as aggregationBatch from '../../app/util/aggregation-batch';
@@ -14,7 +14,7 @@ import { resumeAndSaveJob } from '../../app/util/job';
 import * as stac from '../../app/util/stac';
 import { hookJobCreation } from '../helpers/jobs';
 import hookServersStartStop from '../helpers/servers';
-import { hookPopulateUserWorkFromWorkItems } from '../helpers/user-work';
+import { getCount, hookPopulateUserWorkFromWorkItems } from '../helpers/user-work';
 import { hookGetWorkForService, hookWorkItemCreation, hookWorkItemUpdate, hookWorkflowStepAndItemCreation, getWorkForService, fakeServiceStacOutput, updateWorkItem } from '../helpers/work-items';
 import { hookWorkflowStepCreation, validOperation } from '../helpers/workflow-steps';
 import { Job, JobRecord, JobStatus, terminalStates } from './../../app/models/job';

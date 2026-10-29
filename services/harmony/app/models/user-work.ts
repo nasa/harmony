@@ -2,17 +2,34 @@ import { Knex } from 'knex';
 import { Logger } from 'winston';
 
 import Record from './record';
+import {
+  CompletedWorkItemDuration, DeletedUserWorkRow, getSeedAverageDurations, getUserWorkHistoryForJob,
+  moveUserWorkRowsToHistory,
+} from './user-work-history';
 import WorkItem from './work-item';
+import { WorkItemStatus } from './work-item-interface';
 import db, { Transaction } from '../util/db';
 
-// Expected runtime (in ms) assumed for in-progress work with no measured average_duration yet,
-// used only for ranking users by total expected runtime in duration based fair queueing
-const DEFAULT_EXPECTED_DURATION_MS = 60 * 60 * 1000;
+// Expected runtime (in ms) assumed for in-progress work with no measured duration yet, used only
+// for ranking users by total expected runtime in duration based fair queueing
+// Also the estimate of each ready work item's duration for the admin dashboard's estimated compute
+// time of ready work.
+export const DEFAULT_EXPECTED_DURATION_MS = 60 * 60 * 1000;
+
+// The duration (in ms) duration based fair queueing uses to classify (slow or fast) and rank a
+// user_work row's work. Normally this is average_duration, the mean duration of the job and
+// service's successful (or warning) work items. A job with no successes yet but some failures is
+// instead classified by the mean duration of its failed work items, so a job whose work items keep
+// failing slowly (e.g. timing out) is still treated as slow - failures aren't included in
+// average_duration so they don't skew it once the job has successes. With neither, this is
+// average_duration as is, i.e. a seeded duration or NULL.
+const EFFECTIVE_DURATION_SQL = '(CASE WHEN completed_count = 0 AND failed_count > 0 '
+  + 'THEN failed_sum_duration_ms / failed_count ELSE average_duration END)';
 
 // Expected runtime (in ms) of a user_work row's running work items, with one binding for the
 // default duration. Cast to BIGINT before multiplying - with integer columns postgres overflows
 // 32 bits once running_count * duration passes ~2.1 billion (e.g. 597 unmeasured running items).
-const EXPECTED_RUNTIME_SQL = 'CAST(running_count AS BIGINT) * COALESCE(average_duration, ?)';
+const EXPECTED_RUNTIME_SQL = `CAST(running_count AS BIGINT) * COALESCE(${EFFECTIVE_DURATION_SQL}, ?)`;
 
 /**
  *
@@ -43,12 +60,52 @@ export default class UserWork extends Record {
   // the time the job was last worked
   last_worked: Date;
 
-  // the mean duration (in ms) of completed work items for this job and service, or null until
-  // the first work item for this job and service has completed
+  // the mean duration (in ms) of successful (or warning) work items for this job and service, or
+  // null until the first one has completed. Failed and canceled work items are not included. May
+  // be seeded from the user's recent history for the service (see getSeedAverageDurations) while
+  // completed_count is still 0, in which case the first measured duration replaces it.
   average_duration: number;
 
-  // the number of completed work items factored into average_duration so far
+  // the number of successful (or warning) work items factored into average_duration so far
   completed_count: number;
+
+  // the number of work items that failed (after any retries) for this job and service, and their
+  // summed duration (in ms). Tracked separately so failures don't skew average_duration.
+  failed_count: number;
+
+  failed_sum_duration_ms: number;
+}
+
+// The user_work columns returned when deleting rows, so their totals can be moved to
+// user_work_history
+const DELETED_ROW_COLUMNS = [
+  'job_id', 'service_id', 'username', 'is_async', 'average_duration', 'completed_count',
+  'failed_count', 'failed_sum_duration_ms', 'createdAt',
+];
+
+/**
+ * Gets the duration to record for a work item that has just been updated to the given status, if
+ * any. Only successful (or warning) work items are factored into average_duration and failed ones
+ * are tracked separately. Canceled work items (and any non-terminal status) have no duration
+ * recorded at all.
+ *
+ * @param status - The work item's new status
+ * @param durationMs - The work item's duration (in ms)
+ * @returns the duration to record, or undefined if none should be recorded
+ */
+export function getCompletedWorkItemDuration(
+  status: WorkItemStatus, durationMs: number,
+): CompletedWorkItemDuration | undefined {
+  if (durationMs === undefined || durationMs === null || Number.isNaN(durationMs)) {
+    return undefined;
+  }
+  if (status === WorkItemStatus.SUCCESSFUL || status === WorkItemStatus.WARNING) {
+    return { durationMs, failed: false };
+  }
+  if (status === WorkItemStatus.FAILED) {
+    return { durationMs, failed: true };
+  }
+  return undefined;
 }
 
 /**
@@ -119,8 +176,8 @@ const nextJobIdsLockClause = (): string => (db.client.config.client === 'pg' ? '
 // en_US.UTF-8. sqlite (test-only) doesn't have a "C" collation, but already compares byte-wise.
 const usernameColumn = (): string => (db.client.config.client === 'pg' ? 'username COLLATE "C"' : 'username');
 
-// Counts of a service's slow work (work for jobs whose average_duration is above the slow work
-// threshold), used to enforce the fast lane reserve
+// Counts of a service's slow work (work for jobs whose duration - see EFFECTIVE_DURATION_SQL - is
+// above the slow work threshold), used to enforce the fast lane reserve
 interface SlowWorkCounts {
   // the number of running work items for slow jobs
   slowRunningCount: number;
@@ -142,8 +199,8 @@ async function getSlowWorkCounts(
 ): Promise<SlowWorkCounts> {
   const results = await tx.raw(`
     SELECT
-      SUM(CASE WHEN average_duration > ? THEN running_count ELSE 0 END) AS slow_running_count,
-      COUNT(CASE WHEN average_duration > ? AND ready_count > 0 THEN 1 END) AS slow_ready_count
+      SUM(CASE WHEN ${EFFECTIVE_DURATION_SQL} > ? THEN running_count ELSE 0 END) AS slow_running_count,
+      COUNT(CASE WHEN ${EFFECTIVE_DURATION_SQL} > ? AND ready_count > 0 THEN 1 END) AS slow_ready_count
     FROM user_work
     WHERE service_id = ?
   `, [slowWorkThresholdMs, slowWorkThresholdMs, serviceID]);
@@ -244,9 +301,9 @@ async function getNextJobIdsSlotBased(
  *
  * Slow jobs are ranked by the same rules as every other job. Work items running for jobs actively classified
  * as slow count against the service's slow work capacity (see getSlowWorkCapacity); once that capacity is
- * used up, slow jobs are excluded entirely from the Eligible CTE below (a measured average_duration at or
- * below slowWorkThresholdMs, or no measured duration with nothing currently running or completed, still
- * counts as fast). The remaining slow work capacity is computed in the same query and returned so that
+ * used up, slow jobs are excluded entirely from the Eligible CTE below (a duration - see
+ * EFFECTIVE_DURATION_SQL - at or below slowWorkThresholdMs, or no measured duration with nothing currently
+ * running or completed, still counts as fast). The remaining slow work capacity is computed in the same query and returned so that
  * callers can avoid handing out more slow work items than are available.
  * @param tx - The database transaction
  * @param serviceID - The service ID
@@ -303,14 +360,14 @@ async function getNextJobIdsDurationBased(
         last_worked,
         ${usernameColumn()} AS username,
         is_async,
-        CASE WHEN average_duration > ? THEN 1 ELSE 0 END AS is_slow
+        CASE WHEN ${EFFECTIVE_DURATION_SQL} > ? THEN 1 ELSE 0 END AS is_slow
       FROM user_work
       WHERE service_id = ?
         AND ready_count > 0
         AND (
           ? = 1
-          OR (average_duration IS NOT NULL AND average_duration <= ?)
-          OR (average_duration IS NULL AND running_count = 0 AND completed_count = 0)
+          OR (${EFFECTIVE_DURATION_SQL} IS NOT NULL AND ${EFFECTIVE_DURATION_SQL} <= ?)
+          OR (${EFFECTIVE_DURATION_SQL} IS NULL AND running_count = 0 AND completed_count = 0)
         )
     ),
     UserRank AS (
@@ -406,21 +463,43 @@ export async function getNextJobIds(
 }
 
 /**
- * Deletes all of the rows for the given job from the user_work table.
+ * Deletes the user_work rows matching the given constraints and moves their duration totals to
+ * user_work_history.
+ * @param tx - The database transaction
+ * @param where - The constraints identifying the rows to delete
+ * @returns the number of rows deleted
+ */
+async function deleteUserWorkRowsAndMoveToHistory(
+  tx: Transaction, where: { job_id: string, service_id?: string },
+): Promise<number> {
+  let deleted: DeletedUserWorkRow[];
+  if (db.client.config.client === 'pg') {
+    // a single statement, so the delete takes no more round trips than it did before the history
+    deleted = await tx(UserWork.table).where(where).del().returning(DELETED_ROW_COLUMNS);
+  } else {
+    // knex doesn't support RETURNING on deletes for sqlite (test-only)
+    deleted = await tx(UserWork.table).select(DELETED_ROW_COLUMNS).where(where);
+    await tx(UserWork.table).where(where).del();
+  }
+  await moveUserWorkRowsToHistory(tx, deleted);
+  return deleted.length;
+}
+
+/**
+ * Deletes all of the rows for the given job from the user_work table, first moving their duration
+ * totals to user_work_history.
  * delete from user_work where job_id = $job_id
  * @param tx - The database transaction
  * @param jobID - The job ID
  * @returns the number of rows deleted
  */
 export async function deleteUserWorkForJob(tx: Transaction, jobID: string): Promise<number> {
-  const numDeleted = await tx(UserWork.table)
-    .where({ job_id: jobID })
-    .del();
-  return numDeleted;
+  return deleteUserWorkRowsAndMoveToHistory(tx, { job_id: jobID });
 }
 
 /**
- * Deletes all of the rows for the given job and service ID from the user_work table.
+ * Deletes all of the rows for the given job and service ID from the user_work table, first moving
+ * their duration totals to user_work_history.
  * delete from user_work where job_id = $job_id and service_id = $service_id
  * @param tx - The database transaction
  * @param jobID - The job ID
@@ -430,10 +509,7 @@ export async function deleteUserWorkForJob(tx: Transaction, jobID: string): Prom
 export async function deleteUserWorkForJobAndService(
   tx: Transaction, jobID: string, serviceID: string,
 ): Promise<number> {
-  const numDeleted = await tx(UserWork.table)
-    .where({ job_id: jobID, service_id: serviceID })
-    .del();
-  return numDeleted;
+  return deleteUserWorkRowsAndMoveToHistory(tx, { job_id: jobID, service_id: serviceID });
 }
 
 /**
@@ -449,23 +525,6 @@ export async function incrementReadyCount(
   await tx(UserWork.table)
     .where({ job_id: jobID, service_id: serviceID })
     .increment('ready_count', additionalReadyCount);
-}
-
-/**
- * Get the running_count or ready_count for the given jobID and serviceID.
- * @param tx - The database transaction
- * @param jobID - The job ID
- * @param serviceID - The ID of the service
- * @param readyOrRunning - The work item state (ready or running)
- */
-export async function getCount(
-  tx: Transaction, jobID: string, serviceID: string, readyOrRunning: 'ready' | 'running',
-): Promise<number> {
-  const record = await tx(UserWork.table)
-    .select(`${readyOrRunning}_count`)
-    .where({ job_id: jobID, service_id: serviceID })
-    .first();
-  return record[`${readyOrRunning}_count`];
 }
 
 /**
@@ -492,23 +551,64 @@ export async function setReadyCountToZero(
 }
 
 /**
- * Sets the ready and running count to 0 for the given jobID.
+ * Restores the duration totals recorded in user_work_history to the job's user_work rows (e.g.
+ * after its rows were deleted when it was paused), so the job keeps its measured average_duration
+ * and the totals keep accumulating. Rows without any measured duration are instead seeded from the
+ * user's recent history for the service (see getSeedAverageDurations).
+ *
  * @param tx - The database transaction
  * @param jobID - The job ID
+ * @param seedLookbackDays - How many days of the user's history to seed average_duration from for
+ * services the job has no measured duration for. 0 disables seeding.
  */
-export async function setReadyAndRunningCountToZero(tx: Transaction, jobID: string): Promise<void> {
-  await tx(UserWork.table)
-    .where({ job_id: jobID })
-    .update('ready_count', 0)
-    .update('running_count', 0);
+export async function restoreOrSeedUserWorkDurations(
+  tx: Transaction, jobID: string, seedLookbackDays = 0,
+): Promise<void> {
+  const rows: Pick<UserWork, 'id' | 'service_id' | 'username'>[] = await tx(UserWork.table)
+    .select('id', 'service_id', 'username')
+    .where({ job_id: jobID });
+  if (rows.length === 0) {
+    return;
+  }
+
+  const history = await getUserWorkHistoryForJob(tx, jobID);
+  const unmeasuredServiceIDs = rows
+    .filter((r) => !(history[r.service_id]?.completed_count > 0))
+    .map((r) => r.service_id);
+  const seeds = unmeasuredServiceIDs.length > 0
+    ? await getSeedAverageDurations(tx, rows[0].username, unmeasuredServiceIDs, seedLookbackDays)
+    : {};
+
+  for (const row of rows) {
+    const h = history[row.service_id];
+    const completedCount = Number(h?.completed_count ?? 0);
+    const averageDuration = completedCount > 0
+      ? Math.round(Number(h.sum_duration_ms) / completedCount)
+      : seeds[row.service_id];
+    if (!h && averageDuration === undefined) {
+      continue;
+    }
+    const updates: Partial<UserWork> = { average_duration: averageDuration ?? null };
+    if (h) {
+      updates.completed_count = completedCount;
+      updates.failed_count = Number(h.failed_count);
+      updates.failed_sum_duration_ms = Number(h.failed_sum_duration_ms);
+    }
+    await tx(UserWork.table).where({ id: row.id }).update(updates);
+  }
 }
 
 /**
- * Populates the user_work table for the given jobID from the work_items table.
+ * Populates the user_work table for the given jobID from the work_items table, restoring the
+ * job's duration totals from user_work_history (or seeding them from the user's history).
  * @param tx - The database transaction
  * @param jobID - The job ID
+ * @param seedLookbackDays - How many days of the user's history to seed average_duration from for
+ * services the job has no measured duration for. 0 disables seeding.
  */
-export async function populateUserWorkForJobId(tx: Transaction, jobID: string): Promise<void> {
+export async function populateUserWorkForJobId(
+  tx: Transaction, jobID: string, seedLookbackDays = 0,
+): Promise<void> {
   let now = 'datetime(\'now\')';
   if (db.client.config.client === 'pg') {
     now = 'now()';
@@ -528,6 +628,7 @@ export async function populateUserWorkForJobId(tx: Transaction, jobID: string): 
   + 'GROUP BY "j"."updatedAt", "ws"."serviceID", "ws"."jobID", j.username, "j"."isAsync" '
   + 'ORDER BY "j"."updatedAt" asc';
   await tx.raw(sql);
+  await restoreOrSeedUserWorkDurations(tx, jobID, seedLookbackDays);
 }
 
 /**
@@ -536,15 +637,19 @@ export async function populateUserWorkForJobId(tx: Transaction, jobID: string): 
  * @param tx - The database transaction
  * @param jobID - The job ID
  * @param readyOrRunning - The work item state (ready or running)
+ * @param seedLookbackDays - If the job's user_work rows have to be repopulated, how many days of
+ * the user's history to seed average_duration from. 0 disables seeding.
  */
-export async function recalculateCount(tx: Transaction, jobID: string, readyOrRunning: 'ready' | 'running'): Promise<void> {
+export async function recalculateCount(
+  tx: Transaction, jobID: string, readyOrRunning: 'ready' | 'running', seedLookbackDays = 0,
+): Promise<void> {
   const rows = await tx(UserWork.table)
     .select(['id', 'service_id'])
     .where({ job_id: jobID });
 
   // Job was paused at initial transition and populating of user_work table
   if (rows.length === 0) {
-    await populateUserWorkForJobId(tx, jobID);
+    await populateUserWorkForJobId(tx, jobID, seedLookbackDays);
   } else {
     for (const row of rows) {
       const readyOrRunningCountRow = await tx(WorkItem.table)
@@ -568,20 +673,12 @@ export async function recalculateCount(tx: Transaction, jobID: string, readyOrRu
  * provided jobID.
  * @param tx - The database transaction
  * @param jobID - The job ID
+ * @param seedLookbackDays - If the job's user_work rows have to be repopulated, how many days of
+ * the user's history to seed average_duration from. 0 disables seeding.
  */
-export async function recalculateCounts(tx: Transaction, jobID: string): Promise<void> {
-  await recalculateCount(tx, jobID, 'ready');
-  await recalculateCount(tx, jobID, 'running');
-}
-
-/**
- * Sets the ready_count to the appropriate value for each row in the user_work table for the
- * provided jobID.
- * @param tx - The database transaction
- * @param jobID - The job ID
- */
-export async function recalculateReadyCount(tx: Transaction, jobID: string): Promise<void> {
-  await recalculateCount(tx, jobID, 'ready');
+export async function recalculateCounts(tx: Transaction, jobID: string, seedLookbackDays = 0): Promise<void> {
+  await recalculateCount(tx, jobID, 'ready', seedLookbackDays);
+  await recalculateCount(tx, jobID, 'running', seedLookbackDays);
 }
 
 /**
@@ -623,68 +720,43 @@ export async function incrementReadyAndDecrementRunningCounts(
 
 /**
  * Decrements the running_count by one for the given jobID and serviceID. When the duration of a
- * just-completed work item is provided, also folds it into the cumulative mean average_duration
- * (in ms) and increments completed_count. This is on the hot work item update path, so it's all
+ * just-completed work item is provided, also records it: a successful (or warning) work item's
+ * duration is folded into the cumulative mean average_duration (in ms) and completed_count is
+ * incremented, while a failed work item's duration is added to failed_sum_duration_ms and
+ * failed_count is incremented instead. This is on the hot work item update path, so it's all
  * done in a single UPDATE (using the row's pre-update values in the SET expressions) to avoid
  * extra database round trips and repeated row locking.
  * @param tx - The database transaction
  * @param jobID - The job ID
  * @param serviceID - The ID of the service
- * @param completedDurationMs - The duration (in ms) of the just-completed work item, if any
+ * @param completed - The duration of the just-completed work item and whether it failed, if any
+ * @returns the number of rows updated - 0 if the job and service has no user_work row
  */
 export async function decrementRunningCount(
-  tx: Transaction, jobID: string, serviceID: string, completedDurationMs?: number,
-): Promise<void> {
+  tx: Transaction, jobID: string, serviceID: string, completed?: CompletedWorkItemDuration,
+): Promise<number> {
   const updates: { [column: string]: Knex.Raw } = {
     running_count: tx.raw('CASE WHEN running_count > 0 THEN running_count - 1 ELSE 0 END'),
   };
-  if (completedDurationMs !== undefined && completedDurationMs !== null) {
-    // Cast to BIGINT before multiplying - with integer columns postgres overflows 32 bits once
-    // average_duration * completed_count passes ~2.1 billion (e.g. 36,000 completions at 60s)
-    updates.average_duration = tx.raw(
-      'ROUND((CAST(COALESCE(average_duration, 0) AS BIGINT) * completed_count + ?) * 1.0 / (completed_count + 1))',
-      [Math.round(completedDurationMs)],
-    );
-    updates.completed_count = tx.raw('completed_count + 1');
+  if (completed) {
+    const durationMs = Math.round(completed.durationMs);
+    if (completed.failed) {
+      updates.failed_sum_duration_ms = tx.raw('failed_sum_duration_ms + ?', [durationMs]);
+      updates.failed_count = tx.raw('failed_count + 1');
+    } else {
+      // Cast to BIGINT before multiplying - with integer columns postgres overflows 32 bits once
+      // average_duration * completed_count passes ~2.1 billion (e.g. 36,000 completions at 60s).
+      // A seeded average_duration has a completed_count of 0, so it is replaced, not averaged in.
+      updates.average_duration = tx.raw(
+        'ROUND((CAST(COALESCE(average_duration, 0) AS BIGINT) * completed_count + ?) * 1.0 / (completed_count + 1))',
+        [durationMs],
+      );
+      updates.completed_count = tx.raw('completed_count + 1');
+    }
   }
-  await tx(UserWork.table)
+  return tx(UserWork.table)
     .where({ job_id: jobID, service_id: serviceID })
     .update(updates);
-}
-
-/**
- * Deletes any rows with 0 running_count and 0 ready_count
- * @param tx - The database transaction
- * @returns the number of rows deleted
- */
-export async function deleteOrphanedRows(tx: Transaction): Promise<number> {
-  const numDeleted = await tx(UserWork.table)
-    .where({ ready_count: 0, running_count: 0 })
-    .del();
-  return numDeleted;
-}
-
-/**
- * Populates the user_work table from scratch using the work_items table.
- * @param tx - The database transaction
- */
-export async function populateUserWorkFromWorkItems(tx: Transaction): Promise<void> {
-  let now = 'datetime(\'now\')';
-  if (db.client.config.client === 'pg') {
-    now = 'now()';
-  }
-  const sql = 'INSERT INTO user_work(ready_count, running_count, last_worked, service_id, '
-    + 'job_id, username, is_async, "createdAt", "updatedAt") '
-    + 'SELECT count(1) filter (WHERE i.status = \'ready\' AND "i"."serviceID" = "ws"."serviceID" AND j.status in (\'running\', \'running_with_errors\', \'accepted\')) as ready_count, '
-    + 'count(1) filter (WHERE i.status = \'running\' AND j.status in (\'running\', \'running_with_errors\', \'accepted\')) as running_count, '
-    + `"j"."updatedAt", ws."serviceID", "ws"."jobID", j.username, "j"."isAsync", ${now}, ${now} `
-    + 'FROM workflow_steps ws '
-    + 'JOIN jobs j on "ws"."jobID" = "j"."jobID" '
-    + 'LEFT JOIN work_items i on "ws"."jobID" = "i"."jobID" AND "i"."jobID" = "j"."jobID" '
-    + 'WHERE j.status not in (\'successful\', \'complete_with_errors\', \'failed\', \'canceled\') '
-    + 'GROUP BY "j"."updatedAt", "ws"."serviceID", "ws"."jobID", j.username, "j"."isAsync" '
-    + 'ORDER BY "j"."updatedAt" asc';
-  await tx.raw(sql);
 }
 
 /**
@@ -709,4 +781,78 @@ export async function getCountsByService(
       { queued: Number(r.queued) },
     ]),
   );
+}
+
+// The work queued or running right now for a group of user_work rows
+export interface LiveWork {
+  ready: number;
+  running: number;
+  // the earliest last_worked of the rows that have ready work, i.e. when the job (and service) that
+  // has waited longest last had one of its work items started - not how long any work item has been
+  // ready. A row's last_worked is reset whenever one of its work items is started, and starts out as
+  // the job's creation (or, if the row was repopulated, its updatedAt). Null if nothing is ready.
+  oldestReadyLastWorked: Date | null;
+  // the estimated compute time (in ms) of the ready work items: each user_work row's ready_count
+  // times the duration duration based fair queueing uses for the row (see EFFECTIVE_DURATION_SQL -
+  // its measured average, its failures' average, or one seeded from the user's history for the
+  // service), or DEFAULT_EXPECTED_DURATION_MS for rows with none
+  readyEstimateMs: number;
+  // how many of the ready work items were estimated with DEFAULT_EXPECTED_DURATION_MS
+  readyDefaultEstimateCount: number;
+}
+
+// A LiveWork for a service, user, or both
+export interface LiveWorkRow extends LiveWork {
+  service_id?: string;
+  username?: string;
+}
+
+/**
+ * Gets the work queued or running right now, grouped by service and/or user. This reads only the
+ * user_work table, which only has rows for active work, so it stays cheap regardless of history.
+ *
+ * @param tx - The database transaction
+ * @param groupBy - The columns to group by
+ * @param filters - Optional constraints on the rows included
+ * @returns the live work for each group
+ */
+export async function getLiveWork(
+  tx: Transaction,
+  groupBy: ('service_id' | 'username')[],
+  filters: { serviceIDs?: string[], username?: string } = {},
+): Promise<LiveWorkRow[]> {
+  const query = tx(UserWork.table)
+    .select(
+      ...groupBy,
+      tx.raw('SUM(ready_count) AS ready'),
+      tx.raw('SUM(running_count) AS running'),
+      tx.raw('MIN(CASE WHEN ready_count > 0 THEN last_worked END) AS oldest_ready_last_worked'),
+      // cast before multiplying, as postgres would overflow 32 bit integers (see EXPECTED_RUNTIME_SQL)
+      tx.raw(`SUM(CAST(ready_count AS BIGINT) * COALESCE(${EFFECTIVE_DURATION_SQL}, ?)) AS ready_estimate_ms`,
+        [DEFAULT_EXPECTED_DURATION_MS]),
+      tx.raw(`SUM(CASE WHEN ${EFFECTIVE_DURATION_SQL} IS NULL THEN ready_count ELSE 0 END) AS ready_default_estimate_count`),
+    )
+    .groupBy(groupBy);
+  if (filters.serviceIDs) {
+    query.whereIn('service_id', filters.serviceIDs);
+  }
+  if (filters.username !== undefined) {
+    query.where('username', filters.username);
+  }
+  const rows = await query;
+  return rows.map((r) => {
+    const oldest = r.oldest_ready_last_worked;
+    const row: LiveWorkRow = {
+      ready: Number(r.ready ?? 0),
+      running: Number(r.running ?? 0),
+      // sqlite (test-only) returns ms since the epoch
+      oldestReadyLastWorked: oldest === null || oldest === undefined ? null : new Date(oldest),
+      readyEstimateMs: Number(r.ready_estimate_ms ?? 0),
+      readyDefaultEstimateCount: Number(r.ready_default_estimate_count ?? 0),
+    };
+    for (const column of groupBy) {
+      row[column] = r[column];
+    }
+    return row;
+  });
 }
