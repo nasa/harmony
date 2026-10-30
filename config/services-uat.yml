@@ -404,7 +404,7 @@ https://cmr.uat.earthdata.nasa.gov:
         is_sequential: true
       - image: !Env ${SWATH_PROJECTOR_IMAGE}
       - image: !Env ${FILTERING_IMAGE}
-      - image: !Env ${VARIABLE_FAN_OUT_IMAGE}
+      - image: !Env ${HARMONY_VARIABLE_FAN_OUT_IMAGE}
       - image: !Env ${NET2COG_IMAGE}
       - image: !Env ${HYBIG_IMAGE}
 
@@ -438,7 +438,7 @@ https://cmr.uat.earthdata.nasa.gov:
         conditional:
           exists: ['dimensionSubset']
       - image: !Env ${FILTERING_IMAGE}
-      - image: !Env ${VARIABLE_FAN_OUT_IMAGE}
+      - image: !Env ${HARMONY_VARIABLE_FAN_OUT_IMAGE}
       - image: !Env ${NET2COG_IMAGE}
       - image: !Env ${HYBIG_IMAGE}
 
@@ -587,7 +587,7 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${HARMONY_REGRIDDER_IMAGE}
         conditional:
           exists: ['reproject']
-      - image: !Env ${VARIABLE_FAN_OUT_IMAGE}
+      - image: !Env ${HARMONY_VARIABLE_FAN_OUT_IMAGE}
         conditional:
           format: ['image/tiff']
       - image: !Env ${NET2COG_IMAGE}
@@ -773,7 +773,7 @@ https://cmr.uat.earthdata.nasa.gov:
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
-      - image: !Env ${VARIABLE_FAN_OUT_IMAGE}
+      - image: !Env ${HARMONY_VARIABLE_FAN_OUT_IMAGE}
       - image: !Env ${NET2COG_IMAGE}
 
   - name: harmony-flow
@@ -899,7 +899,7 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${HARMONY_SMAP_L2_GRIDDER_IMAGE}
         conditional:
           format: ['image/tiff', 'application/netcdf']
-      - image: !Env ${VARIABLE_FAN_OUT_IMAGE}
+      - image: !Env ${HARMONY_VARIABLE_FAN_OUT_IMAGE}
         conditional:
           format: ['image/tiff']
       - image: !Env ${NET2COG_IMAGE}

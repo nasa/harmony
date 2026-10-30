@@ -38,8 +38,8 @@ order with the most recent changes first.
 
 ## 2026-10-26
 ### Added
-- `VARIABLE_FAN_OUT_*` default variables added to support image and queues.
-- `VARIABLE_FAN_OUT_ENABLED` Added as a control to allow bypassing of the fan
+- `HARMONY_VARIABLE_FAN_OUT_*` default variables added to support image and queues.
+- `HARMONY_VARIABLE_FAN_OUT_ENABLED` Added as a control to allow bypassing of the fan
    out service when running local Harmony-In-A-Box.  If you are not actively
    developing the fan out service you probably don't want to run fan out or you
    will have to download a file for every variable processed.
