@@ -29,6 +29,7 @@ describe('Versions endpoint', function () {
           'ldds/geoloco',
           'giovanni-time-series-adapter',
           'podaac/l2-subsetter',
+          'satellite-in-situ-matchup',
           'podaac/concise',
           'podaac/l2-subsetter-concise',
           'sds/swath-projector',
