@@ -36,6 +36,14 @@ order with the most recent changes first.
 - USER_WORK_HISTORY_REAPER_BATCH_SIZE - the maximum number of `user_work_history` rows the reaper
   deletes per statement (default 5000).
 
+## 2026-10-26
+### Added
+- `HARMONY_VARIABLE_FAN_OUT_*` default variables added to support image and queues.
+- `HARMONY_VARIABLE_FAN_OUT_ENABLED` Added as a control to allow bypassing of the fan
+   out service when running local Harmony-In-A-Box.  If you are not actively
+   developing the fan out service you probably don't want to run fan out or you
+   will have to download a file for every variable processed.
+
 ## 2026-10-23
 ### Added
 - ENABLE_DURATION_BASED_FAIR_QUEUEING - work-scheduler feature toggle (default false). When false,

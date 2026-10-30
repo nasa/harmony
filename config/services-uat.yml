@@ -404,6 +404,7 @@ https://cmr.uat.earthdata.nasa.gov:
         is_sequential: true
       - image: !Env ${SWATH_PROJECTOR_IMAGE}
       - image: !Env ${FILTERING_IMAGE}
+      - image: !Env ${HARMONY_VARIABLE_FAN_OUT_IMAGE}
       - image: !Env ${NET2COG_IMAGE}
       - image: !Env ${HYBIG_IMAGE}
 
@@ -437,6 +438,7 @@ https://cmr.uat.earthdata.nasa.gov:
         conditional:
           exists: ['dimensionSubset']
       - image: !Env ${FILTERING_IMAGE}
+      - image: !Env ${HARMONY_VARIABLE_FAN_OUT_IMAGE}
       - image: !Env ${NET2COG_IMAGE}
       - image: !Env ${HYBIG_IMAGE}
 
@@ -585,6 +587,9 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${HARMONY_REGRIDDER_IMAGE}
         conditional:
           exists: ['reproject']
+      - image: !Env ${HARMONY_VARIABLE_FAN_OUT_IMAGE}
+        conditional:
+          format: ['image/tiff']
       - image: !Env ${NET2COG_IMAGE}
         conditional:
           format: ['image/tiff']
@@ -634,9 +639,9 @@ https://cmr.uat.earthdata.nasa.gov:
       #### CONCatenation SErvice (CONCISE)
       * Service capable of "concatenating" multiple netCDF files into a single netCDF file.
       The resulting file has an extra dimension with size equal to the number of input files, where each slice in that dimension corresponds to the data from one of the input files.
-      #### CASPER 
+      #### CASPER
       * Service that converts NetCDF file into CSV format by grouping the variables by their coordinates and outputs each group into a separate CSV file.
-      
+
     data_operation_version: '0.22.0'
     type:
       <<: *default-turbo-config
@@ -768,6 +773,7 @@ https://cmr.uat.earthdata.nasa.gov:
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
+      - image: !Env ${HARMONY_VARIABLE_FAN_OUT_IMAGE}
       - image: !Env ${NET2COG_IMAGE}
 
   - name: harmony-flow
@@ -893,6 +899,9 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${HARMONY_SMAP_L2_GRIDDER_IMAGE}
         conditional:
           format: ['image/tiff', 'application/netcdf']
+      - image: !Env ${HARMONY_VARIABLE_FAN_OUT_IMAGE}
+        conditional:
+          format: ['image/tiff']
       - image: !Env ${NET2COG_IMAGE}
         conditional:
           format: ['image/tiff']
@@ -927,6 +936,7 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
       - image: !Env ${HARMONY_SERVICE_EXAMPLE_IMAGE}
+
 
   # This is an example service and backend from example/http-backend.js mounted by
   # the frontend callback server.
