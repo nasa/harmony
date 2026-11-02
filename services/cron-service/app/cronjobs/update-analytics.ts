@@ -16,7 +16,7 @@ import { tableRowTransforms } from '../util/iceberg-row-transforms';
 
 export const ALL_TABLES = ['batch_items', 'batches', 'job_links', 'job_messages', 'jobs',
   'jobs_raw_labels', 'raw_labels', 'service_deployments', 'users_labels', 'work_items',
-  'workflow_steps'];
+  'workflow_steps', 'user_work_history'];
 
 /**
  * A cursor identifying the last row seen from a previous batch, used to page

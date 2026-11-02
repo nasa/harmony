@@ -1,12 +1,13 @@
 import { NextFunction, Response } from 'express';
 import { Knex } from 'knex';
 
-import { camelCaseToSpacedTitleCase, listToText } from '@harmony/util/string';
+import { listToText } from '@harmony/util/string';
 
 import HarmonyRequest from '../models/harmony-request';
 import { getCountsByService } from '../models/user-work';
 import { getWorkItemsStatsSummary, WorkItemsStatsTimeWindow } from '../models/work-items-stats';
 import db from '../util/db';
+import env from '../util/env';
 import { RequestValidationError } from '../util/errors';
 import { keysToLowerCase } from '../util/object';
 import { WorkItemQueueType } from '../util/queue/queue';
@@ -37,7 +38,7 @@ interface TimeRange {
   end: string;
 }
 
-interface DashboardQueues {
+export interface DashboardQueues {
   smallWorkItemUpdates: number;
   largeWorkItemUpdates: number;
   workItemScheduler: number;
@@ -311,7 +312,8 @@ async function getServiceMetrics(
   const [serviceWorkCounts, ...summaries] = await Promise.all([
     getCountsByService(dbConn),
     ...windows.map((window) =>
-      dbConn.transaction((trx) => getWorkItemsStatsSummary(trx, window)),
+      dbConn.transaction((trx) =>
+        getWorkItemsStatsSummary(trx, window, env.workItemsStatsMinuteRetentionDays)),
     ),
   ]);
 
@@ -379,7 +381,7 @@ async function getServiceMetrics(
  *
  * @returns A record containing counts for small updates, large updates, and the scheduler
  */
-async function getSystemQueueMetrics(): Promise<DashboardQueues> {
+export async function getSystemQueueMetrics(): Promise<DashboardQueues> {
   const smallUpdateQueue = getQueueForType(WorkItemQueueType.SMALL_ITEM_UPDATE);
   const largeUpdateQueue = getQueueForType(WorkItemQueueType.LARGE_ITEM_UPDATE);
   const schedulerQueue = getWorkSchedulerQueue();
@@ -395,246 +397,6 @@ async function getSystemQueueMetrics(): Promise<DashboardQueues> {
     largeWorkItemUpdates: large.status === 'fulfilled' ? large.value : -1,
     workItemScheduler: scheduler.status === 'fulfilled' ? scheduler.value : -1,
   };
-}
-
-/**
- * Returns the CSS class used to style a count cell for a given status.
- *
- * @param count - The numeric count for the status
- * @param status - The tracked status type
- * @returns CSS class name for the count cell
- */
-function countClass(count: number, status: TrackedStatus): string {
-  if (count === 0) {
-    return 'count-zero';
-  }
-
-  return `count-${status}`;
-}
-
-/**
- * Computes a success rate from a set of status counts. Only successful and failed
- * items are considered; warned and canceled items are excluded from the
- * denominator so that neither counts against the rate.
- *
- * @param counts - The status counts to evaluate
- * @returns Success rate between 0 and 1, or null if no applicable items exist
- */
-function computeRate(counts: StatusCounts): number | null {
-  const denominator = counts.successful + counts.failed;
-
-  if (denominator === 0) {
-    return null;
-  }
-
-  return counts.successful / denominator;
-}
-
-/**
- * Returns the CSS class used to style a success rate value.
- *
- * @param rate - The computed success rate or null if unavailable
- * @returns CSS class name for the rate display
- */
-function rateClass(rate: number | null): string {
-  if (rate === null) {
-    return 'rate-na';
-  }
-
-  if (rate >= 0.99) {
-    return 'rate-good';
-  }
-
-  if (rate >= 0.95) {
-    return 'rate-warn';
-  }
-
-  return 'rate-bad';
-}
-
-/**
- * Formats a count for display in the HTML dashboard, grouping thousands with
- * commas. Only used for the HTML view - the JSON response returns raw numbers.
- *
- * @param count - The count to format
- * @returns The count as a string with thousands separators
- */
-function formatCount(count: number): string {
-  return count.toLocaleString('en-US');
-}
-
-/**
- * Formats a success rate for display in the dashboard.
- *
- * @param rate - The computed success rate or null if unavailable
- * @returns Formatted percentage string or em dash if unavailable
- */
-function formatRate(rate: number | null): string {
-  if (rate === null) {
-    return '—';
-  }
-
-  return `${(rate * 100).toFixed(1)}%`;
-}
-
-/**
- * Computes the total number of tracked work items across all statuses.
- *
- * @param counts - The status counts to total
- * @returns Sum of all tracked statuses
- */
-function totalCounts(counts: StatusCounts): number {
-  return counts.successful
-    + counts.failed
-    + counts.canceled
-    + counts.warning;
-}
-
-interface DashboardWindowView {
-  label: string;
-  displayName: string;
-  startTime: string;
-  endTime: string;
-
-  successful: string;
-  failed: string;
-  canceled: string;
-  warning: string;
-
-  successfulClass: string;
-  failedClass: string;
-  canceledClass: string;
-  warningClass: string;
-
-  rate: string;
-  rateClass: string;
-
-  trendIsUp?: boolean;
-  trendIsDown?: boolean;
-
-  columnStart: number;
-}
-
-/**
- * Transforms raw metrics into the format expected by the Mustache template
- * and renders the HTML response.
- *
- * @param res - The Express response object
- * @param services - The map of service names to their metrics
- * @param queues - The map of system queue names to their message counts
- * @param timeRanges - The map of time range names to their start/end boundaries
- * @param totals - The aggregated metrics combined across all of the services
- * @param version - The version string to display on the dashboard in the footer
- *        (harmony version not the dashboard API version)
- */
-function renderDashboardHtml(
-  res: Response,
-  services: Record<string, ServiceMetric>,
-  queues: DashboardQueues,
-  timeRanges: Record<string, TimeRange>,
-  totals: ServiceMetric,
-  version: string,
-): void {
-  const buildWindowView = (
-    label: string,
-    counts: StatusCounts,
-    windowIndex: number,
-  ): DashboardWindowView => {
-    const rate = computeRate(counts);
-    const range = timeRanges[label];
-
-    return {
-      label,
-      displayName: camelCaseToSpacedTitleCase(label),
-      startTime: range ? new Date(range.start).toISOString() : '',
-      endTime: range ? new Date(range.end).toISOString() : '',
-
-      successful: formatCount(counts.successful),
-      failed: formatCount(counts.failed),
-      canceled: formatCount(counts.canceled),
-      warning: formatCount(counts.warning),
-
-      successfulClass: countClass(counts.successful, 'successful'),
-      failedClass: countClass(counts.failed, 'failed'),
-      canceledClass: countClass(counts.canceled, 'canceled'),
-      warningClass: countClass(counts.warning, 'warning'),
-
-      rate: formatRate(rate),
-      rateClass: rateClass(rate),
-      columnStart: 2 + (windowIndex * 5),
-    };
-  };
-
-  const buildWindows = (
-    windows: Record<string, StatusCounts>,
-  ): DashboardWindowView[] => Object.entries(windows).map(
-    ([label, counts], index): DashboardWindowView =>
-      buildWindowView(label, counts, index),
-  );
-
-  const servicesArray = Object.entries(services).map(([name, details]) => {
-    const windows = buildWindows(details.windows);
-
-    let trendIsUp = false;
-    let trendIsDown = false;
-
-    const windowEntries = Object.entries(details.windows);
-
-    if (windowEntries.length >= 2) {
-      const currentRate = computeRate(windowEntries[0][1]);
-      const baselineRate = computeRate(windowEntries[1][1]);
-
-      if (currentRate !== null && baselineRate !== null) {
-        const delta = currentRate - baselineRate;
-
-        if (delta < -0.02) {
-          trendIsDown = true;
-        } else if (delta > 0.02) {
-          trendIsUp = true;
-        }
-      }
-    }
-
-    const isIdle = details.queued === 0
-      && Object.values(details.windows)
-        .every((counts) => totalCounts(counts) === 0);
-
-    return {
-      name,
-      // queued for display has thousands separators, queuedCount is a raw number for sorting
-      queuedCount: details.queued,
-      queued: formatCount(details.queued),
-      windows,
-      trendIsUp,
-      trendIsDown,
-      isIdle,
-    };
-  });
-
-  const queuesArray = Object.entries(queues).map(([name, count]) => ({
-    name: camelCaseToSpacedTitleCase(name),
-    count: formatCount(count),
-    isFailed: count === -1,
-  }));
-
-  // Sort by queued count descending for the primary dashboard view
-  servicesArray.sort((a, b) => b.queuedCount - a.queuedCount);
-
-  const windows = buildWindows(totals.windows);
-  const summary = {
-    queued: formatCount(totals.queued),
-    windows,
-  };
-
-  res.render('dashboard', {
-    version,
-    services: servicesArray,
-    queues: queuesArray,
-    timeRanges,
-    summary,
-    windows,
-    windowCount: windows.length,
-  });
 }
 
 /**
@@ -658,6 +420,14 @@ export async function getDashboard(
       validateVersion(version);
     }
 
+    // Default to JSON unless caller explicitly requests html. The HTML page is only a shell - it
+    // loads its data from the dashboard API (see dashboard-api.ts), so it needs no queries here.
+    if (req.accepts(['json', 'html']) === 'html') {
+      req.context.logger.info(`Dashboard page requested by user ${req.user}`);
+      res.render('dashboard', { version: harmonyVersion });
+      return;
+    }
+
     const windows = parseTimeWindows(query);
 
     validateTimeWindows(windows);
@@ -673,22 +443,13 @@ export async function getDashboard(
 
     const totals = getSystemTotals(services);
 
-    const result = {
+    res.json({
       timeRanges,
       queues: queueMetrics,
       totals,
       services,
       version: version ?? currentApiVersion,
-    };
-
-    // Default to JSON unless caller explicitly requests html
-    const acceptsHtml = req.accepts(['json', 'html']) === 'html';
-
-    if (acceptsHtml) {
-      renderDashboardHtml(res, result.services, result.queues, result.timeRanges, result.totals, harmonyVersion);
-    } else {
-      res.json(result);
-    }
+    });
   } catch (e) {
     next(e);
   }

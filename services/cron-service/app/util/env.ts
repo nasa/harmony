@@ -20,11 +20,7 @@ class CronServiceHarmonyEnv extends HarmonyEnv {
   @IsInt()
   @Min(1)
   workReaperBatchSize: number;
-
-  @IsInt()
-  @Min(1)
-  reapableWorkAgeMinutes: number;
-  // End work reaper variables
+  // End work reaper variables (REAPABLE_WORK_AGE_MINUTES is shared, in packages/util)
 
 
   // Begin restart prometheus variables
@@ -40,6 +36,19 @@ class CronServiceHarmonyEnv extends HarmonyEnv {
   @Min(1)
   userWorkExpirationMinutes: number;
   // End user work update variables
+
+  // Begin user work history reaper variables
+  @IsCrontab()
+  userWorkHistoryReaperCron: string;
+
+  @IsInt()
+  @Min(1)
+  userWorkHistoryRetentionDays: number;
+
+  @IsInt()
+  @Min(1)
+  userWorkHistoryReaperBatchSize: number;
+  // End user work history reaper variables
 
   // Begin publish service failure metrics variables
   @IsCrontab()
@@ -69,6 +78,14 @@ class CronServiceHarmonyEnv extends HarmonyEnv {
   // Begin work items stats updater variables
   @IsCrontab()
   workItemsStatsCron: string;
+
+  @IsInt()
+  @Min(1)
+  workItemsStatsHourlyRetentionDays: number;
+
+  @IsInt()
+  @Min(1)
+  workItemsStatsPruneHoursPerRun: number;
   // End work items stats updater variables
 
   // Begin analytics variables

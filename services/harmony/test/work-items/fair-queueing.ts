@@ -3,12 +3,13 @@ import { describe, it } from 'mocha';
 
 import { truncateAll } from '../../../../packages/util/test/helpers/db';
 import { JobRecord } from '../../app/models/job';
-import UserWork, { populateUserWorkFromWorkItems } from '../../app/models/user-work';
+import UserWork from '../../app/models/user-work';
 import { WorkItemRecord } from '../../app/models/work-item-interface';
 import db from '../../app/util/db';
 import { makePartialJobRecord, rawSaveJob } from '../helpers/jobs';
 import { setTestDurationBasedFairQueueing } from '../helpers/queue';
 import hookServersStartStop from '../helpers/servers';
+import { populateUserWorkFromWorkItems } from '../helpers/user-work';
 import { getWorkForService, makePartialWorkItemRecord, rawSaveWorkItem } from '../helpers/work-items';
 import { makePartialWorkflowStepRecord, rawSaveWorkflowStep } from '../helpers/workflow-steps';
 

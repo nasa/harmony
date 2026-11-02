@@ -424,6 +424,7 @@ https://cmr.uat.earthdata.nasa.gov:
         bbox: false
         variable: true
         temporal: false
+        dimension: true
       output_formats:
         - image/png
         - image/jpeg
@@ -431,6 +432,10 @@ https://cmr.uat.earthdata.nasa.gov:
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
+      - image: !Env ${HOSS_IMAGE}
+        operations: ['dimensionSubset']
+        conditional:
+          exists: ['dimensionSubset']
       - image: !Env ${FILTERING_IMAGE}
       - image: !Env ${NET2COG_IMAGE}
       - image: !Env ${HYBIG_IMAGE}
@@ -586,8 +591,10 @@ https://cmr.uat.earthdata.nasa.gov:
 
   - name: sds/hoss-opendap-url
     description: |
-      A service chain for returning the OPeNDAP request URL in a HOSS
-      request instead of the subset granule.
+      The Harmony OPeNDAP URL Service (HOUSe) is a service chain that returns
+      the OPeNDAP request URL created in a HOSS request instead of the subsetted
+      granule. This limits the capabilities of HOUSe to things that can be
+      directly requested from OPeNDAP in the form of array index ranges.
     data_operation_version: '0.22.0'
     type:
       <<: *default-turbo-config

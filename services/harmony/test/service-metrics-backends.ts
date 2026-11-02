@@ -4,11 +4,11 @@ import { describe, it } from 'mocha';
 import { buildJob } from './helpers/jobs';
 import hookServersStartStop from './helpers/servers';
 import { hookServiceMetrics } from './helpers/service-metrics';
+import { populateUserWorkFromWorkItems } from './helpers/user-work';
 import { buildWorkItem } from './helpers/work-items';
 import { buildWorkflowStep } from './helpers/workflow-steps';
 import { truncateAll } from '../../../packages/util/test/helpers/db';
 import { JobStatus } from '../app/models/job';
-import { populateUserWorkFromWorkItems } from '../app/models/user-work';
 import { WorkItemStatus } from '../app/models/work-item-interface';
 import db from '../app/util/db';
 

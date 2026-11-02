@@ -81,10 +81,34 @@ doesn't let one user's synchronous job jump ahead of another user's earlier roun
 ## Work Item Duration Tracking
 Regardless of which algorithm is in use, when a work item completes `decrementRunningCount`
 updates the `average_duration` and `completed_count` columns of its `user_work` row with a
-cumulative mean incorporating the completed work item's duration. This happens in the
-work-updater's own transaction, not the scheduling batch above. Slot based fair queueing ignores
-these columns; they are collected so that duration based fair queueing has measurements to use
-if it is enabled.
+cumulative mean incorporating the completed work item's duration. Only successful (and warning)
+work items are included. A failed work item (after any retries) instead increments
+`failed_count` and adds its duration to `failed_sum_duration_ms`, so that work items that fail
+quickly, or time out, don't skew the average (they're only used to classify a job that has no
+successful work items yet - see [The Fast Lane Reserve](#the-fast-lane-reserve)). Canceled work items aren't recorded at all. This
+happens in the work-updater's own transaction, not the scheduling batch above. Slot based fair
+queueing ignores these columns; they are collected so that duration based fair queueing has
+measurements to use if it is enabled.
+
+### Duration History
+`user_work` rows are deleted as soon as a job has no more work for a service, when the job
+finishes, and when the job is paused, so that the scheduling queries (which read every row for a
+service) only see active work. Before a row is deleted its totals are moved to the
+`user_work_history` table, which has at most one row per job and service:
+
+* When a paused job is resumed, its totals are restored from `user_work_history` to its new
+  `user_work` rows, so the job keeps its measured `average_duration` across any number of pauses.
+  Because the restored row carries the full totals, the next time it is deleted it overwrites the
+  history row rather than adding to it.
+* Work items that were already running when the job was paused keep running, and when they
+  complete their durations are added directly to the job's `user_work_history` row.
+* New jobs (and resumed jobs with no measurement yet for a service) have their `average_duration`
+  _seeded_ from the user's most recent jobs for the service within the last
+  `USER_WORK_DURATION_SEED_LOOKBACK_DAYS` (0 disables seeding). `completed_count` stays 0, so the
+  job's first measured duration replaces the seed. This lets duration based fair queueing classify
+  a job before any of its own work items complete.
+* The cron service deletes rows for finished jobs after `USER_WORK_HISTORY_RETENTION_DAYS`. The
+  table is also propagated to Iceberg by the analytics cron, where rows are kept.
 
 ## Duration Based Fair Queueing (Experimental)
 Duration based fair queueing is disabled by default. It is enabled by setting
@@ -95,8 +119,8 @@ Duration based fair queueing is disabled by default. It is enabled by setting
 ### Ranking Users by Expected Runtime
 In step 2, instead of counting slots for the service, each user's _expected runtime_ of work
 currently in progress **for this service** is computed: the sum, across that user's `user_work`
-rows for the service, of `running_count × average_duration` (using a default duration of one hour
-for rows whose `average_duration` hasn't been measured yet). As with slots, work the user has
+rows for the service, of `running_count × duration` (the same duration used to classify slow work,
+described below, with a default of one hour for rows whose duration hasn't been measured yet). As with slots, work the user has
 running on other services doesn't count. In step 3, the user with the least expected runtime for
 the service goes first within a round, with ties going to whoever was served longest ago for the
 service. This means a user with a few long-running work items can rank behind a user with many
@@ -112,10 +136,15 @@ To prevent this, Harmony caps how much of each service's capacity (its current r
 slow work may occupy at once, reserving the rest for "fast" work:
 
 * A `(job_id, service_id)` pair - tracked by its row in `user_work` - is classified as **slow** once
-  its measured `average_duration` exceeds `SLOW_WORK_THRESHOLD_MS`. It's classified as **fast** if
-  its `average_duration` is at or below that threshold, or if no work item for that job and service
-  has completed yet (so a new job's duration can be measured without being treated as slow by
-  default).
+  its _duration_ exceeds `SLOW_WORK_THRESHOLD_MS`, and as **fast** if its duration is at or below
+  that threshold, or if no work item for that job and service has completed yet (so a new job's
+  duration can be measured without being treated as slow by default). Its duration is normally its
+  `average_duration`. A job with no successful work items yet but some failed ones is instead
+  classified by the average duration of its failed work items
+  (`failed_sum_duration_ms / failed_count`), so a job whose work items keep failing slowly (e.g.
+  timing out) is still treated as slow. This takes precedence over a seeded `average_duration`
+  (see [Duration History](#duration-history)), which otherwise classifies the job the same way a
+  measured one does.
 * `FAST_LANE_RESERVE_FRACTION` (default `0.3`, i.e. 30%) is the fraction of a service's running pod
   count reserved for fast work. The remaining share is the **slow work capacity**:
   `max(1, floor(servicePodCount × (1 - FAST_LANE_RESERVE_FRACTION)))` - 7 slots with 10 pods.

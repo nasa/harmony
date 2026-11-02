@@ -225,6 +225,22 @@ export class HarmonyEnv {
 
   useLocalstack: boolean;
 
+  // Shared because user_work rows are created and repopulated by both harmony and the cron service
+  @IsInt()
+  @Min(0)
+  userWorkDurationSeedLookbackDays: number;
+
+  // Shared because the cron service prunes the dashboard stats tables and harmony reads them
+  @IsInt()
+  @Min(1)
+  workItemsStatsMinuteRetentionDays: number;
+
+  // Shared because the cron service's work reaper deletes old work items and the dashboard warns
+  // when a range reaches back before then
+  @IsInt()
+  @Min(1)
+  reapableWorkAgeMinutes: number;
+
   @IsUrl(hostRegexWhitelist)
   workItemSchedulerQueueUrl: string;
 

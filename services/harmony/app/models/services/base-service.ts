@@ -18,6 +18,7 @@ import DataOperation from '../data-operation';
 import HarmonyRequest from '../harmony-request';
 import { getIDForDuplicateJob, Job, JobStatus, statesToDefaultMessages } from '../job';
 import UserWork from '../user-work';
+import { getSeedAverageDurations } from '../user-work-history';
 import WorkItem from '../work-item';
 import { WorkItemStatus } from '../work-item-interface';
 import WorkflowStep from '../workflow-steps';
@@ -665,6 +666,16 @@ export default abstract class BaseService<ServiceParamType> {
         if (this.isTurbo()) {
           for await (const step of workflowSteps) {
             await step.save(tx);
+          }
+          // Seed the average durations from the user's recent jobs so duration based fair
+          // queueing can classify the job before any of its own work items complete
+          const seeds = await getSeedAverageDurations(
+            tx, this.operation.user, userWorkEntries.map((uw) => uw.service_id),
+            env.userWorkDurationSeedLookbackDays);
+          for (const userWork of userWorkEntries) {
+            if (seeds[userWork.service_id] !== undefined) {
+              userWork.average_duration = seeds[userWork.service_id];
+            }
           }
           for await (const userWork of userWorkEntries) {
             await userWork.save(tx);

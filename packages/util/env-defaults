@@ -197,3 +197,22 @@ CMR_CACHE_SIZE=256000000
 
 # CMR Cache TTL in milliseconds
 CMR_CACHE_TTL=600000
+
+# How many days of a user's user_work_history to average when seeding the average_duration of a
+# new job's (or a resumed job's) user_work rows for a service, so that duration based fair queueing
+# (ENABLE_DURATION_BASED_FAIR_QUEUEING in the work-scheduler) can classify the job as slow or fast
+# before any of its own work items complete. Only the user's 100 most recent jobs for the service
+# are averaged. Has no effect on slot based fair queueing, which doesn't use average_duration.
+# Should not exceed USER_WORK_HISTORY_RETENTION_DAYS in the cron service. 0 disables seeding.
+USER_WORK_DURATION_SEED_LOOKBACK_DAYS=7
+
+# Per-minute rows of the admin dashboard stats tables older than this many days are deleted by the
+# cron service (hourly rollups are kept for much longer - see WORK_ITEMS_STATS_HOURLY_RETENTION_DAYS
+# in the cron service). The dashboard reads the hourly rollups instead for time ranges that start
+# before this. Shared because both the cron service and harmony (the dashboard) use it.
+WORK_ITEMS_STATS_MINUTE_RETENTION_DAYS=14
+
+# WorkItems and WorkflowSteps (in a terminal state) older than this many minutes are checked by the
+# work reaper in the cron service. Shared because the admin dashboard (harmony) warns that work items
+# from before this may be missing from the jobs it lists by work item status.
+REAPABLE_WORK_AGE_MINUTES=20160

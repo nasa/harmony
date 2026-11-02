@@ -167,6 +167,14 @@ class HarmonyServerEnv extends HarmonyEnv {
   @Min(1)
   jobStatusCacheTtl: number;
 
+  @IsInt()
+  @Min(0)
+  dashboardCacheTtlMs: number;
+
+  @IsInt()
+  @Min(1)
+  dashboardQueryTimeoutMs: number;
+
   @IsPositive()
   wktPrecision: number;
 

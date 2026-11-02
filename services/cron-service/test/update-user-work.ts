@@ -194,7 +194,7 @@ describe('UserWorkUpdater', () => {
 
       await updateUserWorkMod.updateUserWork(ctx);
 
-      // Should have called setReadyAndRunningCountToZero once for job6 and recalculateCounts not at all
+      // Should have called deleteUserWorkForJob once for the job and recalculateCounts not at all
       expect(deleteUserWorkForJobStub.callCount).to.equal(1);
       expect(deleteUserWorkForJobStub.calledWith(sinon.match.any, job1.jobID)).to.be.true;
       expect(recalculateCountsStub.callCount).to.equal(0);

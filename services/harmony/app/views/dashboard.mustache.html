@@ -6,690 +6,131 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="/css/eui.min.css" />
   <link rel="stylesheet" href="/css/default.css" />
+  <link rel="stylesheet" href="/css/dashboard.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" />
-  <link href="https://cdn.jsdelivr.net/npm/@yaireo/tagify@4.16.4/dist/tagify.css" rel="stylesheet" type="text/css" />
-  <link rel="stylesheet" href="/css/workflow-ui/default.css" />
-
-  <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify@4.16.4"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify@4.16.4/dist/tagify.polyfills.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
-    integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"
-    defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
-    integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"
-    defer></script>
   <script language="javascript" id="_fed_an_ua_tag"
     src="https://dap.digitalgov.gov/Universal-Federated-Analytics-Min.js?agency=NASA&subagency=GSFC&dclink=true"
     defer></script>
+  <script type="module" src="/js/dashboard/index.js"></script>
   <title>Harmony Dashboard</title>
 </head>
 
 <body class="d-flex flex-column h-100">
   {{> banner}}
-  <div class="container-lg pt-5 flex-grow-1">
-    <h1 class="display-4 text-center">
-      Harmony Dashboard
-    </h1>
-    <div class="row mt-4">
-      <div class="col-12">
-        <div class="card shadow-sm">
-          <div class="card-header d-flex justify-content-between align-items-center">
-            <span><i class="bi bi-clock-history"></i> Time Windows</span>
-            <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse"
-              data-bs-target="#timeWindowBody" aria-expanded="true" aria-controls="timeWindowBody">
-              Show / hide
-            </button>
-          </div>
-          <div class="collapse show" id="timeWindowBody">
-            <div class="card-body">
-              <form id="timeWindowForm">
-                <div class="row g-4">
-                  <!-- Window 1 -->
-                  <div class="col-md-6">
-                    <fieldset id="window1Fieldset">
-                      <div class="mb-3">
-                        <label class="form-label" for="window1.label">Label</label>
-                        <input type="text" class="form-control" id="window1.label" value="Last 5 Minutes">
-                      </div>
-                      <div class="mb-3">
-                        <div class="btn-group" role="group" aria-label="Window 1 mode">
-                          <input type="radio" class="btn-check" name="window1Mode" id="window1ModeRelative"
-                            value="relative" checked>
-                          <label class="btn btn-outline-primary btn-sm" for="window1ModeRelative">Last N minutes</label>
-                          <input type="radio" class="btn-check" name="window1Mode" id="window1ModeAbsolute"
-                            value="absolute">
-                          <label class="btn btn-outline-primary btn-sm" for="window1ModeAbsolute">Custom range</label>
-                        </div>
-                      </div>
-                      <div class="mb-3 window1-relative">
-                        <label class="form-label" for="window1.lastminutes">Last minutes</label>
-                        <input type="number" min="1" class="form-control" id="window1.lastminutes" value="5">
-                      </div>
-                      <div class="window1-absolute d-none">
-                        <div class="mb-3">
-                          <label class="form-label" for="window1.start">Start</label>
-                          <input type="datetime-local" class="form-control" id="window1.start">
-                        </div>
-                        <div class="mb-3">
-                          <label class="form-label" for="window1.end">End</label>
-                          <input type="datetime-local" class="form-control" id="window1.end">
-                        </div>
-                      </div>
-                    </fieldset>
-                  </div>
-                  <!-- Window 2 -->
-                  <div class="col-md-6">
-                    <div class="form-check mb-2">
-                      <input class="form-check-input" type="checkbox" id="window2Enabled" checked>
-                      <label class="form-check-label" for="window2Enabled">Show a second window</label>
-                    </div>
-                    <fieldset id="window2Fieldset">
-                      <div class="mb-3">
-                        <label class="form-label" for="window2.label">Label</label>
-                        <input type="text" class="form-control" id="window2.label" value="Last 60 Minutes">
-                      </div>
-                      <div class="mb-3">
-                        <div class="btn-group" role="group" aria-label="Window 2 mode">
-                          <input type="radio" class="btn-check" name="window2Mode" id="window2ModeRelative"
-                            value="relative" checked>
-                          <label class="btn btn-outline-primary btn-sm" for="window2ModeRelative">Last N minutes</label>
-                          <input type="radio" class="btn-check" name="window2Mode" id="window2ModeAbsolute"
-                            value="absolute">
-                          <label class="btn btn-outline-primary btn-sm" for="window2ModeAbsolute">Custom range</label>
-                        </div>
-                      </div>
-                      <div class="mb-3 window2-relative">
-                        <label class="form-label" for="window2.lastminutes">Last minutes</label>
-                        <input type="number" min="1" class="form-control" id="window2.lastminutes" value="60">
-                      </div>
-                      <div class="window2-absolute d-none">
-                        <div class="mb-3">
-                          <label class="form-label" for="window2.start">Start</label>
-                          <input type="datetime-local" class="form-control" id="window2.start">
-                        </div>
-                        <div class="mb-3">
-                          <label class="form-label" for="window2.end">End</label>
-                          <input type="datetime-local" class="form-control" id="window2.end">
-                        </div>
-                      </div>
-                    </fieldset>
-                  </div>
-                </div>
-                <div class="d-flex gap-2 mt-3 flex-wrap">
-                  <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-arrow-repeat"></i> Apply
-                  </button>
-                  <span id="formMessage" class="align-self-center small text-muted" role="status"
-                    aria-live="polite"></span>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
+  <main class="container-xxl pt-4 pb-5 flex-grow-1 dashboard" id="dashboard">
+    <header class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-3">
+      <h1 class="h3 mb-0">Harmony Dashboard</h1>
+      <p class="dashboard-status small mb-0" id="statusLine" role="status" aria-live="polite">Loading…</p>
+    </header>
+
+    <!-- The filters scope everything below them -->
+    <div class="filter-row d-flex flex-wrap align-items-center gap-2 mb-3" role="toolbar" aria-label="Dashboard filters">
+      <div class="btn-group btn-group-sm" role="group" aria-label="Time range" id="rangePresets"></div>
+      <form id="customRange" class="custom-range d-flex flex-wrap align-items-center gap-2" hidden novalidate>
+        <label class="small text-muted" for="customStart">From</label>
+        <input type="datetime-local" class="form-control form-control-sm" id="customStart" name="start" required>
+        <label class="small text-muted" for="customEnd">to</label>
+        <input type="datetime-local" class="form-control form-control-sm" id="customEnd" name="end" required>
+        <button type="submit" class="btn btn-sm btn-primary">Apply</button>
+        <span class="form-message small text-danger" role="alert"></span>
+      </form>
+      <div class="ms-auto d-flex align-items-center gap-2">
+        <label for="autoRefresh" class="small text-muted mb-0">Auto refresh</label>
+        <select id="autoRefresh" class="form-select form-select-sm w-auto"></select>
+        <button id="refreshNow" type="button" class="btn btn-sm btn-outline-secondary">
+          <i class="bi bi-arrow-clockwise" aria-hidden="true"></i> Refresh
+        </button>
       </div>
     </div>
-    <div class="row mt-5 mb-4">
-      <div class="col-12">
-        <h2 class="h4 mb-3">
-          <i class="bi bi-cpu"></i>
-          System Queues
-        </h2>
-      </div>
-      {{#queues}}
-      <div class="col-md-4 mb-3">
-        <div class="metric-card shadow-sm">
-          <span class="metric-value font-monospace">
-            {{#isFailed}}
-            <small class="fs-6 text-muted">
-              failed to retrieve
-            </small>
-            {{/isFailed}}
-            {{^isFailed}}
-            {{count}}
-            {{/isFailed}}
-          </span>
-          <span class="metric-label">
-            {{name}}
-          </span>
+
+    <div id="staleWarning" class="alert alert-warning d-none" role="alert"></div>
+    <div id="errorMessage" class="alert alert-danger d-none" role="alert"></div>
+
+    <section class="refreshable" aria-labelledby="overviewHeading">
+      <h2 id="overviewHeading" class="visually-hidden">Overview</h2>
+      <div class="kpi-row" id="kpis"></div>
+    </section>
+
+    <section class="refreshable" aria-labelledby="workItemsHeading">
+      <h2 class="section-heading" id="workItemsHeading">Work items</h2>
+      <div class="row g-3">
+        <div class="col-xl-7">
+          <div class="viz-card" id="completionsCard"></div>
+        </div>
+        <div class="col-xl-5">
+          <div class="viz-card" id="durationCard"></div>
+        </div>
+        <div class="col-xl-7">
+          <div class="viz-card" id="histogramCard"></div>
+        </div>
+        <div class="col-xl-5">
+          <div class="viz-card" id="nowCard"></div>
         </div>
       </div>
-      {{/queues}}
-    </div>
+    </section>
 
-    <div class="row">
-      <div class="col-12">
-        <div class="row mt-4 mb-3">
-          <div class="col-12">
-            <h2 class="h4 mb-3">
-              System Summary
-            </h2>
-            <div class="card shadow-sm">
-              <div class="card-body">
-                <div class="row text-center">
-                  <div class="col-md-2 border-end">
-                    <div class="text-muted small text-uppercase">Queued</div>
-                    <div class="display-6 font-monospace">{{summary.queued}}</div>
-                  </div>
-                  {{#summary.windows}}
-                  <div class="col-md border-end">
-                    <div class="text-muted small text-uppercase mb-2">
-                      {{displayName}}
-                      <span class="fw-normal">
-                        (<time class="local-time">{{startTime}}</time> - <time class="local-time">{{endTime}}</time>)
-                      </span>
-                    </div>
-                    <div class="row">
-                      <div class="col">
-                        <div class="small text-muted">Successful</div>
-                        <div class="font-monospace fs-5 {{successfulClass}}">
-                          {{successful}}
-                        </div>
-                      </div>
-                      <div class="col">
-                        <div class="small text-muted">Failed</div>
-                        <div class="font-monospace fs-5 {{failedClass}}">
-                          {{failed}}
-                        </div>
-                      </div>
-                      <div class="col">
-                        <div class="small text-muted">Canceled</div>
-                        <div class="font-monospace fs-5 {{canceledClass}}">
-                          {{canceled}}
-                        </div>
-                      </div>
-                      <div class="col">
-                        <div class="small text-muted">Warning</div>
-                        <div class="font-monospace fs-5 {{warningClass}}">
-                          {{warning}}
-                        </div>
-                      </div>
-                      <div class="col">
-                        <div class="small text-muted">Success %</div>
-                        <div class="font-monospace fs-5 {{rateClass}}">
-                          {{rate}}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  {{/summary.windows}}
-                </div>
-              </div>
-            </div>
+    <section class="refreshable" aria-labelledby="servicesHeading">
+      <div class="d-flex flex-wrap align-items-end justify-content-between gap-2">
+        <h2 class="section-heading mb-2" id="servicesHeading">Services</h2>
+        <div class="d-flex flex-wrap align-items-center gap-3 mb-2">
+          <label class="visually-hidden" for="serviceFilter">Filter services</label>
+          <input type="search" id="serviceFilter" class="form-control form-control-sm" placeholder="Filter services">
+          <div class="form-check mb-0">
+            <input class="form-check-input" type="checkbox" id="hideIdle">
+            <label class="form-check-label small" for="hideIdle">Hide idle services</label>
           </div>
-        </div>
-
-        <h2 class="h4 mb-3">
-          <i class="bi bi-gear-wide-connected"></i>
-          Services
-        </h2>
-        <div class="table-responsive">
-          <table class="table table-striped" id="servicesTable" data-window-count="{{windowCount}}">
-            <thead>
-              <tr>
-                <th scope="col" rowspan="2" class="sortable align-middle" aria-sort="none">
-                  <button type="button" class="btn-sort" onclick="sortTable(0)">
-                    Service Name
-                    <i class="bi bi-arrow-down-up sort-icon"></i>
-                  </button>
-                </th>
-                <th scope="col" rowspan="2" class="sortable align-middle sorted-desc" aria-sort="descending">
-                  <button type="button" class="btn-sort" onclick="sortTable(1)">
-                    Queued
-                    <i class="bi bi-sort-down sort-icon"></i>
-                  </button>
-                </th>
-                {{#windows}}
-                <th scope="col" colspan="5" class="text-center border-start">
-                  {{displayName}}
-                  <span class="text-muted fw-normal">
-                    (<time class="local-time">{{startTime}}</time> - <time class="local-time">{{endTime}}</time>)
-                  </span>
-                </th>
-                {{/windows}}
-              </tr>
-              <tr>
-                {{#windows}}
-                <th class="sortable border-start">
-                  <button type="button" class="btn-sort" onclick="sortTable({{columnStart}})">
-                    Successful
-                    <i class="bi bi-arrow-down-up sort-icon"></i>
-                  </button>
-                </th>
-                <th class="sortable">
-                  <button type="button" class="btn-sort" onclick="sortTable({{columnStart}} + 1)">
-                    Failed
-                    <i class="bi bi-arrow-down-up sort-icon"></i>
-                  </button>
-                </th>
-                <th class="sortable">
-                  <button type="button" class="btn-sort" onclick="sortTable({{columnStart}} + 2)">
-                    Canceled
-                    <i class="bi bi-arrow-down-up sort-icon"></i>
-                  </button>
-                </th>
-                <th class="sortable">
-                  <button type="button" class="btn-sort" onclick="sortTable({{columnStart}} + 3)">
-                    Warning
-                    <i class="bi bi-arrow-down-up sort-icon"></i>
-                  </button>
-                </th>
-                <th class="sortable">
-                  <button type="button" class="btn-sort" onclick="sortTable({{columnStart}} + 4)">
-                    Success %
-                    <i class="bi bi-arrow-down-up sort-icon"></i>
-                  </button>
-                </th>
-                {{/windows}}
-              </tr>
-            </thead>
-            <tbody>
-              {{#services}}
-              <tr class="{{#isIdle}}idle{{/isIdle}}">
-                <td class="font-monospace">
-                  {{name}}
-                </td>
-                <td class="numeric">
-                  <strong>{{queued}}</strong>
-                </td>
-                {{#windows}}
-                <td class="numeric border-start {{successfulClass}}">
-                  {{successful}}
-                </td>
-                <td class="numeric {{failedClass}}">
-                  {{failed}}
-                </td>
-                <td class="numeric {{canceledClass}}">
-                  {{canceled}}
-                </td>
-                <td class="numeric {{warningClass}}">
-                  {{warning}}
-                </td>
-                <td class="numeric {{rateClass}}">
-                  {{rate}}
-                  {{#trendIsDown}}
-                  <span class="trend-down">↓</span>
-                  {{/trendIsDown}}
-                  {{#trendIsUp}}
-                  <span class="trend-up">↑</span>
-                  {{/trendIsUp}}
-                </td>
-                {{/windows}}
-              </tr>
-              {{/services}}
-            </tbody>
-          </table>
+          <span id="servicesHiddenCount" class="small text-muted"></span>
         </div>
       </div>
-    </div>
-  </div>
-  <script>
-    const WINDOW_COLUMNS = 5;
+      <p class="small text-muted mb-2">Select a service to see its trends, duration distribution, versions, failure
+        categories, and users. Select a failed count to see the jobs with those failed work items. The estimated
+        backlog compute and time to clear are for the work not started yet.</p>
+      <div id="servicesTable"></div>
+    </section>
 
-    /**
-     * Parses a percentage cell ("99.5%" or "—") to a sortable number.
-     * Missing values sort below all real percentages in descending order.
-     *
-     * @param {string} text
-     * @returns {number}
-     */
-    function parsePercentCell(text) {
-      if (text === '—' || text === '') return -1;
-      return parseFloat(text);
-    }
+    <section class="refreshable" aria-labelledby="jobsHeading">
+      <h2 class="section-heading" id="jobsHeading">Jobs</h2>
+      <div class="kpi-row" id="jobKpis"></div>
+      <button type="button" class="btn btn-sm btn-outline-secondary mt-3" id="showRunningJobs" aria-expanded="false"
+        aria-controls="runningJobs">Show longest running jobs</button>
+      <div id="runningJobs" class="mt-2" hidden></div>
+    </section>
 
-    /**
-     * Parses a numeric cell ("1,234") to a sortable number, ignoring the
-     * thousands separators added for display.
-     *
-     * @param {string} text
-     * @returns {number}
-     */
-    function parseNumericCell(text) {
-      return parseInt(text.replace(/,/g, ''), 10);
-    }
+    <section class="refreshable" aria-labelledby="usersHeading">
+      <div class="d-flex flex-wrap align-items-end justify-content-between gap-2">
+        <h2 class="section-heading mb-2" id="usersHeading">Users</h2>
+        <div class="d-flex flex-wrap align-items-center gap-3 mb-2">
+          <label class="visually-hidden" for="userFilter">Filter users</label>
+          <input type="search" id="userFilter" class="form-control form-control-sm" placeholder="Filter users">
+          <label class="visually-hidden" for="userService">Only users of a service</label>
+          <select id="userService" class="form-select form-select-sm w-auto">
+            <option value="">All services</option>
+          </select>
+          <span id="usersCount" class="small text-muted"></span>
+        </div>
+      </div>
+      <p class="small text-muted mb-2">Compute time is the summed duration of a user's work items. Every user in the
+        range is ranked by the sorted column, and the top ones are shown. Choose a service to rank only its users by
+        their work for it. Select a user to see their usage by service and over time, or a failed count to see the
+        jobs with those failed work items.</p>
+      <div id="usersTable"></div>
+    </section>
 
-    /**
-     * Returns the sortable column types based on the dynamic window count.
-     *
-     * @returns {{numericColumns: Set<number>, percentColumns: Set<number>}}
-     */
-    function getColumnTypes() {
-      const table = document.getElementById("servicesTable");
-      const windowCount = Number(table.dataset.windowCount);
-
-      const numericColumns = new Set([1]);
-      const percentColumns = new Set();
-
-      for (let i = 0; i < windowCount; i++) {
-        const startColumn = 2 + (i * WINDOW_COLUMNS);
-
-        numericColumns.add(startColumn);
-        numericColumns.add(startColumn + 1);
-        numericColumns.add(startColumn + 2);
-        numericColumns.add(startColumn + 3);
-        numericColumns.add(startColumn + 4);
-
-        percentColumns.add(startColumn + 4);
-      }
-
-      return {
-        numericColumns,
-        percentColumns,
-      };
-    }
-
-    /**
-     * Handles table sorting for the Services list. String columns sort ascending
-     * on first click; numeric columns sort descending on first click. Subsequent
-     * clicks toggle the direction.
-     *
-     * @param {number} n - Column index
-     */
-    function sortTable(n) {
-      const table = document.getElementById("servicesTable");
-      const tbody = table.querySelector("tbody");
-      const rows = Array.from(tbody.rows);
-      const headers = table.querySelectorAll("th.sortable");
-      const header = headers[n];
-
-      const { numericColumns, percentColumns } = getColumnTypes();
-
-      const isNumeric = numericColumns.has(n);
-      const isPercent = percentColumns.has(n);
-
-      const isAscending = header.classList.contains("sorted-asc");
-      const isDescending = header.classList.contains("sorted-desc");
-      const isCurrentlySorted = isAscending || isDescending;
-
-      let nowAscending;
-
-      if (isCurrentlySorted) {
-        nowAscending = !isAscending;
-      } else {
-        nowAscending = !isNumeric;
-      }
-
-      const direction = nowAscending ? 1 : -1;
-
-      const sortedRows = rows.sort((a, b) => {
-        let x = a.cells[n].innerText.trim();
-        let y = b.cells[n].innerText.trim();
-
-        if (isPercent) {
-          return (
-            parsePercentCell(x) -
-            parsePercentCell(y)
-          ) * direction;
-        }
-
-        if (isNumeric) {
-          return (
-            parseNumericCell(x) -
-            parseNumericCell(y)
-          ) * direction;
-        }
-
-        return x.toLowerCase().localeCompare(
-          y.toLowerCase(),
-        ) * direction;
-      });
-
-      while (tbody.firstChild) {
-        tbody.removeChild(tbody.firstChild);
-      }
-
-      tbody.append(...sortedRows);
-
-      headers.forEach((th) => {
-        th.classList.remove(
-          "sorted-asc",
-          "sorted-desc",
-        );
-
-        th.setAttribute(
-          "aria-sort",
-          "none",
-        );
-
-        const icon = th.querySelector(".sort-icon");
-
-        if (icon) {
-          icon.className = "bi bi-arrow-down-up sort-icon";
-        }
-      });
-
-      header.classList.add(
-        nowAscending ? "sorted-asc" : "sorted-desc",
-      );
-
-      header.setAttribute(
-        "aria-sort",
-        nowAscending ? "ascending" : "descending",
-      );
-
-      const icon = header.querySelector(".sort-icon");
-
-      if (icon) {
-        icon.className = nowAscending
-          ? "bi bi-sort-up sort-icon"
-          : "bi bi-sort-down sort-icon";
-      }
-    }
-
-    /**
-     * Chooses Intl format options for a range, matching the old server-side logic:
-     * same-day → time only; same-year → month/day + time; otherwise + year.
-     * Evaluated against the viewer's local clock (the timezone fix).
-     */
-    function formatTimeRangeOptions(start, end) {
-      const now = new Date();
-
-      const sameDay = start.getFullYear() === now.getFullYear()
-        && start.getMonth() === now.getMonth()
-        && start.getDate() === now.getDate()
-        && end.getFullYear() === now.getFullYear()
-        && end.getMonth() === now.getMonth()
-        && end.getDate() === now.getDate();
-
-      if (sameDay) {
-        return { hour: '2-digit', minute: '2-digit', hour12: true };
-      }
-
-      const sameYear = start.getFullYear() === now.getFullYear()
-        && end.getFullYear() === now.getFullYear();
-
-      if (sameYear) {
-        return { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true };
-      }
-
-      return { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true };
-    }
-
-    /**
-     * Reformats each window's start/end <time> pair into the viewer's local zone,
-     * using shared options derived from the pair (mirrors the old server behavior).
-     */
-    function renderLocalTimes() {
-      // Group the two <time> elements by their shared parent <span>, so each
-      // window's start and end are formatted with the same options.
-      const groups = new Map();
-      document.querySelectorAll('time.local-time').forEach((el) => {
-        const parent = el.parentNode;
-        if (!groups.has(parent)) groups.set(parent, []);
-        groups.get(parent).push(el);
-      });
-
-      groups.forEach((els) => {
-        const [startEl, endEl] = els;
-        if (!startEl || !endEl) return;
-
-        const start = new Date(startEl.textContent.trim());
-        const end = new Date(endEl.textContent.trim());
-        if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return;
-
-        const fmt = new Intl.DateTimeFormat([], formatTimeRangeOptions(start, end));
-        startEl.textContent = fmt.format(start);
-        endEl.textContent = fmt.format(end);
-      });
-    }
-
-    renderLocalTimes();
-  </script>
-  <script>
-    (function () {
-      const windowIndices = [1, 2];
-      const form = document.getElementById('timeWindowForm');
-      if (!form) return;
-
-      const messageEl = document.getElementById('formMessage');
-      const window2Enabled = document.getElementById('window2Enabled');
-      const el = (id) => document.getElementById(id);
-      const pad = (n) => String(n).padStart(2, '0');
-
-      // ISO instant -> value for <input type="datetime-local"> in the viewer's local time
-      function isoToLocalInput(iso) {
-        const d = new Date(iso);
-        if (Number.isNaN(d.getTime())) return '';
-        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
-          + `T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-      }
-
-      // datetime-local value (local, no tz) -> UTC ISO 8601 string for the query
-      function localInputToIso(value) {
-        if (!value) return '';
-        const d = new Date(value);
-        return Number.isNaN(d.getTime()) ? '' : d.toISOString();
-      }
-
-      const getMode = (i) => {
-        const checked = form.querySelector(`input[name="window${i}Mode"]:checked`);
-        return checked ? checked.value : 'relative';
-      };
-
-      function syncModeVisibility(i) {
-        const relative = getMode(i) === 'relative';
-        document.querySelector(`.window${i}-relative`)?.classList.toggle('d-none', !relative);
-        document.querySelector(`.window${i}-absolute`)?.classList.toggle('d-none', relative);
-      }
-
-      function setMode(i, mode) {
-        const radio = el(`window${i}Mode${mode === 'absolute' ? 'Absolute' : 'Relative'}`);
-        if (radio) radio.checked = true;
-        syncModeVisibility(i);
-      }
-
-      const isWindowEnabled = (i) => i === 1 || window2Enabled.checked;
-
-      function syncWindow2Enabled() {
-        el('window2Fieldset').disabled = !window2Enabled.checked;
-      }
-
-      let messageTimer;
-      function showMessage(text, isError) {
-        if (!messageEl) return;
-        messageEl.textContent = text;
-        messageEl.classList.toggle('text-danger', !!isError);
-        messageEl.classList.toggle('text-muted', !isError);
-        clearTimeout(messageTimer);
-        if (text) messageTimer = setTimeout(() => { messageEl.textContent = ''; }, 5000);
-      }
-
-      function validate() {
-        for (const i of windowIndices) {
-          if (!isWindowEnabled(i)) continue;
-          if (getMode(i) === 'relative') {
-            const minutes = Number(el(`window${i}.lastminutes`).value);
-            if (!Number.isFinite(minutes) || minutes < 1) {
-              return `Window ${i}: enter a positive number of minutes.`;
-            }
-          } else {
-            const start = el(`window${i}.start`).value;
-            const end = el(`window${i}.end`).value;
-            if (!start || !end) return `Window ${i}: choose both a start and end time.`;
-            if (new Date(start) >= new Date(end)) return `Window ${i}: start must be before end.`;
-          }
-        }
-        return '';
-      }
-
-      function buildParams() {
-        const params = new URLSearchParams();
-        windowIndices.forEach((i) => {
-          if (!isWindowEnabled(i)) return;
-          const prefix = `window${i}.`;
-          const label = el(`${prefix}label`).value.trim();
-          if (label) params.set(`${prefix}label`, label);
-
-          if (getMode(i) === 'relative') {
-            const minutes = el(`${prefix}lastminutes`).value.trim();
-            if (minutes) params.set(`${prefix}lastminutes`, minutes);
-          } else {
-            const start = localInputToIso(el(`${prefix}start`).value);
-            const end = localInputToIso(el(`${prefix}end`).value);
-            if (start) params.set(`${prefix}start`, start);
-            if (end) params.set(`${prefix}end`, end);
-          }
-        });
-        return params;
-      }
-
-      const buildUrl = () => {
-        const qs = buildParams().toString();
-        return window.location.origin + window.location.pathname + (qs ? `?${qs}` : '');
-      };
-
-      function populateFromUrl() {
-        const params = new URLSearchParams(window.location.search);
-        const anyWindowParam = [...params.keys()].some((k) => /^window[12]\./.test(k));
-
-        windowIndices.forEach((i) => {
-          const prefix = `window${i}.`;
-          const label = params.get(`${prefix}label`);
-          const lastMinutes = params.get(`${prefix}lastminutes`);
-          const start = params.get(`${prefix}start`);
-          const end = params.get(`${prefix}end`);
-          const present = label !== null || lastMinutes !== null || start !== null || end !== null;
-
-          if (i === 2) {
-            // URL describes window 2 -> on. Only window 1 in the URL -> off.
-            // Empty URL -> keep the default (on), mirroring the server's two-window default.
-            if (present) window2Enabled.checked = true;
-            else if (anyWindowParam) window2Enabled.checked = false;
-          }
-
-          if (!present) return;
-          if (label !== null) el(`${prefix}label`).value = label;
-
-          if (start !== null || end !== null) {
-            setMode(i, 'absolute');
-            if (start !== null) el(`${prefix}start`).value = isoToLocalInput(start);
-            if (end !== null) el(`${prefix}end`).value = isoToLocalInput(end);
-          } else if (lastMinutes !== null) {
-            setMode(i, 'relative');
-            el(`${prefix}lastminutes`).value = lastMinutes;
-          }
-        });
-      }
-
-      form.addEventListener('submit', (event) => {
-        event.preventDefault();
-        const error = validate();
-        if (error) { showMessage(error, true); return; }
-        const qs = buildParams().toString();
-        window.location.assign(window.location.pathname + (qs ? `?${qs}` : ''));
-      });
-
-      windowIndices.forEach((i) => {
-        form.querySelectorAll(`input[name="window${i}Mode"]`)
-          .forEach((radio) => radio.addEventListener('change', () => syncModeVisibility(i)));
-      });
-      window2Enabled.addEventListener('change', syncWindow2Enabled);
-
-      populateFromUrl();
-      windowIndices.forEach(syncModeVisibility);
-      syncWindow2Enabled();
-    })();
-  </script>
+    <!-- Lists the jobs with work items that reached a status, opened by selecting a status count -->
+    <dialog id="statusJobsDialog" class="status-jobs-dialog" aria-labelledby="statusJobsTitle">
+      <div class="status-jobs-content">
+        <div class="viz-card-header">
+          <div>
+            <h2 class="viz-title" id="statusJobsTitle"></h2>
+            <p class="viz-subtitle" id="statusJobsScope"></p>
+          </div>
+          <button type="button" class="btn btn-sm btn-outline-secondary" id="statusJobsClose">Close</button>
+        </div>
+        <div id="statusJobsBody"></div>
+      </div>
+    </dialog>
+  </main>
+  <div class="container-xxl pb-3 small text-muted">Harmony {{version}}</div>
 </body>
 
 </html>
