@@ -1,0 +1,6 @@
+{
+  "GHSA-g3hv-75wg-m249": {
+    "active": true,
+    "notes": "minimatch through sqlite3's build-time dependency node-gyp (also excepted in services/harmony/.nsprc), no fix available without sqlite3 6.x. node-gyp only matches static glob patterns when building the driver, never attacker-controlled input, and the simulator is a developer tool that isn't deployed"
+  }
+}

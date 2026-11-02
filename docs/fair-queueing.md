@@ -194,3 +194,9 @@ given for each one, which hands out the work items and keeps `user_work` in sync
 can't leave the bookkeeping inconsistent. To add a policy, implement `FairQueueingPolicy` in
 `fair-queueing-policy.ts` and select it in the work-scheduler (`processSchedulerQueue` in
 `services/work-scheduler/app/workers/scheduler.ts`).
+
+New policies can be tried out first with the fair queueing simulator in `tools/fair-queueing-sim`,
+which runs Harmony's real scheduling and work item update code against simulated services and a
+virtual clock, so hours of activity - including services whose work items take hours - can be
+simulated in seconds and policies compared side by side with both of the policies above. See
+`tools/fair-queueing-sim/README.md`.

@@ -1,0 +1,43 @@
+# Story 3: a user's synchronous request competes with their own big async job.
+name: 03-sync-behind-own-async
+description: >-
+  Alice and Bob each have a big async job on a 20 pod service. Ten minutes in, Bob also sends a
+  synchronous request for 1 granule (the production default size). Does Bob's own async backlog hold up his sync request?
+goodOutcome: >-
+  Bob's sync request finishes quickly even though Bob's own big async job is queued too - it
+  shouldn't wait behind his async work. Alice and Bob each get about half the service (fair share
+  near 1.00).
+# the metrics that express goodOutcome, highlighted by `npm run sim -- bench`
+benchmarks:
+  - metric: job.bob-sync.makespan
+    note: shouldn't wait behind Bob's own async work
+  - metric: fairness
+    note: Alice and Bob each get about half the service
+seed: 3
+maxDuration: 1d
+env:
+  QUEUE_LONG_POLLING_WAIT_TIME_SEC: 3
+services:
+  - name: svc
+    pods: 20
+jobs:
+  - name: alice-big
+    user: alice
+    granules: 400
+    steps:
+      - service: svc
+        duration: { dist: lognormal, median: 2m, sigma: 0.3 }
+  - name: bob-big
+    user: bob
+    granules: 400
+    steps:
+      - service: svc
+        duration: { dist: lognormal, median: 2m, sigma: 0.3 }
+  - name: bob-sync
+    user: bob
+    async: false
+    submitAt: 10m
+    granules: 1
+    steps:
+      - service: svc
+        duration: 1m

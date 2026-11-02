@@ -1,0 +1,23 @@
+# Story 7: a user with only slow work has the service to themselves.
+name: 07-slow-alone
+description: >-
+  Frank is the only user, with 100 work items that each take 30 minutes on a 20 pod service.
+  Does he get the whole service?
+goodOutcome: >-
+  Frank gets as much of the service as the policy allows. Under the fast lane policies that is 70%
+  of the pods, and the reserved 30% staying idle is by design (so fast work arriving later never
+  finds every pod taken) - it isn't a defect. This story shows what the reserve costs when no fast
+  work arrives.
+# the metrics that express goodOutcome, highlighted by `npm run sim -- bench`
+benchmarks:
+  - metric: job.frank-slow.makespan
+    note: the fast lane reserve leaves 30% of the pods idle here by design, so fast lane policies are expected to be slower than slot-based
+seed: 7
+maxDuration: 2d
+env:
+  QUEUE_LONG_POLLING_WAIT_TIME_SEC: 3
+services:
+  - name: svc
+    pods: 20
+jobs:
+  - { name: frank-slow, user: frank, granules: 100, steps: [{ service: svc, duration: { dist: lognormal, median: 30m, sigma: 0.2 } }] }

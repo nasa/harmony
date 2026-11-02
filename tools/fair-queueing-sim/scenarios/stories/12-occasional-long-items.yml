@@ -1,0 +1,51 @@
+# Story 12: a job that's fast on average but has occasional long work items, alongside a
+# genuinely slow job.
+name: 12-occasional-long-items
+description: >-
+  Three users start together on a 20 pod service. Kim's job has 80 work items that take about 30
+  minutes - genuinely slow. Nora's job has 400 work items: most take about 2 minutes, but 1 in 20
+  takes about 20 minutes, so they average about 3 minutes - fast. Omar's job has 400 one-minute
+  work items. Is Nora treated as the fast user she is, or do her occasional long work items get
+  all of her work treated as slow?
+goodOutcome: >-
+  Nora's job is fast on average, so it's treated as fast: her occasional long work items don't
+  hold up the rest of her work or cost her her fair share, and her slowdown is close to Omar's.
+  Kim's slow work stays within the slow work capacity, and Omar's fast work keeps flowing.
+# the metrics that express goodOutcome, highlighted by `npm run sim -- bench`
+benchmarks:
+  - metric: job.nora-mixed.slowdown
+    note: occasional long work items shouldn't get all of Nora's work treated as slow
+  - metric: user.nora.fairShare
+    note: Nora keeps her fair share
+  - metric: job.omar-fast.slowdown
+    note: fast work keeps flowing
+seed: 12
+maxDuration: 2d
+env:
+  QUEUE_LONG_POLLING_WAIT_TIME_SEC: 3
+services:
+  - name: svc
+    pods: 20
+jobs:
+  - name: kim-slow
+    user: kim
+    granules: 80
+    steps:
+      - service: svc
+        duration: { dist: lognormal, median: 30m, sigma: 0.2 }
+  - name: nora-mixed
+    user: nora
+    granules: 400
+    steps:
+      - service: svc
+        duration:
+          dist: mix
+          options:
+            - { weight: 19, duration: { dist: lognormal, median: 2m, sigma: 0.3 } }
+            - { weight: 1, duration: { dist: lognormal, median: 20m, sigma: 0.2 } }
+  - name: omar-fast
+    user: omar
+    granules: 400
+    steps:
+      - service: svc
+        duration: { dist: lognormal, median: 1m, sigma: 0.3 }

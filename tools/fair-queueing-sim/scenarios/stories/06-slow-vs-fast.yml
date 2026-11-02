@@ -1,0 +1,28 @@
+# Story 6: slow work competes with fast work on the same service.
+name: 06-slow-vs-fast
+description: >-
+  Frank submits a job of 60 work items that each take 30 minutes. Five minutes later Gina and
+  Hank each submit jobs of 300 one-minute work items. Does slow work take over the service, and
+  does fast work keep flowing?
+goodOutcome: >-
+  Gina's and Hank's fast work starts promptly and keeps making progress while Frank's slow work
+  runs: fast jobs' waits and slowdowns well below slot-based's, and Frank never holding more than the
+  slow work capacity (70% of the pods) once his work is known to be slow. Frank finishing later is
+  the expected price, as are pods held in reserve after the fast work is done.
+# the metrics that express goodOutcome, highlighted by `npm run sim -- bench`
+benchmarks:
+  - metric: job.gina-fast.slowdown
+    note: fast work keeps flowing while slow work runs
+  - metric: job.hank-fast.slowdown
+    note: fast work keeps flowing while slow work runs
+seed: 6
+maxDuration: 2d
+env:
+  QUEUE_LONG_POLLING_WAIT_TIME_SEC: 3
+services:
+  - name: svc
+    pods: 20
+jobs:
+  - { name: frank-slow, user: frank, granules: 60, steps: [{ service: svc, duration: { dist: lognormal, median: 30m, sigma: 0.2 } }] }
+  - { name: gina-fast, user: gina, submitAt: 5m, granules: 300, steps: [{ service: svc, duration: { dist: lognormal, median: 1m, sigma: 0.3 } }] }
+  - { name: hank-fast, user: hank, submitAt: 5m, granules: 300, steps: [{ service: svc, duration: { dist: lognormal, median: 1m, sigma: 0.3 } }] }
