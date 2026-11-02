@@ -35,6 +35,12 @@ here, after `npm approve-scripts sqlite3` if npm asks. `EBADENGINE` warnings abo
 can be ignored. `npm run better-audit` checks the simulator's dependencies the way Harmony's own
 services do, with accepted advisories in `.nsprc`.
 
+`npm test` lints the simulator, runs its tests (mocha and chai, as in Harmony's services) and
+audits its dependencies; `npm run test-fast` runs just the tests, without type checking. The
+tests in `test/` cover scenario parsing, the random streams, the metrics, the code hash and the
+policy catalog, plus a smoke test that runs `scenarios/smoke.yml` end to end under every policy
+and checks it's deterministic. They don't run in CI.
+
 ## Quick start
 
 From `tools/fair-queueing-sim`:

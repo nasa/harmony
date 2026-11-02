@@ -5,8 +5,10 @@
   "description": "Discrete-event simulator for Harmony fair queueing that runs the real scheduling and work item update code against a virtual clock",
   "scripts": {
     "sim": "TS_NODE_TRANSPILE_ONLY=true ts-node src/cli.ts",
+    "test": "npm run lint && mocha && npm run better-audit",
+    "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha",
     "typecheck": "tsc --noEmit -p .",
-    "lint": "../../node_modules/.bin/eslint src",
+    "lint": "../../node_modules/.bin/eslint src test",
     "better-audit": "../../node_modules/.bin/better-npm-audit audit -l moderate -p"
   },
   "engines": {
@@ -24,10 +26,14 @@
     "typescript": "^5.7.2"
   },
   "devDependencies": {
+    "@types/chai": "^4.3.20",
     "@types/js-yaml": "^4.0.9",
+    "@types/mocha": "^10.0.10",
     "@types/node": "^22.13.10",
     "@types/sinon": "^17.0.3",
-    "@types/sinonjs__fake-timers": "^8.1.5"
+    "@types/sinonjs__fake-timers": "^8.1.5",
+    "chai": "^4.5.0",
+    "mocha": "^11.8.0"
   },
   "overrides": {
     "diff": "^5.2.2",
