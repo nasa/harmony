@@ -693,5 +693,29 @@ describe('getWorkItemsFromDatabase', function () {
       expect(taken).to.deep.equal([1]);
     });
   });
+
+  describe('with a fair queueing policy that fails after taking work items', function () {
+    let result: workItemPolling.WorkItemData[];
+
+    beforeEach(async function () {
+      const policy: FairQueueingPolicy = {
+        name: 'test',
+        async scheduleWork(_tx, _serviceID, _batchSize, _context, takeWorkItems): Promise<void> {
+          await takeWorkItems('job-b', 1);
+          throw new Error('policy failed');
+        },
+      };
+      getNextWorkItemsStub.resolves([new WorkItem({ id: 1, jobID: 'job-b', serviceID })]);
+      result = await workItemPolling.getWorkItemsFromDatabase(serviceID, logger, batchSize, policy, schedulingContext);
+    });
+
+    it('took the work item before failing', function () {
+      expect(incrementRunningStub.calledOnce).to.be.true;
+    });
+
+    it('returns no work items, since the transaction rolled back', function () {
+      expect(result).to.deep.equal([]);
+    });
+  });
 });
 
