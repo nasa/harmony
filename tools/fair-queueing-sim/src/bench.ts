@@ -10,6 +10,7 @@ import { REPO_ROOT } from './bootstrap';
 import type { Summary } from './metrics';
 import { POLICY_CATALOG, POLICY_NAMES, resolvedSettings } from './policies/catalog';
 import { describeCode, GitState, gitState, resultCodeHash } from './provenance';
+import { designNotes } from './report';
 import { BenchmarkMetricSpec, loadScenario, ResolvedScenario } from './scenario';
 
 //
@@ -592,6 +593,7 @@ function renderHeader(ctx: ReportContext): string {
     '',
     ...[...new Set([REFERENCE_POLICY, ...ctx.policies])].map((p) => `- \`${p}\` - ${POLICY_CATALOG[p].description}`),
     '',
+    ...designNotes([REFERENCE_POLICY, ...ctx.policies]).flatMap((note) => [`**Design note:** ${note}`, '']),
     'Each value is the mean over the seeds, with the range across seeds in brackets. Comparisons ' +
       'are seed by seed: runs with the same seed have the same work item durations, so ' +
       '**better (or worse) in every seed** is a real difference, while a mixed count is within ' +
