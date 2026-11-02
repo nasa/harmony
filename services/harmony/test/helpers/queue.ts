@@ -1,10 +1,18 @@
+import * as fs from 'fs';
+import * as path from 'path';
+
+import * as dotenv from 'dotenv';
 import { SinonStub, stub } from 'sinon';
 import { Logger } from 'winston';
 
+import { parseBoolean } from '@harmony/util/string';
+
 import { MemoryQueue } from './memory-queue';
+import {
+  durationBasedPolicy, FairQueueingPolicy, SchedulingContext, slotBasedPolicy,
+} from '../../app/backends/workflow-orchestration/fair-queueing-policy';
 import * as util from '../../app/backends/workflow-orchestration/util';
 import { getWorkItemsFromDatabase, WorkItemData } from '../../app/backends/workflow-orchestration/work-item-polling';
-import { DurationBasedFairQueueingOptions } from '../../app/models/user-work';
 import logger from '../../app/util/log';
 import { WorkItemQueueType } from '../../app/util/queue/queue';
 import * as qf from '../../app/util/queue/queue-factory';
@@ -12,27 +20,42 @@ import * as qf from '../../app/util/queue/queue-factory';
 let serviceQueues;
 let typeQueues;
 
-// The duration based fair queueing settings used by getWorkFromDatabase, or undefined to use
-// slot based fair queueing (the work-scheduler's default, ENABLE_DURATION_BASED_FAIR_QUEUEING=false).
-let testDurationBasedOptions: DurationBasedFairQueueingOptions | undefined;
+// These test-only simulation functions stand in for the real work-scheduler (which has no pod
+// running in unit tests), so by default they use the fair queueing policy and settings the
+// work-scheduler ships with. They're read from its env-defaults file rather than its env module
+// so harmony doesn't depend on work-scheduler code, and so local .env overrides don't apply.
+const workSchedulerDefaults = dotenv.parse(
+  fs.readFileSync(path.resolve(__dirname, '../../../work-scheduler/env-defaults')));
+const DEFAULT_TEST_POLICY: FairQueueingPolicy =
+  parseBoolean(workSchedulerDefaults.ENABLE_DURATION_BASED_FAIR_QUEUEING) ? durationBasedPolicy : slotBasedPolicy;
+// The service pod count is only used by duration based fair queueing
+const DEFAULT_TEST_SCHEDULING_CONTEXT: Omit<SchedulingContext, 'logger'> = {
+  servicePodCount: 1,
+  slowWorkThresholdMs: Number(workSchedulerDefaults.SLOW_WORK_THRESHOLD_MS),
+  fastLaneReserveFraction: Number(workSchedulerDefaults.FAST_LANE_RESERVE_FRACTION),
+};
+
+// The fair queueing policy and settings used by getWorkFromDatabase
+let testPolicy = DEFAULT_TEST_POLICY;
+let testSchedulingContext = DEFAULT_TEST_SCHEDULING_CONTEXT;
 
 /**
  * Enables duration based fair queueing for getWorkFromDatabase in tests, simulating the given
  * service pod count ("capacity") since there is no real k8s cluster to query, so tests can
- * exercise the fast lane reserve behavior. Reverts to slot based fair queueing when called with
- * no argument.
+ * exercise the fast lane reserve behavior. Reverts to the work-scheduler's default fair queueing
+ * when called with no argument.
  *
- * These test-only simulation functions stand in for the real work-scheduler (which has no pod
- * running in unit tests), so there's no env to read the other settings from - mirror the
- * production defaults (services/work-scheduler/env-defaults) directly.
- *
- * @param servicePodCount - the service pod count to simulate, or undefined to use slot based
- * fair queueing
+ * @param servicePodCount - the service pod count to simulate, or undefined to use the
+ * work-scheduler's default fair queueing
  */
 export function setTestDurationBasedFairQueueing(servicePodCount?: number): void {
-  testDurationBasedOptions = servicePodCount === undefined
-    ? undefined
-    : { servicePodCount, slowWorkThresholdMs: 600_000, fastLaneReserveFraction: 0.3 };
+  if (servicePodCount === undefined) {
+    testPolicy = DEFAULT_TEST_POLICY;
+    testSchedulingContext = DEFAULT_TEST_SCHEDULING_CONTEXT;
+  } else {
+    testPolicy = durationBasedPolicy;
+    testSchedulingContext = { ...DEFAULT_TEST_SCHEDULING_CONTEXT, servicePodCount };
+  }
 }
 
 /**
@@ -45,7 +68,7 @@ export function setTestDurationBasedFairQueueing(servicePodCount?: number): void
  * @returns A work item from the database for the given service ID
  */
 export async function getWorkFromDatabase(serviceID: string, reqLogger: Logger): Promise<WorkItemData | null> {
-  const workItems = await getWorkItemsFromDatabase(serviceID, reqLogger, 1, testDurationBasedOptions);
+  const workItems = await getWorkItemsFromDatabase(serviceID, reqLogger, 1, testPolicy, testSchedulingContext);
   return workItems[0] ?? null;
 }
 

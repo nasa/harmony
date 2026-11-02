@@ -10,6 +10,7 @@
 - [Duration Based Fair Queueing (Experimental)](#duration-based-fair-queueing-experimental)
   - [Ranking Users by Expected Runtime](#ranking-users-by-expected-runtime)
   - [The Fast Lane Reserve](#the-fast-lane-reserve)
+- [Fair Queueing Policies](#fair-queueing-policies)
 
 ## Introduction
 Harmony supports two goals with regard to processing work for users. These are referred to
@@ -56,7 +57,8 @@ it works out how many items to request and asks for them in batches of at most
    longest ago for the service
 4. The top `batchSize` jobs by that interleaved order are selected and locked with
    `FOR UPDATE ... SKIP LOCKED`, so multiple scheduler pods can't hand out the same work
-5. `getWorkItemsFromDatabase` (`work-item-polling.ts`) shuffles the selected jobs (so that any jobs
+5. The [fair queueing policy](#fair-queueing-policies) (`fair-queueing-policy.ts`, called from
+   `getWorkItemsFromDatabase` in `work-item-polling.ts`) shuffles the selected jobs (so that any jobs
    left over when the batch doesn't divide evenly aren't always the same ones at the end of the
    list), then gives each job `ceil(remaining batch ÷ remaining jobs)` work items, picking the
    lowest-ID ready items for that job. This shuffle only affects how the batch's items are split
@@ -171,3 +173,24 @@ slow work may occupy at once, reserving the rest for "fast" work:
 This means slow work is only held back when it is already using a large share of the service, so a
 service busy with slow work still makes forward progress on fast work, while slow work is never
 starved outright.
+
+## Fair Queueing Policies
+
+The scheduling decision - which jobs get work items, and how many, each time the work-scheduler
+fills a service's queue - is made by a _fair queueing policy_ (see
+`services/harmony/app/backends/workflow-orchestration/fair-queueing-policy.ts`). There are two:
+
+* `slotBasedPolicy` - [slot based fair queueing](#the-algorithm), the default
+* `durationBasedPolicy` - [duration based fair queueing](#duration-based-fair-queueing-experimental),
+  used when `ENABLE_DURATION_BASED_FAIR_QUEUEING` is true
+
+Both select jobs with `getNextJobIds` and split the batch across them the same way (step 5 of
+[The Algorithm](#the-algorithm)); they differ only in how `getNextJobIds` ranks and filters the
+jobs. The work-scheduler picks the policy and passes it to `getWorkItemsFromDatabase` along with
+the service's pod count and the fast lane reserve settings, which each policy uses as needed.
+
+A policy implements `scheduleWork`: it picks jobs and calls the `takeWorkItems` callback it is
+given for each one, which hands out the work items and keeps `user_work` in sync, so a policy
+can't leave the bookkeeping inconsistent. To add a policy, implement `FairQueueingPolicy` in
+`fair-queueing-policy.ts` and select it in the work-scheduler (`processSchedulerQueue` in
+`services/work-scheduler/app/workers/scheduler.ts`).
