@@ -4,6 +4,9 @@ import { LRUCache } from 'lru-cache';
 import { Logger } from 'winston';
 
 
+import {
+  durationBasedPolicy, slotBasedPolicy,
+} from '../../../harmony/app/backends/workflow-orchestration/fair-queueing-policy';
 import { QUERY_CMR_SERVICE_REGEX } from '../../../harmony/app/backends/workflow-orchestration/util';
 import {
   getWorkItemsFromDatabase, revertQueuedWorkItemsToReady,
@@ -235,14 +238,12 @@ export async function processSchedulerQueue(
     reqLogger.debug(`Work size count is ${workSize} based on service pod count of ${servicePodCount}, message count ${messageCount}, scheduler pod count ${schedulerPodCount}, numMessagesReceived ${numMessagesReceived}, and scaleFactor ${scaleFactor} for queue ${queueUrl}`);
     reqLogger.debug(`Attempting to retrieve ${workSize} work items for queue ${queueUrl}`);
 
-    // undefined selects slot based fair queueing
-    const durationBasedOptions = env.enableDurationBasedFairQueueing
-      ? {
-        servicePodCount,
-        slowWorkThresholdMs: env.slowWorkThresholdMs,
-        fastLaneReserveFraction: env.fastLaneReserveFraction,
-      }
-      : undefined;
+    const fairQueueingPolicy = env.enableDurationBasedFairQueueing ? durationBasedPolicy : slotBasedPolicy;
+    const schedulingContext = {
+      servicePodCount,
+      slowWorkThresholdMs: env.slowWorkThresholdMs,
+      fastLaneReserveFraction: env.fastLaneReserveFraction,
+    };
 
     let queuedCount = 0;
     let sendFailed = false;
@@ -252,7 +253,7 @@ export async function processSchedulerQueue(
       const workItems = await logAsyncExecutionTime(
         getWorkItemsFromDatabase,
         'PSQ.getWorkItemsFromDatabase',
-        reqLogger, serviceID, reqLogger, chunk, durationBasedOptions);
+        reqLogger, serviceID, reqLogger, chunk, fairQueueingPolicy, schedulingContext);
 
       for (const [index, workItem] of workItems.entries()) {
         const json = JSON.stringify(workItem);
