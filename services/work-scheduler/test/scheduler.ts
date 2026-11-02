@@ -673,5 +673,25 @@ describe('getWorkItemsFromDatabase', function () {
       expect(result.map((w) => w.workItem.id)).to.deep.equal([1, 2]);
     });
   });
+
+  describe('with a fair queueing policy that asks for more work items than are ready', function () {
+    let taken: number[];
+
+    beforeEach(async function () {
+      taken = [];
+      const policy: FairQueueingPolicy = {
+        name: 'test',
+        async scheduleWork(_tx, _serviceID, _batchSize, _context, takeWorkItems): Promise<void> {
+          taken.push(await takeWorkItems('job-b', 2));
+        },
+      };
+      getNextWorkItemsStub.resolves([new WorkItem({ id: 1, jobID: 'job-b', serviceID })]);
+      await workItemPolling.getWorkItemsFromDatabase(serviceID, logger, batchSize, policy, schedulingContext);
+    });
+
+    it('tells the policy how many work items it actually got', function () {
+      expect(taken).to.deep.equal([1]);
+    });
+  });
 });
 
