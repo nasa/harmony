@@ -1,1 +1,6 @@
-{}
+{
+  "GHSA-g3hv-75wg-m249": {
+    "active": true,
+    "notes": "minimatch through dev dependency copyfiles, no fix available. copyfiles only matches static, developer-authored glob patterns in build scripts, never attacker-controlled input"
+  }
+}
