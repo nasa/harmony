@@ -60,10 +60,10 @@ export interface FairQueueingPolicy {
  * Because the way we readjust the size of work items to retrieve for processing,
  * only the jobs at the back of the list can take advantage of the free slots left by
  * jobs in front. To avoid the situation where a fixed job list with small jobs
- * at the end preventing us from utilizing the full batch size, we randomly shuffle
+ * at the end prevents us from utilizing the full batch size, we randomly shuffle
  * the jobs in the list before looping through them.
- * This shuffle combined with multiple schedulers running in Harmony makes
- * available work items be retrieved for processing more promptly.
+ * This shuffle combined with multiple schedulers running in Harmony
+ * retrieves work items for processing more promptly.
  *
  * @param array - the given list to shuffle
  * @returns The randomly shuffled list of the original list
