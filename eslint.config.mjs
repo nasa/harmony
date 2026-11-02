@@ -173,7 +173,7 @@ export default tseslint.config(
 
   // 3. Test file overrides
   {
-    files: ['services/**/test/**/*.ts', 'packages/**/test/**/*.ts'],
+    files: ['services/**/test/**/*.ts', 'packages/**/test/**/*.ts', 'tools/**/test/**/*.ts'],
     rules: {
       'import-x/no-extraneous-dependencies': ['error', { devDependencies: true }],
       'n/no-unpublished-require': 'off', // "chai-as-promised" is not published

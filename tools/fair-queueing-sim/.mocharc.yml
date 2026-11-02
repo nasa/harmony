@@ -1,0 +1,8 @@
+extension:
+  - ts
+spec: test/**/*.ts
+require:
+  - ts-node/register
+recursive: true
+exit: true
+timeout: 2000
