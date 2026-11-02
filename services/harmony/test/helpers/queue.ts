@@ -1,5 +1,11 @@
+import * as fs from 'fs';
+import * as path from 'path';
+
+import * as dotenv from 'dotenv';
 import { SinonStub, stub } from 'sinon';
 import { Logger } from 'winston';
+
+import { parseBoolean } from '@harmony/util/string';
 
 import { MemoryQueue } from './memory-queue';
 import {
@@ -15,30 +21,36 @@ let serviceQueues;
 let typeQueues;
 
 // These test-only simulation functions stand in for the real work-scheduler (which has no pod
-// running in unit tests), so there's no env to read the fair queueing settings from - mirror the
-// production defaults (services/work-scheduler/env-defaults) directly. The service pod count is
-// only used by duration based fair queueing.
+// running in unit tests), so by default they use the fair queueing policy and settings the
+// work-scheduler ships with. They're read from its env-defaults file rather than its env module
+// so harmony doesn't depend on work-scheduler code, and so local .env overrides don't apply.
+const workSchedulerDefaults = dotenv.parse(
+  fs.readFileSync(path.resolve(__dirname, '../../../work-scheduler/env-defaults')));
+const DEFAULT_TEST_POLICY: FairQueueingPolicy =
+  parseBoolean(workSchedulerDefaults.ENABLE_DURATION_BASED_FAIR_QUEUEING) ? durationBasedPolicy : slotBasedPolicy;
+// The service pod count is only used by duration based fair queueing
 const DEFAULT_TEST_SCHEDULING_CONTEXT: Omit<SchedulingContext, 'logger'> = {
-  servicePodCount: 1, slowWorkThresholdMs: 600_000, fastLaneReserveFraction: 0.3,
+  servicePodCount: 1,
+  slowWorkThresholdMs: Number(workSchedulerDefaults.SLOW_WORK_THRESHOLD_MS),
+  fastLaneReserveFraction: Number(workSchedulerDefaults.FAST_LANE_RESERVE_FRACTION),
 };
 
-// The fair queueing policy and settings used by getWorkFromDatabase - slot based by default, as
-// in the work-scheduler (ENABLE_DURATION_BASED_FAIR_QUEUEING=false)
-let testPolicy: FairQueueingPolicy = slotBasedPolicy;
+// The fair queueing policy and settings used by getWorkFromDatabase
+let testPolicy = DEFAULT_TEST_POLICY;
 let testSchedulingContext = DEFAULT_TEST_SCHEDULING_CONTEXT;
 
 /**
  * Enables duration based fair queueing for getWorkFromDatabase in tests, simulating the given
  * service pod count ("capacity") since there is no real k8s cluster to query, so tests can
- * exercise the fast lane reserve behavior. Reverts to slot based fair queueing when called with
- * no argument.
+ * exercise the fast lane reserve behavior. Reverts to the work-scheduler's default fair queueing
+ * when called with no argument.
  *
- * @param servicePodCount - the service pod count to simulate, or undefined to use slot based
- * fair queueing
+ * @param servicePodCount - the service pod count to simulate, or undefined to use the
+ * work-scheduler's default fair queueing
  */
 export function setTestDurationBasedFairQueueing(servicePodCount?: number): void {
   if (servicePodCount === undefined) {
-    testPolicy = slotBasedPolicy;
+    testPolicy = DEFAULT_TEST_POLICY;
     testSchedulingContext = DEFAULT_TEST_SCHEDULING_CONTEXT;
   } else {
     testPolicy = durationBasedPolicy;
