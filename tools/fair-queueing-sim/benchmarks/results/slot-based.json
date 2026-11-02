@@ -1,15 +1,15 @@
 {
   "policy": "slot-based",
   "code": {
-    "commit": "0007889cfa1c2273097454db72bd1c985f2e8810",
+    "commit": "9f86773b77853ff90cc870eacd00b8b43744d1d9",
     "branch": "harmony-2495",
-    "dirty": true,
-    "changedFiles": ["tools/fair-queueing-sim/src/actors.ts", "tools/fair-queueing-sim/src/batch.ts", "tools/fair-queueing-sim/src/bench-metrics.ts", "tools/fair-queueing-sim/src/bench.ts", "tools/fair-queueing-sim/src/bootstrap.ts", "tools/fair-queueing-sim/src/cli.ts", "tools/fair-queueing-sim/src/engine.ts", "tools/fair-queueing-sim/src/findings.ts", "tools/fair-queueing-sim/src/harness.ts", "tools/fair-queueing-sim/src/metrics.ts", "tools/fair-queueing-sim/src/policies/catalog.ts", "tools/fair-queueing-sim/src/policies/index.ts", "tools/fair-queueing-sim/src/provenance.ts", "tools/fair-queueing-sim/src/report-html.ts", "tools/fair-queueing-sim/src/report.ts", "tools/fair-queueing-sim/src/rng.ts", "tools/fair-queueing-sim/src/scenario.ts", "tools/fair-queueing-sim/src/sim-queue.ts", "tools/fair-queueing-sim/src/simulation.ts", "tools/fair-queueing-sim/src/workload.ts"],
-    "changesHash": "a0c1a99f0cd7",
-    "codeHash": "1ed14912eb45adea",
-    "node": "v24.21.0",
-    "platform": "linux-arm64",
-    "recordedAt": "2026-11-02T22:39:13.854Z"
+    "dirty": false,
+    "changedFiles": [],
+    "changesHash": null,
+    "codeHash": "1d5e7e6615438e1f",
+    "node": "v22.23.0",
+    "platform": "darwin-arm64",
+    "recordedAt": "2026-11-02T23:29:09.610Z"
   },
   "seeds": [101, 102, 103, 104, 105],
   "set": {},
