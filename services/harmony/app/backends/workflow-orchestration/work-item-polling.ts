@@ -102,6 +102,8 @@ export async function getWorkItemsFromDatabase(
   } catch (err) {
     reqLogger.error(err);
     reqLogger.error(`Error getting works from database: ${err.message}`);
+    // the transaction rolled back, so any work items taken before the error are still ready
+    return [];
   }
 
   return workItems;
