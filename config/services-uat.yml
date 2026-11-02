@@ -215,6 +215,9 @@ https://cmr.uat.earthdata.nasa.gov:
         multiple_variable: true
       output_formats:
         - text/csv
+    requirements:
+      - exists: ['spatialSubset']
+      - exists: ['temporalSubset']
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
