@@ -1,0 +1,38 @@
+# Story 2: a small synchronous request arrives while another user has a big async job running.
+name: 02-small-sync
+description: >-
+  Alice has a big async job (600 granules, ~2 minute work items) using the whole 20 pod service.
+  Ten minutes in, Bob sends a synchronous request for 1 granule (1 minute), the production default
+  size (MAX_SYNCHRONOUS_GRANULES=1).
+  How long does Bob wait?
+goodOutcome: >-
+  Bob's sync request finishes close to its 1 minute minimum (a low sync makespan)
+  without noticeably delaying Alice's job.
+# the metrics that express goodOutcome, highlighted by `npm run sim -- bench`
+benchmarks:
+  - metric: job.bob-sync.makespan
+    note: should finish close to its 1 minute minimum
+  - metric: job.alice-big.makespan
+    note: without noticeably delaying Alice's job
+seed: 2
+maxDuration: 1d
+env:
+  QUEUE_LONG_POLLING_WAIT_TIME_SEC: 3
+services:
+  - name: svc
+    pods: 20
+jobs:
+  - name: alice-big
+    user: alice
+    granules: 600
+    steps:
+      - service: svc
+        duration: { dist: lognormal, median: 2m, sigma: 0.3 }
+  - name: bob-sync
+    user: bob
+    async: false
+    submitAt: 10m
+    granules: 1
+    steps:
+      - service: svc
+        duration: 1m
