@@ -320,6 +320,12 @@ differences - a few percent, or a few seconds on a short job - can be noise from
 a few `--seed` values, or use `findings --seeds`, which summarizes how often each policy came out
 best.
 
+**A single sync request's makespan is especially noisy.** Stories 02, 03, 04 and 10 each have one
+sync request lasting a minute or two, so nearly any change moves it by up to about 15%, with mixed
+seed counts. Only trust a difference there that holds in 5 (or at least 4) of 5 seeds. Production
+sync requests are 1 granule (`MAX_SYNCHRONOUS_GRANULES`); story 10's 4 granule request is a stress
+case.
+
 ### Getting Claude Code to interpret the results
 
 Claude Code can read every output file. The reports carry what it needs to interpret them -
