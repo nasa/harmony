@@ -1,15 +1,15 @@
 {
   "policy": "adaptive-fast-lane",
   "code": {
-    "commit": "99838a76062787ea1b3a7f92b9dfe4b079636abd",
+    "commit": "4131369e8d1b0df5fb6b1532efdc412593897e37",
     "branch": "harmony-2414",
-    "dirty": true,
-    "changedFiles": ["tools/fair-queueing-sim/src/bench.ts", "tools/fair-queueing-sim/src/harness.ts", "tools/fair-queueing-sim/src/policies/adaptive-fast-lane.ts", "tools/fair-queueing-sim/src/policies/catalog.ts", "tools/fair-queueing-sim/src/policies/index.ts", "tools/fair-queueing-sim/src/simulation.ts"],
-    "changesHash": "73a669ad6e56",
-    "codeHash": "f96a4fcac9097a53",
-    "node": "v24.21.0",
-    "platform": "linux-arm64",
-    "recordedAt": "2026-11-03T17:28:59.594Z"
+    "dirty": false,
+    "changedFiles": [],
+    "changesHash": null,
+    "codeHash": "0936cd4842e25a0b",
+    "node": "v26.5.0",
+    "platform": "darwin-arm64",
+    "recordedAt": "2026-11-03T20:30:39.958Z"
   },
   "seeds": [101, 102, 103, 104, 105],
   "set": {},
