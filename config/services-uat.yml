@@ -192,6 +192,37 @@ https://cmr.uat.earthdata.nasa.gov:
         is_sequential: true
       - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
 
+  - name: satellite-in-situ-matchup
+    description: |
+      Matches one in-situ observation, sent as a bounding box and temporal range
+      centered on it, against Earthdata Archive Level-2 granules (SST and ocean
+      color, including PACE OCI), reproducing the seabass-utils mk_matchup.py
+      extraction. Returns one CSV row per matching granule.
+    data_operation_version: '0.22.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/satellite-in-situ-matchup
+    umm_s: S1283003833-OB_CLOUD
+    capabilities:
+      subsetting:
+        bbox: true
+        temporal: true
+        variable: true
+        multiple_variable: true
+      output_formats:
+        - text/csv
+    requirements:
+      - exists: ['spatialSubset']
+      - exists: ['temporalSubset']
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
+      - image: !Env ${MAKE_MATCHUP_IMAGE}
+
   - name: podaac/concise
     description: |
       Service capabale of "concatenating" multiple netCDF files into a single netCDF files.

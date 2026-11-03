@@ -613,6 +613,14 @@ CASPER_LIMITS_MEMORY=5Gi
 CASPER_INVOCATION_ARGS='./docker-entrypoint.sh'
 CASPER_SERVICE_QUEUE_URLS='["ghcr.io/nasa/harmony-casper:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/casper.fifo"]'
 
+MAKE_MATCHUP_IMAGE=seadas/satellite-in-situ-matchup:1.0.0
+MAKE_MATCHUP_REQUESTS_CPU=256m
+MAKE_MATCHUP_REQUESTS_MEMORY=512Mi
+MAKE_MATCHUP_LIMITS_CPU=1000m
+MAKE_MATCHUP_LIMITS_MEMORY=2Gi
+MAKE_MATCHUP_INVOCATION_ARGS='python -m matchup_adapter'
+MAKE_MATCHUP_SERVICE_QUEUE_URLS='["seadas/satellite-in-situ-matchup:1.0.0,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/make-matchup.fifo"]'
+
 HARMONY_VARIABLE_FAN_OUT_IMAGE=ghcr.io/nasa/harmony-variable-fan-out:latest
 HARMONY_VARIABLE_FAN_OUT_REQUESTS_MEMORY=128Mi
 HARMONY_VARIABLE_FAN_OUT_LIMITS_MEMORY=1Gi
