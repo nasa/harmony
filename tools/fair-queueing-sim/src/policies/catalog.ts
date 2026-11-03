@@ -82,6 +82,92 @@ export const POLICY_CATALOG: Record<string, PolicyInfo> = {
     designNotes: [FAST_LANE_DESIGN_NOTE],
     settings: FAST_LANE_SETTINGS,
   },
+  'adaptive-fast-lane': {
+    description: 'duration-based, with the same reserve, plus seven fixes: a limit on running work for ' +
+      'unmeasured jobs, a moving average of recent durations, a service-level estimate for unmeasured work, ' +
+      'per-user batch splitting, pod-reported durations, slow work held to its fair share while fast work waits, ' +
+      'and unmeasured work treated as slow once a work item has been running longer than the threshold.',
+    designNotes: [FAST_LANE_DESIGN_NOTE],
+    settings: [
+      ...FAST_LANE_SETTINGS,
+      {
+        env: 'ADAPTIVE_FAST_LANE_UNMEASURED_LIMIT',
+        default: '2',
+        description: 'most work items that may run for a (job, service) before it has a measured duration (0 = no limit)',
+      },
+      {
+        env: 'ADAPTIVE_FAST_LANE_UNMEASURED_FRACTION',
+        default: '0.5',
+        description: 'beyond the unmeasured limit, all unmeasured work on the service together may run up to this fraction ' +
+          'of the slow work capacity, sharing it with slow work so the reserve stays free (0 = just the limit)',
+      },
+      {
+        env: 'ADAPTIVE_FAST_LANE_EWMA_ALPHA',
+        default: '0.2',
+        description: 'weight of the newest work item in the moving average (0 = mean over the job\'s lifetime)',
+      },
+      {
+        env: 'ADAPTIVE_FAST_LANE_UNMEASURED_ESTIMATE',
+        default: 'service',
+        description: "'service' = unmeasured work counts as the service's mean measured duration; 'fixed' = the default below",
+      },
+      {
+        env: 'ADAPTIVE_FAST_LANE_UNMEASURED_DEFAULT_MS',
+        // DEFAULT_EXPECTED_DURATION_MS in user-work.ts, which duration-based uses
+        default: '3600000',
+        description: 'expected duration of unmeasured work when there is nothing better to go on',
+      },
+      {
+        env: 'ADAPTIVE_FAST_LANE_SPLIT_BY_USER',
+        default: 'true',
+        description: 'split each batch between users first (false = evenly per job)',
+      },
+      {
+        env: 'ADAPTIVE_FAST_LANE_USE_SERVICE_DURATION',
+        default: 'true',
+        description: "use the duration the service pod reports (false = Harmony's, which can include queue wait)",
+      },
+      {
+        env: 'ADAPTIVE_FAST_LANE_SLOW_FAIR_SHARE',
+        default: 'true',
+        description: "while other users' fast work is ready, hold a user's slow work to their fair share of the pods",
+      },
+      {
+        env: 'ADAPTIVE_FAST_LANE_RUNNING_EVIDENCE',
+        default: 'true',
+        description: 'treat an unmeasured (job, service) as slow while one of its work items has been running longer than the threshold',
+      },
+      {
+        env: 'ADAPTIVE_FAST_LANE_FAIR_SHARE_ALL',
+        default: 'true',
+        description: 'fix 6 holds every user to their fair share while another user below theirs has work ready, not just slow users',
+      },
+    ],
+    variants: [
+      { name: 'no-unmeasured-limit', description: 'fix 1 (unmeasured work limit) off', set: { ADAPTIVE_FAST_LANE_UNMEASURED_LIMIT: '0' } },
+      { name: 'no-unmeasured-fraction', description: 'fix 1 without the shared fraction (just the limit)', set: { ADAPTIVE_FAST_LANE_UNMEASURED_FRACTION: '0' } },
+      { name: 'no-moving-average', description: 'fix 2 (moving average) off', set: { ADAPTIVE_FAST_LANE_EWMA_ALPHA: '0' } },
+      { name: 'no-service-estimate', description: 'fix 3 (service estimate for unmeasured work) off', set: { ADAPTIVE_FAST_LANE_UNMEASURED_ESTIMATE: 'fixed' } },
+      { name: 'no-split-by-user', description: 'fix 4 (per-user batch split) off', set: { ADAPTIVE_FAST_LANE_SPLIT_BY_USER: 'false' } },
+      { name: 'no-service-duration', description: 'fix 5 (pod-reported durations) off', set: { ADAPTIVE_FAST_LANE_USE_SERVICE_DURATION: 'false' } },
+      { name: 'no-slow-fair-share', description: 'fix 6 (slow work held to fair share) off', set: { ADAPTIVE_FAST_LANE_SLOW_FAIR_SHARE: 'false' } },
+      { name: 'no-fair-share-all', description: 'fix 6 for slow users only', set: { ADAPTIVE_FAST_LANE_FAIR_SHARE_ALL: 'false' } },
+      { name: 'no-running-evidence', description: 'fix 7 (long-running work is slow) off', set: { ADAPTIVE_FAST_LANE_RUNNING_EVIDENCE: 'false' } },
+    ],
+    equivalentTo: {
+      policy: 'duration-based',
+      set: {
+        ADAPTIVE_FAST_LANE_UNMEASURED_LIMIT: '0',
+        ADAPTIVE_FAST_LANE_EWMA_ALPHA: '0',
+        ADAPTIVE_FAST_LANE_UNMEASURED_ESTIMATE: 'fixed',
+        ADAPTIVE_FAST_LANE_SPLIT_BY_USER: 'false',
+        ADAPTIVE_FAST_LANE_USE_SERVICE_DURATION: 'false',
+        ADAPTIVE_FAST_LANE_SLOW_FAIR_SHARE: 'false',
+        ADAPTIVE_FAST_LANE_RUNNING_EVIDENCE: 'false',
+      },
+      description: 'with all seven fixes switched off, adaptive-fast-lane must make exactly the same decisions as Harmony\'s duration-based',
+    },
+  },
 };
 
 export const POLICY_NAMES = Object.keys(POLICY_CATALOG);

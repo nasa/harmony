@@ -4,11 +4,12 @@ import * as path from 'path';
 import * as sinon from 'sinon';
 
 import { REPO_ROOT } from './bootstrap';
+import type { PolicyEntry } from './policies';
 import { Random } from './rng';
 import { SimQueue } from './sim-queue';
-import type { FairQueueingPolicy } from '../../../services/harmony/app/backends/workflow-orchestration/fair-queueing-policy';
 import * as workItemPolling from '../../../services/harmony/app/backends/workflow-orchestration/work-item-polling';
 import * as workItemModel from '../../../services/harmony/app/models/work-item';
+import { COMPLETED_WORK_ITEM_STATUSES } from '../../../services/harmony/app/models/work-item-interface';
 import * as aggregationBatch from '../../../services/harmony/app/util/aggregation-batch';
 import db from '../../../services/harmony/app/util/db';
 import logger, { configureLogToFile } from '../../../services/harmony/app/util/log';
@@ -49,6 +50,9 @@ export interface HarnessOptions {
   podCounts: Record<string, number>;
   schedulerPods: number;
   observer: HarnessObserver;
+  // the duration a simulated pod reported for a work item's latest attempt, for policies'
+  // completion hooks
+  serviceDurationOf: (workItemID: number) => number | undefined;
 }
 
 export class Harness {
@@ -65,7 +69,7 @@ export class Harness {
   private pendingSleepMs = 0;
 
   // the fair queueing policy to use instead of the one the work-scheduler picks, if any
-  private policy: FairQueueingPolicy | undefined;
+  private policy: PolicyEntry | undefined;
 
   private readonly sandbox = sinon.createSandbox();
 
@@ -93,13 +97,16 @@ export class Harness {
 
   /**
    * Makes every scheduling pass use the given fair queueing policy instead of the one the
-   * work-scheduler picks from ENABLE_DURATION_BASED_FAIR_QUEUEING. The work-scheduler's
-   * scheduling context (pod count and fast lane settings) is passed to it unchanged.
+   * work-scheduler picks from ENABLE_DURATION_BASED_FAIR_QUEUEING, and runs the policy's setup
+   * if it has one. The work-scheduler's scheduling context (pod count and fast lane settings)
+   * is passed to the policy unchanged, and the policy's completion hook, if it has one, is called
+   * as work items complete.
    *
-   * @param policy - the policy, or undefined to leave the work-scheduler's choice alone
+   * @param entry - the policy, or undefined to leave the work-scheduler's choice alone
    */
-  usePolicy(policy: FairQueueingPolicy | undefined): void {
-    this.policy = policy;
+  async usePolicy(entry: PolicyEntry | undefined): Promise<void> {
+    this.policy = entry;
+    if (entry?.setup) await db.transaction((tx) => entry.setup(tx));
   }
 
   /**
@@ -183,10 +190,24 @@ export class Harness {
       // others are passed through untouched so native runs work against other versions of Harmony
       const [policy, ...others] = rest;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await (realGetWorkItemsFromDatabase as any)(serviceID, reqLogger, batchSize, this.policy ?? policy, ...others);
+      const result = await (realGetWorkItemsFromDatabase as any)(serviceID, reqLogger, batchSize, this.policy?.policy ?? policy, ...others);
       options.observer.onSchedulingPass(current);
       current = null;
       return result;
+    });
+
+    // processWorkItem calls updateWorkItemStatus (in the update transaction) once a work item is
+    // done - after its retries are used up, if it failed - so that's where the policy hears of it
+    const realUpdateWorkItemStatus = workItemModel.updateWorkItemStatus;
+    sandbox.stub(workItemModel, 'updateWorkItemStatus').callsFake(async (tx, id, status, messageCategory, duration, ...rest) => {
+      await realUpdateWorkItemStatus(tx, id, status, messageCategory, duration, ...rest);
+      const hook = this.policy?.onWorkItemCompleted;
+      if (!hook || !COMPLETED_WORK_ITEM_STATUSES.includes(status)) return;
+      const row = await tx(workItemModel.default.table).select('jobID', 'serviceID').where({ id }).first();
+      await hook(tx, {
+        jobID: row.jobID, serviceID: row.serviceID, workItemID: id, status, durationMs: duration,
+        serviceDurationMs: options.serviceDurationOf(id),
+      });
     });
   }
 

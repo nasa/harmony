@@ -9,9 +9,24 @@ import { NATIVE_POLICY, POLICY_CATALOG, POLICY_NAMES, resolvedSettings } from '.
 const WORK_SCHEDULER_ENV_DEFAULTS = path.resolve(__dirname, '..', '..', '..', 'services', 'work-scheduler', 'env-defaults');
 
 describe('policy catalog', function () {
-  it('has Harmony\'s two policies', function () {
-    expect(POLICY_NAMES).to.deep.equal(['slot-based', 'duration-based']);
+  it('has Harmony\'s two policies, and adaptive-fast-lane', function () {
+    expect(POLICY_NAMES).to.deep.equal(['slot-based', 'duration-based', 'adaptive-fast-lane']);
     expect(POLICY_NAMES).to.not.include(NATIVE_POLICY);
+  });
+
+  it('describes how to make adaptive-fast-lane duration-based, using only its own settings', function () {
+    const { equivalentTo, settings } = POLICY_CATALOG['adaptive-fast-lane'];
+    expect(equivalentTo.policy).to.equal('duration-based');
+    const own = settings.map((s) => s.env);
+    for (const key of Object.keys(equivalentTo.set)) expect(own, key).to.include(key);
+  });
+
+  it('switches off one of adaptive-fast-lane\'s own settings in each variant', function () {
+    const own = POLICY_CATALOG['adaptive-fast-lane'].settings.map((s) => s.env);
+    for (const variant of POLICY_CATALOG['adaptive-fast-lane'].variants) {
+      expect(Object.keys(variant.set), variant.name).to.have.lengthOf(1);
+      expect(own, variant.name).to.include(Object.keys(variant.set)[0]);
+    }
   });
 
   it('describes every policy', function () {
