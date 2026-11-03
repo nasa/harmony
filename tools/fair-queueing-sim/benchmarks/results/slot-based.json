@@ -1,15 +1,15 @@
 {
   "policy": "slot-based",
   "code": {
-    "commit": "9a0fc2426a7b63a80daf797c34a88a567e308db2",
+    "commit": "575ab2efe49e45fdb352f63d08af70278aba3a4f",
     "branch": "harmony-2495",
-    "dirty": true,
-    "changedFiles": ["tools/fair-queueing-sim/src/cli.ts", "tools/fair-queueing-sim/src/findings.ts", "tools/fair-queueing-sim/src/scenario.ts"],
-    "changesHash": "4df955582625",
-    "codeHash": "ffd9bae808c467e1",
+    "dirty": false,
+    "changedFiles": [],
+    "changesHash": null,
+    "codeHash": "837c7e09587ed57c",
     "node": "v26.5.0",
     "platform": "darwin-arm64",
-    "recordedAt": "2026-11-03T15:14:52.096Z"
+    "recordedAt": "2026-11-03T20:02:53.293Z"
   },
   "seeds": [101, 102, 103, 104, 105],
   "set": {},
