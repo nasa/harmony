@@ -127,6 +127,13 @@ describe('scenario', function () {
       expect(durationSpecForItem(step, 19)).to.equal('20m');
       expect(durationSpecForItem(step, 20)).to.equal('2m');
     });
+
+    it('uses the phase with the highest fromItem reached, whatever order the phases are listed in', function () {
+      const reversed = { ...step, phases: [...step.phases].reverse() };
+      expect(durationSpecForItem(reversed, 9)).to.equal('1m');
+      expect(durationSpecForItem(reversed, 19)).to.equal('20m');
+      expect(durationSpecForItem(reversed, 20)).to.equal('2m');
+    });
   });
 
   describe('resolveScenario', function () {
@@ -168,6 +175,10 @@ describe('scenario', function () {
       const { granules } = resolveScenario(scenario).jobs[0];
       expect(granules).to.be.within(5, 9);
       expect(resolveScenario(scenario).jobs[0].granules).to.equal(granules);
+      // and actually draws from the range, rather than always giving one end of it
+      const counts = new Set(Array.from({ length: 20 }, (_, seed) => resolveScenario({ ...scenario, seed }).jobs[0].granules));
+      expect([...counts].every((n) => n >= 5 && n <= 9)).to.equal(true);
+      expect(counts.size).to.be.greaterThan(1);
     });
 
     it('expands generators into jobs until their count or end time', function () {
@@ -193,7 +204,10 @@ describe('scenario', function () {
         ['a job without a user', { ...minimal(), jobs: [{ name: 'j', user: '', granules: 1, steps: step }] }, /name and a user/],
         ['duplicate job names', { ...minimal(), jobs: [minimal().jobs[0], minimal().jobs[0]] }, /Duplicate job name/],
         ['a job with no steps', { ...minimal(), jobs: [{ name: 'j', user: 'a', granules: 1, steps: [] }] }, /has no steps/],
-        ['a job with no granules', { ...minimal(), jobs: [{ name: 'j', user: 'a', granules: 0, steps: step }] }, /at least one granule/],
+        ['a job with no granules', { ...minimal(), jobs: [{ name: 'j', user: 'a', granules: 0, steps: step }] }, /whole number of granules, at least one/],
+        ['a fractional granule count', { ...minimal(), jobs: [{ name: 'j', user: 'a', granules: 1.5, steps: step }] }, /whole number of granules/],
+        ['a reversed granules range', { ...minimal(), jobs: [{ name: 'j', user: 'a', granules: { min: 9, max: 5 }, steps: step }] }, /min at most max/],
+        ['a fractional granules range', { ...minimal(), jobs: [{ name: 'j', user: 'a', granules: { min: 1.5, max: 5 }, steps: step }] }, /whole numbers min and max/],
         ['an unknown service', { ...minimal(), jobs: [{ name: 'j', user: 'a', granules: 1, steps: [{ service: 'nope', duration: '1m' }] }] }, /unknown service/],
         ['a service used twice in one job', { ...minimal(), jobs: [{ name: 'j', user: 'a', granules: 1, steps: [...step, ...step] }] }, /more than once/],
         ['an invalid duration', { ...minimal(), jobs: [{ name: 'j', user: 'a', granules: 1, steps: [{ service: 'svc', duration: 'soon' }] }] }, /Invalid duration/],
@@ -219,6 +233,22 @@ describe('scenario', function () {
           }] }] },
           /weight above 0/,
         ]),
+        ['mix weights that add up to Infinity', { ...minimal(), jobs: [{ name: 'j', user: 'a', granules: 1, steps: [{
+          service: 'svc', duration: { dist: 'mix', options: [{ weight: 1e308, duration: '1m' }, { weight: 1e308, duration: '2m' }] },
+        }] }] }, /add up to a finite number/],
+        ['a lognormal duration with a NaN sigma', { ...minimal(), jobs: [{ name: 'j', user: 'a', granules: 1, steps: [{
+          service: 'svc', duration: { dist: 'lognormal', median: '1m', sigma: NaN },
+        }] }] }, /finite duration/],
+        ...[NaN, -1, 0].map((maxDuration): [string, Scenario, RegExp] => [
+          `a maxDuration of ${maxDuration}`, { ...minimal(), maxDuration }, /maxDuration must be a duration above 0/,
+        ]),
+        ...[1.5, -1].map((count): [string, Scenario, RegExp] => [
+          `a generator count of ${count}`,
+          { ...minimal(), jobs: [], generators: [{ name: 'g', user: 'a', every: '1m', count, job: { granules: 1, steps: step } }] },
+          /count that is a whole number/,
+        ]),
+        ['no updater pods', { ...minimal(), infrastructure: { updaterPods: 0 } }, /infrastructure\.updaterPods needs a whole number of pods/],
+        ['a fractional scheduler pod count', { ...minimal(), infrastructure: { schedulerPods: 1.5 } }, /infrastructure\.schedulerPods needs a whole number of pods/],
         ['a generator interval with a bad mix weight', { ...minimal(), jobs: [], generators: [{
           name: 'g', user: 'a', count: 2, every: { dist: 'mix', options: [{ weight: -1, duration: '1m' }] }, job: { granules: 1, steps: step },
         }] }, /weight above 0/],

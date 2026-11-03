@@ -44,6 +44,9 @@ const USAGE = `Usage:
                   --set QUEUE_LONG_POLLING_WAIT_TIME_SEC=3
 `;
 
+// the options that take a value (--quiet, --record and --set are handled separately)
+const VALUE_OPTIONS = ['policy', 'policies', 'out', 'seed', 'seeds', 'references', 'suite', 'label', 'parallel', 'log-level'];
+
 interface Args {
   command: string;
   files: string[];
@@ -73,6 +76,8 @@ function parseArgs(argv: string[]): Args {
       if (!key || rest.length === 0) throw new Error('--set needs KEY=VALUE');
       args.sets[key] = rest.join('=');
     } else if (arg.startsWith('--')) {
+      // e.g. a misspelled --policy would otherwise silently run the scenario's policy
+      if (!VALUE_OPTIONS.includes(arg.slice(2))) throw new Error(`Unknown option ${arg}`);
       const value = argv[++i];
       if (value === undefined) throw new Error(`${arg} needs a value`);
       args.options[arg.slice(2)] = value;
@@ -216,7 +221,8 @@ async function findingsCommand(args: Args): Promise<void> {
     files: args.files,
     policies,
     outDir: path.resolve(args.options.out || path.join(SIM_ROOT, 'output', 'findings')),
-    seeds: list(args.options.seeds),
+    // without repeats, which would count one run several times in the robustness table
+    seeds: [...new Set(list(args.options.seeds))],
     references: list(args.options.references),
     sets: args.sets,
     parallel: args.options.parallel ? parseInt(args.options.parallel, 10) : undefined,
@@ -233,8 +239,13 @@ async function findingsCommand(args: Args): Promise<void> {
 async function benchCommand(args: Args): Promise<void> {
   let seeds: number[];
   if (args.options.seeds !== undefined) {
-    seeds = args.options.seeds.split(',').map((s) => Number(s.trim()));
-    if (!seeds.every(Number.isInteger)) throw new Error('--seeds needs a list of integers');
+    const tokens = args.options.seeds.split(',').map((s) => s.trim());
+    seeds = tokens.map(Number);
+    // the pattern rejects blanks, which Number() turns into 0; isInteger rejects digit strings
+    // too long to be an integer
+    if (!tokens.every((s) => /^[+-]?\d+$/.test(s)) || !seeds.every(Number.isInteger)) {
+      throw new Error('--seeds needs a list of integers');
+    }
   }
   const { DEFAULT_SUITE, runBench } = await import('./bench');
   await runBench({
