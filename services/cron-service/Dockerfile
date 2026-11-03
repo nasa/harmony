@@ -1,4 +1,4 @@
-FROM node:22-alpine3.22
+FROM node:22.23.4-alpine3.24
 
 RUN apk update && apk upgrade --no-cache
 RUN apk add --no-cache python3 postgresql-client make gcc g++ libc-dev postgresql-dev ca-certificates
