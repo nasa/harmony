@@ -3,6 +3,9 @@ import { describe, it } from 'mocha';
 import * as sinon from 'sinon';
 import { Logger } from 'winston';
 
+import {
+  durationBasedPolicy, FairQueueingPolicy, SchedulingContext, slotBasedPolicy,
+} from '../../harmony/app/backends/workflow-orchestration/fair-queueing-policy';
 import * as workItemPolling from '../../harmony/app/backends/workflow-orchestration/work-item-polling';
 import * as userWorkModel from '../../harmony/app/models/user-work';
 import WorkItem from '../../harmony/app/models/work-item';
@@ -133,7 +136,15 @@ describe('Scheduler Worker', async function () {
       });
 
       it('uses slot based fair queueing by default', async function () {
-        expect(getWorkItemsFromDatabaseStub.lastCall.args[3]).to.be.undefined;
+        expect(getWorkItemsFromDatabaseStub.lastCall.args[3]).to.equal(slotBasedPolicy);
+      });
+
+      it('passes the service pod count and fair queueing settings to getWorkItemsFromDatabase', async function () {
+        expect(getWorkItemsFromDatabaseStub.lastCall.args[4]).to.eql({
+          servicePodCount: 1,
+          slowWorkThresholdMs: env.slowWorkThresholdMs,
+          fastLaneReserveFraction: env.fastLaneReserveFraction,
+        });
       });
 
       describe('and duration based fair queueing is enabled', async function () {
@@ -152,8 +163,12 @@ describe('Scheduler Worker', async function () {
           enableDurationBasedStub.restore();
         });
 
-        it('passes the duration based fair queueing options to getWorkItemsFromDatabase', async function () {
-          expect(getWorkItemsFromDatabaseStub.lastCall.args[3]).to.eql({
+        it('uses duration based fair queueing', async function () {
+          expect(getWorkItemsFromDatabaseStub.lastCall.args[3]).to.equal(durationBasedPolicy);
+        });
+
+        it('passes the service pod count and fair queueing settings to getWorkItemsFromDatabase', async function () {
+          expect(getWorkItemsFromDatabaseStub.lastCall.args[4]).to.eql({
             servicePodCount: 1,
             slowWorkThresholdMs: env.slowWorkThresholdMs,
             fastLaneReserveFraction: env.fastLaneReserveFraction,
@@ -468,7 +483,7 @@ describe('Scheduler Worker', async function () {
 describe('getWorkItemsFromDatabase', function () {
   const serviceID = 'foo:latest';
   const batchSize = 10;
-  const durationBasedOptions = { servicePodCount: 5, slowWorkThresholdMs: 600_000, fastLaneReserveFraction: 0.3 };
+  const schedulingContext = { servicePodCount: 5, slowWorkThresholdMs: 600_000, fastLaneReserveFraction: 0.3 };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const fakeTx = {} as any;
   const sandbox = sinon.createSandbox();
@@ -495,7 +510,8 @@ describe('getWorkItemsFromDatabase', function () {
     beforeEach(async function () {
       getNextJobIdsStub.resolves({ jobs: [{ jobId: 'job-1', isSlow: false }], availableSlowWorkSlots: batchSize });
       getNextWorkItemsStub.resolves([]); // out of sync -> else branch
-      result = await workItemPolling.getWorkItemsFromDatabase(serviceID, logger, batchSize);
+      result = await workItemPolling.getWorkItemsFromDatabase(
+        serviceID, logger, batchSize, slotBasedPolicy, schedulingContext);
     });
 
     it('calls setReadyCountToZero exactly once', function () {
@@ -521,7 +537,11 @@ describe('getWorkItemsFromDatabase', function () {
     beforeEach(async function () {
       getNextJobIdsStub.resolves({ jobs: [{ jobId: 'job-1', isSlow: false }], availableSlowWorkSlots: batchSize });
       getNextWorkItemsStub.resolves([new WorkItem({ id: 1, jobID: 'job-1', serviceID })]);
-      await workItemPolling.getWorkItemsFromDatabase(serviceID, logger, batchSize);
+      await workItemPolling.getWorkItemsFromDatabase(serviceID, logger, batchSize, slotBasedPolicy, schedulingContext);
+    });
+
+    it('uses slot based job selection for the slot based policy', function () {
+      expect(getNextJobIdsStub.firstCall.args[4]).to.be.undefined;
     });
 
     it('does not call setReadyCountToZero', function () {
@@ -545,7 +565,7 @@ describe('getWorkItemsFromDatabase', function () {
       getNextWorkItemsStub
         .withArgs(fakeTx, serviceID, 'job-stale', sinon.match.number)
         .resolves([]);
-      await workItemPolling.getWorkItemsFromDatabase(serviceID, logger, batchSize);
+      await workItemPolling.getWorkItemsFromDatabase(serviceID, logger, batchSize, slotBasedPolicy, schedulingContext);
     });
 
     it('zeroes the ready count only for the stale job', function () {
@@ -565,11 +585,12 @@ describe('getWorkItemsFromDatabase', function () {
       getNextWorkItemsStub.callsFake(async (_tx, _sid, jobID, workSize): Promise<WorkItem[]> => (
         Array.from({ length: workSize }, (_v, i) => new WorkItem({ id: i, jobID, serviceID }))
       ));
-      await workItemPolling.getWorkItemsFromDatabase(serviceID, logger, batchSize, durationBasedOptions);
+      await workItemPolling.getWorkItemsFromDatabase(
+        serviceID, logger, batchSize, durationBasedPolicy, schedulingContext);
     });
 
     it('passes the duration based fair queueing options to getNextJobIds', function () {
-      expect(getNextJobIdsStub.firstCall.args[4]).to.equal(durationBasedOptions);
+      expect(getNextJobIdsStub.firstCall.args[4]).to.eql(schedulingContext);
     });
 
     it('limits the work items requested for the slow job to the available slow work slots', function () {
@@ -591,7 +612,8 @@ describe('getWorkItemsFromDatabase', function () {
       getNextWorkItemsStub.callsFake(async (_tx, _sid, jobID, workSize): Promise<WorkItem[]> => (
         Array.from({ length: workSize }, (_v, i) => new WorkItem({ id: i, jobID, serviceID }))
       ));
-      await workItemPolling.getWorkItemsFromDatabase(serviceID, logger, batchSize, durationBasedOptions);
+      await workItemPolling.getWorkItemsFromDatabase(
+        serviceID, logger, batchSize, durationBasedPolicy, schedulingContext);
     });
 
     it('hands out only one slow work item in total across the slow jobs', function () {
@@ -605,6 +627,94 @@ describe('getWorkItemsFromDatabase', function () {
       const fastCalls = getNextWorkItemsStub.getCalls().filter((c) => c.args[2] === 'job-fast');
       expect(fastCalls.length).to.equal(1);
       expect(fastCalls[0].args[3]).to.be.greaterThan(0);
+    });
+  });
+
+  describe('with a different fair queueing policy', function () {
+    let result: workItemPolling.WorkItemData[];
+    let contexts: SchedulingContext[];
+    let taken: number[];
+
+    beforeEach(async function () {
+      contexts = [];
+      taken = [];
+      const policy: FairQueueingPolicy = {
+        name: 'test',
+        async scheduleWork(_tx, _serviceID, _batchSize, context, takeWorkItems): Promise<void> {
+          contexts.push(context);
+          taken.push(await takeWorkItems('job-b', 2));
+        },
+      };
+      getNextWorkItemsStub.resolves([
+        new WorkItem({ id: 1, jobID: 'job-b', serviceID }),
+        new WorkItem({ id: 2, jobID: 'job-b', serviceID }),
+      ]);
+      result = await workItemPolling.getWorkItemsFromDatabase(serviceID, logger, batchSize, policy, schedulingContext);
+    });
+
+    it('lets the policy choose which job to take work items from', function () {
+      expect(getNextJobIdsStub.called).to.be.false;
+      expect(getNextWorkItemsStub.calledOnceWith(fakeTx, serviceID, 'job-b', 2)).to.be.true;
+    });
+
+    it('passes the scheduling context and logger to the policy', function () {
+      expect(contexts[0]).to.eql({ ...schedulingContext, logger });
+    });
+
+    it('tells the policy how many work items it got', function () {
+      expect(taken).to.deep.equal([2]);
+    });
+
+    it('does the user_work bookkeeping for the policy', function () {
+      expect(incrementRunningStub.calledOnceWith(fakeTx, 'job-b', serviceID, 2)).to.be.true;
+    });
+
+    it('returns the work items the policy took', function () {
+      expect(result.map((w) => w.workItem.id)).to.deep.equal([1, 2]);
+    });
+  });
+
+  describe('with a fair queueing policy that asks for more work items than are ready', function () {
+    let taken: number[];
+
+    beforeEach(async function () {
+      taken = [];
+      const policy: FairQueueingPolicy = {
+        name: 'test',
+        async scheduleWork(_tx, _serviceID, _batchSize, _context, takeWorkItems): Promise<void> {
+          taken.push(await takeWorkItems('job-b', 2));
+        },
+      };
+      getNextWorkItemsStub.resolves([new WorkItem({ id: 1, jobID: 'job-b', serviceID })]);
+      await workItemPolling.getWorkItemsFromDatabase(serviceID, logger, batchSize, policy, schedulingContext);
+    });
+
+    it('tells the policy how many work items it actually got', function () {
+      expect(taken).to.deep.equal([1]);
+    });
+  });
+
+  describe('with a fair queueing policy that fails after taking work items', function () {
+    let result: workItemPolling.WorkItemData[];
+
+    beforeEach(async function () {
+      const policy: FairQueueingPolicy = {
+        name: 'test',
+        async scheduleWork(_tx, _serviceID, _batchSize, _context, takeWorkItems): Promise<void> {
+          await takeWorkItems('job-b', 1);
+          throw new Error('policy failed');
+        },
+      };
+      getNextWorkItemsStub.resolves([new WorkItem({ id: 1, jobID: 'job-b', serviceID })]);
+      result = await workItemPolling.getWorkItemsFromDatabase(serviceID, logger, batchSize, policy, schedulingContext);
+    });
+
+    it('took the work item before failing', function () {
+      expect(incrementRunningStub.calledOnce).to.be.true;
+    });
+
+    it('returns no work items, since the transaction rolled back', function () {
+      expect(result).to.deep.equal([]);
     });
   });
 });
