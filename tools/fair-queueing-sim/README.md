@@ -6,8 +6,9 @@ work item update code against a real (sqlite) database, with simulated service p
 clock, so hours of activity simulate in seconds.
 
 It comes with Harmony's two policies: `slot-based`, the default, and `duration-based`, which
-Harmony uses when `ENABLE_DURATION_BASED_FAIR_QUEUEING` is true. Policies added to `src/policies/`
-are for simulation only until they're [promoted](#6-promote-it-to-production).
+Harmony uses when `ENABLE_DURATION_BASED_FAIR_QUEUEING` is true. It also has
+`adaptive-fast-lane`, a candidate replacement built on `duration-based`. Policies added to
+`src/policies/` are for simulation only until they're [promoted](#6-promote-it-to-production).
 
 - [Setup](#setup)
 - [Quick start](#quick-start)
@@ -158,7 +159,15 @@ Add it to `loadPolicies` in `src/policies/index.ts`, and describe it in `POLICY_
   catalog. The catalog's list is what gets recorded as a run's settings, so keep it complete.
 - **Schema changes**: add a real migration to `db/migrations/` and the same change to
   `db/db.sql` (the simulator builds its database from `db.sql`), so the migration you ship is the
-  one you tested.
+  one you tested. While experimenting, a `loadPolicies` entry's optional `setup` can make the
+  change instead, in the simulator's database only.
+- **Learning from completed work items**: the policy interface only covers scheduling. A
+  `loadPolicies` entry's optional `onWorkItemCompleted` is called, in the simulator only, in the
+  work-updater's transaction whenever a work item finishes. `adaptive-fast-lane` uses it to keep
+  its own duration estimates. A policy that needs it can't ship until the hook exists in
+  Harmony - see [step 6](#6-promote-it-to-production).
+- **Sampling**: an optional `sampler` records policy specific state over time (e.g. how many
+  slow work items are running) for the run's report.
 
 ### 3. Iterate against the baseline
 
@@ -187,6 +196,9 @@ the range in brackets.
 - **vs slot-based** compares with the baseline, `slot-based`, seed by seed. Runs with the same
   seed have the same work item durations, so **better (or worse) in 5/5 seeds** is a real
   difference and a mixed count is noise.
+- **vs &lt;policy&gt;** compares, the same way, with each policy listed before it in `--policies`
+  (or the suite's `policies`), e.g. `adaptive-fast-lane` with `duration-based`, the policy it
+  improves on.
 - **vs recorded** compares with the policy's own recorded results: what your changes since then
   did.
 
@@ -236,12 +248,13 @@ settings. The simulator replaces that choice with the policy being simulated. To
    `processSchedulerQueue`, e.g. with a `FAIR_QUEUEING_POLICY` setting, and add it and the
    policy's own settings to `services/work-scheduler/env-defaults`. Switching back is then a
    configuration change, which is the rollback.
-3. **Check what it needs and stores.** The interface only covers scheduling, so a policy that
-   learns from completed work items also needs a hook in the work-updater, which means extending
-   the interface. Policies that share `user_work` columns misread each other's values after a
-   switch: `duration-based` keeps a lifetime mean in `average_duration`, so a policy that wants,
-   say, a moving average needs its own column (a migration in `db/migrations/` plus `db/db.sql`)
-   or a settling period after a switch.
+3. **Check what it needs and stores.** The interface only covers scheduling, so a policy with an
+   `onWorkItemCompleted` hook (simulator only) needs that hook added to the work-updater, which
+   means extending the interface. Policies that share `user_work` columns misread each other's
+   values after a switch: `duration-based` keeps a lifetime mean in `average_duration`, so a
+   policy that wants, say, a moving average needs its own column, as `adaptive-fast-lane`'s
+   `adaptive_duration` is, or a settling period after a switch. Replace any `setup` schema
+   change with a migration in `db/migrations/` plus `db/db.sql`.
 4. **Test it** like any production change: unit tests for the policy, and a test of its selection
    in `services/work-scheduler/test/scheduler.ts`.
 5. **Re-record the benchmarks** with `npm run sim -- bench --record`. The policy is production code
@@ -275,6 +288,7 @@ The stories are the benchmark suite. To make a scenario, copy one; the format is
 |---|---|
 | `slot-based` | Harmony's default algorithm: jobs interleaved round robin by user, users with the fewest running work items for the service first, with each batch split evenly per job |
 | `duration-based` | Harmony's algorithm when `ENABLE_DURATION_BASED_FAIR_QUEUEING` is true: users ranked by the expected runtime of their running work for the service, and a fast lane reserve |
+| `adaptive-fast-lane` | `duration-based`, with the same reserve, plus seven fixes for what the stories show it getting wrong: a limit on work for jobs with no measured duration yet, a moving average of the durations the service pods report, estimates for new jobs from the service's other jobs, batches split per user, fair shares of the pods while others' fast work waits, and unmeasured work treated as slow once it has run past the threshold. Simulator only: it learns from completed work items through a hook Harmony doesn't have yet |
 
 **The fast lane reserve leaves pods idle on purpose.** Slow work may never use more than
 `1 - FAST_LANE_RESERVE_FRACTION` of a service's pods, even when nothing else is waiting, because

@@ -11,8 +11,10 @@ scenarios:
 seeds: [101, 102, 103, 104, 105]
 
 # the policies whose results are recorded in results/ - slot-based is always recorded, as every
-# other policy is compared with it. Add a policy here once it's a real candidate.
-policies: [slot-based, duration-based]
+# other policy is compared with it. Add a policy here once it's a real candidate. Each policy is
+# also compared with the ones listed before it, so duration-based comes before the policies that
+# build on it.
+policies: [slot-based, duration-based, adaptive-fast-lane]
 
 # environment overrides for every run, as with --set
 set: {}

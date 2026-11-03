@@ -545,7 +545,9 @@ function table(header: string[], rows: string[][]): string {
 }
 
 /**
- * The report's value columns: the baseline, then each other policy with its comparisons.
+ * The report's value columns: the baseline, then each other policy with its comparisons - with
+ * the baseline, with each policy listed before it (so listing duration-based before
+ * adaptive-fast-lane shows what adaptive-fast-lane's fixes add), and with its own record.
  *
  * @param ctx - the report context
  * @returns the columns
@@ -554,12 +556,18 @@ function columns(ctx: ReportContext): Column[] {
   const candidates = ctx.policies.filter((p) => p !== REFERENCE_POLICY);
   const prefix = (p: string): string => (candidates.length > 1 ? `\`${p}\` ` : '');
   const cols: Column[] = [{ heading: `\`${REFERENCE_POLICY}\``, cell: (s, key, kind) => valueCell(valuesOf(ctx.reference[s], key), kind) }];
-  for (const p of candidates) {
+  for (const [i, p] of candidates.entries()) {
     cols.push({ heading: `\`${p}\``, cell: (s, key, kind) => valueCell(valuesOf(ctx.fresh[p][s], key), kind) });
     cols.push({
       heading: `${prefix(p)}vs ${REFERENCE_POLICY}`,
       cell: (s, key, kind) => compareCell(valuesOf(ctx.fresh[p][s], key), valuesOf(ctx.reference[s], key), kind),
     });
+    for (const q of candidates.slice(0, i)) {
+      cols.push({
+        heading: `${prefix(p)}vs ${q}`,
+        cell: (s, key, kind) => compareCell(valuesOf(ctx.fresh[p][s], key), valuesOf(ctx.fresh[q][s], key), kind),
+      });
+    }
     if (ctx.own[p].values) {
       cols.push({
         heading: `${prefix(p)}vs recorded`,
@@ -612,7 +620,8 @@ function renderHeader(ctx: ReportContext): string {
     'Each value is the mean over the seeds, with the range across seeds in brackets. Comparisons ' +
       'are seed by seed: runs with the same seed have the same work item durations, so ' +
       '**better (or worse) in every seed** is a real difference, while a mixed count is within ' +
-      'noise. **Protected metrics** are the ones each scenario names as expressing its goal ' +
+      'noise. Each policy is compared with the baseline and with each policy listed before it. ' +
+      '**Protected metrics** are the ones each scenario names as expressing its goal ' +
       '(its `benchmarks:` list). Metric definitions are in tools/fair-queueing-sim/REFERENCE.md.',
   ];
   return lines.join('\n');
