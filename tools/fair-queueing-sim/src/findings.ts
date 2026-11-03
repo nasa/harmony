@@ -5,6 +5,7 @@ import * as os from 'os';
 import * as path from 'path';
 
 import { readRun, RunTask, runTasks, SIM_ROOT, writeComparison } from './batch';
+import { inheritedHarmonyEnv } from './bench';
 import { REPO_ROOT } from './bootstrap';
 import type { Summary } from './metrics';
 import { NATIVE_POLICY, POLICY_CATALOG } from './policies/catalog';
@@ -192,18 +193,22 @@ const CONCLUSIONS_MARKER = /<!-- conclusions written for code: (.*?) -->/;
 /**
  * An identifier for exact code state and run inputs, used to tell whether conclusions are
  * current: the commit (plus a hash of any uncommitted changes), then a hash of the scenario
- * files' contents and the policies, seeds and settings they were run with.
+ * files' contents, the policies, seeds and settings they were run with (including Harmony
+ * settings inherited from the shell), and the references checked against - each spec with the
+ * commit it resolved to, or why it couldn't be run.
  *
  * @param g - the git state
  * @param o - the findings options
+ * @param references - the references, after prepareReference has resolved them
  * @returns the identifier
  */
-function evidenceId(g: GitState, o: FindingsOptions): string {
+function evidenceId(g: GitState, o: FindingsOptions, references: Reference[]): string {
   const code = g.commit ? `${g.commit}${g.dirty ? `+${g.changesHash}` : ''}` : 'unknown';
   const inputs = createHash('sha256');
   for (const file of o.files) inputs.update(fs.readFileSync(file)).update('\0');
   const sets = Object.fromEntries(Object.entries(o.sets).sort(([a], [b]) => a.localeCompare(b)));
-  inputs.update(JSON.stringify({ policies: o.policies, seeds: o.seeds, sets }));
+  const refs = references.map((r) => ({ spec: r.spec, commit: r.commit ?? null, error: r.error ?? null }));
+  inputs.update(JSON.stringify({ policies: o.policies, seeds: o.seeds, sets, references: refs, inherited: inheritedHarmonyEnv() }));
   return `${code} inputs ${inputs.digest('hex').slice(0, 12)}`;
 }
 
@@ -265,8 +270,13 @@ export async function runFindings(o: FindingsOptions): Promise<void> {
   const names = scenarios.map((s) => s.scenario.name);
   const dir = (...parts: string[]): string => path.join(o.outDir, ...parts);
   const tasks: RunTask[] = [];
+  // each run directory is scheduled once: several checks can need the same main run (e.g. two
+  // references to the same policy), and two runs into one directory would overwrite each other
+  const scheduled = new Set<string>();
   const add = (file: string, scenarioName: string, policy: string, runDir: string,
     extra: Partial<RunTask> = {}): void => {
+    if (scheduled.has(runDir)) return;
+    scheduled.add(runDir);
     tasks.push({ file, scenarioName, policy, runDir, sets: { ...o.sets, ...(extra.sets || {}) }, seed: extra.seed, simRoot: extra.simRoot });
   };
 
@@ -366,7 +376,7 @@ export async function runFindings(o: FindingsOptions): Promise<void> {
   out.push(table(['scenario', 'what it tests', 'what a good result looks like'],
     scenarios.map(({ scenario }) => [scenario.name, scenario.description.replace(/\n/g, ' '), scenario.goodOutcome.replace(/\n/g, ' ') || '-'])), '');
 
-  out.push(conclusionsSection(findingsFile, evidenceId(git, o), o.command), '');
+  out.push(conclusionsSection(findingsFile, evidenceId(git, o, references), o.command), '');
 
   out.push('## Results', '');
   out.push(renderGlossary(), '');

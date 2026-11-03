@@ -156,12 +156,15 @@ async function compareCommand(args: Args): Promise<void> {
   }
   const outDir = path.resolve(args.options.out || path.join(SIM_ROOT, 'output'));
   const scenarios = args.files.map((file) => ({ file: path.resolve(file), scenario: scenarioWithOverrides(file, args) }));
-  const fileByName = new Map<string, string>();
+  // keyed by the directory the runs go to (as for runDir below), since different names can
+  // resolve to the same one, e.g. "smoke" and "./smoke"
+  const fileByDir = new Map<string, string>();
   for (const { file, scenario } of scenarios) {
-    if (fileByName.has(scenario.name)) {
-      throw new Error(`${file} and ${fileByName.get(scenario.name)} are both named ${scenario.name}, so they'd share an output directory`);
+    const scenarioDir = path.join(outDir, scenario.name);
+    if (fileByDir.has(scenarioDir)) {
+      throw new Error(`${file} and ${fileByDir.get(scenarioDir)} would both write to ${scenarioDir}`);
     }
-    fileByName.set(scenario.name, file);
+    fileByDir.set(scenarioDir, file);
   }
   const tasks: RunTask[] = scenarios.flatMap(({ file, scenario }) => policies.map((policy) => ({
     file, scenarioName: scenario.name, policy, runDir: path.join(outDir, scenario.name, policy),
