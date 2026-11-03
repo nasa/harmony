@@ -76,7 +76,7 @@
     "yargs": "^17.7.2"
   },
   "engines": {
-    "node": "^22.23.0",
+    "node": "^22.23.4",
     "npm": ">=10"
   },
   "devDependencies": {
