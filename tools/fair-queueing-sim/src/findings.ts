@@ -110,28 +110,34 @@ function prepareReference(reference: Reference): void {
     return;
   }
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), `fq-sim-ref-${reference.commit.slice(0, 9)}-`));
-  const paths = REFERENCE_PATHS.filter((p) => {
-    try {
-      execFileSync('git', ['cat-file', '-e', `${reference.commit}:${p}`], { cwd: REPO_ROOT, stdio: 'ignore' });
-      return true;
-    } catch {
-      return false;
+  try {
+    const paths = REFERENCE_PATHS.filter((p) => {
+      try {
+        execFileSync('git', ['cat-file', '-e', `${reference.commit}:${p}`], { cwd: REPO_ROOT, stdio: 'ignore' });
+        return true;
+      } catch {
+        return false;
+      }
+    });
+    execFileSync('sh', ['-c', `git archive ${reference.commit} ${paths.join(' ')} | tar -x -C "${dir}"`], { cwd: REPO_ROOT });
+    for (const d of NODE_MODULES_DIRS) {
+      if (fs.existsSync(path.join(dir, d)) && fs.existsSync(path.join(REPO_ROOT, d, 'node_modules'))) {
+        fs.symlinkSync(path.join(REPO_ROOT, d, 'node_modules'), path.join(dir, d, 'node_modules'));
+      }
     }
-  });
-  execFileSync('sh', ['-c', `git archive ${reference.commit} ${paths.join(' ')} | tar -x -C "${dir}"`], { cwd: REPO_ROOT });
-  for (const d of NODE_MODULES_DIRS) {
-    if (fs.existsSync(path.join(dir, d)) && fs.existsSync(path.join(REPO_ROOT, d, 'node_modules'))) {
-      fs.symlinkSync(path.join(REPO_ROOT, d, 'node_modules'), path.join(dir, d, 'node_modules'));
+    const sim = path.join(dir, 'tools', 'fair-queueing-sim');
+    fs.mkdirSync(sim, { recursive: true });
+    fs.cpSync(path.join(SIM_ROOT, 'src'), path.join(sim, 'src'), { recursive: true });
+    for (const f of ['package.json', 'tsconfig.json']) fs.copyFileSync(path.join(SIM_ROOT, f), path.join(sim, f));
+    fs.symlinkSync(path.join(SIM_ROOT, 'node_modules'), path.join(sim, 'node_modules'));
+    for (const overlay of reference.overlays) {
+      fs.mkdirSync(path.dirname(path.join(dir, overlay)), { recursive: true });
+      fs.copyFileSync(path.join(REPO_ROOT, overlay), path.join(dir, overlay));
     }
-  }
-  const sim = path.join(dir, 'tools', 'fair-queueing-sim');
-  fs.mkdirSync(sim, { recursive: true });
-  fs.cpSync(path.join(SIM_ROOT, 'src'), path.join(sim, 'src'), { recursive: true });
-  for (const f of ['package.json', 'tsconfig.json']) fs.copyFileSync(path.join(SIM_ROOT, f), path.join(sim, f));
-  fs.symlinkSync(path.join(SIM_ROOT, 'node_modules'), path.join(sim, 'node_modules'));
-  for (const overlay of reference.overlays) {
-    fs.mkdirSync(path.dirname(path.join(dir, overlay)), { recursive: true });
-    fs.copyFileSync(path.join(REPO_ROOT, overlay), path.join(dir, overlay));
+  } catch (e) {
+    // e.g. an overlay file that doesn't exist - don't leave the partial checkout behind
+    fs.rmSync(dir, { recursive: true, force: true });
+    throw e;
   }
   reference.dir = dir;
 }

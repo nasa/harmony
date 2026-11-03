@@ -281,9 +281,16 @@ function validateDuration(spec: DurationSpec): void {
       }
       validateDuration(option.duration);
     }
+    // e.g. two weights of 1e308: every draw would fall through to the last option
+    if (!Number.isFinite(spec.options.reduce((sum, o) => sum + o.weight, 0))) {
+      throw new Error(`The weights in a mix duration must add up to a finite number: ${JSON.stringify(spec)}`);
+    }
     return;
   }
-  sampleDuration(spec, () => 0.5);
+  // e.g. a lognormal sigma of .nan, which would make NaN an event time
+  if (!Number.isFinite(sampleDuration(spec, () => 0.5))) {
+    throw new Error(`A duration spec must give a finite duration: ${JSON.stringify(spec)}`);
+  }
 }
 
 /**
@@ -295,8 +302,11 @@ function validateDuration(spec: DurationSpec): void {
  */
 export function durationSpecForItem(step: StepSpec, itemIndex: number): DurationSpec {
   let spec = step.duration;
+  // the reached phase with the highest fromItem, so the order phases are listed in doesn't matter
+  let reachedFromItem = -Infinity;
   for (const phase of step.phases || []) {
-    if (itemIndex >= phase.fromItem) {
+    if (itemIndex >= phase.fromItem && phase.fromItem >= reachedFromItem) {
+      reachedFromItem = phase.fromItem;
       spec = phase.duration;
     }
   }
@@ -314,6 +324,9 @@ function resolveGranules(granules: JobTemplate['granules'], random: Random): num
   if (typeof granules === 'number') {
     return granules;
   }
+  if (!Number.isInteger(granules?.min) || !Number.isInteger(granules.max) || granules.min > granules.max) {
+    throw new Error(`A granules range needs whole numbers min and max, with min at most max: ${JSON.stringify(granules)}`);
+  }
   return granules.min + Math.floor(random() * (granules.max - granules.min + 1));
 }
 
@@ -327,6 +340,10 @@ function resolveGranules(granules: JobTemplate['granules'], random: Random): num
  */
 function expandGenerator(generator: GeneratorSpec, seed: number, maxDurationMs: number): ResolvedJob[] {
   validateDuration(generator.every);
+  // a count of 1.5 would make 2 jobs
+  if (generator.count !== undefined && (!Number.isInteger(generator.count) || generator.count < 0)) {
+    throw new Error(`Generator ${generator.name} needs a count that is a whole number, at least 0, not ${JSON.stringify(generator.count)}`);
+  }
   const random = rngFor(seed, 'generator', generator.name);
   const untilMs = generator.until === undefined ? maxDurationMs : parseDuration(generator.until);
   const count = generator.count ?? Number.MAX_SAFE_INTEGER;
@@ -366,6 +383,10 @@ export function resolveScenario(scenario: Scenario): ResolvedScenario {
   }
   const seed = scenario.seed ?? 1;
   const maxDurationMs = parseDuration(scenario.maxDuration ?? '7d');
+  // NaN would never stop the run on time, and a negative value would stop it before it started
+  if (!(maxDurationMs > 0)) {
+    throw new Error(`maxDuration must be a duration above 0, not ${JSON.stringify(scenario.maxDuration)}`);
+  }
   const infra = scenario.infrastructure || {};
   const services = scenario.services.map((s) => ({
     name: s.name,
@@ -416,8 +437,9 @@ export function resolveScenario(scenario: Scenario): ResolvedScenario {
     if (!job.steps?.length) {
       throw new Error(`Job ${job.name} has no steps`);
     }
-    if (!(job.granules > 0)) {
-      throw new Error(`Job ${job.name} must have at least one granule`);
+    // a fractional count would be recorded on the job but make a whole number of work items
+    if (!Number.isInteger(job.granules) || job.granules < 1) {
+      throw new Error(`Job ${job.name} must have a whole number of granules, at least one`);
     }
     const stepServices = new Set<string>();
     for (const step of job.steps) {
@@ -456,6 +478,14 @@ export function resolveScenario(scenario: Scenario): ResolvedScenario {
   if (Math.floor(maxDurationMs / sampleIntervalMs) + 2 > MAX_SAMPLES) {
     throw new Error(`A ${formatDuration(sampleIntervalMs)} sampleInterval over a ${formatDuration(maxDurationMs)} maxDuration ` +
       `could take more than ${MAX_SAMPLES} samples - raise sampleInterval or lower maxDuration`);
+  }
+
+  // with no updater pods, for example, work item updates would queue up and never be processed
+  for (const key of ['schedulerPods', 'updaterPods'] as const) {
+    const pods = infra[key] ?? 1;
+    if (!Number.isInteger(pods) || pods < 1) {
+      throw new Error(`infrastructure.${key} needs a whole number of pods, at least 1, not ${JSON.stringify(pods)}`);
+    }
   }
 
   for (const b of scenario.benchmarks || []) {
