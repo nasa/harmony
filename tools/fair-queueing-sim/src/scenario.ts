@@ -274,7 +274,13 @@ export function sampleDuration(spec: DurationSpec, random: Random): number {
 function validateDuration(spec: DurationSpec): void {
   if (spec && typeof spec === 'object' && spec.dist === 'mix') {
     if (!spec.options?.length) throw new Error(`A mix duration needs at least one option: ${JSON.stringify(spec)}`);
-    for (const option of spec.options) validateDuration(option?.duration);
+    for (const option of spec.options) {
+      // a weight that isn't a positive number (e.g. a string from YAML) silently skews the draws
+      if (typeof option?.weight !== 'number' || !Number.isFinite(option.weight) || option.weight <= 0) {
+        throw new Error(`Every option in a mix duration needs a weight above 0: ${JSON.stringify(option)}`);
+      }
+      validateDuration(option.duration);
+    }
     return;
   }
   sampleDuration(spec, () => 0.5);
@@ -320,6 +326,7 @@ function resolveGranules(granules: JobTemplate['granules'], random: Random): num
  * @returns the generated jobs
  */
 function expandGenerator(generator: GeneratorSpec, seed: number, maxDurationMs: number): ResolvedJob[] {
+  validateDuration(generator.every);
   const random = rngFor(seed, 'generator', generator.name);
   const untilMs = generator.until === undefined ? maxDurationMs : parseDuration(generator.until);
   const count = generator.count ?? Number.MAX_SAFE_INTEGER;
@@ -422,6 +429,12 @@ export function resolveScenario(scenario: Scenario): ResolvedScenario {
         throw new Error(`Job ${job.name} uses service ${step.service} more than once`);
       }
       stepServices.add(step.service);
+      for (const phase of step.phases || []) {
+        // work item indexes start at 0; anything else would make the phase silently never apply
+        if (!Number.isInteger(phase?.fromItem) || phase.fromItem < 0) {
+          throw new Error(`Job ${job.name}: every phase needs a fromItem that is a whole number, at least 0: ${JSON.stringify(phase)}`);
+        }
+      }
       // validate the specs now rather than when a work item first needs one
       for (const spec of [step.duration, ...(step.phases || []).map((p) => p.duration)]) {
         validateDuration(spec);
@@ -439,7 +452,8 @@ export function resolveScenario(scenario: Scenario): ResolvedScenario {
     throw new Error(`infrastructure.sampleInterval must be at least ${formatDuration(MIN_SAMPLE_INTERVAL_MS)}, ` +
       `not ${JSON.stringify(infra.sampleInterval)}`);
   }
-  if (maxDurationMs / sampleIntervalMs > MAX_SAMPLES) {
+  // samples at 0 and every interval up to maxDuration, plus a final one after the run ends
+  if (Math.floor(maxDurationMs / sampleIntervalMs) + 2 > MAX_SAMPLES) {
     throw new Error(`A ${formatDuration(sampleIntervalMs)} sampleInterval over a ${formatDuration(maxDurationMs)} maxDuration ` +
       `could take more than ${MAX_SAMPLES} samples - raise sampleInterval or lower maxDuration`);
   }

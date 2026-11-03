@@ -84,6 +84,17 @@ function parseArgs(argv: string[]): Args {
 }
 
 /**
+ * Parses a --policies list: trimmed, and without repeats, which would schedule two runs into
+ * the same directory.
+ *
+ * @param value - the option's value, e.g. "slot-based,duration-based"
+ * @returns the policy names in the order given, or undefined if the option wasn't given
+ */
+function policiesOption(value: string | undefined): string[] | undefined {
+  return value === undefined ? undefined : [...new Set(value.split(',').map((p) => p.trim()))];
+}
+
+/**
  * Loads a scenario and applies command line overrides.
  *
  * @param file - the scenario file
@@ -150,7 +161,7 @@ async function runCommand(args: Args): Promise<void> {
  */
 async function compareCommand(args: Args): Promise<void> {
   if (args.files.length === 0) throw new Error('compare needs at least one scenario file');
-  const policies = args.options.policies ? args.options.policies.split(',') : POLICY_NAMES;
+  const policies = policiesOption(args.options.policies) ?? POLICY_NAMES;
   for (const policy of policies) {
     if (!POLICY_NAMES.includes(policy)) throw new Error(`Unknown policy "${policy}"`);
   }
@@ -195,7 +206,7 @@ function commandLine(): string {
  */
 async function findingsCommand(args: Args): Promise<void> {
   if (args.files.length === 0) throw new Error('findings needs at least one scenario file');
-  const policies = args.options.policies ? args.options.policies.split(',') : POLICY_NAMES;
+  const policies = policiesOption(args.options.policies) ?? POLICY_NAMES;
   for (const policy of policies) {
     if (!POLICY_NAMES.includes(policy)) throw new Error(`Unknown policy "${policy}"`);
   }
@@ -229,7 +240,7 @@ async function benchCommand(args: Args): Promise<void> {
   await runBench({
     suiteFile: path.resolve(args.options.suite || DEFAULT_SUITE),
     files: args.files,
-    policies: args.options.policies ? args.options.policies.split(',').map((p) => p.trim()) : undefined,
+    policies: policiesOption(args.options.policies),
     seeds,
     sets: args.sets,
     record: args.record,

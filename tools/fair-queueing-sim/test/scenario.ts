@@ -140,6 +140,11 @@ describe('scenario', function () {
       expect(s.infrastructure).to.include({ schedulerPods: 1, updaterPods: 1, sampleIntervalMs: 30_000 });
     });
 
+    it('allows a run that takes exactly the most samples allowed', function () {
+      // samples at 0s..99,998s plus the final one = 100,000
+      expect(() => resolveScenario({ ...minimal(), maxDuration: 99_998_000, infrastructure: { sampleInterval: '1s' } })).to.not.throw();
+    });
+
     it('converts environment values to strings', function () {
       const s = resolveScenario({ ...minimal(), env: { A: 3, B: true, C: 'x' } });
       expect(s.env).to.deep.equal({ A: '3', B: 'true', C: 'x' });
@@ -206,16 +211,37 @@ describe('scenario', function () {
         ['an invalid mix option a draw of 0.5 wouldn\'t pick', { ...minimal(), jobs: [{ name: 'j', user: 'a', granules: 1, steps: [{
           service: 'svc', duration: { dist: 'mix', options: [{ weight: 99, duration: '1m' }, { weight: 1, duration: 'ages' }] },
         }] }] }, /Invalid duration "ages"/],
+        ...[0, -1, NaN, Infinity, '3', undefined].map((weight): [string, Scenario, RegExp] => [
+          `a mix option with weight ${typeof weight === 'string' ? JSON.stringify(weight) : String(weight)}`,
+          { ...minimal(), jobs: [{ name: 'j', user: 'a', granules: 1, steps: [{
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            service: 'svc', duration: { dist: 'mix', options: [{ weight: 1, duration: '1m' }, { weight: weight as any, duration: '2m' }] },
+          }] }] },
+          /weight above 0/,
+        ]),
+        ['a generator interval with a bad mix weight', { ...minimal(), jobs: [], generators: [{
+          name: 'g', user: 'a', count: 2, every: { dist: 'mix', options: [{ weight: -1, duration: '1m' }] }, job: { granules: 1, steps: step },
+        }] }, /weight above 0/],
         ['an invalid option in a nested mix', { ...minimal(), jobs: [{ name: 'j', user: 'a', granules: 1, steps: [{
           service: 'svc', duration: '1m', phases: [{ fromItem: 5, duration: { dist: 'mix', options: [
             { weight: 1, duration: '1m' },
             { weight: 1, duration: { dist: 'mix', options: [{ weight: 1, duration: '2m' }, { weight: 1, duration: 'soon' }] } },
           ] } }],
         }] }] }, /Invalid duration "soon"/],
+        ...[undefined, 'later', '10', 2.5, -1].map((fromItem): [string, Scenario, RegExp] => [
+          `a phase with fromItem ${typeof fromItem === 'string' ? JSON.stringify(fromItem) : String(fromItem)}`,
+          { ...minimal(), jobs: [{ name: 'j', user: 'a', granules: 1, steps: [{
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            service: 'svc', duration: '1m', phases: [{ fromItem: fromItem as any, duration: '2m' }],
+          }] }] },
+          /fromItem that is a whole number/,
+        ]),
         ['an invalid phase duration', { ...minimal(), jobs: [{ name: 'j', user: 'a', granules: 1, steps: [{ service: 'svc', duration: '1m', phases: [{ fromItem: 2, duration: 'later' }] }] }] }, /Invalid duration/],
         ['a sample interval of 0', { ...minimal(), infrastructure: { sampleInterval: 0 } }, /sampleInterval must be at least 1\.0s/],
         ['a sample interval under a second', { ...minimal(), infrastructure: { sampleInterval: '500ms' } }, /sampleInterval must be at least 1\.0s/],
         ['too many samples for the run', { ...minimal(), maxDuration: '7d', infrastructure: { sampleInterval: '1s' } }, /more than 100000 samples/],
+        // 100,000 intervals of 1s: samples at 0s..100,000s plus the final one = 100,002
+        ['just too many samples for the run', { ...minimal(), maxDuration: 100_000_000, infrastructure: { sampleInterval: '1s' } }, /more than 100000 samples/],
         ['a generator with no limit on its jobs', { ...minimal(), jobs: [], generators: [{ name: 'g', user: 'a', every: '1ms', job: { granules: 1, steps: step } }] }, /more than 10000 jobs/],
       ];
       for (const [what, scenario, error] of cases) {

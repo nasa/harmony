@@ -269,6 +269,16 @@ export async function runFindings(o: FindingsOptions): Promise<void> {
   }));
   const names = scenarios.map((s) => s.scenario.name);
   const dir = (...parts: string[]): string => path.join(o.outDir, ...parts);
+  // as in compare: keyed by the directory the runs go to, since different names can resolve to
+  // the same one - and add() below would otherwise silently drop the second scenario's runs
+  const fileByDir = new Map<string, string>();
+  for (const { file, scenario } of scenarios) {
+    const scenarioDir = dir('main', scenario.name);
+    if (fileByDir.has(scenarioDir)) {
+      throw new Error(`${file} and ${fileByDir.get(scenarioDir)} would both write to ${scenarioDir}`);
+    }
+    fileByDir.set(scenarioDir, file);
+  }
   const tasks: RunTask[] = [];
   // each run directory is scheduled once: several checks can need the same main run (e.g. two
   // references to the same policy), and two runs into one directory would overwrite each other
