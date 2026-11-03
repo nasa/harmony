@@ -1,4 +1,5 @@
 import { execFileSync } from 'child_process';
+import { createHash } from 'crypto';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
@@ -189,29 +190,36 @@ function table(header: string[], rows: string[][]): string {
 const CONCLUSIONS_MARKER = /<!-- conclusions written for code: (.*?) -->/;
 
 /**
- * An identifier for exact code state, used to tell whether conclusions are current.
+ * An identifier for exact code state and run inputs, used to tell whether conclusions are
+ * current: the commit (plus a hash of any uncommitted changes), then a hash of the scenario
+ * files' contents and the policies, seeds and settings they were run with.
  *
  * @param g - the git state
+ * @param o - the findings options
  * @returns the identifier
  */
-function codeId(g: GitState): string {
-  return g.commit ? `${g.commit}${g.dirty ? `+${g.changesHash}` : ''}` : 'unknown';
+function evidenceId(g: GitState, o: FindingsOptions): string {
+  const code = g.commit ? `${g.commit}${g.dirty ? `+${g.changesHash}` : ''}` : 'unknown';
+  const inputs = createHash('sha256');
+  for (const file of o.files) inputs.update(fs.readFileSync(file)).update('\0');
+  const sets = Object.fromEntries(Object.entries(o.sets).sort(([a], [b]) => a.localeCompare(b)));
+  inputs.update(JSON.stringify({ policies: o.policies, seeds: o.seeds, sets }));
+  return `${code} inputs ${inputs.digest('hex').slice(0, 12)}`;
 }
 
 /**
  * Builds the Conclusions section, keeping any existing conclusions and flagging them if they
- * were written for different code.
+ * were written for different code or inputs.
  *
  * @param findingsFile - the findings.md path
- * @param git - the current code
+ * @param current - the current code and inputs (see evidenceId)
  * @param command - the command used to regenerate findings
  * @returns the section
  */
-function conclusionsSection(findingsFile: string, git: GitState, command: string): string {
-  const current = codeId(git);
+function conclusionsSection(findingsFile: string, current: string, command: string): string {
   let existing = '';
   if (fs.existsSync(findingsFile)) {
-    const match = /\n## Conclusions\n([\s\S]*?)(?=\n## )/.exec(fs.readFileSync(findingsFile, 'utf8'));
+    const match = /\n## Conclusions\n([\s\S]*?)(?=\n## |$)/.exec(fs.readFileSync(findingsFile, 'utf8'));
     existing = match ? match[1].trim() : '';
   }
   const out = ['## Conclusions', ''];
@@ -235,7 +243,7 @@ function conclusionsSection(findingsFile: string, git: GitState, command: string
   out.push(`<!-- conclusions written for code: ${writtenFor} -->`, '');
   if (writtenFor !== current) {
     out.push(
-      `> **These conclusions were written for different code (${writtenFor}) than the evidence below ` +
+      `> **These conclusions were written for different code or inputs (${writtenFor}) than the evidence below ` +
       `(${current}).** Review them against the regenerated results, update them, then change the marker ` +
       `comment above to \`${current}\`. (Regenerated with: \`${command}\`)`, '',
     );
@@ -290,11 +298,14 @@ export async function runFindings(o: FindingsOptions): Promise<void> {
 
   // other branches' own code
   const references = o.references.map(parseReference);
-  for (const reference of references) {
+  // by position as well as name, so two specs for the same ref (e.g. with different overlays)
+  // don't share a directory
+  const referenceDir = (i: number, r: Reference): string => `${i + 1}-${r.ref.replace(/[^\w.-]/g, '_')}`;
+  for (const [i, reference] of references.entries()) {
     prepareReference(reference);
     if (reference.error) continue;
     for (const { file, scenario } of scenarios) {
-      add(file, scenario.name, NATIVE_POLICY, dir('checks', 'reference', reference.ref.replace(/[^\w.-]/g, '_'), scenario.name),
+      add(file, scenario.name, NATIVE_POLICY, dir('checks', 'reference', referenceDir(i, reference), scenario.name),
         { simRoot: path.join(reference.dir, 'tools', 'fair-queueing-sim') });
       if (!o.policies.includes(reference.policy)) add(file, scenario.name, reference.policy, dir('main', scenario.name, reference.policy));
     }
@@ -322,8 +333,8 @@ export async function runFindings(o: FindingsOptions): Promise<void> {
       results: Object.fromEntries(names.map((n) => [n, sameLogs(dir('checks', 'equivalent', policy, n), dir('main', n, eq.policy))])),
     });
   }
-  for (const r of references) {
-    const refDir = r.ref.replace(/[^\w.-]/g, '_');
+  for (const [i, r] of references.entries()) {
+    const refDir = referenceDir(i, r);
     checks.push({
       name: `${r.policy} = ${r.ref}'s own code`,
       description: r.error
@@ -355,7 +366,7 @@ export async function runFindings(o: FindingsOptions): Promise<void> {
   out.push(table(['scenario', 'what it tests', 'what a good result looks like'],
     scenarios.map(({ scenario }) => [scenario.name, scenario.description.replace(/\n/g, ' '), scenario.goodOutcome.replace(/\n/g, ' ') || '-'])), '');
 
-  out.push(conclusionsSection(findingsFile, git, o.command), '');
+  out.push(conclusionsSection(findingsFile, evidenceId(git, o), o.command), '');
 
   out.push('## Results', '');
   out.push(renderGlossary(), '');

@@ -74,12 +74,14 @@ const USER_METRICS: Record<string, Extractor<UserSummary>> = {
  * metric key
  */
 export function metricKind(key: string): MetricKind | null {
-  const scenarioMetric = SCENARIO_METRICS[key];
-  if (scenarioMetric) return scenarioMetric;
+  const own = (o: object, k: string): boolean => Object.prototype.hasOwnProperty.call(o, k);
+  if (own(SCENARIO_METRICS, key)) return SCENARIO_METRICS[key];
   const match = /^(job|user)\.(.+)\.([^.]+)$/.exec(key);
   if (!match) return null;
-  const field = (match[1] === 'job' ? JOB_METRICS : USER_METRICS)[match[3]];
-  return field ? { label: `${match[2]} ${field.label}`, better: field.better, format: field.format } : null;
+  const fields = match[1] === 'job' ? JOB_METRICS : USER_METRICS;
+  if (!own(fields, match[3])) return null;
+  const field = fields[match[3]];
+  return { label: `${match[2]} ${field.label}`, better: field.better, format: field.format };
 }
 
 /**

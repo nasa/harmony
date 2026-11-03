@@ -29,6 +29,8 @@ export interface RunTask {
  */
 export function runChild(task: RunTask): Promise<void> {
   const simRoot = task.simRoot || SIM_ROOT;
+  // so a failed run can't leave an earlier run's results to be read as this one's
+  fs.rmSync(path.join(task.runDir, 'summary.json'), { force: true });
   const childArgs = [
     '-r', require.resolve('ts-node/register/transpile-only'), path.join(simRoot, 'src', 'cli.ts'),
     'run', task.file, '--policy', task.policy, '--out', task.runDir, '--quiet',

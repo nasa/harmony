@@ -156,6 +156,13 @@ async function compareCommand(args: Args): Promise<void> {
   }
   const outDir = path.resolve(args.options.out || path.join(SIM_ROOT, 'output'));
   const scenarios = args.files.map((file) => ({ file: path.resolve(file), scenario: scenarioWithOverrides(file, args) }));
+  const fileByName = new Map<string, string>();
+  for (const { file, scenario } of scenarios) {
+    if (fileByName.has(scenario.name)) {
+      throw new Error(`${file} and ${fileByName.get(scenario.name)} are both named ${scenario.name}, so they'd share an output directory`);
+    }
+    fileByName.set(scenario.name, file);
+  }
   const tasks: RunTask[] = scenarios.flatMap(({ file, scenario }) => policies.map((policy) => ({
     file, scenarioName: scenario.name, policy, runDir: path.join(outDir, scenario.name, policy),
     seed: args.options.seed, sets: args.sets,

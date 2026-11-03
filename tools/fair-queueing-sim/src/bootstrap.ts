@@ -17,23 +17,32 @@ export const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
 // Virtual time starts at a fixed instant so that runs are reproducible
 export const SIM_EPOCH_MS = Date.parse('2026-01-01T00:00:00Z');
 
+// The environment every run gets, mirroring the settings used by Harmony's own tests
+// (services/harmony/test/helpers/env.ts). These replace anything inherited from the shell.
+export const SIM_ENVIRONMENT: Record<string, string> = {
+  // NODE_ENV=test also stops Harmony from reading the developer's .env file
+  NODE_ENV: 'test',
+  DATABASE_TYPE: 'sqlite',
+  COOKIE_SECRET: 'foo',
+  OAUTH_CLIENT_ID: 'foo',
+  OAUTH_UID: 'foo',
+  OAUTH_PASSWORD: 'foo',
+  SHARED_SECRET_KEY: '_THIS_IS_MY_32_CHARS_SECRET_KEY_',
+};
+
 /**
- * Sets the environment Harmony's modules will read when they load. Mirrors the settings used by
- * Harmony's own tests (services/harmony/test/helpers/env.ts), plus any scenario overrides.
+ * Sets the environment Harmony's modules will read when they load: SIM_ENVIRONMENT plus any
+ * scenario overrides.
  *
  * @param scenario - the scenario being run
+ * @throws Error - if the scenario (or --set) tries to change NODE_ENV
  */
 export function configureEnvironment(scenario: ResolvedScenario): void {
-  Object.assign(process.env, {
-    // NODE_ENV=test also stops Harmony from reading the developer's .env file
-    NODE_ENV: 'test',
-    DATABASE_TYPE: 'sqlite',
-    COOKIE_SECRET: 'foo',
-    OAUTH_CLIENT_ID: 'foo',
-    OAUTH_UID: 'foo',
-    OAUTH_PASSWORD: 'foo',
-    SHARED_SECRET_KEY: '_THIS_IS_MY_32_CHARS_SECRET_KEY_',
-  }, scenario.env);
+  if (scenario.env.NODE_ENV !== undefined) {
+    throw new Error('NODE_ENV can\'t be set by a scenario or --set: the simulator needs NODE_ENV=test, ' +
+      'which also stops Harmony reading your .env file');
+  }
+  Object.assign(process.env, SIM_ENVIRONMENT, scenario.env);
 }
 
 /**
