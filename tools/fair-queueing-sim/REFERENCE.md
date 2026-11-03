@@ -43,7 +43,7 @@ infrastructure:                 # all optional; these are the defaults
   updaterBatchTime: 100ms       # virtual time one batch of work item updates takes
   podReceiveLatency: 50ms       # delay before a long-polling pod receives a newly queued item
   podPollInterval: 500ms        # service-runner's pause between asking Harmony for work
-  sampleInterval: 30s           # how often the system state is sampled for the charts/metrics
+  sampleInterval: 30s           # how often the system state is sampled for the charts/metrics (at least 1s, and at most 100,000 samples over maxDuration)
 
 services:
   - name: svc                   # how jobs refer to the service

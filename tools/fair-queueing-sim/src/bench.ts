@@ -239,6 +239,21 @@ function harmonyEnvKeys(): Set<string> {
 }
 
 /**
+ * The Harmony settings exported in the shell. Simulations run in child processes that inherit
+ * the environment, and Harmony reads its settings from the environment over its env-defaults,
+ * so these affect results too (except those every run replaces - see SIM_ENVIRONMENT).
+ *
+ * @param harmonyKeys - the variables Harmony reads
+ * @returns the inherited values, by variable
+ */
+export function inheritedHarmonyEnv(harmonyKeys: Set<string> = harmonyEnvKeys()): Record<string, string> {
+  return Object.fromEntries([...harmonyKeys]
+    .filter((k) => process.env[k] !== undefined && !(k in SIM_ENVIRONMENT))
+    .sort()
+    .map((k) => [k, process.env[k]]));
+}
+
+/**
  * The settings that can affect a policy's results: all of them except those only other
  * policies read (settings in another policy's catalog entry that Harmony itself doesn't read).
  * So trying a setting only a new policy reads doesn't stop the baseline's recorded results
@@ -682,12 +697,7 @@ export async function runBench(options: BenchOptions): Promise<void> {
   }
   const seeds = options.seeds ?? suite.seeds;
   const harmonyKeys = harmonyEnvKeys();
-  // Harmony reads its settings from the environment over its env-defaults, so variables exported
-  // in the shell count too (except those every run replaces)
-  const inherited = Object.fromEntries([...harmonyKeys]
-    .filter((k) => process.env[k] !== undefined && !(k in SIM_ENVIRONMENT))
-    .map((k) => [k, process.env[k]]));
-  const set = { ...inherited, ...suite.set, ...options.sets };
+  const set = { ...inheritedHarmonyEnv(harmonyKeys), ...suite.set, ...options.sets };
   if (options.record && (options.files.length || options.seeds || Object.keys(options.sets).length)) {
     throw new Error('--record saves results for the whole suite with its own seeds and settings, so it ' +
       "can't be combined with scenario files, --seeds or --set");

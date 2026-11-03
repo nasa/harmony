@@ -168,6 +168,13 @@ const UNITS_MS: Record<string, number> = { ms: 1, s: 1000, m: 60_000, h: 3_600_0
 // interval, from filling memory
 const MAX_GENERATED_JOBS = 10_000;
 
+// Sampling limits. Every sample queries the database and is kept in memory for the metrics, so
+// a run may take at most MAX_SAMPLES (the defaults, 30s over 7 days, take about 20,000). Pods
+// poll every 500ms and the charts are downsampled to a few hundred points, so sampling more
+// often than once a second adds nothing.
+const MIN_SAMPLE_INTERVAL_MS = 1000;
+const MAX_SAMPLES = 100_000;
+
 /**
  * Converts a duration to milliseconds.
  *
@@ -255,6 +262,22 @@ export function sampleDuration(spec: DurationSpec, random: Random): number {
     }
   }
   return Math.max(1, Math.round(ms));
+}
+
+/**
+ * Checks that a duration spec is valid, including every option of a mix (and of any mix inside
+ * it), not just the ones a particular draw would pick.
+ *
+ * @param spec - the duration spec
+ * @throws Error - if the spec, or any option in it, is not valid
+ */
+function validateDuration(spec: DurationSpec): void {
+  if (spec && typeof spec === 'object' && spec.dist === 'mix') {
+    if (!spec.options?.length) throw new Error(`A mix duration needs at least one option: ${JSON.stringify(spec)}`);
+    for (const option of spec.options) validateDuration(option?.duration);
+    return;
+  }
+  sampleDuration(spec, () => 0.5);
 }
 
 /**
@@ -348,6 +371,9 @@ export function resolveScenario(scenario: Scenario): ResolvedScenario {
     if (serviceNames.has(s.name)) throw new Error(`Duplicate service name ${s.name}`);
     // pods, queues and user_work rows are keyed by ID
     if (serviceIDs.has(s.id)) throw new Error(`Service ${s.name} has the same ID as another service: ${s.id}`);
+    if (!Number.isInteger(s.pods) || s.pods < 1) {
+      throw new Error(`Service ${s.name} needs a whole number of pods, at least 1, not ${JSON.stringify(s.pods)}`);
+    }
     serviceNames.add(s.name);
     serviceIDs.add(s.id);
   }
@@ -398,7 +424,7 @@ export function resolveScenario(scenario: Scenario): ResolvedScenario {
       stepServices.add(step.service);
       // validate the specs now rather than when a work item first needs one
       for (const spec of [step.duration, ...(step.phases || []).map((p) => p.duration)]) {
-        sampleDuration(spec, () => 0.5);
+        validateDuration(spec);
       }
     }
   }
@@ -409,8 +435,13 @@ export function resolveScenario(scenario: Scenario): ResolvedScenario {
   }
 
   const sampleIntervalMs = parseDuration(infra.sampleInterval ?? '30s');
-  if (!(sampleIntervalMs > 0)) {
-    throw new Error(`infrastructure.sampleInterval must be more than 0, not ${JSON.stringify(infra.sampleInterval)}`);
+  if (!(sampleIntervalMs >= MIN_SAMPLE_INTERVAL_MS)) {
+    throw new Error(`infrastructure.sampleInterval must be at least ${formatDuration(MIN_SAMPLE_INTERVAL_MS)}, ` +
+      `not ${JSON.stringify(infra.sampleInterval)}`);
+  }
+  if (maxDurationMs / sampleIntervalMs > MAX_SAMPLES) {
+    throw new Error(`A ${formatDuration(sampleIntervalMs)} sampleInterval over a ${formatDuration(maxDurationMs)} maxDuration ` +
+      `could take more than ${MAX_SAMPLES} samples - raise sampleInterval or lower maxDuration`);
   }
 
   for (const b of scenario.benchmarks || []) {

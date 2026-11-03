@@ -197,10 +197,25 @@ describe('scenario', function () {
         ['a benchmark with an invalid direction', { ...minimal(), benchmarks: [{ metric: 'fairness', better: 'up' as any }] }, /must be "lower" or "higher"/],
         ['no jobs', { ...minimal(), jobs: [] }, /at least one job/],
         ['duplicate service names', { ...minimal(), services: [{ name: 'svc', pods: 1 }, { name: 'svc', pods: 2 }] }, /Duplicate service name/],
+        ['a service with no pods', { ...minimal(), services: [{ name: 'svc', pods: 0 }] }, /at least 1, not 0/],
+        ['a service with a fractional pod count', { ...minimal(), services: [{ name: 'svc', pods: 1.5 }] }, /whole number of pods/],
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ['a service with no pod count', { ...minimal(), services: [{ name: 'svc' } as any] }, /whole number of pods/],
         ['duplicate service IDs', { ...minimal(), services: [{ name: 'svc', pods: 1 }, { name: 'other', id: 'harmonyservices/sim-svc:latest', pods: 1 }] }, /same ID/],
         ['a mix duration with no options', { ...minimal(), jobs: [{ name: 'j', user: 'a', granules: 1, steps: [{ service: 'svc', duration: { dist: 'mix', options: [] } }] }] }, /at least one option/],
+        ['an invalid mix option a draw of 0.5 wouldn\'t pick', { ...minimal(), jobs: [{ name: 'j', user: 'a', granules: 1, steps: [{
+          service: 'svc', duration: { dist: 'mix', options: [{ weight: 99, duration: '1m' }, { weight: 1, duration: 'ages' }] },
+        }] }] }, /Invalid duration "ages"/],
+        ['an invalid option in a nested mix', { ...minimal(), jobs: [{ name: 'j', user: 'a', granules: 1, steps: [{
+          service: 'svc', duration: '1m', phases: [{ fromItem: 5, duration: { dist: 'mix', options: [
+            { weight: 1, duration: '1m' },
+            { weight: 1, duration: { dist: 'mix', options: [{ weight: 1, duration: '2m' }, { weight: 1, duration: 'soon' }] } },
+          ] } }],
+        }] }] }, /Invalid duration "soon"/],
         ['an invalid phase duration', { ...minimal(), jobs: [{ name: 'j', user: 'a', granules: 1, steps: [{ service: 'svc', duration: '1m', phases: [{ fromItem: 2, duration: 'later' }] }] }] }, /Invalid duration/],
-        ['a sample interval of 0', { ...minimal(), infrastructure: { sampleInterval: 0 } }, /sampleInterval must be more than 0/],
+        ['a sample interval of 0', { ...minimal(), infrastructure: { sampleInterval: 0 } }, /sampleInterval must be at least 1\.0s/],
+        ['a sample interval under a second', { ...minimal(), infrastructure: { sampleInterval: '500ms' } }, /sampleInterval must be at least 1\.0s/],
+        ['too many samples for the run', { ...minimal(), maxDuration: '7d', infrastructure: { sampleInterval: '1s' } }, /more than 100000 samples/],
         ['a generator with no limit on its jobs', { ...minimal(), jobs: [], generators: [{ name: 'g', user: 'a', every: '1ms', job: { granules: 1, steps: step } }] }, /more than 10000 jobs/],
       ];
       for (const [what, scenario, error] of cases) {
