@@ -1,15 +1,15 @@
 {
   "policy": "slot-based",
   "code": {
-    "commit": "575ab2efe49e45fdb352f63d08af70278aba3a4f",
+    "commit": "2ea1b128773e13eeafdda9decda904042962ca9b",
     "branch": "harmony-2495",
     "dirty": false,
     "changedFiles": [],
     "changesHash": null,
-    "codeHash": "837c7e09587ed57c",
-    "node": "v26.5.0",
-    "platform": "darwin-arm64",
-    "recordedAt": "2026-11-03T20:02:53.293Z"
+    "codeHash": "0ee0c6f10d0d040f",
+    "node": "v24.21.0",
+    "platform": "linux-arm64",
+    "recordedAt": "2026-11-03T20:55:23.803Z"
   },
   "seeds": [101, 102, 103, 104, 105],
   "set": {},
