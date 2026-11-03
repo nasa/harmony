@@ -57,14 +57,14 @@ Ensure node is available and is the correct version, 22.x.y. (Or whatever is in 
 
 ```bash
 node --version
-v22.23.0
+v22.23.4
 ```
 
 Ensure npm is available and is version 10 or later.
 
 ```bash
 npm --version
-10.9.8
+10.9.9
 ```
 
 If either are not the correct versions and you are using NVM, install them and ensure your `PATH` is up-to-date by running:
@@ -76,7 +76,7 @@ nvm install && nvm use
 The output should include node 22 and npm 10.
 
 ```text
-Now using node v22.14.0 (npm v10.9.2)
+Now using node v22.23.4 (npm v10.9.9)
 ```
 
 Be sure to **verify the version on the final line** to make sure the NVM binary appears first in your `PATH`.
