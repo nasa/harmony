@@ -123,6 +123,8 @@ export async function simulate(options: SimulationOptions): Promise<RunResult> {
   const decisions: DecisionRecord[] = [];
   const samples: Sample[] = [];
   const endTimes = new Map<string, { endMs: number; status: string }>();
+  // how long each work item's latest attempt ran, as its pod reports it to Harmony
+  const serviceDurations = new Map<number, number>();
 
   const harness = new Harness({
     runDir: options.runDir,
@@ -140,10 +142,11 @@ export async function simulate(options: SimulationOptions): Promise<RunResult> {
         });
       },
     },
+    serviceDurationOf: (workItemID): number | undefined => serviceDurations.get(workItemID),
   });
   await harness.install();
   const policyEntry = await loadPolicy(options.policy);
-  harness.usePolicy(policyEntry?.policy);
+  await harness.usePolicy(policyEntry);
   const sampler: PolicySampler = policyEntry?.sampler;
 
   const workload = new Workload(scenario);
@@ -167,7 +170,7 @@ export async function simulate(options: SimulationOptions): Promise<RunResult> {
         receiveLatencyMs: infra.podReceiveLatencyMs,
         jobFor: (jobID): SubmittedJob => jobsByID.get(jobID),
         onRunStart: (run): void => { runs.push(run); },
-        onRunEnd: (): void => {},
+        onRunEnd: (run): void => { serviceDurations.set(run.workItemID, run.endMs - run.startMs); },
       });
       servicePods.push(pod);
       pods.push(pod);
