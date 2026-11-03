@@ -161,12 +161,12 @@ export function renderComparisonHtml(scenarios: ComparedRun[][], policies: strin
       `<li><span class="swatch" style="background: var(--s${i === MAX_SERIES - 1 && n === 'other' ? 'o' : i})"></span>${esc(n)}</li>`
     )).join('') + '</ul>');
 
-    for (const svc of first.services) {
+    for (const [vi, svc] of first.services.entries()) {
       parts.push(`<h3>${esc(svc.service)} <span class="muted">· ${svc.pods} pods · pods running each user's work</span></h3>`);
       parts.push(`<div class="multiples" style="--cols: ${runs.length}">`);
       const tables: string[] = [];
       for (const [ri, run] of runs.entries()) {
-        const id = `c${si}-${svc.service.replace(/[^a-z0-9]/gi, '')}-${ri}`;
+        const id = `c${si}-${vi}-${ri}`;
         const { t, values } = busySeries(run.samples, svc.service, legend.names.length, legend.indexOf);
         const ds = downsample(t, values);
         charts.push({

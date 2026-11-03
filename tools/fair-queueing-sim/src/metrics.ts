@@ -106,7 +106,7 @@ function percentile(values: number[], p: number): number | null {
  * @returns each user's fair share
  */
 export function maxMinFairShares(demands: Record<string, number>, capacity: number): Record<string, number> {
-  const shares: Record<string, number> = {};
+  const shares: Record<string, number> = Object.create(null);
   let remaining = capacity;
   let users = Object.keys(demands).filter((u) => demands[u] > 0);
   while (users.length > 0 && remaining > 1e-9) {
@@ -134,7 +134,8 @@ export function maxMinFairShares(demands: Record<string, number>, capacity: numb
  * @returns the demand per user, for users with any demand
  */
 function sampleDemands(sample: Sample['services'][number]): Record<string, number> {
-  const demands: Record<string, number> = {};
+  // no prototype, so usernames such as "constructor" are ordinary keys
+  const demands: Record<string, number> = Object.create(null);
   for (const [u, n] of Object.entries(sample.readyByUser)) demands[u] = (demands[u] || 0) + n;
   for (const [u, n] of Object.entries(sample.runningByUser)) demands[u] = (demands[u] || 0) + n;
   return demands;
@@ -213,8 +214,8 @@ export function summarize(result: RunResult): Summary {
   });
 
   // pod time each user had, and was entitled to, while contending with other users
-  const received: Record<string, number> = {};
-  const entitled: Record<string, number> = {};
+  const received: Record<string, number> = Object.create(null);
+  const entitled: Record<string, number> = Object.create(null);
   for (let i = 0; i < result.samples.length - 1; i++) {
     const dt = result.samples[i + 1].t - result.samples[i].t;
     for (const s of result.samples[i].services) {

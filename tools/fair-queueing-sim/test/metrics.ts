@@ -79,6 +79,10 @@ describe('metrics', function () {
     it('leaves out users with no demand', function () {
       expect(maxMinFairShares({ a: 0, b: 3 }, 2)).to.deep.equal({ b: 2 });
     });
+
+    it('treats usernames that are also object property names as ordinary users', function () {
+      expect({ ...maxMinFairShares({ constructor: 5, toString: 5 }, 4) }).to.deep.equal({ constructor: 2, toString: 2 });
+    });
   });
 
   describe('summarize', function () {

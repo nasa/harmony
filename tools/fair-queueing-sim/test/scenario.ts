@@ -1,4 +1,5 @@
 import * as fs from 'fs';
+import * as os from 'os';
 import * as path from 'path';
 
 import { expect } from 'chai';
@@ -194,6 +195,13 @@ describe('scenario', function () {
         ['a benchmark without a metric', { ...minimal(), benchmarks: [{ metric: '' }] }, /needs a metric/],
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ['a benchmark with an invalid direction', { ...minimal(), benchmarks: [{ metric: 'fairness', better: 'up' as any }] }, /must be "lower" or "higher"/],
+        ['no jobs', { ...minimal(), jobs: [] }, /at least one job/],
+        ['duplicate service names', { ...minimal(), services: [{ name: 'svc', pods: 1 }, { name: 'svc', pods: 2 }] }, /Duplicate service name/],
+        ['duplicate service IDs', { ...minimal(), services: [{ name: 'svc', pods: 1 }, { name: 'other', id: 'harmonyservices/sim-svc:latest', pods: 1 }] }, /same ID/],
+        ['a mix duration with no options', { ...minimal(), jobs: [{ name: 'j', user: 'a', granules: 1, steps: [{ service: 'svc', duration: { dist: 'mix', options: [] } }] }] }, /at least one option/],
+        ['an invalid phase duration', { ...minimal(), jobs: [{ name: 'j', user: 'a', granules: 1, steps: [{ service: 'svc', duration: '1m', phases: [{ fromItem: 2, duration: 'later' }] }] }] }, /Invalid duration/],
+        ['a sample interval of 0', { ...minimal(), infrastructure: { sampleInterval: 0 } }, /sampleInterval must be more than 0/],
+        ['a generator with no limit on its jobs', { ...minimal(), jobs: [], generators: [{ name: 'g', user: 'a', every: '1ms', job: { granules: 1, steps: step } }] }, /more than 10000 jobs/],
       ];
       for (const [what, scenario, error] of cases) {
         it(`with ${what}`, function () {
@@ -218,6 +226,16 @@ describe('scenario', function () {
 
     it('uses a given seed instead of the scenario\'s own', function () {
       expect(loadScenario(path.join(SCENARIOS_DIR, 'smoke.yml'), 101).seed).to.equal(101);
+    });
+
+    it('reports an empty file as an invalid scenario, even with a seed', function () {
+      const empty = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'fq-sim-scenario-')), 'empty.yml');
+      fs.writeFileSync(empty, '');
+      try {
+        expect(() => loadScenario(empty, 101)).to.throw(/must have a name/);
+      } finally {
+        fs.rmSync(path.dirname(empty), { recursive: true, force: true });
+      }
     });
   });
 });

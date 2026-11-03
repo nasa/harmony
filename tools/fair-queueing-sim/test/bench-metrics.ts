@@ -47,6 +47,13 @@ describe('bench-metrics', function () {
       expect(metricKind('job.bob-sync.colour')).to.be.null;
       expect(metricKind('user.judy.makespan')).to.be.null;
     });
+
+    it('doesn\'t treat inherited object properties as metrics', function () {
+      expect(metricKind('constructor')).to.be.null;
+      expect(metricKind('toString')).to.be.null;
+      expect(metricKind('job.bob-sync.constructor')).to.be.null;
+      expect(metricKind('user.judy.hasOwnProperty')).to.be.null;
+    });
   });
 
   describe('extractMetrics', function () {

@@ -6,7 +6,7 @@ import * as yaml from 'js-yaml';
 
 import { RunTask, runTasks, SIM_ROOT } from './batch';
 import { extractMetrics, formatMetric, mean, metricKeysHelp, MetricKind, metricKind } from './bench-metrics';
-import { REPO_ROOT } from './bootstrap';
+import { REPO_ROOT, SIM_ENVIRONMENT } from './bootstrap';
 import type { Summary } from './metrics';
 import { POLICY_CATALOG, POLICY_NAMES, resolvedSettings } from './policies/catalog';
 import { describeCode, GitState, gitState, resultCodeHash } from './provenance';
@@ -681,7 +681,13 @@ export async function runBench(options: BenchOptions): Promise<void> {
     if (!POLICY_NAMES.includes(policy)) throw new Error(`Unknown policy "${policy}" - available policies: ${POLICY_NAMES.join(', ')}`);
   }
   const seeds = options.seeds ?? suite.seeds;
-  const set = { ...suite.set, ...options.sets };
+  const harmonyKeys = harmonyEnvKeys();
+  // Harmony reads its settings from the environment over its env-defaults, so variables exported
+  // in the shell count too (except those every run replaces)
+  const inherited = Object.fromEntries([...harmonyKeys]
+    .filter((k) => process.env[k] !== undefined && !(k in SIM_ENVIRONMENT))
+    .map((k) => [k, process.env[k]]));
+  const set = { ...inherited, ...suite.set, ...options.sets };
   if (options.record && (options.files.length || options.seeds || Object.keys(options.sets).length)) {
     throw new Error('--record saves results for the whole suite with its own seeds and settings, so it ' +
       "can't be combined with scenario files, --seeds or --set");
@@ -691,19 +697,26 @@ export async function runBench(options: BenchOptions): Promise<void> {
   }
 
   const files = options.files.length ? options.files.map((f) => path.resolve(f)) : suite.scenarios;
+  if (files.length === 0) throw new Error(`No scenario files match ${path.relative(process.cwd(), suite.file)}'s scenarios`);
   const scenarios: BenchScenario[] = files.map((file) => ({ file, scenario: loadScenario(file), hash: scenarioHash(file) }));
   const names = new Set<string>();
   for (const { scenario } of scenarios) {
     if (names.has(scenario.name)) throw new Error(`Two scenarios are named ${scenario.name}`);
     names.add(scenario.name);
+    const jobs = new Set(scenario.jobs.map((j) => j.name));
+    const users = new Set(scenario.jobs.map((j) => j.user));
     for (const spec of scenario.benchmarks) {
       if (!metricKind(spec.metric)) {
         throw new Error(`${scenario.name}: unknown benchmark metric "${spec.metric}" - use ${metricKeysHelp()}`);
       }
+      const [kind, ...rest] = spec.metric.split('.');
+      const name = rest.slice(0, -1).join('.');
+      if ((kind === 'job' && !jobs.has(name)) || (kind === 'user' && !users.has(name))) {
+        throw new Error(`${scenario.name}: benchmark metric "${spec.metric}" names a ${kind} the scenario doesn't have`);
+      }
     }
   }
 
-  const harmonyKeys = harmonyEnvKeys();
   const states: Record<string, PolicyState> = Object.fromEntries([...new Set([REFERENCE_POLICY, ...policies])]
     .map((p) => [p, policyState(p, set, harmonyKeys)]));
 

@@ -163,6 +163,11 @@ export interface ResolvedScenario {
 
 const UNITS_MS: Record<string, number> = { ms: 1, s: 1000, m: 60_000, h: 3_600_000, d: 86_400_000 };
 
+// the most jobs one generator may make: far more than a simulation can run in reasonable time
+// (mixed-workload.yml makes 155), but stops a generator with no count or until, and a short
+// interval, from filling memory
+const MAX_GENERATED_JOBS = 10_000;
+
 /**
  * Converts a duration to milliseconds.
  *
@@ -235,6 +240,7 @@ export function sampleDuration(spec: DurationSpec, random: Random): number {
         ms = parseDuration(spec.median) * Math.exp(spec.sigma * standardNormal(random));
         break;
       case 'mix': {
+        if (!spec.options?.length) throw new Error(`A mix duration needs at least one option: ${JSON.stringify(spec)}`);
         const total = spec.options.reduce((sum, o) => sum + o.weight, 0);
         let pick = random() * total;
         const option = spec.options.find((o) => {
@@ -297,6 +303,9 @@ function expandGenerator(generator: GeneratorSpec, seed: number, maxDurationMs: 
   const jobs: ResolvedJob[] = [];
   let t = generator.start === undefined ? 0 : parseDuration(generator.start);
   while (jobs.length < count && t < untilMs) {
+    if (jobs.length >= MAX_GENERATED_JOBS) {
+      throw new Error(`Generator ${generator.name} makes more than ${MAX_GENERATED_JOBS} jobs - give it a count or an until`);
+    }
     jobs.push({
       name: `${generator.name}-${jobs.length + 1}`,
       user: generator.user,
@@ -333,7 +342,15 @@ export function resolveScenario(scenario: Scenario): ResolvedScenario {
     id: s.id || `harmonyservices/sim-${s.name}:latest`,
     pods: s.pods,
   }));
-  const serviceNames = new Set(services.map((s) => s.name));
+  const serviceNames = new Set<string>();
+  const serviceIDs = new Set<string>();
+  for (const s of services) {
+    if (serviceNames.has(s.name)) throw new Error(`Duplicate service name ${s.name}`);
+    // pods, queues and user_work rows are keyed by ID
+    if (serviceIDs.has(s.id)) throw new Error(`Service ${s.name} has the same ID as another service: ${s.id}`);
+    serviceNames.add(s.name);
+    serviceIDs.add(s.id);
+  }
 
   const explicitJobs: ResolvedJob[] = (scenario.jobs || []).map((j) => ({
     name: j.name,
@@ -350,6 +367,9 @@ export function resolveScenario(scenario: Scenario): ResolvedScenario {
     .map((job, index) => ({ job, index }))
     .sort((a, b) => a.job.submitAtMs - b.job.submitAtMs || a.index - b.index)
     .map(({ job }) => job);
+  if (jobs.length === 0) {
+    throw new Error('Scenario must have at least one job (from jobs or generators)');
+  }
 
   const names = new Set<string>();
   for (const job of jobs) {
@@ -376,13 +396,21 @@ export function resolveScenario(scenario: Scenario): ResolvedScenario {
         throw new Error(`Job ${job.name} uses service ${step.service} more than once`);
       }
       stepServices.add(step.service);
-      sampleDuration(step.duration, () => 0.5); // validates the spec
+      // validate the specs now rather than when a work item first needs one
+      for (const spec of [step.duration, ...(step.phases || []).map((p) => p.duration)]) {
+        sampleDuration(spec, () => 0.5);
+      }
     }
   }
 
   const env: Record<string, string> = {};
   for (const [k, v] of Object.entries(scenario.env || {})) {
     env[k] = String(v);
+  }
+
+  const sampleIntervalMs = parseDuration(infra.sampleInterval ?? '30s');
+  if (!(sampleIntervalMs > 0)) {
+    throw new Error(`infrastructure.sampleInterval must be more than 0, not ${JSON.stringify(infra.sampleInterval)}`);
   }
 
   for (const b of scenario.benchmarks || []) {
@@ -412,7 +440,7 @@ export function resolveScenario(scenario: Scenario): ResolvedScenario {
       updaterBatchTimeMs: parseDuration(infra.updaterBatchTime ?? '100ms'),
       podReceiveLatencyMs: parseDuration(infra.podReceiveLatency ?? '50ms'),
       podPollIntervalMs: parseDuration(infra.podPollInterval ?? '500ms'),
-      sampleIntervalMs: parseDuration(infra.sampleInterval ?? '30s'),
+      sampleIntervalMs,
     },
     services,
     jobs,
@@ -428,6 +456,6 @@ export function resolveScenario(scenario: Scenario): ResolvedScenario {
  */
 export function loadScenario(file: string, seed?: number): ResolvedScenario {
   const parsed = yaml.load(fs.readFileSync(file, 'utf8')) as Scenario;
-  if (seed !== undefined) parsed.seed = seed;
+  if (seed !== undefined && parsed && typeof parsed === 'object') parsed.seed = seed;
   return resolveScenario(parsed);
 }
