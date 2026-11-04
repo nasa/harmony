@@ -83,10 +83,11 @@ export const POLICY_CATALOG: Record<string, PolicyInfo> = {
     settings: FAST_LANE_SETTINGS,
   },
   'adaptive-fast-lane': {
-    description: 'duration-based, with the same reserve, plus seven fixes: a limit on running work for ' +
+    description: 'duration-based, with the same reserve, plus eight fixes: a limit on running work for ' +
       'unmeasured jobs, a moving average of recent durations, a service-level estimate for unmeasured work, ' +
       'per-user batch splitting, pod-reported durations, slow work held to its fair share while fast work waits, ' +
-      'and unmeasured work treated as slow once a work item has been running longer than the threshold.',
+      'unmeasured work treated as slow (keeping its limit) once a work item has been running longer than the threshold, ' +
+      'and sync requests first, never held back by fair share.',
     designNotes: [FAST_LANE_DESIGN_NOTE],
     settings: [
       ...FAST_LANE_SETTINGS,
@@ -142,6 +143,22 @@ export const POLICY_CATALOG: Record<string, PolicyInfo> = {
         default: 'true',
         description: 'fix 6 holds every user to their fair share while another user below theirs has work ready, not just slow users',
       },
+      {
+        env: 'ADAPTIVE_FAST_LANE_RUNNING_EVIDENCE_KEEPS_LIMIT',
+        default: 'true',
+        description: "fix 7: unmeasured work it shows is slow keeps fix 1's limits until it's measured " +
+          '(false = it moves from them to the larger slow work capacity)',
+      },
+      {
+        env: 'ADAPTIVE_FAST_LANE_SYNC_EXEMPT',
+        default: 'true',
+        description: "fix 8: fix 6 never holds back a sync request (it still counts towards its user's share)",
+      },
+      {
+        env: 'ADAPTIVE_FAST_LANE_SYNC_FIRST',
+        default: 'true',
+        description: 'fix 8: each scheduling batch goes to sync requests first, before it is split between users',
+      },
     ],
     variants: [
       { name: 'no-unmeasured-limit', description: 'fix 1 (unmeasured work limit) off', set: { ADAPTIVE_FAST_LANE_UNMEASURED_LIMIT: '0' } },
@@ -153,6 +170,9 @@ export const POLICY_CATALOG: Record<string, PolicyInfo> = {
       { name: 'no-slow-fair-share', description: 'fix 6 (slow work held to fair share) off', set: { ADAPTIVE_FAST_LANE_SLOW_FAIR_SHARE: 'false' } },
       { name: 'no-fair-share-all', description: 'fix 6 for slow users only', set: { ADAPTIVE_FAST_LANE_FAIR_SHARE_ALL: 'false' } },
       { name: 'no-running-evidence', description: 'fix 7 (long-running work is slow) off', set: { ADAPTIVE_FAST_LANE_RUNNING_EVIDENCE: 'false' } },
+      { name: 'no-keeps-limit', description: "fix 7 without keeping fix 1's limits", set: { ADAPTIVE_FAST_LANE_RUNNING_EVIDENCE_KEEPS_LIMIT: 'false' } },
+      { name: 'no-sync-exempt', description: 'fix 8 without exempting sync requests from fair share', set: { ADAPTIVE_FAST_LANE_SYNC_EXEMPT: 'false' } },
+      { name: 'no-sync-first', description: 'fix 8 without giving sync requests the batch first', set: { ADAPTIVE_FAST_LANE_SYNC_FIRST: 'false' } },
     ],
     equivalentTo: {
       policy: 'duration-based',
@@ -164,8 +184,11 @@ export const POLICY_CATALOG: Record<string, PolicyInfo> = {
         ADAPTIVE_FAST_LANE_USE_SERVICE_DURATION: 'false',
         ADAPTIVE_FAST_LANE_SLOW_FAIR_SHARE: 'false',
         ADAPTIVE_FAST_LANE_RUNNING_EVIDENCE: 'false',
+        ADAPTIVE_FAST_LANE_RUNNING_EVIDENCE_KEEPS_LIMIT: 'false',
+        ADAPTIVE_FAST_LANE_SYNC_EXEMPT: 'false',
+        ADAPTIVE_FAST_LANE_SYNC_FIRST: 'false',
       },
-      description: 'with all seven fixes switched off, adaptive-fast-lane must make exactly the same decisions as Harmony\'s duration-based',
+      description: 'with all eight fixes switched off, adaptive-fast-lane must make exactly the same decisions as Harmony\'s duration-based',
     },
   },
 };

@@ -38,11 +38,22 @@
 //    to the capacity as before. ADAPTIVE_FAST_LANE_FAIR_SHARE_ALL extends this to every user.
 // 7. Long-running work is slow before it finishes. A work item that has been running longer
 //    than the threshold will take longer than the threshold, so its (job, service) is treated
-//    as slow from then on - without waiting for a work item to complete. This caps the cost
-//    of fix 1's limit at the threshold rather than the first work item's duration. It only
-//    applies to unmeasured work, and only ever shows that work is slow. The current attempt's
-//    start time is used, so queue time and failed attempts don't count; a stuck work item looks
-//    slow until the work-failer times it out.
+//    as slow from then on - without waiting for a work item to complete: it counts against the
+//    slow work capacity, and fix 6 treats it as slow. It only applies to unmeasured work, and
+//    only ever shows that work is slow. The current attempt's start time is used, so queue time
+//    and failed attempts don't count; a stuck work item looks slow until the work-failer times
+//    it out. Such work also keeps fix 1's limits until it's measured
+//    (ADAPTIVE_FAST_LANE_RUNNING_EVIDENCE_KEEPS_LIMIT), so being noticed only ever tightens what
+//    it may run. Otherwise it would move from fix 1's limits to the larger slow work capacity:
+//    in story 11 that makes the fast job a third slower, though the three users then share the
+//    service slightly more evenly.
+// 8. Sync requests go first. Someone is waiting on a sync request, and production limits them
+//    to one granule (MAX_SYNCHRONOUS_GRANULES), so they can't crowd out async work. Fix 6
+//    never holds a sync request back (ADAPTIVE_FAST_LANE_SYNC_EXEMPT) - with FAIR_SHARE_ALL, a
+//    sync request would otherwise wait behind its own user's async work once that fills the
+//    user's share - though it still counts towards the share. And each batch goes to sync
+//    requests before it's split between users (ADAPTIVE_FAST_LANE_SYNC_FIRST): when a pod frees
+//    up the batch may have room for only one work item, which the split could give anyone.
 //
 // Each fix can be switched off (see settings() below); with all of them off the policy makes
 // exactly the same decisions as duration-based, which `findings` checks (the catalog's
@@ -83,9 +94,15 @@ interface Settings {
   // true = an unmeasured (job, service) is also slow while one of its work items has been running
   // longer than the threshold
   runningEvidence: boolean;
+  // true = unmeasured work that fix 7 shows is slow also keeps fix 1's limits until it's measured
+  runningEvidenceKeepsLimit: boolean;
   // true = fix 6 holds every user to their fair share while another user below theirs has work
   // ready, not just users with slow work
   fairShareAll: boolean;
+  // true = fix 6 never holds back a sync request (it still counts towards its user's share)
+  syncExempt: boolean;
+  // true = each batch goes to sync requests first, before it's split between users
+  syncFirst: boolean;
 }
 
 /**
@@ -118,7 +135,10 @@ function settings(): Settings {
     useServiceDuration: envBoolean('ADAPTIVE_FAST_LANE_USE_SERVICE_DURATION', true),
     slowFairShare: envBoolean('ADAPTIVE_FAST_LANE_SLOW_FAIR_SHARE', true),
     runningEvidence: envBoolean('ADAPTIVE_FAST_LANE_RUNNING_EVIDENCE', true),
+    runningEvidenceKeepsLimit: envBoolean('ADAPTIVE_FAST_LANE_RUNNING_EVIDENCE_KEEPS_LIMIT', true),
     fairShareAll: envBoolean('ADAPTIVE_FAST_LANE_FAIR_SHARE_ALL', true),
+    syncExempt: envBoolean('ADAPTIVE_FAST_LANE_SYNC_EXEMPT', true),
+    syncFirst: envBoolean('ADAPTIVE_FAST_LANE_SYNC_FIRST', true),
   };
 }
 
@@ -220,6 +240,8 @@ interface SlowWorkCounts {
   slowReadyCount: number;
   // running work items of unmeasured (job, service)s that aren't slow
   unmeasuredRunningCount: number;
+  // running work items of unmeasured (job, service)s that are slow (fix 7)
+  unmeasuredSlowRunningCount: number;
 }
 
 /**
@@ -238,13 +260,15 @@ async function getSlowWorkCounts(
     SELECT
       SUM(CASE WHEN slow = 1 THEN running_count ELSE 0 END) AS slow_running,
       COUNT(CASE WHEN slow = 1 AND ready_count > 0 THEN 1 END) AS slow_ready,
-      SUM(CASE WHEN slow = 0 AND duration IS NULL THEN running_count ELSE 0 END) AS unmeasured_running
+      SUM(CASE WHEN slow = 0 AND duration IS NULL THEN running_count ELSE 0 END) AS unmeasured_running,
+      SUM(CASE WHEN slow = 1 AND duration IS NULL THEN running_count ELSE 0 END) AS unmeasured_slow_running
     FROM Classified
   `, bindings));
   return {
     slowRunningCount: Number(row?.slow_running) || 0,
     slowReadyCount: Number(row?.slow_ready) || 0,
     unmeasuredRunningCount: Number(row?.unmeasured_running) || 0,
+    unmeasuredSlowRunningCount: Number(row?.unmeasured_slow_running) || 0,
   };
 }
 
@@ -357,6 +381,7 @@ interface NextJob {
   jobId: string;
   username: string;
   isSlow: boolean;
+  isAsync: boolean;
   // running work items if the (job, service) hasn't been measured yet, otherwise null
   unmeasuredRunning: number | null;
 }
@@ -365,6 +390,8 @@ interface NextJobs {
   jobs: NextJob[];
   slowRunningCount: number;
   unmeasuredRunningCount: number;
+  // running unmeasured work that fix 7 shows is slow, if it keeps fix 1's limits (fix 10), else 0
+  unmeasuredSlowRunningCount: number;
   // as getNextJobIdsDurationBased returns: 0 unless slow work may be handed out in this batch
   availableSlowWorkSlots: number;
 }
@@ -398,6 +425,8 @@ async function getNextJobs(
     counts = await getSlowWorkCounts(tx, bindings, s);
   }
   const { slowRunningCount, unmeasuredRunningCount } = counts;
+  // fix 10: only counted against fix 1's allowance when such work keeps fix 1's limits
+  const unmeasuredSlowRunningCount = s.runningEvidenceKeepsLimit ? counts.unmeasuredSlowRunningCount : 0;
   const hasSlowWorkCapacity = slowRunningCount < slowWorkCapacity;
   const availableSlowWorkSlots = mayScheduleSlowWork ? Math.max(0, slowWorkCapacity - slowRunningCount) : 0;
   // sqlite (test-only) doesn't support SKIP LOCKED; it's only needed for real concurrent
@@ -415,18 +444,21 @@ async function getNextJobs(
         ${usernameColumn('uw')} AS username,
         uw.is_async,
         uw.slow AS is_slow,
-        CASE WHEN uw.duration IS NULL AND uw.slow = 0 THEN uw.running_count ELSE NULL END AS unmeasured_running
+        CASE WHEN uw.duration IS NULL AND (uw.slow = 0 OR :keepsLimit = 1) THEN uw.running_count ELSE NULL END AS unmeasured_running
       FROM Classified uw
       WHERE uw.ready_count > 0
         AND (
-          (uw.slow = 1 AND :hasCapacity = 1)
+          (uw.slow = 1 AND :hasCapacity = 1
+            AND (:keepsLimit = 0 OR uw.duration IS NOT NULL OR :unmeasuredLimit <= 0
+              OR uw.running_count < :unmeasuredLimit
+              OR :unmeasuredRunning + :unmeasuredSlowRunning < :unmeasuredAllowance))
           OR (uw.slow = 0 AND uw.duration IS NOT NULL)
           OR (uw.slow = 0 AND uw.duration IS NULL AND :unmeasuredLimit <= 0
             AND (:hasCapacity = 1 OR (uw.running_count = 0 AND uw.completed_count = 0)))
           OR (uw.slow = 0 AND uw.duration IS NULL AND :unmeasuredLimit > 0
             AND uw.running_count < :unmeasuredLimit)
           OR (uw.slow = 0 AND uw.duration IS NULL AND :unmeasuredLimit > 0
-            AND :unmeasuredRunning < :unmeasuredAllowance
+            AND :unmeasuredRunning + :unmeasuredSlowRunning < :unmeasuredAllowance
             AND :slowRunning + :unmeasuredRunning < :capacity)
         )
     ),
@@ -453,6 +485,7 @@ async function getNextJobs(
         e.last_worked,
         e.username,
         e.is_slow,
+        e.is_async,
         e.unmeasured_running,
         ROW_NUMBER() OVER (
           PARTITION BY e.username
@@ -465,6 +498,7 @@ async function getNextJobs(
         R.job_id,
         R.username,
         R.is_slow,
+        R.is_async,
         R.unmeasured_running,
         ROW_NUMBER() OVER (
           ORDER BY R.user_row_num ASC, ur.expected_runtime ASC, ur.most_recent_worked ASC, R.last_worked ASC
@@ -474,7 +508,7 @@ async function getNextJobs(
       ORDER BY overall_row_num
       LIMIT :batchSize
     )
-    SELECT uw.job_id, i.username, i.is_slow, i.unmeasured_running
+    SELECT uw.job_id, i.username, i.is_slow, i.is_async, i.unmeasured_running
     FROM user_work uw
     JOIN Interleaved i
       ON i.job_id = uw.job_id
@@ -489,6 +523,8 @@ async function getNextJobs(
     capacity: slowWorkCapacity,
     slowRunning: slowRunningCount,
     unmeasuredRunning: unmeasuredRunningCount,
+    unmeasuredSlowRunning: unmeasuredSlowRunningCount,
+    keepsLimit: s.runningEvidenceKeepsLimit ? 1 : 0,
     unmeasuredLimit: s.unmeasuredLimit,
     unmeasuredAllowance: unmeasuredAllowance(s, slowWorkCapacity),
     serviceEstimate: s.serviceEstimate ? 1 : 0,
@@ -506,11 +542,14 @@ async function getNextJobs(
       jobId: r.job_id,
       username: r.username,
       isSlow: Number(r.is_slow) === 1,
+      // a boolean on postgres, 0/1 on sqlite
+      isAsync: r.is_async === true || Number(r.is_async) === 1,
       unmeasuredRunning: r.unmeasured_running === null || r.unmeasured_running === undefined
         ? null : Number(r.unmeasured_running),
     })),
     slowRunningCount,
     unmeasuredRunningCount,
+    unmeasuredSlowRunningCount,
     availableSlowWorkSlots,
   };
 }
@@ -522,14 +561,14 @@ export const adaptiveFastLanePolicy: FairQueueingPolicy = {
     const s = settings();
     const podCount = context.servicePodCount;
     const slowWorkCapacity = getSlowWorkCapacity(podCount, context.fastLaneReserveFraction);
-    const { jobs, slowRunningCount, unmeasuredRunningCount, availableSlowWorkSlots } = await getNextJobs(
-      tx, serviceID, batchSize, context, slowWorkCapacity, s);
+    const { jobs, slowRunningCount, unmeasuredRunningCount, unmeasuredSlowRunningCount, availableSlowWorkSlots } =
+      await getNextJobs(tx, serviceID, batchSize, context, slowWorkCapacity, s);
     let remainingSlowWorkSlots = availableSlowWorkSlots;
     // unmeasured work beyond the unmeasured limit might turn out to be slow, so it shares the
     // slow work capacity with the work known to be slow
     let remainingUnmeasuredSlots = Math.max(0, slowWorkCapacity - slowRunningCount - unmeasuredRunningCount);
     // what's left of the allowance for all unmeasured work together
-    let remainingSharedAllowance = unmeasuredAllowance(s, slowWorkCapacity) - unmeasuredRunningCount;
+    let remainingSharedAllowance = unmeasuredAllowance(s, slowWorkCapacity) - unmeasuredRunningCount - unmeasuredSlowRunningCount;
     const slowLimits = s.slowFairShare && podCount > 0 && (s.fairShareAll || jobs.some((j) => j.isSlow))
       ? await slowWorkLimits(tx, classificationBindings(serviceID, context.slowWorkThresholdMs, s), podCount, s)
       : Object.create(null);
@@ -539,7 +578,8 @@ export const adaptiveFastLanePolicy: FairQueueingPolicy = {
     const take = async (job: NextJob, workSize: number, ignoreShare = false): Promise<number> => {
       let size = workSize;
       if (job.isSlow) size = Math.min(size, remainingSlowWorkSlots);
-      if (!ignoreShare && (job.isSlow || s.fairShareAll)) size = Math.min(size, slowLimits[job.username] ?? Infinity);
+      const shareApplies = (job.isSlow || s.fairShareAll) && !(s.syncExempt && !job.isAsync);
+      if (!ignoreShare && shareApplies) size = Math.min(size, slowLimits[job.username] ?? Infinity);
       if (s.unmeasuredLimit > 0 && job.unmeasuredRunning !== null) {
         const limit = s.unmeasuredLimit - job.unmeasuredRunning;
         // beyond the limit, what's left of the shared allowance while the slow work capacity has room
@@ -558,10 +598,18 @@ export const adaptiveFastLanePolicy: FairQueueingPolicy = {
     };
 
     let remainingBatchSize = batchSize;
+    // fix 8: sync requests first, so a batch with room for one work item goes to the sync request
+    let splitJobs = jobs;
+    if (s.syncFirst) {
+      for (const job of jobs) {
+        if (!job.isAsync && remainingBatchSize > 0) remainingBatchSize -= await take(job, remainingBatchSize);
+      }
+      splitJobs = jobs.filter((j) => j.isAsync);
+    }
     if (!s.splitByUser) {
       // split evenly across jobs, as duration-based does
-      let remainingNumOfJobs = jobs.length;
-      for (const job of shuffleArray(jobs)) {
+      let remainingNumOfJobs = splitJobs.length;
+      for (const job of shuffleArray(splitJobs)) {
         const workSize = remainingNumOfJobs > 0 ? Math.ceil(remainingBatchSize / remainingNumOfJobs) : 1;
         remainingBatchSize -= await take(job, workSize);
         remainingNumOfJobs -= 1;
@@ -570,10 +618,10 @@ export const adaptiveFastLanePolicy: FairQueueingPolicy = {
       // split evenly across users, then across each user's jobs in priority order. Users are
       // shuffled for the same reason duration-based shuffles jobs: whoever comes last can use
       // what earlier users couldn't, so that shouldn't always be the same user.
-      const users = shuffleArray([...new Set(jobs.map((j) => j.username))]);
+      const users = shuffleArray([...new Set(splitJobs.map((j) => j.username))]);
       let remainingNumOfUsers = users.length;
       for (const user of users) {
-        const userJobs = jobs.filter((j) => j.username === user);
+        const userJobs = splitJobs.filter((j) => j.username === user);
         let userBudget = Math.ceil(remainingBatchSize / remainingNumOfUsers);
         let remainingUserJobs = userJobs.length;
         for (const job of userJobs) {
