@@ -281,7 +281,8 @@ settings. The simulator replaces that choice with the policy being simulated. To
 | `scenarios/stories/12-occasional-long-items.yml` | a job that's fast on average but has occasional long work items, alongside a slow job |
 | `scenarios/mixed-workload.yml` | six hours of random arrivals from five users across a two step chain (several minutes) |
 
-The stories are the benchmark suite. To make a scenario, copy one; the format is in
+The stories are the benchmark suite. [SCENARIOS.md](SCENARIOS.md) sets out what each one models, its
+goal and how the policies do, for review. To make a scenario, copy one; the format is in
 [REFERENCE.md](REFERENCE.md#scenario-format).
 
 | Policy | What it does |
@@ -295,4 +296,5 @@ The stories are the benchmark suite. To make a scenario, copy one; the format is
 Harmony has seen slow jobs take every pod and leave arriving fast jobs unworked. Idle pods when
 only slow work exists (story 07) are the cost of that guarantee, not a bug to fix.
 
-Policy settings and fuller descriptions are in [REFERENCE.md](REFERENCE.md#policies).
+Policy settings and fuller descriptions are in [REFERENCE.md](REFERENCE.md#policies), and the reasoning
+and evidence behind `adaptive-fast-lane`'s design in [POLICY-DESIGN.md](POLICY-DESIGN.md).
