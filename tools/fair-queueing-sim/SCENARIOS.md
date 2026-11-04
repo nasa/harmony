@@ -58,6 +58,12 @@ granule, the production limit (`MAX_SYNCHRONOUS_GRANULES=1`), except in story 10
 - **contended fairness** - how evenly the competing users got their shares (1.0 = exactly even).
 - **utilization** - the share of pod time spent running work.
 
+**Job and user names in the results.** Each job is named after its user and what it's like:
+`nora-mixed` is Nora's job with mixed work item durations, `bob-sync` Bob's sync request,
+`alice-big` Alice's big async job. A metric labeled with a job name is that job's ("nora-mixed
+slowdown" is the slowdown of Nora's job); one labeled with just a user's name is that user's,
+across all their jobs ("nora fair share").
+
 **Protected metrics** are the ones each story names as expressing its goal; its results table
 shows those. Values are means over 5 seeds (101-105). Runs with the same seed have the same work
 item durations under every policy, so "better in 5/5 seeds" is a real difference and a mixed
