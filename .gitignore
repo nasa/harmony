@@ -16,6 +16,7 @@ test-results.xml
 .ipynb*
 __pycache__
 built
+.devcontainer
 
 # Dev and test databases
 *.sqlite3
