@@ -604,7 +604,6 @@ https://cmr.earthdata.nasa.gov:
         is_sequential: true
       - image: !Env ${SWATH_PROJECTOR_IMAGE}
       - image: !Env ${FILTERING_IMAGE}
-      - image: !Env ${HARMONY_VARIABLE_FAN_OUT_IMAGE}
       - image: !Env ${NET2COG_IMAGE}
       - image: !Env ${HYBIG_IMAGE}
 
@@ -633,7 +632,6 @@ https://cmr.earthdata.nasa.gov:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
       - image: !Env ${FILTERING_IMAGE}
-      - image: !Env ${HARMONY_VARIABLE_FAN_OUT_IMAGE}
       - image: !Env ${NET2COG_IMAGE}
       - image: !Env ${HYBIG_IMAGE}
 
