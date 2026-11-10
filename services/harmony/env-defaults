@@ -43,9 +43,9 @@ METRICS_INDEX=
 # If set to true the listener for the harmony application will use HTTPS
 USE_HTTPS=false
 
-# Whether to run example service endpoints under /example.  Useful for
-# testing HTTP backends without actual service calls.  See example/http-service.js
-EXAMPLE_SERVICES=true
+# Whether to run example service endpoints under /example and enable the harmony/example
+# HTTP service.  Only intended for tests, which turn it on.  See example/http-backend.ts
+EXAMPLE_SERVICES=false
 
 # Log level (error, warn, info, debug)
 LOG_LEVEL=debug

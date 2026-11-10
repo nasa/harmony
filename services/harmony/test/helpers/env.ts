@@ -26,6 +26,10 @@ process.env.MAX_BATCH_SIZE_IN_BYTES = '10000';
 
 process.env.PORT = '4000';
 
+// enable the example HTTP backend and the harmony/example service, which are test-only. Must be
+// set before services.yml is loaded since its enabled flag is resolved at load time.
+process.env.EXAMPLE_SERVICES = 'true';
+
 import env from '../../app/util/env'; // Must set required env before loading the env file
 
 env.nodeEnv = 'test';
