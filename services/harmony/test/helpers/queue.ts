@@ -9,7 +9,7 @@ import { parseBoolean } from '@harmony/util/string';
 
 import { MemoryQueue } from './memory-queue';
 import {
-  durationBasedPolicy, FairQueueingPolicy, SchedulingContext, slotBasedPolicy,
+  durationBasedPolicy, FairQueueingPolicy, getFairQueueingPolicy, SchedulingContext,
 } from '../../app/backends/workflow-orchestration/fair-queueing-policy';
 import * as util from '../../app/backends/workflow-orchestration/util';
 import { getWorkItemsFromDatabase, WorkItemData } from '../../app/backends/workflow-orchestration/work-item-polling';
@@ -26,9 +26,9 @@ let typeQueues;
 // so harmony doesn't depend on work-scheduler code, and so local .env overrides don't apply.
 const workSchedulerDefaults = dotenv.parse(
   fs.readFileSync(path.resolve(__dirname, '../../../work-scheduler/env-defaults')));
-const DEFAULT_TEST_POLICY: FairQueueingPolicy =
-  parseBoolean(workSchedulerDefaults.ENABLE_DURATION_BASED_FAIR_QUEUEING) ? durationBasedPolicy : slotBasedPolicy;
-// The service pod count is only used by duration based fair queueing
+const DEFAULT_TEST_POLICY: FairQueueingPolicy = getFairQueueingPolicy(
+  workSchedulerDefaults.FAIR_QUEUEING_POLICY, parseBoolean(workSchedulerDefaults.ENABLE_DURATION_BASED_FAIR_QUEUEING));
+// The service pod count is only used by the policies with a fast lane reserve
 const DEFAULT_TEST_SCHEDULING_CONTEXT: Omit<SchedulingContext, 'logger'> = {
   servicePodCount: 1,
   slowWorkThresholdMs: Number(workSchedulerDefaults.SLOW_WORK_THRESHOLD_MS),

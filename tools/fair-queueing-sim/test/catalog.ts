@@ -4,6 +4,7 @@ import * as path from 'path';
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
 
+import { adaptiveFastLaneSettings } from '../../../services/harmony/app/backends/workflow-orchestration/adaptive-fast-lane-policy';
 import { NATIVE_POLICY, POLICY_CATALOG, POLICY_NAMES, resolvedSettings } from '../src/policies/catalog';
 
 const WORK_SCHEDULER_ENV_DEFAULTS = path.resolve(__dirname, '..', '..', '..', 'services', 'work-scheduler', 'env-defaults');
@@ -42,6 +43,14 @@ describe('policy catalog', function () {
     for (const setting of POLICY_CATALOG['duration-based'].settings) {
       expect(defaults, setting.env).to.match(new RegExp(`^${setting.env}=${setting.default}$`, 'm'));
     }
+  });
+
+  it('describes adaptive-fast-lane\'s own defaults as the policy has them', function () {
+    // the catalog takes them from the work-scheduler's env-defaults, the policy has its own
+    const own = POLICY_CATALOG['adaptive-fast-lane'].settings.filter((s) => s.env.startsWith('ADAPTIVE_FAST_LANE_'));
+    expect(own).to.have.lengthOf(14);
+    const described = Object.fromEntries(own.map((s) => [s.env, s.default]));
+    expect(adaptiveFastLaneSettings(described)).to.deep.equal(adaptiveFastLaneSettings({}));
   });
 
   describe('resolvedSettings', function () {

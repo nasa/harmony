@@ -77,7 +77,7 @@ export const POLICY_CATALOG: Record<string, PolicyInfo> = {
   },
   'duration-based': {
     description: "Harmony's duration based algorithm (durationBasedPolicy in fair-queueing-policy.ts, used when " +
-      'ENABLE_DURATION_BASED_FAIR_QUEUEING is true): users ranked by the expected runtime of their in-progress ' +
+      'FAIR_QUEUEING_POLICY is duration-based): users ranked by the expected runtime of their in-progress ' +
       'work for the service, and the fast lane reserve.',
     designNotes: [FAST_LANE_DESIGN_NOTE],
     settings: FAST_LANE_SETTINGS,
@@ -116,29 +116,32 @@ export const POLICY_CATALOG: Record<string, PolicyInfo> = {
     },
   },
   'adaptive-fast-lane': {
-    description: 'duration-based, with a 10% reserve instead of 30%, plus fixes: a limit on running work for ' +
-      'unmeasured jobs, a service-level estimate for unmeasured work, per-user batch splitting, every user held to ' +
-      'their fair share while others wait, unmeasured work treated as slow (keeping its limit) once a work item has ' +
-      'been running longer than the threshold, and sync requests first, never held back by fair share. Two more ' +
-      'fixes (a moving average of recent durations, pod-reported durations) are off by default: they need a ' +
-      'work-updater hook and a migration in production, and made no difference on the production scenarios.',
+    description: "Harmony's adaptive fast lane (adaptiveFastLanePolicy in adaptive-fast-lane-policy.ts, used when " +
+      'FAIR_QUEUEING_POLICY is adaptive-fast-lane): duration-based, with a 10% reserve instead of 30%, plus fixes: a ' +
+      'limit on running work for unmeasured jobs, a service-level estimate for unmeasured work, per-user batch ' +
+      'splitting, every user held to their fair share while others wait, unmeasured work treated as slow (keeping ' +
+      'its limit) once a work item has been running longer than the threshold, and sync requests first, never held ' +
+      'back by fair share. Two more fixes (a moving average of recent durations, pod-reported durations) are off by ' +
+      "default and simulator only: they need durations Harmony doesn't keep, and made no difference on the " +
+      'production scenarios.',
     designNotes: [FAST_LANE_DESIGN_NOTE],
+    // defaults from the work-scheduler's env-defaults, except fixes 2 and 5's, which aren't there
     settings: [
       ...FAST_LANE_SETTINGS,
       {
         env: 'ADAPTIVE_FAST_LANE_RESERVE_FRACTION',
-        default: '0.1',
+        default: workSchedulerDefault('ADAPTIVE_FAST_LANE_RESERVE_FRACTION'),
         description: "fraction of a service's pods slow work may never use ('scheduler' = the work-scheduler's " +
           'FAST_LANE_RESERVE_FRACTION, as duration-based uses)',
       },
       {
         env: 'ADAPTIVE_FAST_LANE_UNMEASURED_LIMIT',
-        default: '2',
+        default: workSchedulerDefault('ADAPTIVE_FAST_LANE_UNMEASURED_LIMIT'),
         description: 'most work items that may run for a (job, service) before it has a measured duration (0 = no limit)',
       },
       {
         env: 'ADAPTIVE_FAST_LANE_UNMEASURED_FRACTION',
-        default: '0.5',
+        default: workSchedulerDefault('ADAPTIVE_FAST_LANE_UNMEASURED_FRACTION'),
         description: 'beyond the unmeasured limit, all unmeasured work on the service together may run up to this fraction ' +
           'of the slow work capacity, sharing it with slow work so the reserve stays free (0 = just the limit)',
       },
@@ -150,18 +153,18 @@ export const POLICY_CATALOG: Record<string, PolicyInfo> = {
       },
       {
         env: 'ADAPTIVE_FAST_LANE_UNMEASURED_ESTIMATE',
-        default: 'service',
+        default: workSchedulerDefault('ADAPTIVE_FAST_LANE_UNMEASURED_ESTIMATE'),
         description: "'service' = unmeasured work counts as the service's mean measured duration; 'fixed' = the default below",
       },
       {
         env: 'ADAPTIVE_FAST_LANE_UNMEASURED_DEFAULT_MS',
         // DEFAULT_EXPECTED_DURATION_MS in user-work.ts, which duration-based uses
-        default: '3600000',
+        default: workSchedulerDefault('ADAPTIVE_FAST_LANE_UNMEASURED_DEFAULT_MS'),
         description: 'expected duration of unmeasured work when there is nothing better to go on',
       },
       {
         env: 'ADAPTIVE_FAST_LANE_SPLIT_BY_USER',
-        default: 'true',
+        default: workSchedulerDefault('ADAPTIVE_FAST_LANE_SPLIT_BY_USER'),
         description: 'split each batch between users first (false = evenly per job)',
       },
       {
@@ -171,33 +174,33 @@ export const POLICY_CATALOG: Record<string, PolicyInfo> = {
       },
       {
         env: 'ADAPTIVE_FAST_LANE_SLOW_FAIR_SHARE',
-        default: 'true',
+        default: workSchedulerDefault('ADAPTIVE_FAST_LANE_SLOW_FAIR_SHARE'),
         description: "while other users' fast work is ready, hold a user's slow work to their fair share of the pods",
       },
       {
         env: 'ADAPTIVE_FAST_LANE_RUNNING_EVIDENCE',
-        default: 'true',
+        default: workSchedulerDefault('ADAPTIVE_FAST_LANE_RUNNING_EVIDENCE'),
         description: 'treat an unmeasured (job, service) as slow while one of its work items has been running longer than the threshold',
       },
       {
         env: 'ADAPTIVE_FAST_LANE_FAIR_SHARE_ALL',
-        default: 'true',
+        default: workSchedulerDefault('ADAPTIVE_FAST_LANE_FAIR_SHARE_ALL'),
         description: 'fix 6 holds every user to their fair share while another user below theirs has work ready, not just slow users',
       },
       {
         env: 'ADAPTIVE_FAST_LANE_RUNNING_EVIDENCE_KEEPS_LIMIT',
-        default: 'true',
+        default: workSchedulerDefault('ADAPTIVE_FAST_LANE_RUNNING_EVIDENCE_KEEPS_LIMIT'),
         description: "fix 7: unmeasured work it shows is slow keeps fix 1's limits until it's measured " +
           '(false = it moves from them to the larger slow work capacity)',
       },
       {
         env: 'ADAPTIVE_FAST_LANE_SYNC_EXEMPT',
-        default: 'true',
+        default: workSchedulerDefault('ADAPTIVE_FAST_LANE_SYNC_EXEMPT'),
         description: "fix 8: fix 6 never holds back a sync request (it still counts towards its user's share)",
       },
       {
         env: 'ADAPTIVE_FAST_LANE_SYNC_FIRST',
-        default: 'true',
+        default: workSchedulerDefault('ADAPTIVE_FAST_LANE_SYNC_FIRST'),
         description: 'fix 8: each scheduling batch goes to sync requests first, before it is split between users',
       },
     ],
