@@ -547,7 +547,7 @@ function table(header: string[], rows: string[][]): string {
 /**
  * The report's value columns: the baseline, then each other policy with its comparisons - with
  * the baseline, with each policy listed before it (so listing duration-based before
- * adaptive-fast-lane shows what adaptive-fast-lane's fixes add), and with its own record.
+ * fair-share-fast-lane shows what fair-share-fast-lane's fixes add), and with its own record.
  *
  * @param ctx - the report context
  * @returns the columns

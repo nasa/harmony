@@ -1,15 +1,15 @@
 {
   "policy": "slot-based",
   "code": {
-    "commit": "744ecc73c1d8153ea41e2f75e927de40b5c0065a",
+    "commit": "c742a5e8ffe1758fea86fb74d1636ac81df12be4",
     "branch": "harmony-2414",
     "dirty": true,
-    "changedFiles": ["packages/util/env-defaults", "services/harmony/app/backends/workflow-orchestration/adaptive-fast-lane-policy.ts", "services/harmony/app/backends/workflow-orchestration/fair-queueing-policy.ts", "services/harmony/app/backends/workflow-orchestration/fair-share.ts", "services/work-scheduler/app/util/env.ts", "services/work-scheduler/app/workers/scheduler.ts", "services/work-scheduler/env-defaults", "tools/fair-queueing-sim/src/harness.ts", "tools/fair-queueing-sim/src/policies/adaptive-fast-lane.ts", "tools/fair-queueing-sim/src/policies/catalog.ts", "tools/fair-queueing-sim/src/policies/fair-share.ts", "tools/fair-queueing-sim/src/policies/index.ts", "tools/fair-queueing-sim/src/policies/slot-based-fair-share.ts"],
-    "changesHash": "831db5b95723",
-    "codeHash": "d76b8365c50267b0",
+    "changedFiles": ["packages/util/env-defaults", "services/harmony/app/backends/workflow-orchestration/fair-queueing-policy.ts", "services/harmony/app/backends/workflow-orchestration/fair-share-fast-lane-policy.ts", "services/harmony/app/backends/workflow-orchestration/fair-share.ts", "services/work-scheduler/app/util/env.ts", "services/work-scheduler/env-defaults", "tools/fair-queueing-sim/src/bench.ts", "tools/fair-queueing-sim/src/policies/catalog.ts", "tools/fair-queueing-sim/src/policies/fair-share-fast-lane.ts", "tools/fair-queueing-sim/src/policies/index.ts", "tools/fair-queueing-sim/src/policies/slot-based-fair-share.ts"],
+    "changesHash": "d28b95fe4f8d",
+    "codeHash": "c1d86a5bb23a572d",
     "node": "v24.21.0",
     "platform": "linux-arm64",
-    "recordedAt": "2026-11-10T16:07:44.336Z"
+    "recordedAt": "2026-11-10T18:52:01.910Z"
   },
   "seeds": [101, 102, 103, 104, 105],
   "set": {},

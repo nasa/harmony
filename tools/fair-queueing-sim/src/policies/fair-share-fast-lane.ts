@@ -1,29 +1,30 @@
 //
-// adaptive-fast-lane: Harmony's adaptive fast lane policy (adaptive-fast-lane-policy.ts in
+// fair-share-fast-lane: Harmony's fair share fast lane policy (fair-share-fast-lane-policy.ts in
 // services/harmony/app/backends/workflow-orchestration, where the policy and its fixes are
 // described), with the parts only the simulator has:
 //
 // - Fixes 2 and 5. They need durations Harmony doesn't keep, so here the policy keeps its own in
-//   two columns it adds to user_work (setupAdaptiveFastLane), updated by its completion hook
-//   (adaptiveWorkItemCompleted). In production that would take a migration and a work-updater
-//   hook, and on the production scenarios they made no difference, so production's policy
-//   ignores them and they're off by default here too.
+//   two columns it adds to user_work (setupFairShareFastLane), updated by its completion hook
+//   (fairShareFastLaneWorkItemCompleted). In production that would take a migration and a
+//   work-updater hook, and on the production scenarios they made no difference, so production's
+//   policy ignores them and they're off by default here too. The columns keep fix 2's name,
+//   adaptive_duration: its moving average adapts to recent work items.
 // - The sampler, which records the fast lane state in each sample.
 //
 
 import type { CompletedWorkItem } from './index';
-import {
-  adaptiveFastLaneSettings, classificationBindings, classifiedCtes, createAdaptiveFastLanePolicy, rawRows,
-  usesOwnDurations,
-} from '../../../../services/harmony/app/backends/workflow-orchestration/adaptive-fast-lane-policy';
 import type { FairQueueingPolicy } from '../../../../services/harmony/app/backends/workflow-orchestration/fair-queueing-policy';
+import {
+  classificationBindings, classifiedCtes, createFairShareFastLanePolicy, fairShareFastLaneSettings, rawRows,
+  usesOwnDurations,
+} from '../../../../services/harmony/app/backends/workflow-orchestration/fair-share-fast-lane-policy';
 import UserWork, { getSlowWorkCapacity } from '../../../../services/harmony/app/models/user-work';
 import { WorkItemStatus } from '../../../../services/harmony/app/models/work-item-interface';
 import { Transaction } from '../../../../services/harmony/app/util/db';
 import schedulerEnv from '../../../../services/work-scheduler/app/util/env';
 
-// Harmony's policy, with the duration columns setupAdaptiveFastLane adds, so fixes 2 and 5 work
-export const adaptiveFastLanePolicy: FairQueueingPolicy = createAdaptiveFastLanePolicy({ ownDurationColumns: true });
+// Harmony's policy, with the duration columns setupFairShareFastLane adds, so fixes 2 and 5 work
+export const fairShareFastLanePolicy: FairQueueingPolicy = createFairShareFastLanePolicy({ ownDurationColumns: true });
 
 /**
  * Adds the policy's own duration columns to user_work: its measured duration for each (job,
@@ -32,7 +33,7 @@ export const adaptiveFastLanePolicy: FairQueueingPolicy = createAdaptiveFastLane
  *
  * @param tx - the database transaction
  */
-export async function setupAdaptiveFastLane(tx: Transaction): Promise<void> {
+export async function setupFairShareFastLane(tx: Transaction): Promise<void> {
   await tx.raw('ALTER TABLE user_work ADD COLUMN adaptive_duration BIGINT');
   await tx.raw('ALTER TABLE user_work ADD COLUMN adaptive_count INTEGER NOT NULL DEFAULT 0');
 }
@@ -47,8 +48,8 @@ export async function setupAdaptiveFastLane(tx: Transaction): Promise<void> {
  * @param tx - the work item update transaction
  * @param workItem - the completed work item
  */
-export async function adaptiveWorkItemCompleted(tx: Transaction, workItem: CompletedWorkItem): Promise<void> {
-  const s = adaptiveFastLaneSettings();
+export async function fairShareFastLaneWorkItemCompleted(tx: Transaction, workItem: CompletedWorkItem): Promise<void> {
+  const s = fairShareFastLaneSettings();
   if (!usesOwnDurations(s)) return;
   if (workItem.status !== WorkItemStatus.SUCCESSFUL && workItem.status !== WorkItemStatus.WARNING) return;
   const durationMs = Math.round(s.useServiceDuration && workItem.serviceDurationMs > 0
@@ -80,10 +81,10 @@ export async function adaptiveWorkItemCompleted(tx: Transaction, workItem: Compl
  * @param servicePodCount - the number of pods for the service
  * @returns the sample values
  */
-export async function sampleAdaptiveFastLane(
+export async function sampleFairShareFastLane(
   tx: Transaction, serviceID: string, servicePodCount: number,
 ): Promise<Record<string, number>> {
-  const s = adaptiveFastLaneSettings();
+  const s = fairShareFastLaneSettings();
   const slowCapacity = getSlowWorkCapacity(servicePodCount, s.reserveFraction ?? schedulerEnv.fastLaneReserveFraction);
   const [row] = rawRows(await tx.raw(`
     WITH ${classifiedCtes(s)}

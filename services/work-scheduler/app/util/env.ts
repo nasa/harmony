@@ -46,7 +46,7 @@ class HarmonyWorkSchedulerEnv extends HarmonyEnv {
 
   // the names in FAIR_QUEUEING_POLICIES (fair-queueing-policy.ts), listed here so the env module
   // doesn't load the policies
-  @IsIn(['slot-based', 'duration-based', 'adaptive-fast-lane'])
+  @IsIn(['slot-based', 'duration-based', 'fair-share-fast-lane'])
   fairQueueingPolicy: string;
 
   @IsBoolean()

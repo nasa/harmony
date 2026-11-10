@@ -2,10 +2,10 @@ import { expect } from 'chai';
 import { describe, it } from 'mocha';
 
 import { truncateAll } from '../../../../packages/util/test/helpers/db';
-import { adaptiveFastLanePolicy } from '../../app/backends/workflow-orchestration/adaptive-fast-lane-policy';
 import {
   durationBasedPolicy, FairQueueingPolicy, getFairQueueingPolicy, slotBasedPolicy,
 } from '../../app/backends/workflow-orchestration/fair-queueing-policy';
+import { fairShareFastLanePolicy } from '../../app/backends/workflow-orchestration/fair-share-fast-lane-policy';
 import { getWorkItemsFromDatabase } from '../../app/backends/workflow-orchestration/work-item-polling';
 import { JobRecord } from '../../app/models/job';
 import UserWork from '../../app/models/user-work';
@@ -64,7 +64,7 @@ async function saveJobs(jobs: TestJob[]): Promise<void> {
  * @param policy - the fair queueing policy
  * @returns the number of work items taken from each job
  */
-async function takeBatch(batchSize: number, policy: FairQueueingPolicy = adaptiveFastLanePolicy): Promise<Record<string, number>> {
+async function takeBatch(batchSize: number, policy: FairQueueingPolicy = fairShareFastLanePolicy): Promise<Record<string, number>> {
   const workItems = await getWorkItemsFromDatabase('foo', logger, batchSize, policy, context);
   const counts: Record<string, number> = {};
   for (const { workItem } of workItems) counts[workItem.jobID] = (counts[workItem.jobID] ?? 0) + 1;
@@ -92,16 +92,16 @@ function hookEnv(vars: Record<string, string>): void {
   });
 }
 
-describe('Adaptive fast lane fair queueing', function () {
+describe('Fair share fast lane fair queueing', function () {
   beforeEach(truncateAll);
   after(truncateAll);
 
   describe('when a job has no measured work item duration yet', function () {
     it('limits how many of its work items run until one has been measured', async function () {
       await saveJobs([{ jobID: 'newJob', username: 'Ann', running: 0, ready: 10 }]);
-      const counts = await takeBatch(10);
-      expect(counts.newJob).to.be.at.least(2);
-      expect(counts.newJob).to.be.below(10);
+      // its limit of 2, or the allowance for all unmeasured work if that's more: half of the 9
+      // slow work slots, rounded down - and no more however much of the batch is left
+      expect(await takeBatch(10)).to.eql({ newJob: 4 });
     });
 
     it('does not limit a job whose work items are measured as fast', async function () {
@@ -155,7 +155,7 @@ describe('Adaptive fast lane fair queueing', function () {
     });
 
     describe('and the reserve is set to the work-scheduler\'s', function () {
-      hookEnv({ ADAPTIVE_FAST_LANE_RESERVE_FRACTION: 'scheduler' });
+      hookEnv({ FAIR_SHARE_FAST_LANE_RESERVE_FRACTION: 'scheduler' });
 
       it('keeps 30% of the pods from slow work', async function () {
         expect(await takeBatch(5)).to.eql({});
@@ -164,7 +164,7 @@ describe('Adaptive fast lane fair queueing', function () {
   });
 
   describe('when the simulator-only fixes are switched on', function () {
-    hookEnv({ ADAPTIVE_FAST_LANE_EWMA_ALPHA: '0.2', ADAPTIVE_FAST_LANE_USE_SERVICE_DURATION: 'true' });
+    hookEnv({ FAIR_SHARE_FAST_LANE_EWMA_ALPHA: '0.2', FAIR_SHARE_FAST_LANE_USE_SERVICE_DURATION: 'true' });
 
     it('ignores them and still schedules work', async function () {
       await saveJobs([{ jobID: 'fastJob', username: 'Ann', running: 0, ready: 10, averageDuration: 1000 }]);
@@ -177,7 +177,7 @@ describe('getFairQueueingPolicy', function () {
   it('returns the named policy', function () {
     expect(getFairQueueingPolicy('slot-based')).to.equal(slotBasedPolicy);
     expect(getFairQueueingPolicy('duration-based')).to.equal(durationBasedPolicy);
-    expect(getFairQueueingPolicy('adaptive-fast-lane')).to.equal(adaptiveFastLanePolicy);
+    expect(getFairQueueingPolicy('fair-share-fast-lane')).to.equal(fairShareFastLanePolicy);
   });
 
   it('returns duration based fair queueing for slot-based when ENABLE_DURATION_BASED_FAIR_QUEUEING is true', function () {
@@ -185,7 +185,7 @@ describe('getFairQueueingPolicy', function () {
   });
 
   it('ignores ENABLE_DURATION_BASED_FAIR_QUEUEING when another policy is named', function () {
-    expect(getFairQueueingPolicy('adaptive-fast-lane', true)).to.equal(adaptiveFastLanePolicy);
+    expect(getFairQueueingPolicy('fair-share-fast-lane', true)).to.equal(fairShareFastLanePolicy);
   });
 
   it('throws for an unknown policy', function () {

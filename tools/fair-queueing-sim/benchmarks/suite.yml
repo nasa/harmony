@@ -14,7 +14,7 @@ seeds: [101, 102, 103, 104, 105]
 # other policy is compared with it. Add a policy here once it's a real candidate. Each policy is
 # also compared with the ones listed before it, so duration-based comes before the policies that
 # build on it.
-policies: [slot-based, duration-based, slot-based-fair-share, adaptive-fast-lane]
+policies: [slot-based, duration-based, slot-based-fair-share, fair-share-fast-lane]
 
 # environment overrides for every run, as with --set
 set: {}

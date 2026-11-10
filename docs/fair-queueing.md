@@ -10,7 +10,7 @@
 - [Duration Based Fair Queueing (Experimental)](#duration-based-fair-queueing-experimental)
   - [Ranking Users by Expected Runtime](#ranking-users-by-expected-runtime)
   - [The Fast Lane Reserve](#the-fast-lane-reserve)
-- [Adaptive Fast Lane Fair Queueing (Experimental)](#adaptive-fast-lane-fair-queueing-experimental)
+- [Fair Share Fast Lane Fair Queueing (Experimental)](#fair-share-fast-lane-fair-queueing-experimental)
 - [Fair Queueing Policies](#fair-queueing-policies)
 
 ## Introduction
@@ -38,7 +38,7 @@ performed by a given service, which user should go next?".
 By default Harmony uses _slot based_ fair queueing: each running work item occupies one slot, and
 users with the fewest slots in use go first. (Experimental
 [duration based](#duration-based-fair-queueing-experimental) and
-[adaptive fast lane](#adaptive-fast-lane-fair-queueing-experimental) variants can be selected
+[fair share fast lane](#fair-share-fast-lane-fair-queueing-experimental) variants can be selected
 instead with the work-scheduler's `FAIR_QUEUEING_POLICY`.)
 
 The real scheduling path batches work across many jobs and users at once, rather than picking one
@@ -92,8 +92,8 @@ work items are included. A failed work item (after any retries) instead incremen
 quickly, or time out, don't skew the average (they're only used to classify a job that has no
 successful work items yet - see [The Fast Lane Reserve](#the-fast-lane-reserve)). Canceled work items aren't recorded at all. This
 happens in the work-updater's own transaction, not the scheduling batch above. Slot based fair
-queueing ignores these columns; they are collected so that the duration based and adaptive fast
-lane policies have measurements to use if one of them is selected.
+queueing ignores these columns; they are collected so that the duration based and fair share
+fast lane policies have measurements to use if one of them is selected.
 
 ### Duration History
 `user_work` rows are deleted as soon as a job has no more work for a service, when the job
@@ -110,8 +110,8 @@ service) only see active work. Before a row is deleted its totals are moved to t
 * New jobs (and resumed jobs with no measurement yet for a service) have their `average_duration`
   _seeded_ from the user's most recent jobs for the service within the last
   `USER_WORK_DURATION_SEED_LOOKBACK_DAYS` (0 disables seeding). `completed_count` stays 0, so the
-  job's first measured duration replaces the seed. This lets the duration based and adaptive fast
-  lane policies classify a job before any of its own work items complete.
+  job's first measured duration replaces the seed. This lets the duration based and fair share
+  fast lane policies classify a job before any of its own work items complete.
 * The cron service deletes rows for finished jobs after `USER_WORK_HISTORY_RETENTION_DAYS`. The
   table is also propagated to Iceberg by the analytics cron, where rows are kept.
 
@@ -121,7 +121,7 @@ Duration based fair queueing is disabled by default. It is selected by setting
 `ENABLE_DURATION_BASED_FAIR_QUEUEING=true`), and changes the [algorithm](#the-algorithm) above in
 two ways, described below. `SLOW_WORK_THRESHOLD_MS` and `FAST_LANE_RESERVE_FRACTION` only take
 effect when it is selected (and `SLOW_WORK_THRESHOLD_MS` also with
-[adaptive fast lane](#adaptive-fast-lane-fair-queueing-experimental) fair queueing).
+[fair share fast lane](#fair-share-fast-lane-fair-queueing-experimental) fair queueing).
 
 ### Ranking Users by Expected Runtime
 In step 2, instead of counting slots for the service, each user's _expected runtime_ of work
@@ -179,22 +179,22 @@ This means slow work is only held back when it is already using a large share of
 service busy with slow work still makes forward progress on fast work, while slow work is never
 starved outright.
 
-## Adaptive Fast Lane Fair Queueing (Experimental)
-Adaptive fast lane fair queueing is selected by setting `FAIR_QUEUEING_POLICY=adaptive-fast-lane`
+## Fair Share Fast Lane Fair Queueing (Experimental)
+Fair share fast lane fair queueing is selected by setting `FAIR_QUEUEING_POLICY=fair-share-fast-lane`
 for the work-scheduler. It is [duration based fair queueing](#duration-based-fair-queueing-experimental)
 with changes that stop one user's slow work items from taking over a service, chosen by comparing
 the policies with the fair queueing simulator. `tools/fair-queueing-sim/RESULTS.md` records how it
 compares with slot based and duration based fair queueing, and how to reproduce the comparison.
 The changes:
 
-* **A smaller reserve.** Slow work may use all but `ADAPTIVE_FAST_LANE_RESERVE_FRACTION` (default
+* **A smaller reserve.** Slow work may use all but `FAIR_SHARE_FAST_LANE_RESERVE_FRACTION` (default
   `0.1`, i.e. 10%) of a service's pods, rather than `FAST_LANE_RESERVE_FRACTION` (30%): 9 slots
   with 10 pods. The value `scheduler` uses `FAST_LANE_RESERVE_FRACTION` instead.
 * **New jobs are limited until they're measured.** Duration based fair queueing treats a job with
   no measured duration as fast, so on an idle service a new job whose work items turn out to take
   an hour can take every pod before one of them finishes. Here a `(job_id, service_id)` with no
-  measured duration may only run `ADAPTIVE_FAST_LANE_UNMEASURED_LIMIT` (2) work items, plus a share
-  of an allowance for all of the service's unmeasured work (`ADAPTIVE_FAST_LANE_UNMEASURED_FRACTION`,
+  measured duration may only run `FAIR_SHARE_FAST_LANE_UNMEASURED_LIMIT` (2) work items, plus a share
+  of an allowance for all of the service's unmeasured work (`FAIR_SHARE_FAST_LANE_UNMEASURED_FRACTION`,
   half of the slow work capacity). Unmeasured work beyond its limit counts against the slow work
   capacity, so it never takes the reserve. Once one of its work items has been running for longer
   than `SLOW_WORK_THRESHOLD_MS`, it's treated as slow without waiting for that work item to finish.
@@ -215,14 +215,14 @@ Like duration based fair queueing it leaves pods idle by design when only slow w
 (the reserve), and because new jobs are limited until they're measured, the reserve holds from the
 start.
 
-Each change can be switched off with its `ADAPTIVE_FAST_LANE_*` setting (see the work-scheduler's
+Each change can be switched off with its `FAIR_SHARE_FAST_LANE_*` setting (see the work-scheduler's
 `env-defaults`), which is read on every scheduling pass. With all of them off and
-`ADAPTIVE_FAST_LANE_RESERVE_FRACTION=scheduler`, it makes exactly the same decisions as duration
+`FAIR_SHARE_FAST_LANE_RESERVE_FRACTION=scheduler`, it makes exactly the same decisions as duration
 based fair queueing. It uses the durations Harmony already records (see
 [Work Item Duration Tracking](#work-item-duration-tracking)), so selecting it needs no schema
 changes, and going back is setting `FAIR_QUEUEING_POLICY=slot-based`. The policy, and the reason
 for each change, is described in
-`services/harmony/app/backends/workflow-orchestration/adaptive-fast-lane-policy.ts`.
+`services/harmony/app/backends/workflow-orchestration/fair-share-fast-lane-policy.ts`.
 
 ## Fair Queueing Policies
 
@@ -236,12 +236,12 @@ work-scheduler's `FAIR_QUEUEING_POLICY` selects one of three:
   [duration based fair queueing](#duration-based-fair-queueing-experimental). The older
   `ENABLE_DURATION_BASED_FAIR_QUEUEING=true` also selects it, unless `FAIR_QUEUEING_POLICY` names
   another policy
-* `adaptive-fast-lane` (`adaptiveFastLanePolicy`, in `adaptive-fast-lane-policy.ts`) -
-  [adaptive fast lane fair queueing](#adaptive-fast-lane-fair-queueing-experimental)
+* `fair-share-fast-lane` (`fairShareFastLanePolicy`, in `fair-share-fast-lane-policy.ts`) -
+  [fair share fast lane fair queueing](#fair-share-fast-lane-fair-queueing-experimental)
 
 The first two select jobs with `getNextJobIds` and split the batch across them the same way (step
 5 of [The Algorithm](#the-algorithm)); they differ only in how `getNextJobIds` ranks and filters
-the jobs. The adaptive fast lane policy has its own queries, which follow duration based fair
+the jobs. The fair share fast lane policy has its own queries, which follow duration based fair
 queueing's. The work-scheduler passes the selected policy to `getWorkItemsFromDatabase` along with
 the service's pod count and the fast lane reserve settings, which each policy uses as needed.
 
