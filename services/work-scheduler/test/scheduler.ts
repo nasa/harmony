@@ -17,7 +17,7 @@ import * as queueFactory from '../../harmony/app/util/queue/queue-factory';
 import { MemoryQueue } from '../../harmony/test/helpers/memory-queue';
 import env from '../app/util/env';
 import * as k8s from '../app/util/k8s';
-import { calculateNumItemsToQueue, processSchedulerQueue } from '../app/workers/scheduler';
+import Scheduler, { calculateNumItemsToQueue, processSchedulerQueue } from '../app/workers/scheduler';
 
 describe('Scheduler Worker', async function () {
   const service = 'foo:latest';
@@ -180,22 +180,29 @@ describe('Scheduler Worker', async function () {
       ([['duration-based', durationBasedPolicy], ['fair-share-fast-lane', fairShareFastLanePolicy]] as const).forEach(([name, policy]) => {
         describe(`and the fair queueing policy is ${name}`, async function () {
           let fairQueueingPolicyStub;
+          let infoSpy: sinon.SinonSpy;
           beforeEach(async function () {
             await schedulerQueue.purge();
             await schedulerQueue.sendMessage(service);
             serviceQueues = {};
             serviceQueues[service] = new MemoryQueue();
             fairQueueingPolicyStub = sinon.stub(env, 'fairQueueingPolicy').get(() => name);
+            infoSpy = sinon.spy(logger, 'info');
             await processSchedulerQueue(logger);
           });
           afterEach(async function () {
             await schedulerQueue.purge();
             serviceQueues = {};
             fairQueueingPolicyStub.restore();
+            infoSpy.restore();
           });
 
           it(`uses ${name} fair queueing`, async function () {
             expect(getWorkItemsFromDatabaseStub.lastCall.args[3]).to.equal(policy);
+          });
+
+          it(`says it used ${name} fair queueing`, async function () {
+            expect(infoSpy.calledWith(`Sent 1 work items to queue ${service} (${name} fair queueing)`)).to.be.true;
           });
         });
       });
@@ -359,6 +366,38 @@ describe('Scheduler Worker', async function () {
           // underlying store rather than getApproximateNumberOfMessages (visible-only)
           expect(schedulerQueue.messages.length).to.equal(1);
         });
+      });
+    });
+  });
+
+  describe('Scheduler.start', function () {
+    let infoSpy: sinon.SinonSpy;
+    beforeEach(function () {
+      infoSpy = sinon.spy(logger, 'info');
+    });
+    afterEach(function () {
+      infoSpy.restore();
+    });
+
+    it('logs the fair queueing policy it uses', async function () {
+      await new Scheduler().start(false);
+      expect(infoSpy.calledWith('Starting scheduler with slot-based fair queueing (FAIR_QUEUEING_POLICY=slot-based, '
+        + 'ENABLE_DURATION_BASED_FAIR_QUEUEING=false)')).to.be.true;
+    });
+
+    describe('when ENABLE_DURATION_BASED_FAIR_QUEUEING selects duration based fair queueing', function () {
+      let enableDurationBasedStub: sinon.SinonStub;
+      beforeEach(function () {
+        enableDurationBasedStub = sinon.stub(env, 'enableDurationBasedFairQueueing').get(() => true);
+      });
+      afterEach(function () {
+        enableDurationBasedStub.restore();
+      });
+
+      it('logs the policy it selects, not just the settings', async function () {
+        await new Scheduler().start(false);
+        expect(infoSpy.calledWith('Starting scheduler with duration-based fair queueing (FAIR_QUEUEING_POLICY=slot-based, '
+          + 'ENABLE_DURATION_BASED_FAIR_QUEUEING=true)')).to.be.true;
       });
     });
   });

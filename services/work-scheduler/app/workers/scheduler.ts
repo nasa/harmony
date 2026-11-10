@@ -281,7 +281,7 @@ export async function processSchedulerQueue(
     durationMs = new Date().getTime() - batchStartTime;
     logger.debug('timing.PSQ.batchProcessing.end', { durationMs });
 
-    reqLogger.info(`Sent ${queuedCount} work items to queue ${queueUrl}`);
+    reqLogger.info(`Sent ${queuedCount} work items to queue ${queueUrl} (${fairQueueingPolicy.name} fair queueing)`);
 
     reqLogger.info('Sending delete message to scheduler queue');
 
@@ -297,7 +297,9 @@ export async function processSchedulerQueue(
 
 export default class Scheduler implements Worker {
   async start(repeat = true): Promise<void> {
-    logger.debug('Starting scheduler');
+    const { name } = getFairQueueingPolicy(env.fairQueueingPolicy, env.enableDurationBasedFairQueueing);
+    logger.info(`Starting scheduler with ${name} fair queueing (FAIR_QUEUEING_POLICY=${env.fairQueueingPolicy}, `
+      + `ENABLE_DURATION_BASED_FAIR_QUEUEING=${env.enableDurationBasedFairQueueing})`);
     while (repeat) {
       try {
         await processSchedulerQueue(logger);
