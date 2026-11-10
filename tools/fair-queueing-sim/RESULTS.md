@@ -331,7 +331,7 @@ doesn't.
 
 - **The stories** come from the committed benchmark records, `benchmarks/results/slot-based.json`,
   `benchmarks/results/duration-based.json` and
-  `benchmarks/results/fair-share-fast-lane.json` (duration-based: c742a5e8f + uncommitted changes, code hash c1d86a5bb23a572d, Node v24.21.0, linux-arm64, 2026-11-10; slot-based: c742a5e8f + uncommitted changes, code hash c1d86a5bb23a572d, Node v24.21.0, linux-arm64, 2026-11-10; fair-share-fast-lane: c742a5e8f + uncommitted changes, code hash 3ba30b2a4f64e48f, Node v24.21.0, linux-arm64, 2026-11-10). Each record holds every metric for
+  `benchmarks/results/fair-share-fast-lane.json` (duration-based: 6bdef9564 + uncommitted changes, code hash f46aba252960613f, Node v24.21.0, linux-arm64, 2026-11-10; slot-based: 6bdef9564 + uncommitted changes, code hash f46aba252960613f, Node v24.21.0, linux-arm64, 2026-11-10; fair-share-fast-lane: 6bdef9564 + uncommitted changes, code hash 78d2be9c50db5bd0, Node v24.21.0, linux-arm64, 2026-11-10). Each record holds every metric for
   every story and seed, with the settings and a hash of the code that produced it.
 - **The production scenarios and the mixed workload** aren't in the records; their numbers are from
   `bench` runs with the commands below: `fair-share-fast-lane` and `slot-based` on 2026-11-10,

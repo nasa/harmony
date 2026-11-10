@@ -243,7 +243,11 @@ The first two select jobs with `getNextJobIds` and split the batch across them t
 5 of [The Algorithm](#the-algorithm)); they differ only in how `getNextJobIds` ranks and filters
 the jobs. The fair share fast lane policy has its own queries, which follow duration based fair
 queueing's. The work-scheduler passes the selected policy to `getWorkItemsFromDatabase` along with
-the service's pod count and the fast lane reserve settings, which each policy uses as needed.
+the service's pod count and the fast lane reserve settings, which each policy uses as needed. It
+logs the policy it's using when it starts (`Starting scheduler with fair-share-fast-lane fair
+queueing (FAIR_QUEUEING_POLICY=..., ENABLE_DURATION_BASED_FAIR_QUEUEING=...)`) and at the end of
+each scheduling pass for a service (`Sent 12 work items to queue ... (fair-share-fast-lane fair
+queueing)`).
 
 A policy implements `scheduleWork`: it picks jobs and calls the `takeWorkItems` callback it is
 given for each one, which hands out the work items and keeps `user_work` in sync, so a policy
