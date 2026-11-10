@@ -70,12 +70,18 @@ generators:                     # optional: streams of similar jobs
     start: 0s                   # time of the first job (default 0)
     every: { dist: exponential, mean: 15m }   # time between jobs
     until: 5h                   # stop at this time, and/or after `count:` jobs
+    burst: 100                  # optional: submit this many jobs each time (default 1)
     job:                        # same fields as a job, minus name/user/submitAt
       granules: { min: 10, max: 100 }
       steps:
         - service: svc
           duration: 1m
 ```
+
+**Serial generators** (`serial: true`) submit each job only once the previous one has finished,
+`every` after it - like a user who waits for each request before sending the next. Their jobs'
+submission times depend on the run, so they need a `count`, and can't have an `until` or a
+`burst`. A job's makespan and slowdown are measured from when it was actually submitted.
 
 **Durations** are a number of milliseconds or a string with a unit: `250ms`, `30s`, `10m`,
 `2h`, `1d`. **Duration distributions**:
@@ -190,9 +196,10 @@ in the simulator, so the simulator can't tell you whether it works.
 
 | Policy | What it does |
 |---|---|
-| `slot-based` | Harmony's default algorithm (`slotBasedPolicy` in `fair-queueing-policy.ts`). Picks up to `batchSize` jobs interleaved round robin by user, with a user's sync jobs before their async ones and the users with the fewest running work items for the service first; shuffles them; splits the batch evenly per job. No knowledge of work item durations. |
-| `duration-based` | Harmony's algorithm when `ENABLE_DURATION_BASED_FAIR_QUEUEING` is true (`durationBasedPolicy` in `fair-queueing-policy.ts`). Users are ranked within each round by the expected runtime of their in-progress work for the service (running items x the job's duration), and work for a (job, service) whose duration is above `SLOW_WORK_THRESHOLD_MS` may only occupy `1 - FAST_LANE_RESERVE_FRACTION` of the service's pods, reserving the rest for fast work. See `docs/fair-queueing.md` for how durations are measured and seeded. |
-| `adaptive-fast-lane` | A candidate replacement for `duration-based` (`src/policies/adaptive-fast-lane.ts`), following its queries step for step with the same reserve, plus eight fixes, each with a setting that switches it off: (1) a (job, service) with no measured duration may run at most `ADAPTIVE_FAST_LANE_UNMEASURED_LIMIT` work items, plus a share of the slow work capacity; (2) durations are a moving average rather than a lifetime mean, so a job that slows down is noticed; (3) unmeasured work is expected to take the service's mean measured duration instead of a fixed hour; (4) each batch is split between users before jobs; (5) durations are the time the service pod reports, not Harmony's, which includes queue wait; (6) while another user's fast work is ready, each user is held to their fair share of the pods; (7) unmeasured work counts as slow once one of its work items has run longer than `SLOW_WORK_THRESHOLD_MS`, and keeps fix 1's limits until it's measured, so being noticed never loosens them; (8) sync requests get each batch first, and fix 6 never holds them back (production limits them to one granule, so they can't crowd out async work). With every fix off it makes exactly the same decisions as `duration-based` (`findings` checks this). Simulator only, for now: fixes 2 and 5 learn through `onWorkItemCompleted`. |
+| `slot-based` | Harmony's default algorithm, and what every production service runs (`slotBasedPolicy` in `fair-queueing-policy.ts`). Picks up to `batchSize` jobs interleaved round robin by user, with a user's sync jobs before their async ones and the users with the fewest running work items for the service first; shuffles them; splits the batch evenly per job. No knowledge of work item durations. |
+| `duration-based` | Harmony's algorithm when `ENABLE_DURATION_BASED_FAIR_QUEUEING` is true - the fast lane from HARMONY-2413, which isn't enabled in production (`durationBasedPolicy` in `fair-queueing-policy.ts`). Users are ranked within each round by the expected runtime of their in-progress work for the service (running items x the job's duration), and work for a (job, service) whose duration is above `SLOW_WORK_THRESHOLD_MS` may only occupy `1 - FAST_LANE_RESERVE_FRACTION` of the service's pods, reserving the rest for fast work. See `docs/fair-queueing.md` for how durations are measured and seeded. |
+| `slot-based-fair-share` | A candidate to replace `slot-based` in production (`src/policies/slot-based-fair-share.ts`): it picks jobs with Harmony's own slot based query (`getNextJobIds`), then adds the two fixes from `adaptive-fast-lane` that need no work item durations, each with a setting that switches it off: (1) while another user below their max-min fair share of the service's pods has work ready, each user only gets new work items up to their own share - nothing running is interrupted, and whatever the users held back for can't take goes to the users held back, so it never leaves pods idle; (2) sync requests get each batch first, and fair share never holds them back. It needs no durations, schema change or work-updater hook, and has no fast lane reserve. With both fixes off it makes exactly the same decisions as `slot-based` (`findings` checks this). |
+| `adaptive-fast-lane` | A candidate to replace `slot-based` in production (`src/policies/adaptive-fast-lane.ts`), built on `duration-based`: it follows its queries step for step, with a 10% reserve instead of 30%, plus eight fixes, each with a setting that switches it off (2 and 5 are off by default): (1) a (job, service) with no measured duration may run at most `ADAPTIVE_FAST_LANE_UNMEASURED_LIMIT` work items, plus a share of the slow work capacity; (2) durations are a moving average rather than a lifetime mean, so a job that slows down is noticed; (3) unmeasured work is expected to take the service's mean measured duration instead of a fixed hour; (4) each batch is split between users before jobs; (5) durations are the time the service pod reports, not Harmony's, which includes queue wait; (6) while another user's fast work is ready, each user is held to their fair share of the pods; (7) unmeasured work counts as slow once one of its work items has run longer than `SLOW_WORK_THRESHOLD_MS`, and keeps fix 1's limits until it's measured, so being noticed never loosens them; (8) sync requests get each batch first, and fix 6 never holds them back (production limits them to one granule, so they can't crowd out async work). With every fix off it makes exactly the same decisions as `duration-based` (`findings` checks this). Fixes 2 and 5, the only ones that need the simulator-only `onWorkItemCompleted` hook, are off by default, so as configured it needs no work-updater hook or migration. |
 
 Why `adaptive-fast-lane` is built the way it is - the evidence for each fix, the trade-offs
 chosen and the alternatives rejected - is in [POLICY-DESIGN.md](POLICY-DESIGN.md).
@@ -220,18 +227,27 @@ starts; their defaults are in `services/work-scheduler/env-defaults`:
 | `SLOW_WORK_THRESHOLD_MS` | `600000` (10 min) | `duration-based` | a (job, service) whose work item duration is above this is "slow" |
 | `FAST_LANE_RESERVE_FRACTION` | `0.3` | `duration-based` | fraction of a service's pods slow work may not use |
 
-`adaptive-fast-lane` uses the same two, from the work-scheduler like `duration-based`, plus its
-own, read from the environment when it runs:
+`slot-based-fair-share` reads its own settings from the environment when it runs:
 
 | Variable | Default | Meaning |
 |---|---|---|
+| `SLOT_BASED_FAIR_SHARE` | `true` | while another user below their fair share of the pods has work ready, hold each user to theirs |
+| `SLOT_BASED_SYNC_EXEMPT` | `true` | fair share never holds back a sync request, which still counts towards its user's share |
+| `SLOT_BASED_SYNC_FIRST` | `true` | each batch goes to sync requests first, before it's split between jobs |
+
+`adaptive-fast-lane` uses the work-scheduler's slow work threshold, like `duration-based`, but its
+own reserve, and its own settings, read from the environment when it runs:
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `ADAPTIVE_FAST_LANE_RESERVE_FRACTION` | `0.1` | the fraction of a service's pods slow work may never use - 10%, where the work-scheduler's `FAST_LANE_RESERVE_FRACTION` (which `duration-based` uses) is 30%. `scheduler` = use the work-scheduler's. See POLICY-DESIGN.md's reserve sweep |
 | `ADAPTIVE_FAST_LANE_UNMEASURED_LIMIT` | `2` | fix 1: most work items that may run for a (job, service) before it has a measured duration (0 = no limit) |
 | `ADAPTIVE_FAST_LANE_UNMEASURED_FRACTION` | `0.5` | fix 1: beyond the limit, all unmeasured work on the service together may use up to this fraction of the slow work capacity, sharing it with slow work so the reserve stays free (0 = just the limit) |
-| `ADAPTIVE_FAST_LANE_EWMA_ALPHA` | `0.2` | fix 2: weight of the newest work item in the moving average (0 = mean over the job's lifetime) |
+| `ADAPTIVE_FAST_LANE_EWMA_ALPHA` | `0` | fix 2, off by default: weight of the newest work item in a moving average of durations (0 = off: Harmony's mean over the job's lifetime; 0.2 when on). Needs a work-updater hook and a migration in production |
 | `ADAPTIVE_FAST_LANE_UNMEASURED_ESTIMATE` | `service` | fix 3: `service` = unmeasured work counts as the service's mean measured duration; `fixed` = `ADAPTIVE_FAST_LANE_UNMEASURED_DEFAULT_MS` |
 | `ADAPTIVE_FAST_LANE_UNMEASURED_DEFAULT_MS` | `3600000` (1 h) | expected duration of unmeasured work when there's nothing better to go on (`duration-based`'s `DEFAULT_EXPECTED_DURATION_MS`) |
 | `ADAPTIVE_FAST_LANE_SPLIT_BY_USER` | `true` | fix 4: split each batch between users first (false = evenly per job) |
-| `ADAPTIVE_FAST_LANE_USE_SERVICE_DURATION` | `true` | fix 5: use the duration the service pod reports (false = Harmony's, which can include queue wait) |
+| `ADAPTIVE_FAST_LANE_USE_SERVICE_DURATION` | `false` | fix 5, off by default: use the duration the service pod reports (false = Harmony's, which can include queue wait). Needs a work-updater hook and a migration in production |
 | `ADAPTIVE_FAST_LANE_SLOW_FAIR_SHARE` | `true` | fix 6: while other users' fast work is ready, hold a user's slow work to their fair share of the pods |
 | `ADAPTIVE_FAST_LANE_FAIR_SHARE_ALL` | `true` | fix 6 holds every user to their fair share while another user below theirs has work ready, not just slow users |
 | `ADAPTIVE_FAST_LANE_RUNNING_EVIDENCE` | `true` | fix 7: treat an unmeasured (job, service) as slow while one of its work items has been running longer than the threshold |
@@ -307,9 +323,11 @@ has a "How to read this report" panel) with a glossary of the metrics, so it can
 - **One section per scenario** - its goal, its protected and scenario wide metrics, and
   (collapsed) every job's and user's metrics.
 
-Each policy is compared with the baseline (**vs slot-based**), with each policy listed before it
-in `--policies` or the suite (**vs duration-based** for `adaptive-fast-lane` in the suite, since
-that's the policy it would replace), and with its own record (**vs recorded**).
+Each policy is compared with the baseline (**vs slot-based**, what production runs), with each
+policy listed before it in `--policies` or the suite (in the suite, `slot-based-fair-share` is
+compared with `duration-based`, and `adaptive-fast-lane` with both: **vs duration-based**, the
+policy it's built on, and **vs slot-based-fair-share**, which shows what knowing durations adds),
+and with its own record (**vs recorded**).
 
 Values are the mean over the seeds with the range across seeds in brackets. The comparisons are
 seed by seed - runs with the same seed have the same work item durations -
@@ -324,6 +342,7 @@ difference, a mixed count is noise, and "same" means identical in every seed.
 | **slowdown** | makespan divided by a lower bound on how long the job would take with the cluster to itself (for each step, the longer of its longest work item and its total work spread perfectly over the service's pods) | 1.0 is as fast as possible; 2.0 means it took twice as long as it could have |
 | **wait** | time from a work item being ready to a pod starting it | lower |
 | **sync makespan** | makespan of synchronous requests - what an interactive user waits for | lower |
+| **sync latency** | how much longer a sync request took than it would have with the cluster to itself (its makespan minus its lower bound): for a one granule request, the time it spent waiting rather than running. Reported as the mean, 95th percentile and max | lower - production's target is under 10 seconds |
 | **fair share** (per user) | while the user was competing with at least one other user for a service: the pods running their work divided by their *max-min fair share* of the pods. The fair share is an equal split of the pods, except that users who want fewer than that get what they want and the rest is split among the others | 1.00 is exactly fair; below 1 the user was short-changed; above 1 they got more than their share |
 | **contended fairness** (per service) | Jain's fairness index of those per-user ratios, averaged over the samples where two or more users wanted the service | 1.0 means every competing user had exactly their share |
 | **utilization** | pod time spent running work divided by pods x simulated time | higher, but it also drops simply because the service runs out of work near the end |
@@ -392,7 +411,7 @@ These live in `benchmarks/` and are committed:
 
 | File | Contents |
 |---|---|
-| `suite.yml` | the benchmark suite: the scenarios, the seeds (101-105), any settings, and the **tracked** policies - the baseline, `slot-based`, then `duration-based` and the candidates, in the order they're compared with each other |
+| `suite.yml` | the benchmark suite: the scenarios, the seeds (101-105), any settings, and the **tracked** policies - the baseline, `slot-based`, then `duration-based` and the candidates (`slot-based-fair-share`, `adaptive-fast-lane`), in the order they're compared with each other |
 | `results/<policy>.json` | a policy's recorded results: every metric for every scenario and seed, plus what produced them (commit, a hash of the code that affects results, settings, Node version, platform) |
 
 `bench --label <name>` saves the same kind of file to
@@ -403,8 +422,9 @@ command that reproduces an experiment is the place to keep one worth keeping.
 
 `bench --record` runs the whole suite for the tracked policies (or `--policies`) and writes their
 `results/` files, so it can't be combined with scenario files, `--seeds` or `--set`. The history of
-`results/slot-based.json` and `results/duration-based.json` is the history of production fair
-queueing.
+`results/slot-based.json` is the history of production fair queueing, and that of
+`results/duration-based.json` the history of Harmony's other built-in policy, which production doesn't
+use.
 
 ### When baseline is rerun
 

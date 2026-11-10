@@ -1,10 +1,13 @@
 //
 // Harmony's duration based fair queueing (durationBasedPolicy - see getNextJobIdsDurationBased in
 // services/harmony/app/models/user-work.ts) with fixes for the problems the simulator found with
-// it. The fast lane reserve itself is unchanged - slow work may never use more than
-// (1 - FAST_LANE_RESERVE_FRACTION) of a service's pods, even when nothing else is waiting. That
-// is by design (Harmony has seen slow jobs take every pod and leave arriving fast jobs unworked),
-// so pods the reserve leaves idle are an accepted cost, not something for this policy to fix.
+// it. The fast lane reserve works as duration-based's does - slow work may never use more than
+// (1 - reserve) of a service's pods, even when nothing else is waiting - but it's 10%
+// (ADAPTIVE_FAST_LANE_RESERVE_FRACTION) rather than the work-scheduler's 30%: at production's scale
+// fix 1 below does much of the protecting, so a smaller reserve still keeps sync requests within
+// seconds when a slow user arrives first, and leaves fewer pods idle (POLICY-DESIGN.md). Leaving
+// pods idle when only slow work is waiting is by design (Harmony has seen slow jobs take every pod
+// and leave arriving fast jobs unworked), an accepted cost, not something for this policy to fix.
 // Because fix 1 below stops slow work getting past the cap before it is measured, the reserve
 // holds from the start, so expect more such idle time than with duration-based. The fixes:
 //
@@ -60,13 +63,15 @@
 // equivalentTo). The queries below follow getNextJobIdsDurationBased step for step so that stays
 // true - when that function changes, change these with it.
 //
-// Fixes 2 and 5 need durations Harmony doesn't keep, so the policy keeps its own in two columns
-// it adds to user_work (setupAdaptiveFastLane), updated by its completion hook
-// (adaptiveWorkItemCompleted). Harmony's own average_duration is left alone: with neither fix
-// on, the policy uses Harmony's durations, including their seeding from the user's history and
-// the failed work item fallback.
+// Fixes 2 and 5 are off by default. They need durations Harmony doesn't keep, so with either on
+// the policy keeps its own in two columns it adds to user_work (setupAdaptiveFastLane), updated by
+// its completion hook (adaptiveWorkItemCompleted) - which in production would mean a work-updater
+// hook and a migration - and on the production scenarios they made no difference. With both off
+// the policy uses Harmony's own durations (average_duration), including their seeding from the
+// user's history and the failed work item fallback, and needs neither.
 //
 
+import { maxMinFairShares } from './fair-share';
 import type { CompletedWorkItem } from './index';
 import type { SchedulingContext, FairQueueingPolicy } from '../../../../services/harmony/app/backends/workflow-orchestration/fair-queueing-policy';
 import UserWork, { DEFAULT_EXPECTED_DURATION_MS, getSlowWorkCapacity } from '../../../../services/harmony/app/models/user-work';
@@ -75,6 +80,9 @@ import db, { Transaction } from '../../../../services/harmony/app/util/db';
 import schedulerEnv from '../../../../services/work-scheduler/app/util/env';
 
 interface Settings {
+  // the fraction of a service's pods slow work may never use; null = the work-scheduler's
+  // FAST_LANE_RESERVE_FRACTION (duration-based's)
+  reserveFraction: number | null;
   // max running work items for an unmeasured (job, service); 0 = no limit (duration-based)
   unmeasuredLimit: number;
   // all unmeasured work on the service together may run up to this fraction of the slow work
@@ -125,14 +133,16 @@ function envBoolean(name: string, defaultValue: boolean): boolean {
  */
 function settings(): Settings {
   const { env } = process;
+  const reserve = env.ADAPTIVE_FAST_LANE_RESERVE_FRACTION ?? '0.1';
   return {
+    reserveFraction: reserve === 'scheduler' ? null : Number(reserve),
     unmeasuredLimit: Number(env.ADAPTIVE_FAST_LANE_UNMEASURED_LIMIT ?? 2),
     unmeasuredFraction: Number(env.ADAPTIVE_FAST_LANE_UNMEASURED_FRACTION ?? 0.5),
-    ewmaAlpha: Number(env.ADAPTIVE_FAST_LANE_EWMA_ALPHA ?? 0.2),
+    ewmaAlpha: Number(env.ADAPTIVE_FAST_LANE_EWMA_ALPHA ?? 0),
     serviceEstimate: (env.ADAPTIVE_FAST_LANE_UNMEASURED_ESTIMATE ?? 'service') === 'service',
     unmeasuredDefaultMs: Number(env.ADAPTIVE_FAST_LANE_UNMEASURED_DEFAULT_MS ?? DEFAULT_EXPECTED_DURATION_MS),
     splitByUser: envBoolean('ADAPTIVE_FAST_LANE_SPLIT_BY_USER', true),
-    useServiceDuration: envBoolean('ADAPTIVE_FAST_LANE_USE_SERVICE_DURATION', true),
+    useServiceDuration: envBoolean('ADAPTIVE_FAST_LANE_USE_SERVICE_DURATION', false),
     slowFairShare: envBoolean('ADAPTIVE_FAST_LANE_SLOW_FAIR_SHARE', true),
     runningEvidence: envBoolean('ADAPTIVE_FAST_LANE_RUNNING_EVIDENCE', true),
     runningEvidenceKeepsLimit: envBoolean('ADAPTIVE_FAST_LANE_RUNNING_EVIDENCE_KEEPS_LIMIT', true),
@@ -285,36 +295,6 @@ function shuffleArray<T>(array: T[]): T[] {
     [array[i], array[j]] = [array[j], array[i]];
   }
   return array;
-}
-
-/**
- * Computes the max-min fair allocation of a capacity among users with the given demands: every
- * user gets an equal share, except that users who want less than that get what they want and
- * the remainder is shared among the rest.
- *
- * @param demands - each user's demand
- * @param capacity - the total capacity
- * @returns each user's fair share
- */
-function maxMinFairShares(demands: Record<string, number>, capacity: number): Record<string, number> {
-  const shares: Record<string, number> = Object.create(null);
-  let remaining = capacity;
-  let users = Object.keys(demands).filter((u) => demands[u] > 0);
-  while (users.length > 0 && remaining > 1e-9) {
-    const equal = remaining / users.length;
-    const satisfied = users.filter((u) => demands[u] - (shares[u] || 0) <= equal);
-    if (satisfied.length === 0) {
-      for (const u of users) shares[u] = (shares[u] || 0) + equal;
-      remaining = 0;
-    } else {
-      for (const u of satisfied) {
-        remaining -= demands[u] - (shares[u] || 0);
-        shares[u] = demands[u];
-      }
-      users = users.filter((u) => !satisfied.includes(u));
-    }
-  }
-  return shares;
 }
 
 /**
@@ -560,7 +540,7 @@ export const adaptiveFastLanePolicy: FairQueueingPolicy = {
   async scheduleWork(tx, serviceID, batchSize, context, takeWorkItems): Promise<void> {
     const s = settings();
     const podCount = context.servicePodCount;
-    const slowWorkCapacity = getSlowWorkCapacity(podCount, context.fastLaneReserveFraction);
+    const slowWorkCapacity = getSlowWorkCapacity(podCount, s.reserveFraction ?? context.fastLaneReserveFraction);
     const { jobs, slowRunningCount, unmeasuredRunningCount, unmeasuredSlowRunningCount, availableSlowWorkSlots } =
       await getNextJobs(tx, serviceID, batchSize, context, slowWorkCapacity, s);
     let remainingSlowWorkSlots = availableSlowWorkSlots;
@@ -705,7 +685,7 @@ export async function sampleAdaptiveFastLane(
   tx: Transaction, serviceID: string, servicePodCount: number,
 ): Promise<Record<string, number>> {
   const s = settings();
-  const slowCapacity = getSlowWorkCapacity(servicePodCount, schedulerEnv.fastLaneReserveFraction);
+  const slowCapacity = getSlowWorkCapacity(servicePodCount, s.reserveFraction ?? schedulerEnv.fastLaneReserveFraction);
   const [row] = rawRows(await tx.raw(`
     WITH ${classifiedCtes(s)}
     SELECT

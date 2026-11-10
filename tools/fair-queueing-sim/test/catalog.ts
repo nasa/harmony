@@ -9,25 +9,27 @@ import { NATIVE_POLICY, POLICY_CATALOG, POLICY_NAMES, resolvedSettings } from '.
 const WORK_SCHEDULER_ENV_DEFAULTS = path.resolve(__dirname, '..', '..', '..', 'services', 'work-scheduler', 'env-defaults');
 
 describe('policy catalog', function () {
-  it('has Harmony\'s two policies, and adaptive-fast-lane', function () {
-    expect(POLICY_NAMES).to.deep.equal(['slot-based', 'duration-based', 'adaptive-fast-lane']);
+  it('has Harmony\'s two policies, slot-based-fair-share and adaptive-fast-lane', function () {
+    expect(POLICY_NAMES).to.deep.equal(['slot-based', 'duration-based', 'slot-based-fair-share', 'adaptive-fast-lane']);
     expect(POLICY_NAMES).to.not.include(NATIVE_POLICY);
   });
 
-  it('describes how to make adaptive-fast-lane duration-based, using only its own settings', function () {
-    const { equivalentTo, settings } = POLICY_CATALOG['adaptive-fast-lane'];
-    expect(equivalentTo.policy).to.equal('duration-based');
-    const own = settings.map((s) => s.env);
-    for (const key of Object.keys(equivalentTo.set)) expect(own, key).to.include(key);
-  });
+  for (const [policy, base] of [['adaptive-fast-lane', 'duration-based'], ['slot-based-fair-share', 'slot-based']]) {
+    it(`describes how to make ${policy} ${base}, using only its own settings`, function () {
+      const { equivalentTo, settings } = POLICY_CATALOG[policy];
+      expect(equivalentTo.policy).to.equal(base);
+      const own = settings.map((s) => s.env);
+      for (const key of Object.keys(equivalentTo.set)) expect(own, key).to.include(key);
+    });
 
-  it('switches off one of adaptive-fast-lane\'s own settings in each variant', function () {
-    const own = POLICY_CATALOG['adaptive-fast-lane'].settings.map((s) => s.env);
-    for (const variant of POLICY_CATALOG['adaptive-fast-lane'].variants) {
-      expect(Object.keys(variant.set), variant.name).to.have.lengthOf(1);
-      expect(own, variant.name).to.include(Object.keys(variant.set)[0]);
-    }
-  });
+    it(`switches off one of ${policy}'s own settings in each variant`, function () {
+      const own = POLICY_CATALOG[policy].settings.map((s) => s.env);
+      for (const variant of POLICY_CATALOG[policy].variants) {
+        expect(Object.keys(variant.set), variant.name).to.have.lengthOf(1);
+        expect(own, variant.name).to.include(Object.keys(variant.set)[0]);
+      }
+    });
+  }
 
   it('describes every policy', function () {
     for (const name of POLICY_NAMES) {

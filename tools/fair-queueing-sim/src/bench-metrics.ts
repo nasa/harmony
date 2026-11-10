@@ -38,6 +38,10 @@ const SCENARIO_METRICS: Record<string, Extractor<Summary>> = {
   'overall.maxSlowdown': { label: 'max job slowdown', better: 'lower', format: 'ratio', value: (s) => s.overall.maxSlowdown },
   'sync.meanMakespan': { label: 'sync makespan (mean)', better: 'lower', format: 'duration', value: (s) => s.sync.meanMakespanMs },
   'sync.maxMakespan': { label: 'sync makespan (max)', better: 'lower', format: 'duration', value: (s) => s.sync.maxMakespanMs },
+  // how long sync requests took beyond their own run time (summaries from before this have none)
+  'sync.meanLatency': { label: 'sync latency (mean)', better: 'lower', format: 'duration', value: (s) => s.sync.meanLatencyMs ?? null },
+  'sync.p95Latency': { label: 'sync latency (p95)', better: 'lower', format: 'duration', value: (s) => s.sync.p95LatencyMs ?? null },
+  'sync.maxLatency': { label: 'sync latency (max)', better: 'lower', format: 'duration', value: (s) => s.sync.maxLatencyMs ?? null },
   'fairness': {
     label: 'contended fairness',
     better: 'higher',

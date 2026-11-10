@@ -1,371 +1,505 @@
 # Fair queueing scenarios, for review
 
-The simulator judges fair queueing policies on the scenarios below, so they define what "better"
-means: every policy change in this directory, including `adaptive-fast-lane`'s fixes, was tuned
-and judged against them. Before a policy goes into Harmony, the scenarios themselves deserve a
-review by people who know Harmony's real workloads. This file sets each one out in plain terms,
-with how the policies currently do, and asks the questions where feedback would change something.
+Harmony shares each backend service's pods between the users who want it ("fair queueing"). We
+compare ways of doing that in a simulator, on the 17 scenarios below. The scenarios decide what
+counts as "better", so before changing how Harmony shares its services, we'd like people who know
+Harmony's real users and workloads to check them.
 
-The scenario files (`scenarios/stories/*.yml`, `scenarios/mixed-workload.yml`) are the source of
-truth; this file describes them as of 2026-11-04. The results come from the committed benchmark
-records (`benchmarks/results/*.json`) - `npm run sim -- bench` regenerates them.
+**What we're asking:** for each scenario, is the situation realistic, and is "what should happen"
+what Harmony wants? Each one ends with a specific question. Answers in comments are welcome, short
+or long. The answers so far, and what we'll change because of them, are in
+[Feedback so far](#feedback-so-far).
 
-- [Questions for reviewers](#questions-for-reviewers)
-- [How to read this](#how-to-read-this)
-- The stories: [01](#01-alone) · [02](#02-small-sync) · [03](#03-sync-behind-own-async) ·
-  [04](#04-crowded) · [05](#05-newcomer) · [06](#06-slow-vs-fast) · [07](#07-slow-alone) ·
-  [08](#08-many-jobs) · [09](#09-slowdown-drift) · [10](#10-multi-granule-sync) ·
-  [11](#11-new-slow-pair) · [12](#12-occasional-long-items)
-- [The mixed workload](#the-mixed-workload)
-- [What the scenarios don't cover](#what-the-scenarios-dont-cover)
+## At a glance
 
-## Questions for reviewers
+Every scenario is one service with 20 pods, except 13, which has two services, and 14-17, which
+have 125 pods like production.
 
-Each story ends with questions specific to it. Across all of them:
-
-1. **Are they realistic?** Every story uses one service of 20 pods, work items of 30 seconds to 30
-   minutes, and jobs of 50 to 1,200 granules. Are those shapes like Harmony's real services and
-   users? Which real situations do they miss?
-2. **Is each "good outcome" what Harmony wants?** These are the judgment calls. The ones that most
-   affect policy choices are 05 (even sharing vs. low average slowdown), 07 (what the fast lane
-   reserve may cost), 10 (whether multi-granule sync requests matter) and 11 (fast work first vs.
-   fair from the start - `adaptive-fast-lane`'s fix 7 default rests on this one).
-3. **Are the costs acceptable?** `adaptive-fast-lane` is worse than `duration-based` in every
-   seed in three places: a big job alone or nearly alone takes about a minute (2%) longer (01, 02,
-   10), and a slow job alone about 10% longer (07). See [POLICY-DESIGN.md](POLICY-DESIGN.md#results).
-4. **What's missing?** See [What the scenarios don't cover](#what-the-scenarios-dont-cover).
-
-Comment on the pull request, or edit this file with your answers.
-
-## How to read this
-
-**The setup every story shares.** One service with 20 pods; one work-scheduler pod and one
-work-updater pod; Harmony's default fast lane settings (work is "slow" above 10 minutes, and slow
-work may use at most 70% of the pods, leaving a 30% reserve for fast work); and
-`QUEUE_LONG_POLLING_WAIT_TIME_SEC=3`, Harmony's default. A job has one work item per granule. Work
-item durations are random: "about 2 minutes" means a lognormal distribution with a median of
-2 minutes, where most work items take between roughly 1 and 3.5 minutes. Sync requests are 1
-granule, the production limit (`MAX_SYNCHRONOUS_GRANULES=1`), except in story 10.
-
-**The metrics** (defined fully in [REFERENCE.md](REFERENCE.md#the-metrics)):
-
-- **makespan** - from a job's submission to its completion.
-- **slowdown** - makespan divided by how long the job would take with the service to itself:
-  1.0 is as fast as possible, 2.0 twice as long.
-- **fair share** - while a user competes with others: the pods running their work divided by their
-  fair share of the pods (an equal split, except that users who want fewer get what they want).
-  1.00 is exactly fair.
-- **contended fairness** - how evenly the competing users got their shares (1.0 = exactly even).
-- **utilization** - the share of pod time spent running work.
-
-**Job and user names in the results.** Each job is named after its user and what it's like:
-`nora-mixed` is Nora's job with mixed work item durations, `bob-sync` Bob's sync request,
-`alice-big` Alice's big async job. A metric labeled with a job name is that job's ("nora-mixed
-slowdown" is the slowdown of Nora's job); one labeled with just a user's name is that user's,
-across all their jobs ("nora fair share").
-
-**Protected metrics** are the ones each story names as expressing its goal; its results table
-shows those. Values are means over 5 seeds (101-105). Runs with the same seed have the same work
-item durations under every policy, so "better in 5/5 seeds" is a real difference and a mixed
-count is noise.
-
-**The policies:** `slot-based` is Harmony's default; `duration-based` is Harmony's alternative,
-used when `ENABLE_DURATION_BASED_FAIR_QUEUEING` is true; `adaptive-fast-lane` is the candidate
-replacement for `duration-based` (see [POLICY-DESIGN.md](POLICY-DESIGN.md)).
-
-## The stories
-
-### 01-alone
-
-**What it models:** one user with the service to themselves - the baseline that no policy should
-make worse.
-
-**Setup:** Alice has one async job of 600 granules, about 2 minutes each.
-
-**Good outcome:** Alice uses every pod: utilization close to 100%, slowdown close to 1.0. All
-policies should do equally well.
-
-| metric | slot-based | duration-based | adaptive-fast-lane | adaptive vs duration-based |
+| # | The situation | What should happen | Question for you |
 |---|---|---|---|---|
-| utilization | 97.4% | 97.4% | 95.9% | -1%, **worse in 5/5 seeds** |
-| alice-big slowdown | 1.03 | 1.03 | 1.04 | +2%, **worse in 5/5 seeds** |
+| [1](#1-one-user-alone) | One user, one big job | The user gets every pod | Is a minute's delay at the start of a new job acceptable? |
+| [2](#2-a-sync-request-behind-a-big-job) | A sync request arrives while another user's big job fills the service | The request finishes in about its own run time | Is there a response time sync users expect? |
+| [3](#3-a-sync-request-behind-the-users-own-job) | A user's sync request arrives while their own big job is queued | The request doesn't wait behind their own job | Should sync requests always go first? |
+| [4](#4-a-crowded-service) | Eight users with very different work item lengths | Everyone gets a fair share | Is "fair" best measured in pods? |
+| [5](#5-a-newcomer) | A new user arrives at a service already shared by six | The newcomer gets going promptly | Should a newcomer get extra for a while? |
+| [6](#6-slow-work-and-fast-work) | Slow work (30 minute items) and fast work (1 minute items) compete | Fast work keeps flowing | Are these typical slow and fast durations? |
+| [7](#7-slow-work-alone) | Slow work alone | It gets most of the pods; a reserve stays free for fast work | Is that reserve worth what it costs here? |
+| [8](#8-one-user-with-many-jobs) | One user with four jobs, one with one | The two users get half each | Should some users get more than an equal share? |
+| [9](#9-a-job-that-turns-slow) | A job whose work suddenly gets 20 times slower | It's noticed and limited quickly | Do real jobs change speed like this? |
+| [10](#10-a-larger-sync-request) | A 4 granule sync request (production allows 1) | It finishes in about its own run time | Keep this scenario, or drop it? |
+| [11](#11-two-new-slow-jobs) | Two new slow jobs, then fast work 5 minutes later | Fast work gets going before the slow jobs take over | Fast work first, or fair from the start? |
+| [12](#12-a-job-with-occasional-long-items) | A fast job with occasional long work items | It's treated as fast | Is "1 in 20 items takes 10 times as long" realistic? |
+| [13](#13-a-busy-day) | Six hours of mixed users on a two step chain | Everyone's work keeps moving | What does a real busy day look like? |
+| [14](#14-hoss-under-a-backlog) | hoss, built from production stats: 125 pods, a permanent backlog, 16 users | Sync requests within 10 seconds, everyone gets an equal share | Does this look like hoss? |
+| [15](#15-geoloco-full-with-one-user) | One user keeps geoloco full, as in production; a newcomer arrives | The newcomer gets an equal share soon | Should sync requests have a fast path? |
+| [16](#16-a-trajectory-subsetter-burst) | A trajectory-subsetter burst: 11 users, some with minutes-long work items | Everyone gets an equal share, sync within 10 seconds | Does this look like a burst? |
+| [17](#17-a-slow-user-arrives-first) | An idle service: a user with 30-60 minute work items arrives first, fast work 5 minutes later | Fast work and sync requests start within seconds | How often does this happen? |
 
-`adaptive-fast-lane` runs a new job 2 work items at a time until the first one finishes, so it
-can't fill the service before anyone knows whether its work is slow. Here that costs about a
-minute on a 1 hour job.
+## Feedback so far
 
-**For reviewers:** is a minute at the start of a new job an acceptable price for protecting the
-service from unknown slow jobs?
+### Chris's answers (2026-11-04)
 
-### 02-small-sync
+| # | Question | Answer | What it means for the scenarios |
+|---|---|---|---|---|
+| 1 | Is a minute's delay at the start of a new job acceptable? | No | Real work items are seconds long (see 6), so a new job's first work item finishes in seconds and the delay mostly goes away with realistic durations. Check it once the scenarios use them. |
+| 2 | Is there a response time sync users expect? | Yes, less than 10 seconds of latency | Add a goal: a sync request's time to finish minus its own run time under 10 seconds. |
+| 3 | Should sync requests always go first? | Yes | Matches what adaptive does. |
+| 4 | Is "fair" best measured in pods? | No, it's measured in amount of time using pods | That is what fairness and share measure (pods held, over time), so the question was badly put. It means Carol in 4 really is under-served. |
+| 5 | Should a newcomer get extra for a while? | All 7 of them share time evenly | No extra share for newcomers. Change 5's goal to Erin getting an equal share as soon as Erin arrives. |
+| 6 | Are 30 minutes and 1 minute typical? | Fast work items are ~1 second. Average 10 seconds, median 4-5 seconds, 95th percentile 1 minute. Outliers 30 minutes to 2 hours. | The scenarios' work items are 10-100 times too long. Rebase every scenario on these durations (better still, on each service's own, from the dashboard). |
+| 7 | Is the reserve worth what it costs? | Maybe? Would prefer a much lower reserve of idle pods if possible. | Try smaller reserves (e.g. 10% and 20%) and see what they cost fast work. |
+| 8 | Should some users get more than an equal share? | Equal in amount of time using pods | Matches the current goal. |
+| 9 | Do real jobs change speed like this? | Rarely - usually in error and retry scenarios where spot instances go away and pods die | 9 overstates how often this happens. Replace it with a scenario of failures and retries. |
+| 10 | Keep the 4 granule sync scenario? | No - single granule sync requests only | Drop 10. |
+| 11 | Fast work first, or fair from the start? | Not sure what this means - for the same user, round robin between jobs is fine | The question was unclear: Frank, Mia and Gina are three different users. Ask again (below). |
+| 12 | Is "1 in 20 items takes 10 times as long" realistic? | Possible for subsetting when there's more or less data, but more likely a work item is occasionally much faster than the others | Add the reverse case: a job whose work items are occasionally much faster. A run of those could make a slow job look fast. |
+| 13 | What does a real busy day look like? | Look at the production stats that are being gathered now | Build it from the dashboard's stats. |
 
-**What it models:** an interactive user waiting behind someone else's big batch job.
+**Question 11, asked again:** three different users. Frank and Mia start slow jobs at the same time;
+nobody knows yet that the work is slow. Five minutes later Gina starts fast work. Once Frank's and
+Mia's work is known to be slow, should the three users share the pods equally straight away, or
+should Gina's fast work get more until it's flowing (Gina's job finishing about a third sooner),
+with the sharing evening out later?
 
-**Setup:** Alice's async job (600 granules, about 2 minutes each) fills the service. Ten minutes in,
-Bob sends a 1 granule sync request that takes 1 minute.
+### Chris's other comments
 
-**Good outcome:** Bob's request finishes close to its 1 minute minimum, without noticeably delaying
+- **Use 125 pods per service**, which is what production uses now.
+- **Use work items as short as 1 second**, especially for sync requests arriving while a large job
+  is in progress.
+- **A user who submits one single granule async request at a time**, waiting for each to finish
+  before sending the next: how is their performance affected?
+- **Big-n-bit sends 100 jobs of 1 granule at a time**, then 100 more a minute or two later, for
+  hours on end.
+- **Take the distributions of request performance from the production dashboard.**
+- **Should whole jobs be simulated**, with each finished work item starting the next step in the
+  chain and each service taking a different time, so work arrives at the services unevenly? The
+  simulator already does this: a job is a chain of steps on different services, and Harmony's own
+  work-updater code creates each step's work items as the previous step's finish (scenario 13 does
+  this). What it doesn't model is the CMR query step, aggregation and batching.
+
+### What we'll change
+
+1. **Get each service's work item durations, users and job patterns from the dashboard's API**
+   (`/admin/dashboard/api/services/<name>`, `/admin/dashboard/api/users/<name>`).
+2. **Rebase the scenarios on production:** 125 pods per service, durations from the dashboard (or
+   Chris's figures until then), and the 10 second sync goal. At that scale the simulator's delays
+   between work items (scheduling, queueing, polling) matter much more, so check them against
+   production too.
+3. **Apply the answers:** drop 10; change 5's goal; replace 9 with failures and retries; add the
+   reverse of 12; ask 11 again.
+4. **Add scenarios** for the one-at-a-time user and big-n-bit's bursts. Both need small simulator
+   features: a generator that submits a job when the previous one finishes, and one that submits
+   jobs in bursts.
+5. **Try smaller reserves** - done: a 10% reserve still keeps sync requests within 8 seconds when a
+   slow user arrives first (scenario 17), and adaptive now uses it.
+
+## A few terms
+
+- **Pod** - one copy of a service, which processes one work item at a time.
+- **Work item** - one granule's processing by one service.
+- **Sync request** - a request someone is waiting on interactively; production limits these to
+  1 granule.
+- **Slow and fast work** - Harmony treats work items over 10 minutes as slow, and lets slow work
+  use at most 70% of a service's pods, keeping 30% free so fast work arriving later always finds
+  pods. That 30% is the **reserve** - duration-based's. Adaptive keeps 10% instead (see
+  Feedback so far, question 7).
+- **Times its minimum** - how long a job took compared with the fastest it could possibly finish
+  with the service to itself. 1× is as fast as possible; 3× is three times as long.
+- **Fairness** - how evenly the competing users shared the service: 1.00 is perfectly even.
+- **Share** - a user's pods compared with what they were entitled to: 1.00 is exactly their share.
+
+The full results for adaptive, as it's being promoted, are in [RESULTS.md](RESULTS.md). The results
+here compare four ways of sharing: **slot-based** (Harmony's default, which every
+production service runs today), **duration-based** (Harmony's alternative, which knows how long
+work items take, but isn't used in production), and two candidates to replace slot-based:
+**slot-based fair share** (slot-based, plus a rule that holds each user to a fair share of the
+pods while others are waiting, and sync requests first - it doesn't need to know how long work
+items take) and **adaptive** (built on duration-based). Each number is an average over 5 runs with different random work
+item durations. Lower is better, except for fairness, share and pods busy.
+
+## The scenarios
+
+### 1. One user alone
+
+**The situation:** Alice is the only user, with one job of 600 work items of about 2 minutes each.
+
+**What should happen:** Alice uses every pod, and all three policies do equally well.
+
+| | slot-based | duration-based | slot-based fair share | adaptive |
+|---|---|---|---|---|
+| Alice's job, times its minimum | 1.03× | 1.03× | 1.03× | 1.04× |
+| Pods busy | 97.4% | 97.4% | 97.4% | 96.3% |
+
+Adaptive starts a new job 2 work items at a time until the first one finishes, so that it can't
+fill the service before anyone knows whether its work is slow. Here that costs under a minute on a
+one hour job.
+
+**Question:** is a minute's delay at the start of a new job an acceptable price for protecting the
+service from new slow jobs?
+
+### 2. A sync request behind a big job
+
+**The situation:** Alice's job (600 work items of about 2 minutes) fills the service. Ten minutes
+in, Bob sends a 1 granule sync request that takes 1 minute.
+
+**What should happen:** Bob's request finishes close to 1 minute, without noticeably delaying
 Alice.
 
-| metric | slot-based | duration-based | adaptive-fast-lane | adaptive vs duration-based |
+| | slot-based | duration-based | slot-based fair share | adaptive |
 |---|---|---|---|---|
-| bob-sync makespan | 1m 14s | 1m 14s | 1m 12s | -3%, better in 3, worse in 2 of 5 |
-| alice-big makespan | 1h 05m | 1h 05m | 1h 06m | +2%, **worse in 5/5 seeds** |
+| Bob's request, time to finish | 1m 14s | 1m 14s | 1m 13s | 1m 25s |
+| Alice's job, time to finish | 1h 05m | 1h 05m | 1h 05m | 1h 05m |
 
-Bob's request has to wait for one of Alice's work items to finish, since no policy preempts
-running work, so it can't finish in exactly its 1 minute.
+Bob's request has to wait for one of Alice's work items to finish (no policy interrupts running
+work), so it can't take exactly 1 minute. All three are about the same.
 
-**For reviewers:** is "close to the minimum" the right goal for sync requests, or is there a
-target latency that matters to users?
+**Question:** is "close to its own run time" the right goal, or is there a response time sync users
+expect?
 
-### 03-sync-behind-own-async
+### 3. A sync request behind the user's own job
 
-**What it models:** a user whose own batch job is queued when they send an interactive request.
+**The situation:** Alice and Bob each have a job of 400 work items of about 2 minutes. Ten minutes
+in, Bob also sends a 1 granule sync request.
 
-**Setup:** Alice and Bob each have an async job of 400 granules (about 2 minutes each). Ten minutes
-in, Bob also sends a 1 granule sync request (1 minute).
+**What should happen:** Bob's request finishes quickly even though Bob's own big job is queued, and
+Alice and Bob each get about half the service.
 
-**Good outcome:** Bob's sync request finishes quickly - it shouldn't wait behind Bob's own async work -
-and Alice and Bob each get about half the service.
-
-| metric | slot-based | duration-based | adaptive-fast-lane | adaptive vs duration-based |
+| | slot-based | duration-based | slot-based fair share | adaptive |
 |---|---|---|---|---|
-| bob-sync makespan | 1m 38s | 1m 33s | 1m 13s | -21%, better in 4, worse in 1 of 5 |
-| contended fairness | 0.98 | 0.98 | 0.98 | +1%, **better in 5/5 seeds** |
+| Bob's request, time to finish | 1m 38s | 1m 33s | 1m 10s | 1m 09s |
+| Fairness | 0.98 | 0.98 | 0.99 | 0.99 |
 
-**For reviewers:** should a user's sync request always go ahead of their own async work, even if
-that puts them over their fair share for a moment? (`adaptive-fast-lane` says yes.)
+Adaptive sends sync requests first, even when that puts the user briefly over their share.
 
-### 04-crowded
+**Question:** should a sync request always go ahead of the same user's other work?
 
-**What it models:** a busy service with many users whose work items take very different times.
+### 4. A crowded service
 
-**Setup:** eight users. Carol's work items take about 30 seconds, Dan's about 8 minutes, and the
-other six users' about 2 minutes; Bob has 300 granules, everyone else 150. Fifteen minutes in, Bob
-also sends a 1 granule sync request.
+**The situation:** eight users share the service. Carol's work items take about 30 seconds, Dan's
+about 8 minutes, and everyone else's about 2 minutes. Fifteen minutes in, Bob also sends a sync
+request.
 
-**Good outcome:** every user gets close to their fair share of pods however long their work items
-take, and Bob's sync request finishes quickly. Carol can show a low fair share even when served
-well, because fair share is measured in pods and Carol's work items are short.
+**What should happen:** every user gets close to their fair share of pods, however long their work
+items take, and Bob's request finishes quickly.
 
-| metric | slot-based | duration-based | adaptive-fast-lane | adaptive vs duration-based |
+| | slot-based | duration-based | slot-based fair share | adaptive |
 |---|---|---|---|---|
-| contended fairness | 0.86 | 0.82 | 0.92 | +11%, **better in 5/5 seeds** |
-| bob-sync makespan | 1m 51s | 1m 38s | 1m 25s | -13%, better in 3, worse in 2 of 5 |
+| Fairness | 0.86 | 0.82 | 0.93 | 0.92 |
+| Bob's request, time to finish | 1m 51s | 1m 38s | 1m 49s | 1m 28s |
 
-**For reviewers:** is fairness in pods the right measure, or should a user with short work items
-count as served when their work keeps moving, even with fewer pods?
+**Question:** fairness here is measured in pods. Should a user with very short work items (Carol)
+count as well served when their work keeps moving, even with fewer pods?
 
-### 05-newcomer
+### 5. A newcomer
 
-**What it models:** a new user arriving at a service that's already shared.
+**The situation:** six users each have a job of 200 work items of about 2 minutes. Twenty minutes
+in, Erin submits a small job of 50 one-minute work items.
 
-**Setup:** six users each have a job of 200 granules (about 2 minutes each). Twenty minutes in, Erin
-submits a small job of 50 one-minute work items.
+**What should happen:** Erin's job gets going promptly without starving anyone. (Sharing evenly and
+keeping everyone's jobs short pull against each other here: an even split makes equal jobs all
+finish late together.)
 
-**Good outcome:** Erin's small job gets going promptly without starving anyone, and the six existing
-users share the service evenly. The story notes that even sharing and a low average slowdown pull
-against each other here (equal sharing makes equal jobs all finish late together).
-
-| metric | slot-based | duration-based | adaptive-fast-lane | adaptive vs duration-based |
+| | slot-based | duration-based | slot-based fair share | adaptive |
 |---|---|---|---|---|
-| erin-1 slowdown | 9.83 | 10.21 | 6.86 | -33%, **better in 5/5 seeds** |
-| max job slowdown | 9.83 | 10.21 | 6.86 | -33%, **better in 5/5 seeds** |
+| Erin's job, times its minimum | 9.8× | 10.2× | 8.0× | 6.4× |
 
-No policy gets Erin going promptly yet: Erin's job takes about 7 times as long as it could. A
-"catch-up boost" for users who've had little of the service lately has been tried in an earlier
-version (see [POLICY-DESIGN.md](POLICY-DESIGN.md#considered-and-not-done)).
+Adaptive is better, but no policy gets Erin going promptly yet.
 
-**For reviewers:** should a newcomer get more than an equal share for a while, at the existing
-users' expense? Or is an equal share from the moment they arrive the right behavior?
+**Question:** should a newcomer get more than an equal share for a while, at the existing users'
+expense, or is an equal share from the start right?
 
-### 06-slow-vs-fast
+### 6. Slow work and fast work
 
-**What it models:** slow work and fast work competing - the problem the fast lane reserve exists
-to solve.
+**The situation:** Frank submits 60 work items that take about 30 minutes each. Five minutes later,
+Gina and Hank each submit 300 one-minute work items.
 
-**Setup:** Frank submits 60 work items that take about 30 minutes each. Five minutes later, Gina and
-Hank each submit 300 one-minute work items.
+**What should happen:** Gina's and Hank's work starts promptly and keeps flowing while Frank's runs.
+Frank finishing later is the expected price.
 
-**Good outcome:** Gina's and Hank's fast work starts promptly and keeps flowing while Frank's slow
-work runs, with Frank never holding more than 70% of the pods once Frank's work is known to be slow.
-Frank finishing later is the expected price, as are pods held in reserve after the fast work is
-done.
-
-| metric | slot-based | duration-based | adaptive-fast-lane | adaptive vs duration-based |
+| | slot-based | duration-based | slot-based fair share | adaptive |
 |---|---|---|---|---|
-| gina-fast slowdown | 7.56 | 7.36 | 3.16 | -57%, **better in 5/5 seeds** |
-| hank-fast slowdown | 7.38 | 7.16 | 3.14 | -56%, **better in 5/5 seeds** |
+| Gina's job, times its minimum | 7.6× | 7.4× | 4.8× | 3.3× |
+| Hank's job, times its minimum | 7.4× | 7.2× | 4.7× | 3.3× |
 
-`duration-based` does barely better than `slot-based` here because Frank's work fills the service
-before Frank's first work item finishes and shows it's slow.
+Duration-based barely helps, because Frank's work fills the service before Frank's first work item
+finishes and shows it's slow. Adaptive holds new jobs back until it knows, so the reserve works.
 
-**For reviewers:** is 30 minutes typical of Harmony's slow services? How long do slow and fast
-work items really take?
+**Question:** are 30 minutes and 1 minute typical of Harmony's slow and fast services?
 
-### 07-slow-alone
+### 7. Slow work alone
 
-**What it models:** what the fast lane reserve costs when no fast work arrives.
+**The situation:** Frank is the only user, with 100 work items of about 30 minutes each.
 
-**Setup:** Frank is the only user, with 100 work items of about 30 minutes each.
+**What should happen:** Frank gets as much of the service as allowed - 70% of the pods with
+duration-based's 30% reserve, 90% with adaptive's 10% - with the reserve left free on purpose in case
+fast work arrives.
 
-**Good outcome:** Frank gets as much of the service as the policy allows. Under the fast lane
-policies that's 70% of the pods, and the reserved 30% staying idle is by design, so that fast work
-arriving later never finds every pod taken.
-
-| metric | slot-based | duration-based | adaptive-fast-lane | adaptive vs duration-based |
+| | slot-based | duration-based | slot-based fair share | adaptive |
 |---|---|---|---|---|
-| frank-slow makespan | 2h 51m | 3h 46m | 4h 09m | +10%, **worse in 5/5 seeds** |
+| Frank's job, time to finish | 2h 51m | 3h 46m | 2h 51m | 3h 19m |
 
-`adaptive-fast-lane` is slower than `duration-based` because it enforces the reserve from the
-start; `duration-based` lets Frank's work overshoot it until the first of Frank's work items finishes.
+Duration-based's 30% reserve makes Frank's job take about a third longer. Adaptive's is 10%, so it
+costs about 16%. Production runs slot-based, which has no reserve, so this would be a new cost.
 
-**For reviewers:** is 30% the right reserve, and is roughly 45% longer for a slow user alone (vs.
-`slot-based`) acceptable? How often is a slow service used by one user alone?
+**Question:** is the reserve worth this cost? How often is a slow service used by one user alone?
 
-### 08-many-jobs
+### 8. One user with many jobs
 
-**What it models:** one user splitting their work into many jobs.
+**The situation:** Ivan has four jobs and Judy has one, each of 150 two-minute work items.
 
-**Setup:** Ivan has four jobs and Judy one, each of 150 two-minute work items.
+**What should happen:** Ivan and Judy each get about half the service, rather than Ivan getting four
+times as much for having submitted four jobs.
 
-**Good outcome:** Ivan and Judy each get about half the service while both have work, rather than
-Ivan getting four times Judy's share because Ivan submitted four jobs.
-
-| metric | slot-based | duration-based | adaptive-fast-lane | adaptive vs duration-based |
+| | slot-based | duration-based | slot-based fair share | adaptive |
 |---|---|---|---|---|
-| judy fair share | 0.40 | 0.40 | 0.95 | +137%, **better in 5/5 seeds** |
-| contended fairness | 0.74 | 0.74 | 0.97 | +31%, **better in 5/5 seeds** |
+| Judy's share | 0.40 | 0.40 | 0.98 | 0.96 |
+| Fairness | 0.74 | 0.74 | 0.99 | 0.98 |
 
-**For reviewers:** should fairness be between users, as here, or are there users (e.g. operational
-pipelines) who should get more?
+**Question:** should fairness always be between users, or should some (e.g. operational pipelines)
+get more?
 
-### 09-slowdown-drift
+### 9. A job that turns slow
 
-**What it models:** a job whose work gets much slower part way through.
+**The situation:** Kim's job has 1,200 work items: the first 1,000 take about a minute, the last 200
+about 20 minutes. Lee submits a new job of 100 one-minute work items every 15 minutes.
 
-**Setup:** Kim's job has 1,200 work items: the first 1,000 take about a minute, the last 200 about
-20 minutes. Lee submits a new job of 100 one-minute work items every 15 minutes for 5 hours.
+**What should happen:** once Kim's work turns slow, it's noticed within a few work items and limited,
+so Lee's jobs keep flowing.
 
-**Good outcome:** once Kim's work items become slow, the scheduler notices within a few completions
-and limits them, so Lee's stream of fast jobs keeps flowing. Pods held in reserve once Kim is
-limited are expected.
-
-| metric | slot-based | duration-based | adaptive-fast-lane | adaptive vs duration-based |
+| | slot-based | duration-based | slot-based fair share | adaptive |
 |---|---|---|---|---|
-| lee mean slowdown | 21.75 | 21.84 | 3.03 | -86%, **better in 5/5 seeds** |
-| lee max slowdown | 43.24 | 43.23 | 6.99 | -84%, **better in 5/5 seeds** |
+| Lee's jobs, times their minimum (average) | 21.8× | 21.8× | 3.6× | 3.7× |
+| Lee's jobs, times their minimum (worst) | 43.2× | 43.2× | 7.0× | 8.4× |
 
-`duration-based` never classifies Kim as slow, because the lifetime average of Kim's durations stays
-low.
+Duration-based never notices, because it uses the average over Kim's whole job, which stays low.
+Slot-based fair share doesn't need to notice: it holds Kim to a fair share of the pods however
+long Kim's work items take.
 
-**For reviewers:** do real jobs change speed part way through like this (e.g. a change in granule
-size or region)? How suddenly?
+**Question:** do real jobs change speed part way through like this, e.g. when granule sizes change?
 
-### 10-multi-granule-sync
+### 10. A larger sync request
 
-**What it models:** a sync request bigger than production allows today, as if a service raised its
-maximum sync granules.
+**The situation:** as scenario 2, but Bob's sync request has 4 granules - more than production
+allows today, as if a service raised its sync limit.
 
-**Setup:** as story 02, but Bob's sync request has 4 granules (1 minute each).
+**What should happen:** Bob's request finishes close to 1 minute, without noticeably delaying Alice.
 
-**Good outcome:** Bob's request finishes close to its 1 minute minimum, without noticeably delaying
-Alice.
-
-| metric | slot-based | duration-based | adaptive-fast-lane | adaptive vs duration-based |
+| | slot-based | duration-based | slot-based fair share | adaptive |
 |---|---|---|---|---|
-| bob-sync makespan | 1m 47s | 1m 50s | 1m 38s | -11%, better in 4, worse in 1 of 5 |
-| alice-big makespan | 1h 05m | 1h 05m | 1h 06m | +2%, **worse in 5/5 seeds** |
+| Bob's request, time to finish | 1m 47s | 1m 50s | 1m 24s | 1m 39s |
+| Alice's job, time to finish | 1h 05m | 1h 05m | 1h 05m | 1h 05m |
 
-**For reviewers:** are multi-granule sync requests likely enough to keep this story in the
-benchmark suite, or should it be dropped?
+**Question:** are multi-granule sync requests likely enough to keep this scenario?
 
-### 11-new-slow-pair
+### 11. Two new slow jobs
 
-**What it models:** new slow jobs whose slowness isn't known yet, with fast work arriving soon
-after.
+**The situation:** Frank and Mia each submit 60 work items of about 30 minutes, at the same time.
+Nobody knows yet that their work is slow. Five minutes later, Gina submits 300 one-minute work
+items.
 
-**Setup:** Frank and Mia each submit 60 work items of about 30 minutes at the same time. Nobody knows
-yet that their work is slow. Five minutes later, Gina submits 300 one-minute work items.
+**What should happen:** Gina's work starts promptly and keeps flowing, and once Frank's and Mia's
+work is known to be slow, the three share the service fairly. Frank and Mia finishing later is the
+expected price.
 
-**Good outcome:** Gina's fast work starts promptly and keeps flowing, with the reserve free for Gina's
-work when it arrives. Once Frank's and Mia's work is known to be slow, the three users share the
-service fairly. Frank and Mia finishing later is the expected price.
-
-| metric | slot-based | duration-based | adaptive-fast-lane | adaptive vs duration-based |
+| | slot-based | duration-based | slot-based fair share | adaptive |
 |---|---|---|---|---|
-| gina-fast slowdown | 12.47 | 4.78 | 1.99 | -58%, **better in 5/5 seeds** |
-| contended fairness | 0.72 | 0.89 | 0.94 | +5%, **better in 5/5 seeds** |
+| Gina's job, times its minimum | 12.5× | 4.8× | 5.7× | 2.4× |
+| Fairness | 0.72 | 0.89 | 0.94 | 0.98 |
 
-**For reviewers:** the goal puts Gina first. `adaptive-fast-lane` could instead let Frank's and
-Mia's work out of its new-job limit as soon as it's seen to be slow: Gina would be about a third
-slower, and fairness 1.5% better (see [POLICY-DESIGN.md](POLICY-DESIGN.md#judgment-calls)).
-Which matters more?
+**Question:** this puts Gina first. Adaptive could instead give Frank and Mia more as soon as their
+work is seen to be slow: Gina's job would take about a third longer, and the sharing would be
+slightly more even. Which matters more?
 
-### 12-occasional-long-items
+### 12. A job with occasional long items
 
-**What it models:** a job that's fast on average but has occasional long work items.
+**The situation:** three users start together. Kim has 80 work items of about 30 minutes (slow).
+Nora has 400 work items: most take about 2 minutes, but 1 in 20 takes about 20 minutes, so they
+average about 3 minutes (fast). Omar has 400 one-minute work items.
 
-**Setup:** three users start together. Kim has 80 work items of about 30 minutes (genuinely slow).
-Nora has 400 work items: most take about 2 minutes, but 1 in 20 takes about 20 minutes, averaging
-about 3 minutes (fast). Omar has 400 one-minute work items.
+**What should happen:** Nora's job is treated as fast: the occasional long work items don't hold up
+the rest of it or cost Nora a fair share. Omar's work keeps flowing.
 
-**Good outcome:** Nora is treated as a fast user - the occasional long work items don't hold up
-the rest of Nora's work or cost Nora a fair share - and Nora's slowdown is close to Omar's.
-Kim's slow work stays within the slow work capacity, and Omar's fast work keeps flowing.
-
-| metric | slot-based | duration-based | adaptive-fast-lane | adaptive vs duration-based |
+| | slot-based | duration-based | slot-based fair share | adaptive |
 |---|---|---|---|---|
-| nora-mixed slowdown | 3.66 | 3.67 | 2.74 | -25%, **better in 5/5 seeds** |
-| nora fair share | 0.74 | 0.80 | 0.92 | +14%, **better in 5/5 seeds** |
-| omar-fast slowdown | 9.69 | 9.67 | 3.20 | -67%, **better in 5/5 seeds** |
+| Nora's job, times its minimum | 3.7× | 3.7× | 2.8× | 2.8× |
+| Nora's share | 0.74 | 0.80 | 0.92 | 0.90 |
+| Omar's job, times its minimum | 9.7× | 9.7× | 3.9× | 3.2× |
 
-**For reviewers:** is "1 in 20 work items takes ten times as long" a realistic mix? Do some
-services have much heavier tails?
+**Question:** is "1 in 20 work items takes 10 times as long" a realistic mix? Do some services
+have much heavier tails?
 
-## The mixed workload
+### 13. A busy day
 
-`scenarios/mixed-workload.yml` isn't one of the benchmark stories (each run takes several minutes),
-but it's the closest scenario to a real day, and none of the policy fixes were tuned on it.
-
-**Setup:** over six hours, users submit jobs at random intervals to a two step chain, a 30 pod
+**The situation:** over six hours, users submit jobs at random to a chain of two services, a 30 pod
 subsetter followed by a 10 pod reformatter:
 
-- **pipeline** - a big job every 30 minutes on average: 300-600 granules, about 2 minutes on the
-  subsetter and 20 seconds on the reformatter.
-- **analyst** - every 20 minutes: 20-200 granules, about 90 seconds and 20 seconds.
-- **student** - every 45 minutes: 5-60 granules of about a minute, subsetter only.
-- **modeler** - every 90 minutes, from 30 minutes in: 10-40 granules on the subsetter, three in
-  four taking about 25 minutes and the rest about 3 minutes.
-- **viewer** - a 1 granule sync request every 4 minutes: about 20 seconds and 10 seconds.
+- **pipeline** - a big job (300-600 granules) every 30 minutes on average
+- **analyst** - a medium job (20-200 granules) every 20 minutes
+- **student** - a small job (5-60 granules) every 45 minutes, subsetter only
+- **modeler** - a slow job (10-40 granules, mostly about 25 minutes each) every 90 minutes
+- **viewer** - a 1 granule sync request every 4 minutes
 
-**Good outcome:** sync requests stay fast, users with small jobs aren't stuck behind the pipeline's
-big jobs, the occasional slow modeler jobs don't take over the subsetter, and overall slowdown is
-low.
+**What should happen:** sync requests stay fast, small jobs aren't stuck behind the pipeline's big
+jobs, and the modeler's slow jobs don't take over the subsetter.
 
-Results over seeds 101-103 (from a run on 2026-11-04; `adaptive-fast-lane` vs `duration-based`):
-better in all 3 seeds on mean job slowdown (-30%), worst job slowdown (-37%), mean sync makespan
-(-31%), worst sync makespan (-50%) and contended fairness (+10%), for 0.1% less utilization.
+Over 3 runs, compared with slot-based, slot-based fair share made jobs 26% quicker on average (the
+worst job 35% quicker), sync requests 26% quicker (the slowest 45% quicker), and the sharing 10% more
+even. Adaptive did a few percent better still, and slot-based and duration-based were about the
+same. The sync requests here wait at two services, so they're slower than the 10 second target
+under every policy; this scenario's durations aren't based on production's yet.
 
-**For reviewers:** this is the scenario most worth making realistic. What does a busy day on a real
-Harmony service look like - which users, how many jobs, what sizes, how often? Could it be built
+**Question:** this is the scenario most worth making realistic. What does a busy day on a real
+Harmony service look like - which users, how many jobs, what sizes, how often? Could we build it
 from production job history?
+
+### 14. hoss under a backlog
+
+This one is built from the production dashboard's stats for hoss, which uses nearly half of all
+of Harmony's pod time. The scenario file (`scenarios/production/hoss-saturated.yml`) says which
+parts come from the data and which are assumptions.
+
+**The situation:** two hours on a 125 pod service with more work queued than it can do, as hoss
+has (about 200,000 work items ready). Work items take seconds, like hoss's (median 4.7 seconds).
+Sixteen users: two big ones; one whose work items average 8.5 minutes, like a real hoss user;
+eight mid-sized users submitting 500 granule jobs every 20 minutes or so; three small users; a
+sync request about once a minute; and a user who sends single granule requests one at a time,
+waiting for each to finish.
+
+**What should happen:** sync requests start within seconds (under 10 seconds of latency), every
+user with work waiting gets an equal share of pod time however long their work items take, the
+one-at-a-time user's requests each finish quickly, and pods stay busy.
+
+| | slot-based | duration-based | slot-based fair share | adaptive |
+|---|---|---|---|---|
+| Sync requests, latency (95% within) | 18.9s | 20.3s | 6.3s | 5.9s |
+| Sync requests, latency (average) | 7.2s | 7.4s | 2.7s | 2.5s |
+| Fairness | 0.23 | 0.23 | 0.86 | 0.93 |
+| The 8.5 minute user's share | 6.45 | 6.44 | 1.36 | 1.14 |
+| One-at-a-time requests, times their minimum | 3.7× | 3.8× | 2.1× | 1.9× |
+| Pods busy | 97.8% | 97.8% | 97.0% | 96.8% |
+
+With slot-based, the user whose work items take 8.5 minutes ends up holding over half of the pods,
+as the dashboard's live view of production showed: each scheduling pass gives every user a slice,
+other users' pods come back within seconds, and theirs don't. Both candidates hold that user to
+about a fair share, which is what brings sync requests under 10 seconds.
+
+**Question:** does this look like hoss on a busy day? How many users are usually active at once,
+and how big are their jobs?
+
+### 15. geoloco full with one user
+
+Built from the dashboard's stats for geoloco (`scenarios/production/geoloco-one-user.yml`). That
+week one user did all of geoloco's work, keeping about 122 of its 125 pods busy for 36 hours, with
+work items of about 2 minutes.
+
+**The situation:** that user keeps all 125 pods busy. Twenty minutes in, a newcomer submits a 300
+granule job; small jobs arrive every 15 minutes or so; a sync request comes in about every 5
+minutes.
+
+**What should happen:** the newcomer and the small jobs get an equal share of the pods soon after
+they arrive (with 125 pods finishing 2 minute work items, one comes free about every second), sync
+requests start within seconds, and the service stays busy.
+
+| | slot-based | duration-based | slot-based fair share | adaptive |
+|---|---|---|---|---|
+| The newcomer's job, times its minimum | 1.59× | 1.58× | 1.51× | 1.51× |
+| Small jobs, times their minimum | 1.13× | 1.13× | 1.08× | 1.09× |
+| Sync requests, latency (95% within) | 34s | 35s | 30s | 32s |
+| Fairness | 0.93 | 0.94 | 0.95 | 0.95 |
+| Pods busy | 99.6% | 99.6% | 99.6% | 99.2% |
+
+Every policy does about as well here: with work items this long, pods come free often enough for a
+newcomer to get going. No policy gets sync requests under 10 seconds, though. About 15 work items
+are already waiting on the service's queue ahead of each new one, so a sync request waits for them
+whatever the policy decides next.
+
+**Question:** is one user filling a service common? Would a separate fast path for sync requests,
+ahead of work already queued, be worth having?
+
+### 16. A trajectory-subsetter burst
+
+Built from the dashboard's stats for trajectory-subsetter (`scenarios/production/trajectory-burst.yml`),
+which is usually lightly used but for hours at a time keeps 100-124 of its 125 pods busy. Its work
+items have a heavy tail: median 14 seconds, but 2.4% take over 5 minutes and the longest took 71.
+
+**The situation:** two hours of a burst. Two big users with work items averaging about 2 minutes, a
+user with many 10 second work items, three mid-sized users submitting jobs every 15-20 minutes,
+two users whose work items average 4-6 minutes, two small users, and a sync request every 2
+minutes on average.
+
+**What should happen:** every user with work waiting gets an equal share of pod time however long
+their work items take, sync requests start within seconds, and the mid and small users' jobs keep
+moving.
+
+| | slot-based | duration-based | slot-based fair share | adaptive |
+|---|---|---|---|---|
+| Sync requests, latency (95% within) | 22.1s | 25.6s | 13.1s | 9.8s |
+| Fairness | 0.66 | 0.66 | 0.91 | 0.97 |
+| A mid-sized user's jobs, times their minimum | 7.1× | 7.1× | 4.6× | 5.7× |
+| A small user's jobs, times their minimum | 4.2× | 4.2× | 1.4× | 1.3× |
+| Pods busy | 99.2% | 99.2% | 98.8% | 98.5% |
+
+**Question:** does this look like a trajectory-subsetter burst - the number of users, their job
+sizes?
+
+### 17. A slow user arrives first
+
+Not from one service's stats: it's the case the fast lane reserve exists for, at production's scale
+(`scenarios/production/slow-user-first.yml`). Slow work is rare in production, but outliers of 30
+minutes to 2 hours happen.
+
+**The situation:** a 125 pod service is idle when a user submits 500 work items that take 30 to 60
+minutes - nobody knows yet that they're slow. Five minutes later fast users arrive with work items
+of seconds, and sync requests start arriving about once a minute.
+
+**What should happen:** the slow user never holds all of the pods, fast work and sync requests start
+within seconds, and once everyone has work waiting the slow user has about a fair share.
+
+| | slot-based | duration-based | slot-based fair share | adaptive |
+|---|---|---|---|---|
+| Sync requests, latency (95% within) | 26m 57s | 26m 40s | 26m 41s | 7.8s |
+| Sync requests, latency (average) | 6m 27s | 5m 22s | 6m 57s | 1.7s |
+| Fast jobs, times their minimum | none finished in 2h | 24× | 37× | 7.1× |
+| The slow user's share | 3.71 | 2.18 | 2.22 | 1.27 |
+| Fairness | 0.24 | 0.55 | 0.51 | 0.81 |
+
+With nobody else waiting when the slow user arrives, slot-based, duration-based and slot-based
+fair share all let them take every pod, and Harmony doesn't interrupt running work items, so work
+arriving afterwards waits for them to finish - about half an hour. Adaptive runs only 2 work items
+of a new job (plus a share of an allowance) until one finishes, and keeps 10% of the pods out of
+slow work's reach, so sync requests start within 8 seconds (95% of them). With a 30% reserve, as
+duration-based has, it would be about 2 seconds.
+
+**Question:** how often does a user fill an idle service with long work items? Is protecting
+against it worth the reserve's cost when slow work has the service to itself (scenario 7)?
 
 ## What the scenarios don't cover
 
-Known gaps, in the scenarios and in the simulator:
+- **A service with a backed up queue**, where work items wait on pods before they start.
+- **Autoscaling** - pod counts are fixed.
+- **Smaller and larger services** - every scenario uses 20 pods (an earlier round also tried 4 and
+  80).
+- **Failures and retries**, slow work in a chain's second step, and bursts of sync requests (also
+  tried in the earlier round).
+- **Parts of Harmony the simulator doesn't model:** the CMR query step, aggregation, cancellation,
+  timeouts, and several scheduler pods working at once.
+- **Real traffic** - every scenario is made up.
 
-- **A service whose queue backs up**, so work items wait on pods before running.
-  `adaptive-fast-lane`'s fix 5 (using the pod's own timing) can't be judged without one.
-- **Autoscaling.** Pod counts are fixed.
-- **Small and very large services.** Every story uses 20 pods; an earlier round of experiments
-  also tried 4 and 80 pods, but those scenarios aren't in the suite.
-- **Failures and retries**, slow work in a chain's second step, and bursts of sync requests -
-  also tried in that earlier round, not in the suite.
-- **Parts of Harmony the simulator doesn't model:** query-cmr, aggregation and batching steps,
-  cancellation and pausing, work-failer timeouts, and concurrent scheduler pods (it runs one event
-  at a time, on sqlite rather than Postgres). See [REFERENCE.md](REFERENCE.md#limitations).
-- **Real traffic.** All scenarios are synthetic.
+**Question:** which of these matter most before trying a new policy in a sandbox or UAT? Are there
+real incidents, such as a service taken over by one user, that should become scenarios?
 
-**For reviewers:** which of these matter most for a sandbox or UAT trial? Are there real incidents
-(e.g. a service taken over by one user) that should become stories?
+## Appendix: how the results are produced
+
+- **The scenarios are defined in** `tools/fair-queueing-sim/scenarios/stories/*.yml` (1-12),
+  `scenarios/mixed-workload.yml` (13) and `scenarios/production/` (14 `hoss-saturated.yml`, 15
+  `geoloco-one-user.yml`, 16 `trajectory-burst.yml`, 17 `slow-user-first.yml`). Each file's `description` and `goodOutcome` are the source
+  of the situations and goals above, and its `benchmarks` list names the measures shown.
+- **The results come from** the committed benchmark records (`benchmarks/results/*.json`), as of
+  2026-11-05: 5 runs per scenario (seeds 101-105) for 1-12. Scenarios 13 (3 runs, seeds 101-103)
+  and 14-17 (5 runs, seeds 101-105) aren't in the records; their results are from runs on
+  2026-11-05 and 2026-11-06. Runs with the same seed have the same random work item durations
+  under every policy, so the policies are compared on identical workloads. `npm run sim -- bench`
+  regenerates them.
+- **Details:** how each measure is defined is in [REFERENCE.md](REFERENCE.md#the-metrics); why
+  the two candidates work the way they do, and seed-by-seed comparisons, are in
+  [POLICY-DESIGN.md](POLICY-DESIGN.md).

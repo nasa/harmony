@@ -196,6 +196,35 @@ describe('scenario', function () {
       expect(s.jobs.filter((j) => j.user === 'b').map((j) => j.submitAtMs)).to.deep.equal([300_000, 900_000, 1_500_000]);
     });
 
+    it('submits a generator\'s jobs in bursts, up to its count', function () {
+      const job = { granules: 1, steps: [{ service: 'svc', duration: '1m' }] };
+      const s = resolveScenario({
+        ...minimal(),
+        jobs: [],
+        generators: [
+          { name: 'timed', user: 'a', every: '10m', until: '25m', burst: 3, job },
+          { name: 'counted', user: 'b', every: '10m', count: 5, burst: 3, job },
+        ],
+      });
+      expect(s.jobs.filter((j) => j.user === 'a').map((j) => j.submitAtMs))
+        .to.deep.equal([0, 0, 0, 600_000, 600_000, 600_000, 1_200_000, 1_200_000, 1_200_000]);
+      expect(s.jobs.filter((j) => j.user === 'b').map((j) => [j.name, j.submitAtMs]))
+        .to.deep.equal([['counted-1', 0], ['counted-2', 0], ['counted-3', 0], ['counted-4', 600_000], ['counted-5', 600_000]]);
+    });
+
+    it('makes each of a serial generator\'s jobs wait for the one before', function () {
+      const s = resolveScenario({
+        ...minimal(),
+        jobs: [],
+        generators: [{ name: 's', user: 'a', start: '5m', every: '1m', count: 3, serial: true, job: { granules: 1, steps: [{ service: 'svc', duration: '1m' }] } }],
+      });
+      expect(s.jobs.map((j) => [j.name, j.submitAtMs, j.after, j.afterDelayMs])).to.deep.equal([
+        ['s-1', 300_000, undefined, undefined],
+        ['s-2', 300_000, 's-1', 60_000],
+        ['s-3', 300_000, 's-2', 60_000],
+      ]);
+    });
+
     describe('rejects invalid scenarios', function () {
       const step = [{ service: 'svc', duration: '1m' }];
       const cases: [string, Scenario, RegExp][] = [
@@ -247,6 +276,14 @@ describe('scenario', function () {
           { ...minimal(), jobs: [], generators: [{ name: 'g', user: 'a', every: '1m', count, job: { granules: 1, steps: step } }] },
           /count that is a whole number/,
         ]),
+        ...[0, 1.5].map((burst): [string, Scenario, RegExp] => [
+          `a generator burst of ${burst}`,
+          { ...minimal(), jobs: [], generators: [{ name: 'g', user: 'a', every: '1m', count: 2, burst, job: { granules: 1, steps: step } }] },
+          /burst that is a whole number, at least 1/,
+        ]),
+        ['a serial generator without a count', { ...minimal(), jobs: [], generators: [{ name: 'g', user: 'a', every: '1m', until: '1h', serial: true, job: { granules: 1, steps: step } }] }, /serial, so it needs a count/],
+        ['a serial generator with an until', { ...minimal(), jobs: [], generators: [{ name: 'g', user: 'a', every: '1m', count: 2, until: '1h', serial: true, job: { granules: 1, steps: step } }] }, /can't have an until/],
+        ['a serial generator with a burst', { ...minimal(), jobs: [], generators: [{ name: 'g', user: 'a', every: '1m', count: 2, burst: 2, serial: true, job: { granules: 1, steps: step } }] }, /can't have a burst/],
         ['no updater pods', { ...minimal(), infrastructure: { updaterPods: 0 } }, /infrastructure\.updaterPods needs a whole number of pods/],
         ['a fractional scheduler pod count', { ...minimal(), infrastructure: { schedulerPods: 1.5 } }, /infrastructure\.schedulerPods needs a whole number of pods/],
         ['a generator interval with a bad mix weight', { ...minimal(), jobs: [], generators: [{
@@ -285,7 +322,8 @@ describe('scenario', function () {
   describe('loadScenario', function () {
     const files = [
       ...fs.readdirSync(SCENARIOS_DIR).filter((f) => f.endsWith('.yml')).map((f) => path.join(SCENARIOS_DIR, f)),
-      ...fs.readdirSync(path.join(SCENARIOS_DIR, 'stories')).map((f) => path.join(SCENARIOS_DIR, 'stories', f)),
+      ...['stories', 'production'].flatMap((dir) => fs.readdirSync(path.join(SCENARIOS_DIR, dir))
+        .filter((f) => f.endsWith('.yml')).map((f) => path.join(SCENARIOS_DIR, dir, f))),
     ];
 
     for (const file of files) {

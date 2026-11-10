@@ -45,6 +45,7 @@ async function loadPolicies(): Promise<Record<string, PolicyEntry>> {
   const {
     adaptiveFastLanePolicy, adaptiveWorkItemCompleted, sampleAdaptiveFastLane, setupAdaptiveFastLane,
   } = await import('./adaptive-fast-lane');
+  const { slotBasedFairSharePolicy } = await import('./slot-based-fair-share');
   // To add a policy: implement FairQueueingPolicy in this directory, add it here and describe it
   // in catalog.ts
   return {
@@ -52,6 +53,8 @@ async function loadPolicies(): Promise<Record<string, PolicyEntry>> {
     'slot-based': { policy: slotBasedPolicy },
     // Harmony's algorithm when ENABLE_DURATION_BASED_FAIR_QUEUEING is true
     'duration-based': { policy: durationBasedPolicy },
+    // slot-based plus the fixes that need no work item durations
+    'slot-based-fair-share': { policy: slotBasedFairSharePolicy },
     // duration-based plus fixes for the problems the simulator found with it
     'adaptive-fast-lane': {
       policy: adaptiveFastLanePolicy,

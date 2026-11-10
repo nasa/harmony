@@ -64,7 +64,16 @@ export interface Summary {
   jobs: JobSummary[];
   users: UserSummary[];
   services: ServiceSummary[];
-  sync: { jobs: number; meanMakespanMs: number | null; maxMakespanMs: number | null };
+  // latency is how much longer a sync request took than it would have with the cluster to itself
+  // (its makespan minus its lower bound) - for a one granule request, the time it spent waiting
+  sync: {
+    jobs: number;
+    meanMakespanMs: number | null;
+    maxMakespanMs: number | null;
+    meanLatencyMs: number | null;
+    p95LatencyMs: number | null;
+    maxLatencyMs: number | null;
+  };
   overall: { meanSlowdown: number | null; maxSlowdown: number | null; meanWaitMs: number | null };
   env: Record<string, string | number>;
   // what a good result looks like for the scenario
@@ -284,6 +293,7 @@ export function summarize(result: RunResult): Summary {
   });
 
   const syncJobs = jobs.filter((j) => !j.async && j.makespanMs !== null);
+  const syncLatencies = syncJobs.map((j) => Math.max(0, j.makespanMs - j.aloneLowerBoundMs));
   const slowdowns = jobs.map((j) => j.slowdown).filter((s) => s !== null);
   const allWaits = jobs.map((j) => j.meanWaitMs).filter((w) => w !== null);
   return {
@@ -303,6 +313,9 @@ export function summarize(result: RunResult): Summary {
       jobs: syncJobs.length,
       meanMakespanMs: mean(syncJobs.map((j) => j.makespanMs)),
       maxMakespanMs: syncJobs.length ? Math.max(...syncJobs.map((j) => j.makespanMs)) : null,
+      meanLatencyMs: mean(syncLatencies),
+      p95LatencyMs: percentile(syncLatencies, 95),
+      maxLatencyMs: syncLatencies.length ? Math.max(...syncLatencies) : null,
     },
     overall: {
       meanSlowdown: mean(slowdowns),
