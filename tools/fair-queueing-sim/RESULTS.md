@@ -195,6 +195,17 @@ differences below are what the fixes and the smaller reserve add - and why the c
 measured as slow (a mean over 10 minutes), and only by capping slow work at 70% of the pods. In
 production's terms, that leaves the problems this work set out to fix:
 
+| Problem with the existing fast lane | Fix in `adaptive-fast-lane` | Result |
+|---|---|---|
+| A user whose work items are long but under the 10 minute "slow" threshold takes over hoss | fix 6: fair share for every user | contended fairness 0.23 -> 0.93; sync latency (95th percentile) 20 s -> 6 s |
+| A slow user reaching an idle service first takes all of it | fixes 1 and 7 | sync latency (95th percentile) 27 minutes -> 8 s |
+| A user with many jobs gets more than a user with one (story 08) | fix 4: each batch split between users first | Judy's share 0.40 -> 0.96 |
+| A job that turns slow isn't noticed (story 09) | none needed: fair share holds the user back anyway | Lee's jobs 21.8 -> 3.7 times their minimum |
+| Sync requests wait behind their own user's work (story 03) | fix 8: sync requests first | the sync request 26% sooner |
+| The 30% reserve costs more than it needs to (story 07) | a 10% reserve | a slow job alone finishes 12% sooner |
+
+In more detail:
+
 - **A user whose work items are long but not "slow" can still take a service.** Like `slot-based`,
   it hands every user a slice of each batch, so a user with 8.5 minute work items - under the 10
   minute threshold, so the cap doesn't apply - accumulates pods. On hoss it does no better than
