@@ -164,7 +164,7 @@ function buildFrontendServer(port: number, hostBinding: string, config: RouterCo
   app.set('view engine', 'mustache.html');
   app.set('views', path.join(__dirname, 'views'));
 
-  if (config.EXAMPLE_SERVICES !== 'false') {
+  if (config.EXAMPLE_SERVICES === 'true') {
     app.use('/example', exampleBackend.router());
   }
   app.use('/', router(config));
@@ -197,8 +197,8 @@ function buildFrontendServer(port: number, hostBinding: string, config: RouterCo
  *     PORT: The port to run the frontend server on
  *     BACKEND_PORT: The port to run the backend server on
  *     CALLBACK_URL_ROOT: The base URL for callbacks to use
- *     EXAMPLE_SERVICES: True if we should run example services, false otherwise.  Should
- *       be false in production.  Defaults to true until we have real HTTP services.
+ *     EXAMPLE_SERVICES: True if we should run example services, false otherwise.  Only
+ *       enabled in tests.  Defaults to false.
  *
  * @returns An object with "frontend" and "backend" keys with running http.Server objects
  */

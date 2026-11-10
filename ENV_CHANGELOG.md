@@ -2,6 +2,13 @@
 Any changes to the environment variables will be documented in this file in chronological
 order with the most recent changes first.
 
+## 2026-11-10
+### Changed
+- EXAMPLE_SERVICES - harmony: now defaults to `false` (was `true`), and the example HTTP backend
+  under `/example` is only mounted when it is exactly `true` (previously anything other than
+  `false` mounted it). The example backend and the `harmony/example` service are test-only; the
+  harmony tests turn it on.
+
 ## 2026-10-28
 ### Changed
 - REAPABLE_WORK_AGE_MINUTES - moved from `services/cron-service/env-defaults` to the shared
