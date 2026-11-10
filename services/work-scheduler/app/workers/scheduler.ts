@@ -4,9 +4,7 @@ import { LRUCache } from 'lru-cache';
 import { Logger } from 'winston';
 
 
-import {
-  durationBasedPolicy, slotBasedPolicy,
-} from '../../../harmony/app/backends/workflow-orchestration/fair-queueing-policy';
+import { getFairQueueingPolicy } from '../../../harmony/app/backends/workflow-orchestration/fair-queueing-policy';
 import { QUERY_CMR_SERVICE_REGEX } from '../../../harmony/app/backends/workflow-orchestration/util';
 import {
   getWorkItemsFromDatabase, revertQueuedWorkItemsToReady,
@@ -238,7 +236,7 @@ export async function processSchedulerQueue(
     reqLogger.debug(`Work size count is ${workSize} based on service pod count of ${servicePodCount}, message count ${messageCount}, scheduler pod count ${schedulerPodCount}, numMessagesReceived ${numMessagesReceived}, and scaleFactor ${scaleFactor} for queue ${queueUrl}`);
     reqLogger.debug(`Attempting to retrieve ${workSize} work items for queue ${queueUrl}`);
 
-    const fairQueueingPolicy = env.enableDurationBasedFairQueueing ? durationBasedPolicy : slotBasedPolicy;
+    const fairQueueingPolicy = getFairQueueingPolicy(env.fairQueueingPolicy, env.enableDurationBasedFairQueueing);
     const schedulingContext = {
       servicePodCount,
       slowWorkThresholdMs: env.slowWorkThresholdMs,

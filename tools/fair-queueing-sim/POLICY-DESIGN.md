@@ -1,16 +1,19 @@
 # Fair queueing policy design
 
-Why `adaptive-fast-lane` (`src/policies/adaptive-fast-lane.ts`) is built the way it is: the
+Why `adaptive-fast-lane` (Harmony's `adaptive-fast-lane-policy.ts`, next to
+`fair-queueing-policy.ts`; the simulator-only parts are in `src/policies/adaptive-fast-lane.ts`)
+is built the way it is: the
 problem each fix solves, the evidence for it, the trade-offs chosen and the alternatives that were
 rejected. What each fix does, and its settings, are in the code's header comment and in
 [REFERENCE.md](REFERENCE.md#available-policies); this file is the reasoning behind them.
 
-`adaptive-fast-lane` is a candidate to replace `slot-based`, the policy every Harmony service runs
-today. It's built on `duration-based`, the fast lane from HARMONY-2413, which Harmony has but
-production doesn't use (`ENABLE_DURATION_BASED_FAIR_QUEUEING` isn't set). It runs in the simulator
-only, until it's [promoted](README.md#6-promote-it-to-production). So does the smaller candidate,
-[`slot-based-fair-share`](#the-smaller-candidate-slot-based-fair-share): `slot-based` plus the two of
-its fixes that need no work item durations.
+`adaptive-fast-lane` is the policy chosen to replace `slot-based`, the policy every Harmony
+service runs today. It's built on `duration-based`, the fast lane from HARMONY-2413, which Harmony
+has but production doesn't use. It's [in Harmony now](#promoting-it), selected with the
+work-scheduler's `FAIR_QUEUEING_POLICY=adaptive-fast-lane`, but the default is still `slot-based`.
+The smaller candidate, [`slot-based-fair-share`](#the-smaller-candidate-slot-based-fair-share) -
+`slot-based` plus the two of its fixes that need no work item durations - runs in the simulator
+only.
 
 - [Ground rules](#ground-rules)
 - [Results](#results)
@@ -19,7 +22,7 @@ its fixes that need no work item durations.
 - [The fixes](#the-fixes)
 - [Judgment calls](#judgment-calls)
 - [Considered and not done](#considered-and-not-done)
-- [Before promoting it](#before-promoting-it)
+- [Promoting it](#promoting-it)
 - [Reproducing the evidence](#reproducing-the-evidence)
 
 ## Ground rules
@@ -169,7 +172,7 @@ stops one user's slow work taking a service in both cases, it's at least as good
 migration. Its costs: the reserve (a slow job alone takes 45% longer at today's 30% reserve, 16% at 10% -
 see the reserve sweep below), a slower start for a new job (about 1% on a big job alone), and being production's
 first duration-aware scheduling, which needs a sandbox or UAT trial (see
-[Before promoting it](#before-promoting-it)). `slot-based-fair-share` remains a smaller option if
+[Promoting it](#promoting-it)). `slot-based-fair-share` remains a smaller option if
 that trial has to wait: it fixes the first case, but not the second.
 
 **The reserve can be much smaller.** Chris asked for a much lower reserve of idle pods. Sweeping the
@@ -188,10 +191,9 @@ hoss and trajectory-subsetter are unchanged at every size: they have almost no s
 reserve never applies. Even at 10%, sync requests meet the 10 second target when a slow user
 arrives first (fix 1's limit on new jobs does much of the protecting), and the reserve's cost when
 slow work is alone falls to a third. **Chosen: 10%**, given how rare slow work is in production
-(20% would give more margin). In the simulator it's `adaptive-fast-lane`'s own setting,
-`ADAPTIVE_FAST_LANE_RESERVE_FRACTION`, so `duration-based` keeps the work-scheduler's 30%; in
-production it becomes the work-scheduler's `FAST_LANE_RESERVE_FRACTION` (or a setting of the
-policy's own) when the policy is promoted.
+(20% would give more margin). It's `adaptive-fast-lane`'s own setting,
+`ADAPTIVE_FAST_LANE_RESERVE_FRACTION` (in the work-scheduler's `env-defaults`), so `duration-based`
+keeps `FAST_LANE_RESERVE_FRACTION`'s 30%.
 
 ## The fixes
 
@@ -278,19 +280,25 @@ everything else is over 5 seeds.
   turns slow, a newcomer waits for a pod to free up (story 09, seed 104). No policy without
   preemption can fix that, and preempting running work items is out of scope.
 
-## Before promoting it
+## Promoting it
 
-See the README's [promotion steps](README.md#6-promote-it-to-production). Specific to this policy:
+It was promoted (HARMONY-2414) following the README's
+[promotion steps](README.md#6-promote-it-to-production): `adaptiveFastLanePolicy` is in
+`services/harmony/app/backends/workflow-orchestration/adaptive-fast-lane-policy.ts`, the
+work-scheduler selects it with `FAIR_QUEUEING_POLICY=adaptive-fast-lane`, and its settings, with
+the defaults above, are in `services/work-scheduler/env-defaults`. The default policy is still
+`slot-based`. The simulator runs Harmony's code; `src/policies/adaptive-fast-lane.ts` only adds
+what Harmony doesn't have: the columns and completion hook for fixes 2 and 5, and the sampler.
+What's left, specific to this policy:
 
 - **Production has never run duration-aware scheduling.** Every service runs `slot-based`, so this
-  would also be the first production use of `duration-based`'s queries, its advisory lock and the
-  fast lane reserve. Trying plain `duration-based` in UAT first would separate "that machinery
-  works" from "the fixes help". Rolling back means switching back to `slot-based`.
-- **The completion hook moves into the work-updater** - only if fixes 2 or 5 are on. They learn
-  from completed work items through `onWorkItemCompleted`, which only the simulator calls;
-  production would need it in the work-updater's transaction, which means extending the policy
-  interface. With both off (the recommended configuration) there's no hook.
-- **A migration for its columns**, replacing the simulator's `setup` - again only for fixes 2 and 5.
+  is also the first production use of `duration-based`'s queries, its advisory lock and the fast
+  lane reserve. Trying plain `duration-based` in UAT first would separate "that machinery works"
+  from "the fixes help". Rolling back means switching back to `slot-based`.
+- **Fixes 2 and 5 stay in the simulator.** Harmony's policy ignores their settings (and logs a
+  warning if they're set). Turning either on in production would need the completion hook in the
+  work-updater's transaction, which means extending the policy interface, and a migration for its
+  columns, replacing the simulator's `setup`.
 - **Postgres-only paths are untested here.** The advisory lock and `SKIP LOCKED` that serialize
   concurrent scheduler pods never run in the simulator (sqlite, one event at a time). A sandbox
   deployment is the first real test of them.
@@ -298,8 +306,9 @@ See the README's [promotion steps](README.md#6-promote-it-to-production). Specif
 
 **For `slot-based-fair-share`, most of that doesn't apply.** It needs no completion hook, no
 migration and no reserve, and it keeps `slot-based`'s job selection query, so it doesn't touch the
-untested Postgres paths either. What's left: move it into `fair-queueing-policy.ts` next to
-`slotBasedPolicy` and make it selectable (README steps 1 and 2), test it, and check the cost of
+untested Postgres paths either. Promoting it would mean moving it into Harmony next to
+`slotBasedPolicy` and adding it to `FAIR_QUEUEING_POLICIES` (README steps 1 and 2), testing it, and
+checking the cost of
 its two extra queries per scheduling pass - each user's running and ready counts for the service,
 and the user and type of each job picked, both from `user_work` by service.
 

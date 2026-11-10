@@ -97,7 +97,7 @@ export class Harness {
 
   /**
    * Makes every scheduling pass use the given fair queueing policy instead of the one the
-   * work-scheduler picks from ENABLE_DURATION_BASED_FAIR_QUEUEING, and runs the policy's setup
+   * work-scheduler picks from FAIR_QUEUEING_POLICY, and runs the policy's setup
    * if it has one. The work-scheduler's scheduling context (pod count and fast lane settings)
    * is passed to the policy unchanged, and the policy's completion hook, if it has one, is called
    * as work items complete.

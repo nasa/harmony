@@ -15,7 +15,10 @@ measured in the simulator. Recorded 2026-11-09 (HARMONY-2414). The reasoning beh
 
 ## What's being promoted
 
-`adaptive-fast-lane` (`src/policies/adaptive-fast-lane.ts`) with its defaults:
+`adaptive-fast-lane` with its defaults. It's in Harmony as `adaptiveFastLanePolicy`
+(`services/harmony/app/backends/workflow-orchestration/adaptive-fast-lane-policy.ts`), selected
+with the work-scheduler's `FAIR_QUEUEING_POLICY=adaptive-fast-lane` - the default is still
+`slot-based` - and these defaults are in `services/work-scheduler/env-defaults`:
 
 | Setting | Value | |
 |---|---|---|
@@ -25,7 +28,8 @@ measured in the simulator. Recorded 2026-11-09 (HARMONY-2414). The reasoning beh
 | all other `ADAPTIVE_FAST_LANE_*` | their defaults | fixes 1, 3, 4, 6, 7 and 8 on (see [REFERENCE.md](REFERENCE.md#policy-settings)) |
 
 With fixes 2 and 5 off it uses only the durations Harmony already keeps (`user_work.average_duration`),
-so it needs no work-updater hook and no migration.
+so it needs no work-updater hook and no migration. Fixes 2 and 5 are simulator only: Harmony's
+policy ignores them.
 
 ## Summary
 
@@ -325,10 +329,13 @@ doesn't.
 
 - **The stories** come from the committed benchmark records, `benchmarks/results/slot-based.json`,
   `benchmarks/results/duration-based.json` and
-  `benchmarks/results/adaptive-fast-lane.json` (duration-based: 553308212 + uncommitted changes, code hash 4012a8431651c8cc, Node v24.21.0, linux-arm64, 2026-11-09; slot-based: 553308212 + uncommitted changes, code hash 4012a8431651c8cc, Node v24.21.0, linux-arm64, 2026-11-09; adaptive-fast-lane: 553308212 + uncommitted changes, code hash 4629080262a3e085, Node v24.21.0, linux-arm64, 2026-11-09). Each record holds every metric for
+  `benchmarks/results/adaptive-fast-lane.json` (duration-based: 744ecc73c + uncommitted changes, code hash d76b8365c50267b0, Node v24.21.0, linux-arm64, 2026-11-10; slot-based: 744ecc73c + uncommitted changes, code hash d76b8365c50267b0, Node v24.21.0, linux-arm64, 2026-11-10; adaptive-fast-lane: 744ecc73c + uncommitted changes, code hash 94550e6638e134ed, Node v24.21.0, linux-arm64, 2026-11-10). Each record holds every metric for
   every story and seed, with the settings and a hash of the code that produced it.
 - **The production scenarios and the mixed workload** aren't in the records; their numbers are from
   `bench` runs on 2026-11-09 of the same code, with the commands below.
+- **The promotion didn't change them.** The records were re-recorded on 2026-11-10, when the policy
+  moved into Harmony (`adaptive-fast-lane-policy.ts`), and every metric of every policy, story and
+  seed was identical to the 2026-11-09 records.
 - **Determinism:** runs are deterministic, and `findings` checks that `adaptive-fast-lane` with its
   fixes off (and the work-scheduler's 30% reserve) makes exactly the same decisions as
   `duration-based`, so every difference above comes from the fixes and the reserve.
@@ -363,8 +370,8 @@ npm run sim -- compare scenarios/production/slow-user-first.yml --policies slot-
 ```
 
 `slot-based` is Harmony's own `slotBasedPolicy` (`fair-queueing-policy.ts`), not a copy, so it can
-be simulated for as long as Harmony keeps it - which the promotion keeps, as the rollback (README,
-[step 6](README.md#6-promote-it-to-production)). If it's ever removed, check out a commit that has
+be simulated for as long as Harmony keeps it - which the promotion did, as the rollback
+(`FAIR_QUEUEING_POLICY=slot-based`; README, [step 6](README.md#6-promote-it-to-production)). If it's ever removed, check out a commit that has
 it and run the commands there, or compare against one with `findings --references
 <commit>=slot-based` (REFERENCE.md, [Writing up findings](REFERENCE.md#writing-up-findings)).
 

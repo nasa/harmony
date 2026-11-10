@@ -23,8 +23,8 @@
 // slot-based, which `findings` checks (the catalog's equivalentTo).
 //
 
-import { maxMinFairShares } from './fair-share';
 import type { FairQueueingPolicy } from '../../../../services/harmony/app/backends/workflow-orchestration/fair-queueing-policy';
+import { maxMinFairShares } from '../../../../services/harmony/app/backends/workflow-orchestration/fair-share';
 import { getNextJobIds } from '../../../../services/harmony/app/models/user-work';
 import type { Transaction } from '../../../../services/harmony/app/util/db';
 

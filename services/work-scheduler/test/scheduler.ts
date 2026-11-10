@@ -3,6 +3,7 @@ import { describe, it } from 'mocha';
 import * as sinon from 'sinon';
 import { Logger } from 'winston';
 
+import { adaptiveFastLanePolicy } from '../../harmony/app/backends/workflow-orchestration/adaptive-fast-lane-policy';
 import {
   durationBasedPolicy, FairQueueingPolicy, SchedulingContext, slotBasedPolicy,
 } from '../../harmony/app/backends/workflow-orchestration/fair-queueing-policy';
@@ -172,6 +173,29 @@ describe('Scheduler Worker', async function () {
             servicePodCount: 1,
             slowWorkThresholdMs: env.slowWorkThresholdMs,
             fastLaneReserveFraction: env.fastLaneReserveFraction,
+          });
+        });
+      });
+
+      ([['duration-based', durationBasedPolicy], ['adaptive-fast-lane', adaptiveFastLanePolicy]] as const).forEach(([name, policy]) => {
+        describe(`and the fair queueing policy is ${name}`, async function () {
+          let fairQueueingPolicyStub;
+          beforeEach(async function () {
+            await schedulerQueue.purge();
+            await schedulerQueue.sendMessage(service);
+            serviceQueues = {};
+            serviceQueues[service] = new MemoryQueue();
+            fairQueueingPolicyStub = sinon.stub(env, 'fairQueueingPolicy').get(() => name);
+            await processSchedulerQueue(logger);
+          });
+          afterEach(async function () {
+            await schedulerQueue.purge();
+            serviceQueues = {};
+            fairQueueingPolicyStub.restore();
+          });
+
+          it(`uses ${name} fair queueing`, async function () {
+            expect(getWorkItemsFromDatabaseStub.lastCall.args[3]).to.equal(policy);
           });
         });
       });

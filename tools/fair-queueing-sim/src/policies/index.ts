@@ -49,13 +49,14 @@ async function loadPolicies(): Promise<Record<string, PolicyEntry>> {
   // To add a policy: implement FairQueueingPolicy in this directory, add it here and describe it
   // in catalog.ts
   return {
-    // Harmony's default algorithm
+    // Harmony's default algorithm (FAIR_QUEUEING_POLICY=slot-based)
     'slot-based': { policy: slotBasedPolicy },
-    // Harmony's algorithm when ENABLE_DURATION_BASED_FAIR_QUEUEING is true
+    // FAIR_QUEUEING_POLICY=duration-based
     'duration-based': { policy: durationBasedPolicy },
     // slot-based plus the fixes that need no work item durations
     'slot-based-fair-share': { policy: slotBasedFairSharePolicy },
-    // duration-based plus fixes for the problems the simulator found with it
+    // FAIR_QUEUEING_POLICY=adaptive-fast-lane: duration-based plus fixes for the problems the
+    // simulator found with it, here with the simulator-only fixes 2 and 5 available
     'adaptive-fast-lane': {
       policy: adaptiveFastLanePolicy,
       sampler: sampleAdaptiveFastLane,

@@ -1,6 +1,6 @@
 //
-// Max-min fair shares of a service's pods, shared by the policies that hold users to their fair
-// share (adaptive-fast-lane's fix 6 and slot-based-fair-share).
+// Max-min fair shares of a service's pods, for the fair queueing policies that hold users to
+// their fair share (adaptive-fast-lane-policy.ts, and the simulator's slot-based-fair-share).
 //
 
 /**
