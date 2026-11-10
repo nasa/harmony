@@ -43,7 +43,7 @@ have 125 pods like production.
 |---|---|---|---|---|
 | 1 | Is a minute's delay at the start of a new job acceptable? | No | Real work items are seconds long (see 6), so a new job's first work item finishes in seconds and the delay mostly goes away with realistic durations. Check it once the scenarios use them. |
 | 2 | Is there a response time sync users expect? | Yes, less than 10 seconds of latency | Add a goal: a sync request's time to finish minus its own run time under 10 seconds. |
-| 3 | Should sync requests always go first? | Yes | Matches what adaptive does. |
+| 3 | Should sync requests always go first? | Yes | Matches what fair share fast lane does. |
 | 4 | Is "fair" best measured in pods? | No, it's measured in amount of time using pods | That is what fairness and share measure (pods held, over time), so the question was badly put. It means Carol in 4 really is under-served. |
 | 5 | Should a newcomer get extra for a while? | All 7 of them share time evenly | No extra share for newcomers. Change 5's goal to Erin getting an equal share as soon as Erin arrives. |
 | 6 | Are 30 minutes and 1 minute typical? | Fast work items are ~1 second. Average 10 seconds, median 4-5 seconds, 95th percentile 1 minute. Outliers 30 minutes to 2 hours. | The scenarios' work items are 10-100 times too long. Rebase every scenario on these durations (better still, on each service's own, from the dashboard). |
@@ -91,7 +91,7 @@ with the sharing evening out later?
    features: a generator that submits a job when the previous one finishes, and one that submits
    jobs in bursts.
 5. **Try smaller reserves** - done: a 10% reserve still keeps sync requests within 8 seconds when a
-   slow user arrives first (scenario 17), and adaptive now uses it.
+   slow user arrives first (scenario 17), and fair share fast lane now uses it.
 
 ## A few terms
 
@@ -101,20 +101,21 @@ with the sharing evening out later?
   1 granule.
 - **Slow and fast work** - Harmony treats work items over 10 minutes as slow, and lets slow work
   use at most 70% of a service's pods, keeping 30% free so fast work arriving later always finds
-  pods. That 30% is the **reserve** - duration-based's. Adaptive keeps 10% instead (see
+  pods. That 30% is the **reserve** - duration-based's. Fair share fast lane keeps 10% instead (see
   Feedback so far, question 7).
 - **Times its minimum** - how long a job took compared with the fastest it could possibly finish
   with the service to itself. 1× is as fast as possible; 3× is three times as long.
 - **Fairness** - how evenly the competing users shared the service: 1.00 is perfectly even.
 - **Share** - a user's pods compared with what they were entitled to: 1.00 is exactly their share.
 
-The full results for adaptive, as it's being promoted, are in [RESULTS.md](RESULTS.md). The results
+The full results for fair share fast lane, as it's being promoted, are in [RESULTS.md](RESULTS.md). The results
 here compare four ways of sharing: **slot-based** (Harmony's default, which every
 production service runs today), **duration-based** (Harmony's alternative, which knows how long
 work items take, but isn't used in production), and two candidates to replace slot-based:
 **slot-based fair share** (slot-based, plus a rule that holds each user to a fair share of the
 pods while others are waiting, and sync requests first - it doesn't need to know how long work
-items take) and **adaptive** (built on duration-based). Each number is an average over 5 runs with different random work
+items take) and **fair share fast lane** (built on duration-based; earlier drafts of this
+document called it "adaptive"). Each number is an average over 5 runs with different random work
 item durations. Lower is better, except for fairness, share and pods busy.
 
 ## The scenarios
@@ -125,12 +126,12 @@ item durations. Lower is better, except for fairness, share and pods busy.
 
 **What should happen:** Alice uses every pod, and all three policies do equally well.
 
-| | slot-based | duration-based | slot-based fair share | adaptive |
+| | slot-based | duration-based | slot-based fair share | fair share fast lane |
 |---|---|---|---|---|
 | Alice's job, times its minimum | 1.03× | 1.03× | 1.03× | 1.04× |
 | Pods busy | 97.4% | 97.4% | 97.4% | 96.3% |
 
-Adaptive starts a new job 2 work items at a time until the first one finishes, so that it can't
+Fair share fast lane starts a new job 2 work items at a time until the first one finishes, so that it can't
 fill the service before anyone knows whether its work is slow. Here that costs under a minute on a
 one hour job.
 
@@ -145,7 +146,7 @@ in, Bob sends a 1 granule sync request that takes 1 minute.
 **What should happen:** Bob's request finishes close to 1 minute, without noticeably delaying
 Alice.
 
-| | slot-based | duration-based | slot-based fair share | adaptive |
+| | slot-based | duration-based | slot-based fair share | fair share fast lane |
 |---|---|---|---|---|
 | Bob's request, time to finish | 1m 14s | 1m 14s | 1m 13s | 1m 25s |
 | Alice's job, time to finish | 1h 05m | 1h 05m | 1h 05m | 1h 05m |
@@ -164,12 +165,12 @@ in, Bob also sends a 1 granule sync request.
 **What should happen:** Bob's request finishes quickly even though Bob's own big job is queued, and
 Alice and Bob each get about half the service.
 
-| | slot-based | duration-based | slot-based fair share | adaptive |
+| | slot-based | duration-based | slot-based fair share | fair share fast lane |
 |---|---|---|---|---|
 | Bob's request, time to finish | 1m 38s | 1m 33s | 1m 10s | 1m 09s |
 | Fairness | 0.98 | 0.98 | 0.99 | 0.99 |
 
-Adaptive sends sync requests first, even when that puts the user briefly over their share.
+Fair share fast lane sends sync requests first, even when that puts the user briefly over their share.
 
 **Question:** should a sync request always go ahead of the same user's other work?
 
@@ -182,10 +183,10 @@ request.
 **What should happen:** every user gets close to their fair share of pods, however long their work
 items take, and Bob's request finishes quickly.
 
-| | slot-based | duration-based | slot-based fair share | adaptive |
+| | slot-based | duration-based | slot-based fair share | fair share fast lane |
 |---|---|---|---|---|
 | Fairness | 0.86 | 0.82 | 0.93 | 0.92 |
-| Bob's request, time to finish | 1m 51s | 1m 38s | 1m 49s | 1m 28s |
+| Bob's request, time to finish | 1m 51s | 1m 38s | 1m 49s | 1m 33s |
 
 **Question:** fairness here is measured in pods. Should a user with very short work items (Carol)
 count as well served when their work keeps moving, even with fewer pods?
@@ -199,11 +200,11 @@ in, Erin submits a small job of 50 one-minute work items.
 keeping everyone's jobs short pull against each other here: an even split makes equal jobs all
 finish late together.)
 
-| | slot-based | duration-based | slot-based fair share | adaptive |
+| | slot-based | duration-based | slot-based fair share | fair share fast lane |
 |---|---|---|---|---|
-| Erin's job, times its minimum | 9.8× | 10.2× | 8.0× | 6.4× |
+| Erin's job, times its minimum | 9.8× | 10.2× | 8.0× | 6.7× |
 
-Adaptive is better, but no policy gets Erin going promptly yet.
+Fair share fast lane is better, but no policy gets Erin going promptly yet.
 
 **Question:** should a newcomer get more than an equal share for a while, at the existing users'
 expense, or is an equal share from the start right?
@@ -216,13 +217,13 @@ Gina and Hank each submit 300 one-minute work items.
 **What should happen:** Gina's and Hank's work starts promptly and keeps flowing while Frank's runs.
 Frank finishing later is the expected price.
 
-| | slot-based | duration-based | slot-based fair share | adaptive |
+| | slot-based | duration-based | slot-based fair share | fair share fast lane |
 |---|---|---|---|---|
 | Gina's job, times its minimum | 7.6× | 7.4× | 4.8× | 3.3× |
 | Hank's job, times its minimum | 7.4× | 7.2× | 4.7× | 3.3× |
 
 Duration-based barely helps, because Frank's work fills the service before Frank's first work item
-finishes and shows it's slow. Adaptive holds new jobs back until it knows, so the reserve works.
+finishes and shows it's slow. Fair share fast lane holds new jobs back until it knows, so the reserve works.
 
 **Question:** are 30 minutes and 1 minute typical of Harmony's slow and fast services?
 
@@ -231,14 +232,14 @@ finishes and shows it's slow. Adaptive holds new jobs back until it knows, so th
 **The situation:** Frank is the only user, with 100 work items of about 30 minutes each.
 
 **What should happen:** Frank gets as much of the service as allowed - 70% of the pods with
-duration-based's 30% reserve, 90% with adaptive's 10% - with the reserve left free on purpose in case
+duration-based's 30% reserve, 90% with fair share fast lane's 10% - with the reserve left free on purpose in case
 fast work arrives.
 
-| | slot-based | duration-based | slot-based fair share | adaptive |
+| | slot-based | duration-based | slot-based fair share | fair share fast lane |
 |---|---|---|---|---|
 | Frank's job, time to finish | 2h 51m | 3h 46m | 2h 51m | 3h 19m |
 
-Duration-based's 30% reserve makes Frank's job take about a third longer. Adaptive's is 10%, so it
+Duration-based's 30% reserve makes Frank's job take about a third longer. Fair share fast lane's is 10%, so it
 costs about 16%. Production runs slot-based, which has no reserve, so this would be a new cost.
 
 **Question:** is the reserve worth this cost? How often is a slow service used by one user alone?
@@ -250,9 +251,9 @@ costs about 16%. Production runs slot-based, which has no reserve, so this would
 **What should happen:** Ivan and Judy each get about half the service, rather than Ivan getting four
 times as much for having submitted four jobs.
 
-| | slot-based | duration-based | slot-based fair share | adaptive |
+| | slot-based | duration-based | slot-based fair share | fair share fast lane |
 |---|---|---|---|---|
-| Judy's share | 0.40 | 0.40 | 0.98 | 0.96 |
+| Judy's share | 0.40 | 0.40 | 0.98 | 0.94 |
 | Fairness | 0.74 | 0.74 | 0.99 | 0.98 |
 
 **Question:** should fairness always be between users, or should some (e.g. operational pipelines)
@@ -266,7 +267,7 @@ about 20 minutes. Lee submits a new job of 100 one-minute work items every 15 mi
 **What should happen:** once Kim's work turns slow, it's noticed within a few work items and limited,
 so Lee's jobs keep flowing.
 
-| | slot-based | duration-based | slot-based fair share | adaptive |
+| | slot-based | duration-based | slot-based fair share | fair share fast lane |
 |---|---|---|---|---|
 | Lee's jobs, times their minimum (average) | 21.8× | 21.8× | 3.6× | 3.7× |
 | Lee's jobs, times their minimum (worst) | 43.2× | 43.2× | 7.0× | 8.4× |
@@ -284,7 +285,7 @@ allows today, as if a service raised its sync limit.
 
 **What should happen:** Bob's request finishes close to 1 minute, without noticeably delaying Alice.
 
-| | slot-based | duration-based | slot-based fair share | adaptive |
+| | slot-based | duration-based | slot-based fair share | fair share fast lane |
 |---|---|---|---|---|
 | Bob's request, time to finish | 1m 47s | 1m 50s | 1m 24s | 1m 39s |
 | Alice's job, time to finish | 1h 05m | 1h 05m | 1h 05m | 1h 05m |
@@ -301,13 +302,13 @@ items.
 work is known to be slow, the three share the service fairly. Frank and Mia finishing later is the
 expected price.
 
-| | slot-based | duration-based | slot-based fair share | adaptive |
+| | slot-based | duration-based | slot-based fair share | fair share fast lane |
 |---|---|---|---|---|
-| Gina's job, times its minimum | 12.5× | 4.8× | 5.7× | 2.4× |
+| Gina's job, times its minimum | 12.5× | 4.8× | 5.7× | 2.5× |
 | Fairness | 0.72 | 0.89 | 0.94 | 0.98 |
 
-**Question:** this puts Gina first. Adaptive could instead give Frank and Mia more as soon as their
-work is seen to be slow: Gina's job would take about a third longer, and the sharing would be
+**Question:** this puts Gina first. Fair share fast lane could instead give Frank and Mia more as soon as their
+work is seen to be slow: Gina's job would take about a quarter longer, and the sharing would be
 slightly more even. Which matters more?
 
 ### 12. A job with occasional long items
@@ -319,10 +320,10 @@ average about 3 minutes (fast). Omar has 400 one-minute work items.
 **What should happen:** Nora's job is treated as fast: the occasional long work items don't hold up
 the rest of it or cost Nora a fair share. Omar's work keeps flowing.
 
-| | slot-based | duration-based | slot-based fair share | adaptive |
+| | slot-based | duration-based | slot-based fair share | fair share fast lane |
 |---|---|---|---|---|
-| Nora's job, times its minimum | 3.7× | 3.7× | 2.8× | 2.8× |
-| Nora's share | 0.74 | 0.80 | 0.92 | 0.90 |
+| Nora's job, times its minimum | 3.7× | 3.7× | 2.8× | 2.7× |
+| Nora's share | 0.74 | 0.80 | 0.92 | 0.91 |
 | Omar's job, times its minimum | 9.7× | 9.7× | 3.9× | 3.2× |
 
 **Question:** is "1 in 20 work items takes 10 times as long" a realistic mix? Do some services
@@ -344,7 +345,7 @@ jobs, and the modeler's slow jobs don't take over the subsetter.
 
 Over 3 runs, compared with slot-based, slot-based fair share made jobs 26% quicker on average (the
 worst job 35% quicker), sync requests 26% quicker (the slowest 45% quicker), and the sharing 10% more
-even. Adaptive did a few percent better still, and slot-based and duration-based were about the
+even. Fair share fast lane did a few percent better still, and slot-based and duration-based were about the
 same. The sync requests here wait at two services, so they're slower than the 10 second target
 under every policy; this scenario's durations aren't based on production's yet.
 
@@ -369,7 +370,7 @@ waiting for each to finish.
 user with work waiting gets an equal share of pod time however long their work items take, the
 one-at-a-time user's requests each finish quickly, and pods stay busy.
 
-| | slot-based | duration-based | slot-based fair share | adaptive |
+| | slot-based | duration-based | slot-based fair share | fair share fast lane |
 |---|---|---|---|---|
 | Sync requests, latency (95% within) | 18.9s | 20.3s | 6.3s | 5.9s |
 | Sync requests, latency (average) | 7.2s | 7.4s | 2.7s | 2.5s |
@@ -400,7 +401,7 @@ minutes.
 they arrive (with 125 pods finishing 2 minute work items, one comes free about every second), sync
 requests start within seconds, and the service stays busy.
 
-| | slot-based | duration-based | slot-based fair share | adaptive |
+| | slot-based | duration-based | slot-based fair share | fair share fast lane |
 |---|---|---|---|---|
 | The newcomer's job, times its minimum | 1.59× | 1.58× | 1.51× | 1.51× |
 | Small jobs, times their minimum | 1.13× | 1.13× | 1.08× | 1.09× |
@@ -431,7 +432,7 @@ minutes on average.
 their work items take, sync requests start within seconds, and the mid and small users' jobs keep
 moving.
 
-| | slot-based | duration-based | slot-based fair share | adaptive |
+| | slot-based | duration-based | slot-based fair share | fair share fast lane |
 |---|---|---|---|---|
 | Sync requests, latency (95% within) | 22.1s | 25.6s | 13.1s | 9.8s |
 | Fairness | 0.66 | 0.66 | 0.91 | 0.97 |
@@ -455,17 +456,17 @@ of seconds, and sync requests start arriving about once a minute.
 **What should happen:** the slow user never holds all of the pods, fast work and sync requests start
 within seconds, and once everyone has work waiting the slow user has about a fair share.
 
-| | slot-based | duration-based | slot-based fair share | adaptive |
+| | slot-based | duration-based | slot-based fair share | fair share fast lane |
 |---|---|---|---|---|
-| Sync requests, latency (95% within) | 26m 57s | 26m 40s | 26m 41s | 7.8s |
+| Sync requests, latency (95% within) | 26m 57s | 26m 40s | 26m 41s | 8.1s |
 | Sync requests, latency (average) | 6m 27s | 5m 22s | 6m 57s | 1.7s |
 | Fast jobs, times their minimum | none finished in 2h | 24× | 37× | 7.1× |
-| The slow user's share | 3.71 | 2.18 | 2.22 | 1.27 |
+| The slow user's share | 3.71 | 2.18 | 2.22 | 1.28 |
 | Fairness | 0.24 | 0.55 | 0.51 | 0.81 |
 
 With nobody else waiting when the slow user arrives, slot-based, duration-based and slot-based
 fair share all let them take every pod, and Harmony doesn't interrupt running work items, so work
-arriving afterwards waits for them to finish - about half an hour. Adaptive runs only 2 work items
+arriving afterwards waits for them to finish - about half an hour. Fair share fast lane runs only 2 work items
 of a new job (plus a share of an allowance) until one finishes, and keeps 10% of the pods out of
 slow work's reach, so sync requests start within 8 seconds (95% of them). With a 30% reserve, as
 duration-based has, it would be about 2 seconds.

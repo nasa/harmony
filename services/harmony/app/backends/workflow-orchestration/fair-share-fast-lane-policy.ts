@@ -1,14 +1,16 @@
 //
-// Adaptive fast lane fair queueing (FAIR_QUEUEING_POLICY=adaptive-fast-lane in the
+// Fair share fast lane fair queueing (FAIR_QUEUEING_POLICY=fair-share-fast-lane in the
 // work-scheduler): duration based fair queueing (durationBasedPolicy - see
 // getNextJobIdsDurationBased in models/user-work.ts) with fixes for the problems the fair
-// queueing simulator (tools/fair-queueing-sim) found with it. See docs/fair-queueing.md, and
-// tools/fair-queueing-sim/RESULTS.md for how it compares with slot based and duration based fair
-// queueing.
+// queueing simulator (tools/fair-queueing-sim) found with it, chief among them holding every user
+// to a fair share of the pods while others wait (fix 6). It was called adaptive-fast-lane until
+// its moving average of durations (fix 2) was switched off by default. See docs/fair-queueing.md,
+// and tools/fair-queueing-sim/RESULTS.md for how it compares with slot based and duration based
+// fair queueing.
 //
 // The fast lane reserve works as duration-based's does - slow work may never use more than
 // (1 - reserve) of a service's pods, even when nothing else is waiting - but it's 10%
-// (ADAPTIVE_FAST_LANE_RESERVE_FRACTION) rather than FAST_LANE_RESERVE_FRACTION's 30%: at
+// (FAIR_SHARE_FAST_LANE_RESERVE_FRACTION) rather than FAST_LANE_RESERVE_FRACTION's 30%: at
 // production's scale fix 1 below does much of the protecting, so a smaller reserve still keeps
 // sync requests within seconds when a slow user arrives first, and leaves fewer pods idle. Leaving
 // pods idle when only slow work is waiting is by design (Harmony has seen slow jobs take every pod
@@ -17,15 +19,15 @@
 // holds from the start, so expect more such idle time than with duration-based. The fixes:
 //
 // 1. Unmeasured work is limited. A (job, service) with no measured duration yet may only have
-//    ADAPTIVE_FAST_LANE_UNMEASURED_LIMIT work items running, so a new job whose work items turn
+//    FAIR_SHARE_FAST_LANE_UNMEASURED_LIMIT work items running, so a new job whose work items turn
 //    out to be slow can't fill the service before anyone knows it's slow. Beyond that limit,
 //    all unmeasured work on the service together may run up to
-//    ADAPTIVE_FAST_LANE_UNMEASURED_FRACTION of the slow work capacity, while the capacity has
+//    FAIR_SHARE_FAST_LANE_UNMEASURED_FRACTION of the slow work capacity, while the capacity has
 //    room: unmeasured work might turn out to be slow, so it shares the capacity with the work
 //    known to be slow and never takes the reserve, and sharing the allowance stops a few new
 //    jobs from taking every slow slot between them.
 // 2. Durations track recent work. The measured duration is an exponentially weighted moving
-//    average (weight ADAPTIVE_FAST_LANE_EWMA_ALPHA on the newest work item) rather than the
+//    average (weight FAIR_SHARE_FAST_LANE_EWMA_ALPHA on the newest work item) rather than the
 //    mean over the job's lifetime, so a job whose work items get slower part way through is
 //    reclassified within a few work items. Simulator only - see below.
 // 3. New jobs get a realistic expected runtime. When ranking users, running work items of a
@@ -43,7 +45,7 @@
 //    user refills every pod they free up to the slow work capacity, so backed up fast users
 //    share only the reserve. Nothing running is interrupted - the slow user drops to their
 //    share as their work items finish - and when no fast work is waiting, slow work can use up
-//    to the capacity as before. ADAPTIVE_FAST_LANE_FAIR_SHARE_ALL extends this to every user.
+//    to the capacity as before. FAIR_SHARE_FAST_LANE_FAIR_SHARE_ALL extends this to every user.
 // 7. Long-running work is slow before it finishes. A work item that has been running longer
 //    than the threshold will take longer than the threshold, so its (job, service) is treated
 //    as slow from then on - without waiting for a work item to complete: it counts against the
@@ -51,27 +53,27 @@
 //    only ever shows that work is slow. The current attempt's start time is used, so queue time
 //    and failed attempts don't count; a stuck work item looks slow until the work-failer times
 //    it out. Such work also keeps fix 1's limits until it's measured
-//    (ADAPTIVE_FAST_LANE_RUNNING_EVIDENCE_KEEPS_LIMIT), so being noticed only ever tightens what
+//    (FAIR_SHARE_FAST_LANE_RUNNING_EVIDENCE_KEEPS_LIMIT), so being noticed only ever tightens what
 //    it may run.
 // 8. Sync requests go first. Someone is waiting on a sync request, and production limits them
 //    to one granule (MAX_SYNCHRONOUS_GRANULES), so they can't crowd out async work. Fix 6
-//    never holds a sync request back (ADAPTIVE_FAST_LANE_SYNC_EXEMPT) - with FAIR_SHARE_ALL, a
+//    never holds a sync request back (FAIR_SHARE_FAST_LANE_SYNC_EXEMPT) - with FAIR_SHARE_ALL, a
 //    sync request would otherwise wait behind its own user's async work once that fills the
 //    user's share - though it still counts towards the share. And each batch goes to sync
-//    requests before it's split between users (ADAPTIVE_FAST_LANE_SYNC_FIRST): when a pod frees
+//    requests before it's split between users (FAIR_SHARE_FAST_LANE_SYNC_FIRST): when a pod frees
 //    up the batch may have room for only one work item, which the split could give anyone.
 //
-// Each fix can be switched off (see adaptiveFastLaneSettings below); with all of them off and
-// ADAPTIVE_FAST_LANE_RESERVE_FRACTION=scheduler the policy makes exactly the same decisions as
+// Each fix can be switched off (see fairShareFastLaneSettings below); with all of them off and
+// FAIR_SHARE_FAST_LANE_RESERVE_FRACTION=scheduler the policy makes exactly the same decisions as
 // duration-based, which the simulator's `findings` command checks. The queries below follow
 // getNextJobIdsDurationBased step for step so that stays true - when that function changes,
 // change these with it.
 //
 // Fixes 2 and 5 need durations Harmony doesn't keep, so the policy can only use them where it
 // keeps its own, in two columns added to user_work and updated as work items complete. Only the
-// simulator does that (createAdaptiveFastLanePolicy with ownDurationColumns); in production it
+// simulator does that (createFairShareFastLanePolicy with ownDurationColumns); in production it
 // would take a migration and a work-updater hook, and on the production scenarios they made no
-// difference, so adaptiveFastLanePolicy ignores them. Without them the policy uses Harmony's own
+// difference, so fairShareFastLanePolicy ignores them. Without them the policy uses Harmony's own
 // durations (average_duration), including their seeding from the user's history and the failed
 // work item fallback.
 //
@@ -81,7 +83,7 @@ import { maxMinFairShares } from './fair-share';
 import { DEFAULT_EXPECTED_DURATION_MS, getSlowWorkCapacity } from '../../models/user-work';
 import db, { Transaction } from '../../util/db';
 
-export interface AdaptiveFastLaneSettings {
+export interface FairShareFastLaneSettings {
   // the fraction of a service's pods slow work may never use; null = the work-scheduler's
   // FAST_LANE_RESERVE_FRACTION (duration-based's)
   reserveFraction: number | null;
@@ -119,33 +121,33 @@ export interface AdaptiveFastLaneSettings {
  * Reads the policy's own settings from the environment. They're read on every scheduling pass
  * from process.env, which the work-scheduler's env module fills from its env-defaults (where the
  * defaults below are repeated, with descriptions). The slow work threshold, and the reserve
- * fraction when ADAPTIVE_FAST_LANE_RESERVE_FRACTION is 'scheduler', are the work-scheduler's
+ * fraction when FAIR_SHARE_FAST_LANE_RESERVE_FRACTION is 'scheduler', are the work-scheduler's
  * (from the scheduling context).
  *
  * @param env - the environment to read
  * @returns the settings
  */
-export function adaptiveFastLaneSettings(env: NodeJS.ProcessEnv = process.env): AdaptiveFastLaneSettings {
+export function fairShareFastLaneSettings(env: NodeJS.ProcessEnv = process.env): FairShareFastLaneSettings {
   const boolean = (name: string, defaultValue: boolean): boolean => {
     const value = env[name];
     return value === undefined ? defaultValue : value.toLowerCase() === 'true';
   };
-  const reserve = env.ADAPTIVE_FAST_LANE_RESERVE_FRACTION ?? '0.1';
+  const reserve = env.FAIR_SHARE_FAST_LANE_RESERVE_FRACTION ?? '0.1';
   return {
     reserveFraction: reserve === 'scheduler' ? null : Number(reserve),
-    unmeasuredLimit: Number(env.ADAPTIVE_FAST_LANE_UNMEASURED_LIMIT ?? 2),
-    unmeasuredFraction: Number(env.ADAPTIVE_FAST_LANE_UNMEASURED_FRACTION ?? 0.5),
-    ewmaAlpha: Number(env.ADAPTIVE_FAST_LANE_EWMA_ALPHA ?? 0),
-    serviceEstimate: (env.ADAPTIVE_FAST_LANE_UNMEASURED_ESTIMATE ?? 'service') === 'service',
-    unmeasuredDefaultMs: Number(env.ADAPTIVE_FAST_LANE_UNMEASURED_DEFAULT_MS ?? DEFAULT_EXPECTED_DURATION_MS),
-    splitByUser: boolean('ADAPTIVE_FAST_LANE_SPLIT_BY_USER', true),
-    useServiceDuration: boolean('ADAPTIVE_FAST_LANE_USE_SERVICE_DURATION', false),
-    slowFairShare: boolean('ADAPTIVE_FAST_LANE_SLOW_FAIR_SHARE', true),
-    runningEvidence: boolean('ADAPTIVE_FAST_LANE_RUNNING_EVIDENCE', true),
-    runningEvidenceKeepsLimit: boolean('ADAPTIVE_FAST_LANE_RUNNING_EVIDENCE_KEEPS_LIMIT', true),
-    fairShareAll: boolean('ADAPTIVE_FAST_LANE_FAIR_SHARE_ALL', true),
-    syncExempt: boolean('ADAPTIVE_FAST_LANE_SYNC_EXEMPT', true),
-    syncFirst: boolean('ADAPTIVE_FAST_LANE_SYNC_FIRST', true),
+    unmeasuredLimit: Number(env.FAIR_SHARE_FAST_LANE_UNMEASURED_LIMIT ?? 2),
+    unmeasuredFraction: Number(env.FAIR_SHARE_FAST_LANE_UNMEASURED_FRACTION ?? 0.5),
+    ewmaAlpha: Number(env.FAIR_SHARE_FAST_LANE_EWMA_ALPHA ?? 0),
+    serviceEstimate: (env.FAIR_SHARE_FAST_LANE_UNMEASURED_ESTIMATE ?? 'service') === 'service',
+    unmeasuredDefaultMs: Number(env.FAIR_SHARE_FAST_LANE_UNMEASURED_DEFAULT_MS ?? DEFAULT_EXPECTED_DURATION_MS),
+    splitByUser: boolean('FAIR_SHARE_FAST_LANE_SPLIT_BY_USER', true),
+    useServiceDuration: boolean('FAIR_SHARE_FAST_LANE_USE_SERVICE_DURATION', false),
+    slowFairShare: boolean('FAIR_SHARE_FAST_LANE_SLOW_FAIR_SHARE', true),
+    runningEvidence: boolean('FAIR_SHARE_FAST_LANE_RUNNING_EVIDENCE', true),
+    runningEvidenceKeepsLimit: boolean('FAIR_SHARE_FAST_LANE_RUNNING_EVIDENCE_KEEPS_LIMIT', true),
+    fairShareAll: boolean('FAIR_SHARE_FAST_LANE_FAIR_SHARE_ALL', true),
+    syncExempt: boolean('FAIR_SHARE_FAST_LANE_SYNC_EXEMPT', true),
+    syncFirst: boolean('FAIR_SHARE_FAST_LANE_SYNC_FIRST', true),
   };
 }
 
@@ -155,7 +157,7 @@ export function adaptiveFastLaneSettings(env: NodeJS.ProcessEnv = process.env): 
  * @param s - the policy settings
  * @returns true if they need its own durations
  */
-export function usesOwnDurations(s: AdaptiveFastLaneSettings): boolean {
+export function usesOwnDurations(s: FairShareFastLaneSettings): boolean {
   return s.ewmaAlpha > 0 || s.useServiceDuration;
 }
 
@@ -177,7 +179,7 @@ const HARMONY_DURATION_SQL = '(CASE WHEN uw.completed_count = 0 AND uw.failed_co
  * @param s - the policy settings
  * @returns the CTEs, for a WITH clause
  */
-export function classifiedCtes(s: AdaptiveFastLaneSettings): string {
+export function classifiedCtes(s: FairShareFastLaneSettings): string {
   const duration = usesOwnDurations(s) ? `COALESCE(uw.adaptive_duration, ${HARMONY_DURATION_SQL})` : HARMONY_DURATION_SQL;
   return `
     LongRunning AS (
@@ -209,7 +211,7 @@ export function classifiedCtes(s: AdaptiveFastLaneSettings): string {
  * @returns the bindings
  */
 export function classificationBindings(
-  serviceID: string, slowWorkThresholdMs: number, s: AdaptiveFastLaneSettings,
+  serviceID: string, slowWorkThresholdMs: number, s: FairShareFastLaneSettings,
 ): Record<string, string | number | Date> {
   return {
     serviceID,
@@ -262,7 +264,7 @@ interface SlowWorkCounts {
  * @returns the counts
  */
 async function getSlowWorkCounts(
-  tx: Transaction, bindings: Record<string, string | number | Date>, s: AdaptiveFastLaneSettings,
+  tx: Transaction, bindings: Record<string, string | number | Date>, s: FairShareFastLaneSettings,
 ): Promise<SlowWorkCounts> {
   const [row] = rawRows(await tx.raw(`
     WITH ${classifiedCtes(s)}
@@ -309,7 +311,7 @@ function shuffleArray<T>(array: T[]): T[] {
  * @returns the limit per user, for users with work for the service
  */
 async function slowWorkLimits(
-  tx: Transaction, bindings: Record<string, string | number | Date>, podCount: number, s: AdaptiveFastLaneSettings,
+  tx: Transaction, bindings: Record<string, string | number | Date>, podCount: number, s: FairShareFastLaneSettings,
 ): Promise<Record<string, number>> {
   // unmeasured work counts as fast unless it's been running too long, as when classifying jobs
   const rows = rawRows(await tx.raw(`
@@ -352,7 +354,7 @@ async function slowWorkLimits(
  * @param slowWorkCapacity - the most slow work items that may run on the service
  * @returns the allowance
  */
-function unmeasuredAllowance(s: AdaptiveFastLaneSettings, slowWorkCapacity: number): number {
+function unmeasuredAllowance(s: FairShareFastLaneSettings, slowWorkCapacity: number): number {
   return Math.max(s.unmeasuredLimit, Math.floor(s.unmeasuredFraction * slowWorkCapacity));
 }
 
@@ -391,7 +393,7 @@ interface NextJobs {
  */
 async function getNextJobs(
   tx: Transaction, serviceID: string, batchSize: number, context: SchedulingContext, slowWorkCapacity: number,
-  s: AdaptiveFastLaneSettings,
+  s: FairShareFastLaneSettings,
 ): Promise<NextJobs> {
   const bindings = classificationBindings(serviceID, context.slowWorkThresholdMs, s);
   let counts = await getSlowWorkCounts(tx, bindings, s);
@@ -533,23 +535,23 @@ async function getNextJobs(
 }
 
 /**
- * Creates the adaptive fast lane policy.
+ * Creates the fair share fast lane policy.
  *
  * @param options - ownDurationColumns: user_work has the policy's own duration columns
  * (adaptive_duration and adaptive_count, kept up to date as work items complete), so fixes 2
  * and 5 can be used. Only the simulator has them; without them those settings are ignored.
  * @returns the policy
  */
-export function createAdaptiveFastLanePolicy(options: { ownDurationColumns?: boolean } = {}): FairQueueingPolicy {
+export function createFairShareFastLanePolicy(options: { ownDurationColumns?: boolean } = {}): FairQueueingPolicy {
   let warnedOwnDurations = false;
   return {
-    name: 'adaptive-fast-lane',
+    name: 'fair-share-fast-lane',
 
     async scheduleWork(tx, serviceID, batchSize, context, takeWorkItems): Promise<void> {
-      let s = adaptiveFastLaneSettings();
+      let s = fairShareFastLaneSettings();
       if (usesOwnDurations(s) && !options.ownDurationColumns) {
         if (!warnedOwnDurations) {
-          context.logger.warn('ADAPTIVE_FAST_LANE_EWMA_ALPHA and ADAPTIVE_FAST_LANE_USE_SERVICE_DURATION are '
+          context.logger.warn('FAIR_SHARE_FAST_LANE_EWMA_ALPHA and FAIR_SHARE_FAST_LANE_USE_SERVICE_DURATION are '
             + "ignored: they need work item durations Harmony doesn't keep");
           warnedOwnDurations = true;
         }
@@ -584,6 +586,9 @@ export function createAdaptiveFastLanePolicy(options: { ownDurationColumns?: boo
         if (size <= 0) return 0;
         const numTaken = await takeWorkItems(job.jobId, size);
         if (job.unmeasuredRunning !== null) {
+          // so a later pass over the same job (the work-conserving one below) doesn't give it
+          // its unmeasured limit again
+          job.unmeasuredRunning += numTaken;
           remainingUnmeasuredSlots -= numTaken;
           remainingSharedAllowance -= numTaken;
         }
@@ -644,7 +649,7 @@ export function createAdaptiveFastLanePolicy(options: { ownDurationColumns?: boo
 }
 
 /**
- * Adaptive fast lane fair queueing, as the work-scheduler runs it: Harmony's own durations, so
+ * Fair share fast lane fair queueing, as the work-scheduler runs it: Harmony's own durations, so
  * fixes 2 and 5 are off whatever the settings say.
  */
-export const adaptiveFastLanePolicy: FairQueueingPolicy = createAdaptiveFastLanePolicy();
+export const fairShareFastLanePolicy: FairQueueingPolicy = createFairShareFastLanePolicy();

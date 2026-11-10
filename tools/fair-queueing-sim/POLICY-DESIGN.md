@@ -1,16 +1,20 @@
 # Fair queueing policy design
 
-Why `adaptive-fast-lane` (Harmony's `adaptive-fast-lane-policy.ts`, next to
-`fair-queueing-policy.ts`; the simulator-only parts are in `src/policies/adaptive-fast-lane.ts`)
-is built the way it is: the
-problem each fix solves, the evidence for it, the trade-offs chosen and the alternatives that were
-rejected. What each fix does, and its settings, are in the code's header comment and in
+Why `fair-share-fast-lane` (Harmony's `fair-share-fast-lane-policy.ts`, next to
+`fair-queueing-policy.ts`; the simulator-only parts are in `src/policies/fair-share-fast-lane.ts`)
+is built the way it is: the problem each fix solves, the evidence for it, the trade-offs chosen and
+the alternatives that were rejected. What each fix does, and its settings, are in the code's header comment and in
 [REFERENCE.md](REFERENCE.md#available-policies); this file is the reasoning behind them.
 
-`adaptive-fast-lane` is the policy chosen to replace `slot-based`, the policy every Harmony
+It was called `adaptive-fast-lane` until 2026-11-10. The name came from its moving average of
+durations (fix 2), which is now off by default; it was renamed for what it does by default: hold
+every user to a fair share of the pods while others wait (its main gain), on top of a fast lane
+that limits new work until it's measured.
+
+`fair-share-fast-lane` is the policy chosen to replace `slot-based`, the policy every Harmony
 service runs today. It's built on `duration-based`, the fast lane from HARMONY-2413, which Harmony
 has but production doesn't use. It's [in Harmony now](#promoting-it), selected with the
-work-scheduler's `FAIR_QUEUEING_POLICY=adaptive-fast-lane`, but the default is still `slot-based`.
+work-scheduler's `FAIR_QUEUEING_POLICY=fair-share-fast-lane`, but the default is still `slot-based`.
 The smaller candidate, [`slot-based-fair-share`](#the-smaller-candidate-slot-based-fair-share) -
 `slot-based` plus the two of its fixes that need no work item durations - runs in the simulator
 only.
@@ -66,12 +70,12 @@ Against `duration-based`, the policy it's built on: better in every seed on 17 o
 metrics, worse only in the new job's slower start (01, 02, 10, about 1%).
 
 The rest of this file explains the design. Its numbers come from the experiments that led to each
-decision, mostly with the configuration of the time (fixes 2 and 5 on, a 30% reserve); RESULTS.md
-has the current ones.
+decision, mostly with the configuration of the time (fixes 2 and 5 on, a 30% reserve), and before
+fix 1's limit was corrected on 2026-11-10 (see fix 1 below); RESULTS.md has the current ones.
 
 ## The smaller candidate: slot-based-fair-share
 
-On the hoss scenario, `findings` showed that one fix produces all of `adaptive-fast-lane`'s
+On the hoss scenario, `findings` showed that one fix produces all of `fair-share-fast-lane`'s
 improvement: fix 6 holding every user to their fair share (with `FAIR_SHARE_ALL`). Switched off,
 the policy does no better than `duration-based`; holding only *slow* users to their share does
 nothing there either, because the user taking over hoss has 8.5 minute work items, which aren't
@@ -93,16 +97,16 @@ pods for a long time, so the fair share limits them.
 **On the hoss scenario** (seeds 101-105), in every seed against `slot-based`: sync latency (95th
 percentile) 18.9 -> 6.3 seconds, contended fairness 0.23 -> 0.86, the 8.5 minute user's share of
 the pods 6.4 -> 1.4 times its fair share, the one-at-a-time user 3.7 -> 2.1 times their minimum,
-for 0.8% less utilization. That's most of `adaptive-fast-lane`'s gain there (6.0 s, 0.92, 1.1, 1.9).
+for 0.8% less utilization. That's most of `fair-share-fast-lane`'s gain there (6.0 s, 0.92, 1.1, 1.9).
 
 **On the mixed workload** (`scenarios/mixed-workload.yml`, which none of the fixes were tuned on;
 seeds 101-103), in every seed against `slot-based`: mean job slowdown -26%, worst -35%, mean sync
 makespan -26% (worst -45%), contended fairness 0.88 -> 0.97, with the same utilization. That's
-within a few percent of `adaptive-fast-lane` on every headline metric; `adaptive-fast-lane` is 5%
+within a few percent of `fair-share-fast-lane` on every headline metric; `fair-share-fast-lane` is 5%
 better on mean slowdown in every seed, and leaves 41% more pods idle while work waits (its
 reserve).
 
-**What knowing durations adds** (`adaptive-fast-lane` against `slot-based-fair-share`, the same
+**What knowing durations adds** (`fair-share-fast-lane` against `slot-based-fair-share`, the same
 records): better in every seed on new slow jobs taking the service before they're known to be slow
 (06 -33%, 11 -65%), the newcomer in 05 (-15%) and the fast user in 12 (-18%); worse in every seed
 on a slow job alone (07, +45%, the reserve), big jobs alone or nearly alone (01, 02 +1.5%, 10
@@ -118,11 +122,11 @@ scenarios below show why it isn't enough.
 Four scenarios in `scenarios/production/` are built at production's scale (125 pods, work items of
 seconds to minutes), three of them from the admin dashboard's stats for a service. Each file says
 which parts come from the data and which are assumed. Seeds 101-105; "every seed" against the
-policy named. This table is the comparison that led to the decision, with `adaptive-fast-lane` as
+policy named. This table is the comparison that led to the decision, with `fair-share-fast-lane` as
 configured then (a 30% reserve, fixes 2 and 5 on); its current figures are in
 [RESULTS.md](RESULTS.md).
 
-| | slot-based (production) | slot-based-fair-share | adaptive-fast-lane |
+| | slot-based (production) | slot-based-fair-share | fair-share-fast-lane |
 |---|---|---|---|
 | **slow-user-first**: an idle service, then a user with 30-60 minute work items, then fast work and sync requests 5 minutes later | | | |
 | sync latency, 95th percentile | 27 min | 27 min | **2.2 s** |
@@ -142,12 +146,12 @@ Two ways one user's slow work items can take a service:
 
 1. **While others are waiting** (hoss, trajectory-subsetter): every scheduling pass hands that user
    more pods, and they keep them. Both candidates fix this, because both hold each user to their
-   fair share; `adaptive-fast-lane` a little better, and only it meets the 10 second sync target on
+   fair share; `fair-share-fast-lane` a little better, and only it meets the 10 second sync target on
    trajectory-subsetter.
 2. **Before anyone else arrives** (slow-user-first): with nobody waiting, `slot-based-fair-share` -
    which is work-conserving - lets the slow user take every idle pod, and work arriving afterwards
    waits for running work items to finish, which Harmony doesn't interrupt: about 27 minutes for a
-   sync request. `adaptive-fast-lane` prevents it with fix 1 (a new job runs 2 work items, plus its
+   sync request. `fair-share-fast-lane` prevents it with fix 1 (a new job runs 2 work items, plus its
    share of an allowance, until one finishes) and the reserve, and fast work starts within seconds.
 
 The second case is rare in production's stats, but it's the incident this work set out to
@@ -158,14 +162,14 @@ on the service's queue ahead of each new one, and with 2 minute work items on 12
 free about every second. That's how much work Harmony queues for a service ahead of time
 (`SERVICE_QUEUE_BATCH_SIZE_COEFFICIENT`), which a fair queueing policy doesn't control.
 
-**`adaptive-fast-lane` without its hook does as well.** With the moving average and pod-reported
-durations off (`ADAPTIVE_FAST_LANE_EWMA_ALPHA=0`, `ADAPTIVE_FAST_LANE_USE_SERVICE_DURATION=false`)
+**`fair-share-fast-lane` without its hook does as well.** With the moving average and pod-reported
+durations off (`FAIR_SHARE_FAST_LANE_EWMA_ALPHA=0`, `FAIR_SHARE_FAST_LANE_USE_SERVICE_DURATION=false`)
 it matched the full policy on all four production scenarios, within noise. In that configuration
 it uses only the durations Harmony already keeps (`user_work.average_duration`), so it needs no
 work-updater hook and no migration. Those two fixes only made a difference in story 09 (a job whose
 work items suddenly get slower), which production's reviewers say is rare.
 
-**Decision (2026-11-09): `adaptive-fast-lane`, with fixes 2 and 5 off and a 10% reserve** - now its
+**Decision (2026-11-09): `fair-share-fast-lane`, with fixes 2 and 5 off and a 10% reserve** - now its
 defaults, and the configuration [RESULTS.md](RESULTS.md) records. It's the only candidate that
 stops one user's slow work taking a service in both cases, it's at least as good as
 `slot-based-fair-share` on every production scenario, and without fixes 2 and 5 it needs no hook or
@@ -176,23 +180,24 @@ first duration-aware scheduling, which needs a sandbox or UAT trial (see
 that trial has to wait: it fixes the first case, but not the second.
 
 **The reserve can be much smaller.** Chris asked for a much lower reserve of idle pods. Sweeping the
-reserve (with fixes 2 and 5 off, seeds 101-105):
+reserve (with fixes 2 and 5 off, seeds 101-105; re-run 2026-11-10 after fix 1's correction):
 
-| | slot-based | 30% (now) | 20% | 10% |
+| | slot-based | 30% (duration-based's) | 20% | 10% |
 |---|---|---|---|---|
-| slow-user-first: sync latency, 95th percentile | 26m 57s | 2.1 s | 3.6 s | 7.8 s |
-| slow-user-first: fast jobs, times their minimum | none finished | 3.4 | 4.6 | 7.1 |
-| slow-user-first: the slow user's share (ideal 1.0) | 3.7 | 0.88 | 1.07 | 1.27 |
+| slow-user-first: sync latency, 95th percentile | 26m 57s | 2.0 s | 3.9 s | 8.1 s |
+| slow-user-first: fast jobs, times their minimum | none finished | 3.4 | 4.7 | 7.1 |
+| slow-user-first: the slow user's share (ideal 1.0) | 3.71 | 0.88 | 1.07 | 1.28 |
 | 07: a slow job alone, time to finish | 2h 51m | 4h 09m (+45%) | 3h 41m (+29%) | 3h 19m (+16%) |
-| 06: the fast users, times their minimum | 7.6 | 3.1 | 3.2 | 3.3 |
-| 11: the fast user, times its minimum | 12.5 | 2.0 | 2.3 | 2.4 |
+| 06: the fast users, times their minimum (both) | 7.5 | 3.1 | 3.2 | 3.3 |
+| 11: the fast user, times its minimum | 12.5 | 2.0 | 2.3 | 2.5 |
 
-hoss and trajectory-subsetter are unchanged at every size: they have almost no slow work, so the
-reserve never applies. Even at 10%, sync requests meet the 10 second target when a slow user
+hoss and trajectory-subsetter barely change with the reserve (hoss: sync latency 5.6-6.0 s,
+fairness 0.92-0.93; trajectory-subsetter: 9.6-9.8 s, 0.96-0.97): they have almost no slow work,
+so the reserve hardly applies. Even at 10%, sync requests meet the 10 second target when a slow user
 arrives first (fix 1's limit on new jobs does much of the protecting), and the reserve's cost when
 slow work is alone falls to a third. **Chosen: 10%**, given how rare slow work is in production
-(20% would give more margin). It's `adaptive-fast-lane`'s own setting,
-`ADAPTIVE_FAST_LANE_RESERVE_FRACTION` (in the work-scheduler's `env-defaults`), so `duration-based`
+(20% would give more margin). It's `fair-share-fast-lane`'s own setting,
+`FAIR_SHARE_FAST_LANE_RESERVE_FRACTION` (in the work-scheduler's `env-defaults`), so `duration-based`
 keeps `FAST_LANE_RESERVE_FRACTION`'s 30%.
 
 ## The fixes
@@ -206,7 +211,12 @@ everything else is over 5 seeds.
    a shared allowance for all unmeasured work (half the slow work capacity) that counts against
    the slow work capacity, so it never takes the reserve. *Evidence:* it produces the 06 win (off:
    slowdown 3.57 vs 2.74, fairness 0.78 vs 0.97) and helps 10 and 11. *Cost:* all of 01, 02 and
-   07's costs above - switched off, 01 and 07 match `duration-based` exactly.
+   07's costs above - switched off, 01 and 07 match `duration-based` exactly. *Correction
+   (2026-11-10):* until then, the work-conserving pass at the end of each batch (fix 6) didn't count
+   what a new job had just been given earlier in the batch, so it could give the job its limit
+   again - up to 2 more work items per batch than intended. Fixing that changed stories 04, 05,
+   06, 08, 11 and 12 slightly, and slow-user-first and the mixed workload by a few percent;
+   RESULTS.md has the corrected numbers.
 2. **Moving average.** *Problem:* a lifetime mean hides a job whose work items slow down part
    way through (story 09: Kim is never classified slow). *Decision:* an exponentially weighted
    moving average, weight 0.2 on the newest item. *Evidence:* off, 09 goes from 3.04 to 3.55; fix 6
@@ -247,10 +257,12 @@ everything else is over 5 seeds.
 
 ## Judgment calls
 
-- **Fix 7 keeps fix 1's limits** (`ADAPTIVE_FAST_LANE_RUNNING_EVIDENCE_KEEPS_LIMIT=true`).
+- **Fix 7 keeps fix 1's limits** (`FAIR_SHARE_FAST_LANE_RUNNING_EVIDENCE_KEEPS_LIMIT=true`).
   Without that, noticing that new work is slow moved it from fix 1's limits to the larger slow
   work capacity, so being noticed *loosened* its limit. With it: story 11's fast job -33% (5/5),
   for 11's fairness -1.5% (0/5), 07's slow job +2.9% (0/5) and one of 06's fast users +1.1% (1/4).
+  Re-measured on story 11 after fix 1's correction (2026-11-10): the fast job -22% (3.20 -> 2.51
+  times its minimum, 5/5), for fairness -1.1% (0.99 -> 0.98, 0/5).
   Story 11's goal puts the fast job first ("Gina's fast work starts promptly ... Frank and Mia
   finishing later is the expected price"), hence the default. Read the story as "fair from the
   start" instead and set it to `false`.
@@ -283,11 +295,11 @@ everything else is over 5 seeds.
 ## Promoting it
 
 It was promoted (HARMONY-2414) following the README's
-[promotion steps](README.md#6-promote-it-to-production): `adaptiveFastLanePolicy` is in
-`services/harmony/app/backends/workflow-orchestration/adaptive-fast-lane-policy.ts`, the
-work-scheduler selects it with `FAIR_QUEUEING_POLICY=adaptive-fast-lane`, and its settings, with
+[promotion steps](README.md#6-promote-it-to-production): `fairShareFastLanePolicy` is in
+`services/harmony/app/backends/workflow-orchestration/fair-share-fast-lane-policy.ts`, the
+work-scheduler selects it with `FAIR_QUEUEING_POLICY=fair-share-fast-lane`, and its settings, with
 the defaults above, are in `services/work-scheduler/env-defaults`. The default policy is still
-`slot-based`. The simulator runs Harmony's code; `src/policies/adaptive-fast-lane.ts` only adds
+`slot-based`. The simulator runs Harmony's code; `src/policies/fair-share-fast-lane.ts` only adds
 what Harmony doesn't have: the columns and completion hook for fixes 2 and 5, and the sampler.
 What's left, specific to this policy:
 
@@ -319,13 +331,13 @@ and the user and type of each job picked, both from `user_work` by service.
 npm run sim -- bench
 
 # what each fix contributes, and the duration-based equivalence check (findings.md)
-npm run sim -- findings scenarios/stories/*.yml --policies duration-based,adaptive-fast-lane
+npm run sim -- findings scenarios/stories/*.yml --policies duration-based,fair-share-fast-lane
 
 # the mixed workload
-npm run sim -- bench scenarios/mixed-workload.yml --policies duration-based,adaptive-fast-lane --seeds 101,102,103
+npm run sim -- bench scenarios/mixed-workload.yml --policies duration-based,fair-share-fast-lane --seeds 101,102,103
 
 # one setting's effect over 5 seeds
-npm run sim -- bench --policies adaptive-fast-lane --set ADAPTIVE_FAST_LANE_SYNC_FIRST=false --out output/no-sync-first
+npm run sim -- bench --policies fair-share-fast-lane --set FAIR_SHARE_FAST_LANE_SYNC_FIRST=false --out output/no-sync-first
 ```
 
 `bench` doesn't compare a run with `--set` against the policy's record, because the settings

@@ -29,12 +29,12 @@ POD_COUNT_CACHE_TTL=90000
 # service. See docs/fair-queueing.md.
 #   slot-based (the default) - users are ranked by their number of running work items; there is
 #     no fast lane reserve, and SLOW_WORK_THRESHOLD_MS, FAST_LANE_RESERVE_FRACTION and the
-#     ADAPTIVE_FAST_LANE_* settings are ignored.
+#     FAIR_SHARE_FAST_LANE_* settings are ignored.
 #   duration-based - users are ranked by the expected runtime of their running work items, and
 #     slow work is limited by the fast lane reserve (FAST_LANE_RESERVE_FRACTION).
-#   adaptive-fast-lane - duration-based with fixes that stop one user's slow work items taking a
-#     service, and sync requests first (the ADAPTIVE_FAST_LANE_* settings below). Its fast lane
-#     reserve is ADAPTIVE_FAST_LANE_RESERVE_FRACTION.
+#   fair-share-fast-lane - duration-based with fixes that stop one user's slow work items taking a
+#     service, and sync requests first (the FAIR_SHARE_FAST_LANE_* settings below). Its fast lane
+#     reserve is FAIR_SHARE_FAST_LANE_RESERVE_FRACTION.
 FAIR_QUEUEING_POLICY=slot-based
 
 # The older setting for duration based fair queueing, kept for existing deployments: true is the
@@ -44,46 +44,46 @@ ENABLE_DURATION_BASED_FAIR_QUEUEING=false
 
 # Average work item duration (in ms), per job and service, above which all work items for that
 # job and service are classified as "slow" for fair queueing purposes. Used by duration-based and
-# adaptive-fast-lane.
+# fair-share-fast-lane.
 SLOW_WORK_THRESHOLD_MS=600000
 
 # The fraction of a service's capacity (currently running pods) reserved for fast work items.
 # Slow work items are only blocked once running slow work occupies the rest of the capacity, so
 # short work items keep flowing even while slow work is busy. Used by duration-based (and by
-# adaptive-fast-lane when ADAPTIVE_FAST_LANE_RESERVE_FRACTION is "scheduler").
+# fair-share-fast-lane when FAIR_SHARE_FAST_LANE_RESERVE_FRACTION is "scheduler").
 FAST_LANE_RESERVE_FRACTION=0.3
 
-# Settings for FAIR_QUEUEING_POLICY=adaptive-fast-lane, read on every scheduling pass. The fix
-# numbers are those in harmony's adaptive-fast-lane-policy (app/backends/workflow-orchestration),
+# Settings for FAIR_QUEUEING_POLICY=fair-share-fast-lane, read on every scheduling pass. The fix
+# numbers are those in harmony's fair-share-fast-lane-policy (app/backends/workflow-orchestration),
 # where each fix is described; the defaults are the configuration chosen with the fair queueing
 # simulator (tools/fair-queueing-sim/RESULTS.md).
 #
-# The fraction of a service's pods adaptive-fast-lane's slow work may never use ("scheduler" =
+# The fraction of a service's pods fair-share-fast-lane's slow work may never use ("scheduler" =
 # FAST_LANE_RESERVE_FRACTION).
-ADAPTIVE_FAST_LANE_RESERVE_FRACTION=0.1
+FAIR_SHARE_FAST_LANE_RESERVE_FRACTION=0.1
 # Fix 1: the most work items that may run for a (job, service) before it has a measured duration
 # (0 = no limit), and beyond that, the fraction of the slow work capacity all unmeasured work on
 # the service may use together (0 = just the limit).
-ADAPTIVE_FAST_LANE_UNMEASURED_LIMIT=2
-ADAPTIVE_FAST_LANE_UNMEASURED_FRACTION=0.5
+FAIR_SHARE_FAST_LANE_UNMEASURED_LIMIT=2
+FAIR_SHARE_FAST_LANE_UNMEASURED_FRACTION=0.5
 # Fix 3: "service" = when ranking users, unmeasured work counts as the service's mean measured
-# duration; "fixed" = ADAPTIVE_FAST_LANE_UNMEASURED_DEFAULT_MS, the expected duration of unmeasured
+# duration; "fixed" = FAIR_SHARE_FAST_LANE_UNMEASURED_DEFAULT_MS, the expected duration of unmeasured
 # work when there is nothing better to go on.
-ADAPTIVE_FAST_LANE_UNMEASURED_ESTIMATE=service
-ADAPTIVE_FAST_LANE_UNMEASURED_DEFAULT_MS=3600000
+FAIR_SHARE_FAST_LANE_UNMEASURED_ESTIMATE=service
+FAIR_SHARE_FAST_LANE_UNMEASURED_DEFAULT_MS=3600000
 # Fix 4: split each scheduling batch between users first (false = evenly per job).
-ADAPTIVE_FAST_LANE_SPLIT_BY_USER=true
+FAIR_SHARE_FAST_LANE_SPLIT_BY_USER=true
 # Fix 6: while other users' fast work is ready, hold a user's slow work to their fair share of
 # the service's pods; with FAIR_SHARE_ALL, hold every user to their fair share while another user
 # below theirs has work ready.
-ADAPTIVE_FAST_LANE_SLOW_FAIR_SHARE=true
-ADAPTIVE_FAST_LANE_FAIR_SHARE_ALL=true
+FAIR_SHARE_FAST_LANE_SLOW_FAIR_SHARE=true
+FAIR_SHARE_FAST_LANE_FAIR_SHARE_ALL=true
 # Fix 7: treat an unmeasured (job, service) as slow once one of its work items has been running
 # longer than SLOW_WORK_THRESHOLD_MS, keeping fix 1's limits until it's measured.
-ADAPTIVE_FAST_LANE_RUNNING_EVIDENCE=true
-ADAPTIVE_FAST_LANE_RUNNING_EVIDENCE_KEEPS_LIMIT=true
+FAIR_SHARE_FAST_LANE_RUNNING_EVIDENCE=true
+FAIR_SHARE_FAST_LANE_RUNNING_EVIDENCE_KEEPS_LIMIT=true
 # Fix 8: fair share never holds back a sync request, and each batch goes to sync requests first.
-ADAPTIVE_FAST_LANE_SYNC_EXEMPT=true
-ADAPTIVE_FAST_LANE_SYNC_FIRST=true
-# Fixes 2 and 5 (ADAPTIVE_FAST_LANE_EWMA_ALPHA, ADAPTIVE_FAST_LANE_USE_SERVICE_DURATION) need work
+FAIR_SHARE_FAST_LANE_SYNC_EXEMPT=true
+FAIR_SHARE_FAST_LANE_SYNC_FIRST=true
+# Fixes 2 and 5 (FAIR_SHARE_FAST_LANE_EWMA_ALPHA, FAIR_SHARE_FAST_LANE_USE_SERVICE_DURATION) need work
 # item durations Harmony doesn't keep, so they're only available in the simulator.

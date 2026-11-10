@@ -4,18 +4,18 @@ import * as path from 'path';
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
 
-import { adaptiveFastLaneSettings } from '../../../services/harmony/app/backends/workflow-orchestration/adaptive-fast-lane-policy';
+import { fairShareFastLaneSettings } from '../../../services/harmony/app/backends/workflow-orchestration/fair-share-fast-lane-policy';
 import { NATIVE_POLICY, POLICY_CATALOG, POLICY_NAMES, resolvedSettings } from '../src/policies/catalog';
 
 const WORK_SCHEDULER_ENV_DEFAULTS = path.resolve(__dirname, '..', '..', '..', 'services', 'work-scheduler', 'env-defaults');
 
 describe('policy catalog', function () {
-  it('has Harmony\'s two policies, slot-based-fair-share and adaptive-fast-lane', function () {
-    expect(POLICY_NAMES).to.deep.equal(['slot-based', 'duration-based', 'slot-based-fair-share', 'adaptive-fast-lane']);
+  it('has Harmony\'s three policies and slot-based-fair-share', function () {
+    expect(POLICY_NAMES).to.deep.equal(['slot-based', 'duration-based', 'slot-based-fair-share', 'fair-share-fast-lane']);
     expect(POLICY_NAMES).to.not.include(NATIVE_POLICY);
   });
 
-  for (const [policy, base] of [['adaptive-fast-lane', 'duration-based'], ['slot-based-fair-share', 'slot-based']]) {
+  for (const [policy, base] of [['fair-share-fast-lane', 'duration-based'], ['slot-based-fair-share', 'slot-based']]) {
     it(`describes how to make ${policy} ${base}, using only its own settings`, function () {
       const { equivalentTo, settings } = POLICY_CATALOG[policy];
       expect(equivalentTo.policy).to.equal(base);
@@ -45,12 +45,12 @@ describe('policy catalog', function () {
     }
   });
 
-  it('describes adaptive-fast-lane\'s own defaults as the policy has them', function () {
+  it('describes fair-share-fast-lane\'s own defaults as the policy has them', function () {
     // the catalog takes them from the work-scheduler's env-defaults, the policy has its own
-    const own = POLICY_CATALOG['adaptive-fast-lane'].settings.filter((s) => s.env.startsWith('ADAPTIVE_FAST_LANE_'));
+    const own = POLICY_CATALOG['fair-share-fast-lane'].settings.filter((s) => s.env.startsWith('FAIR_SHARE_FAST_LANE_'));
     expect(own).to.have.lengthOf(14);
     const described = Object.fromEntries(own.map((s) => [s.env, s.default]));
-    expect(adaptiveFastLaneSettings(described)).to.deep.equal(adaptiveFastLaneSettings({}));
+    expect(fairShareFastLaneSettings(described)).to.deep.equal(fairShareFastLaneSettings({}));
   });
 
   describe('resolvedSettings', function () {

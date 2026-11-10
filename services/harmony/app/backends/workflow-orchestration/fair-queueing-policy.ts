@@ -1,6 +1,6 @@
 import { Logger } from 'winston';
 
-import { adaptiveFastLanePolicy } from './adaptive-fast-lane-policy';
+import { fairShareFastLanePolicy } from './fair-share-fast-lane-policy';
 import { getNextJobIds, NextJob } from '../../models/user-work';
 import { Transaction } from '../../util/db';
 
@@ -155,11 +155,11 @@ export const durationBasedPolicy: FairQueueingPolicy = {
 };
 
 // The policies the work-scheduler can be configured to use, by their FAIR_QUEUEING_POLICY name.
-// adaptiveFastLanePolicy is in adaptive-fast-lane-policy.ts.
+// fairShareFastLanePolicy is in fair-share-fast-lane-policy.ts.
 export const FAIR_QUEUEING_POLICIES: Record<string, FairQueueingPolicy> = {
   'slot-based': slotBasedPolicy,
   'duration-based': durationBasedPolicy,
-  'adaptive-fast-lane': adaptiveFastLanePolicy,
+  'fair-share-fast-lane': fairShareFastLanePolicy,
 };
 
 /**

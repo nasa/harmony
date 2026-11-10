@@ -1,9 +1,9 @@
 //
 // Harmony's slot based fair queueing (slotBasedPolicy - see getNextJobIdsSlotBased in
 // services/harmony/app/models/user-work.ts), which every production service runs, plus the
-// fixes from adaptive-fast-lane that don't need work item durations:
+// fixes from fair-share-fast-lane that don't need work item durations:
 //
-// 1. Every user is held to their fair share while others wait (adaptive-fast-lane's fix 6 with
+// 1. Every user is held to their fair share while others wait (fair-share-fast-lane's fix 6 with
 //    FAIR_SHARE_ALL). Slot based hands every job in the batch an equal slice, so a user whose work
 //    items take minutes keeps accumulating pods while other users' pods come back within seconds:
 //    in scenarios/production/hoss-saturated.yml a user with 8.5 minute work items ends up with
@@ -12,13 +12,13 @@
 //    running work on the service). Nothing running is interrupted - a user above their share drops
 //    to it as their work items finish - and whatever the users held back for can't take goes to
 //    the users held back, so it never leaves pods idle. SLOT_BASED_FAIR_SHARE.
-// 2. Sync requests go first (adaptive-fast-lane's fix 8). Fair share never holds back a sync
+// 2. Sync requests go first (fair-share-fast-lane's fix 8). Fair share never holds back a sync
 //    request, though it still counts towards its user's share (SLOT_BASED_SYNC_EXEMPT), and each
 //    batch goes to sync requests before it's split between jobs (SLOT_BASED_SYNC_FIRST). Production
 //    limits sync requests to one granule, so they can't crowd out async work.
 //
 // Neither needs durations, a schema change or a work-updater hook, and there's no fast lane
-// reserve, so this is a much smaller change to production than adaptive-fast-lane. It picks jobs
+// reserve, so this is a much smaller change to production than fair-share-fast-lane. It picks jobs
 // with Harmony's own getNextJobIds, and with every fix off it makes exactly the same decisions as
 // slot-based, which `findings` checks (the catalog's equivalentTo).
 //

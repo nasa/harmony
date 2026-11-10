@@ -3,10 +3,10 @@ import { describe, it } from 'mocha';
 import * as sinon from 'sinon';
 import { Logger } from 'winston';
 
-import { adaptiveFastLanePolicy } from '../../harmony/app/backends/workflow-orchestration/adaptive-fast-lane-policy';
 import {
   durationBasedPolicy, FairQueueingPolicy, SchedulingContext, slotBasedPolicy,
 } from '../../harmony/app/backends/workflow-orchestration/fair-queueing-policy';
+import { fairShareFastLanePolicy } from '../../harmony/app/backends/workflow-orchestration/fair-share-fast-lane-policy';
 import * as workItemPolling from '../../harmony/app/backends/workflow-orchestration/work-item-polling';
 import * as userWorkModel from '../../harmony/app/models/user-work';
 import WorkItem from '../../harmony/app/models/work-item';
@@ -177,7 +177,7 @@ describe('Scheduler Worker', async function () {
         });
       });
 
-      ([['duration-based', durationBasedPolicy], ['adaptive-fast-lane', adaptiveFastLanePolicy]] as const).forEach(([name, policy]) => {
+      ([['duration-based', durationBasedPolicy], ['fair-share-fast-lane', fairShareFastLanePolicy]] as const).forEach(([name, policy]) => {
         describe(`and the fair queueing policy is ${name}`, async function () {
           let fairQueueingPolicyStub;
           beforeEach(async function () {
