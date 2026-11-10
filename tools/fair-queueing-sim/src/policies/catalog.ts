@@ -82,15 +82,55 @@ export const POLICY_CATALOG: Record<string, PolicyInfo> = {
     designNotes: [FAST_LANE_DESIGN_NOTE],
     settings: FAST_LANE_SETTINGS,
   },
+  'slot-based-fair-share': {
+    description: 'slot-based plus the two fixes from adaptive-fast-lane that need no work item durations: each user held ' +
+      'to their max-min fair share of the pods while another user below theirs has work ready (work-conserving), ' +
+      'and sync requests first, never held back by fair share. No durations, schema change, work-updater hook or ' +
+      'fast lane reserve.',
+    settings: [
+      {
+        env: 'SLOT_BASED_FAIR_SHARE',
+        default: 'true',
+        description: 'while another user below their fair share of the pods has work ready, hold each user to theirs',
+      },
+      {
+        env: 'SLOT_BASED_SYNC_EXEMPT',
+        default: 'true',
+        description: "fair share never holds back a sync request (it still counts towards its user's share)",
+      },
+      {
+        env: 'SLOT_BASED_SYNC_FIRST',
+        default: 'true',
+        description: 'each scheduling batch goes to sync requests first, before it is split between jobs',
+      },
+    ],
+    variants: [
+      { name: 'no-fair-share', description: 'fair share off', set: { SLOT_BASED_FAIR_SHARE: 'false' } },
+      { name: 'no-sync-exempt', description: 'without exempting sync requests from fair share', set: { SLOT_BASED_SYNC_EXEMPT: 'false' } },
+      { name: 'no-sync-first', description: 'without giving sync requests the batch first', set: { SLOT_BASED_SYNC_FIRST: 'false' } },
+    ],
+    equivalentTo: {
+      policy: 'slot-based',
+      set: { SLOT_BASED_FAIR_SHARE: 'false', SLOT_BASED_SYNC_EXEMPT: 'false', SLOT_BASED_SYNC_FIRST: 'false' },
+      description: "with all three switched off, slot-based-fair-share must make exactly the same decisions as Harmony's slot-based",
+    },
+  },
   'adaptive-fast-lane': {
-    description: 'duration-based, with the same reserve, plus eight fixes: a limit on running work for ' +
-      'unmeasured jobs, a moving average of recent durations, a service-level estimate for unmeasured work, ' +
-      'per-user batch splitting, pod-reported durations, slow work held to its fair share while fast work waits, ' +
-      'unmeasured work treated as slow (keeping its limit) once a work item has been running longer than the threshold, ' +
-      'and sync requests first, never held back by fair share.',
+    description: 'duration-based, with a 10% reserve instead of 30%, plus fixes: a limit on running work for ' +
+      'unmeasured jobs, a service-level estimate for unmeasured work, per-user batch splitting, every user held to ' +
+      'their fair share while others wait, unmeasured work treated as slow (keeping its limit) once a work item has ' +
+      'been running longer than the threshold, and sync requests first, never held back by fair share. Two more ' +
+      'fixes (a moving average of recent durations, pod-reported durations) are off by default: they need a ' +
+      'work-updater hook and a migration in production, and made no difference on the production scenarios.',
     designNotes: [FAST_LANE_DESIGN_NOTE],
     settings: [
       ...FAST_LANE_SETTINGS,
+      {
+        env: 'ADAPTIVE_FAST_LANE_RESERVE_FRACTION',
+        default: '0.1',
+        description: "fraction of a service's pods slow work may never use ('scheduler' = the work-scheduler's " +
+          'FAST_LANE_RESERVE_FRACTION, as duration-based uses)',
+      },
       {
         env: 'ADAPTIVE_FAST_LANE_UNMEASURED_LIMIT',
         default: '2',
@@ -104,8 +144,9 @@ export const POLICY_CATALOG: Record<string, PolicyInfo> = {
       },
       {
         env: 'ADAPTIVE_FAST_LANE_EWMA_ALPHA',
-        default: '0.2',
-        description: 'weight of the newest work item in the moving average (0 = mean over the job\'s lifetime)',
+        default: '0',
+        description: 'fix 2: weight of the newest work item in a moving average of durations (0 = off: Harmony\'s ' +
+          'mean over the job\'s lifetime; 0.2 was the default before it was switched off)',
       },
       {
         env: 'ADAPTIVE_FAST_LANE_UNMEASURED_ESTIMATE',
@@ -125,8 +166,8 @@ export const POLICY_CATALOG: Record<string, PolicyInfo> = {
       },
       {
         env: 'ADAPTIVE_FAST_LANE_USE_SERVICE_DURATION',
-        default: 'true',
-        description: "use the duration the service pod reports (false = Harmony's, which can include queue wait)",
+        default: 'false',
+        description: "fix 5: use the duration the service pod reports (false = off: Harmony's, which can include queue wait)",
       },
       {
         env: 'ADAPTIVE_FAST_LANE_SLOW_FAIR_SHARE',
@@ -161,12 +202,13 @@ export const POLICY_CATALOG: Record<string, PolicyInfo> = {
       },
     ],
     variants: [
+      { name: 'scheduler-reserve', description: "the work-scheduler's reserve (30%) instead of 10%", set: { ADAPTIVE_FAST_LANE_RESERVE_FRACTION: 'scheduler' } },
       { name: 'no-unmeasured-limit', description: 'fix 1 (unmeasured work limit) off', set: { ADAPTIVE_FAST_LANE_UNMEASURED_LIMIT: '0' } },
       { name: 'no-unmeasured-fraction', description: 'fix 1 without the shared fraction (just the limit)', set: { ADAPTIVE_FAST_LANE_UNMEASURED_FRACTION: '0' } },
-      { name: 'no-moving-average', description: 'fix 2 (moving average) off', set: { ADAPTIVE_FAST_LANE_EWMA_ALPHA: '0' } },
+      { name: 'with-moving-average', description: 'fix 2 (moving average, weight 0.2) on', set: { ADAPTIVE_FAST_LANE_EWMA_ALPHA: '0.2' } },
       { name: 'no-service-estimate', description: 'fix 3 (service estimate for unmeasured work) off', set: { ADAPTIVE_FAST_LANE_UNMEASURED_ESTIMATE: 'fixed' } },
       { name: 'no-split-by-user', description: 'fix 4 (per-user batch split) off', set: { ADAPTIVE_FAST_LANE_SPLIT_BY_USER: 'false' } },
-      { name: 'no-service-duration', description: 'fix 5 (pod-reported durations) off', set: { ADAPTIVE_FAST_LANE_USE_SERVICE_DURATION: 'false' } },
+      { name: 'with-service-duration', description: 'fix 5 (pod-reported durations) on', set: { ADAPTIVE_FAST_LANE_USE_SERVICE_DURATION: 'true' } },
       { name: 'no-slow-fair-share', description: 'fix 6 (slow work held to fair share) off', set: { ADAPTIVE_FAST_LANE_SLOW_FAIR_SHARE: 'false' } },
       { name: 'no-fair-share-all', description: 'fix 6 for slow users only', set: { ADAPTIVE_FAST_LANE_FAIR_SHARE_ALL: 'false' } },
       { name: 'no-running-evidence', description: 'fix 7 (long-running work is slow) off', set: { ADAPTIVE_FAST_LANE_RUNNING_EVIDENCE: 'false' } },
@@ -177,6 +219,7 @@ export const POLICY_CATALOG: Record<string, PolicyInfo> = {
     equivalentTo: {
       policy: 'duration-based',
       set: {
+        ADAPTIVE_FAST_LANE_RESERVE_FRACTION: 'scheduler',
         ADAPTIVE_FAST_LANE_UNMEASURED_LIMIT: '0',
         ADAPTIVE_FAST_LANE_EWMA_ALPHA: '0',
         ADAPTIVE_FAST_LANE_UNMEASURED_ESTIMATE: 'fixed',
@@ -188,7 +231,7 @@ export const POLICY_CATALOG: Record<string, PolicyInfo> = {
         ADAPTIVE_FAST_LANE_SYNC_EXEMPT: 'false',
         ADAPTIVE_FAST_LANE_SYNC_FIRST: 'false',
       },
-      description: 'with all eight fixes switched off, adaptive-fast-lane must make exactly the same decisions as Harmony\'s duration-based',
+      description: 'with all eight fixes switched off and the work-scheduler\'s reserve, adaptive-fast-lane must make exactly the same decisions as Harmony\'s duration-based',
     },
   },
 };

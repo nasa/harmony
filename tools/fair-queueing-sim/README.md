@@ -5,10 +5,17 @@ developed and compared on exactly the same workloads. It runs Harmony's **real**
 work item update code against a real (sqlite) database, with simulated service pods and a virtual
 clock, so hours of activity simulate in seconds.
 
-It comes with Harmony's two policies: `slot-based`, the default, and `duration-based`, which
-Harmony uses when `ENABLE_DURATION_BASED_FAIR_QUEUEING` is true. It also has
-`adaptive-fast-lane`, a candidate replacement built on `duration-based`. Policies added to
+It comes with Harmony's two policies: `slot-based`, the default, which every production service
+runs today, and `duration-based` (the fast lane), which Harmony uses when
+`ENABLE_DURATION_BASED_FAIR_QUEUEING` is true - it isn't in production. It also has two
+candidates to replace `slot-based`: `slot-based-fair-share`, `slot-based` plus a fair share rule
+and sync requests first, which needs no work item durations; and `adaptive-fast-lane`, built on
+`duration-based`. Policies added to
 `src/policies/` are for simulation only until they're [promoted](#6-promote-it-to-production).
+
+**`adaptive-fast-lane` has been chosen to replace `slot-based`.** [RESULTS.md](RESULTS.md) records the
+improvement over the current policy and how to reproduce it; [POLICY-DESIGN.md](POLICY-DESIGN.md)
+explains the design.
 
 - [Setup](#setup)
 - [Quick start](#quick-start)
@@ -247,7 +254,10 @@ settings. The simulator replaces that choice with the policy being simulated. To
 2. **Make it selectable, defaulting to the current policy.** Extend the choice in
    `processSchedulerQueue`, e.g. with a `FAIR_QUEUEING_POLICY` setting, and add it and the
    policy's own settings to `services/work-scheduler/env-defaults`. Switching back is then a
-   configuration change, which is the rollback.
+   configuration change, which is the rollback. **Keep the old policy selectable**, both for the
+   rollback and so it can still be simulated: the simulator runs Harmony's own `slotBasedPolicy`
+   as its baseline, `slot-based`, and the improvement in [RESULTS.md](RESULTS.md) is measured
+   against it.
 3. **Check what it needs and stores.** The interface only covers scheduling, so a policy with an
    `onWorkItemCompleted` hook (simulator only) needs that hook added to the work-updater, which
    means extending the interface. Policies that share `user_work` columns misread each other's
@@ -260,7 +270,11 @@ settings. The simulator replaces that choice with the policy being simulated. To
 5. **Re-record the benchmarks** with `npm run sim -- bench --record`. The policy is production code
    now, so the records' code hashes change. The numbers should be unchanged.
 6. **Roll it out** with the default unchanged. Enable it in UAT, compare with production using the
-   dashboard's work item duration metrics, then enable it in production.
+   dashboard's work item duration metrics, then enable it in production. Production runs
+   `slot-based` everywhere, so a policy built on `duration-based` is also the first time
+   production runs duration-aware scheduling - its queries, its advisory lock and the fast lane
+   reserve. Trying plain `duration-based` in UAT first separates "that machinery works" from "the
+   policy helps". Rolling back means switching back to `slot-based`.
 
 ## Scenarios and policies
 
@@ -280,6 +294,10 @@ settings. The simulator replaces that choice with the policy being simulated. To
 | `scenarios/stories/11-new-slow-pair.yml` | two users start new slow jobs together, and fast work arrives five minutes later |
 | `scenarios/stories/12-occasional-long-items.yml` | a job that's fast on average but has occasional long work items, alongside a slow job |
 | `scenarios/mixed-workload.yml` | six hours of random arrivals from five users across a two step chain (several minutes) |
+| `scenarios/production/hoss-saturated.yml` | hoss under a permanent backlog, built from the production dashboard's stats: 125 pods, 16 users, work items of seconds, a user whose work items average 8.5 minutes, sync requests and a one-at-a-time user (about 2 minutes a run) |
+| `scenarios/production/geoloco-one-user.yml` | geoloco as production has it, one user keeping 125 pods busy with work items of about 2 minutes, then a newcomer, small jobs and sync requests |
+| `scenarios/production/trajectory-burst.yml` | a trajectory-subsetter burst on 125 pods: 11 users from its stats, including users whose work items average minutes, with a heavy tail |
+| `scenarios/production/slow-user-first.yml` | an idle 125 pod service, a user with 30-60 minute work items, then fast work and sync requests 5 minutes later - the case the fast lane reserve exists for |
 
 The stories are the benchmark suite. [SCENARIOS.md](SCENARIOS.md) sets out what each one models, its
 goal and how the policies do, for review. To make a scenario, copy one; the format is in
@@ -287,9 +305,10 @@ goal and how the policies do, for review. To make a scenario, copy one; the form
 
 | Policy | What it does |
 |---|---|
-| `slot-based` | Harmony's default algorithm: jobs interleaved round robin by user, users with the fewest running work items for the service first, with each batch split evenly per job |
-| `duration-based` | Harmony's algorithm when `ENABLE_DURATION_BASED_FAIR_QUEUEING` is true: users ranked by the expected runtime of their running work for the service, and a fast lane reserve |
-| `adaptive-fast-lane` | `duration-based`, with the same reserve, plus eight fixes for what the stories show it getting wrong: a limit on work for jobs with no measured duration yet, a moving average of the durations the service pods report, estimates for new jobs from the service's other jobs, batches split per user, fair shares of the pods while others' fast work waits, unmeasured work treated as slow (and still limited) once it has run past the threshold, and sync requests first, never held back by fair share. Simulator only: it learns from completed work items through a hook Harmony doesn't have yet |
+| `slot-based` | Harmony's default algorithm, and what every production service runs: jobs interleaved round robin by user, users with the fewest running work items for the service first, with each batch split evenly per job |
+| `duration-based` | Harmony's algorithm when `ENABLE_DURATION_BASED_FAIR_QUEUEING` is true (not set in production): users ranked by the expected runtime of their running work for the service, and a fast lane reserve |
+| `slot-based-fair-share` | `slot-based`, plus two fixes that need no work item durations: while another user below their fair share of the pods has work ready, each user is held to theirs (so a user whose work items take minutes can't accumulate the service), and sync requests get each batch first and are never held back. No reserve, durations, schema change or work-updater hook |
+| `adaptive-fast-lane` | **The candidate chosen for production.** `duration-based`, with a 10% reserve instead of 30%, plus fixes for what the stories show it getting wrong: a limit on work for jobs with no measured duration yet, estimates for new jobs from the service's other jobs, batches split per user, every user held to a fair share of the pods while others wait, unmeasured work treated as slow (and still limited) once it has run past the threshold, and sync requests first, never held back by fair share. Two more fixes - a moving average of durations, and using the durations the service pods report - are off by default: they'd need a work-updater hook and a migration. See [RESULTS.md](RESULTS.md) |
 
 **The fast lane reserve leaves pods idle on purpose.** Slow work may never use more than
 `1 - FAST_LANE_RESERVE_FRACTION` of a service's pods, even when nothing else is waiting, because

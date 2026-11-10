@@ -1,0 +1,58 @@
+# Production scenario: trajectory-subsetter during one of its bursts. Built from the admin dashboard's
+# stats for trajectory-subsetter (2026-10-29 to 2026-11-05; durations from 2026-11-03 on), with users
+# anonymised.
+#
+# What comes from the data:
+# - Bursts: usually 10-40 pods busy, but for hours at a time 100-124 of its 125 pods.
+# - A heavy tail: median 14 s, mean 47 s, 95th percentile 4.3 minutes, 2.4% of work items over 5
+#   minutes, longest 71 minutes.
+# - The users and their average durations: two big users with ~2 minute averages (27% and 24% of the
+#   pod time, longest 48 and 21 minutes), a user with many 10 s work items (27% of the work items
+#   but 10% of the pod time), mid users averaging 27-77 s, and users averaging 4-6 minutes. Each
+#   user's durations are a lognormal with sigma 1.0 (a heavy tail of their own) and a median set so
+#   its mean is the user's average (median = mean / 1.65).
+#
+# What's assumed (the dashboard doesn't record it): which users are active at once and the size and
+# timing of their jobs, and the sync request rate.
+name: trajectory-burst
+description: >-
+  Two hours of a trajectory-subsetter burst on 125 pods: two big users with work items averaging about
+  2 minutes and a long tail, a user with many 10 second work items, three mid users submitting jobs
+  every 15-20 minutes, two users whose work items average 4-6 minutes, two small users, and a sync
+  request every 2 minutes on average.
+goodOutcome: >-
+  Every user with work ready gets an equal share of pod time however long their work items take -
+  the users with minutes-long work items don't take over - sync requests start within seconds, and
+  the mid and small users' jobs keep moving.
+benchmarks:
+  - metric: sync.p95Latency
+    note: production's target is under 10 seconds of latency for sync requests
+  - metric: fairness
+    note: equal pod time for every user with work ready
+  - metric: user.mid-2.meanSlowdown
+    note: a mid-sized user's jobs keep moving during the burst
+  - metric: user.small-1.meanSlowdown
+    note: small jobs keep moving during the burst
+  - metric: utilization
+    note: the service should stay busy
+seed: 2028
+maxDuration: 2h
+env:
+  QUEUE_LONG_POLLING_WAIT_TIME_SEC: 3
+services:
+  - name: traj
+    pods: 125
+jobs:
+  - { name: big-a-backlog, user: big-a, granules: 4000, steps: [{ service: traj, duration: { dist: lognormal, median: 70s, sigma: 1.0 } }] }
+  - { name: big-b-backlog, user: big-b, granules: 4000, steps: [{ service: traj, duration: { dist: lognormal, median: 64s, sigma: 1.0 } }] }
+  - { name: many-items-backlog, user: many-items, granules: 20000, steps: [{ service: traj, duration: { dist: lognormal, median: 6.2s, sigma: 1.0 } }] }
+  # users whose work items average 4-6 minutes
+  - { name: long-1-job, user: long-1, submitAt: 10m, granules: 300, steps: [{ service: traj, duration: { dist: lognormal, median: 156s, sigma: 1.0 } }] }
+  - { name: long-2-job, user: long-2, submitAt: 30m, granules: 150, steps: [{ service: traj, duration: { dist: lognormal, median: 219s, sigma: 1.0 } }] }
+generators:
+  - { name: mid-1, user: mid-1, start: 2m, every: { dist: exponential, mean: 20m }, job: { granules: 500, steps: [{ service: traj, duration: { dist: lognormal, median: 47s, sigma: 1.0 } }] } }
+  - { name: mid-2, user: mid-2, start: 6m, every: { dist: exponential, mean: 20m }, job: { granules: 500, steps: [{ service: traj, duration: { dist: lognormal, median: 24s, sigma: 1.0 } }] } }
+  - { name: mid-3, user: mid-3, start: 9m, every: { dist: exponential, mean: 15m }, job: { granules: 300, steps: [{ service: traj, duration: { dist: lognormal, median: 16s, sigma: 1.0 } }] } }
+  - { name: small-1, user: small-1, start: 3m, every: { dist: exponential, mean: 10m }, job: { granules: { min: 20, max: 100 }, steps: [{ service: traj, duration: { dist: lognormal, median: 12s, sigma: 1.0 } }] } }
+  - { name: small-2, user: small-2, start: 7m, every: { dist: exponential, mean: 10m }, job: { granules: { min: 20, max: 100 }, steps: [{ service: traj, duration: { dist: lognormal, median: 18s, sigma: 1.0 } }] } }
+  - { name: viewer, user: viewer, start: 1m, every: { dist: exponential, mean: 2m }, until: 115m, job: { async: false, granules: 1, steps: [{ service: traj, duration: { dist: lognormal, median: 10s, sigma: 0.7 } }] } }

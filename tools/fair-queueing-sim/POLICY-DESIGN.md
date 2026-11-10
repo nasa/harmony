@@ -5,11 +5,17 @@ problem each fix solves, the evidence for it, the trade-offs chosen and the alte
 rejected. What each fix does, and its settings, are in the code's header comment and in
 [REFERENCE.md](REFERENCE.md#available-policies); this file is the reasoning behind them.
 
-`adaptive-fast-lane` is a candidate replacement for Harmony's `duration-based` policy. It runs in
-the simulator only, until it's [promoted](README.md#6-promote-it-to-production).
+`adaptive-fast-lane` is a candidate to replace `slot-based`, the policy every Harmony service runs
+today. It's built on `duration-based`, the fast lane from HARMONY-2413, which Harmony has but
+production doesn't use (`ENABLE_DURATION_BASED_FAIR_QUEUEING` isn't set). It runs in the simulator
+only, until it's [promoted](README.md#6-promote-it-to-production). So does the smaller candidate,
+[`slot-based-fair-share`](#the-smaller-candidate-slot-based-fair-share): `slot-based` plus the two of
+its fixes that need no work item durations.
 
 - [Ground rules](#ground-rules)
 - [Results](#results)
+- [The smaller candidate: slot-based-fair-share](#the-smaller-candidate-slot-based-fair-share)
+- [Production scenarios and the recommendation](#production-scenarios-and-the-recommendation)
 - [The fixes](#the-fixes)
 - [Judgment calls](#judgment-calls)
 - [Considered and not done](#considered-and-not-done)
@@ -39,23 +45,153 @@ Every decision below keeps to these:
 
 ## Results
 
-Against `duration-based`, from the benchmark records (12 stories, seeds 101-105):
+The full results for the default configuration - a 10% reserve, fixes 2 and 5 off - are in
+[RESULTS.md](RESULTS.md), with how to reproduce them. In brief, against `slot-based`, what
+production runs (5 seeds; a difference counts when it holds in every seed):
 
-- **Better in every seed on 15 of the 24 protected metrics:** contended fairness in 03, 04 (+11%),
-  08 (+31%) and 11; the newcomer in 05 (-33% slowdown); the fast users in 06 (-57%), 11 (-58%) and
-  12 (-67%); Judy's share in 08 (0.40 -> 0.95); Nora in 12; Lee in 09 (-86%).
-- **Sync requests** in 02, 03, 04 and 10 are 3-21% faster on average, but not in every seed.
-- **Worse in every seed in three places**, all expected costs:
-  - 01's utilization -1.5%, and a 1 hour job alone or nearly alone (01, 02, 10) +1.5% (about a
-    minute): fix 1 holds a new job to 2 work items until its first one finishes.
-  - 07's slow job alone +10%: fix 1 and the reserve hold from the start, where `duration-based`
-    lets unmeasured slow work overshoot the reserve before it's measured.
+- **The 12 stories:** better in every seed on 16 of the 24 protected metrics. Worse in every seed on
+  5, all expected costs: a new job's slower start (01, 02, 10 - about 1% on a big job alone, and 01's
+  utilization), and the reserve when slow work is alone (07: +16%). The fast lane reserve is new for
+  production, which has none, but production would rarely meet its cost: across all services in the
+  dashboard's stats, about 0.4% of work items take over 5 minutes and under 0.1% over 15.
+- **The four production scenarios:** better in every seed on 16 of 21 protected metrics, including a
+  slow user arriving first (sync requests wait 8 seconds instead of 27 minutes) and the hoss takeover
+  (contended fairness 0.23 -> 0.93); utilization 0.3-1.0 points lower.
+- **The mixed workload:** better in every seed on every headline metric (mean job slowdown -29%).
 
-On `scenarios/mixed-workload.yml` (six hours of random arrivals from five users across a two step
-chain, which none of the fixes were tuned on; seeds 101-103), it is better in all 3 seeds on every
-headline metric: mean job slowdown -30%, worst slowdown -37%, mean sync makespan -31% (worst -50%),
-contended fairness +10%, for -0.1% utilization. One viewer's sync requests are about 7 seconds
-slower in every seed.
+Against `duration-based`, the policy it's built on: better in every seed on 17 of the 24 story
+metrics, worse only in the new job's slower start (01, 02, 10, about 1%).
+
+The rest of this file explains the design. Its numbers come from the experiments that led to each
+decision, mostly with the configuration of the time (fixes 2 and 5 on, a 30% reserve); RESULTS.md
+has the current ones.
+
+## The smaller candidate: slot-based-fair-share
+
+On the hoss scenario, `findings` showed that one fix produces all of `adaptive-fast-lane`'s
+improvement: fix 6 holding every user to their fair share (with `FAIR_SHARE_ALL`). Switched off,
+the policy does no better than `duration-based`; holding only *slow* users to their share does
+nothing there either, because the user taking over hoss has 8.5 minute work items, which aren't
+"slow". And fix 6 doesn't need durations: it works from each user's running and ready work item
+counts, which `slot-based` already has. So `slot-based-fair-share`
+(`src/policies/slot-based-fair-share.ts`) is `slot-based` - Harmony's own job selection, unchanged -
+plus fix 6 for every user and fix 8 (sync requests first), and nothing else: no durations, no
+schema change, no work-updater hook, no fast lane reserve. With both fixes off it makes exactly the
+same decisions as `slot-based`, which `findings` checks in every story.
+
+**Against `slot-based`** (the benchmark records, 12 stories, seeds 101-105): better in every seed
+on 15 of the 24 protected metrics, and **worse in every seed on none** - with no new job limit and
+no reserve, the costs in 01, 02, 07 and 10 don't arise. Contended fairness in 04 (+8%), 08 (+33%)
+and 11 (+31%); the newcomer in 05 (-18%); the fast users in 06 (-37%), 11 (-54%) and 12 (-60%);
+Judy's share in 08 (0.40 -> 0.98); Nora in 12; Lee in 09 (-83%). Holding users to a fair share
+also covers much of the slow work stories without knowing what's slow: a user with slow work holds
+pods for a long time, so the fair share limits them.
+
+**On the hoss scenario** (seeds 101-105), in every seed against `slot-based`: sync latency (95th
+percentile) 18.9 -> 6.3 seconds, contended fairness 0.23 -> 0.86, the 8.5 minute user's share of
+the pods 6.4 -> 1.4 times its fair share, the one-at-a-time user 3.7 -> 2.1 times their minimum,
+for 0.8% less utilization. That's most of `adaptive-fast-lane`'s gain there (6.0 s, 0.92, 1.1, 1.9).
+
+**On the mixed workload** (`scenarios/mixed-workload.yml`, which none of the fixes were tuned on;
+seeds 101-103), in every seed against `slot-based`: mean job slowdown -26%, worst -35%, mean sync
+makespan -26% (worst -45%), contended fairness 0.88 -> 0.97, with the same utilization. That's
+within a few percent of `adaptive-fast-lane` on every headline metric; `adaptive-fast-lane` is 5%
+better on mean slowdown in every seed, and leaves 41% more pods idle while work waits (its
+reserve).
+
+**What knowing durations adds** (`adaptive-fast-lane` against `slot-based-fair-share`, the same
+records): better in every seed on new slow jobs taking the service before they're known to be slow
+(06 -33%, 11 -65%), the newcomer in 05 (-15%) and the fast user in 12 (-18%); worse in every seed
+on a slow job alone (07, +45%, the reserve), big jobs alone or nearly alone (01, 02 +1.5%, 10
++27%) and slightly on fairness in 04 (-1.4%) and 11 (-0.5%). Those gains protect fast work against
+new slow jobs, which production's stats suggest are rare; the costs come from the reserve and from
+limiting new jobs until they're measured.
+
+On its own, that would make `slot-based-fair-share` the obvious first step. The production
+scenarios below show why it isn't enough.
+
+## Production scenarios and the recommendation
+
+Four scenarios in `scenarios/production/` are built at production's scale (125 pods, work items of
+seconds to minutes), three of them from the admin dashboard's stats for a service. Each file says
+which parts come from the data and which are assumed. Seeds 101-105; "every seed" against the
+policy named. This table is the comparison that led to the decision, with `adaptive-fast-lane` as
+configured then (a 30% reserve, fixes 2 and 5 on); its current figures are in
+[RESULTS.md](RESULTS.md).
+
+| | slot-based (production) | slot-based-fair-share | adaptive-fast-lane |
+|---|---|---|---|
+| **slow-user-first**: an idle service, then a user with 30-60 minute work items, then fast work and sync requests 5 minutes later | | | |
+| sync latency, 95th percentile | 27 min | 27 min | **2.2 s** |
+| fast jobs, times their minimum | not finished within 2 hours | 37 | **3.4** |
+| the slow user's share of the pods (ideal 1.0) | 3.7 | 2.2 | **0.9** |
+| **hoss-saturated**: hoss under a permanent backlog, 16 users | | | |
+| sync latency, 95th percentile | 18.9 s | 6.3 s | **6.0 s** |
+| contended fairness | 0.23 | 0.86 | **0.92** |
+| **trajectory-burst**: a trajectory-subsetter burst, 11 users, a heavy tail | | | |
+| sync latency, 95th percentile | 22.1 s | 13.1 s | **9.8 s** |
+| contended fairness | 0.66 | 0.91 | **0.96** |
+| **geoloco-one-user**: one user keeps the service full; a newcomer arrives | | | |
+| newcomer, times its minimum | 1.59 | 1.51 | 1.50 |
+| sync latency, 95th percentile | 34 s | 30 s | 32 s |
+
+Two ways one user's slow work items can take a service:
+
+1. **While others are waiting** (hoss, trajectory-subsetter): every scheduling pass hands that user
+   more pods, and they keep them. Both candidates fix this, because both hold each user to their
+   fair share; `adaptive-fast-lane` a little better, and only it meets the 10 second sync target on
+   trajectory-subsetter.
+2. **Before anyone else arrives** (slow-user-first): with nobody waiting, `slot-based-fair-share` -
+   which is work-conserving - lets the slow user take every idle pod, and work arriving afterwards
+   waits for running work items to finish, which Harmony doesn't interrupt: about 27 minutes for a
+   sync request. `adaptive-fast-lane` prevents it with fix 1 (a new job runs 2 work items, plus its
+   share of an allowance, until one finishes) and the reserve, and fast work starts within seconds.
+
+The second case is rare in production's stats, but it's the incident this work set out to
+prevent, and when it happens it costs tens of minutes rather than seconds.
+
+On geoloco no policy gets sync requests under 10 seconds: about 15 work items are already waiting
+on the service's queue ahead of each new one, and with 2 minute work items on 125 pods one comes
+free about every second. That's how much work Harmony queues for a service ahead of time
+(`SERVICE_QUEUE_BATCH_SIZE_COEFFICIENT`), which a fair queueing policy doesn't control.
+
+**`adaptive-fast-lane` without its hook does as well.** With the moving average and pod-reported
+durations off (`ADAPTIVE_FAST_LANE_EWMA_ALPHA=0`, `ADAPTIVE_FAST_LANE_USE_SERVICE_DURATION=false`)
+it matched the full policy on all four production scenarios, within noise. In that configuration
+it uses only the durations Harmony already keeps (`user_work.average_duration`), so it needs no
+work-updater hook and no migration. Those two fixes only made a difference in story 09 (a job whose
+work items suddenly get slower), which production's reviewers say is rare.
+
+**Decision (2026-11-09): `adaptive-fast-lane`, with fixes 2 and 5 off and a 10% reserve** - now its
+defaults, and the configuration [RESULTS.md](RESULTS.md) records. It's the only candidate that
+stops one user's slow work taking a service in both cases, it's at least as good as
+`slot-based-fair-share` on every production scenario, and without fixes 2 and 5 it needs no hook or
+migration. Its costs: the reserve (a slow job alone takes 45% longer at today's 30% reserve, 16% at 10% -
+see the reserve sweep below), a slower start for a new job (about 1% on a big job alone), and being production's
+first duration-aware scheduling, which needs a sandbox or UAT trial (see
+[Before promoting it](#before-promoting-it)). `slot-based-fair-share` remains a smaller option if
+that trial has to wait: it fixes the first case, but not the second.
+
+**The reserve can be much smaller.** Chris asked for a much lower reserve of idle pods. Sweeping the
+reserve (with fixes 2 and 5 off, seeds 101-105):
+
+| | slot-based | 30% (now) | 20% | 10% |
+|---|---|---|---|---|
+| slow-user-first: sync latency, 95th percentile | 26m 57s | 2.1 s | 3.6 s | 7.8 s |
+| slow-user-first: fast jobs, times their minimum | none finished | 3.4 | 4.6 | 7.1 |
+| slow-user-first: the slow user's share (ideal 1.0) | 3.7 | 0.88 | 1.07 | 1.27 |
+| 07: a slow job alone, time to finish | 2h 51m | 4h 09m (+45%) | 3h 41m (+29%) | 3h 19m (+16%) |
+| 06: the fast users, times their minimum | 7.6 | 3.1 | 3.2 | 3.3 |
+| 11: the fast user, times its minimum | 12.5 | 2.0 | 2.3 | 2.4 |
+
+hoss and trajectory-subsetter are unchanged at every size: they have almost no slow work, so the
+reserve never applies. Even at 10%, sync requests meet the 10 second target when a slow user
+arrives first (fix 1's limit on new jobs does much of the protecting), and the reserve's cost when
+slow work is alone falls to a third. **Chosen: 10%**, given how rare slow work is in production
+(20% would give more margin). In the simulator it's `adaptive-fast-lane`'s own setting,
+`ADAPTIVE_FAST_LANE_RESERVE_FRACTION`, so `duration-based` keeps the work-scheduler's 30%; in
+production it becomes the work-scheduler's `FAST_LANE_RESERVE_FRACTION` (or a setting of the
+policy's own) when the policy is promoted.
 
 ## The fixes
 
@@ -146,14 +282,26 @@ everything else is over 5 seeds.
 
 See the README's [promotion steps](README.md#6-promote-it-to-production). Specific to this policy:
 
-- **The completion hook moves into the work-updater.** Fixes 2 and 5 learn from completed work
-  items through `onWorkItemCompleted`, which only the simulator calls. Production needs it in the
-  work-updater's transaction, which means extending the policy interface.
-- **A migration for its columns**, replacing the simulator's `setup`.
+- **Production has never run duration-aware scheduling.** Every service runs `slot-based`, so this
+  would also be the first production use of `duration-based`'s queries, its advisory lock and the
+  fast lane reserve. Trying plain `duration-based` in UAT first would separate "that machinery
+  works" from "the fixes help". Rolling back means switching back to `slot-based`.
+- **The completion hook moves into the work-updater** - only if fixes 2 or 5 are on. They learn
+  from completed work items through `onWorkItemCompleted`, which only the simulator calls;
+  production would need it in the work-updater's transaction, which means extending the policy
+  interface. With both off (the recommended configuration) there's no hook.
+- **A migration for its columns**, replacing the simulator's `setup` - again only for fixes 2 and 5.
 - **Postgres-only paths are untested here.** The advisory lock and `SKIP LOCKED` that serialize
   concurrent scheduler pods never run in the simulator (sqlite, one event at a time). A sandbox
   deployment is the first real test of them.
 - **Fix 5 needs a scenario that backs up the service queue** before it can be judged.
+
+**For `slot-based-fair-share`, most of that doesn't apply.** It needs no completion hook, no
+migration and no reserve, and it keeps `slot-based`'s job selection query, so it doesn't touch the
+untested Postgres paths either. What's left: move it into `fair-queueing-policy.ts` next to
+`slotBasedPolicy` and make it selectable (README steps 1 and 2), test it, and check the cost of
+its two extra queries per scheduling pass - each user's running and ready counts for the service,
+and the user and type of each job picked, both from `user_work` by service.
 
 ## Reproducing the evidence
 
