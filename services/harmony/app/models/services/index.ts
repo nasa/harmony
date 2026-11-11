@@ -76,8 +76,10 @@ export function loadServiceConfigsFromFile(cmrEndpoint: string, fileName: string
     : fs.readFileSync(path.join(__dirname, fileName));
   const schema = yaml.DEFAULT_SCHEMA.extend([EnvType]);
   const envConfigs = yaml.load(buffer.toString(), { schema: schema as never });
+  // A service with no enabled flag is enabled. Otherwise it must be exactly true so that a value
+  // like `!Env ${EXAMPLE_SERVICES}` matches the exact 'true' checks used elsewhere (e.g. server.ts)
   const configs = envConfigs[cmrEndpoint]
-    .filter((config) => config.enabled !== false && config.enabled !== 'false');
+    .filter((config) => config.enabled === undefined || config.enabled === true || config.enabled === 'true');
   configs.forEach(sc => updateCollectionsConfig(sc));
   return configs;
 }

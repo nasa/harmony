@@ -371,3 +371,45 @@ describe('Services.yml validation', function () {
     });
   });
 });
+
+describe('loadServiceConfigsFromFile enabled flag', function () {
+  const enabledFlagsYmlFile = '../../../test/resources/services_with_enabled_flags.yml';
+
+  /**
+   * Loads the enabled flags test services with the given env value for the enabled flag
+   *
+   * @param value - The value for TEST_SERVICE_ENABLED_FLAG, or undefined to leave it unset
+   * @returns the names of the loaded services
+   */
+  function loadServiceNames(value: string | undefined): string[] {
+    const original = process.env.TEST_SERVICE_ENABLED_FLAG;
+    if (value === undefined) {
+      delete process.env.TEST_SERVICE_ENABLED_FLAG;
+    } else {
+      process.env.TEST_SERVICE_ENABLED_FLAG = value;
+    }
+    try {
+      return loadServiceConfigsFromFile(cmrEndpoints.prod, enabledFlagsYmlFile).map((c) => c.name);
+    } finally {
+      if (original === undefined) {
+        delete process.env.TEST_SERVICE_ENABLED_FLAG;
+      } else {
+        process.env.TEST_SERVICE_ENABLED_FLAG = original;
+      }
+    }
+  }
+
+  it('loads services with no enabled flag or enabled: true, and skips enabled: false', function () {
+    expect(loadServiceNames('false')).to.eql(['no-enabled-flag', 'enabled-true']);
+  });
+
+  it('loads a service whose enabled flag is set to "true" from the environment', function () {
+    expect(loadServiceNames('true')).to.include('enabled-from-env');
+  });
+
+  for (const value of ['false', '0', '1', 'yes', 'TRUE', '', undefined]) {
+    it(`skips a service whose enabled flag is set to ${JSON.stringify(value)} from the environment`, function () {
+      expect(loadServiceNames(value)).to.not.include('enabled-from-env');
+    });
+  }
+});

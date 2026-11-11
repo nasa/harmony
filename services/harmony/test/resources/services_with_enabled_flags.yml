@@ -1,0 +1,18 @@
+# Used to test which values of a service's enabled flag cause it to be loaded
+
+https://cmr.earthdata.nasa.gov:
+
+  - name: no-enabled-flag
+    data_operation_version: '0.22.0'
+
+  - name: enabled-true
+    data_operation_version: '0.22.0'
+    enabled: true
+
+  - name: enabled-false
+    data_operation_version: '0.22.0'
+    enabled: false
+
+  - name: enabled-from-env
+    data_operation_version: '0.22.0'
+    enabled: !Env ${TEST_SERVICE_ENABLED_FLAG}
