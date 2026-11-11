@@ -137,7 +137,7 @@ describe('metrics', function () {
     it('summarizes sync requests and the run as a whole', function () {
       // Bob's request took 20 minutes for 5 minutes of work
       expect(summary.sync).to.deep.equal({
-        jobs: 1, meanMakespanMs: 20 * MIN, maxMakespanMs: 20 * MIN,
+        jobs: 1, unfinished: 0, meanMakespanMs: 20 * MIN, maxMakespanMs: 20 * MIN,
         meanLatencyMs: 15 * MIN, p95LatencyMs: 15 * MIN, maxLatencyMs: 15 * MIN,
       });
       expect(summary.overall).to.deep.equal({ meanSlowdown: 2.5, maxSlowdown: 4, meanWaitMs: 5 * MIN });

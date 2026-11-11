@@ -23,7 +23,7 @@ export const DEFAULT_EXPECTED_DURATION_MS = 60 * 60 * 1000;
 // failing slowly (e.g. timing out) is still treated as slow - failures aren't included in
 // average_duration so they don't skew it once the job has successes. With neither, this is
 // average_duration as is, i.e. a seeded duration or NULL.
-const EFFECTIVE_DURATION_SQL = '(CASE WHEN completed_count = 0 AND failed_count > 0 '
+export const EFFECTIVE_DURATION_SQL = '(CASE WHEN completed_count = 0 AND failed_count > 0 '
   + 'THEN failed_sum_duration_ms / failed_count ELSE average_duration END)';
 
 // Expected runtime (in ms) of a user_work row's running work items, with one binding for the

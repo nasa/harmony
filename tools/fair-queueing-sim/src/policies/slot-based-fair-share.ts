@@ -177,12 +177,15 @@ export const slotBasedFairSharePolicy: FairQueueingPolicy = {
       remainingNumOfJobs -= 1;
     }
 
-    // fair share is work-conserving: what the users held back for couldn't take goes to the
-    // users held back, so it never leaves pods idle
+    // fair share is work-conserving: what's left of the batch goes first to jobs still within
+    // their user's share (a user below their share early in the split only got their slice),
+    // and only what they can't take goes to the users held back, so it never leaves pods idle
     if (s.fairShare && remainingBatchSize > 0) {
-      for (const { jobId } of jobs) {
-        if (remainingBatchSize <= 0) break;
-        remainingBatchSize -= await take(jobId, remainingBatchSize, true);
+      for (const ignoreShare of [false, true]) {
+        for (const { jobId } of jobs) {
+          if (remainingBatchSize <= 0) break;
+          remainingBatchSize -= await take(jobId, remainingBatchSize, ignoreShare);
+        }
       }
     }
   },

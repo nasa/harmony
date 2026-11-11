@@ -400,6 +400,31 @@ describe('Scheduler Worker', async function () {
           + 'ENABLE_DURATION_BASED_FAIR_QUEUEING=true)')).to.be.true;
       });
     });
+
+    describe('when fair share fast lane is selected with an invalid reserve', function () {
+      let fairQueueingPolicyStub: sinon.SinonStub;
+      let original: string | undefined;
+      beforeEach(function () {
+        fairQueueingPolicyStub = sinon.stub(env, 'fairQueueingPolicy').get(() => 'fair-share-fast-lane');
+        original = process.env.FAIR_SHARE_FAST_LANE_RESERVE_FRACTION;
+        process.env.FAIR_SHARE_FAST_LANE_RESERVE_FRACTION = '1.5';
+      });
+      afterEach(function () {
+        fairQueueingPolicyStub.restore();
+        if (original === undefined) delete process.env.FAIR_SHARE_FAST_LANE_RESERVE_FRACTION;
+        else process.env.FAIR_SHARE_FAST_LANE_RESERVE_FRACTION = original;
+      });
+
+      it('fails to start', async function () {
+        let error: Error;
+        try {
+          await new Scheduler().start(false);
+        } catch (e) {
+          error = e;
+        }
+        expect(error?.message).to.match(/FAIR_SHARE_FAST_LANE_RESERVE_FRACTION must be a fraction from 0 to 1/);
+      });
+    });
   });
 
   describe('calculateNumItemsToQueue', function () {

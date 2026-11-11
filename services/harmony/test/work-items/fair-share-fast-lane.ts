@@ -1,11 +1,14 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
+import * as sinon from 'sinon';
 
 import { truncateAll } from '../../../../packages/util/test/helpers/db';
 import {
   durationBasedPolicy, FairQueueingPolicy, getFairQueueingPolicy, slotBasedPolicy,
 } from '../../app/backends/workflow-orchestration/fair-queueing-policy';
-import { fairShareFastLanePolicy } from '../../app/backends/workflow-orchestration/fair-share-fast-lane-policy';
+import {
+  fairShareFastLanePolicy, fairShareFastLaneSettings,
+} from '../../app/backends/workflow-orchestration/fair-share-fast-lane-policy';
 import { getWorkItemsFromDatabase } from '../../app/backends/workflow-orchestration/work-item-polling';
 import { JobRecord } from '../../app/models/job';
 import UserWork from '../../app/models/user-work';
@@ -128,6 +131,28 @@ describe('Fair share fast lane fair queueing', function () {
     });
   });
 
+  describe('when a user below their share comes first in the split but last in priority order', function () {
+    let randomStub: sinon.SinonStub;
+    beforeEach(function () {
+      // the split shuffles users: this puts Waiting before Busy
+      randomStub = sinon.stub(Math, 'random').returns(0);
+    });
+    afterEach(function () {
+      randomStub.restore();
+    });
+
+    it('gives what\'s left of the batch to them, not to the user held back', async function () {
+      await saveJobs([
+        // over their share, but first in priority order: their running work is expected to take
+        // far less time than Waiting's
+        { jobID: 'busyJob', username: 'Busy', running: 8, ready: 10, averageDuration: 10 },
+        { jobID: 'waitingJob', username: 'Waiting', running: 1, ready: 10, averageDuration: 500000 },
+      ]);
+      // Waiting's slice of the split is 2 of the 4; Busy is held back, so 2 are left over
+      expect(await takeBatch(4)).to.eql({ waitingJob: 4 });
+    });
+  });
+
   describe('when a user over their fair share has a sync request', function () {
     it('does not hold the sync request back', async function () {
       await saveJobs([
@@ -171,6 +196,22 @@ describe('Fair share fast lane fair queueing', function () {
       expect(await takeBatch(10)).to.eql({ fastJob: 10 });
     });
   });
+});
+
+describe('fairShareFastLaneSettings', function () {
+  it('reads the reserve as a fraction, or null for the work-scheduler\'s', function () {
+    expect(fairShareFastLaneSettings({}).reserveFraction).to.equal(0.1);
+    expect(fairShareFastLaneSettings({ FAIR_SHARE_FAST_LANE_RESERVE_FRACTION: '0' }).reserveFraction).to.equal(0);
+    expect(fairShareFastLaneSettings({ FAIR_SHARE_FAST_LANE_RESERVE_FRACTION: '1' }).reserveFraction).to.equal(1);
+    expect(fairShareFastLaneSettings({ FAIR_SHARE_FAST_LANE_RESERVE_FRACTION: 'scheduler' }).reserveFraction).to.equal(null);
+  });
+
+  for (const reserve of ['abc', '1.5', '-0.1', '', 'Infinity']) {
+    it(`rejects a reserve of "${reserve}"`, function () {
+      expect(() => fairShareFastLaneSettings({ FAIR_SHARE_FAST_LANE_RESERVE_FRACTION: reserve }))
+        .to.throw(/FAIR_SHARE_FAST_LANE_RESERVE_FRACTION must be a fraction from 0 to 1, or "scheduler"/);
+    });
+  }
 });
 
 describe('getFairQueueingPolicy', function () {

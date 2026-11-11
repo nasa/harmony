@@ -120,8 +120,10 @@ Duration based fair queueing is disabled by default. It is selected by setting
 `FAIR_QUEUEING_POLICY=duration-based` for the work-scheduler (or, the older setting,
 `ENABLE_DURATION_BASED_FAIR_QUEUEING=true`), and changes the [algorithm](#the-algorithm) above in
 two ways, described below. `SLOW_WORK_THRESHOLD_MS` and `FAST_LANE_RESERVE_FRACTION` only take
-effect when it is selected (and `SLOW_WORK_THRESHOLD_MS` also with
-[fair share fast lane](#fair-share-fast-lane-fair-queueing-experimental) fair queueing).
+effect when it is selected, or with
+[fair share fast lane](#fair-share-fast-lane-fair-queueing-experimental) fair queueing:
+`SLOW_WORK_THRESHOLD_MS` always, and `FAST_LANE_RESERVE_FRACTION` when
+`FAIR_SHARE_FAST_LANE_RESERVE_FRACTION` is `scheduler`.
 
 ### Ranking Users by Expected Runtime
 In step 2, instead of counting slots for the service, each user's _expected runtime_ of work
@@ -212,15 +214,19 @@ The changes:
   that hasn't been measured counts as the service's mean measured duration rather than an hour.
 
 Like duration based fair queueing it leaves pods idle by design when only slow work is waiting
-(the reserve), and because new jobs are limited until they're measured, the reserve holds from the
-start.
+(the reserve), and because new jobs are limited until they're measured, the reserve mostly holds
+from the start. Not entirely: each new job may run its first `FAIR_SHARE_FAST_LANE_UNMEASURED_LIMIT`
+work items whatever the slow work capacity, so that it can be measured, so many new jobs arriving
+at once can use some of the reserve until their first work items finish.
 
 Each change can be switched off with its `FAIR_SHARE_FAST_LANE_*` setting (see the work-scheduler's
 `env-defaults`), which is read on every scheduling pass. With all of them off and
 `FAIR_SHARE_FAST_LANE_RESERVE_FRACTION=scheduler`, it makes exactly the same decisions as duration
 based fair queueing. It uses the durations Harmony already records (see
 [Work Item Duration Tracking](#work-item-duration-tracking)), so selecting it needs no schema
-changes, and going back is setting `FAIR_QUEUEING_POLICY=slot-based`. The policy, and the reason
+changes, and going back is setting `FAIR_QUEUEING_POLICY=slot-based` (with
+`ENABLE_DURATION_BASED_FAIR_QUEUEING` false, its default, or it selects duration based fair
+queueing instead). The policy, and the reason
 for each change, is described in
 `services/harmony/app/backends/workflow-orchestration/fair-share-fast-lane-policy.ts`.
 

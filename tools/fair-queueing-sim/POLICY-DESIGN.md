@@ -38,8 +38,9 @@ Every decision below keeps to these:
   Harmony has seen slow jobs take every pod and leave arriving fast jobs unworked. Pods the reserve
   leaves idle (story 07) are the cost of that guarantee, so no fix lets slow work into the reserve.
 - **It's `duration-based` plus fixes.** The queries follow `getNextJobIdsDurationBased` step for
-  step, and with every fix switched off the policy makes exactly the same decisions as
-  `duration-based`, which `findings` checks in every story. So every difference in the results
+  step, and with every fix switched off and `FAIR_SHARE_FAST_LANE_RESERVE_FRACTION=scheduler`
+  (`duration-based`'s 30% reserve rather than the policy's 10%) the policy makes exactly the same
+  decisions as `duration-based`, which `findings` checks in every story. So every difference in the results
   comes from a fix, and each fix can be judged by switching it off.
 - **It keeps its own durations.** Fixes 2 and 5 need durations Harmony doesn't keep, so the policy
   stores them in its own `user_work` columns (`adaptive_duration`, `adaptive_count`). Harmony's
@@ -64,7 +65,7 @@ production runs (5 seeds; a difference counts when it holds in every seed):
 - **The four production scenarios:** better in every seed on 16 of 21 protected metrics, including a
   slow user arriving first (sync requests wait 8 seconds instead of 27 minutes) and the hoss takeover
   (contended fairness 0.23 -> 0.93); utilization 0.3-1.0 points lower.
-- **The mixed workload:** better in every seed on every headline metric (mean job slowdown -29%).
+- **The mixed workload:** better in every seed on every headline metric (mean job slowdown -30%).
 
 Against `duration-based`, the policy it's built on: better in every seed on 17 of the 24 story
 metrics, worse only in the new job's slower start (01, 02, 10, about 1%).
@@ -86,33 +87,37 @@ plus fix 6 for every user and fix 8 (sync requests first), and nothing else: no 
 schema change, no work-updater hook, no fast lane reserve. With both fixes off it makes exactly the
 same decisions as `slot-based`, which `findings` checks in every story.
 
-**Against `slot-based`** (the benchmark records, 12 stories, seeds 101-105): better in every seed
-on 15 of the 24 protected metrics, and **worse in every seed on none** - with no new job limit and
-no reserve, the costs in 01, 02, 07 and 10 don't arise. Contended fairness in 04 (+8%), 08 (+33%)
-and 11 (+31%); the newcomer in 05 (-18%); the fast users in 06 (-37%), 11 (-54%) and 12 (-60%);
-Judy's share in 08 (0.40 -> 0.98); Nora in 12; Lee in 09 (-83%). Holding users to a fair share
-also covers much of the slow work stories without knowing what's slow: a user with slow work holds
-pods for a long time, so the fair share limits them.
+**Against `slot-based`** (the benchmark records, 12 stories, seeds 101-105; these numbers are as of
+2026-11-11, after a fix to its work-conserving pass, which now offers what's left of a batch to jobs
+still within their user's share before the users held back): better in every seed on 15 of the 24
+protected metrics, and **worse in every seed on none** - with no new job limit and no reserve, the
+costs in 01, 02, 07 and 10 don't arise. Contended fairness in 04 (+8%), 08 (+32%) and 11 (+31%);
+the newcomer in 05 (-15%); the fast users in 06 (-37%), 11 (-54%) and 12 (-60%); Judy's share in 08
+(0.40 -> 0.98); Nora in 12; Lee in 09 (-84%). Holding users to a fair share also covers much of the
+slow work stories without knowing what's slow: a user with slow work holds pods for a long time, so
+the fair share limits them.
 
 **On the hoss scenario** (seeds 101-105), in every seed against `slot-based`: sync latency (95th
-percentile) 18.9 -> 6.3 seconds, contended fairness 0.23 -> 0.86, the 8.5 minute user's share of
-the pods 6.4 -> 1.4 times its fair share, the one-at-a-time user 3.7 -> 2.1 times their minimum,
-for 0.8% less utilization. That's most of `fair-share-fast-lane`'s gain there (6.0 s, 0.92, 1.1, 1.9).
+percentile) 18.9 -> 6.2 seconds, contended fairness 0.23 -> 0.86, the 8.5 minute user's share of
+the pods 6.5 -> 1.4 times its fair share, the one-at-a-time user 3.7 -> 2.0 times their minimum,
+for 0.8 points less utilization. That's most of `fair-share-fast-lane`'s gain there (5.9 s, 0.93,
+1.1, 1.9).
 
 **On the mixed workload** (`scenarios/mixed-workload.yml`, which none of the fixes were tuned on;
-seeds 101-103), in every seed against `slot-based`: mean job slowdown -26%, worst -35%, mean sync
-makespan -26% (worst -45%), contended fairness 0.88 -> 0.97, with the same utilization. That's
-within a few percent of `fair-share-fast-lane` on every headline metric; `fair-share-fast-lane` is 5%
-better on mean slowdown in every seed, and leaves 41% more pods idle while work waits (its
+seeds 101-103), in every seed against `slot-based`: mean job slowdown -25%, worst -34%, mean sync
+makespan -26% (worst -51%), contended fairness 0.88 -> 0.97, with the same utilization. That's
+within a few percent of `fair-share-fast-lane` on every headline metric; `fair-share-fast-lane` is 6%
+better on mean slowdown in every seed, and leaves 12% more pods idle while work waits (its
 reserve).
 
 **What knowing durations adds** (`fair-share-fast-lane` against `slot-based-fair-share`, the same
 records): better in every seed on new slow jobs taking the service before they're known to be slow
-(06 -33%, 11 -65%), the newcomer in 05 (-15%) and the fast user in 12 (-18%); worse in every seed
-on a slow job alone (07, +45%, the reserve), big jobs alone or nearly alone (01, 02 +1.5%, 10
-+27%) and slightly on fairness in 04 (-1.4%) and 11 (-0.5%). Those gains protect fast work against
-new slow jobs, which production's stats suggest are rare; the costs come from the reserve and from
-limiting new jobs until they're measured.
+(06 -30%, 11 -56%, with fairness in 11 +4%), the newcomer in 05 (-18%) and the fast user in 12
+(-18%); worse in every seed on a slow job alone (07, +16%, the reserve), big jobs alone or nearly
+alone (01 and 02 +1%, 10 +26%), the worst of Lee's jobs in 09 (+23%) and slightly on fairness in
+04 (-1.3%) and Judy's share in 08 (-3%). Those gains protect fast work against new slow jobs, which
+production's stats suggest are rare; the costs come from the reserve and from limiting new jobs
+until they're measured.
 
 On its own, that would make `slot-based-fair-share` the obvious first step. The production
 scenarios below show why it isn't enough.
@@ -180,19 +185,20 @@ first duration-aware scheduling, which needs a sandbox or UAT trial (see
 that trial has to wait: it fixes the first case, but not the second.
 
 **The reserve can be much smaller.** Chris asked for a much lower reserve of idle pods. Sweeping the
-reserve (with fixes 2 and 5 off, seeds 101-105; re-run 2026-11-10 after fix 1's correction):
+reserve (with fixes 2 and 5 off, seeds 101-105; re-run 2026-11-11 after fix 1's correction and
+the change to fix 6's work-conserving pass):
 
 | | slot-based | 30% (duration-based's) | 20% | 10% |
 |---|---|---|---|---|
-| slow-user-first: sync latency, 95th percentile | 26m 57s | 2.0 s | 3.9 s | 8.1 s |
-| slow-user-first: fast jobs, times their minimum | none finished | 3.4 | 4.7 | 7.1 |
-| slow-user-first: the slow user's share (ideal 1.0) | 3.71 | 0.88 | 1.07 | 1.28 |
+| slow-user-first: sync latency, 95th percentile | 26m 57s | 2.1 s | 3.7 s | 7.8 s |
+| slow-user-first: fast jobs, times their minimum | none finished | 3.4 | 4.6 | 6.9 |
+| slow-user-first: the slow user's share (ideal 1.0) | 3.71 | 0.88 | 1.07 | 1.27 |
 | 07: a slow job alone, time to finish | 2h 51m | 4h 09m (+45%) | 3h 41m (+29%) | 3h 19m (+16%) |
 | 06: the fast users, times their minimum (both) | 7.5 | 3.1 | 3.2 | 3.3 |
 | 11: the fast user, times its minimum | 12.5 | 2.0 | 2.3 | 2.5 |
 
-hoss and trajectory-subsetter barely change with the reserve (hoss: sync latency 5.6-6.0 s,
-fairness 0.92-0.93; trajectory-subsetter: 9.6-9.8 s, 0.96-0.97): they have almost no slow work,
+hoss and trajectory-subsetter barely change with the reserve (hoss: sync latency 5.8-5.9 s,
+fairness 0.92-0.93; trajectory-subsetter: 8.9-9.9 s, 0.96): they have almost no slow work,
 so the reserve hardly applies. Even at 10%, sync requests meet the 10 second target when a slow user
 arrives first (fix 1's limit on new jobs does much of the protecting), and the reserve's cost when
 slow work is alone falls to a third. **Chosen: 10%**, given how rare slow work is in production
@@ -239,7 +245,16 @@ everything else is over 5 seeds.
    take goes to the users held back, so it never leaves pods idle. *Evidence:* the biggest single
    fix - off, 04 goes from 5.86 to 6.72, 06 from 2.74 to 3.96, 09 from 3.04 to 9.72 and 12 from
    2.67 to 4.97. Holding every user to their share, not just slow users (`FAIR_SHARE_ALL`), is
-   what helps 04 and 12.
+   what helps 04 and 12. *Change (2026-11-11):* the work-conserving pass gave what was left of a
+   batch to jobs in priority order with fair share off, so a user below their share who came
+   early in the batch's split (and only got their slice) could lose the rest to a user over
+   theirs. It now offers what's left to users below their share first, up to their share, and
+   only then to everyone. Offering it first to everyone not currently held back was tried and
+   rejected: a user nobody is waiting for isn't held back even when they're over their share, so
+   in story 12 the slow user got the leftover ahead of the fast one (Omar +7%, contended fairness
+   -2%, both in every seed). The change itself moved little (RESULTS.md has the details): a little
+   better on trajectory-subsetter and slow-user-first, mean job slowdown and mean sync latency on
+   the mixed workload better but its 95th percentile sync latency 11% worse, in every seed.
 7. **Long-running work is slow before it finishes.** *Problem:* until a work item completes,
    fix 1 can't tell a 30 minute work item from a slow-to-start one. *Decision:* a (job, service)
    with a work item running longer than the threshold is slow from then on, and keeps fix 1's
