@@ -58,8 +58,10 @@
 //    it out. Such work also keeps fix 1's limits until it's measured
 //    (FAIR_SHARE_FAST_LANE_RUNNING_EVIDENCE_KEEPS_LIMIT), so being noticed only ever tightens what
 //    it may run.
-// 8. Sync requests go first. Someone is waiting on a sync request, and production limits them
-//    to one granule (MAX_SYNCHRONOUS_GRANULES), so they can't crowd out async work. Fix 6
+// 8. Sync requests go first. Someone is waiting on a sync request, and production limits each
+//    one to one granule (MAX_SYNCHRONOUS_GRANULES), so a sync request takes at most one work item
+//    a step - but there's no limit on sync requests in total, so many at once can fill a batch
+//    before async work gets any of it (slot-based also ranks a user's sync jobs first). Fix 6
 //    never holds a sync request back (FAIR_SHARE_FAST_LANE_SYNC_EXEMPT) - with FAIR_SHARE_ALL, a
 //    sync request would otherwise wait behind its own user's async work once that fills the
 //    user's share - though it still counts towards the share. And each batch goes to sync

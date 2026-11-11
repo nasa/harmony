@@ -15,7 +15,8 @@
 // 2. Sync requests go first (fair-share-fast-lane's fix 8). Fair share never holds back a sync
 //    request, though it still counts towards its user's share (SLOT_BASED_SYNC_EXEMPT), and each
 //    batch goes to sync requests before it's split between jobs (SLOT_BASED_SYNC_FIRST). Production
-//    limits sync requests to one granule, so they can't crowd out async work.
+//    limits each sync request to one granule, but not sync requests in total, so many at once can
+//    fill a batch before async work gets any of it.
 //
 // Neither needs durations, a schema change or a work-updater hook, and there's no fast lane
 // reserve, so this is a much smaller change to production than fair-share-fast-lane. It picks jobs

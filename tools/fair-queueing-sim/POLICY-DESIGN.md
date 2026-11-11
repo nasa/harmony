@@ -40,8 +40,11 @@ Every decision below keeps to these:
 - **It's `duration-based` plus fixes.** The queries follow `getNextJobIdsDurationBased` step for
   step, and with every fix switched off and `FAIR_SHARE_FAST_LANE_RESERVE_FRACTION=scheduler`
   (`duration-based`'s 30% reserve rather than the policy's 10%) the policy makes exactly the same
-  decisions as `duration-based`, which `findings` checks in every story. So every difference in the results
-  comes from a fix, and each fix can be judged by switching it off.
+  decisions as `duration-based`, which `findings` checks in every story. So every difference from
+  `duration-based` comes from a fix or from the smaller reserve - and the reserve alone changes
+  results (the [reserve sweep](#production-scenarios-and-the-recommendation) below: a slow job
+  alone takes 4h 09m at 30% and 3h 19m at 10%). Each fix can be judged by switching it off, and the
+  reserve by setting it back to the work-scheduler's (the `scheduler-reserve` variant).
 - **It keeps its own durations.** Fixes 2 and 5 need durations Harmony doesn't keep, so the policy
   stores them in its own `user_work` columns (`adaptive_duration`, `adaptive_count`). Harmony's
   `average_duration` is left alone, so switching between the policies never leaves either one
@@ -265,8 +268,10 @@ everything else is over 5 seeds.
    own user's async work once that fills the user's share (story 03), and when a pod frees up a
    batch may only have room for one work item, which the per-user split gives anyone.
    *Decision:* fix 6 never holds back a sync request (it still counts towards the user's share),
-   and sync requests get each batch first. Production limits sync requests to one granule
-   (`MAX_SYNCHRONOUS_GRANULES`), so they can't crowd out async work. *Evidence:* story 03's sync
+   and sync requests get each batch first. Production limits each sync request to one granule
+   (`MAX_SYNCHRONOUS_GRANULES`), but not sync requests in total, so many at once can fill a batch
+   before async work gets any of it - as with `slot-based`, which also ranks a user's sync jobs
+   first. *Evidence:* story 03's sync
    request -28% (better in 4 seeds, none worse), 04's -16% (5/5). No other protected metric moves
    but 04's fairness (-0.1%); big async jobs in 03 and 04 take 0.2-1% longer.
 

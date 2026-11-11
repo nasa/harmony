@@ -499,8 +499,11 @@ real incidents, such as a service taken over by one user, that should become sce
   2026-11-11: 5 runs per scenario (seeds 101-105) for 1-12. Scenarios 13 (3 runs, seeds 101-103)
   and 14-17 (5 runs, seeds 101-105) aren't in the records; their results are from runs made
   between 2026-11-09 and 2026-11-11 of code that makes the same decisions as the records'. Runs
-  with the same seed have the same random work item durations under every policy, so the policies
-  are compared on identical workloads. The commands that regenerate them are below.
+  with the same seed have the same random inputs - work item durations and when jobs are due -
+  under every policy. That makes the workloads the same, with one exception: a user who waits for
+  each request to finish before sending the next (the one-at-a-time user in 14) sends them at
+  times, and so sends as many, as the policy lets them. The commands that regenerate the results
+  are below.
 - **Details:** how each measure is defined is in [REFERENCE.md](REFERENCE.md#the-metrics); why
   the two candidates work the way they do, and seed-by-seed comparisons, are in
   [POLICY-DESIGN.md](POLICY-DESIGN.md).
