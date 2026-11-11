@@ -721,9 +721,11 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
         });
       hookRedirect('jdoe1');
 
-      it('reports the correct granule count', function () {
+      // The count is corrected to the CMR hits later, when query-cmr reports its granule
+      // validation results, so initially it reflects every granuleId requested
+      it('initially reports the number of requested granuleIds', function () {
         const job = JSON.parse(this.res.text);
-        expect(job.numInputGranules).to.equal(1);
+        expect(job.numInputGranules).to.equal(3);
       });
     });
   });

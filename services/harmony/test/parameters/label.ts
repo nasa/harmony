@@ -163,9 +163,7 @@ describe('labels', function () {
       });
     });
 
-    // Our testing framework is turning the label=first,second into label=['first,second']
-    // Manually tested this works as expected where it breaks it into two separate labels - 'first' and 'second'
-    xdescribe('when passing in labels via a single query parameter with a comma-separated string', async function () {
+    describe('when passing in labels via a single query parameter with a comma-separated string', async function () {
       const label = 'first,second';
       hookPartials[apiType](label);
       hookRedirect('joe');
