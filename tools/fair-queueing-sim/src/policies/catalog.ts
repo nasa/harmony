@@ -68,6 +68,12 @@ const FAST_LANE_DESIGN_NOTE = 'The fast lane reserve is intentional: slow work m
   'idle by the reserve when only slow work exists (e.g. story 07) are the accepted cost of that ' +
   'guarantee, not a bug.';
 
+const FAIR_SHARE_FAST_LANE_DESIGN_NOTE = 'The fast lane reserve is intentional: slow work may never use more than ' +
+  '(1 - FAIR_SHARE_FAST_LANE_RESERVE_FRACTION) of a service\'s pods (FAST_LANE_RESERVE_FRACTION\'s, if it\'s ' +
+  '"scheduler"), even when no other work is waiting, because Harmony has seen slow jobs take every pod and leave ' +
+  'newly arriving fast jobs unworked. Pods left idle by the reserve when only slow work exists (e.g. story 07) are ' +
+  'the accepted cost of that guarantee, not a bug.';
+
 export const POLICY_CATALOG: Record<string, PolicyInfo> = {
   'slot-based': {
     description: "Harmony's default algorithm (slotBasedPolicy in fair-queueing-policy.ts): up to batchSize jobs " +
@@ -125,7 +131,7 @@ export const POLICY_CATALOG: Record<string, PolicyInfo> = {
       'back by fair share. Two more fixes (a moving average of recent durations, pod-reported durations) are off by ' +
       "default and simulator only: they need durations Harmony doesn't keep, and made no difference on the " +
       'production scenarios.',
-    designNotes: [FAST_LANE_DESIGN_NOTE],
+    designNotes: [FAIR_SHARE_FAST_LANE_DESIGN_NOTE],
     // defaults from the work-scheduler's env-defaults, except fixes 2 and 5's, which aren't there
     settings: [
       ...FAST_LANE_SETTINGS,

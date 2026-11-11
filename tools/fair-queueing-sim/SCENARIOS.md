@@ -186,7 +186,7 @@ items take, and Bob's request finishes quickly.
 | | slot-based | duration-based | slot-based fair share | fair share fast lane |
 |---|---|---|---|---|
 | Fairness | 0.86 | 0.82 | 0.93 | 0.92 |
-| Bob's request, time to finish | 1m 51s | 1m 38s | 1m 49s | 1m 33s |
+| Bob's request, time to finish | 1m 51s | 1m 38s | 1m 48s | 1m 47s |
 
 **Question:** fairness here is measured in pods. Should a user with very short work items (Carol)
 count as well served when their work keeps moving, even with fewer pods?
@@ -202,7 +202,7 @@ finish late together.)
 
 | | slot-based | duration-based | slot-based fair share | fair share fast lane |
 |---|---|---|---|---|
-| Erin's job, times its minimum | 9.8× | 10.2× | 8.0× | 6.7× |
+| Erin's job, times its minimum | 9.8× | 10.2× | 8.3× | 6.8× |
 
 Fair share fast lane is better, but no policy gets Erin going promptly yet.
 
@@ -269,8 +269,8 @@ so Lee's jobs keep flowing.
 
 | | slot-based | duration-based | slot-based fair share | fair share fast lane |
 |---|---|---|---|---|
-| Lee's jobs, times their minimum (average) | 21.8× | 21.8× | 3.6× | 3.7× |
-| Lee's jobs, times their minimum (worst) | 43.2× | 43.2× | 7.0× | 8.4× |
+| Lee's jobs, times their minimum (average) | 21.8× | 21.8× | 3.5× | 3.7× |
+| Lee's jobs, times their minimum (worst) | 43.2× | 43.2× | 6.8× | 8.4× |
 
 Duration-based never notices, because it uses the average over Kim's whole job, which stays low.
 Slot-based fair share doesn't need to notice: it holds Kim to a fair share of the pods however
@@ -323,7 +323,7 @@ the rest of it or cost Nora a fair share. Omar's work keeps flowing.
 | | slot-based | duration-based | slot-based fair share | fair share fast lane |
 |---|---|---|---|---|
 | Nora's job, times its minimum | 3.7× | 3.7× | 2.8× | 2.7× |
-| Nora's share | 0.74 | 0.80 | 0.92 | 0.91 |
+| Nora's share | 0.74 | 0.80 | 0.92 | 0.92 |
 | Omar's job, times its minimum | 9.7× | 9.7× | 3.9× | 3.2× |
 
 **Question:** is "1 in 20 work items takes 10 times as long" a realistic mix? Do some services
@@ -343,10 +343,10 @@ subsetter followed by a 10 pod reformatter:
 **What should happen:** sync requests stay fast, small jobs aren't stuck behind the pipeline's big
 jobs, and the modeler's slow jobs don't take over the subsetter.
 
-Over 3 runs, compared with slot-based, slot-based fair share made jobs 26% quicker on average (the
-worst job 35% quicker), sync requests 26% quicker (the slowest 45% quicker), and the sharing 10% more
-even. Fair share fast lane did a few percent better still, and slot-based and duration-based were about the
-same. The sync requests here wait at two services, so they're slower than the 10 second target
+Over 3 runs, compared with slot-based, slot-based fair share made jobs 25% quicker on average (the
+worst job 34% quicker), sync requests 26% quicker (the slowest 51% quicker), and the sharing 10% more
+even. Fair share fast lane did a few percent better on most of these, and slot-based and
+duration-based were about the same. The sync requests here wait at two services, so they're slower than the 10 second target
 under every policy; this scenario's durations aren't based on production's yet.
 
 **Question:** this is the scenario most worth making realistic. What does a busy day on a real
@@ -372,11 +372,11 @@ one-at-a-time user's requests each finish quickly, and pods stay busy.
 
 | | slot-based | duration-based | slot-based fair share | fair share fast lane |
 |---|---|---|---|---|
-| Sync requests, latency (95% within) | 18.9s | 20.3s | 6.3s | 5.9s |
+| Sync requests, latency (95% within) | 18.9s | 20.3s | 6.2s | 5.9s |
 | Sync requests, latency (average) | 7.2s | 7.4s | 2.7s | 2.5s |
 | Fairness | 0.23 | 0.23 | 0.86 | 0.93 |
 | The 8.5 minute user's share | 6.45 | 6.44 | 1.36 | 1.14 |
-| One-at-a-time requests, times their minimum | 3.7× | 3.8× | 2.1× | 1.9× |
+| One-at-a-time requests, times their minimum | 3.7× | 3.8× | 2.0× | 1.9× |
 | Pods busy | 97.8% | 97.8% | 97.0% | 96.8% |
 
 With slot-based, the user whose work items take 8.5 minutes ends up holding over half of the pods,
@@ -434,10 +434,10 @@ moving.
 
 | | slot-based | duration-based | slot-based fair share | fair share fast lane |
 |---|---|---|---|---|
-| Sync requests, latency (95% within) | 22.1s | 25.6s | 13.1s | 9.8s |
-| Fairness | 0.66 | 0.66 | 0.91 | 0.97 |
-| A mid-sized user's jobs, times their minimum | 7.1× | 7.1× | 4.6× | 5.7× |
-| A small user's jobs, times their minimum | 4.2× | 4.2× | 1.4× | 1.3× |
+| Sync requests, latency (95% within) | 22.1s | 25.6s | 12.8s | 9.4s |
+| Fairness | 0.66 | 0.66 | 0.91 | 0.96 |
+| A mid-sized user's jobs, times their minimum | 7.1× | 7.1× | 4.7× | 5.1× |
+| A small user's jobs, times their minimum | 4.2× | 4.2× | 1.5× | 1.3× |
 | Pods busy | 99.2% | 99.2% | 98.8% | 98.5% |
 
 **Question:** does this look like a trajectory-subsetter burst - the number of users, their job
@@ -458,10 +458,10 @@ within seconds, and once everyone has work waiting the slow user has about a fai
 
 | | slot-based | duration-based | slot-based fair share | fair share fast lane |
 |---|---|---|---|---|
-| Sync requests, latency (95% within) | 26m 57s | 26m 40s | 26m 41s | 8.1s |
-| Sync requests, latency (average) | 6m 27s | 5m 22s | 6m 57s | 1.7s |
-| Fast jobs, times their minimum | none finished in 2h | 24× | 37× | 7.1× |
-| The slow user's share | 3.71 | 2.18 | 2.22 | 1.28 |
+| Sync requests, latency (95% within) | 26m 57s | 26m 40s | 26m 41s | 7.8s |
+| Sync requests, latency (average) | 6m 27s | 5m 22s | 6m 58s | 1.6s |
+| Fast jobs, times their minimum | none finished in 2h | 24× | 36× | 6.9× |
+| The slow user's share | 3.71 | 2.18 | 2.19 | 1.27 |
 | Fairness | 0.24 | 0.55 | 0.51 | 0.81 |
 
 With nobody else waiting when the slow user arrives, slot-based, duration-based and slot-based
@@ -496,11 +496,24 @@ real incidents, such as a service taken over by one user, that should become sce
   `geoloco-one-user.yml`, 16 `trajectory-burst.yml`, 17 `slow-user-first.yml`). Each file's `description` and `goodOutcome` are the source
   of the situations and goals above, and its `benchmarks` list names the measures shown.
 - **The results come from** the committed benchmark records (`benchmarks/results/*.json`), as of
-  2026-11-05: 5 runs per scenario (seeds 101-105) for 1-12. Scenarios 13 (3 runs, seeds 101-103)
-  and 14-17 (5 runs, seeds 101-105) aren't in the records; their results are from runs on
-  2026-11-05 and 2026-11-06. Runs with the same seed have the same random work item durations
-  under every policy, so the policies are compared on identical workloads. `npm run sim -- bench`
-  regenerates them.
+  2026-11-11: 5 runs per scenario (seeds 101-105) for 1-12. Scenarios 13 (3 runs, seeds 101-103)
+  and 14-17 (5 runs, seeds 101-105) aren't in the records; their results are from runs made
+  between 2026-11-09 and 2026-11-11 of code that makes the same decisions as the records'. Runs
+  with the same seed have the same random work item durations under every policy, so the policies
+  are compared on identical workloads. The commands that regenerate them are below.
 - **Details:** how each measure is defined is in [REFERENCE.md](REFERENCE.md#the-metrics); why
   the two candidates work the way they do, and seed-by-seed comparisons, are in
   [POLICY-DESIGN.md](POLICY-DESIGN.md).
+
+To regenerate the results, from `tools/fair-queueing-sim`:
+
+```
+# 1-12, from the suite (benchmarks/suite.yml), seeds 101-105
+npm run sim -- bench
+
+# 13, seeds 101-103
+npm run sim -- bench scenarios/mixed-workload.yml --seeds 101,102,103
+
+# 14-17, seeds 101-105 (the suite's)
+npm run sim -- bench scenarios/production/hoss-saturated.yml scenarios/production/geoloco-one-user.yml scenarios/production/trajectory-burst.yml scenarios/production/slow-user-first.yml
+```

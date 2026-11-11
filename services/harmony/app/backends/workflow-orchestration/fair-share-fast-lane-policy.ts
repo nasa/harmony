@@ -16,7 +16,10 @@
 // pods idle when only slow work is waiting is by design (Harmony has seen slow jobs take every pod
 // and leave arriving fast jobs unworked), an accepted cost, not something for this policy to fix.
 // Because fix 1 below stops slow work getting past the cap before it is measured, the reserve
-// holds from the start, so expect more such idle time than with duration-based. The fixes:
+// mostly holds from the start, so expect more such idle time than with duration-based. Not
+// entirely: every new (job, service) may run its first FAIR_SHARE_FAST_LANE_UNMEASURED_LIMIT work
+// items whatever the capacity, so that it can be measured, so many new jobs at once can use some
+// of the reserve until they're measured. The fixes:
 //
 // 1. Unmeasured work is limited. A (job, service) with no measured duration yet may only have
 //    FAIR_SHARE_FAST_LANE_UNMEASURED_LIMIT work items running, so a new job whose work items turn
@@ -80,7 +83,7 @@
 
 import type { FairQueueingPolicy, SchedulingContext } from './fair-queueing-policy';
 import { maxMinFairShares } from './fair-share';
-import { DEFAULT_EXPECTED_DURATION_MS, getSlowWorkCapacity } from '../../models/user-work';
+import { DEFAULT_EXPECTED_DURATION_MS, EFFECTIVE_DURATION_SQL, getSlowWorkCapacity } from '../../models/user-work';
 import db, { Transaction } from '../../util/db';
 
 export interface FairShareFastLaneSettings {
@@ -126,6 +129,8 @@ export interface FairShareFastLaneSettings {
  *
  * @param env - the environment to read
  * @returns the settings
+ * @throws Error - if FAIR_SHARE_FAST_LANE_RESERVE_FRACTION isn't a fraction from 0 to 1 or
+ * 'scheduler'
  */
 export function fairShareFastLaneSettings(env: NodeJS.ProcessEnv = process.env): FairShareFastLaneSettings {
   const boolean = (name: string, defaultValue: boolean): boolean => {
@@ -133,8 +138,13 @@ export function fairShareFastLaneSettings(env: NodeJS.ProcessEnv = process.env):
     return value === undefined ? defaultValue : value.toLowerCase() === 'true';
   };
   const reserve = env.FAIR_SHARE_FAST_LANE_RESERVE_FRACTION ?? '0.1';
+  const reserveFraction = reserve === 'scheduler' ? null : Number(reserve);
+  if (reserveFraction !== null && (reserve.trim() === '' || !Number.isFinite(reserveFraction)
+    || reserveFraction < 0 || reserveFraction > 1)) {
+    throw new Error(`FAIR_SHARE_FAST_LANE_RESERVE_FRACTION must be a fraction from 0 to 1, or "scheduler", not "${reserve}"`);
+  }
   return {
-    reserveFraction: reserve === 'scheduler' ? null : Number(reserve),
+    reserveFraction,
     unmeasuredLimit: Number(env.FAIR_SHARE_FAST_LANE_UNMEASURED_LIMIT ?? 2),
     unmeasuredFraction: Number(env.FAIR_SHARE_FAST_LANE_UNMEASURED_FRACTION ?? 0.5),
     ewmaAlpha: Number(env.FAIR_SHARE_FAST_LANE_EWMA_ALPHA ?? 0),
@@ -161,12 +171,6 @@ export function usesOwnDurations(s: FairShareFastLaneSettings): boolean {
   return s.ewmaAlpha > 0 || s.useServiceDuration;
 }
 
-// The duration Harmony classifies a (job, service) by, as EFFECTIVE_DURATION_SQL in user-work.ts:
-// the mean of its successful work items, or of its failed ones if it has no successes yet, or a
-// duration seeded from the user's history, or NULL
-const HARMONY_DURATION_SQL = '(CASE WHEN uw.completed_count = 0 AND uw.failed_count > 0 '
-  + 'THEN uw.failed_sum_duration_ms / uw.failed_count ELSE uw.average_duration END)';
-
 /**
  * The CTEs that classify each (job, service) of the service as slow or not, shared by every
  * query that needs to know what's slow so they all agree. A (job, service)'s duration is
@@ -180,7 +184,10 @@ const HARMONY_DURATION_SQL = '(CASE WHEN uw.completed_count = 0 AND uw.failed_co
  * @returns the CTEs, for a WITH clause
  */
 export function classifiedCtes(s: FairShareFastLaneSettings): string {
-  const duration = usesOwnDurations(s) ? `COALESCE(uw.adaptive_duration, ${HARMONY_DURATION_SQL})` : HARMONY_DURATION_SQL;
+  // Harmony's duration (EFFECTIVE_DURATION_SQL: the mean of the successful work items, or of the
+  // failed ones if there are no successes yet, or a duration seeded from the user's history, or
+  // NULL); its columns are user_work's, the only table in the FROM clause it's used in
+  const duration = usesOwnDurations(s) ? `COALESCE(uw.adaptive_duration, ${EFFECTIVE_DURATION_SQL})` : EFFECTIVE_DURATION_SQL;
   return `
     LongRunning AS (
       SELECT DISTINCT "jobID" AS job_id
@@ -308,11 +315,12 @@ function shuffleArray<T>(array: T[]): T[] {
  * @param bindings - the classification bindings
  * @param podCount - the number of pods running the service
  * @param s - the policy settings
- * @returns the limit per user, for users with work for the service
+ * @returns for users with work for the service, the limit, and their headroom: how many more
+ * work items they may run before they reach their fair share, whether or not anyone is waiting
  */
 async function slowWorkLimits(
   tx: Transaction, bindings: Record<string, string | number | Date>, podCount: number, s: FairShareFastLaneSettings,
-): Promise<Record<string, number>> {
+): Promise<{ limits: Record<string, number>; headroom: Record<string, number> }> {
   // unmeasured work counts as fast unless it's been running too long, as when classifying jobs
   const rows = rawRows(await tx.raw(`
     WITH ${classifiedCtes(s)}
@@ -332,6 +340,7 @@ async function slowWorkLimits(
   }));
   const shares = maxMinFairShares(Object.fromEntries(loads.map((l) => [l.user, l.running + l.ready])), podCount);
   const limits: Record<string, number> = Object.create(null);
+  const headroom: Record<string, number> = Object.create(null);
   for (const load of loads) {
     // all users: hold back only for someone it would help - another user below their share
     // with work ready - so holding everyone back can't leave pods idle. Slow users only: while
@@ -340,9 +349,10 @@ async function slowWorkLimits(
       ? loads.some((o) => o.user !== load.user && o.ready > 0 && o.running < (shares[o.user] ?? 0) - 1e-9)
       : loads.some((o) => o.user !== load.user && o.fastReady > 0);
     // a fractional share rounds up, so a user isn't held below it
-    limits[load.user] = waiting ? Math.max(0, Math.ceil((shares[load.user] ?? 0) - 1e-9) - load.running) : Infinity;
+    headroom[load.user] = Math.max(0, Math.ceil((shares[load.user] ?? 0) - 1e-9) - load.running);
+    limits[load.user] = waiting ? headroom[load.user] : Infinity;
   }
-  return limits;
+  return { limits, headroom };
 }
 
 /**
@@ -567,17 +577,21 @@ export function createFairShareFastLanePolicy(options: { ownDurationColumns?: bo
       let remainingUnmeasuredSlots = Math.max(0, slowWorkCapacity - slowRunningCount - unmeasuredRunningCount);
       // what's left of the allowance for all unmeasured work together
       let remainingSharedAllowance = unmeasuredAllowance(s, slowWorkCapacity) - unmeasuredRunningCount - unmeasuredSlowRunningCount;
-      const slowLimits = s.slowFairShare && podCount > 0 && (s.fairShareAll || jobs.some((j) => j.isSlow))
+      const { limits: slowLimits, headroom } = s.slowFairShare && podCount > 0 && (s.fairShareAll || jobs.some((j) => j.isSlow))
         ? await slowWorkLimits(tx, classificationBindings(serviceID, context.slowWorkThresholdMs, s), podCount, s)
-        : Object.create(null);
+        : { limits: Object.create(null), headroom: Object.create(null) };
 
-      // takes up to workSize work items from a job, within the slow work, fair share (unless
-      // ignoreShare) and unmeasured limits
-      const take = async (job: NextJob, workSize: number, ignoreShare = false): Promise<number> => {
+      // takes up to workSize work items from a job, within the slow work and unmeasured limits,
+      // and fair share: by default the limit (only while someone else below their share is
+      // waiting), 'headroom' its user's room below their share whether or not anyone is waiting,
+      // or 'none'
+      const take = async (job: NextJob, workSize: number, share: 'limit' | 'headroom' | 'none' = 'limit'): Promise<number> => {
         let size = workSize;
         if (job.isSlow) size = Math.min(size, remainingSlowWorkSlots);
         const shareApplies = (job.isSlow || s.fairShareAll) && !(s.syncExempt && !job.isAsync);
-        if (!ignoreShare && shareApplies) size = Math.min(size, slowLimits[job.username] ?? Infinity);
+        if (shareApplies && share !== 'none') {
+          size = Math.min(size, (share === 'limit' ? slowLimits : headroom)[job.username] ?? Infinity);
+        }
         if (s.unmeasuredLimit > 0 && job.unmeasuredRunning !== null) {
           const limit = s.unmeasuredLimit - job.unmeasuredRunning;
           // beyond the limit, what's left of the shared allowance while the slow work capacity has room
@@ -595,6 +609,7 @@ export function createFairShareFastLanePolicy(options: { ownDurationColumns?: bo
         if (job.isSlow) remainingSlowWorkSlots -= numTaken;
         // the user's fast work counts towards their share too
         if (slowLimits[job.username] !== undefined) slowLimits[job.username] -= numTaken;
+        if (headroom[job.username] !== undefined) headroom[job.username] -= numTaken;
         return numTaken;
       };
 
@@ -635,13 +650,16 @@ export function createFairShareFastLanePolicy(options: { ownDurationColumns?: bo
         }
       }
 
-      // fix 6 for all users is work-conserving: if some of the batch is left because the users
-      // others were held back for couldn't take it (e.g. their unmeasured work is at its limit),
-      // the users held back get it, so fair share never leaves pods idle
+      // fix 6 for all users is work-conserving: what's left of the batch goes first to users below
+      // their share (one early in the split only got their slice), up to their share, and only
+      // what they can't take (e.g. their unmeasured work is at its limit) goes to everyone else,
+      // so fair share never leaves pods idle
       if (s.slowFairShare && s.fairShareAll && remainingBatchSize > 0) {
-        for (const job of jobs) {
-          if (remainingBatchSize <= 0) break;
-          remainingBatchSize -= await take(job, remainingBatchSize, true);
+        for (const share of ['headroom', 'none'] as const) {
+          for (const job of jobs) {
+            if (remainingBatchSize <= 0) break;
+            remainingBatchSize -= await take(job, remainingBatchSize, share);
+          }
         }
       }
     },

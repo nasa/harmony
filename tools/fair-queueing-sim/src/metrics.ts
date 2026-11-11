@@ -65,9 +65,12 @@ export interface Summary {
   users: UserSummary[];
   services: ServiceSummary[];
   // latency is how much longer a sync request took than it would have with the cluster to itself
-  // (its makespan minus its lower bound) - for a one granule request, the time it spent waiting
+  // (its makespan minus its lower bound) - for a one granule request, the time it spent waiting.
+  // The makespan and latency figures are over the finished sync requests; `unfinished` counts
+  // those still running or waiting when the run ended, which they leave out
   sync: {
     jobs: number;
+    unfinished: number;
     meanMakespanMs: number | null;
     maxMakespanMs: number | null;
     meanLatencyMs: number | null;
@@ -311,6 +314,7 @@ export function summarize(result: RunResult): Summary {
     services,
     sync: {
       jobs: syncJobs.length,
+      unfinished: jobs.filter((j) => !j.async && j.makespanMs === null).length,
       meanMakespanMs: mean(syncJobs.map((j) => j.makespanMs)),
       maxMakespanMs: syncJobs.length ? Math.max(...syncJobs.map((j) => j.makespanMs)) : null,
       meanLatencyMs: mean(syncLatencies),

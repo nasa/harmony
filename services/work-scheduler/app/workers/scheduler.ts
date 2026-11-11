@@ -5,6 +5,9 @@ import { Logger } from 'winston';
 
 
 import { getFairQueueingPolicy } from '../../../harmony/app/backends/workflow-orchestration/fair-queueing-policy';
+import {
+  fairShareFastLanePolicy, fairShareFastLaneSettings,
+} from '../../../harmony/app/backends/workflow-orchestration/fair-share-fast-lane-policy';
 import { QUERY_CMR_SERVICE_REGEX } from '../../../harmony/app/backends/workflow-orchestration/util';
 import {
   getWorkItemsFromDatabase, revertQueuedWorkItemsToReady,
@@ -298,6 +301,9 @@ export async function processSchedulerQueue(
 export default class Scheduler implements Worker {
   async start(repeat = true): Promise<void> {
     const { name } = getFairQueueingPolicy(env.fairQueueingPolicy, env.enableDurationBasedFairQueueing);
+    // its settings are read on every scheduling pass, so check them now: an invalid one would
+    // otherwise fail every pass, and the environment can't change while the scheduler runs
+    if (name === fairShareFastLanePolicy.name) fairShareFastLaneSettings();
     logger.info(`Starting scheduler with ${name} fair queueing (FAIR_QUEUEING_POLICY=${env.fairQueueingPolicy}, `
       + `ENABLE_DURATION_BASED_FAIR_QUEUEING=${env.enableDurationBasedFairQueueing})`);
     while (repeat) {
