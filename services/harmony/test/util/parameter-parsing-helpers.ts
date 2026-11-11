@@ -9,6 +9,11 @@ describe('util/parameter-parsing-helpers', function () {
       expect(parseMultiValueParameter(['foo', 'bar'])).to.eql(['foo', 'bar']);
     });
 
+    it('splits comma-separated values within array elements', function () {
+      expect(parseMultiValueParameter(['C1-PROV1,C2-PROV2', 'C3-PROV1']))
+        .to.eql(['C1-PROV1', 'C2-PROV2', 'C3-PROV1']);
+    });
+
     it('returns an array of values when provided a comma-separated string', function () {
       expect(parseMultiValueParameter('C1-PROV1,C2-PROV2')).to.eql(['C1-PROV1', 'C2-PROV2']);
     });

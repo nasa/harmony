@@ -1,0 +1,28 @@
+POST /search/granules.json
+accept: application/json
+content-type: multipart/form-data; boundary=----------------------------012345678901234567890123
+accept-encoding: gzip,deflate
+body: ------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"page_size\"\r\n\r\n100\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"concept_id\"\r\n\r\nG1233800352-EEDTEST,G1233800343-EEDTEST\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"collection_concept_id\"\r\n\r\nC1233800302-EEDTEST\r\n------------------------------012345678901234567890123--\r\n
+
+HTTP/1.1 400 Bad Request
+content-type: application/json
+content-length: 81
+connection: keep-alive
+date: Wed, 11 Nov 2026 20:11:36 GMT
+server: ServerTokens ProductOnly
+vary: Accept-Encoding
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: 816436d9-3607-47ab-ac6d-e790179bb91b, 816436d9-3607-47ab-ac6d-e790179bb91b
+content-sha1: 94a291c9e2dac39ecbc6e2aa9829a3ea65e805dd
+strict-transport-security: max-age=31536000; includeSubDomains; preload
+x-content-type-options: nosniff
+x-request-id: 816436d9-3607-47ab-ac6d-e790179bb91b
+content-md5: aeb0ca3f7151d2239e7ed94c8055bbb9
+x-cache: Error from cloudfront
+via: 1.1 f958a7ff273f1fbe2d4c89cc6e059db8.cloudfront.net (CloudFront)
+x-amz-cf-pop: IAD61-P11
+x-amz-cf-id: h7xmRXSswwbz7ezpbfwJJ8BRwNQZ46vA3YVltfIpBLR7mtU4PcNGZQ==
+
+{"errors":["Concept-id [G1233800352-EEDTEST,G1233800343-EEDTEST] is not valid."]}
