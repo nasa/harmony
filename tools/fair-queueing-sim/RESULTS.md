@@ -85,7 +85,9 @@ Harmony queues ahead of time, not the fair queueing policy.
 ## The results
 
 Each value is the mean over the seeds; **seeds** says in how many the new policy was better or worse
-than `slot-based` with the same seed (the same work item durations and arrivals).
+than `slot-based` with the same seed (the same work item durations and job arrivals, except that
+the one-at-a-time user in hoss-saturated sends each request when the last one finishes, so when
+depends on the policy).
 
 ### Production scenarios (`scenarios/production/`, 125 pods, seeds 101-105)
 
@@ -331,7 +333,7 @@ doesn't.
 
 - **The stories** come from the committed benchmark records, `benchmarks/results/slot-based.json`,
   `benchmarks/results/duration-based.json` and
-  `benchmarks/results/fair-share-fast-lane.json` (duration-based: 44ce75c64 + uncommitted changes, code hash a7d8df5f2f40f028, Node v24.21.0, linux-arm64, 2026-11-11; slot-based: 44ce75c64 + uncommitted changes, code hash a7d8df5f2f40f028, Node v24.21.0, linux-arm64, 2026-11-11; fair-share-fast-lane: 44ce75c64 + uncommitted changes, code hash c23c992155d9dfaa, Node v24.21.0, linux-arm64, 2026-11-11). Each record holds every metric for
+  `benchmarks/results/fair-share-fast-lane.json` (duration-based: 02eead80a + uncommitted changes, code hash 0ca146726bb4649e, Node v24.21.0, linux-arm64, 2026-11-11; slot-based: 02eead80a + uncommitted changes, code hash 0ca146726bb4649e, Node v24.21.0, linux-arm64, 2026-11-11; fair-share-fast-lane: 02eead80a + uncommitted changes, code hash 1e79c6833b24d3c8, Node v24.21.0, linux-arm64, 2026-11-11). Each record holds every metric for
   every story and seed, with the settings and a hash of the code that produced it.
 - **The production scenarios and the mixed workload** aren't in the records; their numbers are from
   `bench` runs with the commands below: `fair-share-fast-lane` and `slot-based` on 2026-11-11,
