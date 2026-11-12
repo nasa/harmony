@@ -219,10 +219,10 @@ from the start. Not entirely: each new job may run its first `FAIR_SHARE_FAST_LA
 work items whatever the slow work capacity, so that it can be measured, so many new jobs arriving
 at once can use some of the reserve until their first work items finish.
 
-Each change can be switched off with its `FAIR_SHARE_FAST_LANE_*` setting (see the work-scheduler's
-`env-defaults`), which is read on every scheduling pass. With all of them off and
-`FAIR_SHARE_FAST_LANE_RESERVE_FRACTION=scheduler`, it makes exactly the same decisions as duration
-based fair queueing. It uses the durations Harmony already records (see
+Its three settings - `FAIR_SHARE_FAST_LANE_RESERVE_FRACTION`, `FAIR_SHARE_FAST_LANE_UNMEASURED_LIMIT`
+and `FAIR_SHARE_FAST_LANE_UNMEASURED_FRACTION`, described in the work-scheduler's `env-defaults` - are
+read on every scheduling pass; the other changes have no settings. It uses the durations Harmony
+already records (see
 [Work Item Duration Tracking](#work-item-duration-tracking)), so selecting it needs no schema
 changes, and going back is setting `FAIR_QUEUEING_POLICY=slot-based` (with
 `ENABLE_DURATION_BASED_FAIR_QUEUEING` false, its default, or it selects duration based fair

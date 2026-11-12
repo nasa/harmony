@@ -53,37 +53,18 @@ SLOW_WORK_THRESHOLD_MS=600000
 # fair-share-fast-lane when FAIR_SHARE_FAST_LANE_RESERVE_FRACTION is "scheduler").
 FAST_LANE_RESERVE_FRACTION=0.3
 
-# Settings for FAIR_QUEUEING_POLICY=fair-share-fast-lane, read on every scheduling pass. The fix
-# numbers are those in harmony's fair-share-fast-lane-policy (app/backends/workflow-orchestration),
-# where each fix is described; the defaults are the configuration chosen with the fair queueing
-# simulator (tools/fair-queueing-sim/RESULTS.md).
+# Settings for FAIR_QUEUEING_POLICY=fair-share-fast-lane, read on every scheduling pass. How the
+# policy works, and why, is in docs/fair-queueing.md and harmony's
+# app/backends/workflow-orchestration/fair-share-fast-lane-policy.ts. The defaults are the
+# configuration chosen with the fair queueing simulator (tools/fair-queueing-sim/RESULTS.md).
 #
-# The fraction of a service's pods fair-share-fast-lane's slow work may never use ("scheduler" =
-# FAST_LANE_RESERVE_FRACTION).
+# The fraction of a service's pods slow work may never use, so that fast work arriving later
+# always finds pods ("scheduler" = FAST_LANE_RESERVE_FRACTION, as duration-based uses).
 FAIR_SHARE_FAST_LANE_RESERVE_FRACTION=0.1
-# Fix 1: the most work items that may run for a (job, service) before it has a measured duration
-# (0 = no limit), and beyond that, the fraction of the slow work capacity all unmeasured work on
-# the service may use together (0 = just the limit).
+# A new job is limited until one of its work items has finished and shown how long its work
+# takes, so a job whose work turns out to be slow can't fill the service first. It may run this
+# many work items for a service (0 = no limit)...
 FAIR_SHARE_FAST_LANE_UNMEASURED_LIMIT=2
+# ...plus a share of an allowance for all new jobs' work on the service together: this fraction
+# of the pods slow work may use (0 = no allowance, just the limit above).
 FAIR_SHARE_FAST_LANE_UNMEASURED_FRACTION=0.5
-# Fix 3: "service" = when ranking users, unmeasured work counts as the service's mean measured
-# duration; "fixed" = FAIR_SHARE_FAST_LANE_UNMEASURED_DEFAULT_MS, the expected duration of unmeasured
-# work when there is nothing better to go on.
-FAIR_SHARE_FAST_LANE_UNMEASURED_ESTIMATE=service
-FAIR_SHARE_FAST_LANE_UNMEASURED_DEFAULT_MS=3600000
-# Fix 4: split each scheduling batch between users first (false = evenly per job).
-FAIR_SHARE_FAST_LANE_SPLIT_BY_USER=true
-# Fix 6: while other users' fast work is ready, hold a user's slow work to their fair share of
-# the service's pods; with FAIR_SHARE_ALL, hold every user to their fair share while another user
-# below theirs has work ready.
-FAIR_SHARE_FAST_LANE_SLOW_FAIR_SHARE=true
-FAIR_SHARE_FAST_LANE_FAIR_SHARE_ALL=true
-# Fix 7: treat an unmeasured (job, service) as slow once one of its work items has been running
-# longer than SLOW_WORK_THRESHOLD_MS, keeping fix 1's limits until it's measured.
-FAIR_SHARE_FAST_LANE_RUNNING_EVIDENCE=true
-FAIR_SHARE_FAST_LANE_RUNNING_EVIDENCE_KEEPS_LIMIT=true
-# Fix 8: fair share never holds back a sync request, and each batch goes to sync requests first.
-FAIR_SHARE_FAST_LANE_SYNC_EXEMPT=true
-FAIR_SHARE_FAST_LANE_SYNC_FIRST=true
-# Fixes 2 and 5 (FAIR_SHARE_FAST_LANE_EWMA_ALPHA, FAIR_SHARE_FAST_LANE_USE_SERVICE_DURATION) need work
-# item durations Harmony doesn't keep, so they're only available in the simulator.

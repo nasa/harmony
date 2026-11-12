@@ -187,15 +187,6 @@ describe('Fair share fast lane fair queueing', function () {
       });
     });
   });
-
-  describe('when the simulator-only fixes are switched on', function () {
-    hookEnv({ FAIR_SHARE_FAST_LANE_EWMA_ALPHA: '0.2', FAIR_SHARE_FAST_LANE_USE_SERVICE_DURATION: 'true' });
-
-    it('ignores them and still schedules work', async function () {
-      await saveJobs([{ jobID: 'fastJob', username: 'Ann', running: 0, ready: 10, averageDuration: 1000 }]);
-      expect(await takeBatch(10)).to.eql({ fastJob: 10 });
-    });
-  });
 });
 
 describe('fairShareFastLaneSettings', function () {
@@ -210,6 +201,27 @@ describe('fairShareFastLaneSettings', function () {
     it(`rejects a reserve of "${reserve}"`, function () {
       expect(() => fairShareFastLaneSettings({ FAIR_SHARE_FAST_LANE_RESERVE_FRACTION: reserve }))
         .to.throw(/FAIR_SHARE_FAST_LANE_RESERVE_FRACTION must be a fraction from 0 to 1, or "scheduler"/);
+    });
+  }
+
+  it('reads the unmeasured limit and fraction', function () {
+    expect(fairShareFastLaneSettings({})).to.include({ unmeasuredLimit: 2, unmeasuredFraction: 0.5 });
+    expect(fairShareFastLaneSettings({
+      FAIR_SHARE_FAST_LANE_UNMEASURED_LIMIT: '0', FAIR_SHARE_FAST_LANE_UNMEASURED_FRACTION: '1',
+    })).to.include({ unmeasuredLimit: 0, unmeasuredFraction: 1 });
+  });
+
+  for (const limit of ['abc', '1.5', '-1', '']) {
+    it(`rejects an unmeasured limit of "${limit}"`, function () {
+      expect(() => fairShareFastLaneSettings({ FAIR_SHARE_FAST_LANE_UNMEASURED_LIMIT: limit }))
+        .to.throw(/FAIR_SHARE_FAST_LANE_UNMEASURED_LIMIT must be a whole number, 0 or more/);
+    });
+  }
+
+  for (const fraction of ['abc', '1.5', '-0.1', '']) {
+    it(`rejects an unmeasured fraction of "${fraction}"`, function () {
+      expect(() => fairShareFastLaneSettings({ FAIR_SHARE_FAST_LANE_UNMEASURED_FRACTION: fraction }))
+        .to.throw(/FAIR_SHARE_FAST_LANE_UNMEASURED_FRACTION must be a fraction from 0 to 1/);
     });
   }
 });

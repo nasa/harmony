@@ -42,9 +42,7 @@ export interface PolicyEntry {
  */
 async function loadPolicies(): Promise<Record<string, PolicyEntry>> {
   const { durationBasedPolicy, slotBasedPolicy } = await import('../../../../services/harmony/app/backends/workflow-orchestration/fair-queueing-policy');
-  const {
-    fairShareFastLanePolicy, fairShareFastLaneWorkItemCompleted, sampleFairShareFastLane, setupFairShareFastLane,
-  } = await import('./fair-share-fast-lane');
+  const { fairShareFastLanePolicy, sampleFairShareFastLane } = await import('./fair-share-fast-lane');
   const { slotBasedFairSharePolicy } = await import('./slot-based-fair-share');
   // To add a policy: implement FairQueueingPolicy in this directory, add it here and describe it
   // in catalog.ts
@@ -56,13 +54,8 @@ async function loadPolicies(): Promise<Record<string, PolicyEntry>> {
     // slot-based plus the fixes that need no work item durations
     'slot-based-fair-share': { policy: slotBasedFairSharePolicy },
     // FAIR_QUEUEING_POLICY=fair-share-fast-lane: duration-based plus fixes for the problems the
-    // simulator found with it, here with the simulator-only fixes 2 and 5 available
-    'fair-share-fast-lane': {
-      policy: fairShareFastLanePolicy,
-      sampler: sampleFairShareFastLane,
-      setup: setupFairShareFastLane,
-      onWorkItemCompleted: fairShareFastLaneWorkItemCompleted,
-    },
+    // simulator found with it
+    'fair-share-fast-lane': { policy: fairShareFastLanePolicy, sampler: sampleFairShareFastLane },
   };
 }
 

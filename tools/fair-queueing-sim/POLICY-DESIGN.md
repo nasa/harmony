@@ -1,15 +1,25 @@
 # Fair queueing policy design
 
 Why `fair-share-fast-lane` (Harmony's `fair-share-fast-lane-policy.ts`, next to
-`fair-queueing-policy.ts`; the simulator-only parts are in `src/policies/fair-share-fast-lane.ts`)
+`fair-queueing-policy.ts`; the simulator adds only a sampler, in `src/policies/fair-share-fast-lane.ts`)
 is built the way it is: the problem each fix solves, the evidence for it, the trade-offs chosen and
 the alternatives that were rejected. What each fix does, and its settings, are in the code's header comment and in
 [REFERENCE.md](REFERENCE.md#available-policies); this file is the reasoning behind them.
 
 It was called `adaptive-fast-lane` until 2026-11-10. The name came from its moving average of
-durations (fix 2), which is now off by default; it was renamed for what it does by default: hold
+durations (fix 2), which had been switched off by default; it was renamed for what it does: hold
 every user to a fair share of the pods while others wait (its main gain), on top of a fast lane
 that limits new work until it's measured.
+
+**Most of its settings were removed on 2026-11-12.** Until then each fix had a
+`FAIR_SHARE_FAST_LANE_*` setting that switched it off, and fixes 2 and 5 were simulator only and
+off by default. The switches served only the experiments recorded here, and their many
+combinations were more than anyone would tune, so fixes 2 and 5 were removed and the others are
+always on. The settings left are the reserve (`FAIR_SHARE_FAST_LANE_RESERVE_FRACTION`) and fix 1's
+limit and shared allowance (`FAIR_SHARE_FAST_LANE_UNMEASURED_LIMIT`,
+`FAIR_SHARE_FAST_LANE_UNMEASURED_FRACTION`). The defaults didn't change, so neither did any
+result. The evidence below was gathered with the switches; to re-run an experiment that uses one,
+check out commit e7624ed69, the last with them, which makes the same decisions with its defaults.
 
 `fair-share-fast-lane` is the policy chosen to replace `slot-based`, the policy every Harmony
 service runs today. It's built on `duration-based`, the fast lane from HARMONY-2413, which Harmony
@@ -38,17 +48,18 @@ Every decision below keeps to these:
   Harmony has seen slow jobs take every pod and leave arriving fast jobs unworked. Pods the reserve
   leaves idle (story 07) are the cost of that guarantee, so no fix lets slow work into the reserve.
 - **It's `duration-based` plus fixes.** The queries follow `getNextJobIdsDurationBased` step for
-  step, and with every fix switched off and `FAIR_SHARE_FAST_LANE_RESERVE_FRACTION=scheduler`
-  (`duration-based`'s 30% reserve rather than the policy's 10%) the policy makes exactly the same
-  decisions as `duration-based`, which `findings` checks in every story. So every difference from
-  `duration-based` comes from a fix or from the smaller reserve - and the reserve alone changes
-  results (the [reserve sweep](#production-scenarios-and-the-recommendation) below: a slow job
-  alone takes 4h 09m at 30% and 3h 19m at 10%). Each fix can be judged by switching it off, and the
-  reserve by setting it back to the work-scheduler's (the `scheduler-reserve` variant).
-- **It keeps its own durations.** Fixes 2 and 5 need durations Harmony doesn't keep, so the policy
-  stores them in its own `user_work` columns (`adaptive_duration`, `adaptive_count`). Harmony's
-  `average_duration` is left alone, so switching between the policies never leaves either one
-  reading the other's values.
+  step. While the fixes could be switched off, with every one off and
+  `FAIR_SHARE_FAST_LANE_RESERVE_FRACTION=scheduler` (`duration-based`'s 30% reserve rather than the
+  policy's 10%) the policy made exactly the same decisions as `duration-based`, which `findings`
+  checked in every story. So every difference from `duration-based` comes from a fix or from the
+  smaller reserve - and the reserve alone changes results (the
+  [reserve sweep](#production-scenarios-and-the-recommendation) below: a slow job alone takes 4h 09m
+  at 30% and 3h 19m at 10%). Each fix was judged by switching it off, and the reserve by setting it
+  back to the work-scheduler's (the `scheduler-reserve` variant, which `findings` still runs).
+- **It kept its own durations.** Fixes 2 and 5 needed durations Harmony doesn't keep, so in the
+  simulator the policy stored them in its own `user_work` columns (`adaptive_duration`,
+  `adaptive_count`), leaving Harmony's `average_duration` alone so that switching between the
+  policies never left either one reading the other's values. Both fixes have since been removed.
 - **Judged on the stories' protected metrics, over 5 seeds** (the stories and their goals are
   set out for review in [SCENARIOS.md](SCENARIOS.md)). A difference counts when it holds
   in every seed (each seed has the same work item durations under every policy). The single-seed
@@ -56,7 +67,7 @@ Every decision below keeps to these:
 
 ## Results
 
-The full results for the default configuration - a 10% reserve, fixes 2 and 5 off - are in
+The full results for the policy as it is - a 10% reserve, without fixes 2 and 5 - are in
 [RESULTS.md](RESULTS.md), with how to reproduce them. In brief, against `slot-based`, what
 production runs (5 seeds; a difference counts when it holds in every seed):
 
@@ -177,8 +188,9 @@ it uses only the durations Harmony already keeps (`user_work.average_duration`),
 work-updater hook and no migration. Those two fixes only made a difference in story 09 (a job whose
 work items suddenly get slower), which production's reviewers say is rare.
 
-**Decision (2026-11-09): `fair-share-fast-lane`, with fixes 2 and 5 off and a 10% reserve** - now its
-defaults, and the configuration [RESULTS.md](RESULTS.md) records. It's the only candidate that
+**Decision (2026-11-09): `fair-share-fast-lane`, with fixes 2 and 5 off and a 10% reserve** - what
+it does now (fixes 2 and 5 were later removed), and the configuration [RESULTS.md](RESULTS.md)
+records. It's the only candidate that
 stops one user's slow work taking a service in both cases, it's at least as good as
 `slot-based-fair-share` on every production scenario, and without fixes 2 and 5 it needs no hook or
 migration. Its costs: the reserve (a slow job alone takes 45% longer at today's 30% reserve, 16% at 10% -
@@ -212,7 +224,8 @@ keeps `FAST_LANE_RESERVE_FRACTION`'s 30%.
 ## The fixes
 
 Feature table numbers are mean job slowdown from `findings` (one seed, all other fixes on);
-everything else is over 5 seeds.
+everything else is over 5 seeds. They're from when each fix could be switched off (see the top of
+this file): fixes 2 and 5 have since been removed, and the others are always on.
 
 1. **Unmeasured work limit.** *Problem:* `duration-based` only knows work is slow once a work
    item finishes, so a new slow job fills the service first (story 06: slow work in flight peaks
@@ -229,7 +242,8 @@ everything else is over 5 seeds.
 2. **Moving average.** *Problem:* a lifetime mean hides a job whose work items slow down part
    way through (story 09: Kim is never classified slow). *Decision:* an exponentially weighted
    moving average, weight 0.2 on the newest item. *Evidence:* off, 09 goes from 3.04 to 3.55; fix 6
-   now does most of what this used to.
+   now does most of what this used to. *Removed (2026-11-12),* having been off by default since
+   2026-11-09.
 3. **Service estimate for unmeasured work.** *Problem:* `duration-based` ranks unmeasured work as
    an hour long, pushing new jobs back. *Decision:* use the service's mean measured duration.
    *Evidence:* small and mixed (helps 09; may slow 04's sync request) - optional.
@@ -239,8 +253,9 @@ everything else is over 5 seeds.
    fixes 4 and 6 together).
 5. **Pod-reported durations.** *Problem:* Harmony's duration includes time a work item waited
    on a pod before running. *Decision:* use the pod's own timing. *Evidence:* none either way - no
-   story backs up the queue enough for the two to differ. Kept because it measures the right
-   thing; judge it with a scenario that does.
+   story backs up the queue enough for the two to differ. *Removed (2026-11-12),* having been off
+   by default since 2026-11-09; judge it with a scenario that backs up the service queue if it's
+   ever revived.
 6. **Fair share while others wait.** *Problem:* a slow user refills every pod they free up, up to
    the slow work capacity, so backed up fast users share only the reserve. *Decision:* while
    another user below their max-min fair share has work ready, each user only gets new work items
@@ -277,15 +292,15 @@ everything else is over 5 seeds.
 
 ## Judgment calls
 
-- **Fix 7 keeps fix 1's limits** (`FAIR_SHARE_FAST_LANE_RUNNING_EVIDENCE_KEEPS_LIMIT=true`).
+- **Fix 7 keeps fix 1's limits** (what `FAIR_SHARE_FAST_LANE_RUNNING_EVIDENCE_KEEPS_LIMIT=true` did).
   Without that, noticing that new work is slow moved it from fix 1's limits to the larger slow
   work capacity, so being noticed *loosened* its limit. With it: story 11's fast job -33% (5/5),
   for 11's fairness -1.5% (0/5), 07's slow job +2.9% (0/5) and one of 06's fast users +1.1% (1/4).
   Re-measured on story 11 after fix 1's correction (2026-11-10): the fast job -22% (3.20 -> 2.51
   times its minimum, 5/5), for fairness -1.1% (0.99 -> 0.98, 0/5).
   Story 11's goal puts the fast job first ("Gina's fast work starts promptly ... Frank and Mia
-  finishing later is the expected price"), hence the default. Read the story as "fair from the
-  start" instead and set it to `false`.
+  finishing later is the expected price"), hence the choice. Reading the story as "fair from the
+  start" instead would mean bringing back the setting's `false` behaviour.
 - **Accepting the costs in 01, 02, 07 and 10.** They're the price of fix 1 and the reserve:
   limiting new work until it's measured is what stops a new slow job filling the service, and no
   version of fix 1 tried avoids both.
@@ -320,21 +335,19 @@ It was promoted (HARMONY-2414) following the README's
 work-scheduler selects it with `FAIR_QUEUEING_POLICY=fair-share-fast-lane`, and its settings, with
 the defaults above, are in `services/work-scheduler/env-defaults`. The default policy is still
 `slot-based`. The simulator runs Harmony's code; `src/policies/fair-share-fast-lane.ts` only adds
-what Harmony doesn't have: the columns and completion hook for fixes 2 and 5, and the sampler.
+the sampler.
 What's left, specific to this policy:
 
 - **Production has never run duration-aware scheduling.** Every service runs `slot-based`, so this
   is also the first production use of `duration-based`'s queries, its advisory lock and the fast
   lane reserve. Trying plain `duration-based` in UAT first would separate "that machinery works"
   from "the fixes help". Rolling back means switching back to `slot-based`.
-- **Fixes 2 and 5 stay in the simulator.** Harmony's policy ignores their settings (and logs a
-  warning if they're set). Turning either on in production would need the completion hook in the
-  work-updater's transaction, which means extending the policy interface, and a migration for its
-  columns, replacing the simulator's `setup`.
+- **Fixes 2 and 5 weren't promoted.** Either would need a completion hook in the work-updater's
+  transaction, which means extending the policy interface, and a migration for its columns, and
+  neither made a difference on the production scenarios, so they were removed instead.
 - **Postgres-only paths are untested here.** The advisory lock and `SKIP LOCKED` that serialize
   concurrent scheduler pods never run in the simulator (sqlite, one event at a time). A sandbox
   deployment is the first real test of them.
-- **Fix 5 needs a scenario that backs up the service queue** before it can be judged.
 
 **For `slot-based-fair-share`, most of that doesn't apply.** It needs no completion hook, no
 migration and no reserve, and it keeps `slot-based`'s job selection query, so it doesn't touch the
@@ -350,15 +363,18 @@ and the user and type of each job picked, both from `user_work` by service.
 # the 5-seed comparison with duration-based and slot-based (bench.md)
 npm run sim -- bench
 
-# what each fix contributes, and the duration-based equivalence check (findings.md)
+# what the reserve and fix 1's settings contribute (findings.md)
 npm run sim -- findings scenarios/stories/*.yml --policies duration-based,fair-share-fast-lane
 
 # the mixed workload
 npm run sim -- bench scenarios/mixed-workload.yml --policies duration-based,fair-share-fast-lane --seeds 101,102,103
 
 # one setting's effect over 5 seeds
-npm run sim -- bench --policies fair-share-fast-lane --set FAIR_SHARE_FAST_LANE_SYNC_FIRST=false --out output/no-sync-first
+npm run sim -- bench --policies fair-share-fast-lane --set FAIR_SHARE_FAST_LANE_UNMEASURED_FRACTION=0 --out output/no-unmeasured-fraction
 ```
+
+Switching off any other fix, or the duration-based equivalence check, needs commit e7624ed69 (see
+the top of this file).
 
 `bench` doesn't compare a run with `--set` against the policy's record, because the settings
 differ. To measure one setting's effect, run the policy with and without it (both with `--out`)
