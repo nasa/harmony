@@ -15,15 +15,15 @@ describe('policy catalog', function () {
     expect(POLICY_NAMES).to.not.include(NATIVE_POLICY);
   });
 
-  for (const [policy, base] of [['fair-share-fast-lane', 'duration-based'], ['slot-based-fair-share', 'slot-based']]) {
-    it(`describes how to make ${policy} ${base}, using only its own settings`, function () {
-      const { equivalentTo, settings } = POLICY_CATALOG[policy];
-      expect(equivalentTo.policy).to.equal(base);
-      const own = settings.map((s) => s.env);
-      for (const key of Object.keys(equivalentTo.set)) expect(own, key).to.include(key);
-    });
+  it('describes how to make slot-based-fair-share slot-based, using only its own settings', function () {
+    const { equivalentTo, settings } = POLICY_CATALOG['slot-based-fair-share'];
+    expect(equivalentTo.policy).to.equal('slot-based');
+    const own = settings.map((s) => s.env);
+    for (const key of Object.keys(equivalentTo.set)) expect(own, key).to.include(key);
+  });
 
-    it(`switches off one of ${policy}'s own settings in each variant`, function () {
+  for (const policy of ['fair-share-fast-lane', 'slot-based-fair-share']) {
+    it(`changes one of ${policy}'s own settings in each variant`, function () {
       const own = POLICY_CATALOG[policy].settings.map((s) => s.env);
       for (const variant of POLICY_CATALOG[policy].variants) {
         expect(Object.keys(variant.set), variant.name).to.have.lengthOf(1);
@@ -48,7 +48,7 @@ describe('policy catalog', function () {
   it('describes fair-share-fast-lane\'s own defaults as the policy has them', function () {
     // the catalog takes them from the work-scheduler's env-defaults, the policy has its own
     const own = POLICY_CATALOG['fair-share-fast-lane'].settings.filter((s) => s.env.startsWith('FAIR_SHARE_FAST_LANE_'));
-    expect(own).to.have.lengthOf(14);
+    expect(own).to.have.lengthOf(3);
     const described = Object.fromEntries(own.map((s) => [s.env, s.default]));
     expect(fairShareFastLaneSettings(described)).to.deep.equal(fairShareFastLaneSettings({}));
   });

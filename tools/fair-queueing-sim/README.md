@@ -171,8 +171,8 @@ Add it to `loadPolicies` in `src/policies/index.ts`, and describe it in `POLICY_
   change instead, in the simulator's database only.
 - **Learning from completed work items**: the policy interface only covers scheduling. A
   `loadPolicies` entry's optional `onWorkItemCompleted` is called, in the simulator only, in the
-  work-updater's transaction whenever a work item finishes. `fair-share-fast-lane` uses it to keep
-  its own duration estimates for fixes 2 and 5, which is why those fixes are simulator only. A
+  work-updater's transaction whenever a work item finishes. `fair-share-fast-lane` once used it to
+  keep its own duration estimates for two fixes that were never promoted, and have been removed. A
   policy that needs it can't ship until the hook exists in Harmony - see
   [step 6](#6-promote-it-to-production).
 - **Sampling**: an optional `sampler` records policy specific state over time (e.g. how many
@@ -267,11 +267,12 @@ this way. To ship a policy:
    [RESULTS.md](RESULTS.md) is measured against it.
 3. **Check what it needs and stores.** The interface only covers scheduling, so a policy with an
    `onWorkItemCompleted` hook (simulator only) needs that hook added to the work-updater, which
-   means extending the interface - or, as with `fair-share-fast-lane`'s fixes 2 and 5, leaving what
-   needs it out of production. Policies that share `user_work` columns misread each other's
-   values after a switch: `duration-based` keeps a lifetime mean in `average_duration`, so a
-   policy that wants, say, a moving average needs its own column, as `fair-share-fast-lane`'s
-   `adaptive_duration` is, or a settling period after a switch. Replace any `setup` schema
+   means extending the interface - or, as with `fair-share-fast-lane`'s moving average and
+   pod-reported durations, leaving what needs it out of production. Policies that share
+   `user_work` columns misread each other's values after a switch: `duration-based` keeps a
+   lifetime mean in `average_duration`, so a policy that wants, say, a moving average needs its
+   own column, as `fair-share-fast-lane`'s `adaptive_duration` was, or a settling period after a
+   switch. Replace any `setup` schema
    change with a migration in `db/migrations/` plus `db/db.sql`.
 4. **Test it** like any production change: unit tests for the policy, and a test of its selection
    in `services/work-scheduler/test/scheduler.ts`.
@@ -316,7 +317,7 @@ goal and how the policies do, for review. To make a scenario, copy one; the form
 | `slot-based` | Harmony's default algorithm, and what every production service runs: jobs interleaved round robin by user, users with the fewest running work items for the service first, with each batch split evenly per job |
 | `duration-based` | Harmony's algorithm when `FAIR_QUEUEING_POLICY` is `duration-based` (not set in production): users ranked by the expected runtime of their running work for the service, and a fast lane reserve |
 | `slot-based-fair-share` | `slot-based`, plus two fixes that need no work item durations: while another user below their fair share of the pods has work ready, each user is held to theirs (so a user whose work items take minutes can't accumulate the service), and sync requests get each batch first and are never held back. No reserve, durations, schema change or work-updater hook |
-| `fair-share-fast-lane` | **The candidate chosen for production**, Harmony's algorithm when `FAIR_QUEUEING_POLICY` is `fair-share-fast-lane` (not set in production yet). `duration-based`, with a 10% reserve instead of 30%, plus fixes for what the stories show it getting wrong: a limit on work for jobs with no measured duration yet, estimates for new jobs from the service's other jobs, batches split per user, every user held to a fair share of the pods while others wait, unmeasured work treated as slow (and still limited) once it has run past the threshold, and sync requests first, never held back by fair share. Two more fixes - a moving average of durations, and using the durations the service pods report - are off by default and simulator only: they'd need a work-updater hook and a migration. See [RESULTS.md](RESULTS.md) |
+| `fair-share-fast-lane` | **The candidate chosen for production**, Harmony's algorithm when `FAIR_QUEUEING_POLICY` is `fair-share-fast-lane` (not set in production yet). `duration-based`, with a 10% reserve instead of 30%, plus fixes for what the stories show it getting wrong: a limit on work for jobs with no measured duration yet, estimates for new jobs from the service's other jobs, batches split per user, every user held to a fair share of the pods while others wait, unmeasured work treated as slow (and still limited) once it has run past the threshold, and sync requests first, never held back by fair share. It uses only the durations Harmony already keeps. See [RESULTS.md](RESULTS.md) |
 
 **The fast lane reserve leaves pods idle on purpose.** Slow work may never use more than
 `1 - FAST_LANE_RESERVE_FRACTION` of a service's pods, even when nothing else is waiting, because

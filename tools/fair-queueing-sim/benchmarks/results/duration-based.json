@@ -1,15 +1,15 @@
 {
   "policy": "duration-based",
   "code": {
-    "commit": "02eead80ab0f6ea7647894e50d7b95f3ca4fdd88",
+    "commit": "e7624ed69e0486dda0d52d5c3f881eaf3e0ef126",
     "branch": "harmony-2414",
     "dirty": true,
-    "changedFiles": ["services/harmony/app/backends/workflow-orchestration/fair-share-fast-lane-policy.ts", "tools/fair-queueing-sim/src/metrics.ts", "tools/fair-queueing-sim/src/policies/slot-based-fair-share.ts"],
-    "changesHash": "885e1a150c69",
-    "codeHash": "0ca146726bb4649e",
+    "changedFiles": ["services/harmony/app/backends/workflow-orchestration/fair-share-fast-lane-policy.ts", "services/work-scheduler/env-defaults", "tools/fair-queueing-sim/src/policies/catalog.ts", "tools/fair-queueing-sim/src/policies/fair-share-fast-lane.ts", "tools/fair-queueing-sim/src/policies/index.ts"],
+    "changesHash": "4561cf2fa5a6",
+    "codeHash": "a5d17e7382c1d50e",
     "node": "v24.21.0",
     "platform": "linux-arm64",
-    "recordedAt": "2026-11-11T21:47:21.762Z"
+    "recordedAt": "2026-11-12T14:45:29.251Z"
   },
   "seeds": [101, 102, 103, 104, 105],
   "set": {},

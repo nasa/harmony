@@ -25,13 +25,15 @@ with the work-scheduler's `FAIR_QUEUEING_POLICY=fair-share-fast-lane` - the defa
 | Setting | Value | |
 |---|---|---|
 | `FAIR_SHARE_FAST_LANE_RESERVE_FRACTION` | `0.1` | the fast lane reserve: slow work (over `SLOW_WORK_THRESHOLD_MS`, 10 minutes) may never use more than 90% of a service's pods |
-| `FAIR_SHARE_FAST_LANE_EWMA_ALPHA` | `0` | fix 2 (moving average of durations) off |
-| `FAIR_SHARE_FAST_LANE_USE_SERVICE_DURATION` | `false` | fix 5 (pod-reported durations) off |
-| all other `FAIR_SHARE_FAST_LANE_*` | their defaults | fixes 1, 3, 4, 6, 7 and 8 on (see [REFERENCE.md](REFERENCE.md#policy-settings)) |
+| `FAIR_SHARE_FAST_LANE_UNMEASURED_LIMIT` | `2` | fix 1: a new job may run 2 work items for a service until it's measured... |
+| `FAIR_SHARE_FAST_LANE_UNMEASURED_FRACTION` | `0.5` | ...plus a share of an allowance of half the slow work capacity for all new jobs together |
 
-With fixes 2 and 5 off it uses only the durations Harmony already keeps (`user_work.average_duration`),
-so it needs no work-updater hook and no migration. Fixes 2 and 5 are simulator only: Harmony's
-policy ignores them.
+Its other fixes (3, 4, 6, 7 and 8; see [REFERENCE.md](REFERENCE.md#available-policies)) have no
+settings. It uses only the durations Harmony already keeps (`user_work.average_duration`), so it
+needs no work-updater hook and no migration. Fixes 2 and 5, which needed durations Harmony doesn't
+keep, were off by default when these results were first recorded, and were removed on 2026-11-12
+along with the settings that switched off the other fixes; the defaults didn't change, and
+re-recording gave the same results.
 
 ## Summary
 
@@ -186,7 +188,8 @@ Harmony already has a fast lane: `duration-based` (HARMONY-2413, `durationBasedP
 `fair-queueing-policy.ts`), which ranks users by the expected runtime of their work and keeps 30% of
 each service's pods away from slow work. It runs when `ENABLE_DURATION_BASED_FAIR_QUEUEING` is true,
 which it isn't in production. `fair-share-fast-lane` is built on it: with its fixes off and the same
-30% reserve it makes exactly the same decisions, which `findings` checks in every story. So the
+30% reserve it made exactly the same decisions, which `findings` checked in every story while the
+fixes could be switched off (until 2026-11-12, commit e7624ed69). So the
 differences below are what the fixes and the smaller reserve add - and why the choice is
 `fair-share-fast-lane` rather than switching the existing fast lane on.
 
@@ -240,9 +243,8 @@ In more detail:
   job alone finishes 12% sooner than under the fast lane's 30% (story 07).
 
 And it costs no more to adopt: `duration-based` has never run in production either, so enabling it
-would be just as much production's first duration-aware scheduling. With fixes 2 and 5 off,
-`fair-share-fast-lane` uses the same durations Harmony already keeps, so it needs nothing the fast lane
-doesn't.
+would be just as much production's first duration-aware scheduling. `fair-share-fast-lane` uses
+the same durations Harmony already keeps, so it needs nothing the fast lane doesn't.
 
 ### Production scenarios, against duration-based
 
@@ -333,12 +335,13 @@ doesn't.
 
 - **The stories** come from the committed benchmark records, `benchmarks/results/slot-based.json`,
   `benchmarks/results/duration-based.json` and
-  `benchmarks/results/fair-share-fast-lane.json` (duration-based: 02eead80a + uncommitted changes, code hash 0ca146726bb4649e, Node v24.21.0, linux-arm64, 2026-11-11; slot-based: 02eead80a + uncommitted changes, code hash 0ca146726bb4649e, Node v24.21.0, linux-arm64, 2026-11-11; fair-share-fast-lane: 02eead80a + uncommitted changes, code hash 1e79c6833b24d3c8, Node v24.21.0, linux-arm64, 2026-11-11). Each record holds every metric for
+  `benchmarks/results/fair-share-fast-lane.json` (duration-based: e7624ed69 + uncommitted changes, code hash a5d17e7382c1d50e, Node v24.21.0, linux-arm64, 2026-11-12; slot-based: e7624ed69 + uncommitted changes, code hash a5d17e7382c1d50e, Node v24.21.0, linux-arm64, 2026-11-12; fair-share-fast-lane: e7624ed69 + uncommitted changes, code hash 6ac22b563b341d07, Node v24.21.0, linux-arm64, 2026-11-12). Each record holds every metric for
   every story and seed, with the settings and a hash of the code that produced it.
 - **The production scenarios and the mixed workload** aren't in the records; their numbers are from
   `bench` runs with the commands below: `fair-share-fast-lane` and `slot-based` on 2026-11-11,
   `duration-based` on 2026-11-09 (its code hasn't changed since; `slot-based`'s runs were
-  identical every day).
+  identical every day). `fair-share-fast-lane`'s were re-run on 2026-11-12, after its switches were
+  removed, with identical results.
 - **Corrected 2026-11-10.** Until then, the last pass of each scheduling batch (fix 6's
   work-conserving pass) didn't count what a new job had just been given earlier in the batch, so it
   could give the job its unmeasured work limit a second time - up to 2 more work items per batch
@@ -358,9 +361,10 @@ doesn't.
   improved the mean job slowdown (3.30 -> 3.27) and mean sync latency (21.0 -> 20.1 seconds) but
   worsened the sync latency's 95th percentile (42.8 -> 47.4 seconds), all in every seed. No
   verdict against `slot-based` or `duration-based` changed.
-- **Determinism:** runs are deterministic, and `findings` checks that `fair-share-fast-lane` with its
-  fixes off (and the work-scheduler's 30% reserve) makes exactly the same decisions as
-  `duration-based`, so every difference above comes from the fixes and the reserve.
+- **Determinism:** runs are deterministic, and while the fixes could be switched off (until
+  2026-11-12), `findings` checked that `fair-share-fast-lane` with them off (and the
+  work-scheduler's 30% reserve) made exactly the same decisions as `duration-based`, so every
+  difference above comes from the fixes and the reserve.
 - **Limits:** the simulator runs Harmony's real scheduling and work item update code, but on sqlite,
   one event at a time, with fixed pod counts and no query-cmr step, aggregation or cancellation;
   see [REFERENCE.md](REFERENCE.md#limitations). The production scenarios' header comments say which
@@ -397,7 +401,8 @@ be simulated for as long as Harmony keeps it - which the promotion did, as the r
 it and run the commands there, or compare against one with `findings --references
 <commit>=slot-based` (REFERENCE.md, [Writing up findings](REFERENCE.md#writing-up-findings)).
 
-**The policy as it was configured before these defaults** (a 30% reserve, fixes 2 and 5 on):
+**The policy as it was configured before these defaults** (a 30% reserve, fixes 2 and 5 on),
+which needs a commit from before fixes 2 and 5 were removed, such as e7624ed69:
 
 ```
 npm run sim -- bench --policies fair-share-fast-lane --set FAIR_SHARE_FAST_LANE_RESERVE_FRACTION=scheduler --set FAIR_SHARE_FAST_LANE_EWMA_ALPHA=0.2 --set FAIR_SHARE_FAST_LANE_USE_SERVICE_DURATION=true

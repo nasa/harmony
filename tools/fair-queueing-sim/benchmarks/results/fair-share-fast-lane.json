@@ -1,15 +1,15 @@
 {
   "policy": "fair-share-fast-lane",
   "code": {
-    "commit": "02eead80ab0f6ea7647894e50d7b95f3ca4fdd88",
+    "commit": "e7624ed69e0486dda0d52d5c3f881eaf3e0ef126",
     "branch": "harmony-2414",
     "dirty": true,
-    "changedFiles": ["services/harmony/app/backends/workflow-orchestration/fair-share-fast-lane-policy.ts", "tools/fair-queueing-sim/src/metrics.ts", "tools/fair-queueing-sim/src/policies/slot-based-fair-share.ts"],
-    "changesHash": "885e1a150c69",
-    "codeHash": "1e79c6833b24d3c8",
+    "changedFiles": ["services/harmony/app/backends/workflow-orchestration/fair-share-fast-lane-policy.ts", "services/work-scheduler/env-defaults", "tools/fair-queueing-sim/src/policies/catalog.ts", "tools/fair-queueing-sim/src/policies/fair-share-fast-lane.ts", "tools/fair-queueing-sim/src/policies/index.ts"],
+    "changesHash": "4561cf2fa5a6",
+    "codeHash": "6ac22b563b341d07",
     "node": "v24.21.0",
     "platform": "linux-arm64",
-    "recordedAt": "2026-11-11T21:47:21.917Z"
+    "recordedAt": "2026-11-12T14:45:29.355Z"
   },
   "seeds": [101, 102, 103, 104, 105],
   "set": {},
@@ -18,18 +18,7 @@
     "FAST_LANE_RESERVE_FRACTION": "0.3",
     "FAIR_SHARE_FAST_LANE_RESERVE_FRACTION": "0.1",
     "FAIR_SHARE_FAST_LANE_UNMEASURED_LIMIT": "2",
-    "FAIR_SHARE_FAST_LANE_UNMEASURED_FRACTION": "0.5",
-    "FAIR_SHARE_FAST_LANE_EWMA_ALPHA": "0",
-    "FAIR_SHARE_FAST_LANE_UNMEASURED_ESTIMATE": "service",
-    "FAIR_SHARE_FAST_LANE_UNMEASURED_DEFAULT_MS": "3600000",
-    "FAIR_SHARE_FAST_LANE_SPLIT_BY_USER": "true",
-    "FAIR_SHARE_FAST_LANE_USE_SERVICE_DURATION": "false",
-    "FAIR_SHARE_FAST_LANE_SLOW_FAIR_SHARE": "true",
-    "FAIR_SHARE_FAST_LANE_RUNNING_EVIDENCE": "true",
-    "FAIR_SHARE_FAST_LANE_FAIR_SHARE_ALL": "true",
-    "FAIR_SHARE_FAST_LANE_RUNNING_EVIDENCE_KEEPS_LIMIT": "true",
-    "FAIR_SHARE_FAST_LANE_SYNC_EXEMPT": "true",
-    "FAIR_SHARE_FAST_LANE_SYNC_FIRST": "true"
+    "FAIR_SHARE_FAST_LANE_UNMEASURED_FRACTION": "0.5"
   },
   "scenarios": {
     "01-alone": {
