@@ -23,7 +23,9 @@ export default async function handleLabelParameter(
 
   // If 'label' exists, convert it to an array (if not already) and assign it to 'label' in the body
   if (label) {
-    const labels = parseMultiValueParameter(label);
+    // Labels may contain commas, so only split strings (e.g., label=a,b in a form body), not
+    // the individual values of an already-parsed array
+    const labels = parseMultiValueParameter(label, false);
     const normalizedLabels = labels.map(normalizeLabel);
     for (const lbl of normalizedLabels) {
       if (lbl === '') {
