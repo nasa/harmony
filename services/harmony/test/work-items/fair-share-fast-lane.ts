@@ -153,6 +153,27 @@ describe('Fair share fast lane fair queueing', function () {
     });
   });
 
+  describe('when the batch is smaller than the number of users', function () {
+    it('gives it to a user below their share who ranks below the batch, not to the user held back', async function () {
+      await saveJobs([
+        // over their share, and first in priority order, so the only job in a batch of 1
+        { jobID: 'busyJob', username: 'Busy', running: 8, ready: 10, averageDuration: 10 },
+        { jobID: 'waitingJob', username: 'Waiting', running: 1, ready: 10, averageDuration: 500000 },
+      ]);
+      expect(await takeBatch(1)).to.eql({ waitingJob: 1 });
+    });
+
+    it('gives it to a sync request that ranks below the batch', async function () {
+      await saveJobs([
+        { jobID: 'annJob', username: 'Ann', running: 0, ready: 10, averageDuration: 1000 },
+        // Bob's running work puts him after Ann in priority order
+        { jobID: 'bobJob', username: 'Bob', running: 2, ready: 10, averageDuration: 1000 },
+        { jobID: 'syncJob', username: 'Bob', isAsync: false, running: 0, ready: 1 },
+      ]);
+      expect(await takeBatch(1)).to.eql({ syncJob: 1 });
+    });
+  });
+
   describe('when a user over their fair share has a sync request', function () {
     it('does not hold the sync request back', async function () {
       await saveJobs([

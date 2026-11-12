@@ -43,10 +43,15 @@ only.
 
 Every decision below keeps to these:
 
-- **The fast lane reserve is intentional.** Slow work never uses more than
+- **The fast lane reserve is intentional.** Slow work gets no new work items once it uses
   `1 - FAST_LANE_RESERVE_FRACTION` of a service's pods, even when nothing else is waiting, because
   Harmony has seen slow jobs take every pod and leave arriving fast jobs unworked. Pods the reserve
-  leaves idle (story 07) are the cost of that guarantee, so no fix lets slow work into the reserve.
+  leaves idle (story 07) are the cost of that guarantee, so no fix lets known slow work into the
+  reserve. One exception, kept from `duration-based`, which also runs unmeasured work when the
+  capacity is full: each new (job, service) may run its first `FAIR_SHARE_FAST_LANE_UNMEASURED_LIMIT`
+  (2) work items whatever the capacity, so that it can be measured. If they take longer than
+  `SLOW_WORK_THRESHOLD_MS`, they use reserved pods until they finish, so many new slow jobs
+  arriving at once can take some of the reserve for a while.
 - **It's `duration-based` plus fixes.** The queries follow `getNextJobIdsDurationBased` step for
   step. While the fixes could be switched off, with every one off and
   `FAIR_SHARE_FAST_LANE_RESERVE_FRACTION=scheduler` (`duration-based`'s 30% reserve rather than the
@@ -71,7 +76,7 @@ The full results for the policy as it is - a 10% reserve, without fixes 2 and 5 
 [RESULTS.md](RESULTS.md), with how to reproduce them. In brief, against `slot-based`, what
 production runs (5 seeds; a difference counts when it holds in every seed):
 
-- **The 12 stories:** better in every seed on 16 of the 24 protected metrics. Worse in every seed on
+- **The 12 stories:** better in every seed on 17 of the 24 protected metrics. Worse in every seed on
   5, all expected costs: a new job's slower start (01, 02, 10 - about 1% on a big job alone, and 01's
   utilization), and the reserve when slow work is alone (07: +16%). The fast lane reserve is new for
   production, which has none, but production would rarely meet its cost: across all services in the
@@ -231,7 +236,8 @@ this file): fixes 2 and 5 have since been removed, and the others are always on.
    item finishes, so a new slow job fills the service first (story 06: slow work in flight peaks
    above the cap). *Decision:* a new (job, service) may run 2 work items until it's measured, plus
    a shared allowance for all unmeasured work (half the slow work capacity) that counts against
-   the slow work capacity, so it never takes the reserve. *Evidence:* it produces the 06 win (off:
+   the slow work capacity, so the allowance never takes the reserve (each job's first 2 work items
+   can - see the [ground rules](#ground-rules)). *Evidence:* it produces the 06 win (off:
    slowdown 3.57 vs 2.74, fairness 0.78 vs 0.97) and helps 10 and 11. *Cost:* all of 01, 02 and
    07's costs above - switched off, 01 and 07 match `duration-based` exactly. *Correction
    (2026-11-10):* until then, the work-conserving pass at the end of each batch (fix 6) didn't count
@@ -273,6 +279,11 @@ this file): fixes 2 and 5 have since been removed, and the others are always on.
    -2%, both in every seed). The change itself moved little (RESULTS.md has the details): a little
    better on trajectory-subsetter and slow-user-first, mean job slowdown and mean sync latency on
    the mixed workload better but its 95th percentile sync latency 11% worse, in every seed.
+   *Change (2026-11-12):* the candidates were the first batchSize jobs, as `duration-based`
+   picks them, so with a small batch the users below their share could all rank outside it, and
+   what fair share held back went back to the user over theirs. Every user's first job (and every
+   sync job, for fix 8) is now a candidate too, though the batch is still split only between the
+   first batchSize; story 04's sync request -27% and its fairness +1.4% (RESULTS.md).
 7. **Long-running work is slow before it finishes.** *Problem:* until a work item completes,
    fix 1 can't tell a 30 minute work item from a slow-to-start one. *Decision:* a (job, service)
    with a work item running longer than the threshold is slow from then on, and keeps fix 1's

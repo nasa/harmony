@@ -24,7 +24,7 @@ with the work-scheduler's `FAIR_QUEUEING_POLICY=fair-share-fast-lane` - the defa
 
 | Setting | Value | |
 |---|---|---|
-| `FAIR_SHARE_FAST_LANE_RESERVE_FRACTION` | `0.1` | the fast lane reserve: slow work (over `SLOW_WORK_THRESHOLD_MS`, 10 minutes) may never use more than 90% of a service's pods |
+| `FAIR_SHARE_FAST_LANE_RESERVE_FRACTION` | `0.1` | the fast lane reserve: slow work (over `SLOW_WORK_THRESHOLD_MS`, 10 minutes) may use at most 90% of a service's pods - except that each new job may run its first 2 work items even when that's full, so that it can be measured, and if they turn out to be slow they use reserved pods until they finish |
 | `FAIR_SHARE_FAST_LANE_UNMEASURED_LIMIT` | `2` | fix 1: a new job may run 2 work items for a service until it's measured... |
 | `FAIR_SHARE_FAST_LANE_UNMEASURED_FRACTION` | `0.5` | ...plus a share of an allowance of half the slow work capacity for all new jobs together |
 
@@ -63,7 +63,7 @@ when it holds in every seed):
 
 - **Production scenarios:** better in every seed on 16 of the 21 protected metrics; the only metric
   worse in every seed is utilization, by 0.3-1.0 points.
-- **The 12 stories:** better in every seed on 16 of the 24 protected metrics; worse in every seed on
+- **The 12 stories:** better in every seed on 17 of the 24 protected metrics; worse in every seed on
   5 - the expected costs below.
 - **The mixed workload:** better in all 3 seeds on every headline metric - mean job slowdown -30%,
   sync latency -50%, fairness +10% - for utilization lower by less than 0.1 points.
@@ -98,20 +98,20 @@ depends on the policy).
 | | slot-based (production) | fair-share-fast-lane | change | seeds |
 |---|---|---|---|---|
 | sync latency (p95) | 18.9s | 5.9s | -69% | **better in 5/5** |
-| sync latency (mean) | 7.2s | 2.5s | -65% | **better in 5/5** |
-| contended fairness | 0.23 | 0.93 | +310% | **better in 5/5** |
-| long-items fair share | 6.45 | 1.14 | -82% | **better in 5/5** |
-| one-at-a-time mean slowdown | 3.72 | 1.92 | -48% | **better in 5/5** |
+| sync latency (mean) | 7.2s | 2.5s | -66% | **better in 5/5** |
+| contended fairness | 0.23 | 0.93 | +311% | **better in 5/5** |
+| long-items fair share | 6.45 | 1.13 | -82% | **better in 5/5** |
+| one-at-a-time mean slowdown | 3.72 | 1.90 | -49% | **better in 5/5** |
 | utilization | 97.8% | 96.8% | -1.0 points | **worse in 5/5** |
 
 **trajectory-burst** - a trajectory-subsetter burst, 11 users with a heavy tail, from its stats:
 
 | | slot-based (production) | fair-share-fast-lane | change | seeds |
 |---|---|---|---|---|
-| sync latency (p95) | 22.1s | 9.4s | -58% | **better in 5/5** |
+| sync latency (p95) | 22.1s | 9.8s | -56% | **better in 5/5** |
 | contended fairness | 0.66 | 0.96 | +46% | **better in 5/5** |
-| mid-2 mean slowdown | 7.13 | 5.08 | -29% | better in 4, worse in 1 |
-| small-1 mean slowdown | 4.24 | 1.29 | -70% | **better in 5/5** |
+| mid-2 mean slowdown | 7.13 | 5.43 | -24% | better in 4, worse in 1 |
+| small-1 mean slowdown | 4.24 | 1.28 | -70% | **better in 5/5** |
 | utilization | 99.2% | 98.5% | -0.6 points | **worse in 5/5** |
 
 **geoloco-one-user** - one user keeps geoloco full, as in production; a newcomer arrives:
@@ -143,11 +143,11 @@ it:
 | | slot-based (production) | fair-share-fast-lane | change | seeds |
 |---|---|---|---|---|
 | mean job slowdown | 4.64 | 3.27 | -30% | **better in 3/3** |
-| max job slowdown | 21.80 | 13.23 | -39% | **better in 3/3** |
-| sync makespan (mean) | 1m 10s | 50.1s | -29% | **better in 3/3** |
+| max job slowdown | 21.80 | 13.26 | -39% | **better in 3/3** |
+| sync makespan (mean) | 1m 10s | 50.0s | -29% | **better in 3/3** |
 | sync makespan (max) | 3m 15s | 1m 37s | -50% | **better in 3/3** |
-| sync latency (mean) | 40.2s | 20.1s | -50% | **better in 3/3** |
-| sync latency (p95) | 1m 28s | 47.4s | -46% | **better in 3/3** |
+| sync latency (mean) | 40.2s | 19.9s | -50% | **better in 3/3** |
+| sync latency (p95) | 1m 28s | 45.0s | -49% | **better in 3/3** |
 | contended fairness | 0.88 | 0.97 | +10% | **better in 3/3** |
 | utilization | 70.8% | 70.8% | -0.0 points | **worse in 3/3** |
 
@@ -163,10 +163,10 @@ Each story's protected metrics, from the benchmark records:
 | 02-small-sync | alice-big makespan | 1h 05m | 1h 05m | +1% | **worse in 5/5** |
 | 03-sync-behind-own-async | bob-sync makespan | 1m 38s | 1m 09s | -30% | **better in 5/5** |
 | 03-sync-behind-own-async | contended fairness | 0.98 | 0.99 | +1% | **better in 5/5** |
-| 04-crowded | contended fairness | 0.86 | 0.92 | +7% | **better in 5/5** |
-| 04-crowded | bob-sync makespan | 1m 51s | 1m 47s | -4% | better in 3, worse in 2 |
-| 05-newcomer | erin-1 slowdown | 9.83 | 6.81 | -31% | **better in 5/5** |
-| 05-newcomer | max job slowdown | 9.83 | 6.81 | -31% | **better in 5/5** |
+| 04-crowded | contended fairness | 0.86 | 0.93 | +8% | **better in 5/5** |
+| 04-crowded | bob-sync makespan | 1m 51s | 1m 18s | -30% | **better in 5/5** |
+| 05-newcomer | erin-1 slowdown | 9.83 | 6.68 | -32% | **better in 5/5** |
+| 05-newcomer | max job slowdown | 9.83 | 6.68 | -32% | **better in 5/5** |
 | 06-slow-vs-fast | gina-fast slowdown | 7.56 | 3.32 | -56% | **better in 5/5** |
 | 06-slow-vs-fast | hank-fast slowdown | 7.38 | 3.35 | -55% | **better in 5/5** |
 | 07-slow-alone | frank-slow makespan | 2h 51m | 3h 19m | +16% | **worse in 5/5** |
@@ -255,18 +255,18 @@ the same durations Harmony already keeps, so it needs nothing the fast lane does
 | sync latency (p95) | 20.3s | 5.9s | -71% | **better in 5/5** |
 | sync latency (mean) | 7.4s | 2.5s | -67% | **better in 5/5** |
 | contended fairness | 0.23 | 0.93 | +311% | **better in 5/5** |
-| long-items fair share | 6.44 | 1.14 | -82% | **better in 5/5** |
-| one-at-a-time mean slowdown | 3.78 | 1.92 | -49% | **better in 5/5** |
+| long-items fair share | 6.44 | 1.13 | -82% | **better in 5/5** |
+| one-at-a-time mean slowdown | 3.78 | 1.90 | -50% | **better in 5/5** |
 | utilization | 97.8% | 96.8% | -1.0 points | **worse in 5/5** |
 
 **trajectory-burst:**
 
 | | duration-based (fast lane) | fair-share-fast-lane | change | seeds |
 |---|---|---|---|---|
-| sync latency (p95) | 25.6s | 9.4s | -63% | **better in 5/5** |
-| contended fairness | 0.66 | 0.96 | +47% | **better in 5/5** |
-| mid-2 mean slowdown | 7.12 | 5.08 | -29% | better in 4, worse in 1 |
-| small-1 mean slowdown | 4.18 | 1.29 | -69% | **better in 5/5** |
+| sync latency (p95) | 25.6s | 9.8s | -62% | **better in 5/5** |
+| contended fairness | 0.66 | 0.96 | +46% | **better in 5/5** |
+| mid-2 mean slowdown | 7.12 | 5.43 | -24% | better in 4, worse in 1 |
+| small-1 mean slowdown | 4.18 | 1.28 | -69% | **better in 5/5** |
 | utilization | 99.2% | 98.5% | -0.6 points | **worse in 5/5** |
 
 **geoloco-one-user:**
@@ -294,11 +294,11 @@ the same durations Harmony already keeps, so it needs nothing the fast lane does
 | | duration-based (fast lane) | fair-share-fast-lane | change | seeds |
 |---|---|---|---|---|
 | mean job slowdown | 4.69 | 3.27 | -30% | **better in 3/3** |
-| max job slowdown | 21.10 | 13.23 | -37% | **better in 3/3** |
-| sync makespan (mean) | 1m 13s | 50.1s | -31% | **better in 3/3** |
+| max job slowdown | 21.10 | 13.26 | -37% | **better in 3/3** |
+| sync makespan (mean) | 1m 13s | 50.0s | -31% | **better in 3/3** |
 | sync makespan (max) | 3m 16s | 1m 37s | -51% | **better in 3/3** |
-| sync latency (mean) | 42.8s | 20.1s | -53% | **better in 3/3** |
-| sync latency (p95) | 1m 47s | 47.4s | -56% | **better in 3/3** |
+| sync latency (mean) | 42.8s | 19.9s | -53% | **better in 3/3** |
+| sync latency (p95) | 1m 47s | 45.0s | -58% | **better in 3/3** |
 | contended fairness | 0.88 | 0.97 | +10% | **better in 3/3** |
 | utilization | 70.8% | 70.8% | -0.0 points | **worse in 3/3** |
 
@@ -312,10 +312,10 @@ the same durations Harmony already keeps, so it needs nothing the fast lane does
 | 02-small-sync | alice-big makespan | 1h 05m | 1h 05m | +1% | **worse in 5/5** |
 | 03-sync-behind-own-async | bob-sync makespan | 1m 33s | 1m 09s | -26% | **better in 5/5** |
 | 03-sync-behind-own-async | contended fairness | 0.98 | 0.99 | +1% | **better in 5/5** |
-| 04-crowded | contended fairness | 0.82 | 0.92 | +12% | **better in 5/5** |
-| 04-crowded | bob-sync makespan | 1m 38s | 1m 47s | +10% | better in 3, worse in 2 |
-| 05-newcomer | erin-1 slowdown | 10.21 | 6.81 | -33% | **better in 5/5** |
-| 05-newcomer | max job slowdown | 10.21 | 6.81 | -33% | **better in 5/5** |
+| 04-crowded | contended fairness | 0.82 | 0.93 | +13% | **better in 5/5** |
+| 04-crowded | bob-sync makespan | 1m 38s | 1m 18s | -20% | better in 4, worse in 1 |
+| 05-newcomer | erin-1 slowdown | 10.21 | 6.68 | -35% | **better in 5/5** |
+| 05-newcomer | max job slowdown | 10.21 | 6.68 | -35% | **better in 5/5** |
 | 06-slow-vs-fast | gina-fast slowdown | 7.36 | 3.32 | -55% | **better in 5/5** |
 | 06-slow-vs-fast | hank-fast slowdown | 7.16 | 3.35 | -53% | **better in 5/5** |
 | 07-slow-alone | frank-slow makespan | 3h 46m | 3h 19m | -12% | **better in 5/5** |
@@ -335,13 +335,13 @@ the same durations Harmony already keeps, so it needs nothing the fast lane does
 
 - **The stories** come from the committed benchmark records, `benchmarks/results/slot-based.json`,
   `benchmarks/results/duration-based.json` and
-  `benchmarks/results/fair-share-fast-lane.json` (duration-based: e7624ed69 + uncommitted changes, code hash a5d17e7382c1d50e, Node v24.21.0, linux-arm64, 2026-11-12; slot-based: e7624ed69 + uncommitted changes, code hash a5d17e7382c1d50e, Node v24.21.0, linux-arm64, 2026-11-12; fair-share-fast-lane: e7624ed69 + uncommitted changes, code hash 6ac22b563b341d07, Node v24.21.0, linux-arm64, 2026-11-12). Each record holds every metric for
+  `benchmarks/results/fair-share-fast-lane.json` (duration-based: 1fff8cf5d + uncommitted changes, code hash 5174f49af38dec3f, Node v24.21.0, linux-arm64, 2026-11-12; slot-based: 1fff8cf5d + uncommitted changes, code hash 5174f49af38dec3f, Node v24.21.0, linux-arm64, 2026-11-12; fair-share-fast-lane: 1fff8cf5d + uncommitted changes, code hash 5b38c29f399dc8c6, Node v24.21.0, linux-arm64, 2026-11-12). Each record holds every metric for
   every story and seed, with the settings and a hash of the code that produced it.
 - **The production scenarios and the mixed workload** aren't in the records; their numbers are from
-  `bench` runs with the commands below: `fair-share-fast-lane` and `slot-based` on 2026-11-11,
-  `duration-based` on 2026-11-09 (its code hasn't changed since; `slot-based`'s runs were
-  identical every day). `fair-share-fast-lane`'s were re-run on 2026-11-12, after its switches were
-  removed, with identical results.
+  `bench` runs with the commands below: `fair-share-fast-lane` on 2026-11-12, `slot-based` on
+  2026-11-11 and 2026-11-12, `duration-based` on 2026-11-09 (its code hasn't changed since;
+  `slot-based`'s runs were identical every day). Removing `fair-share-fast-lane`'s switches on
+  2026-11-12 changed none of its results.
 - **Corrected 2026-11-10.** Until then, the last pass of each scheduling batch (fix 6's
   work-conserving pass) didn't count what a new job had just been given earlier in the batch, so it
   could give the job its unmeasured work limit a second time - up to 2 more work items per batch
@@ -361,6 +361,18 @@ the same durations Harmony already keeps, so it needs nothing the fast lane does
   improved the mean job slowdown (3.30 -> 3.27) and mean sync latency (21.0 -> 20.1 seconds) but
   worsened the sync latency's 95th percentile (42.8 -> 47.4 seconds), all in every seed. No
   verdict against `slot-based` or `duration-based` changed.
+- **Changed 2026-11-12.** The policy picked its candidate jobs as `duration-based` does: the first
+  batchSize jobs in priority order. Batches are often a few work items, so a sync request ranked
+  below the batch couldn't go first, and when the users below their fair share ranked below it,
+  what fair share held back from a user over theirs went back to that user. It now also considers
+  every sync job and each user's first job. Only the scenarios with more users than a typical
+  batch changed: story 04's sync request 1m 47s -> 1m 18s (better against `slot-based` in every
+  seed now, so 17 of the 24 story metrics are) and its fairness 0.92 -> 0.93, story 05's newcomer
+  6.81 -> 6.68 times its minimum; on hoss and trajectory-subsetter small changes either way, none
+  in every seed (e.g. trajectory-subsetter's sync latency, 95th percentile, 9.4 -> 9.8 seconds,
+  its mid-sized user 5.08 -> 5.43 times their minimum); the mixed workload's sync latency, 95th
+  percentile, 47.4 -> 45.0 seconds. No verdict against `duration-based` changed, nor any on the
+  production scenarios or the mixed workload.
 - **Determinism:** runs are deterministic, and while the fixes could be switched off (until
   2026-11-12), `findings` checked that `fair-share-fast-lane` with them off (and the
   work-scheduler's 30% reserve) made exactly the same decisions as `duration-based`, so every
