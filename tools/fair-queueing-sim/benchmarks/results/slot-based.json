@@ -1,15 +1,15 @@
 {
   "policy": "slot-based",
   "code": {
-    "commit": "1fff8cf5da888824ecb84a9365ef8c4c17b2497e",
+    "commit": "329ffd4d4b4a18695fcd3adef021040a596a4fcd",
     "branch": "harmony-2414",
-    "dirty": true,
-    "changedFiles": ["services/harmony/app/backends/workflow-orchestration/fair-share-fast-lane-policy.ts"],
-    "changesHash": "e1dd4c3d279d",
-    "codeHash": "5174f49af38dec3f",
+    "dirty": false,
+    "changedFiles": [],
+    "changesHash": null,
+    "codeHash": "dfdec3790659bc48",
     "node": "v24.21.0",
     "platform": "linux-arm64",
-    "recordedAt": "2026-11-12T15:41:37.194Z"
+    "recordedAt": "2026-11-12T18:15:00.050Z"
   },
   "seeds": [101, 102, 103, 104, 105],
   "set": {},

@@ -136,8 +136,8 @@ describe('Scheduler Worker', async function () {
         expect(numMessages).to.equal(1);
       });
 
-      it('uses slot based fair queueing by default', async function () {
-        expect(getWorkItemsFromDatabaseStub.lastCall.args[3]).to.equal(slotBasedPolicy);
+      it('uses fair share fast lane fair queueing by default', async function () {
+        expect(getWorkItemsFromDatabaseStub.lastCall.args[3]).to.equal(fairShareFastLanePolicy);
       });
 
       it('passes the service pod count and fair queueing settings to getWorkItemsFromDatabase', async function () {
@@ -150,11 +150,14 @@ describe('Scheduler Worker', async function () {
 
       describe('and duration based fair queueing is enabled', async function () {
         let enableDurationBasedStub;
+        let fairQueueingPolicyStub;
         beforeEach(async function () {
           await schedulerQueue.purge();
           await schedulerQueue.sendMessage(service);
           serviceQueues = {};
           serviceQueues[service] = new MemoryQueue();
+          // ENABLE_DURATION_BASED_FAIR_QUEUEING only applies when FAIR_QUEUEING_POLICY is slot-based
+          fairQueueingPolicyStub = sinon.stub(env, 'fairQueueingPolicy').get(() => 'slot-based');
           enableDurationBasedStub = sinon.stub(env, 'enableDurationBasedFairQueueing').get(() => true);
           await processSchedulerQueue(logger);
         });
@@ -162,6 +165,7 @@ describe('Scheduler Worker', async function () {
           await schedulerQueue.purge();
           serviceQueues = {};
           enableDurationBasedStub.restore();
+          fairQueueingPolicyStub.restore();
         });
 
         it('uses duration based fair queueing', async function () {
@@ -381,17 +385,21 @@ describe('Scheduler Worker', async function () {
 
     it('logs the fair queueing policy it uses', async function () {
       await new Scheduler().start(false);
-      expect(infoSpy.calledWith('Starting scheduler with slot-based fair queueing (FAIR_QUEUEING_POLICY=slot-based, '
-        + 'ENABLE_DURATION_BASED_FAIR_QUEUEING=false)')).to.be.true;
+      expect(infoSpy.calledWith('Starting scheduler with fair-share-fast-lane fair queueing '
+        + '(FAIR_QUEUEING_POLICY=fair-share-fast-lane, ENABLE_DURATION_BASED_FAIR_QUEUEING=false)')).to.be.true;
     });
 
     describe('when ENABLE_DURATION_BASED_FAIR_QUEUEING selects duration based fair queueing', function () {
       let enableDurationBasedStub: sinon.SinonStub;
+      let fairQueueingPolicyStub: sinon.SinonStub;
       beforeEach(function () {
+        // it only applies when FAIR_QUEUEING_POLICY is slot-based
+        fairQueueingPolicyStub = sinon.stub(env, 'fairQueueingPolicy').get(() => 'slot-based');
         enableDurationBasedStub = sinon.stub(env, 'enableDurationBasedFairQueueing').get(() => true);
       });
       afterEach(function () {
         enableDurationBasedStub.restore();
+        fairQueueingPolicyStub.restore();
       });
 
       it('logs the policy it selects, not just the settings', async function () {
