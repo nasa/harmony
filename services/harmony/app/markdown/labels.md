@@ -21,3 +21,6 @@ Similarly, labels can be removed from one or more jobs using an HTTP DELETE:
 curl -bj {{root}}/labels   -XDELETE -d '{"jobID": ["<YOUR FIRST JOB ID>", "<YOUR SECOND JOB ID>"], "label": ["foo"]}'  -H "Content-Type: application/json" -H "Authorization: bearer <YOUR BEARER TOKEN>"
 ```
 
+In the JSON body, each element of the `label` array is a single label and may contain commas, while a
+`label` string value is treated as a comma-separated list of labels.
+

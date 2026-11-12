@@ -58,8 +58,15 @@ describe('Get Labels', function () {
 });
 
 describe('Job label CRUD', function () {
-  const envLabelsAllowListStub = stub(env, 'labelsAllowList').get(() => 'butt');
-  const envLabelsForbidListStub = stub(env, 'labelsForbidList').get(() => 'buzz');
+  let envLabelsAllowListStub;
+  let envLabelsForbidListStub;
+  // Stub in a hook rather than at load time so the lists only affect the servers started for
+  // this suite. This must be registered before hookServersStartStop since the lists are applied
+  // to the global label filter when a server starts.
+  before(function () {
+    envLabelsAllowListStub = stub(env, 'labelsAllowList').get(() => 'butt');
+    envLabelsForbidListStub = stub(env, 'labelsForbidList').get(() => 'buzz');
+  });
   hookServersStartStop({ USE_EDL_CLIENT_APP: true });
   hookTransaction();
   const joeJob1 = buildJob({ username: 'joe' });
