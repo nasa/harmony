@@ -335,7 +335,7 @@ the same durations Harmony already keeps, so it needs nothing the fast lane does
 
 - **The stories** come from the committed benchmark records, `benchmarks/results/slot-based.json`,
   `benchmarks/results/duration-based.json` and
-  `benchmarks/results/fair-share-fast-lane.json` (duration-based: 1fff8cf5d + uncommitted changes, code hash 5174f49af38dec3f, Node v24.21.0, linux-arm64, 2026-11-12; slot-based: 1fff8cf5d + uncommitted changes, code hash 5174f49af38dec3f, Node v24.21.0, linux-arm64, 2026-11-12; fair-share-fast-lane: 1fff8cf5d + uncommitted changes, code hash 5b38c29f399dc8c6, Node v24.21.0, linux-arm64, 2026-11-12). Each record holds every metric for
+  `benchmarks/results/fair-share-fast-lane.json` (duration-based: 329ffd4d4, code hash dfdec3790659bc48, Node v24.21.0, linux-arm64, 2026-11-12; slot-based: 329ffd4d4, code hash dfdec3790659bc48, Node v24.21.0, linux-arm64, 2026-11-12; fair-share-fast-lane: 329ffd4d4, code hash a59fc06a298b0e39, Node v24.21.0, linux-arm64, 2026-11-12). Each record holds every metric for
   every story and seed, with the settings and a hash of the code that produced it.
 - **The production scenarios and the mixed workload** aren't in the records; their numbers are from
   `bench` runs with the commands below: `fair-share-fast-lane` on 2026-11-12, `slot-based` on
