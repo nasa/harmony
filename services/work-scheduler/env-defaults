@@ -35,7 +35,7 @@ POD_COUNT_CACHE_TTL=90000
 #   fair-share-fast-lane - duration-based with fixes that stop one user's slow work items taking a
 #     service, and sync requests first (the FAIR_SHARE_FAST_LANE_* settings below). Its fast lane
 #     reserve is FAIR_SHARE_FAST_LANE_RESERVE_FRACTION.
-FAIR_QUEUEING_POLICY=slot-based
+FAIR_QUEUEING_POLICY=fair-share-fast-lane
 
 # The older setting for duration based fair queueing, kept for existing deployments: true is the
 # same as FAIR_QUEUEING_POLICY=duration-based, unless FAIR_QUEUEING_POLICY selects a policy other
