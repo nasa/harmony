@@ -1,10 +1,15 @@
-ARG BASE_IMAGE=node:22.23.4
+# Use the slim variant: the full node image is built on buildpack-deps, which ships
+# ImageMagick and image libraries (libtiff, OpenEXR, ...) that harmony does not use
+# and that are a frequent source of vulnerability scan findings
+ARG BASE_IMAGE=node:22.23.4-slim
 FROM $BASE_IMAGE
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 RUN echo "Building for $TARGETPLATFORM on $BUILDPLATFORM"
 
-RUN apt-get update && apt-get install -y sqlite3 libsqlite3-dev python3 python3-pip python3-venv libpq-dev build-essential
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates sqlite3 libsqlite3-dev \
+    python3 python3-pip python3-venv libpq-dev build-essential \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN python3 -m venv /venv
 ENV PATH="/venv/bin:$PATH"
