@@ -1,14 +1,17 @@
 
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
+import request, { Test } from 'supertest';
 
 import { Job } from '../../app/models/job';
 import db from '../../app/util/db';
+import { auth } from '../helpers/auth';
 import { hookRedirect } from '../helpers/hooks';
 import { hookRangesetRequest } from '../helpers/ogc-api-coverages';
 import { hookEdrRequest } from '../helpers/ogc-api-edr';
 import hookServersStartStop from '../helpers/servers';
 import { generateRandomString } from '../helpers/string';
+import StubService from '../helpers/stub-service';
 
 const collection = 'C1233800302-EEDTEST';
 const granuleId = 'G1233800343-EEDTEST';
@@ -163,25 +166,89 @@ describe('labels', function () {
       });
     });
 
-    describe('when passing in labels via a single query parameter with a comma-separated string', async function () {
-      const label = 'first,second';
-      hookPartials[apiType](label);
-      hookRedirect('joe');
-
-      it('it treats the comma as two separate labels', async function () {
-        const jobStatus = JSON.parse(this.res.text);
-        const job = await Job.byJobID(db, jobStatus.jobID, false, true, false);
-        expect(job.job.labels).deep.equal(['first', 'second']);
-      });
-    });
-
-    describe('when attempting to include a comma within a label', async function () {
+    describe('when including a comma within one of several labels', async function () {
       const label = ['good', 'ok,comma'];
       hookPartials[apiType](label);
       hookRedirect('joe');
 
       it('returns a 200 status code for the request', async function () {
         expect(this.res.status).to.equal(200);
+      });
+
+      it('preserves the comma within the label', async function () {
+        const jobStatus = JSON.parse(this.res.text);
+        const job = await Job.byJobID(db, jobStatus.jobID, false, true, false);
+        expect(job.job.labels).to.have.members(['good', 'ok,comma']);
+      });
+    });
+  }
+});
+
+// Requests are sent as raw URLs so that literal and URL-encoded commas are sent exactly as given
+describe('labels containing commas', function () {
+  const coveragesPath = `/${collection}/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset`;
+  const edrPath = `/ogc-api-edr/1.1.0/collections/${collection}/cube`;
+  const boundingBoxLabel = 'boundingbox: {"e":-109.42,"n":50.48,"w":-109.53,"s":50.45}';
+  const encodedBoundingBoxLabel = encodeURIComponent(boundingBoxLabel);
+
+  hookServersStartStop();
+
+  const tests: { description: string; makeRequest: (app) => Test; expectedLabels: string[] }[] = [{
+    description: 'OGC Coverages GET with labels separated by a literal comma',
+    makeRequest: (app): Test => request(app).get(`${coveragesPath}?granuleId=${granuleId}&label=eed-edsc-prod,edsc-id=5434533836`),
+    expectedLabels: ['eed-edsc-prod', 'edsc-id=5434533836'],
+  }, {
+    description: 'OGC Coverages GET with a URL-encoded comma within a label',
+    makeRequest: (app): Test => request(app).get(`${coveragesPath}?granuleId=${granuleId}&label=${encodedBoundingBoxLabel}`),
+    expectedLabels: [boundingBoxLabel],
+  }, {
+    description: 'OGC Coverages GET with repeated labels, one containing a URL-encoded comma',
+    makeRequest: (app): Test => request(app).get(`${coveragesPath}?granuleId=${granuleId}&label=foo&label=${encodedBoundingBoxLabel}`),
+    expectedLabels: ['foo', boundingBoxLabel],
+  }, {
+    description: 'OGC Coverages POST with a single comma-separated label form field',
+    makeRequest: (app): Test => request(app).post(coveragesPath).field('granuleId', granuleId).field('label', 'eed-edsc-prod,edsc-id=5434533836'),
+    expectedLabels: ['eed-edsc-prod', 'edsc-id=5434533836'],
+  }, {
+    description: 'OGC Coverages POST with multiple label form fields, one containing a comma',
+    makeRequest: (app): Test => request(app).post(coveragesPath).field('granuleId', granuleId).field('label', 'eed-edsc-prod').field('label', boundingBoxLabel),
+    expectedLabels: ['eed-edsc-prod', boundingBoxLabel],
+  }, {
+    description: 'OGC EDR GET with labels separated by a literal comma',
+    makeRequest: (app): Test => request(app).get(`${edrPath}?bbox=-180,-90,180,90&granuleId=${granuleId}&label=eed-edsc-prod,edsc-id=5434533836`),
+    expectedLabels: ['eed-edsc-prod', 'edsc-id=5434533836'],
+  }, {
+    description: 'OGC EDR GET with repeated labels, one containing a URL-encoded comma',
+    makeRequest: (app): Test => request(app).get(`${edrPath}?bbox=-180,-90,180,90&granuleId=${granuleId}&label=foo&label=${encodedBoundingBoxLabel}`),
+    expectedLabels: ['foo', boundingBoxLabel],
+  }];
+
+  for (const { description, makeRequest, expectedLabels } of tests) {
+    describe(description, function () {
+      StubService.hook({ params: { redirect: 'http://example.com' } });
+      before(async function () {
+        await makeRequest(this.frontend).use(auth({ username: 'joe' }));
+        this.job = (await Job.byJobID(db, this.service.operation.requestId, false, true, false)).job;
+
+        // Resubmit the request URL shown for the job, as when a user clicks the job status link
+        const requestUrl = new URL(this.job.request);
+        await request(this.frontend).get(requestUrl.pathname + requestUrl.search).use(auth({ username: 'joe' }));
+        this.resubmittedJob = (await Job.byJobID(db, this.service.operation.requestId, false, true, false)).job;
+      });
+      after(function () {
+        delete this.job;
+        delete this.resubmittedJob;
+      });
+
+      it('adds the expected labels to the job', function () {
+        expect(this.job.labels).to.have.members(expectedLabels);
+        expect(this.job.labels.length).to.equal(expectedLabels.length);
+      });
+
+      it('creates a new job with the same labels when the job request URL is resubmitted', function () {
+        expect(this.resubmittedJob.jobID).to.not.equal(this.job.jobID);
+        expect(this.resubmittedJob.labels).to.have.members(expectedLabels);
+        expect(this.resubmittedJob.labels.length).to.equal(expectedLabels.length);
       });
     });
   }

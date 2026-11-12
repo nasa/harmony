@@ -1747,7 +1747,8 @@ components:
       name: label
       in: query
       description: |
-        the labels for the job
+        the labels for the job. Multiple labels can be specified as a comma-separated list or by
+        repeating the parameter. To include a comma within a label, URL-encode it as %2C.
       required: false
       style: form
       explode: true
