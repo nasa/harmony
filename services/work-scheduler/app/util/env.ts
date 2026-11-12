@@ -1,6 +1,6 @@
 import path from 'path';
 
-import { IsBoolean, IsInt, IsNotEmpty, IsNumber, Max, Min } from 'class-validator';
+import { IsBoolean, IsIn, IsInt, IsNotEmpty, IsNumber, Max, Min } from 'class-validator';
 import _ from 'lodash';
 
 import { HarmonyEnv } from '@harmony/util/env';
@@ -43,6 +43,11 @@ class HarmonyWorkSchedulerEnv extends HarmonyEnv {
   @IsInt()
   @Min(1)
   podCountCacheTtl: number;
+
+  // the names in FAIR_QUEUEING_POLICIES (fair-queueing-policy.ts), listed here so the env module
+  // doesn't load the policies
+  @IsIn(['slot-based', 'duration-based', 'fair-share-fast-lane'])
+  fairQueueingPolicy: string;
 
   @IsBoolean()
   enableDurationBasedFairQueueing: boolean;

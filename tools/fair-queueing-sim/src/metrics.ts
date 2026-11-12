@@ -64,7 +64,19 @@ export interface Summary {
   jobs: JobSummary[];
   users: UserSummary[];
   services: ServiceSummary[];
-  sync: { jobs: number; meanMakespanMs: number | null; maxMakespanMs: number | null };
+  // latency is how much longer a sync request took than it would have with the cluster to itself
+  // (its makespan minus its lower bound) - for a one granule request, the time it spent waiting.
+  // The makespan and latency figures are over the finished sync requests; `unfinished` counts
+  // those submitted but still running or waiting when the run ended, which they leave out
+  sync: {
+    jobs: number;
+    unfinished: number;
+    meanMakespanMs: number | null;
+    maxMakespanMs: number | null;
+    meanLatencyMs: number | null;
+    p95LatencyMs: number | null;
+    maxLatencyMs: number | null;
+  };
   overall: { meanSlowdown: number | null; maxSlowdown: number | null; meanWaitMs: number | null };
   env: Record<string, string | number>;
   // what a good result looks like for the scenario
@@ -284,6 +296,7 @@ export function summarize(result: RunResult): Summary {
   });
 
   const syncJobs = jobs.filter((j) => !j.async && j.makespanMs !== null);
+  const syncLatencies = syncJobs.map((j) => Math.max(0, j.makespanMs - j.aloneLowerBoundMs));
   const slowdowns = jobs.map((j) => j.slowdown).filter((s) => s !== null);
   const allWaits = jobs.map((j) => j.meanWaitMs).filter((w) => w !== null);
   return {
@@ -301,8 +314,14 @@ export function summarize(result: RunResult): Summary {
     services,
     sync: {
       jobs: syncJobs.length,
+      // submitted but not finished: a job due after the run ended, or a serial job still waiting
+      // for the one before it, was never submitted (see the job status in simulation.ts)
+      unfinished: jobs.filter((j) => !j.async && j.makespanMs === null && j.status !== 'not submitted').length,
       meanMakespanMs: mean(syncJobs.map((j) => j.makespanMs)),
       maxMakespanMs: syncJobs.length ? Math.max(...syncJobs.map((j) => j.makespanMs)) : null,
+      meanLatencyMs: mean(syncLatencies),
+      p95LatencyMs: percentile(syncLatencies, 95),
+      maxLatencyMs: syncLatencies.length ? Math.max(...syncLatencies) : null,
     },
     overall: {
       meanSlowdown: mean(slowdowns),

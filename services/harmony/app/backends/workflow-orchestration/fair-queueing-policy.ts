@@ -1,5 +1,6 @@
 import { Logger } from 'winston';
 
+import { fairShareFastLanePolicy } from './fair-share-fast-lane-policy';
 import { getNextJobIds, NextJob } from '../../models/user-work';
 import { Transaction } from '../../util/db';
 
@@ -138,7 +139,7 @@ export const slotBasedPolicy: FairQueueingPolicy = {
 };
 
 /**
- * Duration based fair queueing (ENABLE_DURATION_BASED_FAIR_QUEUEING): users are ranked by the
+ * Duration based fair queueing (FAIR_QUEUEING_POLICY=duration-based): users are ranked by the
  * expected runtime of their work in progress for the service, and slow jobs may only use the
  * share of the service's pods not held back by the fast lane reserve. See docs/fair-queueing.md.
  */
@@ -152,3 +153,31 @@ export const durationBasedPolicy: FairQueueingPolicy = {
     await splitBatchAcrossJobs(jobs, availableSlowWorkSlots, batchSize, takeWorkItems);
   },
 };
+
+// The policies the work-scheduler can be configured to use, by their FAIR_QUEUEING_POLICY name.
+// fairShareFastLanePolicy is in fair-share-fast-lane-policy.ts.
+export const FAIR_QUEUEING_POLICIES: Record<string, FairQueueingPolicy> = {
+  'slot-based': slotBasedPolicy,
+  'duration-based': durationBasedPolicy,
+  'fair-share-fast-lane': fairShareFastLanePolicy,
+};
+
+/**
+ * Returns the fair queueing policy the work-scheduler is configured to use.
+ *
+ * @param name - the policy name (FAIR_QUEUEING_POLICY)
+ * @param enableDurationBased - ENABLE_DURATION_BASED_FAIR_QUEUEING, the older setting, kept for
+ * existing deployments: true selects duration-based unless `name` selects a policy other than
+ * slot-based
+ * @returns the policy
+ * @throws Error - if there is no policy with that name
+ */
+export function getFairQueueingPolicy(name: string, enableDurationBased = false): FairQueueingPolicy {
+  if (enableDurationBased && name === slotBasedPolicy.name) return durationBasedPolicy;
+  const policy = FAIR_QUEUEING_POLICIES[name];
+  if (!policy) {
+    throw new Error(`Unknown fair queueing policy "${name}" - available policies: `
+      + `${Object.keys(FAIR_QUEUEING_POLICIES).join(', ')}`);
+  }
+  return policy;
+}

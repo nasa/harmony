@@ -55,11 +55,19 @@ export interface GeneratorSpec {
   user: string;
   // time of the first submission (defaults to 0)
   start?: Duration;
-  // time between submissions
+  // time between submissions - or, for a serial generator, between a job finishing and the next
+  // one being submitted
   every: DurationSpec;
-  // stop after this many jobs or at this time, whichever comes first
+  // stop after this many jobs or at this time, whichever comes first (a serial generator needs a
+  // count and can't have an until, since when its jobs are submitted depends on the run)
   count?: number;
   until?: Duration;
+  // how many jobs to submit at each submission time (defaults to 1), e.g. a user who sends 100
+  // single granule requests at once
+  burst?: number;
+  // true = submit each job only once the previous one has finished, like a user who waits for
+  // each request before sending the next
+  serial?: boolean;
   job: JobTemplate;
 }
 
@@ -140,7 +148,12 @@ export interface ResolvedService {
 export interface ResolvedJob {
   name: string;
   user: string;
+  // when the job is submitted - unless it has an after, when this is just the earliest it can be
   submitAtMs: number;
+  // the job to wait for: this job is submitted afterDelayMs after that one finishes (serial
+  // generators)
+  after?: string;
+  afterDelayMs?: number;
   async: boolean;
   granules: number;
   ignoreErrors: boolean;
@@ -344,25 +357,42 @@ function expandGenerator(generator: GeneratorSpec, seed: number, maxDurationMs: 
   if (generator.count !== undefined && (!Number.isInteger(generator.count) || generator.count < 0)) {
     throw new Error(`Generator ${generator.name} needs a count that is a whole number, at least 0, not ${JSON.stringify(generator.count)}`);
   }
+  const burst = generator.burst ?? 1;
+  if (!Number.isInteger(burst) || burst < 1) {
+    throw new Error(`Generator ${generator.name} needs a burst that is a whole number, at least 1, not ${JSON.stringify(generator.burst)}`);
+  }
+  if (generator.serial) {
+    if (generator.count === undefined || generator.until !== undefined) {
+      throw new Error(`Generator ${generator.name} is serial, so it needs a count and can't have an until`);
+    }
+    if (burst !== 1) throw new Error(`Generator ${generator.name} is serial, so it can't have a burst`);
+  }
   const random = rngFor(seed, 'generator', generator.name);
   const untilMs = generator.until === undefined ? maxDurationMs : parseDuration(generator.until);
   const count = generator.count ?? Number.MAX_SAFE_INTEGER;
   const jobs: ResolvedJob[] = [];
-  let t = generator.start === undefined ? 0 : parseDuration(generator.start);
+  const start = generator.start === undefined ? 0 : parseDuration(generator.start);
+  let t = start;
   while (jobs.length < count && t < untilMs) {
-    if (jobs.length >= MAX_GENERATED_JOBS) {
-      throw new Error(`Generator ${generator.name} makes more than ${MAX_GENERATED_JOBS} jobs - give it a count or an until`);
+    for (let i = 0; i < burst && jobs.length < count; i++) {
+      if (jobs.length >= MAX_GENERATED_JOBS) {
+        throw new Error(`Generator ${generator.name} makes more than ${MAX_GENERATED_JOBS} jobs - give it a count or an until`);
+      }
+      const previous = jobs[jobs.length - 1];
+      jobs.push({
+        name: `${generator.name}-${jobs.length + 1}`,
+        user: generator.user,
+        // a serial generator's jobs after the first are submitted when the previous one finishes
+        submitAtMs: generator.serial ? start : t,
+        ...(generator.serial && previous ? { after: previous.name, afterDelayMs: sampleDuration(generator.every, random) } : {}),
+        async: generator.job.async ?? true,
+        granules: resolveGranules(generator.job.granules, random),
+        ignoreErrors: generator.job.ignoreErrors ?? true,
+        steps: generator.job.steps,
+      });
     }
-    jobs.push({
-      name: `${generator.name}-${jobs.length + 1}`,
-      user: generator.user,
-      submitAtMs: t,
-      async: generator.job.async ?? true,
-      granules: resolveGranules(generator.job.granules, random),
-      ignoreErrors: generator.job.ignoreErrors ?? true,
-      steps: generator.job.steps,
-    });
-    t += sampleDuration(generator.every, random);
+    // a serial generator samples its delays above, one per job
+    if (!generator.serial) t += sampleDuration(generator.every, random);
   }
   return jobs;
 }

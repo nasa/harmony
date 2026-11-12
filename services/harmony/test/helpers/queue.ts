@@ -9,7 +9,7 @@ import { parseBoolean } from '@harmony/util/string';
 
 import { MemoryQueue } from './memory-queue';
 import {
-  durationBasedPolicy, FairQueueingPolicy, SchedulingContext, slotBasedPolicy,
+  durationBasedPolicy, FairQueueingPolicy, getFairQueueingPolicy, SchedulingContext,
 } from '../../app/backends/workflow-orchestration/fair-queueing-policy';
 import * as util from '../../app/backends/workflow-orchestration/util';
 import { getWorkItemsFromDatabase, WorkItemData } from '../../app/backends/workflow-orchestration/work-item-polling';
@@ -26,31 +26,49 @@ let typeQueues;
 // so harmony doesn't depend on work-scheduler code, and so local .env overrides don't apply.
 const workSchedulerDefaults = dotenv.parse(
   fs.readFileSync(path.resolve(__dirname, '../../../work-scheduler/env-defaults')));
-const DEFAULT_TEST_POLICY: FairQueueingPolicy =
-  parseBoolean(workSchedulerDefaults.ENABLE_DURATION_BASED_FAIR_QUEUEING) ? durationBasedPolicy : slotBasedPolicy;
-// The service pod count is only used by duration based fair queueing
+const DEFAULT_TEST_POLICY: FairQueueingPolicy = getFairQueueingPolicy(
+  workSchedulerDefaults.FAIR_QUEUEING_POLICY, parseBoolean(workSchedulerDefaults.ENABLE_DURATION_BASED_FAIR_QUEUEING));
+// The service pod count is only used by the policies with a fast lane reserve. With
+// fair-share-fast-lane, a job with no measured duration may only run 2 work items plus a share of
+// half the slow work capacity, so a single pod would leave tests that take several of a new job's
+// work items at once with nothing.
 const DEFAULT_TEST_SCHEDULING_CONTEXT: Omit<SchedulingContext, 'logger'> = {
-  servicePodCount: 1,
+  servicePodCount: 10,
   slowWorkThresholdMs: Number(workSchedulerDefaults.SLOW_WORK_THRESHOLD_MS),
   fastLaneReserveFraction: Number(workSchedulerDefaults.FAST_LANE_RESERVE_FRACTION),
 };
 
+// The fair queueing policy getWorkFromDatabase reverts to (see setTestDefaultFairQueueingPolicy)
+let defaultPolicy = DEFAULT_TEST_POLICY;
 // The fair queueing policy and settings used by getWorkFromDatabase
 let testPolicy = DEFAULT_TEST_POLICY;
 let testSchedulingContext = DEFAULT_TEST_SCHEDULING_CONTEXT;
 
 /**
+ * Sets the fair queueing policy getWorkFromDatabase uses, and reverts to when
+ * setTestDurationBasedFairQueueing is called with no argument, for tests of a particular policy.
+ *
+ * @param policy - the policy, or undefined for the work-scheduler's default
+ */
+export function setTestDefaultFairQueueingPolicy(policy: FairQueueingPolicy = DEFAULT_TEST_POLICY): void {
+  defaultPolicy = policy;
+  testPolicy = policy;
+  testSchedulingContext = DEFAULT_TEST_SCHEDULING_CONTEXT;
+}
+
+/**
  * Enables duration based fair queueing for getWorkFromDatabase in tests, simulating the given
  * service pod count ("capacity") since there is no real k8s cluster to query, so tests can
- * exercise the fast lane reserve behavior. Reverts to the work-scheduler's default fair queueing
- * when called with no argument.
+ * exercise the fast lane reserve behavior. Reverts to the default fair queueing (the
+ * work-scheduler's, unless setTestDefaultFairQueueingPolicy chose another) when called with no
+ * argument.
  *
- * @param servicePodCount - the service pod count to simulate, or undefined to use the
- * work-scheduler's default fair queueing
+ * @param servicePodCount - the service pod count to simulate, or undefined to use the default
+ * fair queueing
  */
 export function setTestDurationBasedFairQueueing(servicePodCount?: number): void {
   if (servicePodCount === undefined) {
-    testPolicy = DEFAULT_TEST_POLICY;
+    testPolicy = defaultPolicy;
     testSchedulingContext = DEFAULT_TEST_SCHEDULING_CONTEXT;
   } else {
     testPolicy = durationBasedPolicy;

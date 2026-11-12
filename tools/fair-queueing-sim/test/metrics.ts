@@ -135,8 +135,22 @@ describe('metrics', function () {
     });
 
     it('summarizes sync requests and the run as a whole', function () {
-      expect(summary.sync).to.deep.equal({ jobs: 1, meanMakespanMs: 20 * MIN, maxMakespanMs: 20 * MIN });
+      // Bob's request took 20 minutes for 5 minutes of work
+      expect(summary.sync).to.deep.equal({
+        jobs: 1, unfinished: 0, meanMakespanMs: 20 * MIN, maxMakespanMs: 20 * MIN,
+        meanLatencyMs: 15 * MIN, p95LatencyMs: 15 * MIN, maxLatencyMs: 15 * MIN,
+      });
       expect(summary.overall).to.deep.equal({ meanSlowdown: 2.5, maxSlowdown: 4, meanWaitMs: 5 * MIN });
+    });
+
+    it('counts sync requests submitted but not finished as unfinished, and not ones never submitted', function () {
+      const r = run();
+      const { services } = r.jobs[1];
+      r.jobs.push(
+        { name: 'bob-late', user: 'bob', async: false, granules: 1, services, submitMs: 15 * MIN, endMs: null, status: 'running' },
+        { name: 'bob-never', user: 'bob', async: false, granules: 1, services, submitMs: 30 * MIN, endMs: null, status: 'not submitted' },
+      );
+      expect(summarize(r).sync.unfinished).to.equal(1);
     });
   });
 });

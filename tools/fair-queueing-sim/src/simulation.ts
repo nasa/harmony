@@ -123,6 +123,8 @@ export async function simulate(options: SimulationOptions): Promise<RunResult> {
   const decisions: DecisionRecord[] = [];
   const samples: Sample[] = [];
   const endTimes = new Map<string, { endMs: number; status: string }>();
+  // how long each work item's latest attempt ran, as its pod reports it to Harmony
+  const serviceDurations = new Map<number, number>();
 
   const harness = new Harness({
     runDir: options.runDir,
@@ -140,10 +142,11 @@ export async function simulate(options: SimulationOptions): Promise<RunResult> {
         });
       },
     },
+    serviceDurationOf: (workItemID): number | undefined => serviceDurations.get(workItemID),
   });
   await harness.install();
   const policyEntry = await loadPolicy(options.policy);
-  harness.usePolicy(policyEntry?.policy);
+  await harness.usePolicy(policyEntry);
   const sampler: PolicySampler = policyEntry?.sampler;
 
   const workload = new Workload(scenario);
@@ -167,7 +170,7 @@ export async function simulate(options: SimulationOptions): Promise<RunResult> {
         receiveLatencyMs: infra.podReceiveLatencyMs,
         jobFor: (jobID): SubmittedJob => jobsByID.get(jobID),
         onRunStart: (run): void => { runs.push(run); },
-        onRunEnd: (): void => {},
+        onRunEnd: (run): void => { serviceDurations.set(run.workItemID, run.endMs - run.startMs); },
       });
       servicePods.push(pod);
       pods.push(pod);
@@ -189,6 +192,12 @@ export async function simulate(options: SimulationOptions): Promise<RunResult> {
     },
   );
 
+  // jobs that are submitted once another job finishes (serial generators), by that job's name
+  const waitingFor = new Map<string, ResolvedScenario['jobs']>();
+  for (const spec of scenario.jobs) {
+    if (spec.after) waitingFor.set(spec.after, [...(waitingFor.get(spec.after) ?? []), spec]);
+  }
+
   // checks for newly finished jobs and stops the simulation when everything is done
   let submittedCount = 0;
   const checkJobs = async (): Promise<void> => {
@@ -198,6 +207,10 @@ export async function simulate(options: SimulationOptions): Promise<RunResult> {
     for (const row of finished) {
       if (!endTimes.has(row.jobID)) {
         endTimes.set(row.jobID, { endMs: engine.now(), status: row.status });
+        for (const spec of waitingFor.get(jobNames.get(row.jobID)) ?? []) {
+          // eslint-disable-next-line @typescript-eslint/no-use-before-define
+          engine.schedule(spec.afterDelayMs ?? 0, `submit ${spec.name}`, () => submit(spec));
+        }
       }
     }
     if (submittedCount === scenario.jobs.length && endTimes.size === scenario.jobs.length) {
@@ -229,7 +242,7 @@ export async function simulate(options: SimulationOptions): Promise<RunResult> {
     submittedCount += 1;
   };
   for (const spec of scenario.jobs) {
-    engine.schedule(spec.submitAtMs, `submit ${spec.name}`, () => submit(spec));
+    if (!spec.after) engine.schedule(spec.submitAtMs, `submit ${spec.name}`, () => submit(spec));
   }
 
   // periodic samples of the system state
@@ -309,7 +322,8 @@ export async function simulate(options: SimulationOptions): Promise<RunResult> {
       async: spec.async,
       granules: spec.granules,
       services: spec.steps.map((s) => serviceIDs[s.service]),
-      submitMs: spec.submitAtMs,
+      // when it was actually submitted, which for a job waiting on another depends on the run
+      submitMs: jobsByID.get(jobID)?.submittedAtMs ?? spec.submitAtMs,
       endMs: end?.endMs ?? null,
       status: end?.status ?? (jobsByID.has(jobID) ? JobStatus.RUNNING : 'not submitted'),
     };

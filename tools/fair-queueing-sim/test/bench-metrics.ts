@@ -17,9 +17,10 @@ const STORIES_DIR = path.resolve(__dirname, '..', 'scenarios', 'stories');
  */
 function summary(): Summary {
   return {
+    completed: true,
     endMs: 3_723_456.7,
     overall: { meanSlowdown: 1.234567, maxSlowdown: 2, meanWaitMs: 1000 },
-    sync: { jobs: 0, meanMakespanMs: null, maxMakespanMs: null },
+    sync: { jobs: 0, unfinished: 2, meanMakespanMs: null, maxMakespanMs: null },
     services: [
       { contendedFairness: 0.5, utilizationPct: 80, idleWhileReadyPodMs: 1_800_000 },
       { contendedFairness: null, utilizationPct: 60, idleWhileReadyPodMs: 1_800_000 },
@@ -83,6 +84,31 @@ describe('bench-metrics', function () {
       expect(metrics['sync.maxMakespan']).to.be.null;
       expect(metrics['job.alice.big.meanWait']).to.be.null;
     });
+
+    it('counts the sync requests the latency figures leave out because they hadn\'t finished', function () {
+      expect(metrics['sync.unfinished']).to.equal(2);
+    });
+
+    it('records whether the run finished all its work', function () {
+      expect(metrics.completed).to.equal(100);
+    });
+
+    describe('for a run that reached its maxDuration with work unfinished', function () {
+      const incomplete = extractMetrics({ ...summary(), completed: false });
+
+      it('records it as not completed', function () {
+        expect(incomplete.completed).to.equal(0);
+      });
+
+      it('has no simulated time, which is the time until every job finished', function () {
+        expect(incomplete.simulatedTime).to.be.null;
+      });
+
+      it('still records its other metrics', function () {
+        expect(incomplete['overall.meanSlowdown']).to.equal(1.2346);
+        expect(incomplete.fairness).to.equal(0.5);
+      });
+    });
   });
 
   describe('formatMetric', function () {
@@ -91,6 +117,8 @@ describe('bench-metrics', function () {
       expect(formatMetric(97.44, 'percent')).to.equal('97.4%');
       expect(formatMetric(0.354, 'podHours')).to.equal('0.35 pod-h');
       expect(formatMetric(1.026, 'ratio')).to.equal('1.03');
+      expect(formatMetric(3, 'count')).to.equal('3');
+      expect(formatMetric(0.4, 'count')).to.equal('0.4');
     });
   });
 
