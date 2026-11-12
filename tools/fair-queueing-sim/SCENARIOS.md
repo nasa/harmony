@@ -185,8 +185,8 @@ items take, and Bob's request finishes quickly.
 
 | | slot-based | duration-based | slot-based fair share | fair share fast lane |
 |---|---|---|---|---|
-| Fairness | 0.86 | 0.82 | 0.93 | 0.92 |
-| Bob's request, time to finish | 1m 51s | 1m 38s | 1m 48s | 1m 47s |
+| Fairness | 0.86 | 0.82 | 0.93 | 0.93 |
+| Bob's request, time to finish | 1m 51s | 1m 38s | 1m 48s | 1m 18s |
 
 **Question:** fairness here is measured in pods. Should a user with very short work items (Carol)
 count as well served when their work keeps moving, even with fewer pods?
@@ -202,7 +202,7 @@ finish late together.)
 
 | | slot-based | duration-based | slot-based fair share | fair share fast lane |
 |---|---|---|---|---|
-| Erin's job, times its minimum | 9.8× | 10.2× | 8.3× | 6.8× |
+| Erin's job, times its minimum | 9.8× | 10.2× | 8.3× | 6.7× |
 
 Fair share fast lane is better, but no policy gets Erin going promptly yet.
 
@@ -375,7 +375,7 @@ one-at-a-time user's requests each finish quickly, and pods stay busy.
 | Sync requests, latency (95% within) | 18.9s | 20.3s | 6.2s | 5.9s |
 | Sync requests, latency (average) | 7.2s | 7.4s | 2.7s | 2.5s |
 | Fairness | 0.23 | 0.23 | 0.86 | 0.93 |
-| The 8.5 minute user's share | 6.45 | 6.44 | 1.36 | 1.14 |
+| The 8.5 minute user's share | 6.45 | 6.44 | 1.36 | 1.13 |
 | One-at-a-time requests, times their minimum | 3.7× | 3.8× | 2.0× | 1.9× |
 | Pods busy | 97.8% | 97.8% | 97.0% | 96.8% |
 
@@ -434,9 +434,9 @@ moving.
 
 | | slot-based | duration-based | slot-based fair share | fair share fast lane |
 |---|---|---|---|---|
-| Sync requests, latency (95% within) | 22.1s | 25.6s | 12.8s | 9.4s |
+| Sync requests, latency (95% within) | 22.1s | 25.6s | 12.8s | 9.8s |
 | Fairness | 0.66 | 0.66 | 0.91 | 0.96 |
-| A mid-sized user's jobs, times their minimum | 7.1× | 7.1× | 4.7× | 5.1× |
+| A mid-sized user's jobs, times their minimum | 7.1× | 7.1× | 4.7× | 5.4× |
 | A small user's jobs, times their minimum | 4.2× | 4.2× | 1.5× | 1.3× |
 | Pods busy | 99.2% | 99.2% | 98.8% | 98.5% |
 
@@ -496,9 +496,9 @@ real incidents, such as a service taken over by one user, that should become sce
   `geoloco-one-user.yml`, 16 `trajectory-burst.yml`, 17 `slow-user-first.yml`). Each file's `description` and `goodOutcome` are the source
   of the situations and goals above, and its `benchmarks` list names the measures shown.
 - **The results come from** the committed benchmark records (`benchmarks/results/*.json`), as of
-  2026-11-11: 5 runs per scenario (seeds 101-105) for 1-12. Scenarios 13 (3 runs, seeds 101-103)
+  2026-11-12: 5 runs per scenario (seeds 101-105) for 1-12. Scenarios 13 (3 runs, seeds 101-103)
   and 14-17 (5 runs, seeds 101-105) aren't in the records; their results are from runs made
-  between 2026-11-09 and 2026-11-11 of code that makes the same decisions as the records'. Runs
+  between 2026-11-09 and 2026-11-12 of code that makes the same decisions as the records'. Runs
   with the same seed have the same random inputs - work item durations and when jobs are due -
   under every policy. That makes the workloads the same, with one exception: a user who waits for
   each request to finish before sending the next (the one-at-a-time user in 14) sends them at

@@ -301,6 +301,9 @@ interface NextJob {
   isAsync: boolean;
   // running work items if the (job, service) hasn't been measured yet, otherwise null
   unmeasuredRunning: number | null;
+  // one of the first batchSize jobs, which the batch is split between; the rest are only
+  // candidates for the sync and work-conserving passes
+  inBatch: boolean;
 }
 
 interface NextJobs {
@@ -317,7 +320,8 @@ interface NextJobs {
  * The jobs to work in priority order: getNextJobIdsDurationBased's selection (round robin by
  * user, users ranked by the expected runtime of their in-progress work for the service, a
  * user's sync jobs before their async ones, slow work excluded once the reserve is reached),
- * plus the new job limits and the service level estimate for unmeasured work.
+ * plus the new job limits and the service level estimate for unmeasured work. Beyond the first
+ * batchSize jobs, it also returns every sync job and each user's first job (see inBatch).
  *
  * @param tx - The database transaction
  * @param serviceID - The service ID
@@ -351,7 +355,11 @@ async function getNextJobs(
   // Eligible: measured slow work while there's slow work capacity, within the new job limits if
   // it's unmeasured work that's been running too long; measured fast work; and unmeasured work
   // within the new job limits (with no limit, as getNextJobIdsDurationBased does: everything
-  // while there's slow work capacity, otherwise only unmeasured work with nothing running)
+  // while there's slow work capacity, otherwise only unmeasured work with nothing running).
+  // Candidates: the first batchSize jobs, as getNextJobIdsDurationBased selects, plus every sync
+  // job and each user's first job. Batches are often a few work items, so without them a sync
+  // request ranked below the batch couldn't go first, and what fair share holds back from a user
+  // over their share would go back to them when the users below their share rank below the batch.
   const sql = `
     WITH ${classifiedCtes()},
     Eligible AS (
@@ -413,17 +421,22 @@ async function getNextJobs(
         R.is_slow,
         R.is_async,
         R.unmeasured_running,
+        R.user_row_num,
         ROW_NUMBER() OVER (
           ORDER BY R.user_row_num ASC, ur.expected_runtime ASC, ur.most_recent_worked ASC, R.last_worked ASC
         ) AS overall_row_num
       FROM RankedJobs R
       JOIN UserRank ur ON ur.username = R.username
-      ORDER BY overall_row_num
-      LIMIT :batchSize
+    ),
+    Candidates AS (
+      SELECT *
+      FROM Interleaved
+      WHERE overall_row_num <= :batchSize OR user_row_num = 1 OR NOT is_async
     )
-    SELECT uw.job_id, i.username, i.is_slow, i.is_async, i.unmeasured_running
+    SELECT uw.job_id, i.username, i.is_slow, i.is_async, i.unmeasured_running,
+      CASE WHEN i.overall_row_num <= :batchSize THEN 1 ELSE 0 END AS in_batch
     FROM user_work uw
-    JOIN Interleaved i
+    JOIN Candidates i
       ON i.job_id = uw.job_id
     WHERE uw.service_id = :serviceID
     ORDER BY i.overall_row_num
@@ -458,6 +471,7 @@ async function getNextJobs(
       isAsync: r.is_async === true || Number(r.is_async) === 1,
       unmeasuredRunning: r.unmeasured_running === null || r.unmeasured_running === undefined
         ? null : Number(r.unmeasured_running),
+      inBatch: Number(r.in_batch) === 1,
     })),
     slowRunningCount,
     unmeasuredRunningCount,
@@ -527,7 +541,7 @@ export const fairShareFastLanePolicy: FairQueueingPolicy = {
     // then split evenly across users, then across each user's jobs in priority order. Users are
     // shuffled for the same reason duration-based shuffles jobs: whoever comes last can use what
     // earlier users couldn't, so that shouldn't always be the same user.
-    const asyncJobs = jobs.filter((j) => j.isAsync);
+    const asyncJobs = jobs.filter((j) => j.isAsync && j.inBatch);
     const users = shuffleArray([...new Set(asyncJobs.map((j) => j.username))]);
     let remainingNumOfUsers = users.length;
     for (const user of users) {
