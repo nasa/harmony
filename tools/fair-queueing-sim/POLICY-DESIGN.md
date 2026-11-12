@@ -281,9 +281,13 @@ this file): fixes 2 and 5 have since been removed, and the others are always on.
    the mixed workload better but its 95th percentile sync latency 11% worse, in every seed.
    *Change (2026-11-12):* the candidates were the first batchSize jobs, as `duration-based`
    picks them, so with a small batch the users below their share could all rank outside it, and
-   what fair share held back went back to the user over theirs. Every user's first job (and every
-   sync job, for fix 8) is now a candidate too, though the batch is still split only between the
-   first batchSize; story 04's sync request -27% and its fairness +1.4% (RESULTS.md).
+   what fair share held back went back to the user over theirs. Every sync job and every user's
+   first job are now candidates too, though they're used differently. Sync jobs get the batch
+   before it's split (fix 8), so they take slots from it even when they rank outside the first
+   batchSize. The split between users still covers only the async jobs among the first
+   batchSize, so a user's first job outside them only gets what's left after the split, in the
+   work-conserving pass (first within its user's share, then without). Story 04's sync request
+   -27% and its fairness +1.4% (RESULTS.md).
 7. **Long-running work is slow before it finishes.** *Problem:* until a work item completes,
    fix 1 can't tell a 30 minute work item from a slow-to-start one. *Decision:* a (job, service)
    with a work item running longer than the threshold is slow from then on, and keeps fix 1's
