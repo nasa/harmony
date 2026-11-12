@@ -43,19 +43,28 @@ export function parseNumber(valueStr: string | number): number {
 }
 
 /**
- * Returns the parameter as parsed as an array of comma-separated values if
- * it was a string, or just returns the array if it's already parsed. Returns
- * an empty array if the parameter is null.
+ * Returns the parameter parsed as an array of comma-separated values. Accepts either a
+ * string or an array. By default array elements are also split on commas, since a
+ * URL-encoded comma (%2C) is not split by the query parser and may be coerced by OpenAPI
+ * validation into a single-element array such as ['G1-PROV,G2-PROV']. Returns an empty
+ * array if the parameter is null.
  * @param value - The parameter value to parse (either an array or a string)
+ * @param splitArrayValues - Whether to split array elements on commas. Pass false for
+ * values that may legitimately contain commas (e.g., labels), so that a URL-encoded comma
+ * or a comma within one of several repeated parameters is preserved.
  */
-export function parseMultiValueParameter(value: string[] | string): string[] {
+export function parseMultiValueParameter(
+  value: string[] | string,
+  splitArrayValues = true,
+): string[] {
   if (value === null || value === undefined) {
     return [];
   }
-  if (value instanceof Array) {
+  if (value instanceof Array && !splitArrayValues) {
     return value;
   }
-  return value.split(',').map((v) => v.trim());
+  const values = value instanceof Array ? value : [value];
+  return values.flatMap((v) => `${v}`.split(',').map((s) => s.trim()));
 }
 
 const geoJsonTemplate =

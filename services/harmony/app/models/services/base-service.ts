@@ -13,7 +13,7 @@ import { getJobForDisplay, jobStatusCache } from '../../util/job';
 import { getRequestMetric } from '../../util/metrics';
 import { defaultObjectStore } from '../../util/object-store';
 import { computeRequestChecksum } from '../../util/request-checksum';
-import { getRequestRoot, getRequestUrl } from '../../util/url';
+import { getJobRequestUrl, getRequestRoot } from '../../util/url';
 import DataOperation from '../data-operation';
 import HarmonyRequest from '../harmony-request';
 import { getIDForDuplicateJob, Job, JobStatus, statesToDefaultMessages } from '../job';
@@ -330,10 +330,10 @@ export default abstract class BaseService<ServiceParamType> {
       }
     }
 
-    const job = this._createJob(getRequestUrl(req));
+    const labels = req.body.label || [];
+    const job = this._createJob(getJobRequestUrl(req, labels));
     job.request_checksum = requestChecksum;
-    const labels = req.body.label;
-    job.labels = labels || [];
+    job.labels = labels;
 
     await this._createAndSaveWorkflow(job);
 
