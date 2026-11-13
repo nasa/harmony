@@ -561,9 +561,29 @@ export function buildDeployerJobManifest(
       backoffLimit: 0,
       ttlSecondsAfterFinished: 60,
       template: {
+        metadata: {
+          annotations: {
+            // Keep the cluster autoscaler from draining the node out from under the deploy
+            'cluster-autoscaler.kubernetes.io/safe-to-evict': 'false',
+          },
+        },
         spec: {
           restartPolicy: 'Never',
           serviceAccountName: 'harmony-deployer',
+          // Avoid spot nodes, which can be interrupted mid-deploy
+          affinity: {
+            nodeAffinity: {
+              requiredDuringSchedulingIgnoredDuringExecution: {
+                nodeSelectorTerms: [{
+                  matchExpressions: [{
+                    key: 'eks.amazonaws.com/capacityType',
+                    operator: 'In',
+                    values: ['ON_DEMAND'],
+                  }],
+                }],
+              },
+            },
+          },
           containers: [
             {
               name: 'deployer',
