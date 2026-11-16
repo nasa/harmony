@@ -2,6 +2,14 @@
 Any changes to the environment variables will be documented in this file in chronological
 order with the most recent changes first.
 
+## 2026-11-16
+### Added
+- USER_WORK_UPDATER_BATCH_SIZE - cron service: the number of jobs the user work updater looks up
+  and processes at a time (default 100). Each job is still recalculated in its own transaction.
+- USER_WORK_UPDATER_RECHECK_MINUTES - cron service: the user work updater skips jobs whose counts
+  it recalculated within this many minutes (default 15), so jobs that are just waiting to be worked
+  aren't recalculated every run. 0 recalculates them every run.
+
 ## 2026-11-10
 ### Changed
 - EXAMPLE_SERVICES - harmony: now defaults to `false` (was `true`), and the example HTTP backend
