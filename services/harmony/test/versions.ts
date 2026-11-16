@@ -38,6 +38,7 @@ describe('Versions endpoint', function () {
           'sds/trajectory-subsetter',
           'asdc/imagenator_l2',
           'asdc/imagenator_l3',
+          'asdc/compositor',
           'sds/HyBIG',
           'sds/HOSS-geographic',
           'sds/HOSS-projection-gridded',
