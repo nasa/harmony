@@ -2,12 +2,13 @@ import { expect } from 'chai';
 import { describe, it } from 'mocha';
 
 import { truncateAll } from '../../../../packages/util/test/helpers/db';
+import { slotBasedPolicy } from '../../app/backends/workflow-orchestration/fair-queueing-policy';
 import { JobRecord } from '../../app/models/job';
 import UserWork from '../../app/models/user-work';
 import { WorkItemRecord } from '../../app/models/work-item-interface';
 import db from '../../app/util/db';
 import { makePartialJobRecord, rawSaveJob } from '../helpers/jobs';
-import { setTestDurationBasedFairQueueing } from '../helpers/queue';
+import { setTestDefaultFairQueueingPolicy, setTestDurationBasedFairQueueing } from '../helpers/queue';
 import hookServersStartStop from '../helpers/servers';
 import { populateUserWorkFromWorkItems } from '../helpers/user-work';
 import { getWorkForService, makePartialWorkItemRecord, rawSaveWorkItem } from '../helpers/work-items';
@@ -68,6 +69,10 @@ const workItemData = [
 
 describe('Fair Queueing', function () {
   hookServersStartStop({ USE_EDL_CLIENT_APP: true });
+  // slot based fair queueing, and duration based where a test enables it, whatever the
+  // work-scheduler's default
+  before(() => setTestDefaultFairQueueingPolicy(slotBasedPolicy));
+  after(() => setTestDefaultFairQueueingPolicy());
 
   describe('When work is requested for a service and no work items are currently running', function () {
     const jobRecords = jobData.map(makePartialJobRecord);

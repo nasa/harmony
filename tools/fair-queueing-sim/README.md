@@ -5,9 +5,18 @@ developed and compared on exactly the same workloads. It runs Harmony's **real**
 work item update code against a real (sqlite) database, with simulated service pods and a virtual
 clock, so hours of activity simulate in seconds.
 
-It comes with Harmony's two policies: `slot-based`, the default, and `duration-based`, which
-Harmony uses when `ENABLE_DURATION_BASED_FAIR_QUEUEING` is true. Policies added to `src/policies/`
-are for simulation only until they're [promoted](#6-promote-it-to-production).
+It comes with Harmony's three policies, which the work-scheduler's `FAIR_QUEUEING_POLICY` selects
+between: `slot-based`, the default, which every production service runs today; `duration-based`
+(the fast lane), which isn't used in production; and `fair-share-fast-lane`, built on
+`duration-based`. It also has `slot-based-fair-share`, `slot-based` plus a fair share rule and
+sync requests first, a smaller candidate that needs no work item durations. Policies added to
+`src/policies/` are for simulation only until they're [promoted](#6-promote-it-to-production).
+
+**`fair-share-fast-lane` (called `adaptive-fast-lane` until 2026-11-10) has been chosen to replace
+`slot-based`**, and is in Harmony
+(`FAIR_QUEUEING_POLICY=fair-share-fast-lane`; the default is still `slot-based`).
+[RESULTS.md](RESULTS.md) records the improvement over the current policy and how to reproduce it;
+[POLICY-DESIGN.md](POLICY-DESIGN.md) explains the design.
 
 - [Setup](#setup)
 - [Quick start](#quick-start)
@@ -158,7 +167,16 @@ Add it to `loadPolicies` in `src/policies/index.ts`, and describe it in `POLICY_
   catalog. The catalog's list is what gets recorded as a run's settings, so keep it complete.
 - **Schema changes**: add a real migration to `db/migrations/` and the same change to
   `db/db.sql` (the simulator builds its database from `db.sql`), so the migration you ship is the
-  one you tested.
+  one you tested. While experimenting, a `loadPolicies` entry's optional `setup` can make the
+  change instead, in the simulator's database only.
+- **Learning from completed work items**: the policy interface only covers scheduling. A
+  `loadPolicies` entry's optional `onWorkItemCompleted` is called, in the simulator only, in the
+  work-updater's transaction whenever a work item finishes. `fair-share-fast-lane` once used it to
+  keep its own duration estimates for two fixes that were never promoted, and have been removed. A
+  policy that needs it can't ship until the hook exists in Harmony - see
+  [step 6](#6-promote-it-to-production).
+- **Sampling**: an optional `sampler` records policy specific state over time (e.g. how many
+  slow work items are running) for the run's report.
 
 ### 3. Iterate against the baseline
 
@@ -187,6 +205,9 @@ the range in brackets.
 - **vs slot-based** compares with the baseline, `slot-based`, seed by seed. Runs with the same
   seed have the same work item durations, so **better (or worse) in 5/5 seeds** is a real
   difference and a mixed count is noise.
+- **vs &lt;policy&gt;** compares, the same way, with each policy listed before it in `--policies`
+  (or the suite's `policies`), e.g. `fair-share-fast-lane` with `duration-based`, the policy it
+  improves on.
 - **vs recorded** compares with the policy's own recorded results: what your changes since then
   did.
 
@@ -224,30 +245,45 @@ scenarios/stories/*.yml --seeds 101,102,103` checks them and writes up the evide
 ### 6. Promote it to production
 
 In production the work-scheduler picks the policy in `processSchedulerQueue`
-(`services/work-scheduler/app/workers/scheduler.ts`) from `ENABLE_DURATION_BASED_FAIR_QUEUEING`,
-and passes it to `getWorkItemsFromDatabase` along with the service's pod count and the fast lane
-settings. The simulator replaces that choice with the policy being simulated. To ship a policy:
+(`services/work-scheduler/app/workers/scheduler.ts`) from `FAIR_QUEUEING_POLICY`
+(`getFairQueueingPolicy` in `fair-queueing-policy.ts`), and passes it to
+`getWorkItemsFromDatabase` along with the service's pod count and the fast lane settings. The
+simulator replaces that choice with the policy being simulated. `fair-share-fast-lane` was promoted
+this way. To ship a policy:
 
-1. **Move it into Harmony**, into or next to
-   `services/harmony/app/backends/workflow-orchestration/fair-queueing-policy.ts`, and fix its
-   imports. Import it from there in `src/policies/index.ts`, so the simulator benchmarks the code
-   that ships, not a copy.
-2. **Make it selectable, defaulting to the current policy.** Extend the choice in
-   `processSchedulerQueue`, e.g. with a `FAIR_QUEUEING_POLICY` setting, and add it and the
-   policy's own settings to `services/work-scheduler/env-defaults`. Switching back is then a
-   configuration change, which is the rollback.
-3. **Check what it needs and stores.** The interface only covers scheduling, so a policy that
-   learns from completed work items also needs a hook in the work-updater, which means extending
-   the interface. Policies that share `user_work` columns misread each other's values after a
-   switch: `duration-based` keeps a lifetime mean in `average_duration`, so a policy that wants,
-   say, a moving average needs its own column (a migration in `db/migrations/` plus `db/db.sql`)
-   or a settling period after a switch.
+1. **Move it into Harmony**, next to
+   `services/harmony/app/backends/workflow-orchestration/fair-queueing-policy.ts` (as
+   `fair-share-fast-lane-policy.ts` is), and fix its imports. Import it from there in
+   `src/policies/`, so the simulator benchmarks the code that ships, not a copy. Anything only the
+   simulator can provide - `setup`, `onWorkItemCompleted`, a sampler - stays in `src/policies/`.
+2. **Make it selectable, defaulting to the current policy.** Add it to `FAIR_QUEUEING_POLICIES` in
+   `fair-queueing-policy.ts` and its name to the values `FAIR_QUEUEING_POLICY` accepts
+   (`services/work-scheduler/app/util/env.ts`), and add its own settings to
+   `services/work-scheduler/env-defaults`, which the work-scheduler loads into `process.env`.
+   Take the catalog's defaults from there with `workSchedulerDefault`, as `fair-share-fast-lane`'s
+   are. Switching back is then a configuration change, which is the rollback. **Keep the old
+   policy selectable**, both for the rollback and so it can still be simulated: the simulator runs
+   Harmony's own `slotBasedPolicy` as its baseline, `slot-based`, and the improvement in
+   [RESULTS.md](RESULTS.md) is measured against it.
+3. **Check what it needs and stores.** The interface only covers scheduling, so a policy with an
+   `onWorkItemCompleted` hook (simulator only) needs that hook added to the work-updater, which
+   means extending the interface - or, as with `fair-share-fast-lane`'s moving average and
+   pod-reported durations, leaving what needs it out of production. Policies that share
+   `user_work` columns misread each other's values after a switch: `duration-based` keeps a
+   lifetime mean in `average_duration`, so a policy that wants, say, a moving average needs its
+   own column, as `fair-share-fast-lane`'s `adaptive_duration` was, or a settling period after a
+   switch. Replace any `setup` schema
+   change with a migration in `db/migrations/` plus `db/db.sql`.
 4. **Test it** like any production change: unit tests for the policy, and a test of its selection
    in `services/work-scheduler/test/scheduler.ts`.
 5. **Re-record the benchmarks** with `npm run sim -- bench --record`. The policy is production code
    now, so the records' code hashes change. The numbers should be unchanged.
 6. **Roll it out** with the default unchanged. Enable it in UAT, compare with production using the
-   dashboard's work item duration metrics, then enable it in production.
+   dashboard's work item duration metrics, then enable it in production. Production runs
+   `slot-based` everywhere, so a policy built on `duration-based` is also the first time
+   production runs duration-aware scheduling - its queries, its advisory lock and the fast lane
+   reserve. Trying plain `duration-based` in UAT first separates "that machinery works" from "the
+   policy helps". Rolling back means switching back to `slot-based`.
 
 ## Scenarios and policies
 
@@ -267,18 +303,26 @@ settings. The simulator replaces that choice with the policy being simulated. To
 | `scenarios/stories/11-new-slow-pair.yml` | two users start new slow jobs together, and fast work arrives five minutes later |
 | `scenarios/stories/12-occasional-long-items.yml` | a job that's fast on average but has occasional long work items, alongside a slow job |
 | `scenarios/mixed-workload.yml` | six hours of random arrivals from five users across a two step chain (several minutes) |
+| `scenarios/production/hoss-saturated.yml` | hoss under a permanent backlog, built from the production dashboard's stats: 125 pods, 16 users, work items of seconds, a user whose work items average 8.5 minutes, sync requests and a one-at-a-time user (about 2 minutes a run) |
+| `scenarios/production/geoloco-one-user.yml` | geoloco as production has it, one user keeping 125 pods busy with work items of about 2 minutes, then a newcomer, small jobs and sync requests |
+| `scenarios/production/trajectory-burst.yml` | a trajectory-subsetter burst on 125 pods: 11 users from its stats, including users whose work items average minutes, with a heavy tail |
+| `scenarios/production/slow-user-first.yml` | an idle 125 pod service, a user with 30-60 minute work items, then fast work and sync requests 5 minutes later - the case the fast lane reserve exists for |
 
-The stories are the benchmark suite. To make a scenario, copy one; the format is in
+The stories are the benchmark suite. [SCENARIOS.md](SCENARIOS.md) sets out what each one models, its
+goal and how the policies do, for review. To make a scenario, copy one; the format is in
 [REFERENCE.md](REFERENCE.md#scenario-format).
 
 | Policy | What it does |
 |---|---|
-| `slot-based` | Harmony's default algorithm: jobs interleaved round robin by user, users with the fewest running work items for the service first, with each batch split evenly per job |
-| `duration-based` | Harmony's algorithm when `ENABLE_DURATION_BASED_FAIR_QUEUEING` is true: users ranked by the expected runtime of their running work for the service, and a fast lane reserve |
+| `slot-based` | Harmony's default algorithm, and what every production service runs: jobs interleaved round robin by user, users with the fewest running work items for the service first, with each batch split evenly per job |
+| `duration-based` | Harmony's algorithm when `FAIR_QUEUEING_POLICY` is `duration-based` (not set in production): users ranked by the expected runtime of their running work for the service, and a fast lane reserve |
+| `slot-based-fair-share` | `slot-based`, plus two fixes that need no work item durations: while another user below their fair share of the pods has work ready, each user is held to theirs (so a user whose work items take minutes can't accumulate the service), and sync requests get each batch first and are never held back. No reserve, durations, schema change or work-updater hook |
+| `fair-share-fast-lane` | **The candidate chosen for production**, Harmony's algorithm when `FAIR_QUEUEING_POLICY` is `fair-share-fast-lane` (not set in production yet). `duration-based`, with a 10% reserve instead of 30%, plus fixes for what the stories show it getting wrong: a limit on work for jobs with no measured duration yet, estimates for new jobs from the service's other jobs, batches split per user, every user held to a fair share of the pods while others wait, unmeasured work treated as slow (and still limited) once it has run past the threshold, and sync requests first, never held back by fair share. It uses only the durations Harmony already keeps. See [RESULTS.md](RESULTS.md) |
 
 **The fast lane reserve leaves pods idle on purpose.** Slow work may never use more than
 `1 - FAST_LANE_RESERVE_FRACTION` of a service's pods, even when nothing else is waiting, because
 Harmony has seen slow jobs take every pod and leave arriving fast jobs unworked. Idle pods when
 only slow work exists (story 07) are the cost of that guarantee, not a bug to fix.
 
-Policy settings and fuller descriptions are in [REFERENCE.md](REFERENCE.md#policies).
+Policy settings and fuller descriptions are in [REFERENCE.md](REFERENCE.md#policies), and the reasoning
+and evidence behind `fair-share-fast-lane`'s design in [POLICY-DESIGN.md](POLICY-DESIGN.md).

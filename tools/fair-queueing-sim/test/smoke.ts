@@ -58,4 +58,40 @@ describe('smoke test', function () {
       });
     });
   }
+
+  describe('with a serial generator', function () {
+    const dir = path.join(os.tmpdir(), `fq-sim-serial-${process.pid}`);
+    let summary: Summary;
+    before(async function () {
+      fs.rmSync(dir, { recursive: true, force: true });
+      fs.mkdirSync(dir, { recursive: true });
+      const file = path.join(dir, 'serial.yml');
+      // YAML is a superset of JSON
+      fs.writeFileSync(file, JSON.stringify({
+        name: 'serial',
+        maxDuration: '1h',
+        services: [{ name: 'svc', pods: 2 }],
+        generators: [{
+          name: 'one-at-a-time', user: 'carol', every: '30s', count: 3, serial: true,
+          job: { granules: 2, steps: [{ service: 'svc', duration: '10s' }] },
+        }],
+      }));
+      await runChild({ file, scenarioName: 'serial', policy: 'slot-based', runDir: path.join(dir, 'run'), sets: {} });
+      summary = JSON.parse(fs.readFileSync(path.join(dir, 'run', 'summary.json'), 'utf8'));
+    });
+
+    after(function () {
+      fs.rmSync(dir, { recursive: true, force: true });
+    });
+
+    it('submits each job 30 seconds after the one before finishes', function () {
+      expect(summary.completed).to.be.true;
+      const { jobs } = summary;
+      expect(jobs.map((j) => j.name)).to.deep.equal(['one-at-a-time-1', 'one-at-a-time-2', 'one-at-a-time-3']);
+      expect(jobs[0].submitMs).to.equal(0);
+      for (let i = 1; i < jobs.length; i++) {
+        expect(jobs[i].submitMs, jobs[i].name).to.equal(jobs[i - 1].submitMs + jobs[i - 1].makespanMs + 30_000);
+      }
+    });
+  });
 });

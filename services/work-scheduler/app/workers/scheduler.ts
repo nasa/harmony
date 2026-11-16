@@ -4,9 +4,10 @@ import { LRUCache } from 'lru-cache';
 import { Logger } from 'winston';
 
 
+import { getFairQueueingPolicy } from '../../../harmony/app/backends/workflow-orchestration/fair-queueing-policy';
 import {
-  durationBasedPolicy, slotBasedPolicy,
-} from '../../../harmony/app/backends/workflow-orchestration/fair-queueing-policy';
+  fairShareFastLanePolicy, fairShareFastLaneSettings,
+} from '../../../harmony/app/backends/workflow-orchestration/fair-share-fast-lane-policy';
 import { QUERY_CMR_SERVICE_REGEX } from '../../../harmony/app/backends/workflow-orchestration/util';
 import {
   getWorkItemsFromDatabase, revertQueuedWorkItemsToReady,
@@ -238,7 +239,7 @@ export async function processSchedulerQueue(
     reqLogger.debug(`Work size count is ${workSize} based on service pod count of ${servicePodCount}, message count ${messageCount}, scheduler pod count ${schedulerPodCount}, numMessagesReceived ${numMessagesReceived}, and scaleFactor ${scaleFactor} for queue ${queueUrl}`);
     reqLogger.debug(`Attempting to retrieve ${workSize} work items for queue ${queueUrl}`);
 
-    const fairQueueingPolicy = env.enableDurationBasedFairQueueing ? durationBasedPolicy : slotBasedPolicy;
+    const fairQueueingPolicy = getFairQueueingPolicy(env.fairQueueingPolicy, env.enableDurationBasedFairQueueing);
     const schedulingContext = {
       servicePodCount,
       slowWorkThresholdMs: env.slowWorkThresholdMs,
@@ -283,7 +284,7 @@ export async function processSchedulerQueue(
     durationMs = new Date().getTime() - batchStartTime;
     logger.debug('timing.PSQ.batchProcessing.end', { durationMs });
 
-    reqLogger.info(`Sent ${queuedCount} work items to queue ${queueUrl}`);
+    reqLogger.info(`Sent ${queuedCount} work items to queue ${queueUrl} (${fairQueueingPolicy.name} fair queueing)`);
 
     reqLogger.info('Sending delete message to scheduler queue');
 
@@ -299,7 +300,12 @@ export async function processSchedulerQueue(
 
 export default class Scheduler implements Worker {
   async start(repeat = true): Promise<void> {
-    logger.debug('Starting scheduler');
+    const { name } = getFairQueueingPolicy(env.fairQueueingPolicy, env.enableDurationBasedFairQueueing);
+    // its settings are read on every scheduling pass, so check them now: an invalid one would
+    // otherwise fail every pass, and the environment can't change while the scheduler runs
+    if (name === fairShareFastLanePolicy.name) fairShareFastLaneSettings();
+    logger.info(`Starting scheduler with ${name} fair queueing (FAIR_QUEUEING_POLICY=${env.fairQueueingPolicy}, `
+      + `ENABLE_DURATION_BASED_FAIR_QUEUEING=${env.enableDurationBasedFairQueueing})`);
     while (repeat) {
       try {
         await processSchedulerQueue(logger);

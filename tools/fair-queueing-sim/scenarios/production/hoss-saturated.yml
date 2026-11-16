@@ -1,0 +1,78 @@
+# Production scenario: hoss, saturated. Built from the admin dashboard's stats for hoss
+# (services/hoss, 2026-10-29 to 2026-11-05; durations from 2026-11-03 on), with users anonymised.
+#
+# What comes from the data:
+# - Work item durations: hoss's median is 4.7 s, mean 9.9 s, 95th percentile 41.5 s, longest
+#   48 min, and almost no work item takes under a second. A lognormal with sigma 1.32 matches the
+#   service as a whole; each user here gets a lognormal with sigma 0.7 (their own spread is
+#   narrower than the service's, which mixes users) and a median set so its mean is that user's
+#   average (median = mean / 1.28).
+# - The users and their relative volumes: the top users' shares of work items and pod-time, and
+#   their average durations (big-a 11.3 s, big-b 31.3 s, long-items 509 s, the mid users 3-8 s),
+#   with the rest - many small users with ~3 s work items - represented by three small users.
+# - Saturation: hoss ran ~128 pods busy with ~200,000 work items ready, so the offered work here is
+#   ~1.6 times what 125 pods can do in the two hours.
+#
+# What's assumed (the dashboard doesn't record it): which users are active at the same time, and
+# the size and timing of their jobs. The live snapshot had 6 users with work at once; here 15 are
+# active, so fairness between many users is exercised. The sync request rate (one a minute on
+# average) and the one-at-a-time user are illustrative.
+name: hoss-saturated
+description: >-
+  A two hour slice of hoss under a permanent backlog: 125 pods, two big users, a user whose work
+  items average 8.5 minutes, eight mid-sized users submitting jobs every 20 minutes or so, three
+  small users, a stream of 1 granule sync requests, and a user who sends single granule async
+  requests one at a time. Work items take seconds, like production's.
+goodOutcome: >-
+  Sync requests start within seconds (latency under 10 seconds), every user with work ready gets
+  an equal share of pod time however long their work items take (contended fairness near 1.0,
+  including long-items not taking more than its share), the one-at-a-time user's requests each
+  finish quickly, and pods stay busy.
+benchmarks:
+  - metric: sync.p95Latency
+    note: production's target is under 10 seconds of latency for sync requests
+  - metric: sync.meanLatency
+    note: production's target is under 10 seconds of latency for sync requests
+  - metric: fairness
+    note: equal pod time for every user with work ready
+  - metric: user.long-items.fairShare
+    better: lower
+    note: the user with 8.5 minute work items shouldn't hold more than an equal share of the pods (1.0)
+  - metric: user.one-at-a-time.meanSlowdown
+    note: a user waiting on each single granule request before sending the next
+  - metric: utilization
+    note: hoss is saturated, so pods should stay busy
+seed: 2026
+maxDuration: 2h
+env:
+  QUEUE_LONG_POLLING_WAIT_TIME_SEC: 3
+services:
+  - name: hoss
+    pods: 125
+jobs:
+  # the two big users each start with a large backlog
+  - { name: big-a-backlog, user: big-a, granules: 20000, steps: [{ service: hoss, duration: { dist: lognormal, median: 8.8s, sigma: 0.7 } }] }
+  - { name: big-b-backlog, user: big-b, granules: 6000, steps: [{ service: hoss, duration: { dist: lognormal, median: 24s, sigma: 0.7 } }] }
+  # 8.5 minute average work items - under the 10 minute slow threshold, so not "slow"
+  - { name: long-items-backlog, user: long-items, granules: 1000, steps: [{ service: hoss, duration: { dist: lognormal, median: 398s, sigma: 0.7 } }] }
+generators:
+  # the big users keep adding work
+  - { name: big-a, user: big-a, start: 15m, every: 15m, job: { granules: 2000, steps: [{ service: hoss, duration: { dist: lognormal, median: 8.8s, sigma: 0.7 } }] } }
+  - { name: big-b, user: big-b, start: 20m, every: 20m, job: { granules: 1000, steps: [{ service: hoss, duration: { dist: lognormal, median: 24s, sigma: 0.7 } }] } }
+  # mid-sized users: 500 granule jobs every 20 minutes on average, average work items 3-8 s
+  - { name: mid-1, user: mid-1, start: 1m, every: { dist: exponential, mean: 20m }, job: { granules: 500, steps: [{ service: hoss, duration: { dist: lognormal, median: 3.8s, sigma: 0.7 } }] } }
+  - { name: mid-2, user: mid-2, start: 4m, every: { dist: exponential, mean: 20m }, job: { granules: 500, steps: [{ service: hoss, duration: { dist: lognormal, median: 6.5s, sigma: 0.7 } }] } }
+  - { name: mid-3, user: mid-3, start: 7m, every: { dist: exponential, mean: 20m }, job: { granules: 500, steps: [{ service: hoss, duration: { dist: lognormal, median: 3.8s, sigma: 0.7 } }] } }
+  - { name: mid-4, user: mid-4, start: 10m, every: { dist: exponential, mean: 20m }, job: { granules: 500, steps: [{ service: hoss, duration: { dist: lognormal, median: 4.3s, sigma: 0.7 } }] } }
+  - { name: mid-5, user: mid-5, start: 13m, every: { dist: exponential, mean: 20m }, job: { granules: 500, steps: [{ service: hoss, duration: { dist: lognormal, median: 4.4s, sigma: 0.7 } }] } }
+  - { name: mid-6, user: mid-6, start: 16m, every: { dist: exponential, mean: 20m }, job: { granules: 500, steps: [{ service: hoss, duration: { dist: lognormal, median: 4.5s, sigma: 0.7 } }] } }
+  - { name: mid-7, user: mid-7, start: 19m, every: { dist: exponential, mean: 20m }, job: { granules: 500, steps: [{ service: hoss, duration: { dist: lognormal, median: 3.4s, sigma: 0.7 } }] } }
+  - { name: mid-8, user: mid-8, start: 22m, every: { dist: exponential, mean: 20m }, job: { granules: 500, steps: [{ service: hoss, duration: { dist: lognormal, median: 2.5s, sigma: 0.7 } }] } }
+  # the many small users, ~3 s work items
+  - { name: small-1, user: small-1, start: 2m, every: { dist: exponential, mean: 10m }, job: { granules: { min: 20, max: 100 }, steps: [{ service: hoss, duration: { dist: lognormal, median: 2.3s, sigma: 0.7 } }] } }
+  - { name: small-2, user: small-2, start: 5m, every: { dist: exponential, mean: 10m }, job: { granules: { min: 20, max: 100 }, steps: [{ service: hoss, duration: { dist: lognormal, median: 2.3s, sigma: 0.7 } }] } }
+  - { name: small-3, user: small-3, start: 8m, every: { dist: exponential, mean: 10m }, job: { granules: { min: 20, max: 100 }, steps: [{ service: hoss, duration: { dist: lognormal, median: 2.3s, sigma: 0.7 } }] } }
+  # 1 granule sync requests, one a minute on average
+  - { name: viewer, user: viewer, start: 30s, every: { dist: exponential, mean: 1m }, until: 115m, job: { async: false, granules: 1, steps: [{ service: hoss, duration: { dist: lognormal, median: 3.6s, sigma: 0.7 } }] } }
+  # a user who sends single granule async requests one at a time, 5 seconds after each finishes
+  - { name: one-at-a-time, user: one-at-a-time, start: 3m, every: 5s, count: 200, serial: true, job: { granules: 1, steps: [{ service: hoss, duration: { dist: lognormal, median: 3.6s, sigma: 0.7 } }] } }
