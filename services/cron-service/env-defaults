@@ -17,6 +17,15 @@ USER_WORK_UPDATER_CRON="*/3 * * * *" # every 3 minutes
 # ready and running counts for a job to be recalculated
 USER_WORK_EXPIRATION_MINUTES=3
 
+# The number of jobs the user work updater looks up and processes at a time. Each job is
+# recalculated in its own transaction, so this doesn't change how long a job stays locked.
+USER_WORK_UPDATER_BATCH_SIZE=100
+
+# A job whose counts the user work updater recalculated within this many minutes is skipped, even
+# if it still hasn't been worked. Such jobs are usually just waiting their turn, and recalculating
+# thousands of them every run delays work item updates. 0 recalculates them every run.
+USER_WORK_UPDATER_RECHECK_MINUTES=15
+
 # The cron schedule for deleting old rows from the user_work_history table
 USER_WORK_HISTORY_REAPER_CRON="23 * * * *" # every hour
 

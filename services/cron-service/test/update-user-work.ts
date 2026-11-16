@@ -11,6 +11,17 @@ import * as updateUserWorkMod from '../app/cronjobs/update-user-work';
 import { Context } from '../app/util/context';
 import env from '../app/util/env';
 
+/**
+ * Returns a date older than the 1 hour user work expiration used in these tests
+ *
+ * @returns a date two hours ago
+ */
+function twoHoursAgo(): Date {
+  const pastDate = new Date();
+  pastDate.setHours(pastDate.getHours() - 2);
+  return pastDate;
+}
+
 describe('UserWorkUpdater', () => {
   let ctx: Context;
   let loggerInfoStub: sinon.SinonStub;
@@ -40,6 +51,9 @@ describe('UserWorkUpdater', () => {
     deleteUserWorkForJobStub = sinon.stub(userWork, 'deleteUserWorkForJob').resolves();
 
     env.userWorkExpirationMinutes = 60;
+    env.userWorkUpdaterBatchSize = 100;
+    env.userWorkUpdaterRecheckMinutes = 15;
+    updateUserWorkMod.resetRecentlyRecalculatedJobs();
   });
 
   afterEach(() => {
@@ -58,6 +72,9 @@ describe('UserWorkUpdater', () => {
     const error = new Error('Test error');
 
     it('should log errors when updateUserWork fails', async () => {
+      const job = buildJob({});
+      await job.save(db);
+      await createUserWorkRecord({ job_id: job.jobID, ready_count: 1, running_count: 0, last_worked: twoHoursAgo() }).save(db);
       trxStub = sinon.stub(db, 'transaction').rejects(error);
       loggerErrorStub.reset();
 
@@ -200,6 +217,67 @@ describe('UserWorkUpdater', () => {
       expect(recalculateCountsStub.callCount).to.equal(0);
 
       expect(loggerWarnStub.calledOnceWith(`Removing user_work rows for job ${job1.jobID} with status ${job1.status}`)).to.be.true;
+    });
+
+    it('should skip jobs it recently recalculated', async () => {
+      const job1 = buildJob({});
+      await job1.save(db);
+      await createUserWorkRecord({ job_id: job1.jobID, ready_count: 1, running_count: 0, last_worked: twoHoursAgo() }).save(db);
+
+      await updateUserWorkMod.updateUserWork(ctx);
+      await updateUserWorkMod.updateUserWork(ctx);
+
+      expect(recalculateCountsStub.callCount).to.equal(1);
+      expect(loggerInfoStub.lastCall.args[0]).to.equal('Finished updating user work counts for 0 jobs');
+      expect(loggerInfoStub.lastCall.args[1].skippedCount).to.equal(1);
+    });
+
+    it('should recalculate jobs again once the recheck interval has passed', async () => {
+      env.userWorkUpdaterRecheckMinutes = 0;
+      const job1 = buildJob({});
+      await job1.save(db);
+      await createUserWorkRecord({ job_id: job1.jobID, ready_count: 1, running_count: 0, last_worked: twoHoursAgo() }).save(db);
+
+      await updateUserWorkMod.updateUserWork(ctx);
+      await updateUserWorkMod.updateUserWork(ctx);
+
+      expect(recalculateCountsStub.callCount).to.equal(2);
+    });
+
+    it('should process all of the jobs in batches', async () => {
+      env.userWorkUpdaterBatchSize = 2;
+      const jobIDs = [];
+      for (let i = 0; i < 5; i++) {
+        const job = buildJob({});
+        await job.save(db);
+        await createUserWorkRecord({ job_id: job.jobID, ready_count: 1, running_count: 0, last_worked: twoHoursAgo() }).save(db);
+        jobIDs.push(job.jobID);
+      }
+
+      await updateUserWorkMod.updateUserWork(ctx);
+
+      const recalculatedIDs = recalculateCountsStub.getCalls().map((c) => c.args[1]);
+      expect(recalculatedIDs).to.have.members(jobIDs);
+      expect(loggerInfoStub.lastCall.args[0]).to.equal('Finished updating user work counts for 5 jobs');
+    });
+
+    it('should not process jobs that were worked while earlier batches were being processed', async () => {
+      env.userWorkUpdaterBatchSize = 1;
+      const job1 = buildJob({});
+      await job1.save(db);
+      const job2 = buildJob({});
+      await job2.save(db);
+      await createUserWorkRecord({ job_id: job1.jobID, ready_count: 1, running_count: 0, last_worked: twoHoursAgo() }).save(db);
+      await createUserWorkRecord({ job_id: job2.jobID, ready_count: 1, running_count: 0, last_worked: twoHoursAgo() }).save(db);
+
+      // whichever job is processed first, the other one gets worked in the meantime
+      recalculateCountsStub.callsFake(async (tx, jobID: string) => {
+        await tx(userWork.default.table).whereNot({ job_id: jobID }).update({ last_worked: new Date() });
+      });
+
+      await updateUserWorkMod.updateUserWork(ctx);
+
+      expect(recalculateCountsStub.callCount).to.equal(1);
     });
   });
 });
