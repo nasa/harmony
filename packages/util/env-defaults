@@ -140,6 +140,7 @@ CASPER_SERVICE_QUEUE_URLS='["ghcr.io/nasa/harmony-casper:latest,http://sqs.us-we
 HARMONY_FLOW_SERVICE_QUEUE_URLS='["ghcr.io/nasa/harmony-flow:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/harmony-flow.fifo"]'
 MAKE_MATCHUP_SERVICE_QUEUE_URLS='["seadas/satellite-in-situ-matchup:1.0.0,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/make-matchup.fifo"]'
 HARMONY_VARIABLE_FAN_OUT_SERVICE_QUEUE_URLS='["ghcr.io/nasa/harmony-variable-fan-out:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/harmony-variable-fan-out.fifo"]'
+COMPOSITOR_SERVICE_QUEUE_URLS='["harmony/compositor:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/compositor.fifo"]'
 
 # The number of seconds to allow a pod to continue processing an active request before terminating a pod
 DEFAULT_POD_GRACE_PERIOD_SECS=14400
