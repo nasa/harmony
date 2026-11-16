@@ -1,3 +1,4 @@
+import { ParsedUrlQueryInput } from 'querystring';
 import * as url from 'url';
 
 /**
@@ -28,6 +29,32 @@ export function getRequestUrl(req, includeQuery = true, queryOverrides: object =
     host: req.get('host'),
     pathname: req.originalUrl.split('?')[0],
     query: includeQuery ? { ...req.query, ...queryOverrides } : null,
+  });
+}
+
+/**
+ * Returns the URL to store as a job's request, which can be used to resubmit the same request.
+ * Any label parameter is replaced by the job's labels as repeated label parameters so that
+ * resubmitting the URL produces the same labels, including labels that contain commas. Using
+ * the original parameter value would not work since, e.g., a form value of "a,b" (two labels)
+ * would be serialized as label=a%2Cb, which is a single label containing a comma.
+ *
+ * @param req - The incoming request whose URL should be gleaned
+ * @param labels - The labels parsed from the request
+ * @returns The URL the incoming request is requesting, with the labels as repeated parameters
+ */
+export function getJobRequestUrl(req, labels: string[] = []): string {
+  const query: ParsedUrlQueryInput = Object.fromEntries(
+    Object.entries(req.query as ParsedUrlQueryInput).filter(([key]) => key.toLowerCase() !== 'label'),
+  );
+  if (labels.length > 0) {
+    query.label = labels;
+  }
+  return url.format({
+    protocol: _getProtocol(req),
+    host: req.get('host'),
+    pathname: req.originalUrl.split('?')[0],
+    query,
   });
 }
 
