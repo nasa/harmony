@@ -668,6 +668,7 @@ https://cmr.uat.earthdata.nasa.gov:
     capabilities:
       subsetting:
         bbox: true
+        dimension: true
         variable: true
       output_formats:
         - application/x-netcdf4;profile=opendap_url
@@ -675,7 +676,7 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
       - image: !Env ${HOSS_IMAGE}
-        operations: ['variableSubset', 'spatialSubset', 'reformat']
+        operations: ['variableSubset', 'spatialSubset', 'dimensionSubset', 'reformat']
 
   - name: l2-subsetter-batchee-stitchee-concise
     description: |
@@ -831,6 +832,7 @@ https://cmr.uat.earthdata.nasa.gov:
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
         is_sequential: true
+      - image: !Env ${HARMONY_METADATA_ANNOTATOR_IMAGE}
       - image: !Env ${HARMONY_VARIABLE_FAN_OUT_IMAGE}
       - image: !Env ${NET2COG_IMAGE}
 
@@ -997,11 +999,11 @@ https://cmr.uat.earthdata.nasa.gov:
 
 
   # This is an example service and backend from example/http-backend.js mounted by
-  # the frontend callback server.
-  # EOSS Example: curl -Lnbj 'http://localhost:3000/C1104-PVC_TS2/eoss/0.2.0/items/G1216319051-PVC_TS2'
+  # the frontend callback server. Test-only: disabled unless EXAMPLE_SERVICES=true.
   - name: harmony/example
     description: |
-      An example service for testing harmony http service integration. This service isn't docker-based or make GDAL calls - it does not actually do anything with the data files.
+      An example service for testing harmony http service integration.
+      This service isn't docker-based - it does not actually do anything with the data files.
     data_operation_version: '0.22.0'
     enabled: !Env ${EXAMPLE_SERVICES}
     type:

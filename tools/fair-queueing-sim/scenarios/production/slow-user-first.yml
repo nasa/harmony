@@ -1,0 +1,42 @@
+# Production-scale scenario: a user with slow work items arrives first and takes the service.
+#
+# Not from one service's stats: it's the case the fast lane exists for, at production's scale. Slow
+# work is rare in production (0.4% of work items over 5 minutes, under 0.1% over 15), but outliers of
+# 30 minutes to 2 hours happen, and without preemption a user who fills an idle service with them
+# holds every pod until their work items finish. Fast work uses durations like hoss's (seconds).
+name: slow-user-first
+description: >-
+  A 125 pod service is idle when a user submits 500 work items that take 30 to 60 minutes - nobody
+  knows yet that they're slow. Five minutes later fast users arrive with work items of seconds: one
+  with a large backlog, one submitting 500 granule jobs every 10 minutes or so, and small jobs; and
+  sync requests start arriving about once a minute.
+goodOutcome: >-
+  The slow user never holds all of the pods: fast work and sync requests that arrive 5 minutes
+  later start within seconds (sync latency under 10 seconds), and once everyone has work ready the
+  slow user has about a fair share. The slow user's work taking longer is the expected price.
+benchmarks:
+  - metric: sync.p95Latency
+    note: production's target is under 10 seconds of latency for sync requests
+  - metric: sync.meanLatency
+    note: production's target is under 10 seconds of latency for sync requests
+  - metric: user.fast-jobs.meanSlowdown
+    note: fast jobs arriving after the slow user has started
+  - metric: user.slow.fairShare
+    better: lower
+    note: the slow user shouldn't hold more than an equal share of the pods (1.0)
+  - metric: fairness
+    note: equal pod time for every user with work ready
+seed: 2029
+maxDuration: 2h
+env:
+  QUEUE_LONG_POLLING_WAIT_TIME_SEC: 3
+services:
+  - name: svc
+    pods: 125
+jobs:
+  - { name: slow-job, user: slow, granules: 500, steps: [{ service: svc, duration: { dist: uniform, min: 30m, max: 60m } }] }
+  - { name: fast-backlog, user: fast-backlog, submitAt: 5m, granules: 20000, steps: [{ service: svc, duration: { dist: lognormal, median: 3.6s, sigma: 0.7 } }] }
+generators:
+  - { name: fast-jobs, user: fast-jobs, start: 5m, every: { dist: exponential, mean: 10m }, job: { granules: 500, steps: [{ service: svc, duration: { dist: lognormal, median: 3.6s, sigma: 0.7 } }] } }
+  - { name: small, user: small, start: 6m, every: { dist: exponential, mean: 10m }, job: { granules: { min: 10, max: 50 }, steps: [{ service: svc, duration: { dist: lognormal, median: 3.6s, sigma: 0.7 } }] } }
+  - { name: viewer, user: viewer, start: 5m, every: { dist: exponential, mean: 1m }, until: 115m, job: { async: false, granules: 1, steps: [{ service: svc, duration: { dist: lognormal, median: 3.6s, sigma: 0.7 } }] } }

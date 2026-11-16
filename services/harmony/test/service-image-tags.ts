@@ -307,9 +307,20 @@ describe('buildDeployerJobManifest', function () {
     expect(job.spec.backoffLimit).to.equal(0);
     expect(job.spec.ttlSecondsAfterFinished).to.equal(60);
 
+    expect(job.spec.template.metadata.annotations).to.eql({
+      'cluster-autoscaler.kubernetes.io/safe-to-evict': 'false',
+    });
+
     const podSpec = job.spec.template.spec;
     expect(podSpec.restartPolicy).to.equal('Never');
     expect(podSpec.serviceAccountName).to.equal('harmony-deployer');
+    expect(podSpec.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms).to.eql([{
+      matchExpressions: [{
+        key: 'eks.amazonaws.com/capacityType',
+        operator: 'In',
+        values: ['ON_DEMAND'],
+      }],
+    }]);
 
     const container = podSpec.containers[0];
     expect(container.image).to.equal(

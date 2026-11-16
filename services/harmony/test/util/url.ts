@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
 
-import { getRequestUrl, getSanitizedRequestUrl, getRequestRoot, isValidUri } from '../../app/util/url';
+import { getJobRequestUrl, getRequestUrl, getSanitizedRequestUrl, getRequestRoot, isValidUri } from '../../app/util/url';
 
 /**
  * Returns a request object to be used in tests to simulate different URLs
@@ -58,6 +58,31 @@ describe('util/url', function () {
       it('does NOT include the query parameter string', function () {
         expect(getRequestUrl(request, false)).to.equal('https://harmony.earthdata.nasa.gov/example/path');
       });
+    });
+  });
+
+  describe('#getJobRequestUrl', function () {
+    const root = 'http://localhost:5555/example/path';
+
+    it('replaces a comma-separated label string with each label as a repeated parameter', function () {
+      const request = createRequest('localhost:5555', '/example/path', { param1: 'foo', label: 'eed-edsc-prod,edsc-id=5434533836' });
+      expect(getJobRequestUrl(request, ['eed-edsc-prod', 'edsc-id=5434533836']))
+        .to.equal(`${root}?param1=foo&label=eed-edsc-prod&label=edsc-id%3D5434533836`);
+    });
+
+    it('URL-encodes commas within a label', function () {
+      const request = createRequest('localhost:5555', '/example/path', { label: ['foo', 'a,b'] });
+      expect(getJobRequestUrl(request, ['foo', 'a,b'])).to.equal(`${root}?label=foo&label=a%2Cb`);
+    });
+
+    it('replaces the label parameter regardless of its case', function () {
+      const request = createRequest('localhost:5555', '/example/path', { param1: 'foo', LABEL: 'A,B' });
+      expect(getJobRequestUrl(request, ['a', 'b'])).to.equal(`${root}?param1=foo&label=a&label=b`);
+    });
+
+    it('omits the label parameter when there are no labels', function () {
+      const request = createRequest('localhost:5555', '/example/path', { param1: 'foo' });
+      expect(getJobRequestUrl(request)).to.equal(`${root}?param1=foo`);
     });
   });
 

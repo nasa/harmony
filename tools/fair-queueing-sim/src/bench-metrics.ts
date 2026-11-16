@@ -10,7 +10,7 @@ import { formatDuration } from './scenario';
 //
 
 export type Better = 'lower' | 'higher';
-export type MetricFormat = 'duration' | 'ratio' | 'percent' | 'podHours';
+export type MetricFormat = 'duration' | 'ratio' | 'percent' | 'podHours' | 'count';
 
 export interface MetricKind {
   label: string;
@@ -38,6 +38,12 @@ const SCENARIO_METRICS: Record<string, Extractor<Summary>> = {
   'overall.maxSlowdown': { label: 'max job slowdown', better: 'lower', format: 'ratio', value: (s) => s.overall.maxSlowdown },
   'sync.meanMakespan': { label: 'sync makespan (mean)', better: 'lower', format: 'duration', value: (s) => s.sync.meanMakespanMs },
   'sync.maxMakespan': { label: 'sync makespan (max)', better: 'lower', format: 'duration', value: (s) => s.sync.maxMakespanMs },
+  // how long sync requests took beyond their own run time (summaries from before this have none)
+  'sync.meanLatency': { label: 'sync latency (mean)', better: 'lower', format: 'duration', value: (s) => s.sync.meanLatencyMs ?? null },
+  'sync.p95Latency': { label: 'sync latency (p95)', better: 'lower', format: 'duration', value: (s) => s.sync.p95LatencyMs ?? null },
+  'sync.maxLatency': { label: 'sync latency (max)', better: 'lower', format: 'duration', value: (s) => s.sync.maxLatencyMs ?? null },
+  // sync requests the latency figures leave out because they hadn't finished when the run ended
+  'sync.unfinished': { label: 'sync requests unfinished', better: 'lower', format: 'count', value: (s) => s.sync.unfinished ?? null },
   'fairness': {
     label: 'contended fairness',
     better: 'higher',
@@ -51,7 +57,12 @@ const SCENARIO_METRICS: Record<string, Extractor<Summary>> = {
     format: 'podHours',
     value: (s) => s.services.reduce((sum, x) => sum + x.idleWhileReadyPodMs, 0) / 3_600_000,
   },
-  'simulatedTime': { label: 'simulated time', better: 'lower', format: 'duration', value: (s) => s.endMs },
+  // the time until every job finished, so none for a run that reached its maxDuration first
+  'simulatedTime': { label: 'simulated time', better: 'lower', format: 'duration', value: (s) => (s.completed ? s.endMs : null) },
+  // 100 if every job finished before maxDuration, else 0; over seeds, the share of runs that did.
+  // Production scenarios end at maxDuration with work still queued by design, so their other
+  // metrics are compared anyway
+  'completed': { label: 'runs that finished all their work', better: 'higher', format: 'percent', value: (s) => (s.completed ? 100 : 0) },
 };
 
 const JOB_METRICS: Record<string, Extractor<JobSummary>> = {
@@ -140,6 +151,8 @@ export function formatMetric(value: number, format: MetricFormat): string {
       return `${value.toFixed(1)}%`;
     case 'podHours':
       return `${value.toFixed(2)} pod-h`;
+    case 'count':
+      return Number.isInteger(value) ? String(value) : value.toFixed(1);
     default:
       return value.toFixed(2);
   }

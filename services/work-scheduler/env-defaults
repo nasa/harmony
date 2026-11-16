@@ -25,20 +25,46 @@ MAX_WORK_ITEMS_ON_UPDATE_QUEUE=1200
 # excessive lookups - 90 seconds
 POD_COUNT_CACHE_TTL=90000
 
-# Feature toggle for duration based fair queueing. When false (the default) fair queueing is
-# slot based: users are ranked by their number of running work items and there is no fast lane
-# reserve, and SLOW_WORK_THRESHOLD_MS and FAST_LANE_RESERVE_FRACTION are ignored. When true users
-# are ranked by the expected runtime of their running work items and slow work is limited by the
-# fast lane reserve. See docs/fair-queueing.md.
+# The fair queueing policy: how the work-scheduler chooses which jobs' work items to queue for a
+# service. See docs/fair-queueing.md.
+#   slot-based (the default) - users are ranked by their number of running work items; there is
+#     no fast lane reserve, and SLOW_WORK_THRESHOLD_MS, FAST_LANE_RESERVE_FRACTION and the
+#     FAIR_SHARE_FAST_LANE_* settings are ignored.
+#   duration-based - users are ranked by the expected runtime of their running work items, and
+#     slow work is limited by the fast lane reserve (FAST_LANE_RESERVE_FRACTION).
+#   fair-share-fast-lane - duration-based with fixes that stop one user's slow work items taking a
+#     service, and sync requests first (the FAIR_SHARE_FAST_LANE_* settings below). Its fast lane
+#     reserve is FAIR_SHARE_FAST_LANE_RESERVE_FRACTION.
+FAIR_QUEUEING_POLICY=fair-share-fast-lane
+
+# The older setting for duration based fair queueing, kept for existing deployments: true is the
+# same as FAIR_QUEUEING_POLICY=duration-based, unless FAIR_QUEUEING_POLICY selects a policy other
+# than slot-based.
 ENABLE_DURATION_BASED_FAIR_QUEUEING=false
 
 # Average work item duration (in ms), per job and service, above which all work items for that
-# job and service are classified as "slow" for fair queueing purposes. Only used when
-# ENABLE_DURATION_BASED_FAIR_QUEUEING is true.
+# job and service are classified as "slow" for fair queueing purposes. Used by duration-based and
+# fair-share-fast-lane.
 SLOW_WORK_THRESHOLD_MS=600000
 
 # The fraction of a service's capacity (currently running pods) reserved for fast work items.
 # Slow work items are only blocked once running slow work occupies the rest of the capacity, so
-# short work items keep flowing even while slow work is busy. Only used when
-# ENABLE_DURATION_BASED_FAIR_QUEUEING is true.
+# short work items keep flowing even while slow work is busy. Used by duration-based (and by
+# fair-share-fast-lane when FAIR_SHARE_FAST_LANE_RESERVE_FRACTION is "scheduler").
 FAST_LANE_RESERVE_FRACTION=0.3
+
+# Settings for FAIR_QUEUEING_POLICY=fair-share-fast-lane, read on every scheduling pass. How the
+# policy works, and why, is in docs/fair-queueing.md and harmony's
+# app/backends/workflow-orchestration/fair-share-fast-lane-policy.ts. The defaults are the
+# configuration chosen with the fair queueing simulator (tools/fair-queueing-sim/RESULTS.md).
+#
+# The fraction of a service's pods slow work may never use, so that fast work arriving later
+# always finds pods ("scheduler" = FAST_LANE_RESERVE_FRACTION, as duration-based uses).
+FAIR_SHARE_FAST_LANE_RESERVE_FRACTION=0.1
+# A new job is limited until one of its work items has finished and shown how long its work
+# takes, so a job whose work turns out to be slow can't fill the service first. It may run this
+# many work items for a service (0 = no limit)...
+FAIR_SHARE_FAST_LANE_UNMEASURED_LIMIT=2
+# ...plus a share of an allowance for all new jobs' work on the service together: this fraction
+# of the pods slow work may use (0 = no allowance, just the limit above).
+FAIR_SHARE_FAST_LANE_UNMEASURED_FRACTION=0.5

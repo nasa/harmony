@@ -5,8 +5,6 @@ import { stubEdlRequest, token, unstubEdlRequest } from './auth';
 import * as harmony from '../../app/server';
 import env from '../../app/util/env';
 
-process.env.EXAMPLE_SERVICES = 'true';
-
 /**
  * Add before / after hooks to start up and shut down Harmony's servers
  * on ephemeral ports

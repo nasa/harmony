@@ -1,0 +1,77 @@
+# Production scenario: geoloco, which one user keeps full. Built from the admin dashboard's stats for
+# geoloco (2026-10-29 to 2026-11-05; durations from 2026-11-03 on), with users anonymised.
+#
+# What comes from the data:
+# - One user did all of geoloco's work that week, keeping ~122 of its pods busy for 36 hours.
+# - Work item durations: median ~2 minutes (the dashboard's interpolated median is 175 s; the mean is
+#   120 s), 7.5% under a minute, 89% between 1 and 5 minutes, 3.4% between 5 and 15 minutes, longest
+#   19 minutes. Modelled as a lognormal (median 95 s, sigma 0.45) with 3.4% of work items between 5
+#   and 15 minutes, which gives a mean of ~125 s.
+#
+# What's assumed: the other users. Nobody else used geoloco that week, so this asks what would happen
+# to a second user arriving while the first fills the service - a newcomer with a 300 granule job,
+# small jobs every 15 minutes or so, and an occasional sync request.
+name: geoloco-one-user
+description: >-
+  One user keeps all 125 of geoloco's pods busy with work items of about 2 minutes, as in
+  production. Twenty minutes in a newcomer submits a 300 granule job, small jobs arrive every 15
+  minutes or so, and a sync request comes in every 5 minutes on average.
+goodOutcome: >-
+  The newcomer and the small jobs get an equal share of the pods soon after they arrive (pods free
+  up every second or so, since 125 pods each finish a 2 minute work item), sync requests start
+  within seconds, and the service stays busy - the first user losing some pods to the others is
+  the expected price.
+benchmarks:
+  - metric: job.newcomer.slowdown
+    note: a second user arriving while one user fills the service
+  - metric: user.small.meanSlowdown
+    note: small jobs arriving while one user fills the service
+  - metric: sync.p95Latency
+    note: production's target is under 10 seconds of latency for sync requests
+  - metric: fairness
+    note: equal pod time for every user with work ready
+  - metric: utilization
+    note: the service should stay busy
+seed: 2027
+maxDuration: 90m
+env:
+  QUEUE_LONG_POLLING_WAIT_TIME_SEC: 3
+services:
+  - name: geoloco
+    pods: 125
+jobs:
+  - name: big-backlog
+    user: big
+    granules: 8000
+    steps:
+      - service: geoloco
+        duration: { dist: mix, options: [{ weight: 96.6, duration: { dist: lognormal, median: 95s, sigma: 0.45 } }, { weight: 3.4, duration: { dist: uniform, min: 5m, max: 15m } }] }
+  - name: newcomer
+    user: newcomer
+    submitAt: 20m
+    granules: 300
+    steps:
+      - service: geoloco
+        duration: { dist: mix, options: [{ weight: 96.6, duration: { dist: lognormal, median: 95s, sigma: 0.45 } }, { weight: 3.4, duration: { dist: uniform, min: 5m, max: 15m } }] }
+generators:
+  - name: small
+    user: small
+    start: 10m
+    every: { dist: exponential, mean: 15m }
+    until: 75m
+    job:
+      granules: { min: 10, max: 40 }
+      steps:
+        - service: geoloco
+          duration: { dist: mix, options: [{ weight: 96.6, duration: { dist: lognormal, median: 95s, sigma: 0.45 } }, { weight: 3.4, duration: { dist: uniform, min: 5m, max: 15m } }] }
+  - name: viewer
+    user: viewer
+    start: 5m
+    every: { dist: exponential, mean: 5m }
+    until: 80m
+    job:
+      async: false
+      granules: 1
+      steps:
+        - service: geoloco
+          duration: { dist: lognormal, median: 95s, sigma: 0.45 }
