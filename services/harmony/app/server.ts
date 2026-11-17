@@ -146,8 +146,12 @@ function buildBackendServer(port: number, hostBinding: string, useHttps: string)
 function buildFrontendServer(port: number, hostBinding: string, config: RouterConfig): http.Server | https.Server {
   const appLogger = logger.child({ application: 'frontend' });
   const app = express();
+  // qs defaults to arrayLimit: 20 and parameterLimit: 1000. Past arrayLimit, a repeated or
+  // comma-separated parameter is parsed as an index-keyed object rather than an array, and
+  // parameters past parameterLimit are silently dropped. Raise both well beyond what fits in
+  // a URL so that the request URL length is the only effective limit.
   app.set('query parser', (str) =>
-    qs.parse(str, { comma: true }),
+    qs.parse(str, { comma: true, arrayLimit: 10000, parameterLimit: 10000 }),
   );
   app.use(addRequestId(appLogger));
   app.use(addRequestLogger(appLogger));

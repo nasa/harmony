@@ -341,7 +341,7 @@ async function validateRequestParams(
   req: HarmonyRequest, res: Response,
 ): Promise<boolean> {
   const requestedParams = Object.keys(req.body);
-  const allowedParams = ['tag', 'regression_test_version'];
+  const allowedParams = ['tag'];
   const invalidParams = [];
   requestedParams.forEach((param, index) => {
     if (!allowedParams.includes(param)) {
@@ -782,8 +782,8 @@ export async function updateServiceImageTag(
   }
 
   const { service } = req.params;
-  const { tag, regression_test_version } = req.body;
-  const regressionTestVersion = regression_test_version ? regression_test_version : 'latest';
+  const { tag } = req.body;
+  const regressionTestVersion = 'latest';
 
   const deployment = new ServiceDeployment({
     deployment_id: deploymentId,
