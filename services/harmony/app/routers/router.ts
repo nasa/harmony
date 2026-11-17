@@ -62,7 +62,7 @@ import { admin, core } from '../middleware/permission-groups';
 import validateRestrictedVariables from '../middleware/restricted-variables';
 import chooseService from '../middleware/service-selection';
 import shapefileConverter from '../middleware/shapefile-converter';
-import shapefileUpload from '../middleware/shapefile-upload';
+import shapefileUpload, { handleMulterErrors } from '../middleware/shapefile-upload';
 import { setUmmVisForCollections } from '../middleware/umm-vis';
 import HarmonyRequest, { addRequestContextToOperation } from '../models/harmony-request';
 import env from '../util/env';
@@ -219,9 +219,14 @@ export default function router({ USE_EDL_CLIENT_APP = 'false' }: RouterConfig): 
   // Missing files under schemas not interpreted as service calls
   result.use('/schemas', (req, res, next) => next(new NotFoundError()));
 
-  // Handle multipart/form-data (used for shapefiles). Files will be uploaded to
-  // a bucket.
-  result.post(collectionPrefix('(ogc-api-coverages)'), asyncHandler(shapefileUpload()));
+  // Handle multipart/form-data for all OGC API Coverages POST requests, including those
+  // with a shapefile. Shapefiles will be uploaded to a bucket. Errors such as exceeding the
+  // form field and part limits are returned to the user as 400 errors.
+  result.post(
+    collectionPrefix('(ogc-api-coverages)'),
+    asyncHandler(shapefileUpload()),
+    handleMulterErrors,
+  );
 
   // CORS preflight requests should not use authorization so make sure to include prior
   // to authorization middleware
