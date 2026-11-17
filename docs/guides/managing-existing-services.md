@@ -65,12 +65,11 @@ curl -XPUT https://harmony.uat.earthdata.nasa.gov/service-image-tag/#canonical-s
 ```
 **Example 5** - Updating a specific backend service image tag using the `/service-image-tag` API
 
-The body of the `PUT` request should be a JSON object with a `tag` field indicating the tag of the updated service image and an optional `regression_test_version` field with the value of the tag of the regression test docker image, the value 'latest' will be used when `regression_test_version` field is omitted.
+The body of the `PUT` request should be a JSON object with a `tag` field indicating the tag of the updated service image. No other fields are accepted. The regression tests run after the deployment always use the `latest` regression test docker image.
 
 ```JSON
 {
-  "tag": "new-version",
-  "regression_test_version": "1.0.0"
+  "tag": "new-version"
 }
 ```
 **Example 6** - Harmony `/service-image-tag` request body for updating a tag
