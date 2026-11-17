@@ -606,7 +606,28 @@ describe('Service image endpoint', async function () {
       });
 
       it('returns a meaningful error message', async function () {
-        expect(this.res.text).to.equal('Invalid body parameter(s): unsupportedOne and unsupportedTwo. Allowed body parameters are: tag and regression_test_version.');
+        expect(this.res.text).to.equal('Invalid body parameter(s): unsupportedOne and unsupportedTwo. Allowed body parameters are: tag.');
+      });
+    });
+
+    describe('when regression_test_version is provided in the request', async function () {
+
+      before(async function () {
+        hookRedirect('buzz');
+        this.res = await request(this.frontend).put('/service-image-tag/hoss').use(auth({ username: 'buzz' })).send(
+          { tag: 'latest', regression_test_version: '1.2.3' });
+      });
+
+      after(function () {
+        delete this.res;
+      });
+
+      it('returns a status 400', async function () {
+        expect(this.res.status).to.equal(400);
+      });
+
+      it('returns a meaningful error message', async function () {
+        expect(this.res.text).to.equal('Invalid body parameter(s): regression_test_version. Allowed body parameters are: tag.');
       });
     });
 
@@ -1488,7 +1509,7 @@ describe('Service self-deployment failure', async function () {
 
       hookRedirect('coraline');
       this.res = await request(this.frontend).put('/service-image-tag/harmony-service-example').use(auth({ username: 'coraline' })).send(
-        { tag: 'foo', regression_test_version: '1.2.3' });
+        { tag: 'foo' });
     });
 
     after(async function () {
@@ -1540,8 +1561,8 @@ describe('Service self-deployment failure', async function () {
         expect(username).to.eql('coraline');
         expect(service).to.eql('harmony-service-example');
         expect(tag).to.eql('foo');
-        // regressionTestVersion matches the specified value of the 'regression_test_version' field in the request body
-        expect(regressionTestVersion).to.eql('1.2.3');
+        // regressionTestVersion is always set to the default value
+        expect(regressionTestVersion).to.eql('latest');
         expect(status).to.eql('failed');
         expect(message).to.include(`Failed service deployment for deploymentId: ${deploymentId}.`);
         expect(message).to.include(`See details at: http://127.0.0.1:4000${deploymentLogPath}`);
