@@ -409,100 +409,6 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${TRAJECTORY_SUBSETTER_IMAGE}
         operations: ['variableSubset', 'spatialSubset', 'shapefileSubset', 'temporalSubset']
 
-  - name: asdc/imagenator_l2
-    description: Chain to create TEMPO L2 imagery for GIBS
-    data_operation_version: '0.22.0'
-    type:
-      <<: *default-turbo-config
-      params:
-        <<: *default-turbo-params
-        env:
-          <<: *default-turbo-env
-          STAGING_PATH: public/harmony/imagenator_l2
-    umm_s: S1273539416-LARC_CLOUD
-    capabilities:
-      concatenation: false
-      subsetting:
-        bbox: false
-        variable: true
-        temporal: false
-      output_formats:
-        - image/png
-        - image/jpeg
-      reprojection: true
-    steps:
-      - image: !Env ${QUERY_CMR_IMAGE}
-        is_sequential: true
-      - image: !Env ${SWATH_PROJECTOR_IMAGE}
-      - image: !Env ${FILTERING_IMAGE}
-      - image: !Env ${NET2COG_IMAGE}
-      - image: !Env ${HYBIG_IMAGE}
-
-  - name: asdc/imagenator_l3
-    description: Chain to create TEMPO L3 imagery for GIBS
-    data_operation_version: '0.22.0'
-    type:
-      <<: *default-turbo-config
-      params:
-        <<: *default-turbo-params
-        env:
-          <<: *default-turbo-env
-          STAGING_PATH: public/harmony/imagenator_l3
-    umm_s: S1273539421-LARC_CLOUD
-    capabilities:
-      concatenation: false
-      subsetting:
-        bbox: false
-        variable: true
-        temporal: false
-        dimension: true
-      output_formats:
-        - image/png
-        - image/jpeg
-      reprojection: true
-    steps:
-      - image: !Env ${QUERY_CMR_IMAGE}
-        is_sequential: true
-      - image: !Env ${HOSS_IMAGE}
-        operations: ['dimensionSubset']
-        conditional:
-          exists: ['dimensionSubset']
-      - image: !Env ${FILTERING_IMAGE}
-      - image: !Env ${NET2COG_IMAGE}
-      - image: !Env ${HYBIG_IMAGE}
-
-  - name: sds/HyBIG
-    description: |
-      The Harmony Browse Image Generator (HyBIG) supports the conversion of
-      GeoTIFF inputs to Global Imagery Browse Services (GIBS) compatible PNG or
-      JPEG outputs. This includes, where necessary, conversion to a GIBS
-      supported Coordinate Reference System (CRS). Other projections can be
-      requested, but will not be compatible with GIBS.
-    data_operation_version: '0.22.0'
-    type:
-      <<: *default-turbo-config
-      params:
-        <<: *default-turbo-params
-        env:
-          <<: *default-turbo-env
-          STAGING_PATH: public/sds/hybig
-    umm_s: S1257776354-EEDTEST
-    capabilities:
-      subsetting:
-        bbox: false
-        shape: false
-        temporal: false
-        variable: true
-        multiple_variable: false
-      output_formats:
-        - image/png
-        - image/jpeg
-      reprojection: true
-    steps:
-      - image: !Env ${QUERY_CMR_IMAGE}
-        is_sequential: true
-      - image: !Env ${HYBIG_IMAGE}
-
   - name: sds/HOSS-geographic
     description: |
       A service that currently supports L3/L4 geographically gridded collections, offering variable, temporal, named dimension, bounding box spatial and shape file spatial subsetting.
@@ -727,6 +633,100 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${CASPER_IMAGE}
         conditional:
           format: ['text/csv']
+
+  - name: asdc/imagenator_l2
+    description: Chain to create TEMPO L2 imagery for GIBS
+    data_operation_version: '0.22.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/harmony/imagenator_l2
+    umm_s: S1273539416-LARC_CLOUD
+    capabilities:
+      concatenation: false
+      subsetting:
+        bbox: false
+        variable: true
+        temporal: false
+      output_formats:
+        - image/png
+        - image/jpeg
+      reprojection: true
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
+      - image: !Env ${SWATH_PROJECTOR_IMAGE}
+      - image: !Env ${FILTERING_IMAGE}
+      - image: !Env ${NET2COG_IMAGE}
+      - image: !Env ${HYBIG_IMAGE}
+
+  - name: asdc/imagenator_l3
+    description: Chain to create TEMPO L3 imagery for GIBS
+    data_operation_version: '0.22.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/harmony/imagenator_l3
+    umm_s: S1273539421-LARC_CLOUD
+    capabilities:
+      concatenation: false
+      subsetting:
+        bbox: false
+        variable: true
+        temporal: false
+        dimension: true
+      output_formats:
+        - image/png
+        - image/jpeg
+      reprojection: true
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
+      - image: !Env ${HOSS_IMAGE}
+        operations: ['dimensionSubset']
+        conditional:
+          exists: ['dimensionSubset']
+      - image: !Env ${FILTERING_IMAGE}
+      - image: !Env ${NET2COG_IMAGE}
+      - image: !Env ${HYBIG_IMAGE}
+
+  - name: sds/HyBIG
+    description: |
+      The Harmony Browse Image Generator (HyBIG) supports the conversion of
+      GeoTIFF inputs to Global Imagery Browse Services (GIBS) compatible PNG or
+      JPEG outputs. This includes, where necessary, conversion to a GIBS
+      supported Coordinate Reference System (CRS). Other projections can be
+      requested, but will not be compatible with GIBS.
+    data_operation_version: '0.22.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/sds/hybig
+    umm_s: S1257776354-EEDTEST
+    capabilities:
+      subsetting:
+        bbox: false
+        shape: false
+        temporal: false
+        variable: true
+        multiple_variable: false
+      output_formats:
+        - image/png
+        - image/jpeg
+      reprojection: true
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
+      - image: !Env ${HYBIG_IMAGE}
 
   # Reformatting services below. Any other transformation service should be added above.
   - name: asf/opera-rtc-s1-browse
