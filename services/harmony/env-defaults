@@ -629,7 +629,7 @@ HARMONY_VARIABLE_FAN_OUT_SERVICE_QUEUE_URLS='["ghcr.io/nasa/harmony-variable-fan
 # Most local developers don't need the fan out. Set to true to see deployed behavior.
 HARMONY_VARIABLE_FAN_OUT_ENABLED=false
 
-COMPOSITOR_IMAGE=harmony/compositor:latest
+COMPOSITOR_IMAGE=ghcr.io/srizvi-nasa/harmony-compositor:latest
 COMPOSITOR_REQUESTS_CPU=128m
 COMPOSITOR_REQUESTS_MEMORY=128Mi
 COMPOSITOR_LIMITS_CPU=128m
