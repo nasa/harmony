@@ -635,5 +635,5 @@ COMPOSITOR_REQUESTS_MEMORY=128Mi
 COMPOSITOR_LIMITS_CPU=128m
 COMPOSITOR_LIMITS_MEMORY=8Gi
 COMPOSITOR_INVOCATION_ARGS='python -m harmony_compositor_service.adapter'
-COMPOSITOR_SERVICE_QUEUE_URLS='["harmony/compositor:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/compositor.fifo"]'
+COMPOSITOR_SERVICE_QUEUE_URLS='["ghcr.io/srizvi-nasa/harmony-compositor:latest,http://sqs.us-west-2.localhost.localstack.cloud:4566/000000000000/compositor.fifo"]'
 
