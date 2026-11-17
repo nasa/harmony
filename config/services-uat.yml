@@ -696,6 +696,33 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${NET2COG_IMAGE}
       - image: !Env ${HYBIG_IMAGE}
 
+  - name: asdc/compositor
+    description: |
+      A configuration-driven Harmony service that creates multi-band composite
+      products from supported science variables using externally defined
+      compositor configuration files.
+    data_operation_version: '0.22.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/asdc/compositor
+    umm_s: S1288278044-LARC_CLOUD
+    capabilities:
+      subsetting:
+        bbox: false
+        variable: true
+      output_formats:
+        - image/png
+        - image/jpeg
+      reprojection: false
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+        is_sequential: true
+      - image: !Env ${COMPOSITOR_IMAGE}
+
   - name: sds/HyBIG
     description: |
       The Harmony Browse Image Generator (HyBIG) supports the conversion of
