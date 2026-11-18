@@ -8,7 +8,10 @@ import * as yaml from 'js-yaml';
 import swaggerUi from 'swagger-ui-express';
 
 import serviceInvoker from '../backends/service-invoker';
-import { getAnalyticsPage, proxyAnalyticsApi } from '../frontends/analytics';
+import {
+  createAnalyticsQuery, deleteAnalyticsQueryHandler, getAnalyticsPage, getAnalyticsQuery, listAnalyticsQueries,
+  proxyAnalyticsApi, updateAnalyticsQuery,
+} from '../frontends/analytics';
 import { getCollectionCapabilitiesJson } from '../frontends/capabilities';
 import { cloudAccessJson, cloudAccessSh } from '../frontends/cloud-access';
 import { setLogLevel } from '../frontends/configuration';
@@ -363,6 +366,12 @@ export default function router({ USE_EDL_CLIENT_APP = 'false' }: RouterConfig): 
 
   // Read-only SQL against the Iceberg analytics tables, for admins and log viewers
   result.get('/admin/analytics', asyncHandler(getAnalyticsPage));
+  // Saved queries (before the proxy, whose :endpoint would match "queries")
+  result.get('/admin/analytics/api/queries', asyncHandler(listAnalyticsQueries));
+  result.post('/admin/analytics/api/queries', json({ limit: '256kb' }), asyncHandler(createAnalyticsQuery));
+  result.get('/admin/analytics/api/queries/:id', asyncHandler(getAnalyticsQuery));
+  result.put('/admin/analytics/api/queries/:id', json({ limit: '256kb' }), asyncHandler(updateAnalyticsQuery));
+  result.delete('/admin/analytics/api/queries/:id', asyncHandler(deleteAnalyticsQueryHandler));
   result.get('/admin/analytics/api/:endpoint', asyncHandler(proxyAnalyticsApi));
   result.post('/admin/analytics/api/:endpoint', json({ limit: '256kb' }), asyncHandler(proxyAnalyticsApi));
 

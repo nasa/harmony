@@ -17,7 +17,8 @@
 
 <body class="d-flex flex-column h-100">
   {{> banner}}
-  <main class="container-fluid pt-4 pb-5 flex-grow-1 analytics" id="analytics">
+  <main class="container-fluid pt-4 pb-5 flex-grow-1 analytics" id="analytics" data-username="{{username}}"
+    data-is-admin="{{isAdmin}}">
     <header class="analytics-header mb-3">
       <div>
         <h1 class="h3 mb-1">Analytics</h1>
@@ -30,8 +31,22 @@
     <div id="schemaWarnings" class="alert alert-warning" role="alert" hidden></div>
 
     <div class="analytics-layout">
-      <aside class="schema-panel" aria-labelledby="schemaHeading">
-        <h2 class="panel-heading" id="schemaHeading">Tables</h2>
+      <aside class="schema-panel" aria-label="Saved queries and tables">
+        <section class="saved-queries" aria-labelledby="savedHeading">
+          <div class="panel-heading-row">
+            <h2 class="panel-heading mb-0" id="savedHeading">Saved queries</h2>
+            <button type="button" class="btn btn-sm btn-link p-0" id="newQuery">
+              <i class="bi bi-plus-lg" aria-hidden="true"></i> New
+            </button>
+          </div>
+          <label class="visually-hidden" for="savedFilter">Filter saved queries</label>
+          <input type="search" id="savedFilter" class="form-control form-control-sm mb-2"
+            placeholder="Filter saved queries">
+          <ul id="savedList" class="saved-list"></ul>
+          <p id="savedEmpty" class="small text-muted" hidden>No saved queries yet.</p>
+        </section>
+
+        <h2 class="panel-heading mt-3" id="schemaHeading">Tables</h2>
         <label class="visually-hidden" for="schemaFilter">Filter tables and columns</label>
         <input type="search" id="schemaFilter" class="form-control form-control-sm mb-2"
           placeholder="Filter tables and columns">
@@ -40,6 +55,25 @@
       </aside>
 
       <section class="query-panel" aria-label="Query">
+        <form class="query-details" id="queryDetails">
+          <div class="query-details-row">
+            <label class="visually-hidden" for="queryName">Query name</label>
+            <input type="text" id="queryName" class="form-control form-control-sm query-name" maxlength="255"
+              placeholder="Untitled query">
+            <button type="submit" class="btn btn-sm btn-outline-primary" id="saveQuery">
+              <i class="bi bi-save" aria-hidden="true"></i> <span id="saveLabel">Save</span>
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="saveAsNew" hidden>Save as new</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="copyLink" hidden>
+              <i class="bi bi-link-45deg" aria-hidden="true"></i> Copy link
+            </button>
+            <span class="small text-muted" id="saveStatus" role="status" aria-live="polite"></span>
+          </div>
+          <label class="visually-hidden" for="queryDescription">Description</label>
+          <textarea id="queryDescription" class="form-control form-control-sm query-description" rows="1"
+            maxlength="4096" placeholder="Description (optional)"></textarea>
+        </form>
+
         <label class="visually-hidden" for="editor">SQL query</label>
         <div id="editor" class="sql-editor"></div>
 
@@ -75,6 +109,17 @@
         </section>
       </section>
     </div>
+
+    <!-- Confirms discarding changes or deleting a saved query -->
+    <dialog id="confirmDialog" class="confirm-dialog" aria-labelledby="confirmMessage">
+      <form method="dialog">
+        <p id="confirmMessage"></p>
+        <div class="confirm-actions">
+          <button type="submit" value="cancel" class="btn btn-sm btn-outline-secondary">Cancel</button>
+          <button type="submit" value="ok" class="btn btn-sm btn-danger" id="confirmOk">OK</button>
+        </div>
+      </form>
+    </dialog>
   </main>
   <div class="container-fluid pb-3 small text-muted">Harmony {{version}}</div>
 </body>

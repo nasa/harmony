@@ -9,6 +9,7 @@ import request from 'supertest';
 
 import { auth } from './helpers/auth';
 import hookServersStartStop from './helpers/servers';
+import { truncateAll } from '../../../packages/util/test/helpers/db';
 import env from '../app/util/env';
 
 const ADMIN = 'adam';
@@ -175,6 +176,176 @@ describe('/admin/analytics', function () {
         expect(res.status).to.equal(503);
         expect(res.body.message).to.equal('The analytics query service is not available');
       });
+    });
+  });
+});
+
+describe('/admin/analytics/api/queries (saved queries)', function () {
+  hookServersStartStop({ USE_EDL_CLIENT_APP: true });
+
+  before(async function () {
+    await truncateAll();
+  });
+  after(async function () {
+    await truncateAll();
+  });
+
+  interface QueriesApi {
+    list: (app) => request.Test;
+    get: (app, id: number | string) => request.Test;
+    create: (app, body: object) => request.Test;
+    update: (app, id: number, body: object) => request.Test;
+    delete: (app, id: number) => request.Test;
+  }
+  const as = (username: string): QueriesApi => ({
+    list: (app): request.Test => request(app).get('/admin/analytics/api/queries').use(auth({ username })),
+    get: (app, id: number | string): request.Test => request(app).get(`/admin/analytics/api/queries/${id}`).use(auth({ username })),
+    create: (app, body: object): request.Test => request(app).post('/admin/analytics/api/queries').send(body).use(auth({ username })),
+    update: (app, id: number, body: object): request.Test => request(app).put(`/admin/analytics/api/queries/${id}`).send(body).use(auth({ username })),
+    delete: (app, id: number): request.Test => request(app).delete(`/admin/analytics/api/queries/${id}`).use(auth({ username })),
+  });
+  const admin = as(ADMIN);
+  const logViewer = as(LOG_VIEWER);
+  const other = as(OTHER_USER);
+
+  const failedByStatus = {
+    name: 'Failed jobs by service',
+    description: 'Since a date',
+    sql: 'SELECT service_name, count(*) FROM jobs WHERE status = $status AND created_at >= $start GROUP BY 1',
+    parameters: { status: 'failed', start: '2026-11-01T00:00:00Z' },
+  };
+  let adminQueryId: number;
+  let logViewerQueryId: number;
+
+  describe('saving a query', function () {
+    it('saves it, owned by the user, and returns it', async function () {
+      const res = await admin.create(this.frontend, failedByStatus);
+      expect(res.status).to.equal(201);
+      const { parameters, ...fields } = failedByStatus;
+      expect(res.body).to.include({ ...fields, owner: ADMIN, chart: null });
+      expect(res.body.parameters).to.eql(parameters);
+      expect(res.body.id).to.be.a('number');
+      adminQueryId = res.body.id;
+    });
+
+    it('lets a log viewer save one too', async function () {
+      const res = await logViewer.create(this.frontend, { name: 'My query', sql: 'SELECT 1', parameters: { ids: [1, 2] } });
+      expect(res.status).to.equal(201);
+      expect(res.body.owner).to.equal(LOG_VIEWER);
+      expect(res.body.parameters).to.eql({ ids: [1, 2] });
+      logViewerQueryId = res.body.id;
+    });
+
+    it('rejects a second query with the same name from the same user', async function () {
+      const res = await admin.create(this.frontend, { ...failedByStatus, sql: 'SELECT 2' });
+      expect(res.status).to.equal(409);
+    });
+
+    it('allows the same name from a different user', async function () {
+      const res = await logViewer.create(this.frontend, { ...failedByStatus });
+      expect(res.status).to.equal(201);
+    });
+
+    for (const [problem, body] of [
+      ['no name', { sql: 'SELECT 1' }],
+      ['a blank name', { name: '  ', sql: 'SELECT 1' }],
+      ['no sql', { name: 'x' }],
+      ['a name that is too long', { name: 'x'.repeat(256), sql: 'SELECT 1' }],
+      ['parameters that are not an object', { name: 'x', sql: 'SELECT 1', parameters: [1] }],
+      ['a parameter value that is an object', { name: 'x', sql: 'SELECT 1', parameters: { a: { b: 1 } } }],
+      ['a name that is not a string', { name: 5, sql: 'SELECT 1' }],
+    ]) {
+      it(`rejects a query with ${problem}`, async function () {
+        const res = await admin.create(this.frontend, body as object);
+        expect(res.status).to.equal(400);
+        expect(res.body.errors.length).to.be.greaterThan(0);
+      });
+    }
+
+    it('rejects a body that is not JSON', async function () {
+      const res = await request(this.frontend).post('/admin/analytics/api/queries')
+        .type('form').send('name=x&sql=SELECT+1').use(auth({ username: ADMIN }));
+      expect(res.status).to.equal(415);
+    });
+
+    it('forbids a user who is neither an admin nor a log viewer', async function () {
+      const res = await other.create(this.frontend, { name: 'x', sql: 'SELECT 1' });
+      expect(res.status).to.equal(403);
+    });
+  });
+
+  describe('reading saved queries', function () {
+    it('lists everyone\'s queries to a log viewer, most recently changed first', async function () {
+      const res = await logViewer.list(this.frontend);
+      expect(res.status).to.equal(200);
+      expect(res.body.queries.map((q) => q.owner)).to.include.members([ADMIN, LOG_VIEWER]);
+      const times = res.body.queries.map((q) => new Date(q.updatedAt).getTime());
+      expect(times).to.eql([...times].sort((a, b) => b - a));
+    });
+
+    it('gets one query', async function () {
+      const res = await logViewer.get(this.frontend, adminQueryId);
+      expect(res.status).to.equal(200);
+      expect(res.body.name).to.equal(failedByStatus.name);
+    });
+
+    it('says when there is no such query', async function () {
+      expect((await admin.get(this.frontend, 999999)).status).to.equal(404);
+      expect((await admin.get(this.frontend, 'nope')).status).to.equal(404);
+    });
+
+    it('forbids a user who is neither an admin nor a log viewer', async function () {
+      expect((await other.list(this.frontend)).status).to.equal(403);
+      expect((await other.get(this.frontend, adminQueryId)).status).to.equal(403);
+    });
+  });
+
+  describe('changing a saved query', function () {
+    it('lets the owner change it, keeping fields left out of the request', async function () {
+      const res = await admin.update(this.frontend, adminQueryId, { sql: 'SELECT 3', parameters: {} });
+      expect(res.status).to.equal(200);
+      expect(res.body).to.include({ name: failedByStatus.name, description: failedByStatus.description, sql: 'SELECT 3' });
+      expect(res.body.parameters).to.eql({});
+      expect((await admin.get(this.frontend, adminQueryId)).body.sql).to.equal('SELECT 3');
+    });
+
+    it('does not let someone else change it', async function () {
+      const res = await logViewer.update(this.frontend, adminQueryId, { sql: 'SELECT 4' });
+      expect(res.status).to.equal(403);
+      expect((await admin.get(this.frontend, adminQueryId)).body.sql).to.equal('SELECT 3');
+    });
+
+    it('lets an admin change someone else\'s', async function () {
+      const res = await admin.update(this.frontend, logViewerQueryId, { description: 'tidied up by an admin' });
+      expect(res.status).to.equal(200);
+      expect(res.body.owner).to.equal(LOG_VIEWER);
+    });
+
+    it('rejects renaming it to the name of another of the owner\'s queries', async function () {
+      const res = await logViewer.update(this.frontend, logViewerQueryId, { name: failedByStatus.name });
+      expect(res.status).to.equal(409);
+    });
+
+    it('rejects invalid changes', async function () {
+      const res = await admin.update(this.frontend, adminQueryId, { sql: '' });
+      expect(res.status).to.equal(400);
+    });
+  });
+
+  describe('deleting a saved query', function () {
+    it('does not let someone else delete it', async function () {
+      expect((await logViewer.delete(this.frontend, adminQueryId)).status).to.equal(403);
+      expect((await admin.get(this.frontend, adminQueryId)).status).to.equal(200);
+    });
+
+    it('lets the owner delete it', async function () {
+      expect((await admin.delete(this.frontend, adminQueryId)).status).to.equal(204);
+      expect((await admin.get(this.frontend, adminQueryId)).status).to.equal(404);
+    });
+
+    it('lets an admin delete someone else\'s', async function () {
+      expect((await admin.delete(this.frontend, logViewerQueryId)).status).to.equal(204);
+      expect((await logViewer.get(this.frontend, logViewerQueryId)).status).to.equal(404);
     });
   });
 });
