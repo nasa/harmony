@@ -374,6 +374,27 @@ describe('OGC API EDR - getEdrRadius', function () {
     });
   });
 
+  describe('when provided empty coords using POST', function () {
+    StubService.hook({ params: { redirect: 'http://example.com' } });
+    hookPostEdrRequest('radius', version, collection, {
+      coords: '',
+      within: 10,
+      'within-units': 'km',
+      granuleId,
+      'parameter-name': variableName,
+      scaleExtent: '0,2500000.3,1500000,3300000',
+      scaleSize: '1.1,2',
+    });
+
+    it('rejects the request with an informative error message', function () {
+      expect(this.res.status).to.equal(400);
+      expect(this.res.body).to.eql({
+        code: 'openapi.ValidationError',
+        description: 'Error: body parameter "coords" should NOT be shorter than 1 characters',
+      });
+    });
+  });
+
   describe('when provided an incorrectly named set of parameters', function () {
     StubService.hook({ params: { redirect: 'http://example.com' } });
     hookEdrRequest('radius', version, collection, { query: { coords: pointWKT, within: 10, 'within-units': 'km', granuleId, outputCrz: '', maxResultz: 100, 'parameter-name': variableName } });
@@ -432,6 +453,10 @@ describe('OGC API EDR - getEdrRadius', function () {
     itReturnsAValidationError(
       { granuleId, within: 10, 'within-units': 'km' },
       'query parameter "coords" should have required property \'coords\'',
+    );
+    itReturnsAValidationError(
+      { granuleId, coords: '', within: 10, 'within-units': 'km' },
+      'query parameter "coords" should NOT be shorter than 1 characters',
     );
     itReturnsAValidationError(
       { granuleId, coords: pointWKT, 'within-units': 'km' },

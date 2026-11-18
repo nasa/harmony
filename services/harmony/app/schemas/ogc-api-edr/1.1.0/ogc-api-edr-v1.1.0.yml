@@ -360,6 +360,7 @@ paths:
                 coords:
                   description: Well Known Text POINT or MULTIPOINT definition
                   type: string
+                  minLength: 1
                 within:
                   description: Radius of area around the coords to include in the data selection
                   type: number
@@ -1370,6 +1371,7 @@ components:
       required: true
       schema:
         type: string
+        minLength: 1
     within:
       name: within
       in: query
