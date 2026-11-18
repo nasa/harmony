@@ -437,6 +437,14 @@ WORK_FAILER_LIMITS_CPU=512m
 WORK_FAILER_LIMITS_MEMORY=512Mi
 WORK_FAILER_IMAGE=harmonyservices/work-failer:stable
 
+# analytics query service. DuckDB's native memory use runs well past its own memory_limit
+# (ANALYTICS_QUERY_MEMORY_LIMIT), so the container limit leaves plenty of room above it.
+ANALYTICS_QUERY_REQUESTS_CPU=250m
+ANALYTICS_QUERY_REQUESTS_MEMORY=1Gi
+ANALYTICS_QUERY_LIMITS_CPU=1000m
+ANALYTICS_QUERY_LIMITS_MEMORY=3Gi
+ANALYTICS_QUERY_IMAGE=harmonyservices/analytics-query:stable
+
 # backend services
 HARMONY_GDAL_ADAPTER_IMAGE=ghcr.io/asfhyp3/harmony-gdal:latest
 HARMONY_GDAL_ADAPTER_REQUESTS_CPU=128m

@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: harmony-analytics-query
+  labels:
+    name: harmony-analytics-query
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: harmony-analytics-query
+  template:
+    metadata:
+      labels:
+        name: harmony-analytics-query
+    spec:
+      containers:
+        - name: harmony-analytics-query
+          imagePullPolicy: IfNotPresent
+          image: $ANALYTICS_QUERY_IMAGE
+          resources:
+            limits:
+              memory: $ANALYTICS_QUERY_LIMITS_MEMORY
+              cpu: $ANALYTICS_QUERY_LIMITS_CPU
+            requests:
+              memory: $ANALYTICS_QUERY_REQUESTS_MEMORY
+              cpu: $ANALYTICS_QUERY_REQUESTS_CPU
+          # Deliberately not harmony-secrets: this service needs no database or EDL credentials, and
+          # its shared secret must not be readable by the backend service containers that get those
+          envFrom:
+          - configMapRef:
+              name: analytics-query-env
+          - secretRef:
+              name: analytics-query-secrets
+              optional: true
+          ports:
+            - containerPort: $PORT
+          livenessProbe:
+            httpGet:
+              path: /liveness
+              port: $PORT
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          # Not ready until the Iceberg catalog is attached
+          readinessProbe:
+            httpGet:
+              path: /readiness
+              port: $PORT
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: harmony-analytics-query
+spec:
+  ports:
+    - name: frontend
+      port: $PORT
+      targetPort: $PORT
+      protocol: TCP
+  selector:
+    name: harmony-analytics-query
+  type: ClusterIP
