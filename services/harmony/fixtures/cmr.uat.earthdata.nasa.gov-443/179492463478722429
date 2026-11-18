@@ -1,0 +1,31 @@
+POST /search/granules.json
+accept: application/json
+content-type: multipart/form-data; boundary=----------------------------012345678901234567890123
+accept-encoding: gzip,deflate
+body: ------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"page_size\"\r\n\r\n100\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"concept_id\"\r\n\r\nG123-BOGUS\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"shapefile\"; filename=\"shapefile\"\r\nContent-Type: application/geo+json\r\n\r\n{\"type\":\"FeatureCollection\",\"features\":[{\"type\":\"Feature\",\"geometry\":{\"type\":\"Polygon\",\"coordinates\":[[[-40,10.089932],[-40.042449,10.079628],[-40.075166,10.051079],[-40.090657,10.010828],[-40.085377,9.968099],[-40.060543,9.932679],[-40.021848,9.912681],[-39.978152,9.912681],[-39.939457,9.932679],[-39.914623,9.968099],[-39.909343,10.010828],[-39.924834,10.051079],[-39.957551,10.079628],[-40,10.089932]]]},\"properties\":{}}]}\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"collection_concept_id\"\r\n\r\nC1233800302-EEDTEST\r\n------------------------------012345678901234567890123--\r\n
+
+HTTP/1.1 200 OK
+content-type: application/json;charset=utf-8
+content-length: 157
+connection: keep-alive
+date: Tue, 17 Nov 2026 14:10:36 GMT
+content-md5: d8a3a45f55ead80fa757db1983814598
+server: ServerTokens ProductOnly
+vary: Accept-Encoding
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: 3839a9c0-a652-4fb3-be82-f711407f560c, 3839a9c0-a652-4fb3-be82-f711407f560c
+content-sha1: 52f0665c130ec1f654e2b23236b439e53a1416ca
+strict-transport-security: max-age=31536000; includeSubDomains; preload
+cmr-hits: 0
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Search-After, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 10
+x-request-id: 3839a9c0-a652-4fb3-be82-f711407f560c
+x-cache: Miss from cloudfront
+via: 1.1 502021d2c396bb2ac14446535e72f18a.cloudfront.net (CloudFront)
+x-amz-cf-pop: DFW59-P2
+x-amz-cf-id: qaug8olYFxabrcZmucdjDdZ_EXSHzxZebWGNqrEPWaGdepoIDQQs6w==
+
+{"feed":{"updated":"2026-11-17T14:10:36.732Z","id":"https://cmr.uat.earthdata.nasa.gov:443/search/granules.json","title":"ECHO granule metadata","entry":[]}}
