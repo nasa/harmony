@@ -20,7 +20,7 @@ const { awsDefaultRegion } = env;
  */
 
 const RANGESET_ROUTE_REGEX = /^\/.*\/ogc-api-coverages\/.*\/collections\/.*\/coverage\/rangeset/;
-const EDR_ROUTE_REGEX = /^\/ogc-api-edr\/.*\/collections\/.*\/(cube|area|position|trajectory)/;
+const EDR_ROUTE_REGEX = /^\/ogc-api-edr\/.*\/collections\/.*\/(cube|area|position|radius|trajectory)/;
 const STEPS_ROUTE_REGEX = /^\/(admin\/)?jobs\/[^/]+\/steps/;
 
 /**

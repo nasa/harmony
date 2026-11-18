@@ -16,9 +16,7 @@ import { hashGeoJson } from '../../util/request-checksum';
  *
  * Note this function is currently not being used because for HARMONY-2184 we're
  * changing to handle a single point the same way we handle parsing and passing
- * points to backend services as the coverages API. We may want to handle point
- * with a radius using this method in the future which is why we are keeping the
- * function.
+ * points to backend services as the coverages API.
  *
  * @param wktPoint - The WKT POINT string to convert.
  * @param sideLength - The length of the side of the square polygon.
