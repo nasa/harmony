@@ -36,6 +36,23 @@ const enabled = process.env.ANALYTICS_QUERY_ICEBERG_TEST === 'ministack';
     expect([...tableNames(schema)]).to.include.members(['jobs', 'work_items']);
   });
 
+  // The Iceberg catalog only loads a table's columns once a query uses it, listing a placeholder
+  // column until then - which a DuckDB file fixture can't reproduce
+  it('lists every table\'s real columns, on a fresh instance', async () => {
+    const fresh = new AnalyticsDb(source, TEST_DB_OPTIONS, log);
+    try {
+      const schema = await fresh.withConnection(loadSchema);
+      for (const table of schema.tables) {
+        expect(table.columns.length, table.name).to.be.greaterThan(1);
+        expect(table.columns.filter((c) => c.type === 'UNKNOWN' || c.name === '__'), table.name).to.eql([]);
+      }
+      const jobs = schema.tables.find((t) => t.name === 'jobs');
+      expect(jobs.columns).to.deep.include({ name: 'updated_at', type: 'TIMESTAMP WITH TIME ZONE' });
+    } finally {
+      fresh.close();
+    }
+  });
+
   it('reads the tables through the lockdown', async () => {
     const rows = await db.withConnection(async (conn) =>
       (await conn.runAndReadAll('SELECT count(*)::INTEGER AS n FROM jobs')).getRowObjectsJson());

@@ -1,9 +1,9 @@
 import * as path from 'path';
 
-import { IsBoolean, IsInt, IsNotEmpty, IsPositive, Matches, Max, Min } from 'class-validator';
+import { IsBoolean, IsInt, IsNotEmpty, IsPositive, IsUrl, Matches, Max, Min } from 'class-validator';
 import _ from 'lodash';
 
-import { HarmonyEnv, memorySizeRegex } from '@harmony/util/env';
+import { HarmonyEnv, hostRegexWhitelist, memorySizeRegex } from '@harmony/util/env';
 
 //
 // harmony env module
@@ -211,6 +211,18 @@ class HarmonyServerEnv extends HarmonyEnv {
 
   @IsBoolean()
   allowServiceSelection: boolean;
+
+  // Begin analytics query page variables
+  @IsUrl(hostRegexWhitelist)
+  analyticsQueryUrl: string;
+
+  @IsNotEmpty()
+  analyticsQuerySharedSecret: string;
+
+  @IsInt()
+  @Min(1)
+  analyticsQueryRequestTimeoutMs: number;
+  // End analytics query page variables
 }
 
 const localPath = path.resolve(__dirname, '../../env-defaults');

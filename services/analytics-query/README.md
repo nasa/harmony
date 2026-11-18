@@ -6,6 +6,28 @@ the `/admin/analytics` page in the harmony frontend. Only the frontend calls it:
 that the user is an admin or log viewer, then calls this service with a shared secret and the user's
 name.
 
+## The page
+
+`/admin/analytics` in the harmony frontend (`services/harmony/app/frontends/analytics.ts`,
+`public/js/analytics`) is the UI. It's open to admins and log viewers:
+`ADMIN_OR_LOG_VIEWER_PATHS` in `app/middleware/permission-groups.ts` exempts it from the admin-only
+check on other `/admin` routes. It has:
+- a SQL editor with DuckDB-flavoured highlighting
+- table/column completion from `/api/schema`
+- errors underlined as you type, from `/api/validate`
+- a form for the query's parameters
+- a results table with CSV download
+
+The frontend passes `/admin/analytics/api/{schema,validate,query}` to this service, adding the
+shared secret and the user. `ANALYTICS_QUERY_URL`, `ANALYTICS_QUERY_SHARED_SECRET` and
+`ANALYTICS_QUERY_REQUEST_TIMEOUT_MS` in `services/harmony/env-defaults` configure that. POSTs must be
+JSON, which stops a cross-site form from running a query as a logged-in user.
+
+The editor is CodeMirror 6, bundled into `public/js/vendor/codemirror.js` by
+`services/harmony/bin/build-codemirror-bundle` from the pinned versions in
+`services/harmony/vendor-build/codemirror`. The bundle is committed. Rebuild it only to update
+CodeMirror or change what the page imports from it.
+
 ## API
 
 Every `/api` request needs `Authorization: Bearer $ANALYTICS_QUERY_SHARED_SECRET` and an
