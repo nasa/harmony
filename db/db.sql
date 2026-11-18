@@ -365,3 +365,17 @@ CREATE INDEX job_stats_username_minute_idx ON job_stats(username, minute);
 CREATE INDEX job_stats_hourly_username_hour_idx ON job_stats_hourly(username, hour);
 CREATE INDEX user_work_history_username_service_id_retired_at_idx ON user_work_history(username, service_id, retired_at);
 CREATE INDEX user_work_history_retired_at_idx ON user_work_history(retired_at);
+
+CREATE TABLE `analytics_queries` (
+  `id` integer not null primary key autoincrement,
+  `name` varchar(255) not null,
+  `description` text,
+  `sql` text not null,
+  `parameters` text,
+  `chart` text,
+  `username` varchar(255) not null,
+  `createdAt` datetime not null,
+  `updatedAt` datetime not null,
+  UNIQUE(username, name)
+);
+CREATE INDEX analytics_queries_updatedAt_idx ON analytics_queries(updatedAt);

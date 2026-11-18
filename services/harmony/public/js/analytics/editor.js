@@ -68,7 +68,8 @@ export function errorRange(text, position) {
  * @param {function(): void} options.onRun - called when the user asks to run the query
  * @param {function(string): void} options.onChange - called with the query whenever it changes
  * @returns {{view: EditorView, setTables: function(Array): void, insert: function(string): void,
- *   select: function(number|null): void, text: function(): string}} the editor and helpers
+ *   select: function(number|null): void, text: function(): string, setText: function(string): void}}
+ *   the editor and helpers
  */
 export function createEditor({ parent, doc, validate, onValidated, onRun, onChange }) {
   const language = new Compartment();
@@ -119,6 +120,7 @@ export function createEditor({ parent, doc, validate, onValidated, onRun, onChan
   return {
     view,
     text: () => view.state.doc.toString(),
+    setText: (value) => view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: value } }),
     setTables: (tables) => view.dispatch({ effects: language.reconfigure(sqlFor(tables)) }),
     insert: (value) => {
       view.dispatch(view.state.replaceSelection(value));

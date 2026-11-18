@@ -207,6 +207,9 @@
 }
 
 .results-table-wrap {
+  /* As wide as the table, up to the page width (then it scrolls) */
+  width: fit-content;
+  max-width: 100%;
   overflow: auto;
   max-height: 70vh;
   border: 1px solid var(--an-border);
@@ -214,6 +217,9 @@
 }
 
 .results-table {
+  /* Bootstrap's .table is full width, which spreads a few columns across the page - size each
+     column to its contents instead */
+  width: auto;
   margin-bottom: 0;
   font-size: 0.8rem;
   font-variant-numeric: tabular-nums;
@@ -249,4 +255,117 @@
 .results-table .null {
   color: var(--an-text-muted);
   font-style: italic;
+}
+
+/* Saved queries */
+.panel-heading-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.saved-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 16rem;
+  overflow-y: auto;
+}
+
+.saved-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.25rem;
+  padding: 0.2rem 0.25rem;
+  border-radius: 4px;
+}
+
+.saved-list li.is-current {
+  background: rgba(42, 120, 214, 0.1);
+}
+
+.saved-list .open-query {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: 0;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.saved-list .open-query:hover .saved-name,
+.saved-list .open-query:focus-visible .saved-name {
+  text-decoration: underline;
+}
+
+.saved-list .saved-name {
+  display: block;
+  color: var(--an-accent);
+  font-size: 0.85rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.saved-list .saved-meta {
+  display: block;
+  color: var(--an-text-muted);
+  font-size: 0.72rem;
+}
+
+.saved-list .delete-query {
+  background: none;
+  border: 0;
+  padding: 0 0.15rem;
+  color: var(--an-text-muted);
+  cursor: pointer;
+}
+
+.saved-list .delete-query:hover,
+.saved-list .delete-query:focus-visible {
+  color: var(--an-error);
+}
+
+/* The query's name, description and save controls */
+.query-details {
+  margin-bottom: 0.5rem;
+}
+
+.query-details-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+
+.query-details .query-name {
+  flex: 1 1 18rem;
+  max-width: 32rem;
+  font-weight: 600;
+}
+
+.query-details .query-description {
+  resize: vertical;
+  font-size: 0.8rem;
+}
+
+/* Confirmation dialog */
+.confirm-dialog {
+  border: 1px solid var(--an-border);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  max-width: min(28rem, calc(100vw - 2rem));
+}
+
+.confirm-dialog::backdrop {
+  background: rgba(11, 11, 11, 0.3);
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
 }

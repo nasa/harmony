@@ -17,6 +17,10 @@ check on other `/admin` routes. It has:
 - errors underlined as you type, from `/api/validate`
 - a form for the query's parameters
 - a results table with CSV download
+- saved queries, including the parameter values to use by default. These are stored in the jobs
+  database's `analytics_queries` table and served by the frontend itself, at
+  `/admin/analytics/api/queries`. Everyone who can use the page can see and run every saved query.
+  Only its owner or an admin can change or delete one. `?query=<id>` links to a saved query.
 
 The frontend passes `/admin/analytics/api/{schema,validate,query}` to this service, adding the
 shared secret and the user. `ANALYTICS_QUERY_URL`, `ANALYTICS_QUERY_SHARED_SECRET` and

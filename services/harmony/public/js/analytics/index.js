@@ -3,6 +3,7 @@
 // frontend to the analytics query service, which validates every query before running it.
 import { createEditor } from './editor.js';
 import { download, parameterValue, renderTable, toCsv } from './results.js';
+import { defaultToText, filterSavedList, renderSavedList } from './saved.js';
 
 const API = '/admin/analytics/api';
 // The last query is kept in this browser only, so a reload doesn't lose it
@@ -23,7 +24,20 @@ const state = {
   // Entered parameter values, by name, kept while the parameters change
   parameterValues: new Map(),
   result: null,
+  // Every saved query, and the one that is open (null for an unsaved query)
+  savedQueries: [],
+  current: null,
+  // The name, description and SQL as last opened or saved, to tell whether there are changes
+  snapshot: null,
 };
+
+const page = $('analytics');
+const user = { username: page.dataset.username, isAdmin: page.dataset.isAdmin === 'true' };
+
+/**
+ * Whether the user may change or delete a saved query (the API enforces the same rule)
+ */
+const canChange = (query) => user.isAdmin || query.owner === user.username;
 
 /**
  * An error from the analytics API, with the problems the service found in the query, if any
@@ -39,21 +53,25 @@ class ApiError extends Error {
 /**
  * Calls the analytics API
  *
- * @param {string} endpoint - schema, validate, or query
- * @param {object} [body] - the JSON body, for a POST
- * @returns {Promise<object>} the response
+ * @param {string} endpoint - e.g. schema, validate, query, or queries/12
+ * @param {object} [body] - the JSON body, which makes the request a POST unless method says otherwise
+ * @param {string} [method] - the HTTP method, if not GET (no body) or POST (a body)
+ * @returns {Promise<object|null>} the response, or null if there was none
  * @throws {ApiError} if the request fails
  */
-async function api(endpoint, body) {
+async function api(endpoint, body, method = body === undefined ? 'GET' : 'POST') {
   let response;
   try {
-    response = await fetch(`${API}/${endpoint}`, body === undefined
-      ? { headers: { Accept: 'application/json' } }
-      : { method: 'POST', headers: { Accept: 'application/json', 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const headers = { Accept: 'application/json' };
+    if (body !== undefined) headers['Content-Type'] = 'application/json';
+    response = await fetch(`${API}/${endpoint}`, {
+      method, headers, body: body === undefined ? undefined : JSON.stringify(body),
+    });
   } catch {
     // e.g. an expired session redirecting the request to the Earthdata Login page
     throw new ApiError('Could not reach Harmony. If your session has expired, reload the page to log in again.', 0);
   }
+  if (response.status === 204) return null;
   let data = {};
   try {
     data = await response.json();
@@ -80,9 +98,9 @@ function savedQuery() {
 }
 
 /**
- * Saves the query
+ * Keeps the query in this browser, for the next time the page is opened
  */
-function saveQuery(text) {
+function rememberQuery(text) {
   try {
     localStorage.setItem(STORAGE_KEY, text);
   } catch {
@@ -337,6 +355,214 @@ async function run(editor) {
 }
 
 /**
+ * Asks the user to confirm something
+ *
+ * @param {string} message - the question
+ * @param {string} okLabel - the label for the button that confirms
+ * @returns {Promise<boolean>} whether they confirmed
+ */
+function confirmAction(message, okLabel) {
+  const dialog = $('confirmDialog');
+  $('confirmMessage').textContent = message;
+  $('confirmOk').textContent = okLabel;
+  dialog.returnValue = '';
+  return new Promise((resolve) => {
+    dialog.addEventListener('close', () => resolve(dialog.returnValue === 'ok'), { once: true });
+    dialog.showModal();
+  });
+}
+
+/**
+ * Asks before discarding unsaved changes, if there are any
+ *
+ * @param {object} editor - the editor
+ * @returns {Promise<boolean>} whether to go ahead
+ */
+async function okToDiscard(editor) {
+  return !hasUnsavedChanges(editor) || confirmAction('Discard the changes to the current query?', 'Discard');
+}
+
+/**
+ * Gets the query's name, description and SQL as they are now
+ *
+ * @param {object} editor - the editor
+ */
+function currentDetails(editor) {
+  return { name: $('queryName').value.trim(), description: $('queryDescription').value, sql: editor.text() };
+}
+
+/**
+ * Whether opening another query would lose changes: edits to the open saved query, or a new query
+ * that has been written but not saved
+ *
+ * @param {object} editor - the editor
+ */
+function hasUnsavedChanges(editor) {
+  const details = currentDetails(editor);
+  if (!state.snapshot) return details.sql.trim() !== '' && details.sql !== EXAMPLE_QUERY;
+  return ['name', 'description', 'sql'].some((key) => details[key] !== state.snapshot[key]);
+}
+
+/**
+ * Shows whether the query is saved, and the save buttons that apply to it: an owner saves their
+ * query in place (or as a new one), anyone else saves a copy
+ *
+ * @param {object} editor - the editor
+ */
+function updateSaveControls(editor) {
+  const { current } = state;
+  const owns = current !== null && canChange(current);
+  $('saveLabel').textContent = current && !owns ? 'Save a copy' : 'Save';
+  $('saveAsNew').hidden = !owns;
+  $('copyLink').hidden = !current;
+  let status = '';
+  if (hasUnsavedChanges(editor)) status = current ? 'Unsaved changes' : 'Not saved';
+  else if (current) status = owns ? 'Saved' : `Saved by ${current.owner}`;
+  $('saveStatus').textContent = status;
+}
+
+/**
+ * Shows the saved queries
+ *
+ * @param {object} editor - the editor
+ */
+function renderSaved(editor) {
+  renderSavedList($('savedList'), state.savedQueries, {
+    currentId: state.current?.id ?? null,
+    canChange,
+    onOpen: (query) => void openQuery(query.id, editor),
+    onDelete: (query) => void deleteQuery(query, editor),
+  });
+  filterSavedList($('savedList'), $('savedFilter').value);
+  $('savedEmpty').hidden = state.savedQueries.length > 0;
+}
+
+/**
+ * Loads the saved queries
+ *
+ * @param {object} editor - the editor
+ */
+async function loadSavedQueries(editor) {
+  try {
+    state.savedQueries = (await api('queries')).queries;
+    renderSaved(editor);
+  } catch (e) {
+    showError(e, editor);
+  }
+}
+
+/**
+ * Puts the open saved query's id in the page URL, so the URL is a link to it
+ *
+ * @param {number|null} id - the id, or null for an unsaved query
+ */
+function setUrlQuery(id) {
+  const url = new URL(window.location.href);
+  if (id) url.searchParams.set('query', id);
+  else url.searchParams.delete('query');
+  window.history.replaceState(null, '', url);
+}
+
+/**
+ * Shows a saved query, or a new empty one
+ *
+ * @param {object|null} query - the saved query, or null for a new one
+ * @param {object} editor - the editor
+ */
+function showQuery(query, editor) {
+  state.current = query;
+  state.snapshot = query ? { name: query.name, description: query.description, sql: query.sql } : null;
+  $('queryName').value = query?.name ?? '';
+  $('queryDescription').value = query?.description ?? '';
+  // The parameter fields are rebuilt, with the saved defaults, once the query has been validated
+  $('parameterFields').replaceChildren();
+  $('parameters').hidden = true;
+  state.parameterValues = new Map(Object.entries(query?.parameters ?? {}).map(([k, v]) => [k, defaultToText(v)]));
+  editor.setText(query?.sql ?? '');
+  setUrlQuery(query?.id ?? null);
+  $('results').hidden = true;
+  clearError();
+  renderSaved(editor);
+  updateSaveControls(editor);
+}
+
+/**
+ * Opens a saved query
+ *
+ * @param {number|string} id - its id
+ * @param {object} editor - the editor
+ * @param {boolean} [askFirst] - whether to ask before losing unsaved changes
+ */
+async function openQuery(id, editor, askFirst = true) {
+  if (askFirst && !(await okToDiscard(editor))) return;
+  try {
+    showQuery(await api(`queries/${encodeURIComponent(id)}`), editor);
+  } catch (e) {
+    showError(e, editor);
+  }
+}
+
+/**
+ * Saves the query, with the parameter values entered as its defaults
+ *
+ * @param {object} editor - the editor
+ * @param {boolean} asNew - whether to save a new query even if the user owns the open one
+ */
+async function save(editor, asNew) {
+  clearError();
+  const details = currentDetails(editor);
+  if (!details.name) {
+    $('saveStatus').textContent = 'Give the query a name to save it';
+    $('queryName').focus();
+    return;
+  }
+  let parameters;
+  try {
+    parameters = parameterValues();
+  } catch (e) {
+    showError(e, editor);
+    return;
+  }
+  const body = { ...details, parameters };
+  const inPlace = state.current && canChange(state.current) && !asNew;
+  try {
+    const saved = inPlace
+      ? await api(`queries/${state.current.id}`, body, 'PUT')
+      : await api('queries', body);
+    state.current = saved;
+    state.snapshot = { name: saved.name, description: saved.description, sql: saved.sql };
+    setUrlQuery(saved.id);
+    await loadSavedQueries(editor);
+    updateSaveControls(editor);
+  } catch (e) {
+    showError(e, editor);
+  }
+}
+
+/**
+ * Deletes a saved query, after asking
+ *
+ * @param {object} query - the query
+ * @param {object} editor - the editor
+ */
+async function deleteQuery(query, editor) {
+  if (!(await confirmAction(`Delete the saved query "${query.name}"? This can't be undone.`, 'Delete'))) return;
+  try {
+    await api(`queries/${query.id}`, undefined, 'DELETE');
+    if (state.current?.id === query.id) {
+      // Keep what's in the editor, now as an unsaved query
+      state.current = null;
+      state.snapshot = null;
+      setUrlQuery(null);
+    }
+    await loadSavedQueries(editor);
+    updateSaveControls(editor);
+  } catch (e) {
+    showError(e, editor);
+  }
+}
+
+/**
  * Sets up the page
  */
 function init() {
@@ -346,9 +572,40 @@ function init() {
     validate: (text) => api('validate', { sql: text }),
     onValidated,
     onRun: () => void run(editor),
-    onChange: saveQuery,
+    onChange: (text) => {
+      rememberQuery(text);
+      updateSaveControls(editor);
+    },
   });
   $('runQuery').addEventListener('click', () => void run(editor));
+
+  $('queryDetails').addEventListener('submit', (e) => {
+    e.preventDefault();
+    void save(editor, false);
+  });
+  $('saveAsNew').addEventListener('click', () => void save(editor, true));
+  $('queryName').addEventListener('input', () => updateSaveControls(editor));
+  $('queryDescription').addEventListener('input', () => updateSaveControls(editor));
+  $('newQuery').addEventListener('click', async () => {
+    if (!(await okToDiscard(editor))) return;
+    showQuery(null, editor);
+    editor.view.focus();
+  });
+  $('savedFilter').addEventListener('input', (e) => filterSavedList($('savedList'), e.target.value));
+  $('copyLink').addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      $('saveStatus').textContent = 'Link copied';
+    } catch {
+      $('saveStatus').textContent = 'Copy the link from the address bar';
+    }
+  });
+
+  // A link to a saved query (?query=id) opens it; otherwise the query from last time is shown
+  const linkedId = new URLSearchParams(window.location.search).get('query');
+  if (linkedId) void openQuery(linkedId, editor, false);
+  void loadSavedQueries(editor);
+  updateSaveControls(editor);
   $('parameters').addEventListener('submit', (e) => {
     e.preventDefault();
     void run(editor);
