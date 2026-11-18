@@ -7,6 +7,7 @@ source "./services/work-scheduler/env-defaults"
 source "./services/work-updater/env-defaults"
 source "./services/cron-service/env-defaults"
 source "./services/work-failer/env-defaults"
+source "./services/analytics-query/env-defaults"
 source "packages/util/env-defaults"
 source "./services/harmony/env-defaults"
 source ".env"
@@ -59,6 +60,14 @@ if [ ! "$LOCAL_DEV" = true ]; then
   file="services/work-failer/config/service-template.yaml"
   if [ ! -f "$file" ]; then
     echo "work failer template was not found."
+    exit 1
+  fi
+  envsubst < $file | kubectl apply -f - -n harmony
+
+  # create the analytics query service
+  file="services/analytics-query/config/service-template.yaml"
+  if [ ! -f "$file" ]; then
+    echo "analytics query template was not found."
     exit 1
   fi
   envsubst < $file | kubectl apply -f - -n harmony

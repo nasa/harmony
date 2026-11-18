@@ -1,0 +1,43 @@
+# Port the API and health check server listens on
+PORT=3000
+
+# The ARN of the S3 Table bucket holding the Iceberg analytics tables (the same bucket the cron
+# service's analytics job writes to). Not needed when using ministack, whose Iceberg REST endpoint
+# serves its one bucket at any ARN.
+S3_TABLE_BUCKET_ARN=
+
+# Bearer token the harmony frontend must send with every /api request. The service is only reached
+# through the frontend, which checks that the user is an admin or log viewer; this keeps anything
+# else running in the cluster (including backend service containers) from calling it directly.
+# Must be overridden outside local development - the service refuses to start with this value
+# unless USE_LOCALSTACK is true.
+ANALYTICS_QUERY_SHARED_SECRET=local-development-only
+
+# DuckDB memory limit and threads for the shared query instance. DuckDB's native memory use
+# exceeds memory_limit (see ANALYTICS_UPDATE_MEMORY_LIMIT in the cron service), so leave plenty of
+# headroom below the container's memory limit.
+ANALYTICS_QUERY_MEMORY_LIMIT=1GB
+ANALYTICS_QUERY_THREADS=2
+
+# How many queries may run at once, and how many more may wait for one to finish before requests
+# are rejected as busy
+ANALYTICS_QUERY_MAX_CONCURRENT=2
+ANALYTICS_QUERY_MAX_WAITING=8
+
+# Queries running longer than this are interrupted
+ANALYTICS_QUERY_TIMEOUT_MS=60000
+
+# The most rows a query returns. Larger results are truncated (and flagged as truncated).
+ANALYTICS_QUERY_MAX_ROWS=10000
+
+# How long the table/column listing is cached. The analytics tables only change when the cron
+# service's analytics job runs (ANALYTICS_CRON), so this can be long.
+ANALYTICS_SCHEMA_CACHE_SECONDS=900
+
+# Recreate the DuckDB instance after this many minutes (0 = never). The AWS credentials are read
+# when the instance is set up, before it is locked down, so recreating it periodically picks up
+# refreshed credentials.
+ANALYTICS_QUERY_INSTANCE_MAX_AGE_MINUTES=30
+
+# For tests only: attach this DuckDB database file as the catalog instead of the Iceberg tables
+ANALYTICS_QUERY_FIXTURE_PATH=

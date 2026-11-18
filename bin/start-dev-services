@@ -50,3 +50,4 @@ WORK_ITEM_UPDATE_QUEUE_TYPE=large start_service "Large job work updater" "servic
 WORK_ITEM_UPDATE_QUEUE_TYPE=small start_service "Small job work updater" "services/work-updater" 5003 9303 "logs/work-update-small.log"
 start_service "Cron service" "services/cron-service" 5004 9304 "logs/cron-service.log"
 start_service "Work failer" "services/work-failer" 5005 9305 "logs/work-failer.log"
+start_service "Analytics query" "services/analytics-query" 5007 9307 "logs/analytics-query.log"

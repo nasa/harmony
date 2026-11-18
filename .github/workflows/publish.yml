@@ -74,7 +74,7 @@ jobs:
           fi
           echo "VERSION '${VERSION}' is a semantic version; tagging all core service images as 'stable'."
 
-          for service in harmony query-cmr service-runner work-failer cron-service work-scheduler work-updater; do
+          for service in harmony query-cmr service-runner work-failer cron-service analytics-query work-scheduler work-updater; do
             image="harmonyservices/${service}"
             source_ref="docker.io/${image}:${VERSION}"
             echo "Tagging ${source_ref} as stable..."
