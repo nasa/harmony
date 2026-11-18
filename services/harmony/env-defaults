@@ -139,13 +139,18 @@ NODE_ENV=production
 # The object store used for storing shapefiles. Only S3 is supported currently.
 OBJECT_STORE_TYPE=s3
 
-# Maximum number of non-file fields to accept when providing a shapefile to harmony
+# Maximum number of non-file fields to accept in a multipart/form-data OGC API Coverages POST
+# request, whether or not it includes a shapefile. Each repeated field (e.g. variable=a&variable=b)
+# counts separately, so clients should send many values as a single comma-separated field.
+# Requests that exceed this limit are rejected with a 400 error.
 MAX_POST_FIELDS=100
 
 # Maximum size (in bytes) for shapefiles
 MAX_POST_FILE_SIZE=2000000000
 
-# Maximum number of multipart parts to accept when providing a shapefile
+# Maximum number of parts (fields and files) to accept in a multipart/form-data OGC API Coverages
+# POST request, whether or not it includes a shapefile. Requests that exceed this limit are
+# rejected with a 400 error.
 MAX_POST_FILE_PARTS=100
 
 # Maximum size (in bytes) of the cache for data operations, 512MB
