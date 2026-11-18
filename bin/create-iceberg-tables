@@ -468,6 +468,34 @@ create_table() {
   echo "----------------------------------------"
 }
 
+# Ministack drops the partition spec and stores every timestamptz column as a string for tables
+# created with `s3tables create-table --metadata` (AWS keeps both), so for ministack create them
+# through its Iceberg REST endpoint with DuckDB instead, from the same schemas. That needs the cron
+# service's dependencies; without them, fall back to the aws CLI rather than fail bootstrapping.
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+if [ -n "$AWS_ENDPOINT_FLAG" ]; then
+  if command -v node >/dev/null 2>&1 \
+    && [ -d "${SCRIPT_DIR}/../services/cron-service/node_modules/@duckdb/node-api" ]; then
+    SCHEMA_DIR=$(mktemp -d)
+    trap 'rm -rf "$SCHEMA_DIR"' EXIT
+    INDEX=0
+    while [ "$INDEX" -lt "${#TABLE_NAMES[@]}" ]; do
+      printf '%s' "${TABLE_SCHEMAS[$INDEX]}" > "${SCHEMA_DIR}/${TABLE_NAMES[$INDEX]}.json"
+      INDEX=$((INDEX + 1))
+    done
+    if ! node "${SCRIPT_DIR}/create-ministack-iceberg-tables.mjs" "${AWS_ENDPOINT_FLAG#--endpoint-url=}" \
+      "$AWS_REGION" "$BUCKET_ARN" "$SCHEMA_DIR" "${TABLE_NAMES[@]}" >&2; then
+      exit 1
+    fi
+    # Sole stdout output: callers capture this via `arn=$(./bin/create-iceberg-tables)`.
+    echo "$BUCKET_ARN"
+    exit 0
+  fi
+  echo "Warning: node or services/cron-service/node_modules not found, creating the ministack tables" \
+    "with the aws CLI. Their timestamp columns will be strings and they won't be partitioned;" \
+    "run npm install in services/cron-service and recreate them to fix this." >&2
+fi
+
 # Create the tables in parallel, since each aws call is slow. Each table's output is captured
 # and then printed in table order, as if they had been created one at a time.
 LOG_DIR=$(mktemp -d)
