@@ -22,6 +22,12 @@ if [ "$current_context" != "colima" ] && [ "$current_context" != "docker-desktop
   exit 1
 fi
 
+# When harmony runs in k8s it reaches the analytics query service through its k8s service, not the
+# localhost port bin/start-dev-services uses
+if [ ! "$LOCAL_DEV" = true ]; then
+  export ANALYTICS_QUERY_URL="http://harmony-analytics-query:${PORT:-3000}"
+fi
+
 . ./bin/create-k8s-config-maps-and-secrets
 
 if [ ! "$LOCAL_DEV" = true ]; then

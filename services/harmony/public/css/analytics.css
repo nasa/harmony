@@ -1,0 +1,252 @@
+/* Admin analytics query page. Colors are referenced by role through these tokens, matching the
+   admin dashboard's (dashboard.css). */
+.analytics {
+  --an-surface: #fcfcfb;
+  --an-page: #f9f9f7;
+  --an-text-primary: #0b0b0b;
+  --an-text-secondary: #52514e;
+  --an-text-muted: #898781;
+  --an-border: rgba(11, 11, 11, 0.12);
+  --an-accent: #2a78d6;
+  --an-error: #d03b3b;
+  --an-ok: #006300;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--an-text-primary);
+}
+
+/* The EUI stylesheet predates Bootstrap 5's visually-hidden utility */
+.analytics .visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+.analytics [hidden] {
+  display: none !important;
+}
+
+.analytics-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+}
+
+.analytics-layout {
+  display: grid;
+  grid-template-columns: minmax(14rem, 18rem) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (max-width: 991px) {
+  .analytics-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.panel-heading {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+/* Tables and columns */
+.schema-panel {
+  background: var(--an-surface);
+  border: 1px solid var(--an-border);
+  border-radius: 6px;
+  padding: 0.75rem;
+  position: sticky;
+  top: 1rem;
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+}
+
+.schema-tree details {
+  margin-bottom: 0.15rem;
+}
+
+.schema-tree summary {
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.schema-tree ul {
+  list-style: none;
+  margin: 0.15rem 0 0.4rem;
+  padding-left: 1.1rem;
+}
+
+.schema-tree li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+}
+
+.schema-tree .insert-name {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--an-accent);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  text-align: left;
+  cursor: pointer;
+}
+
+.schema-tree .insert-name:hover,
+.schema-tree .insert-name:focus-visible {
+  text-decoration: underline;
+}
+
+.schema-tree .column-type {
+  color: var(--an-text-muted);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+/* Editor */
+.sql-editor {
+  border: 1px solid var(--an-border);
+  border-radius: 6px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.sql-editor .cm-editor {
+  min-height: 12rem;
+  max-height: 50vh;
+  font-size: 0.875rem;
+}
+
+.sql-editor .cm-editor.cm-focused {
+  outline: 2px solid var(--an-accent);
+  outline-offset: -1px;
+}
+
+.sql-editor .cm-scroller {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.query-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin: 0.5rem 0 1rem;
+}
+
+.validation-status.is-valid {
+  color: var(--an-ok);
+}
+
+.validation-status.is-invalid {
+  color: var(--an-error);
+}
+
+/* Parameters */
+.parameters {
+  background: var(--an-surface);
+  border: 1px solid var(--an-border);
+  border-radius: 6px;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.parameter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: 0.5rem 1rem;
+}
+
+.parameter-grid label {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8rem;
+  margin-bottom: 0.15rem;
+}
+
+.parameter-grid .parameter-type {
+  color: var(--an-text-muted);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+/* Errors */
+.query-error-list {
+  margin: 0.25rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.query-error-list button {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Results */
+.results-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.results-header #downloadCsv {
+  margin-left: auto;
+}
+
+.results-table-wrap {
+  overflow: auto;
+  max-height: 70vh;
+  border: 1px solid var(--an-border);
+  border-radius: 6px;
+}
+
+.results-table {
+  margin-bottom: 0;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.results-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--an-page);
+  white-space: nowrap;
+  border-top: 0;
+}
+
+.results-table .column-type {
+  display: block;
+  color: var(--an-text-muted);
+  font-weight: normal;
+  font-size: 0.7rem;
+}
+
+.results-table td {
+  white-space: nowrap;
+  max-width: 40rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.results-table td.numeric,
+.results-table th.numeric {
+  text-align: right;
+}
+
+.results-table .null {
+  color: var(--an-text-muted);
+  font-style: italic;
+}

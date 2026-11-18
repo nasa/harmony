@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="/css/eui.min.css" />
+  <link rel="stylesheet" href="/css/default.css" />
+  <link rel="stylesheet" href="/css/analytics.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" />
+  <script language="javascript" id="_fed_an_ua_tag"
+    src="https://dap.digitalgov.gov/Universal-Federated-Analytics-Min.js?agency=NASA&subagency=GSFC&dclink=true"
+    defer></script>
+  <script type="module" src="/js/analytics/index.js"></script>
+  <title>Harmony Analytics</title>
+</head>
+
+<body class="d-flex flex-column h-100">
+  {{> banner}}
+  <main class="container-fluid pt-4 pb-5 flex-grow-1 analytics" id="analytics">
+    <header class="analytics-header mb-3">
+      <div>
+        <h1 class="h3 mb-1">Analytics</h1>
+        <p class="small text-muted mb-0">Read-only SQL (DuckDB dialect) against the Harmony Iceberg analytics tables,
+          which are updated from the jobs database every few hours.</p>
+      </div>
+      <p class="small mb-0" id="schemaStatus" role="status" aria-live="polite">Loading tables…</p>
+    </header>
+
+    <div id="schemaWarnings" class="alert alert-warning" role="alert" hidden></div>
+
+    <div class="analytics-layout">
+      <aside class="schema-panel" aria-labelledby="schemaHeading">
+        <h2 class="panel-heading" id="schemaHeading">Tables</h2>
+        <label class="visually-hidden" for="schemaFilter">Filter tables and columns</label>
+        <input type="search" id="schemaFilter" class="form-control form-control-sm mb-2"
+          placeholder="Filter tables and columns">
+        <p class="small text-muted mb-2">Select a name to insert it into the query.</p>
+        <div id="schemaTree" class="schema-tree"></div>
+      </aside>
+
+      <section class="query-panel" aria-label="Query">
+        <label class="visually-hidden" for="editor">SQL query</label>
+        <div id="editor" class="sql-editor"></div>
+
+        <div class="query-toolbar">
+          <button type="button" class="btn btn-primary btn-sm" id="runQuery">
+            <i class="bi bi-play-fill" aria-hidden="true"></i> Run
+          </button>
+          <span class="small text-muted"><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Enter</kbd></span>
+          <span class="small validation-status" id="validationStatus" role="status" aria-live="polite"></span>
+        </div>
+
+        <form id="parameters" class="parameters" hidden>
+          <h2 class="panel-heading">Parameters</h2>
+          <p class="small text-muted mb-2">Timestamps are ISO 8601 (e.g. 2026-11-01T00:00:00Z). Separate list values
+            with commas. Leave a value empty for NULL.</p>
+          <div class="parameter-grid" id="parameterFields"></div>
+        </form>
+
+        <div id="queryError" class="alert alert-danger" role="alert" hidden></div>
+
+        <section class="results" id="results" aria-labelledby="resultsHeading" hidden>
+          <div class="results-header">
+            <h2 class="panel-heading mb-0" id="resultsHeading">Results</h2>
+            <span class="small text-muted" id="resultsSummary"></span>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="downloadCsv">
+              <i class="bi bi-download" aria-hidden="true"></i> Download CSV
+            </button>
+          </div>
+          <div id="truncatedWarning" class="alert alert-warning small py-2" role="status" hidden></div>
+          <div class="results-table-wrap">
+            <table class="table table-sm results-table" id="resultsTable"></table>
+          </div>
+        </section>
+      </section>
+    </div>
+  </main>
+  <div class="container-fluid pb-3 small text-muted">Harmony {{version}}</div>
+</body>
+
+</html>

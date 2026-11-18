@@ -8,6 +8,7 @@ import * as yaml from 'js-yaml';
 import swaggerUi from 'swagger-ui-express';
 
 import serviceInvoker from '../backends/service-invoker';
+import { getAnalyticsPage, proxyAnalyticsApi } from '../frontends/analytics';
 import { getCollectionCapabilitiesJson } from '../frontends/capabilities';
 import { cloudAccessJson, cloudAccessSh } from '../frontends/cloud-access';
 import { setLogLevel } from '../frontends/configuration';
@@ -58,7 +59,7 @@ import handleJobIDParameter from '../middleware/job-id';
 import handleLabelParameter from '../middleware/label';
 import logoutLink from '../middleware/logout-link';
 import parameterValidation from '../middleware/parameter-validation';
-import { admin, core } from '../middleware/permission-groups';
+import { adminRoutes, core } from '../middleware/permission-groups';
 import validateRestrictedVariables from '../middleware/restricted-variables';
 import chooseService from '../middleware/service-selection';
 import shapefileConverter from '../middleware/shapefile-converter';
@@ -244,7 +245,8 @@ export default function router({ USE_EDL_CLIENT_APP = 'false' }: RouterConfig): 
 
   result.use('/core/*', core);
   if (env.adminGroupId) {
-    result.use('/admin/*', admin);
+    // Admins only, except for the few admin pages log viewers may use too
+    result.use('/admin/*', adminRoutes);
   } else {
     // Prevent misconfiguration granting unintended access
     log.warn('ADMIN_GROUP_ID is not set.  The admin interface will not be available');
@@ -358,6 +360,11 @@ export default function router({ USE_EDL_CLIENT_APP = 'false' }: RouterConfig): 
   result.get('/admin/dashboard/api/users/:name', asyncHandler(getDashboardUserDetails));
   result.get('/admin/dashboard/api/jobs/running', asyncHandler(getDashboardRunningJobs));
   result.get('/admin/dashboard/api/jobs/by-work-item-status', asyncHandler(getDashboardJobsByWorkItemStatus));
+
+  // Read-only SQL against the Iceberg analytics tables, for admins and log viewers
+  result.get('/admin/analytics', asyncHandler(getAnalyticsPage));
+  result.get('/admin/analytics/api/:endpoint', asyncHandler(proxyAnalyticsApi));
+  result.post('/admin/analytics/api/:endpoint', json({ limit: '256kb' }), asyncHandler(proxyAnalyticsApi));
 
   result.get('/workflow-ui', asyncHandler(getJobs));
   result.get('/workflow-ui/:jobID', asyncHandler(getJob));

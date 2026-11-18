@@ -20,6 +20,8 @@ export interface SchemaInfo {
 const TIMESTAMP_COLUMN = /_at$/;
 const TIMESTAMPTZ = 'TIMESTAMP WITH TIME ZONE';
 
+const quoteIdentifier = (name: string): string => `"${name.replace(/"/g, '""')}"`;
+
 /**
  * Read the analytics tables and their columns
  *
@@ -27,25 +29,27 @@ const TIMESTAMPTZ = 'TIMESTAMP WITH TIME ZONE';
  * @returns the tables, sorted by name, and any warnings about their definitions
  */
 export async function loadSchema(conn: DuckDBConnection): Promise<SchemaInfo> {
-  const reader = await conn.runAndReadAll(`
-    SELECT table_name, column_name, data_type FROM duckdb_columns()
+  const tablesReader = await conn.runAndReadAll(`
+    SELECT table_name FROM duckdb_tables()
     WHERE database_name = '${CATALOG}' AND schema_name = '${SCHEMA}'
-    ORDER BY table_name, column_index`);
-  const tables = new Map<string, TableInfo>();
+    ORDER BY table_name`);
+  const tables: TableInfo[] = [];
   const warnings: string[] = [];
-  for (const row of reader.getRowObjectsJson()) {
-    const tableName = String(row.table_name);
-    const column = { name: String(row.column_name), type: String(row.data_type) };
-    if (!tables.has(tableName)) {
-      tables.set(tableName, { name: tableName, columns: [] });
-    }
-    tables.get(tableName).columns.push(column);
-    if (TIMESTAMP_COLUMN.test(column.name) && column.type !== TIMESTAMPTZ) {
-      warnings.push(`${tableName}.${column.name} is ${column.type}, not ${TIMESTAMPTZ}: cast it `
-        + `(${column.name}::TIMESTAMPTZ) to use it as a timestamp`);
+  for (const { table_name: tableName } of tablesReader.getRowObjectsJson()) {
+    const name = String(tableName);
+    // Not duckdb_columns(): the Iceberg catalog only loads a table's columns when a query uses the
+    // table, and until then lists a single placeholder column ("__", type UNKNOWN). DESCRIBE loads it.
+    const reader = await conn.runAndReadAll(`DESCRIBE ${CATALOG}.${SCHEMA}.${quoteIdentifier(name)}`);
+    const columns = reader.getRowObjectsJson().map((row) => ({ name: String(row.column_name), type: String(row.column_type) }));
+    tables.push({ name, columns });
+    for (const column of columns) {
+      if (TIMESTAMP_COLUMN.test(column.name) && column.type !== TIMESTAMPTZ) {
+        warnings.push(`${name}.${column.name} is ${column.type}, not ${TIMESTAMPTZ}: cast it `
+          + `(${column.name}::TIMESTAMPTZ) to use it as a timestamp`);
+      }
     }
   }
-  return { tables: [...tables.values()], warnings, loadedAt: new Date().toISOString() };
+  return { tables, warnings, loadedAt: new Date().toISOString() };
 }
 
 /**

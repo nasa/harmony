@@ -1,0 +1,29 @@
+{
+  "name": "harmony-codemirror-bundle",
+  "private": true,
+  "description": "Builds public/js/vendor/codemirror.js, the SQL editor for /admin/analytics. Run bin/build-codemirror-bundle rather than installing here.",
+  "dependencies": {
+    "@codemirror/autocomplete": "6.20.4",
+    "@codemirror/commands": "6.11.1",
+    "@codemirror/lang-sql": "6.10.0",
+    "@codemirror/language": "6.13.1",
+    "@codemirror/lint": "6.9.7",
+    "@codemirror/search": "6.7.2",
+    "@codemirror/state": "6.7.6",
+    "@codemirror/view": "6.43.15",
+    "codemirror": "6.0.2"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  },
+  "overrides": {
+    "@codemirror/autocomplete": "$@codemirror/autocomplete",
+    "@codemirror/commands": "$@codemirror/commands",
+    "@codemirror/language": "$@codemirror/language",
+    "@codemirror/lint": "$@codemirror/lint",
+    "@codemirror/search": "$@codemirror/search",
+    "@codemirror/state": "$@codemirror/state",
+    "@codemirror/view": "$@codemirror/view",
+    "style-mod": "4.1.4"
+  }
+}
