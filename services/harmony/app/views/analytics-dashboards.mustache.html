@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="/css/eui.min.css" />
+  <link rel="stylesheet" href="/css/default.css" />
+  <!-- The chart styles (.viz-*) the dashboard's chart kit uses -->
+  <link rel="stylesheet" href="/css/dashboard.css" />
+  <link rel="stylesheet" href="/css/analytics.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" />
+  <script language="javascript" id="_fed_an_ua_tag"
+    src="https://dap.digitalgov.gov/Universal-Federated-Analytics-Min.js?agency=NASA&subagency=GSFC&dclink=true"
+    defer></script>
+  <script type="module" src="/js/analytics/dashboards.js"></script>
+  <title>Harmony Analytics Dashboards</title>
+</head>
+
+<body class="d-flex flex-column h-100">
+  {{> banner}}
+  <main class="container-fluid pt-4 pb-5 flex-grow-1 analytics" id="analytics" data-username="{{username}}"
+    data-is-admin="{{isAdmin}}">
+    {{> analytics-tabs}}
+
+    <div class="analytics-layout">
+      <aside class="schema-panel" aria-labelledby="dashboardsHeading">
+        <div class="panel-heading-row">
+          <h2 class="panel-heading mb-0" id="dashboardsHeading">Dashboards</h2>
+          <button type="button" class="btn btn-sm btn-link p-0" id="newDashboard">
+            <i class="bi bi-plus-lg" aria-hidden="true"></i> New
+          </button>
+        </div>
+        <label class="visually-hidden" for="dashboardFilter">Filter dashboards</label>
+        <input type="search" id="dashboardFilter" class="form-control form-control-sm mb-2"
+          placeholder="Filter dashboards">
+        <ul id="dashboardList" class="saved-list"></ul>
+        <p id="dashboardsEmpty" class="small text-muted" hidden>No dashboards yet. Select New to make one from
+          your saved queries.</p>
+      </aside>
+
+      <section class="dashboard-panel" aria-label="Dashboard">
+        <div id="dashboardError" class="alert alert-danger" role="alert" hidden></div>
+
+        <p id="noDashboard" class="text-muted">Open a dashboard, or select New to make one.</p>
+
+        <div id="dashboardView" hidden>
+          <!-- The name and description, read-only unless editing -->
+          <form class="query-details" id="dashboardDetails">
+            <div class="query-details-row">
+              <label class="visually-hidden" for="dashboardName">Dashboard name</label>
+              <input type="text" id="dashboardName" class="form-control form-control-sm query-name" maxlength="255"
+                placeholder="Untitled dashboard" readonly>
+              <button type="button" class="btn btn-sm btn-outline-primary" id="editDashboard">
+                <i class="bi bi-pencil" aria-hidden="true"></i> Edit
+              </button>
+              <button type="submit" class="btn btn-sm btn-primary" id="saveDashboard" hidden>
+                <i class="bi bi-save" aria-hidden="true"></i> <span id="saveDashboardLabel">Save</span>
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-secondary" id="saveDashboardAsNew" hidden>Save as
+                new</button>
+              <button type="button" class="btn btn-sm btn-outline-secondary" id="cancelEdit" hidden>Cancel</button>
+              <button type="button" class="btn btn-sm btn-outline-secondary" id="copyDashboardLink" hidden>
+                <i class="bi bi-link-45deg" aria-hidden="true"></i> Copy link
+              </button>
+              <span class="small text-muted" id="dashboardStatus" role="status" aria-live="polite"></span>
+              <!-- Runs every panel's query again, and says when they last ran -->
+              <span class="dashboard-refresh">
+                <span class="small text-muted" id="refreshStatus" role="status" aria-live="polite"></span>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="refreshDashboard">
+                  <i class="bi bi-arrow-clockwise" aria-hidden="true"></i> Refresh
+                </button>
+              </span>
+            </div>
+            <label class="visually-hidden" for="dashboardDescription">Description</label>
+            <textarea id="dashboardDescription" class="form-control form-control-sm query-description" rows="1"
+              maxlength="4096" placeholder="Description (optional)" readonly></textarea>
+          </form>
+
+          <!-- One field per parameter name used by the panels' queries -->
+          <form id="dashboardParameters" class="parameters" hidden>
+            <div class="panel-heading-row">
+              <h2 class="panel-heading mb-0">
+                <button type="button" class="collapse-toggle" aria-expanded="true" aria-controls="dashboardParametersBody"
+                  data-collapse="parameters">
+                  <i class="bi bi-chevron-down" aria-hidden="true"></i> Parameters<span class="collapse-count"
+                    id="parametersCount"></span>
+                </button>
+              </h2>
+            </div>
+            <div id="dashboardParametersBody">
+              <p class="small text-muted mb-2">Shared by every panel whose query uses the parameter. Press Enter in a
+                field (or Refresh) to apply changes. Separate list values with commas; leave a value empty for NULL.</p>
+              <div class="parameter-grid" id="dashboardParameterFields"></div>
+            </div>
+          </form>
+
+          <!-- Editing: the panels, in order -->
+          <section class="panel-editor" id="panelEditor" aria-labelledby="panelEditorHeading" hidden>
+            <div class="panel-heading-row">
+              <h2 class="panel-heading mb-0" id="panelEditorHeading">
+                <button type="button" class="collapse-toggle" aria-expanded="true" aria-controls="panelEditorBody"
+                  data-collapse="panels">
+                  <i class="bi bi-chevron-down" aria-hidden="true"></i> Panels<span class="collapse-count"
+                    id="panelsCount"></span>
+                </button>
+              </h2>
+              <button type="button" class="btn btn-sm btn-outline-primary" id="addPanel">
+                <i class="bi bi-plus-lg" aria-hidden="true"></i> Add panel
+              </button>
+            </div>
+            <div id="panelEditorBody">
+              <table class="panel-editor-table" id="panelEditorTable">
+                <thead>
+                  <tr>
+                    <th scope="col"><span class="visually-hidden">Panel</span></th>
+                    <th scope="col">Saved query</th>
+                    <th scope="col">Display</th>
+                    <th scope="col">Width</th>
+                    <th scope="col">Max rows</th>
+                    <th scope="col"><span class="visually-hidden">Order</span></th>
+                  </tr>
+                </thead>
+                <tbody id="panelEditorList"></tbody>
+              </table>
+              <p class="small text-muted mb-0" id="panelEditorEmpty">Add panels to show your saved queries' charts and
+                tables.</p>
+            </div>
+          </section>
+
+          <div class="dashboard-grid" id="dashboardGrid"></div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Confirms discarding changes or deleting a dashboard -->
+    <dialog id="confirmDialog" class="confirm-dialog" aria-labelledby="confirmMessage">
+      <form method="dialog">
+        <p id="confirmMessage"></p>
+        <!-- The buttons for the choices, added when the dialog is shown (see chooseAction in common.js) -->
+        <div class="confirm-actions" id="confirmActions"></div>
+      </form>
+    </dialog>
+  </main>
+  <div class="container-fluid pb-3 small text-muted">Harmony {{version}}</div>
+</body>
+
+</html>

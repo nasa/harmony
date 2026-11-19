@@ -21,6 +21,7 @@
   {{> banner}}
   <main class="container-fluid pt-4 pb-5 flex-grow-1 analytics" id="analytics" data-username="{{username}}"
     data-is-admin="{{isAdmin}}">
+    {{> analytics-tabs}}
     <header class="analytics-header mb-3">
       <div>
         <h1 class="h3 mb-1">Analytics</h1>
@@ -143,10 +144,8 @@
     <dialog id="confirmDialog" class="confirm-dialog" aria-labelledby="confirmMessage">
       <form method="dialog">
         <p id="confirmMessage"></p>
-        <div class="confirm-actions">
-          <button type="submit" value="cancel" class="btn btn-sm btn-outline-secondary">Cancel</button>
-          <button type="submit" value="ok" class="btn btn-sm btn-danger" id="confirmOk">OK</button>
-        </div>
+        <!-- The buttons for the choices, added when the dialog is shown (see chooseAction in common.js) -->
+        <div class="confirm-actions" id="confirmActions"></div>
       </form>
     </dialog>
   </main>

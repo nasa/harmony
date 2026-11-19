@@ -13,13 +13,29 @@ that the user is an admin, then calls this service with a shared secret and the 
 - a SQL editor with DuckDB-flavoured highlighting
 - table/column completion from `/api/schema`
 - errors underlined as you type, from `/api/validate`
-- a form for the query's parameters
+- a form for the query's parameters (`public/js/analytics/params.js`, shared with the Dashboards
+  tab). Timestamp and date parameters get the browser's date/time picker and quick picks ("Start
+  of today", "7 days ago"). A pair named like a range (`$start`/`$end`, `$from`/`$to`,
+  `$created_start`/`$created_end`, ...) is one range field with presets ("Last 7 days",
+  "Last month"). Times are UTC, and values are sent and saved as ISO 8601 text.
+- time expressions in the editor's completions: typing `last`, `today` or `this` offers e.g.
+  `now() - INTERVAL 7 DAY` or `date_trunc('month', now())`
 - a results table with CSV download
 - saved queries, including the parameter values to use by default. These are stored in the jobs
   database's `analytics_queries` table and served by the frontend itself, at
   `/admin/analytics/api/queries`. Every admin can see, run, change and delete every saved query. The API also has an owner rule
   (only the owner or an admin may change or delete a query), which would matter if the page were
   opened to non-admins. `?query=<id>` links to a saved query.
+- a **Dashboards** tab (`/admin/analytics/dashboards`, `public/js/analytics/dashboards.js`):
+  layouts of saved queries, each panel showing its query's chart or a table, at half or full width.
+  A panel runs with the row limit saved with its query (the Query tab's Row limit when the query was
+  saved, or 10 if it has none) unless the panel sets its own Max rows. One field per parameter name is shared by every panel whose query uses
+  it, so a single `$start` can set the time range of the whole dashboard. Viewing a dashboard runs
+  its panels' queries two at a time (this service's default concurrency). Dashboards are stored in
+  the jobs database's `analytics_dashboards` table and served by the frontend at
+  `/admin/analytics/api/dashboards`, with the same access rules as saved queries. A panel whose
+  saved query has been deleted says so, rather than breaking the dashboard. `?dashboard=<id>`
+  links to a dashboard.
 - a chart of the results, saved with the query (`public/js/analytics/chart.js`), as columns
   (stacked for several series) or lines. Either several numeric columns are each a series, or one
   is split into a series per value of another column. Past eight series the smallest are combined

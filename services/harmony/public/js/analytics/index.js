@@ -2,14 +2,12 @@
 // in its parameters, run it, and see or download the results. Queries go through the harmony
 // frontend to the analytics query service, which validates every query before running it.
 import { chartProblem, isNumericType, renderChart, suggestChart } from './chart.js';
+import { $, api, confirmAction, pageUser, renderError, userStorage } from './common.js';
 import { createEditor } from './editor.js';
+import { renderParameterFields } from './params.js';
 import { download, parameterValue, renderTable, toCsv } from './results.js';
 import { defaultToText, filterSavedList, renderSavedList } from './saved.js';
 
-const API = '/admin/analytics/api';
-// Each user's last query and row limit are kept in this browser only (see remember), so a reload
-// doesn't lose them
-const STORAGE_PREFIX = 'harmony.analytics';
 const DEFAULT_ROW_LIMIT = 10;
 const EXAMPLE_QUERY = `-- Jobs by status over the last 30 days
 SELECT status, count(*) AS jobs
@@ -18,14 +16,14 @@ WHERE created_at >= now() - INTERVAL 30 DAY
 GROUP BY status
 ORDER BY jobs DESC`;
 
-const $ = (id) => document.getElementById(id);
-
 const state = {
   // The latest validation result and the query it is for
   validation: null,
   validatedText: null,
-  // Entered parameter values, by name, kept while the parameters change
+  // Entered parameter values (as text), by name, kept while the parameters change
   parameterValues: new Map(),
+  // The parameters the fields are for: the latest valid query's
+  parameters: [],
   result: null,
   // Every saved query, and the one that is open (null for an unsaved query)
   savedQueries: [],
@@ -44,96 +42,15 @@ const state = {
  */
 const token = (name) => getComputedStyle($('analytics')).getPropertyValue(name).trim();
 
-const page = $('analytics');
-const user = { username: page.dataset.username, isAdmin: page.dataset.isAdmin === 'true' };
+const user = pageUser($('analytics'));
 
 /**
  * Whether the user may change or delete a saved query (the API enforces the same rule)
  */
 const canChange = (query) => user.isAdmin || query.owner === user.username;
 
-/**
- * An error from the analytics API, with the problems the service found in the query, if any
- */
-class ApiError extends Error {
-  constructor(message, status, errors = []) {
-    super(message);
-    this.status = status;
-    this.errors = errors;
-  }
-}
-
-/**
- * Calls the analytics API
- *
- * @param {string} endpoint - e.g. schema, validate, query, or queries/12
- * @param {object} [body] - the JSON body, which makes the request a POST unless method says otherwise
- * @param {string} [method] - the HTTP method, if not GET (no body) or POST (a body)
- * @returns {Promise<object|null>} the response, or null if there was none
- * @throws {ApiError} if the request fails
- */
-async function api(endpoint, body, method = body === undefined ? 'GET' : 'POST') {
-  let response;
-  try {
-    const headers = { Accept: 'application/json' };
-    if (body !== undefined) headers['Content-Type'] = 'application/json';
-    response = await fetch(`${API}/${endpoint}`, {
-      method, headers, body: body === undefined ? undefined : JSON.stringify(body),
-    });
-  } catch {
-    // e.g. an expired session redirecting the request to the Earthdata Login page
-    throw new ApiError('Could not reach Harmony. If your session has expired, reload the page to log in again.', 0);
-  }
-  if (response.status === 204) return null;
-  let data = {};
-  try {
-    data = await response.json();
-  } catch {
-    // not JSON - reported by status below
-  }
-  if (!response.ok) {
-    // The analytics service's errors have a message; harmony's own (e.g. a 403) a description
-    throw new ApiError(data.message ?? data.description ?? `The request failed (HTTP ${response.status})`,
-      response.status, data.errors ?? []);
-  }
-  return data;
-}
-
-/**
- * Gets the storage key for one of the user's remembered settings. Keys include the username, so
- * people sharing a browser each get their own.
- *
- * @param {string} name - the setting, e.g. query or rowLimit
- */
-const storageKey = (name) => `${STORAGE_PREFIX}.${user.username}.${name}`;
-
-/**
- * Reads one of the user's remembered settings
- *
- * @param {string} name - the setting
- * @returns {string|null} its value, or null if there is none (or storage is unavailable)
- */
-function remembered(name) {
-  try {
-    return localStorage.getItem(storageKey(name));
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Remembers one of the user's settings in this browser, for the next time the page is opened
- *
- * @param {string} name - the setting
- * @param {string} value - its value
- */
-function remember(name, value) {
-  try {
-    localStorage.setItem(storageKey(name), value);
-  } catch {
-    // storage may be unavailable (e.g. blocked), in which case the setting just isn't kept
-  }
-}
+// The user's last query and row limit, kept in this browser so a reload doesn't lose them
+const { remembered, remember } = userStorage(user.username);
 
 /**
  * Shows an error, listing the problems in the query with links to where they are
@@ -142,29 +59,7 @@ function remember(name, value) {
  * @param {object} editor - the editor, to select a problem's position
  */
 function showError(error, editor) {
-  const box = $('queryError');
-  box.replaceChildren(error.message);
-  const problems = error.errors ?? [];
-  if (problems.length > 0) {
-    const list = document.createElement('ul');
-    list.className = 'query-error-list';
-    for (const { message, position } of problems) {
-      const item = document.createElement('li');
-      if (position === null || position === undefined) {
-        item.textContent = message;
-      } else {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.textContent = message;
-        button.title = 'Show where this is in the query';
-        button.addEventListener('click', () => editor.select(position));
-        item.append(button);
-      }
-      list.append(item);
-    }
-    box.append(list);
-  }
-  box.hidden = false;
+  renderError($('queryError'), error, (position) => editor.select(position));
 }
 
 /**
@@ -271,43 +166,12 @@ async function loadSchema(editor) {
  * @param {Array<{name: string, type: string}>} parameters - the parameters
  */
 function renderParameters(parameters) {
-  const fields = $('parameterFields');
-  for (const input of fields.querySelectorAll('[data-parameter]')) {
-    state.parameterValues.set(input.dataset.parameter, input.value);
-  }
-  fields.replaceChildren(...parameters.map(({ name, type }) => {
-    const id = `parameter-${name}`;
-    const wrapper = document.createElement('div');
-    const label = document.createElement('label');
-    label.htmlFor = id;
-    label.append(`$${name} `);
-    const typeText = document.createElement('span');
-    typeText.className = 'parameter-type';
-    typeText.textContent = type;
-    label.append(typeText);
-
-    let input;
-    if (type === 'BOOLEAN') {
-      input = document.createElement('select');
-      input.className = 'form-control form-control-sm';
-      for (const [value, text] of [['', 'NULL'], ['true', 'true'], ['false', 'false']]) {
-        input.append(new Option(text, value));
-      }
-    } else {
-      input = document.createElement('input');
-      input.className = 'form-control form-control-sm';
-      input.type = 'text';
-      if (type.endsWith('[]')) input.placeholder = 'a, b, c';
-      else if (type.startsWith('TIMESTAMP')) input.placeholder = '2026-11-01T00:00:00Z';
-      else if (type === 'DATE') input.placeholder = '2026-11-01';
-    }
-    input.id = id;
-    input.dataset.parameter = name;
-    input.dataset.type = type;
-    input.value = state.parameterValues.get(name) ?? '';
-    wrapper.append(label, input);
-    return wrapper;
-  }));
+  state.parameters = parameters;
+  renderParameterFields($('parameterFields'), parameters, {
+    text: state.parameterValues,
+    onChange: (name, text) => state.parameterValues.set(name, text),
+    idPrefix: 'parameter',
+  });
   $('parameters').hidden = parameters.length === 0;
 }
 
@@ -344,8 +208,12 @@ function onValidated(result, text) {
  */
 function parameterValues() {
   const values = {};
-  for (const input of $('parameterFields').querySelectorAll('[data-parameter]')) {
-    values[input.dataset.parameter] = parameterValue(input.value, input.dataset.type);
+  for (const { name, type } of state.parameters) {
+    try {
+      values[name] = parameterValue(state.parameterValues.get(name) ?? '', type);
+    } catch (e) {
+      throw new Error(`$${name}: ${e.message}`);
+    }
   }
   return values;
 }
@@ -487,24 +355,6 @@ async function run(editor) {
 }
 
 /**
- * Asks the user to confirm something
- *
- * @param {string} message - the question
- * @param {string} okLabel - the label for the button that confirms
- * @returns {Promise<boolean>} whether they confirmed
- */
-function confirmAction(message, okLabel) {
-  const dialog = $('confirmDialog');
-  $('confirmMessage').textContent = message;
-  $('confirmOk').textContent = okLabel;
-  dialog.returnValue = '';
-  return new Promise((resolve) => {
-    dialog.addEventListener('close', () => resolve(dialog.returnValue === 'ok'), { once: true });
-    dialog.showModal();
-  });
-}
-
-/**
  * Asks before discarding unsaved changes, if there are any
  *
  * @param {object} editor - the editor
@@ -525,6 +375,7 @@ function currentDetails(editor) {
     description: $('queryDescription').value,
     sql: editor.text(),
     chart: JSON.stringify(state.chart),
+    rowLimit: $('rowLimit').value,
   };
 }
 
@@ -534,7 +385,14 @@ function currentDetails(editor) {
  * @param {object} query - the saved query
  */
 function snapshotOf(query) {
-  return { name: query.name, description: query.description, sql: query.sql, chart: JSON.stringify(query.chart ?? null) };
+  return {
+    name: query.name,
+    description: query.description,
+    sql: query.sql,
+    chart: JSON.stringify(query.chart ?? null),
+    // As shown, which is the query's if it has one (see showQuery)
+    rowLimit: $('rowLimit').value,
+  };
 }
 
 /**
@@ -546,7 +404,7 @@ function snapshotOf(query) {
 function hasUnsavedChanges(editor) {
   const details = currentDetails(editor);
   if (!state.snapshot) return details.sql.trim() !== '' && details.sql !== EXAMPLE_QUERY;
-  return ['name', 'description', 'sql', 'chart'].some((key) => details[key] !== state.snapshot[key]);
+  return ['name', 'description', 'sql', 'chart', 'rowLimit'].some((key) => details[key] !== state.snapshot[key]);
 }
 
 /**
@@ -617,6 +475,8 @@ function setUrlQuery(id) {
  */
 function showQuery(query, editor) {
   state.current = query;
+  // A query saved with a row limit runs with it; otherwise the box keeps the user's own setting
+  if (query?.rowLimit) $('rowLimit').value = query.rowLimit;
   state.snapshot = query ? snapshotOf(query) : null;
   state.chart = query?.chart ?? null;
   $('queryName').value = query?.name ?? '';
@@ -624,6 +484,7 @@ function showQuery(query, editor) {
   // The parameter fields are rebuilt, with the saved defaults, once the query has been validated
   $('parameterFields').replaceChildren();
   $('parameters').hidden = true;
+  state.parameters = [];
   state.parameterValues = new Map(Object.entries(query?.parameters ?? {}).map(([k, v]) => [k, defaultToText(v)]));
   editor.setText(query?.sql ?? '');
   setUrlQuery(query?.id ?? null);
@@ -665,13 +526,15 @@ async function save(editor, asNew) {
     return;
   }
   let parameters;
+  let limit;
   try {
     parameters = parameterValues();
+    limit = rowLimit();
   } catch (e) {
     showError(e, editor);
     return;
   }
-  const body = { ...details, chart: state.chart, parameters };
+  const body = { ...details, chart: state.chart, parameters, rowLimit: limit };
   const inPlace = state.current && canChange(state.current) && !asNew;
   try {
     const saved = inPlace
@@ -735,6 +598,7 @@ function init() {
   $('rowLimit').addEventListener('change', (e) => {
     const limit = Number(e.target.value);
     if (Number.isInteger(limit) && limit >= 1) remember('rowLimit', String(limit));
+    updateSaveControls(editor);
   });
 
   $('queryDetails').addEventListener('submit', (e) => {
