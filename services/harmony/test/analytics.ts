@@ -303,7 +303,20 @@ describe('/admin/analytics/api/queries (saved queries)', function () {
       expect((await admin.delete(this.frontend, res.body.id)).status).to.equal(204);
     });
 
+    it('saves single number and donut charts', async function () {
+      const stat = await admin.create(this.frontend, { name: 'Failed today', sql: 'SELECT 1', chart: { type: 'stat', y: ['n'] } });
+      expect(stat.status).to.equal(201);
+      expect(stat.body.chart).to.eql({ type: 'stat', x: null, y: ['n'], series: null });
+      const donut = await admin.create(this.frontend, { name: 'Share by status', sql: 'SELECT 1', chart: { type: 'donut', x: 'status', y: ['n'] } });
+      expect(donut.status).to.equal(201);
+      expect(donut.body.chart).to.eql({ type: 'donut', x: 'status', y: ['n'], series: null });
+      for (const id of [stat.body.id, donut.body.id]) expect((await admin.delete(this.frontend, id)).status).to.equal(204);
+    });
+
     for (const [problem, chart] of [
+      ['a single number of two columns', { type: 'stat', y: ['a', 'b'] }],
+      ['a donut without a category column', { type: 'donut', y: ['n'] }],
+      ['a donut split into series', { type: 'donut', x: 'a', y: ['n'], series: 's' }],
       ['an unknown chart type', { type: 'pie', x: 'a', y: ['b'] }],
       ['no values to chart', { type: 'line', x: 'a', y: [] }],
       ['more than eight values', { type: 'line', x: 'a', y: ['1', '2', '3', '4', '5', '6', '7', '8', '9'] }],

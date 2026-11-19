@@ -6,7 +6,7 @@
 //   { type: 'column' | 'line', x: column, y: [columns], series: column | null }
 // Either several y columns are each a series ("wide" results), or one y column is split into a
 // series per value of the series column ("long" results, e.g. GROUP BY day, service).
-import { chartCard, columnChart, legend, lineChart, table } from '../dashboard/charts.js';
+import { chartCard, columnChart, h, legend, lineChart, table } from '../dashboard/charts.js';
 import { formatCompact } from '../dashboard/format.js';
 
 // One series per categorical color slot (--viz-series-1 to 8); past that the smallest are folded
@@ -14,7 +14,10 @@ import { formatCompact } from '../dashboard/format.js';
 export const MAX_SERIES = 8;
 // More x positions than this aren't readable as columns or points
 export const MAX_POINTS = 500;
-export const CHART_TYPES = ['column', 'line'];
+// column and line plot rows along x; stat shows one value large; donut shows shares of a whole
+export const CHART_TYPES = ['column', 'line', 'stat', 'donut'];
+// A donut is for part-to-whole at a glance: past this many slices the smallest fold into "Other"
+export const MAX_DONUT_SLICES = 6;
 
 const NUMERIC_TYPE = /^(TINYINT|SMALLINT|INTEGER|BIGINT|HUGEINT|UTINYINT|USMALLINT|UINTEGER|UBIGINT|UHUGEINT|FLOAT|DOUBLE|DECIMAL)/;
 const TEMPORAL_TYPE = /^(TIMESTAMP|DATE)/;
@@ -22,6 +25,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 // About how wide one character of an axis label is (the kit's tick labels are 11px)
 const LABEL_CHAR_PX = 7;
 const OTHER_KEY = '__other__';
+const SVG_NS = 'http://www.w3.org/2000/svg';
 
 export const isNumericType = (type) => NUMERIC_TYPE.test(type);
 export const isTemporalType = (type) => TEMPORAL_TYPE.test(type);
@@ -65,17 +69,28 @@ export function formatUtcTime(date, spanMs, full = false) {
  * as the series - or, for one numeric column and another text column, a series per text value
  *
  * @param {Array<{name: string, type: string}>} columns - the result's columns
+ * @param {string} [type] - the chart type wanted (by default, lines for time and columns otherwise)
  * @returns {object|null} a chart spec, or null if the result has no numeric column to chart
  */
-export function suggestChart(columns) {
+export function suggestChart(columns, type) {
   const numeric = columns.filter((c) => isNumericType(c.type));
+  if (type === 'stat') {
+    // The first numeric column
+    return numeric.length > 0 ? { type, x: null, y: [numeric[0].name], series: null } : null;
+  }
+  if (type === 'donut') {
+    // The first numeric column, split by the first category (text) column
+    const category = columns.find((c) => !isNumericType(c.type) && !isTemporalType(c.type))
+      ?? columns.find((c) => !isNumericType(c.type));
+    return category && numeric.length > 0 ? { type, x: category.name, y: [numeric[0].name], series: null } : null;
+  }
   const x = columns.find((c) => isTemporalType(c.type)) ?? columns.find((c) => !isNumericType(c.type));
   const y = numeric.filter((c) => c !== x);
   if (!x || y.length === 0) return null;
   const otherText = columns.find((c) => c !== x && !isNumericType(c.type) && !isTemporalType(c.type));
   const useSeries = y.length === 1 && otherText;
   return {
-    type: isTemporalType(x.type) ? 'line' : 'column',
+    type: type ?? (isTemporalType(x.type) ? 'line' : 'column'),
     x: x.name,
     y: useSeries ? [y[0].name] : y.slice(0, MAX_SERIES).map((c) => c.name),
     series: useSeries ? otherText.name : null,
@@ -92,8 +107,20 @@ export function suggestChart(columns) {
 export function chartProblem(spec, columns) {
   const byName = new Map(columns.map((c) => [c.name, c]));
   if (!CHART_TYPES.includes(spec.type)) return `Unknown chart type ${spec.type}`;
-  if (!byName.has(spec.x)) return `The results have no column ${spec.x} for the x axis`;
   if (!Array.isArray(spec.y) || spec.y.length === 0) return 'Choose at least one column to chart';
+  if (spec.type === 'stat' || spec.type === 'donut') {
+    // One value: shown alone, or as shares of a whole split by the category column
+    if (spec.y.length !== 1) return `A ${spec.type === 'stat' ? 'single number' : 'donut'} shows one numeric column`;
+    const [y] = spec.y;
+    if (!byName.has(y)) return `The results have no column ${y}`;
+    if (!isNumericType(byName.get(y).type)) return `${y} isn't numeric, so it can't be charted`;
+    if (spec.type === 'donut') {
+      if (!byName.has(spec.x)) return `The results have no column ${spec.x} to split the donut by`;
+      if (spec.x === y) return `${y} can't be both the slices and their sizes`;
+    }
+    return null;
+  }
+  if (!byName.has(spec.x)) return `The results have no column ${spec.x} for the x axis`;
   for (const name of spec.y) {
     if (!byName.has(name)) return `The results have no column ${name}`;
     if (!isNumericType(byName.get(name).type)) return `${name} isn't numeric, so it can't be charted`;
@@ -205,6 +232,177 @@ export function chartData(result, spec) {
 }
 
 /**
+ * Renders a single number: the first row's value of one column, large, named by its column
+ *
+ * @param {HTMLElement} container - the element to render into
+ * @param {{columns: Array, rows: Array<Array>}} result - the query result
+ * @param {object} spec - a stat chart spec
+ * @param {object} options - the options
+ * @param {string} options.title - the title
+ * @returns {string|null} a problem that stopped it being drawn, or null
+ */
+function renderStat(container, result, spec, { title }) {
+  const [name] = spec.y;
+  if (result.rows.length === 0) return 'The query returned no rows';
+  const index = result.columns.findIndex((c) => c.name === name);
+  const value = result.rows[0][index];
+  // The headline is the exact figure, shortened only when it's too long to read at a glance
+  let number = value ?? '–';
+  if (typeof value === 'number') {
+    number = Math.abs(value) < 1e9 ? value.toLocaleString([], { maximumFractionDigits: 2 }) : formatNumber(value);
+  }
+  container.replaceChildren(
+    h('div', { className: 'viz-card-header' }, h('div', {},
+      h('h3', { className: 'viz-title', textContent: title }),
+      result.rows.length > 1
+        ? h('p', { className: 'viz-subtitle', textContent: `The first of ${result.rows.length.toLocaleString()} rows` })
+        : null)),
+    h('div', { className: 'stat-figure' },
+      h('div', { className: 'stat-value', textContent: String(number), title: String(value ?? 'NULL') }),
+      h('div', { className: 'stat-label', textContent: name })),
+  );
+  return null;
+}
+
+/**
+ * Arranges a result for a donut: one slice per category, sized by the sum of its values, biggest
+ * first, with the smallest folded into "Other" past MAX_DONUT_SLICES
+ *
+ * @param {{columns: Array, rows: Array<Array>}} result - the query result
+ * @param {object} spec - a donut chart spec
+ * @returns {{slices: Array<{key: string, label: string, value: number, colorIndex: number|null}>,
+ *   total: number, folded: number, problem: string|null}} the slices; colorIndex is the slice's
+ *   categorical color slot (null for Other)
+ */
+export function donutData(result, spec) {
+  const x = result.columns.findIndex((c) => c.name === spec.x);
+  const y = result.columns.findIndex((c) => c.name === spec.y[0]);
+  const sums = new Map();
+  // Rows with no value aren't part of the whole
+  for (const row of result.rows.filter((r) => r[y] !== null && r[y] !== undefined)) {
+    const label = row[x] === null ? 'NULL' : String(row[x]);
+    sums.set(label, (sums.get(label) ?? 0) + Number(row[y]));
+  }
+  const entries = [...sums.entries()];
+  const empty = { slices: [], total: 0, folded: 0 };
+  if (entries.some(([, v]) => v < 0)) return { ...empty, problem: `A donut can't show negative values of ${spec.y[0]}` };
+  const total = entries.reduce((sum, [, v]) => sum + v, 0);
+  if (total === 0) return { ...empty, problem: 'There is nothing to show: the values add up to zero' };
+
+  entries.sort((a, b) => b[1] - a[1]);
+  const keepCount = entries.length > MAX_DONUT_SLICES ? MAX_DONUT_SLICES - 1 : entries.length;
+  const kept = entries.slice(0, keepCount);
+  const rest = entries.slice(keepCount);
+  // Colors go by name, so a category keeps its color however its share changes
+  const colorOrder = kept.map(([label]) => label).sort((a, b) => a.localeCompare(b, [], { numeric: true }));
+  const slices = kept.map(([label, value]) => ({ key: `s:${label}`, label, value, colorIndex: colorOrder.indexOf(label) }));
+  if (rest.length > 0) {
+    slices.push({ key: OTHER_KEY, label: `Other (${rest.length})`, value: rest.reduce((s, [, v]) => s + v, 0), colorIndex: null });
+  }
+  return { slices, total, folded: rest.length, problem: null };
+}
+
+/**
+ * Renders a donut chart: shares of a whole, with a legend giving each slice's share, a hover
+ * tooltip, and a table view of the same numbers
+ *
+ * @param {HTMLElement} container - the element to render the chart card into
+ * @param {{columns: Array, rows: Array<Array>}} result - the query result
+ * @param {object} spec - a donut chart spec
+ * @param {object} options - the options
+ * @param {string} options.title - the chart's title
+ * @param {function(string): string} options.color - gets a color token's value
+ * @returns {string|null} a problem that stopped it being drawn, or null
+ */
+function renderDonut(container, result, spec, { title, color }) {
+  const data = donutData(result, spec);
+  if (data.problem) return data.problem;
+  const pct = (v) => `${((v / data.total) * 100).toLocaleString([], { maximumFractionDigits: 1 })}%`;
+  const slices = data.slices.map((s) => ({
+    ...s,
+    color: s.colorIndex === null ? color('--viz-neutral') : color(`--viz-series-${s.colorIndex + 1}`),
+  }));
+
+  const drawDonut = (el) => {
+    const size = 200;
+    const outer = 96;
+    const inner = 60;
+    const c = size / 2;
+    const svg = document.createElementNS(SVG_NS, 'svg');
+    svg.setAttribute('class', 'viz-svg donut-svg');
+    svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
+    svg.setAttribute('width', String(size));
+    svg.setAttribute('height', String(size));
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', `${title}: ${spec.y[0]} by ${spec.x}, ${slices.map((s) => `${s.label} ${pct(s.value)}`).join(', ')}`);
+    const tooltip = h('div', { className: 'viz-tooltip', hidden: true });
+    const point = (angle, r) => [c + r * Math.sin(angle), c - r * Math.cos(angle)];
+    let angle = 0;
+    for (const slice of slices) {
+      const sweep = (slice.value / data.total) * 2 * Math.PI;
+      const end = angle + Math.min(sweep, 2 * Math.PI - 1e-6); // a whole circle can't be one arc
+      const large = sweep > Math.PI ? 1 : 0;
+      const [x1, y1] = point(angle, outer);
+      const [x2, y2] = point(end, outer);
+      const [x3, y3] = point(end, inner);
+      const [x4, y4] = point(angle, inner);
+      const path = document.createElementNS(SVG_NS, 'path');
+      path.setAttribute('d', `M${x1},${y1} A${outer},${outer} 0 ${large} 1 ${x2},${y2} L${x3},${y3} A${inner},${inner} 0 ${large} 0 ${x4},${y4} Z`);
+      path.setAttribute('class', 'donut-slice');
+      path.setAttribute('fill', slice.color);
+      const show = (event) => {
+        tooltip.replaceChildren(
+          h('div', { className: 'viz-tooltip-title', textContent: slice.label }),
+          h('div', { className: 'viz-tooltip-row' }, `${spec.y[0]} `, h('strong', { textContent: `${formatNumber(slice.value)} (${pct(slice.value)})` })),
+        );
+        const box = el.getBoundingClientRect();
+        tooltip.style.left = `${event.clientX - box.left + 12}px`;
+        tooltip.style.top = `${event.clientY - box.top + 12}px`;
+        tooltip.hidden = false;
+      };
+      path.addEventListener('pointermove', show);
+      path.addEventListener('pointerleave', () => { tooltip.hidden = true; });
+      svg.append(path);
+      angle += sweep;
+    }
+    // The total in the middle
+    const label = document.createElementNS(SVG_NS, 'text');
+    label.setAttribute('class', 'donut-total');
+    label.setAttribute('x', String(c));
+    label.setAttribute('y', String(c));
+    label.setAttribute('text-anchor', 'middle');
+    label.setAttribute('dominant-baseline', 'central');
+    label.textContent = formatNumber(data.total);
+    const caption = document.createElementNS(SVG_NS, 'text');
+    caption.setAttribute('class', 'donut-total-label');
+    caption.setAttribute('x', String(c));
+    caption.setAttribute('y', String(c + 20));
+    caption.setAttribute('text-anchor', 'middle');
+    caption.textContent = 'total';
+    svg.append(label, caption);
+    el.classList.add('donut-chart');
+    el.append(svg, tooltip);
+  };
+
+  chartCard(container, {
+    title,
+    subtitle: [
+      `${spec.y[0]} by ${spec.x}`,
+      data.folded ? `the smallest ${data.folded} are combined as Other` : null,
+    ].filter(Boolean).join(' · '),
+    // Direct labels: each slice's share, so the reader doesn't match colors to guess sizes
+    legend: legend(slices.map((s) => ({ ...s, label: `${s.label} · ${pct(s.value)}` })), 'bar'),
+    renderChart: drawDonut,
+    renderTable: () => table(
+      [spec.x, spec.y[0], 'Share'],
+      slices.map((s) => [s.label, formatNumber(s.value), pct(s.value)]),
+      { caption: title, numeric: [1, 2] },
+    ),
+  });
+  return null;
+}
+
+/**
  * Renders a chart of a query result
  *
  * @param {HTMLElement} container - the element to render the chart card into
@@ -216,6 +414,8 @@ export function chartData(result, spec) {
  * @returns {string|null} a problem that stopped the chart being drawn, or null
  */
 export function renderChart(container, result, spec, { title, color }) {
+  if (spec.type === 'stat') return renderStat(container, result, spec, { title });
+  if (spec.type === 'donut') return renderDonut(container, result, spec, { title, color });
   const data = chartData(result, spec);
   if (data.problem) return data.problem;
 

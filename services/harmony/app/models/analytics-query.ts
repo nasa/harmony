@@ -11,8 +11,10 @@ const MAX_PARAMETERS_LENGTH = 100_000;
 // more than its own ANALYTICS_QUERY_MAX_ROWS)
 export const MAX_ROW_LIMIT = 100_000;
 
-// The chart types and series limit of public/js/analytics/chart.js (CHART_TYPES, MAX_SERIES)
-const CHART_TYPES = ['column', 'line'];
+// The chart types and series limit of public/js/analytics/chart.js (CHART_TYPES, MAX_SERIES).
+// stat (a single number) and donut chart exactly one value column; a stat has no x column.
+const CHART_TYPES = ['column', 'line', 'stat', 'donut'];
+const ONE_VALUE_TYPES = ['stat', 'donut'];
 const MAX_CHART_SERIES = 8;
 
 // A parameter's saved default value (the same values the analytics query service binds)
@@ -128,8 +130,9 @@ export default class AnalyticsQuery extends Record {
   /**
    * Set how to chart the query's results (see public/js/analytics/chart.js)
    *
-   * @param chart - \{ type: 'column' | 'line', x: column, y: [columns], series: column | null \},
-   * or null for no chart
+   * @param chart - \{ type: 'column' | 'line' | 'stat' | 'donut', x: column, y: [columns],
+   * series: column | null \}, or null for no chart. A stat has no x (it is ignored); stat and donut
+   * chart one y column and no series.
    * @throws TypeError if it isn't a chart spec
    */
   setChart(chart: unknown): void {
@@ -139,15 +142,22 @@ export default class AnalyticsQuery extends Record {
     }
     const spec = chart as { type?: unknown, x?: unknown, y?: unknown, series?: unknown };
     const isName = (v: unknown): boolean => typeof v === 'string' && v.length > 0 && v.length <= MAX_NAME_LENGTH;
+    const isStat = spec.type === 'stat';
+    const oneValue = ONE_VALUE_TYPES.includes(spec.type as string);
+    const noSeries = spec.series === undefined || spec.series === null;
     if (typeof chart !== 'object' || Array.isArray(chart)
       || !CHART_TYPES.includes(spec.type as string)
-      || !isName(spec.x)
-      || !Array.isArray(spec.y) || spec.y.length === 0 || spec.y.length > MAX_CHART_SERIES || !spec.y.every(isName)
-      || !(spec.series === undefined || spec.series === null || isName(spec.series))) {
+      || !(isStat || isName(spec.x))
+      || !Array.isArray(spec.y) || spec.y.length === 0 || spec.y.length > (oneValue ? 1 : MAX_CHART_SERIES)
+      || !spec.y.every(isName)
+      || !(noSeries || (!oneValue && isName(spec.series)))) {
       throw new TypeError(`chart must be null or { type: ${CHART_TYPES.join(' | ')}, x: column, y: [up to `
-        + `${MAX_CHART_SERIES} columns], series: column or null }`);
+        + `${MAX_CHART_SERIES} columns], series: column or null } (stat and donut chart one column, `
+        + 'with no series, and a stat has no x)');
     }
-    this.chart = JSON.stringify({ type: spec.type, x: spec.x, y: spec.y, series: spec.series ?? null });
+    this.chart = JSON.stringify({
+      type: spec.type, x: isStat ? null : spec.x, y: spec.y, series: oneValue ? null : spec.series ?? null,
+    });
   }
 
   /**

@@ -5,8 +5,9 @@ import { chartProblem, isNumericType, renderChart, suggestChart } from './chart.
 import { $, api, confirmAction, pageUser, renderError, userStorage } from './common.js';
 import { createEditor } from './editor.js';
 import { renderParameterFields } from './params.js';
-import { download, parameterValue, renderTable, toCsv } from './results.js';
+import { download, parameterDefault, parameterValue, renderTable, toCsv } from './results.js';
 import { defaultToText, filterSavedList, renderSavedList } from './saved.js';
+import { initTimeHelp } from './timehelp.js';
 
 const DEFAULT_ROW_LIMIT = 10;
 const EXAMPLE_QUERY = `-- Jobs by status over the last 30 days
@@ -50,7 +51,22 @@ const user = pageUser($('analytics'));
 const canChange = (query) => user.isAdmin || query.owner === user.username;
 
 // The user's last query and row limit, kept in this browser so a reload doesn't lose them
-const { remembered, remember } = userStorage(user.username);
+const { remembered, remember, forget } = userStorage(user.username);
+
+// A new query that hasn't been saved is kept in the browser, so it isn't lost by going to another
+// tab or reloading. A saved query isn't: it's reopened from its link, and the page otherwise starts
+// with an empty editor.
+const DRAFT_KEY = 'draft';
+
+/**
+ * Keeps the text of an unsaved new query, or forgets it once it's empty
+ *
+ * @param {string} text - the query
+ */
+function rememberDraft(text) {
+  if (text.trim() === '') forget(DRAFT_KEY);
+  else remember(DRAFT_KEY, text);
+}
 
 /**
  * Shows an error, listing the problems in the query with links to where they are
@@ -208,14 +224,35 @@ function onValidated(result, text) {
  */
 function parameterValues() {
   const values = {};
+  // Relative times (now-7d, now) are all resolved from the same moment
+  const now = Date.now();
   for (const { name, type } of state.parameters) {
     try {
-      values[name] = parameterValue(state.parameterValues.get(name) ?? '', type);
+      values[name] = parameterValue(state.parameterValues.get(name) ?? '', type, now);
     } catch (e) {
       throw new Error(`$${name}: ${e.message}`);
     }
   }
   return values;
+}
+
+/**
+ * Gets the parameter defaults to save with the query: like parameterValues, but with times kept as
+ * written, so a relative time (now-7d) is saved as one
+ *
+ * @returns {object} the defaults by name
+ * @throws {Error} if a value isn't valid for its type
+ */
+function parameterDefaults() {
+  const defaults = {};
+  for (const { name, type } of state.parameters) {
+    try {
+      defaults[name] = parameterDefault(state.parameterValues.get(name) ?? '', type);
+    } catch (e) {
+      throw new Error(`$${name}: ${e.message}`);
+    }
+  }
+  return defaults;
 }
 
 /**
@@ -248,6 +285,13 @@ function renderChartControls() {
   $('chartAxisControls').hidden = !chart;
   if (!chart) return;
 
+  // A single number has no x; a donut's x is its slices; neither is split into series, and both
+  // chart one value column (so the values are radio buttons rather than checkboxes)
+  const oneValue = chart.type === 'stat' || chart.type === 'donut';
+  $('chartXControl').hidden = chart.type === 'stat';
+  $('chartXLabel').textContent = chart.type === 'donut' ? 'Slices by' : 'x axis';
+  $('chartSeriesControl').hidden = oneValue;
+
   const option = (value, text, selected) => {
     const o = new Option(text, value);
     o.selected = selected;
@@ -259,10 +303,12 @@ function renderChartControls() {
     ...columns.filter((c) => !isNumericType(c.type) && c.name !== chart.x)
       .map((c) => option(c.name, c.name, c.name === chart.series)),
   );
-  $('chartYOptions').replaceChildren(...columns.filter((c) => isNumericType(c.type) && c.name !== chart.x).map((c) => {
+  const valueColumns = columns.filter((c) => isNumericType(c.type) && (chart.type === 'stat' || c.name !== chart.x));
+  $('chartYOptions').replaceChildren(...valueColumns.map((c) => {
     const label = document.createElement('label');
     const box = document.createElement('input');
-    box.type = 'checkbox';
+    box.type = oneValue ? 'radio' : 'checkbox';
+    box.name = 'chartY';
     box.value = c.name;
     box.checked = chart.y.includes(c.name);
     label.append(box, c.name);
@@ -278,18 +324,21 @@ function renderChartControls() {
  */
 function onChartControlsChanged(editor, typeChanged) {
   const type = $('chartType').value;
+  const oneValue = type === 'stat' || type === 'donut';
+  const wasOneValue = state.chart?.type === 'stat' || state.chart?.type === 'donut';
   if (!type) {
     state.chart = null;
-  } else if (typeChanged && !state.chart) {
-    // Start from a suggestion for these columns
-    const suggested = state.result ? suggestChart(state.result.columns) : null;
+  } else if (typeChanged && (!state.chart || oneValue || wasOneValue)) {
+    // Start from a suggestion of this type for these columns (switching between columns and
+    // lines keeps the settings, since they take the same ones)
+    const suggested = state.result ? suggestChart(state.result.columns, type) : null;
     state.chart = { ...(suggested ?? { x: state.result?.columns[0]?.name ?? '', y: [], series: null }), type };
   } else {
     let y = [...$('chartYOptions').querySelectorAll('input:checked')].map((box) => box.value);
-    const series = $('chartSeries').value || null;
+    const series = oneValue ? null : ($('chartSeries').value || null);
     // Splitting into series by a column charts one value column
-    if (series && y.length > 1) y = y.slice(0, 1);
-    state.chart = { type, x: $('chartX').value, y, series };
+    if ((series || oneValue) && y.length > 1) y = y.slice(0, 1);
+    state.chart = { type, x: type === 'stat' ? null : $('chartX').value, y, series };
   }
   renderChartControls();
   drawChart();
@@ -403,7 +452,7 @@ function snapshotOf(query) {
  */
 function hasUnsavedChanges(editor) {
   const details = currentDetails(editor);
-  if (!state.snapshot) return details.sql.trim() !== '' && details.sql !== EXAMPLE_QUERY;
+  if (!state.snapshot) return details.sql.trim() !== '';
   return ['name', 'description', 'sql', 'chart', 'rowLimit'].some((key) => details[key] !== state.snapshot[key]);
 }
 
@@ -505,7 +554,11 @@ function showQuery(query, editor) {
 async function openQuery(id, editor, askFirst = true) {
   if (askFirst && !(await okToDiscard(editor))) return;
   try {
-    showQuery(await api(`queries/${encodeURIComponent(id)}`), editor);
+    const query = await api(`queries/${encodeURIComponent(id)}`);
+    // The user agreed to discard an unsaved query. (A link opened without asking keeps the draft,
+    // for the next time the page is opened without one.)
+    if (askFirst) forget(DRAFT_KEY);
+    showQuery(query, editor);
   } catch (e) {
     showError(e, editor);
   }
@@ -528,7 +581,7 @@ async function save(editor, asNew) {
   let parameters;
   let limit;
   try {
-    parameters = parameterValues();
+    parameters = parameterDefaults();
     limit = rowLimit();
   } catch (e) {
     showError(e, editor);
@@ -542,6 +595,7 @@ async function save(editor, asNew) {
       : await api('queries', body);
     state.current = saved;
     state.snapshot = snapshotOf(saved);
+    forget(DRAFT_KEY);
     setUrlQuery(saved.id);
     await loadSavedQueries(editor);
     updateSaveControls(editor);
@@ -564,6 +618,7 @@ async function deleteQuery(query, editor) {
       // Keep what's in the editor, now as an unsaved query
       state.current = null;
       state.snapshot = null;
+      rememberDraft(editor.text());
       setUrlQuery(null);
     }
     await loadSavedQueries(editor);
@@ -577,18 +632,23 @@ async function deleteQuery(query, editor) {
  * Sets up the page
  */
 function init() {
+  // Earlier versions remembered whatever was in the editor, including saved queries
+  forget('query');
+  const linkedId = new URLSearchParams(window.location.search).get('query');
   const editor = createEditor({
     parent: $('editor'),
-    doc: remembered('query') ?? EXAMPLE_QUERY,
+    doc: linkedId ? '' : (remembered(DRAFT_KEY) ?? ''),
+    example: EXAMPLE_QUERY,
     validate: (text) => api('validate', { sql: text }),
     onValidated,
     onRun: () => void run(editor),
     onChange: (text) => {
-      remember('query', text);
+      if (!state.current) rememberDraft(text);
       updateSaveControls(editor);
     },
   });
   $('runQuery').addEventListener('click', () => void run(editor));
+  initTimeHelp();
   $('rowLimit').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') void run(editor);
   });
@@ -625,8 +685,7 @@ function init() {
     }
   });
 
-  // A link to a saved query (?query=id) opens it; otherwise the query from last time is shown
-  const linkedId = new URLSearchParams(window.location.search).get('query');
+  // A link to a saved query (?query=id) opens it; otherwise an unsaved draft from last time, if any
   if (linkedId) void openQuery(linkedId, editor, false);
   void loadSavedQueries(editor);
   updateSaveControls(editor);

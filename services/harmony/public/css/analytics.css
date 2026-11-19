@@ -410,6 +410,37 @@
   max-width: min(28rem, calc(100vw - 2rem));
 }
 
+/* The relative time help: wider than a confirmation, scrolling within the viewport */
+.help-dialog {
+  max-width: min(44rem, calc(100vw - 2rem));
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+}
+.help-dialog .panel-heading-row {
+  margin-bottom: 0.5rem;
+}
+.help-dialog h3.panel-heading {
+  margin-top: 1rem;
+}
+.help-list {
+  padding-left: 1.1rem;
+  margin-bottom: 0;
+}
+.help-table {
+  margin-bottom: 0.5rem;
+}
+.help-table td,
+.help-table th {
+  padding: 0.2rem 0.5rem;
+}
+.help-now {
+  color: var(--an-text-muted);
+  white-space: nowrap;
+}
+.help-try {
+  max-width: 15rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
 .confirm-dialog::backdrop {
   background: rgba(11, 11, 11, 0.3);
 }
@@ -719,4 +750,118 @@
 .parameter-range-ends > div {
   flex: 0 1 auto;
   min-width: 0;
+}
+
+/* A time parameter: the text (a relative time like now-7d, or a fixed ISO time), the calendar button
+   for picking a fixed time, and a note saying what the value means now */
+.parameter-time-input {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.parameter-grid .parameter-time-text {
+  width: 15rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.parameter-picker-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+/* The date input the calendar button opens: hidden under the button, so the browser's picker
+   appears beside it, unless the browser can't open it that way (no showPicker) */
+.parameter-grid .parameter-picker {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 1px;
+  min-width: 0;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.parameter-grid .parameter-picker.is-visible {
+  position: absolute;
+  top: 100%;
+  bottom: auto;
+  z-index: 10;
+  width: auto;
+  min-width: 15rem;
+  height: auto;
+  padding: 0.2rem 0.4rem;
+  border: 1px solid var(--an-border);
+  border-radius: 4px;
+  background: #fff;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.parameter-time-note {
+  min-height: 1.1rem;
+  margin-top: 0.15rem;
+  color: var(--an-text-muted);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.parameter-time-note.is-invalid {
+  color: var(--an-error);
+}
+
+/* A single number: the hero figure, named by its column */
+.stat-figure {
+  padding: 0.5rem 0 0.25rem;
+}
+
+.stat-value {
+  color: var(--viz-text-primary);
+  font-size: 3rem;
+  font-weight: 600;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-label {
+  color: var(--viz-text-secondary);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85rem;
+}
+
+/* A donut: slices separated by a thin surface-colored gap, the total in the middle */
+.donut-chart {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  padding: 0.5rem 0;
+}
+
+.donut-slice {
+  stroke: var(--viz-surface);
+  stroke-width: 2px;
+  cursor: default;
+}
+
+.donut-slice:hover {
+  opacity: 0.85;
+}
+
+.donut-total {
+  fill: var(--viz-text-primary);
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.donut-total-label {
+  fill: var(--viz-text-muted);
+  font-size: 11px;
+}
+
+.chart-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
 }
