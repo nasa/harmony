@@ -1,13 +1,16 @@
 // The /admin/analytics page: write a read-only SQL query against the Iceberg analytics tables, fill
 // in its parameters, run it, and see or download the results. Queries go through the harmony
 // frontend to the analytics query service, which validates every query before running it.
+import { chartProblem, isNumericType, renderChart, suggestChart } from './chart.js';
 import { createEditor } from './editor.js';
 import { download, parameterValue, renderTable, toCsv } from './results.js';
 import { defaultToText, filterSavedList, renderSavedList } from './saved.js';
 
 const API = '/admin/analytics/api';
-// The last query is kept in this browser only, so a reload doesn't lose it
-const STORAGE_KEY = 'harmony.analytics.query';
+// Each user's last query and row limit are kept in this browser only (see remember), so a reload
+// doesn't lose them
+const STORAGE_PREFIX = 'harmony.analytics';
+const DEFAULT_ROW_LIMIT = 10;
 const EXAMPLE_QUERY = `-- Jobs by status over the last 30 days
 SELECT status, count(*) AS jobs
 FROM jobs
@@ -27,9 +30,19 @@ const state = {
   // Every saved query, and the one that is open (null for an unsaved query)
   savedQueries: [],
   current: null,
-  // The name, description and SQL as last opened or saved, to tell whether there are changes
+  // The name, description, SQL and chart as last opened or saved, to tell whether there are changes
   snapshot: null,
+  // How to chart the results (see chart.js), or null for no chart
+  chart: null,
 };
+
+/**
+ * Reads a color token from the page's CSS custom properties, for the charts
+ *
+ * @param {string} name - the custom property name
+ * @returns {string} the color
+ */
+const token = (name) => getComputedStyle($('analytics')).getPropertyValue(name).trim();
 
 const page = $('analytics');
 const user = { username: page.dataset.username, isAdmin: page.dataset.isAdmin === 'true' };
@@ -87,24 +100,38 @@ async function api(endpoint, body, method = body === undefined ? 'GET' : 'POST')
 }
 
 /**
- * Reads the saved query, if there is one
+ * Gets the storage key for one of the user's remembered settings. Keys include the username, so
+ * people sharing a browser each get their own.
+ *
+ * @param {string} name - the setting, e.g. query or rowLimit
  */
-function savedQuery() {
+const storageKey = (name) => `${STORAGE_PREFIX}.${user.username}.${name}`;
+
+/**
+ * Reads one of the user's remembered settings
+ *
+ * @param {string} name - the setting
+ * @returns {string|null} its value, or null if there is none (or storage is unavailable)
+ */
+function remembered(name) {
   try {
-    return localStorage.getItem(STORAGE_KEY);
+    return localStorage.getItem(storageKey(name));
   } catch {
     return null;
   }
 }
 
 /**
- * Keeps the query in this browser, for the next time the page is opened
+ * Remembers one of the user's settings in this browser, for the next time the page is opened
+ *
+ * @param {string} name - the setting
+ * @param {string} value - its value
  */
-function rememberQuery(text) {
+function remember(name, value) {
   try {
-    localStorage.setItem(STORAGE_KEY, text);
+    localStorage.setItem(storageKey(name), value);
   } catch {
-    // storage may be unavailable (e.g. blocked), in which case the query just isn't kept
+    // storage may be unavailable (e.g. blocked), in which case the setting just isn't kept
   }
 }
 
@@ -219,6 +246,10 @@ async function loadSchema(editor) {
     const schema = await api('schema');
     renderSchema(schema.tables, editor);
     editor.setTables(schema.tables);
+    if (schema.limits?.maxRows) {
+      $('rowLimit').max = schema.limits.maxRows;
+      $('rowLimit').title = `Up to ${schema.limits.maxRows.toLocaleString()} rows`;
+    }
     status.textContent = `${schema.tables.length} tables`;
     status.title = `Table list loaded ${new Date(schema.loadedAt).toLocaleString()}`;
     const warnings = $('schemaWarnings');
@@ -320,6 +351,101 @@ function parameterValues() {
 }
 
 /**
+ * Draws the chart of the current result, or explains why it can't be drawn
+ */
+function drawChart() {
+  const card = $('chartCard');
+  const problemText = $('chartProblem');
+  const { chart, result } = state;
+  card.hidden = true;
+  problemText.hidden = true;
+  if (!chart || !result) return;
+  const problem = chartProblem(chart, result.columns)
+    ?? renderChart(card, result, chart, { title: $('queryName').value.trim() || 'Query results', color: token });
+  if (problem) {
+    problemText.textContent = `Can't chart this: ${problem}`;
+    problemText.hidden = false;
+  } else {
+    card.hidden = false;
+  }
+}
+
+/**
+ * Shows the chart controls for the current result's columns, set to the current chart
+ */
+function renderChartControls() {
+  const { chart, result } = state;
+  const columns = result?.columns ?? [];
+  $('chartType').value = chart?.type ?? '';
+  $('chartAxisControls').hidden = !chart;
+  if (!chart) return;
+
+  const option = (value, text, selected) => {
+    const o = new Option(text, value);
+    o.selected = selected;
+    return o;
+  };
+  $('chartX').replaceChildren(...columns.map((c) => option(c.name, c.name, c.name === chart.x)));
+  $('chartSeries').replaceChildren(
+    option('', 'none', !chart.series),
+    ...columns.filter((c) => !isNumericType(c.type) && c.name !== chart.x)
+      .map((c) => option(c.name, c.name, c.name === chart.series)),
+  );
+  $('chartYOptions').replaceChildren(...columns.filter((c) => isNumericType(c.type) && c.name !== chart.x).map((c) => {
+    const label = document.createElement('label');
+    const box = document.createElement('input');
+    box.type = 'checkbox';
+    box.value = c.name;
+    box.checked = chart.y.includes(c.name);
+    label.append(box, c.name);
+    return label;
+  }));
+}
+
+/**
+ * Updates the chart from its controls
+ *
+ * @param {object} editor - the editor
+ * @param {boolean} typeChanged - whether the chart type was what changed
+ */
+function onChartControlsChanged(editor, typeChanged) {
+  const type = $('chartType').value;
+  if (!type) {
+    state.chart = null;
+  } else if (typeChanged && !state.chart) {
+    // Start from a suggestion for these columns
+    const suggested = state.result ? suggestChart(state.result.columns) : null;
+    state.chart = { ...(suggested ?? { x: state.result?.columns[0]?.name ?? '', y: [], series: null }), type };
+  } else {
+    let y = [...$('chartYOptions').querySelectorAll('input:checked')].map((box) => box.value);
+    const series = $('chartSeries').value || null;
+    // Splitting into series by a column charts one value column
+    if (series && y.length > 1) y = y.slice(0, 1);
+    state.chart = { type, x: $('chartX').value, y, series };
+  }
+  renderChartControls();
+  drawChart();
+  updateSaveControls(editor);
+}
+
+/**
+ * Gets the row limit from its box
+ *
+ * @returns {number} the limit
+ * @throws {Error} if it isn't a whole number from 1 to the service's maximum
+ */
+function rowLimit() {
+  const input = $('rowLimit');
+  const limit = Number(input.value);
+  const max = Number(input.max) || Infinity;
+  if (!Number.isInteger(limit) || limit < 1 || limit > max) {
+    input.focus();
+    throw new Error(`The row limit must be a whole number from 1${Number.isFinite(max) ? ` to ${max.toLocaleString()}` : ''}`);
+  }
+  return limit;
+}
+
+/**
  * Runs the query and shows its result
  *
  * @param {object} editor - the editor
@@ -336,14 +462,20 @@ async function run(editor) {
     if (state.validatedText !== text) {
       onValidated(await api('validate', { sql: text }), text);
     }
-    const result = await api('query', { sql: text, params: parameterValues() });
+    const limit = rowLimit();
+    const result = await api('query', { sql: text, params: parameterValues(), limit });
     state.result = result;
     renderTable($('resultsTable'), result);
+    renderChartControls();
+    drawChart();
     $('resultsSummary').textContent = `${result.rowCount.toLocaleString()} row${result.rowCount === 1 ? '' : 's'} in `
       + `${result.durationMs.toLocaleString()} ms`;
     const truncated = $('truncatedWarning');
-    truncated.textContent = `Only the first ${result.rowCount.toLocaleString()} rows are shown (and downloaded). `
-      + 'Add a LIMIT, filter, or aggregate to see the rest.';
+    const max = Number($('rowLimit').max);
+    truncated.textContent = `The query has more rows than the row limit, so only the first ${result.rowCount.toLocaleString()} `
+      + 'are shown (and downloaded and charted). '
+      + (limit < max ? `Raise the row limit (up to ${max.toLocaleString()}), or filter or aggregate the query to see the rest.`
+        : 'Filter or aggregate the query to see the rest.');
     truncated.hidden = !result.truncated;
     $('results').hidden = false;
   } catch (e) {
@@ -388,7 +520,21 @@ async function okToDiscard(editor) {
  * @param {object} editor - the editor
  */
 function currentDetails(editor) {
-  return { name: $('queryName').value.trim(), description: $('queryDescription').value, sql: editor.text() };
+  return {
+    name: $('queryName').value.trim(),
+    description: $('queryDescription').value,
+    sql: editor.text(),
+    chart: JSON.stringify(state.chart),
+  };
+}
+
+/**
+ * Gets what to compare the current details with to tell whether a saved query has changed
+ *
+ * @param {object} query - the saved query
+ */
+function snapshotOf(query) {
+  return { name: query.name, description: query.description, sql: query.sql, chart: JSON.stringify(query.chart ?? null) };
 }
 
 /**
@@ -400,7 +546,7 @@ function currentDetails(editor) {
 function hasUnsavedChanges(editor) {
   const details = currentDetails(editor);
   if (!state.snapshot) return details.sql.trim() !== '' && details.sql !== EXAMPLE_QUERY;
-  return ['name', 'description', 'sql'].some((key) => details[key] !== state.snapshot[key]);
+  return ['name', 'description', 'sql', 'chart'].some((key) => details[key] !== state.snapshot[key]);
 }
 
 /**
@@ -471,7 +617,8 @@ function setUrlQuery(id) {
  */
 function showQuery(query, editor) {
   state.current = query;
-  state.snapshot = query ? { name: query.name, description: query.description, sql: query.sql } : null;
+  state.snapshot = query ? snapshotOf(query) : null;
+  state.chart = query?.chart ?? null;
   $('queryName').value = query?.name ?? '';
   $('queryDescription').value = query?.description ?? '';
   // The parameter fields are rebuilt, with the saved defaults, once the query has been validated
@@ -480,6 +627,7 @@ function showQuery(query, editor) {
   state.parameterValues = new Map(Object.entries(query?.parameters ?? {}).map(([k, v]) => [k, defaultToText(v)]));
   editor.setText(query?.sql ?? '');
   setUrlQuery(query?.id ?? null);
+  state.result = null;
   $('results').hidden = true;
   clearError();
   renderSaved(editor);
@@ -523,14 +671,14 @@ async function save(editor, asNew) {
     showError(e, editor);
     return;
   }
-  const body = { ...details, parameters };
+  const body = { ...details, chart: state.chart, parameters };
   const inPlace = state.current && canChange(state.current) && !asNew;
   try {
     const saved = inPlace
       ? await api(`queries/${state.current.id}`, body, 'PUT')
       : await api('queries', body);
     state.current = saved;
-    state.snapshot = { name: saved.name, description: saved.description, sql: saved.sql };
+    state.snapshot = snapshotOf(saved);
     setUrlQuery(saved.id);
     await loadSavedQueries(editor);
     updateSaveControls(editor);
@@ -568,22 +716,34 @@ async function deleteQuery(query, editor) {
 function init() {
   const editor = createEditor({
     parent: $('editor'),
-    doc: savedQuery() ?? EXAMPLE_QUERY,
+    doc: remembered('query') ?? EXAMPLE_QUERY,
     validate: (text) => api('validate', { sql: text }),
     onValidated,
     onRun: () => void run(editor),
     onChange: (text) => {
-      rememberQuery(text);
+      remember('query', text);
       updateSaveControls(editor);
     },
   });
   $('runQuery').addEventListener('click', () => void run(editor));
+  $('rowLimit').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') void run(editor);
+  });
+  // The user's row limit from last time, kept whenever it changes to a valid value
+  const savedLimit = Number(remembered('rowLimit'));
+  $('rowLimit').value = Number.isInteger(savedLimit) && savedLimit >= 1 ? savedLimit : DEFAULT_ROW_LIMIT;
+  $('rowLimit').addEventListener('change', (e) => {
+    const limit = Number(e.target.value);
+    if (Number.isInteger(limit) && limit >= 1) remember('rowLimit', String(limit));
+  });
 
   $('queryDetails').addEventListener('submit', (e) => {
     e.preventDefault();
     void save(editor, false);
   });
   $('saveAsNew').addEventListener('click', () => void save(editor, true));
+  $('chartControls').addEventListener('change', (e) => onChartControlsChanged(editor, e.target.id === 'chartType'));
+  $('chartControls').addEventListener('submit', (e) => e.preventDefault());
   $('queryName').addEventListener('input', () => updateSaveControls(editor));
   $('queryDescription').addEventListener('input', () => updateSaveControls(editor));
   $('newQuery').addEventListener('click', async () => {

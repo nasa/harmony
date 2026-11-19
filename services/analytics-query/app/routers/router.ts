@@ -56,6 +56,24 @@ function requestParams(body: unknown): Record<string, ParameterValue> {
 }
 
 /**
+ * Get the row limit from a request body: how many rows to return at most, which can't be more than
+ * the service's own maximum (ANALYTICS_QUERY_MAX_ROWS)
+ *
+ * @param body - the request body
+ * @param maxRows - the service's maximum
+ * @returns the limit (the maximum if the request gives none)
+ * @throws RequestValidationError if it isn't a whole number from 1 to maxRows
+ */
+function requestLimit(body: unknown, maxRows: number): number {
+  const limit = (body as { limit?: unknown })?.limit;
+  if (limit === undefined || limit === null) return maxRows;
+  if (typeof limit !== 'number' || !Number.isInteger(limit) || limit < 1 || limit > maxRows) {
+    throw new RequestValidationError(`"limit" must be a whole number of rows from 1 to ${maxRows}`);
+  }
+  return limit;
+}
+
+/**
  * Set up routes for the service: health checks for Kubernetes, and the query API for the harmony
  * frontend
  *
@@ -96,7 +114,8 @@ export default function router(options: RouterOptions): express.Router {
 
   result.get('/api/schema', async (_req, res, next) => {
     try {
-      res.json(await getSchema());
+      // With the limits a query can ask for, so the page can offer them
+      res.json({ ...(await getSchema()), limits: { maxRows: limits.maxRows } });
     } catch (e) {
       next(e);
     }
@@ -120,6 +139,7 @@ export default function router(options: RouterOptions): express.Router {
     try {
       sql = requestSql(req.body);
       params = requestParams(req.body);
+      const maxRows = requestLimit(req.body, limits.maxRows);
       const allowed = tableNames(await getSchema());
       const queryResult = await db.withConnection(async (conn) => {
         // Validated on the same connection it runs on, every time - never trust an earlier check
@@ -127,10 +147,11 @@ export default function router(options: RouterOptions): express.Router {
         if (!validation.valid) {
           throw new RequestValidationError('The query is not valid', validation.errors);
         }
-        return executeQuery(conn, sql, params, limits);
+        // The query runs without a LIMIT of its own being needed: reading stops at the limit
+        return executeQuery(conn, sql, params, { ...limits, maxRows });
       });
       logger.info(`Analytics query by ${user}: success`, {
-        user, sql, params, outcome: 'success', rowCount: queryResult.rowCount,
+        user, sql, params, limit: req.body?.limit, outcome: 'success', rowCount: queryResult.rowCount,
         truncated: queryResult.truncated, durationMs: Date.now() - startMs,
       });
       res.json(queryResult);

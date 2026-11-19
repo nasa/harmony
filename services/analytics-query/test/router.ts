@@ -61,6 +61,11 @@ describe('analytics query API', () => {
       expect(body.tables[1].columns[0]).to.eql({ name: 'id', type: 'BIGINT' });
     });
 
+    it('says how many rows a query can return', async () => {
+      const { body } = await authorized(request(app).get('/api/schema')).expect(200);
+      expect(body.limits).to.eql({ maxRows: env.analyticsQueryMaxRows });
+    });
+
     it('warns about timestamp columns that are not TIMESTAMPTZ', async () => {
       const { body } = await authorized(request(app).get('/api/schema')).expect(200);
       expect(body.warnings).to.have.length(1);
@@ -101,6 +106,27 @@ describe('analytics query API', () => {
     it('caps the rows', async () => {
       const { body } = await authorized(request(app).post('/api/query')).send({ sql: 'SELECT id FROM jobs' }).expect(200);
       expect(body.rowCount).to.equal(Math.min(JOB_COUNT, env.analyticsQueryMaxRows));
+    });
+
+    it('returns at most the requested number of rows, for a query without a LIMIT', async () => {
+      const { body } = await authorized(request(app).post('/api/query'))
+        .send({ sql: 'SELECT id FROM jobs ORDER BY id', limit: 10 }).expect(200);
+      expect(body.rows).to.eql([[0], [1], [2], [3], [4], [5], [6], [7], [8], [9]]);
+      expect(body.truncated).to.be.true;
+    });
+
+    it('does not flag a result within the limit as truncated', async () => {
+      const { body } = await authorized(request(app).post('/api/query'))
+        .send({ sql: 'SELECT id FROM jobs ORDER BY id LIMIT 3', limit: 10 }).expect(200);
+      expect(body.rowCount).to.equal(3);
+      expect(body.truncated).to.be.false;
+    });
+
+    it('rejects a limit that is not a whole number from 1 to the maximum', async () => {
+      for (const limit of [0, -1, 2.5, '10', env.analyticsQueryMaxRows + 1]) {
+        const { body } = await authorized(request(app).post('/api/query')).send({ sql: 'SELECT 1', limit }).expect(400);
+        expect(body.message, JSON.stringify(limit)).to.include(`from 1 to ${env.analyticsQueryMaxRows}`);
+      }
     });
 
     it('rejects an invalid query with its problems', async () => {

@@ -262,6 +262,33 @@ describe('/admin/analytics/api/queries (saved queries)', function () {
       });
     }
 
+    it('saves a chart with the query', async function () {
+      const chart = { type: 'line', x: 'day', y: ['jobs'], series: 'service_name' };
+      const res = await admin.create(this.frontend, { name: 'Jobs per day', sql: 'SELECT 1', chart });
+      expect(res.status).to.equal(201);
+      expect(res.body.chart).to.eql(chart);
+
+      const changed = await admin.update(this.frontend, res.body.id, { chart: { type: 'column', x: 'day', y: ['jobs', 'failed'] } });
+      expect(changed.body.chart).to.eql({ type: 'column', x: 'day', y: ['jobs', 'failed'], series: null });
+      const removed = await admin.update(this.frontend, res.body.id, { chart: null });
+      expect(removed.body.chart).to.be.null;
+      expect((await admin.delete(this.frontend, res.body.id)).status).to.equal(204);
+    });
+
+    for (const [problem, chart] of [
+      ['an unknown chart type', { type: 'pie', x: 'a', y: ['b'] }],
+      ['no values to chart', { type: 'line', x: 'a', y: [] }],
+      ['more than eight values', { type: 'line', x: 'a', y: ['1', '2', '3', '4', '5', '6', '7', '8', '9'] }],
+      ['an x axis that is not a column name', { type: 'line', x: 5, y: ['b'] }],
+      ['a chart that is not an object', 'line'],
+    ]) {
+      it(`rejects a chart with ${problem}`, async function () {
+        const res = await admin.create(this.frontend, { name: `bad chart: ${problem}`, sql: 'SELECT 1', chart });
+        expect(res.status).to.equal(400);
+        expect(res.body.errors[0].message).to.include('chart must be');
+      });
+    }
+
     it('rejects a body that is not JSON', async function () {
       const res = await request(this.frontend).post('/admin/analytics/api/queries')
         .type('form').send('name=x&sql=SELECT+1').use(auth({ username: ADMIN }));

@@ -6,6 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="/css/eui.min.css" />
   <link rel="stylesheet" href="/css/default.css" />
+  <!-- The chart styles (.viz-*) the dashboard's chart kit uses -->
+  <link rel="stylesheet" href="/css/dashboard.css" />
   <link rel="stylesheet" href="/css/analytics.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" />
   <script language="javascript" id="_fed_an_ua_tag"
@@ -82,6 +84,12 @@
             <i class="bi bi-play-fill" aria-hidden="true"></i> Run
           </button>
           <span class="small text-muted"><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Enter</kbd></span>
+          <label class="row-limit small mb-0" for="rowLimit">Row limit
+            <input type="number" id="rowLimit" class="form-control form-control-sm" value="10" min="1" step="1"
+              inputmode="numeric" aria-describedby="rowLimitHelp">
+          </label>
+          <span class="visually-hidden" id="rowLimitHelp">The most rows to return, whether or not the query has a
+            LIMIT</span>
           <span class="small validation-status" id="validationStatus" role="status" aria-live="polite"></span>
         </div>
 
@@ -103,6 +111,27 @@
             </button>
           </div>
           <div id="truncatedWarning" class="alert alert-warning small py-2" role="status" hidden></div>
+
+          <form class="chart-controls" id="chartControls" aria-label="Chart">
+            <label for="chartType">Chart</label>
+            <select id="chartType" class="form-control form-control-sm w-auto">
+              <option value="">None</option>
+              <option value="column">Columns</option>
+              <option value="line">Lines</option>
+            </select>
+            <span class="chart-axis-controls" id="chartAxisControls" hidden>
+              <label for="chartX">x axis</label>
+              <select id="chartX" class="form-control form-control-sm w-auto"></select>
+              <fieldset class="chart-y" id="chartY">
+                <legend class="chart-y-legend">Values</legend>
+                <span id="chartYOptions"></span>
+              </fieldset>
+              <label for="chartSeries">Series by</label>
+              <select id="chartSeries" class="form-control form-control-sm w-auto"></select>
+            </span>
+          </form>
+          <p id="chartProblem" class="small text-muted mb-2" role="status" hidden></p>
+          <div id="chartCard" class="viz-card analytics-chart mb-3" hidden></div>
           <div class="results-table-wrap">
             <table class="table table-sm results-table" id="resultsTable"></table>
           </div>

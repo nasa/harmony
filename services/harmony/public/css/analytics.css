@@ -10,6 +10,27 @@
   --an-accent: #2a78d6;
   --an-error: #d03b3b;
   --an-ok: #006300;
+  /* The chart kit's tokens (as in dashboard.css), with all eight categorical slots: query
+     results can have more series than the dashboard's charts. Validated with the dataviz
+     palette checks; the slots below 3:1 against the surface (3, 4, 5) are covered by the
+     chart's table view and the results table. */
+  --viz-surface: #fcfcfb;
+  --viz-page: #f9f9f7;
+  --viz-text-primary: #0b0b0b;
+  --viz-text-secondary: #52514e;
+  --viz-text-muted: #898781;
+  --viz-grid: #e1e0d9;
+  --viz-axis: #c3c2b7;
+  --viz-border: rgba(11, 11, 11, 0.1);
+  --viz-neutral: #898781;
+  --viz-series-1: #2a78d6;
+  --viz-series-2: #eb6834;
+  --viz-series-3: #1baf7a;
+  --viz-series-4: #eda100;
+  --viz-series-5: #e87ba4;
+  --viz-series-6: #008300;
+  --viz-series-7: #6250d6;
+  --viz-series-8: #e34948;
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
   color: var(--an-text-primary);
 }
@@ -368,4 +389,62 @@
   display: flex;
   justify-content: flex-end;
   gap: 0.5rem;
+}
+
+/* Charts */
+.chart-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.75rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.85rem;
+}
+
+.chart-controls label {
+  margin-bottom: 0;
+}
+
+.chart-axis-controls {
+  display: contents;
+}
+
+.chart-y {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.6rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.chart-y-legend {
+  float: left;
+  width: auto;
+  margin: 0 0.25rem 0 0;
+  font-size: inherit;
+}
+
+.chart-y label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8rem;
+}
+
+.analytics-chart {
+  max-width: 64rem;
+}
+
+/* The row limit next to Run */
+.row-limit {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.row-limit input {
+  width: 6rem;
 }

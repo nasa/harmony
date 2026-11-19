@@ -8,6 +8,10 @@ export const MAX_DESCRIPTION_LENGTH = 4096;
 export const MAX_SQL_LENGTH = 100_000;
 const MAX_PARAMETERS_LENGTH = 100_000;
 
+// The chart types and series limit of public/js/analytics/chart.js (CHART_TYPES, MAX_SERIES)
+const CHART_TYPES = ['column', 'line'];
+const MAX_CHART_SERIES = 8;
+
 // A parameter's saved default value (the same values the analytics query service binds)
 export type ParameterDefault = string | number | boolean | null | (string | number | boolean)[];
 
@@ -110,6 +114,31 @@ export default class AnalyticsQuery extends Record {
         + 'nulls, or lists of them');
     }
     this.parameters = JSON.stringify(parameters);
+  }
+
+  /**
+   * Set how to chart the query's results (see public/js/analytics/chart.js)
+   *
+   * @param chart - \{ type: 'column' | 'line', x: column, y: [columns], series: column | null \},
+   * or null for no chart
+   * @throws TypeError if it isn't a chart spec
+   */
+  setChart(chart: unknown): void {
+    if (chart === undefined || chart === null) {
+      this.chart = null;
+      return;
+    }
+    const spec = chart as { type?: unknown, x?: unknown, y?: unknown, series?: unknown };
+    const isName = (v: unknown): boolean => typeof v === 'string' && v.length > 0 && v.length <= MAX_NAME_LENGTH;
+    if (typeof chart !== 'object' || Array.isArray(chart)
+      || !CHART_TYPES.includes(spec.type as string)
+      || !isName(spec.x)
+      || !Array.isArray(spec.y) || spec.y.length === 0 || spec.y.length > MAX_CHART_SERIES || !spec.y.every(isName)
+      || !(spec.series === undefined || spec.series === null || isName(spec.series))) {
+      throw new TypeError(`chart must be null or { type: ${CHART_TYPES.join(' | ')}, x: column, y: [up to `
+        + `${MAX_CHART_SERIES} columns], series: column or null }`);
+    }
+    this.chart = JSON.stringify({ type: spec.type, x: spec.x, y: spec.y, series: spec.series ?? null });
   }
 
   /**
