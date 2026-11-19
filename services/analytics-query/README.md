@@ -3,15 +3,13 @@
 Runs read-only SQL queries against the Harmony Iceberg analytics tables (the copies of the jobs
 database the cron service's analytics job writes to S3 Tables), using DuckDB. It is the backend for
 the `/admin/analytics` page in the harmony frontend. Only the frontend calls it: the frontend checks
-that the user is an admin or log viewer, then calls this service with a shared secret and the user's
-name.
+that the user is an admin, then calls this service with a shared secret and the user's name.
 
 ## The page
 
 `/admin/analytics` in the harmony frontend (`services/harmony/app/frontends/analytics.ts`,
-`public/js/analytics`) is the UI. It's open to admins and log viewers:
-`ADMIN_OR_LOG_VIEWER_PATHS` in `app/middleware/permission-groups.ts` exempts it from the admin-only
-check on other `/admin` routes. It has:
+`public/js/analytics`) is the UI. Like every `/admin` route it's admin-only (the `admin` middleware in
+`app/middleware/permission-groups.ts`). It has:
 - a SQL editor with DuckDB-flavoured highlighting
 - table/column completion from `/api/schema`
 - errors underlined as you type, from `/api/validate`
@@ -19,8 +17,9 @@ check on other `/admin` routes. It has:
 - a results table with CSV download
 - saved queries, including the parameter values to use by default. These are stored in the jobs
   database's `analytics_queries` table and served by the frontend itself, at
-  `/admin/analytics/api/queries`. Everyone who can use the page can see and run every saved query.
-  Only its owner or an admin can change or delete one. `?query=<id>` links to a saved query.
+  `/admin/analytics/api/queries`. Every admin can see, run, change and delete every saved query. The API also has an owner rule
+  (only the owner or an admin may change or delete a query), which would matter if the page were
+  opened to non-admins. `?query=<id>` links to a saved query.
 - a chart of the results, saved with the query (`public/js/analytics/chart.js`), as columns
   (stacked for several series) or lines. Either several numeric columns are each a series, or one
   is split into a series per value of another column. Past eight series the smallest are combined

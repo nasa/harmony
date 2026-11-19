@@ -32,8 +32,8 @@ export async function getAnalyticsPage(req: HarmonyRequest, res: Response): Prom
 /**
  * Express.js handler that passes /admin/analytics/api/:endpoint requests on to the analytics query
  * service (services/analytics-query), adding the shared secret and the requesting user, and
- * returns its response as-is. Access to this route has already been checked (admins and log
- * viewers only).
+ * returns its response as-is. Access to this route has already been checked (admins only, like
+ * every /admin route).
  *
  * POSTs must have a JSON body. Besides being what the service expects, this keeps another site from
  * running queries as a logged-in user with a cross-site form: a cross-site JSON request needs a

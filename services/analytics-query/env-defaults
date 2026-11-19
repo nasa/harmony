@@ -7,7 +7,7 @@ PORT=3000
 S3_TABLE_BUCKET_ARN=
 
 # Bearer token the harmony frontend must send with every /api request. The service is only reached
-# through the frontend, which checks that the user is an admin or log viewer; this keeps anything
+# through the frontend, which checks that the user is an admin; this keeps anything
 # else running in the cluster (including backend service containers) from calling it directly.
 # Must be overridden outside local development - the service refuses to start with this value
 # unless USE_LOCALSTACK is true.
