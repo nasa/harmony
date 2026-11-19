@@ -15,11 +15,28 @@ const MAX_PARAMETERS_LENGTH = 100_000;
  */
 export interface DashboardPanel {
   queryId: number;
+  // Shown instead of the query's name, or null for the query's name. It may refer to parameter
+  // values ($start, ${start:raw}, $__range); the page fills those in.
+  title: string | null;
   display: 'chart' | 'table';
   width: 'half' | 'full';
   // The most rows to fetch for the panel, or null to use its query's row limit
   limit: number | null;
+  // Values for the query's parameters, for this panel only, by name. A parameter without one takes
+  // the dashboard's value, or else the query's saved default.
+  parameters: { [name: string]: ParameterDefault };
 }
+
+/**
+ * Whether a value is an object of parameter values, by name
+ */
+function isParameterValues(value: unknown): value is { [name: string]: ParameterDefault } {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+    && Object.values(value).every(isParameterDefault);
+}
+
+const PARAMETER_VALUES_PROBLEM = 'must be an object mapping parameter names to strings, numbers, booleans, '
+  + 'nulls, or lists of them';
 
 /**
  * A dashboard as returned by the API
@@ -44,7 +61,9 @@ export interface AnalyticsDashboardForDisplay {
  * @throws TypeError if it isn't a valid panel
  */
 function toPanel(panel: unknown, index: number): DashboardPanel {
-  const p = panel as { queryId?: unknown, display?: unknown, width?: unknown, limit?: unknown };
+  const p = panel as {
+    queryId?: unknown, title?: unknown, display?: unknown, width?: unknown, limit?: unknown, parameters?: unknown
+  };
   const problem = (what: string): TypeError => new TypeError(`panel ${index + 1}: ${what}`);
   if (!p || typeof p !== 'object' || Array.isArray(p)) throw problem('must be an object');
   if (!Number.isInteger(p.queryId) || (p.queryId as number) < 1) throw problem('queryId must be a saved query id');
@@ -58,18 +77,28 @@ function toPanel(panel: unknown, index: number): DashboardPanel {
     && (!Number.isInteger(p.limit) || (p.limit as number) < 1 || (p.limit as number) > MAX_ROW_LIMIT)) {
     throw problem(`limit must be null or a whole number of rows from 1 to ${MAX_ROW_LIMIT}`);
   }
+  if (p.title !== undefined && p.title !== null
+    && (typeof p.title !== 'string' || p.title.length > MAX_NAME_LENGTH)) {
+    throw problem(`title must be null or a string of at most ${MAX_NAME_LENGTH} characters`);
+  }
+  if (p.parameters !== undefined && p.parameters !== null && !isParameterValues(p.parameters)) {
+    throw problem(`parameters ${PARAMETER_VALUES_PROBLEM}`);
+  }
+  const title = typeof p.title === 'string' ? p.title.trim() : '';
   return {
     queryId: p.queryId as number,
+    title: title === '' ? null : title,
     display: (p.display ?? 'chart') as DashboardPanel['display'],
     width: (p.width ?? 'half') as DashboardPanel['width'],
     limit: (p.limit ?? null) as number | null,
+    parameters: (p.parameters ?? {}) as DashboardPanel['parameters'],
   };
 }
 
 /**
  * A dashboard on the /admin/analytics page: an ordered list of panels, each showing a saved query,
- * and values for the queries' parameters (one value per parameter name, shared by every panel
- * whose query has a parameter of that name). Like saved queries, every user of the page can see
+ * and values for the queries' parameters for every panel (by name, for each panel whose query has
+ * a parameter of that name and that doesn't set its own). Like saved queries, every user of the page can see
  * every dashboard, and only its owner or an admin can change or delete it.
  */
 export default class AnalyticsDashboard extends Record {
@@ -135,11 +164,7 @@ export default class AnalyticsDashboard extends Record {
       this.parameters = null;
       return;
     }
-    if (typeof parameters !== 'object' || Array.isArray(parameters)
-      || !Object.values(parameters).every(isParameterDefault)) {
-      throw new TypeError('parameters must be an object mapping parameter names to strings, numbers, booleans, '
-        + 'nulls, or lists of them');
-    }
+    if (!isParameterValues(parameters)) throw new TypeError(`parameters ${PARAMETER_VALUES_PROBLEM}`);
     this.parameters = JSON.stringify(parameters);
   }
 
@@ -161,7 +186,8 @@ export default class AnalyticsDashboard extends Record {
       id: Number(this.id),
       name: this.name,
       description: this.description ?? '',
-      panels: parseJson(this.panels) ?? [],
+      // Panels saved before panels had titles and parameters get the defaults
+      panels: (parseJson<DashboardPanel[]>(this.panels) ?? []).map((p) => ({ title: null, parameters: {}, ...p })),
       parameters: parseJson(this.parameters) ?? {},
       owner: this.username,
       createdAt: this.createdAt,

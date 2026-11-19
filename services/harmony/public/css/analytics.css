@@ -605,6 +605,25 @@
   white-space: nowrap;
 }
 
+/* The selected panel, whose parameters the Parameters box shows */
+.dashboard-tile.is-selected {
+  border-color: var(--an-accent);
+  box-shadow: 0 0 0 1px var(--an-accent);
+}
+/* Pushes the meta and the parameters button to the right of the title */
+.dashboard-tile-title {
+  margin-right: auto;
+}
+.dashboard-tile-select {
+  line-height: 1;
+}
+/* The values worth pointing out: changed from the saved dashboard, or set for all panels */
+.dashboard-tile-parameters {
+  color: var(--an-text-muted);
+  font-size: 0.75rem;
+  margin: -0.25rem 0 0.5rem;
+  overflow-wrap: anywhere;
+}
 .dashboard-tile .viz-card {
   border: 0;
   padding: 0;
@@ -656,14 +675,16 @@
   padding: 0;
 }
 
+/* Top-aligned, as a title may have a hint under it */
 .panel-editor-table td {
   padding: 0;
-  vertical-align: middle;
+  vertical-align: top;
 }
 
 .panel-editor-table .panel-number {
   color: var(--an-text-secondary);
   text-align: right;
+  padding-top: 0.3rem;
 }
 
 .panel-editor-table select.panel-query {
@@ -671,6 +692,27 @@
   max-width: 24rem;
 }
 
+.panel-editor-table input.panel-title {
+  min-width: 24rem;
+  width: 100%;
+}
+/* Under a title: the variables it can use, and any it can't fill in */
+.panel-title-hint {
+  color: var(--an-text-muted);
+  font-size: 0.75rem;
+  margin-top: 0.15rem;
+}
+.panel-title-hint.is-invalid {
+  color: var(--an-error);
+}
+/* The Parameters box's "For" menu: all panels, or one */
+.parameter-scope {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
 .panel-editor-table input.panel-limit {
   width: 6rem;
 }

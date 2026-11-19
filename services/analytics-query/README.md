@@ -39,12 +39,28 @@ that the user is an admin, then calls this service with a shared secret and the 
 - a **Dashboards** tab (`/admin/analytics/dashboards`, `public/js/analytics/dashboards.js`):
   layouts of saved queries, each panel showing its query's chart or a table, at half or full width.
   A panel runs with the row limit saved with its query (the Query tab's Row limit when the query was
-  saved, or 10 if it has none) unless the panel sets its own Max rows. One field per parameter name is shared by every panel whose query uses
-  it, so a single `$start` can set the time range of the whole dashboard. A field starts with
-  whichever value was saved last: the dashboard's own (saved with it), or the default saved with
-  the newest of its queries that has one. So saving a query with new parameter values shows them on
-  every dashboard using it, until a dashboard is saved again with values of its own. Panels always
-  run their queries as last saved (SQL, chart and row limit), and Refresh reloads them first. Viewing a dashboard runs
+  saved, or 10 if it has none) unless the panel sets its own Max rows. Each parameter of a panel's query takes, in order:
+  - the panel's own value
+  - the dashboard's value for all panels
+  - the value saved with the query
+
+  So a "last hour" panel and a "last week" panel can share a dashboard, and saving a query with new
+  values changes every panel that doesn't set its own. The Parameters box shows one level at a
+  time, chosen with its "For" menu or by selecting a panel. An empty field shows, ghosted, the value
+  it inherits. Values changed while viewing apply until the page is left; editing and saving the
+  dashboard keeps them. A tile points out values that differ from the saved dashboard, or that
+  come from the all-panels level, and lists every value on hover of its parameters button.
+  Relative times are worked out when the dashboard is opened or refreshed, so applying a change
+  reruns only the panels it affects.
+
+  A panel can have its own title, in place of the query's name. A title can include the panel's
+  values, Grafana-style (`public/js/analytics/titles.js`): `$start` or `${start}` in words ("7 days
+  ago", "the start of today"), `${start:raw}` as written (`now-7d`), and `$__range` for the panel's
+  time range in words ("the last 7 days", "last month"): its query's first start/end pair, or a
+  lone start parameter up to now. So "Errors in $__range" stays accurate whatever the range is
+  set to. The panel editor lists, under each title, the variables its query offers and any the
+  title uses that it can't fill in. Panels always run their queries as last saved (SQL, chart
+  and row limit), and Refresh reloads them first. Viewing a dashboard runs
   its panels' queries two at a time (this service's default concurrency). Dashboards are stored in
   the jobs database's `analytics_dashboards` table and served by the frontend at
   `/admin/analytics/api/dashboards`, with the same access rules as saved queries. A panel whose

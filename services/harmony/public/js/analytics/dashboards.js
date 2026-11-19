@@ -1,17 +1,28 @@
 // The Dashboards tab of the analytics page: layouts of saved queries, each shown as its chart or as
-// a table. Viewing a dashboard runs every panel's query through the analytics query service, with
-// one shared value for each parameter name (e.g. a single $start for every panel).
+// a table. Viewing a dashboard runs every panel's query through the analytics query service.
+//
+// Each parameter of a panel's query takes the panel's own value if it has one, else the
+// dashboard's value for all panels, else the value saved with the query. The Parameters box shows
+// either level, chosen with its "For" menu or by selecting a panel. Values changed while not
+// editing apply until the page is reloaded; they're saved only by editing and saving the dashboard.
 import { chartProblem, renderChart } from './chart.js';
 import { $, api, chooseAction, confirmAction, pageUser, renderError, userStorage } from './common.js';
 import { renderParameterFields } from './params.js';
 import { parameterDefault, parameterValue, renderTable } from './results.js';
 import { defaultToText, filterSavedList, renderSavedList } from './saved.js';
+import { initTimeHelp } from './timehelp.js';
+import { describeParameter, interpolateTitle, titleVariables } from './titles.js';
 
 // How many panel queries to run at once. The analytics query service runs two at a time by
 // default (ANALYTICS_QUERY_MAX_CONCURRENT) and turns requests away once too many are waiting.
 const MAX_PARALLEL_QUERIES = 2;
-// A new panel's limit is null: it runs with its query's saved row limit
-const NEW_PANEL = { width: 'half', limit: null };
+/**
+ * A new panel for a query: half width, titled with the query's name, and with the query's row
+ * limit and parameter values
+ */
+const newPanel = (query) => ({
+  queryId: query.id, title: '', display: query.chart ? 'chart' : 'table', width: 'half', limit: null, parameters: {},
+});
 // The rows a panel fetches when neither it nor its query sets a limit
 const DEFAULT_ROW_LIMIT = 10;
 
@@ -76,17 +87,24 @@ const state = {
   queries: new Map(),
   // The open dashboard as saved, or null for a new one
   current: null,
-  // The dashboard as shown (and being edited): name, description and panels
+  // The dashboard as shown (and being edited): name, description and panels. Each panel's
+  // parameters are its own values, as written, by name.
   draft: null,
-  // The parameter fields' text, by parameter name
-  parameterText: new Map(),
-  // Each field's text before the user changes it (see baseParameterText), and the names the user
-  // has changed from that
-  parameterBase: new Map(),
-  editedParameters: new Set(),
+  // The dashboard's values for all panels, as written, by name
+  allText: new Map(),
+  // The panel whose parameters the Parameters box shows, or null for all panels
+  selected: null,
+  // As saved, for marking the values that have been changed: the values for all panels, and each
+  // shown panel's saved version (none for a panel added since)
+  savedAllText: new Map(),
+  savedPanels: new WeakMap(),
+  // The tiles drawn, with their panels
+  tiles: [],
   // What the draft was when last opened or saved, to tell whether there are changes
   snapshot: null,
   editing: false,
+  // Whether the dashboard has just been saved, to say so until it is edited again
+  justSaved: false,
   // Each query's parameters ([{name, type}]), from validating it, by query id
   queryParameters: new Map(),
   // Results already fetched, by query, parameters and limit; cleared by Refresh
@@ -150,17 +168,23 @@ function setUrlDashboard(id) {
 function currentSnapshot() {
   if (!state.draft) return null;
   const { name, description, panels } = state.draft;
-  return JSON.stringify({ name: name.trim(), description, panels });
+  const set = (entries) => entries.filter(([, text]) => text.trim() !== '').sort();
+  return JSON.stringify({
+    name: name.trim(),
+    description,
+    panels: panels.map((p) => ({ ...p, title: p.title.trim(), parameters: set(Object.entries(p.parameters)) })),
+    all: set([...state.allText]),
+  });
 }
 
 /**
- * Whether opening something else would lose changes to the dashboard. A parameter value taken
- * from a query saved after the dashboard isn't a change: it will be taken from there again.
+ * Whether opening something else would lose changes to the dashboard. Only edits count: values
+ * changed while viewing are meant to last only until the page is left.
  */
 function hasUnsavedChanges() {
-  if (!state.draft) return false;
+  if (!state.draft || !state.editing) return false;
   if (!state.current && state.draft.name.trim() === '' && state.draft.panels.length === 0) return false;
-  return currentSnapshot() !== state.snapshot || state.editedParameters.size > 0;
+  return currentSnapshot() !== state.snapshot;
 }
 
 /**
@@ -193,6 +217,7 @@ function updateControls() {
   $('panelEditor').hidden = !editing;
   let status = '';
   if (hasUnsavedChanges()) status = current ? 'Unsaved changes' : 'Not saved';
+  else if (state.justSaved) status = 'Saved';
   else if (current && !owns) status = `By ${current.owner}`;
   $('dashboardStatus').textContent = status;
 }
@@ -226,69 +251,164 @@ async function loadLists() {
 }
 
 /**
- * Shows the parameter fields for the parameters of the panels' queries, one per name
- *
- * @param {Map<string, string>} types - each parameter's type, by name
+ * Gets a panel's query's parameters ([] until the query has been validated)
  */
-function showParameterFields(types) {
-  renderParameterFields($('dashboardParameterFields'), [...types].map(([name, type]) => ({ name, type })), {
-    text: state.parameterText,
-    onChange: (name, text) => {
-      state.parameterText.set(name, text);
-      if (text === (state.parameterBase.get(name) ?? '')) state.editedParameters.delete(name);
-      else state.editedParameters.add(name);
-      updateControls();
-    },
-    idPrefix: 'dashboard-parameter',
-    now: () => state.resolvedAt ?? Date.now(),
-  });
-  $('dashboardParameters').hidden = types.size === 0;
-  $('parametersCount').textContent = ` (${types.size})`;
+const parametersOf = (panel) => state.queryParameters.get(panel.queryId) ?? [];
+
+/**
+ * Converts a dashboard's saved panel to how it is shown and edited: its title and parameter values
+ * as text
+ */
+const textPanel = (panel) => ({
+  ...panel,
+  title: panel.title ?? '',
+  parameters: Object.fromEntries(Object.entries(panel.parameters ?? {}).map(([k, v]) => [k, defaultToText(v)])),
+});
+
+const LEVEL_NAMES = { panel: 'Panel', all: 'All panels', query: 'Query', none: 'Not set' };
+
+/**
+ * Gets the value one of a panel's parameters takes: the panel's own, else the dashboard's for all
+ * panels, else the one saved with the query
+ *
+ * @param {object} panel - the panel (as shown, see textPanel)
+ * @param {Map<string, string>} allText - the dashboard's values for all panels
+ * @param {string} name - the parameter
+ * @returns {{text: string, level: 'panel'|'all'|'query'|'none'}} the value as written ('' for
+ *   NULL), and where it comes from
+ */
+function valueOf(panel, allText, name) {
+  const own = panel.parameters[name] ?? '';
+  if (own.trim() !== '') return { text: own, level: 'panel' };
+  const all = allText.get(name) ?? '';
+  if (all.trim() !== '') return { text: all, level: 'all' };
+  const saved = state.queries.get(panel.queryId)?.parameters?.[name];
+  if (saved !== undefined) return { text: defaultToText(saved), level: 'query' };
+  return { text: '', level: 'none' };
 }
 
 /**
- * Works out each parameter field's text before the user changes it: whichever was saved last of the
- * dashboard's own value and the default saved with the panels' queries (the most recently saved
- * query with a default for the name). So saving a query with new parameter values shows them on
- * the dashboards that use it, and saving a dashboard with its own values keeps those.
+ * Gets the values to run a panel's query with
  *
- * @param {Array<object>} queries - the panels' saved queries
- * @returns {Map<string, string>} the text by parameter name
- */
-function baseParameterText(queries) {
-  const saved = state.current?.parameters ?? {};
-  const savedAt = state.current ? Date.parse(state.current.updatedAt) : -Infinity;
-  const base = new Map(Object.entries(saved).map(([name, value]) => [name, defaultToText(value)]));
-  const newestFirst = [...queries].sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
-  const decided = new Set();
-  for (const query of newestFirst) {
-    for (const [name, value] of Object.entries(query.parameters ?? {})) {
-      if (!decided.has(name)) {
-        decided.add(name);
-        if (!(name in saved) || Date.parse(query.updatedAt) > savedAt) base.set(name, defaultToText(value));
-      }
-    }
-  }
-  return base;
-}
-
-/**
- * Gets the parameter values for one query, from the shared fields
- *
- * @param {Array<{name: string, type: string}>} parameters - the query's parameters
+ * @param {object} panel - the panel
  * @returns {object} the values by name
  * @throws {Error} if a value isn't valid for its type
  */
-function valuesFor(parameters) {
+function valuesFor(panel) {
   const values = {};
-  for (const { name, type } of parameters) {
+  for (const { name, type } of parametersOf(panel)) {
     try {
-      values[name] = parameterValue(state.parameterText.get(name) ?? '', type, state.resolvedAt);
+      values[name] = parameterValue(valueOf(panel, state.allText, name).text, type, state.resolvedAt);
     } catch (e) {
       throw new Error(`$${name}: ${e.message}`);
     }
   }
   return values;
+}
+
+/**
+ * Gets a panel's title: its own, with its parameter values filled in (see titles.js), or else its
+ * query's name
+ */
+function titleOf(panel, query) {
+  if (!panel.title.trim()) return query?.name ?? `Saved query ${panel.queryId}`;
+  return interpolateTitle(panel.title.trim(), parametersOf(panel), (name) => valueOf(panel, state.allText, name).text);
+}
+
+/**
+ * Selects the panel whose parameters the Parameters box shows (null for all panels)
+ */
+function selectPanel(panel) {
+  state.selected = panel;
+  for (const { tile, panel: p } of state.tiles) tile.classList.toggle('is-selected', p === panel);
+  showParameterFields();
+}
+
+/**
+ * Shows the parameter fields: for the selected panel, its query's parameters, empty unless the
+ * panel sets its own value; for all panels, every name the panels' queries use
+ */
+function showParameterFields() {
+  const { panels } = state.draft;
+  if (state.selected && !panels.includes(state.selected)) state.selected = null;
+  const { selected } = state;
+  const withParameters = panels.filter((p) => parametersOf(p).length > 0);
+  $('dashboardParameters').hidden = withParameters.length === 0;
+  if (withParameters.length === 0) return;
+
+  const scope = $('parameterScope');
+  scope.replaceChildren(new Option('All panels', 'all'), ...withParameters.map((p) => {
+    const i = panels.indexOf(p);
+    return new Option(`Panel ${i + 1}: ${titleOf(p, state.queries.get(p.queryId))}`, String(i));
+  }));
+  scope.value = selected ? String(panels.indexOf(selected)) : 'all';
+
+  let parameters;
+  let text;
+  const inherited = new Map();
+  if (selected) {
+    parameters = parametersOf(selected);
+    text = new Map(Object.entries(selected.parameters));
+    for (const { name } of parameters) {
+      const { text: value, level } = valueOf({ ...selected, parameters: {} }, state.allText, name);
+      inherited.set(name, { text: value, source: LEVEL_NAMES[level] });
+    }
+    $('parameterScopeHelp').textContent = 'Values for this panel only. Leave a field empty to use the value for all '
+      + 'panels, or else the query\'s.';
+  } else {
+    const types = new Map();
+    for (const p of withParameters) for (const { name, type } of parametersOf(p)) if (!types.has(name)) types.set(name, type);
+    parameters = [...types].map(([name, type]) => ({ name, type }));
+    text = state.allText;
+    for (const { name } of parameters) {
+      // An empty field leaves each panel its query's value: one value if they all agree
+      const own = new Set(withParameters.filter((p) => parametersOf(p).some((q) => q.name === name))
+        .map((p) => valueOf({ ...p, parameters: {} }, new Map(), name).text));
+      inherited.set(name, own.size === 1 ? { text: [...own][0], source: 'Query' } : { text: null, source: 'Each query\'s own' });
+    }
+    $('parameterScopeHelp').textContent = 'Values for every panel that doesn\'t set its own. Leave a field empty to '
+      + 'use each query\'s.';
+  }
+  renderParameterFields($('dashboardParameterFields'), parameters, {
+    text,
+    inherited,
+    onChange: (name, value) => {
+      if (selected) {
+        if (value.trim() === '') delete selected.parameters[name];
+        else selected.parameters[name] = value;
+      } else {
+        state.allText.set(name, value);
+      }
+      updateControls();
+    },
+    idPrefix: 'dashboard-parameter',
+    now: () => state.resolvedAt ?? Date.now(),
+  });
+  $('parametersCount').textContent = selected ? ` (panel ${panels.indexOf(selected) + 1})` : ` (${parameters.length})`;
+}
+
+/**
+ * Lists a panel's parameter values for its tile: all of them, for the tooltip, and the ones to point
+ * out - those changed from the dashboard as saved, and those set for all panels
+ *
+ * @param {object} panel - the panel
+ * @returns {{all: string[], marked: string[]}} the lines
+ */
+function tileParameters(panel) {
+  const saved = state.savedPanels.get(panel);
+  const all = [];
+  const marked = [];
+  for (const { name, type } of parametersOf(panel)) {
+    const { text, level } = valueOf(panel, state.allText, name);
+    const shown = text.trim() || 'NULL';
+    all.push(`$${name} = ${shown} (${LEVEL_NAMES[level].toLowerCase()})`);
+    const changed = saved && valueOf(saved, state.savedAllText, name).text !== text;
+    if (changed || level === 'all') {
+      const words = describeParameter(text, type);
+      marked.push(`$${name}: ${shown}${words !== shown ? ` (${words})` : ''}, ${changed ? 'changed' : 'for all panels'}`);
+    }
+  }
+  return { all, marked };
 }
 
 /**
@@ -301,25 +421,52 @@ function valuesFor(parameters) {
 function panelTile(panel, query) {
   const tile = document.createElement('article');
   tile.className = `dashboard-tile${panel.width === 'full' ? ' is-full' : ''}`;
+  tile.classList.toggle('is-selected', panel === state.selected);
   const header = document.createElement('div');
   header.className = 'dashboard-tile-header';
   const title = document.createElement('h3');
   title.className = 'dashboard-tile-title';
-  if (query) {
-    const link = document.createElement('a');
-    link.href = `/admin/analytics?query=${query.id}`;
-    link.textContent = query.name;
-    link.title = query.description || 'Open on the Query tab';
-    title.append(link);
-  } else {
-    title.textContent = `Saved query ${panel.queryId}`;
-  }
   const meta = document.createElement('span');
   meta.className = 'dashboard-tile-meta';
-  header.append(title, meta);
+  // Selects the panel, to show its parameters (as does clicking anywhere else on the tile)
+  const select = document.createElement('button');
+  select.type = 'button';
+  select.className = 'btn btn-sm btn-link p-0 dashboard-tile-select';
+  select.innerHTML = '<i class="bi bi-sliders" aria-hidden="true"></i>';
+  select.addEventListener('click', () => {
+    expand('parameters');
+    selectPanel(panel);
+  });
+  header.append(title, meta, select);
+  const parameters = document.createElement('p');
+  parameters.className = 'dashboard-tile-parameters';
   const body = document.createElement('div');
-  tile.append(header, body);
-  return { tile, meta, body };
+  tile.append(header, parameters, body);
+  tile.addEventListener('click', (e) => {
+    if (!e.target.closest('a, button, input, select, summary')) selectPanel(panel);
+  });
+
+  // The header, again once the query's parameters are known
+  const fillHeader = () => {
+    const text = titleOf(panel, query);
+    if (query) {
+      const link = document.createElement('a');
+      link.href = `/admin/analytics?query=${query.id}`;
+      link.textContent = text;
+      link.title = `Saved query: ${query.name}${query.description ? ` - ${query.description}` : ''}`;
+      title.replaceChildren(link);
+    } else {
+      title.textContent = text;
+    }
+    const { all, marked } = tileParameters(panel);
+    select.hidden = all.length === 0;
+    select.title = ['Parameters (select to change):', ...all].join('\n');
+    select.setAttribute('aria-label', `Panel parameters: ${all.join('; ')}`);
+    parameters.textContent = marked.join(' · ');
+    parameters.hidden = marked.length === 0;
+  };
+  fillHeader();
+  return { tile, meta, body, fillHeader };
 }
 
 /**
@@ -361,7 +508,7 @@ function renderPanelResult(body, panel, query, result) {
       body.append(card);
       // The tile's header shows the name, so the card's own title is hidden (see analytics.css), but
       // it still labels the chart for screen readers
-      const drawProblem = renderChart(card, result, query.chart, { title: query.name, color: token });
+      const drawProblem = renderChart(card, result, query.chart, { title: titleOf(panel, query), color: token });
       if (!drawProblem) return;
       body.replaceChildren();
       tileMessage(body, `Can't chart this: ${drawProblem}`);
@@ -411,6 +558,7 @@ async function refresh(force = false) {
   const { panels } = state.draft;
   const grid = $('dashboardGrid');
   const tiles = panels.map((panel) => panelTile(panel, state.queries.get(panel.queryId)));
+  state.tiles = tiles.map((t, i) => ({ tile: t.tile, panel: panels[i], fillHeader: t.fillHeader }));
   grid.replaceChildren(...tiles.map((t) => t.tile));
   if (panels.length === 0) {
     $('dashboardParameters').hidden = true;
@@ -428,25 +576,19 @@ async function refresh(force = false) {
   let invalid;
   try {
     $('refreshStatus').textContent = 'Checking the queries…';
+    const known = state.queryParameters.size;
     invalid = await learnParameters(queries);
+    // The title hints list each query's parameters
+    if (state.editing && state.queryParameters.size !== known && !stale()) renderPanelEditor();
   } catch (e) {
     if (!stale()) showError(e);
     return;
   }
   if (stale()) return;
 
-  // One field per parameter name, holding what the user typed, or else whichever value was saved last
-  const types = new Map();
-  for (const query of queries) {
-    for (const { name, type } of state.queryParameters.get(query.id) ?? []) {
-      if (!types.has(name)) types.set(name, type);
-    }
-  }
-  state.parameterBase = baseParameterText(queries);
-  for (const [name, text] of state.parameterBase) {
-    if (!state.editedParameters.has(name)) state.parameterText.set(name, text);
-  }
-  showParameterFields(types);
+  // Titles and values can be shown now the queries' parameters are known
+  for (const t of tiles) t.fillHeader();
+  showParameterFields();
   updateControls();
 
   let done = 0;
@@ -465,7 +607,7 @@ async function refresh(force = false) {
         return;
       }
       tileMessage(body, 'Running…');
-      const params = valuesFor(state.queryParameters.get(query.id) ?? []);
+      const params = valuesFor(panel);
       const limit = limitFor(panel, query);
       const key = JSON.stringify([query.id, query.updatedAt, params, limit]);
       if (!state.results.has(key)) {
@@ -563,10 +705,51 @@ function renderPanelEditor() {
       chartOption.disabled = true;
       chartOption.textContent = 'Chart (none saved)';
     }
+    // Blank uses the query's name, which the placeholder shows
+    const title = document.createElement('input');
+    title.type = 'text';
+    title.className = 'form-control form-control-sm panel-title';
+    title.maxLength = 255;
+    title.value = panel.title;
+    title.placeholder = query?.name ?? 'Title';
+    title.setAttribute('aria-label', `Panel ${i + 1} title (blank for the query's name)`);
+    // Under the title: the variables it can use, and any it uses that its query doesn't have
+    const hint = document.createElement('div');
+    hint.className = 'panel-title-hint';
+    hint.id = `panel-title-hint-${i}`;
+    title.setAttribute('aria-describedby', `${hint.id} panelTitleHelp`);
+    const showHint = () => {
+      const parameters = parametersOf(panel);
+      const missing = titleVariables(title.value, parameters);
+      const available = parameters.map((p) => `$${p.name}`);
+      if (titleVariables('$__range', parameters).length === 0) available.push('$__range');
+      hint.classList.toggle('is-invalid', missing.length > 0);
+      hint.textContent = [
+        missing.length > 0 ? `Not filled in: ${missing.join(', ')}.` : '',
+        available.length > 0 ? `Can use ${available.join(', ')}` : 'This query has no parameters to use.',
+      ].filter(Boolean).join(' ');
+    };
+    showHint();
+    title.addEventListener('input', () => {
+      panel.title = title.value;
+      showHint();
+      state.tiles.find((t) => t.panel === panel)?.fillHeader();
+      updateControls();
+    });
+    title.addEventListener('change', () => {
+      panel.title = title.value;
+      changed();
+    });
     const number = cell(`${i + 1}.`);
     number.className = 'panel-number';
     const order = document.createElement('div');
     order.className = 'panel-order';
+    if (parametersOf(panel).length > 0) {
+      order.append(button('bi-sliders', `Panel ${i + 1} parameters`, () => {
+        expand('parameters');
+        selectPanel(panel);
+      }));
+    }
     order.append(
       button('bi-arrow-up', `Move panel ${i + 1} up`, () => { [panels[i - 1], panels[i]] = [panels[i], panels[i - 1]]; changed(); }, i === 0),
       button('bi-arrow-down', `Move panel ${i + 1} down`, () => { [panels[i], panels[i + 1]] = [panels[i + 1], panels[i]]; changed(); }, i === panels.length - 1),
@@ -579,6 +762,7 @@ function renderPanelEditor() {
         panel.display = displayFor(state.queries.get(panel.queryId));
         changed();
       }, 'panel-query')),
+      cell(title, hint),
       cell(displaySelect),
       cell(select(`Panel ${i + 1} width`, panel.width, [['half', 'Half'], ['full', 'Full']], (v) => { panel.width = v; changed(); })),
       cell(limit),
@@ -595,6 +779,16 @@ function renderPanelEditor() {
 }
 
 /**
+ * Records the dashboard as shown as the saved version: to tell whether there are unsaved changes,
+ * and which values have been changed since
+ */
+function rememberSaved() {
+  state.snapshot = currentSnapshot();
+  state.savedAllText = new Map(state.allText);
+  state.savedPanels = new WeakMap(state.draft.panels.map((p) => [p, { ...p, parameters: { ...p.parameters } }]));
+}
+
+/**
  * Shows a dashboard, or a new empty one
  *
  * @param {object|null} dashboard - the saved dashboard, or null for a new one
@@ -603,6 +797,7 @@ function renderPanelEditor() {
 function showDashboard(dashboard, editing) {
   state.current = dashboard;
   state.editing = editing;
+  state.justSaved = false;
   state.resolvedAt = null;
   state.draft = {
     name: dashboard?.name ?? '',
@@ -611,13 +806,12 @@ function showDashboard(dashboard, editing) {
     // shown as one (before the snapshot, so this alone isn't an unsaved change)
     panels: (dashboard?.panels ?? []).map((p) => {
       const query = state.queries.get(p.queryId);
-      return { ...p, display: query && !query.chart ? 'table' : p.display };
+      return { ...textPanel(p), display: query && !query.chart ? 'table' : p.display };
     }),
   };
-  state.parameterText = new Map(Object.entries(dashboard?.parameters ?? {}).map(([k, v]) => [k, defaultToText(v)]));
-  state.parameterBase = new Map(state.parameterText);
-  state.editedParameters = new Set();
-  state.snapshot = currentSnapshot();
+  state.allText = new Map(Object.entries(dashboard?.parameters ?? {}).map(([k, v]) => [k, defaultToText(v)]));
+  state.selected = null;
+  rememberSaved();
   $('dashboardName').value = state.draft.name;
   $('dashboardDescription').value = state.draft.description;
   $('dashboardParameterFields').replaceChildren();
@@ -658,34 +852,48 @@ async function save(asNew) {
     $('dashboardName').focus();
     return false;
   }
-  // Only the parameters the panels use now are kept
-  const parameters = {};
-  const types = new Map();
-  for (const query of state.draft.panels.map((p) => state.queries.get(p.queryId)).filter(Boolean)) {
-    for (const { name: p, type } of state.queryParameters.get(query.id) ?? []) types.set(p, type);
-  }
+  // Only the values that are set, for parameters the panels' queries have now, are kept. Times are
+  // kept as written, so a relative time (now-7d) is saved as one.
+  const valuesToSave = (text, parameters, where) => {
+    const values = {};
+    for (const { name: p, type } of parameters) {
+      const value = text.get(p) ?? '';
+      if (value.trim() !== '') {
+        try {
+          values[p] = parameterDefault(value, type);
+        } catch (e) {
+          throw new Error(`${where} $${p}: ${e.message}`);
+        }
+      }
+    }
+    return values;
+  };
+  let panels;
+  let parameters;
   try {
-    // Times as written, so a relative time (now-7d) is saved as one
-    for (const [p, type] of types) parameters[p] = parameterDefault(state.parameterText.get(p) ?? '', type);
+    panels = state.draft.panels.map((p, i) => ({
+      ...p,
+      title: p.title.trim() || null,
+      parameters: valuesToSave(new Map(Object.entries(p.parameters)), parametersOf(p), `Panel ${i + 1}:`),
+    }));
+    const types = new Map(state.draft.panels.flatMap((p) => parametersOf(p).map((q) => [q.name, q])));
+    parameters = valuesToSave(state.allText, [...types.values()], 'All panels:');
   } catch (e) {
     showError(e);
     return false;
   }
-  const body = { name, description: state.draft.description, panels: state.draft.panels, parameters };
+  const body = { name, description: state.draft.description, panels, parameters };
   const inPlace = state.current && canChange(state.current) && !asNew;
   try {
     const saved = inPlace
       ? await api(`dashboards/${state.current.id}`, body, 'PUT')
       : await api('dashboards', body);
     state.current = saved;
-    state.snapshot = currentSnapshot();
-    // The dashboard is now the last saved, so the values just saved are what it shows
-    state.parameterBase = new Map(state.parameterText);
-    state.editedParameters.clear();
+    rememberSaved();
     setUrlDashboard(saved.id);
     await loadLists();
+    state.justSaved = true;
     updateControls();
-    $('dashboardStatus').textContent = 'Saved';
     return true;
   } catch (e) {
     showError(e);
@@ -694,17 +902,21 @@ async function save(asNew) {
 }
 
 /**
+ * Closes the editor, back to viewing the dashboard
+ */
+function stopEditing() {
+  state.editing = false;
+  updateControls();
+  void refresh();
+}
+
+/**
  * Stops editing. With unsaved changes, asks whether to save them, discard them (back to the
  * dashboard as last saved, or closing a new one that was never saved), or keep editing.
  */
 async function cancelEditing() {
-  const stop = () => {
-    state.editing = false;
-    updateControls();
-    void refresh();
-  };
   if (!hasUnsavedChanges()) {
-    stop();
+    stopEditing();
     return;
   }
   const choice = await chooseAction('Save your changes to this dashboard?', [
@@ -713,7 +925,7 @@ async function cancelEditing() {
     { value: 'save', label: $('saveDashboardLabel').textContent, className: 'btn-primary' },
   ]);
   if (choice === 'save') {
-    if (await save(false)) stop();
+    if (await save(false)) stopEditing();
   } else if (choice === 'discard') {
     if (state.current) {
       showDashboard(state.current, false);
@@ -769,13 +981,18 @@ async function init() {
     state.draft.description = e.target.value;
     updateControls();
   });
+  // Saving (in place, a copy, or as new) closes the editor; if it fails, editing carries on
+  const saveAndClose = async (asNew) => {
+    if (await save(asNew)) stopEditing();
+  };
   $('dashboardDetails').addEventListener('submit', (e) => {
     e.preventDefault();
-    if (state.editing) void save(false);
+    if (state.editing) void saveAndClose(false);
   });
-  $('saveDashboardAsNew').addEventListener('click', () => void save(true));
+  $('saveDashboardAsNew').addEventListener('click', () => void saveAndClose(true));
   $('editDashboard').addEventListener('click', () => {
     state.editing = true;
+    state.justSaved = false;
     renderPanelEditor();
     updateControls();
     if (state.draft.panels.length === 0) void refresh();
@@ -784,7 +1001,7 @@ async function init() {
   $('addPanel').addEventListener('click', () => {
     const first = [...state.queries.values()].sort((a, b) => a.name.localeCompare(b.name))[0];
     if (!first) return;
-    state.draft.panels.push({ queryId: first.id, display: displayFor(first), ...NEW_PANEL });
+    state.draft.panels.push(newPanel(first));
     expand('panels');
     renderPanelEditor();
     updateControls();
@@ -796,13 +1013,15 @@ async function init() {
     $('dashboardName').focus();
   });
   $('dashboardFilter').addEventListener('input', (e) => filterSavedList($('dashboardList'), e.target.value));
+  initTimeHelp();
+  $('parameterScope').addEventListener('change', (e) => {
+    selectPanel(e.target.value === 'all' ? null : state.draft.panels[Number(e.target.value)]);
+  });
   // Enter in a parameter field applies the changes, rerunning only the panels they affect. (The box
   // has no submit button, without which a form with several fields isn't submitted by Enter.)
-  // Applying parameter changes also resolves relative times (now-7d) from now
-  const applyParameters = () => {
-    state.resolvedAt = null;
-    void refresh();
-  };
+  // Relative times (now-7d) are still worked out from when the dashboard was opened or refreshed,
+  // so every panel shares one "now" and the panels whose values didn't change aren't run again.
+  const applyParameters = () => void refresh();
   $('dashboardParameters').addEventListener('submit', (e) => {
     e.preventDefault();
     applyParameters();

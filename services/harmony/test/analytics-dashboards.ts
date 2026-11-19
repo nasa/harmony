@@ -66,6 +66,7 @@ describe('/admin/analytics/dashboards', function () {
       expect(res.status).to.equal(200);
       expect(res.text).to.include('/js/analytics/dashboards.js');
       expect(res.text).to.include('href="/admin/analytics"');
+      expect(res.text).to.include('id="timeHelpDialog"');
       expect(res.text).to.match(/analytics-tab is-active"[^>]*aria-current="page">\s*<i[^>]*><\/i> Dashboards/);
     });
 
@@ -95,11 +96,26 @@ describe('/admin/analytics/dashboards', function () {
       expect(res.status).to.equal(201);
       expect(res.body).to.include({ name: 'Jobs', description: 'Jobs and work items', owner: ADMIN });
       expect(res.body.panels).to.eql([
-        { queryId: 1, display: 'chart', width: 'full', limit: 5000 },
-        { queryId: 2, display: 'chart', width: 'half', limit: null },
+        { queryId: 1, title: null, display: 'chart', width: 'full', limit: 5000, parameters: {} },
+        { queryId: 2, title: null, display: 'chart', width: 'half', limit: null, parameters: {} },
       ]);
       expect(res.body.parameters).to.eql(jobsDashboard.parameters);
       dashboardId = res.body.id;
+    });
+
+    it('saves panel titles, trimmed, and each panel\'s own parameter values', async function () {
+      const res = await admin.create(this.frontend, {
+        name: 'Titled',
+        panels: [
+          { queryId: 1, title: '  Errors in $__range ', parameters: { start: 'now-7d', ids: [1, 2] } },
+          { queryId: 1, title: '   ' },
+        ],
+      });
+      expect(res.status).to.equal(201);
+      expect(res.body.panels.map((p) => [p.title, p.parameters])).to.eql([
+        ['Errors in $__range', { start: 'now-7d', ids: [1, 2] }],
+        [null, {}],
+      ]);
     });
 
     it('keeps a panel limit of null, which means its query\'s row limit', async function () {
@@ -132,6 +148,10 @@ describe('/admin/analytics/dashboards', function () {
       ['a panel limit of zero', { name: 'x', panels: [{ queryId: 1, limit: 0 }] }],
       ['too many panels', { name: 'x', panels: Array.from({ length: MAX_PANELS + 1 }, () => ({ queryId: 1 })) }],
       ['parameters that are not an object', { name: 'x', panels: [], parameters: ['a'] }],
+      ['a panel title that is not a string', { name: 'x', panels: [{ queryId: 1, title: 5 }] }],
+      ['a panel title that is too long', { name: 'x', panels: [{ queryId: 1, title: 'x'.repeat(256) }] }],
+      ['panel parameters that are not an object', { name: 'x', panels: [{ queryId: 1, parameters: ['a'] }] }],
+      ['a panel parameter value that is an object', { name: 'x', panels: [{ queryId: 1, parameters: { a: { b: 1 } } }] }],
     ]) {
       it(`rejects a dashboard with ${problem}`, async function () {
         const res = await admin.create(this.frontend, body as object);
@@ -160,7 +180,15 @@ describe('/admin/analytics/dashboards', function () {
       const res = await admin.get(this.frontend, anotherId);
       expect(res.status).to.equal(200);
       expect(res.body).to.include({ name: 'Theirs', owner: ANOTHER_ADMIN });
-      expect(res.body.panels).to.eql([{ queryId: 3, display: 'chart', width: 'half', limit: null }]);
+      expect(res.body.panels).to.eql([{ queryId: 3, title: null, display: 'chart', width: 'half', limit: null, parameters: {} }]);
+    });
+
+    it('gives panels saved before panels had titles and parameters the defaults', async function () {
+      const old = new AnalyticsDashboard({ username: ANOTHER_ADMIN, name: 'Old',
+        panels: JSON.stringify([{ queryId: 3, display: 'table', width: 'full', limit: null }]) });
+      await old.save(db);
+      const res = await admin.get(this.frontend, old.id);
+      expect(res.body.panels).to.eql([{ queryId: 3, title: null, display: 'table', width: 'full', limit: null, parameters: {} }]);
     });
 
     it('says when there is no such dashboard', async function () {
@@ -174,7 +202,7 @@ describe('/admin/analytics/dashboards', function () {
       const res = await admin.update(this.frontend, dashboardId, { panels: [{ queryId: 2, display: 'table' }] });
       expect(res.status).to.equal(200);
       expect(res.body).to.include({ name: 'Jobs', description: 'Jobs and work items' });
-      expect(res.body.panels).to.eql([{ queryId: 2, display: 'table', width: 'half', limit: null }]);
+      expect(res.body.panels).to.eql([{ queryId: 2, title: null, display: 'table', width: 'half', limit: null, parameters: {} }]);
       expect(res.body.parameters).to.eql(jobsDashboard.parameters);
     });
 
