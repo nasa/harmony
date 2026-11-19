@@ -50,8 +50,9 @@ function parseJson<T>(text: string | null): T | null {
 
 /**
  * A query saved from the /admin/analytics page, with default values for its parameters. Anyone who
- * can use the page can see and run every saved query, but only its owner (or an admin) can change
- * or delete it.
+ * can use the page can see and run every saved query, but only its owner or an admin can change or
+ * delete it. The page is admin-only, so today every user of it can change any query; the owner
+ * check matters if the page is ever opened to non-admins.
  */
 export default class AnalyticsQuery extends Record {
   static table = 'analytics_queries';

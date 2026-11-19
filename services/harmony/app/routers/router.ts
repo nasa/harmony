@@ -62,7 +62,7 @@ import handleJobIDParameter from '../middleware/job-id';
 import handleLabelParameter from '../middleware/label';
 import logoutLink from '../middleware/logout-link';
 import parameterValidation from '../middleware/parameter-validation';
-import { adminRoutes, core } from '../middleware/permission-groups';
+import { admin, core } from '../middleware/permission-groups';
 import validateRestrictedVariables from '../middleware/restricted-variables';
 import chooseService from '../middleware/service-selection';
 import shapefileConverter from '../middleware/shapefile-converter';
@@ -248,8 +248,7 @@ export default function router({ USE_EDL_CLIENT_APP = 'false' }: RouterConfig): 
 
   result.use('/core/*', core);
   if (env.adminGroupId) {
-    // Admins only, except for the few admin pages log viewers may use too
-    result.use('/admin/*', adminRoutes);
+    result.use('/admin/*', admin);
   } else {
     // Prevent misconfiguration granting unintended access
     log.warn('ADMIN_GROUP_ID is not set.  The admin interface will not be available');
@@ -364,7 +363,7 @@ export default function router({ USE_EDL_CLIENT_APP = 'false' }: RouterConfig): 
   result.get('/admin/dashboard/api/jobs/running', asyncHandler(getDashboardRunningJobs));
   result.get('/admin/dashboard/api/jobs/by-work-item-status', asyncHandler(getDashboardJobsByWorkItemStatus));
 
-  // Read-only SQL against the Iceberg analytics tables, for admins and log viewers
+  // Read-only SQL against the Iceberg analytics tables (admins only, like every /admin route)
   result.get('/admin/analytics', asyncHandler(getAnalyticsPage));
   // Saved queries (before the proxy, whose :endpoint would match "queries")
   result.get('/admin/analytics/api/queries', asyncHandler(listAnalyticsQueries));

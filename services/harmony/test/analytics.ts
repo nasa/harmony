@@ -10,12 +10,14 @@ import request from 'supertest';
 import { auth } from './helpers/auth';
 import hookServersStartStop from './helpers/servers';
 import { truncateAll } from '../../../packages/util/test/helpers/db';
+import AnalyticsQuery from '../app/models/analytics-query';
+import db from '../app/util/db';
 import env from '../app/util/env';
 
 const ADMIN = 'adam';
 const LOG_VIEWER = 'log-viewer-not-bo';
 // In no groups (fixtures/uat.urs.earthdata.nasa.gov-443/no-groups-bo). Note woody, the usual
-// non-admin test user, is a log viewer.
+// non-admin test user, is a log viewer. Neither can use the analytics UI, which is admin-only.
 const OTHER_USER = 'bo';
 
 interface StubCall {
@@ -82,35 +84,27 @@ describe('/admin/analytics', function () {
       expect(res.text).to.include('/js/analytics/index.js');
     });
 
-    it('shows the page to a log viewer', async function () {
-      const res = await page(this.frontend, LOG_VIEWER);
-      expect(res.status).to.equal(200);
-    });
+    const itForbids = (who: string, username: string): void => {
+      it(`forbids the page to ${who}`, async function () {
+        const res = await page(this.frontend, username);
+        expect(res.status).to.equal(403);
+      });
 
-    it('forbids the page to a user who is neither', async function () {
-      const res = await page(this.frontend, OTHER_USER);
-      expect(res.status).to.equal(403);
-    });
-
-    it('lets a log viewer use the API', async function () {
-      stub.respond(200, { tables: [], warnings: [], loadedAt: 'now' });
-      const res = await getApi(this.frontend, 'schema', LOG_VIEWER);
-      expect(res.status).to.equal(200);
-    });
-
-    it('forbids the API to a user who is neither', async function () {
-      const callsBefore = stub.calls.length;
-      const res = await postApi(this.frontend, 'query', { sql: 'SELECT 1' }, OTHER_USER);
-      expect(res.status).to.equal(403);
-      expect(stub.calls.length).to.equal(callsBefore);
-    });
-
-    it('still forbids other admin pages to a log viewer', async function () {
-      for (const path of ['/admin/dashboard', '/admin/jobs', '/admin/analytics-other', '/admin/retry-stats']) {
-        const res = await request(this.frontend).get(path).use(auth({ username: LOG_VIEWER }));
-        expect(res.status, path).to.equal(403);
-      }
-    });
+      it(`forbids every API endpoint to ${who}, without calling the service`, async function () {
+        const callsBefore = stub.calls.length;
+        const responses = await Promise.all([
+          getApi(this.frontend, 'schema', username),
+          postApi(this.frontend, 'validate', { sql: 'SELECT 1' }, username),
+          postApi(this.frontend, 'query', { sql: 'SELECT 1' }, username),
+          request(this.frontend).get('/admin/analytics/api/queries').use(auth({ username })),
+          request(this.frontend).post('/admin/analytics/api/queries').send({ name: 'x', sql: 'SELECT 1' }).use(auth({ username })),
+        ]);
+        expect(responses.map((r) => r.status)).to.eql([403, 403, 403, 403, 403]);
+        expect(stub.calls.length).to.equal(callsBefore);
+      });
+    };
+    itForbids('a log viewer', LOG_VIEWER);
+    itForbids('a user in no groups', OTHER_USER);
   });
 
   describe('the API proxy', function () {
@@ -215,7 +209,17 @@ describe('/admin/analytics/api/queries (saved queries)', function () {
     parameters: { status: 'failed', start: '2026-11-01T00:00:00Z' },
   };
   let adminQueryId: number;
-  let logViewerQueryId: number;
+  // Queries saved by another admin. The EDL fixtures have only one admin (adam), so these are
+  // created directly in the database.
+  const ANOTHER_ADMIN = 'another-admin';
+  let anotherQueryId: number;
+
+  before(async function () {
+    const mine = new AnalyticsQuery({ username: ANOTHER_ADMIN, name: 'My query', sql: 'SELECT 1' });
+    await mine.save(db);
+    anotherQueryId = mine.id;
+    await new AnalyticsQuery({ username: ANOTHER_ADMIN, name: failedByStatus.name, sql: 'SELECT 1' }).save(db);
+  });
 
   describe('saving a query', function () {
     it('saves it, owned by the user, and returns it', async function () {
@@ -228,12 +232,10 @@ describe('/admin/analytics/api/queries (saved queries)', function () {
       adminQueryId = res.body.id;
     });
 
-    it('lets a log viewer save one too', async function () {
-      const res = await logViewer.create(this.frontend, { name: 'My query', sql: 'SELECT 1', parameters: { ids: [1, 2] } });
+    it('saves list parameter defaults', async function () {
+      const res = await admin.create(this.frontend, { name: 'With a list', sql: 'SELECT 1', parameters: { ids: [1, 2] } });
       expect(res.status).to.equal(201);
-      expect(res.body.owner).to.equal(LOG_VIEWER);
       expect(res.body.parameters).to.eql({ ids: [1, 2] });
-      logViewerQueryId = res.body.id;
     });
 
     it('rejects a second query with the same name from the same user', async function () {
@@ -241,8 +243,8 @@ describe('/admin/analytics/api/queries (saved queries)', function () {
       expect(res.status).to.equal(409);
     });
 
-    it('allows the same name from a different user', async function () {
-      const res = await logViewer.create(this.frontend, { ...failedByStatus });
+    it('allows a name another user already has', async function () {
+      const res = await admin.create(this.frontend, { name: 'My query', sql: 'SELECT 1' });
       expect(res.status).to.equal(201);
     });
 
@@ -295,25 +297,25 @@ describe('/admin/analytics/api/queries (saved queries)', function () {
       expect(res.status).to.equal(415);
     });
 
-    it('forbids a user who is neither an admin nor a log viewer', async function () {
-      const res = await other.create(this.frontend, { name: 'x', sql: 'SELECT 1' });
-      expect(res.status).to.equal(403);
+    it('forbids users who are not admins, including log viewers', async function () {
+      expect((await other.create(this.frontend, { name: 'x', sql: 'SELECT 1' })).status).to.equal(403);
+      expect((await logViewer.create(this.frontend, { name: 'x', sql: 'SELECT 1' })).status).to.equal(403);
     });
   });
 
   describe('reading saved queries', function () {
-    it('lists everyone\'s queries to a log viewer, most recently changed first', async function () {
-      const res = await logViewer.list(this.frontend);
+    it('lists everyone\'s queries, most recently changed first', async function () {
+      const res = await admin.list(this.frontend);
       expect(res.status).to.equal(200);
-      expect(res.body.queries.map((q) => q.owner)).to.include.members([ADMIN, LOG_VIEWER]);
+      expect(res.body.queries.map((q) => q.owner)).to.include.members([ADMIN, ANOTHER_ADMIN]);
       const times = res.body.queries.map((q) => new Date(q.updatedAt).getTime());
       expect(times).to.eql([...times].sort((a, b) => b - a));
     });
 
     it('gets one query', async function () {
-      const res = await logViewer.get(this.frontend, adminQueryId);
+      const res = await admin.get(this.frontend, anotherQueryId);
       expect(res.status).to.equal(200);
-      expect(res.body.name).to.equal(failedByStatus.name);
+      expect(res.body).to.include({ name: 'My query', owner: ANOTHER_ADMIN });
     });
 
     it('says when there is no such query', async function () {
@@ -321,9 +323,11 @@ describe('/admin/analytics/api/queries (saved queries)', function () {
       expect((await admin.get(this.frontend, 'nope')).status).to.equal(404);
     });
 
-    it('forbids a user who is neither an admin nor a log viewer', async function () {
-      expect((await other.list(this.frontend)).status).to.equal(403);
-      expect((await other.get(this.frontend, adminQueryId)).status).to.equal(403);
+    it('forbids users who are not admins, including log viewers', async function () {
+      for (const user of [other, logViewer]) {
+        expect((await user.list(this.frontend)).status).to.equal(403);
+        expect((await user.get(this.frontend, adminQueryId)).status).to.equal(403);
+      }
     });
   });
 
@@ -336,20 +340,20 @@ describe('/admin/analytics/api/queries (saved queries)', function () {
       expect((await admin.get(this.frontend, adminQueryId)).body.sql).to.equal('SELECT 3');
     });
 
-    it('does not let someone else change it', async function () {
+    it('does not let a user who is not an admin change it', async function () {
       const res = await logViewer.update(this.frontend, adminQueryId, { sql: 'SELECT 4' });
       expect(res.status).to.equal(403);
       expect((await admin.get(this.frontend, adminQueryId)).body.sql).to.equal('SELECT 3');
     });
 
-    it('lets an admin change someone else\'s', async function () {
-      const res = await admin.update(this.frontend, logViewerQueryId, { description: 'tidied up by an admin' });
+    it('lets an admin change another admin\'s, keeping its owner', async function () {
+      const res = await admin.update(this.frontend, anotherQueryId, { description: 'tidied up' });
       expect(res.status).to.equal(200);
-      expect(res.body.owner).to.equal(LOG_VIEWER);
+      expect(res.body.owner).to.equal(ANOTHER_ADMIN);
     });
 
     it('rejects renaming it to the name of another of the owner\'s queries', async function () {
-      const res = await logViewer.update(this.frontend, logViewerQueryId, { name: failedByStatus.name });
+      const res = await admin.update(this.frontend, anotherQueryId, { name: failedByStatus.name });
       expect(res.status).to.equal(409);
     });
 
@@ -360,7 +364,7 @@ describe('/admin/analytics/api/queries (saved queries)', function () {
   });
 
   describe('deleting a saved query', function () {
-    it('does not let someone else delete it', async function () {
+    it('does not let a user who is not an admin delete it', async function () {
       expect((await logViewer.delete(this.frontend, adminQueryId)).status).to.equal(403);
       expect((await admin.get(this.frontend, adminQueryId)).status).to.equal(200);
     });
@@ -370,9 +374,9 @@ describe('/admin/analytics/api/queries (saved queries)', function () {
       expect((await admin.get(this.frontend, adminQueryId)).status).to.equal(404);
     });
 
-    it('lets an admin delete someone else\'s', async function () {
-      expect((await admin.delete(this.frontend, logViewerQueryId)).status).to.equal(204);
-      expect((await logViewer.get(this.frontend, logViewerQueryId)).status).to.equal(404);
+    it('lets an admin delete another admin\'s', async function () {
+      expect((await admin.delete(this.frontend, anotherQueryId)).status).to.equal(204);
+      expect((await admin.get(this.frontend, anotherQueryId)).status).to.equal(404);
     });
   });
 });
