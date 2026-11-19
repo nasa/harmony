@@ -34,6 +34,7 @@ export const tables = [
   'service_deployments', 'run_watermarks', 'user_work_history', 'work_items_stats_hourly',
   'user_work_items_stats', 'user_work_items_stats_hourly', 'work_items_failure_stats',
   'work_items_failure_stats_hourly', 'job_stats', 'job_stats_hourly', 'analytics_queries',
+  'analytics_dashboards',
 ];
 
 /**

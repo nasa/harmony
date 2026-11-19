@@ -373,9 +373,23 @@ CREATE TABLE `analytics_queries` (
   `sql` text not null,
   `parameters` text,
   `chart` text,
+  `row_limit` integer,
   `username` varchar(255) not null,
   `createdAt` datetime not null,
   `updatedAt` datetime not null,
   UNIQUE(username, name)
 );
 CREATE INDEX analytics_queries_updatedAt_idx ON analytics_queries(updatedAt);
+
+CREATE TABLE `analytics_dashboards` (
+  `id` integer not null primary key autoincrement,
+  `name` varchar(255) not null,
+  `description` text,
+  `panels` text not null,
+  `parameters` text,
+  `username` varchar(255) not null,
+  `createdAt` datetime not null,
+  `updatedAt` datetime not null,
+  UNIQUE(username, name)
+);
+CREATE INDEX analytics_dashboards_updatedAt_idx ON analytics_dashboards(updatedAt);

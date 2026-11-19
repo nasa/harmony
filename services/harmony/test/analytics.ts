@@ -264,6 +264,32 @@ describe('/admin/analytics/api/queries (saved queries)', function () {
       });
     }
 
+    it('saves a row limit with the query', async function () {
+      const res = await admin.create(this.frontend, { name: 'Two rows', sql: 'SELECT 1', rowLimit: 2 });
+      expect(res.status).to.equal(201);
+      expect(res.body.rowLimit).to.equal(2);
+      const changed = await admin.update(this.frontend, res.body.id, { rowLimit: 25 });
+      expect(changed.body.rowLimit).to.equal(25);
+      expect((await admin.get(this.frontend, res.body.id)).body.rowLimit).to.equal(25);
+      const cleared = await admin.update(this.frontend, res.body.id, { rowLimit: null });
+      expect(cleared.body.rowLimit).to.be.null;
+      expect((await admin.delete(this.frontend, res.body.id)).status).to.equal(204);
+    });
+
+    it('has no row limit unless one is saved', async function () {
+      const res = await admin.create(this.frontend, { name: 'No limit', sql: 'SELECT 1' });
+      expect(res.body.rowLimit).to.be.null;
+      expect((await admin.delete(this.frontend, res.body.id)).status).to.equal(204);
+    });
+
+    it('rejects a row limit that is not a whole number from 1 to the maximum', async function () {
+      for (const rowLimit of [0, -1, 2.5, '10', 100_001]) {
+        const res = await admin.create(this.frontend, { name: `bad limit ${rowLimit}`, sql: 'SELECT 1', rowLimit });
+        expect(res.status, JSON.stringify(rowLimit)).to.equal(400);
+        expect(res.body.errors[0].message).to.include('rowLimit must be');
+      }
+    });
+
     it('saves a chart with the query', async function () {
       const chart = { type: 'line', x: 'day', y: ['jobs'], series: 'service_name' };
       const res = await admin.create(this.frontend, { name: 'Jobs per day', sql: 'SELECT 1', chart });

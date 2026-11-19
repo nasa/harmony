@@ -23,6 +23,41 @@ const duckDb = SQLDialect.define({
 // How long typing must pause before the query is validated again
 const VALIDATE_DELAY_MS = 600;
 
+// Time expressions offered as completions, e.g. typing "last" offers "last 7 days", which inserts
+// now() - INTERVAL 7 DAY. Times are UTC, the timezone queries run in.
+const TIME_EXPRESSIONS = [
+  ['now', 'now()', 'The current time'],
+  ['today', "date_trunc('day', now())", 'The start of today'],
+  ['yesterday', "date_trunc('day', now()) - INTERVAL 1 DAY", 'The start of yesterday'],
+  ['last 24 hours', 'now() - INTERVAL 24 HOUR', '24 hours ago'],
+  ['last 7 days', 'now() - INTERVAL 7 DAY', '7 days ago'],
+  ['last 30 days', 'now() - INTERVAL 30 DAY', '30 days ago'],
+  ['this month', "date_trunc('month', now())", 'The start of this month'],
+  ['last month', "date_trunc('month', now()) - INTERVAL 1 MONTH", 'The start of last month'],
+  ['this year', "date_trunc('year', now())", 'The start of this year'],
+];
+
+/**
+ * Completes time expressions, and a timestamp literal for the start of today. They rank below the
+ * schema and keyword completions, so they only lead when nothing else matches what was typed.
+ *
+ * @param {object} context - CodeMirror's completion context
+ * @returns {object|null} the completions
+ */
+export function timeCompletions(context) {
+  const word = context.matchBefore(/\w+/);
+  if (!context.explicit && (!word || word.text.length < 2)) return null;
+  const today = new Date().toISOString().slice(0, 10);
+  const options = [
+    ...TIME_EXPRESSIONS.map(([label, apply, info]) => ({ label, apply, detail: apply, info, type: 'constant', boost: -20 })),
+    {
+      label: 'timestamptz', apply: `TIMESTAMPTZ '${today} 00:00:00+00'`, detail: `TIMESTAMPTZ '${today} 00:00:00+00'`,
+      info: 'A timestamp literal (UTC), to edit', type: 'constant', boost: -20,
+    },
+  ];
+  return { from: word ? word.from : context.pos, options, validFor: /^\w*$/ };
+}
+
 /**
  * Builds the completion namespace for the SQL language from the analytics tables: each table by its
  * own name (the editor's default schema) and fully qualified as catalog.iceberg.table
@@ -73,7 +108,11 @@ export function errorRange(text, position) {
  */
 export function createEditor({ parent, doc, validate, onValidated, onRun, onChange }) {
   const language = new Compartment();
-  const sqlFor = (tables) => sql({ dialect: duckDb, schema: completionSchema(tables), upperCaseKeywords: true });
+  const sqlFor = (tables) => {
+    const support = sql({ dialect: duckDb, schema: completionSchema(tables), upperCaseKeywords: true });
+    // Alongside the language's own schema and keyword completions
+    return [support, support.language.data.of({ autocomplete: timeCompletions })];
+  };
 
   const validationLinter = linter(async (view) => {
     const text = view.state.doc.toString();

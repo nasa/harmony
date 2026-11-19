@@ -7,6 +7,9 @@ export const MAX_NAME_LENGTH = 255;
 export const MAX_DESCRIPTION_LENGTH = 4096;
 export const MAX_SQL_LENGTH = 100_000;
 const MAX_PARAMETERS_LENGTH = 100_000;
+// The largest row limit that can be saved (the analytics query service may allow fewer; it rejects
+// more than its own ANALYTICS_QUERY_MAX_ROWS)
+export const MAX_ROW_LIMIT = 100_000;
 
 // The chart types and series limit of public/js/analytics/chart.js (CHART_TYPES, MAX_SERIES)
 const CHART_TYPES = ['column', 'line'];
@@ -25,6 +28,8 @@ export interface AnalyticsQueryForDisplay {
   sql: string;
   parameters: { [name: string]: ParameterDefault };
   chart: object | null;
+  // The most rows to fetch when it runs, or null for the default
+  rowLimit: number | null;
   owner: string;
   createdAt: Date;
   updatedAt: Date;
@@ -33,7 +38,7 @@ export interface AnalyticsQueryForDisplay {
 /**
  * Whether a value is one a parameter can have
  */
-function isParameterDefault(value: unknown): boolean {
+export function isParameterDefault(value: unknown): boolean {
   const isScalar = (v: unknown): boolean => v === null || ['string', 'number', 'boolean'].includes(typeof v);
   if (Array.isArray(value)) {
     return value.every((v) => v !== null && isScalar(v));
@@ -44,7 +49,7 @@ function isParameterDefault(value: unknown): boolean {
 /**
  * Parse a JSON column, which is null when it was never set
  */
-function parseJson<T>(text: string | null): T | null {
+export function parseJson<T>(text: string | null): T | null {
   return text ? JSON.parse(text) : null;
 }
 
@@ -68,6 +73,9 @@ export default class AnalyticsQuery extends Record {
 
   // JSON describing how to chart the results, or null
   chart: string;
+
+  // The most rows to fetch when the query runs, or null for the default
+  row_limit: number;
 
   // The owner
   username: string;
@@ -143,6 +151,23 @@ export default class AnalyticsQuery extends Record {
   }
 
   /**
+   * Set the row limit the query runs with
+   *
+   * @param rowLimit - a whole number of rows, or null for the default
+   * @throws TypeError if it isn't a whole number from 1 to MAX_ROW_LIMIT
+   */
+  setRowLimit(rowLimit: unknown): void {
+    if (rowLimit === undefined || rowLimit === null) {
+      this.row_limit = null;
+      return;
+    }
+    if (!Number.isInteger(rowLimit) || (rowLimit as number) < 1 || (rowLimit as number) > MAX_ROW_LIMIT) {
+      throw new TypeError(`rowLimit must be null or a whole number of rows from 1 to ${MAX_ROW_LIMIT}`);
+    }
+    this.row_limit = rowLimit as number;
+  }
+
+  /**
    * Whether a user may change or delete this query
    *
    * @param username - the user
@@ -163,6 +188,7 @@ export default class AnalyticsQuery extends Record {
       sql: this.sql,
       parameters: parseJson(this.parameters) ?? {},
       chart: parseJson(this.chart),
+      rowLimit: this.row_limit ?? null,
       owner: this.username,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,

@@ -182,16 +182,45 @@
   margin-bottom: 1rem;
 }
 
+/* Each field is as wide as its label and input need (rather than an equal grid column, which
+   wrapped long labels like "$start TIMESTAMP WITH TIME ZONE · UTC" and cut off date-times), and
+   fields wrap onto more lines when they don't fit side by side */
 .parameter-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
-  gap: 0.5rem 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.6rem 1.5rem;
+}
+
+.parameter-grid > div {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .parameter-grid label {
+  display: block;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.8rem;
   margin-bottom: 0.15rem;
+  white-space: nowrap;
+}
+
+/* Bootstrap's .form-control is full width; give each kind of input the width its values need */
+.parameter-grid .form-control {
+  width: 14rem;
+  max-width: 100%;
+}
+
+.parameter-grid input[type="datetime-local"] {
+  /* Wide enough for the date, the time to the second, and the picker button */
+  width: auto;
+  min-width: 16.5rem;
+}
+
+.parameter-grid input[type="date"] {
+  width: auto;
+  min-width: 10.5rem;
 }
 
 .parameter-grid .parameter-type {
@@ -447,4 +476,247 @@
 
 .row-limit input {
   width: 6rem;
+}
+
+/* Tabs between the Query and Dashboards pages */
+.analytics-tabs {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--an-border);
+}
+
+.analytics-tab {
+  padding: 0.4rem 0.9rem;
+  margin-bottom: -1px;
+  border: 1px solid transparent;
+  border-radius: 6px 6px 0 0;
+  color: var(--an-text-secondary);
+  text-decoration: none;
+}
+
+.analytics-tab:hover,
+.analytics-tab:focus-visible {
+  color: var(--an-accent);
+  text-decoration: none;
+}
+
+.analytics-tab.is-active {
+  color: var(--an-text-primary);
+  font-weight: 600;
+  background: #fff;
+  border-color: var(--an-border) var(--an-border) #fff;
+}
+
+/* Dashboards */
+/* The one Refresh button and when the panels last ran, at the right of the name row */
+.dashboard-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-left: auto;
+}
+
+.dashboard-grid {
+  margin-top: 0.75rem;
+}
+
+.dashboard-empty {
+  grid-column: 1 / -1;
+  color: var(--an-text-secondary);
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (max-width: 1199px) {
+  .dashboard-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.dashboard-tile {
+  background: var(--an-surface);
+  border: 1px solid var(--an-border);
+  border-radius: 6px;
+  padding: 0.75rem;
+  min-width: 0;
+}
+
+.dashboard-tile.is-full {
+  grid-column: 1 / -1;
+}
+
+.dashboard-tile-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.dashboard-tile-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-tile-meta {
+  color: var(--an-text-muted);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.dashboard-tile .viz-card {
+  border: 0;
+  padding: 0;
+  background: none;
+}
+
+/* The tile's header already names the query */
+.dashboard-tile .viz-title {
+  display: none;
+}
+
+.dashboard-tile .results-table-wrap {
+  max-height: 24rem;
+}
+
+.dashboard-tile-message {
+  color: var(--an-text-secondary);
+  font-size: 0.85rem;
+  margin: 0.25rem 0;
+}
+
+.dashboard-tile-message.is-error {
+  color: var(--an-error);
+}
+
+/* The panel editor */
+.panel-editor {
+  background: var(--an-surface);
+  border: 1px solid var(--an-border);
+  border-radius: 6px;
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+/* The panels as a table, so each column lines up under its header */
+.panel-editor-table {
+  border-collapse: separate;
+  border-spacing: 0.5rem 0.3rem;
+  margin: 0 -0.5rem 0.25rem;
+  font-size: 0.85rem;
+}
+
+.panel-editor-table th {
+  color: var(--an-text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+  padding: 0;
+}
+
+.panel-editor-table td {
+  padding: 0;
+  vertical-align: middle;
+}
+
+.panel-editor-table .panel-number {
+  color: var(--an-text-secondary);
+  text-align: right;
+}
+
+.panel-editor-table select.panel-query {
+  min-width: 14rem;
+  max-width: 24rem;
+}
+
+.panel-editor-table input.panel-limit {
+  width: 6rem;
+}
+
+.panel-editor-table .panel-order {
+  display: flex;
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+
+.panel-editor-table .panel-move {
+  padding: 0 0.35rem;
+}
+
+/* Collapsible boxes: the heading is a button that shows or hides the box's body */
+.collapse-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.collapse-toggle:hover,
+.collapse-toggle:focus-visible {
+  color: var(--an-accent);
+}
+
+.collapse-toggle .bi {
+  transition: transform 0.15s;
+}
+
+.collapse-toggle[aria-expanded="false"] .bi {
+  transform: rotate(-90deg);
+}
+
+.collapse-count {
+  color: var(--an-text-muted);
+  font-weight: normal;
+}
+
+/* Collapsed, a box is just its heading row */
+.parameters:has(.collapse-toggle[aria-expanded="false"]) .panel-heading-row,
+.panel-editor:has(.collapse-toggle[aria-expanded="false"]) .panel-heading-row {
+  margin-bottom: 0;
+}
+
+/* Time parameters: the picker and its quick picks, on one line; a range is both ends and its presets */
+.parameter-time {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.35rem;
+}
+
+.parameter-grid .parameter-quick-pick {
+  flex: 0 0 auto;
+  width: auto;
+}
+
+.parameter-range {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.35rem 0.6rem;
+}
+
+.parameter-range-ends {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.6rem;
+}
+
+.parameter-range-ends > div {
+  flex: 0 1 auto;
+  min-width: 0;
 }

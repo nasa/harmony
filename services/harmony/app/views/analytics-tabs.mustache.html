@@ -1,0 +1,8 @@
+<nav class="analytics-tabs" aria-label="Analytics">
+  <a href="/admin/analytics" class="analytics-tab{{^dashboardsTab}} is-active{{/dashboardsTab}}" {{^dashboardsTab}}aria-current="page"{{/dashboardsTab}}>
+    <i class="bi bi-terminal" aria-hidden="true"></i> Query
+  </a>
+  <a href="/admin/analytics/dashboards" class="analytics-tab{{#dashboardsTab}} is-active{{/dashboardsTab}}" {{#dashboardsTab}}aria-current="page"{{/dashboardsTab}}>
+    <i class="bi bi-grid-1x2" aria-hidden="true"></i> Dashboards
+  </a>
+</nav>

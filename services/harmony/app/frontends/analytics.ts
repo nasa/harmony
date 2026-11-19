@@ -90,7 +90,7 @@ export async function proxyAnalyticsApi(req: HarmonyRequest, res: Response, next
 /**
  * Respond with an error in the same shape as the analytics query service's, which the page expects
  */
-function sendError(res: Response, status: number, message: string, errors: string[] = []): void {
+export function sendError(res: Response, status: number, message: string, errors: string[] = []): void {
   res.status(status).json({ code: status, message, errors: errors.map((e) => ({ message: e, position: null })) });
 }
 
@@ -134,6 +134,13 @@ function applyBody(query: AnalyticsQuery, body: { [key: string]: unknown }): str
   if (body.chart !== undefined) {
     try {
       query.setChart(body.chart);
+    } catch (e) {
+      problems.push(e.message);
+    }
+  }
+  if (body.rowLimit !== undefined) {
+    try {
+      query.setRowLimit(body.rowLimit);
     } catch (e) {
       problems.push(e.message);
     }
@@ -206,8 +213,8 @@ export async function updateAnalyticsQuery(req: HarmonyRequest, res: Response): 
       sendError(res, 409, `${query.username} already has a saved query named "${query.name}"`);
       return;
     }
-    const { name, description, sql, parameters, chart } = query;
-    await query.save(tx, { name, description, sql, parameters, chart });
+    const { name, description, sql, parameters, chart, row_limit } = query;
+    await query.save(tx, { name, description, sql, parameters, chart, row_limit });
     req.context.logger.info(`User ${req.user} updated analytics query ${query.id} "${query.name}"`);
     res.json(query.serialize());
   });
