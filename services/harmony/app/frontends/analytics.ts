@@ -131,6 +131,13 @@ function applyBody(query: AnalyticsQuery, body: { [key: string]: unknown }): str
       problems.push(e.message);
     }
   }
+  if (body.chart !== undefined) {
+    try {
+      query.setChart(body.chart);
+    } catch (e) {
+      problems.push(e.message);
+    }
+  }
   return problems.concat(problems.length === 0 ? query.validate() ?? [] : []);
 }
 
@@ -199,8 +206,8 @@ export async function updateAnalyticsQuery(req: HarmonyRequest, res: Response): 
       sendError(res, 409, `${query.username} already has a saved query named "${query.name}"`);
       return;
     }
-    const { name, description, sql, parameters } = query;
-    await query.save(tx, { name, description, sql, parameters });
+    const { name, description, sql, parameters, chart } = query;
+    await query.save(tx, { name, description, sql, parameters, chart });
     req.context.logger.info(`User ${req.user} updated analytics query ${query.id} "${query.name}"`);
     res.json(query.serialize());
   });

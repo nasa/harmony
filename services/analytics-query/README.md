@@ -21,6 +21,12 @@ check on other `/admin` routes. It has:
   database's `analytics_queries` table and served by the frontend itself, at
   `/admin/analytics/api/queries`. Everyone who can use the page can see and run every saved query.
   Only its owner or an admin can change or delete one. `?query=<id>` links to a saved query.
+- a chart of the results, saved with the query (`public/js/analytics/chart.js`), as columns
+  (stacked for several series) or lines. Either several numeric columns are each a series, or one
+  is split into a series per value of another column. Past eight series the smallest are combined
+  as "Other". Times are shown in UTC, the timezone queries run in. It uses the admin dashboard's
+  chart kit (`public/js/dashboard/charts.js`) and its palette, so charts have the same tooltips and
+  table view.
 
 The frontend passes `/admin/analytics/api/{schema,validate,query}` to this service, adding the
 shared secret and the user. `ANALYTICS_QUERY_URL`, `ANALYTICS_QUERY_SHARED_SECRET` and
@@ -41,7 +47,7 @@ Every `/api` request needs `Authorization: Bearer $ANALYTICS_QUERY_SHARED_SECRET
 |---|---|---|
 | `GET /api/schema` | | `{ tables: [{ name, columns: [{ name, type }] }], warnings, loadedAt }`. Cached for `ANALYTICS_SCHEMA_CACHE_SECONDS`. `warnings` lists timestamp columns that aren't `TIMESTAMPTZ`. |
 | `POST /api/validate` | `{ sql }` | `{ valid, errors: [{ message, position }], columns, parameters }`, always with a 200. `position` is a character offset into `sql` (or null), for marking the error in an editor. |
-| `POST /api/query` | `{ sql, params? }` | `{ columns, rows, rowCount, truncated, durationMs }`. Each row is an array in column order. Timestamps are ISO 8601 UTC strings. Integers that fit in a JS number are numbers. |
+| `POST /api/query` | `{ sql, params?, limit? }` | `{ columns, rows, rowCount, truncated, durationMs }`. At most `limit` rows are returned (default and maximum `ANALYTICS_QUERY_MAX_ROWS`, which `/api/schema` reports as `limits.maxRows`), whether or not the query has a LIMIT. Reading stops at the limit, so the rest of the result is never read. `truncated` says there were more. Each row is an array in column order. Timestamps are ISO 8601 UTC strings. Integers that fit in a JS number are numbers. |
 | `GET /liveness`, `GET /readiness` | | For Kubernetes. Not ready until the catalog is attached. |
 
 Errors are `{ code, message, errors }`. An invalid query or bad parameter gets a 400, a missing
