@@ -4,7 +4,7 @@
 import { chartProblem, renderChart } from './chart.js';
 import { $, api, chooseAction, confirmAction, pageUser, renderError, userStorage } from './common.js';
 import { renderParameterFields } from './params.js';
-import { parameterValue, renderTable } from './results.js';
+import { parameterDefault, parameterValue, renderTable } from './results.js';
 import { defaultToText, filterSavedList, renderSavedList } from './saved.js';
 
 // How many panel queries to run at once. The analytics query service runs two at a time by
@@ -80,7 +80,11 @@ const state = {
   draft: null,
   // The parameter fields' text, by parameter name
   parameterText: new Map(),
-  // What the draft and parameters were when last opened or saved, to tell whether there are changes
+  // Each field's text before the user changes it (see baseParameterText), and the names the user
+  // has changed from that
+  parameterBase: new Map(),
+  editedParameters: new Set(),
+  // What the draft was when last opened or saved, to tell whether there are changes
   snapshot: null,
   editing: false,
   // Each query's parameters ([{name, type}]), from validating it, by query id
@@ -89,6 +93,9 @@ const state = {
   results: new Map(),
   // Increases with every refresh, so a refresh still running when another starts stops drawing
   refreshId: 0,
+  // The moment relative times (now-7d) are resolved from: set when the dashboard is opened or
+  // refreshed, and kept while it is only redrawn (e.g. a panel moved), so results can be reused
+  resolvedAt: null,
 };
 
 /**
@@ -143,16 +150,17 @@ function setUrlDashboard(id) {
 function currentSnapshot() {
   if (!state.draft) return null;
   const { name, description, panels } = state.draft;
-  return JSON.stringify({ name: name.trim(), description, panels, parameters: [...state.parameterText].sort() });
+  return JSON.stringify({ name: name.trim(), description, panels });
 }
 
 /**
- * Whether opening something else would lose changes to the dashboard
+ * Whether opening something else would lose changes to the dashboard. A parameter value taken
+ * from a query saved after the dashboard isn't a change: it will be taken from there again.
  */
 function hasUnsavedChanges() {
   if (!state.draft) return false;
   if (!state.current && state.draft.name.trim() === '' && state.draft.panels.length === 0) return false;
-  return currentSnapshot() !== state.snapshot;
+  return currentSnapshot() !== state.snapshot || state.editedParameters.size > 0;
 }
 
 /**
@@ -227,12 +235,41 @@ function showParameterFields(types) {
     text: state.parameterText,
     onChange: (name, text) => {
       state.parameterText.set(name, text);
+      if (text === (state.parameterBase.get(name) ?? '')) state.editedParameters.delete(name);
+      else state.editedParameters.add(name);
       updateControls();
     },
     idPrefix: 'dashboard-parameter',
+    now: () => state.resolvedAt ?? Date.now(),
   });
   $('dashboardParameters').hidden = types.size === 0;
   $('parametersCount').textContent = ` (${types.size})`;
+}
+
+/**
+ * Works out each parameter field's text before the user changes it: whichever was saved last of the
+ * dashboard's own value and the default saved with the panels' queries (the most recently saved
+ * query with a default for the name). So saving a query with new parameter values shows them on
+ * the dashboards that use it, and saving a dashboard with its own values keeps those.
+ *
+ * @param {Array<object>} queries - the panels' saved queries
+ * @returns {Map<string, string>} the text by parameter name
+ */
+function baseParameterText(queries) {
+  const saved = state.current?.parameters ?? {};
+  const savedAt = state.current ? Date.parse(state.current.updatedAt) : -Infinity;
+  const base = new Map(Object.entries(saved).map(([name, value]) => [name, defaultToText(value)]));
+  const newestFirst = [...queries].sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
+  const decided = new Set();
+  for (const query of newestFirst) {
+    for (const [name, value] of Object.entries(query.parameters ?? {})) {
+      if (!decided.has(name)) {
+        decided.add(name);
+        if (!(name in saved) || Date.parse(query.updatedAt) > savedAt) base.set(name, defaultToText(value));
+      }
+    }
+  }
+  return base;
 }
 
 /**
@@ -246,7 +283,7 @@ function valuesFor(parameters) {
   const values = {};
   for (const { name, type } of parameters) {
     try {
-      values[name] = parameterValue(state.parameterText.get(name) ?? '', type);
+      values[name] = parameterValue(state.parameterText.get(name) ?? '', type, state.resolvedAt);
     } catch (e) {
       throw new Error(`$${name}: ${e.message}`);
     }
@@ -369,6 +406,7 @@ async function refresh(force = false) {
     state.results.clear();
     state.queryParameters.clear();
   }
+  if (force || state.resolvedAt === null) state.resolvedAt = Date.now();
   clearError();
   const { panels } = state.draft;
   const grid = $('dashboardGrid');
@@ -397,15 +435,16 @@ async function refresh(force = false) {
   }
   if (stale()) return;
 
-  // One field per parameter name, filled from the dashboard's values or else the first query's default
+  // One field per parameter name, holding what the user typed, or else whichever value was saved last
   const types = new Map();
   for (const query of queries) {
     for (const { name, type } of state.queryParameters.get(query.id) ?? []) {
       if (!types.has(name)) types.set(name, type);
-      if (!state.parameterText.has(name) && query.parameters?.[name] !== undefined) {
-        state.parameterText.set(name, defaultToText(query.parameters[name]));
-      }
     }
+  }
+  state.parameterBase = baseParameterText(queries);
+  for (const [name, text] of state.parameterBase) {
+    if (!state.editedParameters.has(name)) state.parameterText.set(name, text);
   }
   showParameterFields(types);
   updateControls();
@@ -564,6 +603,7 @@ function renderPanelEditor() {
 function showDashboard(dashboard, editing) {
   state.current = dashboard;
   state.editing = editing;
+  state.resolvedAt = null;
   state.draft = {
     name: dashboard?.name ?? '',
     description: dashboard?.description ?? '',
@@ -575,6 +615,8 @@ function showDashboard(dashboard, editing) {
     }),
   };
   state.parameterText = new Map(Object.entries(dashboard?.parameters ?? {}).map(([k, v]) => [k, defaultToText(v)]));
+  state.parameterBase = new Map(state.parameterText);
+  state.editedParameters = new Set();
   state.snapshot = currentSnapshot();
   $('dashboardName').value = state.draft.name;
   $('dashboardDescription').value = state.draft.description;
@@ -623,7 +665,8 @@ async function save(asNew) {
     for (const { name: p, type } of state.queryParameters.get(query.id) ?? []) types.set(p, type);
   }
   try {
-    for (const [p, type] of types) parameters[p] = parameterValue(state.parameterText.get(p) ?? '', type);
+    // Times as written, so a relative time (now-7d) is saved as one
+    for (const [p, type] of types) parameters[p] = parameterDefault(state.parameterText.get(p) ?? '', type);
   } catch (e) {
     showError(e);
     return false;
@@ -636,6 +679,9 @@ async function save(asNew) {
       : await api('dashboards', body);
     state.current = saved;
     state.snapshot = currentSnapshot();
+    // The dashboard is now the last saved, so the values just saved are what it shows
+    state.parameterBase = new Map(state.parameterText);
+    state.editedParameters.clear();
     setUrlDashboard(saved.id);
     await loadLists();
     updateControls();
@@ -752,17 +798,34 @@ async function init() {
   $('dashboardFilter').addEventListener('input', (e) => filterSavedList($('dashboardList'), e.target.value));
   // Enter in a parameter field applies the changes, rerunning only the panels they affect. (The box
   // has no submit button, without which a form with several fields isn't submitted by Enter.)
+  // Applying parameter changes also resolves relative times (now-7d) from now
+  const applyParameters = () => {
+    state.resolvedAt = null;
+    void refresh();
+  };
   $('dashboardParameters').addEventListener('submit', (e) => {
     e.preventDefault();
-    void refresh();
+    applyParameters();
   });
   $('dashboardParameters').addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && e.target.matches('input')) {
       e.preventDefault();
-      void refresh();
+      applyParameters();
     }
   });
-  $('refreshDashboard').addEventListener('click', () => void refresh(true));
+  // Refresh first reloads the saved queries, so it shows any saved since the page was opened (e.g.
+  // in another browser tab), with their SQL, chart, row limit and parameter values
+  const reloadAndRefresh = async () => {
+    await loadLists();
+    if (!state.draft) return;
+    if (state.editing) renderPanelEditor();
+    await refresh(true);
+  };
+  $('refreshDashboard').addEventListener('click', () => void reloadAndRefresh());
+  // Coming back with the Back button can show the page as it was, from the browser's cache
+  window.addEventListener('pageshow', (e) => {
+    if (e.persisted) void reloadAndRefresh();
+  });
   $('copyDashboardLink').addEventListener('click', async () => {
     try {
       await navigator.clipboard.writeText(window.location.href);

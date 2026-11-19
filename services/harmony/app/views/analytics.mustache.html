@@ -95,9 +95,15 @@
         </div>
 
         <form id="parameters" class="parameters" hidden>
-          <h2 class="panel-heading">Parameters</h2>
-          <p class="small text-muted mb-2">Timestamps are ISO 8601 (e.g. 2026-11-01T00:00:00Z). Separate list values
-            with commas. Leave a value empty for NULL.</p>
+          <div class="panel-heading-row">
+            <h2 class="panel-heading mb-0">Parameters</h2>
+            <button type="button" class="btn btn-sm btn-link p-0" id="timeHelp" aria-haspopup="dialog">
+              <i class="bi bi-question-circle" aria-hidden="true"></i> Relative times
+            </button>
+          </div>
+          <p class="small text-muted mb-2">Times are ISO 8601 (e.g. 2026-11-01T00:00:00Z) or relative to when the
+            query runs (e.g. now-7d, or now/d for the start of today, in UTC). Separate list values with commas. Leave
+            a value empty for NULL.</p>
           <div class="parameter-grid" id="parameterFields"></div>
         </form>
 
@@ -119,16 +125,22 @@
               <option value="">None</option>
               <option value="column">Columns</option>
               <option value="line">Lines</option>
+              <option value="stat">Single number</option>
+              <option value="donut">Donut</option>
             </select>
             <span class="chart-axis-controls" id="chartAxisControls" hidden>
-              <label for="chartX">x axis</label>
-              <select id="chartX" class="form-control form-control-sm w-auto"></select>
+              <span class="chart-control" id="chartXControl">
+                <label for="chartX" id="chartXLabel">x axis</label>
+                <select id="chartX" class="form-control form-control-sm w-auto"></select>
+              </span>
               <fieldset class="chart-y" id="chartY">
                 <legend class="chart-y-legend">Values</legend>
                 <span id="chartYOptions"></span>
               </fieldset>
-              <label for="chartSeries">Series by</label>
-              <select id="chartSeries" class="form-control form-control-sm w-auto"></select>
+              <span class="chart-control" id="chartSeriesControl">
+                <label for="chartSeries">Series by</label>
+                <select id="chartSeries" class="form-control form-control-sm w-auto"></select>
+              </span>
             </span>
           </form>
           <p id="chartProblem" class="small text-muted mb-2" role="status" hidden></p>
@@ -139,6 +151,83 @@
         </section>
       </section>
     </div>
+
+    <!-- Documents the relative time syntax (see reltime.js). The "Right now" cells and the try-it
+         box are filled in by timehelp.js when the dialog opens. -->
+    <dialog id="timeHelpDialog" class="confirm-dialog help-dialog" aria-labelledby="timeHelpHeading">
+      <form method="dialog">
+        <div class="panel-heading-row">
+          <h2 class="h5 mb-0" id="timeHelpHeading">Relative times</h2>
+          <button type="submit" class="btn btn-sm btn-link p-0" aria-label="Close">
+            <i class="bi bi-x-lg" aria-hidden="true"></i>
+          </button>
+        </div>
+        <p class="small">A timestamp or date parameter can be a time relative to when the query runs, instead of
+          a fixed time. It's saved as written, so a saved query or dashboard using <code>now-7d</code> always
+          covers the 7 days before it runs. Times are in UTC.</p>
+
+        <h3 class="panel-heading">Syntax</h3>
+        <ul class="small help-list">
+          <li><code>now</code> is the time the query runs.</li>
+          <li><code>-</code> or <code>+</code> a number and a unit moves the time: <code>now-7d</code>,
+            <code>now+1h</code>.</li>
+          <li><code>/</code> and a unit rounds down to the start of that unit: <code>now/d</code> is midnight
+            today.</li>
+          <li>The units are <code>s</code> seconds, <code>m</code> minutes, <code>h</code> hours, <code>d</code>
+            days, <code>w</code> weeks (starting Monday), <code>M</code> months and <code>y</code> years. Note
+            that <code>m</code> is minutes and <code>M</code> is months.</li>
+          <li>Steps apply left to right: <code>now/d-1h</code> is 11pm yesterday (midnight, then back an hour),
+            while <code>now-1h/d</code> is the start of the day it was an hour ago.</li>
+        </ul>
+
+        <h3 class="panel-heading">Examples</h3>
+        <table class="table table-sm small help-table">
+          <thead>
+            <tr><th scope="col">Expression</th><th scope="col">Means</th><th scope="col">Right now</th></tr>
+          </thead>
+          <tbody>
+            <tr data-expr="now"><td><code>now</code></td><td>The time the query runs</td><td class="help-now"></td></tr>
+            <tr data-expr="now-15m"><td><code>now-15m</code></td><td>15 minutes ago</td><td class="help-now"></td></tr>
+            <tr data-expr="now-24h"><td><code>now-24h</code></td><td>24 hours ago</td><td class="help-now"></td></tr>
+            <tr data-expr="now-7d"><td><code>now-7d</code></td><td>7 days ago</td><td class="help-now"></td></tr>
+            <tr data-expr="now/d"><td><code>now/d</code></td><td>The start of today</td><td class="help-now"></td></tr>
+            <tr data-expr="now-1d/d"><td><code>now-1d/d</code></td><td>The start of yesterday</td><td class="help-now"></td></tr>
+            <tr data-expr="now+1d/d"><td><code>now+1d/d</code></td><td>The start of tomorrow</td><td class="help-now"></td></tr>
+            <tr data-expr="now/w"><td><code>now/w</code></td><td>The start of this week (Monday)</td><td class="help-now"></td></tr>
+            <tr data-expr="now-1w/w"><td><code>now-1w/w</code></td><td>The start of last week</td><td class="help-now"></td></tr>
+            <tr data-expr="now/M"><td><code>now/M</code></td><td>The start of this month</td><td class="help-now"></td></tr>
+            <tr data-expr="now-1M/M"><td><code>now-1M/M</code></td><td>The start of last month</td><td class="help-now"></td></tr>
+            <tr data-expr="now-90d/d"><td><code>now-90d/d</code></td><td>Midnight 90 days ago</td><td class="help-now"></td></tr>
+            <tr data-expr="now/y"><td><code>now/y</code></td><td>The start of this year</td><td class="help-now"></td></tr>
+          </tbody>
+        </table>
+
+        <h3 class="panel-heading">Ranges</h3>
+        <p class="small mb-2">For a range, write the query as <code>created_at &gt;= $start AND created_at &lt; $end</code>,
+          so each end is the start of the next period.</p>
+        <table class="table table-sm small help-table">
+          <thead>
+            <tr><th scope="col">Range</th><th scope="col"><code>$start</code></th><th scope="col"><code>$end</code></th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Last 24 hours</td><td><code>now-24h</code></td><td><code>now</code></td></tr>
+            <tr><td>Last 7 days</td><td><code>now-7d</code></td><td><code>now</code></td></tr>
+            <tr><td>Today</td><td><code>now/d</code></td><td><code>now+1d/d</code></td></tr>
+            <tr><td>Yesterday</td><td><code>now-1d/d</code></td><td><code>now/d</code></td></tr>
+            <tr><td>The last 7 whole days</td><td><code>now-7d/d</code></td><td><code>now/d</code></td></tr>
+            <tr><td>This week</td><td><code>now/w</code></td><td><code>now+1w/w</code></td></tr>
+            <tr><td>Last month</td><td><code>now-1M/M</code></td><td><code>now/M</code></td></tr>
+            <tr><td>This year</td><td><code>now/y</code></td><td><code>now+1y/y</code></td></tr>
+          </tbody>
+        </table>
+
+        <h3 class="panel-heading">Try it</h3>
+        <label class="visually-hidden" for="timeHelpTry">A relative time to try</label>
+        <input type="text" id="timeHelpTry" class="form-control form-control-sm help-try" value="now-7d/d"
+          spellcheck="false" autocomplete="off" aria-describedby="timeHelpResult">
+        <p class="small mt-1 mb-0" id="timeHelpResult" role="status" aria-live="polite"></p>
+      </form>
+    </dialog>
 
     <!-- Confirms discarding changes or deleting a saved query -->
     <dialog id="confirmDialog" class="confirm-dialog" aria-labelledby="confirmMessage">

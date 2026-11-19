@@ -14,10 +14,20 @@ that the user is an admin, then calls this service with a shared secret and the 
 - table/column completion from `/api/schema`
 - errors underlined as you type, from `/api/validate`
 - a form for the query's parameters (`public/js/analytics/params.js`, shared with the Dashboards
-  tab). Timestamp and date parameters get the browser's date/time picker and quick picks ("Start
-  of today", "7 days ago"). A pair named like a range (`$start`/`$end`, `$from`/`$to`,
+  tab). A timestamp or date parameter takes either a fixed ISO 8601 time or a time relative to
+  when the query runs (`public/js/analytics/reltime.js`), in Grafana's notation:
+  - `now-7d` is 7 days ago, and `now+1h` is an hour from now (units `s m h d w M y`)
+  - `/unit` rounds down to the start of the unit: `now/d` is the start of today, `now/w` the
+    start of this week (Monday), and `now-1M/M` the start of last month
+  - relative times are saved as written, so a saved "failed jobs in the last 7 days" always means
+    the 7 days before it runs
+  - the page works the time out just before running, all in UTC, and sends it as ISO 8601; the
+    field shows what it currently resolves to. A dashboard works its times out when it's opened
+    and on each Refresh, so all its panels use the same "now".
+  Each time field also has the browser's date/time picker and quick picks ("Start of today",
+  "7 days ago"). A pair named like a range (`$start`/`$end`, `$from`/`$to`,
   `$created_start`/`$created_end`, ...) is one range field with presets ("Last 7 days",
-  "Last month"). Times are UTC, and values are sent and saved as ISO 8601 text.
+  "Last month"), which fill in relative times.
 - time expressions in the editor's completions: typing `last`, `today` or `this` offers e.g.
   `now() - INTERVAL 7 DAY` or `date_trunc('month', now())`
 - a results table with CSV download
@@ -30,7 +40,11 @@ that the user is an admin, then calls this service with a shared secret and the 
   layouts of saved queries, each panel showing its query's chart or a table, at half or full width.
   A panel runs with the row limit saved with its query (the Query tab's Row limit when the query was
   saved, or 10 if it has none) unless the panel sets its own Max rows. One field per parameter name is shared by every panel whose query uses
-  it, so a single `$start` can set the time range of the whole dashboard. Viewing a dashboard runs
+  it, so a single `$start` can set the time range of the whole dashboard. A field starts with
+  whichever value was saved last: the dashboard's own (saved with it), or the default saved with
+  the newest of its queries that has one. So saving a query with new parameter values shows them on
+  every dashboard using it, until a dashboard is saved again with values of its own. Panels always
+  run their queries as last saved (SQL, chart and row limit), and Refresh reloads them first. Viewing a dashboard runs
   its panels' queries two at a time (this service's default concurrency). Dashboards are stored in
   the jobs database's `analytics_dashboards` table and served by the frontend at
   `/admin/analytics/api/dashboards`, with the same access rules as saved queries. A panel whose
@@ -39,7 +53,9 @@ that the user is an admin, then calls this service with a shared secret and the 
 - a chart of the results, saved with the query (`public/js/analytics/chart.js`), as columns
   (stacked for several series) or lines. Either several numeric columns are each a series, or one
   is split into a series per value of another column. Past eight series the smallest are combined
-  as "Other". Times are shown in UTC, the timezone queries run in. It uses the admin dashboard's
+  as "Other". There are two more chart types for one value column: a **single number** (the
+  first row's value, e.g. a count for a dashboard tile) and a **donut** (shares of a whole: the
+  value summed per category, with the smallest past six slices combined as "Other"). Times are shown in UTC, the timezone queries run in. It uses the admin dashboard's
   chart kit (`public/js/dashboard/charts.js`) and its palette, so charts have the same tooltips and
   table view.
 

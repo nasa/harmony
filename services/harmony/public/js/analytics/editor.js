@@ -96,6 +96,7 @@ export function errorRange(text, position) {
  * @param {object} options - the options
  * @param {HTMLElement} options.parent - the element to put the editor in
  * @param {string} options.doc - the initial query
+ * @param {string} options.example - the example query shown, ghosted, while the editor is empty
  * @param {function(string): Promise<object>} options.validate - validates a query, resolving to the
  * service's validation result (or rejecting if it couldn't be checked)
  * @param {function(object|null, string): void} options.onValidated - called with each validation
@@ -106,7 +107,7 @@ export function errorRange(text, position) {
  *   select: function(number|null): void, text: function(): string, setText: function(string): void}}
  *   the editor and helpers
  */
-export function createEditor({ parent, doc, validate, onValidated, onRun, onChange }) {
+export function createEditor({ parent, doc, example, validate, onValidated, onRun, onChange }) {
   const language = new Compartment();
   const sqlFor = (tables) => {
     const support = sql({ dialect: duckDb, schema: completionSchema(tables), upperCaseKeywords: true });
@@ -144,7 +145,7 @@ export function createEditor({ parent, doc, validate, onValidated, onRun, onChan
         language.of(sqlFor([])),
         validationLinter,
         lintGutter(),
-        placeholder('SELECT status, count(*) FROM jobs GROUP BY status'),
+        placeholder(example),
         // Ahead of the default keymap, where Mod-Enter inserts a blank line
         Prec.highest(keymap.of([{ key: 'Mod-Enter', run: () => { onRun(); return true; } }])),
         keymap.of([indentWithTab]),

@@ -1,14 +1,14 @@
-// The parameter fields of the analytics page's Query and Dashboards tabs. Timestamp and date
-// parameters get the browser's date/time picker, with quick picks ("Start of today", "7 days ago"),
-// and a pair of them named like a range ($start/$end, $from/$to, $created_start/$created_end) is
-// shown as one range field with range presets ("Last 7 days", "Last month").
+// The parameter fields of the analytics page's Query and Dashboards tabs. A timestamp or date
+// parameter takes either a relative time (now-7d, now/d - see reltime.js), resolved each time the
+// query runs, or a fixed ISO 8601 time, which the calendar button picks with the browser's date
+// picker. Quick picks fill in relative times ("Start of today", "7 days ago"), and a pair of time
+// parameters named like a range ($start/$end, $from/$to, $created_start/$created_end) is one
+// range field with range presets ("Last 7 days", "Last month").
 //
-// Every value is kept as text in the form the analytics query service binds (see parameterValue in
-// results.js) - timestamps as ISO 8601 UTC, e.g. 2026-11-01T00:00:00Z - so saved defaults don't
-// depend on the picker. Times are UTC, the timezone queries run in.
+// Every value is kept as the text the user entered (see parameterValue in results.js), so saved
+// defaults keep relative times relative. Times are UTC, the timezone queries run in.
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-const HOUR_MS = 60 * 60 * 1000;
+import { describeTime, isRelative, resolveRelative } from './reltime.js';
 
 export const isTimestampType = (type) => /^TIMESTAMP/.test(type);
 export const isDateType = (type) => type === 'DATE';
@@ -54,46 +54,33 @@ export function inputToText(value, type) {
   return `${value.length === 16 ? `${value}:00` : value}Z`;
 }
 
-/**
- * Formats a time as a parameter's text
- */
-function timeText(ms, type) {
-  const iso = new Date(ms).toISOString();
-  return isDateType(type) ? iso.slice(0, 10) : `${iso.slice(0, 19)}Z`;
-}
-
-// Calendar boundaries in UTC
-const startOfDay = (ms) => Math.floor(ms / DAY_MS) * DAY_MS;
-const startOfMonth = (ms, monthsAhead = 0) => {
-  const d = new Date(ms);
-  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + monthsAhead, 1);
-};
-const startOfYear = (ms, yearsAhead = 0) => Date.UTC(new Date(ms).getUTCFullYear() + yearsAhead, 0, 1);
-
-// Quick picks for one time: [label, the time given now]
+// Quick picks for one time: [label, relative time]. They are relative (see reltime.js), so a query
+// or dashboard saved with one keeps meaning the same period whenever it runs.
 export const TIME_PRESETS = [
-  ['Now', (now) => now],
-  ['Start of today', (now) => startOfDay(now)],
-  ['Start of yesterday', (now) => startOfDay(now) - DAY_MS],
-  ['24 hours ago', (now) => now - 24 * HOUR_MS],
-  ['7 days ago', (now) => now - 7 * DAY_MS],
-  ['30 days ago', (now) => now - 30 * DAY_MS],
-  ['Start of this month', (now) => startOfMonth(now)],
-  ['Start of last month', (now) => startOfMonth(now, -1)],
-  ['Start of this year', (now) => startOfYear(now)],
+  ['Now', 'now'],
+  ['Start of today', 'now/d'],
+  ['Start of yesterday', 'now-1d/d'],
+  ['24 hours ago', 'now-24h'],
+  ['7 days ago', 'now-7d'],
+  ['30 days ago', 'now-30d'],
+  ['Start of this week', 'now/w'],
+  ['Start of this month', 'now/M'],
+  ['Start of last month', 'now-1M/M'],
+  ['Start of this year', 'now/y'],
 ];
 
-// Presets for a range: [label, [start, end] given now]. Calendar periods end at the start of the
-// next one, for queries that use `>= $start AND < $end`.
+// Presets for a range: [label, [start, end]]. Calendar periods end at the start of the next one,
+// for queries that use `>= $start AND < $end`.
 export const RANGE_PRESETS = [
-  ['Last 24 hours', (now) => [now - 24 * HOUR_MS, now]],
-  ['Last 7 days', (now) => [now - 7 * DAY_MS, now]],
-  ['Last 30 days', (now) => [now - 30 * DAY_MS, now]],
-  ['Today', (now) => [startOfDay(now), startOfDay(now) + DAY_MS]],
-  ['Yesterday', (now) => [startOfDay(now) - DAY_MS, startOfDay(now)]],
-  ['This month', (now) => [startOfMonth(now), startOfMonth(now, 1)]],
-  ['Last month', (now) => [startOfMonth(now, -1), startOfMonth(now)]],
-  ['This year', (now) => [startOfYear(now), startOfYear(now, 1)]],
+  ['Last 24 hours', ['now-24h', 'now']],
+  ['Last 7 days', ['now-7d', 'now']],
+  ['Last 30 days', ['now-30d', 'now']],
+  ['Today', ['now/d', 'now+1d/d']],
+  ['Yesterday', ['now-1d/d', 'now/d']],
+  ['This week', ['now/w', 'now+1w/w']],
+  ['This month', ['now/M', 'now+1M/M']],
+  ['Last month', ['now-1M/M', 'now/M']],
+  ['This year', ['now/y', 'now+1y/y']],
 ];
 
 // The words that mark the start of a range, and the word for its end
@@ -145,37 +132,123 @@ function fieldLabel(forId, name, type) {
 }
 
 /**
+ * Describes what a time parameter's text means, for the note under its field
+ *
+ * @param {string} text - the text
+ * @param {string} type - the parameter's type
+ * @param {number} now - the current time in ms
+ * @returns {{text: string, invalid: boolean}} the description, and whether the text isn't a time
+ */
+export function describeValue(text, type, now) {
+  const value = String(text ?? '').trim();
+  if (value === '') return { text: '', invalid: false };
+  if (isRelative(value)) {
+    return { text: `→ ${describeTime(resolveRelative(value, now), isDateType(type))} now`, invalid: false };
+  }
+  const date = parseUtc(value);
+  if (date) return { text: `Fixed: ${describeTime(date.getTime(), isDateType(type))}`, invalid: false };
+  return { text: 'Not a time - use e.g. now-7d, now/d, or 2026-11-01T00:00:00Z', invalid: true };
+}
+
+/**
  * Builds the input for one parameter
  *
  * @param {object} parameter - the parameter
  * @param {string} id - the input's id
  * @param {object} options - see renderParameterFields
- * @returns {HTMLElement} the input
+ * @returns {{element: HTMLElement, input: HTMLElement, note: HTMLElement|null, set: function(string): void}}
+ *   the element to show, its input (which the label is for), the note describing a time's value,
+ *   and a function that sets the text (as if entered)
  */
-function parameterInput({ name, type }, id, { text, onChange }) {
-  let input;
+function parameterInput({ name, type }, id, { text, onChange, now }) {
   if (type === 'BOOLEAN') {
-    input = document.createElement('select');
-    for (const [value, label] of [['', 'NULL'], ['true', 'true'], ['false', 'false']]) input.append(new Option(label, value));
-    input.value = text.get(name) ?? '';
-    input.addEventListener('change', () => onChange(name, input.value));
-  } else if (isTimeType(type)) {
-    input = document.createElement('input');
-    input.type = isDateType(type) ? 'date' : 'datetime-local';
-    if (!isDateType(type)) input.step = '1'; // to the second
-    input.value = textToInput(text.get(name) ?? '', type);
-    input.addEventListener('input', () => onChange(name, inputToText(input.value, type)));
-  } else {
-    input = document.createElement('input');
-    input.type = 'text';
-    if (type.endsWith('[]')) input.placeholder = 'a, b, c';
-    input.value = text.get(name) ?? '';
-    input.addEventListener('input', () => onChange(name, input.value));
+    const select = document.createElement('select');
+    for (const [value, label] of [['', 'NULL'], ['true', 'true'], ['false', 'false']]) select.append(new Option(label, value));
+    select.className = 'form-control form-control-sm';
+    select.id = id;
+    select.value = text.get(name) ?? '';
+    select.addEventListener('change', () => onChange(name, select.value));
+    return { element: select, input: select, note: null, set: (v) => { select.value = v; } };
   }
+
+  const input = document.createElement('input');
+  input.type = 'text';
   input.className = 'form-control form-control-sm';
   input.id = id;
   input.dataset.parameter = name;
-  return input;
+  input.value = text.get(name) ?? '';
+  if (!isTimeType(type)) {
+    if (type.endsWith('[]')) input.placeholder = 'a, b, c';
+    input.addEventListener('input', () => onChange(name, input.value));
+    return { element: input, input, note: null, set: (v) => { input.value = v; } };
+  }
+
+  // A time: a relative time or a fixed one, typed or picked from the calendar
+  input.classList.add('parameter-time-text');
+  input.placeholder = isDateType(type) ? 'now/d or 2026-11-01' : 'now-7d or 2026-11-01T00:00:00Z';
+  input.spellcheck = false;
+  const note = document.createElement('div');
+  note.className = 'parameter-time-note';
+  note.id = `${id}-note`;
+  input.setAttribute('aria-describedby', note.id);
+  const update = () => {
+    const { text: description, invalid } = describeValue(input.value, type, now());
+    note.textContent = description;
+    note.classList.toggle('is-invalid', invalid);
+    input.setAttribute('aria-invalid', String(invalid));
+  };
+  const set = (value) => {
+    input.value = value;
+    onChange(name, value);
+    update();
+  };
+  input.addEventListener('input', () => {
+    onChange(name, input.value);
+    update();
+  });
+
+  // The calendar button opens the browser's picker on a hidden date input, for a fixed time
+  const picker = document.createElement('input');
+  picker.type = isDateType(type) ? 'date' : 'datetime-local';
+  if (!isDateType(type)) picker.step = '1'; // to the second
+  picker.className = 'parameter-picker';
+  picker.tabIndex = -1;
+  picker.setAttribute('aria-hidden', 'true');
+  picker.addEventListener('change', () => {
+    const picked = inputToText(picker.value, type);
+    if (picked) set(picked);
+    picker.classList.remove('is-visible');
+  });
+  picker.addEventListener('blur', () => picker.classList.remove('is-visible'));
+  const calendar = document.createElement('button');
+  calendar.type = 'button';
+  calendar.className = 'btn btn-sm btn-outline-secondary parameter-calendar';
+  calendar.title = isDateType(type) ? 'Pick a fixed date' : 'Pick a fixed date and time';
+  calendar.setAttribute('aria-label', `${calendar.title} for $${name}`);
+  calendar.innerHTML = '<i class="bi bi-calendar3" aria-hidden="true"></i>';
+  calendar.addEventListener('click', () => {
+    // Start the calendar at what the field means now
+    const current = input.value.trim();
+    picker.value = isRelative(current)
+      ? textToInput(new Date(resolveRelative(current, now())).toISOString(), type)
+      : textToInput(current, type);
+    try {
+      picker.showPicker();
+    } catch {
+      // Browsers without showPicker show the date input itself instead
+      picker.classList.add('is-visible');
+      picker.focus();
+    }
+  });
+  const pickerWrap = document.createElement('span');
+  pickerWrap.className = 'parameter-picker-wrap';
+  pickerWrap.append(calendar, picker);
+
+  const box = document.createElement('div');
+  box.className = 'parameter-time-input';
+  box.append(input, pickerWrap);
+  update();
+  return { element: box, input, note, set };
 }
 
 /**
@@ -215,8 +288,8 @@ function quickPick(label, presets, apply) {
  * @param {function(): number} [options.now] - the current time in ms, for the presets
  */
 export function renderParameterFields(container, parameters, options) {
-  const { idPrefix, onChange } = options;
-  const now = options.now ?? Date.now;
+  const opts = { ...options, now: options.now ?? Date.now };
+  const { idPrefix } = opts;
   const ranges = findRanges(parameters);
   const inRange = new Map(ranges.flatMap(([start, end]) => [[start.name, [start, end]], [end.name, [start, end]]]));
   const fields = [];
@@ -231,35 +304,27 @@ export function renderParameterFields(container, parameters, options) {
       wrapper.className = 'parameter-range';
       const ends = document.createElement('div');
       ends.className = 'parameter-range-ends';
-      const inputs = [start, end].map((p) => parameterInput(p, `${idPrefix}-${p.name}`, options));
+      const inputs = [start, end].map((p) => parameterInput(p, `${idPrefix}-${p.name}`, opts));
       [start, end].forEach((p, i) => {
         const part = document.createElement('div');
-        part.append(fieldLabel(inputs[i].id, p.name, p.type), inputs[i]);
+        part.append(fieldLabel(inputs[i].input.id, p.name, p.type), inputs[i].element, inputs[i].note);
         ends.append(part);
       });
-      const presets = quickPick(`Quick pick for $${start.name} and $${end.name}`, RANGE_PRESETS, (preset) => {
-        preset(now()).forEach((ms, i) => {
-          const p = [start, end][i];
-          const text = timeText(ms, p.type);
-          inputs[i].value = textToInput(text, p.type);
-          onChange(p.name, text);
-        });
+      const presets = quickPick(`Quick pick for $${start.name} and $${end.name}`, RANGE_PRESETS, ([from, to]) => {
+        inputs[0].set(from);
+        inputs[1].set(to);
       });
       wrapper.append(ends, presets);
     } else {
-      const input = parameterInput(parameter, `${idPrefix}-${parameter.name}`, options);
-      wrapper.append(fieldLabel(input.id, parameter.name, parameter.type));
+      const field = parameterInput(parameter, `${idPrefix}-${parameter.name}`, opts);
+      wrapper.append(fieldLabel(field.input.id, parameter.name, parameter.type));
       if (isTimeType(parameter.type)) {
         const row = document.createElement('div');
         row.className = 'parameter-time';
-        row.append(input, quickPick(`Quick pick for $${parameter.name}`, TIME_PRESETS, (preset) => {
-          const text = timeText(preset(now()), parameter.type);
-          input.value = textToInput(text, parameter.type);
-          onChange(parameter.name, text);
-        }));
-        wrapper.append(row);
+        row.append(field.element, quickPick(`Quick pick for $${parameter.name}`, TIME_PRESETS, (preset) => field.set(preset)));
+        wrapper.append(row, field.note);
       } else {
-        wrapper.append(input);
+        wrapper.append(field.element);
       }
     }
     fields.push(wrapper);

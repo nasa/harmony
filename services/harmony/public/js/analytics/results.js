@@ -1,9 +1,11 @@
 // Rendering query results, exporting them as CSV, and turning parameter form values into the
 // values the analytics query service binds. All text is inserted with textContent - values come
 // from the database.
+import { isRelative, resolveRelative } from './reltime.js';
 
 const NUMERIC_TYPE = /^(TINYINT|SMALLINT|INTEGER|BIGINT|HUGEINT|UTINYINT|USMALLINT|UINTEGER|UBIGINT|UHUGEINT|FLOAT|DOUBLE|DECIMAL)/;
 const INTEGER_TYPE = /^(TINYINT|SMALLINT|INTEGER|BIGINT|HUGEINT|UTINYINT|USMALLINT|UINTEGER|UBIGINT|UHUGEINT)$/;
+const TIME_TYPE = /^(TIMESTAMP|DATE$)/;
 
 /**
  * Formats a result value for display and CSV
@@ -106,14 +108,20 @@ export function download(text, filename, type) {
  *
  * @param {string} text - what was entered
  * @param {string} type - the parameter's DuckDB type, e.g. BIGINT or VARCHAR[]
+ * @param {number} [now] - the current time in ms, for resolving relative times
  * @returns {*} the value (null when nothing was entered)
  * @throws {Error} if the value isn't valid for the type
  */
-export function parameterValue(text, type) {
+export function parameterValue(text, type, now = Date.now()) {
   if (type.endsWith('[]')) {
     if (text.trim() === '') return null;
     const elementType = type.slice(0, -2);
-    return text.split(',').map((part) => parameterValue(part.trim(), elementType));
+    return text.split(',').map((part) => parameterValue(part.trim(), elementType, now));
+  }
+  // A relative time (e.g. now-7d) is resolved now, so a saved query always means the latest period
+  if (TIME_TYPE.test(type) && isRelative(text)) {
+    const iso = new Date(resolveRelative(text, now)).toISOString();
+    return type === 'DATE' ? iso.slice(0, 10) : iso;
   }
   if (type === 'BOOLEAN') {
     if (text === '') return null;
@@ -128,4 +136,21 @@ export function parameterValue(text, type) {
     return n;
   }
   return text === '' ? null : text;
+}
+
+/**
+ * Converts a parameter form value to the default saved with a query or dashboard. Like
+ * parameterValue, except that times are kept as written: a relative time (now-7d) is saved as
+ * such, so the saved query keeps meaning the latest period rather than the one when it was saved.
+ *
+ * @param {string} text - what was entered
+ * @param {string} type - the parameter's DuckDB type
+ * @returns {*} the value to save (null when nothing was entered)
+ * @throws {Error} if the value isn't valid for the type
+ */
+export function parameterDefault(text, type) {
+  const elementType = type.replace(/\[\]$/, '');
+  if (!TIME_TYPE.test(elementType)) return parameterValue(text, type);
+  if (text.trim() === '') return null;
+  return type.endsWith('[]') ? text.split(',').map((part) => part.trim()) : text.trim();
 }

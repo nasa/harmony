@@ -68,8 +68,9 @@ export function pageUser(page) {
  * opened. Keys include the username, so people sharing a browser each get their own.
  *
  * @param {string} username - the user
- * @returns {{remembered: function(string): (string|null), remember: function(string, string): void}}
- *   remembered reads a setting (null if there is none, or storage is unavailable); remember saves one
+ * @returns {{remembered: function(string): (string|null), remember: function(string, string): void,
+ *   forget: function(string): void}} remembered reads a setting (null if there is none, or storage
+ *   is unavailable); remember saves one; forget removes one
  */
 export function userStorage(username) {
   const key = (name) => `${STORAGE_PREFIX}.${username}.${name}`;
@@ -86,6 +87,13 @@ export function userStorage(username) {
         localStorage.setItem(key(name), value);
       } catch {
         // storage may be unavailable (e.g. blocked), in which case the setting just isn't kept
+      }
+    },
+    forget: (name) => {
+      try {
+        localStorage.removeItem(key(name));
+      } catch {
+        // as above
       }
     },
   };
