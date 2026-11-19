@@ -87,10 +87,21 @@
                     id="parametersCount"></span>
                 </button>
               </h2>
+              <button type="button" class="btn btn-sm btn-link p-0" id="timeHelp" aria-haspopup="dialog">
+                <i class="bi bi-question-circle" aria-hidden="true"></i> Relative times
+              </button>
             </div>
             <div id="dashboardParametersBody">
-              <p class="small text-muted mb-2">Shared by every panel whose query uses the parameter. Press Enter in a
-                field (or Refresh) to apply changes. Separate list values with commas; leave a value empty for NULL.</p>
+              <!-- Which values the fields are for: every panel's, or one panel's (also chosen by selecting a panel) -->
+              <div class="parameter-scope">
+                <label for="parameterScope" class="small mb-0">For</label>
+                <select id="parameterScope" class="form-control form-control-sm w-auto"
+                  aria-describedby="parameterScopeHelp"></select>
+                <span class="small text-muted" id="parameterScopeHelp"></span>
+              </div>
+              <p class="small text-muted mb-2">Select a panel to see or change its values. Press Enter in a field (or
+                Refresh) to apply changes. Changes last until you leave the page, unless you edit and save the
+                dashboard. Separate list values with commas.</p>
               <div class="parameter-grid" id="dashboardParameterFields"></div>
             </div>
           </form>
@@ -115,6 +126,7 @@
                   <tr>
                     <th scope="col"><span class="visually-hidden">Panel</span></th>
                     <th scope="col">Saved query</th>
+                    <th scope="col">Title</th>
                     <th scope="col">Display</th>
                     <th scope="col">Width</th>
                     <th scope="col">Max rows</th>
@@ -123,6 +135,13 @@
                 </thead>
                 <tbody id="panelEditorList"></tbody>
               </table>
+              <p class="small text-muted mb-0" id="panelTitleHelp">A title can show the panel's parameter values,
+                using the names of its query's parameters (listed under each title). For a query with a
+                <code>$start</code> parameter: <code>$start</code> shows its value in words (now-7d is "7 days ago"),
+                <code>${start:raw}</code> shows it as written ("now-7d"), and <code>$__range</code> shows the time
+                range from <code>$start</code> to <code>$end</code>, or to now if there's no end parameter ("the
+                last 7 days"). So "Errors in $__range" stays right whatever the range is set to. A blank title is the
+                query's name.</p>
               <p class="small text-muted mb-0" id="panelEditorEmpty">Add panels to show your saved queries' charts and
                 tables.</p>
             </div>
@@ -132,6 +151,8 @@
         </div>
       </section>
     </div>
+
+    {{> analytics-time-help}}
 
     <!-- Confirms discarding changes or deleting a dashboard -->
     <dialog id="confirmDialog" class="confirm-dialog" aria-labelledby="confirmMessage">

@@ -84,3 +84,106 @@ export function describeTime(ms, dateOnly = false) {
     ? date.toLocaleDateString([], { timeZone: 'UTC', dateStyle: 'medium' })
     : `${date.toLocaleString([], { timeZone: 'UTC', dateStyle: 'medium', timeStyle: 'short' })} UTC`;
 }
+
+const UNIT_NAMES = { s: 'second', m: 'minute', h: 'hour', d: 'day', w: 'week', M: 'month', y: 'year' };
+const count = (n, unit) => `${n} ${UNIT_NAMES[unit]}${n === 1 ? '' : 's'}`;
+
+/**
+ * Splits a relative time into its steps
+ *
+ * @param {string} text - e.g. now-1M/M
+ * @returns {Array<{amount: number, unit: string}|{round: string}>|null} the steps (an amount is
+ *   negative for -), or null if the text isn't a relative time
+ */
+function stepsOf(text) {
+  const match = RELATIVE.exec(String(text ?? '').replace(/\s+/g, ''));
+  if (!match) return null;
+  return [...match[1].matchAll(STEP)].map(([, sign, amount, unit, round]) => (round
+    ? { round }
+    : { amount: (sign === '-' ? -1 : 1) * Number(amount), unit }));
+}
+
+/**
+ * A relative time that is the start of a whole unit, as an offset in that unit from the current
+ * one: now/d is 0 days, now-1M/M is -1 months
+ *
+ * @returns {{offset: number, unit: string}|null} the offset, or null if it isn't one
+ */
+function periodStart(steps) {
+  if (steps?.length === 1 && steps[0].round) return { offset: 0, unit: steps[0].round };
+  if (steps?.length === 2 && steps[0].unit && steps[0].unit === steps[1].round) {
+    return { offset: steps[0].amount, unit: steps[1].round };
+  }
+  return null;
+}
+
+/**
+ * Names a period by its offset from the current one: today, last week, the month 3 months ago
+ */
+function periodName(offset, unit) {
+  if (unit === 'd' && offset === 0) return 'today';
+  if (unit === 'd' && offset === -1) return 'yesterday';
+  if (unit === 'd' && offset === 1) return 'tomorrow';
+  const name = UNIT_NAMES[unit];
+  if (offset === 0) return `this ${name}`;
+  if (offset === -1) return `last ${name}`;
+  if (offset === 1) return `next ${name}`;
+  return offset < 0 ? `the ${name} ${count(-offset, unit)} ago` : `the ${name} in ${count(offset, unit)}`;
+}
+
+/**
+ * Describes a relative time in words, for panel titles: now-7d is "7 days ago", now/d is "the
+ * start of today", now-1M/M is "the start of last month"
+ *
+ * @param {string} text - the relative time
+ * @returns {string|null} the words, or null if the text isn't a relative time. One too involved
+ *   to put into words is returned as written.
+ */
+export function describeRelative(text) {
+  const steps = stepsOf(text);
+  if (!steps) return null;
+  if (steps.length === 0) return 'now';
+  const [first, second] = steps;
+  if (steps.length === 1 && first.unit) {
+    return first.amount < 0 ? `${count(-first.amount, first.unit)} ago` : `${count(first.amount, first.unit)} from now`;
+  }
+  const period = periodStart(steps);
+  if (period) return `the start of ${periodName(period.offset, period.unit)}`;
+  // e.g. now-7d/h: the start of the hour 7 days ago
+  if (steps.length === 2 && first.unit && second.round) {
+    const when = first.amount < 0 ? `${count(-first.amount, first.unit)} ago` : `${count(first.amount, first.unit)} from now`;
+    return `the start of the ${UNIT_NAMES[second.round]} ${when}`;
+  }
+  return String(text).trim();
+}
+
+/**
+ * Describes a range of two relative times in words, for panel titles: now-7d to now is "the last
+ * 7 days", now-1M/M to now/M is "last month"
+ *
+ * @param {string} start - the start
+ * @param {string} end - the end
+ * @returns {string|null} the words, or null unless both are relative times that make a familiar range
+ */
+export function describeRelativeRange(start, end) {
+  const s = stepsOf(start);
+  const e = stepsOf(end);
+  if (!s || !e) return null;
+  // Up to now: the last 7 days, or this month so far
+  if (e.length === 0) {
+    if (s.length === 1 && s[0].unit && s[0].amount < 0) {
+      const n = -s[0].amount;
+      return `the last ${n === 1 ? UNIT_NAMES[s[0].unit] : count(n, s[0].unit)}`;
+    }
+    const period = periodStart(s);
+    if (period?.offset === 0) return `${periodName(0, period.unit)} so far`;
+    return null;
+  }
+  // Whole periods: last month, or the last 7 full days
+  const from = periodStart(s);
+  const to = periodStart(e);
+  if (!from || !to || from.unit !== to.unit || to.offset <= from.offset) return null;
+  if (to.offset - from.offset === 1) return periodName(from.offset, from.unit);
+  if (to.offset === 0) return `the last ${count(-from.offset, from.unit).replace(/^(\d+) /, '$1 full ')}`;
+  return null;
+}

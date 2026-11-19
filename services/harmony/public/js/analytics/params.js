@@ -20,7 +20,7 @@ const isTimeType = (type) => isTimestampType(type) || isDateType(type);
  * @param {string} text - e.g. 2026-11-01T00:00:00Z, 2026-11-01 00:00, or 2026-11-01
  * @returns {Date|null} the time, or null if the text isn't one
  */
-function parseUtc(text) {
+export function parseUtc(text) {
   let iso = text.trim().replace(' ', 'T');
   if (/T\d{2}:\d{2}(:\d{2}(\.\d+)?)?$/.test(iso)) iso += 'Z';
   const date = new Date(iso);
@@ -160,10 +160,14 @@ export function describeValue(text, type, now) {
  *   the element to show, its input (which the label is for), the note describing a time's value,
  *   and a function that sets the text (as if entered)
  */
-function parameterInput({ name, type }, id, { text, onChange, now }) {
+function parameterInput({ name, type }, id, { text, onChange, now, inherited }) {
+  // What an empty field stands for, if it takes its value from elsewhere
+  const from = inherited?.get(name);
+  let fromText = null;
+  if (from) fromText = from.text === null ? from.source : `${from.source}: ${from.text.trim() || 'NULL'}`;
   if (type === 'BOOLEAN') {
     const select = document.createElement('select');
-    for (const [value, label] of [['', 'NULL'], ['true', 'true'], ['false', 'false']]) select.append(new Option(label, value));
+    for (const [value, label] of [['', fromText ?? 'NULL'], ['true', 'true'], ['false', 'false']]) select.append(new Option(label, value));
     select.className = 'form-control form-control-sm';
     select.id = id;
     select.value = text.get(name) ?? '';
@@ -178,22 +182,24 @@ function parameterInput({ name, type }, id, { text, onChange, now }) {
   input.dataset.parameter = name;
   input.value = text.get(name) ?? '';
   if (!isTimeType(type)) {
-    if (type.endsWith('[]')) input.placeholder = 'a, b, c';
+    if (fromText) input.placeholder = fromText;
+    else if (type.endsWith('[]')) input.placeholder = 'a, b, c';
     input.addEventListener('input', () => onChange(name, input.value));
     return { element: input, input, note: null, set: (v) => { input.value = v; } };
   }
 
   // A time: a relative time or a fixed one, typed or picked from the calendar
   input.classList.add('parameter-time-text');
-  input.placeholder = isDateType(type) ? 'now/d or 2026-11-01' : 'now-7d or 2026-11-01T00:00:00Z';
+  input.placeholder = fromText ?? (isDateType(type) ? 'now/d or 2026-11-01' : 'now-7d or 2026-11-01T00:00:00Z');
   input.spellcheck = false;
   const note = document.createElement('div');
   note.className = 'parameter-time-note';
   note.id = `${id}-note`;
   input.setAttribute('aria-describedby', note.id);
   const update = () => {
-    const { text: description, invalid } = describeValue(input.value, type, now());
-    note.textContent = description;
+    const inheriting = input.value.trim() === '' && Boolean(from?.text?.trim());
+    const { text: description, invalid } = describeValue(inheriting ? from.text : input.value, type, now());
+    note.textContent = inheriting ? `${from.source}: ${description}` : description;
     note.classList.toggle('is-invalid', invalid);
     input.setAttribute('aria-invalid', String(invalid));
   };
@@ -286,6 +292,9 @@ function quickPick(label, presets, apply) {
  *   text whenever it changes (it should update options.text)
  * @param {string} options.idPrefix - makes the inputs' ids unique on the page
  * @param {function(): number} [options.now] - the current time in ms, for the presets
+ * @param {Map<string, {text: string, source: string}>} [options.inherited] - for fields whose
+ *   empty value means "take it from elsewhere": that value as written (null if it varies), and
+ *   where it's from (e.g. "Query"), shown in the empty field
  */
 export function renderParameterFields(container, parameters, options) {
   const opts = { ...options, now: options.now ?? Date.now };
