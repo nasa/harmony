@@ -289,7 +289,9 @@ paths:
       tags:
         - Collection data queries
       summary: Query end point for radius queries of collection {collectionId}
-      description: Query end point to return values within a defined radius of a point queries
+      description: |-
+        Query end point to return values within a defined radius of a point or points.
+        The coords parameter must be a WKT POINT or MULTIPOINT.
       operationId: getDataForRadius
       parameters:
         - $ref: "#/components/parameters/collectionId"
@@ -338,7 +340,9 @@ paths:
       tags:
         - Collection data queries
       summary: Query end point for radius queries of collection {collectionId}
-      description: Query end point to return values within a defined radius of a point queries
+      description: |-
+        Query end point to return values within a defined radius of a point or points.
+        The coords parameter must be a WKT POINT or MULTIPOINT.
       operationId: postDataForRadius
       parameters:
         - $ref: "#/components/parameters/collectionId"
@@ -354,11 +358,14 @@ paths:
                 - within-units
               properties:
                 coords:
-                  description: Well Known Text Point definition
+                  description: Well Known Text POINT or MULTIPOINT definition
                   type: string
+                  minLength: 1
                 within:
+                  description: Radius of area around the coords to include in the data selection
                   type: number
                 within-units:
+                  description: Distance units for the within parameter, one of km, m, mi or ft
                   type: string
                 z:
                   type: string
@@ -1364,10 +1371,14 @@ components:
       required: true
       schema:
         type: string
+        minLength: 1
     within:
       name: within
       in: query
-      description: Defines radius of area around defined coordinates to include in the data selection
+      description: |-
+        Defines radius of area around defined coordinates to include in the data selection.
+        Must be a positive number. The data selection is a polygon approximating a circle of
+        the given radius around each point. Areas that would contain a pole are not supported.
       required: true
       example: 10
       schema:
@@ -1375,9 +1386,11 @@ components:
     within-units:
       name: within-units
       in: query
-      description: Distance units for the within parameter
+      description: |-
+        Distance units for the within parameter (case insensitive). Supported values are:
+        km (kilometers), m (meters), mi (statute miles) and ft (feet).
       required: true
-      example: KM
+      example: km
       schema:
         type: string
     z:

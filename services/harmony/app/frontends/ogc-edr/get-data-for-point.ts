@@ -11,40 +11,6 @@ import {
 import { hashGeoJson } from '../../util/request-checksum';
 
 /**
- * Converts a WKT POINT string to a WKT POLYGON string.
- * The polygon is a square centered around the point.
- *
- * Note this function is currently not being used because for HARMONY-2184 we're
- * changing to handle a single point the same way we handle parsing and passing
- * points to backend services as the coverages API. We may want to handle point
- * with a radius using this method in the future which is why we are keeping the
- * function.
- *
- * @param wktPoint - The WKT POINT string to convert.
- * @param sideLength - The length of the side of the square polygon.
- * @returns The converted WKT POLYGON string.
- * @throws RequestValidationError if the WKT POINT string format is invalid.
- */
-function wktPointToPolygon(wktPoint: string, sideLength: number): string {
-  validateWkt(wktPoint);
-  const match = wktPoint.match(/POINT\s*\(\s*([-\d.]+)\s+([-\d.]+)\s*\)/);
-  if (!match) {
-    throw new RequestValidationError(`query parameter "coords" invalid WKT POINT format: ${wktPoint}`);
-  }
-
-  const x = parseFloat(match[1]);
-  const y = parseFloat(match[2]);
-  const halfSide = sideLength / 2;
-
-  const minx = x - halfSide;
-  const miny = y - halfSide;
-  const maxx = x + halfSide;
-  const maxy = y + halfSide;
-
-  return `POLYGON ((${minx} ${miny}, ${maxx} ${miny}, ${maxx} ${maxy}, ${minx} ${maxy}, ${minx} ${miny}))`;
-}
-
-/**
 * Converts a WKT MULTIPOINT string to a WKT MULTIPOLYGON string.
 * Each point is converted to a square polygon centered around the point.
 *
@@ -82,18 +48,16 @@ function wktMultipointToMultipolygon(wktMultipoint: string, sideLength: number):
 }
 
 /**
-* Converts a WKT POINT or WKT MULTIPOINT string to a WKT POLYGON or WKT MULTIPOLYGON string.
+* Converts a WKT MULTIPOINT string to a WKT MULTIPOLYGON string.
 *
-* @param wkt - The WKT POINT or WKT MULTIPOINT string to convert.
+* @param wkt - The WKT MULTIPOINT string to convert.
 * @param sideLength - The length of the side of each square polygon,
 *                     defaults to 0.0001. It is about 11 meters in precision.
-* @returns The converted WKT POLYGON or WKT MULTIPOLYGON string.
+* @returns The converted WKT MULTIPOLYGON string.
 * @throws RequestValidationError if the WKT string format is invalid.
 */
-export function convertWktToPolygon(wkt: string, sideLength: number = env.wktPrecision): string {
-  if (wkt.startsWith('POINT')) {
-    return wktPointToPolygon(wkt, sideLength);
-  } else if (wkt.startsWith('MULTIPOINT')) {
+export function convertMultiWktToPolygon(wkt: string, sideLength: number = env.wktPrecision): string {
+  if (wkt.startsWith('MULTIPOINT')) {
     return wktMultipointToMultipolygon(wkt, sideLength);
   } else {
     throw new RequestValidationError(`query parameter "coords" invalid WKT format: ${wkt}`);
@@ -147,7 +111,7 @@ export function getDataForPoint(
       operation.spatialPoint = point;
     } else {
       try {
-        const polygon = convertWktToPolygon(query.coords);
+        const polygon = convertMultiWktToPolygon(query.coords);
 
         const geoJson = parseWkt(polygon);
         if (geoJson) {

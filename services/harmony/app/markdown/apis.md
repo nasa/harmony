@@ -92,7 +92,7 @@ curl -Lnbj "{{root}}/{{exampleCollection}}/ogc-api-coverages/1.0.0/collections/b
 
 The Harmony services REST API also conforms to the OGC EDR API version 1.1.0.
 As such it accepts parameters in the URL path as well as query parameters.
-Currently only the `/position`, `/cube`, `/trajectory` and `/area` routes are supported for spatial subsetting. Other EDR routes will be supported in the future.
+Currently only the `/position`, `/radius`, `/cube`, `/trajectory` and `/area` routes are supported for spatial subsetting. Other EDR routes will be supported in the future.
 
 ##### URL Path Parameters
 | parameter | description |
@@ -185,6 +185,24 @@ curl -Lnbj "{{root}}/ogc-api-edr/1.1.0/collections/{{exampleCollection}}/positio
 
 ```
 **Example {{exampleCounter}}** - Curl command for an OGC EDR position request
+
+##### OGC EDR Radius Subsetting Query Parameters
+| parameter | description |
+|-----------|-------------|
+| coords | (required) A Well Known Text (WKT) POINT or MULTIPOINT string. |
+| within | (required) A positive number defining the radius of the area around each point to include in the data selection. The area is approximated by a polygon. Areas that contain a pole are not supported. |
+| within-units | (required) The distance units for the `within` parameter (case insensitive). Supported values are `km` (kilometers), `m` (meters), `mi` (statute miles), and `ft` (feet). |
+---
+**Table {{tableCounter}}** - OGC EDR API radius parameters
+
+A sample OGC EDR radius request is as follows
+
+```
+
+curl -Lnbj "{{root}}/ogc-api-edr/1.1.0/collections/{{exampleCollection}}/radius?maxResults=1&parameter-name=all&coords=POINT%20(-40%2010)&within=100&within-units=km" -o output
+
+```
+**Example {{exampleCounter}}** - Curl command for an OGC EDR radius request
 
 ##### OGC EDR Trajectory Subsetting Query Parameters
 | parameter | description |

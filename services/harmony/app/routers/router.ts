@@ -305,8 +305,8 @@ export default function router({ USE_EDL_CLIENT_APP = 'false' }: RouterConfig): 
   result.get(collectionPrefix('wms'), asyncHandler(service(serviceInvoker)));
   result.get(/^.*?\/ogc-api-coverages\/.*?\/collections\/.*?\/coverage\/rangeset\/?$/, asyncHandler(service(serviceInvoker)));
   result.post(/^.*?\/ogc-api-coverages\/.*?\/collections\/.*?\/coverage\/rangeset\/?$/, asyncHandler(service(serviceInvoker)));
-  result.get(/^\/ogc-api-edr\/.*?\/collections\/.*?\/(cube|area|position|trajectory)\/?$/, asyncHandler(service(serviceInvoker)));
-  result.post(/^\/ogc-api-edr\/.*?\/collections\/.*?\/(cube|area|position|trajectory)\/?$/, asyncHandler(service(serviceInvoker)));
+  result.get(/^\/ogc-api-edr\/.*?\/collections\/.*?\/(cube|area|position|radius|trajectory)\/?$/, asyncHandler(service(serviceInvoker)));
+  result.post(/^\/ogc-api-edr\/.*?\/collections\/.*?\/(cube|area|position|radius|trajectory)\/?$/, asyncHandler(service(serviceInvoker)));
 
   result.get('/jobs', asyncHandler(getJobsListing));
   result.get('/jobs/:jobID', asyncHandler(getJobStatus));

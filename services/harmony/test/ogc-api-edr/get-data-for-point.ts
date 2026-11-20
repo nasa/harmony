@@ -4,7 +4,7 @@ import { describe, it } from 'mocha';
 import { stub } from 'sinon';
 
 import { hookDatabaseFailure } from '../../../../packages/util/test/helpers/db';
-import { convertWktToPolygon } from '../../app/frontends/ogc-edr/get-data-for-point';
+import { convertMultiWktToPolygon } from '../../app/frontends/ogc-edr/get-data-for-point';
 import { ServiceConfig } from '../../app/models/services/base-service';
 import env from '../../app/util/env';
 import isUUID from '../../app/util/uuid';
@@ -14,14 +14,8 @@ import { edrRequest, hookEdrRequest, hookPostEdrRequest } from '../helpers/ogc-a
 import hookServersStartStop from '../helpers/servers';
 import StubService, { hookServices } from '../helpers/stub-service';
 
-describe('convertWktToPolygon', () => {
+describe('convertMultiWktToPolygon', () => {
   const sideLength = 1;
-
-  it('should convert POINT to POLYGON default', () => {
-    const wktPoint = 'POINT (30 10)';
-    expect(convertWktToPolygon(wktPoint)).to.equal(
-      'POLYGON ((29.99995 9.99995, 30.00005 9.99995, 30.00005 10.00005, 29.99995 10.00005, 29.99995 9.99995))');
-  });
 
   it('should convert MULTIPOINT to MULTIPOLYGON default', () => {
     const wktMultipoint = 'MULTIPOINT ((30 10), (40 40), (20 20), (10 30))';
@@ -30,13 +24,7 @@ describe('convertWktToPolygon', () => {
       + '((39.99995 39.99995, 40.00005 39.99995, 40.00005 40.00005, 39.99995 40.00005, 39.99995 39.99995)), '
       + '((19.99995 19.99995, 20.00005 19.99995, 20.00005 20.00005, 19.99995 20.00005, 19.99995 19.99995)), '
       + '((9.99995 29.99995, 10.00005 29.99995, 10.00005 30.00005, 9.99995 30.00005, 9.99995 29.99995)))';
-    expect(convertWktToPolygon(wktMultipoint)).to.equal(expectedMultipolygon);
-  });
-
-  it('should convert POINT to POLYGON with specified sideLength', () => {
-    const wktPoint = 'POINT (30 10)';
-    const expectedPolygon = 'POLYGON ((29.5 9.5, 30.5 9.5, 30.5 10.5, 29.5 10.5, 29.5 9.5))';
-    expect(convertWktToPolygon(wktPoint, sideLength)).to.equal(expectedPolygon);
+    expect(convertMultiWktToPolygon(wktMultipoint)).to.equal(expectedMultipolygon);
   });
 
   it('should convert MULTIPOINT to MULTIPOLYGON with specified sideLength', () => {
@@ -46,26 +34,26 @@ describe('convertWktToPolygon', () => {
       + '((39.5 39.5, 40.5 39.5, 40.5 40.5, 39.5 40.5, 39.5 39.5)), '
       + '((19.5 19.5, 20.5 19.5, 20.5 20.5, 19.5 20.5, 19.5 19.5)), '
       + '((9.5 29.5, 10.5 29.5, 10.5 30.5, 9.5 30.5, 9.5 29.5)))';
-    expect(convertWktToPolygon(wktMultipoint, sideLength)).to.equal(expectedMultipolygon);
+    expect(convertMultiWktToPolygon(wktMultipoint, sideLength)).to.equal(expectedMultipolygon);
   });
 
   it('should throw an error for invalid WKT type', () => {
     const invalidWkt = 'INVALID (30 10)';
     const expectedErrMsg = 'query parameter "coords" invalid WKT format: INVALID (30 10)';
-    expect(() => convertWktToPolygon(invalidWkt, sideLength)).to.throw(expectedErrMsg);
+    expect(() => convertMultiWktToPolygon(invalidWkt, sideLength)).to.throw(expectedErrMsg);
   });
 
-  it('should throw an error for invalid WKT POINT format', () => {
-    const invalidWkt = 'POINT 30 10';
-    const expectedErrMsg = 'query parameter "coords" Invalid WKT string: POINT 30 10';
-    expect(() => convertWktToPolygon(invalidWkt, sideLength)).to.throw(expectedErrMsg);
+  it('should throw an error for invalid WKT MULTIPOINT format', () => {
+    const invalidWkt = 'MULTIPOINT 30 10';
+    const expectedErrMsg = 'query parameter "coords" Invalid WKT string: MULTIPOINT 30 10';
+    expect(() => convertMultiWktToPolygon(invalidWkt, sideLength)).to.throw(expectedErrMsg);
   });
 
-  it('should throw an error for valid WKT that is not POINT/MULTIPOINT', () => {
+  it('should throw an error for valid WKT that is not MULTIPOINT', () => {
     const invalidWkt = 'POLYGON ((29.5 9.5, 30.5 9.5, 30.5 10.5, 29.5 10.5, 29.5 9.5))';
     const expectedErrMsg = 'query parameter "coords" invalid WKT format: '
       + 'POLYGON ((29.5 9.5, 30.5 9.5, 30.5 10.5, 29.5 10.5, 29.5 9.5))';
-    expect(() => convertWktToPolygon(invalidWkt, sideLength)).to.throw(expectedErrMsg);
+    expect(() => convertMultiWktToPolygon(invalidWkt, sideLength)).to.throw(expectedErrMsg);
   });
 });
 

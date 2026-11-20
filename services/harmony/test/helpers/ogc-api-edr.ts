@@ -12,7 +12,7 @@ export const defaultCollection = 'C1233800302-EEDTEST';
 export const defaultGranuleId = 'G1233800352-EEDTEST';
 export const defaultCoverageId = 'all';
 export const defaultVersion = '1.1.0';
-type supportedEdrQueryType = 'cube' | 'area' | 'position' | 'trajectory';
+type supportedEdrQueryType = 'cube' | 'area' | 'position' | 'radius' | 'trajectory';
 
 interface QueryOptions {
   query?: object;

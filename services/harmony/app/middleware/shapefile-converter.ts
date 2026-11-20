@@ -299,6 +299,9 @@ export function normalizeGeoJson(geoJson: object): object {
 
   let newGeoJson = normalizeGeoJsonCoords(geoJson);
   newGeoJson = convertPointsToPolygons(newGeoJson);
+  // circles generated around points near the antimeridian can have longitudes outside
+  // of [-180, 180], which need to be normalized before splitting
+  newGeoJson = normalizeGeoJsonCoords(newGeoJson);
 
   // eslint-disable-next-line @typescript-eslint/dot-notation
   for (const index in newGeoJson['features']) {

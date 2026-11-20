@@ -9,6 +9,7 @@ import * as yaml from 'js-yaml';
 import { getDataForArea, postDataForArea } from './get-data-for-area';
 import { getDataForCube, postDataForCube } from './get-data-for-cube';
 import { getDataForPoint, postDataForPoint } from './get-data-for-point';
+import { getDataForRadius, postDataForRadius } from './get-data-for-radius';
 import { getDataForTrajectory, postDataForTrajectory } from './get-data-for-trajectory';
 import HarmonyRequest from '../../models/harmony-request';
 import getLandingPage from '../ogc-coverages/get-landing-page';
@@ -95,8 +96,8 @@ export function addOpenApiRoutes(app: Router): void {
       getCollectionInstances: TODO,
       getDataForPoint,
       postDataForPoint,
-      getDataForRadius: TODO,
-      postDataForRadius: TODO,
+      getDataForRadius,
+      postDataForRadius,
       getDataForCube,
       postDataForCube,
       getDataForArea,
