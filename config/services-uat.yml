@@ -194,10 +194,13 @@ https://cmr.uat.earthdata.nasa.gov:
 
   - name: satellite-in-situ-matchup
     description: |
-      Matches one in-situ observation, sent as a bounding box and temporal range
-      centered on it, against Earthdata Archive Level-2 granules (SST and ocean
-      color, including PACE OCI), reproducing the seabass-utils mk_matchup.py
-      extraction. Returns one CSV row per matching granule.
+      Satellite-in situ matchups for validation. Send one in situ observation as a
+      bounding box and temporal range centered on it. For each Level-2 granule
+      that covers it, returns one CSV row with statistics of the pixel box around
+      the observation and a matched or rejected verdict, following the NASA ocean
+      color validation procedure (Bailey and Werdell 2006; SeaBASS mk_matchup.py).
+      Data: Earthdata Archive SST and ocean color (MODIS, VIIRS, PACE OCI) and
+      ORNL DAAC PRISM L1B and L2A.
     data_operation_version: '0.22.0'
     type:
       <<: *default-turbo-config
